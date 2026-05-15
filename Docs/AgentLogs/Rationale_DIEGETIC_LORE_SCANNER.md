@@ -487,3 +487,17 @@ Solution: Ran source-only checks: `git diff --check` passed with line-ending war
 Rejected Alternatives: Running prohibited `dotnet build`; relying on a visual source glance.
 Scalability potential: Process hygiene only.
 Hardware Impact: No runtime impact.
+
+## LOOP 23 PER-SCREEN SHADER STATE ISOLATION
+
+Problem: `ToolDiegeticDisplayController` pushed heat, battery, distance, ammo, critical flash, visual overkill, fault, and tool hue through `Shader.SetGlobalFloat`. That makes one physical tool screen overwrite every other physical tool screen using the same shader properties, and it spends global shader writes for data that is renderer-local.
+Solution: Route those scalar values through the controller's existing cached `MaterialPropertyBlock`. Changed scalars are batched behind one `GetPropertyBlock` / `SetPropertyBlock` pair and cached per display, while texture and low-tier fallback state remain in the same property-block lane.
+Rejected Alternatives: Keeping global floats and accepting multi-display cross-talk; cloning materials per tool screen; adding a new renderer-state service for one local UI surface.
+Scalability potential: Low/MX350 keeps the 256/RGB565/fallback path without global shader contention. Middle/High/Ultra can run multiple rich physical tool screens without heat/fault/overkill values bleeding between displays.
+Hardware Impact: Replaces up to 9 global shader writes with one per-renderer property-block commit when display-visible scalar state changes. Exact microseconds remain PENDING PROFILER.
+
+Problem: Verification after per-screen shader-state isolation needed to prove the old global path was removed without reintroducing UI allocation patterns.
+Solution: Ran source-only checks: `git diff --check` passed with line-ending warning only, `git diff --cached --check` passed, scanner banned-pattern scan found no forbidden scanner/UI patterns, and targeted shader-state scan found no `Shader.SetGlobalFloat` or `ApplyGlobalFloat` in the tool display controller.
+Rejected Alternatives: Running a prohibited dotnet rebuild; assuming `MaterialPropertyBlock` migration was complete without static evidence.
+Scalability potential: Process hygiene only.
+Hardware Impact: No runtime impact.

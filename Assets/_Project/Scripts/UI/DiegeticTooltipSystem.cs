@@ -19,7 +19,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Diegetic Tooltip System")]
-    public sealed class DiegeticTooltipSystem : MonoBehaviour, ILateFrameTickable, IRenderable, IGlobalRegistryHotSwapListener
+    public sealed class DiegeticTooltipSystem : MonoBehaviour, ILateFrameTickable, IRenderable, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
     {
         private const int MaxGlyphCount = 96;
         private const int MaxIconCount = 1;
@@ -185,6 +185,7 @@ namespace Hecton8.UI
         private bool _registeredLateFrame;
         private bool _registeredRenderable;
         private bool _hotSwapListenerRegistered;
+        private bool _scalabilityListenerRegistered;
         private bool _fontUvTableDirty;
         private bool _spriteUvTableDirty;
         private bool _resourceObjectsReady;
@@ -193,11 +194,11 @@ namespace Hecton8.UI
         private bool _materialsReady;
         private bool _lowTierActive;
         private bool _cachedRenderCameraFromInteraction;
+        private bool _inputDeterminismAwaitingRegistration;
 
         public void LateFrameTick()
         {
             float deltaTime = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
-            RefreshScalabilityTier();
             ConsumeLookTargetSignals();
             ConsumeAupShiftSignals();
 
@@ -333,6 +334,7 @@ namespace Hecton8.UI
             EnsureBlackBox();
             TryRegisterRuntime();
             TryRegisterHotSwapListener();
+            TryRegisterScalabilityListener();
             RefreshScalabilityTier();
             RefreshInputDeterminismService();
             _activeSchemeHash = ResolveCurrentSchemeHash();
@@ -342,6 +344,7 @@ namespace Hecton8.UI
         {
             TryRegisterRuntime();
             TryRegisterHotSwapListener();
+            TryRegisterScalabilityListener();
             RefreshScalabilityTier();
             RefreshInputDeterminismService();
             _activeSchemeHash = ResolveCurrentSchemeHash();
@@ -351,17 +354,25 @@ namespace Hecton8.UI
         {
             UnregisterRuntime();
             TryUnregisterHotSwapListener();
+            TryUnregisterScalabilityListener();
             ClearTooltipState();
             _promptLength = 0;
             CacheRenderCamera(null, fromInteraction: false);
             _inputDeterminism = null;
+            _inputDeterminismAwaitingRegistration = false;
         }
 
         private void OnDestroy()
         {
             UnregisterRuntime();
             TryUnregisterHotSwapListener();
+            TryUnregisterScalabilityListener();
             ReleaseResources();
+        }
+
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            _lowTierActive = payload.CurrentTier == ScalabilityTierProfiles.LowMx350;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -381,6 +392,11 @@ namespace Hecton8.UI
                 return;
 
             _inputDeterminism = currentService as IInputDeterminismService;
+            if (_inputDeterminism == null)
+                RefreshInputDeterminismService();
+            else
+                _inputDeterminismAwaitingRegistration = false;
+
             _activeSchemeHash = 0u;
             if (_hasSignalTarget && !_diagnosticActive)
                 RebuildActiveTooltipLayout();
@@ -1099,6 +1115,9 @@ namespace Hecton8.UI
 
         private uint ResolveCurrentSchemeHash()
         {
+            if (_inputDeterminismAwaitingRegistration)
+                RefreshInputDeterminismService();
+
             IInputDeterminismService input = _inputDeterminism;
             if (input == null)
                 return InputSchemeHashKeyboardMouse;
@@ -1111,7 +1130,16 @@ namespace Hecton8.UI
 
         private void RefreshInputDeterminismService()
         {
+            IInputService registeredInput = GlobalRegistry.RegisteredInput;
+            if (registeredInput != null)
+            {
+                _inputDeterminism = registeredInput;
+                _inputDeterminismAwaitingRegistration = false;
+                return;
+            }
+
             _inputDeterminism = GlobalRegistry.InputDeterminism;
+            _inputDeterminismAwaitingRegistration = true;
         }
 
         private bool IsLowTier()
@@ -1174,6 +1202,24 @@ namespace Hecton8.UI
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapListenerRegistered = false;
+        }
+
+        private void TryRegisterScalabilityListener()
+        {
+            if (_scalabilityListenerRegistered || !Application.isPlaying)
+                return;
+
+            ScalabilityEvents.Register(this);
+            _scalabilityListenerRegistered = true;
+        }
+
+        private void TryUnregisterScalabilityListener()
+        {
+            if (!_scalabilityListenerRegistered)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _scalabilityListenerRegistered = false;
         }
 
         private void EnsureBlackBox()

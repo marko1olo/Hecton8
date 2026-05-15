@@ -184,3 +184,15 @@ Rejected Alternatives: Removing the fallback entirely would break cargo mass if 
 Scalability potential: Low/Middle reduce global scalar traffic during submarine physics. High/Ultra keep full cargo buoyancy fidelity on event delivery and still have a bounded safety poll if an event is missed.
 
 Hardware Impact: Estimated 1-3 microseconds saved per active submarine physics frame on i3/MX350 class hardware when inventory mass is stable; 0 managed allocations added.
+
+## Decision 14 - Fluid Runtime Cache Teardown Hardening
+
+Problem: `HectonFluidEngine` already cached its static runtime instance and actor contexts, but teardown only cleared DataVault and bucketer references. A stale fluid/player/submarine pointer after scene unload or domain reload would weaken H-Phi ownership and could route later static calls through a dead owner.
+
+Solution: Clear `s_runtimeInstance` when the current fluid owner disables/destroys, and clear cached player/submarine runtime contexts beside the existing DataVault/bucketer nulling.
+
+Rejected Alternatives: Re-reading `GlobalRegistry.Fluid` on every cavitation burst would fix stale owner risk but would put registry traffic back into the static hot path. Leaving teardown as-is relies on Unity object fake-null behavior instead of explicit ownership release.
+
+Scalability potential: Low/Middle avoid stale fluid static routes during scene churn. High/Ultra preserve cached cavitation/static entrypoint behavior while keeping reload and duplicate-owner cleanup deterministic.
+
+Hardware Impact: Runtime cost is 0 in active loops. Teardown adds four reference stores and two identity checks; hot-path benefit is preserving the existing cached static route without stale-owner risk.

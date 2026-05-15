@@ -4447,7 +4447,7 @@ namespace Hecton8.Environment
                     }
                 }
 
-                Camera parentCamera = GetComponentInParent<Camera>();
+                Camera parentCamera = ResolveNearestParentCamera(transform);
                 if (IsRuntimeMainCamera(parentCamera))
                     mainCamera = parentCamera;
 
@@ -4788,6 +4788,20 @@ namespace Hecton8.Environment
             return camera != null &&
                    camera.cameraType != CameraType.SceneView &&
                    camera.CompareTag("MainCamera");
+        }
+
+        private static Camera ResolveNearestParentCamera(Transform start)
+        {
+            Transform cursor = start;
+            while (cursor != null)
+            {
+                if (cursor.TryGetComponent(out Camera camera))
+                    return camera;
+
+                cursor = cursor.parent;
+            }
+
+            return null;
         }
 
         private static Camera ResolveRuntimeMainCamera()

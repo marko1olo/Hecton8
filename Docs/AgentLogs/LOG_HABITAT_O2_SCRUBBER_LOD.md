@@ -278,3 +278,19 @@ Cinematic Cheats used:
 
 Exact microseconds saved:
 - None claimed. This is partial-native-state crash prevention for future H-Phi migration; no dotnet rebuild was run.
+
+## 2026-05-15 - Room API Readiness Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- Public room/bulkhead APIs could write multiple SOA lanes after checking only one lane.
+
+What was done:
+- Added length-aware `AreRoomStateLanesReady` and `AreBulkheadLanesReady`.
+- Room snapshots, room configuration, player-room state, CO2 pressure injection, room flags, submerged fraction, ambient pressure, scrubber power, temperature, and bulkhead setup now fail closed on capacity skew.
+
+Cinematic Cheats used:
+- None new.
+
+Exact microseconds saved:
+- None claimed. This is API-bound crash prevention for H-Phi/native lane migration; no dotnet rebuild was run.

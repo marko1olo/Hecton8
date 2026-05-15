@@ -523,3 +523,26 @@ Verification:
 - Scanner banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =`: no matches.
 - Filter rebind scan: sequence sentinels and scanner artifact/progress cache reset in `SetToolHashFilter()`.
 - `dotnet build` / rebuild: NOT RUN by explicit user order.
+
+## Follow-Up Hardening Pass 19
+
+What was wrong:
+- Physical tool display heat, battery, distance, ammo, fault, visual-overkill, and tool-hue values were written through global shader floats. Multiple physical screens could overwrite each other's visual state.
+
+What was done:
+- Replaced display-local `Shader.SetGlobalFloat` calls with a batched per-renderer `MaterialPropertyBlock` scalar update.
+- Kept texture and low-tier fallback binding in the same existing property-block lane.
+
+Cinematic Cheats used:
+- Per-screen visual overkill remains a renderer-local presentation fake. No simulation, material cloning, or new service lane was added.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Replaces up to 9 global shader writes with one per-renderer property-block commit on changed display scalar state.
+
+Verification:
+- `git diff --check` on tool-display source: pass, line-ending warning only.
+- `git diff --cached --check` on tool-display source: pass.
+- Scanner/UI banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, `SetText(`, and `.text =`: no matches.
+- Shader-state scan: no `Shader.SetGlobalFloat` or `ApplyGlobalFloat` remains in `ToolDiegeticDisplayController`.
+- `dotnet build` / rebuild: NOT RUN.

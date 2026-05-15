@@ -1000,3 +1000,18 @@ Verification:
 - `git diff --check -- Assets/_Project/Scripts/SubmarineFluidDynamics.cs`: passed; LF/CRLF warning only.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Summary -CoreGraphOnly`: completed at `2026-05-15 04:32:55 +04:00`.
 - Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.
+
+## 2026-05-15 04:45 +04:00 - Fluid Runtime Cache Teardown
+
+Scope:
+- Runtime code touched: `Assets/_Project/Scripts/HectonFluidEngine.cs`.
+- User constraint retained: no `dotnet build` and no rebuild.
+
+Change:
+- Cleared the cached fluid runtime static owner on disable/destroy when it points at the current owner.
+- Cleared cached player/submarine runtime contexts during fluid teardown with DataVault and bucketer references.
+- No new registry polling, signal producer, managed allocation, scene search, or coroutine was added.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/HectonFluidEngine.cs Assets/_Project/Scripts/SubmarineFluidDynamics.cs`: passed; LF/CRLF warning only.
+- Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.

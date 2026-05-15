@@ -1627,6 +1627,9 @@ namespace Hecton8.Physics
                 _fluidRuntimeRegistered = false;
             }
 
+            if (ReferenceEquals(s_runtimeInstance, this))
+                s_runtimeInstance = null;
+
             if (_fixedTickRegistered)
             {
                 GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
@@ -1654,6 +1657,8 @@ namespace Hecton8.Physics
             DisposeFluidAdvectionState();
             _simulationBucketer = null;
             _dataVault = null;
+            _playerRuntime = null;
+            _submarineRuntime = null;
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -1778,6 +1783,9 @@ namespace Hecton8.Physics
                 _fluidRuntimeRegistered = false;
             }
 
+            if (ReferenceEquals(s_runtimeInstance, this))
+                s_runtimeInstance = null;
+
             if (_fixedTickRegistered)
             {
                 GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
@@ -1802,6 +1810,8 @@ namespace Hecton8.Physics
             DisposeFluidAdvectionState();
             _simulationBucketer = null;
             _dataVault = null;
+            _playerRuntime = null;
+            _submarineRuntime = null;
         }
 
         // ══════════════════════════════════════════════════════════

@@ -557,6 +557,7 @@ namespace Hecton8.Editor.ProceduralGen
             ValidateShaderRequiredToken(shaderPath, source, "CBUFFER_START(UnityPerMaterial)", ref failures);
             ValidateShaderRequiredToken(shaderPath, source, "LODFadeCrossFade(input.positionCS);", ref failures);
             ValidateShaderPassBudget(shaderPath, source, ref failures);
+            ValidateShaderPragmaBudget(shaderPath, source, ref failures);
             ValidateShaderForbiddenToken(shaderPath, source, "ZWrite Off", ref failures);
             ValidateShaderForbiddenToken(shaderPath, source, "Blend SrcAlpha", ref failures);
             ValidateShaderForbiddenToken(shaderPath, source, "Blend One One", ref failures);
@@ -610,6 +611,30 @@ namespace Hecton8.Editor.ProceduralGen
             Debug.LogError($"[ShallowsBioForgeBatchBaker] Shader pass budget contract failed at {shaderPath}. Pass={passCount}, UsePass={usePassCount}, GrabPass={grabPassCount}, Fallback={fallbackCount}.");
         }
 
+        private static void ValidateShaderPragmaBudget(string shaderPath, string source, ref int failures)
+        {
+            bool valid = CountSourceToken(source, "#pragma target 4.5") == 1 &&
+                         CountSourceToken(source, "#pragma target 3.5") == 1 &&
+                         CountSourceToken(source, "#pragma vertex Vert") == 1 &&
+                         CountSourceToken(source, "#pragma vertex ShadowVert") == 1 &&
+                         CountSourceToken(source, "#pragma fragment Frag") == 1 &&
+                         CountSourceToken(source, "#pragma fragment ShadowFrag") == 1 &&
+                         CountSourceToken(source, "#pragma multi_compile_instancing") == 2 &&
+                         CountSourceToken(source, "#pragma instancing_options assumeuniformscaling") == 2 &&
+                         CountSourceToken(source, "#pragma multi_compile_fog") == 1 &&
+                         CountSourceToken(source, "#pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE") == 1 &&
+                         CountSourceToken(source, "#pragma multi_compile _ LOD_FADE_CROSSFADE") == 2 &&
+                         CountSourceToken(source, "#pragma multi_compile _ _MATH_LOD_LOW") == 1 &&
+                         CountSourceToken(source, "#pragma shader_feature_local _QUALITY_HIGH") == 1 &&
+                         CountSourceToken(source, "#pragma skip_variants") == 1 &&
+                         CountSourceToken(source, "#pragma multi_compile _ _ADDITIONAL_LIGHTS") == 0;
+            if (valid)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] Shader pragma budget contract failed at {shaderPath}.");
+        }
+
         private static int CountShaderLineToken(string source, string token)
         {
             int count = 0;
@@ -633,6 +658,23 @@ namespace Hecton8.Editor.ProceduralGen
                 }
 
                 index = lineEnd + 1;
+            }
+
+            return count;
+        }
+
+        private static int CountSourceToken(string source, string token)
+        {
+            int count = 0;
+            int index = 0;
+            while (index < source.Length)
+            {
+                index = source.IndexOf(token, index, StringComparison.Ordinal);
+                if (index < 0)
+                    break;
+
+                count++;
+                index += token.Length;
             }
 
             return count;

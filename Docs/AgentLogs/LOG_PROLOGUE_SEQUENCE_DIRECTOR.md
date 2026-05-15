@@ -348,3 +348,11 @@ What was done -> `ReentryVfxStateSignal` exposes `FlagSpatialAnchor`, and both s
 Cinematic Cheats used -> None; this is a diagnostic/ownership flag protecting existing plasma, splash, acoustic, and droplet fakes from ambiguous anchors.
 Exact Microseconds saved -> Adds one branch and byte OR per state/telemetry write, below 1 us. Avoids downstream ambiguity without increasing the 64-byte signal payload.
 Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms the flag in the 64-byte state signal and both VFX writers; forbidden-pattern scan returned no hits; `git diff --check` exits clean for the scoped files.
+
+## 2026-05-15 - Loop 48 Audio Sweep Tick-Source and Finite-Config Review
+
+What was wrong -> Prologue audio advanced portal sweep timing from raw `Time.unscaledDeltaTime`, and malformed serialized cutoff/gain/duration fields could still publish NaN/Inf DSP transition data.
+What was done -> Cached `ITickDispatcher`, updated dispatcher binding on registry hot-swap, added finite/clamped sweep delta fallback, and routed audio filter/gain/duration scalars through finite clamps before transition publish.
+Cinematic Cheats used -> Portal/ocean sweep remains a controlled DSP fake; the patch keeps that fake tied to project tick time and finite scalar inputs.
+Exact Microseconds saved -> Adds one cached pointer read and scalar finite checks, below 1 us per prologue audio frame. Prevents invalid DSP transition churn rather than chasing it downstream.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms dispatcher-backed delta resolution, finite helpers, and hot-swap cache; forbidden-pattern scan returned no hits; `git diff --cached --check` exits clean for the staged audio source, and working-tree doc diff check reports line-ending warnings only.

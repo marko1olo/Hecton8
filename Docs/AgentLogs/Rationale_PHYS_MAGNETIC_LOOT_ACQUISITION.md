@@ -391,3 +391,15 @@ Rejected Alternatives: Allowing the process to finish was rejected because it vi
 Scalability potential: No runtime behavior change. This protects evidence quality during parallel-agent execution.
 
 Hardware Impact: Removes local build CPU pressure only; no gameplay frame-time claim.
+
+## Decision 31 - Evidence Chronology Repair
+
+Problem: Two late 2026-05-15 report sections were inserted near the top of `LOG_PHYS_MAGNETIC_LOOT_ACQUISITION.md`, violating the old-top/new-bottom evidence order required by the reporting protocol.
+
+Solution: Move the misplaced sections to the file tail and re-audit headings by line number after the move.
+
+Rejected Alternatives: Leaving the chronology inverted was rejected because the CTO-facing log must be readable without chat context. Rewriting historical sections was rejected because evidence should be appended and minimally corrected.
+
+Scalability potential: No runtime behavior change. It protects H-Phi process integrity under long-running parallel-agent work and context compaction.
+
+Hardware Impact: None.

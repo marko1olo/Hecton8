@@ -626,8 +626,13 @@ namespace Hecton8.Atmosphere
         public float ResolveEffectiveDepthStress01(int roomId, float depthStress01)
         {
             depthStress01 = FiniteSaturate01(depthStress01);
-            if (!RoomPressure.IsCreated || roomId < 0 || roomId >= _roomCount)
+            if (!RoomPressure.IsCreated ||
+                roomId < 0 ||
+                roomId >= _roomCount ||
+                roomId >= RoomPressure.Length)
+            {
                 return depthStress01;
+            }
 
             float pressureAtm = FiniteNonNegativeOrZero(RoomPressure[roomId]) * math.rcp(KPaPerAtmosphere);
             float relief01 = math.saturate((pressureAtm - 1f) * hullStressReliefPerAtm);
@@ -1155,6 +1160,56 @@ namespace Hecton8.Atmosphere
                 default:
                     return math.max(1f, hibernationDistanceMeters);
             }
+        }
+
+        private bool AreRoomStateLanesReady(int requiredCount)
+        {
+            requiredCount = math.max(0, requiredCount);
+            return RoomO2.IsCreated &&
+                   RoomO2.Length >= requiredCount &&
+                   RoomCO2.IsCreated &&
+                   RoomCO2.Length >= requiredCount &&
+                   RoomPressure.IsCreated &&
+                   RoomPressure.Length >= requiredCount &&
+                   _roomO2Back.IsCreated &&
+                   _roomO2Back.Length >= requiredCount &&
+                   _roomCO2Back.IsCreated &&
+                   _roomCO2Back.Length >= requiredCount &&
+                   _roomNitrogen.IsCreated &&
+                   _roomNitrogen.Length >= requiredCount &&
+                   _roomNitrogenBack.IsCreated &&
+                   _roomNitrogenBack.Length >= requiredCount &&
+                   _roomPressureBack.IsCreated &&
+                   _roomPressureBack.Length >= requiredCount &&
+                   _roomAmbientPressure.IsCreated &&
+                   _roomAmbientPressure.Length >= requiredCount &&
+                   _roomSubmerged01.IsCreated &&
+                   _roomSubmerged01.Length >= requiredCount &&
+                   _roomPlayerStress01.IsCreated &&
+                   _roomPlayerStress01.Length >= requiredCount &&
+                   _roomPlayerHeartRateBpm.IsCreated &&
+                   _roomPlayerHeartRateBpm.Length >= requiredCount &&
+                   _roomTemperatureCelsius.IsCreated &&
+                   _roomTemperatureCelsius.Length >= requiredCount &&
+                   _roomPlayerPresent.IsCreated &&
+                   _roomPlayerPresent.Length >= requiredCount &&
+                   _roomScrubberPowered.IsCreated &&
+                   _roomScrubberPowered.Length >= requiredCount &&
+                   _roomFlags.IsCreated &&
+                   _roomFlags.Length >= requiredCount &&
+                   _roomBaseIndex.IsCreated &&
+                   _roomBaseIndex.Length >= requiredCount;
+        }
+
+        private bool AreBulkheadLanesReady(int requiredCount)
+        {
+            requiredCount = math.max(0, requiredCount);
+            return _bulkheadRoomA.IsCreated &&
+                   _bulkheadRoomA.Length >= requiredCount &&
+                   _bulkheadRoomB.IsCreated &&
+                   _bulkheadRoomB.Length >= requiredCount &&
+                   _bulkheadSealed.IsCreated &&
+                   _bulkheadSealed.Length >= requiredCount;
         }
 
         private bool AreBaseStateLanesReady(int requiredCount)

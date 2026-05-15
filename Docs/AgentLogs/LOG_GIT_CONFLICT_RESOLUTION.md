@@ -291,3 +291,15 @@ Cinematic Cheats used -> None. Git-only integration checkpoint; no runtime or vi
 Exact Microseconds saved -> 0 us runtime. Dev-path savings come from reducing unresolved local merge surface before the next laptop/Desktop pull.
 
 Verification -> `origin/main...HEAD = 0 0`; conflict-marker scan clean; `git diff --check` only reported LF-to-CRLF warnings. Unity compile/profiler not run.
+
+## 2026-05-15 - Loop 13 Reduced Tail
+
+What was wrong -> After `c6682a0be` was pushed and verified, 11 new local files remained dirty from ongoing parallel-agent writes.
+
+What was done -> Classified the reduced tail with status/stat/check/marker scans, recorded evidence, and prepared it as a separate checkpoint instead of rewriting the pushed commit.
+
+Cinematic Cheats used -> None. Git-only integration pass.
+
+Exact Microseconds saved -> 0 us runtime. Dev-path savings are a smaller local conflict surface for the next pull/push cycle.
+
+Verification -> Remote divergence was `0 0`; conflict-marker scan clean; `git diff --check` produced only LF-to-CRLF warnings. Unity compile/profiler not run.

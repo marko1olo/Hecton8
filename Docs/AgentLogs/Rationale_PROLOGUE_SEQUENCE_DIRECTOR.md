@@ -436,3 +436,11 @@ Solution: Add `FlagSpatialAnchor` to the existing state flags and set it from `_
 Rejected Alternatives: Infer validity from default AUP, or suppress state packets until anchored. Default AUP can be finite and ambiguous; suppressing packets hides whiteout/quality diagnostics.
 Scalability potential: Low/MX350 readers can cheaply reject spatial fan-out from unanchored states. Middle/High/Ultra keep richer diagnostics and effects tied to authoritative anchors.
 Hardware Impact: One branch and byte OR per state/telemetry write, below 1 us; avoids downstream ambiguity without adding payload size. Verification static only; no rebuild.
+
+## Decision 53 - Audio Sweep Dispatcher Time and Finite Config
+
+Problem: `PrologueAcousticOrchestrator` advanced the ocean filter sweep from raw `Time.unscaledDeltaTime`, and malformed serialized cutoff/gain/duration scalars could still leak NaN/Inf into audio transition packets despite editor validation.
+Solution: Cache `ITickDispatcher`, update it through hot-swap callbacks, resolve sweep delta through finite/clamped dispatcher time with `Time.unscaledDeltaTime` as fallback, and route filter/gain/duration fields through finite clamps before publishing.
+Rejected Alternatives: Keep raw Unity time, or rely on `OnValidate()`. Raw Unity time drifts from the project tick source; `OnValidate()` does not protect runtime-loaded or tool-mutated serialized data.
+Scalability potential: Low/MX350 gets stable cheap portal sweeps under frame spikes and corrupted config. Middle/High/Ultra keep granular stress and splashdown gain overkill, but only from finite DSP inputs.
+Hardware Impact: One cached service pointer, one delta clamp, and scalar finite checks per audio transition frame, below 1 us; avoids invalid DSP packets and transition churn. Verification static only; no rebuild.

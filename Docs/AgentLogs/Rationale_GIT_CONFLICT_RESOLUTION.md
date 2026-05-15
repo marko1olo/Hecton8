@@ -59,3 +59,9 @@ Solution: Treat pushed history and working-tree state as separate facts. Verify 
 Rejected Alternatives: Reporting "all clean", deleting the new work, or pulling when no remote commits exist. Those would hide active local agent output or create needless merge churn.
 Scalability potential: Git-only operation. No gameplay tier behavior changes are claimed by this integration pass.
 Hardware Impact: 0 us runtime impact. The only measured gain is integration hygiene; Unity compile/profiler proof remains pending.
+
+Problem: After `c6682a0be` was pushed and verified, a smaller 11-file local tail remained.
+Solution: Keep the same evidence gate: classify it as local post-push work, confirm no conflict markers or whitespace errors beyond CRLF warnings, then checkpoint it separately.
+Rejected Alternatives: Stopping with a verified but unpushed small tail, or folding it into the prior already-pushed commit by amend/force-push. Both conflict with the requested careful push workflow.
+Scalability potential: Git-only operation. No Low/Middle/High/Ultra runtime claims made.
+Hardware Impact: 0 us runtime impact. Compile/profiler proof remains pending.

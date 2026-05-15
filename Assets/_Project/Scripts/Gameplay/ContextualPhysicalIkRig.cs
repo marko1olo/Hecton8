@@ -2039,7 +2039,7 @@ namespace Hecton8.Gameplay
                     out AbsoluteUniversePosition rightHandAup,
                     out _))
             {
-                predictiveBlend = ContextualPhysicalIkMath.SmoothScalar(predictiveBlend, 0.0f, predictiveRepairBlendSharpness, deltaTime);
+                predictiveBlend = SanitizeUnitScalar(ContextualPhysicalIkMath.SmoothScalar(predictiveBlend, 0.0f, predictiveRepairBlendSharpness, deltaTime));
                 return;
             }
 
@@ -2067,7 +2067,7 @@ namespace Hecton8.Gameplay
             float requiredDot = SanitizeUnitScalar(predictiveRepairDirectionDot);
             if (directionDot < requiredDot)
             {
-                predictiveBlend = ContextualPhysicalIkMath.SmoothScalar(predictiveBlend, 0.0f, predictiveRepairBlendSharpness, deltaTime);
+                predictiveBlend = SanitizeUnitScalar(ContextualPhysicalIkMath.SmoothScalar(predictiveBlend, 0.0f, predictiveRepairBlendSharpness, deltaTime));
                 return;
             }
 
@@ -2078,7 +2078,7 @@ namespace Hecton8.Gameplay
             float targetBlend = range01 * direction01;
             predictivePosition = (Vector3)targetRuntime;
             predictiveNormal = fallbackNormal;
-            predictiveBlend = ContextualPhysicalIkMath.SmoothScalar(predictiveBlend, targetBlend, predictiveRepairBlendSharpness, deltaTime);
+            predictiveBlend = SanitizeUnitScalar(ContextualPhysicalIkMath.SmoothScalar(predictiveBlend, targetBlend, predictiveRepairBlendSharpness, deltaTime));
         }
 
         private static Vector3 ResolveAupVelocity(
@@ -2756,7 +2756,7 @@ namespace Hecton8.Gameplay
 
             float safeDeltaTime = math.max(0.0001f, SanitizeNonNegativeScalar(deltaTime));
             float targetBulge = SanitizeUnitScalar(_muscleBulgeOutput[0] * muscleBulgeScale);
-            _muscleBulgeCurrent = ContextualPhysicalIkMath.SmoothScalar(_muscleBulgeCurrent, targetBulge, muscleBulgeSharpness, safeDeltaTime);
+            _muscleBulgeCurrent = SanitizeUnitScalar(ContextualPhysicalIkMath.SmoothScalar(_muscleBulgeCurrent, targetBulge, muscleBulgeSharpness, safeDeltaTime));
             _muscleBulgeMaterialInstance.SetFloat(MuscleBulgeShaderId, _muscleBulgeCurrent);
         }
 

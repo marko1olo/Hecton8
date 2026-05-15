@@ -193,3 +193,10 @@ Solution: Added length-aware `AreBaseStateLanesReady` and used it before base sn
 Rejected Alternatives: Repeating partial guards at each callsite was rejected because it would drift. Trusting constructor symmetry was rejected because the domain is explicitly moving toward shared native buffers.
 Scalability potential: Low through Ultra keep the same base mask behavior; future per-lane ownership can fail closed instead of indexing partial state.
 Hardware Impact: Small managed branch set on base cold/Frost paths and transition packets only. Prevents crash-class faults under future H-Phi migration.
+
+## Self-Review 21 - Room API SOA Readiness Guard
+Problem: Public room mutation APIs checked one lane, then wrote several room or bulkhead SOA lanes.
+Solution: Added length-aware `AreRoomStateLanesReady` and `AreBulkheadLanesReady`, then routed room snapshots, room mutators, player-room state, CO2 injection, and bulkhead configuration through them.
+Rejected Alternatives: Letting the Burst job clamp after unsafe API writes was rejected because the fault would already have happened. Guarding only the modified lane was rejected because room APIs maintain cross-lane Dalton consistency.
+Scalability potential: Low through Ultra keep the same room authority while future H-Phi room-lane migration fails closed on capacity skew.
+Hardware Impact: Cold/API path branch cost only. Prevents out-of-bounds public setter faults before the scheduled gas step.

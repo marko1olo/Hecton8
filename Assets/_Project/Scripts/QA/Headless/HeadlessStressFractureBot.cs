@@ -36,12 +36,26 @@ namespace Hecton8.QA.Headless
         private const int BlackboxFrameCapacity = 300;
         private const int BlackboxHeaderSizeBytes = 16;
         private const int BlackboxEntrySizeBytes = 64;
+        private const int BlackboxEntryOffsetFrame = 0;
+        private const int BlackboxEntryOffsetExtremeFrame = 4;
+        private const int BlackboxEntryOffsetShiftSequence = 8;
+        private const int BlackboxEntryOffsetEventHash = 12;
+        private const int BlackboxEntryOffsetNativeBytes = 16;
+        private const int BlackboxEntryOffsetH8Bytes = 24;
+        private const int BlackboxEntryOffsetNativeAllocations = 32;
+        private const int BlackboxEntryOffsetH8Allocations = 36;
+        private const int BlackboxEntryOffsetDispatcherPhaseMs = 40;
+        private const int BlackboxEntryOffsetDataVaultFragmentation = 44;
+        private const int BlackboxEntryOffsetLastShiftMetersX = 48;
+        private const int BlackboxEntryOffsetLastShiftMetersY = 52;
+        private const int BlackboxEntryOffsetLastShiftMetersZ = 56;
+        private const int BlackboxEntryOffsetFlags = 60;
         private const int DefaultTargetFrames = 50000;
         private const int BytesPerMegabyte = 1024 * 1024;
         private const int DefaultScratchMegabytes = 50;
         private const int MinScratchMegabytes = 8;
         private const int MaxScratchMegabytes = 256;
-        private const int ResultSchemaVersion = 6;
+        private const int ResultSchemaVersion = 7;
         private const int DefaultStartupTimeoutSeconds = 60;
         private const int MinStartupTimeoutSeconds = 5;
         private const int MaxStartupTimeoutSeconds = 600;
@@ -124,6 +138,9 @@ namespace Hecton8.QA.Headless
         private int _nativeAllocationBaselineCount;
         private int _h8AllocationBaselineCount;
         private int _scratchBaselineH8AllocationCount;
+        private int _blackboxBinaryDumpSucceeded;
+        private int _blackboxBinaryExistsAfterDump;
+        private int _blackboxManifestDumpSucceeded;
         private uint _shiftSequence;
         private uint _lastFractureHash;
         private long _phaseStartTimestamp;
@@ -868,20 +885,30 @@ namespace Hecton8.QA.Headless
 
         private void TryDumpBlackbox()
         {
+            _blackboxBinaryDumpSucceeded = 0;
+            _blackboxBinaryExistsAfterDump = 0;
+            _blackboxManifestDumpSucceeded = 0;
+
             try
             {
                 DumpBlackbox();
+                _blackboxBinaryDumpSucceeded = FileExistsCold(_blackboxPath) ? 1 : 0;
             }
             catch (Exception)
             {
+                _blackboxBinaryDumpSucceeded = 0;
             }
+
+            _blackboxBinaryExistsAfterDump = FileExistsCold(_blackboxPath) ? 1 : 0;
 
             try
             {
                 DumpBlackboxManifest();
+                _blackboxManifestDumpSucceeded = FileExistsCold(_blackboxManifestPath) ? 1 : 0;
             }
             catch (Exception)
             {
+                _blackboxManifestDumpSucceeded = 0;
             }
         }
 
@@ -943,7 +970,11 @@ namespace Hecton8.QA.Headless
                 WriteJsonEscaped(writer, BlackboxRelativePath);
                 writer.Write("\",\"blackboxBinaryPath\":\"");
                 WriteJsonEscaped(writer, _blackboxPath);
-                writer.Write("\",\"blackboxMagic\":");
+                writer.Write("\",\"blackboxBinaryDumpSucceeded\":");
+                WriteInvariant(writer, _blackboxBinaryDumpSucceeded);
+                writer.Write(",\"blackboxBinaryExistsAfterDump\":");
+                WriteInvariant(writer, _blackboxBinaryExistsAfterDump);
+                writer.Write(",\"blackboxMagic\":");
                 WriteInvariant(writer, BlackboxMagic);
                 writer.Write(",\"blackboxFrameCapacity\":");
                 WriteInvariant(writer, BlackboxFrameCapacity);
@@ -951,6 +982,7 @@ namespace Hecton8.QA.Headless
                 WriteInvariant(writer, BlackboxEntrySizeBytes);
                 writer.Write(",\"blackboxHeaderSizeBytes\":");
                 WriteInvariant(writer, BlackboxHeaderSizeBytes);
+                WriteBlackboxEntryOffsets(writer);
                 writer.Write(",\"blackboxValidEntryCount\":");
                 WriteInvariant(writer, validCount);
                 writer.Write(",\"blackboxCursor\":");
@@ -1080,10 +1112,22 @@ namespace Hecton8.QA.Headless
                     writer.Write("\",\"blackboxManifestPath\":\"");
                     WriteJsonEscaped(writer, _blackboxManifestPath);
                     writer.Write('"');
+                    writer.Write(",\"blackboxBinaryRelativePath\":\"");
+                    WriteJsonEscaped(writer, BlackboxRelativePath);
+                    writer.Write("\",\"blackboxBinaryPath\":\"");
+                    WriteJsonEscaped(writer, _blackboxPath);
+                    writer.Write('"');
+                    writer.Write(",\"blackboxBinaryDumpSucceeded\":");
+                    WriteInvariant(writer, _blackboxBinaryDumpSucceeded);
+                    writer.Write(",\"blackboxBinaryExistsAfterDump\":");
+                    WriteInvariant(writer, _blackboxBinaryExistsAfterDump);
+                    writer.Write(",\"blackboxManifestDumpSucceeded\":");
+                    WriteInvariant(writer, _blackboxManifestDumpSucceeded);
                     writer.Write(",\"blackboxMemorySnapshotIntervalFrames\":");
                     WriteInvariant(writer, BlackboxMemorySnapshotIntervalFrames);
                     writer.Write(",\"blackboxFlagMemorySampleFreshBit\":");
                     WriteInvariant(writer, BlackboxFlagMemorySampleFreshBit);
+                    WriteBlackboxEntryOffsets(writer);
                     writer.Write(",\"simulationPhaseMs\":");
                     WriteInvariant(writer, _lastSimulationPhaseMs);
                     writer.Write(",\"nativeBytesBaseline\":");
@@ -1200,6 +1244,53 @@ namespace Hecton8.QA.Headless
                 default:
                     writer.Write("none");
                     break;
+            }
+        }
+
+        private static void WriteBlackboxEntryOffsets(StreamWriter writer)
+        {
+            writer.Write(",\"blackboxEntryOffsetFrame\":");
+            WriteInvariant(writer, BlackboxEntryOffsetFrame);
+            writer.Write(",\"blackboxEntryOffsetExtremeFrame\":");
+            WriteInvariant(writer, BlackboxEntryOffsetExtremeFrame);
+            writer.Write(",\"blackboxEntryOffsetShiftSequence\":");
+            WriteInvariant(writer, BlackboxEntryOffsetShiftSequence);
+            writer.Write(",\"blackboxEntryOffsetEventHash\":");
+            WriteInvariant(writer, BlackboxEntryOffsetEventHash);
+            writer.Write(",\"blackboxEntryOffsetNativeBytes\":");
+            WriteInvariant(writer, BlackboxEntryOffsetNativeBytes);
+            writer.Write(",\"blackboxEntryOffsetH8Bytes\":");
+            WriteInvariant(writer, BlackboxEntryOffsetH8Bytes);
+            writer.Write(",\"blackboxEntryOffsetNativeAllocations\":");
+            WriteInvariant(writer, BlackboxEntryOffsetNativeAllocations);
+            writer.Write(",\"blackboxEntryOffsetH8Allocations\":");
+            WriteInvariant(writer, BlackboxEntryOffsetH8Allocations);
+            writer.Write(",\"blackboxEntryOffsetDispatcherPhaseMs\":");
+            WriteInvariant(writer, BlackboxEntryOffsetDispatcherPhaseMs);
+            writer.Write(",\"blackboxEntryOffsetDataVaultFragmentation\":");
+            WriteInvariant(writer, BlackboxEntryOffsetDataVaultFragmentation);
+            writer.Write(",\"blackboxEntryOffsetLastShiftMetersX\":");
+            WriteInvariant(writer, BlackboxEntryOffsetLastShiftMetersX);
+            writer.Write(",\"blackboxEntryOffsetLastShiftMetersY\":");
+            WriteInvariant(writer, BlackboxEntryOffsetLastShiftMetersY);
+            writer.Write(",\"blackboxEntryOffsetLastShiftMetersZ\":");
+            WriteInvariant(writer, BlackboxEntryOffsetLastShiftMetersZ);
+            writer.Write(",\"blackboxEntryOffsetFlags\":");
+            WriteInvariant(writer, BlackboxEntryOffsetFlags);
+        }
+
+        private static bool FileExistsCold(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return false;
+
+            try
+            {
+                return File.Exists(path);
+            }
+            catch (Exception)
+            {
+                return false;
             }
         }
 

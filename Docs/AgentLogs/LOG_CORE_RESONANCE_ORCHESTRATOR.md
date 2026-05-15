@@ -72,6 +72,34 @@ Verification:
 Status:
 - ENGINE RESONATING / COMPILE BLOCKED BY DEPENDENCY / RUNTIME PENDING VERIFICATION.
 
+## 2026-05-15 04:45 +04:00 - Fluid Runtime Cache Teardown Hardening
+
+What was wrong:
+- `HectonFluidEngine` owns cached runtime pointers for static fluid entrypoints and actor context reads.
+- Teardown cleared DataVault and bucketer references but left the static fluid owner cache and actor context caches live until later overwrite.
+- That is a stale-pointer risk during scene churn, domain reload, duplicate-owner rejection, and static cavitation burst routing.
+
+What was done:
+- Cleared `s_runtimeInstance` on disable/destroy when it points at the current fluid owner.
+- Cleared cached player/submarine runtime contexts during fluid teardown with the existing DataVault/bucketer cleanup.
+- Left the existing static cached entrypoint intact; no per-burst `GlobalRegistry.Fluid` polling was introduced.
+
+Cinematic Cheats used:
+- No simulation work was added. This is lifecycle hygiene that protects the existing cheap cavitation/static route instead of buying correctness with a per-call registry lookup.
+
+Exact Microseconds saved:
+- Active-loop cost: 0 microseconds added.
+- Teardown cost: two identity checks and four reference stores per teardown path.
+- Preserved hot-path saving: avoids reintroducing a per-cavitation-burst global fluid lookup in transport-heavy scenes.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/HectonFluidEngine.cs Assets/_Project/Scripts/SubmarineFluidDynamics.cs` passed; LF/CRLF warning only.
+- Diff scan found no new managed containers, LINQ, `ToArray`, `FindObject`, coroutine, or signal producer path in the edited hunk.
+- No `dotnet build` or rebuild was run.
+
+Status:
+- ENGINE RESONATING / COMPILE BLOCKED BY DEPENDENCY / RUNTIME PENDING VERIFICATION.
+
 ## 2026-05-15 04:33 +04:00 - Submarine Cargo Mass Fallback Bucketing
 
 What was wrong:

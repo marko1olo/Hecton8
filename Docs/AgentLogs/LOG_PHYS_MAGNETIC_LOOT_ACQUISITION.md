@@ -417,3 +417,28 @@ Verification:
 
 Final Status:
 - PENDING VERIFICATION.
+
+## 2026-05-15 - Evidence Chronology Repair Pass
+
+What was wrong:
+- Two late 2026-05-15 sections were inserted near the top of this log instead of appended at the bottom.
+- That violated the reporting protocol's old-top/new-bottom evidence order and made the latest work harder to audit after context compaction.
+
+What was done:
+- Moved the misplaced sections to the bottom after the existing dependency telemetry section.
+- Tightened the idle-hash verification wording to reflect the actual static checks.
+- Added this tail section so the repair itself is recorded as evidence.
+
+Cinematic Cheats used:
+- None. This is report-integrity work.
+
+Exact Microseconds saved:
+- No gameplay saving claimed. The value is evidence correctness, not frame time.
+
+Verification:
+- Heading audit confirms chronological section order: 2026-05-14 entries first, then 2026-05-15 continuation entries, then the latest tail passes.
+- `git diff --check` passed after the move.
+- Dotnet process query was clean.
+
+Final Status:
+- PENDING VERIFICATION.

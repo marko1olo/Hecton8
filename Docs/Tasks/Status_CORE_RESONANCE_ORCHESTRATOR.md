@@ -96,3 +96,10 @@ Prompt Source: in-chat XML. `Docs/Tasks/CURRENT_BATCH.md` contains no matching p
 - Preserved immediate inventory lane response: `EncumbranceChanged` commits payload mass directly; coarse `InventoryChanged` forces one scalar refresh because that payload carries no mass.
 - `git diff --check -- Assets/_Project/Scripts/SubmarineFluidDynamics.cs` passed; LF/CRLF warning only.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Summary -CoreGraphOnly` completed at `2026-05-15 04:32:55 +04:00`: source-backed bridge debt `14`, compile-bridge debt `8`, project-reference replacement debt `6`. No `dotnet build` or rebuild was run.
+
+### Loop 8 - Fluid Runtime Cache Teardown Hardening
+
+- Re-read status/rationale before editing and targeted only `HectonFluidEngine` lifecycle cleanup.
+- Current source already owns a static `s_runtimeInstance` cache for fluid static entrypoints; this loop cleared that cache on disable/destroy when the current owner is torn down.
+- Cleared cached player/submarine runtime contexts with DataVault and bucketer references on fluid teardown to avoid stale cross-domain pointers after domain reload, scene unload, or duplicate-owner rejection.
+- `git diff --check -- Assets/_Project/Scripts/HectonFluidEngine.cs Assets/_Project/Scripts/SubmarineFluidDynamics.cs` passed; LF/CRLF warning only.
