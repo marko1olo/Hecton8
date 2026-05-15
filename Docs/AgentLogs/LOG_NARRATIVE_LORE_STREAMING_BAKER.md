@@ -402,6 +402,7 @@ What was wrong:
 What was done:
 - Added `REPO_ROOT` anchored path resolution in `Tools/VerifyLore.py`.
 - Kept CLI defaults as repository-relative labels while resolving actual IO from the repo root.
+- Made `read_blob` and `verify_manifest` resolve repo-relative helper paths internally, so imported usage is not cwd-sensitive.
 - Added atomic `.tmp` + replace writes for blob, manifest, and extracted Markdown output.
 - Added regression tests for cwd-independent `--check` and unsorted record-table rejection.
 - Updated `Data/Lore/README.md` to document cwd-independent operation and atomic writes.
@@ -428,7 +429,7 @@ Regression model:
 - GC: no runtime allocation path touched.
 - Memory: runtime blob remains 10329 bytes.
 - Cadence: no Tick/Update/FixedUpdate path touched.
-- Correctness: verifier now behaves from subdirectories, preserves stable repo-relative lore IDs, writes package outputs atomically, and rejects unsorted record tables.
+- Correctness: verifier CLI and imported helpers now behave from subdirectories, preserve stable repo-relative lore IDs, write package outputs atomically, and reject unsorted record tables.
 
 Failure modes:
 - Unity/C# compile proof remains blocked by missing local toolchain/generation state.
