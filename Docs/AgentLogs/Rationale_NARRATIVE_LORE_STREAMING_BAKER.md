@@ -232,14 +232,6 @@ Rejected Alternatives: Keeping path precedence would make extraction less audita
 Scalability potential: Low/Middle/High/Ultra packaging keeps extraction commands unambiguous as the lore table grows beyond one record.
 Hardware Impact: 0 us/frame on i3/MX350; CLI validation only, runtime blob unchanged.
 
-## Decision 031 - Reject Out-Of-Range Hash Selectors
-
-Problem: Numeric hash parsing masked values into uint32, so `-1` or `0x100000000` could become a valid selector instead of a command error.
-Solution: Parse the numeric value first, reject anything outside `0..0xFFFFFFFF`, and keep the canonical `format_hash` masking only for already-valid internal values.
-Rejected Alternatives: Continuing to mask user input was rejected because it can extract the wrong record. Rejecting only negative values was rejected because overflow has the same ambiguity problem.
-Scalability potential: Low/Middle/High/Ultra packaging remains deterministic as the lore table grows and operators pass hashes manually.
-Hardware Impact: 0 us/frame on i3/MX350; offline CLI validation only.
-
 ## Decision 030 - Convert Bad Hash Input To Controlled CLI Error
 
 Problem: A malformed positional hash exited nonzero but printed a raw Python traceback. That is noisy operator tooling and weaker than deterministic parser diagnostics.
@@ -247,3 +239,11 @@ Solution: Wrap `parse_hash` conversion failures with `ValueError("Invalid hash v
 Rejected Alternatives: Leaving the traceback would force operators to interpret implementation internals; returning hash zero on bad input would be dangerous because zero is a valid empty-input engine contract.
 Scalability potential: Low/Middle/High/Ultra extraction remains predictable as the table grows and operators type more hashes manually.
 Hardware Impact: 0 us/frame on i3/MX350; CLI validation only, runtime blob unchanged.
+
+## Decision 031 - Reject Out-Of-Range Hash Selectors
+
+Problem: Numeric hash parsing masked values into uint32, so `-1` or `0x100000000` could become a valid selector instead of a command error.
+Solution: Parse the numeric value first, reject anything outside `0..0xFFFFFFFF`, and keep the canonical `format_hash` masking only for already-valid internal values.
+Rejected Alternatives: Continuing to mask user input was rejected because it can extract the wrong record. Rejecting only negative values was rejected because overflow has the same ambiguity problem.
+Scalability potential: Low/Middle/High/Ultra packaging remains deterministic as the lore table grows and operators pass hashes manually.
+Hardware Impact: 0 us/frame on i3/MX350; offline CLI validation only.
