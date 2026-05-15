@@ -88,6 +88,47 @@ class VerifyLoreTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Duplicate lore source canonical id"):
             VerifyLore.bake_blob([first, first])
 
+    def test_bake_rejects_malformed_canonical_ids(self) -> None:
+        invalid_ids = (
+            "Docs\\Lore\\bad.md",
+            "Docs/Lore/Вad.md",
+            "Docs/Lore/not_markdown.txt",
+        )
+
+        for canonical_id in invalid_ids:
+            with self.subTest(canonical_id=canonical_id):
+                hash_value = VerifyLore.compute_fnv1a32(canonical_id)
+                entry = VerifyLore.SourceEntry(
+                    source_path=Path(canonical_id),
+                    canonical_id=canonical_id,
+                    hash_value=hash_value,
+                    payload=b"# Bad\n",
+                )
+
+                with self.assertRaises(ValueError):
+                    VerifyLore.bake_blob([entry])
+
+    def test_bake_rejects_path_traversal_canonical_ids(self) -> None:
+        invalid_ids = (
+            "/Docs/Lore/bad.md",
+            "Docs//Lore/bad.md",
+            "Docs/Lore/./bad.md",
+            "Docs/Lore/../bad.md",
+        )
+
+        for canonical_id in invalid_ids:
+            with self.subTest(canonical_id=canonical_id):
+                hash_value = VerifyLore.compute_fnv1a32(canonical_id)
+                entry = VerifyLore.SourceEntry(
+                    source_path=Path(canonical_id),
+                    canonical_id=canonical_id,
+                    hash_value=hash_value,
+                    payload=b"# Bad\n",
+                )
+
+                with self.assertRaises(ValueError):
+                    VerifyLore.bake_blob([entry])
+
     def test_absolute_and_relative_paths_hash_to_same_canonical_id(self) -> None:
         source_path = Path("Docs/Lore/Lore_Bible.md")
         self.assertTrue(source_path.exists())
@@ -149,6 +190,34 @@ class VerifyLoreTests(unittest.TestCase):
 
         self.assertNotEqual(context.exception.code, 0)
         self.assertIn("Hash not found", stderr.getvalue())
+        self.assertNotIn("Traceback", stderr.getvalue())
+
+    def test_cli_rejects_missing_blob_without_traceback(self) -> None:
+        stderr = io.StringIO()
+
+        with contextlib.redirect_stderr(stderr):
+            with self.assertRaises(SystemExit) as context:
+                VerifyLore.main(["--check", "--blob", ".codex-artifacts/missing_lore_blob.h8bin"])
+
+        self.assertNotEqual(context.exception.code, 0)
+        self.assertIn("Cannot read blob", stderr.getvalue())
+        self.assertNotIn("Traceback", stderr.getvalue())
+
+    def test_cli_rejects_missing_manifest_without_traceback(self) -> None:
+        stderr = io.StringIO()
+
+        with contextlib.redirect_stderr(stderr):
+            with self.assertRaises(SystemExit) as context:
+                VerifyLore.main(
+                    [
+                        "--verify-manifest",
+                        "--manifest",
+                        ".codex-artifacts/missing_lore_manifest.json",
+                    ]
+                )
+
+        self.assertNotEqual(context.exception.code, 0)
+        self.assertIn("Cannot read manifest", stderr.getvalue())
         self.assertNotIn("Traceback", stderr.getvalue())
 
     def test_hash_parser_rejects_out_of_uint32_range_values(self) -> None:
@@ -382,6 +451,38 @@ class VerifyLoreTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             VerifyLore.verify_manifest_data(blob, records, entries, manifest)
+
+    def test_manifest_malformed_integer_fields_are_rejected(self) -> None:
+        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
+        blob = VerifyLore.bake_blob(entries)
+        records = VerifyLore.parse_blob(blob)
+        manifest = VerifyLore.build_manifest_data(
+            "Data/Lore/Encyclopedia.h8bin",
+            blob,
+            records,
+            entries,
+            "Docs/Lore",
+        )
+
+        for key in ("blob_length",):
+            with self.subTest(key=key):
+                mutated = dict(manifest)
+                mutated[key] = None
+                with self.assertRaisesRegex(ValueError, "Manifest blob length mismatch"):
+                    VerifyLore.verify_manifest_data(blob, records, entries, mutated)
+
+        for key, message in (
+            ("offset", "Manifest offset mismatch"),
+            ("compressed_length", "Manifest compressed length mismatch"),
+            ("decompressed_length", "Manifest decompressed length mismatch"),
+        ):
+            with self.subTest(key=key):
+                mutated = dict(manifest)
+                mutated_entries = [dict(manifest["entries"][0])]
+                mutated_entries[0][key] = None
+                mutated["entries"] = mutated_entries
+                with self.assertRaisesRegex(ValueError, message):
+                    VerifyLore.verify_manifest_data(blob, records, entries, mutated)
 
     def test_manifest_blob_label_mismatch_is_rejected_when_expected(self) -> None:
         entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]

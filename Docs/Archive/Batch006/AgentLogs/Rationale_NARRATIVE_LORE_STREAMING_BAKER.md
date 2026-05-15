@@ -295,3 +295,35 @@ Solution: Catch `OSError` in `atomic_write_bytes`, clean the `.tmp` file when po
 Rejected Alternatives: Writing directly to the target would risk partial files; adding a broad `Exception` catch in `main` would hide specific tooling failures.
 Scalability potential: Low/Middle/High/Ultra operators get deterministic output-write diagnostics for larger lore packages and repeated extraction workflows.
 Hardware Impact: 0 us/frame on i3/MX350; filesystem write handling is offline tooling only.
+
+## Decision 038 - Enforce Canonical ID Shape In Direct Entries
+
+Problem: Real discovered Markdown paths are repository-relative ASCII IDs with forward slashes, but direct `SourceEntry` helper values could still use backslashes, non-ASCII characters, or non-Markdown extensions.
+Solution: Extend `validate_source_entries` to reject malformed canonical IDs before hash validation, and add regression coverage for backslash, non-ASCII, and non-`.md` IDs.
+Rejected Alternatives: Allowing direct helper entries to bypass path normalization would create hash IDs that the engine-side ASCII contract cannot safely reproduce.
+Scalability potential: Low/Middle/High/Ultra lore shards retain one portable ID namespace across operating systems and tooling entry points.
+Hardware Impact: 0 us/frame on i3/MX350; offline validation only.
+
+## Decision 039 - Normalize Manifest Integer Field Failures
+
+Problem: Manifest fields such as `blob_length`, `offset`, `compressed_length`, and `decompressed_length` used raw `int(...)` conversion, so malformed JSON values like `null` could raise `TypeError` instead of a controlled verifier error.
+Solution: Add `read_manifest_int`, reject boolean values, convert malformed numeric fields into `ValueError`, and add regression coverage for `null` integer fields.
+Rejected Alternatives: Letting Python conversion errors leak would weaken operator diagnostics; accepting booleans as integers would make manifest schema validation too loose.
+Scalability potential: Low/Middle/High/Ultra package validation stays deterministic as sidecars grow to more entries.
+Hardware Impact: 0 us/frame on i3/MX350; manifest parsing is offline tooling only.
+
+## Decision 040 - Convert Missing Read Targets To Controlled Diagnostics
+
+Problem: Missing blob or manifest files could raise raw filesystem exceptions during CLI verification.
+Solution: Catch `OSError` in `read_blob`, manifest text reading, and lore source reads, then convert failures to `ValueError` so the CLI boundary reports parser errors without tracebacks.
+Rejected Alternatives: Catching a broad exception at `main` would hide where the read failed; leaving raw filesystem exceptions would weaken operator-facing verification.
+Scalability potential: Low/Middle/High/Ultra operators get deterministic diagnostics for repeated package checks and alternate paths.
+Hardware Impact: 0 us/frame on i3/MX350; file-read diagnostics are offline tooling only.
+
+## Decision 041 - Reject Traversal Canonical IDs
+
+Problem: Direct `SourceEntry` values could still provide absolute-style, duplicate-separator, `.` segment, or `..` segment canonical IDs even though discovered repository files are normalized by `Path.resolve()`.
+Solution: Extend `validate_source_entries` to require repository-relative normalized canonical IDs before hashing or compression, then add regression coverage for traversal and absolute-style IDs.
+Rejected Alternatives: Trusting helper callers was rejected because manifest/source verification uses the same public entry contract; normalizing bad direct IDs silently was rejected because it could hide mismatched hash inputs.
+Scalability potential: Low/Middle/High/Ultra lore shards keep one portable ID namespace as the source tree grows; high-tier future tools can prefetch by stable IDs without traversal aliases.
+Hardware Impact: 0 us/frame on i3/MX350; this is offline validation only.

@@ -150,6 +150,17 @@ def validate_source_entries(entries: list[SourceEntry]) -> None:
     for entry in entries:
         if not entry.canonical_id:
             raise ValueError("Lore source canonical id is empty.")
+        if "\\" in entry.canonical_id:
+            raise ValueError(f"Lore source canonical id must use forward slashes: {entry.canonical_id}")
+        if entry.canonical_id.startswith("/"):
+            raise ValueError(f"Lore source canonical id must be repository-relative: {entry.canonical_id}")
+        path_parts = entry.canonical_id.split("/")
+        if any(part == "" or part == "." or part == ".." for part in path_parts):
+            raise ValueError(f"Lore source canonical id must be normalized: {entry.canonical_id}")
+        if any(ord(char) > 127 for char in entry.canonical_id):
+            raise ValueError(f"Non-ASCII lore source canonical id cannot use H8DataHash contract: {entry.canonical_id}")
+        if not entry.canonical_id.lower().endswith(".md"):
+            raise ValueError(f"Lore source canonical id must point to Markdown: {entry.canonical_id}")
         if entry.canonical_id in seen_ids:
             raise ValueError(f"Duplicate lore source canonical id: {entry.canonical_id}")
         seen_ids.add(entry.canonical_id)
@@ -210,7 +221,10 @@ def load_source_entries(source_dir: Path) -> list[SourceEntry]:
     for path in source_paths:
         canonical_id = canonicalize_path(path)
         hash_value = compute_fnv1a32(canonical_id)
-        payload = path.read_bytes()
+        try:
+            payload = path.read_bytes()
+        except OSError as exc:
+            raise ValueError(f"Cannot read lore source: {canonical_id}") from exc
         entries.append(
             SourceEntry(
                 source_path=path,
@@ -271,7 +285,11 @@ def bake_blob(entries: list[SourceEntry]) -> bytes:
 
 
 def read_blob(path: Path) -> tuple[bytes, list[LoreRecord]]:
-    blob = resolve_repo_path(path).read_bytes()
+    resolved = resolve_repo_path(path)
+    try:
+        blob = resolved.read_bytes()
+    except OSError as exc:
+        raise ValueError(f"Cannot read blob: {format_repo_path(resolved)}") from exc
     return blob, parse_blob(blob)
 
 
@@ -453,7 +471,11 @@ def build_manifest_data(
 def verify_manifest(blob_path: Path, manifest_path: Path, source_dir: Path) -> None:
     blob, records = read_blob(blob_path)
     entries = load_source_entries(source_dir)
-    manifest_text = resolve_repo_path(manifest_path).read_text(encoding="utf-8")
+    resolved_manifest_path = resolve_repo_path(manifest_path)
+    try:
+        manifest_text = resolved_manifest_path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise ValueError(f"Cannot read manifest: {format_repo_path(resolved_manifest_path)}") from exc
     verify_manifest_data(
         blob,
         records,
@@ -496,7 +518,7 @@ def verify_manifest_data(
         raise ValueError("Manifest source directory mismatch.")
     if manifest.get("entry_count") != len(records):
         raise ValueError("Manifest entry count mismatch.")
-    if int(manifest.get("blob_length", -1)) != len(blob):
+    if read_manifest_int(manifest, "blob_length", "Manifest blob length mismatch.") != len(blob):
         raise ValueError("Manifest blob length mismatch.")
     if manifest.get("blob_sha256") != hashlib.sha256(blob).hexdigest().upper():
         raise ValueError("Manifest blob SHA-256 mismatch.")
@@ -524,15 +546,15 @@ def verify_manifest_data(
 
         if item.get("canonical_id") != entry.canonical_id:
             raise ValueError(f"Manifest canonical id mismatch for {format_hash(hash_value)}")
-        if int(item.get("offset", -1)) != record.offset:
+        if read_manifest_int(item, "offset", f"Manifest offset mismatch for {format_hash(hash_value)}") != record.offset:
             raise ValueError(f"Manifest offset mismatch for {format_hash(hash_value)}")
-        if int(item.get("compressed_length", -1)) != record.length:
+        if read_manifest_int(item, "compressed_length", f"Manifest compressed length mismatch for {format_hash(hash_value)}") != record.length:
             raise ValueError(f"Manifest compressed length mismatch for {format_hash(hash_value)}")
 
         payload = extract_payload(blob, record)
         if payload != entry.payload:
             raise ValueError(f"Manifest payload mismatch against source for {format_hash(hash_value)}")
-        if int(item.get("decompressed_length", -1)) != len(payload):
+        if read_manifest_int(item, "decompressed_length", f"Manifest decompressed length mismatch for {format_hash(hash_value)}") != len(payload):
             raise ValueError(f"Manifest decompressed length mismatch for {format_hash(hash_value)}")
 
         payload_hash = hashlib.sha256(payload).hexdigest().upper()
@@ -541,6 +563,16 @@ def verify_manifest_data(
 
     if len(seen_hashes) != len(records):
         raise ValueError("Manifest did not cover every blob record.")
+
+
+def read_manifest_int(container: dict[str, object], key: str, error_message: str) -> int:
+    value = container.get(key, -1)
+    if isinstance(value, bool):
+        raise ValueError(error_message)
+    try:
+        return int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(error_message) from exc
 
 
 def print_record_list(records: list[LoreRecord]) -> None:

@@ -22,7 +22,7 @@ Little-endian.
 - Payload: zlib-compressed UTF-8 Markdown.
 - Alignment: every payload starts on a 16-byte boundary.
 - Hash: `H8DataHash.ComputeFnv1A32` compatible FNV-1a over repository-relative ASCII path, A-Z folded to lowercase.
-- Source validation: every Markdown payload must decode as UTF-8 before compression; invalid bytes fail the bake.
+- Source validation: every canonical id must be repository-relative, normalized, ASCII, forward-slash `.md`; every Markdown payload must decode as UTF-8 before compression.
 
 ## Required Verification
 

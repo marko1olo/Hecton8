@@ -1004,3 +1004,149 @@ Regression model:
 Failure modes:
 - Unity/C# compile proof remains blocked by missing local toolchain/generation state.
 - Runtime loader remains out of explicit prompt scope.
+
+## 2026-05-15 - Canonical ID Shape Guard
+
+STATUS: LORE BAKED / CANONICAL IDS HARDENED
+
+What was wrong:
+- Direct `SourceEntry` helper values could use backslashes, non-ASCII path characters, or non-Markdown extensions even though discovered source paths cannot.
+
+What was done:
+- `validate_source_entries` now rejects direct canonical IDs that are not ASCII, not forward-slash normalized, or not `.md`.
+- Added regression coverage for malformed canonical IDs.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Fixed binary layout and zlib payloads remain unchanged.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- Offline ID validation only; no runtime loader cost claimed.
+
+Verification:
+- `python -B -m unittest Tools.test_verify_lore -v` -> 32 tests passed.
+- `python Tools\VerifyLore.py --check` -> `CHECK OK`.
+- `$env:PYTHONPYCACHEPREFIX='.codex-artifacts\pycache'; python -m py_compile Tools\VerifyLore.py Tools\test_verify_lore.py` -> passed.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: helper-injected lore entries now obey the same portable ID contract as discovered repo files.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.
+
+## 2026-05-15 - Manifest Integer Field Guard
+
+STATUS: LORE BAKED / MANIFEST NUMERIC FIELDS HARDENED
+
+What was wrong:
+- Malformed manifest numeric fields could raise raw Python conversion errors instead of controlled verifier diagnostics.
+
+What was done:
+- Added `read_manifest_int`.
+- Manifest `blob_length`, `offset`, `compressed_length`, and `decompressed_length` checks now reject malformed values through `ValueError`.
+- Added regression coverage for `null` manifest integer fields.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Fixed binary layout and zlib payloads remain unchanged.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- Offline manifest validation only; no runtime loader cost claimed.
+
+Verification:
+- `python -B -m unittest Tools.test_verify_lore -v` -> 33 tests passed.
+- `python Tools\VerifyLore.py --check` -> `CHECK OK`.
+- `$env:PYTHONPYCACHEPREFIX='.codex-artifacts\pycache'; python -m py_compile Tools\VerifyLore.py Tools\test_verify_lore.py` -> passed.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: malformed manifest numeric fields now fail deterministically.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.
+
+## 2026-05-15 - Missing File Read Diagnostic Guard
+
+STATUS: LORE BAKED / READ ERRORS CONTROLLED
+
+What was wrong:
+- Missing blob or manifest paths could raise raw filesystem exceptions during verification.
+
+What was done:
+- `read_blob`, manifest reads, and lore source reads now convert `OSError` into `ValueError`.
+- Added CLI regressions for missing blob and missing manifest paths without `Traceback`.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Fixed binary layout and zlib payloads remain unchanged.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- Offline read diagnostics only; no runtime loader cost claimed.
+
+Verification:
+- `python -B -m unittest Tools.test_verify_lore -v` -> 35 tests passed.
+- `python Tools\VerifyLore.py --check` -> `CHECK OK`.
+- `$env:PYTHONPYCACHEPREFIX='.codex-artifacts\pycache'; python -m py_compile Tools\VerifyLore.py Tools\test_verify_lore.py` -> passed.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: missing package files now fail through deterministic CLI diagnostics.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.
+
+## 2026-05-15 - Traversal Canonical ID Guard
+
+STATUS: LORE BAKED / CANONICAL IDS NORMALIZED
+
+What was wrong:
+- Direct `SourceEntry` helper values could express absolute-style IDs, duplicate separators, `.` segments, or `..` traversal segments.
+
+What was done:
+- `validate_source_entries` now rejects non-normalized canonical IDs before hash validation and compression.
+- Added regression coverage for absolute-style and traversal canonical IDs.
+- Updated `Data/Lore/README.md` to state the canonical ID shape contract.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Fixed binary layout and zlib payloads remain unchanged.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- Offline canonical ID validation only; no runtime loader cost claimed.
+
+Verification:
+- `python Tools\VerifyLore.py --bake --check --list` -> `LORE BAKED`, `CHECK OK`, `0xD1880394 offset=48 length=10281`.
+- `python Tools\VerifyLore.py --verify-manifest --verify-source --list` -> source and manifest verification passed.
+- `python -B -m unittest Tools.test_verify_lore -v` -> 36 tests passed.
+- `python -B -m unittest discover -s Tools -p 'test_verify_lore.py' -v` -> 36 tests passed.
+- `$env:PYTHONPYCACHEPREFIX='.codex-artifacts\pycache'; python -m py_compile Tools\VerifyLore.py Tools\test_verify_lore.py` -> passed.
+- Source/extract SHA-256 matched `6B529A808B25D18DA276747DB9149C61BACDF90A33DCC667FC85375DE13E69CD`; blob SHA-256 remained `8FDBAC8752B5DB10B98226D88BC5A27EEDA049207E139E6F2F3FB15ECDBDDC00`.
+- `git diff --check` on touched lore compiler files -> no whitespace errors; Git emitted only existing LF-to-CRLF warnings.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: direct helper entries can no longer create traversal aliases or absolute-style hash IDs.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.
