@@ -217,6 +217,7 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             ResolveRuntimeContextDependencies();
+            BaselineToolSlotInputSignalSequence();
             TryRegisterToTickManager();
             SubscribeModuleStatusEvents();
             RefreshInteriorCarrierCache(true);
@@ -1160,6 +1161,18 @@ namespace Hecton8.Gameplay
 
                 _lastPlayerInputSignalSequence = signal.Sequence;
                 HandleToolSlot(slotIndex);
+            }
+        }
+
+        private void BaselineToolSlotInputSignalSequence()
+        {
+            ReadOnlySpan<PlayerInputSignal> signals = SignalBus<PlayerInputSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PlayerInputSignal signal = signals[i];
+                if (signal.SourceHash == PlayerInputSignalSourceHash &&
+                    IsNewerInputSequence(signal.Sequence, _lastPlayerInputSignalSequence))
+                    _lastPlayerInputSignalSequence = signal.Sequence;
             }
         }
 

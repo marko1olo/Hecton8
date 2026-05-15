@@ -690,6 +690,7 @@ What was wrong:
 What was done:
 - Removed `PlayerToolManager` tool-slot input subscribe/unsubscribe and per-frame subscription refresh.
 - Added source-filtered `PlayerInputSignalCommands.ToolSlot1..4` snapshot consumption inside `PlayerToolManager.Tick()`.
+- Baselines slot command sequence on enable to prevent same-frame stale slot replay.
 - Kept continuous primary/secondary tool use on `IInputService.GetState()` because held-action state is not an edge command.
 
 Cinematic Cheats used:
