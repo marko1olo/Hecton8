@@ -224,7 +224,7 @@ Load-shed:
 python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --sample-size 256 --json Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.json --markdown Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.md --csv-prefix Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA --ci-surface-gates
 ```
 
-Current result: `ci_surface_gates=enabled`, `active_gate_profiles=surface_safe`, `active_gates=energy_failures,energy_warnings,albedo_read_errors,texture_budget`, `textures=137`, `energy_failures=0`, `energy_warnings=0`, `texture_read_errors=0`, `albedo_read_errors=0`, `import_issue_textures=5`, `estimated_texture_mib=497.565`, `texture_budget_mib=900.0`, `texture_budget_status=PASS`, `materials_with_prompt_orm=0`, `materials_with_legacy_mask=9`, `channel_packing_candidates=31`, `channel_candidate_saved_mib=113.46`, `god_mode_override_count=12`, `global_detail_overlay_count=10`, `materials_with_unresolved_texture_refs=9`, `unresolved_texture_refs=27`, `materials_with_issues=37`.
+Current result: `ci_surface_gates=enabled`, `active_gate_profiles=surface_safe`, `active_gates=energy_failures,energy_warnings,albedo_read_errors,texture_budget`, `textures=137`, `energy_failures=0`, `energy_warnings=0`, `texture_read_errors=0`, `albedo_read_errors=0`, `import_issue_textures=5`, `estimated_texture_mib=497.565`, `texture_budget_mib=900.0`, `texture_budget_status=PASS`, `materials_with_prompt_orm=0`, `materials_with_legacy_mask=9`, `materials_with_detail=0`, `detail_map_missing_materials=31`, `channel_packing_candidates=31`, `channel_candidate_saved_mib=113.46`, `god_mode_override_count=12`, `global_detail_overlay_count=10`, `materials_with_unresolved_texture_refs=9`, `unresolved_texture_refs=27`, `materials_with_issues=37`.
 
 Generated CSV artifacts:
 
@@ -233,6 +233,7 @@ Generated CSV artifacts:
 - `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_material_issues.csv`
 - `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_unresolved_texture_refs.csv`
 - `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_detail_candidates.csv`
+- `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_detail_map_missing_materials.csv`
 - `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_channel_packing_candidates.csv`
 - `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_texture_memory_hotspots.csv`
 - `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_god_mode_texture_overrides.csv`
@@ -247,6 +248,7 @@ python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Proj
 python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --fail-on-texture-read-errors
 python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --fail-on-unresolved-refs
 python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --fail-on-channel-packing-candidates
+python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --fail-on-detail-map-missing
 python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --fail-on-material-issues
 python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --fail-on-texture-budget
 ```
@@ -264,6 +266,7 @@ Exit code contract:
 - `6` = albedo candidate texture cannot be decoded for energy validation when `--fail-on-texture-read-errors` is set.
 - `7` = albedo bright-area energy warnings when `--fail-on-energy-warnings` is set.
 - `8` = channel-packing migration candidates exist when `--fail-on-channel-packing-candidates` is set.
+- `9` = base materials missing detail-map slots when `--fail-on-detail-map-missing` is set.
 
 Regression proof:
 
@@ -272,7 +275,7 @@ python -m py_compile Tools\MaterialAudit.py Tools\test_material_audit.py
 python -m unittest Tools.test_material_audit
 ```
 
-Current test result: 12 tests pass, including subprocess coverage for import-debt exit 2, material-debt exit 3, unresolved-reference exit 4, texture-budget exit 5, albedo-read-error exit 6, energy-warning exit 7, channel-packing exit 8, and the `--ci-surface-gates` profile.
+Current test result: 12 tests pass, including subprocess coverage for import-debt exit 2, material-debt exit 3, unresolved-reference exit 4, texture-budget exit 5, albedo-read-error exit 6, energy-warning exit 7, channel-packing exit 8, detail-map exit 9, and the `--ci-surface-gates` profile.
 
 Generated lighting exclusion:
 

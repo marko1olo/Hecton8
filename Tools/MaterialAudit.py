@@ -117,6 +117,7 @@ GATE_EXIT_CODES = {
     "albedo_read_errors": 6,
     "energy_warnings": 7,
     "channel_packing_candidates": 8,
+    "detail_map_missing": 9,
 }
 CI_SURFACE_GATE_PROFILE = (
     "energy_warnings",
@@ -874,12 +875,16 @@ def summarize_materials(materials: list[dict[str, Any]]) -> dict[str, Any]:
     channel_candidates: list[dict[str, Any]] = []
     channel_priority_counts: dict[str, int] = {}
     unresolved_materials: list[dict[str, Any]] = []
+    detail_missing_materials: list[dict[str, Any]] = []
     unresolved_ref_count = 0
     for material in materials:
-        for issue in material.get("issues", []):
+        issues = material.get("issues", [])
+        for issue in issues:
             issue_counts[issue] = issue_counts.get(issue, 0) + 1
-        if material.get("issues"):
+        if issues:
             issue_materials.append(material)
+        if "NO_DETAIL_MAP_SLOT" in issues:
+            detail_missing_materials.append(material)
         unresolved_refs = material.get("unresolved_texture_refs", [])
         if unresolved_refs:
             unresolved_materials.append(material)
@@ -896,6 +901,8 @@ def summarize_materials(materials: list[dict[str, Any]]) -> dict[str, Any]:
         "materials_with_legacy_mask": sum(1 for item in materials if item.get("has_legacy_packed_mask")),
         "materials_with_packed_mask": sum(1 for item in materials if item.get("has_packed_mask")),
         "materials_with_detail": sum(1 for item in materials if item.get("has_detail")),
+        "detail_map_missing_count": len(detail_missing_materials),
+        "detail_map_missing_materials": detail_missing_materials[:100],
         "materials_with_issues": len(issue_materials),
         "materials_with_unresolved_texture_refs": len(unresolved_materials),
         "unresolved_texture_ref_count": unresolved_ref_count,
@@ -1012,6 +1019,7 @@ def write_markdown_report(report: dict[str, Any], output: Path) -> None:
         markdown_row(["Materials with legacy mask", material_summary.get("materials_with_legacy_mask", 0)]),
         markdown_row(["Materials with packed mask", material_summary["materials_with_packed_mask"]]),
         markdown_row(["Materials with detail", material_summary["materials_with_detail"]]),
+        markdown_row(["Materials missing detail maps", material_summary.get("detail_map_missing_count", 0)]),
         markdown_row(["Materials with issues", material_summary["materials_with_issues"]]),
         markdown_row([
             "Materials with unresolved texture refs",
@@ -1151,6 +1159,23 @@ def write_markdown_report(report: dict[str, Any], output: Path) -> None:
     for item in texture_summary["detail_suggestions"]:
         lines.append(markdown_row([item["path"], ", ".join(item.get("import_issues", []))]))
 
+    lines.extend(["", "## Detail Map Missing Materials", ""])
+    detail_missing = material_summary.get("detail_map_missing_materials", [])
+    if detail_missing:
+        lines.extend([
+            markdown_row(["Material", "Base maps", "Normal maps"]),
+            markdown_row(["---", "---", "---"]),
+        ])
+        for item in detail_missing:
+            props = item.get("texture_properties", {})
+            lines.append(markdown_row([
+                item["path"],
+                "; ".join(property_paths(props, BASE_MAP_PROPS)),
+                "; ".join(property_paths(props, NORMAL_MAP_PROPS)),
+            ]))
+    else:
+        lines.append("No missing detail-map slots detected.")
+
     lines.extend(["", "## Texture Import Issues", ""])
     if texture_summary["import_issue_textures"]:
         lines.extend([markdown_row(["Path", "Issues", "Recommendations"]), markdown_row(["---", "---", "---"])])
@@ -1280,6 +1305,17 @@ def write_csv_reports(report: dict[str, Any], prefix: Path) -> None:
         for item in texture_summary["detail_suggestions"]:
             writer.writerow([item["path"], ";".join(item.get("import_issues", []))])
 
+    with Path(f"{prefix}_detail_map_missing_materials.csv").open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["path", "base_maps", "normal_maps"])
+        for item in material_summary.get("detail_map_missing_materials", []):
+            props = item.get("texture_properties", {})
+            writer.writerow([
+                item["path"],
+                ";".join(property_paths(props, BASE_MAP_PROPS)),
+                ";".join(property_paths(props, NORMAL_MAP_PROPS)),
+            ])
+
     with Path(f"{prefix}_texture_memory_hotspots.csv").open("w", encoding="utf-8", newline="") as handle:
         writer = csv.writer(handle)
         writer.writerow(["path", "estimated_resident_mib", "memory_role", "width", "height"])
@@ -1408,6 +1444,11 @@ def main() -> int:
         help="Return non-zero when materials are missing prompt ORM channel packing.",
     )
     parser.add_argument(
+        "--fail-on-detail-map-missing",
+        action="store_true",
+        help="Return non-zero when base materials do not have detail-map slots.",
+    )
+    parser.add_argument(
         "--fail-on-unresolved-refs",
         action="store_true",
         help="Return non-zero when material texture GUIDs cannot be resolved.",
@@ -1464,6 +1505,8 @@ def main() -> int:
         active_gates.append("texture_budget")
     if args.fail_on_channel_packing_candidates:
         active_gates.append("channel_packing_candidates")
+    if args.fail_on_detail_map_missing:
+        active_gates.append("detail_map_missing")
     if args.fail_on_material_issues:
         active_gates.append("material_issues")
     report["active_gate_profiles"] = active_gate_profiles
@@ -1503,6 +1546,7 @@ def main() -> int:
     print(f"materials_with_legacy_mask={material_summary['materials_with_legacy_mask']}")
     print(f"materials_with_packed_mask={material_summary['materials_with_packed_mask']}")
     print(f"materials_with_detail={material_summary['materials_with_detail']}")
+    print(f"detail_map_missing_materials={material_summary['detail_map_missing_count']}")
     print(f"materials_with_issues={material_summary['materials_with_issues']}")
     print(f"materials_with_unresolved_texture_refs={material_summary['materials_with_unresolved_texture_refs']}")
     print(f"unresolved_texture_refs={material_summary['unresolved_texture_ref_count']}")
@@ -1530,6 +1574,8 @@ def main() -> int:
         return 5
     if args.fail_on_channel_packing_candidates and material_summary["channel_packing_candidate_count"]:
         return 8
+    if args.fail_on_detail_map_missing and material_summary["detail_map_missing_count"]:
+        return 9
     if args.fail_on_material_issues and material_summary["materials_with_issues"]:
         return 3
     return 0

@@ -24,6 +24,7 @@ Include third-party: `False`
 | Materials with legacy mask | 9 |
 | Materials with packed mask | 9 |
 | Materials with detail | 0 |
+| Materials missing detail maps | 31 |
 | Materials with issues | 37 |
 | Materials with unresolved texture refs | 9 |
 | Unresolved texture refs | 27 |
@@ -41,6 +42,7 @@ Include third-party: `False`
 | albedo_read_errors | 6 |
 | energy_warnings | 7 |
 | channel_packing_candidates | 8 |
+| detail_map_missing | 9 |
 
 ## Gate Profiles
 
@@ -140,6 +142,42 @@ Include third-party: `False`
 | Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.abyssal/detail___family.kelp.abyssal.png |  |
 | Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.canopy/detail___family.kelp.canopy.png |  |
 | Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.patch.dense/detail___family.kelp.patch.dense.png |  |
+
+## Detail Map Missing Materials
+
+| Material | Base maps | Normal maps |
+| --- | --- | --- |
+| Art/Materials/MAT_Diegetic_HUD_V4_Projection.mat | _BaseMap:Art/TEXTURES/RT_HUD_Display.renderTexture; _MainTex:Art/TEXTURES/RT_HUD_Display.renderTexture |  |
+| Art/Materials/Mat_GasGiant.mat | _MainTex:Art/TEXTURES/clouds0_diff.png |  |
+| Art/Materials/Meshy_AI_Alien_barnacles_clust_0301230506_texture.mat | _BaseMap:Art/TEXTURES/Meshy_AI_Alien_barnacles_clust_0301230506_texture.png; _MainTex:Art/TEXTURES/Meshy_AI_Alien_barnacles_clust_0301230506_texture.png |  |
+| Art/Materials/terrain.mat | _BaseMap:47f0a231c050423488e0ff6f7d66f813; _MainTex:47f0a231c050423488e0ff6f7d66f813 |  |
+| Art/Materials/Celestial/MAT_CelestialMoon_Ione.mat | _BaseMap:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg; _MainTex:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg |  |
+| Art/Materials/Celestial/MAT_CelestialMoon_Khepri.mat | _BaseMap:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg; _MainTex:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg |  |
+| Art/Materials/Celestial/MAT_CelestialMoon_Nammu.mat | _BaseMap:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg; _MainTex:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg |  |
+| Art/Materials/Celestial/MAT_CelestialMoon_Pelagia.mat | _BaseMap:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg; _MainTex:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg |  |
+| Art/Materials/Celestial/MAT_CelestialMoon_Thalos.mat | _BaseMap:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg; _MainTex:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg |  |
+| Art/Materials/Celestial/MAT_CelestialMoon_Varda.mat | _BaseMap:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg; _MainTex:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg |  |
+| Art/Materials/Construction/Mat_RuinSeepSheen.mat | _MainTex:Art/TEXTURES/Detali/Mineral Seep Mask - second try.png |  |
+| Art/Materials/WorldProceduralProxy/MAT_family_coral_branching.mat | _BaseMap:Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.branching/albedo___family.coral.branching.png | _NormalMap:Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.branching/normal___family.coral.branching.png |
+| Art/Materials/WorldProceduralProxy/MAT_family_coral_brittle.mat | _BaseMap:Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.brittle/albedo___family.coral.brittle.png | _NormalMap:Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.brittle/normal___family.coral.brittle.png |
+| Art/Materials/WorldProceduralProxy/MAT_family_coral_low.mat | _BaseMap:Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.low/albedo___family.coral.low.png | _NormalMap:Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.low/normal___family.coral.low.png |
+| Art/Materials/WorldProceduralProxy/MAT_family_coral_massive.mat | _BaseMap:Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.massive/albedo___family.coral.massive.png | _NormalMap:Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.massive/normal___family.coral.massive.png |
+| Art/Materials/WorldProceduralProxy/MAT_family_coral_plate.mat | _BaseMap:Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.plate/albedo___family.coral.plate.png | _NormalMap:Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.plate/normal___family.coral.plate.png |
+| Art/Materials/WorldProceduralProxy/MAT_family_kelp_abyssal.mat | _BaseMap:Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.abyssal/albedo___family.kelp.abyssal.png | _NormalMap:Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.abyssal/normal___family.kelp.abyssal.png |
+| Art/Materials/WorldProceduralProxy/MAT_family_kelp_canopy.mat | _BaseMap:Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.canopy/albedo___family.kelp.canopy.png | _NormalMap:Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.canopy/normal___family.kelp.canopy.png |
+| Art/Materials/WorldProceduralProxy/MAT_family_kelp_patch_dense.mat | _BaseMap:Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.patch.dense/albedo___family.kelp.patch.dense.png | _NormalMap:Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.patch.dense/normal___family.kelp.patch.dense.png |
+| Art/Materials/WorldProceduralProxy/MAT_family_kelp_tall.mat | _BaseMap:Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.tall/albedo___family.kelp.tall.png | _NormalMap:Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.tall/normal___family.kelp.tall.png |
+| Art/Materials/WorldProceduralProxy/MAT_family_rock_arch_large.mat | _BaseMap:Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_Color.jpg; _MainTex:Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_Color.jpg | _BumpMap:Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_NormalGL.jpg |
+| Art/Materials/WorldProceduralProxy/MAT_family_rock_cluster_medium.mat | _BaseMap:Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_Color.jpg; _MainTex:Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_Color.jpg | _BumpMap:Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_NormalGL.jpg |
+| Art/Materials/WorldProceduralProxy/MAT_family_rock_small_floor.mat | _BaseMap:Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_Color.jpg; _MainTex:Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_Color.jpg | _BumpMap:Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_NormalGL.jpg |
+| Art/Models/Rocks/Rock 6/rock6/rock_6.mat | _BaseMap:Art/Models/Rocks/Rock 6/rock6/Mossy_Forest_Rock_vimrfjsaw_Mid_2K_BaseColor.jpg; _MainTex:Art/Models/Rocks/Rock 6/rock6/Mossy_Forest_Rock_vimrfjsaw_Mid_2K_BaseColor.jpg | _BumpMap:Art/Models/Rocks/Rock 6/rock6/Mossy_Forest_Rock_vimrfjsaw_Mid_2K_Normal.jpg |
+| Art/Models/Rocks/Rock 7/Materials/2.mat | _BaseMap:Art/Models/Rocks/Rock 7/Materials/2.jpg; _MainTex:Art/Models/Rocks/Rock 7/Materials/2.jpg | _BumpMap:Art/Models/Rocks/Rock 6/rock6/Mossy_Forest_Rock_vimrfjsaw_Mid_2K_Normal.jpg |
+| Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/mat_Rock2.mat | _BaseMap:920eb4a5d89009b42a522ff2aa1e6ef3; _MainTex:920eb4a5d89009b42a522ff2aa1e6ef3 | _BumpMap:5189dcc817bc5e24095d445209499d1f |
+| Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/mat_Rock_Shared.mat | _BaseMap:920eb4a5d89009b42a522ff2aa1e6ef3; _MainTex:920eb4a5d89009b42a522ff2aa1e6ef3 | _BumpMap:5189dcc817bc5e24095d445209499d1f |
+| Materials/WorldRuntime/ProceduralPlaceholders/TerrainLod/MAT_family_rock_arch_large_Placeholder.mat | _BaseMap:Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_Color.jpg; _MainTex:Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_Color.jpg | _BumpMap:Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_NormalGL.jpg |
+| _PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonClouds.mat | _BaseMap:_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png; _MainTex:_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png |  |
+| _PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonSurface.mat | _BaseMap:_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_diff.png; _MainTex:_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_diff.png | _BumpMap:_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_bump.png |
+| _PROLOGUE_CONTENT/Textures/Planets/pLANET/Materials/clouds0_diff.mat | _BaseMap:_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png; _MainTex:_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png |  |
 
 ## Texture Import Issues
 

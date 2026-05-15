@@ -303,6 +303,28 @@ class MaterialAuditTests(unittest.TestCase):
                 channel_gate.stdout,
             )
 
+            detail_gate = subprocess.run(
+                [
+                    sys.executable,
+                    str(TOOLS_ROOT / "MaterialAudit.py"),
+                    "--root",
+                    str(root),
+                    "--sample-size",
+                    "16",
+                    "--fail-on-detail-map-missing",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(9, detail_gate.returncode, detail_gate.stdout + detail_gate.stderr)
+            self.assertIn("detail_map_missing_materials=1", detail_gate.stdout)
+            self.assertIn(
+                "active_gates=energy_failures,detail_map_missing",
+                detail_gate.stdout,
+            )
+
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             texture = root / "Budget_ORM.png"
@@ -440,6 +462,7 @@ class MaterialAuditTests(unittest.TestCase):
                 "albedo_read_errors": 6,
                 "energy_warnings": 7,
                 "channel_packing_candidates": 8,
+                "detail_map_missing": 9,
             },
             "gate_profiles": {
                 "surface_safe": [
@@ -503,6 +526,16 @@ class MaterialAuditTests(unittest.TestCase):
                 "materials_with_legacy_mask": 0,
                 "materials_with_packed_mask": 0,
                 "materials_with_detail": 0,
+                "detail_map_missing_count": 1,
+                "detail_map_missing_materials": [
+                    {
+                        "path": "MAT_Test.mat",
+                        "texture_properties": {
+                            "_BaseMap": "Panel_Albedo.png",
+                            "_BumpMap": "Panel_Normal.png",
+                        },
+                    },
+                ],
                 "materials_with_issues": 1,
                 "channel_packing_candidate_count": 1,
                 "channel_packing_priority_counts": {"LOW": 1},
@@ -568,6 +601,7 @@ class MaterialAuditTests(unittest.TestCase):
             texture_csv = Path(f"{csv_prefix}_texture_import_issues.csv").read_text(encoding="utf-8")
             read_error_csv = Path(f"{csv_prefix}_texture_read_errors.csv").read_text(encoding="utf-8")
             material_csv = Path(f"{csv_prefix}_material_issues.csv").read_text(encoding="utf-8")
+            detail_missing_csv = Path(f"{csv_prefix}_detail_map_missing_materials.csv").read_text(encoding="utf-8")
             channel_csv = Path(f"{csv_prefix}_channel_packing_candidates.csv").read_text(encoding="utf-8")
             memory_csv = Path(f"{csv_prefix}_texture_memory_hotspots.csv").read_text(encoding="utf-8")
             overrides_csv = Path(f"{csv_prefix}_god_mode_texture_overrides.csv").read_text(encoding="utf-8")
@@ -582,6 +616,7 @@ class MaterialAuditTests(unittest.TestCase):
             self.assertIn("Gate Exit Codes", markdown_text)
             self.assertIn("Gate Profiles", markdown_text)
             self.assertIn("Active Gates", markdown_text)
+            self.assertIn("Detail Map Missing Materials", markdown_text)
             self.assertIn("surface_safe", markdown_text)
             self.assertIn("unresolved_texture_refs", markdown_text)
             self.assertIn("Texture Budget Model", markdown_text)
@@ -590,6 +625,7 @@ class MaterialAuditTests(unittest.TestCase):
             self.assertIn("Hull_ORM.png", texture_csv)
             self.assertIn("Broken_Albedo.png", read_error_csv)
             self.assertIn("NO_DETAIL_MAP_SLOT", material_csv)
+            self.assertIn("Panel_Albedo.png", detail_missing_csv)
             self.assertIn("MAT_Test.mat", channel_csv)
             self.assertIn("BC7_ORM_LINEAR_8BPP", memory_csv)
             self.assertIn("Hero cockpit albedo", overrides_csv)
