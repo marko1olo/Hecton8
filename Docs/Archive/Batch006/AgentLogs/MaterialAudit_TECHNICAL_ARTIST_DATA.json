@@ -15,7 +15,8 @@
     "unresolved_texture_refs": 4,
     "texture_budget": 5,
     "albedo_read_errors": 6,
-    "energy_warnings": 7
+    "energy_warnings": 7,
+    "channel_packing_candidates": 8
   },
   "gate_profiles": {
     "surface_safe": [

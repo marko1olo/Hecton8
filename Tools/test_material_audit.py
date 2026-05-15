@@ -281,6 +281,28 @@ class MaterialAuditTests(unittest.TestCase):
             self.assertEqual(4, unresolved_gate.returncode, unresolved_gate.stdout + unresolved_gate.stderr)
             self.assertIn("unresolved_texture_refs=1", unresolved_gate.stdout)
 
+            channel_gate = subprocess.run(
+                [
+                    sys.executable,
+                    str(TOOLS_ROOT / "MaterialAudit.py"),
+                    "--root",
+                    str(root),
+                    "--sample-size",
+                    "16",
+                    "--fail-on-channel-packing-candidates",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(8, channel_gate.returncode, channel_gate.stdout + channel_gate.stderr)
+            self.assertIn("channel_packing_candidates=1", channel_gate.stdout)
+            self.assertIn(
+                "active_gates=energy_failures,channel_packing_candidates",
+                channel_gate.stdout,
+            )
+
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             texture = root / "Budget_ORM.png"
@@ -417,6 +439,7 @@ class MaterialAuditTests(unittest.TestCase):
                 "texture_budget": 5,
                 "albedo_read_errors": 6,
                 "energy_warnings": 7,
+                "channel_packing_candidates": 8,
             },
             "gate_profiles": {
                 "surface_safe": [

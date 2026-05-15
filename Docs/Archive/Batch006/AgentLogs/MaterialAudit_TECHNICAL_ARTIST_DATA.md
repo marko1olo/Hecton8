@@ -40,6 +40,7 @@ Include third-party: `False`
 | texture_budget | 5 |
 | albedo_read_errors | 6 |
 | energy_warnings | 7 |
+| channel_packing_candidates | 8 |
 
 ## Gate Profiles
 

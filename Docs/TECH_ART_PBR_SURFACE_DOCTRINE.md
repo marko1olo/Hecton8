@@ -246,6 +246,7 @@ python Tools\MaterialAudit.py --root Assets\_Project --fail-on-import-issues
 python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --fail-on-energy-warnings
 python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --fail-on-texture-read-errors
 python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --fail-on-unresolved-refs
+python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --fail-on-channel-packing-candidates
 python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --fail-on-material-issues
 python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --fail-on-texture-budget
 ```
@@ -262,6 +263,7 @@ Exit code contract:
 - `5` = offline estimated texture residency exceeds `--texture-budget-mib` when `--fail-on-texture-budget` is set.
 - `6` = albedo candidate texture cannot be decoded for energy validation when `--fail-on-texture-read-errors` is set.
 - `7` = albedo bright-area energy warnings when `--fail-on-energy-warnings` is set.
+- `8` = channel-packing migration candidates exist when `--fail-on-channel-packing-candidates` is set.
 
 Regression proof:
 
@@ -270,7 +272,7 @@ python -m py_compile Tools\MaterialAudit.py Tools\test_material_audit.py
 python -m unittest Tools.test_material_audit
 ```
 
-Current test result: 12 tests pass, including subprocess coverage for import-debt exit 2, material-debt exit 3, unresolved-reference exit 4, texture-budget exit 5, albedo-read-error exit 6, energy-warning exit 7, and the `--ci-surface-gates` profile.
+Current test result: 12 tests pass, including subprocess coverage for import-debt exit 2, material-debt exit 3, unresolved-reference exit 4, texture-budget exit 5, albedo-read-error exit 6, energy-warning exit 7, channel-packing exit 8, and the `--ci-surface-gates` profile.
 
 Generated lighting exclusion:
 

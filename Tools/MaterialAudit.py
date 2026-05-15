@@ -116,6 +116,7 @@ GATE_EXIT_CODES = {
     "texture_budget": 5,
     "albedo_read_errors": 6,
     "energy_warnings": 7,
+    "channel_packing_candidates": 8,
 }
 CI_SURFACE_GATE_PROFILE = (
     "energy_warnings",
@@ -1402,6 +1403,11 @@ def main() -> int:
         help="Return non-zero when material slot issues are found.",
     )
     parser.add_argument(
+        "--fail-on-channel-packing-candidates",
+        action="store_true",
+        help="Return non-zero when materials are missing prompt ORM channel packing.",
+    )
+    parser.add_argument(
         "--fail-on-unresolved-refs",
         action="store_true",
         help="Return non-zero when material texture GUIDs cannot be resolved.",
@@ -1456,6 +1462,8 @@ def main() -> int:
         active_gates.append("unresolved_texture_refs")
     if fail_on_texture_budget:
         active_gates.append("texture_budget")
+    if args.fail_on_channel_packing_candidates:
+        active_gates.append("channel_packing_candidates")
     if args.fail_on_material_issues:
         active_gates.append("material_issues")
     report["active_gate_profiles"] = active_gate_profiles
@@ -1520,6 +1528,8 @@ def main() -> int:
         return 4
     if fail_on_texture_budget and report["texture_budget"]["status"] == "FAIL":
         return 5
+    if args.fail_on_channel_packing_candidates and material_summary["channel_packing_candidate_count"]:
+        return 8
     if args.fail_on_material_issues and material_summary["materials_with_issues"]:
         return 3
     return 0

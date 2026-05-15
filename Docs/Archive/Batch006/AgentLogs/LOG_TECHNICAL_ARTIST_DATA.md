@@ -659,3 +659,36 @@ Verification:
 - Full first-party audit with `--ci-surface-gates`: active profile `surface_safe`, active gates `energy_failures,energy_warnings,albedo_read_errors,texture_budget`.
 - Generated Markdown/JSON include `Active Gates`.
 - Scoped import/unresolved/material gates still returned expected exits 2/4/3.
+
+## 2026-05-15 - Channel Packing Gate Pass
+
+What was wrong:
+
+- Channel-packing candidates were exported but not independently gateable.
+- Broad material exit 3 mixed prompt ORM migration with detail-slot and unresolved-reference debt.
+
+What was done:
+
+- Added `--fail-on-channel-packing-candidates`.
+- Exit code 8 now means channel-packing migration candidates exist.
+- Added the channel gate to active-gate metadata.
+- Extended subprocess regression coverage to assert exit 8 and active-gate stdout.
+- Updated doctrine/status/rationale/log with the new contract.
+
+Cinematic Cheats used:
+
+- None. This is offline validator precision.
+
+Exact Microseconds saved:
+
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0 us.
+- Enables channel-packing migration to be blocked independently before material/shader work wastes VRAM.
+
+Verification:
+
+- `python -m py_compile Tools\MaterialAudit.py Tools\test_material_audit.py`: passed.
+- `python -m unittest Tools.test_material_audit`: passed 12 tests.
+- Full first-party audit with `--ci-surface-gates`: still passes.
+- Scoped `Art/Materials` channel gate returned expected exit 8 with 23 channel candidates.
+- Scoped import/unresolved/material gates still returned expected exits 2/4/3.

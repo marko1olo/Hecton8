@@ -199,3 +199,11 @@ Solution: Add `active_gate_profiles` and `active_gates` to report metadata befor
 Rejected Alternatives: Relying on stdout was rejected because logs and reports can be separated. Writing only JSON metadata was rejected because the Markdown report is the human-facing artifact.
 Scalability potential: Low = MX350 gate artifacts remain auditable after handoff. Middle = CI can archive JSON/Markdown and prove the exact gate mode. High/Ultra = GOD_MODE escalation audits can distinguish budget-only runs from full migration gates.
 Hardware Impact: 0 us runtime impact. Current artifact records `surface_safe` with active gates `energy_failures`, `energy_warnings`, `albedo_read_errors`, and `texture_budget`.
+
+## Channel Packing Candidate Gate
+
+Problem: Channel-packing candidates were counted and exported, but broad material issue exit 3 was the only way to fail a material migration job. That mixes prompt ORM debt with detail-slot and unresolved-reference debt.
+Solution: Add `--fail-on-channel-packing-candidates` with exit code 8, include it in active-gate metadata, and cover it through the subprocess regression suite.
+Rejected Alternatives: Adding channel debt to `--ci-surface-gates` was rejected because current first-party assets intentionally have 31 channel candidates and the safe profile must remain usable for albedo/readability/budget enforcement. Leaving only broad material failure was rejected because channel packing is the prompt's primary surface target.
+Scalability potential: Low = channel migration can be tracked separately from safe budget checks. Middle = CI can block material PRs that add new non-ORM surfaces. High = saved ORM texture memory buys shared detail overlays. Ultra = GOD_MODE material escalation can require prompt ORM before higher mips are allowed.
+Hardware Impact: 0 us runtime impact. Current scoped `Art/Materials` channel gate reports 23 candidates and returns exit 8; full first-party audit still reports 31 channel candidates and 113.46 MiB modeled savings potential.
