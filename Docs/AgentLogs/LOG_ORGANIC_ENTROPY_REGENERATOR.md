@@ -320,3 +320,59 @@ Verification:
 - `python -m unittest Tools.test_world_entropy_sim -v`: 4 tests passed in 42.120 s.
 - Target scans: no forbidden hot-path token matches; no raw `new NativeArray`; no raw native dispose.
 - Temporary probe files were removed.
+
+## 2026-05-15 - Exact SOA Storage Guard
+
+What was wrong:
+- Dimension coherence did not prove the lane buffers matched the declared topology.
+- The codec accepted lane lengths greater than `CellCount`, which could serialize only a prefix of an already-allocated larger SOA block after public field corruption.
+
+What was done:
+- Added `HasValidStorage`.
+- Scheduler and codec entry points now require exact byte-lane lengths equal to `CellCount`.
+- Black box ring length must be exactly `300` before backend entry points accept the memory block.
+- Removed the permissive `Length >= CellCount` codec helper.
+
+Cinematic cheats used:
+- None. This is data integrity hardening for the macro-sector simulation backend.
+
+Exact microseconds saved:
+- Runtime microseconds saved: 0. This adds entry validation only.
+- Failure avoided: no prefix/superset SOA serialization or partial-topology job scheduling.
+
+Verification:
+- Roslyn C# 9 unsafe probe compile with H8Memory stubs: exit code 0.
+- `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`: exit code 0.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
+- `python -m unittest Tools.test_world_entropy_sim -v`: 4 tests passed in 34.654 s.
+- Target scans: no forbidden hot-path token matches; no raw `new NativeArray`; no raw native dispose.
+- Temporary probe files were removed.
+
+## 2026-05-15 - Dimension Coherence Guard
+
+What was wrong:
+- `Width`, `Height`, and `CellCount` are public data-owner fields.
+- Corrupt dimensions could let scheduler entry points run with invalid topology, including divide-by-zero risk in diffusion.
+- H8_MacroDB pack/unpack could accept a lane block whose dimensions did not match its serialized topology.
+
+What was done:
+- Added `HasValidDimensions`.
+- Gated initialize, daily solve, mining tombstones, H8_MacroDB pack, and H8_MacroDB unpack behind dimension coherence checks.
+- Guard requires positive dimensions, max grid limits, max cell budget, and `Width * Height == CellCount`.
+
+Cinematic cheats used:
+- None. This is backend state validation for the existing macro-sector fake.
+
+Exact microseconds saved:
+- Runtime microseconds saved: 0. This adds branch-only entry guards and does not change job bodies.
+- Failure avoided: invalid public dimension state no longer reaches diffusion modulo/division or payload writes.
+
+Verification:
+- Roslyn C# 9 unsafe probe compile with H8Memory stubs: exit code 0.
+- `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`: exit code 0.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
+- `python -m unittest Tools.test_world_entropy_sim -v`: 4 tests passed in 26.206 s.
+- Target scans: no forbidden hot-path token matches; no raw `new NativeArray`; no raw native dispose.
+- Temporary probe files were removed.

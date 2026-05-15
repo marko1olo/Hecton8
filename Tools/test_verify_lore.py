@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+import contextlib
+import io
 import os
 import sys
 import unittest
@@ -74,6 +76,52 @@ class VerifyLoreTests(unittest.TestCase):
             VerifyLore.compute_fnv1a32(absolute_canonical),
         )
 
+    def test_check_command_is_independent_of_process_cwd(self) -> None:
+        os.chdir(self.repo_root / "Tools")
+        output = io.StringIO()
+
+        with contextlib.redirect_stdout(output):
+            self.assertEqual(VerifyLore.main(["--check"]), 0)
+
+        blob, records = VerifyLore.read_blob(Path("Data/Lore/Encyclopedia.h8bin"))
+        self.assertEqual(len(records), 1)
+        self.assertGreater(len(blob), 0)
+        VerifyLore.verify_manifest(
+            Path("Data/Lore/Encyclopedia.h8bin"),
+            Path("Data/Lore/Encyclopedia.manifest.json"),
+            Path("Docs/Lore"),
+        )
+        self.assertIn("CHECK OK: entries=1", output.getvalue())
+        self.assertIn("blob=Data/Lore/Encyclopedia.h8bin", output.getvalue())
+        self.assertEqual(
+            VerifyLore.canonicalize_path(Path("Docs/Lore/Lore_Bible.md")),
+            "Docs/Lore/Lore_Bible.md",
+        )
+
+    def test_cli_rejects_hash_and_source_path_together(self) -> None:
+        with contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit) as context:
+                VerifyLore.main(["0xD1880394", "--source-path", "Docs/Lore/Lore_Bible.md"])
+
+        self.assertNotEqual(context.exception.code, 0)
+
+    def test_cli_rejects_invalid_hash_without_traceback(self) -> None:
+        stderr = io.StringIO()
+
+        with contextlib.redirect_stderr(stderr):
+            with self.assertRaises(SystemExit) as context:
+                VerifyLore.main(["NOT_A_HASH"])
+
+        self.assertNotEqual(context.exception.code, 0)
+        self.assertIn("Invalid hash value", stderr.getvalue())
+        self.assertNotIn("Traceback", stderr.getvalue())
+
+    def test_hash_parser_rejects_out_of_uint32_range_values(self) -> None:
+        for value in ("-1", "0x100000000", "4294967296"):
+            with self.subTest(value=value):
+                with self.assertRaises(ValueError):
+                    VerifyLore.parse_hash(value)
+
     def test_missing_hash_returns_none(self) -> None:
         record = VerifyLore.LoreRecord(0x10, 32, 4)
         self.assertIsNone(VerifyLore.find_record([record], 0x20))
@@ -82,6 +130,32 @@ class VerifyLoreTests(unittest.TestCase):
         entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
         blob = bytearray(VerifyLore.bake_blob(entries))
         blob[0:4] = b"BAD!"
+
+        with self.assertRaises(ValueError):
+            VerifyLore.parse_blob(bytes(blob))
+
+    def test_unsorted_record_table_is_rejected(self) -> None:
+        entries = [
+            self.make_entry("Docs/Lore/alpha.md", b"# Alpha\nPressure note.\n"),
+            self.make_entry("Docs/Lore/beta.md", b"# Beta\nAtlas note.\n"),
+        ]
+        blob = bytearray(VerifyLore.bake_blob(entries))
+        records = VerifyLore.parse_blob(blob)
+        self.assertEqual(len(records), 2)
+        VerifyLore.RECORD_STRUCT.pack_into(
+            blob,
+            VerifyLore.HEADER_SIZE,
+            records[1].hash_value,
+            records[1].offset,
+            records[1].length,
+        )
+        VerifyLore.RECORD_STRUCT.pack_into(
+            blob,
+            VerifyLore.HEADER_SIZE + VerifyLore.RECORD_SIZE,
+            records[0].hash_value,
+            records[0].offset,
+            records[0].length,
+        )
 
         with self.assertRaises(ValueError):
             VerifyLore.parse_blob(bytes(blob))
@@ -168,6 +242,37 @@ class VerifyLoreTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             VerifyLore.verify_manifest_data(blob, records, entries, manifest)
 
+    def test_manifest_generation_rejects_blob_source_mismatch(self) -> None:
+        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
+        stale_entries = [self.make_entry("Docs/Lore/entry.md", b"Stale entry\n")]
+        blob = VerifyLore.bake_blob(stale_entries)
+        records = VerifyLore.parse_blob(blob)
+
+        with self.assertRaises(ValueError):
+            VerifyLore.build_manifest_data(
+                "Data/Lore/Encyclopedia.h8bin",
+                blob,
+                records,
+                entries,
+                "Docs/Lore",
+            )
+
+    def test_manifest_verification_rejects_blob_source_mismatch_even_when_manifest_matches_blob(self) -> None:
+        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
+        stale_entries = [self.make_entry("Docs/Lore/entry.md", b"Stale entry\n")]
+        blob = VerifyLore.bake_blob(stale_entries)
+        records = VerifyLore.parse_blob(blob)
+        manifest = VerifyLore.build_manifest_data(
+            "Data/Lore/Encyclopedia.h8bin",
+            blob,
+            records,
+            stale_entries,
+            "Docs/Lore",
+        )
+
+        with self.assertRaises(ValueError):
+            VerifyLore.verify_manifest_data(blob, records, entries, manifest)
+
     def test_manifest_blob_length_mismatch_is_rejected(self) -> None:
         entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
         blob = VerifyLore.bake_blob(entries)
@@ -199,6 +304,50 @@ class VerifyLoreTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             VerifyLore.verify_manifest_data(blob, records, entries, manifest)
+
+    def test_manifest_blob_label_mismatch_is_rejected_when_expected(self) -> None:
+        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
+        blob = VerifyLore.bake_blob(entries)
+        records = VerifyLore.parse_blob(blob)
+        manifest = VerifyLore.build_manifest_data(
+            "Data/Lore/Stale.h8bin",
+            blob,
+            records,
+            entries,
+            "Docs/Lore",
+        )
+
+        with self.assertRaises(ValueError):
+            VerifyLore.verify_manifest_data(
+                blob,
+                records,
+                entries,
+                manifest,
+                expected_blob_label="Data/Lore/Encyclopedia.h8bin",
+                expected_source_dir_label="Docs/Lore",
+            )
+
+    def test_manifest_source_dir_label_mismatch_is_rejected_when_expected(self) -> None:
+        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
+        blob = VerifyLore.bake_blob(entries)
+        records = VerifyLore.parse_blob(blob)
+        manifest = VerifyLore.build_manifest_data(
+            "Data/Lore/Encyclopedia.h8bin",
+            blob,
+            records,
+            entries,
+            "Docs/Design",
+        )
+
+        with self.assertRaises(ValueError):
+            VerifyLore.verify_manifest_data(
+                blob,
+                records,
+                entries,
+                manifest,
+                expected_blob_label="Data/Lore/Encyclopedia.h8bin",
+                expected_source_dir_label="Docs/Lore",
+            )
 
     def test_source_path_outside_repo_is_rejected(self) -> None:
         with self.assertRaises(ValueError):

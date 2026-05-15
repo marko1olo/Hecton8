@@ -257,3 +257,25 @@ Rejected Alternatives: Trusting callers never to retry allocation after partial 
 Scalability potential: Low through Ultra tiers get deterministic allocation ownership even after failed or partial teardown scenarios. Larger high-end grids still allocate as one coherent SOA block.
 
 Hardware Impact: No hot-path cost. This is cold bootstrap/retry hygiene and does not affect daily solve timing.
+
+## Decision 24 - Dimension Coherence Guard
+Problem: `Width`, `Height`, and `CellCount` are public fields on the data-owner struct. If external code corrupts them while lanes remain alive, scheduler entry points can run jobs with invalid dimensions, including divide-by-zero in nutrient diffusion, and the codec can write payload headers that do not match the lane topology.
+
+Solution: Added `HasValidDimensions` and used it before initialization, daily solve, mining tombstone scheduling, H8_MacroDB packing, and H8_MacroDB unpacking. The guard requires positive dimensions, the configured max grid bounds, the max cell budget, and `Width * Height == CellCount`.
+
+Rejected Alternatives: Trusting allocation-time values was rejected because the fields are public. Making fields private was rejected as a larger public API shift during the batch. Adding exception throws was rejected because gameplay/backend code should fail closed and return false/dependency unchanged.
+
+Scalability potential: Low through Ultra tiers all get the same coherent topology guarantee. High-end oversized configs still respect the `1,048,576` cell cap before any job or codec path accepts state.
+
+Hardware Impact: Branch-only entry validation. Daily job bodies and entropy math are unchanged; low-end cost is effectively zero outside scheduler calls.
+
+## Decision 25 - Exact SOA Storage Guard
+Problem: Dimension coherence alone still allowed a corrupted but internally valid smaller topology to run against larger already-allocated lanes. The old codec lane check accepted `Length >= CellCount`, which could hide public field corruption and serialize only a prefix of the true SOA block.
+
+Solution: Added `HasValidStorage`. Scheduler and codec entry points now require every serialized byte lane length to equal `CellCount` and require `BlackBox.Length == 300`. The old permissive lane-length helper was removed.
+
+Rejected Alternatives: Keeping `Length >= CellCount` was rejected because it silently accepts mismatched topology. Making all lanes private was again rejected as a larger public API change during a multi-agent batch.
+
+Scalability potential: Low through Ultra tiers now have a strict one-to-one topology contract between dimensions, lanes, and persisted payloads. High-end larger grids still work when allocated coherently.
+
+Hardware Impact: Branch-only entry validation. Daily jobs execute the same math and memory traversal after the guard passes.

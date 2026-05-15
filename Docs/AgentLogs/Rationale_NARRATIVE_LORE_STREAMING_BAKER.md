@@ -191,3 +191,59 @@ Solution: Add `Data/Lore/README.md` with the binary layout, required commands, a
 Rejected Alternatives: Putting the runbook in `Docs/Lore` would be compiled into the encyclopedia; relying on chat or status logs alone is weak handoff.
 Scalability potential: Low/Middle/High/Ultra packaging can verify and extract lore data without searching agent logs.
 Hardware Impact: 0 us/frame on i3/MX350; documentation only.
+
+## Decision 025 - Anchor Verifier Paths To Repository Root
+
+Problem: The verifier used process cwd for relative path identity, so launching `Tools/VerifyLore.py` from `Tools/` or another operator shell could break default paths or alter source-path hashing. Direct helper calls still needed the same guarantee after the CLI path was fixed.
+Solution: Define the repository root from `Tools/VerifyLore.py`, resolve default blob/manifest/source paths from that root, make `read_blob` and `verify_manifest` resolve repo-relative paths internally, keep manifest labels repository-relative, add `.tmp` + atomic replace writes for generated files, and add regression coverage for cwd-independent `--check`, helper usage, and unsorted record-table rejection.
+Rejected Alternatives: Telling operators to always run from repo root is a process dependency, not a compiler guarantee; hashing cwd-relative paths would corrupt stable lore IDs; direct writes risk partial blobs if interrupted.
+Scalability potential: Low uses deterministic one-file packaging from any shell; Middle/High/Ultra can add more Markdown shards without path drift, and atomic replacement prevents stale half-written package data.
+Hardware Impact: 0 us/frame on i3/MX350; this is offline tooling. Low-tier runtime still reads the same 10329-byte blob, while high-tier future loaders can rely on stable IDs and strict binary ordering.
+
+## Decision 026 - Redirect Python Bytecode Cache For Compile Proof
+
+Problem: Default `python -m py_compile` previously failed because workspace pycache atomic rename returned `[WinError 5] Access denied`, even though AST parsing and unit tests passed.
+Solution: Use `PYTHONPYCACHEPREFIX=.codex-artifacts\pycache` for compile proof so bytecode emission goes into the ignored artifact cache rather than tool directories with unreliable rename permissions.
+Rejected Alternatives: Dropping py_compile proof would leave syntax proof dependent only on AST parsing; changing filesystem ACLs is outside this batch and would mutate the developer machine.
+Scalability potential: Low/Middle/High/Ultra unaffected; this is local verification hygiene for the offline compiler.
+Hardware Impact: 0 us/frame on i3/MX350; no runtime code or data layout changed.
+
+## Decision 027 - Make Manifest Verification Prove Current Source Bytes
+
+Problem: `--check` compared source payloads against the blob, but `--verify-manifest` could still pass if a manifest truthfully described a stale blob whose payload no longer matched the current Markdown source.
+Solution: Make `build_manifest_data` and `verify_manifest_data` reject payload mismatches against the active `SourceEntry` bytes, then add regressions where a stale blob and matching manifest are rejected against current source.
+Rejected Alternatives: Requiring operators to always remember `--check` would keep `--verify-manifest` weaker than its help text; trusting only SHA-256 values stored in the manifest would let stale packages self-certify.
+Scalability potential: Low/Middle/High/Ultra all get stricter offline package gates as lore shards scale; stale shard detection remains content-byte exact before any future runtime loader sees the blob.
+Hardware Impact: 0 us/frame on i3/MX350; this is offline validation. Runtime artifact size and layout remain unchanged.
+
+## Decision 028 - Bind Manifest Labels To Verification Paths
+
+Problem: Manifest payload and digest checks were strict, but `blob` and `source_dir` labels were still advisory. A sidecar copied from another package path could pass if the bytes matched, weakening operator auditability.
+Solution: Pass expected repository-relative blob and source directory labels from `verify_manifest` into `verify_manifest_data`, reject label mismatches, and add regressions for wrong blob and wrong source directory labels.
+Rejected Alternatives: Ignoring labels would make the manifest less useful as a handoff contract; embedding path labels in the binary would bloat the runtime artifact and exceed the prompt's fixed record table.
+Scalability potential: Low/Middle/High/Ultra packaging keeps sidecars tied to exact source roots as future lore shards scale across subdirectories.
+Hardware Impact: 0 us/frame on i3/MX350; this is offline verification. Runtime blob size and layout remain unchanged.
+
+## Decision 029 - Reject Ambiguous Extraction Inputs
+
+Problem: The CLI accepted both a positional numeric hash and `--source-path` in one extraction command, then silently preferred the source path. That creates operator ambiguity and can hide a bad copied hash.
+Solution: Add a parser-level error when both selectors are present and add a regression test that expects nonzero `SystemExit`.
+Rejected Alternatives: Keeping path precedence would make extraction less auditable; choosing numeric hash precedence would surprise users who supplied `--source-path`; allowing both only when they match would add unnecessary blob reads before argument validation.
+Scalability potential: Low/Middle/High/Ultra packaging keeps extraction commands unambiguous as the lore table grows beyond one record.
+Hardware Impact: 0 us/frame on i3/MX350; CLI validation only, runtime blob unchanged.
+
+## Decision 030 - Convert Bad Hash Input To Controlled CLI Error
+
+Problem: A malformed positional hash exited nonzero but printed a raw Python traceback. That is noisy operator tooling and weaker than deterministic parser diagnostics.
+Solution: Wrap `parse_hash` conversion failures with `ValueError("Invalid hash value")`, route positional hash parsing through `parser.error`, and add a regression proving stderr has no traceback.
+Rejected Alternatives: Leaving the traceback would force operators to interpret implementation internals; returning hash zero on bad input would be dangerous because zero is a valid empty-input engine contract.
+Scalability potential: Low/Middle/High/Ultra extraction remains predictable as the table grows and operators type more hashes manually.
+Hardware Impact: 0 us/frame on i3/MX350; CLI validation only, runtime blob unchanged.
+
+## Decision 031 - Reject Out-Of-Range Hash Selectors
+
+Problem: Numeric hash parsing masked values into uint32, so `-1` or `0x100000000` could become a valid selector instead of a command error.
+Solution: Parse the numeric value first, reject anything outside `0..0xFFFFFFFF`, and keep the canonical `format_hash` masking only for already-valid internal values.
+Rejected Alternatives: Continuing to mask user input was rejected because it can extract the wrong record. Rejecting only negative values was rejected because overflow has the same ambiguity problem.
+Scalability potential: Low/Middle/High/Ultra packaging remains deterministic as the lore table grows and operators pass hashes manually.
+Hardware Impact: 0 us/frame on i3/MX350; offline CLI validation only.

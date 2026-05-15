@@ -390,6 +390,128 @@ Failure modes:
 - Unity/C# compile proof remains blocked by missing local toolchain/generation state.
 - Runtime loader remains out of explicit prompt scope.
 
+## 2026-05-15 - Invalid Hash Diagnostic Guard
+
+STATUS: LORE BAKED / BAD HASH TRACEBACK REMOVED
+
+What was wrong:
+- A malformed numeric hash exited nonzero but printed a raw Python traceback.
+- Operator-facing extraction failures should be deterministic parser diagnostics, not implementation stack traces.
+
+What was done:
+- Wrapped hash conversion failures in a clear `Invalid hash value` error.
+- Routed positional hash parsing through `argparse` error handling.
+- Added regression coverage proving invalid hashes exit nonzero without `Traceback` in stderr.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Fixed binary layout and zlib payloads remain unchanged.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- CLI validation only; no runtime loader cost claimed.
+
+Verification:
+- `python Tools\VerifyLore.py --bake --check --list` -> `LORE BAKED`, `CHECK OK`, record `0xD1880394 offset=48 length=10281`.
+- `python Tools\VerifyLore.py NOT_A_HASH` -> rejected with parser error, no traceback.
+- `python -B -m unittest Tools.test_verify_lore -v` -> 23 tests passed.
+- `$env:PYTHONPYCACHEPREFIX='.codex-artifacts\pycache'; python -m py_compile Tools\VerifyLore.py Tools\test_verify_lore.py` -> passed.
+- Source/extract SHA-256 match -> `6B529A808B25D18DA276747DB9149C61BACDF90A33DCC667FC85375DE13E69CD`.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: malformed hash input now fails before blob extraction with a controlled diagnostic.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.
+
+## 2026-05-15 - Ambiguous Extraction Rejection
+
+STATUS: LORE BAKED / CLI SELECTOR AMBIGUITY REJECTED
+
+What was wrong:
+- The extractor accepted both a positional numeric hash and `--source-path` in the same command.
+- The previous behavior silently preferred the path, which could hide a bad copied hash in operator verification.
+
+What was done:
+- Added parser-level rejection for commands that supply both selectors.
+- Added regression coverage for the nonzero parser exit.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Fixed binary layout and zlib payloads remain unchanged.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- No runtime loader cost claimed.
+
+Verification:
+- `python Tools\VerifyLore.py --bake --check --list` -> `LORE BAKED`, `CHECK OK`, record `0xD1880394 offset=48 length=10281`.
+- `python Tools\VerifyLore.py 0xD1880394 --source-path Docs\Lore\Lore_Bible.md` -> rejected with parser error.
+- `python -B -m unittest Tools.test_verify_lore -v` -> 22 tests passed.
+- `$env:PYTHONPYCACHEPREFIX='.codex-artifacts\pycache'; python -m py_compile Tools\VerifyLore.py Tools\test_verify_lore.py` -> passed.
+- Source/extract SHA-256 match -> `6B529A808B25D18DA276747DB9149C61BACDF90A33DCC667FC85375DE13E69CD`.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: extraction selector intent is now single-source and fail-fast.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.
+
+## 2026-05-15 - Repository-Root Path Hardening
+
+STATUS: LORE BAKED / CWD-INDEPENDENT VERIFIER / STRICT TABLE GUARD VERIFIED
+
+What was wrong:
+- The verifier previously resolved relative paths from process cwd. Running from `Tools/` or another shell could break default source/blob paths and could change canonical source hash behavior.
+- Blob and manifest writes were direct writes, which is weaker than atomic package replacement.
+- Record sorting was checked, but there was no explicit regression test that corrupted table order and proved rejection.
+
+What was done:
+- Added `REPO_ROOT` anchored path resolution in `Tools/VerifyLore.py`.
+- Kept CLI defaults as repository-relative labels while resolving actual IO from the repo root.
+- Made `read_blob` and `verify_manifest` resolve repo-relative helper paths internally, so imported usage is not cwd-sensitive.
+- Added atomic `.tmp` + replace writes for blob, manifest, and extracted Markdown output.
+- Added regression tests for cwd-independent `--check` and unsorted record-table rejection.
+- Updated `Data/Lore/README.md` to document cwd-independent operation and atomic writes.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Offline deterministic binary packaging remains the delivery mechanism.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- No Unity runtime loader was added, so no new frame-time cost exists from this pass.
+
+Verification:
+- `python Tools\VerifyLore.py --bake --check --list` -> `LORE BAKED`, `CHECK OK`, record `0xD1880394 offset=48 length=10281`.
+- `Push-Location Tools; python ..\Tools\VerifyLore.py --check; Pop-Location` -> `CHECK OK` from a subdirectory.
+- `python -B -m unittest Tools.test_verify_lore -v` -> 17 tests passed.
+- AST syntax parse -> `AST OK`.
+- `$env:PYTHONPYCACHEPREFIX='.codex-artifacts\pycache'; python -m py_compile Tools\VerifyLore.py Tools\test_verify_lore.py` -> passed.
+- Source/extract SHA-256 match -> `6B529A808B25D18DA276747DB9149C61BACDF90A33DCC667FC85375DE13E69CD`.
+- Blob SHA-256 remains `8FDBAC8752B5DB10B98226D88BC5A27EEDA049207E139E6F2F3FB15ECDBDDC00`.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: verifier CLI and imported helpers now behave from subdirectories, preserve stable repo-relative lore IDs, write package outputs atomically, and reject unsorted record tables.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.
+
 ## 2026-05-15 - Artifact Runbook Handoff
 
 STATUS: LORE BAKED / RUNBOOK ADDED / SOURCE SCAN CLEAN
@@ -462,6 +584,191 @@ Regression model:
 - Memory: runtime blob remains 10329 bytes.
 - Cadence: no Tick/Update/FixedUpdate path touched.
 - Correctness: blob parser now rejects bad magic, overlap, nonzero padding, and trailing bytes before payload extraction.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.
+
+## 2026-05-15 - Manifest Source Payload Guard - Bottom Append
+
+STATUS: LORE BAKED / MANIFEST SOURCE-BYTE VERIFIED / LOG ORDER CORRECTED
+
+What was wrong:
+- `--verify-manifest` could previously validate a manifest that truthfully described a stale blob, because manifest-vs-blob metadata was checked before source-byte equality.
+- Earlier patching inserted the first report for this pass above the current tail instead of appending it.
+
+What was done:
+- `build_manifest_data` now rejects blob payload bytes that do not match the active source entry.
+- `verify_manifest_data` now rejects stale blob payloads even when manifest metadata and manifest SHA-256 match that stale blob.
+- Added regression tests for stale payload rejection during manifest generation and manifest verification.
+- Appended this report at the bottom of the log to restore chronological handoff order.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Fixed binary layout and zlib payloads remain the implementation.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- No runtime loader cost claimed.
+
+Verification:
+- `python Tools\VerifyLore.py --bake --check --list` -> `LORE BAKED`, `CHECK OK`, record `0xD1880394 offset=48 length=10281`.
+- `python Tools\VerifyLore.py --verify-manifest --verify-source --list` -> source and manifest verification passed.
+- `python Tools\VerifyLore.py --check` -> `CHECK OK`.
+- `python -B -m unittest Tools.test_verify_lore -v` -> 19 tests passed.
+- `$env:PYTHONPYCACHEPREFIX='.codex-artifacts\pycache'; python -m py_compile Tools\VerifyLore.py Tools\test_verify_lore.py` -> passed.
+- Source/extract SHA-256 match -> `6B529A808B25D18DA276747DB9149C61BACDF90A33DCC667FC85375DE13E69CD`.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: manifest validation now proves blob payload bytes against current Markdown source, not only manifest-vs-blob metadata consistency.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.
+
+## 2026-05-15 - Manifest Label Binding
+
+STATUS: LORE BAKED / MANIFEST LABELS VERIFIED
+
+What was wrong:
+- Manifest payload and digest checks were strict, but the sidecar `blob` and `source_dir` labels were not bound to the paths being verified.
+- A copied sidecar could pass if bytes matched while still pointing operators at the wrong package/source labels.
+
+What was done:
+- `verify_manifest` now passes expected repository-relative blob and source directory labels into `verify_manifest_data`.
+- `verify_manifest_data` rejects manifest blob path mismatches and source directory mismatches when expected labels are supplied.
+- Added regressions for wrong blob label and wrong source directory label.
+- Appended this report at the bottom of the log after correcting the patch insertion point.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Fixed binary layout and zlib payloads remain unchanged.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- No runtime loader cost claimed.
+
+Verification:
+- `python Tools\VerifyLore.py --bake --check --list` -> `LORE BAKED`, `CHECK OK`, record `0xD1880394 offset=48 length=10281`.
+- `python -B -m unittest Tools.test_verify_lore -v` -> 21 tests passed.
+- `$env:PYTHONPYCACHEPREFIX='.codex-artifacts\pycache'; python -m py_compile Tools\VerifyLore.py Tools\test_verify_lore.py` -> passed.
+- Source/extract SHA-256 match -> `6B529A808B25D18DA276747DB9149C61BACDF90A33DCC667FC85375DE13E69CD`.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: manifest verification now binds content, blob label, and source directory label to the current package.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.
+
+## 2026-05-15 - Ambiguous Extraction Input Guard
+
+STATUS: LORE BAKED / AMBIGUOUS CLI REJECTED
+
+What was wrong:
+- The extractor accepted a positional numeric hash and `--source-path` in the same command.
+- That silently preferred `--source-path`, hiding a copied or stale numeric hash.
+
+What was done:
+- Added a parser-level error when both extraction selectors are present.
+- Added regression coverage for the ambiguous hash plus `--source-path` command.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Fixed binary layout and zlib payloads remain unchanged.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- CLI validation only; no runtime loader cost claimed.
+
+Verification:
+- `python Tools\VerifyLore.py 0xD1880394 --source-path Docs\Lore\Lore_Bible.md` -> rejected with parser error.
+- `python -B -m unittest Tools.test_verify_lore -v` -> 22 tests passed.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: extraction commands now have exactly one selector, avoiding silent precedence.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.
+
+## 2026-05-15 - Invalid Hash Parser Error
+
+STATUS: LORE BAKED / INVALID HASH TRACEBACK REMOVED
+
+What was wrong:
+- Invalid positional hash input raised a raw `ValueError`.
+- That could show a Python traceback instead of a clean CLI parser error.
+
+What was done:
+- `parse_hash` now wraps invalid numeric parsing with an explicit `Invalid hash value` message.
+- Extraction routes that validation failure through `parser.error`.
+- Added a regression proving `NOT_A_HASH` exits nonzero without printing `Traceback`.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Fixed binary layout and zlib payloads remain unchanged.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- CLI validation only; no runtime loader cost claimed.
+
+Verification:
+- `python Tools\VerifyLore.py NOT_A_HASH` -> rejected with parser error and no traceback.
+- `python -B -m unittest Tools.test_verify_lore -v` -> 23 tests passed.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: malformed hash input now fails at argument handling with deterministic diagnostics.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.
+
+## 2026-05-15 - Hash Range Guard
+
+STATUS: LORE BAKED / HASH RANGE STRICT
+
+What was wrong:
+- Numeric hash parsing masked negative and overflow values into uint32.
+- That could turn a bad operator input into a valid but unintended lore record selector.
+
+What was done:
+- `parse_hash` now rejects values outside `0..0xFFFFFFFF`.
+- Added regression coverage for `-1`, `0x100000000`, and `4294967296`.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Fixed binary layout and zlib payloads remain unchanged.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- CLI validation only; no runtime loader cost claimed.
+
+Verification:
+- `python -B -m unittest Tools.test_verify_lore -v` -> 24 tests passed.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: invalid numeric hash selectors cannot wrap into valid IDs.
 
 Failure modes:
 - Unity/C# compile proof remains blocked by missing local toolchain/generation state.

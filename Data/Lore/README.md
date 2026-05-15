@@ -32,6 +32,8 @@ python Tools\VerifyLore.py --bake --check --list
 python -B -m unittest Tools.test_verify_lore -v
 ```
 
+The CLI anchors relative paths to the repository root, so the same commands work when launched from a subdirectory. Blob, manifest, and extracted Markdown writes use `.tmp` + atomic replace.
+
 Expected active record:
 
 ```text
