@@ -110,7 +110,7 @@ Hardware Impact: 0 us gameplay runtime gain measured.
 ## Decision 14
 
 Problem: The shared checkout kept receiving valid-looking concurrent Organic Entropy, Save Hash, and Narrative Lore updates while `origin/main` also advanced. A single blind commit or stale-base push would either mix domains without review or risk remote regression.
-Solution: Review diffs by domain, commit narrow slices, fetch/rebase over remote checkpoints, and rerun CLI gates after the final rebase. The final local stack is on top of `origin/main` commit `ed8a9a7bc`.
+Solution: Review diffs by domain, commit narrow slices, fetch/rebase over remote checkpoints, and rerun CLI gates after the final rebase. The final local stack is on top of `origin/main` commit `90c8aa095`.
 Rejected Alternatives: Force-push was rejected because it could discard remote checkpoint work. `git add -A` was rejected because concurrent agents were writing during verification. Stashing dirty state was rejected once clean commits could preserve exact authored content.
 Scalability potential: Low/Middle/High/Ultra runtime tiers are not changed by repository hygiene. Domain changes remain owned by their agents; GIT_SYNC only preserved and verified repository-level integrity.
 Hardware Impact: 0 us runtime gain measured; repository operation only.
