@@ -274,10 +274,10 @@ Exact microseconds saved:
 Verification:
 - PYTHONDONTWRITEBYTECODE=1 Python AST syntax parse for `Tools/MemoryBudgetCheck.py` and `Tools/test_memory_budget_check.py`: PASS.
 - PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --validate-reports: PASS; `reports valid: textures=1652 meshes=302 render_textures=1 texture_redlines=946 mesh_redlines=293 rt_redlines=1 rt_hotspots=61 scan_roots=Assets,Packages,Data`.
-- PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py: PASS, 24 tests, elapsed 19.561 seconds.
+- PYTHONDONTWRITEBYTECODE=1 python -m unittest Tools.test_memory_budget_check -v: PASS, 24 tests, elapsed 32.831 seconds.
 - PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --ci: EXPECTED FAIL with `ci_exit_code=2`; current static redlines/overflow still produce `[CRITICAL_VRAM_OVERFLOW]`.
 - Python bytecode cleanup: PASS, `PYTHON_CACHE_COUNT 0`.
-- git diff --check on VRAM-owned touched files: PASS, no whitespace errors.
+- git diff --check on VRAM-owned touched files: PASS, no whitespace errors; CRLF warnings only.
 - Active log chronology: PASS, `LOG_ORDER_OK headers=9 latest=2026-05-15T23:21:22+03:00`.
 
 Evidence boundary:
