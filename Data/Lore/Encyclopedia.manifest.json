@@ -6,8 +6,8 @@
   "alignment_bytes": 16,
   "record_layout": "uint32 hash, uint64 absolute_offset, uint32 compressed_length",
   "blob": "Data/Lore/Encyclopedia.h8bin",
-  "blob_length": 9892,
-  "blob_sha256": "78E652F73A46F88AF593AB25B6659FF87CE55825111EF46D2DE7FEF5EB00C224",
+  "blob_length": 10329,
+  "blob_sha256": "8FDBAC8752B5DB10B98226D88BC5A27EEDA049207E139E6F2F3FB15ECDBDDC00",
   "source_dir": "Docs/Lore",
   "entry_count": 1,
   "entries": [
@@ -15,9 +15,9 @@
       "hash": "0xD1880394",
       "canonical_id": "Docs/Lore/Lore_Bible.md",
       "offset": 48,
-      "compressed_length": 9844,
-      "decompressed_length": 24089,
-      "sha256": "F4212835C5D035F387BAEDA6B90EDF35E376828644FBEE11A99F35391B2535D4"
+      "compressed_length": 10281,
+      "decompressed_length": 25003,
+      "sha256": "6B529A808B25D18DA276747DB9149C61BACDF90A33DCC667FC85375DE13E69CD"
     }
   ]
 }

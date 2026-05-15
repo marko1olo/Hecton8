@@ -55,3 +55,12 @@ Cinematic Cheats used: None. Git object plumbing only.
 Exact Microseconds saved: 0 us runtime measured.
 Verification: `git diff-tree --no-commit-id --name-status -r 8345f682e0e50a89acd6cdef6b28f81b4fd67eff` listed only five intended paths; `git push origin 8345f682e0e50a89acd6cdef6b28f81b4fd67eff:refs/heads/main` succeeded as `8213d7838..8345f682e`.
 Residual risk: Local checked-out `main` is still not reset/rebased to remote because doing so would overwrite or disturb unrelated dirty working-tree files. Remote `origin/main` contains the cleanup.
+
+## 2026-05-15 Lore Artifact Follow-Up
+
+What was wrong: A fresh full `Tools` unittest after the push failed in `test_verify_lore.VerifyLoreTests.test_current_artifact_verifies_against_current_sources`: `Docs/Lore/Lore_Bible.md` had changed, but `Data/Lore/Encyclopedia.h8bin` and `Data/Lore/Encyclopedia.manifest.json` still represented the previous payload.
+What was done: Regenerated the lore artifact pair using `python Tools/VerifyLore.py --bake --check` and kept the publish scope to `Docs/Lore/Lore_Bible.md`, `Data/Lore/Encyclopedia.h8bin`, `Data/Lore/Encyclopedia.manifest.json`, and GIT_SYNC evidence files.
+Cinematic Cheats used: None. Data artifact synchronization only.
+Exact Microseconds saved: 0 us runtime measured.
+Verification: `python Tools/VerifyLore.py --bake --check` passed; `python -m unittest Tools.test_verify_lore` passed 11 tests in 0.272 seconds; `python -m unittest discover -s Tools -p "test*.py"` passed 176 tests in 470.526 seconds.
+Residual risk: Unity compile/runtime remains PENDING VERIFICATION because Unity executable/project generation is unavailable in this environment. Other dirty files outside the lore sync remain owned by their respective agents.

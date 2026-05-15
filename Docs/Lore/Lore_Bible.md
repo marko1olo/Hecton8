@@ -1,9 +1,10 @@
 # HECTON-8 Lore Bible - Marauder / Corp Payload
 
-Status: PENDING VERIFICATION
+Status: TRUTH SYNCHRONIZED (STATIC/CLI) / UNITY RUNTIME PENDING VERIFICATION
 Prompt: `NARRATIVE_LORE_WEAVER`
 Localization source of truth: `Data/Localization/en_US.json`
 Binary blob: `Data/Localization/en_US.bin`
+Semantic audit: `NARRATIVE_SEMANTIC_AUDITOR` synced lore, localization, DTO references, and offline validation on 2026-05-15.
 
 ## Tone Contract
 
@@ -129,6 +130,10 @@ Authoritative runtime owner: `Assets/_Project/Scripts/Gameplay/SuitUpgradeResolv
 "Oxygen Tank" is a field name for the `suit_oxygen_t1_aux_reservoir` upgrade, not a separate inventory item. In system DTO terms it resolves to `SuitUpgrades.HighCapacityTank`, bit `1 << 0`, hex mask `0x0000000000000001`.
 
 Baseline `SuitStats` oxygen is `MaxO2 = 100`. When the High Capacity Tank bit is present, `Resolve` adds `+4 MaxO2`, so the active value is `104`. It does not change `CrushDepth`, `MaxIntegrity`, pressure rating, thermal range, energy, radiation threshold, or swim speed. Any line implying that this tank lets the suit go deeper is false and must be rewritten as a hull-module claim.
+
+`SuitStats` is a 64-byte DTO with these authored fields: `MaxO2`, `CrushDepth`, `SwimSpeedMultiplier`, `ThermalResistance`, `MaxEnergy`, `MaxIntegrity`, `MinSafeTemperature`, `MaxSafeTemperature`, and `RadiationThreshold`. Lore may only claim a mechanical suit effect if it names one of those fields or explicitly says the effect is cosmetic/diagnostic.
+
+`SuitUpgradeManager` also aliases internal equipment item hashes `ItemEquipOxygenRigT1Hash = 0xF0B55FA2` and `ItemEquipOxygenRigT2Hash = 0xEFB55E0F` to the same `HighCapacityTank` bit. Those are inventory-equipment aliases, not separate stat tiers. If an Oxygen Rig appears in UI or terminal text, it must still resolve to the same `+4 MaxO2` tank truth unless the runtime resolver changes.
 
 Player-facing wording: "Auxiliary Reservoir" or "Oxygen I - Auxiliary Reservoir." Diagnostic wording may use "Oxygen Tank" only when it also states the bitmask and the `+4 MaxO2` effect. Rejected wording: "pressure tank," "deep tank," and "abyss tank," because those imply depth resistance owned by `DepthModuleMk1` through `DepthModuleMk4`.
 

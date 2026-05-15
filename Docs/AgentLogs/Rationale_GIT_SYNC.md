@@ -67,3 +67,11 @@ Rejected Alternatives: Force-push would discard remote work. Stashing the whole 
 Scalability potential: Low/Middle/High/Ultra runtime tiers are not affected. This is repository hygiene only.
 Hardware Impact: 0 us runtime gain; no gameplay code path modified by this decision.
 
+## Decision 9
+
+Problem: A fresh full `Tools` unittest after the remote push failed because `Docs/Lore/Lore_Bible.md` changed again while `Data/Lore/Encyclopedia.h8bin` and `Data/Lore/Encyclopedia.manifest.json` were stale, producing a `VerifyLore` payload mismatch for hash `0xD1880394`.
+Solution: Regenerate the lore blob and manifest through `Tools/VerifyLore.py --bake --check`, then verify with `python -m unittest Tools.test_verify_lore` and full `python -m unittest discover -s Tools -p "test*.py"`. Publish the source doc and generated artifacts together because the binary blob is invalid without its exact source text.
+Rejected Alternatives: Hand-editing the manifest hashes would create fake provenance. Publishing only the generated blob would hide the source change. Staging the entire dirty tree would include unrelated parallel-agent work not owned by GIT_SYNC.
+Scalability potential: Runtime tier behavior is not changed by this repository sync. Lore blob size increased from 9,892 bytes to 10,329 bytes, still trivial for Low/Middle/High/Ultra memory budgets.
+Hardware Impact: 0 us gameplay runtime gain measured; CLI verification only.
+
