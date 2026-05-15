@@ -548,3 +548,44 @@ Regression model:
 Failure modes:
 - Unity/C# compile proof remains blocked by missing local toolchain/generation state.
 - Runtime loader remains out of explicit prompt scope.
+
+## 2026-05-15 - Manifest Source Payload Guard - Bottom Append
+
+STATUS: LORE BAKED / MANIFEST SOURCE-BYTE VERIFIED / LOG ORDER CORRECTED
+
+What was wrong:
+- `--verify-manifest` could previously validate a manifest that truthfully described a stale blob, because manifest-vs-blob metadata was checked before source-byte equality.
+- Earlier patching inserted the first report for this pass above the current tail instead of appending it.
+
+What was done:
+- `build_manifest_data` now rejects blob payload bytes that do not match the active source entry.
+- `verify_manifest_data` now rejects stale blob payloads even when manifest metadata and manifest SHA-256 match that stale blob.
+- Added regression tests for stale payload rejection during manifest generation and manifest verification.
+- Appended this report at the bottom of the log to restore chronological handoff order.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Fixed binary layout and zlib payloads remain the implementation.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- No runtime loader cost claimed.
+
+Verification:
+- `python Tools\VerifyLore.py --bake --check --list` -> `LORE BAKED`, `CHECK OK`, record `0xD1880394 offset=48 length=10281`.
+- `python Tools\VerifyLore.py --verify-manifest --verify-source --list` -> source and manifest verification passed.
+- `python Tools\VerifyLore.py --check` -> `CHECK OK`.
+- `python -B -m unittest Tools.test_verify_lore -v` -> 19 tests passed.
+- `$env:PYTHONPYCACHEPREFIX='.codex-artifacts\pycache'; python -m py_compile Tools\VerifyLore.py Tools\test_verify_lore.py` -> passed.
+- Source/extract SHA-256 match -> `6B529A808B25D18DA276747DB9149C61BACDF90A33DCC667FC85375DE13E69CD`.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: manifest validation now proves blob payload bytes against current Markdown source, not only manifest-vs-blob metadata consistency.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.
