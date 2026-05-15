@@ -25,9 +25,9 @@ Source reality:
 
 - [x] Task 1 - DIRECTORY SCAN | DOD: enumerated source `.md` files in literal prompt directory `Docs/Lore/`; canonical source `Docs/Lore/Lore_Bible.md` | Alternatives rejected: baking redirect stubs, archive lore, or Cyrillic-damaged root text | Estimate: 0 us runtime, offline bake only
 - [x] Task 2 - HASH TABLE | DOD: generated sorted 16-byte records `uint hash, long offset, int length`; canonical lore hash `0xD1880394` | Alternatives rejected: runtime string keys or unsorted scan table | Estimate: 0 us runtime, fixed binary lookup data only
-- [x] Task 3 - COMPRESSION | DOD: zlib-compressed Markdown payload at level 9; compressed record length 9849 bytes for the current 23960-byte source | Alternatives rejected: uncompressed UTF-16 MMF payload from existing lazy proxy | Estimate: 0 us runtime until a loader exists
-- [x] Task 4 - BINARY OUTPUT | DOD: generated `Data/Lore/Encyclopedia.h8bin`, 9897 bytes, payload offset 48 | Alternatives rejected: writing into `Assets/StreamingAssets` without prompt authority | Estimate: 0 us runtime, data artifact only
-- [x] Task 5 - SELF-AUDIT | DOD: added `Tools/VerifyLore.py` and `Tools/test_verify_lore.py`; direct extraction by hash `0xD1880394` and by source path `Docs/Lore/Lore_Bible.md` both matched current source SHA-256 `A734EF38913EBE80474F71BBD355FFA1CB08EAD3195DA0331D4A336FEA1D1402`; 11 regression tests now cover source-path hashing, manifest tamper, missing prompt source fallback rejection, H8DataHash empty-input zero behavior, metadata mismatch rejection, in-memory blob validation, and current artifact validation | Alternatives rejected: one-off bake without repeatable extraction proof or temp-directory-dependent tests | Estimate: 0 us runtime, offline verification only
+- [x] Task 3 - COMPRESSION | DOD: zlib-compressed Markdown payload at level 9; compressed record length 10281 bytes for the current 25003-byte source | Alternatives rejected: uncompressed UTF-16 MMF payload from existing lazy proxy | Estimate: 0 us runtime until a loader exists
+- [x] Task 4 - BINARY OUTPUT | DOD: generated `Data/Lore/Encyclopedia.h8bin`, 10329 bytes, payload offset 48 | Alternatives rejected: writing into `Assets/StreamingAssets` without prompt authority | Estimate: 0 us runtime, data artifact only
+- [x] Task 5 - SELF-AUDIT | DOD: added `Tools/VerifyLore.py` and `Tools/test_verify_lore.py`; direct extraction by hash `0xD1880394` and by source path `Docs/Lore/Lore_Bible.md` both matched current source SHA-256 `6B529A808B25D18DA276747DB9149C61BACDF90A33DCC667FC85375DE13E69CD`; 15 regression tests now cover source-path hashing, manifest tamper, missing prompt source fallback rejection, H8DataHash empty-input zero behavior, metadata mismatch rejection, in-memory blob validation, malformed blob rejection, payload overlap rejection, nonzero padding rejection, trailing byte rejection, and current artifact validation | Alternatives rejected: one-off bake without repeatable extraction proof or temp-directory-dependent tests | Estimate: 0 us runtime, offline verification only
 - [x] Task 6 - BYTE ALIGNMENT | DOD: `Tools/VerifyLore.py --verify-source --list` asserted 32-byte header, 16-byte table record, and 16-byte aligned payload offset 48 | Alternatives rejected: packed variable header that forces reader-side guesswork | Estimate: 0 us runtime, load-time alignment benefit pending runtime loader
 
 ## Loop State
@@ -40,15 +40,14 @@ Loop 5: polish mandate and final log - COMPLETE
 
 ## Verification
 
-- `python Tools\VerifyLore.py --bake --verify-source --verify-manifest --list` -> `LORE BAKED`, `VERIFY OK`, `MANIFEST VERIFY OK`, one record `0xD1880394 offset=48 length=9849`.
-- `python Tools\VerifyLore.py --source-path Docs\Lore\Lore_Bible.md --output-text .codex-artifacts\NARRATIVE_LORE_STREAMING_BAKER_latest_extract.md` -> source/extract SHA-256 matched `A734EF38913EBE80474F71BBD355FFA1CB08EAD3195DA0331D4A336FEA1D1402`.
-- Raw binary header inspection -> `H8LR`, version `1`, header size `32`, record size `16`, table offset `32`, payload offset `48`, flags `15`, all alignment remainders `0`, file length `9897`.
-- `python -B -m unittest Tools.test_verify_lore -v` -> 11 tests passed without bytecode writes or new scratch directories.
+- `python Tools\VerifyLore.py --bake --check --list` -> `LORE BAKED`, manifest written, `CHECK OK`, one record `0xD1880394 offset=48 length=10281`, file length `10329`.
+- `python Tools\VerifyLore.py --source-path Docs\Lore\Lore_Bible.md --output-text .codex-artifacts\NARRATIVE_LORE_STREAMING_BAKER_latest_extract.md` -> source/extract SHA-256 matched `6B529A808B25D18DA276747DB9149C61BACDF90A33DCC667FC85375DE13E69CD`.
+- Raw binary header inspection -> `H8LR`, version `1`, header size `32`, record size `16`, table offset `32`, payload offset `48`, flags `15`, all alignment remainders `0`, file length `10329`.
+- `python -B -m unittest Tools.test_verify_lore -v` -> 15 tests passed without bytecode writes or new scratch directories.
 - `python -c "import ast, pathlib; ..."` -> `AST OK` for `Tools/VerifyLore.py` and `Tools/test_verify_lore.py`.
 - `python -m py_compile Tools\VerifyLore.py Tools\test_verify_lore.py` -> BLOCKED under current sandbox: Python can parse/import/run the tests, but pycache atomic rename returns `[WinError 5] Access denied`.
 - `python Tools\VerifyLore.py --check` -> `CHECK OK: entries=1 blob=Data\Lore\Encyclopedia.h8bin manifest=Data\Lore\Encyclopedia.manifest.json`.
-- `python Tools\VerifyLore.py --bake --check --list` -> rebaked same-size 9897-byte blob, manifest written, check passed, one record `0xD1880394 offset=48 length=9849`.
-- `Data\Lore\Encyclopedia.manifest.json` written with `entry_count=1`, canonical id `Docs/Lore/Lore_Bible.md`, hash `0xD1880394`, offset `48`, compressed length `9849`, decompressed length `23960`, source SHA-256 match, blob length `9897`, blob SHA-256 `69E1631622B2FBCEAEE39A83A6F9CAEAC8715BCCE5F37C336F63F9E9D026B71B`.
+- `Data\Lore\Encyclopedia.manifest.json` written with `entry_count=1`, canonical id `Docs/Lore/Lore_Bible.md`, hash `0xD1880394`, offset `48`, compressed length `10281`, decompressed length `25003`, source SHA-256 match, blob length `10329`, blob SHA-256 `8FDBAC8752B5DB10B98226D88BC5A27EEDA049207E139E6F2F3FB15ECDBDDC00`.
 - `python Tools\VerifyLore.py --verify-source --verify-manifest --list` -> source and manifest verification passed.
 - `dotnet build Hecton8.Core.csproj --no-restore ...` -> BLOCKED: `dotnet` command not found; standard `C:\Program Files\dotnet\dotnet.exe` and `C:\Program Files (x86)\dotnet\dotnet.exe` absent.
 - Visual Studio private dotnet runtime found at `C:\Program Files\Microsoft Visual Studio\2022\Community\dotnet\net8.0\runtime\dotnet.exe`, but it has no SDK and cannot execute `build`.
@@ -70,4 +69,9 @@ Loop 5: polish mandate and final log - COMPLETE
 - Tenth self-audit rebaked after the concurrent lore source changed; current source SHA-256 is `A734EF38913EBE80474F71BBD355FFA1CB08EAD3195DA0331D4A336FEA1D1402`, current blob SHA-256 is `69E1631622B2FBCEAEE39A83A6F9CAEAC8715BCCE5F37C336F63F9E9D026B71B`.
 - Eleventh self-audit split byte-level blob parsing, source verification, manifest construction, and manifest verification into pure helpers so tests no longer need disposable filesystem repositories.
 - Twelfth self-audit added `--check` as the single packaging gate for source-vs-blob and manifest-vs-blob verification.
+- Thirteenth self-audit added explicit record-table bounds and payload-overlap rejection to the blob parser, plus bad-magic and overlap regression tests.
+- Fourteenth self-audit rebaked after another concurrent lore source update; current source SHA-256 is `6B529A808B25D18DA276747DB9149C61BACDF90A33DCC667FC85375DE13E69CD`, current blob SHA-256 is `8FDBAC8752B5DB10B98226D88BC5A27EEDA049207E139E6F2F3FB15ECDBDDC00`.
+- Fifteenth self-audit added parser rejection for nonzero alignment padding and trailing bytes after the final payload.
+- Sixteenth self-audit hardened the nonzero-padding regression so it searches for a guaranteed alignment gap instead of assuming one specific zlib output length.
+- Seventeenth self-audit added `Data/Lore/README.md` as an operator runbook outside `Docs/Lore` so verification commands and binary layout are documented without becoming compiled lore content.
 - Re-ran bake, source verification, list, extraction SHA-256 check, regression tests, and AST syntax parsing after polish fixes; bytecode file emission is sandbox-blocked by pycache rename denial.

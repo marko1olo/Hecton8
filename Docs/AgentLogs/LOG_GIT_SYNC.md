@@ -64,3 +64,12 @@ Cinematic Cheats used: None. Data artifact synchronization only.
 Exact Microseconds saved: 0 us runtime measured.
 Verification: `python Tools/VerifyLore.py --bake --check` passed; `python -m unittest Tools.test_verify_lore` passed 11 tests in 0.272 seconds; `python -m unittest discover -s Tools -p "test*.py"` passed 176 tests in 470.526 seconds.
 Residual risk: Unity compile/runtime remains PENDING VERIFICATION because Unity executable/project generation is unavailable in this environment. Other dirty files outside the lore sync remain owned by their respective agents.
+
+## 2026-05-15 Multi-Agent Checkpoint Gate
+
+What was wrong: Local `main` remained stale (`ahead 1`, `behind 20`) while the checkout accumulated 191 changed/untracked files from multiple domains. A normal checkout/rebase would touch unrelated active work, and a blind commit against the stale branch would not be a clean pull/push.
+What was done: Fetched `origin/main`, inspected status/stat/untracked payload, ran repository guards, and prepared to replay only local dirty deltas over current `origin/main` through an isolated index.
+Cinematic Cheats used: None. Repository synchronization only.
+Exact Microseconds saved: 0 us runtime measured.
+Verification: `git diff --check` passed; conflict-marker scan over changed/untracked text files reported 0 hits; changed/untracked payload was 191 files / 6,679,916 bytes; large-file guard reported 0 files >= 100 MB; `python -m unittest discover -s Tools -p "test*.py"` passed 188 tests in 154.679 seconds.
+Residual risk: Unity compile/runtime remains PENDING VERIFICATION; this checkpoint includes other agents' work and GIT_SYNC does not claim domain-level correctness beyond the gates above.

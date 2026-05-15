@@ -1,6 +1,6 @@
 # Rationale - H8_HARDWARE_TIER_MATRIX_BKR
 
-Status: PROFILES BAKED / STATIC PARITY VERIFIED / COMPILE TOOLCHAIN BLOCKED
+Status: PROFILES BAKED / STATIC TOOLING VERIFIED / COMPILE TOOLCHAIN BLOCKED
 
 ## Decision 1 - Hardware Profile File Scope
 Problem: The prompt requires `Data/System/Hardware_Profiles.json`, while an existing `Data/Hardware/Profiles.json` already owns Quest 3 and Steam Deck generated constants.
@@ -57,3 +57,24 @@ Solution: Correct `SystemRamLimit` to 8192 MB and keep a conservative 5120 MB bu
 Rejected Alternatives: Leaving the old value would blur the difference between physical limit and budget. Raising Quest2 would violate the explicit 4GB self-audit requirement.
 Scalability potential: Quest3 LowPlus can keep slightly richer visual residency than Quest2 while still vasoconstricting before PC/Deck thresholds.
 Hardware Impact: 0 microseconds/frame. Data correctness improvement only.
+
+## Decision 9 - Fail-Closed Static Guard
+Problem: The profile JSON contained a self-audit block, but no repeatable tool existed to fail on future drift in profile order, override keys, FNV hashes, Quest2 RAM cap, SHI thresholds, hysteresis, or row/table parity.
+Solution: Add `Tools/Hardware/ValidateSystemHardwareProfiles.py` and `Tools/Hardware/test_validate_system_hardware_profiles.py`. The guard writes a deterministic report at `Docs/AgentLogs/Hardware_Profile_Audit_H8_HARDWARE_TIER_MATRIX_BKR.json` and fails closed on broken parity or budget invariants.
+Rejected Alternatives: A one-off PowerShell assertion would not be reusable. A runtime C# parser would mutate code ownership and demand Unity compile evidence that this machine cannot provide. Modifying `Data/Hardware/Profiles.json` would cross into the existing generated hardware catalog.
+Scalability potential: Low/Quest2 drift is now blocked before it can exceed 4GB or delay sacrifice. Mid/LowPlus/High thresholds remain ordered so low devices shed presentation first while high devices reserve budget for VISUAL_SYNC overkill.
+Hardware Impact: 0 microseconds/frame. Offline Python tooling only; no hot path and no Unity runtime code changed.
+
+## Decision 10 - Active Batch Drift Handling
+Problem: The current `Docs/Tasks/CURRENT_BATCH.md` no longer contains `<AGENT_PROMPT id="H8_HARDWARE_TIER_MATRIX_BKR">` or `<POLISH_MANDATE>`, while the user explicitly ordered this agent to keep its role.
+Solution: Continue from `Docs/Tasks/Status_H8_HARDWARE_TIER_MATRIX_BKR.md` and `Docs/AgentLogs/Rationale_H8_HARDWARE_TIER_MATRIX_BKR.md`, record the active batch drift as verification evidence, and avoid importing neighboring batch tasks.
+Rejected Alternatives: Switching to a neighboring prompt would violate strict prompt parsing. Inventing a missing polish mandate would create false authority. Stopping would leave the profile bake without reusable guard evidence.
+Scalability potential: Preserves H8 hardware ownership boundaries during multi-agent execution and prevents unrelated batch scope from contaminating hardware profile decisions.
+Hardware Impact: 0 microseconds/frame. Process correction only.
+
+## Decision 11 - Combined Hardware Guard Entry Point
+Problem: The H8 system profile guard and the existing generated hardware catalog guard both passed independently, but separate commands create an avoidable integration gap.
+Solution: Add `Tools/Hardware/ValidateAllHardwareProfiles.py`, importing both guards and failing if either the runtime catalog or the H8 system profile audit drifts.
+Rejected Alternatives: Merging H8 checks into `ValidateHardwareProfileCatalog.py` would overload that existing script's ownership. Shell wrapper scripts are less portable and weaker for structured summary output.
+Scalability potential: Integrators now get one cold validation command covering generated hardware data plus H8 profile bake, reducing the chance that low-tier caps or high-tier visual budget assumptions drift unnoticed.
+Hardware Impact: 0 microseconds/frame. Offline Python entry point only.

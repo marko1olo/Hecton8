@@ -181,19 +181,23 @@ Concurrency note:
 
 - [x] Runtime binding guard integrated | DOD: `Tools/EconomyRecipeGraphAudit.py` accepts missing crafted `ItemData` assets only when every missing crafted ID is blocked in `Data/Economy/Runtime_Binding_Plan.json` with owner decision required | Alternative rejected: treating absent crafted assets as harmless without runtime-use proof | Estimate: 0 us runtime
 - [x] Runtime zero-metadata fail-closed | DOD: normal inventory insertion now rejects nonpositive unit mass or unit volume before capacity resolution; graph audit and unittest both assert the guard | Alternative rejected: letting zero physical demand act as unlimited capacity | Estimate: command path only, 0 us/frame
-- [x] Capacity resolver zero-unit fail-closed | DOD: `ResolveCapacityLimitedQuantity` returns 0 for nonpositive unit values and the unittest locks the helper body | Alternative rejected: relying on current callers to prefilter zero unit demand forever | Estimate: command path only, 0 us/frame
+- [x] Capacity resolver zero-unit fail-closed | DOD: `ResolveCapacityLimitedQuantity` returns 0 for nonpositive unit values; unittest locks the helper body and graph audit reports `capacity_resolver_rejects_nonpositive_unit_value=True` as a blocking gate | Alternative rejected: relying on current callers to prefilter zero unit demand forever | Estimate: command path only, 0 us/frame
+- [x] Method-scoped physical-demand audit | DOD: graph audit now extracts `TryResolveUnitPhysicalDemand` before checking strict-positive mass/volume guards, avoiding whole-file false positives | Alternative rejected: broad regex scan over all `PlayerInventory.cs` text | Estimate: 0 us runtime
 - [x] Runtime binding negative test added | DOD: `Tools/test_economy_integrity.py` mutates one missing crafted binding to `runtime_use_allowed=true` and proves the guard reports it as unblocked with blocked count reduced to 21 | Alternative rejected: only testing the current valid binding plan | Estimate: 0 us runtime
+- [x] Full graph-audit CLI binding failure locked | DOD: `Tools/test_economy_integrity.py` now runs `EconomyRecipeGraphAudit.main()` against a temp fixture with one missing crafted binding made runtime-allowed and asserts exit code 1 plus pending-risk status | Alternative rejected: only testing the helper function and trusting CLI wiring | Estimate: 0 us runtime
+- [x] Full graph-audit CLI missing binding plan failure locked | DOD: `Tools/test_economy_integrity.py` now deletes `Runtime_Binding_Plan.json` from a temp fixture and asserts graph-audit exit code 1, blocked count 0, 22 unblocked missing crafted assets, and pending-risk status | Alternative rejected: assuming helper fallback behavior proves CLI wiring | Estimate: 0 us runtime
+- [x] Audit report regression coverage documented | DOD: `Docs/Reports/Economy_Integrity_Audit.md` now lists the no-bytecode commands, 12-test suite scope, full graph-audit CLI binding drift/missing-plan failures, six validator negative cases, and pycache hygiene requirement | Alternative rejected: leaving regression coverage only in logs/chat | Estimate: 0 us runtime
 - [x] No-bytecode hygiene rerun | DOD: final validator, graph audit, unittest, and AST syntax checks were rerun with `python -B`; economy pycache artifacts were removed and stayed absent | Alternative rejected: leaving ignored bytecode artifacts from verification passes | Estimate: 0 us runtime
 - [x] Final post-bake verification completed | DOD: rebaked `Items.csv`, reran graph audit, validator negative tests, unittest suite, and Python compile gate after the binding guard patch | Alternative rejected: keeping pre-guard evidence as final | Estimate: 0 us runtime
 
 ## Final Recipe Auditor Evidence
 
 - `python Tools\EconomyItemsCsvBake.py --root .` -> `items_csv_rows=55`.
-- `python -m unittest Tools.test_economy_integrity` -> 10 tests, OK.
+- `python -m unittest Tools.test_economy_integrity` -> 12 tests, OK.
 - `python Tools\EconomyValidator.py --root . --negative-tests` -> `ECONOMY VALIDATION OK`, `items_rows=55 raw=15 crafted=40`, `hash_pairs_checked=1041`, `negative_cases=6`, `STATUS: ECONOMY BALANCED`.
-- `python Tools\EconomyRecipeGraphAudit.py --root . --report Docs\Reports\Economy_Integrity_Audit.md` -> DAG true, cycles 0, `items_csv.hash_checks=150`, `physical_metadata.missing_crafted_assets_runtime_blocked=True`, `runtime_binding_plan_blocked_count=22`, `unblocked_missing_crafted_assets=[]`, `invalid_effective_mass=[]`, `invalid_effective_volume=[]`, `bulk_transfer.try_add_rejects_nonpositive_unit_mass=True`, `bulk_transfer.try_add_rejects_nonpositive_unit_volume=True`, `status: ECONOMY SECURED`.
+- `python Tools\EconomyRecipeGraphAudit.py --root . --report Docs\Reports\Economy_Integrity_Audit.md` -> DAG true, cycles 0, `items_csv.hash_checks=150`, `physical_metadata.missing_crafted_assets_runtime_blocked=True`, `runtime_binding_plan_blocked_count=22`, `unblocked_missing_crafted_assets=[]`, `invalid_effective_mass=[]`, `invalid_effective_volume=[]`, `bulk_transfer.try_add_rejects_nonpositive_unit_mass=True`, `bulk_transfer.try_add_rejects_nonpositive_unit_volume=True`, `bulk_transfer.capacity_resolver_rejects_nonpositive_unit_value=True`, `status: ECONOMY SECURED`.
 - `python -m py_compile Tools\EconomyRecipeGraphAudit.py Tools\EconomyValidator.py Tools\EconomyItemsCsvBake.py Tools\test_economy_integrity.py` -> passed with no output.
-- `python -B -m unittest Tools.test_economy_integrity` -> 10 tests, OK.
+- `python -B -m unittest Tools.test_economy_integrity` -> 12 tests, OK.
 - `python -B Tools\EconomyValidator.py --root . --negative-tests` -> `ECONOMY VALIDATION OK`, `negative_cases=6`, `STATUS: ECONOMY BALANCED`.
 - `python -B Tools\EconomyRecipeGraphAudit.py --root . --report Docs\Reports\Economy_Integrity_Audit.md` -> `status: ECONOMY SECURED`.
 - `python -B -c "ast.parse(...)"` -> `ECONOMY_AST_OK`.
@@ -201,3 +205,70 @@ Concurrency note:
 
 Unity boundary:
 - Unity Editor and `dotnet` are unavailable in this shell from earlier environment checks, so Unity import/compile and Play Mode remain PENDING VERIFICATION.
+
+---
+
+# Hash Drift Reconciliation - ITEM_CATALOG_FNV_GEN - 2026-05-15
+
+Status: HASHES SYNCHRONIZED - 1017 RECORDS; REGRESSION TESTED; UNITY IMPORT BLOCKED BY MISSING EDITOR
+
+Concurrency note:
+- A later backend economy-auditor section exists above. It was preserved. This section is the latest hash-catalog state for `ITEM_CATALOG_FNV_GEN`.
+
+## Reconciliation Checklist
+
+- [x] Full no-bytecode verifier rerun | DOD: `python -B Tools\VerifyH8HashCollisions.py` reported 1017 records; Items 209, Biomes 523, Signals 285; `HASH COLLISIONS: 0` | Alternative rejected: keeping the previous 1007-record table after concurrent source/data drift | Estimate: 0 us runtime
+- [x] Generated header resynchronized | DOD: `python -B Tools\VerifyH8HashCollisions.py --write-csharp Assets/_Project/Scripts/Core/Generated/H8Hashes.cs` wrote `TotalCount = 1017` and `Signals.Count = 285` | Alternative rejected: manual constant edits | Estimate: 0 us runtime
+- [x] Fast regression suite rerun | DOD: `python -B -m unittest Tools.test_h8_hash_collisions` -> 5 tests, OK | Alternative rejected: full scanner only | Estimate: 0 us runtime
+- [x] No-bytecode hygiene applied | DOD: hash-tool `Tools\__pycache__` artifacts for `VerifyH8HashCollisions` and `test_h8_hash_collisions` were removed and stayed absent after `python -B` reruns | Alternative rejected: leaving cache artifacts created by this pass | Estimate: 0 us runtime
+- [x] Constants-only guard rerun | DOD: generated C# scan returned `NO_RUNTIME_LOGIC_HITS`; Python AST check returned `H8_HASH_AST_OK`; `git diff --check` passed on owned files with line-ending warnings only | Alternative rejected: trusting pre-regeneration checks | Estimate: 0 us runtime
+- [x] 1017-table C# compile verified | DOD: `.NET Framework csc` compiled regenerated `H8Hashes.cs` to `Temp\H8HashesSyntaxCheck_1017.dll` with `CSC_1017_EXIT=0`, size 125952 bytes, and the temp DLL was removed | Alternative rejected: relying on the older 1007-table compile proof | Estimate: 0 us runtime
+
+## Generated Header Drift Gate - 2026-05-15
+
+- [x] Stale-header check mode added | DOD: `Tools\VerifyH8HashCollisions.py --check-csharp` compares generated output with an existing header and exits nonzero on missing/stale files | Alternative rejected: requiring humans to infer staleness from counts | Estimate: 0 us runtime
+- [x] Stale-header regression coverage added | DOD: `Tools/test_h8_hash_collisions.py` now covers missing, current, line-ending tolerated, and stale generated-header states | Alternative rejected: testing only the current happy path | Estimate: 0 us runtime
+- [x] Check mode verified against project header | DOD: `python -B Tools\VerifyH8HashCollisions.py --check-csharp Assets/_Project/Scripts/Core/Generated/H8Hashes.cs` -> 1017 records, `CSharp output check: up-to-date`, `HASH COLLISIONS: 0` | Alternative rejected: relying on write mode only | Estimate: 0 us runtime
+- [x] Focused suite rerun | DOD: `python -B -m unittest Tools.test_h8_hash_collisions` -> 6 tests, OK | Alternative rejected: leaving the new branch untested | Estimate: 0 us runtime
+
+## Dedicated Hash Report - 2026-05-15
+
+- [x] Hash audit report generated | DOD: `python -B Tools\VerifyH8HashCollisions.py --check-csharp Assets/_Project/Scripts/Core/Generated/H8Hashes.cs --write-report Docs/Reports/H8_Hash_Catalog_Audit.md` wrote a standalone report with 1017 records, 0 collisions, header status, hash modes, group counts, and runtime boundary | Alternative rejected: burying final hash evidence only in shared BACKEND logs | Estimate: 0 us runtime
+- [x] Report generation tested | DOD: `Tools/test_h8_hash_collisions.py` now covers Markdown summary counts, hash modes, group counts, and Unity boundary text; `python -B -m unittest Tools.test_h8_hash_collisions` -> 7 tests, OK | Alternative rejected: report helper without regression coverage | Estimate: 0 us runtime
+- [x] Final report/static gates rerun | DOD: report readback confirmed Items 209, Biomes 523, Signals 285, `Generated header check: up-to-date`; generated C# scan returned `NO_RUNTIME_LOGIC_HITS`; `git diff --check` passed with line-ending warnings only | Alternative rejected: writing report without validating content | Estimate: 0 us runtime
+
+---
+
+# Recipe Identity Hardening - ITEM_RECIPE_GRAPH_AUDITOR - 2026-05-15
+
+Status: ECONOMY SECURED - DUPLICATE RECIPE/PRODUCER GATE ADDED; UNITY COMPILE PENDING
+
+Concurrency note:
+- Hash-catalog sections above are preserved. This bottom section is the latest recipe-auditor addendum.
+
+## Hardening Checklist
+
+- [x] Recipe identity audit added | DOD: `Tools/EconomyRecipeGraphAudit.py` now reports `recipe_identity` with recipe count, missing recipe IDs, missing result item IDs, duplicate recipe IDs, and duplicate result item IDs | Alternative rejected: relying on DAG acyclicity, which does not prove unique recipe/output ownership | Estimate: 0 us runtime, offline audit only
+- [x] Duplicate identity blocks secured status | DOD: graph audit now exits nonzero if any recipe ID or result item ID is missing/duplicated | Alternative rejected: warning-only report that lets ambiguous producer lookup pass CI | Estimate: 0 us runtime
+- [x] CLI regression test added | DOD: `Tools/test_economy_integrity.py` mutates a temp `Recipes.json` to duplicate both a recipe ID and a result item ID, then proves `EconomyRecipeGraphAudit.main()` returns exit 1 and emits pending-risk status | Alternative rejected: helper-only coverage that could miss CLI summary/blocking regressions | Estimate: 0 us runtime
+- [x] Current economy identity verified | DOD: latest graph audit reports 40 recipes, no missing recipe IDs, no missing result item IDs, no duplicate recipe IDs, and no duplicate result item IDs | Alternative rejected: manual JSON inspection | Estimate: 0 us runtime
+- [x] Report regenerated | DOD: `Docs/Reports/Economy_Integrity_Audit.md` now includes a `Recipe Identity` section and records the expanded 13-test regression suite | Alternative rejected: leaving the new gate hidden in JSON output only | Estimate: 0 us runtime
+
+## Hardening Evidence
+
+- `python -B Tools\EconomyItemsCsvBake.py --root .` -> `items_csv_rows=55`.
+- `python -B Tools\EconomyRecipeGraphAudit.py --root . --report Docs\Reports\Economy_Integrity_Audit.md` -> `status: ECONOMY SECURED`, `recipe_identity.recipe_count=40`, duplicate recipe IDs `[]`, duplicate result item IDs `[]`, DAG true, cycles 0.
+- `python -B -m unittest Tools.test_economy_integrity` -> 13 tests, OK.
+- `python -B Tools\EconomyValidator.py --root . --negative-tests` -> `ECONOMY VALIDATION OK`, `negative_cases=6`, `STATUS: ECONOMY BALANCED`.
+- `python -B -c "ast.parse(...)"` -> `ECONOMY_AST_OK`.
+- Economy pycache check -> `ECONOMY_PYCACHE_CLEAN`.
+- `git diff --check -- ...owned economy files...` -> exit 0; line-ending warnings only.
+
+Unity boundary:
+- Unity Editor and `dotnet` remain unavailable in this shell from prior environment checks, so Unity import/compile and Play Mode stay PENDING VERIFICATION.
+
+## Machine-Readable Manifest - 2026-05-15
+
+- [x] JSON manifest writer added | DOD: `Tools\VerifyH8HashCollisions.py --write-json Docs/Reports/H8_Hash_Catalog_Audit.json` writes status, category counts, hash modes, group counts, runtime impact, and all 1017 records with source paths and hex hashes | Alternative rejected: forcing integrators to parse generated C# or Markdown | Estimate: 0 us runtime
+- [x] JSON manifest tested | DOD: `Tools/test_h8_hash_collisions.py` now validates manifest status, counts, hash hex, full record data, and runtime boundary; `python -B -m unittest Tools.test_h8_hash_collisions` -> 8 tests, OK | Alternative rejected: untested serialization path | Estimate: 0 us runtime
+- [x] JSON manifest verified | DOD: `python -B -c "json.load(...)"` confirmed `HASHES_SYNCHRONIZED`, 1017 total records, 1017 record entries, and `generated_header_check=up-to-date`; hash-tool pycache stayed clean | Alternative rejected: file existence only | Estimate: 0 us runtime

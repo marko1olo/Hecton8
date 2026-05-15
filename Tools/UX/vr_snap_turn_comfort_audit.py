@@ -18,6 +18,7 @@ from pathlib import Path
 
 
 SCRIPT_PATH = Path(__file__).resolve()
+TEST_SCRIPT_PATH = SCRIPT_PATH.with_name("test_vr_snap_turn_comfort_audit.py")
 ROOT = SCRIPT_PATH.parents[2]
 COMFORT_JSON = ROOT / "Docs" / "Design" / "VR_Comfort_Profile_Quest.json"
 COMFORT_MD = ROOT / "Docs" / "Design" / "VR_Comfort_Profile_Quest.md"
@@ -888,6 +889,81 @@ def validate_source_contract() -> tuple[dict[str, float], list[str]]:
         "comfortVignetteReleaseSlewPerFrame",
         errors,
     )
+    values["runtimeQuest2ComfortVignetteMaximum"] = extract_csharp_number(
+        somatic_source,
+        "Quest2ComfortVignetteMaximum",
+        errors,
+    )
+    values["runtimeQuest2AccelerationSoftTunnelStartRadS2"] = extract_csharp_number(
+        somatic_source,
+        "Quest2ComfortAccelerationSoftTunnelStartRadS2",
+        errors,
+    )
+    values["runtimeQuest2AccelerationEmergencyClampRadS2"] = extract_csharp_number(
+        somatic_source,
+        "Quest2ComfortAccelerationEmergencyClampRadS2",
+        errors,
+    )
+    values["runtimeQuest2AccelerationReleaseBelowRadS2"] = extract_csharp_number(
+        somatic_source,
+        "Quest2ComfortAccelerationReleaseBelowRadS2",
+        errors,
+    )
+    values["runtimeQuest2AccelerationReleaseHysteresisSeconds"] = extract_csharp_number(
+        somatic_source,
+        "Quest2ComfortAccelerationReleaseHysteresisSeconds",
+        errors,
+    )
+    values["runtimeQuest2ComfortVignetteAttackSlewPerFrame"] = extract_csharp_number(
+        somatic_source,
+        "Quest2ComfortVignetteAttackSlewPerFrame",
+        errors,
+    )
+    values["runtimeQuest2ComfortVignetteReleaseSlewPerFrame"] = extract_csharp_number(
+        somatic_source,
+        "Quest2ComfortVignetteReleaseSlewPerFrame",
+        errors,
+    )
+    values["runtimeQuest2FrameSafetyDeltaSeconds"] = extract_csharp_number(
+        somatic_source,
+        "Quest2ComfortFrameSafetyDeltaSeconds",
+        errors,
+    )
+    values["runtimeQuest2FrameSafetyMinOpacity"] = extract_csharp_number(
+        somatic_source,
+        "Quest2ComfortFrameSafetyMinOpacity",
+        errors,
+    )
+    values["runtimeQuest2FrameSafetyConsecutiveFrames"] = extract_csharp_number(
+        somatic_source,
+        "Quest2ComfortFrameSafetyConsecutiveFrames",
+        errors,
+    )
+    values["runtimeQuest2FrameSafetyReleaseStableFrames"] = extract_csharp_number(
+        somatic_source,
+        "Quest2ComfortFrameSafetyReleaseStableFrames",
+        errors,
+    )
+    values["runtimeQuest3FrameSafetyDeltaSeconds"] = extract_csharp_number(
+        somatic_source,
+        "Quest3ComfortFrameSafetyDeltaSeconds",
+        errors,
+    )
+    values["runtimeQuest3FrameSafetyMinOpacity"] = extract_csharp_number(
+        somatic_source,
+        "Quest3ComfortFrameSafetyMinOpacity",
+        errors,
+    )
+    values["runtimeQuest3FrameSafetyConsecutiveFrames"] = extract_csharp_number(
+        somatic_source,
+        "Quest3ComfortFrameSafetyConsecutiveFrames",
+        errors,
+    )
+    values["runtimeQuest3FrameSafetyReleaseStableFrames"] = extract_csharp_number(
+        somatic_source,
+        "Quest3ComfortFrameSafetyReleaseStableFrames",
+        errors,
+    )
     values["hapticBufferCapacity"] = extract_csharp_number(haptics_source, "BufferCapacity", errors)
     values["hapticMaxDurationSeconds"] = extract_csharp_number(haptics_source, "MaxCommandDurationSeconds", errors)
     values["hapticMaxFrequencyHz"] = extract_csharp_number(haptics_source, "MaxCommandFrequencyHz", errors)
@@ -910,12 +986,14 @@ def validate_source_contract() -> tuple[dict[str, float], list[str]]:
             default_stabilization = mode
             break
     devices = require_list(comfort_payload.get("devices", []), "sourceContract.devices", errors)
+    quest2: dict = {}
     quest3: dict = {}
     for index, device_value in enumerate(devices):
         device = require_dict(device_value, f"sourceContract.devices[{index}]", errors)
-        if device.get("id") == "Quest3_90Hz":
+        if device.get("id") == "Quest2_72Hz":
+            quest2 = device
+        elif device.get("id") == "Quest3_90Hz":
             quest3 = device
-            break
     limits = require_dict(waveform_payload.get("limits", {}), "sourceContract.haptic.limits", errors)
 
     compare_close(
@@ -1034,6 +1112,161 @@ def validate_source_contract() -> tuple[dict[str, float], list[str]]:
         0.001,
         errors,
     )
+    compare_close(
+        "Quest2 opacityMax vs runtime Quest2ComfortVignetteMaximum",
+        read_float(quest2.get("opacityMax", float("nan")), "sourceContract.Quest2.opacityMax", errors),
+        values["runtimeQuest2ComfortVignetteMaximum"],
+        0.001,
+        errors,
+    )
+    compare_close(
+        "Quest2 accelSoftTunnelStartRadS2 vs runtime Quest2ComfortAccelerationSoftTunnelStartRadS2",
+        read_float(
+            quest2.get("accelSoftTunnelStartRadS2", float("nan")),
+            "sourceContract.Quest2.accelSoftTunnelStartRadS2",
+            errors,
+        ),
+        values["runtimeQuest2AccelerationSoftTunnelStartRadS2"],
+        0.001,
+        errors,
+    )
+    compare_close(
+        "Quest2 accelEmergencyClampRadS2 vs runtime Quest2ComfortAccelerationEmergencyClampRadS2",
+        read_float(
+            quest2.get("accelEmergencyClampRadS2", float("nan")),
+            "sourceContract.Quest2.accelEmergencyClampRadS2",
+            errors,
+        ),
+        values["runtimeQuest2AccelerationEmergencyClampRadS2"],
+        0.001,
+        errors,
+    )
+    compare_close(
+        "Quest2 releaseBelowRadS2 vs runtime Quest2ComfortAccelerationReleaseBelowRadS2",
+        read_float(
+            quest2.get("releaseBelowRadS2", float("nan")),
+            "sourceContract.Quest2.releaseBelowRadS2",
+            errors,
+        ),
+        values["runtimeQuest2AccelerationReleaseBelowRadS2"],
+        0.001,
+        errors,
+    )
+    compare_close(
+        "Quest2 releaseHysteresisSeconds vs runtime Quest2ComfortAccelerationReleaseHysteresisSeconds",
+        read_float(
+            quest2.get("releaseHysteresisSeconds", float("nan")),
+            "sourceContract.Quest2.releaseHysteresisSeconds",
+            errors,
+        ),
+        values["runtimeQuest2AccelerationReleaseHysteresisSeconds"],
+        0.001,
+        errors,
+    )
+    compare_close(
+        "Quest2 attackSlewPerFrame vs runtime Quest2ComfortVignetteAttackSlewPerFrame",
+        read_float(
+            quest2.get("attackSlewPerFrame", float("nan")),
+            "sourceContract.Quest2.attackSlewPerFrame",
+            errors,
+        ),
+        values["runtimeQuest2ComfortVignetteAttackSlewPerFrame"],
+        0.001,
+        errors,
+    )
+    compare_close(
+        "Quest2 releaseSlewPerFrame vs runtime Quest2ComfortVignetteReleaseSlewPerFrame",
+        read_float(
+            quest2.get("releaseSlewPerFrame", float("nan")),
+            "sourceContract.Quest2.releaseSlewPerFrame",
+            errors,
+        ),
+        values["runtimeQuest2ComfortVignetteReleaseSlewPerFrame"],
+        0.001,
+        errors,
+    )
+    compare_close(
+        "Quest2 frameSafetyDeltaMs vs runtime Quest2ComfortFrameSafetyDeltaSeconds",
+        read_float(quest2.get("frameSafetyDeltaMs", float("nan")), "sourceContract.Quest2.frameSafetyDeltaMs", errors)
+        * 0.001,
+        values["runtimeQuest2FrameSafetyDeltaSeconds"],
+        0.00001,
+        errors,
+    )
+    compare_close(
+        "Quest2 frameSafetyMinOpacity vs runtime Quest2ComfortFrameSafetyMinOpacity",
+        read_float(
+            quest2.get("frameSafetyMinOpacity", float("nan")),
+            "sourceContract.Quest2.frameSafetyMinOpacity",
+            errors,
+        ),
+        values["runtimeQuest2FrameSafetyMinOpacity"],
+        0.001,
+        errors,
+    )
+    compare_close(
+        "Quest2 frameSafetyConsecutiveFrames vs runtime Quest2ComfortFrameSafetyConsecutiveFrames",
+        read_float(
+            quest2.get("frameSafetyConsecutiveFrames", float("nan")),
+            "sourceContract.Quest2.frameSafetyConsecutiveFrames",
+            errors,
+        ),
+        values["runtimeQuest2FrameSafetyConsecutiveFrames"],
+        0.001,
+        errors,
+    )
+    compare_close(
+        "Quest2 frameSafetyReleaseStableFrames vs runtime Quest2ComfortFrameSafetyReleaseStableFrames",
+        read_float(
+            quest2.get("frameSafetyReleaseStableFrames", float("nan")),
+            "sourceContract.Quest2.frameSafetyReleaseStableFrames",
+            errors,
+        ),
+        values["runtimeQuest2FrameSafetyReleaseStableFrames"],
+        0.001,
+        errors,
+    )
+    compare_close(
+        "Quest3 frameSafetyDeltaMs vs runtime Quest3ComfortFrameSafetyDeltaSeconds",
+        read_float(quest3.get("frameSafetyDeltaMs", float("nan")), "sourceContract.Quest3.frameSafetyDeltaMs", errors)
+        * 0.001,
+        values["runtimeQuest3FrameSafetyDeltaSeconds"],
+        0.00001,
+        errors,
+    )
+    compare_close(
+        "Quest3 frameSafetyMinOpacity vs runtime Quest3ComfortFrameSafetyMinOpacity",
+        read_float(
+            quest3.get("frameSafetyMinOpacity", float("nan")),
+            "sourceContract.Quest3.frameSafetyMinOpacity",
+            errors,
+        ),
+        values["runtimeQuest3FrameSafetyMinOpacity"],
+        0.001,
+        errors,
+    )
+    compare_close(
+        "Quest3 frameSafetyConsecutiveFrames vs runtime Quest3ComfortFrameSafetyConsecutiveFrames",
+        read_float(
+            quest3.get("frameSafetyConsecutiveFrames", float("nan")),
+            "sourceContract.Quest3.frameSafetyConsecutiveFrames",
+            errors,
+        ),
+        values["runtimeQuest3FrameSafetyConsecutiveFrames"],
+        0.001,
+        errors,
+    )
+    compare_close(
+        "Quest3 frameSafetyReleaseStableFrames vs runtime Quest3ComfortFrameSafetyReleaseStableFrames",
+        read_float(
+            quest3.get("frameSafetyReleaseStableFrames", float("nan")),
+            "sourceContract.Quest3.frameSafetyReleaseStableFrames",
+            errors,
+        ),
+        values["runtimeQuest3FrameSafetyReleaseStableFrames"],
+        0.001,
+        errors,
+    )
     validate_runtime_source_fragments(somatic_source, errors)
     compare_close(
         "haptic bufferCapacity",
@@ -1064,6 +1297,19 @@ def validate_runtime_source_fragments(somatic_source: str, errors: list[str]) ->
         "UpdateAccelerationComfortState",
         "ApproximateMagnitudeNoSqrt(angularAcceleration)",
         "_accelerationReleaseBelowTimer = math.min(hysteresisSeconds",
+        "UpdateComfortFramePressureState(deltaTime)",
+        "safeDeltaTime > frameSafetyDeltaSeconds",
+        "_comfortFramePressureConsecutiveFrames = math.min(consecutiveFrames",
+        "ResolveComfortFrameSafetyMinOpacity()",
+        "target = math.max(target, framePressureTarget)",
+        "RefreshComfortProfileSelection();",
+        "_useQuest2ComfortFallback",
+        "BlackBoxFlagFramePressure",
+        "BlackBoxFlagQuest2Fallback",
+        "BlackBoxFlagAccelerationTunnel",
+        "flags |= BlackBoxFlagFramePressure",
+        "flags |= BlackBoxFlagQuest2Fallback",
+        "flags |= BlackBoxFlagAccelerationTunnel",
         "float maxDelta = target > _accelerationComfortVignette01",
         "math.clamp(target - _accelerationComfortVignette01",
         "AccelerationVignette01 = Sanitize01(_accelerationComfortVignette01, 0f)",
@@ -1075,6 +1321,134 @@ def validate_runtime_source_fragments(somatic_source: str, errors: list[str]) ->
     for fragment in required_fragments:
         if fragment not in somatic_source:
             errors.append(f"runtime acceleration integration missing source fragment: {fragment}")
+    validate_method_fragments(
+        somatic_source,
+        "public void OnOriginShift",
+        (
+            "_accelerationComfortVignette01 = 0f",
+            "_accelerationReleaseBelowTimer = 0f",
+            "ResetComfortFramePressureState();",
+            "PublishComfortVignette(0f)",
+            "PublishShaderState();",
+        ),
+        errors,
+    )
+    validate_method_fragments_before(
+        somatic_source,
+        "public void OnOriginShift",
+        "if (!IsFiniteVector(shiftOffset))",
+        (
+            "_accelerationComfortVignette01 = 0f",
+            "_accelerationReleaseBelowTimer = 0f",
+            "ResetComfortFramePressureState();",
+            "PublishComfortVignette(0f)",
+            "PublishShaderState();",
+        ),
+        errors,
+    )
+    validate_method_fragments(
+        somatic_source,
+        "private void ResetHeadMotionHistoryAndPublishedComfort",
+        (
+            "ResetHeadMotionHistory(headPosition, headRotation);",
+            "PublishComfortVignette(0f)",
+            "PublishShaderState();",
+        ),
+        errors,
+    )
+    validate_method_fragments(
+        somatic_source,
+        "private void ResetHeadMotionIfAupShifted",
+        (
+            "ResetHeadMotionHistoryAndPublishedComfort(headPosition, headRotation);",
+        ),
+        errors,
+    )
+    if somatic_source.count("ResetHeadMotionHistoryAndPublishedComfort(headPosition, headRotation);") < 3:
+        errors.append("runtime acceleration reset helper must cover first pose, tracking jump, and AUP shift paths")
+    validate_call_only_inside_method(
+        somatic_source,
+        "ResetHeadMotionHistory(headPosition, headRotation);",
+        "private void ResetHeadMotionHistoryAndPublishedComfort",
+        errors,
+    )
+    validate_method_fragments(
+        somatic_source,
+        "private void ResetHeadMotionHistory",
+        ("ResetComfortFramePressureState();",),
+        errors,
+    )
+    validate_method_fragments(
+        somatic_source,
+        "private void ApplyInactiveState",
+        ("ResetComfortFramePressureState();",),
+        errors,
+    )
+    if somatic_source.count("ResetComfortFramePressureState();") < 3:
+        errors.append("runtime frame-pressure reset must cover origin shift, head-history, and inactive paths")
+
+
+def validate_method_fragments(source: str, signature: str, fragments: tuple[str, ...], errors: list[str]) -> None:
+    method_body = extract_csharp_method_body(source, signature, errors)
+    if not method_body:
+        return
+    for fragment in fragments:
+        if fragment not in method_body:
+            errors.append(f"runtime method {signature} missing source fragment: {fragment}")
+
+
+def validate_method_fragments_before(
+    source: str,
+    signature: str,
+    marker: str,
+    fragments: tuple[str, ...],
+    errors: list[str],
+) -> None:
+    method_body = extract_csharp_method_body(source, signature, errors)
+    if not method_body:
+        return
+    marker_index = method_body.find(marker)
+    if marker_index < 0:
+        errors.append(f"runtime method {signature} missing order marker: {marker}")
+        return
+    prefix = method_body[:marker_index]
+    for fragment in fragments:
+        if fragment not in prefix:
+            errors.append(f"runtime method {signature} must run before {marker}: {fragment}")
+
+
+def validate_call_only_inside_method(source: str, call: str, signature: str, errors: list[str]) -> None:
+    method_body = extract_csharp_method_body(source, signature, errors)
+    if not method_body:
+        return
+    total_calls = source.count(call)
+    allowed_calls = method_body.count(call)
+    if total_calls != allowed_calls:
+        errors.append(f"runtime call must be routed through {signature}: {call}")
+
+
+def extract_csharp_method_body(source: str, signature: str, errors: list[str]) -> str:
+    signature_index = source.find(signature)
+    if signature_index < 0:
+        errors.append(f"runtime method missing: {signature}")
+        return ""
+    brace_index = source.find("{", signature_index)
+    if brace_index < 0:
+        errors.append(f"runtime method missing body: {signature}")
+        return ""
+
+    depth = 0
+    for index in range(brace_index, len(source)):
+        char = source[index]
+        if char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                return source[brace_index : index + 1]
+
+    errors.append(f"runtime method unclosed body: {signature}")
+    return ""
 
 
 def read_text_if_exists(path: Path, errors: list[str]) -> str:
@@ -1152,10 +1526,40 @@ def load_json_object(path: Path, label: str, errors: list[str]) -> dict:
     return payload
 
 
+def validate_audit_test_contract() -> list[str]:
+    errors: list[str] = []
+    test_source = read_text_if_exists(TEST_SCRIPT_PATH, errors)
+    if not test_source:
+        return errors
+
+    required_fragments = (
+        "def test_report_writes_source_hashes",
+        "auditTestSha256",
+        "def test_report_check_rejects_stale_hashes",
+        "def test_origin_shift_reset_must_precede_invalid_shift_return",
+        "def test_aup_sequence_reset_requires_immediate_shader_reset",
+        "def test_raw_head_history_reset_outside_helper_fails_closed",
+        "def test_frame_pressure_reset_paths_fail_closed",
+        "def test_workspace_temp_dir_cleans_entry_and_exit",
+        "import shutil",
+        "remove_workspace_temp_root()",
+        "finally:",
+        "shutil.rmtree",
+        "self.assertFalse(TEST_TEMP_ROOT.exists())",
+        "def test_float_fields_reject_bool_and_numeric_strings",
+        "def test_missing_audit_test_script_fails_closed",
+    )
+    for fragment in required_fragments:
+        if fragment not in test_source:
+            errors.append(f"audit test contract missing fragment: {fragment}")
+    return errors
+
+
 def build_audit_payload() -> dict:
     profiles, jerk_profile, shock_rules, comfort_errors = load_comfort_profile()
     waveform_count, waveform_errors = validate_waveforms()
     source_contract_values, source_contract_errors = validate_source_contract()
+    audit_test_errors = validate_audit_test_contract()
     results = []
     for profile in profiles:
         if can_simulate_profile(profile, jerk_profile, shock_rules):
@@ -1164,7 +1568,7 @@ def build_audit_payload() -> dict:
             results.append(blocked_simulation_result(profile.name))
             comfort_errors.append(f"{profile.name} simulation blocked by invalid comfort numeric data")
     shock_total = sum(int(result["shock_frames"]) for result in results)
-    all_errors = comfort_errors + waveform_errors + source_contract_errors
+    all_errors = comfort_errors + waveform_errors + source_contract_errors + audit_test_errors
     if shock_total > 0:
         all_errors.append(f"visual teleport shock frames detected: {shock_total}")
 
@@ -1183,6 +1587,7 @@ def build_audit_payload() -> dict:
             "comfortMarkdownSha256": sha256_file(COMFORT_MD),
             "hapticWaveformsSha256": sha256_file(WAVEFORM_JSON),
             "auditScriptSha256": sha256_file(SCRIPT_PATH),
+            "auditTestSha256": sha256_file(TEST_SCRIPT_PATH),
             "vrSomaticProviderSha256": sha256_file(VR_SOMATIC_PROVIDER_CS),
             "toolHapticsRuntimeSha256": sha256_file(TOOL_HAPTICS_RUNTIME_CS),
         },

@@ -1,0 +1,287 @@
+{
+  "binary": {
+    "bytes": 25936,
+    "path": "Data\\Visuals\\Biolum_Profiles.bin",
+    "payloadCrc32": "0x0D545E74"
+  },
+  "constants": {
+    "curveSamples": 256,
+    "godColorCount": 10,
+    "harmonicBytes": 16,
+    "headerBytes": 48,
+    "maxHarmonics": 8,
+    "paletteBytes": 156,
+    "paletteStride": 156,
+    "profileBaseBytes": 80,
+    "profileStride": 1232,
+    "safetyClampHz": 15.0,
+    "toasterColorCount": 2
+  },
+  "endianness": "little",
+  "flags": {
+    "ACOUSTIC_REACTIVE": 2,
+    "HIGH_TIER_OVERKILL": 8,
+    "PREDATOR_VISIBLE": 4,
+    "SAFETY_CLAMP": 1
+  },
+  "header": [
+    {
+      "bytes": 8,
+      "name": "magic",
+      "offset": 0,
+      "type": "bytes8"
+    },
+    {
+      "bytes": 4,
+      "name": "version",
+      "offset": 8,
+      "type": "uint32"
+    },
+    {
+      "bytes": 4,
+      "name": "profileCount",
+      "offset": 12,
+      "type": "uint32"
+    },
+    {
+      "bytes": 4,
+      "name": "paletteCount",
+      "offset": 16,
+      "type": "uint32"
+    },
+    {
+      "bytes": 4,
+      "name": "maxHarmonics",
+      "offset": 20,
+      "type": "uint32"
+    },
+    {
+      "bytes": 4,
+      "name": "curveSamples",
+      "offset": 24,
+      "type": "uint32"
+    },
+    {
+      "bytes": 4,
+      "name": "godColorCount",
+      "offset": 28,
+      "type": "uint32"
+    },
+    {
+      "bytes": 4,
+      "name": "toasterColorCount",
+      "offset": 32,
+      "type": "uint32"
+    },
+    {
+      "bytes": 4,
+      "name": "profileStride",
+      "offset": 36,
+      "type": "uint32"
+    },
+    {
+      "bytes": 4,
+      "name": "paletteStride",
+      "offset": 40,
+      "type": "uint32"
+    },
+    {
+      "bytes": 4,
+      "name": "payloadCrc32",
+      "offset": 44,
+      "type": "uint32"
+    }
+  ],
+  "paletteRecord": {
+    "base": [
+      {
+        "bytes": 4,
+        "name": "paletteHash",
+        "offset": 0,
+        "type": "uint32"
+      },
+      {
+        "bytes": 4,
+        "name": "paletteIndex",
+        "offset": 4,
+        "type": "uint32"
+      },
+      {
+        "bytes": 4,
+        "name": "flags",
+        "offset": 8,
+        "type": "uint32"
+      }
+    ],
+    "colors": {
+      "floatCount": 36,
+      "godModeRgbCount": 10,
+      "offset": 12,
+      "toasterRgbCount": 2,
+      "type": "float32"
+    }
+  },
+  "profileRecord": {
+    "base": [
+      {
+        "bytes": 4,
+        "name": "profileHash",
+        "offset": 0,
+        "type": "uint32"
+      },
+      {
+        "bytes": 4,
+        "name": "profileIndex",
+        "offset": 4,
+        "type": "uint32"
+      },
+      {
+        "bytes": 4,
+        "name": "biomeHash",
+        "offset": 8,
+        "type": "uint32"
+      },
+      {
+        "bytes": 4,
+        "name": "flags",
+        "offset": 12,
+        "type": "uint32"
+      },
+      {
+        "bytes": 4,
+        "name": "harmonicCount",
+        "offset": 16,
+        "type": "uint32"
+      },
+      {
+        "bytes": 4,
+        "name": "periodSeconds",
+        "offset": 20,
+        "type": "float32"
+      },
+      {
+        "bytes": 4,
+        "name": "baseline",
+        "offset": 24,
+        "type": "float32"
+      },
+      {
+        "bytes": 4,
+        "name": "amplitude",
+        "offset": 28,
+        "type": "float32"
+      },
+      {
+        "bytes": 4,
+        "name": "gamma",
+        "offset": 32,
+        "type": "float32"
+      },
+      {
+        "bytes": 4,
+        "name": "noiseScale",
+        "offset": 36,
+        "type": "float32"
+      },
+      {
+        "bytes": 4,
+        "name": "noiseRateHz",
+        "offset": 40,
+        "type": "float32"
+      },
+      {
+        "bytes": 4,
+        "name": "safetyClampHz",
+        "offset": 44,
+        "type": "float32"
+      },
+      {
+        "bytes": 4,
+        "name": "rawMaxHz",
+        "offset": 48,
+        "type": "float32"
+      },
+      {
+        "bytes": 4,
+        "name": "effectiveMaxHz",
+        "offset": 52,
+        "type": "float32"
+      },
+      {
+        "bytes": 4,
+        "name": "acousticGain",
+        "offset": 56,
+        "type": "float32"
+      },
+      {
+        "bytes": 4,
+        "name": "acousticDecaySeconds",
+        "offset": 60,
+        "type": "float32"
+      },
+      {
+        "bytes": 4,
+        "name": "acousticRefractorySeconds",
+        "offset": 64,
+        "type": "float32"
+      },
+      {
+        "bytes": 4,
+        "name": "acousticPhaseKickRad",
+        "offset": 68,
+        "type": "float32"
+      },
+      {
+        "bytes": 4,
+        "name": "acousticStrobeHz",
+        "offset": 72,
+        "type": "float32"
+      },
+      {
+        "bytes": 4,
+        "name": "acousticWidth01",
+        "offset": 76,
+        "type": "float32"
+      }
+    ],
+    "curveSamples": {
+      "bytes": 1024,
+      "count": 256,
+      "offset": 208,
+      "type": "float32"
+    },
+    "harmonics": {
+      "count": 8,
+      "fields": [
+        {
+          "bytes": 4,
+          "name": "multiplier",
+          "offset": 0,
+          "type": "float32"
+        },
+        {
+          "bytes": 4,
+          "name": "amplitude",
+          "offset": 4,
+          "type": "float32"
+        },
+        {
+          "bytes": 4,
+          "name": "phaseRad",
+          "offset": 8,
+          "type": "float32"
+        },
+        {
+          "bytes": 4,
+          "name": "shapePower",
+          "offset": 12,
+          "type": "float32"
+        }
+      ],
+      "offset": 80,
+      "stride": 16
+    }
+  },
+  "schema": "H8_BIOLUM_BINARY_SCHEMA",
+  "version": 1
+}

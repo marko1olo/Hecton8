@@ -7,6 +7,7 @@ Python/data only. No Unity scene, prefab, project setting, or C# public API muta
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import re
@@ -19,11 +20,29 @@ from typing import Dict, Iterable, List, Mapping, MutableMapping, Sequence, Tupl
 
 DEFAULT_SEED = 0x48384C5649425241
 DEFAULT_ENCOUNTERS = 10_000
+SIMULATOR_SCHEMA_VERSION = 2
 MAX_SECONDS = 180
 TIME_STEP_SECONDS = 2
 EXPECTED_STATUS = "INSTINCTS DEFINED"
+EXPECTED_CONTEXT_COUNT = 10
 EXPECTED_UTILITY_SCORE_COUNT = 50
 EXPECTED_BEHAVIORS = ("Circle", "Hide", "Breach", "FalseCharge", "RealAttack")
+EXPECTED_MATH_LOD_TIERS = ("low", "middle", "high", "ultra")
+EXPECTED_PACK_RULE_COUNT = 4
+EXPECTED_BLACK_BOX_FRAMES = 300
+EXPECTED_BLACK_BOX_DUMP_PATH = "Docs/AgentLogs/Dump_AI_BEHAVIOR_BIOMIMETIC_DESIGNER.bin"
+REQUIRED_BLACK_BOX_FIELDS = (
+    "frame",
+    "contextHash",
+    "behaviorId",
+    "distanceSq01",
+    "sound01",
+    "light01",
+    "movement01",
+    "packSynergy01",
+    "scoreHash",
+    "flags",
+)
 EPSILON = 1.0e-9
 BUFFER_SOURCE_RELATIVE_PATH = Path("Assets/_Project/Scripts/Core/Memory/H8Memory.cs")
 FALLBACK_GLOBAL_DATA_VAULT_BUFFERS = {
@@ -134,6 +153,18 @@ def clamp01(value: float) -> float:
     return value
 
 
+def is_number(value: object) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(float(value))
+
+
+def read_number(mapping: Mapping[str, object], key: str, default: float, label: str, errors: List[str]) -> float:
+    value = mapping.get(key)
+    if not is_number(value):
+        errors.append(f"{label}.{key} invalid")
+        return default
+    return float(value)
+
+
 def stable_seed(*values: int) -> int:
     state = DEFAULT_SEED
     for value in values:
@@ -188,6 +219,11 @@ def write_json(path: Path, payload: Mapping[str, object]) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
+def canonical_digest(payload: object) -> str:
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
 def project_root() -> Path:
     return Path(__file__).resolve().parents[1]
 
@@ -237,7 +273,7 @@ def validate_brain(brain: Mapping[str, object], known_buffers: set[str] | None =
         errors.append(f"status != {EXPECTED_STATUS}")
 
     behavior_order = brain.get("behaviorOrder")
-    if tuple(behavior_order) != EXPECTED_BEHAVIORS:
+    if not isinstance(behavior_order, list) or tuple(behavior_order) != EXPECTED_BEHAVIORS:
         errors.append("behaviorOrder drift")
 
     feed_rows = brain.get("globalDataVaultFeeds")
@@ -252,6 +288,8 @@ def validate_brain(brain: Mapping[str, object], known_buffers: set[str] | None =
             feature = row.get("feature")
             if not isinstance(feature, str) or not feature:
                 errors.append(f"globalDataVaultFeeds[{index}].feature invalid")
+            elif feature in feature_names:
+                errors.append(f"duplicate GlobalDataVault feature {feature}")
             else:
                 feature_names.add(feature)
             buffer_ids = row.get("bufferIds")
@@ -267,12 +305,20 @@ def validate_brain(brain: Mapping[str, object], known_buffers: set[str] | None =
     if not isinstance(contexts, list):
         errors.append("contexts missing")
     else:
+        if len(contexts) != EXPECTED_CONTEXT_COUNT:
+            errors.append(f"contexts count != {EXPECTED_CONTEXT_COUNT}")
         for context in contexts:
             if isinstance(context, dict) and isinstance(context.get("id"), str):
-                context_names.add(str(context["id"]))
+                context_id = str(context["id"])
+                if context_id in context_names:
+                    errors.append(f"duplicate context {context_id}")
+                context_names.add(context_id)
+            else:
+                errors.append("context id invalid")
 
     utility_scores = brain.get("utilityScores")
     behavior_counts = {behavior: 0 for behavior in EXPECTED_BEHAVIORS}
+    pair_counts = {(context, behavior): 0 for context in context_names for behavior in EXPECTED_BEHAVIORS}
     if not isinstance(utility_scores, list):
         errors.append("utilityScores missing")
     else:
@@ -305,10 +351,15 @@ def validate_brain(brain: Mapping[str, object], known_buffers: set[str] | None =
                 for item in inputs:
                     if item not in feature_names:
                         errors.append(f"utilityScores[{index}] input {item} has no GlobalDataVault feed")
+            if context in context_names and behavior in EXPECTED_BEHAVIORS:
+                pair_counts[(str(context), str(behavior))] = pair_counts.get((str(context), str(behavior)), 0) + 1
 
     for behavior, count in behavior_counts.items():
         if count != 10:
             errors.append(f"{behavior} utility row count != 10")
+    for (context, behavior), count in sorted(pair_counts.items()):
+        if count != 1:
+            errors.append(f"utility pair {context}/{behavior} count != 1")
 
     sensory = brain.get("sensoryWeights")
     if isinstance(sensory, dict):
@@ -324,10 +375,148 @@ def validate_brain(brain: Mapping[str, object], known_buffers: set[str] | None =
     else:
         errors.append("sensoryWeights missing")
 
+    cadence = brain.get("decisionCadence")
+    if isinstance(cadence, dict):
+        cadence_limits = {
+            "lowHz": (1.0, 4.0),
+            "middleHz": (2.0, 8.0),
+            "highHz": (5.0, 20.0),
+            "ultraHz": (5.0, 20.0),
+            "hysteresisSeconds": (2.0, 5.0),
+            "minimumAttackCooldownSeconds": (12.0, 30.0),
+            "minimumFalseChargeCooldownSeconds": (6.0, 20.0),
+        }
+        for key, (minimum, maximum) in cadence_limits.items():
+            value = cadence.get(key)
+            if not is_number(value) or not minimum <= float(value) <= maximum:
+                errors.append(f"decisionCadence.{key} out of range")
+        if is_number(cadence.get("highHz")) and is_number(cadence.get("ultraHz")) and float(cadence["ultraHz"]) < float(cadence["highHz"]):
+            errors.append("decisionCadence.ultraHz < highHz")
+    else:
+        errors.append("decisionCadence missing")
+
+    behavior_parameters = brain.get("behaviorParameters")
+    behavior_parameter_count = 0
+    if isinstance(behavior_parameters, dict):
+        for behavior in EXPECTED_BEHAVIORS:
+            row = behavior_parameters.get(behavior)
+            if not isinstance(row, dict):
+                errors.append(f"behaviorParameters.{behavior} missing")
+                continue
+            behavior_parameter_count += 1
+            for key in ("damage", "terror", "distancePullMeters", "cooldownSeconds"):
+                if not is_number(row.get(key)):
+                    errors.append(f"behaviorParameters.{behavior}.{key} invalid")
+            if is_number(row.get("terror")) and not 0.0 <= float(row["terror"]) <= 1.25:
+                errors.append(f"behaviorParameters.{behavior}.terror out of range")
+            if is_number(row.get("damage")) and float(row["damage"]) < 0.0:
+                errors.append(f"behaviorParameters.{behavior}.damage negative")
+            if is_number(row.get("cooldownSeconds")) and float(row["cooldownSeconds"]) < 0.0:
+                errors.append(f"behaviorParameters.{behavior}.cooldownSeconds negative")
+            cheat = row.get("cinematicCheat")
+            if not isinstance(cheat, str) or len(cheat.strip()) < 24:
+                errors.append(f"behaviorParameters.{behavior}.cinematicCheat missing")
+        if set(behavior_parameters.keys()) != set(EXPECTED_BEHAVIORS):
+            errors.append("behaviorParameters behavior set drift")
+    else:
+        errors.append("behaviorParameters missing")
+
+    self_audit = brain.get("selfAudit")
+    if isinstance(self_audit, dict):
+        encounters_required = self_audit.get("encountersRequired")
+        target_min = self_audit.get("targetKillRateMin")
+        target_max = self_audit.get("targetKillRateMax")
+        under30_max = self_audit.get("frustrationGuardUnder30KillRateMax")
+        subgroup_max = self_audit.get("subgroupKillRateMax")
+        if encounters_required != DEFAULT_ENCOUNTERS:
+            errors.append(f"selfAudit.encountersRequired != {DEFAULT_ENCOUNTERS}")
+        if not is_number(target_min) or not is_number(target_max) or not 0.0 <= float(target_min) < float(target_max) <= 1.0:
+            errors.append("selfAudit target kill-rate bounds invalid")
+        if not is_number(under30_max) or not 0.0 <= float(under30_max) <= 0.5:
+            errors.append("selfAudit.frustrationGuardUnder30KillRateMax invalid")
+        if not is_number(subgroup_max) or not is_number(target_max) or not float(target_max) <= float(subgroup_max) <= 1.0:
+            errors.append("selfAudit.subgroupKillRateMax invalid")
+        if self_audit.get("simulationPath") != "Tools/AiBattleSim.py":
+            errors.append("selfAudit.simulationPath invalid")
+        if self_audit.get("reportPath") != "Tools/AiBattleSim_Report.json":
+            errors.append("selfAudit.reportPath invalid")
+    else:
+        errors.append("selfAudit missing")
+
+    math_lods = brain.get("mathLods")
+    math_lod_tier_count = 0
+    if isinstance(math_lods, dict):
+        for tier in EXPECTED_MATH_LOD_TIERS:
+            row = math_lods.get(tier)
+            if not isinstance(row, dict):
+                errors.append(f"mathLods.{tier} missing")
+                continue
+            math_lod_tier_count += 1
+            for key in ("range", "pack", "presentation"):
+                value = row.get(key)
+                if not isinstance(value, str) or len(value.strip()) < 12:
+                    errors.append(f"mathLods.{tier}.{key} missing")
+        if set(math_lods.keys()) != set(EXPECTED_MATH_LOD_TIERS):
+            errors.append("mathLods tier set drift")
+    else:
+        errors.append("mathLods missing")
+
+    pack_hunting = brain.get("packHuntingSynergy")
+    pack_rule_count = 0
+    if isinstance(pack_hunting, dict):
+        formula = pack_hunting.get("formula")
+        if not isinstance(formula, str) or "dot" not in formula:
+            errors.append("packHuntingSynergy.formula missing dot")
+        rules = pack_hunting.get("rules")
+        if not isinstance(rules, list) or len(rules) != EXPECTED_PACK_RULE_COUNT:
+            errors.append(f"packHuntingSynergy.rules count != {EXPECTED_PACK_RULE_COUNT}")
+        elif isinstance(rules, list):
+            rule_ids = set()
+            for index, rule in enumerate(rules):
+                if not isinstance(rule, dict):
+                    errors.append(f"packHuntingSynergy.rules[{index}] invalid")
+                    continue
+                rule_id = rule.get("id")
+                if not isinstance(rule_id, str) or not rule_id or rule_id in rule_ids:
+                    errors.append(f"packHuntingSynergy.rules[{index}].id invalid")
+                else:
+                    rule_ids.add(rule_id)
+                if "dot" not in str(rule.get("dotCondition", "")):
+                    errors.append(f"packHuntingSynergy.rules[{index}].dotCondition missing dot")
+            pack_rule_count = len(rule_ids)
+    else:
+        errors.append("packHuntingSynergy missing")
+
+    black_box = brain.get("blackBox")
+    black_box_capacity = 0
+    if isinstance(black_box, dict):
+        capacity = black_box.get("capacityFrames")
+        if capacity != EXPECTED_BLACK_BOX_FRAMES:
+            errors.append(f"blackBox.capacityFrames != {EXPECTED_BLACK_BOX_FRAMES}")
+        elif isinstance(capacity, int):
+            black_box_capacity = capacity
+        if black_box.get("dumpPath") != EXPECTED_BLACK_BOX_DUMP_PATH:
+            errors.append("blackBox.dumpPath invalid")
+        entry_fields = black_box.get("entryFields")
+        if not isinstance(entry_fields, list):
+            errors.append("blackBox.entryFields missing")
+        else:
+            for field in REQUIRED_BLACK_BOX_FIELDS:
+                if field not in entry_fields:
+                    errors.append(f"blackBox.entryFields missing {field}")
+    else:
+        errors.append("blackBox missing")
+
     return {
         "status": "BRAIN_VALIDATION_PASSED" if not errors else "BRAIN_VALIDATION_FAILED",
         "errors": errors,
         "utilityScoreCount": len(utility_scores) if isinstance(utility_scores, list) else 0,
+        "contextCount": len(context_names),
+        "utilityPairCount": sum(1 for count in pair_counts.values() if count == 1),
+        "behaviorParameterCount": behavior_parameter_count,
+        "mathLodTierCount": math_lod_tier_count,
+        "packRuleCount": pack_rule_count,
+        "blackBoxCapacityFrames": black_box_capacity,
         "behaviorCounts": behavior_counts,
         "globalDataVaultFeedCount": len(feature_names),
         "knownBufferCount": len(known_buffers),
@@ -704,6 +893,30 @@ def result_sample(result: EncounterResult) -> Dict[str, object]:
     }
 
 
+def simulation_digest(results: Sequence[EncounterResult]) -> str:
+    digest = hashlib.sha256()
+    for result in results:
+        digest.update(str(result.index).encode("ascii"))
+        digest.update(b"|")
+        digest.update(result.profile.encode("ascii"))
+        digest.update(b"|")
+        digest.update(result.tier.encode("ascii"))
+        digest.update(b"|")
+        digest.update(str(result.pack_count).encode("ascii"))
+        digest.update(b"|1|" if result.killed else b"|0|")
+        digest.update(b"1|" if result.escaped else b"0|")
+        digest.update(b"1|" if result.timeout else b"0|")
+        digest.update(str(result.kill_time).encode("ascii"))
+        digest.update(b"|")
+        digest.update(f"{result.final_hp:.3f}|{result.max_terror:.5f}|{result.mean_terror:.5f}".encode("ascii"))
+        for key, value in sorted(result.behavior_counts.items()):
+            digest.update(f"|b:{key}:{value}".encode("ascii"))
+        for key, value in sorted(result.context_counts.items()):
+            digest.update(f"|c:{key}:{value}".encode("ascii"))
+        digest.update(b"\n")
+    return digest.hexdigest()
+
+
 def build_report(brain: Mapping[str, object], validation: Mapping[str, object], results: Sequence[EncounterResult], elapsed: float, aggression: float, passes: int, lowered: bool, seed: int) -> Dict[str, object]:
     summary = summarize_results(results)
     profile_breakdown = breakdown_by(results, "profile")
@@ -727,11 +940,14 @@ def build_report(brain: Mapping[str, object], validation: Mapping[str, object], 
     status = EXPECTED_STATUS if validation["status"] == "BRAIN_VALIDATION_PASSED" and frustration_passed and target_passed and fast_guard_passed and subgroup_guard_passed else "PENDING_VERIFICATION"
     return {
         "schemaVersion": 1,
+        "simulatorSchemaVersion": SIMULATOR_SCHEMA_VERSION,
         "status": status,
         "generatedBy": "AI_BEHAVIOR_BIOMIMETIC_DESIGNER",
         "evidenceClass": "CLI_PYTHON_BATTLE_SIMULATION",
         "runtimeUnityProof": "PENDING VERIFICATION",
         "brainPath": "Data/AI/Leviathan_Brain.json",
+        "brainDigest": canonical_digest(brain),
+        "simulationDigest": simulation_digest(results),
         "seed": seed,
         "elapsedSeconds": round(elapsed, 3),
         "calibration": {
@@ -770,7 +986,7 @@ def build_report(brain: Mapping[str, object], validation: Mapping[str, object], 
     }
 
 
-def check_artifacts(brain_path: Path, report_path: Path, expected_encounters: int) -> Dict[str, object]:
+def check_artifacts(brain_path: Path, report_path: Path, expected_encounters: int, verify_rerun: bool = False) -> Dict[str, object]:
     errors: List[str] = []
     try:
         brain = load_json(brain_path)
@@ -786,6 +1002,7 @@ def check_artifacts(brain_path: Path, report_path: Path, expected_encounters: in
         errors.extend(f"brain:{error}" for error in validation["errors"])
     if validation.get("knownBufferSourceStatus") != "SOURCE_PARSED":
         errors.append("GlobalDataVault BufferID source was not parsed")
+    expected_brain_digest = canonical_digest(brain)
 
     self_audit = brain.get("selfAudit")
     target_min = 0.0
@@ -793,15 +1010,22 @@ def check_artifacts(brain_path: Path, report_path: Path, expected_encounters: in
     fast_max = 1.0
     subgroup_max = 1.0
     if isinstance(self_audit, dict):
-        target_min = float(self_audit.get("targetKillRateMin", target_min))
-        target_max = float(self_audit.get("targetKillRateMax", target_max))
-        fast_max = float(self_audit.get("frustrationGuardUnder30KillRateMax", fast_max))
-        subgroup_max = float(self_audit.get("subgroupKillRateMax", target_max))
+        target_min = read_number(self_audit, "targetKillRateMin", target_min, "brain.selfAudit", errors)
+        target_max = read_number(self_audit, "targetKillRateMax", target_max, "brain.selfAudit", errors)
+        fast_max = read_number(self_audit, "frustrationGuardUnder30KillRateMax", fast_max, "brain.selfAudit", errors)
+        subgroup_max = read_number(self_audit, "subgroupKillRateMax", target_max, "brain.selfAudit", errors)
     else:
         errors.append("brain.selfAudit missing")
 
     if report.get("status") != EXPECTED_STATUS:
         errors.append(f"report.status != {EXPECTED_STATUS}")
+    if report.get("simulatorSchemaVersion") != SIMULATOR_SCHEMA_VERSION:
+        errors.append(f"simulatorSchemaVersion != {SIMULATOR_SCHEMA_VERSION}")
+    if report.get("brainDigest") != expected_brain_digest:
+        errors.append("brainDigest mismatch")
+    simulation_digest_value = report.get("simulationDigest")
+    if not isinstance(simulation_digest_value, str) or not re.fullmatch(r"[0-9a-f]{64}", simulation_digest_value):
+        errors.append("simulationDigest invalid")
 
     report_validation = report.get("validation")
     if not isinstance(report_validation, dict):
@@ -811,6 +1035,15 @@ def check_artifacts(brain_path: Path, report_path: Path, expected_encounters: in
             errors.append("report.validation status mismatch")
         if report_validation.get("utilityScoreCount") != validation.get("utilityScoreCount"):
             errors.append("report.validation utilityScoreCount mismatch")
+        if report_validation.get("contextCount") != validation.get("contextCount"):
+            errors.append("report.validation contextCount mismatch")
+        if report_validation.get("utilityPairCount") != validation.get("utilityPairCount"):
+            errors.append("report.validation utilityPairCount mismatch")
+        for field in ("behaviorParameterCount", "mathLodTierCount", "packRuleCount", "blackBoxCapacityFrames"):
+            if report_validation.get(field) != validation.get(field):
+                errors.append(f"report.validation {field} mismatch")
+        if report_validation.get("behaviorCounts") != validation.get("behaviorCounts"):
+            errors.append("report.validation behaviorCounts mismatch")
         if report_validation.get("globalDataVaultFeedCount") != validation.get("globalDataVaultFeedCount"):
             errors.append("report.validation globalDataVaultFeedCount mismatch")
         if report_validation.get("knownBufferCount") != validation.get("knownBufferCount"):
@@ -857,6 +1090,37 @@ def check_artifacts(brain_path: Path, report_path: Path, expected_encounters: in
             value = frustration.get(field)
             if not isinstance(value, (int, float)) or isinstance(value, bool) or float(value) > subgroup_max:
                 errors.append(f"{field} exceeds subgroupKillRateMax")
+
+    rerun_summary: Dict[str, object] | None = None
+    if verify_rerun and not validation["errors"]:
+        seed = report.get("seed", DEFAULT_SEED)
+        if not isinstance(seed, int) or isinstance(seed, bool):
+            errors.append("report.seed invalid")
+        else:
+            calibration = report.get("calibration")
+            initial_aggression = 1.0
+            if isinstance(calibration, dict):
+                raw_aggression = calibration.get("initialAggressionScalar", initial_aggression)
+                if isinstance(raw_aggression, (int, float)) and not isinstance(raw_aggression, bool):
+                    initial_aggression = float(raw_aggression)
+            results, aggression, passes, lowered = execute_simulation(brain, expected_encounters, seed, max(0.05, initial_aggression))
+            rerun_summary = summarize_results(results)
+            if simulation_digest(results) != simulation_digest_value:
+                errors.append("simulationDigest rerun mismatch")
+            for key in ("kills", "killRate", "under30Kills", "under30KillRate", "averageKillTimeSeconds", "meanTerror"):
+                if summary.get(key) != rerun_summary.get(key):
+                    errors.append(f"summary.{key} rerun mismatch")
+            rerun_calibration = {
+                "finalAggressionScalar": round(aggression, 6),
+                "passes": passes,
+                "aggressionLowered": lowered,
+            }
+            report_calibration = report.get("calibration")
+            if isinstance(report_calibration, dict):
+                for key, value in rerun_calibration.items():
+                    if report_calibration.get(key) != value:
+                        errors.append(f"calibration.{key} rerun mismatch")
+
     find_nonfinite(report, "report", errors)
     return {
         "status": "ARTIFACT_CHECK_PASSED" if not errors else "ARTIFACT_CHECK_FAILED",
@@ -866,6 +1130,10 @@ def check_artifacts(brain_path: Path, report_path: Path, expected_encounters: in
         "encounters": summary.get("encounters"),
         "killRate": summary.get("killRate"),
         "under30KillRate": summary.get("under30KillRate"),
+        "brainDigest": expected_brain_digest,
+        "simulationDigest": simulation_digest_value,
+        "rerunVerified": verify_rerun and not errors,
+        "rerunSummary": rerun_summary,
     }
 
 
@@ -877,6 +1145,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=lambda text: int(text, 0), default=DEFAULT_SEED)
     parser.add_argument("--aggression", type=float, default=1.0)
     parser.add_argument("--check-artifacts", action="store_true")
+    parser.add_argument("--verify-rerun", action="store_true")
     return parser.parse_args()
 
 
@@ -887,10 +1156,11 @@ def main() -> int:
     encounters = max(1, args.encounters)
 
     if args.check_artifacts:
-        check = check_artifacts(brain_path, report_path, encounters)
+        check = check_artifacts(brain_path, report_path, encounters, verify_rerun=args.verify_rerun)
         print(f"status={check['status']}")
         print(f"sizes brain={check['brainBytes']} report={check['reportBytes']}")
         print(f"encounters={check['encounters']} killRate={check['killRate']} under30KillRate={check['under30KillRate']}")
+        print(f"brainDigest={check['brainDigest']} simulationDigest={check['simulationDigest']} rerunVerified={check['rerunVerified']}")
         for error in check["errors"]:
             print(f"error={error}")
         return 0 if check["status"] == "ARTIFACT_CHECK_PASSED" else 2

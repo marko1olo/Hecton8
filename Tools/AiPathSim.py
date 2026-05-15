@@ -10,8 +10,8 @@ from __future__ import annotations
 
 import json
 import math
+import re
 import sys
-import time
 from dataclasses import dataclass
 from itertools import product
 from pathlib import Path
@@ -24,9 +24,12 @@ MAX_STEPS = 360
 TARGET_RADIUS = 3.0
 MAX_SPEED = 13.0
 MAX_ACCEL = 30.0
+TRACE_SAMPLE_STRIDE_STEPS = 20
 START = (-82.0, -340.0, -64.0)
 TARGET = (78.0, -340.0, 68.0)
 HURRICANE_CENTER = (0.0, -340.0, 0.0)
+SOURCE_ROOT = Path(__file__).resolve().parents[1]
+FLUID_ENGINE_PATH = Path("Assets/_Project/Scripts/HectonFluidEngine.cs")
 
 SOURCE_PARAMETER_SNAPSHOT = {
     "flowTextureResolution": 32,
@@ -42,6 +45,53 @@ SOURCE_PARAMETER_SNAPSHOT = {
         "Docs/ARCHITECTURE/FLOW_FIELD_MATH.md",
         ".agents-skills/CORE_Weather_Abyssal_FlowField_Currents.txt",
     ],
+}
+
+SOURCE_CONSTANTS = {
+    "flowTextureResolution": ("AbyssalFlowTextureResolution", 32),
+    "flowTextureWorldSizeMeters": ("AbyssalFlowTextureWorldSizeMeters", 100.0),
+    "vectorNoiseResolution": ("VectorNoiseResolution", 32),
+    "surfaceStormLayerDepthMeters": ("SurfaceStormLayerDepthMeters", 50.0),
+    "stormSurfaceTurbulenceStrength": ("StormSurfaceTurbulenceStrength", 0.4),
+    "abyssalThermoclineDepthMeters": ("AbyssalFlowThermoclineDepthMeters", 120.0),
+    "heatSourceCapacity": ("MaxAbyssalHeatSourceCount", 8),
+}
+
+BLACK_BOX_TELEMETRY_SCHEMA = {
+    "capacityFrames": 300,
+    "storage": "NativeArray<AiPotentialFieldTelemetryEntry> circular buffer",
+    "dumpPath": "Docs/AgentLogs/Dump_AI_POTENTIAL_FIELD_NAVIGATOR.bin",
+    "dumpTriggers": [
+        "nonFinitePosition",
+        "nonFiniteVelocity",
+        "negativeSdfClearance",
+        "sourceParameterDrift",
+    ],
+    "fields": [
+        {"name": "frameIndex", "type": "uint"},
+        {"name": "entityId", "type": "uint"},
+        {"name": "positionAupCell", "type": "int3"},
+        {"name": "positionLocalMeters", "type": "float3"},
+        {"name": "velocityMetersPerSecond", "type": "float3"},
+        {"name": "targetDistanceMeters", "type": "float"},
+        {"name": "flowAlignmentSigned", "type": "float"},
+        {"name": "sdfClearanceMeters", "type": "float"},
+        {"name": "stateFlags", "type": "uint"},
+        {"name": "stateHash", "type": "uint"},
+    ],
+    "finiteGuards": [
+        "positionLocalMeters",
+        "velocityMetersPerSecond",
+        "targetDistanceMeters",
+        "flowAlignmentSigned",
+        "sdfClearanceMeters",
+    ],
+}
+
+TIER_HYSTERESIS = {
+    "distanceMeters": 5.0,
+    "timeSeconds": 3.0,
+    "rule": "Tier/scalability changes require both bands before switching to prevent AI LOD flip-flop.",
 }
 
 
@@ -414,6 +464,51 @@ def weights_from_dict(data: dict) -> SteeringWeights:
     )
 
 
+def extract_source_constants(source_text: str, constant_name: str) -> list[float]:
+    pattern = re.compile(
+        rf"\bconst\s+(?:int|float)\s+{re.escape(constant_name)}\s*=\s*"
+        r"(?P<value>-?\d+(?:\.\d+)?)(?:f)?\s*;"
+    )
+    return [float(match.group("value")) for match in pattern.finditer(source_text)]
+
+
+def validate_source_constants(snapshot: dict, root: Path | None = None) -> Tuple[bool, list[str]]:
+    errors: list[str] = []
+    project_root = SOURCE_ROOT if root is None else root
+    source_path = project_root / FLUID_ENGINE_PATH
+    if not source_path.exists():
+        return False, [f"missing source file: {FLUID_ENGINE_PATH.as_posix()}"]
+
+    source_text = source_path.read_text(encoding="utf-8")
+    for snapshot_key, (constant_name, expected_value) in SOURCE_CONSTANTS.items():
+        actual_values = extract_source_constants(source_text, constant_name)
+        if not actual_values:
+            errors.append(f"missing source constant: {constant_name}")
+            continue
+
+        exported = snapshot.get(snapshot_key)
+        if exported is None:
+            errors.append(f"missing exported source parameter: {snapshot_key}")
+            continue
+
+        for actual in actual_values:
+            if abs(actual - float(exported)) > 0.00001:
+                errors.append(f"source/export drift: {constant_name}")
+
+            if abs(actual - float(expected_value)) > 0.00001:
+                errors.append(f"source/default drift: {constant_name}")
+
+    resolutions = extract_source_constants(source_text, "AbyssalFlowTextureResolution")
+    world_sizes = extract_source_constants(source_text, "AbyssalFlowTextureWorldSizeMeters")
+    exported_cell = snapshot.get("flowTextureCellSizeMeters")
+    if resolutions and world_sizes and exported_cell is not None:
+        cell_size = world_sizes[0] / max(resolutions[0], EPSILON)
+        if abs(cell_size - float(exported_cell)) > 0.00001:
+            errors.append("source/export drift: AbyssalFlowTextureCellSizeMeters")
+
+    return len(errors) == 0, errors
+
+
 def result_to_dict(result: SimResult) -> dict:
     return {
         "reached": result.reached,
@@ -428,6 +523,111 @@ def result_to_dict(result: SimResult) -> dict:
         "meanPositiveFlowUse": round(result.mean_flow_use, 4),
         "score": round(result.score, 4),
     }
+
+
+def rounded_vec(v: Vec3) -> list[float]:
+    return [round(v[0], 4), round(v[1], 4), round(v[2], 4)]
+
+
+def trace_path(weights: SteeringWeights, use_smoothing: bool = True) -> dict:
+    pos = START
+    vel = (0.0, 0.0, 0.0)
+    prev_steer = (0.0, 0.0, 1.0)
+    min_obstacle_distance = float("inf")
+    sdf_pushout_events = 0
+
+    active_weights = weights if use_smoothing else SteeringWeights(
+        weights.attraction,
+        weights.flow_boost,
+        weights.flow_resistance,
+        weights.obstacle_repulsion,
+        1.0,
+        weights.idle_flow_coupling,
+        weights.wall_influence,
+        weights.max_repulsion,
+    )
+
+    _, start_clearance = obstacle_repulsion(pos, active_weights)
+    start_alignment = dot(normalize(hurricane_flow(pos, 0.0)), normalize(sub(TARGET, pos)))
+    samples = [
+        {
+            "step": 0,
+            "timeSeconds": 0.0,
+            "position": rounded_vec(pos),
+            "distanceToTargetMeters": round(length(sub(TARGET, pos)), 4),
+            "clearanceMeters": round(start_clearance, 4),
+            "flowAlignmentSigned": round(start_alignment, 4),
+        }
+    ]
+
+    reached = False
+    final_distance = length(sub(TARGET, pos))
+    steps = 0
+    for step in range(MAX_STEPS):
+        t = step * DT
+        steer, alignment, _ = steering_force(pos, prev_steer, t, active_weights)
+        flow = hurricane_flow(pos, t)
+        accel = add(steer, mul(flow, 0.08))
+        vel = clamp_magnitude(add(mul(vel, 0.94), mul(accel, DT)), MAX_SPEED)
+        next_pos = add(pos, mul(vel, DT))
+        pos, vel, pushouts = enforce_sdf_clearance(next_pos, vel)
+        sdf_pushout_events += pushouts
+        _, obstacle_distance = obstacle_repulsion(pos, active_weights)
+        min_obstacle_distance = min(min_obstacle_distance, obstacle_distance)
+        prev_steer = steer
+        steps = step + 1
+        final_distance = length(sub(TARGET, pos))
+        reached = final_distance <= TARGET_RADIUS
+
+        if steps % TRACE_SAMPLE_STRIDE_STEPS == 0 or reached:
+            samples.append(
+                {
+                    "step": steps,
+                    "timeSeconds": round(steps * DT, 4),
+                    "position": rounded_vec(pos),
+                    "distanceToTargetMeters": round(final_distance, 4),
+                    "clearanceMeters": round(obstacle_distance, 4),
+                    "flowAlignmentSigned": round(alignment, 4),
+                }
+            )
+
+        if reached:
+            break
+
+    return {
+        "scenario": "selected smoothed predator path through hurricane current",
+        "sampleStrideSteps": TRACE_SAMPLE_STRIDE_STEPS,
+        "reached": reached,
+        "steps": steps,
+        "finalDistanceMeters": round(final_distance, 4),
+        "minObstacleClearanceMeters": round(min_obstacle_distance, 4),
+        "sdfPushoutEvents": sdf_pushout_events,
+        "samples": samples,
+    }
+
+
+def find_best_candidate() -> Tuple[SteeringWeights, SimResult, SimResult, int, int]:
+    best_weights = None
+    best_result = None
+    best_raw = None
+    evaluated = 0
+    reached_count = 0
+
+    for weights in candidate_weights():
+        raw = simulate(weights, use_smoothing=False)
+        smoothed = simulate(weights, use_smoothing=True)
+        evaluated += 1
+        if smoothed.reached:
+            reached_count += 1
+        if best_result is None or smoothed.score > best_result.score:
+            best_weights = weights
+            best_result = smoothed
+            best_raw = raw
+
+    if best_weights is None or best_result is None or best_raw is None:
+        raise RuntimeError("No steering candidates evaluated")
+
+    return best_weights, best_result, best_raw, evaluated, reached_count
 
 
 def performance_model() -> dict:
@@ -451,21 +651,15 @@ def performance_model() -> dict:
     }
 
 
-def run_micro_benchmark(weights: SteeringWeights) -> dict:
-    iterations = 1000
-    pos = START
-    prev = (0.0, 0.0, 1.0)
-    start = time.perf_counter()
-    for i in range(iterations):
-        force, _, _ = steering_force(pos, prev, i * DT, weights)
-        prev = force
-        pos = add(pos, mul(force, 0.001))
-    elapsed = time.perf_counter() - start
+def deterministic_sample_cost_model() -> dict:
     return {
-        "pythonIterations": iterations,
-        "pythonElapsedMs": round(elapsed * 1000.0, 4),
-        "pythonMicrosecondsPerSample": round(elapsed * 1_000_000.0 / iterations, 4),
-        "runtimeEvidence": "PYTHON_TOOL_ONLY - not Unity runtime proof",
+        "model": "STATIC_SCALAR_OP_ESTIMATE",
+        "flowSamplesPerSolve": 1,
+        "sdfProxyChecksPerSolve": len(OBSTACLES) + 1,
+        "normalizationsPerSolve": 5,
+        "sqrtOrRsqrtSitesPerSolve": 5,
+        "branchClampSitesPerSolve": 7,
+        "runtimeEvidence": "DETERMINISTIC_MODEL_ONLY - requires Burst profiler/GCMonitor for acceptance",
     }
 
 
@@ -487,6 +681,9 @@ def validate_export(data: dict) -> Tuple[bool, list[str]]:
         for key, expected in SOURCE_PARAMETER_SNAPSHOT.items():
             actual = snapshot.get(key)
             expect(actual == expected, f"source parameter mismatch: {key}")
+        valid_source, source_errors = validate_source_constants(snapshot)
+        if not valid_source:
+            errors.extend(source_errors)
 
     try:
         weights = weights_from_dict(data["selectedWeights"])
@@ -497,17 +694,41 @@ def validate_export(data: dict) -> Tuple[bool, list[str]]:
     for name, value in weights_to_dict(weights).items():
         expect(math.isfinite(float(value)), f"non-finite weight: {name}")
 
-    replay = simulate(weights, use_smoothing=True)
-    raw = simulate(weights, use_smoothing=False)
+    expected_weights, replay, raw, evaluated, reached_count = find_best_candidate()
+    expect(weights_to_dict(weights) == weights_to_dict(expected_weights), "selected weights are not deterministic best")
     expect(replay.reached, "selected weights do not reach target")
     expect(replay.sdf_pushout_events == 0, "selected weights require SDF pushout")
     expect(replay.min_obstacle_distance >= 2.0, "selected weights violate 2m clearance guard")
     expect(replay.jitter_events <= 1, "selected weights exceed jitter guard")
     expect(replay.jitter_events <= raw.jitter_events, "EWMA increases jitter")
+    expect(data.get("smoothedMetrics") == result_to_dict(replay), "smoothed metrics do not match replay")
+    expect(data.get("rawNoSmoothingMetrics") == result_to_dict(raw), "raw metrics do not match replay")
 
     drift = idle_drift(weights)
     expect(drift["drift_distance_meters"] > 10.0, "idle drift distance too low")
     expect(drift["mean_velocity_flow_alignment01"] > 0.95, "idle drift does not follow current")
+    expect(data.get("idleDriftVerification") == drift, "idle drift metrics do not match replay")
+    expected_trace = trace_path(weights, use_smoothing=True)
+    exported_trace = data.get("pathTrace")
+    expect(exported_trace == expected_trace, "path trace does not match replay")
+    if isinstance(exported_trace, dict):
+        samples = exported_trace.get("samples")
+        if not isinstance(samples, list) or len(samples) < 5:
+            errors.append("path trace has too few samples")
+        else:
+            expect(samples[0].get("step") == 0, "path trace missing start sample")
+            expect(exported_trace.get("reached") is True, "path trace does not reach target")
+            expect(exported_trace.get("sdfPushoutEvents") == 0, "path trace requires SDF pushout")
+            expect(float(exported_trace.get("minObstacleClearanceMeters", 0.0)) >= 2.0, "path trace clearance below guard")
+
+    search = data.get("search")
+    if not isinstance(search, dict):
+        errors.append("missing search metrics")
+    else:
+        expect(search.get("candidatesEvaluated") == evaluated, "candidate evaluation count mismatch")
+        expect(search.get("candidatesReachedTarget") == reached_count, "candidate reach count mismatch")
+        expect(search.get("dtSeconds") == DT, "search dt mismatch")
+        expect(search.get("maxSteps") == MAX_STEPS, "search max step mismatch")
 
     perf = data.get("performanceModel")
     if not isinstance(perf, dict):
@@ -517,6 +738,64 @@ def validate_export(data: dict) -> Tuple[bool, list[str]]:
         expect(perf.get("cadenceHz") == 10, "performance cadence mismatch")
         expect(perf.get("samplesPerSecond") == 1000, "performance samples/sec mismatch")
         expect(perf.get("samplesPerFrameAt60Hz") == 16.6667, "performance samples/frame mismatch")
+
+    cost = data.get("sampleCostModel")
+    if not isinstance(cost, dict):
+        errors.append("missing sampleCostModel")
+    else:
+        expect(cost == deterministic_sample_cost_model(), "sample cost model mismatch")
+
+    telemetry = data.get("blackBoxTelemetry")
+    if not isinstance(telemetry, dict):
+        errors.append("missing blackBoxTelemetry")
+    else:
+        expect(telemetry.get("capacityFrames") == 300, "blackbox capacity mismatch")
+        expect(
+            telemetry.get("dumpPath") == "Docs/AgentLogs/Dump_AI_POTENTIAL_FIELD_NAVIGATOR.bin",
+            "blackbox dump path mismatch",
+        )
+        fields = telemetry.get("fields")
+        if not isinstance(fields, list):
+            errors.append("blackbox fields missing")
+        else:
+            field_names = {field.get("name") for field in fields if isinstance(field, dict)}
+            required = {
+                "frameIndex",
+                "entityId",
+                "positionAupCell",
+                "positionLocalMeters",
+                "velocityMetersPerSecond",
+                "targetDistanceMeters",
+                "flowAlignmentSigned",
+                "sdfClearanceMeters",
+                "stateFlags",
+                "stateHash",
+            }
+            missing = required.difference(field_names)
+            if missing:
+                errors.append("blackbox fields incomplete")
+
+        guards = telemetry.get("finiteGuards")
+        if not isinstance(guards, list) or "sdfClearanceMeters" not in guards:
+            errors.append("blackbox finite guards incomplete")
+
+    tiers = data.get("tierProfiles")
+    if not isinstance(tiers, dict):
+        errors.append("missing tierProfiles")
+    else:
+        for tier_name in ("Low", "Middle", "High", "Ultra"):
+            tier = tiers.get(tier_name)
+            if not isinstance(tier, dict):
+                errors.append(f"missing tier profile: {tier_name}")
+                continue
+            hysteresis = tier.get("hysteresis")
+            if not isinstance(hysteresis, dict):
+                errors.append(f"missing hysteresis: {tier_name}")
+                continue
+            distance = float(hysteresis.get("distanceMeters", 0.0))
+            seconds = float(hysteresis.get("timeSeconds", 0.0))
+            expect(3.0 <= distance <= 5.0, f"hysteresis distance out of mandate range: {tier_name}")
+            expect(2.0 <= seconds <= 3.0, f"hysteresis time out of mandate range: {tier_name}")
 
     return len(errors) == 0, errors
 
@@ -549,21 +828,25 @@ def build_tiers(best: SteeringWeights) -> dict:
             "weights": weights_to_dict(low),
             "mathLod": "one flow sample, one nearest SDF/bounds repulsion, strongest current axis only",
             "cadenceHz": 10,
+            "hysteresis": TIER_HYSTERESIS,
         },
         "Middle": {
             "weights": weights_to_dict(middle),
             "mathLod": "one flow sample, obstacle loop capped to local SDF proxies, EWMA final steering",
             "cadenceHz": 10,
+            "hysteresis": TIER_HYSTERESIS,
         },
         "High": {
             "weights": weights_to_dict(high),
             "mathLod": "flow alignment plus richer local SDF gradient, tighter smoothing for pursuit",
             "cadenceHz": 15,
+            "hysteresis": TIER_HYSTERESIS,
         },
         "Ultra": {
             "weights": weights_to_dict(ultra),
             "mathLod": "adds local vortex interest and visual-overkill path curvature while retaining O(1) steering",
             "cadenceHz": 20,
+            "hysteresis": TIER_HYSTERESIS,
         },
     }
 
@@ -577,25 +860,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         print("Usage: Tools/AiPathSim.py [--check]", file=sys.stderr)
         return 2
 
-    best_weights = None
-    best_result = None
-    best_raw = None
-    evaluated = 0
-    reached_count = 0
-
-    for weights in candidate_weights():
-        raw = simulate(weights, use_smoothing=False)
-        smoothed = simulate(weights, use_smoothing=True)
-        evaluated += 1
-        if smoothed.reached:
-            reached_count += 1
-        if best_result is None or smoothed.score > best_result.score:
-            best_weights = weights
-            best_result = smoothed
-            best_raw = raw
-
-    if best_weights is None or best_result is None or best_raw is None:
-        raise RuntimeError("No steering candidates evaluated")
+    best_weights, best_result, best_raw, evaluated, reached_count = find_best_candidate()
 
     output = {
         "schema": "H8.NavigationTuning.PotentialField.v1",
@@ -627,8 +892,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         "rawNoSmoothingMetrics": result_to_dict(best_raw),
         "smoothedMetrics": result_to_dict(best_result),
         "idleDriftVerification": idle_drift(best_weights),
+        "pathTrace": trace_path(best_weights, use_smoothing=True),
         "performanceModel": performance_model(),
-        "pythonMicroBenchmark": run_micro_benchmark(best_weights),
+        "sampleCostModel": deterministic_sample_cost_model(),
+        "blackBoxTelemetry": BLACK_BOX_TELEMETRY_SCHEMA,
         "tierProfiles": build_tiers(best_weights),
         "failureModes": [
             "No finite flow sample: use target attraction plus SDF repulsion only.",

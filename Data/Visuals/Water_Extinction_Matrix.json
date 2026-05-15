@@ -4,103 +4,7 @@
     "green530": 0.0434,
     "red700": 0.624
   },
-  "axes": {
-    "depthMeters": {
-      "count": 256,
-      "max": 1500.0,
-      "min": 0.0,
-      "spacing": "linear"
-    },
-    "turbidityMultiplier": {
-      "count": 256,
-      "max": 2.5,
-      "min": 0.0,
-      "spacing": "linear"
-    },
-    "wavelengthNm": {
-      "count": 256,
-      "max": 700.0,
-      "min": 470.0,
-      "spacing": "linear"
-    }
-  },
-  "binaryHeader": "none",
-  "byteOrder": "little-endian",
-  "fogDensity": {
-    "axis": {
-      "depthMeters": {
-        "count": 1501,
-        "max": 1500,
-        "min": 0,
-        "step": 1
-      }
-    },
-    "baseFogDensityPerMeter": 0.0021,
-    "bytes": 3002,
-    "format": "float16",
-    "representativeSilt": 1.2165106659259257,
-    "shape": [
-      1501
-    ]
-  },
-  "fogDensityFile": "Water_Fog_Density_LUT.bin",
-  "inputSources": {
-    "giRelayLogsReadByCli": [
-      "Docs/Archive/Batch003/AgentLogs/LOG_RENDER_GI_RELAY_SYNC.md",
-      "Docs/Archive/Batch003/AgentLogs/Rationale_RENDER_GI_RELAY_SYNC.md",
-      "Docs/Archive/Batch003/Tasks/Status_RENDER_GI_RELAY_SYNC.md"
-    ],
-    "opticalAnchorNote": "Rounded visible-water absorption anchors for 470nm, 530nm, and 700nm; gameplay silt extinction is a presentation scalar, not particle simulation.",
-    "siltProfileGlob": "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/*.asset",
-    "underwaterFogProfile": "Assets/_Project/Data/Atmosphere/Profile_Underwater.asset"
-  },
-  "matrixFile": "Water_Extinction_Matrix.bin",
-  "matrixShape": [
-    256,
-    256,
-    256
-  ],
-  "packedTexture2D": {
-    "bytes": 33554432,
-    "format": "R16F",
-    "height": 4096,
-    "width": 4096
-  },
-  "previewFile": "Water_Extinction_GradientPreview.png",
-  "scalarFormat": "float16",
-  "schema": "H8.WaterExtinctionMatrix.v1",
-  "selfAudit": {
-    "previewTurbidity": 1.34,
-    "redAt500mRequirement": "exactly 0.0000 after float16 quantization",
-    "redTransmittanceAt10m": 0.0019502639770507812,
-    "redTransmittanceAt500m": 0.0,
-    "referenceChecks": [
-      {
-        "appliedCheck": "Red wavelengths are filtered early underwater; preview and LUT keep red below visible persistence after 10m.",
-        "source": "NOAA Ocean Explorer ocean color guidance",
-        "url": "https://oceanexplorer.noaa.gov/ocean-fact/red-color/"
-      },
-      {
-        "appliedCheck": "Preserve the 1D depth-palette/fog-global visual fake path instead of runtime volumetric GI.",
-        "source": "RENDER_GI_RELAY_SYNC batch logs",
-        "url": "Docs/Archive/Batch003/AgentLogs/LOG_RENDER_GI_RELAY_SYNC.md"
-      }
-    ],
-    "status": "PASS"
-  },
-  "sha256": {
-    "Water_Extinction_GradientPreview.png": "D8B5956C9CAB5C900CE511D9D87A06BDF18ACCDCDCFCF6EB0237C1471B53971A",
-    "Water_Extinction_Hecton_CoreLit_Snippet.hlsl": "2D004C331CE98E21B3FC5CE04C5BE00EBDF2A94C16A618A3E7F4ED398FBCDC9E",
-    "Water_Extinction_Matrix.bin": "2788C8F1591E2F036392231883668E363675D164690005FF5DF3FBF8AD5EDB67",
-    "Water_Fog_Density_LUT.bin": "BA07352B1F26C830681282E87E6BA18FA584D1AB3EFCF2ACF6E1BC9110638D56"
-  },
-  "shaderSnippetFile": "Water_Extinction_Hecton_CoreLit_Snippet.hlsl",
-  "siltExtinctionAnchorsMInv": {
-    "blue470": 0.012,
-    "green530": 0.0105,
-    "red700": 0.009
-  },
-  "siltProfileScan": {
+  "allTurbidityProfileScan": {
     "count": 216,
     "firstFiles": [
       "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_001_01_Archipelago_Needles.asset",
@@ -125,5 +29,267 @@
     "min": 0.55,
     "sourceGlob": "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/*.asset"
   },
-  "status": "OPTICS CALCULATED"
+  "axes": {
+    "depthMeters": {
+      "count": 256,
+      "max": 1500.0,
+      "min": 0.0,
+      "spacing": "linear"
+    },
+    "turbidityMultiplier": {
+      "count": 256,
+      "max": 2.5,
+      "min": 0.0,
+      "spacing": "linear"
+    },
+    "wavelengthNm": {
+      "count": 256,
+      "max": 700.0,
+      "min": 470.0,
+      "spacing": "linear"
+    }
+  },
+  "binaryHeader": "none",
+  "byteOrder": "little-endian",
+  "fogDensity": {
+    "abyssalSiltFogDensityPerMeter": 0.024,
+    "abyssalSiltFogDensitySource": "Assets/_Project/Data/Biomes/AtmosphereProfiles/Atmos_AbyssalSilt.asset",
+    "axis": {
+      "depthMeters": {
+        "count": 1501,
+        "max": 1500,
+        "min": 0,
+        "step": 1
+      }
+    },
+    "baseFogDensityPerMeter": 0.0021,
+    "bytes": 3002,
+    "format": "float16",
+    "representativeSilt": 1.2657899742857144,
+    "representativeSiltSource": "named silt/sediment RuntimeVisualProfiles",
+    "shape": [
+      1501
+    ]
+  },
+  "fogDensityFile": "Water_Fog_Density_LUT.bin",
+  "giRelayContract": {
+    "allRequiredRulesPresent": true,
+    "appliedRules": {
+      "depthPaletteFake": true,
+      "fogGlobals": true,
+      "lowTierSnapStates": true,
+      "rejectRuntimeVolumetricGI": true,
+      "singleCubemapPath": true
+    },
+    "files": [
+      {
+        "bytes": 6516,
+        "exists": true,
+        "path": "Docs/Archive/Batch003/AgentLogs/LOG_RENDER_GI_RELAY_SYNC.md",
+        "sha256": "B30151AAEE79E22B36E11CC0A8C976401FD06931120B12091BAB949EE6B8ABAD"
+      },
+      {
+        "bytes": 26915,
+        "exists": true,
+        "path": "Docs/Archive/Batch003/AgentLogs/Rationale_RENDER_GI_RELAY_SYNC.md",
+        "sha256": "775F899CD5417442387E308E1110EEC9EBA7887908FE1464B7DB28D79944921F"
+      },
+      {
+        "bytes": 11042,
+        "exists": true,
+        "path": "Docs/Archive/Batch003/Tasks/Status_RENDER_GI_RELAY_SYNC.md",
+        "sha256": "44E48B33CDEC3599B0946A4A84B0FF939191F5A5D2CC06E5B3D66C27A5C8E39C"
+      }
+    ],
+    "summary": [
+      "Use a 1D cyan-to-black depth palette / LUT path rather than volumetric underwater GI.",
+      "Keep fog and atmosphere color as shader-global relay state.",
+      "Keep MX350 low tier on discrete snap-state math; spend high-tier budget on presentation overkill.",
+      "Use a single optional WaterVolume cubemap path, not realtime reflection probe churn."
+    ]
+  },
+  "inputSources": {
+    "atmosphereFogProfiles": [
+      {
+        "fogDensity": 0.024,
+        "name": "Atmos_AbyssalSilt",
+        "path": "Assets/_Project/Data/Biomes/AtmosphereProfiles/Atmos_AbyssalSilt.asset"
+      },
+      {
+        "fogDensity": 0.028,
+        "name": "Atmos_ChemosyntheticBrine",
+        "path": "Assets/_Project/Data/Biomes/AtmosphereProfiles/Atmos_ChemosyntheticBrine.asset"
+      },
+      {
+        "fogDensity": 0.01,
+        "name": "Atmos_CrystalGrowth",
+        "path": "Assets/_Project/Data/Biomes/AtmosphereProfiles/Atmos_CrystalGrowth.asset"
+      },
+      {
+        "fogDensity": 0.013,
+        "name": "Atmos_FossilReef",
+        "path": "Assets/_Project/Data/Biomes/AtmosphereProfiles/Atmos_FossilReef.asset"
+      },
+      {
+        "fogDensity": 0.009,
+        "name": "Atmos_GraniteEscarpment",
+        "path": "Assets/_Project/Data/Biomes/AtmosphereProfiles/Atmos_GraniteEscarpment.asset"
+      },
+      {
+        "fogDensity": 0.0065,
+        "name": "Atmos_LittoralKarst",
+        "path": "Assets/_Project/Data/Biomes/AtmosphereProfiles/Atmos_LittoralKarst.asset"
+      },
+      {
+        "fogDensity": 0.032,
+        "name": "Atmos_MetallicHadal",
+        "path": "Assets/_Project/Data/Biomes/AtmosphereProfiles/Atmos_MetallicHadal.asset"
+      },
+      {
+        "fogDensity": 0.03,
+        "name": "Atmos_RiftSpine",
+        "path": "Assets/_Project/Data/Biomes/AtmosphereProfiles/Atmos_RiftSpine.asset"
+      },
+      {
+        "fogDensity": 0.042,
+        "name": "Atmos_RiftVoid",
+        "path": "Assets/_Project/Data/Biomes/AtmosphereProfiles/Atmos_RiftVoid.asset"
+      },
+      {
+        "fogDensity": 0.011,
+        "name": "Atmos_SedimentDrift",
+        "path": "Assets/_Project/Data/Biomes/AtmosphereProfiles/Atmos_SedimentDrift.asset"
+      },
+      {
+        "fogDensity": 0.015,
+        "name": "Atmos_TectonicSpine",
+        "path": "Assets/_Project/Data/Biomes/AtmosphereProfiles/Atmos_TectonicSpine.asset"
+      },
+      {
+        "fogDensity": 0.03,
+        "name": "Atmos_VolcanicGlass",
+        "path": "Assets/_Project/Data/Biomes/AtmosphereProfiles/Atmos_VolcanicGlass.asset"
+      },
+      {
+        "fogDensity": 0.038,
+        "name": "Atmos_VolcanicHadal",
+        "path": "Assets/_Project/Data/Biomes/AtmosphereProfiles/Atmos_VolcanicHadal.asset"
+      }
+    ],
+    "giRelayLogsReadByCli": [
+      "Docs/Archive/Batch003/AgentLogs/LOG_RENDER_GI_RELAY_SYNC.md",
+      "Docs/Archive/Batch003/AgentLogs/Rationale_RENDER_GI_RELAY_SYNC.md",
+      "Docs/Archive/Batch003/Tasks/Status_RENDER_GI_RELAY_SYNC.md"
+    ],
+    "opticalAnchorNote": "Rounded visible-water absorption anchors for 470nm, 530nm, and 700nm; gameplay silt extinction is a presentation scalar, not particle simulation.",
+    "siltProfileGlob": "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/*.asset",
+    "underwaterFogProfile": "Assets/_Project/Data/Atmosphere/Profile_Underwater.asset"
+  },
+  "matrixFile": "Water_Extinction_Matrix.bin",
+  "matrixShape": [
+    256,
+    256,
+    256
+  ],
+  "packedTexture2D": {
+    "bytes": 33554432,
+    "format": "R16F",
+    "height": 4096,
+    "width": 4096
+  },
+  "previewFile": "Water_Extinction_GradientPreview.png",
+  "readmeFile": "Water_Extinction_README.md",
+  "scalarFormat": "float16",
+  "schema": "H8.WaterExtinctionMatrix.v1",
+  "selfAudit": {
+    "previewTurbidity": 1.34,
+    "redAt500mRequirement": "exactly 0.0000 after float16 quantization",
+    "redMatrixAt500m": 0.0,
+    "redMatrixAt500mDepthIndex": 85,
+    "redTransmittanceAt10m": 0.0019502639770507812,
+    "redTransmittanceAt500m": 0.0,
+    "referenceChecks": [
+      {
+        "appliedCheck": "Red wavelengths are filtered early underwater; preview and LUT keep red below visible persistence after 10m.",
+        "source": "NOAA Ocean Explorer ocean color guidance",
+        "url": "https://oceanexplorer.noaa.gov/ocean-fact/red-color/"
+      },
+      {
+        "appliedCheck": "Preserve the 1D depth-palette/fog-global visual fake path instead of runtime volumetric GI.",
+        "source": "RENDER_GI_RELAY_SYNC batch logs",
+        "url": "Docs/Archive/Batch003/AgentLogs/LOG_RENDER_GI_RELAY_SYNC.md"
+      }
+    ],
+    "status": "PASS"
+  },
+  "sha256": {
+    "Water_Extinction_GradientPreview.png": "D8B5956C9CAB5C900CE511D9D87A06BDF18ACCDCDCFCF6EB0237C1471B53971A",
+    "Water_Extinction_Hecton_CoreLit_Snippet.hlsl": "2D004C331CE98E21B3FC5CE04C5BE00EBDF2A94C16A618A3E7F4ED398FBCDC9E",
+    "Water_Extinction_Matrix.bin": "2788C8F1591E2F036392231883668E363675D164690005FF5DF3FBF8AD5EDB67",
+    "Water_Extinction_README.md": "20C40B55110A0B303C8851D545CADD298623146E24BF532323C05B5546AFF70A",
+    "Water_Fog_Density_LUT.bin": "7012B9C520F84DDB2E8BBFED41DF761646C32EA8B62541A0CF5012D407D0B172"
+  },
+  "shaderSnippetFile": "Water_Extinction_Hecton_CoreLit_Snippet.hlsl",
+  "siltExtinctionAnchorsMInv": {
+    "blue470": 0.012,
+    "green530": 0.0105,
+    "red700": 0.009
+  },
+  "siltProfileScan": {
+    "count": 14,
+    "filter": "file path contains silt or sediment",
+    "firstFiles": [
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_004_01_The_Silt_Tongue.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_004_West_01_The_Silt_Tongue.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_013_04_Silt_Dunes.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_013_North_04_Silt_Dunes.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_024_06_The_Silt_Cascades.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_024_West_06_The_Silt_Cascades.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_028_07_Meandering_Silt_Rivers.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_028_West_07_Meandering_Silt_Rivers.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_033_09_Silt_Catacombs.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_033_North_09_Silt_Catacombs.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_040_10_Silt_Void.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_040_West_10_Silt_Void.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_060_15_The_Silt_Shadows.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_060_West_15_The_Silt_Shadows.asset"
+    ],
+    "max": 1.52716431,
+    "mean": 1.2657899742857144,
+    "min": 0.9072,
+    "sourceGlob": "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/*.asset"
+  },
+  "sourceReferences": [
+    {
+      "source": "NOAA Ocean Explorer ocean color guidance",
+      "url": "https://oceanexplorer.noaa.gov/ocean-fact/red-color/",
+      "usage": "External sanity check that red wavelengths disappear early underwater."
+    },
+    {
+      "source": "Pope/Fry visible pure-water absorption reference listing",
+      "url": "https://opg.optica.org/ao/issue.cfm?issue=33&volume=36",
+      "usage": "Reference trail for the rounded visible-water absorption anchor family used by the baker."
+    },
+    {
+      "path": "Docs/Archive/Batch003/AgentLogs/LOG_RENDER_GI_RELAY_SYNC.md",
+      "source": "RENDER_GI_RELAY_SYNC batch logs",
+      "usage": "Preserves the depth-palette/fog-global visual fake contract."
+    }
+  ],
+  "status": "OPTICS CALCULATED",
+  "validation": {
+    "fog0": 0.00241851806640625,
+    "fog1500": 0.0240020751953125,
+    "fog750": 0.01320648193359375,
+    "fogBytes": 3002,
+    "fogCount": 1501,
+    "fogExpectedBytes": 3002,
+    "giRelayContractAllRequiredRulesPresent": true,
+    "matrixBytes": 33554432,
+    "matrixExpectedBytes": 33554432,
+    "pngSignature": "89504E470D0A1A0A",
+    "snippetHasInt2Load": true,
+    "snippetHasNoRound": true,
+    "status": "PASS"
+  }
 }

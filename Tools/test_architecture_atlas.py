@@ -1,4 +1,5 @@
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -43,6 +44,21 @@ class AtlasCheckTests(unittest.TestCase):
         self.assertIn("Tools/AtlasCheck.py", refs)
         self.assertIn(".agents-skills/ARCH_Signal_Lane_Segregation.txt", refs)
 
+    def test_collect_json_references_walks_nested_payloads(self) -> None:
+        refs = {}
+        atlas_check.collect_json_references(
+            {
+                "artifact": "Docs/DEPENDENCY_GRAPH.md",
+                "nested": ["Tools/BuildArchitectureAtlas.py:44"],
+                "external": "https://example.invalid/nope",
+            },
+            refs,
+        )
+
+        self.assertIn("Docs/DEPENDENCY_GRAPH.md", refs)
+        self.assertIn("Tools/BuildArchitectureAtlas.py", refs)
+        self.assertNotIn("https://example.invalid/nope", refs)
+
 
 class BuildArchitectureAtlasTests(unittest.TestCase):
     def test_normalize_signal_name_strips_namespace_and_generic_tail(self) -> None:
@@ -61,6 +77,37 @@ class BuildArchitectureAtlasTests(unittest.TestCase):
         self.assertEqual(atlas_build.line_number(text, text.index("beta")), 2)
         self.assertEqual(atlas_build.line_number(text, text.index("gamma")), 3)
 
+    def test_analyze_source_file_extracts_cacheable_signal_data(self) -> None:
+        source = (
+            "namespace Hecton8.Core.Signals\n"
+            "{\n"
+            "    public struct CacheProbeSignal : ISignal {}\n"
+            "    public static class Probe\n"
+            "    {\n"
+            "        public static void Run()\n"
+            "        {\n"
+            "            SignalBus<CacheProbeSignal>.Publish(default);\n"
+            "            SignalBus<CacheProbeSignal>.GetFrameSnapshot();\n"
+            "        }\n"
+            "    }\n"
+            "}\n"
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "Probe.cs"
+            path.write_text(source, encoding="utf-8")
+
+            analysis = atlas_build.analyze_source_file(
+                path,
+                "Assets/_Project/Scripts/Core/Signals/Probe.cs",
+                True,
+            )
+
+        self.assertEqual(analysis["line_count"], source.count("\n") + 1)
+        self.assertEqual(analysis["signals"][0]["name"], "CacheProbeSignal")
+        self.assertIn("CacheProbeSignal", analysis["signal_uses"])
+        self.assertIn("Publish", analysis["signal_uses"]["CacheProbeSignal"]["methods"])
+        self.assertIn("GetFrameSnapshot", analysis["signal_uses"]["CacheProbeSignal"]["methods"])
+
     def test_current_atlas_contains_required_machine_sections(self) -> None:
         atlas = PROJECT_ROOT / "Docs" / "DEPENDENCY_GRAPH.md"
         text = atlas.read_text(encoding="utf-8")
@@ -71,6 +118,7 @@ class BuildArchitectureAtlasTests(unittest.TestCase):
         self.assertIn("## SHERST Wall Of Shame", text)
         self.assertIn("## Phi-Resonance Connectivity Model", text)
         self.assertIn("Tools/BuildArchitectureAtlas.py", text)
+        self.assertIn("Docs/DEPENDENCY_GRAPH.json", text)
 
 
 if __name__ == "__main__":

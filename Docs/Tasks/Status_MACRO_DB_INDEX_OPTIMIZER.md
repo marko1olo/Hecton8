@@ -44,7 +44,7 @@ Status: DATABASE OPTIMIZED / PENDING UNITY VERIFICATION
 
 ## Verification
 
-- Compile: BLOCKED BY ENVIRONMENT: no `dotnet`, no `csc.exe`, no `Unity.exe`, no `.sln`, no `.csproj` found in this workspace.
+- Compile: BLOCKED BY ENVIRONMENT: `dotnet` is not installed; MSBuild exists but `Hecton8.slnx` references generated Unity `.csproj` files that are absent; Unity.exe is not installed in searched paths, so project files cannot be regenerated locally.
 - Python fragmentation audit: PASS, dummy file reports `fragmentation_percent=27.033493`.
 - Python RLE audit: PASS.
 - Python hash audit: PASS, 10,000,000 samples, observed collisions `0`, probability `0.000002710501`.
@@ -64,3 +64,10 @@ Status: DATABASE OPTIMIZED / PENDING UNITY VERIFICATION
 - [x] Static source guard | DOD: delimiter scan, B-tree lower-bound usage check, page-fault loop uniqueness check, vault LRU lifecycle check, and managed-container/LINQ hot-path grep all passed. Alternative rejected: pretending hung `csc` equals compile validation. Estimate: 84,200,000 us.
 - [x] Full Python audit rerun | DOD: dummy fragmentation, RLE audit, and 10M hash audit passed in one command chain. Alternative rejected: relying only on first run. Estimate: 379,200,000 us.
 - [x] Process hygiene | DOD: no stray `csc`/`VBCSCompiler` process remained after the failed compiler probe. Alternative rejected: leaving hung compiler processes alive. Estimate: 87,000,000 us.
+- [x] MSBuild wall probe | DOD: `Hecton8.slnx` was found and MSBuild executed; build stopped before C# compilation because every generated Unity `.csproj` listed by the solution is missing. Alternative rejected: generating fake project files outside Unity. Estimate: 121,800,000 us.
+- [x] Unity executable search | DOD: searched PATH, Program Files Unity locations, Unity Hub locations, and user-local Unity paths; Unity.exe not found. Alternative rejected: claiming Unity verification without Unity. Estimate: 83,100,000 us.
+- [x] Final hygiene repair | DOD: removed trailing whitespace in the rationale diff and reran `git diff --check` successfully. `python -B` dummy/RLE/hash executions pass; `compileall` is blocked by a locked `Tools\__pycache__` temp file, so no bytecode-compile claim is made for this final pass. Alternative rejected: deleting shared pycache while other agents are active. Estimate: 150,200,000 us.
+- [x] Analyzer unit-test hardening | DOD: added `Tools/test_db_health_check.py` with five unit tests for v1 layout constants, dummy fragmentation counters, corrupt header rejection, hash probability math, and neighbor-coordinate hash separation. `python -B -m unittest Tools.test_db_health_check` passes. Alternative rejected: relying only on CLI smoke output. Estimate: 29,600,000 us.
+- [x] Post-test verification pass | DOD: reran analyzer unit tests, dummy fragmentation, RLE audit, 1M hash audit, owned-file `git diff --check`, anti-bloat grep, and MSBuild wall probe. Python gates pass; MSBuild still stops before C# compilation on missing Unity-generated `.csproj` files. Alternative rejected: installing or fabricating Unity project files inside a live multi-agent checkout. Estimate: 104,300,000 us.
+- [x] Logical EOF hardening | DOD: `DbHealthCheck` now validates live payload offsets and payload byte ranges against header `append_offset`, not physical mapped file size; added two tests for payloads past/crossing append. `python -B -m unittest Tools.test_db_health_check` passes 7 tests. Alternative rejected: treating mapped slack as valid payload space. Estimate: 68,400,000 us.
+- [x] Full post-EOF verification | DOD: reran the original 10M hash audit after modifying `DbHealthCheck`; observed collisions remain `0` and probability remains `0.000002710501`. Reran MSBuild; failure remains MSB3202 missing generated Unity `.csproj` files before C# compilation. Alternative rejected: downgrading to the earlier 1M sample after touching analyzer code. Estimate: 152,000,000 us.

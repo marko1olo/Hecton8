@@ -105,6 +105,35 @@ def build_recipe_graph(recipes: list[dict[str, Any]]) -> nx.DiGraph:
     return graph
 
 
+def analyze_recipe_identity(recipes: list[dict[str, Any]]) -> dict[str, Any]:
+    recipe_ids: list[str] = []
+    result_item_ids: list[str] = []
+    missing_recipe_ids: list[int] = []
+    missing_result_item_ids: list[str] = []
+
+    for index, recipe in enumerate(recipes):
+        recipe_id = str(recipe.get("recipe_id", ""))
+        result_id = str(recipe.get("result", {}).get("item_id", ""))
+        recipe_ids.append(recipe_id)
+        result_item_ids.append(result_id)
+
+        if not recipe_id:
+            missing_recipe_ids.append(index)
+        if not result_id:
+            missing_result_item_ids.append(recipe_id if recipe_id else f"index_{index}")
+
+    recipe_counts = Counter(recipe_id for recipe_id in recipe_ids if recipe_id)
+    result_counts = Counter(result_id for result_id in result_item_ids if result_id)
+
+    return {
+        "recipe_count": len(recipes),
+        "missing_recipe_ids": missing_recipe_ids,
+        "missing_result_item_ids": missing_result_item_ids,
+        "duplicate_recipe_ids": sorted(recipe_id for recipe_id, count in recipe_counts.items() if count > 1),
+        "duplicate_result_item_ids": sorted(result_id for result_id, count in result_counts.items() if count > 1),
+    }
+
+
 def compute_dependency_depths(recipes_by_result: dict[str, dict[str, Any]]) -> tuple[dict[str, int], list[str]]:
     visiting: set[str] = set()
     cycle_markers: list[str] = []
@@ -546,6 +575,8 @@ def analyze_bulk_transfer(root: Path) -> dict[str, Any]:
     utility = utility_path.read_text(encoding="utf-8", errors="replace")
     inventory = inventory_path.read_text(encoding="utf-8", errors="replace")
     add_method = extract_method(inventory, "private bool TryAddItemWithStateInternal")
+    unit_physical_demand = extract_method(inventory, "private static bool TryResolveUnitPhysicalDemand")
+    capacity_resolver = extract_method(inventory, "private static int ResolveCapacityLimitedQuantity")
 
     return {
         "bulk_job_weight_limit": "nextWeightKg > TargetMaxWeightKg" in utility,
@@ -554,8 +585,9 @@ def analyze_bulk_transfer(root: Path) -> dict[str, Any]:
         "player_bulk_passes_max_volume": "TargetMaxVolumeLiters = targetInventory.MaxVolumeLiters" in inventory,
         "try_add_checks_weight_limit": bool(re.search(r"MaxWeight|_currentWeightKg|CurrentWeight|TryResolveCapacityLimitedQuantity", add_method)),
         "try_add_checks_volume_limit": bool(re.search(r"MaxVolume|_currentVolumeLiters|CurrentVolume|TryResolveCapacityLimitedQuantity", add_method)),
-        "try_add_rejects_nonpositive_unit_mass": bool(re.search(r"unitMassKg\s*>\s*0f", inventory)),
-        "try_add_rejects_nonpositive_unit_volume": bool(re.search(r"unitVolumeLiters\s*>\s*0f", inventory)),
+        "try_add_rejects_nonpositive_unit_mass": bool(re.search(r"unitMassKg\s*>\s*0f", unit_physical_demand)),
+        "try_add_rejects_nonpositive_unit_volume": bool(re.search(r"unitVolumeLiters\s*>\s*0f", unit_physical_demand)),
+        "capacity_resolver_rejects_nonpositive_unit_value": bool(re.search(r"unitValue\s*<=\s*0f\)\s*\r?\n\s*return\s+0;", capacity_resolver)),
     }
 
 
@@ -570,11 +602,16 @@ def build_report(summary: dict[str, Any]) -> str:
         "## Commands",
         "",
         "- `python Tools\\EconomyItemsCsvBake.py --root .`",
-        "- `python Tools\\EconomyValidator.py --root . --negative-tests`",
-        "- `python Tools\\EconomyRecipeGraphAudit.py --root . --report Docs\\Reports\\Economy_Integrity_Audit.md`",
-        "- `python -m unittest Tools.test_economy_integrity`",
-        "- `python -m py_compile Tools\\EconomyRecipeGraphAudit.py Tools\\EconomyValidator.py Tools\\EconomyItemsCsvBake.py Tools\\test_economy_integrity.py`",
+        "- `python -B Tools\\EconomyValidator.py --root . --negative-tests`",
+        "- `python -B Tools\\EconomyRecipeGraphAudit.py --root . --report Docs\\Reports\\Economy_Integrity_Audit.md`",
+        "- `python -B -m unittest Tools.test_economy_integrity`",
+        "- `python -B -c \"ast.parse(...)\"`",
         "- `git diff --check -- ...owned files...`",
+        "",
+        "## Regression Coverage",
+        "- `Tools.test_economy_integrity`: 13 tests covering deterministic `Items.csv` bake, manifest validation, hash corruption detection, recipe identity uniqueness, effective physical metadata, full graph-audit CLI binding drift failure, missing binding-plan failure, resource matrix coverage, DAG/progression band, and inventory capacity fail-closed source gates.",
+        "- `EconomyValidator.py --negative-tests`: 6 malformed economy cases must fail as expected.",
+        "- Bytecode hygiene: final verification uses `python -B`; economy pycache artifacts must remain absent.",
         "",
         "## Sources",
         f"- Recipes: `{summary['sources']['recipes']}`",
@@ -613,6 +650,13 @@ def build_report(summary: dict[str, Any]) -> str:
         f"- Is DAG: {summary['graph']['is_dag']}",
         f"- Cycle count: {summary['graph']['cycle_count']}",
         "",
+        "## Recipe Identity",
+        f"- Recipe count: {summary['recipe_identity']['recipe_count']}",
+        f"- Missing recipe IDs: {summary['recipe_identity']['missing_recipe_ids']}",
+        f"- Missing result item IDs: {summary['recipe_identity']['missing_result_item_ids']}",
+        f"- Duplicate recipe IDs: {summary['recipe_identity']['duplicate_recipe_ids']}",
+        f"- Duplicate result item IDs: {summary['recipe_identity']['duplicate_result_item_ids']}",
+        "",
         "## Progression",
         f"- Goal: {summary['progression'].get('goal_id')}",
         f"- Unique recipe steps: {summary['progression'].get('unique_recipe_steps')}",
@@ -646,6 +690,7 @@ def build_report(summary: dict[str, Any]) -> str:
         f"- Normal TryAdd checks volume: {summary['bulk_transfer']['try_add_checks_volume_limit']}",
         f"- Normal TryAdd rejects nonpositive unit mass: {summary['bulk_transfer']['try_add_rejects_nonpositive_unit_mass']}",
         f"- Normal TryAdd rejects nonpositive unit volume: {summary['bulk_transfer']['try_add_rejects_nonpositive_unit_volume']}",
+        f"- Capacity resolver rejects nonpositive unit value: {summary['bulk_transfer']['capacity_resolver_rejects_nonpositive_unit_value']}",
         "- Fix applied: normal inventory add now resolves capacity-limited quantity using current mass/volume plus runtime item mass/volume before mutating inventory.",
         "",
         "## Save DTO Hash Width",
@@ -701,6 +746,7 @@ def main() -> int:
             "resource_matrix": str(matrix_path.relative_to(root)),
         },
         "networkx_version": nx.__version__,
+        "recipe_identity": analyze_recipe_identity(recipes),
         "items_csv": analyze_items_csv(items_csv_path, data, matrix_rows),
         "physical_metadata": analyze_item_physical_metadata(root, set(item_values), raw_item_ids),
         "graph": {
@@ -725,6 +771,10 @@ def main() -> int:
 
     blocking_findings = (
         not summary["graph"]["is_dag"]
+        or bool(summary["recipe_identity"]["missing_recipe_ids"])
+        or bool(summary["recipe_identity"]["missing_result_item_ids"])
+        or bool(summary["recipe_identity"]["duplicate_recipe_ids"])
+        or bool(summary["recipe_identity"]["duplicate_result_item_ids"])
         or bool(summary["exploits"]["zero_ingredient_recipes"])
         or bool(summary["exploits"]["nonpositive_quantities"])
         or bool(summary["exploits"]["nonpositive_costs"])
@@ -752,6 +802,7 @@ def main() -> int:
         or not summary["bulk_transfer"]["bulk_job_weight_limit"]
         or not summary["bulk_transfer"]["try_add_rejects_nonpositive_unit_mass"]
         or not summary["bulk_transfer"]["try_add_rejects_nonpositive_unit_volume"]
+        or not summary["bulk_transfer"]["capacity_resolver_rejects_nonpositive_unit_value"]
     )
     risk_findings = (
         not summary["bulk_transfer"]["try_add_checks_volume_limit"]

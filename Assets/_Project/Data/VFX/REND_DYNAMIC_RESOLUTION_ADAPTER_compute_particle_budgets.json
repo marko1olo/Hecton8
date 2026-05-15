@@ -7,9 +7,10 @@
   "runtimeCatalog": "Assets/_Project/Scripts/VFX/VfxComputeParticleBudgetCatalog.cs",
   "runtimeConsumers": [
     "Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs",
+    "Assets/_Project/Art/Shaders/Hecton_MarineSnow.compute",
     "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl"
   ],
-  "generatedDate": "2026-05-14",
+  "generatedDate": "2026-05-15",
   "sourceMandates": [
     ".agents-skills/REND_VFX_Fluid_Aesthetics_Compute_Particles.txt",
     ".agents-skills/GPU_Compute_Kernels_Kernels_Optimization_MX350.txt",

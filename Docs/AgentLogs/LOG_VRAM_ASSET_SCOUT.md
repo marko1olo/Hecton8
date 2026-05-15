@@ -254,3 +254,171 @@ Verification:
 Evidence boundary:
 - STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
 - Unity import, Memory Profiler, player build, and runtime frame time remain PENDING VERIFICATION.
+
+## 2026-05-15T05:18:00+03:00 - GEOMETRY BUFFER ESTIMATE PASS
+
+What was wrong:
+- The scanner reported triangles and importer risk, but it did not translate mesh triangle counts into a geometry-buffer pressure estimate against the MX350 200 MiB geometry budget.
+- Asset owners could see one 127,645-triangle redline, but not its approximate geometry-buffer cost.
+
+What was done:
+- Added static geometry estimate constants to Tools/MemoryBudgetCheck.py: 48-byte vertex stride plus 4-byte index, no vertex sharing assumed.
+- Added mesh geometry estimate fields to MeshRecord, broad CSV, mesh redline CSV, JSON, summary, remediation plan, and CI console output.
+- Added MESH_GEOMETRY_ESTIMATE_GT_16MIB_STATIC for single meshes over 16 MiB estimated geometry.
+- Added a deterministic unit test for estimate_geometry_bytes().
+- Regenerated all VRAM reports.
+
+Cinematic cheats used:
+- No runtime simulation. Geometry-side cheap path is LOD/impostor/cull first, then import stripping. Hero geometry remains a tier-gated visual spend only after the low-tier budget holds.
+
+Exact microseconds saved:
+- 0us runtime measured. Static tooling only.
+- Static mesh geometry estimate: 47.85 MiB / 200 MiB geometry budget.
+- First-party static mesh geometry estimate: 6.31 MiB.
+- Single-asset geometry estimate redlines: 1. `Assets/Feel/MMTools/Demos/MMGhostCamera/Models/MMGhostCameraCity.fbx` estimates at 18.99 MiB and also has 127,645 triangles with no detected LOD.
+
+Verification:
+- PYTHONDONTWRITEBYTECODE=1 python AST syntax parse for Tools/MemoryBudgetCheck.py and Tools/test_memory_budget_check.py: PASS.
+- PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py: PASS, 9 tests.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root .: PASS as full report generation; emitted [CRITICAL_VRAM_OVERFLOW], counts 1,645 textures / 301 meshes, geometry estimate 47.85 MiB.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --ci: expected failure with ci_exit_code=2 due current static texture overflow and redlines.
+- Docs/Reports/VRAM_Mesh_Redlines.csv now includes geometry_estimate_mib.
+- Docs/Reports/VRAM_Budget_Audit.json now includes geometry_buffer_budget_mib, mesh_geometry_static_estimate_mib, first_party_mesh_geometry_static_estimate_mib, and mesh_geometry_single_asset_redline_rows.
+
+Evidence boundary:
+- STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
+- Geometry estimate is conservative source math, not Unity imported vertex/index residency. Unity Memory Profiler remains required before marking geometry budget VERIFIED.
+
+## 2026-05-15T06:05:00+03:00 - TEXTURE FORMAT COVERAGE PASS
+
+What was wrong:
+- The scanner only treated PNG/JPG/JPEG as textures.
+- The project contains additional Unity texture containers: TGA, PSD, HDR, EXR, TIFF, BMP, and GIF. Those were previously omitted from texture counts and BC7 pressure.
+
+What was done:
+- Expanded TEXTURE_EXTS in Tools/MemoryBudgetCheck.py to include .tga, .bmp, .psd, .tif, .tiff, .dds, .hdr, .exr, and .gif.
+- Added dependency-free dimension parsers for TGA, BMP, PSD, DDS, GIF, Radiance HDR, TIFF, and OpenEXR dataWindow headers.
+- Added real fixture tests for TGA, PSD, BMP, TIFF, HDR, EXR, and GIF dimension parsing.
+- Regenerated Docs/Reports/VRAM_Budget_Audit.csv, Docs/Reports/VRAM_Budget_Audit_Summary.md, Docs/Reports/VRAM_Remediation_Plan.md, Docs/Reports/VRAM_Budget_Audit.json, Docs/Reports/VRAM_Texture_Redlines.csv, and Docs/Reports/VRAM_Mesh_Redlines.csv.
+
+Cinematic cheats used:
+- No asset mutation. The cheap visual path remains Low-tier clamp/mip bias for heavy texture containers, quarantine demo/editor payloads, and retain HDR/EXR/PSD-derived visuals only behind tier/import proof.
+
+Exact microseconds saved:
+- 0us runtime measured. Static tooling only.
+- Texture coverage increased from 1,645 to 1,668 rows.
+- Static full-mip BC7 total rose to 1,329.88 MiB.
+- Runtime-candidate full-mip BC7 rose to 1,298.65 MiB.
+- First-party production full-mip BC7 is 505.62 MiB.
+- Texture VRAM crime rows rose to 801.
+- Low-tier halving estimate: 179 runtime-candidate >1024 textures, 816.50 MiB full-mip BC7 relief if all are halved.
+
+Verification:
+- PYTHONDONTWRITEBYTECODE=1 python AST syntax parse for Tools/MemoryBudgetCheck.py and Tools/test_memory_budget_check.py: PASS.
+- PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py: PASS, 10 tests.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root .: PASS as full report generation; emitted [CRITICAL_VRAM_OVERFLOW], counts 1,668 textures / 301 meshes.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --ci: expected failure with ci_exit_code=2 due current static texture overflow and redlines.
+- New parsed format sample set includes ScifiFacility TGA/PSD/HDR, scene EXR, MapMagic TIFF, Bakery BMP, Crest HDR/PSD, and Data GIF.
+
+Evidence boundary:
+- STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
+- Unity import settings, platform compression, texture streaming residency, and Memory Profiler graphics memory remain PENDING VERIFICATION.
+
+## 2026-05-15T14:36:00+03:00 - SOURCE CONTAINER RISK PASS
+
+What was wrong:
+- Expanded texture formats were counted, but HDR/EXR/PSD/GIF/TGA/TIFF/BMP source-container risk was not grouped into a direct remediation queue.
+- Asset owners would have had to filter the broad CSV manually to see format-family pressure.
+
+What was done:
+- Added source-container risk flags for HDR/EXR, PSD, GIF, TGA, TIFF, and BMP texture rows.
+- Added runtime texture extension pressure summaries to Docs/Reports/VRAM_Budget_Audit_Summary.md.
+- Added texture_extension_summary to Docs/Reports/VRAM_Budget_Audit.json.
+- Added Priority 2 - Convert Risky Texture Source Containers to Docs/Reports/VRAM_Remediation_Plan.md.
+- Added unit coverage for container-risk classification.
+- Removed duplicated mesh-geometry aggregate lines in write_remediation_plan while touching the report path.
+
+Cinematic cheats used:
+- No asset mutation. The cheap path is format conversion/quarantine plus import compression proof before spending VRAM on high-fidelity HDR/PSD/TGA-derived visuals.
+
+Exact microseconds saved:
+- 0us runtime measured. Static tooling only.
+- Texture source-container risk rows: 23.
+- First-party texture source-container risk rows: 2.
+- Texture flagged rows: 962.
+- Runtime extension pressure: .tga 38.67 MiB, .hdr 5.33 MiB, .psd 2.17 MiB, .gif 0.88 MiB, .exr 0.25 MiB, .tif 0.08 MiB, .bmp 0.02 MiB full-mip BC7 estimates.
+
+Verification:
+- PYTHONDONTWRITEBYTECODE=1 python AST syntax parse for Tools/MemoryBudgetCheck.py and Tools/test_memory_budget_check.py: PASS.
+- PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py: PASS, 11 tests.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root .: PASS as full report generation; emitted [CRITICAL_VRAM_OVERFLOW], counts 1,668 textures / 301 meshes.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --ci: expected failure with ci_exit_code=2 due current static texture overflow and redlines.
+
+Evidence boundary:
+- STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
+- Source-container flags are import-risk evidence, not proof of runtime residency or final platform compression.
+
+## 2026-05-15T15:08:00+03:00 - GLB MESH COVERAGE PASS
+
+What was wrong:
+- A blind-spot probe for Unity-importable mesh formats found `Assets/_Project/Art/Models/Rocks/nordic_beach_rock_vbumba2fa_mid.glb`.
+- The scanner only counted `.fbx` and `.obj`, so the previous "all meshes" audit missed one first-party mesh source.
+
+What was done:
+- Added `.glb` and `.gltf` to `MESH_EXTS`.
+- Added GLB v2 JSON chunk parsing and glTF primitive triangle counting from accessor counts for TRIANGLES, TRIANGLE_STRIP, and TRIANGLE_FAN.
+- Added `mesh_extension_summary` to `Docs/Reports/VRAM_Budget_Audit.json`.
+- Added `Runtime Mesh Extension Pressure` to `Docs/Reports/VRAM_Budget_Audit_Summary.md`.
+- Added read-only unit coverage for synthetic glTF primitive math and the real first-party GLB fixture.
+- Regenerated `Docs/Reports/VRAM_Budget_Audit.csv`, `Docs/Reports/VRAM_Budget_Audit_Summary.md`, `Docs/Reports/VRAM_Remediation_Plan.md`, `Docs/Reports/VRAM_Budget_Audit.json`, `Docs/Reports/VRAM_Texture_Redlines.csv`, and `Docs/Reports/VRAM_Mesh_Redlines.csv`.
+
+Cinematic cheats used:
+- No runtime simulation and no asset mutation. The cheap path is source visibility plus LOD/cull/import proof; high-tier GLB visual spend remains allowed only after Low/MX350 geometry and residency gates hold.
+
+Exact microseconds saved:
+- 0us runtime measured. Static tooling only.
+- Mesh count increased from 301 to 302.
+- New `.glb` mesh count: 1 asset, 1,298 known triangles, 0 triangle-unreadable rows, 0.193 MiB conservative geometry estimate, 0 flagged rows.
+- Static mesh geometry estimate increased from 47.85 MiB to 48.05 MiB.
+- First-party static mesh geometry estimate increased from 6.31 MiB to 6.505 MiB.
+
+Verification:
+- `rg --files` blind-spot probe found one `.glb` mesh and zero `.dae/.blend/.3ds/.ma/.mb/.max/.c4d/.stl/.ply/.gltf` extras.
+- `rg --files` exotic texture probe found zero `.webp/.ktx/.ktx2/.pic/.pict/.iff/.psb/.sgi/.rgb/.rgba/.pvr/.astc/.basis` textures.
+- PYTHONDONTWRITEBYTECODE=1 python AST syntax parse for `Tools/MemoryBudgetCheck.py` and `Tools/test_memory_budget_check.py`: PASS.
+- PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py: PASS, 12 tests.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root .: PASS as full report generation; emitted [CRITICAL_VRAM_OVERFLOW], counts 1,668 textures / 302 meshes.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --ci: expected failure with ci_exit_code=2 due current static texture overflow and redlines.
+
+Evidence boundary:
+- STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
+- glTF accessor triangle counts are source evidence, not Unity imported vertex/index residency. Unity Memory Profiler remains required for geometry budget verification.
+
+## 2026-05-15T15:18:00+03:00 - FINAL ANTI-BLOAT BOUNDARY PASS
+
+What was wrong:
+- The checklist is complete, but `Docs/Tasks/CURRENT_BATCH.md` no longer contains `VRAM_ASSET_SCOUT` or a `<POLISH_MANDATE>` tag.
+- A final report cannot claim a missing XML mandate was executed.
+
+What was done:
+- Documented the missing POLISH_MANDATE boundary in `Docs/Tasks/Status_VRAM_ASSET_SCOUT.md` and `Docs/AgentLogs/Rationale_VRAM_ASSET_SCOUT.md`.
+- Re-ran extension probes after the GLB patch.
+- Confirmed `Tools/__pycache__` contains no `MemoryBudgetCheck` or `test_memory_budget_check` bytecode.
+- Reviewed scoped diff surface for this agent's owned files.
+
+Cinematic cheats used:
+- No runtime simulation and no asset mutation. Final polish remained a tooling/report hygiene pass.
+
+Exact microseconds saved:
+- 0us runtime measured. Static tooling only.
+- Remaining non-FBX/OBJ Unity mesh-format probe result: one `.glb`, already scanned.
+- Exotic texture probe result: zero `.webp/.ktx/.ktx2/.pic/.pict/.iff/.psb/.sgi/.rgb/.rgba/.pvr/.astc/.basis` hits.
+
+Verification:
+- `rg --files` mesh-format probe returned only `Assets/_Project/Art/Models/Rocks/nordic_beach_rock_vbumba2fa_mid.glb`.
+- `rg --files` exotic texture-format probe returned no files.
+- `git diff --stat` reviewed scoped files: `Tools/MemoryBudgetCheck.py`, `Tools/test_memory_budget_check.py`, VRAM reports, status, rationale, and CTO log.
+
+Evidence boundary:
+- STATIC_SOURCE / FILESYSTEM only.
+- Unity import, Memory Profiler, player build, and runtime frame time remain PENDING VERIFICATION.

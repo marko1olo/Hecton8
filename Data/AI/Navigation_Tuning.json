@@ -1,4 +1,64 @@
 {
+  "blackBoxTelemetry": {
+    "capacityFrames": 300,
+    "dumpPath": "Docs/AgentLogs/Dump_AI_POTENTIAL_FIELD_NAVIGATOR.bin",
+    "dumpTriggers": [
+      "nonFinitePosition",
+      "nonFiniteVelocity",
+      "negativeSdfClearance",
+      "sourceParameterDrift"
+    ],
+    "fields": [
+      {
+        "name": "frameIndex",
+        "type": "uint"
+      },
+      {
+        "name": "entityId",
+        "type": "uint"
+      },
+      {
+        "name": "positionAupCell",
+        "type": "int3"
+      },
+      {
+        "name": "positionLocalMeters",
+        "type": "float3"
+      },
+      {
+        "name": "velocityMetersPerSecond",
+        "type": "float3"
+      },
+      {
+        "name": "targetDistanceMeters",
+        "type": "float"
+      },
+      {
+        "name": "flowAlignmentSigned",
+        "type": "float"
+      },
+      {
+        "name": "sdfClearanceMeters",
+        "type": "float"
+      },
+      {
+        "name": "stateFlags",
+        "type": "uint"
+      },
+      {
+        "name": "stateHash",
+        "type": "uint"
+      }
+    ],
+    "finiteGuards": [
+      "positionLocalMeters",
+      "velocityMetersPerSecond",
+      "targetDistanceMeters",
+      "flowAlignmentSigned",
+      "sdfClearanceMeters"
+    ],
+    "storage": "NativeArray<AiPotentialFieldTelemetryEntry> circular buffer"
+  },
   "evidenceClass": "PY_SIM_STATIC_MODEL",
   "failureModes": [
     "No finite flow sample: use target attraction plus SDF repulsion only.",
@@ -23,6 +83,245 @@
     ],
     "mean_velocity_flow_alignment01": 0.9979
   },
+  "pathTrace": {
+    "finalDistanceMeters": 2.8104,
+    "minObstacleClearanceMeters": 2.2249,
+    "reached": true,
+    "sampleStrideSteps": 20,
+    "samples": [
+      {
+        "clearanceMeters": 23.0,
+        "distanceToTargetMeters": 207.4223,
+        "flowAlignmentSigned": 0.9986,
+        "position": [
+          -82.0,
+          -340.0,
+          -64.0
+        ],
+        "step": 0,
+        "timeSeconds": 0.0
+      },
+      {
+        "clearanceMeters": 29.994,
+        "distanceToTargetMeters": 196.6208,
+        "flowAlignmentSigned": 0.8071,
+        "position": [
+          -73.8418,
+          -339.994,
+          -56.9153
+        ],
+        "step": 20,
+        "timeSeconds": 2.0
+      },
+      {
+        "clearanceMeters": 16.7954,
+        "distanceToTargetMeters": 172.8171,
+        "flowAlignmentSigned": 0.2364,
+        "position": [
+          -56.0778,
+          -339.9447,
+          -41.0361
+        ],
+        "step": 40,
+        "timeSeconds": 4.0
+      },
+      {
+        "clearanceMeters": 7.0371,
+        "distanceToTargetMeters": 163.0725,
+        "flowAlignmentSigned": 0.2921,
+        "position": [
+          -50.2627,
+          -339.718,
+          -32.7037
+        ],
+        "step": 60,
+        "timeSeconds": 6.0
+      },
+      {
+        "clearanceMeters": 20.0353,
+        "distanceToTargetMeters": 175.8383,
+        "flowAlignmentSigned": 0.282,
+        "position": [
+          -62.5569,
+          -339.2697,
+          -37.6519
+        ],
+        "step": 80,
+        "timeSeconds": 8.0
+      },
+      {
+        "clearanceMeters": 8.0002,
+        "distanceToTargetMeters": 162.8958,
+        "flowAlignmentSigned": 0.6707,
+        "position": [
+          -54.4271,
+          -339.0277,
+          -26.8534
+        ],
+        "step": 100,
+        "timeSeconds": 10.0
+      },
+      {
+        "clearanceMeters": 11.8378,
+        "distanceToTargetMeters": 161.1679,
+        "flowAlignmentSigned": 0.8602,
+        "position": [
+          -59.675,
+          -337.8366,
+          -15.7616
+        ],
+        "step": 120,
+        "timeSeconds": 12.0
+      },
+      {
+        "clearanceMeters": 17.6074,
+        "distanceToTargetMeters": 155.6479,
+        "flowAlignmentSigned": 0.8604,
+        "position": [
+          -61.2998,
+          -336.645,
+          -1.3582
+        ],
+        "step": 140,
+        "timeSeconds": 14.0
+      },
+      {
+        "clearanceMeters": 19.7907,
+        "distanceToTargetMeters": 134.6903,
+        "flowAlignmentSigned": 0.763,
+        "position": [
+          -46.1814,
+          -336.4321,
+          15.9642
+        ],
+        "step": 160,
+        "timeSeconds": 16.0
+      },
+      {
+        "clearanceMeters": 13.7387,
+        "distanceToTargetMeters": 109.559,
+        "flowAlignmentSigned": 0.9994,
+        "position": [
+          -25.0799,
+          -336.8291,
+          31.0182
+        ],
+        "step": 180,
+        "timeSeconds": 18.0
+      },
+      {
+        "clearanceMeters": 8.0079,
+        "distanceToTargetMeters": 99.6011,
+        "flowAlignmentSigned": 0.8839,
+        "position": [
+          -12.6453,
+          -333.2553,
+          27.2775
+        ],
+        "step": 200,
+        "timeSeconds": 20.0
+      },
+      {
+        "clearanceMeters": 9.9258,
+        "distanceToTargetMeters": 105.3145,
+        "flowAlignmentSigned": 0.9147,
+        "position": [
+          -14.6819,
+          -323.4226,
+          20.8152
+        ],
+        "step": 220,
+        "timeSeconds": 22.0
+      },
+      {
+        "clearanceMeters": 11.6621,
+        "distanceToTargetMeters": 93.7841,
+        "flowAlignmentSigned": 0.8142,
+        "position": [
+          -6.9852,
+          -322.0207,
+          32.6486
+        ],
+        "step": 240,
+        "timeSeconds": 24.0
+      },
+      {
+        "clearanceMeters": 12.681,
+        "distanceToTargetMeters": 71.5926,
+        "flowAlignmentSigned": 0.449,
+        "position": [
+          13.0343,
+          -322.681,
+          43.403
+        ],
+        "step": 260,
+        "timeSeconds": 26.0
+      },
+      {
+        "clearanceMeters": 10.0004,
+        "distanceToTargetMeters": 45.9216,
+        "flowAlignmentSigned": 0.1494,
+        "position": [
+          36.8265,
+          -326.3244,
+          52.9497
+        ],
+        "step": 280,
+        "timeSeconds": 28.0
+      },
+      {
+        "clearanceMeters": 20.328,
+        "distanceToTargetMeters": 20.8476,
+        "flowAlignmentSigned": 0.4581,
+        "position": [
+          58.7596,
+          -332.3692,
+          65.51
+        ],
+        "step": 300,
+        "timeSeconds": 30.0
+      },
+      {
+        "clearanceMeters": 22.988,
+        "distanceToTargetMeters": 4.7503,
+        "flowAlignmentSigned": 0.5747,
+        "position": [
+          82.012,
+          -340.5368,
+          70.4862
+        ],
+        "step": 320,
+        "timeSeconds": 32.0
+      },
+      {
+        "clearanceMeters": 22.7981,
+        "distanceToTargetMeters": 5.9465,
+        "flowAlignmentSigned": -0.025,
+        "position": [
+          82.2019,
+          -343.2807,
+          65.3653
+        ],
+        "step": 340,
+        "timeSeconds": 34.0
+      },
+      {
+        "clearanceMeters": 27.1432,
+        "distanceToTargetMeters": 2.8104,
+        "flowAlignmentSigned": -0.7143,
+        "position": [
+          77.8568,
+          -341.4198,
+          65.5788
+        ],
+        "step": 346,
+        "timeSeconds": 34.6
+      }
+    ],
+    "scenario": "selected smoothed predator path through hurricane current",
+    "sdfPushoutEvents": 0,
+    "steps": 346
+  },
   "performanceModel": {
     "cadenceHz": 10,
     "estimatedScalarOpsPerFrameHigh": 7166.67,
@@ -36,12 +335,6 @@
     "samplesPerSecond": 1000
   },
   "promptId": "AI_POTENTIAL_FIELD_NAVIGATOR",
-  "pythonMicroBenchmark": {
-    "pythonElapsedMs": 64.7093,
-    "pythonIterations": 1000,
-    "pythonMicrosecondsPerSample": 64.7093,
-    "runtimeEvidence": "PYTHON_TOOL_ONLY - not Unity runtime proof"
-  },
   "rawNoSmoothingMetrics": {
     "finalDistanceMeters": 2.453,
     "jitterEvents": 2,
@@ -54,6 +347,15 @@
     "sdfPushoutEvents": 0,
     "seconds": 23.8,
     "steps": 238
+  },
+  "sampleCostModel": {
+    "branchClampSitesPerSolve": 7,
+    "flowSamplesPerSolve": 1,
+    "model": "STATIC_SCALAR_OP_ESTIMATE",
+    "normalizationsPerSolve": 5,
+    "runtimeEvidence": "DETERMINISTIC_MODEL_ONLY - requires Burst profiler/GCMonitor for acceptance",
+    "sdfProxyChecksPerSolve": 5,
+    "sqrtOrRsqrtSitesPerSolve": 5
   },
   "schema": "H8.NavigationTuning.PotentialField.v1",
   "search": {
@@ -111,6 +413,11 @@
   "tierProfiles": {
     "High": {
       "cadenceHz": 15,
+      "hysteresis": {
+        "distanceMeters": 5.0,
+        "rule": "Tier/scalability changes require both bands before switching to prevent AI LOD flip-flop.",
+        "timeSeconds": 3.0
+      },
       "mathLod": "flow alignment plus richer local SDF gradient, tighter smoothing for pursuit",
       "weights": {
         "ewmaSteeringAlpha": 0.28,
@@ -125,6 +432,11 @@
     },
     "Low": {
       "cadenceHz": 10,
+      "hysteresis": {
+        "distanceMeters": 5.0,
+        "rule": "Tier/scalability changes require both bands before switching to prevent AI LOD flip-flop.",
+        "timeSeconds": 3.0
+      },
       "mathLod": "one flow sample, one nearest SDF/bounds repulsion, strongest current axis only",
       "weights": {
         "ewmaSteeringAlpha": 0.46,
@@ -139,6 +451,11 @@
     },
     "Middle": {
       "cadenceHz": 10,
+      "hysteresis": {
+        "distanceMeters": 5.0,
+        "rule": "Tier/scalability changes require both bands before switching to prevent AI LOD flip-flop.",
+        "timeSeconds": 3.0
+      },
       "mathLod": "one flow sample, obstacle loop capped to local SDF proxies, EWMA final steering",
       "weights": {
         "ewmaSteeringAlpha": 0.28,
@@ -153,6 +470,11 @@
     },
     "Ultra": {
       "cadenceHz": 20,
+      "hysteresis": {
+        "distanceMeters": 5.0,
+        "rule": "Tier/scalability changes require both bands before switching to prevent AI LOD flip-flop.",
+        "timeSeconds": 3.0
+      },
       "mathLod": "adds local vortex interest and visual-overkill path curvature while retaining O(1) steering",
       "weights": {
         "ewmaSteeringAlpha": 0.28,

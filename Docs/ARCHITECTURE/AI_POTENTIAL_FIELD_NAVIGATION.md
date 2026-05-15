@@ -44,6 +44,12 @@ Pinned values in `Data/AI/Navigation_Tuning.json`:
 - `POST_SIMULATION`: swap steering outputs, write the 300-frame AI black box entry, publish broad typed signals only when state changes.
 - `VISUAL_SYNC`: animation/VAT/audio consume steering output; no gameplay truth mutation.
 
+## Black Box
+
+Runtime port must keep `NativeArray<AiPotentialFieldTelemetryEntry>[300]` as a circular buffer and dump it to `Docs/AgentLogs/Dump_AI_POTENTIAL_FIELD_NAVIGATOR.bin` on non-finite state, negative SDF clearance, or source-parameter drift detection.
+
+Required telemetry fields are exported in `Data/AI/Navigation_Tuning.json`: `frameIndex`, `entityId`, `positionAupCell`, `positionLocalMeters`, `velocityMetersPerSecond`, `targetDistanceMeters`, `flowAlignmentSigned`, `sdfClearanceMeters`, `stateFlags`, and `stateHash`. All float fields feeding steering or rendering must be finite-guarded before write.
+
 ## Steering Formula
 
 ```text
@@ -72,7 +78,7 @@ This gives organic drift without simulating water as physical authority for ever
 
 ## Tuning Export
 
-The simulator writes `Data/AI/Navigation_Tuning.json` with selected weights, tier profiles, jitter metrics, idle drift metrics, and a static performance model.
+The simulator writes `Data/AI/Navigation_Tuning.json` with selected weights, tier profiles, jitter metrics, idle drift metrics, compact path trace samples, and a static performance model.
 
 Artifact guard:
 
@@ -80,7 +86,7 @@ Artifact guard:
 python Tools/AiPathSim.py --check
 ```
 
-The guard reloads the exported JSON, reconstructs the selected weights, replays the path, and rejects stale or weakened data if reach, SDF clearance, jitter, idle drift, source constants, or the 100-predator performance model regress.
+The guard reloads the exported JSON, reconstructs the selected weights, replays the full candidate search, and rejects stale or weakened data if reach, SDF clearance, jitter, idle drift, path trace samples, stored raw/smoothed metrics, source constants, or the 100-predator performance model regress. Source drift is checked against every matching live constant in `Assets/_Project/Scripts/HectonFluidEngine.cs`, including `AbyssalFlowTextureResolution`, `AbyssalFlowTextureWorldSizeMeters`, `VectorNoiseResolution`, `SurfaceStormLayerDepthMeters`, `StormSurfaceTurbulenceStrength`, `AbyssalFlowThermoclineDepthMeters`, and `MaxAbyssalHeatSourceCount`.
 
 ## Scalability
 
@@ -104,6 +110,8 @@ Ultra:
 - 20Hz steering.
 - Optional local vortex interest for visual overkill.
 - Still O(1); no global A* spam and no GPU readback.
+
+Tier switching uses hysteresis from `Data/AI/Navigation_Tuning.json`: 5m distance band and 3s dwell time. Runtime must satisfy both before changing steering tier so predators do not flip between Low/Middle/High/Ultra within the same engagement.
 
 ## Failure Modes
 

@@ -1,0 +1,389 @@
+{
+  "schema_id": "hecton8.submarine_runtime_pack_layout.v1",
+  "byte_order": "little-endian",
+  "magic_ascii": "H8HYDRO\\0",
+  "version": 1,
+  "header": {
+    "format": "<8sIIII",
+    "bytes": 24,
+    "fields": [
+      {
+        "name": "magic",
+        "byte_offset": 0,
+        "bytes": 8,
+        "format": "char[8]"
+      },
+      {
+        "name": "version",
+        "byte_offset": 8,
+        "bytes": 4,
+        "format": "uint32_le"
+      },
+      {
+        "name": "hull_count",
+        "byte_offset": 12,
+        "bytes": 4,
+        "format": "uint32_le"
+      },
+      {
+        "name": "float_count",
+        "byte_offset": 16,
+        "bytes": 4,
+        "format": "uint32_le"
+      },
+      {
+        "name": "record_stride_bytes",
+        "byte_offset": 20,
+        "bytes": 4,
+        "format": "uint32_le"
+      }
+    ]
+  },
+  "record": {
+    "format": "<IIfffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "bytes": 220,
+    "fields": [
+      {
+        "index": -2,
+        "byte_offset_from_record_start": 0,
+        "name": "shape_hash_fnv1a32",
+        "format": "uint32_le"
+      },
+      {
+        "index": -1,
+        "byte_offset_from_record_start": 4,
+        "name": "shape_index",
+        "format": "uint32_le"
+      },
+      {
+        "index": 0,
+        "byte_offset_from_record_start": 8,
+        "name": "length_m",
+        "format": "float32_le"
+      },
+      {
+        "index": 1,
+        "byte_offset_from_record_start": 12,
+        "name": "beam_m",
+        "format": "float32_le"
+      },
+      {
+        "index": 2,
+        "byte_offset_from_record_start": 16,
+        "name": "height_m",
+        "format": "float32_le"
+      },
+      {
+        "index": 3,
+        "byte_offset_from_record_start": 20,
+        "name": "operational_mass_kg",
+        "format": "float32_le"
+      },
+      {
+        "index": 4,
+        "byte_offset_from_record_start": 24,
+        "name": "displaced_water_mass_kg",
+        "format": "float32_le"
+      },
+      {
+        "index": 5,
+        "byte_offset_from_record_start": 28,
+        "name": "max_thrust_n",
+        "format": "float32_le"
+      },
+      {
+        "index": 6,
+        "byte_offset_from_record_start": 32,
+        "name": "rated_cruise_speed_mps",
+        "format": "float32_le"
+      },
+      {
+        "index": 7,
+        "byte_offset_from_record_start": 36,
+        "name": "terminal_speed_at_max_thrust_mps",
+        "format": "float32_le"
+      },
+      {
+        "index": 8,
+        "byte_offset_from_record_start": 40,
+        "name": "drag_cd_area_x",
+        "format": "float32_le"
+      },
+      {
+        "index": 9,
+        "byte_offset_from_record_start": 44,
+        "name": "drag_cd_area_y",
+        "format": "float32_le"
+      },
+      {
+        "index": 10,
+        "byte_offset_from_record_start": 48,
+        "name": "drag_cd_area_z",
+        "format": "float32_le"
+      },
+      {
+        "index": 11,
+        "byte_offset_from_record_start": 52,
+        "name": "square_drag_per_meter_x",
+        "format": "float32_le"
+      },
+      {
+        "index": 12,
+        "byte_offset_from_record_start": 56,
+        "name": "square_drag_per_meter_y",
+        "format": "float32_le"
+      },
+      {
+        "index": 13,
+        "byte_offset_from_record_start": 60,
+        "name": "square_drag_per_meter_z",
+        "format": "float32_le"
+      },
+      {
+        "index": 14,
+        "byte_offset_from_record_start": 64,
+        "name": "added_mass_kg_x",
+        "format": "float32_le"
+      },
+      {
+        "index": 15,
+        "byte_offset_from_record_start": 68,
+        "name": "added_mass_kg_y",
+        "format": "float32_le"
+      },
+      {
+        "index": 16,
+        "byte_offset_from_record_start": 72,
+        "name": "added_mass_kg_z",
+        "format": "float32_le"
+      },
+      {
+        "index": 17,
+        "byte_offset_from_record_start": 76,
+        "name": "effective_mass_kg_x",
+        "format": "float32_le"
+      },
+      {
+        "index": 18,
+        "byte_offset_from_record_start": 80,
+        "name": "effective_mass_kg_y",
+        "format": "float32_le"
+      },
+      {
+        "index": 19,
+        "byte_offset_from_record_start": 84,
+        "name": "effective_mass_kg_z",
+        "format": "float32_le"
+      },
+      {
+        "index": 20,
+        "byte_offset_from_record_start": 88,
+        "name": "angular_damping_roll",
+        "format": "float32_le"
+      },
+      {
+        "index": 21,
+        "byte_offset_from_record_start": 92,
+        "name": "angular_damping_pitch",
+        "format": "float32_le"
+      },
+      {
+        "index": 22,
+        "byte_offset_from_record_start": 96,
+        "name": "angular_damping_yaw",
+        "format": "float32_le"
+      },
+      {
+        "index": 23,
+        "byte_offset_from_record_start": 100,
+        "name": "added_angular_inertia_roll",
+        "format": "float32_le"
+      },
+      {
+        "index": 24,
+        "byte_offset_from_record_start": 104,
+        "name": "added_angular_inertia_pitch",
+        "format": "float32_le"
+      },
+      {
+        "index": 25,
+        "byte_offset_from_record_start": 108,
+        "name": "added_angular_inertia_yaw",
+        "format": "float32_le"
+      },
+      {
+        "index": 26,
+        "byte_offset_from_record_start": 112,
+        "name": "rigid_angular_inertia_roll",
+        "format": "float32_le"
+      },
+      {
+        "index": 27,
+        "byte_offset_from_record_start": 116,
+        "name": "rigid_angular_inertia_pitch",
+        "format": "float32_le"
+      },
+      {
+        "index": 28,
+        "byte_offset_from_record_start": 120,
+        "name": "rigid_angular_inertia_yaw",
+        "format": "float32_le"
+      },
+      {
+        "index": 29,
+        "byte_offset_from_record_start": 124,
+        "name": "lift_pitch_cl_neg15",
+        "format": "float32_le"
+      },
+      {
+        "index": 30,
+        "byte_offset_from_record_start": 128,
+        "name": "lift_yaw_cl_neg15",
+        "format": "float32_le"
+      },
+      {
+        "index": 31,
+        "byte_offset_from_record_start": 132,
+        "name": "lift_pitch_cl_neg10",
+        "format": "float32_le"
+      },
+      {
+        "index": 32,
+        "byte_offset_from_record_start": 136,
+        "name": "lift_yaw_cl_neg10",
+        "format": "float32_le"
+      },
+      {
+        "index": 33,
+        "byte_offset_from_record_start": 140,
+        "name": "lift_pitch_cl_neg5",
+        "format": "float32_le"
+      },
+      {
+        "index": 34,
+        "byte_offset_from_record_start": 144,
+        "name": "lift_yaw_cl_neg5",
+        "format": "float32_le"
+      },
+      {
+        "index": 35,
+        "byte_offset_from_record_start": 148,
+        "name": "lift_pitch_cl_0",
+        "format": "float32_le"
+      },
+      {
+        "index": 36,
+        "byte_offset_from_record_start": 152,
+        "name": "lift_yaw_cl_0",
+        "format": "float32_le"
+      },
+      {
+        "index": 37,
+        "byte_offset_from_record_start": 156,
+        "name": "lift_pitch_cl_pos5",
+        "format": "float32_le"
+      },
+      {
+        "index": 38,
+        "byte_offset_from_record_start": 160,
+        "name": "lift_yaw_cl_pos5",
+        "format": "float32_le"
+      },
+      {
+        "index": 39,
+        "byte_offset_from_record_start": 164,
+        "name": "lift_pitch_cl_pos10",
+        "format": "float32_le"
+      },
+      {
+        "index": 40,
+        "byte_offset_from_record_start": 168,
+        "name": "lift_yaw_cl_pos10",
+        "format": "float32_le"
+      },
+      {
+        "index": 41,
+        "byte_offset_from_record_start": 172,
+        "name": "lift_pitch_cl_pos15",
+        "format": "float32_le"
+      },
+      {
+        "index": 42,
+        "byte_offset_from_record_start": 176,
+        "name": "lift_yaw_cl_pos15",
+        "format": "float32_le"
+      },
+      {
+        "index": 43,
+        "byte_offset_from_record_start": 180,
+        "name": "cavitation_onset_mps_depth_0",
+        "format": "float32_le"
+      },
+      {
+        "index": 44,
+        "byte_offset_from_record_start": 184,
+        "name": "cavitation_onset_mps_depth_25",
+        "format": "float32_le"
+      },
+      {
+        "index": 45,
+        "byte_offset_from_record_start": 188,
+        "name": "cavitation_onset_mps_depth_50",
+        "format": "float32_le"
+      },
+      {
+        "index": 46,
+        "byte_offset_from_record_start": 192,
+        "name": "cavitation_onset_mps_depth_100",
+        "format": "float32_le"
+      },
+      {
+        "index": 47,
+        "byte_offset_from_record_start": 196,
+        "name": "cavitation_onset_mps_depth_300",
+        "format": "float32_le"
+      },
+      {
+        "index": 48,
+        "byte_offset_from_record_start": 200,
+        "name": "cavitation_critical_prop_mps_depth_0",
+        "format": "float32_le"
+      },
+      {
+        "index": 49,
+        "byte_offset_from_record_start": 204,
+        "name": "cavitation_critical_prop_mps_depth_25",
+        "format": "float32_le"
+      },
+      {
+        "index": 50,
+        "byte_offset_from_record_start": 208,
+        "name": "cavitation_critical_prop_mps_depth_50",
+        "format": "float32_le"
+      },
+      {
+        "index": 51,
+        "byte_offset_from_record_start": 212,
+        "name": "cavitation_critical_prop_mps_depth_100",
+        "format": "float32_le"
+      },
+      {
+        "index": 52,
+        "byte_offset_from_record_start": 216,
+        "name": "cavitation_critical_prop_mps_depth_300",
+        "format": "float32_le"
+      }
+    ]
+  },
+  "hull_order": [
+    "SLEEK",
+    "INDUSTRIAL",
+    "BOXY",
+    "ALIEN",
+    "ARMORED_CRAWLER"
+  ],
+  "notes": [
+    "Load at initialization only; do not parse JSON in Tick or FixedTick.",
+    "Records are append-only for batch compatibility; increase version before changing existing field order."
+  ]
+}

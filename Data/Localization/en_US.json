@@ -591,14 +591,14 @@
       "Hash": "0x36D56F26",
       "Layer": "UI",
       "Category": "suit_upgrade",
-      "Text": "Adds a small emergency oxygen reserve to the suit. System audit: the field label Oxygen Tank resolves to SuitUpgrades.HighCapacityTank, bit 0, mask 0x0000000000000001, and adds +4 MaxO2 to SuitStats from 100 to 104. It does not improve CrushDepth, pressure rating, MaxIntegrity, thermal range, energy, radiation threshold, or swim speed."
+      "Text": "Adds a small emergency oxygen reserve to the suit. System audit: suit_oxygen_t1_aux_reservoir, field label Oxygen Tank, resolves to SuitUpgrades.HighCapacityTank, bit 0, mask 0x0000000000000001, and adds +4 MaxO2 to SuitStats from 100 to 104. It does not improve CrushDepth, pressure rating, MaxIntegrity, thermal range, energy, radiation threshold, or swim speed."
     },
     {
       "LocID": "LORE_AUDIT_SUIT_OXYGEN_TANK_DTO_SYNC",
       "Hash": "0x06BE1095",
       "Layer": "Narrative",
       "Category": "audit",
-      "Text": "Lore DTO sync: Oxygen Tank is diagnostic shorthand for the suit_oxygen_t1_aux_reservoir upgrade. Runtime owner SuitUpgradeResolver maps it to SuitUpgrades.HighCapacityTank. The only stat delta is +4 MaxO2; all depth and pressure claims belong to hull depth modules."
+      "Text": "Lore DTO sync: Oxygen Tank is diagnostic shorthand for the suit_oxygen_t1_aux_reservoir upgrade. Runtime owner SuitUpgradeResolver maps it to SuitUpgrades.HighCapacityTank. SuitUpgradeManager also aliases ItemEquipOxygenRigT1Hash and ItemEquipOxygenRigT2Hash to the same bit. The only stat delta is +4 MaxO2; all depth and pressure claims belong to hull depth modules."
     },
     {
       "LocID": "LORE_ECOLOGICAL_COLLAPSE_80_SECTORS",

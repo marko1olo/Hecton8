@@ -8,6 +8,7 @@ albedo luminance for PBR energy-conservation violations.
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import math
 import os
@@ -71,20 +72,6 @@ DETAIL_TOKENS = (
     "noise",
     "micro",
 )
-ALBEDO_TOKENS = (
-    "albedo",
-    "basecolor",
-    "base_color",
-    "base-color",
-    "diffuse",
-    "_diff",
-    "-diff",
-    "diff",
-    "_d",
-    "-d",
-    "color",
-    "colour",
-)
 ALBEDO_EXCLUDE_TOKENS = (
     "normal",
     "norm",
@@ -105,9 +92,18 @@ ALBEDO_EXCLUDE_TOKENS = (
     "noise",
     "blue",
 )
-ORM_TOKENS = ("orm", "mask", "packed", "ao", "occlusion", "rough", "metal", "smooth", "spec")
 NORMAL_TOKENS = ("normal", "norm", "nrm", "bump")
 NON_SURFACE_PATH_PARTS = ("/sprites/ui/", "/skyboxes/")
+BASE_MAP_PROPS = {"_BaseMap", "_MainTex", "_BaseColorMap"}
+NORMAL_MAP_PROPS = {"_BumpMap", "_NormalMap"}
+PROMPT_ORM_PROPS = {"_ORMMap", "_OrmMap", "_OcclusionRoughnessMetallicMap"}
+LEGACY_PACKED_MASK_PROPS = {"_MaskMap", "_MetallicGlossMap", "_SpecGlossMap"}
+SEPARATE_OCCLUSION_PROPS = {"_OcclusionMap", "_AOMap", "_AmbientOcclusionMap"}
+SEPARATE_ROUGHNESS_PROPS = {"_RoughnessMap", "_SmoothnessMap", "_GlossMap", "_SpecGlossMap"}
+SEPARATE_METALLIC_PROPS = {"_MetallicMap", "_MetallicGlossMap"}
+DETAIL_MAP_PROPS = {"_DetailAlbedoMap", "_DetailNormalMap", "_DetailMask"}
+STANDARD_MATERIAL_MIB = 6.65
+OPTIMIZED_MATERIAL_MIB = 2.99
 
 TEXTURE_PROPERTY_RE = re.compile(r"^\s*-\s+([A-Za-z0-9_]+):\s*$")
 GUID_RE = re.compile(r"guid:\s*([0-9a-fA-F]{32})")
@@ -145,6 +141,10 @@ def has_detail_token(terms: list[str]) -> bool:
     return any(term in DETAIL_TOKENS for term in terms)
 
 
+def has_albedo_token(terms: list[str]) -> bool:
+    return any(term in {"albedo", "basecolor", "diffuse", "diff", "color", "colour"} for term in terms)
+
+
 def classify_texture(path: Path) -> dict[str, bool]:
     name = path.stem.lower()
     terms = tokenize_name(name)
@@ -152,7 +152,11 @@ def classify_texture(path: Path) -> dict[str, bool]:
     is_normal = contains_any(name, NORMAL_TOKENS)
     is_orm_candidate = has_orm_token(terms) and not is_normal and not is_surface_excluded
     is_detail_candidate = has_detail_token(terms) and not is_surface_excluded
-    is_albedo_candidate = contains_any(name, ALBEDO_TOKENS) and not contains_any(name, ALBEDO_EXCLUDE_TOKENS)
+    is_albedo_candidate = (
+        has_albedo_token(terms)
+        and not contains_any(name, ALBEDO_EXCLUDE_TOKENS)
+        and not is_surface_excluded
+    )
     return {
         "is_albedo_candidate": is_albedo_candidate,
         "is_detail_candidate": is_detail_candidate,
@@ -215,6 +219,35 @@ def meta_value(meta: dict[str, str], key: str) -> str:
     return meta.get(key, "")
 
 
+def estimate_texture_mib(width: int, height: int, bits_per_pixel: int = 8, include_mips: bool = True) -> float:
+    pixel_count = max(1, width) * max(1, height)
+    byte_count = pixel_count * max(1, bits_per_pixel) / 8.0
+    if include_mips:
+        byte_count *= 4.0 / 3.0
+    return round(byte_count / (1024.0 * 1024.0), 3)
+
+
+def texture_memory_role(record: dict[str, Any]) -> str:
+    if record.get("is_normal"):
+        return "BC5_NORMAL_8BPP"
+    if record.get("is_albedo_candidate"):
+        return "BC7_ALBEDO_8BPP"
+    if record.get("is_orm_candidate"):
+        return "BC7_ORM_LINEAR_8BPP"
+    if record.get("is_detail_candidate"):
+        return "BC4_BC5_DETAIL_8BPP"
+    return "BC7_UNKNOWN_8BPP"
+
+
+def append_texture_memory_estimate(record: dict[str, Any], width: int, height: int) -> None:
+    enable_mip = record.get("meta", {}).get("enableMipMap", "")
+    include_mips = enable_mip != "0"
+    record["width"] = width
+    record["height"] = height
+    record["memory_role"] = texture_memory_role(record)
+    record["estimated_resident_mib"] = estimate_texture_mib(width, height, 8, include_mips)
+
+
 def append_texture_import_issues(record: dict[str, Any]) -> None:
     meta = record.get("meta", {})
     issues: list[str] = []
@@ -254,6 +287,44 @@ def append_texture_import_issues(record: dict[str, Any]) -> None:
     record["import_issues"] = issues
 
 
+def recommend_texture_fix(issue: str) -> str:
+    if issue == "MISSING_META":
+        return "Regenerate or restore Unity .meta before import enforcement."
+    if issue == "READ_WRITE_ENABLED":
+        return "Disable Read/Write unless CPU readback is explicitly required."
+    if issue == "UNCOMPRESSED_TEXTURE":
+        return "Enable platform compression; use BC7/BC5/BC4 class formats by texture role."
+    if issue == "ALBEDO_SRGB_OFF":
+        return "Enable sRGB for albedo/base-color maps."
+    if issue == "ALBEDO_MIPS_OFF":
+        return "Enable mipmaps for world albedo."
+    if issue == "NORMAL_SRGB_ON":
+        return "Disable sRGB for normal maps."
+    if issue == "NORMAL_NOT_TEXTURETYPE_NORMAL":
+        return "Set Texture Type to Normal Map."
+    if issue == "NORMAL_MIPS_OFF":
+        return "Enable mipmaps for world normals."
+    if issue == "DATA_TEXTURE_SRGB_ON":
+        return "Disable sRGB; data/mask/detail maps must be sampled linear."
+    if issue == "DATA_TEXTURE_MIPS_OFF":
+        return "Enable mipmaps unless this is a UI-only or non-tiled data texture."
+    return "Manual technical-art review required."
+
+
+def recommend_material_fix(issue: str) -> str:
+    if issue == "NO_PROMPT_ORM_SLOT":
+        return "Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved."
+    if issue == "NO_PACKED_ORM_OR_MASK_SLOT":
+        return "Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved."
+    if issue == "LEGACY_MASK_SLOT_REQUIRES_CHANNEL_REVIEW":
+        return "Review legacy mask/gloss channel order before treating it as prompt ORM."
+    if issue == "SEPARATE_OCCLUSION_AND_METALLIC_MAPS":
+        return "Collapse separate occlusion and metallic maps into packed ORM/mask data."
+    if issue == "NO_DETAIL_MAP_SLOT":
+        return "Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier."
+    return "Manual material review required."
+
+
 def inspect_image(path: Path, root: Path, sample_size: int) -> dict[str, Any]:
     record: dict[str, Any] = {
         "path": normalized(path.relative_to(root)),
@@ -262,15 +333,14 @@ def inspect_image(path: Path, root: Path, sample_size: int) -> dict[str, Any]:
     }
     record.update(classify_texture(path))
     append_texture_import_issues(record)
-    if not record["is_albedo_candidate"]:
-        return record
 
     try:
         with Image.open(path) as image:
-            image.draft("RGB", (sample_size, sample_size))
-            record["width"] = image.width
-            record["height"] = image.height
             record["mode"] = image.mode
+            append_texture_memory_estimate(record, image.width, image.height)
+            if not record["is_albedo_candidate"]:
+                return record
+            image.draft("RGB", (sample_size, sample_size))
             sample = image.convert("RGB")
             sample.thumbnail((sample_size, sample_size))
             pixels = list(sample.getdata())
@@ -392,33 +462,98 @@ def parse_material(path: Path, root: Path) -> dict[str, Any]:
     }
 
 
+def property_paths(props: dict[str, str], names: set[str]) -> list[str]:
+    return [f"{name}:{props[name]}" for name in sorted(names.intersection(props.keys()))]
+
+
+def build_channel_packing_candidate(
+    path: str,
+    props: dict[str, str],
+    prop_names: set[str],
+    has_base: bool,
+    has_prompt_orm: bool,
+    has_detail: bool,
+) -> dict[str, Any] | None:
+    if not has_base or has_prompt_orm:
+        return None
+
+    occlusion = property_paths(props, SEPARATE_OCCLUSION_PROPS)
+    roughness = property_paths(props, SEPARATE_ROUGHNESS_PROPS)
+    metallic = property_paths(props, SEPARATE_METALLIC_PROPS)
+    legacy = property_paths(props, LEGACY_PACKED_MASK_PROPS)
+
+    if occlusion and (roughness or metallic):
+        priority = "HIGH"
+        reason = "Separate AO plus metallic/roughness data can collapse into prompt ORM."
+    elif legacy:
+        priority = "MEDIUM"
+        reason = "Legacy packed/gloss slot exists, but prompt ORM slot is absent."
+    else:
+        priority = "LOW"
+        reason = "Base material has no prompt ORM slot; author or reuse ORM if the material is near-field."
+
+    return {
+        "path": path,
+        "priority": priority,
+        "reason": reason,
+        "base_maps": property_paths(props, BASE_MAP_PROPS),
+        "normal_maps": property_paths(props, NORMAL_MAP_PROPS),
+        "occlusion_sources": occlusion,
+        "roughness_sources": roughness,
+        "metallic_sources": metallic,
+        "legacy_mask_sources": legacy,
+        "detail_sources": property_paths(props, DETAIL_MAP_PROPS),
+        "has_detail": has_detail,
+    }
+
+
 def resolve_material(raw: dict[str, Any], guid_map: dict[str, str]) -> dict[str, Any]:
     props = {
         prop: guid_map.get(guid_or_path, guid_or_path)
         for prop, guid_or_path in raw.get("texture_properties", {}).items()
     }
     prop_names = set(props.keys())
-    has_base = bool(prop_names.intersection({"_BaseMap", "_MainTex", "_BaseColorMap"}))
-    has_packed = bool(prop_names.intersection({"_ORMMap", "_OrmMap", "_MaskMap", "_MetallicGlossMap"}))
-    has_separate_occlusion = "_OcclusionMap" in prop_names
-    has_detail = bool(prop_names.intersection({"_DetailAlbedoMap", "_DetailNormalMap", "_DetailMask"}))
-    has_normal = bool(prop_names.intersection({"_BumpMap", "_NormalMap"}))
+    has_base = bool(prop_names.intersection(BASE_MAP_PROPS))
+    has_prompt_orm = bool(prop_names.intersection(PROMPT_ORM_PROPS))
+    has_legacy_packed_mask = bool(prop_names.intersection(LEGACY_PACKED_MASK_PROPS))
+    has_packed = has_prompt_orm or has_legacy_packed_mask
+    has_separate_occlusion = bool(prop_names.intersection(SEPARATE_OCCLUSION_PROPS))
+    has_separate_metallic = bool(prop_names.intersection(SEPARATE_METALLIC_PROPS))
+    has_detail = bool(prop_names.intersection(DETAIL_MAP_PROPS))
+    has_normal = bool(prop_names.intersection(NORMAL_MAP_PROPS))
 
     issues: list[str] = []
+    if has_base and not has_prompt_orm:
+        issues.append("NO_PROMPT_ORM_SLOT")
     if has_base and not has_packed:
         issues.append("NO_PACKED_ORM_OR_MASK_SLOT")
-    if has_separate_occlusion and "_MetallicGlossMap" in prop_names:
+    if has_legacy_packed_mask and not has_prompt_orm:
+        issues.append("LEGACY_MASK_SLOT_REQUIRES_CHANNEL_REVIEW")
+    if has_separate_occlusion and has_separate_metallic:
         issues.append("SEPARATE_OCCLUSION_AND_METALLIC_MAPS")
     if has_base and not has_detail:
         issues.append("NO_DETAIL_MAP_SLOT")
 
+    path = raw["path"]
+    channel_candidate = build_channel_packing_candidate(
+        path,
+        props,
+        prop_names,
+        has_base,
+        has_prompt_orm,
+        has_detail,
+    )
+
     return {
-        "path": raw["path"],
+        "path": path,
         "texture_properties": props,
         "has_base_map": has_base,
         "has_normal": has_normal,
+        "has_prompt_orm": has_prompt_orm,
+        "has_legacy_packed_mask": has_legacy_packed_mask,
         "has_packed_mask": has_packed,
         "has_detail": has_detail,
+        "channel_packing_candidate": channel_candidate,
         "issues": issues,
     }
 
@@ -435,6 +570,15 @@ def summarize_textures(textures: list[dict[str, Any]]) -> dict[str, Any]:
     for item in import_issue_textures:
         for issue in item.get("import_issues", []):
             import_issue_counts[issue] = import_issue_counts.get(issue, 0) + 1
+    estimated_texture_mib = round(
+        sum(float(item.get("estimated_resident_mib", 0.0)) for item in textures),
+        3,
+    )
+    largest_estimated = sorted(
+        [item for item in textures if "estimated_resident_mib" in item],
+        key=lambda item: float(item.get("estimated_resident_mib", 0.0)),
+        reverse=True,
+    )
 
     detail_sorted = sorted(
         detail,
@@ -458,23 +602,48 @@ def summarize_textures(textures: list[dict[str, Any]]) -> dict[str, Any]:
         "energy_failures": energy_fail[:50],
         "energy_warnings": energy_warn[:50],
         "import_issue_textures": import_issue_textures[:100],
+        "estimated_texture_mib": estimated_texture_mib,
+        "largest_estimated_textures": largest_estimated[:50],
     }
 
 
 def summarize_materials(materials: list[dict[str, Any]]) -> dict[str, Any]:
     issue_counts: dict[str, int] = {}
     issue_materials: list[dict[str, Any]] = []
+    channel_candidates: list[dict[str, Any]] = []
+    channel_priority_counts: dict[str, int] = {}
     for material in materials:
         for issue in material.get("issues", []):
             issue_counts[issue] = issue_counts.get(issue, 0) + 1
         if material.get("issues"):
             issue_materials.append(material)
+        candidate = material.get("channel_packing_candidate")
+        if candidate:
+            channel_candidates.append(candidate)
+            priority = candidate.get("priority", "UNKNOWN")
+            channel_priority_counts[priority] = channel_priority_counts.get(priority, 0) + 1
 
     return {
         "material_count": len(materials),
+        "materials_with_prompt_orm": sum(1 for item in materials if item.get("has_prompt_orm")),
+        "materials_with_legacy_mask": sum(1 for item in materials if item.get("has_legacy_packed_mask")),
         "materials_with_packed_mask": sum(1 for item in materials if item.get("has_packed_mask")),
         "materials_with_detail": sum(1 for item in materials if item.get("has_detail")),
         "materials_with_issues": len(issue_materials),
+        "channel_packing_candidate_count": len(channel_candidates),
+        "channel_packing_priority_counts": channel_priority_counts,
+        "channel_packing_candidates": channel_candidates[:100],
+        "vram_model": {
+            "standard_mib_per_material": STANDARD_MATERIAL_MIB,
+            "optimized_mib_per_material": OPTIMIZED_MATERIAL_MIB,
+            "candidate_standard_mib": round(len(channel_candidates) * STANDARD_MATERIAL_MIB, 2),
+            "candidate_optimized_mib": round(len(channel_candidates) * OPTIMIZED_MATERIAL_MIB, 2),
+            "candidate_saved_mib": round(len(channel_candidates) * (STANDARD_MATERIAL_MIB - OPTIMIZED_MATERIAL_MIB), 2),
+            "candidate_reduction_percent": round(
+                ((STANDARD_MATERIAL_MIB - OPTIMIZED_MATERIAL_MIB) / STANDARD_MATERIAL_MIB) * 100.0,
+                1,
+            ),
+        },
         "issue_counts": issue_counts,
         "issue_materials": issue_materials[:100],
     }
@@ -542,16 +711,35 @@ def write_markdown_report(report: dict[str, Any], output: Path) -> None:
         markdown_row(["Albedo energy failures", texture_summary["energy_fail_count"]]),
         markdown_row(["Albedo energy warnings", texture_summary["energy_warn_count"]]),
         markdown_row(["Import issue textures", texture_summary["import_issue_count"]]),
+        markdown_row(["Estimated texture residency MiB", texture_summary.get("estimated_texture_mib", 0)]),
         markdown_row(["ORM candidates", texture_summary["orm_candidate_count"]]),
         markdown_row(["Detail candidates", texture_summary["detail_candidate_count"]]),
         markdown_row(["Materials", material_summary["material_count"]]),
+        markdown_row(["Materials with prompt ORM", material_summary.get("materials_with_prompt_orm", 0)]),
+        markdown_row(["Materials with legacy mask", material_summary.get("materials_with_legacy_mask", 0)]),
         markdown_row(["Materials with packed mask", material_summary["materials_with_packed_mask"]]),
         markdown_row(["Materials with detail", material_summary["materials_with_detail"]]),
         markdown_row(["Materials with issues", material_summary["materials_with_issues"]]),
+        markdown_row(["Channel packing candidates", material_summary.get("channel_packing_candidate_count", 0)]),
         "",
         "## Import Issue Counts",
         "",
     ]
+    vram_model = material_summary.get("vram_model", {})
+    if vram_model:
+        lines.extend([
+            "## Channel Packing VRAM Model",
+            "",
+            markdown_row(["Metric", "Value"]),
+            markdown_row(["---", "---"]),
+            markdown_row(["Standard MiB/material", vram_model["standard_mib_per_material"]]),
+            markdown_row(["Optimized MiB/material", vram_model["optimized_mib_per_material"]]),
+            markdown_row(["Candidate standard MiB", vram_model["candidate_standard_mib"]]),
+            markdown_row(["Candidate optimized MiB", vram_model["candidate_optimized_mib"]]),
+            markdown_row(["Candidate saved MiB", vram_model["candidate_saved_mib"]]),
+            markdown_row(["Candidate reduction percent", vram_model["candidate_reduction_percent"]]),
+            "",
+        ])
 
     if texture_summary["import_issue_counts"]:
         lines.extend([markdown_row(["Issue", "Count"]), markdown_row(["---", "---"])])
@@ -575,22 +763,143 @@ def write_markdown_report(report: dict[str, Any], output: Path) -> None:
 
     lines.extend(["", "## Texture Import Issues", ""])
     if texture_summary["import_issue_textures"]:
-        lines.extend([markdown_row(["Path", "Issues"]), markdown_row(["---", "---"])])
+        lines.extend([markdown_row(["Path", "Issues", "Recommendations"]), markdown_row(["---", "---", "---"])])
         for item in texture_summary["import_issue_textures"]:
-            lines.append(markdown_row([item["path"], ", ".join(item.get("import_issues", []))]))
+            issues = item.get("import_issues", [])
+            recommendations = "; ".join(recommend_texture_fix(issue) for issue in issues)
+            lines.append(markdown_row([item["path"], ", ".join(issues), recommendations]))
     else:
         lines.append("No import issues detected.")
 
     lines.extend(["", "## Material Slot Issues", ""])
     if material_summary["issue_materials"]:
-        lines.extend([markdown_row(["Material", "Issues"]), markdown_row(["---", "---"])])
+        lines.extend([markdown_row(["Material", "Issues", "Recommendations"]), markdown_row(["---", "---", "---"])])
         for item in material_summary["issue_materials"]:
-            lines.append(markdown_row([item["path"], ", ".join(item.get("issues", []))]))
+            issues = item.get("issues", [])
+            recommendations = "; ".join(recommend_material_fix(issue) for issue in issues)
+            lines.append(markdown_row([item["path"], ", ".join(issues), recommendations]))
     else:
         lines.append("No material slot issues detected.")
 
+    lines.extend(["", "## Texture Memory Hotspots", ""])
+    hotspots = texture_summary.get("largest_estimated_textures", [])
+    if hotspots:
+        lines.extend([
+            markdown_row(["Texture", "MiB", "Role", "Size"]),
+            markdown_row(["---", "---", "---", "---"]),
+        ])
+        for item in hotspots[:20]:
+            lines.append(markdown_row([
+                item["path"],
+                item.get("estimated_resident_mib", 0),
+                item.get("memory_role", ""),
+                f"{item.get('width', '?')}x{item.get('height', '?')}",
+            ]))
+    else:
+        lines.append("No texture memory estimates available.")
+
+    lines.extend(["", "## Channel Packing Candidates", ""])
+    candidates = material_summary.get("channel_packing_candidates", [])
+    if candidates:
+        lines.extend([
+            markdown_row(["Material", "Priority", "Reason", "Mask sources", "Has detail"]),
+            markdown_row(["---", "---", "---", "---", "---"]),
+        ])
+        for item in candidates:
+            mask_sources = (
+                item.get("occlusion_sources", [])
+                + item.get("roughness_sources", [])
+                + item.get("metallic_sources", [])
+                + item.get("legacy_mask_sources", [])
+            )
+            lines.append(markdown_row([
+                item["path"],
+                item["priority"],
+                item["reason"],
+                "; ".join(mask_sources),
+                item["has_detail"],
+            ]))
+    else:
+        lines.append("No channel-packing migration candidates detected.")
+
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def write_csv_reports(report: dict[str, Any], prefix: Path) -> None:
+    texture_summary = report["texture_summary"]
+    material_summary = report["material_summary"]
+    prefix.parent.mkdir(parents=True, exist_ok=True)
+
+    with Path(f"{prefix}_texture_import_issues.csv").open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["path", "issues", "recommendations"])
+        for item in texture_summary["import_issue_textures"]:
+            issues = item.get("import_issues", [])
+            writer.writerow([
+                item["path"],
+                ";".join(issues),
+                " | ".join(recommend_texture_fix(issue) for issue in issues),
+            ])
+
+    with Path(f"{prefix}_material_issues.csv").open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["path", "issues", "recommendations"])
+        for item in material_summary["issue_materials"]:
+            issues = item.get("issues", [])
+            writer.writerow([
+                item["path"],
+                ";".join(issues),
+                " | ".join(recommend_material_fix(issue) for issue in issues),
+            ])
+
+    with Path(f"{prefix}_detail_candidates.csv").open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["path", "import_issues"])
+        for item in texture_summary["detail_suggestions"]:
+            writer.writerow([item["path"], ";".join(item.get("import_issues", []))])
+
+    with Path(f"{prefix}_texture_memory_hotspots.csv").open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["path", "estimated_resident_mib", "memory_role", "width", "height"])
+        for item in texture_summary.get("largest_estimated_textures", []):
+            writer.writerow([
+                item["path"],
+                item.get("estimated_resident_mib", 0),
+                item.get("memory_role", ""),
+                item.get("width", ""),
+                item.get("height", ""),
+            ])
+
+    with Path(f"{prefix}_channel_packing_candidates.csv").open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow([
+            "path",
+            "priority",
+            "reason",
+            "base_maps",
+            "normal_maps",
+            "occlusion_sources",
+            "roughness_sources",
+            "metallic_sources",
+            "legacy_mask_sources",
+            "detail_sources",
+            "has_detail",
+        ])
+        for item in material_summary.get("channel_packing_candidates", []):
+            writer.writerow([
+                item["path"],
+                item["priority"],
+                item["reason"],
+                ";".join(item.get("base_maps", [])),
+                ";".join(item.get("normal_maps", [])),
+                ";".join(item.get("occlusion_sources", [])),
+                ";".join(item.get("roughness_sources", [])),
+                ";".join(item.get("metallic_sources", [])),
+                ";".join(item.get("legacy_mask_sources", [])),
+                ";".join(item.get("detail_sources", [])),
+                item.get("has_detail", False),
+            ])
 
 
 def main() -> int:
@@ -604,6 +913,7 @@ def main() -> int:
     )
     parser.add_argument("--json", help="Optional JSON report path.")
     parser.add_argument("--markdown", help="Optional Markdown report path.")
+    parser.add_argument("--csv-prefix", help="Optional CSV prefix for issue exports.")
     parser.add_argument(
         "--fail-on-import-issues",
         action="store_true",
@@ -628,6 +938,8 @@ def main() -> int:
         output.write_text(json.dumps(report, indent=2), encoding="utf-8")
     if args.markdown:
         write_markdown_report(report, Path(args.markdown))
+    if args.csv_prefix:
+        write_csv_reports(report, Path(args.csv_prefix))
 
     texture_summary = report["texture_summary"]
     material_summary = report["material_summary"]
@@ -638,16 +950,23 @@ def main() -> int:
     print(f"energy_failures={texture_summary['energy_fail_count']}")
     print(f"energy_warnings={texture_summary['energy_warn_count']}")
     print(f"import_issue_textures={texture_summary['import_issue_count']}")
+    print(f"estimated_texture_mib={texture_summary['estimated_texture_mib']}")
     print(f"detail_candidates={texture_summary['detail_candidate_count']}")
     print(f"orm_candidates={texture_summary['orm_candidate_count']}")
     print(f"materials={material_summary['material_count']}")
+    print(f"materials_with_prompt_orm={material_summary['materials_with_prompt_orm']}")
+    print(f"materials_with_legacy_mask={material_summary['materials_with_legacy_mask']}")
     print(f"materials_with_packed_mask={material_summary['materials_with_packed_mask']}")
     print(f"materials_with_detail={material_summary['materials_with_detail']}")
     print(f"materials_with_issues={material_summary['materials_with_issues']}")
+    print(f"channel_packing_candidates={material_summary['channel_packing_candidate_count']}")
+    print(f"channel_candidate_saved_mib={material_summary['vram_model']['candidate_saved_mib']}")
     if args.json:
         print(f"json={args.json}")
     if args.markdown:
         print(f"markdown={args.markdown}")
+    if args.csv_prefix:
+        print(f"csv_prefix={args.csv_prefix}")
     if texture_summary["energy_fail_count"]:
         return 1
     if args.fail_on_import_issues and texture_summary["import_issue_count"]:

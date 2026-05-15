@@ -1,21 +1,26 @@
 # VRAM Budget Audit Summary
 
-Generated: 2026-05-15T04:48:12
+Generated: 2026-05-15T14:43:09
 Evidence class: STATIC_SOURCE / FILESYSTEM. Runtime residency is PENDING VERIFICATION.
 
 ## Summary
 
-- Texture files scanned: 1645
-- Mesh files scanned: 301
-- Total BC7 no-mip estimate: 961.85 MiB
-- Total BC7 full-mip estimate: 1282.47 MiB
-- Runtime-candidate BC7 full-mip estimate: 1251.24 MiB
-- First-party production BC7 full-mip estimate: 504.62 MiB
+- Texture files scanned: 1668
+- Mesh files scanned: 302
+- Total BC7 no-mip estimate: 997.41 MiB
+- Total BC7 full-mip estimate: 1329.88 MiB
+- Runtime-candidate BC7 full-mip estimate: 1298.65 MiB
+- First-party production BC7 full-mip estimate: 505.62 MiB
 - MX350 texture budget: 900 MiB
 - Critical overflow trigger: 1228.8 MiB
 - [CRITICAL_VRAM_OVERFLOW] All scanned textures exceed 1.2GB static full-mip BC7 threshold.
 - [CRITICAL_VRAM_OVERFLOW] Runtime-candidate textures exceed 1.2GB static full-mip BC7 threshold.
-- Texture VRAM crime rows: 800
+- Texture VRAM crime rows: 801
+- Texture source-container risk rows: 23
+- First-party texture source-container risk rows: 2
+- Static mesh geometry estimate: 48.05 MiB / 200 MiB geometry budget
+- First-party static mesh geometry estimate: 6.51 MiB
+- Mesh single-asset geometry estimate redlines: 1
 - Mesh redline/risk rows: 293
 - Mesh importer risk rows: 293
 - First-party mesh importer risk rows: 16
@@ -43,7 +48,7 @@ Evidence class: STATIC_SOURCE / FILESYSTEM. Runtime residency is PENDING VERIFIC
 
 | Directory | Count | BC7 full mip MiB | VRAM crime rows |
 |---|---:|---:|---:|
-| Assets/ScifiFacility/Textures | 67 | 483.67 | 11 |
+| Assets/ScifiFacility/Textures | 76 | 525.00 | 11 |
 | Assets/_Project/Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY) | 12 | 56.00 | 0 |
 | Assets/_Project/_PROLOGUE_CONTENT/Textures/Planets/pLANET | 5 | 53.33 | 5 |
 | Assets/_Project/Art/TEXTURES | 11 | 50.69 | 3 |
@@ -55,6 +60,28 @@ Evidence class: STATIC_SOURCE / FILESYSTEM. Runtime residency is PENDING VERIFIC
 | Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.branching | 4 | 21.33 | 0 |
 | Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.low | 4 | 21.33 | 0 |
 | Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.abyssal | 4 | 21.33 | 0 |
+
+## Runtime Texture Extension Pressure
+
+| Extension | Count | BC7 full mip MiB | VRAM crime rows | Container risk rows |
+|---|---:|---:|---:|---:|
+| .png | 1592 | 1132.12 | 799 | 0 |
+| .jpg | 37 | 119.12 | 1 | 0 |
+| .tga | 10 | 38.67 | 1 | 10 |
+| .hdr | 2 | 5.33 | 0 | 2 |
+| .psd | 5 | 2.17 | 0 | 5 |
+| .gif | 1 | 0.88 | 0 | 1 |
+| .exr | 2 | 0.25 | 0 | 2 |
+| .tif | 2 | 0.08 | 0 | 2 |
+| .bmp | 1 | 0.02 | 0 | 1 |
+
+## Runtime Mesh Extension Pressure
+
+| Extension | Count | Known triangles | Triangle-unreadable rows | Geometry MiB | Flagged rows |
+|---|---:|---:|---:|---:|---:|
+| .fbx | 300 | 321633 | 0 | 47.85 | 292 |
+| .glb | 1 | 1298 | 0 | 0.19 | 0 |
+| .obj | 1 | 12 | 0 | 0.00 | 1 |
 
 ## Top Runtime Texture Costs
 
@@ -88,48 +115,48 @@ Evidence class: STATIC_SOURCE / FILESYSTEM. Runtime residency is PENDING VERIFIC
 
 ## Mesh Redlines
 
-| Path | File MiB | Triangles | LOD | Readable | Compression | BlendShapes | Flags |
-|---|---:|---:|---:|---:|---:|---:|---|
-| Assets/Feel/MMTools/Demos/MMGhostCamera/Models/MMGhostCameraCity.fbx | 2.20 | 127645 | false | 0 | 0 | 1 | MESH_GT_80K_ABSOLUTE_STATIC;MESH_REDLINE_GT_50K_NO_LOD;MESH_COMPRESSION_OFF_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/ScifiFacility/Models/structural/walls/viewing_deck.fbx | 0.45 | 12778 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/_Project/Art/Materials/Meshy_AI_Alien_barnacles_clust_0301230506_texture.fbx | 1.90 | 10000 | false | 0 | 0 | 1 | MESH_COMPRESSION_OFF_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/ScifiFacility/Models/props/details/technical/detail_04_b.fbx | 0.75 | 7377 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/_Project/Art/Models/Rocks/Rock 7/SAMMPLE.fbx | 2.59 | 6519 | false | 0 | 0 | 1 | MESH_COMPRESSION_OFF_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_h.fbx | 0.29 | 5388 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/ScifiFacility/Models/props/prop_14.fbx | 0.22 | 5189 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/_Project/Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/Rock_4.fbx | 0.23 | 5000 | false | 0 | 0 | 1 | MESH_COMPRESSION_OFF_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/_Project/Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/Forest_Rock_Shelf_wgpqfjl_Mid.fbx | 0.18 | 4038 | false | 0 | 0 | 1 | MESH_COMPRESSION_OFF_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/ScifiFacility/Models/props/prop_10_base.fbx | 0.11 | 3952 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/ScifiFacility/Models/structural/walls/wall_01_6x3_door.fbx | 0.19 | 3540 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/_Project/Art/Models/Rocks/Rock 6/rock6/Mossy_Forest_Rock_vimrfjsaw_Mid.fbx | 0.12 | 3539 | false | 0 | 0 | 1 | MESH_COMPRESSION_OFF_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/_Project/Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/Mossy_Forest_Rock_vimrfjsaw_Mid.fbx | 0.12 | 3539 | false | 0 | 0 | 1 | MESH_COMPRESSION_OFF_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/ScifiFacility/Models/structural/walls/wall_01_6x3_door_b.fbx | 0.18 | 3468 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/Shapes/Models/shapes_primitives.fbx | 0.09 | 3222 | false | 0 | 0 | 0 | MESH_COMPRESSION_OFF_STATIC_SUSPECT |
-| Assets/ScifiFacility/Models/props/prop_11.fbx | 0.11 | 3090 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/_Project/Art/Models/Rocks/Rock 5/orig/River_Rock_FBX.fbx | 0.11 | 3054 | false | 0 | 0 | 1 | MESH_COMPRESSION_OFF_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/ScifiFacility/Models/props/prop_15.fbx | 0.18 | 2999 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/ScifiFacility/Models/props/details/technical/detail_02.fbx | 0.11 | 2688 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/ScifiFacility/Models/furniture/chair_01.fbx | 0.15 | 2548 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/ScifiFacility/Models/furniture/bed_02.fbx | 0.13 | 2243 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/ScifiFacility/Models/furniture/chair_02.fbx | 0.14 | 2234 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/walk_02.fbx | 0.09 | 2228 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/stairs_01.fbx | 0.11 | 2176 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/_Project/Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/Nordic_Beach_Rock_Formation_vd4iecjva_Low.fbx | 0.08 | 2100 | false | 0 | 0 | 1 | MESH_COMPRESSION_OFF_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/ScifiFacility/Models/structural/walls/column_03.fbx | 0.11 | 2000 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/ScifiFacility/Models/props/prop_13.fbx | 0.09 | 1992 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/ScifiFacility/Models/props/details/technical/detail_03_b.fbx | 0.15 | 1964 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/ScifiFacility/Models/props/prop_11_base.fbx | 0.09 | 1920 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/walk_01.fbx | 0.09 | 1880 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/ScifiFacility/Models/props/prop_10.fbx | 0.09 | 1858 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/ScifiFacility/Models/props/details/technical/detail_04_c.fbx | 0.15 | 1788 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/ScifiFacility/Models/structural/walls/column_04.fbx | 0.09 | 1594 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/ScifiFacility/Models/props/prop_05.fbx | 0.22 | 1582 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/ScifiFacility/Models/structural/walls/column_01.fbx | 0.33 | 1535 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/ScifiFacility/Models/props/details/technical/detail_04_d.fbx | 0.09 | 1518 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door.fbx | 0.25 | 1407 | false | 1 | 2 | 0 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT |
-| Assets/ScifiFacility/Models/props/tubes/tube_03.fbx | 0.12 | 1337 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/ScifiFacility/Models/props/keyboard_b.fbx | 0.05 | 1314 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
-| Assets/ScifiFacility/Models/props/keyboard.fbx | 0.05 | 1314 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Path | File MiB | Triangles | Geometry MiB | LOD | Readable | Compression | BlendShapes | Flags |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| Assets/Feel/MMTools/Demos/MMGhostCamera/Models/MMGhostCameraCity.fbx | 2.20 | 127645 | 18.99 | false | 0 | 0 | 1 | MESH_GEOMETRY_ESTIMATE_GT_16MIB_STATIC;MESH_GT_80K_ABSOLUTE_STATIC;MESH_REDLINE_GT_50K_NO_LOD;MESH_COMPRESSION_OFF_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/ScifiFacility/Models/structural/walls/viewing_deck.fbx | 0.45 | 12778 | 1.90 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/_Project/Art/Materials/Meshy_AI_Alien_barnacles_clust_0301230506_texture.fbx | 1.90 | 10000 | 1.49 | false | 0 | 0 | 1 | MESH_COMPRESSION_OFF_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/ScifiFacility/Models/props/details/technical/detail_04_b.fbx | 0.75 | 7377 | 1.10 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/_Project/Art/Models/Rocks/Rock 7/SAMMPLE.fbx | 2.59 | 6519 | 0.97 | false | 0 | 0 | 1 | MESH_COMPRESSION_OFF_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_h.fbx | 0.29 | 5388 | 0.80 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/ScifiFacility/Models/props/prop_14.fbx | 0.22 | 5189 | 0.77 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/_Project/Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/Rock_4.fbx | 0.23 | 5000 | 0.74 | false | 0 | 0 | 1 | MESH_COMPRESSION_OFF_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/_Project/Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/Forest_Rock_Shelf_wgpqfjl_Mid.fbx | 0.18 | 4038 | 0.60 | false | 0 | 0 | 1 | MESH_COMPRESSION_OFF_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/ScifiFacility/Models/props/prop_10_base.fbx | 0.11 | 3952 | 0.59 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/ScifiFacility/Models/structural/walls/wall_01_6x3_door.fbx | 0.19 | 3540 | 0.53 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/_Project/Art/Models/Rocks/Rock 6/rock6/Mossy_Forest_Rock_vimrfjsaw_Mid.fbx | 0.12 | 3539 | 0.53 | false | 0 | 0 | 1 | MESH_COMPRESSION_OFF_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/_Project/Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/Mossy_Forest_Rock_vimrfjsaw_Mid.fbx | 0.12 | 3539 | 0.53 | false | 0 | 0 | 1 | MESH_COMPRESSION_OFF_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/ScifiFacility/Models/structural/walls/wall_01_6x3_door_b.fbx | 0.18 | 3468 | 0.52 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/Shapes/Models/shapes_primitives.fbx | 0.09 | 3222 | 0.48 | false | 0 | 0 | 0 | MESH_COMPRESSION_OFF_STATIC_SUSPECT |
+| Assets/ScifiFacility/Models/props/prop_11.fbx | 0.11 | 3090 | 0.46 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/_Project/Art/Models/Rocks/Rock 5/orig/River_Rock_FBX.fbx | 0.11 | 3054 | 0.45 | false | 0 | 0 | 1 | MESH_COMPRESSION_OFF_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/ScifiFacility/Models/props/prop_15.fbx | 0.18 | 2999 | 0.45 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/ScifiFacility/Models/props/details/technical/detail_02.fbx | 0.11 | 2688 | 0.40 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/ScifiFacility/Models/furniture/chair_01.fbx | 0.15 | 2548 | 0.38 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/ScifiFacility/Models/furniture/bed_02.fbx | 0.13 | 2243 | 0.33 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/ScifiFacility/Models/furniture/chair_02.fbx | 0.14 | 2234 | 0.33 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/walk_02.fbx | 0.09 | 2228 | 0.33 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/stairs_01.fbx | 0.11 | 2176 | 0.32 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/_Project/Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/Nordic_Beach_Rock_Formation_vd4iecjva_Low.fbx | 0.08 | 2100 | 0.31 | false | 0 | 0 | 1 | MESH_COMPRESSION_OFF_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/ScifiFacility/Models/structural/walls/column_03.fbx | 0.11 | 2000 | 0.30 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/ScifiFacility/Models/props/prop_13.fbx | 0.09 | 1992 | 0.30 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/ScifiFacility/Models/props/details/technical/detail_03_b.fbx | 0.15 | 1964 | 0.29 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/ScifiFacility/Models/props/prop_11_base.fbx | 0.09 | 1920 | 0.29 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/walk_01.fbx | 0.09 | 1880 | 0.28 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/ScifiFacility/Models/props/prop_10.fbx | 0.09 | 1858 | 0.28 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/ScifiFacility/Models/props/details/technical/detail_04_c.fbx | 0.15 | 1788 | 0.27 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/ScifiFacility/Models/structural/walls/column_04.fbx | 0.09 | 1594 | 0.24 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/ScifiFacility/Models/props/prop_05.fbx | 0.22 | 1582 | 0.24 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/ScifiFacility/Models/structural/walls/column_01.fbx | 0.33 | 1535 | 0.23 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/ScifiFacility/Models/props/details/technical/detail_04_d.fbx | 0.09 | 1518 | 0.23 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door.fbx | 0.25 | 1407 | 0.21 | false | 1 | 2 | 0 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT |
+| Assets/ScifiFacility/Models/props/tubes/tube_03.fbx | 0.12 | 1337 | 0.20 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/ScifiFacility/Models/props/keyboard_b.fbx | 0.05 | 1314 | 0.20 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
+| Assets/ScifiFacility/Models/props/keyboard.fbx | 0.05 | 1314 | 0.20 | false | 1 | 2 | 1 | MESH_READ_WRITE_ENABLED_STATIC_SUSPECT;MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT |
 
 ## Atlas Suggestions
 
@@ -175,5 +202,6 @@ Evidence class: STATIC_SOURCE / FILESYSTEM. Runtime residency is PENDING VERIFIC
 ## Evidence Boundary
 
 - STATIC_SOURCE: file dimensions, file sizes, source metadata, and parser-readable mesh triangle counts.
+- Static geometry estimate assumes 48 byte vertices plus 4 byte indices and no vertex sharing; Unity imported geometry must be verified in Memory Profiler.
 - Scan excludes generated/scratch directories by name: .codex-artifacts, .codex-build, .git, .vs, Build, Builds, Library, Obj, Temp.
 - PENDING VERIFICATION: Unity importer compression, actual texture residency, mesh import settings, Memory Profiler VRAM, scene wiring, player-build behavior.

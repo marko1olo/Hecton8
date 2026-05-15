@@ -333,22 +333,33 @@ Persistence contract:
 - `WorldRegrowthMacroDatabaseCodec.TryPack` writes a contiguous H8_MacroDB payload.
 - `TryUnpack` verifies magic, version, width, height, cell count, fixed lane offsets, and FNV-style checksum before restoring lanes.
 - Scratch diffusion memory is not serialized; it is restored from `SoilNutrients` on load, then overwritten by the next deterministic diffusion pass.
+- Scene-lifetime NativeArray lanes allocate/release through `H8Memory` with `SystemID.WorldStreaming`, while `NativeMemorySentinel` keeps field-level labels.
 - Initialization uses allocated grid dimensions after clamp, not raw config dimensions.
+- Regrowth memory lanes are scene-lifetime state and are allocated with `Allocator.Persistent`; Temp/TempJob allocation is not allowed for this data block.
+- Allocation failure rolls back any partially allocated SOA lanes through an H8Memory-only pre-registration release path; reallocation first disposes any partial old lane set; max macro-sector allocation is capped at `1,048,576` cells.
 - Mining tombstone writes are serial and deterministic for duplicate cell indices.
 - `WorldRegrowthSimulation.TryDumpBlackBox` writes the fixed 300-entry telemetry ring to `Docs/AgentLogs/Dump_ORGANIC_ENTROPY_REGENERATOR.bin` on cold diagnostic paths.
+- `WorldEntropySim.py` mirrors the C# `Hash32`/rotate-left biome resolver and reads explicit seed/origin fields from `Regrowth_Constants.json`.
+- Negative macro-sector origins use C# remainder semantics before local-z banding; the Python harness carries a parity test for this edge case.
+- The Python harness uses a persistent nutrient scratch lane, a byte-state apex respawn lookup table, and row-based diffusion traversal to keep repeated entropy validation practical without changing acceptance output.
 
 Entropy-test result:
 
 - Command: `python Tools/WorldEntropySim.py --days 365 --mode total_overharvest`
 - Result: `STATUS=ENTROPY BALANCED`
 - Safe Shallows half recovery: `28` days.
-- Deep Abyss half recovery: `95` days.
-- Ratio: `3.393`, satisfying the 3x requirement.
+- Deep Abyss half recovery: `88` days.
+- Ratio: `3.143`, satisfying the 3x requirement.
+- Seeded biome counts: Safe Shallows `1729`, Temperate Reef `996`, Thermal Vent `564`, Deep Abyss `807`.
 
 Verification boundary: this is static source plus Python harness evidence. Unity import, Play Mode, profiler, GCMonitor, and player build remain `PENDING VERIFICATION`.
 
 Post-hardening verification:
 
-- `python -m unittest Tools.test_world_entropy_sim -v`: 3 tests passed.
-- Visual Studio Roslyn C# 9 probe compile against Unity/Hecton8 stubs: exit code `0`; re-run after black box dump hook remained exit code `0`.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`; mature counts stable through day 1000.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: latest optimized run `STATUS=ENTROPY BALANCED`; elapsed 68.723 s under current machine load.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: latest run `STATUS=ENTROPY BALANCED`; mature counts stable through day 1000.
+- `python -m unittest Tools.test_world_entropy_sim -v`: latest run 4 tests passed in 42.120 s.
+- Visual Studio Roslyn C# 9 probe compile against Unity/Hecton8 stubs: exit code `0`; re-run after allocation rollback tightening remained exit code `0`.
+- Static scans: no forbidden hot-path token matches and no raw `new NativeArray` or raw native dispose remains in `WorldRegrowthSimulation.cs`.
 - Full Unity import and Burst compile remain `PENDING VERIFICATION` because no Unity CLI/editor route was available in-session.

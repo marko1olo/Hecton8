@@ -88,3 +88,82 @@ Verification:
 - `python Tools/VerifyLore.py --verify-source --verify-manifest`: PASS.
 - Scoped `git diff --check`: PASS for tracked files touched in this agent domain, only CRLF warning.
 - Trailing whitespace scan on new/untracked text/script/log files: PASS.
+
+## 2026-05-15 - DTO Alias Semantic Lock
+
+What was wrong:
+- `SuitUpgradeManager` also maps `ItemEquipOxygenRigT1Hash` and `ItemEquipOxygenRigT2Hash` to `SuitUpgrades.HighCapacityTank`; the first lore patch did not document those aliases.
+- The suit upgrade description did not include the explicit `suit_oxygen_t1_aux_reservoir` source ID, even though the audit rows did.
+
+What was done:
+- Added the oxygen equipment alias truth to `Docs/Lore/Lore_Bible.md`.
+- Updated `LORE_AUDIT_SUIT_OXYGEN_TANK_DTO_SYNC` and `SUIT_UPGRADE_SUIT_OXYGEN_T1_AUX_RESERVOIR_DESCRIPTION`.
+- Added `Tools/test_lore_semantic_sync.py` to lock resolver, asset, manager aliases, lore, localization, GI depth, sector count, and terminal count.
+- Rebuilt `Data/Localization/en_US.bin`.
+
+Cinematic Cheats used:
+- Alias truth remains authored text and offline test evidence. No inventory/runtime resolver changes.
+
+Exact microseconds saved:
+- Runtime added cost remains 0 us/frame.
+- Avoided runtime alias introspection or validation: estimated 2-8 us per dirty inventory scan preserved.
+
+Verification:
+- `python Tools/LocToBinary.py --normalize`: PASS, entries=88, bytes=26896.
+- `python Tools/VerifyLore.py --bake --verify-source --verify-manifest`: PASS, entries=1, bytes=10215.
+- `python Tools/LoreChecker.py ... --extra-text Docs/Lore/Lore_Bible.md --extra-text Data/Lore/CockpitTerminalBootErrors.raw.txt`: PASS, unresolved=0.
+- `python -m unittest Tools.test_lore_checker Tools.test_verify_lore Tools.test_lore_semantic_sync`: PASS, 20 tests.
+- `python Tools/VerifyLore.py --verify-source --verify-manifest`: PASS.
+- Scoped `git diff --check`: PASS for agent-touched tracked files, only CRLF warnings.
+
+## 2026-05-15 - Runtime Verification Boundary Recheck
+
+What was wrong:
+- The lore bible header still said `PENDING VERIFICATION` even after static/CLI truth had been synchronized.
+- The earlier Unity block only checked PATH-level commands and not common Unity Hub locations.
+
+What was done:
+- Updated the lore bible header to `TRUTH SYNCHRONIZED (STATIC/CLI) / UNITY RUNTIME PENDING VERIFICATION`.
+- Rebaked `Data/Lore/Encyclopedia.h8bin` and manifest.
+- Checked target Unity metadata and common editor install paths.
+
+Cinematic Cheats used:
+- None added. This pass is evidence hygiene only.
+
+Exact microseconds saved:
+- Runtime added cost remains 0 us/frame.
+- Prevented future duplicate lore audit work by making the evidence boundary explicit; estimated authoring-time savings only.
+
+Verification:
+- `ProjectSettings/ProjectVersion.txt`: Unity target `6000.4.1f1 (8535861f39e1)`.
+- Unity executable search: not found in PATH, `C:/Program Files/Unity*`, `%LOCALAPPDATA%/Programs`, or `%LOCALAPPDATA%/Unity/Hub/Editor`.
+- `Library/ScriptAssemblies`: absent.
+- `python Tools/VerifyLore.py --bake --verify-source --verify-manifest`: PASS, entries=1, bytes=10329.
+- `python Tools/LoreChecker.py ... --extra-text Docs/Lore/Lore_Bible.md --extra-text Data/Lore/CockpitTerminalBootErrors.raw.txt`: PASS, unresolved=0.
+- `python -m unittest Tools.test_lore_checker Tools.test_verify_lore Tools.test_lore_semantic_sync`: PASS, 20 tests.
+- `python Tools/LocToBinary.py --verify-only`: PASS, entries=88.
+
+## 2026-05-15 - Artifact Chain Integrity Pass
+
+What was wrong:
+- Source-level checks alone did not prove that the baked lore blob and localization binary carried the synchronized truth.
+- Terminal raw bank count did not prove unique IDs or the required boot/error split.
+
+What was done:
+- Inspected `Data/Localization/en_US.bin` header directly: magic `H8LB`, version `1`, entries `88`, total bytes `26896`.
+- Extracted `Docs/Lore/Lore_Bible.md` from `Data/Lore/Encyclopedia.h8bin` and verified it contains synchronized status, oxygen alias truth, Sector 80, `NS_ALPHA_XENON_CORE`, and `DepthPaletteFullDepthMeters`.
+- Extended `Tools/test_lore_semantic_sync.py` to require 25 unique ordered `BOOT_001`-`BOOT_025` records and 25 unique ordered `ERROR_026`-`ERROR_050` records.
+
+Cinematic Cheats used:
+- None added. This pass is artifact verification only.
+
+Exact microseconds saved:
+- Runtime added cost remains 0 us/frame.
+- Raw terminal validation stays CLI-only; no runtime ID scan.
+
+Verification:
+- Localization binary header: PASS.
+- Baked lore extraction grep: PASS.
+- `python -m unittest Tools.test_lore_checker Tools.test_verify_lore Tools.test_lore_semantic_sync`: PASS, 22 tests.
+- `python -m py_compile Tools/LoreChecker.py Tools/LocToBinary.py Tools/VerifyLore.py Tools/test_lore_checker.py Tools/test_verify_lore.py Tools/test_lore_semantic_sync.py`: PASS.
+- `python Tools/LoreChecker.py ... --extra-text Docs/Lore/Lore_Bible.md --extra-text Data/Lore/CockpitTerminalBootErrors.raw.txt`: PASS, unresolved=0.

@@ -347,3 +347,122 @@ Failure modes:
 - Old ignored scratch directories from earlier sandbox-denied cleanup may remain locally; the current tests no longer create new scratch trees.
 - `python -m py_compile` remains blocked by pycache atomic rename denial in this sandbox.
 - Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+
+## 2026-05-15 - Malformed Blob Guard And Latest Source Rebake
+
+STATUS: LORE BAKED / MALFORMED BLOB GUARDED / PYTHON VERIFIED
+
+What was wrong:
+- The parser rejected bad headers and out-of-range slices, but it did not explicitly reject overlapping payload intervals or truncated record tables with clear verifier errors.
+- `Docs/Lore/Lore_Bible.md` changed again during continuation, making the previous blob and manifest stale.
+
+What was done:
+- Added explicit record-table bounds validation to `parse_blob`.
+- Added payload interval overlap detection after record parsing.
+- Added regression tests for bad magic and overlapping payload records.
+- Rebaked `Data/Lore/Encyclopedia.h8bin` and rewrote `Data/Lore/Encyclopedia.manifest.json` against the current source.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Offline zlib compression and fixed binary offsets remain the data-path implementation.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- Runtime loader cost remains PENDING UNITY VERIFICATION.
+
+Verification:
+- `python Tools\VerifyLore.py --bake --check --list` -> `LORE BAKED`, `CHECK OK`, record `0xD1880394 offset=48 length=10281`.
+- `python Tools\VerifyLore.py --check` -> `CHECK OK`.
+- `python -B -m unittest Tools.test_verify_lore -v` -> 13 tests passed.
+- AST syntax parse -> `AST OK`.
+- Source/extract SHA-256 -> `6B529A808B25D18DA276747DB9149C61BACDF90A33DCC667FC85375DE13E69CD` both sides.
+- Blob SHA-256 -> `8FDBAC8752B5DB10B98226D88BC5A27EEDA049207E139E6F2F3FB15ECDBDDC00`.
+- Raw header -> `H8LR`, version 1, header 32, record size 16, table offset 32, payload offset 48, file length 10329, all 16-byte alignment checks 0.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob is 10329 bytes for the current 25003-byte lore source.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: malformed binary tables now fail before extraction; current blob, manifest, and source agree.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.
+
+## 2026-05-15 - Artifact Runbook Handoff
+
+STATUS: LORE BAKED / RUNBOOK ADDED / SOURCE SCAN CLEAN
+
+What was wrong:
+- The binary layout and required verification commands were present in task logs, but not beside the produced artifact.
+- Placing operator notes under `Docs/Lore` would compile those notes into the encyclopedia blob.
+
+What was done:
+- Added `Data/Lore/README.md` with blob path, manifest path, binary layout, required verification commands, active record, extraction command, and a warning that `Docs/Lore` is source-only.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Documentation only.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+
+Verification:
+- `python Tools\VerifyLore.py --hash-source` -> only `0xD1880394 Docs/Lore/Lore_Bible.md`.
+- `python Tools\VerifyLore.py --check` -> `CHECK OK`.
+- `python -B -m unittest Tools.test_verify_lore -v` -> 15 tests passed.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob unchanged.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: runbook lives outside the scanned source directory.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.
+
+## 2026-05-15 - Padding And Trailing Byte Guard
+
+STATUS: LORE BAKED / STRICT BLOB PARSER VERIFIED
+
+What was wrong:
+- Alignment padding between payloads was generated as zero bytes, but the parser did not enforce zeroed padding.
+- Standalone blob parsing allowed trailing unreferenced bytes after the last payload; manifest digest verification caught this, but `--list`/extraction should reject it too.
+
+What was done:
+- Added zero-padding validation for payload alignment gaps.
+- Added trailing-byte rejection after the final payload.
+- Added regression tests for nonzero padding and trailing-byte corruption.
+- Hardened the padding regression so it searches deterministic payload variants for a real alignment gap instead of assuming one zlib compressed length.
+- Rebaked through the stricter parser.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Fixed binary layout and zlib payloads remain the implementation.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- No runtime loader cost claimed.
+
+Verification:
+- `python Tools\VerifyLore.py --bake --check --list` -> `LORE BAKED`, `CHECK OK`, record `0xD1880394 offset=48 length=10281`.
+- `python Tools\VerifyLore.py --check` -> `CHECK OK`.
+- `python -B -m unittest Tools.test_verify_lore -v` -> 15 tests passed.
+- AST syntax parse -> `AST OK`.
+- Source SHA-256 -> `6B529A808B25D18DA276747DB9149C61BACDF90A33DCC667FC85375DE13E69CD`.
+- Blob SHA-256 -> `8FDBAC8752B5DB10B98226D88BC5A27EEDA049207E139E6F2F3FB15ECDBDDC00`.
+- Raw header -> `H8LR`, version 1, header 32, record size 16, table offset 32, payload offset 48, file length 10329, all 16-byte alignment checks 0.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: blob parser now rejects bad magic, overlap, nonzero padding, and trailing bytes before payload extraction.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.

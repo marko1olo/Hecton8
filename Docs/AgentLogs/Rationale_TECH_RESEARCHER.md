@@ -70,7 +70,7 @@ Problem: The prompt explicitly says 1.6M LOC. The first successful atlas only co
 Solution: Use `rg --files` from the generator for C# enumeration, with a Python fallback. Count all `Assets/` + `Packages/` C# files by bytes, but parse signal/namespace ownership only for first-party source.
 Rejected Alternatives: Regex-parse all vendor/package source for Hecton signal ownership, which timed out and adds no first-party architecture value; keep the first-party-only count.
 Scalability potential: Low/MX350 and Ultra decisions now have accurate project-scale context while keeping ownership mapping focused on controllable first-party code.
-Hardware Impact: 0 us runtime impact. Offline source scale is now 5,034 C# files and 1,694,411 lines; first-party ownership is 1,505 files and 945,750 lines.
+Hardware Impact: 0 us runtime impact. Offline source scale is now 5,034 C# files and 1,709,155 lines; first-party ownership is 1,505 files and 960,494 lines.
 
 ## Decision 10 - Tool Self-Tests
 
@@ -79,3 +79,27 @@ Solution: Add `Tools/test_architecture_atlas.py` covering path normalization, ma
 Rejected Alternatives: Relying only on a full atlas generation run. That checks current output but not small parser behaviors that can silently rot.
 Scalability potential: Low/Middle/High/Ultra architecture refreshes keep the same validation contract as the atlas grows.
 Hardware Impact: 0 us runtime impact. Unit tests ran in 0.003 seconds reported test time; wall time was tool-shell overhead only.
+
+## Decision 11 - Machine-Readable Atlas Sidecar
+
+Problem: The markdown atlas is readable, but downstream integrator tooling would have to scrape tables to verify dependency and signal data.
+Solution: Emit `Docs/DEPENDENCY_GRAPH.json` from `Tools/BuildArchitectureAtlas.py` using the same source scan as the markdown, then extend `Tools/AtlasCheck.py` to validate path references in both artifacts.
+Rejected Alternatives: Force the GRAND_INTEGRATOR to parse markdown, or create a second hand-maintained JSON file that could drift from the atlas.
+Scalability potential: Low/Middle/High/Ultra architecture refreshes now have a stable machine-readable contract; low-tier VRAM and signal-lane audits can consume the same data as high-tier visual-overkill planning without manual transcription.
+Hardware Impact: 0 us runtime impact on i3/MX350. Offline verification expanded from 179 markdown references to 587 markdown+JSON references.
+
+## Decision 12 - Generator Reproducibility Under Workspace Load
+
+Problem: A final `python Tools/BuildArchitectureAtlas.py` run timed out under shell/session load even though the already-generated atlas remained integrity-clean.
+Solution: Profile generator sections with unbuffered Python, identify `scan_source` as the expensive section, then rerun the actual generator command with `python -u` and a long guard. The command completed and wrote both atlas artifacts.
+Rejected Alternatives: Ignore the timeout because the files already passed validation, or hide the timeout from the handoff report.
+Scalability potential: Low/Middle/High/Ultra unaffected at runtime. Offline atlas refresh is now characterized: source scanning is the cost center; markdown/JSON emission is cheap.
+Hardware Impact: 0 us runtime impact on i3/MX350. Latest reproducible generator run completed in 153.4 s wall time; `scan_source` profiling ranged from 130.641 s to 261.070 s under session load.
+
+## Decision 13 - Incremental Atlas Source Cache
+
+Problem: Re-running the atlas generator still spent too much wall time scanning unchanged C# files during multi-agent handoff.
+Solution: Add `Docs/DEPENDENCY_GRAPH.cache.json` as a guarded per-file source-analysis cache. Cache reuse requires matching file size, mtime, and first-party classification; changed or uncached files are still re-read and re-parsed. Replace per-file `Path.resolve()` formatting with lexical repo-relative conversion.
+Rejected Alternatives: Trust stale atlas output without regeneration, or use an unsafe unguarded cache that could hide changed signal lanes.
+Scalability potential: Low/Middle/High/Ultra runtime remains unchanged. Offline refresh is cheaper, so integrators can regenerate the architecture map more often during concurrent agent edits.
+Hardware Impact: 0 us runtime impact on i3/MX350. Cold-cache generator run completed in 221.3 s; warm-cache generator run after path optimization completed in 95.5 s; profiled `scan_source` warm section dropped to 22.696 s.

@@ -20,6 +20,13 @@ from typing import Dict, Iterable, List, Optional, Tuple
 MASK64 = (1 << 64) - 1
 FNV64_OFFSET = 0xCBF29CE484222325
 FNV64_PRIME = 0x100000001B3
+AUP_AXIS_BITS = 21
+AUP_AXIS_MASK = (1 << AUP_AXIS_BITS) - 1
+AUP_SIGN_BIT = 1 << (AUP_AXIS_BITS - 1)
+AUP_AXIS_MIN = -(1 << (AUP_AXIS_BITS - 1))
+AUP_AXIS_MAX = (1 << (AUP_AXIS_BITS - 1)) - 1
+AUP_OVERFLOW_BIT = 1 << 63
+NET_MTU_PAYLOAD_BYTES = 1200
 HASH_FUNCTION_NAMES = {
     "mix64",
     "hash_input_state",
@@ -28,6 +35,85 @@ HASH_FUNCTION_NAMES = {
     "merkle_root",
     "master_state_hash",
 }
+
+
+@dataclass(frozen=True)
+class FieldSpec:
+    name: str
+    offset: int
+    size: int
+    type_name: str
+
+
+@dataclass(frozen=True)
+class StructSpec:
+    name: str
+    size: int
+    fields: Tuple[FieldSpec, ...]
+
+
+NET_PACKET_SCHEMA: Tuple[StructSpec, ...] = (
+    StructSpec(
+        "H8NetEnvelope",
+        24,
+        (
+            FieldSpec("Magic", 0, 4, "uint32"),
+            FieldSpec("ProtocolVersion", 4, 1, "uint8"),
+            FieldSpec("PacketType", 5, 1, "uint8"),
+            FieldSpec("HeaderBytes", 6, 1, "uint8"),
+            FieldSpec("Flags", 7, 1, "uint8"),
+            FieldSpec("SenderPeerId", 8, 2, "uint16"),
+            FieldSpec("Sequence", 10, 2, "uint16"),
+            FieldSpec("AckSequence", 12, 2, "uint16"),
+            FieldSpec("RecordCount", 14, 1, "uint8"),
+            FieldSpec("Reserved", 15, 1, "uint8"),
+            FieldSpec("AuthorityTick", 16, 4, "uint32"),
+            FieldSpec("AckMask32", 20, 4, "uint32"),
+        ),
+    ),
+    StructSpec(
+        "InputStateRecord",
+        16,
+        (
+            FieldSpec("InputTick", 0, 4, "uint32"),
+            FieldSpec("PlayerId", 4, 1, "uint8"),
+            FieldSpec("ButtonMask", 5, 2, "uint16"),
+            FieldSpec("InputFlags", 7, 1, "uint8"),
+            FieldSpec("MoveX", 8, 1, "int8"),
+            FieldSpec("MoveY", 9, 1, "int8"),
+            FieldSpec("AimYawQ12", 10, 2, "uint16"),
+            FieldSpec("ToolState", 12, 2, "uint16"),
+            FieldSpec("LocalInputSeq", 14, 2, "uint16"),
+        ),
+    ),
+    StructSpec(
+        "WorldDeltaHeader",
+        32,
+        (
+            FieldSpec("DeltaId", 0, 4, "uint32"),
+            FieldSpec("BaseTick", 4, 4, "uint32"),
+            FieldSpec("BaseMasterHash", 8, 8, "uint64"),
+            FieldSpec("TargetMasterHash", 16, 8, "uint64"),
+            FieldSpec("FirstLeafIndex", 24, 4, "uint32"),
+            FieldSpec("PayloadBytes", 28, 2, "uint16"),
+            FieldSpec("FragmentIndex", 30, 1, "uint8"),
+            FieldSpec("FragmentTotal", 31, 1, "uint8"),
+        ),
+    ),
+    StructSpec(
+        "WorldDeltaRecord",
+        32,
+        (
+            FieldSpec("BufferId", 0, 4, "uint32"),
+            FieldSpec("PageIndex", 4, 4, "uint32"),
+            FieldSpec("Generation", 8, 4, "uint32"),
+            FieldSpec("ByteOffset", 12, 2, "uint16"),
+            FieldSpec("ByteCount", 14, 2, "uint16"),
+            FieldSpec("LeafHashBefore", 16, 8, "uint64"),
+            FieldSpec("LeafHashAfter", 24, 8, "uint64"),
+        ),
+    ),
+)
 
 
 @dataclass(frozen=True)
@@ -91,6 +177,47 @@ class XorShift32:
         if basis_points >= 10000:
             return True
         return self.range(10000) < basis_points
+
+
+def schema_by_name() -> Dict[str, StructSpec]:
+    return {spec.name: spec for spec in NET_PACKET_SCHEMA}
+
+
+def validate_packet_schema() -> List[str]:
+    errors: List[str] = []
+    for spec in NET_PACKET_SCHEMA:
+        cursor = 0
+        seen = set()
+        for field in spec.fields:
+            if field.name in seen:
+                errors.append(f"{spec.name}: duplicate field {field.name}")
+            seen.add(field.name)
+            if field.offset != cursor:
+                errors.append(f"{spec.name}.{field.name}: offset {field.offset} != cursor {cursor}")
+            if field.size <= 0:
+                errors.append(f"{spec.name}.{field.name}: invalid size {field.size}")
+            cursor = field.offset + field.size
+        if cursor != spec.size:
+            errors.append(f"{spec.name}: final size {cursor} != declared {spec.size}")
+
+    specs = schema_by_name()
+    envelope = specs.get("H8NetEnvelope")
+    input_record = specs.get("InputStateRecord")
+    world_header = specs.get("WorldDeltaHeader")
+    world_record = specs.get("WorldDeltaRecord")
+    if envelope is None or input_record is None or world_header is None or world_record is None:
+        errors.append("missing required packet schema struct")
+        return errors
+
+    input_payload_size = envelope.size + (16 * input_record.size)
+    if input_payload_size > NET_MTU_PAYLOAD_BYTES:
+        errors.append(f"InputStatePacket default redundancy exceeds MTU: {input_payload_size}")
+
+    world_delta_min_size = envelope.size + world_header.size + world_record.size
+    if world_delta_min_size > NET_MTU_PAYLOAD_BYTES:
+        errors.append(f"WorldDeltaPacket minimum exceeds MTU: {world_delta_min_size}")
+
+    return errors
 
 
 def parse_percent_bps(text: str) -> int:
@@ -176,6 +303,88 @@ def merkle_root(leaves: Tuple[int, ...]) -> int:
             next_level.append(merkle_pair(left, right))
         level = next_level
     return level[0]
+
+
+def build_merkle_levels(leaves: Tuple[int, ...]) -> List[List[int]]:
+    if not leaves:
+        return [[merkle_pair(0, 0)]]
+
+    levels: List[List[int]] = [list(leaves)]
+    while len(levels[-1]) > 1:
+        previous = levels[-1]
+        current: List[int] = []
+        for i in range(0, len(previous), 2):
+            left = previous[i]
+            right = previous[i + 1] if i + 1 < len(previous) else left
+            current.append(merkle_pair(left, right))
+        levels.append(current)
+    return levels
+
+
+def merkle_diff_indices(left_leaves: Tuple[int, ...], right_leaves: Tuple[int, ...]) -> List[int]:
+    if len(left_leaves) != len(right_leaves):
+        raise ValueError("Merkle leaf counts must match")
+    if not left_leaves:
+        return []
+
+    left_levels = build_merkle_levels(left_leaves)
+    right_levels = build_merkle_levels(right_leaves)
+    top_level = len(left_levels) - 1
+    if left_levels[top_level][0] == right_levels[top_level][0]:
+        return []
+
+    result: List[int] = []
+
+    def descend(level: int, node_index: int) -> None:
+        if level == 0:
+            result.append(node_index)
+            return
+
+        child_level = level - 1
+        first_child = node_index * 2
+        for child_offset in range(2):
+            child_index = first_child + child_offset
+            if child_index >= len(left_levels[child_level]):
+                continue
+            if left_levels[child_level][child_index] != right_levels[child_level][child_index]:
+                descend(child_level, child_index)
+
+    descend(top_level, 0)
+    return result
+
+
+def pack_aup_local64(x_mm: int, y_mm: int, z_mm: int) -> int:
+    if (
+        x_mm < AUP_AXIS_MIN
+        or x_mm > AUP_AXIS_MAX
+        or y_mm < AUP_AXIS_MIN
+        or y_mm > AUP_AXIS_MAX
+        or z_mm < AUP_AXIS_MIN
+        or z_mm > AUP_AXIS_MAX
+    ):
+        return AUP_OVERFLOW_BIT
+
+    x_bits = x_mm & AUP_AXIS_MASK
+    y_bits = y_mm & AUP_AXIS_MASK
+    z_bits = z_mm & AUP_AXIS_MASK
+    return x_bits | (y_bits << AUP_AXIS_BITS) | (z_bits << (AUP_AXIS_BITS * 2))
+
+
+def unpack_aup_local64(packed: int) -> Tuple[int, int, int, bool]:
+    if (packed & AUP_OVERFLOW_BIT) != 0:
+        return 0, 0, 0, True
+
+    x_bits = packed & AUP_AXIS_MASK
+    y_bits = (packed >> AUP_AXIS_BITS) & AUP_AXIS_MASK
+    z_bits = (packed >> (AUP_AXIS_BITS * 2)) & AUP_AXIS_MASK
+    return sign_extend_21(x_bits), sign_extend_21(y_bits), sign_extend_21(z_bits), False
+
+
+def sign_extend_21(value: int) -> int:
+    value &= AUP_AXIS_MASK
+    if (value & AUP_SIGN_BIT) != 0:
+        return value - (1 << AUP_AXIS_BITS)
+    return value
 
 
 def master_state_hash(tick: int, state: SimState, inputs: Tuple[InputState, ...]) -> int:

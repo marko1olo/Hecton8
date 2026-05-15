@@ -213,6 +213,170 @@ Evidence:
 Status:
 - STATUS: HASHES SYNCHRONIZED - REGRESSION TESTED; UNITY IMPORT BLOCKED BY MISSING EDITOR.
 
+## 2026-05-15 - ITEM_CATALOG_FNV_GEN DRIFT RECONCILIATION
+
+What was wrong:
+- A final no-bytecode full verifier run found the active project catalog had moved from 1007 to 1017 records. Signals increased from 275 to 285 due to concurrent workspace changes.
+- The generated `H8Hashes.cs` needed to be regenerated again to match current source/data truth.
+- Hash-tool `.pyc` cache files existed from earlier unittest runs.
+
+What was done:
+- Regenerated `Assets/_Project/Scripts/Core/Generated/H8Hashes.cs` with `python -B Tools\VerifyH8HashCollisions.py --write-csharp Assets/_Project/Scripts/Core/Generated/H8Hashes.cs`.
+- Removed only hash-tool pycache artifacts for `VerifyH8HashCollisions` and `test_h8_hash_collisions`.
+- Reran the full verifier, focused regression suite, Python AST check, generated C# runtime/allocation scan, and diff whitespace check.
+
+Cinematic Cheats used:
+- Offline deterministic hash baking only.
+- No runtime lookup table, scanner, dictionary, static constructor, Unity scene mutation, or project setting change.
+
+Exact Microseconds saved:
+- Runtime overhead added: 0 us/frame and 0 B/frame.
+- Saved future validation time through no-bytecode regression tests; no runtime savings claimed.
+
+Evidence:
+- `python -B Tools\VerifyH8HashCollisions.py --write-csharp Assets/_Project/Scripts/Core/Generated/H8Hashes.cs` -> 1017 records; Items 209, Biomes 523, Signals 285; `HASH COLLISIONS: 0`.
+- `python -B Tools\VerifyH8HashCollisions.py` -> 1017 records; Items 209, Biomes 523, Signals 285; `HASH COLLISIONS: 0`.
+- `python -B -m unittest Tools.test_h8_hash_collisions` -> 5 tests, OK.
+- `python -B -c "ast.parse(...)"` -> `H8_HASH_AST_OK`.
+- Generated C# scan -> `NO_RUNTIME_LOGIC_HITS`.
+- Hash-tool pycache check -> no `VerifyH8HashCollisions*` or `test_h8_hash_collisions*` artifacts remain.
+- `git diff --check` on owned files -> clean; only Git line-ending warnings.
+
+Status:
+- STATUS: HASHES SYNCHRONIZED - 1017 RECORDS; REGRESSION TESTED; UNITY IMPORT BLOCKED BY MISSING EDITOR.
+
+## 2026-05-15 - ITEM_CATALOG_FNV_GEN TRUE EOF STALE HEADER GATE
+
+What was wrong:
+- The true EOF log entry still only recorded the 1017 regeneration, not the new non-mutating stale-header gate.
+
+What was done:
+- Added `--check-csharp` to `Tools\VerifyH8HashCollisions.py`.
+- Added regression coverage for missing/current/line-ending/stale generated-header states.
+- Verified the project header is up to date without rewriting it.
+
+Evidence:
+- `python -B Tools\VerifyH8HashCollisions.py --check-csharp Assets/_Project/Scripts/Core/Generated/H8Hashes.cs` -> 1017 records; `CSharp output check: up-to-date`; `HASH COLLISIONS: 0`.
+- `python -B -m unittest Tools.test_h8_hash_collisions` -> 6 tests, OK.
+- `python -B -c "ast.parse(...)"` -> `H8_HASH_AST_OK`.
+- Hash-tool pycache check -> clean.
+- `git diff --check` on owned files -> clean; Git line-ending warnings only.
+
+Status:
+- STATUS: HASHES SYNCHRONIZED - 1017 RECORDS; STALE HEADER GATED; UNITY IMPORT BLOCKED BY MISSING EDITOR.
+
+## 2026-05-15 - ITEM_CATALOG_FNV_GEN DEDICATED REPORT
+
+What was wrong:
+- Final hash evidence was correct but buried in shared backend logs that other agents keep appending to.
+
+What was done:
+- Added `--write-report` to `Tools\VerifyH8HashCollisions.py`.
+- Generated `Docs\Reports\H8_Hash_Catalog_Audit.md`.
+- Added regression coverage for the report helper.
+
+Cinematic Cheats used:
+- Offline report generation only.
+- No runtime path, scene, prefab, project setting, material, or Unity asset changed.
+
+Exact Microseconds saved:
+- Runtime overhead added: 0 us/frame and 0 B/frame.
+
+Evidence:
+- `python -B Tools\VerifyH8HashCollisions.py --check-csharp Assets/_Project/Scripts/Core/Generated/H8Hashes.cs --write-report Docs/Reports/H8_Hash_Catalog_Audit.md` -> 1017 records; Items 209, Biomes 523, Signals 285; `CSharp output check: up-to-date`; `HASH COLLISIONS: 0`.
+- `Docs\Reports\H8_Hash_Catalog_Audit.md` records hash modes: `ascii_lower=26`, `loc_utf16=813`, `signal_label=178`.
+- `python -B -m unittest Tools.test_h8_hash_collisions` -> 7 tests, OK.
+- Generated C# scan -> `NO_RUNTIME_LOGIC_HITS`.
+- `git diff --check` on owned files -> clean; Git line-ending warnings only.
+
+Status:
+- STATUS: HASHES SYNCHRONIZED - 1017 RECORDS; REPORT GENERATED; UNITY IMPORT BLOCKED BY MISSING EDITOR.
+
+## 2026-05-15 - ITEM_CATALOG_FNV_GEN TRUE EOF JSON MANIFEST
+
+What was wrong:
+- The hash catalog had C# and Markdown outputs, but no machine-readable manifest for CI/integrator tooling.
+
+What was done:
+- Added `--write-json` to `Tools\VerifyH8HashCollisions.py`.
+- Generated `Docs\Reports\H8_Hash_Catalog_Audit.json`.
+- Added regression coverage for JSON manifest content.
+
+Cinematic Cheats used:
+- Offline structured-data emission only.
+- No runtime code path, Unity scene, prefab, project setting, material, or asset behavior changed.
+
+Exact Microseconds saved:
+- Runtime overhead added: 0 us/frame and 0 B/frame.
+
+Evidence:
+- `python -B Tools\VerifyH8HashCollisions.py --check-csharp Assets/_Project/Scripts/Core/Generated/H8Hashes.cs --write-report Docs/Reports/H8_Hash_Catalog_Audit.md --write-json Docs/Reports/H8_Hash_Catalog_Audit.json` -> 1017 records; Items 209, Biomes 523, Signals 285; `CSharp output check: up-to-date`; `HASH COLLISIONS: 0`.
+- `Docs\Reports\H8_Hash_Catalog_Audit.json` -> `status=HASHES_SYNCHRONIZED`, `total_records=1017`, 1017 record entries, hash modes `ascii_lower=26`, `loc_utf16=813`, `signal_label=178`.
+- `python -B -m unittest Tools.test_h8_hash_collisions` -> 8 tests, OK.
+- `python -B -c "ast.parse(...)"` -> `H8_HASH_AST_OK`.
+- Generated C# scan -> `NO_RUNTIME_LOGIC_HITS`.
+- Hash-tool pycache check -> clean.
+- `git diff --check` on owned files -> clean; Git line-ending warnings only.
+
+Status:
+- STATUS: HASHES SYNCHRONIZED - 1017 RECORDS; JSON MANIFEST GENERATED; UNITY IMPORT BLOCKED BY MISSING EDITOR.
+
+## 2026-05-15 - ITEM_RECIPE_GRAPH_AUDITOR RECIPE IDENTITY HARDENING
+
+What was wrong:
+- The economy DAG audit could prove acyclicity, but acyclicity does not prove unique recipe identity or unique producer ownership.
+- Duplicate `recipe_id` values or duplicate result item IDs could leave the graph valid while runtime maps overwrite producers or expose recipe arbitrage.
+
+What was done:
+- Added `recipe_identity` analysis to `Tools\EconomyRecipeGraphAudit.py`.
+- Wired missing/duplicate recipe IDs and missing/duplicate result item IDs into blocking findings and process exit code.
+- Added `Recipe Identity` output to `Docs\Reports\Economy_Integrity_Audit.md`.
+- Added a full temp-fixture CLI regression test that duplicates both a recipe ID and a result item ID and proves the graph audit returns exit 1 with pending-risk status.
+
+Cinematic Cheats used:
+- No runtime simulation added. This is an offline deterministic import gate. Saved runtime budget remains available for inventory/UI presentation and high-tier visual overkill.
+
+Exact microseconds saved:
+- 0 us/frame direct runtime change. The improvement prevents runtime conflict resolution/lookup ambiguity from entering gameplay.
+
+Verification:
+- `python -B Tools\EconomyItemsCsvBake.py --root .` -> `items_csv_rows=55`.
+- `python -B Tools\EconomyRecipeGraphAudit.py --root . --report Docs\Reports\Economy_Integrity_Audit.md` -> `status: ECONOMY SECURED`, `recipe_identity.recipe_count=40`, duplicate recipe IDs `[]`, duplicate result item IDs `[]`, DAG true, cycles 0.
+- `python -B -m unittest Tools.test_economy_integrity` -> 13 tests, OK.
+- `python -B Tools\EconomyValidator.py --root . --negative-tests` -> `ECONOMY VALIDATION OK`, `negative_cases=6`, `STATUS: ECONOMY BALANCED`.
+- `python -B -c "ast.parse(...)"` -> `ECONOMY_AST_OK`.
+- Economy pycache check -> `ECONOMY_PYCACHE_CLEAN`.
+- `git diff --check` on owned economy files/logs -> exit 0; Git line-ending warnings only.
+
+Status:
+- STATUS: ECONOMY SECURED - RECIPE IDENTITY GATED; UNITY COMPILE/IMPORT PENDING BECAUSE UNITY EDITOR IS UNAVAILABLE IN THIS SHELL.
+
+## 2026-05-15 - ITEM_CATALOG_FNV_GEN STALE HEADER GATE
+
+What was wrong:
+- The 1007-to-1017 drift proved that the generated header can become stale when other backend agents add source/data identities. The verifier needed a non-mutating fail-fast check mode.
+
+What was done:
+- Added `--check-csharp` to `Tools\VerifyH8HashCollisions.py`.
+- Extended `Tools\test_h8_hash_collisions.py` to cover missing, current, line-ending tolerated, and stale generated-header states.
+
+Cinematic Cheats used:
+- Offline deterministic source comparison only.
+- No runtime lookup table, scene, prefab, project setting, or Unity asset mutation.
+
+Exact Microseconds saved:
+- Runtime overhead added: 0 us/frame and 0 B/frame.
+- CI/local validation now fails stale headers before runtime.
+
+Evidence:
+- `python -B Tools\VerifyH8HashCollisions.py --check-csharp Assets/_Project/Scripts/Core/Generated/H8Hashes.cs` -> 1017 records; `CSharp output check: up-to-date`; `HASH COLLISIONS: 0`.
+- `python -B -m unittest Tools.test_h8_hash_collisions` -> 6 tests, OK.
+- Generated C# scan -> `NO_RUNTIME_LOGIC_HITS`.
+- `git diff --check` on owned files -> clean; Git line-ending warnings only.
+
+Status:
+- STATUS: HASHES SYNCHRONIZED - 1017 RECORDS; STALE HEADER GATED; UNITY IMPORT BLOCKED BY MISSING EDITOR.
+
 ## 2026-05-15 - ITEM_CATALOG_FNV_GEN TESTED FINAL MARKER
 
 What was done:
@@ -369,6 +533,112 @@ Evidence:
 
 Status:
 - STATUS: NETWORK PROTOCOL READY - OFFLINE SIM + REGRESSION TEST VERIFIED; UNITY RUNTIME PENDING.
+
+## NET_SYNC_MERKLE_ARCHITECT - AUP64 / MERKLE HARDENING - 2026-05-15
+
+What was wrong:
+- AUP64 packing and Merkle difference detection were documented but not executable-tested. Those are bit-boundary and tree-index failure zones.
+
+What was done:
+- Added integer-only `pack_aup_local64` and `unpack_aup_local64` helpers.
+- Added `build_merkle_levels` and `merkle_diff_indices` helpers.
+- Expanded `Tools/test_net_jitter_sim.py` from 5 to 7 tests.
+- Updated `Docs/Modding/Net_Protocol_v1.md` test coverage table.
+
+Cinematic Cheats used:
+- Anchor-relative millimeter AUP encoding remains the cheap authority payload.
+- Merkle tree descent targets the changed leaves instead of resending whole-world state.
+
+Exact Microseconds saved:
+- Runtime overhead added: 0 us/frame.
+- Future common position payload remains 8 bytes instead of full anchor payload; profiler-backed CPU savings remain pending runtime owner implementation.
+
+Evidence:
+- `python -B -m unittest Tools.test_net_jitter_sim` -> 7 tests, OK.
+- AST parse -> `NET_SYNC_AST_AUP_MERKLE_OK`.
+- NET_SYNC pycache gate -> `NET_SYNC_PYCACHE_CLEAN`.
+- Final post-AUP64/Merkle simulator reruns:
+  - baseline -> `NETWORK PROTOCOL READY`, 0 hash/ring mismatches.
+  - rollback stress -> `NETWORK PROTOCOL READY`, 1190 rollback events, max rollback 4 ticks, 0 hash/ring mismatches.
+  - 4-client sanity -> `NETWORK PROTOCOL READY`, 7776 sent, 390 lost, 0 hash/ring mismatches.
+- Final gates:
+  - `python -B -m unittest Tools.test_net_jitter_sim` -> 7 tests, OK, 15.990 s.
+  - `FINAL_NET_REPORTS_OK_AUP_MERKLE`
+  - `FINAL_NET_DOC_OK_AUP_MERKLE`
+  - `FINAL_NET_AST_OK_AUP_MERKLE`
+  - `NET_SYNC_PYCACHE_CLEAN`
+  - `git diff --check -- ...owned NET_SYNC files...` -> exit 0; line-ending normalization warnings only.
+
+Status:
+- STATUS: NETWORK PROTOCOL READY - AUP64 / MERKLE EXECUTABLE TESTS ADDED; UNITY RUNTIME PENDING.
+
+## NET_SYNC_MERKLE_ARCHITECT - ONE-COMMAND GATE HARDENING - 2026-05-15
+
+What was wrong:
+- NET_SYNC validation required several separate commands. That creates partial-rerun risk and weak CI ergonomics.
+
+What was done:
+- Added `Tools/NetProtocolGate.py`.
+- The gate runs baseline, rollback-stress, and four-client simulator scenarios.
+- The gate runs the seven-case unittest suite.
+- The gate validates protocol doc terms, Python AST, NET_SYNC pycache cleanliness, and simulator report fields.
+- The gate writes `Docs/Reports/Net_Protocol_Gate_Report.md`.
+
+Cinematic Cheats used:
+- Offline deterministic gate catches authority drift before runtime work.
+- No runtime owner invented; no fake Unity readiness claimed.
+
+Exact Microseconds saved:
+- Runtime overhead added: 0 us/frame.
+- CI/manual verification time reduced to one command; no runtime microsecond claim.
+
+Evidence:
+- `python -B Tools\NetProtocolGate.py` -> `NETWORK PROTOCOL READY`, failures `[]`, scenarios baseline/rollback_stress/four_client, unit tests 7.
+- Gate report readback -> `Status: NETWORK PROTOCOL READY`, all scenarios 0 hash/ring mismatches, float audit PASS, 7 tests OK.
+- Post-gate cache check -> `NET_SYNC_PYCACHE_CLEAN`.
+- Post-gate AST check -> `NET_PROTOCOL_GATE_AST_OK`.
+- Final post-documentation rerun:
+  - `python -B Tools\NetProtocolGate.py` -> `NETWORK PROTOCOL READY`, failures `[]`, scenarios baseline/rollback_stress/four_client, unit tests 7.
+  - `NET_PROTOCOL_GATE_DOC_REFERENCES_OK`
+  - `NET_SYNC_PYCACHE_CLEAN`
+  - `FINAL_NET_GATE_AST_OK`
+  - `git diff --check -- ...owned NET_SYNC files...` -> exit 0; line-ending normalization warnings only.
+
+Status:
+- STATUS: NETWORK PROTOCOL READY - ONE-COMMAND OFFLINE GATE VERIFIED; UNITY RUNTIME PENDING.
+
+## NET_SYNC_MERKLE_ARCHITECT - PACKET SCHEMA ABI HARDENING - 2026-05-15
+
+What was wrong:
+- Packet schema offsets and sizes were locked only in Markdown. Binary ABI drift could pass until runtime implementation.
+
+What was done:
+- Added executable `NET_PACKET_SCHEMA` definitions for `H8NetEnvelope`, `InputStateRecord`, `WorldDeltaHeader`, and `WorldDeltaRecord`.
+- Added `validate_packet_schema()`.
+- Added `test_packet_schema_offsets_sizes_and_mtu_budget_are_locked`.
+- Wired packet schema validation into `Tools/NetProtocolGate.py`.
+
+Cinematic Cheats used:
+- Fixed binary records remain the cheap deterministic transport surface.
+- MTU check prevents packet bloat before runtime transport work.
+
+Exact Microseconds saved:
+- Runtime overhead added: 0 us/frame.
+- Future prevention value: binary ABI drift fails offline. No runtime profiler claim.
+
+Evidence:
+- `python -B -m unittest Tools.test_net_jitter_sim` -> 8 tests, OK.
+- `python -B Tools\NetProtocolGate.py` -> `NETWORK PROTOCOL READY`, failures `[]`, unit tests 8.
+- AST check -> `NET_PACKET_SCHEMA_AST_OK`.
+- Final packet-schema gate rerun:
+  - `python -B Tools\NetProtocolGate.py` -> `NETWORK PROTOCOL READY`, failures `[]`, unit tests 8.
+  - `NET_PROTOCOL_PACKET_SCHEMA_DOC_OK`
+  - `NET_SYNC_PYCACHE_CLEAN`
+  - `FINAL_PACKET_SCHEMA_AST_OK`
+  - `git diff --check -- ...owned NET_SYNC files...` -> exit 0; line-ending normalization warnings only.
+
+Status:
+- STATUS: NETWORK PROTOCOL READY - PACKET SCHEMA ABI EXECUTABLE GATE ADDED; UNITY RUNTIME PENDING.
 
 ## 2026-05-15 - ITEM_CATALOG_FNV_GEN FINAL BOUNDARY PASS
 
@@ -625,6 +895,7 @@ What was wrong:
 What was done:
 - Changed nonpositive `unitValue` handling to return 0.
 - Added a regression assertion that the resolver body fails closed on `unitValue <= 0f`.
+- Added `capacity_resolver_rejects_nonpositive_unit_value` to the graph audit report and blocking gate.
 
 Cinematic Cheats used:
 - Scalar validation in the command path only. No runtime polling or simulation.
@@ -635,9 +906,229 @@ Exact Microseconds saved:
 
 Evidence:
 - `python -B -m unittest Tools.test_economy_integrity` -> 10 tests, OK.
-- `python -B Tools\EconomyRecipeGraphAudit.py --root . --report Docs\Reports\Economy_Integrity_Audit.md` -> `status: ECONOMY SECURED`.
+- `python -B Tools\EconomyRecipeGraphAudit.py --root . --report Docs\Reports\Economy_Integrity_Audit.md` -> `capacity_resolver_rejects_nonpositive_unit_value=True`, `status: ECONOMY SECURED`.
 - `python -B Tools\EconomyValidator.py --root . --negative-tests` -> `ECONOMY VALIDATION OK`, 6 negative cases rejected.
 - `python -B -c "ast.parse(...)"` -> `ECONOMY_AST_OK`.
 
 Status:
 - STATUS: ECONOMY SECURED - CAPACITY RESOLVER FAIL-CLOSED; UNITY COMPILE/IMPORT PENDING.
+
+## 2026-05-15 - ITEM_RECIPE_GRAPH_AUDITOR METHOD-SCOPED AUDIT PATCH
+
+What was wrong:
+- The graph audit checked strict-positive unit mass/volume guards using whole-file regex over `PlayerInventory.cs`, which could create a false positive if matching text appeared outside the runtime helper.
+
+What was done:
+- Scoped the nonpositive mass/volume checks to the extracted `TryResolveUnitPhysicalDemand` method body.
+- Reran no-bytecode verification and regenerated `Docs\Reports\Economy_Integrity_Audit.md`.
+
+Cinematic Cheats used:
+- Static source audit precision only. No runtime component or scene mutation.
+
+Exact Microseconds saved:
+- Runtime overhead added: 0 us/frame.
+- Audit precision improvement only; no runtime savings claimed.
+
+Evidence:
+- `python -B -m unittest Tools.test_economy_integrity` -> 10 tests, OK.
+- `python -B Tools\EconomyRecipeGraphAudit.py --root . --report Docs\Reports\Economy_Integrity_Audit.md` -> `capacity_resolver_rejects_nonpositive_unit_value=True`, `try_add_rejects_nonpositive_unit_mass=True`, `try_add_rejects_nonpositive_unit_volume=True`, `status: ECONOMY SECURED`.
+- `python -B Tools\EconomyValidator.py --root . --negative-tests` -> `ECONOMY VALIDATION OK`, 6 negative cases rejected.
+- `python -B -c "ast.parse(...)"` -> `ECONOMY_AST_OK`.
+
+Status:
+- STATUS: ECONOMY SECURED - METHOD-SCOPED AUDIT VERIFIED; UNITY COMPILE/IMPORT PENDING.
+
+## 2026-05-15 - ITEM_RECIPE_GRAPH_AUDITOR FULL CLI NEGATIVE GATE
+
+What was wrong:
+- The binding drift test covered the helper function, but not the complete graph-audit CLI path that produces the final `ECONOMY SECURED` or pending-risk status.
+
+What was done:
+- Added a temp-root integration test that copies the required economy fixture, mutates one copied missing crafted binding to `runtime_use_allowed=true`, runs `EconomyRecipeGraphAudit.main()`, and asserts exit code 1 plus `PENDING VERIFICATION - ECONOMY RISKS FOUND`.
+
+Cinematic Cheats used:
+- Offline temp fixture. No project asset mutation, no runtime watcher, no Unity scene dependency.
+
+Exact Microseconds saved:
+- Runtime overhead added: 0 us/frame and 0 B/frame.
+- CI coverage improvement only.
+
+Evidence:
+- `python -B -m unittest Tools.test_economy_integrity` -> 11 tests, OK.
+- `python -B Tools\EconomyRecipeGraphAudit.py --root . --report Docs\Reports\Economy_Integrity_Audit.md` -> `status: ECONOMY SECURED`.
+- `python -B Tools\EconomyValidator.py --root . --negative-tests` -> `ECONOMY VALIDATION OK`, 6 negative cases rejected.
+- `python -B -c "ast.parse(...)"` -> `ECONOMY_AST_OK`.
+- Economy pycache cleanup check -> `ECONOMY_PYCACHE_CLEAN`.
+
+Status:
+- STATUS: ECONOMY SECURED - FULL CLI BINDING DRIFT NEGATIVE TESTED; UNITY COMPILE/IMPORT PENDING.
+
+## 2026-05-15 - ITEM_RECIPE_GRAPH_AUDITOR REPORT COVERAGE PATCH
+
+What was wrong:
+- The generated economy audit report listed generic commands but did not state the final no-bytecode command set or the 11-test coverage scope, including the full graph-audit CLI binding drift failure.
+
+What was done:
+- Updated `Tools\EconomyRecipeGraphAudit.py` report generation to add a `Regression Coverage` section.
+- Regenerated `Docs\Reports\Economy_Integrity_Audit.md`.
+
+Cinematic Cheats used:
+- Documentation/report generation only. No runtime code path changed.
+
+Exact Microseconds saved:
+- Runtime overhead added: 0 us/frame and 0 B/frame.
+
+Evidence:
+- `Docs\Reports\Economy_Integrity_Audit.md` now lists `python -B` commands, 11-test suite scope, 6 validator negative cases, full graph-audit CLI binding drift failure coverage, and economy pycache hygiene.
+- `python -B Tools\EconomyRecipeGraphAudit.py --root . --report Docs\Reports\Economy_Integrity_Audit.md` -> `status: ECONOMY SECURED`.
+- `python -B -m unittest Tools.test_economy_integrity` -> 11 tests, OK.
+- `python -B Tools\EconomyValidator.py --root . --negative-tests` -> `ECONOMY VALIDATION OK`, 6 negative cases rejected.
+- `python -B -c "ast.parse(...)"` -> `ECONOMY_AST_OK`.
+- Economy pycache cleanup check -> `ECONOMY_PYCACHE_CLEAN`.
+
+Status:
+- STATUS: ECONOMY SECURED - REPORT REGRESSION COVERAGE RECORDED; UNITY COMPILE/IMPORT PENDING.
+
+## 2026-05-15 - ITEM_RECIPE_GRAPH_AUDITOR MISSING BINDING PLAN CLI GATE
+
+What was wrong:
+- The CLI negative test covered a runtime-allowed missing crafted binding, but not complete removal of `Runtime_Binding_Plan.json`.
+
+What was done:
+- Added a temp-root integration test that deletes the copied binding plan and runs `EconomyRecipeGraphAudit.main()`.
+- The test asserts exit code 1, `PENDING VERIFICATION - ECONOMY RISKS FOUND`, blocked count 0, and 22 unblocked missing crafted assets.
+- Updated the generated audit report coverage text from 11 tests to 12 tests.
+
+Cinematic Cheats used:
+- Offline temp fixture. No project asset mutation and no runtime watcher.
+
+Exact Microseconds saved:
+- Runtime overhead added: 0 us/frame and 0 B/frame.
+- CI coverage improvement only.
+
+Evidence:
+- `python -B -m unittest Tools.test_economy_integrity` -> 12 tests, OK.
+- `python -B Tools\EconomyRecipeGraphAudit.py --root . --report Docs\Reports\Economy_Integrity_Audit.md` -> `status: ECONOMY SECURED`.
+- `python -B Tools\EconomyValidator.py --root . --negative-tests` -> `ECONOMY VALIDATION OK`, 6 negative cases rejected.
+- `python -B -c "ast.parse(...)"` -> `ECONOMY_AST_OK`.
+- Economy pycache cleanup check -> `ECONOMY_PYCACHE_CLEAN`.
+
+Status:
+- STATUS: ECONOMY SECURED - MISSING BINDING PLAN CLI NEGATIVE TESTED; UNITY COMPILE/IMPORT PENDING.
+
+## 2026-05-15 - ITEM_CATALOG_FNV_GEN TRUE EOF 1017 CLOSURE
+
+What was wrong:
+- Concurrent backend work made the earlier 1007-record generated table stale. The live hash verifier now reports 1017 records.
+
+What was done:
+- Regenerated `Assets/_Project/Scripts/Core/Generated/H8Hashes.cs`.
+- Reran the full no-bytecode verifier after regeneration and confirmed the count stayed at 1017.
+- Kept the economy-auditor log entries intact and appended this hash closure at true EOF.
+
+Cinematic Cheats used:
+- Offline deterministic hash baking only.
+- No runtime path, Unity scene, prefab, project setting, or material changed.
+
+Exact Microseconds saved:
+- Runtime overhead added: 0 us/frame and 0 B/frame.
+
+Evidence:
+- `python -B Tools\VerifyH8HashCollisions.py --write-csharp Assets/_Project/Scripts/Core/Generated/H8Hashes.cs` -> 1017 records; Items 209, Biomes 523, Signals 285; `HASH COLLISIONS: 0`.
+- `python -B Tools\VerifyH8HashCollisions.py` -> 1017 records; Items 209, Biomes 523, Signals 285; `HASH COLLISIONS: 0`.
+- `python -B -m unittest Tools.test_h8_hash_collisions` -> 5 tests, OK.
+- `.NET Framework csc` compile of regenerated `H8Hashes.cs` -> `CSC_1017_EXIT=0`, output size 125952 bytes, `Temp\H8HashesSyntaxCheck_1017.dll` removed.
+- Generated C# scan -> `NO_RUNTIME_LOGIC_HITS`.
+- Hash-tool pycache check -> clean.
+- `git diff --check` on owned files -> clean; Git line-ending warnings only.
+
+Status:
+- STATUS: HASHES SYNCHRONIZED - 1017 RECORDS; REGRESSION TESTED; UNITY IMPORT BLOCKED BY MISSING EDITOR.
+
+## 2026-05-15 - ITEM_CATALOG_FNV_GEN TRUE EOF STALE HEADER GATE
+
+What was wrong:
+- The previous true EOF hash entry recorded the 1017 regeneration, but not the new non-mutating stale-header gate.
+
+What was done:
+- Added `--check-csharp` to `Tools\VerifyH8HashCollisions.py`.
+- Added regression coverage for missing/current/line-ending/stale generated-header states.
+- Verified the project header is up to date without rewriting it.
+
+Evidence:
+- `python -B Tools\VerifyH8HashCollisions.py --check-csharp Assets/_Project/Scripts/Core/Generated/H8Hashes.cs` -> 1017 records; `CSharp output check: up-to-date`; `HASH COLLISIONS: 0`.
+- `python -B -m unittest Tools.test_h8_hash_collisions` -> 6 tests, OK.
+- `python -B -c "ast.parse(...)"` -> `H8_HASH_AST_OK`.
+- Hash-tool pycache check -> clean.
+- `git diff --check` on owned files -> clean; Git line-ending warnings only.
+
+Status:
+- STATUS: HASHES SYNCHRONIZED - 1017 RECORDS; STALE HEADER GATED; UNITY IMPORT BLOCKED BY MISSING EDITOR.
+
+## 2026-05-15 - ITEM_CATALOG_FNV_GEN TRUE EOF DEDICATED REPORT
+
+What was done:
+- Generated `Docs\Reports\H8_Hash_Catalog_Audit.md` as the standalone hash evidence artifact.
+- Verified the report through the no-bytecode hash verifier and focused test suite.
+
+Evidence:
+- `python -B Tools\VerifyH8HashCollisions.py --check-csharp Assets/_Project/Scripts/Core/Generated/H8Hashes.cs --write-report Docs/Reports/H8_Hash_Catalog_Audit.md` -> 1017 records; Items 209, Biomes 523, Signals 285; `CSharp output check: up-to-date`; `HASH COLLISIONS: 0`.
+- `Docs\Reports\H8_Hash_Catalog_Audit.md` -> total records 1017, generated header up-to-date, hash modes `ascii_lower=26`, `loc_utf16=813`, `signal_label=178`.
+- `python -B -m unittest Tools.test_h8_hash_collisions` -> 7 tests, OK.
+- Hash-tool pycache check -> clean.
+- `git diff --check` on owned files -> clean; Git line-ending warnings only.
+
+Status:
+- STATUS: HASHES SYNCHRONIZED - 1017 RECORDS; REPORT GENERATED; UNITY IMPORT BLOCKED BY MISSING EDITOR.
+## NET_SYNC_MERKLE_ARCHITECT - GATE COUNT CONSISTENCY HARDENING - 2026-05-15
+
+What was wrong:
+- `Docs/Modding/Net_Protocol_v1.md` still reported `Unit tests: 7` after packet schema hardening expanded `Tools/test_net_jitter_sim.py` to 8 tests.
+- `Tools/NetProtocolGate.py` reported the discovered unittest count but did not yet fail on count drift.
+
+What was done:
+- Corrected the protocol doc gate evidence to `Unit tests: 8`.
+- Added `EXPECTED_UNIT_TESTS = 8` and required `Unit tests: 8` in `Tools/NetProtocolGate.py`.
+- Added a gate failure path when discovered unittest count differs from the expected count.
+
+Cinematic Cheats used:
+- No runtime simulation added. This remains an offline deterministic protocol gate; presentation interpolation and visual overkill stay outside authority.
+
+Exact microseconds saved:
+- 0 us/frame current. The change is offline only.
+- Future saved debugging cost: stale gate-count drift now fails at protocol gate execution instead of surviving into runtime integration.
+
+Verification:
+- `python -B Tools\NetProtocolGate.py` -> `NETWORK PROTOCOL READY`, failures `[]`, unit tests 8.
+- Protocol doc count readback -> `Docs\Modding\Net_Protocol_v1.md:370:- Unit tests: 8`.
+- Gate count readback -> `Tools\NetProtocolGate.py` contains `Unit tests: 8` and `EXPECTED_UNIT_TESTS = 8`.
+- AST parse -> `FINAL_TEST_COUNT_GATE_AST_OK`.
+- Bytecode cache -> `NET_SYNC_PYCACHE_CLEAN`.
+- Gate report readback -> `Status: NETWORK PROTOCOL READY`, `Tests: 8`.
+- `git diff --check` on owned NET_SYNC files/reports/logs -> exit 0; line-ending normalization warnings only.
+- Post-log rerun `python -B Tools\NetProtocolGate.py` -> `NETWORK PROTOCOL READY`, failures `[]`, unit tests 8.
+- Post-log AST parse -> `FINAL_ALL_NET_SYNC_AST_OK`.
+- Post-log bytecode cache -> `NET_SYNC_PYCACHE_CLEAN_FINAL`.
+- Post-log gate report readback -> `Status: NETWORK PROTOCOL READY`, `Tests: 8`.
+
+Status:
+- NETWORK PROTOCOL READY - OFFLINE SIM VERIFIED; UNITY RUNTIME PENDING.
+
+## 2026-05-15 - ITEM_CATALOG_FNV_GEN TRUE EOF JSON MANIFEST
+
+What was done:
+- Generated `Docs\Reports\H8_Hash_Catalog_Audit.md` and `Docs\Reports\H8_Hash_Catalog_Audit.json`.
+- Verified the generated C# header, Markdown report, JSON manifest, and focused regression tests with no-bytecode Python runs.
+- Preserved the later NET_SYNC log entry and appended this hash closure at true EOF.
+
+Evidence:
+- `python -B Tools\VerifyH8HashCollisions.py --check-csharp Assets/_Project/Scripts/Core/Generated/H8Hashes.cs --write-report Docs/Reports/H8_Hash_Catalog_Audit.md --write-json Docs/Reports/H8_Hash_Catalog_Audit.json` -> 1017 records; Items 209, Biomes 523, Signals 285; `CSharp output check: up-to-date`; `HASH COLLISIONS: 0`.
+- `Docs\Reports\H8_Hash_Catalog_Audit.json` -> `status=HASHES_SYNCHRONIZED`, `total_records=1017`, 1017 record entries, hash modes `ascii_lower=26`, `loc_utf16=813`, `signal_label=178`.
+- `python -B -m unittest Tools.test_h8_hash_collisions` -> 8 tests, OK.
+- `python -B -c "ast.parse(...); json.load(...)"` -> `H8_HASH_FINAL_OK`.
+- Generated C# scan -> `NO_RUNTIME_LOGIC_HITS`.
+- Hash-tool pycache check -> clean.
+- `git diff --check` on owned hash files/reports/logs -> clean; Git line-ending warnings only.
+
+Status:
+- STATUS: HASHES SYNCHRONIZED - 1017 RECORDS; JSON MANIFEST GENERATED; UNITY IMPORT BLOCKED BY MISSING EDITOR.

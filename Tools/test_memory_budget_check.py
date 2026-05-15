@@ -21,6 +21,21 @@ class MemoryBudgetCheckTests(unittest.TestCase):
         self.assertEqual(budget.read_png_size(png), (256, 256, "RGBA"))
         self.assertEqual(budget.read_jpeg_size(jpg), (4000, 4000, "RGB"))
 
+    def test_unity_texture_container_dimensions_are_read_without_external_dependencies(self) -> None:
+        samples = [
+            ("Assets/ScifiFacility/Textures/Lights_emissive.tga", (2048, 2048, "RGB")),
+            ("Assets/ScifiFacility/Textures/Text_01.psd", (1024, 1024, "PSD_4CH")),
+            ("Assets/Bakery/ftUnitySpotTexture.bmp", (128, 128, "RGB")),
+            ("Assets/MapMagic/Tools/GUI/Editor/Resources/DPUI/PolyLineTex.tif", (1, 8, "TIFF")),
+            ("Packages/com.waveharmonic.crest/Shared/Textures/Skybox.hdr", (2048, 1024, "HDR")),
+            ("Assets/_Project/Scenes/02_HECTON_WORLD/ReflectionProbe-0.exr", (768, 128, "EXR")),
+            ("Data/Visuals/Biolum_Waveforms.gif", (960, 720, "GIF")),
+        ]
+
+        for relative_path, expected in samples:
+            with self.subTest(relative_path=relative_path):
+                self.assertEqual(budget.read_image_size(PROJECT_ROOT / relative_path), expected)
+
     def test_obj_triangle_count_triangulates_ngons(self) -> None:
         obj = PROJECT_ROOT / "Assets" / "Dynamic Decals" / "Resources" / "Decal.obj"
 
@@ -29,6 +44,34 @@ class MemoryBudgetCheckTests(unittest.TestCase):
     def test_fbx_polygon_index_math_counts_faces(self) -> None:
         values = [0, 1, -3, 4, 5, 6, -8]
         self.assertEqual(budget.count_triangles_from_indices(values), 3)
+
+    def test_gltf_and_glb_triangle_counts_are_included_as_mesh_sources(self) -> None:
+        document = {
+            "accessors": [{"count": 6}, {"count": 4}, {"count": 5}],
+            "meshes": [
+                {
+                    "primitives": [
+                        {"mode": 4, "indices": 0},
+                        {"mode": 5, "attributes": {"POSITION": 1}},
+                        {"mode": 6, "attributes": {"POSITION": 2}},
+                        {"mode": 1, "attributes": {"POSITION": 0}},
+                    ]
+                }
+            ],
+        }
+        glb = PROJECT_ROOT / "Assets" / "_Project" / "Art" / "Models" / "Rocks" / "nordic_beach_rock_vbumba2fa_mid.glb"
+
+        self.assertIn(".glb", budget.MESH_EXTS)
+        self.assertIn(".gltf", budget.MESH_EXTS)
+        self.assertEqual(budget.count_gltf_document_triangles(document), 7)
+        self.assertGreater(budget.count_gltf_triangles(glb) or 0, 0)
+
+    def test_static_geometry_estimate_is_conservative_and_deterministic(self) -> None:
+        self.assertEqual(
+            budget.estimate_geometry_bytes(10),
+            10 * 3 * (budget.STATIC_GEOMETRY_VERTEX_STRIDE_BYTES + budget.STATIC_GEOMETRY_INDEX_BYTES),
+        )
+        self.assertEqual(budget.estimate_geometry_bytes(None), 0)
 
     def test_mesh_meta_fields_are_exposed_for_importer_risk(self) -> None:
         mesh = PROJECT_ROOT / "Assets" / "ScifiFacility" / "Models" / "decals" / "decal_01.fbx"
@@ -67,6 +110,13 @@ class MemoryBudgetCheckTests(unittest.TestCase):
         self.assertIn("STREAMING_MIPMAPS_OFF_LARGE", flags)
         self.assertTrue(budget.is_first_party_production_candidate(texture, PROJECT_ROOT))
 
+    def test_texture_container_risk_flags_source_formats(self) -> None:
+        texture = PROJECT_ROOT / "Assets" / "ScifiFacility" / "Textures" / "sky_hdr.hdr"
+        flags, recommendation = budget.classify_texture(texture, 2048, 2048, "HDR", "2048", "1", "-1", "0", "0")
+
+        self.assertIn("HDR_TEXTURE_CONTAINER_STATIC_SUSPECT", flags)
+        self.assertIn("HDR import", recommendation)
+
     def test_summary_payload_exposes_gate_keys_without_filesystem_writes(self) -> None:
         texture = PROJECT_ROOT / "Assets" / "_Project" / "Art" / "TEXTURES" / "TX_split.png"
         texture_record = budget.TextureRecord(
@@ -82,6 +132,7 @@ class MemoryBudgetCheckTests(unittest.TestCase):
             path=mesh,
             file_bytes=1024,
             triangles=90000,
+            estimated_geometry_bytes=budget.estimate_geometry_bytes(90000),
             lod_detected=False,
             meta_is_readable="1",
             flags=["MESH_GT_80K_ABSOLUTE_STATIC", "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"],
@@ -93,8 +144,11 @@ class MemoryBudgetCheckTests(unittest.TestCase):
         self.assertEqual(payload["schema_version"], 1)
         self.assertIn("TEXTURE_VRAM_CRIMES", payload["gate_reasons"])
         self.assertIn("MESH_REDLINE_OR_RISK", payload["gate_reasons"])
+        self.assertIn("texture_extension_summary", payload)
+        self.assertIn("mesh_extension_summary", payload)
         self.assertIn(".codex-build", payload["skipped_directory_names"])
         self.assertEqual(payload["mesh_redline_rows"], 1)
+        self.assertGreater(payload["mesh_geometry_static_estimate_mib"], 0)
         self.assertEqual(payload["mesh_import_risk_rows"], 1)
         self.assertEqual(payload["mesh_read_write_enabled_rows"], 1)
         self.assertEqual(payload["first_party_mesh_import_risk_rows"], 0)

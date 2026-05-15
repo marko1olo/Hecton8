@@ -21,6 +21,12 @@
     "hot_path_gc": "Load this data into preallocated structs or NativeArrays. Do not parse JSON in Tick/FixedTick.",
     "black_box": "Runtime vehicle physics owner must write 300 fixed frames of state to Dump_HYDRODYNAMIC_DRAG_MATRIX_BAKER.bin on NaN/crash."
   },
+  "quality_tier_runtime_usage": {
+    "Low": "Axial CdA, surge added mass, binary cavitation state, scalar yaw damping. Minimal VFX.",
+    "Middle": "Full XYZ drag/effective mass tensors, cavitation intensity ramps, pitch/yaw lift curves.",
+    "High": "Angular damping tensors, added angular inertia, wake/acoustic feedback driven by thresholds.",
+    "Ultra": "Same physics truth as High plus visual overkill: denser wake sheets, cockpit vibration, sonar bloom, and hull creak audio."
+  },
   "global_constants": {
     "sea_water_density_kg_m3": 1027.0,
     "gravity_m_s2": 9.80665,
@@ -59,6 +65,43 @@
         "Cl_yaw_per_rad": 0.16,
         "Cl_control_surface_max": 0.72
       },
+      "lift_curve_samples": [
+        {
+          "angle_degrees": -15.0,
+          "pitch_Cl": -0.047124,
+          "yaw_Cl": -0.041888
+        },
+        {
+          "angle_degrees": -10.0,
+          "pitch_Cl": -0.031416,
+          "yaw_Cl": -0.027925
+        },
+        {
+          "angle_degrees": -5.0,
+          "pitch_Cl": -0.015708,
+          "yaw_Cl": -0.013963
+        },
+        {
+          "angle_degrees": 0.0,
+          "pitch_Cl": 0.0,
+          "yaw_Cl": 0.0
+        },
+        {
+          "angle_degrees": 5.0,
+          "pitch_Cl": 0.015708,
+          "yaw_Cl": 0.013963
+        },
+        {
+          "angle_degrees": 10.0,
+          "pitch_Cl": 0.031416,
+          "yaw_Cl": 0.027925
+        },
+        {
+          "angle_degrees": 15.0,
+          "pitch_Cl": 0.047124,
+          "yaw_Cl": 0.041888
+        }
+      ],
       "drag_tensor_cd_area_m2_local_xyz": [
         [
           1.157632,
@@ -270,6 +313,43 @@
         "Cl_yaw_per_rad": 0.09,
         "Cl_control_surface_max": 0.44
       },
+      "lift_curve_samples": [
+        {
+          "angle_degrees": -15.0,
+          "pitch_Cl": -0.02618,
+          "yaw_Cl": -0.023562
+        },
+        {
+          "angle_degrees": -10.0,
+          "pitch_Cl": -0.017453,
+          "yaw_Cl": -0.015708
+        },
+        {
+          "angle_degrees": -5.0,
+          "pitch_Cl": -0.008727,
+          "yaw_Cl": -0.007854
+        },
+        {
+          "angle_degrees": 0.0,
+          "pitch_Cl": 0.0,
+          "yaw_Cl": 0.0
+        },
+        {
+          "angle_degrees": 5.0,
+          "pitch_Cl": 0.008727,
+          "yaw_Cl": 0.007854
+        },
+        {
+          "angle_degrees": 10.0,
+          "pitch_Cl": 0.017453,
+          "yaw_Cl": 0.015708
+        },
+        {
+          "angle_degrees": 15.0,
+          "pitch_Cl": 0.02618,
+          "yaw_Cl": 0.023562
+        }
+      ],
       "drag_tensor_cd_area_m2_local_xyz": [
         [
           5.616,
@@ -481,6 +561,43 @@
         "Cl_yaw_per_rad": 0.04,
         "Cl_control_surface_max": 0.24
       },
+      "lift_curve_samples": [
+        {
+          "angle_degrees": -15.0,
+          "pitch_Cl": -0.01309,
+          "yaw_Cl": -0.010472
+        },
+        {
+          "angle_degrees": -10.0,
+          "pitch_Cl": -0.008727,
+          "yaw_Cl": -0.006981
+        },
+        {
+          "angle_degrees": -5.0,
+          "pitch_Cl": -0.004363,
+          "yaw_Cl": -0.003491
+        },
+        {
+          "angle_degrees": 0.0,
+          "pitch_Cl": 0.0,
+          "yaw_Cl": 0.0
+        },
+        {
+          "angle_degrees": 5.0,
+          "pitch_Cl": 0.004363,
+          "yaw_Cl": 0.003491
+        },
+        {
+          "angle_degrees": 10.0,
+          "pitch_Cl": 0.008727,
+          "yaw_Cl": 0.006981
+        },
+        {
+          "angle_degrees": 15.0,
+          "pitch_Cl": 0.01309,
+          "yaw_Cl": 0.010472
+        }
+      ],
       "drag_tensor_cd_area_m2_local_xyz": [
         [
           14.654976,
@@ -692,6 +809,43 @@
         "Cl_yaw_per_rad": 0.21,
         "Cl_control_surface_max": 0.86
       },
+      "lift_curve_samples": [
+        {
+          "angle_degrees": -15.0,
+          "pitch_Cl": -0.062832,
+          "yaw_Cl": -0.054978
+        },
+        {
+          "angle_degrees": -10.0,
+          "pitch_Cl": -0.041888,
+          "yaw_Cl": -0.036652
+        },
+        {
+          "angle_degrees": -5.0,
+          "pitch_Cl": -0.020944,
+          "yaw_Cl": -0.018326
+        },
+        {
+          "angle_degrees": 0.0,
+          "pitch_Cl": 0.0,
+          "yaw_Cl": 0.0
+        },
+        {
+          "angle_degrees": 5.0,
+          "pitch_Cl": 0.020944,
+          "yaw_Cl": 0.018326
+        },
+        {
+          "angle_degrees": 10.0,
+          "pitch_Cl": 0.041888,
+          "yaw_Cl": 0.036652
+        },
+        {
+          "angle_degrees": 15.0,
+          "pitch_Cl": 0.062832,
+          "yaw_Cl": 0.054978
+        }
+      ],
       "drag_tensor_cd_area_m2_local_xyz": [
         [
           1.599104,
@@ -903,6 +1057,43 @@
         "Cl_yaw_per_rad": 0.05,
         "Cl_control_surface_max": 0.3
       },
+      "lift_curve_samples": [
+        {
+          "angle_degrees": -15.0,
+          "pitch_Cl": -0.015708,
+          "yaw_Cl": -0.01309
+        },
+        {
+          "angle_degrees": -10.0,
+          "pitch_Cl": -0.010472,
+          "yaw_Cl": -0.008727
+        },
+        {
+          "angle_degrees": -5.0,
+          "pitch_Cl": -0.005236,
+          "yaw_Cl": -0.004363
+        },
+        {
+          "angle_degrees": 0.0,
+          "pitch_Cl": 0.0,
+          "yaw_Cl": 0.0
+        },
+        {
+          "angle_degrees": 5.0,
+          "pitch_Cl": 0.005236,
+          "yaw_Cl": 0.004363
+        },
+        {
+          "angle_degrees": 10.0,
+          "pitch_Cl": 0.010472,
+          "yaw_Cl": 0.008727
+        },
+        {
+          "angle_degrees": 15.0,
+          "pitch_Cl": 0.015708,
+          "yaw_Cl": 0.01309
+        }
+      ],
       "drag_tensor_cd_area_m2_local_xyz": [
         [
           12.300288,

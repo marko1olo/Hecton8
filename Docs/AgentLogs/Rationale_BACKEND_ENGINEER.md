@@ -195,7 +195,95 @@ Hardware Impact: 0 us/frame and 0 B/frame.
 ## Decision R017 - Fail Closed Inside The Capacity Resolver Itself
 
 Problem: `TryResolveUnitPhysicalDemand` rejects zero unit mass and volume, but the lower-level `ResolveCapacityLimitedQuantity` helper still returned the requested quantity when `unitValue <= 0f`. A future caller could bypass the prefilter and reintroduce unlimited zero-demand inventory acceptance.
-Solution: Changed `ResolveCapacityLimitedQuantity` to return 0 for nonpositive unit values and added a regression assertion against the helper body.
+Solution: Changed `ResolveCapacityLimitedQuantity` to return 0 for nonpositive unit values, added a regression assertion against the helper body, and added `capacity_resolver_rejects_nonpositive_unit_value` as a blocking graph-audit field.
 Rejected Alternatives: Trusting all future callers to prefilter zero values was rejected because this helper is the last capacity gate before quantity acceptance.
 Scalability potential: Low tier pays no per-frame cost; this is command-path scalar validation. Middle/High/Ultra retain deterministic backend behavior.
 Hardware Impact: 0 us/frame; one branch behavior change in an insertion helper.
+
+## Decision R018 - Scope Source Regex Audits To Owning Methods
+
+Problem: The graph audit originally searched all of `PlayerInventory.cs` for `unitMassKg > 0f` and `unitVolumeLiters > 0f`. That could be satisfied by an unrelated future method and produce false confidence.
+Solution: Extracted `TryResolveUnitPhysicalDemand` and scoped the strict-positive mass/volume regex checks to that method body. The capacity resolver check was already scoped to `ResolveCapacityLimitedQuantity`.
+Rejected Alternatives: Broad whole-file regex was rejected because it does not prove the actual runtime insertion helper owns the guard.
+Scalability potential: Low/Middle/High/Ultra unaffected; offline audit precision only.
+Hardware Impact: 0 us/frame and 0 B/frame.
+
+## Decision R019 - Test Full Graph-Audit CLI Failure On Binding Drift
+
+Problem: The binding drift negative test proved `analyze_runtime_binding_guard`, but the complete `EconomyRecipeGraphAudit.main()` path still needed proof that the CLI exits nonzero and emits pending-risk status when a missing crafted asset becomes runtime-allowed.
+Solution: Added a temp-root fixture test that copies only economy data, item assets, and required source files, mutates one copied binding to `runtime_use_allowed=true`, calls `EconomyRecipeGraphAudit.main()`, and asserts exit code 1 plus `PENDING VERIFICATION - ECONOMY RISKS FOUND`.
+Rejected Alternatives: Testing only the helper was rejected because future CLI summary/blocking wiring could regress while the helper stayed correct. Copying the entire repo was rejected as slow and unnecessary.
+Scalability potential: Low/Middle/High/Ultra unaffected; offline CLI regression only.
+Hardware Impact: 0 us/frame and 0 B/frame.
+
+## Decision R020 - Put Regression Coverage In The Generated Audit Report
+
+Problem: The strongest final evidence lived in status/log files, while `Docs/Reports/Economy_Integrity_Audit.md` did not explicitly state the no-bytecode verification commands or that the suite includes the full graph-audit CLI binding drift failure.
+Solution: Updated the report generator to include a `Regression Coverage` section listing the 12-test suite scope, six validator negative cases, and pycache hygiene requirement.
+Rejected Alternatives: Keeping this only in `LOG_BACKEND_ENGINEER.md` was rejected because the audit report is the economy artifact most likely to be read independently.
+Scalability potential: Low/Middle/High/Ultra unaffected; offline documentation accuracy only.
+Hardware Impact: 0 us/frame and 0 B/frame.
+
+## Decision R021 - Test Full Graph-Audit CLI Failure When Binding Plan Is Missing
+
+Problem: The graph-audit helper rejects missing binding plans by treating all missing crafted assets as unblocked, but the complete CLI path still needed a regression test for the file-missing case.
+Solution: Added a temp-root fixture test that deletes `Runtime_Binding_Plan.json`, runs `EconomyRecipeGraphAudit.main()`, and asserts exit code 1, pending-risk status, blocked count 0, and 22 unblocked missing crafted assets. Updated the generated report coverage text from 11 to 12 tests.
+Rejected Alternatives: Assuming helper behavior would always propagate through CLI summary/blocking logic was rejected because previous hardening already showed CLI wiring needs explicit coverage.
+Scalability potential: Low/Middle/High/Ultra unaffected; offline regression only.
+Hardware Impact: 0 us/frame and 0 B/frame.
+
+## Decision 017 - Regenerate After Concurrent Hash Catalog Drift
+
+Problem: A final no-bytecode verifier run after regression-test work reported 1017 live records, not the previously generated 1007. Concurrent source/data changes added 10 signal records while this shared backend workspace was still active.
+Solution: Regenerated `Assets/_Project/Scripts/Core/Generated/H8Hashes.cs` with `python -B Tools\VerifyH8HashCollisions.py --write-csharp ...`, reran the full verifier with `python -B`, and confirmed 1017 records with zero collisions.
+Rejected Alternatives: Keeping the 1007-record table was rejected because it was stale against the current scan. Manually editing constants was rejected because the generator owns deterministic ordering and collision proof.
+Scalability potential: Low tier still gets compile-time constants only; Middle/High/Ultra keep richer authored signal identity coverage without runtime string hashing.
+Hardware Impact: 0 us/frame and 0 B/frame. Offline generation only.
+
+## Decision 018 - Hash Tool No-Bytecode Hygiene
+
+Problem: Earlier unittest runs produced hash-tool `.pyc` files under `Tools\__pycache__`, adding local noise to a task that is supposed to be deterministic and file-evidence driven.
+Solution: Removed only `VerifyH8HashCollisions*` and `test_h8_hash_collisions*` pycache artifacts, then reran the verifier/test/AST gates with `python -B` so the cache stayed absent.
+Rejected Alternatives: Deleting the whole pycache directory was rejected because other agents may own unrelated cache files. Leaving hash pycache was rejected because this pass created it and it is not required evidence.
+Scalability potential: Low/Middle/High/Ultra unaffected; local hygiene only.
+Hardware Impact: 0 us/frame and 0 B/frame.
+
+## Decision 019 - Refresh Compile Proof After 1017 Regeneration
+
+Problem: The previous `.NET Framework csc` compile proof applied to the older generated table, not the regenerated 1017-record table.
+Solution: Compiled the regenerated `H8Hashes.cs` to `Temp\H8HashesSyntaxCheck_1017.dll`; `csc` returned exit 0, produced a 125952-byte DLL, and the temp DLL was removed.
+Rejected Alternatives: Treating the older compile proof as sufficient was rejected because the generated file contents changed after drift reconciliation. Compiling to `NUL` was attempted and rejected because this csc reports `CS2021` for `NUL`.
+Scalability potential: Low/Middle/High/Ultra unaffected; compile proof only.
+Hardware Impact: 0 us/frame and 0 B/frame.
+
+## Decision 020 - Add Generated Header Staleness Gate
+
+Problem: The task already proved collisions and generated the header, but the drift from 1007 to 1017 records showed that future source/data changes can silently make `H8Hashes.cs` stale unless a check mode exists.
+Solution: Added `--check-csharp` to `Tools/VerifyH8HashCollisions.py`. It builds expected C# from the current scan, compares it to the existing header, accepts line-ending-only differences, and exits nonzero for missing or stale output.
+Rejected Alternatives: Depending on `--write-csharp` alone was rejected because it mutates files and does not serve CI's fail-fast check use case. Manually comparing counts was rejected because stale content can exist with the same count.
+Scalability potential: Low/Middle/High/Ultra unaffected at runtime; CI and local validation become stricter without Unity runtime cost.
+Hardware Impact: 0 us/frame and 0 B/frame. Offline scan only.
+
+## Decision 021 - Generate Dedicated Hash Catalog Audit Report
+
+Problem: Hash evidence was spread across shared BACKEND status/log files that other agents keep appending to, making the latest hash state harder to read independently.
+Solution: Added `--write-report` to `Tools/VerifyH8HashCollisions.py` and generated `Docs/Reports/H8_Hash_Catalog_Audit.md` with total/category counts, hash-mode counts, group counts, generated-header check status, collision status, runtime impact, verification commands, and Unity boundary.
+Rejected Alternatives: Keeping the report only in `LOG_BACKEND_ENGINEER.md` was rejected because that file is shared and interleaved. Dumping every hash record into the report was rejected as bloated; the generated C# remains the authoritative full catalog.
+Scalability potential: Low/Middle/High/Ultra runtime unaffected; this is offline audit readability and CI evidence.
+Hardware Impact: 0 us/frame and 0 B/frame.
+
+## Decision R022 - Fail Closed On Duplicate Recipe And Producer Identity
+
+Problem: A recipe DAG can remain acyclic even when two recipes share the same `recipe_id` or two recipes produce the same result item. That creates ambiguous runtime lookup, source-recipe parity drift, and potential arbitrage/overwrite behavior in generated producer maps.
+Solution: Added `analyze_recipe_identity` to `Tools/EconomyRecipeGraphAudit.py`, wired missing/duplicate recipe IDs and result item IDs into blocking findings, regenerated `Docs/Reports/Economy_Integrity_Audit.md`, and added a full CLI temp-fixture regression test that mutates `Recipes.json` to duplicate both identities and verifies exit code 1.
+Rejected Alternatives: Relying on NetworkX DAG checks was rejected because DAG acyclicity only proves no dependency cycle, not unique ownership. Warning-only reporting was rejected because CI would still accept ambiguous producer identity.
+Scalability potential: Low/Middle/High/Ultra runtime unaffected; this is offline economy import validation. Low-tier devices keep zero added frame cost. High/Ultra can consume deterministic recipe ownership for richer UI/visual presentation without runtime conflict resolution.
+Hardware Impact: 0 us/frame and 0 B/frame on i3/MX350. The new checks run only in CLI audit/test workflows.
+
+## Decision 022 - Emit Machine-Readable Hash Catalog Manifest
+
+Problem: The Markdown report is readable, but automation and integrators still need a deterministic machine-readable catalog without parsing C# constants.
+Solution: Added `--write-json` to `Tools/VerifyH8HashCollisions.py` and generated `Docs/Reports/H8_Hash_Catalog_Audit.json` containing summary counts, hash modes, group counts, runtime impact, generated-header status, and every hash record with category, group, value, hash mode, decimal hash, hex hash, and source path.
+Rejected Alternatives: Parsing `H8Hashes.cs` was rejected because it couples tools to C# formatting. Dumping only summary JSON was rejected because it would not serve downstream collision or source audits.
+Scalability potential: Low/Middle/High/Ultra runtime unaffected; offline integration and CI consumers get stable structured data.
+Hardware Impact: 0 us/frame and 0 B/frame.

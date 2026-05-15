@@ -87,6 +87,10 @@ Assets/ScifiFacility/Textures/Detail_05_basecolor.png,2048,2048,5.333,false,STRE
 Assets/ScifiFacility/Textures/Detail_05_metallic.png,2048,2048,5.333,false,STREAMING_MIPMAPS_OFF_LARGE,Channel-pack masks into one RGBA texture; avoid separate AO/spec maps.
 Assets/ScifiFacility/Textures/Detail_05_normal.png,2048,2048,5.333,false,STREAMING_MIPMAPS_OFF_LARGE,Use BC5 normal import; Low tier cap 1024 unless hero close-read asset.
 Assets/ScifiFacility/Textures/Detail_05_occlusion.png,2048,2048,5.333,false,STREAMING_MIPMAPS_OFF_LARGE,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
+Assets/ScifiFacility/Textures/Details_01_basecolor.tga,2048,2048,5.333,false,TGA_SOURCE_CONTAINER_STATIC_SUSPECT;STREAMING_MIPMAPS_OFF_LARGE,Verify production import compression; convert to standard compressed source if kept in runtime payload.
+Assets/ScifiFacility/Textures/Details_01_metallic.tga,2048,2048,5.333,false,TGA_SOURCE_CONTAINER_STATIC_SUSPECT;STREAMING_MIPMAPS_OFF_LARGE,Verify production import compression; convert to standard compressed source if kept in runtime payload.
+Assets/ScifiFacility/Textures/Details_01_normal.tga,2048,2048,5.333,false,TGA_SOURCE_CONTAINER_STATIC_SUSPECT;STREAMING_MIPMAPS_OFF_LARGE,Verify production import compression; convert to standard compressed source if kept in runtime payload.
+Assets/ScifiFacility/Textures/Details_01_occlusion.tga,2048,2048,5.333,false,TGA_SOURCE_CONTAINER_STATIC_SUSPECT;STREAMING_MIPMAPS_OFF_LARGE,Verify production import compression; convert to standard compressed source if kept in runtime payload.
 Assets/ScifiFacility/Textures/Fabric_02_basecolor.png,2048,2048,5.333,false,STREAMING_MIPMAPS_OFF_LARGE,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
 Assets/ScifiFacility/Textures/Fabric_02_metallic.png,2048,2048,5.333,false,STREAMING_MIPMAPS_OFF_LARGE,Channel-pack masks into one RGBA texture; avoid separate AO/spec maps.
 Assets/ScifiFacility/Textures/Fabric_02_normal.png,2048,2048,5.333,false,STREAMING_MIPMAPS_OFF_LARGE,Use BC5 normal import; Low tier cap 1024 unless hero close-read asset.
@@ -100,8 +104,11 @@ Assets/ScifiFacility/Textures/Fluid_normal.png,2048,2048,5.333,false,STREAMING_M
 Assets/ScifiFacility/Textures/hull_basecolor.png,2048,2048,5.333,false,STREAMING_MIPMAPS_OFF_LARGE,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
 Assets/ScifiFacility/Textures/hull_emission.png,2048,2048,5.333,false,STREAMING_MIPMAPS_OFF_LARGE,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
 Assets/ScifiFacility/Textures/hull_normal.png,2048,2048,5.333,false,STREAMING_MIPMAPS_OFF_LARGE,Use BC5 normal import; Low tier cap 1024 unless hero close-read asset.
+Assets/ScifiFacility/Textures/Labels_basecolor.tga,2048,2048,5.333,false,TGA_SOURCE_CONTAINER_STATIC_SUSPECT;STREAMING_MIPMAPS_OFF_LARGE,Verify production import compression; convert to standard compressed source if kept in runtime payload.
+Assets/ScifiFacility/Textures/Labels_mask.tga,2048,2048,5.333,false,TGA_SOURCE_CONTAINER_STATIC_SUSPECT;STREAMING_MIPMAPS_OFF_LARGE,Verify production import compression; convert to standard compressed source if kept in runtime payload.
 Assets/ScifiFacility/Textures/Lights_basecolor.png,2048,2048,5.333,false,STREAMING_MIPMAPS_OFF_LARGE,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
 Assets/ScifiFacility/Textures/Lights_emissive.png,2048,2048,5.333,false,STREAMING_MIPMAPS_OFF_LARGE,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
+Assets/ScifiFacility/Textures/Lights_emissive.tga,2048,2048,5.333,false,TGA_SOURCE_CONTAINER_STATIC_SUSPECT;STREAMING_MIPMAPS_OFF_LARGE,Verify production import compression; convert to standard compressed source if kept in runtime payload.
 Assets/ScifiFacility/Textures/Lights_metallic.png,2048,2048,5.333,false,STREAMING_MIPMAPS_OFF_LARGE,Channel-pack masks into one RGBA texture; avoid separate AO/spec maps.
 Assets/ScifiFacility/Textures/Lights_normal.png,2048,2048,5.333,false,STREAMING_MIPMAPS_OFF_LARGE,Use BC5 normal import; Low tier cap 1024 unless hero close-read asset.
 Assets/ScifiFacility/Textures/Machinery_metallic.png,2048,2048,5.333,false,STREAMING_MIPMAPS_OFF_LARGE,Channel-pack masks into one RGBA texture; avoid separate AO/spec maps.
@@ -123,6 +130,8 @@ Assets/TRANSFER HUB/family kelp tall/normal___family.kelp.tall.png,2048,2048,5.3
 Packages/com.unity.shadergraph/GraphTemplates/Cross Pipeline/LitParticleTemplateThumbnail.png,2560,1440,4.688,false,VRAM CRIME: TEXTURE_GT_2048;STREAMING_MIPMAPS_OFF_LARGE,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
 Packages/com.unity.shadergraph/GraphTemplates/Cross Pipeline/UnlitParticleTemplateThumbnail.png,2560,1440,4.688,false,VRAM CRIME: TEXTURE_GT_2048;STREAMING_MIPMAPS_OFF_LARGE,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
 Data/Visuals/Biolum_Waveforms.png,1800,1200,2.747,true,MISSING_META_IMPORT_UNKNOWN,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
+Assets/ScifiFacility/Textures/sky_hdr.hdr,2048,1024,2.667,false,HDR_TEXTURE_CONTAINER_STATIC_SUSPECT,Verify HDR import format/probe or skybox residency; keep only tier-gated or baked proof for MX350.
+Packages/com.waveharmonic.crest/Shared/Textures/Skybox.hdr,2048,1024,2.667,false,HDR_TEXTURE_CONTAINER_STATIC_SUSPECT;STREAMING_MIPMAPS_OFF_LARGE,Verify HDR import format/probe or skybox residency; keep only tier-gated or baked proof for MX350.
 _agent_screen_capture.png,1920,1080,2.637,false,MISSING_META_IMPORT_UNKNOWN,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
 Assets/Feel/MMTools/Tools/MMVFX/MMBloomDirt/MMBloomDirt3.png,1920,1080,2.637,false,VRAM CRIME: IMPORT_MAX_GT_2048;STREAMING_MIPMAPS_OFF_LARGE,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
 Docs/AgentLogs/Desktop_after_play_stop_mcp_UI_DIEGETIC_INPUT.png,1920,1080,2.637,false,MISSING_META_IMPORT_UNKNOWN,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
@@ -143,6 +152,8 @@ Assets/_Project/Art/Skyboxes/panorama_noch.png,1472,720,1.348,true,STREAMING_MIP
 Assets/_Project/Art/Skyboxes/panorama_shtorm.png,1472,720,1.348,true,STREAMING_MIPMAPS_OFF_LARGE,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
 Assets/_Project/Art/TEXTURES/gameart.png,1376,768,1.344,true,STREAMING_MIPMAPS_OFF_LARGE,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
 Assets/_Project/Art/TEXTURES/menuview.png,1376,768,1.344,true,STREAMING_MIPMAPS_OFF_LARGE,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
+Assets/ScifiFacility/Textures/Text_01.psd,1024,1024,1.333,false,PSD_SOURCE_CONTAINER_STATIC_SUSPECT,Flatten/export production texture and import compressed; keep PSD source out of runtime payload.
+Packages/com.jbooth.microsplat.core/Textures/microsplat_def_perlin4.tga,1024,1024,1.333,false,TGA_SOURCE_CONTAINER_STATIC_SUSPECT,Verify production import compression; convert to standard compressed source if kept in runtime payload.
 Assets/_Project/Art/Skyboxes/panorama_den.png,1456,720,1.333,true,STREAMING_MIPMAPS_OFF_LARGE,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
 Assets/Screenshots/final-hudcam-after-editmode-refresh.png,1280,720,1.172,false,STREAMING_MIPMAPS_OFF_LARGE,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
 Assets/Screenshots/hud-render-camera-after-proj-acoustic-disable.png,1280,720,1.172,false,STREAMING_MIPMAPS_OFF_LARGE,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
@@ -163,10 +174,17 @@ Packages/com.unity.shadergraph/GraphTemplates/Cross Pipeline/TerrainStandardTemp
 Packages/com.unity.shadergraph/GraphTemplates/Cross Pipeline/UnlitSimpleTemplateThumbnail.png,1280,720,1.172,false,STREAMING_MIPMAPS_OFF_LARGE,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
 Packages/com.unity.shadergraph/GraphTemplates/DefaultTemplateImage.png,1280,720,1.172,false,STREAMING_MIPMAPS_OFF_LARGE,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
 Data/Physics/Submarine_SpeedPower.png,1200,720,1.099,true,MISSING_META_IMPORT_UNKNOWN,Low tier should halve source/import max; keep high mips only with hero or streaming proof.
+Data/Visuals/Biolum_Waveforms.gif,960,720,0.879,true,GIF_SOURCE_CONTAINER_STATIC_SUSPECT;MISSING_META_IMPORT_UNKNOWN,Convert GIF to explicit sprite sheet/texture or quarantine; prove runtime importer behavior.
 Data/Visuals/Water_Extinction_GradientPreview.png,1024,512,0.667,true,MISSING_META_IMPORT_UNKNOWN,Keep compressed; atlas if grouped with small sibling textures.
+Assets/Particle Attractor by Moonflower Carnivore/Textures/glow_small_dot.psd,512,512,0.333,false,PSD_SOURCE_CONTAINER_STATIC_SUSPECT,Flatten/export production texture and import compressed; keep PSD source out of runtime payload.
+Assets/VolumetricLightBeam/Resources/DustParticles.psd,512,512,0.333,false,PSD_SOURCE_CONTAINER_STATIC_SUSPECT,Flatten/export production texture and import compressed; keep PSD source out of runtime payload.
 Docs/AgentLogs/IconBaker_UX_ENGINEER_SelfTest/h8_self_test_icon_512.png,512,512,0.333,false,MISSING_META_IMPORT_UNKNOWN,Keep compressed; atlas if grouped with small sibling textures.
+Packages/com.waveharmonic.crest/Shared/Effects/LensFlares/Textures/Flare50mm.psd,256,512,0.167,false,PSD_SOURCE_CONTAINER_STATIC_SUSPECT,Flatten/export production texture and import compressed; keep PSD source out of runtime payload.
+Assets/_Project/Scenes/02_HECTON_WORLD/ReflectionProbe-0.exr,768,128,0.125,true,HDR_TEXTURE_CONTAINER_STATIC_SUSPECT,Verify HDR import format/probe or skybox residency; keep only tier-gated or baked proof for MX350.
+Assets/Feel/MMTools/Demos/MMPrototypeTextures/MMPrototypeTexturesDemo/ReflectionProbe-0.exr,768,128,0.125,false,HDR_TEXTURE_CONTAINER_STATIC_SUSPECT,Verify HDR import format/probe or skybox residency; keep only tier-gated or baked proof for MX350.
 Assets/Plugins/Demigiant/DOTweenPro Examples/Examples Assets/dotweenpro_logo.png,241,320,0.098,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
 Assets/MapMagic/Core/Editor/Resources/MapMagic/Icons/AssetBig.png,256,256,0.083,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
+Assets/MapMagic/Tools/GUI/Editor/Resources/DPUI/Backgrounds/Gradient.tif,256,256,0.083,false,TIFF_SOURCE_CONTAINER_STATIC_SUSPECT,Verify production import compression; convert to standard compressed source if kept in runtime payload.
 Assets/Shapes/Textures/icon-cone.png,256,256,0.083,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
 Assets/Shapes/Textures/icon-cuboid.png,256,256,0.083,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
 Assets/Shapes/Textures/icon-disc.png,256,256,0.083,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
@@ -184,6 +202,7 @@ Data/Textures/BlueNoise_RGBA.png,256,256,0.083,true,MISSING_META_IMPORT_UNKNOWN,
 Data/Precomputed/Atmosphere/atmosphere_sky_gradient_preview.png,256,128,0.042,true,MISSING_META_IMPORT_UNKNOWN,Keep compressed; atlas if grouped with small sibling textures.
 Assets/AmplifyImpostors/Plugins/EditorResources/Textures/Icon64.png,160,160,0.033,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
 Assets/MapMagic/Tools/GUI/Editor/Resources/DPUI/Curve/Frame.png,145,145,0.027,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
+Assets/Bakery/ftUnitySpotTexture.bmp,128,128,0.021,false,BMP_SOURCE_CONTAINER_STATIC_SUSPECT,Verify production import compression; convert to standard compressed source if kept in runtime payload.
 Assets/Feel/NiceVibrations/Demo/_Common/Sprites/NVRoundedCornersBig.png,128,128,0.021,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
 Assets/MapMagic/Core/Editor/Resources/MapMagic/Node/Header.png,256,64,0.021,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT;VRAM CRIME: RGBA32_TEXTURE_FORMAT_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
 Assets/MapMagic/Core/Editor/Resources/MapMagic/Node/SelectionShadow.png,128,128,0.021,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
@@ -207,6 +226,7 @@ Assets/MapMagic/Core/Editor/Resources/MapMagic/Icons/NodeRemoveActive.png,68,68,
 Assets/MapMagic/Core/Editor/Resources/MapMagic/Icons/pro/NodeAdd.png,68,68,0.006,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
 Assets/AstarPathfindingProject/Editor/EditorAssets/DarkSkin/hex_diameter@2x.png,64,64,0.005,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
 Assets/AstarPathfindingProject/Editor/EditorAssets/DarkSkin/hex_width@2x.png,64,64,0.005,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
+Assets/AstarPathfindingProject/Editor/EditorAssets/grid.psd,64,64,0.005,false,PSD_SOURCE_CONTAINER_STATIC_SUSPECT,Flatten/export production texture and import compressed; keep PSD source out of runtime payload.
 Assets/AstarPathfindingProject/Editor/EditorAssets/LightSkin/hex_diameter@2x.png,64,64,0.005,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
 Assets/AstarPathfindingProject/Editor/EditorAssets/LightSkin/hex_width@2x.png,64,64,0.005,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
 Assets/AstarPathfindingProject/Editor/EditorAssets/scene_box@2x.png,64,64,0.005,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
@@ -215,6 +235,7 @@ Assets/MapMagic/Core/Editor/Resources/MapMagic/Node/Footer.png,256,16,0.005,fals
 Assets/Shapes/Textures/point-edit-add.png,64,64,0.005,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
 Assets/Shapes/Textures/point-edit-color.png,64,64,0.005,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
 Assets/Shapes/Textures/point-edit-remove.png,64,64,0.005,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
+Packages/com.unity.shadergraph/GraphTemplates/Subgraphs/SmallNoiseMask.tga,64,64,0.005,false,TGA_SOURCE_CONTAINER_STATIC_SUSPECT,Verify production import compression; convert to standard compressed source if kept in runtime payload.
 Assets/MapMagic/Tools/GUI/Editor/Resources/DPUI/Levels/Gradient.png,254,13,0.004,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
 Assets/AstarPathfindingProject/Editor/EditorAssets/DarkSkin/lock_closed@2x.png,54,56,0.004,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
 Assets/AstarPathfindingProject/Editor/EditorAssets/DarkSkin/lock_open@2x.png,54,56,0.004,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
@@ -927,9 +948,11 @@ Assets/MapMagic/Core/Editor/Resources/MapMagic/Group.png,4,4,0.000,false,VRAM CR
 Assets/MapMagic/Core/Editor/Resources/MapMagic/Group_pro.png,4,4,0.000,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
 Assets/MapMagic/Core/Editor/Resources/MapMagic/Node/Frame.png,4,4,0.000,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
 Assets/MapMagic/Tools/GUI/Editor/Resources/DPUI/Backgrounds/BlackLines.png,4,4,0.000,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
+Assets/MapMagic/Tools/GUI/Editor/Resources/DPUI/PolyLineTex.tif,1,8,0.000,false,TIFF_SOURCE_CONTAINER_STATIC_SUSPECT,Verify production import compression; convert to standard compressed source if kept in runtime payload.
 Assets/MapMagic/Tools/GUI/Editor/Resources/DPUI/SplineTex.png,1,8,0.000,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
 Assets/Graphy - Ultimate Stats Monitor/Textures/2x2_Texture.png,2,2,0.000,false,VRAM CRIME: RGBA32_TEXTURE_FORMAT_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
 Assets/MapMagic/Core/Editor/Resources/MapMagic/Node/Background.png,2,2,0.000,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT;VRAM CRIME: RGBA32_TEXTURE_FORMAT_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
+Assets/Bakery/emptyDirection.tga,1,1,0.000,false,TGA_SOURCE_CONTAINER_STATIC_SUSPECT;VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Verify production import compression; convert to standard compressed source if kept in runtime payload.
 Assets/MapMagic/Tools/GUI/Editor/Resources/DPUI/Backgrounds/Black.png,1,1,0.000,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
 Assets/MapMagic/Tools/GUI/Editor/Resources/DPUI/Backgrounds/White.png,1,1,0.000,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.
 Assets/MapMagic/Tools/GUI/Editor/Resources/DPUI/White.png,1,1,0.000,false,VRAM CRIME: UNCOMPRESSED_RGBA32_STATIC_SUSPECT,Keep compressed; atlas if grouped with small sibling textures.

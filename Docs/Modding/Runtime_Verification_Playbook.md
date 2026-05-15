@@ -10,6 +10,10 @@ Companion files:
 - `Docs/Modding/API_Surface_Audit_Matrix.md`
 - `Docs/Modding/Payload_Layout_Audit_Matrix.md`
 - `Docs/Modding/Loader_Save_Audit_Matrix.md`
+- `Docs/Modding/Event_Subscription_Audit_Matrix.md`
+- `Docs/Modding/Resource_Content_Audit_Matrix.md`
+- `Docs/Modding/Change_Control_Checklist.md`
+- `Docs/Modding/Sample_InfiniteO2_Mod.md`
 - `Docs/Modding/Validate_Mod_API_Static.ps1`
 - `Docs/Modding/Mod_API_Specification.md`
 
@@ -55,6 +59,12 @@ Source-backed limits:
 - `ModRuntimeInfo` field count: 7.
 - `IHectonMod` lifecycle method count: 3.
 - Mod save payload cap: 16352 bytes.
+- Public event method count: 7.
+- Native event kind count: 2.
+- Projected event kind count including `None`: 3.
+- Native queue bridge publish lanes: 2.
+- Dispatch recursion depth cap: 5.
+- Event callback watchdog: 2.0 ms.
 
 ## Required Test Mod
 
@@ -108,9 +118,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_AP
 Required result:
 
 - `Status = PASS`
-- `SourceSignals = 129`
+- `SourceSignals = 134`
 - `AllowedProjectedSignals = 2`
-- `DeniedByDefaultSignals = 127`
+- `DeniedByDefaultSignals = 132`
 - `ProjectionBridgeSignals = CombatDamageSignal,WeatherChangedSignal`
 - `AcceptedCommandOpcodes = 8`
 - `CommandRejectReasons = 19`
@@ -128,6 +138,19 @@ Required result:
 - `LifecycleMethodCount = 3`
 - `SaveStatePublicMethods = 2`
 - `ModPayloadMaxBytes = 16352`
+- `PublicEventMethodCount = 7`
+- `NativeEventKindCount = 2`
+- `ProjectedEventKindCountIncludingNone = 3`
+- `NativeQueueBridgePublishLaneCount = 2`
+- `MaxEventDispatchDepth = 5`
+- `CallbackWatchdogMilliseconds = 2`
+- `ChangeControlChecklistPath = Docs/Modding/Change_Control_Checklist.md`
+- `PublicResourceMethodCount = 3`
+- `ResourceKindCount = 3`
+- `ResourceRegistryCapacity = 256`
+- `PublicContentMethodCount = 14`
+- `RawTextureMaxBytes = 8388608`
+- `RawTextureMaxDimension = 2048`
 
 ### Step 2 - Unity Load Gate
 
@@ -171,6 +194,7 @@ Required evidence:
 - `SubscribeNative` receives `HectonNativeEventKind.Crafting`.
 - The callback does not store the `ReadOnlySpan<byte>`.
 - Native event payloads are immutable copies only; no `NativeQueue` or `NativeArray` handle is exposed.
+- Only `Interaction` and `Crafting` native event kinds are observed.
 
 ### Step 5 - Command Result Gate
 
@@ -231,6 +255,7 @@ Required evidence:
 - Every `HectonEventSubscription` is disposed.
 - No callback from the unloaded mod fires on the next projected/native/unmanaged event.
 - No command from the unloaded mod is accepted.
+- `HectonEventSubscription.IsActive` is false after disposal.
 
 ### Step 10 - GC/Profiler Gate
 
@@ -278,6 +303,9 @@ The mod API can be marked `VERIFIED` only when all conditions below are true:
 - Native byte events expose no native container handles.
 - Command rejection and quota payloads are delivered.
 - Loader/save contracts match `Loader_Save_Audit_Matrix.md`.
+- Event subscription contracts match `Event_Subscription_Audit_Matrix.md`.
+- Resource/content contracts match `Resource_Content_Audit_Matrix.md`.
+- Change control requirements match `Change_Control_Checklist.md`.
 - SaveState stores only mod-owned text under the scoped mod boundary.
 - `OnUnload` prevents later callbacks.
 - GC hot-path projection dispatch is 0 B/frame.

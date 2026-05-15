@@ -1963,7 +1963,9 @@ namespace Hecton8.Environment
 
             float budgetScale = 1f;
             byte pressureLevel = HomeostasisBrain.PressureLevel;
-            ulong killSwitchMask = HomeostasisBrain.CurrentKillSwitchMask;
+            ulong killSwitchMask = VfxComputeParticleBudgetCatalog.ResolvePolicyKillSwitchMask(
+                pressureLevel,
+                HomeostasisBrain.CurrentKillSwitchMask);
             VfxComputeParticleBudget pressureBudget =
                 VfxComputeParticleBudgetCatalog.ResolveBudgetForPressure(_resolvedQualityTier, pressureLevel);
             capacity = math.min(capacity, pressureBudget.ResolvePoolCapacity(fluidType));
@@ -2002,7 +2004,8 @@ namespace Hecton8.Environment
             resolvedCount = VfxComputeParticleBudgetCatalog.ApplyKillSwitchCount(
                 resolvedCount,
                 fluidType,
-                killSwitchMask);
+                killSwitchMask,
+                pressureLevel);
             _debugActiveParticleCount = resolvedCount;
             return resolvedCount;
         }
@@ -2022,7 +2025,9 @@ namespace Hecton8.Environment
         {
             HectonQualityTier qualityTier = GlobalRegistry.QualityTier;
             byte pressureLevel = HomeostasisBrain.PressureLevel;
-            ulong killSwitchMask = HomeostasisBrain.CurrentKillSwitchMask;
+            ulong killSwitchMask = VfxComputeParticleBudgetCatalog.ResolvePolicyKillSwitchMask(
+                pressureLevel,
+                HomeostasisBrain.CurrentKillSwitchMask);
             if (qualityTier == _resolvedQualityTier &&
                 pressureLevel == _resolvedPressureLevel &&
                 killSwitchMask == _resolvedKillSwitchMask &&

@@ -1,6 +1,7 @@
 import importlib.util
 import re
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -57,6 +58,50 @@ class H8HashCollisionToolTests(unittest.TestCase):
         self.assertIn("public const uint AtlasHash = 802807208u;", csharp)
         self.assertNotRegex(csharp, re.compile(r"\b(new|static readonly|Dictionary|List<|LocHash)\b"))
         self.assertNotIn("=>", csharp)
+
+    def test_check_csharp_output_detects_current_missing_and_stale_files(self):
+        record = self.tool.HashRecord("Signals", "AuthoredSignalIds", "Atlas", "atlas6_core_message", "loc_utf16", 802807208, "source")
+        records = [record]
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir) / "H8Hashes.cs"
+            self.assertEqual((False, "missing"), self.tool.check_csharp_output(records, temp_path))
+            temp_path.write_text(self.tool.build_csharp(records), encoding="utf-8", newline="\n")
+            self.assertEqual((True, "up-to-date"), self.tool.check_csharp_output(records, temp_path))
+            temp_path.write_text(self.tool.build_csharp(records).replace("\n", "\r\n"), encoding="utf-8", newline="")
+            is_current, status = self.tool.check_csharp_output(records, temp_path)
+            self.assertTrue(is_current)
+            self.assertIn(status, ("up-to-date", "up-to-date line-ending normalized"))
+            temp_path.write_text("// stale\n", encoding="utf-8")
+            self.assertEqual((False, "stale"), self.tool.check_csharp_output(records, temp_path))
+
+    def test_markdown_report_contains_counts_modes_and_boundary(self):
+        records = [
+            self.tool.HashRecord("Items", "PersistentIds", "Scrap", "Data_TitaniumScrap", "loc_utf16", 3511699502, "a"),
+            self.tool.HashRecord("Biomes", "FamilyIds", "Biome", "biome.family.abyssal_silt", "ascii_lower", 618808801, "b"),
+            self.tool.HashRecord("Signals", "AuthoredSignalIds", "Atlas", "atlas6_core_message", "loc_utf16", 802807208, "c"),
+        ]
+        report = self.tool.build_report(records, "up-to-date")
+        self.assertIn("Status: HASHES SYNCHRONIZED", report)
+        self.assertIn("- Total records: 3", report)
+        self.assertIn("- Items: 1", report)
+        self.assertIn("- `ascii_lower`: 1", report)
+        self.assertIn("- `Signals.AuthoredSignalIds`: 1", report)
+        self.assertIn("JSON manifest", report)
+        self.assertIn("Unity import is not claimed", report)
+
+    def test_json_manifest_contains_full_records_and_runtime_boundary(self):
+        records = [
+            self.tool.HashRecord("Items", "PersistentIds", "Scrap", "Data_TitaniumScrap", "loc_utf16", 3511699502, "a"),
+            self.tool.HashRecord("Signals", "AuthoredSignalIds", "Atlas", "atlas6_core_message", "loc_utf16", 802807208, "b"),
+        ]
+        manifest = self.tool.build_manifest(records, "up-to-date")
+        self.assertEqual("HASHES_SYNCHRONIZED", manifest["status"])
+        self.assertEqual(2, manifest["total_records"])
+        self.assertEqual(1, manifest["categories"]["Items"])
+        self.assertEqual(2, manifest["hash_modes"]["loc_utf16"])
+        self.assertEqual(0, manifest["runtime_impact"]["microseconds_per_frame"])
+        self.assertEqual("0xD150482E", manifest["records"][0]["hash_hex"])
+        self.assertEqual("atlas6_core_message", manifest["records"][1]["value"])
 
 
 if __name__ == "__main__":

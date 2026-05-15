@@ -7,11 +7,16 @@ Evidence class: STATIC_SOURCE plus CLI_PYTHON. Unity compile, Play Mode, profile
 ## Commands
 
 - `python Tools\EconomyItemsCsvBake.py --root .`
-- `python Tools\EconomyValidator.py --root . --negative-tests`
-- `python Tools\EconomyRecipeGraphAudit.py --root . --report Docs\Reports\Economy_Integrity_Audit.md`
-- `python -m unittest Tools.test_economy_integrity`
-- `python -m py_compile Tools\EconomyRecipeGraphAudit.py Tools\EconomyValidator.py Tools\EconomyItemsCsvBake.py Tools\test_economy_integrity.py`
+- `python -B Tools\EconomyValidator.py --root . --negative-tests`
+- `python -B Tools\EconomyRecipeGraphAudit.py --root . --report Docs\Reports\Economy_Integrity_Audit.md`
+- `python -B -m unittest Tools.test_economy_integrity`
+- `python -B -c "ast.parse(...)"`
 - `git diff --check -- ...owned files...`
+
+## Regression Coverage
+- `Tools.test_economy_integrity`: 13 tests covering deterministic `Items.csv` bake, manifest validation, hash corruption detection, recipe identity uniqueness, effective physical metadata, full graph-audit CLI binding drift failure, missing binding-plan failure, resource matrix coverage, DAG/progression band, and inventory capacity fail-closed source gates.
+- `EconomyValidator.py --negative-tests`: 6 malformed economy cases must fail as expected.
+- Bytecode hygiene: final verification uses `python -B`; economy pycache artifacts must remain absent.
 
 ## Sources
 - Recipes: `Data\Economy\Recipes.json`
@@ -50,6 +55,13 @@ Evidence class: STATIC_SOURCE plus CLI_PYTHON. Unity compile, Play Mode, profile
 - Is DAG: True
 - Cycle count: 0
 
+## Recipe Identity
+- Recipe count: 40
+- Missing recipe IDs: []
+- Missing result item IDs: []
+- Duplicate recipe IDs: []
+- Duplicate result item IDs: []
+
 ## Progression
 - Goal: economy.goal.first_submarine_handoff
 - Unique recipe steps: 17
@@ -83,6 +95,7 @@ Evidence class: STATIC_SOURCE plus CLI_PYTHON. Unity compile, Play Mode, profile
 - Normal TryAdd checks volume: True
 - Normal TryAdd rejects nonpositive unit mass: True
 - Normal TryAdd rejects nonpositive unit volume: True
+- Capacity resolver rejects nonpositive unit value: True
 - Fix applied: normal inventory add now resolves capacity-limited quantity using current mass/volume plus runtime item mass/volume before mutating inventory.
 
 ## Save DTO Hash Width

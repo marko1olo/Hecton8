@@ -322,7 +322,10 @@ bool ShouldRunStaggeredRate(uint particleIndex)
 
 float3 ResolveFlowField(float3 positionWS, uint particleIndex)
 {
-    float2 flowXZ = _MarineSnowScalabilityParams.x > 0.5 ? SampleFlowFieldXZ(positionWS) : 0.0.xx;
+    if (_MarineSnowScalabilityParams.x <= 0.5)
+        return float3(0.0, 0.0, 0.0);
+
+    float2 flowXZ = SampleFlowFieldXZ(positionWS);
     float3 abyssalFlow = ShouldRunStaggeredRate(particleIndex) ? SampleAbyssalFlowField(positionWS) : float3(0.0, 0.0, 0.0);
     return float3(flowXZ.x, 0.0, flowXZ.y) + abyssalFlow;
 }
@@ -812,16 +815,25 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     particle.Vel.y = lerp(particle.Vel.y, targetVerticalVelocity, saturate(dt * 4.0));
     particle.Vel.xz += wander;
 
-    float3 flowSample = ResolveFlowField(particle.Pos, index);
-    float4 shallowWaterData = EvaluateShallowWaterFieldData(particle.Pos);
-    float2 shallowWaterVelocity = DecodeShallowWaterVelocity(shallowWaterData.xy);
-    float shallowWaterDisplacement = saturate(shallowWaterData.z);
-    float3 shallowWaterFlow = float3(shallowWaterVelocity.x, 0.0, shallowWaterVelocity.y) *
-        (0.45 + shallowWaterDisplacement * 1.35);
-    float3 synchronizedFlow = (flowSample + shallowWaterFlow) * max(_HectonFlowSynchronyParams.x, 1.0) +
-        ResolveFlowSynchronyOffset(particle.Pos, flowSample);
-    particle.Vel += (synchronizedFlow - particle.Vel) * (_MarineSnowFlowParams.x + densityScale * _MarineSnowFlowParams.y) * dt;
-    particle.Vel.y += shallowWaterDisplacement * 0.025 * dt;
+    bool flowAdvectionEnabled = _MarineSnowScalabilityParams.x > 0.5;
+    float3 synchronizedFlow = float3(0.0, 0.0, 0.0);
+    if (flowAdvectionEnabled)
+    {
+        float3 flowSample = ResolveFlowField(particle.Pos, index);
+        float4 shallowWaterData = EvaluateShallowWaterFieldData(particle.Pos);
+        float2 shallowWaterVelocity = DecodeShallowWaterVelocity(shallowWaterData.xy);
+        float shallowWaterDisplacement = saturate(shallowWaterData.z);
+        float3 shallowWaterFlow = float3(shallowWaterVelocity.x, 0.0, shallowWaterVelocity.y) *
+            (0.45 + shallowWaterDisplacement * 1.35);
+        synchronizedFlow = (flowSample + shallowWaterFlow) * max(_HectonFlowSynchronyParams.x, 1.0) +
+            ResolveFlowSynchronyOffset(particle.Pos, flowSample);
+        particle.Vel += (synchronizedFlow - particle.Vel) * (_MarineSnowFlowParams.x + densityScale * _MarineSnowFlowParams.y) * dt;
+        particle.Vel.y += shallowWaterDisplacement * 0.025 * dt;
+    }
+    else
+    {
+        particle.Vel.xz *= saturate(1.0 - dt * 2.0);
+    }
     particle.Vel = ApplyPropwashSandForce(particle.Pos, particle.Vel, dt);
     particle.Vel = ApplyMaelstromParticleForce(particle.Pos, particle.Vel, dt);
 

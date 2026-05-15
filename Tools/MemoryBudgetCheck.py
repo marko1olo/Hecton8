@@ -22,8 +22,8 @@ from pathlib import Path
 from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Tuple
 
 
-TEXTURE_EXTS = {".png", ".jpg", ".jpeg"}
-MESH_EXTS = {".fbx", ".obj"}
+TEXTURE_EXTS = {".png", ".jpg", ".jpeg", ".tga", ".bmp", ".psd", ".tif", ".tiff", ".dds", ".hdr", ".exr", ".gif"}
+MESH_EXTS = {".fbx", ".obj", ".gltf", ".glb"}
 SKIP_DIRS = {".git", ".vs", ".codex-build", ".codex-artifacts", "Library", "Temp", "Obj", "Build", "Builds"}
 SKIP_DIR_NAMES_LOWER = {name.lower() for name in SKIP_DIRS}
 JPEG_SOF_MARKERS = {0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF}
@@ -37,6 +37,11 @@ LOW_TIER_TARGET_DIM = 1024
 MESH_TRI_REDLINE = 50000
 MESH_ABSOLUTE_REDLINE = 80000
 FBX_SIZE_RISK_BYTES = 10 * 1024 * 1024
+GEOMETRY_BUFFER_BUDGET_MIB = 200.0
+STATIC_GEOMETRY_VERTEX_STRIDE_BYTES = 48
+STATIC_GEOMETRY_INDEX_BYTES = 4
+MESH_GEOMETRY_SINGLE_ASSET_REDLINE_MIB = 16.0
+TEXTURE_CONTAINER_RISK_EXTS = {".hdr", ".exr", ".psd", ".gif", ".tga", ".tif", ".tiff", ".bmp"}
 
 
 @dataclass
@@ -63,6 +68,7 @@ class MeshRecord:
     path: Path
     file_bytes: int = 0
     triangles: Optional[int] = None
+    estimated_geometry_bytes: int = 0
     lod_detected: bool = False
     meta_is_readable: str = ""
     meta_mesh_compression: str = ""
@@ -164,12 +170,172 @@ def read_jpeg_size(path: Path) -> Tuple[int, int, str]:
     raise ValueError("jpeg dimensions not found")
 
 
+def read_tga_size(path: Path) -> Tuple[int, int, str]:
+    with path.open("rb") as handle:
+        header = handle.read(18)
+    if len(header) < 18:
+        raise ValueError("invalid tga header")
+    width = struct.unpack_from("<H", header, 12)[0]
+    height = struct.unpack_from("<H", header, 14)[0]
+    depth = header[16]
+    mode = "RGBA" if depth >= 32 else "RGB" if depth >= 24 else f"TGA_{depth}"
+    return width, height, mode
+
+
+def read_bmp_size(path: Path) -> Tuple[int, int, str]:
+    with path.open("rb") as handle:
+        header = handle.read(30)
+    if len(header) < 30 or header[:2] != b"BM":
+        raise ValueError("invalid bmp header")
+    width = abs(struct.unpack_from("<i", header, 18)[0])
+    height = abs(struct.unpack_from("<i", header, 22)[0])
+    depth = struct.unpack_from("<H", header, 28)[0]
+    mode = "RGBA" if depth >= 32 else "RGB" if depth >= 24 else f"BMP_{depth}"
+    return width, height, mode
+
+
+def read_psd_size(path: Path) -> Tuple[int, int, str]:
+    with path.open("rb") as handle:
+        header = handle.read(26)
+    if len(header) < 26 or header[:4] != b"8BPS":
+        raise ValueError("invalid psd header")
+    channels = struct.unpack_from(">H", header, 12)[0]
+    height = struct.unpack_from(">I", header, 14)[0]
+    width = struct.unpack_from(">I", header, 18)[0]
+    return width, height, f"PSD_{channels}CH"
+
+
+def read_dds_size(path: Path) -> Tuple[int, int, str]:
+    with path.open("rb") as handle:
+        header = handle.read(128)
+    if len(header) < 128 or header[:4] != b"DDS ":
+        raise ValueError("invalid dds header")
+    height = struct.unpack_from("<I", header, 12)[0]
+    width = struct.unpack_from("<I", header, 16)[0]
+    return width, height, "DDS"
+
+
+def read_gif_size(path: Path) -> Tuple[int, int, str]:
+    with path.open("rb") as handle:
+        header = handle.read(10)
+    if len(header) < 10 or header[:6] not in (b"GIF87a", b"GIF89a"):
+        raise ValueError("invalid gif header")
+    width = struct.unpack_from("<H", header, 6)[0]
+    height = struct.unpack_from("<H", header, 8)[0]
+    return width, height, "GIF"
+
+
+def read_hdr_size(path: Path) -> Tuple[int, int, str]:
+    with path.open("rb") as handle:
+        for _ in range(80):
+            line = handle.readline(256)
+            if not line:
+                break
+            text = line.decode("ascii", errors="ignore").strip()
+            match = re.search(r"([+-])Y\s+(\d+)\s+([+-])X\s+(\d+)", text)
+            if match:
+                height = int(match.group(2))
+                width = int(match.group(4))
+                return width, height, "HDR"
+    raise ValueError("hdr dimensions not found")
+
+
+def read_tiff_size(path: Path) -> Tuple[int, int, str]:
+    with path.open("rb") as handle:
+        header = handle.read(4096)
+    if len(header) < 8:
+        raise ValueError("invalid tiff header")
+    if header[:2] == b"II":
+        endian = "<"
+    elif header[:2] == b"MM":
+        endian = ">"
+    else:
+        raise ValueError("invalid tiff endian")
+    if struct.unpack_from(endian + "H", header, 2)[0] != 42:
+        raise ValueError("unsupported tiff header")
+    ifd_offset = struct.unpack_from(endian + "I", header, 4)[0]
+    if ifd_offset + 2 > len(header):
+        raise ValueError("tiff ifd outside header window")
+    tag_count = struct.unpack_from(endian + "H", header, ifd_offset)[0]
+    width = 0
+    height = 0
+    offset = ifd_offset + 2
+    for _ in range(tag_count):
+        if offset + 12 > len(header):
+            break
+        tag = struct.unpack_from(endian + "H", header, offset)[0]
+        field_type = struct.unpack_from(endian + "H", header, offset + 2)[0]
+        count = struct.unpack_from(endian + "I", header, offset + 4)[0]
+        value_offset = offset + 8
+        if count == 1 and tag in (256, 257):
+            if field_type == 3:
+                value = struct.unpack_from(endian + "H", header, value_offset)[0]
+            elif field_type == 4:
+                value = struct.unpack_from(endian + "I", header, value_offset)[0]
+            else:
+                value = 0
+            if tag == 256:
+                width = value
+            else:
+                height = value
+        offset += 12
+    if width <= 0 or height <= 0:
+        raise ValueError("tiff dimensions not found")
+    return width, height, "TIFF"
+
+
+def read_exr_size(path: Path) -> Tuple[int, int, str]:
+    with path.open("rb") as handle:
+        data = handle.read(8192)
+    if len(data) < 16 or data[:4] != b"\x76\x2f\x31\x01":
+        raise ValueError("invalid exr header")
+    offset = 8
+    while offset < len(data):
+        name_end = data.find(b"\x00", offset)
+        if name_end < 0:
+            break
+        if name_end == offset:
+            break
+        name = data[offset:name_end].decode("ascii", errors="ignore")
+        offset = name_end + 1
+        type_end = data.find(b"\x00", offset)
+        if type_end < 0 or type_end + 5 > len(data):
+            break
+        attr_type = data[offset:type_end].decode("ascii", errors="ignore")
+        offset = type_end + 1
+        size = struct.unpack_from("<I", data, offset)[0]
+        offset += 4
+        if offset + size > len(data):
+            break
+        if name == "dataWindow" and attr_type == "box2i" and size >= 16:
+            min_x, min_y, max_x, max_y = struct.unpack_from("<iiii", data, offset)
+            return max_x - min_x + 1, max_y - min_y + 1, "EXR"
+        offset += size
+    raise ValueError("exr dataWindow not found")
+
+
 def read_image_size(path: Path) -> Tuple[int, int, str]:
     ext = path.suffix.lower()
     if ext == ".png":
         return read_png_size(path)
     if ext in (".jpg", ".jpeg"):
         return read_jpeg_size(path)
+    if ext == ".tga":
+        return read_tga_size(path)
+    if ext == ".bmp":
+        return read_bmp_size(path)
+    if ext == ".psd":
+        return read_psd_size(path)
+    if ext in (".tif", ".tiff"):
+        return read_tiff_size(path)
+    if ext == ".dds":
+        return read_dds_size(path)
+    if ext == ".hdr":
+        return read_hdr_size(path)
+    if ext == ".exr":
+        return read_exr_size(path)
+    if ext == ".gif":
+        return read_gif_size(path)
     raise ValueError(f"unsupported image type {ext}")
 
 
@@ -220,6 +386,10 @@ def meta_contains(meta_value: str, expected: str) -> bool:
     return expected in {part for part in meta_value.split("|") if part}
 
 
+def has_texture_container_risk(record: TextureRecord) -> bool:
+    return any(flag.endswith("_SOURCE_CONTAINER_STATIC_SUSPECT") or flag == "HDR_TEXTURE_CONTAINER_STATIC_SUSPECT" for flag in record.flags)
+
+
 def classify_texture(
     path: Path,
     width: int,
@@ -234,8 +404,21 @@ def classify_texture(
     flags: List[str] = []
     max_dim = max(width, height)
     lower_name = path.name.lower()
+    ext = path.suffix.lower()
     if width <= 0 or height <= 0:
         flags.append("VRAM CRIME: TEXTURE_DIMENSIONS_UNREADABLE")
+    if ext in (".hdr", ".exr"):
+        flags.append("HDR_TEXTURE_CONTAINER_STATIC_SUSPECT")
+    elif ext == ".psd":
+        flags.append("PSD_SOURCE_CONTAINER_STATIC_SUSPECT")
+    elif ext == ".gif":
+        flags.append("GIF_SOURCE_CONTAINER_STATIC_SUSPECT")
+    elif ext == ".tga":
+        flags.append("TGA_SOURCE_CONTAINER_STATIC_SUSPECT")
+    elif ext in (".tif", ".tiff"):
+        flags.append("TIFF_SOURCE_CONTAINER_STATIC_SUSPECT")
+    elif ext == ".bmp":
+        flags.append("BMP_SOURCE_CONTAINER_STATIC_SUSPECT")
     if max_dim > MAX_TEXTURE_DIM:
         flags.append("VRAM CRIME: TEXTURE_GT_2048")
     if meta_max:
@@ -254,13 +437,21 @@ def classify_texture(
         flags.append("STREAMING_MIPMAPS_OFF_LARGE")
     if max_dim > LOW_TIER_TARGET_DIM and meta_readable and meta_contains(meta_readable, "1"):
         flags.append("READ_WRITE_ENABLED_LARGE_STATIC_SUSPECT")
-    if "normal" in lower_name or "_norm" in lower_name or lower_name.endswith("_n.png"):
+    if ext in (".hdr", ".exr"):
+        recommendation = "Verify HDR import format/probe or skybox residency; keep only tier-gated or baked proof for MX350."
+    elif ext == ".psd":
+        recommendation = "Flatten/export production texture and import compressed; keep PSD source out of runtime payload."
+    elif ext == ".gif":
+        recommendation = "Convert GIF to explicit sprite sheet/texture or quarantine; prove runtime importer behavior."
+    elif ext in (".tga", ".tif", ".tiff", ".bmp"):
+        recommendation = "Verify production import compression; convert to standard compressed source if kept in runtime payload."
+    elif "normal" in lower_name or "_norm" in lower_name or lower_name.endswith("_n.png"):
         recommendation = "Use BC5 normal import; Low tier cap 1024 unless hero close-read asset."
     elif any(token in lower_name for token in ("ao", "rough", "smooth", "metal", "spec", "mask")):
         recommendation = "Channel-pack masks into one RGBA texture; avoid separate AO/spec maps."
     elif max_dim > LOW_TIER_TARGET_DIM:
         recommendation = "Low tier should halve source/import max; keep high mips only with hero or streaming proof."
-    elif path.suffix.lower() in (".jpg", ".jpeg"):
+    elif ext in (".jpg", ".jpeg"):
         recommendation = "Verify Unity import compression; JPG disk compression does not reduce VRAM."
     else:
         recommendation = "Keep compressed; atlas if grouped with small sibling textures."
@@ -395,6 +586,13 @@ def count_triangles_from_indices(values: Iterable[int]) -> int:
     return triangles
 
 
+def estimate_geometry_bytes(triangles: Optional[int]) -> int:
+    if triangles is None or triangles <= 0:
+        return 0
+    vertex_count_estimate = triangles * 3
+    return int(vertex_count_estimate * (STATIC_GEOMETRY_VERTEX_STRIDE_BYTES + STATIC_GEOMETRY_INDEX_BYTES))
+
+
 def iter_int32_values(raw: bytes) -> Iterator[int]:
     count = len(raw) // 4
     for index in range(count):
@@ -518,6 +716,117 @@ def count_fbx_triangles(path: Path) -> Optional[int]:
     return count_fbx_ascii_triangles(text)
 
 
+def as_non_negative_int(value: object) -> Optional[int]:
+    try:
+        number = int(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return None
+    if number < 0:
+        return None
+    return number
+
+
+def gltf_accessor_count(accessors: object, index: object) -> Optional[int]:
+    accessor_index = as_non_negative_int(index)
+    if accessor_index is None or not isinstance(accessors, list) or accessor_index >= len(accessors):
+        return None
+    accessor = accessors[accessor_index]
+    if not isinstance(accessor, dict):
+        return None
+    return as_non_negative_int(accessor.get("count"))
+
+
+def gltf_primitive_triangle_count(primitive: object, accessors: object) -> Optional[int]:
+    if not isinstance(primitive, dict):
+        return None
+    mode = as_non_negative_int(primitive.get("mode", 4))
+    if mode is None:
+        return None
+    if mode not in (4, 5, 6):
+        return 0
+    if "indices" in primitive:
+        vertex_count = gltf_accessor_count(accessors, primitive.get("indices"))
+    else:
+        attributes = primitive.get("attributes")
+        position_index = attributes.get("POSITION") if isinstance(attributes, dict) else None
+        vertex_count = gltf_accessor_count(accessors, position_index)
+    if vertex_count is None:
+        return None
+    if mode == 4:
+        return vertex_count // 3
+    if vertex_count < 3:
+        return 0
+    return vertex_count - 2
+
+
+def count_gltf_document_triangles(document: object) -> Optional[int]:
+    if not isinstance(document, dict):
+        return None
+    accessors = document.get("accessors")
+    meshes = document.get("meshes")
+    if not isinstance(meshes, list):
+        return None
+    total = 0
+    triangle_primitive_seen = False
+    for mesh in meshes:
+        if not isinstance(mesh, dict):
+            continue
+        primitives = mesh.get("primitives")
+        if not isinstance(primitives, list):
+            continue
+        for primitive in primitives:
+            if isinstance(primitive, dict):
+                mode = as_non_negative_int(primitive.get("mode", 4))
+                if mode not in (4, 5, 6):
+                    continue
+            triangle_primitive_seen = True
+            triangle_count = gltf_primitive_triangle_count(primitive, accessors)
+            if triangle_count is None:
+                return None
+            total += triangle_count
+    return total if triangle_primitive_seen else 0
+
+
+def read_glb_json_document(path: Path) -> Optional[object]:
+    try:
+        with path.open("rb") as handle:
+            header = handle.read(12)
+            if len(header) != 12:
+                return None
+            magic, version, total_length = struct.unpack("<III", header)
+            if magic != 0x46546C67 or version != 2 or total_length < 20:
+                return None
+            bytes_read = 12
+            while bytes_read + 8 <= total_length:
+                chunk_header = handle.read(8)
+                if len(chunk_header) != 8:
+                    return None
+                chunk_length, chunk_type = struct.unpack("<II", chunk_header)
+                bytes_read += 8
+                if chunk_type == 0x4E4F534A:
+                    payload = handle.read(chunk_length)
+                    if len(payload) != chunk_length:
+                        return None
+                    return json.loads(payload.decode("utf-8", errors="replace").rstrip("\x00 \t\r\n"))
+                handle.seek(chunk_length, os.SEEK_CUR)
+                bytes_read += chunk_length
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError, struct.error):
+        return None
+    return None
+
+
+def count_gltf_triangles(path: Path) -> Optional[int]:
+    ext = path.suffix.lower()
+    if ext == ".glb":
+        document = read_glb_json_document(path)
+    else:
+        try:
+            document = json.loads(path.read_text(encoding="utf-8", errors="replace"))
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+            return None
+    return count_gltf_document_triangles(document)
+
+
 LOD_RE = re.compile(r"(^|[_\-. ])lod[_\-. ]?([0-9])($|[_\-. ])", re.IGNORECASE)
 
 
@@ -584,11 +893,16 @@ def audit_meshes(paths: Sequence[Path]) -> List[MeshRecord]:
             record.triangles = count_obj_triangles(path)
         elif ext == ".fbx":
             record.triangles = count_fbx_triangles(path)
+        elif ext in (".gltf", ".glb"):
+            record.triangles = count_gltf_triangles(path)
+        record.estimated_geometry_bytes = estimate_geometry_bytes(record.triangles)
         if record.triangles is None:
             record.flags.append("TRIANGLE_COUNT_UNREADABLE_STATIC")
             if record.file_bytes > FBX_SIZE_RISK_BYTES and not record.lod_detected:
                 record.flags.append("MESH_SIZE_RISK_NO_LOD_STATIC")
         else:
+            if mib(record.estimated_geometry_bytes) > MESH_GEOMETRY_SINGLE_ASSET_REDLINE_MIB:
+                record.flags.append("MESH_GEOMETRY_ESTIMATE_GT_16MIB_STATIC")
             if record.triangles > MESH_ABSOLUTE_REDLINE:
                 record.flags.append("MESH_GT_80K_ABSOLUTE_STATIC")
             if record.triangles > MESH_TRI_REDLINE and not record.lod_detected:
@@ -638,6 +952,8 @@ def write_csv(path: Path, root: Path, textures: Sequence[TextureRecord], meshes:
                 "file_bytes",
                 "file_mib",
                 "triangles",
+                "mesh_geometry_estimate_bytes",
+                "mesh_geometry_estimate_mib",
                 "lod_detected",
                 "mesh_meta_is_readable",
                 "mesh_meta_compression",
@@ -682,6 +998,8 @@ def write_csv(path: Path, root: Path, textures: Sequence[TextureRecord], meshes:
                     "",
                     "",
                     "",
+                    "",
+                    "",
                     ";".join(record.flags),
                     record.atlas_group,
                     record.recommendation,
@@ -709,6 +1027,8 @@ def write_csv(path: Path, root: Path, textures: Sequence[TextureRecord], meshes:
                     record.file_bytes,
                     f"{mib(record.file_bytes):.3f}",
                     "" if record.triangles is None else record.triangles,
+                    record.estimated_geometry_bytes,
+                    f"{mib(record.estimated_geometry_bytes):.3f}",
                     str(record.lod_detected).lower(),
                     record.meta_is_readable,
                     record.meta_mesh_compression,
@@ -765,6 +1085,7 @@ def write_mesh_redlines_csv(path: Path, root: Path, meshes: Sequence[MeshRecord]
                 "path",
                 "file_mib",
                 "triangles",
+                "geometry_estimate_mib",
                 "lod_detected",
                 "meta_is_readable",
                 "meta_mesh_compression",
@@ -785,6 +1106,7 @@ def write_mesh_redlines_csv(path: Path, root: Path, meshes: Sequence[MeshRecord]
                     rel(record.path, root),
                     f"{mib(record.file_bytes):.3f}",
                     "" if record.triangles is None else record.triangles,
+                    f"{mib(record.estimated_geometry_bytes):.3f}",
                     str(record.lod_detected).lower(),
                     record.meta_is_readable,
                     record.meta_mesh_compression,
@@ -895,6 +1217,47 @@ def non_first_party_runtime_costs(records: Sequence[TextureRecord], root: Path, 
     return ranked[:limit]
 
 
+def texture_extension_costs(records: Sequence[TextureRecord], root: Path, limit: int = 16) -> List[Tuple[str, int, float, int, int]]:
+    groups: Dict[str, Tuple[int, float, int, int]] = {}
+    for record in records:
+        if not is_runtime_candidate(record.path, root):
+            continue
+        ext = record.path.suffix.lower() or "<none>"
+        count, total, crimes, container_risks = groups.get(ext, (0, 0.0, 0, 0))
+        has_crime = any(flag.startswith("VRAM CRIME") for flag in record.flags)
+        groups[ext] = (
+            count + 1,
+            total + record.bc7_bytes * FULL_MIP_FACTOR,
+            crimes + (1 if has_crime else 0),
+            container_risks + (1 if has_texture_container_risk(record) else 0),
+        )
+    ranked = [(ext, count, total, crimes, container_risks) for ext, (count, total, crimes, container_risks) in groups.items()]
+    ranked.sort(key=lambda item: item[2], reverse=True)
+    return ranked[:limit]
+
+
+def mesh_extension_costs(records: Sequence[MeshRecord], root: Path, limit: int = 16) -> List[Tuple[str, int, int, int, float, int]]:
+    groups: Dict[str, Tuple[int, int, int, float, int]] = {}
+    for record in records:
+        if not is_runtime_candidate(record.path, root):
+            continue
+        ext = record.path.suffix.lower() or "<none>"
+        count, known_triangles, unreadable_rows, geometry_bytes, flagged_rows = groups.get(ext, (0, 0, 0, 0.0, 0))
+        groups[ext] = (
+            count + 1,
+            known_triangles + (record.triangles or 0),
+            unreadable_rows + (1 if record.triangles is None else 0),
+            geometry_bytes + record.estimated_geometry_bytes,
+            flagged_rows + (1 if record.flags else 0),
+        )
+    ranked = [
+        (ext, count, known_triangles, unreadable_rows, geometry_bytes, flagged_rows)
+        for ext, (count, known_triangles, unreadable_rows, geometry_bytes, flagged_rows) in groups.items()
+    ]
+    ranked.sort(key=lambda item: item[4], reverse=True)
+    return ranked[:limit]
+
+
 def write_remediation_plan(
     path: Path,
     root: Path,
@@ -903,9 +1266,14 @@ def write_remediation_plan(
     atlas_groups: Sequence[Tuple[str, List[TextureRecord], int]],
 ) -> None:
     texture_crimes = [record for record in textures if any(flag.startswith("VRAM CRIME") for flag in record.flags)]
+    texture_container_risks = [record for record in textures if has_texture_container_risk(record)]
+    first_party_texture_container_risks = [record for record in texture_container_risks if is_first_party_production_candidate(record.path, root)]
     mesh_redlines = [record for record in meshes if record.flags]
     mesh_import_risks = [record for record in meshes if any(flag.endswith("_STATIC_SUSPECT") for flag in record.flags)]
     first_party_mesh_import_risks = [record for record in mesh_import_risks if is_first_party_production_candidate(record.path, root)]
+    mesh_geometry_bytes = sum(record.estimated_geometry_bytes for record in meshes)
+    first_party_mesh_geometry_bytes = sum(record.estimated_geometry_bytes for record in meshes if is_first_party_production_candidate(record.path, root))
+    mesh_geometry_redlines = [record for record in meshes if "MESH_GEOMETRY_ESTIMATE_GT_16MIB_STATIC" in record.flags]
     runtime_full_mips = sum(record.bc7_bytes for record in textures if is_runtime_candidate(record.path, root)) * FULL_MIP_FACTOR
     first_party_full_mips = sum(record.bc7_bytes for record in textures if is_first_party_production_candidate(record.path, root)) * FULL_MIP_FACTOR
     halving_candidates = low_tier_halving(textures, root, limit=25)
@@ -922,6 +1290,11 @@ def write_remediation_plan(
     lines.append(f"- Runtime-candidate full-mip BC7: {mib(runtime_full_mips):.2f} MiB")
     lines.append(f"- First-party production full-mip BC7: {mib(first_party_full_mips):.2f} MiB")
     lines.append(f"- Texture VRAM crime rows: {len(texture_crimes)}")
+    lines.append(f"- Texture source-container risk rows: {len(texture_container_risks)}")
+    lines.append(f"- First-party texture source-container risk rows: {len(first_party_texture_container_risks)}")
+    lines.append(f"- Static mesh geometry estimate: {mib(mesh_geometry_bytes):.2f} MiB / {GEOMETRY_BUFFER_BUDGET_MIB:.0f} MiB geometry budget")
+    lines.append(f"- First-party static mesh geometry estimate: {mib(first_party_mesh_geometry_bytes):.2f} MiB")
+    lines.append(f"- Mesh single-asset geometry estimate redlines: {len(mesh_geometry_redlines)}")
     lines.append(f"- Mesh redline/risk rows: {len(mesh_redlines)}")
     lines.append(f"- Mesh importer risk rows: {len(mesh_import_risks)}")
     lines.append(f"- First-party mesh importer risk rows: {len(first_party_mesh_import_risks)}")
@@ -934,7 +1307,16 @@ def write_remediation_plan(
     for directory, count, total, crimes in non_first_party_runtime_costs(textures, root):
         lines.append(f"| {directory} | {count} | {mib(total):.2f} | {crimes} | Prove production use, move to editor-only/demo quarantine, or exclude from Addressables/build payload. |")
     lines.append("")
-    lines.append("## Priority 2 - Clamp First-Party Large Textures")
+    lines.append("## Priority 2 - Convert Risky Texture Source Containers")
+    lines.append("")
+    lines.append("| Extension | Runtime count | BC7 full mip MiB | VRAM crime rows | Container risk rows | Required action |")
+    lines.append("|---|---:|---:|---:|---:|---|")
+    for ext, count, total, crimes, container_risks in texture_extension_costs(textures, root):
+        if container_risks <= 0:
+            continue
+        lines.append(f"| {ext} | {count} | {mib(total):.2f} | {crimes} | {container_risks} | Convert/quarantine source container or prove importer compression and residency. |")
+    lines.append("")
+    lines.append("## Priority 3 - Clamp First-Party Large Textures")
     lines.append("")
     lines.append("| Path | Source | Est. full-mip MiB saved by halving | Current flags | Required action |")
     lines.append("|---|---:|---:|---|---|")
@@ -947,28 +1329,28 @@ def write_remediation_plan(
     lines.append("")
     lines.append(f"Static halving relief if every runtime-candidate >1024 texture is halved: {halving_total:.2f} MiB full-mip BC7.")
     lines.append("")
-    lines.append("## Priority 3 - Enable Streaming Mipmaps On Large First-Party Textures")
+    lines.append("## Priority 4 - Enable Streaming Mipmaps On Large First-Party Textures")
     lines.append("")
     lines.append("| Path | Source | Streaming metadata | Required action |")
     lines.append("|---|---:|---|---|")
     for record in large_streaming_mipmap_off(textures, root):
         lines.append(f"| {rel(record.path, root)} | {record.width}x{record.height} | {record.meta_streaming_mipmaps} | Enable streaming mips unless UI/non-mipped proof exists. |")
     lines.append("")
-    lines.append("## Priority 4 - Atlas Small First-Party Texture Families")
+    lines.append("## Priority 5 - Atlas Small First-Party Texture Families")
     lines.append("")
     lines.append("| Group | Count | Combined BC7 MiB | Required action |")
     lines.append("|---|---:|---:|---|")
     for key, items, area in atlas_groups[:5]:
         lines.append(f"| {key} | {len(items)} | {mib(area):.2f} | Build one atlas/material family or justify separate residency. |")
     lines.append("")
-    lines.append("## Priority 5 - Mesh LOD And Importer Redlines")
+    lines.append("## Priority 6 - Mesh LOD And Importer Redlines")
     lines.append("")
-    lines.append("| Path | Triangles | LOD detected | Readable | Compression | BlendShapes | Flags | Required action |")
-    lines.append("|---|---:|---:|---:|---:|---:|---|---|")
+    lines.append("| Path | Triangles | Geometry MiB | LOD detected | Readable | Compression | BlendShapes | Flags | Required action |")
+    lines.append("|---|---:|---:|---:|---:|---:|---:|---|---|")
     for record in sorted(mesh_redlines, key=lambda item: (item.triangles or 0, item.file_bytes), reverse=True):
         tri = "UNKNOWN" if record.triangles is None else str(record.triangles)
         lines.append(
-            f"| {rel(record.path, root)} | {tri} | {str(record.lod_detected).lower()} | {record.meta_is_readable} | {record.meta_mesh_compression} | {record.meta_import_blend_shapes} | {';'.join(record.flags)} | {record.recommendation} |"
+            f"| {rel(record.path, root)} | {tri} | {mib(record.estimated_geometry_bytes):.2f} | {str(record.lod_detected).lower()} | {record.meta_is_readable} | {record.meta_mesh_compression} | {record.meta_import_blend_shapes} | {';'.join(record.flags)} | {record.recommendation} |"
         )
     lines.append("")
     lines.append("## Verification Required After Asset Fixes")
@@ -995,9 +1377,14 @@ def build_summary_payload(
     first_party_bc7 = sum(record.bc7_bytes for record in textures if is_first_party_production_candidate(record.path, root))
     texture_crimes = [record for record in textures if any(flag.startswith("VRAM CRIME") for flag in record.flags)]
     texture_flagged = [record for record in textures if record.flags]
+    texture_container_risks = [record for record in textures if has_texture_container_risk(record)]
+    first_party_texture_container_risks = [record for record in texture_container_risks if is_first_party_production_candidate(record.path, root)]
     mesh_redlines = [record for record in meshes if record.flags]
     mesh_import_risks = [record for record in meshes if any(flag.endswith("_STATIC_SUSPECT") for flag in record.flags)]
     first_party_mesh_import_risks = [record for record in mesh_import_risks if is_first_party_production_candidate(record.path, root)]
+    mesh_geometry_bytes = sum(record.estimated_geometry_bytes for record in meshes)
+    first_party_mesh_geometry_bytes = sum(record.estimated_geometry_bytes for record in meshes if is_first_party_production_candidate(record.path, root))
+    mesh_geometry_redlines = [record for record in meshes if "MESH_GEOMETRY_ESTIMATE_GT_16MIB_STATIC" in record.flags]
     first_party_streaming_off = large_streaming_mipmap_off(textures, root, limit=100000)
     all_streaming_off = [record for record in textures if "STREAMING_MIPMAPS_OFF_LARGE" in record.flags]
     runtime_full_mips = runtime_bc7 * FULL_MIP_FACTOR
@@ -1019,6 +1406,11 @@ def build_summary_payload(
         "skipped_directory_names": sorted(SKIP_DIRS, key=str.lower),
         "texture_count": len(textures),
         "mesh_count": len(meshes),
+        "geometry_buffer_budget_mib": GEOMETRY_BUFFER_BUDGET_MIB,
+        "mesh_geometry_static_estimate_mib": round(mib(mesh_geometry_bytes), 3),
+        "first_party_mesh_geometry_static_estimate_mib": round(mib(first_party_mesh_geometry_bytes), 3),
+        "mesh_geometry_single_asset_redline_mib": MESH_GEOMETRY_SINGLE_ASSET_REDLINE_MIB,
+        "mesh_geometry_single_asset_redline_rows": len(mesh_geometry_redlines),
         "bc7_no_mip_mib": round(mib(total_bc7), 3),
         "bc7_full_mip_total_mib": round(mib(total_full_mips), 3),
         "bc7_full_mip_runtime_candidate_mib": round(mib(runtime_full_mips), 3),
@@ -1028,6 +1420,8 @@ def build_summary_payload(
         "critical_vram_overflow": critical,
         "texture_vram_crime_rows": len(texture_crimes),
         "texture_flagged_rows": len(texture_flagged),
+        "texture_source_container_risk_rows": len(texture_container_risks),
+        "first_party_texture_source_container_risk_rows": len(first_party_texture_container_risks),
         "mesh_redline_rows": len(mesh_redlines),
         "mesh_import_risk_rows": len(mesh_import_risks),
         "mesh_read_write_enabled_rows": sum(1 for record in meshes if "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT" in record.flags),
@@ -1053,6 +1447,27 @@ def build_summary_payload(
             }
             for directory, count, total, crimes in non_first_party_runtime_costs(textures, root)
         ],
+        "texture_extension_summary": [
+            {
+                "extension": ext,
+                "count": count,
+                "bc7_full_mip_mib": round(mib(total), 3),
+                "vram_crime_rows": crimes,
+                "source_container_risk_rows": container_risks,
+            }
+            for ext, count, total, crimes, container_risks in texture_extension_costs(textures, root)
+        ],
+        "mesh_extension_summary": [
+            {
+                "extension": ext,
+                "count": count,
+                "known_triangles": known_triangles,
+                "triangle_unreadable_rows": unreadable_rows,
+                "geometry_estimate_mib": round(mib(geometry_bytes), 3),
+                "flagged_rows": flagged_rows,
+            }
+            for ext, count, known_triangles, unreadable_rows, geometry_bytes, flagged_rows in mesh_extension_costs(meshes, root)
+        ],
         "atlas_suggestions": [
             {
                 "group": key,
@@ -1066,6 +1481,7 @@ def build_summary_payload(
             {
                 "path": rel(record.path, root),
                 "triangles": record.triangles,
+                "geometry_estimate_mib": round(mib(record.estimated_geometry_bytes), 3),
                 "lod_detected": record.lod_detected,
                 "meta_is_readable": record.meta_is_readable,
                 "meta_mesh_compression": record.meta_mesh_compression,
@@ -1111,9 +1527,14 @@ def write_summary(
     runtime_bc7_mips = runtime_bc7 * FULL_MIP_FACTOR
     first_party_bc7_mips = first_party_bc7 * FULL_MIP_FACTOR
     texture_crimes = [record for record in textures if any(flag.startswith("VRAM CRIME") for flag in record.flags)]
+    texture_container_risks = [record for record in textures if has_texture_container_risk(record)]
+    first_party_texture_container_risks = [record for record in texture_container_risks if is_first_party_production_candidate(record.path, root)]
     mesh_redlines = [record for record in meshes if record.flags]
     mesh_import_risks = [record for record in meshes if any(flag.endswith("_STATIC_SUSPECT") for flag in record.flags)]
     first_party_mesh_import_risks = [record for record in mesh_import_risks if is_first_party_production_candidate(record.path, root)]
+    mesh_geometry_bytes = sum(record.estimated_geometry_bytes for record in meshes)
+    first_party_mesh_geometry_bytes = sum(record.estimated_geometry_bytes for record in meshes if is_first_party_production_candidate(record.path, root))
+    mesh_geometry_redlines = [record for record in meshes if "MESH_GEOMETRY_ESTIMATE_GT_16MIB_STATIC" in record.flags]
     first_party_streaming_off = large_streaming_mipmap_off(textures, root, limit=100000)
     overflow = total_bc7_mips > CRITICAL_TEXTURE_POOL_MIB * 1024 * 1024
     runtime_overflow = runtime_bc7_mips > CRITICAL_TEXTURE_POOL_MIB * 1024 * 1024
@@ -1141,6 +1562,11 @@ def write_summary(
     if not overflow and not runtime_overflow:
         lines.append("- No static BC7 full-mip overflow against 1.2GB trigger.")
     lines.append(f"- Texture VRAM crime rows: {len(texture_crimes)}")
+    lines.append(f"- Texture source-container risk rows: {len(texture_container_risks)}")
+    lines.append(f"- First-party texture source-container risk rows: {len(first_party_texture_container_risks)}")
+    lines.append(f"- Static mesh geometry estimate: {mib(mesh_geometry_bytes):.2f} MiB / {GEOMETRY_BUFFER_BUDGET_MIB:.0f} MiB geometry budget")
+    lines.append(f"- First-party static mesh geometry estimate: {mib(first_party_mesh_geometry_bytes):.2f} MiB")
+    lines.append(f"- Mesh single-asset geometry estimate redlines: {len(mesh_geometry_redlines)}")
     lines.append(f"- Mesh redline/risk rows: {len(mesh_redlines)}")
     lines.append(f"- Mesh importer risk rows: {len(mesh_import_risks)}")
     lines.append(f"- First-party mesh importer risk rows: {len(first_party_mesh_import_risks)}")
@@ -1161,6 +1587,20 @@ def write_summary(
     for directory, count, total, crimes in texture_directory_costs(textures, root, first_party_only=False):
         lines.append(f"| {directory} | {count} | {mib(total):.2f} | {crimes} |")
     lines.append("")
+    lines.append("## Runtime Texture Extension Pressure")
+    lines.append("")
+    lines.append("| Extension | Count | BC7 full mip MiB | VRAM crime rows | Container risk rows |")
+    lines.append("|---|---:|---:|---:|---:|")
+    for ext, count, total, crimes, container_risks in texture_extension_costs(textures, root):
+        lines.append(f"| {ext} | {count} | {mib(total):.2f} | {crimes} | {container_risks} |")
+    lines.append("")
+    lines.append("## Runtime Mesh Extension Pressure")
+    lines.append("")
+    lines.append("| Extension | Count | Known triangles | Triangle-unreadable rows | Geometry MiB | Flagged rows |")
+    lines.append("|---|---:|---:|---:|---:|---:|")
+    for ext, count, known_triangles, unreadable_rows, geometry_bytes, flagged_rows in mesh_extension_costs(meshes, root):
+        lines.append(f"| {ext} | {count} | {known_triangles} | {unreadable_rows} | {mib(geometry_bytes):.2f} | {flagged_rows} |")
+    lines.append("")
     lines.append("## Top Runtime Texture Costs")
     lines.append("")
     lines.append("| Path | Size | BC7 full mip MiB | Flags |")
@@ -1172,12 +1612,12 @@ def write_summary(
     lines.append("")
     lines.append("## Mesh Redlines")
     lines.append("")
-    lines.append("| Path | File MiB | Triangles | LOD | Readable | Compression | BlendShapes | Flags |")
-    lines.append("|---|---:|---:|---:|---:|---:|---:|---|")
+    lines.append("| Path | File MiB | Triangles | Geometry MiB | LOD | Readable | Compression | BlendShapes | Flags |")
+    lines.append("|---|---:|---:|---:|---:|---:|---:|---:|---|")
     for record in sorted(mesh_redlines, key=lambda item: (item.triangles or 0, item.file_bytes), reverse=True)[:40]:
         tri = "UNKNOWN" if record.triangles is None else str(record.triangles)
         lines.append(
-            f"| {rel(record.path, root)} | {mib(record.file_bytes):.2f} | {tri} | {str(record.lod_detected).lower()} | {record.meta_is_readable} | {record.meta_mesh_compression} | {record.meta_import_blend_shapes} | {';'.join(record.flags)} |"
+            f"| {rel(record.path, root)} | {mib(record.file_bytes):.2f} | {tri} | {mib(record.estimated_geometry_bytes):.2f} | {str(record.lod_detected).lower()} | {record.meta_is_readable} | {record.meta_mesh_compression} | {record.meta_import_blend_shapes} | {';'.join(record.flags)} |"
         )
     lines.append("")
     lines.append("## Atlas Suggestions")
@@ -1205,6 +1645,7 @@ def write_summary(
     lines.append("## Evidence Boundary")
     lines.append("")
     lines.append("- STATIC_SOURCE: file dimensions, file sizes, source metadata, and parser-readable mesh triangle counts.")
+    lines.append(f"- Static geometry estimate assumes {STATIC_GEOMETRY_VERTEX_STRIDE_BYTES} byte vertices plus {STATIC_GEOMETRY_INDEX_BYTES} byte indices and no vertex sharing; Unity imported geometry must be verified in Memory Profiler.")
     lines.append(f"- Scan excludes generated/scratch directories by name: {', '.join(sorted(SKIP_DIRS, key=str.lower))}.")
     lines.append("- PENDING VERIFICATION: Unity importer compression, actual texture residency, mesh import settings, Memory Profiler VRAM, scene wiring, player-build behavior.")
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -1214,12 +1655,14 @@ def write_summary(
 def print_console_summary(root: Path, textures: Sequence[TextureRecord], meshes: Sequence[MeshRecord], link_status: str) -> bool:
     total_full_mips = sum(record.bc7_bytes for record in textures) * FULL_MIP_FACTOR
     runtime_full_mips = sum(record.bc7_bytes for record in textures if is_runtime_candidate(record.path, root)) * FULL_MIP_FACTOR
+    mesh_geometry_bytes = sum(record.estimated_geometry_bytes for record in meshes)
     texture_crime_count = sum(1 for record in textures if any(flag.startswith("VRAM CRIME") for flag in record.flags))
     mesh_risk_count = sum(1 for record in meshes if record.flags)
     critical_overflow = total_full_mips > CRITICAL_TEXTURE_POOL_MIB * 1024 * 1024 or runtime_full_mips > CRITICAL_TEXTURE_POOL_MIB * 1024 * 1024
     print(f"textures={len(textures)} meshes={len(meshes)}")
     print(f"bc7_full_mip_total_mib={mib(total_full_mips):.2f}")
     print(f"bc7_full_mip_runtime_candidate_mib={mib(runtime_full_mips):.2f}")
+    print(f"mesh_geometry_static_estimate_mib={mib(mesh_geometry_bytes):.2f}")
     if critical_overflow:
         print("[CRITICAL_VRAM_OVERFLOW]")
     print(f"texture_vram_crimes={texture_crime_count}")

@@ -140,7 +140,7 @@ python -m pip install --target .\.codex_tmp\xxhash_check xxhash
 python -B .\Tools\Security\VerifyReplayHasherReference.py --xxhash-path .\.codex_tmp\xxhash_check --fuzz-count 128
 ```
 
-`--xxhash-path` is mandatory. The verifier rejects a globally installed `xxhash` module so the reference proof remains isolated from the developer machine state.
+`--xxhash-path` is mandatory. The verifier rejects a globally installed `xxhash` module, evicts any preloaded `sys.modules["xxhash"]` entry before import, and restores host `sys.path`/`sys.modules` state after execution, so the reference proof remains isolated from the developer machine state.
 
 Expected master vector for the second command:
 

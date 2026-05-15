@@ -3,7 +3,7 @@
 Prompt ID: H8_HARDWARE_TIER_MATRIX_BKR
 Role: SYSTEMS_ARCHITECT
 Domain: Echelon 1 / Scalability Dictator (Hardware)
-Status: PROFILES BAKED / STATIC PARITY VERIFIED / COMPILE TOOLCHAIN BLOCKED
+Status: PROFILES BAKED / STATIC TOOLING VERIFIED / COMPILE TOOLCHAIN BLOCKED
 
 ## Mandates Loaded
 - `.agents-skills/README.md`
@@ -46,12 +46,27 @@ Status: PROFILES BAKED / STATIC PARITY VERIFIED / COMPILE TOOLCHAIN BLOCKED
   - Result: `<POLISH_MANDATE>` tag was not present in `Docs/Tasks/CURRENT_BATCH.md`; manual anti-bloat pass completed with strict JSON audit and trailing whitespace audit.
 - [x] Loop 6 - Hardened bake after user escalation.
   - Result: added `profileCount`, `guardThresholds`, SHI `stressModel`, `profileTable` columnar arrays, exact FNV hash parity checks, and corrected `Quest3_LowPlus` total RAM limit to 8192 MB with 5120 MB budget + 3072 MB reserve.
+- [x] Loop 7 - Dedicated static guard and negative test harness.
+  - Result: added `Tools/Hardware/ValidateSystemHardwareProfiles.py`, `Tools/Hardware/test_validate_system_hardware_profiles.py`, and deterministic audit report `Docs/AgentLogs/Hardware_Profile_Audit_H8_HARDWARE_TIER_MATRIX_BKR.json`.
+  - Guard coverage: required profile order, required override keys, exact FNV hashes, row/table parity, Quest2 4GB cap, SHI monotonicity, release hysteresis, stress weight sum, and guard threshold drift.
+- [x] Loop 8 - Active batch drift audit after user escalation.
+  - Result: `Docs/Tasks/CURRENT_BATCH.md` no longer contains `<AGENT_PROMPT id="H8_HARDWARE_TIER_MATRIX_BKR">` or `<POLISH_MANDATE>`; continued from H8 disk status/rationale instead of importing neighboring batch scope.
+- [x] Loop 9 - Combined hardware guard entry point.
+  - Result: added `Tools/Hardware/ValidateAllHardwareProfiles.py` so integrators can validate both `Data/Hardware/Profiles.json` and `Data/System/Hardware_Profiles.json` from one command.
 
 ## Verification
 - JSON parse: PASS (`ConvertFrom-Json`)
 - Strict JSON audit: PASS (required profiles, required override keys, render-scale range, mip-bias range, monotonic SHI thresholds, release hysteresis, Quest2 4GB cap)
 - Columnar parity audit: PASS (profile rows match `profileTable`, row-major arrays have correct lengths, FNV1A32 hashes match exact `ProfileId`, stress weights sum to 1)
+- Dedicated static guard: PASS (`python -B Tools/Hardware/ValidateSystemHardwareProfiles.py --write-report`)
+- Deterministic audit report: PASS (`python -B Tools/Hardware/ValidateSystemHardwareProfiles.py --check-report`)
+- Combined hardware guards: PASS (`python -B Tools/Hardware/ValidateAllHardwareProfiles.py`)
+- Existing hardware catalog guard: PASS (`python -B Tools/Hardware/ValidateHardwareProfileCatalog.py`)
+- Unit tests: PASS (`python -B Tools/Hardware/test_validate_system_hardware_profiles.py -v`, 6 tests)
+- Python syntax: PASS (`python -B -m py_compile Tools/Hardware/ValidateAllHardwareProfiles.py Tools/Hardware/ValidateSystemHardwareProfiles.py Tools/Hardware/test_validate_system_hardware_profiles.py`)
+- Audit report JSON parse: PASS (`python -B -m json.tool Docs/AgentLogs/Hardware_Profile_Audit_H8_HARDWARE_TIER_MATRIX_BKR.json`)
 - Whitespace audit: PASS (no trailing whitespace in `Data/System/Hardware_Profiles.json`)
+- Active batch tag audit: DRIFT DETECTED - H8 prompt tag and polish tag absent from current `Docs/Tasks/CURRENT_BATCH.md`.
 - Compile/static check: BLOCKED - `dotnet` command unavailable, no `.sln`/`.csproj` found, Unity Hub editor roots missing in `C:\Program Files`, `C:\Program Files (x86)`, and common `D:\` paths.
 - Polish mandate: BLOCKED - `<POLISH_MANDATE>` tag not found in `Docs/Tasks/CURRENT_BATCH.md`.
 - Final report: APPENDED to `Docs/AgentLogs/LOG_H8_HARDWARE_TIER_MATRIX_BKR.md`.

@@ -1,10 +1,14 @@
 {
   "schema": "H8_Regrowth_Constants",
   "version": 1,
-  "status": "ENTROPY_BALANCED_PENDING_UNITY_VERIFICATION",
+  "status": "ENTROPY BALANCED",
+  "unityVerificationStatus": "PENDING_UNITY_VERIFICATION",
   "macroSectorMeters": 512,
   "gridWidth": 64,
   "gridHeight": 64,
+  "entropyTestWorldSeed": 0,
+  "macroSectorOriginX": 0,
+  "macroSectorOriginZ": 0,
   "baseGrowthProgressPerDayQ": 10,
   "nutrientDiffusionPermille": 220,
   "passiveNutrientRecoveryPerDayQ": 2,
@@ -31,21 +35,21 @@
       "name": "Temperate Reef",
       "temperatureQ": 190,
       "nutrientStartQ": 210,
-      "expectedHalfRecoveryDaysUnderTotalOverharvest": 37
+      "expectedHalfRecoveryDaysUnderTotalOverharvest": 41
     },
     {
       "id": 2,
       "name": "Thermal Vent",
       "temperatureQ": 180,
       "nutrientStartQ": 190,
-      "expectedHalfRecoveryDaysUnderTotalOverharvest": 43
+      "expectedHalfRecoveryDaysUnderTotalOverharvest": 44
     },
     {
       "id": 3,
       "name": "Deep Abyss",
       "temperatureQ": 80,
       "nutrientStartQ": 150,
-      "expectedHalfRecoveryDaysUnderTotalOverharvest": 95
+      "expectedHalfRecoveryDaysUnderTotalOverharvest": 88
     }
   ],
   "acceptance": {

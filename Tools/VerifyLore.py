@@ -225,6 +225,8 @@ def parse_blob(blob: bytes) -> list[LoreRecord]:
         raise ValueError("Unexpected table offset.")
     if table_bytes != entry_count * RECORD_SIZE:
         raise ValueError("Table byte count does not match entry count.")
+    if table_offset + table_bytes > len(blob):
+        raise ValueError("Record table points beyond file length.")
     if payload_offset != align_up(table_offset + table_bytes):
         raise ValueError("Payload offset does not match aligned table end.")
     if payload_offset > len(blob):
@@ -247,6 +249,18 @@ def parse_blob(blob: bytes) -> list[LoreRecord]:
         if payload_file_offset < payload_offset or payload_file_offset + compressed_length > len(blob):
             raise ValueError(f"Payload slice for {format_hash(hash_value)} is outside file bounds.")
         records.append(LoreRecord(hash_value, payload_file_offset, compressed_length))
+
+    intervals = sorted(records, key=lambda record: record.offset)
+    previous_end = payload_offset
+    for record in intervals:
+        if record.offset < previous_end:
+            raise ValueError(f"Payload slice for {format_hash(record.hash_value)} overlaps a previous record.")
+        if any(blob[index] != 0 for index in range(previous_end, record.offset)):
+            raise ValueError(f"Payload padding before {format_hash(record.hash_value)} is not zeroed.")
+        previous_end = record.offset + record.length
+
+    if previous_end != len(blob):
+        raise ValueError("Blob contains trailing bytes after the last payload.")
 
     return records
 

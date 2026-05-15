@@ -18,6 +18,7 @@ from typing import Iterator
 
 
 MASK64 = 0xFFFFFFFFFFFFFFFF
+_MISSING_MODULE = object()
 
 DETERMINISTIC_LENGTHS = (
     0, 1, 2, 3, 4, 5, 7, 8, 9, 15, 16, 17,
@@ -150,30 +151,44 @@ def main(argv: list[str] | None = None) -> int:
         print(f"--xxhash-path does not exist or is not a directory: {xxhash_path}", file=sys.stderr)
         return 2
 
-    sys.path.insert(0, str(xxhash_path))
+    path_entry = str(xxhash_path)
+    previous_xxhash = sys.modules.get("xxhash", _MISSING_MODULE)
+    sys.path.insert(0, path_entry)
+    sys.modules.pop("xxhash", None)
 
     try:
-        xxhash_module = importlib.import_module("xxhash")
-    except ImportError:
-        print(
-            "Missing optional dependency `xxhash`. Install it into a temporary "
-            "directory and pass --xxhash-path.",
-            file=sys.stderr,
-        )
-        return 2
+        try:
+            xxhash_module = importlib.import_module("xxhash")
+        except ImportError:
+            print(
+                "Missing optional dependency `xxhash`. Install it into a temporary "
+                "directory and pass --xxhash-path.",
+                file=sys.stderr,
+            )
+            return 2
 
-    try:
-        verify_module_path(xxhash_module, xxhash_path)
-    except RuntimeError as exc:
-        print(str(exc), file=sys.stderr)
-        return 2
+        try:
+            verify_module_path(xxhash_module, xxhash_path)
+        except RuntimeError as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
 
-    root = pathlib.Path(__file__).resolve().parents[2]
-    replay = load_replay_hasher(root / "Tools" / "Security" / "ReplayHasher.py")
-    xxh_cases = verify_xxh3(replay, xxhash_module, args.fuzz_count)
-    shuffle_cases = verify_shuffle_inverse(replay, args.fuzz_count)
-    print(f"XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK xxh3={xxh_cases} shuffle={shuffle_cases}")
-    return 0
+        root = pathlib.Path(__file__).resolve().parents[2]
+        replay = load_replay_hasher(root / "Tools" / "Security" / "ReplayHasher.py")
+        xxh_cases = verify_xxh3(replay, xxhash_module, args.fuzz_count)
+        shuffle_cases = verify_shuffle_inverse(replay, args.fuzz_count)
+        print(f"XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK xxh3={xxh_cases} shuffle={shuffle_cases}")
+        return 0
+    finally:
+        try:
+            sys.path.remove(path_entry)
+        except ValueError:
+            pass
+
+        if previous_xxhash is _MISSING_MODULE:
+            sys.modules.pop("xxhash", None)
+        else:
+            sys.modules["xxhash"] = previous_xxhash
 
 
 if __name__ == "__main__":

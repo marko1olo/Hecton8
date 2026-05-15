@@ -67,6 +67,42 @@ namespace Hecton8.VFX
         /// <summary>Ultra-tier debris pool ceiling.</summary>
         public const int UltraDebrisCount = 1024;
 
+        /// <summary>Low-tier collision/integration step distance in meters.</summary>
+        public const float LowStepDistanceMeters = 0.40f;
+
+        /// <summary>Mid-tier collision/integration step distance in meters.</summary>
+        public const float MidStepDistanceMeters = 0.25f;
+
+        /// <summary>High-tier collision/integration step distance in meters.</summary>
+        public const float HighStepDistanceMeters = 0.16f;
+
+        /// <summary>Ultra-tier collision/integration step distance in meters.</summary>
+        public const float UltraStepDistanceMeters = 0.10f;
+
+        /// <summary>Low-tier fake depth/fog occlusion tap count.</summary>
+        public const int LowShadowTaps = 0;
+
+        /// <summary>Mid-tier fake depth/fog occlusion tap count.</summary>
+        public const int MidShadowTaps = 1;
+
+        /// <summary>High-tier fake depth/fog occlusion tap count.</summary>
+        public const int HighShadowTaps = 2;
+
+        /// <summary>Ultra-tier fake depth/fog occlusion tap count.</summary>
+        public const int UltraShadowTaps = 4;
+
+        /// <summary>Low-tier flow resample cadence in frames. Zero means disabled.</summary>
+        public const int LowFlowResampleFrames = 0;
+
+        /// <summary>Mid-tier flow resample cadence in frames.</summary>
+        public const int MidFlowResampleFrames = 8;
+
+        /// <summary>High-tier flow resample cadence in frames.</summary>
+        public const int HighFlowResampleFrames = 4;
+
+        /// <summary>Ultra-tier flow resample cadence in frames.</summary>
+        public const int UltraFlowResampleFrames = 2;
+
         /// <summary>Emergency MarineSnow multiplier encoded as permille to avoid float policy drift.</summary>
         public const int EmergencyMarineSnowMultiplierPermille = 500;
 
@@ -78,6 +114,18 @@ namespace Hecton8.VFX
 
         /// <summary>Homeostasis bit that disables non-critical VFX pools.</summary>
         public const ulong NonCriticalVfxMask = (ulong)SystemBit.NonCriticalVfx;
+
+        /// <summary>Prompt policy mask for sacrifice level 1.</summary>
+        public const ulong PressureLevel1DisableMask = ParticleAdvectionMask;
+
+        /// <summary>Prompt policy mask for sacrifice level 2.</summary>
+        public const ulong PressureLevel2DisableMask =
+            ParticleAdvectionMask |
+            VolumetricFogHighResMask |
+            NonCriticalVfxMask;
+
+        /// <summary>Prompt policy mask for emergency level 3.</summary>
+        public const ulong PressureLevel3DisableMask = PressureLevel2DisableMask;
 
         /// <summary>4x4 deterministic blue-noise fallback thresholds as half-ready float constants.</summary>
         public const float BlueNoise4x4_00 = 0.90625f;
@@ -140,6 +188,24 @@ namespace Hecton8.VFX
         }
 
         /// <summary>
+        /// Combines the observed homeostasis mask with the VFX prompt policy mask for the active pressure level.
+        /// </summary>
+        /// <param name="pressureLevel">Homeostasis pressure level.</param>
+        /// <param name="killSwitchMask">Observed homeostasis kill-switch mask.</param>
+        /// <returns>Effective VFX kill-switch mask.</returns>
+        public static ulong ResolvePolicyKillSwitchMask(byte pressureLevel, ulong killSwitchMask)
+        {
+            if (pressureLevel >= 3)
+                return killSwitchMask | PressureLevel3DisableMask;
+            if (pressureLevel >= 2)
+                return killSwitchMask | PressureLevel2DisableMask;
+            if (pressureLevel == 1)
+                return killSwitchMask | PressureLevel1DisableMask;
+
+            return killSwitchMask;
+        }
+
+        /// <summary>
         /// Resolves the pool capacity for the requested fluid class.
         /// </summary>
         /// <param name="qualityTier">Selected quality tier.</param>
@@ -167,6 +233,27 @@ namespace Hecton8.VFX
             VFXEmissionProfile.FluidType fluidType,
             ulong killSwitchMask)
         {
+            return ApplyKillSwitchCount(
+                activeParticleCount,
+                fluidType,
+                killSwitchMask,
+                byte.MaxValue);
+        }
+
+        /// <summary>
+        /// Applies pressure-aware emergency VFX kill switches to a resolved active particle count.
+        /// </summary>
+        /// <param name="activeParticleCount">Count after local density, render-scale, and VRAM pressure.</param>
+        /// <param name="fluidType">Fluid class emitted by the GPU particle owner.</param>
+        /// <param name="killSwitchMask">Effective VFX kill-switch mask.</param>
+        /// <param name="pressureLevel">Homeostasis pressure level.</param>
+        /// <returns>Final active count after pressure-aware kill switches.</returns>
+        public static int ApplyKillSwitchCount(
+            int activeParticleCount,
+            VFXEmissionProfile.FluidType fluidType,
+            ulong killSwitchMask,
+            byte pressureLevel)
+        {
             if (activeParticleCount <= 0)
                 return 0;
 
@@ -179,7 +266,10 @@ namespace Hecton8.VFX
                 return 0;
             }
 
-            return math.max(64, activeParticleCount * EmergencyMarineSnowMultiplierPermille / 1000);
+            if (pressureLevel >= 3)
+                return math.max(64, activeParticleCount * EmergencyMarineSnowMultiplierPermille / 1000);
+
+            return activeParticleCount;
         }
 
         /// <summary>
@@ -205,9 +295,9 @@ namespace Hecton8.VFX
             VfxComputeParticleBudgetCatalog.LowMarineSnowCount,
             VfxComputeParticleBudgetCatalog.LowBubbleCount,
             VfxComputeParticleBudgetCatalog.LowDebrisCount,
-            0.40f,
-            0,
-            0);
+            VfxComputeParticleBudgetCatalog.LowStepDistanceMeters,
+            VfxComputeParticleBudgetCatalog.LowShadowTaps,
+            VfxComputeParticleBudgetCatalog.LowFlowResampleFrames);
 
         /// <summary>Mid-tier budget row.</summary>
         public static readonly VfxComputeParticleBudget Mid = new VfxComputeParticleBudget(
@@ -215,9 +305,9 @@ namespace Hecton8.VFX
             VfxComputeParticleBudgetCatalog.MidMarineSnowCount,
             VfxComputeParticleBudgetCatalog.MidBubbleCount,
             VfxComputeParticleBudgetCatalog.MidDebrisCount,
-            0.25f,
-            1,
-            8);
+            VfxComputeParticleBudgetCatalog.MidStepDistanceMeters,
+            VfxComputeParticleBudgetCatalog.MidShadowTaps,
+            VfxComputeParticleBudgetCatalog.MidFlowResampleFrames);
 
         /// <summary>High-tier budget row.</summary>
         public static readonly VfxComputeParticleBudget High = new VfxComputeParticleBudget(
@@ -225,9 +315,9 @@ namespace Hecton8.VFX
             VfxComputeParticleBudgetCatalog.HighMarineSnowCount,
             VfxComputeParticleBudgetCatalog.HighBubbleCount,
             VfxComputeParticleBudgetCatalog.HighDebrisCount,
-            0.16f,
-            2,
-            4);
+            VfxComputeParticleBudgetCatalog.HighStepDistanceMeters,
+            VfxComputeParticleBudgetCatalog.HighShadowTaps,
+            VfxComputeParticleBudgetCatalog.HighFlowResampleFrames);
 
         /// <summary>Ultra-tier budget row.</summary>
         public static readonly VfxComputeParticleBudget Ultra = new VfxComputeParticleBudget(
@@ -235,9 +325,9 @@ namespace Hecton8.VFX
             VfxComputeParticleBudgetCatalog.UltraMarineSnowCount,
             VfxComputeParticleBudgetCatalog.UltraBubbleCount,
             VfxComputeParticleBudgetCatalog.UltraDebrisCount,
-            0.10f,
-            4,
-            2);
+            VfxComputeParticleBudgetCatalog.UltraStepDistanceMeters,
+            VfxComputeParticleBudgetCatalog.UltraShadowTaps,
+            VfxComputeParticleBudgetCatalog.UltraFlowResampleFrames);
 
         /// <summary>Total particle count budget.</summary>
         public readonly int ParticleCount;

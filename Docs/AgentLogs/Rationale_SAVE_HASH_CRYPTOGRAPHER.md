@@ -467,3 +467,39 @@ Rejected Alternatives: Ignoring the edge case was rejected because this tool exi
 Scalability potential: No runtime impact. All tiers retain the same save ABI; external-reference failure modes are now deterministic.
 
 Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 40
+
+Problem: `importlib.import_module("xxhash")` reuses `sys.modules["xxhash"]` if the verifier is called from an already-running Python process. That leaves a cached host module path able to bypass the explicit path insertion until the containment check catches it, and it makes embedded use less deterministic.
+
+Solution: Evict `sys.modules["xxhash"]` immediately after inserting the requested `--xxhash-path` and before importing the reference package.
+
+Rejected Alternatives: Depending on command-line process freshness was rejected because the verifier is a project tool and may be called from another Python harness. Keeping the cached module and relying only on containment rejection was rejected because the correct behavior is to load the requested isolated module.
+
+Scalability potential: No runtime impact. All tiers retain the same save ABI; embedded verifier calls are now isolated from prior Python process state.
+
+Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 41
+
+Problem: After loading the isolated `xxhash` module, embedded verifier calls left `sys.path` and `sys.modules["xxhash"]` mutated in the host Python process. That is harmless for a one-shot CLI process but unacceptable for a reusable verification tool.
+
+Solution: Saved the previous `xxhash` module state, inserted the requested path only for the import/verification window, and restored both `sys.path` and `sys.modules["xxhash"]` in a `finally` block on success and failure paths.
+
+Rejected Alternatives: Leaving process-state cleanup to callers was rejected because future verification harnesses should not need to know this tool's internal import mechanics. Removing the isolated import entirely was rejected because the external reference proof must stay independent of globally installed packages.
+
+Scalability potential: No runtime impact. All tiers retain the same save ABI; repeated embedded verifier calls no longer contaminate later tooling.
+
+Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 42
+
+Problem: `Status_SAVE_HASH_CRYPTOGRAPHER.md` still stated that the rationale trail was ordered through Decisions `1-37`, while the actual rationale file now contains Decisions `1-41`. The latest-suite line also included an older standalone sys.modules guard label that has been subsumed by the embedded cleanup success/failure probes.
+
+Solution: Corrected the status evidence text to Decisions `1-41` and aligned the latest-suite labels with the current verifier cleanup checks.
+
+Rejected Alternatives: Leaving stale evidence text was rejected because the status file is long-term memory for this task. Rewriting old append-only logs was rejected; the correction belongs in current status and a new log entry.
+
+Scalability potential: No runtime impact. Evidence hygiene only.
+
+Hardware Impact: 0 us frame impact. Documentation correction only.

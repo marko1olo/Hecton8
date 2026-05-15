@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "schemaRevision": 8,
+  "schemaRevision": 13,
   "schemaId": "hecton8.modding.signal_schema.v1",
   "status": "MOD_API_DEFINED_STATIC_SOURCE_RUNTIME_PENDING",
   "generatedBy": "MODDING_API_SCHEMA_BUILDER",
@@ -54,9 +54,9 @@
     "auditPath": "Docs/Modding/Signal_Audit_Matrix.md",
     "sourceFile": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
     "extractionCommand": "rg -o \"public struct [A-Za-z0-9_]+ : ISignal\" Assets/_Project/Scripts/Core/GlobalSignals.cs",
-    "uniqueISignalStructCount": 129,
+    "uniqueISignalStructCount": 134,
     "modProjectedISignalCount": 2,
-    "deniedByDefaultISignalCount": 127,
+    "deniedByDefaultISignalCount": 132,
     "projectedISignals": [
       "CombatDamageSignal",
       "WeatherChangedSignal"
@@ -450,6 +450,86 @@
     ],
     "runtimeBoundary": "Loader and SaveState are cold-path/managed-boundary contracts. They do not authorize direct SignalBus, NativeArray, DataVault, Unity object, or first-party save-owner mutation."
   },
+  "eventSubscriptionAudit": {
+    "auditPath": "Docs/Modding/Event_Subscription_Audit_Matrix.md",
+    "publicEventMethodCount": 7,
+    "nativeEventKindCount": 2,
+    "projectedEventKindCountIncludingNone": 3,
+    "nativeQueueBridgePublishLaneCount": 2,
+    "maxEventDispatchDepth": 5,
+    "callbackWatchdogMilliseconds": 2.0,
+    "subscriptionToken": "HectonEventSubscription",
+    "subscriptionTokenActiveProperty": "IsActive",
+    "subscriptionTokenDisposeMethod": "Dispose",
+    "nativeEventKinds": [
+      "Interaction",
+      "Crafting"
+    ],
+    "projectedEventKinds": [
+      "None",
+      "CombatDamage",
+      "WeatherChanged"
+    ],
+    "publicEventMethods": [
+      "Subscribe<TPayload>",
+      "SubscribeNative",
+      "SubscribeProjected",
+      "OnPlayerSpawned",
+      "OnBiomeChanged",
+      "Unsubscribe",
+      "Publish<TPayload>"
+    ],
+    "lifetimeRule": "Every subscription token returned to a mod must be disposed during IHectonMod.OnUnload; DisableManagedMod must isolate native, unmanaged, and projected subscribers by subscriber id."
+  },
+  "sampleModSpecs": [
+    {
+      "name": "Infinite O2",
+      "path": "Docs/Modding/Sample_InfiniteO2_Mod.md",
+      "status": "SAMPLE_SPEC_NO_RUNTIME_AUTHORITY",
+      "requiredApiVersion": 2,
+      "allowedCurrentBehavior": "mod-owned toggle, SaveState text persistence, read-only projected subscription, rejection listener",
+      "forbiddenCurrentBehavior": "direct player physiology, DataVault, Unity object, first-party save truth, SignalBus, NativeQueue, or NativeArray mutation",
+      "futureKernelRequired": "ModCommandOpcode.SurvivalOverride with PlayerSurvival owner, TTL clamp, telemetry, rejection, unload revocation, and runtime proof"
+    }
+  ],
+  "resourceContentAudit": {
+    "auditPath": "Docs/Modding/Resource_Content_Audit_Matrix.md",
+    "publicResourceMethodCount": 3,
+    "resourceKindCount": 3,
+    "resourceRegistryCapacity": 256,
+    "internalForbiddenAssetLoaderCount": 3,
+    "rawTextureMaxBytes": 8388608,
+    "rawTextureMaxDimension": 2048,
+    "publicContentMethodCount": 14,
+    "resourceResolutionShape": "hash_only_public_resolution_engine_owned_unity_asset_load",
+    "resourceKinds": [
+      "Prefab",
+      "AudioClip",
+      "Texture"
+    ],
+    "publicResourceMethods": [
+      "TryResolvePrefab",
+      "TryResolveAudioClip",
+      "TryResolveTexture"
+    ],
+    "publicContentMethods": [
+      "RegisterCustomItem",
+      "TryFindItem",
+      "RegisterRecipe",
+      "RegisterRecycleYield",
+      "ProcessRecycle",
+      "RegisterBuildable",
+      "TryFindBuildable",
+      "RegisterBiomeMutation",
+      "InjectTable",
+      "ShowInfo",
+      "ShowWarning",
+      "ShowCritical",
+      "RegisterSetting",
+      "RegisterSetting"
+    ],
+    "forbiddenUnityObjectReturnRule": "Public mod facade must return hashes, booleans, copied data, or diagnostics only; Unity asset/object references remain internal owner-only."
+  },
   "acceptanceGates": {
     "newProjectedSignalBus": [
       "schema entry added with source payload, capacity, event hash, field projection, and security notes",
@@ -476,20 +556,48 @@
       "CurrentAPIVersion or compatibility shim changes are reflected in schema and runtime playbook",
       "SaveState payload limits and namespace prefix are revalidated against SaveBinaryStorage",
       "Unity runtime smoke test confirms lifecycle callback order and unload disposal"
+    ],
+    "eventSubscriptionContractChange": [
+      "Event_Subscription_Audit_Matrix.md updated with event method, native kind, projected kind, bridge lane, and token lifetime changes",
+      "new native event kind proves immutable byte-copy source owner and callback-scoped span use",
+      "runtime playbook covers subscribe, dispatch, unsubscribe, disable, and post-unload no-callback proof",
+      "callback watchdog and dispatch depth caps are preserved or justified with profiler evidence"
+    ],
+    "generalChangeControl": [
+      "Change_Control_Checklist.md consulted and updated when a new mod API contract category appears",
+      "source, schema, relevant audit matrix, spec, runtime playbook, validator, status, rationale, and log agree before final report",
+      "static validator returns PASS after every contract edit",
+      "runtime VERIFIED status remains forbidden until Unity Console, GCMonitor, and profiler evidence exists"
+    ],
+    "sampleModSpecChange": [
+      "Sample_InfiniteO2_Mod.md remains source-signature compatible with HectonAPI public methods",
+      "sample keeps gameplay mutation disabled until an engine-owned command kernel exists",
+      "validator checks sample for RequiredAPIVersion, SaveState, projected subscription, rejection listener, and forbidden direct authority"
+    ],
+    "resourceContentContractChange": [
+      "Resource_Content_Audit_Matrix.md updated with resource methods, content methods, registry capacities, and raw texture caps",
+      "public facade still returns hash ids or cold overlay results, not Unity object references",
+      "raw texture and AssetBundle paths remain cold path and bounded",
+      "runtime playbook adds resource/content smoke proof before VERIFIED status"
     ]
   },
   "staticValidation": {
     "script": "Docs/Modding/Validate_Mod_API_Static.ps1",
+    "contractIndex": "Docs/Modding/README.md",
+    "sampleModSpec": "Docs/Modding/Sample_InfiniteO2_Mod.md",
+    "resourceContentAudit": "Docs/Modding/Resource_Content_Audit_Matrix.md",
     "runtimePlaybook": "Docs/Modding/Runtime_Verification_Playbook.md",
+    "changeControlChecklist": "Docs/Modding/Change_Control_Checklist.md",
     "commandAudit": "Docs/Modding/Command_Audit_Matrix.md",
     "apiSurfaceAudit": "Docs/Modding/API_Surface_Audit_Matrix.md",
     "payloadLayoutAudit": "Docs/Modding/Payload_Layout_Audit_Matrix.md",
     "loaderSaveAudit": "Docs/Modding/Loader_Save_Audit_Matrix.md",
+    "eventSubscriptionAudit": "Docs/Modding/Event_Subscription_Audit_Matrix.md",
     "lastKnownPass": {
       "date": "2026-05-15",
-      "sourceSignals": 129,
+      "sourceSignals": 134,
       "allowedProjectedSignals": 2,
-      "deniedByDefaultSignals": 127,
+      "deniedByDefaultSignals": 132,
       "acceptedCommandOpcodes": 8,
       "commandRejectReasons": 19,
       "publicApiSurfaces": 16,
@@ -507,6 +615,23 @@
       "lifecycleMethodCount": 3,
       "saveStatePublicMethodCount": 2,
       "modPayloadMaxBytes": 16352,
+      "publicEventMethodCount": 7,
+      "nativeEventKindCount": 2,
+      "projectedEventKindCountIncludingNone": 3,
+      "nativeQueueBridgePublishLaneCount": 2,
+      "maxEventDispatchDepth": 5,
+      "callbackWatchdogMilliseconds": 2.0,
+      "changeControlChecklistPresent": true,
+      "contractIndexPresent": true,
+      "sampleModSpecPresent": true,
+      "resourceContentAuditPresent": true,
+      "publicResourceMethodCount": 3,
+      "resourceKindCount": 3,
+      "resourceRegistryCapacity": 256,
+      "internalForbiddenAssetLoaderCount": 3,
+      "rawTextureMaxBytes": 8388608,
+      "rawTextureMaxDimension": 2048,
+      "publicContentMethodCount": 14,
       "projectionBridgeSignals": [
         "CombatDamageSignal",
         "WeatherChangedSignal"
@@ -522,6 +647,11 @@
       "API_Surface_Audit_Matrix.md contains every public facade surface, public method, public property, and internal forbidden method",
       "Payload_Layout_Audit_Matrix.md contains fixed payload size and field offset contracts",
       "Loader_Save_Audit_Matrix.md contains loader lifecycle, manifest, runtime info, and mod save-state contracts",
+      "Event_Subscription_Audit_Matrix.md contains public event methods, native event kinds, projected event kinds, callback caps, and subscription lifetime contracts",
+      "Change_Control_Checklist.md lists required files and proof for every mod API contract change type",
+      "README.md indexes all mod API contract files and states the runtime proof boundary",
+      "Sample_InfiniteO2_Mod.md defines a safe no-authority cheat mod sample",
+      "Resource_Content_Audit_Matrix.md records hash-only resources, cold content registration, asset caps, and forbidden Unity object returns",
       "Mod_API_Specification.md links the audit and runtime playbook",
       "Runtime_Verification_Playbook.md defines pass criteria before VERIFIED status"
     ]

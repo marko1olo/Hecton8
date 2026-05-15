@@ -151,3 +151,43 @@ Solution: Add `--check`, which runs source verification and manifest verificatio
 Rejected Alternatives: Relying on manual multi-flag command sequencing increases handoff error; embedding more metadata into `.h8bin` would bloat the runtime artifact.
 Scalability potential: Low/Middle/High/Ultra packaging can gate lore blobs with one deterministic command before handoff.
 Hardware Impact: 0 us/frame on i3/MX350; this is an offline packaging guard.
+
+## Decision 020 - Reject Malformed Blob Payload Intervals
+
+Problem: The blob parser validated individual payload bounds but did not explicitly reject overlapping payload intervals or truncated record tables.
+Solution: Add record-table bounds validation and a sorted interval pass that rejects any payload overlap. Add regression coverage for bad magic and overlapping record offsets.
+Rejected Alternatives: Letting zlib decompression fail later would produce weaker diagnostics and could hide malformed table data behind a decompressor error.
+Scalability potential: Low/Middle/High/Ultra loaders get a stricter offline packaging gate without changing runtime layout.
+Hardware Impact: 0 us/frame on i3/MX350; this validation is offline tooling only.
+
+## Decision 021 - Rebake After Second Concurrent Lore Source Change
+
+Problem: `Docs/Lore/Lore_Bible.md` changed again during continuation, changing the source digest, decompressed length, compressed payload length, and blob digest.
+Solution: Rebake through `python Tools\VerifyLore.py --bake --check --list`, re-extract by source path, and update persistent status/logs to source SHA-256 `6B529A808B25D18DA276747DB9149C61BACDF90A33DCC667FC85375DE13E69CD`.
+Rejected Alternatives: Keeping prior `9897`-byte blob data would leave the runtime artifact stale against the current lore source.
+Scalability potential: Low/Middle/High/Ultra continue using one stable record-table format while content changes safely rebake.
+Hardware Impact: 0 us/frame in this offline task; current blob is 10329 bytes, still negligible for target storage and memory budgets.
+
+## Decision 022 - Reject Nonzero Padding And Trailing Bytes
+
+Problem: Alignment gaps between payloads were expected to be zero padding, but the parser did not enforce that. It also allowed unreferenced trailing bytes if the manifest check was skipped.
+Solution: Add explicit zero-padding validation between payload intervals and reject any byte after the final payload. Add regression coverage for both cases.
+Rejected Alternatives: Allowing unreferenced bytes would make `--list` and extraction less strict than `--check`; relying only on the manifest digest would leave standalone blob parsing weaker.
+Scalability potential: Low/Middle/High/Ultra get deterministic binary packaging with no hidden payload bytes.
+Hardware Impact: 0 us/frame on i3/MX350; parser hardening is offline tooling only.
+
+## Decision 023 - Make Padding Test Independent Of One Zlib Length
+
+Problem: The nonzero-padding regression originally assumed the first small compressed payload would leave an alignment gap before the second payload.
+Solution: Search up to 32 deterministic payload variants until a real alignment gap exists, then corrupt that gap.
+Rejected Alternatives: Depending on a single zlib output length would make the test fragile across Python/zlib builds.
+Scalability potential: Low/Middle/High/Ultra unaffected; this keeps the offline guard stable across machines.
+Hardware Impact: 0 us/frame on i3/MX350; test harness only.
+
+## Decision 024 - Put Operator Runbook Outside Lore Source
+
+Problem: The binary layout and verification commands were recorded in status/log files, but handoff operators need a local runbook beside the artifact. Placing that runbook under `Docs/Lore` would make it source content and pollute the blob.
+Solution: Add `Data/Lore/README.md` with the binary layout, required commands, active record, and warning not to place notes under `Docs/Lore`.
+Rejected Alternatives: Putting the runbook in `Docs/Lore` would be compiled into the encyclopedia; relying on chat or status logs alone is weak handoff.
+Scalability potential: Low/Middle/High/Ultra packaging can verify and extract lore data without searching agent logs.
+Hardware Impact: 0 us/frame on i3/MX350; documentation only.

@@ -1,0 +1,6 @@
+path,issues,recommendations
+Art/TEXTURES/Detali/Soft Plume Noise - second try.png,DATA_TEXTURE_SRGB_ON,Disable sRGB; data/mask/detail maps must be sampled linear.
+Art/TEXTURES/Detali/soft_plume_noise_-_kakoy_to_seryy_nu_norm.png,NORMAL_SRGB_ON;NORMAL_NOT_TEXTURETYPE_NORMAL;DATA_TEXTURE_SRGB_ON,Disable sRGB for normal maps. | Set Texture Type to Normal Map. | Disable sRGB; data/mask/detail maps must be sampled linear.
+_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_bump.png,NORMAL_SRGB_ON;NORMAL_NOT_TEXTURETYPE_NORMAL,Disable sRGB for normal maps. | Set Texture Type to Normal Map.
+_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_norm.png,NORMAL_SRGB_ON;NORMAL_NOT_TEXTURETYPE_NORMAL,Disable sRGB for normal maps. | Set Texture Type to Normal Map.
+_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_spec.png,DATA_TEXTURE_SRGB_ON,Disable sRGB; data/mask/detail maps must be sampled linear.

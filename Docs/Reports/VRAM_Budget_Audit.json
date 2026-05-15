@@ -1,5 +1,5 @@
 {
-  "all_large_streaming_mips_off": 148,
+  "all_large_streaming_mips_off": 156,
   "atlas_suggestions": [
     {
       "combined_bc7_mib": 7.0,
@@ -62,10 +62,10 @@
       ]
     }
   ],
-  "bc7_full_mip_first_party_production_mib": 504.619,
-  "bc7_full_mip_runtime_candidate_mib": 1251.242,
-  "bc7_full_mip_total_mib": 1282.47,
-  "bc7_no_mip_mib": 961.853,
+  "bc7_full_mip_first_party_production_mib": 505.623,
+  "bc7_full_mip_runtime_candidate_mib": 1298.652,
+  "bc7_full_mip_total_mib": 1329.881,
+  "bc7_no_mip_mib": 997.41,
   "ci_expected_exit_code": 2,
   "critical_texture_pool_mib": 1228.8,
   "critical_vram_overflow": true,
@@ -73,15 +73,18 @@
   "first_party_large_streaming_mips_off": 50,
   "first_party_mesh_blendshapes_enabled_rows": 9,
   "first_party_mesh_compression_off_rows": 16,
+  "first_party_mesh_geometry_static_estimate_mib": 6.505,
   "first_party_mesh_import_risk_rows": 16,
   "first_party_mesh_read_write_enabled_rows": 0,
+  "first_party_texture_source_container_risk_rows": 2,
   "gate_reasons": [
     "CRITICAL_VRAM_OVERFLOW",
     "TEXTURE_VRAM_CRIMES",
     "MESH_REDLINE_OR_RISK"
   ],
-  "generated": "2026-05-15T04:48:21",
-  "generated_utc": "2026-05-15T01:48:21+00:00",
+  "generated": "2026-05-15T14:43:17",
+  "generated_utc": "2026-05-15T11:43:17+00:00",
+  "geometry_buffer_budget_mib": 200.0,
   "link_xml_notes": [
     "Assets/AstarPathfindingProject/link.xml assemblies=1 types=18 preserve_all=18",
     "Assets/link.xml assemblies=2 types=10 preserve_all=10",
@@ -90,7 +93,36 @@
   "link_xml_status": "LINK_XML_PRESENT_STATIC_ONLY",
   "mesh_blendshapes_enabled_rows": 269,
   "mesh_compression_off_rows": 19,
-  "mesh_count": 301,
+  "mesh_count": 302,
+  "mesh_extension_summary": [
+    {
+      "count": 300,
+      "extension": ".fbx",
+      "flagged_rows": 292,
+      "geometry_estimate_mib": 47.85,
+      "known_triangles": 321633,
+      "triangle_unreadable_rows": 0
+    },
+    {
+      "count": 1,
+      "extension": ".glb",
+      "flagged_rows": 0,
+      "geometry_estimate_mib": 0.193,
+      "known_triangles": 1298,
+      "triangle_unreadable_rows": 0
+    },
+    {
+      "count": 1,
+      "extension": ".obj",
+      "flagged_rows": 1,
+      "geometry_estimate_mib": 0.002,
+      "known_triangles": 12,
+      "triangle_unreadable_rows": 0
+    }
+  ],
+  "mesh_geometry_single_asset_redline_mib": 16.0,
+  "mesh_geometry_single_asset_redline_rows": 1,
+  "mesh_geometry_static_estimate_mib": 48.045,
   "mesh_import_colliders_enabled_rows": 0,
   "mesh_import_risk_rows": 293,
   "mesh_read_write_enabled_rows": 275,
@@ -100,6 +132,7 @@
       "flags": [
         "MESH_COMPRESSION_OFF_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.016,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -115,6 +148,7 @@
       "flags": [
         "MESH_COMPRESSION_OFF_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.1,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -130,6 +164,7 @@
       "flags": [
         "MESH_COMPRESSION_OFF_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "0",
@@ -145,6 +180,7 @@
       "flags": [
         "MESH_COMPRESSION_OFF_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.079,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -160,6 +196,7 @@
       "flags": [
         "MESH_COMPRESSION_OFF_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.11,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -175,6 +212,7 @@
       "flags": [
         "MESH_COMPRESSION_OFF_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.116,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -190,6 +228,7 @@
       "flags": [
         "MESH_COMPRESSION_OFF_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.087,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -206,6 +245,7 @@
         "MESH_COMPRESSION_OFF_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 1.488,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -222,6 +262,7 @@
         "MESH_COMPRESSION_OFF_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.454,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -238,6 +279,7 @@
         "MESH_COMPRESSION_OFF_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.527,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -254,6 +296,7 @@
         "MESH_COMPRESSION_OFF_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.97,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -270,6 +313,7 @@
         "MESH_COMPRESSION_OFF_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.601,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -286,6 +330,7 @@
         "MESH_COMPRESSION_OFF_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.527,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -302,6 +347,7 @@
         "MESH_COMPRESSION_OFF_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.312,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -318,6 +364,7 @@
         "MESH_COMPRESSION_OFF_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.181,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -334,6 +381,7 @@
         "MESH_COMPRESSION_OFF_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.744,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -350,6 +398,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_COMPRESSION_OFF_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.002,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "0",
@@ -363,11 +412,13 @@
     },
     {
       "flags": [
+        "MESH_GEOMETRY_ESTIMATE_GT_16MIB_STATIC",
         "MESH_GT_80K_ABSOLUTE_STATIC",
         "MESH_REDLINE_GT_50K_NO_LOD",
         "MESH_COMPRESSION_OFF_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 18.99,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "0",
@@ -384,6 +435,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.009,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -400,6 +452,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.011,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -416,6 +469,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.015,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -432,6 +486,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.007,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -448,6 +503,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.001,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -464,6 +520,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.002,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -480,6 +537,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.002,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -496,6 +554,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -512,6 +571,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -528,6 +588,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -544,6 +605,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -560,6 +622,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -576,6 +639,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -592,6 +656,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -608,6 +673,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -624,6 +690,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -640,6 +707,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -656,6 +724,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -672,6 +741,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -688,6 +758,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -704,6 +775,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -720,6 +792,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -736,6 +809,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -752,6 +826,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -768,6 +843,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -784,6 +860,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -800,6 +877,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -816,6 +894,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -832,6 +911,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -848,6 +928,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -864,6 +945,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -880,6 +962,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.001,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -896,6 +979,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -912,6 +996,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -928,6 +1013,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -944,6 +1030,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -960,6 +1047,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -976,6 +1064,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -992,6 +1081,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.156,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1008,6 +1098,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.334,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1024,6 +1115,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.144,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1040,6 +1132,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.136,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1056,6 +1149,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.379,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1072,6 +1166,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.332,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1088,6 +1183,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.065,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1104,6 +1200,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.046,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1120,6 +1217,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.088,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1136,6 +1234,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.088,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1152,6 +1251,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.028,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1168,6 +1268,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.051,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1184,6 +1285,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.038,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1200,6 +1302,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.074,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1216,6 +1319,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.077,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1232,6 +1336,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.104,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1248,6 +1353,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.111,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1264,6 +1370,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.04,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1280,6 +1387,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.012,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1296,6 +1404,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.032,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1312,6 +1421,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.013,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1328,6 +1438,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.069,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1344,6 +1455,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.112,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1360,6 +1472,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1376,6 +1489,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.015,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1392,6 +1506,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.043,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1408,6 +1523,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.034,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1424,6 +1540,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.005,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1440,6 +1557,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1456,6 +1574,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.016,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1472,6 +1591,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1488,6 +1608,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.074,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1504,6 +1625,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.012,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1520,6 +1642,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.038,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1536,6 +1659,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.008,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1552,6 +1676,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.187,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1568,6 +1693,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.112,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1584,6 +1710,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.18,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1600,6 +1727,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.103,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1616,6 +1744,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.149,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1632,6 +1761,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.087,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1648,6 +1778,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.058,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1664,6 +1795,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.083,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1680,6 +1812,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.033,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1696,6 +1829,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.088,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1712,6 +1846,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.4,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1728,6 +1863,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.008,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1744,6 +1880,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.181,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1760,6 +1897,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.292,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1776,6 +1914,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.007,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1792,6 +1931,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.123,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1808,6 +1948,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 1.097,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1824,6 +1965,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.266,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1840,6 +1982,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.226,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1856,6 +1999,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.041,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1872,6 +2016,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.088,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1888,6 +2033,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.089,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1904,6 +2050,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.032,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1920,6 +2067,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.038,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1936,6 +2084,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.061,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1952,6 +2101,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.037,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1968,6 +2118,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.195,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -1984,6 +2135,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.195,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2000,6 +2152,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.041,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2016,6 +2169,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.007,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2032,6 +2186,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.005,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2048,6 +2203,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.004,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2064,6 +2220,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.021,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2080,6 +2237,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.026,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2096,6 +2254,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.037,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2112,6 +2271,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.042,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2128,6 +2288,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.03,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2144,6 +2305,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.035,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2160,6 +2322,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.076,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2176,6 +2339,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.086,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2192,6 +2356,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.076,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2208,6 +2373,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.091,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2224,6 +2390,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.057,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2240,6 +2407,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.026,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2256,6 +2424,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.024,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2272,6 +2441,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.235,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2288,6 +2458,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.067,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2304,6 +2475,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.04,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2320,6 +2492,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.04,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2336,6 +2509,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.039,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2352,6 +2526,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.276,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2368,6 +2543,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.588,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2384,6 +2560,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.46,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2400,6 +2577,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.286,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2416,6 +2594,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.009,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2432,6 +2611,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.037,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2448,6 +2628,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.296,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2464,6 +2645,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.772,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2480,6 +2662,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.446,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2496,6 +2679,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.102,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2512,6 +2696,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.099,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2528,6 +2713,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.102,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2544,6 +2730,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.052,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2560,6 +2747,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.052,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2576,6 +2764,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.199,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2592,6 +2781,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.027,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2608,6 +2798,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.027,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2624,6 +2815,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.025,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2640,6 +2832,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.02,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2656,6 +2849,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.02,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2672,6 +2866,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.019,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2688,6 +2883,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.002,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2704,6 +2900,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.015,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2720,6 +2917,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.01,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2736,6 +2934,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.013,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2752,6 +2951,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.046,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2768,6 +2968,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.033,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2784,6 +2985,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.154,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2800,6 +3002,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.003,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2816,6 +3019,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.012,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2832,6 +3036,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.001,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2848,6 +3053,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.052,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2864,6 +3070,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.025,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2880,6 +3087,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.025,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2896,6 +3104,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.025,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2912,6 +3121,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.1,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2928,6 +3138,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.003,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2944,6 +3155,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.041,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2959,6 +3171,7 @@
       "flags": [
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.027,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2975,6 +3188,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.005,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -2991,6 +3205,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.038,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3007,6 +3222,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.018,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3023,6 +3239,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.004,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3038,6 +3255,7 @@
       "flags": [
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.031,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3053,6 +3271,7 @@
       "flags": [
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.014,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3069,6 +3288,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.014,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3085,6 +3305,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "0",
@@ -3101,6 +3322,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.023,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3117,6 +3339,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.028,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3133,6 +3356,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.026,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3149,6 +3373,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "0",
@@ -3165,6 +3390,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.012,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3181,6 +3407,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.001,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3197,6 +3424,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.052,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3213,6 +3441,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.025,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3229,6 +3458,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.025,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3245,6 +3475,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.025,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3261,6 +3492,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.003,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3277,6 +3509,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.041,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3292,6 +3525,7 @@
       "flags": [
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.027,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3308,6 +3542,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.005,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3324,6 +3559,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.038,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3340,6 +3576,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.018,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3356,6 +3593,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.004,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3371,6 +3609,7 @@
       "flags": [
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.031,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3386,6 +3625,7 @@
       "flags": [
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.014,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3402,6 +3642,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.014,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3418,6 +3659,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.023,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3434,6 +3676,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.028,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3450,6 +3693,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.026,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3466,6 +3710,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.0,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "0",
@@ -3482,6 +3727,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.087,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3498,6 +3744,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.088,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3514,6 +3761,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.012,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3530,6 +3778,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.012,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3546,6 +3795,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.005,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3562,6 +3812,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.001,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3578,6 +3829,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.048,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3594,6 +3846,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.324,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3610,6 +3863,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.28,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3626,6 +3880,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.331,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3642,6 +3897,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.177,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3658,6 +3914,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.057,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3674,6 +3931,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.046,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3690,6 +3948,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.013,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3706,6 +3965,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.004,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3722,6 +3982,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.008,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3738,6 +3999,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.01,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3754,6 +4016,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.004,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3770,6 +4033,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.026,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3786,6 +4050,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.027,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3802,6 +4067,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.001,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3818,6 +4084,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.228,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3833,6 +4100,7 @@
       "flags": [
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.05,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3849,6 +4117,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.298,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3865,6 +4134,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.237,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3881,6 +4151,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.027,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3897,6 +4168,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.014,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3913,6 +4185,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.131,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3929,6 +4202,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.042,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3945,6 +4219,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.033,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3961,6 +4236,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 1.901,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3977,6 +4253,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.098,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -3993,6 +4270,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.013,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4009,6 +4287,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.008,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4024,6 +4303,7 @@
       "flags": [
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.042,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4040,6 +4320,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.021,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4055,6 +4336,7 @@
       "flags": [
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.209,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4071,6 +4353,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.143,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4087,6 +4370,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.091,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4102,6 +4386,7 @@
       "flags": [
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.045,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4117,6 +4402,7 @@
       "flags": [
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.078,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4133,6 +4419,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.131,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4149,6 +4436,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.072,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4165,6 +4453,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.063,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4181,6 +4470,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.014,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4197,6 +4487,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.802,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4213,6 +4504,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.082,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4229,6 +4521,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.067,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4245,6 +4538,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.017,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4261,6 +4555,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.054,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4277,6 +4572,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.105,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4293,6 +4589,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.527,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4309,6 +4606,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.516,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4324,6 +4622,7 @@
       "flags": [
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.024,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4340,6 +4639,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.041,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4356,6 +4656,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.003,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4372,6 +4673,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.016,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4388,6 +4690,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.006,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4404,6 +4707,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.003,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4419,6 +4723,7 @@
       "flags": [
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.035,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4435,6 +4740,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.03,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4450,6 +4756,7 @@
       "flags": [
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.035,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4465,6 +4772,7 @@
       "flags": [
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.041,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4481,6 +4789,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.03,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4497,6 +4806,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.035,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4513,6 +4823,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.034,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4529,6 +4840,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.015,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4545,6 +4857,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.069,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4561,6 +4874,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.048,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4577,6 +4891,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.067,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4593,6 +4908,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.003,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4609,6 +4925,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.012,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4625,6 +4942,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.002,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4641,6 +4959,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.038,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4657,6 +4976,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.027,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4673,6 +4993,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.003,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4689,6 +5010,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.007,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4705,6 +5027,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.007,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4721,6 +5044,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.013,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4737,6 +5061,7 @@
         "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
         "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.043,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "1",
@@ -4752,6 +5077,7 @@
       "flags": [
         "MESH_COMPRESSION_OFF_STATIC_SUSPECT"
       ],
+      "geometry_estimate_mib": 0.479,
       "lod_detected": false,
       "meta_add_colliders": "0",
       "meta_generate_secondary_uv": "0",
@@ -4778,13 +5104,79 @@
     "Obj",
     "Temp"
   ],
-  "texture_count": 1645,
-  "texture_flagged_rows": 939,
-  "texture_vram_crime_rows": 800,
+  "texture_count": 1668,
+  "texture_extension_summary": [
+    {
+      "bc7_full_mip_mib": 1132.123,
+      "count": 1592,
+      "extension": ".png",
+      "source_container_risk_rows": 0,
+      "vram_crime_rows": 799
+    },
+    {
+      "bc7_full_mip_mib": 119.118,
+      "count": 37,
+      "extension": ".jpg",
+      "source_container_risk_rows": 0,
+      "vram_crime_rows": 1
+    },
+    {
+      "bc7_full_mip_mib": 38.672,
+      "count": 10,
+      "extension": ".tga",
+      "source_container_risk_rows": 10,
+      "vram_crime_rows": 1
+    },
+    {
+      "bc7_full_mip_mib": 5.333,
+      "count": 2,
+      "extension": ".hdr",
+      "source_container_risk_rows": 2,
+      "vram_crime_rows": 0
+    },
+    {
+      "bc7_full_mip_mib": 2.172,
+      "count": 5,
+      "extension": ".psd",
+      "source_container_risk_rows": 5,
+      "vram_crime_rows": 0
+    },
+    {
+      "bc7_full_mip_mib": 0.879,
+      "count": 1,
+      "extension": ".gif",
+      "source_container_risk_rows": 1,
+      "vram_crime_rows": 0
+    },
+    {
+      "bc7_full_mip_mib": 0.25,
+      "count": 2,
+      "extension": ".exr",
+      "source_container_risk_rows": 2,
+      "vram_crime_rows": 0
+    },
+    {
+      "bc7_full_mip_mib": 0.083,
+      "count": 2,
+      "extension": ".tif",
+      "source_container_risk_rows": 2,
+      "vram_crime_rows": 0
+    },
+    {
+      "bc7_full_mip_mib": 0.021,
+      "count": 1,
+      "extension": ".bmp",
+      "source_container_risk_rows": 1,
+      "vram_crime_rows": 0
+    }
+  ],
+  "texture_flagged_rows": 962,
+  "texture_source_container_risk_rows": 23,
+  "texture_vram_crime_rows": 801,
   "top_non_first_party_runtime_directories": [
     {
-      "bc7_full_mip_mib": 483.667,
-      "count": 67,
+      "bc7_full_mip_mib": 525.0,
+      "count": 76,
       "directory": "Assets/ScifiFacility/Textures",
       "vram_crime_rows": 11
     },

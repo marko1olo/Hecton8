@@ -16,18 +16,26 @@ function Assert-True([bool]$Condition, [string]$Message) {
 }
 
 $schemaPath = Join-Path $RepoRoot 'Docs\Modding\Signal_Schema.json'
+$contractIndexPath = Join-Path $RepoRoot 'Docs\Modding\README.md'
 $specPath = Join-Path $RepoRoot 'Docs\Modding\Mod_API_Specification.md'
+$sampleModSpecPath = Join-Path $RepoRoot 'Docs\Modding\Sample_InfiniteO2_Mod.md'
 $auditPath = Join-Path $RepoRoot 'Docs\Modding\Signal_Audit_Matrix.md'
 $commandAuditPath = Join-Path $RepoRoot 'Docs\Modding\Command_Audit_Matrix.md'
 $apiSurfaceAuditPath = Join-Path $RepoRoot 'Docs\Modding\API_Surface_Audit_Matrix.md'
 $payloadLayoutAuditPath = Join-Path $RepoRoot 'Docs\Modding\Payload_Layout_Audit_Matrix.md'
 $loaderSaveAuditPath = Join-Path $RepoRoot 'Docs\Modding\Loader_Save_Audit_Matrix.md'
+$eventSubscriptionAuditPath = Join-Path $RepoRoot 'Docs\Modding\Event_Subscription_Audit_Matrix.md'
+$resourceContentAuditPath = Join-Path $RepoRoot 'Docs\Modding\Resource_Content_Audit_Matrix.md'
+$changeControlChecklistPath = Join-Path $RepoRoot 'Docs\Modding\Change_Control_Checklist.md'
 $runtimePlaybookPath = Join-Path $RepoRoot 'Docs\Modding\Runtime_Verification_Playbook.md'
 $signalsPath = Join-Path $RepoRoot 'Assets\_Project\Scripts\Core\GlobalSignals.cs'
 $projectionPath = Join-Path $RepoRoot 'Assets\_Project\Scripts\ModdingAPI\ModEventProjectionBridge.cs'
 $commandDispatcherPath = Join-Path $RepoRoot 'Assets\_Project\Scripts\ModdingAPI\ModCommandDispatcher.cs'
 $hectonApiPath = Join-Path $RepoRoot 'Assets\_Project\Scripts\ModdingAPI\HectonAPI.cs'
+$hectonEventBusPath = Join-Path $RepoRoot 'Assets\_Project\Scripts\ModdingAPI\HectonEventBus.cs'
 $eventContractsPath = Join-Path $RepoRoot 'Assets\_Project\Scripts\ModdingAPI\ModEventContracts.cs'
+$resourceProxyPath = Join-Path $RepoRoot 'Assets\_Project\Scripts\ModdingAPI\IModResourceProxy.cs'
+$modAssetManagerPath = Join-Path $RepoRoot 'Assets\_Project\Scripts\ModdingAPI\ModAssetManager.cs'
 $spatialContractsPath = Join-Path $RepoRoot 'Assets\_Project\Scripts\ModdingAPI\ModSpatialContracts.cs'
 $modLoaderPath = Join-Path $RepoRoot 'Assets\_Project\Scripts\ModdingAPI\ModLoader.cs'
 $iHectonModPath = Join-Path $RepoRoot 'Assets\_Project\Scripts\ModdingAPI\IHectonMod.cs'
@@ -38,18 +46,26 @@ $saveBinaryStoragePath = Join-Path $RepoRoot 'Assets\_Project\Scripts\SaveBinary
 $saveBinaryPayloadCodecPath = Join-Path $RepoRoot 'Assets\_Project\Scripts\SaveBinaryPayloadCodec.cs'
 
 Assert-True (Test-Path -LiteralPath $schemaPath) "Missing schema: $schemaPath"
+Assert-True (Test-Path -LiteralPath $contractIndexPath) "Missing modding contract index: $contractIndexPath"
 Assert-True (Test-Path -LiteralPath $specPath) "Missing spec: $specPath"
+Assert-True (Test-Path -LiteralPath $sampleModSpecPath) "Missing sample mod spec: $sampleModSpecPath"
 Assert-True (Test-Path -LiteralPath $auditPath) "Missing audit matrix: $auditPath"
 Assert-True (Test-Path -LiteralPath $commandAuditPath) "Missing command audit matrix: $commandAuditPath"
 Assert-True (Test-Path -LiteralPath $apiSurfaceAuditPath) "Missing API surface audit matrix: $apiSurfaceAuditPath"
 Assert-True (Test-Path -LiteralPath $payloadLayoutAuditPath) "Missing payload layout audit matrix: $payloadLayoutAuditPath"
 Assert-True (Test-Path -LiteralPath $loaderSaveAuditPath) "Missing loader/save audit matrix: $loaderSaveAuditPath"
+Assert-True (Test-Path -LiteralPath $eventSubscriptionAuditPath) "Missing event subscription audit matrix: $eventSubscriptionAuditPath"
+Assert-True (Test-Path -LiteralPath $resourceContentAuditPath) "Missing resource/content audit matrix: $resourceContentAuditPath"
+Assert-True (Test-Path -LiteralPath $changeControlChecklistPath) "Missing change control checklist: $changeControlChecklistPath"
 Assert-True (Test-Path -LiteralPath $runtimePlaybookPath) "Missing runtime verification playbook: $runtimePlaybookPath"
 Assert-True (Test-Path -LiteralPath $signalsPath) "Missing signal source: $signalsPath"
 Assert-True (Test-Path -LiteralPath $projectionPath) "Missing projection bridge: $projectionPath"
 Assert-True (Test-Path -LiteralPath $commandDispatcherPath) "Missing command dispatcher: $commandDispatcherPath"
 Assert-True (Test-Path -LiteralPath $hectonApiPath) "Missing HectonAPI facade: $hectonApiPath"
+Assert-True (Test-Path -LiteralPath $hectonEventBusPath) "Missing HectonEventBus source: $hectonEventBusPath"
 Assert-True (Test-Path -LiteralPath $eventContractsPath) "Missing event contracts: $eventContractsPath"
+Assert-True (Test-Path -LiteralPath $resourceProxyPath) "Missing resource proxy source: $resourceProxyPath"
+Assert-True (Test-Path -LiteralPath $modAssetManagerPath) "Missing mod asset manager source: $modAssetManagerPath"
 Assert-True (Test-Path -LiteralPath $spatialContractsPath) "Missing spatial contracts: $spatialContractsPath"
 Assert-True (Test-Path -LiteralPath $modLoaderPath) "Missing mod loader: $modLoaderPath"
 Assert-True (Test-Path -LiteralPath $iHectonModPath) "Missing IHectonMod contract: $iHectonModPath"
@@ -60,11 +76,16 @@ Assert-True (Test-Path -LiteralPath $saveBinaryStoragePath) "Missing save binary
 Assert-True (Test-Path -LiteralPath $saveBinaryPayloadCodecPath) "Missing save binary payload codec source: $saveBinaryPayloadCodecPath"
 
 $schema = Get-Content -Raw -LiteralPath $schemaPath | ConvertFrom-Json
+$contractIndexText = Get-Content -Raw -LiteralPath $contractIndexPath
+$sampleModSpecText = Get-Content -Raw -LiteralPath $sampleModSpecPath
 $signalSource = Get-Content -Raw -LiteralPath $signalsPath
 $projectionSource = Get-Content -Raw -LiteralPath $projectionPath
 $commandDispatcherSource = Get-Content -Raw -LiteralPath $commandDispatcherPath
 $hectonApiSource = Get-Content -Raw -LiteralPath $hectonApiPath
+$hectonEventBusSource = Get-Content -Raw -LiteralPath $hectonEventBusPath
 $eventContractsSource = Get-Content -Raw -LiteralPath $eventContractsPath
+$resourceProxySource = Get-Content -Raw -LiteralPath $resourceProxyPath
+$modAssetManagerSource = Get-Content -Raw -LiteralPath $modAssetManagerPath
 $spatialContractsSource = Get-Content -Raw -LiteralPath $spatialContractsPath
 $modLoaderSource = Get-Content -Raw -LiteralPath $modLoaderPath
 $iHectonModSource = Get-Content -Raw -LiteralPath $iHectonModPath
@@ -78,6 +99,9 @@ $commandAuditText = Get-Content -Raw -LiteralPath $commandAuditPath
 $apiSurfaceAuditText = Get-Content -Raw -LiteralPath $apiSurfaceAuditPath
 $payloadLayoutAuditText = Get-Content -Raw -LiteralPath $payloadLayoutAuditPath
 $loaderSaveAuditText = Get-Content -Raw -LiteralPath $loaderSaveAuditPath
+$eventSubscriptionAuditText = Get-Content -Raw -LiteralPath $eventSubscriptionAuditPath
+$resourceContentAuditText = Get-Content -Raw -LiteralPath $resourceContentAuditPath
+$changeControlChecklistText = Get-Content -Raw -LiteralPath $changeControlChecklistPath
 $runtimePlaybookText = Get-Content -Raw -LiteralPath $runtimePlaybookPath
 $specText = Get-Content -Raw -LiteralPath $specPath
 
@@ -191,6 +215,64 @@ $protectedBlockMatch = [regex]::Match($saveBinaryPayloadCodecSource, 'internal\s
 Assert-True $protectedBlockMatch.Success 'Missing SaveBinaryPayloadCodec.ProtectedLz4BlockSizeBytes.'
 $modPayloadBlockSize = [int]$protectedBlockMatch.Groups[1].Value * [int]$protectedBlockMatch.Groups[2].Value
 $modPayloadMaxBytes = $modPayloadBlockSize - $modPayloadHeaderSize
+$nativeEventKindNames = Get-EnumNames $eventContractsSource 'HectonNativeEventKind'
+$projectedEventKindNames = Get-EnumNames $eventContractsSource 'ModEventKind'
+$publicEventMethodPatterns = [ordered]@{
+    'Subscribe<TPayload>' = 'public\s+static\s+HectonEventSubscription\s+Subscribe<TPayload>\s*\('
+    'SubscribeNative' = 'public\s+static\s+HectonEventSubscription\s+SubscribeNative\s*\('
+    'SubscribeProjected' = 'public\s+static\s+HectonEventSubscription\s+SubscribeProjected\s*\('
+    'OnPlayerSpawned' = 'public\s+static\s+HectonEventSubscription\s+OnPlayerSpawned\s*\('
+    'OnBiomeChanged' = 'public\s+static\s+HectonEventSubscription\s+OnBiomeChanged\s*\('
+    'Unsubscribe' = 'public\s+static\s+void\s+Unsubscribe\s*\('
+    'Publish<TPayload>' = 'public\s+static\s+void\s+Publish<TPayload>\s*\('
+}
+$publicEventMethodNames = @()
+foreach ($entry in $publicEventMethodPatterns.GetEnumerator()) {
+    Assert-True ([regex]::IsMatch($hectonApiSource, $entry.Value)) "Missing public event method pattern: $($entry.Key)"
+    $publicEventMethodNames += $entry.Key
+}
+$nativeBridgePublishLanes = @([regex]::Matches($hectonEventBusSource, 'PublishNativePayload\(HectonNativeEventKind\.([A-Za-z0-9_]+),') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
+$maxDispatchDepthMatch = [regex]::Match($hectonEventBusSource, 'private\s+const\s+int\s+MaxEventDispatchDepth\s*=\s*(\d+);')
+Assert-True $maxDispatchDepthMatch.Success 'Missing HectonEventBus.MaxEventDispatchDepth.'
+$maxDispatchDepth = [int]$maxDispatchDepthMatch.Groups[1].Value
+$watchdogSecondsMatch = [regex]::Match($hectonEventBusSource, 'Stopwatch\.Frequency\s*\*\s*([0-9.]+)d')
+Assert-True $watchdogSecondsMatch.Success 'Missing HectonEventBus callback watchdog seconds.'
+$callbackWatchdogMilliseconds = [double]$watchdogSecondsMatch.Groups[1].Value * 1000.0
+$subscriptionTokenHasIsActive = [regex]::IsMatch($hectonEventBusSource, 'public\s+bool\s+IsActive\s*=>')
+$subscriptionTokenHasDispose = [regex]::IsMatch($hectonEventBusSource, 'public\s+void\s+Dispose\s*\(')
+$publicResourceMethodNames = @([regex]::Matches($hectonApiSource, '(?m)^\s*public\s+static\s+bool\s+(TryResolve(?:Prefab|AudioClip|Texture))\s*\(') | ForEach-Object { $_.Groups[1].Value } | Sort-Object)
+$resourceKindNames = Get-EnumNames $resourceProxySource 'ModResourceKind'
+$resourceCapacityMatch = [regex]::Match($resourceProxySource, 'private\s+const\s+int\s+ResourceCapacity\s*=\s*(\d+);')
+Assert-True $resourceCapacityMatch.Success 'Missing ModResourceRegistry.ResourceCapacity.'
+$resourceRegistryCapacity = [int]$resourceCapacityMatch.Groups[1].Value
+$internalAssetLoaderNames = @([regex]::Matches($hectonApiSource, '(?m)^\s*internal\s+static\s+(?:GameObject|AudioClip|Texture2D)\s+(Load(?:Prefab|AudioClip|Texture))\s*\(') | ForEach-Object { $_.Groups[1].Value } | Sort-Object)
+$rawTextureBytesMatch = [regex]::Match($modAssetManagerSource, 'private\s+const\s+long\s+MaxRawTextureBytes\s*=\s*(\d+)L\s*\*\s*(\d+)L\s*\*\s*(\d+)L;')
+Assert-True $rawTextureBytesMatch.Success 'Missing ModAssetManager.MaxRawTextureBytes.'
+$rawTextureMaxBytes = [long]$rawTextureBytesMatch.Groups[1].Value * [long]$rawTextureBytesMatch.Groups[2].Value * [long]$rawTextureBytesMatch.Groups[3].Value
+$rawTextureDimensionMatch = [regex]::Match($modAssetManagerSource, 'private\s+const\s+int\s+MaxRawTextureDimension\s*=\s*(\d+);')
+Assert-True $rawTextureDimensionMatch.Success 'Missing ModAssetManager.MaxRawTextureDimension.'
+$rawTextureMaxDimension = [int]$rawTextureDimensionMatch.Groups[1].Value
+$contentMethodPatterns = [ordered]@{
+    'RegisterCustomItem' = 'public\s+static\s+bool\s+RegisterCustomItem\s*\('
+    'TryFindItem' = 'public\s+static\s+bool\s+TryFindItem\s*\('
+    'RegisterRecipe' = 'public\s+static\s+bool\s+RegisterRecipe\s*\('
+    'RegisterRecycleYield' = 'public\s+static\s+bool\s+RegisterRecycleYield\s*\('
+    'ProcessRecycle' = 'public\s+static\s+bool\s+ProcessRecycle\s*\('
+    'RegisterBuildable' = 'public\s+static\s+bool\s+RegisterBuildable\s*\('
+    'TryFindBuildable' = 'public\s+static\s+bool\s+TryFindBuildable\s*\('
+    'RegisterBiomeMutation' = 'public\s+static\s+bool\s+RegisterBiomeMutation\s*\('
+    'InjectTable' = 'public\s+static\s+void\s+InjectTable\s*\('
+    'ShowInfo' = 'public\s+static\s+void\s+ShowInfo\s*\('
+    'ShowWarning' = 'public\s+static\s+void\s+ShowWarning\s*\('
+    'ShowCritical' = 'public\s+static\s+void\s+ShowCritical\s*\('
+    'RegisterSettingBool' = 'public\s+static\s+void\s+RegisterSetting\s*\(\s*string\s+modId,\s*string\s+settingName,\s*bool\s+defaultValue'
+    'RegisterSettingFloat' = 'public\s+static\s+void\s+RegisterSetting\s*\(\s*string\s+modId,\s*string\s+settingName,\s*float\s+defaultValue'
+}
+$publicContentMethodNames = @()
+foreach ($entry in $contentMethodPatterns.GetEnumerator()) {
+    Assert-True ([regex]::IsMatch($hectonApiSource, $entry.Value, 'Singleline')) "Missing public content method pattern: $($entry.Key)"
+    $publicContentMethodNames += $entry.Key
+}
 
 Assert-True ($schema.status -eq 'MOD_API_DEFINED_STATIC_SOURCE_RUNTIME_PENDING') "Unexpected schema status: $($schema.status)"
 Assert-True ($schema.globalRules.directSignalBusAccessForMods -eq $false) 'Schema allows direct SignalBus access.'
@@ -199,6 +281,10 @@ Assert-True ($schema.globalRules.directDataVaultAccessForMods -eq $false) 'Schem
 Assert-True ($schema.globalRules.directUnityObjectReferencesForMods -eq $false) 'Schema allows direct Unity object references.'
 Assert-True ($schema.globalRules.stringEventNames -eq $false) 'Schema allows string event names.'
 Assert-True ($schema.globalRules.jsonHotPathEvents -eq $false) 'Schema allows JSON hot-path events.'
+Assert-True ($schema.staticValidation.contractIndex -eq 'Docs/Modding/README.md') 'Schema static validation does not point at Docs/Modding/README.md.'
+Assert-True ($schema.staticValidation.changeControlChecklist -eq 'Docs/Modding/Change_Control_Checklist.md') 'Schema static validation does not point at Change_Control_Checklist.md.'
+Assert-True ($schema.staticValidation.sampleModSpec -eq 'Docs/Modding/Sample_InfiniteO2_Mod.md') 'Schema static validation does not point at Sample_InfiniteO2_Mod.md.'
+Assert-True ($schema.staticValidation.resourceContentAudit -eq 'Docs/Modding/Resource_Content_Audit_Matrix.md') 'Schema static validation does not point at Resource_Content_Audit_Matrix.md.'
 
 Assert-True ($uniqueSignals.Count -eq [int]$schema.sourceSignalInventory.uniqueISignalStructCount) "Signal count drift. Source=$($uniqueSignals.Count) Schema=$($schema.sourceSignalInventory.uniqueISignalStructCount)"
 Assert-True ($allowedSignals.Count -eq [int]$schema.sourceSignalInventory.modProjectedISignalCount) "Projected count drift. Allowed=$($allowedSignals.Count) Schema=$($schema.sourceSignalInventory.modProjectedISignalCount)"
@@ -227,6 +313,40 @@ Assert-True ($saveDictionaryPrefix -eq $schema.loaderSaveAudit.saveDictionaryPre
 Assert-True ($modPayloadBlockSize -eq [int]$schema.loaderSaveAudit.modPayloadBlockSizeBytes) "Mod payload block size drift. Source=$modPayloadBlockSize Schema=$($schema.loaderSaveAudit.modPayloadBlockSizeBytes)"
 Assert-True ($modPayloadHeaderSize -eq [int]$schema.loaderSaveAudit.modPayloadHeaderSizeBytes) "Mod payload header size drift. Source=$modPayloadHeaderSize Schema=$($schema.loaderSaveAudit.modPayloadHeaderSizeBytes)"
 Assert-True ($modPayloadMaxBytes -eq [int]$schema.loaderSaveAudit.modPayloadMaxBytes) "Mod payload max size drift. Source=$modPayloadMaxBytes Schema=$($schema.loaderSaveAudit.modPayloadMaxBytes)"
+Assert-True ($publicEventMethodNames.Count -eq [int]$schema.eventSubscriptionAudit.publicEventMethodCount) "Public event method count drift. Source=$($publicEventMethodNames.Count) Schema=$($schema.eventSubscriptionAudit.publicEventMethodCount)"
+Assert-True ($nativeEventKindNames.Count -eq [int]$schema.eventSubscriptionAudit.nativeEventKindCount) "Native event kind count drift. Source=$($nativeEventKindNames.Count) Schema=$($schema.eventSubscriptionAudit.nativeEventKindCount)"
+Assert-True ($projectedEventKindNames.Count -eq [int]$schema.eventSubscriptionAudit.projectedEventKindCountIncludingNone) "Projected event kind count drift. Source=$($projectedEventKindNames.Count) Schema=$($schema.eventSubscriptionAudit.projectedEventKindCountIncludingNone)"
+Assert-True ($nativeBridgePublishLanes.Count -eq [int]$schema.eventSubscriptionAudit.nativeQueueBridgePublishLaneCount) "Native queue bridge publish lane count drift. Source=$($nativeBridgePublishLanes.Count) Schema=$($schema.eventSubscriptionAudit.nativeQueueBridgePublishLaneCount)"
+Assert-True ($maxDispatchDepth -eq [int]$schema.eventSubscriptionAudit.maxEventDispatchDepth) "Max event dispatch depth drift. Source=$maxDispatchDepth Schema=$($schema.eventSubscriptionAudit.maxEventDispatchDepth)"
+Assert-True ([math]::Abs($callbackWatchdogMilliseconds - [double]$schema.eventSubscriptionAudit.callbackWatchdogMilliseconds) -lt 0.001) "Callback watchdog drift. Source=$callbackWatchdogMilliseconds Schema=$($schema.eventSubscriptionAudit.callbackWatchdogMilliseconds)"
+Assert-True $subscriptionTokenHasIsActive 'HectonEventSubscription missing IsActive property.'
+Assert-True $subscriptionTokenHasDispose 'HectonEventSubscription missing Dispose method.'
+Assert-True ($publicResourceMethodNames.Count -eq [int]$schema.resourceContentAudit.publicResourceMethodCount) "Public resource method count drift. Source=$($publicResourceMethodNames.Count) Schema=$($schema.resourceContentAudit.publicResourceMethodCount)"
+Assert-True ($resourceKindNames.Count -eq [int]$schema.resourceContentAudit.resourceKindCount) "Resource kind count drift. Source=$($resourceKindNames.Count) Schema=$($schema.resourceContentAudit.resourceKindCount)"
+Assert-True ($resourceRegistryCapacity -eq [int]$schema.resourceContentAudit.resourceRegistryCapacity) "Resource registry capacity drift. Source=$resourceRegistryCapacity Schema=$($schema.resourceContentAudit.resourceRegistryCapacity)"
+Assert-True ($internalAssetLoaderNames.Count -eq [int]$schema.resourceContentAudit.internalForbiddenAssetLoaderCount) "Internal asset loader count drift. Source=$($internalAssetLoaderNames.Count) Schema=$($schema.resourceContentAudit.internalForbiddenAssetLoaderCount)"
+Assert-True ($rawTextureMaxBytes -eq [long]$schema.resourceContentAudit.rawTextureMaxBytes) "Raw texture byte cap drift. Source=$rawTextureMaxBytes Schema=$($schema.resourceContentAudit.rawTextureMaxBytes)"
+Assert-True ($rawTextureMaxDimension -eq [int]$schema.resourceContentAudit.rawTextureMaxDimension) "Raw texture dimension cap drift. Source=$rawTextureMaxDimension Schema=$($schema.resourceContentAudit.rawTextureMaxDimension)"
+Assert-True ($publicContentMethodNames.Count -eq [int]$schema.resourceContentAudit.publicContentMethodCount) "Public content method count drift. Source=$($publicContentMethodNames.Count) Schema=$($schema.resourceContentAudit.publicContentMethodCount)"
+
+$schemaNativeEventKinds = @($schema.eventSubscriptionAudit.nativeEventKinds | Sort-Object -Unique)
+$missingNativeKinds = @($nativeEventKindNames | Where-Object { $schemaNativeEventKinds -notcontains $_ })
+Assert-True ($missingNativeKinds.Count -eq 0) "Native event kinds missing from schema: $($missingNativeKinds -join ', ')"
+
+$schemaProjectedEventKinds = @($schema.eventSubscriptionAudit.projectedEventKinds | Sort-Object -Unique)
+$missingProjectedKinds = @($projectedEventKindNames | Where-Object { $schemaProjectedEventKinds -notcontains $_ })
+Assert-True ($missingProjectedKinds.Count -eq 0) "Projected event kinds missing from schema: $($missingProjectedKinds -join ', ')"
+
+$missingBridgeLanesInSchema = @($nativeBridgePublishLanes | Where-Object { $schemaNativeEventKinds -notcontains $_ })
+Assert-True ($missingBridgeLanesInSchema.Count -eq 0) "Native bridge publish lanes missing from schema: $($missingBridgeLanesInSchema -join ', ')"
+
+$schemaResourceKinds = @($schema.resourceContentAudit.resourceKinds | Sort-Object -Unique)
+$missingResourceKinds = @($resourceKindNames | Where-Object { $schemaResourceKinds -notcontains $_ })
+Assert-True ($missingResourceKinds.Count -eq 0) "Resource kinds missing from schema: $($missingResourceKinds -join ', ')"
+
+$schemaResourceMethods = @($schema.resourceContentAudit.publicResourceMethods | Sort-Object -Unique)
+$missingResourceMethods = @($publicResourceMethodNames | Where-Object { $schemaResourceMethods -notcontains $_ })
+Assert-True ($missingResourceMethods.Count -eq 0) "Public resource methods missing from schema: $($missingResourceMethods -join ', ')"
 
 $missingSchemaOpcodes = @($acceptedOpcodes | Where-Object { $schemaOpcodes -notcontains $_ })
 Assert-True ($missingSchemaOpcodes.Count -eq 0) "Accepted source opcodes missing from schema: $($missingSchemaOpcodes -join ', ')"
@@ -310,11 +430,143 @@ Assert-True ($loaderSaveAuditText.Contains([string]$currentApiVersion)) 'Loader/
 Assert-True ($loaderSaveAuditText.Contains($saveDictionaryPrefix)) 'Loader/save audit missing save dictionary prefix.'
 Assert-True ($loaderSaveAuditText.Contains([string]$modPayloadMaxBytes)) 'Loader/save audit missing mod payload max bytes.'
 
+foreach ($method in $publicEventMethodNames) {
+    Assert-True ($eventSubscriptionAuditText.Contains($method)) "Public event method missing from event subscription audit matrix: $method"
+}
+
+foreach ($kind in $nativeEventKindNames) {
+    Assert-True ($eventSubscriptionAuditText.Contains($kind)) "Native event kind missing from event subscription audit matrix: $kind"
+}
+
+foreach ($kind in $projectedEventKindNames) {
+    Assert-True ($eventSubscriptionAuditText.Contains($kind)) "Projected event kind missing from event subscription audit matrix: $kind"
+}
+
+foreach ($lane in $nativeBridgePublishLanes) {
+    Assert-True ($eventSubscriptionAuditText.Contains($lane)) "Native bridge lane missing from event subscription audit matrix: $lane"
+}
+
+Assert-True ($eventSubscriptionAuditText.Contains([string]$maxDispatchDepth)) 'Event subscription audit missing dispatch depth cap.'
+Assert-True ($eventSubscriptionAuditText.Contains('2.0 ms')) 'Event subscription audit missing callback watchdog.'
+Assert-True ($eventSubscriptionAuditText.Contains('HectonEventSubscription')) 'Event subscription audit missing subscription token.'
+Assert-True ($eventSubscriptionAuditText.Contains('IsActive')) 'Event subscription audit missing IsActive token property.'
+
+foreach ($method in $publicResourceMethodNames) {
+    Assert-True ($resourceContentAuditText.Contains($method)) "Resource/content audit missing public resource method: $method"
+}
+
+foreach ($kind in $resourceKindNames) {
+    Assert-True ($resourceContentAuditText.Contains($kind)) "Resource/content audit missing resource kind: $kind"
+}
+
+foreach ($method in $publicContentMethodNames) {
+    $displayName = $method.Replace('RegisterSettingBool', 'RegisterSetting').Replace('RegisterSettingFloat', 'RegisterSetting')
+    Assert-True ($resourceContentAuditText.Contains($displayName)) "Resource/content audit missing public content method: $method"
+}
+
+foreach ($method in $internalAssetLoaderNames) {
+    Assert-True ($resourceContentAuditText.Contains($method)) "Resource/content audit missing internal asset loader: $method"
+}
+
+Assert-True ($resourceContentAuditText.Contains([string]$resourceRegistryCapacity)) 'Resource/content audit missing resource registry capacity.'
+Assert-True ($resourceContentAuditText.Contains([string]$rawTextureMaxBytes)) 'Resource/content audit missing raw texture byte cap.'
+Assert-True ($resourceContentAuditText.Contains([string]$rawTextureMaxDimension)) 'Resource/content audit missing raw texture dimension cap.'
+Assert-True ($resourceContentAuditText.Contains('No public Unity asset reference returned to mods')) 'Resource/content audit missing Unity object return prohibition.'
+
+$requiredChecklistLinks = @(
+    'Signal_Audit_Matrix.md',
+    'Command_Audit_Matrix.md',
+    'API_Surface_Audit_Matrix.md',
+    'Payload_Layout_Audit_Matrix.md',
+    'Loader_Save_Audit_Matrix.md',
+    'Event_Subscription_Audit_Matrix.md',
+    'Resource_Content_Audit_Matrix.md',
+    'Runtime_Verification_Playbook.md',
+    'Sample_InfiniteO2_Mod.md',
+    'Validate_Mod_API_Static.ps1'
+)
+
+foreach ($requiredLink in $requiredChecklistLinks) {
+    Assert-True ($changeControlChecklistText.Contains($requiredLink)) "Change control checklist missing required link: $requiredLink"
+}
+
+$requiredChecklistPhrases = @(
+    'Add/remove any `ISignal` struct',
+    'Add projected `SignalBus<T>` for mods',
+    'Add native byte event kind',
+    'Add unmanaged public event payload',
+    'Add command opcode or target',
+    'Change public `HectonAPI` facade',
+    'Change resource/content registration',
+    'Change payload byte layout',
+    'Change loader manifest or lifecycle',
+    'Change mod save payload boundary',
+    'Change runtime verification criteria',
+    'Change sample mod spec',
+    'Schema-only expansion is invalid',
+    'Markdown-only expansion is invalid',
+    'Runtime-verified status is invalid'
+)
+
+foreach ($requiredPhrase in $requiredChecklistPhrases) {
+    Assert-True ($changeControlChecklistText.Contains($requiredPhrase)) "Change control checklist missing required phrase: $requiredPhrase"
+}
+
+$requiredIndexLinks = @(
+    'Signal_Schema.json',
+    'Mod_API_Specification.md',
+    'Validate_Mod_API_Static.ps1',
+    'Runtime_Verification_Playbook.md',
+    'Change_Control_Checklist.md',
+    'Sample_InfiniteO2_Mod.md',
+    'Signal_Audit_Matrix.md',
+    'Command_Audit_Matrix.md',
+    'API_Surface_Audit_Matrix.md',
+    'Payload_Layout_Audit_Matrix.md',
+    'Loader_Save_Audit_Matrix.md',
+    'Event_Subscription_Audit_Matrix.md',
+    'Resource_Content_Audit_Matrix.md'
+)
+
+foreach ($requiredIndexLink in $requiredIndexLinks) {
+    Assert-True ($contractIndexText.Contains($requiredIndexLink)) "Contract index missing required link: $requiredIndexLink"
+}
+
+$expectedSchemaRevisionText = 'Schema revision: `' + [string]$schema.schemaRevision + '`'
+Assert-True ($contractIndexText.Contains($expectedSchemaRevisionText)) 'Contract index missing schema revision.'
+Assert-True ($contractIndexText.Contains('Source `ISignal` structs: `134`')) 'Contract index missing current signal count.'
+Assert-True ($contractIndexText.Contains('Runtime proof: `PENDING`')) 'Contract index missing runtime proof boundary.'
+
+$requiredSamplePhrases = @(
+    'RequiredAPIVersion": 2',
+    'IHectonVersionedMod',
+    'HectonAPI.SaveState.GetModString',
+    'HectonAPI.SaveState.SetModString',
+    'HectonAPI.UI.RegisterSetting',
+    'HectonAPI.Events.SubscribeProjected',
+    'HectonAPI.Events.Subscribe<ModInteractionRejectedPayload>',
+    'OnUnload',
+    '_projectionSub?.Dispose()',
+    '_rejectSub?.Dispose()',
+    'Current API has no SurvivalOverride opcode',
+    'No direct player oxygen',
+    'No `SignalBus<T>`',
+    'Future Kernel Required'
+)
+
+foreach ($requiredSamplePhrase in $requiredSamplePhrases) {
+    Assert-True ($sampleModSpecText.Contains($requiredSamplePhrase)) "Sample Infinite O2 spec missing required phrase: $requiredSamplePhrase"
+}
+
 Assert-True ($specText.Contains('Signal_Audit_Matrix.md')) 'Spec does not link Signal_Audit_Matrix.md.'
 Assert-True ($specText.Contains('Command_Audit_Matrix.md')) 'Spec does not link Command_Audit_Matrix.md.'
 Assert-True ($specText.Contains('API_Surface_Audit_Matrix.md')) 'Spec does not link API_Surface_Audit_Matrix.md.'
 Assert-True ($specText.Contains('Payload_Layout_Audit_Matrix.md')) 'Spec does not link Payload_Layout_Audit_Matrix.md.'
 Assert-True ($specText.Contains('Loader_Save_Audit_Matrix.md')) 'Spec does not link Loader_Save_Audit_Matrix.md.'
+Assert-True ($specText.Contains('Event_Subscription_Audit_Matrix.md')) 'Spec does not link Event_Subscription_Audit_Matrix.md.'
+Assert-True ($specText.Contains('Resource_Content_Audit_Matrix.md')) 'Spec does not link Resource_Content_Audit_Matrix.md.'
+Assert-True ($specText.Contains('Change_Control_Checklist.md')) 'Spec does not link Change_Control_Checklist.md.'
+Assert-True ($specText.Contains('Sample_InfiniteO2_Mod.md')) 'Spec does not link Sample_InfiniteO2_Mod.md.'
 Assert-True ($specText.Contains('Runtime_Verification_Playbook.md')) 'Spec does not link Runtime_Verification_Playbook.md.'
 Assert-True ($runtimePlaybookText.Contains('Pass Criteria')) 'Runtime playbook missing pass criteria.'
 Assert-True ($runtimePlaybookText.Contains('GC hot-path projection dispatch is 0 B/frame')) 'Runtime playbook missing GC pass criterion.'
@@ -323,6 +575,10 @@ Assert-True ($runtimePlaybookText.Contains('Command_Audit_Matrix.md')) 'Runtime 
 Assert-True ($runtimePlaybookText.Contains('API_Surface_Audit_Matrix.md')) 'Runtime playbook does not link API_Surface_Audit_Matrix.md.'
 Assert-True ($runtimePlaybookText.Contains('Payload_Layout_Audit_Matrix.md')) 'Runtime playbook does not link Payload_Layout_Audit_Matrix.md.'
 Assert-True ($runtimePlaybookText.Contains('Loader_Save_Audit_Matrix.md')) 'Runtime playbook does not link Loader_Save_Audit_Matrix.md.'
+Assert-True ($runtimePlaybookText.Contains('Event_Subscription_Audit_Matrix.md')) 'Runtime playbook does not link Event_Subscription_Audit_Matrix.md.'
+Assert-True ($runtimePlaybookText.Contains('Resource_Content_Audit_Matrix.md')) 'Runtime playbook does not link Resource_Content_Audit_Matrix.md.'
+Assert-True ($runtimePlaybookText.Contains('Change_Control_Checklist.md')) 'Runtime playbook does not link Change_Control_Checklist.md.'
+Assert-True ($runtimePlaybookText.Contains('Sample_InfiniteO2_Mod.md')) 'Runtime playbook does not link Sample_InfiniteO2_Mod.md.'
 
 $result = [pscustomobject]@{
     Status = 'PASS'
@@ -347,12 +603,30 @@ $result = [pscustomobject]@{
     LifecycleMethodCount = $lifecycleMethods.Count
     SaveStatePublicMethods = $saveStatePublicMethods.Count
     ModPayloadMaxBytes = $modPayloadMaxBytes
+    PublicEventMethodCount = $publicEventMethodNames.Count
+    NativeEventKindCount = $nativeEventKindNames.Count
+    ProjectedEventKindCountIncludingNone = $projectedEventKindNames.Count
+    NativeQueueBridgePublishLaneCount = $nativeBridgePublishLanes.Count
+    MaxEventDispatchDepth = $maxDispatchDepth
+    CallbackWatchdogMilliseconds = $callbackWatchdogMilliseconds
     ProjectionBridgeSignals = ($uniqueBridgeSignals -join ',')
+    ContractIndexPath = $schema.staticValidation.contractIndex
     AuditPath = $schema.sourceSignalInventory.auditPath
     CommandAuditPath = $schema.commandApi.auditPath
     ApiSurfaceAuditPath = $schema.apiSurfaceAudit.auditPath
     PayloadLayoutAuditPath = $schema.payloadLayoutAudit.auditPath
     LoaderSaveAuditPath = $schema.loaderSaveAudit.auditPath
+    EventSubscriptionAuditPath = $schema.eventSubscriptionAudit.auditPath
+    ChangeControlChecklistPath = $schema.staticValidation.changeControlChecklist
+    SampleModSpecPath = $schema.staticValidation.sampleModSpec
+    ResourceContentAuditPath = $schema.resourceContentAudit.auditPath
+    PublicResourceMethodCount = $publicResourceMethodNames.Count
+    ResourceKindCount = $resourceKindNames.Count
+    ResourceRegistryCapacity = $resourceRegistryCapacity
+    InternalAssetLoaderCount = $internalAssetLoaderNames.Count
+    RawTextureMaxBytes = $rawTextureMaxBytes
+    RawTextureMaxDimension = $rawTextureMaxDimension
+    PublicContentMethodCount = $publicContentMethodNames.Count
     RuntimePlaybook = $schema.staticValidation.runtimePlaybook
 }
 

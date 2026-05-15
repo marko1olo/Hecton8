@@ -57,6 +57,21 @@ namespace Hecton8.Gameplay
         private const float HapticSideThreshold = 0.2f;
         private const float JerkEventDebounceSeconds = 0.2f;
         private const float VrComfortTelemetryStep01 = 0.05f;
+        private const float Quest2ComfortVignetteMaximum = 0.52f;
+        private const float Quest2ComfortAccelerationSoftTunnelStartRadS2 = 42f;
+        private const float Quest2ComfortAccelerationEmergencyClampRadS2 = 150f;
+        private const float Quest2ComfortAccelerationReleaseBelowRadS2 = 24f;
+        private const float Quest2ComfortAccelerationReleaseHysteresisSeconds = 0.25f;
+        private const float Quest2ComfortVignetteAttackSlewPerFrame = 0.055f;
+        private const float Quest2ComfortVignetteReleaseSlewPerFrame = 0.025f;
+        private const float Quest2ComfortFrameSafetyDeltaSeconds = 0.01667f;
+        private const float Quest2ComfortFrameSafetyMinOpacity = 0.12f;
+        private const int Quest2ComfortFrameSafetyConsecutiveFrames = 2;
+        private const int Quest2ComfortFrameSafetyReleaseStableFrames = 12;
+        private const float Quest3ComfortFrameSafetyDeltaSeconds = 0.01389f;
+        private const float Quest3ComfortFrameSafetyMinOpacity = 0.10f;
+        private const int Quest3ComfortFrameSafetyConsecutiveFrames = 2;
+        private const int Quest3ComfortFrameSafetyReleaseStableFrames = 12;
         private const uint VrComfortTelemetryContextHash = 0x56524346u; // VRCF
         private const uint VrComfortJerkEventHash = 0x4A524B31u; // JRK1
         private const uint VrComfortMaxVignetteHash = 0x4D565231u; // MVR1
@@ -72,6 +87,9 @@ namespace Hecton8.Gameplay
         private const ushort BlackBoxFlagNearCollision = 1 << 6;
         private const ushort BlackBoxFlagAupShiftSeen = 1 << 7;
         private const ushort BlackBoxFlagLowTier = 1 << 8;
+        private const ushort BlackBoxFlagFramePressure = 1 << 9;
+        private const ushort BlackBoxFlagQuest2Fallback = 1 << 10;
+        private const ushort BlackBoxFlagAccelerationTunnel = 1 << 11;
         private const string BlackBoxDumpFileName = "Dump_VR_SOMATIC_ENGINEER.bin";
         private const uint StateHeadCollisionScheduled = 1u << 0;
         private const uint StateRegisteredService = 1u << 1;
@@ -210,6 +228,8 @@ namespace Hecton8.Gameplay
         private float _headAngularJerk01;
         private float _accelerationComfortVignette01;
         private float _accelerationReleaseBelowTimer;
+        private int _comfortFramePressureConsecutiveFrames;
+        private int _comfortFramePressureStableFrames;
         private float _jerkCullBlend01;
         private uint _jerkEventCount;
         private uint _lastTelemetryJerkEventCount;
@@ -239,6 +259,8 @@ namespace Hecton8.Gameplay
         private int _blackBoxCursor;
         private int _blackBoxLastRecordedFrame = -1;
         private bool _blackBoxDumped;
+        private bool _comfortFramePressureActive;
+        private bool _useQuest2ComfortFallback;
         private VRSomaticChestSocketPose _pdaSocketPose;
         private VRSomaticChestSocketPose _flareSocketPose;
         private VRSomaticCollisionState _collisionState;
@@ -361,11 +383,14 @@ namespace Hecton8.Gameplay
             _headAngularJerk01 = 0f;
             _accelerationComfortVignette01 = 0f;
             _accelerationReleaseBelowTimer = 0f;
+            ResetComfortFramePressureState();
             _jerkCullBlend01 = 0f;
             _jerkEventCooldownRemaining = 0f;
             _nearFieldCollision01 = 0f;
             _collisionState = default;
             _lastPublishedNearCollision01 = float.PositiveInfinity;
+            PublishComfortVignette(0f);
+            PublishShaderState();
 
             Vector3 shiftOffset = shiftData.ShiftOffset;
             if (!IsFiniteVector(shiftOffset))
@@ -530,6 +555,7 @@ namespace Hecton8.Gameplay
 
             if (!isActive)
             {
+                _useQuest2ComfortFallback = false;
                 bool hadRuntimeState = HasRuntimeRegistrationOrActiveSnapshot();
                 TryUnregisterLateFrame();
                 TryUnregisterUpdate();
@@ -539,6 +565,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            RefreshComfortProfileSelection();
             EnsureNativeBuffers();
             TryRegisterService();
             TryRegisterUpdate();
@@ -666,6 +693,29 @@ namespace Hecton8.Gameplay
             return HectonXRRuntimeState.IsXRActive;
         }
 
+        private void RefreshComfortProfileSelection()
+        {
+            _useQuest2ComfortFallback = IsQuest2LikeRuntime();
+        }
+
+        private static bool IsQuest2LikeRuntime()
+        {
+            if (HardwareTierDetector.IsQuest3Like)
+                return false;
+
+            return ContainsIgnoreCase(SystemInfo.deviceModel, "quest 2") ||
+                   ContainsIgnoreCase(SystemInfo.deviceModel, "quest2") ||
+                   ContainsIgnoreCase(SystemInfo.deviceName, "quest 2") ||
+                   ContainsIgnoreCase(SystemInfo.deviceName, "quest2") ||
+                   ContainsIgnoreCase(SystemInfo.operatingSystem, "quest 2");
+        }
+
+        private static bool ContainsIgnoreCase(string value, string token)
+        {
+            return !string.IsNullOrEmpty(value) &&
+                   value.IndexOf(token, System.StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
         private static bool IsFiniteVector(Vector3 value)
         {
             return math.all(math.isfinite(new float3(value.x, value.y, value.z)));
@@ -695,7 +745,7 @@ namespace Hecton8.Gameplay
         {
             if ((_stateFlags & StateHasPreviousHeadPose) == 0u)
             {
-                ResetHeadMotionHistory(headPosition, headRotation);
+                ResetHeadMotionHistoryAndPublishedComfort(headPosition, headRotation);
                 return;
             }
 
@@ -711,7 +761,7 @@ namespace Hecton8.Gameplay
                 headDeltaSq > HeadTrackingJumpDistanceMetersSq ||
                 angularDelta > HeadTrackingJumpAngularRadians)
             {
-                ResetHeadMotionHistory(headPosition, headRotation);
+                ResetHeadMotionHistoryAndPublishedComfort(headPosition, headRotation);
                 return;
             }
 
@@ -759,7 +809,15 @@ namespace Hecton8.Gameplay
             _headAngularJerk01 = 0f;
             _accelerationComfortVignette01 = 0f;
             _accelerationReleaseBelowTimer = 0f;
+            ResetComfortFramePressureState();
             _jerkCullBlend01 = 0f;
+        }
+
+        private void ResetHeadMotionHistoryAndPublishedComfort(Vector3 headPosition, Quaternion headRotation)
+        {
+            ResetHeadMotionHistory(headPosition, headRotation);
+            PublishComfortVignette(0f);
+            PublishShaderState();
         }
 
         private void ResetHeadMotionIfAupShifted(Vector3 headPosition, Quaternion headRotation)
@@ -769,7 +827,7 @@ namespace Hecton8.Gameplay
                 return;
 
             _lastObservedAupShiftSequence = currentShiftSequence;
-            ResetHeadMotionHistory(headPosition, headRotation);
+            ResetHeadMotionHistoryAndPublishedComfort(headPosition, headRotation);
         }
 
         private void UpdateRotationJerkState(float deltaTime, float3 headAngularVelocityRadiansPerSecond)
@@ -808,10 +866,12 @@ namespace Hecton8.Gameplay
 
         private void UpdateAccelerationComfortState(float deltaTime, float angularAccelerationRadS2)
         {
-            float softStart = SanitizeMinimum(comfortAccelerationSoftTunnelStartRadS2, 0.01f);
-            float emergencyClamp = math.max(softStart + 0.01f, SanitizeMinimum(comfortAccelerationEmergencyClampRadS2, softStart + 0.01f));
-            float releaseBelow = math.min(softStart, SanitizeNonNegative(comfortAccelerationReleaseBelowRadS2));
-            float hysteresisSeconds = SanitizeNonNegative(comfortAccelerationReleaseHysteresisSeconds);
+            UpdateComfortFramePressureState(deltaTime);
+
+            float softStart = SanitizeMinimum(ResolveComfortAccelerationSoftTunnelStartRadS2(), 0.01f);
+            float emergencyClamp = math.max(softStart + 0.01f, SanitizeMinimum(ResolveComfortAccelerationEmergencyClampRadS2(), softStart + 0.01f));
+            float releaseBelow = math.min(softStart, SanitizeNonNegative(ResolveComfortAccelerationReleaseBelowRadS2()));
+            float hysteresisSeconds = SanitizeNonNegative(ResolveComfortAccelerationReleaseHysteresisSeconds());
             float safeAcceleration = SanitizeNonNegative(angularAccelerationRadS2);
 
             if (safeAcceleration <= releaseBelow)
@@ -825,16 +885,112 @@ namespace Hecton8.Gameplay
             {
                 float clampedAcceleration = math.min(safeAcceleration, emergencyClamp);
                 float acceleration01 = math.saturate((clampedAcceleration - softStart) * math.rcp(math.max(0.001f, emergencyClamp - softStart)));
-                target = Smoothstep01(acceleration01) * Sanitize01(comfortVignetteMaximum, 0f);
+                target = Smoothstep01(acceleration01) * Sanitize01(ResolveComfortVignetteMaximum(), 0f);
                 if (!canRelease && target < _accelerationComfortVignette01)
                     target = _accelerationComfortVignette01;
             }
 
+            float framePressureTarget = _comfortFramePressureActive
+                ? Sanitize01(ResolveComfortFrameSafetyMinOpacity(), 0f)
+                : 0f;
+            target = math.max(target, framePressureTarget);
             float maxDelta = target > _accelerationComfortVignette01
-                ? math.min(SanitizeMinimum(comfortVignetteAttackSlewPerFrame, 0.001f), 0.1f)
-                : math.min(SanitizeMinimum(comfortVignetteReleaseSlewPerFrame, 0.001f), 0.1f);
+                ? math.min(SanitizeMinimum(ResolveComfortVignetteAttackSlewPerFrame(), 0.001f), 0.1f)
+                : math.min(SanitizeMinimum(ResolveComfortVignetteReleaseSlewPerFrame(), 0.001f), 0.1f);
             float delta = math.clamp(target - _accelerationComfortVignette01, -maxDelta, maxDelta);
             _accelerationComfortVignette01 = Sanitize01(_accelerationComfortVignette01 + delta, 0f);
+        }
+
+        private void UpdateComfortFramePressureState(float deltaTime)
+        {
+            float safeDeltaTime = math.isfinite(deltaTime) ? math.max(deltaTime, 0f) : 0f;
+            float frameSafetyDeltaSeconds = ResolveComfortFrameSafetyDeltaSeconds();
+            int consecutiveFrames = math.max(1, ResolveComfortFrameSafetyConsecutiveFrames());
+            int releaseStableFrames = math.max(1, ResolveComfortFrameSafetyReleaseStableFrames());
+            if (safeDeltaTime > frameSafetyDeltaSeconds)
+            {
+                _comfortFramePressureConsecutiveFrames = math.min(consecutiveFrames, _comfortFramePressureConsecutiveFrames + 1);
+                _comfortFramePressureStableFrames = 0;
+                if (_comfortFramePressureConsecutiveFrames >= consecutiveFrames)
+                    _comfortFramePressureActive = true;
+                return;
+            }
+
+            _comfortFramePressureConsecutiveFrames = 0;
+            if (!_comfortFramePressureActive)
+            {
+                _comfortFramePressureStableFrames = 0;
+                return;
+            }
+
+            _comfortFramePressureStableFrames = math.min(releaseStableFrames, _comfortFramePressureStableFrames + 1);
+            if (_comfortFramePressureStableFrames >= releaseStableFrames)
+            {
+                _comfortFramePressureStableFrames = 0;
+                _comfortFramePressureActive = false;
+            }
+        }
+
+        private void ResetComfortFramePressureState()
+        {
+            _comfortFramePressureConsecutiveFrames = 0;
+            _comfortFramePressureStableFrames = 0;
+            _comfortFramePressureActive = false;
+        }
+
+        private float ResolveComfortVignetteMaximum()
+        {
+            return _useQuest2ComfortFallback ? Quest2ComfortVignetteMaximum : comfortVignetteMaximum;
+        }
+
+        private float ResolveComfortAccelerationSoftTunnelStartRadS2()
+        {
+            return _useQuest2ComfortFallback ? Quest2ComfortAccelerationSoftTunnelStartRadS2 : comfortAccelerationSoftTunnelStartRadS2;
+        }
+
+        private float ResolveComfortAccelerationEmergencyClampRadS2()
+        {
+            return _useQuest2ComfortFallback ? Quest2ComfortAccelerationEmergencyClampRadS2 : comfortAccelerationEmergencyClampRadS2;
+        }
+
+        private float ResolveComfortAccelerationReleaseBelowRadS2()
+        {
+            return _useQuest2ComfortFallback ? Quest2ComfortAccelerationReleaseBelowRadS2 : comfortAccelerationReleaseBelowRadS2;
+        }
+
+        private float ResolveComfortAccelerationReleaseHysteresisSeconds()
+        {
+            return _useQuest2ComfortFallback ? Quest2ComfortAccelerationReleaseHysteresisSeconds : comfortAccelerationReleaseHysteresisSeconds;
+        }
+
+        private float ResolveComfortVignetteAttackSlewPerFrame()
+        {
+            return _useQuest2ComfortFallback ? Quest2ComfortVignetteAttackSlewPerFrame : comfortVignetteAttackSlewPerFrame;
+        }
+
+        private float ResolveComfortVignetteReleaseSlewPerFrame()
+        {
+            return _useQuest2ComfortFallback ? Quest2ComfortVignetteReleaseSlewPerFrame : comfortVignetteReleaseSlewPerFrame;
+        }
+
+        private float ResolveComfortFrameSafetyDeltaSeconds()
+        {
+            return _useQuest2ComfortFallback ? Quest2ComfortFrameSafetyDeltaSeconds : Quest3ComfortFrameSafetyDeltaSeconds;
+        }
+
+        private float ResolveComfortFrameSafetyMinOpacity()
+        {
+            return _useQuest2ComfortFallback ? Quest2ComfortFrameSafetyMinOpacity : Quest3ComfortFrameSafetyMinOpacity;
+        }
+
+        private int ResolveComfortFrameSafetyConsecutiveFrames()
+        {
+            return _useQuest2ComfortFallback ? Quest2ComfortFrameSafetyConsecutiveFrames : Quest3ComfortFrameSafetyConsecutiveFrames;
+        }
+
+        private int ResolveComfortFrameSafetyReleaseStableFrames()
+        {
+            return _useQuest2ComfortFallback ? Quest2ComfortFrameSafetyReleaseStableFrames : Quest3ComfortFrameSafetyReleaseStableFrames;
         }
 
         private void RefreshPlayerSignalsIfDue()
@@ -1093,7 +1249,7 @@ namespace Hecton8.Gameplay
                 RootRotationSharpness = SanitizeMinimum(rootRotationSmoothingSharpness, 1f),
                 VignetteAngularSpeedStart = SanitizeMinimum(comfortVignetteAngularSpeedStart, 0.01f),
                 VignetteAngularSpeedFull = SanitizeMinimum(comfortVignetteAngularSpeedFull, 0.02f),
-                VignetteMaximum = Sanitize01(comfortVignetteMaximum, 0f),
+                VignetteMaximum = Sanitize01(ResolveComfortVignetteMaximum(), 0f),
                 AccelerationVignette01 = Sanitize01(_accelerationComfortVignette01, 0f)
             };
 
@@ -1440,6 +1596,7 @@ namespace Hecton8.Gameplay
             _headAngularJerk01 = 0f;
             _accelerationComfortVignette01 = 0f;
             _accelerationReleaseBelowTimer = 0f;
+            ResetComfortFramePressureState();
             _jerkCullBlend01 = 0f;
             _jerkEventCooldownRemaining = 0f;
             _playerSignalSampleRemaining = 0f;
@@ -1670,6 +1827,12 @@ namespace Hecton8.Gameplay
                 flags |= BlackBoxFlagAupShiftSeen;
             if (IsLowTier(GlobalRegistry.ScalabilityTier))
                 flags |= BlackBoxFlagLowTier;
+            if (_comfortFramePressureActive)
+                flags |= BlackBoxFlagFramePressure;
+            if (_useQuest2ComfortFallback)
+                flags |= BlackBoxFlagQuest2Fallback;
+            if (_accelerationComfortVignette01 > 0.001f)
+                flags |= BlackBoxFlagAccelerationTunnel;
 
             return (ushort)(flags & 0xFFFFu);
         }

@@ -12,6 +12,7 @@ STAGE_TOMBSTONE = 0
 STAGE_SEED = 1
 STAGE_IMMATURE = 2
 STAGE_MATURE = 3
+UINT32_MASK = 0xFFFFFFFF
 
 
 def load_constants(path: Path) -> dict:
@@ -19,12 +20,35 @@ def load_constants(path: Path) -> dict:
         return json.load(handle)
 
 
-def resolve_biome(z: int, height: int) -> int:
-    if z < height * 0.25:
+def rotate_left_u32(value: int, count: int) -> int:
+    value &= UINT32_MASK
+    return ((value << count) | (value >> (32 - count))) & UINT32_MASK
+
+
+def hash32(value: int) -> int:
+    value &= UINT32_MASK
+    value ^= value >> 16
+    value = (value * 0x7FEB352D) & UINT32_MASK
+    value ^= value >> 15
+    value = (value * 0x846CA68B) & UINT32_MASK
+    value ^= value >> 16
+    return value & UINT32_MASK
+
+
+def resolve_biome(sector_x: int, sector_z: int, seed: int, height: int) -> int:
+    height = max(1, height)
+    value = (sector_x & UINT32_MASK) ^ rotate_left_u32(sector_z, 13) ^ (seed & UINT32_MASK)
+    band = (hash32(value) * 100) >> 32
+    local_z = sector_z % height
+    if sector_z < 0 and local_z != 0:
+        local_z -= height
+    if local_z < 0:
+        local_z = -local_z
+    if local_z < height // 4 or band < 24:
         return 0
-    if z < height * 0.55:
+    if band < 58:
         return 1
-    if z < height * 0.75:
+    if band < 75:
         return 2
     return 3
 
@@ -35,9 +59,14 @@ def build_initial_state(constants: dict, total_overharvest: bool) -> dict:
     count = width * height
     penalty = int(constants["nutrientPenaltyOnMiningQ"]) if total_overharvest else 0
     minimum_nutrients = int(constants["minimumNutrientsQ"])
+    world_seed = int(constants.get("entropyTestWorldSeed", 0))
+    origin_x = int(constants.get("macroSectorOriginX", 0))
+    origin_z = int(constants.get("macroSectorOriginZ", 0))
     biomes = constants["biomes"]
+    apex_respawn_lut = build_apex_respawn_lut(constants)
     biome_ids = [0] * count
     nutrients = [0] * count
+    nutrient_scratch = [0] * count
     temperatures = [0] * count
     stages = [STAGE_MATURE] * count
     tombstone_age = [0] * count
@@ -50,13 +79,13 @@ def build_initial_state(constants: dict, total_overharvest: bool) -> dict:
     for z in range(height):
         for x in range(width):
             index = z * width + x
-            biome_id = resolve_biome(z, height)
+            biome_id = resolve_biome(origin_x + x, origin_z + z, world_seed, height)
             biome = biomes[biome_id]
             biome_ids[index] = biome_id
             temperatures[index] = int(biome["temperatureQ"])
             nutrients[index] = max(minimum_nutrients, int(biome["nutrientStartQ"]) - penalty)
             predator[index] = max(8, min(96, temperatures[index] >> 2))
-            respawn[index] = resolve_apex_respawn(prey[index], predator[index], constants)
+            respawn[index] = apex_respawn_lut[(prey[index] << 8) | predator[index]]
 
             if total_overharvest:
                 stages[index] = STAGE_TOMBSTONE
@@ -70,6 +99,7 @@ def build_initial_state(constants: dict, total_overharvest: bool) -> dict:
         "count": count,
         "biome_ids": biome_ids,
         "nutrients": nutrients,
+        "nutrient_scratch": nutrient_scratch,
         "temperatures": temperatures,
         "stages": stages,
         "tombstone_age": tombstone_age,
@@ -78,6 +108,7 @@ def build_initial_state(constants: dict, total_overharvest: bool) -> dict:
         "prey": prey,
         "predator": predator,
         "respawn": respawn,
+        "apex_respawn_lut": apex_respawn_lut,
     }
 
 
@@ -98,12 +129,21 @@ def resolve_apex_respawn(prey_q: int, predator_q: int, constants: dict) -> int:
     return max(min_days, min(max_days, delay))
 
 
+def build_apex_respawn_lut(constants: dict) -> list[int]:
+    table = [0] * (256 * 256)
+    for prey_q in range(256):
+        base = prey_q << 8
+        for predator_q in range(256):
+            table[base | predator_q] = resolve_apex_respawn(prey_q, predator_q, constants)
+    return table
+
+
 def step_day(state: dict, constants: dict) -> None:
     width = state["width"]
     height = state["height"]
     count = state["count"]
     nutrients = state["nutrients"]
-    old_nutrients = nutrients[:]
+    next_nutrients = state["nutrient_scratch"]
     stages = state["stages"]
     tombstone_age = state["tombstone_age"]
     progress = state["progress"]
@@ -111,6 +151,7 @@ def step_day(state: dict, constants: dict) -> None:
     prey = state["prey"]
     predator = state["predator"]
     respawn = state["respawn"]
+    apex_respawn_lut = state["apex_respawn_lut"]
     temperatures = state["temperatures"]
 
     diffusion = int(constants["nutrientDiffusionPermille"])
@@ -119,30 +160,42 @@ def step_day(state: dict, constants: dict) -> None:
     base_growth = int(constants["baseGrowthProgressPerDayQ"])
     mature_threshold = int(constants["seedToMatureProgressQ"])
     tombstone_decay = int(constants["tombstoneBaseDecayDays"])
+    predator_conversion = int(constants["predatorConversionPermille"])
+    predator_mortality = int(constants["predatorMortalityPermille"])
 
-    for index in range(count):
-        x = index % width
-        z = index // width
-        total = 0
-        neighbor_count = 0
-        if x > 0:
-            total += old_nutrients[index - 1]
-            neighbor_count += 1
-        if x + 1 < width:
-            total += old_nutrients[index + 1]
-            neighbor_count += 1
-        if z > 0:
-            total += old_nutrients[index - width]
-            neighbor_count += 1
-        if z + 1 < height:
-            total += old_nutrients[index + width]
-            neighbor_count += 1
+    last_x = width - 1
+    last_z = height - 1
+    for z in range(height):
+        row = z * width
+        row_up = row - width
+        row_down = row + width
+        for x in range(width):
+            index = row + x
+            total = 0
+            neighbor_count = 0
+            if x > 0:
+                total += nutrients[index - 1]
+                neighbor_count += 1
+            if x < last_x:
+                total += nutrients[index + 1]
+                neighbor_count += 1
+            if z > 0:
+                total += nutrients[row_up + x]
+                neighbor_count += 1
+            if z < last_z:
+                total += nutrients[row_down + x]
+                neighbor_count += 1
 
-        average = total // neighbor_count if neighbor_count else old_nutrients[index]
-        next_nutrient = old_nutrients[index] + ((average - old_nutrients[index]) * diffusion) // 1000 + passive_recovery
-        if stages[index] == STAGE_TOMBSTONE:
-            next_nutrient -= 1
-        nutrients[index] = max(minimum_nutrients, min(255, next_nutrient))
+            current_nutrient = nutrients[index]
+            average = total // neighbor_count if neighbor_count else current_nutrient
+            next_nutrient = current_nutrient + ((average - current_nutrient) * diffusion) // 1000 + passive_recovery
+            if stages[index] == STAGE_TOMBSTONE:
+                next_nutrient -= 1
+            next_nutrients[index] = max(minimum_nutrients, min(255, next_nutrient))
+
+    state["nutrients"] = next_nutrients
+    state["nutrient_scratch"] = nutrients
+    nutrients = next_nutrients
 
     for index in range(count):
         stage = stages[index]
@@ -154,7 +207,7 @@ def step_day(state: dict, constants: dict) -> None:
                 stages[index] = STAGE_SEED
                 tombstone_age[index] = 0
                 progress[index] = 0
-            respawn[index] = resolve_apex_respawn(prey[index], predator[index], constants)
+            respawn[index] = apex_respawn_lut[(prey[index] << 8) | predator[index]]
             continue
 
         growth = (base_growth * nutrients[index] * temperature) // (255 * 255)
@@ -176,9 +229,9 @@ def step_day(state: dict, constants: dict) -> None:
             stock[index] = min(255, stock[index] + refill)
             prey[index] = stock[index]
 
-        predator_delta = (((predator[index] * prey[index] * int(constants["predatorConversionPermille"])) // 255) - (predator[index] * int(constants["predatorMortalityPermille"]))) // 1000
+        predator_delta = (((predator[index] * prey[index] * predator_conversion) // 255) - (predator[index] * predator_mortality)) // 1000
         predator[index] = max(0, min(255, predator[index] + predator_delta))
-        respawn[index] = resolve_apex_respawn(prey[index], predator[index], constants)
+        respawn[index] = apex_respawn_lut[(prey[index] << 8) | predator[index]]
 
 
 def summarize(state: dict, day: int, first_half_recovery: list[int | None]) -> dict:
@@ -212,13 +265,20 @@ def run_sim(constants: dict, days: int, total_overharvest: bool) -> tuple[dict, 
     state = build_initial_state(constants, total_overharvest)
     first_half_recovery: list[int | None] = [None, None, None, None]
     checkpoints: list[dict] = []
+    checkpoint_days = {1, 28, 95, 180, 365, days}
+    final_summary: dict | None = None
     for day in range(1, days + 1):
         step_day(state, constants)
-        if day in (1, 28, 95, 180, 365) or day == days:
-            checkpoints.append(summarize(state, day, first_half_recovery))
-        else:
-            summarize(state, day, first_half_recovery)
-    return summarize(state, days, first_half_recovery), checkpoints
+        needs_recovery_scan = any(value is None for value in first_half_recovery)
+        if day in checkpoint_days or needs_recovery_scan:
+            final_summary = summarize(state, day, first_half_recovery)
+            if day in checkpoint_days:
+                checkpoints.append(final_summary)
+
+    if final_summary is None or final_summary["day"] != days:
+        final_summary = summarize(state, days, first_half_recovery)
+
+    return final_summary, checkpoints
 
 
 def main() -> int:

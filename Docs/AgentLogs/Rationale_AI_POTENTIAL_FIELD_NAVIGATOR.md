@@ -57,3 +57,45 @@ Solution: Round exported steering weights to six decimals before JSON serializat
 Rejected Alternatives: Leave binary tail values; hand-edit JSON after each simulator run.
 Scalability potential: Cleaner Low/Middle/High/Ultra diffs reduce accidental tuning churn while preserving deterministic values.
 Hardware Impact: No runtime cost. Tooling-only formatting; Unity performance remains PENDING VERIFICATION.
+
+Problem: JSON self-validation alone does not detect later drift in `HectonFluidEngine.cs` constants.
+Solution: `Tools/AiPathSim.py --check` now parses live source constants for flow texture resolution, world size, vector noise resolution, storm layer depth, storm turbulence, thermocline depth, and heat-source capacity, then compares them against the exported snapshot.
+Rejected Alternatives: Treat the JSON as permanent authority; require a human to manually compare source and export; integrate runtime C# before Unity profiler access.
+Scalability potential: Low/Middle/High/Ultra profiles now fail fast when the flow field resolution or storm math changes under them, preventing stale tuning from shipping.
+Hardware Impact: No runtime cost. The check is offline tooling; Unity frame-time and GC remain PENDING UNITY VERIFICATION.
+
+Problem: `HectonFluidEngine.cs` contains duplicate storm constants in separate flow contexts, so checking only the first match could miss split-brain source drift.
+Solution: Parse all matching constant occurrences and require each one to match the exported snapshot and expected value.
+Rejected Alternatives: Accept the first regex match; hard-code line numbers that will rot after fluid-system edits.
+Scalability potential: Prevents Low/Middle/High/Ultra tuning from binding to only one of multiple storm constant definitions.
+Hardware Impact: No runtime cost. Extra validation is offline tooling only.
+
+Problem: The steering handoff referenced black-box telemetry but did not export a concrete schema for runtime implementers.
+Solution: Add `blackBoxTelemetry` to the tuning JSON with 300-frame capacity, circular `NativeArray` storage, dump path, dump triggers, required fields, and finite guards.
+Rejected Alternatives: Leave the Black Box mandate in prose; create runtime C# without Unity profiler access; use a variable-size managed log.
+Scalability potential: Low/Middle/High/Ultra implementations share the same fixed telemetry contract, so higher tiers can add visual steering richness without changing crash evidence shape.
+Hardware Impact: Planned runtime storage is fixed-size native data. No runtime code was edited; Unity cost remains PENDING VERIFICATION.
+
+Problem: A JSON artifact could keep valid selected weights while carrying stale or manually edited metrics.
+Solution: `Tools/AiPathSim.py --check` now reruns the deterministic candidate search and requires exported raw metrics, smoothed metrics, idle drift, selected weights, and search counts to match replay.
+Rejected Alternatives: Trust generated JSON because the weights still pass thresholds; compare only reach/jitter/clearance thresholds.
+Scalability potential: Low/Middle/High/Ultra tuning evidence remains reproducible as the simulator evolves.
+Hardware Impact: No runtime cost. The extra verification is offline tooling; Unity frame-time and GC remain PENDING UNITY VERIFICATION.
+
+Problem: Low/Middle/High/Ultra steering profiles were scalability switches without explicit hysteresis bands.
+Solution: Add 5m distance and 3s dwell-time hysteresis to every tier profile and validate the mandated range in `Tools/AiPathSim.py --check`.
+Rejected Alternatives: Let runtime switch tiers immediately based on distance/load; rely on prose instead of exported data.
+Scalability potential: Prevents steering LOD flip-flop on predators moving near tier thresholds while preserving High/Ultra visual-overkill options.
+Hardware Impact: No runtime code edited. Future runtime will spend a few scalar comparisons, not allocations; Unity cost remains PENDING VERIFICATION.
+
+Problem: The simulator proved aggregate metrics but did not export the actual selected route through the hurricane current.
+Solution: Add `pathTrace` samples to the tuning JSON and validate them against deterministic replay.
+Rejected Alternatives: Leave route proof to console output; export a massive full-frame trace; require manual rerun to inspect path shape.
+Scalability potential: Route samples give future Low/Middle/High/Ultra runtime ports a compact truth source for visual path curvature without bloating the artifact.
+Hardware Impact: No runtime cost. The trace is offline evidence only; Unity cost remains PENDING VERIFICATION.
+
+Problem: The JSON export included Python wall-clock timing, so identical simulator runs changed the artifact hash.
+Solution: Replace volatile `pythonMicroBenchmark` with deterministic `sampleCostModel` metadata and add a regression test that reruns export and byte-compares the JSON.
+Rejected Alternatives: Keep workstation timing as evidence; ignore hash churn; write timing into logs instead of tuning data.
+Scalability potential: Stable data lets Low/Middle/High/Ultra tuning diffs represent real steering changes, not machine load noise.
+Hardware Impact: No runtime cost. Static operation counts remain estimates; Unity profiler proof remains PENDING VERIFICATION.

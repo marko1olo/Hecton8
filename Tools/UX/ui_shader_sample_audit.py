@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import glob
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -63,9 +64,33 @@ def build_report(spec_path: Path) -> dict:
         "status": "PASS" if not errors else "FAIL",
         "maxSamplesPerUiElement": max_samples,
         "shaderCount": len(records),
+        "sourceHashes": build_source_hashes(spec_path, records),
         "records": records,
         "errors": errors,
     }
+
+
+def build_source_hashes(spec_path: Path, records: list[dict]) -> dict[str, str | dict[str, str]]:
+    shader_hashes: dict[str, str] = {}
+    for record in records:
+        shader_path = ROOT / str(record["path"])
+        shader_hashes[str(record["path"])] = sha256_file(shader_path)
+    return {
+        "specSha256": sha256_file(spec_path),
+        "scriptSha256": sha256_file(SCRIPT_PATH),
+        "shaderSha256": shader_hashes,
+    }
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        while True:
+            chunk = handle.read(65536)
+            if not chunk:
+                break
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def main() -> int:

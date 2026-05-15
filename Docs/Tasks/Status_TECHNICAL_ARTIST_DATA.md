@@ -26,7 +26,7 @@ Task count: 8 numbered tasks in extracted XML. Header claims 15; rejected as sta
 ### Loop 1 - Tasks 1-5
 
 - [x] Task 1 ORM PACKING SPEC | DOD: `Docs/TECH_ART_PBR_SURFACE_DOCTRINE.md` defines prompt-authoritative ORM as R=AO, G=Roughness, B=Metallic and records conflict with older packed-mask mandate. Alternatives Rejected: mixed channel layouts or shader mutation without integrator decision. Estimate: saves about 40-70% mask VRAM depending source import.
-- [x] Task 2 MICRO-DETAIL LIBRARY | DOD: first-party texture scan found 14 detail candidates; doctrine lists 10 actual detail maps and separately lists missing hard-surface overlays. Alternatives Rejected: claiming nonexistent scratch/dust/carbon maps exist. Estimate: 0 us CPU until shader uses shared detail; potential unique texture memory saved by sharing overlays.
+- [x] Task 2 MICRO-DETAIL LIBRARY | DOD: corrected first-party texture scan found 13 detail candidates; doctrine lists 10 actual detail maps and separately lists missing hard-surface overlays. Alternatives Rejected: claiming nonexistent scratch/dust/carbon maps exist. Estimate: 0 us CPU until shader uses shared detail; potential unique texture memory saved by sharing overlays.
 - [x] Task 3 CLEARCOAT FAKE | DOD: single-pass fake clearcoat parameters and HLSL math documented for wet glass/chrome. Alternatives Rejected: second-pass rendering and material clone stacks. Estimate: avoids one additional transparent/spec pass, approximate saving 100-400 us on MX350 per affected view versus extra pass.
 - [x] Task 4 ANISOTROPIC FAKE | DOD: cockpit brushed-metal lobe modulation documented using tangent/bitangent banding and shared brush detail. Alternatives Rejected: full anisotropic GGX migration or ray-traced reflection truth. Estimate: sub-20 us shader ALU impact per visible cluster versus multi-pass/ray-based reflection waste.
 - [x] Task 5 MATERIAL VALIDATOR | DOD: `Tools/MaterialAudit.py` created, py_compile passed, and first-party audit executed to JSON. Alternatives Rejected: Unity editor mutator and full third-party decode as default. Estimate: 0 us runtime impact; offline gate only.
@@ -35,7 +35,7 @@ Task count: 8 numbered tasks in extracted XML. Header claims 15; rejected as sta
 
 - [x] Task 6 SELF-AUDIT LOOP 1 | DOD: standard 5-texture material model compared against optimized albedo+normal+512 ORM+shared detail model. Alternatives Rejected: balanced middle-ground without target VRAM delta. Estimate: 6.65 MB -> 2.99 MB per set under documented assumption, about 55% unique texture VRAM reduction.
 - [x] Python energy-conservation test executed | DOD: `python Tools\MaterialAudit.py --root Assets\_Project --sample-size 256 --json Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.json`. Alternatives Rejected: visual-only judgement. Estimate: 0 us runtime impact; 0 albedo failures, 0 warnings.
-- [x] Surface/material audit reviewed | DOD: JSON reviewed: 138 textures, 28 albedo candidates, 30 ORM candidates, 173 materials, 31 material issues. Alternatives Rejected: chat-only unverifiable summary. Estimate: no runtime change; material debt quantified.
+- [x] Surface/material audit reviewed | DOD: JSON reviewed: 138 textures, 26 albedo candidates, 17 ORM candidates, 13 detail candidates, 176 materials, 31 material issues, 5 texture import issues. Alternatives Rejected: chat-only unverifiable summary. Estimate: no runtime change; material debt quantified.
 
 ### Loop 3 - Doctrine / Batch Update
 
@@ -56,8 +56,40 @@ Task count: 8 numbered tasks in extracted XML. Header claims 15; rejected as sta
 
 ### Loop 6 - Hardening Pass After User Escalation
 
-- [x] Added import-setting validation | DOD: validator now checks sRGB, normal-map type, mips, compression/readability where visible in `.meta`. Alternatives Rejected: filename-only audit. Estimate: 0 us runtime impact; 6 suspect texture imports found.
+- [x] Added import-setting validation | DOD: validator now checks sRGB, normal-map type, mips, compression/readability where visible in `.meta`. Alternatives Rejected: filename-only audit. Estimate: 0 us runtime impact; 5 suspect texture imports found.
 - [x] Added Markdown audit report | DOD: `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA.md` generated for human review. Alternatives Rejected: JSON-only evidence. Estimate: 0 us runtime impact.
 - [x] Fixed false positive ORM classification | DOD: tokenized classifier no longer treats `storms` as ORM and excludes UI/skybox paths from surface data checks. Alternatives Rejected: accepting noisy audit evidence. Estimate: 0 us runtime impact.
 - [x] Added CI fail flags | DOD: `--fail-on-import-issues` and `--fail-on-material-issues` added to `Tools/MaterialAudit.py`. Alternatives Rejected: manual-only validation. Estimate: 0 us runtime impact.
 - [x] Verified CI fail flags | DOD: scoped import-debt run returned exit 2; scoped material-debt run returned exit 3. Alternatives Rejected: untested CLI switches. Estimate: 0 us runtime impact.
+
+### Loop 7 - Evidence Export Pass After User Escalation
+
+- [x] Added recommendation text | DOD: Markdown report now emits direct recommendations for texture import and material slot issues. Alternatives Rejected: issue-code-only handoff. Estimate: 0 us runtime impact.
+- [x] Added CSV exports | DOD: generated texture import issue, material issue, and detail candidate CSVs under `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_*`. Alternatives Rejected: Markdown-only handoff. Estimate: 0 us runtime impact.
+- [x] Re-ran full audit with CSV output | DOD: final audit reports 138 textures, 26 albedo candidates, 0 energy failures, 5 import issue textures, 17 ORM candidates, 13 detail candidates, 176 materials, and 31 material issues. Alternatives Rejected: relying on stale pre-CSV audit numbers. Estimate: 0 us runtime impact.
+
+### Loop 8 - Surface Classifier Cleanup
+
+- [x] Tightened albedo classifier | DOD: albedo detection now uses tokens and excludes UI/skybox paths, removing `panorama_den.png` style false positives from PBR surface energy testing. Alternatives Rejected: broad `_d` substring matching. Estimate: 0 us runtime impact.
+- [x] Removed dead classifier constants | DOD: obsolete raw `ALBEDO_TOKENS` and `ORM_TOKENS` constants removed from `Tools/MaterialAudit.py`. Alternatives Rejected: leaving unused audit code. Estimate: 0 us runtime impact.
+
+### Loop 9 - Regression Test Harness
+
+- [x] Added synthetic material-audit tests | DOD: `Tools/test_material_audit.py` covers classifier exclusions, albedo energy failure/pass, import-setting debt, material slot debt, and Markdown/CSV recommendation exports. Alternatives Rejected: relying on manual audit reruns only. Estimate: 0 us runtime impact; offline QA only.
+- [x] Executed Python regression suite | DOD: `python -m unittest Tools.test_material_audit` passed 6 tests after the residency-model addition. Alternatives Rejected: treating code inspection as validator proof. Estimate: 0 us runtime impact.
+- [x] Recompiled audit tooling | DOD: `python -m py_compile Tools\MaterialAudit.py Tools\test_material_audit.py` passed. Alternatives Rejected: leaving late test-file syntax unchecked. Estimate: 0 us runtime impact.
+- [x] Re-ran full first-party audit after test harness | DOD: `python Tools\MaterialAudit.py --root Assets\_Project --sample-size 256 --json Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.json --markdown Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.md --csv-prefix Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA` passed and preserved final counts. Alternatives Rejected: relying on pre-test audit artifacts. Estimate: 0 us runtime impact.
+
+### Loop 10 - Prompt ORM Separation Pass
+
+- [x] Separated prompt ORM from legacy mask slots | DOD: `Tools/MaterialAudit.py` now distinguishes prompt ORM (`R=AO, G=Roughness, B=Metallic`) from `_MaskMap`/`_MetallicGlossMap` legacy or unknown packed masks. Alternatives Rejected: counting legacy masks as prompt-ready. Estimate: 0 us runtime impact.
+- [x] Added channel-packing migration candidates | DOD: validator now emits `channel_packing_candidate_count`, priority counts, Markdown section, and `MaterialAudit_TECHNICAL_ARTIST_DATA_channel_packing_candidates.csv`. Alternatives Rejected: material issue list without migration triage. Estimate: 0 us runtime impact.
+- [x] Re-ran full first-party audit after ORM separation | DOD: final audit reports 0 prompt ORM slots, 9 legacy mask slots, 31 channel-packing candidates, 31 material issue materials, 0 energy failures, and 5 import issue textures. Alternatives Rejected: leaving old packed-mask counts ambiguous. Estimate: 0 us runtime impact.
+- [x] Re-verified CI fail gates after ORM separation | DOD: `Assets\_Project\Art\TEXTURES\Detali` returned import-debt exit 2 and `Assets\_Project\Art\Materials` returned material-debt exit 3. Alternatives Rejected: trusting earlier gate proof after issue-code changes. Estimate: 0 us runtime impact.
+
+### Loop 11 - Residency Model Pass
+
+- [x] Added texture residency estimates | DOD: validator now records width, height, memory role, per-texture estimated resident MiB, aggregate estimated texture MiB, and texture memory hotspot CSV. Alternatives Rejected: leaving VRAM pressure as only a prose model. Estimate: 0 us runtime impact; offline BC-class estimate only.
+- [x] Added channel-packing savings model to audit output | DOD: JSON/Markdown now report 31 channel candidates as 206.15 MiB standard -> 92.69 MiB optimized, saving 113.46 MiB or 55.0% under the documented model. Alternatives Rejected: unquantified "50% less VRAM" claim. Estimate: 0 us runtime impact.
+- [x] Re-ran full audit after residency model | DOD: final audit reports 497.565 MiB estimated texture residency, 0 energy failures, 5 import issue textures, 0 prompt ORM slots, 9 legacy mask slots, and 31 channel candidates. Alternatives Rejected: stale JSON/Markdown/CSV artifacts. Estimate: 0 us runtime impact.
+- [x] Re-verified fail gates after residency model | DOD: import-debt scoped run returned exit 2 and material-debt scoped run returned exit 3 with the new summary fields present. Alternatives Rejected: assuming added summary fields did not affect exit paths. Estimate: 0 us runtime impact.

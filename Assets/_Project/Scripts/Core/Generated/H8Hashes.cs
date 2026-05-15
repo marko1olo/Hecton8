@@ -4,7 +4,7 @@ namespace Hecton8.Core.Generated
 {
     public static class H8Hashes
     {
-        public const int TotalCount = 1007;
+        public const int TotalCount = 1017;
 
         public static class Items
         {
@@ -1484,7 +1484,7 @@ namespace Hecton8.Core.Generated
 
         public static class Signals
         {
-            public const int Count = 275;
+            public const int Count = 285;
 
             public const string ATLASSIGNALREVEALSTAGE2Id = "ATLAS_SIGNAL_REVEAL_STAGE_2";
             public const uint ATLASSIGNALREVEALSTAGE2Hash = 2388679583u;
@@ -1822,6 +1822,8 @@ namespace Hecton8.Core.Generated
             public const uint LightLevelSignalHash = 4275790471u;
             public const string LoreFragmentScannedSignalId = "LoreFragmentScannedSignal";
             public const uint LoreFragmentScannedSignalHash = 3097398211u;
+            public const string MacroDatabaseSectorHydrationSignalId = "MacroDatabaseSectorHydrationSignal";
+            public const uint MacroDatabaseSectorHydrationSignalHash = 2148181094u;
             public const string ManualOverridePulledSignalId = "ManualOverridePulledSignal";
             public const uint ManualOverridePulledSignalHash = 4132018473u;
             public const string MemoryAddressShiftSignalId = "MemoryAddressShiftSignal";
@@ -1854,6 +1856,10 @@ namespace Hecton8.Core.Generated
             public const uint PlayerActionCompletedSignalHash = 3088201159u;
             public const string PlayerActionProgressSignalId = "PlayerActionProgressSignal";
             public const uint PlayerActionProgressSignalHash = 1226266217u;
+            public const string PlayerBaseEnterSignalId = "PlayerBaseEnterSignal";
+            public const uint PlayerBaseEnterSignalHash = 683287905u;
+            public const string PlayerBaseExitSignalId = "PlayerBaseExitSignal";
+            public const uint PlayerBaseExitSignalHash = 3136712521u;
             public const string PlayerInputSignalId = "PlayerInputSignal";
             public const uint PlayerInputSignalHash = 382047424u;
             public const string PlayerLookTargetSignalId = "PlayerLookTargetSignal";
@@ -1896,12 +1902,12 @@ namespace Hecton8.Core.Generated
             public const uint SaveStatusSignalHash = 3377932938u;
             public const string ScanCompleteSignalId = "ScanCompleteSignal";
             public const uint ScanCompleteSignalHash = 3741073575u;
+            public const string ScanLogChangedSignalId = "ScanLogChangedSignal";
+            public const uint ScanLogChangedSignalHash = 3063428374u;
             public const string ScannerToolActiveSignalId = "ScannerToolActiveSignal";
             public const uint ScannerToolActiveSignalHash = 3562466725u;
             public const string SectorDehydratedSignalId = "SectorDehydratedSignal";
             public const uint SectorDehydratedSignalHash = 892106233u;
-            public const string SectorHydratedSignalId = "SectorHydratedSignal";
-            public const uint SectorHydratedSignalHash = 1975250674u;
             public const string SectorResidencyHydratedSignalId = "SectorResidencyHydratedSignal";
             public const uint SectorResidencyHydratedSignalHash = 1971960536u;
             public const string SeismicSignalId = "SeismicSignal";
@@ -1926,6 +1932,8 @@ namespace Hecton8.Core.Generated
             public const uint SubmarineLightsChangedSignalHash = 887228434u;
             public const string SubtitleSignalId = "SubtitleSignal";
             public const uint SubtitleSignalHash = 3814269189u;
+            public const string SurvivalVitalsChangedSignalId = "SurvivalVitalsChangedSignal";
+            public const uint SurvivalVitalsChangedSignalHash = 353370072u;
             public const string SwarmDispersedSignalId = "SwarmDispersedSignal";
             public const uint SwarmDispersedSignalHash = 3663101764u;
             public const string SystemHealthIndexSignalId = "SystemHealthIndexSignal";
@@ -1944,6 +1952,8 @@ namespace Hecton8.Core.Generated
             public const uint TimeDilationSignalHash = 682003334u;
             public const string ToolAcousticSignalId = "ToolAcousticSignal";
             public const uint ToolAcousticSignalHash = 1213288304u;
+            public const string ToolLoadoutChangedSignalId = "ToolLoadoutChangedSignal";
+            public const uint ToolLoadoutChangedSignalHash = 372076359u;
             public const string ToolStateChangedSignalId = "ToolStateChangedSignal";
             public const uint ToolStateChangedSignalHash = 982347128u;
             public const string ToolTriggerSignalId = "ToolTriggerSignal";
@@ -1992,10 +2002,16 @@ namespace Hecton8.Core.Generated
             public const uint DesyncDetectedSignalHash = 1422046935u;
             public const string EntanglementStrainSignalId = "EntanglementStrainSignal";
             public const uint EntanglementStrainSignalHash = 1085272472u;
+            public const string HabitatDamageSignalId = "HabitatDamageSignal";
+            public const uint HabitatDamageSignalHash = 2614666813u;
             public const string HullStressSignalId = "HullStressSignal";
             public const uint HullStressSignalHash = 690278418u;
             public const string InputSignalId = "InputSignal";
             public const uint InputSignalHash = 1334157611u;
+            public const string InstanceCullingCameraFrustumSignalId = "InstanceCullingCameraFrustumSignal";
+            public const uint InstanceCullingCameraFrustumSignalHash = 4206890801u;
+            public const string InstanceCullingCameraPositionSignalId = "InstanceCullingCameraPositionSignal";
+            public const uint InstanceCullingCameraPositionSignalHash = 726037058u;
             public const string InteractionSignalId = "InteractionSignal";
             public const uint InteractionSignalHash = 998384219u;
             public const string KccVelocitySignalId = "KccVelocitySignal";
@@ -2008,8 +2024,12 @@ namespace Hecton8.Core.Generated
             public const uint PhysicsImpactSignalHash = 1002922076u;
             public const string PingReturnSignalId = "PingReturnSignal";
             public const uint PingReturnSignalHash = 2877455091u;
+            public const string PlayerInteractionStressSignalId = "PlayerInteractionStressSignal";
+            public const uint PlayerInteractionStressSignalHash = 3126273520u;
             public const string PlayerNoiseSignalId = "PlayerNoiseSignal";
             public const uint PlayerNoiseSignalHash = 1219342658u;
+            public const string SectorHydratedSignalId = "SectorHydratedSignal";
+            public const uint SectorHydratedSignalHash = 1975250674u;
             public const string SoundEmissionSignalId = "SoundEmissionSignal";
             public const uint SoundEmissionSignalHash = 983599571u;
             public const string StateCorrectionSignalId = "StateCorrectionSignal";

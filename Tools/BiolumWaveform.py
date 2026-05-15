@@ -7,6 +7,7 @@ Outputs:
 - Data/Visuals/Biolum_Waveforms.png: static oscilloscope sheet.
 - Data/Visuals/Biolum_Waveforms.gif: animated pulse preview.
 - Data/Visuals/Biolum_Verification.json: one-hour validation metrics.
+- Data/Visuals/Biolum_BinarySchema.json: machine-readable binary layout.
 
 The runtime intent is shader-side deterministic emission, not physical light
 simulation. Harmonics and palette data are precomputed offline to keep hot
@@ -16,6 +17,7 @@ paths allocation-free.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import struct
@@ -48,6 +50,8 @@ PROFILE_BASE_STRUCT = struct.Struct("<IIIII15f")
 HARMONIC_STRUCT = struct.Struct("<4f")
 PALETTE_STRUCT = struct.Struct("<III36f")
 FLOAT32 = np.float32
+FLOAT32_BYTES = 4
+UINT32_BYTES = 4
 
 FLAG_SAFETY_CLAMP = 1 << 0
 FLAG_ACOUSTIC_REACTIVE = 1 << 1
@@ -547,6 +551,228 @@ def readback_binary(path: Path) -> Dict[str, Any]:
     }
 
 
+def binary_schema(binary_info: Dict[str, Any]) -> Dict[str, Any]:
+    """Return a machine-readable schema for C#/CI importers."""
+
+    profile_base_fields = [
+        ("profileHash", "uint32"),
+        ("profileIndex", "uint32"),
+        ("biomeHash", "uint32"),
+        ("flags", "uint32"),
+        ("harmonicCount", "uint32"),
+        ("periodSeconds", "float32"),
+        ("baseline", "float32"),
+        ("amplitude", "float32"),
+        ("gamma", "float32"),
+        ("noiseScale", "float32"),
+        ("noiseRateHz", "float32"),
+        ("safetyClampHz", "float32"),
+        ("rawMaxHz", "float32"),
+        ("effectiveMaxHz", "float32"),
+        ("acousticGain", "float32"),
+        ("acousticDecaySeconds", "float32"),
+        ("acousticRefractorySeconds", "float32"),
+        ("acousticPhaseKickRad", "float32"),
+        ("acousticStrobeHz", "float32"),
+        ("acousticWidth01", "float32"),
+    ]
+    header_fields = [
+        ("magic", "bytes8"),
+        ("version", "uint32"),
+        ("profileCount", "uint32"),
+        ("paletteCount", "uint32"),
+        ("maxHarmonics", "uint32"),
+        ("curveSamples", "uint32"),
+        ("godColorCount", "uint32"),
+        ("toasterColorCount", "uint32"),
+        ("profileStride", "uint32"),
+        ("paletteStride", "uint32"),
+        ("payloadCrc32", "uint32"),
+    ]
+
+    offset = 0
+    header = []
+    for field_name, field_type in header_fields:
+        byte_count = 8 if field_type == "bytes8" else UINT32_BYTES
+        header.append({"name": field_name, "type": field_type, "offset": offset, "bytes": byte_count})
+        offset += byte_count
+
+    offset = 0
+    profile_base = []
+    for field_name, field_type in profile_base_fields:
+        byte_count = UINT32_BYTES if field_type == "uint32" else FLOAT32_BYTES
+        profile_base.append({"name": field_name, "type": field_type, "offset": offset, "bytes": byte_count})
+        offset += byte_count
+
+    harmonic_offset = PROFILE_BASE_STRUCT.size
+    curve_offset = harmonic_offset + (MAX_HARMONICS * HARMONIC_STRUCT.size)
+    palette_payload_offset = 12
+
+    return {
+        "schema": "H8_BIOLUM_BINARY_SCHEMA",
+        "version": VERSION,
+        "endianness": "little",
+        "binary": {
+            "path": binary_info["path"],
+            "bytes": binary_info["bytes"],
+            "payloadCrc32": binary_info["payloadCrc32"],
+        },
+        "constants": {
+            "headerBytes": HEADER_STRUCT.size,
+            "profileBaseBytes": PROFILE_BASE_STRUCT.size,
+            "harmonicBytes": HARMONIC_STRUCT.size,
+            "paletteBytes": PALETTE_STRUCT.size,
+            "profileStride": binary_info["profileStride"],
+            "paletteStride": binary_info["paletteStride"],
+            "maxHarmonics": MAX_HARMONICS,
+            "curveSamples": CURVE_SAMPLES,
+            "godColorCount": GOD_COLOR_COUNT,
+            "toasterColorCount": TOASTER_COLOR_COUNT,
+            "safetyClampHz": SAFETY_CLAMP_HZ,
+        },
+        "flags": {
+            "SAFETY_CLAMP": FLAG_SAFETY_CLAMP,
+            "ACOUSTIC_REACTIVE": FLAG_ACOUSTIC_REACTIVE,
+            "PREDATOR_VISIBLE": FLAG_PREDATOR_VISIBLE,
+            "HIGH_TIER_OVERKILL": FLAG_HIGH_TIER_OVERKILL,
+        },
+        "header": header,
+        "profileRecord": {
+            "base": profile_base,
+            "harmonics": {
+                "offset": harmonic_offset,
+                "count": MAX_HARMONICS,
+                "stride": HARMONIC_STRUCT.size,
+                "fields": [
+                    {"name": "multiplier", "type": "float32", "offset": 0, "bytes": FLOAT32_BYTES},
+                    {"name": "amplitude", "type": "float32", "offset": 4, "bytes": FLOAT32_BYTES},
+                    {"name": "phaseRad", "type": "float32", "offset": 8, "bytes": FLOAT32_BYTES},
+                    {"name": "shapePower", "type": "float32", "offset": 12, "bytes": FLOAT32_BYTES},
+                ],
+            },
+            "curveSamples": {
+                "offset": curve_offset,
+                "count": CURVE_SAMPLES,
+                "type": "float32",
+                "bytes": CURVE_SAMPLES * FLOAT32_BYTES,
+            },
+        },
+        "paletteRecord": {
+            "base": [
+                {"name": "paletteHash", "type": "uint32", "offset": 0, "bytes": UINT32_BYTES},
+                {"name": "paletteIndex", "type": "uint32", "offset": 4, "bytes": UINT32_BYTES},
+                {"name": "flags", "type": "uint32", "offset": 8, "bytes": UINT32_BYTES},
+            ],
+            "colors": {
+                "offset": palette_payload_offset,
+                "type": "float32",
+                "floatCount": 36,
+                "toasterRgbCount": TOASTER_COLOR_COUNT,
+                "godModeRgbCount": GOD_COLOR_COUNT,
+            },
+        },
+    }
+
+
+def write_schema(path: Path, binary_info: Dict[str, Any]) -> None:
+    """Write the binary schema sidecar."""
+
+    write_json(path, binary_schema(binary_info))
+
+
+def verify_binary_records(path: Path) -> Dict[str, Any]:
+    """Validate every profile, harmonic, curve, and palette record."""
+
+    binary_info = readback_binary(path)
+    data = path.read_bytes()
+    offset = HEADER_STRUCT.size
+    safety_clamped_records = 0
+    max_curve_sample = 0.0
+
+    for expected_index in range(binary_info["profileCount"]):
+        record_offset = offset + (expected_index * binary_info["profileStride"])
+        base = PROFILE_BASE_STRUCT.unpack_from(data, record_offset)
+        (
+            _profile_hash,
+            profile_index,
+            _biome_hash,
+            flags,
+            harmonic_count,
+        ) = base[:5]
+        floats = base[5:]
+
+        if profile_index != expected_index:
+            raise ValueError(f"Profile index mismatch: expected {expected_index}, got {profile_index}")
+        if harmonic_count < 1 or harmonic_count > MAX_HARMONICS:
+            raise ValueError(f"Profile {expected_index} has invalid harmonic count {harmonic_count}")
+        if not all(math.isfinite(value) for value in floats):
+            raise ValueError(f"Profile {expected_index} contains non-finite base float.")
+
+        period_seconds = floats[0]
+        safety_clamp_hz = floats[6]
+        raw_max_hz = floats[7]
+        effective_max_hz = floats[8]
+        acoustic_strobe_hz = floats[13]
+        if period_seconds <= 0.0:
+            raise ValueError(f"Profile {expected_index} has non-positive period.")
+        if abs(safety_clamp_hz - SAFETY_CLAMP_HZ) > 0.0001:
+            raise ValueError(f"Profile {expected_index} safety clamp mismatch.")
+        if effective_max_hz > safety_clamp_hz + 0.0001:
+            raise ValueError(f"Profile {expected_index} effective frequency exceeds safety clamp.")
+        if acoustic_strobe_hz > safety_clamp_hz + 0.0001:
+            raise ValueError(f"Profile {expected_index} acoustic strobe exceeds safety clamp.")
+        if raw_max_hz > safety_clamp_hz and (flags & FLAG_SAFETY_CLAMP) == 0:
+            raise ValueError(f"Profile {expected_index} needs safety flag but does not have it.")
+        if (flags & FLAG_SAFETY_CLAMP) != 0:
+            safety_clamped_records += 1
+
+        harmonic_offset = record_offset + PROFILE_BASE_STRUCT.size
+        for harmonic_index in range(MAX_HARMONICS):
+            harmonic = HARMONIC_STRUCT.unpack_from(
+                data,
+                harmonic_offset + (harmonic_index * HARMONIC_STRUCT.size),
+            )
+            if not all(math.isfinite(value) for value in harmonic):
+                raise ValueError(f"Profile {expected_index} harmonic {harmonic_index} is non-finite.")
+            if harmonic_index < harmonic_count:
+                multiplier, amplitude, _phase_rad, shape_power = harmonic
+                if multiplier <= 0.0 or amplitude <= 0.0 or shape_power <= 0.0:
+                    raise ValueError(
+                        f"Profile {expected_index} harmonic {harmonic_index} has invalid positive fields."
+                    )
+
+        curve_offset = harmonic_offset + (MAX_HARMONICS * HARMONIC_STRUCT.size)
+        curve = np.frombuffer(data, dtype="<f4", count=CURVE_SAMPLES, offset=curve_offset)
+        if not np.all(np.isfinite(curve)):
+            raise ValueError(f"Profile {expected_index} curve has non-finite samples.")
+        if float(np.min(curve)) < -0.0001 or float(np.max(curve)) > 1.0001:
+            raise ValueError(f"Profile {expected_index} curve samples exceed normalized range.")
+        max_curve_sample = max(max_curve_sample, float(np.max(curve)))
+
+    palette_offset = offset + (binary_info["profileCount"] * binary_info["profileStride"])
+    for expected_index in range(binary_info["paletteCount"]):
+        record_offset = palette_offset + (expected_index * binary_info["paletteStride"])
+        palette_record = PALETTE_STRUCT.unpack_from(data, record_offset)
+        _palette_hash, palette_index, _flags = palette_record[:3]
+        color_values = palette_record[3:]
+        if palette_index != expected_index:
+            raise ValueError(f"Palette index mismatch: expected {expected_index}, got {palette_index}")
+        if not all(math.isfinite(value) for value in color_values):
+            raise ValueError(f"Palette {expected_index} has non-finite color values.")
+        if min(color_values) < 0.0:
+            raise ValueError(f"Palette {expected_index} has negative HDR color values.")
+
+    return {
+        "profileCount": binary_info["profileCount"],
+        "paletteCount": binary_info["paletteCount"],
+        "profileStride": binary_info["profileStride"],
+        "paletteStride": binary_info["paletteStride"],
+        "safetyClampedRecords": safety_clamped_records,
+        "maxCurveSample": round(max_curve_sample, 6),
+        "payloadCrc32": binary_info["payloadCrc32"],
+    }
+
+
 def profile_to_json(profile: PulseProfile, verification: Dict[str, Any]) -> Dict[str, Any]:
     """Serialize profile metadata."""
 
@@ -705,6 +931,139 @@ def write_json(path: Path, data: Dict[str, Any]) -> None:
     path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
+def sha256_file(path: Path) -> str:
+    """Return SHA-256 for a generated artifact."""
+
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def write_manifest(path: Path, artifact_paths: Sequence[Path], verification: Dict[str, Any]) -> None:
+    """Write an integrity manifest for generated biolum artifacts."""
+
+    artifacts = []
+    for artifact_path in artifact_paths:
+        artifacts.append(
+            {
+                "path": str(artifact_path.relative_to(ROOT_DIR)),
+                "bytes": artifact_path.stat().st_size,
+                "sha256": sha256_file(artifact_path),
+            }
+        )
+
+    manifest = {
+        "schema": "H8_BIOLUM_MANIFEST",
+        "version": VERSION,
+        "status": verification["status"],
+        "payloadCrc32": verification["binary"]["payloadCrc32"],
+        "profileCount": verification["summary"]["profileCount"],
+        "paletteCount": verification["summary"]["paletteCount"],
+        "safetyClampProfiles": verification["summary"]["safetyClampProfiles"],
+        "maxDcDrift01": verification["summary"]["maxDcDrift01"],
+        "maxOrganicJerk95": verification["summary"]["maxOrganicJerk95"],
+        "artifacts": artifacts,
+    }
+    write_json(path, manifest)
+
+
+def verify_manifest(manifest_path: Path) -> Dict[str, Any]:
+    """Verify manifest artifact sizes, hashes, and binary CRC."""
+
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    artifact_count = 0
+    for artifact in manifest["artifacts"]:
+        artifact_path = ROOT_DIR / artifact["path"]
+        if not artifact_path.exists():
+            raise FileNotFoundError(f"Manifest artifact missing: {artifact['path']}")
+        actual_bytes = artifact_path.stat().st_size
+        if actual_bytes != artifact["bytes"]:
+            raise ValueError(
+                f"Manifest byte mismatch for {artifact['path']}: "
+                f"expected {artifact['bytes']}, got {actual_bytes}"
+            )
+        actual_sha = sha256_file(artifact_path)
+        if actual_sha != artifact["sha256"]:
+            raise ValueError(f"Manifest SHA-256 mismatch for {artifact['path']}")
+        artifact_count += 1
+
+    binary_path = ROOT_DIR / "Data" / "Visuals" / "Biolum_Profiles.bin"
+    for artifact in manifest["artifacts"]:
+        if artifact["path"].replace("\\", "/").endswith("Biolum_Profiles.bin"):
+            binary_path = ROOT_DIR / artifact["path"]
+            break
+
+    binary_info = readback_binary(binary_path)
+    if binary_info["payloadCrc32"] != manifest["payloadCrc32"]:
+        raise ValueError(
+            f"Manifest CRC mismatch: expected {manifest['payloadCrc32']}, "
+            f"got {binary_info['payloadCrc32']}"
+        )
+
+    return {
+        "status": manifest["status"],
+        "artifactCount": artifact_count,
+        "payloadCrc32": manifest["payloadCrc32"],
+        "profileCount": manifest["profileCount"],
+        "paletteCount": manifest["paletteCount"],
+    }
+
+
+def verify_generated_package(output_dir: Path) -> Dict[str, Any]:
+    """Verify every generated biolum sidecar without rebuilding artifacts."""
+
+    manifest_info = verify_manifest(output_dir / "Biolum_Manifest.json")
+    binary_info = verify_binary_records(output_dir / "Biolum_Profiles.bin")
+    schema = json.loads((output_dir / "Biolum_BinarySchema.json").read_text(encoding="utf-8"))
+    profiles_json = json.loads((output_dir / "Biolum_Profiles.json").read_text(encoding="utf-8"))
+    verification_json = json.loads((output_dir / "Biolum_Verification.json").read_text(encoding="utf-8"))
+
+    if profiles_json["status"] != "RHYTHMS COMPOSED":
+        raise ValueError(f"Profile JSON status mismatch: {profiles_json['status']}")
+    if verification_json["status"] != "RHYTHMS COMPOSED":
+        raise ValueError(f"Verification JSON status mismatch: {verification_json['status']}")
+    if manifest_info["status"] != verification_json["status"]:
+        raise ValueError("Manifest status does not match verification JSON.")
+    if manifest_info["payloadCrc32"] != binary_info["payloadCrc32"]:
+        raise ValueError("Manifest CRC does not match binary record validator.")
+    if profiles_json["binary"]["payloadCrc32"] != binary_info["payloadCrc32"]:
+        raise ValueError("Profile JSON binary CRC does not match binary validator.")
+    if verification_json["binary"]["payloadCrc32"] != binary_info["payloadCrc32"]:
+        raise ValueError("Verification JSON binary CRC does not match binary validator.")
+
+    profile_count = len(profiles_json["profiles"])
+    palette_count = len(profiles_json["palettes"])
+    safety_count = sum(
+        1 for profile in profiles_json["profiles"] if profile["safety"]["safetyClampActive"]
+    )
+    if profile_count != manifest_info["profileCount"] or profile_count != binary_info["profileCount"]:
+        raise ValueError("Profile count mismatch across manifest, binary, and profile JSON.")
+    if palette_count != manifest_info["paletteCount"] or palette_count != binary_info["paletteCount"]:
+        raise ValueError("Palette count mismatch across manifest, binary, and profile JSON.")
+    if safety_count != binary_info["safetyClampedRecords"]:
+        raise ValueError("Safety-clamp count mismatch between profile JSON and binary records.")
+    if verification_json["summary"]["safetyClampProfiles"] != safety_count:
+        raise ValueError("Safety-clamp count mismatch in verification summary.")
+    if schema["constants"]["profileStride"] != binary_info["profileStride"]:
+        raise ValueError("Schema profile stride does not match binary header.")
+    if schema["constants"]["paletteStride"] != binary_info["paletteStride"]:
+        raise ValueError("Schema palette stride does not match binary header.")
+    expected_curve_offset = PROFILE_BASE_STRUCT.size + (MAX_HARMONICS * HARMONIC_STRUCT.size)
+    if schema["profileRecord"]["curveSamples"]["offset"] != expected_curve_offset:
+        raise ValueError("Schema curve offset does not match packed profile record layout.")
+
+    return {
+        "status": verification_json["status"],
+        "artifactCount": manifest_info["artifactCount"],
+        "profileCount": profile_count,
+        "paletteCount": palette_count,
+        "safetyClampedRecords": safety_count,
+        "payloadCrc32": binary_info["payloadCrc32"],
+    }
+
+
 def run(output_dir: Path) -> Dict[str, Any]:
     """Generate all artifacts and return verification summary."""
 
@@ -744,7 +1103,16 @@ def run(output_dir: Path) -> Dict[str, Any]:
             profile_to_json(profile, verification[index]) for index, profile in enumerate(profiles)
         ],
     }
-    write_json(output_dir / "Biolum_Profiles.json", profile_json)
+    profiles_json_path = output_dir / "Biolum_Profiles.json"
+    verification_json_path = output_dir / "Biolum_Verification.json"
+    png_path = output_dir / "Biolum_Waveforms.png"
+    gif_path = output_dir / "Biolum_Waveforms.gif"
+    manifest_path = output_dir / "Biolum_Manifest.json"
+    binary_path = output_dir / "Biolum_Profiles.bin"
+    schema_path = output_dir / "Biolum_BinarySchema.json"
+
+    write_schema(schema_path, binary_info)
+    write_json(profiles_json_path, profile_json)
 
     verification_json = {
         "schema": "H8_BIOLUM_VERIFICATION",
@@ -764,9 +1132,21 @@ def run(output_dir: Path) -> Dict[str, Any]:
             "maxOrganicJerk95": round(max(float(item["organicJerk95"]) for item in verification), 8),
         },
     }
-    write_json(output_dir / "Biolum_Verification.json", verification_json)
-    draw_waveform_png(output_dir / "Biolum_Waveforms.png", profiles, palettes)
-    draw_waveform_gif(output_dir / "Biolum_Waveforms.gif", profiles, palettes)
+    write_json(verification_json_path, verification_json)
+    draw_waveform_png(png_path, profiles, palettes)
+    draw_waveform_gif(gif_path, profiles, palettes)
+    write_manifest(
+        manifest_path,
+        (
+            binary_path,
+            profiles_json_path,
+            verification_json_path,
+            png_path,
+            gif_path,
+            schema_path,
+        ),
+        verification_json,
+    )
     return verification_json
 
 
@@ -780,7 +1160,53 @@ def main() -> int:
         default=DEFAULT_OUTPUT_DIR,
         help="Artifact directory. Defaults to Data/Visuals.",
     )
+    parser.add_argument(
+        "--verify-manifest",
+        action="store_true",
+        help="Verify Data/Visuals/Biolum_Manifest.json without regenerating artifacts.",
+    )
+    parser.add_argument(
+        "--verify-binary",
+        action="store_true",
+        help="Verify Biolum_Profiles.bin record structure without regenerating artifacts.",
+    )
+    parser.add_argument(
+        "--verify-all",
+        action="store_true",
+        help="Verify manifest, binary records, schema, and JSON sidecars without regenerating artifacts.",
+    )
     args = parser.parse_args()
+
+    if args.verify_all:
+        package_info = verify_generated_package(args.output_dir)
+        print("BIOLUM PACKAGE VERIFIED")
+        print(f"status={package_info['status']}")
+        print(f"artifactCount={package_info['artifactCount']}")
+        print(f"profiles={package_info['profileCount']}")
+        print(f"palettes={package_info['paletteCount']}")
+        print(f"safetyClampedRecords={package_info['safetyClampedRecords']}")
+        print(f"payloadCrc32={package_info['payloadCrc32']}")
+        return 0
+
+    if args.verify_manifest:
+        manifest_info = verify_manifest(args.output_dir / "Biolum_Manifest.json")
+        print("BIOLUM MANIFEST VERIFIED")
+        print(f"status={manifest_info['status']}")
+        print(f"artifactCount={manifest_info['artifactCount']}")
+        print(f"profiles={manifest_info['profileCount']}")
+        print(f"palettes={manifest_info['paletteCount']}")
+        print(f"payloadCrc32={manifest_info['payloadCrc32']}")
+        return 0
+
+    if args.verify_binary:
+        binary_info = verify_binary_records(args.output_dir / "Biolum_Profiles.bin")
+        print("BIOLUM BINARY VERIFIED")
+        print(f"profiles={binary_info['profileCount']}")
+        print(f"palettes={binary_info['paletteCount']}")
+        print(f"safetyClampedRecords={binary_info['safetyClampedRecords']}")
+        print(f"maxCurveSample={binary_info['maxCurveSample']}")
+        print(f"payloadCrc32={binary_info['payloadCrc32']}")
+        return 0
 
     summary = run(args.output_dir)
     print("RHYTHMS COMPOSED")

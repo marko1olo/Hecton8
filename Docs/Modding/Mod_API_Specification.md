@@ -35,7 +35,7 @@ Every currently mod-exposed `SignalBus<T>` lane is listed below. No other first-
 
 `InteractionEvents` and `CraftingEvents` are also exposed, but they are not `SignalBus<T>` projections. They are copied into `SubscribeNative` as immutable bytes for the callback duration.
 
-Full source audit: [Signal_Audit_Matrix.md](Signal_Audit_Matrix.md) records 129 current `ISignal` structs in `GlobalSignals.cs`. Only 2 are projected for mods. The remaining 127 are denied by default.
+Full source audit: [Signal_Audit_Matrix.md](Signal_Audit_Matrix.md) records 134 current `ISignal` structs in `GlobalSignals.cs`. Only 2 are projected for mods. The remaining 132 are denied by default.
 
 ## ModEventDto Contract
 
@@ -68,6 +68,16 @@ Low-tier samples set `ModEventDto.LowTierSampleFlag`.
 - `HectonNativeEventKind.Crafting`
 
 The span is valid only during the callback. Mods must copy only small data they own and must not store the span.
+
+Full subscription audit: [Event_Subscription_Audit_Matrix.md](Event_Subscription_Audit_Matrix.md) records public event methods, native event kinds, projected event kinds, bridge lanes, callback watchdog limits, dispatch recursion cap, and subscription lifetime rules.
+
+Event lifetime rules:
+
+- Every subscription returns `HectonEventSubscription`.
+- Tokens must be disposed from `IHectonMod.OnUnload`.
+- `HectonAPI.Events.Unsubscribe` is only a `Dispose` convenience wrapper.
+- `DisableManagedMod` isolates native, unmanaged, and projected subscribers by subscriber id.
+- Dispatch recursion is capped at `5` and callback stalls are watched at `2.0 ms`.
 
 ## Command Writes
 
@@ -119,6 +129,8 @@ Blocked direct signal families:
 ## Cheat Mod Spec: Infinite O2
 
 Current runtime status: true Infinite O2 is not available through the public mod API. That is correct. Direct survival mutation would bypass player physiology ownership and save truth.
+
+Full sample artifact: [Sample_InfiniteO2_Mod.md](Sample_InfiniteO2_Mod.md) records the manifest, managed entry pattern, forbidden accesses, and required future survival command kernel.
 
 Safe design:
 
@@ -209,6 +221,7 @@ JSON remains acceptable only for cold mod configuration or mod-owned save text u
 The public facade is the implementation boundary. Anything internal or first-party-only is not a mod right.
 
 Full facade audit: [API_Surface_Audit_Matrix.md](API_Surface_Audit_Matrix.md) records the current `HectonAPI.cs` public nested surfaces, public methods, public properties, and internal forbidden methods.
+Resource/content audit: [Resource_Content_Audit_Matrix.md](Resource_Content_Audit_Matrix.md) records hash-only resource resolution, cold content registration, registry capacities, raw texture caps, and forbidden Unity object returns.
 
 | Surface | Public methods | Classification | Hard rule |
 |---|---|---|---|
@@ -229,6 +242,21 @@ Full facade audit: [API_Surface_Audit_Matrix.md](API_Surface_Audit_Matrix.md) re
 | `HectonAPI.Mods` | `GetLoadedMods` | diagnostics copy | Caller provides destination list. |
 
 `HectonAPI.Assets.LoadPrefab`, `LoadAudioClip`, and `LoadTexture` are internal and throw `IllegalContractException`. Modders must resolve hashes and submit commands.
+
+## Resource And Content Boundary
+
+Mods may register cold content overlays and resolve resource hashes. They may not receive live Unity asset references.
+
+Current source-backed resource/content limits:
+
+| Contract | Value | Rule |
+|---|---:|---|
+| Public resource methods | `3` | `TryResolvePrefab`, `TryResolveAudioClip`, `TryResolveTexture`; hash ids only. |
+| Resource kinds | `3` | `Prefab`, `AudioClip`, `Texture`. |
+| Resource registry capacity | `256` | Engine owner resolves hash ids internally. |
+| Public content methods | `14` | Cold catalog/settings/localization/UI methods only. |
+| Internal asset loaders | `3` | Public facade throws for direct Unity object loads. |
+| Raw PNG cap | `8388608` bytes / `2048` px | Cold fallback only; not hot-path event transport. |
 
 ## Loader And Save Boundary
 
@@ -281,6 +309,12 @@ Adding another mod-visible signal is not a documentation-only change. Required g
 
 Adding another command opcode requires an engine-owned `IModCommandKernel`, target validation, rejection reason, unmanaged response path when applicable, and quota accounting.
 
+## Change Control
+
+Required checklist: [Change_Control_Checklist.md](Change_Control_Checklist.md).
+
+Every source or contract edit must update the matching audit matrix, this spec, the schema, the runtime playbook, and the static validator when needed. Schema-only and Markdown-only expansions are invalid.
+
 ## Acceptance Tests
 
 Static checks already required for this package:
@@ -289,10 +323,10 @@ Static checks already required for this package:
 powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1
 Get-Content -Raw Docs/Modding/Signal_Schema.json | ConvertFrom-Json
 rg --pcre2 -n "[^\x00-\x7F]" Docs/Modding Docs/Tasks/Status_MODDING_API_SCHEMA_BUILDER.md Docs/AgentLogs/Rationale_MODDING_API_SCHEMA_BUILDER.md Docs/AgentLogs/LOG_MODDING_API_SCHEMA_BUILDER.md
-git diff --check -- Docs/Modding/Signal_Schema.json Docs/Modding/Mod_API_Specification.md Docs/Modding/Signal_Audit_Matrix.md Docs/Modding/Command_Audit_Matrix.md Docs/Modding/API_Surface_Audit_Matrix.md Docs/Modding/Payload_Layout_Audit_Matrix.md Docs/Modding/Loader_Save_Audit_Matrix.md Docs/Modding/Runtime_Verification_Playbook.md Docs/Modding/Validate_Mod_API_Static.ps1 Docs/Tasks/Status_MODDING_API_SCHEMA_BUILDER.md Docs/AgentLogs/Rationale_MODDING_API_SCHEMA_BUILDER.md Docs/AgentLogs/LOG_MODDING_API_SCHEMA_BUILDER.md
+git diff --check -- Docs/Modding/Signal_Schema.json Docs/Modding/Mod_API_Specification.md Docs/Modding/Signal_Audit_Matrix.md Docs/Modding/Command_Audit_Matrix.md Docs/Modding/API_Surface_Audit_Matrix.md Docs/Modding/Payload_Layout_Audit_Matrix.md Docs/Modding/Loader_Save_Audit_Matrix.md Docs/Modding/Event_Subscription_Audit_Matrix.md Docs/Modding/Change_Control_Checklist.md Docs/Modding/Runtime_Verification_Playbook.md Docs/Modding/Validate_Mod_API_Static.ps1 Docs/Tasks/Status_MODDING_API_SCHEMA_BUILDER.md Docs/AgentLogs/Rationale_MODDING_API_SCHEMA_BUILDER.md Docs/AgentLogs/LOG_MODDING_API_SCHEMA_BUILDER.md
 ```
 
-`Validate_Mod_API_Static.ps1` is the static drift gate. It fails when the source `ISignal` count, schema inventory, projection bridge lanes, command opcodes, facade shape, payload byte layout, loader/save contracts, audit matrices, or runtime verification gate drift apart.
+`Validate_Mod_API_Static.ps1` is the static drift gate. It fails when the source `ISignal` count, schema inventory, projection bridge lanes, command opcodes, facade shape, event subscription contracts, payload byte layout, loader/save contracts, audit matrices, or runtime verification gate drift apart.
 
 Runtime checks required before a future `VERIFIED` status:
 

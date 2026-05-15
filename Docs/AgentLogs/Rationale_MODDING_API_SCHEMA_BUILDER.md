@@ -171,3 +171,63 @@ Rejected Alternatives: Treating loader and save as out-of-scope was rejected bec
 Scalability potential: Low tier keeps mod package execution small, scoped, and unloadable. Middle/High/Ultra can add richer content packages only by changing the audited manifest/save contract and then proving runtime callback and save behavior through the playbook.
 
 Hardware Impact: No runtime impact from docs. The audit prevents silent expansion of managed loader or save payload paths that could increase memory pressure or package callback fanout on i3/MX350-class hardware.
+
+## Decision 15 - Event Subscription Audit And Signal Drift Refresh
+
+Problem: Static validation caught live source drift: `GlobalSignals.cs` now has 134 `ISignal` structs instead of the audited 129. Separately, event subscription lifetime and native byte event exposure were only partially covered by facade counts, leaving leak/native-kind drift risk.
+
+Solution: Refreshed `Signal_Audit_Matrix.md`, `Signal_Schema.json`, spec, and playbook to 134 total signals, 2 projected signals, and 132 denied-by-default signals. Added `Docs/Modding/Event_Subscription_Audit_Matrix.md` and promoted schema to revision 9. The validator now checks 7 public event methods, 2 native event kinds, 3 projected event kinds including `None`, 2 native bridge publish lanes, dispatch depth cap 5, callback watchdog 2.0 ms, and `HectonEventSubscription` `IsActive`/`Dispose` contracts.
+
+Rejected Alternatives: Leaving stale 129/127 counts was rejected because current source is authority. Treating event subscriptions as covered by the public facade audit was rejected because subscription leaks, native byte span misuse, and new event kinds need an explicit runtime boundary.
+
+Scalability potential: Low tier keeps native/projected event exposure tightly capped and unloadable. Middle/High/Ultra can add richer event streams only by updating the event subscription audit, schema, validator, and runtime playbook, then proving callback cost and no post-unload dispatch.
+
+Hardware Impact: No runtime impact from docs. The audit prevents unbounded callback fanout and stale subscriptions from becoming low-end CPU/GC pressure on i3/MX350-class hardware.
+
+## Decision 16 - Change Control Checklist Added
+
+Problem: The mod API package had strong individual audits, but a future agent could still make a partial edit: update one matrix and forget schema, spec, runtime playbook, validator, or status/log evidence.
+
+Solution: Added `Docs/Modding/Change_Control_Checklist.md` and promoted schema to revision 10. The checklist maps every contract change category to required files and proof. The validator now checks checklist presence, required audit links, required change categories, hard stops, and schema linkage.
+
+Rejected Alternatives: Leaving change control distributed across individual audit files was rejected because it forces future agents to infer process from scattered prose. Chat-only process notes were rejected because context compression would erase them.
+
+Scalability potential: Low tier keeps the public mod API small and tightly audited. Middle/High/Ultra can expand mod-facing capability only when the source, schema, matrices, runtime playbook, and validator move together.
+
+Hardware Impact: No runtime impact from docs. The checklist prevents governance gaps that could allow expensive callback, command, or payload expansion onto MX350-class hardware without proof.
+
+## Decision 17 - Contract Index Added
+
+Problem: The contract package was complete but scattered. A future agent could open one audit matrix and miss the schema, validator, runtime playbook, or change-control gate.
+
+Solution: Added `Docs/Modding/README.md` and promoted schema to revision 11. The index names the current source counts, runtime pending boundary, primary files, audit matrices, and required validator command. The static validator now checks the index exists and references the required contract files.
+
+Rejected Alternatives: Depending on directory listings or chat summaries was rejected because neither gives a durable authority entry point. Making the spec itself the only index was rejected because the machine schema and validator need their own discoverable contract package root.
+
+Scalability potential: Low tier gets a small, explicit API surface. Middle/High/Ultra expansions start from the same index and must pass the same gates before adding richer event or command surfaces.
+
+Hardware Impact: No runtime impact from docs. The index reduces wrong-file edits that could otherwise let unprofiled mod surfaces reach low-end hardware.
+
+## Decision 18 - Infinite O2 Sample Spec Hardened
+
+Problem: The Infinite O2 sample existed inside the main specification, but it was not a standalone artifact and the validator did not prove it stayed aligned with current public `HectonAPI` signatures or forbidden-authority rules.
+
+Solution: Added `Docs/Modding/Sample_InfiniteO2_Mod.md` and promoted schema to revision 12. The sample includes a `mod.json` manifest, `IHectonVersionedMod`, `RequiredAPIVersion` 2, SaveState toggle persistence, UI setting registration, projected event subscription, rejection listener, idempotent unload disposal, forbidden direct access list, and required future `SurvivalOverride` kernel. The validator now checks the sample path and required safety/signature phrases.
+
+Rejected Alternatives: Leaving the sample embedded only in `Mod_API_Specification.md` was rejected because it could drift without static failure. Creating runtime C# source was rejected because this role is schema/spec research and no compile target exists.
+
+Scalability potential: Low tier keeps the sample as a no-authority settings/event pattern. Middle/High/Ultra can implement an actual oxygen effect only through a future engine-owned command kernel with runtime proof, not by widening mod direct access.
+
+Hardware Impact: No runtime impact from docs. The hardened sample prevents unsafe modder guidance that could create per-frame polling, direct player mutation, or save corruption on low-end hardware.
+
+## Decision 19 - Resource And Content Boundary Audit Added
+
+Problem: The public facade audit counted content and resource methods, but it did not enforce the resource-specific boundary: mods may resolve hash ids and register cold overlays, but they must not receive Unity asset references or use raw asset loading as a hot path.
+
+Solution: Added `Docs/Modding/Resource_Content_Audit_Matrix.md` and promoted schema to revision 13. The validator now parses `HectonAPI.cs`, `IModResourceProxy.cs`, and `ModAssetManager.cs` to confirm 3 public resource methods, 3 resource kinds, resource capacity 256, 3 internal forbidden asset loaders, raw texture cap 8388608 bytes, raw texture dimension cap 2048, and 14 public content methods.
+
+Rejected Alternatives: Treating resource/content as covered by the facade matrix was rejected because asset caps, registry capacity, and Unity object return rules are distinct security/performance boundaries. Exposing direct `GameObject`, `AudioClip`, or `Texture2D` references was rejected by existing architecture and source exceptions.
+
+Scalability potential: Low tier keeps resources hash-only and content registration cold. Middle/High/Ultra can add richer content through engine-owned registries and commands only after the audit, schema, validator, and runtime playbook are updated.
+
+Hardware Impact: No runtime impact from docs. The audit prevents unbounded mod resource registration, raw texture overuse, and direct Unity object exposure from reaching MX350-class memory and frame budgets.

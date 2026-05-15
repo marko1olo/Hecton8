@@ -65,3 +65,39 @@ Solution: Add a custom source guard over owned files: delimiter scanning with co
 Rejected Alternatives: Only using `rg` grep. That catches policy smells but not structural delimiter errors.  
 Scalability potential: Guard is offline and can be rerun on any hardware; High/CI can still run Unity compile afterward.  
 Hardware Impact: Zero runtime impact; catches editor-blocking mistakes before Unity import.
+
+Problem: A valid `Hecton8.slnx` appeared in the workspace, but Unity-generated `.csproj` files were absent.
+Solution: Run MSBuild anyway to prove the exact wall. MSBuild reports missing Unity project files, including `Hecton8.Core.csproj` and `Assembly-CSharp.csproj`, before any C# compile occurs. Search Unity install paths; Unity.exe is absent.
+Rejected Alternatives: Hand-generating `.csproj` files or stubbing Unity assemblies. That would not verify the real Unity build graph and would create false confidence.
+Scalability potential: Real verification must happen after Unity regenerates project files or in the Unity batch importer. This avoids wasting low-end hardware time on fake builds.
+Hardware Impact: No runtime impact. The build wall is now exact: missing generated project files and Unity editor, not unknown compiler failure.
+
+Problem: Final `compileall` validation hit `PermissionError` on `Tools\__pycache__\DbHealthCheck.cpython-314.pyc.*`, likely a Windows file lock from concurrent tooling.
+Solution: Validate the analyzer with `python -B` executions for dummy fragmentation, RLE audit, and a hash audit sample, then rerun `git diff --check` after whitespace repair.
+Rejected Alternatives: Deleting the whole shared `Tools\__pycache__` directory while 20+ agents are active, or marking bytecode compilation as passed despite the permission wall.
+Scalability potential: `python -B` avoids bytecode writes on locked/low-end CI machines; full bytecode compilation remains a separate clean-workspace gate.
+Hardware Impact: No runtime impact. Tool validation remains deterministic and avoids creating more filesystem contention on the workstation.
+
+Problem: CLI smoke tests prove the analyzer runs, but they do not lock the exact dummy fragmentation counters or corrupt-header failure modes.
+Solution: Add `Tools/test_db_health_check.py` using `unittest` and temporary `.h8db` files. The tests assert v1 layout constants, dummy audit counters, header corruption rejection, hash probability math, and coordinate sensitivity.
+Rejected Alternatives: Only documenting expected CLI output, or adding runtime C# test hooks. CLI-only evidence is weaker; runtime hooks would expand the hot-path surface for an offline analyzer.
+Scalability potential: Low-end machines can run the five-test suite in under a second with `python -B`; CI/high-end can pair it with the 10M hash audit.
+Hardware Impact: No runtime impact. The tool now catches bad `.h8db` layout drift before an MX350 machine wastes time importing or hydrating broken data.
+
+Problem: After adding analyzer tests, verification needed to distinguish actual tool health from the still-existing Unity project-file wall.
+Solution: Rerun `python -B -m unittest Tools.test_db_health_check`, dummy audit, RLE audit, 1M hash audit, `git diff --check`, anti-bloat grep, and MSBuild. Record that Python/tooling gates pass while MSBuild fails before C# compile because generated Unity `.csproj` files are absent.
+Rejected Alternatives: Installing Unity/dotnet or hand-generating `.csproj` files during a concurrent batch. That would mutate machine/project state beyond this storage-domain task and still would not prove real Unity import.
+Scalability potential: Offline gates now cover low-end machines without Unity; high-end/CI must still run real Unity import and GCMonitor.
+Hardware Impact: No runtime impact. Verification risk is narrowed to environment/project generation, not analyzer behavior.
+
+Problem: The analyzer accepted live payload references that were inside the mapped file but beyond the logical `append_offset`, which would let a corrupt B-tree index point into slack space.
+Solution: Validate payload header offsets and payload byte ranges against `append_offset`. Add unit tests for a payload starting past append and a payload record crossing append.
+Rejected Alternatives: Keeping file-size validation only. Physical mapped slack is not committed database content and must not be accepted as live data.
+Scalability potential: Low-end devices avoid wasting I/O on corrupt slack pointers; high-end tooling catches the same fault before broader prefetch hides it.
+Hardware Impact: Offline only. Runtime gain is indirect: corrupted macro DB files are rejected before they create MicroSD read stalls or invalid hydration state.
+
+Problem: The analyzer file changed after the previous 10M hash audit, so evidence needed to be refreshed against the same task-scale sample.
+Solution: Rerun `python -B Tools\DbHealthCheck.py hash-audit --samples 10000000 --seed 1211634754` and rerun MSBuild. The hash audit remains collision-free; MSBuild still fails before C# compile on absent generated Unity `.csproj` files.
+Rejected Alternatives: Relying on the 1M continuation sample only. The XML task explicitly required 10M random AUP coordinates.
+Scalability potential: Low-end can keep the unit and 1M gates for quick iteration; full 10M remains the batch acceptance proof.
+Hardware Impact: Offline only. No runtime cost; evidence confirms the hash-audit path survived the logical EOF hardening.

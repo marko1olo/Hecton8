@@ -357,6 +357,19 @@ Regression test command:
 python -m unittest Tools.test_net_jitter_sim
 ```
 
+Full offline gate command:
+
+```powershell
+python -B Tools\NetProtocolGate.py
+```
+
+Gate output:
+
+- Report: `Docs/Reports/Net_Protocol_Gate_Report.md`
+- Scenarios: baseline, rollback stress, four-client sanity
+- Unit tests: 8
+- Status: `NETWORK PROTOCOL READY`
+
 Regression test coverage:
 
 | Test | Contract |
@@ -365,6 +378,9 @@ Regression test coverage:
 | `test_rollback_stress_corrects_predicted_inputs` | low input delay forces rollback and still converges |
 | `test_four_client_fanout_converges` | packet fan-out and peer masks converge with four clients |
 | `test_redundant_packet_records_clamp_to_available_ticks` | redundant input bundles do not underflow/overflow tick records |
+| `test_packet_schema_offsets_sizes_and_mtu_budget_are_locked` | executable packet schema locks offsets, sizes, and MTU budget for envelope/input/world-delta records |
+| `test_aup64_round_trips_boundaries_and_flags_overflow` | executable `AupLocal64` signed 21-bit millimeter pack/unpack validates min/max and overflow path |
+| `test_merkle_diff_indices_localize_changed_leaves` | executable Merkle comparison localizes changed leaves, including odd leaf counts |
 | `test_float_hash_crime_detector_rejects_float_math` | hash self-audit flags float constants and division in hash functions |
 
 ## Regression Model

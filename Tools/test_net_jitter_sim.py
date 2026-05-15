@@ -87,6 +87,64 @@ class NetJitterSimTests(unittest.TestCase):
         self.assertEqual(84, late_records[0].tick)
         self.assertEqual(99, late_records[-1].tick)
 
+    def test_packet_schema_offsets_sizes_and_mtu_budget_are_locked(self) -> None:
+        self.assertEqual([], net_sim.validate_packet_schema())
+        specs = net_sim.schema_by_name()
+
+        envelope = specs["H8NetEnvelope"]
+        input_record = specs["InputStateRecord"]
+        world_header = specs["WorldDeltaHeader"]
+        world_record = specs["WorldDeltaRecord"]
+
+        self.assertEqual(24, envelope.size)
+        self.assertEqual(16, input_record.size)
+        self.assertEqual(32, world_header.size)
+        self.assertEqual(32, world_record.size)
+        self.assertEqual(0, envelope.fields[0].offset)
+        self.assertEqual("Magic", envelope.fields[0].name)
+        self.assertEqual(20, envelope.fields[-1].offset)
+        self.assertEqual("AckMask32", envelope.fields[-1].name)
+        self.assertLessEqual(envelope.size + (16 * input_record.size), net_sim.NET_MTU_PAYLOAD_BYTES)
+        self.assertLessEqual(envelope.size + world_header.size + world_record.size, net_sim.NET_MTU_PAYLOAD_BYTES)
+
+    def test_aup64_round_trips_boundaries_and_flags_overflow(self) -> None:
+        cases = (
+            (0, 0, 0),
+            (net_sim.AUP_AXIS_MIN, net_sim.AUP_AXIS_MAX, -1),
+            (net_sim.AUP_AXIS_MAX, net_sim.AUP_AXIS_MIN, 1),
+            (512000, -512000, 123456),
+        )
+
+        for x_mm, y_mm, z_mm in cases:
+            with self.subTest(case=(x_mm, y_mm, z_mm)):
+                packed = net_sim.pack_aup_local64(x_mm, y_mm, z_mm)
+                unpacked_x, unpacked_y, unpacked_z, overflow = net_sim.unpack_aup_local64(packed)
+
+                self.assertFalse(overflow)
+                self.assertEqual((x_mm, y_mm, z_mm), (unpacked_x, unpacked_y, unpacked_z))
+
+        overflow_cases = (
+            (net_sim.AUP_AXIS_MAX + 1, 0, 0),
+            (0, net_sim.AUP_AXIS_MIN - 1, 0),
+            (0, 0, net_sim.AUP_AXIS_MAX + 1),
+        )
+        for x_mm, y_mm, z_mm in overflow_cases:
+            with self.subTest(overflow_case=(x_mm, y_mm, z_mm)):
+                packed = net_sim.pack_aup_local64(x_mm, y_mm, z_mm)
+                self.assertEqual(net_sim.AUP_OVERFLOW_BIT, packed)
+                self.assertEqual((0, 0, 0, True), net_sim.unpack_aup_local64(packed))
+
+    def test_merkle_diff_indices_localize_changed_leaves(self) -> None:
+        base = tuple(net_sim.hash_state_chunk(index, 10, (index, index * 3)) for index in range(9))
+        altered = list(base)
+        altered[3] = net_sim.hash_state_chunk(3, 10, (999, 3))
+        altered[8] = net_sim.hash_state_chunk(8, 10, (888, 8))
+
+        self.assertEqual([], net_sim.merkle_diff_indices(base, base))
+        self.assertEqual([3, 8], net_sim.merkle_diff_indices(base, tuple(altered)))
+        with self.assertRaises(ValueError):
+            net_sim.merkle_diff_indices(base, base[:-1])
+
     def test_float_hash_crime_detector_rejects_float_math(self) -> None:
         source = "\n".join(
             (

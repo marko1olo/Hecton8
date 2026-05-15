@@ -62,7 +62,7 @@ Hardware Impact: 0 us/frame from this pass. Maintains visual-fake-first contract
 ## Decision 7: Verification Boundaries
 
 Problem: Static docs/tools can be verified locally, but Unity runtime truth requires Unity import/Console/Play Mode logs.
-Solution: Ran localization pack/verify, LoreChecker, VerifyLore bake/manifest verify, unit tests, py_compile, targeted counts, and scoped diff check. Marked Unity runtime as PENDING VERIFICATION. CLI compile is blocked because no `.csproj` or `.sln` was found and no Unity executable is discoverable in PATH.
+Solution: Ran localization pack/verify, LoreChecker, VerifyLore bake/manifest verify, unit tests, py_compile, targeted counts, and scoped diff check. Marked Unity runtime as PENDING VERIFICATION. CLI compile/import is blocked because no `.csproj` or `.sln` was found, Unity target is `6000.4.1f1`, no Unity executable is discoverable in PATH or common Unity Hub install paths, and `Library/ScriptAssemblies` is absent.
 Rejected Alternatives: Claiming runtime readiness from static scans, modifying unrelated project files to create a compile surface, or touching existing dirty work from other agents.
 Scalability potential: Verification scripts remain cheap local gates; Unity profiling remains required before runtime claims.
 Hardware Impact: No runtime code changed; no measured CPU/GC/memory regression introduced by this pass.
@@ -74,3 +74,27 @@ Solution: Performed the anti-bloat pass against loaded rules: no runtime code ad
 Rejected Alternatives: Searching archived batches for a mandate, adding runtime systems for narrative spawns, or modifying unrelated current-batch whitespace found by repository-wide diff check.
 Scalability potential: The content scales by authoring density and tiered presentation only. Low stays text/scanner-light; Ultra can add visuals/audio through existing owners.
 Hardware Impact: 0 us/frame. No C# or shader runtime changes in this pass.
+
+## Decision 9: Semantic Sync Regression Test
+
+Problem: Static prose can drift after the first audit; `SuitUpgradeManager` also owns equipment-hash aliases that affect how inventory grants the oxygen tank bit.
+Solution: Added `Tools/test_lore_semantic_sync.py`. It verifies `SuitUpgradeResolver` bit and `+4 MaxO2`, the oxygen upgrade asset `deltaMaxOxygen: 4` and `deltaSafeDepth: 0`, `SuitUpgradeManager` oxygen equipment aliases, lore/localization text, `HectonGIRelaySystem` 500 m depth palette, 80 collapse sectors, and 50 raw terminal records.
+Rejected Alternatives: Relying on grep-only evidence, ignoring `SuitUpgradeManager`, or leaving the player-facing upgrade description without the explicit `suit_oxygen_t1_aux_reservoir` ID.
+Scalability potential: The sync test is a cheap authoring gate for future Low/Middle/High/Ultra content expansion without runtime cost.
+Hardware Impact: 0 us/frame. Additional cost is Python CLI test time only; no Unity runtime code changed.
+
+## Decision 10: Lore Bible Status Correction
+
+Problem: The top of `Docs/Lore/Lore_Bible.md` still declared `PENDING VERIFICATION`, which contradicted the completed static/CLI status and could mislead later agents.
+Solution: Updated the lore bible header to `TRUTH SYNCHRONIZED (STATIC/CLI) / UNITY RUNTIME PENDING VERIFICATION` and rebaked the lore blob.
+Rejected Alternatives: Leaving the stale header, or claiming full runtime verification without Unity import evidence.
+Scalability potential: Future content readers get the correct static/runtime evidence boundary immediately.
+Hardware Impact: 0 us/frame. Documentation and baked lore blob only.
+
+## Decision 11: Artifact Chain Integrity
+
+Problem: Static source checks do not prove that the baked lore blob and localization binary carry the synchronized truth, and raw terminal records could rot through duplicate IDs.
+Solution: Verified `Data/Localization/en_US.bin` header shape directly, extracted `Docs/Lore/Lore_Bible.md` from `Data/Lore/Encyclopedia.h8bin`, and extended semantic tests to require 25 ordered boot records and 25 ordered error records with unique IDs.
+Rejected Alternatives: Trusting source files only, or treating terminal text count as enough.
+Scalability potential: Future content expansion can rely on binary/source parity and stable raw terminal identifiers before adding tier-specific UI presentation.
+Hardware Impact: 0 us/frame. CLI-only validation.

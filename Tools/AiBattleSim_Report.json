@@ -1,4 +1,5 @@
 {
+  "brainDigest": "07dad20de885023d068e93c97ae468732cb077efd6fc0b01420279900389e246",
   "brainPath": "Data/AI/Leviathan_Brain.json",
   "calibration": {
     "aggressionLowered": false,
@@ -6,7 +7,7 @@
     "initialAggressionScalar": 1.0,
     "passes": 1
   },
-  "elapsedSeconds": 41.955,
+  "elapsedSeconds": 207.297,
   "evidenceClass": "CLI_PYTHON_BATTLE_SIMULATION",
   "frustrationAudit": {
     "allKillsUnder30": false,
@@ -619,6 +620,8 @@
   ],
   "schemaVersion": 1,
   "seed": 5203993302906589761,
+  "simulationDigest": "97a10330bb86ded1a29b82aa896ac9acbe46d768fe0c403360c80e08bca50867",
+  "simulatorSchemaVersion": 2,
   "status": "INSTINCTS DEFINED",
   "summary": {
     "averageKillTimeSeconds": 76.401,
@@ -797,12 +800,18 @@
       "Hide": 10,
       "RealAttack": 10
     },
+    "behaviorParameterCount": 5,
+    "blackBoxCapacityFrames": 300,
+    "contextCount": 10,
     "errors": [],
     "globalDataVaultFeedCount": 7,
     "knownBufferCount": 66,
     "knownBufferSource": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
     "knownBufferSourceStatus": "SOURCE_PARSED",
+    "mathLodTierCount": 4,
+    "packRuleCount": 4,
     "status": "BRAIN_VALIDATION_PASSED",
+    "utilityPairCount": 50,
     "utilityScoreCount": 50
   }
 }

@@ -9,19 +9,24 @@ Audit source: `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA.json`
 
 - First-party scan root: `Assets/_Project`
 - Textures scanned by filename/material audit: 138
-- Albedo energy candidates decoded by Python/Pillow: 28
+- Albedo energy candidates decoded by Python/Pillow: 26
 - Albedo energy failures: 0
 - Albedo energy warnings: 0
-- Texture import-setting issues: 6
+- Texture import-setting issues: 5
+- Estimated texture residency by offline BC-class model: 497.565 MiB
 - ORM/mask candidates found: 17
 - Detail candidates found: 13
-- Materials scanned: 173
-- Materials with packed mask slots: 9
+- Materials scanned: 176
+- Materials with prompt ORM slots: 0
+- Materials with legacy/unknown packed mask slots: 9
+- Materials with any packed mask slots: 9
 - Materials with detail slots: 0
 - Materials with audit issues: 31
-- Issue counts: `NO_PACKED_ORM_OR_MASK_SLOT` = 22, `NO_DETAIL_MAP_SLOT` = 31
+- Channel-packing migration candidates: 31 (`LOW` = 22, `MEDIUM` = 9)
+- Channel-packing candidate model: 206.15 MiB standard -> 92.69 MiB optimized, saving 113.46 MiB (55.0%)
+- Issue counts: `NO_PROMPT_ORM_SLOT` = 31, `NO_PACKED_ORM_OR_MASK_SLOT` = 22, `NO_DETAIL_MAP_SLOT` = 31, `LEGACY_MASK_SLOT_REQUIRES_CHANNEL_REVIEW` = 9
 
-Conclusion: the current albedo set does not break the offline energy test. The material system is underusing channel-packing and detail overlays. Six texture import settings are suspect and must be reviewed before material migration.
+Conclusion: the current albedo set does not break the offline energy test. The material system has zero prompt-authoritative ORM slots, nine legacy/unknown mask slots, and zero wired detail slots. Five texture import settings are suspect and must be reviewed before material migration. The offline residency estimate is not Unity profiler proof; it is a deterministic BC-class triage model for asset prioritization.
 
 ## ORM Packing Spec
 
@@ -210,10 +215,10 @@ Load-shed:
 ## Validator Command
 
 ```powershell
-python Tools\MaterialAudit.py --root Assets\_Project --sample-size 256 --json Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.json --markdown Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.md
+python Tools\MaterialAudit.py --root Assets\_Project --sample-size 256 --json Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.json --markdown Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.md --csv-prefix Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA
 ```
 
-Current result: `energy_failures=0`, `energy_warnings=0`, `import_issue_textures=6`, `materials_with_issues=31`.
+Current result: `energy_failures=0`, `energy_warnings=0`, `import_issue_textures=5`, `estimated_texture_mib=497.565`, `materials_with_prompt_orm=0`, `materials_with_legacy_mask=9`, `channel_packing_candidates=31`, `channel_candidate_saved_mib=113.46`, `materials_with_issues=31`.
 
 CI gate modes:
 
@@ -226,7 +231,6 @@ Known import issues from the current audit:
 
 - `Assets/_Project/Art/TEXTURES/Detali/Soft Plume Noise - second try.png` - data texture has sRGB enabled.
 - `Assets/_Project/Art/TEXTURES/Detali/soft_plume_noise_-_kakoy_to_seryy_nu_norm.png` - normal/data texture has sRGB enabled and is not imported as Normal Map.
-- `Assets/_Project/Art/TEXTURES/WorldProceduralFlora/TX_ProceduralBio_Shallows_ORMAtlas.png` - ORM data texture has sRGB enabled.
 - `Assets/_Project/_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_bump.png` - normal/bump map has sRGB enabled and is not imported as Normal Map.
 - `Assets/_Project/_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_norm.png` - normal map has sRGB enabled and is not imported as Normal Map.
 - `Assets/_Project/_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_spec.png` - specular/data texture has sRGB enabled.

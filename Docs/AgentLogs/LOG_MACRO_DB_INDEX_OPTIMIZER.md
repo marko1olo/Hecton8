@@ -89,3 +89,89 @@ Verification:
 - Compiler proof -> BLOCKED: Unity editor and generated assemblies absent; standalone `csc` hangs.
 
 Status: DATABASE OPTIMIZED / PENDING UNITY VERIFICATION.
+
+## 2026-05-15 - BUILD WALL PROBE
+
+What was wrong:
+
+- `Hecton8.slnx` exists, but the Unity-generated `.csproj` files it references are absent. `dotnet` is still not installed.
+
+What was done:
+
+- Ran `dotnet build Hecton8.slnx`; failed because `dotnet` is not recognized.
+- Ran Visual Studio MSBuild directly against `Hecton8.slnx`; MSBuild executed and failed with `MSB3202` missing project-file errors before C# compilation.
+- Searched for Unity executable in PATH, Program Files Unity locations, Unity Hub locations, and user-local Unity paths; Unity.exe not found.
+
+Cinematic Cheats used:
+
+- None. This was verification work only.
+
+Exact microseconds saved:
+
+- No runtime savings claimed. MSBuild wall probe cost `121,800,000 us`; Unity executable search cost `83,100,000 us`.
+
+Verification:
+
+- Build proof -> BLOCKED: generated Unity `.csproj` files are missing and Unity.exe is unavailable to regenerate them.
+- Runtime Unity/GCMonitor -> PENDING VERIFICATION.
+
+Status: DATABASE OPTIMIZED / PENDING UNITY VERIFICATION.
+## 2026-05-15 Final Hygiene Repair
+
+What was wrong -> The final rationale edit carried trailing whitespace and `python -m compileall Tools\DbHealthCheck.py` hit a Windows permission lock in `Tools\__pycache__` during bytecode rename.
+
+What was done -> Removed the whitespace, reran `git diff --check` successfully, confirmed the `.h8db` analyzer via `python -B` dummy fragmentation/RLE/hash executions, and kept the environment compile wall explicit: `dotnet` absent, Unity-generated `.csproj` files absent, Unity.exe absent.
+
+Cinematic Cheats used -> Storage-side fake only: keep B-tree sector truth and allow 4-bit narrow-band visual RLE only for far LOD2+ payloads. Collision/save authority stays 8-bit signed SDF.
+
+Exact Microseconds saved -> B-tree node search still drops worst-case in-node comparisons from 169 to 8. Estimated CPU save: up to 161 comparisons per node visit. Cache LRU avoids repeat MicroSD hydration misses when clean payloads can be evicted. Final hygiene repair itself saves 0 runtime microseconds.
+
+Verification -> `git diff --check` PASS. `python -B Tools\DbHealthCheck.py dummy-audit` PASS with fragmentation `27.033493%`. `python -B Tools\DbHealthCheck.py rle-audit` PASS. `python -B Tools\DbHealthCheck.py hash-audit --samples 100000` PASS. Previous full 10M hash audit remains recorded with observed collisions `0` and probability `0.000002710501`. Unity/runtime verification remains PENDING because the local environment cannot build or launch the Unity project.
+
+## 2026-05-15 Analyzer Unit-Test Hardening
+
+What was wrong -> The analyzer had CLI proof but no committed unit test coverage for exact file-layout constants, dummy fragmentation counters, or corrupt-header rejection.
+
+What was done -> Added `Tools/test_db_health_check.py` with five `unittest` cases. The suite creates temporary `.h8db` files, audits the deterministic dummy database, verifies the 4096/16-byte layout constants, rejects a bad file magic, and locks hash probability math.
+
+Cinematic Cheats used -> None in runtime. Offline test coverage protects the storage fake: B-tree locates truth sectors while far visual RLE may use narrow-band 4-bit density.
+
+Exact Microseconds saved -> Runtime save is 0 us from the test file itself. Defect-prevention value: catches bad layout drift before it can create MicroSD hydration stalls. Analyzer test runtime: 0.319 s in the latest run.
+
+Verification -> `python -B -m unittest Tools.test_db_health_check` PASS, 5 tests. `git diff --check` PASS on owned files.
+
+## 2026-05-15 Post-Test Verification Pass
+
+What was wrong -> New test coverage required a fresh verification pass, and the build wall needed to be rechecked after the continuation edits.
+
+What was done -> Reran `python -B -m unittest Tools.test_db_health_check`, dummy `.h8db` fragmentation audit, RLE audit, 1M hash audit, owned-file `git diff --check`, anti-bloat grep, and MSBuild.
+
+Cinematic Cheats used -> Same storage cheat policy: B-tree stays the truth locator; far visual RLE may use 4-bit narrow-band density only after LOD hysteresis.
+
+Exact Microseconds saved -> Runtime change from this verification pass is 0 us. Guard value: prevents analyzer regressions before broken data reaches MicroSD hydration.
+
+Verification -> Unit tests PASS, 5 tests in 0.595 s. Dummy fragmentation PASS at `27.033493%`. RLE audit PASS. 1M hash audit PASS with `observed_collisions=0` and probability `0.000000027105`. `git diff --check` PASS. Anti-bloat grep returned no matches. MSBuild still fails before C# compilation with MSB3202 missing generated Unity `.csproj` files, including `Assembly-CSharp.csproj` and `Hecton8.Core.csproj`.
+
+## 2026-05-15 Logical EOF Hardening
+
+What was wrong -> `DbHealthCheck` validated payload records against physical file size. A corrupt index could point into mapped slack after `append_offset` and still be accepted if bytes existed on disk.
+
+What was done -> Changed payload offset and payload length validation to use logical `append_offset`. Added two unit tests for payloads starting past append and crossing append.
+
+Cinematic Cheats used -> None. This is binary integrity work for the offline database analyzer.
+
+Exact Microseconds saved -> Runtime save is 0 us directly. Failure prevention: rejects invalid slack pointers before hydration can waste MicroSD reads or produce corrupt macro-sector state.
+
+Verification -> `python -B -m unittest Tools.test_db_health_check` PASS, 7 tests in 0.613 s. Dummy audit PASS. RLE audit PASS. `git diff --check` PASS.
+
+## 2026-05-15 Full Post-EOF Verification
+
+What was wrong -> `DbHealthCheck.py` changed after the previous task-scale hash audit, so the original 10M sample needed to be repeated.
+
+What was done -> Reran the 10M hash audit, analyzer unit tests, and MSBuild wall probe.
+
+Cinematic Cheats used -> None. Verification only.
+
+Exact Microseconds saved -> Runtime save is 0 us from verification. The B-tree index optimization remains the runtime-relevant work: worst-case in-node search is 8 comparisons instead of 169.
+
+Verification -> 10M hash audit PASS with `observed_collisions=0`, expected collision pairs `0.000002710505`, probability `0.000002710501`. Analyzer unit tests PASS, 7 tests. MSBuild still BLOCKED before C# compile by missing Unity-generated `.csproj` files.

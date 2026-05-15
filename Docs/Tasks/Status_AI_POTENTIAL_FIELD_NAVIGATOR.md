@@ -65,3 +65,34 @@ Status: NAVIGATION OPTIMIZED (PY_SIM) / PENDING UNITY VERIFICATION
 - [x] Re-run simulator, self-check, py_compile, unit tests, and diff whitespace guard | Justification: `python Tools/AiPathSim.py` regenerated the export, `python Tools/AiPathSim.py --check` passed, `python -m unittest Tools.AI_Sim.test_ai_path_sim` ran 5 tests OK, and `git diff --check` passed on touched files. Alternative rejected: chat-only completion evidence. Estimate: 89,000,000 us.
 - [x] Final artifact invariant/debt scan | Justification: JSON invariant command confirmed optimized status, source resolution, zero SDF pushouts, and >=2m clearance; `rg` debt-marker scan returned no hits in touched files. Alternative rejected: leaving final acceptance to visual inspection. Estimate: 12,000,000 us.
 - [x] Normalize exported float precision | Justification: tier tuning no longer leaks Python binary float tail values; regenerated JSON verified via `json-float-normalized`, self-check, py_compile, and unit tests. Alternative rejected: leaving machine-noisy values in a handoff data artifact. Estimate: 14,000,000 us.
+
+## Iterative Loop 8 - Source Drift Guard
+
+- [x] Validate export against live `HectonFluidEngine.cs` constants | Justification: `Tools/AiPathSim.py --check` now parses source constants and rejects drift between source, JSON snapshot, and expected flow values. Alternative rejected: accepting stale tuning if the fluid engine constants change later. Estimate: 42,000,000 us.
+- [x] Extend regression suite to six tests | Justification: `test_source_constants_match_export` exercises the same source drift guard and the corrected standalone assertion printed `source-constants-ok`. Alternative rejected: hidden source coupling documented only in prose. Estimate: 18,000,000 us.
+- [x] Validate duplicate source constant occurrences | Justification: parser now checks every matching occurrence of duplicated storm-layer constants; regression suite reached 7 tests and standalone assertion printed `duplicate-source-constants-ok`. Alternative rejected: accepting the first matching source constant while another class silently diverges. Estimate: 21,000,000 us.
+
+## Iterative Loop 9 - Black Box Handoff
+
+- [x] Export AI black-box telemetry contract | Justification: `Data/AI/Navigation_Tuning.json` now includes a 300-frame circular `NativeArray<AiPotentialFieldTelemetryEntry>` contract, dump path, triggers, finite guards, and required telemetry fields. Alternative rejected: leaving Black Box compliance as prose only. Estimate: 28,000,000 us.
+- [x] Validate telemetry contract in simulator checks | Justification: `python Tools/AiPathSim.py --check` and the regression suite reject missing black-box capacity/path/fields; tests reached 8 and `blackbox-contract-ok` passed. Alternative rejected: relying on future runtime agents to infer telemetry shape. Estimate: 16,000,000 us.
+
+## Iterative Loop 10 - Metric Replay Guard
+
+- [x] Validate stored metrics against deterministic replay | Justification: `Tools/AiPathSim.py --check` now recomputes the full candidate search and rejects stale raw/smoothed/idle/search metrics that do not match the exported JSON. Alternative rejected: accepting plausible selected weights with hand-edited or stale metrics. Estimate: 57,000,000 us.
+- [x] Extend regression suite to nine tests | Justification: `test_exported_metrics_match_replay` asserts selected weights, raw metrics, smoothed metrics, idle drift, and search counts match a fresh replay; standalone JSON invariant printed `metric-replay-json-ok`. Alternative rejected: metric validation only in prose. Estimate: 47,000,000 us.
+
+## Iterative Loop 11 - State Hysteresis Guard
+
+- [x] Add tier-switch hysteresis to Low/Middle/High/Ultra profiles | Justification: AI scalability switches now include a 5m distance band and 3s dwell time so runtime steering tier changes cannot flip-flop immediately. Alternative rejected: cadence-only tiers with no state stability band. Estimate: 22,000,000 us.
+- [x] Validate hysteresis in check/test suite | Justification: `Tools/AiPathSim.py --check` rejects missing/out-of-range hysteresis, regression suite reached 10 tests, and standalone invariant printed `hysteresis-json-ok`. Alternative rejected: relying on implementer memory of the hysteresis mandate. Estimate: 31,000,000 us.
+
+## Iterative Loop 12 - Path Trace Evidence
+
+- [x] Export compact selected-path trace | Justification: `Data/AI/Navigation_Tuning.json` now records deterministic path samples with step, time, position, target distance, SDF clearance, and flow alignment. Alternative rejected: aggregate metrics without route evidence. Estimate: 38,000,000 us.
+- [x] Validate trace against replay | Justification: `Tools/AiPathSim.py --check` and `test_path_trace_matches_replay` reject stale path samples; regression suite reached 11 tests and standalone invariant printed `path-trace-json-ok`. Alternative rejected: visual inspection of JSON samples. Estimate: 46,000,000 us.
+
+## Iterative Loop 13 - Deterministic Export Guard
+
+- [x] Remove volatile Python wall-clock timing from JSON | Justification: `pythonMicroBenchmark` made identical simulator runs produce different `Navigation_Tuning.json` hashes; export now uses deterministic `sampleCostModel`. Alternative rejected: keeping workstation-noisy timing as handoff evidence. Estimate: 25,000,000 us.
+- [x] Add byte-stable regeneration test | Justification: `test_export_regeneration_is_deterministic` reruns the simulator and byte-compares `Data/AI/Navigation_Tuning.json`; regression suite reached 13 tests and manual hash check stayed `BE874CA325A9B3DE0BAABB6784837C4DBA7F5BA66B93EFAD63F3D750D7FFA693` across repeated runs. Alternative rejected: assuming determinism from stable aggregate metrics. Estimate: 50,000,000 us.

@@ -5,11 +5,36 @@ from __future__ import annotations
 
 import json
 import ast
-import tempfile
+import shutil
 import unittest
+from contextlib import contextmanager
 from pathlib import Path
 
 import vr_snap_turn_comfort_audit as audit
+
+
+TEST_TEMP_ROOT = audit.ROOT / "Temp" / "CodexValidation" / "SOMATIC_COMFORT_ANALYST_TESTS"
+
+
+@contextmanager
+def workspace_temp_dir():
+    remove_workspace_temp_root()
+    TEST_TEMP_ROOT.mkdir(parents=True, exist_ok=True)
+    try:
+        yield str(TEST_TEMP_ROOT)
+    finally:
+        remove_workspace_temp_root()
+
+
+def remove_workspace_temp_root() -> None:
+    workspace_root = audit.ROOT.resolve()
+    temp_root = TEST_TEMP_ROOT.resolve()
+    try:
+        temp_root.relative_to(workspace_root)
+    except ValueError as exc:
+        raise AssertionError(f"Refusing temp cleanup outside workspace: {temp_root}") from exc
+    if temp_root.exists():
+        shutil.rmtree(temp_root)
 
 
 class VRSnapTurnComfortAuditTests(unittest.TestCase):
@@ -29,6 +54,19 @@ class VRSnapTurnComfortAuditTests(unittest.TestCase):
     def test_audit_script_path_contract_matches_module_file(self) -> None:
         self.assertEqual(Path(str(audit.__file__)).resolve(), audit.SCRIPT_PATH)
         self.assertEqual("vr_snap_turn_comfort_audit.py", audit.SCRIPT_PATH.name)
+
+    def test_workspace_temp_dir_cleans_entry_and_exit(self) -> None:
+        TEST_TEMP_ROOT.mkdir(parents=True, exist_ok=True)
+        stale_file = TEST_TEMP_ROOT / "stale.json"
+        stale_file.write_text("{}", encoding="utf-8")
+
+        with workspace_temp_dir() as temp_dir:
+            temp_path = Path(temp_dir)
+            self.assertTrue(temp_path.exists())
+            self.assertFalse(stale_file.exists())
+            (temp_path / "created.json").write_text("{}", encoding="utf-8")
+
+        self.assertFalse(TEST_TEMP_ROOT.exists())
 
     def test_current_profile_passes(self) -> None:
         payload = audit.build_audit_payload()
@@ -59,7 +97,7 @@ class VRSnapTurnComfortAuditTests(unittest.TestCase):
 
     def test_report_writes_source_hashes(self) -> None:
         payload = audit.build_audit_payload()
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with workspace_temp_dir() as temp_dir:
             report_path = Path(temp_dir) / "audit.json"
             audit.write_report(payload, report_path)
             written = json.loads(report_path.read_text(encoding="utf-8"))
@@ -69,11 +107,12 @@ class VRSnapTurnComfortAuditTests(unittest.TestCase):
         self.assertEqual(64, len(hashes["comfortMarkdownSha256"]))
         self.assertEqual(64, len(hashes["hapticWaveformsSha256"]))
         self.assertEqual(64, len(hashes["auditScriptSha256"]))
+        self.assertEqual(64, len(hashes["auditTestSha256"]))
         self.assertEqual(64, len(hashes["vrSomaticProviderSha256"]))
         self.assertEqual(64, len(hashes["toolHapticsRuntimeSha256"]))
 
     def test_report_writer_sanitizes_non_finite_values(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with workspace_temp_dir() as temp_dir:
             report_path = Path(temp_dir) / "audit.json"
             audit.write_report({"value": float("nan"), "nested": [float("inf")]}, report_path)
             written = json.loads(report_path.read_text(encoding="utf-8"))
@@ -83,7 +122,7 @@ class VRSnapTurnComfortAuditTests(unittest.TestCase):
 
     def test_report_check_accepts_current_report(self) -> None:
         payload = audit.build_audit_payload()
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with workspace_temp_dir() as temp_dir:
             report_path = Path(temp_dir) / "audit.json"
             audit.write_report(payload, report_path)
             errors = audit.validate_report(report_path)
@@ -92,7 +131,7 @@ class VRSnapTurnComfortAuditTests(unittest.TestCase):
 
     def test_report_check_rejects_stale_hashes(self) -> None:
         payload = audit.build_audit_payload()
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with workspace_temp_dir() as temp_dir:
             report_path = Path(temp_dir) / "audit.json"
             audit.write_report(payload, report_path)
             written = json.loads(report_path.read_text(encoding="utf-8"))
@@ -148,13 +187,325 @@ class VRSnapTurnComfortAuditTests(unittest.TestCase):
         self.assertTrue(any("ApproximateMagnitudeNoSqrt(angularAcceleration)" in error for error in errors))
         self.assertTrue(any("PublishComfortVignette(0f)" in error for error in errors))
         self.assertTrue(any("_accelerationComfortVignette01 = 0f" in error for error in errors))
+        self.assertTrue(any("safeDeltaTime > frameSafetyDeltaSeconds" in error for error in errors))
+        self.assertTrue(any("ResolveComfortFrameSafetyMinOpacity()" in error for error in errors))
+        self.assertTrue(any("BlackBoxFlagFramePressure" in error for error in errors))
+        self.assertTrue(any("BlackBoxFlagQuest2Fallback" in error for error in errors))
+        self.assertTrue(any("BlackBoxFlagAccelerationTunnel" in error for error in errors))
+
+    def test_origin_shift_source_requires_immediate_shader_reset(self) -> None:
+        errors: list[str] = []
+        partial_source = """
+            public void OnOriginShift(in OriginShiftEventData shiftData)
+            {
+                _accelerationComfortVignette01 = 0f;
+                _accelerationReleaseBelowTimer = 0f;
+            }
+            private void UpdateAccelerationComfortState() {}
+            private void UpdateRotationJerkState()
+            {
+                float angularAccelerationMagnitude = ApproximateMagnitudeNoSqrt(angularAcceleration);
+            }
+            private void ScheduleRootSync()
+            {
+                AccelerationVignette01 = Sanitize01(_accelerationComfortVignette01, 0f);
+                vignette01 = math.max(vignette01, math.saturate(input.AccelerationVignette01));
+            }
+            private void ApplyInactiveState()
+            {
+                _accelerationComfortVignette01 = 0f;
+                _accelerationReleaseBelowTimer = 0f;
+                _accelerationReleaseBelowTimer = math.min(hysteresisSeconds, _accelerationReleaseBelowTimer + deltaTime);
+                float maxDelta = target > _accelerationComfortVignette01;
+                float delta = math.clamp(target - _accelerationComfortVignette01, -maxDelta, maxDelta);
+                PublishComfortVignette(0f);
+            }
+        """
+
+        audit.validate_runtime_source_fragments(partial_source, errors)
+
+        self.assertTrue(
+            any(
+                "runtime method public void OnOriginShift missing source fragment: PublishComfortVignette(0f)"
+                in error
+                for error in errors
+            )
+        )
+        self.assertTrue(
+            any(
+                "runtime method public void OnOriginShift missing source fragment: PublishShaderState();"
+                in error
+                for error in errors
+            )
+        )
+
+    def test_origin_shift_reset_must_precede_invalid_shift_return(self) -> None:
+        errors: list[str] = []
+        partial_source = """
+            public void OnOriginShift(in OriginShiftEventData shiftData)
+            {
+                Vector3 shiftOffset = shiftData.ShiftOffset;
+                if (!IsFiniteVector(shiftOffset))
+                    return;
+
+                _accelerationComfortVignette01 = 0f;
+                _accelerationReleaseBelowTimer = 0f;
+                PublishComfortVignette(0f);
+                PublishShaderState();
+            }
+            private void UpdateAccelerationComfortState() {}
+            private void UpdateRotationJerkState()
+            {
+                float angularAccelerationMagnitude = ApproximateMagnitudeNoSqrt(angularAcceleration);
+            }
+            private void ScheduleRootSync()
+            {
+                AccelerationVignette01 = Sanitize01(_accelerationComfortVignette01, 0f);
+                vignette01 = math.max(vignette01, math.saturate(input.AccelerationVignette01));
+            }
+            private void ApplyInactiveState()
+            {
+                _accelerationComfortVignette01 = 0f;
+                _accelerationReleaseBelowTimer = 0f;
+                _accelerationReleaseBelowTimer = math.min(hysteresisSeconds, _accelerationReleaseBelowTimer + deltaTime);
+                float maxDelta = target > _accelerationComfortVignette01;
+                float delta = math.clamp(target - _accelerationComfortVignette01, -maxDelta, maxDelta);
+                PublishComfortVignette(0f);
+            }
+        """
+
+        audit.validate_runtime_source_fragments(partial_source, errors)
+
+        self.assertTrue(
+            any(
+                "runtime method public void OnOriginShift must run before if (!IsFiniteVector(shiftOffset))"
+                in error
+                for error in errors
+            )
+        )
+
+    def test_aup_sequence_reset_requires_immediate_shader_reset(self) -> None:
+        errors: list[str] = []
+        partial_source = """
+            public void OnOriginShift(in OriginShiftEventData shiftData)
+            {
+                _accelerationComfortVignette01 = 0f;
+                _accelerationReleaseBelowTimer = 0f;
+                PublishComfortVignette(0f);
+                PublishShaderState();
+                if (!IsFiniteVector(shiftOffset))
+                    return;
+            }
+            private void ResetHeadMotionIfAupShifted(Vector3 headPosition, Quaternion headRotation)
+            {
+                ResetHeadMotionHistory(headPosition, headRotation);
+            }
+            private void UpdateAccelerationComfortState() {}
+            private void UpdateRotationJerkState()
+            {
+                float angularAccelerationMagnitude = ApproximateMagnitudeNoSqrt(angularAcceleration);
+            }
+            private void ScheduleRootSync()
+            {
+                AccelerationVignette01 = Sanitize01(_accelerationComfortVignette01, 0f);
+                vignette01 = math.max(vignette01, math.saturate(input.AccelerationVignette01));
+            }
+            private void ApplyInactiveState()
+            {
+                _accelerationComfortVignette01 = 0f;
+                _accelerationReleaseBelowTimer = 0f;
+                _accelerationReleaseBelowTimer = math.min(hysteresisSeconds, _accelerationReleaseBelowTimer + deltaTime);
+                float maxDelta = target > _accelerationComfortVignette01;
+                float delta = math.clamp(target - _accelerationComfortVignette01, -maxDelta, maxDelta);
+                PublishComfortVignette(0f);
+            }
+        """
+
+        audit.validate_runtime_source_fragments(partial_source, errors)
+
+        self.assertTrue(
+            any(
+                "runtime method private void ResetHeadMotionIfAupShifted missing source fragment: ResetHeadMotionHistoryAndPublishedComfort(headPosition, headRotation);"
+                in error
+                for error in errors
+            )
+        )
+        self.assertTrue(
+            any(
+                "runtime acceleration reset helper must cover first pose, tracking jump, and AUP shift paths"
+                in error
+                for error in errors
+            )
+        )
+
+    def test_raw_head_history_reset_outside_helper_fails_closed(self) -> None:
+        errors: list[str] = []
+        partial_source = """
+            public void OnOriginShift(in OriginShiftEventData shiftData)
+            {
+                _accelerationComfortVignette01 = 0f;
+                _accelerationReleaseBelowTimer = 0f;
+                PublishComfortVignette(0f);
+                PublishShaderState();
+                if (!IsFiniteVector(shiftOffset))
+                    return;
+            }
+            private void UpdateHeadMotion()
+            {
+                ResetHeadMotionHistoryAndPublishedComfort(headPosition, headRotation);
+                ResetHeadMotionHistory(headPosition, headRotation);
+            }
+            private void ResetHeadMotionHistoryAndPublishedComfort(Vector3 headPosition, Quaternion headRotation)
+            {
+                ResetHeadMotionHistory(headPosition, headRotation);
+                PublishComfortVignette(0f);
+                PublishShaderState();
+            }
+            private void ResetHeadMotionIfAupShifted(Vector3 headPosition, Quaternion headRotation)
+            {
+                ResetHeadMotionHistoryAndPublishedComfort(headPosition, headRotation);
+            }
+            private void AnotherResetPath(Vector3 headPosition, Quaternion headRotation)
+            {
+                ResetHeadMotionHistoryAndPublishedComfort(headPosition, headRotation);
+            }
+            private void UpdateAccelerationComfortState() {}
+            private void UpdateRotationJerkState()
+            {
+                float angularAccelerationMagnitude = ApproximateMagnitudeNoSqrt(angularAcceleration);
+            }
+            private void ScheduleRootSync()
+            {
+                AccelerationVignette01 = Sanitize01(_accelerationComfortVignette01, 0f);
+                vignette01 = math.max(vignette01, math.saturate(input.AccelerationVignette01));
+            }
+            private void ApplyInactiveState()
+            {
+                _accelerationComfortVignette01 = 0f;
+                _accelerationReleaseBelowTimer = 0f;
+                _accelerationReleaseBelowTimer = math.min(hysteresisSeconds, _accelerationReleaseBelowTimer + deltaTime);
+                float maxDelta = target > _accelerationComfortVignette01;
+                float delta = math.clamp(target - _accelerationComfortVignette01, -maxDelta, maxDelta);
+                PublishComfortVignette(0f);
+            }
+        """
+
+        audit.validate_runtime_source_fragments(partial_source, errors)
+
+        self.assertTrue(
+            any(
+                "runtime call must be routed through private void ResetHeadMotionHistoryAndPublishedComfort"
+                in error
+                for error in errors
+            )
+        )
+
+    def test_frame_pressure_reset_paths_fail_closed(self) -> None:
+        errors: list[str] = []
+        partial_source = """
+            public void OnOriginShift(in OriginShiftEventData shiftData)
+            {
+                _accelerationComfortVignette01 = 0f;
+                _accelerationReleaseBelowTimer = 0f;
+                PublishComfortVignette(0f);
+                PublishShaderState();
+                if (!IsFiniteVector(shiftOffset))
+                    return;
+            }
+            private void UpdateHeadMotion()
+            {
+                ResetHeadMotionHistoryAndPublishedComfort(headPosition, headRotation);
+            }
+            private void ResetHeadMotionHistory(Vector3 headPosition, Quaternion headRotation)
+            {
+                _accelerationComfortVignette01 = 0f;
+            }
+            private void ResetHeadMotionHistoryAndPublishedComfort(Vector3 headPosition, Quaternion headRotation)
+            {
+                ResetHeadMotionHistory(headPosition, headRotation);
+                PublishComfortVignette(0f);
+                PublishShaderState();
+            }
+            private void ResetHeadMotionIfAupShifted(Vector3 headPosition, Quaternion headRotation)
+            {
+                ResetHeadMotionHistoryAndPublishedComfort(headPosition, headRotation);
+            }
+            private void AnotherResetPath(Vector3 headPosition, Quaternion headRotation)
+            {
+                ResetHeadMotionHistoryAndPublishedComfort(headPosition, headRotation);
+            }
+            private void UpdateAccelerationComfortState(float deltaTime)
+            {
+                UpdateComfortFramePressureState(deltaTime);
+                _accelerationReleaseBelowTimer = math.min(hysteresisSeconds, _accelerationReleaseBelowTimer + deltaTime);
+                float framePressureTarget = _comfortFramePressureActive ? ResolveComfortFrameSafetyMinOpacity() : 0f;
+                target = math.max(target, framePressureTarget);
+                float maxDelta = target > _accelerationComfortVignette01;
+                float delta = math.clamp(target - _accelerationComfortVignette01, -maxDelta, maxDelta);
+            }
+            private void UpdateComfortFramePressureState(float deltaTime)
+            {
+                if (safeDeltaTime > frameSafetyDeltaSeconds)
+                    _comfortFramePressureConsecutiveFrames = math.min(consecutiveFrames, _comfortFramePressureConsecutiveFrames + 1);
+            }
+            private void ApplyInactiveState()
+            {
+                _accelerationComfortVignette01 = 0f;
+                _accelerationReleaseBelowTimer = 0f;
+                PublishComfortVignette(0f);
+            }
+            private void RefreshComfortProfileSelection()
+            {
+                _useQuest2ComfortFallback = true;
+            }
+            private void UpdateRotationJerkState()
+            {
+                float angularAccelerationMagnitude = ApproximateMagnitudeNoSqrt(angularAcceleration);
+            }
+            private void ScheduleRootSync()
+            {
+                AccelerationVignette01 = Sanitize01(_accelerationComfortVignette01, 0f);
+                vignette01 = math.max(vignette01, math.saturate(input.AccelerationVignette01));
+            }
+        """
+
+        audit.validate_runtime_source_fragments(partial_source, errors)
+
+        self.assertTrue(
+            any(
+                "runtime method public void OnOriginShift missing source fragment: ResetComfortFramePressureState();"
+                in error
+                for error in errors
+            )
+        )
+        self.assertTrue(
+            any(
+                "runtime method private void ResetHeadMotionHistory missing source fragment: ResetComfortFramePressureState();"
+                in error
+                for error in errors
+            )
+        )
+        self.assertTrue(
+            any(
+                "runtime method private void ApplyInactiveState missing source fragment: ResetComfortFramePressureState();"
+                in error
+                for error in errors
+            )
+        )
+        self.assertTrue(
+            any(
+                "runtime frame-pressure reset must cover origin shift, head-history, and inactive paths"
+                in error
+                for error in errors
+            )
+        )
 
     def test_source_contract_malformed_profile_number_fails_closed(self) -> None:
         payload = json.loads(audit.COMFORT_JSON.read_text(encoding="utf-8"))
         payload["jerk"]["fullEventRadS3"] = "not-a-number"
         original_path = audit.COMFORT_JSON
 
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with workspace_temp_dir() as temp_dir:
             temp_path = Path(temp_dir) / "comfort.json"
             temp_path.write_text(json.dumps(payload, allow_nan=False), encoding="utf-8")
             try:
@@ -168,7 +519,7 @@ class VRSnapTurnComfortAuditTests(unittest.TestCase):
     def test_source_contract_malformed_shape_fails_closed(self) -> None:
         original_comfort_path = audit.COMFORT_JSON
         original_waveform_path = audit.WAVEFORM_JSON
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with workspace_temp_dir() as temp_dir:
             temp_root = Path(temp_dir)
             comfort_path = temp_root / "comfort.json"
             waveform_path = temp_root / "haptic.json"
@@ -342,6 +693,37 @@ class VRSnapTurnComfortAuditTests(unittest.TestCase):
         self.assertEqual("MISSING", payload["sourceHashes"]["vrSomaticProviderSha256"])
         self.assertTrue(any("missing source contract file" in error for error in payload["errors"]))
 
+    def test_missing_audit_test_script_fails_closed(self) -> None:
+        original_path = audit.TEST_SCRIPT_PATH
+        try:
+            audit.TEST_SCRIPT_PATH = audit.ROOT / "missing_vr_comfort_audit_tests_for_test.py"
+            payload = audit.build_audit_payload()
+        finally:
+            audit.TEST_SCRIPT_PATH = original_path
+
+        self.assertEqual("FAIL", payload["status"])
+        self.assertEqual("MISSING", payload["sourceHashes"]["auditTestSha256"])
+        self.assertTrue(any("missing source contract file" in error for error in payload["errors"]))
+
+    def test_stripped_audit_test_contract_fails_closed(self) -> None:
+        original_path = audit.TEST_SCRIPT_PATH
+        with workspace_temp_dir() as temp_dir:
+            temp_path = Path(temp_dir) / "stripped_vr_comfort_audit_tests.py"
+            temp_path.write_text(
+                "def test_report_writes_source_hashes():\n"
+                "    auditTestSha256 = 'placeholder'\n",
+                encoding="utf-8",
+            )
+            try:
+                audit.TEST_SCRIPT_PATH = temp_path
+                payload = audit.build_audit_payload()
+            finally:
+                audit.TEST_SCRIPT_PATH = original_path
+
+        self.assertEqual("FAIL", payload["status"])
+        self.assertEqual(64, len(payload["sourceHashes"]["auditTestSha256"]))
+        self.assertTrue(any("audit test contract missing fragment" in error for error in payload["errors"]))
+
     def test_missing_comfort_json_fails_closed(self) -> None:
         original_path = audit.COMFORT_JSON
         try:
@@ -356,7 +738,7 @@ class VRSnapTurnComfortAuditTests(unittest.TestCase):
 
     def test_non_object_comfort_json_fails_closed(self) -> None:
         original_path = audit.COMFORT_JSON
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with workspace_temp_dir() as temp_dir:
             temp_path = Path(temp_dir) / "comfort.json"
             temp_path.write_text("[]", encoding="utf-8")
             try:
@@ -370,7 +752,7 @@ class VRSnapTurnComfortAuditTests(unittest.TestCase):
 
     def test_invalid_haptic_json_fails_closed(self) -> None:
         original_path = audit.WAVEFORM_JSON
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with workspace_temp_dir() as temp_dir:
             temp_path = Path(temp_dir) / "haptic.json"
             temp_path.write_text("{", encoding="utf-8")
             try:

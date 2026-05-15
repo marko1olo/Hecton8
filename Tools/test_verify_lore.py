@@ -78,6 +78,63 @@ class VerifyLoreTests(unittest.TestCase):
         record = VerifyLore.LoreRecord(0x10, 32, 4)
         self.assertIsNone(VerifyLore.find_record([record], 0x20))
 
+    def test_bad_magic_blob_is_rejected(self) -> None:
+        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
+        blob = bytearray(VerifyLore.bake_blob(entries))
+        blob[0:4] = b"BAD!"
+
+        with self.assertRaises(ValueError):
+            VerifyLore.parse_blob(bytes(blob))
+
+    def test_overlapping_payload_records_are_rejected(self) -> None:
+        entries = [
+            self.make_entry("Docs/Lore/alpha.md", b"# Alpha\nPressure note.\n"),
+            self.make_entry("Docs/Lore/beta.md", b"# Beta\nAtlas note.\n"),
+        ]
+        blob = bytearray(VerifyLore.bake_blob(entries))
+        records = VerifyLore.parse_blob(blob)
+        self.assertEqual(len(records), 2)
+        second_record_offset = VerifyLore.HEADER_SIZE + VerifyLore.RECORD_SIZE
+        VerifyLore.RECORD_STRUCT.pack_into(
+            blob,
+            second_record_offset,
+            records[1].hash_value,
+            records[0].offset,
+            records[1].length,
+        )
+
+        with self.assertRaises(ValueError):
+            VerifyLore.parse_blob(bytes(blob))
+
+    def test_nonzero_payload_padding_is_rejected(self) -> None:
+        gap_start = 0
+        gap_end = 0
+        blob = bytearray()
+        for suffix in range(32):
+            entries = [
+                self.make_entry("Docs/Lore/alpha.md", b"# Alpha\nPressure note.\n" + bytes([65 + suffix]) * suffix),
+                self.make_entry("Docs/Lore/beta.md", b"# Beta\nAtlas note.\n"),
+            ]
+            blob = bytearray(VerifyLore.bake_blob(entries))
+            records = sorted(VerifyLore.parse_blob(blob), key=lambda record: record.offset)
+            gap_start = records[0].offset + records[0].length
+            gap_end = records[1].offset
+            if gap_end > gap_start:
+                break
+
+        self.assertGreater(gap_end, gap_start)
+        blob[gap_start] = 0xFF
+
+        with self.assertRaises(ValueError):
+            VerifyLore.parse_blob(bytes(blob))
+
+    def test_trailing_blob_bytes_are_rejected(self) -> None:
+        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
+        blob = VerifyLore.bake_blob(entries) + b"\x00"
+
+        with self.assertRaises(ValueError):
+            VerifyLore.parse_blob(blob)
+
     def test_missing_docs_lore_does_not_fallback_to_design_redirect(self) -> None:
         self.assertTrue(Path("Docs/Design/Lore_Bible.md").exists())
         missing_dir = Path(".__verify_lore_missing_docs_lore_sentinel__")
@@ -122,11 +179,10 @@ class VerifyLoreTests(unittest.TestCase):
             entries,
             "Docs/Lore",
         )
-        tampered_blob = blob + b"\x00"
-        tampered_records = VerifyLore.parse_blob(tampered_blob)
+        manifest["blob_length"] = len(blob) + 1
 
         with self.assertRaises(ValueError):
-            VerifyLore.verify_manifest_data(tampered_blob, tampered_records, entries, manifest)
+            VerifyLore.verify_manifest_data(blob, records, entries, manifest)
 
     def test_manifest_metadata_mismatch_is_rejected(self) -> None:
         entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]

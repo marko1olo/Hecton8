@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 from dataclasses import dataclass
@@ -170,10 +171,25 @@ def build_report(spec_path: Path) -> dict:
         "promptId": "HARDWARE_ADAPTIVE_UI_BAKER",
         "status": "PASS" if not errors else "FAIL",
         "spec": str(spec_path.relative_to(ROOT)).replace("\\", "/"),
+        "sourceHashes": {
+            "specSha256": sha256_file(spec_path),
+            "scriptSha256": sha256_file(SCRIPT_PATH),
+        },
         "sampleText": sample_text,
         "results": [result.__dict__ for result in results],
         "errors": errors,
     }
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        while True:
+            chunk = handle.read(65536)
+            if not chunk:
+                break
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def main() -> int:

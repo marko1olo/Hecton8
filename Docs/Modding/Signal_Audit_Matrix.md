@@ -13,7 +13,7 @@ Command used:
 rg -o "public struct [A-Za-z0-9_]+ : ISignal" Assets/_Project/Scripts/Core/GlobalSignals.cs
 ```
 
-Result: 129 unique `ISignal` structs in `GlobalSignals.cs`.
+Result: 134 unique `ISignal` structs in `GlobalSignals.cs`.
 
 Projection bridge source check: `Assets/_Project/Scripts/ModdingAPI/ModEventProjectionBridge.cs` consumes only `SignalBus<CombatDamageSignal>` and `SignalBus<WeatherChangedSignal>` for `ModEventDto` projection.
 
@@ -28,7 +28,7 @@ Only signals listed in `Signal_Schema.json.allowedSignalBuses` are public to mod
 
 ## Denied-By-Default Inventory
 
-The following 127 current `ISignal` structs are not public mod subscriptions. Any future exposure requires schema update, projection/copy wrapper, cap, telemetry, finite guards, runtime profiling, and Integrator approval.
+The following 132 current `ISignal` structs are not public mod subscriptions. Any future exposure requires schema update, projection/copy wrapper, cap, telemetry, finite guards, runtime profiling, and Integrator approval.
 
 ```text
 AcousticPingSignal
@@ -87,6 +87,7 @@ ItemDecaySignal
 ItemDurabilityChangedSignal
 LightLevelSignal
 LoreFragmentScannedSignal
+MacroDatabaseSectorHydrationSignal
 ManualOverridePulledSignal
 MemoryAddressShiftSignal
 MemoryPressureSignal
@@ -103,6 +104,8 @@ PipeRuptureSignal
 PlayerActionCancelledSignal
 PlayerActionCompletedSignal
 PlayerActionProgressSignal
+PlayerBaseEnterSignal
+PlayerBaseExitSignal
 PlayerInputSignal
 PlayerLookTargetSignal
 PlayerStateSignal
@@ -123,6 +126,7 @@ SaveMetadataReadySignal
 SaveRequestSignal
 SaveStatusSignal
 ScanCompleteSignal
+ScanLogChangedSignal
 ScannerToolActiveSignal
 SectorDehydratedSignal
 SectorHydratedSignal
@@ -138,6 +142,7 @@ StreamingTurbulenceSignal
 SubmarineFloodStateSignal
 SubmarineLightsChangedSignal
 SubtitleSignal
+SurvivalVitalsChangedSignal
 SwarmDispersedSignal
 SystemHealthIndexSignal
 SystemPauseSignal
@@ -146,6 +151,7 @@ TemperatureChangedSignal
 ThermalStateChangedSignal
 TimeDilationSignal
 ToolAcousticSignal
+ToolLoadoutChangedSignal
 ToolStateChangedSignal
 ToolTriggerSignal
 TraumaSignal
@@ -165,14 +171,14 @@ WfcOutpostStateChangedSignal
 | Group | Signals | Crash/corruption risk | Required wrapper |
 |---|---|---|---|
 | AUP/origin shift | `AupPreShiftSignal`, `AupShiftSignal`, `RebaseSignal`, `MemoryAddressShiftSignal` | Stale coordinate handles, bad rebases, native buffer desync. | Read-only rebased DTO or command response only. |
-| DataVault/streaming/save | `MemoryPressureSignal`, `StorageDebtSignal`, `SectorHydratedSignal`, `SectorResidencyHydratedSignal`, `SectorDehydratedSignal`, `ChunkDehydratedSignal`, `SaveRequestSignal`, `SaveCompletedSignal`, `SaveLifecycleSignal`, `SaveStatusSignal`, `SaveMetadataReadySignal`, WFC signals | Can expose lifecycle state that must stay engine-owned. | Redacted hashes/status only; no file offsets, handles, mutable sector ids, or save authority. |
-| Player/survival/input | `InputStateSignal`, `PlayerInputSignal`, `PlayerLookTargetSignal`, `PlayerStateSignal`, `PhysiologyStateSignal`, `HypoxiaSignal`, `OxygenCriticalSignal`, `PlayerStressSignal`, `InventoryCommandSignal`, `InventoryChangedSignal` | Input spoofing, inventory duplication, survival corruption. | Read-only redacted DTO plus validated engine-owned command kernels. |
+| DataVault/streaming/save | `MemoryPressureSignal`, `StorageDebtSignal`, `SectorHydratedSignal`, `SectorResidencyHydratedSignal`, `SectorDehydratedSignal`, `ChunkDehydratedSignal`, `MacroDatabaseSectorHydrationSignal`, `ScanLogChangedSignal`, `SaveRequestSignal`, `SaveCompletedSignal`, `SaveLifecycleSignal`, `SaveStatusSignal`, `SaveMetadataReadySignal`, WFC signals | Can expose lifecycle state that must stay engine-owned. | Redacted hashes/status only; no file offsets, handles, mutable sector ids, or save authority. |
+| Player/survival/input | `InputStateSignal`, `PlayerInputSignal`, `PlayerLookTargetSignal`, `PlayerStateSignal`, `PhysiologyStateSignal`, `SurvivalVitalsChangedSignal`, `HypoxiaSignal`, `OxygenCriticalSignal`, `PlayerStressSignal`, `PlayerBaseEnterSignal`, `PlayerBaseExitSignal`, `ToolLoadoutChangedSignal`, `InventoryCommandSignal`, `InventoryChangedSignal` | Input spoofing, inventory duplication, survival corruption. | Read-only redacted DTO plus validated engine-owned command kernels. |
 | High-volume sim/render | `WakeGeneratedSignal`, `FluidImpulseSignal`, `FluidIncursionSignal`, `RigidbodySleepSignal`, `CameraPositionSignal`, `CameraFrustumSignal`, `CullingOverloadSignal`, `FaunaStateChangedSignal` | Callback storm and presentation-state leakage. | Sampled projection with low/high caps and overflow telemetry. |
 | UI/audio/presentation | `HUDNotificationSignal`, `SubtitleSignal`, `VocalWarningSignal`, `HapticRequest`, `SoundscapeProfileSignal`, `MixerStateSignal`, `SubmarineLightsChangedSignal` | Mods could fake authoritative status or flood managed presentation callbacks. | Presentation-only facade APIs; no direct first-party signal subscription. |
 
 ## Consistency Gate
 
-If the source inventory count changes from 129, the mod signal schema and this audit must be updated before the mod API can be marked runtime verified. A new `SignalBus<T>` exposure is not valid until `Signal_Schema.json.allowedSignalBuses`, `Mod_API_Specification.md`, and this audit matrix all name it explicitly.
+If the source inventory count changes from 134, the mod signal schema and this audit must be updated before the mod API can be marked runtime verified. A new `SignalBus<T>` exposure is not valid until `Signal_Schema.json.allowedSignalBuses`, `Mod_API_Specification.md`, and this audit matrix all name it explicitly.
 
 Run the static drift gate after any signal or mod bridge edit:
 

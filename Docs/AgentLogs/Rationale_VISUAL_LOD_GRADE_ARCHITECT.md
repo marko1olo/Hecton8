@@ -125,3 +125,51 @@ Rejected Alternatives: Manual re-run only was rejected because it does not fail 
 Scalability potential: Low - keeps TOASTER under the hard guard. High - keeps GOD_MODE overkill above 5x PRO.
 
 Hardware Impact: Offline-only. No runtime cost.
+
+## Decision 11 - Post-Resume Verification Discipline
+
+Problem: After the first completion report, a verification command used an escaped quote pattern and returned `TASK_COUNT=0`, which could be misread as a prompt extraction failure.
+
+Solution: Re-run extraction with `rg` against `Docs/Tasks/CURRENT_BATCH.md`, verify the exact `VISUAL_LOD_GRADE_ARCHITECT` XML block, and record that the block contains 10 numbered tasks even though its local header text says 15 titanium tasks.
+
+Rejected Alternatives: Treating the stale `TASK_COUNT=0` result as authoritative was rejected because the raw XML block visibly contains tasks 1-10. Editing the batch file was rejected because the prompt source is not this agent's artifact.
+
+Scalability potential: Not runtime. This protects the matrix handoff from false task-count rejection.
+
+Hardware Impact: No runtime impact. Offline validation was rerun and still reports TOASTER 1560 MiB and GOD_MODE/PRO density ratio 9.097.
+
+## Decision 12 - Final Verification Push Without Dirty Index
+
+Problem: Post-resume evidence changed only three owned documentation files, but the live `main` worktree contains unrelated multi-agent modifications.
+
+Solution: Create and push the final verification evidence with a temporary git index and an allowlist containing only this agent's status, rationale, and log files. The branch-tip commit containing this paragraph records the completed verification push.
+
+Rejected Alternatives: Staging the live index was rejected because it would include unrelated work. Rewriting `main` was rejected because the task owns only the visual scalability handoff branch.
+
+Scalability potential: Not runtime. The branch remains isolated for integrator review.
+
+Hardware Impact: No runtime impact.
+
+## Decision 13 - Polish Hardening for Drift Failure
+
+Problem: The post-completion anti-bloat audit found no `<POLISH_MANDATE>` tag in `Docs/Tasks/CURRENT_BATCH.md`, but it did find a legitimate robustness gap: `build_report()` tried to stress every required tier before it could produce a structured failure report. If a future edit removed `GOD_MODE`, the tool would throw a Python key error instead of returning a deterministic audit failure.
+
+Solution: Add an early missing-tier check in `build_report()` and expose `REQUIRED_GOD_FALLBACK_REFS` as a module constant so tests verify every expensive GOD_MODE fallback path points at an existing `godModeFallbacks` key.
+
+Rejected Alternatives: Leaving the throw path was rejected because stress tooling must fail cleanly in CI-style use. Adding a schema package was rejected because it would introduce dependency weight for a small fixed JSON contract.
+
+Scalability potential: Not runtime. The matrix handoff becomes harder to corrupt during future tier edits.
+
+Hardware Impact: No runtime impact. Offline validation still reports TOASTER 1560 MiB and GOD_MODE/PRO density ratio 9.097.
+
+## Decision 14 - Required Field Preflight Before Stress Math
+
+Problem: The first polish hardening handled missing tier rows, but a missing nested field such as `GOD_MODE.shaderFeatures.pom.tapCount` could still throw before the report returned structured failures. The CLI summary also assumed every tier row existed.
+
+Solution: Add required top-level and per-tier field preflight before stress math, validate that every GOD_MODE fallback reference resolves to an existing `godModeFallbacks` key, and make `print_summary()` emit `MISSING` rows for partial failure reports.
+
+Rejected Alternatives: Wrapping broad `try/except` around stress math was rejected because it would hide the exact missing contract field. Adding a full schema dependency was again rejected as unnecessary weight for this fixed matrix.
+
+Scalability potential: Not runtime. The adapter handoff now has stricter drift detection for missing fields and broken fallback references.
+
+Hardware Impact: No runtime impact. Offline validation still reports TOASTER 1560 MiB and GOD_MODE/PRO density ratio 9.097.

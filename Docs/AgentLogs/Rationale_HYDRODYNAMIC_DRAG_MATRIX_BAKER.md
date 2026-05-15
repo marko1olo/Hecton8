@@ -88,7 +88,7 @@ Problem: PNG plot output depended on optional matplotlib. On this machine the ea
 Solution: Replaced optional matplotlib output with a deterministic pure-Python PNG writer using explicit PNG chunks, zlib compression, and a fixed 1200x720 RGB pixel buffer. SVG remains available for readable vector inspection.
 Rejected Alternatives: Installing matplotlib was rejected because adding a dependency to satisfy an offline plot is unnecessary. Leaving SVG-only output was rejected because the verification summary had a `power_png` field and the artifact can be produced without third-party code.
 Scalability potential: Offline plot artifacts can be inspected by low/high-tier designers without affecting runtime. Runtime still consumes only baked constants.
-Hardware Impact: Runtime impact is 0 us. Offline PNG generation cost is outside frame time. Deterministic PNG SHA256 is `BC7A8882B8A3F861648E883677BCF30FFA516CC384413E2B822A315BE6D886D7`.
+Hardware Impact: Runtime impact is 0 us. Offline PNG generation cost is outside frame time. Initial deterministic PNG SHA256 was `BC7A8882B8A3F861648E883677BCF30FFA516CC384413E2B822A315BE6D886D7`; current canonical plot PNG SHA256 is `E9CE89566C80CC19CF6149F52D3CEFA2D67CB4D7B7A3F8498F02CFC11EAAA792`.
 
 ## Artifact Manifest
 
@@ -105,3 +105,105 @@ Solution: Added `--verify-only`, which validates file presence, verification sta
 Rejected Alternatives: Asking integrators to run unittest or trust the manifest manually was rejected because batch gates need a single direct CLI command.
 Scalability potential: CI can use verify-only on cheap machines without Unity, then reserve Unity/Profiler work for runtime integration.
 Hardware Impact: Offline only. No runtime impact. Same-size artifact corruption is now detected by SHA256.
+
+## Lift Curves and Tier Contract
+
+Problem: Static Cl slopes were correct but not enough evidence for a "calculator" task; consumers needed explicit sample behavior.
+Solution: Exported deterministic pitch/yaw lift curve samples from -15 to +15 degrees for every hull, bounded by each hull's max control-surface Cl.
+Rejected Alternatives: Runtime lift-curve generation was rejected because the curve is stable per hull and belongs in the offline data bake.
+Scalability potential: Low ignores lift curves and uses axial damping only. Middle consumes lift curves for predictable control response. High/Ultra can map lift/cavitation ranges to stronger wake, sonar, and cockpit feedback without changing physics truth.
+Hardware Impact: Offline table generation has 0 runtime cost. Runtime consumers can read fixed arrays during initialization. New specs SHA256 is `F5990771914EE80DA73FFEBC5B7568C9A79C697394AD1B3753ABAB130D7E63EE`.
+
+Problem: Scalability guidance existed in rationale but not in the machine-readable export.
+Solution: Added `quality_tier_runtime_usage` with Low/Middle/High/Ultra usage paths.
+Rejected Alternatives: Keeping tier guidance only in prose was rejected because runtime integrators need the intended tier split next to the constants.
+Scalability potential: Toaster path remains cheap; top-tier path spends saved budget on visual overkill while using identical physics gates.
+Hardware Impact: JSON metadata only. No runtime hot-path impact if loaded once.
+
+## Runtime Binary Pack
+
+Problem: JSON is acceptable for authoring but forbidden in hot paths; runtime teams needed a fixed-layout import option.
+Solution: Added `Submarine_RuntimePack.bin`, a deterministic little-endian binary pack with magic `H8HYDRO\0`, version 1, 5 hull records, 53 floats per record, and 220-byte record stride. Records include stable FNV-1a hull IDs and core runtime constants.
+Rejected Alternatives: C# runtime codegen was rejected because this batch is offline data bake only. Keeping JSON-only output was rejected because it leaves the no-hot-path-JSON contract incomplete for future import work.
+Scalability potential: Low-tier runtime can load only the axial subset from each fixed record. Middle/High/Ultra can consume additional tensor/lift/cavitation ranges without changing file layout.
+Hardware Impact: Runtime hot-path impact is 0 us if loaded once during initialization. Binary size is 1124 bytes. Runtime pack SHA256 is `872091D8234D11848BAEC016A0C526717840F507F68C464E5317D2D48D534350`.
+
+## Runtime Layout Document
+
+Problem: A binary pack without explicit field offsets forces future consumers to reverse-engineer Python order.
+Solution: Added `Submarine_RuntimePackLayout.json` with header metadata, record stride, shape hash/index fields, all 53 float field names, byte offsets, formats, and hull order.
+Rejected Alternatives: A prose-only layout in chat or logs was rejected because runtime import code needs machine-readable offset authority.
+Scalability potential: Low/Middle/High/Ultra importers can selectively load fields by index while preserving one file format.
+Hardware Impact: Offline JSON layout only. No runtime hot-path impact if used during import-code generation or editor validation. Layout SHA256 is `320C8DA303174F9DCFA9C7FC47CF212498334413F192782984E49CD5AC3274E1`.
+
+## Runtime Pack Round-Trip Validation
+
+Problem: The binary pack validator proved header shape and record stride, but a shifted float field could still pass structural checks.
+Solution: Added `read_runtime_pack()` and verify-only cross-checking against `Submarine_Specs.json` for all 5 hulls and all 53 float fields per record, with finite-value enforcement and field-level failure messages.
+Rejected Alternatives: Trusting SHA256 alone was rejected because hashes detect mutation but do not explain field drift. Trusting layout JSON alone was rejected because it documents offsets but does not prove payload parity.
+Scalability potential: Low-tier importers can still consume a small axial subset, while Middle/High/Ultra importers can trust that all additional tensor/lift/cavitation fields are aligned to the JSON authority.
+Hardware Impact: Offline validation only. Runtime hot-path impact remains 0 us if the pack is loaded once during initialization. Regression suite now passes 14 tests with runtime pack payload-corruption coverage.
+
+## Runtime Layout Drift Gate
+
+Problem: The runtime layout file documented offsets, but verify-only only checked schema/version/stride/field count. A renamed or shifted field could survive as long as the skeleton remained valid.
+Solution: Verify-only now compares the current layout header, hull order, and every field definition against `runtime_pack_layout_document()`.
+Rejected Alternatives: Manifest hash-only detection was rejected because it proves bytes changed but not which layout contract broke. Partial schema checks were rejected because field order is the actual runtime safety contract.
+Scalability potential: Low/Middle/High/Ultra importers can trust the same canonical layout and fail fast if the offline pack field authority drifts.
+Hardware Impact: Offline validation only. Runtime hot-path impact remains 0 us. Regression suite now passes 15 tests with layout drift corruption coverage.
+
+## Power CSV Semantic Gate
+
+Problem: `Submarine_SpeedPower.csv` could be made monotonic and have a matching manifest while still not matching the JSON hull specs that generated it.
+Solution: Verify-only now recomputes the speed/power rows from `Submarine_Specs.json` and compares every speed row and every hull power column.
+Rejected Alternatives: Manifest-only validation was rejected because it can be updated with bad bytes. Monotonic-only validation was rejected because physically wrong curves can remain monotonic.
+Scalability potential: Designers and integrators can trust the graph source data across Low/Middle/High/Ultra tuning without guessing whether CSV and JSON drifted apart.
+Hardware Impact: Offline validation only. Runtime hot-path impact remains 0 us. Regression suite now passes 16 tests with manifest-updated CSV corruption coverage.
+
+## Non-Finite Numeric Gate
+
+Problem: Python JSON can carry `NaN`/`Inf` tokens, and ordinary comparison checks can miss `NaN` because comparisons against it are false.
+Solution: Verify-only now recursively rejects non-finite numeric values in `Submarine_Specs.json` before downstream tensor/pack/CSV validation can trust them.
+Rejected Alternatives: Relying on JSON parsing was rejected because Python accepts non-finite constants by default. Relying on runtime importers was rejected because the offline authority should fail before poisoning NativeArray constants.
+Scalability potential: All Low/Middle/High/Ultra import paths get the same finite data authority and no tier inherits a poisoned coefficient.
+Hardware Impact: Offline validation only. Runtime hot-path impact remains 0 us. Regression suite now passes 17 tests with manifest-updated NaN corruption coverage.
+
+## Strict JSON and Manifest-Updated Runtime Corruption Gates
+
+Problem: Generated JSON still used Python's default permissive encoder, and some corruption tests could pass primarily because the artifact manifest hash changed.
+Solution: `write_json()` now uses `allow_nan=False`. Runtime pack and runtime layout corruption tests now refresh the manifest after mutation, forcing semantic validators to catch the drift.
+Rejected Alternatives: Trusting hashes alone was rejected because a bad actor or broken tool can update hashes with bad payloads. Permissive JSON output was rejected because non-standard `NaN`/`Inf` tokens are poison for deterministic importers.
+Scalability potential: Low/Middle/High/Ultra importers all get strict JSON and binary/layout contracts that fail before bad constants reach tier-specific runtime paths.
+Hardware Impact: Offline validation only. Runtime hot-path impact remains 0 us. Regression suite now passes 18 tests with strict JSON output and manifest-updated binary/layout corruption coverage.
+
+## Non-Finite CSV Gate
+
+Problem: `float("nan")` parses successfully in Python, and comparisons against `NaN` do not behave like normal numeric checks. A `nan` power cell could dodge monotonicity and semantic-drift comparisons.
+Solution: `power_csv_spec_failures()` now rejects non-finite speed and hull power cells before comparing values to regenerated expectations.
+Rejected Alternatives: Relying on manifest hashes or float comparison was rejected because both can miss manifest-updated `nan` CSV corruption.
+Scalability potential: Designers and importers can trust the CSV plot source for every quality tier without inheriting non-finite evidence data.
+Hardware Impact: Offline validation only. Runtime hot-path impact remains 0 us. Regression suite now passes 19 tests with manifest-updated CSV NaN coverage.
+
+## Canonical Specs Document Gate
+
+Problem: A metadata-only change in `Submarine_Specs.json` could avoid CSV and binary-pack checks because not every JSON field is packed into runtime binary records.
+Solution: Verify-only now compares `Submarine_Specs.json` against a canonical document rebuilt from `HULL_SHAPES` and `build_export_document()`.
+Rejected Alternatives: Checking only physics gates was rejected because display names, runtime contract text, tier usage, and rationale are part of the exported authority. Manifest-only validation was rejected because bad specs can be rehashed.
+Scalability potential: Every tier receives one canonical spec authority; metadata, control contracts, and physical constants cannot drift independently.
+Hardware Impact: Offline validation only. Runtime hot-path impact remains 0 us. Regression suite now passes 20 tests with manifest-updated metadata drift coverage.
+
+## Verification Summary Gate
+
+Problem: `Submarine_Verification.json` could have stale top-level file-name fields or stale failure text while its artifact manifest stayed correct.
+Solution: Verify-only now checks top-level artifact-name fields and requires the generated summary failure list to be empty.
+Rejected Alternatives: Relying only on the artifact manifest was rejected because the verification summary is the integrator-facing status object and must not carry stale names or stale failures.
+Scalability potential: Batch gates, CI, and future importers can trust one consistent verification summary across all quality tiers.
+Hardware Impact: Offline validation only. Runtime hot-path impact remains 0 us. Regression suite now passes 21 tests with verification-summary drift coverage.
+
+## Canonical Plot Payload Gate
+
+Problem: `Submarine_SpeedPower.svg` and `.png` could be corrupted and rehashed while still passing structural header/dimension checks.
+Solution: Plot generation now routes through canonical byte builders, and verify-only compares actual SVG/PNG bytes against those canonical payloads.
+Rejected Alternatives: Header-only validation was rejected because a valid SVG/PNG container can display wrong evidence. Manifest-only validation was rejected because bad plot bytes can be rehashed.
+Scalability potential: Designers and integrators can trust that Low/Middle/High/Ultra power-curve review artifacts match the baked physics data.
+Hardware Impact: Offline validation only. Runtime hot-path impact remains 0 us. Regression suite now passes 23 tests with manifest-updated SVG/PNG drift coverage.

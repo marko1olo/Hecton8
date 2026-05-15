@@ -72,6 +72,17 @@ class HardwareAdaptiveUiTests(unittest.TestCase):
         for record in report["records"]:
             self.assertLessEqual(record["totalTextureSamples"], report["maxSamplesPerUiElement"])
 
+    def test_written_reports_are_current(self) -> None:
+        readability_report_path = ROOT / "Docs" / "AgentLogs" / "UI_Readability_UX_ENGINEER.json"
+        shader_report_path = ROOT / "Docs" / "AgentLogs" / "UI_ShaderSampleAudit_UX_ENGINEER.json"
+        self.assertTrue(readability_report_path.exists())
+        self.assertTrue(shader_report_path.exists())
+
+        readability_report = json.loads(readability_report_path.read_text(encoding="utf-8"))
+        shader_report = json.loads(shader_report_path.read_text(encoding="utf-8"))
+        self.assertEqual(readability.build_report(SPEC_PATH), readability_report)
+        self.assertEqual(sample_audit.build_report(SPEC_PATH), shader_report)
+
     def test_icon_baker_outputs_three_snap_sizes(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             source = Path(temp_dir) / "source_icon.png"

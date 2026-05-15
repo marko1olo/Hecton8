@@ -63,7 +63,7 @@ Hardware Impact: Two byte lanes plus one timer byte per sector. Expected cost is
 ## Decision 6 - Constants Tuned By Offline Entropy Harness
 Problem: The prompt requires Safe Shallows to regrow 3x faster than Deep Abyss and status `ENTROPY BALANCED`; constants cannot be hand-waved.
 
-Solution: Added `Tools/WorldEntropySim.py` and `Data/Economy/Regrowth_Constants.json`. The 365-day total-overharvest run produced Safe half-recovery day 28, Abyss half-recovery day 95, ratio 3.393, final mature ratio 1.000.
+Solution: Added `Tools/WorldEntropySim.py` and `Data/Economy/Regrowth_Constants.json`. The latest C#-parity 365-day total-overharvest run produced Safe half-recovery day 28, Abyss half-recovery day 88, ratio 3.143, final mature ratio 1.000.
 
 Rejected Alternatives: Static inspection of formulas, one-biome tests, and hardcoded status output were rejected. The status comes from acceptance checks.
 
@@ -129,7 +129,7 @@ Hardware Impact: No runtime impact. Verification confidence improved without fak
 ## Decision 12 - Unittest Coverage For Entropy Harness
 Problem: Manual console output from `WorldEntropySim.py` is easy to misread and easy to regress.
 
-Solution: Added `Tools/test_world_entropy_sim.py` using standard library `unittest`. It verifies the 365-day overharvest contract, deterministic reduced-grid replay, and locked acceptance constants.
+Solution: Added `Tools/test_world_entropy_sim.py` using standard library `unittest`. It verifies the 365-day overharvest contract, seeded C#-parity biome count snapshot, deterministic reduced-grid replay, and locked acceptance constants.
 
 Rejected Alternatives: Adding pytest was rejected because pytest is not installed in this environment. Re-running multiple 4096-cell 1000-day tests inside unittest was rejected after timeout; the direct 1000-day command remains logged separately.
 
@@ -147,3 +147,113 @@ Rejected Alternatives: Leaving dump ownership implicit was rejected because the 
 Scalability potential: Low/Middle/High/Ultra all share the same 300-entry binary ring; richer tiers can add more renderer-side diagnostics separately without changing the core dump.
 
 Hardware Impact: No hot-path cost. The only managed allocation is a crash/manual dump staging buffer on a cold path.
+
+## Decision 14 - Python Harness Must Mirror C# Biome Hashing
+Problem: The offline entropy harness initially used a simpler depth-band biome layout while C# initialization used `Hash32`, rotate-left sector mixing, local-z banding, world seed, and macro-sector origin. That made the old Deep Abyss recovery day a tester artifact rather than proof of runtime parity.
+
+Solution: Patched `Tools/WorldEntropySim.py` to mirror the C# resolver and exported `entropyTestWorldSeed`, `macroSectorOriginX`, and `macroSectorOriginZ` into `Regrowth_Constants.json`. Updated expected half-recovery days to the actual seeded 64x64 layout: Safe 28, Temperate 41, Thermal 44, Deep Abyss 88. Added a unittest snapshot for seeded biome counts `[1729, 996, 564, 807]`.
+
+Rejected Alternatives: Keeping hidden Python defaults was rejected because exported constants would not fully define the test. Keeping the stale 95-day Deep Abyss expectation was rejected because it came from a non-runtime layout. Using random biome distribution was rejected because replay determinism is mandatory.
+
+Scalability potential: Low can reduce grid dimensions while preserving seed/origin semantics. Middle/High/Ultra can expand macro-sector coverage and still produce reproducible biome lanes for denser presentation systems.
+
+Hardware Impact: Tooling-only change. Runtime C# cost is unchanged; the gain is correctness of offline acceptance evidence.
+
+## Decision 15 - Negative Macro-Sector Remainder Hardening
+Problem: C# `ResolveBiomeId` used `math.abs(sectorZ)` before modulo. That can overflow at `int.MinValue` and makes negative macro-sector handling depend on a raw absolute-value edge case.
+
+Solution: Replaced raw absolute-z with bounded C# remainder conversion before absolute local-z banding. Mirrored that exact negative-remainder behavior in `WorldEntropySim.py` and added a negative-sector resolver test.
+
+Rejected Alternatives: Assuming macro-sector origins are never negative was rejected because the world grid accepts an origin parameter. Leaving Python `%` semantics in the harness was rejected because Python and C# disagree for negative remainders.
+
+Scalability potential: Low through Ultra tiers can shift macro-sector origins without changing biome distribution rules or losing replay parity.
+
+Hardware Impact: CPU impact is neutral. The added branch is initialization/tooling-path only for biome placement, not a per-frame solve cost.
+
+## Decision 16 - Full SOA IsCreated Guard
+Problem: `WorldRegrowthSimulationMemory.IsCreated` initially checked only a subset of lanes. Because the lanes are public data-owner fields, external misuse or partial disposal could leave a scheduler guard passing while later jobs touched missing lanes.
+
+Solution: Expanded `IsCreated` to verify every NativeArray lane used by initialization, solve, mining, telemetry, and codec paths.
+
+Rejected Alternatives: Leaving the subset check was rejected because the scheduler guards would be weaker than `HasValidLaneLengths`. Making all lanes private was rejected as a larger API shift during a multi-agent batch.
+
+Scalability potential: Low through Ultra tiers all depend on the same data block being coherent before scheduling. The guard cost is branch-only and does not change the daily math model.
+
+Hardware Impact: No meaningful runtime cost; the hot solve still runs in jobs. This prevents corrupted memory-state scheduling rather than buying frame time.
+
+## Decision 17 - Fresh Probe Compile After Final Guard Patch
+Problem: After the guard change, prior probe compile evidence was stale.
+
+Solution: Located Visual Studio 2022 Community Roslyn `csc.exe` and ran a fresh C# 9 unsafe library compile against temporary Unity/Hecton8 API stubs. Result: exit code 0. Temporary probe files were removed.
+
+Rejected Alternatives: Reusing the previous probe result was rejected. The .NET Framework `csc.exe` was also rejected because it is too old for the C# surface and produced invalid-language errors.
+
+Scalability potential: Verification-only. Runtime tiers unchanged.
+
+Hardware Impact: No runtime impact. Compile confidence improved; full Unity import and profiler proof still require Unity tooling.
+
+## Decision 18 - H8Memory Owner-Tracked Native Lanes
+Problem: Regrowth lanes were still allocated with direct `new NativeArray<T>` calls even though the project has `H8Memory.Allocate<T>` and owner-based `SystemID` tracking. Direct allocation kept sentinel labels but bypassed the broader memory owner ledger.
+
+Solution: Switched every regrowth NativeArray lane to `H8Memory.Allocate<T>` with `SystemID.WorldStreaming` and switched both deferred and immediate release helpers to `H8Memory.Release` with the same owner.
+
+Rejected Alternatives: Keeping raw NativeArray allocation was rejected after confirming `H8Memory` is available in `Hecton8.Core.Memory`. Moving to `GlobalDataVault` was rejected for this pass because there is no existing regrowth buffer ID and adding one would mutate shared core contracts during a multi-agent batch.
+
+Scalability potential: Low through Ultra tiers now account regrowth memory under a stable world-system owner, so future grid-size scaling has a single memory-budget owner.
+
+Hardware Impact: Runtime solve cost is unchanged. Cold allocation/release now pays H8Memory tracking overhead and gains leak/accounting visibility.
+
+## Decision 19 - Offline Harness Hot Loop Reduction
+Problem: The entropy harness was correct but slow under current machine load. It rescanned the full grid after recovery milestones were already known, copied nutrient lists every day, recalculated byte-quantized apex timers per cell, and used division/modulo in the diffusion loop.
+
+Solution: Added summary-scan gating, persistent nutrient scratch swapping, a 256x256 apex respawn LUT, and row-based diffusion traversal. Output stayed identical: Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
+
+Rejected Alternatives: Leaving the slow tester was rejected because regression tests were becoming expensive enough to discourage repeated use. Adding numpy was rejected because the project should not gain a new Python dependency for a local validation harness.
+
+Scalability potential: Low-end CI can run the same deterministic harness with less waste. High-end validation can still run 1000-day checks without changing the acceptance model.
+
+Hardware Impact: Tooling-only. Latest measured wrapper times under current load: 365-day command 68.723 s, 1000-day command 160.281 s, unittest wrapper 145.819 s. Runtime Unity code is unchanged.
+
+## Decision 20 - Persistent Allocator Enforcement
+Problem: `WorldRegrowthSimulationMemory.Allocate` accepted an allocator parameter but registered every lane as scene-lifetime native memory. A caller passing Temp or TempJob would create a lifetime mismatch.
+
+Solution: Force all regrowth lanes to allocate with `Allocator.Persistent` inside `Allocate`, and leave the parameter ignored for compatibility with the existing call shape.
+
+Rejected Alternatives: Trusting callers was rejected because the data block must survive across simulated days and save/load boundaries. Removing the allocator parameter was rejected as a public API change during the batch.
+
+Scalability potential: Low through Ultra tiers use the same persistent macro-state block. Larger grids still have explicit disposal paths and sentinel registration.
+
+Hardware Impact: Cold-path allocation policy only. Runtime solve cost is unchanged. This reduces leak/stale-buffer risk on low-memory devices.
+
+## Decision 21 - Allocation Failure Rollback And Bounded Grid Budget
+Problem: H8Memory can reject allocations when budget/tracking capacity is exhausted. Without rollback, a partially allocated regrowth block could remain live while `IsCreated` stays false. Also, clamping each dimension independently still allowed a pathological 4096x4096 grid.
+
+Solution: Added partial-allocation rollback when any required lane fails, then tightened that rollback in Decision 22 to use a pre-registration release path. Added a `1,048,576` cell cap by reducing height after width clamp. Exported constants now carry exact `ENTROPY BALANCED` status while keeping Unity proof in a separate field.
+
+Rejected Alternatives: Letting callers retry after partial allocation was rejected because it leaks ownership records and memory. Allowing a 4096x4096 macro grid was rejected because it is excessive for the low-end memory target. Hiding Unity verification status inside the main status string was rejected because the XML requires a clear entropy status.
+
+Scalability potential: Low-end devices cannot be forced into an oversized macro grid by bad config. High-end devices still retain up to 1,048,576 macro-sector cells, which is already visual-overkill for this backend.
+
+Hardware Impact: Default 64x64 path unchanged. Worst-case backend lane memory is capped to roughly 12 MB for the 12 byte lanes plus telemetry before payload buffers, instead of allowing roughly 192 MB for 4096x4096 lanes.
+
+## Decision 22 - Sentinel-Free Failed Allocation Cleanup
+Problem: The failed-allocation rollback in Decision 21 used the normal disposal path before `RegisterNativeArrays()` had run. `NativeMemorySentinel.UnregisterNativeArray` currently no-ops for untracked pointers, but depending on that behavior is a weak lifecycle contract.
+
+Solution: Added `ReleaseUnregisteredNativeArrays()` for the pre-registration failure path. It releases only H8Memory-owned lanes with `SystemID.WorldStreaming`, then `ResetState()` clears width, height, cell count, and day. Normal registered disposal still unregisters from the sentinel first.
+
+Rejected Alternatives: Keeping full `Dispose()` on pre-registration failure was rejected because it mixes registered and unregistered lifetimes. Registering partially created lanes was rejected because jobs require the full SOA block, not a partial data owner.
+
+Scalability potential: Low through Ultra tiers get the same fail-fast behavior when memory budgets reject oversized grids. High-end grids still register only after the entire SOA block exists.
+
+Hardware Impact: No hot-path cost. This is cold allocation failure hygiene; default 64x64 simulation and daily jobs are unchanged.
+
+## Decision 23 - Partial State Reallocation Guard
+Problem: `Allocate()` previously returned only when the full SOA block was created. If a caller reused a memory struct with only some lanes still alive, `Allocate()` could overwrite those fields with new H8Memory allocations and leave the old lanes live.
+
+Solution: Added `HasAnyCreatedLane` and made `Allocate()` dispose any partial lane set before allocating a fresh coherent block. Full blocks still return without churn.
+
+Rejected Alternatives: Trusting callers never to retry allocation after partial field disposal was rejected because the lanes are public data-owner fields. Making all lanes private was rejected as a larger API change during a multi-agent batch.
+
+Scalability potential: Low through Ultra tiers get deterministic allocation ownership even after failed or partial teardown scenarios. Larger high-end grids still allocate as one coherent SOA block.
+
+Hardware Impact: No hot-path cost. This is cold bootstrap/retry hygiene and does not affect daily solve timing.

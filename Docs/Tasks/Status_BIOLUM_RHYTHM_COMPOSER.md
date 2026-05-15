@@ -47,3 +47,17 @@ Mandates loaded before work:
 - [x] POLISH_MANDATE checked: no tag exists in Docs/Tasks/CURRENT_BATCH.md
 - [x] Additional hardening: Tools/test_biolum_waveform.py validates source/profile/artifact alignment
 - [x] Regression test passed: python -m unittest Tools.test_biolum_waveform
+- [x] Integrity manifest generated: Data/Visuals/Biolum_Manifest.json with SHA-256 artifact hashes
+- [x] Integrity manifest validated: 6 artifacts, payload CRC 0x0D545E74
+- [x] Fast manifest verification mode added: python Tools/BiolumWaveform.py --verify-manifest
+- [x] Fast manifest verification passed: BIOLUM MANIFEST VERIFIED, 6 artifacts, CRC 0x0D545E74
+- [x] Fast binary record verification mode added: python Tools/BiolumWaveform.py --verify-binary
+- [x] Fast binary record verification passed: 20 profiles, 8 palettes, 2 safety-clamped records, CRC 0x0D545E74
+- [x] Machine-readable binary schema generated: Data/Visuals/Biolum_BinarySchema.json
+- [x] Machine-readable binary schema validated: profileStride=1232, curveOffset=208
+- [x] Full fast package verification mode added: python Tools/BiolumWaveform.py --verify-all
+- [x] Full fast package verification passed: BIOLUM PACKAGE VERIFIED, 6 artifacts, 20 profiles, 8 palettes, 2 safety-clamped records, CRC 0x0D545E74
+- [x] Final Python compile passed: python -m py_compile Tools/BiolumWaveform.py Tools/test_biolum_waveform.py
+- [x] Final regression test passed: python -m unittest Tools.test_biolum_waveform, 4 tests in 0.420s, OK
+- [x] Final whitespace check passed: git diff --check on touched files, line-ending warnings only
+- [x] Biolum Python bytecode cache cleaned: 0 Biolum .pyc files remaining

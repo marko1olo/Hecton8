@@ -55,6 +55,11 @@ class BiolumWaveformTests(unittest.TestCase):
 
     def test_binary_readback_and_manifest_values(self) -> None:
         readback = biolum.readback_binary(VISUALS_ROOT / "Biolum_Profiles.bin")
+        binary_records = biolum.verify_binary_records(VISUALS_ROOT / "Biolum_Profiles.bin")
+        manifest = json.loads((VISUALS_ROOT / "Biolum_Manifest.json").read_text(encoding="utf-8"))
+        schema = json.loads((VISUALS_ROOT / "Biolum_BinarySchema.json").read_text(encoding="utf-8"))
+        manifest_info = biolum.verify_manifest(VISUALS_ROOT / "Biolum_Manifest.json")
+        package_info = biolum.verify_generated_package(VISUALS_ROOT)
 
         self.assertEqual(readback["profileCount"], 20)
         self.assertEqual(readback["paletteCount"], 8)
@@ -64,6 +69,26 @@ class BiolumWaveformTests(unittest.TestCase):
         self.assertEqual(readback["toasterColorCount"], biolum.TOASTER_COLOR_COUNT)
         self.assertEqual(readback["bytes"], 25936)
         self.assertEqual(readback["payloadCrc32"], "0x0D545E74")
+        self.assertEqual(manifest["status"], "RHYTHMS COMPOSED")
+        self.assertEqual(manifest["payloadCrc32"], readback["payloadCrc32"])
+        self.assertEqual(manifest["profileCount"], 20)
+        self.assertEqual(len(manifest["artifacts"]), 6)
+        self.assertTrue(all(len(artifact["sha256"]) == 64 for artifact in manifest["artifacts"]))
+        self.assertEqual(manifest_info["artifactCount"], 6)
+        self.assertEqual(manifest_info["payloadCrc32"], "0x0D545E74")
+        self.assertEqual(binary_records["profileCount"], 20)
+        self.assertEqual(binary_records["paletteCount"], 8)
+        self.assertEqual(binary_records["safetyClampedRecords"], 2)
+        self.assertEqual(binary_records["payloadCrc32"], "0x0D545E74")
+        self.assertEqual(package_info["artifactCount"], 6)
+        self.assertEqual(package_info["profileCount"], 20)
+        self.assertEqual(package_info["paletteCount"], 8)
+        self.assertEqual(package_info["safetyClampedRecords"], 2)
+        self.assertEqual(package_info["payloadCrc32"], "0x0D545E74")
+        self.assertEqual(schema["schema"], "H8_BIOLUM_BINARY_SCHEMA")
+        self.assertEqual(schema["constants"]["profileStride"], 1232)
+        self.assertEqual(schema["profileRecord"]["curveSamples"]["offset"], 208)
+        self.assertEqual(schema["paletteRecord"]["colors"]["floatCount"], 36)
 
     def test_waveform_images_are_present_and_sized(self) -> None:
         with Image.open(VISUALS_ROOT / "Biolum_Waveforms.png") as png:

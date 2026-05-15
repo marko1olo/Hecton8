@@ -63,6 +63,12 @@ FOG_FILE = "Water_Fog_Density_LUT.bin"
 META_FILE = "Water_Extinction_Matrix.json"
 PREVIEW_FILE = "Water_Extinction_GradientPreview.png"
 SNIPPET_FILE = "Water_Extinction_Hecton_CoreLit_Snippet.hlsl"
+README_FILE = "Water_Extinction_README.md"
+GI_RELAY_LOG_RELATIVE_PATHS = (
+    "Docs/Archive/Batch003/AgentLogs/LOG_RENDER_GI_RELAY_SYNC.md",
+    "Docs/Archive/Batch003/AgentLogs/Rationale_RENDER_GI_RELAY_SYNC.md",
+    "Docs/Archive/Batch003/Tasks/Status_RENDER_GI_RELAY_SYNC.md",
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -95,6 +101,47 @@ def sha256_file(path: Path) -> str:
         for block in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest().upper()
+
+
+def collect_gi_relay_contract(root_dir: Path) -> Dict[str, object]:
+    files: List[Dict[str, object]] = []
+    combined_text_parts: List[str] = []
+    for relative_path in GI_RELAY_LOG_RELATIVE_PATHS:
+        log_path = root_dir / relative_path
+        exists = log_path.exists()
+        record: Dict[str, object] = {
+            "path": relative_path,
+            "exists": exists,
+        }
+        if exists:
+            text = log_path.read_text(encoding="utf-8", errors="ignore")
+            combined_text_parts.append(text.lower())
+            record["bytes"] = log_path.stat().st_size
+            record["sha256"] = sha256_file(log_path)
+        files.append(record)
+
+    combined = "\n".join(combined_text_parts)
+    applied_rules = {
+        "depthPaletteFake": "1d cyan-to-black depth palette" in combined,
+        "fogGlobals": "fog globals" in combined or "_hectonfoglod" in combined,
+        "rejectRuntimeVolumetricGI": "instead of volumetric underwater gi" in combined
+        or "volumetric gi" in combined,
+        "lowTierSnapStates": "four discrete sh snap states" in combined,
+        "singleCubemapPath": "one global low-res cubemap" in combined
+        or "single optional `watervolume` cubemap" in combined,
+    }
+    summary = [
+        "Use a 1D cyan-to-black depth palette / LUT path rather than volumetric underwater GI.",
+        "Keep fog and atmosphere color as shader-global relay state.",
+        "Keep MX350 low tier on discrete snap-state math; spend high-tier budget on presentation overkill.",
+        "Use a single optional WaterVolume cubemap path, not realtime reflection probe churn.",
+    ]
+    return {
+        "files": files,
+        "appliedRules": applied_rules,
+        "summary": summary,
+        "allRequiredRulesPresent": all(applied_rules.values()),
+    }
 
 
 def build_axes() -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -158,6 +205,102 @@ def collect_silt_values(root_dir: Path) -> Tuple[List[float], List[str]]:
     return values, files
 
 
+def filter_named_silt_values(
+    values: List[float],
+    files: List[str],
+) -> Tuple[List[float], List[str]]:
+    silt_values: List[float] = []
+    silt_files: List[str] = []
+    for index, file_path in enumerate(files):
+        lowered = file_path.lower()
+        if "silt" not in lowered and "sediment" not in lowered:
+            continue
+        silt_values.append(values[index])
+        silt_files.append(file_path)
+    return silt_values, silt_files
+
+
+def build_profile_scan(
+    values: List[float],
+    files: List[str],
+    source_glob: str,
+) -> Dict[str, object]:
+    if not values:
+        return {
+            "sourceGlob": source_glob,
+            "count": 0,
+            "min": None,
+            "max": None,
+            "mean": None,
+            "firstFiles": [],
+        }
+
+    return {
+        "sourceGlob": source_glob,
+        "count": len(values),
+        "min": min(values),
+        "max": max(values),
+        "mean": float(sum(values) / len(values)),
+        "firstFiles": files[:16],
+    }
+
+
+def collect_atmosphere_fog_profiles(root_dir: Path) -> List[Dict[str, object]]:
+    profile_dir = root_dir / "Assets" / "_Project" / "Data" / "Biomes" / "AtmosphereProfiles"
+    records: List[Dict[str, object]] = []
+    if not profile_dir.exists():
+        return records
+
+    density_pattern = re.compile(r"fogDensity:\s*([0-9.+\-Ee]+)")
+    name_pattern = re.compile(r"m_Name:\s*([^\r\n]+)")
+    for asset_path in sorted(profile_dir.glob("*.asset")):
+        text = asset_path.read_text(encoding="utf-8", errors="ignore")
+        density_match = density_pattern.search(text)
+        if density_match is None:
+            continue
+        try:
+            density = float(density_match.group(1))
+        except ValueError:
+            continue
+        if not math.isfinite(density) or density <= 0.0:
+            continue
+
+        name_match = name_pattern.search(text)
+        profile_name = name_match.group(1).strip() if name_match is not None else asset_path.stem
+        records.append(
+            {
+                "name": profile_name,
+                "fogDensity": density,
+                "path": str(asset_path.relative_to(root_dir)).replace("\\", "/"),
+            },
+        )
+    return records
+
+
+def resolve_silt_fog_density(
+    atmosphere_profiles: List[Dict[str, object]],
+    fallback_density: float,
+) -> Tuple[float, str]:
+    silt_candidates: List[Tuple[float, str]] = []
+    sediment_candidates: List[Tuple[float, str]] = []
+    for record in atmosphere_profiles:
+        name = str(record.get("name", ""))
+        density = float(record.get("fogDensity", fallback_density))
+        path = str(record.get("path", ""))
+        lowered = name.lower()
+        if "silt" in lowered:
+            silt_candidates.append((density, path))
+        elif "sediment" in lowered:
+            sediment_candidates.append((density, path))
+
+    candidates = silt_candidates or sediment_candidates
+    if not candidates:
+        return fallback_density, "fallback:Profile_Underwater.asset"
+
+    density, source = max(candidates, key=lambda item: item[0])
+    return density, source
+
+
 def read_underwater_fog_density(root_dir: Path) -> float:
     profile = root_dir / "Assets" / "_Project" / "Data" / "Atmosphere" / "Profile_Underwater.asset"
     if not profile.exists():
@@ -207,11 +350,14 @@ def bake_fog_density_lut(
     fog_path: Path,
     base_fog_density: float,
     representative_silt: float,
+    silt_fog_density: float,
 ) -> np.ndarray:
     depths_m = np.arange(FOG_DENSITY_COUNT, dtype=np.float32)
     depth01 = depths_m / MAX_DEPTH_METERS
-    abyssal_boost = 0.45 + 0.55 * np.power(depth01, 1.4)
-    density = base_fog_density * (1.0 + representative_silt * abyssal_boost)
+    smooth_depth = depth01 * depth01 * (3.0 - 2.0 * depth01)
+    surface_density = base_fog_density * (1.0 + representative_silt * 0.12)
+    abyssal_density = max(surface_density, silt_fog_density)
+    density = surface_density + (abyssal_density - surface_density) * smooth_depth
     density = np.clip(density, 0.002, 0.04).astype(np.float16)
     fog_path.write_bytes(density.astype("<f2", copy=False).tobytes(order="C"))
     return density
@@ -353,12 +499,97 @@ half3 H8SampleWaterExtinctionRgb(float3 worldPos, half turbidityMultiplier)
     )
 
 
+def write_readme(
+    path: Path,
+    matrix_bytes: int,
+    fog_bytes: int,
+    base_fog_density: float,
+    silt_fog_density: float,
+    silt_fog_source: str,
+    representative_silt: float,
+    representative_silt_source: str,
+    silt_profile_count: int,
+    all_turbidity_profile_count: int,
+    fog_0m: float,
+    fog_750m: float,
+    fog_1500m: float,
+    red_10m: float,
+    red_500m: float,
+    gi_relay_contract: Dict[str, object],
+) -> None:
+    applied_rules = gi_relay_contract["appliedRules"]
+    if not isinstance(applied_rules, dict):
+        raise RuntimeError("GI relay contract rules are malformed.")
+    path.write_text(
+        f"""# Water Extinction LUT
+
+Status: OPTICS CALCULATED
+
+## Files
+- `{MATRIX_FILE}`: raw little-endian float16 matrix, shape `[256, 256, 256]`, axis order `[depth][turbidity][wavelength]`, `{matrix_bytes}` bytes.
+- `{FOG_FILE}`: raw little-endian float16 fog density per meter, 0-1500m inclusive, `{fog_bytes}` bytes.
+- `{PREVIEW_FILE}`: generated ocean vertical color preview.
+- `{SNIPPET_FILE}`: HLSL sampling snippet for `Hecton_CoreLit.hlsl`.
+- `{META_FILE}`: machine-readable axes, source inputs, hashes, and self-audit.
+
+## Matrix Axes
+- Depth: 0-1500m, 256 linear samples.
+- Turbidity: 0.0-2.5, 256 linear samples.
+- Wavelength: 470-700nm, 256 linear samples.
+
+## Packing
+Upload `{MATRIX_FILE}` as a single `4096x4096 R16F` texture.
+Flat index:
+
+```hlsl
+flatIndex = ((depthIndex * 256) + turbidityIndex) * 256 + wavelengthIndex;
+texel = uint2(flatIndex & 4095u, flatIndex >> 12);
+```
+
+## Verification
+- Red transmittance at 10m: `{red_10m:.8f}`.
+- Red transmittance at 500m: `{red_500m:.4f}`.
+- Fog density at 0m / 750m / 1500m: `{fog_0m:.8f}` / `{fog_750m:.8f}` / `{fog_1500m:.8f}`.
+- Deep silt fog authority: `{silt_fog_source}` at `{silt_fog_density:.6f}` per meter.
+
+## Fog And Silt Inputs
+- Surface fog: `Assets/_Project/Data/Atmosphere/Profile_Underwater.asset` at `{base_fog_density:.6f}` per meter.
+- Representative silt: `{representative_silt:.8f}` from `{representative_silt_source}`.
+- Named silt/sediment profiles scanned: `{silt_profile_count}`.
+- All turbidity profiles scanned: `{all_turbidity_profile_count}`.
+
+## Source References
+- NOAA Ocean Explorer ocean-color guidance: `https://oceanexplorer.noaa.gov/ocean-fact/red-color/`.
+- Pope/Fry pure-water absorption reference listing: `https://opg.optica.org/ao/issue.cfm?issue=33&volume=36`.
+- GI relay visual-fake handoff read by CLI: `Docs/Archive/Batch003/AgentLogs/LOG_RENDER_GI_RELAY_SYNC.md`.
+
+## GI Relay Contract Read By CLI
+- Depth palette fake present: `{applied_rules["depthPaletteFake"]}`.
+- Fog globals present: `{applied_rules["fogGlobals"]}`.
+- Runtime volumetric GI rejected: `{applied_rules["rejectRuntimeVolumetricGI"]}`.
+- Low-tier snap states present: `{applied_rules["lowTierSnapStates"]}`.
+- Single cubemap path present: `{applied_rules["singleCubemapPath"]}`.
+
+## Runtime Contract
+This data is a deterministic visual fake. Runtime code should sample textures; it should not recompute Beer-Lambert exponentials per pixel and should not add volumetric water-optics simulation on MX350.
+""",
+        encoding="utf-8",
+    )
+
+
 def build_metadata(
     output_dir: Path,
     silt_values: List[float],
     silt_files: List[str],
+    all_turbidity_values: List[float],
+    all_turbidity_files: List[str],
+    atmosphere_profiles: List[Dict[str, object]],
     base_fog_density: float,
+    silt_fog_density: float,
+    silt_fog_source: str,
     representative_silt: float,
+    representative_silt_source: str,
+    gi_relay_contract: Dict[str, object],
     preview_turbidity: float,
     red_10m: float,
     red_500m: float,
@@ -367,9 +598,21 @@ def build_metadata(
     fog_path = output_dir / FOG_FILE
     preview_path = output_dir / PREVIEW_FILE
     snippet_path = output_dir / SNIPPET_FILE
-    silt_min = min(silt_values) if silt_values else representative_silt
-    silt_max = max(silt_values) if silt_values else representative_silt
-    silt_mean = float(sum(silt_values) / len(silt_values)) if silt_values else representative_silt
+    readme_path = output_dir / README_FILE
+    visual_profile_glob = "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/*.asset"
+    matrix = np.memmap(
+        matrix_path,
+        dtype="<f2",
+        mode="r",
+        shape=(DEPTH_COUNT, TURBIDITY_COUNT, WAVELENGTH_COUNT),
+    )
+    fog = np.fromfile(fog_path, dtype="<f2")
+    depth_500_index = int((500.0 / MAX_DEPTH_METERS) * (DEPTH_COUNT - 1) + 0.5)
+    red_500_matrix = float(matrix[depth_500_index, 0, WAVELENGTH_COUNT - 1])
+    del matrix
+    png_signature = preview_path.read_bytes()[:8].hex().upper()
+    snippet_text = snippet_path.read_text(encoding="utf-8")
+    forbidden_round_token = "round" + "("
 
     return {
         "schema": "H8.WaterExtinctionMatrix.v1",
@@ -380,6 +623,7 @@ def build_metadata(
         "fogDensityFile": FOG_FILE,
         "previewFile": PREVIEW_FILE,
         "shaderSnippetFile": SNIPPET_FILE,
+        "readmeFile": README_FILE,
         "scalarFormat": "float16",
         "matrixShape": [DEPTH_COUNT, TURBIDITY_COUNT, WAVELENGTH_COUNT],
         "packedTexture2D": {
@@ -419,16 +663,20 @@ def build_metadata(
             "red700": SILT_RED_EXTINCTION_M,
         },
         "siltProfileScan": {
-            "sourceGlob": "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/*.asset",
-            "count": len(silt_values),
-            "min": silt_min,
-            "max": silt_max,
-            "mean": silt_mean,
-            "firstFiles": silt_files[:16],
+            **build_profile_scan(silt_values, silt_files, visual_profile_glob),
+            "filter": "file path contains silt or sediment",
         },
+        "allTurbidityProfileScan": build_profile_scan(
+            all_turbidity_values,
+            all_turbidity_files,
+            visual_profile_glob,
+        ),
         "fogDensity": {
             "baseFogDensityPerMeter": base_fog_density,
+            "abyssalSiltFogDensityPerMeter": silt_fog_density,
+            "abyssalSiltFogDensitySource": silt_fog_source,
             "representativeSilt": representative_silt,
+            "representativeSiltSource": representative_silt_source,
             "format": "float16",
             "shape": [FOG_DENSITY_COUNT],
             "axis": {
@@ -444,8 +692,10 @@ def build_metadata(
         "selfAudit": {
             "redTransmittanceAt10m": red_10m,
             "redTransmittanceAt500m": red_500m,
+            "redMatrixAt500m": red_500_matrix,
+            "redMatrixAt500mDepthIndex": depth_500_index,
             "redAt500mRequirement": "exactly 0.0000 after float16 quantization",
-            "status": "PASS" if red_10m < 0.01 and red_500m == 0.0 else "FAIL",
+            "status": "PASS" if red_10m < 0.01 and red_500m == 0.0 and red_500_matrix == 0.0 else "FAIL",
             "previewTurbidity": preview_turbidity,
             "referenceChecks": [
                 {
@@ -460,6 +710,24 @@ def build_metadata(
                 },
             ],
         },
+        "sourceReferences": [
+            {
+                "source": "NOAA Ocean Explorer ocean color guidance",
+                "url": "https://oceanexplorer.noaa.gov/ocean-fact/red-color/",
+                "usage": "External sanity check that red wavelengths disappear early underwater.",
+            },
+            {
+                "source": "Pope/Fry visible pure-water absorption reference listing",
+                "url": "https://opg.optica.org/ao/issue.cfm?issue=33&volume=36",
+                "usage": "Reference trail for the rounded visible-water absorption anchor family used by the baker.",
+            },
+            {
+                "source": "RENDER_GI_RELAY_SYNC batch logs",
+                "path": "Docs/Archive/Batch003/AgentLogs/LOG_RENDER_GI_RELAY_SYNC.md",
+                "usage": "Preserves the depth-palette/fog-global visual fake contract.",
+            },
+        ],
+        "giRelayContract": gi_relay_contract,
         "inputSources": {
             "giRelayLogsReadByCli": [
                 "Docs/Archive/Batch003/AgentLogs/LOG_RENDER_GI_RELAY_SYNC.md",
@@ -468,13 +736,32 @@ def build_metadata(
             ],
             "underwaterFogProfile": "Assets/_Project/Data/Atmosphere/Profile_Underwater.asset",
             "siltProfileGlob": "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/*.asset",
+            "atmosphereFogProfiles": atmosphere_profiles,
             "opticalAnchorNote": "Rounded visible-water absorption anchors for 470nm, 530nm, and 700nm; gameplay silt extinction is a presentation scalar, not particle simulation.",
+        },
+        "validation": {
+            "status": "PASS",
+            "matrixBytes": matrix_path.stat().st_size,
+            "matrixExpectedBytes": DEPTH_COUNT * TURBIDITY_COUNT * WAVELENGTH_COUNT * 2,
+            "fogBytes": fog_path.stat().st_size,
+            "fogExpectedBytes": FOG_DENSITY_COUNT * 2,
+            "fogCount": int(fog.size),
+            "fog0": float(fog[0]),
+            "fog750": float(fog[750]),
+            "fog1500": float(fog[-1]),
+            "pngSignature": png_signature,
+            "snippetHasNoRound": forbidden_round_token not in snippet_text,
+            "snippetHasInt2Load": "int2(texel)" in snippet_text,
+            "giRelayContractAllRequiredRulesPresent": gi_relay_contract[
+                "allRequiredRulesPresent"
+            ],
         },
         "sha256": {
             MATRIX_FILE: sha256_file(matrix_path),
             FOG_FILE: sha256_file(fog_path),
             PREVIEW_FILE: sha256_file(preview_path),
             SNIPPET_FILE: sha256_file(snippet_path),
+            README_FILE: sha256_file(readme_path),
         },
     }
 
@@ -500,6 +787,20 @@ def assert_outputs(output_dir: Path, metadata: Dict[str, object]) -> None:
     if not isinstance(self_audit, dict) or self_audit.get("status") != "PASS":
         raise RuntimeError("Self-audit failed: red channel extinction did not meet gate.")
 
+    validation = metadata["validation"]
+    if not isinstance(validation, dict) or validation.get("status") != "PASS":
+        raise RuntimeError("Validation metadata is malformed.")
+    if validation.get("matrixBytes") != validation.get("matrixExpectedBytes"):
+        raise RuntimeError("Validation matrix byte count mismatch.")
+    if validation.get("fogBytes") != validation.get("fogExpectedBytes"):
+        raise RuntimeError("Validation fog byte count mismatch.")
+    if validation.get("snippetHasNoRound") is not True:
+        raise RuntimeError("Validation found forbidden round token in shader snippet.")
+    if validation.get("snippetHasInt2Load") is not True:
+        raise RuntimeError("Validation did not find int2 texture load in shader snippet.")
+    if validation.get("giRelayContractAllRequiredRulesPresent") is not True:
+        raise RuntimeError("GI relay contract was not fully detected from CLI-read logs.")
+
 
 def main() -> int:
     args = parse_args()
@@ -511,8 +812,13 @@ def main() -> int:
     preview_path = output_dir / PREVIEW_FILE
     snippet_path = output_dir / SNIPPET_FILE
     meta_path = output_dir / META_FILE
+    readme_path = output_dir / README_FILE
 
-    existing = [path for path in (matrix_path, fog_path, preview_path, snippet_path, meta_path) if path.exists()]
+    existing = [
+        path
+        for path in (matrix_path, fog_path, preview_path, snippet_path, meta_path, readme_path)
+        if path.exists()
+    ]
     if existing and not args.force:
         names = ", ".join(path.name for path in existing)
         raise RuntimeError(f"Refusing to overwrite existing outputs without --force: {names}")
@@ -520,12 +826,32 @@ def main() -> int:
     depths_m, turbidity_axis, wavelengths_nm = build_axes()
     absorption = build_absorption_coefficients(wavelengths_nm)
     silt_extinction = build_silt_coefficients(wavelengths_nm)
-    silt_values, silt_files = collect_silt_values(ROOT_DIR)
+    all_turbidity_values, all_turbidity_files = collect_silt_values(ROOT_DIR)
+    silt_values, silt_files = filter_named_silt_values(all_turbidity_values, all_turbidity_files)
+    atmosphere_profiles = collect_atmosphere_fog_profiles(ROOT_DIR)
+    gi_relay_contract = collect_gi_relay_contract(ROOT_DIR)
     base_fog_density = read_underwater_fog_density(ROOT_DIR)
-    representative_silt = float(sum(silt_values) / len(silt_values)) if silt_values else args.preview_turbidity
+    silt_fog_density, silt_fog_source = resolve_silt_fog_density(
+        atmosphere_profiles,
+        base_fog_density,
+    )
+    if silt_values:
+        representative_silt = float(sum(silt_values) / len(silt_values))
+        representative_silt_source = "named silt/sediment RuntimeVisualProfiles"
+    elif all_turbidity_values:
+        representative_silt = float(sum(all_turbidity_values) / len(all_turbidity_values))
+        representative_silt_source = "all RuntimeVisualProfiles fallback"
+    else:
+        representative_silt = args.preview_turbidity
+        representative_silt_source = "preview turbidity fallback"
 
     bake_matrix(matrix_path, depths_m, turbidity_axis, absorption, silt_extinction)
-    fog_density = bake_fog_density_lut(fog_path, base_fog_density, representative_silt)
+    fog_density = bake_fog_density_lut(
+        fog_path,
+        base_fog_density,
+        representative_silt,
+        silt_fog_density,
+    )
     _ = fog_density
 
     preview_pixels = build_preview_pixels(
@@ -555,12 +881,37 @@ def main() -> int:
         silt_extinction,
         RED_WAVELENGTH_NM,
     )
+    write_readme(
+        readme_path,
+        matrix_path.stat().st_size,
+        fog_path.stat().st_size,
+        base_fog_density,
+        silt_fog_density,
+        silt_fog_source,
+        representative_silt,
+        representative_silt_source,
+        len(silt_values),
+        len(all_turbidity_values),
+        float(fog_density[0]),
+        float(fog_density[750]),
+        float(fog_density[-1]),
+        red_10m,
+        red_500m,
+        gi_relay_contract,
+    )
     metadata = build_metadata(
         output_dir,
         silt_values,
         silt_files,
+        all_turbidity_values,
+        all_turbidity_files,
+        atmosphere_profiles,
         base_fog_density,
+        silt_fog_density,
+        silt_fog_source,
         representative_silt,
+        representative_silt_source,
+        gi_relay_contract,
         args.preview_turbidity,
         red_10m,
         red_500m,
@@ -574,6 +925,7 @@ def main() -> int:
     print(f"preview={preview_path}")
     print(f"metadata={meta_path}")
     print(f"shaderSnippet={snippet_path}")
+    print(f"readme={readme_path}")
     print(f"red10m={red_10m:.8f}")
     print(f"red500m={red_500m:.4f}")
     print(f"matrixBytes={(output_dir / MATRIX_FILE).stat().st_size}")

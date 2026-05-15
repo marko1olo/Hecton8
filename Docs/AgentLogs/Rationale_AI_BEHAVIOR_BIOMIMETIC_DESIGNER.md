@@ -63,7 +63,7 @@ Scalability potential: Future brain schema additions can extend the same test fi
 Hardware Impact: No runtime cost; the initial offline suite covered the core artifact regressions before the later hardening pass expanded it.
 
 Problem: The DataVault feed validator used a copied BufferID list, which can drift from the real `H8Memory.cs` enum.
-Solution: Replaced copied source-of-truth validation with live parsing of `Assets/_Project/Scripts/Core/Memory/H8Memory.cs` BufferID enum. The report now records `knownBufferSourceStatus: SOURCE_PARSED` and `knownBufferCount: 34`.
+Solution: Replaced copied source-of-truth validation with live parsing of `Assets/_Project/Scripts/Core/Memory/H8Memory.cs` BufferID enum. The current regenerated report records `knownBufferSourceStatus: SOURCE_PARSED` and `knownBufferCount: 66`.
 Rejected Alternatives: Keeping the fallback list as the normal path was rejected because it can claim stale validity.
 Scalability potential: New vault BufferIDs become valid automatically after the source enum changes; removed BufferIDs will fail artifact validation.
 Hardware Impact: Offline validation cost only. Runtime impact remains 0 us because validation does not execute in Unity gameplay.
@@ -78,4 +78,52 @@ Problem: The regression test for subgroup-guard rejection wrote under `Temp/AiBa
 Solution: Switched report-mutation tests to `tempfile.TemporaryDirectory` with unittest cleanup and added two more regression tests for impossible target kill-rate drift and stale report validation drift.
 Rejected Alternatives: Keeping repo-local temp artifacts was rejected because batch agents already produce enough untracked noise.
 Scalability potential: More artifact tamper tests can reuse the system temp helper without polluting the workspace.
-Hardware Impact: No runtime impact. Final test readback runs 9 tests in 3.618 s with `python -B`, so it does not create new bytecode in the project.
+Hardware Impact: No runtime impact. Final test readback after digest hardening runs 11 tests in 13.026 s with `python -B`, so it does not create new bytecode in the project.
+
+Problem: The report could still be a valid-looking artifact for a different brain revision because it lacked a hard fingerprint binding to the exact JSON and full simulated result stream.
+Solution: Added `brainDigest` and `simulationDigest` SHA-256 fields to `Tools/AiBattleSim.py` reports, plus `simulatorSchemaVersion=2`. The artifact checker now rejects brain digest drift and invalid simulation digests. A strict `--verify-rerun` pass reruns all 10,000 encounters and compares digest, summary, and calibration against the saved report.
+Rejected Alternatives: Trusting report numbers after schema hardening was rejected. A report must prove it belongs to the current brain and current simulator semantics.
+Scalability potential: Future importer/CI can use cheap digest checks for normal validation and opt into `--verify-rerun` for release gates or suspicious balance edits.
+Hardware Impact: Offline validation cost only. Runtime impact remains 0 us; the digest does not enter Unity gameplay. Current live `H8Memory.cs` BufferID count is 66, so the old 34-count evidence is obsolete.
+
+Problem: The first strict rerun attempt exceeded the shell timeout before printing a footer under system load, even though the report file had been written.
+Solution: Re-ran strict verification as a redirected background process, polled the output, and recorded only the completed result: `ARTIFACT_CHECK_PASSED`, `rerunVerified=True`, digest matched `97a10330bb86ded1a29b82aa896ac9acbe46d768fe0c403360c80e08bca50867`.
+Rejected Alternatives: Treating the timed-out foreground command as proof was rejected.
+Scalability potential: Long release-grade reruns can be run under redirected output without losing evidence to shell timeout.
+Hardware Impact: No runtime impact. Temporary verifier output was removed after recording the result.
+
+Problem: The validator proved 50 utility rows and 10 rows per behavior, but it did not prove that every context/behavior pair existed exactly once. Duplicate pairs could hide a missing transition while preserving row counts.
+Solution: Added strict matrix validation to `Tools/AiBattleSim.py`: expected context count is 10, context ids must be unique, and all 50 context/behavior pairs must appear exactly once. The report now records `contextCount=10` and `utilityPairCount=50`.
+Rejected Alternatives: Trusting total row count was rejected because duplicate rows can make the runtime lookup silently overwrite a missing pair.
+Scalability potential: Future contexts or behaviors must update constants and tests deliberately, preventing silent drift in the utility surface.
+Hardware Impact: Offline validation only. Runtime impact remains 0 us; this prevents an importer from packing a broken decision matrix.
+
+Problem: Matrix validation changed the report validation schema, so the previous report failed the current artifact checker until regenerated.
+Solution: Regenerated `Tools/AiBattleSim_Report.json`, reran artifact validation, reran the strict 10,000 encounter verification, and expanded the unit suite to 13 tests.
+Rejected Alternatives: Keeping a stale report and documenting the mismatch was rejected. Evidence must match the current validator.
+Scalability potential: CI can detect stale report schemas through `report.validation contextCount/utilityPairCount mismatch`.
+Hardware Impact: No runtime impact. Strict rerun remained offline and passed with the same brain and simulation digest.
+
+Problem: The brain JSON contained important contracts beyond utility scores, but the validator did not enforce them. A malformed behavior parameter block, missing Math LOD tier, bad cadence hysteresis, missing dot rule, or broken black-box telemetry contract could pass if the utility rows remained valid.
+Solution: Added full contract validation to `Tools/AiBattleSim.py`: behavior parameter count, numeric parameter ranges, cinematic cheat presence, cadence bounds with hysteresis, self-audit thresholds, all four Math LOD tiers, four dot-based pack rules, and 300-frame black-box telemetry with the required dump path/fields.
+Rejected Alternatives: Treating those fields as documentation-only was rejected. They are importer/runtime contracts and must fail closed before handoff.
+Scalability potential: Future runtime import can trust the report to reject incomplete tiering or telemetry drift before packing data into vault-owned arrays.
+Hardware Impact: Offline validation only. Runtime impact remains 0 us. The black-box contract remains data-level until an AI runtime owner maps it to the actual telemetry ring.
+
+Problem: Full contract validation changed the report schema and made the pre-existing report stale.
+Solution: Regenerated `Tools/AiBattleSim_Report.json`, reran artifact validation, reran strict 10,000 encounter verification, and expanded the unit suite to 19 tests. Current report records `behaviorParameterCount=5`, `mathLodTierCount=4`, `packRuleCount=4`, and `blackBoxCapacityFrames=300`.
+Rejected Alternatives: Keeping the stale report was rejected for the same evidence-integrity reason as prior schema changes.
+Scalability potential: CI can detect stale contract counts through report validation mismatches.
+Hardware Impact: No runtime impact. Strict rerun remains offline and passed with unchanged brain/simulation digests.
+
+Problem: Some malformed inputs could stress validator error paths instead of returning clean failure evidence. Missing `behaviorOrder` could throw during tuple conversion, invalid self-audit fields could throw during artifact checks, and report-side `behaviorCounts` drift was not compared.
+Solution: Added fail-closed validation helpers to `Tools/AiBattleSim.py`: malformed `behaviorOrder` now records `behaviorOrder drift`; artifact self-audit reads use numeric guards; `report.validation.behaviorCounts` is compared against fresh validation. Added regression tests for all three cases.
+Rejected Alternatives: Assuming only valid JSON reaches the checker was rejected. Batch artifacts are hand-edited by multiple agents and must fail cleanly.
+Scalability potential: CI and future importer scripts can consume checker failures as structured evidence instead of crashing on malformed artifacts.
+Hardware Impact: Offline validation only. Runtime impact remains 0 us.
+
+Problem: Fail-closed checker changes required fresh evidence.
+Solution: Regenerated `Tools/AiBattleSim_Report.json`, reran artifact validation, reran strict 10,000 encounter verification, and expanded the unit suite to 22 tests.
+Rejected Alternatives: Reusing the old report was rejected because digest/schema evidence must track the current checker.
+Scalability potential: More malformed-input tests can use the existing temp-brain/temp-report helpers without writing repo-local test debris.
+Hardware Impact: No runtime impact. Strict rerun remains offline and passed with unchanged brain/simulation digests.

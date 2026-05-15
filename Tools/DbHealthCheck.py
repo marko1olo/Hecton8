@@ -222,13 +222,13 @@ def audit_h8db(path: Path) -> dict[str, int | float | str]:
             payload_padding_bytes = 0
             live_payload_bytes = 0
             for payload_offset in sorted(live_payload_offsets):
-                if payload_offset < HEADER_SIZE_BYTES or payload_offset > file_bytes - PAYLOAD_HEADER_SIZE_BYTES:
-                    raise ValueError(f"payload offset {payload_offset} outside file")
+                if payload_offset < HEADER_SIZE_BYTES or payload_offset > append_offset - PAYLOAD_HEADER_SIZE_BYTES:
+                    raise ValueError(f"payload offset {payload_offset} outside append range")
                 payload_magic = read_u32(view, payload_offset + PAYLOAD_MAGIC_OFFSET)
                 if payload_magic != PAYLOAD_MAGIC:
                     raise ValueError(f"payload at {payload_offset} has bad magic 0x{payload_magic:08X}")
                 payload_bytes = read_i32(view, payload_offset + PAYLOAD_BYTES_OFFSET)
-                if payload_bytes <= 0 or payload_offset + PAYLOAD_HEADER_SIZE_BYTES + payload_bytes > file_bytes:
+                if payload_bytes <= 0 or payload_offset + PAYLOAD_HEADER_SIZE_BYTES + payload_bytes > append_offset:
                     raise ValueError(f"payload at {payload_offset} has invalid byte length {payload_bytes}")
                 record_bytes = align_up(PAYLOAD_HEADER_SIZE_BYTES + payload_bytes, PAYLOAD_ALIGNMENT_BYTES)
                 live_payload_bytes += payload_bytes

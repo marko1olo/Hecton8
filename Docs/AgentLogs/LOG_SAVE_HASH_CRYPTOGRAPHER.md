@@ -396,6 +396,42 @@ Exact Microseconds saved: 0 runtime microseconds. This improves failure determin
 
 Verification: full owned suite returned `PY_AST_OK files=3`, `SELFTEST_OK`, `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=2 resultCtor=4 blitAttrs=2`, `XXHASH_PATH_REQUIRED_GUARD=PASS`, `XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK xxh3=338 shuffle=128`, and `XXHASH_TMP_REMOVED`. Direct malformed-module probe returned `XXHASH_MODULE_FILE_GUARD=PASS`. `git diff --check` passed with line-ending warnings only.
 
+## 2026-05-15 - Reference Verifier Cached Module Eviction
+
+What was wrong: Embedded use of `VerifyReplayHasherReference.py` could inherit an existing `sys.modules["xxhash"]` from the host Python process. The path containment check would reject a wrong path, but it still did not force loading the explicitly requested isolated module.
+
+What was done: Added `sys.modules.pop("xxhash", None)` after inserting `--xxhash-path` and before importing `xxhash`. Updated the save header design doc to state the cached-module eviction behavior.
+
+Cinematic Cheats used: None. Offline verification tooling only.
+
+Exact Microseconds saved: 0 runtime microseconds. This improves isolation for embedded verifier calls; no gameplay path changed.
+
+Verification: direct embedded-process probe preloaded a polluted `sys.modules["xxhash"]`, then verified the tool imported from the requested temp path and returned `XXHASH_SYSMODULES_EVICTION_GUARD=PASS`. Full owned suite returned `PY_AST_OK files=3`, `SELFTEST_OK`, `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=2 resultCtor=4 blitAttrs=2`, `XXHASH_PATH_REQUIRED_GUARD=PASS`, `XXHASH_MODULE_FILE_GUARD=PASS`, `XXHASH_SYSMODULES_EVICTION_GUARD=PASS`, `XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK xxh3=338 shuffle=128`, and `XXHASH_TMP_REMOVED`. `git diff --check` passed with line-ending warnings only.
+
+## 2026-05-15 - Reference Verifier Embedded Cleanup
+
+What was wrong: Embedded calls to `VerifyReplayHasherReference.py` could leave `sys.path` and `sys.modules["xxhash"]` mutated after `main()` returned. The CLI process exits, but a Python harness would keep that contamination.
+
+What was done: Wrapped the isolated import/verification window in `finally`, removing the inserted `--xxhash-path` entry and restoring the previous `xxhash` module object or absence state.
+
+Cinematic Cheats used: None. Offline verification tooling only.
+
+Exact Microseconds saved: 0 runtime microseconds. This improves repeatability of tooling; no gameplay path changed.
+
+Verification: full owned suite returned `PY_AST_OK files=3`, `SELFTEST_OK`, `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=2 resultCtor=4 blitAttrs=2`, `XXHASH_PATH_REQUIRED_GUARD=PASS`, `XXHASH_MODULE_FILE_GUARD=PASS`, `XXHASH_EMBEDDED_CLEANUP_SUCCESS_GUARD=PASS`, `XXHASH_EMBEDDED_CLEANUP_FAILURE_GUARD=PASS`, `XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK xxh3=338 shuffle=128`, and `XXHASH_TMP_REMOVED`. `git diff --check` passed with line-ending warnings only.
+
+## 2026-05-15 - Evidence Consistency Correction
+
+What was wrong: `Status_SAVE_HASH_CRYPTOGRAPHER.md` still claimed the rationale ordering proof covered Decisions `1-37`, while the rationale file now contains Decisions `1-41`. The latest-suite evidence list also carried an older standalone sys.modules guard label after the cleanup probe had superseded it.
+
+What was done: Updated the status file to record Decisions `1-41`, added Loop 40, and aligned latest-suite labels with the current cleanup success/failure probes.
+
+Cinematic Cheats used: None. Evidence hygiene only.
+
+Exact Microseconds saved: 0 runtime microseconds. No runtime or active save writer changed.
+
+Verification: post-correction checks returned `PY_AST_OK files=3`, `SELFTEST_OK`, `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=2 resultCtor=4 blitAttrs=2`, `XXHASH_TMP_ABSENT`, and `git diff --check` passed with line-ending warnings only. Status/rationale readback confirms Loop 40 and Decisions `1-42`.
+
 ## 2026-05-15 - Shuffle Mask Preimage Byte Fixtures
 
 What was wrong: Shuffle mask output vectors were frozen, but the raw low/high mask preimage bytes were not. That makes lane-order drift harder to diagnose.

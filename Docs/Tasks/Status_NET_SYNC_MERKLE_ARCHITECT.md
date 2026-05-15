@@ -37,6 +37,10 @@ Loop 3: prompt re-extraction and Tasks 1-5 compile/static verification - COMPLET
 Loop 4: MasterStateHash/InputRingBuffer self-audit, report validation, and 4-client sanity run - COMPLETE
 Loop 5: final anti-bloat verification, missing Polish Mandate check, and LOG_BACKEND_ENGINEER append - COMPLETE
 Loop 6: regression unittest hardening and generated-cache cleanup - COMPLETE
+Loop 7: executable AUP64 and Merkle-diff hardening - COMPLETE
+Loop 8: one-command offline protocol gate - COMPLETE
+Loop 9: executable packet schema offset/MTU hardening - COMPLETE
+Loop 10: gate/doc test-count consistency hardening - COMPLETE
 
 ## Verification Evidence
 
@@ -66,3 +70,49 @@ Loop 6: regression unittest hardening and generated-cache cleanup - COMPLETE
 - Final protocol doc gate -> `FINAL_NET_DOC_OK`.
 - Final NET_SYNC bytecode cache gate -> `NET_SYNC_PYCACHE_CLEAN`.
 - Final `git diff --check` on owned NET_SYNC files/reports/logs -> exit 0.
+- Added executable `pack_aup_local64`, `unpack_aup_local64`, `build_merkle_levels`, and `merkle_diff_indices` helpers to `Tools\NetJitterSim.py`.
+- Expanded `Tools\test_net_jitter_sim.py` from 5 to 7 tests, adding AUP64 boundary/overflow coverage and Merkle changed-leaf localization coverage.
+- `python -B -m unittest Tools.test_net_jitter_sim` -> 7 tests, OK, 13.177 s.
+- PowerShell-piped Python AST parse after AUP64/Merkle hardening -> `NET_SYNC_AST_AUP_MERKLE_OK`.
+- NET_SYNC bytecode cache gate after AUP64/Merkle hardening -> `NET_SYNC_PYCACHE_CLEAN`.
+- Final post-AUP64/Merkle `python -B` rerun of baseline, rollback-stress, and 4-client reports -> all `NETWORK PROTOCOL READY`.
+- Final post-AUP64/Merkle `python -B -m unittest Tools.test_net_jitter_sim` -> 7 tests, OK, 15.990 s.
+- Final JSON report gate -> `FINAL_NET_REPORTS_OK_AUP_MERKLE`.
+- Final protocol doc gate -> `FINAL_NET_DOC_OK_AUP_MERKLE`.
+- Final AST gate -> `FINAL_NET_AST_OK_AUP_MERKLE`.
+- Final bytecode cache gate -> `NET_SYNC_PYCACHE_CLEAN`.
+- Final `git diff --check` on owned NET_SYNC files/reports/logs -> exit 0; line-ending normalization warnings only.
+- Added `Tools\NetProtocolGate.py` as a single offline NET_SYNC protocol gate.
+- `python -B Tools\NetProtocolGate.py` -> `NETWORK PROTOCOL READY`, failures `[]`, scenarios baseline/rollback_stress/four_client, unit tests 7, report `Docs\Reports\Net_Protocol_Gate_Report.md`.
+- Gate report readback -> `Status: NETWORK PROTOCOL READY`, 0 hash mismatches, 0 ring mismatches, float audit PASS for all scenarios, 7 unittest cases OK.
+- Post-gate bytecode cache check -> `NET_SYNC_PYCACHE_CLEAN`.
+- Post-gate AST check for `NetJitterSim.py`, `test_net_jitter_sim.py`, and `NetProtocolGate.py` -> `NET_PROTOCOL_GATE_AST_OK`.
+- Post-documentation final `python -B Tools\NetProtocolGate.py` -> `NETWORK PROTOCOL READY`, failures `[]`, scenarios baseline/rollback_stress/four_client, unit tests 7.
+- Protocol doc gate-command reference check -> `NET_PROTOCOL_GATE_DOC_REFERENCES_OK`.
+- Final one-command gate bytecode cache check -> `NET_SYNC_PYCACHE_CLEAN`.
+- Final one-command gate AST check -> `FINAL_NET_GATE_AST_OK`.
+- Final `git diff --check` including `Tools\NetProtocolGate.py` and `Docs\Reports\Net_Protocol_Gate_Report.md` -> exit 0; line-ending normalization warnings only.
+- Added executable packet schema specs for `H8NetEnvelope`, `InputStateRecord`, `WorldDeltaHeader`, and `WorldDeltaRecord` in `Tools\NetJitterSim.py`.
+- Added `validate_packet_schema()` and wired it into `Tools\NetProtocolGate.py`.
+- Added `test_packet_schema_offsets_sizes_and_mtu_budget_are_locked`; `Tools\test_net_jitter_sim.py` now has 8 tests.
+- `python -B -m unittest Tools.test_net_jitter_sim` -> 8 tests, OK, 12.659 s.
+- `python -B Tools\NetProtocolGate.py` -> `NETWORK PROTOCOL READY`, failures `[]`, unit tests 8.
+- AST check after packet-schema hardening -> `NET_PACKET_SCHEMA_AST_OK`.
+- Post-documentation packet-schema `python -B Tools\NetProtocolGate.py` -> `NETWORK PROTOCOL READY`, failures `[]`, unit tests 8.
+- Packet schema documentation reference check -> `NET_PROTOCOL_PACKET_SCHEMA_DOC_OK`.
+- Packet schema bytecode cache check -> `NET_SYNC_PYCACHE_CLEAN`.
+- Packet schema final AST check -> `FINAL_PACKET_SCHEMA_AST_OK`.
+- Packet schema final `git diff --check` -> exit 0; line-ending normalization warnings only.
+- Found stale protocol doc gate evidence line `Unit tests: 7` after expanding the suite to 8 tests; corrected `Docs\Modding\Net_Protocol_v1.md` to `Unit tests: 8`.
+- Hardened `Tools\NetProtocolGate.py` with `EXPECTED_UNIT_TESTS = 8`, a matching required doc term, and a nonzero failure when unittest count drifts.
+- Final test-count consistency `python -B Tools\NetProtocolGate.py` -> `NETWORK PROTOCOL READY`, failures `[]`, unit tests 8.
+- Protocol doc unit-test count check -> `Docs\Modding\Net_Protocol_v1.md:370:- Unit tests: 8`.
+- Gate expected-count check -> `Tools\NetProtocolGate.py` contains `Unit tests: 8` and `EXPECTED_UNIT_TESTS = 8`.
+- Final test-count consistency AST check -> `FINAL_TEST_COUNT_GATE_AST_OK`.
+- Final test-count consistency bytecode cache check -> `NET_SYNC_PYCACHE_CLEAN`.
+- Final gate report readback -> `Status: NETWORK PROTOCOL READY`, `Tests: 8`.
+- Final test-count consistency `git diff --check` on owned NET_SYNC files/reports/logs -> exit 0; line-ending normalization warnings only.
+- Final post-log `python -B Tools\NetProtocolGate.py` -> `NETWORK PROTOCOL READY`, failures `[]`, unit tests 8.
+- Final post-log AST parse -> `FINAL_ALL_NET_SYNC_AST_OK`.
+- Final post-log pycache check -> `NET_SYNC_PYCACHE_CLEAN_FINAL`.
+- Final post-log gate report readback -> `Status: NETWORK PROTOCOL READY`, `Tests: 8`.

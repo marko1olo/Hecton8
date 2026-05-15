@@ -1,0 +1,43 @@
+{
+  "artifacts": [
+    {
+      "bytes": 25936,
+      "path": "Data\\Visuals\\Biolum_Profiles.bin",
+      "sha256": "1c7db3b6fd0fc24541b078bf9deebbcaa9eb9aae2dcc6f4f25d749439a3b0feb"
+    },
+    {
+      "bytes": 48897,
+      "path": "Data\\Visuals\\Biolum_Profiles.json",
+      "sha256": "ad87413685bc1ababfb1dd73dfc949e79fba4783132efc6fa3c2c768ca8a51e6"
+    },
+    {
+      "bytes": 8629,
+      "path": "Data\\Visuals\\Biolum_Verification.json",
+      "sha256": "eb9c26e9b0e4219360b3d6c62888ffe072b516c143cdcd88ab3ff62f4197abd7"
+    },
+    {
+      "bytes": 76069,
+      "path": "Data\\Visuals\\Biolum_Waveforms.png",
+      "sha256": "cbf2e3ad6b2900412eced1db96619edb62bc0e7217dff07aaba92ede172449bf"
+    },
+    {
+      "bytes": 777510,
+      "path": "Data\\Visuals\\Biolum_Waveforms.gif",
+      "sha256": "17f5383beb33c2fbfeec45e4d4aea46c16b1557fcd55507598d076424b82bbb1"
+    },
+    {
+      "bytes": 5718,
+      "path": "Data\\Visuals\\Biolum_BinarySchema.json",
+      "sha256": "81f914787341d2b89cbf2a691eb089cf6dc1549168021948f578e94a81197129"
+    }
+  ],
+  "maxDcDrift01": 0.01155574,
+  "maxOrganicJerk95": 0.11291006,
+  "paletteCount": 8,
+  "payloadCrc32": "0x0D545E74",
+  "profileCount": 20,
+  "safetyClampProfiles": 2,
+  "schema": "H8_BIOLUM_MANIFEST",
+  "status": "RHYTHMS COMPOSED",
+  "version": 1
+}

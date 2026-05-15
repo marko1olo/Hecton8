@@ -28,10 +28,25 @@ class WorldEntropySimTests(unittest.TestCase):
         final_mature_ratio = sum(final["matureByBiome"]) / sum(final["countByBiome"])
         ratio = abyss_day / safe_day
 
-        self.assertEqual(28, safe_day)
-        self.assertEqual(95, abyss_day)
+        self.assertEqual(
+            self.constants["biomes"][0]["expectedHalfRecoveryDaysUnderTotalOverharvest"],
+            safe_day,
+        )
+        self.assertEqual(
+            self.constants["biomes"][3]["expectedHalfRecoveryDaysUnderTotalOverharvest"],
+            abyss_day,
+        )
         self.assertGreaterEqual(ratio, self.constants["acceptance"]["safeShallowsVsDeepAbyssMinRecoveryRatio"])
         self.assertGreaterEqual(final_mature_ratio, self.constants["acceptance"]["minFinalMatureRatio"])
+
+    def test_seeded_biome_layout_matches_csharp_resolver_snapshot(self) -> None:
+        state = entropy.build_initial_state(self.constants, False)
+        counts = [0, 0, 0, 0]
+        for biome_id in state["biome_ids"]:
+            counts[biome_id] += 1
+
+        self.assertEqual([1729, 996, 564, 807], counts)
+        self.assertEqual(0, entropy.resolve_biome(2, -9, 0, 8))
 
     def test_simulation_is_deterministic(self) -> None:
         constants = deepcopy(self.constants)
@@ -44,9 +59,17 @@ class WorldEntropySimTests(unittest.TestCase):
         self.assertEqual(first_checkpoints, second_checkpoints)
 
     def test_acceptance_constants_lock_total_overharvest_mode(self) -> None:
+        self.assertEqual("ENTROPY BALANCED", self.constants["status"])
+        self.assertEqual("PENDING_UNITY_VERIFICATION", self.constants["unityVerificationStatus"])
         self.assertEqual(365, self.constants["acceptance"]["simulationDays"])
         self.assertEqual("total_overharvest", self.constants["acceptance"]["mode"])
         self.assertEqual(220, self.constants["nutrientDiffusionPermille"])
+        expected_days = [
+            biome["expectedHalfRecoveryDaysUnderTotalOverharvest"]
+            for biome in self.constants["biomes"]
+        ]
+        final, _ = entropy.run_sim(self.constants, 365, True)
+        self.assertEqual(expected_days, final["firstHalfRecoveryDays"])
 
 
 if __name__ == "__main__":

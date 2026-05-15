@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
@@ -49,6 +50,10 @@ def normalize_reference(raw: str) -> str | None:
     if "#" in ref:
         ref = ref.split("#", 1)[0]
 
+    for marker in (" assemblies=", " types=", " preserve_all="):
+        if marker in ref:
+            ref = ref.split(marker, 1)[0]
+
     if ":" in ref:
         before, after = ref.rsplit(":", 1)
         if after.isdigit():
@@ -87,6 +92,25 @@ def collect_references(text: str) -> dict[str, set[int]]:
     return refs
 
 
+def collect_json_references(value: object, refs: dict[str, set[int]]) -> None:
+    if isinstance(value, dict):
+        for nested in value.values():
+            collect_json_references(nested, refs)
+        return
+
+    if isinstance(value, list):
+        for nested in value:
+            collect_json_references(nested, refs)
+        return
+
+    if not isinstance(value, str):
+        return
+
+    normalized = normalize_reference(value)
+    if normalized is not None:
+        refs.setdefault(normalized, set()).add(0)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -109,6 +133,13 @@ def main() -> int:
 
     text = atlas.read_text(encoding="utf-8")
     refs = collect_references(text)
+    json_atlas = atlas.with_suffix(".json")
+    if json_atlas.exists():
+        try:
+            collect_json_references(json.loads(json_atlas.read_text(encoding="utf-8")), refs)
+        except json.JSONDecodeError as exc:
+            print(f"ATLAS_CHECK_FAIL invalid_json={json_atlas} error={exc}", file=sys.stderr)
+            return 3
     missing: list[tuple[str, list[int]]] = []
 
     for ref, lines in sorted(refs.items()):

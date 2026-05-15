@@ -41,6 +41,10 @@
   ],
   "sampleText": "O2 LOW",
   "schema": "hecton8.ui_readability_report.v1",
+  "sourceHashes": {
+    "scriptSha256": "d14be3b812738fcf22de9cc36f0a601e66b655ea6068ec275a972629b7155a0d",
+    "specSha256": "0fdef3000ff1ff02717dce14de37f7012b6cf0b7f7bf6ac27147075c126c85ce"
+  },
   "spec": "Docs/Design/HardwareAdaptiveUIScaler.json",
   "status": "PASS"
 }

@@ -139,3 +139,110 @@ Verification:
 - Workspace hygiene: elevated cleanup removed generated `Temp/CodexValidation` compiler probe files; no `ValidateVfxParticleBudgetCatalog*.pyc*` files remain under `Tools/__pycache__`.
 
 Status: VFX BUDGETED.
+
+## 2026-05-15 - Compute Advection Gate Correction
+
+What was wrong:
+- Low tier and `ParticleAdvection` pressure disabled regular flow sampling in renderer params, but `Hecton_MarineSnow.compute` still sampled abyssal flow on the staggered path.
+- The same kernel still sampled shallow-water field data per particle even when flow advection was meant to be off.
+
+What was done:
+- Added a hard `_MarineSnowScalabilityParams.x <= 0.5` return in `ResolveFlowField`.
+- Wrapped flow-field, abyssal-flow, shallow-water sampling, synchrony offset, and flow velocity blending behind `flowAdvectionEnabled`.
+- Added multiply-only lateral drag in the disabled-flow path so cheap wander cannot accumulate unbounded sideways velocity.
+- Added `Assets/_Project/Art/Shaders/Hecton_MarineSnow.compute` to the JSON runtime consumer list.
+- Extended `Tools/ValidateVfxParticleBudgetCatalog.py` to require the compute-kernel advection gate.
+
+Cinematic Cheats used:
+- Low/pressure keeps descent and cheap wander for underwater readability while deleting expensive flow truth.
+- High/Ultra still get full flow detail when the kill bit is clear.
+
+Exact Microseconds saved:
+- Measured GPU proof absent. Static effect: Low/ParticleAdvection avoids the flow-field sample, abyssal-flow sample path, shallow-water field sample, synchrony offset, and flow-blend math per particle. Replacement damping is one vector multiply.
+
+Verification:
+- `python Tools/ValidateVfxParticleBudgetCatalog.py`: PASS.
+- Validator Python syntax: PASS via AST parse.
+- `python -m json.tool Assets/_Project/Data/VFX/REND_DYNAMIC_RESOLUTION_ADAPTER_compute_particle_budgets.json`: PASS.
+- Static scan confirms `flowAdvectionEnabled`, `_MarineSnowScalabilityParams.x <= 0.5`, and disabled-flow lateral damping in `Hecton_MarineSnow.compute`.
+
+Status: VFX BUDGETED.
+
+## 2026-05-15 - Catalog Field Parity Hardening
+
+What was wrong:
+- `StepDistanceMeters`, `ShadowTaps`, and `FlowResampleFrames` were present in JSON but only embedded as constructor literals in the C# catalog.
+- The validator enforced counts but not the other primary prompt fields.
+
+What was done:
+- Added named C# constants for Low/Mid/High/Ultra step distance, fake shadow taps, and flow cadence.
+- Rewired `VfxComputeParticleBudget` rows to use those constants.
+- Extended `Tools/ValidateVfxParticleBudgetCatalog.py` to validate those fields against JSON.
+- Updated the JSON `generatedDate` to `2026-05-15` after the handoff artifact changed again.
+
+Cinematic Cheats used:
+- No new simulation truth was added. This is drift prevention for the existing visual-fake tiers.
+
+Exact Microseconds saved:
+- 0 us direct runtime change. Prevents future accidental tier drift that could re-enable expensive paths on MX350.
+
+Verification:
+- `python Tools/ValidateVfxParticleBudgetCatalog.py`: PASS.
+- Validator Python syntax: PASS via AST parse.
+- Scoped catalog C# syntax via framework `csc.exe` and local stubs: PASS.
+- Static scan confirms named constants for all primary prompt fields.
+
+Status: VFX BUDGETED.
+
+## 2026-05-15 - DRS Handoff Mask Parity Hardening
+
+What was wrong:
+- The JSON pressure policy said pressure level 2 disables `NonCriticalVfx`, but the existing `HomeostasisBrain` mask does not set that bit until pressure level 3.
+- That meant bubble/debris pools could survive a level-2 VFX pressure policy unless the renderer enforced the handoff mask locally.
+
+What was done:
+- Added prompt policy masks to `VfxComputeParticleBudgetCatalog`.
+- Added `ResolvePolicyKillSwitchMask` and wired `HectonMarineSnowRenderer` to OR the policy mask with observed `HomeostasisBrain.CurrentKillSwitchMask`.
+- Extended `Tools/ValidateVfxParticleBudgetCatalog.py` to validate JSON bit indexes/hex values against `HomeostasisBrain.SystemBit`.
+- Extended the validator to prove `ThermalDynamicResolutionAdapter` exists as the `REND_DYNAMIC_RESOLUTION_ADAPTER` target without editing the DRS domain.
+
+Cinematic Cheats used:
+- Level-2 pressure now deletes bubble/debris clutter while preserving a reduced marine-snow field for depth belief.
+- High/Ultra still spend saved cycles on dense particle visuals only when pressure is clear.
+
+Exact Microseconds saved:
+- Measured GPU proof absent. Static effect: level-2 pressure removes non-critical bubble/debris active counts before dispatch; runtime policy merge is integer OR/AND only.
+
+Verification:
+- `python Tools/ValidateVfxParticleBudgetCatalog.py`: PASS.
+- Validator Python syntax: PASS via AST parse.
+- `python -m json.tool Assets/_Project/Data/VFX/REND_DYNAMIC_RESOLUTION_ADAPTER_compute_particle_budgets.json`: PASS.
+- Scoped catalog C# syntax via framework `csc.exe` and local stubs: PASS.
+
+Status: VFX BUDGETED.
+
+## 2026-05-15 - Emergency Multiplier Scope Correction
+
+What was wrong:
+- Once level 2 started enforcing `NonCriticalVfx`, the old reducer also applied the 0.5 marine-snow multiplier at level 2.
+- The JSON handoff assigns `emergencyMarineSnowMultiplier` only to pressure level 3.
+
+What was done:
+- Added a pressure-aware `ApplyKillSwitchCount` overload in `VfxComputeParticleBudgetCatalog`.
+- Updated `HectonMarineSnowRenderer` to pass the cached `pressureLevel` into the reducer.
+- Extended `Tools/ValidateVfxParticleBudgetCatalog.py` to require the renderer pressure-level argument and the `pressureLevel >= 3` emergency gate.
+
+Cinematic Cheats used:
+- Level 2 deletes bubble/debris clutter and keeps low-budget marine snow for depth belief.
+- Level 3 performs the true emergency half-count marine-snow collapse.
+
+Exact Microseconds saved:
+- Measured GPU proof absent. Static behavior: level 2 saves non-critical bubble/debris active counts; level 3 adds the 50% snow/plankton write reduction. Runtime overhead is one byte comparison inside the existing kill-switch branch.
+
+Verification:
+- `python Tools/ValidateVfxParticleBudgetCatalog.py`: PASS.
+- Validator Python syntax: PASS via AST parse.
+- `python -m json.tool Assets/_Project/Data/VFX/REND_DYNAMIC_RESOLUTION_ADAPTER_compute_particle_budgets.json`: PASS.
+- Scoped catalog C# syntax via framework `csc.exe` and local stubs: PASS.
+
+Status: VFX BUDGETED.

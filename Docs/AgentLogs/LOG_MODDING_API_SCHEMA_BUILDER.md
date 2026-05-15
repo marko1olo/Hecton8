@@ -135,3 +135,73 @@ Exact Microseconds saved -> No profiler-backed timing claim. Static prevention o
 Verification -> Validator output: `PASS`, schema revision `8`, current API version `2`, manifest fields `9`, `ModMetadata` fields `8`, `ModRuntimeInfo` fields `7`, lifecycle methods `3`, SaveState public methods `2`, mod payload max bytes `16352`.
 
 Final status -> MOD API DEFINED / HARDENED / STATIC VALIDATOR PASSING / PAYLOAD AUDITED / LOADER/SAVE AUDITED / API SURFACE AUDITED / COMMAND AUDITED / RUNTIME PLAYBOOK DEFINED / PENDING RUNTIME VERIFICATION.
+
+## 2026-05-15 Event Subscription Audit And Source Drift Refresh Report
+
+What was wrong -> The static validator exposed live source drift: `GlobalSignals.cs` had moved from 129 to 134 `ISignal` structs. Event subscription lifetime and native byte event exposure also lacked a dedicated drift gate.
+
+What was done -> Updated signal schema/spec/playbook/audit counts to 134 total signals, 2 projected lanes, and 132 denied-by-default lanes. Added `Docs/Modding/Event_Subscription_Audit_Matrix.md`. Promoted `Signal_Schema.json` to revision 9 with `eventSubscriptionAudit`. Linked the audit from `Mod_API_Specification.md` and `Runtime_Verification_Playbook.md`. Extended `Validate_Mod_API_Static.ps1` to parse event methods, native/projected event kinds, native bridge lanes, dispatch depth, watchdog, and subscription token lifetime.
+
+Cinematic Cheats used -> Event exposure remains projection/copy based. Mods get bounded DTOs, callback-scoped byte spans, and disposable tokens instead of direct first-party SignalBus or NativeQueue handles.
+
+Exact Microseconds saved -> No profiler-backed timing claim. Static prevention only: the gate blocks unmanaged/native event expansion and stale subscription leaks before they become callback fanout or GC pressure.
+
+Verification -> Validator output: `PASS`, schema revision `9`, source signals `134`, allowed projected signals `2`, denied-by-default signals `132`, public event methods `7`, native event kinds `2`, projected event kinds `3`, native queue bridge lanes `2`, max event dispatch depth `5`, callback watchdog milliseconds `2`.
+
+Final status -> MOD API DEFINED / HARDENED / STATIC VALIDATOR PASSING / SOURCE INVENTORY REFRESHED / EVENT SUBSCRIPTION AUDITED / PAYLOAD AUDITED / LOADER/SAVE AUDITED / API SURFACE AUDITED / COMMAND AUDITED / RUNTIME PLAYBOOK DEFINED / PENDING RUNTIME VERIFICATION.
+
+## 2026-05-15 Change Control Gate Report
+
+What was wrong -> The mod API package had multiple source-backed audits, but no single enforced change-control checklist. Future agents could update one artifact and leave schema, validator, runtime playbook, or logs stale.
+
+What was done -> Added `Docs/Modding/Change_Control_Checklist.md`. Promoted `Signal_Schema.json` to revision 10 with `staticValidation.changeControlChecklist`. Linked the checklist from `Mod_API_Specification.md` and `Runtime_Verification_Playbook.md`. Extended `Validate_Mod_API_Static.ps1` to require the checklist, required audit links, change categories, hard stops, and schema linkage.
+
+Cinematic Cheats used -> Governance fake instead of runtime expansion: block partial API changes offline before they can become callback, command, or payload cost in the frame.
+
+Exact Microseconds saved -> No profiler-backed timing claim. Static prevention only: missing change-control proof now fails before review.
+
+Verification -> Validator output: `PASS`, schema revision `10`, source signals `134`, allowed projected signals `2`, denied-by-default signals `132`, event subscription audit path present, change control checklist path `Docs/Modding/Change_Control_Checklist.md`.
+
+Final status -> MOD API DEFINED / HARDENED / STATIC VALIDATOR PASSING / CHANGE CONTROL DEFINED / SOURCE INVENTORY REFRESHED / EVENT SUBSCRIPTION AUDITED / PAYLOAD AUDITED / LOADER/SAVE AUDITED / API SURFACE AUDITED / COMMAND AUDITED / RUNTIME PLAYBOOK DEFINED / PENDING RUNTIME VERIFICATION.
+
+## 2026-05-15 Contract Index Report
+
+What was wrong -> The mod API contract package had no root index. The schema, spec, audits, validator, playbook, and change-control gate were source-backed, but discoverability was still fragile for the next batch.
+
+What was done -> Added `Docs/Modding/README.md`. Promoted `Signal_Schema.json` to revision 11 with `staticValidation.contractIndex`. Extended `Validate_Mod_API_Static.ps1` to require the index, required artifact links, current signal count, and runtime proof boundary.
+
+Cinematic Cheats used -> No runtime expansion. This is a documentation entry point that keeps future work on bounded projection/copy/command contracts.
+
+Exact Microseconds saved -> No profiler-backed timing claim. Static prevention only: the index reduces wrong-file edits and missed gates.
+
+Verification -> Validator output: `PASS`, schema revision `11`, contract index path `Docs/Modding/README.md`, source signals `134`, allowed projected signals `2`, denied-by-default signals `132`.
+
+Final status -> MOD API DEFINED / HARDENED / STATIC VALIDATOR PASSING / CONTRACT INDEXED / CHANGE CONTROL DEFINED / SOURCE INVENTORY REFRESHED / EVENT SUBSCRIPTION AUDITED / PAYLOAD AUDITED / LOADER/SAVE AUDITED / API SURFACE AUDITED / COMMAND AUDITED / RUNTIME PLAYBOOK DEFINED / PENDING RUNTIME VERIFICATION.
+
+## 2026-05-15 Sample Mod Spec Hardening Report
+
+What was wrong -> The Infinite O2 sample was embedded in the main spec but not standalone or validator-enforced. Sample code is part of the mod API contract because implementers copy it.
+
+What was done -> Added `Docs/Modding/Sample_InfiniteO2_Mod.md` with manifest, `IHectonVersionedMod`, SaveState toggle, UI setting, projected event subscription, rejection listener, unload disposal, forbidden direct access list, and future `SurvivalOverride` kernel requirements. Promoted `Signal_Schema.json` to revision 12 with `sampleModSpecs` and `staticValidation.sampleModSpec`. Linked the sample from the spec, README, runtime playbook, and change-control checklist. Extended the static validator to enforce sample safety phrases.
+
+Cinematic Cheats used -> The sample is a no-authority fake: it persists UI/settings and listens to read-only events, but it does not mutate oxygen truth until an engine-owned kernel exists.
+
+Exact Microseconds saved -> No profiler-backed timing claim. Static prevention only: unsafe sample drift now fails before review.
+
+Verification -> Validator output: `PASS`, schema revision `12`, sample mod path `Docs/Modding/Sample_InfiniteO2_Mod.md`, source signals `134`, allowed projected signals `2`, denied-by-default signals `132`.
+
+Final status -> MOD API DEFINED / HARDENED / STATIC VALIDATOR PASSING / SAMPLE MOD SPEC HARDENED / CONTRACT INDEXED / CHANGE CONTROL DEFINED / SOURCE INVENTORY REFRESHED / EVENT SUBSCRIPTION AUDITED / PAYLOAD AUDITED / LOADER/SAVE AUDITED / API SURFACE AUDITED / COMMAND AUDITED / RUNTIME PLAYBOOK DEFINED / PENDING RUNTIME VERIFICATION.
+
+## 2026-05-15 Resource And Content Boundary Audit Report
+
+What was wrong -> Resource and content APIs were counted in the public facade audit, but there was no dedicated source-backed gate for hash-only resource resolution, cold overlay registration, registry capacity, raw texture caps, or forbidden Unity object returns.
+
+What was done -> Added `Docs/Modding/Resource_Content_Audit_Matrix.md`. Promoted `Signal_Schema.json` to revision 13 with `resourceContentAudit`. Linked the audit from `Mod_API_Specification.md`, `README.md`, `Runtime_Verification_Playbook.md`, and `Change_Control_Checklist.md`. Extended `Validate_Mod_API_Static.ps1` to parse resource/content methods, resource kinds, registry capacity, internal asset loaders, and raw texture caps from source.
+
+Cinematic Cheats used -> Mods get hash ids and cold overlays, not direct Unity asset truth. Engine owners resolve and arbitrate actual content use.
+
+Exact Microseconds saved -> No profiler-backed timing claim. Static prevention only: direct Unity asset exposure, unbounded resource registration, and raw texture cap drift now fail before review.
+
+Verification -> Validator output: `PASS`, schema revision `13`, public resource methods `3`, resource kinds `3`, resource registry capacity `256`, internal asset loaders `3`, raw texture caps `8388608` bytes / `2048` px, public content methods `14`.
+
+Final status -> MOD API DEFINED / HARDENED / STATIC VALIDATOR PASSING / RESOURCE-CONTENT AUDITED / SAMPLE MOD SPEC HARDENED / CONTRACT INDEXED / CHANGE CONTROL DEFINED / SOURCE INVENTORY REFRESHED / EVENT SUBSCRIPTION AUDITED / PAYLOAD AUDITED / LOADER/SAVE AUDITED / API SURFACE AUDITED / COMMAND AUDITED / RUNTIME PLAYBOOK DEFINED / PENDING RUNTIME VERIFICATION.

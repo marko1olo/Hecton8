@@ -56,6 +56,163 @@ Status:
 - INSTINCTS DEFINED for data and Python evidence.
 - Unity runtime verification remains PENDING VERIFICATION.
 
+## 2026-05-15 - Fail-Closed Validator Hardening
+
+What was wrong:
+- Some malformed artifacts could stress checker error paths or evade comparison:
+- Missing `behaviorOrder` could throw instead of cleanly failing.
+- Invalid self-audit numeric fields could throw inside artifact checks.
+- Report-side `behaviorCounts` drift was not compared against fresh validation.
+
+What was done:
+- Added guarded numeric reads for artifact self-audit fields.
+- Changed `behaviorOrder` validation to reject non-list/missing values without throwing.
+- Added report `behaviorCounts` drift comparison.
+- Added temp brain helper for tests.
+- Added regression tests for missing `behaviorOrder`, invalid `selfAudit.targetKillRateMin`, and report `behaviorCounts` drift.
+
+Cinematic cheats used:
+- No new simulation truth. This is evidence-path hardening only.
+
+Exact microseconds saved:
+- Unity runtime saving remains 0 us measured because no Unity runtime path changed.
+- Avoided CI/importer failure mode: malformed artifacts return structured errors instead of crashing.
+
+Evidence:
+- `python -B -c "import ast, pathlib; ..."`
+- Result: syntax parse passed.
+- `python -B -m unittest Tools.test_ai_battle_sim`
+- Result: 22 tests passed in 15.108 s.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json`
+- Result: `INSTINCTS DEFINED`, kills 5224, killRate 0.5224, under30KillRate 0.0.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts`
+- Result: `ARTIFACT_CHECK_PASSED`.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts --verify-rerun`
+- Result: `ARTIFACT_CHECK_PASSED`, `rerunVerified=True`.
+
+Status:
+- INSTINCTS DEFINED for data and Python evidence.
+- Unity runtime verification remains PENDING VERIFICATION.
+
+## 2026-05-15 - Full Brain Contract Hardening
+
+What was wrong:
+- Utility matrix validation was strict, but non-row contracts were still soft: behavior parameters, cadence, self-audit thresholds, Math LOD tiers, pack dot rules, and black-box telemetry could drift without failing the checker.
+
+What was done:
+- Added validation for all five behavior parameter blocks.
+- Added numeric range checks for damage, terror, cooldown, and decision cadence.
+- Enforced hysteresis bounds.
+- Enforced self-audit paths and 10,000 required encounters.
+- Enforced Low/Middle/High/Ultra Math LOD tiers.
+- Enforced four pack hunting rules and required `dot` conditions.
+- Enforced 300-frame black-box telemetry, dump path, and required entry fields.
+- Added six regression tests for those failure modes.
+
+Cinematic cheats used:
+- Every behavior parameter still requires a `cinematicCheat` string. This keeps visual fake intent attached to the data contract instead of drifting into runtime truth simulation.
+
+Exact microseconds saved:
+- Unity runtime saving remains 0 us measured because no Unity runtime path changed.
+- Avoided runtime risk: incomplete LOD/black-box/pack contracts now fail in Python before importer/runtime work.
+
+Evidence:
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json`
+- Result: `INSTINCTS DEFINED`, kills 5224, killRate 0.5224, under30KillRate 0.0.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts`
+- Result: `ARTIFACT_CHECK_PASSED`.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts --verify-rerun`
+- Result: `ARTIFACT_CHECK_PASSED`, `rerunVerified=True`.
+- `python -B -m unittest Tools.test_ai_battle_sim`
+- Result: 19 tests passed in 18.922 s.
+- Contract result: `behaviorParameterCount=5`, `mathLodTierCount=4`, `packRuleCount=4`, `blackBoxCapacityFrames=300`.
+
+Status:
+- INSTINCTS DEFINED for data and Python evidence.
+- Unity runtime verification remains PENDING VERIFICATION.
+
+## 2026-05-15 - Utility Matrix Completeness Hardening
+
+What was wrong:
+- The validator counted 50 utility rows and 10 rows per behavior, but it did not prove that every context/behavior pair existed exactly once.
+- A duplicate pair could have hidden a missing transition and still passed the old row-count checks.
+
+What was done:
+- Added `EXPECTED_CONTEXT_COUNT=10`.
+- Added duplicate context rejection.
+- Added exact 10 x 5 context/behavior pair validation.
+- Added `contextCount` and `utilityPairCount` to validation output.
+- Added tests for duplicate context ids and duplicate context/behavior pairs.
+- Regenerated `Tools/AiBattleSim_Report.json` with the updated validation schema.
+
+Cinematic cheats used:
+- No new truth simulation. This is offline guardrail work preventing broken utility data from reaching runtime.
+
+Exact microseconds saved:
+- Unity runtime saving remains 0 us measured because no Unity runtime path changed.
+- Avoided importer/runtime risk: broken utility pairs fail before any NativeArray packing or gameplay lookup.
+
+Evidence:
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json`
+- Result: `INSTINCTS DEFINED`, kills 5224, killRate 0.5224, under30KillRate 0.0.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts`
+- Result: `ARTIFACT_CHECK_PASSED`.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts --verify-rerun`
+- Result: `ARTIFACT_CHECK_PASSED`, `rerunVerified=True`.
+- `python -B -m unittest Tools.test_ai_battle_sim`
+- Result: 13 tests passed in 9.356 s.
+- Matrix result: `contextCount=10`, `utilityPairCount=50`.
+
+Status:
+- INSTINCTS DEFINED for data and Python evidence.
+- Unity runtime verification remains PENDING VERIFICATION.
+
+## 2026-05-15 - Deterministic Evidence Binding
+
+What was wrong:
+- A sane report was still not enough. Without a hard fingerprint, a stale report from another brain revision could pass field-level validation if its numbers stayed within bounds.
+
+What was done:
+- Added `brainDigest` and `simulationDigest` SHA-256 fields to `Tools/AiBattleSim.py` reports.
+- Added `simulatorSchemaVersion=2`.
+- Hardened artifact validation to reject digest drift.
+- Added strict `--verify-rerun` mode that reruns the requested encounter count and compares simulation digest, summary, and calibration.
+- Added regression tests for brain digest tampering and rerun summary drift.
+
+Cinematic cheats used:
+- No new physical simulation truth. The work remained offline proof infrastructure for the same visual-fake-first utility brain.
+
+Exact microseconds saved:
+- Unity runtime saving remains 0 us measured because no Unity runtime path changed.
+- Release-gate value: stale/tampered AI evidence fails before runtime import, avoiding wasted Unity profiling cycles.
+
+Evidence:
+- Regenerated `Tools/AiBattleSim_Report.json` with `brainDigest=07dad20de885023d068e93c97ae468732cb077efd6fc0b01420279900389e246`.
+- Full result-stream digest: `simulationDigest=97a10330bb86ded1a29b82aa896ac9acbe46d768fe0c403360c80e08bca50867`.
+- Current live `H8Memory.cs` BufferID count: 66.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts`
+- Result: `ARTIFACT_CHECK_PASSED`, killRate 0.5224, under30KillRate 0.0.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts --verify-rerun`
+- Result: `ARTIFACT_CHECK_PASSED`, `rerunVerified=True`.
+- `python -B -m unittest Tools.test_ai_battle_sim`
+- Result: 11 tests passed in 13.026 s.
+
+Regression model:
+- CPU: no Unity runtime CPU added. Strict rerun is offline and intentionally expensive.
+- GC: no Unity hot path changed. Runtime GC proof remains PENDING VERIFICATION until importer/playmode.
+- Memory: report grew by digest fields only; no runtime NativeArray allocated.
+- Cadence: no gameplay cadence changed.
+- Correctness: report is now bound to exact brain JSON and deterministic result stream.
+
+Failure modes:
+- If future edits change `Leviathan_Brain.json`, `brainDigest` mismatch will fail artifact validation until the report is regenerated.
+- If simulator semantics change, schema/digest mismatch forces rerun evidence.
+- If future importer parses JSON at runtime, that remains a separate zero-GC violation outside this data/tooling task.
+
+Status:
+- INSTINCTS DEFINED for data and Python evidence.
+- Unity runtime verification remains PENDING VERIFICATION.
+
 ## 2026-05-15 - Final Artifact Hardening Pass
 
 What was wrong:

@@ -143,3 +143,51 @@ Rejected Alternatives: Allowing the JSON to remain a weaker sample was rejected 
 Scalability potential: Low/MX350 fallback stays texture-free and compiler-stable. High/Ultra are unaffected unless the fallback keyword is enabled.
 
 Hardware Impact: No runtime cost from JSON. Prevents shader-backend drift that could reintroduce local-array indexing on constrained hardware.
+
+## Decision 13 - Compute Advection Gate
+
+Problem: Low tier and `ParticleAdvection` pressure set `_MarineSnowScalabilityParams.x` to zero, but `Hecton_MarineSnow.compute` still sampled abyssal flow on the staggered path and still sampled shallow-water field data every particle. That contradicted the JSON promise that particle advection is skipped.
+
+Solution: `ResolveFlowField` now returns zero immediately when `_MarineSnowScalabilityParams.x <= 0.5`. The main update kernel wraps flow-field, abyssal-flow, shallow-water sampling, synchrony offset, and flow velocity blending in `flowAdvectionEnabled`. The disabled-flow path applies a cheap multiply-only lateral drag so wander cannot accumulate unbounded velocity.
+
+Rejected Alternatives: Only disabling `SampleFlowFieldXZ` was rejected because it left abyssal flow and shallow-water sampling alive. Killing all particle velocity was rejected because Low still needs base descent and cheap wander for underwater readability.
+
+Scalability potential: Low/MX350 keeps sparse drift without flow truth. Mid/High/Ultra keep authored flow detail when allowed. Pressure can now actually remove the flow advection cost without deleting the particle field.
+
+Hardware Impact: Expected savings on MX350 are avoided flow-field texture/buffer samples and avoided per-particle synchrony math under Low or pressure. The fallback drag is one vector multiply. Exact microseconds remain pending GPU capture.
+
+## Decision 14 - Budget Field Constantization
+
+Problem: The validator enforced particle counts, but `StepDistanceMeters`, `ShadowTaps`, and `FlowResampleFrames` were only constructor literals in the C# catalog. That allowed the primary prompt fields to drift silently.
+
+Solution: Added public constants for all tier step distances, fake shadow taps, and flow cadence values. The budget rows now use those constants, and `Tools/ValidateVfxParticleBudgetCatalog.py` validates them against the JSON tier rows.
+
+Rejected Alternatives: Leaving the values as constructor literals was rejected because the prompt explicitly named those fields. Parsing constructor positions manually in reviews was rejected because it is brittle.
+
+Scalability potential: Adapter, renderer, and shader workers now have stable named constants for Low/Mid/High/Ultra behavior.
+
+Hardware Impact: No runtime cost. Prevents accidental tier drift that would overspend MX350 or flatten Ultra visuals.
+
+## Decision 15 - DRS Handoff Mask Parity
+
+Problem: The JSON pressure policy declared that sacrifice level 2 disables `NonCriticalVfx`, but the authoritative `HomeostasisBrain` only sets that bit at level 3. Without a VFX-local policy merge, level 2 could still leave bubble/debris pools alive despite the handoff contract.
+
+Solution: Added `PressureLevel1DisableMask`, `PressureLevel2DisableMask`, `PressureLevel3DisableMask`, and `ResolvePolicyKillSwitchMask` to `VfxComputeParticleBudgetCatalog`. `HectonMarineSnowRenderer` now ORs the documented VFX pressure policy with the observed homeostasis mask before resolving active counts and scalability parameters. The validator now checks JSON bit indexes/hex values against `HomeostasisBrain.SystemBit` and confirms `ThermalDynamicResolutionAdapter` exists as the DRS target.
+
+Rejected Alternatives: Editing `ThermalDynamicResolutionAdapter` was rejected because DRS is outside the VFX domain and already has its own agent-owned rationale. Changing `HomeostasisBrain` masks was rejected because that is core hardware policy, not a particle-budget task. Leaving the mismatch as documentation was rejected because pressure level 2 behavior would be false.
+
+Scalability potential: Low/MX350 and level-2 pressure now drop bubble/debris VFX completely while retaining reduced marine snow. High/Ultra still keep dense pools when pressure is clear, then shed non-critical visual clutter deterministically under pressure.
+
+Hardware Impact: Runtime cost is two integer OR branches during existing budget resolution. Expected savings under level-2 pressure are the removed bubble/debris dispatches and fewer active particle writes. Exact microseconds remain pending GPU capture.
+
+## Decision 16 - Emergency Multiplier Scope
+
+Problem: After the level-2 policy mask started enforcing `NonCriticalVfx`, the existing count reducer would halve marine snow whenever that bit was set. The JSON only assigns `emergencyMarineSnowMultiplier: 0.5` to pressure level 3, so level 2 was becoming more destructive than the authored handoff policy.
+
+Solution: Added a pressure-aware `ApplyKillSwitchCount` overload and changed `HectonMarineSnowRenderer` to pass the cached pressure level. Bubble/debris still return zero whenever `NonCriticalVfx` is present. Snow/plankton keep the low pressure-gated budget at level 2 and are halved only when `pressureLevel >= 3`.
+
+Rejected Alternatives: Keeping a bit-only reducer was rejected because one bit cannot distinguish level-2 clutter shedding from level-3 emergency collapse. Adding a new `EmergencyMarineSnow` bit was rejected because the task must use existing `SystemBit` bindings and avoid single-use signal IDs.
+
+Scalability potential: Level 2 preserves underwater depth readability with a low-count marine-snow field while killing bubble/debris pressure. Level 3 still performs the hard emergency reduction. High/Ultra remain visually dense when pressure is clear.
+
+Hardware Impact: Runtime cost is one byte comparison in an existing branch. Expected visual/perf behavior is stricter: level 2 saves bubble/debris dispatches without over-dimming marine snow; level 3 saves the additional 50% snow/plankton writes. Exact microseconds remain pending GPU capture.

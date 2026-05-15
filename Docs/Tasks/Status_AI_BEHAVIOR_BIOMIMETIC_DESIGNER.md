@@ -39,13 +39,23 @@ Rule quote: "All AI decisions are based on data available in the GlobalDataVault
 - [x] Loop 4 - Self-audit: frustration threshold, DataVault feed audit, artifact validation
 - [x] Loop 5 - Regression/test pass, own-code readback, final log append
 - [x] Loop 6 - Final hardening: artifact checker now rejects stale report validation, fallback BufferID source, target kill-rate drift, and subgroup cap drift
+- [x] Loop 7 - Deterministic proof binding: report now includes current brain SHA-256 and full simulation stream digest; strict 10k rerun verification passed
+- [x] Loop 8 - Matrix completeness hardening: validator now rejects duplicate contexts and missing/duplicated context-behavior utility pairs
+- [x] Loop 9 - Full contract hardening: validator now rejects malformed behavior parameters, cadence hysteresis, self-audit settings, Math LOD tiers, pack dot rules, and black-box telemetry
+- [x] Loop 10 - Fail-closed hardening: malformed `behaviorOrder`, invalid `selfAudit`, and report behavior-count drift now reject cleanly without validator crashes
 
 ## Evidence
-- `python Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json` -> status `INSTINCTS DEFINED`, kills 5224, killRate 0.5224, under30KillRate 0.0, avgKillTime 76.401, meanTerror 0.74994, elapsedSeconds 195.149.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json` -> regenerated schema v2 report with `brainDigest` and `simulationDigest`; status `INSTINCTS DEFINED`, kills 5224, killRate 0.5224, under30KillRate 0.0.
 - `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts` -> `ARTIFACT_CHECK_PASSED`; hardened checker confirms live BufferID source, matching report validation, killRate 0.5224 inside target, under30KillRate 0.0, subgroup caps intact.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts --verify-rerun` -> `ARTIFACT_CHECK_PASSED`, `rerunVerified=True`; digest rerun matched `97a10330bb86ded1a29b82aa896ac9acbe46d768fe0c403360c80e08bca50867`.
 - `python -B -c "import ast, pathlib; ..."` -> syntax parse passed for `Tools/AiBattleSim.py` and `Tools/test_ai_battle_sim.py` without writing bytecode.
-- `python -B -m unittest Tools.test_ai_battle_sim` -> 9 tests passed in 3.618 s on final readback.
+- `python -B -m unittest Tools.test_ai_battle_sim` -> 22 tests passed in 15.108 s after fail-closed hardening.
 - `.sln/.csproj` scan -> none found in workspace, so `dotnet build` was not applicable for this data/Python task.
 - Polish mandate extraction -> `<POLISH_MANDATE>` tag not found in `Docs/Tasks/CURRENT_BATCH.md`.
 - Anti-bloat scan -> only expected hits: `AudioSource` appears in a JSON note rejecting AudioSource queries; `math.sqrt` appears only inside the Python `rsqrt()` helper for offline dot normalization.
-- Temp hygiene -> updated tests to use system temp directories; no `Temp/AiBattleSimTests` artifact remains in the repo.
+- GlobalDataVault source -> `Assets/_Project/Scripts/Core/Memory/H8Memory.cs` parsed live; current BufferID count in report is 66.
+- Digest evidence -> `brainDigest=07dad20de885023d068e93c97ae468732cb077efd6fc0b01420279900389e246`; `simulationDigest=97a10330bb86ded1a29b82aa896ac9acbe46d768fe0c403360c80e08bca50867`.
+- Matrix evidence -> report validation records `contextCount=10` and `utilityPairCount=50`.
+- Contract evidence -> report validation records `behaviorParameterCount=5`, `mathLodTierCount=4`, `packRuleCount=4`, `blackBoxCapacityFrames=300`.
+- Fail-closed evidence -> tests cover missing `behaviorOrder`, invalid `selfAudit.targetKillRateMin`, and report `behaviorCounts` drift.
+- Temp hygiene -> updated tests to use system temp directories; no `Temp/AiBattleSimTests` or `Temp/AiBattleSimVerify.*` artifact remains in the repo.

@@ -41,8 +41,8 @@ Hardware Impact: Direct runtime microseconds saved are PENDING PROFILER. Expecte
 Problem: The audit found static full-mip BC7 estimates above the 1.2GB trigger, but static source totals are not the same as runtime residency.
 Solution: Emit [CRITICAL_VRAM_OVERFLOW] while labeling it STATIC_SOURCE. Report both all-scanned and runtime-candidate totals.
 Rejected Alternatives: Marking MX350 runtime failure as verified. That requires Unity Memory Profiler/player capture.
-Scalability potential: Low should halve or mip-bias 170 runtime-candidate textures above 1024; Middle can keep selected 2048 assets; High/Ultra keeps overkill variants only behind streaming and tier gates.
-Hardware Impact: Halving all 170 runtime-candidate textures above 1024 would save an estimated 784.50 MiB full-mip BC7. Frame-time impact remains PENDING PROFILER.
+Scalability potential: Low should halve or mip-bias 179 runtime-candidate textures above 1024; Middle can keep selected 2048 assets; High/Ultra keeps overkill variants only behind streaming and tier gates.
+Hardware Impact: Halving all 179 runtime-candidate textures above 1024 would save an estimated 816.50 MiB full-mip BC7. Frame-time impact remains PENDING PROFILER.
 
 ## Decision 6: link.xml Boundary
 
@@ -58,7 +58,7 @@ Problem: Treating every Assets/Packages/Data texture as runtime-candidate finds 
 Solution: Keep the broad runtime-candidate overflow gate, then add a stricter first-party production estimate for Assets/_Project and Data paths.
 Rejected Alternatives: Dropping third-party/package assets from the scan. The prompt requested all textures and meshes, and third-party payloads can still enter builds if not quarantined.
 Scalability potential: Low focuses first on first-party large planet/rock/flora directories and ScifiFacility/third-party payload quarantine; Middle retains curated 2048 families; High/Ultra can use richer variants only when Addressables residency proves budget headroom.
-Hardware Impact: First-party production static full-mip BC7 is 503.52 MiB. Broad runtime-candidate pressure remains 1,251.24 MiB. This identifies quarantine/import work before MX350 runtime profiling.
+Hardware Impact: First-party production static full-mip BC7 is 505.62 MiB. Broad runtime-candidate pressure remains 1,298.65 MiB. This identifies quarantine/import work before MX350 runtime profiling.
 
 ## Decision 8: Tool Self-Tests
 
@@ -98,7 +98,7 @@ Problem: The scanner temporarily counted .codex-build copied payloads, inflating
 Solution: Add SKIP_DIRS and exclude .codex-build and .codex-artifacts alongside Library/Temp/Build-like directories.
 Rejected Alternatives: Keeping duplicate generated trees in the audit. That produces false positives and unstable totals unrelated to production payload.
 Scalability potential: All tiers need source-of-truth asset counts, not copied scratch payloads.
-Hardware Impact: 0us runtime. Static counts now exclude known generated-tree payloads; latest regenerated values are 1,645 textures and 301 meshes under concurrent workspace churn.
+Hardware Impact: 0us runtime. Static counts now exclude known generated-tree payloads; latest regenerated values are 1,668 textures and 301 meshes under concurrent workspace churn.
 
 ## Decision 13: CI Fast-Fail
 
@@ -139,3 +139,43 @@ Solution: Parse mesh `.meta` fields into the broad CSV, mesh redline CSV, JSON p
 Rejected Alternatives: Leaving mesh import risk to manual Unity inspection. That hides hundreds of source-level import risks from the offline gate and gives asset owners an incomplete remediation queue.
 Scalability potential: Low/MX350 can strip CPU mesh copies and unused blend-shape data first; Middle can keep compression where visual loss is acceptable; High/Ultra may retain hero/offline deformation settings only with CPU/Memory Profiler proof.
 Hardware Impact: 0us runtime measured. Static audit now exposes 293 mesh importer risk rows: 275 Read/Write enabled rows, 269 BlendShapes enabled rows, 19 compression-off rows, and 0 import-collider rows. First-party split: 16 mesh importer risk rows, 0 Read/Write enabled, 9 BlendShapes enabled, 16 compression-off. Actual memory/frame relief is PENDING UNITY PROFILER.
+
+## Decision 18: Static Geometry Buffer Estimate
+
+Problem: The mesh audit exposed triangle and importer risk but did not compare source meshes against the MX350 200 MiB geometry-buffer budget.
+Solution: Add a conservative static geometry estimate using triangle count * 3 vertices * (48 byte vertex stride + 4 byte index), report total/first-party geometry MiB, and flag single assets over 16 MiB.
+Rejected Alternatives: Claiming exact Unity vertex/index residency from source FBX/OBJ alone. Importer optimization, vertex sharing, compression, skinning streams, and platform index width require Unity Memory Profiler proof.
+Scalability potential: Low/MX350 focuses on single-asset geometry outliers and import stripping; Middle keeps modest geometry with LOD proof; High/Ultra may extend LOD0 residency only after the 200 MiB baseline remains under budget.
+Hardware Impact: 0us runtime measured. Static estimate is 47.85 MiB total geometry against the 200 MiB budget, 6.31 MiB first-party geometry, and 1 single-asset geometry redline. Actual geometry residency remains PENDING UNITY PROFILER.
+
+## Decision 19: Expanded Unity Texture Container Coverage
+
+Problem: The scanner only treated PNG/JPG/JPEG as textures, but the project contains runtime-candidate TGA, PSD, HDR, EXR, TIFF, BMP, and GIF texture containers.
+Solution: Expand TEXTURE_EXTS and add dependency-free dimension parsers for TGA, BMP, PSD, DDS, GIF, Radiance HDR, TIFF, and OpenEXR dataWindow headers. Regenerate all reports from the broader texture set.
+Rejected Alternatives: Leaving these formats out or marking them unreadable. Silent omission violates the "all textures" audit requirement; blanket unreadable flags would lose deterministic size evidence for simple headers.
+Scalability potential: Low/MX350 can now catch HDR/EXR/TGA/PSD residency pressure and clamp/quarantine it; Middle keeps approved 1024/2048 sources; High/Ultra can keep HDR/EXR/PSD-derived visuals only behind streaming/import proof.
+Hardware Impact: 0us runtime measured. Static texture coverage increased by 23 files to 1,668 textures. Runtime-candidate full-mip BC7 estimate rose to 1,298.65 MiB and total full-mip BC7 to 1,329.88 MiB; texture crime rows rose to 801. Actual VRAM residency remains PENDING UNITY PROFILER.
+
+## Decision 20: Source Container Risk Summaries
+
+Problem: After expanding texture coverage, HDR/EXR/PSD/GIF/TGA/TIFF/BMP rows were counted but not grouped into an asset-owner action queue.
+Solution: Add source-container risk flags, runtime extension pressure summaries, JSON extension payloads, and a remediation section for risky texture source containers.
+Rejected Alternatives: Letting asset owners discover container risk by filtering the broad CSV manually. That hides high-risk source formats inside 1,668 rows.
+Scalability potential: Low/MX350 prioritizes converting or quarantining TGA/HDR/PSD/GIF source containers; Middle keeps explicit compressed imports; High/Ultra keeps high-fidelity source-derived visuals only behind importer and residency proof.
+Hardware Impact: 0us runtime measured. Static audit now flags 23 texture source-container risk rows, 2 first-party source-container risk rows, and texture_flagged_rows rose to 962. Runtime extension pressure shows .tga at 38.67 MiB full-mip BC7 and .hdr at 5.33 MiB. Actual memory remains PENDING UNITY PROFILER.
+
+## Decision 21: GLB/GLTF Mesh Source Coverage
+
+Problem: A blind-spot probe found one Unity-importable first-party `.glb` mesh that was not included in the mesh scan, so the "all meshes" audit was incomplete by one source asset.
+Solution: Add `.glb` and `.gltf` to MESH_EXTS, parse GLB v2 JSON chunks, count glTF primitive triangles from accessor counts for TRIANGLES/TRIANGLE_STRIP/TRIANGLE_FAN modes, and expose runtime mesh extension pressure in Markdown and JSON.
+Rejected Alternatives: Flagging GLB by file size only or leaving it to Unity ModelImporter. File size is not polygon evidence, and this scout pass must be repeatable offline without mutating/importing assets.
+Scalability potential: Low/MX350 now sees first-party GLB geometry pressure in the same queue as FBX/OBJ; Middle keeps modest GLB sources with LOD/import proof; High/Ultra can keep richer glTF-derived visuals only when LOD/residency proof protects the 200 MiB geometry budget.
+Hardware Impact: 0us runtime measured. Static audit now counts 302 meshes. The newly counted asset is `Assets/_Project/Art/Models/Rocks/nordic_beach_rock_vbumba2fa_mid.glb` at 1,298 triangles and 0.193 MiB conservative geometry estimate. Total static geometry estimate rose to 48.05 MiB; actual Unity imported geometry remains PENDING UNITY MEMORY PROFILER.
+
+## Decision 22: Missing Polish Mandate Boundary
+
+Problem: The state checklist is complete, but `Docs/Tasks/CURRENT_BATCH.md` no longer contains the original VRAM_ASSET_SCOUT prompt or any `<POLISH_MANDATE>` tag.
+Solution: Treat persisted `Status_VRAM_ASSET_SCOUT.md` and this rationale file as the authority for final hardening, document the missing tag, and run anti-bloat probes against remaining Unity-importable mesh and texture extensions.
+Rejected Alternatives: Reading neighboring current-batch prompts or inventing a polish mandate. That violates strict XML ownership and would let unrelated tasks steer this audit.
+Scalability potential: Low/MX350 stays protected by explicit scanner coverage and failure gates; Middle/High/Ultra content remains tier-gated by reports, not by stale batch text.
+Hardware Impact: 0us runtime measured. Final probes found one `.glb` mesh, already added to scanner coverage, and zero exotic texture hits for `.webp/.ktx/.ktx2/.pic/.pict/.iff/.psb/.sgi/.rgb/.rgba/.pvr/.astc/.basis`.

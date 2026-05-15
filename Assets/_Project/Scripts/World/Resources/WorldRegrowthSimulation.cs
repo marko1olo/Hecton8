@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -123,7 +124,10 @@ namespace Hecton8.World
     public struct WorldRegrowthSimulationMemory : IDisposable
     {
         private const string NativeMemoryOwner = nameof(WorldRegrowthSimulationMemory);
+        private const SystemID NativeMemorySystemId = SystemID.WorldStreaming;
         private const int BlackBoxCapacity = 300;
+        private const int MaxGridDimension = 4096;
+        private const int MaxCellCount = 1048576;
 
         public NativeArray<byte> SoilNutrients;
         public NativeArray<byte> SoilNutrientsScratch;
@@ -143,7 +147,35 @@ namespace Hecton8.World
         public int CellCount;
         public int CurrentDay;
 
-        public bool IsCreated => SoilNutrients.IsCreated && SoilNutrientsScratch.IsCreated && ResourceStages.IsCreated && BlackBox.IsCreated;
+        public bool IsCreated =>
+            SoilNutrients.IsCreated &&
+            SoilNutrientsScratch.IsCreated &&
+            TemperatureQ.IsCreated &&
+            BiomeIds.IsCreated &&
+            ResourceStages.IsCreated &&
+            TombstoneAgeDays.IsCreated &&
+            RegrowthProgressQ.IsCreated &&
+            OreStockQ.IsCreated &&
+            FloraStockQ.IsCreated &&
+            PreyBiomassQ.IsCreated &&
+            PredatorBiomassQ.IsCreated &&
+            ApexRespawnDays.IsCreated &&
+            BlackBox.IsCreated;
+
+        private bool HasAnyCreatedLane =>
+            SoilNutrients.IsCreated ||
+            SoilNutrientsScratch.IsCreated ||
+            TemperatureQ.IsCreated ||
+            BiomeIds.IsCreated ||
+            ResourceStages.IsCreated ||
+            TombstoneAgeDays.IsCreated ||
+            RegrowthProgressQ.IsCreated ||
+            OreStockQ.IsCreated ||
+            FloraStockQ.IsCreated ||
+            PreyBiomassQ.IsCreated ||
+            PredatorBiomassQ.IsCreated ||
+            ApexRespawnDays.IsCreated ||
+            BlackBox.IsCreated;
 
         /// <summary>
         /// Allocates all regrowth SOA lanes. This is a cold-path scene/bootstrap operation.
@@ -153,24 +185,38 @@ namespace Hecton8.World
             if (IsCreated)
                 return;
 
-            Width = math.clamp(config.GridWidth, 1, 4096);
-            Height = math.clamp(config.GridHeight, 1, 4096);
+            if (HasAnyCreatedLane)
+                Dispose();
+
+            Width = math.clamp(config.GridWidth, 1, MaxGridDimension);
+            int maxHeightForBudget = math.max(1, MaxCellCount / Width);
+            Height = math.min(math.clamp(config.GridHeight, 1, MaxGridDimension), maxHeightForBudget);
             CellCount = Width * Height;
             CurrentDay = 0;
+            _ = allocator;
+            // Scene-lifetime regrowth lanes must not use Temp or TempJob allocators.
+            Allocator laneAllocator = Allocator.Persistent;
 
-            SoilNutrients = new NativeArray<byte>(CellCount, allocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[cellCount] — macro-sector soil nutrients SOA lane — owner: WorldRegrowthSimulationMemory
-            SoilNutrientsScratch = new NativeArray<byte>(CellCount, allocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[cellCount] — deterministic nutrient diffusion scratch lane — owner: WorldRegrowthSimulationMemory
-            TemperatureQ = new NativeArray<byte>(CellCount, allocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[cellCount] — macro-sector temperature SOA lane — owner: WorldRegrowthSimulationMemory
-            BiomeIds = new NativeArray<byte>(CellCount, allocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[cellCount] — macro-sector biome ids — owner: WorldRegrowthSimulationMemory
-            ResourceStages = new NativeArray<byte>(CellCount, allocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[cellCount] — tombstone/seed/mature state lane — owner: WorldRegrowthSimulationMemory
-            TombstoneAgeDays = new NativeArray<byte>(CellCount, allocator, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[cellCount] — tombstone decay age lane — owner: WorldRegrowthSimulationMemory
-            RegrowthProgressQ = new NativeArray<byte>(CellCount, allocator, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[cellCount] — seed growth progress lane — owner: WorldRegrowthSimulationMemory
-            OreStockQ = new NativeArray<byte>(CellCount, allocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[cellCount] — ore stock lane — owner: WorldRegrowthSimulationMemory
-            FloraStockQ = new NativeArray<byte>(CellCount, allocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[cellCount] — flora stock lane — owner: WorldRegrowthSimulationMemory
-            PreyBiomassQ = new NativeArray<byte>(CellCount, allocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[cellCount] — prey biomass lane — owner: WorldRegrowthSimulationMemory
-            PredatorBiomassQ = new NativeArray<byte>(CellCount, allocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[cellCount] — predator biomass lane — owner: WorldRegrowthSimulationMemory
-            ApexRespawnDays = new NativeArray<byte>(CellCount, allocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[cellCount] — apex respawn timer lane — owner: WorldRegrowthSimulationMemory
-            BlackBox = new NativeArray<WorldRegrowthTelemetryEntry>(BlackBoxCapacity, allocator, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<WorldRegrowthTelemetryEntry>[300] — regrowth blackbox ring — owner: WorldRegrowthSimulationMemory
+            SoilNutrients = H8Memory.Allocate<byte>(CellCount, NativeMemorySystemId, laneAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[cellCount] — macro-sector soil nutrients SOA lane — owner: WorldRegrowthSimulationMemory
+            SoilNutrientsScratch = H8Memory.Allocate<byte>(CellCount, NativeMemorySystemId, laneAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[cellCount] — deterministic nutrient diffusion scratch lane — owner: WorldRegrowthSimulationMemory
+            TemperatureQ = H8Memory.Allocate<byte>(CellCount, NativeMemorySystemId, laneAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[cellCount] — macro-sector temperature SOA lane — owner: WorldRegrowthSimulationMemory
+            BiomeIds = H8Memory.Allocate<byte>(CellCount, NativeMemorySystemId, laneAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[cellCount] — macro-sector biome ids — owner: WorldRegrowthSimulationMemory
+            ResourceStages = H8Memory.Allocate<byte>(CellCount, NativeMemorySystemId, laneAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[cellCount] — tombstone/seed/mature state lane — owner: WorldRegrowthSimulationMemory
+            TombstoneAgeDays = H8Memory.Allocate<byte>(CellCount, NativeMemorySystemId, laneAllocator, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[cellCount] — tombstone decay age lane — owner: WorldRegrowthSimulationMemory
+            RegrowthProgressQ = H8Memory.Allocate<byte>(CellCount, NativeMemorySystemId, laneAllocator, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[cellCount] — seed growth progress lane — owner: WorldRegrowthSimulationMemory
+            OreStockQ = H8Memory.Allocate<byte>(CellCount, NativeMemorySystemId, laneAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[cellCount] — ore stock lane — owner: WorldRegrowthSimulationMemory
+            FloraStockQ = H8Memory.Allocate<byte>(CellCount, NativeMemorySystemId, laneAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[cellCount] — flora stock lane — owner: WorldRegrowthSimulationMemory
+            PreyBiomassQ = H8Memory.Allocate<byte>(CellCount, NativeMemorySystemId, laneAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[cellCount] — prey biomass lane — owner: WorldRegrowthSimulationMemory
+            PredatorBiomassQ = H8Memory.Allocate<byte>(CellCount, NativeMemorySystemId, laneAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[cellCount] — predator biomass lane — owner: WorldRegrowthSimulationMemory
+            ApexRespawnDays = H8Memory.Allocate<byte>(CellCount, NativeMemorySystemId, laneAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[cellCount] — apex respawn timer lane — owner: WorldRegrowthSimulationMemory
+            BlackBox = H8Memory.Allocate<WorldRegrowthTelemetryEntry>(BlackBoxCapacity, NativeMemorySystemId, laneAllocator, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<WorldRegrowthTelemetryEntry>[300] — regrowth blackbox ring — owner: WorldRegrowthSimulationMemory
+
+            if (!IsCreated)
+            {
+                ReleaseUnregisteredNativeArrays();
+                ResetState();
+                return;
+            }
 
             RegisterNativeArrays();
         }
@@ -193,10 +239,7 @@ namespace Hecton8.World
             dependency = DisposeNativeArray(ref PredatorBiomassQ, dependency);
             dependency = DisposeNativeArray(ref ApexRespawnDays, dependency);
             dependency = DisposeNativeArray(ref BlackBox, dependency);
-            Width = 0;
-            Height = 0;
-            CellCount = 0;
-            CurrentDay = 0;
+            ResetState();
             return dependency;
         }
 
@@ -215,10 +258,7 @@ namespace Hecton8.World
             DisposeNativeArrayImmediate(ref PredatorBiomassQ);
             DisposeNativeArrayImmediate(ref ApexRespawnDays);
             DisposeNativeArrayImmediate(ref BlackBox);
-            Width = 0;
-            Height = 0;
-            CellCount = 0;
-            CurrentDay = 0;
+            ResetState();
         }
 
         private void RegisterNativeArrays()
@@ -238,13 +278,39 @@ namespace Hecton8.World
             NativeMemorySentinel.RegisterNativeArray(BlackBox, NativeMemoryOwner, nameof(BlackBox), NativeAllocationLifetime.Scene);
         }
 
+        private void ReleaseUnregisteredNativeArrays()
+        {
+            ReleaseUnregisteredNativeArray(ref SoilNutrients);
+            ReleaseUnregisteredNativeArray(ref SoilNutrientsScratch);
+            ReleaseUnregisteredNativeArray(ref TemperatureQ);
+            ReleaseUnregisteredNativeArray(ref BiomeIds);
+            ReleaseUnregisteredNativeArray(ref ResourceStages);
+            ReleaseUnregisteredNativeArray(ref TombstoneAgeDays);
+            ReleaseUnregisteredNativeArray(ref RegrowthProgressQ);
+            ReleaseUnregisteredNativeArray(ref OreStockQ);
+            ReleaseUnregisteredNativeArray(ref FloraStockQ);
+            ReleaseUnregisteredNativeArray(ref PreyBiomassQ);
+            ReleaseUnregisteredNativeArray(ref PredatorBiomassQ);
+            ReleaseUnregisteredNativeArray(ref ApexRespawnDays);
+            ReleaseUnregisteredNativeArray(ref BlackBox);
+        }
+
+        private static void ReleaseUnregisteredNativeArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            H8Memory.Release(ref array, NativeMemorySystemId);
+            array = default;
+        }
+
         private static JobHandle DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency) where T : struct
         {
             if (!array.IsCreated)
                 return dependency;
 
             NativeMemorySentinel.UnregisterNativeArray(array);
-            JobHandle disposeHandle = array.Dispose(dependency);
+            JobHandle disposeHandle = H8Memory.Release(ref array, dependency, NativeMemorySystemId);
             array = default;
             return disposeHandle;
         }
@@ -255,8 +321,16 @@ namespace Hecton8.World
                 return;
 
             NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
+            H8Memory.Release(ref array, NativeMemorySystemId);
             array = default;
+        }
+
+        private void ResetState()
+        {
+            Width = 0;
+            Height = 0;
+            CellCount = 0;
+            CurrentDay = 0;
         }
     }
 
@@ -477,9 +551,12 @@ namespace Hecton8.World
         {
             uint hash = Hash32(unchecked((uint)sectorX) ^ RotateLeft(unchecked((uint)sectorZ), 13) ^ seed);
             int band = (int)(((ulong)hash * 100UL) >> 32);
-            int localZ = math.abs(sectorZ) % math.max(1, gridHeight);
+            int safeHeight = math.max(1, gridHeight);
+            int localZ = sectorZ % safeHeight;
+            if (localZ < 0)
+                localZ = -localZ;
 
-            if (localZ < gridHeight / 4 || band < 24)
+            if (localZ < safeHeight / 4 || band < 24)
                 return (byte)WorldRegrowthBiomeId.SafeShallows;
             if (band < 58)
                 return (byte)WorldRegrowthBiomeId.TemperateReef;

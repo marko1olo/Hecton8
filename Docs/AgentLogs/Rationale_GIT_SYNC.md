@@ -75,3 +75,11 @@ Rejected Alternatives: Hand-editing the manifest hashes would create fake proven
 Scalability potential: Runtime tier behavior is not changed by this repository sync. Lore blob size increased from 9,892 bytes to 10,329 bytes, still trivial for Low/Middle/High/Ultra memory budgets.
 Hardware Impact: 0 us gameplay runtime gain measured; CLI verification only.
 
+## Decision 10
+
+Problem: The user requested continued commits/pulls/pushes while local `main` is stale (`behind 20`, `ahead 1`) and the checkout contains 191 changed/untracked files from multiple active agents. A direct `git add -A` over `origin/main` would risk reverting remote-only commits because the working tree was not checked out at the remote tip.
+Solution: Treat the current work as a multi-agent checkpoint only after static and CLI gates pass. Use a binary patch of local dirty tracked changes plus explicit untracked additions against an isolated index rooted at current `origin/main`, then commit and push that synthetic tree as a fast-forward update if it applies cleanly.
+Rejected Alternatives: Force-push is forbidden because it discards remote history. Reset/rebase of the shared checkout risks overwriting concurrent work. Blind `git add -A` against `origin/main` from the stale checkout can stage remote regressions.
+Scalability potential: Runtime tier claims are not made. This checkpoint contains multiple systems authored by other agents; GIT_SYNC only validates repository-level gates and CLI tests.
+Hardware Impact: 0 us gameplay runtime gain measured; Unity/profiler evidence remains absent.
+

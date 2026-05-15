@@ -65,3 +65,43 @@ Solution: Added `Tools/test_biolum_waveform.py` to validate profile counts, pale
 Rejected Alternatives: Manual artifact inspection only was rejected because it is easy to skip and cannot be run by CI.
 Scalability potential: Test enforces the TOASTER/GOD_MODE data shape and catches accidental loss of high-tier palette data.
 Hardware Impact: No runtime change; offline test prevents malformed data from reaching MX350 load paths.
+
+## Artifact Integrity Manifest
+
+Problem: Generated data, plots, and verification JSON could be copied partially or drift unnoticed.
+Solution: Added `Data/Visuals/Biolum_Manifest.json` generation with byte counts and SHA-256 hashes for binary, JSON, PNG, and GIF artifacts.
+Rejected Alternatives: Relying on Git status or human inspection was rejected because artifact integrity must be machine-checkable.
+Scalability potential: Integrators can verify TOASTER/GOD_MODE data packages before runtime import.
+Hardware Impact: No runtime change; manifest is offline evidence only.
+
+## Fast Verification Mode
+
+Problem: Manifest integrity could be checked only by a separate ad hoc script or by regenerating expensive waveform images.
+Solution: Added `python Tools/BiolumWaveform.py --verify-manifest` to validate artifact sizes, SHA-256 hashes, and binary CRC without rebuilding artifacts.
+Rejected Alternatives: Regenerating the GIF for every CI check was rejected because it wastes local agent time and creates avoidable churn.
+Scalability potential: Integrators can run a cheap gate before importing the binary into Unity.
+Hardware Impact: No runtime change; offline verification only.
+
+## Binary Record Validator
+
+Problem: Header and CRC validation can prove payload identity, but not that every profile, harmonic, curve, and palette record is structurally safe for a reader.
+Solution: Added `python Tools/BiolumWaveform.py --verify-binary` to validate record indices, harmonic counts, finite floats, normalized curve ranges, safety-clamp flags, and HDR palette values.
+Rejected Alternatives: Trusting the CRC alone was rejected because CRC does not explain malformed-but-consistent records.
+Scalability potential: C# importers get a reference validator for both low-end curve sample paths and high-end harmonic paths.
+Hardware Impact: No runtime change; offline importer safety only.
+
+## Machine-Readable Binary Schema
+
+Problem: C# and CI importers should not scrape Markdown to discover binary offsets.
+Solution: Added `Data/Visuals/Biolum_BinarySchema.json` generation with header fields, profile base fields, harmonic block layout, curve offsets, palette offsets, constants, and flags.
+Rejected Alternatives: Prose-only layout was rejected because it is easy to misread and cannot be mechanically verified.
+Scalability potential: Low-end curve-sample readers and high-end harmonic reconstruction readers can share the same schema contract.
+Hardware Impact: No runtime change; schema is import-time evidence.
+
+## Full Fast Package Gate
+
+Problem: Integrators had to run manifest, binary, schema, and JSON checks separately after generation.
+Solution: Added `python Tools/BiolumWaveform.py --verify-all` to validate artifact hashes, binary records, schema offsets, profile JSON, verification JSON, safety counts, and CRC alignment in one command.
+Rejected Alternatives: Keeping manual multi-command verification only was rejected because it invites partial verification and missed sidecar drift.
+Scalability potential: One cheap CI/import gate protects both TOASTER curve-sample readers and GOD_MODE harmonic/palette readers.
+Hardware Impact: No runtime change; offline verification only, preserving MX350 runtime budget.

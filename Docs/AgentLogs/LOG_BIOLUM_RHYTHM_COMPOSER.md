@@ -19,8 +19,13 @@ What was done:
 - Generated `Data/Visuals/Biolum_Verification.json`.
 - Generated `Data/Visuals/Biolum_Waveforms.png`.
 - Generated `Data/Visuals/Biolum_Waveforms.gif`.
+- Generated `Data/Visuals/Biolum_BinarySchema.json`.
+- Generated `Data/Visuals/Biolum_Manifest.json`.
 - Wrote `Docs/Design/Biolum_Implementation_Guide.md`.
 - Added `Tools/test_biolum_waveform.py` artifact/source regression tests.
+- Added `python Tools/BiolumWaveform.py --verify-manifest` fast integrity check.
+- Added `python Tools/BiolumWaveform.py --verify-binary` binary record integrity check.
+- Added `python Tools/BiolumWaveform.py --verify-all` full fast package check.
 - Updated `Docs/Tasks/Status_BIOLUM_RHYTHM_COMPOSER.md`.
 - Updated `Docs/AgentLogs/Rationale_BIOLUM_RHYTHM_COMPOSER.md`.
 
@@ -48,7 +53,22 @@ Verification:
 - Binary size: 25,936 bytes.
 - PNG dimensions: 1800x1200.
 - GIF dimensions: 960x720, 48 frames.
-- `python -m unittest Tools.test_biolum_waveform` passed cleanly: 4 tests in 9.279s, OK.
+- Manifest artifact hashes present: 6 files with SHA-256.
+- `python -m unittest Tools.test_biolum_waveform` passed cleanly after manifest addition: 4 tests in 0.398s, OK.
+- Manifest validation passed: 6 artifacts, payload CRC 0x0D545E74, SHA-256 matches current files.
+- Fast manifest CLI passed after schema addition: `BIOLUM MANIFEST VERIFIED`, 6 artifacts, CRC 0x0D545E74.
+- Fast binary CLI passed: `BIOLUM BINARY VERIFIED`, 20 profiles, 8 palettes, 2 safety-clamped records, max curve sample 1.0, CRC 0x0D545E74.
+- `python -m unittest Tools.test_biolum_waveform` passed after binary validator: 4 tests in 0.522s, OK.
+- Schema validation passed: profileStride 1232, curveOffset 208.
+- `python -m unittest Tools.test_biolum_waveform` passed after schema addition: 4 tests in 0.191s, OK.
+- `python -m unittest Tools.test_biolum_waveform` passed after fast verify mode: 4 tests in 0.675s, OK.
+- Full package CLI passed: `BIOLUM PACKAGE VERIFIED`, 6 artifacts, 20 profiles, 8 palettes, 2 safety-clamped records, CRC 0x0D545E74.
+- `python -m py_compile Tools/BiolumWaveform.py Tools/test_biolum_waveform.py` passed.
+- `python -m unittest Tools.test_biolum_waveform` passed after full package gate: 4 tests in 0.875s, OK.
+- Final `python Tools/BiolumWaveform.py --verify-all` rerun passed after evidence-file updates.
+- Final `python -m unittest Tools.test_biolum_waveform` rerun passed: 4 tests in 0.420s, OK.
+- Final `git diff --check` on touched files passed with line-ending warnings only.
+- Removed generated Biolum Python bytecode caches; remaining Biolum `.pyc` count: 0.
 
 Pending verification:
 - Unity import.

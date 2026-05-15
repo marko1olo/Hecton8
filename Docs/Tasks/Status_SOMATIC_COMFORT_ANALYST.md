@@ -26,7 +26,7 @@ Mandates loaded:
 - Prompt extracted from `Docs/Tasks/CURRENT_BATCH.md`: YES at original pass; current file no longer contains `SOMATIC_COMFORT_ANALYST` as of 2026-05-15 recheck
 - Domain file read: YES
 - Current status/rationale hygiene: no current files existed before creation
-- Compile/static verification: Python syntax PASS; Python unit tests PASS (29 tests); Python audit PASS with source-contract validation and runtime-integration handoff validation; audit report JSON PASS with source hashes; comfort JSON parse PASS; haptic JSON parse PASS; device/waveform table parity PASS; Markdown companion parity PASS; duplicate function guard PASS; module path contract PASS; runtime acceleration source-fragment guard PASS; runtime acceleration hysteresis/slew/no-sqrt/reset guard PASS; malformed runtime-integration shape guard PASS; malformed waveform numeric guard PASS; malformed waveform shape guard PASS; malformed comfort numeric guard PASS; malformed source-contract shape guard PASS; strict integer coercion guard PASS; strict float coercion guard PASS; missing runtime-source hash guard PASS; missing comfort JSON guard PASS; non-object comfort JSON guard PASS; invalid haptic JSON guard PASS; anti-bloat scan PASS; C# compile BLOCKED because no generated `.csproj`/`.sln` exists and Unity/dotnet are unavailable on this host
+- Compile/static verification: Python syntax PASS; Python unit tests PASS (37 tests); Python audit PASS with source-contract validation and runtime-integration handoff validation; audit report JSON PASS with source hashes including audit test script; audit test contract guard PASS; stripped audit-test contract guard PASS; workspace temp cleanup harness PASS; comfort JSON parse PASS; haptic JSON parse PASS; device/waveform table parity PASS; Markdown companion parity PASS; duplicate function guard PASS; module path contract PASS; runtime acceleration source-fragment guard PASS; runtime acceleration hysteresis/slew/no-sqrt/reset guard PASS; runtime frame-pressure reset path guard PASS; origin-shift immediate shader reset guard PASS; origin-shift reset-before-invalid-shift guard PASS; AUP sequence shader reset guard PASS; head-history reset helper guard PASS; raw head-history reset guard PASS; malformed runtime-integration shape guard PASS; malformed waveform numeric guard PASS; malformed waveform shape guard PASS; malformed comfort numeric guard PASS; malformed source-contract shape guard PASS; strict integer coercion guard PASS; strict float coercion guard PASS; missing runtime-source hash guard PASS; missing audit-test source guard PASS; missing comfort JSON guard PASS; non-object comfort JSON guard PASS; invalid haptic JSON guard PASS; anti-bloat scan PASS; C# compile BLOCKED because no generated `.csproj`/`.sln` exists and Unity/dotnet are unavailable on this host
 - Runtime Unity/GCMonitor proof: PENDING VERIFICATION
 
 ## Iterative Self-Review
@@ -142,6 +142,90 @@ Mandates loaded:
   - Re-ran report check after audit report regeneration: PASS.
   - Re-ran scoped hygiene, anti-bloat scan, scoped `git diff --check`, and removed `Tools/UX/__pycache__` after verifying the path stayed inside the workspace.
   - Confirmed C# compile remains blocked by missing `dotnet`, missing generated `.csproj`/`.sln`, and unavailable Unity executable, not by the SOMATIC Python/data slice.
+- [x] Loop 32 - Origin-shift shader reset hardening
+  - Patched `VRSomaticProvider.OnOriginShift()` to immediately publish zero comfort vignette and refresh shader state after clearing acceleration/jerk fields.
+  - Added method-scoped audit validation requiring `OnOriginShift` to clear acceleration timer/state and call both `PublishComfortVignette(0f)` and `PublishShaderState();`.
+  - Added failure-injection coverage proving a partial origin-shift reset fails the source-fragment audit.
+  - Re-ran audit, 30-test suite, report write/check, py_compile, JSON validation, scoped hygiene, no-sqrt/coroutine/find scan, Unity callback scan, scoped `git diff --check`, and workspace-local `__pycache__` cleanup.
+- [x] Loop 33 - Origin-shift reset order guard
+  - Tightened the audit so `OnOriginShift()` reset/publish fragments must appear before the invalid-shift early return marker.
+  - Added failure-injection coverage proving a reset after `if (!IsFiniteVector(shiftOffset)) return;` fails the source-fragment audit.
+  - Regenerated and rechecked `Docs/AgentLogs/VR_Comfort_Audit_SOMATIC_COMFORT_ANALYST.json`.
+  - Re-ran audit, 31-test suite, report write/check, py_compile, JSON validation, scoped hygiene, no-sqrt/coroutine/find scan, Unity callback scan, scoped `git diff --check`, and workspace-local `__pycache__` cleanup.
+- [x] Loop 34 - AUP sequence reset shader hardening
+  - Patched `VRSomaticProvider.ResetHeadMotionIfAupShifted()` to immediately publish zero comfort vignette and refresh shader state after sequence-detected history reset.
+  - Extended source-fragment audit validation to require `ResetHeadMotionIfAupShifted()` to call `ResetHeadMotionHistory()`, `PublishComfortVignette(0f)`, and `PublishShaderState();`.
+  - Added failure-injection coverage proving a partial AUP sequence reset fails the source-fragment audit.
+  - Re-ran 32-test suite, py_compile, audit report write/check, and regenerated source-hash evidence.
+- [x] Loop 35 - Audit test source hash sealing
+  - Added `auditTestSha256` to the persisted audit report source-hash block.
+  - Extended report source-hash unit coverage to require the failure-injection test script hash.
+  - Regenerated `Docs/AgentLogs/VR_Comfort_Audit_SOMATIC_COMFORT_ANALYST.json` and re-ran report check.
+  - Re-ran 32-test suite, audit, py_compile, JSON validation, scoped hygiene, no-sqrt/coroutine/find scan, Unity callback scan, scoped `git diff --check`, and workspace-local `__pycache__` cleanup.
+- [x] Loop 36 - Missing audit-test fail-closed guard
+  - Added `validate_audit_test_contract()` so the audit fails if the failure-injection test script is missing or stripped of critical tests.
+  - Added failure-injection coverage proving a missing audit test script marks the payload `FAIL` and emits a `MISSING` test hash.
+  - Regenerated and rechecked `Docs/AgentLogs/VR_Comfort_Audit_SOMATIC_COMFORT_ANALYST.json`.
+  - Re-ran 33-test suite, audit, py_compile, JSON validation, scoped hygiene, no-sqrt/coroutine/find scan, Unity callback scan, scoped `git diff --check`, and workspace-local `__pycache__` cleanup.
+- [x] Loop 37 - Head-history reset helper hardening
+  - Patched `VRSomaticProvider.UpdateHeadMotion()` first-pose and tracking-jump branches plus `ResetHeadMotionIfAupShifted()` to route through `ResetHeadMotionHistoryAndPublishedComfort()`.
+  - Extended source-fragment audit validation to require the helper body, the AUP reset helper call, and at least three helper call sites.
+  - Regenerated `Docs/AgentLogs/VR_Comfort_Audit_SOMATIC_COMFORT_ANALYST.json` after the report hash gate caught stale source hashes.
+  - Re-ran 33-test suite, audit, report write/check, py_compile, JSON validation, scoped hygiene, no-sqrt/coroutine/find scan, Unity callback scan, scoped `git diff --check`, and workspace-local `__pycache__` cleanup.
+- [x] Loop 38 - Quest 2 fallback and frame-pressure tunnel hardening
+  - Added cached Quest 2 native-runtime fallback selection in `VRSomaticProvider` without changing shared hardware APIs or adding per-frame string checks.
+  - Added profile-derived frame-pressure tunnel state: two over-budget frames force a minimum comfort opacity, then release only after the authored stable-frame window.
+  - Reset frame-pressure streak/active state on origin shift, inactive XR, first-pose reset, tracking jump, and AUP sequence reset.
+  - Extended audit source-contract validation to require Quest 2 fallback constants, Quest 2/3 frame-safety constants, and frame-pressure source fragments.
+  - Re-ran py_compile, 33-test suite, audit, report write, report check, scoped hygiene, source scan, and regenerated `Docs/AgentLogs/VR_Comfort_Audit_SOMATIC_COMFORT_ANALYST.json`.
+- [x] Loop 39 - Final log-order reconciliation
+  - Re-read status/rationale/log after cleanup and found the bottom-most CTO log section did not reflect the latest head-history hardening.
+  - Appended a final reconciliation entry instead of rewriting prior evidence.
+  - Re-ran scoped file hygiene and scoped `git diff --check`; no Python rerun after final `__pycache__` cleanup.
+- [x] Loop 40 - Current 35-test suite reconciliation
+  - Re-ran the current test suite after concurrent SOMATIC guard additions; executable discovery is 35 tests.
+  - Confirmed audit PASS, report check PASS, py_compile PASS, and JSON parse PASS against current source/report files.
+  - Removed `Tools/UX/__pycache__` after py_compile with a resolved-path containment check.
+  - Re-ran scoped file hygiene and scoped `git diff --check` after this status/log/rationale reconciliation.
+- [x] Loop 41 - Stripped audit-test contract and temp fixture cleanup
+  - Extended `validate_audit_test_contract()` to require the missing-audit-test regression test fragment itself.
+  - Added failure-injection coverage proving a stripped test script with only hash evidence fails the audit payload.
+  - Added temporary fixture writes under `Temp/CodexValidation/SOMATIC_COMFORT_ANALYST_TESTS`; cleanup was later hardened by Loop 43 with a containment-checked helper.
+  - Regenerated `Docs/AgentLogs/VR_Comfort_Audit_SOMATIC_COMFORT_ANALYST.json` after audit/test hashes changed.
+  - Re-ran 35-test suite, audit, report write/check, py_compile, JSON validation, scoped hygiene, exact Unity callback scan, no-sqrt/coroutine/find scan, scoped `git diff --check`, and verified the workspace-local temp validation directory is absent.
+- [x] Loop 42 - Final report hash and test-count reconciliation
+  - Re-ran the current verbose audit test suite after latest audit-test additions: PASS, 35 tests.
+  - Regenerated `Docs/AgentLogs/VR_Comfort_Audit_SOMATIC_COMFORT_ANALYST.json` after the report hash gate caught stale source hashes.
+  - Re-ran report check, py_compile, JSON validation, scoped trailing-whitespace scan, and scoped `git diff --check`.
+  - Runtime Unity/GCMonitor proof remains blocked by unavailable Unity/.NET project tooling.
+- [x] Loop 43 - Workspace temp cleanup harness repair
+  - Added `remove_workspace_temp_root()` with a workspace containment check and `shutil.rmtree()` cleanup before and after `workspace_temp_dir()` use.
+  - Added `test_workspace_temp_dir_cleans_entry_and_exit()` so stale scratch files fail the unit suite.
+  - Re-ran the current verbose audit test suite after frame-pressure/reset additions: PASS, 37 tests.
+  - Regenerated and rechecked `Docs/AgentLogs/VR_Comfort_Audit_SOMATIC_COMFORT_ANALYST.json`; re-ran py_compile, audit report JSON validation, and verified generated scratch cleanup.
+- [x] Loop 44 - Frame-pressure reset path source guard
+  - Added method-scoped audit validation requiring `ResetComfortFramePressureState();` in `OnOriginShift()`, `ResetHeadMotionHistory()`, and `ApplyInactiveState()`.
+  - Added failure-injection coverage proving missing frame-pressure reset paths fail closed.
+  - Regenerated `Docs/AgentLogs/VR_Comfort_Audit_SOMATIC_COMFORT_ANALYST.json` and re-ran report check.
+  - Re-ran 37-test suite, audit, py_compile, JSON validation, scoped hygiene, scoped `git diff --check`, and workspace-local `__pycache__` cleanup.
+- [x] Loop 45 - Final generated bytecode cleanup
+  - Confirmed `python -m py_compile` regenerated `Tools/UX/__pycache__` after the 37-test verification pass.
+  - Removed the generated bytecode directory after verifying the resolved path stayed under `C:\Hecton8`.
+  - Re-ran scoped trailing-whitespace scan and scoped `git diff --check`; both remain PASS.
+  - Verified `Temp/CodexValidation/SOMATIC_COMFORT_ANALYST_TESTS` and `Tools/UX/__pycache__` are absent after cleanup.
+- [x] Loop 46 - Comfort black-box state flag hardening
+  - Added black-box flags for frame-pressure active, Quest 2 fallback, and acceleration tunnel active states.
+  - Extended the runtime source-fragment audit to require those black-box flags and flag writes.
+  - Added failure-injection assertions proving partial runtime source fails when black-box comfort flags are missing.
+  - Re-ran 37-test suite, audit, report write/check, py_compile, JSON validation, temp absence check, generated bytecode cleanup, scoped trailing-whitespace scan, no-sqrt/coroutine/find scan, and scoped `git diff --check`.
+- [x] Loop 47 - Sandbox-safe scratch helper finalization
+  - Rejected the weaker create/yield-only fixture because it left a false-positive path for scratch debris.
+  - Restored `workspace_temp_dir()` entry/exit cleanup with `remove_workspace_temp_root()` and a workspace-containment assertion before `shutil.rmtree()`.
+  - Re-ran 37-test suite, audit report write/check, py_compile, and verified `Temp/CodexValidation/SOMATIC_COMFORT_ANALYST_TESTS` remains absent.
+- [x] Loop 48 - Cleanup contract fragment hardening
+  - Extended `validate_audit_test_contract()` to require the cleanup implementation fragments: `import shutil`, `remove_workspace_temp_root()`, `finally:`, `shutil.rmtree`, and `self.assertFalse(TEST_TEMP_ROOT.exists())`.
+  - Re-ran the 37-test suite, regenerated/rechecked the audit report, and verified the temp fixture directory remains absent.
+  - This closes the false-positive path where a renamed test could satisfy the audit while still leaving scratch files behind.
 
 ## Audit Output
 
@@ -150,9 +234,9 @@ Mandates loaded:
   - Quest3_90Hz: maxAngleDelta 3.115 deg, maxOpacityDelta 0.050, shockFrames 0
 - `python Tools/UX/vr_snap_turn_comfort_audit.py --write-report`: PASS; wrote `Docs/AgentLogs/VR_Comfort_Audit_SOMATIC_COMFORT_ANALYST.json`
 - `python Tools/UX/vr_snap_turn_comfort_audit.py --check-report`: PASS; report hashes/results/source contract match current files
-- `PYTHONDONTWRITEBYTECODE=1 python -B Tools/UX/test_vr_snap_turn_comfort_audit.py -v`: PASS, 29 tests
+- `PYTHONDONTWRITEBYTECODE=1 python -B Tools/UX/test_vr_snap_turn_comfort_audit.py -v`: PASS, 37 tests
 - Audit now loads `Docs/Design/VR_Comfort_Profile_Quest.json` and validates exact device IDs, combine rule, device thresholds, device-table parity, markdown companion parity, runtime integration field bindings, jerk caps, visual shock rules, speed LUT monotonicity, Quest 2 LUT derivation, FastNlerp alpha formula, runtime acceleration source fragments, exact haptic waveform IDs/events, haptic waveform-table parity, haptic cadence/duration bounds, haptic limits, `VRSomaticProvider` comfort defaults, and `ToolHapticsRuntime` haptic buffer limits.
-- Audit report now hashes the comfort JSON, comfort Markdown, haptic JSON, audit script, `VRSomaticProvider.cs`, and `ToolHapticsRuntime.cs`.
+- Audit report now hashes the comfort JSON, comfort Markdown, haptic JSON, audit script, audit test script, `VRSomaticProvider.cs`, and `ToolHapticsRuntime.cs`.
 - `python -m py_compile Tools/UX/vr_snap_turn_comfort_audit.py Tools/UX/test_vr_snap_turn_comfort_audit.py`: PASS
 - `python -m json.tool` on comfort JSON, haptic JSON, and audit report JSON: PASS
 - `FILE_HYGIENE files=10 trailingWs=0`: PASS
@@ -160,6 +244,19 @@ Mandates loaded:
 - Duplicate top-level function guard: PASS
 - Audit module `SCRIPT_PATH` contract: PASS
 - Runtime acceleration hysteresis/slew/no-sqrt/reset source guard: PASS
+- Runtime Quest 2 fallback constants/source guard: PASS
+- Runtime Quest 2/3 frame-pressure safety tunnel guard: PASS
+- Runtime comfort black-box flag guard: PASS
+- Runtime frame-pressure reset path guard: PASS
+- Origin-shift immediate shader reset guard: PASS
+- Origin-shift reset-before-invalid-shift guard: PASS
+- AUP sequence shader reset guard: PASS
+- Head-history reset helper guard: PASS
+- Raw head-history reset guard: PASS
+- Audit test contract guard: PASS
+- Stripped audit-test contract guard: PASS
+- Temp validation fixture cleanup: PASS; `Temp/CodexValidation/SOMATIC_COMFORT_ANALYST_TESTS` absent after the containment-checked test fixture cleanup
+- `Tools/UX/__pycache__`: absent after final resolved-path cleanup
 - Malformed runtime-integration shape guard: PASS
 - Malformed waveform numeric guard: PASS
 - Malformed waveform shape guard: PASS
@@ -167,6 +264,7 @@ Mandates loaded:
 - Strict integer coercion guard: PASS; bools and strings are rejected for authored integer fields
 - Strict float coercion guard: PASS; bools and numeric strings are rejected for authored float fields
 - Missing runtime-source hash guard: PASS; absent source paths report `MISSING` hashes and validation errors instead of crashing
+- Missing audit-test source guard: PASS; absent audit test path reports `MISSING` hash and validation error instead of crashing
 - Missing comfort JSON guard: PASS; absent comfort profile reports `MISSING` hash and validation error instead of crashing
 - Non-object comfort JSON guard: PASS; malformed root shape reports validation error instead of crashing
 - Invalid haptic JSON guard: PASS; malformed haptic JSON reports validation error instead of crashing

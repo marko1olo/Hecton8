@@ -13,7 +13,16 @@ ROOT = Path(__file__).resolve().parents[1]
 JSON_PATH = ROOT / "Assets/_Project/Data/VFX/REND_DYNAMIC_RESOLUTION_ADAPTER_compute_particle_budgets.json"
 CATALOG_PATH = ROOT / "Assets/_Project/Scripts/VFX/VfxComputeParticleBudgetCatalog.cs"
 RENDERER_PATH = ROOT / "Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs"
+MARINE_SNOW_COMPUTE_PATH = ROOT / "Assets/_Project/Art/Shaders/Hecton_MarineSnow.compute"
 HLSL_PATH = ROOT / "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl"
+HOMEOSTASIS_PATH = ROOT / "Assets/_Project/Scripts/Core/HomeostasisBrain.cs"
+DRS_ADAPTER_PATH = ROOT / "Assets/_Project/Scripts/Graphics/DRS/ThermalDynamicResolutionAdapter.cs"
+
+EXPECTED_SYSTEM_BITS = {
+    "ParticleAdvection": 5,
+    "VolumetricFogHighRes": 6,
+    "NonCriticalVfx": 20,
+}
 
 
 def require(condition: bool, message: str) -> None:
@@ -29,6 +38,12 @@ def load_json() -> dict:
 def require_catalog_constant(catalog: str, token: str, expected: int) -> None:
     pattern = rf"public\s+const\s+int\s+{re.escape(token)}\s*=\s*{expected}\s*;"
     require(re.search(pattern, catalog) is not None, f"catalog constant {token} != {expected}")
+
+
+def require_catalog_float_constant(catalog: str, token: str, expected: float) -> None:
+    formatted = f"{expected:.2f}f"
+    pattern = rf"public\s+const\s+float\s+{re.escape(token)}\s*=\s*{re.escape(formatted)}\s*;"
+    require(re.search(pattern, catalog) is not None, f"catalog constant {token} != {formatted}")
 
 
 def validate_tier_rows(data: dict, catalog: str) -> None:
@@ -51,9 +66,55 @@ def validate_tier_rows(data: dict, catalog: str) -> None:
         require_catalog_constant(catalog, f"{tier_name}MarineSnowCount", marine_snow)
         require_catalog_constant(catalog, f"{tier_name}BubbleCount", bubbles)
         require_catalog_constant(catalog, f"{tier_name}DebrisCount", debris)
+        require_catalog_float_constant(catalog, f"{tier_name}StepDistanceMeters", float(tier["stepDistanceMeters"]))
+        require_catalog_constant(catalog, f"{tier_name}ShadowTaps", int(tier["shadowTaps"]))
+        require_catalog_constant(catalog, f"{tier_name}FlowResampleFrames", int(tier["flowResampleFrames"]))
 
 
-def validate_pressure_gates(data: dict, catalog: str, renderer: str) -> None:
+def validate_handoff_contract(data: dict, catalog: str, renderer: str, homeostasis: str, drs_adapter: str) -> None:
+    require(data.get("targetConsumer") == "REND_DYNAMIC_RESOLUTION_ADAPTER", "wrong target consumer")
+    require("ThermalDynamicResolutionAdapter" in drs_adapter, "DRS adapter class missing")
+    require("Dump_REND_DYNAMIC_RESOLUTION_ADAPTER.bin" in drs_adapter, "DRS adapter blackbox dump name missing")
+    require("IDynamicResolutionRuntime" in drs_adapter, "DRS adapter runtime contract missing")
+
+    binding_rows = {str(row["name"]): row for row in data["systemBitBindings"]}
+    for name, bit_index in EXPECTED_SYSTEM_BITS.items():
+        require(name in binding_rows, f"JSON systemBitBindings missing {name}")
+        row = binding_rows[name]
+        expected_mask = 1 << bit_index
+        require(int(row["bitIndex"]) == bit_index, f"{name} bitIndex drift")
+        require(int(str(row["bitHex"]), 16) == expected_mask, f"{name} bitHex drift")
+        enum_pattern = rf"{re.escape(name)}\s*=\s*1UL\s*<<\s*{bit_index}\b"
+        require(re.search(enum_pattern, homeostasis) is not None, f"Homeostasis SystemBit drift for {name}")
+        require(
+            f"public const ulong {name}Mask = (ulong)SystemBit.{name};" in catalog,
+            f"catalog mask binding missing {name}",
+        )
+
+    pressure_rows = {int(row["pressureLevel"]): row for row in data["pressureGatePolicy"]}
+    expected_policy_bits = {
+        1: ("ParticleAdvection",),
+        2: ("ParticleAdvection", "VolumetricFogHighRes", "NonCriticalVfx"),
+        3: ("ParticleAdvection", "VolumetricFogHighRes", "NonCriticalVfx"),
+    }
+    for pressure_level, bit_names in expected_policy_bits.items():
+        expected_mask = 0
+        for bit_name in bit_names:
+            expected_mask |= 1 << EXPECTED_SYSTEM_BITS[bit_name]
+        require(
+            int(str(pressure_rows[pressure_level]["disableMaskHex"]), 16) == expected_mask,
+            f"pressure {pressure_level} disableMaskHex drift",
+        )
+        require(
+            f"PressureLevel{pressure_level}DisableMask" in catalog,
+            f"catalog missing PressureLevel{pressure_level}DisableMask",
+        )
+
+    require("ResolvePolicyKillSwitchMask" in catalog, "catalog missing policy mask resolver")
+    require("ResolvePolicyKillSwitchMask" in renderer, "renderer missing policy mask resolver binding")
+
+
+def validate_pressure_gates(data: dict, catalog: str, renderer: str, marine_snow_compute: str) -> None:
     pressure_rows = {int(row["pressureLevel"]): row for row in data["pressureGatePolicy"]}
     require(pressure_rows[1]["forceBudgetTier"] == "Mid", "pressure level 1 must force Mid cap")
     require(pressure_rows[2]["forceBudgetTier"] == "Low", "pressure level 2 must force Low cap")
@@ -67,6 +128,10 @@ def validate_pressure_gates(data: dict, catalog: str, renderer: str) -> None:
         "EmergencyMarineSnowMultiplierPermille",
         "fluidType == VFXEmissionProfile.FluidType.Bubble",
         "fluidType == VFXEmissionProfile.FluidType.Debris",
+        "ResolvePolicyKillSwitchMask",
+        "PressureLevel2DisableMask",
+        "PressureLevel3DisableMask",
+        "pressureLevel >= 3",
     )
     for term in required_catalog_terms:
         require(term in catalog, f"catalog missing pressure behavior: {term}")
@@ -78,9 +143,35 @@ def validate_pressure_gates(data: dict, catalog: str, renderer: str) -> None:
         "ApplyKillSwitchCount",
         "VolumetricFogHighResMask",
         "ResolveEffectiveShadowTaps",
+        "ResolvePolicyKillSwitchMask",
     )
     for term in required_renderer_terms:
         require(term in renderer, f"renderer missing pressure behavior: {term}")
+    require(
+        re.search(
+            r"ApplyKillSwitchCount\(\s*resolvedCount,\s*fluidType,\s*killSwitchMask,\s*pressureLevel\s*\)",
+            renderer,
+        )
+        is not None,
+        "renderer must pass pressureLevel into ApplyKillSwitchCount",
+    )
+
+    runtime_consumers = set(str(path) for path in data["runtimeConsumers"])
+    require(
+        "Assets/_Project/Art/Shaders/Hecton_MarineSnow.compute" in runtime_consumers,
+        "JSON runtimeConsumers missing marine-snow compute kernel",
+    )
+
+    required_compute_terms = (
+        "if (_MarineSnowScalabilityParams.x <= 0.5)",
+        "return float3(0.0, 0.0, 0.0);",
+        "bool flowAdvectionEnabled = _MarineSnowScalabilityParams.x > 0.5;",
+        "if (flowAdvectionEnabled)",
+        "EvaluateShallowWaterFieldData(particle.Pos)",
+        "particle.Vel.xz *= saturate(1.0 - dt * 2.0);",
+    )
+    for term in required_compute_terms:
+        require(term in marine_snow_compute, f"marine-snow compute missing advection gate: {term}")
 
 
 def validate_renderer_binding(renderer: str) -> None:
@@ -126,11 +217,15 @@ def main() -> int:
     data = load_json()
     catalog = CATALOG_PATH.read_text(encoding="utf-8")
     renderer = RENDERER_PATH.read_text(encoding="utf-8")
+    marine_snow_compute = MARINE_SNOW_COMPUTE_PATH.read_text(encoding="utf-8")
     hlsl = HLSL_PATH.read_text(encoding="utf-8")
+    homeostasis = HOMEOSTASIS_PATH.read_text(encoding="utf-8")
+    drs_adapter = DRS_ADAPTER_PATH.read_text(encoding="utf-8")
 
     require(data.get("status") == "VFX BUDGETED", "JSON status is not VFX BUDGETED")
     validate_tier_rows(data, catalog)
-    validate_pressure_gates(data, catalog, renderer)
+    validate_handoff_contract(data, catalog, renderer, homeostasis, drs_adapter)
+    validate_pressure_gates(data, catalog, renderer, marine_snow_compute)
     validate_renderer_binding(renderer)
     validate_hlsl_blue_noise(data, hlsl)
     print("VFX_PARTICLE_BUDGET_CATALOG_OK")
