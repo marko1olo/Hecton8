@@ -352,6 +352,7 @@ class MaterialAuditTests(unittest.TestCase):
             self.assertIn("Global Detail Overlay Plan", markdown_text)
             self.assertIn("Gate Exit Codes", markdown_text)
             self.assertIn("unresolved_texture_refs", markdown_text)
+            self.assertIn("## Import Issue Counts\n\n| Issue | Count |", markdown_text)
             self.assertIn("Hull_ORM.png", texture_csv)
             self.assertIn("NO_DETAIL_MAP_SLOT", material_csv)
             self.assertIn("MAT_Test.mat", channel_csv)

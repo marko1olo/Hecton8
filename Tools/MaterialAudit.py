@@ -971,7 +971,6 @@ def write_markdown_report(report: dict[str, Any], output: Path) -> None:
             lines.append(markdown_row([gate, exit_code]))
         lines.append("")
 
-    lines.extend(["## Import Issue Counts", ""])
     vram_model = material_summary.get("vram_model", {})
     if vram_model:
         lines.extend([
@@ -1029,6 +1028,7 @@ def write_markdown_report(report: dict[str, Any], output: Path) -> None:
         lines.append("No global detail overlay plan defined.")
     lines.append("")
 
+    lines.extend(["## Import Issue Counts", ""])
     if texture_summary["import_issue_counts"]:
         lines.extend([markdown_row(["Issue", "Count"]), markdown_row(["---", "---"])])
         for issue, count in sorted(texture_summary["import_issue_counts"].items()):

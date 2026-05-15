@@ -136,3 +136,9 @@ Task count: 8 numbered tasks in extracted XML. Header claims 15; rejected as sta
 - [x] Published exit-code contract in reports | DOD: generated JSON now includes `gate_exit_codes`, Markdown includes a Gate Exit Codes section, and doctrine lists exit codes 1/2/3/4. Alternatives Rejected: relying on source-code inspection for CI behavior. Estimate: 0 us runtime impact.
 - [x] Extended CLI subprocess test | DOD: `python -m unittest Tools.test_material_audit` still passes 8 tests and now asserts unresolved-reference exit 4 in addition to exit 2 and exit 3. Alternatives Rejected: manual-only proof for the new gate. Estimate: 0 us runtime impact.
 - [x] Re-ran full audit and scoped gates | DOD: full audit preserved 0 energy failures, 5 import issues, 37 material issue materials, 27 unresolved refs; scoped import/material/unresolved gates returned expected exits 2/3/4. Alternatives Rejected: stale artifacts after CLI contract change. Estimate: 0 us runtime impact.
+
+### Loop 18 - Markdown Report Structure Pass
+
+- [x] Fixed import-issue Markdown section ordering | DOD: `## Import Issue Counts` now emits directly before its issue-count table instead of before unrelated VRAM/GOD_MODE sections. Alternatives Rejected: leaving a misleading empty header in the CTO-facing report. Estimate: 0 us runtime impact.
+- [x] Added export regression assertion | DOD: test now asserts `## Import Issue Counts` is followed by the issue table header. Alternatives Rejected: trusting manual report inspection only. Estimate: 0 us runtime impact.
+- [x] Re-ran audit artifacts and scoped gates after report fix | DOD: full audit preserved counts; Markdown readback shows Gate Exit Codes and Import Issue Counts tables; scoped gates returned exits 2/4/3. Alternatives Rejected: stale Markdown after report generator fix. Estimate: 0 us runtime impact.

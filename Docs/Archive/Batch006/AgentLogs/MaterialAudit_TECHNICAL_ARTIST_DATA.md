@@ -36,8 +36,6 @@ Include third-party: `False`
 | material_issues | 3 |
 | unresolved_texture_refs | 4 |
 
-## Import Issue Counts
-
 ## Channel Packing VRAM Model
 
 | Metric | Value |
@@ -80,6 +78,8 @@ Include third-party: `False`
 | grease_hand_smudges | MISSING_AUTHORING | Switch panels, handles, lockers, tool drawers | Use low-frequency decal only. | BC4 1024 roughness-darkening overlay in interaction zones. | 20 |
 | edge_chipped_paint | MISSING_AUTHORING | Painted industrial panels, doors, crates, railings | Vertex color or baked mask only. | BC4 1024 edge wear mask multiplied by curvature/AO author data. | 20 |
 | condensation_micro_droplets | MISSING_AUTHORING | Cold glass, wet acrylic, instrument covers, exterior windows | Disabled; rely on fake clearcoat. | BC5 1024 tiny droplet normal at 0.05-0.12 strength. | 25 |
+
+## Import Issue Counts
 
 | Issue | Count |
 | --- | --- |
