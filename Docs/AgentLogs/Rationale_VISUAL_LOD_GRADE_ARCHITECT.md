@@ -137,3 +137,15 @@ Rejected Alternatives: Treating the stale `TASK_COUNT=0` result as authoritative
 Scalability potential: Not runtime. This protects the matrix handoff from false task-count rejection.
 
 Hardware Impact: No runtime impact. Offline validation was rerun and still reports TOASTER 1560 MiB and GOD_MODE/PRO density ratio 9.097.
+
+## Decision 12 - Final Verification Push Without Dirty Index
+
+Problem: Post-resume evidence changed only three owned documentation files, but the live `main` worktree contains unrelated multi-agent modifications.
+
+Solution: Create and push the final verification evidence with a temporary git index and an allowlist containing only this agent's status, rationale, and log files. The branch-tip commit containing this paragraph records the completed verification push.
+
+Rejected Alternatives: Staging the live index was rejected because it would include unrelated work. Rewriting `main` was rejected because the task owns only the visual scalability handoff branch.
+
+Scalability potential: Not runtime. The branch remains isolated for integrator review.
+
+Hardware Impact: No runtime impact.

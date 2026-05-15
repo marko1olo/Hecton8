@@ -131,3 +131,4 @@ Why kept:
 Why rejected:
 - Batch-file editing was rejected.
 - Unrelated dirty worktree edits were rejected.
+- Live-index staging was rejected; the final verification evidence uses a temporary-index branch-tip commit on `origin/visual-lod-grade-architect`.
