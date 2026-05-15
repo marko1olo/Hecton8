@@ -321,6 +321,7 @@ class MemoryBudgetCheckTests(unittest.TestCase):
                     "extension": ".rendertexture",
                     "width": "1280",
                     "height": "720",
+                    "rt_estimate_bytes": "7372800",
                     "rt_estimate_mib": "7.031",
                     "redline_flags": "RENDER_TEXTURE_DEPTH_STENCIL_PRESENT_STATIC_SUSPECT",
                     "evidence_class": "STATIC_SOURCE",
@@ -372,16 +373,41 @@ class MemoryBudgetCheckTests(unittest.TestCase):
                 "schema_version": 1,
                 "evidence_class": "STATIC_SOURCE/FILESYSTEM/PY_UNIT_TEST",
                 "scan_root_names": list(budget.DEFAULT_SCAN_ROOT_NAMES),
-                "ci_expected_exit_code": 0,
+                "ci_expected_exit_code": 2,
                 "texture_count": 0,
                 "mesh_count": 1,
                 "render_texture_count": 1,
                 "resolved_scan_roots": ["Assets"],
                 "texture_flagged_rows": 0,
+                "texture_vram_crime_rows": 0,
+                "texture_source_container_risk_rows": 0,
+                "first_party_texture_source_container_risk_rows": 0,
+                "all_large_streaming_mips_off": 0,
+                "first_party_large_streaming_mips_off": 0,
                 "mesh_redline_rows": 1,
+                "mesh_import_risk_rows": 0,
+                "mesh_read_write_enabled_rows": 0,
+                "mesh_blendshapes_enabled_rows": 0,
+                "mesh_compression_off_rows": 0,
+                "mesh_import_colliders_enabled_rows": 0,
+                "first_party_mesh_import_risk_rows": 0,
+                "first_party_mesh_read_write_enabled_rows": 0,
+                "first_party_mesh_blendshapes_enabled_rows": 0,
+                "first_party_mesh_compression_off_rows": 0,
                 "render_texture_redline_rows": 1,
+                "render_texture_depth_stencil_rows": 1,
+                "mx350_texture_budget_mib": budget.TEXTURE_BUDGET_MIB,
+                "critical_texture_pool_mib": budget.CRITICAL_TEXTURE_POOL_MIB,
+                "geometry_buffer_budget_mib": budget.GEOMETRY_BUFFER_BUDGET_MIB,
+                "render_target_budget_mib": budget.RENDER_TARGET_BUDGET_MIB,
+                "bc7_full_mip_total_mib": 0.0,
+                "bc7_full_mip_runtime_candidate_mib": 0.0,
+                "bc7_full_mip_first_party_production_mib": 0.0,
+                "mesh_geometry_static_estimate_mib": 0.0,
+                "first_party_mesh_geometry_static_estimate_mib": 0.0,
+                "render_texture_static_estimate_mib": 7.031,
                 "critical_vram_overflow": False,
-                "gate_reasons": [],
+                "gate_reasons": ["MESH_REDLINE_OR_RISK", "RENDER_TEXTURE_REDLINE_OR_RISK"],
                 "mesh_redlines": [
                     {
                         "path": "Assets/BigMesh.fbx",
@@ -453,6 +479,8 @@ class MemoryBudgetCheckTests(unittest.TestCase):
                     "extension": ".png",
                     "width": "4096",
                     "height": "2048",
+                    "bc7_bytes": "8388608",
+                    "bc7_full_mip_mib": "10.667",
                     "redline_flags": "VRAM CRIME: TEXTURE_GT_2048",
                     "evidence_class": "STATIC_SOURCE",
                 }
@@ -466,7 +494,7 @@ class MemoryBudgetCheckTests(unittest.TestCase):
                         "path": "Assets/_Project/TX_Test.png",
                         "width": "4096",
                         "height": "2048",
-                        "bc7_full_mip_mib": "42.667",
+                        "bc7_full_mip_mib": "10.667",
                         "first_party_production": "true",
                         "flags": "VRAM CRIME: TEXTURE_GT_2048",
                         "recommendation": "Clamp import cap.",
@@ -477,24 +505,49 @@ class MemoryBudgetCheckTests(unittest.TestCase):
                 "schema_version": 1,
                 "evidence_class": "STATIC_SOURCE/FILESYSTEM/PY_UNIT_TEST",
                 "scan_root_names": list(budget.DEFAULT_SCAN_ROOT_NAMES),
-                "ci_expected_exit_code": 0,
+                "ci_expected_exit_code": 2,
                 "texture_count": 1,
                 "mesh_count": 0,
                 "render_texture_count": 0,
                 "resolved_scan_roots": ["Assets"],
                 "texture_flagged_rows": 1,
+                "texture_vram_crime_rows": 1,
+                "texture_source_container_risk_rows": 0,
+                "first_party_texture_source_container_risk_rows": 0,
+                "all_large_streaming_mips_off": 0,
+                "first_party_large_streaming_mips_off": 0,
                 "mesh_redline_rows": 0,
+                "mesh_import_risk_rows": 0,
+                "mesh_read_write_enabled_rows": 0,
+                "mesh_blendshapes_enabled_rows": 0,
+                "mesh_compression_off_rows": 0,
+                "mesh_import_colliders_enabled_rows": 0,
+                "first_party_mesh_import_risk_rows": 0,
+                "first_party_mesh_read_write_enabled_rows": 0,
+                "first_party_mesh_blendshapes_enabled_rows": 0,
+                "first_party_mesh_compression_off_rows": 0,
                 "render_texture_redline_rows": 0,
+                "render_texture_depth_stencil_rows": 0,
                 "render_texture_source_hotspot_rows": 0,
                 "runtime_render_texture_source_hotspot_rows": 0,
+                "mx350_texture_budget_mib": budget.TEXTURE_BUDGET_MIB,
+                "critical_texture_pool_mib": budget.CRITICAL_TEXTURE_POOL_MIB,
+                "geometry_buffer_budget_mib": budget.GEOMETRY_BUFFER_BUDGET_MIB,
+                "render_target_budget_mib": budget.RENDER_TARGET_BUDGET_MIB,
+                "bc7_full_mip_total_mib": 10.667,
+                "bc7_full_mip_runtime_candidate_mib": 10.667,
+                "bc7_full_mip_first_party_production_mib": 10.667,
+                "mesh_geometry_static_estimate_mib": 0.0,
+                "first_party_mesh_geometry_static_estimate_mib": 0.0,
+                "render_texture_static_estimate_mib": 0.0,
                 "critical_vram_overflow": False,
-                "gate_reasons": [],
+                "gate_reasons": ["TEXTURE_VRAM_CRIMES"],
                 "texture_redlines": [
                     {
                         "path": "Assets/_Project/TX_Test.png",
                         "width": 4096,
                         "height": 2048,
-                        "bc7_full_mip_mib": 42.667,
+                        "bc7_full_mip_mib": 10.667,
                         "first_party_production": True,
                         "flags": ["VRAM CRIME: TEXTURE_GT_2048"],
                     }
@@ -541,6 +594,37 @@ class MemoryBudgetCheckTests(unittest.TestCase):
             )
             self.assertFalse(ok)
             self.assertIn("texture redline dimensions/estimate mismatch JSON", messages)
+
+    def test_validate_reports_rejects_json_budget_aggregate_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            drifted_json = Path(temp_dir) / "VRAM_Budget_Audit_budget_drift.json"
+            payload = json.loads((PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit.json").read_text(encoding="utf-8"))
+            expected_texture_total = payload["bc7_full_mip_total_mib"]
+            expected_mesh_total = payload["mesh_geometry_static_estimate_mib"]
+            expected_rt_total = payload["render_texture_static_estimate_mib"]
+            payload["bc7_full_mip_total_mib"] = -1.0
+            payload["mesh_geometry_static_estimate_mib"] = -1.0
+            payload["render_texture_static_estimate_mib"] = -1.0
+            payload["critical_vram_overflow"] = False
+            drifted_json.write_text(json.dumps(payload), encoding="utf-8")
+
+            ok, messages = budget.validate_generated_reports(
+                PROJECT_ROOT,
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit.csv",
+                drifted_json,
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Texture_Redlines.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Mesh_Redlines.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_RenderTexture_Redlines.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_RenderTexture_SourceHotspots.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit_Summary.md",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Remediation_Plan.md",
+            )
+
+            self.assertFalse(ok)
+            self.assertIn(f"JSON bc7_full_mip_total_mib drift json=-1.0 csv={expected_texture_total}", messages)
+            self.assertIn(f"JSON mesh_geometry_static_estimate_mib drift json=-1.0 csv={expected_mesh_total}", messages)
+            self.assertIn(f"JSON render_texture_static_estimate_mib drift json=-1.0 csv={expected_rt_total}", messages)
+            self.assertIn("JSON critical_vram_overflow drift json=False expected=True", messages)
 
     def test_validate_reports_rejects_broad_csv_schema_drift(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -614,6 +698,38 @@ class MemoryBudgetCheckTests(unittest.TestCase):
             self.assertFalse(ok)
             self.assertIn("JSON evidence_class drift", messages)
             self.assertIn("JSON ci_expected_exit_code drift", messages)
+
+    def test_validate_reports_rejects_json_derived_counter_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            drifted_json = Path(temp_dir) / "VRAM_Budget_Audit_counter_drift.json"
+            payload = json.loads((PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit.json").read_text(encoding="utf-8"))
+            expected_texture_crimes = payload["texture_vram_crime_rows"]
+            expected_mesh_import_risks = payload["mesh_import_risk_rows"]
+            expected_rt_depth_stencil = payload["render_texture_depth_stencil_rows"]
+            expected_gate_reasons = list(payload["gate_reasons"])
+            payload["texture_vram_crime_rows"] = -1
+            payload["mesh_import_risk_rows"] = -1
+            payload["render_texture_depth_stencil_rows"] = -1
+            payload["gate_reasons"] = []
+            drifted_json.write_text(json.dumps(payload), encoding="utf-8")
+
+            ok, messages = budget.validate_generated_reports(
+                PROJECT_ROOT,
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit.csv",
+                drifted_json,
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Texture_Redlines.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Mesh_Redlines.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_RenderTexture_Redlines.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_RenderTexture_SourceHotspots.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit_Summary.md",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Remediation_Plan.md",
+            )
+
+            self.assertFalse(ok)
+            self.assertIn(f"JSON texture_vram_crime_rows drift json=-1 csv={expected_texture_crimes}", messages)
+            self.assertIn(f"JSON mesh_import_risk_rows drift json=-1 csv={expected_mesh_import_risks}", messages)
+            self.assertIn(f"JSON render_texture_depth_stencil_rows drift json=-1 csv={expected_rt_depth_stencil}", messages)
+            self.assertIn(f"JSON gate_reasons drift json=[] expected={expected_gate_reasons}", messages)
 
     def test_iter_assets_uses_case_insensitive_generated_tree_exclusion(self) -> None:
         self.assertIn(".codex-build", budget.SKIP_DIRS)

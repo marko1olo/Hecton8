@@ -83,8 +83,8 @@
     "MESH_REDLINE_OR_RISK",
     "RENDER_TEXTURE_REDLINE_OR_RISK"
   ],
-  "generated": "2026-05-15T22:57:39",
-  "generated_utc": "2026-05-15T19:57:39+00:00",
+  "generated": "2026-05-15T23:25:58",
+  "generated_utc": "2026-05-15T20:25:58+00:00",
   "geometry_buffer_budget_mib": 200.0,
   "link_xml_notes": [
     "Assets/AstarPathfindingProject/link.xml assemblies=1 types=18 preserve_all=18",

@@ -2159,6 +2159,37 @@ def validate_generated_reports(
             if snippet not in text:
                 messages.append(f"{label} report missing snippet: {snippet}")
 
+    def row_flags(row: Dict[str, str]) -> Tuple[str, ...]:
+        return tuple(flag for flag in row.get("redline_flags", "").split(";") if flag)
+
+    def row_path(row: Dict[str, str]) -> Path:
+        return root / row.get("path", "")
+
+    def is_row_first_party(row: Dict[str, str]) -> bool:
+        return is_first_party_production_candidate(row_path(row), root)
+
+    def row_has_texture_container_risk(row: Dict[str, str]) -> bool:
+        return any(flag.endswith("_SOURCE_CONTAINER_STATIC_SUSPECT") or flag == "HDR_TEXTURE_CONTAINER_STATIC_SUSPECT" for flag in row_flags(row))
+
+    def row_has_vram_crime(row: Dict[str, str]) -> bool:
+        return any(flag.startswith("VRAM CRIME") for flag in row_flags(row))
+
+    def row_has_mesh_import_risk(row: Dict[str, str]) -> bool:
+        return any(flag.endswith("_STATIC_SUSPECT") for flag in row_flags(row))
+
+    def row_has_flag(row: Dict[str, str], flag: str) -> bool:
+        return flag in row_flags(row)
+
+    def csv_int(row: Dict[str, str], column: str) -> int:
+        value = row.get(column, "").strip()
+        if not value:
+            return 0
+        try:
+            return int(float(value))
+        except ValueError:
+            messages.append(f"non-numeric CSV value column={column} path={row.get('path', '')}")
+            return 0
+
     texture_rows = [row for row in rows if row.get("asset_type") == "texture"]
     mesh_rows = [row for row in rows if row.get("asset_type") == "mesh"]
     render_texture_rows = [row for row in rows if row.get("asset_type") == "render_texture"]
@@ -2196,6 +2227,46 @@ def validate_generated_reports(
     broad_texture_redline_paths = {path for path, flags in texture_flags_by_path.items() if flags}
     broad_mesh_redline_paths = {path for path, flags in mesh_flags_by_path.items() if flags}
     broad_render_texture_redline_paths = {path for path, flags in render_texture_flags_by_path.items() if flags}
+    texture_vram_crime_rows = [row for row in texture_rows if row_has_vram_crime(row)]
+    texture_source_container_risk_rows = [row for row in texture_rows if row_has_texture_container_risk(row)]
+    first_party_texture_source_container_risk_rows = [row for row in texture_source_container_risk_rows if is_row_first_party(row)]
+    all_large_streaming_mips_off_rows = [row for row in texture_rows if row_has_flag(row, "STREAMING_MIPMAPS_OFF_LARGE")]
+    first_party_large_streaming_mips_off_rows = [row for row in all_large_streaming_mips_off_rows if is_row_first_party(row)]
+    mesh_import_risk_rows = [row for row in mesh_rows if row_has_mesh_import_risk(row)]
+    first_party_mesh_import_risk_rows = [row for row in mesh_import_risk_rows if is_row_first_party(row)]
+    mesh_read_write_enabled_rows = [row for row in mesh_rows if row_has_flag(row, "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT")]
+    mesh_blendshapes_enabled_rows = [row for row in mesh_rows if row_has_flag(row, "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT")]
+    mesh_compression_off_rows = [row for row in mesh_rows if row_has_flag(row, "MESH_COMPRESSION_OFF_STATIC_SUSPECT")]
+    mesh_import_colliders_enabled_rows = [row for row in mesh_rows if row_has_flag(row, "MESH_IMPORT_COLLIDERS_ENABLED_STATIC_SUSPECT")]
+    first_party_mesh_read_write_enabled_rows = [row for row in first_party_mesh_import_risk_rows if row_has_flag(row, "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT")]
+    first_party_mesh_blendshapes_enabled_rows = [row for row in first_party_mesh_import_risk_rows if row_has_flag(row, "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT")]
+    first_party_mesh_compression_off_rows = [row for row in first_party_mesh_import_risk_rows if row_has_flag(row, "MESH_COMPRESSION_OFF_STATIC_SUSPECT")]
+    render_texture_depth_stencil_rows = [row for row in render_texture_rows if row_has_flag(row, "RENDER_TEXTURE_DEPTH_STENCIL_PRESENT_STATIC_SUSPECT")]
+    texture_bc7_bytes = sum(csv_int(row, "bc7_bytes") for row in texture_rows)
+    runtime_texture_bc7_bytes = sum(csv_int(row, "bc7_bytes") for row in texture_rows if is_runtime_candidate(row_path(row), root))
+    first_party_texture_bc7_bytes = sum(csv_int(row, "bc7_bytes") for row in texture_rows if is_row_first_party(row))
+    mesh_geometry_bytes = sum(csv_int(row, "mesh_geometry_estimate_bytes") for row in mesh_rows)
+    first_party_mesh_geometry_bytes = sum(csv_int(row, "mesh_geometry_estimate_bytes") for row in mesh_rows if is_row_first_party(row))
+    render_texture_bytes = sum(csv_int(row, "rt_estimate_bytes") for row in render_texture_rows)
+    texture_full_mip_total_mib = round(mib(texture_bc7_bytes * FULL_MIP_FACTOR), 3)
+    runtime_texture_full_mip_mib = round(mib(runtime_texture_bc7_bytes * FULL_MIP_FACTOR), 3)
+    first_party_texture_full_mip_mib = round(mib(first_party_texture_bc7_bytes * FULL_MIP_FACTOR), 3)
+    mesh_geometry_static_mib = round(mib(mesh_geometry_bytes), 3)
+    first_party_mesh_geometry_static_mib = round(mib(first_party_mesh_geometry_bytes), 3)
+    render_texture_static_mib = round(mib(render_texture_bytes), 3)
+    critical_vram_overflow = (
+        texture_bc7_bytes * FULL_MIP_FACTOR > CRITICAL_TEXTURE_POOL_MIB * 1024 * 1024
+        or runtime_texture_bc7_bytes * FULL_MIP_FACTOR > CRITICAL_TEXTURE_POOL_MIB * 1024 * 1024
+    )
+    expected_gate_reasons: List[str] = []
+    if critical_vram_overflow:
+        expected_gate_reasons.append("CRITICAL_VRAM_OVERFLOW")
+    if texture_vram_crime_rows:
+        expected_gate_reasons.append("TEXTURE_VRAM_CRIMES")
+    if broad_mesh_redline_paths:
+        expected_gate_reasons.append("MESH_REDLINE_OR_RISK")
+    if broad_render_texture_redline_paths:
+        expected_gate_reasons.append("RENDER_TEXTURE_REDLINE_OR_RISK")
     texture_redline_paths = [row.get("path", "") for row in texture_redline_rows]
     mesh_redline_paths = [row.get("path", "") for row in mesh_redline_rows]
     render_texture_redline_paths = [row.get("path", "") for row in render_texture_redline_rows]
@@ -2268,9 +2339,33 @@ def validate_generated_reports(
         messages.append("JSON evidence_class drift")
     if payload.get("scan_root_names") != list(DEFAULT_SCAN_ROOT_NAMES):
         messages.append("JSON scan_root_names drift")
-    expected_ci_exit_code = 2 if payload.get("gate_reasons") else 0
+    if payload.get("gate_reasons") != expected_gate_reasons:
+        messages.append(f"JSON gate_reasons drift json={payload.get('gate_reasons')} expected={expected_gate_reasons}")
+    expected_ci_exit_code = 2 if expected_gate_reasons else 0
     if payload.get("ci_expected_exit_code") != expected_ci_exit_code:
         messages.append("JSON ci_expected_exit_code drift")
+    if payload.get("mx350_texture_budget_mib") != TEXTURE_BUDGET_MIB:
+        messages.append("JSON mx350_texture_budget_mib drift")
+    if payload.get("critical_texture_pool_mib") != CRITICAL_TEXTURE_POOL_MIB:
+        messages.append("JSON critical_texture_pool_mib drift")
+    if payload.get("geometry_buffer_budget_mib") != GEOMETRY_BUFFER_BUDGET_MIB:
+        messages.append("JSON geometry_buffer_budget_mib drift")
+    if payload.get("render_target_budget_mib") != RENDER_TARGET_BUDGET_MIB:
+        messages.append("JSON render_target_budget_mib drift")
+    if payload.get("critical_vram_overflow") != critical_vram_overflow:
+        messages.append(f"JSON critical_vram_overflow drift json={payload.get('critical_vram_overflow')} expected={critical_vram_overflow}")
+    if payload.get("bc7_full_mip_total_mib") != texture_full_mip_total_mib:
+        messages.append(f"JSON bc7_full_mip_total_mib drift json={payload.get('bc7_full_mip_total_mib')} csv={texture_full_mip_total_mib}")
+    if payload.get("bc7_full_mip_runtime_candidate_mib") != runtime_texture_full_mip_mib:
+        messages.append(f"JSON bc7_full_mip_runtime_candidate_mib drift json={payload.get('bc7_full_mip_runtime_candidate_mib')} csv={runtime_texture_full_mip_mib}")
+    if payload.get("bc7_full_mip_first_party_production_mib") != first_party_texture_full_mip_mib:
+        messages.append(f"JSON bc7_full_mip_first_party_production_mib drift json={payload.get('bc7_full_mip_first_party_production_mib')} csv={first_party_texture_full_mip_mib}")
+    if payload.get("mesh_geometry_static_estimate_mib") != mesh_geometry_static_mib:
+        messages.append(f"JSON mesh_geometry_static_estimate_mib drift json={payload.get('mesh_geometry_static_estimate_mib')} csv={mesh_geometry_static_mib}")
+    if payload.get("first_party_mesh_geometry_static_estimate_mib") != first_party_mesh_geometry_static_mib:
+        messages.append(f"JSON first_party_mesh_geometry_static_estimate_mib drift json={payload.get('first_party_mesh_geometry_static_estimate_mib')} csv={first_party_mesh_geometry_static_mib}")
+    if payload.get("render_texture_static_estimate_mib") != render_texture_static_mib:
+        messages.append(f"JSON render_texture_static_estimate_mib drift json={payload.get('render_texture_static_estimate_mib')} csv={render_texture_static_mib}")
     if payload.get("resolved_scan_roots") != expected_roots:
         messages.append(f"resolved_scan_roots mismatch json={payload.get('resolved_scan_roots')} expected={expected_roots}")
     if unknown_type_rows:
@@ -2295,6 +2390,36 @@ def validate_generated_reports(
         messages.append(f"broad mesh redline mismatch json={payload.get('mesh_redline_rows')} csv={len(broad_mesh_redline_paths)}")
     if payload.get("render_texture_redline_rows") != len(broad_render_texture_redline_paths):
         messages.append(f"broad RenderTexture redline mismatch json={payload.get('render_texture_redline_rows')} csv={len(broad_render_texture_redline_paths)}")
+    if payload.get("texture_vram_crime_rows") != len(texture_vram_crime_rows):
+        messages.append(f"JSON texture_vram_crime_rows drift json={payload.get('texture_vram_crime_rows')} csv={len(texture_vram_crime_rows)}")
+    if payload.get("texture_source_container_risk_rows") != len(texture_source_container_risk_rows):
+        messages.append(f"JSON texture_source_container_risk_rows drift json={payload.get('texture_source_container_risk_rows')} csv={len(texture_source_container_risk_rows)}")
+    if payload.get("first_party_texture_source_container_risk_rows") != len(first_party_texture_source_container_risk_rows):
+        messages.append(f"JSON first_party_texture_source_container_risk_rows drift json={payload.get('first_party_texture_source_container_risk_rows')} csv={len(first_party_texture_source_container_risk_rows)}")
+    if payload.get("all_large_streaming_mips_off") != len(all_large_streaming_mips_off_rows):
+        messages.append(f"JSON all_large_streaming_mips_off drift json={payload.get('all_large_streaming_mips_off')} csv={len(all_large_streaming_mips_off_rows)}")
+    if payload.get("first_party_large_streaming_mips_off") != len(first_party_large_streaming_mips_off_rows):
+        messages.append(f"JSON first_party_large_streaming_mips_off drift json={payload.get('first_party_large_streaming_mips_off')} csv={len(first_party_large_streaming_mips_off_rows)}")
+    if payload.get("mesh_import_risk_rows") != len(mesh_import_risk_rows):
+        messages.append(f"JSON mesh_import_risk_rows drift json={payload.get('mesh_import_risk_rows')} csv={len(mesh_import_risk_rows)}")
+    if payload.get("mesh_read_write_enabled_rows") != len(mesh_read_write_enabled_rows):
+        messages.append(f"JSON mesh_read_write_enabled_rows drift json={payload.get('mesh_read_write_enabled_rows')} csv={len(mesh_read_write_enabled_rows)}")
+    if payload.get("mesh_blendshapes_enabled_rows") != len(mesh_blendshapes_enabled_rows):
+        messages.append(f"JSON mesh_blendshapes_enabled_rows drift json={payload.get('mesh_blendshapes_enabled_rows')} csv={len(mesh_blendshapes_enabled_rows)}")
+    if payload.get("mesh_compression_off_rows") != len(mesh_compression_off_rows):
+        messages.append(f"JSON mesh_compression_off_rows drift json={payload.get('mesh_compression_off_rows')} csv={len(mesh_compression_off_rows)}")
+    if payload.get("mesh_import_colliders_enabled_rows") != len(mesh_import_colliders_enabled_rows):
+        messages.append(f"JSON mesh_import_colliders_enabled_rows drift json={payload.get('mesh_import_colliders_enabled_rows')} csv={len(mesh_import_colliders_enabled_rows)}")
+    if payload.get("first_party_mesh_import_risk_rows") != len(first_party_mesh_import_risk_rows):
+        messages.append(f"JSON first_party_mesh_import_risk_rows drift json={payload.get('first_party_mesh_import_risk_rows')} csv={len(first_party_mesh_import_risk_rows)}")
+    if payload.get("first_party_mesh_read_write_enabled_rows") != len(first_party_mesh_read_write_enabled_rows):
+        messages.append(f"JSON first_party_mesh_read_write_enabled_rows drift json={payload.get('first_party_mesh_read_write_enabled_rows')} csv={len(first_party_mesh_read_write_enabled_rows)}")
+    if payload.get("first_party_mesh_blendshapes_enabled_rows") != len(first_party_mesh_blendshapes_enabled_rows):
+        messages.append(f"JSON first_party_mesh_blendshapes_enabled_rows drift json={payload.get('first_party_mesh_blendshapes_enabled_rows')} csv={len(first_party_mesh_blendshapes_enabled_rows)}")
+    if payload.get("first_party_mesh_compression_off_rows") != len(first_party_mesh_compression_off_rows):
+        messages.append(f"JSON first_party_mesh_compression_off_rows drift json={payload.get('first_party_mesh_compression_off_rows')} csv={len(first_party_mesh_compression_off_rows)}")
+    if payload.get("render_texture_depth_stencil_rows") != len(render_texture_depth_stencil_rows):
+        messages.append(f"JSON render_texture_depth_stencil_rows drift json={payload.get('render_texture_depth_stencil_rows')} csv={len(render_texture_depth_stencil_rows)}")
     if len(texture_paths) != len(texture_path_set):
         messages.append("duplicate texture paths in broad CSV")
     if len(mesh_paths) != len(mesh_path_set):

@@ -208,8 +208,77 @@ Exact microseconds saved:
 - Tooling correctness improvement: false JSON authority claims now have explicit failing test coverage.
 
 Verification:
+- PYTHONDONTWRITEBYTECODE=1 Python AST syntax parse for `Tools/MemoryBudgetCheck.py` and `Tools/test_memory_budget_check.py`: PASS.
 - PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --validate-reports: PASS; `reports valid: textures=1652 meshes=302 render_textures=1 texture_redlines=946 mesh_redlines=293 rt_redlines=1 rt_hotspots=61 scan_roots=Assets,Packages,Data`.
-- PYTHONDONTWRITEBYTECODE=1 python -m unittest Tools.test_memory_budget_check -v: PASS, 22 tests, elapsed 7.629 seconds.
+- PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py: PASS, 23 tests, elapsed 14.760 seconds.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --ci: EXPECTED FAIL with `ci_exit_code=2`; current static redlines/overflow still produce `[CRITICAL_VRAM_OVERFLOW]`.
+- Python bytecode cleanup: PASS, `PYTHON_CACHE_COUNT 0`.
+- git diff --check on VRAM-owned touched files: PASS, no whitespace errors.
+- Active log chronology: PASS, `LOG_ORDER_OK headers=7 latest=2026-05-15T23:03:49+03:00`.
+
+Evidence boundary:
+- STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
+- Unity import, Memory Profiler, player build, and runtime frame time remain PENDING VERIFICATION.
+
+## 2026-05-15T23:12:41+03:00 - JSON DERIVED COUNTER AND GATE-REASON PARITY PASS
+
+What was wrong:
+- JSON top-level authority checks still left derived remediation counters exposed to stale manual edits or partial regeneration.
+- `gate_reasons` could drift away from the broad CSV redline state, which would corrupt CI handoff semantics.
+
+What was done:
+- Recomputed texture VRAM crime rows, texture source-container risk rows, first-party texture risk subsets, streaming-mip risk rows, mesh import-risk categories, first-party mesh risk subsets, and RenderTexture depth/stencil risk rows from the broad CSV inside `validate_generated_reports()`.
+- Recomputed expected gate reasons from critical overflow, texture crimes, mesh redlines, and RenderTexture redlines before accepting JSON.
+- Added a regression test that mutates derived JSON counters and `gate_reasons`, then proves validation rejects the drift.
+
+Cinematic cheats used:
+- None. This is offline report validation, not runtime rendering work.
+
+Exact microseconds saved:
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0us.
+- Tooling correctness improvement: stale JSON remediation totals and false CI gate reasons now fail no-scan validation.
+
+Verification:
+- PYTHONDONTWRITEBYTECODE=1 Python AST syntax parse for `Tools/MemoryBudgetCheck.py` and `Tools/test_memory_budget_check.py`: PASS.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --validate-reports: PASS; `reports valid: textures=1652 meshes=302 render_textures=1 texture_redlines=946 mesh_redlines=293 rt_redlines=1 rt_hotspots=61 scan_roots=Assets,Packages,Data`.
+- PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py: PASS, 23 tests, elapsed 14.760 seconds.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --ci: EXPECTED FAIL with `ci_exit_code=2`; current static redlines/overflow still produce `[CRITICAL_VRAM_OVERFLOW]`.
+- Python bytecode cleanup: PASS, `PYTHON_CACHE_COUNT 0`.
+- git diff --check on VRAM-owned touched files: PASS, no whitespace errors.
+- Active log chronology: PASS, `LOG_ORDER_OK headers=8 through 2026-05-15T23:12:41+03:00`.
+
+Evidence boundary:
+- STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
+- Unity import, Memory Profiler, player build, and runtime frame time remain PENDING VERIFICATION.
+
+## 2026-05-15T23:21:22+03:00 - JSON BUDGET AGGREGATE PARITY PASS
+
+What was wrong:
+- JSON risk counters were guarded, but budget constants and aggregate MiB fields could still drift from the broad CSV.
+- A stale `critical_vram_overflow` flag could hide the MX350 texture-pool overflow even when CSV byte totals prove the overflow.
+
+What was done:
+- Recomputed texture BC7 full-mip total, runtime texture full-mip total, first-party texture full-mip total, mesh geometry totals, first-party mesh geometry totals, RenderTexture totals, budget constants, and critical overflow state inside `validate_generated_reports()`.
+- Added a regression test that mutates JSON aggregate totals and `critical_vram_overflow`, then proves validation rejects the drift.
+- Updated synthetic payload fixtures so split-payload tests satisfy the stricter aggregate authority contract.
+
+Cinematic cheats used:
+- None. This is offline report validation, not runtime rendering work.
+
+Exact microseconds saved:
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0us.
+- Tooling correctness improvement: stale JSON budget aggregates and false overflow state now fail no-scan validation.
+
+Verification:
+- PYTHONDONTWRITEBYTECODE=1 Python AST syntax parse for `Tools/MemoryBudgetCheck.py` and `Tools/test_memory_budget_check.py`: PASS.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --validate-reports: PASS; `reports valid: textures=1652 meshes=302 render_textures=1 texture_redlines=946 mesh_redlines=293 rt_redlines=1 rt_hotspots=61 scan_roots=Assets,Packages,Data`.
+- PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py: PASS, 24 tests, elapsed 19.561 seconds.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --ci: EXPECTED FAIL with `ci_exit_code=2`; current static redlines/overflow still produce `[CRITICAL_VRAM_OVERFLOW]`.
+- Python bytecode cleanup: PASS, `PYTHON_CACHE_COUNT 0`.
+- git diff --check on VRAM-owned touched files: PASS, no whitespace errors.
+- Active log chronology: PASS, `LOG_ORDER_OK headers=9 latest=2026-05-15T23:21:22+03:00`.
 
 Evidence boundary:
 - STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.

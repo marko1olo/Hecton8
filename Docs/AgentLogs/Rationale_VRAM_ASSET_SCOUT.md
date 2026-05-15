@@ -57,3 +57,19 @@ Solution: Add a regression test that loads the current generated JSON report, mu
 Rejected Alternatives: Relying on implementation inspection. Authority fields are evidence-boundary claims and require a failing fixture, not code-review memory.
 Scalability potential: Low/MX350 reports cannot silently claim runtime profiler evidence or green CI while redlines remain; Middle/High/Ultra payload consumers inherit the same authority guard.
 Hardware Impact: 0us runtime measured. Tooling impact: unit coverage is now 22 tests and rejects JSON authority drift.
+
+## Decision 41: JSON Derived Counter And Gate-Reason Parity
+
+Problem: JSON authority fields were guarded, but derived remediation counters could still drift from the broad CSV while keeping raw asset counts valid. A stale `gate_reasons` list could also claim green CI despite redline rows.
+Solution: Recompute texture crime rows, texture container risks, streaming mip risks, mesh import-risk categories, first-party subsets, RenderTexture depth/stencil risk rows, and expected gate reasons from CSV rows inside `validate_generated_reports()`. Add a regression fixture that mutates those JSON counters and proves validation fails.
+Rejected Alternatives: Trusting generated JSON counters because the generator created them. The no-scan validator must defend handoff artifacts after manual edits, partial regeneration, or stale merges.
+Scalability potential: Low/MX350 remediation queues keep exact risk totals for the hard budget gate; Middle/High/Ultra can add larger report payloads without allowing stale machine-readable counters.
+Hardware Impact: 0us runtime measured. Tooling impact: unit coverage now rejects derived counter and gate-reason drift.
+
+## Decision 42: JSON Budget Aggregate Parity
+
+Problem: Derived risk counters were guarded, but JSON budget constants and MiB aggregates could still drift from the broad CSV. A stale `critical_vram_overflow` flag could hide the MX350 texture-pool overflow even when CSV bytes prove it.
+Solution: Recompute BC7 full-mip totals, runtime texture totals, first-party texture totals, mesh geometry totals, first-party mesh totals, RenderTexture totals, budget constants, and critical overflow state inside `validate_generated_reports()`. Add a regression fixture that mutates those JSON aggregates and proves validation fails.
+Rejected Alternatives: Trusting generated aggregate fields because the current generator writes them. Handoff artifacts must survive manual edits, stale merges, and partial report regeneration.
+Scalability potential: Low/MX350 keeps hard-budget overflow evidence tied to CSV bytes; Middle/High/Ultra can consume higher-budget aggregate reports without accepting stale machine-readable totals.
+Hardware Impact: 0us runtime measured. Tooling impact: unit coverage is now 24 tests and rejects JSON budget aggregate drift.
