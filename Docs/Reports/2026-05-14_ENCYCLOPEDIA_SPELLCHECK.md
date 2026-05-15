@@ -157,3 +157,38 @@ Python spellchecker gate after the index edits:
 - known typo hits in six edited third-continuation docs after evidence logging: `0`
 
 The full-corpus typo hits remain outside owned encyclopedia docs. No archive or third-party evidence file was rewritten.
+
+## 2026-05-15 Fourth Continuation Recheck
+
+The user requested another continuation pass. This pass checked authority-spine and first-level documentation routing.
+
+Index coverage defect found and fixed:
+
+- `Docs/README.md` did not route to `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/README.md`, which is part of the authority spine as the Archivarius actual-reports evidence vault.
+- `Docs/README.md` did not route tracked first-level `_Archive/README.md` and `DEPRECATED/README.md` as non-authority archive/deprecation areas.
+
+Post-fix tracked coverage gate:
+
+- missing authority-spine links: `0`
+- tracked direct root `Docs/*.md` files: `13`
+- missing tracked direct root doc mentions: `0`
+- tracked first-level README directories: `10`
+- missing tracked first-level README routes: `0`
+- untracked direct root docs observed but not indexed: `DEPENDENCY_GRAPH.md`, `TECH_ART_PBR_SURFACE_DOCTRINE.md`
+
+Post-fix link gate:
+
+- key docs checked: `5`
+- key-doc relative links checked: `274`
+- missing links: `0`
+
+Python spellchecker gate after the index edits:
+
+- files scanned: `1567`
+- unique tokens: `86830`
+- unknown tokens after allowlist: `73749`
+- owned unknown tokens after allowlist: `533`
+- known typo hits in full scanned corpus: `13`
+- known typo hits in owned encyclopedia docs: `0`
+
+The two observed untracked direct root docs were not linked in committed index text because Git does not yet own them. Linking them now would create committed index dependency on untracked files.

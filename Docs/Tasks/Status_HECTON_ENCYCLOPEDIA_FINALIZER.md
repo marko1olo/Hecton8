@@ -4,7 +4,7 @@ Agent: WRITER_ARCHITECT
 Domain: The Chronicler (Docs)
 Prompt source: `Docs/Tasks/CURRENT_BATCH.md`
 Prompt task count: 6
-Status: ENCYCLOPEDIA VERIFIED - third continuation committed
+Status: ENCYCLOPEDIA VERIFIED - fourth continuation committed
 
 ## Mandates Loaded
 
@@ -45,3 +45,6 @@ Status: ENCYCLOPEDIA VERIFIED - third continuation committed
 - Iteration 14: Third continuation request received on 2026-05-15. Re-read status/rationale and rechecked live batch rotation; current batch still belongs to other agents.
 - Iteration 15: Found one real stable-index gap: `Docs/ARCHITECTURE/AI_POTENTIAL_FIELD_NAVIGATION.md` was missing from root README architecture contracts, and `Docs/ARCHITECTURE/README.md` lacked a complete architecture contract inventory.
 - Iteration 16: Patched root README plus architecture sub-index. Coverage gate passed: `36` architecture contract files, `0` missing from root README, `0` missing from architecture README, `271` key-doc relative links checked, `0` missing links. Fresh Docs spellcheck scanned `1556` files with `0` owned encyclopedia known typo hits.
+- Iteration 17: Fourth continuation request received on 2026-05-15. Re-read status/rationale and rechecked live batch rotation; current batch still belongs to other agents.
+- Iteration 18: Found tracked authority-routing omissions in `Docs/README.md`: missing `ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/README.md` from the read-first authority spine and missing tracked `_Archive/README.md` plus `DEPRECATED/README.md` non-authority routes.
+- Iteration 19: Patched root README. Tracked coverage gate passed: missing authority links `0`, tracked direct root docs `13`, missing tracked root doc mentions `0`, tracked first-level README dirs `10`, missing first-level routes `0`. Untracked direct root docs observed but not indexed: `DEPENDENCY_GRAPH.md`, `TECH_ART_PBR_SURFACE_DOCTRINE.md`. Link gate checked `274` key-doc relative links with `0` missing. Fresh Docs spellcheck scanned `1567` files with `0` owned encyclopedia known typo hits.

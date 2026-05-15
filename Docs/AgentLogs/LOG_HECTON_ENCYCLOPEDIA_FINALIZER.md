@@ -149,3 +149,36 @@ Verification:
 - Edited-doc known-typo gate exited `0`.
 - `git diff --check` clean for edited docs except CRLF normalization warnings.
 - Runtime/Unity/Profiler/GC/player-build proof remains `PENDING VERIFICATION`.
+
+## 2026-05-15 - Fourth Continuation Hardening
+
+What was wrong:
+
+- User requested another certainty pass.
+- Root README did not link `ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/README.md` even though it is part of the authority spine.
+- Root README did not route tracked first-level `_Archive` and `DEPRECATED` README files as non-authority areas.
+
+What was done:
+
+- Added Archivarius actual-reports README to the `Read First` list.
+- Added `Non-Authority Archive Routes` for `_Archive` and `DEPRECATED`.
+- Re-ran tracked coverage gate: missing authority links `0`, tracked direct root docs `13`, missing tracked root doc mentions `0`, tracked first-level README dirs `10`, missing first-level routes `0`.
+- Recorded untracked direct root docs observed but not indexed: `DEPENDENCY_GRAPH.md`, `TECH_ART_PBR_SURFACE_DOCTRINE.md`.
+- Re-ran key-doc link gate: `274` relative links checked, missing links `0`.
+- Re-ran Python spellcheck over current `Docs/`: `1567` files, `86830` unique tokens, full-corpus known typo hits `13`, owned encyclopedia known typo hits `0`.
+
+Cinematic Cheats used:
+
+- Documentation-only hardening. No runtime simulation touched.
+
+Exact Microseconds saved:
+
+- Runtime measured saving: 0 us. No runtime code changed.
+- Documentation lookup improvement: authority-spine route and non-authority archive routes added; unmeasured.
+
+Verification:
+
+- Tracked coverage Python gate exited `0`.
+- Key-doc link Python gate exited `0`.
+- Python spellchecker gate exited `0`.
+- Runtime/Unity/Profiler/GC/player-build proof remains `PENDING VERIFICATION`.

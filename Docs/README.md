@@ -27,7 +27,8 @@ Scope: project documentation navigation, architecture orientation, report routin
 9. [ARCHITECTURE/README.md](ARCHITECTURE/README.md) - architecture contract index.
 10. [ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md](ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md) - visual-fake-first ledger.
 11. [ARCHIVARIUS orientation](ARCHIVARIUS%20REPORTS/01_GENERAL_INFO/README.md) - stable Archivarius entry point.
-12. [Reports README](Reports/README.md) - report vault and current evidence snapshots.
+12. [Archivarius actual reports](ARCHIVARIUS%20REPORTS/02_ACTUAL_REPORTS/README.md) - dated Archivarius evidence vault.
+13. [Reports README](Reports/README.md) - report vault and current evidence snapshots.
 
 ## Active Root Authority
 
@@ -100,6 +101,11 @@ Root mirrors and generated snapshots are not authority unless a stable doc or cu
 - [Legacy_Backlog](Legacy_Backlog/README.md)
 - [SPACE_ENGINE_RESEARCH](SPACE_ENGINE_RESEARCH/)
 - [2026-04-30 Codex Full Project Forensic Audit](2026-04-30_Codex_Full_Project_Forensic_Audit/README.md)
+
+## Non-Authority Archive Routes
+
+- [_Archive](_Archive/README.md) - historical bundles removed from active workspace use.
+- [DEPRECATED](DEPRECATED/README.md) - superseded snapshots and deprecated audit bundles.
 
 ## Major System Reports
 

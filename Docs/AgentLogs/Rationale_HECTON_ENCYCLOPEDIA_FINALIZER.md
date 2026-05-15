@@ -143,3 +143,15 @@ Rejected Alternatives: Leaving the sub-index as a partial read-order guide was r
 Scalability potential: Runtime tiers unchanged; documentation routing improves for low-context agents and high-tier system owners.
 
 Hardware Impact: 0 us runtime gain on i3/MX350; documentation lookup reduction only.
+
+## Decision 12 - Authority Spine And Archive Routing
+
+Problem: The project index omitted the tracked Archivarius actual-reports README from the read-first authority spine and did not expose tracked first-level `_Archive` and `DEPRECATED` README routes as non-authority areas.
+
+Solution: Add the Archivarius actual-reports README to the read-first list and add a non-authority archive route section for `_Archive` and `DEPRECATED`. Evidence class: FILESYSTEM / STATIC_DOC.
+
+Rejected Alternatives: Promoting archive/deprecated content into current authority was rejected; linking untracked direct root docs was also rejected because committed index text must not depend on files Git does not own yet.
+
+Scalability potential: Runtime tiers unchanged; documentation routing is safer for future agents because current authority and non-authority provenance are separated.
+
+Hardware Impact: 0 us runtime gain on i3/MX350; documentation lookup reduction only.
