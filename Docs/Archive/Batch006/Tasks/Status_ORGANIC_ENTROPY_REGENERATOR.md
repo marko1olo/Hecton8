@@ -137,6 +137,11 @@ Verification after Loop 2: Constants and codec implemented; no Unity import proo
 - [x] Constants schema test | Added `test_exported_constants_match_csharp_fast_path_bounds` to lock exported JSON against C# `HasValidConfig` assumptions. DOD: invalid future constants fail tooling before they reach Burst fixed-point math. Rejected: relying on manual review of `Regrowth_Constants.json`. Estimate: tooling-only; runtime unchanged.
 - [x] Loop 19 verification | Re-ran `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`, `python -m unittest Tools.test_world_entropy_sim -v`, target forbidden-token scan, raw native allocation/dispose scan, 365-day entropy command, and 1000-day entropy command. Results: py_compile exit `0`; unittest 5 passed in `25.404 s`; no forbidden hot-path matches; no raw `new NativeArray`/raw dispose matches; 365/1000-day entropy `STATUS=ENTROPY BALANCED`.
 
+## Loop 20 - Entropy CLI Input Guard
+- [x] Non-positive day audit | Patched `WorldEntropySim.py` so `--days < 1` fails via argparse instead of silently clamping to day 1 while printing the invalid day count. DOD: CLI evidence cannot misreport the simulated day span. Rejected: hidden clamp because it makes bad test invocations look valid. Estimate: tooling-only; runtime unchanged.
+- [x] CLI regression test | Added `test_cli_rejects_non_positive_day_count` and suppressed argparse stderr inside the test. DOD: invalid CLI input now has a locked failure mode without noisy test output. Rejected: manual command-only validation.
+- [x] Loop 20 verification | Re-ran `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`, `python -m unittest Tools.test_world_entropy_sim -v`, target forbidden-token scan, raw native allocation/dispose scan, `git diff --check`, 365-day entropy command, and 1000-day entropy command. Results: py_compile exit `0`; unittest 6 passed in `34.315 s`; no forbidden hot-path matches; no raw `new NativeArray`/raw dispose matches; `git diff --check` only CRLF warnings; 365/1000-day entropy `STATUS=ENTROPY BALANCED`; temp directory removed.
+
 ## Final State
 - [x] Core tasks 1-8 complete.
 - [x] Recursive verification target met by Python entropy-test.

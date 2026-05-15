@@ -319,6 +319,32 @@ Verification:
 - `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
 - `python -m unittest Tools.test_world_entropy_sim -v`: 4 tests passed in 42.120 s.
 - Target scans: no forbidden hot-path token matches; no raw `new NativeArray`; no raw native dispose.
+
+## 2026-05-15 - Entropy CLI Input Guard
+
+What was wrong:
+- `WorldEntropySim.py` silently clamped non-positive `--days` to one simulated day.
+- The output still printed the invalid original day count, creating misleading validation evidence.
+
+What was done:
+- Added an argparse failure for `--days < 1`.
+- Added `test_cli_rejects_non_positive_day_count` with stderr suppression.
+
+Cinematic cheats used:
+- None. This is harness input hygiene.
+
+Exact microseconds saved:
+- Runtime microseconds saved: 0. Tooling-only.
+- Failure avoided: invalid day-count evidence in automation logs.
+
+Verification:
+- `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`: exit code 0.
+- `python -m unittest Tools.test_world_entropy_sim -v`: 6 tests passed in 34.315 s.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
+- Target scans: no forbidden hot-path token matches; no raw `new NativeArray`; no raw native dispose.
+- `git diff --check`: only CRLF warnings.
+- Temporary directory removed.
 - Temporary probe files were removed.
 
 ## 2026-05-15 - Exported Config Schema Guard

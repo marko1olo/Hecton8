@@ -301,3 +301,14 @@ Rejected Alternatives: Manual JSON inspection was rejected because constants can
 Scalability potential: Low through Ultra tiers keep exported data within the same safe int-math envelope. Future higher-tier constants must remain explicit and tested.
 
 Hardware Impact: Tooling only. Runtime code is unchanged.
+
+## Decision 28 - Entropy CLI Day Count Guard
+Problem: The entropy harness CLI silently clamped non-positive `--days` values to one simulated day while printing the invalid original day count. That can create misleading evidence in automation logs.
+
+Solution: `WorldEntropySim.py` now rejects `--days < 1` through argparse. Added `test_cli_rejects_non_positive_day_count` with stderr suppression so the regression is quiet and deterministic.
+
+Rejected Alternatives: Keeping the hidden clamp was rejected because invalid evidence is worse than a failed command. Allowing day zero as an initial-state summary was rejected because the XML acceptance target is a simulated 365-day overharvest test, not a static snapshot.
+
+Scalability potential: Tooling results remain comparable across low-end and high-end validation machines because invalid invocation parameters fail consistently.
+
+Hardware Impact: Tooling only. Runtime code is unchanged.

@@ -6,7 +6,9 @@ from __future__ import annotations
 import sys
 import unittest
 from copy import deepcopy
+from io import StringIO
 from pathlib import Path
+from unittest.mock import patch
 
 
 TOOLS_ROOT = Path(__file__).resolve().parent
@@ -94,6 +96,13 @@ class WorldEntropySimTests(unittest.TestCase):
         for biome in self.constants["biomes"]:
             self.assertGreater(biome["temperatureQ"], 0)
             self.assertGreaterEqual(biome["nutrientStartQ"], self.constants["minimumNutrientsQ"])
+
+    def test_cli_rejects_non_positive_day_count(self) -> None:
+        with patch.object(sys, "argv", ["WorldEntropySim.py", "--days", "0"]), patch("sys.stderr", StringIO()):
+            with self.assertRaises(SystemExit) as context:
+                entropy.main()
+
+        self.assertEqual(2, context.exception.code)
 
 
 if __name__ == "__main__":

@@ -287,9 +287,11 @@ def main() -> int:
     parser.add_argument("--days", type=int, default=365)
     parser.add_argument("--mode", choices=("total_overharvest", "baseline"), default="total_overharvest")
     args = parser.parse_args()
+    if args.days < 1:
+        parser.error("--days must be >= 1")
 
     constants = load_constants(Path(args.constants))
-    final, checkpoints = run_sim(constants, max(1, args.days), args.mode == "total_overharvest")
+    final, checkpoints = run_sim(constants, args.days, args.mode == "total_overharvest")
 
     safe_day = final["firstHalfRecoveryDays"][0]
     abyss_day = final["firstHalfRecoveryDays"][3]
