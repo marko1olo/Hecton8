@@ -129,6 +129,10 @@ class WorldEntropySimTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             entropy.run_sim(self.constants, 0, True)
 
+    def test_run_sim_rejects_non_overharvest_direct_mode(self) -> None:
+        with self.assertRaises(ValueError):
+            entropy.run_sim(self.constants, 1, False)
+
     def test_run_sim_rejects_misaligned_biome_contract(self) -> None:
         constants = deepcopy(self.constants)
         constants["biomes"][3]["id"] = 0

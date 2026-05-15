@@ -352,6 +352,8 @@ def summarize(state: dict, day: int, first_half_recovery: list[int | None]) -> d
 def run_sim(constants: dict, days: int, total_overharvest: bool) -> tuple[dict, list[dict]]:
     if days < 1:
         raise ValueError("days must be >= 1")
+    if not total_overharvest:
+        raise ValueError("run_sim only supports total_overharvest mode")
 
     validate_constants(constants)
     state = build_initial_state(constants, total_overharvest)
