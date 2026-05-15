@@ -803,3 +803,32 @@ Verification:
 - `dotnet --info`: unavailable.
 - `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
 - `git diff --check`: CRLF warnings only.
+
+## 2026-05-15 - Nutrient Floor Config Parity Guard
+
+What was wrong:
+- Python rejected biome starting nutrients below `minimumNutrientsQ`.
+- C# `WorldRegrowthSimulation.HasValidConfig` did not, so invalid config could seed `SoilNutrients` below the configured floor until the next daily clamp.
+
+What was done:
+- Added C# config guards requiring all biome nutrient starts to be `>= MinimumNutrientsQ`.
+- Added a Python regression for `minimumNutrientsQ=128` and Safe Shallows `nutrientStartQ=127`.
+- Updated `Docs/ARCHITECTURE/ORGANIC_ENTROPY_MATH.md` so stable documentation names the direct memory asmdef dependency and nutrient-floor guard.
+- Re-ran syntax, static, regression, entropy, long-horizon, and Roslyn probe checks.
+
+Cinematic cheats used:
+- None. This is deterministic config-contract hardening.
+
+Exact microseconds saved:
+- Runtime microseconds saved: 0 on valid constants.
+- Failure avoided: invalid nutrient-floor config aborts before job scheduling or Python state allocation.
+
+Verification:
+- `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`: exit code 0.
+- Guard scan found the C# nutrient floor checks and Python invalid-floor regression values.
+- Target forbidden-token scan: no matches.
+- `python -m unittest Tools.test_world_entropy_sim -v`: 17 tests passed in 43.733 s.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
+- Visual Studio Roslyn C# 9 unsafe probe compile: exit code 0.
+- Probe temp directory: removed.

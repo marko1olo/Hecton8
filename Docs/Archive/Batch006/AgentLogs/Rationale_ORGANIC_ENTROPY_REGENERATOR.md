@@ -455,3 +455,14 @@ Rejected Alternatives: Letting Python accept larger integers was rejected becaus
 Scalability potential: Low/Middle/High/Ultra validation runs now fail malformed lifecycle constants before allocation. High-tier visuals still derive from the same valid lifecycle byte envelope; no tier gets a separate unbounded lifecycle model.
 
 Hardware Impact: Tooling-only. Unity runtime backend unchanged; invalid lifecycle byte data now aborts before Python state allocation and day loops.
+
+## Decision 42 - Nutrient Floor Config Parity
+Problem: The Python harness already rejected biome starting nutrients below `minimumNutrientsQ`, but C# `HasValidConfig` did not. A caller could initialize `SoilNutrients` below the configured floor and rely on a later daily diffusion clamp to repair state.
+
+Solution: Added C# `HasValidConfig` checks requiring every biome nutrient start to be greater than or equal to `MinimumNutrientsQ`. Added a Python regression with `minimumNutrientsQ=128` and Safe Shallows `nutrientStartQ=127`.
+
+Rejected Alternatives: Clamping in `InitializeRegrowthGridJob` was rejected because malformed config should fail before scheduling, not silently mutate authored constants. Leaving the mismatch was rejected because tooling and runtime validation would not share the same acceptance boundary.
+
+Scalability potential: Low/Middle/High/Ultra validation and runtime scheduling now share one nutrient-floor contract. Higher tiers can spend presentation budget on richer regrowth visuals without carrying a separate invalid nutrient baseline.
+
+Hardware Impact: Runtime impact is branch-only at scheduler entry. Valid default constants pay no job cost change; invalid data aborts before scheduling.
