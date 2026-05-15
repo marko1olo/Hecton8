@@ -35,6 +35,17 @@ Include third-party: `False`
 | import_issues | 2 |
 | material_issues | 3 |
 | unresolved_texture_refs | 4 |
+| texture_budget | 5 |
+
+## Texture Budget Model
+
+| Metric | Value |
+| --- | --- |
+| Estimated MiB | 497.565 |
+| Budget MiB | 900.0 |
+| Warning threshold MiB | 810.0 |
+| Used ratio | 0.5528 |
+| Status | PASS |
 
 ## Channel Packing VRAM Model
 

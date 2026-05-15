@@ -12,7 +12,15 @@
     "energy_failures": 1,
     "import_issues": 2,
     "material_issues": 3,
-    "unresolved_texture_refs": 4
+    "unresolved_texture_refs": 4,
+    "texture_budget": 5
+  },
+  "texture_budget": {
+    "estimated_mib": 497.565,
+    "budget_mib": 900.0,
+    "warning_threshold_mib": 810.0,
+    "used_ratio": 0.5528,
+    "status": "PASS"
   },
   "texture_summary": {
     "texture_count": 138,

@@ -142,3 +142,10 @@ Task count: 8 numbered tasks in extracted XML. Header claims 15; rejected as sta
 - [x] Fixed import-issue Markdown section ordering | DOD: `## Import Issue Counts` now emits directly before its issue-count table instead of before unrelated VRAM/GOD_MODE sections. Alternatives Rejected: leaving a misleading empty header in the CTO-facing report. Estimate: 0 us runtime impact.
 - [x] Added export regression assertion | DOD: test now asserts `## Import Issue Counts` is followed by the issue table header. Alternatives Rejected: trusting manual report inspection only. Estimate: 0 us runtime impact.
 - [x] Re-ran audit artifacts and scoped gates after report fix | DOD: full audit preserved counts; Markdown readback shows Gate Exit Codes and Import Issue Counts tables; scoped gates returned exits 2/4/3. Alternatives Rejected: stale Markdown after report generator fix. Estimate: 0 us runtime impact.
+
+### Loop 19 - Texture Budget Gate Pass
+
+- [x] Added texture-budget model | DOD: audit output now reports estimated MiB, 900 MiB budget, 810 MiB warning threshold, used ratio, and PASS/WARN/FAIL status. Alternatives Rejected: leaving budget enforcement as prose only. Estimate: 0 us runtime impact.
+- [x] Added texture-budget fail gate | DOD: `--fail-on-texture-budget` returns exit 5 when estimated residency exceeds `--texture-budget-mib`. Alternatives Rejected: folding budget overflow into material issue debt. Estimate: 0 us runtime impact.
+- [x] Added budget regression tests | DOD: test suite now covers budget PASS/WARN/FAIL and subprocess exit 5; `python -m unittest Tools.test_material_audit` passed 9 tests. Alternatives Rejected: manual threshold proof only. Estimate: 0 us runtime impact.
+- [x] Re-ran project audit with budget gate | DOD: full audit with `--fail-on-texture-budget` passed at 497.565/900.0 MiB, status PASS; import/unresolved/material scoped gates still returned expected exits 2/4/3. Alternatives Rejected: stale artifacts without budget fields. Estimate: 0 us runtime impact.

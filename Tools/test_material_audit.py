@@ -3,8 +3,8 @@
 
 from __future__ import annotations
 
-import sys
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -47,6 +47,20 @@ class MaterialAuditTests(unittest.TestCase):
     def test_texture_memory_estimate_uses_mip_factor(self) -> None:
         self.assertAlmostEqual(1.333, audit.estimate_texture_mib(1024, 1024, 8, True), places=3)
         self.assertAlmostEqual(1.0, audit.estimate_texture_mib(1024, 1024, 8, False), places=3)
+
+    def test_texture_budget_model_reports_pass_warn_and_fail(self) -> None:
+        self.assertEqual(
+            "PASS",
+            audit.build_texture_budget_model({"estimated_texture_mib": 497.565}, 900.0)["status"],
+        )
+        self.assertEqual(
+            "WARN",
+            audit.build_texture_budget_model({"estimated_texture_mib": 810.0}, 900.0)["status"],
+        )
+        self.assertEqual(
+            "FAIL",
+            audit.build_texture_budget_model({"estimated_texture_mib": 901.0}, 900.0)["status"],
+        )
 
     def test_classifier_ignores_non_surface_skybox_and_ui(self) -> None:
         skybox = Path("Assets/_Project/Art/Skyboxes/panorama_den.png")
@@ -230,6 +244,32 @@ class MaterialAuditTests(unittest.TestCase):
             self.assertEqual(4, unresolved_gate.returncode, unresolved_gate.stdout + unresolved_gate.stderr)
             self.assertIn("unresolved_texture_refs=1", unresolved_gate.stdout)
 
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            texture = root / "Budget_ORM.png"
+            Image.new("RGB", (512, 512), (32, 32, 32)).save(texture)
+            write_meta(texture, srgb=0, mip=1, texture_type=0)
+
+            budget_gate = subprocess.run(
+                [
+                    sys.executable,
+                    str(TOOLS_ROOT / "MaterialAudit.py"),
+                    "--root",
+                    str(root),
+                    "--sample-size",
+                    "16",
+                    "--texture-budget-mib",
+                    "0.001",
+                    "--fail-on-texture-budget",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(5, budget_gate.returncode, budget_gate.stdout + budget_gate.stderr)
+            self.assertIn("texture_budget_status=FAIL", budget_gate.stdout)
+
     def test_markdown_and_csv_exports_include_recommendations(self) -> None:
         report = {
             "root": "Temp",
@@ -241,6 +281,14 @@ class MaterialAuditTests(unittest.TestCase):
                 "import_issues": 2,
                 "material_issues": 3,
                 "unresolved_texture_refs": 4,
+                "texture_budget": 5,
+            },
+            "texture_budget": {
+                "estimated_mib": 1.333,
+                "budget_mib": 900.0,
+                "warning_threshold_mib": 810.0,
+                "used_ratio": 0.0015,
+                "status": "PASS",
             },
             "texture_summary": {
                 "texture_count": 1,
@@ -352,6 +400,7 @@ class MaterialAuditTests(unittest.TestCase):
             self.assertIn("Global Detail Overlay Plan", markdown_text)
             self.assertIn("Gate Exit Codes", markdown_text)
             self.assertIn("unresolved_texture_refs", markdown_text)
+            self.assertIn("Texture Budget Model", markdown_text)
             self.assertIn("## Import Issue Counts\n\n| Issue | Count |", markdown_text)
             self.assertIn("Hull_ORM.png", texture_csv)
             self.assertIn("NO_DETAIL_MAP_SLOT", material_csv)
