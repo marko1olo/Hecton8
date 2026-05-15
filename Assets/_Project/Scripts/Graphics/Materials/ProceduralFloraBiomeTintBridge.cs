@@ -55,7 +55,7 @@ namespace Hecton8.Graphics.Materials
 
         private void TryRegisterTick()
         {
-            if (_registered)
+            if (_registered || !Application.isPlaying)
                 return;
 
             _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);

@@ -122,9 +122,9 @@ Rejected Alternatives: Leaving instant scale flips was rejected by the state hys
 Scalability potential: Low/MX350 sheds resolution only after sustained pressure and recovers slowly. High/Ultra keep full scale unless real sustained pressure appears, preserving visual stability.
 Hardware Impact: Estimated gain is 5-40 us of avoided render-state churn/jitter during unstable pressure windows; measured proof absent until profiler capture.
 
-## Decision 018 - Global Flora Tint Finite Guard
-Problem: Serialized flora tint/strength values could become non-finite and then be published as global shader vectors.
-Solution: Sanitize tint and strength before `Shader.SetGlobalVector`, preserving the cached-change early-out and zero-GC signal drain.
-Rejected Alternatives: Trusting inspector data was rejected because rendering globals feed many materials and NaN propagation is a project-level failure mode.
+## Decision 018 - Global Flora Tint Finite And Play-Mode Guard
+Problem: Serialized flora tint/strength values could become non-finite and then be published as global shader vectors; the bridge could also attempt runtime registry registration outside play mode.
+Solution: Sanitize tint and strength before `Shader.SetGlobalVector`, preserve the cached-change early-out, and guard registry registration with `Application.isPlaying`.
+Rejected Alternatives: Trusting inspector data was rejected because rendering globals feed many materials and NaN propagation is a project-level failure mode. Edit-mode registry side effects were rejected because shader preview globals do not require runtime tick ownership.
 Scalability potential: All tiers receive stable globals; the visual tint fake remains cheap on low hardware and usable as biome richness on high hardware.
-Hardware Impact: 0 us speed claimed. Correctness gain is preventing shader global poisoning.
+Hardware Impact: 0 us speed claimed. Correctness gain is preventing shader global poisoning and edit-mode runtime-registry noise.

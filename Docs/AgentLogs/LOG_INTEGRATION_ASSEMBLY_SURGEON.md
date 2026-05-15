@@ -378,6 +378,71 @@ Residual risk:
 - This is not fresh compile proof. `Fresh19` remains the latest compile artifact on disk.
 - Generated `Hecton8.Core.csproj` still lists stale project references until Unity regenerates project files or a compile-enabled lane validates generated-project cleanup.
 
+## 2026-05-15 - Fresh25 Bottom Addendum
+
+What was wrong:
+- Earlier log sections are historical. The current compile authority is `Fresh25`, not Fresh19 and not any static-only pass.
+
+What was done:
+- Revalidated the current disk after concurrent edits.
+- Accepted `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh25.log` as the latest compile artifact.
+- Accepted `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_FinalBudgetPass2.json` as the latest static H-Phi artifact.
+
+Cinematic Cheats used:
+- No runtime simulation changes.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Final build verification time: 117,770,000 us.
+- Final H-Phi verification time: 296,100,000 us.
+
+Verification:
+- `Hecton8.Core.csproj --no-restore`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- H-Phi static gate: `EXIT=0`, `AupPrecisionRisk=0`, `DuplicateSignalNameCount=6`, `DuplicateSignalDeclarationCount=12`.
+- `git diff --check`: exit 0 with CRLF normalization warnings only.
+
+Current Status:
+- BUILD SUCCESSFUL / FRESH25 CURRENT-DISK GREEN.
+
+## 2026-05-15 - Fresh25 Compile And H-Phi Continuation
+
+What was wrong:
+- Current disk had moved past the old Fresh19/Fresh24 evidence because other agents continued editing C#.
+- `SargassumMicroFaunaBoids.PublishPredatorKillDebris` was static while reading `_abyssalFluidDecals`, producing CS0120.
+- `SpatialAudioManager` had hot-swap calls without the helper implementations, producing CS0103; then a concurrent duplicate helper set risked CS0111.
+- `OculusFfrEnforcer` still had a private `Update()` fallback outside the dispatcher exception list.
+- H-Phi did not expose duplicate `*Signal` struct-name debt as a budgetable metric.
+
+What was done:
+- Converted `PublishPredatorKillDebris` to an instance method, matching the existing instance caller and field ownership.
+- Completed `SpatialAudioManager` cold service caching plus `GlobalRegistry` hot-swap listener registration/unregistration.
+- Removed the duplicate short helper set from `SpatialAudioManager`.
+- Moved `OculusFfrEnforcer` off its fallback `Update()` and onto `IGlobalRegistryHotSwapListener` dispatcher registration.
+- Added duplicate signal-name scanning and `-MaxDuplicateSignalNames` to `Tools/Architecture/HectonPhiAudit.ps1`.
+- Updated `Docs/ARCHITECTURE/HECTON_PHI_STATIC_METRIC.md` with the duplicate signal-name gate.
+
+Cinematic Cheats used:
+- No physical simulation or visual runtime algorithm changed.
+- Compile surgery and static graph tooling only; public signal renames were rejected during the active batch.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Final Core compile verification time: 117,770,000 us.
+- Final H-Phi full-source budget verification time: 296,100,000 us.
+
+Verification:
+- CLI_COMPILE artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh25.log`.
+- Command: `dotnet build Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal`.
+- Result: `Build succeeded. 0 Warning(s). 0 Error(s). EXIT=0`.
+- H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_FinalBudgetPass2.json`.
+- H-Phi result: `EXIT=0`, `AupPrecisionRisk=0`, `DuplicateSignalNameCount=6`, `DuplicateSignalDeclarationCount=12`, `UnityUpdateMethods=2`.
+- `rg` scan: `OculusFfrEnforcer.cs` has no `private void Update()`; only `SystemDispatcher.Update()` remains in the bounded scan.
+- `git diff --check`: exit 0; CRLF normalization warnings only.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals were not run.
+- Duplicate signal-name debt is now visible and budgeted, not fully eliminated. Public contract renames require staged wrappers under the interface immutability rule.
+
 ## 2026-05-15 - Replacement Bridge Exact-Use Correction
 
 What was wrong:
@@ -411,3 +476,29 @@ Verification:
 Residual risk:
 - This is not fresh compile proof. `Fresh19` remains the latest compile artifact on disk.
 - Generated `Hecton8.Core.csproj` still lists stale project references until Unity regenerates project files or a compile-enabled lane validates generated-project cleanup.
+
+## 2026-05-15 - Fresh25 Bottom Addendum
+
+What was wrong:
+- Earlier log sections are historical. The current compile authority is `Fresh25`, not Fresh19 and not any static-only pass.
+
+What was done:
+- Revalidated the current disk after concurrent edits.
+- Accepted `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh25.log` as the latest compile artifact.
+- Accepted `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_FinalBudgetPass2.json` as the latest static H-Phi artifact.
+
+Cinematic Cheats used:
+- No runtime simulation changes.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Final build verification time: 117,770,000 us.
+- Final H-Phi verification time: 296,100,000 us.
+
+Verification:
+- `Hecton8.Core.csproj --no-restore`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- H-Phi static gate: `EXIT=0`, `AupPrecisionRisk=0`, `DuplicateSignalNameCount=6`, `DuplicateSignalDeclarationCount=12`.
+- `git diff --check`: exit 0 with CRLF normalization warnings only.
+
+Current Status:
+- BUILD SUCCESSFUL / FRESH25 CURRENT-DISK GREEN.

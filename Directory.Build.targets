@@ -23,6 +23,7 @@
     <Compile Remove="Assets\_Project\Scripts\Core\Signals\PrologueReentrySignals.cs" />
     <Compile Remove="Assets\_Project\Scripts\Ecosystem\FaunaGenome64.cs" />
     <Compile Remove="Assets\_Project\Scripts\Fauna\FaunaKinematicsRuntime.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Fauna\ProceduralLeviathanSpineIK.cs" />
     <Compile Remove="Assets\_Project\Scripts\Gameplay\PlayerMovementBrineRuntimeSystem.cs" />
     <Compile Remove="Assets\_Project\Scripts\Logistics\Grid\Contracts\WfcOutpostGridContracts.cs" />
     <Compile Remove="Assets\_Project\Scripts\Logistics\Grid\WfcOutpostGraphTranslationJob.cs" />

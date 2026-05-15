@@ -348,17 +348,18 @@ namespace Hecton8.UI.Tools
 
             _lastScannerSignalSequence = sequence;
             bool acceptsScanner = _toolHashFilter == 0u || _toolHashFilter == ScannerToolTuningHash || signal.ToolHash == _toolHashFilter;
-            bool active = acceptsScanner && signal.Active != 0 && signal.ArtifactHash != 0u;
-            float scannerProgress01 = Sanitize01(signal.Progress01);
+            uint artifactHash = acceptsScanner ? signal.ArtifactHash : 0u;
+            bool active = acceptsScanner && signal.Active != 0 && artifactHash != 0u;
+            float scannerProgress01 = active ? Sanitize01(signal.Progress01) : 0f;
             if (_scannerSignalActive == active &&
-                _scannerArtifactHash == signal.ArtifactHash &&
+                _scannerArtifactHash == artifactHash &&
                 math.abs(_scannerProgress01 - scannerProgress01) < 0.005f)
             {
                 return;
             }
 
             _scannerSignalActive = active;
-            _scannerArtifactHash = signal.ArtifactHash;
+            _scannerArtifactHash = artifactHash;
             _scannerProgress01 = scannerProgress01;
             _stateDirty = true;
         }

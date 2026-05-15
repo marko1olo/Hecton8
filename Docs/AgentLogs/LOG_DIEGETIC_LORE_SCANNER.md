@@ -472,4 +472,8 @@ Exact Microseconds saved:
 - Removes one `SystemInfo.SupportsRenderTextureFormat` platform capability probe per tool RT rent.
 
 Verification:
-- Static no-rebuild checks pending in this pass; dotnet rebuild remains forbidden by user order.
+- `git diff --check` on scanner/UI/doc edits: pass, line-ending warnings only.
+- `git diff --cached --check` on scanner/UI/doc edits: pass.
+- Scanner banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =`: no matches.
+- RT format support scan: support query only in `ResolveRenderTextureFormatCold()`.
+- `dotnet build` / rebuild: NOT RUN by explicit user order.

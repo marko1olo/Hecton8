@@ -202,6 +202,28 @@ Verification:
 - `git diff --check` returned only CRLF warnings.
 - Changed-file conflict marker scan returned no active merge markers.
 
+## 2026-05-15 - Post-Graphics Tail Check
+
+What was wrong:
+- `61b7b6cfe` pushed successfully, then another large post-push dirty tail appeared.
+- Remote committed history still matched local committed history after fetch: `origin/main...HEAD` returned `0 0`.
+
+What was done:
+- Verified `61b7b6cfe` on `origin/main`.
+- Checked the new live tail with stat, whitespace, unmerged-path, and conflict-marker scans.
+- Prepared one more checkpoint while explicitly bounding the loop against continuous parallel writes.
+
+Cinematic Cheats used:
+- None. Git-only operation.
+
+Exact Microseconds saved:
+- Runtime saved: 0 us. Dev-path saved: reduced local-only conflict surface for the next integrator pass.
+
+Verification:
+- `git fetch origin` succeeded.
+- `git rev-list --left-right --count origin/main...HEAD` returned `0 0`.
+- `git diff --check` returned only CRLF warnings.
+
 ## 2026-05-15 - Final Bounded Checkpoint
 
 What was wrong:

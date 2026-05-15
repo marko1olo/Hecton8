@@ -301,8 +301,7 @@ namespace Hecton8.Atmosphere
         {
             snapshot = default;
             if (_stepRunning ||
-                !BaseAwakeState.IsCreated ||
-                !_baseRoomStart.IsCreated ||
+                !AreBaseStateLanesReady() ||
                 baseId < 0 ||
                 baseId >= _baseCount)
             {
@@ -366,7 +365,7 @@ namespace Hecton8.Atmosphere
             float leakRatePerSecond)
         {
             if (_stepRunning ||
-                !BaseAwakeState.IsCreated ||
+                !AreBaseStateLanesReady() ||
                 !_roomBaseIndex.IsCreated ||
                 baseId < 0 ||
                 baseId >= _baseCapacityLimit)
@@ -418,20 +417,19 @@ namespace Hecton8.Atmosphere
 
         public bool TrySetBasePlayerInside(int baseId, bool playerInside)
         {
-            if (_stepRunning || !_basePlayerInside.IsCreated || baseId < 0 || baseId >= _baseCount)
+            if (_stepRunning || !AreBaseStateLanesReady() || baseId < 0 || baseId >= _baseCount)
                 return false;
 
-            if (_basePlayerInsideCount.IsCreated)
-                _basePlayerInsideCount[baseId] = playerInside ? math.max(1, _basePlayerInsideCount[baseId]) : 0;
+            _basePlayerInsideCount[baseId] = playerInside ? math.max(1, _basePlayerInsideCount[baseId]) : 0;
             _basePlayerInside[baseId] = (byte)(playerInside ? 1 : 0);
-            if (playerInside && BaseAwakeState.IsCreated && BaseAwakeState[baseId] == 0)
+            if (playerInside && BaseAwakeState[baseId] == 0)
                 WakeBase(baseId, ResolveUnscaledTimeSeconds());
             return true;
         }
 
         public bool TrySetBaseCenterAup(int baseId, AbsoluteUniversePosition centerAup)
         {
-            if (_stepRunning || !_baseCenterAup.IsCreated || baseId < 0 || baseId >= _baseCount)
+            if (_stepRunning || !AreBaseStateLanesReady() || baseId < 0 || baseId >= _baseCount)
                 return false;
 
             _baseCenterAup[baseId] = centerAup;
@@ -589,7 +587,8 @@ namespace Hecton8.Atmosphere
             AccumulateAudit(_roomScrubberPowered, nameof(_roomScrubberPowered), ref accumulator);
             AccumulateAudit(_roomFlags, nameof(_roomFlags), ref accumulator);
             AccumulateAudit(_roomBaseIndex, nameof(_roomBaseIndex), ref accumulator);
-            AccumulateAudit(BaseAwakeState, nameof(BaseAwakeState), ref accumulator);
+            if (!_baseAwakeVaultOwned)
+                AccumulateAudit(BaseAwakeState, nameof(BaseAwakeState), ref accumulator);
             AccumulateAudit(_basePlayerInside, nameof(_basePlayerInside), ref accumulator);
             AccumulateAudit(_basePlayerInsideCount, nameof(_basePlayerInsideCount), ref accumulator);
             AccumulateAudit(_baseRoomStart, nameof(_baseRoomStart), ref accumulator);
@@ -889,7 +888,7 @@ namespace Hecton8.Atmosphere
 
         private void ScheduleStep(float deltaTime)
         {
-            if (_stepRunning || !RoomO2.IsCreated)
+            if (_stepRunning || !RoomO2.IsCreated || !_toxicitySignals.IsCreated)
                 return;
 
             TrimToxicityQueueBeforeSchedule();
@@ -965,7 +964,7 @@ namespace Hecton8.Atmosphere
 
         private void DrainBaseTransitionSignals(bool allowWake)
         {
-            if (!BaseAwakeState.IsCreated || _baseCapacityLimit <= 0)
+            if (!AreBaseStateLanesReady() || _baseCapacityLimit <= 0)
                 return;
 
             if (SignalBus<PlayerBaseExitSignal>.SnapshotCount <= 0 &&
@@ -1013,8 +1012,7 @@ namespace Hecton8.Atmosphere
         private void WakePlayerInsideSleepingBases(double now)
         {
             if (_stepRunning ||
-                !BaseAwakeState.IsCreated ||
-                !_basePlayerInside.IsCreated ||
+                !AreBaseStateLanesReady() ||
                 _baseCount <= 0)
             {
                 return;
@@ -1069,7 +1067,7 @@ namespace Hecton8.Atmosphere
 
         private void ResolveBaseHibernationStates()
         {
-            if (!BaseAwakeState.IsCreated || _baseCount <= 0)
+            if (!AreBaseStateLanesReady() || _baseCount <= 0)
                 return;
 
             double now = ResolveUnscaledTimeSeconds();
@@ -1152,9 +1150,24 @@ namespace Hecton8.Atmosphere
             }
         }
 
+        private bool AreBaseStateLanesReady()
+        {
+            return BaseAwakeState.IsCreated &&
+                   _basePlayerInside.IsCreated &&
+                   _basePlayerInsideCount.IsCreated &&
+                   _baseRoomStart.IsCreated &&
+                   _baseRoomCount.IsCreated &&
+                   _baseCenterAup.IsCreated &&
+                   _baseHibernatedUnscaledTime.IsCreated &&
+                   _baseBatteryWattSeconds.IsCreated &&
+                   _baseIdleDrawWatts.IsCreated &&
+                   _baseLeakRatePerSecond.IsCreated &&
+                   _baseAmbientOxygenKPa.IsCreated;
+        }
+
         private void HibernateBase(int baseId, double now)
         {
-            if ((uint)baseId >= (uint)_baseCount || BaseAwakeState[baseId] == 0)
+            if (!AreBaseStateLanesReady() || (uint)baseId >= (uint)_baseCount || BaseAwakeState[baseId] == 0)
                 return;
 
             BaseAwakeState[baseId] = 0;
@@ -1163,7 +1176,7 @@ namespace Hecton8.Atmosphere
 
         private void WakeBase(int baseId, double now)
         {
-            if ((uint)baseId >= (uint)_baseCount || BaseAwakeState[baseId] != 0)
+            if (!AreBaseStateLanesReady() || (uint)baseId >= (uint)_baseCount || BaseAwakeState[baseId] != 0)
                 return;
 
             double start = _baseHibernatedUnscaledTime[baseId];

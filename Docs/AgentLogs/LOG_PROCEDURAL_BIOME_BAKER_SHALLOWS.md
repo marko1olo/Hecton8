@@ -297,3 +297,15 @@ Cinematic Cheats used: Static offline L-system/SDF meshes, strict LOD payload bu
 Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents runtime repair/lookup logic and editor ambiguity from stale mesh object names; exact runtime microseconds were not profiled.
 
 Verification: No dotnet rebuild and no Unity import was run. `MeshNameContractYamlScan Count=600 Bad=0`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0`, `NonAscii=0`, and case-sensitive forbidden source scan stayed clean.
+
+## 2026-05-15 Family Index Completeness Contract
+
+What was wrong: Shallows family counts could pass while one variation index was missing and another index was duplicated under a different hash.
+
+What was done: Added `ValidateFamilyIndexContract` with a fixed `bool[100]` scratch buffer and three-digit index parser. Each family must now cover exactly `000..expectedCount-1` once.
+
+Cinematic Cheats used: Static offline L-system/SDF prefab libraries, strict deterministic variation identity, shared atlas/material, dithered LOD crossfade, no flora colliders, and rock-only LOD2 convex proxies remain unchanged.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents runtime registry/fallback logic and dressing-set holes from missing or duplicated variation indices; exact runtime microseconds were not profiled.
+
+Verification: No dotnet rebuild and no Unity import was run. `FamilyIndexContractYamlScan Count=200 Bad=0`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0`, `NonAscii=0`, and case-sensitive forbidden source scan stayed clean.

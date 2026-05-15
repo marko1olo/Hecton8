@@ -1068,6 +1068,10 @@ function Get-DuplicateSignalNameAudit {
         $regexOptions)
 
     foreach ($file in $Files) {
+        if (-not [System.IO.File]::Exists($file)) {
+            continue
+        }
+
         $content = [System.IO.File]::ReadAllText($file)
         $codeSurface = ConvertTo-CodeSurface $content
         $lines = $codeSurface -split "`r?`n", -1
@@ -1667,6 +1671,37 @@ function New-CoreGraphBudgetSummary {
     }
 }
 
+function ConvertTo-BudgetDisplayRows {
+    param([System.Collections.IDictionary]$Budgets)
+
+    $Budgets.GetEnumerator() |
+        ForEach-Object {
+            $budget = $_.Value
+            $hasMax = $budget.Contains('Max')
+            $hasMin = $budget.Contains('Min')
+            $limit = $null
+            $direction = '='
+
+            if ($hasMax) {
+                $limit = $budget.Max
+                $direction = if ($budget.Max -is [bool]) { '=' } else { '<=' }
+            }
+            elseif ($hasMin) {
+                $limit = $budget.Min
+                $direction = '>='
+            }
+
+            [pscustomobject]@{
+                Budget = $_.Key
+                Enabled = $budget.Enabled
+                Direction = $direction
+                Limit = $limit
+                Actual = $budget.Actual
+                Passed = $budget.Passed
+            }
+        }
+}
+
 function New-CoreGraphSummary {
     param([System.Collections.Specialized.OrderedDictionary]$CoreGraphAudit)
 
@@ -1826,17 +1861,7 @@ if ($CoreGraphOnly) {
         [pscustomobject]$summaryResult.CoreGraph.Counts | Format-List
         Write-Output ''
         Write-Output 'Core graph H-Phi budgets:'
-        $summaryResult.CoreGraph.Budgets.GetEnumerator() |
-            ForEach-Object {
-                [pscustomobject]@{
-                    Budget = $_.Key
-                    Enabled = $_.Value.Enabled
-                    Max = $_.Value.Max
-                    Actual = $_.Value.Actual
-                    Passed = $_.Value.Passed
-                }
-            } |
-            Format-Table -AutoSize
+        ConvertTo-BudgetDisplayRows $summaryResult.CoreGraph.Budgets | Format-Table -AutoSize
         Write-Output ''
         Write-Output 'Core asmdef H-Phi debt references:'
         $summaryResult.CoreGraph.CoreAsmdefDebtReferences | ForEach-Object { Write-Output ("  {0}" -f $_) }
@@ -1962,6 +1987,10 @@ $duplicateSignalNameAudit = Get-DuplicateSignalNameAudit $files
 Assert-DuplicateSignalNameBudget $duplicateSignalNameAudit
 
 foreach ($file in $files) {
+    if (-not [System.IO.File]::Exists($file)) {
+        continue
+    }
+
     $content = [System.IO.File]::ReadAllText($file)
     $codeContent = if ($LexicalScrub) { ConvertTo-CodeSurface $content } else { $content }
     $lineCount = Count-Lines $content
@@ -2182,34 +2211,13 @@ if ($Summary) {
     [pscustomobject]$summaryResult.Counts | Format-List
     Write-Output ''
     Write-Output 'Budgets:'
-    $summaryResult.Budgets.GetEnumerator() |
-        ForEach-Object {
-            [pscustomobject]@{
-                Budget = $_.Key
-                Enabled = $_.Value.Enabled
-                Min = $_.Value.Min
-                Max = $_.Value.Max
-                Actual = $_.Value.Actual
-                Passed = $_.Value.Passed
-            }
-        } |
-        Format-Table -AutoSize
+    ConvertTo-BudgetDisplayRows $summaryResult.Budgets | Format-Table -AutoSize
     Write-Output ''
     Write-Output 'Core graph H-Phi debt counts:'
     [pscustomobject]$summaryResult.CoreGraph.Counts | Format-List
     Write-Output ''
     Write-Output 'Core graph H-Phi budgets:'
-    $summaryResult.CoreGraph.Budgets.GetEnumerator() |
-        ForEach-Object {
-            [pscustomobject]@{
-                Budget = $_.Key
-                Enabled = $_.Value.Enabled
-                Max = $_.Value.Max
-                Actual = $_.Value.Actual
-                Passed = $_.Value.Passed
-            }
-        } |
-        Format-Table -AutoSize
+    ConvertTo-BudgetDisplayRows $summaryResult.CoreGraph.Budgets | Format-Table -AutoSize
     if (@($summaryResult.TopAupPrecisionRiskFiles).Count -gt 0) {
         Write-Output ''
         Write-Output 'Top AUP precision risk files:'

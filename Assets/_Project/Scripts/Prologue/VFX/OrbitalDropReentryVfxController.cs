@@ -665,6 +665,8 @@ namespace Hecton8.Prologue.VFX
                 flags |= ReentryVfxStateSignal.FlagWhiteout;
             if (_phase == ReentryPhase.HydratedFade || _phase == ReentryPhase.Complete)
                 flags |= ReentryVfxStateSignal.FlagHydrated;
+            if (_hasSpatialAnchor)
+                flags |= ReentryVfxStateSignal.FlagSpatialAnchor;
 
             ReentryVfxStateSignal signal = new ReentryVfxStateSignal
             {
@@ -693,6 +695,8 @@ namespace Hecton8.Prologue.VFX
                 flags |= ReentryVfxStateSignal.FlagWhiteout;
             if (_phase == ReentryPhase.HydratedFade || _phase == ReentryPhase.Complete)
                 flags |= ReentryVfxStateSignal.FlagHydrated;
+            if (_hasSpatialAnchor)
+                flags |= ReentryVfxStateSignal.FlagSpatialAnchor;
 
             ReentryVfxTelemetryEntry entry = new ReentryVfxTelemetryEntry
             {

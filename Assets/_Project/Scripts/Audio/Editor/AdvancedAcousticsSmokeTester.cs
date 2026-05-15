@@ -102,6 +102,7 @@ namespace Hecton8.Audio.Editor
                 string spatialColdRuntimeServices = ExtractMethodBody(spatial, "private void RefreshCachedAudioRuntimeServicesCold()");
                 string spatialPrologueQueue = ExtractMethodBody(spatial, "public bool QueuePrologueAudioTransition(");
                 string spatialHighSpeedQueue = ExtractMethodBody(spatial, "public bool QueueHighSpeedImpactSignal(");
+                string spatialHabitatPortalGraph = ExtractMethodBody(spatial, "private bool TryBuildHabitatAcousticPortalGraph(");
                 AssertContains(spatial, "TryResolveCinematicZoneMismatch", "Delayed world events apply deterministic zone muffle", builder, ref failureCount);
                 AssertContains(spatial, "CinematicZoneMuffleTransmission = 0.25118864f", "Cinematic zone muffle applies -12 dB transmission", builder, ref failureCount);
                 AssertContains(spatial, "CinematicZoneMuffleCutoffHertz = 800f", "Cinematic zone muffle applies 800 Hz LPF", builder, ref failureCount);
@@ -146,6 +147,10 @@ namespace Hecton8.Audio.Editor
                 AssertContains(spatialColdRuntimeServices, "_cachedPlayerCriticalAudio = GlobalRegistry.PlayerCriticalAudio", "Spatial audio seeds player-critical runtime only during cold cache refresh", builder, ref failureCount);
                 AssertNotContains(spatialPrologueQueue, "GlobalRegistry.", "Prologue audio transition queue uses cached player-critical runtime", builder, ref failureCount);
                 AssertNotContains(spatialHighSpeedQueue, "GlobalRegistry.", "High-speed impact queue uses cached player-critical runtime", builder, ref failureCount);
+                AssertContains(spatialColdRuntimeServices, "_cachedConstructionManager = GlobalRegistry.ConstructionRuntime", "Spatial audio seeds habitat portal construction runtime only during cold cache refresh", builder, ref failureCount);
+                AssertContains(spatial, "GlobalRegistryServiceSlot.Logistics", "Spatial audio listens for construction/logistics runtime rebinding", builder, ref failureCount);
+                AssertContains(spatial, "_cachedConstructionManager = currentService as ConstructionManager", "Spatial audio refreshes cached construction runtime from hot-swap payload", builder, ref failureCount);
+                AssertNotContains(spatialHabitatPortalGraph, "GlobalRegistry.", "Habitat acoustic portal graph uses cached construction runtime", builder, ref failureCount);
                 AssertNotContains(spatialPortalPath, "GlobalRegistry.ScalabilityTier", "Spatial audio portal path does not poll scalability registry directly", builder, ref failureCount);
                 AssertNotContains(spatialUsePortalPath, "GlobalRegistry.ScalabilityTier", "Spatial audio portal policy does not poll scalability registry directly", builder, ref failureCount);
                 AssertNotContains(spatialVoiceLimit, "GlobalRegistry.ScalabilityTier", "Spatial audio voice-limit policy does not poll scalability registry directly", builder, ref failureCount);

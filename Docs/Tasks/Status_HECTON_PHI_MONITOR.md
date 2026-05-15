@@ -43,18 +43,19 @@ Task Count: 6
 - [x] Task 21: Full-scan recovery and lexical-scrub containment | DOD: tested comment/string lexical scrubbing, observed two full-scan timeouts, gated it behind `-LexicalScrub`, and restored default `-Summary` completion | Rejected: leaving a >420s default audit path or claiming partial H-Phi output | Estimate: 0 us runtime
 - [x] Task 22: AUP risk stale-score verification and summary routing | DOD: reran full default `-Summary -Json`, proved current runtime `AupPrecisionRisk=0`, and added `TopAupPrecisionRiskFiles` to summary output for future regression triage | Rejected: patching gameplay files from stale counters or hiding file-level risk routing in full JSON only | Estimate: 0 us runtime
 - [x] Task 23: Coupling-risk routing and static regression budgets | DOD: added per-file coupling rows, `TopCouplingRiskFiles`, and full-scan budget gates for runtime `Find*` and legacy event publish counts; verified current gates pass without rebuild | Rejected: cross-domain gameplay edits in bootstrap/VR/UI/audio owners without owner proof | Estimate: 0 us runtime
+- [x] Task 24: H-Phi score floors and concurrent-scan hardening | DOD: added full-scan gates for `GlobalRegistrySurface`, `GetComponentCalls`, `NativeArrayRefs`, `DataSovereignty`, `MemoryAlignment`, and risk-adjusted runtime H-Phi; skipped files deleted between enumerate/read during concurrent agent work; verified final static gate without rebuild | Rejected: pretending owner-domain NativeArray/registry churn was this agent's editable code | Estimate: 0 us runtime
 
 ## Latest Static Scores
-- H-Phi runtime static narrow: `0.010497120`
-- H-Phi runtime static risk-adjusted: `0.000574075`
-- H-Phi all-source static narrow: `0.009348602`
-- H-Phi all-source static risk-adjusted: `0.000472137`
+- H-Phi runtime static narrow: `0.010739531`
+- H-Phi runtime static risk-adjusted: `0.000586338`
+- H-Phi all-source static narrow: `0.009562671`
+- H-Phi all-source static risk-adjusted: `0.000481656`
 - Narrow integration: `1.0`
-- Risk integration: `0.054688783`
-- Architectural purity: `0.996460177`
-- Data sovereignty: `0.020903010`
-- Memory alignment: `0.503966155`
-- Binary-safe ratio: `0.018508726`
+- Risk integration: `0.054596284`
+- Architectural purity: `0.996447602`
+- Data sovereignty: `0.021374686`
+- Memory alignment: `0.504232804`
+- Binary-safe ratio: `0.018518519`
 - AUP precision integrity: `1.000000000`
 
 ## Current Verification Notes
@@ -83,6 +84,11 @@ Task Count: 6
 - `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` now exposes `TopAupPrecisionRiskFiles`; latest list is empty because the current runtime AUP risk counter is zero.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` now exposes `TopCouplingRiskFiles`; current top files are `Bootstrap/GameBootstrapper.cs`, `CrashTelemetryBuffer.cs`, `HectonFluidEngine.cs`, `UI/PauseMenuController.cs`, and `Fauna/FaunaBrain.cs`.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0 -MaxFindObjectCalls 5 -MaxLegacyEventPublish 28 -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 14 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 6` passed at `2026-05-15 03:52:11 +04:00`.
+- `Tools/Architecture/HectonPhiAudit.ps1` now also gates `GlobalRegistrySurface`, `GetComponentCalls`, `NativeArrayRefs`, `DataSovereignty`, `MemoryAlignment`, and `RuntimeHPhiRisk`; source-count gates are rejected under `-CoreGraphOnly`.
+- Concurrent-scan hardening now skips files deleted between enumeration and `ReadAllText`; this handled `Assets/_Project/Scripts/Fauna/ProceduralLeviathanSpineIK.cs` disappearing during a full scan.
+- Tight transient gates caught real current-tree churn before the final pass: `NativeArrayRefs 7029 > 7026` and `GlobalRegistrySurface 5150 > 5149`; these were owner-routed, not edited blindly.
+- Latest full static summary after final pass: `SignalBusPush=332`, `EventPublish=28`, `RuntimeHPhiNarrow=0.010739531`, `RuntimeHPhiRisk=0.000586338`, `DataVaultRefs=153`, `NativeArrayRefs=7005`, `GlobalRegistrySurface=5143`, `GetComponentCalls=540`, `AupPrecisionRisk=0`.
+- Latest final budgeted full command passed at `2026-05-15 04:20:55 +04:00`: `-MaxAupPrecisionRisk 0 -MaxFindObjectCalls 5 -MaxLegacyEventPublish 28 -MaxDuplicateSignalNames 6 -MaxGlobalRegistrySurface 5160 -MaxGetComponentCalls 550 -MaxNativeArrayRefs 7035 -MinDataSovereignty 0.020800000 -MinMemoryAlignment 0.503900000 -MinRuntimeHPhiRisk 0.000570000 -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 14 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 6`.
 - Duplicate signal-name scan currently reports `6` duplicate names and remains a routing warning, not a passing zero budget.
 - Remaining runtime `Find*` debt is concentrated in `GameBootstrapper` bootstrap handoff, `HectonUrpShadowBudgetGuard` cold light scan, and `VRSomaticRuntimeBootstrap` decoupled root lookup; one textual `HectonUnderwaterVisuals` hit is editor-only and excluded from runtime score.
 - `git diff --check` on touched H-Phi files reports only LF/CRLF normalization warnings.

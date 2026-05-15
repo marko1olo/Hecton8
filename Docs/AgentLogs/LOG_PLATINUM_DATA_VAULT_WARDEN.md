@@ -68,6 +68,35 @@ Verification:
 Status:
 - VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
 
+## 2026-05-15 - Root Migration Clamp Gate
+
+What was wrong:
+- Binary reads were bounded, but non-binary restore paths could still feed oversized legacy compatibility containers into migration.
+- Corporate pending order IDs and timers could be mismatched after non-binary repair.
+
+What was done:
+- Added cold migration trims for root legacy tool maps, custom mod data, discovered biome IDs, audio-log discovery IDs, quest IDs, suit upgrade IDs, corporate order IDs/timers, and mission IDs.
+- Added paired trimming for corporate pending order IDs and timers so migration keeps both lists synchronized.
+- Kept trims in migration, not producer hot paths, because this is load/repair hygiene.
+
+Cinematic Cheats used:
+- Compatibility containers are capped repair metadata. Primary packed bitmasks and fixed DTO arrays carry scalable state.
+
+Exact Microseconds saved:
+- Frame cost: 0 us.
+- Cold corrupt/non-binary load avoids downstream iteration over oversized legacy containers. Dictionary/hash-set trimming is cold-only and allocation-free except existing container storage.
+
+Verification:
+- `SaveBinaryPayloadCodec.cs` and `SaveDataMigration.cs` brace/parenthesis balance passed.
+- Migration cap scan found all root cap constants wired.
+- Root unbounded codec read/write scans remained clean.
+- DataVault live compaction scan returned no `UnsafeUtility.MemMove`, `RunCompactionSlice`, `TryCompactFreeGapAt`, `VaultMemMoveJob`, `System.Threading`, `Stopwatch`, or `BurstCompile`.
+- `git diff --check` passed with CRLF warnings only.
+- No dotnet rebuild was run per user order.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
 ## 2026-05-15 - Root Legacy Collection Bounds Gate
 
 What was wrong:

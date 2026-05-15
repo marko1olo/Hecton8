@@ -221,3 +221,17 @@ Solution: Cached the resolved interaction camera transform with the authored/reg
 Rejected Alternatives: Reading `resolvedCamera.transform` in each panel path, caching a global camera transform, or leaving stale explicit camera references after authoring changes. Per-path property reads are avoidable; globals violate ownership; stale explicit cameras break physical panel authoring.
 Scalability potential: Low removes small render/input-side property traffic. Middle/High/Ultra keep deterministic camera ownership for richer physical panel projection and CRT effects.
 Hardware Impact: Expected gain is sub-microsecond per active physical panel frame and removes a stale-camera edge case. No profiler proof.
+
+## Decision 31: Diegetic Panel Input Service Hot-Swap Cache
+Problem: `DiegeticPanelController.EnsureRuntimeState()` still fetched `GlobalRegistry.Input` every active tick, but blindly caching that property can freeze the no-op fallback when the panel starts before the real input dispatcher registers.
+Solution: Registered the panel as an `IGlobalRegistryHotSwapListener`, cached `GlobalRegistry.RegisteredInput` when present, kept `_inputAwaitingRegistration` true only while the registry slot is empty, and used hot-swap notifications for later input/player service replacement.
+Rejected Alternatives: Polling `GlobalRegistry.Input` forever, subscribing to managed input events, or caching the no-op fallback as final. Forever polling wastes steady-state budget; managed events add lifecycle coupling; stale no-op input breaks panel interaction after startup ordering changes.
+Scalability potential: Low removes the steady-state registry read while preserving startup correctness. Middle/High/Ultra keep deterministic input and camera ownership for richer panel projection, CRT, and physical cursor effects.
+Hardware Impact: Expected gain is sub-microsecond per active physical panel tick after input registration. Startup-only fallback probing remains until the real service exists; no profiler proof.
+
+## Decision 32: Diegetic Panel Output Material Property Cache
+Problem: Phosphor decay forces panel output texture rebinding every late frame, and `ApplyMaterialState()` was repeatedly calling `Material.HasProperty` plus rewriting `_PanelPowerLevel` during those texture-only refreshes.
+Solution: Cached panel output material property support when the material reference changes, routed material writes through cached flags, and added `_appliedPanelMaterialPowerLevel` so power is written only when the material needs it.
+Rejected Alternatives: Keeping per-refresh `HasProperty` calls, mutating shader keywords, or assuming every authored material has all properties. Repeated property checks waste steady-state budget; shader mutation is unrelated; unchecked property writes would break material variants.
+Scalability potential: Low keeps the cheap phosphor-history fake with less CPU/API traffic. Middle/High/Ultra can use richer authored panel materials while the controller pays property discovery only when material ownership changes.
+Hardware Impact: Expected gain is sub-microsecond per phosphor-enabled panel late frame on i3/MX350; no profiler proof.

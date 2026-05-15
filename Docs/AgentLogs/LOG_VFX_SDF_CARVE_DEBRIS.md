@@ -549,3 +549,35 @@ Verification state:
 - `CURRENT_BATCH.md` exact prompt tag count for `VFX_SDF_CARVE_DEBRIS`: 0.
 - Unity import/compile and profiler capture remain unverified.
 - No dotnet rebuild was run.
+
+## 2026-05-15 - Registry Hot-Swap Cache for H-Phi Services
+
+What was wrong:
+- Ready-state DataVault validation still compared against `GlobalRegistry.DataVault` on a cadence.
+- Fluid rebinding also used a cadence-based `GlobalRegistry.Fluid` read.
+- That kept a service-locator dependency in the tick path after the renderer had already acquired its H-Phi lease.
+
+What was done:
+- Implemented `IGlobalRegistryHotSwapListener` and `IGlobalRegistryHotSwapRefListener` on `CarveDebrisComputeRenderer`.
+- Cached DataVault and Fluid during enable/start wiring.
+- Rebound Fluid and invalidated DataVault lease from hot-swap callbacks.
+- Changed ready-state DataVault validation to compare against the cached registry service reference instead of reading `GlobalRegistry.DataVault`.
+- Kept a bounded missing-service refresh only while GPU state is not ready, so late initial DataVault setup can still bind.
+- Did not run dotnet build, dotnet rebuild, or Unity batch compile.
+
+Cinematic cheats used:
+- No simulation truth was added.
+- This protects the existing compute/indirect debris fake from stale H-Phi service references.
+
+Exact microseconds saved:
+- Direct steady saving: sub-microsecond; removes one registry service read every 30 ready frames.
+- Correctness gain: DataVault replacement invalidates immediately through registry callbacks instead of waiting for a cadence check.
+- Low/MX350 and High/Ultra visual budgets remain unchanged.
+
+Verification state:
+- Static verification completed: `git diff --check` returned no whitespace errors, only Git LF/CRLF notices.
+- Forbidden hot-path scan returned no matches for CPU readback, ParticleSystem, ComputeBuffer, scene search, job scheduling fences, private `H8Memory.Allocate`, private `H8Memory.Release`, `MaterialPropertyBlock`, or `matProps`.
+- Shader hot-math scan returned no matches for `sincos`, raw trig, `pow`, `exp`, `log`, or raw `normalize`.
+- `CURRENT_BATCH.md` exact prompt tag count for `VFX_SDF_CARVE_DEBRIS`: 0.
+- Unity import/compile and profiler capture remain unverified.
+- No dotnet rebuild was run.

@@ -264,3 +264,11 @@ Status: PENDING VERIFICATION
 - Verification avoided dotnet rebuilds and Unity import. `MeshNameContractYamlScan Count=600 Bad=0`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0` with `NonAscii=0`; case-sensitive forbidden source scan stayed clean.
 - Rejected alternative: full mesh serialization hashing was rejected because it would be brittle to Unity YAML churn; the path/name/geometry/stream/budget contracts already cover the deterministic payload surface that matters here.
 - H-Phi impact remains domain-local evidence only: mesh asset identity is now fail-closed with no runtime lookup, fix-up, allocation, or cross-domain dependency added.
+
+### Loop 29 - Family Index Completeness Contract
+
+- Found the final count-check weakness in the same asset-identity surface: a family could have the right total prefab count while skipping one variation index and duplicating another.
+- Patched `ValidateFamily` with `ValidateFamilyIndexContract`, a fixed `bool[100]` editor scratch buffer, and `TryParseThreeDigitIndex` so each family must cover exactly `000..expectedCount-1` with no duplicate index slots.
+- Verification avoided dotnet rebuilds and Unity import. `FamilyIndexContractYamlScan Count=200 Bad=0`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0` with `NonAscii=0`; case-sensitive forbidden source scan stayed clean.
+- Rejected alternative: sorting names or allocating per-family hash sets was rejected because a fixed scratch bitset is simpler, deterministic, and sufficient for the small generated Shallows family sizes.
+- H-Phi impact remains domain-local evidence only: generated variation coverage is now fail-closed without runtime registries, lookup repair, allocations on the render path, or cross-domain dependencies.

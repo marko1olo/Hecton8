@@ -367,3 +367,15 @@ Rejected Alternatives: Leaving the registry capped at 4096 was rejected because 
 Scalability potential: Low = same default 4096 magnet capacity with explicit dependency fault evidence. Middle = same Burst pull path with diagnosable registry pressure. High = authored capacity can reach the hard cap without source-registry truncation. Ultra = dense pickup fields can feed richer presentation budgets while black-box telemetry records when authored density reaches the limit.
 
 Hardware Impact: Low-end silicon pays no extra normal-case per-entity work. Dependency telemetry is branch/bitwise only, and registry expansion adds roughly 32 KB of cold managed reference storage compared with 4096 slots. The gain is correctness under dense fields, not measured frame time.
+
+## Decision 29 - Idle Hash Truth And Dead-Tail Trim
+
+Problem: Idle telemetry could carry the previous commit hash even after a SlowTick registry refresh changed active loot truth. Failed writable-lane refreshes could also leave stale `_activeCount`, and mass acquisitions left cleared trailing slots inside the FastTick schedule window until the next SlowTick refresh.
+
+Solution: Cache the active-slot telemetry hash during the existing SlowTick registry scan. Idle telemetry now uses that cached hash. Failed writable-lane refresh clears runtime active state and hash evidence. Late-frame commit now folds final active slots after managed pickup transfer and trims `_activeCount` to the highest remaining active slot.
+
+Rejected Alternatives: A full extra hash pass inside every idle LateFrame was rejected because it turns black-box evidence into a 60Hz O(n) scan. Compacting the whole vault on every commit was rejected because it would add data movement and sidecar churn; trimming the dead tail preserves the existing dense-refresh owner while removing the worst useless job iterations.
+
+Scalability potential: Low = fail-closed active count when vault lanes disappear. Middle = idle black-box hashes match current registry truth. High = mass stow fields stop scheduling cleared tail slots before the next SlowTick. Ultra = dense fields retain truthful hash evidence without an extra per-frame telemetry sweep.
+
+Hardware Impact: MX350 avoids repeated Burst execution over cleared trailing slots after mass acquisition. Added work is integer FNV folding inside loops already scanning/committing loot; no heap allocation, no new native memory, and no extra idle O(n) pass.

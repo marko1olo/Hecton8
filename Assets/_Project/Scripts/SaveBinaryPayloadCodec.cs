@@ -154,7 +154,10 @@ namespace Hecton8.SaveSystem
         {
             return source != null &&
                    length >= sizeof(uint) &&
-                   ReadUInt(source, 0) == WfcOutpostPayloadMagic;
+                   source[0] == unchecked((byte)WfcOutpostPayloadMagic) &&
+                   source[1] == unchecked((byte)(WfcOutpostPayloadMagic >> 8)) &&
+                   source[2] == unchecked((byte)(WfcOutpostPayloadMagic >> 16)) &&
+                   source[3] == unchecked((byte)(WfcOutpostPayloadMagic >> 24));
         }
 
         internal static bool TryReadWfcOutpostBitmaskPayload(

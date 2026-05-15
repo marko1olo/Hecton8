@@ -1493,6 +1493,8 @@ namespace Hecton8.Physics
         private bool _fixedTickRegistered;
         private bool _postFixedRegistered;
         private bool _lateFrameRegistered;
+        private IPlayerRuntimeContext _playerRuntime;
+        private ISubmarineRuntimeContext _submarineRuntime;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -1509,6 +1511,7 @@ namespace Hecton8.Physics
 
             MathGuard.Initialize();
             _dataVault = GlobalRegistry.DataVault;
+            RefreshRuntimeActorContextsIfMissing();
 
             // Initial observer resolution. If player/camera appears later,
             // FixedTick retries on a cooldown instead of staying in full-cost mode forever.
@@ -1554,6 +1557,7 @@ namespace Hecton8.Physics
             EnsurePrebakedVectorNoiseField();
             _dataVault = GlobalRegistry.DataVault;
             _simulationBucketer = GlobalRegistry.SimulationBucketer;
+            RefreshRuntimeActorContextsIfMissing();
 
             if (Application.isPlaying && !_fluidRuntimeRegistered)
             {
@@ -5265,7 +5269,8 @@ namespace Hecton8.Physics
             float eventHorizonRadiusSq = eventHorizonRadius * eventHorizonRadius;
             Vector3 center = new Vector3(whirlpool.CenterWS.x, whirlpool.CenterWS.y, whirlpool.CenterWS.z);
 
-            IPlayerRuntimeContext player = GlobalRegistry.Player;
+            RefreshRuntimeActorContextsIfMissing();
+            IPlayerRuntimeContext player = _playerRuntime;
             Rigidbody playerBody = player != null ? player.PlayerRigidbody : null;
             Transform playerTransform = player != null ? player.PlayerTransform : null;
             Vector3 playerPosition = playerBody != null
@@ -5274,7 +5279,7 @@ namespace Hecton8.Physics
             if (IsFiniteVector(playerPosition) && (playerPosition - center).sqrMagnitude <= eventHorizonRadiusSq)
                 published |= PublishMaelstromDamageSignal(center, playerPosition, playerBody != null ? unchecked((uint)EntityId.ToULong(playerBody.GetEntityId())) : 0u, intensity01);
 
-            ISubmarineRuntimeContext submarine = GlobalRegistry.Submarine;
+            ISubmarineRuntimeContext submarine = _submarineRuntime;
             Rigidbody hull = submarine != null ? submarine.HullRigidbody : null;
             if (hull != null)
             {
@@ -6186,12 +6191,13 @@ namespace Hecton8.Physics
             return dispatchCount;
         }
 
-        private static bool TryResolveSubmarineWakePayload(out Vector4 wakeSphere, out Vector4 wakeVelocity)
+        private bool TryResolveSubmarineWakePayload(out Vector4 wakeSphere, out Vector4 wakeVelocity)
         {
             wakeSphere = Vector4.zero;
             wakeVelocity = Vector4.zero;
 
-            ISubmarineRuntimeContext submarine = GlobalRegistry.Submarine;
+            RefreshRuntimeActorContextsIfMissing();
+            ISubmarineRuntimeContext submarine = _submarineRuntime;
             Rigidbody hull = submarine != null ? submarine.HullRigidbody : null;
             if (hull == null)
                 return false;
@@ -6612,6 +6618,20 @@ namespace Hecton8.Physics
 
             if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
                 lodObserver = playerTransform;
+        }
+
+        private void RefreshRuntimeActorContextsIfMissing()
+        {
+            if (_playerRuntime == null || IsUnityObjectInvalid(_playerRuntime))
+                _playerRuntime = GlobalRegistry.Player;
+
+            if (_submarineRuntime == null || IsUnityObjectInvalid(_submarineRuntime))
+                _submarineRuntime = GlobalRegistry.Submarine;
+        }
+
+        private static bool IsUnityObjectInvalid(object context)
+        {
+            return context is UnityEngine.Object unityObject && unityObject == null;
         }
 
         /// <summary>

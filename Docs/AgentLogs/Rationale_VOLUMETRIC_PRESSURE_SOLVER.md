@@ -401,3 +401,19 @@ Solution: `HectonHabitatInteriorPanelUv` now returns zero panel UV for non-finit
 Rejected Alternatives: Checking UV separately in every bend/crease callsite or allowing downstream saturate to handle it. Callsite checks duplicate policy; saturate on NaN is not a stable correctness contract.
 Scalability potential: Low/MX350 crease and Mid/High/Ultra sine bow share one invalid-UV behavior: zero panel influence. Valid panels keep the exact existing look.
 Hardware Impact: Adds a finite UV check only where panel masks are calculated. Faulted vertices/fragments avoid NaN offset/crease propagation; valid-frame overhead is bounded to stressed/crease paths.
+
+## Follow-Up Correction - CoreLit Analytical Habitat Finite Gates
+
+Problem: The CoreLit analytical habitat dent path still trusted global stress, displacement, radius, grid scale, and seed scalars. A non-finite global could keep the high-tier analytical dent path alive or produce NaN phase/radius math.
+Solution: `HectonCoreLitApplyHabitatAnalyticalStress` now fails closed when analytical stress/displacement/radius/grid/seed inputs are non-finite, and rejects non-finite radius masks before dent output.
+Rejected Alternatives: Relying only on CPU publication sanitation, or sanitizing the final position after NaN phase work. CPU sanitation is necessary but not sufficient for a shared shader global; final-position cleanup hides wasted ALU and can still poison intermediate logic.
+Scalability potential: Low/MX350 stays unaffected because analytical displacement is zero below high scalability. High/Ultra keep the analytical dent fake for valid data and degrade invalid globals to no-op.
+Hardware Impact: Adds finite checks only in the active analytical dent path. Fault frames avoid NaN phase/radius propagation; valid-frame overhead is under the analytical path's existing ALU budget.
+
+## Follow-Up Correction - UberNoir Habitat Bending Finite Gates
+
+Problem: UberNoir hull bending reused habitat analytical globals and a shared radius-mask helper that could accept non-finite position or center/radius data. A bad habitat scalar could still leak into the noir bending displacement.
+Solution: `H8UberNoirRadiusMask` now fails closed on non-finite position or center/radius vectors. UberNoir habitat stress and displacement scalars are separately finite-gated before contributing to dynamic hull bending.
+Rejected Alternatives: Leaving the CoreLit guard as the only analytical protection, or final-position sanitation only. UberNoir has its own path and must not depend on another include's guard; final sanitation hides bad intermediate displacement.
+Scalability potential: Low/MX350 remains bypassed through `_MATH_LOD_LOW`. High/Ultra keep noir hull bending when data is valid and lose only corrupted habitat contribution.
+Hardware Impact: Adds finite checks in the non-low UberNoir bend path. Fault frames avoid NaN displacement; valid-frame overhead is scalar/vector finite checks around already-active bending math.

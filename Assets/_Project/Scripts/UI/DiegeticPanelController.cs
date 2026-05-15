@@ -357,6 +357,7 @@ namespace Hecton8.UI
         private RenderTexture _phosphorFrontTexture;
         private RenderTexture _phosphorBackTexture;
         private Material _phosphorDecayMaterial;
+        private Material _cachedPanelOutputMaterial;
         private int2 _activeRenderResolution;
         private int2 _fixedRenderResolution;
         private bool _retainRenderTextureOnDisable;
@@ -364,6 +365,7 @@ namespace Hecton8.UI
         private float _refreshTimer;
         private float _appliedDepthFadeRange = -1f;
         private float _appliedPowerLevel = -1f;
+        private float _appliedPanelMaterialPowerLevel = -1f;
         private float _terminalDamageGlitch;
         private float _terminalDamageGlitchPeak;
         private float _terminalDamageGlitchRemaining;
@@ -375,8 +377,16 @@ namespace Hecton8.UI
         private bool _lateFrameRegistered;
         private bool _renderPipelineHookRegistered;
         private bool _hotSwapListenerRegistered;
+        private bool _inputAwaitingRegistration;
         private bool _phosphorMaterialResolveAttempted;
         private bool _phosphorMaterialResolveFailed;
+        private bool _panelOutputHasBaseMap;
+        private bool _panelOutputHasMainTex;
+        private bool _panelOutputHasDepthFadeRange;
+        private bool _panelOutputHasOcclusionActive;
+        private bool _panelOutputHasPanelPowerLevel;
+        private bool _panelOutputHasTerminalDamageGlitch;
+        private bool _panelOutputHasFlashlightGlare;
         private bool _resolvedInteractionCameraFromExplicit;
         private bool _wasPressedLastFrame;
         private bool _fingerPressedLastFrame;
@@ -448,6 +458,7 @@ namespace Hecton8.UI
             ClearHoverState();
             CacheInteractionCamera(null, fromExplicit: false);
             _input = null;
+            _inputAwaitingRegistration = false;
             _cursorStateInitialized = false;
             _canvasSettingsApplied = false;
             if (panelCamera != null && panelCamera.enabled)
@@ -929,7 +940,16 @@ namespace Hecton8.UI
 
         private void RefreshServices()
         {
+            IInputService registeredInput = GlobalRegistry.RegisteredInput;
+            if (registeredInput != null)
+            {
+                _input = registeredInput;
+                _inputAwaitingRegistration = false;
+                return;
+            }
+
             _input = GlobalRegistry.Input;
+            _inputAwaitingRegistration = true;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -940,6 +960,13 @@ namespace Hecton8.UI
             if (serviceSlot == GlobalRegistryServiceSlot.Input)
             {
                 _input = currentService as IInputService;
+                if (_input == null)
+                {
+                    RefreshServices();
+                    return;
+                }
+
+                _inputAwaitingRegistration = false;
                 return;
             }
 
@@ -960,7 +987,7 @@ namespace Hecton8.UI
 
             ResolveSerializedReferences(resolveGraphicRaycaster: false);
             ResolveInterfaces();
-            if (_input == null)
+            if (_input == null || _inputAwaitingRegistration)
                 RefreshServices();
             ApplyCanvasWorldSpaceSettings();
             return targetCanvas != null && _resolvedPanelRect != null && panelCollider != null;
@@ -1348,16 +1375,40 @@ namespace Hecton8.UI
             else
                 _panelData.StateFlags &= ~PanelStateFlags.Powered;
 
-            if (math.abs(_appliedPowerLevel - powerLevel) <= 0.0001f)
+            bool materialChanged = !ReferenceEquals(_cachedPanelOutputMaterial, panelOutputMaterial);
+            if (!materialChanged && math.abs(_appliedPowerLevel - powerLevel) <= 0.0001f)
                 return;
 
             _appliedPowerLevel = powerLevel;
-            ApplyMaterialState(forceTextureRefresh: false, forceDepthRefresh: false);
+            ApplyMaterialState(forceTextureRefresh: materialChanged, forceDepthRefresh: materialChanged);
+        }
+
+        private void RefreshPanelOutputMaterialPropertyCache()
+        {
+            Material outputMaterial = panelOutputMaterial;
+            if (ReferenceEquals(_cachedPanelOutputMaterial, outputMaterial))
+                return;
+
+            _cachedPanelOutputMaterial = outputMaterial;
+            _panelOutputHasBaseMap = outputMaterial != null && outputMaterial.HasProperty(_BaseMapId);
+            _panelOutputHasMainTex = outputMaterial != null && outputMaterial.HasProperty(_MainTexId);
+            _panelOutputHasDepthFadeRange = outputMaterial != null && outputMaterial.HasProperty(_DepthFadeRangeId);
+            _panelOutputHasOcclusionActive = outputMaterial != null && outputMaterial.HasProperty(_OcclusionActiveId);
+            _panelOutputHasPanelPowerLevel = outputMaterial != null && outputMaterial.HasProperty(_PanelPowerLevelId);
+            _panelOutputHasTerminalDamageGlitch = outputMaterial != null && outputMaterial.HasProperty(_TerminalDamageGlitchId);
+            _panelOutputHasFlashlightGlare = outputMaterial != null && outputMaterial.HasProperty(_FlashlightGlareId);
+            _appliedDepthFadeRange = -1f;
+            _appliedPanelMaterialPowerLevel = -1f;
+            _appliedTerminalDamageGlitch = -1f;
+            _appliedFlashlightGlare = -1f;
         }
 
         private void ApplyMaterialState(bool forceTextureRefresh, bool forceDepthRefresh)
         {
-            if (panelOutputMaterial == null)
+            RefreshPanelOutputMaterialPropertyCache();
+
+            Material outputMaterial = _cachedPanelOutputMaterial;
+            if (outputMaterial == null)
                 return;
 
             if (forceTextureRefresh && _panelRenderTexture != null)
@@ -1365,10 +1416,10 @@ namespace Hecton8.UI
                 Texture outputTexture = enablePhosphorDecay && _phosphorFrontTexture != null
                     ? _phosphorFrontTexture
                     : _panelRenderTexture;
-                if (panelOutputMaterial.HasProperty(_BaseMapId))
-                    panelOutputMaterial.SetTexture(_BaseMapId, outputTexture);
-                if (panelOutputMaterial.HasProperty(_MainTexId))
-                    panelOutputMaterial.SetTexture(_MainTexId, outputTexture);
+                if (_panelOutputHasBaseMap)
+                    outputMaterial.SetTexture(_BaseMapId, outputTexture);
+                if (_panelOutputHasMainTex)
+                    outputMaterial.SetTexture(_MainTexId, outputTexture);
             }
 
             float resolvedFadeRange = enableDepthOcclusion ? depthFadeRange : 0f;
@@ -1376,27 +1427,31 @@ namespace Hecton8.UI
             if (shouldWriteDepthState)
             {
                 _appliedDepthFadeRange = resolvedFadeRange;
-                if (panelOutputMaterial.HasProperty(_DepthFadeRangeId))
-                    panelOutputMaterial.SetFloat(_DepthFadeRangeId, resolvedFadeRange);
-                if (panelOutputMaterial.HasProperty(_OcclusionActiveId))
-                    panelOutputMaterial.SetFloat(_OcclusionActiveId, enableDepthOcclusion ? 1f : 0f);
+                if (_panelOutputHasDepthFadeRange)
+                    outputMaterial.SetFloat(_DepthFadeRangeId, resolvedFadeRange);
+                if (_panelOutputHasOcclusionActive)
+                    outputMaterial.SetFloat(_OcclusionActiveId, enableDepthOcclusion ? 1f : 0f);
             }
 
-            if (panelOutputMaterial.HasProperty(_PanelPowerLevelId))
-                panelOutputMaterial.SetFloat(_PanelPowerLevelId, math.max(0f, _appliedPowerLevel));
+            if (math.abs(_appliedPanelMaterialPowerLevel - _appliedPowerLevel) > 0.0001f)
+            {
+                _appliedPanelMaterialPowerLevel = _appliedPowerLevel;
+                if (_panelOutputHasPanelPowerLevel)
+                    outputMaterial.SetFloat(_PanelPowerLevelId, math.max(0f, _appliedPowerLevel));
+            }
 
             if (math.abs(_appliedTerminalDamageGlitch - _terminalDamageGlitch) > 0.0001f)
             {
                 _appliedTerminalDamageGlitch = _terminalDamageGlitch;
-                if (panelOutputMaterial.HasProperty(_TerminalDamageGlitchId))
-                    panelOutputMaterial.SetFloat(_TerminalDamageGlitchId, math.saturate(_terminalDamageGlitch));
+                if (_panelOutputHasTerminalDamageGlitch)
+                    outputMaterial.SetFloat(_TerminalDamageGlitchId, math.saturate(_terminalDamageGlitch));
             }
 
             if (math.abs(_appliedFlashlightGlare - flashlightGlare) > 0.0001f)
             {
                 _appliedFlashlightGlare = flashlightGlare;
-                if (panelOutputMaterial.HasProperty(_FlashlightGlareId))
-                    panelOutputMaterial.SetFloat(_FlashlightGlareId, math.saturate(flashlightGlare));
+                if (_panelOutputHasFlashlightGlare)
+                    outputMaterial.SetFloat(_FlashlightGlareId, math.saturate(flashlightGlare));
             }
         }
 

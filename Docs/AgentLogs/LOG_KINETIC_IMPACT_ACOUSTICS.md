@@ -575,3 +575,34 @@ Verification:
 - Method-body counters: `QueuePrologue GlobalRegistry=0`, `QueueHighSpeed GlobalRegistry=0`, `ColdPlayerCriticalAudio=1`, `CacheRebound GlobalRegistry=0`, `HotSwapCallbacks GlobalRegistry=0`.
 - Scoped forbidden scan found only pre-existing editor/cold diagnostics, comments, and assertion strings.
 - Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.
+
+## 2026-05-15 - DSP_ACOUSTIC_LEAD - Loop 22 Habitat Portal Construction Cache H-Phi Pass
+Status: PENDING VERIFICATION
+
+What was wrong:
+- Habitat acoustic portal graphing still pulled `GlobalRegistry.ConstructionRuntime` directly from `TryBuildHabitatAcousticPortalGraph()`.
+- The portal path is audio-owned, but the dependency source is logistics/construction; the correct bridge is the registry hot-swap lane.
+- Smoke coverage did not guard this portal graph method against direct registry polling.
+
+What was done:
+- Added `_cachedConstructionManager` to `SpatialAudioManager`.
+- Cold-seeded `_cachedConstructionManager` through `RefreshCachedAudioRuntimeServicesCold()`.
+- Cleared the cached construction manager during service shutdown.
+- Updated the cache on `GlobalRegistryServiceSlot.Logistics` hot-swap payloads.
+- Replaced the portal graph method's direct registry read with `_cachedConstructionManager`.
+- Added smoke assertions for cold-only construction seed, logistics rebind, payload cache update, and no `GlobalRegistry.` in `TryBuildHabitatAcousticPortalGraph()`.
+
+Cinematic cheats used:
+- Habitat acoustics remain a bounded portal graph fake, not full room acoustic simulation.
+- The graph route uses cached construction data; no scene search, no physics query, no allocation fallback.
+- High-tier portal richness spends CPU on graph traversal and attenuation, not service lookup.
+
+Exact microseconds saved:
+- Saves one construction service-locator read per habitat acoustic portal graph attempt after cache warmup.
+- Runtime allocation delta remains 0 B/frame.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/SpatialAudioManager.cs Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs Docs/Tasks/Status_KINETIC_IMPACT_ACOUSTICS.md Docs/AgentLogs/Rationale_KINETIC_IMPACT_ACOUSTICS.md Docs/AgentLogs/LOG_KINETIC_IMPACT_ACOUSTICS.md` passed except CRLF normalization warnings.
+- Method-body counters: `HabitatPortalGraph GlobalRegistry=0`, `PortalPath GlobalRegistry=0`, `ColdConstructionRuntime=1`, `CacheRebound GlobalRegistry=0`.
+- Scoped forbidden scan found only pre-existing editor/cold diagnostics, comments, and assertion strings.
+- Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.

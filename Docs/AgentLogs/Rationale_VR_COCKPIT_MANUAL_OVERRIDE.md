@@ -437,3 +437,15 @@ Rejected Alternatives: keeping the receiver registered and relying on `TryQueueH
 Scalability potential: Low/toaster avoids wasting scarce fixed receiver capacity on allocation-failed or dispatcher-detached controls. Middle/High keep receiver/tick identity coherent through service rebinding. Ultra can stream more cockpit controls because dead manual override levers vacate hot physical interaction tables faster.
 
 Hardware Impact: 0 us normal steady-state. Cold dispatcher removal pays one idempotent receiver unregister; dispatcher replacement pays one guarded receiver register. i3/MX350 avoids useless overlap-to-receiver callbacks and preserves fixed receiver slots when native allocation or dispatcher availability is not valid.
+
+## Decision 36 - Shared cockpit receivers must not trust stale booleans
+
+Problem: `PhysicalPanelButton` and `PhysicalSnapSwitch` still used flag-gated receiver and UI updatable teardown. If `_receiverRegistered` or `_registered` drifted false while the fixed registry still contained the object, disable/settle cleanup could leave stale physical receiver slots or inert UI-lane ticks.
+
+Solution: make both controls unregister physical receivers from `_registeredActivationVolume` whenever the cached collider exists, then clear local fields. Make both UI updatable `Unregister()` helpers call `GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI)` unconditionally before clearing `_registered`.
+
+Rejected Alternatives: leaving these controls unchanged was rejected because they share the same physical hand receiver table as the manual override lever. Searching the registry from each control was rejected because exact cached collider identity is already owned locally. Adding another registration flag was rejected because the problem is stale flags, not missing flags.
+
+Scalability potential: Low/toaster avoids permanent stale receiver slots and UI ticks after scene streaming, disable ordering, or lifecycle drift. Middle/High keep the physical cockpit table deterministic across buttons, switches, and manual levers. Ultra can ship denser cockpit panels without paying for dead receiver entries.
+
+Hardware Impact: 0 us active-frame cost. Cold teardown pays an idempotent fixed-bucket unregister scan. i3/MX350 gain is prevention of persistent stale overlap receivers and inert UI dispatcher calls after lifecycle drift.

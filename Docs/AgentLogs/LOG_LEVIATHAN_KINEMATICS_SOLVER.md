@@ -633,3 +633,28 @@ Verification:
 - `rg` confirms `TryGetLeviathanBoneGraphicsBuffer()` only assigns non-null `buffer` inside the fresh-upload success branch.
 - `git diff --check` and `git diff --cached --check` on touched code/docs exit 0.
 - Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
+
+## 2026-05-15T04:15+04:00
+
+Status: PENDING VERIFICATION. Removed dead legacy Leviathan presentation file. No `dotnet` rebuild/compile, Unity import, or response-file probe was run.
+
+What was wrong:
+- `ProceduralLeviathanSpineIK` still existed as an older Animator/SkinnedMeshRenderer transform-chain route.
+- It carried a stale strike API and managed scratch-list setup despite the active Alpha path using `FaunaKinematicsRuntime`.
+
+What was done:
+- Verified the MonoScript GUID `409e50cc5c5dffc4790462e3a0eafe0f` had no asset references.
+- Verified type-name scans only hit the legacy file itself.
+- Deleted `ProceduralLeviathanSpineIK.cs` and `ProceduralLeviathanSpineIK.cs.meta` together.
+
+Cinematic cheats used:
+- None. This is dead-path removal; active GPU matrix deformation and low-tier eight-bone cheat remain unchanged.
+
+Exact microseconds saved:
+- No runtime frame-time saving claimed because the file had no found consumers.
+- Removed roughly 1,000 lines of dead compile surface and eliminated an accidental CPU skinning/Animator route.
+
+Verification:
+- Post-delete `rg` found no remaining `ProceduralLeviathanSpineIK` or `409e50cc5c5dffc4790462e3a0eafe0f` references.
+- Both deleted paths return `False` from `Test-Path`.
+- Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.

@@ -58,6 +58,8 @@ namespace Hecton8.Editor.ProceduralGen
         private static readonly List<Component> ComponentScratch = new List<Component>(8);
         // COLD ALLOC: List<Material>[4] - reusable editor renderer material slot validation scratch - owner: ShallowsBioForgeBatchBaker
         private static readonly List<Material> RendererMaterialScratch = new List<Material>(4);
+        // COLD ALLOC: bool[100] - reusable editor family index completeness scratch - owner: ShallowsBioForgeBatchBaker
+        private static readonly bool[] FamilyIndexScratch = new bool[KelpCount];
 
         [MenuItem("HECTON-8/Bio-Forge/Bake Safe Shallows Assets", false, 172)]
         public static void BakeSafeShallowsAssets()
@@ -894,6 +896,8 @@ namespace Hecton8.Editor.ProceduralGen
                 failures++;
             }
 
+            ValidateFamilyIndexContract(familyFolder, expectedCount, guids, ref failures);
+
             for (int i = 0; i < guids.Length; i++)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guids[i]);
@@ -903,6 +907,48 @@ namespace Hecton8.Editor.ProceduralGen
 
             ValidateMeshFamily(familyFolder, expectedCount, ref failures);
             return count;
+        }
+
+        private static void ValidateFamilyIndexContract(string familyFolder, int expectedCount, string[] guids, ref int failures)
+        {
+            if (expectedCount > FamilyIndexScratch.Length)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Family index scratch too small for {familyFolder}. Expected={expectedCount}, Capacity={FamilyIndexScratch.Length}.");
+                return;
+            }
+
+            Array.Clear(FamilyIndexScratch, 0, expectedCount);
+
+            int bad = 0;
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                string assetStem = Path.GetFileNameWithoutExtension(path);
+                if (!TryResolvePrefabNameContract(familyFolder, out string prefix, out _) ||
+                    !assetStem.StartsWith(prefix, StringComparison.Ordinal) ||
+                    !TryParseThreeDigitIndex(assetStem, prefix.Length, out int index) ||
+                    index >= expectedCount ||
+                    FamilyIndexScratch[index])
+                {
+                    bad++;
+                    continue;
+                }
+
+                FamilyIndexScratch[index] = true;
+            }
+
+            for (int i = 0; i < expectedCount; i++)
+            {
+                if (!FamilyIndexScratch[i])
+                    bad++;
+            }
+
+            if (bad == 0)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] {familyFolder} index completeness contract failed. Expected={expectedCount}, BadSlots={bad}.");
         }
 
         private static void ValidateMeshFamily(string familyFolder, int expectedCount, ref int failures)
@@ -1497,6 +1543,18 @@ namespace Hecton8.Editor.ProceduralGen
                     return false;
             }
 
+            return true;
+        }
+
+        private static bool TryParseThreeDigitIndex(string value, int start, out int index)
+        {
+            index = 0;
+            if (!IsThreeDigitIndex(value, start))
+                return false;
+
+            index = ((value[start] - '0') * 100) +
+                    ((value[start + 1] - '0') * 10) +
+                    (value[start + 2] - '0');
             return true;
         }
 

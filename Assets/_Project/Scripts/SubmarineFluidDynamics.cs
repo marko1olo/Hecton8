@@ -510,6 +510,9 @@ namespace Hecton8.Physics
         private HectonPlayerMovement _cachedPlayerMovement;
         private IDataVault _dataVault;
         private Rigidbody _cachedPlayerRigidbody;
+        private IPlayerRuntimeContext _playerRuntime;
+        private ISubmarineRuntimeContext _submarineRuntime;
+        private HectonFluidEngine _fluidRuntime;
         private bool _registered;
         private bool _registeredOriginShiftListener;
         private bool _fluidJobRunning;
@@ -1125,6 +1128,7 @@ namespace Hecton8.Physics
 
             _skipHydrodynamicsForCurrentFixedTick = false;
             _currentFixedDeltaTime = fixedDeltaTime;
+            RefreshRuntimeActorContextsIfMissing();
             RefreshCargoMassScalarFromGlobalCache();
             UpdateHydroRuntimeState(fixedDeltaTime);
             ApplyCompletedHydroKinematicOutput();
@@ -1414,7 +1418,7 @@ namespace Hecton8.Physics
             if (!math.isfinite(baseAcceleration) || baseAcceleration <= Epsilon || maximumAcceleration <= Epsilon)
                 return;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = ResolvePlayerRuntimeContext();
             Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : null;
             Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
             HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
@@ -1761,6 +1765,7 @@ namespace Hecton8.Physics
             }
 
             _dataVault ??= GlobalRegistry.DataVault;
+            RefreshRuntimeActorContextsIfMissing();
 
             if (_structuralBreachReadModel == null)
             {
@@ -2524,12 +2529,12 @@ namespace Hecton8.Physics
             _hydroKinematicJobRunning = true;
         }
 
-        private static float3 ResolveAnalyticalFlowVelocity(Vector3 samplePosition)
+        private float3 ResolveAnalyticalFlowVelocity(Vector3 samplePosition)
         {
             if (!IsFiniteVector(samplePosition))
                 return float3.zero;
 
-            HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
+            HectonFluidEngine fluidEngine = ResolveFluidRuntime();
             if (fluidEngine == null)
                 return float3.zero;
 
@@ -3208,7 +3213,7 @@ namespace Hecton8.Physics
             if (maximumAcceleration <= Epsilon)
                 return;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = ResolvePlayerRuntimeContext();
             Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : null;
             Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
             HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
@@ -4874,11 +4879,47 @@ namespace Hecton8.Physics
             if (safeCrushDepthMeters > Epsilon)
                 return safeCrushDepthMeters;
 
-            ISubmarineRuntimeContext submarine = GlobalRegistry.Submarine;
+            ISubmarineRuntimeContext submarine = ResolveSubmarineRuntimeContext();
             if (submarine is SubmarineCoreDirector director)
                 return math.max(Epsilon, director.MaxDepth);
 
             return math.max(Epsilon, hullImplosionDepthThresholdMeters);
+        }
+
+        private IPlayerRuntimeContext ResolvePlayerRuntimeContext()
+        {
+            if (_playerRuntime == null || IsUnityObjectInvalid(_playerRuntime))
+                _playerRuntime = GlobalRegistry.Player;
+
+            return _playerRuntime;
+        }
+
+        private ISubmarineRuntimeContext ResolveSubmarineRuntimeContext()
+        {
+            if (_submarineRuntime == null || IsUnityObjectInvalid(_submarineRuntime))
+                _submarineRuntime = GlobalRegistry.Submarine;
+
+            return _submarineRuntime;
+        }
+
+        private HectonFluidEngine ResolveFluidRuntime()
+        {
+            if (_fluidRuntime == null)
+                _fluidRuntime = GlobalRegistry.Fluid;
+
+            return _fluidRuntime;
+        }
+
+        private void RefreshRuntimeActorContextsIfMissing()
+        {
+            ResolvePlayerRuntimeContext();
+            ResolveSubmarineRuntimeContext();
+            ResolveFluidRuntime();
+        }
+
+        private static bool IsUnityObjectInvalid(object context)
+        {
+            return context is UnityEngine.Object unityObject && unityObject == null;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

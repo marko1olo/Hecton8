@@ -411,3 +411,17 @@ Scalability potential: Low/MX350 keeps QA and LOD diagnostics deterministic with
 Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no stale mesh object name can create editor ambiguity or push runtime repair/lookup logic into the render path on i3/MX350. Exact runtime microseconds are not profiled because this is editor validation.
 
 Verification: No dotnet rebuild and no Unity import was run. `MeshNameContractYamlScan Count=600 Bad=0`. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs` with only the repo CRLF warning. Source scans found `expectedMeshName`, `mesh.name`, and `LOD{i} mesh name mismatch`; source brace count remained balanced and `NonAscii=0`. Case-sensitive forbidden source scan found no `Shader.Find`, `mesh.colors`, `renderer.sharedMaterial`, `.material`, `Update`, `LateUpdate`, `FixedUpdate`, or `Regex` hits.
+
+## Decision 30 - Family Index Completeness Contract
+
+Problem: Family prefab counts and deterministic name shapes were validated, but count equality alone did not prove that every expected variation index was present exactly once. A library could contain 100 Kelp prefabs while missing `042` and duplicating `041` under a different seed hash.
+
+Solution: Add `ValidateFamilyIndexContract` to `ValidateFamily`. It uses one fixed `bool[100]` scratch buffer sized for the largest Shallows family, parses the three-digit index with `TryParseThreeDigitIndex`, rejects out-of-range/duplicate slots, and then scans for missing indices.
+
+Rejected Alternatives: Allocating a `HashSet<int>` per validation was rejected because the family size is bounded and a fixed scratch bitset is cheaper and clearer. Sorting prefab names was rejected because it adds unnecessary allocation/work for a simple presence contract. Runtime registry reconciliation was rejected because generated Shallows assets must be deterministic before play.
+
+Scalability potential: Low/MX350 gets complete deterministic variation coverage without runtime indexing or missing-slot repair. Middle/High/Ultra can scale density or variant richness while content QA can rely on exact per-family coverage from the static asset library.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no missing or duplicate variation index can force runtime fallback, lookup ambiguity, or dressing-set holes on i3/MX350. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: No dotnet rebuild and no Unity import was run. `FamilyIndexContractYamlScan Count=200 Bad=0`. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs` with only the repo CRLF warning. Source scans found `FamilyIndexScratch`, `ValidateFamilyIndexContract`, `TryParseThreeDigitIndex`, `Array.Clear(FamilyIndexScratch`, and `index completeness contract failed`; source brace count remained balanced and `NonAscii=0`. Case-sensitive forbidden source scan found no `Shader.Find`, `mesh.colors`, `renderer.sharedMaterial`, `.material`, `Update`, `LateUpdate`, `FixedUpdate`, or `Regex` hits.

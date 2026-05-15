@@ -93,7 +93,6 @@ namespace Hecton8.UI
         private int _lastOxygenPercent = int.MinValue;
         private int _lastEnergyPercent = int.MinValue;
         private bool _lastPdaOpen;
-        private HectonSurvivalSystem _subscribedSurvivalSystem;
         private uint _inventorySignalHash;
         private uint _lastInventorySignalRevision;
         private uint _toolLoadoutSignalSourceId;
@@ -244,8 +243,9 @@ namespace Hecton8.UI
 
             if (!ReferenceEquals(previousSurvivalSystem, survivalSystem))
             {
-                UnsubscribeSurvival(previousSurvivalSystem);
-                SubscribeSurvival(survivalSystem);
+                _lastOxygenPercent = int.MinValue;
+                _lastEnergyPercent = int.MinValue;
+                _appliedRightFooterVersion = int.MinValue;
             }
         }
 
@@ -253,37 +253,12 @@ namespace Hecton8.UI
         {
             PDAEvents.Register(this);
             LocalizationEvents.RegisterLanguageListener(this);
-
-            SubscribeSurvival(survivalSystem);
         }
 
         private void Unsubscribe()
         {
             PDAEvents.Unregister(this);
             LocalizationEvents.UnregisterLanguageListener(this);
-
-            UnsubscribeSurvival(_subscribedSurvivalSystem);
-        }
-
-        private void SubscribeSurvival(HectonSurvivalSystem system)
-        {
-            if (system == null || ReferenceEquals(_subscribedSurvivalSystem, system))
-                return;
-
-            system.OnOxygenChanged += HandleOxygenChanged;
-            system.OnEnergyChanged += HandleEnergyChanged;
-            _subscribedSurvivalSystem = system;
-        }
-
-        private void UnsubscribeSurvival(HectonSurvivalSystem system)
-        {
-            if (system == null)
-                return;
-
-            system.OnOxygenChanged -= HandleOxygenChanged;
-            system.OnEnergyChanged -= HandleEnergyChanged;
-            if (ReferenceEquals(_subscribedSurvivalSystem, system))
-                _subscribedSurvivalSystem = null;
         }
 
         public void OnPDAEvent(in PDAEventPayload payload)
@@ -345,6 +320,9 @@ namespace Hecton8.UI
                 : 0;
             bool inventoryDirty = ConsumeInventoryChangedSignals();
             bool toolDirty = ConsumeToolLoadoutChangedSignals();
+            ResolveSurvivalPercentBuckets(out int oxygenPercent, out int energyPercent);
+            bool vitalsDirty = oxygenPercent != _lastOxygenPercent ||
+                energyPercent != _lastEnergyPercent;
 
             bool reactiveDirty = stressBucket != _lastStressCorruptionBucket ||
                 intrusionActive != _lastIntrusionActive ||
@@ -353,7 +331,7 @@ namespace Hecton8.UI
                 storageDebtBucket != _lastStorageDebtBucket ||
                 rebootProgressPercent != _lastRebootProgressPercent;
 
-            if (!inventoryDirty && !toolDirty && !reactiveDirty)
+            if (!inventoryDirty && !toolDirty && !vitalsDirty && !reactiveDirty)
                 return;
 
             if (!reactiveDirty)
@@ -459,10 +437,17 @@ namespace Hecton8.UI
                 : 0u;
         }
 
-        private void HandleOxygenChanged(float _)
+        private void ResolveSurvivalPercentBuckets(out int oxygenPercent, out int energyPercent)
         {
-            if (PlayerPDA.IsOpen)
-                RefreshChrome();
+            if (survivalSystem == null)
+            {
+                oxygenPercent = 0;
+                energyPercent = 0;
+                return;
+            }
+
+            oxygenPercent = (int)math.round(survivalSystem.OxygenNormalized * 100f);
+            energyPercent = (int)math.round(survivalSystem.EnergyNormalized * 100f);
         }
 
         private void EnsureBuilt()
@@ -544,12 +529,6 @@ namespace Hecton8.UI
             _built = true;
         }
 
-        private void HandleEnergyChanged(float _)
-        {
-            if (PlayerPDA.IsOpen)
-                RefreshChrome();
-        }
-
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
 
         {
@@ -620,14 +599,11 @@ namespace Hecton8.UI
                 ? playerInventory.Grid.Columns * playerInventory.Grid.Rows
                 : 48;
             float weight = playerInventory != null ? playerInventory.TotalWeight : 0f;
-            float energy = survivalSystem != null ? survivalSystem.EnergyNormalized : 0f;
-            float oxygen = survivalSystem != null ? survivalSystem.OxygenNormalized : 0f;
             int readyTools = CountReadyTools();
             int assignedTools = toolManager != null ? CountAssignedTools() : 0;
             int activeTabIndex = playerPDA != null ? playerPDA.ActiveTab : -1;
             int weightDeci = (int)math.round(weight * 10f);
-            int oxygenPercent = (int)math.round(oxygen * 100f);
-            int energyPercent = (int)math.round(energy * 100f);
+            ResolveSurvivalPercentBuckets(out int oxygenPercent, out int energyPercent);
             bool pdaOpen = PlayerPDA.IsOpen;
             bool intrusionActive = _intrusionManager != null && _intrusionManager.IsHacked;
             bool mechModeActive = _playerMovement != null && _playerMovement.CurrentLocomotionMode == PlayerLocomotionMode.ExosuitLocomotion;

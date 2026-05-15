@@ -24,8 +24,9 @@ namespace Hecton8.QA.Headless.Editor
         private const string RunnerStatusRelativePath = "Docs/AgentLogs/HeadlessStressFractureBatchRunner_HEADLESS_STRESS_FRACTURE_BOT.txt";
         private const string ExitCodeJsonKey = "\"exitCode\"";
         private const string AgentName = "HEADLESS_STRESS_FRACTURE_BOT";
-        private const int ResultSchemaVersion = 5;
+        private const int ResultSchemaVersion = 6;
         private const int BlackboxFrameCapacity = 300;
+        private const int BlackboxHeaderSizeBytes = 16;
         private const int BlackboxEntrySizeBytes = 64;
         private const uint BlackboxMagic = 0x48534642u;
         private const double TimeoutSeconds = 7200.0;
@@ -289,6 +290,8 @@ namespace Hecton8.QA.Headless.Editor
                     WriteInvariant(writer, BlackboxMagic);
                     writer.Write(",\"blackboxFrameCapacity\":");
                     WriteInvariant(writer, BlackboxFrameCapacity);
+                    writer.Write(",\"blackboxHeaderSizeBytes\":");
+                    WriteInvariant(writer, BlackboxHeaderSizeBytes);
                     writer.Write(",\"blackboxEntrySizeBytes\":");
                     WriteInvariant(writer, BlackboxEntrySizeBytes);
                     writer.Write(",\"blackboxManifestRelativePath\":\"");

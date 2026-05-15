@@ -232,3 +232,33 @@ Cinematic Cheats used:
 
 Exact microseconds saved:
 - None claimed. This preserves black-box evidence under future ring-size changes; no dotnet rebuild was run.
+
+## 2026-05-15 - Toxicity Queue Guard Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- `ScheduleStep` could build `GasDynamicsStepJob` from `RoomO2` alone even though the job requires a valid toxicity signal queue writer.
+
+What was done:
+- Added `_toxicitySignals.IsCreated` to the scheduler gate before creating the job and parallel writer.
+
+Cinematic Cheats used:
+- None new.
+
+Exact microseconds saved:
+- None claimed. This is a native writer safety guard after partial disposal or future ownership migration; no dotnet rebuild was run.
+
+## 2026-05-15 - H-Phi Audit Ownership Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- Native memory audit counted `BaseAwakeState` as local gas memory even when GlobalDataVault owned that buffer.
+
+What was done:
+- `TryGetNativeMemoryAudit` now skips `BaseAwakeState` local byte accounting when `_baseAwakeVaultOwned` is true.
+
+Cinematic Cheats used:
+- None new.
+
+Exact microseconds saved:
+- None claimed. This is cold audit accuracy for H-Phi evidence; no dotnet rebuild was run.

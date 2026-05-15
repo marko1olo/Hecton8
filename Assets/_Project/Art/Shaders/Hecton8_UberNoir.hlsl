@@ -304,6 +304,9 @@ float H8UberNoirBucklingMask(float3 positionWS, half instanceSeed)
 
 float H8UberNoirRadiusMask(float3 positionWS, float4 centerRadius)
 {
+    if (!all(isfinite(positionWS)) || !all(isfinite(centerRadius)))
+        return 0.0;
+
     float radius = max(centerRadius.w, 0.0);
     float3 delta = positionWS - centerRadius.xyz;
     float radiusSq = max(radius * radius, H8_UBER_NOIR_EPS);
@@ -315,23 +318,28 @@ float3 H8UberNoirApplyDynamicHullBendingWS(float3 positionWS, float3 normalWS, h
 #if defined(_MATH_LOD_LOW)
     return positionWS;
 #else
+    float3 safePositionWS = H8UberNoirFinite3(positionWS, float3(0.0, 0.0, 0.0));
     float featureMask = step(0.5, _UberNoirFeatureFlags.z);
     float localStrength = max(_UberNoirBendParams.x, 0.0);
     float crushDepth = max(_HectonSubmarineCrushDepthParams.y, H8_UBER_NOIR_EPS);
     float crush01 = saturate(max(_HectonSubmarineCrushDepthParams.x, 0.0) * rcp(crushDepth));
     float crushDisplacement = max(_HectonSubmarineCrushDepthParams.z, 0.0) * crush01;
-    float crushMask = H8UberNoirRadiusMask(positionWS, _HectonSubmarineCrushCenterRadius);
+    float crushMask = H8UberNoirRadiusMask(safePositionWS, _HectonSubmarineCrushCenterRadius);
 
-    float habitatStress01 = saturate(_HectonHabitatStressParams.x);
-    float habitatDisplacement = max(_HectonHabitatStressParams.y, 0.0) * habitatStress01;
+    float habitatStressSource = _HectonHabitatStressParams.x;
+    float habitatDisplacementSource = _HectonHabitatStressParams.y;
+    float habitatStress01 = isfinite(habitatStressSource) ? saturate(habitatStressSource) : 0.0;
+    float habitatDisplacement = isfinite(habitatDisplacementSource)
+        ? max(habitatDisplacementSource, 0.0) * habitatStress01
+        : 0.0;
     float habitatMask = 0.0;
     [branch]
     if (habitatDisplacement > H8_UBER_NOIR_EPS)
-        habitatMask = H8UberNoirRadiusMask(positionWS, _HectonHabitatStressCenterRadius);
+        habitatMask = H8UberNoirRadiusMask(safePositionWS, _HectonHabitatStressCenterRadius);
 
-    float buckle = H8UberNoirBucklingMask(positionWS, instanceSeed) * 2.0 - 1.0;
+    float buckle = H8UberNoirBucklingMask(safePositionWS, instanceSeed) * 2.0 - 1.0;
     float displacement = (crushDisplacement * crushMask + habitatDisplacement * habitatMask) * buckle * localStrength * featureMask;
-    return H8UberNoirFinite3(positionWS + H8UberNoirSafeNormalize(normalWS, float3(0.0, 1.0, 0.0)) * displacement, positionWS);
+    return H8UberNoirFinite3(safePositionWS + H8UberNoirSafeNormalize(normalWS, float3(0.0, 1.0, 0.0)) * displacement, safePositionWS);
 #endif
 }
 

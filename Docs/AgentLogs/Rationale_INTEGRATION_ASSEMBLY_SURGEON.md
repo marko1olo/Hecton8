@@ -2,7 +2,7 @@
 
 Agent: INTEGRATION_ASSEMBLY_SURGEON
 Domain: Unity Compilation Graph / Integrator
-Status: BUILD SUCCESSFUL / POST-GREEN STATIC H-PHI DEBT REDUCED (bridge debt 14/6; Fresh19 retained; no dotnet command run in latest static pass)
+Status: BUILD SUCCESSFUL / FRESH25 CURRENT-DISK GREEN (Hecton8.Core --no-restore 0 warnings / 0 errors)
 
 ## Decision 0 - Session Initialization
 
@@ -203,6 +203,22 @@ Solution: Repaired the PowerShell property-array syntax without removing the AUP
 Rejected Alternatives: Reverting the AUP precision gate was rejected because it is useful H-Phi debt control. Treating the parse failure as a project build failure was rejected because no compile command was involved.
 Scalability potential: Low-end validation gets a static precision-risk tripwire without Unity import or dotnet. High/Ultra validation can keep the same gate as a preflight before runtime/profiler proof.
 Hardware Impact: Runtime impact 0 us. Tooling reliability improved; exact player-frame savings are 0 us.
+
+## Decision 26 - Fresh25 Current-Disk Compile Closure
+
+Problem: Parallel agents edited C# after earlier green artifacts. Fresh21 exposed a static/instance mismatch in `SargassumMicroFaunaBoids`; Fresh22 exposed missing hot-swap helper methods in `SpatialAudioManager`; stale Fresh19/Fresh24 evidence would be a false report.
+Solution: Fixed the exact compile wall without reverting unrelated edits, then reran serial Core builds with build servers disabled. `Fresh25` is the accepted current-disk artifact: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`.
+Rejected Alternatives: Reverting concurrent agent files was rejected. Claiming Unity/editor readiness was rejected because this pass is CLI_COMPILE only. Leaving duplicate helper methods in `SpatialAudioManager` was rejected because it would become CS0111 under the current disk.
+Scalability potential: Low/Middle/High/Ultra runtime behavior is not proven by CLI compile. The dispatcher/hot-swap repairs preserve the low-tier no-Update rule and keep high-tier audio services on cached dependencies instead of per-frame registry reads.
+Hardware Impact: Runtime frame savings are reported as 0 us because no profiler was run. Final compile verification time: 117,770,000 us.
+
+## Decision 27 - Dispatcher Fallback And H-Phi Signal Debt Gate
+
+Problem: The inquisition report flagged `OculusFfrEnforcer.Update()` as hot-path purity debt, and duplicate `*Signal` names were invisible to the H-Phi tool even though `SectorHydratedSignal` was a known contract collision.
+Solution: `OculusFfrEnforcer` now relies on `GlobalRegistry` hot-swap notification to register with `SystemDispatcher` when the dispatcher appears. `HectonPhiAudit.ps1` now scans first-party `*Signal` struct names, reports duplicate names, and enforces `-MaxDuplicateSignalNames`. Current static debt is 6 duplicate names / 12 declarations; `SectorHydratedSignal` remains exposed, not renamed.
+Rejected Alternatives: Keeping the `Update()` exception was rejected. Blindly renaming public signal contracts during the active batch was rejected by interface immutability law. Hiding duplicate signal debt in prose was rejected because budgeted tooling is the enforceable route.
+Scalability potential: Low tier removes a standalone Unity Update fallback from the Quest FFR path. Middle/High/Ultra keep deterministic dispatcher ownership; duplicate-signal cleanup can now be staged without silent API drift.
+Hardware Impact: Runtime impact measured: 0 us. Static tool verification cost: 296,100,000 us for the final H-Phi budget pass. Expected player-frame savings are not claimed without profiler evidence.
 
 ## Decision 26 - Exact Replacement Reference Correction
 

@@ -172,3 +172,17 @@ Solution: `ScheduleStep` now computes the write index and next cursor from `_tel
 Rejected Alternatives: Relying on the job guard to silently drop telemetry was rejected because the black-box ring is crash evidence, not optional garnish.
 Scalability potential: Low through Ultra keep the same 300-frame black box by default; future ring-size changes remain safe.
 Hardware Impact: One live-length branch per scheduled gas step. No frame-time saving claimed.
+
+## Self-Review 18 - Toxicity Queue Schedule Guard
+Problem: `GasDynamicsStepJob` carries a `NativeQueue<ToxicitySignal>.ParallelWriter`, but `ScheduleStep` only checked `RoomO2` before building the job.
+Solution: The scheduler now refuses to run the gas step unless `_toxicitySignals` is created.
+Rejected Alternatives: Letting the job discover a missing queue was rejected because a `NativeQueue` writer has no safe in-job fallback. Removing toxicity emission from hibernating builds was rejected because player CO2/narcosis feedback is domain-critical.
+Scalability potential: Low through Ultra keep the same queue and toxicity semantics; this only preserves the invariant required by the job.
+Hardware Impact: One boolean check per attempted gas schedule. Prevents an invalid native writer path after partial disposal or future owner migration.
+
+## Self-Review 19 - H-Phi Audit Ownership Accuracy
+Problem: `TryGetNativeMemoryAudit` counted `BaseAwakeState` as local gas memory even when the buffer was owned by GlobalDataVault.
+Solution: The audit now skips `BaseAwakeState` in local allocation totals when `_baseAwakeVaultOwned` is true.
+Rejected Alternatives: Adding a new audit field for vault-owned bytes was rejected because the public contract would widen without compile proof. Counting it twice was rejected because it hides the H-Phi ownership improvement.
+Scalability potential: Low through Ultra get accurate memory accounting for the shared awake mask.
+Hardware Impact: No runtime saving; one cold audit branch only. Improves evidence quality for H-Phi/data-sovereignty review.

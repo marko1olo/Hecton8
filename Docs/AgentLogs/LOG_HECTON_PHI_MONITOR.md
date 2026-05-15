@@ -488,3 +488,59 @@ Regression Model:
 - Memory: no buffer ownership changed.
 - Cadence: no Tick/FixedTick/Update/job schedule changed.
 - Correctness: analyzer output is broader and more actionable; static text evidence remains `PENDING VERIFICATION` for runtime behavior.
+
+## 2026-05-15 Score Floors And Concurrent-Scan Hardening
+
+What was wrong:
+- H-Phi regression gates did not yet enforce floors for the actual low-score coefficients: `DataSovereignty`, `MemoryAlignment`, and risk-adjusted runtime H-Phi.
+- Registry, component lookup, and NativeArray totals could rise without failing the full source audit.
+- Full scans could crash when another active agent deleted a source file between enumeration and `ReadAllText`.
+
+What was done:
+- Added full-source gates:
+  - `-MaxGlobalRegistrySurface`
+  - `-MaxGetComponentCalls`
+  - `-MaxNativeArrayRefs`
+  - `-MinDataSovereignty`
+  - `-MinMemoryAlignment`
+  - `-MinRuntimeHPhiRisk`
+- Added `CoreGraphOnly` rejection for those source-only gates.
+- Added Core graph budget summaries to compact JSON output.
+- Hardened duplicate-signal and main file scans to skip files removed during concurrent work.
+- Honored user instruction: no `dotnet build`, no rebuild.
+
+Cinematic Cheats used:
+- None. Static audit tooling and owner-routing only.
+
+Exact Microseconds saved:
+- Runtime gameplay: 0 us measured; no gameplay code path changed.
+- Tooling: final full budgeted summary completed in about 223.4 seconds. This is static-source evidence only.
+
+Compile Status:
+- Not run by explicit user order.
+- Static checks run:
+  - `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -MinDataSovereignty 0.02 -Summary -Json` correctly rejected source floor under graph-only mode.
+  - `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1`
+  - `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`
+  - Tight full gate caught `NativeArrayRefs 7029 > 7026`.
+  - Tight full gate caught `GlobalRegistrySurface 5150 > 5149`.
+  - Final full gate passed: `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0 -MaxFindObjectCalls 5 -MaxLegacyEventPublish 28 -MaxDuplicateSignalNames 6 -MaxGlobalRegistrySurface 5160 -MaxGetComponentCalls 550 -MaxNativeArrayRefs 7035 -MinDataSovereignty 0.020800000 -MinMemoryAlignment 0.503900000 -MinRuntimeHPhiRisk 0.000570000 -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 14 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 6`
+- `git diff --check`: no whitespace errors; LF/CRLF warning only.
+
+Phi Gain:
+- Previous runtime narrow score: `0.010497120`.
+- Current runtime narrow score: `0.010739531`.
+- Previous runtime risk-adjusted score: `0.000574075`.
+- Current runtime risk-adjusted score: `0.000586338`.
+- Data Sovereignty moved `0.020903010 -> 0.021374686`.
+- Memory Alignment moved `0.503966155 -> 0.504232804`.
+- DataVault refs moved `150 -> 153`; NativeArray refs moved `7026 -> 7005`.
+- GlobalRegistry surface moved `5149 -> 5143`; GetComponent calls moved `541 -> 540`.
+- Important: this score movement includes concurrent workspace changes and a file disappearing during active agent work. It is not measured frame-time gain.
+
+Regression Model:
+- CPU: no gameplay code path changed.
+- GC: no gameplay allocation changed.
+- Memory: no buffer ownership changed.
+- Cadence: no Tick/FixedTick/Update/job schedule changed.
+- Correctness: future H-Phi regressions now fail on score floors and source-count ceilings instead of only appearing as advisory text.

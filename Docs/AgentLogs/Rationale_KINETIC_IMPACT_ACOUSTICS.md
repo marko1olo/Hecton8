@@ -424,3 +424,22 @@ Solution: Ran source-only checks: duplicate symbol scan, method-body registry co
 Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile or profiler status without Editor console/MCP data would be false.
 Scalability potential: Verification only.
 Hardware Impact: Verification only.
+
+## LOOP 22 HABITAT PORTAL CONSTRUCTION CACHE H-PHI PASS
+Problem: `TryBuildHabitatAcousticPortalGraph()` still read `GlobalRegistry.ConstructionRuntime` directly while building spatial audio portal routes through habitat graph data. This is audio portal routing, but the dependency source belongs to logistics/construction and should be cached through the registry hot-swap lane.
+Solution: Added `_cachedConstructionManager`, seeded it in `RefreshCachedAudioRuntimeServicesCold()` from `GlobalRegistry.ConstructionRuntime`, cleared it during service shutdown, used it in `TryBuildHabitatAcousticPortalGraph()`, and updated it from `GlobalRegistryServiceSlot.Logistics` inside `CacheReboundAudioRuntimeService()`.
+Rejected Alternatives: Keeping the direct portal-path lookup would leave a service-locator read in the acoustic route builder; adding a new construction event interface would widen cross-domain contracts; cadence polling would spend lookup work despite an existing service hot-swap lane.
+Scalability potential: Low/MX350 habitat acoustics use the same bounded fake portal graph but avoid construction service lookup per graph attempt. Middle/High/Ultra retain habitat portal overkill when the graph exists, with CPU spent on graph edge/node traversal instead of service discovery.
+Hardware Impact: Saves one `GlobalRegistry.ConstructionRuntime` read per habitat acoustic portal graph attempt after cache warmup. Runtime allocation delta remains 0 B/frame; added work is one cached field and hot-swap callback assignment on logistics rebinding.
+
+Problem: Static coverage did not guard habitat portal graphing from direct registry polling.
+Solution: Extended `AdvancedAcousticsSmokeTester` to extract `TryBuildHabitatAcousticPortalGraph()`, assert cold-only construction runtime seeding, assert logistics-slot rebinding, assert `_cachedConstructionManager` payload update, and reject any `GlobalRegistry.` access in the habitat portal graph method body.
+Rejected Alternatives: Manual-only review, or checking only `GlobalRegistry.ConstructionRuntime` while allowing a different registry read into the same method.
+Scalability potential: Editor-only guard; protects low-tier fake portal acoustics and high-tier habitat graph routing from dependency lookup creep.
+Hardware Impact: 0 us runtime in player builds.
+
+Problem: Compile/profiler proof remains unavailable under the user's no-dotnet-rebuild order and missing Unity MCP resources.
+Solution: Ran source-only checks: fixed-symbol scan, method-body registry counters, `git diff --check`, and scoped forbidden-API scan. Counters: `HabitatPortalGraph GlobalRegistry=0`, `PortalPath GlobalRegistry=0`, `ColdConstructionRuntime=1`, `CacheRebound GlobalRegistry=0`. `git diff --check` passed except CRLF normalization warnings.
+Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile or profiler status without Editor console/MCP data would be false.
+Scalability potential: Verification only.
+Hardware Impact: Verification only.

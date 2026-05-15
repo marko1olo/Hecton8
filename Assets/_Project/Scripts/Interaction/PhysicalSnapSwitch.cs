@@ -224,10 +224,13 @@ namespace Hecton8.Interaction
 
         private void UnregisterCollider()
         {
-            if (!_receiverRegistered)
+            Collider registeredVolume = _registeredActivationVolume;
+            if (!_receiverRegistered && registeredVolume == null)
                 return;
 
-            PhysicalHandReceiverRegistry.Unregister(_registeredActivationVolume, this);
+            if (registeredVolume != null)
+                PhysicalHandReceiverRegistry.Unregister(registeredVolume, this);
+
             _registeredActivationVolume = null;
             _receiverRegistered = false;
         }
@@ -250,9 +253,6 @@ namespace Hecton8.Interaction
 
         private void Unregister()
         {
-            if (!_registered)
-                return;
-
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registered = false;
         }

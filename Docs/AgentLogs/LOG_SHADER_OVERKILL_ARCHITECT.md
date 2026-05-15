@@ -133,6 +133,7 @@ What was done:
 - Packed DRS hysteresis counters into the existing telemetry `Reserved` field without changing the 32-byte black-box entry size.
 - Removed the runtime upscaling-filter mutation method and stopped writing `UniversalRenderPipelineAsset.renderScale` from the direct fallback path.
 - Added finite guards for procedural flora tint and tint strength before `Shader.SetGlobalVector`.
+- Guarded procedural flora tint tick registration so it only registers with `GlobalRegistry` in play mode.
 
 Cinematic Cheats used:
 - Resolution scaling remains a controlled presentation fake: stable scale changes buy frame time without changing simulation truth.

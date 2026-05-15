@@ -284,3 +284,11 @@ Solution: Resolve a local candidate buffer, publish it only inside the fresh-upl
 Rejected Alternatives: Keeping the previous contract was rejected because parallel consumers can make mistakes and the getter is the boundary that knows whether data is fresh. Forcing an upload from the getter was still rejected because queries must not create hidden GPU bandwidth or main-thread render work.
 Scalability potential: Low/MX350/high/ultra visuals are unchanged when uploads are fresh. All tiers now fail closed on stale data, preserving the cheap low-tier path and high-tier visual overkill only when the buffer freshness contract is proven.
 Hardware Impact: Hot-path frame-time savings are not claimed. The change adds no allocation and only reuses the existing branch; it prevents stale GPU deformation from invalid query states.
+
+## Decision 29: Legacy Animator Spine Path Removal
+
+Problem: `ProceduralLeviathanSpineIK` remained in the fauna domain as an older transform-chain presentation owner with `Animator`, `SkinnedMeshRenderer`, managed scratch lists, and a stale four-argument strike API. The current Alpha Leviathan integration uses `FaunaKinematicsRuntime`, and scans showed no active references to the legacy MonoScript.
+Solution: Delete the unused legacy `.cs` and matching `.meta` together after verifying no type-name references and no GUID references in code, prefabs, scenes, assets, materials, controllers, packages, or project settings.
+Rejected Alternatives: Leaving the file as "unused" was rejected because dead components with forbidden dependencies keep architectural drift alive and can be rebound accidentally by parallel work. Porting the legacy class to the new API was rejected because `FaunaKinematicsRuntime` is already the domain owner.
+Scalability potential: Low/MX350/high/ultra runtime behavior is unchanged through the active path. The cleanup removes a fallback route that could reintroduce CPU skinning/transform writeback instead of the eight-to-twenty matrix GPU deformation contract.
+Hardware Impact: No runtime microsecond savings are claimed because no references were found. The hardware gain is risk removal: no accidental Animator/SkinnedMeshRenderer presentation path for Leviathan on i3/MX350-class hardware.

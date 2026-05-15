@@ -465,5 +465,7 @@ Verification:
 - Scoped source counts: `ResultSchemaVersion5=2`, `BlackboxManifestFields=12`, `BlackboxFlagLegendFields=9`, `DumpBlackboxManifestMethods=2`, `GlobalRegistryDot=13`.
 - Runtime isolated Unity compiler probe: PASS via Unity Mono/Roslyn with UnityJIT facades, Unity modules, current `Library/ScriptAssemblies`, and `Assembly-CSharp.dll`.
 - Editor runner isolated Unity compiler probe: PASS via Unity Mono/Roslyn with UnityEngine/UnityEditor facade references and `UNITY_EDITOR` defined.
+- `git diff --check`: PASS for whitespace on the QA runner, editor runner, and owned status/rationale/log files.
+- No temp `*ManifestSchema*.dll` probe artifacts remain in `Temp`.
 - No `dotnet` rebuild was run.
 - Full Unity/editor/player execution remains PENDING VERIFICATION because no Unity MCP/editor session is available in this tool context.

@@ -201,3 +201,25 @@ Cinematic cheats used: No visual change. The same physical panel projection math
 Exact microseconds saved: Estimate only. Expected gain is sub-1 us per active physical panel frame, with cleaner camera ownership for future panel effects.
 
 Verification: No dotnet rebuilds were run. Static scan found no `resolvedCamera.transform` markers; the only remaining `camera.transform` marker in `DiegeticPanelController.cs` is inside `CacheInteractionCamera()`.
+
+## 2026-05-15 Diegetic Panel Input Service Cache
+What was wrong: `DiegeticPanelController` still refreshed `GlobalRegistry.Input` during every runtime-state check. A naive cache would also be wrong because `GlobalRegistry.Input` can return the no-op fallback before the real input dispatcher registers, and first registration from null does not broadcast a hot-swap event.
+
+What was done: Added hot-swap listener ownership to the panel controller, cached the real registered `IInputService`, and kept a narrow `_inputAwaitingRegistration` fallback probe only while `GlobalRegistry.RegisteredInput` is empty. Player service hot-swap now refreshes the cached panel camera when no authored interaction camera is assigned.
+
+Cinematic cheats used: No visual contract change. The same physical panel projection, RT presentation, proxy-light fake, and phosphor-history CRT persistence remain.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per active physical panel tick after input registration, with correctness preserved for startup ordering.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed listener registration/unregistration, `GlobalRegistry.Input` isolated to `RefreshServices()`, stale no-op protection through `_inputAwaitingRegistration`, and no forbidden hot-path allocation/text/LINQ, bootstrap fallback, direct `Time`, old phosphor fallback, or `resolvedCamera.transform` markers.
+
+## 2026-05-15 Diegetic Panel Material Property Cache
+What was wrong: Phosphor-enabled physical panels refresh the output texture every late frame, but the material path still repeated `HasProperty` checks and rewrote `_PanelPowerLevel` during texture-only updates.
+
+What was done: Cached panel output material property support when the material reference changes, routed texture/float writes through cached flags, and separated the material-written power value from the logical panel power state.
+
+Cinematic cheats used: Preserved the phosphor-history CRT persistence fake. The change spends less CPU/API traffic on the same authored material effect.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per phosphor-enabled panel late frame on i3/MX350; no profiler proof is claimed.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed `HasProperty` is isolated to `RefreshPanelOutputMaterialPropertyCache()`, material writes use cached flags, and no forbidden allocation/text/LINQ, bootstrap fallback, direct `Time`, old phosphor fallback, or `resolvedCamera.transform` markers returned.

@@ -53,3 +53,7 @@ Task loop 8:
 Task loop 9:
 - [x] Continue pull gate | DOD: `git fetch origin`; `rev-list origin/main...HEAD` returned `0 0`, so no pull/merge required | Rejected: pull over dirty worktree without incoming commits | Estimate: 0 us runtime.
 - [x] Validate graphics/live tail | DOD: `git diff --stat`, `git diff --check`, unmerged-path scan, and changed-file conflict-marker scan | Rejected: staging unchecked edits | Estimate: 0 us runtime.
+
+Task loop 10:
+- [x] Verify pushed graphics tail | DOD: `git push origin main:main`; post-push `fetch` and divergence check returned `0 0` | Rejected: trusting push output without fetch verification | Estimate: 0 us runtime.
+- [x] Check next live tail | DOD: post-push `git status`, `git diff --stat`, `git diff --check`, unmerged-path scan, and marker scan | Rejected: hiding continuing parallel-agent writes | Estimate: 0 us runtime.

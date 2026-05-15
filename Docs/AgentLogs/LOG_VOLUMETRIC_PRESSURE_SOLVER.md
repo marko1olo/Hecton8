@@ -405,3 +405,25 @@ Follow-up upgrade 41:
 Exact microseconds saved after follow-up 41:
 - Faulted vertices/fragments avoid NaN bend and crease propagation.
 - Valid-frame overhead is one UV finite check plus one mask finite check in already-gated panel paths.
+
+Follow-up upgrade 42:
+- What was wrong: CoreLit analytical habitat dent trusted global stress, displacement, radius, grid scale, and seed scalars.
+- What was done: `HectonCoreLitApplyHabitatAnalyticalStress` now fails closed on non-finite analytical stress/displacement/radius/grid/seed inputs and non-finite radius masks before dent output.
+- Cinematic cheat used: invalid analytical pressure globals become no-op deformation; valid High/Ultra analytical dent remains unchanged.
+- Static checks: `rg` confirms CoreLit analytical finite gates; exact shader `normalize()`/`sqrt()` scan remains clean; managed-offender scan remains clean; mesh mutation scan found no owned `Mesh.vertices` writes; touched shader/doc braces are balanced; `git diff --check` reports only CRLF normalization warnings.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction.
+
+Exact microseconds saved after follow-up 42:
+- Fault frames avoid NaN radius/phase/dent propagation.
+- Valid-frame overhead is finite scalar checks only inside the already-active analytical dent path.
+
+Follow-up upgrade 43:
+- What was wrong: UberNoir dynamic hull bending reused habitat analytical globals and radius masks without a local finite guard.
+- What was done: `H8UberNoirRadiusMask` now rejects non-finite position/center/radius data, and UberNoir habitat stress/displacement scalars are finite-gated before bend accumulation.
+- Cinematic cheat used: corrupted habitat contribution becomes zero noir bend; valid High/Ultra bending remains unchanged.
+- Static checks: `rg` confirms UberNoir radius-mask and habitat-scalar finite gates; exact shader `normalize()`/`sqrt()` scan remains clean; managed-offender scan remains clean; mesh mutation scan found no owned `Mesh.vertices` writes; touched shader/doc braces are balanced; `git diff --check` reports only CRLF normalization warnings.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction.
+
+Exact microseconds saved after follow-up 43:
+- Fault frames avoid NaN dynamic hull displacement in UberNoir.
+- Low/MX350 remains bypassed by `_MATH_LOD_LOW`; valid non-low overhead is finite checks around already-active bending math.

@@ -349,3 +349,15 @@ Cinematic Cheats used: no simulation change. This preserves the scalar kinematic
 Exact microseconds saved/spent: 0 us normal steady-state. Cold dispatcher transitions pay one guarded receiver unregister/register. Allocation-failed or dispatcher-detached states avoid useless receiver callbacks and free one fixed receiver-table slot.
 
 Verification: `git diff --check` passed for the lever source. Scoped counter reports `ReceiverRequiresNative=1`, `DispatcherNullUnregistersReceiver=1`, `DispatcherRecoveryRegistersReceiver=1`, `ScalabilityCallbackActiveGuard=1`, `ScalabilityByteTier=1`, `PayloadQualityTierInCallback=0`. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - Shared Physical Receiver Stale-Flag Recovery
+
+What was wrong: panel buttons and snap switches still trusted local booleans for receiver/updatable teardown. A drifted false flag could leave a collider in `PhysicalHandReceiverRegistry` or an inert object in the UI dispatcher lane.
+
+What was done: `PhysicalPanelButton` and `PhysicalSnapSwitch` now unregister receivers from cached collider identity when present and use idempotent `GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI)` cleanup before clearing local flags.
+
+Cinematic Cheats used: no simulation change. This preserves the existing cheap physical cockpit controls and removes dead lifecycle work instead of adding polling.
+
+Exact microseconds saved/spent: 0 us active-frame cost. Cold teardown pays an idempotent fixed-bucket scan and prevents permanent stale receiver slots or stray UI ticks.
+
+Verification: `git diff --check` passed for `PhysicalPanelButton.cs` and `PhysicalSnapSwitch.cs`. Scoped counter reports `PanelReceiverCachedUnregister=1`, `SwitchReceiverCachedUnregister=1`, `PanelFlagGatedUpdatableUnregister=0`, `SwitchFlagGatedUpdatableUnregister=0`, `PanelUnregisterUpdatable=1`, `SwitchUnregisterUpdatable=1`. `CURRENT_BATCH.md` extraction still returns no matching prompt block. No dotnet rebuild/probe was run by user instruction.

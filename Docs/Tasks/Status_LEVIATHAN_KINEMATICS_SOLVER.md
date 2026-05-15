@@ -316,3 +316,13 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 - `rg` confirms `TryGetLeviathanBoneGraphicsBuffer()` only assigns non-null `buffer` inside the fresh-upload success branch.
 - `git diff --check` and `git diff --cached --check` on touched code/docs exit 0.
 - No `dotnet` rebuild, compile, Unity import, or response-file probe was run.
+
+### Loop 29: Legacy Animator Spine Path Deletion Recheck
+
+- Deleted `ProceduralLeviathanSpineIK.cs` and `ProceduralLeviathanSpineIK.cs.meta` together.
+- DOD: type-name and GUID scans found no code, prefab, scene, asset, material, controller, package, or project-settings references to the legacy MonoScript before deletion.
+- Alternative Rejected: keeping a dead Animator/SkinnedMeshRenderer path because it violates the Leviathan GPU/Burst presentation contract and preserves false API surface.
+- Estimate: 0 us runtime hot-path change if the class was truly unbound; removes roughly 1,000 lines of dead compile surface and cold legacy allocation code.
+- Static reference scan after deletion found no remaining `ProceduralLeviathanSpineIK` or `409e50cc5c5dffc4790462e3a0eafe0f` references.
+- `.cs` and `.meta` are both absent on disk after the deletion.
+- No `dotnet` rebuild, compile, Unity import, or response-file probe was run.

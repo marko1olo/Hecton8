@@ -679,4 +679,32 @@ Exact microseconds saved:
 
 Verification:
 - Static scans confirm valid config resets before WFC identity assignment and flag application.
--
+- Static scans confirm invalid config remains clear-then-reset.
+- `git diff` shows no source delta for `SealedDoor.cs`.
+- Targeted `git diff --check` reports only Git CRLF normalization warnings.
+- No `dotnet` rebuild was run.
+
+## Recheck Report: WFC Hydration Magic Unaligned Read Guard
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- The hydration magic prefilter used `ReadUInt(source, 0)`.
+- That raw `uint*` load was unnecessary before payload type certainty.
+
+What was done:
+- Replaced the prefilter read with four guarded byte comparisons.
+- Left full WFC payload decode and checksum validation unchanged.
+
+Cinematic cheats used:
+- Fixed magic-byte prefilter avoids payload-type contract churn and avoids replay diagnostics.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Hydration candidate cost: four byte reads instead of one raw 32-bit load.
+- Runtime allocation: 0 B by static inspection.
+
+Verification:
+- Static scans confirm `HasWfcOutpostBitmaskMagic()` no longer calls `ReadUInt`.
+- Static scans confirm full WFC decode still performs complete header validation.
+- Targeted `git diff --check` reports only Git CRLF normalization warnings.
+- No `dotnet` rebuild was run.

@@ -164,10 +164,14 @@ Mandates read:
 - [x] Tool RT format cold cache | DOD: `ToolDiegeticDisplayController` resolves RGB565-vs-ARGB32 support once in `Awake()` and uses the cached `RenderTextureFormat` for future pool rents | Rejected: repeating `SystemInfo.SupportsRenderTextureFormat` during RT reacquisition after visibility churn or pool retry | Estimate: removes one platform capability probe per RT rent
 - [x] Static no-regression checks after Loop 20 | DOD: `git diff --check` passed with line-ending warnings only, `git diff --cached --check` passed, scanner banned-pattern scan found no forbidden UI/scanner patterns, and RT-format scan confirmed the support probe is only in the cold resolver | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 2800 us
 
+## Loop 21 - Filtered Scanner Signal Dirty-Churn Guard
+
+- [x] Rejected scanner packet zeroing | DOD: `ToolDiegeticDisplayController` now maps scanner-active packets that fail the tool-hash filter to artifact `0` and progress `0`, so unrelated scanner traffic cannot carry artifact/progress into the display cache | Rejected: letting rejected packets mark filtered displays dirty through irrelevant artifact hashes | Estimate: avoids one dirty-state refresh per unrelated scanner hash transition
+
 ## Verification
 
 - [x] Compile/source validation - `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:quiet -clp:Summary` passed with 0 warnings / 0 errors after Loop 10
-- [ ] Compile/source validation after Loops 11-20 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
+- [ ] Compile/source validation after Loops 11-21 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
 - [ ] Console check - BLOCKED BY UNITY SESSION: MCP validate/console calls cannot connect to Unity MCP HTTP endpoint / session
 - [x] Re-read prompt after core tasks
 - [x] Omega polish mandate after all tasks done or blocked

@@ -178,6 +178,12 @@ Rejected Alternatives: Trusting migration to trim after allocation; keeping gene
 Scalability potential: Low devices reject corrupt save payloads before heap pressure; Middle keeps legacy compatibility lists bounded while packed bitmasks and DTO arrays carry primary state; High and Ultra can keep richer save DTO capacity without letting compatibility maps scale with mod or corruption noise.
 Hardware Impact: 0 us frame impact. Cold load now caps worst-case root compatibility allocation to 32/108/1024/1024/32/16/32/64 records instead of attacker-controlled counts; cold save adds scalar clamps and one paired-list min chain only.
 
+Problem: The binary codec was bounded, but non-binary restore paths could still hand migration oversized legacy lists/maps from JSON, editor repair, or manual DTO construction.
+Solution: Added cold migration trimming for tool durability maps, custom mod data, legacy biome/audio-log discovery collections, quest lists, suit upgrade lists, corporate order lists/timers, and mission lists. Dictionary/hash-set trimming uses repeated single-entry removal to avoid temporary key arrays; corporate pending order IDs/timers clamp to a shared paired count.
+Rejected Alternatives: Assuming every restore path uses the binary codec; adding hot runtime guards in producer systems; sorting legacy dictionaries before trimming. Migration is the correct cold gate, and deterministic order is not guaranteed for these existing legacy dictionaries anyway.
+Scalability potential: Low devices avoid oversized post-load compatibility containers even from non-binary saves; Middle keeps migration repair bounded and explicit; High and Ultra can keep rich primary DTO state without compatibility baggage growing beyond producer limits.
+Hardware Impact: 0 us frame impact. Cold migration adds O(extra entries) list trims and O(extra entries * remaining dictionary count) dictionary/hash-set removal only when corrupt or oversized data is present.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Polish audit required removal of fake precision, managed iteration/string debt, and any code outside the DataVault domain without justification.

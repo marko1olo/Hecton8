@@ -4,7 +4,24 @@ Agent: INTEGRATION_ASSEMBLY_SURGEON
 Role: SYSTEMS_ARCHITECT
 Domain: Unity Compilation Graph / Integrator
 Prompt task count: 15 (current in-chat XML; older 17-task static pass retained below)
-Current state: BUILD SUCCESSFUL / POST-GREEN STATIC H-PHI DEBT REDUCED (bridge debt 14/6; Fresh19 retained; no dotnet command run in this pass)
+Current state: BUILD SUCCESSFUL / FRESH25 CURRENT-DISK GREEN (Hecton8.Core --no-restore 0 warnings / 0 errors)
+
+## 2026-05-15 Fresh25 Continuation
+
+Directive source: current user continuation plus in-chat `<AGENT_PROMPT id="INTEGRATION_ASSEMBLY_SURGEON">`; `Docs/Tasks/CURRENT_BATCH.md` still does not expose this agent tag.
+Task count: 15 numbered primary objectives.
+Domain: Echelon 9 / The Integrator (Compile Medic).
+Current state: BUILD SUCCESSFUL / FRESH25 CURRENT-DISK GREEN.
+Final compile artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh25.log`.
+Final H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_FinalBudgetPass2.json`.
+
+- [x] Fresh build recheck | Justification: Fresh20 proved green, Fresh21/Fresh22 caught concurrent compile breaks, Fresh23/Fresh24 restored green, and Fresh25 revalidated the current disk after more concurrent edits | Alternatives rejected: reporting stale Fresh19/Fresh24 while other agents were still editing C# | Estimate: 117,770,000 us final build verification
+- [x] `OculusFfrEnforcer` Update fallback removed | Justification: inquisition flagged private `Update()` outside dispatcher exception list; current file implements `IGlobalRegistryHotSwapListener` and contains no `private void Update()` | Alternatives rejected: documenting an exception without removing the hot-path fallback | Estimate: 0 us measured runtime; static hot-path method count reduced
+- [x] `SpatialAudioManager` hot-swap repair | Justification: concurrent edits called missing cold-cache/hot-swap helpers; implemented cached service rebinding and removed a duplicate helper set before final build | Alternatives rejected: per-frame `GlobalRegistry` polling and duplicate helper bodies | Estimate: 0 us measured runtime; prevents CS0103/CS0111 wall
+- [x] `SargassumMicroFaunaBoids` static mismatch repaired | Justification: `PublishPredatorKillDebris` read `_abyssalFluidDecals`; method changed from static to instance to match existing caller and field ownership | Alternatives rejected: making the decal cache static or removing the fluid-decal visual hook | Estimate: 0 us measured runtime
+- [x] H-Phi duplicate signal-name gate added | Justification: `HectonPhiAudit.ps1` now reports duplicate `*Signal` struct names and supports `-MaxDuplicateSignalNames`; current static debt is 6 duplicate names / 12 declarations | Alternatives rejected: blind public contract renames during active batch | Estimate: 0 us runtime
+- [x] Static H-Phi budget verification | Justification: `HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_FinalBudgetPass2.json` exits 0 with `AupPrecisionRisk=0`, `DuplicateSignalNameCount=6`, `UnityUpdateMethods=2` | Alternatives rejected: claiming duplicate-signal cleanup; the debt is exposed, not erased | Estimate: 296,100,000 us tooling verification
+- [x] Diff hygiene | Justification: `git diff --check` returned exit 0; only CRLF normalization warnings from concurrent working-tree files remain | Alternatives rejected: normalizing unrelated files under active multi-agent edits | Estimate: 0 us runtime
 
 ## Mandates Read
 

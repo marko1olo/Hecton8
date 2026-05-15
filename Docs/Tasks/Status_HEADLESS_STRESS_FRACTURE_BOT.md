@@ -109,6 +109,8 @@ Status: PENDING VERIFICATION
 - Focused static audit after blackbox manifest schema pass: PASS for both Race Condition Hunter files; no scene search, component lookup, LINQ, coroutine, `Task<`, `.Complete()`, explicit GC, reflection, managed collection creation, `string.Format`, or `Substring` parser usage. Counts: `ResultSchemaVersion5=2`, `BlackboxManifestFields=12`, `BlackboxFlagLegendFields=9`, `DumpBlackboxManifestMethods=2`, `GlobalRegistryDot=13`.
 - Isolated runtime compile after blackbox manifest schema pass: PASS via Unity Mono/Roslyn using UnityJIT facades, Unity modules, current `Library/ScriptAssemblies`, and `Assembly-CSharp.dll`.
 - Isolated editor runner compile after blackbox manifest schema pass: PASS via Unity Mono/Roslyn with `UNITY_EDITOR` defined, UnityEngine/UnityEditor facade references, and `Assembly-CSharp.dll`.
+- `git diff --check` after blackbox manifest schema pass: PASS for whitespace on the QA runner, editor runner, and owned status/rationale/log files.
+- Temp ManifestSchema compiler artifacts after blackbox manifest schema pass: PASS, no `*ManifestSchema*.dll` files remain in `Temp`.
 - Full `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false`: BLOCKED BY EXISTING DEPENDENCIES, 139 unrelated errors before/around core missing namespaces, duplicate SaveManager members, and interface mismatches.
 - Full `dotnet build Assembly-CSharp.csproj --no-restore -m:2 /nr:false`: BLOCKED BY SAME EXISTING `Hecton8.Core.csproj` dependency failures.
 - No `dotnet` rebuilds were run during the 2026-05-15 continuation pass.
