@@ -29,3 +29,20 @@ Combined outputs:
 Cinematic Cheats used: not applicable.
 
 Exact Microseconds saved: 0 runtime us claimed. Future documentation grep noise reduced; no measured editor timing claimed.
+
+## 2026-05-15 Lightweight AgentLogs Combined Variant
+
+What was wrong: `AgentLogs_Batch006_COMBINED.txt` reached 19,214,452 bytes because it embedded archived `.json` files along with `.md` and `.txt` reports.
+
+What was done: created two additional non-JSON review bundles:
+- `Docs/Archive/Batch006/AgentLogs_Combined/AgentLogs_Batch006_COMBINED_MD_TXT_ONLY.txt`
+- `Docs/Archive/Batch006/AgentLogs_Combined/AgentLogs_Batch006_COMBINED_MD_TXT_ONLY.md`
+Also created split text parts for easier review:
+- `Docs/Archive/Batch006/AgentLogs_Combined/AgentLogs_Batch006_COMBINED_MD_TXT_ONLY_PART01.txt`
+- `Docs/Archive/Batch006/AgentLogs_Combined/AgentLogs_Batch006_COMBINED_MD_TXT_ONLY_PART02.txt`
+
+Verification: each full lightweight file is 6,034,131 bytes after trailing-whitespace normalization, contains 429 FILE sections, and has 0 `.json` sections. Split parts are 3,015,328 bytes / 330 FILE sections and 3,019,323 bytes / 99 FILE sections. Included sources: 177 `.md` files and 252 `.txt` files. No lightweight JSON manifest was generated.
+
+Cinematic Cheats used: not applicable.
+
+Exact Microseconds saved: 0 runtime us claimed. Human review/search load is reduced by using the MD/TXT-only bundle instead of the full md/txt/json bundle.

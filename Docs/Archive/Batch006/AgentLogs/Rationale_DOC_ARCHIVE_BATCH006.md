@@ -31,3 +31,15 @@ Late-write handling: Because other agents are still active, 7 AgentLogs files an
 Final late-write handling: 2 additional AgentLogs files and 1 Tasks file appeared during finalization. They were moved into Batch006. Final archive counts recorded before final readback: AgentLogs 917 files, Tasks 87 files.
 
 Stabilization late-write handling: A bounded idle loop moved 7 additional AgentLogs items and 2 Tasks items until two consecutive scans found active folders empty. Stabilized counts: AgentLogs 921 files, Tasks 87 files. This is still a filesystem readback, not a guarantee that another external agent will never write after the readback.
+
+## Lightweight Combined Variant
+
+Problem: The full AgentLogs combined text bundle includes `.json` source files and reached 19,214,452 bytes, which is too heavy for quick human review.
+
+Solution: Add separate lightweight AgentLogs combined outputs that include only archived `.md` and `.txt` files, plus two split `.txt` parts divided at a FILE boundary for easier review. The new outputs keep explicit file boundaries and provenance fields but do not embed `.json` content and do not create a new JSON manifest.
+
+Rejected Alternatives: Deleting or replacing the full combined bundle was rejected because it is the complete md/txt/json snapshot. Generating another manifest JSON was rejected because the requested variant is explicitly non-JSON.
+
+Scalability potential: Low/Middle review can use the 6,034,131-byte lightweight `.txt` or `.md` file, or the two split text parts. High/Ultra forensic review can still open the original full bundle and manifest when JSON evidence is needed.
+
+Hardware Impact: Runtime impact is 0 us/frame. Editor-side load/search cost is reduced for the lightweight review path; no profiler timing claimed.

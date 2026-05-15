@@ -22,3 +22,8 @@ Task Count: 6
 
 ## Evidence Boundary
 Evidence class for this task is FILESYSTEM and STATIC_DOC only. No Unity compile, PlayMode, profiler, GCMonitor, or player-build proof is relevant.
+
+## 2026-05-15 Lightweight AgentLogs Combined Variant
+- [x] Generated MD/TXT-only AgentLogs combined outputs. | DOD: created `.txt` and `.md` variants from archived AgentLogs using only `.md` and `.txt` sources; 429 FILE sections, 0 `.json` sections. | Alternative rejected: replacing the original full md/txt/json combined artifact, because it is still the complete evidence snapshot. | Estimate: 0 us runtime.
+- [x] Verified output size and boundaries. | DOD: both lightweight outputs are 6,034,131 bytes after trailing-whitespace normalization and preserve FILE/RELATIVE_PATH/SIZE/LAST_WRITE/EXTENSION boundaries. | Alternative rejected: a JSON manifest for the lightweight variant, per user request. | Estimate: 0 us runtime.
+- [x] Generated split review parts. | DOD: `PART01` is 3,015,328 bytes with 330 FILE sections; `PART02` is 3,019,323 bytes with 99 FILE sections; split occurs on a FILE boundary. | Alternative rejected: cutting mid-report by raw byte offset. | Estimate: 0 us runtime.
