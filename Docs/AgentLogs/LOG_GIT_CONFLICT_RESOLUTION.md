@@ -435,3 +435,15 @@ Cinematic Cheats used -> None by this Git pass. Reviewed authored FX-tier and fi
 Exact Microseconds saved -> 0 us runtime. Dev-path gain is preventing the next GitHub Desktop pull from colliding with already-validated local work.
 
 Verification -> Conflict-marker scan clean. `git diff --cached --check` passed. Staged `H8Memory.cs` ends with complete class/namespace braces. Build exits are mixed: Fresh66=-1, Fresh67=0, Fresh68=-1, Fresh69=1, Fresh70=0, Fresh71=1. HPhi lexical scrub exits Fresh60=0 and Fresh65=0. Full green is not claimed.
+
+## 2026-05-15 - Loop 25 Residual Live Tail
+
+What was wrong -> `580a1a325` pushed and verified cleanly, then a 54-file staged residual tail remained from active agents.
+
+What was done -> Validated staged whitespace and conflict markers, inspected H8Memory descriptor scrub, macro database evidence, KinematicGhostDebugger AUP conversion, Fauna/IK finite guards, physical snap switch, narrative/progression installers, OrbitalDrop finite ambient, CameraJuice lookup replacement, marine snow guard, VoxelDelta signal, VoxelDynamicNav obstacle validation, and WorldSpatialHash cleanup.
+
+Cinematic Cheats used -> None. Git integration only.
+
+Exact Microseconds saved -> 0 us runtime. Dev-path gain is a smaller local tail and one more pushed checkpoint boundary.
+
+Verification -> Conflict-marker scan clean. `git diff --cached --check` passed. Build Fresh72 and Fresh73 report EXIT=0. Full branch green is not claimed because prior build and HPhi evidence in the same run was mixed.

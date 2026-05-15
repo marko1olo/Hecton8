@@ -419,7 +419,7 @@ namespace Hecton8.Environment
         public void BindTargetCamera(Transform cameraTransform)
         {
             targetCamera = cameraTransform;
-            _targetCameraComponent = cameraTransform != null ? cameraTransform.GetComponent<Camera>() : null;
+            _targetCameraComponent = ResolveComponentOnTransform<Camera>(cameraTransform);
             ResetSpeedLineHistory();
         }
 
@@ -586,12 +586,12 @@ namespace Hecton8.Environment
         {
             if (targetCamera == null)
             {
-                _targetCameraComponent = GetComponentInParent<Camera>();
+                _targetCameraComponent = ResolveComponentInParents<Camera>(transform);
                 targetCamera = _targetCameraComponent != null ? _targetCameraComponent.transform : null;
             }
             else if (_targetCameraComponent == null || _targetCameraComponent.transform != targetCamera)
             {
-                _targetCameraComponent = targetCamera.GetComponent<Camera>();
+                _targetCameraComponent = ResolveComponentOnTransform<Camera>(targetCamera);
             }
         }
 
@@ -2092,6 +2092,28 @@ namespace Hecton8.Environment
             }
 
             return shadowTaps;
+        }
+
+        private static T ResolveComponentOnTransform<T>(Transform source) where T : Component
+        {
+            if (source == null)
+                return null;
+
+            return source.TryGetComponent(out T component) ? component : null;
+        }
+
+        private static T ResolveComponentInParents<T>(Transform start) where T : Component
+        {
+            Transform current = start;
+            while (current != null)
+            {
+                if (current.TryGetComponent(out T component))
+                    return component;
+
+                current = current.parent;
+            }
+
+            return null;
         }
     }
 }

@@ -555,7 +555,9 @@ namespace Hecton8.Celestial
 
             if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
             {
-                Camera playerCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
+                Camera playerCamera = Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null
+                    ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera
+                    : ResolveComponentOnTransform<Camera>(playerTransform);
                 if (playerCamera != null)
                     observerTransform = playerCamera.transform;
             }
@@ -568,10 +570,10 @@ namespace Hecton8.Celestial
         private void CacheMeshRadius()
         {
             if (bodyRenderer == null)
-                bodyRenderer = GetComponent<Renderer>();
+                TryGetComponent(out bodyRenderer);
 
             if (bodyMeshFilter == null)
-                bodyMeshFilter = GetComponent<MeshFilter>();
+                TryGetComponent(out bodyMeshFilter);
 
             Mesh sharedMesh = bodyMeshFilter != null ? bodyMeshFilter.sharedMesh : null;
             if (sharedMesh == null)

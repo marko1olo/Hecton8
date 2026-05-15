@@ -475,3 +475,27 @@ Rejected Alternatives: Expanding the black-box dump with per-slot identity array
 Scalability potential: Low = no new FastTick cost. Middle = same-item swaps become diagnosable. High/Ultra = dense pooled loot fields keep identity evidence without larger telemetry memory.
 
 Hardware Impact: Adds two integer hash folds per active slot inside loops that already scan/commit loot. MX350 pays only existing cadence/commit loops and gains clearer postmortem evidence.
+
+## Decision 38 - Scheduler Authoring Sanitation
+
+Problem: Serialized pull radius, pull strength, max velocity, and tick delta could enter the Burst job as NaN/Inf or extreme values. That creates avoidable velocity poison and can push AUP offset math toward overflow before the black-box fault flag explains the source.
+
+Solution: Add explicit stable upper bounds to the loot magnet contract, clamp/sanitize scheduler inputs before job creation, record `TelemetryAuthoringClampFlag` when any value is non-finite or outside the stable range, and bump the loot telemetry dump version to 5.
+
+Rejected Alternatives: Letting the Burst job discover bad values later was rejected because the job would only report a non-finite result, not the authoring source. Hard-failing the component was rejected because field tuning errors should degrade to bounded defaults and remain visible in black-box evidence.
+
+Scalability potential: Low = bad inspector values cannot turn the snap path into an unbounded pull. Middle = normal Burst pull receives stable scalar inputs. High/Ultra = large authored values are capped at explicit overkill ceilings instead of disabling broadphase or overflowing velocity math.
+
+Hardware Impact: Adds four scalar finite/range checks per scheduled job, not per entity. MX350 avoids NaN recovery and oversized-radius scans caused by bad authoring; no profiler microsecond claim until Unity/Burst verification is allowed.
+
+## Decision 39 - Post-Authoring Dotnet Stop
+
+Problem: After the authoring sanitation static checks, an external `dotnet build Hecton8.Editor.csproj` process appeared despite the user's no-dotnet-rebuild constraint.
+
+Solution: Stop the observed build process and re-query `Get-Process -Name dotnet` before final reporting.
+
+Rejected Alternatives: Waiting for the watcher build to finish was rejected because it violates the active user constraint and contaminates verification evidence.
+
+Scalability potential: No runtime behavior change. This preserves evidence quality while parallel build watchers are unstable.
+
+Hardware Impact: Removes local build CPU pressure only; no gameplay frame-time claim.

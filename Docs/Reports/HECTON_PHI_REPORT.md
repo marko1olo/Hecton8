@@ -1429,3 +1429,77 @@ Verification:
 - Static diff scan: no new managed containers, LINQ, `ToArray`, `ToList`, `FindObject`, coroutine, or `ScalabilityEvents` registration in the edited hunk.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Summary`: completed at local timestamp `2026-05-15 05:25:05 +04:00`.
 - Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.
+
+## 2026-05-15 Live Addendum - HECTON_PHI_MONITOR Runtime Lookup Surgery
+
+Evidence class: `STATIC_SOURCE`.
+
+User constraint for this pass: no `dotnet build` and no rebuild.
+
+What changed:
+- `HectonUrpShadowBudgetGuard` no longer performs a scene-wide runtime light enumeration fallback.
+- Shadow budget enforcement now relies on explicit registered lights only.
+- `VRSomaticRuntimeBootstrap` now owns the decoupled VR root through a static transform cache instead of a global object-name lookup.
+- `GameBootstrapper` player/spawner recovery lookups were intentionally left unchanged pending integrator scene evidence.
+
+Current static scores after this pass:
+
+| Coefficient | Score |
+|---|---:|
+| Runtime H-Phi narrow | 0.010758376 |
+| Runtime H-Phi risk-adjusted | 0.000623300 |
+| All-source H-Phi narrow | 0.009586908 |
+| All-source H-Phi risk-adjusted | 0.000508577 |
+| Risk integration | 0.057936236 |
+| Architectural purity | 1.000000000 |
+| Data sovereignty | 0.021270718 |
+| Memory alignment | 0.505783386 |
+| Binary-safe ratio | 0.018401682 |
+| AUP precision integrity | 1.000000000 |
+
+Current runtime counts:
+
+| Counter | Value |
+|---|---:|
+| Typed/queued signal push surface | 338 |
+| Legacy/direct event publish surface | 28 |
+| `GlobalRegistry.` surface refs | 5,084 |
+| DataVault access surface refs | 154 |
+| `NativeArray<T>` refs | 7,086 |
+| Runtime `Find*` calls | 3 |
+| Runtime `GetComponent*` calls | 348 |
+| AUP precision risk refs | 0 |
+| LINQ surface | 5 |
+| Coroutine surface | 0 |
+| Managed formatting surface | 681 |
+| Job `.Complete()` surface | 61 |
+| Primary managed-runtime risk | 330 |
+| Primary owner-blocked NativeArray refs | 5,692 |
+
+Budget gates:
+
+| Gate | Budget/Floor | Current | Status |
+|---|---:|---:|---|
+| Runtime `Find*` calls | <= 3 | 3 | PASS |
+| Runtime H-Phi risk | >= 0.000623000 | 0.000623300 | PASS |
+| Data sovereignty | >= 0.021270000 | 0.021270718 | PASS |
+| Memory alignment | >= 0.505700000 | 0.505783386 | PASS |
+| AUP precision risk | <= 0 | 0 | PASS |
+| Legacy event publish | <= 28 | 28 | PASS |
+| Duplicate signal names | <= 0 | 0 | PASS |
+| `GlobalRegistry.` surface refs | <= 5,090 | 5,084 | PASS |
+| `GetComponent*` calls | <= 360 | 348 | PASS |
+| `NativeArray<T>` refs | <= 7,090 | 7,086 | PASS |
+| Primary managed-runtime risk | <= 330 | 330 | PASS |
+| Primary owner-blocked NativeArray refs | <= 5,695 | 5,692 | PASS |
+
+Residual bottlenecks:
+- Runtime `Find*` debt is now concentrated in `GameBootstrapper` bootstrap handoff/player-spawner recovery.
+- Data Sovereignty remains the hard floor: `154 / (154 + 7086) = 0.021270718`.
+- Runtime verification remains absent by user order.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/Core/HectonUrpShadowBudgetGuard.cs Assets/_Project/Scripts/Gameplay/VRSomaticRuntimeBootstrap.cs`: passed; LF/CRLF warnings only.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`: completed at local timestamp `2026-05-15 14:30:08 +04:00`.
+- Final full static gate completed at local timestamp `2026-05-15 14:39:21 +04:00`.
+- Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.

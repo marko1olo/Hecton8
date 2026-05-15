@@ -349,6 +349,7 @@ namespace Hecton8.AI
             RefreshColdDependencies();
             EnsurePersistentBuffers();
             SeedSpineFromOwner();
+            ResetConstraintIterationHysteresis();
         }
 
         internal void BindSkinningMaterial(Material material)
@@ -712,6 +713,7 @@ namespace Hecton8.AI
             if (!_leviathanBones.IsCreated)
             {
                 _gpuBufferDataValid = false;
+                ClearGpuSkinningBinding();
                 return false;
             }
 
@@ -729,6 +731,7 @@ namespace Hecton8.AI
             if (!HasValidGraphicsBuffer(writeBuffer, MaxSegments))
             {
                 _gpuBufferDataValid = false;
+                ClearGpuSkinningBinding();
                 return false;
             }
 

@@ -88,7 +88,7 @@ namespace Hecton8.Interaction
             PhysicalHandSide fallbackHandSide,
             int sampleFrame = -1)
         {
-            if (activationVolume == null || !IsFiniteVector(handPosition))
+            if (activationVolume == null || interactionSignals == null || !interactionSignals.IsInitialized || !IsFiniteVector(handPosition))
                 return false;
 
             int currentFrame = Time.frameCount;
@@ -105,11 +105,13 @@ namespace Hecton8.Interaction
             if (desiredOn == _isOn || _snapCooldownRemaining > 0f)
                 return true;
 
+            if (!PublishSwitchSignal(handPosition, handForward, interactionSignals, resolvedSampleFrame, desiredOn))
+                return false;
+
             _isOn = desiredOn;
             _targetAngle = _isOn ? ResolveSafeOnAngleDegrees() : ResolveSafeOffAngleDegrees();
             _snapCooldownRemaining = ResolveSafeSnapCooldownSeconds();
             TryRegister();
-            PublishSwitchSignal(handPosition, handForward, interactionSignals, resolvedSampleFrame);
             EnqueueClickHaptic(handSourceCollider, fallbackHandSide);
             QueueSnapAudio(handPosition);
             return true;
@@ -424,10 +426,15 @@ namespace Hecton8.Interaction
             cos = cosSign * (1f - (x2 * (0.5f - (x2 * 0.041666667f))));
         }
 
-        private void PublishSwitchSignal(Vector3 handPosition, Vector3 handForward, IInteractionSignalService interactionSignals, int sampleFrame)
+        private bool PublishSwitchSignal(
+            Vector3 handPosition,
+            Vector3 handForward,
+            IInteractionSignalService interactionSignals,
+            int sampleFrame,
+            bool desiredOn)
         {
             if (interactionSignals == null || !interactionSignals.IsInitialized || !IsFiniteVector(handPosition))
-                return;
+                return false;
 
             double3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(handPosition);
             Vector3 fallbackForward = _cachedTransform != null ? _cachedTransform.forward : Vector3.forward;
@@ -436,14 +443,14 @@ namespace Hecton8.Interaction
 
             Vector3 safeDirection = NormalizeVectorApproxNoSqrt(handForward, fallbackForward);
             if (!math.all(math.isfinite(absoluteHitPoint)) || !IsFiniteVector(safeDirection))
-                return;
+                return false;
 
             float signalRange = math.abs(ResolveSafeOnAngleDegrees() - ResolveSafeOffAngleDegrees());
             InteractionPacket packet = new InteractionPacket(
                 PhysicalSwitchToolId,
                 new float3((float)absoluteHitPoint.x, (float)absoluteHitPoint.y, (float)absoluteHitPoint.z),
                 (float3)safeDirection,
-                _isOn ? 1f : 0.5f,
+                desiredOn ? 1f : 0.5f,
                 signalRange,
                 (byte)ToolActionMode.Primary,
                 (byte)ToolStateBits.Active,
@@ -453,11 +460,11 @@ namespace Hecton8.Interaction
                 0,
                 new float3((float)absoluteHitPoint.x, (float)absoluteHitPoint.y, (float)absoluteHitPoint.z),
                 (float3)(-safeDirection),
-                _isOn ? 1f : 0.5f,
+                desiredOn ? 1f : 0.5f,
                 (byte)InteractionEffectType.Drill,
                 0);
 
-            interactionSignals.Publish(in signal, activationVolume);
+            return interactionSignals.Publish(in signal, activationVolume);
         }
 
         private void EnqueueClickHaptic(Collider handSourceCollider, PhysicalHandSide fallbackHandSide)

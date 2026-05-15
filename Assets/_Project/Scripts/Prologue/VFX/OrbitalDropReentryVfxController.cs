@@ -43,6 +43,7 @@ namespace Hecton8.Prologue.VFX
         private static readonly int _PlasmaAltitudeId = Shader.PropertyToID("_PlasmaAltitude01");
         private static readonly int _PlasmaLowTierId = Shader.PropertyToID("_PlasmaLowTier");
         private static readonly int _PlasmaPhaseId = Shader.PropertyToID("_HectonReentryPhase");
+        private static readonly Color _defaultOceanAmbientColor = new Color(0.02f, 0.52f, 0.62f, 1f);
 
         private enum ReentryPhase : byte
         {
@@ -96,7 +97,7 @@ namespace Hecton8.Prologue.VFX
 
         [Header("Lighting")]
         [SerializeField] private Color spaceAmbientColor = Color.black;
-        [SerializeField] private Color oceanAmbientColor = new Color(0.02f, 0.52f, 0.62f, 1f);
+        [SerializeField] private Color oceanAmbientColor = _defaultOceanAmbientColor;
         [SerializeField] private bool driveAmbientProbe = true;
 
         private NativeArray<ReentryVfxTelemetryEntry> _telemetry;
@@ -584,11 +585,26 @@ namespace Hecton8.Prologue.VFX
 
         private void ApplyAmbientBlend()
         {
-            if (math.abs(_lastAppliedAmbientBlend - _ambientBlend01) <= ShaderEpsilon)
+            float ambientBlend01 = math.isfinite(_ambientBlend01) ? math.saturate(_ambientBlend01) : 0f;
+            float lastAppliedAmbientBlend = math.isfinite(_lastAppliedAmbientBlend)
+                ? _lastAppliedAmbientBlend
+                : float.PositiveInfinity;
+            if (math.abs(lastAppliedAmbientBlend - ambientBlend01) <= ShaderEpsilon)
                 return;
 
-            _lastAppliedAmbientBlend = _ambientBlend01;
-            Color ambient = Color.Lerp(spaceAmbientColor, oceanAmbientColor, _ambientBlend01);
+            _lastAppliedAmbientBlend = ambientBlend01;
+            bool finiteSpaceAmbient = IsFiniteColor(spaceAmbientColor);
+            bool finiteOceanAmbient = IsFiniteColor(oceanAmbientColor);
+            Color ambient = Color.Lerp(
+                finiteSpaceAmbient ? spaceAmbientColor : ResolveFiniteColor(spaceAmbientColor, Color.black),
+                finiteOceanAmbient ? oceanAmbientColor : ResolveFiniteColor(oceanAmbientColor, _defaultOceanAmbientColor),
+                ambientBlend01);
+            if (!finiteSpaceAmbient || !finiteOceanAmbient)
+            {
+                WriteTelemetry(ReentryVfxStateSignal.FlagNaNGuard);
+                DumpBlackBoxOnce();
+            }
+
             RenderSettings.ambientLight = ambient;
             if (!driveAmbientProbe)
                 return;
@@ -910,6 +926,23 @@ namespace Hecton8.Prologue.VFX
             return math.isfinite(value) ? math.clamp(value, minimum, maximum) : minimum;
         }
 
+        private static bool IsFiniteColor(Color value)
+        {
+            return math.isfinite(value.r) &&
+                   math.isfinite(value.g) &&
+                   math.isfinite(value.b) &&
+                   math.isfinite(value.a);
+        }
+
+        private static Color ResolveFiniteColor(Color value, Color fallback)
+        {
+            return new Color(
+                math.isfinite(value.r) ? value.r : fallback.r,
+                math.isfinite(value.g) ? value.g : fallback.g,
+                math.isfinite(value.b) ? value.b : fallback.b,
+                math.isfinite(value.a) ? value.a : fallback.a);
+        }
+
         private void OnValidate()
         {
             overlayLocalDistanceMeters = ClampFinite(overlayLocalDistanceMeters, MinimumOverlayLocalDistanceMeters, 0.35f);
@@ -921,6 +954,8 @@ namespace Hecton8.Prologue.VFX
             ambientTransitionSeconds = ClampFinite(ambientTransitionSeconds, 0.1f, 4f);
             audioCrossfadeSeconds = ClampFinite(audioCrossfadeSeconds, 0.25f, 4f);
             audioCrossfadeIntervalSeconds = ClampFinite(audioCrossfadeIntervalSeconds, 0.05f, 0.5f);
+            spaceAmbientColor = ResolveFiniteColor(spaceAmbientColor, Color.black);
+            oceanAmbientColor = ResolveFiniteColor(oceanAmbientColor, _defaultOceanAmbientColor);
         }
 
         private static bool IsFiniteAtmosphericSignal(in AtmosphericReentrySignal signal)

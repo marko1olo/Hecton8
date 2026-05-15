@@ -334,6 +334,13 @@ Task Count: 15
 - [x] Persistent obstacle merge finite proof | DOD: merged persistent obstacle center/extents must remain finite and positive, otherwise the slot is replaced with the new valid obstacle; rejected storing overflowed merged centers; estimate 2 us.
 - [x] Dynamic overflow static scan | DOD: changed request-bound and merge ranges report no forbidden normalization, sqrt, managed allocation, or `foreach`; retained exact integer chunk division; dotnet rebuilds remain prohibited; estimate 2 us.
 
+## Loop 47 - Obstacle Snapshot Count/Write Parity
+
+- [x] Collider obstacle finite count proof | DOD: collider obstacle counting now shares the finite/positive bounds resolver used by snapshot writing; rejected allocating snapshot slots for invalid collider bounds; estimate 3 us.
+- [x] Persistent obstacle count/write parity | DOD: snapshot allocation counts only valid persistent dynamic obstacles, matching the writer skip rules; rejected uninitialized snapshot tails after invalid persistent entries; estimate 3 us.
+- [x] Burst stamp obstacle guard | DOD: `PartialObstacleResetAndStampJob` skips non-finite or non-positive obstacle primitives and overflowed min/max bounds before stamping solid cells; rejected trusting snapshot construction alone; estimate 3 us.
+- [x] Snapshot parity static scan | DOD: changed collider/persistent/stamp ranges report no forbidden normalization, sqrt, modulo, managed allocation, or `foreach`; exact integer index divisions and cold snapshot allocation are documented; dotnet rebuilds remain prohibited; estimate 3 us.
+
 ## Verification
 
 - [x] Static scan | PASS: `StringPullPathJob`, `NativeAStarJob`, `TryResolveAbyssalNavNodeCandidate`, abyssal nav support/hash, nav graph ingress, and funnel telemetry conversion regions have no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/` code matches after loop 19.
@@ -364,6 +371,7 @@ Task Count: 15
 - [x] Dynamic pure-void metadata targeted scan | PASS: dynamic update block-count metadata range reports no raw division, forbidden hot math, managed allocation, or `foreach`.
 - [x] Dynamic obstacle ingress targeted scan | PASS: growth, destroyed-organic, clear-queue, and persistent-obstacle ranges report no raw division, forbidden hot math, managed allocation, or `foreach`.
 - [x] Dynamic obstacle overflow targeted scan | PASS: request-bound and merge ranges report no forbidden normalization, sqrt, managed allocation, or `foreach`; exact integer chunk divisions remain documented bucket math.
+- [x] Obstacle snapshot parity targeted scan | PASS: collider count/write, persistent count/write, and Burst stamp guard ranges report no forbidden normalization, sqrt, modulo, managed allocation, or `foreach`; exact integer index divisions and cold snapshot allocation remain documented.
 - [x] Batch prompt re-extraction | PASS: CLI regex rechecked `CURRENT_BATCH.md` after loop 45 and confirmed `AI_FUNNEL_NAV_POLISH` remains absent; persisted task files remain authority.
 - [x] Diff hygiene | PASS: `git diff --check` passed for touched source/status/rationale/log files; only LF-to-CRLF working-copy warnings were emitted.
 - [x] Core graph H-Phi summary | PASS STATIC: `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` completed without build; graph debt counts are Core asmdef 25, generated project 10, source-backed bridge 14, source-backed compile bridge 8, project-reference replacement 6; no source-only route hardening score was claimed.

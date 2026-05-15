@@ -982,6 +982,7 @@ namespace Hecton8.VFX.Debris
                    gridResolution.y > 0f &&
                    gridResolution.z > 0f &&
                    gridResolution.w > 0f &&
+                   gridResolution.w <= flowBuffer.count &&
                    flowSpacing.x > 0f &&
                    flowSpacing.y > 0f &&
                    flowSpacing.z > 0f &&

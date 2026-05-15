@@ -401,10 +401,10 @@ namespace Hecton8.Audio.Editor
                 AssertContains(prologueAcoustic, "IScalabilityChangedEventListener", "Prologue acoustic bridge receives scalability changes through the typed event lane", builder, ref failureCount);
                 AssertContains(prologueAcoustic, "ScalabilityEvents.Register(this)", "Prologue acoustic bridge registers for scalability events", builder, ref failureCount);
                 AssertContains(prologueAcoustic, "ScalabilityEvents.Unregister(this)", "Prologue acoustic bridge unregisters scalability events", builder, ref failureCount);
-                AssertContains(prologueAcoustic, "CacheQualityPolicy(payload.CurrentQualityTier, payload.CurrentTier, _lowMemoryProfile)", "Prologue acoustic bridge updates quality policy from scalability payloads", builder, ref failureCount);
+                AssertContains(prologueAcoustic, "CacheQualityPolicy(payload.CurrentQualityTier, payload.CurrentTier, GlobalRegistry.H8_LOW_MEMORY_PROFILE)", "Prologue acoustic bridge refreshes low-memory policy from scalability events", builder, ref failureCount);
                 AssertContains(prologueColdRuntime, "GlobalRegistry.Audio", "Prologue acoustic bridge reads audio service only during cold runtime refresh", builder, ref failureCount);
                 AssertContains(prologueColdRuntime, "GlobalRegistry.TickDispatcher", "Prologue acoustic bridge reads tick dispatcher only during cold runtime refresh", builder, ref failureCount);
-                AssertContains(prologueColdPolicy, "GlobalRegistry.H8_LOW_MEMORY_PROFILE", "Prologue acoustic bridge reads low-memory policy only during cold cache refresh", builder, ref failureCount);
+                AssertContains(prologueColdPolicy, "GlobalRegistry.H8_LOW_MEMORY_PROFILE", "Prologue acoustic bridge seeds low-memory policy during cold cache refresh", builder, ref failureCount);
                 AssertNotContains(prologueLateFrame, "GlobalRegistry.", "Prologue acoustic LateFrameTick does not poll registry services directly", builder, ref failureCount);
                 AssertNotContains(prologueLateFrame, "GlobalRegistry.ScalabilityTier", "Prologue acoustic LateFrameTick does not poll scalability tier registry directly", builder, ref failureCount);
                 AssertNotContains(prologueLateFrame, "GlobalRegistry.ScalabilityTierProfileByte", "Prologue acoustic LateFrameTick does not poll scalability profile byte directly", builder, ref failureCount);

@@ -238,6 +238,12 @@ Rejected Alternatives: Trusting pointer uniqueness because earlier registration 
 Scalability potential: Low devices avoid losing native ownership evidence under tracking pressure; Middle keeps leak attribution stable; High and Ultra can run larger native pools without accepting silent owner-map erosion.
 Hardware Impact: Cold growth path adds one checked branch per active record. 0 us steady-frame impact after tracking capacity is established.
 
+Problem: Freed non-vault allocation descriptors were marked free but could retain nonzero `Bytes`, while `RegisterBlockDescriptorNoInit` only reuses slots whose `Bytes` is zero. Allocation churn could therefore consume descriptor capacity even when native memory had already been freed.
+Solution: `MarkBlockDescriptorFree` now tombstones freed descriptors by clearing base pointer, offset, bytes, owner key, owner, reserved byte, and setting the freed/free state while advancing generation. DataVault free-region descriptors remain map evidence because DataVault updates sub-block descriptors through `UpdateH8Descriptor`, not this native-allocation tombstone path.
+Rejected Alternatives: Reusing any descriptor with `State=Free`; DataVault intentionally stores free sub-blocks as real map evidence, so `Bytes=0` remains the safe reusable-slot sentinel.
+Scalability potential: Low devices avoid descriptor-table exhaustion during scene churn; Middle keeps native leak scans bounded; High and Ultra can run more transient persistent buffers without eroding H8 memory-map capacity.
+Hardware Impact: Free path adds scalar field clears on an existing descriptor scan. 0 us steady-frame impact; cold allocation churn avoids eventual `MaxTrackingCapacity` pressure.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Polish audit required removal of fake precision, managed iteration/string debt, and any code outside the DataVault domain without justification.

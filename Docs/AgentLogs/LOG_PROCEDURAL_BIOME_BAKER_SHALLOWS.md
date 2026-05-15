@@ -537,3 +537,15 @@ Cinematic Cheats used: Static baked L-system meshes, triplanar shader projection
 Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents hidden mesh payload growth that would increase memory bandwidth on low-end GPUs; exact runtime microseconds were not profiled.
 
 Verification: No dotnet rebuild and no Unity import was run. `MeshVertexPayloadYamlScan Count=600 Bad=0 BadShape=0 ActiveAttributesMin=5 ActiveAttributesMax=5 StrideMin=64 StrideMax=64`; source scan found the new vertex attribute, vertex buffer, stride, blendshape, bindpose, and Float32 layout checks; `git diff --check` passed with only repo CRLF warnings; source brace balance stayed `Delta=0`, `NonAscii=0`.
+
+## 2026-05-15 Shader Mesh Input Minimalism Contract
+
+What was wrong: Shader source validation did not prevent the triplanar Shallows shader from regressing into mesh UV or vertex tangent dependency while keeping the same shader path.
+
+What was done: Added `ValidateShaderVertexInputContract`, requiring position, normal, color, and tangent-free normal transform input while forbidding `TANGENT`, mesh UV attribute usage, `input.uv`, and the tangent overload of `GetVertexNormalInputs`.
+
+Cinematic Cheats used: Triplanar projection, vertex-color height masking, and static shared material stay the visual fake. No runtime shader fallback or material variant path was added.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents future mesh/shader coupling that would force heavier vertex payloads; exact runtime microseconds were not profiled.
+
+Verification: No dotnet rebuild and no Unity import was run. Shader source scan found required position/normal/color/tangent-free normal transform tokens and zero forbidden UV/tangent tokens; `git diff --check` passed with only repo CRLF warnings; source brace balance stayed `Delta=0`, `NonAscii=0`.

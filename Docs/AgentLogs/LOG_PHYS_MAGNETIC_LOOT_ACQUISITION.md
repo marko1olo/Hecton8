@@ -595,3 +595,52 @@ Verification:
 
 Final Status:
 - PENDING VERIFICATION.
+
+## 2026-05-15 - Scheduler Authoring Sanitation Pass
+
+What was wrong:
+- Pull radius, pull strength, max velocity, and dt were sanitized only partially before Burst scheduling.
+- NaN/Inf or absurd inspector values could still reach the job and appear later as unexplained non-finite velocity/AUP faults.
+
+What was done:
+- Added stable loot magnet scalar ceilings for radius, strength, and velocity.
+- Changed inspector metadata from minimum-only fields to bounded ranges.
+- Sanitized dt, radius, strength, and max velocity before creating `LootMagnetPullJob`.
+- Added a fixed black-box bit for authoring clamps and bumped loot telemetry dump version to 5.
+
+Cinematic Cheats used:
+- Bounded math LOD: oversized authoring resolves to capped visual-overkill limits instead of expensive or unstable physical truth.
+
+Exact Microseconds saved:
+- No profiler number claimed. Adds four scalar checks once per scheduled job.
+- Prevents bad authoring from disabling the adjacent-cell reject or producing non-finite velocity recovery work.
+
+Verification:
+- User forbade dotnet rebuilds; none were run.
+- Changed hunks were read after patching.
+- External dotnet watcher processes respawned during verification and were stopped; follow-up process query returned no process.
+
+Final Status:
+- PENDING VERIFICATION.
+
+## 2026-05-15 - Post-Authoring Dotnet Stop Pass
+
+What was wrong:
+- An external `dotnet build Hecton8.Editor.csproj` watcher appeared after the scheduler authoring sanitation static checks.
+
+What was done:
+- Stopped the observed dotnet build process.
+- Re-ran `Get-Process -Name dotnet`; the follow-up query returned no process.
+
+Cinematic Cheats used:
+- None. This is verification hygiene.
+
+Exact Microseconds saved:
+- No gameplay frame-time claim. Removes local build CPU pressure only.
+
+Verification:
+- User forbade dotnet rebuilds; none were run.
+- Follow-up `Get-Process -Name dotnet` returned no process.
+
+Final Status:
+- PENDING VERIFICATION.

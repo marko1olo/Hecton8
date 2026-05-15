@@ -536,7 +536,8 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (!IsRayOriginWithinAupInteractionRange(rayOriginWs))
+            float effectiveInteractionDistance = ResolveEffectiveInteractionDistance();
+            if (!IsRayOriginWithinAupInteractionRange(rayOriginWs, effectiveInteractionDistance))
             {
                 ClearHoverState();
                 return;
@@ -545,7 +546,7 @@ namespace Hecton8.UI
             if (!TryProjectRayToPanel(
                     rayOriginWs,
                     rayDirectionWs,
-                    ResolveEffectiveInteractionDistance(),
+                    effectiveInteractionDistance,
                     rayDirectionIsNormalized: true,
                     out float2 canvasPos,
                     out float3 localHit,
@@ -1611,9 +1612,8 @@ namespace Hecton8.UI
             return math.lengthsq(rayDirectionWs) > 0.0001f;
         }
 
-        private bool IsRayOriginWithinAupInteractionRange(float3 rayOriginWs)
+        private bool IsRayOriginWithinAupInteractionRange(float3 rayOriginWs, float maxDistance)
         {
-            float maxDistance = ResolveEffectiveInteractionDistance();
             double maxDistanceSq = (double)maxDistance * maxDistance;
             Vector3 panelOrigin = (Vector3)_panelData.LocalToWorld.c3.xyz;
             return ResolveAupDistanceSq((Vector3)rayOriginWs, panelOrigin) <= maxDistanceSq;

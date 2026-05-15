@@ -379,3 +379,23 @@ No dotnet rebuild was run per user instruction. `Select-String` forbidden-patter
 
 Status:
 PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
+
+## 2026-05-15 Recursive QA Addendum 19
+
+What was wrong:
+`ContextualPhysicalIkRuntime.OnDisable` could unregister tick and origin-shift callbacks while a ground-response job was still pending. That left pre-disable target writes able to complete after lifecycle/origin state changed, especially if an origin shift happened while the runtime was disabled.
+
+What was done:
+Added `CompletePendingGroundResponseForRuntimeDisable()`. On disable, the runtime now force-completes any pending ground response, swaps target buffers, publishes the front buffer to active rigs, writes a dedicated `TelemetryReasonRuntimeDisable` flag, clears `_groundResponseScheduled`, and resets the pending job handle before unregistering callbacks.
+
+Cinematic cheats used:
+No solver change, no extra probes, no physical simulation. This is cold lifecycle hygiene for the existing visual fake: finish the pending target buffer deterministically instead of carrying stale IK state across disable/re-enable or origin-shift boundaries.
+
+Exact microseconds saved:
+0.0 us steady-state. Disable-only cost is one forced completion if a job is outstanding. Prevented cost is stale target-frame investigation, invalid post-disable foot/hand positions, and black-box chronology gaps.
+
+Verification:
+No dotnet rebuild was run per user instruction. `Select-String` forbidden-pattern scan scoped to `ContextualPhysicalIkRuntime.cs` returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `.ToString(`, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`. `git diff --check` over `ContextualPhysicalIkRuntime.cs` passed with CRLF warning only. MCP resource listing returned no Unity resources.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.

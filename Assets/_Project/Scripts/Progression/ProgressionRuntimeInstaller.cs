@@ -17,40 +17,40 @@ namespace Hecton8.Progression
             if (playerObject == null)
                 return;
 
-            if (playerObject.GetComponent<PDAContextualAdvisorySystem>() == null)
+            if (!playerObject.TryGetComponent<PDAContextualAdvisorySystem>(out _))
                 playerObject.AddComponent<PDAContextualAdvisorySystem>();
 
-            if (playerObject.GetComponent<PlayerAchievementRegistry>() == null)
+            if (!playerObject.TryGetComponent<PlayerAchievementRegistry>(out _))
                 playerObject.AddComponent<PlayerAchievementRegistry>();
 
-            if (playerObject.GetComponent<NarrativeProgressionBridge>() == null)
+            if (!playerObject.TryGetComponent<NarrativeProgressionBridge>(out _))
                 playerObject.AddComponent<NarrativeProgressionBridge>();
 
-            if (playerObject.GetComponent<HectonOSBootManager>() == null)
+            if (!playerObject.TryGetComponent<HectonOSBootManager>(out _))
                 playerObject.AddComponent<HectonOSBootManager>();
 
-            if (playerObject.GetComponent<SonarHoloCompass>() == null)
+            if (!playerObject.TryGetComponent<SonarHoloCompass>(out _))
                 playerObject.AddComponent<SonarHoloCompass>();
 
-            if (playerObject.GetComponent<Hecton8.UI.FakeRadarBlipController>() == null)
+            if (!playerObject.TryGetComponent<Hecton8.UI.FakeRadarBlipController>(out _))
                 playerObject.AddComponent<Hecton8.UI.FakeRadarBlipController>();
 
-            if (playerObject.GetComponent<Hecton8.UI.ShaderCompassRibbon>() == null)
+            if (!playerObject.TryGetComponent<Hecton8.UI.ShaderCompassRibbon>(out _))
                 playerObject.AddComponent<Hecton8.UI.ShaderCompassRibbon>();
 
-            if (playerObject.GetComponent<AcousticEcholocationTranslator>() == null)
+            if (!playerObject.TryGetComponent<AcousticEcholocationTranslator>(out _))
                 playerObject.AddComponent<AcousticEcholocationTranslator>();
 
-            if (playerObject.GetComponent<AudioCaptionOverlay>() == null)
+            if (!playerObject.TryGetComponent<AudioCaptionOverlay>(out _))
                 playerObject.AddComponent<AudioCaptionOverlay>();
 
-            if (playerObject.GetComponent<TerminalBootSequence>() == null)
+            if (!playerObject.TryGetComponent<TerminalBootSequence>(out _))
                 playerObject.AddComponent<TerminalBootSequence>();
 
-            if (playerObject.GetComponent<PDADeathMemoryDump>() == null)
+            if (!playerObject.TryGetComponent<PDADeathMemoryDump>(out _))
                 playerObject.AddComponent<PDADeathMemoryDump>();
 
-            if (playerObject.GetComponent<ARWaypointOverlay>() == null)
+            if (!playerObject.TryGetComponent<ARWaypointOverlay>(out _))
                 playerObject.AddComponent<ARWaypointOverlay>();
         }
     }

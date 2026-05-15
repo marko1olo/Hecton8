@@ -897,3 +897,31 @@ Verification state:
 - `CURRENT_BATCH.md` exact prompt tag count for `VFX_SDF_CARVE_DEBRIS`: 0.
 - Unity import/compile/profiler evidence remains unavailable.
 - No dotnet build or rebuild was run.
+
+## 2026-05-15 - DataVault Compaction Rebind Guard
+
+What was wrong:
+- `IsGpuStateValid()` rejected active compaction fences, but `TryEnsureGpuState()` could immediately try to reacquire DataVault buffers from the same fenced vault.
+- That could touch H-Phi memory during relocation and clear the debris mirror during a transient compaction window.
+
+What was done:
+- Added an early `vault.IsCompactionFenceActive` guard before any `GetBuffer()` reacquisition, generation capture, GPU allocation, or mirror clear.
+- Invalidates the local DataVault lease and fails the VFX tick closed until the vault fence drops.
+- Did not change particle budgets, shader paths, SDF collision, or flow binding.
+- Did not run dotnet build or dotnet rebuild.
+
+Cinematic cheats used:
+- Presentation skip on fenced memory: missing one debris tick is cheaper and safer than touching relocating vault state.
+- Visual richness resumes after H-Phi memory is stable; no emergency CPU fallback or readback path added.
+
+Exact Microseconds saved:
+- Steady-state saving: 0 us; this is correctness.
+- Avoided risk/cost: compaction-frame alias use and possible 4096-slot mirror clear/upload while the vault is fenced.
+- Added cost: one boolean check only on GPU-state rebind attempts.
+
+Verification state:
+- Focused `git diff --check` returned clean except Git LF/CRLF notices.
+- Forbidden VFX scan returned no matches.
+- `CURRENT_BATCH.md` exact prompt tag count for `VFX_SDF_CARVE_DEBRIS`: 0.
+- Unity import/compile/profiler evidence remains unavailable.
+- No dotnet build or rebuild was run.

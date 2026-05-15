@@ -162,6 +162,7 @@ namespace Hecton8.Caves
         private static readonly Vector4[] s_recentCutHeatStrengthTime = new Vector4[RecentCutHeatMax];
         private static int s_recentCutHeatCursor;
         private static int s_recentCutHeatCount;
+        private static bool _carveSignalLaneConfigured;
         [Header("Debris Aftermath")]
         [Tooltip("Optional dropped-item payload spawned from carved voxel mass. Leave empty to disable persistent debris aftermath.")]
         [SerializeField] private ItemData carveDebrisItem;
@@ -197,7 +198,6 @@ namespace Hecton8.Caves
         private int _pendingCarveHead;
         private int _pendingCarveCount;
         private NativeQueue<VoxelCarveEvent> _queuedCarveEvents;
-        private static bool _carveSignalLaneConfigured;
         private int _queuedCarveEventCount;
         private int _thermalMeltCount;
         private JobHandle _scheduledCarveHandle;

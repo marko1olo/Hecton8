@@ -593,6 +593,7 @@ namespace Hecton8.Core.Database
 
             _dirtyPayloads.Remove(sectorHash);
             RemoveDirtyPayloadKey(sectorHash);
+            MarkPayloadCleanInCacheLocked(sectorHash, in dirty, payloadOffset);
             if (hadLivePayload && oldPayloadOffset != payloadOffset)
                 AddDeadBytesLocked(oldPayloadRecordBytes);
 
@@ -1030,10 +1031,37 @@ namespace Hecton8.Core.Database
                     return false;
                 }
 
+                MarkPayloadCleanInCacheLocked(sectorHash, in dirty, newPayloadOffset);
                 flushedDirtyPayloads++;
             }
 
             return true;
+        }
+
+        private void MarkPayloadCleanInCacheLocked(
+            ulong sectorHash,
+            in MacroDatabasePayloadHandle dirty,
+            long payloadOffset)
+        {
+            if (_cacheOwner == null ||
+                dirty.Pointer == IntPtr.Zero ||
+                dirty.ByteLength <= 0 ||
+                dirty.ByteLength > _config.MaxPayloadBytes)
+            {
+                return;
+            }
+
+            byte cleanFlags = (byte)(dirty.Flags & ~PayloadDirtyFlag);
+            if (!_cacheOwner.TryStoreMacroDatabasePayload(
+                    sectorHash,
+                    dirty.Pointer,
+                    dirty.ByteLength,
+                    payloadOffset,
+                    cleanFlags,
+                    out _))
+            {
+                _cacheOwner.TryRemoveMacroDatabasePayload(sectorHash, out _);
+            }
         }
 
         private void ClearDirtyPayloadQueueLocked()

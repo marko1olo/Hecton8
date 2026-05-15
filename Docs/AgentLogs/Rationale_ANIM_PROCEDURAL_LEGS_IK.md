@@ -210,6 +210,14 @@ Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instructio
 Scalability potential: Low/MX350 keeps cadence-skipped lower-body state stable without extra sensing. Middle keeps deterministic two-foot stepping. High keeps velocity-led swim/stride polish without stale step locks. Ultra can layer secondary/muscle presentation over foot lanes that are finite and bounded even after skipped frames.
 Hardware Impact: Added work is fixed two-lane scalar/vector checks on skipped/active foot paths, estimated below 0.2 us/frame on i3/MX350. No allocations, no new jobs, no new ray lanes, and no public API changes.
 
+## Decision 27: Runtime disable pending-job closure
+
+Problem: `ContextualPhysicalIkRuntime.OnDisable` unregistered origin and tick callbacks without first closing a pending ground-response job. That allowed a scheduled job to complete after the runtime had stopped receiving origin-shift callbacks, risking stale pre-disable target frames or foot SOA lanes crossing a lifecycle boundary.
+Solution: Add a disable-only forced completion path. If a ground response is pending, the runtime now completes it, swaps/publishes the front buffer, writes a dedicated telemetry reason flag, clears `_groundResponseScheduled`, and resets the pending handle before unregistering callbacks.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Waiting for re-enable/LateFrame was rejected because disabled runtimes do not have reliable tick ordering. Dropping the pending job without publishing was rejected because it would hide the final coherent target buffer and weaken black-box chronology.
+Scalability potential: Low/MX350 pays no steady-state cost; the sync is disable-only. Middle/High/Ultra get deterministic lifecycle behavior for pooled rigs, scene transitions, and future multi-rig contextual IK without adding runtime sensing or solver work.
+Hardware Impact: 0.0 us steady-state. Disable-only cost is a forced job completion if one is outstanding; this is safer than carrying stale target writes across origin/lifecycle state.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Final anti-bloat pass required checking the lower-body implementation for honest simulation, unbounded math, GC leaks, and out-of-domain edits.

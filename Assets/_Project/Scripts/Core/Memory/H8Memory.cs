@@ -931,8 +931,14 @@ namespace Hecton8.Core.Memory
                 if (descriptor.BasePointer != basePointer || descriptor.OffsetBytes != offsetBytes)
                     continue;
 
+                descriptor.BasePointer = IntPtr.Zero;
+                descriptor.OffsetBytes = 0L;
+                descriptor.Bytes = 0L;
+                descriptor.OwnerKey = 0;
+                descriptor.Owner = SystemID.Unknown;
                 descriptor.State = (byte)H8BlockState.Free;
-                descriptor.Flags |= (ushort)H8AllocationFlags.Freed;
+                descriptor.Flags = (ushort)H8AllocationFlags.Freed;
+                descriptor.Reserved = 0;
                 descriptor.Generation++;
                 _blockDescriptors[i] = descriptor;
                 return;

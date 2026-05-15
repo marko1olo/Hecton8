@@ -284,8 +284,7 @@ namespace Hecton8.Narrative
             if (spawnedObject == null)
                 return false;
 
-            AudioLogPickup pickup = spawnedObject.GetComponent<AudioLogPickup>();
-            if (pickup == null)
+            if (!spawnedObject.TryGetComponent(out AudioLogPickup pickup))
             {
                 pool.Despawn(spawnedObject);
                 return false;

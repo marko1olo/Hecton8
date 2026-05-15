@@ -347,3 +347,10 @@ Solution: Added `_appliedPhosphorPreviousTexture` and `_appliedPhosphorCurrentTe
 Rejected Alternatives: Keeping unconditional phosphor texture writes, caching only `_CurrentTex`, or skipping `_PreviousTex` updates. Unconditional writes waste API traffic; current-only caching leaves asymmetry; previous texture must still update when front/back swaps.
 Scalability potential: Low removes redundant composite material writes for stable current RTs. Middle/High/Ultra preserve phosphor history correctness because swapped previous textures still rebind.
 Hardware Impact: Expected gain is sub-microsecond per phosphor composite on i3/MX350; no profiler proof.
+
+## Decision 49: Diegetic Panel Interaction-Distance Hoist
+Problem: The desktop panel ray path resolved the same effective interaction distance once for AUP range validation and again for panel ray projection.
+Solution: Resolve the clamped interaction distance once per ray tick and pass it into both checks.
+Rejected Alternatives: Keeping duplicate clamp calls, caching distance across frames, or removing the AUP range check. Duplicate calls are avoidable; cross-frame caching risks stale designer tuning; the AUP range check is required for floating-origin safety.
+Scalability potential: Low removes tiny repeated math from panel interaction. Middle/High/Ultra keep identical interaction behavior while retaining AUP correctness.
+Hardware Impact: Expected gain is sub-microsecond per desktop interaction tick on i3/MX350; no profiler proof.

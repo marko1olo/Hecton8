@@ -364,3 +364,11 @@ Solution: Add `ResolveSafeTailWhipSecondsRemaining()`, repair the runtime field 
 Rejected Alternatives: Sanitizing only in the Burst job was rejected because shader publication is a separate Mono path. Clamping inside the shader was rejected because bad CPU-side state should be caught before publication and recorded in the blackbox.
 Scalability potential: Low/MX350/high/ultra visuals are unchanged for valid input. Corrupt tail-whip state now collapses to no whip on all tiers, preserving low-tier stability and high-tier visual overkill only with finite state.
 Hardware Impact: Normal frame cost is a few scalar ops, estimated below 0.01 us and not profiler-backed. The benefit is preventing NaN shader publication and preserving postmortem evidence.
+
+## Decision 39: GPU Skinning Upload Failure Fail-Closed
+
+Problem: `FaunaKinematicsRuntime.UploadBonesToGpu()` set `_gpuBufferDataValid = false` when persistent bone matrices or the write `GraphicsBuffer` were unavailable, but it could leave material/global shader bindings from the last successful upload active.
+Solution: Call `ClearGpuSkinningBinding()` on those upload failure paths so `_H8LeviathanGpuSkinning`, bone count, IK tier, and tail-whip scalar all fail closed with the buffer validity state.
+Rejected Alternatives: Depending on callers to query `_gpuBufferDataValid` was rejected because bound shaders do not consult that C# boolean. Releasing graphics buffers on every failure was rejected because the invalid-buffer branch already goes through `EnsureGraphicsBuffers()`/`HasValidGraphicsBuffer()` and the needed fix is shader state cleanup.
+Scalability potential: Low/MX350/high/ultra visuals are unchanged when upload succeeds. On failure, all tiers stop stale deformation instead of showing old bones; low tier remains cheap and high tier only keeps visual overkill with fresh buffers.
+Hardware Impact: 0 us normal-path cost. Failure path pays material/global float clears only when upload cannot produce a valid buffer; no measured frame-time saving is claimed.

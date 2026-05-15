@@ -16,7 +16,7 @@ namespace Hecton8.Narrative
             if (playerObject == null)
                 return;
 
-            if (playerObject.GetComponent<ProceduralLoreDirector>() == null)
+            if (!playerObject.TryGetComponent<ProceduralLoreDirector>(out _))
                 playerObject.AddComponent<ProceduralLoreDirector>();
         }
     }

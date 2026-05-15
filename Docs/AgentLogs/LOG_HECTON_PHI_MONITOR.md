@@ -757,3 +757,46 @@ Regression Model:
 - Memory: no buffer ownership changed.
 - Cadence: no Tick/FixedTick/Update/job schedule changed.
 - Correctness: primary runtime DataVault migration debt now has a dedicated static regression gate separate from instrumentation, persistence, and UI backlog.
+
+## 2026-05-15 Runtime Lookup Debt Surgery
+
+What was wrong:
+- Runtime H-Phi still scored `FindObjectCalls=5`.
+- Two of those calls were not bootstrap recovery: one scene-wide light enumeration in `HectonUrpShadowBudgetGuard`, and one global name lookup in `VRSomaticRuntimeBootstrap`.
+- Both paths had better ownership models available: explicit shadow-light registration and static VR root ownership.
+
+What was done:
+- Removed the scene-wide light enumeration fallback from `HectonUrpShadowBudgetGuard`.
+- Shadow budget enforcement now operates only on lights registered through `HectonShadowBudgetLight`, `RegisterDynamicShadowLight`, or `RegisterAuthoritativeForwardSpotlight`.
+- Added static ownership for the VR somatic decoupled root and removed the global name lookup from `VRSomaticRuntimeBootstrap`.
+- Left `GameBootstrapper` recovery lookups untouched because those require integrator-owned scene/player-spawner evidence.
+- Honored user instruction: no `dotnet build`, no rebuild.
+
+Cinematic Cheats used:
+- Registration-first shadow control. The budget guard no longer tries to discover every scene light; authored lights must opt into the single dynamic shadow slot.
+
+Exact Microseconds saved:
+- Hot path: 0 us measured; no Tick/render-loop/job scheduling code changed.
+- Cold path: two runtime lookup surfaces removed: one full scene light enumeration/allocation and one global object-name lookup. Exact microseconds remain unmeasured by user order.
+
+Compile Status:
+- Not run by explicit user order.
+- Static checks run:
+  - runtime `rg` lookup scan
+  - `git diff --check -- Assets/_Project/Scripts/Core/HectonUrpShadowBudgetGuard.cs Assets/_Project/Scripts/Gameplay/VRSomaticRuntimeBootstrap.cs`
+  - `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`
+  - full budgeted static gate at `2026-05-15 14:39:21 +04:00`
+
+Phi Gain:
+- Runtime `FindObjectCalls`: `5 -> 3`.
+- Runtime narrow H-Phi: `0.010687040 -> 0.010758376`.
+- Runtime risk H-Phi: `0.000611619 -> 0.000623300`.
+- Risk integration: `0.057434000 -> 0.057936236`.
+- Data Sovereignty: `0.021129678 -> 0.021270718` in the current tree. This movement includes concurrent workspace changes, not only this patch.
+
+Regression Model:
+- CPU: no hot loop changed; cold lookup/allocation pressure reduced.
+- GC: shadow scene-light array allocation surface removed from runtime fallback.
+- Memory: no NativeArray/DataVault ownership changed.
+- Cadence: no Tick/FixedTick/Update/job schedule changed.
+- Correctness: unregistered first-party shadow lights no longer get auto-discovered by the guard; they must use the existing authored registration path.

@@ -387,8 +387,20 @@ namespace Hecton8.World
                     for (int obstacleIndex = 0; obstacleIndex < Obstacles.Length; obstacleIndex++)
                     {
                         NavObstaclePrimitive obstacle = Obstacles[obstacleIndex];
+                        if (!math.all(math.isfinite(obstacle.Center)) ||
+                            !math.all(math.isfinite(obstacle.Extents)) ||
+                            obstacle.Extents.x <= 0.0001f ||
+                            obstacle.Extents.y <= 0.0001f ||
+                            obstacle.Extents.z <= 0.0001f)
+                        {
+                            continue;
+                        }
+
                         float3 min = obstacle.Center - obstacle.Extents;
                         float3 max = obstacle.Center + obstacle.Extents;
+                        if (!math.all(math.isfinite(min)) || !math.all(math.isfinite(max)))
+                            continue;
+
                         if (samplePoint.x < min.x || samplePoint.x > max.x ||
                             samplePoint.y < min.y || samplePoint.y > max.y ||
                             samplePoint.z < min.z || samplePoint.z > max.z)
@@ -977,7 +989,7 @@ namespace Hecton8.World
 
             HectonMapMagicVegetationBridge activeBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
             obstacleCount += CountMacroFloraObstacles(activeBridge);
-            obstacleCount += _persistentDynamicObstacles.IsCreated ? _persistentDynamicObstacles.Length : 0;
+            obstacleCount += CountPersistentDynamicObstacles();
 
             if (obstacleCount <= 0)
                 return default;
@@ -2157,31 +2169,54 @@ namespace Hecton8.World
             int count = 0;
             for (int i = 0; i < colliders.Length; i++)
             {
-                T collider = colliders[i];
-                if (collider != null && collider.enabled && collider.gameObject.activeInHierarchy)
+                if (TryResolveColliderObstacleBounds(colliders[i], out _, out _))
                     count++;
             }
 
             return count;
         }
 
+        private static bool TryResolveColliderObstacleBounds<T>(T collider, out float3 center, out float3 extents)
+            where T : Collider
+        {
+            center = float3.zero;
+            extents = float3.zero;
+            if (collider == null ||
+                !collider.enabled ||
+                !collider.gameObject.activeInHierarchy)
+            {
+                return false;
+            }
+
+            Bounds bounds = collider.bounds;
+            center = bounds.center;
+            extents = bounds.extents;
+            return IsValidDynamicObstacleBounds(center, extents);
+        }
+
         private static void WriteColliderBounds<T>(T[] colliders, ref NativeArray<NavObstaclePrimitive> snapshot, ref int writeIndex)
             where T : Collider
         {
-            if (colliders == null || colliders.Length <= 0)
+            if (colliders == null ||
+                colliders.Length <= 0 ||
+                !snapshot.IsCreated ||
+                writeIndex < 0)
+            {
                 return;
+            }
 
             for (int i = 0; i < colliders.Length; i++)
             {
-                T collider = colliders[i];
-                if (collider == null || !collider.enabled || !collider.gameObject.activeInHierarchy)
+                if (writeIndex >= snapshot.Length)
+                    return;
+
+                if (!TryResolveColliderObstacleBounds(colliders[i], out float3 center, out float3 extents))
                     continue;
 
-                Bounds bounds = collider.bounds;
                 snapshot[writeIndex] = new NavObstaclePrimitive
                 {
-                    Center = bounds.center,
-                    Extents = bounds.extents
+                    Center = center,
+                    Extents = extents
                 };
                 writeIndex++;
             }
@@ -2313,6 +2348,22 @@ namespace Hecton8.World
                 snapshot[writeIndex] = obstacle;
                 writeIndex++;
             }
+        }
+
+        private static int CountPersistentDynamicObstacles()
+        {
+            if (!_persistentDynamicObstacles.IsCreated || _persistentDynamicObstacles.Length <= 0)
+                return 0;
+
+            int count = 0;
+            for (int i = 0; i < _persistentDynamicObstacles.Length; i++)
+            {
+                NavObstaclePrimitive obstacle = _persistentDynamicObstacles[i];
+                if (IsValidDynamicObstacleBounds(obstacle.Center, obstacle.Extents))
+                    count++;
+            }
+
+            return count;
         }
 
         private static void RegisterPersistentDynamicObstacle(float3 center, float3 extents)

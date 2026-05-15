@@ -68,6 +68,35 @@ Verification:
 Status:
 - VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
 
+## 2026-05-15 - H8Memory Descriptor Reuse Gate
+
+What was wrong:
+- Freed non-vault allocation descriptors could remain with nonzero `Bytes`.
+- Descriptor registration only reuses slots with `Bytes == 0`, so allocation churn could leak descriptor capacity even after native memory was freed.
+
+What was done:
+- `MarkBlockDescriptorFree` now tombstones freed native-allocation descriptors by clearing pointer, offset, bytes, owner key, owner, and reserved byte.
+- Kept DataVault free-region descriptors intact; those are maintained through DataVault descriptor updates and remain block-map evidence.
+- Documented the reusable tombstone rule in `Docs/ARCHITECTURE/ARENA_ALLOCATOR_2_0.md`.
+
+Cinematic Cheats used:
+- None. This is native descriptor lifecycle integrity.
+
+Exact Microseconds saved:
+- Frame cost: 0 us.
+- Free path adds scalar field clears on the existing descriptor scan.
+- Prevents cold descriptor-capacity pressure during allocation churn, avoiding future failed allocation tracking.
+
+Verification:
+- `H8Memory.cs`, `GlobalDataVault.cs`, `SaveBinaryPayloadCodec.cs`, and `SaveDataMigration.cs` brace/parenthesis balance passed.
+- Tombstone scan found `Bytes=0`, owner clearing, reserved clearing, and the `existing.Bytes != 0L` reuse gate.
+- DataVault live compaction scan remained clean.
+- `git diff --check` passed with CRLF warnings only.
+- No dotnet rebuild was run per user order.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
 ## 2026-05-15 - H8Memory Tracking Growth All-Or-Nothing Gate
 
 What was wrong:

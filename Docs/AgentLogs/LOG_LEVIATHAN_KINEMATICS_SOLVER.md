@@ -886,3 +886,26 @@ Verification:
 - `git diff --check` on `FaunaKinematicsRuntime.cs` exits 0 with only LF-to-CRLF warning.
 - Static forbidden scan over `FaunaKinematicsRuntime.cs` remains clean for direct native allocations/disposals, `Time.frameCount`, `GlobalRegistry.Get`, forbidden Unity searches, `Animator`, and `SkinnedMeshRenderer`.
 - Runtime status remains pending until Unity Editor import, shader compile, PlayMode behavior, GC, profiler evidence, and fault-dump proof exist.
+
+## 2026-05-15T14:45+04:00
+
+Status: PENDING VERIFICATION. Continued Leviathan GPU publication failure-path audit. No `dotnet` rebuild/compile, Unity import, shader compile, or response-file probe was run.
+
+What was wrong:
+- `UploadBonesToGpu()` marked CPU-side buffer data invalid on upload failure but could leave already-bound material/global shader state enabled from the previous successful frame.
+
+What was done:
+- Added `ClearGpuSkinningBinding()` calls when persistent bone matrices are missing or the current write `GraphicsBuffer` is invalid.
+- Shader publication now fails closed in the same paths where `_gpuBufferDataValid` fails closed.
+
+Cinematic cheats used:
+- No new simulation. On failure, the visual fake shuts off deformation rather than rendering stale bones.
+
+Exact microseconds saved:
+- 0 us normal-path saving claimed.
+- Failure path pays material/global shader clears only when no fresh buffer can be published.
+
+Verification:
+- `git diff --check` on `FaunaKinematicsRuntime.cs` exits 0 with only LF-to-CRLF warning.
+- Static forbidden scan over `FaunaKinematicsRuntime.cs` remains clean for direct native allocations/disposals, `Time.frameCount`, `GlobalRegistry.Get`, forbidden Unity searches, `Animator`, and `SkinnedMeshRenderer`.
+- Runtime status remains pending until Unity Editor import, shader compile, PlayMode behavior, GC, profiler evidence, and failure-path visual proof exist.

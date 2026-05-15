@@ -411,3 +411,9 @@ Solution: Reject non-finite request min/max bounds before voxel conversion, comp
 Rejected Alternatives: Clamping infinities back into the record bounds was rejected because it fabricates a route obstacle. Dropping the new obstacle on merge overflow was rejected because the new primitive is already proven valid and should keep route authority.
 Scalability potential: Low/MX350 avoids invalid giant route update regions. Middle/High/Ultra can retain dense persistent obstacles without overflowed merge data poisoning macro routing.
 Hardware Impact: Adds scalar finite checks on cold dynamic-obstacle maintenance; expected gain is avoided invalid voxel conversion and route rebuild churn. Dotnet rebuilds remain prohibited.
+
+Problem: Obstacle snapshot allocation could count collider or persistent obstacle entries that later write-side finite guards skipped, leaving uninitialized native snapshot slots that the Burst stamp job would still scan.
+Solution: Share collider finite/positive bounds proof between count and write, count only valid persistent dynamic obstacles, and add a Burst-side obstacle primitive guard before min/max stamping.
+Rejected Alternatives: Zero-filling the snapshot was rejected because a zero-size primitive can still carry ambiguous route meaning near origin. Allocating a second compacted snapshot was rejected because it adds cold allocation churn where count/write parity solves the authority gap.
+Scalability potential: Low/MX350 avoids invalid obstacle stamping and route recovery from uninitialized snapshot tails. Middle/High/Ultra keep dense obstacle snapshots with exact count/write parity and job-local fail-closed proof.
+Hardware Impact: Adds scalar finite checks during cold snapshot creation and obstacle scan; expected gain is avoided false solid cells and macro route rebuild churn. Dotnet rebuilds remain prohibited.

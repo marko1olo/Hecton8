@@ -131,3 +131,9 @@ Solution: Fast-forward the non-overlapping git-sync commit first, then validate 
 Rejected Alternatives: Force-push over `e1a6a489f`, pulling without overlap checks, or hiding failed build exit files. These would break shared history or corrupt evidence.
 Scalability potential: Git-only integration pass. Authored shader/runtime scalability gates remain owned by the producing agents; this pass only validates no obvious conflict debris.
 Hardware Impact: 0 us runtime impact. Dev-path gain is a smaller dirty tail and a synchronized main before the next checkpoint.
+
+Problem: After `580a1a325` was pushed and verified, a smaller residual live tail remained from active agents.
+Solution: Validate the 54-file staged tail as a separate checkpoint, include latest successful build exit files, and keep the proof boundary honest because earlier build/HPhi evidence in this run was mixed.
+Rejected Alternatives: Reporting a clean tree, amending the pushed commit, or claiming global green from Fresh72/Fresh73 alone.
+Scalability potential: Git-only integration pass. Runtime/scalability behavior remains owned by the producers; this pass reduces Git conflict surface only.
+Hardware Impact: 0 us runtime impact. Dev-path gain is another published integration boundary.

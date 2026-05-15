@@ -25,7 +25,7 @@ namespace Hecton8.Build
         private void OnValidate()
         {
             if (label == null)
-                label = GetComponent<TMP_Text>();
+                TryGetComponent(out label);
         }
 
         public void ApplyWatermark()

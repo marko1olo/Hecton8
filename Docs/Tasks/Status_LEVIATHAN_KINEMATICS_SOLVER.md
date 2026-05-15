@@ -430,3 +430,13 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 - `git diff --check` on `FaunaKinematicsRuntime.cs` exits 0; output only reports LF-to-CRLF normalization warning.
 - Static forbidden scan over `FaunaKinematicsRuntime.cs` remains clean for direct native allocations/disposals, `Time.frameCount`, `GlobalRegistry.Get`, forbidden Unity object searches, `Animator`, and `SkinnedMeshRenderer`.
 - No `dotnet` rebuild, compile, Unity import, shader compile, or response-file probe was run.
+
+### Loop 39: GPU Skinning Upload Failure Fail-Closed Recheck
+
+- Cleared material/global Leviathan GPU skinning bindings when `UploadBonesToGpu()` cannot access persistent bone matrices or cannot resolve a valid write `GraphicsBuffer`.
+- DOD: shader state does not keep `_H8LeviathanGpuSkinning = 1` from the last good frame after a fresh upload failure.
+- Alternative Rejected: relying only on `_gpuBufferDataValid = false` because that protects query APIs but not already-bound material/global shader state.
+- Estimate: 0 us normal hot-path cost; cleanup only runs on upload failure.
+- `git diff --check` on `FaunaKinematicsRuntime.cs` exits 0; output only reports LF-to-CRLF normalization warning.
+- Static forbidden scan over `FaunaKinematicsRuntime.cs` remains clean for direct native allocations/disposals, `Time.frameCount`, `GlobalRegistry.Get`, forbidden Unity object searches, `Animator`, and `SkinnedMeshRenderer`.
+- No `dotnet` rebuild, compile, Unity import, shader compile, or response-file probe was run.

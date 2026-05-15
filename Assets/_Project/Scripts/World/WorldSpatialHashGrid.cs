@@ -275,7 +275,6 @@ namespace Hecton8.World
                 CancelValidationForTeardown(),
                 CancelFarUnloadForTeardown());
             teardownDependency = DisposeValidationBuffers(teardownDependency);
-            teardownDependency = DisposeOriginShiftBuffers(teardownDependency);
             teardownDependency = DisposeFarUnloadBuffers(teardownDependency);
             JobHandle.ScheduleBatchedJobs();
             DispatcherJobSwap.TryComplete(ref teardownDependency, forceComplete: true);
@@ -1105,7 +1104,6 @@ namespace Hecton8.World
             if (count <= 0)
                 return;
 
-            EnsureOriginShiftCapacity(count);
             int writeIndex = 0;
             Dictionary<int, Entry>.Enumerator enumerator = _entries.GetEnumerator();
             while (enumerator.MoveNext())
@@ -1636,20 +1634,6 @@ namespace Hecton8.World
                 NativeMemoryLifetime);
         }
 
-        private static void EnsureOriginShiftCapacity(int requiredCapacity)
-        {
-            if (_originShiftHandles.IsCreated)
-                return;
-
-            DisposeOriginShiftBuffers();
-            _originShiftHandles = new NativeArray<int>(MaxSpatialMaintenanceEntryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(
-                _originShiftHandles,
-                nameof(WorldSpatialHashGrid),
-                nameof(_originShiftHandles),
-                NativeMemoryLifetime);
-        }
-
         private static void DisposeValidationBuffers()
         {
             if (_validationScheduled)
@@ -1720,30 +1704,6 @@ namespace Hecton8.World
             }
 
             _validationCount = 0;
-            return disposeHandle;
-        }
-
-        private static void DisposeOriginShiftBuffers()
-        {
-            if (_originShiftHandles.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_originShiftHandles);
-                _originShiftHandles.Dispose();
-                _originShiftHandles = default;
-            }
-        }
-
-        private static JobHandle DisposeOriginShiftBuffers(JobHandle dependency)
-        {
-            JobHandle disposeHandle = dependency;
-
-            if (_originShiftHandles.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_originShiftHandles);
-                disposeHandle = _originShiftHandles.Dispose(disposeHandle);
-                _originShiftHandles = default;
-            }
-
             return disposeHandle;
         }
 

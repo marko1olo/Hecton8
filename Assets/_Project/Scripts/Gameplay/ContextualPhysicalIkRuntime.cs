@@ -1505,6 +1505,7 @@ namespace Hecton8.Gameplay
         private const uint TelemetryReasonStructuralMutation = 0x00000002u;
         private const uint TelemetryReasonInvalidOriginShift = 0x00000004u;
         private const uint TelemetryReasonNativeStorageInvalid = 0x00000008u;
+        private const uint TelemetryReasonRuntimeDisable = 0x00000010u;
         private const float MaxAcceptedOriginShiftMeters = 10000.0f;
         private const float MaxAcceptedOriginShiftMetersSq = MaxAcceptedOriginShiftMeters * MaxAcceptedOriginShiftMeters;
         private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_ANIM_PROCEDURAL_LEGS_IK.bin";
@@ -1582,6 +1583,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            CompletePendingGroundResponseForRuntimeDisable();
             TryUnregisterOriginShiftListener();
             TryUnregister();
         }
@@ -1941,6 +1943,20 @@ namespace Hecton8.Gameplay
             _groundResponseScheduled = false;
             _pendingGroundResponseHandle = default;
             return true;
+        }
+
+        private void CompletePendingGroundResponseForRuntimeDisable()
+        {
+            if (!_groundResponseScheduled)
+                return;
+
+            // COLD SYNC JOB: disabled runtimes must not leave pre-shift target writes pending.
+            DispatcherJobSwap.TryComplete(ref _pendingGroundResponseHandle, forceComplete: true);
+            SwapTargetBuffers();
+            PublishFrontTargetBuffer();
+            WriteTelemetrySample(TelemetryReasonRuntimeDisable);
+            _groundResponseScheduled = false;
+            _pendingGroundResponseHandle = default;
         }
 
         private void RebaseScheduledEntityStates(float3 shiftOffset)

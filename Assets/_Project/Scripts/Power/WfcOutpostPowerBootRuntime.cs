@@ -54,6 +54,7 @@ namespace Hecton8.Power
                                                 WfcOutpostGraphFaultFlags.NoPowerNodes;
         private const uint FaultFlag = 1u << 31;
         private const uint AupShiftFlag = 1u << 2;
+        private const uint ReactorClockFaultFlag = 1u << 3;
 
         private readonly LogisticsNetworkGraph _graph; // COLD ALLOC: LogisticsNetworkGraph[1] - WFC outpost power evaluator - owner: WfcOutpostPowerBootRuntime
         private NativeArray<WfcOutpostPowerNode> _nodes;
@@ -316,7 +317,7 @@ namespace Hecton8.Power
             _activeGeneratorNodeIndex = _generatorNodeIndex.IsCreated && _generatorNodeIndex.Length > 0 ? _generatorNodeIndex[0] : -1;
             _lastGraphFaultFlags = ReadCount(WfcOutpostGraphCountSlots.FaultFlags);
             _reactorOutput01 = InitialReactorOutput01;
-            _lastReactorUpdateTime = now;
+            _lastReactorUpdateTime = SanitizeClockSeconds(now);
             bool hasFatalGraphFault = HasFatalGraphFault(_lastGraphFaultFlags);
             _gasSeedPending = !hasFatalGraphFault;
             _hasActiveGraph = _activeNodeCount > 0 && !hasFatalGraphFault;
@@ -419,20 +420,32 @@ namespace Hecton8.Power
 
         private void UpdateReactorDecay(float now)
         {
+            float safeNow = SanitizeClockSeconds(now);
             if (!_hasActiveGraph)
             {
-                _lastReactorUpdateTime = now;
+                _lastReactorUpdateTime = safeNow;
                 return;
             }
 
             if (!math.isfinite(now))
+            {
+                _lastReactorUpdateTime = safeNow;
+                WriteBlackBox(FaultFlag | ReactorClockFaultFlag, 0f, 1f);
                 return;
+            }
+
+            if (!math.isfinite(_lastReactorUpdateTime))
+            {
+                _lastReactorUpdateTime = safeNow;
+                WriteBlackBox(FaultFlag | ReactorClockFaultFlag, 0f, 1f);
+                return;
+            }
 
             if (_lastReactorUpdateTime <= 0f)
-                _lastReactorUpdateTime = now;
+                _lastReactorUpdateTime = safeNow;
 
-            float dt = math.max(0f, now - _lastReactorUpdateTime);
-            _lastReactorUpdateTime = now;
+            float dt = math.max(0f, safeNow - _lastReactorUpdateTime);
+            _lastReactorUpdateTime = safeNow;
             _reactorOutput01 = math.max(0f, _reactorOutput01 - dt * ReactorDecayPerSecond);
         }
 
@@ -511,8 +524,9 @@ namespace Hecton8.Power
             }
 
             float o2 = StandardOxygenKPa * 0.05f;
+            int nodeLimit = math.clamp(_activeNodeCount, 0, MaxCells);
             bool allSeeded = true;
-            for (int nodeIndex = 0; nodeIndex < _activeNodeCount; nodeIndex++)
+            for (int nodeIndex = 0; nodeIndex < nodeLimit; nodeIndex++)
             {
                 WfcOutpostPowerNode node = _nodes[nodeIndex];
                 if (node.RoomId == ushort.MaxValue || node.RoomId >= roomLimit)
@@ -705,6 +719,11 @@ namespace Hecton8.Power
         private static bool HasFatalGraphFault(int faultFlags)
         {
             return (faultFlags & FatalGraphFaultMask) != 0;
+        }
+
+        private static float SanitizeClockSeconds(float now)
+        {
+            return math.isfinite(now) ? math.max(0f, now) : 0f;
         }
 
         private static float ResolveDemandWatts(byte kind)

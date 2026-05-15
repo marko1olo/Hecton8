@@ -1615,7 +1615,7 @@ namespace Hecton8.VFX
             velocity.space = ParticleSystemSimulationSpace.Local;
             velocity.z = new ParticleSystem.MinMaxCurve(-18f, -28f);
 
-            _speedLineRenderer = _speedLineParticles.GetComponent<ParticleSystemRenderer>();
+            _speedLineParticles.TryGetComponent(out _speedLineRenderer);
             if (_speedLineRenderer != null)
             {
                 _speedLineRenderer.renderMode = ParticleSystemRenderMode.Stretch;
@@ -2018,7 +2018,7 @@ namespace Hecton8.VFX
 
                 if (_mainCamera == null)
                 {
-                    _mainCamera = GetComponentInParent<Camera>();
+                    _mainCamera = ResolveComponentInParents<Camera>(transform);
                 }
 
             }
@@ -2050,7 +2050,7 @@ namespace Hecton8.VFX
 
             if (_urpVolume == null && _cameraTransform != null)
             {
-                _urpVolume = _cameraTransform.GetComponentInParent<Volume>();
+                _urpVolume = ResolveComponentInParents<Volume>(_cameraTransform);
             }
         }
 
@@ -2081,7 +2081,7 @@ namespace Hecton8.VFX
 
                 if (_survivalSystem == null && _cameraTransform != null)
                 {
-                    _survivalSystem = _cameraTransform.GetComponentInParent<HectonSurvivalSystem>();
+                    _survivalSystem = ResolveComponentInParents<HectonSurvivalSystem>(_cameraTransform);
                 }
 
                 if (_survivalSystem == null && playerRoot != null)
@@ -2098,7 +2098,7 @@ namespace Hecton8.VFX
 
                 if (_playerMovement == null && _cameraTransform != null)
                 {
-                    _playerMovement = _cameraTransform.GetComponentInParent<HectonPlayerMovement>();
+                    _playerMovement = ResolveComponentInParents<HectonPlayerMovement>(_cameraTransform);
                 }
 
                 if (_playerMovement == null && playerRoot != null)
@@ -2287,6 +2287,20 @@ namespace Hecton8.VFX
 #endif
 
         // ═══ EDITOR GIZMOS ═══
+
+        private static T ResolveComponentInParents<T>(Transform start) where T : Component
+        {
+            Transform current = start;
+            while (current != null)
+            {
+                if (current.TryGetComponent(out T component))
+                    return component;
+
+                current = current.parent;
+            }
+
+            return null;
+        }
 
 #if UNITY_EDITOR
         private void OnDrawGizmos()
