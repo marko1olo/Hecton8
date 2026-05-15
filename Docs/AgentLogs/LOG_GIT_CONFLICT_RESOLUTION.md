@@ -653,3 +653,15 @@ Exact Microseconds saved -> 0 us runtime claimed. Process-only gain is lower act
 Verification -> Batch006 archive currently contains 991 files and 148317214 bytes after removing 19 zero-byte archive artifacts and regenerating combined manifests. Remote incoming report shows the current pull state as `0 0`; the last observed other-computer fetch ranges include economy proof, lore/regrowth/hash work, Git sync evidence, orphan meta cleanup, generated artifact refresh, and batch agent output sync.
 
 Current Status -> Pushed `61b008d36`; post-push fetch reports `origin/main...HEAD = 0 0`. Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals are not claimed. Remaining untracked files are the separate unfinished `SUBNAUTICA_RESEARCHER` research notes, intentionally excluded from the Git hygiene checkpoint.
+
+## 2026-05-15 - Loop 44 Two-Day Remote Incoming Audit
+
+What was wrong -> The user asked what came from the other computer over the last day or two. Because both machines use one GitHub account, commit author alone cannot identify the physical laptop.
+
+What was done -> Parsed local `origin/main` reflog entries whose reason starts with `fetch*`, covering 2026-05-14 through 2026-05-15. Generated `Docs/AgentLogs/RemoteIncoming_Day2_GIT_CONFLICT_RESOLUTION_20260515.md` with all incoming ranges, commits, per-range file lists, distinct path totals, and top-level classification.
+
+Cinematic Cheats used -> None. Git/static audit only.
+
+Exact Microseconds saved -> 0 runtime us claimed.
+
+Verification -> Report covers 13 remote-fetch ranges, 55 commits, 824 file-change rows, and 530 distinct touched paths. Current `origin/main...HEAD` was `0 0` before the report write.

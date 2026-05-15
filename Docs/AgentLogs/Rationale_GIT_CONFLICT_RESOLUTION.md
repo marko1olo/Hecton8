@@ -251,3 +251,9 @@ Solution: Treat the archive as a documentation handover move after reading its o
 Rejected Alternatives: Force-pushing, resetting the archive move, committing deletion of active integration memory, or summarizing the other-computer changes without concrete commit/file evidence.
 Scalability potential: Low keeps active docs searchable by keeping old batch material archived; Middle/High/Ultra keep forensic breadth through per-file archive plus combined manifests. Runtime behavior is unchanged.
 Hardware Impact: 0 us runtime impact. Dev-path gain is reduced active documentation scan noise and a reproducible remote-incoming audit trail.
+
+Problem: User asked what arrived from the other computer over the last day or two, but both checkouts use one GitHub account, so author metadata cannot prove physical machine origin.
+Solution: Use local `origin/main` reflog fetch entries as the hard evidence boundary: anything that advanced this checkout via `fetch*` is classified as remote-incoming. Generate a full two-day report with every incoming range, commit, and touched path.
+Rejected Alternatives: Guessing by commit subject, treating local push reflog entries as other-computer work, or giving only a chat summary without file evidence.
+Scalability potential: Git-only audit. Low/Middle/High/Ultra runtime behavior is unchanged; process scalability improves by separating remote-incoming evidence from local push checkpoints.
+Hardware Impact: 0 us runtime impact.

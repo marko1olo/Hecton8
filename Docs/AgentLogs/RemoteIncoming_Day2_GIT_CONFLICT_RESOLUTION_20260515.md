@@ -1,0 +1,1552 @@
+﻿# Remote Incoming Audit - GIT_CONFLICT_RESOLUTION
+
+Generated: 2026-05-15 Europe/Samara from local `origin/main` reflog and Git object database.
+Evidence class: `GIT_REFLOG` / `STATIC_DIFF`. This is not Unity runtime proof.
+
+Current `origin/main...HEAD`: `0	0`
+
+Definition: entries below are ranges where this checkout advanced `origin/main` through a `fetch*` reflog entry. With one GitHub account, author identity cannot prove the physical laptop; fetch-ranges are the local evidence for "came from the other checkout/remote".
+
+## Totals
+Remote fetch ranges: 13
+Incoming commits: 55
+File-change rows across ranges: 824
+Distinct touched paths: 530
+
+Top-level distinct path counts:
+- .agents-skills: 56
+- .codex_tmp: 21
+- .gitignore: 1
+- Assets: 46
+- Data: 64
+- Docs: 254
+- Tools: 88
+
+Status counts across file-change rows:
+- A: 418
+- D: 23
+- M: 383
+
+## Executive Classification
+- 2026-05-14 afternoon: auxiliary batch data/tooling/evidence, then hardware profile and save-master-hash static guards.
+- 2026-05-15 early: Sabine reverb LUT bake, acoustic validator/tests, and verification notes.
+- 2026-05-15 midday: economy binding/authority docs, large batch-agent output sync, generated artifact refresh, orphan Unity meta cleanup, and multi-agent/lore artifacts.
+- 2026-05-15 evening: real code/tooling hardening in regrowth/lore/hash verification plus final economy proof docs.
+- No incoming `Packages/` or `ProjectSettings/` changes were observed in these fetch ranges.
+
+## Ranges
+
+### 2026-05-14 14:50:05 +0400 - `1875424c7..926ed7a55`
+Reflog reason: `fetch --progress --prune --recurse-submodules=on-demand origin: fast-forward`
+Commits: 3; file rows: 156; docs=42; assets=0; data=21; tools=16; skills=56; tmp=21
+
+Commits:
+- 926ed7a55 2026-05-14 13:39:36 +0300 Record auxiliary batch verification logs
+- d2c221e51 2026-05-14 13:38:18 +0300 Update auxiliary batch artifact revisions
+- 953354e7b 2026-05-14 13:35:30 +0300 Add auxiliary batch data and tooling outputs
+
+Changed files:
+- M  .agents-skills/AI_Creature_Cognition_States.txt
+- M  .agents-skills/AI_Director_Encounter_Manager.txt
+- M  .agents-skills/AI_DYNAMIC_NAVGRID_SDF_INTEGRATION.txt
+- M  .agents-skills/AI_Navigation_AStar_Funnel_Smoothing_Pathfinding.txt
+- M  .agents-skills/ANIM_Contextual_Physical_IK.txt
+- M  .agents-skills/ANIM_IK_FABRIK_GroundSnapping_Procedural.txt
+- A  .agents-skills/ARCH_Execution_Phases.txt
+- M  .agents-skills/ARCH_Global_Registry_ServiceLocator_DI_Init.txt
+- M  .agents-skills/ARCH_Project_Bootstrap_Sequence_Init_Safety.txt
+- A  .agents-skills/ARCH_Signal_Lane_Segregation.txt
+- M  .agents-skills/AUD_Acoustic_Sonar_Occlusion_Sensory_Simulation.txt
+- M  .agents-skills/AUD_DSP_Audio_Synthesis_ThreadSafe_SPSC.txt
+- M  .agents-skills/AUDIO_Hrtf_Binaural_Spatialization.txt
+- M  .agents-skills/CORE_Abyss_Survival_Systems_O2_Pressure_Logic.txt
+- M  .agents-skills/CORE_Damage_System_Hull_Integrity_VFX_Feedback.txt
+- M  .agents-skills/CORE_Submarine_Vehicles_Kinematics_AUP.txt
+- M  .agents-skills/CORE_Tools_Equipment_Interaction_Raycast_Heat.txt
+- M  .agents-skills/CORE_Weather_Abyssal_FlowField_Currents.txt
+- M  .agents-skills/CTRL_Device_Abstraction_Haptics.txt
+- M  .agents-skills/DATA_Inventory_Resources_Items_SOA_Layout.txt
+- M  .agents-skills/DBG_Telemetry_Crash_Reporting_PostMortem.txt
+- M  .agents-skills/GPU_Compute_Kernels_Kernels_Optimization_MX350.txt
+- M  .agents-skills/LOGI_Energy_Networks_Power_Grid_Graph_Flow.txt
+- M  .agents-skills/MANDATE_VERSION_6.0.txt
+- A  .agents-skills/MATH_AUP_Determinism_Sync.txt
+- M  .agents-skills/MATH_Coordinate_Precision_AUP_FloatingOrigin.txt
+- M  .agents-skills/NET_Logistics_Sync_BitPacking_Reconciliation.txt
+- M  .agents-skills/OPT_Native_Memory_Collections_JobSystem_Protocol.txt
+- M  .agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt
+- M  .agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+- M  .agents-skills/PHYS_Destructible_Organic_Entropy.txt
+- M  .agents-skills/PHYS_Fluid_Incursion_Interior.txt
+- M  .agents-skills/PHYS_Kinematic_Interaction_Hands.txt
+- M  .agents-skills/PHYS_Physics_Integrity_Determinism_ForceMode.txt
+- M  .agents-skills/PHYS_Tether_Cable_Acceleration_Constraints.txt
+- M  .agents-skills/PROG_Quest_State_Graph_Logic.txt
+- M  .agents-skills/PROJECT_LTS_Compatibility_Layer.txt
+- M  .agents-skills/QA_Evidence_Text_Filter_Audit.txt
+- M  .agents-skills/README.md
+- M  .agents-skills/REND_Abyssal_Lighting_Voxel_Occlusion_Shadows.txt
+- M  .agents-skills/REND_Foveated_Simulation_LOD.txt
+- M  .agents-skills/REND_GPU_Driven_Animation_VAT.txt
+- M  .agents-skills/REND_Instanced_Flora_Physics.txt
+- M  .agents-skills/REND_Shader_Noir_Aesthetics_Dithering_Fog.txt
+- M  .agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt
+- M  .agents-skills/REND_VFX_Fluid_Aesthetics_Compute_Particles.txt
+- M  .agents-skills/REND_VR_Stencil_Masking.txt
+- M  .agents-skills/STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt
+- M  .agents-skills/STRM_Async_Standard.txt
+- M  .agents-skills/STRM_World_Streaming_Residency_Chunk_Management.txt
+- M  .agents-skills/TOOL_Procedural_Wreckage_Generator.txt
+- M  .agents-skills/UI_Diegetic_Physical_Interfaces.txt
+- M  .agents-skills/UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt
+- M  .agents-skills/VOX_MapMagic_Voxel_Seam_Alignment_Integration.txt
+- M  .agents-skills/VOX_Voxel_SDF_Geometry_MarchingCubes_Pipeline.txt
+- M  .agents-skills/VOX_Voxel_World_Logic_Carving_Persistence.txt
+- D  .codex_tmp/ai_swarm_navgrid_patch.diff
+- D  .codex_tmp/eco_director_flow_fields_patch.diff
+- D  .codex_tmp/eco_director_vortex_math_patch.diff
+- D  .codex_tmp/ecosystem_dynamics_patch.diff
+- D  .codex_tmp/huv_20c82c86.cs
+- D  .codex_tmp/hybrid_nav_patch.diff
+- D  .codex_tmp/hybrid_nav_runtime_sampling_build.log
+- D  .codex_tmp/hybrid_nav_runtime_sampling_patch.diff
+- D  .codex_tmp/iter22/Hecton8.Editor.asmdef.before
+- D  .codex_tmp/iter22/McpLog.cs.before
+- D  .codex_tmp/iter22/ProjectIdentityUtility.cs.before
+- D  .codex_tmp/iter22/WebSocketTransportClient.cs.before
+- D  .codex_tmp/iter23/McpLog.cs.before
+- D  .codex_tmp/iter23/WebSocketTransportClient.cs.before
+- D  .codex_tmp/iter25/dotnet_build_Assembly-CSharp.log
+- D  .codex_tmp/iter25/registry_after.txt
+- D  .codex_tmp/iter25/registry_before.txt
+- D  .codex_tmp/iter25/tile_after.txt
+- D  .codex_tmp/iter25/tile_before.txt
+- D  .codex_tmp/ocean_20c82c86.prefab
+- D  .codex_tmp/player_runtime_context_math_purge.diff
+- A  Data/AI/Fauna_Global_Weights.json
+- A  Data/Economy/Recipes.json
+- A  Data/Economy/Resource_Distribution_Matrix.csv
+- A  Data/Economy/Runtime_Binding_Review.json
+- A  Data/Economy/Survival_Stats.json
+- A  Data/Economy/Time_To_First_Submarine.json
+- A  Data/Hardware/Profiles.json
+- A  Data/Localization/en_US.bin
+- A  Data/Localization/en_US.json
+- A  Data/Precomputed/caustics_dispersion_offsets.bin
+- A  Data/Precomputed/dalton_gas_toxicity.bin
+- A  Data/Precomputed/ecosystem_coefficients.json
+- A  Data/Precomputed/gerstner_wave_weather.bin
+- A  Data/Precomputed/math_lut_manifest.json
+- A  Data/Precomputed/sabine_reverb_rt60.bin
+- A  Data/Textures/AbyssalFlowField_LowTier_RGBA.png
+- A  Data/Textures/BlueNoise_RGBA.png
+- A  Data/Textures/NoiseBakeMetrics.final.json
+- A  Data/Textures/NoiseBakeMetrics.json
+- A  Data/Textures/NoiseBakeMetrics.verify.json
+- A  Data/Textures/NoiseBakeMetrics.verify2.json
+- A  Docs/AgentLogs/LOG_BLACKBOX_TELEMETRY_VISUALIZER.md
+- A  Docs/AgentLogs/LOG_ECONOMY_DATA_BALANCER.md
+- A  Docs/AgentLogs/LOG_FAUNA_BEHAVIOR_SIMULATOR.md
+- A  Docs/AgentLogs/LOG_HARDWARE_PROFILE_GENERATOR.md
+- A  Docs/AgentLogs/LOG_MANDATE_EVOLUTION_CHRONICLER.md
+- A  Docs/AgentLogs/LOG_MISSION_FAIL_SAFE_ARCHITECT.md
+- A  Docs/AgentLogs/LOG_NARRATIVE_LORE_WEAVER.md
+- A  Docs/AgentLogs/LOG_OFFLINE_PRECOMPUTE_MATHEMATICIAN.md
+- A  Docs/AgentLogs/LOG_PROCEDURAL_NOISE_BAKER.md
+- A  Docs/AgentLogs/LOG_SAVE_HASH_CRYPTOGRAPHER.md
+- A  Docs/AgentLogs/Rationale_BLACKBOX_TELEMETRY_VISUALIZER.md
+- A  Docs/AgentLogs/Rationale_ECONOMY_DATA_BALANCER.md
+- A  Docs/AgentLogs/Rationale_FAUNA_BEHAVIOR_SIMULATOR.md
+- A  Docs/AgentLogs/Rationale_FAUNA_SIMULATOR.md
+- A  Docs/AgentLogs/Rationale_HARDWARE_PROFILE_GENERATOR.md
+- A  Docs/AgentLogs/Rationale_MANDATE_EVOLUTION_CHRONICLER.md
+- A  Docs/AgentLogs/Rationale_MISSION_FAIL_SAFE_ARCHITECT.md
+- A  Docs/AgentLogs/Rationale_NARRATIVE_LORE_WEAVER.md
+- A  Docs/AgentLogs/Rationale_OFFLINE_PRECOMPUTE_MATHEMATICIAN.md
+- A  Docs/AgentLogs/Rationale_PROCEDURAL_NOISE_BAKER.md
+- A  Docs/AgentLogs/Rationale_SAVE_HASH_CRYPTOGRAPHER.md
+- M  Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/GLOSSARY.md
+- M  Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/FRAME_TIMELINE.md
+- A  Docs/DEPRECATED/Batch007_Stale_Simulation_Doc_Index.md
+- A  Docs/Design/Economy_Matrix_v1.md
+- A  Docs/Design/Lore_Bible.md
+- A  Docs/Design/LUT_Memory_Layout.md
+- A  Docs/Design/Missions/Outpost_FailSafe_Handoff.json
+- A  Docs/Design/Missions/Outpost_Failure_Modes.md
+- A  Docs/Design/Save_Binary_Header.md
+- M  Docs/PROJECT_ATLAS.md
+- M  Docs/Tasks/CURRENT_BATCH.md
+- A  Docs/Tasks/Status_BLACKBOX_TELEMETRY_VISUALIZER.md
+- A  Docs/Tasks/Status_ECONOMY_DATA_BALANCER.md
+- A  Docs/Tasks/Status_FAUNA_BEHAVIOR_SIMULATOR.md
+- A  Docs/Tasks/Status_HARDWARE_PROFILE_GENERATOR.md
+- A  Docs/Tasks/Status_MANDATE_EVOLUTION_CHRONICLER.md
+- A  Docs/Tasks/Status_MISSION_FAIL_SAFE_ARCHITECT.md
+- A  Docs/Tasks/Status_NARRATIVE_LORE_WEAVER.md
+- A  Docs/Tasks/Status_OFFLINE_PRECOMPUTE_MATHEMATICIAN.md
+- A  Docs/Tasks/Status_PROCEDURAL_NOISE_BAKER.md
+- A  Docs/Tasks/Status_SAVE_HASH_CRYPTOGRAPHER.md
+- A  Tools/AI_Sim/FaunaBalanceSim.py
+- A  Tools/AI_Sim/FaunaBalanceSim_Report.json
+- A  Tools/EconomyValidator.py
+- A  Tools/LocToBinary.py
+- A  Tools/MathLUTGenerator.py
+- A  Tools/NoiseBaker/GenerateBlueNoise.py
+- A  Tools/NoiseBaker/VerifyBlueNoiseSpectrum.py
+- A  Tools/Security/ReplayHasher.py
+- A  Tools/TelemetryDashboard/index.html
+- A  Tools/TelemetryDashboard/README.md
+- A  Tools/TelemetryDashboard/requirements.txt
+- A  Tools/TelemetryDashboard/server.py
+- A  Tools/TelemetryDashboard/smoke_test.py
+- A  Tools/TelemetryDashboard/start_dashboard.bat
+- A  Tools/TelemetryDashboard/start_dashboard.sh
+- A  Tools/test_math_lut_generator.py
+
+### 2026-05-14 22:51:41 +0400 - `edf70db65..c68c201b7`
+Reflog reason: `fetch --progress --prune --recurse-submodules=on-demand origin: fast-forward`
+Commits: 8; file rows: 69; docs=32; assets=9; data=7; tools=14; skills=7; tmp=0
+
+Commits:
+- c68c201b7 2026-05-14 16:40:48 +0300 Add hardware profile catalog static guard
+- 3968213d7 2026-05-14 16:30:19 +0300 Add save master hash CSharp static guard
+- 8021a2454 2026-05-14 16:16:06 +0300 Fix mission fail-safe validator self-check docs
+- 5a4b33716 2026-05-14 16:07:09 +0300 Checkpoint mission fail-safe validation status
+- e742e45f4 2026-05-14 16:04:46 +0300 Checkpoint reviewed auxiliary batch upgrades 20260514-160444
+- 569c5605c 2026-05-14 14:32:57 +0300 Checkpoint incoming auxiliary batch updates 20260514-143246
+- f7cb05bc5 2026-05-14 14:25:19 +0300 Checkpoint incoming auxiliary batch updates 20260514-142511
+- d3fb78a93 2026-05-14 14:09:35 +0300 Checkpoint incoming auxiliary batch updates 20260514-140909
+
+Changed files:
+- M  .agents-skills/CORE_Tools_Equipment_Interaction_Raycast_Heat.txt
+- M  .agents-skills/CTRL_Device_Abstraction_Haptics.txt
+- M  .agents-skills/DBG_Telemetry_Crash_Reporting_PostMortem.txt
+- M  .agents-skills/LOGI_Energy_Networks_Power_Grid_Graph_Flow.txt
+- M  .agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt
+- M  .agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt
+- M  .agents-skills/STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt
+- M  Assets/_Project/Scripts/Core/BinaryLayoutManifest.cs
+- A  Assets/_Project/Scripts/Core/HardwareProfileCatalog.cs
+- A  Assets/_Project/Scripts/Core/HardwareProfileCatalog.cs.meta
+- M  Assets/_Project/Scripts/Core/HardwareTierDetector.cs
+- A  Assets/_Project/Scripts/Editor/OutpostFailSafeHandoffValidator.cs
+- A  Assets/_Project/Scripts/Editor/OutpostFailSafeHandoffValidator.cs.meta
+- M  Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs
+- A  Assets/_Project/Scripts/SaveSystem/SaveMasterHashV10.cs
+- A  Assets/_Project/Scripts/SaveSystem/SaveMasterHashV10.cs.meta
+- M  Data/AI/Fauna_Global_Weights.json
+- M  Data/Hardware/Profiles.json
+- M  Data/Precomputed/math_lut_manifest.json
+- M  Data/Textures/NoiseBakeMetrics.final.json
+- M  Data/Textures/NoiseBakeMetrics.json
+- M  Data/Textures/NoiseBakeMetrics.verify.json
+- M  Data/Textures/NoiseBakeMetrics.verify2.json
+- M  Docs/AgentLogs/LOG_BLACKBOX_TELEMETRY_VISUALIZER.md
+- M  Docs/AgentLogs/LOG_ECONOMY_DATA_BALANCER.md
+- M  Docs/AgentLogs/LOG_FAUNA_BEHAVIOR_SIMULATOR.md
+- M  Docs/AgentLogs/LOG_HARDWARE_PROFILE_GENERATOR.md
+- M  Docs/AgentLogs/LOG_MANDATE_EVOLUTION_CHRONICLER.md
+- M  Docs/AgentLogs/LOG_MISSION_FAIL_SAFE_ARCHITECT.md
+- M  Docs/AgentLogs/LOG_OFFLINE_PRECOMPUTE_MATHEMATICIAN.md
+- M  Docs/AgentLogs/LOG_PROCEDURAL_NOISE_BAKER.md
+- M  Docs/AgentLogs/LOG_SAVE_HASH_CRYPTOGRAPHER.md
+- M  Docs/AgentLogs/Rationale_BLACKBOX_TELEMETRY_VISUALIZER.md
+- M  Docs/AgentLogs/Rationale_ECONOMY_DATA_BALANCER.md
+- M  Docs/AgentLogs/Rationale_FAUNA_BEHAVIOR_SIMULATOR.md
+- M  Docs/AgentLogs/Rationale_HARDWARE_PROFILE_GENERATOR.md
+- M  Docs/AgentLogs/Rationale_MANDATE_EVOLUTION_CHRONICLER.md
+- M  Docs/AgentLogs/Rationale_MISSION_FAIL_SAFE_ARCHITECT.md
+- M  Docs/AgentLogs/Rationale_OFFLINE_PRECOMPUTE_MATHEMATICIAN.md
+- M  Docs/AgentLogs/Rationale_PROCEDURAL_NOISE_BAKER.md
+- M  Docs/AgentLogs/Rationale_SAVE_HASH_CRYPTOGRAPHER.md
+- M  Docs/Design/Economy_Matrix_v1.md
+- M  Docs/Design/LUT_Memory_Layout.md
+- M  Docs/Design/Missions/Outpost_FailSafe_Handoff.json
+- M  Docs/Design/Missions/Outpost_Failure_Modes.md
+- M  Docs/Design/Save_Binary_Header.md
+- M  Docs/Tasks/Status_BLACKBOX_TELEMETRY_VISUALIZER.md
+- M  Docs/Tasks/Status_ECONOMY_DATA_BALANCER.md
+- M  Docs/Tasks/Status_FAUNA_BEHAVIOR_SIMULATOR.md
+- M  Docs/Tasks/Status_HARDWARE_PROFILE_GENERATOR.md
+- M  Docs/Tasks/Status_MANDATE_EVOLUTION_CHRONICLER.md
+- M  Docs/Tasks/Status_MISSION_FAIL_SAFE_ARCHITECT.md
+- M  Docs/Tasks/Status_OFFLINE_PRECOMPUTE_MATHEMATICIAN.md
+- M  Docs/Tasks/Status_PROCEDURAL_NOISE_BAKER.md
+- M  Docs/Tasks/Status_SAVE_HASH_CRYPTOGRAPHER.md
+- M  Tools/AI_Sim/FaunaBalanceSim.py
+- A  Tools/AI_Sim/FaunaBalanceSim_ReplicateValidation.json
+- A  Tools/AI_Sim/test_fauna_balance_sim.py
+- M  Tools/EconomyValidator.py
+- A  Tools/Hardware/ValidateHardwareProfileCatalog.py
+- M  Tools/MathLUTGenerator.py
+- M  Tools/NoiseBaker/GenerateBlueNoise.py
+- M  Tools/NoiseBaker/VerifyBlueNoiseSpectrum.py
+- M  Tools/Security/ReplayHasher.py
+- A  Tools/Security/ValidateSaveMasterHashCSharp.py
+- M  Tools/TelemetryDashboard/index.html
+- M  Tools/TelemetryDashboard/server.py
+- M  Tools/TelemetryDashboard/smoke_test.py
+- M  Tools/test_math_lut_generator.py
+
+### 2026-05-15 00:57:36 +0400 - `c68c201b7..b407324b4`
+Reflog reason: `fetch --progress --prune --recurse-submodules=on-demand origin: fast-forward`
+Commits: 4; file rows: 7; docs=4; assets=0; data=1; tools=2; skills=0; tmp=0
+
+Commits:
+- b407324b4 2026-05-14 23:42:09 +0300 Record final Sabine test rerun
+- b87d7e177 2026-05-14 23:34:46 +0300 Add Sabine LUT regression tests
+- 97ab36eaa 2026-05-14 23:25:10 +0300 Record Sabine bake verification
+- 8dc0eed5a 2026-05-14 23:18:19 +0300 Bake Sabine reverb LUT
+
+Changed files:
+- A  Data/Precomputed/Reverb_LUT.bin
+- A  Docs/AgentLogs/LOG_SOUNDSCAPE_SABINE_BAKER.md
+- A  Docs/AgentLogs/Rationale_SOUNDSCAPE_SABINE_BAKER.md
+- A  Docs/Design/Acoustic_Binary_Specs.md
+- A  Docs/Tasks/Status_SOUNDSCAPE_SABINE_BAKER.md
+- A  Tools/AcousticValidator.py
+- A  Tools/test_acoustic_validator.py
+
+### 2026-05-15 02:23:31 +0400 - `b407324b4..6b8d46529`
+Reflog reason: `fetch --progress --prune --recurse-submodules=on-demand origin: fast-forward`
+Commits: 4; file rows: 3; docs=3; assets=0; data=0; tools=0; skills=0; tmp=0
+
+Commits:
+- 6b8d46529 2026-05-15 01:08:58 +0300 Correct Sabine remote proof log
+- 2fc81bd9a 2026-05-15 00:47:13 +0300 Record Sabine final rerun evidence
+- 3631e7a79 2026-05-15 00:38:35 +0300 Record clean Sabine remote isolation
+- 3b26e6af7 2026-05-15 00:19:24 +0300 Record Sabine Unity verification boundary
+
+Changed files:
+- M  Docs/AgentLogs/LOG_SOUNDSCAPE_SABINE_BAKER.md
+- M  Docs/AgentLogs/Rationale_SOUNDSCAPE_SABINE_BAKER.md
+- M  Docs/Tasks/Status_SOUNDSCAPE_SABINE_BAKER.md
+
+### 2026-05-15 12:25:12 +0400 - `8f96b8eca..5e93fb931`
+Reflog reason: `fetch origin: fast-forward`
+Commits: 10; file rows: 15; docs=12; assets=0; data=2; tools=1; skills=0; tmp=0
+
+Commits:
+- 5e93fb931 2026-05-15 04:31:19 +0300 Merge origin/main for economy validation push
+- fe6c60f0e 2026-05-15 04:22:28 +0300 docs: complete authority index routes
+- 862bf5984 2026-05-15 03:32:41 +0300 docs: complete architecture index coverage
+- 3ff5b9933 2026-05-15 02:59:13 +0300 Add economy binding plan validation
+- 27eb438ea 2026-05-15 02:30:34 +0300 docs: record encyclopedia second verification pass
+- 5d3c4cead 2026-05-15 01:52:10 +0300 docs: harden encyclopedia verification
+- 1b0d6a85a 2026-05-15 01:13:55 +0300 Correct Sabine remote proof log
+- 24fc362d5 2026-05-15 00:50:42 +0300 Record Sabine final rerun evidence
+- 73683c495 2026-05-15 00:12:09 +0300 Record Sabine Unity verification boundary
+- b0fab1e65 2026-05-14 23:51:56 +0300 docs: finalize encyclopedia index
+
+Changed files:
+- A  Data/Economy/Items.csv
+- A  Data/Economy/Runtime_Binding_Plan.json
+- M  Docs/AgentLogs/LOG_ECONOMY_DATA_BALANCER.md
+- A  Docs/AgentLogs/LOG_HECTON_ENCYCLOPEDIA_FINALIZER.md
+- M  Docs/AgentLogs/Rationale_ECONOMY_DATA_BALANCER.md
+- A  Docs/AgentLogs/Rationale_HECTON_ENCYCLOPEDIA_FINALIZER.md
+- M  Docs/ARCHITECTURE/README.md
+- M  Docs/Design/Economy_Matrix_v1.md
+- A  Docs/H8_GLOSSARY.md
+- M  Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md
+- A  Docs/Reports/2026-05-14_ENCYCLOPEDIA_SPELLCHECK.md
+- M  Docs/Tasks/Status_ECONOMY_DATA_BALANCER.md
+- A  Docs/Tasks/Status_HECTON_ENCYCLOPEDIA_FINALIZER.md
+- A  Docs/TECHNICAL_FAQ.md
+- M  Tools/EconomyValidator.py
+
+### 2026-05-15 12:46:41 +0400 - `5e93fb931..38feb8f11`
+Reflog reason: `fetch origin: fast-forward`
+Commits: 1; file rows: 344; docs=204; assets=36; data=42; tools=61; skills=0; tmp=0
+
+Commits:
+- 38feb8f11 2026-05-15 11:22:45 +0300 chore: sync batch agent outputs
+
+Changed files:
+- M  .gitignore
+- M  Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl
+- M  Assets/_Project/Art/Shaders/Hecton_DiegeticPanelUnlit.shader
+- M  Assets/_Project/Art/Shaders/Hecton_HUD_AcousticRadarOverlay.shader
+- M  Assets/_Project/Art/Shaders/Hecton_ToolScreenDiegetic.shader
+- M  Assets/_Project/Data/Lore/Quests/Quest_Arrival.asset
+- M  Assets/_Project/Data/Lore/Quests/Quest_BiomeSpine.asset
+- M  Assets/_Project/Data/Lore/Quests/Quest_CopperSample.asset
+- M  Assets/_Project/Data/Lore/Quests/Quest_CoreReached.asset
+- M  Assets/_Project/Data/Lore/Quests/Quest_FirstHour_CollectTitanium.asset
+- M  Assets/_Project/Data/Lore/Quests/Quest_RadShield.asset
+- A  Assets/_Project/Data/VFX/REND_DYNAMIC_RESOLUTION_ADAPTER_compute_particle_budgets.json
+- A  Assets/_Project/Data/VFX/REND_DYNAMIC_RESOLUTION_ADAPTER_compute_particle_budgets.json.meta
+- M  Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs
+- M  Assets/_Project/Scripts/Core/Database/H8MacroDatabaseFileFormat.cs
+- M  Assets/_Project/Scripts/Core/Database/H8MacroDatabaseService.cs
+- A  Assets/_Project/Scripts/Core/Generated/H8Hashes.cs
+- A  Assets/_Project/Scripts/Core/Generated/H8Hashes.cs.meta
+- M  Assets/_Project/Scripts/Core/HardwareProfileCatalog.cs
+- M  Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs
+- M  Assets/_Project/Scripts/Core/PlatformAdaptiveBudgetGovernor.cs
+- M  Assets/_Project/Scripts/Editor/OutpostFailSafeHandoffValidator.cs
+- A  Assets/_Project/Scripts/Editor/QuestGraphRepairUtility.cs
+- A  Assets/_Project/Scripts/Editor/QuestGraphRepairUtility.cs.meta
+- M  Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs
+- M  Assets/_Project/Scripts/Optimization/VRAMBudgetThresholds.cs
+- M  Assets/_Project/Scripts/Optimization/VRAMMonitor.cs
+- M  Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs
+- M  Assets/_Project/Scripts/PlayerInventory.cs
+- M  Assets/_Project/Scripts/Quest/QuestStateManager.cs
+- M  Assets/_Project/Scripts/UI/WorldSpaceTMPSharpnessController.cs
+- M  Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs
+- A  Assets/_Project/Scripts/VFX/VfxComputeParticleBudgetCatalog.cs
+- A  Assets/_Project/Scripts/VFX/VfxComputeParticleBudgetCatalog.cs.meta
+- A  Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs
+- A  Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs.meta
+- M  Assets/_Project/Shaders/UI/Hecton_DiegeticVisorCurvedHUD.shader
+- A  Data/AI/Leviathan_Brain.json
+- A  Data/AI/Navigation_Tuning.json
+- A  Data/Audio/Acoustic_Material_Profiles.json
+- A  Data/Audio/AudioSim_LastRun.json
+- A  Data/Economy/Regrowth_Constants.json
+- A  Data/Flora/LSystem_Library.json
+- A  Data/Flora/LSystem_Library.schema.json
+- A  Data/Hardware/HARDWARE_TIER_QUEST_3.json
+- A  Data/Hardware/HARDWARE_TIER_STEAM_DECK_LCD.json
+- M  Data/Hardware/Profiles.json
+- M  Data/Localization/en_US.bin
+- M  Data/Localization/en_US.json
+- A  Data/Lore/CockpitTerminalBootErrors.raw.txt
+- A  Data/Lore/Encyclopedia.h8bin
+- A  Data/Lore/Encyclopedia.manifest.json
+- A  Data/Narrative/Quest_Graph.json
+- A  Data/Physics/Submarine_Specs.json
+- A  Data/Physics/Submarine_SpeedPower.csv
+- A  Data/Physics/Submarine_SpeedPower.png
+- A  Data/Physics/Submarine_SpeedPower.svg
+- A  Data/Physics/Submarine_Verification.json
+- A  Data/Precomputed/Atmosphere/atmosphere_density_matrix_rgba16f.bin
+- A  Data/Precomputed/Atmosphere/atmosphere_lut_manifest.json
+- A  Data/Precomputed/Atmosphere/atmosphere_sky_gradient_preview.png
+- A  Data/Precomputed/Atmosphere/atmosphere_sky_gradient_rgba16f.bin
+- M  Data/Precomputed/math_lut_manifest.json
+- A  Data/System/Hardware_Profiles.json
+- A  Data/System/Visual_Scalability_Matrix.json
+- M  Data/Textures/NoiseBakeMetrics.final.json
+- M  Data/Textures/NoiseBakeMetrics.json
+- M  Data/Textures/NoiseBakeMetrics.verify.json
+- M  Data/Textures/NoiseBakeMetrics.verify2.json
+- A  Data/Visuals/Biolum_Profiles.bin
+- A  Data/Visuals/Biolum_Profiles.json
+- A  Data/Visuals/Biolum_Verification.json
+- A  Data/Visuals/Biolum_Waveforms.gif
+- A  Data/Visuals/Biolum_Waveforms.png
+- A  Data/Visuals/Water_Extinction_GradientPreview.png
+- A  Data/Visuals/Water_Extinction_Hecton_CoreLit_Snippet.hlsl
+- A  Data/Visuals/Water_Extinction_Matrix.bin
+- A  Data/Visuals/Water_Extinction_Matrix.json
+- A  Data/Visuals/Water_Fog_Density_LUT.bin
+- A  Docs/AgentLogs/AtmoValidation_ORBITAL_ATMOSPHERE_MATHEMATICIAN.json
+- A  Docs/AgentLogs/Dummy_MACRO_DB_INDEX_OPTIMIZER.h8db
+- A  Docs/AgentLogs/FloraMetrics_FLORA_GRAMMAR_GENETICIST.json
+- A  Docs/AgentLogs/FloraMetrics_TurtleSmoke_FLORA_GRAMMAR_GENETICIST.json
+- A  Docs/AgentLogs/FloraMetrics_ValidateOnly_FLORA_GRAMMAR_GENETICIST.json
+- A  Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_00_pass_00.svg
+- A  Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_00_pass_01.svg
+- A  Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_00_pass_02.svg
+- A  Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_01_pass_00.svg
+- A  Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_01_pass_01.svg
+- A  Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_01_pass_02.svg
+- A  Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_02_pass_00.svg
+- A  Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_02_pass_01.svg
+- A  Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_02_pass_02.svg
+- A  Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_03_pass_00.svg
+- A  Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_03_pass_01.svg
+- A  Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_03_pass_02.svg
+- A  Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_04_pass_00.svg
+- A  Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_04_pass_01.svg
+- A  Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_04_pass_02.svg
+- A  Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_05_pass_00.svg
+- A  Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_05_pass_01.svg
+- A  Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_05_pass_02.svg
+- A  Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_06_pass_00.svg
+- A  Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_06_pass_01.svg
+- A  Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_06_pass_02.svg
+- A  Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_07_pass_00.svg
+- A  Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_07_pass_01.svg
+- A  Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_07_pass_02.svg
+- A  Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_08_pass_00.svg
+- A  Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_08_pass_01.svg
+- A  Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_08_pass_02.svg
+- A  Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_09_pass_00.svg
+- A  Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_09_pass_01.svg
+- A  Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_09_pass_02.svg
+- A  Docs/AgentLogs/FloraPreview_TurtleSmoke_FLORA_GRAMMAR_GENETICIST/flora_block_00_pass_00.ps
+- A  Docs/AgentLogs/FloraPreview_TurtleSmoke_FLORA_GRAMMAR_GENETICIST/flora_block_01_pass_00.ps
+- A  Docs/AgentLogs/FloraPreview_TurtleSmoke_FLORA_GRAMMAR_GENETICIST/flora_block_02_pass_00.ps
+- A  Docs/AgentLogs/FloraPreview_TurtleSmoke_FLORA_GRAMMAR_GENETICIST/flora_block_03_pass_00.ps
+- A  Docs/AgentLogs/FloraPreview_TurtleSmoke_FLORA_GRAMMAR_GENETICIST/flora_block_04_pass_00.ps
+- A  Docs/AgentLogs/FloraPreview_TurtleSmoke_FLORA_GRAMMAR_GENETICIST/flora_block_05_pass_00.ps
+- A  Docs/AgentLogs/FloraPreview_TurtleSmoke_FLORA_GRAMMAR_GENETICIST/flora_block_06_pass_00.ps
+- A  Docs/AgentLogs/FloraPreview_TurtleSmoke_FLORA_GRAMMAR_GENETICIST/flora_block_07_pass_00.ps
+- A  Docs/AgentLogs/FloraPreview_TurtleSmoke_FLORA_GRAMMAR_GENETICIST/flora_block_08_pass_00.ps
+- A  Docs/AgentLogs/FloraPreview_TurtleSmoke_FLORA_GRAMMAR_GENETICIST/flora_block_09_pass_00.ps
+- A  Docs/AgentLogs/FloraValidation_FLORA_GRAMMAR_GENETICIST.json
+- A  Docs/AgentLogs/FloraValidation_TurtleSmoke_FLORA_GRAMMAR_GENETICIST.json
+- A  Docs/AgentLogs/FloraValidation_ValidateOnly_FLORA_GRAMMAR_GENETICIST.json
+- A  Docs/AgentLogs/IconBaker_UX_ENGINEER_SelfTest/h8_self_test_icon_128.png
+- A  Docs/AgentLogs/IconBaker_UX_ENGINEER_SelfTest/h8_self_test_icon_32.png
+- A  Docs/AgentLogs/IconBaker_UX_ENGINEER_SelfTest/h8_self_test_icon_512.png
+- A  Docs/AgentLogs/IconBaker_UX_ENGINEER_SelfTest/IconBakeManifest.json
+- A  Docs/AgentLogs/LOG_AI_BEHAVIOR_BIOMIMETIC_DESIGNER.md
+- A  Docs/AgentLogs/LOG_AI_POTENTIAL_FIELD_NAVIGATOR.md
+- A  Docs/AgentLogs/LOG_AUDIO_MATERIAL_SYNTHESIZER.md
+- A  Docs/AgentLogs/LOG_BACKEND_ENGINEER.md
+- A  Docs/AgentLogs/LOG_BIOLUM_RHYTHM_COMPOSER.md
+- M  Docs/AgentLogs/LOG_BLACKBOX_TELEMETRY_VISUALIZER.md
+- M  Docs/AgentLogs/LOG_FAUNA_BEHAVIOR_SIMULATOR.md
+- A  Docs/AgentLogs/LOG_FLORA_GRAMMAR_GENETICIST.md
+- A  Docs/AgentLogs/LOG_GIT_SYNC.md
+- A  Docs/AgentLogs/LOG_H8_HARDWARE_TIER_MATRIX_BKR.md
+- M  Docs/AgentLogs/LOG_HARDWARE_PROFILE_GENERATOR.md
+- A  Docs/AgentLogs/LOG_HYDRODYNAMIC_DRAG_MATRIX_BAKER.md
+- A  Docs/AgentLogs/LOG_MACRO_DB_INDEX_OPTIMIZER.md
+- M  Docs/AgentLogs/LOG_MISSION_FAIL_SAFE_ARCHITECT.md
+- A  Docs/AgentLogs/LOG_MODDING_API_SCHEMA_BUILDER.md
+- A  Docs/AgentLogs/LOG_NARRATIVE_LORE_STREAMING_BAKER.md
+- A  Docs/AgentLogs/LOG_NARRATIVE_SEMANTIC_AUDITOR.md
+- M  Docs/AgentLogs/LOG_OFFLINE_PRECOMPUTE_MATHEMATICIAN.md
+- A  Docs/AgentLogs/LOG_ORBITAL_ATMOSPHERE_MATHEMATICIAN.md
+- A  Docs/AgentLogs/LOG_ORGANIC_ENTROPY_REGENERATOR.md
+- M  Docs/AgentLogs/LOG_PROCEDURAL_NOISE_BAKER.md
+- A  Docs/AgentLogs/LOG_QUEST_STATE_GRAPH_VALIDATOR.md
+- A  Docs/AgentLogs/LOG_QUEST_STATE_GRAPH_VALIDATOR_CONTINUATION_2026-05-15.md
+- M  Docs/AgentLogs/LOG_SAVE_HASH_CRYPTOGRAPHER.md
+- A  Docs/AgentLogs/LOG_SOMATIC_COMFORT_ANALYST.md
+- A  Docs/AgentLogs/LOG_TECH_RESEARCHER.md
+- A  Docs/AgentLogs/LOG_TECHNICAL_ARTIST_DATA.md
+- A  Docs/AgentLogs/LOG_UX_ENGINEER.md
+- A  Docs/AgentLogs/LOG_VFX_PARTICLE_LOD_PARAMETERIZER.md
+- A  Docs/AgentLogs/LOG_VISUAL_EXTINCTION_LUT_BAKER.md
+- A  Docs/AgentLogs/LOG_VISUAL_LOD_GRADE_ARCHITECT.md
+- A  Docs/AgentLogs/LOG_VRAM_ASSET_SCOUT.md
+- A  Docs/AgentLogs/LoreChecker_NARRATIVE_SEMANTIC_AUDITOR.json
+- A  Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA.json
+- A  Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA.md
+- A  Docs/AgentLogs/QuestGraphRepairCandidates_QUEST_STATE_GRAPH_VALIDATOR.md
+- A  Docs/AgentLogs/QuestStressTest_QUEST_STATE_GRAPH_VALIDATOR.json
+- A  Docs/AgentLogs/QuestStressTest_QUEST_STATE_GRAPH_VALIDATOR_export_probe.json
+- A  Docs/AgentLogs/QuestStressTest_QUEST_STATE_GRAPH_VALIDATOR_smoke.json
+- A  Docs/AgentLogs/QuestValidationRunbook_QUEST_STATE_GRAPH_VALIDATOR.md
+- A  Docs/AgentLogs/Rationale_AI_BEHAVIOR_BIOMIMETIC_DESIGNER.md
+- A  Docs/AgentLogs/Rationale_AI_POTENTIAL_FIELD_NAVIGATOR.md
+- A  Docs/AgentLogs/Rationale_AUDIO_MATERIAL_SYNTHESIZER.md
+- A  Docs/AgentLogs/Rationale_BACKEND_ENGINEER.md
+- A  Docs/AgentLogs/Rationale_BIOLUM_RHYTHM_COMPOSER.md
+- M  Docs/AgentLogs/Rationale_BLACKBOX_TELEMETRY_VISUALIZER.md
+- M  Docs/AgentLogs/Rationale_FAUNA_BEHAVIOR_SIMULATOR.md
+- A  Docs/AgentLogs/Rationale_FLORA_GENETICIST.md
+- A  Docs/AgentLogs/Rationale_FLORA_GRAMMAR_GENETICIST.md
+- A  Docs/AgentLogs/Rationale_GIT_SYNC.md
+- A  Docs/AgentLogs/Rationale_H8_HARDWARE_TIER_MATRIX_BKR.md
+- M  Docs/AgentLogs/Rationale_HARDWARE_PROFILE_GENERATOR.md
+- A  Docs/AgentLogs/Rationale_HYDRODYNAMIC_DRAG_MATRIX_BAKER.md
+- A  Docs/AgentLogs/Rationale_MACRO_DB_INDEX_OPTIMIZER.md
+- M  Docs/AgentLogs/Rationale_MISSION_FAIL_SAFE_ARCHITECT.md
+- A  Docs/AgentLogs/Rationale_MODDING_API_SCHEMA_BUILDER.md
+- A  Docs/AgentLogs/Rationale_NARRATIVE_LORE_STREAMING_BAKER.md
+- A  Docs/AgentLogs/Rationale_NARRATIVE_SEMANTIC_AUDITOR.md
+- A  Docs/AgentLogs/Rationale_NET_SYNC_MERKLE_ARCHITECT.md
+- M  Docs/AgentLogs/Rationale_OFFLINE_PRECOMPUTE_MATHEMATICIAN.md
+- A  Docs/AgentLogs/Rationale_ORBITAL_ATMOSPHERE_MATHEMATICIAN.md
+- A  Docs/AgentLogs/Rationale_ORGANIC_ENTROPY_REGENERATOR.md
+- M  Docs/AgentLogs/Rationale_PROCEDURAL_NOISE_BAKER.md
+- A  Docs/AgentLogs/Rationale_QUEST_STATE_GRAPH_VALIDATOR.md
+- A  Docs/AgentLogs/Rationale_QUEST_STATE_GRAPH_VALIDATOR_CONTINUATION_2026-05-15.md
+- M  Docs/AgentLogs/Rationale_SAVE_HASH_CRYPTOGRAPHER.md
+- A  Docs/AgentLogs/Rationale_SOMATIC_COMFORT_ANALYST.md
+- A  Docs/AgentLogs/Rationale_TECH_RESEARCHER.md
+- A  Docs/AgentLogs/Rationale_TECHNICAL_ARTIST_DATA.md
+- A  Docs/AgentLogs/Rationale_UX_ENGINEER.md
+- A  Docs/AgentLogs/Rationale_VFX_PARTICLE_LOD_PARAMETERIZER.md
+- A  Docs/AgentLogs/Rationale_VISUAL_EXTINCTION_LUT_BAKER.md
+- A  Docs/AgentLogs/Rationale_VISUAL_LOD_GRADE_ARCHITECT.md
+- A  Docs/AgentLogs/Rationale_VRAM_ASSET_SCOUT.md
+- A  Docs/AgentLogs/UI_Readability_UX_ENGINEER.json
+- A  Docs/AgentLogs/UI_ShaderSampleAudit_UX_ENGINEER.json
+- A  Docs/AgentLogs/VisualMatrixCommit_VISUAL_LOD_GRADE_ARCHITECT.bundle
+- A  Docs/AgentLogs/VisualMatrixCommit_VISUAL_LOD_GRADE_ARCHITECT.txt
+- A  Docs/AgentLogs/VisualStressSim_VISUAL_LOD_GRADE_ARCHITECT.json
+- A  Docs/AgentLogs/VR_Comfort_Audit_SOMATIC_COMFORT_ANALYST.json
+- A  Docs/ARCHITECTURE/AI_POTENTIAL_FIELD_NAVIGATION.md
+- M  Docs/ARCHITECTURE/ORGANIC_ENTROPY_MATH.md
+- A  Docs/DEPENDENCY_GRAPH.md
+- A  Docs/Design/Atmosphere_Scattering_LUT.md
+- A  Docs/Design/Biolum_Implementation_Guide.md
+- A  Docs/Design/H8DB_Index_RLE_Spec.md
+- A  Docs/Design/HardwareAdaptiveUIScaler.json
+- A  Docs/Design/HardwareAdaptiveUIScaler.md
+- M  Docs/Design/Lore_Bible.md
+- M  Docs/Design/LUT_Memory_Layout.md
+- M  Docs/Design/Missions/Outpost_FailSafe_Handoff.json
+- M  Docs/Design/Missions/Outpost_Failure_Modes.md
+- M  Docs/Design/Save_Binary_Header.md
+- A  Docs/Design/VR_Comfort_Profile_Quest.json
+- A  Docs/Design/VR_Comfort_Profile_Quest.md
+- A  Docs/Design/VR_Haptic_Waveforms_Quest.json
+- A  Docs/Lore/Lore_Bible.md
+- A  Docs/Modding/API_Surface_Audit_Matrix.md
+- A  Docs/Modding/Command_Audit_Matrix.md
+- A  Docs/Modding/Loader_Save_Audit_Matrix.md
+- A  Docs/Modding/Mod_API_Specification.md
+- A  Docs/Modding/Net_Protocol_v1.md
+- A  Docs/Modding/Payload_Layout_Audit_Matrix.md
+- A  Docs/Modding/Runtime_Verification_Playbook.md
+- A  Docs/Modding/Signal_Audit_Matrix.md
+- A  Docs/Modding/Signal_Schema.json
+- A  Docs/Modding/Validate_Mod_API_Static.ps1
+- A  Docs/Reports/Economy_Integrity_Audit.md
+- A  Docs/Reports/NetJitterSim_4Client_Report.json
+- A  Docs/Reports/NetJitterSim_Report.json
+- A  Docs/Reports/NetJitterSim_RollbackStress_Report.json
+- A  Docs/Reports/VRAM_Budget_Audit.csv
+- A  Docs/Reports/VRAM_Budget_Audit.json
+- A  Docs/Reports/VRAM_Budget_Audit_Summary.md
+- A  Docs/Reports/VRAM_Mesh_Redlines.csv
+- A  Docs/Reports/VRAM_Remediation_Plan.md
+- A  Docs/Reports/VRAM_Texture_Redlines.csv
+- M  Docs/Tasks/CURRENT_BATCH.md
+- A  Docs/Tasks/Status_AI_BEHAVIOR_BIOMIMETIC_DESIGNER.md
+- A  Docs/Tasks/Status_AI_POTENTIAL_FIELD_NAVIGATOR.md
+- A  Docs/Tasks/Status_AUDIO_MATERIAL_SYNTHESIZER.md
+- A  Docs/Tasks/Status_BACKEND_ENGINEER.md
+- A  Docs/Tasks/Status_BIOLUM_RHYTHM_COMPOSER.md
+- M  Docs/Tasks/Status_BLACKBOX_TELEMETRY_VISUALIZER.md
+- M  Docs/Tasks/Status_FAUNA_BEHAVIOR_SIMULATOR.md
+- A  Docs/Tasks/Status_FLORA_GRAMMAR_GENETICIST.md
+- A  Docs/Tasks/Status_GIT_SYNC.md
+- A  Docs/Tasks/Status_H8_HARDWARE_TIER_MATRIX_BKR.md
+- M  Docs/Tasks/Status_HARDWARE_PROFILE_GENERATOR.md
+- A  Docs/Tasks/Status_HYDRODYNAMIC_DRAG_MATRIX_BAKER.md
+- A  Docs/Tasks/Status_MACRO_DB_INDEX_OPTIMIZER.md
+- M  Docs/Tasks/Status_MISSION_FAIL_SAFE_ARCHITECT.md
+- A  Docs/Tasks/Status_MODDING_API_SCHEMA_BUILDER.md
+- A  Docs/Tasks/Status_NARRATIVE_LORE_STREAMING_BAKER.md
+- A  Docs/Tasks/Status_NARRATIVE_SEMANTIC_AUDITOR.md
+- A  Docs/Tasks/Status_NET_SYNC_MERKLE_ARCHITECT.md
+- M  Docs/Tasks/Status_OFFLINE_PRECOMPUTE_MATHEMATICIAN.md
+- A  Docs/Tasks/Status_ORBITAL_ATMOSPHERE_MATHEMATICIAN.md
+- A  Docs/Tasks/Status_ORGANIC_ENTROPY_REGENERATOR.md
+- M  Docs/Tasks/Status_PROCEDURAL_NOISE_BAKER.md
+- A  Docs/Tasks/Status_QUEST_STATE_GRAPH_VALIDATOR.md
+- A  Docs/Tasks/Status_QUEST_STATE_GRAPH_VALIDATOR_CONTINUATION_2026-05-15.md
+- M  Docs/Tasks/Status_SAVE_HASH_CRYPTOGRAPHER.md
+- A  Docs/Tasks/Status_SOMATIC_COMFORT_ANALYST.md
+- A  Docs/Tasks/Status_TECH_RESEARCHER.md
+- A  Docs/Tasks/Status_TECHNICAL_ARTIST_DATA.md
+- A  Docs/Tasks/Status_UX_ENGINEER.md
+- A  Docs/Tasks/Status_VFX_PARTICLE_LOD_PARAMETERIZER.md
+- A  Docs/Tasks/Status_VISUAL_EXTINCTION_LUT_BAKER.md
+- A  Docs/Tasks/Status_VISUAL_LOD_GRADE_ARCHITECT.md
+- A  Docs/Tasks/Status_VRAM_ASSET_SCOUT.md
+- A  Docs/TECH_ART_PBR_SURFACE_DOCTRINE.md
+- M  Tools/AI_Sim/FaunaBalanceSim.py
+- A  Tools/AI_Sim/test_ai_path_sim.py
+- M  Tools/AI_Sim/test_fauna_balance_sim.py
+- A  Tools/AiBattleSim.py
+- A  Tools/AiBattleSim_Report.json
+- A  Tools/AiPathSim.py
+- A  Tools/AtlasCheck.py
+- A  Tools/AtmoPreview.py
+- A  Tools/AudioSim.py
+- A  Tools/BiolumWaveform.py
+- A  Tools/BuildArchitectureAtlas.py
+- A  Tools/DbHealthCheck.py
+- A  Tools/EconomyItemsCsvBake.py
+- A  Tools/EconomyRecipeGraphAudit.py
+- A  Tools/FloraPreview.py
+- M  Tools/Hardware/ValidateHardwareProfileCatalog.py
+- A  Tools/IconBaker.py
+- A  Tools/LoreChecker.py
+- A  Tools/MaterialAudit.py
+- M  Tools/MathLUTGenerator.py
+- A  Tools/MemoryBudgetCheck.py
+- A  Tools/NetJitterSim.py
+- M  Tools/NoiseBaker/GenerateBlueNoise.py
+- M  Tools/NoiseBaker/VerifyBlueNoiseSpectrum.py
+- A  Tools/OutpostFailSafeValidate.py
+- A  Tools/QuestStressReportGate.py
+- A  Tools/QuestStressTest.py
+- A  Tools/RunQuestValidation.py
+- M  Tools/Security/ReplayHasher.py
+- M  Tools/Security/ValidateSaveMasterHashCSharp.py
+- A  Tools/Security/VerifyReplayHasherReference.py
+- A  Tools/SubmarinePhysicsSim.py
+- M  Tools/TelemetryDashboard/server.py
+- M  Tools/TelemetryDashboard/smoke_test.py
+- A  Tools/test_ai_battle_sim.py
+- A  Tools/test_architecture_atlas.py
+- A  Tools/test_atmo_preview.py
+- A  Tools/test_audio_sim.py
+- A  Tools/test_biolum_waveform.py
+- A  Tools/test_economy_integrity.py
+- A  Tools/test_flora_preview.py
+- A  Tools/test_h8_hash_collisions.py
+- A  Tools/test_lore_checker.py
+- M  Tools/test_math_lut_generator.py
+- A  Tools/test_memory_budget_check.py
+- A  Tools/test_net_jitter_sim.py
+- A  Tools/test_submarine_physics_sim.py
+- A  Tools/test_verify_lore.py
+- A  Tools/test_visual_stress_sim.py
+- A  Tools/test_world_entropy_sim.py
+- A  Tools/UX/test_hardware_adaptive_ui.py
+- A  Tools/UX/test_vr_snap_turn_comfort_audit.py
+- A  Tools/UX/ui_readability_test.py
+- A  Tools/UX/ui_shader_sample_audit.py
+- A  Tools/UX/vr_snap_turn_comfort_audit.py
+- A  Tools/ValidateVfxParticleBudgetCatalog.py
+- A  Tools/VerifyH8HashCollisions.py
+- A  Tools/VerifyLore.py
+- A  Tools/VisualStressSim.py
+- A  Tools/WaterColorPreview.py
+- A  Tools/WorldEntropySim.py
+
+### 2026-05-15 13:22:52 +0400 - `38feb8f11..5a83ff1df`
+Reflog reason: `fetch origin: fast-forward`
+Commits: 1; file rows: 6; docs=3; assets=0; data=2; tools=1; skills=0; tmp=0
+
+Commits:
+- 5a83ff1df 2026-05-15 11:56:29 +0300 chore: refresh validated generated artifacts
+
+Changed files:
+- M  Data/Lore/Encyclopedia.h8bin
+- M  Data/Lore/Encyclopedia.manifest.json
+- M  Docs/AgentLogs/LOG_GIT_SYNC.md
+- M  Docs/AgentLogs/Rationale_GIT_SYNC.md
+- M  Docs/Tasks/Status_GIT_SYNC.md
+- M  Tools/AiBattleSim_Report.json
+
+### 2026-05-15 14:23:16 +0400 - `8213d7838..8345f682e`
+Reflog reason: `fetch origin: fast-forward`
+Commits: 1; file rows: 5; docs=3; assets=2; data=0; tools=0; skills=0; tmp=0
+
+Commits:
+- 8345f682e 2026-05-15 13:18:59 +0300 chore: remove first-party orphan metas
+
+Changed files:
+- D  Assets/_Project/Art/TEXTURES/VFX.meta
+- D  Assets/_Project/Scripts/Core/Memory/Layout.meta
+- M  Docs/AgentLogs/LOG_GIT_SYNC.md
+- M  Docs/AgentLogs/Rationale_GIT_SYNC.md
+- M  Docs/Tasks/Status_GIT_SYNC.md
+
+### 2026-05-15 14:36:50 +0400 - `922da919d..e1a6a489f`
+Reflog reason: `fetch origin: fast-forward`
+Commits: 1; file rows: 3; docs=3; assets=0; data=0; tools=0; skills=0; tmp=0
+
+Commits:
+- e1a6a489f 2026-05-15 13:33:43 +0300 chore: document git sync push repair
+
+Changed files:
+- M  Docs/AgentLogs/LOG_GIT_SYNC.md
+- M  Docs/AgentLogs/Rationale_GIT_SYNC.md
+- M  Docs/Tasks/Status_GIT_SYNC.md
+
+### 2026-05-15 15:59:23 +0400 - `10914f2ae..abe92af42`
+Reflog reason: `fetch origin: fast-forward`
+Commits: 3; file rows: 191; docs=114; assets=7; data=18; tools=52; skills=0; tmp=0
+
+Commits:
+- abe92af42 2026-05-15 14:56:53 +0300 chore: document multi-agent checkpoint push
+- cb92dc6ad 2026-05-15 14:55:32 +0300 chore: checkpoint multi-agent verified work
+- 57a75ba81 2026-05-15 14:18:41 +0300 chore: sync lore encyclopedia artifact
+
+Changed files:
+- M  Assets/_Project/Art/Shaders/Hecton_MarineSnow.compute
+- M  Assets/_Project/Data/VFX/REND_DYNAMIC_RESOLUTION_ADAPTER_compute_particle_budgets.json
+- M  Assets/_Project/Scripts/Core/Generated/H8Hashes.cs
+- M  Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs
+- M  Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs
+- M  Assets/_Project/Scripts/VFX/VfxComputeParticleBudgetCatalog.cs
+- M  Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs
+- M  Data/AI/Navigation_Tuning.json
+- M  Data/Economy/Regrowth_Constants.json
+- M  Data/Localization/en_US.bin
+- M  Data/Localization/en_US.json
+- M  Data/Lore/Encyclopedia.h8bin
+- M  Data/Lore/Encyclopedia.manifest.json
+- A  Data/Lore/README.md
+- A  Data/Physics/Submarine_RuntimePack.bin
+- A  Data/Physics/Submarine_RuntimePackLayout.json
+- M  Data/Physics/Submarine_Specs.json
+- M  Data/Physics/Submarine_SpeedPower.png
+- M  Data/Physics/Submarine_SpeedPower.svg
+- M  Data/Physics/Submarine_Verification.json
+- A  Data/Visuals/Biolum_BinarySchema.json
+- A  Data/Visuals/Biolum_Manifest.json
+- M  Data/Visuals/Water_Extinction_Matrix.json
+- A  Data/Visuals/Water_Extinction_README.md
+- M  Data/Visuals/Water_Fog_Density_LUT.bin
+- A  Docs/AgentLogs/Blocker_UX_ENGINEER.md
+- A  Docs/AgentLogs/Hardware_Profile_Audit_H8_HARDWARE_TIER_MATRIX_BKR.json
+- M  Docs/AgentLogs/IconBaker_UX_ENGINEER_SelfTest/IconBakeManifest.json
+- M  Docs/AgentLogs/LOG_AI_BEHAVIOR_BIOMIMETIC_DESIGNER.md
+- M  Docs/AgentLogs/LOG_AI_POTENTIAL_FIELD_NAVIGATOR.md
+- M  Docs/AgentLogs/LOG_BACKEND_ENGINEER.md
+- M  Docs/AgentLogs/LOG_BIOLUM_RHYTHM_COMPOSER.md
+- M  Docs/AgentLogs/LOG_GIT_SYNC.md
+- M  Docs/AgentLogs/LOG_H8_HARDWARE_TIER_MATRIX_BKR.md
+- M  Docs/AgentLogs/LOG_HYDRODYNAMIC_DRAG_MATRIX_BAKER.md
+- M  Docs/AgentLogs/LOG_MACRO_DB_INDEX_OPTIMIZER.md
+- M  Docs/AgentLogs/LOG_MODDING_API_SCHEMA_BUILDER.md
+- M  Docs/AgentLogs/LOG_NARRATIVE_LORE_STREAMING_BAKER.md
+- M  Docs/AgentLogs/LOG_NARRATIVE_SEMANTIC_AUDITOR.md
+- M  Docs/AgentLogs/LOG_ORGANIC_ENTROPY_REGENERATOR.md
+- M  Docs/AgentLogs/LOG_SAVE_HASH_CRYPTOGRAPHER.md
+- M  Docs/AgentLogs/LOG_SOMATIC_COMFORT_ANALYST.md
+- M  Docs/AgentLogs/LOG_TECH_RESEARCHER.md
+- M  Docs/AgentLogs/LOG_TECHNICAL_ARTIST_DATA.md
+- M  Docs/AgentLogs/LOG_UX_ENGINEER.md
+- M  Docs/AgentLogs/LOG_VFX_PARTICLE_LOD_PARAMETERIZER.md
+- M  Docs/AgentLogs/LOG_VISUAL_EXTINCTION_LUT_BAKER.md
+- M  Docs/AgentLogs/LOG_VISUAL_LOD_GRADE_ARCHITECT.md
+- M  Docs/AgentLogs/LOG_VRAM_ASSET_SCOUT.md
+- M  Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA.json
+- M  Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA.md
+- A  Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_channel_packing_candidates.csv
+- A  Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_detail_candidates.csv
+- A  Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_material_issues.csv
+- A  Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_texture_import_issues.csv
+- A  Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_texture_memory_hotspots.csv
+- M  Docs/AgentLogs/Rationale_AI_BEHAVIOR_BIOMIMETIC_DESIGNER.md
+- M  Docs/AgentLogs/Rationale_AI_POTENTIAL_FIELD_NAVIGATOR.md
+- M  Docs/AgentLogs/Rationale_BACKEND_ENGINEER.md
+- M  Docs/AgentLogs/Rationale_BIOLUM_RHYTHM_COMPOSER.md
+- M  Docs/AgentLogs/Rationale_GIT_SYNC.md
+- M  Docs/AgentLogs/Rationale_H8_HARDWARE_TIER_MATRIX_BKR.md
+- M  Docs/AgentLogs/Rationale_HYDRODYNAMIC_DRAG_MATRIX_BAKER.md
+- M  Docs/AgentLogs/Rationale_MACRO_DB_INDEX_OPTIMIZER.md
+- M  Docs/AgentLogs/Rationale_MODDING_API_SCHEMA_BUILDER.md
+- M  Docs/AgentLogs/Rationale_NARRATIVE_LORE_STREAMING_BAKER.md
+- M  Docs/AgentLogs/Rationale_NARRATIVE_SEMANTIC_AUDITOR.md
+- M  Docs/AgentLogs/Rationale_NET_SYNC_MERKLE_ARCHITECT.md
+- M  Docs/AgentLogs/Rationale_ORGANIC_ENTROPY_REGENERATOR.md
+- M  Docs/AgentLogs/Rationale_SAVE_HASH_CRYPTOGRAPHER.md
+- M  Docs/AgentLogs/Rationale_SOMATIC_COMFORT_ANALYST.md
+- M  Docs/AgentLogs/Rationale_TECH_RESEARCHER.md
+- M  Docs/AgentLogs/Rationale_TECHNICAL_ARTIST_DATA.md
+- M  Docs/AgentLogs/Rationale_UX_ENGINEER.md
+- M  Docs/AgentLogs/Rationale_VFX_PARTICLE_LOD_PARAMETERIZER.md
+- M  Docs/AgentLogs/Rationale_VISUAL_EXTINCTION_LUT_BAKER.md
+- M  Docs/AgentLogs/Rationale_VISUAL_LOD_GRADE_ARCHITECT.md
+- M  Docs/AgentLogs/Rationale_VRAM_ASSET_SCOUT.md
+- A  Docs/AgentLogs/UI_HardwareAdaptiveValidation_UX_ENGINEER.json
+- M  Docs/AgentLogs/UI_Readability_UX_ENGINEER.json
+- M  Docs/AgentLogs/UI_ShaderSampleAudit_UX_ENGINEER.json
+- A  Docs/AgentLogs/UI_UnityReportAudit_UX_ENGINEER.json
+- A  Docs/AgentLogs/UI_UnityTemplateAudit_UX_ENGINEER.json
+- A  Docs/AgentLogs/UnityVerification_UX_ENGINEER.json
+- M  Docs/AgentLogs/VR_Comfort_Audit_SOMATIC_COMFORT_ANALYST.json
+- M  Docs/ARCHITECTURE/AI_POTENTIAL_FIELD_NAVIGATION.md
+- M  Docs/ARCHITECTURE/ORGANIC_ENTROPY_MATH.md
+- A  Docs/DEPENDENCY_GRAPH.cache.json
+- A  Docs/DEPENDENCY_GRAPH.json
+- M  Docs/DEPENDENCY_GRAPH.md
+- M  Docs/Design/Biolum_Implementation_Guide.md
+- A  Docs/Design/HardwareAdaptiveUIScaler_Runbook.md
+- A  Docs/Design/HardwareAdaptiveUIScaler_UnityVerificationTemplate.json
+- M  Docs/Design/Save_Binary_Header.md
+- M  Docs/Lore/Lore_Bible.md
+- A  Docs/Modding/Change_Control_Checklist.md
+- A  Docs/Modding/Event_Subscription_Audit_Matrix.md
+- M  Docs/Modding/Mod_API_Specification.md
+- M  Docs/Modding/Net_Protocol_v1.md
+- A  Docs/Modding/README.md
+- A  Docs/Modding/Resource_Content_Audit_Matrix.md
+- M  Docs/Modding/Runtime_Verification_Playbook.md
+- A  Docs/Modding/Sample_InfiniteO2_Mod.md
+- M  Docs/Modding/Signal_Audit_Matrix.md
+- M  Docs/Modding/Signal_Schema.json
+- M  Docs/Modding/Validate_Mod_API_Static.ps1
+- M  Docs/Reports/Economy_Integrity_Audit.md
+- A  Docs/Reports/H8_Hash_Catalog_Audit.json
+- A  Docs/Reports/H8_Hash_Catalog_Audit.md
+- A  Docs/Reports/Net_Protocol_Gate_Report.md
+- M  Docs/Reports/VRAM_Budget_Audit.csv
+- M  Docs/Reports/VRAM_Budget_Audit.json
+- M  Docs/Reports/VRAM_Budget_Audit_Summary.md
+- M  Docs/Reports/VRAM_Mesh_Redlines.csv
+- M  Docs/Reports/VRAM_Remediation_Plan.md
+- M  Docs/Reports/VRAM_Texture_Redlines.csv
+- M  Docs/Tasks/Status_AI_BEHAVIOR_BIOMIMETIC_DESIGNER.md
+- M  Docs/Tasks/Status_AI_POTENTIAL_FIELD_NAVIGATOR.md
+- M  Docs/Tasks/Status_BACKEND_ENGINEER.md
+- M  Docs/Tasks/Status_BIOLUM_RHYTHM_COMPOSER.md
+- M  Docs/Tasks/Status_GIT_SYNC.md
+- M  Docs/Tasks/Status_H8_HARDWARE_TIER_MATRIX_BKR.md
+- M  Docs/Tasks/Status_HYDRODYNAMIC_DRAG_MATRIX_BAKER.md
+- M  Docs/Tasks/Status_MACRO_DB_INDEX_OPTIMIZER.md
+- M  Docs/Tasks/Status_MODDING_API_SCHEMA_BUILDER.md
+- M  Docs/Tasks/Status_NARRATIVE_LORE_STREAMING_BAKER.md
+- M  Docs/Tasks/Status_NARRATIVE_SEMANTIC_AUDITOR.md
+- M  Docs/Tasks/Status_NET_SYNC_MERKLE_ARCHITECT.md
+- M  Docs/Tasks/Status_ORGANIC_ENTROPY_REGENERATOR.md
+- M  Docs/Tasks/Status_SAVE_HASH_CRYPTOGRAPHER.md
+- M  Docs/Tasks/Status_SOMATIC_COMFORT_ANALYST.md
+- M  Docs/Tasks/Status_TECH_RESEARCHER.md
+- M  Docs/Tasks/Status_TECHNICAL_ARTIST_DATA.md
+- M  Docs/Tasks/Status_UX_ENGINEER.md
+- M  Docs/Tasks/Status_VFX_PARTICLE_LOD_PARAMETERIZER.md
+- M  Docs/Tasks/Status_VISUAL_EXTINCTION_LUT_BAKER.md
+- M  Docs/Tasks/Status_VISUAL_LOD_GRADE_ARCHITECT.md
+- M  Docs/Tasks/Status_VRAM_ASSET_SCOUT.md
+- M  Docs/TECH_ART_PBR_SURFACE_DOCTRINE.md
+- M  Tools/AI_Sim/test_ai_path_sim.py
+- M  Tools/AiBattleSim.py
+- M  Tools/AiBattleSim_Report.json
+- M  Tools/AiPathSim.py
+- M  Tools/AtlasCheck.py
+- M  Tools/BiolumWaveform.py
+- M  Tools/BuildArchitectureAtlas.py
+- M  Tools/DbHealthCheck.py
+- M  Tools/EconomyRecipeGraphAudit.py
+- A  Tools/Hardware/test_validate_system_hardware_profiles.py
+- A  Tools/Hardware/ValidateAllHardwareProfiles.py
+- A  Tools/Hardware/ValidateSystemHardwareProfiles.py
+- M  Tools/MaterialAudit.py
+- M  Tools/MemoryBudgetCheck.py
+- M  Tools/NetJitterSim.py
+- A  Tools/NetProtocolGate.py
+- M  Tools/Security/VerifyReplayHasherReference.py
+- M  Tools/SubmarinePhysicsSim.py
+- M  Tools/test_ai_battle_sim.py
+- M  Tools/test_architecture_atlas.py
+- M  Tools/test_biolum_waveform.py
+- A  Tools/test_db_health_check.py
+- M  Tools/test_economy_integrity.py
+- M  Tools/test_h8_hash_collisions.py
+- A  Tools/test_lore_semantic_sync.py
+- A  Tools/test_material_audit.py
+- M  Tools/test_memory_budget_check.py
+- M  Tools/test_net_jitter_sim.py
+- M  Tools/test_submarine_physics_sim.py
+- M  Tools/test_verify_lore.py
+- M  Tools/test_visual_stress_sim.py
+- A  Tools/test_water_color_preview.py
+- M  Tools/test_world_entropy_sim.py
+- A  Tools/UX/run_hardware_adaptive_ui_validation.py
+- A  Tools/UX/run_unity_import_check.ps1
+- M  Tools/UX/test_hardware_adaptive_ui.py
+- A  Tools/UX/test_unity_report_update_cli.py
+- A  Tools/UX/test_unity_verification_gates.py
+- M  Tools/UX/test_vr_snap_turn_comfort_audit.py
+- M  Tools/UX/ui_readability_test.py
+- M  Tools/UX/ui_shader_sample_audit.py
+- A  Tools/UX/unity_compile_log_audit.py
+- A  Tools/UX/update_unity_verification_report.py
+- A  Tools/UX/validate_unity_verification_report.py
+- A  Tools/UX/validate_unity_verification_template.py
+- M  Tools/UX/vr_snap_turn_comfort_audit.py
+- M  Tools/ValidateVfxParticleBudgetCatalog.py
+- M  Tools/VerifyH8HashCollisions.py
+- M  Tools/VerifyLore.py
+- M  Tools/VisualStressSim.py
+- M  Tools/WaterColorPreview.py
+- M  Tools/WorldEntropySim.py
+
+### 2026-05-15 16:16:39 +0400 - `abe92af42..09eaf26ca`
+Reflog reason: `fetch origin: fast-forward`
+Commits: 1; file rows: 3; docs=3; assets=0; data=0; tools=0; skills=0; tmp=0
+
+Commits:
+- 09eaf26ca 2026-05-15 15:08:27 +0300 chore: document local checkout alignment
+
+Changed files:
+- M  Docs/AgentLogs/LOG_GIT_SYNC.md
+- M  Docs/AgentLogs/Rationale_GIT_SYNC.md
+- M  Docs/Tasks/Status_GIT_SYNC.md
+
+### 2026-05-15 17:15:14 +0400 - `90c8aa095..7ea60d200`
+Reflog reason: `fetch origin: fast-forward`
+Commits: 17; file rows: 19; docs=14; assets=1; data=1; tools=3; skills=0; tmp=0
+
+Commits:
+- 7ea60d200 2026-05-15 16:13:28 +0300 docs: order lore rationale decisions
+- 4c0e940e0 2026-05-15 16:12:34 +0300 chore: refresh git sync evidence on latest base
+- 9fdc7a841 2026-05-15 16:08:51 +0300 fix: reject out-of-range lore hashes
+- 67531c3de 2026-05-15 16:07:30 +0300 chore: refresh git sync evidence after rebase
+- 29e36b24e 2026-05-15 16:06:30 +0300 fix: report invalid lore hash input cleanly
+- b476c341b 2026-05-15 16:01:52 +0300 fix: reject ambiguous lore extraction inputs
+- ffc7a13f3 2026-05-15 15:52:53 +0300 chore: document live git sync verification
+- 63f415006 2026-05-15 15:50:40 +0300 fix: bind lore manifest labels
+- 8ece3561e 2026-05-15 15:44:36 +0300 docs: remove duplicate lore manifest report
+- ae872d4fb 2026-05-15 15:43:39 +0300 docs: append lore manifest guard report
+- 9e6111c50 2026-05-15 15:41:25 +0300 fix: verify lore manifest source bytes
+- 41cb1a913 2026-05-15 15:36:22 +0300 docs: clarify lore verifier helper log
+- 78b6a13cf 2026-05-15 15:35:55 +0300 docs: clarify lore verifier helper path proof
+- 13d7742a5 2026-05-15 15:35:04 +0300 fix: anchor lore verifier paths
+- e48bdeebd 2026-05-15 15:34:48 +0300 docs: record regrowth storage guard evidence
+- 351fd69e0 2026-05-15 15:28:58 +0300 chore: isolate save hash verifier imports
+- 978605b36 2026-05-15 15:28:40 +0300 fix: harden regrowth dimension guards
+
+Changed files:
+- M  Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs
+- M  Data/Lore/README.md
+- M  Docs/AgentLogs/LOG_GIT_SYNC.md
+- M  Docs/AgentLogs/LOG_NARRATIVE_LORE_STREAMING_BAKER.md
+- M  Docs/AgentLogs/LOG_ORGANIC_ENTROPY_REGENERATOR.md
+- M  Docs/AgentLogs/LOG_SAVE_HASH_CRYPTOGRAPHER.md
+- M  Docs/AgentLogs/Rationale_GIT_SYNC.md
+- M  Docs/AgentLogs/Rationale_NARRATIVE_LORE_STREAMING_BAKER.md
+- M  Docs/AgentLogs/Rationale_ORGANIC_ENTROPY_REGENERATOR.md
+- M  Docs/AgentLogs/Rationale_SAVE_HASH_CRYPTOGRAPHER.md
+- M  Docs/ARCHITECTURE/ORGANIC_ENTROPY_MATH.md
+- M  Docs/Design/Save_Binary_Header.md
+- M  Docs/Tasks/Status_GIT_SYNC.md
+- M  Docs/Tasks/Status_NARRATIVE_LORE_STREAMING_BAKER.md
+- M  Docs/Tasks/Status_ORGANIC_ENTROPY_REGENERATOR.md
+- M  Docs/Tasks/Status_SAVE_HASH_CRYPTOGRAPHER.md
+- M  Tools/Security/VerifyReplayHasherReference.py
+- M  Tools/test_verify_lore.py
+- M  Tools/VerifyLore.py
+
+### 2026-05-15 21:19:17 +0400 - `a192bbc16..0eab4bae1`
+Reflog reason: `fetch origin: fast-forward`
+Commits: 1; file rows: 3; docs=3; assets=0; data=0; tools=0; skills=0; tmp=0
+
+Commits:
+- 0eab4bae1 2026-05-15 19:52:47 +0300 docs: record economy remote proof
+
+Changed files:
+- M  Docs/AgentLogs/LOG_ECONOMY_DATA_BALANCER.md
+- M  Docs/AgentLogs/Rationale_ECONOMY_DATA_BALANCER.md
+- M  Docs/Tasks/Status_ECONOMY_DATA_BALANCER.md
+
+## Distinct Incoming Paths
+- .agents-skills/AI_Creature_Cognition_States.txt
+- .agents-skills/AI_Director_Encounter_Manager.txt
+- .agents-skills/AI_DYNAMIC_NAVGRID_SDF_INTEGRATION.txt
+- .agents-skills/AI_Navigation_AStar_Funnel_Smoothing_Pathfinding.txt
+- .agents-skills/ANIM_Contextual_Physical_IK.txt
+- .agents-skills/ANIM_IK_FABRIK_GroundSnapping_Procedural.txt
+- .agents-skills/ARCH_Execution_Phases.txt
+- .agents-skills/ARCH_Global_Registry_ServiceLocator_DI_Init.txt
+- .agents-skills/ARCH_Project_Bootstrap_Sequence_Init_Safety.txt
+- .agents-skills/ARCH_Signal_Lane_Segregation.txt
+- .agents-skills/AUD_Acoustic_Sonar_Occlusion_Sensory_Simulation.txt
+- .agents-skills/AUD_DSP_Audio_Synthesis_ThreadSafe_SPSC.txt
+- .agents-skills/AUDIO_Hrtf_Binaural_Spatialization.txt
+- .agents-skills/CORE_Abyss_Survival_Systems_O2_Pressure_Logic.txt
+- .agents-skills/CORE_Damage_System_Hull_Integrity_VFX_Feedback.txt
+- .agents-skills/CORE_Submarine_Vehicles_Kinematics_AUP.txt
+- .agents-skills/CORE_Tools_Equipment_Interaction_Raycast_Heat.txt
+- .agents-skills/CORE_Weather_Abyssal_FlowField_Currents.txt
+- .agents-skills/CTRL_Device_Abstraction_Haptics.txt
+- .agents-skills/DATA_Inventory_Resources_Items_SOA_Layout.txt
+- .agents-skills/DBG_Telemetry_Crash_Reporting_PostMortem.txt
+- .agents-skills/GPU_Compute_Kernels_Kernels_Optimization_MX350.txt
+- .agents-skills/LOGI_Energy_Networks_Power_Grid_Graph_Flow.txt
+- .agents-skills/MANDATE_VERSION_6.0.txt
+- .agents-skills/MATH_AUP_Determinism_Sync.txt
+- .agents-skills/MATH_Coordinate_Precision_AUP_FloatingOrigin.txt
+- .agents-skills/NET_Logistics_Sync_BitPacking_Reconciliation.txt
+- .agents-skills/OPT_Native_Memory_Collections_JobSystem_Protocol.txt
+- .agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt
+- .agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+- .agents-skills/PHYS_Destructible_Organic_Entropy.txt
+- .agents-skills/PHYS_Fluid_Incursion_Interior.txt
+- .agents-skills/PHYS_Kinematic_Interaction_Hands.txt
+- .agents-skills/PHYS_Physics_Integrity_Determinism_ForceMode.txt
+- .agents-skills/PHYS_Tether_Cable_Acceleration_Constraints.txt
+- .agents-skills/PROG_Quest_State_Graph_Logic.txt
+- .agents-skills/PROJECT_LTS_Compatibility_Layer.txt
+- .agents-skills/QA_Evidence_Text_Filter_Audit.txt
+- .agents-skills/README.md
+- .agents-skills/REND_Abyssal_Lighting_Voxel_Occlusion_Shadows.txt
+- .agents-skills/REND_Foveated_Simulation_LOD.txt
+- .agents-skills/REND_GPU_Driven_Animation_VAT.txt
+- .agents-skills/REND_Instanced_Flora_Physics.txt
+- .agents-skills/REND_Shader_Noir_Aesthetics_Dithering_Fog.txt
+- .agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt
+- .agents-skills/REND_VFX_Fluid_Aesthetics_Compute_Particles.txt
+- .agents-skills/REND_VR_Stencil_Masking.txt
+- .agents-skills/STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt
+- .agents-skills/STRM_Async_Standard.txt
+- .agents-skills/STRM_World_Streaming_Residency_Chunk_Management.txt
+- .agents-skills/TOOL_Procedural_Wreckage_Generator.txt
+- .agents-skills/UI_Diegetic_Physical_Interfaces.txt
+- .agents-skills/UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt
+- .agents-skills/VOX_MapMagic_Voxel_Seam_Alignment_Integration.txt
+- .agents-skills/VOX_Voxel_SDF_Geometry_MarchingCubes_Pipeline.txt
+- .agents-skills/VOX_Voxel_World_Logic_Carving_Persistence.txt
+- .codex_tmp/ai_swarm_navgrid_patch.diff
+- .codex_tmp/eco_director_flow_fields_patch.diff
+- .codex_tmp/eco_director_vortex_math_patch.diff
+- .codex_tmp/ecosystem_dynamics_patch.diff
+- .codex_tmp/huv_20c82c86.cs
+- .codex_tmp/hybrid_nav_patch.diff
+- .codex_tmp/hybrid_nav_runtime_sampling_build.log
+- .codex_tmp/hybrid_nav_runtime_sampling_patch.diff
+- .codex_tmp/iter22/Hecton8.Editor.asmdef.before
+- .codex_tmp/iter22/McpLog.cs.before
+- .codex_tmp/iter22/ProjectIdentityUtility.cs.before
+- .codex_tmp/iter22/WebSocketTransportClient.cs.before
+- .codex_tmp/iter23/McpLog.cs.before
+- .codex_tmp/iter23/WebSocketTransportClient.cs.before
+- .codex_tmp/iter25/dotnet_build_Assembly-CSharp.log
+- .codex_tmp/iter25/registry_after.txt
+- .codex_tmp/iter25/registry_before.txt
+- .codex_tmp/iter25/tile_after.txt
+- .codex_tmp/iter25/tile_before.txt
+- .codex_tmp/ocean_20c82c86.prefab
+- .codex_tmp/player_runtime_context_math_purge.diff
+- .gitignore
+- Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl
+- Assets/_Project/Art/Shaders/Hecton_DiegeticPanelUnlit.shader
+- Assets/_Project/Art/Shaders/Hecton_HUD_AcousticRadarOverlay.shader
+- Assets/_Project/Art/Shaders/Hecton_MarineSnow.compute
+- Assets/_Project/Art/Shaders/Hecton_ToolScreenDiegetic.shader
+- Assets/_Project/Art/TEXTURES/VFX.meta
+- Assets/_Project/Data/Lore/Quests/Quest_Arrival.asset
+- Assets/_Project/Data/Lore/Quests/Quest_BiomeSpine.asset
+- Assets/_Project/Data/Lore/Quests/Quest_CopperSample.asset
+- Assets/_Project/Data/Lore/Quests/Quest_CoreReached.asset
+- Assets/_Project/Data/Lore/Quests/Quest_FirstHour_CollectTitanium.asset
+- Assets/_Project/Data/Lore/Quests/Quest_RadShield.asset
+- Assets/_Project/Data/VFX/REND_DYNAMIC_RESOLUTION_ADAPTER_compute_particle_budgets.json
+- Assets/_Project/Data/VFX/REND_DYNAMIC_RESOLUTION_ADAPTER_compute_particle_budgets.json.meta
+- Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs
+- Assets/_Project/Scripts/Core/BinaryLayoutManifest.cs
+- Assets/_Project/Scripts/Core/Database/H8MacroDatabaseFileFormat.cs
+- Assets/_Project/Scripts/Core/Database/H8MacroDatabaseService.cs
+- Assets/_Project/Scripts/Core/Generated/H8Hashes.cs
+- Assets/_Project/Scripts/Core/Generated/H8Hashes.cs.meta
+- Assets/_Project/Scripts/Core/HardwareProfileCatalog.cs
+- Assets/_Project/Scripts/Core/HardwareProfileCatalog.cs.meta
+- Assets/_Project/Scripts/Core/HardwareTierDetector.cs
+- Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs
+- Assets/_Project/Scripts/Core/Memory/Layout.meta
+- Assets/_Project/Scripts/Core/PlatformAdaptiveBudgetGovernor.cs
+- Assets/_Project/Scripts/Editor/OutpostFailSafeHandoffValidator.cs
+- Assets/_Project/Scripts/Editor/OutpostFailSafeHandoffValidator.cs.meta
+- Assets/_Project/Scripts/Editor/QuestGraphRepairUtility.cs
+- Assets/_Project/Scripts/Editor/QuestGraphRepairUtility.cs.meta
+- Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs
+- Assets/_Project/Scripts/Optimization/VRAMBudgetThresholds.cs
+- Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs
+- Assets/_Project/Scripts/Optimization/VRAMMonitor.cs
+- Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs
+- Assets/_Project/Scripts/PlayerInventory.cs
+- Assets/_Project/Scripts/Quest/QuestStateManager.cs
+- Assets/_Project/Scripts/SaveSystem/SaveMasterHashV10.cs
+- Assets/_Project/Scripts/SaveSystem/SaveMasterHashV10.cs.meta
+- Assets/_Project/Scripts/UI/WorldSpaceTMPSharpnessController.cs
+- Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs
+- Assets/_Project/Scripts/VFX/VfxComputeParticleBudgetCatalog.cs
+- Assets/_Project/Scripts/VFX/VfxComputeParticleBudgetCatalog.cs.meta
+- Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs
+- Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs.meta
+- Assets/_Project/Shaders/UI/Hecton_DiegeticVisorCurvedHUD.shader
+- Data/AI/Fauna_Global_Weights.json
+- Data/AI/Leviathan_Brain.json
+- Data/AI/Navigation_Tuning.json
+- Data/Audio/Acoustic_Material_Profiles.json
+- Data/Audio/AudioSim_LastRun.json
+- Data/Economy/Items.csv
+- Data/Economy/Recipes.json
+- Data/Economy/Regrowth_Constants.json
+- Data/Economy/Resource_Distribution_Matrix.csv
+- Data/Economy/Runtime_Binding_Plan.json
+- Data/Economy/Runtime_Binding_Review.json
+- Data/Economy/Survival_Stats.json
+- Data/Economy/Time_To_First_Submarine.json
+- Data/Flora/LSystem_Library.json
+- Data/Flora/LSystem_Library.schema.json
+- Data/Hardware/HARDWARE_TIER_QUEST_3.json
+- Data/Hardware/HARDWARE_TIER_STEAM_DECK_LCD.json
+- Data/Hardware/Profiles.json
+- Data/Localization/en_US.bin
+- Data/Localization/en_US.json
+- Data/Lore/CockpitTerminalBootErrors.raw.txt
+- Data/Lore/Encyclopedia.h8bin
+- Data/Lore/Encyclopedia.manifest.json
+- Data/Lore/README.md
+- Data/Narrative/Quest_Graph.json
+- Data/Physics/Submarine_RuntimePack.bin
+- Data/Physics/Submarine_RuntimePackLayout.json
+- Data/Physics/Submarine_Specs.json
+- Data/Physics/Submarine_SpeedPower.csv
+- Data/Physics/Submarine_SpeedPower.png
+- Data/Physics/Submarine_SpeedPower.svg
+- Data/Physics/Submarine_Verification.json
+- Data/Precomputed/Atmosphere/atmosphere_density_matrix_rgba16f.bin
+- Data/Precomputed/Atmosphere/atmosphere_lut_manifest.json
+- Data/Precomputed/Atmosphere/atmosphere_sky_gradient_preview.png
+- Data/Precomputed/Atmosphere/atmosphere_sky_gradient_rgba16f.bin
+- Data/Precomputed/caustics_dispersion_offsets.bin
+- Data/Precomputed/dalton_gas_toxicity.bin
+- Data/Precomputed/ecosystem_coefficients.json
+- Data/Precomputed/gerstner_wave_weather.bin
+- Data/Precomputed/math_lut_manifest.json
+- Data/Precomputed/Reverb_LUT.bin
+- Data/Precomputed/sabine_reverb_rt60.bin
+- Data/System/Hardware_Profiles.json
+- Data/System/Visual_Scalability_Matrix.json
+- Data/Textures/AbyssalFlowField_LowTier_RGBA.png
+- Data/Textures/BlueNoise_RGBA.png
+- Data/Textures/NoiseBakeMetrics.final.json
+- Data/Textures/NoiseBakeMetrics.json
+- Data/Textures/NoiseBakeMetrics.verify.json
+- Data/Textures/NoiseBakeMetrics.verify2.json
+- Data/Visuals/Biolum_BinarySchema.json
+- Data/Visuals/Biolum_Manifest.json
+- Data/Visuals/Biolum_Profiles.bin
+- Data/Visuals/Biolum_Profiles.json
+- Data/Visuals/Biolum_Verification.json
+- Data/Visuals/Biolum_Waveforms.gif
+- Data/Visuals/Biolum_Waveforms.png
+- Data/Visuals/Water_Extinction_GradientPreview.png
+- Data/Visuals/Water_Extinction_Hecton_CoreLit_Snippet.hlsl
+- Data/Visuals/Water_Extinction_Matrix.bin
+- Data/Visuals/Water_Extinction_Matrix.json
+- Data/Visuals/Water_Extinction_README.md
+- Data/Visuals/Water_Fog_Density_LUT.bin
+- Docs/AgentLogs/AtmoValidation_ORBITAL_ATMOSPHERE_MATHEMATICIAN.json
+- Docs/AgentLogs/Blocker_UX_ENGINEER.md
+- Docs/AgentLogs/Dummy_MACRO_DB_INDEX_OPTIMIZER.h8db
+- Docs/AgentLogs/FloraMetrics_FLORA_GRAMMAR_GENETICIST.json
+- Docs/AgentLogs/FloraMetrics_TurtleSmoke_FLORA_GRAMMAR_GENETICIST.json
+- Docs/AgentLogs/FloraMetrics_ValidateOnly_FLORA_GRAMMAR_GENETICIST.json
+- Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_00_pass_00.svg
+- Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_00_pass_01.svg
+- Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_00_pass_02.svg
+- Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_01_pass_00.svg
+- Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_01_pass_01.svg
+- Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_01_pass_02.svg
+- Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_02_pass_00.svg
+- Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_02_pass_01.svg
+- Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_02_pass_02.svg
+- Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_03_pass_00.svg
+- Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_03_pass_01.svg
+- Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_03_pass_02.svg
+- Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_04_pass_00.svg
+- Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_04_pass_01.svg
+- Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_04_pass_02.svg
+- Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_05_pass_00.svg
+- Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_05_pass_01.svg
+- Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_05_pass_02.svg
+- Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_06_pass_00.svg
+- Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_06_pass_01.svg
+- Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_06_pass_02.svg
+- Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_07_pass_00.svg
+- Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_07_pass_01.svg
+- Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_07_pass_02.svg
+- Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_08_pass_00.svg
+- Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_08_pass_01.svg
+- Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_08_pass_02.svg
+- Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_09_pass_00.svg
+- Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_09_pass_01.svg
+- Docs/AgentLogs/FloraPreview_FLORA_GRAMMAR_GENETICIST/flora_block_09_pass_02.svg
+- Docs/AgentLogs/FloraPreview_TurtleSmoke_FLORA_GRAMMAR_GENETICIST/flora_block_00_pass_00.ps
+- Docs/AgentLogs/FloraPreview_TurtleSmoke_FLORA_GRAMMAR_GENETICIST/flora_block_01_pass_00.ps
+- Docs/AgentLogs/FloraPreview_TurtleSmoke_FLORA_GRAMMAR_GENETICIST/flora_block_02_pass_00.ps
+- Docs/AgentLogs/FloraPreview_TurtleSmoke_FLORA_GRAMMAR_GENETICIST/flora_block_03_pass_00.ps
+- Docs/AgentLogs/FloraPreview_TurtleSmoke_FLORA_GRAMMAR_GENETICIST/flora_block_04_pass_00.ps
+- Docs/AgentLogs/FloraPreview_TurtleSmoke_FLORA_GRAMMAR_GENETICIST/flora_block_05_pass_00.ps
+- Docs/AgentLogs/FloraPreview_TurtleSmoke_FLORA_GRAMMAR_GENETICIST/flora_block_06_pass_00.ps
+- Docs/AgentLogs/FloraPreview_TurtleSmoke_FLORA_GRAMMAR_GENETICIST/flora_block_07_pass_00.ps
+- Docs/AgentLogs/FloraPreview_TurtleSmoke_FLORA_GRAMMAR_GENETICIST/flora_block_08_pass_00.ps
+- Docs/AgentLogs/FloraPreview_TurtleSmoke_FLORA_GRAMMAR_GENETICIST/flora_block_09_pass_00.ps
+- Docs/AgentLogs/FloraValidation_FLORA_GRAMMAR_GENETICIST.json
+- Docs/AgentLogs/FloraValidation_TurtleSmoke_FLORA_GRAMMAR_GENETICIST.json
+- Docs/AgentLogs/FloraValidation_ValidateOnly_FLORA_GRAMMAR_GENETICIST.json
+- Docs/AgentLogs/Hardware_Profile_Audit_H8_HARDWARE_TIER_MATRIX_BKR.json
+- Docs/AgentLogs/IconBaker_UX_ENGINEER_SelfTest/h8_self_test_icon_128.png
+- Docs/AgentLogs/IconBaker_UX_ENGINEER_SelfTest/h8_self_test_icon_32.png
+- Docs/AgentLogs/IconBaker_UX_ENGINEER_SelfTest/h8_self_test_icon_512.png
+- Docs/AgentLogs/IconBaker_UX_ENGINEER_SelfTest/IconBakeManifest.json
+- Docs/AgentLogs/LOG_AI_BEHAVIOR_BIOMIMETIC_DESIGNER.md
+- Docs/AgentLogs/LOG_AI_POTENTIAL_FIELD_NAVIGATOR.md
+- Docs/AgentLogs/LOG_AUDIO_MATERIAL_SYNTHESIZER.md
+- Docs/AgentLogs/LOG_BACKEND_ENGINEER.md
+- Docs/AgentLogs/LOG_BIOLUM_RHYTHM_COMPOSER.md
+- Docs/AgentLogs/LOG_BLACKBOX_TELEMETRY_VISUALIZER.md
+- Docs/AgentLogs/LOG_ECONOMY_DATA_BALANCER.md
+- Docs/AgentLogs/LOG_FAUNA_BEHAVIOR_SIMULATOR.md
+- Docs/AgentLogs/LOG_FLORA_GRAMMAR_GENETICIST.md
+- Docs/AgentLogs/LOG_GIT_SYNC.md
+- Docs/AgentLogs/LOG_H8_HARDWARE_TIER_MATRIX_BKR.md
+- Docs/AgentLogs/LOG_HARDWARE_PROFILE_GENERATOR.md
+- Docs/AgentLogs/LOG_HECTON_ENCYCLOPEDIA_FINALIZER.md
+- Docs/AgentLogs/LOG_HYDRODYNAMIC_DRAG_MATRIX_BAKER.md
+- Docs/AgentLogs/LOG_MACRO_DB_INDEX_OPTIMIZER.md
+- Docs/AgentLogs/LOG_MANDATE_EVOLUTION_CHRONICLER.md
+- Docs/AgentLogs/LOG_MISSION_FAIL_SAFE_ARCHITECT.md
+- Docs/AgentLogs/LOG_MODDING_API_SCHEMA_BUILDER.md
+- Docs/AgentLogs/LOG_NARRATIVE_LORE_STREAMING_BAKER.md
+- Docs/AgentLogs/LOG_NARRATIVE_LORE_WEAVER.md
+- Docs/AgentLogs/LOG_NARRATIVE_SEMANTIC_AUDITOR.md
+- Docs/AgentLogs/LOG_OFFLINE_PRECOMPUTE_MATHEMATICIAN.md
+- Docs/AgentLogs/LOG_ORBITAL_ATMOSPHERE_MATHEMATICIAN.md
+- Docs/AgentLogs/LOG_ORGANIC_ENTROPY_REGENERATOR.md
+- Docs/AgentLogs/LOG_PROCEDURAL_NOISE_BAKER.md
+- Docs/AgentLogs/LOG_QUEST_STATE_GRAPH_VALIDATOR.md
+- Docs/AgentLogs/LOG_QUEST_STATE_GRAPH_VALIDATOR_CONTINUATION_2026-05-15.md
+- Docs/AgentLogs/LOG_SAVE_HASH_CRYPTOGRAPHER.md
+- Docs/AgentLogs/LOG_SOMATIC_COMFORT_ANALYST.md
+- Docs/AgentLogs/LOG_SOUNDSCAPE_SABINE_BAKER.md
+- Docs/AgentLogs/LOG_TECH_RESEARCHER.md
+- Docs/AgentLogs/LOG_TECHNICAL_ARTIST_DATA.md
+- Docs/AgentLogs/LOG_UX_ENGINEER.md
+- Docs/AgentLogs/LOG_VFX_PARTICLE_LOD_PARAMETERIZER.md
+- Docs/AgentLogs/LOG_VISUAL_EXTINCTION_LUT_BAKER.md
+- Docs/AgentLogs/LOG_VISUAL_LOD_GRADE_ARCHITECT.md
+- Docs/AgentLogs/LOG_VRAM_ASSET_SCOUT.md
+- Docs/AgentLogs/LoreChecker_NARRATIVE_SEMANTIC_AUDITOR.json
+- Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA.json
+- Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA.md
+- Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_channel_packing_candidates.csv
+- Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_detail_candidates.csv
+- Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_material_issues.csv
+- Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_texture_import_issues.csv
+- Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_texture_memory_hotspots.csv
+- Docs/AgentLogs/QuestGraphRepairCandidates_QUEST_STATE_GRAPH_VALIDATOR.md
+- Docs/AgentLogs/QuestStressTest_QUEST_STATE_GRAPH_VALIDATOR.json
+- Docs/AgentLogs/QuestStressTest_QUEST_STATE_GRAPH_VALIDATOR_export_probe.json
+- Docs/AgentLogs/QuestStressTest_QUEST_STATE_GRAPH_VALIDATOR_smoke.json
+- Docs/AgentLogs/QuestValidationRunbook_QUEST_STATE_GRAPH_VALIDATOR.md
+- Docs/AgentLogs/Rationale_AI_BEHAVIOR_BIOMIMETIC_DESIGNER.md
+- Docs/AgentLogs/Rationale_AI_POTENTIAL_FIELD_NAVIGATOR.md
+- Docs/AgentLogs/Rationale_AUDIO_MATERIAL_SYNTHESIZER.md
+- Docs/AgentLogs/Rationale_BACKEND_ENGINEER.md
+- Docs/AgentLogs/Rationale_BIOLUM_RHYTHM_COMPOSER.md
+- Docs/AgentLogs/Rationale_BLACKBOX_TELEMETRY_VISUALIZER.md
+- Docs/AgentLogs/Rationale_ECONOMY_DATA_BALANCER.md
+- Docs/AgentLogs/Rationale_FAUNA_BEHAVIOR_SIMULATOR.md
+- Docs/AgentLogs/Rationale_FAUNA_SIMULATOR.md
+- Docs/AgentLogs/Rationale_FLORA_GENETICIST.md
+- Docs/AgentLogs/Rationale_FLORA_GRAMMAR_GENETICIST.md
+- Docs/AgentLogs/Rationale_GIT_SYNC.md
+- Docs/AgentLogs/Rationale_H8_HARDWARE_TIER_MATRIX_BKR.md
+- Docs/AgentLogs/Rationale_HARDWARE_PROFILE_GENERATOR.md
+- Docs/AgentLogs/Rationale_HECTON_ENCYCLOPEDIA_FINALIZER.md
+- Docs/AgentLogs/Rationale_HYDRODYNAMIC_DRAG_MATRIX_BAKER.md
+- Docs/AgentLogs/Rationale_MACRO_DB_INDEX_OPTIMIZER.md
+- Docs/AgentLogs/Rationale_MANDATE_EVOLUTION_CHRONICLER.md
+- Docs/AgentLogs/Rationale_MISSION_FAIL_SAFE_ARCHITECT.md
+- Docs/AgentLogs/Rationale_MODDING_API_SCHEMA_BUILDER.md
+- Docs/AgentLogs/Rationale_NARRATIVE_LORE_STREAMING_BAKER.md
+- Docs/AgentLogs/Rationale_NARRATIVE_LORE_WEAVER.md
+- Docs/AgentLogs/Rationale_NARRATIVE_SEMANTIC_AUDITOR.md
+- Docs/AgentLogs/Rationale_NET_SYNC_MERKLE_ARCHITECT.md
+- Docs/AgentLogs/Rationale_OFFLINE_PRECOMPUTE_MATHEMATICIAN.md
+- Docs/AgentLogs/Rationale_ORBITAL_ATMOSPHERE_MATHEMATICIAN.md
+- Docs/AgentLogs/Rationale_ORGANIC_ENTROPY_REGENERATOR.md
+- Docs/AgentLogs/Rationale_PROCEDURAL_NOISE_BAKER.md
+- Docs/AgentLogs/Rationale_QUEST_STATE_GRAPH_VALIDATOR.md
+- Docs/AgentLogs/Rationale_QUEST_STATE_GRAPH_VALIDATOR_CONTINUATION_2026-05-15.md
+- Docs/AgentLogs/Rationale_SAVE_HASH_CRYPTOGRAPHER.md
+- Docs/AgentLogs/Rationale_SOMATIC_COMFORT_ANALYST.md
+- Docs/AgentLogs/Rationale_SOUNDSCAPE_SABINE_BAKER.md
+- Docs/AgentLogs/Rationale_TECH_RESEARCHER.md
+- Docs/AgentLogs/Rationale_TECHNICAL_ARTIST_DATA.md
+- Docs/AgentLogs/Rationale_UX_ENGINEER.md
+- Docs/AgentLogs/Rationale_VFX_PARTICLE_LOD_PARAMETERIZER.md
+- Docs/AgentLogs/Rationale_VISUAL_EXTINCTION_LUT_BAKER.md
+- Docs/AgentLogs/Rationale_VISUAL_LOD_GRADE_ARCHITECT.md
+- Docs/AgentLogs/Rationale_VRAM_ASSET_SCOUT.md
+- Docs/AgentLogs/UI_HardwareAdaptiveValidation_UX_ENGINEER.json
+- Docs/AgentLogs/UI_Readability_UX_ENGINEER.json
+- Docs/AgentLogs/UI_ShaderSampleAudit_UX_ENGINEER.json
+- Docs/AgentLogs/UI_UnityReportAudit_UX_ENGINEER.json
+- Docs/AgentLogs/UI_UnityTemplateAudit_UX_ENGINEER.json
+- Docs/AgentLogs/UnityVerification_UX_ENGINEER.json
+- Docs/AgentLogs/VisualMatrixCommit_VISUAL_LOD_GRADE_ARCHITECT.bundle
+- Docs/AgentLogs/VisualMatrixCommit_VISUAL_LOD_GRADE_ARCHITECT.txt
+- Docs/AgentLogs/VisualStressSim_VISUAL_LOD_GRADE_ARCHITECT.json
+- Docs/AgentLogs/VR_Comfort_Audit_SOMATIC_COMFORT_ANALYST.json
+- Docs/ARCHITECTURE/AI_POTENTIAL_FIELD_NAVIGATION.md
+- Docs/ARCHITECTURE/ORGANIC_ENTROPY_MATH.md
+- Docs/ARCHITECTURE/README.md
+- Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/GLOSSARY.md
+- Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/FRAME_TIMELINE.md
+- Docs/DEPENDENCY_GRAPH.cache.json
+- Docs/DEPENDENCY_GRAPH.json
+- Docs/DEPENDENCY_GRAPH.md
+- Docs/DEPRECATED/Batch007_Stale_Simulation_Doc_Index.md
+- Docs/Design/Acoustic_Binary_Specs.md
+- Docs/Design/Atmosphere_Scattering_LUT.md
+- Docs/Design/Biolum_Implementation_Guide.md
+- Docs/Design/Economy_Matrix_v1.md
+- Docs/Design/H8DB_Index_RLE_Spec.md
+- Docs/Design/HardwareAdaptiveUIScaler.json
+- Docs/Design/HardwareAdaptiveUIScaler.md
+- Docs/Design/HardwareAdaptiveUIScaler_Runbook.md
+- Docs/Design/HardwareAdaptiveUIScaler_UnityVerificationTemplate.json
+- Docs/Design/Lore_Bible.md
+- Docs/Design/LUT_Memory_Layout.md
+- Docs/Design/Missions/Outpost_FailSafe_Handoff.json
+- Docs/Design/Missions/Outpost_Failure_Modes.md
+- Docs/Design/Save_Binary_Header.md
+- Docs/Design/VR_Comfort_Profile_Quest.json
+- Docs/Design/VR_Comfort_Profile_Quest.md
+- Docs/Design/VR_Haptic_Waveforms_Quest.json
+- Docs/H8_GLOSSARY.md
+- Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md
+- Docs/Lore/Lore_Bible.md
+- Docs/Modding/API_Surface_Audit_Matrix.md
+- Docs/Modding/Change_Control_Checklist.md
+- Docs/Modding/Command_Audit_Matrix.md
+- Docs/Modding/Event_Subscription_Audit_Matrix.md
+- Docs/Modding/Loader_Save_Audit_Matrix.md
+- Docs/Modding/Mod_API_Specification.md
+- Docs/Modding/Net_Protocol_v1.md
+- Docs/Modding/Payload_Layout_Audit_Matrix.md
+- Docs/Modding/README.md
+- Docs/Modding/Resource_Content_Audit_Matrix.md
+- Docs/Modding/Runtime_Verification_Playbook.md
+- Docs/Modding/Sample_InfiniteO2_Mod.md
+- Docs/Modding/Signal_Audit_Matrix.md
+- Docs/Modding/Signal_Schema.json
+- Docs/Modding/Validate_Mod_API_Static.ps1
+- Docs/PROJECT_ATLAS.md
+- Docs/Reports/2026-05-14_ENCYCLOPEDIA_SPELLCHECK.md
+- Docs/Reports/Economy_Integrity_Audit.md
+- Docs/Reports/H8_Hash_Catalog_Audit.json
+- Docs/Reports/H8_Hash_Catalog_Audit.md
+- Docs/Reports/Net_Protocol_Gate_Report.md
+- Docs/Reports/NetJitterSim_4Client_Report.json
+- Docs/Reports/NetJitterSim_Report.json
+- Docs/Reports/NetJitterSim_RollbackStress_Report.json
+- Docs/Reports/VRAM_Budget_Audit.csv
+- Docs/Reports/VRAM_Budget_Audit.json
+- Docs/Reports/VRAM_Budget_Audit_Summary.md
+- Docs/Reports/VRAM_Mesh_Redlines.csv
+- Docs/Reports/VRAM_Remediation_Plan.md
+- Docs/Reports/VRAM_Texture_Redlines.csv
+- Docs/Tasks/CURRENT_BATCH.md
+- Docs/Tasks/Status_AI_BEHAVIOR_BIOMIMETIC_DESIGNER.md
+- Docs/Tasks/Status_AI_POTENTIAL_FIELD_NAVIGATOR.md
+- Docs/Tasks/Status_AUDIO_MATERIAL_SYNTHESIZER.md
+- Docs/Tasks/Status_BACKEND_ENGINEER.md
+- Docs/Tasks/Status_BIOLUM_RHYTHM_COMPOSER.md
+- Docs/Tasks/Status_BLACKBOX_TELEMETRY_VISUALIZER.md
+- Docs/Tasks/Status_ECONOMY_DATA_BALANCER.md
+- Docs/Tasks/Status_FAUNA_BEHAVIOR_SIMULATOR.md
+- Docs/Tasks/Status_FLORA_GRAMMAR_GENETICIST.md
+- Docs/Tasks/Status_GIT_SYNC.md
+- Docs/Tasks/Status_H8_HARDWARE_TIER_MATRIX_BKR.md
+- Docs/Tasks/Status_HARDWARE_PROFILE_GENERATOR.md
+- Docs/Tasks/Status_HECTON_ENCYCLOPEDIA_FINALIZER.md
+- Docs/Tasks/Status_HYDRODYNAMIC_DRAG_MATRIX_BAKER.md
+- Docs/Tasks/Status_MACRO_DB_INDEX_OPTIMIZER.md
+- Docs/Tasks/Status_MANDATE_EVOLUTION_CHRONICLER.md
+- Docs/Tasks/Status_MISSION_FAIL_SAFE_ARCHITECT.md
+- Docs/Tasks/Status_MODDING_API_SCHEMA_BUILDER.md
+- Docs/Tasks/Status_NARRATIVE_LORE_STREAMING_BAKER.md
+- Docs/Tasks/Status_NARRATIVE_LORE_WEAVER.md
+- Docs/Tasks/Status_NARRATIVE_SEMANTIC_AUDITOR.md
+- Docs/Tasks/Status_NET_SYNC_MERKLE_ARCHITECT.md
+- Docs/Tasks/Status_OFFLINE_PRECOMPUTE_MATHEMATICIAN.md
+- Docs/Tasks/Status_ORBITAL_ATMOSPHERE_MATHEMATICIAN.md
+- Docs/Tasks/Status_ORGANIC_ENTROPY_REGENERATOR.md
+- Docs/Tasks/Status_PROCEDURAL_NOISE_BAKER.md
+- Docs/Tasks/Status_QUEST_STATE_GRAPH_VALIDATOR.md
+- Docs/Tasks/Status_QUEST_STATE_GRAPH_VALIDATOR_CONTINUATION_2026-05-15.md
+- Docs/Tasks/Status_SAVE_HASH_CRYPTOGRAPHER.md
+- Docs/Tasks/Status_SOMATIC_COMFORT_ANALYST.md
+- Docs/Tasks/Status_SOUNDSCAPE_SABINE_BAKER.md
+- Docs/Tasks/Status_TECH_RESEARCHER.md
+- Docs/Tasks/Status_TECHNICAL_ARTIST_DATA.md
+- Docs/Tasks/Status_UX_ENGINEER.md
+- Docs/Tasks/Status_VFX_PARTICLE_LOD_PARAMETERIZER.md
+- Docs/Tasks/Status_VISUAL_EXTINCTION_LUT_BAKER.md
+- Docs/Tasks/Status_VISUAL_LOD_GRADE_ARCHITECT.md
+- Docs/Tasks/Status_VRAM_ASSET_SCOUT.md
+- Docs/TECH_ART_PBR_SURFACE_DOCTRINE.md
+- Docs/TECHNICAL_FAQ.md
+- Tools/AcousticValidator.py
+- Tools/AI_Sim/FaunaBalanceSim.py
+- Tools/AI_Sim/FaunaBalanceSim_ReplicateValidation.json
+- Tools/AI_Sim/FaunaBalanceSim_Report.json
+- Tools/AI_Sim/test_ai_path_sim.py
+- Tools/AI_Sim/test_fauna_balance_sim.py
+- Tools/AiBattleSim.py
+- Tools/AiBattleSim_Report.json
+- Tools/AiPathSim.py
+- Tools/AtlasCheck.py
+- Tools/AtmoPreview.py
+- Tools/AudioSim.py
+- Tools/BiolumWaveform.py
+- Tools/BuildArchitectureAtlas.py
+- Tools/DbHealthCheck.py
+- Tools/EconomyItemsCsvBake.py
+- Tools/EconomyRecipeGraphAudit.py
+- Tools/EconomyValidator.py
+- Tools/FloraPreview.py
+- Tools/Hardware/test_validate_system_hardware_profiles.py
+- Tools/Hardware/ValidateAllHardwareProfiles.py
+- Tools/Hardware/ValidateHardwareProfileCatalog.py
+- Tools/Hardware/ValidateSystemHardwareProfiles.py
+- Tools/IconBaker.py
+- Tools/LocToBinary.py
+- Tools/LoreChecker.py
+- Tools/MaterialAudit.py
+- Tools/MathLUTGenerator.py
+- Tools/MemoryBudgetCheck.py
+- Tools/NetJitterSim.py
+- Tools/NetProtocolGate.py
+- Tools/NoiseBaker/GenerateBlueNoise.py
+- Tools/NoiseBaker/VerifyBlueNoiseSpectrum.py
+- Tools/OutpostFailSafeValidate.py
+- Tools/QuestStressReportGate.py
+- Tools/QuestStressTest.py
+- Tools/RunQuestValidation.py
+- Tools/Security/ReplayHasher.py
+- Tools/Security/ValidateSaveMasterHashCSharp.py
+- Tools/Security/VerifyReplayHasherReference.py
+- Tools/SubmarinePhysicsSim.py
+- Tools/TelemetryDashboard/index.html
+- Tools/TelemetryDashboard/README.md
+- Tools/TelemetryDashboard/requirements.txt
+- Tools/TelemetryDashboard/server.py
+- Tools/TelemetryDashboard/smoke_test.py
+- Tools/TelemetryDashboard/start_dashboard.bat
+- Tools/TelemetryDashboard/start_dashboard.sh
+- Tools/test_acoustic_validator.py
+- Tools/test_ai_battle_sim.py
+- Tools/test_architecture_atlas.py
+- Tools/test_atmo_preview.py
+- Tools/test_audio_sim.py
+- Tools/test_biolum_waveform.py
+- Tools/test_db_health_check.py
+- Tools/test_economy_integrity.py
+- Tools/test_flora_preview.py
+- Tools/test_h8_hash_collisions.py
+- Tools/test_lore_checker.py
+- Tools/test_lore_semantic_sync.py
+- Tools/test_material_audit.py
+- Tools/test_math_lut_generator.py
+- Tools/test_memory_budget_check.py
+- Tools/test_net_jitter_sim.py
+- Tools/test_submarine_physics_sim.py
+- Tools/test_verify_lore.py
+- Tools/test_visual_stress_sim.py
+- Tools/test_water_color_preview.py
+- Tools/test_world_entropy_sim.py
+- Tools/UX/run_hardware_adaptive_ui_validation.py
+- Tools/UX/run_unity_import_check.ps1
+- Tools/UX/test_hardware_adaptive_ui.py
+- Tools/UX/test_unity_report_update_cli.py
+- Tools/UX/test_unity_verification_gates.py
+- Tools/UX/test_vr_snap_turn_comfort_audit.py
+- Tools/UX/ui_readability_test.py
+- Tools/UX/ui_shader_sample_audit.py
+- Tools/UX/unity_compile_log_audit.py
+- Tools/UX/update_unity_verification_report.py
+- Tools/UX/validate_unity_verification_report.py
+- Tools/UX/validate_unity_verification_template.py
+- Tools/UX/vr_snap_turn_comfort_audit.py
+- Tools/ValidateVfxParticleBudgetCatalog.py
+- Tools/VerifyH8HashCollisions.py
+- Tools/VerifyLore.py
+- Tools/VisualStressSim.py
+- Tools/WaterColorPreview.py
+- Tools/WorldEntropySim.py
