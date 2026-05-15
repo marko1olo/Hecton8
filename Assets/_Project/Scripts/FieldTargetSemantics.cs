@@ -1,9 +1,22 @@
+using System;
+using System.Globalization;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
 {
     public static class FieldTargetSemantics
     {
+        private const string OneDecimalFormat = "0.0";
+        private const string MassLabelPrefix = "Mass ";
+        private const string KilogramsAtText = " kg at ";
+        private const string RangeText = " Range ";
+        private const string MetersText = " m";
+        private const string MetersPeriodText = " m.";
+        private const string PeriodText = ".";
+        private const string SafeEnvelopeExceededText = " exceeds the safe envelope.";
+        private const string SafeReelEdgeText = " is near the safe reel edge.";
+        private const string ReelIntentExceededText = " exceeds reel intent.";
+
         public readonly struct SemanticAssessment
         {
             public readonly string Headline;
@@ -395,7 +408,7 @@ namespace Hecton8.Gameplay
                 case FieldTargetRole.CargoLight:
                     assessment = new SemanticAssessment(
                         tractorIntent ? "TRACTOR - PRECISION CARGO" : "PROPULSION - PRECISION CARGO",
-                        $"{note} Mass {mass:0.0} kg at {distance:0.0} m.",
+                        BuildMassDistanceSentence(note, includeMassLabel: true, mass, distance, PeriodText),
                         tractorIntent ? "Lock it and walk it through hazards or narrow gaps." : "Use short pulses to clear the lane without overshooting.",
                         "INFO",
                         "Logistics");
@@ -403,7 +416,7 @@ namespace Hecton8.Gameplay
                 case FieldTargetRole.CargoWork:
                     assessment = new SemanticAssessment(
                         tractorIntent ? "TRACTOR - WORK CRATE" : "PROPULSION - WORK CRATE",
-                        $"{note} Mass {mass:0.0} kg at {distance:0.0} m.",
+                        BuildMassDistanceSentence(note, includeMassLabel: true, mass, distance, PeriodText),
                         tractorIntent ? "Stable lock is expected. Reposition it with deliberate holds." : "Push in measured bursts and keep the return path open.",
                         "INFO",
                         "Logistics");
@@ -411,7 +424,7 @@ namespace Hecton8.Gameplay
                 case FieldTargetRole.CargoHeavy:
                     assessment = new SemanticAssessment(
                         tractorIntent ? "TRACTOR - HEAVY SALVAGE" : "PROPULSION - HEAVY SALVAGE",
-                        $"{note} Mass {mass:0.0} kg at {distance:0.0} m.",
+                        BuildMassDistanceSentence(note, includeMassLabel: true, mass, distance, PeriodText),
                         tractorIntent ? "Keep the hold distance steady and expect sluggish correction." : "Use controlled pulses only. Avoid rebounds in tight spaces.",
                         "WARN",
                         "Logistics");
@@ -419,7 +432,7 @@ namespace Hecton8.Gameplay
                 case FieldTargetRole.CargoOverweight:
                     assessment = new SemanticAssessment(
                         tractorIntent ? "TRACTOR - OVERWEIGHT LOAD" : "PROPULSION - OVERWEIGHT LOAD",
-                        $"{note} Mass {mass:0.0} kg at {distance:0.0} m exceeds the safe envelope.",
+                        BuildMassDistanceSentence(note, includeMassLabel: true, mass, distance, SafeEnvelopeExceededText),
                         "Do not force this lane. Reroute, deconstruct, or break the problem into lighter pieces.",
                         "WARN",
                         "Logistics");
@@ -441,7 +454,7 @@ namespace Hecton8.Gameplay
                 case FieldTargetRole.CargoLight:
                     assessment = new SemanticAssessment(
                         tetherReady ? "HARPOON - LIGHT CARGO TETHERED" : "HARPOON - LIGHT CARGO",
-                        $"{note} {mass:0.0} kg at {distance:0.0} m.",
+                        BuildMassDistanceSentence(note, includeMassLabel: false, mass, distance, PeriodText),
                         tetherReady ? "Reel it quickly to recover or clear the lane." : "One clean shot is enough if you need a fast tether.",
                         "INFO",
                         "Logistics");
@@ -449,7 +462,7 @@ namespace Hecton8.Gameplay
                 case FieldTargetRole.CargoWork:
                     assessment = new SemanticAssessment(
                         tetherReady ? "HARPOON - WORKLOAD TETHERED" : "HARPOON - WORKLOAD CONTACT",
-                        $"{note} {mass:0.0} kg at {distance:0.0} m.",
+                        BuildMassDistanceSentence(note, includeMassLabel: false, mass, distance, PeriodText),
                         tetherReady ? "Use steady reels to reposition the crate without overcommitting." : "Confirm the tether before moving through the lane.",
                         "INFO",
                         "Logistics");
@@ -457,7 +470,7 @@ namespace Hecton8.Gameplay
                 case FieldTargetRole.CargoHeavy:
                     assessment = new SemanticAssessment(
                         tetherReady ? "HARPOON - HEAVY CARGO TETHERED" : "HARPOON - HEAVY CARGO",
-                        $"{note} {mass:0.0} kg at {distance:0.0} m is near the safe reel edge.",
+                        BuildMassDistanceSentence(note, includeMassLabel: false, mass, distance, SafeReelEdgeText),
                         tetherReady ? "Reel only to stabilize. Switch to propulsion for major repositioning." : "Use the shot to tag and control, not to drag the load far.",
                         "WARN",
                         "Logistics");
@@ -465,7 +478,7 @@ namespace Hecton8.Gameplay
                 case FieldTargetRole.CargoOverweight:
                     assessment = new SemanticAssessment(
                         "HARPOON - OVERWEIGHT LOAD",
-                        $"{note} {mass:0.0} kg at {distance:0.0} m exceeds reel intent.",
+                        BuildMassDistanceSentence(note, includeMassLabel: false, mass, distance, ReelIntentExceededText),
                         "Do not waste line tension here. Use propulsion planning or route around it.",
                         "WARN",
                         "Logistics");
@@ -473,7 +486,7 @@ namespace Hecton8.Gameplay
                 case FieldTargetRole.BioformDormant:
                     assessment = new SemanticAssessment(
                         tetherReady ? "HARPOON - DORMANT TARGET TETHERED" : "HARPOON - DORMANT CONTACT",
-                        $"{note} Range {distance:0.0} m.",
+                        BuildRangeSentence(note, distance),
                         tetherReady ? "Control the contact before wake-up." : "Clean opener is available if you need a controlled pull.",
                         "INFO",
                         "Bioform");
@@ -481,7 +494,7 @@ namespace Hecton8.Gameplay
                 case FieldTargetRole.BioformAggressive:
                     assessment = new SemanticAssessment(
                         tetherReady ? "HARPOON - HOSTILE TETHERED" : "HARPOON - HOSTILE CONTACT",
-                        $"{note} Range {distance:0.0} m.",
+                        BuildRangeSentence(note, distance),
                         tetherReady ? "Use the line to manage spacing and stop the rush." : "Control first, then decide whether to reel or disengage.",
                         "CRITICAL",
                         "Bioform");
@@ -489,7 +502,7 @@ namespace Hecton8.Gameplay
                 case FieldTargetRole.BioformFractured:
                     assessment = new SemanticAssessment(
                         tetherReady ? "HARPOON - FRACTURED TARGET TETHERED" : "HARPOON - FRACTURED TARGET",
-                        $"{note} Range {distance:0.0} m.",
+                        BuildRangeSentence(note, distance),
                         tetherReady ? "Short controlled reels are safe while the target is weak." : "Finish window is open. Reel or strike before the lane changes.",
                         "WARN",
                         "Bioform");
@@ -497,7 +510,7 @@ namespace Hecton8.Gameplay
                 case FieldTargetRole.BioformDown:
                     assessment = new SemanticAssessment(
                         "HARPOON - TARGET DOWN",
-                        $"{note} Range {distance:0.0} m.",
+                        BuildRangeSentence(note, distance),
                         "Threat is neutralized. Use the line only if recovery or repositioning matters.",
                         "INFO",
                         "Bioform");
@@ -519,7 +532,7 @@ namespace Hecton8.Gameplay
                 case FieldTargetRole.BioformDormant:
                     assessment = new SemanticAssessment(
                         "STUN PISTOL - DORMANT CONTACT",
-                        $"{note} Range {distance:0.0} m.",
+                        BuildRangeSentence(note, distance),
                         "Take the shot now or pass quietly before wake-up.",
                         "INFO",
                         "Bioform");
@@ -527,7 +540,7 @@ namespace Hecton8.Gameplay
                 case FieldTargetRole.BioformAggressive:
                     assessment = new SemanticAssessment(
                         "STUN PISTOL - AGGRESSIVE THREAT",
-                        $"{note} Range {distance:0.0} m.",
+                        BuildRangeSentence(note, distance),
                         "Disrupt immediately, then create distance.",
                         "CRITICAL",
                         "Bioform");
@@ -535,7 +548,7 @@ namespace Hecton8.Gameplay
                 case FieldTargetRole.BioformFractured:
                     assessment = new SemanticAssessment(
                         "STUN PISTOL - FRACTURED TARGET",
-                        $"{note} Range {distance:0.0} m.",
+                        BuildRangeSentence(note, distance),
                         "Stun now if you want a clean finish or safe bypass.",
                         "WARN",
                         "Bioform");
@@ -543,7 +556,7 @@ namespace Hecton8.Gameplay
                 case FieldTargetRole.BioformDown:
                     assessment = new SemanticAssessment(
                         "STUN PISTOL - TARGET DOWN",
-                        $"{note} Range {distance:0.0} m.",
+                        BuildRangeSentence(note, distance),
                         "No disruption needed. Recover, scan, or move on.",
                         "INFO",
                         "Bioform");
@@ -565,7 +578,7 @@ namespace Hecton8.Gameplay
                 case FieldTargetRole.BioformDormant:
                     assessment = new SemanticAssessment(
                         "BLADE READ - DORMANT BIOFORM",
-                        $"{note} Range {distance:0.0} m.",
+                        BuildRangeSentence(note, distance),
                         "Quiet opener is possible, but do not wake it without a plan.",
                         "INFO",
                         "Bioform");
@@ -573,7 +586,7 @@ namespace Hecton8.Gameplay
                 case FieldTargetRole.BioformAggressive:
                     assessment = new SemanticAssessment(
                         "BLADE READ - HOSTILE",
-                        $"{note} Range {distance:0.0} m.",
+                        BuildRangeSentence(note, distance),
                         "Do not stay in close range unless you are finishing or forced to commit.",
                         "WARN",
                         "Bioform");
@@ -581,7 +594,7 @@ namespace Hecton8.Gameplay
                 case FieldTargetRole.BioformFractured:
                     assessment = new SemanticAssessment(
                         "BLADE READ - FRACTURED TARGET",
-                        $"{note} Range {distance:0.0} m.",
+                        BuildRangeSentence(note, distance),
                         "Precision strike window is open if you need a quick finish.",
                         "INFO",
                         "Bioform");
@@ -589,7 +602,7 @@ namespace Hecton8.Gameplay
                 case FieldTargetRole.BioformDown:
                     assessment = new SemanticAssessment(
                         "BLADE READ - TARGET DOWN",
-                        $"{note} Range {distance:0.0} m.",
+                        BuildRangeSentence(note, distance),
                         "Switch tools. The blade is no longer the value play here.",
                         "INFO",
                         "Bioform");
@@ -597,6 +610,85 @@ namespace Hecton8.Gameplay
             }
 
             return false;
+        }
+
+        private static string BuildMassDistanceSentence(
+            string note,
+            bool includeMassLabel,
+            float mass,
+            float distance,
+            string suffix)
+        {
+            note ??= string.Empty;
+            suffix ??= string.Empty;
+            int massLength = GetSingleDecimalLength(mass);
+            int distanceLength = GetSingleDecimalLength(distance);
+            int length = note.Length +
+                         1 +
+                         (includeMassLabel ? MassLabelPrefix.Length : 0) +
+                         massLength +
+                         KilogramsAtText.Length +
+                         distanceLength +
+                         MetersText.Length +
+                         suffix.Length;
+
+            return string.Create(
+                length,
+                (note, includeMassLabel, mass, distance, suffix),
+                static (span, state) =>
+                {
+                    int cursor = 0;
+                    cursor += CopyString(state.note, span, cursor);
+                    span[cursor++] = ' ';
+                    if (state.includeMassLabel)
+                        cursor += CopyString(MassLabelPrefix, span, cursor);
+
+                    cursor += WriteSingleDecimal(state.mass, span, cursor);
+                    cursor += CopyString(KilogramsAtText, span, cursor);
+                    cursor += WriteSingleDecimal(state.distance, span, cursor);
+                    cursor += CopyString(MetersText, span, cursor);
+                    CopyString(state.suffix, span, cursor);
+                });
+        }
+
+        private static string BuildRangeSentence(string note, float distance)
+        {
+            note ??= string.Empty;
+            int distanceLength = GetSingleDecimalLength(distance);
+            int length = note.Length + RangeText.Length + distanceLength + MetersPeriodText.Length;
+
+            return string.Create(
+                length,
+                (note, distance),
+                static (span, state) =>
+                {
+                    int cursor = 0;
+                    cursor += CopyString(state.note, span, cursor);
+                    cursor += CopyString(RangeText, span, cursor);
+                    cursor += WriteSingleDecimal(state.distance, span, cursor);
+                    CopyString(MetersPeriodText, span, cursor);
+                });
+        }
+
+        private static int GetSingleDecimalLength(float value)
+        {
+            Span<char> buffer = stackalloc char[32];
+            return value.TryFormat(buffer, out int written, OneDecimalFormat.AsSpan(), CultureInfo.CurrentCulture)
+                ? written
+                : 0;
+        }
+
+        private static int WriteSingleDecimal(float value, Span<char> destination, int offset)
+        {
+            return value.TryFormat(destination.Slice(offset), out int written, OneDecimalFormat.AsSpan(), CultureInfo.CurrentCulture)
+                ? written
+                : 0;
+        }
+
+        private static int CopyString(string source, Span<char> destination, int offset)
+        {
+            source.AsSpan().CopyTo(destination.Slice(offset));
+            return source.Length;
         }
     }
 }

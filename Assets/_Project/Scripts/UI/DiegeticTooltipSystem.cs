@@ -201,6 +201,7 @@ namespace Hecton8.UI
         private bool _cachedRenderCameraFromInteraction;
         private bool _inputDeterminismAwaitingRegistration;
         private bool _textSinkHasPayload;
+        private bool _blackBoxDumped;
 
         public void LateFrameTick()
         {
@@ -334,6 +335,7 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            _blackBoxDumped = false;
             EnsureResources();
             EnsureBlackBox();
             TryRegisterRuntime();
@@ -475,7 +477,7 @@ namespace Hecton8.UI
             for (int i = 0; i < shifts.Length; i++)
             {
                 AupShiftSignal signal = shifts[i];
-                if (signal.ShiftFrameId <= _lastAupShiftFrame)
+                if (!IsNewAupShift(signal.ShiftFrameId, _lastAupShiftFrame))
                     continue;
 
                 _lastAupShiftFrame = signal.ShiftFrameId;
@@ -485,6 +487,13 @@ namespace Hecton8.UI
                 if (_diagnosticActive)
                     _diagnosticWorldAnchor += shift;
             }
+        }
+
+        private static bool IsNewAupShift(uint shiftFrameId, uint lastAppliedFrameId)
+        {
+            return shiftFrameId != 0u &&
+                   shiftFrameId != lastAppliedFrameId &&
+                   unchecked(shiftFrameId - lastAppliedFrameId) < 0x80000000u;
         }
 
         private void StagePromptFromHash(uint promptHash)
@@ -1292,6 +1301,7 @@ namespace Hecton8.UI
             if (!_blackBox.IsCreated)
                 return;
 
+            _blackBoxDumped = false;
             _blackBox[_blackBoxCursor] = new TooltipBlackBoxEntry
             {
                 Frame = unchecked((uint)Time.frameCount),
@@ -1313,9 +1323,10 @@ namespace Hecton8.UI
 
         private void DumpBlackBox()
         {
-            if (!_blackBox.IsCreated)
+            if (_blackBoxDumped || !_blackBox.IsCreated)
                 return;
 
+            _blackBoxDumped = true;
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
             string dumpPath = Path.Combine(projectRoot, DumpRelativePath);
             Directory.CreateDirectory(Path.GetDirectoryName(dumpPath));
@@ -1419,6 +1430,7 @@ namespace Hecton8.UI
 
             _blackBoxCursor = 0;
             _blackBoxWrittenCount = 0;
+            _blackBoxDumped = false;
             _resourceObjectsReady = false;
         }
 

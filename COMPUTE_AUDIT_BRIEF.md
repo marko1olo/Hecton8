@@ -1,7 +1,7 @@
 # COMPUTE AUDIT BRIEF
 
 Status: AUDIT COMPLETE
-Snapshot: 2026-05-15T16:39+04:00
+Snapshot: 2026-05-15T17:18+04:00
 Agent: COMPUTE_LOGISTICS_AUDITOR
 Index: `COMPUTE_AUDIT_INDEX.md`
 Full report: `Docs/Reports/COMPUTE_DOMINANCE_REPORT.md`
@@ -12,6 +12,7 @@ Thread value audit: `COMPUTE_THREAD_VALUE_AUDIT.md`
 Collision risk: `COMPUTE_COLLISION_RISK.md`
 File burn attribution: `COMPUTE_FILE_BURN_ATTRIBUTION.md`
 Token burn rate ledger: `COMPUTE_TOKEN_BURN_RATE_LEDGER.md`
+Corrected rolling rates: `COMPUTE_CORRECTED_ROLLING_RATES.md`
 Model bucket reconciliation: `COMPUTE_MODEL_BUCKET_RECONCILIATION.md`
 Live burn sources: `COMPUTE_LIVE_BURN_SOURCES.md`
 Rate efficiency audit: `COMPUTE_RATE_EFFICIENCY_AUDIT.md`
@@ -30,34 +31,34 @@ Status/Rationale/Log:
 | Script meaningful LOC | 788,619 |
 | Script logic density | 82.05% |
 | All `Assets/**/*.cs` physical LOC | 1,596,990 |
-| Latest JSONL final tokens | 45,652,088,834 |
-| Input tokens | 45,496,680,026 |
-| Cached input tokens | 43,678,873,216 |
-| Output tokens | 155,150,408 |
-| Cached-input ratio | 96.00453% |
-| Model-aware cache-aware corrected estimate | USD 30,613.26 |
-| Model-aware no-cache equivalent | USD 201,374.74 |
-| Model-aware cache avoided | USD 170,761.48 |
-| All-GPT-5.5 standard cache-aware scenario | USD 35,582.98 |
-| All-GPT-5.5 standard no-cache scenario | USD 232,137.91 |
-| All-GPT-5.5 standard cache avoided | USD 196,554.93 |
+| Latest JSONL final tokens | 45,771,499,116 |
+| Input tokens | 45,615,641,500 |
+| Cached input tokens | 43,793,799,808 |
+| Output tokens | 155,599,216 |
+| Cached-input ratio | 96.00610% |
+| Model-aware cache-aware corrected estimate | USD 30,704.36 |
+| Model-aware no-cache equivalent | USD 201,983.02 |
+| Model-aware cache avoided | USD 171,278.65 |
+| All-GPT-5.5 standard cache-aware scenario | USD 35,674.08 |
+| All-GPT-5.5 standard no-cache scenario | USD 232,746.18 |
+| All-GPT-5.5 standard cache avoided | USD 197,072.10 |
 | Unknown final-usage model bucket | 0 tokens after UUID reconciliation |
-| Whole-period average | 12,637.18 tokens/sec |
-| Whole-period minute rate | 758,230.83 tokens/min |
-| Whole-period hour rate | 45,493,849.62 tokens/hour |
-| Whole-period day rate | 1,091,852,390.98 tokens/day |
-| Last 1h rate | 66,160.07 tokens/sec |
-| Last 6h rate | 24,429.23 tokens/sec |
-| Last 24h tokens | 3,236,618,901 |
-| Last 24h cache-aware cost | USD 1,039.59 |
-| Last 24h no-cache equivalent | USD 6,584.06 |
-| Last 24h average cost | USD 0.72/min; USD 43.32/hour |
-| Tokens per meaningful LOC | 57,888.65 |
-| Tokens per script source byte | 1,085.201 |
-| Model-aware cost per meaningful LOC | USD 0.03882 |
-| All-GPT-5.5 standard cost per meaningful LOC | USD 0.04512 |
-| Energy by prompt constant | 2,282.60 MWh |
-| Live SQLite all-thread tokens, 16:39 snapshot | 45,644,663,325 |
+| Whole-period average | 12,659.39 tokens/sec |
+| Whole-period minute rate | 759,563.17 tokens/min |
+| Whole-period hour rate | 45,573,790.44 tokens/hour |
+| Whole-period day rate | 1,093,770,970.49 tokens/day |
+| Corrected last 1h rate | 54,437.26 tokens/sec |
+| Corrected last 6h rate | 39,149.01 tokens/sec |
+| Corrected last 24h tokens | 3,398,780,549 |
+| Corrected last 24h cache-aware cost | USD 2,601.80 |
+| Corrected last 24h no-cache equivalent | USD 17,262.61 |
+| Corrected last 24h average cost | USD 1.81/min; USD 108.41/hour |
+| Tokens per meaningful LOC | 58,040.07 |
+| Tokens per script source byte | 1,088.040 |
+| Model-aware cost per meaningful LOC | USD 0.03893 |
+| All-GPT-5.5 standard cost per meaningful LOC | USD 0.04524 |
+| Energy by prompt constant | 2,288.57 MWh |
+| Live SQLite all-thread tokens, 17:18 snapshot | 45,758,254,570 |
 | UUID-resolved final-usage sessions | 17 |
 | Tail delta after full scan | +102,151,525 tokens |
 | Tail delta model bucket | `gpt-5.5` |
@@ -110,7 +111,7 @@ Status/Rationale/Log:
 
 The codebase is not 1.63M meaningful first-party LOC. It is 775,435 meaningful script LOC and 1.58M physical all-Assets C# LOC.
 
-The economic anomaly is context recursion: 45.652B total tokens against 788,619 meaningful LOC equals 57,889 tokens per meaningful line. Cache pricing makes the bill survivable; it does not make the workflow clean.
+The economic anomaly is context recursion: 45.771B total tokens against 788,619 meaningful LOC equals 58,040 tokens per meaningful line. Cache pricing makes the bill survivable; it does not make the workflow clean.
 
 The top-100 `.codex` thread audit has been executed. They hold about half of the recorded token mass. Broad scanning below that is lower yield than joining these threads to final diffs, compile/test results, and quality deltas.
 
@@ -127,6 +128,8 @@ Collision snapshot has been refreshed. Current hot-target intersections are `Ass
 File burn attribution has been written to `COMPUTE_FILE_BURN_ATTRIBUTION.md`. It distributes top-30 thread tokens across patch targets by per-thread patch-hit share. This is probabilistic work-trace attribution, not final value proof.
 
 Token burn rate ledger has been written to `COMPUTE_TOKEN_BURN_RATE_LEDGER.md`. It is now the current source for rolling 1h/6h/24h/7d/14d/30d burn rate, cost/min, cost/hour, cost/day, model split, and cache savings.
+
+Corrected rolling rates have been written to `COMPUTE_CORRECTED_ROLLING_RATES.md`. They supersede earlier rolling-window costs because they use path-or-UUID model matching.
 
 Live burn sources have been written to `COMPUTE_LIVE_BURN_SOURCES.md`. It identifies which active thread IDs generated token deltas during a 90-second sample.
 

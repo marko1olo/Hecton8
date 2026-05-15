@@ -335,3 +335,15 @@ Rejected Alternatives: Keeping the path-only `unknown` bucket was rejected becau
 Scalability potential: Low/Middle/High/Ultra process gains a cleaner cost model. Future rate scans must use path-or-UUID matching; otherwise active sessions are underpriced and attribution degrades.
 
 Hardware Impact: 0 runtime microseconds on i3/MX350. No runtime code changed. Process impact: unknown final-usage model bucket reduced to 0 tokens; corrected model-aware estimate is USD 30,613.26.
+
+## Decision 28 - Corrected Rolling Rates
+
+Problem: Model bucket reconciliation fixed final-usage attribution, but rolling 1h/6h/24h cost windows still preserved the older path-only underpricing.
+
+Solution: Re-run the JSONL positive-delta window scan with path-or-UUID model matching, then write `COMPUTE_CORRECTED_ROLLING_RATES.md`. Use per-model blended cache-aware cost from the corrected scan to price deltas by window.
+
+Rejected Alternatives: Editing the old rolling ledger in place was rejected because it would erase historical evidence of the under-attribution. Keeping old last-24h USD 1,039.59 as current was rejected because the corrected window is USD 2,601.80.
+
+Scalability potential: Low/Middle/High/Ultra process gains a more reliable live spend throttle. Window costs now reflect actual `gpt-5.5` dominance instead of a cheap `unknown` proxy.
+
+Hardware Impact: 0 runtime microseconds on i3/MX350. No runtime code changed. Process impact: latest corrected 24h burn is 3.399B tokens and USD 2.60k cache-aware.

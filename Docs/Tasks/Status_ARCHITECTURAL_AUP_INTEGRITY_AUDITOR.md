@@ -3,7 +3,7 @@
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
 Domain: ECHELON 1 / Origin Shift (AUP Manager), with audit reach into Physics, Voxel, Kinematics, AI trigger math, Biome trigger math, and deterministic seed callsites.
 Assignment Source: User-supplied XML block. `Docs/Tasks/CURRENT_BATCH.md` extraction returned `PROMPT_NOT_FOUND` for this ID on initial pass.
-Status: VERIFIED AUP INTEGRITY - LOOP 44 APPLIED; REAL H-PHI SOURCE REPAIRS REMOVED WORLD SPATIAL HASH ORIGIN-SHIFT NATIVE SCRATCH, FAR-UNLOAD LIST SCRATCH, RESTORED EDITOR GHOST DOUBLE AUP HISTORY, KEPT PDA DIAGNOSTIC UNIVERSE OFFSET IN DOUBLE UNTIL TEXT OUTPUT, MOVED FLUID CPU GERSTNER PHASE INPUT TO DOUBLE AUP, AND KEPT SCANNER MARKER AUP DISTANCE IN DOUBLE UNTIL PIXEL SIZING; STRICT AUP SCANS RETURN NO_MATCHES; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
+Status: VERIFIED AUP INTEGRITY - LOOP 45 APPLIED; REAL H-PHI SOURCE REPAIRS REMOVED WORLD SPATIAL HASH ORIGIN-SHIFT NATIVE SCRATCH, FAR-UNLOAD LIST SCRATCH, RESTORED EDITOR GHOST DOUBLE AUP HISTORY, KEPT PDA DIAGNOSTIC UNIVERSE OFFSET IN DOUBLE UNTIL TEXT OUTPUT, MOVED FLUID CPU GERSTNER PHASE INPUT TO DOUBLE AUP, KEPT SCANNER MARKER AUP DISTANCE IN DOUBLE UNTIL PIXEL SIZING, AND MOVED ACOUSTIC ECHOLOCATION CLASSIFICATION DISTANCE TO GRID-DELTA DOUBLE MATH; STRICT AUP SCANS RETURN NO_MATCHES; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
 
 ## Selected Mandates
 
@@ -540,3 +540,17 @@ Loop 44 - Real AUP Precision Repair / Scanner Marker Distance Double Kernel:
 - Temporary capture `TEMP_HECTON_PHI_SUMMARY_LOOP44.json` was removed after extracting metrics.
 - `git diff --check -- Assets/_Project/Scripts/HectonScanMarkerSystem.cs` reports a line-ending warning only, no whitespace errors.
 - No `dotnet build` or rebuild was run in Loop 44 because the user explicitly forbade rebuilds.
+
+Loop 45 - Real AUP Precision Repair / Acoustic Echolocation Classification Grid-Delta Distance:
+- Re-read status/rationale and kept the rebuild ban active.
+- Patched `Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs` so leviathan, abyssal-anchor, and visual-sound-wave distance labels keep AUP distance approximation in double until final integer text output.
+- Replaced full absolute-double subtraction with direct grid-delta/local double axis math to avoid cancellation at large `GridX/Y/Z` values.
+- Kept the existing cheap max/mid/min approximation and fixed contact/char buffers; no allocations, sqrt, or new event/state ownership were added.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 157.778 seconds.
+- Latest full static H-Phi summary: `RuntimeHPhiRisk=0.000629959`, `RuntimeHPhiNarrow=0.01078177`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=362`, `AupPrecisionRisk=0`, `NativeArrayRefs=7074`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, `NativeOwnershipRisk=8196`, `RuntimeFiles=1278`, `RuntimeLines=869963`.
+- Final targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Final direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run and returned 233 broad residual matches. Residuals remain broad `universe` text and known final-cast/presentation payload names.
+- Temporary capture `TEMP_HECTON_PHI_SUMMARY_LOOP45.json` was removed after extracting metrics.
+- `git diff --check -- Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs` reports a line-ending warning only, no whitespace errors.
+- No `dotnet build` or rebuild was run in Loop 45 because the user explicitly forbade rebuilds.

@@ -833,6 +833,7 @@ namespace Hecton8.Gameplay
         private const float MeteorWaterPlaneY = 0f;
         private const float MeteorThunderSoundSpeedMetersPerSecond = 343f;
         private const float InvSqrtTwo = 0.70710678118f;
+        private const long AupAxisClampCells = 1000000L;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private const string MeteorSplashQuadVfxTypeName = "MeteorSplashQuadVfx";
         private static readonly List<MonoBehaviour> _meteorSplashValidationScratch = new List<MonoBehaviour>(8);
@@ -1847,9 +1848,23 @@ namespace Hecton8.Gameplay
         {
             AbsoluteUniversePosition fromAup = AbsoluteUniversePosition.FromRuntimePosition(fromRuntime);
             AbsoluteUniversePosition toAup = AbsoluteUniversePosition.FromRuntimePosition(toRuntime);
-            double3 delta = toAup.ToAbsoluteDouble3() - fromAup.ToAbsoluteDouble3();
+            double3 delta = ResolveAupDeltaMeters(in toAup, in fromAup);
             double distanceSq = math.dot(delta, delta);
-            double resolvedDistance = distanceSq * math.rsqrt(math.max(0.000001d, distanceSq));
+            if (!math.isfinite(distanceSq))
+            {
+                direction = Vector3.up;
+                distance = float.MaxValue;
+                return;
+            }
+
+            if (distanceSq <= 0.000001d)
+            {
+                direction = Vector3.up;
+                distance = 0f;
+                return;
+            }
+
+            double resolvedDistance = distanceSq * math.rsqrt(distanceSq);
             distance = resolvedDistance > float.MaxValue ? float.MaxValue : (float)resolvedDistance;
             direction = resolvedDistance > 0.0001d
                 ? new Vector3(
@@ -1857,6 +1872,37 @@ namespace Hecton8.Gameplay
                     (float)(delta.y / resolvedDistance),
                     (float)(delta.z / resolvedDistance))
                 : Vector3.up;
+        }
+
+        private static double3 ResolveAupDeltaMeters(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
+        {
+            return new double3(
+                ResolveAupAxisDeltaMeters(a.GridX, b.GridX, a.LocalX, b.LocalX),
+                ResolveAupAxisDeltaMeters(a.GridY, b.GridY, a.LocalY, b.LocalY),
+                ResolveAupAxisDeltaMeters(a.GridZ, b.GridZ, a.LocalZ, b.LocalZ));
+        }
+
+        private static double ResolveAupAxisDeltaMeters(long aGrid, long bGrid, float aLocal, float bLocal)
+        {
+            if (aGrid > bGrid)
+            {
+                long positiveLimit = bGrid > long.MaxValue - AupAxisClampCells
+                    ? long.MaxValue
+                    : bGrid + AupAxisClampCells;
+                if (aGrid > positiveLimit)
+                    return double.MaxValue * 0.25d;
+            }
+            else if (aGrid < bGrid)
+            {
+                long negativeLimit = bGrid < long.MinValue + AupAxisClampCells
+                    ? long.MinValue
+                    : bGrid - AupAxisClampCells;
+                if (aGrid < negativeLimit)
+                    return double.MinValue * 0.25d;
+            }
+
+            long gridDelta = aGrid - bGrid;
+            return (gridDelta * (double)AbsoluteUniversePosition.CellSizeMeters) + ((double)aLocal - bLocal);
         }
     }
 }

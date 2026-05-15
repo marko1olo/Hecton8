@@ -465,6 +465,34 @@ Status: VERIFIED AUP INTEGRITY - LOOP 39 REAL H-PHI SOURCE REPAIR REMOVED DEAD O
 - Unity import/Console verification remains pending because no Unity editor session is available.
 - H-Phi result is static-source evidence, not profiler proof.
 
+## Loop 45 Real AUP Precision Repair - Acoustic Echolocation Classification Grid-Delta Distance
+
+### Findings
+
+- `AcousticEcholocationTranslator` used `a.ToAbsoluteDouble3() - b.ToAbsoluteDouble3()` for classification distance approximation and returned `float` before radius decisions.
+- This is better than raw `Vector3`, but full absolute-double subtraction still loses low bits at extreme AUP grid values.
+
+### Source Changes
+
+- `Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs`: `ApproximateAupDistanceMeters` now resolves AUP grid/local axis deltas directly in double.
+- Abyssal-anchor nearest-distance comparison now stays in double until final integer meter output.
+- The existing cheap approximate magnitude was preserved; no sqrt, allocation, or new UI state was introduced.
+
+### Verification
+
+- `git diff --check -- Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs` reports a line-ending warning only, no whitespace errors.
+- Final targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Final direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` returned 233 broad residual matches. Residuals remain broad `universe` text plus known final-cast/presentation payload names.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 157.778 seconds with `RuntimeHPhiRisk=0.000629959`, `RuntimeHPhiNarrow=0.01078177`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=362`, `AupPrecisionRisk=0`, `NativeArrayRefs=7074`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, and `NativeOwnershipRisk=8196`.
+- Temporary Loop 45 capture is absent after cleanup.
+- No `dotnet build` or rebuild was run in Loop 45 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- H-Phi result is static-source evidence, not profiler proof.
+
 ## Loop 44 Real AUP Precision Repair - Scanner Marker Distance Double Kernel
 
 ### Findings

@@ -98,6 +98,8 @@ Status: PENDING VERIFICATION
 - Loop 55: Tooltip text-sink stale payload pass. Added a zero-GC sink payload latch so the optional world-space TMP validation sink clears once when signal/diagnostic payloads disappear or glyph layout fails. No dotnet rebuilds run per user instruction.
 - Loop 56: Tooltip culling authoring clamp pass. Added finite clamps for visible-distance cache and VR depth offset so bad runtime/serialized values cannot poison culling bounds or move XR prompts away from the camera. No dotnet rebuilds run per user instruction.
 - Loop 57: Tooltip black-box chronological dump pass. Added valid-entry tracking and changed `DumpBlackBox()` to write circular telemetry oldest-to-newest instead of raw storage order. No dotnet rebuilds run per user instruction.
+- Loop 58: Tooltip black-box one-shot dump latch pass. Added `_blackBoxDumped` so persistent non-finite tooltip anchors cannot rewrite the binary dump every frame; valid telemetry samples and lifecycle/resource reset clear the latch. No dotnet rebuilds run per user instruction.
+- Loop 59: Tooltip AUP shift wrap-safe frame pass. Replaced raw `ShiftFrameId <= _lastAupShiftFrame` comparison with wrap-safe unsigned shift-frame validation matching project AUP consumers. No dotnet rebuilds run per user instruction.
 
 ## Verification Notes
 - `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary | Select-String ...`: no output for touched-file filter after final cache collision fix.
@@ -148,6 +150,8 @@ Status: PENDING VERIFICATION
 - Post Loop 56 static scans confirmed `maxVisibleDistance` is clamped to finite `[0.5, 20]` before cache writes and `vrDepthOffsetMeters` is finite/non-negative before XR offset. No dotnet rebuilds run per user instruction.
 - Post Loop 57 static scans confirmed `_blackBoxWrittenCount` bounds dump length, `DumpBlackBox()` wraps from `_blackBoxCursor` when full, and release resets cursor/count. No dotnet rebuilds run per user instruction.
 - Post Loop 57 forbidden Unity fallback sweep returned no `Camera.main`, `FindObjectOfType`, coroutine/update methods, `.text =`, runtime material/shader fallback, direct unscaled/realtime markers, or TODO/FIXME/HACK hits in panel/tooltip scope; the sole `RegisterOrUpdate` hit is the intended proxy-light registry call. No dotnet rebuilds run per user instruction.
+- Post Loop 58 static scans confirmed `_blackBoxDumped` gates `DumpBlackBox()`, resets on `OnEnable()`/resource release, and is cleared after valid `RecordBlackBox()` samples. No dotnet rebuilds run per user instruction.
+- Post Loop 59 static scans confirmed no raw `ShiftFrameId <=` comparison remains in `DiegeticTooltipSystem`; AUP shift consumption now uses `IsNewAupShift()` with unsigned wrap handling. No dotnet rebuilds run per user instruction.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Json` completed at `2026-05-15 01:32:33 +04:00` without invoking a rebuild. Follow-up summary extraction exceeded tool timeout; no score claim is recorded from that partial extraction.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Summary` was retried after Loop 18 and timed out after 120 seconds without output; no H-Phi score claim is recorded.
 - `git diff --check` on `DiegeticTooltipSystem.cs` and `Hecton_DiegeticTooltipIndirect.shader` passed with repository CRLF warnings only.

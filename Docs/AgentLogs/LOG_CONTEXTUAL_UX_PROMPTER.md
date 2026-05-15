@@ -509,3 +509,14 @@ Cinematic cheats used: No visual change. This improves the crash evidence trail 
 Exact microseconds saved: None claimed. Normal render path adds one bounded counter increment; dump path is cold and writes only valid samples.
 
 Verification: No dotnet rebuilds were run. Static scans confirmed `_blackBoxWrittenCount` bounds the dump length, wrapped export starts at `_blackBoxCursor`, and release resets cursor/count.
+
+## 2026-05-15 Tooltip Black-Box One-Shot Dump Latch
+What was wrong: A persistent non-finite tooltip anchor could trigger `DumpBlackBox()` repeatedly if the same bad signal was republished every render frame.
+
+What was done: Added `_blackBoxDumped` so the dump path writes once per fault streak, resets after a valid telemetry sample, and resets with black-box lifetime.
+
+Cinematic cheats used: No visual change. This preserves crash evidence without converting a repeated bad prompt into repeated disk I/O.
+
+Exact microseconds saved: None claimed for healthy frames. Fault frames avoid repeated file creation and binary writes after the first dump.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed `_blackBoxDumped` gates `DumpBlackBox()` and resets on lifecycle/resource reset plus valid `RecordBlackBox()` samples.

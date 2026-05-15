@@ -3247,6 +3247,42 @@ namespace Hecton8.Core
         {
             _currentContext = context;
             _currentCamera = camera;
+            PublishCameraSignals(camera);
+        }
+
+        private static void PublishCameraSignals(Camera camera)
+        {
+            if (camera == null)
+                return;
+
+            Transform cameraTransform = camera.transform;
+            if (cameraTransform == null)
+                return;
+
+            uint frame = unchecked((uint)Mathf.Max(0, Time.frameCount));
+            Vector3 position = cameraTransform.position;
+            Vector3 forward = cameraTransform.forward;
+            Vector3 up = cameraTransform.up;
+
+            SignalBus<Hecton8.Core.Signals.CameraPositionSignal>.Push(new Hecton8.Core.Signals.CameraPositionSignal
+            {
+                Position = (float3)position,
+                Frame = frame,
+                Forward = (float3)forward,
+                Flags = 1
+            });
+
+            SignalBus<Hecton8.Core.Signals.CameraFrustumSignal>.Push(new Hecton8.Core.Signals.CameraFrustumSignal
+            {
+                Position = (float3)position,
+                Forward = (float3)forward,
+                Up = (float3)up,
+                FieldOfViewDegrees = camera.fieldOfView,
+                NearClipMeters = camera.nearClipPlane,
+                FarClipMeters = camera.farClipPlane,
+                Frame = frame,
+                Flags = 1
+            });
         }
 
         internal static void Clear()

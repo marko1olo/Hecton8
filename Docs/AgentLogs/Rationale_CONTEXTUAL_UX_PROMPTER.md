@@ -417,3 +417,17 @@ Solution: Track valid black-box sample count, write that count into the dump, an
 Rejected Alternatives: Keeping raw storage order, sorting by frame on dump, or dumping all 300 slots even before they are valid. Raw order slows post-mortem analysis; sorting allocates/complicates cold path; invalid zero slots obscure first-fault evidence.
 Scalability potential: Low/Middle/High/Ultra all get the same bounded 300-frame evidence trail without runtime allocation. Better dumps reduce time spent reproducing rare prompt faults.
 Hardware Impact: Normal render path adds one bounded counter increment. Dump path is cold and writes at most the valid telemetry count in chronological order.
+
+## Decision 59: Tooltip Black-Box One-Shot Dump Latch
+Problem: A persistent non-finite tooltip anchor could call `DumpBlackBox()` every render after the signal republished, turning a cold crash artifact into repeated disk I/O.
+Solution: Add `_blackBoxDumped` as a lifecycle-reset latch. `DumpBlackBox()` exits after the first dump until a valid `RecordBlackBox()` sample proves recovery or the black-box lifetime resets.
+Rejected Alternatives: Dumping every bad frame, suppressing all future dumps until scene reload, or clearing the target without evidence. Repeated dumps damage frame pacing; permanent suppression hides later distinct faults; clearing without dump violates black-box requirements.
+Scalability potential: Low avoids disk-write spikes during persistent bad signals. Middle/High/Ultra keep the same evidence trail while preserving render budget for richer prompt effects.
+Hardware Impact: Normal valid frames pay one boolean clear before telemetry write; fault frames avoid repeated file creation/writes after the first dump.
+
+## Decision 60: Tooltip AUP Shift Wrap-Safe Frame Check
+Problem: Tooltip AUP shift consumption used `ShiftFrameId <= _lastAupShiftFrame`, which fails when the unsigned shift sequence wraps and can leave prompts anchored to stale runtime positions.
+Solution: Replace the raw comparison with `IsNewAupShift()` using the project-standard unsigned delta check and a zero-id guard.
+Rejected Alternatives: Keeping raw ordering, resetting the last frame every origin shift, or applying all shift packets blindly. Raw ordering breaks at wrap; resets can duplicate shifts; blind application double-shifts cached anchors.
+Scalability potential: Low keeps prompt anchors correct across long sessions. Middle/High/Ultra preserve stable diegetic prompt placement while richer visual treatment remains independent of floating-origin churn.
+Hardware Impact: One unsigned delta check per AUP shift packet; no steady render cost when no shift packets exist.

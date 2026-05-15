@@ -52,7 +52,7 @@ Do not hide the `unknown` bucket: 40 final-usage sessions, 4.242B final tokens, 
 
 The ledger is live. This file is a timestamped capture, not eternal truth.
 
-Correction note: `COMPUTE_MODEL_BUCKET_RECONCILIATION.md` supersedes this file's model split and total cost rows for final-usage model attribution. Path-only matching created a false `unknown` bucket. Path-or-UUID matching reduces unknown final-usage tokens to zero and raises the corrected model-aware total estimate to USD 30,613.26 at 45,652,088,834 final tokens.
+Correction note: `COMPUTE_MODEL_BUCKET_RECONCILIATION.md` supersedes this file's model split and total cost rows for final-usage model attribution. Path-only matching created a false `unknown` bucket. `COMPUTE_CORRECTED_ROLLING_RATES.md` supersedes this file's rolling-window cost rows with path-or-UUID model matching.
 
 ## Cost
 

@@ -176,11 +176,9 @@ namespace Hecton8.Power
 
             if (_translationPending)
             {
-                if (!_translationHandle.IsCompleted)
+                if (!DispatcherJobSwap.TryFinalizeCompleted(ref _translationHandle))
                     return true;
 
-                _translationHandle.Complete();
-                _translationHandle = default;
                 _translationPending = false;
                 CommitTranslation(now);
             }
@@ -200,22 +198,18 @@ namespace Hecton8.Power
 
         public void Dispose()
         {
+            JobHandle dependency = _translationPending ? _translationHandle : default;
             if (_translationPending)
             {
-                _translationHandle.Complete();
+                _translationHandle = default;
                 _translationPending = false;
             }
 
-            if (_graphEvaluationPending)
-            {
-                _graph.CompleteEvaluation();
-                _graphEvaluationPending = false;
-            }
+            _graphEvaluationPending = false;
 
             _graph.Dispose();
             NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(OwnerName, nameof(_powerEdges));
 
-            JobHandle dependency = default;
             if (_powerEdges.IsCreated)
             {
                 dependency = _powerEdges.Dispose(dependency);
@@ -227,7 +221,7 @@ namespace Hecton8.Power
             dependency = H8Memory.Release(ref _counts, dependency, LogisticsGridSystemId);
             dependency = H8Memory.Release(ref _generatorNodeIndex, dependency, LogisticsGridSystemId);
             dependency = H8Memory.Release(ref _blackBox, dependency, LogisticsGridSystemId);
-            dependency.Complete();
+            JobHandle.ScheduleBatchedJobs();
 
             _initialized = false;
             _hasActiveGraph = false;

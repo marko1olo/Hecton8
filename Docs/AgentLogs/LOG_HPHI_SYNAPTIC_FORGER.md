@@ -755,3 +755,48 @@ Verification:
 - `rg` confirms `MainMenuController` has no native cancel subscription remnants.
 - `rg` now leaves only InputDispatcher bridges, gameplay authority interact paths, prologue skip, and non-ticking rebind panels as discrete input callback surfaces.
 - `git diff --check` on `MainMenuController.cs` passed with only standard LF/CRLF notices.
+
+## 2026-05-15 - Core Legacy SignalBus Prewarm Addendum
+
+What was wrong:
+- `ImpactSignal`, `AupPreShiftSignal`, `AupShiftSignal`, `EntityDeathSignal`, and `MemoryPressureSignal` had typed snapshot consumers but no explicit typed-lane prewarm.
+- `MemoryPressureSignal` only entered the legacy queue while prologue and residency systems read `SignalBus<MemoryPressureSignal>` snapshots.
+
+What was done:
+- Added central `SignalBus.Configure()` / `EnsureInitialized()` for all five Core-owned legacy lanes.
+- Mirrored `MemoryPressureSignal` publishes into the typed SignalBus while keeping the legacy queue API.
+
+Cinematic Cheats used:
+- Memory-pressure policy now rides one compact packet lane instead of forcing consumers to poll policy owners.
+- AUP, impact, and death diagnostics get prewarmed typed fanout before the first burst.
+
+Exact microseconds saved:
+- Estimated 0.1-0.5 us avoided on first impact/AUP/death/memory-pressure packet bursts.
+- Larger correctness gain: memory-pressure snapshot readers now receive deterministic packets.
+
+Verification:
+- No dotnet build, restore, test, or rebuild was run.
+- Static lane audit now leaves only alias-qualified false positives plus optional camera pose lanes without identified producers.
+- `git diff --check` on `GlobalSignals.cs` passed with only standard LF/CRLF notices.
+
+## 2026-05-15 - Camera Pose SignalLane Producer Addendum
+
+What was wrong:
+- `CameraPositionSignal` and `CameraFrustumSignal` were configured and consumed by `FoveatedSimulationManager`.
+- Static search found no producer, so the lanes could not influence foveated tiering.
+
+What was done:
+- `GlobalRenderContext.SetCurrent()` now publishes both camera position and frustum packets from the existing SRP begin-camera render boundary.
+- The producer writes numeric packet fields only and does not add any new scene updater or camera polling owner.
+
+Cinematic Cheats used:
+- Foveated simulation gets last-rendered camera pose through a compact signal lane instead of a new camera search path.
+
+Exact microseconds saved:
+- Estimated 0.1-0.3 us avoided from camera retry/fallback ambiguity.
+- Better tier correctness on multi-camera/render-context frames.
+
+Verification:
+- No dotnet build, restore, test, or rebuild was run.
+- Static snapshot/push audit now leaves only alias-qualified false positives.
+- `git diff --check` on `SystemDispatcher.cs` passed cleanly.

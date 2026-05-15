@@ -863,6 +863,37 @@ Verification:
 Integrator notes:
 - Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
 
+## 2026-05-15 - Loop 45 Real AUP Precision Repair - Acoustic Echolocation Distance
+
+What was wrong:
+- `AcousticEcholocationTranslator` subtracted full absolute `double3` AUP coordinates for classification distance and returned `float` before radius comparisons.
+- Full absolute subtraction can cancel low bits at large grids; float return was still too early for classification decisions.
+
+What was done:
+- Moved acoustic classification distance to direct grid-delta/local double axis math.
+- Kept nearest-anchor comparisons in double until final integer meter text.
+- Preserved the cheap approximate magnitude and existing fixed buffers.
+
+Cinematic Cheats used:
+- Kept the diegetic sonar approximation instead of paying sqrt for a UI label.
+- Low-tier keeps capped scans and cheap math; High/Ultra can improve overlay visuals without corrupting classification distance.
+
+Exact Microseconds saved:
+- Gameplay frame time: 0 us measured; profiler proof is absent.
+- No allocation added; expected cost is a few scalar double operations in bounded contact loops.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs` reports line-ending warning only.
+- Qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory AUP regex scan returned 233 broad residual matches: broad `universe` text and known final-cast/presentation payload names.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 157.778 seconds with `AupPrecisionRisk=0`, `AupPrecisionIntegrity=1`, `RuntimeHPhiRisk=0.000629959`, `NativeArrayRefs=7074`, and `PrimaryOwnerBlockedNativeArrayRefs=5678`.
+- Temporary Loop 45 capture is absent after cleanup.
+- No `dotnet build` or rebuild was run because the user explicitly forbade rebuilds.
+
+Integrator notes:
+- Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
+
 ## 2026-05-15 - Loop 44 Real AUP Precision Repair - Scanner Marker Distance
 
 What was wrong:

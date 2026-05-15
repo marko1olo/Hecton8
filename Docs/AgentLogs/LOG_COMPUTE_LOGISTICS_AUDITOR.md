@@ -34,6 +34,41 @@ Verification:
 
 STATUS: AUDIT COMPLETE.
 
+## 2026-05-15 - Corrected Rolling Rates
+
+What was wrong:
+- The previous rolling window costs used path-only model matching and underpriced recent windows through `unknown`.
+- Model bucket reconciliation fixed final totals but did not yet recalculate 1h/6h/24h/7d/14d/30d windows.
+
+What was done:
+- Re-read `Docs/Tasks/Status_COMPUTE_LOGISTICS_AUDITOR.md` and `Docs/AgentLogs/Rationale_COMPUTE_LOGISTICS_AUDITOR.md`.
+- Re-ran JSONL positive-delta scan with path-or-UUID model matching.
+- Created `COMPUTE_CORRECTED_ROLLING_RATES.md`.
+- Updated root brief, audit index, token burn ledger note, full report, status, and rationale.
+
+Evidence captured:
+- JSONL final tokens: 45,771,499,116.
+- SQLite `threads.tokens_used`: 45,758,254,570.
+- Corrected model-aware cost: USD 30,704.36.
+- Corrected no-cache equivalent: USD 201,983.02.
+- Last 1h: 195,974,142 tokens, USD 150.02 cache-aware.
+- Last 6h: 845,618,668 tokens, USD 647.33 cache-aware.
+- Last 24h: 3,398,780,549 tokens, USD 2,601.80 cache-aware, USD 17,262.61 no-cache.
+- Whole observed positive-delta flow: 45,761,631,790 tokens.
+
+Cinematic Cheats used:
+- None. Audit-only evidence accounting.
+
+Exact microseconds saved:
+- Runtime: 0 us.
+- Process: not claimed as measured saving. The pass prevents using underpriced rolling-window numbers.
+
+Verification:
+- Markdown-only audit continuation.
+- No runtime compile run because no C# or C++ runtime source changed.
+
+STATUS: AUDIT COMPLETE.
+
 ## 2026-05-15 - Model Bucket Reconciliation
 
 What was wrong:

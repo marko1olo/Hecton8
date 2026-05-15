@@ -880,3 +880,32 @@ Corrected model split:
 | `unknown` with final usage | 0 | 0 | 0.000% | USD 0.00 |
 
 Verdict: the `unknown` final-usage bucket was an attribution bug, not a real model bucket. Future `.codex` model scans must use path-or-UUID matching.
+
+## Continuation Addendum - Corrected Rolling Rates
+
+Snapshot: 2026-05-15T17:18:23+04:00
+
+The corrected rolling-rate ledger is preserved at `COMPUTE_CORRECTED_ROLLING_RATES.md`.
+
+| Metric | Value |
+|---|---:|
+| JSONL final total tokens | 45,771,499,116 |
+| SQLite `threads.tokens_used` | 45,758,254,570 |
+| Positive-delta token flow | 45,761,631,790 |
+| Cached-input ratio | 96.00610% |
+| Model-aware corrected cost | USD 30,704.36 |
+| Model-aware no-cache equivalent | USD 201,983.02 |
+| Cache avoided | USD 171,278.65 |
+
+Corrected rolling windows:
+
+| Window | Tokens | Tokens/sec | Tokens/min | Tokens/hour | Tokens/day equiv | Cache-aware cost | USD/min | USD/hour |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Last 1h | 195,974,142 | 54,437.26 | 3,266,235.70 | 195,974,142.00 | 4,703,379,408.00 | USD 150.02 | USD 2.50 | USD 150.02 |
+| Last 6h | 845,618,668 | 39,149.01 | 2,348,940.74 | 140,936,444.67 | 3,382,474,672.00 | USD 647.33 | USD 1.80 | USD 107.89 |
+| Last 24h | 3,398,780,549 | 39,337.74 | 2,360,264.27 | 141,615,856.21 | 3,398,780,549.00 | USD 2,601.80 | USD 1.81 | USD 108.41 |
+| Last 7d | 20,296,429,548 | 33,558.91 | 2,013,534.68 | 120,812,080.64 | 2,899,489,935.43 | USD 15,537.13 | USD 1.54 | USD 92.48 |
+| Last 14d | 29,912,591,279 | 24,729.32 | 1,483,759.49 | 89,025,569.28 | 2,136,613,662.79 | USD 22,898.41 | USD 1.14 | USD 68.15 |
+| Last 30d | 42,821,381,540 | 16,520.59 | 991,235.68 | 59,474,141.03 | 1,427,379,384.67 | USD 29,550.86 | USD 0.68 | USD 41.04 |
+
+Verdict: the prior rolling-day cost was under-attributed. Corrected path-or-UUID matching prices the latest 24h at USD 2,601.80 cache-aware, not USD 1,039.59.

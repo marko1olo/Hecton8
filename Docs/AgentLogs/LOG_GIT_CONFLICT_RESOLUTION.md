@@ -510,9 +510,9 @@ Verification -> `git diff --check` returned only CRLF warnings. Strict conflict-
 
 ## 2026-05-15 - Loop 31 Remote Merge And Acoustic Tail
 
-What was wrong -> Remote advanced by 17 commits while the local checkpoint was pending, then the merge left a small post-merge live tail in acoustic AUP distance, MacroDB/WFC dirty snapshot handling, WFC status docs, and diegetic tooltip black-box dump ordering.
+What was wrong -> Remote advanced by 17 commits while the local checkpoint was pending, then the merge left a small post-merge live tail in acoustic AUP distance, MacroDB/WFC dirty snapshot handling, WFC power disposal, camera signal publishing, WFC status docs, diegetic tooltip black-box dump ordering, and field-target UI text formatting.
 
-What was done -> Merged `origin/main` with the `ort` strategy, kept both histories, verified no unmerged paths, inspected the acoustic double AUP distance diff, MacroDB dirty flag contract move, WFC restore/hydration dirty cache preservation, WFC last-snapshot gating documentation, and tooltip initialized-entry dump change, then prepared a separate post-merge checkpoint.
+What was done -> Merged `origin/main` with the `ort` strategy, kept both histories, verified no unmerged paths, inspected the acoustic double AUP distance diff, MacroDB dirty flag contract move, WFC restore/hydration dirty cache preservation, WFC power deferred disposal, `SystemDispatcher` camera pose/frustum signal publishing against existing prewarmed lanes, WFC last-snapshot gating documentation, tooltip initialized-entry dump change, and field-target string formatting cleanup, then prepared a separate post-merge checkpoint.
 
 Cinematic Cheats used -> None. Git integration only.
 

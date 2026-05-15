@@ -333,3 +333,17 @@ Solution: The explicit `IGasDynamicsSolver` room and base read-only properties n
 Rejected Alternatives: Trusting consumers to check `IsInitialized` was rejected because read-only aliases are cross-domain H-Phi surfaces. Throwing was rejected because the safe alias contract should fail closed without allocations or exceptions.
 Scalability potential: Low through Ultra keep identical aliases when coherent; partial native recovery windows no longer leak stale buffers into power/UI consumers.
 Hardware Impact: One `IsInitialized` branch per alias request, not per frame job. No profiler microsecond claim; this is alias safety.
+
+## Self-Review 41 - WFC Power Bridge Job Stall Removal
+Problem: `WfcOutpostPowerBootRuntime` still used direct job completion in the WFC translation/disposal path adjacent to gas hibernation power masking.
+Solution: Late-frame translation finalization now uses `DispatcherJobSwap.TryFinalizeCompleted`, and disposal carries any pending translation handle into the native release dependency chain before scheduling batched release jobs.
+Rejected Alternatives: Keeping `_translationHandle.Complete()` was rejected because even completed-handle cleanup should follow the dispatcher helper contract. Blocking on the final disposal dependency was rejected because teardown can carry unfinished translation work and native release jobs do not need a main-thread stall.
+Scalability potential: Low = no WFC translation/disposal stall on i3/MX350 during outpost boot teardown. Middle = same native release dependency chain without frame hitch risk. High = saved wait time can be spent on richer outpost presentation. Ultra = no extra simulation truth, just cleaner job ownership for visual overkill systems above it.
+Hardware Impact: Steady-state cost is unchanged. Worst-case teardown now avoids waiting on a pending WFC translation plus chained native releases on the main thread; exact microseconds are not claimed without profiler evidence.
+
+## Self-Review 42 - Post-Bridge H-Phi Core Graph Audit
+Problem: The WFC bridge patch touched a cross-domain power runtime near the habitat gas authority, so the H-Phi graph evidence needed to be current without violating the no-rebuild instruction.
+Solution: Re-ran `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`. It exited 0 with STATIC_SOURCE evidence; the opt-in core build graph gate still passes and disabled-budget graph debt counts are unchanged.
+Rejected Alternatives: Running a dotnet rebuild was rejected by explicit user instruction. Treating the pre-patch artifact as current was rejected because the C# source is now newer than the last green build artifact.
+Scalability potential: Low through Ultra keep the same source graph shape for the gas-power bridge; the job-stall cleanup adds no new Core dependency edge.
+Hardware Impact: Audit-only pass. No runtime microsecond gain claimed.

@@ -1105,3 +1105,31 @@ Verification:
 - `git diff --check -- Assets/_Project/Scripts/SaveManager.cs` reports only Git CRLF normalization warnings.
 - `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` exited 0 at 2026-05-15 17:11:19 +04:00; core graph debt counts unchanged.
 - No `dotnet` rebuild was run.
+
+## Recheck Report: WFC Dirty Hydration Flag Preservation
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- WFC restore/hydration remembered decoded payload hashes as clean even when MacroDB returned a dirty in-memory payload handle.
+- Same-frame hydration after a WFC mutation could clear append pending/in-flight state before the dirty payload was durably appended.
+- The dirty payload bit existed only as a private MacroDB implementation constant, so consumers could not make a documented cache-state decision.
+
+What was done:
+- Added `MacroDatabasePayloadFlags.Dirty` to MacroDB contracts.
+- Updated `H8MacroDatabaseService` to use the public dirty flag for dirty cache handles and to strip it before payload header writes.
+- Updated WFC restore/hydration to preserve append-pending state when the payload handle is dirty and clear retry state only for clean committed handles.
+
+Cinematic cheats used:
+- One byte flag carried through the existing payload handle instead of adding new append-status APIs, extra signal lanes, or managed retry objects.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation: 0 B by static inspection.
+- Hot Tick scan cost: unchanged.
+- Restore/hydration success cost: one byte flag test.
+
+Verification:
+- Static scan confirms `MacroDatabasePayloadFlags.Dirty` is used by MacroDB dirty marking, disk clean writes, and WFC cache flag resolution.
+- `git diff --check` reports only Git CRLF normalization warnings.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` exited 0 at 2026-05-15 17:18:51 +04:00; core graph debt counts unchanged.
+- No `dotnet` rebuild was run.

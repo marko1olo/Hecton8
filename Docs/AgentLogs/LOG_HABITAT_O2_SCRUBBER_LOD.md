@@ -626,3 +626,41 @@ Verification:
 - Confirmed all explicit `IGasDynamicsSolver` room/base aliases now gate on `IsInitialized`.
 - Targeted scan found no forbidden `.Complete`, component lookup, managed collection, coroutine, string-format, interpolation, or `foreach` matches in touched runtime files.
 - `git diff --check` exited 0.
+
+## 2026-05-15 - WFC Power Bridge Job Stall Removal
+STATUS: SOURCE VERIFIED
+
+What was wrong:
+- The WFC outpost power boot bridge still had direct `.Complete()` calls in translation finalization and native disposal, creating avoidable main-thread stall risk beside the gas hibernation power-mask integration.
+
+What was done:
+- Replaced late-frame translation completion with `DispatcherJobSwap.TryFinalizeCompleted`.
+- Changed disposal to pass any pending translation fence into `_powerEdges` and H8 native buffer releases, then call `JobHandle.ScheduleBatchedJobs()` instead of blocking on the dependency.
+- Left graph evaluation disposal to `LogisticsNetworkGraph.Dispose()`, which already owns its job fence and schedules dependent releases.
+
+Cinematic Cheats used:
+- No extra simulation. This is a job-ownership cleanup that preserves the existing WFC/native data model.
+
+Exact microseconds saved:
+- No measured microsecond claim. The change removes one potential translation/disposal sync wait; worst-case saving equals the pending translation plus native release wait that would previously have blocked the main thread.
+
+Verification:
+- Targeted scan found no forbidden `.Complete`, component lookup, managed collection, coroutine, string-format, interpolation, or `foreach` matches in `WfcOutpostPowerBootRuntime.cs`.
+- `git diff --check -- Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs` exited 0 with the existing CRLF working-copy warning only.
+- No dotnet rebuild was run.
+
+## 2026-05-15 - Post-WFC Bridge H-Phi Core Graph Recheck
+STATUS: SOURCE VERIFIED
+
+What was wrong:
+- The WFC bridge change made the previous source graph evidence stale.
+
+What was done:
+- Re-ran `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`.
+- Result: exit 0, STATIC_SOURCE evidence, core build graph gate still true/opt-in. Disabled-budget debt counts remain: Core asmdef 25, generated project 10, source-backed bridge 14, source-backed compile bridge 8, project-reference replacement 6.
+
+Cinematic Cheats used:
+- None; audit-only pass.
+
+Exact microseconds saved:
+- None. This is source evidence only; no dotnet rebuild was run.
