@@ -388,9 +388,23 @@ Rejected Alternatives: Relying on older aggregate outputs was rejected because t
 Scalability potential: Static proof now covers 32 tests and 30 artifact hashes before Unity import/profiler work.
 Hardware Impact: Runtime impact is 0 us. Unity, Frame Debugger, GCMonitor, and in-engine visual captures remain pending.
 
+## Decision - Current Aggregate Readback Refresh
+Problem: Status text still mentioned an older 32-test aggregate proof, while the current aggregate report includes additional status/log validation coverage.
+Solution: Read `UI_HardwareAdaptiveValidation_UX_ENGINEER.json` directly and reran aggregate/status validators. Current report shows 36 tests, 30 artifact hashes, 8 commands, aggregate self-validation PASS, and status/log self-validation PASS.
+Rejected Alternatives: Leaving stale test-count text was rejected because the open status file must match current evidence.
+Scalability potential: Static proof now clearly includes both implementation validation and disk-memory validation before Unity runtime work.
+Hardware Impact: Runtime impact is 0 us. Unity runtime metrics remain unavailable.
+
 ## Aggregate Validation Runner
 Problem: The validation path existed as several commands, which creates operator error and partial-proof risk.
 Solution: Added `Tools/UX/run_hardware_adaptive_ui_validation.py`; it regenerates readability and shader reports, runs IconBaker self-test, runs the unit harness, records command exits/timings, and writes `UI_HardwareAdaptiveValidation_UX_ENGINEER.json`.
 Rejected Alternatives: A Markdown-only runbook was rejected because it cannot fail CI.
 Scalability potential: One command now validates Low/Middle/High/Ultra UI proof artifacts before Unity import.
 Hardware Impact: Offline verification only; runtime impact 0 us.
+
+## Bottom-Most Current-Tree Proof
+Problem: Multiple continuation passes left older final-proof entries above and below newer evidence, so the latest state needed a bottom-most canonical proof entry.
+Solution: Reran current-tree compile, focused status/log and aggregate-validator tests, aggregate validation, standalone aggregate validation, status/log consistency, JSON readback, whitespace check, and pycache scan after wiring `Tools.UX.test_status_log_consistency` into the aggregate unit harness.
+Rejected Alternatives: Reordering older historical entries was rejected because preserving append-only evidence is safer under multi-agent churn.
+Scalability potential: Static proof now covers 36 tests and 30 artifact hashes before Unity import, Frame Debugger, GCMonitor, and capture work.
+Hardware Impact: Runtime impact is 0 us. Unity runtime proof remains pending.

@@ -490,6 +490,18 @@ Exact Microseconds saved: 0 us runtime.
 
 Verification: `aggregateSelfValidation` PASS, `statusLogSelfValidation` PASS, both with empty failures. Runtime proof remains blocked on Unity editor availability.
 
+## UX_ENGINEER Current Aggregate Readback Refresh - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: The latest status text included an older 32-test count, while the current aggregate report has grown after status/log validation was added.
+
+What was done: Read `Docs/AgentLogs/UI_HardwareAdaptiveValidation_UX_ENGINEER.json` and reran `python Tools/UX/validate_aggregate_report.py` plus `python Tools/UX/validate_status_log_consistency.py --write-report`.
+
+Cinematic Cheats used: None. Evidence readback only.
+
+Exact Microseconds saved: 0 us runtime.
+
+Verification: Current aggregate status PASS, `unityRuntimeStatus` PENDING_UNITY_VERIFICATION, command count 8, unit harness 36 tests, artifact hash count 30, `aggregateSelfValidation` PASS, `statusLogSelfValidation` PASS, aggregate validator PASS, and status/log consistency PASS.
+
 ## UX_ENGINEER Final Static Hygiene Pass - HARDWARE_ADAPTIVE_UI_BAKER
 
 What was wrong: After multiple continuation hardening passes, touched UX files needed a final whitespace/static validation check.
@@ -501,3 +513,15 @@ Cinematic Cheats used: None. Evidence hygiene only.
 Exact Microseconds saved: 0 us runtime.
 
 Verification: `git diff --check` returned no whitespace errors, only CRLF normalization warnings. Aggregate validation returned PASS. Status/log consistency returned PASS. Runtime verification remains blocked by missing Unity editor.
+
+## UX_ENGINEER Bottom-Most Current-Tree Proof - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: Earlier final-proof entries were superseded by aggregate self-validation and status/log self-validation changes.
+
+What was done: Wired `Tools.UX.test_status_log_consistency` into the aggregate unit harness. Reran compile, focused status/log tests, focused aggregate report tests, full aggregate validation, standalone aggregate report validation, status/log consistency validation, JSON readback, whitespace check, and pycache scan.
+
+Cinematic Cheats used: None. Static evidence validation only.
+
+Exact Microseconds saved: 0 us runtime.
+
+Verification: Aggregate status PASS; `unityRuntimeStatus` remains `PENDING_UNITY_VERIFICATION`; unit harness ran 36 tests; artifact hash count is 30; `aggregateSelfValidation` PASS; `statusLogSelfValidation` PASS; status/log consistency PASS with no failures; `PYTHON_CACHE_COUNT 0`. Unity runtime proof remains pending.
