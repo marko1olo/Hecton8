@@ -1,0 +1,702 @@
+﻿{
+    "generated":  "2026-05-15 22:49:18 +04:00",
+    "source":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch006\\Tasks",
+    "combinedPath":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch006\\Tasks_Combined\\Tasks_Batch006_COMBINED.txt",
+    "combinedExtensions":  [
+                               ".md",
+                               ".txt",
+                               ".json"
+                           ],
+    "allFileCount":  86,
+    "combinedTextFileCount":  86,
+    "files":  [
+                  {
+                      "relativePath":  "CURRENT_BATCH.md",
+                      "fileName":  "CURRENT_BATCH.md",
+                      "extension":  ".md",
+                      "sizeBytes":  19680,
+                      "lastWrite":  "2026-05-15 13:00:32 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_ACOUSTIC_OCCLUSION_CULLING.md",
+                      "fileName":  "Status_ACOUSTIC_OCCLUSION_CULLING.md",
+                      "extension":  ".md",
+                      "sizeBytes":  16127,
+                      "lastWrite":  "2026-05-14 14:13:48 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_AI_BEHAVIOR_BIOMIMETIC_DESIGNER.md",
+                      "fileName":  "Status_AI_BEHAVIOR_BIOMIMETIC_DESIGNER.md",
+                      "extension":  ".md",
+                      "sizeBytes":  7637,
+                      "lastWrite":  "2026-05-15 16:00:16 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_AI_FUNNEL_NAV_POLISH.md",
+                      "fileName":  "Status_AI_FUNNEL_NAV_POLISH.md",
+                      "extension":  ".md",
+                      "sizeBytes":  54235,
+                      "lastWrite":  "2026-05-15 15:02:07 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_AI_POTENTIAL_FIELD_NAVIGATOR.md",
+                      "fileName":  "Status_AI_POTENTIAL_FIELD_NAVIGATOR.md",
+                      "extension":  ".md",
+                      "sizeBytes":  12501,
+                      "lastWrite":  "2026-05-15 16:00:16 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_ALPHA_LEVIATHAN_COGNITION.md",
+                      "fileName":  "Status_ALPHA_LEVIATHAN_COGNITION.md",
+                      "extension":  ".md",
+                      "sizeBytes":  7874,
+                      "lastWrite":  "2026-05-14 22:52:41 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_ANIM_PROCEDURAL_LEGS_IK.md",
+                      "fileName":  "Status_ANIM_PROCEDURAL_LEGS_IK.md",
+                      "extension":  ".md",
+                      "sizeBytes":  20598,
+                      "lastWrite":  "2026-05-15 21:56:10 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_ARCHITECTURAL_AUP_INTEGRITY_AUDITOR.md",
+                      "fileName":  "Status_ARCHITECTURAL_AUP_INTEGRITY_AUDITOR.md",
+                      "extension":  ".md",
+                      "sizeBytes":  94967,
+                      "lastWrite":  "2026-05-15 22:21:18 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_ARCHITECTURAL_SIGNAL_STANDARDIZER.md",
+                      "fileName":  "Status_ARCHITECTURAL_SIGNAL_STANDARDIZER.md",
+                      "extension":  ".md",
+                      "sizeBytes":  19745,
+                      "lastWrite":  "2026-05-15 21:46:34 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_AUDIO_MATERIAL_SYNTHESIZER.md",
+                      "fileName":  "Status_AUDIO_MATERIAL_SYNTHESIZER.md",
+                      "extension":  ".md",
+                      "sizeBytes":  8260,
+                      "lastWrite":  "2026-05-15 13:00:32 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_BACKEND_ENGINEER.md",
+                      "fileName":  "Status_BACKEND_ENGINEER.md",
+                      "extension":  ".md",
+                      "sizeBytes":  31255,
+                      "lastWrite":  "2026-05-15 16:00:16 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_BACKEND_MACRO_DB_COMPACTOR.md",
+                      "fileName":  "Status_BACKEND_MACRO_DB_COMPACTOR.md",
+                      "extension":  ".md",
+                      "sizeBytes":  12791,
+                      "lastWrite":  "2026-05-14 14:06:00 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_BIOLUM_RHYTHM_COMPOSER.md",
+                      "fileName":  "Status_BIOLUM_RHYTHM_COMPOSER.md",
+                      "extension":  ".md",
+                      "sizeBytes":  6127,
+                      "lastWrite":  "2026-05-15 16:00:16 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_BIOME_TRANSITION_BLENDER.md",
+                      "fileName":  "Status_BIOME_TRANSITION_BLENDER.md",
+                      "extension":  ".md",
+                      "sizeBytes":  7679,
+                      "lastWrite":  "2026-05-14 22:52:41 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_BLACKBOX_TELEMETRY_VISUALIZER.md",
+                      "fileName":  "Status_BLACKBOX_TELEMETRY_VISUALIZER.md",
+                      "extension":  ".md",
+                      "sizeBytes":  7465,
+                      "lastWrite":  "2026-05-15 13:00:32 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_COMPUTE_LOGISTICS_AUDITOR.md",
+                      "fileName":  "Status_COMPUTE_LOGISTICS_AUDITOR.md",
+                      "extension":  ".md",
+                      "sizeBytes":  20329,
+                      "lastWrite":  "2026-05-15 19:20:59 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_CONSOLE_MEDIC.md",
+                      "fileName":  "Status_CONSOLE_MEDIC.md",
+                      "extension":  ".md",
+                      "sizeBytes":  9993,
+                      "lastWrite":  "2026-05-14 00:11:34 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_CONTEXTUAL_UX_PROMPTER.md",
+                      "fileName":  "Status_CONTEXTUAL_UX_PROMPTER.md",
+                      "extension":  ".md",
+                      "sizeBytes":  43864,
+                      "lastWrite":  "2026-05-15 19:20:16 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_CORE_RESONANCE_ORCHESTRATOR.md",
+                      "fileName":  "Status_CORE_RESONANCE_ORCHESTRATOR.md",
+                      "extension":  ".md",
+                      "sizeBytes":  16722,
+                      "lastWrite":  "2026-05-15 21:08:13 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_DIEGETIC_INVENTORY_HOLOGRAPHER.md",
+                      "fileName":  "Status_DIEGETIC_INVENTORY_HOLOGRAPHER.md",
+                      "extension":  ".md",
+                      "sizeBytes":  3425,
+                      "lastWrite":  "2026-05-14 01:25:28 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_DIEGETIC_LORE_SCANNER.md",
+                      "fileName":  "Status_DIEGETIC_LORE_SCANNER.md",
+                      "extension":  ".md",
+                      "sizeBytes":  42988,
+                      "lastWrite":  "2026-05-15 15:15:00 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_DOC_ARCHIVE_BATCH006.md",
+                      "fileName":  "Status_DOC_ARCHIVE_BATCH006.md",
+                      "extension":  ".md",
+                      "sizeBytes":  2100,
+                      "lastWrite":  "2026-05-15 22:39:03 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_DOC_AUDIT.md",
+                      "fileName":  "Status_DOC_AUDIT.md",
+                      "extension":  ".md",
+                      "sizeBytes":  3516,
+                      "lastWrite":  "2026-05-15 22:43:18 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_DOC_HONEST_ANALYSIS.md",
+                      "fileName":  "Status_DOC_HONEST_ANALYSIS.md",
+                      "extension":  ".md",
+                      "sizeBytes":  7257,
+                      "lastWrite":  "2026-05-15 22:30:08 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_DOC_RELOCATE.md",
+                      "fileName":  "Status_DOC_RELOCATE.md",
+                      "extension":  ".md",
+                      "sizeBytes":  2686,
+                      "lastWrite":  "2026-05-15 22:09:55 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_DOC_ROOT_CLEANUP.md",
+                      "fileName":  "Status_DOC_ROOT_CLEANUP.md",
+                      "extension":  ".md",
+                      "sizeBytes":  3612,
+                      "lastWrite":  "2026-05-15 18:52:02 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_ECONOMY_DATA_BALANCER.md",
+                      "fileName":  "Status_ECONOMY_DATA_BALANCER.md",
+                      "extension":  ".md",
+                      "sizeBytes":  17237,
+                      "lastWrite":  "2026-05-15 21:22:11 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_FAUNA_BEHAVIOR_SIMULATOR.md",
+                      "fileName":  "Status_FAUNA_BEHAVIOR_SIMULATOR.md",
+                      "extension":  ".md",
+                      "sizeBytes":  20203,
+                      "lastWrite":  "2026-05-15 13:00:32 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_FLORA_GRAMMAR_GENETICIST.md",
+                      "fileName":  "Status_FLORA_GRAMMAR_GENETICIST.md",
+                      "extension":  ".md",
+                      "sizeBytes":  7316,
+                      "lastWrite":  "2026-05-15 13:00:32 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_GIT_CONFLICT_RESOLUTION.md",
+                      "fileName":  "Status_GIT_CONFLICT_RESOLUTION.md",
+                      "extension":  ".md",
+                      "sizeBytes":  40328,
+                      "lastWrite":  "2026-05-15 22:25:06 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_GIT_SYNC.md",
+                      "fileName":  "Status_GIT_SYNC.md",
+                      "extension":  ".md",
+                      "sizeBytes":  6501,
+                      "lastWrite":  "2026-05-15 17:15:40 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_H8_HARDWARE_TIER_MATRIX_BKR.md",
+                      "fileName":  "Status_H8_HARDWARE_TIER_MATRIX_BKR.md",
+                      "extension":  ".md",
+                      "sizeBytes":  6745,
+                      "lastWrite":  "2026-05-15 16:00:16 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_HABITAT_O2_SCRUBBER_LOD.md",
+                      "fileName":  "Status_HABITAT_O2_SCRUBBER_LOD.md",
+                      "extension":  ".md",
+                      "sizeBytes":  30795,
+                      "lastWrite":  "2026-05-15 22:27:05 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_HARDWARE_PROFILE_GENERATOR.md",
+                      "fileName":  "Status_HARDWARE_PROFILE_GENERATOR.md",
+                      "extension":  ".md",
+                      "sizeBytes":  18969,
+                      "lastWrite":  "2026-05-15 13:00:32 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_HEADLESS_STRESS_FRACTURE_BOT.md",
+                      "fileName":  "Status_HEADLESS_STRESS_FRACTURE_BOT.md",
+                      "extension":  ".md",
+                      "sizeBytes":  27425,
+                      "lastWrite":  "2026-05-15 04:58:49 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_HECTON_ENCYCLOPEDIA_FINALIZER.md",
+                      "fileName":  "Status_HECTON_ENCYCLOPEDIA_FINALIZER.md",
+                      "extension":  ".md",
+                      "sizeBytes":  7126,
+                      "lastWrite":  "2026-05-15 12:29:07 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_HECTON_PHI_MONITOR.md",
+                      "fileName":  "Status_HECTON_PHI_MONITOR.md",
+                      "extension":  ".md",
+                      "sizeBytes":  38013,
+                      "lastWrite":  "2026-05-15 22:29:21 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_HPHI_SYNAPTIC_FORGER.md",
+                      "fileName":  "Status_HPHI_SYNAPTIC_FORGER.md",
+                      "extension":  ".md",
+                      "sizeBytes":  38970,
+                      "lastWrite":  "2026-05-15 22:26:55 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_HYDRODYNAMIC_DRAG_MATRIX_BAKER.md",
+                      "fileName":  "Status_HYDRODYNAMIC_DRAG_MATRIX_BAKER.md",
+                      "extension":  ".md",
+                      "sizeBytes":  19205,
+                      "lastWrite":  "2026-05-15 16:00:16 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_INTEGRATION_ASSEMBLY_SURGEON.md",
+                      "fileName":  "Status_INTEGRATION_ASSEMBLY_SURGEON.md",
+                      "extension":  ".md",
+                      "sizeBytes":  80716,
+                      "lastWrite":  "2026-05-15 22:36:07 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_INTEGRATOR.md",
+                      "fileName":  "Status_INTEGRATOR.md",
+                      "extension":  ".md",
+                      "sizeBytes":  3930,
+                      "lastWrite":  "2026-05-14 13:47:41 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_KINETIC_IMPACT_ACOUSTICS.md",
+                      "fileName":  "Status_KINETIC_IMPACT_ACOUSTICS.md",
+                      "extension":  ".md",
+                      "sizeBytes":  63873,
+                      "lastWrite":  "2026-05-15 05:44:52 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_LEVIATHAN_KINEMATICS_SOLVER.md",
+                      "fileName":  "Status_LEVIATHAN_KINEMATICS_SOLVER.md",
+                      "extension":  ".md",
+                      "sizeBytes":  49884,
+                      "lastWrite":  "2026-05-15 15:01:32 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_MACRO_DB_INDEX_OPTIMIZER.md",
+                      "fileName":  "Status_MACRO_DB_INDEX_OPTIMIZER.md",
+                      "extension":  ".md",
+                      "sizeBytes":  8897,
+                      "lastWrite":  "2026-05-15 16:00:16 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_MACRO_WFC_PERSISTENCE_SYNC.md",
+                      "fileName":  "Status_MACRO_WFC_PERSISTENCE_SYNC.md",
+                      "extension":  ".md",
+                      "sizeBytes":  88343,
+                      "lastWrite":  "2026-05-15 22:11:10 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_MANDATE_EVOLUTION_CHRONICLER.md",
+                      "fileName":  "Status_MANDATE_EVOLUTION_CHRONICLER.md",
+                      "extension":  ".md",
+                      "sizeBytes":  16980,
+                      "lastWrite":  "2026-05-14 22:52:53 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_MARAUDER_OUTPOST_ARCHITECT.md",
+                      "fileName":  "Status_MARAUDER_OUTPOST_ARCHITECT.md",
+                      "extension":  ".md",
+                      "sizeBytes":  79877,
+                      "lastWrite":  "2026-05-15 20:51:19 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_MISSION_FAIL_SAFE_ARCHITECT.md",
+                      "fileName":  "Status_MISSION_FAIL_SAFE_ARCHITECT.md",
+                      "extension":  ".md",
+                      "sizeBytes":  22525,
+                      "lastWrite":  "2026-05-15 13:00:32 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_MODDING_API_SCHEMA_BUILDER.md",
+                      "fileName":  "Status_MODDING_API_SCHEMA_BUILDER.md",
+                      "extension":  ".md",
+                      "sizeBytes":  24070,
+                      "lastWrite":  "2026-05-15 16:00:16 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_NARRATIVE_LORE_STREAMING_BAKER.md",
+                      "fileName":  "Status_NARRATIVE_LORE_STREAMING_BAKER.md",
+                      "extension":  ".md",
+                      "sizeBytes":  11347,
+                      "lastWrite":  "2026-05-15 17:15:40 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_NARRATIVE_LORE_WEAVER.md",
+                      "fileName":  "Status_NARRATIVE_LORE_WEAVER.md",
+                      "extension":  ".md",
+                      "sizeBytes":  9699,
+                      "lastWrite":  "2026-05-14 14:51:56 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_NARRATIVE_SEMANTIC_AUDITOR.md",
+                      "fileName":  "Status_NARRATIVE_SEMANTIC_AUDITOR.md",
+                      "extension":  ".md",
+                      "sizeBytes":  8129,
+                      "lastWrite":  "2026-05-15 16:00:16 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_NET_SYNC_MERKLE_ARCHITECT.md",
+                      "fileName":  "Status_NET_SYNC_MERKLE_ARCHITECT.md",
+                      "extension":  ".md",
+                      "sizeBytes":  12182,
+                      "lastWrite":  "2026-05-15 16:00:16 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_OFFLINE_PRECOMPUTE_MATHEMATICIAN.md",
+                      "fileName":  "Status_OFFLINE_PRECOMPUTE_MATHEMATICIAN.md",
+                      "extension":  ".md",
+                      "sizeBytes":  10110,
+                      "lastWrite":  "2026-05-15 13:00:32 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_ORBITAL_ATMOSPHERE_MATHEMATICIAN.md",
+                      "fileName":  "Status_ORBITAL_ATMOSPHERE_MATHEMATICIAN.md",
+                      "extension":  ".md",
+                      "sizeBytes":  9082,
+                      "lastWrite":  "2026-05-15 13:00:32 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_ORGANIC_ENTROPY_REGENERATOR.md",
+                      "fileName":  "Status_ORGANIC_ENTROPY_REGENERATOR.md",
+                      "extension":  ".md",
+                      "sizeBytes":  26890,
+                      "lastWrite":  "2026-05-15 17:15:40 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_OUTPOST_LOGISTICS_INITIALIZER.md",
+                      "fileName":  "Status_OUTPOST_LOGISTICS_INITIALIZER.md",
+                      "extension":  ".md",
+                      "sizeBytes":  2810,
+                      "lastWrite":  "2026-05-14 22:52:41 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_PHYS_MAGNETIC_LOOT_ACQUISITION.md",
+                      "fileName":  "Status_PHYS_MAGNETIC_LOOT_ACQUISITION.md",
+                      "extension":  ".md",
+                      "sizeBytes":  17599,
+                      "lastWrite":  "2026-05-15 15:00:18 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_PLATINUM_DATA_VAULT_WARDEN.md",
+                      "fileName":  "Status_PLATINUM_DATA_VAULT_WARDEN.md",
+                      "extension":  ".md",
+                      "sizeBytes":  27870,
+                      "lastWrite":  "2026-05-15 22:18:34 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_PROCEDURAL_BIOME_BAKER_SHALLOWS.md",
+                      "fileName":  "Status_PROCEDURAL_BIOME_BAKER_SHALLOWS.md",
+                      "extension":  ".md",
+                      "sizeBytes":  64417,
+                      "lastWrite":  "2026-05-15 14:44:15 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_PROCEDURAL_NOISE_BAKER.md",
+                      "fileName":  "Status_PROCEDURAL_NOISE_BAKER.md",
+                      "extension":  ".md",
+                      "sizeBytes":  14837,
+                      "lastWrite":  "2026-05-15 13:00:32 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_PROLOGUE_ACOUSTIC_ORCHESTRATOR.md",
+                      "fileName":  "Status_PROLOGUE_ACOUSTIC_ORCHESTRATOR.md",
+                      "extension":  ".md",
+                      "sizeBytes":  10017,
+                      "lastWrite":  "2026-05-14 13:13:40 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_PROLOGUE_SEQUENCE_DIRECTOR.md",
+                      "fileName":  "Status_PROLOGUE_SEQUENCE_DIRECTOR.md",
+                      "extension":  ".md",
+                      "sizeBytes":  49236,
+                      "lastWrite":  "2026-05-15 15:00:57 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_QUEST_STATE_GRAPH_VALIDATOR.md",
+                      "fileName":  "Status_QUEST_STATE_GRAPH_VALIDATOR.md",
+                      "extension":  ".md",
+                      "sizeBytes":  10674,
+                      "lastWrite":  "2026-05-15 13:00:32 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_QUEST_STATE_GRAPH_VALIDATOR_CONTINUATION_2026-05-15.md",
+                      "fileName":  "Status_QUEST_STATE_GRAPH_VALIDATOR_CONTINUATION_2026-05-15.md",
+                      "extension":  ".md",
+                      "sizeBytes":  7330,
+                      "lastWrite":  "2026-05-15 13:00:32 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_REND_DYNAMIC_RESOLUTION_ADAPTER.md",
+                      "fileName":  "Status_REND_DYNAMIC_RESOLUTION_ADAPTER.md",
+                      "extension":  ".md",
+                      "sizeBytes":  9105,
+                      "lastWrite":  "2026-05-14 22:52:41 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_SAVE_HASH_CRYPTOGRAPHER.md",
+                      "fileName":  "Status_SAVE_HASH_CRYPTOGRAPHER.md",
+                      "extension":  ".md",
+                      "sizeBytes":  17432,
+                      "lastWrite":  "2026-05-15 17:15:40 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_SHADER_OVERKILL_ARCHITECT.md",
+                      "fileName":  "Status_SHADER_OVERKILL_ARCHITECT.md",
+                      "extension":  ".md",
+                      "sizeBytes":  27586,
+                      "lastWrite":  "2026-05-15 22:44:15 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_SHALLOWS_ECONOMY_DISTRIBUTOR.md",
+                      "fileName":  "Status_SHALLOWS_ECONOMY_DISTRIBUTOR.md",
+                      "extension":  ".md",
+                      "sizeBytes":  9181,
+                      "lastWrite":  "2026-05-14 23:19:11 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_SOMATIC_COMFORT_ANALYST.md",
+                      "fileName":  "Status_SOMATIC_COMFORT_ANALYST.md",
+                      "extension":  ".md",
+                      "sizeBytes":  31725,
+                      "lastWrite":  "2026-05-15 16:00:16 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_SOUNDSCAPE_SABINE_BAKER.md",
+                      "fileName":  "Status_SOUNDSCAPE_SABINE_BAKER.md",
+                      "extension":  ".md",
+                      "sizeBytes":  6027,
+                      "lastWrite":  "2026-05-15 02:55:03 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_SPLASHDOWN_FLUID_DYNAMICS.md",
+                      "fileName":  "Status_SPLASHDOWN_FLUID_DYNAMICS.md",
+                      "extension":  ".md",
+                      "sizeBytes":  17743,
+                      "lastWrite":  "2026-05-14 22:52:41 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_TECH_RESEARCHER.md",
+                      "fileName":  "Status_TECH_RESEARCHER.md",
+                      "extension":  ".md",
+                      "sizeBytes":  7655,
+                      "lastWrite":  "2026-05-15 16:00:16 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_TECHNICAL_ARTIST_DATA.md",
+                      "fileName":  "Status_TECHNICAL_ARTIST_DATA.md",
+                      "extension":  ".md",
+                      "sizeBytes":  12574,
+                      "lastWrite":  "2026-05-15 16:00:16 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_UI_DIEGETIC_INPUT.md",
+                      "fileName":  "Status_UI_DIEGETIC_INPUT.md",
+                      "extension":  ".md",
+                      "sizeBytes":  24902,
+                      "lastWrite":  "2026-05-14 22:52:41 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_UX_ENGINEER.md",
+                      "fileName":  "Status_UX_ENGINEER.md",
+                      "extension":  ".md",
+                      "sizeBytes":  10905,
+                      "lastWrite":  "2026-05-15 16:00:16 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_UX_HPHI_SIGNAL_WIRING.md",
+                      "fileName":  "Status_UX_HPHI_SIGNAL_WIRING.md",
+                      "extension":  ".md",
+                      "sizeBytes":  26914,
+                      "lastWrite":  "2026-05-14 14:31:34 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_VAULT_MEMORY_RELOCATOR.md",
+                      "fileName":  "Status_VAULT_MEMORY_RELOCATOR.md",
+                      "extension":  ".md",
+                      "sizeBytes":  7710,
+                      "lastWrite":  "2026-05-14 22:52:41 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_VFX_PARTICLE_LOD_PARAMETERIZER.md",
+                      "fileName":  "Status_VFX_PARTICLE_LOD_PARAMETERIZER.md",
+                      "extension":  ".md",
+                      "sizeBytes":  10062,
+                      "lastWrite":  "2026-05-15 16:00:16 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_VFX_SDF_CARVE_DEBRIS.md",
+                      "fileName":  "Status_VFX_SDF_CARVE_DEBRIS.md",
+                      "extension":  ".md",
+                      "sizeBytes":  40823,
+                      "lastWrite":  "2026-05-15 15:07:09 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_VISUAL_EXTINCTION_LUT_BAKER.md",
+                      "fileName":  "Status_VISUAL_EXTINCTION_LUT_BAKER.md",
+                      "extension":  ".md",
+                      "sizeBytes":  10403,
+                      "lastWrite":  "2026-05-15 16:00:16 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_VISUAL_LOD_GRADE_ARCHITECT.md",
+                      "fileName":  "Status_VISUAL_LOD_GRADE_ARCHITECT.md",
+                      "extension":  ".md",
+                      "sizeBytes":  8683,
+                      "lastWrite":  "2026-05-15 16:00:16 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_VOLUMETRIC_PRESSURE_SOLVER.md",
+                      "fileName":  "Status_VOLUMETRIC_PRESSURE_SOLVER.md",
+                      "extension":  ".md",
+                      "sizeBytes":  54126,
+                      "lastWrite":  "2026-05-15 14:45:49 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_VR_COCKPIT_MANUAL_OVERRIDE.md",
+                      "fileName":  "Status_VR_COCKPIT_MANUAL_OVERRIDE.md",
+                      "extension":  ".md",
+                      "sizeBytes":  68176,
+                      "lastWrite":  "2026-05-15 22:19:59 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_VRAM_ASSET_SCOUT.md",
+                      "fileName":  "Status_VRAM_ASSET_SCOUT.md",
+                      "extension":  ".md",
+                      "sizeBytes":  10161,
+                      "lastWrite":  "2026-05-15 16:00:16 +04:00",
+                      "includedInCombinedText":  true
+                  },
+                  {
+                      "relativePath":  "Status_WAKE_TURBULENCE_COMPUTE.md",
+                      "fileName":  "Status_WAKE_TURBULENCE_COMPUTE.md",
+                      "extension":  ".md",
+                      "sizeBytes":  12544,
+                      "lastWrite":  "2026-05-14 14:29:42 +04:00",
+                      "includedInCombinedText":  true
+                  }
+              ]
+}

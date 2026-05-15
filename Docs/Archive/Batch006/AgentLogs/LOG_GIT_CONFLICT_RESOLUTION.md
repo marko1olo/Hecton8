@@ -639,17 +639,3 @@ Cinematic Cheats used -> The visor remains a fullscreen compositing cheat. No ph
 Exact Microseconds saved -> 0 us measured. Compile integrity restored; runtime/profiler proof is pending.
 
 Verification -> `CurrentTail43` records the RenderGraph compile failure. `CurrentTail44` records `EXIT=0`; the referenced log reports build succeeded with `0 Warning(s)` and `0 Error(s)`. Mixed external evidence remains recorded: some integrator builds failed before later successful exits, and one DOC_AUDIT HPhi exit has an empty `EXIT=` field. Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals are not claimed.
-
-## 2026-05-15 - Loop 42 Batch006 Archive And Remote Incoming Audit
-
-What was wrong -> A documentation archive pass moved the active `Docs/AgentLogs` and `Docs/Tasks` batch surface into `Docs/Archive/Batch006`, including this running Git integration agent's own status, rationale, and log files. Remote was already synchronized, so this was a local live-tail issue, not an incoming merge conflict.
-
-What was done -> Fetched `origin/main` and verified `origin/main...HEAD = 0 0`; read the archive agent's status/rationale/log and both archive manifests; restored active `GIT_CONFLICT_RESOLUTION` memory files; generated `Docs/Archive/Batch006/AgentLogs/GitRemoteIncoming_GIT_CONFLICT_RESOLUTION_20260515_2245.md` with full `origin/main` reflog fetch ranges, commits, and changed files.
-
-Cinematic Cheats used -> None. Git/documentation integration only.
-
-Exact Microseconds saved -> 0 us runtime claimed. Process-only gain is lower active-doc scan noise after archiving old batch evidence.
-
-Verification -> Batch006 archive currently contains 991 files and 148317214 bytes after removing 19 zero-byte archive artifacts and regenerating combined manifests. Remote incoming report shows the current pull state as `0 0`; the last observed other-computer fetch ranges include economy proof, lore/regrowth/hash work, Git sync evidence, orphan meta cleanup, generated artifact refresh, and batch agent output sync.
-
-Current Status -> Staging pending for archive checkpoint. Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals are not claimed.

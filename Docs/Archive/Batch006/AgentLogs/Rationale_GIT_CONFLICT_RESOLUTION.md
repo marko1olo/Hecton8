@@ -245,9 +245,3 @@ Solution: Stage only nonzero evidence and required Unity meta/asmdef companions,
 Rejected Alternatives: Omitting asmdef/meta files, committing empty HPhi JSON evidence, leaving `RenderGraphUtils.AddBlitPass`/obsolete render pass code, or force-pushing around a compile failure.
 Scalability potential: Git-only operator pass. The SpaceEngine smoke tester is dev-only under `UNITY_EDITOR || DEVELOPMENT_BUILD`; visor pass remains a fullscreen visual cheat path with low-tier parameters owned by producer code.
 Hardware Impact: 0 us measured runtime impact. Latest proof is `Build_GIT_CONFLICT_RESOLUTION_20260515_CurrentTail44.exit.txt` with `EXIT=0`, `0 Warning(s)`, `0 Error(s)`; Unity Editor import, Play Mode, profiler, GCMonitor, player build, and visual proof remain unclaimed.
-
-Problem: Batch006 archive hygiene moved hundreds of active `Docs/AgentLogs` and `Docs/Tasks` files, including the running Git integration memory files, while `origin/main` was already synchronized.
-Solution: Treat the archive as a documentation handover move after reading its own status, rationale, log, and manifests; restore only the active `GIT_CONFLICT_RESOLUTION` memory files required by the running protocol; generate a reflog-backed incoming report with exact remote ranges and file lists.
-Rejected Alternatives: Force-pushing, resetting the archive move, committing deletion of active integration memory, or summarizing the other-computer changes without concrete commit/file evidence.
-Scalability potential: Low keeps active docs searchable by keeping old batch material archived; Middle/High/Ultra keep forensic breadth through per-file archive plus combined manifests. Runtime behavior is unchanged.
-Hardware Impact: 0 us runtime impact. Dev-path gain is reduced active documentation scan noise and a reproducible remote-incoming audit trail.

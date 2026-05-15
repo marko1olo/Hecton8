@@ -230,17 +230,17 @@ updates this contract with a bounded dispatcher-shell justification.
 
 ## 2026-05-15 Current Static Baseline
 
-Artifact: `../AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_222808_CurrentDiskBudgetGate20_Tight.json`
+Artifact: `../AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.json`
 with exit summary
-`../AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_222808_CurrentDiskBudgetGate20_Tight.exit.txt`.
+`../AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.exit.txt`.
 Result: `EXIT=0` on a full source summary JSON budget run at
-`2026-05-15 22:30:16 +04:00`.
+`2026-05-15 22:46:22 +04:00`.
 
 Current score floors passed:
 
 - `DataSovereignty=0.021306032`
 - `MemoryAlignment=0.506309148`
-- `HPhiStaticRisk=0.000636091`
+- `RuntimeHPhiRisk=0.000636091`
 - `RiskIntegration=0.058965935`
 
 Current static counters passed:
@@ -258,16 +258,17 @@ Current static counters passed:
 - `CoroutineSurface=0/0`
 - `AupPrecisionRisk=0`
 
-CurrentDiskBudgetGate20 Core graph debt was at the accepted ceiling:
+CurrentDiskBudgetGate22 Core graph debt was at the accepted ceiling:
 `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`,
 `SourceBackedBridgeDebtReferenceCount=14`,
 `SourceBackedCompileBridgeDebtReferenceCount=8`, and
 `ProjectReferenceReplacementDebtReferenceCount=6`.
 
 This supersedes earlier same-day MemoryAlignment failure artifacts, the interim
-R47 `GlobalRegistrySurface=5076 > 5075` failure, and R49 as current-disk static
-H-Phi status. Pair it with
-`../AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_222140_CurrentDisk50.log`
+R47 `GlobalRegistrySurface=5076 > 5075` failure, R49, R52, R53, R54, and the
+integration CurrentDiskBudgetGate19 slice as current-disk static H-Phi status.
+Pair it with
+`../AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_224641_CurrentDisk53.log`
 for CLI compile evidence. It is not Unity import proof, Play Mode proof,
 profiler proof, GC proof, player-build proof, or visual quality proof.
 
