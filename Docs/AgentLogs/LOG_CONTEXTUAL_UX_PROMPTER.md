@@ -289,3 +289,25 @@ Cinematic cheats used: No visual change. The same integer-index glyph atlas rema
 Exact microseconds saved: Estimate only. Expected gain is sub-1 us per idle tooltip late frame on i3/MX350; no profiler proof is claimed.
 
 Verification: No dotnet rebuilds were run. Static scans confirmed gated scheme reads and no forbidden allocation/text/LINQ, bootstrap fallback, direct `Time`, old phosphor fallback, or `resolvedCamera.transform` markers.
+
+## 2026-05-15 Tooltip Render-Path Scheme Read Removal
+What was wrong: `ResolveAnchorPosition()` still had a render-path fallback call that could read the input scheme when the cached scheme hash was zero.
+
+What was done: Removed the fallback from anchor resolution, refreshed the scheme on input hot-swap and diagnostic show, and reused the refreshed scheme for hot-swap layout rebuilds.
+
+Cinematic cheats used: Preserved the XR 0.1m comfort depth offset while keeping render submission deterministic and input-free.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us on active tooltip render frames when the scheme cache would otherwise be cold; no profiler proof is claimed.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed `ResolveAnchorPosition()` uses cached `_activeSchemeHash` only and no forbidden allocation/text/LINQ, bootstrap fallback, direct `Time`, old phosphor fallback, or `resolvedCamera.transform` markers returned.
+
+## 2026-05-15 Tooltip UV Dirty-Gate
+What was wrong: Prompt layout rebuilds marked font and sprite UV compute buffers dirty even when the atlas rect for a glyph was unchanged.
+
+What was done: Added exact UV rect comparison before writing font/sprite UV table slots, so full UV-table uploads happen only after real table changes.
+
+Cinematic cheats used: No visual change. The same atlas-driven glyph fake remains; the patch only removes redundant buffer-upload traffic during repeated layout rebuilds.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us on i3/MX350 during device hot-swap or prompt layout rebuilds with unchanged atlas rects; no profiler proof is claimed.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed UV dirty flags now pass through `WriteUvRectIfChanged()`, render-path scheme reads remain removed, and forbidden allocation/text/LINQ plus bootstrap/direct-time fallback scans stayed clean.

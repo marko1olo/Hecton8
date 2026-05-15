@@ -34,6 +34,47 @@ Verification:
 
 STATUS: AUDIT COMPLETE.
 
+## 2026-05-15 - Codex Dialogue Topology
+
+What was wrong:
+- Token totals and cost models did not explain dialogue/tool shape.
+- `logs_2.sqlite` had previously timed out under broad grouping, so its real evidence boundary was still vague.
+- JSONL dialogue structure needed durable near-root accounting separate from token billing.
+
+What was done:
+- Re-read `Docs/Tasks/Status_COMPUTE_LOGISTICS_AUDITOR.md` and `Docs/AgentLogs/Rationale_COMPUTE_LOGISTICS_AUDITOR.md`.
+- Inspected `.codex/logs_2.sqlite` schema, indexes, row counts, timestamp bounds, and retention shape read-only.
+- Ran bounded/indexed `logs_2.sqlite` queries and recent 50,000-row samples.
+- Ran a marker-based JSONL topology scan over 765 session files.
+- Created `COMPUTE_CODEX_DIALOGUE_AUDIT.md`.
+- Updated `COMPUTE_AUDIT_INDEX.md`, `COMPUTE_AUDIT_BRIEF.md`, and `Docs/Reports/COMPUTE_DOMINANCE_REPORT.md`.
+
+Evidence captured:
+- `.codex/logs_2.sqlite`: 474,415 rows.
+- Thread-bound log rows: 467,415.
+- Distinct logged thread IDs: 871.
+- Threads exactly at 1,000 log rows: 298.
+- JSONL files scanned: 765.
+- JSONL lines scanned: 2,410,138.
+- User-role markers: 14,473.
+- Assistant-role markers: 102,453.
+- Function-call markers: 518,303.
+- Shell-command markers: 461,485.
+- Apply-patch markers: 81,114.
+
+Cinematic Cheats used:
+- None. Audit-only evidence accounting.
+
+Exact microseconds saved:
+- Runtime: 0 us.
+- Process: not claimed as measured saving. The new file prevents `logs_2.sqlite` from being misrepresented as complete historical proof.
+
+Verification:
+- Markdown-only audit continuation.
+- No runtime compile run. Current workspace remains dirty from concurrent runtime agents, and this pass changed no C#.
+
+STATUS: AUDIT COMPLETE.
+
 ## 2026-05-15 - Root Audit Index
 
 What was wrong:

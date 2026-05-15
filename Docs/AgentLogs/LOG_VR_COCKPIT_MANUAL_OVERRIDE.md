@@ -373,3 +373,15 @@ Cinematic Cheats used: no simulation change. This is lifecycle table hygiene for
 Exact microseconds saved/spent: 0 us active-frame cost. Cold registration adds a cached-reference check and pays one idempotent unregister only on drift.
 
 Verification: `git diff --check` passed for the three receiver files. Scoped counter reports `LeverRegisterAllowsIdentityRepair=1`, `LeverSameColliderFastReturn=1`, `PanelRegisterRepairsCachedVolume=1`, `SwitchRegisterRepairsCachedVolume=1`, `OldLeverEarlyRegisteredGuard=0`, `OldPanelRegisteredOnlyBlock=0`, `OldSwitchRegisteredOnlyBlock=0`. `CURRENT_BATCH.md` extraction still returns no matching prompt block. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - Shared Receiver Sample Monotonicity
+
+What was wrong: panel buttons and snap switches still accepted older physical-hand callback frames after newer probe samples. That could regress panel hand-inside visual state or let a stale switch callback toggle/publish after a fresher sample.
+
+What was done: `PhysicalPanelButton.TryQueueHandPress()` now rejects sample frames older than `_lastHandInsideFrame`. `PhysicalSnapSwitch.TryQueueHandPress()` now caches `_lastSampleFrame`, rejects older callbacks before transform work, and publishes with the resolved probe frame.
+
+Cinematic Cheats used: no simulation change. The controls remain deterministic scalar cockpit fakes backed by overlap probes and typed interaction signals, not Unity joints or physical switch solvers.
+
+Exact microseconds saved/spent: one integer compare per receiver callback. Stale panel callbacks skip registration, AUP conversion, signal construction, and haptics. Stale switch callbacks skip one `InverseTransformPoint`, state solve, signal publish, haptic, and audio. 0 B/frame.
+
+Verification: `git diff --check` passed for `PhysicalPanelButton.cs` and `PhysicalSnapSwitch.cs`. Scoped counter reports `PanelStaleFrameReject=1`, `SwitchLastSampleField=1`, `SwitchResolvedSampleFrame=1`, `SwitchStaleFrameReject=1`, `SwitchPublishUsesResolvedFrame=1`, `ForbiddenPatternTotal=0`, `DotnetMention=0`. `CURRENT_BATCH.md` extraction still returns no matching prompt block. No dotnet rebuild/probe was run by user instruction.

@@ -293,7 +293,7 @@ namespace Hecton8.UI
             }
 
             if (diegeticPanel == null)
-                diegeticPanel = ResolveFirstChildComponent<DiegeticPanelController>(transform, includeInactive: true);
+                diegeticPanel = ComponentReferenceUtility.ResolveOwnedComponent<DiegeticPanelController>(transform);
 
             if (diegeticPanelRoot == null)
             {
@@ -331,7 +331,7 @@ namespace Hecton8.UI
             }
 
             if (tabletScreenRenderer == null && tabletRoot != null)
-                tabletScreenRenderer = ResolveFirstChildComponent<Renderer>(tabletRoot.transform, includeInactive: true);
+                tabletScreenRenderer = ComponentReferenceUtility.ResolveOwnedComponent<Renderer>(tabletRoot.transform);
 
             if (!ReferenceEquals(_cachedTabletRoot, tabletRoot))
                 RebuildTabletVisibilityCache();
@@ -809,32 +809,6 @@ namespace Hecton8.UI
             for (Transform current = start; current != null; current = current.parent)
             {
                 if (current.TryGetComponent(out T component))
-                    return component;
-            }
-
-            return null;
-        }
-
-        private static T ResolveFirstChildComponent<T>(Transform root, bool includeInactive) where T : Component
-        {
-            if (root == null)
-                return null;
-
-            if (includeInactive || root.gameObject.activeInHierarchy)
-            {
-                if (root.TryGetComponent(out T component))
-                    return component;
-            }
-
-            int childCount = root.childCount;
-            for (int i = 0; i < childCount; i++)
-            {
-                Transform child = root.GetChild(i);
-                if (!includeInactive && !child.gameObject.activeInHierarchy)
-                    continue;
-
-                T component = ResolveFirstChildComponent<T>(child, includeInactive);
-                if (component != null)
                     return component;
             }
 

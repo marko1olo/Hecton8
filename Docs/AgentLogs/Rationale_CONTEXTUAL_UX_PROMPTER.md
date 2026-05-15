@@ -284,3 +284,10 @@ Solution: Make render use cached `_activeSchemeHash` only, refresh the scheme du
 Rejected Alternatives: Keeping the render-time fallback, skipping XR depth offset permanently, or moving input reads into `DrawBatch`. Render-time input reads couple device state to draw submission; removing XR offset hurts VR comfort; per-batch reads multiply the problem.
 Scalability potential: Low removes input-service work from the draw path. Middle/High/Ultra keep XR comfort and dynamic glyph swaps while preserving render determinism.
 Hardware Impact: Expected gain is sub-microsecond on active tooltip render frames when the scheme cache was cold; no profiler proof.
+
+## Decision 40: Tooltip UV Dirty-Gate
+Problem: Prompt layout rebuilds rewrote atlas UV table entries and marked the full font/sprite UV compute buffers dirty even when the glyph rects were unchanged.
+Solution: Added exact `WriteUvRectIfChanged()` gating for font and sprite UV tables, so the upload flag flips only when a table slot changes.
+Rejected Alternatives: Uploading the full UV table after every layout rebuild, keeping a managed set of changed glyph indices, or adding partial buffer uploads now. Full uploads waste API traffic; a managed set violates zero-GC goals; partial uploads are unnecessary for the current 128-slot table and would add complexity.
+Scalability potential: Low avoids redundant buffer uploads when repeated prompt layouts reuse the same atlas rects. Middle/High/Ultra keep the same atlas contract and can spend saved CPU/API budget on richer glyph materials.
+Hardware Impact: Expected gain is sub-microsecond on i3/MX350 during device hot-swap or prompt layout rebuilds with unchanged atlas rects; no profiler proof.

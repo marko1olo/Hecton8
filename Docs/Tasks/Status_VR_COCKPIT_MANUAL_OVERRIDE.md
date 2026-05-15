@@ -236,6 +236,12 @@ Execution lane: SIMULATION / `PriorityLayer.Player`
 - [x] Snap switch registration repairs cached-volume drift before writing a new slot. DOD: `PhysicalSnapSwitch.RegisterCollider()` mirrors the panel button cached-identity path. Rejected: leaving switches on a weaker lifecycle contract than levers/buttons while all share the same receiver table. Estimate: cold lifecycle only.
 - [x] Reverification without dotnet. DOD: `git diff --check` passed for the three receiver files; scoped counter reports `LeverRegisterAllowsIdentityRepair=1`, `LeverSameColliderFastReturn=1`, `PanelRegisterRepairsCachedVolume=1`, `SwitchRegisterRepairsCachedVolume=1`, `OldLeverEarlyRegisteredGuard=0`, `OldPanelRegisteredOnlyBlock=0`, `OldSwitchRegisteredOnlyBlock=0`. `CURRENT_BATCH.md` extraction still returns no matching prompt block. Rejected: dotnet rebuild/probe by explicit user instruction. Estimate: verification only.
 
+## Loop 36 - Shared Receiver Sample Monotonicity
+
+- [x] Panel button rejects stale hand samples. DOD: `PhysicalPanelButton.TryQueueHandPress()` now resolves the probe frame once and ignores callbacks older than `_lastHandInsideFrame` before registration, signal construction, haptic routing, or AUP conversion. Rejected: last-writer-wins hand contacts because callback arrival order is not interaction truth. Estimate: one integer compare per receiver callback; stale callbacks avoid event work.
+- [x] Snap switch rejects stale hand samples. DOD: `PhysicalSnapSwitch.TryQueueHandPress()` caches `_lastSampleFrame`, rejects older callbacks before `InverseTransformPoint`, and publishes switch signals with the same resolved frame stamp. Rejected: sampling `Time.frameCount` again during publish or letting stale callbacks toggle state. Estimate: one integer compare on callbacks; stale samples skip one transform conversion and switch solve.
+- [x] Reverification without dotnet. DOD: `git diff --check` passed for `PhysicalPanelButton.cs` and `PhysicalSnapSwitch.cs`; scoped counter reports `PanelStaleFrameReject=1`, `SwitchLastSampleField=1`, `SwitchResolvedSampleFrame=1`, `SwitchStaleFrameReject=1`, `SwitchPublishUsesResolvedFrame=1`, `ForbiddenPatternTotal=0`, `DotnetMention=0`. `CURRENT_BATCH.md` extraction still returns no matching prompt block. Rejected: dotnet rebuild/probe by explicit user instruction. Estimate: verification only.
+
 STATUS: PENDING VERIFICATION - Unity editor/global Core compile dependency wall prevents full player compile proof in this session.
 
 ## Compile Attempts

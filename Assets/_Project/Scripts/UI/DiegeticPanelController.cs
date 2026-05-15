@@ -918,39 +918,13 @@ namespace Hecton8.UI
             cursorTransform.TryGetComponent(out _cursorCollider);
 
             if (_cursorGraphic == null)
-                _cursorGraphic = ResolveFirstChildComponent<Graphic>(cursorTransform, includeInactive: true);
+                _cursorGraphic = ComponentReferenceUtility.ResolveOwnedComponent<Graphic>(cursorTransform);
 
             if (_cursorRenderer == null)
-                _cursorRenderer = ResolveFirstChildComponent<Renderer>(cursorTransform, includeInactive: true);
+                _cursorRenderer = ComponentReferenceUtility.ResolveOwnedComponent<Renderer>(cursorTransform);
 
             if (_cursorCollider == null)
-                _cursorCollider = ResolveFirstChildComponent<Collider>(cursorTransform, includeInactive: true);
-        }
-
-        private static T ResolveFirstChildComponent<T>(Transform root, bool includeInactive) where T : Component
-        {
-            if (root == null)
-                return null;
-
-            if (includeInactive || root.gameObject.activeInHierarchy)
-            {
-                if (root.TryGetComponent(out T component))
-                    return component;
-            }
-
-            int childCount = root.childCount;
-            for (int i = 0; i < childCount; i++)
-            {
-                Transform child = root.GetChild(i);
-                if (!includeInactive && !child.gameObject.activeInHierarchy)
-                    continue;
-
-                T component = ResolveFirstChildComponent<T>(child, includeInactive);
-                if (component != null)
-                    return component;
-            }
-
-            return null;
+                _cursorCollider = ComponentReferenceUtility.ResolveOwnedComponent<Collider>(cursorTransform);
         }
 
         private void ResolveInterfaces()

@@ -662,18 +662,32 @@ namespace Hecton8.UI
                 _textGlyphLocalScales[_textGlyphCount] = new Vector2(width, height);
                 int glyphIndex = c < UvTableCapacity ? c : '?';
                 _textGlyphIndices[_textGlyphCount] = glyphIndex;
-                _fontUvTable[glyphIndex] = new Vector4(
+                Vector4 uvRect = new Vector4(
                     rect.x * invAtlasWidth,
                     rect.y * invAtlasHeight,
                     (rect.x + rect.width) * invAtlasWidth,
                     (rect.y + rect.height) * invAtlasHeight);
-                _fontUvTableDirty = true;
+                if (WriteUvRectIfChanged(_fontUvTable, glyphIndex, uvRect))
+                    _fontUvTableDirty = true;
 
                 penX += metrics.horizontalAdvance * glyphScale * glyphAdvanceScale;
                 _textGlyphCount++;
             }
 
             return penX;
+        }
+
+        private static bool WriteUvRectIfChanged(Vector4[] table, int index, Vector4 uvRect)
+        {
+            Vector4 current = table[index];
+            if (current.x == uvRect.x
+                && current.y == uvRect.y
+                && current.z == uvRect.z
+                && current.w == uvRect.w)
+                return false;
+
+            table[index] = uvRect;
+            return true;
         }
 
         private float MeasureAdvance(ReadOnlySpan<char> text, float glyphScale)
@@ -727,12 +741,13 @@ namespace Hecton8.UI
             float invAtlasHeight = math.rcp(math.max(1f, atlasHeight));
             width = Mathf.Max(MinimumGlyphScale, metrics.width * glyphScale * IconScaleMultiplier);
             height = Mathf.Max(MinimumGlyphScale, metrics.height * glyphScale * IconScaleMultiplier);
-            _spriteUvTable[spriteIndex] = new Vector4(
+            Vector4 uvRect = new Vector4(
                 rect.x * invAtlasWidth,
                 rect.y * invAtlasHeight,
                 (rect.x + rect.width) * invAtlasWidth,
                 (rect.y + rect.height) * invAtlasHeight);
-            _spriteUvTableDirty = true;
+            if (WriteUvRectIfChanged(_spriteUvTable, spriteIndex, uvRect))
+                _spriteUvTableDirty = true;
             iconGlyphIndex = spriteIndex;
             return true;
         }

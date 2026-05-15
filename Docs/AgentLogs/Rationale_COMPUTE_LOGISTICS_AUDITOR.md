@@ -275,3 +275,15 @@ Rejected Alternatives: Reusing the previous 43.78B snapshot was rejected because
 Scalability potential: Low/Middle/High/Ultra process gains a hard rate dashboard. Future work can see when prompt velocity jumps from normal burn into pathological burst mode and can decide whether to pause agents before piling more context onto hot files.
 
 Hardware Impact: 0 runtime microseconds on i3/MX350. No C# source, scene, prefab, shader, project setting, or Unity asset was changed. Process impact: identifies 57,503.86 tokens per meaningful LOC and 1,070.477 tokens per script source byte as the current context-recursion signature.
+
+## Decision 23 - Codex Dialogue Topology
+
+Problem: Token totals explain cost but not dialogue/tool shape. The user asked to keep studying `.codex` dialogs and logs, and the prior `logs_2.sqlite` grouping attempts had timed out.
+
+Solution: Inspect `logs_2.sqlite` schema/indexes read-only, use indexed and bounded queries only, then run a marker-based scan over JSONL sessions. Preserve the result in `COMPUTE_CODEX_DIALOGUE_AUDIT.md` with explicit boundaries between exact indexed facts, recent samples, and marker counts.
+
+Rejected Alternatives: Full grouping by `target`/`level` over the whole 3.2GB log DB was rejected after timeout because there are no target/level indexes. Full semantic JSON parse over 8GB JSONL was rejected after timeout. Treating marker counts as exact executed tool-call counts was rejected because markers can occur in payloads, outputs, summaries, or quoted text.
+
+Scalability potential: Low/Middle/High/Ultra process gains a realistic view of automation density. Future audits can see that the main risk is not just token mass, but one user marker driving dozens of tool markers and transport/log events.
+
+Hardware Impact: 0 runtime microseconds on i3/MX350. No C# source, scene, prefab, shader, project setting, or Unity asset was changed. Process impact: identifies `logs_2.sqlite` as capped recent evidence and JSONL as the durable but expensive dialogue source.

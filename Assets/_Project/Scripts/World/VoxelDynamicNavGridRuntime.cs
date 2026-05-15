@@ -2579,11 +2579,11 @@ namespace Hecton8.World
             if (xyCount <= 0L || xyCount > int.MaxValue)
                 return false;
 
-            long expectedCellCount = xyCount * dimensions.z;
-            if (expectedCellCount <= 0L || expectedCellCount > int.MaxValue)
+            long expectedCellCountLong = xyCount * dimensions.z;
+            if (expectedCellCountLong <= 0L || expectedCellCountLong > int.MaxValue)
                 return false;
 
-            expectedCellCount = (int)expectedCellCount;
+            expectedCellCount = (int)expectedCellCountLong;
             return true;
         }
 

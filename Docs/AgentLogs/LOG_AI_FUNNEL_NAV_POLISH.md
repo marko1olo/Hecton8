@@ -826,3 +826,26 @@ Verification:
 - Targeted pure-void job range reported no raw division, forbidden hot math, managed allocation, or `foreach`.
 - `git diff --check` passed without invoking dotnet rebuilds.
 - Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.
+
+## 2026-05-15 - Dynamic Update Buffer Coverage Proof
+
+What was wrong:
+- Dynamic obstacle scheduling checked secondary buffers for creation but not complete length coverage.
+- A stale shorter `Next`, base, distance, or pure-void flag buffer could enter route-record update jobs.
+
+What was done:
+- Added `HasCompleteDynamicUpdateBuffers`.
+- Added `TryResolveVoxelCellCount` as shared 64-bit voxel cell-count proof.
+- Dynamic update scheduling now requires complete next/base/distance/pure-void buffers before reset, dilation, or pure-void scan scheduling.
+
+Cinematic Cheats used:
+- Corrupt dynamic obstacle records fail closed before job dispatch instead of attempting partial route updates.
+- Low tier avoids invalid update jobs; High/Ultra keep richer obstacle updates only with complete buffer coverage.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Static gain is invalid dispatch and route-recovery avoidance.
+
+Verification:
+- Targeted dynamic scheduling and buffer-proof ranges reported no raw division, forbidden hot math, managed allocation, or `foreach`.
+- `git diff --check` passed without invoking dotnet rebuilds.
+- Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.

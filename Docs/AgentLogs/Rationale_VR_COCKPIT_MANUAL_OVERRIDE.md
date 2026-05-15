@@ -461,3 +461,15 @@ Rejected Alternatives: keeping registration unchanged was rejected because the p
 Scalability potential: Low/toaster avoids stale receiver slots after runtime prefab repair, scene streaming, or enable-order drift. Middle/High keep dense cockpit receiver tables stable across authored control replacement. Ultra can support more physical panel controls without carrying dead collider entries.
 
 Hardware Impact: 0 us active-frame cost. Cold registration pays one cached-reference branch and, only on drift, one idempotent unregister before re-registering. i3/MX350 gain is fixed receiver capacity preservation and avoided stale overlap dispatch.
+
+## Decision 38 - Shared receiver callbacks must be time-monotonic
+
+Problem: the manual override lever rejected stale hand samples, but adjacent receiver controls still accepted any valid callback. A panel button could mark a prior frame as the current hand-inside state, and a snap switch could toggle or publish using an older sample after a newer probe had already been processed.
+
+Solution: add the same resolved-frame monotonic policy to `PhysicalPanelButton` and `PhysicalSnapSwitch`. Panel buttons now reject frames older than `_lastHandInsideFrame` before registration or signal construction. Snap switches cache `_lastSampleFrame`, reject older callbacks before transform work, and forward the resolved frame into `PublishSwitchSignal()`.
+
+Rejected Alternatives: accepting last-writer-wins was rejected because probe order is not gameplay truth. Adding a queue was rejected because these controls only need the freshest sample and a queue would add state and drain policy. Rejecting same-frame callbacks was rejected because future left/right probes may legitimately report in one frame.
+
+Scalability potential: Low keeps receiver callbacks scalar and allocation-free while stale samples skip transform/signal work. Middle/High keep dense cockpit panels deterministic under multi-hand or delayed callback paths. Ultra can layer richer haptics/audio on top of truthful sample frames without increasing gameplay state cost.
+
+Hardware Impact: i3/MX350 pays one integer compare per receiver callback. Stale panel callbacks skip registration/signal/AUP/haptic work; stale switch callbacks skip `InverseTransformPoint`, desired-state solve, signal publish, haptic, and audio. 0 B/frame, no new service dependency, no physics simulation.

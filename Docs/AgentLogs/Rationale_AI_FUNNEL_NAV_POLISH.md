@@ -369,3 +369,9 @@ Solution: Return before writing when the flag buffer is missing or the block ind
 Rejected Alternatives: Trusting scheduler correctness alone was rejected because Burst jobs must fail closed when invoked with stale or corrupt native state.
 Scalability potential: Low/MX350 avoids rare invalid pure-void metadata writes. Middle/High/Ultra keep exact pure-void scheduling without unsafe job fallback behavior.
 Hardware Impact: Adds cheap branch proof inside one Burst job; expected gain is fault avoidance, not throughput. Dotnet rebuilds remain prohibited.
+
+Problem: Dynamic obstacle scheduling proved record `Current` bounds but only checked the other update buffers for creation, so stale shorter `Next`, base, distance, or pure-void flag buffers could enter route-record jobs.
+Solution: Add `HasCompleteDynamicUpdateBuffers` and `TryResolveVoxelCellCount`; dynamic update scheduling now requires every buffer to cover the proven voxel cell count and pure-void block count before scheduling reset/dilation/scan jobs.
+Rejected Alternatives: Relying on downstream job index guards was rejected because the scheduler is the route update authority boundary. Duplicating dimension products in each caller was rejected because integer overflow proof must remain single-source.
+Scalability potential: Low/MX350 fails closed before corrupt dynamic obstacle jobs. Middle/High/Ultra keep larger voxel records and richer dynamic obstacle updates only when buffer coverage is explicit.
+Hardware Impact: Adds scalar length checks before job scheduling; expected gain is avoided invalid dispatch and route recovery. Dotnet rebuilds remain prohibited.

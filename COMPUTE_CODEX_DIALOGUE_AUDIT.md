@@ -23,8 +23,10 @@ Reason: full semantic grouping over `logs_2.sqlite` and full JSON parse over 8GB
 | `.codex/sessions/**/*.jsonl` | 8,165,855,838 | 7.605 |
 | `.codex/logs_2.sqlite` | 3,260,547,072 | 3.037 |
 | `.codex/logs_2.sqlite-wal` | 6,217,112 | 0.006 |
+| `.codex/logs_2.sqlite-shm` | 32,768 | 0.000 |
 | `.codex/state_5.sqlite` | 4,571,136 | 0.004 |
 | `.codex/state_5.sqlite-wal` | 4,548,512 | 0.004 |
+| `.codex/state_5.sqlite-shm` | 32,768 | 0.000 |
 | Total listed surface | 11,441,805,206 | 10.656 |
 
 The `.codex` evidence surface is already larger than many small game repositories. It is not "logs". It is a local forensic warehouse.

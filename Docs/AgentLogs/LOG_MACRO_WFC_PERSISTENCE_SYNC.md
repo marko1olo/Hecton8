@@ -855,3 +855,27 @@ Verification:
 - Static scan confirms `hydrationSectors` uses stack-only scratch.
 - `git diff --check -- Assets/_Project/Scripts/SaveManager.cs` reports only Git CRLF normalization warnings.
 - No `dotnet` rebuild was run.
+
+## Recheck Report: WFC Signal Storm Stack Guard
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- The prior unique-sector drain used `stackalloc ulong[signals.Length]`.
+- `SignalBus<T>.Configure(128)` is expected queue capacity, not a hard snapshot cap, so storm snapshots can exceed the intended stack bound.
+
+What was done:
+- Added `MaxWfcDirtySectorStackEntries = 256` for the fast stack path.
+- Added an exact no-allocation storm fallback that records events in snapshot order and persists each unique sector by first occurrence.
+
+Cinematic cheats used:
+- Bounded stack batching plus first-occurrence storm scan instead of managed maps or signal bus contract churn.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation: 0 B by static inspection.
+- Common path stays stack-only; storm path trades extra scalar scans for bounded stack and no mutation loss.
+
+Verification:
+- Static scan confirms the storm fallback and shared event helper exist.
+- `git diff --check -- Assets/_Project/Scripts/SaveManager.cs` reports only Git CRLF normalization warnings.
+- No `dotnet` rebuild was run.

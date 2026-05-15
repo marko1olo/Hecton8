@@ -287,6 +287,12 @@ Task Count: 15
 - [x] Job range overflow proof | DOD: block start/end are computed in 64-bit and out-of-range starts write a bounded zero flag before returning; rejected int multiplication/addition on corrupt block indices; estimate 2 us.
 - [x] Pure void job static scan | DOD: changed Burst job range reports no raw division, forbidden hot math, managed allocation, or `foreach`; dotnet rebuilds remain prohibited; estimate 2 us.
 
+## Loop 40 - Dynamic Update Buffer Coverage Proof
+
+- [x] Dynamic update complete-buffer proof | DOD: added `HasCompleteDynamicUpdateBuffers` so dynamic obstacle scheduling requires next/base/current-distance/next-distance/pure-void buffers to cover the resolved voxel cell and block counts; rejected created-only checks; estimate 4 us.
+- [x] Shared voxel cell count proof | DOD: `TryResolveVoxelCellCount` centralizes 64-bit dimensions product proof for current record and dynamic update buffer coverage; rejected duplicated int products; estimate 3 us.
+- [x] Dynamic buffer static scan | DOD: changed dynamic scheduling and buffer-proof ranges report no raw division, forbidden hot math, managed allocation, or `foreach`; dotnet rebuilds remain prohibited; estimate 2 us.
+
 ## Verification
 
 - [x] Static scan | PASS: `StringPullPathJob`, `NativeAStarJob`, `TryResolveAbyssalNavNodeCandidate`, abyssal nav support/hash, nav graph ingress, and funnel telemetry conversion regions have no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/` code matches after loop 19.
@@ -310,6 +316,7 @@ Task Count: 15
 - [x] Pure void block count targeted scan | PASS: `ResolvePureVoidBlockCount` and `PureVoidScanBlockShift` range reports no raw division, forbidden hot math, managed allocation, or `foreach`.
 - [x] Pure void scheduler targeted scan | PASS: `SchedulePureVoidScan` range reports no raw division, forbidden hot math, managed allocation, or `foreach`.
 - [x] Pure void job targeted scan | PASS: `PureVoidBlockScanJob.Execute` range reports no raw division, forbidden hot math, managed allocation, or `foreach`.
+- [x] Dynamic update buffer targeted scan | PASS: dynamic scheduling, `HasCompleteDynamicUpdateBuffers`, and `TryResolveVoxelCellCount` ranges report no raw division, forbidden hot math, managed allocation, or `foreach`.
 - [x] Batch prompt re-extraction | PASS: CLI regex rechecked `CURRENT_BATCH.md` after loop 34 and confirmed `AI_FUNNEL_NAV_POLISH` remains absent; persisted task files remain authority.
 - [x] Diff hygiene | PASS: `git diff --check` passed for touched source/status/rationale/log files; only LF-to-CRLF working-copy warnings were emitted.
 - [x] Core graph H-Phi summary | PASS STATIC: `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` completed without build; graph debt counts are Core asmdef 25, generated project 10, source-backed bridge 14, source-backed compile bridge 8, project-reference replacement 6; no source-only route hardening score was claimed.
