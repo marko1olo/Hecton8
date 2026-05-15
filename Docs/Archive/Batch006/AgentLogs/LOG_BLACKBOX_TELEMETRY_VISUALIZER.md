@@ -294,3 +294,27 @@ Verification:
 - `curl -D - -o NUL /api/health`: HTTP 200 with `cache-control: no-store, max-age=0`, `pragma: no-cache`, `x-content-type-options: nosniff`.
 - Removed `.codex_tmp`; `Tools/TelemetryDashboard/__pycache__` absent after verification.
 - C# boundary: no `Assets/_Project/Scripts` edits by this task. Unrelated modified/untracked C# files exist and were not touched.
+
+## 2026-05-15 - Workspace-Local Smoke Harness
+
+What was wrong:
+- `Tools/TelemetryDashboard/smoke_test.py` used `tempfile.TemporaryDirectory()`.
+- On this host, sandboxed verification cannot write/delete inside OS temp, so the smoke test failed before exercising dashboard parser contracts.
+
+What was done:
+- Replaced OS-temp smoke fixtures with `Temp/CodexValidation/BLACKBOX_TELEMETRY_VISUALIZER_SMOKE`.
+- Made the synthetic `.h8dump` directory creation idempotent.
+- Relaxed frame-series count to tolerate deterministic reruns while still proving the expected jitter and live telemetry points exist.
+
+Cinematic Cheats used:
+- Synthetic binary/CSV fixtures still replace live Unity crash production. No runtime telemetry values are fabricated by the dashboard.
+
+Exact Microseconds saved:
+- Unity gameplay frame: 0 us changed.
+- Dashboard verification now runs without OS-temp permission dependency; auxiliary timing remains PENDING MEASUREMENT.
+
+Verification:
+- `python -B Tools\TelemetryDashboard\smoke_test.py`: PASS, output `telemetry dashboard smoke ok`.
+- `python -B -m py_compile Tools\TelemetryDashboard\server.py Tools\TelemetryDashboard\smoke_test.py`: PASS.
+- `git diff --check -- Tools\TelemetryDashboard\smoke_test.py`: PASS; Git reports only LF-to-CRLF warning.
+- C# boundary: no `Assets/_Project/Scripts` edits by this task.

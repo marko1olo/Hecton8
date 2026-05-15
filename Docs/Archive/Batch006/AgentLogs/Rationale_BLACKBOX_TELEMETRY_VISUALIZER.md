@@ -118,3 +118,10 @@ Solution: Add shared `NO_STORE_HEADERS` and route all dashboard JSON through `da
 Rejected Alternatives: Relying only on browser fetch options was rejected because intermediaries and manual reloads should receive the same no-store contract. Adding broad CSP was rejected for now because the current page uses Chart.js from CDN and CSP would need a separate asset decision.
 Scalability potential: Low tier avoids stale local telemetry after refresh. High/Ultra can add more endpoints later through the same `dashboard_json()` helper without repeating header logic.
 Hardware Impact: 0 us Unity frame impact. External HTTP header change only; exact auxiliary timing remains PENDING MEASUREMENT.
+
+## Decision 018 - Workspace-Local Smoke Harness
+Problem: `smoke_test.py` used `tempfile.TemporaryDirectory()`, which writes outside the workspace and fails under sandboxed verification on this host.
+Solution: Route synthetic dump/CSV fixtures to `Temp/CodexValidation/BLACKBOX_TELEMETRY_VISUALIZER_SMOKE`, overwrite deterministic fixture names, and keep parser assertions tolerant of existing smoke artifacts.
+Rejected Alternatives: Requesting escalation for every smoke run was rejected because normal parser verification should be sandbox-runnable. Keeping OS temp was rejected because it moves evidence outside project-owned disk state.
+Scalability potential: Low/Middle/High/Ultra dashboard verification now runs in restricted CI-style environments without Unity or OS-temp write assumptions.
+Hardware Impact: 0 us Unity frame impact. External test harness only; dashboard runtime behavior unchanged.

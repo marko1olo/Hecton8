@@ -57,3 +57,4 @@ Source prompt: `Docs/Tasks/CURRENT_BATCH.md` / `<AGENT_PROMPT id="BLACKBOX_TELEM
 - [x] Frontend nested-shape guard: array elements and memory-map block lists are normalized before chart/table/map rendering.
 - [x] API degraded-response guard: `/api/summary` catches summary generation failures and returns explicit empty telemetry with `DASHBOARD DEGRADED` status.
 - [x] Response cache guard: `/`, `/api/summary`, and `/api/health` return `no-store`, `no-cache`, and `nosniff` headers.
+- [x] Workspace-local smoke harness: `Tools/TelemetryDashboard/smoke_test.py` writes synthetic telemetry under `Temp/CodexValidation/BLACKBOX_TELEMETRY_VISUALIZER_SMOKE` instead of OS temp, so sandboxed verification executes without external temp permissions.
