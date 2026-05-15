@@ -628,6 +628,18 @@ def parse_dump_file(path: Path) -> dict[str, Any]:
     return {**base, "type": "unknown_binary", "warnings": ["unrecognized_binary_layout"]}
 
 
+def parse_failed_dump_file(path: Path, exc: Exception) -> dict[str, Any]:
+    return {
+        **file_stamp(path),
+        "name": path.name,
+        "type": "parse_failed",
+        "entries": [],
+        "latest": None,
+        "warnings": [f"parse_failed:{exc.__class__.__name__}"],
+        "errorType": exc.__class__.__name__,
+    }
+
+
 def collect_dumps() -> dict[str, Any]:
     candidate_paths = {path for path in AGENT_LOGS.glob("Dump_*")}
     candidate_paths.update(AGENT_LOGS.glob("*.h8dump"))
@@ -635,7 +647,14 @@ def collect_dumps() -> dict[str, Any]:
         candidate = AGENT_LOGS / file_name
         if candidate.exists():
             candidate_paths.add(candidate)
-    dumps = [parse_dump_file(path) for path in sorted(candidate_paths) if path.is_file()]
+    dumps = []
+    for path in sorted(candidate_paths):
+        if not path.is_file():
+            continue
+        try:
+            dumps.append(parse_dump_file(path))
+        except Exception as exc:
+            dumps.append(parse_failed_dump_file(path, exc))
 
     memory_maps = []
     thermal_latest = None

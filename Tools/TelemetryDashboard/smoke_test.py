@@ -102,6 +102,26 @@ def main() -> int:
     assert not missing_logs.exists()
 
     server.AGENT_LOGS = root
+    original_parse_dump_file = server.parse_dump_file
+
+    def fail_player_dump(path: Path) -> dict[str, object]:
+        if path.name == "Dump_PLAYER_KINEMATICS.bin":
+            raise ValueError("forced parser failure")
+        return original_parse_dump_file(path)
+
+    server.parse_dump_file = fail_player_dump
+    try:
+        fault_data = server.collect_dumps()
+    finally:
+        server.parse_dump_file = original_parse_dump_file
+        server.AGENT_LOGS = old_logs
+    assert any(
+        file["name"] == "Dump_PLAYER_KINEMATICS.bin" and file["type"] == "parse_failed"
+        for file in fault_data["files"]
+    )
+    assert any(file["type"] == "live_telemetry" for file in fault_data["files"])
+
+    server.AGENT_LOGS = root
     try:
         dump_data = server.collect_dumps()
     finally:
