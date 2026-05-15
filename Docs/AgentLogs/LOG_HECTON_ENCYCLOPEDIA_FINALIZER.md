@@ -113,3 +113,39 @@ Verification:
 - ASCII backbone Python gate exited `0`.
 - Python spellchecker gate exited `0`.
 - Runtime/Unity/Profiler/GC/player-build proof remains `PENDING VERIFICATION`.
+
+## 2026-05-15 - Third Continuation Hardening
+
+What was wrong:
+
+- User requested another certainty pass.
+- Root README had one missing stable architecture contract link: `ARCHITECTURE/AI_POTENTIAL_FIELD_NAVIGATION.md`.
+- `Docs/ARCHITECTURE/README.md` did not provide a complete architecture contract inventory.
+
+What was done:
+
+- Added the missing root README architecture contract link.
+- Added a complete 36-file contract inventory to `Docs/ARCHITECTURE/README.md`.
+- Re-ran architecture coverage gate: architecture files `36`, missing from root README `0`, missing from architecture README `0`.
+- Re-ran structural gate: checked tasks `6/6`, FAQ entries `20`, required glossary terms present, ASCII/table domain ids contiguous `1..85`, direct tracked reports `84`, missing report links `0`.
+- Re-ran link gate on key docs: `271` relative links checked, missing links `0`.
+- Re-ran Python spellcheck over current `Docs/`: `1556` files, `86595` unique tokens, full-corpus known typo hits `13`, owned encyclopedia known typo hits `0`.
+- Re-ran known-typo scan on the six edited third-continuation docs after evidence logging: `0` hits.
+
+Cinematic Cheats used:
+
+- Documentation-only hardening. No runtime simulation touched.
+
+Exact Microseconds saved:
+
+- Runtime measured saving: 0 us. No runtime code changed.
+- Documentation lookup improvement: one missing stable architecture route removed; unmeasured.
+
+Verification:
+
+- Architecture coverage Python gate exited `0`.
+- Key-doc link Python gate exited `0`.
+- Python spellchecker gate exited `0`.
+- Edited-doc known-typo gate exited `0`.
+- `git diff --check` clean for edited docs except CRLF normalization warnings.
+- Runtime/Unity/Profiler/GC/player-build proof remains `PENDING VERIFICATION`.

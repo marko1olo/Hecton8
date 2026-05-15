@@ -131,3 +131,15 @@ Rejected Alternatives: Accepting the failed import as proof, rewriting stable do
 Scalability potential: Low/middle/high/ultra runtime tiers unchanged; future documentation agents get stronger mechanical evidence and less ambiguity around proof boundaries.
 
 Hardware Impact: 0 us runtime gain on i3/MX350; documentation verification only.
+
+## Decision 11 - Architecture Inventory Completeness
+
+Problem: The root README architecture contract list missed `AI_POTENTIAL_FIELD_NAVIGATION.md`, and `Docs/ARCHITECTURE/README.md` did not mechanically enumerate every stable architecture contract file.
+
+Solution: Add the missing root README link and a complete 36-file contract inventory to the architecture sub-index, then validate both indexes against filesystem reality. Evidence class: FILESYSTEM / STATIC_DOC.
+
+Rejected Alternatives: Leaving the sub-index as a partial read-order guide was rejected because a future agent could miss a stable contract and act from stale reports instead.
+
+Scalability potential: Runtime tiers unchanged; documentation routing improves for low-context agents and high-tier system owners.
+
+Hardware Impact: 0 us runtime gain on i3/MX350; documentation lookup reduction only.

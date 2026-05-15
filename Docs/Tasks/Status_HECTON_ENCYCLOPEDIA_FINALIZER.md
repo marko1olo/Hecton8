@@ -4,7 +4,7 @@ Agent: WRITER_ARCHITECT
 Domain: The Chronicler (Docs)
 Prompt source: `Docs/Tasks/CURRENT_BATCH.md`
 Prompt task count: 6
-Status: ENCYCLOPEDIA VERIFIED - second continuation committed
+Status: ENCYCLOPEDIA VERIFIED - third continuation committed
 
 ## Mandates Loaded
 
@@ -42,3 +42,6 @@ Status: ENCYCLOPEDIA VERIFIED - second continuation committed
 - Iteration 11: Second continuation request received on 2026-05-15. Re-read status and rationale. `Docs/Tasks/CURRENT_BATCH.md` still points to another agent prompt, so this pass remains bound to the original captured 6-task assignment.
 - Iteration 12: Corrected structural gate passed: checked tasks `6/6`, FAQ entries `20`, required glossary terms present, ASCII and table domain ranges both contiguous `1..85`, direct tracked reports `84`, key-doc relative links checked `234`, missing links `0`, bad stale-domain wording `0`.
 - Iteration 13: ASCII domain backbone validation passed with `0` non-ASCII characters. `pyspellchecker` was missing from the active Python environment, installed with approval, then rerun over `1527` Docs text/CSV/JSON files: `85978` unique tokens, `13` known typo hits outside owned encyclopedia docs, `0` owned known typo hits.
+- Iteration 14: Third continuation request received on 2026-05-15. Re-read status/rationale and rechecked live batch rotation; current batch still belongs to other agents.
+- Iteration 15: Found one real stable-index gap: `Docs/ARCHITECTURE/AI_POTENTIAL_FIELD_NAVIGATION.md` was missing from root README architecture contracts, and `Docs/ARCHITECTURE/README.md` lacked a complete architecture contract inventory.
+- Iteration 16: Patched root README plus architecture sub-index. Coverage gate passed: `36` architecture contract files, `0` missing from root README, `0` missing from architecture README, `271` key-doc relative links checked, `0` missing links. Fresh Docs spellcheck scanned `1556` files with `0` owned encyclopedia known typo hits.

@@ -119,3 +119,41 @@ Python spellchecker gate:
 - known typo hits in owned encyclopedia docs: `0`
 
 The high unknown-token count is expected because this pass included `.csv` and `.json` evidence files, which contain GUID-like tokens, identifiers, file paths, and code symbols. No owned encyclopedia typo requiring a content edit was found.
+
+## 2026-05-15 Third Continuation Recheck
+
+The user requested another continuation pass. This pass searched for stable-index coverage gaps instead of repeating only the previous gates.
+
+Index coverage defect found and fixed:
+
+- `Docs/ARCHITECTURE/AI_POTENTIAL_FIELD_NAVIGATION.md` existed but was absent from the root `Docs/README.md` architecture contract list.
+- `Docs/ARCHITECTURE/README.md` described read order but lacked a complete inventory of all stable architecture contract files.
+
+Post-fix coverage gate:
+
+- architecture contract files under `Docs/ARCHITECTURE/*.md` excluding `README.md`: `36`
+- missing architecture contracts from `Docs/README.md`: `0`
+- missing architecture contracts from `Docs/ARCHITECTURE/README.md`: `0`
+- checked tasks in status: `6`
+- reported task count: `6`
+- FAQ count: `20`
+- required glossary terms missing: `0`
+- ASCII domain ids: `1..85`, contiguous
+- table domain ids: `1..85`, contiguous
+- tracked direct `Docs/Reports/*.md` files: `84`
+- missing direct report links in `Docs/README.md`: `0`
+- key docs checked for links: `5`
+- key-doc relative links checked: `271`
+- key-doc missing links: `0`
+
+Python spellchecker gate after the index edits:
+
+- files scanned: `1556`
+- unique tokens: `86595`
+- unknown tokens after allowlist: `73532`
+- owned unknown tokens after allowlist: `526`
+- known typo hits in full scanned corpus: `13`
+- known typo hits in owned encyclopedia docs: `0`
+- known typo hits in six edited third-continuation docs after evidence logging: `0`
+
+The full-corpus typo hits remain outside owned encyclopedia docs. No archive or third-party evidence file was rewritten.
