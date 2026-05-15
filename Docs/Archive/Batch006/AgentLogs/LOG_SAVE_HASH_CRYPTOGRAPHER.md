@@ -503,3 +503,39 @@ Cinematic Cheats used: None. Offline byte-order validation only.
 Exact Microseconds saved: 0 runtime microseconds. This improves diagnostic precision; no gameplay path changed.
 
 Verification: `python -B .\Tools\Security\ReplayHasher.py self-test` returned `SELFTEST_OK`. `python -B .\Tools\Security\ValidateSaveMasterHashCSharp.py` returned `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=2 resultCtor=4 blitAttrs=2`. AST syntax parsing returned `PY_AST_OK files=3`. `git diff --check` passed with line-ending warnings only.
+
+## 2026-05-15 - Reference Verifier Shuffle Pair Guard
+
+What was wrong: `VerifyReplayHasherReference.py` validated XXH3 digest type/range, but the shuffle path still trusted `shuffle_hash128` and `unshuffle_hash128` to return exactly two unsigned 64-bit lanes.
+
+What was done: Added lane-pair validation helpers and applied them before indexing stored lanes or comparing recovered lanes.
+
+Cinematic Cheats used: None. Offline verification tooling only.
+
+Exact Microseconds saved: 0 runtime microseconds. This improves verifier failure precision; no runtime save path changed.
+
+Verification: `PY_AST_OK files=3`, `SELFTEST_OK`, `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=2 resultCtor=4 blitAttrs=2`, `SHUFFLE_PAIR_TYPE_GUARD=PASS`, `SHUFFLE_PAIR_RANGE_GUARD=PASS`, `UNSHUFFLE_PAIR_TYPE_GUARD=PASS`, `UNSHUFFLE_PAIR_RANGE_GUARD=PASS`, `XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK xxh3=338 shuffle=128`, `RATIONALE_ORDER_OK decisions=48`, `XXHASH_TMP_REMOVED`, and `git diff --check` passed with line-ending warnings only.
+
+## 2026-05-15 - Reference Verifier Exact Int Guard
+
+What was wrong: Python accepts `bool` as an `int` subtype, so the verifier still allowed boolean digest/lane values through the type gate.
+
+What was done: Replaced `isinstance(value, int)` with exact `type(value) is int` checks for digest and 128-bit lane validation.
+
+Cinematic Cheats used: None. Offline verification tooling only.
+
+Exact Microseconds saved: 0 runtime microseconds. This improves verifier ABI strictness; no runtime save path changed.
+
+Verification: `PY_AST_OK files=3`, `SELFTEST_OK`, `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=2 resultCtor=4 blitAttrs=2`, `XXHASH_DIGEST_BOOL_GUARD=PASS`, `REPLAY_DIGEST_BOOL_GUARD=PASS`, `SHUFFLE_PAIR_BOOL_GUARD=PASS`, `UNSHUFFLE_PAIR_BOOL_GUARD=PASS`, `XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK xxh3=338 shuffle=128`, and `XXHASH_TMP_REMOVED`.
+
+## 2026-05-15 - Final Owned Verification Sweep
+
+What was wrong: The verifier and logs had been hardened incrementally; final evidence needed one consolidated pass after all edits.
+
+What was done: Re-ran syntax, replay self-test, C# static parity guard, shuffle pair guards, exact-int bool guards, isolated external `xxhash` fuzz, temp cleanup, rationale ordering, and scoped diff hygiene.
+
+Cinematic Cheats used: None. Verification-only pass.
+
+Exact Microseconds saved: 0 runtime microseconds. No runtime save path changed.
+
+Verification: `PY_AST_OK files=3`, `SELFTEST_OK`, `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=2 resultCtor=4 blitAttrs=2`, `SHUFFLE_PAIR_TYPE_GUARD=PASS`, `SHUFFLE_PAIR_RANGE_GUARD=PASS`, `UNSHUFFLE_PAIR_TYPE_GUARD=PASS`, `UNSHUFFLE_PAIR_RANGE_GUARD=PASS`, `XXHASH_DIGEST_BOOL_GUARD=PASS`, `REPLAY_DIGEST_BOOL_GUARD=PASS`, `SHUFFLE_PAIR_BOOL_GUARD=PASS`, `UNSHUFFLE_PAIR_BOOL_GUARD=PASS`, `XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK xxh3=338 shuffle=128`, `XXHASH_TMP_REMOVED`, `RATIONALE_ORDER_OK decisions=49`, and `git diff --check` passed with line-ending warnings only.
