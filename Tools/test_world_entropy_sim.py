@@ -104,6 +104,13 @@ class WorldEntropySimTests(unittest.TestCase):
 
         self.assertEqual(2, context.exception.code)
 
+    def test_cli_rejects_non_acceptance_mode(self) -> None:
+        with patch.object(sys, "argv", ["WorldEntropySim.py", "--mode", "baseline"]), patch("sys.stderr", StringIO()):
+            with self.assertRaises(SystemExit) as context:
+                entropy.main()
+
+        self.assertEqual(2, context.exception.code)
+
     def test_run_sim_rejects_non_positive_day_count(self) -> None:
         with self.assertRaises(ValueError):
             entropy.run_sim(self.constants, 0, True)

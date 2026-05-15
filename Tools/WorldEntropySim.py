@@ -376,7 +376,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Run the HECTON-8 world regrowth entropy test.")
     parser.add_argument("--constants", default="Data/Economy/Regrowth_Constants.json")
     parser.add_argument("--days", type=int, default=365)
-    parser.add_argument("--mode", choices=("total_overharvest", "baseline"), default="total_overharvest")
+    parser.add_argument("--mode", choices=("total_overharvest",), default="total_overharvest")
     args = parser.parse_args()
     if args.days < 1:
         parser.error("--days must be >= 1")
