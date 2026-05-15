@@ -25,7 +25,7 @@ EXPECTED_COMMANDS = (
     "python_cache_cleanup",
 )
 
-EXPECTED_UNIT_HARNESS_TESTS = 38
+EXPECTED_UNIT_HARNESS_TESTS = 40
 EXPECTED_ARTIFACT_HASHES = 30
 
 ALLOWED_UNITY_PROBE_STATUSES = {
@@ -85,6 +85,8 @@ def validate_aggregate_report(report: dict[str, Any], environment_probe: dict[st
     for expected_command in EXPECTED_COMMANDS:
         if expected_command not in command_names:
             failures.append(f"missing aggregate command: {expected_command}")
+    if command_names and command_names[-1] != "python_cache_cleanup":
+        failures.append("python_cache_cleanup must be the final aggregate command")
 
     for record in command_records:
         if not isinstance(record, dict):
@@ -118,6 +120,9 @@ def validate_aggregate_report(report: dict[str, Any], environment_probe: dict[st
             failures.append("artifactHashCount must match artifactSha256 length")
         if report.get("artifactHashCount") != EXPECTED_ARTIFACT_HASHES:
             failures.append(f"artifactHashCount must be {EXPECTED_ARTIFACT_HASHES}")
+
+    if report.get("pythonCacheCountAfter") != 0:
+        failures.append("pythonCacheCountAfter must be 0")
 
     if environment_probe.get("schema") != "hecton8.hardware_adaptive_ui_scaler.unity_environment_probe.v1":
         failures.append("environment probe schema mismatch")

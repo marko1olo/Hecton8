@@ -54,6 +54,7 @@ def _valid_report_fixture() -> dict:
         "artifactHashCount": EXPECTED_ARTIFACT_HASHES,
         "artifactSha256": {f"artifact_{index:02d}": "0" * 64 for index in range(EXPECTED_ARTIFACT_HASHES)},
         "unitHarnessTestCount": EXPECTED_UNIT_HARNESS_TESTS,
+        "pythonCacheCountAfter": 0,
         "aggregateSelfValidation": {"status": "PASS", "failures": []},
         "statusLogSelfValidation": {"status": "PASS", "failures": []},
     }
@@ -81,6 +82,14 @@ class AggregateReportValidatorTests(unittest.TestCase):
         failures = validate_aggregate_report(report, _load(PROBE_PATH))
 
         self.assertIn("missing aggregate command: unity_environment_probe", failures)
+
+    def test_rejects_cleanup_not_last(self) -> None:
+        report = _valid_report_fixture()
+        report["commands"][-1], report["commands"][-2] = report["commands"][-2], report["commands"][-1]
+
+        failures = validate_aggregate_report(report, _load(PROBE_PATH))
+
+        self.assertIn("python_cache_cleanup must be the final aggregate command", failures)
 
     def test_rejects_failed_command(self) -> None:
         report = _valid_report_fixture()
@@ -123,6 +132,14 @@ class AggregateReportValidatorTests(unittest.TestCase):
 
         self.assertIn("artifactHashCount must match artifactSha256 length", failures)
         self.assertIn(f"artifactHashCount must be {EXPECTED_ARTIFACT_HASHES}", failures)
+
+    def test_rejects_generated_python_cache_left_after_aggregate(self) -> None:
+        report = _valid_report_fixture()
+        report["pythonCacheCountAfter"] = 1
+
+        failures = validate_aggregate_report(report, _load(PROBE_PATH))
+
+        self.assertIn("pythonCacheCountAfter must be 0", failures)
 
 
 if __name__ == "__main__":

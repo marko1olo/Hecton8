@@ -502,6 +502,66 @@ Exact Microseconds saved: 0 us runtime.
 
 Verification: Current aggregate status PASS, `unityRuntimeStatus` PENDING_UNITY_VERIFICATION, command count 8, unit harness 36 tests, artifact hash count 30, `aggregateSelfValidation` PASS, `statusLogSelfValidation` PASS, aggregate validator PASS, and status/log consistency PASS.
 
+## UX_ENGINEER Runbook Current-Gate Correction - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: The runbook's aggregate command breakdown lagged behind the current count-locked aggregate gate.
+
+What was done: Updated `Docs/Design/HardwareAdaptiveUIScaler_Runbook.md` so the aggregate unit harness includes `Tools.UX.test_validate_aggregate_report` and `Tools.UX.test_status_log_consistency`, documents expected 8 commands / 38 tests / 30 hashes, and separates standalone post-run validators from aggregate subcommands.
+
+Cinematic Cheats used: None. Operator documentation only.
+
+Exact Microseconds saved: 0 us runtime.
+
+Verification: Rerun required because the runbook is hashed by the aggregate report.
+
+## UX_ENGINEER Runbook Current-Gate Verified - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: The corrected runbook needed fresh aggregate validation because it is part of the aggregate hash set.
+
+What was done: Ran `python Tools/UX/run_hardware_adaptive_ui_validation.py`, `python Tools/UX/validate_aggregate_report.py`, and `python Tools/UX/validate_status_log_consistency.py --write-report`. Read back the generated aggregate JSON.
+
+Cinematic Cheats used: None. Operator documentation/evidence validation only.
+
+Exact Microseconds saved: 0 us runtime.
+
+Verification: Aggregate PASS; runtime PENDING_UNITY_VERIFICATION; commandCount 8/8; unitHarnessTestCount 38; artifactHashCount 30/30; `aggregateSelfValidation` PASS; `statusLogSelfValidation` PASS; runbook hash `659801e10d2d7464b6175343b35ee6a186be7671864151bf14b7be8f64c62f0a`.
+
+## UX_ENGINEER Aggregate Count-Lock Refresh - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: Current aggregate rerun failed because the exact unit-test count lock expected 38 while the unit harness now runs 40 tests.
+
+What was done: Updated `EXPECTED_UNIT_HARNESS_TESTS` in `Tools/UX/validate_aggregate_report.py` to 40 and corrected the runbook expected count.
+
+Cinematic Cheats used: None. Evidence validation only.
+
+Exact Microseconds saved: 0 us runtime.
+
+Verification: Rerun required after patch.
+
+## UX_ENGINEER Aggregate Count-Lock Refresh Verified - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: The exact test-count update needed a clean rerun.
+
+What was done: Ran `python -m py_compile Tools/UX/validate_aggregate_report.py Tools/UX/run_hardware_adaptive_ui_validation.py`; clean exit. Ran `python Tools/UX/run_hardware_adaptive_ui_validation.py`; PASS. Ran `python Tools/UX/validate_aggregate_report.py`; PASS. Ran `python Tools/UX/validate_status_log_consistency.py --write-report`; PASS. Read back aggregate report fields.
+
+Cinematic Cheats used: None. Evidence validation only.
+
+Exact Microseconds saved: 0 us runtime.
+
+Verification: Aggregate status PASS, runtime PENDING_UNITY_VERIFICATION, commandCount 8/8, unitHarnessTestCount 40, artifactHashCount 30/30, pythonCacheCountAfter 0, `aggregateSelfValidation` PASS, `statusLogSelfValidation` PASS.
+
+## UX_ENGINEER No-Drift Rerun - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: The user requested continued work after the static gate was already green. The remaining local risk was drift in generated reports, status/log consistency, cache cleanup, or whitespace.
+
+What was done: Reran `python Tools/UX/run_hardware_adaptive_ui_validation.py`, `python Tools/UX/validate_aggregate_report.py`, `python Tools/UX/validate_status_log_consistency.py --write-report`, aggregate report readback, pycache scan under `Tools`, and `git diff --check` on UX-owned touched files.
+
+Cinematic Cheats used: None. Evidence validation only.
+
+Exact Microseconds saved: 0 us runtime.
+
+Verification: Aggregate PASS; aggregate validator PASS; status/log consistency PASS; runtime PENDING_UNITY_VERIFICATION; commandCount 8/8; unitHarnessTestCount 40; artifactHashCount 30/30; pythonCacheCountAfter 0; aggregate/status self-validation PASS; `PYTHON_CACHE_COUNT 0`; `git diff --check` returned no whitespace errors, only CRLF warnings.
+
 ## UX_ENGINEER Final Static Hygiene Pass - HARDWARE_ADAPTIVE_UI_BAKER
 
 What was wrong: After multiple continuation hardening passes, touched UX files needed a final whitespace/static validation check.
@@ -525,3 +585,43 @@ Cinematic Cheats used: None. Static evidence validation only.
 Exact Microseconds saved: 0 us runtime.
 
 Verification: Aggregate status PASS; `unityRuntimeStatus` remains `PENDING_UNITY_VERIFICATION`; unit harness ran 36 tests; artifact hash count is 30; `aggregateSelfValidation` PASS; `statusLogSelfValidation` PASS; status/log consistency PASS with no failures; `PYTHON_CACHE_COUNT 0`. Unity runtime proof remains pending.
+
+## UX_ENGINEER Aggregate Count-Lock Hardening - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: The aggregate validator accepted a loose unit-test floor and the aggregate harness had drifted away from validator/status tests. Exact-count hardening also exposed a self-reference failure where aggregate unit tests read the previous disk report before the new report was written.
+
+What was done: Added explicit `commandCount`, `artifactHashCount`, and `unitHarnessTestCount` fields to `UI_HardwareAdaptiveValidation_UX_ENGINEER.json`. Validator now requires 8 commands, 30 artifact hashes, and 38 unit-harness tests. Restored aggregate execution of validator/status tests. Added aggregate-mode skipping only for disk-current report tests; candidate report self-validation still runs before PASS.
+
+Cinematic Cheats used: None. Static validation and evidence hardening only.
+
+Exact Microseconds saved: 0 us runtime.
+
+Verification: `python Tools/UX/run_hardware_adaptive_ui_validation.py` PASS. `python Tools/UX/validate_aggregate_report.py` PASS. `python Tools/UX/validate_status_log_consistency.py --write-report` PASS. Standalone full suite with `PYTHONDONTWRITEBYTECODE=1` passed 38/38. Aggregate readback: schema v2, status PASS, `unityRuntimeStatus` PENDING_UNITY_VERIFICATION, commandCount 8, artifactHashCount 30, unitHarnessTestCount 38, self-validations PASS. `PYTHON_CACHE_COUNT 0`. `git diff --check` produced no whitespace errors, only CRLF normalization warnings.
+
+Status: UI SCALED - STATIC/PYTHON AGGREGATE PASS; UNITY RUNTIME PENDING.
+
+## UX_ENGINEER Bottom-Most 40-Test Proof - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: The previous bottom-most UX log entry still described the older 38-test count after the exact-count lock was refreshed to 40 tests.
+
+What was done: Appended this current proof instead of rewriting historical entries. The aggregate gate now records 8 commands, 30 artifact hashes, 40 unit-harness tests, `pythonCacheCountAfter` 0, and both self-validations PASS.
+
+Cinematic Cheats used: None. Static validation and evidence hygiene only.
+
+Exact Microseconds saved: 0 us runtime.
+
+Verification: `python Tools/UX/run_hardware_adaptive_ui_validation.py` PASS. `python Tools/UX/validate_aggregate_report.py` PASS. `python Tools/UX/validate_status_log_consistency.py --write-report` PASS. Standalone full suite with `PYTHONDONTWRITEBYTECODE=1` PASS 40/40. Final cleanup scan `PYTHON_CACHE_COUNT 0`. `git diff --check` returned no whitespace errors, only CRLF normalization warnings. Unity runtime proof remains pending.
+
+## UX_ENGINEER Terminal Cache-Count Lock - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: Aggregate cleanup ran as a command, but the report did not explicitly prove that cleanup was terminal or that zero `__pycache__` directories remained after validation.
+
+What was done: Added `pythonCacheCountAfter` to the aggregate report, made nonzero cache count fail aggregate PASS, required `python_cache_cleanup` to be the final aggregate command, and added validator regression tests for cleanup-order and cache-count drift.
+
+Cinematic Cheats used: None. Offline evidence hygiene only.
+
+Exact Microseconds saved: 0 us runtime.
+
+Verification: `python Tools/UX/run_hardware_adaptive_ui_validation.py` PASS. `python -B Tools/UX/validate_aggregate_report.py` PASS. `python -B Tools/UX/validate_status_log_consistency.py --write-report` PASS. Readback: commandCount 8/8, unitHarnessTestCount 40, artifactHashCount 30/30, pythonCacheCountAfter 0, aggregate/status self-validation PASS. Unity runtime proof remains pending.
+
+Status: UI SCALED - STATIC/PYTHON AGGREGATE PASS; UNITY RUNTIME PENDING.

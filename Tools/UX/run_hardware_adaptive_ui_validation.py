@@ -190,10 +190,17 @@ def _extract_unit_harness_test_count(results: list[dict[str, object]]) -> int:
     return -1
 
 
+def _count_pycache_dirs(root: Path) -> int:
+    if not root.exists():
+        return 0
+    return sum(1 for path in root.rglob("__pycache__") if path.is_dir())
+
+
 def main() -> int:
     root = ROOT
     results = [_run_command(root, name, command) for name, command in COMMANDS]
     failures = [result for result in results if result["exitCode"] != 0]
+    python_cache_count_after = _count_pycache_dirs(root / "Tools")
 
     hashes: dict[str, str] = {}
     missing_artifacts: list[str] = []
@@ -208,7 +215,7 @@ def main() -> int:
         "schema": "hecton8.hardware_adaptive_ui_scaler.aggregate_validation.v2",
         "owner": "UX_ENGINEER",
         "promptId": "HARDWARE_ADAPTIVE_UI_BAKER",
-        "status": "PASS" if not failures and not missing_artifacts else "FAIL",
+        "status": "PASS" if not failures and not missing_artifacts and python_cache_count_after == 0 else "FAIL",
         "unityRuntimeStatus": "PENDING_UNITY_VERIFICATION",
         "commandCount": len(results),
         "commands": results,
@@ -216,6 +223,7 @@ def main() -> int:
         "artifactHashCount": len(hashes),
         "artifactSha256": hashes,
         "unitHarnessTestCount": _extract_unit_harness_test_count(results),
+        "pythonCacheCountAfter": python_cache_count_after,
         "note": "Static/Python validation only. Unity import, GCMonitor, Frame Debugger, and in-engine captures remain separate gates.",
     }
 
@@ -259,6 +267,10 @@ def main() -> int:
     if missing_artifacts:
         for artifact in missing_artifacts:
             print(f"missing artifact: {artifact}")
+        return 1
+
+    if python_cache_count_after != 0:
+        print(f"python cache cleanup left {python_cache_count_after} __pycache__ directories")
         return 1
 
     if self_validation_failures:

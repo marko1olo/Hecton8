@@ -33,6 +33,11 @@ Status: STATIC/PYTHON VALIDATION PASS - RUNTIME VERIFICATION BLOCKED
 - Added status/log consistency validator and tests. `python -m unittest Tools.UX.test_status_log_consistency -v` passed 3/3. `python Tools/UX/validate_status_log_consistency.py --write-report` returned PASS. Aggregate validation returned PASS.
 - Patched aggregate runner to enforce status/log self-validation inside one-command static validation. Focused aggregate/status tests passed 9/9. Aggregate validation PASS. Standalone aggregate validator PASS. Report has both `aggregateSelfValidation` and `statusLogSelfValidation` PASS with empty failures.
 - Current aggregate readback: PASS, runtime pending, command count 8, unit harness 36 tests, artifact hash count 30, aggregate self-validation PASS, status/log self-validation PASS. Aggregate validator PASS. Status/log consistency PASS.
+- Corrected runbook to match current count-locked aggregate gate; aggregate rerun required because runbook is a hashed artifact.
+- Runbook correction verified: aggregate PASS, aggregate validator PASS, status/log consistency PASS, commandCount 8, unitHarnessTestCount 38, artifactHashCount 30, both self-validations PASS, runbook hash `659801e10d2d7464b6175343b35ee6a186be7671864151bf14b7be8f64c62f0a`.
+- Aggregate count-lock refresh: gate caught unit harness drift from 38 to 40 tests. Updated expected count to 40 and runbook count; rerun pending.
+- Aggregate count-lock refresh verified: aggregate PASS, aggregate validator PASS, status/log consistency PASS, commandCount 8, unitHarnessTestCount 40, artifactHashCount 30, pythonCacheCountAfter 0, both self-validations PASS.
+- No-drift rerun: aggregate PASS, aggregate validator PASS, status/log consistency PASS, commandCount 8, unitHarnessTestCount 40, artifactHashCount 30, pythonCacheCountAfter 0, `PYTHON_CACHE_COUNT 0`, no whitespace errors. Runtime blocker unchanged: Unity editor unavailable.
 - Final static hygiene: `git diff --check` on UX-owned touched files returned no whitespace errors, only CRLF warnings. Aggregate validation PASS. Status/log consistency PASS.
 
 ## Completed Static Scope

@@ -408,3 +408,59 @@ Solution: Reran current-tree compile, focused status/log and aggregate-validator
 Rejected Alternatives: Reordering older historical entries was rejected because preserving append-only evidence is safer under multi-agent churn.
 Scalability potential: Static proof now covers 36 tests and 30 artifact hashes before Unity import, Frame Debugger, GCMonitor, and capture work.
 Hardware Impact: Runtime impact is 0 us. Unity runtime proof remains pending.
+
+## Decision - Aggregate Count-Lock And Bootstrap Fix
+Problem: The aggregate report validator accepted a loose unit-test floor and the aggregate harness was no longer executing the validator/status test modules. When exact-count hardening was added, the aggregate runner also exposed a self-reference bug: unit tests read the previous disk report before the new candidate report was written, so a stale failing report could block recovery.
+Solution: Restored `Tools.UX.test_validate_aggregate_report` and `Tools.UX.test_status_log_consistency` into the aggregate unit harness, wrote explicit `commandCount`, `artifactHashCount`, and `unitHarnessTestCount` fields into `UI_HardwareAdaptiveValidation_UX_ENGINEER.json`, and required exactly 8 commands, 30 hashes, and 38 unit-harness tests. Aggregate generation now sets `H8_UX_AGGREGATE_RUNNING=1`; only disk-current report tests skip in that mode, while the runner still self-validates the candidate report object before writing PASS. Mutation tests now use an in-memory valid fixture instead of the previous disk report.
+Rejected Alternatives: Keeping a `>=27` unit-test floor was rejected because dropped validator tests could pass silently. Letting mutation tests depend on the previous aggregate report was rejected because a single failed run becomes a recovery blocker. Removing validator/status tests from aggregate entirely was rejected because it would weaken the one-command gate.
+Scalability potential: Static proof now locks low-end readability and GOD_MODE evidence gates to a reproducible command count, hash count, and test count before Unity runtime capture begins.
+Hardware Impact: Runtime impact is 0 us. Offline validation only; Unity import, GCMonitor, Frame Debugger, MX350, and GOD_MODE captures remain pending.
+
+## Decision - Runbook Current-Gate Correction
+Problem: `HardwareAdaptiveUIScaler_Runbook.md` still listed the old aggregate unit-harness module set and implied standalone aggregate/status validators were aggregate subcommands.
+Solution: Updated the runbook to match the actual current gate: 8 aggregate commands, 38 unit tests, 30 artifact hashes, internal aggregate/status self-validation, and standalone post-run validator commands.
+Rejected Alternatives: Leaving stale operator docs was rejected because it would send the next integrator through the wrong validation sequence.
+Scalability potential: The handoff now matches the exact static gate before low-end and GOD_MODE runtime captures.
+Hardware Impact: Runtime impact is 0 us. Documentation correction only.
+
+## Decision - Runbook Current-Gate Verified
+Problem: The runbook is a hashed artifact in the aggregate report, so documentation correction required a fresh aggregate run and readback.
+Solution: Reran aggregate validation, aggregate report validator, status/log consistency validator, and aggregate JSON readback. Current report remains PASS with commandCount 8, unitHarnessTestCount 38, artifactHashCount 30, both self-validations PASS, and updated runbook hash recorded.
+Rejected Alternatives: Trusting the patch without rerunning aggregate was rejected because the runbook hash would otherwise be stale.
+Scalability potential: Operator docs and machine gate now agree exactly before Unity runtime work.
+Hardware Impact: Runtime impact is 0 us.
+
+## Decision - Aggregate Count-Lock Refresh
+Problem: A current aggregate rerun correctly failed because the unit harness now runs 40 tests while the exact-count validator still expected 38.
+Solution: Updated `EXPECTED_UNIT_HARNESS_TESTS` to 40 and corrected the runbook expected count.
+Rejected Alternatives: Loosening the validator back to a floor was rejected; exact count locking is what caught the drift.
+Scalability potential: The one-command gate remains strict enough to catch dropped or added validation tests.
+Hardware Impact: Runtime impact is 0 us. Offline validation only.
+
+## Decision - Aggregate Count-Lock Refresh Verified
+Problem: The updated exact test count required compile, aggregate rerun, validator rerun, status/log validation, and report readback.
+Solution: Python compile returned clean, aggregate validation returned PASS, aggregate report validator returned PASS, status/log consistency returned PASS, and readback shows 40 tests, 30 hashes, cache count 0, and both self-validations PASS.
+Rejected Alternatives: Trusting the constant update without rerun was rejected.
+Scalability potential: The current strict gate is now synchronized with the real test harness.
+Hardware Impact: Runtime impact is 0 us.
+
+## Decision - Terminal Cache-Count Lock
+Problem: The aggregate runner executed `python_cache_cleanup`, but the report did not explicitly fail if a later command reordered cleanup or left `__pycache__` directories after validation.
+Solution: Added `pythonCacheCountAfter` to `UI_HardwareAdaptiveValidation_UX_ENGINEER.json`, failed aggregate PASS if the count is nonzero, required `python_cache_cleanup` to be the final aggregate command, and added regression tests for both drift modes.
+Rejected Alternatives: Relying on a post-run manual scan was rejected because the aggregate report must carry its own hygiene proof. Keeping cleanup as a non-terminal command was rejected because later Python commands can recreate bytecode.
+Scalability potential: The one-command static gate now leaves source-only tooling state for follow-up agents and CI while still defending TOASTER/MX350 and GOD_MODE evidence boundaries.
+Hardware Impact: Runtime impact is 0 us. Offline validation hygiene only.
+
+## Decision - Bottom-Most 40-Test Proof
+Problem: An older 38-test evidence entry remained at the bottom of `LOG_UX_ENGINEER.md` after the later 40-test correction, creating audit ambiguity even though the status and runbook were current.
+Solution: Appended a bottom-most 40-test proof entry, reran the aggregate validation path, standalone aggregate/status validators, standalone full unit suite, pycache cleanup scan, and whitespace check.
+Rejected Alternatives: Editing historical log entries in place was rejected because append-only evidence is safer under multi-agent churn.
+Scalability potential: Static proof stays strict for both TOASTER readability and GOD_MODE visual-overkill gates before Unity runtime capture.
+Hardware Impact: Runtime impact is 0 us. Offline evidence hygiene only.
+
+## Decision - No-Drift Rerun
+Problem: User requested continued work after the count-locked gate was already green; the only responsible action was to check for drift, not invent runtime proof.
+Solution: Reran aggregate validation, aggregate report validation, status/log consistency, aggregate JSON readback, pycache scan, and whitespace check.
+Rejected Alternatives: Adding new runtime code without a failing gate was rejected. Claiming Unity verification was rejected because the probe still reports no usable Unity editor.
+Scalability potential: No drift in the strict static gate; TOASTER/GOD_MODE runtime capture still waits for Unity.
+Hardware Impact: Runtime impact is 0 us.

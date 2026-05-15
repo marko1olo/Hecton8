@@ -25,8 +25,15 @@ python Tools/IconBaker.py --self-test --output Docs/AgentLogs/IconBaker_UX_ENGIN
 python Tools/UX/validate_unity_verification_template.py --write-report
 python Tools/UX/validate_unity_verification_report.py --write-audit
 python Tools/UX/probe_unity_environment.py --write-report
-python -m unittest Tools.UX.test_hardware_adaptive_ui Tools.UX.test_unity_verification_gates Tools.UX.test_unity_report_update_cli Tools.UX.test_python_cache_cleanup Tools.UX.test_unity_environment_probe -v
+python -m unittest Tools.UX.test_hardware_adaptive_ui Tools.UX.test_unity_verification_gates Tools.UX.test_unity_report_update_cli Tools.UX.test_python_cache_cleanup Tools.UX.test_unity_environment_probe Tools.UX.test_validate_aggregate_report Tools.UX.test_status_log_consistency -v
 python Tools/UX/clean_python_cache.py --write-report
+```
+
+The aggregate report also self-validates before final `PASS`: `aggregateSelfValidation` and `statusLogSelfValidation` must both be `PASS` with empty failure lists. Current expected counts are 8 commands, 40 unit tests, and 30 artifact hashes. The final aggregate command must be `python_cache_cleanup`, and the report field `pythonCacheCountAfter` must be `0`.
+
+Direct post-run validation commands:
+
+```powershell
 python Tools/UX/validate_aggregate_report.py
 python Tools/UX/validate_status_log_consistency.py --write-report
 ```
