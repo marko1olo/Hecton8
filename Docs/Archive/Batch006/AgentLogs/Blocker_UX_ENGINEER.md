@@ -102,6 +102,6 @@ Do not change `status` to runtime PASS until `Tools/UX/validate_unity_verificati
 
 ## Latest Static Gate Recheck - 2026-05-15
 
-- Aggregate report: PASS with 8 ordered commands, 42 unit-harness tests, 30 valid artifact hashes, and `pythonCacheCountAfter` 0.
-- Standalone UX test discovery: PASS 81/81.
+- Aggregate report: PASS with 8 ordered commands, 44 unit-harness tests, 30 valid artifact hashes, locked static/CLI evidence classes, locked missing runtime evidence classes, and `pythonCacheCountAfter` 0.
+- Standalone UX test discovery: PASS 83/83.
 - Unity runtime boundary: unchanged, still `PENDING_UNITY_VERIFICATION`.

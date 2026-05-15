@@ -26,7 +26,7 @@
         "--write-report"
       ],
       "exitCode": 0,
-      "elapsedMs": 1693.373,
+      "elapsedMs": 771.059,
       "stdoutTail": "UI_READABILITY_TEST\nTOASTER_800P: contrast=0.709 corr=0.947 ink=1.000 status=PASS\nLOW_900P: contrast=0.700 corr=0.947 ink=1.000 status=PASS\nSTANDARD_1080P: contrast=0.689 corr=0.949 ink=1.000 status=PASS\nHIGH_1440P: contrast=0.678 corr=0.953 ink=1.000 status=PASS\nGOD_MODE_4K: contrast=0.716 corr=0.969 ink=1.000 status=PASS\nreport=C:\\Hecton8\\Docs\\AgentLogs\\UI_Readability_UX_ENGINEER.json\nSTATUS: PASS\n",
       "stderrTail": ""
     },
@@ -38,7 +38,7 @@
         "--write-report"
       ],
       "exitCode": 0,
-      "elapsedMs": 936.977,
+      "elapsedMs": 504.421,
       "stdoutTail": "UI_SHADER_SAMPLE_AUDIT\nAssets/_Project/Art/Shaders/Hecton_DiegeticPanelUnlit.shader: material=1 depth=1 total=2 status=PASS\nAssets/_Project/Art/Shaders/Hecton_DiegeticTooltipGlyph.shader: material=1 depth=0 total=1 status=PASS\nAssets/_Project/Art/Shaders/Hecton_DiegeticTooltipIndirect.shader: material=1 depth=0 total=1 status=PASS\nAssets/_Project/Art/Shaders/Hecton_HUD_AcousticRadarOverlay.shader: material=1 depth=0 total=1 status=PASS\nAssets/_Project/Art/Shaders/Hecton_HUD_DiegeticProjectionUnlit.shader: material=2 depth=0 total=2 status=PASS\nAssets/_Project/Art/Shaders/Hecton_ToolScreenDiegetic.shader: material=1 depth=0 total=1 status=PASS\nAssets/_Project/Art/Shaders/Hecton_UI_CompassRibbon.shader: material=1 depth=0 total=1 status=PASS\nAssets/_Project/Shaders/UI/Hecton_DataRecPulse.shader: material=1 depth=0 total=1 status=PASS\nAssets/_Project/Shaders/UI/Hecton_DiegeticPanelDepthFade.shader: material=1 depth=1 total=2 status=PASS\nAssets/_Project/Shaders/UI/Hecton_DiegeticVisorCurvedHUD.shader: material=2 depth=0 total=2 status=PASS\nAssets/_Project/Shaders/UI/Hecton_IGNDitherDissolve.shader: material=1 depth=0 total=1 status=PASS\nAssets/_Project/Shaders/UI/Hecton_IGNDitheredBackground.shader: material=1 depth=0 total=1 status=PASS\nAssets/_Project/Shaders/UI/Hecton_RetinaStressPulse.shader: material=0 depth=0 total=0 status=PASS\nreport=C:\\Hecton8\\Docs\\AgentLogs\\UI_ShaderSampleAudit_UX_ENGINEER.json\nSTATUS: PASS\n",
       "stderrTail": ""
     },
@@ -54,7 +54,7 @@
         "Docs/AgentLogs/IconBaker_UX_ENGINEER_SelfTest/IconBakeManifest.json"
       ],
       "exitCode": 0,
-      "elapsedMs": 1302.683,
+      "elapsedMs": 793.653,
       "stdoutTail": "ICON_BAKER_STATUS: PASS\nicons=1\nsizes=32,128,512\nmanifest=C:\\Hecton8\\Docs\\AgentLogs\\IconBaker_UX_ENGINEER_SelfTest\\IconBakeManifest.json\n",
       "stderrTail": ""
     },
@@ -66,7 +66,7 @@
         "--write-report"
       ],
       "exitCode": 0,
-      "elapsedMs": 1031.538,
+      "elapsedMs": 455.181,
       "stdoutTail": "Unity verification template audit PASS\n",
       "stderrTail": ""
     },
@@ -78,7 +78,7 @@
         "--write-audit"
       ],
       "exitCode": 0,
-      "elapsedMs": 784.526,
+      "elapsedMs": 458.954,
       "stdoutTail": "Unity verification report audit PASS\n",
       "stderrTail": ""
     },
@@ -90,7 +90,7 @@
         "--write-report"
       ],
       "exitCode": 0,
-      "elapsedMs": 958.237,
+      "elapsedMs": 471.405,
       "stdoutTail": "Unity environment probe UNITY_NOT_FOUND\n",
       "stderrTail": ""
     },
@@ -110,9 +110,9 @@
         "-v"
       ],
       "exitCode": 0,
-      "elapsedMs": 6209.58,
+      "elapsedMs": 3955.264,
       "stdoutTail": "",
-      "stderrTail": "e_pycache_dirs_under_root (Tools.UX.test_python_cache_cleanup.PythonCacheCleanupTests.test_find_and_remove_pycache_dirs_under_root) ... ok\ntest_candidate_details_mark_required_version_match (Tools.UX.test_unity_environment_probe.UnityEnvironmentProbeTests.test_candidate_details_mark_required_version_match) ... ok\ntest_finds_unity_candidate_in_supplied_root (Tools.UX.test_unity_environment_probe.UnityEnvironmentProbeTests.test_finds_unity_candidate_in_supplied_root) ... ok\ntest_infers_unity_version_from_candidate_path (Tools.UX.test_unity_environment_probe.UnityEnvironmentProbeTests.test_infers_unity_version_from_candidate_path) ... ok\ntest_missing_project_version_returns_empty_string (Tools.UX.test_unity_environment_probe.UnityEnvironmentProbeTests.test_missing_project_version_returns_empty_string) ... ok\ntest_probe_status_reports_version_mismatch (Tools.UX.test_unity_environment_probe.UnityEnvironmentProbeTests.test_probe_status_reports_version_mismatch) ... ok\ntest_reads_project_version (Tools.UX.test_unity_environment_probe.UnityEnvironmentProbeTests.test_reads_project_version) ... ok\ntest_current_aggregate_report_is_valid (Tools.UX.test_validate_aggregate_report.AggregateReportValidatorTests.test_current_aggregate_report_is_valid) ... skipped 'aggregate runner validates the candidate report after command execution'\ntest_rejects_artifact_hash_count_drift (Tools.UX.test_validate_aggregate_report.AggregateReportValidatorTests.test_rejects_artifact_hash_count_drift) ... ok\ntest_rejects_cleanup_not_last (Tools.UX.test_validate_aggregate_report.AggregateReportValidatorTests.test_rejects_cleanup_not_last) ... ok\ntest_rejects_command_order_drift (Tools.UX.test_validate_aggregate_report.AggregateReportValidatorTests.test_rejects_command_order_drift) ... ok\ntest_rejects_failed_command (Tools.UX.test_validate_aggregate_report.AggregateReportValidatorTests.test_rejects_failed_command) ... ok\ntest_rejects_failed_self_validation (Tools.UX.test_validate_aggregate_report.AggregateReportValidatorTests.test_rejects_failed_self_validation) ... ok\ntest_rejects_failed_status_log_self_validation (Tools.UX.test_validate_aggregate_report.AggregateReportValidatorTests.test_rejects_failed_status_log_self_validation) ... ok\ntest_rejects_generated_python_cache_left_after_aggregate (Tools.UX.test_validate_aggregate_report.AggregateReportValidatorTests.test_rejects_generated_python_cache_left_after_aggregate) ... ok\ntest_rejects_malformed_artifact_hash (Tools.UX.test_validate_aggregate_report.AggregateReportValidatorTests.test_rejects_malformed_artifact_hash) ... ok\ntest_rejects_missing_command (Tools.UX.test_validate_aggregate_report.AggregateReportValidatorTests.test_rejects_missing_command) ... ok\ntest_rejects_missing_evidence_classes (Tools.UX.test_validate_aggregate_report.AggregateReportValidatorTests.test_rejects_missing_evidence_classes) ... ok\ntest_rejects_runtime_evidence_class_promotion (Tools.UX.test_validate_aggregate_report.AggregateReportValidatorTests.test_rejects_runtime_evidence_class_promotion) ... ok\ntest_rejects_runtime_promotion (Tools.UX.test_validate_aggregate_report.AggregateReportValidatorTests.test_rejects_runtime_promotion) ... ok\ntest_rejects_unit_harness_count_drift (Tools.UX.test_validate_aggregate_report.AggregateReportValidatorTests.test_rejects_unit_harness_count_drift) ... ok\ntest_current_status_logs_are_consistent (Tools.UX.test_status_log_consistency.StatusLogConsistencyTests.test_current_status_logs_are_consistent) ... skipped 'aggregate runner validates candidate status/log consistency after command execution'\ntest_rejects_missing_checked_task (Tools.UX.test_status_log_consistency.StatusLogConsistencyTests.test_rejects_missing_checked_task) ... ok\ntest_rejects_runtime_promotion_in_aggregate (Tools.UX.test_status_log_consistency.StatusLogConsistencyTests.test_rejects_runtime_promotion_in_aggregate) ... ok\n\n----------------------------------------------------------------------\nRan 44 tests in 5.293s\n\nOK (skipped=2)\n"
+      "stderrTail": "e_pycache_dirs_under_root (Tools.UX.test_python_cache_cleanup.PythonCacheCleanupTests.test_find_and_remove_pycache_dirs_under_root) ... ok\ntest_candidate_details_mark_required_version_match (Tools.UX.test_unity_environment_probe.UnityEnvironmentProbeTests.test_candidate_details_mark_required_version_match) ... ok\ntest_finds_unity_candidate_in_supplied_root (Tools.UX.test_unity_environment_probe.UnityEnvironmentProbeTests.test_finds_unity_candidate_in_supplied_root) ... ok\ntest_infers_unity_version_from_candidate_path (Tools.UX.test_unity_environment_probe.UnityEnvironmentProbeTests.test_infers_unity_version_from_candidate_path) ... ok\ntest_missing_project_version_returns_empty_string (Tools.UX.test_unity_environment_probe.UnityEnvironmentProbeTests.test_missing_project_version_returns_empty_string) ... ok\ntest_probe_status_reports_version_mismatch (Tools.UX.test_unity_environment_probe.UnityEnvironmentProbeTests.test_probe_status_reports_version_mismatch) ... ok\ntest_reads_project_version (Tools.UX.test_unity_environment_probe.UnityEnvironmentProbeTests.test_reads_project_version) ... ok\ntest_current_aggregate_report_is_valid (Tools.UX.test_validate_aggregate_report.AggregateReportValidatorTests.test_current_aggregate_report_is_valid) ... skipped 'aggregate runner validates the candidate report after command execution'\ntest_rejects_artifact_hash_count_drift (Tools.UX.test_validate_aggregate_report.AggregateReportValidatorTests.test_rejects_artifact_hash_count_drift) ... ok\ntest_rejects_cleanup_not_last (Tools.UX.test_validate_aggregate_report.AggregateReportValidatorTests.test_rejects_cleanup_not_last) ... ok\ntest_rejects_command_order_drift (Tools.UX.test_validate_aggregate_report.AggregateReportValidatorTests.test_rejects_command_order_drift) ... ok\ntest_rejects_failed_command (Tools.UX.test_validate_aggregate_report.AggregateReportValidatorTests.test_rejects_failed_command) ... ok\ntest_rejects_failed_self_validation (Tools.UX.test_validate_aggregate_report.AggregateReportValidatorTests.test_rejects_failed_self_validation) ... ok\ntest_rejects_failed_status_log_self_validation (Tools.UX.test_validate_aggregate_report.AggregateReportValidatorTests.test_rejects_failed_status_log_self_validation) ... ok\ntest_rejects_generated_python_cache_left_after_aggregate (Tools.UX.test_validate_aggregate_report.AggregateReportValidatorTests.test_rejects_generated_python_cache_left_after_aggregate) ... ok\ntest_rejects_malformed_artifact_hash (Tools.UX.test_validate_aggregate_report.AggregateReportValidatorTests.test_rejects_malformed_artifact_hash) ... ok\ntest_rejects_missing_command (Tools.UX.test_validate_aggregate_report.AggregateReportValidatorTests.test_rejects_missing_command) ... ok\ntest_rejects_missing_evidence_classes (Tools.UX.test_validate_aggregate_report.AggregateReportValidatorTests.test_rejects_missing_evidence_classes) ... ok\ntest_rejects_runtime_evidence_class_promotion (Tools.UX.test_validate_aggregate_report.AggregateReportValidatorTests.test_rejects_runtime_evidence_class_promotion) ... ok\ntest_rejects_runtime_promotion (Tools.UX.test_validate_aggregate_report.AggregateReportValidatorTests.test_rejects_runtime_promotion) ... ok\ntest_rejects_unit_harness_count_drift (Tools.UX.test_validate_aggregate_report.AggregateReportValidatorTests.test_rejects_unit_harness_count_drift) ... ok\ntest_current_status_logs_are_consistent (Tools.UX.test_status_log_consistency.StatusLogConsistencyTests.test_current_status_logs_are_consistent) ... skipped 'aggregate runner validates candidate status/log consistency after command execution'\ntest_rejects_missing_checked_task (Tools.UX.test_status_log_consistency.StatusLogConsistencyTests.test_rejects_missing_checked_task) ... ok\ntest_rejects_runtime_promotion_in_aggregate (Tools.UX.test_status_log_consistency.StatusLogConsistencyTests.test_rejects_runtime_promotion_in_aggregate) ... ok\n\n----------------------------------------------------------------------\nRan 44 tests in 3.087s\n\nOK (skipped=2)\n"
     },
     {
       "name": "python_cache_cleanup",
@@ -122,8 +122,8 @@
         "--write-report"
       ],
       "exitCode": 0,
-      "elapsedMs": 992.115,
-      "stdoutTail": "Python cache cleanup PASS: removed 1\n",
+      "elapsedMs": 426.277,
+      "stdoutTail": "Python cache cleanup PASS: removed 2\n",
       "stderrTail": ""
     }
   ],

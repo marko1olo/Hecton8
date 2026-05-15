@@ -2050,6 +2050,33 @@ def validate_generated_reports(
     ]
     expected_roots = [rel(path, root) for path in resolve_scan_roots(root)]
     allowed_prefixes = tuple(f"{name}/" for name in expected_roots)
+    texture_paths = [row.get("path", "") for row in texture_rows]
+    mesh_paths = [row.get("path", "") for row in mesh_rows]
+    render_texture_paths = [row.get("path", "") for row in render_texture_rows]
+    texture_path_set = set(texture_paths)
+    mesh_path_set = set(mesh_paths)
+    render_texture_path_set = set(render_texture_paths)
+    texture_redline_paths = [row.get("path", "") for row in texture_redline_rows]
+    mesh_redline_paths = [row.get("path", "") for row in mesh_redline_rows]
+    render_texture_redline_paths = [row.get("path", "") for row in render_texture_redline_rows]
+    render_texture_hotspot_keys = {
+        (
+            row.get("path", ""),
+            row.get("line", ""),
+            row.get("pattern", ""),
+            row.get("editor_only", "").strip().lower() in {"1", "true", "yes"},
+        )
+        for row in render_texture_hotspot_rows
+    }
+    json_hotspot_keys = {
+        (
+            str(item.get("path", "")),
+            str(item.get("line", "")),
+            str(item.get("pattern", "")),
+            bool(item.get("editor_only", False)),
+        )
+        for item in payload.get("render_texture_source_hotspots", [])
+    }
 
     if payload.get("texture_count") != len(texture_rows):
         messages.append(f"texture_count mismatch json={payload.get('texture_count')} csv={len(texture_rows)}")
@@ -2071,6 +2098,28 @@ def validate_generated_reports(
         messages.append(f"RenderTexture hotspot mismatch json={payload.get('render_texture_source_hotspot_rows')} csv={len(render_texture_hotspot_rows)}")
     if render_texture_hotspots_path is not None and payload.get("runtime_render_texture_source_hotspot_rows") != len(runtime_hotspot_rows):
         messages.append(f"runtime RenderTexture hotspot mismatch json={payload.get('runtime_render_texture_source_hotspot_rows')} csv={len(runtime_hotspot_rows)}")
+    if len(texture_paths) != len(texture_path_set):
+        messages.append("duplicate texture paths in broad CSV")
+    if len(mesh_paths) != len(mesh_path_set):
+        messages.append("duplicate mesh paths in broad CSV")
+    if len(render_texture_paths) != len(render_texture_path_set):
+        messages.append("duplicate RenderTexture paths in broad CSV")
+    if texture_redlines_path is not None and len(texture_redline_paths) != len(set(texture_redline_paths)):
+        messages.append("duplicate texture redline paths")
+    if mesh_redlines_path is not None and len(mesh_redline_paths) != len(set(mesh_redline_paths)):
+        messages.append("duplicate mesh redline paths")
+    if render_texture_redlines_path is not None and len(render_texture_redline_paths) != len(set(render_texture_redline_paths)):
+        messages.append("duplicate RenderTexture redline paths")
+    if texture_redlines_path is not None and any(path not in texture_path_set for path in texture_redline_paths):
+        messages.append("texture redline paths missing from broad CSV")
+    if mesh_redlines_path is not None and any(path not in mesh_path_set for path in mesh_redline_paths):
+        messages.append("mesh redline paths missing from broad CSV")
+    if render_texture_redlines_path is not None and any(path not in render_texture_path_set for path in render_texture_redline_paths):
+        messages.append("RenderTexture redline paths missing from broad CSV")
+    if render_texture_hotspots_path is not None and len(render_texture_hotspot_rows) != len(render_texture_hotspot_keys):
+        messages.append("duplicate RenderTexture hotspot keys")
+    if render_texture_hotspots_path is not None and render_texture_hotspot_keys != json_hotspot_keys:
+        messages.append("RenderTexture hotspot identity mismatch between CSV and JSON")
     if any(not row.get("path", "").startswith(allowed_prefixes) for row in texture_rows):
         messages.append("texture rows outside import roots")
     if any(not row.get("path", "").startswith(allowed_prefixes) for row in mesh_rows):

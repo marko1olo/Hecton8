@@ -485,3 +485,10 @@ Solution: Reran `python -B -m unittest discover -s Tools/UX -p 'test*.py' -v` wi
 Rejected Alternatives: Treating the stale 79-test line as verified was rejected. Expanding the aggregate exact-count lock to 81 was rejected because that would couple the UI scaler gate to another agent's comfort audit scope.
 Scalability potential: The strict UX aggregate gate still protects TOASTER readability and GOD_MODE visual-overkill contracts. The broader discovery pass confirms adjacent `Tools/UX` audit code did not regress.
 Hardware Impact: Runtime impact is 0 us. Offline validation only; Unity import, GCMonitor, Frame Debugger, MX350, and GOD_MODE captures remain blocked by missing Unity.
+
+## Decision - Evidence-Class Lock 2026-05-15
+Problem: The aggregate report described static/Python proof in prose, but it did not machine-enforce the QA mandate requiring evidence-class labels or explicitly list missing runtime evidence classes.
+Solution: Added `evidenceClasses` and `runtimeEvidenceClassesMissing` to the aggregate report. The validator now requires `STATIC_SOURCE`, `STATIC_DOC`, `CLI_COMPILE`, and requires `UNITY_CONSOLE`, `PLAYMODE`, `PROFILER`, `FRAME_DEBUGGER`, `PLAYER_BUILD` to remain missing until real Unity evidence exists. Added regression tests for missing evidence labels and runtime evidence promotion.
+Rejected Alternatives: Prose-only labels were rejected because stale or edited reports could still imply runtime readiness. Promoting `UNITY_CONSOLE` or profiler classes from static Python output was rejected by the anti-lie mandate.
+Scalability potential: The static gate is now explicit about what protects TOASTER readability and GOD_MODE visual-overkill contracts, and what still requires Unity/runtime hardware proof.
+Hardware Impact: Runtime impact is 0 us. Offline validation only; no Unity hot path changed.

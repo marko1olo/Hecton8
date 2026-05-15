@@ -600,6 +600,20 @@ Verification: `python Tools/UX/run_hardware_adaptive_ui_validation.py` PASS. `py
 
 Status: UI SCALED - STATIC/PYTHON AGGREGATE PASS; UNITY RUNTIME PENDING.
 
+## UX_ENGINEER Evidence-Class Lock - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: The aggregate report stated static/Python scope in prose, but it did not machine-label the evidence class or require runtime evidence classes to remain missing.
+
+What was done: Added `evidenceClasses` and `runtimeEvidenceClassesMissing` to `UI_HardwareAdaptiveValidation_UX_ENGINEER.json`. Patched `Tools/UX/validate_aggregate_report.py` to require `STATIC_SOURCE`, `STATIC_DOC`, and `CLI_COMPILE`, and to keep `UNITY_CONSOLE`, `PLAYMODE`, `PROFILER`, `FRAME_DEBUGGER`, and `PLAYER_BUILD` listed as missing. Added regression tests for missing evidence labels and runtime evidence promotion. Updated the runbook to document the 44-test aggregate lock.
+
+Cinematic Cheats used: None in this pass. Existing UI cheats remain TMP-SDF scaling, TOASTER solid contrast, GOD_MODE gated post treatment, and the two-sample widget shader cap.
+
+Exact Microseconds saved: 0 us runtime. No Unity hot path changed.
+
+Verification: `python -m py_compile Tools/UX/run_hardware_adaptive_ui_validation.py Tools/UX/validate_aggregate_report.py Tools/UX/test_validate_aggregate_report.py` PASS. Focused aggregate-validator suite PASS: 14 tests, 1 aggregate-mode skip. `python Tools/UX/run_hardware_adaptive_ui_validation.py` PASS. `python -B Tools/UX/validate_aggregate_report.py` PASS. `python -B Tools/UX/validate_status_log_consistency.py --write-report` PASS. Standalone `PYTHONDONTWRITEBYTECODE=1` UX discovery PASS 83/83. Aggregate readback: status PASS, `unityRuntimeStatus` PENDING_UNITY_VERIFICATION, evidenceClasses `STATIC_SOURCE`/`STATIC_DOC`/`CLI_COMPILE`, runtimeEvidenceClassesMissing `UNITY_CONSOLE`/`PLAYMODE`/`PROFILER`/`FRAME_DEBUGGER`/`PLAYER_BUILD`, commandCount 8/8 exact order, unitHarnessTestCount 44, artifactHashCount 30/30 valid SHA-256, pythonCacheCountAfter 0, aggregate/status self-validation PASS. Unity probe `UNITY_NOT_FOUND`, MCP resources/templates empty, no `Library/Logs/Unity/Editor.log`, `PYTHON_CACHE_COUNT 0`, `git diff --check` no whitespace errors.
+
+Status: UI SCALED - STATIC/PYTHON AGGREGATE PASS; UNITY RUNTIME PENDING.
+
 ## UX_ENGINEER Aggregate Order and Hash Hardening - HARDWARE_ADAPTIVE_UI_BAKER
 
 What was wrong: The aggregate validator enforced command presence and final cache cleanup, but it did not require the exact command order or verify that `artifactSha256` values were well-formed SHA-256 digests.
@@ -679,5 +693,19 @@ Cinematic Cheats used: None in this pass. Existing UI cheats remain TMP-SDF scal
 Exact Microseconds saved: 0 us runtime. No Unity hot path changed.
 
 Verification: `python Tools/UX/run_hardware_adaptive_ui_validation.py` PASS. `python -B Tools/UX/validate_aggregate_report.py` PASS. `python -B Tools/UX/validate_status_log_consistency.py --write-report` PASS. Standalone `PYTHONDONTWRITEBYTECODE=1` UX discovery PASS 81/81. Readback: commandCount 8/8 exact order, unitHarnessTestCount 42, artifactHashCount 30/30 valid SHA-256, pythonCacheCountAfter 0, aggregate/status self-validation PASS, Unity probe `UNITY_NOT_FOUND`, no `Library/Logs/Unity/Editor.log`, `PYTHON_CACHE_COUNT 0`.
+
+Status: UI SCALED - STATIC/PYTHON AGGREGATE PASS; UNITY RUNTIME PENDING.
+
+## UX_ENGINEER Bottom-Most Evidence-Class Lock - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: The current aggregate report needed machine-readable QA evidence labels, and the bottom-most log entry still reflected the previous 42-test proof.
+
+What was done: Added and validated `evidenceClasses` and `runtimeEvidenceClassesMissing` in the aggregate runner/report/validator. The active static proof is now explicitly limited to `STATIC_SOURCE`, `STATIC_DOC`, and `CLI_COMPILE`, while Unity/runtime proof remains blocked behind `UNITY_CONSOLE`, `PLAYMODE`, `PROFILER`, `FRAME_DEBUGGER`, and `PLAYER_BUILD`.
+
+Cinematic Cheats used: None in this pass. Existing UI cheats remain TMP-SDF scaling, TOASTER solid contrast, GOD_MODE gated post treatment, and the two-sample widget shader cap.
+
+Exact Microseconds saved: 0 us runtime. No Unity hot path changed.
+
+Verification: `python Tools/UX/run_hardware_adaptive_ui_validation.py` PASS. `python -B Tools/UX/validate_aggregate_report.py` PASS. `python -B Tools/UX/validate_status_log_consistency.py --write-report` PASS. Standalone `PYTHONDONTWRITEBYTECODE=1` UX discovery PASS 83/83. Readback: evidenceClasses `STATIC_SOURCE`/`STATIC_DOC`/`CLI_COMPILE`, runtimeEvidenceClassesMissing `UNITY_CONSOLE`/`PLAYMODE`/`PROFILER`/`FRAME_DEBUGGER`/`PLAYER_BUILD`, commandCount 8/8 exact order, unitHarnessTestCount 44, artifactHashCount 30/30 valid SHA-256, pythonCacheCountAfter 0, aggregate/status self-validation PASS, Unity probe `UNITY_NOT_FOUND`, no `Library/Logs/Unity/Editor.log`, MCP resources/templates empty, `PYTHON_CACHE_COUNT 0`.
 
 Status: UI SCALED - STATIC/PYTHON AGGREGATE PASS; UNITY RUNTIME PENDING.
