@@ -389,3 +389,14 @@ Rejected Alternatives: Validating only the shipped constants was rejected becaus
 Scalability potential: Low/Middle/High/Ultra validation runs now share fail-closed acceptance metadata before any day loop starts. High-end validation can still run longer day spans, but the exported acceptance threshold contract stays explicit.
 
 Hardware Impact: Tooling-only. Unity runtime backend unchanged; invalid acceptance data now aborts before Python allocates per-cell lanes.
+
+## Decision 36 - Export Identity Fail-Closed Guard
+Problem: `run_sim()` validated math and acceptance fields but still accepted a constants payload with the wrong schema, version, status, or Unity-verification marker. That could produce new entropy output from a file that is not the exported authority requested by the XML task.
+
+Solution: Added schema/version/status/unity-verification checks to `validate_constants`. Added a regression that changes `status` to `PENDING` and expects `ValueError`.
+
+Rejected Alternatives: Trusting only the happy-path assertions was rejected because direct callers can bypass that test. Ignoring `unityVerificationStatus` was rejected because the project requires explicit separation between offline balanced tooling and pending Unity proof.
+
+Scalability potential: Low/Middle/High/Ultra validation runs now reject non-authoritative constants before any day loop starts. Future schema upgrades must explicitly bump validation and tests.
+
+Hardware Impact: Tooling-only. Unity runtime backend unchanged; invalid export identity aborts before Python allocates per-cell lanes.

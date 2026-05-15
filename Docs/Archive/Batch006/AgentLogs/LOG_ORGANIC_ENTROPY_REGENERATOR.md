@@ -638,3 +638,30 @@ Verification:
 - Target scans: no forbidden hot-path token matches; no raw `new NativeArray`; no raw native dispose.
 - `git diff --check`: CRLF warnings only for edited text files.
 - `dotnet --info`: timed out/unavailable; full Unity import/build remains PENDING VERIFICATION.
+
+## 2026-05-15 - Export Identity Fail-Closed Guard
+
+What was wrong:
+- The entropy harness validated math/acceptance fields but not the exported constants identity.
+- A wrong schema/version/status payload could still generate fresh entropy output.
+
+What was done:
+- Added schema, version, `ENTROPY BALANCED`, and `PENDING_UNITY_VERIFICATION` checks in `validate_constants`.
+- Added `test_run_sim_rejects_invalid_export_identity`.
+- Re-ran unit, entropy, syntax, static, and workspace checks.
+
+Cinematic cheats used:
+- None. This is offline export-contract validation.
+
+Exact microseconds saved:
+- Runtime microseconds saved: 0. Unity runtime backend was not changed.
+- Failure avoided: non-authoritative constants abort before Python state allocation and day loops.
+
+Verification:
+- `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`: exit code 0.
+- `python -m unittest Tools.test_world_entropy_sim -v`: 13 tests passed in 23.639 s.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
+- Target scans: no forbidden hot-path token matches; no raw `new NativeArray`; no raw native dispose.
+- `git diff --check`: clean.
+- `dotnet --info`: unavailable; full Unity import/build remains PENDING VERIFICATION.
