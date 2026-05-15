@@ -147,6 +147,15 @@ Verification after Loop 2: Constants and codec implemented; no Unity import proo
 - [x] Direct API regression test | Added `test_run_sim_rejects_non_positive_day_count`. DOD: CLI and programmatic entry points now share the same invalid-day failure contract. Rejected: relying on argparse coverage for non-CLI callers.
 - [x] Loop 21 verification | Re-ran `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`, `python -m unittest Tools.test_world_entropy_sim -v`, target forbidden-token scan, raw native allocation/dispose scan, `git diff --check`, 365-day entropy command, 1000-day entropy command, `dotnet --info`, and temp cleanup. Results: py_compile exit `0`; unittest 7 passed in `50.570 s`; no forbidden hot-path matches; no raw `new NativeArray`/raw dispose matches; `git diff --check` only CRLF warnings; 365/1000-day entropy `STATUS=ENTROPY BALANCED`; `.codex_tmp` removed; `dotnet` remains unavailable.
 
+## Loop 22 - Acceptance Balance Guard
+- [x] Absent-biome audit | Extracted `calculate_balance` and required Safe/Deep recovery evidence before total-overharvest can pass. DOD: a degenerate constants set with no Deep Abyss cells cannot pass from final mature ratio alone. Rejected: treating missing biome recovery as infinite or successful recovery. Estimate: tooling-only; runtime unchanged.
+- [x] Loop 22 verification | Re-ran `python -B -m unittest Tools.test_world_entropy_sim -v` and the 365-day entropy command. Results: unittest 8 passed in `29.721 s`; 365-day entropy remained `STATUS=ENTROPY BALANCED`, ratio `3.143`, final mature ratio `1.000`.
+
+## Loop 23 - Empty-Biome Recovery Evidence Guard
+- [x] Half-recovery empty-biome fix | Patched `summarize` so a biome with zero macro-sector cells cannot be marked half-recovered by the `0 >= 0` edge case. DOD: recovery evidence now requires `countByBiome > 0`. Rejected: recording recovery days for absent biomes because it contaminates acceptance math. Estimate: tooling-only; runtime C# unchanged.
+- [x] Full acceptance rerun | Re-ran `python -m unittest Tools.test_world_entropy_sim -v`, the 365-day entropy command, and the 1000-day entropy command. Results: unittest 8 passed in `31.000 s`; 365/1000-day entropy remained `STATUS=ENTROPY BALANCED`, Safe day `28`, Deep Abyss day `88`, ratio `3.143`, final mature ratio `1.000`.
+- [x] Loop 23 static/tooling guard | Re-ran `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`, target forbidden-token scan, raw native allocation/dispose scan, `git diff --check`, and `dotnet --info`. Results: py_compile exit `0`; no forbidden hot-path matches; no raw `new NativeArray`/raw dispose matches; `git diff --check` only CRLF warnings; `dotnet` remains unavailable; `.codex_tmp` absent.
+
 ## Final State
 - [x] Core tasks 1-8 complete.
 - [x] Recursive verification target met by Python entropy-test.

@@ -302,6 +302,17 @@ Scalability potential: Low through Ultra tiers keep exported data within the sam
 
 Hardware Impact: Tooling only. Runtime code is unchanged.
 
+## Decision 30 - Absent-Biome Acceptance Guard
+Problem: Total-overharvest acceptance used final mature ratio and a recovery ratio, but an invalid constants slice with no Deep Abyss cells could report perfect final maturity while lacking required biome recovery evidence.
+
+Solution: Extracted `calculate_balance` and made total-overharvest require Safe and Deep Abyss recovery days before comparing the ratio. Added a one-cell regression proving an absent Deep Abyss biome fails acceptance even with final mature ratio `1.0`.
+
+Rejected Alternatives: Treating missing biome recovery as infinite recovery was rejected because it hides invalid coverage. Trusting only final mature ratio was rejected because it ignores biome-specific recovery requirements.
+
+Scalability potential: Low through Ultra validation machines now fail malformed acceptance constants deterministically before publishing misleading balance evidence.
+
+Hardware Impact: Tooling only. Runtime code is unchanged.
+
 ## Decision 28 - Entropy CLI Day Count Guard
 Problem: The entropy harness CLI silently clamped non-positive `--days` values to one simulated day while printing the invalid original day count. That can create misleading evidence in automation logs.
 
@@ -323,3 +334,14 @@ Rejected Alternatives: Keeping validation only in `main()` was rejected because 
 Scalability potential: Low/Middle/High/Ultra tiers are unaffected at runtime. Validation tooling is stricter, so bad long-horizon entropy evidence fails before expensive simulation loops run.
 
 Hardware Impact: Tooling-only. Unity runtime backend cost is unchanged; invalid direct harness calls now avoid allocating Python state and avoid any simulated-day work.
+
+## Decision 31 - Empty-Biome Half-Recovery Guard
+Problem: `summarize()` marked half recovery when `matureByBiome * 2 >= countByBiome`. For a biome with zero cells, that condition is `0 >= 0`, so malformed or tiny validation grids could record a fake recovery day for an absent biome.
+
+Solution: Required `countByBiome > 0` before writing `firstHalfRecoveryDays[biome]`. The existing `calculate_balance` fail-closed path then treats missing Safe/Deep evidence as failed total-overharvest acceptance.
+
+Rejected Alternatives: Leaving the edge case to `calculate_balance` alone was rejected because the summary payload itself would still contain false recovery data. Throwing on missing biomes was rejected because reduced-grid determinism tests can intentionally omit a biome while still needing a summary.
+
+Scalability potential: Low/Middle/High/Ultra validation grids now report absent biome coverage honestly. Larger high-end validation maps keep the same acceptance output when all required biomes are present.
+
+Hardware Impact: Tooling-only. Runtime Unity backend unchanged; added one branch in Python summary generation.

@@ -248,7 +248,11 @@ def summarize(state: dict, day: int, first_half_recovery: list[int | None]) -> d
             mature_by_biome[biome_id] += 1
 
     for biome_id in range(biomes):
-        if first_half_recovery[biome_id] is None and mature_by_biome[biome_id] * 2 >= count_by_biome[biome_id]:
+        if (
+            count_by_biome[biome_id] > 0
+            and first_half_recovery[biome_id] is None
+            and mature_by_biome[biome_id] * 2 >= count_by_biome[biome_id]
+        ):
             first_half_recovery[biome_id] = day
 
     return {
@@ -284,6 +288,24 @@ def run_sim(constants: dict, days: int, total_overharvest: bool) -> tuple[dict, 
     return final_summary, checkpoints
 
 
+def calculate_balance(final: dict, constants: dict, total_overharvest: bool) -> tuple[bool, float, float]:
+    safe_day = final["firstHalfRecoveryDays"][0]
+    abyss_day = final["firstHalfRecoveryDays"][3]
+    has_required_recovery = safe_day is not None and abyss_day is not None and safe_day > 0
+    ratio = (abyss_day / safe_day) if has_required_recovery else 0.0
+    final_mature_total = sum(final["matureByBiome"])
+    final_count_total = sum(final["countByBiome"])
+    final_mature_ratio = final_mature_total / max(1, final_count_total)
+    required_ratio = float(constants["acceptance"]["safeShallowsVsDeepAbyssMinRecoveryRatio"])
+    required_mature = float(constants["acceptance"]["minFinalMatureRatio"])
+    if total_overharvest:
+        balanced = has_required_recovery and ratio >= required_ratio and final_mature_ratio >= required_mature
+    else:
+        balanced = final_mature_ratio >= required_mature
+
+    return balanced, ratio, final_mature_ratio
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run the HECTON-8 world regrowth entropy test.")
     parser.add_argument("--constants", default="Data/Economy/Regrowth_Constants.json")
@@ -298,16 +320,11 @@ def main() -> int:
 
     safe_day = final["firstHalfRecoveryDays"][0]
     abyss_day = final["firstHalfRecoveryDays"][3]
-    ratio = float("inf") if safe_day in (None, 0) else (abyss_day or 999999) / safe_day
-    final_mature_total = sum(final["matureByBiome"])
-    final_count_total = sum(final["countByBiome"])
-    final_mature_ratio = final_mature_total / max(1, final_count_total)
-    required_ratio = float(constants["acceptance"]["safeShallowsVsDeepAbyssMinRecoveryRatio"])
-    required_mature = float(constants["acceptance"]["minFinalMatureRatio"])
-    if args.mode == "total_overharvest":
-        balanced = ratio >= required_ratio and final_mature_ratio >= required_mature
-    else:
-        balanced = final_mature_ratio >= required_mature
+    balanced, ratio, final_mature_ratio = calculate_balance(
+        final,
+        constants,
+        args.mode == "total_overharvest",
+    )
 
     print("WORLD ENTROPY SIM")
     print(f"days={args.days} mode={args.mode}")

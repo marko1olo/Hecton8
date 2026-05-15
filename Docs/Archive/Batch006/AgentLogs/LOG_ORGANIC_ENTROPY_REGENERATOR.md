@@ -481,3 +481,25 @@ Verification:
 - Target scans: no forbidden hot-path token matches; no raw `new NativeArray`; no raw native dispose.
 - `git diff --check`: CRLF warnings only for the edited Python files.
 - `dotnet --info`: unavailable; full Unity import/build remains PENDING VERIFICATION.
+
+## 2026-05-15 - Acceptance Balance Guard
+
+What was wrong:
+- A degenerate constants set with no Deep Abyss cells could still reach final mature ratio `1.0`.
+- Total-overharvest acceptance needed explicit required-biome recovery evidence, not only aggregate maturity.
+
+What was done:
+- Extracted `calculate_balance`.
+- Required Safe and Deep Abyss half-recovery days before total-overharvest can pass.
+- Added `test_absent_biome_cannot_pass_total_overharvest_acceptance`.
+
+Cinematic cheats used:
+- None. This is offline acceptance-harness hygiene.
+
+Exact microseconds saved:
+- Runtime microseconds saved: 0. Tooling-only.
+- Failure avoided: malformed constants publishing false entropy balance evidence.
+
+Verification:
+- `python -B -m unittest Tools.test_world_entropy_sim -v`: 8 tests passed in 29.721 s.
+- `python Tools\WorldEntropySim.py --constants Data\Economy\Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, ratio 3.143, final mature ratio 1.000.

@@ -347,6 +347,8 @@ Persistence contract:
 - `Tools/test_world_entropy_sim.py` locks exported constants against the C# fast-path config bounds.
 - `WorldEntropySim.py` rejects non-positive `--days` values instead of silently clamping them.
 - `run_sim()` also rejects non-positive day counts, so direct test/automation callers cannot bypass the CLI evidence guard.
+- Acceptance balance requires required biome recovery evidence; an absent Deep Abyss biome cannot pass total-overharvest from final mature ratio alone.
+- Summary recovery days require at least one macro-sector in the biome; absent biomes remain `None` instead of reporting false day-1 recovery.
 
 Entropy-test result:
 
@@ -364,7 +366,7 @@ Post-hardening verification:
 - `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`; mature counts stable through day 1000.
 - `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: latest optimized run `STATUS=ENTROPY BALANCED`; elapsed 68.723 s under current machine load.
 - `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: latest run `STATUS=ENTROPY BALANCED`; mature counts stable through day 1000.
-- `python -m unittest Tools.test_world_entropy_sim -v`: latest run 7 tests passed in 50.570 s.
+- `python -m unittest Tools.test_world_entropy_sim -v`: latest run 8 tests passed in 31.000 s.
 - Visual Studio Roslyn C# 9 probe compile against Unity/Hecton8 stubs: exit code `0`; re-run after config overflow guard tightening remained exit code `0`.
 - Static scans: no forbidden hot-path token matches and no raw `new NativeArray` or raw native dispose remains in `WorldRegrowthSimulation.cs`.
 - Full Unity import and Burst compile remain `PENDING VERIFICATION` because no Unity CLI/editor route was available in-session.

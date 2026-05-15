@@ -108,6 +108,21 @@ class WorldEntropySimTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             entropy.run_sim(self.constants, 0, True)
 
+    def test_absent_biome_cannot_pass_total_overharvest_acceptance(self) -> None:
+        constants = deepcopy(self.constants)
+        constants["gridWidth"] = 1
+        constants["gridHeight"] = 1
+        constants["macroSectorOriginX"] = 0
+        constants["macroSectorOriginZ"] = 0
+
+        final, _ = entropy.run_sim(constants, 365, True)
+        balanced, ratio, final_mature_ratio = entropy.calculate_balance(final, constants, True)
+
+        self.assertEqual(1.0, final_mature_ratio)
+        self.assertIsNone(final["firstHalfRecoveryDays"][3])
+        self.assertEqual(0.0, ratio)
+        self.assertFalse(balanced)
+
 
 if __name__ == "__main__":
     unittest.main()
