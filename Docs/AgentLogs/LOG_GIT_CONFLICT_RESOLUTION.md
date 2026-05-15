@@ -652,4 +652,4 @@ Exact Microseconds saved -> 0 us runtime claimed. Process-only gain is lower act
 
 Verification -> Batch006 archive currently contains 991 files and 148317214 bytes after removing 19 zero-byte archive artifacts and regenerating combined manifests. Remote incoming report shows the current pull state as `0 0`; the last observed other-computer fetch ranges include economy proof, lore/regrowth/hash work, Git sync evidence, orphan meta cleanup, generated artifact refresh, and batch agent output sync.
 
-Current Status -> Staging pending for archive checkpoint. Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals are not claimed.
+Current Status -> Pushed `61b008d36`; post-push fetch reports `origin/main...HEAD = 0 0`. Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals are not claimed. Remaining untracked files are the separate unfinished `SUBNAUTICA_RESEARCHER` research notes, intentionally excluded from the Git hygiene checkpoint.
