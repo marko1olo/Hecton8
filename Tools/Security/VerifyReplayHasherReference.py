@@ -140,6 +140,33 @@ def verify_module_path(xxhash_module, package_root: pathlib.Path) -> None:
         ) from exc
 
 
+def verify_module_api(xxhash_module) -> None:
+    digest = getattr(xxhash_module, "xxh3_64_intdigest", None)
+    if not callable(digest):
+        raise RuntimeError("xxhash module does not expose callable xxh3_64_intdigest")
+
+
+def module_is_loaded_from(module, package_root: pathlib.Path) -> bool:
+    module_path = getattr(module, "__file__", None)
+    if not module_path:
+        return False
+
+    try:
+        pathlib.Path(module_path).resolve().relative_to(package_root)
+    except (OSError, ValueError):
+        return False
+
+    return True
+
+
+def remove_new_modules_loaded_from(package_root: pathlib.Path, baseline_names: set[str]) -> None:
+    for name, module in tuple(sys.modules.items()):
+        if name in baseline_names:
+            continue
+        if module_is_loaded_from(module, package_root):
+            sys.modules.pop(name, None)
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     if args.fuzz_count < 0:
@@ -153,6 +180,7 @@ def main(argv: list[str] | None = None) -> int:
 
     path_entry = str(xxhash_path)
     previous_xxhash = sys.modules.get("xxhash", _MISSING_MODULE)
+    baseline_module_names = set(sys.modules)
     sys.path.insert(0, path_entry)
     sys.modules.pop("xxhash", None)
 
@@ -172,6 +200,11 @@ def main(argv: list[str] | None = None) -> int:
         except RuntimeError as exc:
             print(str(exc), file=sys.stderr)
             return 2
+        try:
+            verify_module_api(xxhash_module)
+        except RuntimeError as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
 
         root = pathlib.Path(__file__).resolve().parents[2]
         replay = load_replay_hasher(root / "Tools" / "Security" / "ReplayHasher.py")
@@ -184,6 +217,8 @@ def main(argv: list[str] | None = None) -> int:
             sys.path.remove(path_entry)
         except ValueError:
             pass
+
+        remove_new_modules_loaded_from(xxhash_path, baseline_module_names)
 
         if previous_xxhash is _MISSING_MODULE:
             sys.modules.pop("xxhash", None)

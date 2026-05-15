@@ -432,6 +432,30 @@ Exact Microseconds saved: 0 runtime microseconds. No runtime or active save writ
 
 Verification: post-correction checks returned `PY_AST_OK files=3`, `SELFTEST_OK`, `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=2 resultCtor=4 blitAttrs=2`, `XXHASH_TMP_ABSENT`, and `git diff --check` passed with line-ending warnings only. Status/rationale readback confirms Loop 40 and Decisions `1-42`.
 
+## 2026-05-15 - Reference Verifier Temp Helper Cleanup
+
+What was wrong: Embedded verifier cleanup restored `xxhash` and `sys.path`, but a temp-path `xxhash` package could import helper modules that remained in `sys.modules` after `main()` returned.
+
+What was done: Added cleanup for newly loaded modules whose `__file__` resolves under `--xxhash-path`, while preserving modules that existed before verifier execution. Updated the design doc and status file.
+
+Cinematic Cheats used: None. Offline verification tooling only.
+
+Exact Microseconds saved: 0 runtime microseconds. This prevents verifier state contamination; no runtime save path changed.
+
+Verification: full owned suite returned `PY_AST_OK files=3`, `SELFTEST_OK`, `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=2 resultCtor=4 blitAttrs=2`, `XXHASH_PATH_REQUIRED_GUARD=PASS`, `XXHASH_MODULE_FILE_GUARD=PASS`, `XXHASH_EMBEDDED_CLEANUP_SUCCESS_GUARD=PASS`, `XXHASH_TEMP_HELPER_MODULE_CLEANUP_GUARD=PASS`, `XXHASH_EMBEDDED_CLEANUP_FAILURE_GUARD=PASS`, `XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK xxh3=338 shuffle=128`, and `XXHASH_TMP_REMOVED`. `git diff --check` passed with line-ending warnings only.
+
+## 2026-05-15 - Reference Verifier API Shape Guard
+
+What was wrong: A module named `xxhash` under the explicit temp path could pass path containment but lack `xxh3_64_intdigest`, producing an uncontrolled traceback instead of a deterministic verifier error.
+
+What was done: Added `verify_module_api()` to require a callable `xxh3_64_intdigest` before vector verification starts. Updated the design doc and status file.
+
+Cinematic Cheats used: None. Offline verification tooling only.
+
+Exact Microseconds saved: 0 runtime microseconds. This improves failure clarity; no runtime save path changed.
+
+Verification: full owned suite returned `PY_AST_OK files=3`, `SELFTEST_OK`, `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=2 resultCtor=4 blitAttrs=2`, `XXHASH_PATH_REQUIRED_GUARD=PASS`, `XXHASH_MODULE_FILE_GUARD=PASS`, `XXHASH_API_SHAPE_GUARD=PASS`, `XXHASH_EMBEDDED_CLEANUP_SUCCESS_GUARD=PASS`, `XXHASH_TEMP_HELPER_MODULE_CLEANUP_GUARD=PASS`, `XXHASH_EMBEDDED_CLEANUP_FAILURE_GUARD=PASS`, `XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK xxh3=338 shuffle=128`, and `XXHASH_TMP_REMOVED`. `git diff --check` passed with line-ending warnings only.
+
 ## 2026-05-15 - Shuffle Mask Preimage Byte Fixtures
 
 What was wrong: Shuffle mask output vectors were frozen, but the raw low/high mask preimage bytes were not. That makes lane-order drift harder to diagnose.

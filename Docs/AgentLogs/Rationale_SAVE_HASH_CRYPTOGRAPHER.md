@@ -503,3 +503,27 @@ Rejected Alternatives: Leaving stale evidence text was rejected because the stat
 Scalability potential: No runtime impact. Evidence hygiene only.
 
 Hardware Impact: 0 us frame impact. Documentation correction only.
+
+## Decision 43
+
+Problem: Restoring only `sys.modules["xxhash"]` does not remove helper modules that an isolated temp-path `xxhash` package might import. A one-shot CLI exits, but an embedded Python harness could keep those helper modules loaded after verification.
+
+Solution: Added cleanup for any newly loaded module whose `__file__` resolves under `--xxhash-path`, while preserving modules that existed before verifier execution.
+
+Rejected Alternatives: Removing every new module was rejected because that could delete unrelated modules loaded concurrently by a harness. Leaving helper modules in place was rejected because this verifier exists specifically to avoid environment contamination.
+
+Scalability potential: No runtime impact. All tiers retain the same save ABI; embedded verifier calls now clean up temp package helper modules.
+
+Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 44
+
+Problem: A temp-path module named `xxhash` could satisfy path containment but still lack the `xxh3_64_intdigest` API used by the verifier. That produced an uncontrolled `AttributeError` traceback instead of a deterministic verifier failure.
+
+Solution: Added `verify_module_api()` to require a callable `xxh3_64_intdigest` immediately after path containment and before any vector checks.
+
+Rejected Alternatives: Letting `verify_xxh3()` fail naturally was rejected because tool failures must identify contamination clearly. Expanding the project dependency surface was rejected because the external package remains optional and isolated.
+
+Scalability potential: No runtime impact. All tiers retain the same save ABI; offline reference failure modes are clearer.
+
+Hardware Impact: 0 us frame impact. Offline validation only.
