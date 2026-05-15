@@ -142,6 +142,11 @@ Verification after Loop 2: Constants and codec implemented; no Unity import proo
 - [x] CLI regression test | Added `test_cli_rejects_non_positive_day_count` and suppressed argparse stderr inside the test. DOD: invalid CLI input now has a locked failure mode without noisy test output. Rejected: manual command-only validation.
 - [x] Loop 20 verification | Re-ran `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`, `python -m unittest Tools.test_world_entropy_sim -v`, target forbidden-token scan, raw native allocation/dispose scan, `git diff --check`, 365-day entropy command, and 1000-day entropy command. Results: py_compile exit `0`; unittest 6 passed in `34.315 s`; no forbidden hot-path matches; no raw `new NativeArray`/raw dispose matches; `git diff --check` only CRLF warnings; 365/1000-day entropy `STATUS=ENTROPY BALANCED`; temp directory removed.
 
+## Loop 21 - Direct Harness Input Guard
+- [x] Direct `run_sim` day audit | Patched `run_sim` to reject `days < 1` with `ValueError` instead of allowing programmatic callers to bypass the CLI guard. DOD: invalid automation inputs fail before state construction. Rejected: CLI-only validation because tests and tools can call the harness directly. Estimate: tooling-only; runtime unchanged.
+- [x] Direct API regression test | Added `test_run_sim_rejects_non_positive_day_count`. DOD: CLI and programmatic entry points now share the same invalid-day failure contract. Rejected: relying on argparse coverage for non-CLI callers.
+- [x] Loop 21 verification | Re-ran `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`, `python -m unittest Tools.test_world_entropy_sim -v`, target forbidden-token scan, raw native allocation/dispose scan, `git diff --check`, 365-day entropy command, 1000-day entropy command, `dotnet --info`, and temp cleanup. Results: py_compile exit `0`; unittest 7 passed in `50.570 s`; no forbidden hot-path matches; no raw `new NativeArray`/raw dispose matches; `git diff --check` only CRLF warnings; 365/1000-day entropy `STATUS=ENTROPY BALANCED`; `.codex_tmp` removed; `dotnet` remains unavailable.
+
 ## Final State
 - [x] Core tasks 1-8 complete.
 - [x] Recursive verification target met by Python entropy-test.

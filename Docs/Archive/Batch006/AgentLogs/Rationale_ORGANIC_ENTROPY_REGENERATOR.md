@@ -312,3 +312,14 @@ Rejected Alternatives: Keeping the hidden clamp was rejected because invalid evi
 Scalability potential: Tooling results remain comparable across low-end and high-end validation machines because invalid invocation parameters fail consistently.
 
 Hardware Impact: Tooling only. Runtime code is unchanged.
+
+## Decision 29 - Direct Harness API Day Count Guard
+Problem: The CLI rejected non-positive day counts, but direct `run_sim()` callers could still pass `0` or negative values. That lets automation bypass the evidence guard and create misleading validation state outside argparse.
+
+Solution: Added a fail-fast `ValueError` at the top of `run_sim()` before state construction. Added `test_run_sim_rejects_non_positive_day_count` so CLI and programmatic entry points share the invalid-day contract.
+
+Rejected Alternatives: Keeping validation only in `main()` was rejected because the test suite and future batch automation call `run_sim()` directly. Silently clamping in `run_sim()` was rejected because it repeats the original misleading-evidence failure mode.
+
+Scalability potential: Low/Middle/High/Ultra tiers are unaffected at runtime. Validation tooling is stricter, so bad long-horizon entropy evidence fails before expensive simulation loops run.
+
+Hardware Impact: Tooling-only. Unity runtime backend cost is unchanged; invalid direct harness calls now avoid allocating Python state and avoid any simulated-day work.

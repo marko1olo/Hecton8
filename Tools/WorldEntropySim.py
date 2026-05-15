@@ -262,6 +262,9 @@ def summarize(state: dict, day: int, first_half_recovery: list[int | None]) -> d
 
 
 def run_sim(constants: dict, days: int, total_overharvest: bool) -> tuple[dict, list[dict]]:
+    if days < 1:
+        raise ValueError("days must be >= 1")
+
     state = build_initial_state(constants, total_overharvest)
     first_half_recovery: list[int | None] = [None, None, None, None]
     checkpoints: list[dict] = []

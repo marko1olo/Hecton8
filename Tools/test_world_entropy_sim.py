@@ -104,6 +104,10 @@ class WorldEntropySimTests(unittest.TestCase):
 
         self.assertEqual(2, context.exception.code)
 
+    def test_run_sim_rejects_non_positive_day_count(self) -> None:
+        with self.assertRaises(ValueError):
+            entropy.run_sim(self.constants, 0, True)
+
 
 if __name__ == "__main__":
     unittest.main()
