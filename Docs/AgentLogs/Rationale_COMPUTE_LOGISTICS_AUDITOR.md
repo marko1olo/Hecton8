@@ -252,7 +252,7 @@ Scalability potential: Low/Middle/High/Ultra process gains a stable navigation p
 
 Hardware Impact: 0 runtime microseconds on i3/MX350. Documentation-only.
 
-## Decision 19 - Top-100 Value And C++ Transfer Evidence
+## Decision 22 - Top-100 Value And C++ Transfer Evidence
 
 Problem: Top-30 attribution and validation forensics showed expensive work traces, but the user requested continued certainty and specifically repeated the C++ transfer requirement. Token concentration alone cannot prove productive value or migration state.
 

@@ -286,7 +286,7 @@ What was done:
 - Refreshed `COMPUTE_COLLISION_RISK.md`.
 - Updated `COMPUTE_AUDIT_BRIEF.md` with value-audit, validation, collision, and C++ evidence pointers.
 - Appended the top-100 addendum to `Docs/Reports/COMPUTE_DOMINANCE_REPORT.md`.
-- Updated status and rationale for Loop 14 / Decision 20.
+- Updated status and rationale for Loop 13 / Decision 22.
 
 Evidence captured:
 - Live SQLite ledger: 764 threads, 44,145,781,873 tokens.

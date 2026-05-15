@@ -139,9 +139,13 @@ namespace Hecton8.Audio.Editor
                 AssertNotContains(spatialFoveatedRefresh, "GlobalRegistry.FoveatedSimulationDirector", "Spatial audio slow-lane foveated refresh does not poll registry directly", builder, ref failureCount);
                 AssertContains(spatial, "IGlobalRegistryHotSwapRefListener", "Spatial audio caches player-critical runtime through hot-swap rebinding", builder, ref failureCount);
                 AssertContains(spatial, "TryRegisterHotSwapListener()", "Spatial audio registers for player-critical runtime hot swaps", builder, ref failureCount);
-                AssertContains(spatialColdRuntimeServices, "GlobalRegistry.PlayerCriticalAudio", "Spatial audio seeds player-critical runtime only during cold cache refresh", builder, ref failureCount);
-                AssertNotContains(spatialPrologueQueue, "GlobalRegistry.PlayerCriticalAudio", "Prologue audio transition queue uses cached player-critical runtime", builder, ref failureCount);
-                AssertNotContains(spatialHighSpeedQueue, "GlobalRegistry.PlayerCriticalAudio", "High-speed impact queue uses cached player-critical runtime", builder, ref failureCount);
+                AssertContains(spatial, "GlobalRegistry.TryUnregisterHotSwapListener(this)", "Spatial audio unregisters player-critical runtime hot-swap listener", builder, ref failureCount);
+                AssertContains(spatial, "public void OnGlobalRegistryServiceRebound(", "Spatial audio receives ref-forwarded service rebinds", builder, ref failureCount);
+                AssertContains(spatial, "GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime", "Spatial audio listens for player-critical audio runtime rebinding", builder, ref failureCount);
+                AssertContains(spatial, "_cachedPlayerCriticalAudio = currentService as PlayerCriticalProceduralAudioRenderer", "Spatial audio refreshes cached player-critical renderer from hot-swap payload", builder, ref failureCount);
+                AssertContains(spatialColdRuntimeServices, "_cachedPlayerCriticalAudio = GlobalRegistry.PlayerCriticalAudio", "Spatial audio seeds player-critical runtime only during cold cache refresh", builder, ref failureCount);
+                AssertNotContains(spatialPrologueQueue, "GlobalRegistry.", "Prologue audio transition queue uses cached player-critical runtime", builder, ref failureCount);
+                AssertNotContains(spatialHighSpeedQueue, "GlobalRegistry.", "High-speed impact queue uses cached player-critical runtime", builder, ref failureCount);
                 AssertNotContains(spatialPortalPath, "GlobalRegistry.ScalabilityTier", "Spatial audio portal path does not poll scalability registry directly", builder, ref failureCount);
                 AssertNotContains(spatialUsePortalPath, "GlobalRegistry.ScalabilityTier", "Spatial audio portal policy does not poll scalability registry directly", builder, ref failureCount);
                 AssertNotContains(spatialVoiceLimit, "GlobalRegistry.ScalabilityTier", "Spatial audio voice-limit policy does not poll scalability registry directly", builder, ref failureCount);

@@ -45,3 +45,7 @@ Task loop 6:
 Task loop 7:
 - [x] Re-check pull gate | DOD: `git fetch origin`; `rev-list origin/main...HEAD` returned `0 0`, so pull remained unnecessary | Rejected: merging without incoming commits | Estimate: 0 us runtime.
 - [x] Validate current tail | DOD: `git diff --stat`, `git diff --check`, unmerged-path scan, and changed-file marker scan | Rejected: staging unchecked live edits | Estimate: 0 us runtime.
+
+Task loop 8:
+- [x] Push verified tail | DOD: committed and pushed the checked tail; post-push fetch confirmed `origin/main...HEAD` before the next live edits | Rejected: leaving validated local work only on disk | Estimate: 0 us runtime.
+- [x] Final bounded pass | DOD: validated the remaining small tail and prepared one final checkpoint for this run | Rejected: unbounded loop while parallel agents continue writing | Estimate: 0 us runtime.

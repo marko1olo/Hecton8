@@ -540,6 +540,34 @@ Status: VERIFIED AUP INTEGRITY - LOOP 29 AUP PRECISION H-PHI BUDGET GATE PASSES 
 - Unity import/Console verification remains pending because no Unity editor session is available.
 - H-Phi result is static-source evidence, not profiler proof.
 
+## Loop 31 H-Phi Core-Graph Budget Summary Metadata
+
+### Findings
+
+- Core graph H-Phi budgets were enforceable, but passing summary output did not explicitly record enabled/max/actual/pass state for those graph debt gates.
+
+### Tool Changes
+
+- `Tools/Architecture/HectonPhiAudit.ps1`: added `New-BudgetState` and `New-CoreGraphBudgetSummary`.
+- `New-CoreGraphSummary` now includes graph budget rows for the core build graph gate, Core asmdef debt, generated project debt, source-backed bridge debt, source-backed compile bridge debt, and project-reference replacement debt.
+- CoreGraphOnly text summary now prints a core graph H-Phi budget table.
+
+### Verification
+
+- PowerShell parser reports `PARSE_OK`.
+- CoreGraphOnly JSON with enabled graph budgets completed; all graph budget rows passed at actual counts: Core asmdef 25, generated project 10, source-backed bridge 14, source-backed compile bridge 8, project-reference replacement 6, core build graph gate `Actual=true`.
+- Deliberate failure check with `-MaxCoreAsmdefDebtReferences 24` returns the expected graph budget violation.
+- Loop 31 full-source retest with AUP and graph budgets timed out after 240 seconds; no full-source JSON was claimed. Loop 30 remains the latest completed full AUP budget run.
+- Targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. Residual hits remain broad `universe` text and known final-cast fluid/scatter/shader payload names.
+- No `dotnet build` or rebuild was run in Loop 31 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- H-Phi result is static-source evidence, not profiler proof.
+
 ## Loop 27 AUP Precision H-Phi Budget Gate
 
 ### Findings

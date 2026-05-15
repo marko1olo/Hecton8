@@ -3,7 +3,7 @@
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
 Domain: ECHELON 1 / Origin Shift (AUP Manager), with audit reach into Physics, Voxel, Kinematics, AI trigger math, Biome trigger math, and deterministic seed callsites.
 Assignment Source: User-supplied XML block. `Docs/Tasks/CURRENT_BATCH.md` extraction returned `PROMPT_NOT_FOUND` for this ID on initial pass.
-Status: VERIFIED AUP INTEGRITY - LOOP 30 APPLIED; H-PHI SUMMARY NOW RECORDS AUP PRECISION BUDGET STATE; `-MaxAupPrecisionRisk 0` FULL SCAN PASSES; AUP PRECISION INTEGRITY 1.0; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
+Status: VERIFIED AUP INTEGRITY - LOOP 31 APPLIED; H-PHI CORE-GRAPH SUMMARY NOW RECORDS GRAPH BUDGET STATE; LOOP 30 REMAINS LATEST COMPLETED FULL AUP BUDGET SCAN; LOOP 31 FULL RETEST TIMED OUT; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
 
 ## Selected Mandates
 
@@ -331,3 +331,18 @@ Loop 30 - H-Phi AUP Budget Summary Metadata:
 - Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run; residual hits remain broad `universe` text plus known final-cast fluid/scatter/shader payload names.
 - `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1` reports line-ending warnings only, no whitespace errors.
 - No `dotnet build` or rebuild was run in Loop 30 because the user explicitly forbade rebuilds.
+
+Loop 31 - H-Phi Core-Graph Budget Summary Metadata:
+- Re-read status/rationale and kept the rebuild ban active.
+- Patched `Tools/Architecture/HectonPhiAudit.ps1` so `New-CoreGraphSummary` includes `Budgets` for core build graph gate, Core asmdef debt, generated project debt, source-backed bridge debt, source-backed compile bridge debt, and project-reference replacement debt.
+- Added `New-BudgetState` and `New-CoreGraphBudgetSummary` so graph budget summaries record `Enabled`, `Max`, `Actual`, `Passed`, and `EvidenceClass=STATIC_SOURCE_GRAPH`.
+- Core graph text summary now prints the core graph H-Phi budget table.
+- PowerShell parser reports `PARSE_OK`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json -RequireCoreBuildGate -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 14 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 6` completed and returned all graph budgets enabled and passing.
+- Deliberate failure check `-CoreGraphOnly -Summary -Json -MaxCoreAsmdefDebtReferences 24` returns `Core graph H-Phi budget failed with 1 violation(s): Core asmdef H-Phi debt refs 25 exceed budget 24.`
+- Loop 31 full-source retest with AUP and graph budgets timed out after 240 seconds; no full-source JSON was claimed. Loop 30 remains the latest completed full `-MaxAupPrecisionRisk 0` run.
+- Targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run; residual hits remain broad `universe` text plus known final-cast fluid/scatter/shader payload names.
+- `git diff --check` on touched tool/docs reports no whitespace errors.
+- No `dotnet build` or rebuild was run in Loop 31 because the user explicitly forbade rebuilds.

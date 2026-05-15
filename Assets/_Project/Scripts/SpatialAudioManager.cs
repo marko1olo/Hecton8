@@ -625,10 +625,14 @@ namespace Hecton8.Audio
                 _acousticOcclusionRuntimeAcquired = true;
             }
 
-            if (_isInitialized)
+            if (Application.isPlaying)
             {
                 RefreshCachedAudioRuntimeServicesCold();
                 TryRegisterHotSwapListener();
+            }
+
+            if (_isInitialized)
+            {
                 RefreshSpatialAudioPolicyCold();
                 TryRegisterScalabilityEvents();
                 TrySubscribeAudioEvents();

@@ -945,6 +945,8 @@ namespace Hecton8.Editor.ProceduralGen
                 return;
             }
 
+            ValidatePrefabNameContract(path, familyFolder, prefab, rock, ref failures);
+
             LODGroup lodGroup = prefab.GetComponent<LODGroup>();
             if (lodGroup == null || lodGroup.GetLODs().Length != 3)
             {
@@ -1020,6 +1022,50 @@ namespace Hecton8.Editor.ProceduralGen
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] Runtime script component found at {path}.");
             }
 
+        }
+
+        private static void ValidatePrefabNameContract(string path, string familyFolder, GameObject prefab, bool rock, ref int failures)
+        {
+            string assetStem = Path.GetFileNameWithoutExtension(path);
+            if (!string.Equals(prefab.name, assetStem, StringComparison.Ordinal))
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Prefab root name mismatch at {path}. Root={prefab.name}, Stem={assetStem}.");
+            }
+
+            if (!TryResolvePrefabNameContract(familyFolder, out string prefix, out string kind))
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Missing prefab name contract for family={familyFolder}, Prefab={path}.");
+                return;
+            }
+
+            bool rockKind = string.Equals(kind, "Rock", StringComparison.Ordinal);
+            if (rock != rockKind)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Prefab kind contract mismatch at {path}. Family={familyFolder}, Kind={kind}, RockFlag={rock}.");
+            }
+
+            int indexStart = prefix.Length;
+            int kindSeparator = indexStart + 3;
+            int kindStart = kindSeparator + 1;
+            int hashSeparator = kindStart + kind.Length;
+            int hashStart = hashSeparator + 1;
+            int expectedLength = hashStart + 8;
+
+            bool valid = assetStem.Length == expectedLength &&
+                         assetStem.StartsWith(prefix, StringComparison.Ordinal) &&
+                         IsThreeDigitIndex(assetStem, indexStart) &&
+                         assetStem[kindSeparator] == '_' &&
+                         StringRangeEquals(assetStem, kindStart, kind) &&
+                         assetStem[hashSeparator] == '_' &&
+                         IsUpperHex8(assetStem, hashStart);
+            if (valid)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] Prefab name contract failed at {path}. Expected={prefix}###_{kind}_HHHHHHHH, Actual={assetStem}.");
         }
 
         private static void ValidatePrefabTransformContract(string path, Transform root, ref int failures)
@@ -1390,6 +1436,29 @@ namespace Hecton8.Editor.ProceduralGen
             }
         }
 
+        private static bool TryResolvePrefabNameContract(string familyFolder, out string prefix, out string kind)
+        {
+            switch (familyFolder)
+            {
+                case "TubeCoral":
+                    prefix = "GEN_Shallows_TubeCoral_";
+                    kind = "Flora";
+                    return true;
+                case "Kelp":
+                    prefix = "GEN_Shallows_Kelp_";
+                    kind = "Flora";
+                    return true;
+                case "PorousRock":
+                    prefix = "GEN_Shallows_PorousRock_";
+                    kind = "Rock";
+                    return true;
+                default:
+                    prefix = string.Empty;
+                    kind = string.Empty;
+                    return false;
+            }
+        }
+
         private static bool TryResolveLodTriangleBudget(int lodIndex, int lod0, int lod1, int lod2, out int triangleBudget)
         {
             switch (lodIndex)
@@ -1407,6 +1476,54 @@ namespace Hecton8.Editor.ProceduralGen
                     triangleBudget = 0;
                     return false;
             }
+        }
+
+        private static bool IsThreeDigitIndex(string value, int start)
+        {
+            if (start < 0 || start + 3 > value.Length)
+                return false;
+
+            for (int i = 0; i < 3; i++)
+            {
+                char c = value[start + i];
+                if (c < '0' || c > '9')
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsUpperHex8(string value, int start)
+        {
+            if (start < 0 || start + 8 > value.Length)
+                return false;
+
+            for (int i = 0; i < 8; i++)
+            {
+                if (!IsUpperHexDigit(value[start + i]))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsUpperHexDigit(char value)
+        {
+            return (value >= '0' && value <= '9') || (value >= 'A' && value <= 'F');
+        }
+
+        private static bool StringRangeEquals(string value, int start, string expected)
+        {
+            if (start < 0 || start + expected.Length > value.Length)
+                return false;
+
+            for (int i = 0; i < expected.Length; i++)
+            {
+                if (value[start + i] != expected[i])
+                    return false;
+            }
+
+            return true;
         }
 
         private static bool IsFinite(Vector3 value)

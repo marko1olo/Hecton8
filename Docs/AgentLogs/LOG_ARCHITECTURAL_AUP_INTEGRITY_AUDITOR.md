@@ -775,3 +775,34 @@ Verification:
 
 Integrator notes:
 - Summary budget metadata is static-source evidence only. Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
+
+## 2026-05-15 - Loop 31 H-Phi Core-Graph Budget Summary Metadata
+
+What was wrong:
+- Passing CoreGraphOnly H-Phi output did not preserve which graph budgets were enabled or the actual debt counts behind the pass.
+
+What was done:
+- Added `New-BudgetState` and `New-CoreGraphBudgetSummary` to `Tools/Architecture/HectonPhiAudit.ps1`.
+- `New-CoreGraphSummary` now includes graph budget rows for core build gate, Core asmdef debt, generated project debt, source-backed bridge debt, source-backed compile bridge debt, and project-reference replacement debt.
+- CoreGraphOnly text summary now prints the graph budget table.
+
+Cinematic Cheats used:
+- Static tooling only. Runtime simulation and rendering are unchanged.
+- Low-tier machines get fast graph-budget evidence without Unity launch or rebuild; High/Ultra pipelines get explicit graph-debt gates before large visual systems rely on stable core topology.
+
+Exact Microseconds saved:
+- Gameplay frame time: 0 us.
+- CoreGraphOnly enabled-budget summary completed inside the existing fast graph audit path; no runtime cost.
+
+Verification:
+- PowerShell parser reports `PARSE_OK`.
+- CoreGraphOnly JSON with enabled graph budgets completed and reported passing rows at actual counts: Core asmdef 25, generated project 10, source-backed bridge 14, source-backed compile bridge 8, project-reference replacement 6, core build graph gate `Actual=true`.
+- Deliberate `-MaxCoreAsmdefDebtReferences 24` failure returns `Core graph H-Phi budget failed with 1 violation(s): Core asmdef H-Phi debt refs 25 exceed budget 24.`
+- Loop 31 full-source retest with AUP and graph budgets timed out after 240 seconds; no full-source JSON was claimed.
+- Qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory AUP regex scan re-run; residual hits remain broad `universe` text and known final-cast fluid/scatter/shader payload names.
+- No `dotnet build` or rebuild was run because the user explicitly forbade rebuilds.
+
+Integrator notes:
+- Loop 30 remains the latest completed full `-MaxAupPrecisionRisk 0` static run. Loop 31 is CoreGraphOnly/tooling summary evidence plus AUP regex scans; Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.

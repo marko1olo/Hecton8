@@ -190,6 +190,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            ResetState();
             _wfcOutpostSectorHash = sectorHash;
             _wfcOutpostCellIndex = cellIndex;
             _wfcOutpostFlags = (byte)(initialFlags & WfcOutpostPersistenceConstants.MutableFlagMask);
@@ -534,6 +535,11 @@ namespace Hecton8.Gameplay
             _lastPublishedProgress = -1f;
             _lastVisualProgress = -1f;
             _isBeingCut = false;
+
+            if (cuttingSparks != null)
+                cuttingSparks.Stop();
+            if (openParticles != null)
+                openParticles.Stop();
 
             // Reset visuals
             ResetProgressVisuals();

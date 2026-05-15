@@ -455,3 +455,11 @@ Solution: Add `Budgets.AupPrecisionRisk` to the H-Phi audit result and summary o
 Rejected Alternatives: Rely on command history or infer budget state from `AupPrecisionRisk=0`. Command history is lost during context compression and a zero count does not prove that the budget gate was active.
 Scalability potential: Low machines get compact CI-readable budget evidence without Unity launch or rebuild. Middle/High/Ultra pipelines get explicit AUP drift-gate metadata before expensive visual-overkill systems rely on stable long-session anchors.
 Hardware Impact: Gameplay frame impact is 0 us. Full gated static run completed in 116.463 seconds with `BudgetEnabled=true`, `BudgetMax=0`, `BudgetActual=0`, and `BudgetPassed=true`; summary metadata cost is negligible relative to the existing static scan.
+
+## Decision 57 - H-Phi Core-Graph Budget Summary Metadata
+
+Problem: Core graph H-Phi budgets were enforced by command-line switches, but passing summaries did not preserve which graph budgets were enabled or the actual debt counts behind the pass.
+Solution: Add `New-CoreGraphBudgetSummary` and `New-BudgetState`, then surface graph budgets from `New-CoreGraphSummary` and the CoreGraphOnly text summary.
+Rejected Alternatives: Leave graph-budget evidence in shell history or require integrators to infer it from raw counts. Shell history is not stable project memory, and raw counts do not prove which budgets were active.
+Scalability potential: Low machines get fast CoreGraphOnly budget proof without full source scan or Unity launch. Middle/High/Ultra CI can gate graph debt explicitly before large visual systems depend on core compile topology stability.
+Hardware Impact: Gameplay frame impact is 0 us. CoreGraphOnly budget summary completed with enabled budgets passing at actual counts: Core asmdef 25, generated project 10, source-backed bridge 14, source-backed compile bridge 8, project-reference replacement 6. Full-source Loop 31 retest timed out after 240 seconds, so no new full H-Phi score was claimed.

@@ -516,9 +516,13 @@ namespace Hecton8.UI.VR
             {
                 TryUnregisterTick();
                 if (currentService == null)
+                {
+                    TryUnregisterReceiver();
                     return;
+                }
 
                 EnsureNativeStateForLifecycle();
+                TryRegisterReceiver();
                 TryRegisterTick();
             }
         }
@@ -529,7 +533,10 @@ namespace Hecton8.UI.VR
         /// <param name="payload">Scalability transition payload.</param>
         public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
         {
-            _lowTierMath = IsLowTierMath(payload.CurrentQualityTier);
+            if (!isActiveAndEnabled || _latched)
+                return;
+
+            _lowTierMath = payload.CurrentTier == ScalabilityTierProfiles.LowMx350;
         }
 
         private void WriteBlackBoxFrame(float angleDegrees)
@@ -764,7 +771,7 @@ namespace Hecton8.UI.VR
 
         private void TryRegisterReceiver()
         {
-            if (_receiverRegistered || _latched || activationVolume == null || !Application.isPlaying)
+            if (_receiverRegistered || _latched || !_nativeAllocated || activationVolume == null || !Application.isPlaying)
                 return;
 
             if (!PhysicalHandReceiverRegistry.TryRegister(activationVolume, this))

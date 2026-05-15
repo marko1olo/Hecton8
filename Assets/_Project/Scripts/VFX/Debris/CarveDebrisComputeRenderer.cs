@@ -262,6 +262,61 @@ namespace Hecton8.VFX.Debris
             _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
+        private void TryRegisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+
+            RefreshCachedRegistryServices();
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private void RefreshCachedRegistryServices()
+        {
+            _registryDataVault = GlobalRegistry.DataVault;
+            _fluidEngine = GlobalRegistry.Fluid;
+        }
+
+        public void OnGlobalRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService)
+        {
+            ApplyRegistryServiceRebind(serviceSlot, currentService);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            ApplyRegistryServiceRebind(serviceSlot, currentService);
+        }
+
+        private void ApplyRegistryServiceRebind(GlobalRegistryServiceSlot serviceSlot, object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                IDataVault currentVault = currentService as IDataVault;
+                _registryDataVault = currentVault;
+                if (!ReferenceEquals(_dataVault, currentVault))
+                {
+                    InvalidateDataVaultLease();
+                    _gpuReady = false;
+                }
+
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.FluidRuntime)
+                _fluidEngine = currentService as HectonFluidEngine;
+        }
+
         private bool TryEnsureGpuState()
         {
             if (_gpuReady && IsGpuStateValid())
@@ -1376,7 +1431,9 @@ namespace Hecton8.VFX.Debris
             _cachedDrawIndexStart = 0u;
             _cachedDrawBaseVertex = 0u;
             _cachedDrawMeshValid = false;
+            _registryDataVault = null;
             _fluidEngine = null;
+            _hotSwapRegistered = false;
             InvalidateDataVaultLease();
             _emptyTexture3D = null;
             _debrisPositions = default;
