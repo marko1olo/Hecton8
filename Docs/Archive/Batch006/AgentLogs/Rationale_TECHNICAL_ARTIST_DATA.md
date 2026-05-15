@@ -143,3 +143,11 @@ Solution: Add `--fail-on-unresolved-refs` with exit code 4, publish the exit-cod
 Rejected Alternatives: Reusing `--fail-on-material-issues` was rejected because it makes broken references compete with planned material modernization debt. Adding an editor mutator was rejected because this pass must not repair material YAML without shader/import authority.
 Scalability potential: Low = dependency damage can block cheap-device builds without blocking all migration planning. Middle = CI can split import, unresolved-reference, and broad material modernization jobs. High/Ultra = high-tier material upgrades avoid inheriting missing/external texture references.
 Hardware Impact: 0 us runtime impact. Full audit still reports 9 materials with 27 unresolved refs; scoped `Art/Materials` gate returns exit 4 with 19 unresolved refs after wider GUID resolution.
+
+## Markdown Report Structure
+
+Problem: The Markdown generator emitted the `Import Issue Counts` header before unrelated VRAM and tier-override sections, then wrote the actual import-issue table much later.
+Solution: Move the header emission to the table emission point and add a regression assertion that the header is followed by the issue-count table.
+Rejected Alternatives: Leaving the report structurally misleading was rejected because the CTO-facing Markdown is a handoff artifact, not decoration. Manually editing the generated Markdown was rejected because regeneration would reintroduce the defect.
+Scalability potential: Low/Middle/High/Ultra unchanged; report consumers get deterministic issue ordering for triage.
+Hardware Impact: 0 us runtime impact. The fix only changes offline Markdown generation and test coverage.

@@ -438,3 +438,33 @@ Verification:
 - Scoped import gate: expected exit 2 confirmed.
 - Scoped unresolved-reference gate: expected exit 4 confirmed, 19 unresolved refs under `Assets\_Project\Art\Materials` with `--resolve-root Assets\_Project`.
 - Scoped broad material gate: expected exit 3 confirmed.
+
+## 2026-05-15 - Markdown Report Structure Pass
+
+What was wrong:
+
+- The generated Markdown report placed `Import Issue Counts` before unrelated VRAM and tier-override sections, then emitted the actual issue table later.
+
+What was done:
+
+- Moved the `Import Issue Counts` heading to the table emission point.
+- Added a regression assertion that the heading is followed by the issue-count table header.
+- Regenerated JSON/Markdown/CSV audit artifacts.
+
+Cinematic Cheats used:
+
+- None. This is report integrity.
+
+Exact Microseconds saved:
+
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0 us.
+- Prevents handoff errors when texture import debt is assigned from Markdown.
+
+Verification:
+
+- `python -m py_compile Tools\MaterialAudit.py Tools\test_material_audit.py`: passed.
+- `python -m unittest Tools.test_material_audit`: passed 8 tests.
+- Full first-party audit regenerated with existing counts preserved.
+- Markdown readback confirms Gate Exit Codes and Import Issue Counts tables are present; import issue table starts at the corrected section.
+- Scoped import/unresolved/material gates returned expected exits 2/4/3.
