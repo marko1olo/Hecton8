@@ -35,3 +35,11 @@ Rejected Alternatives: Blind `--ours` would drop Macro DB LRU support and leave 
 Scalability potential: Preserves cheap LRU payload eviction for low-end devices while avoiding restored unused NativeArray allocation. High/Ultra runtime claims remain pending Unity/profiler evidence.
 Hardware Impact: Static estimate: avoids reintroducing 64 relocation records of persistent NativeArray storage; exact runtime gain is 0 us measured / pending profiler.
 
+## Decision 5
+
+Problem: After the push, `python -m unittest discover -s Tools -p "test*.py"` exposed two stale generated artifacts: `Tools/AiBattleSim_Report.json` had `knownBufferCount=34` while current `H8Memory.cs` parses 66 buffers, and `Data/Lore/Encyclopedia.h8bin` no longer matched `Docs/Lore/Lore_Bible.md`.
+Solution: Regenerate the artifacts using their owning tools: `python Tools/VerifyLore.py --bake --check` and `python Tools/AiBattleSim.py --encounters 10000`, then verify with artifact checkers and full unittest discovery.
+Rejected Alternatives: Editing tests, hand-editing binary blobs, or leaving the failure documented only. Tests were reporting real stale artifact drift, not flaky behavior.
+Scalability potential: Generated data remains cheap on low hardware; high-tier visual/AI behavior is not changed by this repository hygiene repair.
+Hardware Impact: 0 us gameplay runtime gain measured; CLI report generation time was 41.955 seconds for 10,000 encounters on this machine, but Unity/player runtime remains pending.
+

@@ -6,7 +6,7 @@
     "initialAggressionScalar": 1.0,
     "passes": 1
   },
-  "elapsedSeconds": 175.305,
+  "elapsedSeconds": 41.955,
   "evidenceClass": "CLI_PYTHON_BATTLE_SIMULATION",
   "frustrationAudit": {
     "allKillsUnder30": false,
@@ -27,7 +27,7 @@
   "generatedBy": "AI_BEHAVIOR_BIOMIMETIC_DESIGNER",
   "globalDataVaultAudit": {
     "feedCount": 7,
-    "knownBufferCount": 34,
+    "knownBufferCount": 66,
     "knownBufferSource": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
     "knownBufferSourceStatus": "SOURCE_PARSED",
     "status": "PASSED",
@@ -799,7 +799,7 @@
     },
     "errors": [],
     "globalDataVaultFeedCount": 7,
-    "knownBufferCount": 34,
+    "knownBufferCount": 66,
     "knownBufferSource": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
     "knownBufferSourceStatus": "SOURCE_PARSED",
     "status": "BRAIN_VALIDATION_PASSED",

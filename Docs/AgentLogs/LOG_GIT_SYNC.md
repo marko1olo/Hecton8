@@ -18,3 +18,12 @@ Exact Microseconds saved: 0 us runtime measured. Static conflict decision avoide
 Verification: `git status --porcelain=v1` clean; `git ls-files -u` empty; changed text files scanned for conflict markers; Python syntax scan passed for 67 `Tools/*.py` files.
 Failed/limited checks: `dotnet build Hecton8.slnx` could not run because `dotnet` is not in PATH; `python -m pytest ...` could not run because `pytest` is not installed; full `git fsck --no-progress` timed out after 5 minutes and was not used as pass evidence; `git diff --check HEAD~1 HEAD` reported existing whitespace debt in batch docs/meta files.
 Residual risk: Unity compile, Unity Console, Play Mode, profiler, and runtime GC are PENDING VERIFICATION.
+
+## 2026-05-15 Artifact Verification Continuation
+
+What was wrong: Full `unittest discover` initially failed with stale generated artifacts: AI battle report artifact checker failed on `knownBufferCount`, and lore verification failed with a payload mismatch for `Docs/Lore/Lore_Bible.md`.
+What was done: Rebuilt `Data/Lore/Encyclopedia.h8bin`, `Data/Lore/Encyclopedia.manifest.json`, and `Tools/AiBattleSim_Report.json` with their owning CLI tools.
+Cinematic Cheats used: None. Data/tool artifact repair only.
+Exact Microseconds saved: 0 us runtime measured.
+Verification: `python Tools/VerifyLore.py --bake --check` passed; `python Tools/AiBattleSim.py --check-artifacts` passed; `python -m unittest discover -s Tools -p "test*.py"` ran 117 tests in 65.642 seconds and passed; `git diff --check` on current changes passed.
+Residual risk: Unity compile/runtime verification remains PENDING VERIFICATION. Existing whitespace debt in the previous batch commit is not part of this narrow artifact repair.
