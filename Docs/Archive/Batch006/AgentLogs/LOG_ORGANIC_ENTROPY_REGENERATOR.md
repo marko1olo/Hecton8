@@ -584,3 +584,30 @@ Verification:
 - Target scans: no forbidden hot-path token matches; no raw `new NativeArray`; no raw native dispose.
 - `git diff --check`: CRLF warnings only for edited text files.
 - `dotnet --info`: timed out/unavailable; full Unity import/build remains PENDING VERIFICATION.
+
+## 2026-05-15 - Entropy Harness Grid Budget Guard
+
+What was wrong:
+- The C# backend caps regrowth memory at `1,048,576` cells.
+- The Python entropy harness accepted arbitrary grid sizes and could allocate huge per-cell lists from malformed constants.
+
+What was done:
+- Added `MAX_SAFE_GRID_CELLS`.
+- Rejected oversized grids in `validate_constants` before state construction.
+- Added `test_run_sim_rejects_oversized_grid`.
+
+Cinematic cheats used:
+- None. This is offline validation memory hygiene.
+
+Exact microseconds saved:
+- Runtime microseconds saved: 0. Unity runtime backend was not changed.
+- Failure avoided: oversized validation grids abort before allocating Python SOA lanes.
+
+Verification:
+- `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`: exit code 0.
+- `python -m unittest Tools.test_world_entropy_sim -v`: 11 tests passed in 46.985 s.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
+- Target scans: no forbidden hot-path token matches; no raw `new NativeArray`; no raw native dispose.
+- `git diff --check`: clean.
+- `dotnet --info`: unavailable; full Unity import/build remains PENDING VERIFICATION.

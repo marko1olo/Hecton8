@@ -367,3 +367,14 @@ Rejected Alternatives: Trusting the unit test alone was rejected because future 
 Scalability potential: Low/Middle/High/Ultra validation runs now reject invalid constants before any expensive entropy loop starts. High-end validation can still use larger grids if the constants stay inside the runtime math envelope.
 
 Hardware Impact: Tooling-only. Unity runtime backend unchanged; validation cost is a small constant number of integer checks before simulation.
+
+## Decision 34 - Entropy Harness Grid Budget Guard
+Problem: The C# regrowth backend caps allocation at `1,048,576` macro cells, but the Python entropy harness still accepted arbitrary `gridWidth * gridHeight`. A malformed constants file could force huge Python list allocations before failure.
+
+Solution: Added `MAX_SAFE_GRID_CELLS = 1_048_576` and made `validate_constants` reject larger grids before state construction. Added `test_run_sim_rejects_oversized_grid` using `1025x1025`.
+
+Rejected Alternatives: Relying on machine memory pressure was rejected because validation tools must fail deterministically. Shrinking oversized grids silently was rejected because it would change the tested world.
+
+Scalability potential: Low-end validation machines avoid accidental huge allocations. High-end validation can still use up to the same cap as the runtime backend and must explicitly change both systems if a larger cap is required.
+
+Hardware Impact: Tooling-only. Unity runtime backend unchanged; invalid oversized grids now abort before Python allocates per-cell lanes.
