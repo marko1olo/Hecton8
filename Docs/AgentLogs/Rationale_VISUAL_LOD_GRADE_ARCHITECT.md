@@ -68,13 +68,13 @@ Hardware Impact: No hardware impact. Runtime hot paths are untouched.
 
 ## Decision 6 - Remote Push Timeout
 
-Problem: `git push origin ac7e9977d81bcec15e8c3656aaefb64b908e6e78:refs/heads/visual-lod-grade-architect` timed out twice. `git ls-remote --heads origin visual-lod-grade-architect` returned no branch.
+Problem: `git push origin ac7e9977d81bcec15e8c3656aaefb64b908e6e78:refs/heads/visual-lod-grade-architect` timed out twice. `git ls-remote --heads origin visual-lod-grade-architect` initially returned no branch.
 
-Solution: Stop only the stale push processes with command lines containing the exact visual matrix commit hash, preserve the local branch, and record the remote transport timeout as a dependency blocker.
+Solution: Stop only the stale push processes with command lines containing the exact visual matrix commit hash, preserve the local branch, recreate a clean current-base commit, then retry a bounded push. Final bounded push to `origin/visual-lod-grade-architect` succeeded.
 
 Rejected Alternatives: Killing unrelated git commands was rejected; command-line inspection showed other agents had separate economy/fetch/status processes. Repeated blind push loops were rejected after two long transport timeouts.
 
-Scalability potential: Not runtime. The local branch preserves the exact commit for integrator pickup or later push when GitHub transport is functional.
+Scalability potential: Not runtime. The remote branch now preserves the clean handoff for integrator review.
 
 Hardware Impact: No runtime impact. Offline-only repository operation.
 
@@ -87,6 +87,30 @@ Solution: Reject that commit for handoff, do not push it, and recreate the hando
 Rejected Alternatives: Pushing the contaminated commit was rejected because it violates domain boundary and would ship unrelated agents' files.
 
 Scalability potential: Not runtime. This preserves clean integration boundaries in a multi-agent workspace.
+
+Hardware Impact: No runtime impact.
+
+## Decision 9 - Clean Commit Handoff
+
+Problem: The local handoff must be usable without pulling unrelated dirty workspace files.
+
+Solution: Create clean commit `04329730fd3d9e4563ba2d1045302ce9b99ed73f` from current `origin/main` using a temporary index and an explicit allowlist. `git diff-tree` reports exactly these files: `Data/System/Visual_Scalability_Matrix.json`, `Tools/VisualStressSim.py`, `Tools/test_visual_stress_sim.py`, status, rationale, log, and stress report.
+
+Rejected Alternatives: Including the ignored patch file in the clean branch commit was rejected because it is a handoff artifact, not source. The patch and bundle remain on disk under `Docs/AgentLogs`.
+
+Scalability potential: Not runtime. This gives the integrator a small branch diff and separate patch/bundle fallback.
+
+Hardware Impact: No runtime impact.
+
+## Decision 10 - Final Status Commit
+
+Problem: The first successful remote push carried the clean matrix/code handoff but status still described remote timeout.
+
+Solution: Add a docs-only follow-up commit on top of the clean branch so `origin/visual-lod-grade-architect` records the final completed state.
+
+Rejected Alternatives: Leaving remote branch with blocked status was rejected because it would create a false report for the CTO.
+
+Scalability potential: Not runtime. It improves handoff evidence integrity.
 
 Hardware Impact: No runtime impact.
 

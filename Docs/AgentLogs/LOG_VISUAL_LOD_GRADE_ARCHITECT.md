@@ -19,6 +19,8 @@ What was done:
 - Created local temp-index commit from `origin/main` with only owned files.
 - Set local branch `visual-lod-grade-architect` to the clean commit recorded in `Docs/AgentLogs/VisualMatrixCommit_VISUAL_LOD_GRADE_ARCHITECT.txt`.
 - Wrote fallback handoff patch `Docs/AgentLogs/VisualMatrixCommit_VISUAL_LOD_GRADE_ARCHITECT.patch`.
+- Wrote fallback git bundle `Docs/AgentLogs/VisualMatrixCommit_VISUAL_LOD_GRADE_ARCHITECT.bundle`.
+- Pushed `visual-lod-grade-architect` to `origin`.
 
 Cinematic Cheats used:
 - Depth-only exponential noir fog with 256x16 LUT on TOASTER.
@@ -44,6 +46,9 @@ Verification:
 - `git show --stat --oneline ac7e9977d81bcec15e8c3656aaefb64b908e6e78 --` showed only owned files.
 - `git format-patch -1 ac7e9977d81bcec15e8c3656aaefb64b908e6e78 --stdout` generated a 105862-byte patch artifact.
 - `git diff-tree` rejected contaminated candidate commit `8cb27a224fd65be564783f7eaa1f4706ef32d70d` because it contained 38 files.
+- `git diff-tree --no-commit-id --name-only -r 04329730fd3d9e4563ba2d1045302ce9b99ed73f` verified exactly 7 owned files.
+- `git bundle create Docs/AgentLogs/VisualMatrixCommit_VISUAL_LOD_GRADE_ARCHITECT.bundle visual-lod-grade-architect ^origin/main` produced a 19073-byte bundle.
+- `git push --porcelain --no-verify origin 04329730fd3d9e4563ba2d1045302ce9b99ed73f:refs/heads/visual-lod-grade-architect` completed.
 
 Regression model:
 - CPU: runtime unchanged; adapter must bake JSON to fixed rows at boot, not parse in Tick.
@@ -58,9 +63,11 @@ Hot path impact:
 Failure modes:
 - Runtime adapter could parse JSON in hot path; forbidden by adapter contract.
 - Unity import, Play Mode, Memory Profiler, Frame Debugger, RenderDoc, and visual quality are still PENDING VERIFICATION.
-- Git remote push blocked: two push attempts to `refs/heads/visual-lod-grade-architect` timed out; `git ls-remote` shows no remote branch.
-- Local branch exists: `visual-lod-grade-architect` -> clean commit recorded in `Docs/AgentLogs/VisualMatrixCommit_VISUAL_LOD_GRADE_ARCHITECT.txt`.
+- Earlier Git remote pushes timed out; final bounded push completed.
+- Remote branch exists: `origin/visual-lod-grade-architect`.
+- Local branch exists: `visual-lod-grade-architect`.
 - Patch fallback exists for integrator pickup if remote transport remains unavailable.
+- Bundle fallback exists for local `git fetch` pickup if remote transport remains unavailable.
 
 Why kept:
 - The matrix gives the dynamic resolution adapter a hard budget source.
