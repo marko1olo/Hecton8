@@ -66,6 +66,19 @@ class MemoryBudgetCheckTests(unittest.TestCase):
         self.assertEqual(budget.count_gltf_document_triangles(document), 7)
         self.assertGreater(budget.count_gltf_triangles(glb) or 0, 0)
 
+    def test_render_texture_asset_estimate_is_reported_from_yaml(self) -> None:
+        rt_path = PROJECT_ROOT / "Assets" / "_Project" / "Art" / "TEXTURES" / "RT_HUD_Display.renderTexture"
+
+        records = budget.audit_render_textures([rt_path])
+
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0].width, 1280)
+        self.assertEqual(records[0].height, 720)
+        self.assertEqual(records[0].color_format, "8")
+        self.assertEqual(records[0].depth_stencil_format, "94")
+        self.assertGreater(records[0].estimated_bytes, 0)
+        self.assertIn("RENDER_TEXTURE_DEPTH_STENCIL_PRESENT_STATIC_SUSPECT", records[0].flags)
+
     def test_static_geometry_estimate_is_conservative_and_deterministic(self) -> None:
         self.assertEqual(
             budget.estimate_geometry_bytes(10),
@@ -137,15 +150,27 @@ class MemoryBudgetCheckTests(unittest.TestCase):
             meta_is_readable="1",
             flags=["MESH_GT_80K_ABSOLUTE_STATIC", "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"],
         )
+        rt_record = budget.RenderTextureRecord(
+            path=PROJECT_ROOT / "Assets" / "_Project" / "Art" / "TEXTURES" / "RT_Test.renderTexture",
+            width=1280,
+            height=720,
+            color_format="8",
+            depth_stencil_format="94",
+            estimated_bytes=1280 * 720 * 8,
+            flags=["RENDER_TEXTURE_DEPTH_STENCIL_PRESENT_STATIC_SUSPECT"],
+        )
 
-        payload = budget.build_summary_payload(PROJECT_ROOT, [texture_record], [mesh_record], [], "LINK_XML_MISSING", [])
+        payload = budget.build_summary_payload(PROJECT_ROOT, [texture_record], [mesh_record], [rt_record], [], "LINK_XML_MISSING", [])
 
         self.assertEqual(payload["texture_count"], 1)
+        self.assertEqual(payload["render_texture_count"], 1)
         self.assertEqual(payload["schema_version"], 1)
         self.assertIn("TEXTURE_VRAM_CRIMES", payload["gate_reasons"])
         self.assertIn("MESH_REDLINE_OR_RISK", payload["gate_reasons"])
+        self.assertIn("RENDER_TEXTURE_REDLINE_OR_RISK", payload["gate_reasons"])
         self.assertIn("texture_extension_summary", payload)
         self.assertIn("mesh_extension_summary", payload)
+        self.assertIn("render_textures", payload)
         self.assertIn(".codex-build", payload["skipped_directory_names"])
         self.assertEqual(payload["mesh_redline_rows"], 1)
         self.assertGreater(payload["mesh_geometry_static_estimate_mib"], 0)

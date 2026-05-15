@@ -1,12 +1,13 @@
 # VRAM Budget Audit Summary
 
-Generated: 2026-05-15T14:43:09
+Generated: 2026-05-15T17:05:42
 Evidence class: STATIC_SOURCE / FILESYSTEM. Runtime residency is PENDING VERIFICATION.
 
 ## Summary
 
 - Texture files scanned: 1668
 - Mesh files scanned: 302
+- RenderTexture assets scanned: 1
 - Total BC7 no-mip estimate: 997.41 MiB
 - Total BC7 full-mip estimate: 1329.88 MiB
 - Runtime-candidate BC7 full-mip estimate: 1298.65 MiB
@@ -24,6 +25,8 @@ Evidence class: STATIC_SOURCE / FILESYSTEM. Runtime residency is PENDING VERIFIC
 - Mesh redline/risk rows: 293
 - Mesh importer risk rows: 293
 - First-party mesh importer risk rows: 16
+- Static RenderTexture estimate: 7.03 MiB / 320 MiB RT+Depth budget
+- RenderTexture redline/risk rows: 1
 - First-party large textures with streaming mips off: 50
 - link.xml status: LINK_XML_PRESENT_STATIC_ONLY
 
@@ -82,6 +85,12 @@ Evidence class: STATIC_SOURCE / FILESYSTEM. Runtime residency is PENDING VERIFIC
 | .fbx | 300 | 321633 | 0 | 47.85 | 292 |
 | .glb | 1 | 1298 | 0 | 0.19 | 0 |
 | .obj | 1 | 12 | 0 | 0.00 | 1 |
+
+## RenderTexture Static Assets
+
+| Path | Size | Estimate MiB | Color | Depth | AA | Flags |
+|---|---:|---:|---:|---:|---:|---|
+| Assets/_Project/Art/TEXTURES/RT_HUD_Display.renderTexture | 1280x720 | 7.03 | 8 | 94 | 1 | RENDER_TEXTURE_DEPTH_STENCIL_PRESENT_STATIC_SUSPECT |
 
 ## Top Runtime Texture Costs
 
@@ -203,5 +212,6 @@ Evidence class: STATIC_SOURCE / FILESYSTEM. Runtime residency is PENDING VERIFIC
 
 - STATIC_SOURCE: file dimensions, file sizes, source metadata, and parser-readable mesh triangle counts.
 - Static geometry estimate assumes 48 byte vertices plus 4 byte indices and no vertex sharing; Unity imported geometry must be verified in Memory Profiler.
+- Static RenderTexture estimates use YAML dimensions, MSAA, mip flag, color format, and depth-stencil format; transient and code-created RTs still require Unity runtime capture.
 - Scan excludes generated/scratch directories by name: .codex-artifacts, .codex-build, .git, .vs, Build, Builds, Library, Obj, Temp.
 - PENDING VERIFICATION: Unity importer compression, actual texture residency, mesh import settings, Memory Profiler VRAM, scene wiring, player-build behavior.

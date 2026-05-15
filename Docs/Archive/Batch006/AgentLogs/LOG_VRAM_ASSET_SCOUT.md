@@ -422,3 +422,30 @@ Verification:
 Evidence boundary:
 - STATIC_SOURCE / FILESYSTEM only.
 - Unity import, Memory Profiler, player build, and runtime frame time remain PENDING VERIFICATION.
+
+## 2026-05-15T15:45:00+03:00 - RENDERTEXTURE STATIC BUDGET PASS
+
+What was wrong:
+- `.renderTexture` assets were not counted by the static memory scout, leaving the 320 MiB RT+Depth budget without a static artifact guard.
+
+What was done:
+- Added RenderTexture discovery and conservative byte estimation to `Tools/MemoryBudgetCheck.py`.
+- Added RT columns to `VRAM_Budget_Audit.csv`, RT fields to `VRAM_Budget_Audit.json`, RT rows to the remediation plan, and `Docs/Reports/VRAM_RenderTexture_Redlines.csv`.
+- Added regression coverage for YAML-based RenderTexture estimates.
+
+Cinematic cheats used:
+- None. Offline budget scanner only.
+
+Exact microseconds saved:
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0us.
+- Integration value: RT depth/MSAA/mip/random-write risks are visible before Unity profiler passes.
+
+Verification:
+- `python -m py_compile Tools\MemoryBudgetCheck.py Tools\test_memory_budget_check.py`: passed.
+- `python -B -m unittest Tools.test_memory_budget_check -v`: 13 tests passed.
+- `python Tools\MemoryBudgetCheck.py --root .`: scanner executed with expected `[CRITICAL_VRAM_OVERFLOW]`; counts 1,668 textures / 302 meshes / 1 render texture; RT static estimate 7.03 MiB; RT redline/risk rows 1.
+
+Evidence boundary:
+- STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
+- Unity import, Memory Profiler, player build, and runtime frame time remain PENDING VERIFICATION.

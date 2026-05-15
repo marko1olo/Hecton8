@@ -80,10 +80,11 @@
   "gate_reasons": [
     "CRITICAL_VRAM_OVERFLOW",
     "TEXTURE_VRAM_CRIMES",
-    "MESH_REDLINE_OR_RISK"
+    "MESH_REDLINE_OR_RISK",
+    "RENDER_TEXTURE_REDLINE_OR_RISK"
   ],
-  "generated": "2026-05-15T14:43:17",
-  "generated_utc": "2026-05-15T11:43:17+00:00",
+  "generated": "2026-05-15T17:05:56",
+  "generated_utc": "2026-05-15T14:05:56+00:00",
   "geometry_buffer_budget_mib": 200.0,
   "link_xml_notes": [
     "Assets/AstarPathfindingProject/link.xml assemblies=1 types=18 preserve_all=18",
@@ -5091,6 +5092,27 @@
     }
   ],
   "mx350_texture_budget_mib": 900.0,
+  "render_target_budget_mib": 320.0,
+  "render_texture_count": 1,
+  "render_texture_depth_stencil_rows": 1,
+  "render_texture_redline_rows": 1,
+  "render_texture_static_estimate_mib": 7.031,
+  "render_textures": [
+    {
+      "anti_aliasing": 1,
+      "color_format": "8",
+      "depth_stencil_format": "94",
+      "estimate_mib": 7.031,
+      "flags": [
+        "RENDER_TEXTURE_DEPTH_STENCIL_PRESENT_STATIC_SUSPECT"
+      ],
+      "height": 720,
+      "mipmap": "0",
+      "path": "Assets/_Project/Art/TEXTURES/RT_HUD_Display.renderTexture",
+      "random_write": "0",
+      "width": 1280
+    }
+  ],
   "root": "C:\\Hecton8",
   "schema_version": 1,
   "skipped_directory_names": [

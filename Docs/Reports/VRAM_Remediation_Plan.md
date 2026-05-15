@@ -1,6 +1,6 @@
 # VRAM Remediation Plan
 
-Generated: 2026-05-15T14:43:14
+Generated: 2026-05-15T17:05:51
 Evidence class: STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST. No asset/import mutation performed.
 
 ## Gate Status
@@ -16,6 +16,8 @@ Evidence class: STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST. No asset/import mutat
 - Mesh redline/risk rows: 293
 - Mesh importer risk rows: 293
 - First-party mesh importer risk rows: 16
+- Static RenderTexture estimate: 7.03 MiB / 320 MiB RT+Depth budget
+- RenderTexture redline/risk rows: 1
 - CI behavior: `python Tools/MemoryBudgetCheck.py --root . --ci` must fail until redlines are resolved or explicitly suppressed by future policy.
 
 ## Priority 1 - Quarantine Non-Production Runtime Payloads
@@ -47,7 +49,13 @@ Evidence class: STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST. No asset/import mutat
 | .tif | 2 | 0.08 | 0 | 2 | Convert/quarantine source container or prove importer compression and residency. |
 | .bmp | 1 | 0.02 | 0 | 1 | Convert/quarantine source container or prove importer compression and residency. |
 
-## Priority 3 - Clamp First-Party Large Textures
+## Priority 3 - RenderTexture Static Assets
+
+| Path | Size | Estimate MiB | Color | Depth | AA | Flags | Required action |
+|---|---:|---:|---:|---:|---:|---|---|
+| Assets/_Project/Art/TEXTURES/RT_HUD_Display.renderTexture | 1280x720 | 7.03 | 8 | 94 | 1 | RENDER_TEXTURE_DEPTH_STENCIL_PRESENT_STATIC_SUSPECT | Verify RT necessity in Unity; remove depth/MSAA/mips/random-write unless required and keep RT+Depth under 320 MiB. |
+
+## Priority 4 - Clamp First-Party Large Textures
 
 | Path | Source | Est. full-mip MiB saved by halving | Current flags | Required action |
 |---|---:|---:|---|---|
@@ -66,7 +74,7 @@ Evidence class: STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST. No asset/import mutat
 
 Static halving relief if every runtime-candidate >1024 texture is halved: 816.50 MiB full-mip BC7.
 
-## Priority 4 - Enable Streaming Mipmaps On Large First-Party Textures
+## Priority 5 - Enable Streaming Mipmaps On Large First-Party Textures
 
 | Path | Source | Streaming metadata | Required action |
 |---|---:|---|---|
@@ -96,7 +104,7 @@ Static halving relief if every runtime-candidate >1024 texture is halved: 816.50
 | Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.low/albedo___family.coral.low.png | 2048x2048 | 0 | Enable streaming mips unless UI/non-mipped proof exists. |
 | Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.low/detail___family.coral.low.png | 2048x2048 | 0 | Enable streaming mips unless UI/non-mipped proof exists. |
 
-## Priority 5 - Atlas Small First-Party Texture Families
+## Priority 6 - Atlas Small First-Party Texture Families
 
 | Group | Count | Combined BC7 MiB | Required action |
 |---|---:|---:|---|
@@ -106,7 +114,7 @@ Static halving relief if every runtime-candidate >1024 texture is halved: 816.50
 | Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.branching.v2 | 4 | 4.00 | Build one atlas/material family or justify separate residency. |
 | Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.brittle | 4 | 4.00 | Build one atlas/material family or justify separate residency. |
 
-## Priority 6 - Mesh LOD And Importer Redlines
+## Priority 7 - Mesh LOD And Importer Redlines
 
 | Path | Triangles | Geometry MiB | LOD detected | Readable | Compression | BlendShapes | Flags | Required action |
 |---|---:|---:|---:|---:|---:|---:|---|---|

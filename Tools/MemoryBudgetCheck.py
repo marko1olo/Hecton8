@@ -24,6 +24,7 @@ from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Tuple
 
 TEXTURE_EXTS = {".png", ".jpg", ".jpeg", ".tga", ".bmp", ".psd", ".tif", ".tiff", ".dds", ".hdr", ".exr", ".gif"}
 MESH_EXTS = {".fbx", ".obj", ".gltf", ".glb"}
+RENDER_TEXTURE_EXTS = {".rendertexture"}
 SKIP_DIRS = {".git", ".vs", ".codex-build", ".codex-artifacts", "Library", "Temp", "Obj", "Build", "Builds"}
 SKIP_DIR_NAMES_LOWER = {name.lower() for name in SKIP_DIRS}
 JPEG_SOF_MARKERS = {0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF}
@@ -38,10 +39,38 @@ MESH_TRI_REDLINE = 50000
 MESH_ABSOLUTE_REDLINE = 80000
 FBX_SIZE_RISK_BYTES = 10 * 1024 * 1024
 GEOMETRY_BUFFER_BUDGET_MIB = 200.0
+RENDER_TARGET_BUDGET_MIB = 320.0
 STATIC_GEOMETRY_VERTEX_STRIDE_BYTES = 48
 STATIC_GEOMETRY_INDEX_BYTES = 4
 MESH_GEOMETRY_SINGLE_ASSET_REDLINE_MIB = 16.0
+RENDER_TEXTURE_SINGLE_ASSET_REDLINE_MIB = 32.0
 TEXTURE_CONTAINER_RISK_EXTS = {".hdr", ".exr", ".psd", ".gif", ".tga", ".tif", ".tiff", ".bmp"}
+RENDER_TEXTURE_COLOR_FORMAT_BYTES = {
+    0: 4,   # ARGB32
+    2: 8,   # ARGBHalf
+    4: 2,   # RGB565
+    5: 2,   # ARGB4444
+    6: 2,   # ARGB1555
+    7: 4,   # Default, conservative LDR fallback
+    8: 4,   # ARGB2101010
+    9: 8,   # DefaultHDR, conservative half fallback
+    11: 4,  # RFloat
+    12: 4,  # RGFloat
+    13: 8,  # RGHalf/RGBA half-family fallback
+    14: 16, # ARGBFloat
+    15: 1,  # R8
+    16: 2,  # RG16
+    17: 1,  # RHalf fallback
+}
+RENDER_TEXTURE_DEPTH_FORMAT_BYTES = {
+    0: 0,
+    90: 2,
+    91: 4,
+    92: 4,
+    93: 4,
+    94: 4,
+    95: 4,
+}
 
 
 @dataclass
@@ -81,6 +110,25 @@ class MeshRecord:
     recommendation: str = ""
 
 
+@dataclass
+class RenderTextureRecord:
+    path: Path
+    width: int = 0
+    height: int = 0
+    color_format: str = ""
+    depth_stencil_format: str = ""
+    anti_aliasing: int = 1
+    mipmap: str = ""
+    generate_mips: str = ""
+    texture_dimension: str = ""
+    volume_depth: int = 1
+    dynamic_scale: str = ""
+    random_write: str = ""
+    estimated_bytes: int = 0
+    flags: List[str] = field(default_factory=list)
+    recommendation: str = ""
+
+
 def rel(path: Path, root: Path) -> str:
     try:
         return path.relative_to(root).as_posix()
@@ -98,9 +146,10 @@ def is_first_party_production_candidate(path: Path, root: Path) -> bool:
     return value.startswith("Assets/_Project/") or value.startswith("Data/")
 
 
-def iter_assets(root: Path) -> Tuple[List[Path], List[Path]]:
+def iter_assets(root: Path) -> Tuple[List[Path], List[Path], List[Path]]:
     textures: List[Path] = []
     meshes: List[Path] = []
+    render_textures: List[Path] = []
     for current_root, dirs, files in os.walk(root):
         dirs[:] = [d for d in dirs if d.lower() not in SKIP_DIR_NAMES_LOWER]
         current = Path(current_root)
@@ -111,9 +160,12 @@ def iter_assets(root: Path) -> Tuple[List[Path], List[Path]]:
                 textures.append(path)
             elif ext in MESH_EXTS:
                 meshes.append(path)
+            elif ext in RENDER_TEXTURE_EXTS:
+                render_textures.append(path)
     textures.sort(key=lambda p: rel(p, root).lower())
     meshes.sort(key=lambda p: rel(p, root).lower())
-    return textures, meshes
+    render_textures.sort(key=lambda p: rel(p, root).lower())
+    return textures, meshes, render_textures
 
 
 def read_png_size(path: Path) -> Tuple[int, int, str]:
@@ -924,11 +976,101 @@ def audit_meshes(paths: Sequence[Path]) -> List[MeshRecord]:
     return records
 
 
+def parse_yaml_int(text: str, key: str, default: int = 0) -> int:
+    match = re.search(rf"\b{re.escape(key)}:\s*([-0-9]+)", text)
+    if not match:
+        return default
+    try:
+        return int(match.group(1))
+    except ValueError:
+        return default
+
+
+def parse_yaml_str(text: str, key: str) -> str:
+    match = re.search(rf"\b{re.escape(key)}:\s*([-0-9]+)", text)
+    return match.group(1) if match else ""
+
+
+def render_texture_slice_count(texture_dimension: str, volume_depth: int) -> int:
+    dimension = as_non_negative_int(texture_dimension)
+    if dimension == 4:
+        return 6
+    if dimension in (3, 5):
+        return max(1, volume_depth)
+    return 1
+
+
+def estimate_render_texture_bytes(record: RenderTextureRecord) -> int:
+    if record.width <= 0 or record.height <= 0:
+        return 0
+    color_format = as_non_negative_int(record.color_format)
+    depth_format = as_non_negative_int(record.depth_stencil_format)
+    color_bytes = RENDER_TEXTURE_COLOR_FORMAT_BYTES.get(color_format if color_format is not None else -1, 4)
+    depth_bytes = RENDER_TEXTURE_DEPTH_FORMAT_BYTES.get(depth_format if depth_format is not None else -1, 4 if depth_format else 0)
+    aa = max(1, record.anti_aliasing)
+    slices = render_texture_slice_count(record.texture_dimension, record.volume_depth)
+    bytes_estimate = record.width * record.height * slices * aa * (color_bytes + depth_bytes)
+    if meta_contains(record.mipmap, "1"):
+        bytes_estimate = int(bytes_estimate * FULL_MIP_FACTOR)
+    return bytes_estimate
+
+
+def audit_render_textures(paths: Sequence[Path]) -> List[RenderTextureRecord]:
+    records: List[RenderTextureRecord] = []
+    for path in paths:
+        record = RenderTextureRecord(path=path)
+        try:
+            text = path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            record.flags.append("RENDER_TEXTURE_YAML_UNREADABLE_STATIC")
+            record.recommendation = "Open asset in Unity and verify render target dimensions/format manually."
+            records.append(record)
+            continue
+        record.width = parse_yaml_int(text, "m_Width")
+        record.height = parse_yaml_int(text, "m_Height")
+        record.color_format = parse_yaml_str(text, "m_ColorFormat")
+        record.depth_stencil_format = parse_yaml_str(text, "m_DepthStencilFormat")
+        record.anti_aliasing = max(1, parse_yaml_int(text, "m_AntiAliasing", 1))
+        record.mipmap = parse_yaml_str(text, "m_MipMap")
+        record.generate_mips = parse_yaml_str(text, "m_GenerateMips")
+        record.texture_dimension = parse_yaml_str(text, "m_TextureDimension")
+        record.volume_depth = max(1, parse_yaml_int(text, "m_VolumeDepth", 1))
+        record.dynamic_scale = parse_yaml_str(text, "m_UseDynamicScale")
+        record.random_write = parse_yaml_str(text, "m_EnableRandomWrite")
+        record.estimated_bytes = estimate_render_texture_bytes(record)
+        if record.width <= 0 or record.height <= 0:
+            record.flags.append("RENDER_TEXTURE_DIMENSIONS_UNREADABLE_STATIC")
+        if max(record.width, record.height) > MAX_TEXTURE_DIM:
+            record.flags.append("RENDER_TEXTURE_GT_2048_STATIC")
+        if mib(record.estimated_bytes) > RENDER_TEXTURE_SINGLE_ASSET_REDLINE_MIB:
+            record.flags.append("RENDER_TEXTURE_SINGLE_ASSET_GT_32MIB_STATIC")
+        if record.anti_aliasing > 1:
+            record.flags.append("RENDER_TEXTURE_MSAA_GT1_STATIC_SUSPECT")
+        if meta_contains(record.mipmap, "1") or meta_contains(record.generate_mips, "1"):
+            record.flags.append("RENDER_TEXTURE_MIPMAPS_ENABLED_STATIC_SUSPECT")
+        if meta_contains(record.random_write, "1"):
+            record.flags.append("RENDER_TEXTURE_RANDOM_WRITE_ENABLED_STATIC_SUSPECT")
+        if as_non_negative_int(record.depth_stencil_format):
+            record.flags.append("RENDER_TEXTURE_DEPTH_STENCIL_PRESENT_STATIC_SUSPECT")
+        if record.flags:
+            record.recommendation = "Verify RT necessity in Unity; remove depth/MSAA/mips/random-write unless required and keep RT+Depth under 320 MiB."
+        else:
+            record.recommendation = "Static RT estimate only; verify live RT+Depth budget in Memory Profiler."
+        records.append(record)
+    return records
+
+
 def mib(value: float) -> float:
     return value / (1024.0 * 1024.0)
 
 
-def write_csv(path: Path, root: Path, textures: Sequence[TextureRecord], meshes: Sequence[MeshRecord]) -> None:
+def write_csv(
+    path: Path,
+    root: Path,
+    textures: Sequence[TextureRecord],
+    meshes: Sequence[MeshRecord],
+    render_textures: Sequence[RenderTextureRecord],
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
@@ -962,6 +1104,17 @@ def write_csv(path: Path, root: Path, textures: Sequence[TextureRecord], meshes:
                 "mesh_meta_add_colliders",
                 "mesh_meta_generate_secondary_uv",
                 "mesh_meta_keep_quads",
+                "rt_color_format",
+                "rt_depth_stencil_format",
+                "rt_anti_aliasing",
+                "rt_mipmap",
+                "rt_generate_mips",
+                "rt_texture_dimension",
+                "rt_volume_depth",
+                "rt_dynamic_scale",
+                "rt_random_write",
+                "rt_estimate_bytes",
+                "rt_estimate_mib",
                 "redline_flags",
                 "atlas_group",
                 "recommendation",
@@ -989,6 +1142,17 @@ def write_csv(path: Path, root: Path, textures: Sequence[TextureRecord], meshes:
                     f"{mib(record.bc7_bytes * FULL_MIP_FACTOR):.3f}",
                     file_bytes,
                     f"{mib(file_bytes):.3f}",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
                     "",
                     "",
                     "",
@@ -1037,6 +1201,65 @@ def write_csv(path: Path, root: Path, textures: Sequence[TextureRecord], meshes:
                     record.meta_add_colliders,
                     record.meta_generate_secondary_uv,
                     record.meta_keep_quads,
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    ";".join(record.flags),
+                    "",
+                    record.recommendation,
+                    "STATIC_SOURCE",
+                ]
+            )
+        for record in render_textures:
+            file_bytes = record.path.stat().st_size if record.path.exists() else 0
+            writer.writerow(
+                [
+                    "render_texture",
+                    rel(record.path, root),
+                    record.path.suffix.lower(),
+                    record.width,
+                    record.height,
+                    "RenderTexture",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    file_bytes,
+                    f"{mib(file_bytes):.3f}",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    record.color_format,
+                    record.depth_stencil_format,
+                    record.anti_aliasing,
+                    record.mipmap,
+                    record.generate_mips,
+                    record.texture_dimension,
+                    record.volume_depth,
+                    record.dynamic_scale,
+                    record.random_write,
+                    record.estimated_bytes,
+                    f"{mib(record.estimated_bytes):.3f}",
                     ";".join(record.flags),
                     "",
                     record.recommendation,
@@ -1115,6 +1338,45 @@ def write_mesh_redlines_csv(path: Path, root: Path, meshes: Sequence[MeshRecord]
                     record.meta_add_colliders,
                     record.meta_generate_secondary_uv,
                     record.meta_keep_quads,
+                    ";".join(record.flags),
+                    record.recommendation,
+                ]
+            )
+
+
+def write_render_texture_redlines_csv(path: Path, root: Path, render_textures: Sequence[RenderTextureRecord]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(
+            [
+                "path",
+                "width",
+                "height",
+                "estimate_mib",
+                "color_format",
+                "depth_stencil_format",
+                "anti_aliasing",
+                "mipmap",
+                "random_write",
+                "flags",
+                "recommendation",
+            ]
+        )
+        for record in sorted(render_textures, key=lambda item: item.estimated_bytes, reverse=True):
+            if not record.flags:
+                continue
+            writer.writerow(
+                [
+                    rel(record.path, root),
+                    record.width,
+                    record.height,
+                    f"{mib(record.estimated_bytes):.3f}",
+                    record.color_format,
+                    record.depth_stencil_format,
+                    record.anti_aliasing,
+                    record.mipmap,
+                    record.random_write,
                     ";".join(record.flags),
                     record.recommendation,
                 ]
@@ -1263,6 +1525,7 @@ def write_remediation_plan(
     root: Path,
     textures: Sequence[TextureRecord],
     meshes: Sequence[MeshRecord],
+    render_textures: Sequence[RenderTextureRecord],
     atlas_groups: Sequence[Tuple[str, List[TextureRecord], int]],
 ) -> None:
     texture_crimes = [record for record in textures if any(flag.startswith("VRAM CRIME") for flag in record.flags)]
@@ -1274,6 +1537,8 @@ def write_remediation_plan(
     mesh_geometry_bytes = sum(record.estimated_geometry_bytes for record in meshes)
     first_party_mesh_geometry_bytes = sum(record.estimated_geometry_bytes for record in meshes if is_first_party_production_candidate(record.path, root))
     mesh_geometry_redlines = [record for record in meshes if "MESH_GEOMETRY_ESTIMATE_GT_16MIB_STATIC" in record.flags]
+    render_texture_bytes = sum(record.estimated_bytes for record in render_textures)
+    render_texture_redlines = [record for record in render_textures if record.flags]
     runtime_full_mips = sum(record.bc7_bytes for record in textures if is_runtime_candidate(record.path, root)) * FULL_MIP_FACTOR
     first_party_full_mips = sum(record.bc7_bytes for record in textures if is_first_party_production_candidate(record.path, root)) * FULL_MIP_FACTOR
     halving_candidates = low_tier_halving(textures, root, limit=25)
@@ -1298,6 +1563,8 @@ def write_remediation_plan(
     lines.append(f"- Mesh redline/risk rows: {len(mesh_redlines)}")
     lines.append(f"- Mesh importer risk rows: {len(mesh_import_risks)}")
     lines.append(f"- First-party mesh importer risk rows: {len(first_party_mesh_import_risks)}")
+    lines.append(f"- Static RenderTexture estimate: {mib(render_texture_bytes):.2f} MiB / {RENDER_TARGET_BUDGET_MIB:.0f} MiB RT+Depth budget")
+    lines.append(f"- RenderTexture redline/risk rows: {len(render_texture_redlines)}")
     lines.append("- CI behavior: `python Tools/MemoryBudgetCheck.py --root . --ci` must fail until redlines are resolved or explicitly suppressed by future policy.")
     lines.append("")
     lines.append("## Priority 1 - Quarantine Non-Production Runtime Payloads")
@@ -1316,7 +1583,16 @@ def write_remediation_plan(
             continue
         lines.append(f"| {ext} | {count} | {mib(total):.2f} | {crimes} | {container_risks} | Convert/quarantine source container or prove importer compression and residency. |")
     lines.append("")
-    lines.append("## Priority 3 - Clamp First-Party Large Textures")
+    lines.append("## Priority 3 - RenderTexture Static Assets")
+    lines.append("")
+    lines.append("| Path | Size | Estimate MiB | Color | Depth | AA | Flags | Required action |")
+    lines.append("|---|---:|---:|---:|---:|---:|---|---|")
+    for record in sorted(render_textures, key=lambda item: item.estimated_bytes, reverse=True):
+        lines.append(
+            f"| {rel(record.path, root)} | {record.width}x{record.height} | {mib(record.estimated_bytes):.2f} | {record.color_format} | {record.depth_stencil_format} | {record.anti_aliasing} | {';'.join(record.flags)} | {record.recommendation} |"
+        )
+    lines.append("")
+    lines.append("## Priority 4 - Clamp First-Party Large Textures")
     lines.append("")
     lines.append("| Path | Source | Est. full-mip MiB saved by halving | Current flags | Required action |")
     lines.append("|---|---:|---:|---|---|")
@@ -1329,21 +1605,21 @@ def write_remediation_plan(
     lines.append("")
     lines.append(f"Static halving relief if every runtime-candidate >1024 texture is halved: {halving_total:.2f} MiB full-mip BC7.")
     lines.append("")
-    lines.append("## Priority 4 - Enable Streaming Mipmaps On Large First-Party Textures")
+    lines.append("## Priority 5 - Enable Streaming Mipmaps On Large First-Party Textures")
     lines.append("")
     lines.append("| Path | Source | Streaming metadata | Required action |")
     lines.append("|---|---:|---|---|")
     for record in large_streaming_mipmap_off(textures, root):
         lines.append(f"| {rel(record.path, root)} | {record.width}x{record.height} | {record.meta_streaming_mipmaps} | Enable streaming mips unless UI/non-mipped proof exists. |")
     lines.append("")
-    lines.append("## Priority 5 - Atlas Small First-Party Texture Families")
+    lines.append("## Priority 6 - Atlas Small First-Party Texture Families")
     lines.append("")
     lines.append("| Group | Count | Combined BC7 MiB | Required action |")
     lines.append("|---|---:|---:|---|")
     for key, items, area in atlas_groups[:5]:
         lines.append(f"| {key} | {len(items)} | {mib(area):.2f} | Build one atlas/material family or justify separate residency. |")
     lines.append("")
-    lines.append("## Priority 6 - Mesh LOD And Importer Redlines")
+    lines.append("## Priority 7 - Mesh LOD And Importer Redlines")
     lines.append("")
     lines.append("| Path | Triangles | Geometry MiB | LOD detected | Readable | Compression | BlendShapes | Flags | Required action |")
     lines.append("|---|---:|---:|---:|---:|---:|---:|---|---|")
@@ -1368,6 +1644,7 @@ def build_summary_payload(
     root: Path,
     textures: Sequence[TextureRecord],
     meshes: Sequence[MeshRecord],
+    render_textures: Sequence[RenderTextureRecord],
     atlas_groups: Sequence[Tuple[str, List[TextureRecord], int]],
     link_status: str,
     link_notes: Sequence[str],
@@ -1385,6 +1662,8 @@ def build_summary_payload(
     mesh_geometry_bytes = sum(record.estimated_geometry_bytes for record in meshes)
     first_party_mesh_geometry_bytes = sum(record.estimated_geometry_bytes for record in meshes if is_first_party_production_candidate(record.path, root))
     mesh_geometry_redlines = [record for record in meshes if "MESH_GEOMETRY_ESTIMATE_GT_16MIB_STATIC" in record.flags]
+    render_texture_bytes = sum(record.estimated_bytes for record in render_textures)
+    render_texture_redlines = [record for record in render_textures if record.flags]
     first_party_streaming_off = large_streaming_mipmap_off(textures, root, limit=100000)
     all_streaming_off = [record for record in textures if "STREAMING_MIPMAPS_OFF_LARGE" in record.flags]
     runtime_full_mips = runtime_bc7 * FULL_MIP_FACTOR
@@ -1397,6 +1676,8 @@ def build_summary_payload(
         gate_reasons.append("TEXTURE_VRAM_CRIMES")
     if mesh_redlines:
         gate_reasons.append("MESH_REDLINE_OR_RISK")
+    if render_texture_redlines:
+        gate_reasons.append("RENDER_TEXTURE_REDLINE_OR_RISK")
     return {
         "schema_version": 1,
         "generated": _dt.datetime.now().isoformat(timespec="seconds"),
@@ -1406,9 +1687,14 @@ def build_summary_payload(
         "skipped_directory_names": sorted(SKIP_DIRS, key=str.lower),
         "texture_count": len(textures),
         "mesh_count": len(meshes),
+        "render_texture_count": len(render_textures),
         "geometry_buffer_budget_mib": GEOMETRY_BUFFER_BUDGET_MIB,
+        "render_target_budget_mib": RENDER_TARGET_BUDGET_MIB,
         "mesh_geometry_static_estimate_mib": round(mib(mesh_geometry_bytes), 3),
         "first_party_mesh_geometry_static_estimate_mib": round(mib(first_party_mesh_geometry_bytes), 3),
+        "render_texture_static_estimate_mib": round(mib(render_texture_bytes), 3),
+        "render_texture_redline_rows": len(render_texture_redlines),
+        "render_texture_depth_stencil_rows": sum(1 for record in render_textures if "RENDER_TEXTURE_DEPTH_STENCIL_PRESENT_STATIC_SUSPECT" in record.flags),
         "mesh_geometry_single_asset_redline_mib": MESH_GEOMETRY_SINGLE_ASSET_REDLINE_MIB,
         "mesh_geometry_single_asset_redline_rows": len(mesh_geometry_redlines),
         "bc7_no_mip_mib": round(mib(total_bc7), 3),
@@ -1468,6 +1754,21 @@ def build_summary_payload(
             }
             for ext, count, known_triangles, unreadable_rows, geometry_bytes, flagged_rows in mesh_extension_costs(meshes, root)
         ],
+        "render_textures": [
+            {
+                "path": rel(record.path, root),
+                "width": record.width,
+                "height": record.height,
+                "estimate_mib": round(mib(record.estimated_bytes), 3),
+                "color_format": record.color_format,
+                "depth_stencil_format": record.depth_stencil_format,
+                "anti_aliasing": record.anti_aliasing,
+                "mipmap": record.mipmap,
+                "random_write": record.random_write,
+                "flags": list(record.flags),
+            }
+            for record in render_textures
+        ],
         "atlas_suggestions": [
             {
                 "group": key,
@@ -1502,12 +1803,13 @@ def write_summary_json(
     root: Path,
     textures: Sequence[TextureRecord],
     meshes: Sequence[MeshRecord],
+    render_textures: Sequence[RenderTextureRecord],
     atlas_groups: Sequence[Tuple[str, List[TextureRecord], int]],
     link_status: str,
     link_notes: Sequence[str],
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    payload = build_summary_payload(root, textures, meshes, atlas_groups, link_status, link_notes)
+    payload = build_summary_payload(root, textures, meshes, render_textures, atlas_groups, link_status, link_notes)
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
@@ -1516,6 +1818,7 @@ def write_summary(
     root: Path,
     textures: Sequence[TextureRecord],
     meshes: Sequence[MeshRecord],
+    render_textures: Sequence[RenderTextureRecord],
     atlas_groups: Sequence[Tuple[str, List[TextureRecord], int]],
     link_status: str,
     link_notes: Sequence[str],
@@ -1535,6 +1838,8 @@ def write_summary(
     mesh_geometry_bytes = sum(record.estimated_geometry_bytes for record in meshes)
     first_party_mesh_geometry_bytes = sum(record.estimated_geometry_bytes for record in meshes if is_first_party_production_candidate(record.path, root))
     mesh_geometry_redlines = [record for record in meshes if "MESH_GEOMETRY_ESTIMATE_GT_16MIB_STATIC" in record.flags]
+    render_texture_bytes = sum(record.estimated_bytes for record in render_textures)
+    render_texture_redlines = [record for record in render_textures if record.flags]
     first_party_streaming_off = large_streaming_mipmap_off(textures, root, limit=100000)
     overflow = total_bc7_mips > CRITICAL_TEXTURE_POOL_MIB * 1024 * 1024
     runtime_overflow = runtime_bc7_mips > CRITICAL_TEXTURE_POOL_MIB * 1024 * 1024
@@ -1549,6 +1854,7 @@ def write_summary(
     lines.append("")
     lines.append(f"- Texture files scanned: {len(textures)}")
     lines.append(f"- Mesh files scanned: {len(meshes)}")
+    lines.append(f"- RenderTexture assets scanned: {len(render_textures)}")
     lines.append(f"- Total BC7 no-mip estimate: {mib(total_bc7):.2f} MiB")
     lines.append(f"- Total BC7 full-mip estimate: {mib(total_bc7_mips):.2f} MiB")
     lines.append(f"- Runtime-candidate BC7 full-mip estimate: {mib(runtime_bc7_mips):.2f} MiB")
@@ -1570,6 +1876,8 @@ def write_summary(
     lines.append(f"- Mesh redline/risk rows: {len(mesh_redlines)}")
     lines.append(f"- Mesh importer risk rows: {len(mesh_import_risks)}")
     lines.append(f"- First-party mesh importer risk rows: {len(first_party_mesh_import_risks)}")
+    lines.append(f"- Static RenderTexture estimate: {mib(render_texture_bytes):.2f} MiB / {RENDER_TARGET_BUDGET_MIB:.0f} MiB RT+Depth budget")
+    lines.append(f"- RenderTexture redline/risk rows: {len(render_texture_redlines)}")
     lines.append(f"- First-party large textures with streaming mips off: {len(first_party_streaming_off)}")
     lines.append(f"- link.xml status: {link_status}")
     lines.append("")
@@ -1600,6 +1908,15 @@ def write_summary(
     lines.append("|---|---:|---:|---:|---:|---:|")
     for ext, count, known_triangles, unreadable_rows, geometry_bytes, flagged_rows in mesh_extension_costs(meshes, root):
         lines.append(f"| {ext} | {count} | {known_triangles} | {unreadable_rows} | {mib(geometry_bytes):.2f} | {flagged_rows} |")
+    lines.append("")
+    lines.append("## RenderTexture Static Assets")
+    lines.append("")
+    lines.append("| Path | Size | Estimate MiB | Color | Depth | AA | Flags |")
+    lines.append("|---|---:|---:|---:|---:|---:|---|")
+    for record in sorted(render_textures, key=lambda item: item.estimated_bytes, reverse=True):
+        lines.append(
+            f"| {rel(record.path, root)} | {record.width}x{record.height} | {mib(record.estimated_bytes):.2f} | {record.color_format} | {record.depth_stencil_format} | {record.anti_aliasing} | {';'.join(record.flags)} |"
+        )
     lines.append("")
     lines.append("## Top Runtime Texture Costs")
     lines.append("")
@@ -1646,29 +1963,40 @@ def write_summary(
     lines.append("")
     lines.append("- STATIC_SOURCE: file dimensions, file sizes, source metadata, and parser-readable mesh triangle counts.")
     lines.append(f"- Static geometry estimate assumes {STATIC_GEOMETRY_VERTEX_STRIDE_BYTES} byte vertices plus {STATIC_GEOMETRY_INDEX_BYTES} byte indices and no vertex sharing; Unity imported geometry must be verified in Memory Profiler.")
+    lines.append("- Static RenderTexture estimates use YAML dimensions, MSAA, mip flag, color format, and depth-stencil format; transient and code-created RTs still require Unity runtime capture.")
     lines.append(f"- Scan excludes generated/scratch directories by name: {', '.join(sorted(SKIP_DIRS, key=str.lower))}.")
     lines.append("- PENDING VERIFICATION: Unity importer compression, actual texture residency, mesh import settings, Memory Profiler VRAM, scene wiring, player-build behavior.")
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def print_console_summary(root: Path, textures: Sequence[TextureRecord], meshes: Sequence[MeshRecord], link_status: str) -> bool:
+def print_console_summary(
+    root: Path,
+    textures: Sequence[TextureRecord],
+    meshes: Sequence[MeshRecord],
+    render_textures: Sequence[RenderTextureRecord],
+    link_status: str,
+) -> bool:
     total_full_mips = sum(record.bc7_bytes for record in textures) * FULL_MIP_FACTOR
     runtime_full_mips = sum(record.bc7_bytes for record in textures if is_runtime_candidate(record.path, root)) * FULL_MIP_FACTOR
     mesh_geometry_bytes = sum(record.estimated_geometry_bytes for record in meshes)
+    render_texture_bytes = sum(record.estimated_bytes for record in render_textures)
     texture_crime_count = sum(1 for record in textures if any(flag.startswith("VRAM CRIME") for flag in record.flags))
     mesh_risk_count = sum(1 for record in meshes if record.flags)
+    render_texture_risk_count = sum(1 for record in render_textures if record.flags)
     critical_overflow = total_full_mips > CRITICAL_TEXTURE_POOL_MIB * 1024 * 1024 or runtime_full_mips > CRITICAL_TEXTURE_POOL_MIB * 1024 * 1024
-    print(f"textures={len(textures)} meshes={len(meshes)}")
+    print(f"textures={len(textures)} meshes={len(meshes)} render_textures={len(render_textures)}")
     print(f"bc7_full_mip_total_mib={mib(total_full_mips):.2f}")
     print(f"bc7_full_mip_runtime_candidate_mib={mib(runtime_full_mips):.2f}")
     print(f"mesh_geometry_static_estimate_mib={mib(mesh_geometry_bytes):.2f}")
+    print(f"render_texture_static_estimate_mib={mib(render_texture_bytes):.2f}")
     if critical_overflow:
         print("[CRITICAL_VRAM_OVERFLOW]")
     print(f"texture_vram_crimes={texture_crime_count}")
     print(f"mesh_redline_or_unknown_rows={mesh_risk_count}")
+    print(f"render_texture_redline_or_risk_rows={render_texture_risk_count}")
     print(f"link_xml_status={link_status}")
-    return texture_crime_count > 0 or mesh_risk_count > 0 or critical_overflow
+    return texture_crime_count > 0 or mesh_risk_count > 0 or render_texture_risk_count > 0 or critical_overflow
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
@@ -1680,26 +2008,29 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser.add_argument("--json", default="Docs/Reports/VRAM_Budget_Audit.json", help="Machine-readable summary path.")
     parser.add_argument("--texture-redlines", default="Docs/Reports/VRAM_Texture_Redlines.csv", help="Texture redline CSV path.")
     parser.add_argument("--mesh-redlines", default="Docs/Reports/VRAM_Mesh_Redlines.csv", help="Mesh redline CSV path.")
+    parser.add_argument("--render-texture-redlines", default="Docs/Reports/VRAM_RenderTexture_Redlines.csv", help="RenderTexture redline CSV path.")
     parser.add_argument("--ci", action="store_true", help="Exit non-zero if static redlines or overflow are detected.")
     args = parser.parse_args(argv)
 
     root = Path(args.root).resolve()
-    textures_paths, mesh_paths = iter_assets(root)
+    textures_paths, mesh_paths, render_texture_paths = iter_assets(root)
     textures = audit_textures(textures_paths, root)
     meshes = audit_meshes(mesh_paths)
+    render_textures = audit_render_textures(render_texture_paths)
     link_status, link_notes = summarize_link_xml(find_link_xml(root), root)
-    ci_failure = print_console_summary(root, textures, meshes, link_status)
+    ci_failure = print_console_summary(root, textures, meshes, render_textures, link_status)
     if args.ci:
         return 2 if ci_failure else 0
 
     atlas_groups = assign_atlas_groups(textures, root)
 
-    write_csv(root / args.csv, root, textures, meshes)
+    write_csv(root / args.csv, root, textures, meshes, render_textures)
     write_texture_redlines_csv(root / args.texture_redlines, root, textures)
     write_mesh_redlines_csv(root / args.mesh_redlines, root, meshes)
-    write_summary(root / args.summary, root, textures, meshes, atlas_groups, link_status, link_notes)
-    write_remediation_plan(root / args.plan, root, textures, meshes, atlas_groups)
-    write_summary_json(root / args.json, root, textures, meshes, atlas_groups, link_status, link_notes)
+    write_render_texture_redlines_csv(root / args.render_texture_redlines, root, render_textures)
+    write_summary(root / args.summary, root, textures, meshes, render_textures, atlas_groups, link_status, link_notes)
+    write_remediation_plan(root / args.plan, root, textures, meshes, render_textures, atlas_groups)
+    write_summary_json(root / args.json, root, textures, meshes, render_textures, atlas_groups, link_status, link_notes)
     return 0
 
 

@@ -179,3 +179,11 @@ Solution: Treat persisted `Status_VRAM_ASSET_SCOUT.md` and this rationale file a
 Rejected Alternatives: Reading neighboring current-batch prompts or inventing a polish mandate. That violates strict XML ownership and would let unrelated tasks steer this audit.
 Scalability potential: Low/MX350 stays protected by explicit scanner coverage and failure gates; Middle/High/Ultra content remains tier-gated by reports, not by stale batch text.
 Hardware Impact: 0us runtime measured. Final probes found one `.glb` mesh, already added to scanner coverage, and zero exotic texture hits for `.webp/.ktx/.ktx2/.pic/.pict/.iff/.psb/.sgi/.rgb/.rgba/.pvr/.astc/.basis`.
+
+## Decision 23: Static RenderTexture Budget Coverage
+
+Problem: The memory scout covered source textures and meshes, but `.renderTexture` assets were invisible even though HECTON-8 has a 320 MiB RT+Depth budget and RT settings can carry depth, MSAA, mips, random write, and oversized dimensions.
+Solution: Add RenderTexture discovery, YAML field parsing, conservative byte estimation, CSV/report rows, summary payload fields, and a dedicated `VRAM_RenderTexture_Redlines.csv`.
+Rejected Alternatives: Waiting for Unity Memory Profiler was rejected because static assets can be triaged before import. Folding RTs into texture rows was rejected because RT+Depth has a separate budget and different failure modes.
+Scalability potential: Low/MX350 catches depth/MSAA/mips before runtime; High/Ultra can raise RT quality deliberately against explicit RT+Depth budget data.
+Hardware Impact: 0us runtime measured. Offline scan reports 1 render texture, 7.03 MiB static RT estimate, and 1 RT redline/risk row.
