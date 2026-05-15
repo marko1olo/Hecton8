@@ -257,3 +257,9 @@ Solution: Use local `origin/main` reflog fetch entries as the hard evidence boun
 Rejected Alternatives: Guessing by commit subject, treating local push reflog entries as other-computer work, or giving only a chat summary without file evidence.
 Scalability potential: Git-only audit. Low/Middle/High/Ultra runtime behavior is unchanged; process scalability improves by separating remote-incoming evidence from local push checkpoints.
 Hardware Impact: 0 us runtime impact.
+
+Problem: User asked whether the mandate updates from the other checkout are correct. The updates are broad authority text, so an unreviewed accept/reject answer would either hide policy defects or cause an unnecessary rollback.
+Solution: Audit the exact incoming `.agents-skills` ranges, verify the 78-file inventory, read the new phase/signal/AUP mandates, compare against `AGENTS.md` and current source surfaces, then patch only the concrete text-hygiene inconsistency where advisory words survived the new command-language rule.
+Rejected Alternatives: Roll back the mandate batch, trust the chronicler report without source checks, or claim runtime compliance from mandate text.
+Scalability potential: Low/MX350 agents get stricter, clearer constraints for phase, signal, AUP, and allocation decisions; High/Ultra work remains allowed only through VISUAL_SYNC/typed-lane overkill after proof.
+Hardware Impact: 0 us runtime impact. This is documentation authority cleanup; profiler/Unity/runtime evidence remains pending.

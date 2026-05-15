@@ -125,7 +125,7 @@ float3 floodCoM_local = (totalFloodMass > EPSILON)
                         : float3.zero
 
 // Step 3: Blend toward target (exponential decay, frame-rate independent)
-// tau = time constant (seconds). Recommended tau = 1.2s (viscous fluid response)
+// tau = time constant (seconds). Default tau = 1.2s (viscous fluid response)
 float  alpha    = 1.0 - exp(-dt / TAU_COM)              // dt-invariant blend factor
 float3 currentCoM = rigidbody.centerOfMass               // local space
 float3 targetCoM  = lerp(DRY_COM_LOCAL, floodCoM_local,

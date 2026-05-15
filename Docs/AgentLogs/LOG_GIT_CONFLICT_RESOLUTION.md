@@ -665,3 +665,15 @@ Cinematic Cheats used -> None. Git/static audit only.
 Exact Microseconds saved -> 0 runtime us claimed.
 
 Verification -> Report covers 13 remote-fetch ranges, 55 commits, 824 file-change rows, and 530 distinct touched paths. Current `origin/main...HEAD` was `0 0` before the report write.
+
+## 2026-05-15 - Loop 45 Remote Mandate Correctness Audit
+
+What was wrong -> The other checkout delivered a large `.agents-skills` authority update: 56 files in primary incoming range `1875424c7..926ed7a55`, plus follow-up cleanup. The update was mostly coherent, but the registry README banned advisory mandate language while several current mandate files still contained unquoted `consider`/`should`/`recommended` wording.
+
+What was done -> Reviewed README inventory, the three new mandate files, mandate chronicler status/rationale/log, current `SignalBus<T>`, `SystemDispatcher`, `GlobalDataVault`, and AUP/Black Box evidence surfaces. Patched five mandate files to remove advisory wording without changing technical meaning. Wrote `Docs/AgentLogs/MandateRemoteAudit_GIT_CONFLICT_RESOLUTION_20260515.md`.
+
+Cinematic Cheats used -> None. This is governance/static text hygiene only.
+
+Exact Microseconds saved -> 0 runtime us. Process gain is reduced mandate ambiguity and less chance of agents treating optional language as acceptable.
+
+Verification -> Filesystem count matches README at 78 mandate `.txt` files. Post-patch advisory-word scan only hits the README banned-word quote. `git diff --check -- .agents-skills` reports only CRLF normalization warnings. Runtime compliance remains `PENDING VERIFICATION`.

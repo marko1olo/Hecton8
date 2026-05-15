@@ -578,7 +578,7 @@ Does this type need to be passed by reference to maintain shared mutable state?
         YES -> Must be class.
         NO
           Does this type need virtual dispatch / polymorphism at runtime?
-             YES -> Consider class or interface + struct implementation.
+             YES -> Use class only when identity is required; otherwise use interface + struct implementation.
              NO
                Does this type hold primarily data with logic that acts on that data?
                   YES -> MUST be struct.
@@ -746,7 +746,7 @@ Everything else is hot path. Default to zero.
 | Missing NonAlloc for physics query | P1 - Must Fix | Fix within same sprint |
 | Uncached lambda in hot path | P1 - Must Fix | Fix within same sprint |
 | Missing Registry, using Find at runtime | P1 - Must Fix | Fix within same sprint |
-| Struct candidate implemented as class | P2 - Should Fix | Fix within two sprints |
+| Struct candidate implemented as class | P2 - Required Fix | Fix within two sprints |
 | Missing profiler screenshot on hot-path PR | P1 - PR Blocked | Attach before review |
 
 ---

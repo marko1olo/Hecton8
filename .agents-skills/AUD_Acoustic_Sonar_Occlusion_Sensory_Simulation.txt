@@ -83,7 +83,7 @@ V_approx = (dU + dD) * (dL + dR) * (dF + dB)
 RT60 = REVERB_MIN + (REVERB_MAX - REVERB_MIN) *
        saturate(log10(V_approx + 1.0f) / log10(MAX_V + 1.0f))
 
-// Recommended values:
+// Default values:
 REVERB_MIN = 0.15f   // tight crevice
 REVERB_MAX = 6.0f    // abyssal open water
 MAX_V      = (MAX_PROBE_DIST * 2)^3

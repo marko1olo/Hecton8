@@ -37,7 +37,7 @@ It does not bind dictionary APIs such as `LZ4_loadDict`, `LZ4_compress_fast_cont
 
 [RULE] LZ4 dictionary is second-stage compression, not the primary ratio source.
 
-Recommended pipeline:
+Required pipeline:
 1. Offline collect 10k+ representative DTO payloads.
 2. Train static dictionary outside Unity.
 3. Version dictionary with save format header.
