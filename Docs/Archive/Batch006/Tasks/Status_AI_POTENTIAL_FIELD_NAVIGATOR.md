@@ -121,4 +121,4 @@ Status: NAVIGATION OPTIMIZED (PY_SIM) / PENDING UNITY VERIFICATION
 ## Iterative Loop 18 - Architecture Handoff Sync
 
 - [x] Update architecture handoff with explicit-path checker and source-file existence guard | Justification: documentation now matches the actual CLI and validation surface. Alternative rejected: leaving runtime integrators with stale default-only checker instructions. Estimate: 8,000,000 us.
-- [ ] Re-run post-doc verification guard | Justification: pending doc diff guard, self-check, regression suite, debt scan, and final readback. Alternative rejected: pending. Estimate: pending.
+- [x] Re-run post-doc verification guard | Justification: default and explicit-path `--check` passed, regression suite stayed 17 tests OK, py_compile passed, diff whitespace guard passed, debt scan had no hits, and JSON hash stayed stable. Alternative rejected: trusting documentation-only edits without verification. Estimate: 62,000,000 us.

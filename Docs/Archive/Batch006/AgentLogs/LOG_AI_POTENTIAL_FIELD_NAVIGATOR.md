@@ -206,7 +206,7 @@ What was done -> Updated `Docs/ARCHITECTURE/AI_POTENTIAL_FIELD_NAVIGATION.md` wi
 
 Cinematic Cheats used -> No runtime behavior changed. This keeps the analytical-flow/SDF-proxy handoff consistent for the later Unity port.
 
-Verification -> Pending in this entry until the post-doc guard is rerun: checker, regression suite, py_compile, diff whitespace guard, debt scan, and final readback.
+Verification -> `python Tools/AiPathSim.py --check` printed `CHECK PASSED`. `python Tools/AiPathSim.py --check Data/AI/Navigation_Tuning.json` printed `CHECK PASSED`. `python -m unittest Tools.AI_Sim.test_ai_path_sim` ran 17 tests and passed. `python -m py_compile Tools/AiPathSim.py Tools/AI_Sim/test_ai_path_sim.py` passed. `git diff --check` passed with only autocrlf warning on the architecture doc. Debt-marker scan returned no hits. `Navigation_Tuning.json` SHA256 stayed `BE874CA325A9B3DE0BAABB6784837C4DBA7F5BA66B93EFAD63F3D750D7FFA693`.
 
 Exact Microseconds saved -> 0 Unity runtime microseconds claimed. Documentation sync is offline only.
 

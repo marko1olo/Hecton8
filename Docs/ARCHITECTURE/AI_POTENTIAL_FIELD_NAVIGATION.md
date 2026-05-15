@@ -84,9 +84,10 @@ Artifact guard:
 
 ```text
 python Tools/AiPathSim.py --check
+python Tools/AiPathSim.py --check Data/AI/Navigation_Tuning.json
 ```
 
-The guard reloads the exported JSON, reconstructs the selected weights, replays the full candidate search, and rejects stale or weakened data if reach, SDF clearance, jitter, idle drift, path trace samples, stored raw/smoothed metrics, source constants, or the 100-predator performance model regress. Source drift is checked against every matching live constant in `Assets/_Project/Scripts/HectonFluidEngine.cs`, including `AbyssalFlowTextureResolution`, `AbyssalFlowTextureWorldSizeMeters`, `VectorNoiseResolution`, `SurfaceStormLayerDepthMeters`, `StormSurfaceTurbulenceStrength`, `AbyssalFlowThermoclineDepthMeters`, and `MaxAbyssalHeatSourceCount`.
+The guard reloads the exported JSON, reconstructs the selected weights, replays the full candidate search, and rejects stale or weakened data if reach, SDF clearance, jitter, idle drift, path trace samples, stored raw/smoothed metrics, source constants, source contract file references, or the 100-predator performance model regress. Source drift is checked against every matching live constant in `Assets/_Project/Scripts/HectonFluidEngine.cs`, including `AbyssalFlowTextureResolution`, `AbyssalFlowTextureWorldSizeMeters`, `VectorNoiseResolution`, `SurfaceStormLayerDepthMeters`, `StormSurfaceTurbulenceStrength`, `AbyssalFlowThermoclineDepthMeters`, and `MaxAbyssalHeatSourceCount`. All `sourceFiles` entries must be relative project paths that exist on disk.
 
 ## Scalability
 
