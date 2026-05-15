@@ -339,3 +339,15 @@ Cinematic Cheats used -> None. Git-only integration pass.
 Exact Microseconds saved -> 0 us runtime. Dev-path gain is another reduced local merge surface for GitHub Desktop and the other laptop.
 
 Verification -> Conflict-marker scan clean; `git diff --check` only reported LF-to-CRLF warnings. Unity compile/profiler proof remains pending.
+
+## 2026-05-15 - Loop 17 Small Live Tail
+
+What was wrong -> After `21fb57eca`, a 12-file local tail appeared while `origin/main` still matched local committed history.
+
+What was done -> Fetched remote, verified divergence `0 0`, scanned for unmerged paths and conflict markers, inspected runtime hunks in prologue audio, voxel dynamic navigation, SaveManager WFC batching, Leviathan grab damage guard, and prologue VFX reset, then prepared a bounded checkpoint.
+
+Cinematic Cheats used -> None. Git integration only.
+
+Exact Microseconds saved -> 0 us runtime. Dev-path gain is reduced local conflict surface without rewriting pushed history.
+
+Verification -> Conflict-marker scan clean. `git diff --check` reported only LF-to-CRLF warnings. Unity compile/profiler proof remains pending.

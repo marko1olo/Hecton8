@@ -757,3 +757,29 @@ Verification:
 - Static grep confirms every `_pendingSolverHandle` completion/finalization site now writes telemetry when it consumes a scheduled solve.
 - `git diff --check` on touched code/docs exits 0.
 - Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
+
+## 2026-05-15T05:11+04:00
+
+Status: PENDING VERIFICATION. Continued Leviathan tentacle runtime scalar-boundary audit. No `dotnet` rebuild/compile, Unity import, or response-file probe was run.
+
+What was wrong:
+- Rest length, max stretch, damping, radii, flow gains, suction pulse, and grab damage scalars depended on editor validation or downstream clamps.
+- Runtime mutation or corrupt serialized values could reach Burst job payloads, material bindings, or combat damage requests unchecked.
+
+What was done:
+- Added centralized default constants for tentacle scalar contracts.
+- Added finite/min/range sanitizers that mark `_invalidInputDetected`.
+- Fed sanitized scalars into job scheduling, seed/reset matrices, material radius binding, and grab damage requests.
+- Kept damage scalar invalidation behind an actual target check so no-target tentacles do not produce irrelevant blackbox invalid flags.
+
+Cinematic cheats used:
+- No physical complexity added. Invalid inputs collapse to predictable defaults so the existing cheap Verlet and indirect shader presentation remains controllable.
+
+Exact microseconds saved:
+- No savings claimed.
+- Added fixed scalar guards estimated under 0.05 us per scheduled tentacle frame, pending profiler proof.
+
+Verification:
+- Static grep over the tentacle solver still finds no direct `new NativeArray<`, direct `array.Dispose(`, `Time.frameCount`, `GlobalRegistry.Get`, forbidden Unity object searches, or legacy Animator/SkinnedMeshRenderer paths.
+- `git diff --check` on `LeviathanTentacleVerletSolver.cs` exits 0.
+- Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.

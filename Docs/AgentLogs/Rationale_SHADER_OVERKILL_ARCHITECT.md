@@ -142,3 +142,10 @@ Solution: Replaced runtime camera/component probes with `TryGetComponent(out T)`
 Rejected Alternatives: A full camera-stack rewrite was rejected because this presentation hub owns Crest fallback, editor preview, gameplay camera composition, and underwater ownership. Editing Crest wrappers or moving camera ownership to another domain was rejected as higher-risk cross-domain churn.
 Scalability potential: Low/MX350 avoids extra Unity lookup debt during cold camera recovery and keeps the same visual ownership path. High/Ultra remain behavior-equivalent while cleaner static coupling leaves room for later RenderGraph/camera-stack work.
 Hardware Impact: Runtime speed gain is estimated at 0-5 us on rare camera recovery frames, not hot path. Static H-Phi evidence after the pass: `GetComponentCalls=532`, `MemoryAlignment=0.505023797`, `AupPrecisionRisk=0`.
+
+## Decision 021 - Flashlight Voxel Shadow Provider Lookup And Native Handle Hygiene
+Problem: `HectonFlashlightVoxelShadowProvider` still used `GetComponent<PlayerFlashlight>()` in cold setup/retry paths and left disposed native volume handles non-default after release.
+Solution: Resolve the required flashlight through `TryGetComponent(out _flashlight)` and reset `_occupancyVolume` / `_sdfVolume` to `default` immediately after unregistering and disposing them.
+Rejected Alternatives: Rewriting the voxel SDF algorithm or moving its buffers to a new vault owner was rejected because the existing provider is small, bounded, and already registers native allocations with `NativeMemorySentinel`; a vault migration needs a separate integration ticket.
+Scalability potential: Low/MX350 keeps the same 12-20 voxel-resolution clamp and incremental slice refresh. High/Ultra keep the same visual fake, with cleaner cold-path lookup and safer long-session native handle state.
+Hardware Impact: Estimated runtime gain is 0-2 us on rare flashlight component recovery frames; no steady-state Tick gain claimed. Latest static audit: `GetComponentCalls=530`, `NativeArrayRefs=7001`, `DataSovereignty=0.021386637`, `AupPrecisionRisk=0`.

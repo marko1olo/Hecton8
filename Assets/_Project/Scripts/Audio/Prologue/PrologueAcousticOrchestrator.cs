@@ -76,21 +76,7 @@ namespace Hecton8.Audio.Prologue
         {
             RefreshRuntimeServicesCold();
             RefreshQualityPolicyCold();
-            _currentLowPassCutoffHertz = ClampCutoff(oceanLowPassCutoffHertz);
-            _stage = AudioTransitionState.StageSpace;
-            _sweepActive = false;
-            _splashdownPending = false;
-            _prologueArmed = false;
-            _hasCompleteSequence = false;
-            _hasWhiteoutCompleteSequence = false;
-            _forcePublishTransition = false;
-            _lastPublishedStage = 0;
-            _lastPublishedFlags = 0;
-            _lastPublishedLowPassCutoffHertz = -1f;
-            _lastPublishedLfeGain = -1f;
-            _lastPublishedGranularStress = -1f;
-            _lastPublishedSplashdownGain = -1f;
-            _lastPublishedPortalBlend = -1f;
+            ResetTransientState();
 
             if (!_lateFrameRegistered)
             {
@@ -125,6 +111,34 @@ namespace Hecton8.Audio.Prologue
             _tickDispatcher = null;
         }
 
+        private void ResetTransientState()
+        {
+            _lastLateFrame = -1;
+            _lastAtmosphericFrame = -1;
+            _lastCompleteFrame = -1;
+            _lastCompleteSequence = 0;
+            _lastWhiteoutCompleteSequence = 0;
+            _lastWhiteoutCompleteSourceHash = 0u;
+            _stage = AudioTransitionState.StageSpace;
+            _lastPublishedStage = 0;
+            _lastPublishedFlags = 0;
+            _velocityMetersPerSecond = 0f;
+            _heat01 = 0f;
+            _currentLowPassCutoffHertz = ClampCutoff(oceanLowPassCutoffHertz);
+            _lastPublishedLowPassCutoffHertz = -1f;
+            _lastPublishedLfeGain = -1f;
+            _lastPublishedGranularStress = -1f;
+            _lastPublishedSplashdownGain = -1f;
+            _lastPublishedPortalBlend = -1f;
+            _sweepElapsedSeconds = 0f;
+            _sweepActive = false;
+            _splashdownPending = false;
+            _prologueArmed = false;
+            _hasCompleteSequence = false;
+            _hasWhiteoutCompleteSequence = false;
+            _forcePublishTransition = false;
+        }
+
         /// <inheritdoc />
         public void LateFrameTick()
         {
@@ -143,7 +157,7 @@ namespace Hecton8.Audio.Prologue
         /// <inheritdoc />
         public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
         {
-            CacheQualityPolicy(payload.CurrentQualityTier, payload.CurrentTier, _lowMemoryProfile);
+            CacheQualityPolicy(payload.CurrentQualityTier, payload.CurrentTier, GlobalRegistry.H8_LOW_MEMORY_PROFILE);
         }
 
         /// <inheritdoc />

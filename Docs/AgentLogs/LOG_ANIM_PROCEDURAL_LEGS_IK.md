@@ -120,26 +120,6 @@ Scoped forbidden-pattern scan over touched IK/KCC/signal files returned no match
 Status:
 PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
 
-## 2026-05-15 Recursive QA Addendum 16
-
-What was wrong:
-Runtime jobs still had post-rig H-Phi leaks. Ground detection command origins could fall back to `entity.RootPosition` even if that root was corrupt. Predictive latch blend alone could suppress hand wall probes even when the latch position was invalid. Ground response smoothing wrote raw `SmoothScalar` output into tunnel blend, contact blends, packed foot blend state, and COM lean before final sanitizers.
-
-What was done:
-`ContextualPhysicalIkGroundDetectionJob` now derives a finite `safeRootPosition`, uses it for camera/tool/hand/foot ray fallback origins, validates predictive latch position before disabling wall probes, and sanitizes fallback values inside its local `SanitizeFloat3`. `ContextualPhysicalIkGroundResponseJob` now sanitizes fallback values in its local `SanitizeFloat3`, routes unit blend smoothing through `SmoothBlend`, and routes COM lean through `SmoothFiniteScalar` before target-frame/foot-state publication.
-
-Cinematic cheats used:
-No new sensing, ray lanes, gait physics, or solver authority. The runtime keeps the same deterministic visual fake: hip-origin batched rays, squared step triggers, triangle-wave foot lift, predictive hand latch, and small COM lean, but invalid state collapses to neutral data before publication.
-
-Exact microseconds saved:
-Added cost is finite checks, unit-blend clamps, and scalar smooth wrappers inside existing jobs, estimated below 0.4 us/frame on i3/MX350. Prevented cost is NaN ray commands, lost fallback wall probes, packed foot blend corruption, and COM lean spikes.
-
-Verification:
-No dotnet rebuild was run per user instruction. `git diff --check` and `git diff --cached --check` over `ContextualPhysicalIkRuntime.cs` passed. Scoped forbidden-pattern scans over lower-body/signal files returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `.ToString(`, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`. MCP resource listing returned no Unity resources.
-
-Status:
-PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
-
 ## 2026-05-14 Recursive QA Addendum 6
 
 What was wrong:

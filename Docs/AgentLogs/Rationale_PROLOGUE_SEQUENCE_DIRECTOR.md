@@ -452,3 +452,19 @@ Solution: Add local finite clamps for heat scale, whiteout altitude, ramp rates,
 Rejected Alternatives: Trust inspector attributes, or rely on post-NaN sanitize. Inspector attributes do not protect runtime-loaded/tool-mutated data; post-NaN sanitize happens after visible shader/audio damage can already be emitted.
 Scalability potential: Low/MX350 avoids invalid shader/audio work and keeps cheap whiteout stable. Middle/High/Ultra can keep stronger plasma/splash visuals without letting malformed config poison overkill responders.
 Hardware Impact: Scalar finite checks are below 1 us on prologue VFX frames; they prevent invalid material/global writes and downstream audio/debris churn. Verification static only; no rebuild.
+
+## Decision 55 - Audio Non-Reload Lifecycle Reset
+
+Problem: `PrologueAcousticOrchestrator` reset some presentation booleans on enable but kept same-frame tick cursors, signal cursors, complete-sequence latches, cached velocity/heat, and last-published thresholds. In non-reload or same-frame disable/enable, the first tick could be skipped or a stale complete sequence could suppress a valid ocean sweep.
+Solution: Add `ResetTransientState()` and call it from `OnEnable()` after cold service/quality cache refresh. The reset clears only scalar runtime state and preserves the existing registry registration flow.
+Rejected Alternatives: Rely on `OnDisable()`, or reset only the visible stage booleans. Disable does not guarantee same-frame cursor cleanup for re-enable; partial reset keeps stale signal ownership and publication suppression.
+Scalability potential: Low/MX350 avoids missed portal sweep/audio concealment during scene churn. Middle/High/Ultra keep granular/splash overkill synchronized to the current prologue run instead of stale sequence memory.
+Hardware Impact: Enable-only scalar assignments; 0 us per-frame steady-state cost. Prevents one skipped audio tick or redundant stale transition work under non-reload reuse. Verification static only; no rebuild.
+
+## Decision 56 - Audio Low-Memory Policy Refresh
+
+Problem: `PrologueAcousticOrchestrator.OnScalabilityChanged()` updated tier bytes from the event payload but reused the previous `_lowMemoryProfile` value. If the low-memory flag changed around the same transition, prologue DSP could keep the wrong low-tier proxy policy.
+Solution: Sample `GlobalRegistry.H8_LOW_MEMORY_PROFILE` inside the scalability event handler, matching the cold refresh path.
+Rejected Alternatives: Treat scalability events as tier-only, or poll registry every audio frame. Tier-only leaves a stale policy edge; per-frame polling wastes hot-path budget for a cold policy transition.
+Scalability potential: Low/MX350 and emergency low-memory paths keep proxy DSP flags current. Middle/High/Ultra keep granular overkill enabled only when the current policy allows it.
+Hardware Impact: One registry bool read per scalability event, 0 us steady-state per frame. Verification static only; no rebuild.

@@ -83,3 +83,9 @@ Solution: Verify remote sync, classify the tail as live local output, and checkp
 Rejected Alternatives: Reporting clean state, dropping files, or amending/force-pushing the prior checkpoint. These would either misrepresent state or risk other agents' work.
 Scalability potential: Git-only operation. No runtime tier claims.
 Hardware Impact: 0 us runtime impact. Compile/profiler proof remains pending.
+
+Problem: After `21fb57eca`, another smaller runtime/docs tail appeared, but remote history stayed synchronized.
+Solution: Fetch first, prove no incoming commits, scan for conflict markers, inspect the runtime surfaces, then checkpoint the evidence-backed tail.
+Rejected Alternatives: Blind pull, reset, amend/force-push, or skipping runtime inspection. The changed files include audio lifecycle, voxel navigation bounds, save batching, Leviathan grab damage guard, and prologue VFX reset logic.
+Scalability potential: Git-only integration pass. Runtime tier effects are owned by the producing agents; no new performance claims are made here.
+Hardware Impact: 0 us runtime impact. Unity compile/profiler proof remains pending.

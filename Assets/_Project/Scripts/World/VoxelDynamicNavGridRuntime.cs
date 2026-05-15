@@ -1379,6 +1379,8 @@ namespace Hecton8.World
             dimensions = int3.zero;
             origin = float3.zero;
             cellSize = 0f;
+            if (!math.all(math.isfinite(worldPosition)))
+                return false;
 
             bool foundContainingRecord = false;
             float nearestDistanceSq = float.MaxValue;
@@ -1387,12 +1389,7 @@ namespace Hecton8.World
             while (enumerator.MoveNext())
             {
                 VolumeRecord candidate = enumerator.Current.Value;
-                if (candidate == null ||
-                    !candidate.Current.IsCreated ||
-                    candidate.Dimensions.x <= 0 ||
-                    candidate.Dimensions.y <= 0 ||
-                    candidate.Dimensions.z <= 0 ||
-                    candidate.CellSize <= 0f)
+                if (!VoxelDynamicNavGridRuntime.HasValidRecordBounds(candidate))
                 {
                     continue;
                 }
@@ -1440,18 +1437,14 @@ namespace Hecton8.World
             while (enumerator.MoveNext())
             {
                 VolumeRecord record = enumerator.Current.Value;
-                if (record == null ||
-                    !record.Current.IsCreated ||
-                    record.Dimensions.x <= 0 ||
-                    record.Dimensions.y <= 0 ||
-                    record.Dimensions.z <= 0 ||
-                    record.CellSize <= 0f)
+                if (!VoxelDynamicNavGridRuntime.HasValidRecordBounds(record))
                 {
                     continue;
                 }
 
                 float safeCellSize = math.max(record.CellSize, 0.0001f);
-                float3 local = (worldPosition - record.Origin) / safeCellSize;
+                float invCellSize = math.rcp(safeCellSize);
+                float3 local = (worldPosition - record.Origin) * invCellSize;
                 int3 centerCell = new int3(
                     math.clamp((int)math.floor(local.x), 0, math.max(0, record.Dimensions.x - 1)),
                     math.clamp((int)math.floor(local.y), 0, math.max(0, record.Dimensions.y - 1)),
@@ -1813,7 +1806,10 @@ namespace Hecton8.World
 
         internal static int ResolveClearanceRadiusCells(float cellSize)
         {
-            return math.max(1, (int)math.ceil(DefaultPredatorClearanceRadiusMeters / math.max(cellSize, 0.0001f)));
+            if (cellSize <= 0f || !math.isfinite(cellSize))
+                return 1;
+
+            return math.max(1, (int)math.ceil(DefaultPredatorClearanceRadiusMeters * math.rcp(cellSize)));
         }
 
         private static int ResolveDynamicClearanceRadiusCells(float cellSize, bool useReducedClearance)
@@ -1830,7 +1826,7 @@ namespace Hecton8.World
                 return;
 
             long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - completionStartTimestamp;
-            double elapsedMilliseconds = elapsedTicks * 1000.0d / System.Diagnostics.Stopwatch.Frequency;
+            double elapsedMilliseconds = elapsedTicks * 1000.0d * math.rcp((double)System.Diagnostics.Stopwatch.Frequency);
             if (elapsedMilliseconds <= PartialClearanceDilationBudgetMilliseconds)
                 return;
 
@@ -2417,7 +2413,9 @@ namespace Hecton8.World
         {
             regionMin = new int3(int.MaxValue, int.MaxValue, int.MaxValue);
             regionMax = new int3(int.MinValue, int.MinValue, int.MinValue);
-            if (record == null ||
+            if (!HasValidRecordBounds(record) ||
+                !math.all(math.isfinite(request.Center)) ||
+                !math.all(math.isfinite(request.Extents)) ||
                 request.Extents.x <= 0.0001f ||
                 request.Extents.y <= 0.0001f ||
                 request.Extents.z <= 0.0001f)
@@ -2425,7 +2423,8 @@ namespace Hecton8.World
                 return false;
             }
 
-            int chunkCells = math.max(1, (int)math.ceil(DynamicObstacleChunkSizeMeters / math.max(record.CellSize, 0.0001f)));
+            float invCellSize = math.rcp(record.CellSize);
+            int chunkCells = math.max(1, (int)math.ceil(DynamicObstacleChunkSizeMeters * invCellSize));
             int clearanceCells = ResolveClearanceRadiusCells(record.CellSize);
             float3 requestMinWorld = request.Center - request.Extents;
             float3 requestMaxWorld = request.Center + request.Extents;
@@ -2450,11 +2449,12 @@ namespace Hecton8.World
 
         private static int3 WorldToVoxel(VolumeRecord record, float3 worldPosition)
         {
-            float safeCellSize = math.max(record.CellSize, 0.0001f);
+            float invCellSize = math.rcp(record.CellSize);
+            float3 local = (worldPosition - record.Origin) * invCellSize;
             return new int3(
-                math.clamp((int)math.floor((worldPosition.x - record.Origin.x) / safeCellSize), 0, math.max(0, record.Dimensions.x - 1)),
-                math.clamp((int)math.floor((worldPosition.y - record.Origin.y) / safeCellSize), 0, math.max(0, record.Dimensions.y - 1)),
-                math.clamp((int)math.floor((worldPosition.z - record.Origin.z) / safeCellSize), 0, math.max(0, record.Dimensions.z - 1)));
+                math.clamp((int)math.floor(local.x), 0, math.max(0, record.Dimensions.x - 1)),
+                math.clamp((int)math.floor(local.y), 0, math.max(0, record.Dimensions.y - 1)),
+                math.clamp((int)math.floor(local.z), 0, math.max(0, record.Dimensions.z - 1)));
         }
 
         private static bool BoundsOverlapRecord(VolumeRecord record, float3 min, float3 max)
@@ -2465,6 +2465,19 @@ namespace Hecton8.World
                    min.x <= record.Max.x &&
                    min.y <= record.Max.y &&
                    min.z <= record.Max.z;
+        }
+
+        private static bool HasValidRecordBounds(VolumeRecord record)
+        {
+            return record != null &&
+                   record.Current.IsCreated &&
+                   record.Dimensions.x > 0 &&
+                   record.Dimensions.y > 0 &&
+                   record.Dimensions.z > 0 &&
+                   record.CellSize > 0f &&
+                   math.isfinite(record.CellSize) &&
+                   math.all(math.isfinite(record.Origin)) &&
+                   math.all(math.isfinite(record.Max));
         }
 
         private static bool ContainsPoint(VolumeRecord record, float3 worldPosition)
@@ -2555,12 +2568,15 @@ namespace Hecton8.World
         private static bool TryResolveRecord(float3 worldPosition, out VolumeRecord record)
         {
             record = null;
+            if (!math.all(math.isfinite(worldPosition)))
+                return false;
+
             float nearestDistanceSq = float.MaxValue;
             Dictionary<int, VolumeRecord>.Enumerator enumerator = _records.GetEnumerator();
             while (enumerator.MoveNext())
             {
                 VolumeRecord candidate = enumerator.Current.Value;
-                if (candidate == null || !candidate.Current.IsCreated)
+                if (!HasValidRecordBounds(candidate))
                     continue;
 
                 if (ContainsPoint(candidate, worldPosition))
@@ -2583,12 +2599,14 @@ namespace Hecton8.World
         private static bool TryResolveContainingRecord(float3 worldPosition, out VolumeRecord record)
         {
             record = null;
+            if (!math.all(math.isfinite(worldPosition)))
+                return false;
+
             Dictionary<int, VolumeRecord>.Enumerator enumerator = _records.GetEnumerator();
             while (enumerator.MoveNext())
             {
                 VolumeRecord candidate = enumerator.Current.Value;
-                if (candidate == null ||
-                    !candidate.Current.IsCreated ||
+                if (!HasValidRecordBounds(candidate) ||
                     !ContainsPoint(candidate, worldPosition))
                 {
                     continue;
@@ -2873,14 +2891,13 @@ namespace Hecton8.World
         {
             voxel = int3.zero;
             passability = SolidCell;
-            if (record == null ||
-                !record.Current.IsCreated ||
-                record.CellSize <= 0f)
+            if (!HasValidRecordBounds(record) ||
+                !math.all(math.isfinite(worldPosition)))
             {
                 return false;
             }
 
-            float invCellSize = 1f / math.max(record.CellSize, 0.0001f);
+            float invCellSize = math.rcp(record.CellSize);
             float3 local = (worldPosition - record.Origin) * invCellSize;
             int3 candidate = new int3(
                 math.clamp((int)math.floor(local.x), 0, math.max(0, record.Dimensions.x - 1)),

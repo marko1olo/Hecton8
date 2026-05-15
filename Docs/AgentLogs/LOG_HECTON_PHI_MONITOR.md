@@ -596,3 +596,61 @@ Regression Model:
 - Memory: no buffer ownership changed.
 - Cadence: no Tick/FixedTick/Update/job schedule changed.
 - Correctness: future managed-runtime and sync debt regressions now fail static budgets before profiler work starts.
+
+## 2026-05-15 Primary-Runtime Managed-Risk Role Routing
+
+What was wrong:
+- Managed-runtime risk was visible, but it mixed primary gameplay runtime with instrumentation, persistence, and UI code.
+- That made `ManagedFormatSurface=704` and `JobCompleteSurface=61` actionable only at a coarse level and risked pushing owner agents toward blind, non-profiler-backed edits.
+
+What was done:
+- Added file-role classification in `Tools/Architecture/HectonPhiAudit.ps1`.
+- Added per-file counters:
+  - `FileRole`
+  - `ManagedRuntimeRisk`
+  - `PrimaryManagedRuntimeRisk`
+  - `PrimaryJobCompleteRisk`
+- Added compact summary routing:
+  - `ManagedRiskByRole`
+  - `TopPrimaryManagedRuntimeRiskFiles`
+- Added the full-source budget gate `-MaxPrimaryManagedRuntimeRisk`.
+- Added `CoreGraphOnly` rejection for that gate.
+- Honored user instruction: no `dotnet build`, no rebuild.
+
+Cinematic Cheats used:
+- None. Static audit tooling and owner-routing only.
+
+Exact Microseconds saved:
+- Runtime gameplay: 0 us measured; no gameplay code path changed.
+- Tooling: final primary-runtime-risk gated summary completed in about 172 seconds. This is static-source evidence only.
+
+Compile Status:
+- Not run by explicit user order.
+- Static checks run:
+  - `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`
+  - `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -MaxPrimaryManagedRuntimeRisk 1 -Summary -Json` correctly rejected source budget under graph-only mode.
+  - `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1`
+  - Full ungated summary at `2026-05-15 05:05:42 +04:00`
+  - Full gated summary at `2026-05-15 05:14:05 +04:00`
+- `git diff --check`: no whitespace errors; LF/CRLF warning only.
+
+Phi Gain:
+- Previous runtime narrow score: `0.010750370`.
+- Current runtime narrow score: `0.010800761`.
+- Previous runtime risk-adjusted score: `0.000590952`.
+- Current runtime risk-adjusted score: `0.000594407`.
+- Data Sovereignty moved `0.021362748 -> 0.021386637`.
+- Memory Alignment remained `0.505023797`.
+- GlobalRegistry surface moved `5144 -> 5139`.
+- GetComponent calls moved `532 -> 530`.
+- NativeArray refs moved `7009 -> 7001`.
+- Primary managed-runtime risk is now isolated: `PrimaryManagedRuntimeRisk=353`, `PrimaryJobCompleteRisk=44`.
+- Managed-risk split: `PrimaryRuntime=353`, `Instrumentation=236`, `Persistence=96`, `UI=24`.
+- Important: the score movement includes concurrent workspace changes. It is not measured frame-time or GC gain.
+
+Regression Model:
+- CPU: no gameplay code path changed.
+- GC: no gameplay allocation changed.
+- Memory: no buffer ownership changed.
+- Cadence: no Tick/FixedTick/Update/job schedule changed.
+- Correctness: primary-runtime managed-risk regressions now fail a dedicated static budget, while diagnostics/persistence/UI risk remains visible but separated.

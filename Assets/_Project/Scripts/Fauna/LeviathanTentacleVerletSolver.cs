@@ -932,8 +932,14 @@ namespace Hecton8.AI
         private bool TryQueueGrabDamage(float deltaTime)
         {
             Transform target = _grabTarget != null ? _grabTarget : defaultGrabTarget;
+            if (target == null)
+            {
+                _grabDamageTimer = 0f;
+                return false;
+            }
+
             float safeDamageAmount = SanitizeFiniteMinInput(grabDamageAmount, 0f, 0f);
-            if (target == null || safeDamageAmount <= 0f)
+            if (safeDamageAmount <= 0f)
             {
                 _grabDamageTimer = 0f;
                 return false;

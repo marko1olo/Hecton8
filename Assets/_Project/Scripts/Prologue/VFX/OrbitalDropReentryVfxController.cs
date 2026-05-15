@@ -161,10 +161,9 @@ namespace Hecton8.Prologue.VFX
                 _registeredLateFrame = false;
             }
 
-            _targetHeat01 = 0f;
-            _targetOpacity01 = 0f;
-            _heat01 = 0f;
-            _opacity01 = 0f;
+            ResetTransientState();
+            _lastAppliedAmbientBlend = float.PositiveInfinity;
+            ApplyAmbientBlend();
             PublishShaderState(force: true);
             _tickDispatcher = null;
         }

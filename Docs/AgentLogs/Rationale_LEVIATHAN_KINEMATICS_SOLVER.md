@@ -324,3 +324,11 @@ Solution: Call `WriteTelemetryFrame()` after every scheduled-job completion/fina
 Rejected Alternatives: Rendering immediately from the origin-shift path was rejected because the barrier should not add GPU submit work. Leaving lifecycle completion invisible was rejected because the blackbox requirement is about explainable state, not only rendered frames.
 Scalability potential: Low/MX350/high/ultra visuals are unchanged. All tiers now preserve coherent last-300-frame state across lifecycle and origin-shift edges, so invalid tentacle positions have a dump trail even when no render upload happens.
 Hardware Impact: Normal render-frame cost is unchanged. Lifecycle/rebase completion writes one fixed-size telemetry entry, estimated below 0.02 us and not profiler-backed; no hot-path saving is claimed.
+
+## Decision 34: Tentacle Runtime Scalar Boundary Hygiene
+
+Problem: Several tentacle scalar fields relied on `OnValidate()` or Burst-side clamps: rest length, stretch length, damping, radii, flow gains, suction pulse, and grab damage. Runtime mutation or corrupted serialized state could still pass NaN/invalid values into job payloads, material state, or combat damage signals before the blackbox marked the frame invalid.
+Solution: Add central default constants plus `SanitizeFiniteMinInput()` and `SanitizeFiniteRangeInput()`. Use them when scheduling the Burst job, seeding/resetting matrices, binding material radius references, and queuing grab damage; keep grab-damage scalar invalidation behind an actual target check.
+Rejected Alternatives: Trusting `OnValidate()` was rejected because builds and scripts can bypass it. Sanitizing only inside the Burst job was rejected because material and combat paths are Mono-side consumers.
+Scalability potential: Low/MX350/high/ultra visuals are unchanged for valid input. Invalid scalar data now fails into cheap predictable defaults on all tiers, preserving low-end stability and high-end visual overkill without NaN-driven shader/combat corruption.
+Hardware Impact: Added fixed scalar guards are estimated below 0.05 us per scheduled tentacle frame and are not profiler-backed. The benefit is deterministic failure behavior, not measured frame-time savings.

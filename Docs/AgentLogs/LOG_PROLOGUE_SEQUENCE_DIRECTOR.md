@@ -364,3 +364,19 @@ What was done -> Added finite clamps for heat scale, whiteout threshold, ramp ra
 Cinematic Cheats used -> Plasma whiteout, ocean crossfade, and splash acoustics stay shader/audio fakes; the patch keeps those fakes fed by finite, bounded control values.
 Exact Microseconds saved -> Adds scalar finite checks below 1 us per VFX frame. Prevents invalid material/global writes and downstream audio/debris churn from corrupted config.
 Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms finite helper coverage in VFX; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only for the touched working-tree files.
+
+## 2026-05-15 - Loop 50 Audio Non-Reload Lifecycle Reset Review
+
+What was wrong -> Prologue audio reset visible stage flags on enable but kept same-frame tick/signal cursors and sequence latches that can survive non-reload or same-frame disable/enable.
+What was done -> Added `ResetTransientState()` for audio and now clear frame cursors, whiteout/ocean latches, last-published thresholds, cached velocity/heat, sweep state, and publication flags on every enable.
+Cinematic Cheats used -> None; this keeps the existing DSP portal/ocean sweep fake aligned to the current prologue run.
+Exact Microseconds saved -> Enable-only scalar reset, 0 us steady-state. Prevents skipped first-tick audio and stale sequence suppression under scene churn.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms reset coverage and enable call site; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only for the touched working-tree files.
+
+## 2026-05-15 - Loop 51 Audio Low-Memory Policy Refresh Review
+
+What was wrong -> Prologue audio scalability events reused the previous `_lowMemoryProfile` bit, so a tier change could leave DSP proxy/overkill policy one event behind.
+What was done -> `OnScalabilityChanged()` now samples `GlobalRegistry.H8_LOW_MEMORY_PROFILE`, matching the cold refresh path.
+Cinematic Cheats used -> Low-tier proxy DSP remains the cheap presentation path; high/ultra granular stress remains reserved for current non-low-memory policy.
+Exact Microseconds saved -> One cold registry bool read per scalability event, 0 us per-frame steady-state. Prevents wrong-tier DSP transition packets after policy changes.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms the current low-memory registry read; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only for the touched working-tree files.

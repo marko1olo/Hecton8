@@ -1185,20 +1185,18 @@ namespace Hecton8.SaveSystem
         private void DrainWfcOutpostStateChangedSignals()
         {
             ReadOnlySpan<WfcOutpostStateChangedSignal> signals = SignalBus<WfcOutpostStateChangedSignal>.GetFrameSnapshot();
+            if (signals.Length == 0)
+                return;
+
             NativeArray<byte> wfcGrid = default;
             bool hasGrid = false;
-            bool hasDirtySector = false;
-            ulong dirtySectorHash = 0UL;
-            uint dirtyFrame = 0u;
+            Span<ulong> dirtySectors = stackalloc ulong[signals.Length];
+            int dirtySectorCount = 0;
 
             for (int i = 0; i < signals.Length; i++)
             {
                 WfcOutpostStateChangedSignal signal = signals[i];
-                if (signal.SectorHash == 0UL || signal.CellIndex >= WfcOutpostPersistenceConstants.CellCount)
-                    continue;
-
-                byte changedMask = (byte)((signal.PreviousFlags ^ signal.CurrentFlags) & WfcOutpostPersistenceConstants.MutableFlagMask);
-                if (changedMask == 0)
+                if (!IsPersistableWfcOutpostStateSignal(in signal))
                     continue;
 
                 RecordWfcOutpostEventBlackBox(
@@ -1212,6 +1210,12 @@ namespace Hecton8.SaveSystem
                     flags: signal.Flags,
                     frame: signal.Frame);
 
+                if (!ContainsWfcOutpostDirtySector(dirtySectors, dirtySectorCount, signal.SectorHash))
+                    dirtySectors[dirtySectorCount++] = signal.SectorHash;
+            }
+
+            for (int sectorIndex = 0; sectorIndex < dirtySectorCount; sectorIndex++)
+            {
                 if (!hasGrid)
                 {
                     if (!TryEnsureWfcOutpostGrid(out wfcGrid))
@@ -1220,24 +1224,46 @@ namespace Hecton8.SaveSystem
                     hasGrid = true;
                 }
 
-                if (dirtySectorHash != signal.SectorHash)
-                {
-                    if (hasDirtySector)
-                        TryPersistWfcOutpostStateSnapshotInternal(dirtySectorHash, wfcGrid, dirtyFrame, out _);
+                ulong dirtySectorHash = dirtySectors[sectorIndex];
+                uint dirtyFrame = 0u;
+                bool hasDirtySignal = false;
+                PrepareWfcOutpostMutableGridForSector(dirtySectorHash, wfcGrid);
 
-                    dirtySectorHash = signal.SectorHash;
-                    hasDirtySector = false;
-                    PrepareWfcOutpostMutableGridForSector(dirtySectorHash, wfcGrid);
+                for (int signalIndex = 0; signalIndex < signals.Length; signalIndex++)
+                {
+                    WfcOutpostStateChangedSignal signal = signals[signalIndex];
+                    if (signal.SectorHash != dirtySectorHash ||
+                        !IsPersistableWfcOutpostStateSignal(in signal))
+                    {
+                        continue;
+                    }
+
+                    wfcGrid[signal.CellIndex] = (byte)(signal.CurrentFlags & WfcOutpostPersistenceConstants.MutableFlagMask);
+                    dirtyFrame = signal.Frame;
+                    hasDirtySignal = true;
                 }
 
-                byte mutableFlags = (byte)(signal.CurrentFlags & WfcOutpostPersistenceConstants.MutableFlagMask);
-                wfcGrid[signal.CellIndex] = mutableFlags;
-                dirtyFrame = signal.Frame;
-                hasDirtySector = true;
+                if (hasDirtySignal)
+                    TryPersistWfcOutpostStateSnapshotInternal(dirtySectorHash, wfcGrid, dirtyFrame, out _);
+            }
+        }
+
+        private static bool IsPersistableWfcOutpostStateSignal(in WfcOutpostStateChangedSignal signal)
+        {
+            return signal.SectorHash != 0UL &&
+                   signal.CellIndex < WfcOutpostPersistenceConstants.CellCount &&
+                   ((signal.PreviousFlags ^ signal.CurrentFlags) & WfcOutpostPersistenceConstants.MutableFlagMask) != 0;
+        }
+
+        private static bool ContainsWfcOutpostDirtySector(ReadOnlySpan<ulong> dirtySectors, int dirtySectorCount, ulong sectorHash)
+        {
+            for (int i = 0; i < dirtySectorCount; i++)
+            {
+                if (dirtySectors[i] == sectorHash)
+                    return true;
             }
 
-            if (hasDirtySector)
-                TryPersistWfcOutpostStateSnapshotInternal(dirtySectorHash, wfcGrid, dirtyFrame, out _);
+            return false;
         }
 
         private void DrainWfcSectorHydratedSignals()

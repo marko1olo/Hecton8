@@ -89,3 +89,9 @@ Task loop 16:
 - [x] Verify pushed runtime audit checkpoint | DOD: `23c8203c5` pushed to `origin/main`; post-fetch divergence returned `0 0` | Rejected: relying on local commit only | Estimate: 0 us runtime.
 - [x] Classify post-push live tail | DOD: 22-file tail checked with `git diff --stat`, `git diff --check`, and marker scan | Rejected: pretending the working tree was clean while agents still wrote files | Estimate: 0 us runtime.
 - [x] Prepare continued checkpoint | DOD: loop 16 evidence appended before staging the next small tail | Rejected: force-push/reset/amend | Estimate: 0 us runtime.
+
+Task loop 17:
+- [x] Re-check pull gate | DOD: `git fetch origin`; `rev-list origin/main...HEAD` returned `0 0`, so no pull was required | Rejected: pulling without incoming remote commits | Estimate: 0 us runtime.
+- [x] Validate small live tail | DOD: 12-file tail checked with `git diff --stat`, `git diff --check`, unmerged-path scan, and marker scan | Rejected: staging unchecked parallel-agent edits | Estimate: 0 us runtime.
+- [x] Review runtime surface | DOD: inspected Prologue acoustic lifecycle reset, VoxelDynamicNavGrid finite/bounds hardening, SaveManager WFC sector batching, Leviathan grab damage guard, and OrbitalDrop reentry reset hunks before commit | Rejected: docs-only validation while runtime code changed | Estimate: 0 us runtime.
+- [x] Prepare checkpoint evidence | DOD: loop 17 evidence appended before staging | Rejected: chat-only report | Estimate: 0 us runtime.

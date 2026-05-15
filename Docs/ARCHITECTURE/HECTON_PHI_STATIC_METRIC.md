@@ -294,7 +294,8 @@ Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json
 
 The compact summary includes aggregate scores, Core graph debt, duplicate signal
 name debt, top owner-blocked DataVault candidate files,
-`TopAupPrecisionRiskFiles`, and `TopCouplingRiskFiles`.
+`TopAupPrecisionRiskFiles`, `TopCouplingRiskFiles`,
+`TopPrimaryManagedRuntimeRiskFiles`, and `ManagedRiskByRole`.
 
 Core graph only:
 
@@ -323,7 +324,7 @@ Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0
 Full H-Phi regression budget gate:
 
 ```powershell
-Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0 -MaxFindObjectCalls 5 -MaxLegacyEventPublish 28 -MaxDuplicateSignalNames 0 -MaxGlobalRegistrySurface 5160 -MaxGetComponentCalls 550 -MaxNativeArrayRefs 7035 -MaxLinqSurface 5 -MaxCoroutineSurface 0 -MaxManagedFormatSurface 704 -MaxJobCompleteSurface 61 -MinDataSovereignty 0.021300000 -MinMemoryAlignment 0.505000000 -MinRuntimeHPhiRisk 0.000590000 -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 14 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 6
+Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0 -MaxFindObjectCalls 5 -MaxLegacyEventPublish 28 -MaxDuplicateSignalNames 0 -MaxGlobalRegistrySurface 5160 -MaxGetComponentCalls 550 -MaxNativeArrayRefs 7035 -MaxLinqSurface 5 -MaxCoroutineSurface 0 -MaxManagedFormatSurface 704 -MaxJobCompleteSurface 61 -MaxPrimaryManagedRuntimeRisk 353 -MinDataSovereignty 0.021300000 -MinMemoryAlignment 0.505000000 -MinRuntimeHPhiRisk 0.000590000 -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 14 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 6
 ```
 
 Source-count and score-floor gates require a full source scan. `-CoreGraphOnly`
@@ -331,6 +332,9 @@ rejects them by design so graph-only status cannot masquerade as full H-Phi
 proof. The current floors are deliberately just below the latest verified
 static values; domain owners should lower debt and then tighten these floors.
 Managed-runtime counters are static risk surfaces, not profiler/GC proof.
+`PrimaryManagedRuntimeRisk` excludes editor, instrumentation, persistence, and
+UI role buckets so smoke/diagnostic/save/UI debt remains visible without being
+treated as the primary gameplay hot-path budget.
 
 Duplicate signal-name budget gate:
 

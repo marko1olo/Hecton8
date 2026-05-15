@@ -45,16 +45,17 @@ Task Count: 6
 - [x] Task 23: Coupling-risk routing and static regression budgets | DOD: added per-file coupling rows, `TopCouplingRiskFiles`, and full-scan budget gates for runtime `Find*` and legacy event publish counts; verified current gates pass without rebuild | Rejected: cross-domain gameplay edits in bootstrap/VR/UI/audio owners without owner proof | Estimate: 0 us runtime
 - [x] Task 24: H-Phi score floors and concurrent-scan hardening | DOD: added full-scan gates for `GlobalRegistrySurface`, `GetComponentCalls`, `NativeArrayRefs`, `DataSovereignty`, `MemoryAlignment`, and risk-adjusted runtime H-Phi; skipped files deleted between enumerate/read during concurrent agent work; verified final static gate without rebuild | Rejected: pretending owner-domain NativeArray/registry churn was this agent's editable code | Estimate: 0 us runtime
 - [x] Task 25: Managed-runtime and job-sync risk gates | DOD: added static counters, summary rows, top-file routing, and full-scan budgets for LINQ surface, coroutine surface, managed formatting surface, and job `.Complete()` surface; verified gated full scan without rebuild | Rejected: editing owner runtime files from static counters without call-stack/profiler proof | Estimate: 0 us runtime
+- [x] Task 26: Primary-runtime risk role routing | DOD: classified managed-risk counters by file role and added `PrimaryManagedRuntimeRisk` gate so smoke, diagnostics, persistence, and UI debt do not masquerade as core gameplay hot-path debt | Rejected: blindly fixing static `string.Format`/`.Complete()` hits in owner runtime files without profiler/call-stack proof | Estimate: 0 us runtime
 
 ## Latest Static Scores
-- H-Phi runtime static narrow: `0.010750370`
-- H-Phi runtime static risk-adjusted: `0.000590952`
-- H-Phi all-source static narrow: `0.009572568`
-- H-Phi all-source static risk-adjusted: `0.000485398`
+- H-Phi runtime static narrow: `0.010800761`
+- H-Phi runtime static risk-adjusted: `0.000594407`
+- H-Phi all-source static narrow: `0.009582622`
+- H-Phi all-source static risk-adjusted: `0.000486713`
 - Narrow integration: `1.0`
-- Risk integration: `0.054970375`
+- Risk integration: `0.055070074`
 - Architectural purity: `0.996447602`
-- Data sovereignty: `0.021362748`
+- Data sovereignty: `0.021386637`
 - Memory alignment: `0.505023797`
 - Binary-safe ratio: `0.018508726`
 - AUP precision integrity: `1.000000000`
@@ -93,6 +94,9 @@ Task Count: 6
 - Latest final budgeted full command passed at `2026-05-15 04:20:55 +04:00`: `-MaxAupPrecisionRisk 0 -MaxFindObjectCalls 5 -MaxLegacyEventPublish 28 -MaxDuplicateSignalNames 6 -MaxGlobalRegistrySurface 5160 -MaxGetComponentCalls 550 -MaxNativeArrayRefs 7035 -MinDataSovereignty 0.020800000 -MinMemoryAlignment 0.503900000 -MinRuntimeHPhiRisk 0.000570000 -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 14 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 6`.
 - Latest managed-risk full summary after current workspace changes: `SignalBusPush=334`, `EventPublish=28`, `RuntimeHPhiNarrow=0.010750370`, `RuntimeHPhiRisk=0.000590952`, `DataVaultRefs=153`, `NativeArrayRefs=7009`, `GlobalRegistrySurface=5144`, `GetComponentCalls=532`, `LinqSurface=5`, `CoroutineSurface=0`, `ManagedFormatSurface=704`, `JobCompleteSurface=61`, `AupPrecisionRisk=0`, `DuplicateSignalNameCount=0`.
 - Latest managed-risk budgeted full command passed at `2026-05-15 04:47:08 +04:00`: `-MaxAupPrecisionRisk 0 -MaxFindObjectCalls 5 -MaxLegacyEventPublish 28 -MaxDuplicateSignalNames 0 -MaxGlobalRegistrySurface 5160 -MaxGetComponentCalls 550 -MaxNativeArrayRefs 7035 -MaxLinqSurface 5 -MaxCoroutineSurface 0 -MaxManagedFormatSurface 704 -MaxJobCompleteSurface 61 -MinDataSovereignty 0.021300000 -MinMemoryAlignment 0.505000000 -MinRuntimeHPhiRisk 0.000590000 -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 14 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 6`.
+- Latest primary-runtime-risk gated full command passed at `2026-05-15 05:14:05 +04:00`: `-MaxAupPrecisionRisk 0 -MaxFindObjectCalls 5 -MaxLegacyEventPublish 28 -MaxDuplicateSignalNames 0 -MaxGlobalRegistrySurface 5160 -MaxGetComponentCalls 550 -MaxNativeArrayRefs 7035 -MaxLinqSurface 5 -MaxCoroutineSurface 0 -MaxManagedFormatSurface 704 -MaxJobCompleteSurface 61 -MaxPrimaryManagedRuntimeRisk 353 -MinDataSovereignty 0.021300000 -MinMemoryAlignment 0.505000000 -MinRuntimeHPhiRisk 0.000590000 -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 14 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 6`.
+- Latest primary-runtime-risk summary: `SignalBusPush=334`, `EventPublish=28`, `RuntimeHPhiNarrow=0.010800761`, `RuntimeHPhiRisk=0.000594407`, `DataVaultRefs=153`, `NativeArrayRefs=7001`, `GlobalRegistrySurface=5139`, `GetComponentCalls=530`, `LinqSurface=5`, `CoroutineSurface=0`, `ManagedFormatSurface=704`, `JobCompleteSurface=61`, `PrimaryManagedRuntimeRisk=353`, `PrimaryJobCompleteRisk=44`, `AupPrecisionRisk=0`, `DuplicateSignalNameCount=0`.
+- Managed-risk role split: `PrimaryRuntime=353 managed / 44 job-complete`, `Instrumentation=236 managed / 12 job-complete`, `Persistence=96 managed / 0 job-complete`, `UI=24 managed / 5 job-complete`.
 - Duplicate signal-name scan currently reports `0` duplicate names in the static source scan; compile/runtime proof remains pending.
 - Remaining runtime `Find*` debt is concentrated in `GameBootstrapper` bootstrap handoff, `HectonUrpShadowBudgetGuard` cold light scan, and `VRSomaticRuntimeBootstrap` decoupled root lookup; one textual `HectonUnderwaterVisuals` hit is editor-only and excluded from runtime score.
 - `git diff --check` on touched H-Phi files reports only LF/CRLF normalization warnings.

@@ -460,3 +460,14 @@ Follow-up upgrade 46:
 Exact microseconds saved after follow-up 46:
 - Disabled/calm non-low UberNoir vertices skip crush/habitat mask and buckling ALU.
 - Estimated 2-8 us saved per 1k UberNoir vertices in no-op bend states on MX350-class GPUs; active bend output is unchanged.
+
+Follow-up upgrade 47:
+- What was wrong: `H8UberNoirLoadInstance` cast instance-buffer count/offset/use globals directly to `uint`; non-finite metadata could destabilize StructuredBuffer indexing before the clamped read.
+- What was done: finite-gated buffer offset, buffer count, and use-buffer scalars before casting. Invalid metadata now keeps default per-object instance data and skips the buffer read.
+- Cinematic cheat used: corrupted instance metadata falls back to non-instanced visual truth instead of trying to recover instanced deformation.
+- Static checks: `rg` confirms `bufferOffsetSource`, `bufferCountSource`, `useBufferSource`, and finite-gated `uint` casts are wired; exact shader `normalize()`/`sqrt()` scan produced no matches; managed-offender scan remains clean; mesh mutation scan found no owned `Mesh.vertices` writes; touched shader/doc braces are balanced; `git diff --cached --check` is clean and `git diff --check` reports only CRLF normalization warning in this log update.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction.
+
+Exact microseconds saved after follow-up 47:
+- Fault frames avoid bad StructuredBuffer reads from corrupt metadata.
+- Valid-frame overhead is three scalar finite checks only in the instance-buffer shader variant; expected cost is below measurement noise in the existing instanced vertex path.

@@ -200,3 +200,26 @@ Verification:
 - Brace scan: `564/564`.
 - Runtime lookup scan: no runtime `GetComponent<T>` / `GetComponentInParent<T>` left in `HectonUnderwaterVisuals`; remaining lookup patterns are `UNITY_EDITOR` fallback discovery.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`: `RuntimeHPhiNarrow=0.010750370`, `RuntimeHPhiRisk=0.000590952`, `AllSourceHPhiNarrow=0.009572568`, `AllSourceHPhiRisk=0.000485398`, `ArchitecturalPurity=0.996447602`, `MemoryAlignment=0.505023797`, `GetComponentCalls=532`, `StructLayoutAttributes=955`, `AupPrecisionRisk=0`.
+
+## 2026-05-15 05:12:40 +04:00 - Follow-Up No-Rebuild Flashlight Voxel Shadow Provider Hygiene
+What was wrong:
+- `HectonFlashlightVoxelShadowProvider` still used `GetComponent<PlayerFlashlight>()` in cold setup/retry paths.
+- Disposed native SDF staging buffers were unregistered and disposed but not reset to default, which weakens long-session state inspection.
+
+What was done:
+- Replaced both flashlight component lookups with `TryGetComponent(out _flashlight)`.
+- Reset `_occupancyVolume` and `_sdfVolume` to `default` immediately after dispose.
+- Kept voxel resolution clamp, incremental slice refresh, SDF encoding, and shader global publication behavior unchanged.
+
+Cinematic Cheats used:
+- Existing flashlight shadow remains a bounded voxel SDF visual fake instead of allocating shadow-map VRAM or doing physical light transport.
+
+Exact Microseconds saved:
+- Estimated 0-2 us CPU on rare flashlight component recovery frames.
+- No steady-state Tick saving claimed; the main gain is static lookup debt and native handle hygiene.
+
+Verification:
+- No dotnet rebuild was executed.
+- `git diff --check` on `HectonFlashlightVoxelShadowProvider.cs`: no whitespace errors; LF-to-CRLF warning only.
+- Brace scan: `66/66`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`: `RuntimeHPhiNarrow=0.010762392`, `RuntimeHPhiRisk=0.000592295`, `AllSourceHPhiNarrow=0.009582622`, `AllSourceHPhiRisk=0.000486054`, `ArchitecturalPurity=0.996447602`, `DataSovereignty=0.021386637`, `MemoryAlignment=0.505023797`, `GetComponentCalls=530`, `StructLayoutAttributes=955`, `AupPrecisionRisk=0`.

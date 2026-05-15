@@ -374,6 +374,7 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 - Added centralized default constants for tentacle rest length, max stretch, damping, radius, flow, pulse, and grab damage scalars.
 - Added finite/min/range runtime sanitizers that set `_invalidInputDetected` on corrupted scalar input.
 - Fed sanitized scalars into Burst job scheduling, seed/reset matrices, material radius references, and combat damage requests.
+- Kept grab-damage scalar invalidation behind an actual target check so idle/no-target tentacles do not report irrelevant damage-field corruption.
 - DOD: non-finite or out-of-contract authored floats no longer enter native solve payloads, material properties, or combat signals unchecked.
 - Alternative Rejected: relying on `OnValidate()` because runtime/script mutation and corrupted serialized data can bypass editor validation in builds.
 - Estimate: under 0.05 us per scheduled frame for fixed scalar guards; no profiler-backed saving claimed.

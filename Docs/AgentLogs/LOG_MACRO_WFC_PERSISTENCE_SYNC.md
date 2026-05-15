@@ -684,6 +684,30 @@ Verification:
 - Targeted `git diff --check` reports only Git CRLF normalization warnings.
 - No `dotnet` rebuild was run.
 
+## Recheck Report: WFC Interleaved Sector Signal Drain
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- WFC state-change draining flushed on sector transitions, so A/B/A signal order could persist the same sector twice in one frame.
+- That made correctness depend on immediate visibility of a just-dirtied MacroDB payload.
+
+What was done:
+- Signal black-box events still record in original snapshot order.
+- Dirty sectors are collected in stack-only scratch and each sector is hydrated, patched, and persisted once.
+
+Cinematic cheats used:
+- Bounded snapshot batching instead of a managed per-sector map or new signal layer.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation: 0 B by static inspection.
+- Worst case: <=16,384 scalar checks for a full 128-signal lane; common case is one sector and two snapshot scans.
+
+Verification:
+- Static scan confirms old contiguous flush state is gone and stack-only sector accumulation is present.
+- `git diff --check -- Assets/_Project/Scripts/SaveManager.cs` reports only Git CRLF normalization warnings.
+- No `dotnet` rebuild was run.
+
 ## Recheck Report: WFC Producer Attribution Closure
 Status: PENDING VERIFICATION.
 

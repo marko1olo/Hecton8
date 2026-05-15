@@ -1103,3 +1103,97 @@ Verification:
 - `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1`: no whitespace errors; LF/CRLF warning only.
 - Final full static gate completed at local timestamp `2026-05-15 04:47:08 +04:00`.
 - Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.
+
+## 2026-05-15 Live Addendum 15
+
+Evidence class: `STATIC_SOURCE`.
+
+User constraint for this pass: no `dotnet build` and no rebuild.
+
+What changed:
+- Added role-aware managed-risk routing to `Tools/Architecture/HectonPhiAudit.ps1`.
+- Added `PrimaryManagedRuntimeRisk` and `PrimaryJobCompleteRisk` counters.
+- Added `ManagedRiskByRole` and `TopPrimaryManagedRuntimeRiskFiles` to compact summary output.
+- Added `-MaxPrimaryManagedRuntimeRisk` full-source budget gate.
+- No gameplay code, buffer ownership, tick cadence, job scheduling, scene, prefab, or Unity project setting was changed by this H-Phi monitor pass.
+
+Current runtime static scores:
+
+| Coefficient | Score |
+|---|---:|
+| Narrow integration | 1.000000000 |
+| Risk-adjusted integration | 0.055070074 |
+| Architectural purity | 0.996447602 |
+| Data sovereignty | 0.021386637 |
+| Memory alignment | 0.505023797 |
+| Binary-safe ratio | 0.018508726 |
+| AUP precision integrity | 1.000000000 |
+| H-Phi runtime static narrow | 0.010800761 |
+| H-Phi runtime static risk-adjusted | 0.000594407 |
+
+Current runtime counts:
+
+| Counter | Value |
+|---|---:|
+| Typed/queued signal push surface | 334 |
+| Legacy/direct event publish surface | 28 |
+| `GlobalRegistry.` surface refs | 5,139 |
+| DataVault access surface refs | 153 |
+| `NativeArray<T>` refs | 7,001 |
+| Runtime `Find*` calls | 5 |
+| Runtime `GetComponent*` calls | 530 |
+| AUP precision risk refs | 0 |
+| LINQ surface | 5 |
+| Coroutine surface | 0 |
+| Managed formatting surface | 704 |
+| Job `.Complete()` surface | 61 |
+| Primary managed-runtime risk | 353 |
+| Primary job `.Complete()` risk | 44 |
+| Duplicate signal names | 0 |
+
+Managed-risk role split:
+
+| Role | Files | Managed risk | Job complete |
+|---|---:|---:|---:|
+| PrimaryRuntime | 624 | 353 | 44 |
+| Instrumentation | 42 | 236 | 12 |
+| Persistence | 18 | 96 | 0 |
+| UI | 77 | 24 | 5 |
+
+Budget gates:
+
+| Gate | Budget/Floor | Current | Status |
+|---|---:|---:|---|
+| AUP precision risk | <= 0 | 0 | PASS |
+| Runtime `Find*` calls | <= 5 | 5 | PASS |
+| Legacy event publish | <= 28 | 28 | PASS |
+| Duplicate signal names | <= 0 | 0 | PASS |
+| `GlobalRegistry.` surface refs | <= 5,160 | 5,139 | PASS |
+| `GetComponent*` calls | <= 550 | 530 | PASS |
+| `NativeArray<T>` refs | <= 7,035 | 7,001 | PASS |
+| LINQ surface | <= 5 | 5 | PASS |
+| Coroutine surface | <= 0 | 0 | PASS |
+| Managed formatting surface | <= 704 | 704 | PASS |
+| Job `.Complete()` surface | <= 61 | 61 | PASS |
+| Primary managed-runtime risk | <= 353 | 353 | PASS |
+| Data sovereignty | >= 0.021300000 | 0.021386637 | PASS |
+| Memory alignment | >= 0.505000000 | 0.505023797 | PASS |
+| Runtime H-Phi risk | >= 0.000590000 | 0.000594407 | PASS |
+| Core asmdef debt refs | <= 25 | 25 | PASS |
+| Generated project debt refs | <= 10 | 10 | PASS |
+| Source-backed bridge debt refs | <= 14 | 14 | PASS |
+| Source-backed compile bridge debt refs | <= 8 | 8 | PASS |
+| Project-reference replacement debt refs | <= 6 | 6 | PASS |
+
+Residual bottlenecks:
+- Data Sovereignty remains the hard floor: `153 / (153 + 7001) = 0.021386637`.
+- Primary managed-runtime risk is now separated from instrumentation/persistence/UI, but it is still static text evidence, not profiler/GC proof.
+- Job `.Complete()` risk is now split by role; owner systems still need job-handle review before runtime edits.
+- Runtime verification remains absent by user order.
+
+Verification:
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: completed.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -MaxPrimaryManagedRuntimeRisk 1 -Summary -Json`: parser guard correctly rejected source budget under graph-only mode.
+- `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1`: no whitespace errors; LF/CRLF warning only.
+- Final full static gate completed at local timestamp `2026-05-15 05:14:05 +04:00`.
+- Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.
