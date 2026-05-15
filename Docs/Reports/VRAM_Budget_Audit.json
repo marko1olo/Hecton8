@@ -83,8 +83,8 @@
     "MESH_REDLINE_OR_RISK",
     "RENDER_TEXTURE_REDLINE_OR_RISK"
   ],
-  "generated": "2026-05-15T17:18:21",
-  "generated_utc": "2026-05-15T14:18:21+00:00",
+  "generated": "2026-05-15T17:21:22",
+  "generated_utc": "2026-05-15T14:21:22+00:00",
   "geometry_buffer_budget_mib": 200.0,
   "link_xml_notes": [
     "Assets/AstarPathfindingProject/link.xml assemblies=1 types=18 preserve_all=18",
@@ -5096,7 +5096,7 @@
   "render_texture_count": 1,
   "render_texture_depth_stencil_rows": 1,
   "render_texture_redline_rows": 1,
-  "render_texture_source_hotspot_rows": 62,
+  "render_texture_source_hotspot_rows": 61,
   "render_texture_source_hotspots": [
     {
       "editor_only": false,
@@ -5144,7 +5144,7 @@
       "editor_only": false,
       "line": 69,
       "path": "Assets/_Project/Scripts/Core/HectonXRManager.cs",
-      "pattern": "new RenderTexture",
+      "pattern": "RenderTextureDescriptor",
       "snippet": "return new RenderTextureDescriptor("
     },
     {
@@ -5158,7 +5158,7 @@
       "editor_only": false,
       "line": 334,
       "path": "Assets/_Project/Scripts/Graphics/Caustics/AnalyticalCausticsService.cs",
-      "pattern": "new RenderTexture",
+      "pattern": "RenderTextureDescriptor",
       "snippet": "RenderTextureDescriptor descriptor = new RenderTextureDescriptor(CausticsResolution, CausticsResolution, GraphicsFormat.R8G8B8A8_UNorm, 0)"
     },
     {
@@ -5242,7 +5242,7 @@
       "editor_only": false,
       "line": 5716,
       "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
-      "pattern": "new RenderTexture",
+      "pattern": "RenderTextureDescriptor",
       "snippet": "RenderTextureDescriptor descriptor = new RenderTextureDescriptor("
     },
     {
@@ -5256,7 +5256,7 @@
       "editor_only": false,
       "line": 5464,
       "path": "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs",
-      "pattern": "new RenderTexture",
+      "pattern": "RenderTextureDescriptor",
       "snippet": "RenderTextureDescriptor descriptor = new RenderTextureDescriptor(1, 1)"
     },
     {
@@ -5270,7 +5270,7 @@
       "editor_only": false,
       "line": 5670,
       "path": "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs",
-      "pattern": "new RenderTexture",
+      "pattern": "RenderTextureDescriptor",
       "snippet": "RenderTextureDescriptor descriptor = new RenderTextureDescriptor("
     },
     {
@@ -5279,13 +5279,6 @@
       "path": "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs",
       "pattern": "new RenderTexture",
       "snippet": "RenderTexture texture = new RenderTexture(descriptor)"
-    },
-    {
-      "editor_only": false,
-      "line": 148,
-      "path": "Assets/_Project/Scripts/Optimization/RenderTextureLifecycleTracker.cs",
-      "pattern": "new RenderTexture",
-      "snippet": "var record = new RenderTextureAllocationRecord"
     },
     {
       "editor_only": false,
@@ -5305,7 +5298,7 @@
       "editor_only": false,
       "line": 1180,
       "path": "Assets/_Project/Scripts/UI/DiegeticPanelController.cs",
-      "pattern": "new RenderTexture",
+      "pattern": "RenderTextureDescriptor",
       "snippet": "RenderTextureDescriptor descriptor = new RenderTextureDescriptor(requiredResolution.x, requiredResolution.y)"
     },
     {
@@ -5424,7 +5417,7 @@
       "editor_only": false,
       "line": 295,
       "path": "Assets/_Project/Scripts/World/Biolum/HectonBiolumDiffusionVolume.cs",
-      "pattern": "new RenderTexture",
+      "pattern": "RenderTextureDescriptor",
       "snippet": "RenderTextureDescriptor descriptor = new RenderTextureDescriptor(resolution, resolution)"
     },
     {
@@ -5551,7 +5544,7 @@
     }
   ],
   "root": "C:\\Hecton8",
-  "runtime_render_texture_source_hotspot_rows": 54,
+  "runtime_render_texture_source_hotspot_rows": 53,
   "schema_version": 1,
   "skipped_directory_names": [
     ".codex-artifacts",
