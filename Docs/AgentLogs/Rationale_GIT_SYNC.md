@@ -59,3 +59,11 @@ Rejected Alternatives: Broad cleanup of third-party metas, native bundle interna
 Scalability potential: No runtime tier impact; reduces Unity asset database noise and avoids unreachable GUID residue.
 Hardware Impact: 0 us runtime gain measured.
 
+## Decision 8
+
+Problem: After the orphan-meta cleanup commit was created locally, `origin/main` advanced repeatedly while the shared working tree contained many unrelated concurrent agent edits. A normal rebase/stash would touch files outside GIT_SYNC ownership, and a temporary worktree checkout stalled for more than 10 minutes in `git reset --hard`.
+Solution: Remove the incomplete temporary worktree, build a new commit object on top of the current `origin/main` with an isolated `GIT_INDEX_FILE`, delete only the two orphan `.meta` entries, copy the three GIT_SYNC documentation blobs from the verified local commit, and push that object as a fast-forward update to `origin/main`.
+Rejected Alternatives: Force-push would discard remote work. Stashing the whole tree would interfere with parallel agents. Keeping a side branch only would not satisfy the requested push to `main`. Continuing to wait on the stalled worktree created no evidence and blocked the sync.
+Scalability potential: Low/Middle/High/Ultra runtime tiers are not affected. This is repository hygiene only.
+Hardware Impact: 0 us runtime gain; no gameplay code path modified by this decision.
+

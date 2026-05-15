@@ -30,19 +30,28 @@ Residual risk: Unity compile/runtime verification remains PENDING VERIFICATION. 
 
 ## 2026-05-15 Repository Inquisition Continuation
 
-What was wrong: Further verification still lacked Unity/dotnet compile proof and static scans found repository hygiene debt.
-What was done: Probed compile tooling, ran repository integrity scans, and removed two confirmed first-party orphan folder `.meta` files.
-Cinematic Cheats used: None. Repository hygiene only.
+What was wrong: After artifact repair, remaining repository risk existed in verification coverage: Unity executable was unavailable, generated `.csproj` files were absent, and static scans still needed to separate first-party hygiene defects from third-party import debris.
+What was done: Probed Unity/dotnet/MSBuild availability, ran repository integrity scans, confirmed duplicate `.meta` GUIDs were absent, confirmed tracked large-file/path-length guards, found strict JSON issues outside GIT_SYNC scope, and deleted only two confirmed first-party orphan folder metas.
+Cinematic Cheats used: None. Repository/static verification only.
 Exact Microseconds saved: 0 us runtime measured.
-Verification: Unity executable not found under Program Files; Visual Studio-local `dotnet.exe --info` reports no SDKs; MSBuild 17.14 fails `Hecton8.slnx` because generated `.csproj` files are missing; duplicate `.meta` GUID scan passed for 15,640 files; large-file guard passed for 35,060 files; path-length guard passed for 35,060 files; conflict-marker scan passed for 27,523 tracked text-like files.
-Findings not fixed: Strict JSON parse reports `.vscode/settings.json` JSONC/trailing comma, non-UTF8/multi-document H-Phi logs, and `tools_list_mcp.json` encoding; refined meta scan still reports third-party/import debris and native bundle internals. Those are not edited in this pass.
-Residual risk: Unity import, generated project regeneration, Play Mode, profiler, GC, and player build remain PENDING VERIFICATION.
+Verification: First-party meta pairing scan passed after deletion; duplicate GUID scan covered 15,640 `.meta` files; large-file guard found no tracked file >= 100 MB; path-length guard found 35,060 files below 240 chars; `git diff --cached --check` passed before commit `b12c4d0d4`.
+Failed/limited checks: Unity executable was not found under Program Files; Visual Studio-local `dotnet.exe` reported no SDKs; MSBuild failed because `.csproj` files referenced by `Hecton8.slnx` are absent; repeat full conflict-marker scan timed out under concurrent dirty-tree churn.
+Residual risk: Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, and true runtime memory/frame-time remain PENDING VERIFICATION.
 
 ## 2026-05-15 Dirty-Tree Boundary Note
 
-What was wrong: During long verification scans, the worktree received unrelated BACKEND/HYDRODYNAMIC/UX/ORGANIC changes and new generated files from other active agents.
-What was done: Kept this pass scoped to `GIT_SYNC` logs plus two confirmed first-party orphan `.meta` deletions. Unrelated dirty files were not staged, reverted, or modified.
+What was wrong: The shared workspace contains many unrelated modified and untracked files from other agents after GIT_SYNC's committed work.
+What was done: GIT_SYNC staged and committed only its own orphan-meta cleanup and own status/rationale/log evidence. Other agent files were left untouched.
 Cinematic Cheats used: None.
 Exact Microseconds saved: 0 us runtime measured.
-Verification: `python -m unittest discover -s Tools -p "test*.py"` passed under the current dirty tree with 123 tests in 381.056 seconds. A repeat broad conflict-marker scan timed out after 5 minutes; earlier bounded scan in this pass had completed clean over 27,523 tracked text-like files.
-Residual risk: Repository contains concurrent uncommitted work outside GIT_SYNC ownership. Do not report final global cleanliness until those owners commit or clear their changes.
+Verification: `git diff --cached --name-status` before commit contained only two `.meta` deletions plus `Docs/Tasks/Status_GIT_SYNC.md`, `Docs/AgentLogs/Rationale_GIT_SYNC.md`, and `Docs/AgentLogs/LOG_GIT_SYNC.md`.
+Residual risk: Remaining dirty files require their owning agents or integrator to validate and commit.
+
+## 2026-05-15 Orphan Meta Push Repair
+
+What was wrong: Local `main` held orphan-meta cleanup commit `b12c4d0d4`, but `origin/main` advanced beyond it while the working tree contained unrelated concurrent agent edits. A normal rebase would have required touching the dirty shared checkout. A temporary clean worktree checkout stalled for more than 10 minutes and was removed.
+What was done: Fetched latest `origin/main`, constructed commit `8345f682e0e50a89acd6cdef6b28f81b4fd67eff` on top of `8213d7838e18f5632d455a62aab8185791623dca` using an isolated Git index, verified the commit diff was limited to the two orphan `.meta` deletions plus the three GIT_SYNC evidence files, and pushed it fast-forward to `origin/main`.
+Cinematic Cheats used: None. Git object plumbing only.
+Exact Microseconds saved: 0 us runtime measured.
+Verification: `git diff-tree --no-commit-id --name-status -r 8345f682e0e50a89acd6cdef6b28f81b4fd67eff` listed only five intended paths; `git push origin 8345f682e0e50a89acd6cdef6b28f81b4fd67eff:refs/heads/main` succeeded as `8213d7838..8345f682e`.
+Residual risk: Local checked-out `main` is still not reset/rebased to remote because doing so would overwrite or disturb unrelated dirty working-tree files. Remote `origin/main` contains the cleanup.
