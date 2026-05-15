@@ -739,3 +739,37 @@ Regression model:
 Failure modes:
 - Unity/C# compile proof remains blocked by missing local toolchain/generation state.
 - Runtime loader remains out of explicit prompt scope.
+
+## 2026-05-15 - Hash Range Guard
+
+STATUS: LORE BAKED / HASH RANGE STRICT
+
+What was wrong:
+- Numeric hash parsing masked negative and overflow values into uint32.
+- That could turn a bad operator input into a valid but unintended lore record selector.
+
+What was done:
+- `parse_hash` now rejects values outside `0..0xFFFFFFFF`.
+- Added regression coverage for `-1`, `0x100000000`, and `4294967296`.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Fixed binary layout and zlib payloads remain unchanged.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- CLI validation only; no runtime loader cost claimed.
+
+Verification:
+- `python -B -m unittest Tools.test_verify_lore -v` -> 24 tests passed.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: invalid numeric hash selectors cannot wrap into valid IDs.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.

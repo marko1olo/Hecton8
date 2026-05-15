@@ -93,10 +93,15 @@ def parse_hash(value: str) -> int:
     stripped = value.strip()
     try:
         if stripped.lower().startswith("0x"):
-            return int(stripped, 16) & 0xFFFFFFFF
-        return int(stripped, 10) & 0xFFFFFFFF
+            parsed = int(stripped, 16)
+        else:
+            parsed = int(stripped, 10)
     except ValueError as exc:
         raise ValueError(f"Invalid hash value: {value}") from exc
+
+    if parsed < 0 or parsed > 0xFFFFFFFF:
+        raise ValueError(f"Hash value out of uint32 range: {value}")
+    return parsed
 
 
 def format_hash(value: int) -> str:

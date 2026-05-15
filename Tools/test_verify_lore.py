@@ -116,6 +116,12 @@ class VerifyLoreTests(unittest.TestCase):
         self.assertIn("Invalid hash value", stderr.getvalue())
         self.assertNotIn("Traceback", stderr.getvalue())
 
+    def test_hash_parser_rejects_out_of_uint32_range_values(self) -> None:
+        for value in ("-1", "0x100000000", "4294967296"):
+            with self.subTest(value=value):
+                with self.assertRaises(ValueError):
+                    VerifyLore.parse_hash(value)
+
     def test_missing_hash_returns_none(self) -> None:
         record = VerifyLore.LoreRecord(0x10, 32, 4)
         self.assertIsNone(VerifyLore.find_record([record], 0x20))
