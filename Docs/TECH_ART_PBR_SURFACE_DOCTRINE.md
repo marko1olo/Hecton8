@@ -9,34 +9,34 @@ Audit source: `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA.json`
 
 - First-party scan root: `Assets/_Project`
 - Textures scanned by filename/material audit: 137
-- Albedo energy candidates decoded by Python/Pillow: 26
+- Albedo energy candidates decoded by Python/Pillow: 25
 - Albedo energy failures: 0
 - Albedo energy warnings: 0
 - Texture read errors: 0
 - Albedo read errors: 0
-- Texture import-setting issues: 5
+- Texture import-setting issues: 4
 - Estimated texture residency by offline BC-class model: 497.565 MiB
-- ORM/mask candidates found: 17
+- ORM/mask candidates found: 16
 - Detail candidates found: 13
 - Materials scanned: 176
 - Materials with prompt ORM slots: 0
 - Materials with legacy/unknown packed mask slots: 9
 - Materials with any packed mask slots: 9
 - Materials with detail slots: 0
-- Materials with audit issues: 29
+- Materials with audit issues: 26
 - Materials with unresolved first-party texture references: 9
 - Unresolved first-party texture references: 27
 - Surface materials with unresolved texture references: 2
 - Surface unresolved texture references: 8
 - Surface unresolved BLOCKER materials: 2
-- Surface material migration queue rows: 22 (`BLOCKER` = 2, `MEDIUM` = 9, `LOW` = 11)
-- Channel-packing migration candidates: 22 (`LOW` = 13, `MEDIUM` = 9)
-- Channel-packing candidate model: 146.3 MiB standard -> 65.78 MiB optimized, saving 80.52 MiB (55.0%)
+- Surface material migration queue rows: 19 (`BLOCKER` = 2, `MEDIUM` = 9, `LOW` = 8)
+- Channel-packing migration candidates: 19 (`LOW` = 10, `MEDIUM` = 9)
+- Channel-packing candidate model: 126.35 MiB standard -> 56.81 MiB optimized, saving 69.54 MiB (55.0%)
 - Machine-readable GOD_MODE texture override rows: 12
 - Machine-readable global detail overlay rows: 10, minimum expected detail gain 20%
-- Issue counts: `NO_PROMPT_ORM_SLOT` = 22, `NO_PACKED_ORM_OR_MASK_SLOT` = 13, `NO_DETAIL_MAP_SLOT` = 22, `UNRESOLVED_TEXTURE_GUID` = 9, `LEGACY_MASK_SLOT_REQUIRES_CHANNEL_REVIEW` = 9
+- Issue counts: `NO_PROMPT_ORM_SLOT` = 19, `NO_PACKED_ORM_OR_MASK_SLOT` = 10, `NO_DETAIL_MAP_SLOT` = 19, `UNRESOLVED_TEXTURE_GUID` = 9, `LEGACY_MASK_SLOT_REQUIRES_CHANNEL_REVIEW` = 9
 
-Conclusion: the current albedo set does not break the offline energy test. The material system has zero prompt-authoritative ORM slots, nine legacy/unknown mask slots, and zero wired detail slots. Five texture import settings are suspect. Broad unresolved texture GUID debt remains at 9 materials / 27 refs, but only 2 materials / 8 refs are prompt-surface unresolved debt after non-surface filtering. Both prompt-surface unresolved materials are `BLOCKER` severity because base/normal slots are unresolved. The offline residency estimate is not Unity profiler proof; it is a deterministic BC-class triage model for asset prioritization.
+Conclusion: the current albedo set does not break the offline energy test. The material system has zero prompt-authoritative ORM slots, nine legacy/unknown mask slots, and zero wired detail slots. Four texture import settings are suspect. Broad unresolved texture GUID debt remains at 9 materials / 27 refs, but only 2 materials / 8 refs are prompt-surface unresolved debt after non-surface filtering. Both prompt-surface unresolved materials are `BLOCKER` severity because base/normal slots are unresolved. Prologue planet/cloud materials are excluded from the prompt-surface migration queue because they are celestial/prologue content, not inspectable NASA-Punk worn surface materials. The offline residency estimate is not Unity profiler proof; it is a deterministic BC-class triage model for asset prioritization.
 
 ## ORM Packing Spec
 
@@ -228,7 +228,7 @@ Load-shed:
 python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --sample-size 256 --json Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.json --markdown Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.md --csv-prefix Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA --ci-surface-gates
 ```
 
-Current result: `ci_surface_gates=enabled`, `active_gate_profiles=surface_safe`, `active_gates=energy_failures,energy_warnings,albedo_read_errors,texture_budget`, `textures=137`, `energy_failures=0`, `energy_warnings=0`, `texture_read_errors=0`, `albedo_read_errors=0`, `import_issue_textures=5`, `estimated_texture_mib=497.565`, `texture_budget_mib=900.0`, `texture_budget_status=PASS`, `materials_with_prompt_orm=0`, `materials_with_legacy_mask=9`, `materials_with_detail=0`, `detail_map_missing_materials=22`, `channel_packing_candidates=22`, `channel_candidate_saved_mib=80.52`, `god_mode_override_count=12`, `global_detail_overlay_count=10`, `materials_with_unresolved_texture_refs=9`, `unresolved_texture_refs=27`, `surface_materials_with_unresolved_texture_refs=2`, `surface_unresolved_texture_refs=8`, `surface_unresolved_blocker_materials=2`, `surface_migration_queue_rows=22`, `surface_migration_queue_priority_counts=BLOCKER=2, MEDIUM=9, LOW=11`, `materials_with_issues=29`.
+Current result: `ci_surface_gates=enabled`, `active_gate_profiles=surface_safe`, `active_gates=energy_failures,energy_warnings,albedo_read_errors,texture_budget`, `textures=137`, `albedo_candidates=25`, `energy_failures=0`, `energy_warnings=0`, `texture_read_errors=0`, `albedo_read_errors=0`, `import_issue_textures=4`, `estimated_texture_mib=497.565`, `texture_budget_mib=900.0`, `texture_budget_status=PASS`, `materials_with_prompt_orm=0`, `materials_with_legacy_mask=9`, `materials_with_detail=0`, `detail_map_missing_materials=19`, `channel_packing_candidates=19`, `channel_candidate_saved_mib=69.54`, `god_mode_override_count=12`, `global_detail_overlay_count=10`, `materials_with_unresolved_texture_refs=9`, `unresolved_texture_refs=27`, `surface_materials_with_unresolved_texture_refs=2`, `surface_unresolved_texture_refs=8`, `surface_unresolved_blocker_materials=2`, `surface_migration_queue_rows=19`, `surface_migration_queue_priority_counts=BLOCKER=2, MEDIUM=9, LOW=8`, `materials_with_issues=26`.
 
 Generated CSV artifacts:
 
@@ -262,7 +262,7 @@ python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Proj
 
 `--ci-surface-gates` is the current-corpus safe profile. It enables `energy_warnings`, `albedo_read_errors`, and `texture_budget`. It does not enable broad import/material/unresolved-reference gates because current first-party assets still have known migration debt.
 Generated JSON/Markdown artifacts must record both available profiles and active gates so the report proves which gate mode produced it.
-Projection/HUD, UI, celestial/moon/gas giant, skybox, and terrain material names are excluded from surface ORM/detail migration debt because they are not first-party hard-surface PBR material targets for this prompt.
+Projection/HUD, UI, celestial/moon/gas giant, prologue planet/cloud, skybox, and terrain material names are excluded from surface ORM/detail migration debt because they are not first-party hard-surface PBR material targets for this prompt.
 
 Exit code contract:
 

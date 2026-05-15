@@ -45,9 +45,9 @@
   },
   "texture_summary": {
     "texture_count": 137,
-    "albedo_candidate_count": 26,
+    "albedo_candidate_count": 25,
     "normal_candidate_count": 30,
-    "orm_candidate_count": 17,
+    "orm_candidate_count": 16,
     "detail_candidate_count": 13,
     "energy_fail_count": 0,
     "energy_warn_count": 0,
@@ -55,9 +55,9 @@
     "read_error_textures": [],
     "albedo_read_error_count": 0,
     "albedo_read_error_textures": [],
-    "import_issue_count": 5,
+    "import_issue_count": 4,
     "import_issue_counts": {
-      "DATA_TEXTURE_SRGB_ON": 3,
+      "DATA_TEXTURE_SRGB_ON": 2,
       "NORMAL_SRGB_ON": 3,
       "NORMAL_NOT_TEXTURETYPE_NORMAL": 3
     },
@@ -531,43 +531,6 @@
         "height": 2048,
         "memory_role": "BC5_NORMAL_8BPP",
         "estimated_resident_mib": 10.667
-      },
-      {
-        "path": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_spec.png",
-        "extension": ".png",
-        "meta": {
-          "guid": "3c0b44c605b1a034599e9d00fe4d4843",
-          "enableMipMap": "1",
-          "sRGBTexture": "1",
-          "isReadable": "0",
-          "streamingMipmaps": "0",
-          "textureFormat": "1",
-          "maxTextureSize": "2048",
-          "aniso": "1",
-          "textureType": "0",
-          "DefaultTexturePlatform.maxTextureSize": "2048",
-          "DefaultTexturePlatform.textureFormat": "-1",
-          "textureCompression": "1",
-          "DefaultTexturePlatform.textureCompression": "1",
-          "Standalone.maxTextureSize": "2048",
-          "Standalone.textureFormat": "-1",
-          "Standalone.textureCompression": "1",
-          "WebGL.maxTextureSize": "2048",
-          "WebGL.textureFormat": "-1",
-          "WebGL.textureCompression": "1"
-        },
-        "is_albedo_candidate": false,
-        "is_detail_candidate": false,
-        "is_normal": false,
-        "is_orm_candidate": true,
-        "import_issues": [
-          "DATA_TEXTURE_SRGB_ON"
-        ],
-        "mode": "L",
-        "width": 4096,
-        "height": 2048,
-        "memory_role": "BC7_ORM_LINEAR_8BPP",
-        "estimated_resident_mib": 10.667
       }
     ],
     "estimated_texture_mib": 497.565,
@@ -914,7 +877,7 @@
           "WebGL.textureFormat": "-1",
           "WebGL.textureCompression": "1"
         },
-        "is_albedo_candidate": true,
+        "is_albedo_candidate": false,
         "is_detail_candidate": false,
         "is_normal": false,
         "is_orm_candidate": false,
@@ -922,14 +885,8 @@
         "mode": "RGB",
         "width": 4096,
         "height": 2048,
-        "memory_role": "BC7_ALBEDO_8BPP",
-        "estimated_resident_mib": 10.667,
-        "energy_status": "PASS",
-        "energy_reason": "within albedo luminance budget",
-        "mean_srgb_luma": 0.19415,
-        "mean_linear_luma": 0.10429,
-        "p95_srgb_luma": 0.97984,
-        "bright_pixel_ratio": 0.07571
+        "memory_role": "BC7_UNKNOWN_8BPP",
+        "estimated_resident_mib": 10.667
       },
       {
         "path": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_norm.png",
@@ -996,14 +953,12 @@
         "is_albedo_candidate": false,
         "is_detail_candidate": false,
         "is_normal": false,
-        "is_orm_candidate": true,
-        "import_issues": [
-          "DATA_TEXTURE_SRGB_ON"
-        ],
+        "is_orm_candidate": false,
+        "import_issues": [],
         "mode": "L",
         "width": 4096,
         "height": 2048,
-        "memory_role": "BC7_ORM_LINEAR_8BPP",
+        "memory_role": "BC7_UNKNOWN_8BPP",
         "estimated_resident_mib": 10.667
       },
       {
@@ -2353,7 +2308,7 @@
     "materials_with_legacy_mask": 9,
     "materials_with_packed_mask": 9,
     "materials_with_detail": 0,
-    "detail_map_missing_count": 22,
+    "detail_map_missing_count": 19,
     "detail_map_missing_materials": [
       {
         "path": "Art/Materials/Meshy_AI_Alien_barnacles_clust_0301230506_texture.mat",
@@ -3337,149 +3292,9 @@
           "NO_PACKED_ORM_OR_MASK_SLOT",
           "NO_DETAIL_MAP_SLOT"
         ]
-      },
-      {
-        "path": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonClouds.mat",
-        "texture_properties": {
-          "_BaseMap": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png",
-          "_MainTex": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png"
-        },
-        "has_base_map": true,
-        "has_normal": false,
-        "has_prompt_orm": false,
-        "has_legacy_packed_mask": false,
-        "has_packed_mask": false,
-        "has_detail": false,
-        "is_surface_material_candidate": true,
-        "unresolved_texture_refs": [],
-        "unresolved_texture_ref_summary": {
-          "severity": "NONE",
-          "base_color_refs": [],
-          "normal_refs": [],
-          "data_refs": [],
-          "detail_refs": [],
-          "other_refs": [],
-          "recommendation": "No unresolved material texture refs."
-        },
-        "channel_packing_candidate": {
-          "path": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonClouds.mat",
-          "priority": "LOW",
-          "reason": "Base material has no prompt ORM slot; author or reuse ORM if the material is near-field.",
-          "base_maps": [
-            "_BaseMap:_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png",
-            "_MainTex:_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png"
-          ],
-          "normal_maps": [],
-          "occlusion_sources": [],
-          "roughness_sources": [],
-          "metallic_sources": [],
-          "legacy_mask_sources": [],
-          "detail_sources": [],
-          "has_detail": false
-        },
-        "issues": [
-          "NO_PROMPT_ORM_SLOT",
-          "NO_PACKED_ORM_OR_MASK_SLOT",
-          "NO_DETAIL_MAP_SLOT"
-        ]
-      },
-      {
-        "path": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonSurface.mat",
-        "texture_properties": {
-          "_BaseMap": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_diff.png",
-          "_BumpMap": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_bump.png",
-          "_MainTex": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_diff.png",
-          "_ParallaxMap": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_bump.png",
-          "unity_ShadowMasks": "d0353a89b1f911e48b9e16bdc9f2e058"
-        },
-        "has_base_map": true,
-        "has_normal": true,
-        "has_prompt_orm": false,
-        "has_legacy_packed_mask": false,
-        "has_packed_mask": false,
-        "has_detail": false,
-        "is_surface_material_candidate": true,
-        "unresolved_texture_refs": [],
-        "unresolved_texture_ref_summary": {
-          "severity": "NONE",
-          "base_color_refs": [],
-          "normal_refs": [],
-          "data_refs": [],
-          "detail_refs": [],
-          "other_refs": [],
-          "recommendation": "No unresolved material texture refs."
-        },
-        "channel_packing_candidate": {
-          "path": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonSurface.mat",
-          "priority": "LOW",
-          "reason": "Base material has no prompt ORM slot; author or reuse ORM if the material is near-field.",
-          "base_maps": [
-            "_BaseMap:_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_diff.png",
-            "_MainTex:_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_diff.png"
-          ],
-          "normal_maps": [
-            "_BumpMap:_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_bump.png"
-          ],
-          "occlusion_sources": [],
-          "roughness_sources": [],
-          "metallic_sources": [],
-          "legacy_mask_sources": [],
-          "detail_sources": [],
-          "has_detail": false
-        },
-        "issues": [
-          "NO_PROMPT_ORM_SLOT",
-          "NO_PACKED_ORM_OR_MASK_SLOT",
-          "NO_DETAIL_MAP_SLOT"
-        ]
-      },
-      {
-        "path": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/Materials/clouds0_diff.mat",
-        "texture_properties": {
-          "_BaseMap": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png",
-          "_MainTex": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png"
-        },
-        "has_base_map": true,
-        "has_normal": false,
-        "has_prompt_orm": false,
-        "has_legacy_packed_mask": false,
-        "has_packed_mask": false,
-        "has_detail": false,
-        "is_surface_material_candidate": true,
-        "unresolved_texture_refs": [],
-        "unresolved_texture_ref_summary": {
-          "severity": "NONE",
-          "base_color_refs": [],
-          "normal_refs": [],
-          "data_refs": [],
-          "detail_refs": [],
-          "other_refs": [],
-          "recommendation": "No unresolved material texture refs."
-        },
-        "channel_packing_candidate": {
-          "path": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/Materials/clouds0_diff.mat",
-          "priority": "LOW",
-          "reason": "Base material has no prompt ORM slot; author or reuse ORM if the material is near-field.",
-          "base_maps": [
-            "_BaseMap:_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png",
-            "_MainTex:_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png"
-          ],
-          "normal_maps": [],
-          "occlusion_sources": [],
-          "roughness_sources": [],
-          "metallic_sources": [],
-          "legacy_mask_sources": [],
-          "detail_sources": [],
-          "has_detail": false
-        },
-        "issues": [
-          "NO_PROMPT_ORM_SLOT",
-          "NO_PACKED_ORM_OR_MASK_SLOT",
-          "NO_DETAIL_MAP_SLOT"
-        ]
       }
     ],
-    "materials_with_issues": 29,
+    "materials_with_issues": 26,
     "materials_with_unresolved_texture_refs": 9,
     "unresolved_texture_ref_count": 27,
     "unresolved_texture_ref_severity_counts": {
@@ -4025,11 +3840,11 @@
         ]
       }
     ],
-    "surface_migration_queue_count": 22,
+    "surface_migration_queue_count": 19,
     "surface_migration_queue_priority_counts": {
       "BLOCKER": 2,
       "MEDIUM": 9,
-      "LOW": 11
+      "LOW": 8
     },
     "surface_material_migration_queue": [
       {
@@ -4401,67 +4216,11 @@
         ],
         "data_refs": [],
         "detail_refs": []
-      },
-      {
-        "path": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonClouds.mat",
-        "priority": "LOW",
-        "action": "Author prompt ORM if near-field, then assign shared detail overlay.",
-        "needs_reference_repair": false,
-        "unresolved_severity": "NONE",
-        "needs_prompt_orm": true,
-        "needs_detail_map": true,
-        "needs_legacy_mask_review": false,
-        "channel_priority": "LOW",
-        "base_maps": [
-          "_BaseMap:_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png",
-          "_MainTex:_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png"
-        ],
-        "normal_maps": [],
-        "data_refs": [],
-        "detail_refs": []
-      },
-      {
-        "path": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonSurface.mat",
-        "priority": "LOW",
-        "action": "Author prompt ORM if near-field, then assign shared detail overlay.",
-        "needs_reference_repair": false,
-        "unresolved_severity": "NONE",
-        "needs_prompt_orm": true,
-        "needs_detail_map": true,
-        "needs_legacy_mask_review": false,
-        "channel_priority": "LOW",
-        "base_maps": [
-          "_BaseMap:_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_diff.png",
-          "_MainTex:_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_diff.png"
-        ],
-        "normal_maps": [
-          "_BumpMap:_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_bump.png"
-        ],
-        "data_refs": [],
-        "detail_refs": []
-      },
-      {
-        "path": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/Materials/clouds0_diff.mat",
-        "priority": "LOW",
-        "action": "Author prompt ORM if near-field, then assign shared detail overlay.",
-        "needs_reference_repair": false,
-        "unresolved_severity": "NONE",
-        "needs_prompt_orm": true,
-        "needs_detail_map": true,
-        "needs_legacy_mask_review": false,
-        "channel_priority": "LOW",
-        "base_maps": [
-          "_BaseMap:_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png",
-          "_MainTex:_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png"
-        ],
-        "normal_maps": [],
-        "data_refs": [],
-        "detail_refs": []
       }
     ],
-    "channel_packing_candidate_count": 22,
+    "channel_packing_candidate_count": 19,
     "channel_packing_priority_counts": {
-      "LOW": 13,
+      "LOW": 10,
       "MEDIUM": 9
     },
     "channel_packing_candidates": [
@@ -4824,71 +4583,21 @@
         "legacy_mask_sources": [],
         "detail_sources": [],
         "has_detail": false
-      },
-      {
-        "path": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonClouds.mat",
-        "priority": "LOW",
-        "reason": "Base material has no prompt ORM slot; author or reuse ORM if the material is near-field.",
-        "base_maps": [
-          "_BaseMap:_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png",
-          "_MainTex:_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png"
-        ],
-        "normal_maps": [],
-        "occlusion_sources": [],
-        "roughness_sources": [],
-        "metallic_sources": [],
-        "legacy_mask_sources": [],
-        "detail_sources": [],
-        "has_detail": false
-      },
-      {
-        "path": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonSurface.mat",
-        "priority": "LOW",
-        "reason": "Base material has no prompt ORM slot; author or reuse ORM if the material is near-field.",
-        "base_maps": [
-          "_BaseMap:_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_diff.png",
-          "_MainTex:_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_diff.png"
-        ],
-        "normal_maps": [
-          "_BumpMap:_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_bump.png"
-        ],
-        "occlusion_sources": [],
-        "roughness_sources": [],
-        "metallic_sources": [],
-        "legacy_mask_sources": [],
-        "detail_sources": [],
-        "has_detail": false
-      },
-      {
-        "path": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/Materials/clouds0_diff.mat",
-        "priority": "LOW",
-        "reason": "Base material has no prompt ORM slot; author or reuse ORM if the material is near-field.",
-        "base_maps": [
-          "_BaseMap:_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png",
-          "_MainTex:_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png"
-        ],
-        "normal_maps": [],
-        "occlusion_sources": [],
-        "roughness_sources": [],
-        "metallic_sources": [],
-        "legacy_mask_sources": [],
-        "detail_sources": [],
-        "has_detail": false
       }
     ],
     "vram_model": {
       "standard_mib_per_material": 6.65,
       "optimized_mib_per_material": 2.99,
-      "candidate_standard_mib": 146.3,
-      "candidate_optimized_mib": 65.78,
-      "candidate_saved_mib": 80.52,
+      "candidate_standard_mib": 126.35,
+      "candidate_optimized_mib": 56.81,
+      "candidate_saved_mib": 69.54,
       "candidate_reduction_percent": 55.0
     },
     "issue_counts": {
       "UNRESOLVED_TEXTURE_GUID": 9,
-      "NO_PROMPT_ORM_SLOT": 22,
-      "NO_PACKED_ORM_OR_MASK_SLOT": 13,
-      "NO_DETAIL_MAP_SLOT": 22,
+      "NO_PROMPT_ORM_SLOT": 19,
+      "NO_PACKED_ORM_OR_MASK_SLOT": 10,
+      "NO_DETAIL_MAP_SLOT": 19,
       "LEGACY_MASK_SLOT_REQUIRES_CHANNEL_REVIEW": 9
     },
     "issue_materials": [
@@ -6125,146 +5834,6 @@
           "occlusion_sources": [
             "_OcclusionMap:Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_AmbientOcclusion.jpg"
           ],
-          "roughness_sources": [],
-          "metallic_sources": [],
-          "legacy_mask_sources": [],
-          "detail_sources": [],
-          "has_detail": false
-        },
-        "issues": [
-          "NO_PROMPT_ORM_SLOT",
-          "NO_PACKED_ORM_OR_MASK_SLOT",
-          "NO_DETAIL_MAP_SLOT"
-        ]
-      },
-      {
-        "path": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonClouds.mat",
-        "texture_properties": {
-          "_BaseMap": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png",
-          "_MainTex": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png"
-        },
-        "has_base_map": true,
-        "has_normal": false,
-        "has_prompt_orm": false,
-        "has_legacy_packed_mask": false,
-        "has_packed_mask": false,
-        "has_detail": false,
-        "is_surface_material_candidate": true,
-        "unresolved_texture_refs": [],
-        "unresolved_texture_ref_summary": {
-          "severity": "NONE",
-          "base_color_refs": [],
-          "normal_refs": [],
-          "data_refs": [],
-          "detail_refs": [],
-          "other_refs": [],
-          "recommendation": "No unresolved material texture refs."
-        },
-        "channel_packing_candidate": {
-          "path": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonClouds.mat",
-          "priority": "LOW",
-          "reason": "Base material has no prompt ORM slot; author or reuse ORM if the material is near-field.",
-          "base_maps": [
-            "_BaseMap:_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png",
-            "_MainTex:_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png"
-          ],
-          "normal_maps": [],
-          "occlusion_sources": [],
-          "roughness_sources": [],
-          "metallic_sources": [],
-          "legacy_mask_sources": [],
-          "detail_sources": [],
-          "has_detail": false
-        },
-        "issues": [
-          "NO_PROMPT_ORM_SLOT",
-          "NO_PACKED_ORM_OR_MASK_SLOT",
-          "NO_DETAIL_MAP_SLOT"
-        ]
-      },
-      {
-        "path": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonSurface.mat",
-        "texture_properties": {
-          "_BaseMap": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_diff.png",
-          "_BumpMap": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_bump.png",
-          "_MainTex": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_diff.png",
-          "_ParallaxMap": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_bump.png",
-          "unity_ShadowMasks": "d0353a89b1f911e48b9e16bdc9f2e058"
-        },
-        "has_base_map": true,
-        "has_normal": true,
-        "has_prompt_orm": false,
-        "has_legacy_packed_mask": false,
-        "has_packed_mask": false,
-        "has_detail": false,
-        "is_surface_material_candidate": true,
-        "unresolved_texture_refs": [],
-        "unresolved_texture_ref_summary": {
-          "severity": "NONE",
-          "base_color_refs": [],
-          "normal_refs": [],
-          "data_refs": [],
-          "detail_refs": [],
-          "other_refs": [],
-          "recommendation": "No unresolved material texture refs."
-        },
-        "channel_packing_candidate": {
-          "path": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonSurface.mat",
-          "priority": "LOW",
-          "reason": "Base material has no prompt ORM slot; author or reuse ORM if the material is near-field.",
-          "base_maps": [
-            "_BaseMap:_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_diff.png",
-            "_MainTex:_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_diff.png"
-          ],
-          "normal_maps": [
-            "_BumpMap:_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_bump.png"
-          ],
-          "occlusion_sources": [],
-          "roughness_sources": [],
-          "metallic_sources": [],
-          "legacy_mask_sources": [],
-          "detail_sources": [],
-          "has_detail": false
-        },
-        "issues": [
-          "NO_PROMPT_ORM_SLOT",
-          "NO_PACKED_ORM_OR_MASK_SLOT",
-          "NO_DETAIL_MAP_SLOT"
-        ]
-      },
-      {
-        "path": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/Materials/clouds0_diff.mat",
-        "texture_properties": {
-          "_BaseMap": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png",
-          "_MainTex": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png"
-        },
-        "has_base_map": true,
-        "has_normal": false,
-        "has_prompt_orm": false,
-        "has_legacy_packed_mask": false,
-        "has_packed_mask": false,
-        "has_detail": false,
-        "is_surface_material_candidate": true,
-        "unresolved_texture_refs": [],
-        "unresolved_texture_ref_summary": {
-          "severity": "NONE",
-          "base_color_refs": [],
-          "normal_refs": [],
-          "data_refs": [],
-          "detail_refs": [],
-          "other_refs": [],
-          "recommendation": "No unresolved material texture refs."
-        },
-        "channel_packing_candidate": {
-          "path": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/Materials/clouds0_diff.mat",
-          "priority": "LOW",
-          "reason": "Base material has no prompt ORM slot; author or reuse ORM if the material is near-field.",
-          "base_maps": [
-            "_BaseMap:_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png",
-            "_MainTex:_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png"
-          ],
-          "normal_maps": [],
-          "occlusion_sources": [],
           "roughness_sources": [],
           "metallic_sources": [],
           "legacy_mask_sources": [],

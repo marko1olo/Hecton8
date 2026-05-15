@@ -836,6 +836,40 @@ Verification:
 - Artifact grep confirmed queue rows in doctrine, generated Markdown/JSON, status, rationale, log, tool, and tests.
 - Artifact readback confirmed exit code 10 and `Surface Material Texture GUIDs` in generated documentation.
 
+## 2026-05-15 - Prologue Planet False-Positive Pass
+
+What was wrong:
+
+- `_PROLOGUE_CONTENT/Textures/Planets/pLANET` cloud/surface materials were still entering the prompt-surface ORM/detail migration queue.
+- Those rows are celestial/prologue content, not inspectable worn hard-surface PBR materials for this agent.
+
+What was done:
+
+- Added `/textures/planets/` to non-surface texture and material filtering.
+- Added regression coverage proving prologue planet textures are not albedo energy candidates and resolved planet material refs do not create channel/detail/material debt.
+- Regenerated JSON, Markdown, and CSV audit artifacts.
+- Updated the surface doctrine with current counts and the explicit prologue planet/cloud exclusion.
+
+Cinematic Cheats used:
+
+- None. This is offline evidence cleanup so later visual-fake ORM/detail work targets the correct surface lane.
+
+Exact Microseconds saved:
+
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0 us.
+- Migration triage was reduced by 3 false-positive rows: queue 22 -> 19, channel candidates 22 -> 19, detail-missing rows 22 -> 19.
+
+Verification:
+
+- `python -m py_compile Tools\MaterialAudit.py Tools\test_material_audit.py`: passed.
+- `python -m unittest Tools.test_material_audit`: passed 13 tests.
+- Full first-party audit with `--ci-surface-gates`: passed with 137 textures, 25 albedo candidates, 0 energy warnings, 0 albedo read errors, and 497.565/900.0 MiB texture budget PASS.
+- Full audit current counts: `import_issue_textures=4`, `orm_candidates=16`, `materials_with_issues=26`, `channel_packing_candidates=19`, `surface_migration_queue_rows=19`.
+- Queue priority counts: `BLOCKER=2`, `MEDIUM=9`, `LOW=8`.
+- Scoped import/channel/detail gates returned expected exits `2/8/9`.
+- Full-root `--fail-on-surface-unresolved-refs` returned expected exit `10`.
+
 ## 2026-05-15 - Surface Blocker Severity Pass
 
 What was wrong:

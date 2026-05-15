@@ -10,30 +10,30 @@ Include third-party: `False`
 | Metric | Value |
 | --- | --- |
 | Textures | 137 |
-| Albedo candidates | 26 |
+| Albedo candidates | 25 |
 | Albedo energy failures | 0 |
 | Albedo energy warnings | 0 |
 | Texture read errors | 0 |
 | Albedo read errors | 0 |
-| Import issue textures | 5 |
+| Import issue textures | 4 |
 | Estimated texture residency MiB | 497.565 |
-| ORM candidates | 17 |
+| ORM candidates | 16 |
 | Detail candidates | 13 |
 | Materials | 176 |
 | Materials with prompt ORM | 0 |
 | Materials with legacy mask | 9 |
 | Materials with packed mask | 9 |
 | Materials with detail | 0 |
-| Materials missing detail maps | 22 |
-| Materials with issues | 29 |
+| Materials missing detail maps | 19 |
+| Materials with issues | 26 |
 | Materials with unresolved texture refs | 9 |
 | Unresolved texture refs | 27 |
 | Surface materials with unresolved texture refs | 2 |
 | Surface unresolved texture refs | 8 |
 | Surface unresolved BLOCKER materials | 2 |
-| Surface migration queue rows | 22 |
-| Surface migration queue priority counts | BLOCKER=2, MEDIUM=9, LOW=11 |
-| Channel packing candidates | 22 |
+| Surface migration queue rows | 19 |
+| Surface migration queue priority counts | BLOCKER=2, MEDIUM=9, LOW=8 |
+| Channel packing candidates | 19 |
 
 ## Gate Exit Codes
 
@@ -79,9 +79,9 @@ Include third-party: `False`
 | --- | --- |
 | Standard MiB/material | 6.65 |
 | Optimized MiB/material | 2.99 |
-| Candidate standard MiB | 146.3 |
-| Candidate optimized MiB | 65.78 |
-| Candidate saved MiB | 80.52 |
+| Candidate standard MiB | 126.35 |
+| Candidate optimized MiB | 56.81 |
+| Candidate saved MiB | 69.54 |
 | Candidate reduction percent | 55.0 |
 
 ## GOD_MODE Texture Overrides
@@ -120,7 +120,7 @@ Include third-party: `False`
 
 | Issue | Count |
 | --- | --- |
-| DATA_TEXTURE_SRGB_ON | 3 |
+| DATA_TEXTURE_SRGB_ON | 2 |
 | NORMAL_NOT_TEXTURETYPE_NORMAL | 3 |
 | NORMAL_SRGB_ON | 3 |
 
@@ -129,9 +129,9 @@ Include third-party: `False`
 | Issue | Count |
 | --- | --- |
 | LEGACY_MASK_SLOT_REQUIRES_CHANNEL_REVIEW | 9 |
-| NO_DETAIL_MAP_SLOT | 22 |
-| NO_PACKED_ORM_OR_MASK_SLOT | 13 |
-| NO_PROMPT_ORM_SLOT | 22 |
+| NO_DETAIL_MAP_SLOT | 19 |
+| NO_PACKED_ORM_OR_MASK_SLOT | 10 |
+| NO_PROMPT_ORM_SLOT | 19 |
 | UNRESOLVED_TEXTURE_GUID | 9 |
 
 ## Detail Candidates
@@ -172,9 +172,6 @@ Include third-party: `False`
 | Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/mat_Rock2.mat | _BaseMap:920eb4a5d89009b42a522ff2aa1e6ef3; _MainTex:920eb4a5d89009b42a522ff2aa1e6ef3 | _BumpMap:5189dcc817bc5e24095d445209499d1f |
 | Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/mat_Rock_Shared.mat | _BaseMap:920eb4a5d89009b42a522ff2aa1e6ef3; _MainTex:920eb4a5d89009b42a522ff2aa1e6ef3 | _BumpMap:5189dcc817bc5e24095d445209499d1f |
 | Materials/WorldRuntime/ProceduralPlaceholders/TerrainLod/MAT_family_rock_arch_large_Placeholder.mat | _BaseMap:Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_Color.jpg; _MainTex:Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_Color.jpg | _BumpMap:Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_NormalGL.jpg |
-| _PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonClouds.mat | _BaseMap:_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png; _MainTex:_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png |  |
-| _PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonSurface.mat | _BaseMap:_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_diff.png; _MainTex:_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_diff.png | _BumpMap:_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_bump.png |
-| _PROLOGUE_CONTENT/Textures/Planets/pLANET/Materials/clouds0_diff.mat | _BaseMap:_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png; _MainTex:_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png |  |
 
 ## Texture Import Issues
 
@@ -184,7 +181,6 @@ Include third-party: `False`
 | Art/TEXTURES/Detali/soft_plume_noise_-_kakoy_to_seryy_nu_norm.png | NORMAL_SRGB_ON, NORMAL_NOT_TEXTURETYPE_NORMAL, DATA_TEXTURE_SRGB_ON | Disable sRGB for normal maps.; Set Texture Type to Normal Map.; Disable sRGB; data/mask/detail maps must be sampled linear. |
 | _PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_bump.png | NORMAL_SRGB_ON, NORMAL_NOT_TEXTURETYPE_NORMAL | Disable sRGB for normal maps.; Set Texture Type to Normal Map. |
 | _PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_norm.png | NORMAL_SRGB_ON, NORMAL_NOT_TEXTURETYPE_NORMAL | Disable sRGB for normal maps.; Set Texture Type to Normal Map. |
-| _PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_spec.png | DATA_TEXTURE_SRGB_ON | Disable sRGB; data/mask/detail maps must be sampled linear. |
 
 ## Texture Read Errors
 
@@ -220,9 +216,6 @@ No texture read errors detected.
 | Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/mat_Rock2.mat | UNRESOLVED_TEXTURE_GUID, NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Resolve the texture GUID inside first-party assets or quarantine the external dependency.; Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
 | Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/mat_Rock_Shared.mat | UNRESOLVED_TEXTURE_GUID, NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Resolve the texture GUID inside first-party assets or quarantine the external dependency.; Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
 | Materials/WorldRuntime/ProceduralPlaceholders/TerrainLod/MAT_family_rock_arch_large_Placeholder.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
-| _PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonClouds.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
-| _PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonSurface.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
-| _PROLOGUE_CONTENT/Textures/Planets/pLANET/Materials/clouds0_diff.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
 
 ## Unresolved Material Texture GUIDs
 
@@ -268,9 +261,6 @@ No texture read errors detected.
 | Art/Models/Rocks/Rock 6/rock6/rock_6.mat | LOW | Author prompt ORM if near-field, then assign shared detail overlay. | True | True | False |
 | Art/Models/Rocks/Rock 7/Materials/2.mat | LOW | Author prompt ORM if near-field, then assign shared detail overlay. | True | True | False |
 | Materials/WorldRuntime/ProceduralPlaceholders/TerrainLod/MAT_family_rock_arch_large_Placeholder.mat | LOW | Author prompt ORM if near-field, then assign shared detail overlay. | True | True | False |
-| _PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonClouds.mat | LOW | Author prompt ORM if near-field, then assign shared detail overlay. | True | True | False |
-| _PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonSurface.mat | LOW | Author prompt ORM if near-field, then assign shared detail overlay. | True | True | False |
-| _PROLOGUE_CONTENT/Textures/Planets/pLANET/Materials/clouds0_diff.mat | LOW | Author prompt ORM if near-field, then assign shared detail overlay. | True | True | False |
 
 ## Texture Memory Hotspots
 
@@ -285,9 +275,9 @@ No texture read errors detected.
 | _PROLOGUE_CONTENT/Textures/Planets/Clouds/GASgIANT/clouds0_diff.png | 10.667 | BC7_UNKNOWN_8BPP | 4096x2048 |
 | _PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png | 10.667 | BC7_UNKNOWN_8BPP | 4096x2048 |
 | _PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_bump.png | 10.667 | BC5_NORMAL_8BPP | 4096x2048 |
-| _PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_diff.png | 10.667 | BC7_ALBEDO_8BPP | 4096x2048 |
+| _PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_diff.png | 10.667 | BC7_UNKNOWN_8BPP | 4096x2048 |
 | _PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_norm.png | 10.667 | BC5_NORMAL_8BPP | 4096x2048 |
-| _PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_spec.png | 10.667 | BC7_ORM_LINEAR_8BPP | 4096x2048 |
+| _PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_spec.png | 10.667 | BC7_UNKNOWN_8BPP | 4096x2048 |
 | Art/Models/Rocks/Rock 6/rock6/Mossy_Forest_Rock_vimrfjsaw_Mid_2K_AO.jpg | 5.333 | BC7_ORM_LINEAR_8BPP | 2048x2048 |
 | Art/Models/Rocks/Rock 6/rock6/Mossy_Forest_Rock_vimrfjsaw_Mid_2K_BaseColor.jpg | 5.333 | BC7_ALBEDO_8BPP | 2048x2048 |
 | Art/Models/Rocks/Rock 6/rock6/Mossy_Forest_Rock_vimrfjsaw_Mid_2K_Normal.jpg | 5.333 | BC5_NORMAL_8BPP | 2048x2048 |
@@ -320,6 +310,3 @@ No texture read errors detected.
 | Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/mat_Rock2.mat | LOW | Base material has no prompt ORM slot; author or reuse ORM if the material is near-field. | _OcclusionMap:df147ac10298ce44e9557850251a533a | False |
 | Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/mat_Rock_Shared.mat | LOW | Base material has no prompt ORM slot; author or reuse ORM if the material is near-field. | _OcclusionMap:df147ac10298ce44e9557850251a533a | False |
 | Materials/WorldRuntime/ProceduralPlaceholders/TerrainLod/MAT_family_rock_arch_large_Placeholder.mat | LOW | Base material has no prompt ORM slot; author or reuse ORM if the material is near-field. | _OcclusionMap:Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_AmbientOcclusion.jpg | False |
-| _PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonClouds.mat | LOW | Base material has no prompt ORM slot; author or reuse ORM if the material is near-field. |  | False |
-| _PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonSurface.mat | LOW | Base material has no prompt ORM slot; author or reuse ORM if the material is near-field. |  | False |
-| _PROLOGUE_CONTENT/Textures/Planets/pLANET/Materials/clouds0_diff.mat | LOW | Base material has no prompt ORM slot; author or reuse ORM if the material is near-field. |  | False |

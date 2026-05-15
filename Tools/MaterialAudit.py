@@ -93,7 +93,12 @@ ALBEDO_EXCLUDE_TOKENS = (
     "blue",
 )
 NORMAL_TOKENS = ("normal", "norm", "nrm", "bump")
-NON_SURFACE_PATH_PARTS = ("/sprites/ui/", "/skyboxes/")
+NON_SURFACE_PATH_PARTS = ("/sprites/ui/", "/skyboxes/", "/textures/planets/")
+NON_SURFACE_MATERIAL_PATH_PARTS = (
+    "/celestial/",
+    "/skyboxes/",
+    "/textures/planets/",
+)
 NON_SURFACE_MATERIAL_NAME_TOKENS = {
     "celestial",
     "hud",
@@ -358,6 +363,10 @@ def is_generated_lighting_texture(path: Path) -> bool:
 
 
 def is_surface_material_candidate(path: str, props: dict[str, str]) -> bool:
+    lowered_path = "/" + path.lower().replace("\\", "/")
+    if any(part in lowered_path for part in NON_SURFACE_MATERIAL_PATH_PARTS):
+        return False
+
     material_terms = set(tokenize_name(path))
     if material_terms.intersection(NON_SURFACE_MATERIAL_NAME_TOKENS):
         return False
@@ -370,7 +379,7 @@ def is_surface_material_candidate(path: str, props: dict[str, str]) -> bool:
         lowered = base_path.lower().replace("\\", "/")
         if lowered.endswith(".rendertexture"):
             return False
-        if "/sprites/ui/" in lowered or "/skyboxes/" in lowered:
+        if any(part in f"/{lowered}" for part in NON_SURFACE_PATH_PARTS):
             return False
     return True
 

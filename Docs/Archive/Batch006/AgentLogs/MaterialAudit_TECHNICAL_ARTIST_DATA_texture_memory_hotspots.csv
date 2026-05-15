@@ -8,9 +8,9 @@ _PROLOGUE_CONTENT/Textures/Planets/Clouds/GASgIANT/clouds.png,10.667,BC7_UNKNOWN
 _PROLOGUE_CONTENT/Textures/Planets/Clouds/GASgIANT/clouds0_diff.png,10.667,BC7_UNKNOWN_8BPP,4096,2048
 _PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png,10.667,BC7_UNKNOWN_8BPP,4096,2048
 _PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_bump.png,10.667,BC5_NORMAL_8BPP,4096,2048
-_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_diff.png,10.667,BC7_ALBEDO_8BPP,4096,2048
+_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_diff.png,10.667,BC7_UNKNOWN_8BPP,4096,2048
 _PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_norm.png,10.667,BC5_NORMAL_8BPP,4096,2048
-_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_spec.png,10.667,BC7_ORM_LINEAR_8BPP,4096,2048
+_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_spec.png,10.667,BC7_UNKNOWN_8BPP,4096,2048
 Art/Models/Rocks/Rock 6/rock6/Mossy_Forest_Rock_vimrfjsaw_Mid_2K_AO.jpg,5.333,BC7_ORM_LINEAR_8BPP,2048,2048
 Art/Models/Rocks/Rock 6/rock6/Mossy_Forest_Rock_vimrfjsaw_Mid_2K_BaseColor.jpg,5.333,BC7_ALBEDO_8BPP,2048,2048
 Art/Models/Rocks/Rock 6/rock6/Mossy_Forest_Rock_vimrfjsaw_Mid_2K_Normal.jpg,5.333,BC5_NORMAL_8BPP,2048,2048

@@ -66,11 +66,13 @@ class MaterialAuditTests(unittest.TestCase):
     def test_classifier_ignores_non_surface_skybox_and_ui(self) -> None:
         skybox = Path("Assets/_Project/Art/Skyboxes/panorama_den.png")
         ui = Path("Assets/_Project/Art/Sprites/ui/Panel_Color.png")
+        planet = Path("Assets/_Project/_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_diff.png")
         surface = Path("Assets/_Project/Art/TEXTURES/Terrain/basalt/Rock031_1K-JPG_Color.jpg")
         orm = Path("Assets/_Project/Art/TEXTURES/Terrain/basalt/Rock031_1K-JPG_ORM.png")
 
         self.assertFalse(audit.classify_texture(skybox)["is_albedo_candidate"])
         self.assertFalse(audit.classify_texture(ui)["is_albedo_candidate"])
+        self.assertFalse(audit.classify_texture(planet)["is_albedo_candidate"])
         self.assertTrue(audit.classify_texture(surface)["is_albedo_candidate"])
         self.assertTrue(audit.classify_texture(orm)["is_orm_candidate"])
 
@@ -248,6 +250,39 @@ class MaterialAuditTests(unittest.TestCase):
             self.assertEqual(0, summary["detail_map_missing_count"])
             self.assertEqual(0, summary["materials_with_issues"])
 
+            planet_dir = root / "_PROLOGUE_CONTENT" / "Textures" / "Planets" / "pLANET"
+            planet_dir.mkdir(parents=True)
+            planet_albedo = planet_dir / "surface_diff.png"
+            planet_albedo.write_bytes(b"")
+            planet_albedo.with_name(planet_albedo.name + ".meta").write_text(
+                "\n".join([
+                    "fileFormatVersion: 2",
+                    "guid: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                ]),
+                encoding="utf-8",
+            )
+            planet_material = planet_dir / "Mat_HectonSurface.mat"
+            planet_material.write_text(
+                "\n".join(
+                    [
+                        "%YAML 1.1",
+                        "m_SavedProperties:",
+                        "  m_TexEnvs:",
+                        "  - _BaseMap:",
+                        "      m_Texture: {fileID: 2800000, guid: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb, type: 3}",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            report = audit.run_audit(root, 16, False)
+            summary = report["material_summary"]
+
+            self.assertEqual(2, summary["material_count"])
+            self.assertEqual(0, summary["channel_packing_candidate_count"])
+            self.assertEqual(0, summary["detail_map_missing_count"])
+            self.assertEqual(0, summary["materials_with_issues"])
+
             celestial = root / "Art" / "Materials" / "Celestial"
             celestial.mkdir(parents=True)
             celestial_material = celestial / "MAT_CelestialMoon_Test.mat"
@@ -266,7 +301,7 @@ class MaterialAuditTests(unittest.TestCase):
 
             report = audit.run_audit(root, 16, False)
             summary = report["material_summary"]
-            self.assertEqual(2, summary["material_count"])
+            self.assertEqual(3, summary["material_count"])
             self.assertEqual(0, summary["channel_packing_candidate_count"])
             self.assertEqual(0, summary["detail_map_missing_count"])
             self.assertEqual(0, summary["materials_with_issues"])

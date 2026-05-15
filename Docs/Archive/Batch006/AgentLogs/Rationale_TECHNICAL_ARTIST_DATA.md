@@ -247,3 +247,11 @@ Solution: Build a single `surface_material_migration_queue` sorted by practical 
 Rejected Alternatives: Keeping separate CSVs only was rejected because cross-file correlation causes missed blockers and repeated artist triage. Promoting all missing ORM rows to medium was rejected after readback because low-risk base-only materials should stay LOW until they are near-field or hero.
 Scalability potential: Low = queue starts with blocker repair so cheap-device imports do not carry broken surfaces. Middle = channel review can be batched. High = detail/ORM authoring can target visible surfaces first. Ultra = GOD_MODE material upgrades can consume the same queue after blockers are cleared.
 Hardware Impact: 0 us runtime impact. Current full audit reports `surface_migration_queue_rows=22` with `BLOCKER=2, MEDIUM=9, LOW=11`.
+
+## Prologue Planet False-Positive Filter
+
+Problem: The migration queue still included three `_PROLOGUE_CONTENT/Textures/Planets/pLANET` cloud/surface materials as LOW prompt-surface ORM/detail work. Those materials are celestial/prologue content, not inspectable worn NASA-Punk hard-surface materials.
+Solution: Extend non-surface filtering to `/textures/planets/` for texture classification, base-map references, and material paths; add regression coverage for a prologue planet texture and resolved planet material.
+Rejected Alternatives: Leaving the rows in the queue was rejected because it wastes surface-material migration time. Blanket-excluding every material named `surface` was rejected because valid rocks, panels, and terrain-adjacent surfaces would be lost.
+Scalability potential: Low = MX350-safe surface cleanup focuses on visible inspectable props and rocks. Middle = CI queue avoids assigning celestial/prologue work to the surface material lane. High = saved migration effort goes into shared detail overlays for cockpit/modules/rocks. Ultra = GOD_MODE overrides remain reserved for actual surface materials after blockers clear.
+Hardware Impact: 0 us runtime impact. Current full audit reports `surface_migration_queue_rows=19` with `BLOCKER=2, MEDIUM=9, LOW=8`; channel-packing modeled savings is now 69.54 MiB after removing non-surface prologue false positives.
