@@ -311,3 +311,15 @@ Rejected Alternatives: Treating all unmatched sessions as GPT-5.5 was rejected b
 Scalability potential: Low/Middle/High/Ultra process gains an explicit spend throttle. Future agents can see that the last 24h alone burned 3.237B tokens and about USD 1.04k cache-aware, and that the live tail added another 102.15M tokens at 27,749.37 tokens/sec after the full scan.
 
 Hardware Impact: 0 runtime microseconds on i3/MX350. No runtime code changed. Process impact: identifies 96.003% cache dependence and 57,636.87 tokens per meaningful script LOC as the current context-recursion signature.
+
+## Decision 26 - Live Burn Source Sampling
+
+Problem: Rolling totals show that tokens are still being consumed, but they do not identify which active threads are currently burning tokens.
+
+Solution: Use a two-point SQLite sample over `threads.tokens_used`, compare per-thread deltas, and write `COMPUTE_LIVE_BURN_SOURCES.md`. Use blended cache-aware rates from the full JSONL ledger because SQLite deltas do not contain input/cache/output splits.
+
+Rejected Alternatives: Running another full JSONL parse immediately was rejected because it takes minutes and is unnecessary for a short live attribution sample. Keeping the failed 120-second stdout sample was rejected because Windows codepage encoding destroyed the output. Calling active threads waste was rejected because token delta does not prove value or non-value.
+
+Scalability potential: Low/Middle/High/Ultra process gains a live throttle map. Instead of pausing all agents blindly, an integrator can inspect the 11 active threads and decide whether the top two, which produced 50.59% of the sample burn, are doing necessary work.
+
+Hardware Impact: 0 runtime microseconds on i3/MX350. No runtime code changed. Process impact: current live burn measured at 30,099.39 tokens/sec and USD 1.38/min cache-aware.

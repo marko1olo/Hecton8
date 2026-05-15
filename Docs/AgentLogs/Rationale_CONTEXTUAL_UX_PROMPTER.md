@@ -368,3 +368,17 @@ Solution: Keep direction-length validation only for non-normalized public ray pr
 Rejected Alternatives: Leaving the duplicate dot product, trusting all public rays as normalized, or re-normalizing every ray. Duplicate math wastes the hot desktop path; public rays still need validation; per-call normalization changes distance semantics and adds unnecessary cost.
 Scalability potential: Low removes tiny repeated math from cursor projection. Middle/High/Ultra preserve the same physical panel hit behavior while keeping CPU budget available for richer diegetic surface effects.
 Hardware Impact: Expected gain is sub-microsecond per desktop ray projection on i3/MX350; no profiler proof.
+
+## Decision 52: Diegetic Panel Cursor Margin Clamp
+Problem: The local cursor clamp used serialized margins directly. On very small panels or over-authored margins, clamp min/max bounds could invert and make the physical cursor jump or pin incorrectly.
+Solution: Sanitize the cursor margin to `[0, panel half-size]` inside `UpdateCursor()` before constructing clamp bounds.
+Rejected Alternatives: Trusting `OnValidate()` only, rejecting tiny panels, or hiding the cursor when margins exceed panel extents. Runtime systems can still mutate serialized values; tiny panels are legitimate UX targets; hiding the cursor would be worse feedback than clamping safely.
+Scalability potential: Low keeps stable cursor feedback on compact panels. Middle/High/Ultra preserve exact normal-panel behavior while protecting richer physical cursor effects from bad authoring bounds.
+Hardware Impact: Expected cost is sub-microsecond per cursor update on i3/MX350; gain is correctness and fewer pathological cursor snaps, not measured frame time.
+
+## Decision 53: Diegetic Panel Finger-Mode Release
+Problem: If a panel switched to `RaycastOnly` while a fingertip press was latched, `TryResolveFingerInteraction()` returned false without emitting an Up event or clearing finger ownership.
+Solution: Route the `RaycastOnly` branch through `ResolveFingerRelease()` when a finger press is active, and clear `_activeFingerIndex` when no press is active.
+Rejected Alternatives: Letting desktop input overwrite the state, clearing without an Up event, or blocking mode switches during contact. Overwrite is nondeterministic UX; clearing without Up can leave receivers latched; blocking mode switches is too heavy for runtime panel configuration.
+Scalability potential: Low gets deterministic release behavior on simple panels. Middle/High/Ultra keep the same finger/raycast hybrid contract without input latches during richer panel mode changes.
+Hardware Impact: Runtime cost is a branch only in the finger path; expected gain is correctness, not measured frame time.

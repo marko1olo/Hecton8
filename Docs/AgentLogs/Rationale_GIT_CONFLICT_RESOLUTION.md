@@ -149,3 +149,15 @@ Solution: Commit non-empty build/HPhi evidence as audit trail and report full gr
 Rejected Alternatives: Deleting generated evidence without owner context, committing an empty HPhi file as proof, or claiming branch health from Fresh78/Fresh80_Unbudgeted alone.
 Scalability potential: Not a runtime system. This preserves evidence classification discipline across hardware tiers.
 Hardware Impact: 0 us runtime impact. Prevents false CTO-facing green reports from partial local artifacts.
+
+Problem: After local checkpoint `abbcdb6ec`, the remote advanced to `09eaf26ca`, creating a one-local/one-remote divergence while active agents kept writing runtime and HPhi evidence files.
+Solution: Treat the remote commit as incoming other-machine work, inspect its actual merge-base diff, confirm it only touches GIT_SYNC docs, then checkpoint the dirty local tail before merging remote history.
+Rejected Alternatives: Pushing into a stale remote, merging over unchecked dirty runtime files, or force-pushing over `09eaf26ca`.
+Scalability potential: Git-only integration pass. Runtime changes in the residual tail remain producer-owned; this pass only reduces conflict risk before publishing.
+Hardware Impact: 0 us runtime impact. Dev-path gain is a clear boundary between our local checkpoint, incoming GIT_SYNC docs, and the next residual local checkpoint.
+
+Problem: Latest evidence mix improved but is still not full Unity/profiler proof.
+Solution: Record Fresh81=1, Fresh82=0, Fresh83=0, CurrentDisk build=0, and Fresh84 HPhi=0 as evidence classes without upgrading to full runtime green.
+Rejected Alternatives: Claiming full readiness from static HPhi/source scans or generated-project build exits without Unity Console, PlayMode, profiler, and player build artifacts.
+Scalability potential: No runtime tier claim. Evidence discipline prevents false Low/Middle/High/Ultra readiness reports.
+Hardware Impact: 0 us runtime impact.

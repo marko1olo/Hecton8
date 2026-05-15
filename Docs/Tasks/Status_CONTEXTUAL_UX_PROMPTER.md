@@ -91,6 +91,8 @@ Status: PENDING VERIFICATION
 - Loop 48: Diegetic panel interaction-distance hoist pass. Resolved effective desktop interaction distance once per raycast tick and passed it to both AUP range and panel projection checks. No dotnet rebuilds run per user instruction.
 - Loop 49: Diegetic panel projection reciprocal cache pass. Cached inverse canvas and reference sizes in `PanelData` during transform refresh, then reused them in canvas-to-world, pixel-basis, and hit-to-canvas projection helpers. No dotnet rebuilds run per user instruction.
 - Loop 50: Diegetic panel projection direction-math pass. Changed normalized desktop ray projection to skip a duplicate direction-length dot product and use the cached safe panel normal from `RefreshPanelData()`. No dotnet rebuilds run per user instruction.
+- Loop 51: Diegetic panel cursor-margin clamp pass. Sanitized cursor margins against zero and current panel half-size before clamping the local cursor position, preventing inverted bounds on tiny or over-authored panels. No dotnet rebuilds run per user instruction.
+- Loop 52: Diegetic panel finger-mode release pass. When interaction mode switches to `RaycastOnly`, the finger path now emits a pending release and clears the active finger index instead of leaving pressed state latched. No dotnet rebuilds run per user instruction.
 
 ## Verification Notes
 - `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary | Select-String ...`: no output for touched-file filter after final cache collision fix.
@@ -132,6 +134,8 @@ Status: PENDING VERIFICATION
 - Post Loop 48 static scans confirmed `ResolveEffectiveInteractionDistance()` is called once in the desktop ray path and `IsRayOriginWithinAupInteractionRange()` consumes the cached distance. Existing no-bootstrap/no-direct-Time/no-old-phosphor/no-hot-path text scans stayed clean. No dotnet rebuilds run per user instruction.
 - Post Loop 49 static scans confirmed `InvCanvasSize` and `InvReferenceSize` are populated in `RefreshPanelData()` and consumed by projection helpers, removing repeated reciprocal work from the hit projection path. No dotnet rebuilds run per user instruction.
 - Post Loop 50 static scans confirmed `TryProjectRayToPanel()` computes `math.lengthsq(rayDirection)` only for non-normalized public rays, uses `_panelData.PanelNormal`, and compares against a cached `maxDistanceSq`. No dotnet rebuilds run per user instruction.
+- Post Loop 51 static scans confirmed cursor bounds use a zero-to-half-size sanitized `cursorMarginLocal` before `math.clamp`, keeping cursor projection stable on undersized panels. No dotnet rebuilds run per user instruction.
+- Post Loop 52 static scans confirmed the `RaycastOnly` branch routes pending finger presses through `ResolveFingerRelease()` and clears stale finger ownership when no press is active. No dotnet rebuilds run per user instruction.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Json` completed at `2026-05-15 01:32:33 +04:00` without invoking a rebuild. Follow-up summary extraction exceeded tool timeout; no score claim is recorded from that partial extraction.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Summary` was retried after Loop 18 and timed out after 120 seconds without output; no H-Phi score claim is recorded.
 - `git diff --check` on `DiegeticTooltipSystem.cs` and `Hecton_DiegeticTooltipIndirect.shader` passed with repository CRLF warnings only.

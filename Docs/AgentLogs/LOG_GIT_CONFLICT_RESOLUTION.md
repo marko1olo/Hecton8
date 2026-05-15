@@ -459,3 +459,15 @@ Cinematic Cheats used -> None. Git integration only.
 Exact Microseconds saved -> 0 us runtime. Dev-path gain is avoiding a Desktop overwrite/merge conflict by publishing a checked snapshot on top of the latest remote head.
 
 Verification -> Conflict-marker scan clean. `git diff --cached --check` passed. Build evidence is mixed: Fresh74=-1, Fresh76=-1, Fresh77=-1, Fresh78=0. HPhi Fresh79 reports EXIT=1 with Memory Alignment floor failure; Fresh80_Unbudgeted reports EXIT=0 with valid JSON but is explicitly unbudgeted evidence. Full build/HPhi green is not claimed.
+
+## 2026-05-15 - Loop 27 Diverged Remote And Residual Tail
+
+What was wrong -> After local checkpoint `abbcdb6ec`, `origin/main` advanced to `09eaf26ca`, so local history became ahead 1 / behind 1 while another runtime/docs/evidence tail existed.
+
+What was done -> Identified `09eaf26ca` as incoming GIT_SYNC documentation only, verified no actual incoming-path overlap with the dirty tail, reviewed residual GasDynamics, SaveManager, diegetic UI, PauseMenu, compute, HPhi monitor, and HPhi evidence changes, then prepared a local checkpoint before merging remote.
+
+Cinematic Cheats used -> None. Git integration only.
+
+Exact Microseconds saved -> 0 us runtime. Dev-path gain is avoiding a stale push and preserving both local checkpoint work and the second machine's GIT_SYNC documentation.
+
+Verification -> Current dirty tail has no conflict markers or unmerged paths before staging. Latest evidence: Fresh81 build EXIT=1, Fresh82 build EXIT=0, Fresh83 build EXIT=0, CurrentDisk build EXIT=0, HPhi Fresh84 EXIT=0 with valid JSON. Full Unity/runtime/profiler green is not claimed.

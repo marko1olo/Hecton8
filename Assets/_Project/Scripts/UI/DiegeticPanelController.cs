@@ -1706,7 +1706,13 @@ namespace Hecton8.UI
             showCursor = false;
 
             if (interactionMode == PanelInteractionMode.RaycastOnly)
+            {
+                if (_fingerPressedLastFrame)
+                    return ResolveFingerRelease(out canvasPos, out localHit, out eventType);
+
+                _activeFingerIndex = -1;
                 return false;
+            }
 
             if (_fingertipBindingMask == 0u)
             {
@@ -1804,10 +1810,11 @@ namespace Hecton8.UI
             if (cursorTransform == null)
                 return;
 
+            float2 cursorMarginLocal = math.min(math.max(new float2(cursorMargin.x, cursorMargin.y), float2.zero), _panelData.HalfSize);
             float2 clampedLocalXY = math.clamp(
                 localHit.xy,
-                -_panelData.HalfSize + new float2(cursorMargin.x, cursorMargin.y),
-                _panelData.HalfSize - new float2(cursorMargin.x, cursorMargin.y));
+                -_panelData.HalfSize + cursorMarginLocal,
+                _panelData.HalfSize - cursorMarginLocal);
 
             float3 cursorLocal = new float3(clampedLocalXY.x, clampedLocalXY.y, cursorHoverOffset);
             float3 cursorTargetWorld = math.transform(_panelData.LocalToWorld, cursorLocal);

@@ -488,3 +488,59 @@ Cinematic Cheats used:
 
 Exact microseconds saved:
 - None claimed. This deliberately spends bounded work under a transition storm to preserve correctness; no dotnet rebuild was run.
+
+## 2026-05-15 - Static H-Phi Recheck Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- Full H-Phi source summary still times out in this dirty multi-agent workspace, so a clean full-source score cannot be claimed.
+- The latest transition-buffer work still needed fresh static evidence.
+
+What was done:
+- Ran `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`.
+- Result: exit 0, STATIC_SOURCE, core build graph gate true/opt-in.
+- Debt counts remain: Core asmdef 25, generated project 10, source-backed bridge 14, source-backed compile bridge 8, project-reference replacement 6.
+- Targeted scan of `GasDynamicsSolver.cs` found no `.Complete()`, `GetComponent`, coroutine, managed collection, `FindObject`, `ToString`, or string-format patterns.
+
+Cinematic Cheats used:
+- None new.
+
+Exact microseconds saved:
+- None. This was audit evidence only; no dotnet rebuild was run.
+
+## 2026-05-15 - Overflow Guard Timestamp Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- The overflow awake guard used the default timestamp value `0`.
+- At time zero, that could make the solver treat startup as temporarily overflow-guarded.
+
+What was done:
+- The guard now requires `_transitionOverflowAwakeUntil > 0` before it blocks hibernation.
+
+Cinematic Cheats used:
+- None new.
+
+Exact microseconds saved:
+- None claimed. This removes a false startup guard; no dotnet rebuild was run.
+
+## 2026-05-15 - Base AUP Ingress Finite Gate Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- Direct `IGasDynamicsSolver` base configuration APIs could accept non-finite AUP local coordinates.
+- Startup default base centers used `transform.position` without a finite gate before AUP conversion.
+
+What was done:
+- `TryConfigureBase`, `TrySetBaseCenterAup`, and signal-derived base slot creation now reject non-finite AUP local coordinates.
+- Startup default base centers now resolve through a finite `transform.position` gate and fall back to default AUP on corrupt transform data.
+
+Cinematic Cheats used:
+- None new. This preserves the existing analytical hibernation fake and rejects corrupt spatial authority instead of inventing a repaired base location.
+
+Exact microseconds saved:
+- None claimed. This adds cheap scalar admission checks to prevent false hibernation/wake decisions; no dotnet rebuild was run.
+
+Verification:
+- Targeted scan found no forbidden normalization, distance, foreach, managed collection, coroutine, or string-format matches in `GasDynamicsSolver.cs`.
+- `git diff --check` passed with only the existing CRLF working-copy warning.

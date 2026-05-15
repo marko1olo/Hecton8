@@ -800,3 +800,46 @@ Regression Model:
 - Memory: no NativeArray/DataVault ownership changed.
 - Cadence: no Tick/FixedTick/Update/job schedule changed.
 - Correctness: unregistered first-party shadow lights no longer get auto-discovered by the guard; they must use the existing authored registration path.
+
+## 2026-05-15 Build And Lookup Closure
+
+What was wrong:
+- Runtime `Find*` debt still had three scored calls in `GameBootstrapper`: bootstrap controller handoff, player tag recovery, and player-spawner recovery.
+- The first build attempt reported a stale `PlayerPDA.SubscribeToInputManager()` blocker, but current source no longer contains that symbol; the live file had already moved PDA input through `SignalBus<PlayerInputSignal>`.
+
+What was done:
+- Replaced the remaining `GameBootstrapper` scene-wide lookups with scene-local traversal using existing scratch lists.
+- Added reusable helpers for active-scene component and tag resolution without `FindAnyObjectByType` or `GameObject.FindGameObjectWithTag`.
+- Verified current `PlayerPDA` input path: it consumes `SignalBus<PlayerInputSignal>.GetFrameSnapshot()` once during `Tick` and no longer performs input event subscription churn.
+- Ran the Core build gate and the full H-Phi static budget gate.
+
+Cinematic Cheats used:
+- Bootstrap recovery now uses bounded scene-local traversal instead of global discovery. No physical simulation or visual cheat changed in this pass.
+
+Exact Microseconds saved:
+- Hot path: 0 us measured; no gameplay Tick/render/job schedule changed by the bootstrap patch.
+- Cold path: three Unity scene-wide lookup APIs removed from bootstrap/recovery. Exact microseconds remain unmeasured without Unity Profiler evidence.
+
+Compile Status:
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:GenerateFullPaths=true -v:minimal`: passed, `0 Warning(s)`, `0 Error(s)`.
+- `git diff --check -- Assets/_Project/Scripts/PlayerPDA.cs Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs`: passed.
+- `rg "SubscribeToInputManager" . -g "*.cs"`: no current source hits.
+
+Phi Gain:
+- Runtime `FindObjectCalls`: `3 -> 0`.
+- Runtime narrow H-Phi: `0.010758376 -> 0.010773555`.
+- Runtime risk H-Phi: `0.000623300 -> 0.000627514`.
+- Risk integration: `0.057936236 -> 0.058245735`.
+- `SignalBusPush`: `338` in the current tree.
+- `DataSovereignty`: `0.021311929`.
+- `MemoryAlignment`: `0.505517604`.
+- Important: some score movement includes concurrent workspace changes. Runtime frame-time, GC, and memory gains are not claimed without Unity evidence.
+
+Regression Model:
+- CPU: cold bootstrap lookup pressure reduced; no hot loop changed.
+- GC: no managed container allocation added in the edited paths.
+- Memory: no NativeArray/DataVault ownership changed.
+- Cadence: no Tick/FixedTick/Update/job schedule changed by `GameBootstrapper`; `PlayerPDA` reads an existing signal snapshot.
+- Correctness: bootstrap resolution is now scene-local. Inactive spawner recovery remains supported by the `includeInactive` traversal branch.
+
+STATUS: H-PHI VERIFIED / CORE BUILD GREEN / UNITY RUNTIME PENDING

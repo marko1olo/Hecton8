@@ -630,3 +630,52 @@ Verification:
 - `rg` confirms docking lanes are configured before request scans and completion/failure pushes.
 - One-pass SignalBus audit after the docking fix leaves only alias/legacy queue false positives: `AupPreShiftSignal`, `AupShiftSignal`, `ImpactSignal`, `EntityDeathSignal`, `MemoryPressureSignal`, residency aliases, and namespaced combat/macro aliases.
 - `git diff --check` on touched runtime and report files passed with only standard LF/CRLF notices.
+
+## 2026-05-15 - Discrete Input Command SignalLane Addendum
+
+What was wrong:
+- `PlayerInputSignal` existed but only published inventory toggles.
+- `PlayerPDA` subscribed to five `IInputService` managed events for PDA/inventory/cancel/tab commands despite already ticking in the UI layer.
+- `HectonFabricatorUI` subscribed to native cancel/tab events even though cancel/tab are discrete UI commands suitable for the numeric signal lane.
+
+What was done:
+- Added numeric command ids for PDA, cancel, tab next/previous, interact, primary, secondary, and tool slots.
+- `InputDispatcher` now publishes one `PlayerInputSignal` packet for every discrete command path while preserving legacy managed events for authority consumers.
+- `PlayerPDA` now consumes `SignalBus<PlayerInputSignal>` snapshots and removed PDA/inventory/cancel/tab input-event subscriptions.
+- `HectonFabricatorUI` now consumes cancel/tab commands from `SignalBus<PlayerInputSignal>` and keeps only native navigate/submit callbacks.
+
+Cinematic Cheats used:
+- PDA and fabricator UI react to a compact command packet stream instead of owning input delegates.
+- Tool, interact, and action command packets are now available for future diegetic hints without polling input owners.
+
+Exact microseconds saved:
+- Estimated 0.2-0.8 us on PDA/fabricator input bursts from removed passive UI delegate dispatch and subscription churn.
+- Steady-state cost is one bounded snapshot scan in already ticking UI surfaces.
+
+Verification:
+- No dotnet build, restore, test, or rebuild was run.
+- `rg` confirms `PlayerPDA` has no PDA/inventory/cancel/tab input event subscriptions.
+- `rg` confirms `HectonFabricatorUI` removed cancel/tab subscriptions and retains only navigate/submit native callbacks.
+- `git diff --check` on touched source and docs passed with only standard LF/CRLF notices.
+
+## 2026-05-15 - Pause Menu Cancel Signal Addendum
+
+What was wrong:
+- `PauseMenuController` already ticks in UI but still subscribed to native cancel input.
+- Cancel is now a numeric `PlayerInputSignal` command, so the callback was unnecessary for this passive UI path.
+
+What was done:
+- Added source-filtered `PlayerInputSignalCommands.Cancel` consumption inside `PauseMenuController.Tick()`.
+- Removed native cancel subscribe/unsubscribe and the cancel callback method.
+- Kept native pause input because pause-open authority is not yet represented by the command lane.
+
+Cinematic Cheats used:
+- Pause cancel now rides the same compact command packet as PDA/fabricator cancel instead of owning another delegate.
+
+Exact microseconds saved:
+- Estimated 0.05-0.2 us on cancel bursts plus lower subscription leak risk.
+
+Verification:
+- No dotnet build, restore, test, or rebuild was run.
+- `rg` confirms `PauseMenuController` has no native cancel subscription remnants.
+- `git diff --check` on touched pause/input files passed with only standard LF/CRLF notices.

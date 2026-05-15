@@ -1532,3 +1532,73 @@ Core graph H-Phi audit at `2026-05-15 14:45:33 +04:00`:
 Residual bottlenecks:
 - Runtime H-Phi remains pending Unity Console, PlayMode, Profiler, and GCMonitor evidence.
 - Generated Unity full graph traversal needs integrator/toolchain attention because it exits without diagnostic text while direct source gates pass.
+
+## 2026-05-15 Live Addendum - HECTON_PHI_MONITOR Build And Lookup Closure
+
+Evidence class: `STATIC_SOURCE_COMPILE`.
+
+What changed:
+- `GameBootstrapper` no longer uses the remaining runtime scene-wide lookup APIs for bootstrap controller, player tag, or player-spawner recovery.
+- Scene recovery now traverses only the active loaded scene using existing scratch lists and `TryGetComponent`.
+- `PlayerPDA` input is currently signal-backed through `SignalBus<PlayerInputSignal>`; no `SubscribeToInputManager` call remains in current source.
+- Core source build passed.
+
+Current static scores after this pass:
+
+| Coefficient | Score |
+|---|---:|
+| Runtime H-Phi narrow | 0.010773555 |
+| Runtime H-Phi risk-adjusted | 0.000627514 |
+| All-source H-Phi narrow | 0.009599686 |
+| All-source H-Phi risk-adjusted | 0.000511723 |
+| Risk integration | 0.058245735 |
+| Architectural purity | 1.000000000 |
+| Data sovereignty | 0.021311929 |
+| Memory alignment | 0.505517604 |
+| Binary-safe ratio | 0.018392013 |
+| AUP precision integrity | 1.000000000 |
+
+Current runtime counts:
+
+| Counter | Value |
+|---|---:|
+| Typed/queued signal push surface | 338 |
+| Legacy/direct event publish surface | 28 |
+| `GlobalRegistry.` surface refs | 5,083 |
+| DataVault access surface refs | 154 |
+| `NativeArray<T>` refs | 7,072 |
+| Runtime `Find*` calls | 0 |
+| Runtime `GetComponent*` calls | 321 |
+| AUP precision risk refs | 0 |
+| LINQ surface | 5 |
+| Coroutine surface | 0 |
+| Managed formatting surface | 681 |
+| Job `.Complete()` surface | 61 |
+| Primary managed-runtime risk | 330 |
+| Primary owner-blocked NativeArray refs | 5,678 |
+
+Budget gates:
+
+| Gate | Budget/Floor | Current | Status |
+|---|---:|---:|---|
+| Runtime `Find*` calls | <= 0 | 0 | PASS |
+| Runtime H-Phi risk | >= 0.000626000 | 0.000627514 | PASS |
+| Data sovereignty | >= 0.021270000 | 0.021311929 | PASS |
+| Memory alignment | >= 0.505500000 | 0.505517604 | PASS |
+| AUP precision risk | <= 0 | 0 | PASS |
+| Legacy event publish | <= 28 | 28 | PASS |
+| Duplicate signal names | <= 0 | 0 | PASS |
+| `GlobalRegistry.` surface refs | <= 5,090 | 5,083 | PASS |
+| `GetComponent*` calls | <= 330 | 321 | PASS |
+| `NativeArray<T>` refs | <= 7,090 | 7,072 | PASS |
+| Primary managed-runtime risk | <= 330 | 330 | PASS |
+| Primary owner-blocked NativeArray refs | <= 5,695 | 5,678 | PASS |
+
+Build evidence:
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:GenerateFullPaths=true -v:minimal`: passed, `0 Warning(s)`, `0 Error(s)`.
+- Full static H-Phi gate completed at local timestamp `2026-05-15 16:13:23 +04:00`.
+
+Residual bottlenecks:
+- Data Sovereignty remains the hard floor: `154 / (154 + 7072) = 0.021311929`.
+- Primary owner-blocked NativeArray refs remain high at `5678`; those migrations need domain-owner BufferID/SystemID/generation/disposal proof.
+- Runtime H-Phi remains pending Unity Console, PlayMode, Profiler, and GCMonitor evidence.

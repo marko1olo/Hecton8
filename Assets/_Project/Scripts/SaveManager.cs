@@ -2854,6 +2854,7 @@ namespace Hecton8.SaveSystem
                 $"Budget is {MainThreadSnapshotBudgetMs}ms. Snapshot purity is pending verification.");
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 4)]
         private readonly struct SaveContextFrameData
         {
             public readonly int FrameCount;

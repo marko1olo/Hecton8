@@ -12,6 +12,7 @@ Thread value audit: `COMPUTE_THREAD_VALUE_AUDIT.md`
 Collision risk: `COMPUTE_COLLISION_RISK.md`
 File burn attribution: `COMPUTE_FILE_BURN_ATTRIBUTION.md`
 Token burn rate ledger: `COMPUTE_TOKEN_BURN_RATE_LEDGER.md`
+Live burn sources: `COMPUTE_LIVE_BURN_SOURCES.md`
 Rate efficiency audit: `COMPUTE_RATE_EFFICIENCY_AUDIT.md`
 Codex dialogue audit: `COMPUTE_CODEX_DIALOGUE_AUDIT.md`
 Status/Rationale/Log:
@@ -59,6 +60,9 @@ Status/Rationale/Log:
 | Tail delta after full scan | +102,151,525 tokens |
 | Tail delta model bucket | `gpt-5.5` |
 | Tail delta average | 27,749.37 tokens/sec; USD 1.27/min |
+| Live 90s active-source sample | 2,725,800 tokens |
+| Live 90s active-source rate | 30,099.39 tokens/sec; USD 1.38/min |
+| Live active threads | 11, all `gpt-5.5` |
 | Top-30 attribution patch calls | 14,015 |
 | Top-30 attribution unique patch targets | 1,647 |
 | Top-30 attribution patch churn | +354,203 / -75,895 lines |
@@ -121,6 +125,8 @@ Collision snapshot has been refreshed. Current hot-target intersections are `Ass
 File burn attribution has been written to `COMPUTE_FILE_BURN_ATTRIBUTION.md`. It distributes top-30 thread tokens across patch targets by per-thread patch-hit share. This is probabilistic work-trace attribution, not final value proof.
 
 Token burn rate ledger has been written to `COMPUTE_TOKEN_BURN_RATE_LEDGER.md`. It is now the current source for rolling 1h/6h/24h/7d/14d/30d burn rate, cost/min, cost/hour, cost/day, model split, and cache savings.
+
+Live burn sources have been written to `COMPUTE_LIVE_BURN_SOURCES.md`. It identifies which active thread IDs generated token deltas during a 90-second sample.
 
 Rate efficiency audit remains in `COMPUTE_RATE_EFFICIENCY_AUDIT.md` as the previous detailed rate snapshot.
 

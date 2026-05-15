@@ -73,7 +73,9 @@ namespace Hecton8.UI
         private PauseSection _activeSection;
         private float _cachedTimeDilationScalar = 1f;
         private uint _pauseSignalSequence;
+        private uint _lastPlayerInputSignalSequence;
         private InputManager _inputManager;
+        private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
 
         private RectTransform _root;
         private CanvasGroup _canvasGroup;
@@ -293,6 +295,8 @@ namespace Hecton8.UI
 
             if (_saveOperationInFlight)
                 return;
+
+            ConsumePlayerInputSignals();
 
             if (_pauseRequested)
             {
@@ -1808,7 +1812,6 @@ namespace Hecton8.UI
                 return;
 
             _inputManager.OnPause += HandlePauseActionPerformed;
-            _inputManager.OnCancel += HandleCancelActionPerformed;
         }
 
         private void UnbindInputActions()
@@ -1816,7 +1819,6 @@ namespace Hecton8.UI
             if (_inputManager != null)
             {
                 _inputManager.OnPause -= HandlePauseActionPerformed;
-                _inputManager.OnCancel -= HandleCancelActionPerformed;
             }
 
             _inputManager = null;
@@ -1829,9 +1831,25 @@ namespace Hecton8.UI
             _pauseRequested = true;
         }
 
-        private void HandleCancelActionPerformed()
+        private void ConsumePlayerInputSignals()
         {
-            _cancelRequested = true;
+            ReadOnlySpan<PlayerInputSignal> signals = SignalBus<PlayerInputSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PlayerInputSignal signal = signals[i];
+                if (signal.SourceHash != PlayerInputSignalSourceHash ||
+                    signal.Command != PlayerInputSignalCommands.Cancel ||
+                    !IsNewerInputSequence(signal.Sequence, _lastPlayerInputSignalSequence))
+                    continue;
+
+                _lastPlayerInputSignalSequence = signal.Sequence;
+                _cancelRequested = true;
+            }
+        }
+
+        private static bool IsNewerInputSequence(uint candidate, uint current)
+        {
+            return candidate != 0u && candidate != current && unchecked(candidate - current) < 0x80000000u;
         }
 
         private void HandlePauseRequested()

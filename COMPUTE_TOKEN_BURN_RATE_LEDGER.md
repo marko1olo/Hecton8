@@ -170,4 +170,6 @@ The last rolling 24h burned 3.237B tokens. The current cache-aware local cost es
 
 The whole local ledger now sits at 45.454B final tokens. Cache is carrying the economy: 96.003% of input tokens are cached. That does not make the workflow clean. It means the project is converting long-context recursion into a discounted burn instead of a full-price burn.
 
+Live source attribution is preserved at `COMPUTE_LIVE_BURN_SOURCES.md`. Latest 90-second SQLite sample: 2,725,800 tokens, 30,099.39 tokens/sec, USD 1.38/min cache-aware, 11 active threads, all `gpt-5.5`.
+
 STATUS: AUDIT COMPLETE.

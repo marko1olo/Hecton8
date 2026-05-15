@@ -805,3 +805,37 @@ Current code ratios:
 | Context amplification vs 50-token/LOC heuristic | 1,152.74x |
 
 Verdict: cache is carrying the economy. The project is not cheap because it is lean. It is cheap because 96.003% of input tokens are discounted cached context. The engineering smell is still the same: long-context recursion at 57.6k tokens per meaningful line.
+
+## Continuation Addendum - Live Burn Sources
+
+Snapshot: 2026-05-15T16:17:32+04:00
+
+The live active-source sample is preserved at `COMPUTE_LIVE_BURN_SOURCES.md`.
+
+| Metric | Value |
+|---|---:|
+| Sample elapsed | 90.559961 seconds |
+| Active threads | 11 |
+| Total delta tokens | 2,725,800 |
+| Tokens/sec | 30,099.39 |
+| Tokens/min | 1,805,963.68 |
+| Tokens/hour | 108,357,820.52 |
+| Tokens/day equivalent | 2,600,587,692.39 |
+| Model bucket | `gpt-5.5` only |
+| Cache-aware cost | USD 2.08 |
+| No-cache equivalent | USD 13.84 |
+| Average cost/min | USD 1.38 |
+| Average cost/hour | USD 82.70 |
+| Average cost/day equivalent | USD 1,984.87 |
+
+Top active sources:
+
+| Rank | Thread ID | Delta tokens | Tokens/sec | Title label |
+|---:|---|---:|---:|---|
+| 1 | `019e2592-efa1-7562-93d6-f671ff937574` | 718,524 | 7,934.23 | Implement base hibernation |
+| 2 | `019e2098-4883-7440-9d71-44971d6192fd` | 660,381 | 7,292.20 | Check bot and documentation |
+| 3 | `019e230e-0e12-7be2-8eb9-39df3a774cc6` | 382,909 | 4,228.24 | Forge SignalLanes |
+| 4 | `019e27db-3780-7b80-900a-0aeb9a23f4de` | 219,246 | 2,421.00 | Form 10 agent prompts |
+| 5 | `019e2804-f244-7ba0-a863-982e85d123fd` | 175,185 | 1,934.46 | Read batch prompt |
+
+Two active threads produced 50.59% of the 90-second burn. This is the current throttle target. Token volume alone still does not prove waste; it proves where live spend is happening.

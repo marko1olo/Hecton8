@@ -284,3 +284,24 @@ Solution: Overflow now sets a native-domain fail-open flag. After the active gas
 Rejected Alternatives: Growing the native list on demand was rejected because transition capture runs on the gameplay frame path and must not allocate. Keeping silent drops was rejected because hibernation correctness beats saving a few microseconds under a storm. Permanent player-inside marking was rejected because one overflow could pin a base awake forever.
 Scalability potential: Low devices get bounded memory and fail-open correctness under storms; High/Ultra keep the same path and can absorb the short awake guard without extra simulation complexity.
 Hardware Impact: Steady-state cost is one boolean branch. Overflow cost wakes at most `MaxBaseCapacity` bases once and temporarily spends extra gas/power work rather than risking an occupied-base sleep. No profiler microsecond claim without Unity verification.
+
+## Self-Review 34 - Static H-Phi And Zero-GC Recheck
+Problem: Full H-Phi source scan remains timeout-prone in the dirty multi-agent workspace, but the domain still needed fresh static evidence after the transition-buffer changes.
+Solution: Ran `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`. It exited 0 with STATIC_SOURCE evidence; core build graph gate remains true/opt-in, with existing debt counts: Core asmdef 25, generated project 10, source-backed bridge 14, source-backed compile bridge 8, project-reference replacement 6. Targeted fixed-string scans of `GasDynamicsSolver.cs` found no `.Complete()`, `GetComponent`, coroutine, managed collection, `FindObject`, `ToString`, or string-format patterns.
+Rejected Alternatives: Running the full H-Phi scan again was rejected because prior 120s/240s runs timed out. Running dotnet/Unity compilation remains rejected by explicit user instruction.
+Scalability potential: Low through Ultra keep the same zero-GC transition and hibernation paths; remaining H-Phi graph debt is outside this domain and still requires integrator work.
+Hardware Impact: Audit-only pass; no runtime change and no microsecond saving claimed.
+
+## Self-Review 35 - Overflow Guard Default Timestamp
+Problem: `_transitionOverflowAwakeUntil` defaults to `0`, so a strict `now <= awakeUntil` check could treat a time-zero startup hibernation pass as overflow-guarded even though no overflow occurred.
+Solution: The guard now requires `_transitionOverflowAwakeUntil > 0` before blocking hibernation.
+Rejected Alternatives: Initializing the field to a negative sentinel was rejected because disposal already resets to zero and a positive-active contract is clearer.
+Scalability potential: Low through Ultra avoid an unnecessary initial awake hold while retaining fail-open behavior after real transition overflow.
+Hardware Impact: One extra scalar comparison on the FrostTick hibernation path; no measurable claim.
+
+## Self-Review 36 - Base AUP Ingress Finite Gate
+Problem: Direct gas API calls could configure a base center from an `AbsoluteUniversePosition` with non-finite local coordinates. Startup base centers also came from `transform.position` without proving the vector was finite before `AbsoluteUniversePosition.FromRuntimePosition`.
+Solution: `TryConfigureBase`, `TrySetBaseCenterAup`, and signal-derived base slot creation now reject non-finite AUP local coordinates. Startup default base center resolution now uses a finite `transform.position` gate and falls back to default AUP if the transform is corrupt.
+Rejected Alternatives: Sanitizing invalid AUP to zero inside public setters was rejected because that fabricates a plausible habitat location and can make hibernation distance logic lie. Adding managed diagnostics or exceptions was rejected because the solver must stay zero-GC/fail-closed in gameplay paths.
+Scalability potential: Low through Ultra keep the same hibernation Math LOD behavior on valid data. Corrupt base centers now fail closed instead of poisoning distance-gated sleep/wake decisions.
+Hardware Impact: Adds three scalar finite checks on cold/direct API paths and transition packet admission. No frame-time saving claimed; this is AUP integrity and false-hibernation prevention.

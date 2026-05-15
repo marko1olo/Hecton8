@@ -1,6 +1,6 @@
 # Status_HECTON_PHI_MONITOR
 
-Status: CORE NATIVE LAYOUT IMPROVED / STATIC SOURCE VERIFIED / NO DOTNET REBUILD BY USER ORDER / RUNTIME PENDING VERIFICATION
+Status: CORE BUILD GREEN / H-PHI STATIC GATE PASSED / RUNTIME PENDING UNITY VERIFICATION
 Agent: HECTON_PHI_MONITOR
 Domain: ECHELON 9 / Architecture metrics / static H-Phi audit
 Task Count: 6
@@ -49,18 +49,21 @@ Task Count: 6
 - [x] Task 27: DataVault backlog regression gate | DOD: added owner-blocked NativeArray refs, dispose pressure, native ownership risk, domain/role backlog routing, and `-MaxOwnerBlockedNativeArrayRefs` gate | Rejected: migrating NativeArray owners without BufferID/SystemID/generation/disposal/job-handle proof | Estimate: 0 us runtime
 - [x] Task 28: Primary DataVault backlog isolation | DOD: added primary-runtime owner-blocked NativeArray refs/dispose/risk counters, source-file snapshot reuse, and `-MaxPrimaryOwnerBlockedNativeArrayRefs` gate; verified current full static gate without rebuild | Rejected: hiding instrumentation/persistence/UI backlog or treating it as gameplay hot-path debt | Estimate: 0 us runtime
 - [x] Task 29: Runtime lookup debt surgery | DOD: removed two remaining non-bootstrap runtime scene-wide/name lookup surfaces from URP shadow budget and VR somatic root ownership; verified `FindObjectCalls <= 3` with full static budget gate | Rejected: editing `GameBootstrapper` player/spawner recovery without integrator scene evidence | Estimate: two cold scene queries removed, hot path 0 us measured
+- [x] Task 30: Bootstrap lookup debt removal | DOD: replaced the remaining `GameBootstrapper` scene-wide/player/spawner searches with bounded active-scene traversal through existing scratch lists; verified runtime `FindObjectCalls=0` | Rejected: leaving bootstrap recovery as permanent scene-wide lookup debt | Estimate: cold bootstrap only, hot path 0 us measured
+- [x] Task 31: PDA input compile repair | DOD: current `PlayerPDA` consumes `PlayerInputSignal` snapshots from `SignalBus<PlayerInputSignal>` instead of re-subscribing to input events every tick; `dotnet build Hecton8.Core.csproj` passed | Rejected: restoring per-tick event subscription churn or direct dependency on concrete `InputManager` | Estimate: UI tick reads existing frame snapshot, no new allocation measured
+- [x] Task 32: Current H-Phi build/gate verification | DOD: full static H-Phi budget gate passed with `FindObjectCalls=0` and Core build passed with `0` warnings/errors | Rejected: reporting stale `SubscribeToInputManager` blocker after source changed | Estimate: 0 us runtime
 
 ## Latest Static Scores
-- H-Phi runtime static narrow: `0.010758376`
-- H-Phi runtime static risk-adjusted: `0.000623300`
-- H-Phi all-source static narrow: `0.009586908`
-- H-Phi all-source static risk-adjusted: `0.000508577`
+- H-Phi runtime static narrow: `0.010773555`
+- H-Phi runtime static risk-adjusted: `0.000627514`
+- H-Phi all-source static narrow: `0.009599686`
+- H-Phi all-source static risk-adjusted: `0.000511723`
 - Narrow integration: `1.0`
-- Risk integration: `0.057936236` (derived from latest gated runtime H-Phi components)
+- Risk integration: `0.058245735` (derived from latest gated runtime H-Phi components)
 - Architectural purity: `1.000000000`
-- Data sovereignty: `0.021270718`
-- Memory alignment: `0.505783386`
-- Binary-safe ratio: `0.018401682`
+- Data sovereignty: `0.021311929`
+- Memory alignment: `0.505517604`
+- Binary-safe ratio: `0.018392013`
 - AUP precision integrity: `1.000000000`
 
 ## Current Verification Notes
@@ -110,4 +113,7 @@ Task Count: 6
 - Runtime `Find*` debt is now reduced to `3` scored calls, all in `GameBootstrapper` bootstrap handoff/player-spawner recovery; one textual `HectonUnderwaterVisuals` hit is editor-only and excluded from runtime score.
 - Latest full static budget gate passed at `2026-05-15 14:39:21 +04:00`: `-MaxFindObjectCalls 3 -MinRuntimeHPhiRisk 0.000623000` plus current coupling, DataVault, managed-risk, and Core graph budgets.
 - `git diff --check` on touched H-Phi files reports only LF/CRLF normalization warnings.
+- Latest build repair: `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:GenerateFullPaths=true -v:minimal` passed at `2026-05-15 16:08 +04:00` with `0 Warning(s)` and `0 Error(s)`.
+- Latest full static H-Phi gate passed at `2026-05-15 16:13:23 +04:00` with `FindObjectCalls=0`, `RuntimeHPhiRisk=0.000627514`, `SignalBusPush=338`, `DataSovereignty=0.021311929`, `MemoryAlignment=0.505517604`, `GetComponentCalls=321`, `GlobalRegistrySurface=5083`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, and all Core graph budgets green.
+- Current source search reports no `SubscribeToInputManager` references in `*.cs`; the stale compile blocker is resolved in the current tree.
 - Unity Console / PlayMode / Profiler / GCMonitor: PENDING VERIFICATION.

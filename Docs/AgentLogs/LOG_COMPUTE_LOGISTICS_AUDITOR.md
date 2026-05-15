@@ -34,6 +34,41 @@ Verification:
 
 STATUS: AUDIT COMPLETE.
 
+## 2026-05-15 - Live Active-Source Burn Sample
+
+What was wrong:
+- Rolling token totals showed burn, but not which active thread IDs were currently producing it.
+- A first 120-second sample completed but was discarded because Windows stdout encoding failed on Unicode thread titles.
+
+What was done:
+- Re-read `Docs/Tasks/Status_COMPUTE_LOGISTICS_AUDITOR.md` and `Docs/AgentLogs/Rationale_COMPUTE_LOGISTICS_AUDITOR.md`.
+- Ran a successful UTF-8 90.559961-second two-point sample over `state_5.sqlite.threads.tokens_used`.
+- Created `COMPUTE_LIVE_BURN_SOURCES.md`.
+- Updated root brief, audit index, token ledger, full report, status, and rationale.
+
+Evidence captured:
+- Active threads: 11.
+- Total live delta: 2,725,800 tokens.
+- Live rate: 30,099.39 tokens/sec, 1,805,963.68 tokens/min, 108,357,820.52 tokens/hour.
+- Day equivalent: 2,600,587,692.39 tokens/day.
+- Model bucket: all delta in `gpt-5.5`.
+- Cache-aware cost: USD 2.08 for the sample.
+- Average cache-aware cost: USD 1.38/min, USD 82.70/hour, USD 1,984.87/day equivalent.
+- Top two active threads: 1,378,905 tokens, 50.59% of sample burn.
+
+Cinematic Cheats used:
+- None. Audit-only evidence accounting.
+
+Exact microseconds saved:
+- Runtime: 0 us.
+- Process: not claimed as measured saving. The report identifies current live throttle targets.
+
+Verification:
+- Markdown-only audit continuation.
+- No runtime compile run because no C# or C++ runtime source changed.
+
+STATUS: AUDIT COMPLETE.
+
 ## 2026-05-15 - Rolling Token Burn Rate Ledger
 
 What was wrong:

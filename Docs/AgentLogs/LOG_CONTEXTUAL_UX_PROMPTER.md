@@ -432,3 +432,25 @@ Cinematic cheats used: No visual change. The same physical panel ray projection 
 Exact microseconds saved: Estimate only. Expected gain is sub-1 us per desktop panel ray projection on i3/MX350; no profiler proof is claimed.
 
 Verification: No dotnet rebuilds were run. Static scans confirmed normalized desktop projection skips the duplicate `math.lengthsq(rayDirection)` path, public non-normalized projection still validates length, and panel projection uses the cached safe panel normal.
+
+## 2026-05-15 Diegetic Panel Cursor Margin Clamp
+What was wrong: The physical cursor clamp used serialized margins directly, so tiny panels or over-authored margins could invert local clamp bounds and make the cursor pin or jump.
+
+What was done: Sanitized cursor margins to the `[0, panel half-size]` range inside `UpdateCursor()` before building clamp bounds.
+
+Cinematic cheats used: No visual change for normal authoring. The physical cursor remains a cheap transform-following diegetic marker; the patch keeps that marker stable on edge-case panel geometry.
+
+Exact microseconds saved: None claimed. Expected cost is sub-1 us per cursor update on i3/MX350; the gain is correctness and stable UX under bad authoring bounds.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed cursor clamp now uses sanitized `cursorMarginLocal` bounds before `math.clamp`.
+
+## 2026-05-15 Diegetic Panel Finger Mode Release
+What was wrong: Switching a panel to `RaycastOnly` while a fingertip press was latched returned from the finger path without emitting an Up event.
+
+What was done: Routed active finger presses through `ResolveFingerRelease()` before leaving the finger path, and cleared stale active finger ownership when no press is active.
+
+Cinematic cheats used: No visual change. The same hybrid finger/raycast panel interaction remains; the patch prevents a latent input-state artifact during runtime mode changes.
+
+Exact microseconds saved: None claimed. Runtime cost is one branch in the finger path; the gain is deterministic input release behavior.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed the `RaycastOnly` branch now emits pending release events and clears stale finger ownership.

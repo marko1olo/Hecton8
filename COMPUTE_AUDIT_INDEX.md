@@ -16,9 +16,10 @@ Agent: COMPUTE_LOGISTICS_AUDITOR
 | 6 | `COMPUTE_THREAD_VALUE_AUDIT.md` | Top-100 work-trace/value/collision/C++ evidence audit |
 | 7 | `COMPUTE_FILE_BURN_ATTRIBUTION.md` | Weighted token burn by patch target |
 | 8 | `COMPUTE_TOKEN_BURN_RATE_LEDGER.md` | Current rolling token burn, cost/min, cost/hour, cost/day, model/cache split |
-| 9 | `COMPUTE_RATE_EFFICIENCY_AUDIT.md` | Previous detailed token rates, cache economics, and token/code ratios |
-| 10 | `COMPUTE_CODEX_DIALOGUE_AUDIT.md` | `.codex` dialogue/log topology and `logs_2.sqlite` boundaries |
-| 11 | `COMPUTE_COLLISION_RISK.md` | Current dirty-tree collision gate |
+| 9 | `COMPUTE_LIVE_BURN_SOURCES.md` | Current short-window active thread token deltas |
+| 10 | `COMPUTE_RATE_EFFICIENCY_AUDIT.md` | Previous detailed token rates, cache economics, and token/code ratios |
+| 11 | `COMPUTE_CODEX_DIALOGUE_AUDIT.md` | `.codex` dialogue/log topology and `logs_2.sqlite` boundaries |
+| 12 | `COMPUTE_COLLISION_RISK.md` | Current dirty-tree collision gate |
 
 ## Current Hard Boundaries
 
@@ -33,6 +34,7 @@ Agent: COMPUTE_LOGISTICS_AUDITOR
 | All-GPT-5.5 standard no-cache scenario | USD 231,128.29 |
 | Latest last-24h token flow | 3,236,618,901 tokens; USD 1,039.59 cache-aware |
 | Latest post-scan SQLite tail delta | +102,151,525 tokens; 27,749.37 tokens/sec |
+| Latest 90s active-source sample | 2,725,800 tokens; 30,099.39 tokens/sec; 11 active threads |
 | Top-100 thread share | 49.752% at 03:42 snapshot |
 | Top-30 validation non-zero outputs | 2,374 |
 | Reliable test-success evidence in top-30 validation scan | 0 |

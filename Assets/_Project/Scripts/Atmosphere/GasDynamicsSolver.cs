@@ -379,6 +379,7 @@ namespace Hecton8.Atmosphere
                 !_roomBaseIndex.IsCreated ||
                 baseId < 0 ||
                 baseId >= _baseCapacityLimit ||
+                !IsFiniteAup(in centerAup) ||
                 !AreBaseStateLanesReady(baseId + 1) ||
                 !AreRoomStateLanesReady(_roomCount))
             {
@@ -442,8 +443,14 @@ namespace Hecton8.Atmosphere
 
         public bool TrySetBaseCenterAup(int baseId, AbsoluteUniversePosition centerAup)
         {
-            if (_stepRunning || baseId < 0 || baseId >= _baseCount || !AreBaseStateLanesReady(baseId + 1))
+            if (_stepRunning ||
+                baseId < 0 ||
+                baseId >= _baseCount ||
+                !IsFiniteAup(in centerAup) ||
+                !AreBaseStateLanesReady(baseId + 1))
+            {
                 return false;
+            }
 
             _baseCenterAup[baseId] = centerAup;
             return true;
@@ -847,7 +854,7 @@ namespace Hecton8.Atmosphere
 
         private void InitializeBaseSlots(int safeBaseCapacity, int safeRoomCapacity)
         {
-            AbsoluteUniversePosition defaultCenterAup = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
+            AbsoluteUniversePosition defaultCenterAup = ResolveDefaultBaseCenterAup();
             float safeDefaultBattery = FiniteNonNegativeOrZero(defaultBaseBatteryWattSeconds);
             float safeDefaultIdleDraw = FiniteNonNegativeOrZero(defaultBaseIdleDrawWatts);
             float safeDefaultLeakRate = FiniteNonNegativeOrZero(hibernationLeakRatePerSecond);
@@ -1182,6 +1189,7 @@ namespace Hecton8.Atmosphere
         {
             if (baseId < 0 ||
                 baseId >= _baseCapacityLimit ||
+                !IsFiniteAup(in centerAup) ||
                 !_roomBaseIndex.IsCreated ||
                 !AreBaseStateLanesReady(baseId + 1))
             {
@@ -1235,7 +1243,9 @@ namespace Hecton8.Atmosphere
             float wakeDistance = math.max(0f, sleepDistance - math.max(3f, hibernationHysteresisMeters));
             double sleepDistanceSq = (double)sleepDistance * sleepDistance;
             double wakeDistanceSq = (double)wakeDistance * wakeDistance;
-            bool transitionOverflowAwakeGuard = double.IsFinite(_transitionOverflowAwakeUntil) && now <= _transitionOverflowAwakeUntil;
+            bool transitionOverflowAwakeGuard = _transitionOverflowAwakeUntil > 0d &&
+                                                double.IsFinite(_transitionOverflowAwakeUntil) &&
+                                                now <= _transitionOverflowAwakeUntil;
             int sleepingCount = 0;
 
             for (int baseId = 0; baseId < _baseCount; baseId++)
@@ -1304,6 +1314,30 @@ namespace Hecton8.Atmosphere
 
             double fallback = SystemDispatcher.CurrentUnscaledTimeSeconds;
             return double.IsFinite(fallback) && fallback >= 0d ? fallback : 0d;
+        }
+
+        private AbsoluteUniversePosition ResolveDefaultBaseCenterAup()
+        {
+            Vector3 position = transform.position;
+            return IsFiniteVector3(position)
+                ? AbsoluteUniversePosition.FromRuntimePosition(position)
+                : default;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsFiniteVector3(Vector3 value)
+        {
+            return float.IsFinite(value.x) &&
+                   float.IsFinite(value.y) &&
+                   float.IsFinite(value.z);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsFiniteAup(in AbsoluteUniversePosition position)
+        {
+            return math.isfinite(position.LocalX) &&
+                   math.isfinite(position.LocalY) &&
+                   math.isfinite(position.LocalZ);
         }
 
         private float ResolveHibernationDistanceMeters(GasDynamicsMathLod lod)
