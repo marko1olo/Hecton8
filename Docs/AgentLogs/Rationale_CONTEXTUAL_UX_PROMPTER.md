@@ -305,3 +305,10 @@ Solution: Replaced remaining layout clamps with `math.max`, keeping the same cla
 Rejected Alternatives: Leaving mixed math APIs, replacing more unrelated Unity API calls, or folding the clamps into serialized validation. Mixed APIs are needless inconsistency; broader replacements risk touching unrelated behavior; serialized validation cannot protect runtime font/sprite metrics.
 Scalability potential: Low keeps clamps cheap and predictable. Middle/High/Ultra preserve identical glyph sizing while keeping the layout path coherent for future vectorized/predictable math.
 Hardware Impact: Expected gain is sub-microsecond per layout rebuild on i3/MX350; no profiler proof.
+
+## Decision 43: Tooltip Sprite Asset Local Cache
+Problem: `TryResolveBindingIcon()` read `spriteAsset`, `spriteSheet`, and `spriteCharacterTable` through the asset property chain multiple times during binding-icon layout.
+Solution: Cache the sprite asset, sheet texture, and character table in locals before count/index access.
+Rejected Alternatives: Leaving repeated property reads, caching the sprite table across frames, or adding a dictionary from scheme to sprite character. Repeated reads are avoidable; cross-frame table caching risks stale authored assets; a dictionary violates the integer-index contract.
+Scalability potential: Low removes tiny repeated property traffic during layout. Middle/High/Ultra preserve the same TMP sprite atlas contract for richer device glyphs.
+Hardware Impact: Expected gain is sub-microsecond per binding-icon layout rebuild on i3/MX350; no profiler proof.

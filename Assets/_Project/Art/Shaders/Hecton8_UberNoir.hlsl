@@ -260,7 +260,10 @@ H8UberNoirInstanceData H8UberNoirLoadInstance(uint instanceID)
     if ((useBuffer != 0u) && (bufferCount > 0u))
     {
         uint clampedId = min(instanceID, bufferCount - 1u);
-        instanceData = _H8UberNoirInstanceData[bufferOffset + clampedId];
+        uint bufferIndex = bufferOffset + clampedId;
+        [branch]
+        if (bufferIndex >= bufferOffset)
+            instanceData = _H8UberNoirInstanceData[bufferIndex];
     }
 #endif
     return instanceData;
@@ -322,7 +325,7 @@ float H8UberNoirRadiusMask(float3 positionWS, float4 centerRadius)
 float3 H8UberNoirApplyDynamicHullBendingWS(float3 positionWS, float3 normalWS, half instanceSeed)
 {
 #if defined(_MATH_LOD_LOW)
-    return positionWS;
+    return H8UberNoirFinite3(positionWS, float3(0.0, 0.0, 0.0));
 #else
     float3 safePositionWS = H8UberNoirFinite3(positionWS, float3(0.0, 0.0, 0.0));
     float featureSource = _UberNoirFeatureFlags.z;
@@ -679,9 +682,13 @@ H8UberNoirVaryings H8UberNoirVertex(H8UberNoirAttributes input)
     float4x4 objectToAupWorld = H8UberNoirObjectToAupWorld(instanceData.ObjectToWorld);
     float3 positionOS = H8UberNoirFinite3(input.positionOS.xyz, float3(0.0, 0.0, 0.0));
     float3 normalOS = H8UberNoirSafeNormalize(input.normalOS, float3(0.0, 1.0, 0.0));
+    float instanceSeedSource = instanceData.SeedFadeFlags.x + _UberNoirInstanceParams.w;
+    float safeInstanceSeed = isfinite(instanceSeedSource) ? instanceSeedSource : 0.0;
+    float instanceFadeSource = instanceData.SeedFadeFlags.y;
+    float safeInstanceFade = isfinite(instanceFadeSource) ? saturate(instanceFadeSource) : 1.0;
     float3 positionWS = mul(objectToAupWorld, float4(positionOS, 1.0)).xyz;
     float3 normalWS = H8UberNoirTransformNormal(normalOS, instanceData.WorldToObject);
-    positionWS = H8UberNoirApplyDynamicHullBendingWS(positionWS, normalWS, (half)(instanceData.SeedFadeFlags.x + _UberNoirInstanceParams.w));
+    positionWS = H8UberNoirApplyDynamicHullBendingWS(positionWS, normalWS, (half)safeInstanceSeed);
 
     float3 tangentWS = H8UberNoirSafeNormalize(mul((float3x3)objectToAupWorld, input.tangentOS.xyz), float3(1.0, 0.0, 0.0));
     output.positionWS = positionWS;
@@ -691,8 +698,8 @@ H8UberNoirVaryings H8UberNoirVertex(H8UberNoirAttributes input)
     output.viewDirWS = (half3)H8UberNoirSafeNormalize(GetWorldSpaceViewDir(positionWS), float3(0.0, 0.0, 1.0));
     output.uv = input.uv;
     output.fogFactor = ComputeFogFactor(output.positionCS.z);
-    output.instanceSeed = (half)saturate(frac(instanceData.SeedFadeFlags.x + _UberNoirInstanceParams.w));
-    output.instanceFade = (half)saturate(instanceData.SeedFadeFlags.y);
+    output.instanceSeed = (half)saturate(frac(safeInstanceSeed));
+    output.instanceFade = (half)safeInstanceFade;
     return output;
 }
 

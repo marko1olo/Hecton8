@@ -177,3 +177,31 @@ Solution: Ran only `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`, scope
 Rejected Alternatives: Running a build was rejected by the direct no-rebuild order. Expanding into non-presentation domains was rejected by the domain boundary and active multi-agent churn.
 Scalability potential: Low-tier UI/visor/PDA setup has less hierarchy lookup debt; high-tier rendering and visual overkill features remain unchanged.
 Hardware Impact: 0 us runtime from the audit itself. Latest static audit: `RuntimeHPhiNarrow=0.010821867`, `RuntimeHPhiRisk=0.000610985`, `AllSourceHPhiNarrow=0.009633634`, `AllSourceHPhiRisk=0.000498924`, `GetComponentCalls=481`, `UnityUpdateMethods=0`, `StructLayoutAttributes=957`, `AupPrecisionRisk=0`.
+
+## Decision 026 - Procedural Overlay Lookup Consolidation
+Problem: Boot, death dump, subtitle, builder status, and temporary debug overlays still used `GetComponent<T>` in procedural UI construction and canvas fallback paths, leaving avoidable H-Phi lookup debt in Echelon 8.
+Solution: Replaced same-object and freshly-created-object probes with `TryGetComponent(out T)`, added null-safe canvas fallback recovery, and kept all generated hierarchy, TMP registration, tick cadence, and visual styling unchanged.
+Rejected Alternatives: Rewriting the procedural UI builders was rejected because it would add churn while other agents own adjacent UI. Moving overlay resolution into a global registry was rejected because these are local component relationships, not cross-domain services.
+Scalability potential: Low/MX350 gets lower cold construction/recovery lookup debt and no additional allocations. Middle/High/Ultra retain identical boot/death/subtitle/debug visual presentation, leaving shader and post budget untouched for overkill visuals.
+Hardware Impact: Estimated runtime gain is 0-10 us on cold UI construction/recovery frames only; no steady-state Tick win claimed. Static `GetComponentCalls` improved from 481 to 448.
+
+## Decision 027 - No-Rebuild Third UI H-Phi Reverification
+Problem: The procedural overlay lookup pass changed source state after the `12:55:12` H-Phi run.
+Solution: Ran only `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`, scoped `rg`, brace counts, and `git diff --check`. No `dotnet build`, `dotnet rebuild`, Unity compile, or Unity import was executed.
+Rejected Alternatives: Running a build was rejected by the direct no-rebuild order. Editing World/GPR or gameplay files was rejected by the Echelon 8 domain boundary and known external compile blocker.
+Scalability potential: Low-tier UI construction remains cheap and zero-GC styled; high-tier visual systems keep the same Hecton-OS/death-dump/subtitle polish without extra per-frame cost.
+Hardware Impact: 0 us runtime from the audit itself. Latest static audit: `RuntimeHPhiNarrow=0.010671906`, `RuntimeHPhiRisk=0.000607563`, `AllSourceHPhiNarrow=0.009509931`, `AllSourceHPhiRisk=0.000496385`, `GetComponentCalls=448`, `UnityUpdateMethods=0`, `StructLayoutAttributes=960`, `AupPrecisionRisk=0`.
+
+## Decision 028 - Pause And PDA Tab Lookup Consolidation
+Problem: Pause controls and multiple PDA tab builders still carried `GetComponent<T>` / `GetComponentInParent<T>` calls in cold construction and owner-resolution paths.
+Solution: Replaced local component probes with `TryGetComponent(out T)` and replaced parent lookups with explicit bounded `Transform` walks that preserve nearest-parent semantics without Unity hierarchy search APIs.
+Rejected Alternatives: Rewriting the PDA tab framework was rejected as high-churn during parallel UI work. Adding a new shared Core helper was rejected because this pass can stay inside Echelon 8 without changing cross-domain APIs.
+Scalability potential: Low/MX350 gets lower cold tab construction/recovery lookup debt. Middle/High/Ultra keep identical PDA atlas/data-log/barter/construction/controls/loadout visuals and pause controls behavior.
+Hardware Impact: Estimated runtime gain is 0-10 us on cold tab construction/recovery frames only. Static `GetComponentCalls` improved from 448 to 416; `RuntimeHPhiRisk` moved from `0.000607563` to `0.000610856` because the parent-walk code adds source lines, so this is recorded as lookup hygiene rather than a full scalar-score win.
+
+## Decision 029 - No-Rebuild Fourth UI H-Phi Reverification
+Problem: The pause/PDA lookup pass changed source state after the `13:27:58` H-Phi run.
+Solution: Ran only `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`, scoped `rg`, brace counts, and `git diff --check`. No `dotnet build`, `dotnet rebuild`, Unity compile, or Unity import was executed.
+Rejected Alternatives: Running a build was rejected by the direct no-rebuild order. Expanding to dirty files owned by other agents was rejected by the parallel-execution rule.
+Scalability potential: Low-tier tab setup remains cheaper and deterministic; high-tier diegetic PDA/pause presentation remains visually unchanged with no extra per-frame cost.
+Hardware Impact: 0 us runtime from the audit itself. Latest static audit: `RuntimeHPhiNarrow=0.010671906`, `RuntimeHPhiRisk=0.000610856`, `AllSourceHPhiNarrow=0.009509931`, `AllSourceHPhiRisk=0.000498829`, `GetComponentCalls=416`, `UnityUpdateMethods=0`, `StructLayoutAttributes=960`, `AupPrecisionRisk=0`.

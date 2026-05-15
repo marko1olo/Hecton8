@@ -1165,13 +1165,22 @@ namespace Hecton8.World
                 if (!TryResolveDynamicUpdateRegion(record, clearRequest, out int3 regionMin, out int3 regionMax))
                     continue;
 
-                int3 regionSize = regionMax - regionMin + 1;
-                int regionPointCount = regionSize.x * regionSize.y * regionSize.z;
-                if (regionPointCount <= 0)
+                if (!TryResolveVoxelCellCount(record.Dimensions, out int requiredCellCount))
                     continue;
 
-                NativeArray<byte>.Copy(record.Current, record.Next, record.Current.Length);
-                NativeArray<ushort>.Copy(record.CurrentDistance, record.NextDistance, record.CurrentDistance.Length);
+                int requiredBlockCount = ResolvePureVoidBlockCount(requiredCellCount);
+                if (requiredBlockCount <= 0 || record.PureVoidBlockFlags.Length < requiredBlockCount)
+                    continue;
+
+                int3 regionSize = regionMax - regionMin + 1;
+                long regionPointCountLong = (long)regionSize.x * regionSize.y * regionSize.z;
+                if (regionPointCountLong <= 0L || regionPointCountLong > int.MaxValue)
+                    continue;
+
+                record.PureVoidBlockCount = requiredBlockCount;
+                int regionPointCount = (int)regionPointCountLong;
+                NativeArray<byte>.Copy(record.Current, record.Next, requiredCellCount);
+                NativeArray<ushort>.Copy(record.CurrentDistance, record.NextDistance, requiredCellCount);
 
                 DisposeObstacleSnapshot(ref record.PendingObstacleSnapshot);
 
@@ -1211,7 +1220,7 @@ namespace Hecton8.World
                     record.Next,
                     record.NextDistance,
                     record.PureVoidBlockFlags,
-                    record.Next.Length,
+                    requiredCellCount,
                     dilationHandle);
 
                 record.HasPendingDynamicUpdate = true;

@@ -381,3 +381,16 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 - Static grep over the tentacle solver still finds no direct `new NativeArray<`, direct `array.Dispose(`, `Time.frameCount`, `GlobalRegistry.Get`, forbidden Unity object searches, or legacy Animator/SkinnedMeshRenderer paths.
 - `git diff --check` on `LeviathanTentacleVerletSolver.cs` exits 0.
 - No `dotnet` rebuild, compile, Unity import, or response-file probe was run.
+
+### Loop 35: Tentacle Low-Tier Shader Cost Gate Recheck
+
+- Added `_H8LeviathanTentacleFxTier` to `Hecton_LeviathanTentacleIndirect.shader`.
+- Bound the shader tier from `LeviathanTentacleVerletSolver` using the same cached scalability tier that resolves constraint iterations.
+- Low/Unknown/MX350 now use vertex normal lighting and skip normal-map reconstruction, flow sheen pulse, SSS, projected caustics, and biolum volume sampling in the tentacle fragment shader.
+- High/Ultra keep the full organic shading stack.
+- DOD: low-tier tentacle presentation retains indirect rendering and readable silhouettes while avoiding high-tier pixel effects.
+- Alternative Rejected: reducing tentacle SOA count because the fixed 8x20 buffer contract is stable and the concrete low-tier gap was per-pixel shading cost.
+- Estimate: low-tier saves one normal sample/reconstruction plus SSS/caustics/biolum/flow-sheen work per tentacle pixel; no GPU profiler proof yet.
+- `git diff --check` and `git diff --cached --check` on touched code/shader/docs exit 0; working-copy output only reports LF-to-CRLF warnings.
+- Static forbidden scan over Leviathan IK code/shader scope remains clean for `new NativeArray<`, direct `array.Dispose(`, `Time.frameCount`, `GlobalRegistry.Get`, forbidden Unity object searches, `Animator`, and `SkinnedMeshRenderer`.
+- No `dotnet` rebuild, compile, Unity import, shader compile, or response-file probe was run.

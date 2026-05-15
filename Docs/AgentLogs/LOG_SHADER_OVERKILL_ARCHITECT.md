@@ -275,3 +275,54 @@ Verification:
 - `git diff --check` on edited files: no whitespace errors.
 - Brace scan: all edited files balanced.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`: `RuntimeHPhiNarrow=0.010821867`, `RuntimeHPhiRisk=0.000610985`, `AllSourceHPhiNarrow=0.009633634`, `AllSourceHPhiRisk=0.000498924`, `ArchitecturalPurity=1`, `DataSovereignty=0.021383648`, `MemoryAlignment=0.506081438`, `GetComponentCalls=481`, `UnityUpdateMethods=0`, `StructLayoutAttributes=957`, `AupPrecisionRisk=0`.
+
+## 2026-05-15 13:27:58 +04:00 - Follow-Up No-Rebuild Procedural Overlay Lookup Consolidation
+What was wrong:
+- Hecton OS boot, death memory dump, subtitle, debug overlay, and builder status UI builders still used local `GetComponent<T>` probes during procedural construction and canvas fallback recovery.
+- The debt was cold-path, but it inflated H-Phi and kept inconsistent component-lookup style in Presentation & UX.
+
+What was done:
+- Updated `BuilderStatusOverlay`, `HectonOSBootManager`, `PDADeathMemoryDump`, `SubtitleManager`, and `SubnauticaSystemsDebugUI`.
+- Replaced same-object and freshly-created-object `GetComponent<T>` calls with `TryGetComponent(out T)`.
+- Preserved generated hierarchy, TMP registration, canvas fallback behavior, overlay visibility, and tick registration cadence.
+
+Cinematic Cheats used:
+- None added. This pass removed UI setup debt only.
+- Existing presentation cheats remain: Hecton-OS boot text, death-dump scroll, subtitle waveform fake, and debug overlay stay deterministic and cheap.
+
+Exact Microseconds saved:
+- Estimated 0-10 us CPU on cold UI construction/recovery frames.
+- No steady-state Tick saving claimed; static H-Phi lookup debt reduction is the measured output.
+
+Verification:
+- No dotnet rebuild was executed.
+- `rg` over the 5 edited files found no remaining `GetComponent*<T>` matches.
+- `git diff --check` on edited files: no whitespace errors; LF-to-CRLF warnings only.
+- Brace scan: `BuilderStatusOverlay 77/77`, `HectonOSBootManager 54/54`, `PDADeathMemoryDump 42/42`, `SubtitleManager 133/133`, `SubnauticaSystemsDebugUI 105/105`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`: `RuntimeHPhiNarrow=0.010671906`, `RuntimeHPhiRisk=0.000607563`, `AllSourceHPhiNarrow=0.009509931`, `AllSourceHPhiRisk=0.000496385`, `ArchitecturalPurity=1`, `DataSovereignty=0.021132597`, `MemoryAlignment=0.50499737`, `GetComponentCalls=448`, `UnityUpdateMethods=0`, `StructLayoutAttributes=960`, `AupPrecisionRisk=0`.
+
+## 2026-05-15 13:32:15 +04:00 - Follow-Up No-Rebuild Pause And PDA Tab Lookup Consolidation
+What was wrong:
+- Pause controls and PDA atlas/data-log/barter/construction/controls/loadout tab builders still had local `GetComponent<T>` and `GetComponentInParent<T>` debt.
+- The debt was cold-path, but it kept H-Phi lookup count high and mixed direct Unity hierarchy search with the newer zero-GC style.
+
+What was done:
+- Updated `PauseControlsPanel`, `PDAAtlasSignalTab`, `PDADataLogTab`, `PDABarterTab`, `PDAConstructionTab`, `PDAControlsRebindUI`, and `PDALoadoutTab`.
+- Replaced same-object and generated-object component probes with `TryGetComponent(out T)`.
+- Replaced parent PDA/pause-owner recovery with bounded `Transform` walks.
+- Kept generated tab hierarchy, fonts, selection indicators, madness FX binding, and loadout/barter/construction behavior unchanged.
+
+Cinematic Cheats used:
+- None added. This was UI setup hygiene.
+- Existing PDA and pause presentation remains deterministic and fake-first: generated panels, char-buffer text, cached indicators, and no physical simulation.
+
+Exact Microseconds saved:
+- Estimated 0-10 us CPU on cold tab construction/recovery frames.
+- No steady-state Tick saving claimed. Static lookup debt reduction is the measured output.
+
+Verification:
+- No dotnet rebuild was executed.
+- `rg` over the 7 edited files found no remaining `GetComponent*<T>` matches.
+- `git diff --check` on edited files: no whitespace errors; LF-to-CRLF warnings only.
+- Brace scan: `PauseControlsPanel 125/125`, `PDAAtlasSignalTab 84/84`, `PDADataLogTab 161/161`, `PDABarterTab 92/92`, `PDAConstructionTab 210/210`, `PDAControlsRebindUI 164/164`, `PDALoadoutTab 185/185`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`: `RuntimeHPhiNarrow=0.010671906`, `RuntimeHPhiRisk=0.000610856`, `AllSourceHPhiNarrow=0.009509931`, `AllSourceHPhiRisk=0.000498829`, `ArchitecturalPurity=1`, `DataSovereignty=0.021132597`, `MemoryAlignment=0.50499737`, `GetComponentCalls=416`, `UnityUpdateMethods=0`, `StructLayoutAttributes=960`, `AupPrecisionRisk=0`.

@@ -524,3 +524,19 @@ Solution: Use a local `hasFreshAtmosphericReentry` flag and allow atmospheric Ma
 Rejected Alternatives: Clear `_lastAtmosphericReentry` before every poll, or trust the cached snapshot because run-entry reset already exists. Per-frame clearing would destroy useful black-box sequence context; run-entry reset does not protect cross-stage stale data inside one run.
 Scalability potential: Low/MX350 avoids a false fast-forward into warning/manual override when the orbital provider briefly drops out. Middle/High/Ultra keep the same richer VWS, rumble, plasma, and whiteout sequence, but only from current motion data.
 Hardware Impact: One stack bool and branch per burn wait iteration, below 1 us on i3/MX350. Prevents stale Mach progression without registry polling, allocation, or extra signal scanning. Verification static only; no rebuild.
+
+## Decision 64 - Director Atmospheric Finite Wall
+
+Problem: Orbital snapshots were protected by director-level finite checks, but atmospheric snapshots were trusted after the runtime call. The current Core bridge validates them, but the contract allows future adapters and tests to supply data directly.
+Solution: Add `IsFiniteAtmospheric()` and call it before atmospheric stage hashing or Mach fallback in both `AwaitAtmosphericReentryAsync()` and `RunReentryBurnAsync()`. Non-finite atmospheric packets route to the same fault stage and black-box dump path as invalid orbital snapshots.
+Rejected Alternatives: Keep validation only in `PrologueSequenceRegistryBridge`, or sanitize non-finite values to zero. Bridge-only validation is not a contract wall; zero sanitizing would hide a corrupt producer and make crash forensics weaker.
+Scalability potential: Low/MX350 avoids wasting VWS, haptic, and hydration waits on corrupt reentry packets. Middle/High/Ultra keep richer plasma/whiteout presentation only when the control data is finite.
+Hardware Impact: Three scalar finite checks only when an atmospheric packet is consumed, below 1 us on i3/MX350. No allocation, no registry read, and fault-only black-box dumping. Verification static only; no rebuild.
+
+## Decision 65 - Audio Quality-Tier Publish Gate
+
+Problem: `PrologueAcousticOrchestrator` refreshed `_qualityTierByte` on scalability events, but `ShouldPublishTransition()` ignored tier-byte changes when stage, flags, and scalar DSP values stayed stable. Downstream audio could therefore keep stale quality metadata during a high/ultra or low-memory policy switch.
+Solution: Track `_lastPublishedQualityTierByte`, reset it with transient audio state, update it only after `QueuePrologueAudioTransition()` succeeds, and include one byte compare in the transition publish predicate.
+Rejected Alternatives: Force-publish directly from `OnScalabilityChanged()`, or poll registry every audio frame. Event-time force-publish can waste SPSC capacity while prologue audio is idle; per-frame registry polling violates the hot-path cache rule.
+Scalability potential: Low/MX350 receives low-tier proxy DSP metadata promptly. Middle/High/Ultra receive quality-tier metadata even when scalar values are otherwise stable, allowing richer granular/binaural paths to engage from current policy.
+Hardware Impact: One byte compare per armed prologue audio publish check, below 1 us on i3/MX350. No allocation, no extra registry read, no audio-thread work. Verification static only; no rebuild.

@@ -270,8 +270,7 @@ namespace Hecton8.UI
 
         private void Awake()
         {
-            _root = GetComponent<RectTransform>();
-            if (_root == null)
+            if (!TryGetComponent(out _root))
                 _root = gameObject.AddComponent<RectTransform>();
 
             EnsureHologramMaterial();
@@ -583,8 +582,7 @@ namespace Hecton8.UI
             _labelFont = LocalizedFontResolver.ResolveReadableFont(_labelFont);
 
             // Background
-            Image bg = gameObject.GetComponent<Image>();
-            if (bg == null) bg = gameObject.AddComponent<Image>();
+            if (!TryGetComponent(out Image bg)) bg = gameObject.AddComponent<Image>();
             bg.color = colorBackground;
 
             // Header
@@ -730,8 +728,7 @@ namespace Hecton8.UI
             _summaryLabel.textWrappingMode = TMPro.TextWrappingModes.Normal;
             Anchor(_summaryLabel.rectTransform, new Vector2(0, 1), new Vector2(1, 1),
                 new Vector2(12, -200), new Vector2(-12, -96));
-            _summaryMadnessFx = _summaryLabel.gameObject.GetComponent<LocalizedTextMadnessFx>();
-            if (_summaryMadnessFx == null)
+            if (!_summaryLabel.TryGetComponent(out _summaryMadnessFx))
                 _summaryMadnessFx = _summaryLabel.gameObject.AddComponent<LocalizedTextMadnessFx>();
 
             _summaryMadnessFx.Bind(_summaryLabel);
@@ -748,8 +745,7 @@ namespace Hecton8.UI
             _subtitleLabel.textWrappingMode = TMPro.TextWrappingModes.Normal;
             Anchor(_subtitleLabel.rectTransform, new Vector2(0, 0.3f), new Vector2(1, 0.7f),
                 new Vector2(12, 0), new Vector2(-12, 0));
-            _subtitleMadnessFx = _subtitleLabel.gameObject.GetComponent<LocalizedTextMadnessFx>();
-            if (_subtitleMadnessFx == null)
+            if (!_subtitleLabel.TryGetComponent(out _subtitleMadnessFx))
                 _subtitleMadnessFx = _subtitleLabel.gameObject.AddComponent<LocalizedTextMadnessFx>();
 
             _subtitleMadnessFx.Bind(_subtitleLabel);
@@ -1592,7 +1588,7 @@ namespace Hecton8.UI
         {
             var go = new GameObject(name, typeof(RectTransform));
             go.layer = parent.gameObject.layer;
-            var rt = go.GetComponent<RectTransform>();
+            go.TryGetComponent(out RectTransform rt);
             rt.SetParent(parent, false);
             return rt;
         }

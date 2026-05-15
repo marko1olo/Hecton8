@@ -457,17 +457,17 @@ namespace Hecton8.UI
 
             GameObject rootObject = new GameObject(RootObjectName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(CanvasGroup));
             rootObject.transform.SetParent(canvas.transform, false);
-            _root = rootObject.GetComponent<RectTransform>();
+            rootObject.TryGetComponent(out _root);
             _root.anchorMin = new Vector2(0f, 1f);
             _root.anchorMax = new Vector2(0f, 1f);
             _root.pivot = new Vector2(0f, 1f);
             _root.anchoredPosition = anchoredPosition;
             _root.sizeDelta = panelSize;
 
-            Image background = rootObject.GetComponent<Image>();
+            rootObject.TryGetComponent(out Image background);
             background.color = new Color(0.02f, 0.07f, 0.10f, 0.94f);
 
-            _canvasGroup = rootObject.GetComponent<CanvasGroup>();
+            rootObject.TryGetComponent(out _canvasGroup);
             _canvasGroup.alpha = 1f;
             _canvasGroup.interactable = false;
             _canvasGroup.blocksRaycasts = false;
@@ -824,14 +824,14 @@ namespace Hecton8.UI
             GameObject textObject = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
             textObject.transform.SetParent(_root, false);
 
-            RectTransform rectTransform = textObject.GetComponent<RectTransform>();
+            textObject.TryGetComponent(out RectTransform rectTransform);
             rectTransform.anchorMin = new Vector2(0f, 1f);
             rectTransform.anchorMax = new Vector2(0f, 1f);
             rectTransform.pivot = new Vector2(0f, 1f);
             rectTransform.anchoredPosition = anchoredPos;
             rectTransform.sizeDelta = size;
 
-            TextMeshProUGUI text = textObject.GetComponent<TextMeshProUGUI>();
+            textObject.TryGetComponent(out TextMeshProUGUI text);
             text.font = fontAsset != null ? fontAsset : TMP_Settings.defaultFontAsset;
             text.fontSize = fontSize;
             text.fontStyle = fontStyle;
@@ -920,7 +920,9 @@ namespace Hecton8.UI
         private Canvas ResolveOrCreateRuntimeCanvas()
         {
             Transform existing = transform.Find(CanvasObjectName);
-            Canvas canvas = existing != null ? existing.GetComponent<Canvas>() : null;
+            Canvas canvas = null;
+            if (existing != null)
+                existing.TryGetComponent(out canvas);
             if (canvas != null)
                 return canvas;
 
@@ -932,19 +934,24 @@ namespace Hecton8.UI
                 typeof(GraphicRaycaster));
             canvasObject.transform.SetParent(transform, false);
 
-            canvas = canvasObject.GetComponent<Canvas>();
+            canvasObject.TryGetComponent(out canvas);
+            if (canvas == null)
+                return null;
+
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.overrideSorting = true;
             canvas.sortingOrder = 32000;
 
-            CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
-            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-            scaler.matchWidthOrHeight = 0.5f;
+            if (canvasObject.TryGetComponent(out CanvasScaler scaler))
+            {
+                scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+                scaler.referenceResolution = new Vector2(1920f, 1080f);
+                scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+                scaler.matchWidthOrHeight = 0.5f;
+            }
 
-            GraphicRaycaster raycaster = canvasObject.GetComponent<GraphicRaycaster>();
-            raycaster.enabled = false;
+            if (canvasObject.TryGetComponent(out GraphicRaycaster raycaster))
+                raycaster.enabled = false;
 
             return canvas;
         }

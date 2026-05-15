@@ -22,6 +22,7 @@ Shader "Hecton8/Fauna/LeviathanTentacleIndirect"
         _SssDistortion("SSS Distortion", Range(0, 2)) = 0.42
         _SssPower("SSS Power", Range(0.1, 16)) = 3.4
         _SssScale("SSS Scale", Range(0, 4)) = 0.92
+        _H8LeviathanTentacleFxTier("FX Tier", Range(0, 1)) = 1.0
         _DepthBias("Depth Bias", Range(0, 0.01)) = 0.0
         _Cutoff("Alpha Cutoff", Range(0, 1)) = 0.02
     }
@@ -87,6 +88,7 @@ Shader "Hecton8/Fauna/LeviathanTentacleIndirect"
             float _SssDistortion;
             float _SssPower;
             float _SssScale;
+            float _H8LeviathanTentacleFxTier;
             float _DepthBias;
             float _Cutoff;
         CBUFFER_END
@@ -254,7 +256,11 @@ Shader "Hecton8/Fauna/LeviathanTentacleIndirect"
 
             half4 packedMask = SAMPLE_TEXTURE2D(_MaskMap, sampler_MaskMap, input.uv);
             HectonPackedMaskV1 decodedMask = HectonCoreLitDecodePackedMaskV1(packedMask, (half)_Metallic, (half)_OcclusionStrength, (half)_Smoothness);
-            half3 normalWS = ResolveTentacleNormal(input);
+            half fxTier = saturate((half)_H8LeviathanTentacleFxTier);
+            half3 normalWS = (half3)HectonCoreLitSafeNormalize(input.normalWS);
+            [branch]
+            if (fxTier > 0.5h)
+                normalWS = ResolveTentacleNormal(input);
             half3 viewDirWS = (half3)HectonCoreLitSafeNormalize(input.viewDirWS);
             half segment01 = saturate(input.segment01);
             half middleMask = saturate(1.0h - abs(segment01 * 2.0h - 1.0h));
@@ -269,11 +275,16 @@ Shader "Hecton8/Fauna/LeviathanTentacleIndirect"
             half referenceRadius = (half)lerp(_BaseRadiusReference, _TipRadiusReference, segment01);
             half radiusPulse = saturate((input.radius - referenceRadius) * (half)_SuctionGlowGain) * middleMask;
             half flowActive = saturate((half)_H8AbyssalFlowActive);
-            half flowPulse = CheapTriangle01(dot(input.positionWS.xz, float2(0.037, 0.061)) + _Time.y * 0.41 + segment01 * 2.37);
-            half3 flowDirection = input.flowWS.xyz;
-            half flowCellActive = saturate(input.flowWS.w);
-            half flowAlignment = saturate(dot(flowDirection, normalWS) * 0.5h + 0.5h);
-            half flowSheen = flowActive * flowCellActive * flowPulse * lerp(0.35h, 1.0h, flowAlignment) * (half)_FlowSheenStrength;
+            half flowSheen = 0.0h;
+            [branch]
+            if (fxTier > 0.5h)
+            {
+                half flowPulse = CheapTriangle01(dot(input.positionWS.xz, float2(0.037, 0.061)) + _Time.y * 0.41 + segment01 * 2.37);
+                half3 flowDirection = input.flowWS.xyz;
+                half flowCellActive = saturate(input.flowWS.w);
+                half flowAlignment = saturate(dot(flowDirection, normalWS) * 0.5h + 0.5h);
+                flowSheen = flowActive * flowCellActive * flowPulse * lerp(0.35h, 1.0h, flowAlignment) * (half)_FlowSheenStrength;
+            }
             half rim = saturate(1.0h - dot(normalWS, viewDirWS));
             half rim2 = rim * rim;
 
@@ -286,16 +297,23 @@ Shader "Hecton8/Fauna/LeviathanTentacleIndirect"
                 metallic,
                 smoothness,
                 ambientOcclusion);
-            half3 sss = HectonCoreLitEvaluateOrganicSss(
-                viewDirWS,
-                (half3)HectonCoreLitSafeNormalize(_MainLightPosition.xyz),
-                normalWS,
-                _SssColor.rgb,
-                _SssDistortion,
-                _SssPower,
-                _SssScale);
-            half3 caustics = HectonCoreLitEvaluateProjectedCausticsScattering(input.positionWS, normalWS) * albedo;
-            half3 biolum = (half3)HectonCoreLitSampleBiolumVolumeRadiance(input.positionWS) * emissionMask;
+            half3 sss = half3(0.0h, 0.0h, 0.0h);
+            half3 caustics = half3(0.0h, 0.0h, 0.0h);
+            half3 biolum = half3(0.0h, 0.0h, 0.0h);
+            [branch]
+            if (fxTier > 0.5h)
+            {
+                sss = HectonCoreLitEvaluateOrganicSss(
+                    viewDirWS,
+                    (half3)HectonCoreLitSafeNormalize(_MainLightPosition.xyz),
+                    normalWS,
+                    _SssColor.rgb,
+                    _SssDistortion,
+                    _SssPower,
+                    _SssScale);
+                caustics = HectonCoreLitEvaluateProjectedCausticsScattering(input.positionWS, normalWS) * albedo;
+                biolum = (half3)HectonCoreLitSampleBiolumVolumeRadiance(input.positionWS) * emissionMask;
+            }
             half3 emission = _EmissionColor.rgb * (_EmissionStrength * emissionMask);
             emission += _SuctionGlowColor.rgb * (_SuctionGlowColor.a * radiusPulse * (0.55h + rim2));
             emission += _EmissionColor.rgb * (flowSheen * (0.18h + rim2 * 0.82h));

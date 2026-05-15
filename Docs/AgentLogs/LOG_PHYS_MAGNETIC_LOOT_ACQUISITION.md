@@ -510,3 +510,60 @@ Verification:
 
 Final Status:
 - PENDING VERIFICATION.
+
+## 2026-05-15 - Finite AUP Ingress Guard Pass
+
+What was wrong:
+- Player and pickup runtime positions were converted into AUP vault state without explicit finite checks at the managed boundary.
+- A bad transform could poison loot magnet vault data before the Burst job recorded a non-finite fault.
+- Missing player context forced a missing-pose path even when the player inventory transform was available.
+
+What was done:
+- Added fixed telemetry bits for non-finite pickup and player pose evidence.
+- Bumped loot telemetry dump version to 3 for the expanded flag semantics.
+- Guarded pickup registry positions before `AbsoluteUniversePosition.FromRuntimePosition`.
+- Guarded player context snapshots and fallback transform positions before scheduling.
+- Used the inventory transform as a player anchor fallback when player context is missing.
+
+Cinematic Cheats used:
+- None. This is truth-state poison prevention.
+
+Exact Microseconds saved:
+- No profiler number claimed. FastTick normal path is unchanged.
+- SlowTick adds finite checks per pickup candidate and prevents expensive downstream fault recovery from poisoned AUP vault data.
+
+Verification:
+- User forbade dotnet rebuilds; none were run.
+- `git diff --check` passed for `LootMagnetSystem.cs`.
+- Static loot anti-bloat scan returned no matches.
+- Dotnet process query was clean before the documentation update.
+
+Final Status:
+- PENDING VERIFICATION.
+
+## 2026-05-15 - Commit-Time Pickup Proxy Quarantine Pass
+
+What was wrong:
+- The managed commit path rejected null pickup references but still trusted inactive, depleted, pooled, or item-hash-mismatched sidecar proxies.
+- A proxy reconfigured between Burst scheduling and LateFrame commit could publish wrong-item acquisition/presentation signals.
+
+What was done:
+- Added a fixed telemetry bit for invalid pickup proxy evidence.
+- Rejected null, inactive, quantity-zero, zero-hash, and item-hash-mismatched pickups before inventory transfer.
+- Cleared invalid vault slots before presentation publish or transform mirroring.
+
+Cinematic Cheats used:
+- None. This is state-integrity hardening.
+
+Exact Microseconds saved:
+- No profiler number claimed. Adds a small commit-time branch cluster per scheduled slot.
+- Prevents wrong inventory/presentation side effects from stale pooled pickups, which are costlier than the guard.
+
+Verification:
+- User forbade dotnet rebuilds; none were run.
+- `git diff --check` passed for `LootMagnetSystem.cs`.
+- Static loot anti-bloat scan returned no matches.
+- A dotnet watcher respawned during verification, was stopped by id, and the follow-up process query was clean.
+
+Final Status:
+- PENDING VERIFICATION.

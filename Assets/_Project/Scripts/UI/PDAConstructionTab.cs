@@ -223,7 +223,14 @@ namespace Hecton8.UI
                 constructionManager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
 
             if (playerPDA == null)
-                playerPDA = GetComponentInParent<PlayerPDA>();
+            {
+                for (Transform current = transform; current != null; current = current.parent)
+                {
+                    if (current.TryGetComponent(out playerPDA))
+                        break;
+                }
+            }
+
             if (hudNotification == null)
                 HUDNotification.TryGetActive(out hudNotification);
 
@@ -1942,15 +1949,14 @@ namespace Hecton8.UI
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
             go.layer = parent.gameObject.layer;
-            RectTransform rect = go.GetComponent<RectTransform>();
+            go.TryGetComponent(out RectTransform rect);
             rect.SetParent(parent, false);
             return rect;
         }
 
         private static Image EnsureImage(GameObject go)
         {
-            Image image = go.GetComponent<Image>();
-            if (image == null)
+            if (!go.TryGetComponent(out Image image))
                 image = go.AddComponent<Image>();
             return image;
         }

@@ -485,3 +485,15 @@ Rejected Alternatives: clamping future frames to current was rejected because it
 Scalability potential: Low/toaster avoids long-lived unresponsive cockpit controls after one bad tool/test callback. Middle/High keep receiver frame semantics strict as cockpit density and multi-hand probes increase. Ultra can layer richer feedback knowing that only current-or-past truthful samples enter control state.
 
 Hardware Impact: one `Time.frameCount` read and integer comparison pair per receiver callback. Future samples skip transform, AUP, signal, haptic, audio, and state writes. 0 B/frame and no extra registry/signal dependency.
+
+## Decision 40 - Receiver registration must be backed by a runnable dispatcher lane
+
+Problem: the lever receiver registration guard checked latch state, native allocation, collider presence, and play mode, but not dispatcher availability. During enable-before-dispatcher or dispatcher service outage, the lever could occupy `PhysicalHandReceiverRegistry` even though `TryRegisterTick()` could not place it in the player lane to consume hand samples.
+
+Solution: add the same `GlobalRegistry.Dispatcher == null` fast-fail to `TryRegisterReceiver()` that tick registration already uses. Dispatcher removal already unregisters the receiver, and dispatcher replacement still recovers native state before registering receiver and tick.
+
+Rejected Alternatives: keeping early receiver registration was rejected because fixed receiver capacity is scarce and a dead receiver can accept samples without simulation. Moving all receiver registration behind tick registration was rejected because the receiver table and dispatcher lane have distinct lifecycle identities and hot-swap repairs already use separate helpers. Polling dispatcher state in `Tick()` was rejected because the bad state is lifecycle-only.
+
+Scalability potential: Low/toaster avoids wasting a receiver slot during boot, scene streaming, or dispatcher reload. Middle/High keep receiver and tick identity coherent as cockpit controls stream in. Ultra can support denser physical panels because dead manual override levers no longer occupy overlap dispatch capacity.
+
+Hardware Impact: 0 us steady-state. Cold registration pays one static dispatcher-null branch and prevents useless overlap-to-receiver dispatch while no runnable lever simulation lane exists.

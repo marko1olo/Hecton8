@@ -400,3 +400,19 @@ Status: PENDING VERIFICATION
 - Verification avoided dotnet rebuilds and Unity import. `RuleRawReplacementYamlScan Count=3 Bad=0`; source scan found `SerializedRuleReplacementEquals Count=2`, `failed |= !SerializedRuleReplacementEquals Count=1`, direct child `FindPropertyRelative(...).stringValue Count=0`, and `BioRuleData _rules element schema missing serialized fields Count=1`; `git diff --check` passed; source brace balance stayed `Delta=0` with `NonAscii=0`; case-sensitive forbidden source scan stayed clean.
 - Rejected alternative: leaving the dereference was rejected because validators and authoring tools must fail closed with actionable diagnostics, not crash on corrupted serialized assets. Catching exceptions was rejected because explicit null checks make the contract clearer.
 - H-Phi impact remains domain-local evidence only: Shallows BioRule validation now stays deterministic under malformed authoring data without runtime rule normalization or cross-domain error handling.
+
+### Loop 46 - BioRule Serialized Setter Schema Diagnostics
+
+- Found another authoring-path schema drift gap: `SetString`, `SetInt`, `SetFloat`, `SetEnum`, and `SetObject` silently skipped missing serialized fields, allowing partial rule rewrites with no immediate diagnostic.
+- Patched the setter layer with `TryFindSerializedProperty` and `ResolveSerializedTargetName`, requiring the expected serialized property type before writes and logging deterministic schema errors on missing/wrong fields. `SetRules` now also logs missing array/element failures.
+- Verification avoided dotnet rebuilds and Unity import. `RuleSetterFieldYamlScan Count=3 Bad=0`; source scan found `TryFindSerializedProperty Count=6`, all five expected `SerializedPropertyType` checks, `if (property != null) Count=0`, `Missing serialized field Count=1`, and `Serialized field type drift Count=1`; `git diff --check` passed with only repo CRLF warnings; source brace balance stayed `Delta=0` with `NonAscii=0`; case-sensitive forbidden source scan stayed clean.
+- Rejected alternative: keeping silent no-ops was rejected because authoring tools must report schema drift where it occurs. Throwing exceptions was rejected because deterministic editor error logs plus subsequent validation failures are easier to integrate.
+- H-Phi impact remains domain-local evidence only: Shallows rule authoring now fails visibly on schema drift without runtime normalization, cross-domain dependencies, or hot-path allocations.
+
+### Loop 47 - Serialized Validation Type Guards
+
+- Found the matching read-side schema drift gap: serialized validation helpers checked property existence but did not require expected `SerializedPropertyType` before reading values.
+- Patched `SerializedIntEquals`, `SerializedBoolEquals`, `SerializedFloatEquals`, `SerializedStringEquals`, object-reference helpers, `SerializedRuleReplacementEquals`, and `SerializedSavedPropertyKeysEqual` to reject type drift explicitly.
+- Verification pending. Planned static checks: source token scan for helper type guards, rule/material YAML scans, `git diff --check`, source brace/non-ASCII balance, and case-sensitive forbidden source scan. No dotnet rebuild or Unity import will be run.
+- Rejected alternative: trusting Unity property access behavior was rejected because validation should encode the contract explicitly. Exception-driven detection was rejected because fail-closed boolean checks are clearer and cheaper.
+- H-Phi impact remains domain-local evidence only: Shallows serialized validation now rejects type drift directly without runtime repair, material mutation, or cross-domain schema handling.

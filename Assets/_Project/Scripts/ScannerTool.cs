@@ -3332,6 +3332,7 @@ namespace Hecton8.Gameplay
             float exhaustGradientWeight = 0f;
             if (TrySampleScientificAttractantGradient(
                     sdfHit.Point,
+                    now,
                     out float bloodSignal01,
                     out float exhaustSignal01,
                     out float3 bloodGradient,
@@ -3434,6 +3435,7 @@ namespace Hecton8.Gameplay
 
             if (TrySampleScientificAttractantGradient(
                     probePosition,
+                    now,
                     out float bloodSignal01,
                     out float exhaustSignal01,
                     out float3 bloodGradient,
@@ -3904,6 +3906,7 @@ namespace Hecton8.Gameplay
 
         private static bool TrySampleScientificAttractantGradient(
             Vector3 worldPosition,
+            float now,
             out float bloodSignal01,
             out float exhaustSignal01,
             out float3 bloodGradient,
@@ -3922,7 +3925,6 @@ namespace Hecton8.Gameplay
             }
 
             float3 center = new float3(worldPosition.x, worldPosition.y, worldPosition.z);
-            float now = Time.time;
             int safeCount = math.min(breadcrumbCount, breadcrumbs.Length);
             float3 bloodGradientWeighted = float3.zero;
             float3 exhaustGradientWeighted = float3.zero;

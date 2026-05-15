@@ -449,3 +449,27 @@ Solution: Finite-gated buffer offset, buffer count, and use-buffer scalars befor
 Rejected Alternatives: Trusting CPU publication, clamping after the cast, or adding a separate buffer metadata structure. CPU-only trust is insufficient for shared shader globals; post-cast clamping is too late for NaN conversion; a new metadata structure adds interface surface for a local guard.
 Scalability potential: Low/MX350 keeps default instance fallback on corrupted metadata with no extra buffer traffic. Mid/High/Ultra keep instanced visual overkill when metadata is valid and fail closed when it is not.
 Hardware Impact: Adds three scalar finite checks only when the instance-buffer variant is compiled. Fault frames avoid bad StructuredBuffer reads; valid-frame overhead is negligible compared with the existing instanced vertex path.
+
+## Follow-Up Correction - UberNoir Low-Tier Position Fallback
+
+Problem: `_MATH_LOD_LOW` skipped dynamic hull bending entirely and returned raw `positionWS`. That kept low-tier/MX350 cheap, but also bypassed the finite world-position fallback used by the non-low path.
+Solution: The low-tier branch now returns `H8UberNoirFinite3(positionWS, 0)` instead of raw `positionWS`, preserving the cheap no-bend path while still failing closed on poisoned transform output.
+Rejected Alternatives: Moving position sanitation to every vertex callsite, or enabling full bend sanitation on low tier. Callsite sanitation is duplicated policy; full bend sanitation spends unnecessary crush/habitat ALU on the tier that explicitly disables bending.
+Scalability potential: Low/MX350 remains no-bend and cheap, but no longer preserves NaN world positions. Mid/High/Ultra behavior is unchanged and still uses the fuller dynamic bending path.
+Hardware Impact: Adds one vector finite check only to the low-tier bend function return. Fault frames avoid NaN clip-space propagation; valid-frame cost is negligible compared with the rest of the vertex transform.
+
+## Follow-Up Correction - UberNoir Instance Seed/Fade Finite Gates
+
+Problem: The vertex path still used instance seed plus material seed bias directly in the dynamic bend seed and `frac` output, and used instance fade directly in a varying. Non-finite instance data could poison buckling phase or biolum phase even after buffer metadata gates.
+Solution: Compute `safeInstanceSeed` and `safeInstanceFade` once after loading instance data. The safe seed drives dynamic hull bending and the normalized seed varying; invalid fade falls back to fully visible.
+Rejected Alternatives: Clamping only in the fragment biolum path, or dropping instanced seed bias. Fragment-only cleanup leaves vertex buckling exposed; dropping seed bias removes authored variation for valid instanced hulls.
+Scalability potential: Low/MX350 keeps cheap fallback behavior for invalid instance data. Mid/High/Ultra retain authored per-instance variation when data is valid and fail closed when it is not.
+Hardware Impact: Adds two scalar finite checks in the vertex path and removes duplicated seed expression use. Fault frames avoid NaN buckling/biolum phase; valid-frame overhead is negligible.
+
+## Follow-Up Correction - UberNoir Instance Buffer Index Wrap Guard
+
+Problem: Even after finite-gating instance-buffer offset/count metadata, `bufferOffset + clampedId` could wrap as `uint` before the StructuredBuffer read. That arithmetic overflow case would bypass the intended clamped instance id.
+Solution: Compute `bufferIndex` separately and read `_H8UberNoirInstanceData` only when `bufferIndex >= bufferOffset`, leaving default per-object data on wrap.
+Rejected Alternatives: Inventing a shader-side buffer-length constant, or relying only on CPU metadata. A fake length constant risks hiding actual buffer ownership; CPU metadata can still be corrupted in shared global state.
+Scalability potential: Low/MX350 invalid metadata falls back without buffer traffic. Mid/High/Ultra keep instanced rendering when metadata is valid and avoid wraparound reads when it is not.
+Hardware Impact: Adds one unsigned compare in the instance-buffer variant. Fault frames avoid wrapped StructuredBuffer reads; valid-frame overhead is negligible.

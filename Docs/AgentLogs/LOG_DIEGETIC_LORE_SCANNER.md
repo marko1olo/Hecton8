@@ -643,3 +643,27 @@ Verification:
 - Scanner/UI banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, `SetText(`, and `.text =`: no matches.
 - Contact timestamp scan: no `_scientificLastContactTime = Time.time` and no old no-timestamp scientific contact consumer calls remain.
 - `dotnet build` / rebuild: NOT RUN.
+
+## Follow-Up Hardening Pass 24
+
+What was wrong:
+- Physical tool scanner title scramble still read `Time.frameCount` in the UI writer instead of using the scanner packet frame.
+- Focused scanner attractant-gradient sampling still read `Time.time` inside the helper after voxel/spatial consumers already had a scan timestamp.
+
+What was done:
+- `ToolDiegeticDisplayController` stores `ScannerToolActiveSignal.Frame` and passes it into scanner title scramble.
+- Same-progress frame-only scanner packets update stored frame without forcing text repaint.
+- `TrySampleScientificAttractantGradient()` now receives caller `now` and uses it for breadcrumb expiry in voxel/spatial focused samples.
+
+Cinematic Cheats used:
+- Kept scanner decryption as a deterministic visual fake seeded from producer frame data; no extra simulation.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Removes one display-side frame read per scanner title repaint and up to two helper-local time reads across voxel/spatial focused contact samples.
+
+Verification:
+- `git diff --check` on scanner/UI edits: pass, source line-ending warnings only.
+- `git diff --cached --check` on scanner/UI/doc edits: pass.
+- Scanner/UI banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, `SetText(`, and `.text =`: no matches.
+- `dotnet build` / rebuild: NOT RUN.

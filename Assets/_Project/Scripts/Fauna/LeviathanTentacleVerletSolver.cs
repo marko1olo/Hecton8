@@ -59,6 +59,7 @@ namespace Hecton8.AI
         private static readonly int _AbyssalFlowActiveId = Shader.PropertyToID("_H8AbyssalFlowActive");
         private static readonly int _BaseRadiusReferenceId = Shader.PropertyToID("_BaseRadiusReference");
         private static readonly int _TipRadiusReferenceId = Shader.PropertyToID("_TipRadiusReference");
+        private static readonly int _FxTierId = Shader.PropertyToID("_H8LeviathanTentacleFxTier");
 
         [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
         private struct LeviathanTentacleTelemetryEntry
@@ -411,6 +412,7 @@ namespace Hecton8.AI
         private int _pendingConstraintIterations;
         private int _telemetryCursor;
         private int _frameIndex;
+        private HectonQualityTier _qualityTier = HectonQualityTier.Unknown;
         private float _grabDamageTimer;
         private float _solverTimeSeconds;
         private float _constraintIterationSwitchTimer;
@@ -592,7 +594,8 @@ namespace Hecton8.AI
                 math.max(DefaultMaxStretchLength, safeRestLength * SegmentLastIndex),
                 safeRestLength * SegmentLastIndex);
             float3 safeGravity = SanitizeFiniteInputFloat3(new float3(gravity.x, gravity.y, gravity.z), float3.zero);
-            int constraintIterations = ResolveConstraintIterationsWithHysteresis(safeDeltaTime);
+            _qualityTier = GlobalRegistry.ScalabilityTier;
+            int constraintIterations = ResolveConstraintIterationsWithHysteresis(safeDeltaTime, _qualityTier);
             _solverTimeSeconds += safeDeltaTime;
             if (_solverTimeSeconds > 4096f)
                 _solverTimeSeconds -= 4096f;
@@ -1018,6 +1021,7 @@ namespace Hecton8.AI
             tentacleMaterial.SetBuffer(_MatrixBufferId, matrixBuffer);
             tentacleMaterial.SetBuffer(_RadiusBufferId, radiusBuffer);
             BindRadiusReferenceToMaterial();
+            BindFxTierToMaterial();
             BindFlowBufferToMaterial();
             UploadIndirectArgs(instanceCount);
 
@@ -1046,6 +1050,11 @@ namespace Hecton8.AI
             float safeTipRadius = SanitizeFiniteMinInput(tipRadius, DefaultTipRadius, 0.001f);
             tentacleMaterial.SetFloat(_BaseRadiusReferenceId, safeBaseRadius);
             tentacleMaterial.SetFloat(_TipRadiusReferenceId, safeTipRadius);
+        }
+
+        private void BindFxTierToMaterial()
+        {
+            tentacleMaterial.SetFloat(_FxTierId, IsLowTier(_qualityTier) ? 0f : 1f);
         }
 
         private void BindFlowBufferToMaterial()
@@ -1337,22 +1346,23 @@ namespace Hecton8.AI
 
         private static int ResolveConstraintIterations(HectonQualityTier tier, int highTierIterations)
         {
-            return tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350 || tier == HectonQualityTier.Unknown
+            return IsLowTier(tier)
                 ? 1
                 : math.clamp(highTierIterations, 1, 3);
         }
 
         private void ResetConstraintIterationHysteresis()
         {
-            int iterations = ResolveConstraintIterations(GlobalRegistry.ScalabilityTier, highTierConstraintIterations);
+            _qualityTier = GlobalRegistry.ScalabilityTier;
+            int iterations = ResolveConstraintIterations(_qualityTier, highTierConstraintIterations);
             _resolvedConstraintIterations = iterations;
             _pendingConstraintIterations = iterations;
             _constraintIterationSwitchTimer = 0f;
         }
 
-        private int ResolveConstraintIterationsWithHysteresis(float deltaTime)
+        private int ResolveConstraintIterationsWithHysteresis(float deltaTime, HectonQualityTier tier)
         {
-            int requestedIterations = ResolveConstraintIterations(GlobalRegistry.ScalabilityTier, highTierConstraintIterations);
+            int requestedIterations = ResolveConstraintIterations(tier, highTierConstraintIterations);
             if (_resolvedConstraintIterations < 1)
             {
                 _resolvedConstraintIterations = requestedIterations;
@@ -1383,6 +1393,11 @@ namespace Hecton8.AI
             }
 
             return _resolvedConstraintIterations;
+        }
+
+        private static bool IsLowTier(HectonQualityTier tier)
+        {
+            return tier == HectonQualityTier.Unknown || tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350;
         }
 
         private static int FlatIndex(int tentacleIndex, int segmentIndex)

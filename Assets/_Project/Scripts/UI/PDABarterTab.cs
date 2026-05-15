@@ -125,8 +125,15 @@ namespace Hecton8.UI
                     playerPDA = playerContext.PlayerPDA;
 
                 if (playerPDA == null)
-                    playerPDA = GetComponentInParent<PlayerPDA>();
+                {
+                    for (Transform current = transform; current != null; current = current.parent)
+                    {
+                        if (current.TryGetComponent(out playerPDA))
+                            break;
+                    }
+                }
             }
+
             labelFont = LocalizedFontResolver.ResolveReadableFont(labelFont);
             numericFont = LocalizedFontResolver.ResolveNumericFont(numericFont, labelFont);
             int visibleOfferCapacity = ResolveVisibleOfferCapacity();
@@ -757,23 +764,21 @@ namespace Hecton8.UI
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
             go.layer = parent.gameObject.layer;
-            RectTransform rect = go.GetComponent<RectTransform>();
+            go.TryGetComponent(out RectTransform rect);
             rect.SetParent(parent, false);
             return rect;
         }
 
         private static Image EnsureImage(GameObject go)
         {
-            Image image = go.GetComponent<Image>();
-            if (image == null)
+            if (!go.TryGetComponent(out Image image))
                 image = go.AddComponent<Image>();
             return image;
         }
 
         private static CanvasGroup EnsureCanvasGroup(GameObject go)
         {
-            CanvasGroup canvasGroup = go.GetComponent<CanvasGroup>();
-            if (canvasGroup == null)
+            if (!go.TryGetComponent(out CanvasGroup canvasGroup))
                 canvasGroup = go.AddComponent<CanvasGroup>();
             return canvasGroup;
         }
@@ -782,7 +787,7 @@ namespace Hecton8.UI
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
             go.layer = parent.gameObject.layer;
-            RectTransform rect = go.GetComponent<RectTransform>();
+            go.TryGetComponent(out RectTransform rect);
             rect.SetParent(parent, false);
             TextMeshProUGUI text = go.AddComponent<TextMeshProUGUI>();
             text.font = font;

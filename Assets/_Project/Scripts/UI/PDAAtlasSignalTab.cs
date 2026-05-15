@@ -184,8 +184,7 @@ namespace Hecton8.UI
 
         private void Awake()
         {
-            _root = GetComponent<RectTransform>();
-            if (_root == null)
+            if (!TryGetComponent(out _root))
                 _root = gameObject.AddComponent<RectTransform>();
         }
 
@@ -326,8 +325,7 @@ namespace Hecton8.UI
             _labelFont = LocalizedFontResolver.ResolveReadableFont(_labelFont);
 
             // Background
-            Image bg = gameObject.GetComponent<Image>();
-            if (bg == null) bg = gameObject.AddComponent<Image>();
+            if (!TryGetComponent(out Image bg)) bg = gameObject.AddComponent<Image>();
             bg.color = colorBackground;
 
             BuildHeader();
@@ -818,7 +816,7 @@ namespace Hecton8.UI
         {
             var go = new GameObject(name, typeof(RectTransform));
             go.layer = parent.gameObject.layer;
-            var rt = go.GetComponent<RectTransform>();
+            go.TryGetComponent(out RectTransform rt);
             rt.SetParent(parent, false);
             return rt;
         }

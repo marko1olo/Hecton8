@@ -222,13 +222,32 @@ namespace Hecton8.UI
             }
 
             if (playerPDA == null)
-                playerPDA = GetComponent<PlayerPDA>() ?? GetComponentInParent<PlayerPDA>();
+            {
+                if (!TryGetComponent(out playerPDA))
+                {
+                    for (Transform current = transform.parent; current != null; current = current.parent)
+                    {
+                        if (current.TryGetComponent(out playerPDA))
+                            break;
+                    }
+                }
+            }
 
             if (_intrusionManager == null && playerPDA != null)
-                _intrusionManager = playerPDA.GetComponent<PDAIntrusionManager>();
+                playerPDA.TryGetComponent(out _intrusionManager);
 
             if (_intrusionManager == null)
-                _intrusionManager = GetComponent<PDAIntrusionManager>() ?? GetComponentInParent<PDAIntrusionManager>();
+            {
+                if (!TryGetComponent(out _intrusionManager))
+                {
+                    for (Transform current = transform.parent; current != null; current = current.parent)
+                    {
+                        if (current.TryGetComponent(out _intrusionManager))
+                            break;
+                    }
+                }
+            }
+
             labelFont = LocalizedFontResolver.ResolveReadableFont(labelFont);
             numericFont = LocalizedFontResolver.ResolveNumericFont(numericFont, labelFont);
         }
@@ -1292,8 +1311,9 @@ namespace Hecton8.UI
             if (target == null)
                 return null;
 
-            CanvasGroup canvasGroup = target.GetComponent<CanvasGroup>();
-            return canvasGroup != null ? canvasGroup : target.gameObject.AddComponent<CanvasGroup>();
+            return target.TryGetComponent(out CanvasGroup canvasGroup)
+                ? canvasGroup
+                : target.gameObject.AddComponent<CanvasGroup>();
         }
 
         private static void ClearChildren(Transform parent)
@@ -1312,7 +1332,7 @@ namespace Hecton8.UI
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
             go.layer = parent.gameObject.layer;
-            RectTransform rect = go.GetComponent<RectTransform>();
+            go.TryGetComponent(out RectTransform rect);
             rect.SetParent(parent, false);
             rect.localScale = Vector3.one;
             return rect;
@@ -1322,7 +1342,7 @@ namespace Hecton8.UI
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
             go.layer = parent.gameObject.layer;
-            RectTransform rect = go.GetComponent<RectTransform>();
+            go.TryGetComponent(out RectTransform rect);
             rect.SetParent(parent, false);
             rect.localScale = Vector3.one;
 
@@ -1451,8 +1471,7 @@ namespace Hecton8.UI
 
         private static Image EnsureImage(GameObject target)
         {
-            Image image = target.GetComponent<Image>();
-            if (image == null)
+            if (!target.TryGetComponent(out Image image))
                 image = target.AddComponent<Image>();
             return image;
         }

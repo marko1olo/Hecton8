@@ -248,6 +248,12 @@ Execution lane: SIMULATION / `PriorityLayer.Player`
 - [x] Panel and snap switch reject future receiver frames. DOD: `PhysicalPanelButton` rejects future samples before `_lastHandInsideFrame` mutation; `PhysicalSnapSwitch` rejects future samples before `InverseTransformPoint()` and `_lastSampleFrame` mutation. Rejected: clamping future frames down to current because that hides malformed input instead of containing it. Estimate: one frame read/compare per receiver callback; stale/future callbacks avoid downstream work.
 - [x] Reverification without dotnet. DOD: `git diff --check` passed for the three receiver files; scoped counter reports `CurrentFrameCaptures=3`, `LeverFutureReject=1`, `PanelFutureReject=1`, `SwitchFutureReject=1`, `FutureRejectBeforeLeverTransform=1`, `FutureRejectBeforePanelState=1`, `FutureRejectBeforeSwitchTransform=1`, `ForbiddenPatternTotal=0`, `DotnetMention=0`. Rejected: dotnet rebuild/probe by explicit user instruction. Estimate: verification only.
 
+## Loop 38 - Dispatcher-Backed Receiver Registration
+
+- [x] Manual override receiver registration now requires a dispatcher. DOD: `TryRegisterReceiver()` refuses registration while `GlobalRegistry.Dispatcher` is null, matching `TryRegisterTick()` and preventing a receiver table entry when no player tick lane can consume samples. Rejected: registering the collider early and trusting callbacks to be harmless because it occupies fixed receiver capacity and can cache hand state with no simulation consumer. Estimate: cold lifecycle branch only; 0 us steady.
+- [x] Dispatcher hot-swap recovery still restores receiver/tick in order. DOD: dispatcher removal already unregisters the receiver; dispatcher replacement still runs `EnsureNativeStateForLifecycle()`, `TryRegisterReceiver()`, and `TryRegisterTick()`. Rejected: moving receiver registration into tick registration because the receiver table and dispatcher lane have separate lifecycle keys. Estimate: verification only.
+- [x] Reverification without dotnet. DOD: `git diff --check` passed for `OpenXRManualOverrideLever.cs`; scoped counter reports `ReceiverRequiresDispatcher=1`, `TickRequiresDispatcher=1`, `DispatcherNullUnregistersReceiver=1`, `DispatcherRecoveryRegistersReceiver=1`, `ForbiddenPatternTotal=0`, `DotnetMention=0`. Rejected: dotnet rebuild/probe by explicit user instruction. Estimate: verification only.
+
 STATUS: PENDING VERIFICATION - Unity editor/global Core compile dependency wall prevents full player compile proof in this session.
 
 ## Compile Attempts

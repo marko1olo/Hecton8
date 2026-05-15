@@ -333,3 +333,14 @@ Cinematic cheats used: No visual change. The same diegetic glyph atlas layout re
 Exact microseconds saved: Estimate only. Expected gain is sub-1 us per layout rebuild on i3/MX350; no profiler proof is claimed.
 
 Verification: No dotnet rebuilds were run. Static scans confirmed no `Mathf.` calls remain in `DiegeticTooltipSystem.cs`, and forbidden allocation/text/LINQ plus bootstrap/direct-time fallback scans stayed clean.
+
+## 2026-05-15 Tooltip Sprite Asset Local Cache
+What was wrong: Binding-icon layout read `spriteAsset`, `spriteSheet`, and `spriteCharacterTable` through repeated property chains.
+
+What was done: Cached the sprite asset, sheet texture, and character table in locals before count and index access.
+
+Cinematic cheats used: No visual change. The same integer-index TMP sprite atlas binding remains; the resolver just stops repeating asset property reads.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per binding-icon layout rebuild on i3/MX350; no profiler proof is claimed.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed the local-cache shape in `TryResolveBindingIcon()` and forbidden allocation/text/LINQ plus bootstrap/direct-time fallback scans stayed clean.

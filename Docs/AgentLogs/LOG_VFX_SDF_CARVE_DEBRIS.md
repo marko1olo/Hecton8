@@ -832,6 +832,9 @@ Exact Microseconds saved:
 - GC impact: 0 B/frame maintained.
 
 Verification state:
-- Static verification pending for this pass.
+- Focused `git diff --check` returned no whitespace errors, only Git LF/CRLF notices.
+- Forbidden VFX scan returned no matches for CPU readback, ParticleSystem, ComputeBuffer, scene search, job scheduling fences, private `H8Memory.Allocate`, private `H8Memory.Release`, `MaterialPropertyBlock`, `matProps`, stale draw-frame cache, managed hot strings, `Vector3.magnitude`, or `math.sqrt`.
+- Shader hot-math scan returned no matches.
+- `CURRENT_BATCH.md` exact prompt tag count for `VFX_SDF_CARVE_DEBRIS`: 0.
 - Unity import/compile/profiler evidence remains unavailable.
 - No dotnet build or rebuild was run.

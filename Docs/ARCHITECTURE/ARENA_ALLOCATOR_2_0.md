@@ -95,7 +95,8 @@ Persistent H8 allocations are all-or-nothing:
 - if allocation tracking or memory-map descriptor registration fails after native memory is acquired, the new allocation is freed and `FatalMemoryException` is thrown;
 - block descriptor storage grows up to `MaxTrackingCapacity` instead of silently dropping new descriptor evidence;
 - read-only aliases require a concrete `SystemID` reader at the DataVault and H8Memory boundaries;
-- generation handles mark the target block as externally viewed before returning the post-mark generation.
+- generation handles mark the target block as externally viewed before returning the post-mark generation;
+- DataVault arena initialization and block splitting fail closed if H8 sub-block descriptors cannot be registered.
 
 ## Legal Uses
 

@@ -24,6 +24,7 @@ param(
     [int]$MaxJobCompleteSurface = -1,
     [int]$MaxPrimaryManagedRuntimeRisk = -1,
     [int]$MaxOwnerBlockedNativeArrayRefs = -1,
+    [int]$MaxPrimaryOwnerBlockedNativeArrayRefs = -1,
     [double]$MinDataSovereignty = -1.0,
     [double]$MinMemoryAlignment = -1.0,
     [double]$MinRuntimeHPhiRisk = -1.0
@@ -149,6 +150,10 @@ function New-FileRow {
     $disposeCalls = [int]$Counters['DisposeCalls']
     $ownerBlockedNativeArrayRefs = if ($nativeArrayRefs -gt 0 -and $dataVaultRefs -eq 0) { $nativeArrayRefs } else { 0 }
     $ownerBlockedDisposeCalls = if ($ownerBlockedNativeArrayRefs -gt 0) { $disposeCalls } else { 0 }
+    $nativeOwnershipRisk = $ownerBlockedNativeArrayRefs + ($ownerBlockedDisposeCalls * 2)
+    $primaryOwnerBlockedNativeArrayRefs = if ($fileRole -eq 'PrimaryRuntime') { $ownerBlockedNativeArrayRefs } else { 0 }
+    $primaryOwnerBlockedDisposeCalls = if ($fileRole -eq 'PrimaryRuntime') { $ownerBlockedDisposeCalls } else { 0 }
+    $primaryNativeOwnershipRisk = if ($fileRole -eq 'PrimaryRuntime') { $nativeOwnershipRisk } else { 0 }
 
     [ordered]@{
         File = $RelativePath
@@ -167,7 +172,10 @@ function New-FileRow {
         DisposeCalls = $disposeCalls
         OwnerBlockedNativeArrayRefs = $ownerBlockedNativeArrayRefs
         OwnerBlockedDisposeCalls = $ownerBlockedDisposeCalls
-        NativeOwnershipRisk = $ownerBlockedNativeArrayRefs + ($ownerBlockedDisposeCalls * 2)
+        NativeOwnershipRisk = $nativeOwnershipRisk
+        PrimaryOwnerBlockedNativeArrayRefs = $primaryOwnerBlockedNativeArrayRefs
+        PrimaryOwnerBlockedDisposeCalls = $primaryOwnerBlockedDisposeCalls
+        PrimaryNativeOwnershipRisk = $primaryNativeOwnershipRisk
         FindObjectCalls = [int]$Counters['FindObjectCalls']
         GetComponentCalls = [int]$Counters['GetComponentCalls']
         AupPrecisionSafe = [int]$Counters['AupPrecisionSafe']
@@ -206,6 +214,26 @@ function Count-Lines {
     }
 
     return $lineCount
+}
+
+function New-SourceFileSnapshot {
+    param([string]$Path)
+
+    if (-not [System.IO.File]::Exists($Path)) {
+        return $null
+    }
+
+    $content = [System.IO.File]::ReadAllText($Path)
+    $relativePath = Get-RelativeSourcePath $Path
+
+    [pscustomobject][ordered]@{
+        FullName = $Path
+        RelativePath = $relativePath
+        Domain = Get-DomainName $Path
+        Content = $content
+        LineCount = Count-Lines $content
+        IsEditorFile = Test-IsEditorFile $Path
+    }
 }
 
 function Remove-UnityEditorBlocks {
@@ -544,6 +572,11 @@ function ConvertTo-MaskedCodeSurface {
     param([System.Text.RegularExpressions.Match]$Match)
 
     $value = $Match.Value
+    if ($value.IndexOf([char]10) -lt 0 -and
+        $value.IndexOf([char]13) -lt 0) {
+        return ' ' * $value.Length
+    }
+
     $builder = [System.Text.StringBuilder]::new($value.Length)
     for ($i = 0; $i -lt $value.Length; $i++) {
         $ch = $value[$i]
@@ -1130,7 +1163,7 @@ function Get-UnusedCoreReferenceScan {
 }
 
 function Get-DuplicateSignalNameAudit {
-    param([string[]]$Files)
+    param([object[]]$Sources)
 
     $rows = [System.Collections.Generic.List[object]]::new()
     $totalFileCount = 0
@@ -1143,12 +1176,12 @@ function Get-DuplicateSignalNameAudit {
         '^\s*namespace\s+(?<Name>[A-Za-z_][A-Za-z0-9_.]*)\b',
         $regexOptions)
 
-    foreach ($file in $Files) {
-        if (-not [System.IO.File]::Exists($file)) {
+    foreach ($source in $Sources) {
+        if ($null -eq $source) {
             continue
         }
 
-        $content = [System.IO.File]::ReadAllText($file)
+        $content = [string]$source.Content
         $totalFileCount++
 
         if ($content.IndexOf('Signal', [StringComparison]::Ordinal) -lt 0 -or
@@ -1173,7 +1206,7 @@ function Get-DuplicateSignalNameAudit {
                 [void]$rows.Add([pscustomobject][ordered]@{
                     Name = $match.Groups['Name'].Value
                     Namespace = $namespace
-                    File = Get-RelativeSourcePath $file
+                    File = [string]$source.RelativePath
                     Line = $lineIndex + 1
                 })
             }
@@ -1589,6 +1622,28 @@ function Test-ContainsAnyLiteral {
     return $false
 }
 
+function New-LiteralHintIndex {
+    param([hashtable]$LiteralHints)
+
+    $index = [System.Collections.Generic.List[string]]::new()
+    if ($null -eq $LiteralHints) {
+        return [string[]]$index.ToArray()
+    }
+
+    foreach ($entry in $LiteralHints.GetEnumerator()) {
+        foreach ($literal in @($entry.Value)) {
+            if ([string]::IsNullOrEmpty($literal) -or
+                $index.Contains($literal)) {
+                continue
+            }
+
+            [void]$index.Add($literal)
+        }
+    }
+
+    return [string[]]$index.ToArray()
+}
+
 function Add-PatternCounts {
     param(
         [System.Collections.Specialized.OrderedDictionary]$Counters,
@@ -1917,9 +1972,13 @@ function New-AuditSummary {
             OwnerBlockedNativeArrayRefs = $Audit.RiskSums.OwnerBlockedNativeArrayRefs
             OwnerBlockedDisposeCalls = $Audit.RiskSums.OwnerBlockedDisposeCalls
             NativeOwnershipRisk = $Audit.RiskSums.NativeOwnershipRisk
+            PrimaryOwnerBlockedNativeArrayRefs = $Audit.RiskSums.PrimaryOwnerBlockedNativeArrayRefs
+            PrimaryOwnerBlockedDisposeCalls = $Audit.RiskSums.PrimaryOwnerBlockedDisposeCalls
+            PrimaryNativeOwnershipRisk = $Audit.RiskSums.PrimaryNativeOwnershipRisk
         }
         Budgets = $Audit.Budgets
         CoreGraph = New-CoreGraphSummary $Audit.CoreGraphAudit
+        SourceScanAudit = $Audit.SourceScanAudit
         DuplicateSignalNameAudit = [ordered]@{
             EvidenceClass = $Audit.DuplicateSignalNameAudit.EvidenceClass
             SourceFileCount = $Audit.DuplicateSignalNameAudit.SourceFileCount
@@ -2009,6 +2068,10 @@ if ($CoreGraphOnly) {
 
     if ($MaxOwnerBlockedNativeArrayRefs -ge 0) {
         throw 'Owner-blocked NativeArray budget requires full source scan. Remove -CoreGraphOnly when using -MaxOwnerBlockedNativeArrayRefs.'
+    }
+
+    if ($MaxPrimaryOwnerBlockedNativeArrayRefs -ge 0) {
+        throw 'Primary owner-blocked NativeArray budget requires full source scan. Remove -CoreGraphOnly when using -MaxPrimaryOwnerBlockedNativeArrayRefs.'
     }
 
     if ($MinDataSovereignty -ge 0.0) {
@@ -2161,11 +2224,13 @@ $patternLiteralHints = @{
     DisposeCalls = @('.Dispose')
     AupPrecisionSafe = @('CurrentTotalOffsetDouble', 'ToAbsoluteUniversePositionDouble3', 'ToUniverseSpaceDouble3', 'ToRuntimeSpaceDouble3', 'FromAbsolutePosition', 'DistanceSq', 'ToRuntimeSpace')
     AupPrecisionRisk = @('HectonFloatingOrigin', 'HectonMapMagicVegetationBridge', 'CurrentTotalOffset', 'NewTotalOffset', 'PreviousTotalOffset', 'AUP', 'universePosition', 'stableUniverseRoot')
-    LinqSurface = @('.Where', '.Select', '.Any', '.First', '.ToList', '.ToArray', '.OrderBy', '.GroupBy', '.Sum', '.Average')
+    LinqSurface = @('.Where', '.Select', '.Any', '.All', '.First', '.Last', '.Single', '.ToList', '.ToArray', '.OrderBy', '.ThenBy', '.GroupBy', '.Sum', '.Average')
     CoroutineSurface = @('StartCoroutine')
     ManagedFormatSurface = @('$"', '$@"', '@$"', 'string.Format', 'String.Format', '.ToString')
     JobCompleteSurface = @('.Complete')
 }
+
+$allPatternLiteralHints = New-LiteralHintIndex $patternLiteralHints
 
 $allCounters = New-CounterSet
 $runtimeCounters = New-CounterSet
@@ -2174,30 +2239,54 @@ $runtimeDomainRows = @{}
 $editorDomainRows = @{}
 $runtimeFileRows = [System.Collections.Generic.List[object]]::new()
 $editorFileRows = [System.Collections.Generic.List[object]]::new()
+$allSourceAuditLiteralCandidateFiles = 0
+$allSourceAuditLiteralSkippedFiles = 0
+$runtimeAuditLiteralCandidateFiles = 0
+$runtimeAuditLiteralSkippedFiles = 0
+$runtimeEditorStrippedFiles = 0
 
 $files = @(Get-ChildItem -LiteralPath $scope -Filter '*.cs' -Recurse -File |
     Sort-Object FullName |
     Select-Object -ExpandProperty FullName)
 
-$duplicateSignalNameAudit = Get-DuplicateSignalNameAudit $files
+$sourceFiles = [System.Collections.Generic.List[object]]::new()
+foreach ($file in $files) {
+    $snapshot = New-SourceFileSnapshot $file
+    if ($null -ne $snapshot) {
+        [void]$sourceFiles.Add($snapshot)
+    }
+}
+
+$duplicateSignalNameAudit = Get-DuplicateSignalNameAudit @($sourceFiles)
 Assert-DuplicateSignalNameBudget $duplicateSignalNameAudit
 
-foreach ($file in $files) {
-    if (-not [System.IO.File]::Exists($file)) {
+foreach ($source in $sourceFiles) {
+    if ($null -eq $source) {
         continue
     }
 
-    $content = [System.IO.File]::ReadAllText($file)
-    $codeContent = if ($LexicalScrub) { ConvertTo-CodeSurface $content } else { $content }
-    $lineCount = Count-Lines $content
-    $isEditorFile = Test-IsEditorFile $file
-    $domain = Get-DomainName $file
-    $relativePath = Get-RelativeSourcePath $file
+    $file = [string]$source.FullName
+    $content = [string]$source.Content
+    $hasAuditLiterals = Test-ContainsAnyLiteral $content $allPatternLiteralHints
+    if ($hasAuditLiterals) {
+        $allSourceAuditLiteralCandidateFiles++
+    }
+    else {
+        $allSourceAuditLiteralSkippedFiles++
+    }
+
+    $lineCount = [int]$source.LineCount
+    $isEditorFile = [bool]$source.IsEditorFile
+    $domain = [string]$source.Domain
+    $relativePath = [string]$source.RelativePath
     $fileCounters = New-CounterSet
     Add-Count $fileCounters 'CsFiles' 1
     Add-Count $fileCounters 'Lines' $lineCount
-    Add-PatternCounts $fileCounters $codeContent $patterns $patternLiteralHints
-    Normalize-UnityLoopCounters $fileCounters $relativePath
+    if ($hasAuditLiterals) {
+        $codeContent = if ($LexicalScrub) { ConvertTo-CodeSurface $content } else { $content }
+        Add-PatternCounts $fileCounters $codeContent $patterns $patternLiteralHints
+        Normalize-UnityLoopCounters $fileCounters $relativePath
+    }
 
     foreach ($key in $fileCounters.Keys) {
         Add-Count $allCounters $key $fileCounters[$key]
@@ -2227,15 +2316,32 @@ foreach ($file in $files) {
 
     if ($content.IndexOf('UNITY_EDITOR', [StringComparison]::Ordinal) -lt 0) {
         $runtimeFileCounters = $fileCounters
+        if ($hasAuditLiterals) {
+            $runtimeAuditLiteralCandidateFiles++
+        }
+        else {
+            $runtimeAuditLiteralSkippedFiles++
+        }
     }
     else {
+        $runtimeEditorStrippedFiles++
         $runtimeContent = Remove-UnityEditorBlocks $content
-        $runtimeCodeContent = if ($LexicalScrub) { ConvertTo-CodeSurface $runtimeContent } else { $runtimeContent }
+        $runtimeHasAuditLiterals = Test-ContainsAnyLiteral $runtimeContent $allPatternLiteralHints
+        if ($runtimeHasAuditLiterals) {
+            $runtimeAuditLiteralCandidateFiles++
+        }
+        else {
+            $runtimeAuditLiteralSkippedFiles++
+        }
+
         $runtimeFileCounters = New-CounterSet
         Add-Count $runtimeFileCounters 'CsFiles' 1
         Add-Count $runtimeFileCounters 'Lines' $lineCount
-        Add-PatternCounts $runtimeFileCounters $runtimeCodeContent $patterns $patternLiteralHints
-        Normalize-UnityLoopCounters $runtimeFileCounters $relativePath
+        if ($runtimeHasAuditLiterals) {
+            $runtimeCodeContent = if ($LexicalScrub) { ConvertTo-CodeSurface $runtimeContent } else { $runtimeContent }
+            Add-PatternCounts $runtimeFileCounters $runtimeCodeContent $patterns $patternLiteralHints
+            Normalize-UnityLoopCounters $runtimeFileCounters $relativePath
+        }
     }
 
     foreach ($key in $fileCounters.Keys) {
@@ -2276,6 +2382,12 @@ $ownerBlockedDisposeCalls = [int](@($runtimeFileRows |
     Measure-Object -Property OwnerBlockedDisposeCalls -Sum).Sum)
 $nativeOwnershipRisk = [int](@($runtimeFileRows |
     Measure-Object -Property NativeOwnershipRisk -Sum).Sum)
+$primaryOwnerBlockedNativeArrayRefs = [int](@($runtimeFileRows |
+    Measure-Object -Property PrimaryOwnerBlockedNativeArrayRefs -Sum).Sum)
+$primaryOwnerBlockedDisposeCalls = [int](@($runtimeFileRows |
+    Measure-Object -Property PrimaryOwnerBlockedDisposeCalls -Sum).Sum)
+$primaryNativeOwnershipRisk = [int](@($runtimeFileRows |
+    Measure-Object -Property PrimaryNativeOwnershipRisk -Sum).Sum)
 
 Assert-AupPrecisionBudget $runtimeCounters $runtimeFileRows
 Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'UnityUpdateMethods' $MaxUnityUpdateMethods 'Unity update-method runtime debt'
@@ -2290,6 +2402,7 @@ Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'ManagedFormatSurfa
 Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'JobCompleteSurface' $MaxJobCompleteSurface 'Job Complete runtime surface'
 Assert-ScalarMaxBudget $primaryManagedRuntimeRisk $MaxPrimaryManagedRuntimeRisk 'Primary managed runtime risk'
 Assert-ScalarMaxBudget $ownerBlockedNativeArrayRefs $MaxOwnerBlockedNativeArrayRefs 'Owner-blocked NativeArray refs'
+Assert-ScalarMaxBudget $primaryOwnerBlockedNativeArrayRefs $MaxPrimaryOwnerBlockedNativeArrayRefs 'Primary owner-blocked NativeArray refs'
 Assert-StaticScoreFloor $runtimeScores 'DataSovereignty' $MinDataSovereignty 'Data Sovereignty'
 Assert-StaticScoreFloor $runtimeScores 'MemoryAlignment' $MinMemoryAlignment 'Memory Alignment'
 Assert-StaticScoreFloor $runtimeScores 'HPhiStaticRisk' $MinRuntimeHPhiRisk 'Runtime risk-adjusted H-Phi'
@@ -2300,6 +2413,15 @@ $result = [ordered]@{
     MetricModel = 'Runtime H-Phi excludes Scripts/Editor from runtime debt counters; UnityUpdateMethods excludes the Core/SystemDispatcher.cs Unity shell and reports it separately as UnityLoopShellMethods/UnityUpdateMethodsRaw; Data Sovereignty counts DataVault access surface including IDataVault, VaultBufferHandle, GetBuffer, TryGetBuffer, and GlobalDataVault; risk-adjusted score includes AUP precision integrity from qualified legacy bridge and double-safe AUP patterns; AllSourceCounts is retained for hygiene tracking.'
     CoreGraphAudit = $coreGraphAudit
     DuplicateSignalNameAudit = $duplicateSignalNameAudit
+    SourceScanAudit = [ordered]@{
+        EvidenceClass = 'STATIC_SOURCE_FULL_SCAN'
+        SourceFileCount = $sourceFiles.Count
+        AllSourceAuditLiteralCandidateFileCount = $allSourceAuditLiteralCandidateFiles
+        AllSourceAuditLiteralSkippedFileCount = $allSourceAuditLiteralSkippedFiles
+        RuntimeAuditLiteralCandidateFileCount = $runtimeAuditLiteralCandidateFiles
+        RuntimeAuditLiteralSkippedFileCount = $runtimeAuditLiteralSkippedFiles
+        RuntimeEditorStrippedFileCount = $runtimeEditorStrippedFiles
+    }
     Counts = $runtimeCounters
     Scores = $runtimeScores
     AllSourceCounts = $allCounters
@@ -2312,6 +2434,9 @@ $result = [ordered]@{
         OwnerBlockedNativeArrayRefs = $ownerBlockedNativeArrayRefs
         OwnerBlockedDisposeCalls = $ownerBlockedDisposeCalls
         NativeOwnershipRisk = $nativeOwnershipRisk
+        PrimaryOwnerBlockedNativeArrayRefs = $primaryOwnerBlockedNativeArrayRefs
+        PrimaryOwnerBlockedDisposeCalls = $primaryOwnerBlockedDisposeCalls
+        PrimaryNativeOwnershipRisk = $primaryNativeOwnershipRisk
     }
     Budgets = [ordered]@{
         AupPrecisionRisk = [ordered]@{
@@ -2412,6 +2537,13 @@ $result = [ordered]@{
             Passed = $MaxOwnerBlockedNativeArrayRefs -lt 0 -or $ownerBlockedNativeArrayRefs -le $MaxOwnerBlockedNativeArrayRefs
             EvidenceClass = 'STATIC_SOURCE_FULL_SCAN'
         }
+        PrimaryOwnerBlockedNativeArrayRefs = [ordered]@{
+            Enabled = $MaxPrimaryOwnerBlockedNativeArrayRefs -ge 0
+            Max = $MaxPrimaryOwnerBlockedNativeArrayRefs
+            Actual = $primaryOwnerBlockedNativeArrayRefs
+            Passed = $MaxPrimaryOwnerBlockedNativeArrayRefs -lt 0 -or $primaryOwnerBlockedNativeArrayRefs -le $MaxPrimaryOwnerBlockedNativeArrayRefs
+            EvidenceClass = 'STATIC_SOURCE_FULL_SCAN'
+        }
         DataSovereignty = [ordered]@{
             Enabled = $MinDataSovereignty -ge 0.0
             Min = $MinDataSovereignty
@@ -2500,6 +2632,9 @@ $result = [ordered]@{
                 OwnerBlockedNativeArrayRefs = [int](@($_.Group | Measure-Object -Property OwnerBlockedNativeArrayRefs -Sum).Sum)
                 OwnerBlockedDisposeCalls = [int](@($_.Group | Measure-Object -Property OwnerBlockedDisposeCalls -Sum).Sum)
                 NativeOwnershipRisk = [int](@($_.Group | Measure-Object -Property NativeOwnershipRisk -Sum).Sum)
+                PrimaryOwnerBlockedNativeArrayRefs = [int](@($_.Group | Measure-Object -Property PrimaryOwnerBlockedNativeArrayRefs -Sum).Sum)
+                PrimaryOwnerBlockedDisposeCalls = [int](@($_.Group | Measure-Object -Property PrimaryOwnerBlockedDisposeCalls -Sum).Sum)
+                PrimaryNativeOwnershipRisk = [int](@($_.Group | Measure-Object -Property PrimaryNativeOwnershipRisk -Sum).Sum)
             }
         } |
         Sort-Object NativeOwnershipRisk -Descending)
@@ -2513,6 +2648,9 @@ $result = [ordered]@{
                 OwnerBlockedNativeArrayRefs = [int](@($_.Group | Measure-Object -Property OwnerBlockedNativeArrayRefs -Sum).Sum)
                 OwnerBlockedDisposeCalls = [int](@($_.Group | Measure-Object -Property OwnerBlockedDisposeCalls -Sum).Sum)
                 NativeOwnershipRisk = [int](@($_.Group | Measure-Object -Property NativeOwnershipRisk -Sum).Sum)
+                PrimaryOwnerBlockedNativeArrayRefs = [int](@($_.Group | Measure-Object -Property PrimaryOwnerBlockedNativeArrayRefs -Sum).Sum)
+                PrimaryOwnerBlockedDisposeCalls = [int](@($_.Group | Measure-Object -Property PrimaryOwnerBlockedDisposeCalls -Sum).Sum)
+                PrimaryNativeOwnershipRisk = [int](@($_.Group | Measure-Object -Property PrimaryNativeOwnershipRisk -Sum).Sum)
             }
         } |
         Sort-Object NativeOwnershipRisk -Descending)

@@ -399,3 +399,15 @@ Cinematic Cheats used -> None. Git integration only.
 Exact Microseconds saved -> 0 us runtime. Dev-path gain is avoiding a pull over dirty runtime files.
 
 Verification -> Conflict-marker scan clean. `git diff --check` reported only LF-to-CRLF warnings. HPhi Fresh54 is a failure evidence file: `GlobalRegistrySurface=5095 > 5094`; no HPhi green claim is made.
+
+## 2026-05-15 - Loop 22 Large Post-Push Tail
+
+What was wrong -> After the verified pushed head `085af01d1`, a new 107-file shader/runtime/UI/docs/tools tail appeared while `origin/main` still matched local committed history.
+
+What was done -> Fetched remote, verified divergence `0 0`, checked unmerged paths, scanned changed files for conflict markers, reviewed key shader/runtime/UI/tool diffs, parsed `Tools/Architecture/HectonPhiAudit.ps1`, repaired generated HPhi JSON trailing whitespace, and prepared a bounded checkpoint.
+
+Cinematic Cheats used -> None by this operator pass. Reviewed authored FX-tier gating in Leviathan shader/solver as an authored scalability surface, not a verified performance claim.
+
+Exact Microseconds saved -> 0 us runtime by the Git pass. Dev-path gain is reduced Desktop merge exposure by publishing another checked snapshot.
+
+Verification -> Conflict-marker scan clean. `git diff --check` reported only LF-to-CRLF warnings. `HectonPhiAudit.ps1` parsed successfully. Unity compile/profiler green and HPhi green are not claimed.

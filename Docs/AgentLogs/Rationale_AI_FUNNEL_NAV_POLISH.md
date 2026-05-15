@@ -387,3 +387,15 @@ Solution: Add an existing-record metadata gate in `TryPrepareBuild` for finite o
 Rejected Alternatives: Refreshing the metadata fields without forcing a rebuild was rejected because a stale pure-void flag would still claim route authority without a current scan. Clamping corrupt metadata was rejected because it fabricates a navigable volume.
 Scalability potential: Low/MX350 rebuilds only when existing route-record metadata is corrupt instead of routing through unproven pure void. Middle/High/Ultra preserve pure-void fast paths when metadata is stable and finite.
 Hardware Impact: Adds scalar finite/order checks during build scheduling; expected gain is avoided stale pure-void route records and downstream funnel correction. Dotnet rebuilds remain prohibited.
+
+Problem: Dynamic obstacle scheduling copied and rescanned by backing-buffer length, so spare native capacity could overrun paired buffers or make pure-void scan authority differ from declared voxel dimensions.
+Solution: Recompute the declared voxel cell count, copy passability/distance buffers by that exact count, pass that count into `SchedulePureVoidScan`, and compute partial-update region point count in 64-bit before scheduling.
+Rejected Alternatives: Copying `record.Current.Length` was rejected because current/next buffers can have stale capacity mismatch. Passing `record.Next.Length` into the pure-void scan was rejected because scan authority must be dimension-derived, not capacity-derived.
+Scalability potential: Low/MX350 avoids spare-capacity scan work and stale pure-void flags after dynamic obstacle updates. Middle/High/Ultra keep richer dynamic obstacle updates only when declared record dimensions remain the single source of truth.
+Hardware Impact: Avoids invalid copy lengths and unnecessary pure-void scan cells when native capacity exceeds declared cell count. Dotnet rebuilds remain prohibited.
+
+Problem: After exact dynamic rescans were restored, stale `PureVoidBlockCount` metadata could still prevent valid pure-void updates from taking the buffer-release fast path and force unnecessary portal rebuilds.
+Solution: Derive `requiredBlockCount` from the declared voxel cell count, prove flag coverage, and write `record.PureVoidBlockCount = requiredBlockCount` immediately before scheduling the exact pure-void rescan.
+Rejected Alternatives: Leaving stale block metadata was rejected because it wastes the pure-void shortcut after safe updates. Blindly setting the count without flag coverage was rejected because it would make metadata claim more blocks than the native buffer can hold.
+Scalability potential: Low/MX350 avoids avoidable portal rebuilds after clean dynamic updates. Middle/High/Ultra preserve the high-density obstacle update path while still releasing buffers for fully pure records.
+Hardware Impact: Adds a scalar block-count proof and preserves the cold pure-void fast path; expected gain is avoided portal rebuild churn. Dotnet rebuilds remain prohibited.

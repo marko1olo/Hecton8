@@ -118,7 +118,14 @@ namespace Hecton8.UI
             _resetClickAction = OnResetToDefaultsClicked; // COLD ALLOC: UnityAction[1] - cached controls reset listener - owner: PauseControlsPanel
 
             if (pauseMenu == null)
-                pauseMenu = GetComponentInParent<PauseMenuController>();
+            {
+                for (Transform current = transform; current != null; current = current.parent)
+                {
+                    if (current.TryGetComponent(out pauseMenu))
+                        break;
+                }
+            }
+
             labelFont = LocalizedFontResolver.ResolveReadableFont(labelFont);
             if (bindingFont == null)
                 bindingFont = labelFont;
@@ -1090,7 +1097,7 @@ namespace Hecton8.UI
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
             go.layer = parent.gameObject.layer;
-            RectTransform rect = go.GetComponent<RectTransform>();
+            go.TryGetComponent(out RectTransform rect);
             rect.SetParent(parent, false);
             rect.localScale = Vector3.one;
             return rect;
@@ -1098,8 +1105,7 @@ namespace Hecton8.UI
 
         private static Image EnsureImage(GameObject target)
         {
-            Image image = target.GetComponent<Image>();
-            if (image == null)
+            if (!target.TryGetComponent(out Image image))
                 image = target.AddComponent<Image>();
             return image;
         }
@@ -1109,7 +1115,7 @@ namespace Hecton8.UI
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
             go.layer = parent.gameObject.layer;
-            RectTransform rect = go.GetComponent<RectTransform>();
+            go.TryGetComponent(out RectTransform rect);
             rect.SetParent(parent, false);
             rect.localScale = Vector3.one;
 

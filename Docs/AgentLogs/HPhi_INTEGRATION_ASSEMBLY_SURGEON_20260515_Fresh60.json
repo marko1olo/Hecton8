@@ -1,0 +1,24 @@
+﻿GlobalRegistry surface H-Phi budget failed: count 5087 exceeds budget 5086.
+Top files:
+Bootstrap\GameBootstrapper.cs GlobalRegistrySurface=156 coupling=162
+CrashTelemetryBuffer.cs GlobalRegistrySurface=49 coupling=49
+SpatialAudioManager.cs GlobalRegistrySurface=40 coupling=40
+SaveManager.cs GlobalRegistrySurface=39 coupling=40
+Fauna\FaunaBrain.cs GlobalRegistrySurface=37 coupling=41
+HectonPlayerMovement.cs GlobalRegistrySurface=37 coupling=41
+GlobalPhysicsStateManager.cs GlobalRegistrySurface=36 coupling=38
+HectonFluidEngine.cs GlobalRegistrySurface=35 coupling=36
+At C:\hades\Hecton8\Tools\Architecture\HectonPhiAudit.ps1:1540 char:5
++     throw $message
++     ~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (GlobalRegistry ...=35 coupling=36:String) [], RuntimeException
+    + FullyQualifiedErrorId : GlobalRegistry surface H-Phi budget failed: count 5087 exceeds budget 5086.
+Top files:
+Bootstrap\GameBootstrapper.cs GlobalRegistrySurface=156 coupling=162
+CrashTelemetryBuffer.cs GlobalRegistrySurface=49 coupling=49
+SpatialAudioManager.cs GlobalRegistrySurface=40 coupling=40
+SaveManager.cs GlobalRegistrySurface=39 coupling=40
+Fauna\FaunaBrain.cs GlobalRegistrySurface=37 coupling=41
+HectonPlayerMovement.cs GlobalRegistrySurface=37 coupling=41
+GlobalPhysicsStateManager.cs GlobalRegistrySurface=36 coupling=38
+HectonFluidEngine.cs GlobalRegistrySurface=35 coupling=36

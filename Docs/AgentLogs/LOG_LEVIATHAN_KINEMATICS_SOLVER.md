@@ -783,3 +783,29 @@ Verification:
 - Static grep over the tentacle solver still finds no direct `new NativeArray<`, direct `array.Dispose(`, `Time.frameCount`, `GlobalRegistry.Get`, forbidden Unity object searches, or legacy Animator/SkinnedMeshRenderer paths.
 - `git diff --check` on `LeviathanTentacleVerletSolver.cs` exits 0.
 - Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
+
+## 2026-05-15T13:45+04:00
+
+Status: PENDING VERIFICATION. Continued Leviathan tentacle scalability audit. No `dotnet` rebuild/compile, Unity import, shader compile, or response-file probe was run.
+
+What was wrong:
+- `Hecton_LeviathanTentacleIndirect.shader` ran high-tier organic fragment effects on every quality tier.
+- The CPU solver resolved scalability for constraint iterations but did not publish a material tier for tentacle pixel cost.
+
+What was done:
+- Added `_H8LeviathanTentacleFxTier` to the tentacle indirect shader.
+- Cached `GlobalRegistry.ScalabilityTier` in `LeviathanTentacleVerletSolver` and reused it for constraint iteration and material FX tier.
+- Low/Unknown/MX350 now skip normal-map reconstruction, flow sheen pulse, SSS, projected caustics, and biolum volume sampling.
+- High/Ultra retain the full organic lighting stack.
+
+Cinematic cheats used:
+- Low tier keeps base indirect silhouettes and suction/emission pulse while dropping expensive organic overdraw. High/Ultra keep the visual-overkill path.
+
+Exact microseconds saved:
+- No measured saving claimed.
+- Static shader-path reduction: one normal texture sample/reconstruction plus SSS/caustics/biolum/flow-sheen work avoided per low-tier tentacle pixel.
+
+Verification:
+- `git diff --check` and `git diff --cached --check` on touched code/shader/docs exit 0; working-copy output only reports LF-to-CRLF warnings.
+- Static forbidden scan over Leviathan IK code/shader scope remains clean for `new NativeArray<`, direct `array.Dispose(`, `Time.frameCount`, `GlobalRegistry.Get`, forbidden Unity object searches, `Animator`, and `SkinnedMeshRenderer`.
+- Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, RenderDoc/profiler evidence, and visual validation exist.

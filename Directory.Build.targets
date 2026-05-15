@@ -57,6 +57,7 @@
     <Compile Include="Assets\_Project\Scripts\SaveSystem\SaveMasterHashV10.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\SaveSystem\SaveMasterHashV10.cs'))" />
     <Compile Include="Assets\_Project\Scripts\TerrainChunkGeneratedEvents.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\TerrainChunkGeneratedEvents.cs'))" />
     <Compile Include="Assets\_Project\Scripts\UI\HphiReactiveUiTelemetry.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\UI\HphiReactiveUiTelemetry.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\VFX\VfxComputeParticleBudgetCatalog.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\VFX\VfxComputeParticleBudgetCatalog.cs'))" />
     <Compile Include="Assets\_Project\Scripts\World\HectonOctahedralImpostorTypes.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\World\HectonOctahedralImpostorTypes.cs'))" />
     <Compile Include="Assets\_Project\Scripts\AI\Cognition\AlphaLeviathanCognitionContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\AI\Cognition\AlphaLeviathanCognitionContracts.cs'))" />
     <Reference Include="Hecton8.AI.Ecology.Migration" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.AI.Ecology.Migration.dll') And !$([System.String]::Copy('@(Reference)').Contains('Hecton8.AI.Ecology.Migration'))">

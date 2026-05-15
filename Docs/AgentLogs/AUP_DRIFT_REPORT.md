@@ -1,7 +1,7 @@
 # AUP Drift Report
 
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
-Status: VERIFIED AUP INTEGRITY - LOOP 29 AUP PRECISION H-PHI BUDGET GATE PASSES AND FAILURE OUTPUT IS ACTIONABLE; AUP PRECISION INTEGRITY 1.0; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
+Status: VERIFIED AUP INTEGRITY - LOOP 37 H-PHI ALL-PATTERN LITERAL GATE; AUP PRECISION INTEGRITY 1.0; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
 
 ## Authority
 
@@ -658,6 +658,68 @@ Status: VERIFIED AUP INTEGRITY - LOOP 29 AUP PRECISION H-PHI BUDGET GATE PASSES 
 - Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 193.981 seconds.
 - Full static summary: `RuntimeHPhiRisk=0.00059249`, `AupPrecisionRisk=0`, `PrimaryManagedRuntimeRisk=353`, `PrimaryJobCompleteRisk=44`, `PrimaryBudgetActual=353`, `PrimaryBudgetPassed=True`, role split `PrimaryRuntime=353`, `Instrumentation=236`, `Persistence=96`, `UI=24`, `RuntimeFiles=1275`, `RuntimeLines=862084`.
 - No `dotnet build` or rebuild was run in Loop 35 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- H-Phi result is static-source evidence, not profiler proof.
+
+## Loop 36 H-Phi One-Read Source Snapshot Pass
+
+### Findings
+
+- The full-source H-Phi audit still performed duplicate source reads: duplicate signal-name analysis read files independently from the main runtime/source counter pass.
+- Strict AUP authority scans remain clean: qualified legacy bridge patterns and direct committed-offset leaks both return `NO_MATCHES`.
+
+### Tool Changes
+
+- `Tools/Architecture/HectonPhiAudit.ps1`: added `New-SourceFileSnapshot`.
+- The full-source audit now builds one snapshot list and reuses it for duplicate-signal analysis and runtime/source counters.
+
+### Verification
+
+- PowerShell parser reports `PARSE_OK`.
+- CoreGraphOnly summary JSON still completes successfully with Core asmdef debt 25, generated project debt 10, source-backed bridge debt 14, source-backed compile bridge debt 8, and project-reference replacement debt 6.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 78.467 seconds.
+- Full static summary: `RuntimeHPhiRisk=0.000604205`, `RuntimeHPhiNarrow=0.010671906`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=363`, `AupPrecisionRisk=0`, `DuplicateSignalSourceFiles=1505`, `DuplicateSignalCandidateFiles=225`, `DuplicateSignalSkippedFiles=1280`, `PrimaryManagedRuntimeRisk=330`, `PrimaryJobCompleteRisk=44`, `RuntimeFiles=1278`, `RuntimeLines=867607`.
+- Targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` returned 237 broad residual matches. Residuals remain broad `universe` text plus known final-cast fluid/scatter/shader payload names.
+- Temporary capture `Docs/AgentLogs/TEMP_HECTON_PHI_SUMMARY_LOOP36.json` is absent after cleanup.
+- No `dotnet build` or rebuild was run in Loop 36 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- H-Phi result is static-source evidence, not profiler proof.
+
+## Loop 37 H-Phi All-Pattern Literal Gate
+
+### Findings
+
+- Full-source H-Phi still paid regex/masking setup for files with no monitored H-Phi/AUP literal.
+- The existing LINQ prefilter omitted `.All`, `.Last`, `.Single`, and `.ThenBy`; `.All(` appears in 178 files in the current tree.
+
+### Tool Changes
+
+- `Tools/Architecture/HectonPhiAudit.ps1`: added `New-LiteralHintIndex`.
+- Added a full-source all-pattern literal gate before code-surface masking and regex counting.
+- Added `SourceScanAudit` to summary JSON.
+- Expanded LINQ literal hints so the prefilter covers every LINQ method in the regex.
+
+### Verification
+
+- PowerShell parser reports `PARSE_OK`.
+- CoreGraphOnly summary JSON still completes successfully with Core asmdef debt 25, generated project debt 10, source-backed bridge debt 14, source-backed compile bridge debt 8, and project-reference replacement debt 6.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 39.931 seconds.
+- Full static summary: `RuntimeHPhiRisk=0.000611515`, `RuntimeHPhiNarrow=0.01068704`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=363`, `AupPrecisionRisk=0`, `SourceFiles=1505`, `AllSourceAuditLiteralSkippedFiles=205`, `RuntimeAuditLiteralSkippedFiles=209`, `DuplicateSignalCandidateFiles=225`, `PrimaryManagedRuntimeRisk=330`, `PrimaryJobCompleteRisk=44`, `PrimaryOwnerBlockedNativeArrayRefs=5696`, `RuntimeFiles=1278`, `RuntimeLines=867756`.
+- `-CoreGraphOnly -Summary -Json -MaxPrimaryOwnerBlockedNativeArrayRefs 0` returns the expected full-source requirement.
+- Optional lexical-scrubbed full source scan timed out after 240 seconds; no lexical-scrubbed H-Phi score was claimed.
+- Targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` returned 237 broad residual matches. Residuals remain broad `universe` text plus known final-cast fluid/scatter/shader payload names.
+- Temporary Loop 37 captures are absent after cleanup.
+- No `dotnet build` or rebuild was run in Loop 37 because the latest user instruction explicitly forbids rebuilds.
 
 ### Evidence Queue
 

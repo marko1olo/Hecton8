@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
@@ -590,7 +591,6 @@ namespace Hecton8.UI
             int atlasWidth = math.max(1, font.atlasWidth);
             int atlasHeight = math.max(1, font.atlasHeight);
             float glyphScale = glyphWorldHeight * math.rcp(math.max(1f, font.faceInfo.pointSize));
-            float promptAdvance = MeasureAdvance(prompt, glyphScale);
 
             float iconWidth = 0f;
             float iconHeight = 0f;
@@ -605,18 +605,18 @@ namespace Hecton8.UI
                 iconAdvance = iconWidth + glyphWorldHeight * IconGapMultiplier;
             }
 
-            float totalAdvance = iconAdvance + promptAdvance;
-            float penX = -totalAdvance * 0.5f;
-            if (_iconCount > 0)
-            {
-                _iconLocalCenters[0] = new Vector2(penX + iconWidth * 0.5f, IconVerticalBias);
-                _iconLocalScales[0] = new Vector2(iconWidth, iconHeight);
-                penX += iconAdvance;
-            }
-
             float baselineOffset = font.faceInfo.ascentLine * glyphScale * 0.36f;
             _textGlyphCount = 0;
-            BuildTextRun(atlasWidth, atlasHeight, glyphScale, baselineOffset, penX, prompt);
+            float promptAdvance = BuildTextRun(atlasWidth, atlasHeight, glyphScale, baselineOffset, 0f, prompt);
+            float totalAdvance = iconAdvance + promptAdvance;
+            float originX = -totalAdvance * 0.5f;
+            if (_iconCount > 0)
+            {
+                _iconLocalCenters[0] = new Vector2(originX + iconWidth * 0.5f, IconVerticalBias);
+                _iconLocalScales[0] = new Vector2(iconWidth, iconHeight);
+            }
+
+            OffsetTextGlyphCenters(originX + iconAdvance);
         }
 
         private float BuildTextRun(
@@ -674,6 +674,19 @@ namespace Hecton8.UI
             return penX;
         }
 
+        private void OffsetTextGlyphCenters(float offsetX)
+        {
+            if (offsetX == 0f)
+                return;
+
+            for (int i = 0; i < _textGlyphCount; i++)
+            {
+                Vector2 center = _textGlyphLocalCenters[i];
+                center.x += offsetX;
+                _textGlyphLocalCenters[i] = center;
+            }
+        }
+
         private static bool WriteUvRectIfChanged(Vector4[] table, int index, Vector4 uvRect)
         {
             Vector4 current = table[index];
@@ -687,42 +700,26 @@ namespace Hecton8.UI
             return true;
         }
 
-        private float MeasureAdvance(ReadOnlySpan<char> text, float glyphScale)
-        {
-            if (text.IsEmpty)
-                return 0f;
-
-            float totalAdvance = 0f;
-            int visibleGlyphCount = 0;
-            for (int i = 0; i < text.Length && visibleGlyphCount < MaxGlyphCount; i++)
-            {
-                char c = text[i];
-                TMP_Character character = ResolveCachedCharacter(c);
-                if (character == null || character.glyph == null)
-                    continue;
-
-                totalAdvance += character.glyph.metrics.horizontalAdvance * glyphScale * glyphAdvanceScale;
-                visibleGlyphCount++;
-            }
-
-            return totalAdvance;
-        }
-
         private bool TryResolveBindingIcon(float glyphScale, out int iconGlyphIndex, out float width, out float height)
         {
             iconGlyphIndex = 0;
             width = 0f;
             height = 0f;
-            if (spriteAsset == null || spriteAsset.spriteSheet == null || spriteAsset.spriteCharacterTable == null)
+            TMP_SpriteAsset sprite = spriteAsset;
+            if (sprite == null)
                 return false;
 
-            Texture spriteSheet = spriteAsset.spriteSheet;
+            Texture spriteSheet = sprite.spriteSheet;
+            List<TMP_SpriteCharacter> spriteCharacters = sprite.spriteCharacterTable;
+            if (spriteSheet == null || spriteCharacters == null)
+                return false;
+
             _runtimeSpriteAtlasTexture = spriteSheet;
             int spriteIndex = ResolveInteractSpriteIndex(_activeSchemeHash);
-            if ((uint)spriteIndex >= (uint)spriteAsset.spriteCharacterTable.Count || (uint)spriteIndex >= UvTableCapacity)
+            if ((uint)spriteIndex >= (uint)spriteCharacters.Count || (uint)spriteIndex >= UvTableCapacity)
                 return false;
 
-            TMP_SpriteCharacter spriteCharacter = spriteAsset.spriteCharacterTable[spriteIndex];
+            TMP_SpriteCharacter spriteCharacter = spriteCharacters[spriteIndex];
             if (spriteCharacter == null || spriteCharacter.glyph == null)
                 return false;
 

@@ -68,65 +68,6 @@ Verification:
 Status:
 - VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
 
-## 2026-05-15 - Handle External-View Generation Gate
-
-What was wrong:
-- `TryGetBufferHandle` could build a `VaultBufferHandle<T>` without marking the block as externally viewed.
-- The returned handle could carry the pre-mark generation if external-view metadata was updated later through another access path.
-
-What was done:
-- `TryBuildHandle` now calls `MarkExternalView`.
-- It reloads pointer and metadata after the mark, revalidates type/stride/alignment, and returns the post-mark generation.
-- Documented the handle external-view rule in `Docs/ARCHITECTURE/ARENA_ALLOCATOR_2_0.md`.
-
-Cinematic Cheats used:
-- None. This is DataVault metadata correctness.
-
-Exact Microseconds saved:
-- Frame cost: 0 us.
-- First handle build on an unmarked block may pay one metadata update and block lookup.
-- Subsequent handle builds are branch-only after the external-view flag is set.
-
-Verification:
-- `H8Memory.cs`, `GlobalDataVault.cs`, and `SaveBinaryPayloadCodec.cs` brace/parenthesis balance passed.
-- `TryBuildHandle` scan shows `MarkExternalView` before writing `handle.generation`.
-- DataVault live compaction scan remained clean.
-- `git diff --check` passed with CRLF warnings only.
-- No dotnet rebuild was run per user order.
-
-Status:
-- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
-
-## 2026-05-15 - Alias Accountability Gate
-
-What was wrong:
-- `CreateAlias` accepted a `SystemID reader` but did not reject `SystemID.Unknown`.
-- Read-only aliases are still persistent vault memory exposure and need PHI/VOD attribution.
-
-What was done:
-- Added `FatalMemoryException.ThrowUnknownAliasReader`.
-- `GlobalDataVault.CreateAlias` now rejects unknown requesters before probing buffers.
-- `H8Memory.CreateAlias` now rejects unknown readers for both NativeArray and raw pointer alias helpers.
-- Documented the alias reader requirement in `Docs/ARCHITECTURE/ARENA_ALLOCATOR_2_0.md`.
-
-Cinematic Cheats used:
-- None. This is memory sovereignty and alias accountability.
-
-Exact Microseconds saved:
-- Frame cost: 0 us.
-- Alias creation adds one branch, estimated <0.05 us on i3/MX350.
-- The gain is diagnostic integrity: no anonymous read-alias consumers in DataVault/H8Memory.
-
-Verification:
-- `H8Memory.cs`, `GlobalDataVault.cs`, and `SaveBinaryPayloadCodec.cs` brace/parenthesis balance passed.
-- Direct `SystemID.Unknown` alias call scan returned clean.
-- DataVault live compaction scan remained clean.
-- `git diff --check` passed with CRLF warnings only.
-- No dotnet rebuild was run per user order.
-
-Status:
-- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
-
 ## 2026-05-15 - Procedural DTO Payload Bounds Pass
 
 What was wrong:
@@ -774,6 +715,95 @@ Exact Microseconds saved:
 Verification:
 - `H8Memory.cs` brace/parenthesis balance passed.
 - Register-pointer call scan found only checked call sites.
+- DataVault live compaction scan remained clean.
+- `git diff --check` passed with CRLF warnings only.
+- No dotnet rebuild was run per user order.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-15 - Alias Accountability Gate
+
+What was wrong:
+- `CreateAlias` accepted a `SystemID reader` but did not reject `SystemID.Unknown`.
+- Read-only aliases are still persistent vault memory exposure and need PHI/VOD attribution.
+
+What was done:
+- Added `FatalMemoryException.ThrowUnknownAliasReader`.
+- `GlobalDataVault.CreateAlias` now rejects unknown requesters before probing buffers.
+- `H8Memory.CreateAlias` now rejects unknown readers for both NativeArray and raw pointer alias helpers.
+- Documented the alias reader requirement in `Docs/ARCHITECTURE/ARENA_ALLOCATOR_2_0.md`.
+
+Cinematic Cheats used:
+- None. This is memory sovereignty and alias accountability.
+
+Exact Microseconds saved:
+- Frame cost: 0 us.
+- Alias creation adds one branch, estimated <0.05 us on i3/MX350.
+- The gain is diagnostic integrity: no anonymous read-alias consumers in DataVault/H8Memory.
+
+Verification:
+- `H8Memory.cs`, `GlobalDataVault.cs`, and `SaveBinaryPayloadCodec.cs` brace/parenthesis balance passed.
+- Direct `SystemID.Unknown` alias call scan returned clean.
+- DataVault live compaction scan remained clean.
+- `git diff --check` passed with CRLF warnings only.
+- No dotnet rebuild was run per user order.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-15 - Handle External-View Generation Gate
+
+What was wrong:
+- `TryGetBufferHandle` could build a `VaultBufferHandle<T>` without marking the block as externally viewed.
+- The returned handle could carry the pre-mark generation if external-view metadata was updated later through another access path.
+
+What was done:
+- `TryBuildHandle` now calls `MarkExternalView`.
+- It reloads pointer and metadata after the mark, revalidates type/stride/alignment, and returns the post-mark generation.
+- Documented the handle external-view rule in `Docs/ARCHITECTURE/ARENA_ALLOCATOR_2_0.md`.
+
+Cinematic Cheats used:
+- None. This is DataVault metadata correctness.
+
+Exact Microseconds saved:
+- Frame cost: 0 us.
+- First handle build on an unmarked block may pay one metadata update and block lookup.
+- Subsequent handle builds are branch-only after the external-view flag is set.
+
+Verification:
+- `H8Memory.cs`, `GlobalDataVault.cs`, and `SaveBinaryPayloadCodec.cs` brace/parenthesis balance passed.
+- `TryBuildHandle` scan shows `MarkExternalView` before writing `handle.generation`.
+- DataVault live compaction scan remained clean.
+- `git diff --check` passed with CRLF warnings only.
+- No dotnet rebuild was run per user order.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-15 - DataVault Sub-Block Descriptor Fail-Closed Gate
+
+What was wrong:
+- DataVault arena initialization accepted `RegisterBlockDescriptor` returning `-1` for the root free block.
+- Block splitting accepted `RegisterBlockDescriptor` returning `-1` for the free remainder.
+- That allowed arena sub-blocks to exist without H8 descriptor evidence.
+
+What was done:
+- Root free-block descriptor failure now dumps PHI/VOD, disposes the partial vault, and throws `FatalMemoryException`.
+- Free-remainder descriptor failure now dumps PHI/VOD and rejects the allocation before mutating `_blocks`.
+- Documented the fail-closed DataVault descriptor rule in `Docs/ARCHITECTURE/ARENA_ALLOCATOR_2_0.md`.
+
+Cinematic Cheats used:
+- None. This is memory-map evidence integrity.
+
+Exact Microseconds saved:
+- Frame cost: 0 us.
+- Cold init/split path adds one descriptor-index branch.
+- The gain is fail-closed postmortem evidence instead of an incomplete block map.
+
+Verification:
+- `H8Memory.cs`, `GlobalDataVault.cs`, and `SaveBinaryPayloadCodec.cs` brace/parenthesis balance passed.
+- Descriptor registration failure branches are present around root init and split remainder creation.
 - DataVault live compaction scan remained clean.
 - `git diff --check` passed with CRLF warnings only.
 - No dotnet rebuild was run per user order.

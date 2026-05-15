@@ -772,7 +772,7 @@ namespace Hecton8.UI.VR
 
         private void TryRegisterReceiver()
         {
-            if (_latched || !_nativeAllocated || activationVolume == null || !Application.isPlaying)
+            if (_latched || !_nativeAllocated || activationVolume == null || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             Collider registeredVolume = _registeredActivationVolume;

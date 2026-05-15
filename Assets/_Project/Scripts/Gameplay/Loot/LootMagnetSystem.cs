@@ -30,8 +30,11 @@ namespace Hecton8.Gameplay.Loot
         private const uint TelemetryPlayerPoseMissingFlag = 1u << 5;
         private const uint TelemetryVaultUnavailableFlag = 1u << 6;
         private const uint TelemetryPickupRegistrySaturatedFlag = 1u << 7;
+        private const uint TelemetryPickupPoseNonFiniteFlag = 1u << 8;
+        private const uint TelemetryPlayerPoseNonFiniteFlag = 1u << 9;
+        private const uint TelemetryPickupProxyInvalidFlag = 1u << 10;
         private const uint TelemetryDumpMagic = 0x48384C4Du;
-        private const uint TelemetryDumpVersion = 2u;
+        private const uint TelemetryDumpVersion = 3u;
         private const uint TelemetryHashOffset = 2166136261u;
         private const uint TelemetryHashPrime = 16777619u;
 
@@ -269,7 +272,10 @@ namespace Hecton8.Gameplay.Loot
             _inventory = _playerContext != null && _playerContext.Inventory != null
                 ? _playerContext.Inventory
                 : GlobalRegistry.PlayerInventoryRuntime;
-            _playerTransform = _playerContext != null ? _playerContext.PlayerTransform : null;
+            Transform contextTransform = _playerContext != null ? _playerContext.PlayerTransform : null;
+            _playerTransform = contextTransform != null
+                ? contextTransform
+                : (_inventory != null ? _inventory.transform : null);
             _dependencyTelemetryFlags = 0u;
             if (_vault == null)
                 _dependencyTelemetryFlags |= TelemetryVaultUnavailableFlag;
@@ -484,6 +490,13 @@ namespace Hecton8.Gameplay.Loot
                 }
 
                 Transform pickupTransform = pickup.transform;
+                Vector3 pickupPosition = pickupTransform.position;
+                if (!IsFiniteRuntimePosition(pickupPosition))
+                {
+                    _registryTelemetryFlags |= TelemetryPickupPoseNonFiniteFlag;
+                    continue;
+                }
+
                 ulong entityId = EntityId.ToULong(pickup.GetEntityId());
                 uint itemHash = unchecked((uint)pickup.ItemHashId);
                 const uint slotFlags = LootEntityFlags.Active | LootEntityFlags.IsLoot | LootEntityFlags.PullEnabled;
@@ -492,7 +505,7 @@ namespace Hecton8.Gameplay.Loot
 
                 _pickupRefs[activeCount] = pickup;
                 _pickupEntityIds[activeCount] = entityId;
-                _entityAups[activeCount] = AbsoluteUniversePosition.FromRuntimePosition(pickupTransform.position);
+                _entityAups[activeCount] = AbsoluteUniversePosition.FromRuntimePosition(pickupPosition);
                 _entityItemHashes[activeCount] = itemHash;
                 _entityQuantities[activeCount] = (ushort)math.clamp(pickup.Quantity, 1, (int)ushort.MaxValue);
                 _entityFlags[activeCount] = slotFlags;
@@ -522,17 +535,30 @@ namespace Hecton8.Gameplay.Loot
             if (playerContext != null &&
                 playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
             {
-                playerAup = snapshot.Aup;
-                _lastPlayerAup = playerAup;
-                _dependencyTelemetryFlags &= ~TelemetryPlayerPoseMissingFlag;
-                return true;
+                if (IsFiniteAup(in snapshot.Aup))
+                {
+                    playerAup = snapshot.Aup;
+                    _lastPlayerAup = playerAup;
+                    _dependencyTelemetryFlags &= ~TelemetryPlayerPoseMissingFlag;
+                    return true;
+                }
+
+                _dependencyTelemetryFlags |= TelemetryPlayerPoseNonFiniteFlag;
             }
 
             playerAup = default;
             Transform playerTransform = _playerTransform;
             if (playerTransform != null)
             {
-                playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
+                Vector3 playerPosition = playerTransform.position;
+                if (!IsFiniteRuntimePosition(playerPosition))
+                {
+                    _dependencyTelemetryFlags |= TelemetryPlayerPoseNonFiniteFlag;
+                    _dependencyTelemetryFlags |= TelemetryPlayerPoseMissingFlag;
+                    return false;
+                }
+
+                playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
                 _lastPlayerAup = playerAup;
                 _dependencyTelemetryFlags &= ~TelemetryPlayerPoseMissingFlag;
                 return true;
@@ -603,6 +629,18 @@ namespace Hecton8.Gameplay.Loot
                 LootMagnetSignalEvent signalEvent = _signalEvents.IsCreated ? _signalEvents[index] : default;
                 if (pickup == null)
                 {
+                    telemetryFlags |= TelemetryPickupProxyInvalidFlag;
+                    ClearVaultSlot(index);
+                    continue;
+                }
+
+                uint pickupItemHash = unchecked((uint)pickup.ItemHashId);
+                if (!pickup.isActiveAndEnabled ||
+                    pickup.Quantity <= 0 ||
+                    pickupItemHash == 0u ||
+                    pickupItemHash != _entityItemHashes[index])
+                {
+                    telemetryFlags |= TelemetryPickupProxyInvalidFlag;
                     ClearVaultSlot(index);
                     continue;
                 }
@@ -722,6 +760,20 @@ namespace Hecton8.Gameplay.Loot
         private static uint FoldTelemetryHash(uint hash, uint value)
         {
             return (hash ^ value) * TelemetryHashPrime;
+        }
+
+        private static bool IsFiniteAup(in AbsoluteUniversePosition aup)
+        {
+            return math.isfinite(aup.LocalX) &&
+                   math.isfinite(aup.LocalY) &&
+                   math.isfinite(aup.LocalZ);
+        }
+
+        private static bool IsFiniteRuntimePosition(Vector3 position)
+        {
+            return math.isfinite(position.x) &&
+                   math.isfinite(position.y) &&
+                   math.isfinite(position.z);
         }
 
         private void PublishItemAcquired(in LootMagnetSignalEvent signalEvent, int addedQuantity)

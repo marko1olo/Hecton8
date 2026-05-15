@@ -220,6 +220,12 @@ Rejected Alternatives: Leaving handle creation as metadata-only because live com
 Scalability potential: Low keeps handle telemetry exact; Middle can diagnose handle lifetimes consistently; High and Ultra can increase handle-based consumers without losing external-view accounting.
 Hardware Impact: First handle extraction for a block may pay one block lookup and metadata update on a cold path; subsequent handles hit the external-view flag and return branch-only. Steady-frame cost for already-resolved handles remains 0 us.
 
+Problem: DataVault sub-block descriptors could still be missing even after H8 allocation tracking was made all-or-nothing. Arena initialization and block splitting accepted `RegisterBlockDescriptor` returning `-1`, leaving sub-block memory-map evidence incomplete.
+Solution: Arena initialization now dumps PHI/VOD, disposes the partially initialized vault, and throws `FatalMemoryException` if the root free-block descriptor cannot be registered. Block splitting now rejects the allocation and dumps PHI/VOD if the free-remainder descriptor cannot be registered before mutating the block list.
+Rejected Alternatives: Allowing `H8BlockIndex = -1` as best-effort telemetry; missing descriptors make later PHI/VOD analysis lie about the real arena map.
+Scalability potential: Low devices fail closed instead of running with incomplete memory evidence; Middle keeps block-map telemetry exact; High and Ultra can tolerate larger sub-block maps because descriptor storage already grows to `MaxTrackingCapacity`.
+Hardware Impact: One cold descriptor-index branch during vault init and one during block split. 0 us frame impact after buffers are allocated.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Polish audit required removal of fake precision, managed iteration/string debt, and any code outside the DataVault domain without justification.

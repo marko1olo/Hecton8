@@ -306,6 +306,20 @@ Task Count: 15
 - [x] Pure-void rebuild forcing | DOD: invalid stored record metadata now forces `originChanged` and `cellSizeChanged`, so a stale pure-void record cannot skip rebuild after corrupt metadata; rejected refreshing metadata while preserving unproven pure-void authority; estimate 2 us.
 - [x] Metadata drift static scan | DOD: changed build-scheduling range reports no raw division, forbidden hot math, managed allocation, or `foreach`; dotnet rebuilds remain prohibited; estimate 2 us.
 
+## Loop 43 - Dynamic Update Exact Cell Count
+
+- [x] Dynamic copy count proof | DOD: dynamic obstacle scheduling now recomputes the declared voxel cell count and copies `Current`/distance buffers by that count, not backing-buffer length; rejected spare-capacity copies; estimate 2 us.
+- [x] Pure-void rescan count proof | DOD: dynamic pure-void scan now receives the declared voxel cell count instead of `record.Next.Length`; rejected stale spare capacity suppressing or extending scan authority; estimate 2 us.
+- [x] Region count overflow proof | DOD: update region point count now uses 64-bit multiplication before scheduling partial reset; rejected unchecked int products; estimate 2 us.
+- [x] Dynamic exact-count static scan | DOD: changed dynamic scheduling range reports no raw division, forbidden hot math, managed allocation, or `foreach`; dotnet rebuilds remain prohibited; estimate 2 us.
+
+## Loop 44 - Dynamic Pure Void Metadata Repair
+
+- [x] Dynamic block metadata proof | DOD: dynamic update scheduling now derives `requiredBlockCount` from the declared cell count and verifies flag coverage before copy/schedule; rejected trusting stale `PureVoidBlockCount`; estimate 2 us.
+- [x] Pure-void fast-path preservation | DOD: `PureVoidBlockCount` is corrected to the derived count immediately before the exact rescan, so valid pure updates can release buffers instead of rebuilding portals; rejected fail-open metadata and rejected unnecessary portal rebuild churn; estimate 2 us.
+- [x] Dynamic pure-void metadata static scan | DOD: changed dynamic scheduling range reports no raw division, forbidden hot math, managed allocation, or `foreach`; dotnet rebuilds remain prohibited; estimate 2 us.
+- [x] Batch prompt re-extraction | DOD: CLI regex rechecked `CURRENT_BATCH.md` after three more route-record loops and confirmed `AI_FUNNEL_NAV_POLISH` remains absent; persisted files remain authority; estimate 0 us.
+
 ## Verification
 
 - [x] Static scan | PASS: `StringPullPathJob`, `NativeAStarJob`, `TryResolveAbyssalNavNodeCandidate`, abyssal nav support/hash, nav graph ingress, and funnel telemetry conversion regions have no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/` code matches after loop 19.
@@ -332,7 +346,9 @@ Task Count: 15
 - [x] Dynamic update buffer targeted scan | PASS: dynamic scheduling, `HasCompleteDynamicUpdateBuffers`, and `TryResolveVoxelCellCount` ranges report no raw division, forbidden hot math, managed allocation, or `foreach`.
 - [x] Pure void snapshot targeted scan | PASS: `IsPureVoidSnapshot` range reports no raw division, forbidden hot math, managed allocation, or `foreach`.
 - [x] Build metadata drift targeted scan | PASS: `TryPrepareBuild` change-detection range reports no raw division, forbidden hot math, managed allocation, or `foreach`.
-- [x] Batch prompt re-extraction | PASS: CLI regex rechecked `CURRENT_BATCH.md` after loop 34 and confirmed `AI_FUNNEL_NAV_POLISH` remains absent; persisted task files remain authority.
+- [x] Dynamic exact-count targeted scan | PASS: dynamic update copy/schedule range reports no raw division, forbidden hot math, managed allocation, or `foreach`.
+- [x] Dynamic pure-void metadata targeted scan | PASS: dynamic update block-count metadata range reports no raw division, forbidden hot math, managed allocation, or `foreach`.
+- [x] Batch prompt re-extraction | PASS: CLI regex rechecked `CURRENT_BATCH.md` after loop 44 and confirmed `AI_FUNNEL_NAV_POLISH` remains absent; persisted task files remain authority.
 - [x] Diff hygiene | PASS: `git diff --check` passed for touched source/status/rationale/log files; only LF-to-CRLF working-copy warnings were emitted.
 - [x] Core graph H-Phi summary | PASS STATIC: `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` completed without build; graph debt counts are Core asmdef 25, generated project 10, source-backed bridge 14, source-backed compile bridge 8, project-reference replacement 6; no source-only route hardening score was claimed.
 - [x] Static H-Phi audit | ATTEMPTED: `Tools/Architecture/HectonPhiAudit.ps1 -Json` timed out after 120 seconds under current repo load; no score claimed from this pass.

@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Unity.Mathematics;
 
@@ -195,6 +196,7 @@ namespace Hecton8.VFX
     /// <summary>
     /// Immutable compute-particle budget row.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct VfxComputeParticleBudget
     {
         /// <summary>Low-tier budget row.</summary>

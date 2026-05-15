@@ -271,14 +271,16 @@ namespace Hecton8.UI
             SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.ActiveRuntimeInstance;
             Canvas targetCanvas = overlay != null
                 ? overlay.TargetCanvas
-                : (SuitHUDV4CanvasOverlay.ActiveRuntimeInstance != null ? SuitHUDV4CanvasOverlay.ActiveRuntimeInstance.GetComponent<Canvas>() : null);
+                : null;
+            if (targetCanvas == null && overlay != null)
+                overlay.TryGetComponent(out targetCanvas);
             if (targetCanvas == null)
                 return;
 
             GameObject owner = new GameObject("SubtitleManager", typeof(RectTransform));
             owner.layer = targetCanvas.gameObject.layer;
 
-            RectTransform rect = owner.GetComponent<RectTransform>();
+            owner.TryGetComponent(out RectTransform rect);
             rect.SetParent(targetCanvas.transform, false);
 
             owner.AddComponent<SubtitleManager>();
@@ -1294,22 +1296,20 @@ namespace Hecton8.UI
             _root.anchoredPosition = new Vector2(0f, 72f);
             _root.sizeDelta = new Vector2(940f, 92f);
 
-            _canvasGroup = gameObject.GetComponent<CanvasGroup>();
-            if (_canvasGroup == null)
+            if (!TryGetComponent(out _canvasGroup))
                 _canvasGroup = gameObject.AddComponent<CanvasGroup>();
             _canvasGroup.alpha = 0f;
             _canvasGroup.interactable = false;
             _canvasGroup.blocksRaycasts = false;
 
-            _backdrop = gameObject.GetComponent<Image>();
-            if (_backdrop == null)
+            if (!TryGetComponent(out _backdrop))
                 _backdrop = gameObject.AddComponent<Image>();
             _backdrop.color = BackdropColor;
             _backdrop.raycastTarget = false;
 
             GameObject textOwner = new GameObject("SubtitleText", typeof(RectTransform));
             textOwner.layer = gameObject.layer;
-            RectTransform textRect = textOwner.GetComponent<RectTransform>();
+            textOwner.TryGetComponent(out RectTransform textRect);
             textRect.SetParent(_root, false);
             textRect.anchorMin = new Vector2(0f, 0f);
             textRect.anchorMax = new Vector2(1f, 1f);
@@ -1338,7 +1338,7 @@ namespace Hecton8.UI
                 typeof(AudioWaveformAnimator));
             waveformOwner.layer = gameObject.layer;
 
-            RectTransform waveformRoot = waveformOwner.GetComponent<RectTransform>();
+            waveformOwner.TryGetComponent(out RectTransform waveformRoot);
             waveformRoot.SetParent(_root, false);
             waveformRoot.anchorMin = new Vector2(0f, 0.5f);
             waveformRoot.anchorMax = new Vector2(0f, 0.5f);
@@ -1346,7 +1346,7 @@ namespace Hecton8.UI
             waveformRoot.anchoredPosition = new Vector2(18f, 0f);
             waveformRoot.sizeDelta = new Vector2(42f, 34f);
 
-            _audioCueGroup = waveformOwner.GetComponent<CanvasGroup>();
+            waveformOwner.TryGetComponent(out _audioCueGroup);
             _audioCueGroup.alpha = 0f;
             _audioCueGroup.interactable = false;
             _audioCueGroup.blocksRaycasts = false;
@@ -1360,7 +1360,7 @@ namespace Hecton8.UI
                     typeof(Image));
                 barObject.layer = gameObject.layer;
 
-                RectTransform barRect = barObject.GetComponent<RectTransform>();
+                barObject.TryGetComponent(out RectTransform barRect);
                 barRect.SetParent(waveformRoot, false);
                 barRect.anchorMin = new Vector2(0f, 0.5f);
                 barRect.anchorMax = new Vector2(0f, 0.5f);
@@ -1368,13 +1368,13 @@ namespace Hecton8.UI
                 barRect.sizeDelta = new Vector2(5f, 18f);
                 barRect.anchoredPosition = new Vector2(5f + i * 9f, 0f);
 
-                Image barImage = barObject.GetComponent<Image>();
+                barObject.TryGetComponent(out Image barImage);
                 barImage.color = WaveformColor;
                 barImage.raycastTarget = false;
                 waveformBars[i] = barRect;
             }
 
-            _audioWaveformAnimator = waveformOwner.GetComponent<AudioWaveformAnimator>();
+            waveformOwner.TryGetComponent(out _audioWaveformAnimator);
             _audioWaveformAnimator.ConfigureWaveformTargets(waveformBars);
 
             _built = true;

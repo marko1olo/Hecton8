@@ -551,3 +551,23 @@ Solution: Ran source-only checks: `git diff --check` passed with source/doc line
 Rejected Alternatives: Running prohibited `dotnet build`; trusting a visual source pass over a staged/unstaged mixed worktree.
 Scalability potential: Process hygiene only.
 Hardware Impact: No runtime impact.
+
+## LOOP 28 SIGNAL-OWNED SCANNER PRESENTATION TIMING
+
+Problem: The physical tool display still scrambled scanner titles with `Time.frameCount` inside the UI text writer. The scanner signal already carries a frame stamp, so the display was taking an extra engine frame read and could seed the physical screen from a different frame than the producer packet.
+Solution: Store `ScannerToolActiveSignal.Frame` in `ToolDiegeticDisplayController` and pass that value into `ScrambleDecryptionSpan()`. Same-content signal frames update the stored frame without forcing a repaint.
+Rejected Alternatives: Reading `Time.frameCount` in the writer; reading frame once in every display tick; repainting every same-progress scanner packet just to update scramble noise.
+Scalability potential: Low/MX350 keeps cheap `SCAN xx%` fallback. Middle/High/Ultra preserve richer scanner title scramble seeded by the producer frame without additional display-side engine time reads.
+Hardware Impact: Removes one engine frame read per scanner title repaint and avoids dirty churn from same-progress frame-only signal updates. Exact microseconds remain PENDING PROFILER.
+
+Problem: Focused scanner attractant-gradient sampling still read `Time.time` inside `TrySampleScientificAttractantGradient()` even though voxel/spatial contact consumers already received a coherent scan timestamp.
+Solution: Pass the focused scan `now` into attractant-gradient sampling and use it for breadcrumb-expiry checks.
+Rejected Alternatives: Keeping helper-local time reads; using stale breadcrumb lifetime without expiry checks; adding a clock service for one sensory helper.
+Scalability potential: Low/MX350 trims hidden time reads from active scanner sensory sampling. Middle/High/Ultra keep richer attractant vector output while sharing one scan timestamp across density, chemical, and contact evidence.
+Hardware Impact: Removes up to two helper-local engine time reads across voxel/spatial contact samples. Exact microseconds remain PENDING PROFILER.
+
+Problem: Verification after signal-owned timing needed to prove no forbidden UI/text/physics patterns were introduced without using rebuilds.
+Solution: Ran source-only checks: `git diff --check` passed with source line-ending warnings only, `git diff --cached --check` passed, and scanner/UI banned-pattern scan found no forbidden patterns.
+Rejected Alternatives: Running prohibited `dotnet build`; trusting the signal-frame and attractant timestamp edits without static scans.
+Scalability potential: Process hygiene only.
+Hardware Impact: No runtime impact.

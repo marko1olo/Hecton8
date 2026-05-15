@@ -375,3 +375,20 @@ Cinematic Cheats used:
 
 Exact microseconds saved:
 - None. This was an audit-only source pass; no dotnet rebuild was run.
+
+## 2026-05-15 - Initialization Invariant Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- The solver could report initialized when only `RoomO2` and the toxicity queue existed.
+- A Dalton step could be scheduled without proving room, base, bulkhead, and telemetry lanes were coherent.
+
+What was done:
+- Strengthened `IsInitialized` to require length-aware room/base/bulkhead readiness plus telemetry and toxicity creation.
+- Routed `ScheduleStep` through the stronger initialization invariant.
+
+Cinematic Cheats used:
+- None new.
+
+Exact microseconds saved:
+- None claimed. This is invalid-job prevention for H-Phi/native lane migration; no dotnet rebuild was run.

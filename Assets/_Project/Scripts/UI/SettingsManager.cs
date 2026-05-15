@@ -1420,9 +1420,11 @@ namespace Hecton8.UI
                 return true;
             }
 
-            Camera parentCamera = GetComponentInParent<Camera>();
-            if (parentCamera != null)
+            for (Transform current = transform.parent; current != null; current = current.parent)
             {
+                if (!current.TryGetComponent(out Camera parentCamera))
+                    continue;
+
                 mainCamera = parentCamera;
                 _cachedMainCamera = parentCamera;
                 return true;
@@ -1472,7 +1474,13 @@ namespace Hecton8.UI
             if (TryCacheVolumeProfile(Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Volume>(transform)))
                 return true;
 
-            return TryCacheVolumeProfile(GetComponentInParent<Volume>());
+            for (Transform current = transform.parent; current != null; current = current.parent)
+            {
+                if (current.TryGetComponent(out Volume parentVolume))
+                    return TryCacheVolumeProfile(parentVolume);
+            }
+
+            return false;
         }
 
         private bool TryCacheVolumeProfile(Volume candidate)

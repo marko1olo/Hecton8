@@ -559,7 +559,7 @@ namespace Hecton8.UI
                     typeof(Image));
                 overlayObject.layer = targetCanvas.gameObject.layer;
 
-                _overlayRoot = overlayObject.GetComponent<RectTransform>();
+                overlayObject.TryGetComponent(out _overlayRoot);
                 _overlayRoot.SetParent(contentRoot, false);
             }
 
@@ -571,15 +571,13 @@ namespace Hecton8.UI
             _overlayRoot.localScale = Vector3.one;
             _overlayRoot.SetAsLastSibling();
 
-            _overlayGroup = _overlayRoot.GetComponent<CanvasGroup>();
-            if (_overlayGroup == null)
+            if (!_overlayRoot.TryGetComponent(out _overlayGroup))
                 _overlayGroup = _overlayRoot.gameObject.AddComponent<CanvasGroup>();
             _overlayGroup.alpha = 0f;
             _overlayGroup.blocksRaycasts = false;
             _overlayGroup.interactable = false;
 
-            Image background = _overlayRoot.GetComponent<Image>();
-            if (background == null)
+            if (!_overlayRoot.TryGetComponent(out Image background))
                 background = _overlayRoot.gameObject.AddComponent<Image>();
             background.color = new Color(0.02f, 0.06f, 0.08f, 0.82f);
             background.raycastTarget = false;
@@ -588,14 +586,14 @@ namespace Hecton8.UI
 
             GameObject textObject = new GameObject("ConsoleText", typeof(RectTransform), typeof(TextMeshProUGUI));
             textObject.layer = _overlayRoot.gameObject.layer;
-            RectTransform textRoot = textObject.GetComponent<RectTransform>();
+            textObject.TryGetComponent(out RectTransform textRoot);
             textRoot.SetParent(_overlayRoot, false);
             textRoot.anchorMin = Vector2.zero;
             textRoot.anchorMax = Vector2.one;
             textRoot.offsetMin = new Vector2(24f, 20f);
             textRoot.offsetMax = new Vector2(-24f, -20f);
 
-            _consoleLabel = textObject.GetComponent<TextMeshProUGUI>();
+            textObject.TryGetComponent(out _consoleLabel);
             if (font != null)
                 _consoleLabel.font = font;
 
@@ -616,7 +614,7 @@ namespace Hecton8.UI
             if (overlay != null && overlay.TargetCanvas != null)
                 return overlay.TargetCanvas;
 
-            return (SuitHUDV4CanvasOverlay.ActiveRuntimeInstance != null ? SuitHUDV4CanvasOverlay.ActiveRuntimeInstance.GetComponent<Canvas>() : null);
+            return overlay != null && overlay.TryGetComponent(out Canvas canvas) ? canvas : null;
         }
 
         private static string ResolveLocalized(LocalizationManager manager, string key, string fallback)

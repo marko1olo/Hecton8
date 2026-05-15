@@ -214,7 +214,14 @@ namespace Hecton8.UI
             }
 
             if (playerPDA == null)
-                playerPDA = GetComponentInParent<PlayerPDA>();
+            {
+                for (Transform current = transform; current != null; current = current.parent)
+                {
+                    if (current.TryGetComponent(out playerPDA))
+                        break;
+                }
+            }
+
             if (playerExpressionManager == null)
                 playerExpressionManager = Hecton8.Core.GlobalRegistry.PlayerExpression;
             if (hudNotification == null)
@@ -1434,8 +1441,7 @@ namespace Hecton8.UI
 
         private static Image EnsureImage(GameObject target)
         {
-            Image image = target.GetComponent<Image>();
-            if (image == null)
+            if (!target.TryGetComponent(out Image image))
                 image = target.AddComponent<Image>();
             return image;
         }
@@ -1445,8 +1451,7 @@ namespace Hecton8.UI
             if (target == null)
                 return null;
 
-            CanvasGroup group = target.GetComponent<CanvasGroup>();
-            if (group == null)
+            if (!target.TryGetComponent(out CanvasGroup group))
                 group = target.gameObject.AddComponent<CanvasGroup>();
 
             return group;
@@ -1561,7 +1566,7 @@ namespace Hecton8.UI
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
             go.layer = parent.gameObject.layer;
-            RectTransform rect = go.GetComponent<RectTransform>();
+            go.TryGetComponent(out RectTransform rect);
             rect.SetParent(parent, false);
             rect.localScale = Vector3.one;
             return rect;
@@ -1572,7 +1577,7 @@ namespace Hecton8.UI
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
             go.layer = parent.gameObject.layer;
-            RectTransform rect = go.GetComponent<RectTransform>();
+            go.TryGetComponent(out RectTransform rect);
             rect.SetParent(parent, false);
             rect.localScale = Vector3.one;
 

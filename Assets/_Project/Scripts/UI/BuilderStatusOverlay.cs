@@ -306,14 +306,12 @@ namespace Hecton8.UI
             _self.anchoredPosition = anchoredOffset;
             _self.sizeDelta = panelSize;
 
-            _canvasGroup = _self.gameObject.GetComponent<CanvasGroup>();
-            if (_canvasGroup == null)
+            if (!_self.gameObject.TryGetComponent(out _canvasGroup))
                 _canvasGroup = _self.gameObject.AddComponent<CanvasGroup>();
             _canvasGroup.interactable = false;
             _canvasGroup.blocksRaycasts = false;
 
-            _panel = _self.gameObject.GetComponent<Image>();
-            if (_panel == null)
+            if (!_self.gameObject.TryGetComponent(out _panel))
                 _panel = _self.gameObject.AddComponent<Image>();
             _panel.color = PanelColor;
             _panel.raycastTarget = false;
@@ -644,7 +642,7 @@ namespace Hecton8.UI
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
             go.layer = parent.gameObject.layer;
-            RectTransform rect = go.GetComponent<RectTransform>();
+            go.TryGetComponent(out RectTransform rect);
             rect.SetParent(parent, false);
             return rect;
         }

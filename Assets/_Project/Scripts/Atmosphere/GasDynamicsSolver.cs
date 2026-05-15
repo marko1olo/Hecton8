@@ -154,7 +154,12 @@ namespace Hecton8.Atmosphere
         private IPlayerMovementContracts _playerMovementContracts;
         private IDataVault _dataVault;
 
-        public bool IsInitialized => RoomO2.IsCreated && _toxicitySignals.IsCreated;
+        public bool IsInitialized =>
+            _toxicitySignals.IsCreated &&
+            _telemetryRing.IsCreated &&
+            AreRoomStateLanesReady(_roomCount) &&
+            AreBulkheadLanesReady(_bulkheadCount) &&
+            AreBaseStateLanesReady(_baseCount);
         public int RoomCount => _roomCount;
         public int BaseCount => _baseCount;
         public float LastCadenceSeconds => _lastCadenceSeconds;
@@ -898,7 +903,7 @@ namespace Hecton8.Atmosphere
 
         private void ScheduleStep(float deltaTime)
         {
-            if (_stepRunning || !RoomO2.IsCreated || !_toxicitySignals.IsCreated)
+            if (_stepRunning || !IsInitialized)
                 return;
 
             TrimToxicityQueueBeforeSchedule();

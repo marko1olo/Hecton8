@@ -397,3 +397,15 @@ Cinematic Cheats used: no simulation change. This preserves overlap-probe physic
 Exact microseconds saved/spent: one frame read and integer compare pair per receiver callback. Future samples skip lever transform projection, panel AUP/signal/haptic work, and snap-switch transform/signal/haptic/audio work. 0 B/frame.
 
 Verification: `git diff --check` passed for the three receiver files. Scoped counter reports `CurrentFrameCaptures=3`, `LeverFutureReject=1`, `PanelFutureReject=1`, `SwitchFutureReject=1`, `FutureRejectBeforeLeverTransform=1`, `FutureRejectBeforePanelState=1`, `FutureRejectBeforeSwitchTransform=1`, `ForbiddenPatternTotal=0`, `DotnetMention=0`. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - Dispatcher-Backed Receiver Registration
+
+What was wrong: manual override receiver registration could enter `PhysicalHandReceiverRegistry` while `GlobalRegistry.Dispatcher` was null. That leaves a collider-backed receiver without a runnable player tick lane.
+
+What was done: `OpenXRManualOverrideLever.TryRegisterReceiver()` now refuses registration when the dispatcher is absent, matching the existing tick registration guard. Dispatcher hot-swap recovery still re-registers receiver and tick in order after native-state recovery.
+
+Cinematic Cheats used: no simulation change. This keeps the manual override as a bounded kinematic/probe control and removes dead receiver occupancy instead of adding runtime polling or physics.
+
+Exact microseconds saved/spent: 0 us steady-state. Cold lifecycle registration pays one dispatcher-null branch. During dispatcher outages, it saves a fixed receiver slot and avoids useless overlap-to-receiver dispatch.
+
+Verification: `git diff --check` passed for `OpenXRManualOverrideLever.cs`. Scoped counter reports `ReceiverRequiresDispatcher=1`, `TickRequiresDispatcher=1`, `DispatcherNullUnregistersReceiver=1`, `DispatcherRecoveryRegistersReceiver=1`, `ForbiddenPatternTotal=0`, `DotnetMention=0`. No dotnet rebuild/probe was run by user instruction.

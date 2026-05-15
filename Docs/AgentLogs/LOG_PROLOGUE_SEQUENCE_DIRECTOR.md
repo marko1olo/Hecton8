@@ -436,3 +436,19 @@ What was done -> Added a current-iteration `hasFreshAtmosphericReentry` gate so 
 Cinematic Cheats used -> None; this preserves deterministic pacing before the VWS/rumble/manual override presentation cheats are allowed to advance.
 Exact Microseconds saved -> Adds one stack bool and branch below 1 us per burn wait frame. Prevents false sequence progression and avoids heavier rollback/debug work.
 Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted readback confirms the fresh-atmospheric gate; forbidden-pattern scan returned no hits; scoped `git diff --check` exits clean.
+
+## 2026-05-15 - Loop 59 Director Atmospheric Finite Wall Review
+
+What was wrong -> The director guarded orbital snapshots against NaN/Inf but trusted atmospheric snapshots after the runtime call, leaving future runtime adapters able to contaminate hashes or Mach fallback.
+What was done -> Added `IsFiniteAtmospheric()` and route non-finite altitude, velocity, or heat through the existing fault stage and black-box dump path before hashing or progression.
+Cinematic Cheats used -> None; this protects the deterministic control lane that triggers later VWS, rumble, whiteout, and water-transition presentation fakes.
+Exact Microseconds saved -> Adds three scalar finite checks per consumed atmospheric packet, below 1 us. Avoids corrupt warning/manual progression and preserves postmortem evidence.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted readback confirms finite guards before both atmospheric hash sites; forbidden-pattern scan returned no hits; scoped `git diff --check` reports line-ending warnings only for the touched markdown logs.
+
+## 2026-05-15 - Loop 60 Audio Quality-Tier Transition Gate Review
+
+What was wrong -> Prologue audio accepted scalability events but did not publish a new transition when only `QualityTier` changed and the DSP scalars remained stable.
+What was done -> Added `_lastPublishedQualityTierByte`, reset it on transient reset, update it after successful queue, and include tier-byte drift in `ShouldPublishTransition()`.
+Cinematic Cheats used -> Low-tier proxy DSP and high/ultra granular stress remain presentation fakes; this keeps the fake selected from current quality policy.
+Exact Microseconds saved -> Adds one byte compare below 1 us per armed publish check. Avoids stale downstream DSP policy without per-frame registry polling or event-time queue spam.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted readback confirms the tier reset/update/gate paths; forbidden-pattern scan returned no hits; scoped `git diff --check` reports line-ending warnings only.

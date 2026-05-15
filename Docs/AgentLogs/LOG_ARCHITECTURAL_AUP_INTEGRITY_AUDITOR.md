@@ -916,3 +916,69 @@ Verification:
 
 Integrator notes:
 - Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
+
+## 2026-05-15 - Loop 36 H-Phi One-Read Source Snapshot Pass
+
+What was wrong:
+- Full-source H-Phi audit read C# files once for duplicate-signal analysis and again for runtime/source counters.
+
+What was done:
+- Added `New-SourceFileSnapshot` to `Tools/Architecture/HectonPhiAudit.ps1`.
+- Built one source snapshot list containing file content, relative path, domain, line count, and editor-file classification.
+- Routed duplicate-signal analysis and the main runtime/source counter pass through the shared snapshots.
+
+Cinematic Cheats used:
+- Static tooling only. Runtime simulation, rendering, physics, AUP authority, and gameplay code are unchanged.
+- Low-tier machines pay less full-scan IO; High/Ultra CI keeps full AUP/H-Phi evidence without dropping duplicate-signal collision detection.
+
+Exact Microseconds saved:
+- Gameplay frame time: 0 us.
+- Tooling-only improvement. Full gated static run completed in 78.467 seconds; no exact same-tree before/after delta is claimed because unrelated working-tree H-Phi lanes changed concurrently.
+
+Verification:
+- PowerShell parser reports `PARSE_OK`.
+- CoreGraphOnly summary JSON still completes successfully.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed and reported `RuntimeHPhiRisk=0.000604205`, `RuntimeHPhiNarrow=0.010671906`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=363`, `AupPrecisionRisk=0`, `DuplicateSignalSourceFiles=1505`, `DuplicateSignalCandidateFiles=225`, `DuplicateSignalSkippedFiles=1280`, `PrimaryManagedRuntimeRisk=330`, `PrimaryJobCompleteRisk=44`, `RuntimeFiles=1278`, `RuntimeLines=867607`.
+- Qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory AUP regex scan returned 237 broad residual matches: broad `universe` text and known final-cast fluid/scatter/shader payload names.
+- Temporary JSON capture for Loop 36 is absent after cleanup.
+- No `dotnet build` or rebuild was run because the user explicitly forbade rebuilds.
+
+Integrator notes:
+- Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
+
+## 2026-05-15 - Loop 37 H-Phi All-Pattern Literal Gate
+
+What was wrong:
+- Full-source H-Phi still evaluated counter regex passes for files with no monitored H-Phi/AUP literals.
+- LINQ literal hints missed `.All`, `.Last`, `.Single`, and `.ThenBy`; `.All(` currently appears in 178 files.
+
+What was done:
+- Added `New-LiteralHintIndex` to `Tools/Architecture/HectonPhiAudit.ps1`.
+- Added a full-source all-pattern literal gate before code-surface masking and regex counting.
+- Expanded LINQ literal hints to match the regex surface.
+- Added `SourceScanAudit` to summary JSON.
+
+Cinematic Cheats used:
+- Static tooling only. Runtime simulation, rendering, physics, AUP authority, and gameplay code are unchanged.
+- Low-tier machines skip no-surface files before regex work; High/Ultra CI keeps broader H-Phi evidence without weakening AUP precision gates.
+
+Exact Microseconds saved:
+- Gameplay frame time: 0 us.
+- Tooling-only improvement. Full gated static run completed in 39.931 seconds and skipped 205 all-source files plus 209 runtime files before counter regex passes.
+
+Verification:
+- PowerShell parser reports `PARSE_OK`.
+- CoreGraphOnly summary JSON still completes successfully.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed and reported `RuntimeHPhiRisk=0.000611515`, `RuntimeHPhiNarrow=0.01068704`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=363`, `AupPrecisionRisk=0`, `SourceFiles=1505`, `AllSourceAuditLiteralSkippedFiles=205`, `RuntimeAuditLiteralSkippedFiles=209`, `DuplicateSignalSourceFiles=1505`, `DuplicateSignalCandidateFiles=225`, `DuplicateSignalSkippedFiles=1280`, `PrimaryManagedRuntimeRisk=330`, `PrimaryJobCompleteRisk=44`, `PrimaryOwnerBlockedNativeArrayRefs=5696`, `RuntimeFiles=1278`, `RuntimeLines=867756`.
+- `-CoreGraphOnly -Summary -Json -MaxPrimaryOwnerBlockedNativeArrayRefs 0` returns the expected full-source requirement.
+- Optional lexical-scrubbed full source scan timed out after 240 seconds; no lexical-scrubbed score was claimed.
+- Qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory AUP regex scan returned 237 broad residual matches: broad `universe` text and known final-cast fluid/scatter/shader payload names.
+- Temporary Loop 37 captures are absent after cleanup.
+- No `dotnet build` or rebuild was run because the user explicitly forbade rebuilds.
+
+Integrator notes:
+- Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.

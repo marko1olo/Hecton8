@@ -52,6 +52,7 @@ namespace Hecton8.Audio.Prologue
         private byte _stage = AudioTransitionState.StageSpace;
         private byte _lastPublishedStage;
         private byte _lastPublishedFlags;
+        private byte _lastPublishedQualityTierByte = byte.MaxValue;
         private float _velocityMetersPerSecond;
         private float _heat01;
         private float _currentLowPassCutoffHertz = 400f;
@@ -123,6 +124,7 @@ namespace Hecton8.Audio.Prologue
             _stage = AudioTransitionState.StageSpace;
             _lastPublishedStage = 0;
             _lastPublishedFlags = 0;
+            _lastPublishedQualityTierByte = byte.MaxValue;
             _velocityMetersPerSecond = 0f;
             _heat01 = 0f;
             _currentLowPassCutoffHertz = ClampCutoff(oceanLowPassCutoffHertz);
@@ -373,6 +375,7 @@ namespace Hecton8.Audio.Prologue
 
             _lastPublishedStage = _stage;
             _lastPublishedFlags = flags;
+            _lastPublishedQualityTierByte = _qualityTierByte;
             _lastPublishedLowPassCutoffHertz = lowPassCutoffHertz;
             _lastPublishedLfeGain = lfeGain;
             _lastPublishedGranularStress = granularStress;
@@ -537,6 +540,7 @@ namespace Hecton8.Audio.Prologue
                    _splashdownPending ||
                    _stage != _lastPublishedStage ||
                    flags != _lastPublishedFlags ||
+                   _qualityTierByte != _lastPublishedQualityTierByte ||
                    math.abs(lowPassCutoffHertz - _lastPublishedLowPassCutoffHertz) > CutoffPublishEpsilonHertz ||
                    math.abs(lfeGain - _lastPublishedLfeGain) > GainPublishEpsilon ||
                    math.abs(granularStress - _lastPublishedGranularStress) > GainPublishEpsilon ||

@@ -120,6 +120,7 @@ namespace Hecton8.UI.Tools
         private float _distanceMeters;
         private float _scannerProgress01;
         private uint _scannerArtifactHash;
+        private uint _scannerFrame;
         private ushort _ammoUnits;
         private uint _statusMask;
         private byte _stateFlags;
@@ -306,6 +307,7 @@ namespace Hecton8.UI.Tools
             _hasState = false;
             _scannerSignalActive = false;
             _scannerArtifactHash = 0u;
+            _scannerFrame = 0u;
             _scannerProgress01 = 0f;
             _lastSignalSequence = InvalidDisplayBucket;
             _lastScannerSignalSequence = InvalidDisplayBucket;
@@ -358,15 +360,18 @@ namespace Hecton8.UI.Tools
             uint artifactHash = acceptsScanner ? signal.ArtifactHash : 0u;
             bool active = acceptsScanner && signal.Active != 0 && artifactHash != 0u;
             float scannerProgress01 = active ? Sanitize01(signal.Progress01) : 0f;
+            uint scannerFrame = active ? signal.Frame : 0u;
             if (_scannerSignalActive == active &&
                 _scannerArtifactHash == artifactHash &&
                 math.abs(_scannerProgress01 - scannerProgress01) < 0.005f)
             {
+                _scannerFrame = scannerFrame;
                 return;
             }
 
             _scannerSignalActive = active;
             _scannerArtifactHash = artifactHash;
+            _scannerFrame = scannerFrame;
             _scannerProgress01 = scannerProgress01;
             _stateDirty = true;
         }
@@ -393,7 +398,7 @@ namespace Hecton8.UI.Tools
                     statusBucket != ResolveStatusBucket(_appliedStatusMask);
                 if (scannerTextChanged)
                 {
-                    WriteScannerPrimaryLine(_scannerArtifactHash, scannerProgressBucket);
+                    WriteScannerPrimaryLine(_scannerArtifactHash, _scannerFrame, scannerProgressBucket);
                     WriteScannerSecondaryLine(scannerProgressBucket, statusBucket);
                     _lastScannerProgressBucket = scannerProgressBucket;
                     _lastScannerArtifactHash = _scannerArtifactHash;
@@ -460,7 +465,7 @@ namespace Hecton8.UI.Tools
             _secondaryLabel.SetCharArray(_secondaryBuffer, 0, math.max(0, cursor));
         }
 
-        private void WriteScannerPrimaryLine(uint artifactHash, int progressPercent)
+        private void WriteScannerPrimaryLine(uint artifactHash, uint scannerFrame, int progressPercent)
         {
             if (_primaryLabel == null)
                 return;
@@ -479,7 +484,7 @@ namespace Hecton8.UI.Tools
             }
             else if (progressPercent < 100)
             {
-                ScrambleDecryptionSpan(span.Slice(0, cursor), artifactHash, Time.frameCount, progressPercent * 0.01f);
+                ScrambleDecryptionSpan(span.Slice(0, cursor), artifactHash, unchecked((int)scannerFrame), progressPercent * 0.01f);
             }
 
             _primaryLabel.SetCharArray(_primaryBuffer, 0, math.max(0, cursor));

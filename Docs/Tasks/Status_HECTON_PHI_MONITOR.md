@@ -47,17 +47,18 @@ Task Count: 6
 - [x] Task 25: Managed-runtime and job-sync risk gates | DOD: added static counters, summary rows, top-file routing, and full-scan budgets for LINQ surface, coroutine surface, managed formatting surface, and job `.Complete()` surface; verified gated full scan without rebuild | Rejected: editing owner runtime files from static counters without call-stack/profiler proof | Estimate: 0 us runtime
 - [x] Task 26: Primary-runtime risk role routing | DOD: classified managed-risk counters by file role and added `PrimaryManagedRuntimeRisk` gate so smoke, diagnostics, persistence, and UI debt do not masquerade as core gameplay hot-path debt | Rejected: blindly fixing static `string.Format`/`.Complete()` hits in owner runtime files without profiler/call-stack proof | Estimate: 0 us runtime
 - [x] Task 27: DataVault backlog regression gate | DOD: added owner-blocked NativeArray refs, dispose pressure, native ownership risk, domain/role backlog routing, and `-MaxOwnerBlockedNativeArrayRefs` gate | Rejected: migrating NativeArray owners without BufferID/SystemID/generation/disposal/job-handle proof | Estimate: 0 us runtime
+- [x] Task 28: Primary DataVault backlog isolation | DOD: added primary-runtime owner-blocked NativeArray refs/dispose/risk counters, source-file snapshot reuse, and `-MaxPrimaryOwnerBlockedNativeArrayRefs` gate; verified current full static gate without rebuild | Rejected: hiding instrumentation/persistence/UI backlog or treating it as gameplay hot-path debt | Estimate: 0 us runtime
 
 ## Latest Static Scores
-- H-Phi runtime static narrow: `0.010823380`
-- H-Phi runtime static risk-adjusted: `0.000606109`
+- H-Phi runtime static narrow: `0.010687040`
+- H-Phi runtime static risk-adjusted: `0.000611619`
 - H-Phi all-source static narrow: `0.009582622`
 - H-Phi all-source static risk-adjusted: `0.000486713`
 - Narrow integration: `1.0`
-- Risk integration: `0.056199618` (derived from latest gated runtime H-Phi components)
+- Risk integration: `0.057434000` (derived from latest gated runtime H-Phi components)
 - Architectural purity: `0.996447602`
-- Data sovereignty: `0.021386637`
-- Memory alignment: `0.506081438`
+- Data sovereignty: `0.021129678`
+- Memory alignment: `0.505783386`
 - Binary-safe ratio: `0.018508726`
 - AUP precision integrity: `1.000000000`
 
@@ -101,6 +102,9 @@ Task Count: 6
 - Latest DataVault backlog full gate passed at `2026-05-15 12:43:12 +04:00`: `-MaxOwnerBlockedNativeArrayRefs 6195` plus the existing H-Phi budgets.
 - Latest DataVault backlog summary: `OwnerBlockedNativeArrayRefs=6195`, `OwnerBlockedDisposeCalls=973`, `NativeOwnershipRisk=8141`, `PrimaryRuntime backlog=5611 NativeArray refs / 848 dispose calls`, `World backlog=1792 NativeArray refs / 334 dispose calls`.
 - Latest static score after current workspace changes: `RuntimeHPhiNarrow=0.010823380`, `RuntimeHPhiRisk=0.000606109`, `DataSovereignty=0.021386637`, `MemoryAlignment=0.506081438`, `PrimaryManagedRuntimeRisk=330`, `PrimaryJobCompleteRisk=44`.
+- Latest primary DataVault backlog full gate passed at `2026-05-15 13:48:00 +04:00`: `-MaxPrimaryOwnerBlockedNativeArrayRefs 5696` plus current H-Phi budgets.
+- Latest primary backlog summary after concurrent owner changes: `OwnerBlockedNativeArrayRefs=6280`, `OwnerBlockedDisposeCalls=975`, `NativeOwnershipRisk=8230`, `PrimaryOwnerBlockedNativeArrayRefs=5696`, `PrimaryOwnerBlockedDisposeCalls=850`, `PrimaryNativeOwnershipRisk=7396`.
+- Latest current-tree score: `RuntimeHPhiNarrow=0.010687040`, `RuntimeHPhiRisk=0.000611619`, `DataSovereignty=0.021129678`, `MemoryAlignment=0.505783386`, `NativeArrayRefs=7088`, `DataVaultRefs=153`, `GlobalRegistrySurface=5086`, `GetComponentCalls=416`.
 - Duplicate signal-name scan currently reports `0` duplicate names in the static source scan; compile/runtime proof remains pending.
 - Remaining runtime `Find*` debt is concentrated in `GameBootstrapper` bootstrap handoff, `HectonUrpShadowBudgetGuard` cold light scan, and `VRSomaticRuntimeBootstrap` decoupled root lookup; one textual `HectonUnderwaterVisuals` hit is editor-only and excluded from runtime score.
 - `git diff --check` on touched H-Phi files reports only LF/CRLF normalization warnings.

@@ -461,6 +461,62 @@ Verification:
 
 Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
 
+## 2026-05-15 - WFC Outpost Loop 34 Bottom Ledger Addendum
+
+What was wrong:
+- The latest Loop 34 log entry was present earlier in the file, but the file bottom still ended on Loop 33.
+- The translator's raw edge writes needed bottom-visible evidence after the final capacity hardening pass.
+
+What was done:
+- `BuildEdges` resolves effective edge capacity once per translation.
+- Zero-capacity edge maps raise `CapacityExceeded`.
+- Horizontal/vertical edge writes pass through `TryAddBidirectionalEdge(ref directedEdges, edgeCapacity, ...)` before the two raw `PowerEdges.Add` operations.
+- The reciprocal exit-mask and hatch-only vertical edge gates remain intact.
+
+Cinematic Cheats used:
+- Power flow remains deterministic SOA data. No physical simulation, collider probing, GameObject nodes, polling loops, or render-path work were added.
+
+Exact Microseconds saved:
+- New cost: one capacity read per cold graph translation and one integer comparison per candidate edge.
+- Saved cost: prevents native map-capacity exceptions and invalid downstream graph work on allocation drift.
+- Steady Tick/Render remains 0 B/frame.
+
+Verification:
+- Targeted translator scan: PASS; `ExecuteBufferGateBeforeClear=True`, `EdgeCapacityZeroGate=1`, `EdgeCapacityResolvedOnce=1`, `BoundedBidirectionalAdd=1`, `RawPowerEdgeAdds=2`, `CapacityFaultWrites=3`, `LegacyReturnAdds=0`, `LegacyTryAddEdge=0`, `GlobalSignalsPublish=0`, `ForeachTokens=0`, `ModuloOperators=0`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS at `2026-05-15 13:26:58 +04:00`; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
+- `git diff --check`: PASS with repository CRLF warnings only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
+## 2026-05-15 - WFC Outpost Loop 34 Edge Capacity Gate
+
+What was wrong:
+- The WFC translator wrote bidirectional power edges into `NativeParallelMultiHashMap<int,int>` without checking the map capacity at the job boundary.
+- Current boot runtime allocates `MaxDirectedEdges`, but the translator should not depend on a single caller staying correct forever.
+
+What was done:
+- `BuildEdges` now resolves effective edge capacity once per translation, bounded by `WfcOutpostGridConstants.MaxDirectedEdges`.
+- Zero-capacity maps raise `CapacityExceeded`.
+- Every horizontal/vertical edge now routes through `TryAddBidirectionalEdge(ref directedEdges, edgeCapacity, ...)` before the two `PowerEdges.Add` calls.
+- The prior reciprocal exit-mask and hatch-only vertical gates remain active.
+
+Cinematic Cheats used:
+- Power remains a deterministic graph fake. No physics adjacency, colliders, GameObjects, or MonoBehaviour power modules were added.
+
+Exact Microseconds saved:
+- New cost: one capacity read per cold graph translation and one integer comparison per candidate edge.
+- Saved cost: avoids native map capacity exceptions and prevents invalid downstream graph work when edge storage regresses.
+- Steady Tick/Render remains 0 B/frame.
+
+Verification:
+- Targeted translator scan: PASS; `ExecuteBufferGateBeforeClear=True`, `EdgeCapacityZeroGate=1`, `EdgeCapacityResolvedOnce=1`, `BoundedBidirectionalAdd=1`, `RawPowerEdgeAdds=2`, `CapacityFaultWrites=3`, `LegacyReturnAdds=0`, `LegacyTryAddEdge=0`, `GlobalSignalsPublish=0`, `ForeachTokens=0`, `ModuloOperators=0`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS at `2026-05-15 13:26:58 +04:00`; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
+- `git diff --check`: PASS with repository CRLF warnings only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
 ## 2026-05-15 - WFC Outpost Loop 33 Final Ledger Addendum
 
 What was wrong:
@@ -1059,6 +1115,90 @@ Exact Microseconds saved:
 Verification:
 - Targeted translator/contract scan: PASS; `ExecuteBufferGateBeforeClear=True`, `InvalidBuffersMentions=2`, `BufferGate=2`, `CountWriter=5`, `LegacyTryAddEdge=0`, `GlobalSignalsPublish=0`, `ForeachTokens=0`, `ModuloOperators=0`.
 - `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS at `2026-05-15 05:34:18 +04:00`; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
+- `git diff --check`: PASS with repository CRLF warnings only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
+## 2026-05-15 - WFC Outpost Loop 34 Bottom Ledger Addendum
+
+What was wrong:
+- The translator's raw edge writes needed bottom-visible evidence after the final capacity hardening pass.
+- Current boot runtime allocates enough edge slots, but the Burst job boundary still needed its own map-capacity proof.
+
+What was done:
+- `BuildEdges` resolves effective edge capacity once per translation.
+- Zero-capacity edge maps raise `CapacityExceeded`.
+- Horizontal/vertical edge writes pass through `TryAddBidirectionalEdge(ref directedEdges, edgeCapacity, ...)` before the two raw `PowerEdges.Add` operations.
+- The reciprocal exit-mask and hatch-only vertical edge gates remain intact.
+
+Cinematic Cheats used:
+- Power flow remains deterministic SOA data. No physical simulation, collider probing, GameObject nodes, polling loops, or render-path work were added.
+
+Exact Microseconds saved:
+- New cost: one capacity read per cold graph translation and one integer comparison per candidate edge.
+- Saved cost: prevents native map-capacity exceptions and invalid downstream graph work on allocation drift.
+- Steady Tick/Render remains 0 B/frame.
+
+Verification:
+- Targeted translator scan: PASS; `ExecuteBufferGateBeforeClear=True`, `EdgeCapacityZeroGate=1`, `EdgeCapacityResolvedOnce=1`, `BoundedBidirectionalAdd=1`, `RawPowerEdgeAdds=2`, `CapacityFaultWrites=3`, `LegacyReturnAdds=0`, `LegacyTryAddEdge=0`, `GlobalSignalsPublish=0`, `ForeachTokens=0`, `ModuloOperators=0`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS at `2026-05-15 13:26:58 +04:00`; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
+- `git diff --check`: PASS with repository CRLF warnings only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
+## 2026-05-15 - WFC Outpost Loop 35 Typed Signal Lane Direct Push
+
+What was wrong:
+- The owned WFC generated-grid and door-power producers still used the generic `GlobalSignals.Publish(in signal)` wrapper.
+- Both lanes already had typed `SignalBus<T>` consumers, so the wrapper added avoidable dispatch surface.
+
+What was done:
+- `MarauderOutpostGenerationService.OnEnable` now performs cold `GlobalSignals.InitializeAllQueues()`.
+- `PublishGeneratedSignalForHandle` now calls `SignalBus<WfcOutpostGeneratedSignal>.Push(in signal)`.
+- `WfcOutpostPowerBootRuntime.PublishDoorPowerSignals` now calls `SignalBus<WfcOutpostDoorPowerSignal>.Push(in signal)`.
+- Unrelated gameplay producers were not touched.
+
+Cinematic Cheats used:
+- Signal flow remains a typed data lane. No polling bridge, scene objects, or visual/runtime simulation was added.
+
+Exact Microseconds saved:
+- New cost: one cold queue-init guard on service enable.
+- Saved cost: one generic wrapper hop removed from generated-grid heartbeat and each door-power signal.
+- Steady Tick/Render remains 0 B/frame.
+
+Verification:
+- Scoped outpost signal scan: PASS; `DirectGeneratedPush=1`, `DirectDoorPowerPush=1`, `OutpostWrapperPublish=0`, `InitializeAllQueues=2`, `GeneratedSnapshotConsumer=1`, `DoorSnapshotConsumer=1`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS at `2026-05-15 13:31:02 +04:00`; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
+- `git diff --check`: PASS with repository CRLF warnings only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
+## 2026-05-15 - WFC Outpost Loop 36 Blackbox Dump Failure Telemetry
+
+What was wrong:
+- `MarauderOutpostGenerationService.DumpBlackBox()` failure handling used `Debug.LogError` and `exception.Message` string concatenation.
+- That is not a hot path, but it is the post-mortem boundary and should report as numeric telemetry, not managed string output.
+
+What was done:
+- Added `TelemetryDumpFaultHash` and `TelemetryContextHash`.
+- Replaced the dump catch string log with `GlobalTelemetryBus.PublishPerformanceWarning(TelemetryDumpFaultHash, TelemetryContextHash, exception.HResult)`.
+- Left successful binary dump format unchanged.
+
+Cinematic Cheats used:
+- Failure reporting stays data-only. No UI/debug object, no polling bridge, no extra dump format, no simulation.
+
+Exact Microseconds saved:
+- Normal frame savings: 0 us; this is failure-path hygiene.
+- Failure case savings: avoids managed string concatenation and editor-only log formatting when the dump itself fails.
+- Steady Tick/Render remains 0 B/frame.
+
+Verification:
+- Scoped failure scan: PASS; `DumpFaultHash=2`, `DumpContextHash=2`, `DebugLogError=0`, `ExceptionMessage=0`, `DumpFaultTelemetry=1`, `StringConcatDumpFault=0`.
+- Scoped outpost signal scan remains clean: direct WFC typed lanes, no wrapper publishes in owned outpost files.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS at `2026-05-15 13:33:07 +04:00`; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
 - `git diff --check`: PASS with repository CRLF warnings only.
 - `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
 

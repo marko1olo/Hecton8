@@ -82,6 +82,7 @@ Status: PENDING VERIFICATION
 - Loop 39: Tooltip UV dirty-gate pass. Changed font and sprite atlas UV writes to mark compute buffers dirty only when the exact UV rect changes, avoiding redundant full UV-table uploads on layout rebuilds that reuse the same glyph atlas rects. No dotnet rebuilds run per user instruction.
 - Loop 40: Tooltip normalized-span layout pass. Removed duplicate per-character normalization from `MeasureAdvance()` and `BuildTextRun()` because all prompt entry points stage normalized text into the fixed buffer before layout. No dotnet rebuilds run per user instruction.
 - Loop 41: Tooltip layout math consistency pass. Replaced remaining `Mathf.Max` layout clamps with `math.max` in font, text glyph, and sprite icon layout calculations. No dotnet rebuilds run per user instruction.
+- Loop 42: Tooltip sprite asset local-cache pass. Cached `TMP_SpriteAsset`, sprite sheet texture, and sprite character table locals inside `TryResolveBindingIcon()` so binding-icon layout does not repeat the same property chain. No dotnet rebuilds run per user instruction.
 
 ## Verification Notes
 - `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary | Select-String ...`: no output for touched-file filter after final cache collision fix.
@@ -114,6 +115,7 @@ Status: PENDING VERIFICATION
 - Post Loop 39 static scans confirmed UV table dirty flags are set through `WriteUvRectIfChanged()` only, `ResolveAnchorPosition()` still uses cached `_activeSchemeHash`, and existing no-bootstrap/no-direct-Time/no-old-phosphor/no-hot-path text scans stayed clean. No dotnet rebuilds run per user instruction.
 - Post Loop 40 static scans confirmed `NormalizeTooltipCharacter()` remains isolated to staging paths, `BuildTextRun()` and `MeasureAdvance()` read already-normalized spans directly, and existing no-bootstrap/no-direct-Time/no-old-phosphor/no-hot-path text scans stayed clean. No dotnet rebuilds run per user instruction.
 - Post Loop 41 static scans confirmed no `Mathf.` calls remain in `DiegeticTooltipSystem.cs`; existing no-bootstrap/no-direct-Time/no-old-phosphor/no-hot-path text scans stayed clean. No dotnet rebuilds run per user instruction.
+- Post Loop 42 static scans confirmed `TryResolveBindingIcon()` reads `spriteAsset`, `spriteSheet`, and `spriteCharacterTable` once into locals before table count/index access; existing no-bootstrap/no-direct-Time/no-old-phosphor/no-hot-path text scans stayed clean. No dotnet rebuilds run per user instruction.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Json` completed at `2026-05-15 01:32:33 +04:00` without invoking a rebuild. Follow-up summary extraction exceeded tool timeout; no score claim is recorded from that partial extraction.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Summary` was retried after Loop 18 and timed out after 120 seconds without output; no H-Phi score claim is recorded.
 - `git diff --check` on `DiegeticTooltipSystem.cs` and `Hecton_DiegeticTooltipIndirect.shader` passed with repository CRLF warnings only.

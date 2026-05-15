@@ -340,7 +340,7 @@ namespace Hecton8.UI
                 // COLD ALLOC: GameObject[1] — fatal-pressure death dump overlay host — owner: PDADeathMemoryDump
                 GameObject overlayObject = new GameObject(OverlayName, typeof(RectTransform), typeof(CanvasGroup), typeof(Image));
                 overlayObject.layer = canvasRoot.gameObject.layer;
-                _overlayRoot = overlayObject.GetComponent<RectTransform>();
+                overlayObject.TryGetComponent(out _overlayRoot);
                 _overlayRoot.SetParent(canvasRoot, false);
             }
 
@@ -351,14 +351,14 @@ namespace Hecton8.UI
             _overlayRoot.localScale = Vector3.one;
             _overlayRoot.SetAsLastSibling();
 
-            _overlayGroup = _overlayRoot.GetComponent<CanvasGroup>();
-            if (_overlayGroup == null)
+            if (!_overlayRoot.TryGetComponent(out _overlayGroup))
                 _overlayGroup = _overlayRoot.gameObject.AddComponent<CanvasGroup>();
             _overlayGroup.alpha = 0f;
             _overlayGroup.interactable = false;
             _overlayGroup.blocksRaycasts = false;
 
-            _background = _overlayRoot.GetComponent<Image>();
+            if (!_overlayRoot.TryGetComponent(out _background))
+                _background = _overlayRoot.gameObject.AddComponent<Image>();
             _background.color = BackgroundColor;
             _background.raycastTarget = false;
 
@@ -434,7 +434,7 @@ namespace Hecton8.UI
             if (overlay != null && overlay.TargetCanvas != null)
                 return overlay.TargetCanvas;
 
-            return (SuitHUDV4CanvasOverlay.ActiveRuntimeInstance != null ? SuitHUDV4CanvasOverlay.ActiveRuntimeInstance.GetComponent<Canvas>() : null);
+            return overlay != null && overlay.TryGetComponent(out Canvas canvas) ? canvas : null;
         }
 
         private static string ResolveLocalized(string key, string fallback)
@@ -476,7 +476,7 @@ namespace Hecton8.UI
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
             go.layer = parent.gameObject.layer;
-            RectTransform rect = go.GetComponent<RectTransform>();
+            go.TryGetComponent(out RectTransform rect);
             rect.SetParent(parent, false);
             rect.localScale = Vector3.one;
             return rect;

@@ -36,6 +36,8 @@ namespace Hecton8.World.Outposts
         private const ulong TelemetryDumpMagic = 0x00384E4F54434548UL; // HECTON8\0 as little-endian bytes.
         private const uint TelemetryDumpVersion = 1u;
         private const int TelemetryDumpEntryPayloadBytes = 72;
+        private const uint TelemetryDumpFaultHash = 0x4F424446u; // OBDF
+        private const uint TelemetryContextHash = 0x4D4F4152u; // MOAR
         private const float ShiftEpsilonMeters = 0.0001f;
         private const float MaxAupShiftMeters = 10000f;
 
@@ -145,6 +147,7 @@ namespace Hecton8.World.Outposts
             if (!Application.isPlaying)
                 return;
 
+            GlobalSignals.InitializeAllQueues();
             AllocatePersistentState();
             EnsureGraphicsResources();
             BakeInteractableProxyMeshes();
@@ -1301,7 +1304,7 @@ namespace Hecton8.World.Outposts
                 CellCount = (ushort)math.min(ResolveActiveCellCount(), ushort.MaxValue),
                 Flags = ResolveDescriptorFlags()
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<WfcOutpostGeneratedSignal>.Push(in signal);
         }
 
         private void ReleasePublishedPowerGrid()
@@ -1428,9 +1431,7 @@ namespace Hecton8.World.Outposts
             }
             catch (Exception exception)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[MARAUDER_OUTPOST_ARCHITECT] Failed to dump outpost blackbox: " + exception.Message, this);
-#endif
+                GlobalTelemetryBus.PublishPerformanceWarning(TelemetryDumpFaultHash, TelemetryContextHash, exception.HResult);
             }
         }
 

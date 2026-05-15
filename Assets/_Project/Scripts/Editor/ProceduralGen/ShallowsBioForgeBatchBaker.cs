@@ -1635,37 +1635,37 @@ namespace Hecton8.Editor.ProceduralGen
         private static bool SerializedIntEquals(SerializedObject serialized, string propertyName, int expected)
         {
             SerializedProperty property = serialized.FindProperty(propertyName);
-            return property != null && property.intValue == expected;
+            return property != null && property.propertyType == SerializedPropertyType.Integer && property.intValue == expected;
         }
 
         private static bool SerializedBoolEquals(SerializedObject serialized, string propertyName, bool expected)
         {
             SerializedProperty property = serialized.FindProperty(propertyName);
-            return property != null && property.boolValue == expected;
+            return property != null && property.propertyType == SerializedPropertyType.Boolean && property.boolValue == expected;
         }
 
         private static bool SerializedFloatEquals(SerializedObject serialized, string propertyName, float expected)
         {
             SerializedProperty property = serialized.FindProperty(propertyName);
-            return property != null && Approximately(property.floatValue, expected);
+            return property != null && property.propertyType == SerializedPropertyType.Float && Approximately(property.floatValue, expected);
         }
 
         private static bool SerializedStringEquals(SerializedObject serialized, string propertyName, string expected)
         {
             SerializedProperty property = serialized.FindProperty(propertyName);
-            return property != null && string.Equals(property.stringValue, expected, StringComparison.Ordinal);
+            return property != null && property.propertyType == SerializedPropertyType.String && string.Equals(property.stringValue, expected, StringComparison.Ordinal);
         }
 
         private static bool SerializedObjectReferenceEquals(SerializedObject serialized, string propertyName, UnityEngine.Object expected)
         {
             SerializedProperty property = serialized.FindProperty(propertyName);
-            return property != null && property.objectReferenceValue == expected;
+            return property != null && property.propertyType == SerializedPropertyType.ObjectReference && property.objectReferenceValue == expected;
         }
 
         private static bool SerializedObjectReferenceIsNull(SerializedObject serialized, string propertyName)
         {
             SerializedProperty property = serialized.FindProperty(propertyName);
-            return property != null && property.objectReferenceValue == null;
+            return property != null && property.propertyType == SerializedPropertyType.ObjectReference && property.objectReferenceValue == null;
         }
 
         private static bool SerializedRuleReplacementEquals(SerializedObject serialized, string expectedReplacement)
@@ -1679,6 +1679,8 @@ namespace Hecton8.Editor.ProceduralGen
             SerializedProperty replacement = element.FindPropertyRelative("_replacement");
             return symbol != null &&
                    replacement != null &&
+                   symbol.propertyType == SerializedPropertyType.String &&
+                   replacement.propertyType == SerializedPropertyType.String &&
                    string.Equals(symbol.stringValue, "F", StringComparison.Ordinal) &&
                    string.Equals(replacement.stringValue, expectedReplacement, StringComparison.Ordinal);
         }
@@ -1699,7 +1701,7 @@ namespace Hecton8.Editor.ProceduralGen
             {
                 SerializedProperty element = property.GetArrayElementAtIndex(i);
                 SerializedProperty key = element.FindPropertyRelative("first");
-                if (key == null || !string.Equals(key.stringValue, expectedKeys[i], StringComparison.Ordinal))
+                if (key == null || key.propertyType != SerializedPropertyType.String || !string.Equals(key.stringValue, expectedKeys[i], StringComparison.Ordinal))
                     return false;
             }
 
@@ -2241,49 +2243,63 @@ namespace Hecton8.Editor.ProceduralGen
 
         private static void SetString(SerializedObject serialized, string propertyName, string value)
         {
-            SerializedProperty property = serialized.FindProperty(propertyName);
-            if (property != null)
-                property.stringValue = value;
+            if (!TryFindSerializedProperty(serialized, propertyName, SerializedPropertyType.String, out SerializedProperty property))
+                return;
+
+            property.stringValue = value;
         }
 
         private static void SetInt(SerializedObject serialized, string propertyName, int value)
         {
-            SerializedProperty property = serialized.FindProperty(propertyName);
-            if (property != null)
-                property.intValue = value;
+            if (!TryFindSerializedProperty(serialized, propertyName, SerializedPropertyType.Integer, out SerializedProperty property))
+                return;
+
+            property.intValue = value;
         }
 
         private static void SetFloat(SerializedObject serialized, string propertyName, float value)
         {
-            SerializedProperty property = serialized.FindProperty(propertyName);
-            if (property != null)
-                property.floatValue = value;
+            if (!TryFindSerializedProperty(serialized, propertyName, SerializedPropertyType.Float, out SerializedProperty property))
+                return;
+
+            property.floatValue = value;
         }
 
         private static void SetEnum(SerializedObject serialized, string propertyName, BioForgeSdfProfile value)
         {
-            SerializedProperty property = serialized.FindProperty(propertyName);
-            if (property != null)
-                property.enumValueIndex = (int)value;
+            if (!TryFindSerializedProperty(serialized, propertyName, SerializedPropertyType.Enum, out SerializedProperty property))
+                return;
+
+            property.enumValueIndex = (int)value;
         }
 
         private static void SetObject(SerializedObject serialized, string propertyName, UnityEngine.Object value)
         {
-            SerializedProperty property = serialized.FindProperty(propertyName);
-            if (property != null)
-                property.objectReferenceValue = value;
+            if (!TryFindSerializedProperty(serialized, propertyName, SerializedPropertyType.ObjectReference, out SerializedProperty property))
+                return;
+
+            property.objectReferenceValue = value;
         }
 
         private static void SetRules(SerializedObject serialized, RuleSpec[] rules)
         {
             SerializedProperty property = serialized.FindProperty("_rules");
             if (property == null || !property.isArray)
+            {
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Missing serialized array _rules on {ResolveSerializedTargetName(serialized)}.");
                 return;
+            }
 
             property.arraySize = rules.Length;
             for (int i = 0; i < rules.Length; i++)
             {
                 SerializedProperty element = property.GetArrayElementAtIndex(i);
+                if (element == null)
+                {
+                    Debug.LogError($"[ShallowsBioForgeBatchBaker] BioRuleData _rules element missing at index {i} on {ResolveSerializedTargetName(serialized)}.");
+                    continue;
+                }
+
                 SerializedProperty symbol = element.FindPropertyRelative("_symbol");
                 SerializedProperty replacement = element.FindPropertyRelative("_replacement");
                 if (symbol == null || replacement == null)
@@ -2295,6 +2311,27 @@ namespace Hecton8.Editor.ProceduralGen
                 symbol.stringValue = rules[i].Symbol;
                 replacement.stringValue = rules[i].Replacement;
             }
+        }
+
+        private static bool TryFindSerializedProperty(SerializedObject serialized, string propertyName, SerializedPropertyType expectedType, out SerializedProperty property)
+        {
+            property = serialized.FindProperty(propertyName);
+            if (property == null)
+            {
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Missing serialized field {propertyName} on {ResolveSerializedTargetName(serialized)}.");
+                return false;
+            }
+
+            if (property.propertyType == expectedType)
+                return true;
+
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] Serialized field type drift for {propertyName} on {ResolveSerializedTargetName(serialized)}. Expected={expectedType}, Actual={property.propertyType}.");
+            return false;
+        }
+
+        private static string ResolveSerializedTargetName(SerializedObject serialized)
+        {
+            return serialized != null && serialized.targetObject != null ? serialized.targetObject.name : "<null>";
         }
 
         private static float Hash01(int value)

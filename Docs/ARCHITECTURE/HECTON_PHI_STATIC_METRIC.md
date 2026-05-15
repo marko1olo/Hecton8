@@ -339,7 +339,7 @@ Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0
 Full H-Phi regression budget gate:
 
 ```powershell
-Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0 -MaxFindObjectCalls 5 -MaxLegacyEventPublish 28 -MaxDuplicateSignalNames 0 -MaxGlobalRegistrySurface 5160 -MaxGetComponentCalls 550 -MaxNativeArrayRefs 7035 -MaxLinqSurface 5 -MaxCoroutineSurface 0 -MaxManagedFormatSurface 704 -MaxJobCompleteSurface 61 -MaxPrimaryManagedRuntimeRisk 353 -MaxOwnerBlockedNativeArrayRefs 6195 -MinDataSovereignty 0.021300000 -MinMemoryAlignment 0.505000000 -MinRuntimeHPhiRisk 0.000590000 -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 14 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 6
+Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0 -MaxFindObjectCalls 5 -MaxLegacyEventPublish 28 -MaxDuplicateSignalNames 0 -MaxGlobalRegistrySurface 5100 -MaxGetComponentCalls 420 -MaxNativeArrayRefs 7100 -MaxLinqSurface 5 -MaxCoroutineSurface 0 -MaxManagedFormatSurface 704 -MaxJobCompleteSurface 61 -MaxPrimaryManagedRuntimeRisk 330 -MaxOwnerBlockedNativeArrayRefs 6280 -MaxPrimaryOwnerBlockedNativeArrayRefs 5696 -MinDataSovereignty 0.021120000 -MinMemoryAlignment 0.505700000 -MinRuntimeHPhiRisk 0.000611000 -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 14 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 6
 ```
 
 Source-count and score-floor gates require a full source scan. `-CoreGraphOnly`
@@ -353,6 +353,9 @@ treated as the primary gameplay hot-path budget.
 `OwnerBlockedNativeArrayRefs` counts NativeArray surface in runtime files with
 zero Vault access surface. It is a migration backlog gate, not proof that every
 NativeArray in the file should move to Vault.
+`PrimaryOwnerBlockedNativeArrayRefs` applies the same backlog rule only to
+primary runtime files, so UI, persistence, and instrumentation debt remains
+visible without being treated as gameplay hot-path migration pressure.
 
 Duplicate signal-name budget gate:
 

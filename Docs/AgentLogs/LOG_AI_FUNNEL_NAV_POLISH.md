@@ -872,3 +872,71 @@ Verification:
 - Targeted `IsPureVoidSnapshot` range reported no raw division, forbidden hot math, managed allocation, or `foreach`.
 - `CURRENT_BATCH.md` recheck confirmed the `AI_FUNNEL_NAV_POLISH` prompt tag remains absent, so persisted files remain authority.
 - Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.
+
+## 2026-05-15 - Build Metadata Drift Gate
+
+What was wrong:
+- `TryPrepareBuild` could compare existing record metadata with normal float comparisons before proving the stored origin/max/cell size were finite and ordered.
+- A stored NaN or inverted bound could under-report change detection and preserve a stale pure-void route record.
+
+What was done:
+- Added an existing-record metadata validity gate for finite origin, finite max, ordered bounds, and finite positive cell size.
+- Invalid stored metadata now forces rebuild change flags instead of allowing a pure-void shortcut to survive.
+
+Cinematic Cheats used:
+- Corrupt route-record metadata now buys a rebuild, not a fabricated clean volume.
+- Low tier avoids stale pure-void route authority; High/Ultra keep the fast path only when metadata proof remains intact.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Static gain is avoided route recovery and funnel correction after stale pure-void metadata.
+
+Verification:
+- Targeted `TryPrepareBuild` metadata range reported no raw division, forbidden hot math, managed allocation, or `foreach`.
+- Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.
+
+## 2026-05-15 - Dynamic Update Exact Cell Count
+
+What was wrong:
+- Dynamic obstacle scheduling copied `Current` and distance buffers by backing-buffer length.
+- The follow-up pure-void scan used `record.Next.Length`, allowing spare capacity to become scan authority.
+- Region point count used unchecked int multiplication.
+
+What was done:
+- Recomputed the declared voxel cell count with `TryResolveVoxelCellCount`.
+- Copied passability and distance buffers by the declared cell count.
+- Scheduled pure-void scan with the declared cell count.
+- Computed partial-update region point count in 64-bit before scheduling.
+
+Cinematic Cheats used:
+- Spare native capacity is ignored as route authority; declared dimensions remain the proof.
+- Low tier avoids wasted scan/copy work; High/Ultra keep dynamic obstacle polish under exact count proof.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Static gain is avoided spare-capacity copying/scanning and invalid update recovery.
+
+Verification:
+- Targeted dynamic update copy/schedule range reported no raw division, forbidden hot math, managed allocation, or `foreach`.
+- Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.
+
+## 2026-05-15 - Dynamic Pure Void Metadata Repair
+
+What was wrong:
+- Exact dynamic rescans could still be followed by stale `PureVoidBlockCount` metadata.
+- Safe pure-void updates could miss the release fast path and rebuild portals unnecessarily.
+
+What was done:
+- Derived `requiredBlockCount` from the declared voxel cell count before dynamic update scheduling.
+- Verified flag-buffer coverage against that count.
+- Corrected `record.PureVoidBlockCount` immediately before scheduling the exact pure-void scan.
+
+Cinematic Cheats used:
+- Clean dynamic records keep the pure-void shortcut instead of paying portal rebuild work.
+- Low tier avoids unnecessary route graph churn; High/Ultra keep richer dynamic obstacle updates without losing buffer-release wins.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Static gain is avoided portal rebuild work when a dynamic update leaves a record fully pure.
+
+Verification:
+- Targeted dynamic update block metadata range reported no raw division, forbidden hot math, managed allocation, or `foreach`.
+- `CURRENT_BATCH.md` recheck confirmed the `AI_FUNNEL_NAV_POLISH` prompt tag remains absent, so persisted files remain authority.
+- Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.

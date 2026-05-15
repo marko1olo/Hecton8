@@ -471,3 +471,25 @@ Follow-up upgrade 47:
 Exact microseconds saved after follow-up 47:
 - Fault frames avoid bad StructuredBuffer reads from corrupt metadata.
 - Valid-frame overhead is three scalar finite checks only in the instance-buffer shader variant; expected cost is below measurement noise in the existing instanced vertex path.
+
+Follow-up upgrade 48:
+- What was wrong: `_MATH_LOD_LOW` returned raw `positionWS` from `H8UberNoirApplyDynamicHullBendingWS`, bypassing the finite world-position fallback used by non-low dynamic bending.
+- What was done: changed the low-tier return to `H8UberNoirFinite3(positionWS, 0)` so MX350/no-bend mode still fails closed on poisoned transform output.
+- Cinematic cheat used: low-tier keeps the zero-bend visual fake and only sanitizes invalid position data; no deformation simulation is reintroduced.
+- Static checks: `rg` confirms the low-tier finite return plus existing instance-buffer finite gates and no-op bend exits; exact shader `normalize()`/`sqrt()` scan produced no matches; managed-offender scan remains clean; mesh mutation scan found no owned `Mesh.vertices` writes; touched shader/doc braces are balanced; `git diff --check` reports only CRLF normalization warnings.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by standing user instruction.
+
+Exact microseconds saved after follow-up 48:
+- Fault frames avoid low-tier NaN world-position propagation into clip-space.
+- Valid-frame cost is one vector finite check in the low-tier vertex path; no crush/habitat mask or buckling ALU is added to MX350.
+
+Follow-up upgrade 49:
+- What was wrong: UberNoir vertex setup reused raw instance seed plus material seed bias for dynamic bending and `frac`, and passed raw instance fade into a varying.
+- What was done: added `safeInstanceSeed` and `safeInstanceFade` once after instance load; the safe seed drives dynamic hull bending and seed output, while invalid fade falls back to 1.
+- Cinematic cheat used: corrupted per-instance variation falls back to stable default variation instead of trying to preserve bad metadata.
+- Static checks: `rg` confirms `safeInstanceSeed`, `safeInstanceFade`, dynamic-bend seed reuse, and normalized seed/fade output; exact shader `normalize()`/`sqrt()` scan produced no matches; managed-offender scan remains clean; mesh mutation scan found no owned `Mesh.vertices` writes; touched shader/doc braces are balanced; `git diff --check` reports only CRLF normalization warnings.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by standing user instruction.
+
+Exact microseconds saved after follow-up 49:
+- Fault frames avoid NaN buckling and biolum phase propagation from bad instance seed/fade data.
+- Valid-frame overhead is two scalar finite checks in the vertex path, with duplicated seed expression removed.

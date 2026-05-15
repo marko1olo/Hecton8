@@ -707,3 +707,53 @@ Regression Model:
 - Memory: no buffer ownership changed.
 - Cadence: no Tick/FixedTick/Update/job schedule changed.
 - Correctness: DataVault migration debt now has a hard static regression gate and domain/role routing for owner agents.
+
+## 2026-05-15 Primary DataVault Backlog Isolation
+
+What was wrong:
+- Total owner-blocked NativeArray debt still mixed primary gameplay runtime with instrumentation, persistence, and UI roles.
+- The total backlog gate protected repo hygiene, but did not isolate gameplay-frame native ownership pressure.
+
+What was done:
+- Added file-row fields:
+  - `PrimaryOwnerBlockedNativeArrayRefs`
+  - `PrimaryOwnerBlockedDisposeCalls`
+  - `PrimaryNativeOwnershipRisk`
+- Added those fields to compact summary counts and backlog rows.
+- Added full-source regression gate `-MaxPrimaryOwnerBlockedNativeArrayRefs`.
+- Added `CoreGraphOnly` rejection for that source-only gate.
+- Added source-file snapshot reuse so duplicate-signal and main H-Phi scans do not independently read the same source files.
+- Honored user instruction: no `dotnet build`, no rebuild.
+
+Cinematic Cheats used:
+- None. Static audit tooling and owner-routing only.
+
+Exact Microseconds saved:
+- Runtime gameplay: 0 us measured; no gameplay code path changed.
+- Tooling: full summary completed in about 100 seconds; final gated summary completed in about 174 seconds. This is static-source evidence only.
+
+Compile Status:
+- Not run by explicit user order.
+- Static checks run:
+  - PowerShell parser: `POWERSHELL_PARSE_OK`
+  - `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -MaxPrimaryOwnerBlockedNativeArrayRefs 1 -Summary -Json` correctly rejected source budget under graph-only mode.
+  - Full ungated summary at `2026-05-15 13:36:27 +04:00`
+  - Full gated summary at `2026-05-15 13:48:00 +04:00`
+
+Phi Gain:
+- Previous runtime narrow score: `0.010823380`.
+- Current runtime narrow score: `0.010687040`.
+- Previous runtime risk-adjusted score: `0.000606109`.
+- Current runtime risk-adjusted score: `0.000611619`.
+- Data Sovereignty moved `0.021386637 -> 0.021129678` because concurrent owner changes raised `NativeArrayRefs` to `7088`.
+- Memory Alignment moved `0.506081438 -> 0.505783386`.
+- New primary DataVault backlog baseline: `PrimaryOwnerBlockedNativeArrayRefs=5696`, `PrimaryOwnerBlockedDisposeCalls=850`, `PrimaryNativeOwnershipRisk=7396`.
+- Total DataVault backlog baseline: `OwnerBlockedNativeArrayRefs=6280`, `OwnerBlockedDisposeCalls=975`, `NativeOwnershipRisk=8230`.
+- Important: score movement includes concurrent workspace changes. It is not measured frame-time, GC, or memory gain.
+
+Regression Model:
+- CPU: no gameplay code path changed.
+- GC: no gameplay allocation changed.
+- Memory: no buffer ownership changed.
+- Cadence: no Tick/FixedTick/Update/job schedule changed.
+- Correctness: primary runtime DataVault migration debt now has a dedicated static regression gate separate from instrumentation, persistence, and UI backlog.

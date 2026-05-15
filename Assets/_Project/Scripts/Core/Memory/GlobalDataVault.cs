@@ -452,7 +452,17 @@ namespace Hecton8.Core.Memory
                     Version = 1u,
                     State = BlockStateFree
                 };
-                freeBlock.H8BlockIndex = H8Memory.RegisterBlockDescriptor(BuildDescriptor(in freeBlock));
+                int h8BlockIndex = H8Memory.RegisterBlockDescriptor(BuildDescriptor(in freeBlock));
+                if (h8BlockIndex < 0)
+                {
+                    DumpPhiVodBlackBox();
+                    _initialized = true;
+                    Dispose();
+                    FatalMemoryException.ThrowAllocationTrackingFailed();
+                    return;
+                }
+
+                freeBlock.H8BlockIndex = h8BlockIndex;
                 _blocks.AddNoResize(freeBlock);
             }
 
@@ -1626,7 +1636,16 @@ namespace Hecton8.Core.Memory
                 freeRemainder.State = BlockStateFree;
                 freeRemainder.Reserved0 = 0;
                 freeRemainder.Version = NextGeneration(freeRemainder.Version);
-                freeRemainder.H8BlockIndex = H8Memory.RegisterBlockDescriptor(BuildDescriptor(in freeRemainder));
+                int remainderH8BlockIndex = H8Memory.RegisterBlockDescriptor(BuildDescriptor(in freeRemainder));
+                if (remainderH8BlockIndex < 0)
+                {
+                    DumpPhiVodBlackBox();
+                    blockIndex = -1;
+                    pointer = default;
+                    return false;
+                }
+
+                freeRemainder.H8BlockIndex = remainderH8BlockIndex;
 
                 InsertBlockAfter(i, in freeRemainder);
                 _blocks[i] = occupiedBlock;

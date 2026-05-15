@@ -153,6 +153,13 @@ namespace Hecton8.Logistics.Grid
         private int BuildEdges(int cellCount, int3 dimensions)
         {
             int directedEdges = 0;
+            int edgeCapacity = ResolveEdgeCapacity();
+            if (edgeCapacity <= 0)
+            {
+                WriteFault(WfcOutpostGraphFaultFlags.CapacityExceeded);
+                return 0;
+            }
+
             for (int cellIndex = 0; cellIndex < cellCount; cellIndex++)
             {
                 int sourceNode = CellToNode[cellIndex];
@@ -161,59 +168,75 @@ namespace Hecton8.Logistics.Grid
 
                 int3 cell = Unflatten(cellIndex, dimensions);
                 byte sourcePacked = Cells[cellIndex];
-                directedEdges += TryAddHorizontalEdge(sourceNode, sourcePacked, cell.x + 1, cell.y, cell.z, dimensions, WfcOutpostGridConstants.East, WfcOutpostGridConstants.West);
-                directedEdges += TryAddVerticalEdge(sourceNode, sourcePacked, cell.x, cell.y + 1, cell.z, dimensions);
-                directedEdges += TryAddHorizontalEdge(sourceNode, sourcePacked, cell.x, cell.y, cell.z + 1, dimensions, WfcOutpostGridConstants.North, WfcOutpostGridConstants.South);
+                if (!TryAddHorizontalEdge(ref directedEdges, edgeCapacity, sourceNode, sourcePacked, cell.x + 1, cell.y, cell.z, dimensions, WfcOutpostGridConstants.East, WfcOutpostGridConstants.West) ||
+                    !TryAddVerticalEdge(ref directedEdges, edgeCapacity, sourceNode, sourcePacked, cell.x, cell.y + 1, cell.z, dimensions) ||
+                    !TryAddHorizontalEdge(ref directedEdges, edgeCapacity, sourceNode, sourcePacked, cell.x, cell.y, cell.z + 1, dimensions, WfcOutpostGridConstants.North, WfcOutpostGridConstants.South))
+                {
+                    return directedEdges;
+                }
             }
 
             return directedEdges;
         }
 
-        private int TryAddHorizontalEdge(int sourceNode, byte sourcePacked, int x, int y, int z, int3 dimensions, byte sourceExit, byte destinationExit)
+        private bool TryAddHorizontalEdge(ref int directedEdges, int edgeCapacity, int sourceNode, byte sourcePacked, int x, int y, int z, int3 dimensions, byte sourceExit, byte destinationExit)
         {
             if (x < 0 || y < 0 || z < 0 || x >= dimensions.x || y >= dimensions.y || z >= dimensions.z)
-                return 0;
+                return true;
 
             int destinationCell = WfcOutpostGridConstants.Flatten(x, y, z, dimensions);
             if ((uint)destinationCell >= (uint)CellToNode.Length)
-                return 0;
+                return true;
 
             int destinationNode = CellToNode[destinationCell];
             if (destinationNode < 0)
-                return 0;
+                return true;
 
             byte destinationPacked = Cells[destinationCell];
             if ((sourcePacked & sourceExit) == 0 || (destinationPacked & destinationExit) == 0)
-                return 0;
+                return true;
 
-            AddBidirectionalEdge(sourceNode, destinationNode);
-            return 2;
+            return TryAddBidirectionalEdge(ref directedEdges, edgeCapacity, sourceNode, destinationNode);
         }
 
-        private int TryAddVerticalEdge(int sourceNode, byte sourcePacked, int x, int y, int z, int3 dimensions)
+        private bool TryAddVerticalEdge(ref int directedEdges, int edgeCapacity, int sourceNode, byte sourcePacked, int x, int y, int z, int3 dimensions)
         {
             if (x < 0 || y < 0 || z < 0 || x >= dimensions.x || y >= dimensions.y || z >= dimensions.z)
-                return 0;
+                return true;
 
             int destinationCell = WfcOutpostGridConstants.Flatten(x, y, z, dimensions);
             if ((uint)destinationCell >= (uint)CellToNode.Length)
-                return 0;
+                return true;
 
             int destinationNode = CellToNode[destinationCell];
             if (destinationNode < 0)
-                return 0;
+                return true;
 
             if (!IsVerticalBridge(sourcePacked, Cells[destinationCell]))
-                return 0;
+                return true;
 
-            AddBidirectionalEdge(sourceNode, destinationNode);
-            return 2;
+            return TryAddBidirectionalEdge(ref directedEdges, edgeCapacity, sourceNode, destinationNode);
         }
 
-        private void AddBidirectionalEdge(int sourceNode, int destinationNode)
+        private bool TryAddBidirectionalEdge(ref int directedEdges, int edgeCapacity, int sourceNode, int destinationNode)
         {
+            if (directedEdges + 2 > edgeCapacity)
+            {
+                WriteFault(WfcOutpostGraphFaultFlags.CapacityExceeded);
+                return false;
+            }
+
             PowerEdges.Add(sourceNode, destinationNode);
             PowerEdges.Add(destinationNode, sourceNode);
+            directedEdges += 2;
+            return true;
+        }
+
+        private int ResolveEdgeCapacity()
+        {
+            return PowerEdges.IsCreated
+                ? math.min(PowerEdges.Capacity, WfcOutpostGridConstants.MaxDirectedEdges)
+                : 0;
         }
 
         private static bool IsVerticalBridge(byte sourcePacked, byte destinationPacked)

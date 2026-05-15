@@ -332,3 +332,11 @@ Solution: Add central default constants plus `SanitizeFiniteMinInput()` and `San
 Rejected Alternatives: Trusting `OnValidate()` was rejected because builds and scripts can bypass it. Sanitizing only inside the Burst job was rejected because material and combat paths are Mono-side consumers.
 Scalability potential: Low/MX350/high/ultra visuals are unchanged for valid input. Invalid scalar data now fails into cheap predictable defaults on all tiers, preserving low-end stability and high-end visual overkill without NaN-driven shader/combat corruption.
 Hardware Impact: Added fixed scalar guards are estimated below 0.05 us per scheduled tentacle frame and are not profiler-backed. The benefit is deterministic failure behavior, not measured frame-time savings.
+
+## Decision 35: Tentacle Low-Tier Shader Cost Gate
+
+Problem: The tentacle indirect shader executed high-tier organic fragment work on every device tier: normal-map reconstruction, flow sheen pulse, SSS, projected caustics, and biolum volume sampling. The CPU solver already had tier awareness, but the material did not receive a tier scalar.
+Solution: Add `_H8LeviathanTentacleFxTier`, cache the scalability tier in `LeviathanTentacleVerletSolver`, bind the material tier before indirect draw, and branch the shader so Low/Unknown/MX350 use vertex-normal lit silhouettes while High/Ultra keep the full organic stack.
+Rejected Alternatives: Cutting tentacle count was rejected because the fixed 8 tentacle / 20 segment buffer contract is predictable and already cheap on CPU. Removing all glow was rejected because low tier still needs readable suction/emission silhouettes.
+Scalability potential: Low - indirect silhouettes with base lighting and pulse emission only. Middle/High/Ultra - full normal map, flow sheen, SSS, caustics, and biolum. Cheap devices shed fragment effects; top-tier devices keep visual overkill.
+Hardware Impact: Low-tier saves one normal texture sample/reconstruction plus SSS/caustics/biolum/flow-sheen work per tentacle pixel. No GPU profiler measurement exists; this is a static shader-path reduction pending Unity shader compile and RenderDoc/profiler confirmation.

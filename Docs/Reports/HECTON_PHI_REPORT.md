@@ -1291,6 +1291,75 @@ Verification:
 - Final full static gate completed at local timestamp `2026-05-15 12:43:12 +04:00`.
 - Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.
 
+## 2026-05-15 Live Addendum 17
+
+Evidence class: `STATIC_SOURCE`.
+
+User constraint for this pass: no `dotnet build` and no rebuild.
+
+What changed:
+- Added primary-runtime owner-blocked DataVault backlog accounting to `Tools/Architecture/HectonPhiAudit.ps1`.
+- Added `PrimaryOwnerBlockedNativeArrayRefs`, `PrimaryOwnerBlockedDisposeCalls`, and `PrimaryNativeOwnershipRisk`.
+- Added `-MaxPrimaryOwnerBlockedNativeArrayRefs` full-source budget gate.
+- No gameplay code, buffer ownership, tick cadence, job scheduling, scene, prefab, or Unity project setting was changed by this H-Phi monitor pass.
+
+Current runtime static scores:
+
+| Coefficient | Score |
+|---|---:|
+| H-Phi runtime static narrow | 0.010687040 |
+| H-Phi runtime static risk-adjusted | 0.000611619 |
+| Data sovereignty | 0.021129678 |
+| Memory alignment | 0.505783386 |
+
+Current runtime counts:
+
+| Counter | Value |
+|---|---:|
+| Typed/queued signal push surface | 338 |
+| Legacy/direct event publish surface | 28 |
+| `GlobalRegistry.` surface refs | 5,086 |
+| DataVault access surface refs | 153 |
+| `NativeArray<T>` refs | 7,088 |
+| Runtime `GetComponent*` calls | 416 |
+| Owner-blocked NativeArray refs | 6,280 |
+| Owner-blocked dispose calls | 975 |
+| Native ownership risk | 8,230 |
+| Primary owner-blocked NativeArray refs | 5,696 |
+| Primary owner-blocked dispose calls | 850 |
+| Primary native ownership risk | 7,396 |
+| Primary managed-runtime risk | 330 |
+
+Budget gates:
+
+| Gate | Budget/Floor | Current | Status |
+|---|---:|---:|---|
+| Primary owner-blocked NativeArray refs | <= 5,696 | 5,696 | PASS |
+| Owner-blocked NativeArray refs | <= 6,280 | 6,280 | PASS |
+| AUP precision risk | <= 0 | 0 | PASS |
+| Runtime `Find*` calls | <= 5 | 5 | PASS |
+| Legacy event publish | <= 28 | 28 | PASS |
+| Duplicate signal names | <= 0 | 0 | PASS |
+| `GlobalRegistry.` surface refs | <= 5,100 | 5,086 | PASS |
+| `GetComponent*` calls | <= 420 | 416 | PASS |
+| `NativeArray<T>` refs | <= 7,100 | 7,088 | PASS |
+| Primary managed-runtime risk | <= 330 | 330 | PASS |
+| Data sovereignty | >= 0.021120000 | 0.021129678 | PASS |
+| Memory alignment | >= 0.505700000 | 0.505783386 | PASS |
+| Runtime H-Phi risk | >= 0.000611000 | 0.000611619 | PASS |
+
+Residual bottlenecks:
+- Data Sovereignty regressed versus the previous addendum because concurrent owner changes raised `NativeArray<T>` refs. This pass does not hide that regression.
+- Primary runtime backlog is now isolated: `5696` owner-blocked refs and `850` owner-blocked dispose calls.
+- Runtime verification remains absent by user order.
+
+Verification:
+- PowerShell parser: `POWERSHELL_PARSE_OK`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -MaxPrimaryOwnerBlockedNativeArrayRefs 1 -Summary -Json`: parser guard correctly rejected source budget under graph-only mode.
+- Full ungated static summary completed at local timestamp `2026-05-15 13:36:27 +04:00`.
+- Final full static gate completed at local timestamp `2026-05-15 13:48:00 +04:00`.
+- Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.
+
 ## 2026-05-15 Live Addendum - CORE_RESONANCE_ORCHESTRATOR
 
 Evidence class: `STATIC_SOURCE`.

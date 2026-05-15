@@ -110,7 +110,11 @@ namespace Hecton8.UI
             AutoResolveTabIndex();
             if (playerPda == null)
             {
-                playerPda = GetComponentInParent<PlayerPDA>();
+                for (Transform current = transform; current != null; current = current.parent)
+                {
+                    if (current.TryGetComponent(out playerPda))
+                        break;
+                }
             }
 
             labelFont = LocalizedFontResolver.ResolveReadableFont(labelFont);
@@ -671,7 +675,7 @@ namespace Hecton8.UI
             {
                 Transform hintTransform = FindDeepChild(transform, "Hint");
                 if (hintTransform != null)
-                    _headerHintText = hintTransform.GetComponent<TextMeshProUGUI>();
+                    hintTransform.TryGetComponent(out _headerHintText);
             }
 
             if (rows == null || rows.Length == 0) return;
@@ -690,13 +694,13 @@ namespace Hecton8.UI
                 if (row.labelText == null)
                 {
                     Transform t = FindDeepChild(transform, $"Label_{key}");
-                    if (t != null) row.labelText = t.GetComponent<TextMeshProUGUI>();
+                    if (t != null) t.TryGetComponent(out row.labelText);
                 }
 
                 if (row.bindingText == null)
                 {
                     Transform t = FindDeepChild(transform, $"Binding_{key}");
-                    if (t != null) row.bindingText = t.GetComponent<TextMeshProUGUI>();
+                    if (t != null) t.TryGetComponent(out row.bindingText);
                 }
 
                 if (row.selectedIndicator == null)
@@ -1344,7 +1348,7 @@ namespace Hecton8.UI
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
             go.layer = parent.gameObject.layer;
-            RectTransform rect = go.GetComponent<RectTransform>();
+            go.TryGetComponent(out RectTransform rect);
             rect.SetParent(parent, false);
             rect.localScale = Vector3.one;
             return rect;
@@ -1352,8 +1356,7 @@ namespace Hecton8.UI
 
         private static Image EnsureImage(GameObject target)
         {
-            Image image = target.GetComponent<Image>();
-            if (image == null)
+            if (!target.TryGetComponent(out Image image))
                 image = target.AddComponent<Image>();
             return image;
         }
@@ -1363,7 +1366,7 @@ namespace Hecton8.UI
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
             go.layer = parent.gameObject.layer;
-            RectTransform rect = go.GetComponent<RectTransform>();
+            go.TryGetComponent(out RectTransform rect);
             rect.SetParent(parent, false);
             rect.localScale = Vector3.one;
 

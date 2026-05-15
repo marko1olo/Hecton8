@@ -1021,7 +1021,9 @@ namespace Hecton8.VFX.Debris
             if (lowTier)
                 return _emptyTexture3D;
 
-            if (voxelSdfTexture3D != null && IsValidSdfInvDoubleHalfExtents(voxelSdfInvDoubleHalfExtents))
+            if (voxelSdfTexture3D != null &&
+                IsFiniteMatrix(voxelSdfWorldToLocal) &&
+                IsValidSdfInvDoubleHalfExtents(voxelSdfInvDoubleHalfExtents))
             {
                 sdfWorldToLocal = voxelSdfWorldToLocal;
                 sdfInvDoubleHalfExtents = voxelSdfInvDoubleHalfExtents;
@@ -1053,6 +1055,13 @@ namespace Hecton8.VFX.Debris
             bool valid = Shader.GetGlobalFloat(HectonCaveVoxelActiveId) > 0.5f &&
                          sdfTexture != null &&
                          IsValidSdfInvDoubleHalfExtents(invDoubleHalfExtents);
+            Matrix4x4 worldToLocal = Matrix4x4.identity;
+            if (valid)
+            {
+                worldToLocal = Shader.GetGlobalMatrix(HectonCaveVoxelWorldToLocalId);
+                valid = IsFiniteMatrix(worldToLocal);
+            }
+
             if (!valid)
             {
                 _cachedGlobalSdfTexture = null;
@@ -1063,9 +1072,29 @@ namespace Hecton8.VFX.Debris
             }
 
             _cachedGlobalSdfTexture = sdfTexture;
-            _cachedGlobalSdfWorldToLocal = Shader.GetGlobalMatrix(HectonCaveVoxelWorldToLocalId);
+            _cachedGlobalSdfWorldToLocal = worldToLocal;
             _cachedGlobalSdfInvDoubleHalfExtents = invDoubleHalfExtents;
             _cachedGlobalSdfActive = 1f;
+        }
+
+        private static bool IsFiniteMatrix(Matrix4x4 value)
+        {
+            return math.isfinite(value.m00) &&
+                   math.isfinite(value.m01) &&
+                   math.isfinite(value.m02) &&
+                   math.isfinite(value.m03) &&
+                   math.isfinite(value.m10) &&
+                   math.isfinite(value.m11) &&
+                   math.isfinite(value.m12) &&
+                   math.isfinite(value.m13) &&
+                   math.isfinite(value.m20) &&
+                   math.isfinite(value.m21) &&
+                   math.isfinite(value.m22) &&
+                   math.isfinite(value.m23) &&
+                   math.isfinite(value.m30) &&
+                   math.isfinite(value.m31) &&
+                   math.isfinite(value.m32) &&
+                   math.isfinite(value.m33);
         }
 
         private static bool IsValidSdfInvDoubleHalfExtents(Vector4 invDoubleHalfExtents)

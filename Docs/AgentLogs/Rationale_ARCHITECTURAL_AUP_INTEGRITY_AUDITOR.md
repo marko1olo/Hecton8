@@ -495,3 +495,19 @@ Solution: Verify the active working-tree primary-runtime managed-risk lane, incl
 Rejected Alternatives: Revert or ignore the working-tree lane. Reverting would discard useful H-Phi separation; ignoring it would leave unverified budget behavior in the same AUP/H-Phi audit tool.
 Scalability potential: Low machines can gate primary runtime debt separately from debug/CI/persistence support code. Middle/High/Ultra pipelines can keep instrumentation-rich QA while still protecting primary runtime from managed allocations and job-completion debt.
 Hardware Impact: Gameplay frame impact is 0 us. Full static run completed in 193.981 seconds with `PrimaryManagedRuntimeRisk=353`, `PrimaryJobCompleteRisk=44`, role split `PrimaryRuntime=353`, `Instrumentation=236`, `Persistence=96`, `UI=24`, and `AupPrecisionRisk=0`.
+
+## Decision 62 - One-Read H-Phi Source Snapshots
+
+Problem: The full-source H-Phi audit read every C# file separately for duplicate-signal analysis and for the main runtime/source counter pass, adding avoidable IO and repeated metadata derivation to an already expensive AUP budget gate.
+Solution: Add `New-SourceFileSnapshot`, build a single source snapshot list once, and route duplicate-signal analysis plus the main counter pass through that shared content, relative path, domain, line count, and editor-file metadata.
+Rejected Alternatives: Keep duplicate file reads, disable the duplicate-signal audit, or add a broad mutable content cache. Keeping duplicate reads wastes low-end CI time; disabling the audit hides signal-lane collisions; a mutable cache is harder to reason about than an explicit immutable snapshot list.
+Scalability potential: Low machines pay one read per source file for the full gate instead of duplicated reads. Middle keeps the same AUP precision budget evidence. High/Ultra CI can retain richer H-Phi lanes without weakening the source scan.
+Hardware Impact: Gameplay frame impact is 0 us and 0 B/frame. Full static `-MaxAupPrecisionRisk 0` run completed in 78.467 seconds with `AupPrecisionRisk=0`, `DuplicateSignalSourceFiles=1505`, `DuplicateSignalCandidateFiles=225`, and `DuplicateSignalSkippedFiles=1280`; no profiler/runtime claim is made.
+
+## Decision 63 - H-Phi All-Pattern Literal Gate
+
+Problem: Even after one-read snapshots, the full-source H-Phi pass still evaluated counter regexes for files that contained none of the monitored H-Phi/AUP literals. The LINQ prefilter also missed `.All`, `.Last`, `.Single`, and `.ThenBy`, and `.All(` appears in 178 files in the current tree.
+Solution: Add `New-LiteralHintIndex` to build a single unique literal gate from all counter hints, skip code-surface masking and regex counter passes when a file has no monitored literals, export `SourceScanAudit` counts, and repair the LINQ literal hint list.
+Rejected Alternatives: Disable `LinqSurface`, leave the hint gap, or rely only on per-counter prefilters. Disabling hides managed runtime debt; leaving the gap undercounts H-Phi risk; per-counter prefilters still pay unnecessary loop/masking work for zero-surface files.
+Scalability potential: Low machines skip 205 all-source files and 209 runtime files before regex/masking work. Middle keeps deterministic source evidence. High/Ultra CI can retain broader H-Phi lanes without making the AUP precision budget gate slow enough to ignore.
+Hardware Impact: Gameplay frame impact is 0 us and 0 B/frame. Full static `-MaxAupPrecisionRisk 0` run completed in 39.931 seconds with `AupPrecisionRisk=0`, `RuntimeAuditLiteralSkippedFiles=209`, and `PrimaryOwnerBlockedNativeArrayRefs=5696`; optional lexical-scrubbed full scan still exceeded 240 seconds, so no lexical score is claimed.

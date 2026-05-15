@@ -649,3 +649,31 @@ Scalability potential: Low/MX350 benefits indirectly because malformed rule asse
 Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: corrupted BioRule serialized data now becomes a deterministic editor validation failure instead of an exception path. Exact runtime microseconds are not profiled because this is editor validation.
 
 Verification: No dotnet rebuild and no Unity import was run. `RuleRawReplacementYamlScan Count=3 Bad=0`. Source scan found `SerializedRuleReplacementEquals Count=2`, `failed |= !SerializedRuleReplacementEquals Count=1`, direct child `FindPropertyRelative(...).stringValue Count=0`, and `BioRuleData _rules element schema missing serialized fields Count=1`. `git diff --check` passed for the touched Shallows files. Source brace count remained `Delta=0` and `NonAscii=0`; case-sensitive forbidden source scan remained clean.
+
+## Decision 47 - BioRule Serialized Setter Schema Diagnostics
+
+Problem: The rule authoring helpers `SetString`, `SetInt`, `SetFloat`, `SetEnum`, and `SetObject` used `FindProperty` and silently skipped missing properties. That turns schema drift into partial asset writes, forcing later validators to report symptoms instead of the authoring path reporting the broken field. `SetRules` also returned silently when `_rules` was missing or not an array.
+
+Solution: Add `TryFindSerializedProperty` and `ResolveSerializedTargetName`. Each scalar/object setter now requires the expected `SerializedPropertyType` before writing. Missing fields and type mismatches log deterministic editor errors with the target asset name. `SetRules` now logs missing array and missing element cases.
+
+Rejected Alternatives: Keeping silent no-ops was rejected because authoring tools must not hide schema drift. Throwing exceptions was rejected because deterministic editor errors keep the tool usable and still allow final validation to report contract failures. Runtime defaults were rejected because these are editor-only bake inputs.
+
+Scalability potential: Low/MX350 benefits indirectly because malformed or partially updated BioRule assets cannot quietly generate stale/heavier payloads. Middle/High/Ultra can expand rule schemas only with explicit setter/validator contract updates.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: authoring schema drift becomes a clear editor diagnostic instead of a silent partial write. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: No dotnet rebuild and no Unity import was run. `RuleSetterFieldYamlScan Count=3 Bad=0`. Source scan found `TryFindSerializedProperty Count=6`, all five expected `SerializedPropertyType` checks, `if (property != null) Count=0`, `Missing serialized field Count=1`, and `Serialized field type drift Count=1`. `git diff --check` passed for the touched Shallows files with only repo CRLF warnings. Source brace count remained `Delta=0` and `NonAscii=0`; case-sensitive forbidden source scan remained clean.
+
+## Decision 48 - Serialized Validation Type Guards
+
+Problem: The serialized validation helpers returned false for missing properties, but they read `intValue`, `boolValue`, `floatValue`, `stringValue`, and `objectReferenceValue` without checking the serialized property type first. That leaves the contract dependent on Unity access behavior instead of explicit schema validation.
+
+Solution: Add `SerializedPropertyType` checks to scalar/object validation helpers, to raw rule replacement validation, and to saved material property-key validation before reading values.
+
+Rejected Alternatives: Trusting Unity getter behavior was rejected because the validator must encode schema expectations directly. Adding a generic reflection layer was rejected because local helper guards are simpler and match the existing zero-bloat editor validator style. Runtime schema repair was rejected because these are offline bake inputs.
+
+Scalability potential: Low/MX350 benefits because corrupted or migrated authoring data cannot pass validation through type ambiguity and generate heavier/stale payloads. Middle/High/Ultra can expand serialized schemas only by explicitly updating helper contracts.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: serialized type drift becomes a deterministic validation failure instead of ambiguous getter behavior. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: Pending static verification. Planned checks: no dotnet rebuild and no Unity import; source token scan for helper type guards; rule/material YAML scans; `git diff --check`; source brace/non-ASCII balance; case-sensitive forbidden source scan.

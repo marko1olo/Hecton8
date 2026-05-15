@@ -235,3 +235,10 @@ Solution: Re-ran `Tools/Architecture/HectonPhiAudit.ps1 -Summary` as a source-on
 Rejected Alternatives: Treating the timed-out run as a clean pass was rejected. Running dotnet or Unity compilation was rejected by explicit user instruction.
 Scalability potential: The metrics show the awake-mask DataVault path is still present and AUP precision risk remains zero; broader Dalton array sovereignty is still a separate owner-migration pass.
 Hardware Impact: Audit-only pass; no runtime impact and no microsecond savings claimed.
+
+## Self-Review 27 - Initialization Invariant Tightening
+Problem: `IsInitialized` only checked `RoomO2` and the toxicity queue, while the scheduler and external consumers require coherent room, base, bulkhead, telemetry, and queue lanes.
+Solution: `IsInitialized` now requires the same length-aware readiness helpers used by public APIs, plus telemetry ring and toxicity queue creation. `ScheduleStep` now gates on `IsInitialized`.
+Rejected Alternatives: Letting the Burst job clamp partial state was rejected because the solver could still advertise itself as valid to power/registry consumers. Checking only `RoomO2` was rejected as a stale single-lane proxy.
+Scalability potential: Low through Ultra keep identical fast paths when state is coherent; partial H-Phi/native migration now fails closed before scheduling work.
+Hardware Impact: A few cold/main-thread readiness branches before scheduling. No frame-time saving claimed; this prevents invalid native job submission.

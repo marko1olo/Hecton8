@@ -439,3 +439,27 @@ Rejected Alternatives: Killing the root IDE/Codex host was rejected because it i
 Scalability potential: No runtime behavior change. This protects verification evidence under aggressive external build watchers.
 
 Hardware Impact: Removes local build CPU pressure only; no gameplay frame-time claim.
+
+## Decision 35 - Finite AUP Ingress Guard
+
+Problem: Player and pickup runtime positions were converted into AUP vault data without an explicit finite guard on the managed boundary. A NaN/Inf transform could poison loot truth before the Burst job marked the frame as faulty.
+
+Solution: Add finite checks before player transform and pickup transform AUP conversion. Use the inventory transform as a fallback player anchor when `IPlayerRuntimeContext` is missing but inventory exists. Add fixed black-box bits for non-finite pickup/player pose evidence and bump the loot telemetry dump version to 3.
+
+Rejected Alternatives: Letting the Burst job discover NaN later was rejected because poisoned vault state can already affect scheduling, telemetry, and proxy mirroring. Logging each bad transform was rejected because it allocates/noises under a fault burst.
+
+Scalability potential: Low = bad pickup/player transforms are skipped or fail closed instead of poisoning the low-cadence snap path. Middle = Burst receives cleaner vault lanes. High/Ultra = dense authored fields retain postmortem evidence for transform poison without expanding the telemetry ring.
+
+Hardware Impact: Normal FastTick has no new per-entity cost. SlowTick registry refresh adds three finite checks per accepted pickup candidate; MX350 pays only on refresh cadence and avoids NaN-induced recovery work.
+
+## Decision 36 - Commit-Time Pickup Proxy Quarantine
+
+Problem: A pickup sidecar reference can become inactive, depleted, pooled, or reconfigured after the Burst job runs but before managed commit. The old commit path only rejected null references, so stale proxies could still receive transform mirroring or publish stale item acquisition data.
+
+Solution: Before acquisition, presentation, or transform mirroring, validate the pickup reference exists, is active, quantity-positive, nonzero hash, and still matches the vault item hash. Invalid slots are cleared and marked with a fixed black-box flag.
+
+Rejected Alternatives: Trusting the next SlowTick refresh was rejected because the current LateFrame could publish wrong-item signals. Mutating inventory first and correcting telemetry after was rejected because side effects would already have escaped.
+
+Scalability potential: Low = pooled/depleted pickups are removed before snap acquisition. Middle = stale sidecars do not leak wrong presentation. High/Ultra = dense fields with object pooling retain deterministic truth under reconfiguration pressure.
+
+Hardware Impact: Adds a small branch cluster only for scheduled commit slots. MX350 avoids wrong inventory/presentation side effects that are more expensive than the validation.

@@ -476,6 +476,28 @@ Rejected Alternatives: Running response-file compiles through `dotnet` was rejec
 Scalability potential: Static terrain-ingress proof improved without extra buffers, registries, signals, shell GameObjects, or render mutations.
 Hardware Impact: Verification only. Core graph summary still reports `CoreAsmdefDebtReferenceCount=25` and `GeneratedProjectDebtReferenceCount=10`, both project-level debts outside this outpost edit.
 
+## LOOP 34 WFC GRAPH EDGE CAPACITY GATE - BOTTOM ADDENDUM
+
+Problem: The current bottom of the rationale file ended at Loop 33 after the Loop 34 entry was inserted into an earlier section. The latest decision needed bottom-visible evidence for anti-amnesia review.
+Solution: Append the Loop 34 capacity decision again at the current file bottom: the translator resolves effective edge capacity once, rejects zero capacity with `CapacityExceeded`, and gates all `PowerEdges.Add` calls through `TryAddBidirectionalEdge`.
+Rejected Alternatives: Leaving the latest rationale only in the middle of the file was rejected because future compressed-context recovery reads tails first. Reordering the whole log was rejected because it risks disturbing other historical entries.
+Scalability potential: Low devices get fail-closed native edge writes if future map allocation regresses. Middle/High/Ultra keep the same deterministic graph output for valid allocations.
+Hardware Impact: Cold graph translation only: one map capacity read and candidate-edge integer checks. Steady Tick/Render remains 0 B/frame.
+
+## LOOP 34 WFC GRAPH EDGE CAPACITY GATE
+
+Problem: `WfcOutpostPowerBootRuntime` currently allocates `_powerEdges` with `MaxDirectedEdges`, but `WfcOutpostGraphTranslationJob` is a public native job boundary and wrote to `PowerEdges` without checking the map's current capacity. A future caller or allocation regression could make `PowerEdges.Add` hit capacity during Burst execution.
+Solution: Resolve the effective directed-edge capacity once in `BuildEdges`, bounded by `WfcOutpostGridConstants.MaxDirectedEdges`. Reject zero-capacity maps with `CapacityExceeded`, stop scanning once the capacity is reached, and route all bidirectional writes through `TryAddBidirectionalEdge(ref directedEdges, edgeCapacity, ...)` before calling `PowerEdges.Add`.
+Rejected Alternatives: Resizing `NativeParallelMultiHashMap` inside the Burst job was rejected because allocation ownership belongs to the boot runtime. Trusting `WfcOutpostPowerBootRuntime` forever was rejected because the translator is a cross-boundary native surface. GameObject power nodes or physics adjacency were rejected because power flow is authored graph truth.
+Scalability potential: Low devices avoid native container capacity exceptions and downstream graph churn if future allocation size regresses. Middle/High/Ultra keep the same deterministic SOA graph and can spend saved safety margin on richer outpost presentation. No GameObjects, managed allocations, polling, or render work are added.
+Hardware Impact: Cold translation only: one map capacity read per graph build and one integer comparison per candidate edge before two directed writes. Estimated below 0.1 us for the 500-cell outpost on i3/MX350. Steady Tick/Render remains 0 B/frame.
+
+Problem: The active instruction still forbids dotnet rebuilds, so runtime compile/profiler proof cannot be claimed.
+Solution: Verification stayed source-only: targeted translator scan, `git diff --check`, and `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`.
+Rejected Alternatives: Running response-file compiles or `dotnet` rebuilds was rejected because it violates the active user instruction.
+Scalability potential: Static edge-capacity proof improved without changing WFC cell layout, graph capacity constants, signal lanes, save payloads, or render path.
+Hardware Impact: Verification only. Core graph summary still reports `CoreAsmdefDebtReferenceCount=25` and `GeneratedProjectDebtReferenceCount=10`, both project-level debts outside this outpost edit.
+
 ## LOOP 28 INDIRECT UPLOAD CAPACITY FENCE
 
 Problem: `UploadMatricesAndArgs` guarded only `_shellMatrices`, `_matrixBuffer`, and `_cellTypeBuffer`. If `_shellCellTypes` or `_argsBuffer` was missing, or if any CPU/GPU buffer capacity drifted below `_matrixCount`, the helper-local copy clamp could upload fewer values while indirect args still advertised the larger count.
@@ -585,3 +607,27 @@ Solution: Verification stayed source-only: targeted translator/contract scan, `g
 Rejected Alternatives: Running response-file compiles or `dotnet` rebuilds was rejected because it violates the active user instruction.
 Scalability potential: Static native-boundary proof improved without changing graph capacity, signal lanes, save payloads, or render path.
 Hardware Impact: Verification only. Core graph summary still reports `CoreAsmdefDebtReferenceCount=25` and `GeneratedProjectDebtReferenceCount=10`, both project-level debts outside this outpost edit.
+
+## LOOP 34 WFC GRAPH EDGE CAPACITY GATE - BOTTOM ADDENDUM
+
+Problem: The translator wrote bidirectional edges to a `NativeParallelMultiHashMap` after only proving the map was created. It did not prove the current map capacity before the two directed `Add` calls.
+Solution: Resolve the effective edge capacity once in `BuildEdges`, bounded by `WfcOutpostGridConstants.MaxDirectedEdges`; reject zero capacity with `CapacityExceeded`; and gate all horizontal/vertical writes through `TryAddBidirectionalEdge`.
+Rejected Alternatives: Resizing inside the Burst job was rejected because allocation ownership belongs to `WfcOutpostPowerBootRuntime`. Leaving the raw `Add` path was rejected because it weakens native-boundary proof.
+Scalability potential: Low devices fail closed on allocation drift. Middle/High/Ultra keep identical graph output for valid allocations, with no new runtime object surface.
+Hardware Impact: Cold graph translation only: one capacity read and integer comparisons on candidate edges. Steady Tick/Render remains 0 B/frame.
+
+## LOOP 35 WFC TYPED SIGNAL LANE DIRECT PUSH
+
+Problem: Two owned outpost lanes still used `GlobalSignals.Publish(in signal)` even though the wrapper only ensured initialization and forwarded to typed `SignalBus<T>`. This kept avoidable wrapper surface on the WFC generated-grid and door-power lanes.
+Solution: Add cold `GlobalSignals.InitializeAllQueues()` to `MarauderOutpostGenerationService.OnEnable`, then publish `WfcOutpostGeneratedSignal` directly through `SignalBus<WfcOutpostGeneratedSignal>.Push(in signal)`. Publish `WfcOutpostDoorPowerSignal` directly through `SignalBus<WfcOutpostDoorPowerSignal>.Push(in signal)` in `WfcOutpostPowerBootRuntime`.
+Rejected Alternatives: Broadly replacing every `GlobalSignals.Publish` in gameplay/core was rejected as outside the Habitat/Outposts domain and unsafe during concurrent agent work. Creating a local event bus was rejected because it duplicates the existing typed signal transport.
+Scalability potential: Low devices avoid wrapper dispatch on recurring outpost generated-signal heartbeats and door-power updates. Middle/High/Ultra keep deterministic typed lanes and can spend saved control-surface simplicity on richer outpost presentation. No buffers, GameObjects, polling, or render work are added.
+Hardware Impact: One cold queue-init guard on service enable; direct typed pushes on existing event cadence. Estimated below 0.1 us per signal on i3/MX350. Steady Tick/Render allocation remains 0 B/frame.
+
+## LOOP 36 WFC BLACKBOX DUMP FAILURE TELEMETRY
+
+Problem: `MarauderOutpostGenerationService.DumpBlackBox()` caught exceptions by building a managed debug string from `exception.Message`. This is failure-path code, not frame-hot code, but the blackbox mandate favors numeric post-mortem evidence over string allocation.
+Solution: Add `TelemetryDumpFaultHash` and `TelemetryContextHash`, then report dump failures through `GlobalTelemetryBus.PublishPerformanceWarning(TelemetryDumpFaultHash, TelemetryContextHash, exception.HResult)`.
+Rejected Alternatives: Keeping `Debug.LogError` was rejected because it allocates and is editor/development-only evidence. Adding both debug log and telemetry was rejected because duplicate failure channels add noise without stronger runtime proof.
+Scalability potential: Low devices avoid managed string work during dump failure; Middle/High/Ultra get the same numeric telemetry path without changing rendering, graph, or save payloads.
+Hardware Impact: Failure path only. Normal Tick/Render remains 0 B/frame; blackbox dump success path remains unchanged.

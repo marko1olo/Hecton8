@@ -501,3 +501,27 @@ Cinematic Cheats used: Static offline L-system rule validation remains the contr
 Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents editor validation exception paths; exact runtime microseconds were not profiled.
 
 Verification: No dotnet rebuild and no Unity import was run. `RuleRawReplacementYamlScan Count=3 Bad=0`; source scan found no direct child `FindPropertyRelative(...).stringValue` pattern; `git diff --check` passed; source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.
+
+## 2026-05-15 BioRule Serialized Setter Schema Diagnostics
+
+What was wrong: BioRule setter helpers silently skipped missing serialized fields, allowing partial authoring writes with no immediate diagnostic.
+
+What was done: Added `TryFindSerializedProperty` and `ResolveSerializedTargetName`; scalar/object setters now require expected property types, and `SetRules` logs missing array/element schema failures.
+
+Cinematic Cheats used: Static offline L-system rule authoring remains the contract. No runtime rule defaults or fallback generation were added.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents silent editor partial writes; exact runtime microseconds were not profiled.
+
+Verification: No dotnet rebuild and no Unity import was run. `RuleSetterFieldYamlScan Count=3 Bad=0`; source scan found all five setter type checks and no silent `if (property != null)` setter branch; `git diff --check` passed with only repo CRLF warnings; source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.
+
+## 2026-05-15 Serialized Validation Type Guards
+
+What was wrong: Serialized validation helpers checked property presence but not serialized property type before reading values.
+
+What was done: Added explicit `SerializedPropertyType` guards for scalar/object helpers, raw rule replacement validation, and saved material key validation.
+
+Cinematic Cheats used: Static offline validation remains the contract. No runtime schema repair or fallback generation was added.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents ambiguous editor validation behavior; exact runtime microseconds were not profiled.
+
+Verification: Pending static verification. No dotnet rebuild and no Unity import will be run.
