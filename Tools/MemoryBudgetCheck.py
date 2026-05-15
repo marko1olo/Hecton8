@@ -2267,6 +2267,144 @@ def validate_generated_reports(
         expected_gate_reasons.append("MESH_REDLINE_OR_RISK")
     if broad_render_texture_redline_paths:
         expected_gate_reasons.append("RENDER_TEXTURE_REDLINE_OR_RISK")
+
+    def texture_directory_payload(rows_to_group: Sequence[Dict[str, str]], first_party_only: bool, limit: int = 12) -> List[Dict[str, object]]:
+        groups: Dict[str, Tuple[int, float, int]] = {}
+        for row in rows_to_group:
+            path = row_path(row)
+            if not is_runtime_candidate(path, root):
+                continue
+            if first_party_only and not is_row_first_party(row):
+                continue
+            if not first_party_only and is_row_first_party(row):
+                continue
+            key = rel(path.parent, root).replace("\\", "/")
+            count, total, crimes = groups.get(key, (0, 0.0, 0))
+            groups[key] = (
+                count + 1,
+                total + csv_int(row, "bc7_bytes") * FULL_MIP_FACTOR,
+                crimes + (1 if row_has_vram_crime(row) else 0),
+            )
+        ranked = [(key, count, total, crimes) for key, (count, total, crimes) in groups.items()]
+        ranked.sort(key=lambda item: item[2], reverse=True)
+        return [
+            {
+                "directory": directory,
+                "count": count,
+                "bc7_full_mip_mib": round(mib(total), 3),
+                "vram_crime_rows": crimes,
+            }
+            for directory, count, total, crimes in ranked[:limit]
+        ]
+
+    def texture_extension_payload(rows_to_group: Sequence[Dict[str, str]], limit: int = 16) -> List[Dict[str, object]]:
+        groups: Dict[str, Tuple[int, float, int, int]] = {}
+        for row in rows_to_group:
+            if not is_runtime_candidate(row_path(row), root):
+                continue
+            ext = row.get("extension", "").lower() or Path(row.get("path", "")).suffix.lower() or "<none>"
+            count, total, crimes, container_risks = groups.get(ext, (0, 0.0, 0, 0))
+            groups[ext] = (
+                count + 1,
+                total + csv_int(row, "bc7_bytes") * FULL_MIP_FACTOR,
+                crimes + (1 if row_has_vram_crime(row) else 0),
+                container_risks + (1 if row_has_texture_container_risk(row) else 0),
+            )
+        ranked = [(ext, count, total, crimes, container_risks) for ext, (count, total, crimes, container_risks) in groups.items()]
+        ranked.sort(key=lambda item: item[2], reverse=True)
+        return [
+            {
+                "extension": ext,
+                "count": count,
+                "bc7_full_mip_mib": round(mib(total), 3),
+                "vram_crime_rows": crimes,
+                "source_container_risk_rows": container_risks,
+            }
+            for ext, count, total, crimes, container_risks in ranked[:limit]
+        ]
+
+    def mesh_extension_payload(rows_to_group: Sequence[Dict[str, str]], limit: int = 16) -> List[Dict[str, object]]:
+        groups: Dict[str, Tuple[int, int, int, float, int]] = {}
+        for row in rows_to_group:
+            if not is_runtime_candidate(row_path(row), root):
+                continue
+            ext = row.get("extension", "").lower() or Path(row.get("path", "")).suffix.lower() or "<none>"
+            count, known_triangles, unreadable_rows, geometry_bytes, flagged_rows = groups.get(ext, (0, 0, 0, 0.0, 0))
+            groups[ext] = (
+                count + 1,
+                known_triangles + csv_int(row, "triangles"),
+                unreadable_rows + (1 if not row.get("triangles", "").strip() else 0),
+                geometry_bytes + csv_int(row, "mesh_geometry_estimate_bytes"),
+                flagged_rows + (1 if row.get("redline_flags", "") else 0),
+            )
+        ranked = [
+            (ext, count, known_triangles, unreadable_rows, geometry_bytes, flagged_rows)
+            for ext, (count, known_triangles, unreadable_rows, geometry_bytes, flagged_rows) in groups.items()
+        ]
+        ranked.sort(key=lambda item: item[4], reverse=True)
+        return [
+            {
+                "extension": ext,
+                "count": count,
+                "known_triangles": known_triangles,
+                "triangle_unreadable_rows": unreadable_rows,
+                "geometry_estimate_mib": round(mib(geometry_bytes), 3),
+                "flagged_rows": flagged_rows,
+            }
+            for ext, count, known_triangles, unreadable_rows, geometry_bytes, flagged_rows in ranked[:limit]
+        ]
+
+    def atlas_owner_rank(group: str) -> int:
+        normalized = group.lower().replace("\\", "/")
+        if normalized.startswith("assets/_project/"):
+            return 0
+        if normalized.startswith("assets/scififacility/"):
+            return 1
+        if normalized.startswith("assets/"):
+            return 2
+        if normalized.startswith("data/"):
+            return 3
+        return 4
+
+    def atlas_payload(rows_to_group: Sequence[Dict[str, str]], limit: int = 5) -> List[Dict[str, object]]:
+        groups: Dict[str, List[Dict[str, str]]] = {}
+        for row in rows_to_group:
+            group = row.get("atlas_group", "")
+            if not group:
+                continue
+            groups.setdefault(group, []).append(row)
+        ranked: List[Tuple[str, List[Dict[str, str]], int]] = []
+        for group, items in groups.items():
+            area = sum(csv_int(item, "width") * csv_int(item, "height") for item in items)
+            ranked.append((group, items, area))
+        ranked.sort(key=lambda entry: (atlas_owner_rank(entry[0]), -len(entry[1]), -entry[2]))
+        return [
+            {
+                "group": group,
+                "count": len(items),
+                "combined_bc7_mib": round(mib(area), 3),
+                "members": [Path(item.get("path", "")).name for item in items],
+            }
+            for group, items, area in ranked[:limit]
+        ]
+
+    def render_texture_hotspot_payload(rows_to_copy: Sequence[Dict[str, str]], limit: int = 120) -> List[Dict[str, object]]:
+        return [
+            {
+                "path": row.get("path", ""),
+                "line": csv_int(row, "line"),
+                "pattern": row.get("pattern", ""),
+                "editor_only": row.get("editor_only", "").strip().lower() in {"1", "true", "yes"},
+                "snippet": row.get("snippet", ""),
+            }
+            for row in rows_to_copy[:limit]
+        ]
+
+    expected_top_non_first_party_runtime_directories = texture_directory_payload(texture_rows, first_party_only=False)
+    expected_texture_extension_summary = texture_extension_payload(texture_rows)
+    expected_mesh_extension_summary = mesh_extension_payload(mesh_rows)
+    expected_atlas_suggestions = atlas_payload(texture_rows)
+    expected_render_texture_hotspots = render_texture_hotspot_payload(render_texture_hotspot_rows)
     texture_redline_paths = [row.get("path", "") for row in texture_redline_rows]
     mesh_redline_paths = [row.get("path", "") for row in mesh_redline_rows]
     render_texture_redline_paths = [row.get("path", "") for row in render_texture_redline_rows]
@@ -2420,6 +2558,16 @@ def validate_generated_reports(
         messages.append(f"JSON first_party_mesh_compression_off_rows drift json={payload.get('first_party_mesh_compression_off_rows')} csv={len(first_party_mesh_compression_off_rows)}")
     if payload.get("render_texture_depth_stencil_rows") != len(render_texture_depth_stencil_rows):
         messages.append(f"JSON render_texture_depth_stencil_rows drift json={payload.get('render_texture_depth_stencil_rows')} csv={len(render_texture_depth_stencil_rows)}")
+    if payload.get("top_non_first_party_runtime_directories") != expected_top_non_first_party_runtime_directories:
+        messages.append("JSON top_non_first_party_runtime_directories drift")
+    if payload.get("texture_extension_summary") != expected_texture_extension_summary:
+        messages.append("JSON texture_extension_summary drift")
+    if payload.get("mesh_extension_summary") != expected_mesh_extension_summary:
+        messages.append("JSON mesh_extension_summary drift")
+    if payload.get("atlas_suggestions") != expected_atlas_suggestions:
+        messages.append("JSON atlas_suggestions drift")
+    if render_texture_hotspots_path is not None and payload.get("render_texture_source_hotspots") != expected_render_texture_hotspots:
+        messages.append("JSON render_texture_source_hotspots drift")
     if len(texture_paths) != len(texture_path_set):
         messages.append("duplicate texture paths in broad CSV")
     if len(mesh_paths) != len(mesh_path_set):

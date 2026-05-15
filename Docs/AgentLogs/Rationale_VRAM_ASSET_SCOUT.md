@@ -73,3 +73,11 @@ Solution: Recompute BC7 full-mip totals, runtime texture totals, first-party tex
 Rejected Alternatives: Trusting generated aggregate fields because the current generator writes them. Handoff artifacts must survive manual edits, stale merges, and partial report regeneration.
 Scalability potential: Low/MX350 keeps hard-budget overflow evidence tied to CSV bytes; Middle/High/Ultra can consume higher-budget aggregate reports without accepting stale machine-readable totals.
 Hardware Impact: 0us runtime measured. Tooling impact: unit coverage is now 24 tests and rejects JSON budget aggregate drift.
+
+## Decision 43: JSON Derived List Parity
+
+Problem: Scalar counters and aggregate MiB values were guarded, but JSON list payloads for non-first-party runtime directory pressure, texture extension pressure, mesh extension pressure, atlas suggestions, and RenderTexture source hotspots could still drift from the CSV/static evidence. Downstream agents use those lists to prioritize asset cleanup, so stale ordering or stale members would misroute work.
+Solution: Recompute those derived JSON lists inside `validate_generated_reports()` from the broad CSV and RenderTexture hotspot CSV, including list order, MiB totals, counts, atlas members, and source snippets. Add a regression fixture that mutates each list family and proves validation rejects the drift.
+Rejected Alternatives: Count-only validation. Counts prove size, not payload identity, priority ordering, or row membership.
+Scalability potential: Low/MX350 cleanup queues now keep exact directory, extension, atlas, and RT hotspot priorities tied to static evidence; Middle/High/Ultra can consume larger reports after regeneration without accepting stale list payloads.
+Hardware Impact: 0us runtime measured. Tooling impact: unit coverage is now 26 tests and rejects JSON derived list drift.

@@ -283,3 +283,41 @@ Verification:
 Evidence boundary:
 - STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
 - Unity import, Memory Profiler, player build, and runtime frame time remain PENDING VERIFICATION.
+
+## 2026-05-15T23:39:51+03:00 - JSON DERIVED LIST PARITY PASS
+
+What was wrong:
+- JSON scalar counters and aggregate MiB values were guarded, but derived list payloads could still drift.
+- Exposed lists: `top_non_first_party_runtime_directories`, `texture_extension_summary`, `mesh_extension_summary`, `atlas_suggestions`, and `render_texture_source_hotspots`.
+- Stale list payloads would misroute remediation priority even when top-level counts stayed correct.
+
+What was done:
+- Recomputed non-first-party runtime directory pressure from broad texture CSV rows.
+- Recomputed texture extension and mesh extension summaries from broad CSV rows.
+- Recomputed atlas suggestion payloads from CSV `atlas_group`, dimensions, and member paths.
+- Recomputed RenderTexture hotspot JSON payloads from the hotspot CSV, including line, pattern, editor flag, and snippet.
+- Added a regression test that mutates all five list families and proves `--validate-reports` rejects the drift.
+- Updated minimal synthetic JSON fixtures to satisfy the stricter generated-list contract.
+- Regenerated the active VRAM report artifacts.
+
+Cinematic cheats used:
+- None. This is offline report validation, not runtime rendering work.
+
+Exact microseconds saved:
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0us.
+- Tooling correctness improvement: stale JSON priority lists now fail no-scan validation before downstream agents act on them.
+
+Verification:
+- PYTHONDONTWRITEBYTECODE=1 Python AST syntax parse for `Tools/MemoryBudgetCheck.py` and `Tools/test_memory_budget_check.py`: PASS.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root .: PASS; regenerated reports.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --validate-reports: PASS; `reports valid: textures=1652 meshes=302 render_textures=1 texture_redlines=946 mesh_redlines=293 rt_redlines=1 rt_hotspots=61 scan_roots=Assets,Packages,Data`.
+- PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py -v: PASS, 26 tests, elapsed 49.523 seconds.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --ci: EXPECTED FAIL with `ci_exit_code=2`; current static redlines/overflow still produce `[CRITICAL_VRAM_OVERFLOW]`.
+- Python bytecode cleanup: PASS, `PYTHON_CACHE_COUNT 0`.
+- git diff --check on VRAM-owned touched files: PASS, no whitespace errors; CRLF warnings only.
+- Active log chronology: PASS, `LOG_ORDER_OK headers=10 through 2026-05-15T23:39:51+03:00`.
+
+Evidence boundary:
+- STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
+- Unity import, Memory Profiler, player build, and runtime frame time remain PENDING VERIFICATION.

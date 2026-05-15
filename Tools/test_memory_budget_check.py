@@ -408,6 +408,19 @@ class MemoryBudgetCheckTests(unittest.TestCase):
                 "render_texture_static_estimate_mib": 7.031,
                 "critical_vram_overflow": False,
                 "gate_reasons": ["MESH_REDLINE_OR_RISK", "RENDER_TEXTURE_REDLINE_OR_RISK"],
+                "top_non_first_party_runtime_directories": [],
+                "texture_extension_summary": [],
+                "mesh_extension_summary": [
+                    {
+                        "extension": ".fbx",
+                        "count": 1,
+                        "known_triangles": 0,
+                        "triangle_unreadable_rows": 1,
+                        "geometry_estimate_mib": 0.0,
+                        "flagged_rows": 1,
+                    },
+                ],
+                "atlas_suggestions": [],
                 "mesh_redlines": [
                     {
                         "path": "Assets/BigMesh.fbx",
@@ -423,6 +436,7 @@ class MemoryBudgetCheckTests(unittest.TestCase):
                         "flags": ["RENDER_TEXTURE_DEPTH_STENCIL_PRESENT_STATIC_SUSPECT"],
                     },
                 ],
+                "render_texture_source_hotspots": [],
             }
             json_path.write_text(json.dumps(payload), encoding="utf-8")
 
@@ -542,6 +556,18 @@ class MemoryBudgetCheckTests(unittest.TestCase):
                 "render_texture_static_estimate_mib": 0.0,
                 "critical_vram_overflow": False,
                 "gate_reasons": ["TEXTURE_VRAM_CRIMES"],
+                "top_non_first_party_runtime_directories": [],
+                "texture_extension_summary": [
+                    {
+                        "extension": ".png",
+                        "count": 1,
+                        "bc7_full_mip_mib": 10.667,
+                        "vram_crime_rows": 1,
+                        "source_container_risk_rows": 0,
+                    },
+                ],
+                "mesh_extension_summary": [],
+                "atlas_suggestions": [],
                 "texture_redlines": [
                     {
                         "path": "Assets/_Project/TX_Test.png",
@@ -625,6 +651,41 @@ class MemoryBudgetCheckTests(unittest.TestCase):
             self.assertIn(f"JSON mesh_geometry_static_estimate_mib drift json=-1.0 csv={expected_mesh_total}", messages)
             self.assertIn(f"JSON render_texture_static_estimate_mib drift json=-1.0 csv={expected_rt_total}", messages)
             self.assertIn("JSON critical_vram_overflow drift json=False expected=True", messages)
+
+    def test_validate_reports_rejects_json_derived_list_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            drifted_json = Path(temp_dir) / "VRAM_Budget_Audit_list_drift.json"
+            payload = json.loads((PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit.json").read_text(encoding="utf-8"))
+            self.assertGreater(len(payload["top_non_first_party_runtime_directories"]), 0)
+            self.assertGreater(len(payload["texture_extension_summary"]), 0)
+            self.assertGreater(len(payload["mesh_extension_summary"]), 0)
+            self.assertGreater(len(payload["atlas_suggestions"]), 0)
+            self.assertGreater(len(payload["render_texture_source_hotspots"]), 0)
+            payload["top_non_first_party_runtime_directories"][0]["directory"] = "Assets/STALE"
+            payload["texture_extension_summary"][0]["count"] = -1
+            payload["mesh_extension_summary"][0]["flagged_rows"] = -1
+            payload["atlas_suggestions"][0]["members"] = []
+            payload["render_texture_source_hotspots"][0]["snippet"] = "STALE_SNIPPET"
+            drifted_json.write_text(json.dumps(payload), encoding="utf-8")
+
+            ok, messages = budget.validate_generated_reports(
+                PROJECT_ROOT,
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit.csv",
+                drifted_json,
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Texture_Redlines.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Mesh_Redlines.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_RenderTexture_Redlines.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_RenderTexture_SourceHotspots.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit_Summary.md",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Remediation_Plan.md",
+            )
+
+            self.assertFalse(ok)
+            self.assertIn("JSON top_non_first_party_runtime_directories drift", messages)
+            self.assertIn("JSON texture_extension_summary drift", messages)
+            self.assertIn("JSON mesh_extension_summary drift", messages)
+            self.assertIn("JSON atlas_suggestions drift", messages)
+            self.assertIn("JSON render_texture_source_hotspots drift", messages)
 
     def test_validate_reports_rejects_broad_csv_schema_drift(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -730,6 +791,36 @@ class MemoryBudgetCheckTests(unittest.TestCase):
             self.assertIn(f"JSON mesh_import_risk_rows drift json=-1 csv={expected_mesh_import_risks}", messages)
             self.assertIn(f"JSON render_texture_depth_stencil_rows drift json=-1 csv={expected_rt_depth_stencil}", messages)
             self.assertIn(f"JSON gate_reasons drift json=[] expected={expected_gate_reasons}", messages)
+
+    def test_validate_reports_rejects_json_summary_array_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            drifted_json = Path(temp_dir) / "VRAM_Budget_Audit_summary_array_drift.json"
+            payload = json.loads((PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit.json").read_text(encoding="utf-8"))
+            payload["top_non_first_party_runtime_directories"][0]["count"] = -1
+            payload["texture_extension_summary"][0]["vram_crime_rows"] = -1
+            payload["mesh_extension_summary"][0]["flagged_rows"] = -1
+            payload["atlas_suggestions"][0]["count"] = -1
+            payload["render_texture_source_hotspots"][0]["pattern"] = "STALE_PATTERN"
+            drifted_json.write_text(json.dumps(payload), encoding="utf-8")
+
+            ok, messages = budget.validate_generated_reports(
+                PROJECT_ROOT,
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit.csv",
+                drifted_json,
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Texture_Redlines.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Mesh_Redlines.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_RenderTexture_Redlines.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_RenderTexture_SourceHotspots.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit_Summary.md",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Remediation_Plan.md",
+            )
+
+            self.assertFalse(ok)
+            self.assertIn("JSON top_non_first_party_runtime_directories drift", messages)
+            self.assertIn("JSON texture_extension_summary drift", messages)
+            self.assertIn("JSON mesh_extension_summary drift", messages)
+            self.assertIn("JSON atlas_suggestions drift", messages)
+            self.assertIn("JSON render_texture_source_hotspots drift", messages)
 
     def test_iter_assets_uses_case_insensitive_generated_tree_exclusion(self) -> None:
         self.assertIn(".codex-build", budget.SKIP_DIRS)
