@@ -171,8 +171,7 @@ def write_source_cache(files: dict[str, object]) -> None:
     SOURCE_CACHE_OUTPUT.write_text(json.dumps(payload, separators=(",", ":")), encoding="utf-8")
 
 
-def analyze_source_file(path: Path, path_rel: str, first_party: bool) -> dict[str, object]:
-    raw = path.read_bytes()
+def analyze_source_bytes(raw: bytes, path_rel: str, first_party: bool) -> dict[str, object]:
     line_count = raw.count(b"\n") + 1
 
     entry: dict[str, object] = {
@@ -242,6 +241,10 @@ def analyze_source_file(path: Path, path_rel: str, first_party: bool) -> dict[st
     entry["signal_uses"] = signal_uses
     entry["global_publish_sites"] = global_publish_sites
     return entry
+
+
+def analyze_source_file(path: Path, path_rel: str, first_party: bool) -> dict[str, object]:
+    return analyze_source_bytes(path.read_bytes(), path_rel, first_party)
 
 
 def load_asmdefs() -> list[dict[str, object]]:

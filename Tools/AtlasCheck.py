@@ -111,6 +111,24 @@ def collect_json_references(value: object, refs: dict[str, set[int]]) -> None:
         refs.setdefault(normalized, set()).add(0)
 
 
+def collect_source_cache_references(value: object, refs: dict[str, set[int]]) -> list[str]:
+    if not isinstance(value, dict):
+        return ["cache root is not a JSON object"]
+
+    files = value.get("files")
+    if not isinstance(files, dict):
+        return ["cache files table is missing or not a JSON object"]
+
+    invalid: list[str] = []
+    for raw in files:
+        normalized = normalize_reference(str(raw))
+        if normalized is None:
+            invalid.append(str(raw))
+            continue
+        refs.setdefault(normalized, set()).add(0)
+    return invalid
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -140,6 +158,23 @@ def main() -> int:
         except json.JSONDecodeError as exc:
             print(f"ATLAS_CHECK_FAIL invalid_json={json_atlas} error={exc}", file=sys.stderr)
             return 3
+    cache_atlas = atlas.with_name(f"{atlas.stem}.cache.json")
+    if cache_atlas.exists():
+        try:
+            invalid_cache_keys = collect_source_cache_references(
+                json.loads(cache_atlas.read_text(encoding="utf-8")),
+                refs,
+            )
+        except json.JSONDecodeError as exc:
+            print(f"ATLAS_CHECK_FAIL invalid_cache_json={cache_atlas} error={exc}", file=sys.stderr)
+            return 4
+        if invalid_cache_keys:
+            print(f"ATLAS_CHECK_FAIL invalid_cache_keys={len(invalid_cache_keys)}")
+            for key in invalid_cache_keys[:100]:
+                print(f"INVALID_CACHE_KEY {key}")
+            if len(invalid_cache_keys) > 100:
+                print(f"INVALID_CACHE_KEY_TRUNCATED remaining={len(invalid_cache_keys) - 100}")
+            return 5
     missing: list[tuple[str, list[int]]] = []
 
     for ref, lines in sorted(refs.items()):

@@ -1,5 +1,4 @@
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 
@@ -59,6 +58,22 @@ class AtlasCheckTests(unittest.TestCase):
         self.assertIn("Tools/BuildArchitectureAtlas.py", refs)
         self.assertNotIn("https://example.invalid/nope", refs)
 
+    def test_collect_source_cache_references_validates_cache_keys(self) -> None:
+        refs = {}
+        invalid = atlas_check.collect_source_cache_references(
+            {
+                "schema_version": 1,
+                "files": {
+                    "Assets/_Project/Scripts/Core/GlobalSignals.cs": {},
+                    "not/a/repo/path.cs": {},
+                },
+            },
+            refs,
+        )
+
+        self.assertIn("Assets/_Project/Scripts/Core/GlobalSignals.cs", refs)
+        self.assertEqual(invalid, ["not/a/repo/path.cs"])
+
 
 class BuildArchitectureAtlasTests(unittest.TestCase):
     def test_normalize_signal_name_strips_namespace_and_generic_tail(self) -> None:
@@ -92,15 +107,11 @@ class BuildArchitectureAtlasTests(unittest.TestCase):
             "    }\n"
             "}\n"
         )
-        with tempfile.TemporaryDirectory() as temp_dir:
-            path = Path(temp_dir) / "Probe.cs"
-            path.write_text(source, encoding="utf-8")
-
-            analysis = atlas_build.analyze_source_file(
-                path,
-                "Assets/_Project/Scripts/Core/Signals/Probe.cs",
-                True,
-            )
+        analysis = atlas_build.analyze_source_bytes(
+            source.encode("utf-8"),
+            "Assets/_Project/Scripts/Core/Signals/Probe.cs",
+            True,
+        )
 
         self.assertEqual(analysis["line_count"], source.count("\n") + 1)
         self.assertEqual(analysis["signals"][0]["name"], "CacheProbeSignal")

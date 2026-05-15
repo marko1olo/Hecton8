@@ -192,6 +192,67 @@ Evidence boundary:
 - STATIC_SOURCE / STATIC_DOC / FILESYSTEM / PY_TOOL / PY_UNIT_TEST only.
 - Unity import, Play Mode, GCMonitor, Frame Debugger, runtime VRAM residency, C# compile, and player build remain PENDING VERIFICATION.
 
+## 2026-05-15T19:20:00+03:00 - FINAL NO-PYC VERIFICATION
+
+What was wrong:
+- Final verification needed to be re-run after the cache-key integrity changes and under the current workspace-write sandbox, where pycache writes are not reliable.
+
+What was done:
+- Re-ran syntax validation without pycache writes.
+- Re-ran the no-temp-file unit suite.
+- Re-ran expanded atlas integrity, project-file discovery, and whitespace checks.
+- Confirmed `Docs/DEPENDENCY_GRAPH.cache.json` exists, is tracked, and has no pending diff after regeneration.
+
+Cinematic Cheats used:
+- No runtime simulation or Unity asset mutation.
+- Verification cheat: `python -B` plus AST parsing avoids denied pycache writes while still proving Python syntax.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured.
+- Unit test runner reported 0.005 s for 9 tests.
+
+Verification:
+- `python -B -c "ast.parse(...)"`: `AST_SYNTAX_PASS files=3`.
+- `python -B -m unittest Tools.test_architecture_atlas`: PASS, 9 tests in 0.005 s.
+- `python Tools/AtlasCheck.py`: `ATLAS_CHECK_PASS references=5651 atlas=C:\Hecton8\Docs\DEPENDENCY_GRAPH.md`.
+- `git diff --check` on TECH_RESEARCHER artifacts: PASS; CRLF normalization warnings only.
+- `rg --files | rg "\.sln$|\.csproj$"`: no files found, so C# compile remains unavailable from current root state.
+
+Evidence boundary:
+- STATIC_SOURCE / STATIC_DOC / FILESYSTEM / PY_TOOL / PY_UNIT_TEST only.
+- Unity import, Play Mode, GCMonitor, Frame Debugger, runtime VRAM residency, C# compile, and player build remain PENDING VERIFICATION.
+
+## 2026-05-15T19:12:00+03:00 - CACHE KEY INTEGRITY ADDED
+
+What was wrong:
+- The atlas checker validated markdown and JSON sidecar paths, but did not inspect `Docs/DEPENDENCY_GRAPH.cache.json` file keys.
+- After sandbox rules changed, `python -m py_compile` failed on pycache rename and the unit test that used OS temp files failed on write permission. That was a verification harness problem, not atlas logic.
+
+What was done:
+- Extended `Tools/AtlasCheck.py` to parse `Docs/DEPENDENCY_GRAPH.cache.json` and validate cached C# path keys as atlas references.
+- Refactored `Tools/BuildArchitectureAtlas.py` source analysis into `analyze_source_bytes()` plus `analyze_source_file()` wrapper.
+- Updated `Tools/test_architecture_atlas.py` to test signal extraction without creating temp files.
+- Regenerated `Docs/DEPENDENCY_GRAPH.md`, `Docs/DEPENDENCY_GRAPH.json`, and `Docs/DEPENDENCY_GRAPH.cache.json` after the refactor.
+
+Cinematic Cheats used:
+- No runtime simulation or Unity asset mutation.
+- Verification cheat: syntax validation through `ast.parse` under `python -B`, avoiding pycache writes that the sandbox denies.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured.
+- Warm-cache generator after refactor: 63.4 s wall time, down from 95.5 s in the previous warm-cache pass and 153.4 s before cache work.
+
+Verification:
+- `python -B -c "ast.parse(...)"`: PASS, 3 Python files.
+- `python -B -m unittest Tools.test_architecture_atlas`: PASS, 9 tests in 0.006 s.
+- `python -u Tools/BuildArchitectureAtlas.py`: PASS, wrote markdown and JSON artifacts.
+- `python Tools/AtlasCheck.py`: `ATLAS_CHECK_PASS references=5651 atlas=C:\Hecton8\Docs\DEPENDENCY_GRAPH.md`.
+- Current generated source snapshot: 5,034 C# files / 1,709,155 lines under `Assets/` + `Packages/`; 1,505 first-party files / 960,494 lines; 147 signals; 56 queue lanes; 10 SHERST hits.
+
+Evidence boundary:
+- STATIC_SOURCE / STATIC_DOC / FILESYSTEM / PY_TOOL / PY_UNIT_TEST only.
+- Unity import, Play Mode, GCMonitor, Frame Debugger, runtime VRAM residency, C# compile, and player build remain PENDING VERIFICATION.
+
 ## 2026-05-15T14:04:00+03:00 - INCREMENTAL ATLAS CACHE ADDED
 
 What was wrong:

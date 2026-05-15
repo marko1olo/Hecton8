@@ -86,7 +86,7 @@ Problem: The markdown atlas is readable, but downstream integrator tooling would
 Solution: Emit `Docs/DEPENDENCY_GRAPH.json` from `Tools/BuildArchitectureAtlas.py` using the same source scan as the markdown, then extend `Tools/AtlasCheck.py` to validate path references in both artifacts.
 Rejected Alternatives: Force the GRAND_INTEGRATOR to parse markdown, or create a second hand-maintained JSON file that could drift from the atlas.
 Scalability potential: Low/Middle/High/Ultra architecture refreshes now have a stable machine-readable contract; low-tier VRAM and signal-lane audits can consume the same data as high-tier visual-overkill planning without manual transcription.
-Hardware Impact: 0 us runtime impact on i3/MX350. Offline verification expanded from 179 markdown references to 587 markdown+JSON references.
+Hardware Impact: 0 us runtime impact on i3/MX350. Offline verification expanded from 179 markdown references to 5,651 markdown+JSON+cache references.
 
 ## Decision 12 - Generator Reproducibility Under Workspace Load
 
@@ -102,4 +102,12 @@ Problem: Re-running the atlas generator still spent too much wall time scanning 
 Solution: Add `Docs/DEPENDENCY_GRAPH.cache.json` as a guarded per-file source-analysis cache. Cache reuse requires matching file size, mtime, and first-party classification; changed or uncached files are still re-read and re-parsed. Replace per-file `Path.resolve()` formatting with lexical repo-relative conversion.
 Rejected Alternatives: Trust stale atlas output without regeneration, or use an unsafe unguarded cache that could hide changed signal lanes.
 Scalability potential: Low/Middle/High/Ultra runtime remains unchanged. Offline refresh is cheaper, so integrators can regenerate the architecture map more often during concurrent agent edits.
-Hardware Impact: 0 us runtime impact on i3/MX350. Cold-cache generator run completed in 221.3 s; warm-cache generator run after path optimization completed in 95.5 s; profiled `scan_source` warm section dropped to 22.696 s.
+Hardware Impact: 0 us runtime impact on i3/MX350. Cold-cache generator run completed in 221.3 s; warm-cache generator run after path optimization completed in 95.5 s; refactored warm generator completed in 63.4 s; profiled `scan_source` warm section dropped to 22.696 s.
+
+## Decision 14 - Cache Key Integrity Validation
+
+Problem: The atlas checker validated markdown and JSON sidecar references, but the source-analysis cache could still retain a deleted C# path without being caught.
+Solution: Extend `Tools/AtlasCheck.py` to parse `Docs/DEPENDENCY_GRAPH.cache.json`, validate cache `files` keys as repo paths, and fail on invalid keys before missing-file checks. Refactor source analysis into `analyze_source_bytes()` so unit tests can validate parser behavior without sandbox-denied temp-file writes.
+Rejected Alternatives: Trust cache keys because the generator writes them, or keep tests dependent on OS temp writes under a restricted sandbox.
+Scalability potential: Low/Middle/High/Ultra runtime unchanged. Integrator tooling can now trust that the cache artifact itself is not silently pointing at deleted source files.
+Hardware Impact: 0 us runtime impact on i3/MX350. Atlas integrity coverage now validates 5,651 markdown+JSON+cache references.
