@@ -88,7 +88,13 @@ namespace Hecton8.Core
                     return true;
 
                 IInputService input = _inputService;
-                if (input == null || !input.IsInitialized)
+                if (input == null)
+                    return false;
+
+                if (!_inputSubscribed)
+                    TrySubscribeInput();
+
+                if (!input.IsInitialized)
                     return false;
 
                 PlayerInputState state = input.GetState();
@@ -503,6 +509,8 @@ namespace Hecton8.Core
         private void ClearRuntimeServiceCache()
         {
             _isDevelopmentBuild = false;
+            _inputService = null;
+            _inputSubscribed = false;
             _orbitalDirector = null;
             _streamingBackpressure = null;
             _tickDispatcher = null;
@@ -529,23 +537,32 @@ namespace Hecton8.Core
 
         private void BindInputIfAvailable(IInputService input)
         {
-            if (_inputSubscribed)
-                return;
-
-            if (input == null || !input.IsInitialized)
+            if (input == null)
                 return;
 
             _inputService = input;
-            _inputService.OnCancel += HandleSkipRequested;
+            TrySubscribeInput();
+        }
+
+        private void TrySubscribeInput()
+        {
+            if (_inputSubscribed)
+                return;
+
+            IInputService input = _inputService;
+            if (input == null || !input.IsInitialized)
+                return;
+
+            input.OnCancel += HandleSkipRequested;
             _inputSubscribed = true;
         }
 
         private void UnbindInput()
         {
-            if (!_inputSubscribed || _inputService == null)
-                return;
+            IInputService input = _inputService;
+            if (_inputSubscribed && input != null)
+                input.OnCancel -= HandleSkipRequested;
 
-            _inputService.OnCancel -= HandleSkipRequested;
             _inputService = null;
             _inputSubscribed = false;
         }

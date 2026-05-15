@@ -363,3 +363,27 @@ Cinematic Cheats used -> None. Git integration only.
 Exact Microseconds saved -> 0 us runtime. Dev-path gain is preventing GitHub Desktop from overwriting the dirty runtime tail during the incoming merge.
 
 Verification -> Conflict-marker scan clean. `git diff --check` reported only LF-to-CRLF warnings. Unity compile/profiler proof remains pending.
+
+## 2026-05-15 - Loop 19 Merge Remote Economy Tail
+
+What was wrong -> Local runtime/docs checkpoint needed to integrate 10 incoming remote commits without overwriting the working tree.
+
+What was done -> Committed `6c6d56f94`, merged `origin/main` into `main` as `0378b36f7`, and verified the merged history with clean status, `git diff --check origin/main..HEAD`, and conflict-marker scan.
+
+Cinematic Cheats used -> None. Git integration only.
+
+Exact Microseconds saved -> 0 us runtime. Dev-path gain is a published merge boundary that preserves both local runtime work and remote economy/docs validation.
+
+Verification -> Merge had no unmerged paths. CLI `dotnet build Assembly-CSharp.csproj --no-restore -v:minimal` timed out after 5 minutes without diagnostic output, so compile green is not claimed. The timed-out build root `29400` and its child MSBuild/VBCSCompiler processes were stopped; unrelated agent builds were left running.
+
+## 2026-05-15 - Loop 20 Post-Merge Live Tail
+
+What was wrong -> After merge `0378b36f7`, another local tail appeared before push, and staged `H8Memory.cs` briefly contained a truncated `_blockD` tail.
+
+What was done -> Classified the tail with status/stat/check/marker scans, inspected bootstrap, prologue input, rebinding, UI lookup, MovementAcoustic SignalBus, H8Memory allocation tracking/capacity growth, OrbitalDrop scalability events, CarveDebris, VoxelDynamicNav, and HPhi audit hunks, re-staged the complete `H8Memory.cs`, then prepared a separate checkpoint.
+
+Cinematic Cheats used -> None. Git integration only.
+
+Exact Microseconds saved -> 0 us runtime. Dev-path gain is a clean pushed boundary instead of leaving a dirty post-merge tail for GitHub Desktop.
+
+Verification -> Conflict-marker scan clean. `git diff --check` reported only LF-to-CRLF warnings. Compile green remains unproven because the prior CLI build timed out.

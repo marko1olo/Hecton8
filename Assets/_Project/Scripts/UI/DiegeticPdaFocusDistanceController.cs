@@ -123,13 +123,13 @@ namespace Hecton8.UI
             if (targetCamera == null && GlobalRegistry.Player != null)
                 targetCamera = GlobalRegistry.Player.PlayerCamera;
             if (targetCamera == null)
-                targetCamera = GetComponentInParent<Camera>();
+                targetCamera = ResolveNearestParentCamera(transform);
             _cameraTransform = targetCamera != null ? targetCamera.transform : null;
 
             if (targetVolume == null && targetCamera != null)
-                targetVolume = targetCamera.GetComponentInChildren<Volume>();
+                targetVolume = ResolveCameraVolume(targetCamera.transform);
             if (targetVolume == null)
-                targetVolume = GetComponentInParent<Volume>();
+                targetVolume = ResolveNearestParentVolume(transform);
 
             if (_depthOfField == null && targetVolume != null && targetVolume.profile != null)
                 targetVolume.profile.TryGet(out _depthOfField);
@@ -158,6 +158,59 @@ namespace Hecton8.UI
             float x2 = x * x;
             float expNegApprox = math.rcp(1f + x + (0.48f * x2) + (0.235f * x2 * x));
             return math.saturate(1f - expNegApprox);
+        }
+
+        private static Camera ResolveNearestParentCamera(Transform start)
+        {
+            for (Transform current = start; current != null; current = current.parent)
+            {
+                if (current.TryGetComponent(out Camera camera))
+                    return camera;
+            }
+
+            return null;
+        }
+
+        private static Volume ResolveNearestParentVolume(Transform start)
+        {
+            for (Transform current = start; current != null; current = current.parent)
+            {
+                if (current.TryGetComponent(out Volume volume))
+                    return volume;
+            }
+
+            return null;
+        }
+
+        private static Volume ResolveCameraVolume(Transform cameraTransform)
+        {
+            if (cameraTransform == null)
+                return null;
+
+            if (cameraTransform.TryGetComponent(out Volume volume))
+                return volume;
+
+            return ResolveFirstChildVolume(cameraTransform);
+        }
+
+        private static Volume ResolveFirstChildVolume(Transform root)
+        {
+            int childCount = root.childCount;
+            for (int i = 0; i < childCount; i++)
+            {
+                Transform child = root.GetChild(i);
+                if (!child.gameObject.activeInHierarchy)
+                    continue;
+
+                if (child.TryGetComponent(out Volume volume))
+                    return volume;
+
+                volume = ResolveFirstChildVolume(child);
+                if (volume != null)
+                    return volume;
+            }
+
+            return null;
         }
     }
 }

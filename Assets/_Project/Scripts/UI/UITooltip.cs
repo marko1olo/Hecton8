@@ -81,9 +81,9 @@ namespace Hecton8.UI
                 return;
             }
 
-            _canvas = GetComponentInParent<Canvas>();
+            _canvas = ResolveNearestParentCanvas(transform);
             if (_canvas != null)
-                _canvasRect = _canvas.GetComponent<RectTransform>();
+                _canvas.TryGetComponent(out _canvasRect);
 
             if (tooltipCanvasGroup != null)
             {
@@ -91,6 +91,17 @@ namespace Hecton8.UI
                 tooltipCanvasGroup.interactable = false;
                 tooltipCanvasGroup.blocksRaycasts = false;
             }
+        }
+
+        private static Canvas ResolveNearestParentCanvas(Transform start)
+        {
+            for (Transform current = start; current != null; current = current.parent)
+            {
+                if (current.TryGetComponent(out Canvas canvas))
+                    return canvas;
+            }
+
+            return null;
         }
 
         private void OnEnable()

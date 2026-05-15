@@ -136,6 +136,10 @@ namespace Hecton8.VFX.Debris
         private Mesh _ownedMesh;
         private Material _ownedMaterial;
         private Material _ownedMaterialSource;
+        private Material _boundRenderMaterial;
+        private GraphicsBuffer _boundVisibleIndicesBuffer;
+        private Vector4 _boundMaterialParams;
+        private bool _boundMaterialParamsValid;
         private HectonFluidEngine _fluidEngine;
         private int _advectKernel = -1;
         private int _clearArgsKernel = -1;
@@ -552,7 +556,10 @@ namespace Hecton8.VFX.Debris
             if (_velocityBufferB == null || !_velocityBufferB.IsValid())
                 _velocityBufferB = CreateStructuredBuffer<float4>(MaxCarveDebrisCount);
             if (_visibleIndicesBuffer == null || !_visibleIndicesBuffer.IsValid())
+            {
                 _visibleIndicesBuffer = CreateStructuredBuffer<uint>(MaxCarveDebrisCount);
+                InvalidateRenderMaterialBindings();
+            }
             if (_emptyFlowBuffer == null || !_emptyFlowBuffer.IsValid())
                 _emptyFlowBuffer = CreateStructuredBuffer<float4>(1);
             if (_indirectArgsBuffer == null || !_indirectArgsBuffer.IsValid())
@@ -1094,7 +1101,9 @@ namespace Hecton8.VFX.Debris
         {
             if (_activeMirrorCount <= 0 ||
                 _visibleIndicesBuffer == null ||
-                _indirectArgsBuffer == null)
+                !_visibleIndicesBuffer.IsValid() ||
+                _indirectArgsBuffer == null ||
+                !_indirectArgsBuffer.IsValid())
             {
                 return;
             }
@@ -1107,8 +1116,7 @@ namespace Hecton8.VFX.Debris
             GraphicsBuffer currentVelocityBuffer = (_bufferParity & 1) == 0 ? _velocityBufferA : _velocityBufferB;
             material.SetBuffer(CarveDebrisReadId, currentPositionBuffer);
             material.SetBuffer(CarveDebrisVelocityReadId, currentVelocityBuffer);
-            material.SetBuffer(CarveDebrisVisibleIndicesId, _visibleIndicesBuffer);
-            material.SetVector(CarveDebrisMaterialParamsId, new Vector4(minRockScale, math.max(minRockScale, maxRockScale), particleLifetimeSeconds, _cachedLowTier ? 0f : 1f));
+            BindStaticRenderMaterialState(material);
 
             RenderParams renderParams = new RenderParams(material)
             {
@@ -1120,6 +1128,30 @@ namespace Hecton8.VFX.Debris
                 motionVectorMode = MotionVectorGenerationMode.ForceNoMotion
             };
             Graphics.RenderMeshIndirect(renderParams, mesh, _indirectArgsBuffer, 1, 0);
+        }
+
+        private void BindStaticRenderMaterialState(Material material)
+        {
+            bool materialChanged = !ReferenceEquals(_boundRenderMaterial, material);
+            if (materialChanged || !ReferenceEquals(_boundVisibleIndicesBuffer, _visibleIndicesBuffer))
+            {
+                material.SetBuffer(CarveDebrisVisibleIndicesId, _visibleIndicesBuffer);
+                _boundRenderMaterial = material;
+                _boundVisibleIndicesBuffer = _visibleIndicesBuffer;
+                _boundMaterialParamsValid = false;
+            }
+
+            Vector4 materialParams = new Vector4(
+                minRockScale,
+                math.max(minRockScale, maxRockScale),
+                particleLifetimeSeconds,
+                _cachedLowTier ? 0f : 1f);
+            if (!_boundMaterialParamsValid || !AreVector4ExactlyEqual(_boundMaterialParams, materialParams))
+            {
+                material.SetVector(CarveDebrisMaterialParamsId, materialParams);
+                _boundMaterialParams = materialParams;
+                _boundMaterialParamsValid = true;
+            }
         }
 
         private Mesh ResolveMesh()
@@ -1227,11 +1259,29 @@ namespace Hecton8.VFX.Debris
 
         private void DestroyOwnedMaterial()
         {
+            InvalidateRenderMaterialBindings();
+
             if (_ownedMaterial != null)
                 DestroyUnityObject(_ownedMaterial);
 
             _ownedMaterial = null;
             _ownedMaterialSource = null;
+        }
+
+        private void InvalidateRenderMaterialBindings()
+        {
+            _boundRenderMaterial = null;
+            _boundVisibleIndicesBuffer = null;
+            _boundMaterialParams = default;
+            _boundMaterialParamsValid = false;
+        }
+
+        private static bool AreVector4ExactlyEqual(Vector4 lhs, Vector4 rhs)
+        {
+            return lhs.x == rhs.x &&
+                   lhs.y == rhs.y &&
+                   lhs.z == rhs.z &&
+                   lhs.w == rhs.w;
         }
 
         private void DrainAupShiftSignals()

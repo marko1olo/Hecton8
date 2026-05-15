@@ -412,3 +412,19 @@ What was done -> `OnDisable()` now queues one neutral open-low-pass `AudioTransi
 Cinematic Cheats used -> The neutral packet shuts down the prologue DSP fake cleanly instead of relying on scene lifecycle to reset audio truth.
 Exact Microseconds saved -> 0 us steady-state. One disable-only SPSC enqueue when needed; prevents stale muffling and granular stress carrying into later presentation.
 Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms neutral disable publish before cache clear; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only for audio/VFX sources.
+
+## 2026-05-15 - Loop 56 Dev-Skip Input Late-Init Review
+
+What was wrong -> The bridge only cached/subscribed to input when `IInputService` was already initialized, so a later-initialized input service could leave dev skip inert unless the registry slot was replaced.
+What was done -> Input is now cached before initialization, `TrySubscribeInput()` subscribes once when initialization is observed, and disable/cache clear removes stale input references even if no subscription happened.
+Cinematic Cheats used -> None; this protects the dev skip lane used to jump directly to shallow-water handoff during prologue iteration.
+Exact Microseconds saved -> 0 us release path. Adds one dev-only branch while skip polling until subscribed; avoids failed skip attempts and forced editor interruption.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms late input subscription and stale cache clearing; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only for the bridge source.
+
+## 2026-05-15 - Loop 57 VFX Scalability Event Refresh Review
+
+What was wrong -> Re-entry VFX relied on enable-time and 60-frame quality probes, so low-memory or scalability events could leave stale visual policy for up to one second.
+What was done -> VFX now implements `IScalabilityChangedEventListener`, registers while enabled, unregisters on disable, and routes event plus fallback probe data through one `CacheQualityPolicy()` path.
+Cinematic Cheats used -> Low-tier plasma/splash remains the cheap presentation fake; high/ultra overkill remains enabled only under current policy.
+Exact Microseconds saved -> Avoids up to 60 frames of stale policy after a downshift. Steady-state frame cost stays unchanged except existing cadence probe; event work is cold scalar assignment.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms event registration and shared cache path; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only for VFX source.

@@ -95,3 +95,15 @@ Solution: Do not pull over dirty files. Fetch, classify divergence as incoming-o
 Rejected Alternatives: Blind pull, force-push, reset, amend, or stash-pop into an unknown live tail. Incoming files are economy/docs/tools by path, but the dirty runtime tail still needs its own evidence-backed commit before merge.
 Scalability potential: Git-only integration pass. Low/Middle/High/Ultra runtime behavior is not claimed by this operator step; the producing agents own authored runtime tier changes.
 Hardware Impact: 0 us runtime impact on i3/MX350. Dev-path gain is avoiding Desktop merge overwrite while keeping a clear conflict boundary. Unity compile/profiler proof remains pending.
+
+Problem: After the local checkpoint, repository history had one local runtime/docs commit and ten incoming economy/docs/tool commits.
+Solution: Merge `origin/main` normally with `ort`, preserve both histories, then run post-merge status, whitespace, and conflict-marker scans before push.
+Rejected Alternatives: Rebase, force-push, amend, or GitHub Desktop-only merge. Those either rewrite shared history or hide the post-merge proof.
+Scalability potential: Git-only integration pass. No Low/Middle/High/Ultra runtime claim is made by the merge operator step.
+Hardware Impact: 0 us runtime impact. Compile proof remains blocked because CLI `dotnet build Assembly-CSharp.csproj --no-restore -v:minimal` timed out after 5 minutes with no diagnostic output; only the timed-out build root and its child MSBuild/VBCSCompiler processes were stopped.
+
+Problem: A new post-merge live tail appeared immediately after the remote merge, including runtime code, HPhi evidence files, MovementAcoustic signal routing, and a transient staged truncation in `H8Memory.cs`.
+Solution: Treat it as a separate post-merge checkpoint. Scan for unmerged paths, conflict markers, and whitespace errors; inspect the runtime diffs; detect and repair the staged `H8Memory.cs` truncation by re-staging the complete working file; then commit it separately before push.
+Rejected Alternatives: Pushing with a dirty tree, squashing into the merge by amend, resetting the new files, or committing the truncated staged memory file. These would either hide local state, rewrite merge evidence, or break compile.
+Scalability potential: Git-only operator pass. Authored runtime changes preserve the producing agents' tier intent; this pass only verifies no obvious conflict debris.
+Hardware Impact: 0 us runtime impact. Dev-path gain is reducing the next GitHub Desktop merge surface while leaving compile proof explicitly blocked/pending.

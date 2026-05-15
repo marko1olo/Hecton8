@@ -149,3 +149,17 @@ Solution: Resolve the required flashlight through `TryGetComponent(out _flashlig
 Rejected Alternatives: Rewriting the voxel SDF algorithm or moving its buffers to a new vault owner was rejected because the existing provider is small, bounded, and already registers native allocations with `NativeMemorySentinel`; a vault migration needs a separate integration ticket.
 Scalability potential: Low/MX350 keeps the same 12-20 voxel-resolution clamp and incremental slice refresh. High/Ultra keep the same visual fake, with cleaner cold-path lookup and safer long-session native handle state.
 Hardware Impact: Estimated runtime gain is 0-2 us on rare flashlight component recovery frames; no steady-state Tick gain claimed. Latest static audit: `GetComponentCalls=530`, `NativeArrayRefs=7001`, `DataSovereignty=0.021386637`, `AupPrecisionRisk=0`.
+
+## Decision 022 - Presentation UI Component Lookup Hygiene
+Problem: Multiple clean Echelon 8 UI setup scripts still used bounded `GetComponent<T>`, `GetComponentInParent<T>`, or `GetComponentInChildren<T>` calls in cold setup/retry paths, keeping H-Phi lookup debt high without adding useful behavior.
+Solution: Replaced those calls with `TryGetComponent(out T)` where the target is on the same object, and with explicit parent/child `Transform` walks where first-parent or active-child semantics were required.
+Rejected Alternatives: A broad UI framework rewrite was rejected because several UI files are being edited by other agents and many generated UI builders still need a separate ownership pass. Registry-only lookup was rejected for local required components because it would add global coupling for component relationships Unity already owns.
+Scalability potential: Low/MX350 gets lower cold-start/recovery lookup pressure and cleaner static coupling. Middle/High/Ultra retain identical UI construction, PDA focus, visor mesh, localization autosize, and pause-menu behavior.
+Hardware Impact: Estimated runtime gain is 0-10 us on cold UI setup/recovery frames, not a steady-state Tick win. Static H-Phi improved `GetComponentCalls` from 530 to 503, `MemoryAlignment` from 0.505023797 to 0.506081438, and `ArchitecturalPurity` to 1.
+
+## Decision 023 - No-Rebuild H-Phi UI Reverification
+Problem: The presentation lookup pass changed source state after the previous H-Phi reading, while the user explicitly forbade dotnet rebuilds.
+Solution: Ran only `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`, scoped `rg` checks, brace counts, and `git diff --check`. No `dotnet build`, `dotnet rebuild`, or Unity rebuild/import was executed.
+Rejected Alternatives: Running a build was rejected because it violates the direct user order and the known external World/GPR compile blocker still exists. Reusing stale H-Phi metrics was rejected as fake evidence.
+Scalability potential: Low-tier presentation now has less startup/recovery lookup debt, while high-tier visual systems keep their overkill rendering features unchanged.
+Hardware Impact: 0 us runtime from the audit itself. Latest static audit: `RuntimeHPhiNarrow=0.01082338`, `RuntimeHPhiRisk=0.00060621`, `AllSourceHPhiNarrow=0.009634899`, `AllSourceHPhiRisk=0.000495259`, `GetComponentCalls=503`, `UnityUpdateMethods=0`, `StructLayoutAttributes=957`, `AupPrecisionRisk=0`.

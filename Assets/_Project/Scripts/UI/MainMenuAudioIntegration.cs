@@ -39,7 +39,7 @@ namespace Hecton8.UI
 
         private void Awake()
         {
-            _controller = GetComponent<MainMenuController>();
+            TryGetComponent(out _controller);
         }
 
         private void Start()

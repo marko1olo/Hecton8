@@ -30,7 +30,7 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             if (notificationSystem == null)
-                notificationSystem = GetComponent<HUDNotification>();
+                TryGetComponent(out notificationSystem);
 
             SaveEvents.Register(this);
             LocalizationEvents.RegisterLanguageListener(this);

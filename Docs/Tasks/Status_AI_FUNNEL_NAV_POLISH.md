@@ -263,6 +263,24 @@ Task Count: 15
 - [x] Chunk-id reciprocal proof | DOD: `ComputeChunkId` now fail-closes on non-finite/invalid metadata and uses `math.rcp(chunkSpan)` instead of raw scalar division for chunk coordinate mapping; rejected epsilon-masked raw division; estimate 3 us.
 - [x] Build/chunk static scan | DOD: changed SDF ingress, build metadata, dynamic update, and chunk-id ranges report no raw division, forbidden hot math, managed allocation, or `foreach`; dotnet rebuilds remain prohibited; estimate 3 us.
 
+## Loop 36 - Portal Scratch Capacity Closure
+
+- [x] Portal scratch null proof | DOD: `EnsurePortalWorkCapacity` now rejects missing face-visit, face-queue, or portal arrays before length access; rejected relying only on constructor invariants under parallel edits; estimate 2 us.
+- [x] Portal face-count overflow proof | DOD: replaced raw `ResolveMaxFaceCells` int multiplication with `TryResolveMaxFaceCells` using 64-bit face products and explicit int-cap proof; rejected overflow-prone face scratch sizing; estimate 3 us.
+- [x] Portal scratch static scan | DOD: changed portal scratch capacity range reports no raw division, forbidden hot math, managed allocation, or `foreach`; dotnet rebuilds remain prohibited; estimate 2 us.
+
+## Loop 37 - Pure Void Block Count Shift Proof
+
+- [x] Pure void block count overflow proof | DOD: `ResolvePureVoidBlockCount` now computes the 64-cell ceiling count in 64-bit and clamps impossible overflow before returning; rejected overflow-prone int addition; estimate 2 us.
+- [x] Pure void shift proof | DOD: fixed block size 64 now uses `PureVoidScanBlockShift` and `>> 6` instead of `/ 64`; rejected raw division in route-adjacent pure-void scan sizing; estimate 1 us.
+- [x] Pure void static scan | DOD: changed constant/helper ranges report no raw division, forbidden hot math, managed allocation, or `foreach`; dotnet rebuilds remain prohibited; estimate 2 us.
+
+## Loop 38 - Pure Void Scheduler Exact Count Proof
+
+- [x] Pure void input length proof | DOD: `SchedulePureVoidScan` now requires passability, distance, and block-flag buffers created and sized for `pointCount` before scheduling; rejected relying only on job-side guards; estimate 2 us.
+- [x] Pure void exact schedule proof | DOD: scheduler now computes `requiredBlockCount` and schedules exactly that count instead of `blockFlags.Length`; rejected scanning stale trailing flag capacity; estimate 2 us.
+- [x] Pure void scheduler static scan | DOD: changed scheduler range reports no raw division, forbidden hot math, managed allocation, or `foreach`; dotnet rebuilds remain prohibited; estimate 2 us.
+
 ## Verification
 
 - [x] Static scan | PASS: `StringPullPathJob`, `NativeAStarJob`, `TryResolveAbyssalNavNodeCandidate`, abyssal nav support/hash, nav graph ingress, and funnel telemetry conversion regions have no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/` code matches after loop 19.
@@ -282,6 +300,9 @@ Task Count: 15
 - [x] Macro portal emit targeted scan | PASS: managed-array and `NativeList` macro route emitters plus `CanEmitPortalRoutePath` report no raw division, forbidden hot math, managed allocation, or `foreach`.
 - [x] Portal rebuild/reconstruction targeted scan | PASS: nearest-payload fallback, portal rebuild, graph current-node validation, neighbor relaxation, and reconstruction closure ranges report no raw division, forbidden hot math, managed allocation, or `foreach`.
 - [x] Build metadata/chunk-id targeted scan | PASS: localized SDF ingress, nav build metadata, dynamic obstacle scheduling, and `ComputeChunkId` reciprocal mapping report no raw division, forbidden hot math, managed allocation, or `foreach`.
+- [x] Portal scratch capacity targeted scan | PASS: `EnsurePortalWorkCapacity` and `TryResolveMaxFaceCells` report no raw division, forbidden hot math, managed allocation, or `foreach`.
+- [x] Pure void block count targeted scan | PASS: `ResolvePureVoidBlockCount` and `PureVoidScanBlockShift` range reports no raw division, forbidden hot math, managed allocation, or `foreach`.
+- [x] Pure void scheduler targeted scan | PASS: `SchedulePureVoidScan` range reports no raw division, forbidden hot math, managed allocation, or `foreach`.
 - [x] Batch prompt re-extraction | PASS: CLI regex rechecked `CURRENT_BATCH.md` after loop 34 and confirmed `AI_FUNNEL_NAV_POLISH` remains absent; persisted task files remain authority.
 - [x] Diff hygiene | PASS: `git diff --check` passed for touched source/status/rationale/log files; only LF-to-CRLF working-copy warnings were emitted.
 - [x] Core graph H-Phi summary | PASS STATIC: `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` completed without build; graph debt counts are Core asmdef 25, generated project 10, source-backed bridge 14, source-backed compile bridge 8, project-reference replacement 6; no source-only route hardening score was claimed.

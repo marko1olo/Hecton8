@@ -91,7 +91,7 @@ namespace Hecton8.UI
 
         private void Awake()
         {
-            _canvasGroup = GetComponent<CanvasGroup>();
+            TryGetComponent(out _canvasGroup);
             _currentAlpha = 0f;
             _canvasGroup.alpha = 0f;
             _canvasGroup.blocksRaycasts = false;

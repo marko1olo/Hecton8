@@ -345,3 +345,21 @@ Solution: Add finite/positive build metadata proof, 64-bit expected point-count 
 Rejected Alternatives: Keeping `math.max(cellSize, epsilon)` and raw division in `ComputeChunkId` was rejected because it masks corrupt metadata and still violates the reciprocal math gate. Scheduling dynamic clears from non-finite patch extents was rejected because it can poison portal route updates.
 Scalability potential: Low/MX350 avoids corrupt chunk IDs and failed dynamic obstacle clears before funnel smoothing. Middle/High/Ultra keep larger route volumes and richer obstacle updates only when build metadata is finite and buffer coverage is proven.
 Hardware Impact: Removes three scalar divisions from chunk-id mapping and adds cheap scalar validation at build/update ingress; exact microseconds remain pending Unity profiler data because dotnet rebuilds are prohibited.
+
+Problem: Portal scratch capacity proof still trusted constructor-created arrays and used int face-area products before scratch-length validation.
+Solution: `EnsurePortalWorkCapacity` now rejects null scratch/portal arrays, and `TryResolveMaxFaceCells` computes face areas in 64-bit with explicit int-cap proof before comparing against scratch lengths.
+Rejected Alternatives: Trusting constructor invariants was rejected because this file is being edited by parallel agents and scratch arrays are the route authority for portal flood fill. Keeping int multiplication was rejected because overflow can produce a false small face count.
+Scalability potential: Low/MX350 avoids corrupt portal flood-fill setup from stale arrays or overflowed dimensions. Middle/High/Ultra keep larger voxel chunks only when scratch capacity is explicitly proven.
+Hardware Impact: Adds cold-path scalar checks before portal rebuild; expected benefit is invalid portal rebuild avoidance, not measurable throughput. Dotnet rebuilds remain prohibited.
+
+Problem: Pure-void scan block count used int addition plus `/ 64`, so corrupt large point counts could overflow before sizing the route-record pure-void block flags.
+Solution: Add `PureVoidScanBlockShift`, compute the ceiling block count in 64-bit, shift by six for the fixed 64-cell block size, and clamp impossible overflows before returning.
+Rejected Alternatives: Keeping the raw division was rejected by the reciprocal/no-raw-division gate. Leaving int addition was rejected because a false-small block count can under-prove pure-void metadata.
+Scalability potential: Low/MX350 keeps pure-void route records fail-closed under corrupt counts. Middle/High/Ultra can keep larger voxel records with explicit sizing proof.
+Hardware Impact: Removes one integer division from pure-void block sizing and avoids overflow-driven undersized metadata; exact microseconds remain pending Unity profiler data because dotnet rebuilds are prohibited.
+
+Problem: `SchedulePureVoidScan` scheduled by `blockFlags.Length` and only prechecked the output buffer, leaving input length proof to the Burst job and letting stale spare block capacity execute.
+Solution: Require created passability/distance/block buffers, require passability and distance lengths cover `pointCount`, require block flags cover `ResolvePureVoidBlockCount(pointCount)`, and schedule exactly the required block count.
+Rejected Alternatives: Relying on job-side guards was rejected because the scheduler is the route-record authority boundary. Scheduling full flag capacity was rejected because spare capacity can carry stale metadata semantics even when ignored later.
+Scalability potential: Low/MX350 avoids extra pure-void scan work and stale flag exposure. Middle/High/Ultra keep larger records with exact block scheduling.
+Hardware Impact: Removes unnecessary block iterations when capacity exceeds required count and avoids invalid job dispatch; exact microseconds remain pending Unity profiler data because dotnet rebuilds are prohibited.

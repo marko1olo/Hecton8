@@ -735,3 +735,71 @@ Verification:
 - Targeted SDF ingress, nav build metadata, dynamic update, and chunk-id ranges reported no raw division, forbidden hot math, managed allocation, or `foreach`.
 - `git diff --check` passed without invoking dotnet rebuilds.
 - Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.
+
+## 2026-05-15 - Portal Scratch Capacity Closure
+
+What was wrong:
+- Portal rebuild scratch proof trusted constructor-created arrays before length access.
+- Max face-cell count used int multiplication before capacity comparison, which could overflow into false-small values on corrupt dimensions.
+
+What was done:
+- `EnsurePortalWorkCapacity` now rejects null face-visit, face-queue, and portal arrays.
+- Replaced `ResolveMaxFaceCells` with `TryResolveMaxFaceCells`, using 64-bit face-area products and explicit int-cap proof.
+
+Cinematic Cheats used:
+- Corrupt portal scratch setup fails closed instead of fabricating portal flood-fill capacity.
+- Low tier avoids invalid portal rebuild faults; High/Ultra keep larger chunks only with proven scratch capacity.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Static gain is invalid portal rebuild avoidance; no allocations or new containers.
+
+Verification:
+- Targeted portal scratch capacity range reported no raw division, forbidden hot math, managed allocation, or `foreach`.
+- `git diff --check` passed without invoking dotnet rebuilds.
+- Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.
+
+## 2026-05-15 - Pure Void Block Count Shift Proof
+
+What was wrong:
+- Pure-void scan block count used int addition followed by `/ 64`.
+- A corrupt large point count could overflow before sizing the block-flag metadata used by route records.
+
+What was done:
+- Added `PureVoidScanBlockShift`.
+- Computed the 64-cell ceiling block count in 64-bit.
+- Replaced raw division with a fixed `>> 6` shift and clamped impossible overflows.
+
+Cinematic Cheats used:
+- Corrupt pure-void sizing fails into bounded metadata instead of fabricating a false-small scan count.
+- Low tier avoids route-record metadata faults; High/Ultra keep larger voxel records with explicit sizing proof.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Static gain is one integer division removed from pure-void block sizing plus overflow fault avoidance.
+
+Verification:
+- Targeted pure-void block count range reported no raw division, forbidden hot math, managed allocation, or `foreach`.
+- `git diff --check` passed without invoking dotnet rebuilds.
+- Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.
+
+## 2026-05-15 - Pure Void Scheduler Exact Count Proof
+
+What was wrong:
+- `SchedulePureVoidScan` only prechecked the output flag buffer.
+- It scheduled by `blockFlags.Length` instead of the exact required block count.
+
+What was done:
+- Added scheduler-side created/length proof for passability, distance map, and block flags.
+- Computed `requiredBlockCount` with the hardened helper.
+- Scheduled exactly `requiredBlockCount` pure-void scan jobs.
+
+Cinematic Cheats used:
+- Stale spare block-flag capacity is ignored instead of scanned as route authority.
+- Low tier avoids extra block work; High/Ultra keep larger voxel records with exact scheduling.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Static gain is avoided spare block iterations and invalid pure-void dispatch.
+
+Verification:
+- Targeted scheduler range reported no raw division, forbidden hot math, managed allocation, or `foreach`.
+- `git diff --check` passed without invoking dotnet rebuilds.
+- Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.

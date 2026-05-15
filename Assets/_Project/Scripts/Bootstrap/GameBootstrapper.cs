@@ -2255,67 +2255,34 @@ namespace Hecton8.Bootstrap
             if (service is IServiceHeartbeat heartbeat)
                 return heartbeat.IsServiceReady && heartbeat.HeartbeatState != ServiceHeartbeatState.Failed;
 
-            return IsBootstrapDependencyNodeReady(node);
+            return IsBootstrapDependencyNodeReady(node, service);
         }
 
         private static bool IsBootstrapDependencyNodeReady(BootstrapDependencyNode node)
         {
+            return IsBootstrapDependencyNodeReady(node, ResolveBootstrapDependencyService(node));
+        }
+
+        private static bool IsBootstrapDependencyNodeReady(BootstrapDependencyNode node, object service)
+        {
             switch (node)
             {
-                case BootstrapDependencyNode.SystemDispatcher:
-                    return GlobalRegistry.Dispatcher != null;
-                case BootstrapDependencyNode.GameTickManager:
-                    return GlobalRegistry.TickManager != null;
-                case BootstrapDependencyNode.SaveManager:
-                    return GlobalRegistry.Save != null;
-                case BootstrapDependencyNode.ObjectPoolManager:
-                    return GlobalRegistry.ObjectPool != null;
                 case BootstrapDependencyNode.RenderDispatcher:
-                    return _headlessBootMode || GlobalRegistry.RenderDispatcher != null;
-                case BootstrapDependencyNode.SceneRuntimeService:
-                    return GlobalRegistry.Scene != null;
-                case BootstrapDependencyNode.EquipmentInteractionHandler:
-                    return GlobalRegistry.InteractionSignals != null;
+                    return _headlessBootMode || service != null;
                 case BootstrapDependencyNode.HectonFloatingOrigin:
-                    return GlobalRegistry.FloatingOrigin != null && !HectonFloatingOrigin.IsShiftInProgress;
+                    return service != null && !HectonFloatingOrigin.IsShiftInProgress;
                 case BootstrapDependencyNode.ConnectionSplineBatchRenderer:
-                    return _headlessBootMode || GlobalRegistry.ConnectionSplineBatchRenderer != null;
-                case BootstrapDependencyNode.GlobalPhysicsStateManager:
-                    return GlobalRegistry.PhysicsStateManager != null;
-                case BootstrapDependencyNode.PhysicsApplySystem:
-                    return GlobalRegistry.Physics != null;
+                    return _headlessBootMode || service != null;
                 case BootstrapDependencyNode.DebrisManager:
-                    return _headlessBootMode || GlobalRegistry.Debris != null;
-                case BootstrapDependencyNode.EnvironmentRuntimeContextService:
-                    return GlobalRegistry.Environment != null;
-                case BootstrapDependencyNode.OceanKinematicsRuntimeService:
-                    return GlobalRegistry.OceanKinematics != null;
-                case BootstrapDependencyNode.EcosystemDirector:
-                    return GlobalRegistry.EcosystemDirector != null;
+                    return _headlessBootMode || service != null;
                 case BootstrapDependencyNode.FaunaSimulation:
-                    return GlobalRegistry.FaunaSimulation != null && GlobalRegistry.FaunaSimulation.IsReady;
+                    return service is IFaunaSim faunaSimulation && faunaSimulation.IsReady;
                 case BootstrapDependencyNode.SpatialAudioManager:
-                    return _headlessBootMode || GlobalRegistry.Audio != null;
-                case BootstrapDependencyNode.NativeInputManager:
-                    return GlobalRegistry.NativeInputManager != null;
-                case BootstrapDependencyNode.InputDispatcher:
-                    return GlobalRegistry.RegisteredInput != null;
-                case BootstrapDependencyNode.PlayerRuntimeContextService:
-                    return GlobalRegistry.Player != null;
-                case BootstrapDependencyNode.PlayerInventoryManager:
-                    return GlobalRegistry.PlayerInventory != null;
-                case BootstrapDependencyNode.PlayerSensoryManager:
-                    return GlobalRegistry.PlayerSensory != null;
-                case BootstrapDependencyNode.PowerGridManager:
-                    return GlobalRegistry.PowerGrid != null;
+                    return _headlessBootMode || service != null;
                 case BootstrapDependencyNode.ConstructionManager:
-                    return GlobalRegistry.ConstructionRuntime != null || GlobalRegistry.Logistics == null;
-                case BootstrapDependencyNode.BeaconNetworkSystem:
-                    return GlobalRegistry.BeaconNetwork != null;
-                case BootstrapDependencyNode.ModWorldPersistenceManager:
-                    return GlobalRegistry.ModWorldPersistence != null;
+                    return service != null || GlobalRegistry.Logistics == null;
                 default:
-                    return false;
+                    return service != null;
             }
         }
 
@@ -2442,22 +2409,22 @@ namespace Hecton8.Bootstrap
             switch (node)
             {
                 case BootstrapDependencyNode.SystemDispatcher:
-                    return EnsureSystemDispatcherRegistered() != null && GlobalRegistry.Dispatcher != null;
+                    return EnsureSystemDispatcherRegistered() != null && IsBootstrapDependencyNodeReady(node);
 
                 case BootstrapDependencyNode.GameTickManager:
-                    return EnsureGameTickManagerRegistered() != null && GlobalRegistry.TickManager != null;
+                    return EnsureGameTickManagerRegistered() != null && IsBootstrapDependencyNodeReady(node);
 
                 case BootstrapDependencyNode.SaveManager:
-                    return EnsureSaveServiceRegistered() != null && GlobalRegistry.Save != null;
+                    return EnsureSaveServiceRegistered() != null && IsBootstrapDependencyNodeReady(node);
 
                 case BootstrapDependencyNode.ObjectPoolManager:
-                    return EnsureObjectPoolServiceRegistered() != null && GlobalRegistry.ObjectPool != null;
+                    return EnsureObjectPoolServiceRegistered() != null && IsBootstrapDependencyNodeReady(node);
 
                 case BootstrapDependencyNode.RenderDispatcher:
                     if (_headlessBootMode)
                         return true;
 
-                    return EnsureRenderDispatcherRegistered() != null && GlobalRegistry.RenderDispatcher != null;
+                    return EnsureRenderDispatcherRegistered() != null && IsBootstrapDependencyNodeReady(node);
 
                 case BootstrapDependencyNode.SceneRuntimeService:
                 {
@@ -2467,11 +2434,11 @@ namespace Hecton8.Bootstrap
 
                     PersistRuntimeService(sceneRuntimeService);
                     sceneRuntimeService.InitializeService();
-                    return GlobalRegistry.Scene != null;
+                    return IsBootstrapDependencyNodeReady(node);
                 }
 
                 case BootstrapDependencyNode.EquipmentInteractionHandler:
-                    return EnsureEquipmentInteractionServiceRegistered() != null && GlobalRegistry.InteractionSignals != null;
+                    return EnsureEquipmentInteractionServiceRegistered() != null && IsBootstrapDependencyNodeReady(node);
 
                 case BootstrapDependencyNode.HectonFloatingOrigin:
                     return EnsureFloatingOriginRegistered() != null && GlobalRegistry.FloatingOrigin != null;
@@ -2480,10 +2447,10 @@ namespace Hecton8.Bootstrap
                     if (_headlessBootMode)
                         return true;
 
-                    return EnsureConnectionSplineBatchRendererRegistered() != null && GlobalRegistry.ConnectionSplineBatchRenderer != null;
+                    return EnsureConnectionSplineBatchRendererRegistered() != null && IsBootstrapDependencyNodeReady(node);
 
                 case BootstrapDependencyNode.GlobalPhysicsStateManager:
-                    return EnsureGlobalPhysicsStateManagerRegistered() != null && GlobalRegistry.PhysicsStateManager != null;
+                    return EnsureGlobalPhysicsStateManagerRegistered() != null && IsBootstrapDependencyNodeReady(node);
 
                 case BootstrapDependencyNode.PhysicsApplySystem:
                 {
@@ -2491,7 +2458,7 @@ namespace Hecton8.Bootstrap
                     if (physicsApplySystem == null)
                         return false;
 
-                    return GlobalRegistry.Physics != null;
+                    return IsBootstrapDependencyNodeReady(node);
                 }
 
                 case BootstrapDependencyNode.DebrisManager:
@@ -2505,7 +2472,7 @@ namespace Hecton8.Bootstrap
 
                     PersistRuntimeService(debrisManager);
                     debrisManager.InitializeService();
-                    return GlobalRegistry.Debris != null;
+                    return IsBootstrapDependencyNodeReady(node);
                 }
 
                 case BootstrapDependencyNode.EnvironmentRuntimeContextService:
@@ -2536,11 +2503,11 @@ namespace Hecton8.Bootstrap
                     oceanKinematicsRuntimeService.InitializeService();
                     if (!_headlessBootMode)
                         TryEnsureAnalyticalCausticsRegistered();
-                    return GlobalRegistry.OceanKinematics != null;
+                    return IsBootstrapDependencyNodeReady(node);
                 }
 
                 case BootstrapDependencyNode.EcosystemDirector:
-                    return EnsureEcosystemDirectorRegistered() != null && GlobalRegistry.EcosystemDirector != null;
+                    return EnsureEcosystemDirectorRegistered() != null && IsBootstrapDependencyNodeReady(node);
 
                 case BootstrapDependencyNode.FaunaSimulation:
                     return EnsureFaunaSimulationRegistered();
@@ -2558,10 +2525,10 @@ namespace Hecton8.Bootstrap
                 }
 
                 case BootstrapDependencyNode.NativeInputManager:
-                    return EnsureNativeInputManagerRegistered() != null && GlobalRegistry.NativeInputManager != null;
+                    return EnsureNativeInputManagerRegistered() != null && IsBootstrapDependencyNodeReady(node);
 
                 case BootstrapDependencyNode.InputDispatcher:
-                    return EnsureInputDispatcherRegistered() != null && GlobalRegistry.RegisteredInput != null;
+                    return EnsureInputDispatcherRegistered() != null && IsBootstrapDependencyNodeReady(node);
 
                 case BootstrapDependencyNode.PlayerRuntimeContextService:
                 {
@@ -2571,7 +2538,7 @@ namespace Hecton8.Bootstrap
 
                     PersistRuntimeService(playerContextService);
                     playerContextService.InitializeServiceDeferredSync();
-                    return GlobalRegistry.Player != null;
+                    return IsBootstrapDependencyNodeReady(node);
                 }
 
                 case BootstrapDependencyNode.PlayerInventoryManager:
@@ -2582,7 +2549,7 @@ namespace Hecton8.Bootstrap
 
                     PersistRuntimeService(playerInventoryManager);
                     playerInventoryManager.InitializeService();
-                    return GlobalRegistry.PlayerInventory != null;
+                    return IsBootstrapDependencyNodeReady(node);
                 }
 
                 case BootstrapDependencyNode.PlayerSensoryManager:
@@ -2593,17 +2560,17 @@ namespace Hecton8.Bootstrap
 
                     PersistRuntimeService(playerSensoryManager);
                     playerSensoryManager.InitializeService();
-                    return GlobalRegistry.PlayerSensory != null;
+                    return IsBootstrapDependencyNodeReady(node);
                 }
 
                 case BootstrapDependencyNode.BeaconNetworkSystem:
-                    return EnsureBeaconNetworkServiceRegistered() != null && GlobalRegistry.BeaconNetwork != null;
+                    return EnsureBeaconNetworkServiceRegistered() != null && IsBootstrapDependencyNodeReady(node);
 
                 case BootstrapDependencyNode.ModWorldPersistenceManager:
-                    return EnsureModWorldPersistenceRegistered() != null && GlobalRegistry.ModWorldPersistence != null;
+                    return EnsureModWorldPersistenceRegistered() != null && IsBootstrapDependencyNodeReady(node);
 
                 case BootstrapDependencyNode.PowerGridManager:
-                    return EnsurePowerGridServiceRegistered() != null && GlobalRegistry.PowerGrid != null;
+                    return EnsurePowerGridServiceRegistered() != null && IsBootstrapDependencyNodeReady(node);
 
                 default:
                     return false;

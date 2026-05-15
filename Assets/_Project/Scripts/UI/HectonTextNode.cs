@@ -94,7 +94,7 @@ namespace Hecton8.UI
         private void CacheTextComponent()
         {
             if (_text == null)
-                _text = GetComponent<TMP_Text>();
+                TryGetComponent(out _text);
         }
 
         private void EnsureRuntimeHierarchyHash()

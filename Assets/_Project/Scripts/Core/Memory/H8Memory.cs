@@ -200,6 +200,11 @@ namespace Hecton8.Core.Memory
         {
             throw new FatalMemoryException("H8Memory reallocation size mismatch.");
         }
+
+        public static void ThrowAllocationTrackingFailed()
+        {
+            throw new FatalMemoryException("H8Memory allocation tracking failed.");
+        }
     }
 
     /// <summary>
@@ -309,7 +314,13 @@ namespace Hecton8.Core.Memory
 
             NativeArray<T> array = new NativeArray<T>(length, allocator, options);
             void* pointer = NativeArrayUnsafeUtility.GetUnsafePtr(array);
-            RegisterPointer(pointer, bytes, length, stride, UnsafeUtility.AlignOf<T>(), owner, allocator, H8AllocationFlags.NativeArray);
+            if (!RegisterPointer(pointer, bytes, length, stride, UnsafeUtility.AlignOf<T>(), owner, allocator, H8AllocationFlags.NativeArray))
+            {
+                array.Dispose();
+                FatalMemoryException.ThrowAllocationTrackingFailed();
+                return default;
+            }
+
             return array;
         }
 
@@ -398,7 +409,13 @@ namespace Hecton8.Core.Memory
             if (clearMemory)
                 UnsafeUtility.MemClear(pointer, bytes);
 
-            RegisterPointer(pointer, bytes, 0, 0, safeAlignment, owner, allocator, H8AllocationFlags.Raw | extraFlags);
+            if (!RegisterPointer(pointer, bytes, 0, 0, safeAlignment, owner, allocator, H8AllocationFlags.Raw | extraFlags))
+            {
+                UnsafeUtility.Free(pointer, allocator);
+                FatalMemoryException.ThrowAllocationTrackingFailed();
+                return null;
+            }
+
             return pointer;
         }
 
@@ -443,9 +460,15 @@ namespace Hecton8.Core.Memory
             if (clearExtendedBytes && newBytes > copyBytes)
                 UnsafeUtility.MemClear((byte*)newPointer + copyBytes, newBytes - copyBytes);
 
+            if (!RegisterPointer(newPointer, newBytes, 0, 0, safeAlignment, owner, allocator, H8AllocationFlags.Raw | extraFlags))
+            {
+                UnsafeUtility.Free(newPointer, allocator);
+                FatalMemoryException.ThrowAllocationTrackingFailed();
+                return null;
+            }
+
             UnregisterPointer(oldPointer, owner);
             UnsafeUtility.Free(oldPointer, allocator);
-            RegisterPointer(newPointer, newBytes, 0, 0, safeAlignment, owner, allocator, H8AllocationFlags.Raw | extraFlags);
 
             return newPointer;
         }
@@ -702,7 +725,7 @@ namespace Hecton8.Core.Memory
             return true;
         }
 
-        private static void RegisterPointer(
+        private static bool RegisterPointer(
             void* pointer,
             long bytes,
             int length,
@@ -713,9 +736,13 @@ namespace Hecton8.Core.Memory
             H8AllocationFlags flags)
         {
             if (pointer == null || bytes <= 0L || _recordCount >= _records.Length)
-                return;
+                return false;
 
             IntPtr pointerValue = (IntPtr)pointer;
+            if (!_allocationOwners.TryAdd(pointerValue.ToInt64(), owner))
+                return false;
+
+            int recordIndex = _recordCount;
             H8AllocationRecord record = new H8AllocationRecord
             {
                 Pointer = pointerValue,
@@ -723,23 +750,22 @@ namespace Hecton8.Core.Memory
                 Length = length,
                 Stride = stride,
                 Alignment = alignment,
-                AllocationIndex = _recordCount,
+                AllocationIndex = recordIndex,
                 Owner = owner,
                 Allocator = allocator,
                 Flags = (ushort)flags
             };
 
             _records[_recordCount++] = record;
-            _allocationOwners.TryAdd(pointerValue.ToInt64(), owner);
             _totalBytes += bytes;
             int ownerIndex = (int)owner;
             if ((uint)ownerIndex < (uint)_ownerBytes.Length)
                 _ownerBytes[ownerIndex] += bytes;
 
             if ((flags & H8AllocationFlags.SubAllocatorRoot) != 0)
-                return;
+                return true;
 
-            RegisterBlockDescriptorNoInit(new BlockDescriptor
+            int descriptorIndex = RegisterBlockDescriptorNoInit(new BlockDescriptor
             {
                 BasePointer = pointerValue,
                 OffsetBytes = 0L,
@@ -750,6 +776,12 @@ namespace Hecton8.Core.Memory
                 Flags = (ushort)flags,
                 State = (byte)H8BlockState.Occupied
             });
+
+            if (descriptorIndex >= 0)
+                return true;
+
+            RemoveRecordAt(recordIndex);
+            return false;
         }
 
         private static void UnregisterPointer(void* pointer, SystemID requester)
@@ -843,7 +875,19 @@ namespace Hecton8.Core.Memory
             }
 
             if (_blockDescriptors.Length >= _blockDescriptors.Capacity)
-                return -1;
+            {
+                int oldCapacity = _blockDescriptors.Capacity;
+                if (oldCapacity >= MaxTrackingCapacity)
+                    return -1;
+
+                int newCapacity = oldCapacity > 0 ? oldCapacity << 1 : DefaultCapacity;
+                if (newCapacity < oldCapacity || newCapacity > MaxTrackingCapacity)
+                    newCapacity = MaxTrackingCapacity;
+
+                EnsureBlockDescriptorCapacity(newCapacity);
+                if (_blockDescriptors.Length >= _blockDescriptors.Capacity)
+                    return -1;
+            }
 
             int index = _blockDescriptors.Length;
             _blockDescriptors.AddNoResize(descriptor);

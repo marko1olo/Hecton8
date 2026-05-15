@@ -120,7 +120,7 @@ namespace Hecton8.UI
 
             float resolvedMin = Mathf.Max(1f, Mathf.Min(minSize, maxSize));
             float resolvedMax = Mathf.Max(resolvedMin, maxSize);
-            LocalizedTMPAutoSizer autoSizer = text.GetComponent<LocalizedTMPAutoSizer>();
+            text.TryGetComponent(out LocalizedTMPAutoSizer autoSizer);
             if (autoSizer == null)
                 autoSizer = text.gameObject.AddComponent<LocalizedTMPAutoSizer>();
 

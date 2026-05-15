@@ -112,8 +112,8 @@ namespace Hecton8.UI
 
         private void Awake()
         {
-            RectTransform rt = GetComponent<RectTransform>();
-            if (rt == null) gameObject.AddComponent<RectTransform>();
+            if (!TryGetComponent(out RectTransform _))
+                gameObject.AddComponent<RectTransform>();
         }
 
         private void OnEnable()
@@ -207,9 +207,9 @@ namespace Hecton8.UI
 
             _labelFont = LocalizedFontResolver.ResolveReadableFont(_labelFont);
 
-            RectTransform root = GetComponent<RectTransform>();
+            TryGetComponent(out RectTransform root);
 
-            Image bg = gameObject.GetComponent<Image>();
+            gameObject.TryGetComponent(out Image bg);
             if (bg == null) bg = gameObject.AddComponent<Image>();
             bg.color = colorBg;
 
@@ -304,7 +304,7 @@ namespace Hecton8.UI
 
             Image mapViewportFrame = mapViewport.gameObject.AddComponent<Image>();
             mapViewportFrame.color = new Color(0.03f, 0.08f, 0.08f, 0.94f);
-            _mapTab = mapViewport.gameObject.GetComponent<PDAMapTab>();
+            mapViewport.gameObject.TryGetComponent(out _mapTab);
             if (_mapTab == null)
                 _mapTab = mapViewport.gameObject.AddComponent<PDAMapTab>();
             _mapTab.ConfigurePointCloudAssets(pdaSonarPointCloudShader, pdaSonarMapCompute);
@@ -829,7 +829,7 @@ namespace Hecton8.UI
         {
             var go = new GameObject(name, typeof(RectTransform));
             go.layer = parent.gameObject.layer;
-            var rt = go.GetComponent<RectTransform>();
+            go.TryGetComponent(out RectTransform rt);
             rt.SetParent(parent, false);
             return rt;
         }

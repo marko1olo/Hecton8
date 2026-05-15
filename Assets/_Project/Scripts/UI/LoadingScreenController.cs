@@ -111,7 +111,7 @@ namespace Hecton8.UI
         private void Awake()
         {
             _tipRandomState = MixSeed(unchecked((uint)EntityId.ToULong(GetEntityId())));
-            _canvasGroup = GetComponent<CanvasGroup>();
+            TryGetComponent(out _canvasGroup);
             if (_canvasGroup == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -556,7 +556,7 @@ namespace Hecton8.UI
         private void OnValidate()
         {
             if (_loadingPanel == null)
-                _loadingPanel = GetComponent<CanvasGroup>();
+                TryGetComponent(out _loadingPanel);
         }
 #endif
     }

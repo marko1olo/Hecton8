@@ -223,3 +223,30 @@ Verification:
 - `git diff --check` on `HectonFlashlightVoxelShadowProvider.cs`: no whitespace errors; LF-to-CRLF warning only.
 - Brace scan: `66/66`.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`: `RuntimeHPhiNarrow=0.010762392`, `RuntimeHPhiRisk=0.000592295`, `AllSourceHPhiNarrow=0.009582622`, `AllSourceHPhiRisk=0.000486054`, `ArchitecturalPurity=0.996447602`, `DataSovereignty=0.021386637`, `MemoryAlignment=0.505023797`, `GetComponentCalls=530`, `StructLayoutAttributes=955`, `AupPrecisionRisk=0`.
+
+## 2026-05-15 12:38:17 +04:00 - Follow-Up No-Rebuild Presentation UI Lookup Hygiene
+What was wrong:
+- Clean Echelon 8 UI/presentation setup scripts still carried local `GetComponent<T>`, `GetComponentInParent<T>`, and `GetComponentInChildren<T>` lookup debt.
+- The debt was mostly cold-path, but it inflated H-Phi and left inconsistent zero-GC lookup style across tooltip, PDA, visor, localization, loading, pause, and HUD setup.
+
+What was done:
+- Updated `ActionProgressHUD`, `UIFadeTransition`, `EngineHealthOverlay`, `HUDSaveNotificationLink`, `UITooltip`, `MainMenuAudioIntegration`, `HectonTextNode`, `RelayHUDElement`, `SaveSlotHoverPreview`, `LoadingScreenController`, `PDASpectrumTab`, `PauseMenuHost`, `DiegeticPdaFocusDistanceController`, `DiegeticVisorHudMesh`, `LocalizedTMPAutoSizer`, and `LocalizedLayoutMirror`.
+- Replaced same-object component probes with `TryGetComponent(out T)`.
+- Replaced parent/camera/canvas/volume discovery with zero-allocation `Transform` walks where behavior required hierarchy search.
+- Preserved active-child semantics for PDA focus volume discovery and did not change raycast, DOF, visor mesh, localization, or generated UI behavior.
+
+Cinematic Cheats used:
+- None added. This pass was presentation-domain hygiene.
+- Existing visual fake policy remains intact: local UI/visor setup stays cheap on low tier, while high tier retains shader/post visual overkill.
+
+Exact Microseconds saved:
+- Estimated 0-10 us CPU on cold UI setup/recovery frames.
+- Estimated 0-5 us CPU on PDA focus/visor camera recovery frames.
+- No steady-state Tick saving claimed; static H-Phi and lookup hygiene were the measurable outputs.
+
+Verification:
+- No dotnet rebuild was executed.
+- `rg` over the 16 edited files found no remaining `GetComponent*<T>` matches.
+- `git diff --check` on edited files: no whitespace errors; LF-to-CRLF warnings only.
+- Brace scan: all edited files balanced.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`: `RuntimeHPhiNarrow=0.01082338`, `RuntimeHPhiRisk=0.00060621`, `AllSourceHPhiNarrow=0.009634899`, `AllSourceHPhiRisk=0.000495259`, `ArchitecturalPurity=1`, `DataSovereignty=0.021386637`, `MemoryAlignment=0.506081438`, `GetComponentCalls=503`, `UnityUpdateMethods=0`, `StructLayoutAttributes=957`, `AupPrecisionRisk=0`.

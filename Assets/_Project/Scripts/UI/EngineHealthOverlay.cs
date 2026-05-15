@@ -36,13 +36,13 @@ namespace Hecton8.UI
         private void Awake()
         {
             if (uiDocument == null)
-                uiDocument = GetComponent<UIDocument>();
+                TryGetComponent(out uiDocument);
         }
 
         private void OnEnable()
         {
             if (uiDocument == null)
-                uiDocument = GetComponent<UIDocument>();
+                TryGetComponent(out uiDocument);
 
             if (uiDocument == null)
                 return;

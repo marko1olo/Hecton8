@@ -47,6 +47,7 @@ namespace Hecton8.World
         private const int DeferredDirtyVolumeQueueCapacity = 16;
         private const int PendingObstacleClearQueueCapacity = 16;
         private const int PureVoidScanBlockSize = 64;
+        private const int PureVoidScanBlockShift = 6;
         private const int MaxTrackedVolumeRecords = 512;
         private const int MaxRegisteredObstacleRecords = 512;
         private const int MaxPortalFaceScratchCells = 4096;
@@ -1981,7 +1982,18 @@ namespace Hecton8.World
             int pointCount,
             JobHandle dependency)
         {
-            if (!blockFlags.IsCreated || pointCount <= 0)
+            if (!passability.IsCreated ||
+                !distanceMap.IsCreated ||
+                !blockFlags.IsCreated ||
+                pointCount <= 0 ||
+                passability.Length < pointCount ||
+                distanceMap.Length < pointCount)
+            {
+                return dependency;
+            }
+
+            int requiredBlockCount = ResolvePureVoidBlockCount(pointCount);
+            if (requiredBlockCount <= 0 || blockFlags.Length < requiredBlockCount)
                 return dependency;
 
             return new PureVoidBlockScanJob
@@ -1990,12 +2002,21 @@ namespace Hecton8.World
                 DistanceMap = distanceMap,
                 BlockFlags = blockFlags,
                 PointCount = pointCount
-            }.Schedule(blockFlags.Length, 32, dependency);
+            }.Schedule(requiredBlockCount, 32, dependency);
         }
 
         internal static int ResolvePureVoidBlockCount(int pointCount)
         {
-            return math.max(1, (math.max(1, pointCount) + PureVoidScanBlockSize - 1) / PureVoidScanBlockSize);
+            if (pointCount <= 0)
+                return 1;
+
+            long blockCount = ((long)pointCount + PureVoidScanBlockSize - 1L) >> PureVoidScanBlockShift;
+            if (blockCount <= 0L)
+                return 1;
+
+            return blockCount > int.MaxValue
+                ? int.MaxValue
+                : (int)blockCount;
         }
 
         private static void EvaluatePureVoidState(VolumeRecord record)
@@ -3176,24 +3197,47 @@ namespace Hecton8.World
             if (record == null ||
                 record.Dimensions.x <= 1 ||
                 record.Dimensions.y <= 1 ||
-                record.Dimensions.z <= 1)
+                record.Dimensions.z <= 1 ||
+                record.FaceVisitScratch == null ||
+                record.FaceQueueScratch == null ||
+                record.Portals == null)
             {
                 return false;
             }
 
-            int maxFaceCells = ResolveMaxFaceCells(record.Dimensions);
+            if (!TryResolveMaxFaceCells(record.Dimensions, out int maxFaceCells))
+                return false;
+
             return maxFaceCells > 0 &&
                    maxFaceCells <= record.FaceVisitScratch.Length &&
                    maxFaceCells <= record.FaceQueueScratch.Length &&
-                   record.Portals != null &&
                    record.Portals.Length > 0;
         }
 
-        private static int ResolveMaxFaceCells(int3 dimensions)
+        private static bool TryResolveMaxFaceCells(int3 dimensions, out int maxFaceCells)
         {
-            return math.max(
-                dimensions.x * dimensions.y,
-                math.max(dimensions.x * dimensions.z, dimensions.y * dimensions.z));
+            maxFaceCells = 0;
+            if (dimensions.x <= 0 ||
+                dimensions.y <= 0 ||
+                dimensions.z <= 0)
+            {
+                return false;
+            }
+
+            long xy = (long)dimensions.x * dimensions.y;
+            long xz = (long)dimensions.x * dimensions.z;
+            long yz = (long)dimensions.y * dimensions.z;
+            long maxFaceCellCount = xy;
+            if (xz > maxFaceCellCount)
+                maxFaceCellCount = xz;
+            if (yz > maxFaceCellCount)
+                maxFaceCellCount = yz;
+
+            if (maxFaceCellCount <= 0L || maxFaceCellCount > int.MaxValue)
+                return false;
+
+            maxFaceCells = (int)maxFaceCellCount;
+            return true;
         }
 
 #if UNITY_EDITOR

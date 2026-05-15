@@ -277,3 +277,10 @@ Solution: Gate scheme refresh to active non-diagnostic signal prompts, and make 
 Rejected Alternatives: Keeping unconditional scheme reads, moving scheme reads into render, or freezing the scheme until prompt changes. Unconditional reads waste idle frames; render-time reads couple input to draw submission; frozen schemes miss live device swaps while hovering.
 Scalability potential: Low avoids input-service reads during idle tooltip frames. Middle/High/Ultra keep dynamic glyph swaps for richer prompt materials while paying only when a prompt can display them.
 Hardware Impact: Expected gain is sub-microsecond per idle tooltip late frame on i3/MX350; no profiler proof.
+
+## Decision 39: Tooltip Render-Path Scheme Read Removal
+Problem: `ResolveAnchorPosition()` still had a fallback scheme read during render to decide XR depth offset if `_activeSchemeHash` was zero.
+Solution: Make render use cached `_activeSchemeHash` only, refresh the scheme during input hot-swap and diagnostic show, and use the already refreshed scheme for hot-swap layout rebuilds.
+Rejected Alternatives: Keeping the render-time fallback, skipping XR depth offset permanently, or moving input reads into `DrawBatch`. Render-time input reads couple device state to draw submission; removing XR offset hurts VR comfort; per-batch reads multiply the problem.
+Scalability potential: Low removes input-service work from the draw path. Middle/High/Ultra keep XR comfort and dynamic glyph swaps while preserving render determinism.
+Hardware Impact: Expected gain is sub-microsecond on active tooltip render frames when the scheme cache was cold; no profiler proof.

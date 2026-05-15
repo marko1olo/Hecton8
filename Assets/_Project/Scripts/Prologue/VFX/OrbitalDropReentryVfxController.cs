@@ -19,7 +19,7 @@ namespace Hecton8.Prologue.VFX
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6910)]
     [AddComponentMenu("Hecton/Prologue/VFX/Orbital Drop Reentry VFX Controller")]
-    public sealed class OrbitalDropReentryVfxController : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class OrbitalDropReentryVfxController : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
     {
         private const int TelemetryCapacity = 300;
         private const int TelemetryEntrySizeBytes = 48;
@@ -135,6 +135,7 @@ namespace Hecton8.Prologue.VFX
         private bool _lowTier = true;
         private bool _registeredLateFrame;
         private bool _hotSwapRegistered;
+        private bool _scalabilityEventsRegistered;
         private bool _blackBoxDumped;
         private bool _plasmaRoarPublished;
         private bool _oceanWavesPublished;
@@ -152,11 +153,14 @@ namespace Hecton8.Prologue.VFX
             RefreshQualityTier(force: true);
             RegisterLateFrame();
             TryRegisterHotSwap();
+            TryRegisterScalabilityEvents();
             PublishShaderState(force: true);
         }
 
         private void OnDisable()
         {
+            TryUnregisterScalabilityEvents();
+
             if (_registeredLateFrame)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
@@ -169,6 +173,12 @@ namespace Hecton8.Prologue.VFX
             ApplyAmbientBlend();
             PublishShaderState(force: true);
             _tickDispatcher = null;
+        }
+
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            _qualityRefreshFrame = Time.frameCount;
+            CacheQualityPolicy(payload.CurrentQualityTier, payload.CurrentTier, GlobalRegistry.H8_LOW_MEMORY_PROFILE);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -282,6 +292,24 @@ namespace Hecton8.Prologue.VFX
             _hotSwapRegistered = false;
         }
 
+        private void TryRegisterScalabilityEvents()
+        {
+            if (_scalabilityEventsRegistered || !Application.isPlaying)
+                return;
+
+            ScalabilityEvents.Register(this);
+            _scalabilityEventsRegistered = true;
+        }
+
+        private void TryUnregisterScalabilityEvents()
+        {
+            if (!_scalabilityEventsRegistered)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _scalabilityEventsRegistered = false;
+        }
+
         private void ApplyConfiguredMaterial()
         {
             if (!assignMaterialOnEnable || plasmaMaterial == null)
@@ -302,12 +330,17 @@ namespace Hecton8.Prologue.VFX
             _qualityRefreshFrame = frame;
             HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
             byte profileByte = GlobalRegistry.ScalabilityTierProfileByte;
+            CacheQualityPolicy(tier, profileByte, GlobalRegistry.H8_LOW_MEMORY_PROFILE);
+        }
+
+        private void CacheQualityPolicy(HectonQualityTier tier, byte profileByte, bool lowMemoryProfile)
+        {
             bool lowTier = tier == HectonQualityTier.Unknown ||
                            tier == HectonQualityTier.Low ||
                            tier == HectonQualityTier.Mx350 ||
-                           GlobalRegistry.H8_LOW_MEMORY_PROFILE;
+                           lowMemoryProfile;
 
-            if (!force && tier == _qualityTier && profileByte == _qualityTierByte && lowTier == _lowTier)
+            if (tier == _qualityTier && profileByte == _qualityTierByte && lowTier == _lowTier)
                 return;
 
             _qualityTier = tier;

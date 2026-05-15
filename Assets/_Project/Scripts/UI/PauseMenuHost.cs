@@ -19,7 +19,7 @@ namespace Hecton8.UI
             {
                 GameObject go = new GameObject(rootName, typeof(RectTransform));
                 go.layer = gameObject.layer;
-                root = go.GetComponent<RectTransform>();
+                go.TryGetComponent(out root);
                 root.SetParent(parent, false);
                 root.localScale = Vector3.one;
                 root.anchorMin = Vector2.zero;
@@ -28,7 +28,7 @@ namespace Hecton8.UI
                 root.offsetMax = Vector2.zero;
             }
 
-            PauseMenuController controller = root.GetComponent<PauseMenuController>();
+            root.TryGetComponent(out PauseMenuController controller);
             if (controller == null)
                 controller = root.gameObject.AddComponent<PauseMenuController>();
         }

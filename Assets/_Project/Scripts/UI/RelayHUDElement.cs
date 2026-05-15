@@ -88,8 +88,8 @@ namespace Hecton8.UI
 
         private void Awake()
         {
-            _rectTransform = GetComponent<RectTransform>();
-            _canvasGroup = GetComponent<CanvasGroup>();
+            TryGetComponent(out _rectTransform);
+            TryGetComponent(out _canvasGroup);
             SetVisible(false);
         }
 

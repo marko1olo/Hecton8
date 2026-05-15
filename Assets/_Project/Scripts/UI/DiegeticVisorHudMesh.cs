@@ -263,9 +263,9 @@ namespace Hecton8.UI
         private void ResolveComponents()
         {
             if (_meshFilter == null)
-                _meshFilter = GetComponent<MeshFilter>();
+                TryGetComponent(out _meshFilter);
             if (_meshRenderer == null)
-                _meshRenderer = GetComponent<MeshRenderer>();
+                TryGetComponent(out _meshRenderer);
         }
 
         private void ResolveCamera()
@@ -273,7 +273,7 @@ namespace Hecton8.UI
             if (visorCamera == null && GlobalRegistry.Player != null)
                 visorCamera = GlobalRegistry.Player.PlayerCamera;
             if (visorCamera == null)
-                visorCamera = GetComponentInParent<Camera>();
+                visorCamera = ResolveNearestParentCamera(transform);
             if (visorCamera == null)
                 return;
 
@@ -285,6 +285,17 @@ namespace Hecton8.UI
             transform.localPosition = Vector3.zero;
             transform.localRotation = Quaternion.identity;
             transform.localScale = Vector3.one;
+        }
+
+        private static Camera ResolveNearestParentCamera(Transform start)
+        {
+            for (Transform current = start; current != null; current = current.parent)
+            {
+                if (current.TryGetComponent(out Camera camera))
+                    return camera;
+            }
+
+            return null;
         }
 
         private void RebuildMesh()

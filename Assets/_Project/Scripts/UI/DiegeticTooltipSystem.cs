@@ -393,8 +393,9 @@ namespace Hecton8.UI
                 _inputDeterminismAwaitingRegistration = false;
 
             _activeSchemeHash = 0u;
+            RefreshActiveSchemeHash();
             if (_hasSignalTarget && !_diagnosticActive)
-                RebuildActiveTooltipLayout();
+                RebuildActiveTooltipLayout(refreshScheme: false);
         }
 
         public void ShowDiagnostic(Vector3 worldAnchor, ReadOnlySpan<char> text, Color tint)
@@ -406,6 +407,7 @@ namespace Hecton8.UI
             }
 
             EnsureResources();
+            RefreshActiveSchemeHash();
             _diagnosticWorldAnchor = worldAnchor;
             _diagnosticColor = tint;
             _diagnosticActive = true;
@@ -1049,8 +1051,7 @@ namespace Hecton8.UI
                 ? _diagnosticWorldAnchor
                 : ResolveSignalAnchorRuntime() + worldOffset;
 
-            uint schemeHash = _activeSchemeHash != 0u ? _activeSchemeHash : ResolveCurrentSchemeHash();
-            if (schemeHash == InputSchemeHashXRTouch)
+            if (_activeSchemeHash == InputSchemeHashXRTouch)
                 anchor = ApplyVrDepthOffset(anchor, cameraPosition);
 
             return anchor;

@@ -128,7 +128,7 @@ namespace Hecton8.Input
             InputAction action = inputManager.GetAction(actionName, actionMap);
             if (action == null)
             {
-                LogWarning($"Action not found: map='{actionMap}', action='{actionName}'.");
+                LogWarning("Action not found: map='" + actionMap + "', action='" + actionName + "'.");
                 return false;
             }
 
@@ -139,13 +139,13 @@ namespace Hecton8.Input
             }
             catch (Exception ex)
             {
-                LogWarning($"Unable to inspect bindings for '{actionMap}/{actionName}': {ex.Message}");
+                LogWarning("Unable to inspect bindings for '" + actionMap + "/" + actionName + "': " + ex.Message);
                 return false;
             }
 
             if (bindingIndex < 0 || bindingIndex >= bindingCount)
             {
-                LogWarning($"Binding index out of range: action='{actionName}', index={bindingIndex}.");
+                LogWarning("Binding index out of range: action='" + actionName + "', index=" + bindingIndex + ".");
                 return false;
             }
 
@@ -156,13 +156,13 @@ namespace Hecton8.Input
             }
             catch (Exception ex)
             {
-                LogWarning($"Failed to read binding for '{actionMap}/{actionName}[{bindingIndex}]': {ex.Message}");
+                LogWarning("Failed to read binding for '" + actionMap + "/" + actionName + "[" + bindingIndex + "]': " + ex.Message);
                 return false;
             }
 
             if (binding.isComposite)
             {
-                LogWarning($"Binding index points to a composite root. Rebind composite parts instead. action='{actionName}', index={bindingIndex}.");
+                LogWarning("Binding index points to a composite root. Rebind composite parts instead. action='" + actionName + "', index=" + bindingIndex + ".");
                 return false;
             }
 
@@ -196,7 +196,7 @@ namespace Hecton8.Input
                 if (wasEnabled) action.Enable();
                 DisposeActiveRebind();
                 OnRebindCanceled?.Invoke(actionName, actionMap, bindingIndex);
-                Log($"Rebind canceled: {actionMap}/{actionName}[{bindingIndex}]");
+                Log("Rebind canceled: " + actionMap + "/" + actionName + "[" + bindingIndex + "]");
             });
 
             _activeRebind.OnComplete(operation =>
@@ -242,12 +242,12 @@ namespace Hecton8.Input
                 }
 
                 OnRebindCompleted?.Invoke(actionName, actionMap, bindingIndex, display);
-                Log($"Rebind complete: {actionMap}/{actionName}[{bindingIndex}] => {display}");
+                Log("Rebind complete: " + actionMap + "/" + actionName + "[" + bindingIndex + "] => " + display);
             });
 
             _activeRebind.Start();
             OnRebindStarted?.Invoke(actionName, actionMap, bindingIndex);
-            Log($"Rebind started: {actionMap}/{actionName}[{bindingIndex}]");
+            Log("Rebind started: " + actionMap + "/" + actionName + "[" + bindingIndex + "]");
             return true;
         }
 
@@ -275,14 +275,14 @@ namespace Hecton8.Input
             InputAction action = inputManager.GetAction(actionName, actionMap);
             if (action == null)
             {
-                LogWarning($"Action not found: map='{actionMap}', action='{actionName}'.");
+                LogWarning("Action not found: map='" + actionMap + "', action='" + actionName + "'.");
                 return false;
             }
 
             int index = FindBindingIndexById(action, bindingId);
             if (index < 0)
             {
-                LogWarning($"Binding id not found: action='{actionName}', bindingId='{bindingId}'.");
+                LogWarning("Binding id not found: action='" + actionName + "', bindingId='" + bindingId + "'.");
                 return false;
             }
 
@@ -374,18 +374,18 @@ namespace Hecton8.Input
                 string json = File.ReadAllText(path);
                 if (string.IsNullOrWhiteSpace(json))
                 {
-                    LogWarning($"Binding overrides file is empty: {path}");
+                    LogWarning("Binding overrides file is empty: " + path);
                     return false;
                 }
 
                 inputManager.LoadBindingOverridesFromJson(json);
                 OnOverridesLoaded?.Invoke();
-                Log($"Binding overrides loaded from file: {path}");
+                Log("Binding overrides loaded from file: " + path);
                 return true;
             }
             catch (Exception ex)
             {
-                LogWarning($"Failed to load binding overrides file '{path}': {ex.Message}");
+                LogWarning("Failed to load binding overrides file '" + path + "': " + ex.Message);
                 return false;
             }
         }
@@ -418,7 +418,7 @@ namespace Hecton8.Input
             }
             catch (Exception ex)
             {
-                LogWarning($"Failed to load legacy binding overrides payload: {ex.Message}");
+                LogWarning("Failed to load legacy binding overrides payload: " + ex.Message);
                 return false;
             }
         }
@@ -449,7 +449,7 @@ namespace Hecton8.Input
             }
             catch (Exception ex)
             {
-                LogWarning($"Failed to save binding overrides file '{path}': {ex.Message}");
+                LogWarning("Failed to save binding overrides file '" + path + "': " + ex.Message);
 
                 try
                 {
@@ -476,7 +476,7 @@ namespace Hecton8.Input
                 }
                 catch (Exception ex)
                 {
-                    LogWarning($"Failed to delete binding overrides file '{path}': {ex.Message}");
+                    LogWarning("Failed to delete binding overrides file '" + path + "': " + ex.Message);
                 }
             }
 
@@ -489,7 +489,7 @@ namespace Hecton8.Input
                 }
                 catch (Exception ex)
                 {
-                    LogWarning($"Failed to delete temp binding overrides file '{tempPath}': {ex.Message}");
+                    LogWarning("Failed to delete temp binding overrides file '" + tempPath + "': " + ex.Message);
                 }
             }
         }
@@ -528,6 +528,9 @@ namespace Hecton8.Input
             if (action == null || string.IsNullOrWhiteSpace(bindingId))
                 return -1;
 
+            if (!Guid.TryParse(bindingId, out Guid targetBindingId))
+                return -1;
+
             int bindingCount;
             try
             {
@@ -542,10 +545,8 @@ namespace Hecton8.Input
             {
                 try
                 {
-                    if (action.bindings[i].id.ToString().Equals(bindingId, StringComparison.OrdinalIgnoreCase))
-                    {
+                    if (action.bindings[i].id == targetBindingId)
                         return i;
-                    }
                 }
                 catch
                 {
@@ -601,13 +602,13 @@ namespace Hecton8.Input
         private void Log(string message)
         {
             if (!verboseLogging) return;
-            Debug.Log($"[RebindingManager] {message}");
+            Debug.Log("[RebindingManager] " + message);
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private void LogWarning(string message)
         {
-            Debug.LogWarning($"[RebindingManager] {message}");
+            Debug.LogWarning("[RebindingManager] " + message);
         }
 
         /// <summary>
@@ -689,7 +690,7 @@ namespace Hecton8.Input
             }
 
             OnRebindCompleted?.Invoke(actionName, actionMap, bindingIndex, display);
-            Log($"Rebind complete (after conflict resolution): {actionMap}/{actionName}[{bindingIndex}] => {display}");
+            Log("Rebind complete (after conflict resolution): " + actionMap + "/" + actionName + "[" + bindingIndex + "] => " + display);
         }
 
         /// <summary>
@@ -708,12 +709,12 @@ namespace Hecton8.Input
                 }
                 catch (Exception ex)
                 {
-                    LogWarning($"Failed to remove binding override after conflict cancel: {ex.Message}");
+                    LogWarning("Failed to remove binding override after conflict cancel: " + ex.Message);
                 }
             }
 
             OnRebindCanceled?.Invoke(actionName, actionMap, bindingIndex);
-            Log($"Rebind canceled (conflict rejected): {actionMap}/{actionName}[{bindingIndex}]");
+            Log("Rebind canceled (conflict rejected): " + actionMap + "/" + actionName + "[" + bindingIndex + "]");
         }
     }
 }

@@ -374,7 +374,7 @@ namespace Hecton8.UI
             GameObject owner = layoutGroup != null
                 ? layoutGroup.gameObject
                 : rectTransform.gameObject;
-            LocalizedLayoutMirror mirror = owner.GetComponent<LocalizedLayoutMirror>();
+            owner.TryGetComponent(out LocalizedLayoutMirror mirror);
             if (mirror == null)
                 mirror = owner.AddComponent<LocalizedLayoutMirror>();
 

@@ -72,13 +72,13 @@ namespace Hecton8.UI
 
         private void Awake()
         {
-            _slotUI = GetComponent<SaveSlotUI>();
+            TryGetComponent(out _slotUI);
             _slotRect = transform as RectTransform;
             _previewPanelRect = previewPanel != null ? previewPanel.transform as RectTransform : null;
             _previewParentRect = previewContainer != null
                 ? previewContainer.parent as RectTransform
                 : (previewPanel != null ? previewPanel.transform.parent as RectTransform : null);
-            _rootCanvas = GetComponentInParent<Canvas>();
+            _rootCanvas = ResolveNearestParentCanvas(transform);
             _uiCamera = _rootCanvas != null && _rootCanvas.renderMode != RenderMode.ScreenSpaceOverlay
                 ? _rootCanvas.worldCamera
                 : null;
@@ -87,6 +87,17 @@ namespace Hecton8.UI
             ConfigurePreviewText(previewDetailsText, 14f, 24f);
             ConfigurePreviewText(previewStatusText, 14f, 24f);
             HideImmediate();
+        }
+
+        private static Canvas ResolveNearestParentCanvas(Transform start)
+        {
+            for (Transform current = start; current != null; current = current.parent)
+            {
+                if (current.TryGetComponent(out Canvas canvas))
+                    return canvas;
+            }
+
+            return null;
         }
 
         private void OnEnable()

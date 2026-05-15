@@ -749,3 +749,33 @@ Exact Microseconds saved:
 Verification state:
 - Static verification only; Unity import/compile/profiler evidence is still unavailable.
 - No dotnet build or rebuild was run.
+
+## 2026-05-15 - Owned Material Dirty-State Binding
+
+What was wrong:
+- `RenderDebris()` still rebound `_CarveDebrisVisibleIndices` and `_CarveDebrisMaterialParams` every active frame.
+- Those inputs are static across steady frames; only position and velocity buffers must change with ping-pong parity.
+
+What was done:
+- Added a per-owned-material binding cache for visible-index buffer and material parameter vector.
+- Invalidated the cache on material destruction and visible-index buffer replacement.
+- Kept per-frame position/velocity buffer writes because the compute ping-pong lane changes legitimately.
+- Added validity checks for visible-index and indirect-args buffers before the indirect draw.
+- Did not use `MaterialPropertyBlock`, shared material mutation, ParticleSystem, readback, dotnet build, or dotnet rebuild.
+
+Cinematic cheats used:
+- Static draw-state cheat: chip scale/lifetime/tier are treated as draw constants until they actually change.
+- Visual overkill remains in the approved debris shader; render-state churn is not used as a quality path.
+
+Exact Microseconds saved:
+- Estimated sub-5 us CPU on steady active frames after first bind by removing two redundant material property writes.
+- Direct GC saving: 0 B/frame maintained.
+- GPU saving: 0 us; this is CPU/render-state hygiene and fail-closed validity.
+
+Verification state:
+- Focused `git diff --check` returned no whitespace errors, only Git LF/CRLF notices.
+- Forbidden VFX scan returned no matches for CPU readback, ParticleSystem, ComputeBuffer, scene search, job scheduling fences, private `H8Memory.Allocate`, private `H8Memory.Release`, `MaterialPropertyBlock`, `matProps`, stale draw-frame cache, managed hot strings, `Vector3.magnitude`, or `math.sqrt`.
+- Shader hot-math scan returned no matches.
+- `CURRENT_BATCH.md` exact prompt tag count for `VFX_SDF_CARVE_DEBRIS`: 0.
+- Unity import/compile/profiler evidence remains unavailable.
+- No dotnet build or rebuild was run.

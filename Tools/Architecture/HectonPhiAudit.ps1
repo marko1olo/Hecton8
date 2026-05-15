@@ -23,6 +23,7 @@ param(
     [int]$MaxManagedFormatSurface = -1,
     [int]$MaxJobCompleteSurface = -1,
     [int]$MaxPrimaryManagedRuntimeRisk = -1,
+    [int]$MaxOwnerBlockedNativeArrayRefs = -1,
     [double]$MinDataSovereignty = -1.0,
     [double]$MinMemoryAlignment = -1.0,
     [double]$MinRuntimeHPhiRisk = -1.0
@@ -143,6 +144,11 @@ function New-FileRow {
     $managedRuntimeRisk = [int]$Counters['LinqSurface'] +
         [int]$Counters['CoroutineSurface'] +
         [int]$Counters['ManagedFormatSurface']
+    $nativeArrayRefs = [int]$Counters['NativeArrayRefs']
+    $dataVaultRefs = [int]$Counters['GlobalDataVaultRefs']
+    $disposeCalls = [int]$Counters['DisposeCalls']
+    $ownerBlockedNativeArrayRefs = if ($nativeArrayRefs -gt 0 -and $dataVaultRefs -eq 0) { $nativeArrayRefs } else { 0 }
+    $ownerBlockedDisposeCalls = if ($ownerBlockedNativeArrayRefs -gt 0) { $disposeCalls } else { 0 }
 
     [ordered]@{
         File = $RelativePath
@@ -156,9 +162,12 @@ function New-FileRow {
         UnityLoopShellMethods = [int]$Counters['UnityLoopShellMethods']
         UnityUpdateMethods = [int]$Counters['UnityUpdateMethods']
         StaticInstance = [int]$Counters['StaticInstance']
-        NativeArrayRefs = [int]$Counters['NativeArrayRefs']
-        GlobalDataVaultRefs = [int]$Counters['GlobalDataVaultRefs']
-        DisposeCalls = [int]$Counters['DisposeCalls']
+        NativeArrayRefs = $nativeArrayRefs
+        GlobalDataVaultRefs = $dataVaultRefs
+        DisposeCalls = $disposeCalls
+        OwnerBlockedNativeArrayRefs = $ownerBlockedNativeArrayRefs
+        OwnerBlockedDisposeCalls = $ownerBlockedDisposeCalls
+        NativeOwnershipRisk = $ownerBlockedNativeArrayRefs + ($ownerBlockedDisposeCalls * 2)
         FindObjectCalls = [int]$Counters['FindObjectCalls']
         GetComponentCalls = [int]$Counters['GetComponentCalls']
         AupPrecisionSafe = [int]$Counters['AupPrecisionSafe']
@@ -1905,6 +1914,9 @@ function New-AuditSummary {
             JobCompleteSurface = $Audit.Counts.JobCompleteSurface
             PrimaryManagedRuntimeRisk = $Audit.RiskSums.PrimaryManagedRuntimeRisk
             PrimaryJobCompleteRisk = $Audit.RiskSums.PrimaryJobCompleteRisk
+            OwnerBlockedNativeArrayRefs = $Audit.RiskSums.OwnerBlockedNativeArrayRefs
+            OwnerBlockedDisposeCalls = $Audit.RiskSums.OwnerBlockedDisposeCalls
+            NativeOwnershipRisk = $Audit.RiskSums.NativeOwnershipRisk
         }
         Budgets = $Audit.Budgets
         CoreGraph = New-CoreGraphSummary $Audit.CoreGraphAudit
@@ -1929,6 +1941,10 @@ function New-AuditSummary {
         TopJobCompleteRiskFiles = @($Audit.TopJobCompleteRiskFiles |
             Select-Object -First 10)
         ManagedRiskByRole = @($Audit.ManagedRiskByRole |
+            Select-Object -First 8)
+        DataVaultBacklogByDomain = @($Audit.DataVaultBacklogByDomain |
+            Select-Object -First 8)
+        DataVaultBacklogByRole = @($Audit.DataVaultBacklogByRole |
             Select-Object -First 8)
         TopOwnerBlockedDataVaultCandidates = @($Audit.OwnerBlockedDataVaultCandidates |
             Select-Object -First 10)
@@ -1989,6 +2005,10 @@ if ($CoreGraphOnly) {
 
     if ($MaxPrimaryManagedRuntimeRisk -ge 0) {
         throw 'Primary managed runtime risk budget requires full source scan. Remove -CoreGraphOnly when using -MaxPrimaryManagedRuntimeRisk.'
+    }
+
+    if ($MaxOwnerBlockedNativeArrayRefs -ge 0) {
+        throw 'Owner-blocked NativeArray budget requires full source scan. Remove -CoreGraphOnly when using -MaxOwnerBlockedNativeArrayRefs.'
     }
 
     if ($MinDataSovereignty -ge 0.0) {
@@ -2250,6 +2270,12 @@ $primaryManagedRuntimeRisk = [int](@($runtimeFileRows |
     Measure-Object -Property PrimaryManagedRuntimeRisk -Sum).Sum)
 $primaryJobCompleteRisk = [int](@($runtimeFileRows |
     Measure-Object -Property PrimaryJobCompleteRisk -Sum).Sum)
+$ownerBlockedNativeArrayRefs = [int](@($runtimeFileRows |
+    Measure-Object -Property OwnerBlockedNativeArrayRefs -Sum).Sum)
+$ownerBlockedDisposeCalls = [int](@($runtimeFileRows |
+    Measure-Object -Property OwnerBlockedDisposeCalls -Sum).Sum)
+$nativeOwnershipRisk = [int](@($runtimeFileRows |
+    Measure-Object -Property NativeOwnershipRisk -Sum).Sum)
 
 Assert-AupPrecisionBudget $runtimeCounters $runtimeFileRows
 Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'UnityUpdateMethods' $MaxUnityUpdateMethods 'Unity update-method runtime debt'
@@ -2263,6 +2289,7 @@ Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'CoroutineSurface' 
 Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'ManagedFormatSurface' $MaxManagedFormatSurface 'Managed format runtime surface'
 Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'JobCompleteSurface' $MaxJobCompleteSurface 'Job Complete runtime surface'
 Assert-ScalarMaxBudget $primaryManagedRuntimeRisk $MaxPrimaryManagedRuntimeRisk 'Primary managed runtime risk'
+Assert-ScalarMaxBudget $ownerBlockedNativeArrayRefs $MaxOwnerBlockedNativeArrayRefs 'Owner-blocked NativeArray refs'
 Assert-StaticScoreFloor $runtimeScores 'DataSovereignty' $MinDataSovereignty 'Data Sovereignty'
 Assert-StaticScoreFloor $runtimeScores 'MemoryAlignment' $MinMemoryAlignment 'Memory Alignment'
 Assert-StaticScoreFloor $runtimeScores 'HPhiStaticRisk' $MinRuntimeHPhiRisk 'Runtime risk-adjusted H-Phi'
@@ -2282,6 +2309,9 @@ $result = [ordered]@{
     RiskSums = [ordered]@{
         PrimaryManagedRuntimeRisk = $primaryManagedRuntimeRisk
         PrimaryJobCompleteRisk = $primaryJobCompleteRisk
+        OwnerBlockedNativeArrayRefs = $ownerBlockedNativeArrayRefs
+        OwnerBlockedDisposeCalls = $ownerBlockedDisposeCalls
+        NativeOwnershipRisk = $nativeOwnershipRisk
     }
     Budgets = [ordered]@{
         AupPrecisionRisk = [ordered]@{
@@ -2375,6 +2405,13 @@ $result = [ordered]@{
             Passed = $MaxPrimaryManagedRuntimeRisk -lt 0 -or $primaryManagedRuntimeRisk -le $MaxPrimaryManagedRuntimeRisk
             EvidenceClass = 'STATIC_SOURCE_FULL_SCAN'
         }
+        OwnerBlockedNativeArrayRefs = [ordered]@{
+            Enabled = $MaxOwnerBlockedNativeArrayRefs -ge 0
+            Max = $MaxOwnerBlockedNativeArrayRefs
+            Actual = $ownerBlockedNativeArrayRefs
+            Passed = $MaxOwnerBlockedNativeArrayRefs -lt 0 -or $ownerBlockedNativeArrayRefs -le $MaxOwnerBlockedNativeArrayRefs
+            EvidenceClass = 'STATIC_SOURCE_FULL_SCAN'
+        }
         DataSovereignty = [ordered]@{
             Enabled = $MinDataSovereignty -ge 0.0
             Min = $MinDataSovereignty
@@ -2406,7 +2443,10 @@ $result = [ordered]@{
         Select-Object -First 25)
     OwnerBlockedDataVaultCandidates = @($runtimeFileRows |
         Where-Object { $_.NativeArrayRefs -gt 0 -and $_.GlobalDataVaultRefs -eq 0 } |
-        Sort-Object NativeArrayRefs -Descending |
+        Sort-Object -Property @(
+            @{ Expression = 'NativeOwnershipRisk'; Descending = $true },
+            @{ Expression = 'NativeArrayRefs'; Descending = $true },
+            @{ Expression = 'OwnerBlockedDisposeCalls'; Descending = $true }) |
         Select-Object -First 25)
     TopAupPrecisionRiskFiles = @($runtimeFileRows |
         Where-Object { $_.AupPrecisionRisk -gt 0 } |
@@ -2450,6 +2490,32 @@ $result = [ordered]@{
             }
         } |
         Sort-Object ManagedRuntimeRisk -Descending)
+    DataVaultBacklogByDomain = @($runtimeFileRows |
+        Where-Object { $_.OwnerBlockedNativeArrayRefs -gt 0 } |
+        Group-Object Domain |
+        ForEach-Object {
+            [pscustomobject][ordered]@{
+                Domain = $_.Name
+                FileCount = @($_.Group).Count
+                OwnerBlockedNativeArrayRefs = [int](@($_.Group | Measure-Object -Property OwnerBlockedNativeArrayRefs -Sum).Sum)
+                OwnerBlockedDisposeCalls = [int](@($_.Group | Measure-Object -Property OwnerBlockedDisposeCalls -Sum).Sum)
+                NativeOwnershipRisk = [int](@($_.Group | Measure-Object -Property NativeOwnershipRisk -Sum).Sum)
+            }
+        } |
+        Sort-Object NativeOwnershipRisk -Descending)
+    DataVaultBacklogByRole = @($runtimeFileRows |
+        Where-Object { $_.OwnerBlockedNativeArrayRefs -gt 0 } |
+        Group-Object FileRole |
+        ForEach-Object {
+            [pscustomobject][ordered]@{
+                FileRole = $_.Name
+                FileCount = @($_.Group).Count
+                OwnerBlockedNativeArrayRefs = [int](@($_.Group | Measure-Object -Property OwnerBlockedNativeArrayRefs -Sum).Sum)
+                OwnerBlockedDisposeCalls = [int](@($_.Group | Measure-Object -Property OwnerBlockedDisposeCalls -Sum).Sum)
+                NativeOwnershipRisk = [int](@($_.Group | Measure-Object -Property NativeOwnershipRisk -Sum).Sum)
+            }
+        } |
+        Sort-Object NativeOwnershipRisk -Descending)
     TopJobCompleteRiskFiles = @($runtimeFileRows |
         Where-Object { $_.JobCompleteSurface -gt 0 } |
         Sort-Object -Property @(
@@ -2508,6 +2574,12 @@ if ($Summary) {
     Write-Output ''
     Write-Output 'Managed runtime risk by role:'
     $summaryResult.ManagedRiskByRole | Format-Table -AutoSize
+    Write-Output ''
+    Write-Output 'DataVault backlog by domain:'
+    $summaryResult.DataVaultBacklogByDomain | Format-Table -AutoSize
+    Write-Output ''
+    Write-Output 'DataVault backlog by role:'
+    $summaryResult.DataVaultBacklogByRole | Format-Table -AutoSize
     Write-Output ''
     Write-Output 'Top job Complete risk files:'
     $summaryResult.TopJobCompleteRiskFiles | Format-Table -AutoSize

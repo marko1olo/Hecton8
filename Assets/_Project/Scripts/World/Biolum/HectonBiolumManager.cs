@@ -649,10 +649,11 @@ namespace Hecton8.Biolum
 
         private void DrainMovementAcousticSignals()
         {
-            int drained = 0;
-            while (drained < MovementSignalMaxDrainPerTick && GlobalSignals.TryDequeueMovementAcoustic(out MovementAcousticSignal signal))
+            ReadOnlySpan<MovementAcousticSignal> signals = SignalBus<MovementAcousticSignal>.GetFrameSnapshot();
+            int count = math.min(signals.Length, MovementSignalMaxDrainPerTick);
+            for (int i = 0; i < count; i++)
             {
-                drained++;
+                ref readonly MovementAcousticSignal signal = ref signals[i];
                 AddOrRefreshTouchRipple(in signal);
             }
         }

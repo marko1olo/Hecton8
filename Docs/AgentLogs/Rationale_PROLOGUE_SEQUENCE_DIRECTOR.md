@@ -500,3 +500,19 @@ Solution: Before clearing service references, queue one neutral `AudioTransition
 Rejected Alternatives: Depend on audio renderer reset lifecycle, or queue neutral every disable. Renderer reset may not run on prologue component teardown; unconditional neutral packets waste SPSC capacity on untouched components.
 Scalability potential: Low/MX350 avoids stale muffling or plasma stress after scene churn. Middle/High/Ultra keep expensive splash/portal DSP overkill scoped to active prologue ownership.
 Hardware Impact: One disable-only SPSC enqueue when needed, 0 us steady-state. Prevents stale audio state without per-frame polling or extra audio renderer coupling. Verification static only; no rebuild.
+
+## Decision 61 - Dev-Skip Input Late-Init Cache
+
+Problem: `PrologueSequenceRegistryBridge` only cached and subscribed to `IInputService` when the service was already initialized during bridge enable or hot-swap. If input existed but initialized later without a registry replacement, development skip chord polling and cancel-event handling could stay inert for that prologue run.
+Solution: Cache the input service reference even before initialization, subscribe once through `TrySubscribeInput()` when initialization is observed, and clear both the cached reference and subscription flag during unbind/cache clear. `ShouldSkipPrologue` now performs the one-time subscription attempt only in the development skip path.
+Rejected Alternatives: Poll `GlobalRegistry.Input` every skip check, or require input service replacement after initialization. Registry polling spends hot-path budget on a cold lifecycle edge; requiring replacement makes dev tooling fragile.
+Scalability potential: Low/MX350 development testing can interrupt the prologue reliably even when input bootstraps slightly later. Middle/High/Ultra release runtime has no added cost because the path is development-build gated.
+Hardware Impact: One dev-only branch and possible one-time event subscription while skip polling; 0 us release path and no added allocations. Verification static only; no rebuild.
+
+## Decision 62 - VFX Scalability Event Refresh
+
+Problem: `OrbitalDropReentryVfxController` refreshed quality tier and low-memory policy only on enable and a 60-frame cadence. A scalability or emergency low-memory change could leave plasma opacity, splash quantity, acoustic crossfade, and state flags using stale quality policy for up to one second.
+Solution: Implement `IScalabilityChangedEventListener`, register/unregister with `ScalabilityEvents`, and route both event updates and periodic fallback probes through `CacheQualityPolicy()`.
+Rejected Alternatives: Keep cadence-only registry reads, or poll registry every late frame. Cadence-only leaves visible stale quality state; per-frame registry polling spends hot-path budget on a cold policy edge.
+Scalability potential: Low/MX350 and low-memory transitions downshift presentation immediately. Middle/High/Ultra keep richer plasma/splash presentation when the current policy allows it.
+Hardware Impact: One cold listener registration/unregistration and one event-time scalar policy update; steady-state frame cost remains the existing 60-frame fallback probe. Verification static only; no rebuild.

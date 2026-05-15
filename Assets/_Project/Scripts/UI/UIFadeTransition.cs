@@ -40,7 +40,7 @@ namespace Hecton8.UI
 
         private void Awake()
         {
-            _canvasGroup = GetComponent<CanvasGroup>();
+            TryGetComponent(out _canvasGroup);
         }
 
         private void OnEnable()

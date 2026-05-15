@@ -2255,6 +2255,7 @@ namespace Hecton8.Core
         {
             EnsureInitialized();
             _movementAcousticSignals.Enqueue(signal);
+            SignalBus<MovementAcousticSignal>.Push(in signal);
         }
 
         /// <summary>Queues one swarm dispersion packet from the main thread.</summary>
@@ -3179,6 +3180,8 @@ namespace Hecton8.Core
             SignalBus<WeatherChangedSignal>.EnsureInitialized();
             SignalBus<SystemPauseSignal>.Configure(SimulationPauseSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(SystemPauseSignal)));
             SignalBus<SystemPauseSignal>.EnsureInitialized();
+            SignalBus<MovementAcousticSignal>.Configure(MovementAcousticSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(MovementAcousticSignal)));
+            SignalBus<MovementAcousticSignal>.EnsureInitialized();
             SignalBus<DiegeticHudSignal>.Configure(DiegeticHudSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(DiegeticHudSignal)));
             SignalBus<DiegeticHudSignal>.EnsureInitialized();
             SignalBus<SaveRequestSignal>.Configure(SaveLifecycleSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(SaveRequestSignal)));
