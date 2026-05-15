@@ -137,6 +137,7 @@ namespace Hecton8.Prologue.VFX
         private bool _oceanWavesPublished;
         private bool _splashPublished;
         private bool _audioCrossfadeActive;
+        private bool _hasSpatialAnchor;
 
         private void OnEnable()
         {
@@ -228,6 +229,7 @@ namespace Hecton8.Prologue.VFX
             _plasmaRoarPublished = false;
             _oceanWavesPublished = false;
             _splashPublished = false;
+            _hasSpatialAnchor = false;
         }
 
         private void ResolveDependencies()
@@ -312,6 +314,10 @@ namespace Hecton8.Prologue.VFX
                 }
 
                 _lastCapsuleAup = signal.CapsuleAup;
+                _hasSpatialAnchor = true;
+                if (_phase == ReentryPhase.Whiteout && !_plasmaRoarPublished)
+                    PublishPlasmaRoar();
+
                 _altitudeMeters = math.max(0f, signal.AltitudeMeters);
                 _velocityMetersPerSecond = math.max(0f, signal.UniverseVelocityMetersPerSecond);
                 _targetHeat01 = ResolveHeat01(in signal);
@@ -366,7 +372,10 @@ namespace Hecton8.Prologue.VFX
                 }
 
                 if (sequenceOceanHandoff)
+                {
                     _lastCapsuleAup = signal.CapsuleAup;
+                    _hasSpatialAnchor = true;
+                }
 
                 _whiteoutHoldSecondsRemaining = math.max(_whiteoutHoldSecondsRemaining, math.max(0f, signal.WhiteoutHoldSeconds));
                 EnterWhiteout();
@@ -560,6 +569,9 @@ namespace Hecton8.Prologue.VFX
 
         private void PublishAcousticBlend(uint sourceId, float radiusMeters, float intensity01)
         {
+            if (!_hasSpatialAnchor)
+                return;
+
             float safeIntensity01 = math.saturate(intensity01);
             if (safeIntensity01 <= 0.001f)
                 return;
@@ -578,7 +590,7 @@ namespace Hecton8.Prologue.VFX
 
         private void PublishPlasmaRoar()
         {
-            if (_plasmaRoarPublished)
+            if (_plasmaRoarPublished || !_hasSpatialAnchor)
                 return;
 
             _plasmaRoarPublished = true;
@@ -596,7 +608,7 @@ namespace Hecton8.Prologue.VFX
 
         private void PublishOceanWaves()
         {
-            if (_oceanWavesPublished || _audioCrossfadeActive)
+            if (_oceanWavesPublished || _audioCrossfadeActive || !_hasSpatialAnchor)
                 return;
 
             _oceanWavesPublished = true;
@@ -614,7 +626,7 @@ namespace Hecton8.Prologue.VFX
 
         private void PublishMassiveSplash()
         {
-            if (_splashPublished)
+            if (_splashPublished || !_hasSpatialAnchor)
                 return;
 
             _splashPublished = true;

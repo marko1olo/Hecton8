@@ -88,6 +88,7 @@ namespace Hecton8.UI.Tools
         private RenderTexturePool _cachedRenderTexturePool;
         private RenderTexturePool _renderTextureOwnerPool;
         private Texture _boundScreenTexture;
+        private RenderTextureFormat _renderTextureFormat = RenderTextureFormat.ARGB32;
         private bool _registered;
         private bool _hasState;
         private bool _stateDirty = true;
@@ -148,6 +149,7 @@ namespace Hecton8.UI.Tools
         private void Awake()
         {
             ResolveLayerMaskCold();
+            ResolveRenderTextureFormatCold();
             ConfigureCameraCold();
         }
 
@@ -564,10 +566,7 @@ namespace Hecton8.UI.Tools
                 return;
             }
 
-            RenderTextureFormat format = SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.RGB565)
-                ? RenderTextureFormat.RGB565
-                : RenderTextureFormat.ARGB32;
-            _renderTexture = pool.Rent(RenderTextureSize, RenderTextureSize, format, this, 16);
+            _renderTexture = pool.Rent(RenderTextureSize, RenderTextureSize, _renderTextureFormat, this, 16);
             if (_renderTexture == null)
             {
                 _poolUnavailableFallback = true;
@@ -691,6 +690,13 @@ namespace Hecton8.UI.Tools
         {
             int layer = LayerMask.NameToLayer(ToolUiLayerName);
             _toolUiMask = layer >= 0 ? 1 << layer : _fallbackToolUiMask.value;
+        }
+
+        private void ResolveRenderTextureFormatCold()
+        {
+            _renderTextureFormat = SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.RGB565)
+                ? RenderTextureFormat.RGB565
+                : RenderTextureFormat.ARGB32;
         }
 
         private void ConfigureCameraCold()

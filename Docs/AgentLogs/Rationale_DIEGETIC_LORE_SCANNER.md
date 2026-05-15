@@ -445,3 +445,11 @@ Solution: Ran source-only checks: `git diff --check` passed with docs line-endin
 Rejected Alternatives: Running prohibited `dotnet build`; trusting the patch visually without regression scan.
 Scalability potential: Process hygiene only.
 Hardware Impact: No runtime impact.
+
+## LOOP 20 DIEGETIC RT FORMAT PROBE CACHE
+
+Problem: `ToolDiegeticDisplayController.EnsureRenderTexture()` checked `SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.RGB565)` every time the physical tool display needed a render texture. This is cold under ideal conditions, but visibility churn, low-tier transitions, or pool pressure can make RT reacquisition repeat the same platform capability probe.
+Solution: Resolve the preferred tool-screen RT format once in `Awake()` via `ResolveRenderTextureFormatCold()` and reuse the cached `_renderTextureFormat` for future pool rents.
+Rejected Alternatives: Repeating `SystemInfo` capability checks during every rent; forcing ARGB32 and losing the RGB565 memory cut on low hardware; changing the shared RT pool contract.
+Scalability potential: Low/MX350 keeps RGB565 when supported and avoids repeated capability probing during RT churn. Middle/High/Ultra keep the same visual path with cleaner pool-rent code and no extra per-frame cost.
+Hardware Impact: Removes one platform format support query per physical tool RT rent. Exact microseconds PENDING PROFILER; main value is deterministic cold-path hygiene and preserving 16-bit RT memory savings where supported.

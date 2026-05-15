@@ -69,6 +69,7 @@ Status: PENDING VERIFICATION / STATIC CHECKS ONLY / UNITY COMPILE BLOCKED (NO DO
 - Loop 30: Camera-scoped indirect draw pass. DOD: `RenderDebris()` now passes the authored `renderCamera` into `RenderParams.camera`, matching the camera used for compute distance culling. Rejected alternative: leaving the draw unscoped to all cameras or using `Camera.main`, because both violate predictable presentation ownership. Estimate: 0 us in one-camera scenes; saves one indirect draw plus shader work per unrelated camera when an authored camera is assigned.
 - Loop 31: AGENTS material-rule compliance pass. DOD: removed `MaterialPropertyBlock`/`matProps` from the debris geometry path and kept H-Phi buffer isolation through an owned first-party runtime material instance. Rejected alternative: keeping MPB because it is clean isolation but conflicts with the current material-property mandate. Estimate: 0 us direct frame saving; one cold material instance avoids shared material corruption without geometry MPB.
 - Loop 32: Static verification after camera/material compliance pass. DOD: `git diff --check` returned no whitespace errors, only Git LF/CRLF notices; VFX static scan found no CPU readback, ParticleSystem, ComputeBuffer, scene search, job scheduling fences, private `H8Memory.Allocate`, private `H8Memory.Release`, `MaterialPropertyBlock`, or `matProps`; shader hot-math scan returned no matches; exact current batch prompt tag count remains 0. Rejected alternative: dotnet rebuild or fake Unity compile pass. Estimate: verification saves 0 us.
+- Loop 33: Registry hot-swap cache pass. DOD: renderer now registers as a `GlobalRegistry` hot-swap/ref listener, caches DataVault/Fluid during enable/start wiring, invalidates DataVault lease from callbacks, and validates the ready lease against the cached registry service instead of polling `GlobalRegistry.DataVault` every 30 frames. Rejected alternative: cadence-based ready-state service lookup. Estimate: sub-microsecond steady saving; stronger H-Phi service replacement correctness.
 
 ## Second-Pass Upgrade Status
 
@@ -101,6 +102,7 @@ Status: PENDING VERIFICATION / STATIC CHECKS ONLY / UNITY COMPILE BLOCKED (NO DO
 - [x] Low-tier debris lighting skips main-light shadow-coordinate and shadow attenuation work; High/Ultra keeps the richer shadowed response.
 - [x] Indirect debris draw bindings are scoped through a private owned runtime material instance instead of shared material mutation or a geometry `MaterialPropertyBlock`.
 - [x] Indirect debris draw now uses the same authored camera as the compute cull path when `renderCamera` is assigned.
+- [x] DataVault and Fluid service caches now rebind through `GlobalRegistry` hot-swap callbacks; ready-state DataVault validation no longer polls the registry.
 
 ## OMEGA Polish Status
 

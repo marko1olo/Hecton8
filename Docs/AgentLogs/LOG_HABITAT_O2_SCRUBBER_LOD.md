@@ -217,3 +217,18 @@ Cinematic Cheats used:
 
 Exact microseconds saved:
 - None claimed. This is one-time per-step guard arithmetic to prevent capacity-skew faults during future H-Phi/native ownership migration. No dotnet rebuild was run.
+
+## 2026-05-15 - Telemetry Cursor Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- The gas scheduler advanced `_telemetryWriteIndex` modulo the constant `TelemetryCapacity` even though the job now validates against the live native ring length.
+
+What was done:
+- `ScheduleStep` now derives the write index and next cursor from `_telemetryRing.Length` when the ring exists.
+
+Cinematic Cheats used:
+- None new.
+
+Exact microseconds saved:
+- None claimed. This preserves black-box evidence under future ring-size changes; no dotnet rebuild was run.

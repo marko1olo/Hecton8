@@ -41,6 +41,7 @@ namespace Hecton8.VFX.Debris
         private const int GlobalSdfRefreshStrideFrames = 4;
         private const int TierRefreshStrideFrames = 30;
         private const int TierSwitchConfirmFrames = 120;
+        private const int MissingRegistryRefreshStrideFrames = 30;
         private const float MinimumCarveSpawnRadiusMeters = 0.05f;
 #if UNITY_EDITOR
         private const string FluidAdvectionComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_FluidAdvection.compute";
@@ -141,6 +142,7 @@ namespace Hecton8.VFX.Debris
         private int _lastActiveCapacity = MaxCarveDebrisCount;
         private int _nextGlobalSdfRefreshFrame;
         private int _nextTierRefreshFrame;
+        private int _nextMissingRegistryRefreshFrame;
         private int _pendingTierFrames;
         private int _cachedDrawMeshFrame = -1;
         private int _bufferParity;
@@ -283,14 +285,27 @@ namespace Hecton8.VFX.Debris
         {
             _registryDataVault = GlobalRegistry.DataVault;
             _fluidEngine = GlobalRegistry.Fluid;
+            _nextMissingRegistryRefreshFrame = Time.frameCount + MissingRegistryRefreshStrideFrames;
         }
 
-        public void OnGlobalRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService)
+        private void RefreshMissingRegistryServicesIfNeeded()
+        {
+            if (_registryDataVault != null && _fluidEngine != null)
+                return;
+
+            int frame = Time.frameCount;
+            if (frame < _nextMissingRegistryRefreshFrame)
+                return;
+
+            RefreshCachedRegistryServices();
+        }
+
+        void IGlobalRegistryHotSwapRefListener.OnGlobalRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService)
         {
             ApplyRegistryServiceRebind(serviceSlot, currentService);
         }
 
-        public void OnGlobalRegistryServiceReplaced(
+        void IGlobalRegistryHotSwapListener.OnGlobalRegistryServiceReplaced(
             GlobalRegistryServiceSlot serviceSlot,
             object previousService,
             object currentService)
@@ -326,6 +341,7 @@ namespace Hecton8.VFX.Debris
             if (fluidAdvectionCompute == null)
                 return false;
 
+            RefreshMissingRegistryServicesIfNeeded();
             IDataVault vault = _registryDataVault;
             if (vault == null)
                 return false;
@@ -1419,8 +1435,8 @@ namespace Hecton8.VFX.Debris
             _cachedGlobalSdfInvDoubleHalfExtents = Vector4.zero;
             _cachedGlobalSdfActive = 0f;
             _nextGlobalSdfRefreshFrame = 0;
-            _nextFluidRebindFrame = 0;
             _nextTierRefreshFrame = 0;
+            _nextMissingRegistryRefreshFrame = 0;
             _pendingTierFrames = 0;
             _cachedLowTier = true;
             _pendingLowTier = true;

@@ -592,6 +592,7 @@ namespace Hecton8.Audio
         private AcousticZoneController _cachedAcousticZone;
         private HectonSurfaceWeatherDirector _cachedSurfaceWeatherDirector;
         private PlayerCriticalProceduralAudioRenderer _cachedPlayerCriticalAudio;
+        private ConstructionManager _cachedConstructionManager;
         private HectonQualityTier _cachedScalabilityTier = HectonQualityTier.Unknown;
         private bool _cachedLowMemoryProfile;
         private int _spatialAudioPolicyRefreshFrame = SpatialAudioPolicyUninitializedFrame;
@@ -704,6 +705,7 @@ namespace Hecton8.Audio
             _listenerPlayerMovement = null;
             _foveatedSimulationDirector = null;
             _cachedPlayerCriticalAudio = null;
+            _cachedConstructionManager = null;
             _cachedPlayerRuntimeContext = null;
             _cachedWeatherService = null;
             _cachedAcousticZone = null;
@@ -2475,6 +2477,7 @@ namespace Hecton8.Audio
             _cachedAcousticZone = GlobalRegistry.AcousticZone;
             _cachedSurfaceWeatherDirector = GlobalRegistry.SurfaceWeather;
             _cachedPlayerCriticalAudio = GlobalRegistry.PlayerCriticalAudio;
+            _cachedConstructionManager = GlobalRegistry.ConstructionRuntime;
             _foveatedSimulationDirector = GlobalRegistry.FoveatedSimulationDirector;
             _playerRuntimeContextResolveFrame = nextResolveFrame;
             _weatherServiceResolveFrame = nextResolveFrame;
@@ -2508,6 +2511,9 @@ namespace Hecton8.Audio
                     break;
                 case GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime:
                     _cachedPlayerCriticalAudio = currentService as PlayerCriticalProceduralAudioRenderer;
+                    break;
+                case GlobalRegistryServiceSlot.Logistics:
+                    _cachedConstructionManager = currentService as ConstructionManager;
                     break;
                 case GlobalRegistryServiceSlot.FoveatedSimulationDirector:
                     _foveatedSimulationDirector = currentService as IFoveatedSimulationDirector;
@@ -4963,7 +4969,7 @@ namespace Hecton8.Audio
         {
             nodeCount = 0;
             edgeCount = 0;
-            ConstructionManager constructionManager = GlobalRegistry.ConstructionRuntime;
+            ConstructionManager constructionManager = _cachedConstructionManager;
             if (constructionManager == null ||
                 !constructionManager.TryGetHabitatAcousticGraph(out HabitatGraphManager graph) ||
                 _acousticHabitatNodeMap == null ||

@@ -41,3 +41,9 @@ Solution: Fetch and compare `origin/main...HEAD` before any staging. Because the
 Rejected Alternatives: Pulling with no incoming remote commits, force-pushing, deleting stashes, or resetting dirty files. These add risk without solving the actual state.
 Scalability potential: Git-only operation. No runtime tier behavior changes.
 Hardware Impact: 0 us runtime impact. Dev-path gain is avoiding unnecessary merge churn and preserving active local work.
+
+Problem: Continued work found another graphics/VFX/docs dirty tail after the last verified push, while remote history still matched local committed history.
+Solution: Treat the dirty tail as post-push live work, prove no incoming remote commits and no active conflict markers, then checkpoint the evidence-backed snapshot.
+Rejected Alternatives: Calling the repo clean because committed history matched remote, or pulling with no incoming commits. Both would misstate the live worktree.
+Scalability potential: Git-only operation. Runtime Low/Middle/High/Ultra behavior unchanged by this repository operation.
+Hardware Impact: 0 us runtime impact. Dev-path gain is reduced local conflict exposure by publishing another validated batch.

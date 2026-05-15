@@ -19,11 +19,12 @@ namespace Hecton8.QA.Headless.Editor
         private const string FlagRelativePath = "Temp/H8_FRACTURE_TEST.flag";
         private const string ResultRelativePath = "Docs/AgentLogs/HeadlessStressFractureResult_HEADLESS_STRESS_FRACTURE_BOT.json";
         private const string BlackboxRelativePath = "Docs/AgentLogs/Dump_HEADLESS_STRESS_FRACTURE_BOT.bin";
+        private const string BlackboxManifestRelativePath = "Docs/AgentLogs/Dump_HEADLESS_STRESS_FRACTURE_BOT.json";
         private const string H8MemoryDumpRelativePath = "Docs/AgentLogs/H8Memory_HEADLESS_STRESS_FRACTURE_BOT.txt";
         private const string RunnerStatusRelativePath = "Docs/AgentLogs/HeadlessStressFractureBatchRunner_HEADLESS_STRESS_FRACTURE_BOT.txt";
         private const string ExitCodeJsonKey = "\"exitCode\"";
         private const string AgentName = "HEADLESS_STRESS_FRACTURE_BOT";
-        private const int ResultSchemaVersion = 4;
+        private const int ResultSchemaVersion = 5;
         private const int BlackboxFrameCapacity = 300;
         private const int BlackboxEntrySizeBytes = 64;
         private const uint BlackboxMagic = 0x48534642u;
@@ -45,6 +46,7 @@ namespace Hecton8.QA.Headless.Editor
             TryDeleteFile(ResolveProjectPath(ResultRelativePath));
             TryDeleteFile(ResolveProjectPath(ResultRelativePath + ".tmp"));
             TryDeleteFile(ResolveProjectPath(BlackboxRelativePath));
+            TryDeleteFile(ResolveProjectPath(BlackboxManifestRelativePath));
             TryDeleteFile(ResolveProjectPath(H8MemoryDumpRelativePath));
             TryDeleteFile(ResolveProjectPath(FlagRelativePath));
             if (!TryWriteFlagFile())
@@ -289,6 +291,9 @@ namespace Hecton8.QA.Headless.Editor
                     WriteInvariant(writer, BlackboxFrameCapacity);
                     writer.Write(",\"blackboxEntrySizeBytes\":");
                     WriteInvariant(writer, BlackboxEntrySizeBytes);
+                    writer.Write(",\"blackboxManifestRelativePath\":\"");
+                    WriteJsonEscaped(writer, BlackboxManifestRelativePath);
+                    writer.Write('"');
                     writer.Write('}');
                 }
 

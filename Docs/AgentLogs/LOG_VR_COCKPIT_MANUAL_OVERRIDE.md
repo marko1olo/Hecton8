@@ -337,3 +337,15 @@ Cinematic Cheats used: no physical simulation change. This keeps the kinematic l
 Exact microseconds saved/spent: 0 us steady-state. Tier changes pay one bool write. Lifecycle/latch pay fixed-bucket listener register/unregister only.
 
 Verification: `git diff --check` passed for the lever source. Scoped counter reports `ForbiddenPatternTotal=0`, `ScalabilityInterface=1`, `ScalabilityRegister=1`, `ScalabilityUnregister=1`, `ScalabilityCallback=1`, `LowTierPayloadUpdate=1`, `LatchedScalabilityGuard=1`, `LatchUnregisterScalability=1`, `TickBodyHasScalabilityPoll=false`, `ColdResolveLowTierMath=1`, `DotnetMention=0`. `CURRENT_BATCH.md` extraction still returns no matching prompt block. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - Receiver Lifecycle Native Gate
+
+What was wrong: a manual override lever could keep its activation collider registered as a physical hand receiver even when native state was unavailable or the dispatcher was removed, so overlap work could reach a receiver that could not advance simulation.
+
+What was done: receiver registration now requires `_nativeAllocated`. Dispatcher removal unregisters the receiver with the tick lane, and dispatcher replacement recovers native state before registering receiver and tick. The scalability callback also ignores disabled/latched controls and uses the normalized byte tier directly.
+
+Cinematic Cheats used: no simulation change. This preserves the scalar kinematic lever and spends lifecycle work only where the control can actually run.
+
+Exact microseconds saved/spent: 0 us normal steady-state. Cold dispatcher transitions pay one guarded receiver unregister/register. Allocation-failed or dispatcher-detached states avoid useless receiver callbacks and free one fixed receiver-table slot.
+
+Verification: `git diff --check` passed for the lever source. Scoped counter reports `ReceiverRequiresNative=1`, `DispatcherNullUnregistersReceiver=1`, `DispatcherRecoveryRegistersReceiver=1`, `ScalabilityCallbackActiveGuard=1`, `ScalabilityByteTier=1`, `PayloadQualityTierInCallback=0`. No dotnet rebuild/probe was run by user instruction.

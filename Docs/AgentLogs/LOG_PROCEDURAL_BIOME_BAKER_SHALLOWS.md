@@ -273,3 +273,27 @@ Cinematic Cheats used: Static authored LOD meshes, dithered crossfade, shader ma
 Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents hidden vertex-buffer bloat and malformed topology from entering the Shallows mesh library; exact runtime microseconds were not profiled.
 
 Verification: No dotnet rebuild and no Unity import was run. `MeshVertexIndexYamlScan TotalBad=0`; maxima were Kelp `6600/1542/282`, TubeCoral `7092/1026/72`, PorousRock `9243/1743/159`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.
+
+## 2026-05-15 Prefab Deterministic Name Contract
+
+What was wrong: Generated Shallows prefabs could keep valid counts, hierarchy, materials, meshes, LODs, and renderer flags while the asset stem or root name drifted away from the deterministic BioForge family/index/kind/hash identity.
+
+What was done: Added `ValidatePrefabNameContract` to `ShallowsBioForgeBatchBaker`, with family-specific prefix/kind resolution and direct ordinal checks for three decimal index digits, separators, kind text, and eight uppercase hex hash digits. The validator also requires root `GameObject.name` to equal the prefab file stem.
+
+Cinematic Cheats used: Static offline L-system/SDF prefabs, MeshRenderer-owned GPU Resident Drawer-friendly data, shared atlas/material, vertex-color masks, dithered LOD crossfade, no flora colliders, and rock-only LOD2 convex proxies remain unchanged.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents runtime lookup/repair work and QA ambiguity from malformed prefab identity; exact runtime microseconds were not profiled.
+
+Verification: No dotnet rebuild and no Unity import was run. `PrefabNameContractYamlScan Count=200 Bad=0`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0`, `NonAscii=0`, and case-sensitive forbidden source scan stayed clean.
+
+## 2026-05-15 Mesh Asset Name Contract
+
+What was wrong: Shallows mesh references were locked by path, but the internal `Mesh.name` field could drift away from the deterministic `<prefab-stem>_LOD#` identity while the file reference still passed.
+
+What was done: Extended `ValidatePrefabMeshReferences` so each resolved LOD mesh object name must match the prefab stem and LOD index.
+
+Cinematic Cheats used: Static offline L-system/SDF meshes, strict LOD payload budgets, shared atlas/material, vertex-color masks, dithered LOD crossfade, no flora colliders, and rock-only LOD2 convex proxies remain unchanged.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents runtime repair/lookup logic and editor ambiguity from stale mesh object names; exact runtime microseconds were not profiled.
+
+Verification: No dotnet rebuild and no Unity import was run. `MeshNameContractYamlScan Count=600 Bad=0`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0`, `NonAscii=0`, and case-sensitive forbidden source scan stayed clean.

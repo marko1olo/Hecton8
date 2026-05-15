@@ -81,8 +81,8 @@ namespace Hecton8.Graphics.Materials
 
         private void PublishTint(Vector4 tint, uint biomeHash)
         {
-            tint.w = 1f;
-            Vector4 parameters = new Vector4(Mathf.Clamp01(_tintStrength), biomeHash, 0f, 0f);
+            tint = SanitizeTint(tint);
+            Vector4 parameters = new Vector4(Mathf.Clamp01(SanitizeFloat(_tintStrength, 0.32f)), biomeHash, 0f, 0f);
             if (_lastTint == tint && _lastParams == parameters)
                 return;
 
@@ -116,6 +116,20 @@ namespace Hecton8.Graphics.Materials
         private static float Byte01(uint value)
         {
             return (value & 0xFFu) * (1f / 255f);
+        }
+
+        private static Vector4 SanitizeTint(Vector4 tint)
+        {
+            tint.x = SanitizeFloat(tint.x, 0.72f);
+            tint.y = SanitizeFloat(tint.y, 0.96f);
+            tint.z = SanitizeFloat(tint.z, 0.84f);
+            tint.w = 1f;
+            return tint;
+        }
+
+        private static float SanitizeFloat(float value, float fallback)
+        {
+            return float.IsNaN(value) || float.IsInfinity(value) ? fallback : value;
         }
     }
 }

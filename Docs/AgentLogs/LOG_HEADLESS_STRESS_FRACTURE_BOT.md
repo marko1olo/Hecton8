@@ -436,3 +436,34 @@ Verification:
 - No temp `*LifecycleHygiene*.dll` probe artifacts remain in `Temp`.
 - No `dotnet` rebuild was run.
 - Full Unity/editor/player execution remains PENDING VERIFICATION because no Unity MCP/editor session is available in this tool context.
+
+## 2026-05-15 - Blackbox Manifest Schema Addendum
+Status: PENDING VERIFICATION
+Evidence Class: CLI_COMPILE_PLUS_STATIC_SOURCE
+
+What was wrong:
+- The binary blackbox dump had no companion manifest.
+- CI/postmortem tools had to infer flag meanings, valid entry count, cursor state, and dump paths from source.
+- Runtime and editor fallback artifacts did not expose a manifest path.
+
+What was done:
+- Bumped `ResultSchemaVersion` to 5 in runtime and editor fallback artifacts.
+- Added terminal-only `Dump_HEADLESS_STRESS_FRACTURE_BOT.json`.
+- Manifest now writes binary path, magic, capacity, entry size, valid count, cursor, flag bit legend, AUP snap-fence frames, activation source, last fracture hash, and time-dilation restore state.
+- Runtime result JSON now writes `blackboxManifestRelativePath` and `blackboxManifestPath`; editor fallback JSON writes `blackboxManifestRelativePath`.
+
+Cinematic Cheats used:
+- None. This is postmortem artifact hygiene only.
+
+Exact Microseconds saved:
+- Hot path: 0 us; manifest write runs only on pass/fail dump.
+- Avoided source-inspection pass for binary dump decoding: estimated 1000000+ us saved per artifact review.
+- Binary entry remains 64 bytes and ring capacity remains 300, so MX350 memory footprint is unchanged.
+
+Verification:
+- Focused static audit: PASS for both Race Condition Hunter files; no scene search, component lookup, LINQ, coroutine, `Task<`, `.Complete()`, explicit GC, reflection, managed collection creation, `string.Format`, or `Substring` parser usage.
+- Scoped source counts: `ResultSchemaVersion5=2`, `BlackboxManifestFields=12`, `BlackboxFlagLegendFields=9`, `DumpBlackboxManifestMethods=2`, `GlobalRegistryDot=13`.
+- Runtime isolated Unity compiler probe: PASS via Unity Mono/Roslyn with UnityJIT facades, Unity modules, current `Library/ScriptAssemblies`, and `Assembly-CSharp.dll`.
+- Editor runner isolated Unity compiler probe: PASS via Unity Mono/Roslyn with UnityEngine/UnityEditor facade references and `UNITY_EDITOR` defined.
+- No `dotnet` rebuild was run.
+- Full Unity/editor/player execution remains PENDING VERIFICATION because no Unity MCP/editor session is available in this tool context.

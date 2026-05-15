@@ -510,22 +510,36 @@ float HectonCoreLitSampleSubmarineCrushBuckling(float3 positionWS)
 
 float3 HectonCoreLitApplyHabitatAnalyticalStress(float3 positionWS, float3 normalWS)
 {
-    float stress01 = saturate(_HectonHabitatStressParams.x);
-    float displacementMax = max(_HectonHabitatStressParams.y, 0.0);
+    float sourceStress01 = _HectonHabitatStressParams.x;
+    float displacementSource = _HectonHabitatStressParams.y;
+    if (!isfinite(sourceStress01) || !isfinite(displacementSource))
+        return positionWS;
+
+    float stress01 = saturate(sourceStress01);
+    float displacementMax = max(displacementSource, 0.0);
     if (stress01 <= HECTON_CORE_LIT_HABITAT_STRESS_EPSILON ||
         displacementMax <= HECTON_CORE_LIT_HABITAT_DISPLACEMENT_EPSILON)
         return positionWS;
 
-    float radius = max(_HectonHabitatStressCenterRadius.w, 0.0);
+    float radiusSource = _HectonHabitatStressCenterRadius.w;
+    if (!isfinite(radiusSource))
+        return positionWS;
+
+    float radius = max(radiusSource, 0.0);
     float3 radiusDelta = positionWS - _HectonHabitatStressCenterRadius.xyz;
     float radiusMask = radius > 0.001
         ? 1.0 - saturate(dot(radiusDelta, radiusDelta) * rcp(max(radius * radius, 0.0001)))
         : 1.0;
-    if (radiusMask <= 0.0001)
+    if (!isfinite(radiusMask) || radiusMask <= 0.0001)
         return positionWS;
 
-    float gridScale = max(_HectonHabitatStressParams.z, 0.001);
-    float seed = _HectonHabitatStressParams.w * 0.0137;
+    float gridScaleSource = _HectonHabitatStressParams.z;
+    float seedSource = _HectonHabitatStressParams.w;
+    if (!isfinite(gridScaleSource) || !isfinite(seedSource))
+        return positionWS;
+
+    float gridScale = max(gridScaleSource, 0.001);
+    float seed = seedSource * 0.0137;
     float3 q = floor((positionWS + _TotalUniverseOffset.xyz) * gridScale);
     float phaseA = dot(q, float3(0.31, 0.47, 0.19)) + seed;
     float phaseB = dot(q.yzx + 17.0, float3(0.23, 0.11, 0.41)) - seed;

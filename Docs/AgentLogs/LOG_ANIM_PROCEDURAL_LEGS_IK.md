@@ -120,26 +120,6 @@ Scoped forbidden-pattern scan over touched IK/KCC/signal files returned no match
 Status:
 PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
 
-## 2026-05-15 Recursive QA Addendum 14
-
-What was wrong:
-Rig-side capture still had source-boundary H-Phi leaks before the runtime/job sanitizer. Predictive controller AUPs could be built before finite controller-position validation. Spine targets could write bad HMD yaw/breath offsets into NativeArray lanes. Appendage targets could publish non-finite transform or snapped-corner positions with nonzero weight. Upper-arm FOV culling could hide arms when camera or renderer bounds data became corrupt.
-
-What was done:
-`ContextualPhysicalIkRig` now gates predictive controller AUP creation on finite source positions, keeps previous controller AUPs only when the source pose is valid, sanitizes spine target writes, sanitizes appendage surface normals, ignores non-finite voxel snapped corners, zeroes appendage weight when the target position is invalid, sanitizes upper-arm culling hysteresis, and fails open to visible arms on invalid camera/bounds culling data.
-
-Cinematic cheats used:
-No extra raycasts, no physical arm model, no new solver. Invalid capture data collapses to neutral targets or visible arms so the existing visual-fake IK path stays believable instead of trying to simulate through corrupt transforms.
-
-Exact microseconds saved:
-Added cost is branch/finite checks plus one no-sqrt normal fallback inside existing rig capture/culling paths, estimated below 0.3 us/frame on i3/MX350. Prevented cost is IK target spikes, corrupt appendage weights, and disappearing arms caused by invalid source transforms or renderer bounds.
-
-Verification:
-No dotnet rebuild was run per user instruction. `git diff --check` over touched IK/KCC files passed with CRLF warnings only. Scoped forbidden-pattern scan over lower-body/signal files returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`.
-
-Status:
-PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
-
 ## 2026-05-14 Recursive QA Addendum 6
 
 What was wrong:
@@ -293,6 +273,26 @@ No new gait physics, no additional rays, no solver change. Invalid metadata fall
 
 Exact microseconds saved:
 Added cost is finite checks, integer length comparisons, and scalar sanitization at existing boundaries, estimated below 0.3 us/frame on i3/MX350 plus cold reset-only guards. Prevented cost is corrupt metadata amplifying stride/swim prediction or faulting the native ground pipeline.
+
+Verification:
+No dotnet rebuild was run per user instruction. `git diff --check` over touched IK/KCC files passed with CRLF warnings only. Scoped forbidden-pattern scan over lower-body/signal files returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
+
+## 2026-05-15 Recursive QA Addendum 14
+
+What was wrong:
+Rig-side capture still had source-boundary H-Phi leaks before the runtime/job sanitizer. Predictive controller AUPs could be built before finite controller-position validation. Spine targets could write bad HMD yaw/breath offsets into NativeArray lanes. Appendage targets could publish non-finite transform or snapped-corner positions with nonzero weight. Upper-arm FOV culling could hide arms when camera or renderer bounds data became corrupt.
+
+What was done:
+`ContextualPhysicalIkRig` now gates predictive controller AUP creation on finite source positions, keeps previous controller AUPs only when the source pose is valid, sanitizes spine target writes, sanitizes appendage surface normals, ignores non-finite voxel snapped corners, zeroes appendage weight when the target position is invalid, sanitizes upper-arm culling hysteresis, and fails open to visible arms on invalid camera/bounds culling data.
+
+Cinematic cheats used:
+No extra raycasts, no physical arm model, no new solver. Invalid capture data collapses to neutral targets or visible arms so the existing visual-fake IK path stays believable instead of trying to simulate through corrupt transforms.
+
+Exact microseconds saved:
+Added cost is branch/finite checks plus one no-sqrt normal fallback inside existing rig capture/culling paths, estimated below 0.3 us/frame on i3/MX350. Prevented cost is IK target spikes, corrupt appendage weights, and disappearing arms caused by invalid source transforms or renderer bounds.
 
 Verification:
 No dotnet rebuild was run per user instruction. `git diff --check` over touched IK/KCC files passed with CRLF warnings only. Scoped forbidden-pattern scan over lower-body/signal files returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`.

@@ -897,8 +897,9 @@ namespace Hecton8.Atmosphere
             float co2Fatal = math.max(co2Threshold + 0.01f, FiniteNonNegativeOrZero(co2FatalKPa));
             float narcosisThreshold = math.max(1f, FiniteNonNegativeOrZero(narcosisThresholdAtm));
             float narcosisFull = math.max(narcosisThreshold + 0.01f, FiniteNonNegativeOrZero(narcosisFullAtm));
-            int writeIndex = _telemetryWriteIndex;
-            _telemetryWriteIndex = (_telemetryWriteIndex + 1) % TelemetryCapacity;
+            int telemetryLength = _telemetryRing.IsCreated ? _telemetryRing.Length : 0;
+            int writeIndex = telemetryLength > 0 ? _telemetryWriteIndex % telemetryLength : 0;
+            _telemetryWriteIndex = telemetryLength > 0 ? (writeIndex + 1) % telemetryLength : 0;
             GasDynamicsStepJob job = new GasDynamicsStepJob
             {
                 DeltaTime = math.max(0f, deltaTime),

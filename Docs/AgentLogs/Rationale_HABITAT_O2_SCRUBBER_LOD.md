@@ -165,3 +165,10 @@ Solution: The job now clamps `roomLimit` across all required room lanes, clamps 
 Rejected Alternatives: Adding runtime managed validation before scheduling was rejected because it would duplicate the Burst-side safety and add main-thread code. Assuming all arrays stay aligned forever was rejected because the H-Phi roadmap pushes more lanes toward shared ownership.
 Scalability potential: Low through Ultra keep the same per-room/per-edge work; the extra length mins run once per gas step.
 Hardware Impact: Negligible per-step scalar cost. Prevents bad memory access if future DataVault/native ownership changes desynchronize capacities.
+
+## Self-Review 17 - Telemetry Cursor Live Length
+Problem: After adding a job-side telemetry bounds guard, the scheduler still advanced `_telemetryWriteIndex` modulo the compile-time `TelemetryCapacity`.
+Solution: `ScheduleStep` now computes the write index and next cursor from `_telemetryRing.Length` when the ring exists.
+Rejected Alternatives: Relying on the job guard to silently drop telemetry was rejected because the black-box ring is crash evidence, not optional garnish.
+Scalability potential: Low through Ultra keep the same 300-frame black box by default; future ring-size changes remain safe.
+Hardware Impact: One live-length branch per scheduled gas step. No frame-time saving claimed.

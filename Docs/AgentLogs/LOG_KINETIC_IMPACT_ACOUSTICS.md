@@ -543,3 +543,35 @@ Verification:
 - Method-body counters: `SlowTickFoveatedRegistry=0`, `RefreshFoveatedRegistry=0`, `ResolveFoveatedRegistry=1`, `VirtualVoiceTierRegistry=0`.
 - Scoped forbidden scan found only pre-existing editor/cold diagnostics and assertion text.
 - Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.
+
+## 2026-05-15 - DSP_ACOUSTIC_LEAD - Loop 21 Spatial Player-Critical Runtime Hot-Swap Cache H-Phi Pass
+Status: PENDING VERIFICATION
+
+What was wrong:
+- Player-critical procedural audio forwarding must not read `GlobalRegistry.PlayerCriticalAudio` from queue admission paths.
+- The runtime cache needed an early play-mode `OnEnable()` seed so prologue handoff is not dependent on `_isInitialized`.
+- Smoke coverage only checked a narrow string and did not prove hot-swap unregister/rebind hygiene.
+
+What was done:
+- Kept `QueuePrologueAudioTransition()` and `QueueHighSpeedImpactSignal()` on `_cachedPlayerCriticalAudio`.
+- Moved play-mode runtime cache seeding and hot-swap listener registration into `OnEnable()` before the `_isInitialized` branch.
+- Retained the idempotent `InitializeService()` seed.
+- Verified `SpatialAudioManager` receives ref-forwarded and compatibility hot-swap callbacks for `GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime`.
+- Hardened `AdvancedAcousticsSmokeTester` to require hot-swap unregister, ref callback, slot handling, payload cache update, cold-only seed, and no `GlobalRegistry.` in the queue methods.
+
+Cinematic cheats used:
+- Impact/prologue admission is a cached pointer check, not a dynamic service discovery pass.
+- Missing renderer fails closed instead of searching the scene or allocating a fallback.
+- High-tier collision audio keeps budget for procedural transient synthesis/radar cues rather than registry lookup.
+
+Exact microseconds saved:
+- Saves one player-critical service-locator read per prologue transition forwarding after cache warmup.
+- Saves one player-critical service-locator read per valid high-speed impact forwarding after cache warmup.
+- Runtime allocation delta remains 0 B/frame.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/SpatialAudioManager.cs Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs` passed except CRLF normalization warnings.
+- Duplicate symbol scan shows one `RefreshCachedAudioRuntimeServicesCold`, one `TryRegisterHotSwapListener`, one `TryUnregisterHotSwapListener`.
+- Method-body counters: `QueuePrologue GlobalRegistry=0`, `QueueHighSpeed GlobalRegistry=0`, `ColdPlayerCriticalAudio=1`, `CacheRebound GlobalRegistry=0`, `HotSwapCallbacks GlobalRegistry=0`.
+- Scoped forbidden scan found only pre-existing editor/cold diagnostics, comments, and assertion strings.
+- Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.

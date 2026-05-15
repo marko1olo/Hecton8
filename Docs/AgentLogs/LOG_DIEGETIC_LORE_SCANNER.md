@@ -454,3 +454,22 @@ Verification:
 - Scanner banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =`: no matches.
 - Focused scan time-read regression scan: no old `Time.time` contact/resample patterns remain.
 - `dotnet build` / rebuild: NOT RUN by explicit user order.
+
+## Follow-Up Hardening Pass 16
+
+What was wrong:
+- The physical scanner/tool display rechecked RGB565 support every time it reacquired a render texture.
+
+What was done:
+- Added `_renderTextureFormat` cached in `Awake()`.
+- `EnsureRenderTexture()` now rents from the pool with that cached format.
+
+Cinematic Cheats used:
+- RGB565 remains the low-memory visual cheat for MX350-class hardware when supported; ARGB32 remains fallback.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Removes one `SystemInfo.SupportsRenderTextureFormat` platform capability probe per tool RT rent.
+
+Verification:
+- Static no-rebuild checks pending in this pass; dotnet rebuild remains forbidden by user order.

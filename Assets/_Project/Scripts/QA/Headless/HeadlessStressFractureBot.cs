@@ -31,6 +31,7 @@ namespace Hecton8.QA.Headless
         private const string FlagRelativePath = "Temp/H8_FRACTURE_TEST.flag";
         private const string ResultRelativePath = "Docs/AgentLogs/HeadlessStressFractureResult_HEADLESS_STRESS_FRACTURE_BOT.json";
         private const string BlackboxRelativePath = "Docs/AgentLogs/Dump_HEADLESS_STRESS_FRACTURE_BOT.bin";
+        private const string BlackboxManifestRelativePath = "Docs/AgentLogs/Dump_HEADLESS_STRESS_FRACTURE_BOT.json";
         private const string H8MemoryDumpRelativePath = "Docs/AgentLogs/H8Memory_HEADLESS_STRESS_FRACTURE_BOT.txt";
         private const int BlackboxFrameCapacity = 300;
         private const int BlackboxEntrySizeBytes = 64;
@@ -39,7 +40,7 @@ namespace Hecton8.QA.Headless
         private const int DefaultScratchMegabytes = 50;
         private const int MinScratchMegabytes = 8;
         private const int MaxScratchMegabytes = 256;
-        private const int ResultSchemaVersion = 4;
+        private const int ResultSchemaVersion = 5;
         private const int DefaultStartupTimeoutSeconds = 60;
         private const int MinStartupTimeoutSeconds = 5;
         private const int MaxStartupTimeoutSeconds = 600;
@@ -101,6 +102,7 @@ namespace Hecton8.QA.Headless
         private bool[] _cameraEnabledScratch;
         private string _resultPath;
         private string _blackboxPath;
+        private string _blackboxManifestPath;
         private string _h8MemoryDumpPath;
         private int _targetFrames;
         private int _scratchBlockBytes;
@@ -364,14 +366,17 @@ namespace Hecton8.QA.Headless
                 MaxStartupTimeoutSeconds);
             _resultPath = ResolveProjectPath(ResultRelativePath);
             _blackboxPath = ResolveProjectPath(BlackboxRelativePath);
+            _blackboxManifestPath = ResolveProjectPath(BlackboxManifestRelativePath);
             _h8MemoryDumpPath = ResolveProjectPath(H8MemoryDumpRelativePath);
             _lastMemorySnapshotExtremeFrame = int.MinValue;
             EnsureParentDirectory(_resultPath);
             EnsureParentDirectory(_blackboxPath);
+            EnsureParentDirectory(_blackboxManifestPath);
             EnsureParentDirectory(_h8MemoryDumpPath);
             TryDeleteFile(_resultPath);
             TryDeleteFile(_resultPath + ".tmp");
             TryDeleteFile(_blackboxPath);
+            TryDeleteFile(_blackboxManifestPath);
             TryDeleteFile(_h8MemoryDumpPath);
             // COLD ALLOC: NativeArray<FractureTelemetryEntry>[300] - fixed 19200 byte blackbox ring - owner: HeadlessStressFractureBot
             _blackbox = new NativeArray<FractureTelemetryEntry>(BlackboxFrameCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
@@ -869,6 +874,14 @@ namespace Hecton8.QA.Headless
             catch (Exception)
             {
             }
+
+            try
+            {
+                DumpBlackboxManifest();
+            }
+            catch (Exception)
+            {
+            }
         }
 
         private void DumpBlackbox()
@@ -905,6 +918,71 @@ namespace Hecton8.QA.Headless
                     writer.Write(entry.LastShiftMeters.z);
                     writer.Write(entry.Flags);
                 }
+            }
+        }
+
+        private void DumpBlackboxManifest()
+        {
+            if (string.IsNullOrEmpty(_blackboxManifestPath))
+                return;
+
+            EnsureParentDirectory(_blackboxManifestPath);
+            using (StreamWriter writer = new StreamWriter(_blackboxManifestPath, false))
+            {
+                int validCount = _blackbox.IsCreated ? math.min(_blackboxCursor, _blackbox.Length) : 0;
+                writer.Write('{');
+                writer.Write("\"agent\":\"");
+                writer.Write(AgentName);
+                writer.Write("\",\"resultSchemaVersion\":");
+                WriteInvariant(writer, ResultSchemaVersion);
+                writer.Write(",\"generatedUtc\":\"");
+                WriteJsonEscaped(writer, DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture));
+                writer.Write('"');
+                writer.Write(",\"blackboxBinaryRelativePath\":\"");
+                WriteJsonEscaped(writer, BlackboxRelativePath);
+                writer.Write("\",\"blackboxBinaryPath\":\"");
+                WriteJsonEscaped(writer, _blackboxPath);
+                writer.Write("\",\"blackboxMagic\":");
+                WriteInvariant(writer, BlackboxMagic);
+                writer.Write(",\"blackboxFrameCapacity\":");
+                WriteInvariant(writer, BlackboxFrameCapacity);
+                writer.Write(",\"blackboxEntrySizeBytes\":");
+                WriteInvariant(writer, BlackboxEntrySizeBytes);
+                writer.Write(",\"blackboxValidEntryCount\":");
+                WriteInvariant(writer, validCount);
+                writer.Write(",\"blackboxCursor\":");
+                WriteInvariant(writer, _blackboxCursor);
+                writer.Write(",\"blackboxMemorySnapshotIntervalFrames\":");
+                WriteInvariant(writer, BlackboxMemorySnapshotIntervalFrames);
+                writer.Write(",\"blackboxFlagScratchActiveBit\":");
+                WriteInvariant(writer, BlackboxFlagScratchActiveBit);
+                writer.Write(",\"blackboxFlagBaselineCapturedBit\":");
+                WriteInvariant(writer, BlackboxFlagBaselineCapturedBit);
+                writer.Write(",\"blackboxFlagChunkUnloadPendingBit\":");
+                WriteInvariant(writer, BlackboxFlagChunkUnloadPendingBit);
+                writer.Write(",\"blackboxFlagEcosystemStressIssuedBit\":");
+                WriteInvariant(writer, BlackboxFlagEcosystemStressIssuedBit);
+                writer.Write(",\"blackboxFlagDataVaultMissingBit\":");
+                WriteInvariant(writer, BlackboxFlagDataVaultMissingBit);
+                writer.Write(",\"blackboxFlagAupSnapFenceBit\":");
+                WriteInvariant(writer, BlackboxFlagAupSnapFenceActiveBit);
+                writer.Write(",\"blackboxFlagMemorySampleFreshBit\":");
+                WriteInvariant(writer, BlackboxFlagMemorySampleFreshBit);
+                writer.Write(",\"blackboxAupSnapFenceFrames\":");
+                WriteInvariant(writer, AupSnapFenceFrames);
+                writer.Write(",\"lastFractureHash\":");
+                WriteInvariant(writer, _lastFractureHash);
+                writer.Write(",\"extremeFrames\":");
+                WriteInvariant(writer, _extremeFrame);
+                writer.Write(",\"shiftSequence\":");
+                WriteInvariant(writer, _shiftSequence);
+                writer.Write(",\"activationSource\":");
+                WriteInvariant(writer, _activationSource);
+                writer.Write(",\"activationSourceName\":\"");
+                WriteActivationSourceName(writer, _activationSource);
+                writer.Write("\",\"headlessTimeDilationRestored\":");
+                WriteInvariant(writer, _headlessTimeDilationRestored);
+                writer.Write('}');
             }
         }
 
@@ -972,6 +1050,11 @@ namespace Hecton8.QA.Headless
                     WriteInvariant(writer, BlackboxFrameCapacity);
                     writer.Write(",\"blackboxEntrySizeBytes\":");
                     WriteInvariant(writer, BlackboxEntrySizeBytes);
+                    writer.Write(",\"blackboxManifestRelativePath\":\"");
+                    WriteJsonEscaped(writer, BlackboxManifestRelativePath);
+                    writer.Write("\",\"blackboxManifestPath\":\"");
+                    WriteJsonEscaped(writer, _blackboxManifestPath);
+                    writer.Write('"');
                     writer.Write(",\"blackboxMemorySnapshotIntervalFrames\":");
                     WriteInvariant(writer, BlackboxMemorySnapshotIntervalFrames);
                     writer.Write(",\"blackboxFlagMemorySampleFreshBit\":");

@@ -1279,6 +1279,13 @@ namespace Hecton8.Editor.ProceduralGen
                     failures++;
                     Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{i} mesh reference mismatch at {path}. Expected={expectedPath}, Actual={actualPath}.");
                 }
+
+                string expectedMeshName = $"{assetStem}_LOD{i}";
+                if (mesh != null && !string.Equals(mesh.name, expectedMeshName, StringComparison.Ordinal))
+                {
+                    failures++;
+                    Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{i} mesh name mismatch at {path}. Expected={expectedMeshName}, Actual={mesh.name}.");
+                }
             }
         }
 

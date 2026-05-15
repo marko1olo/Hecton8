@@ -383,3 +383,31 @@ Scalability potential: Low/MX350 gets stricter control over mesh memory and vert
 Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no extra unused vertices, non-triangle topology, or malformed index buffers can silently inflate geometry bandwidth or corrupt culling/LOD assumptions on i3/MX350. Exact runtime microseconds are not profiled because this is editor validation.
 
 Verification: No dotnet rebuild and no Unity import was run. `MeshVertexIndexYamlScan TotalBad=0`; maximum vertex/index counts were Kelp `6600/1542/282`, TubeCoral `7092/1026/72`, PorousRock `9243/1743/159`. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs` with only the repo CRLF warning. Source scans found `ValidateLodVertexBudget`, `MeshTopology.Triangles`, `indexCount % 3ul`, `GetTopology`, and `IndexCount=`; source brace count remained balanced and `NonAscii=0`. Forbidden source scan remained clean.
+
+## Decision 28 - Prefab Deterministic Name Contract
+
+Problem: The Shallows validator proved generated prefab counts, hierarchy, component envelopes, materials, mesh references, LOD payloads, and renderer flags. It still trusted the prefab file stem and root `GameObject.name` as identity. A manually renamed or misclassified prefab could keep valid references while breaking deterministic traceability back to the BioForge family, variation index, kind, and seed hash.
+
+Solution: Add `ValidatePrefabNameContract` before `LODGroup` validation. The contract requires root name equality with the asset stem and a family-specific deterministic stem shape: `GEN_Shallows_TubeCoral_###_Flora_HHHHHHHH`, `GEN_Shallows_Kelp_###_Flora_HHHHHHHH`, or `GEN_Shallows_PorousRock_###_Rock_HHHHHHHH`. The parser uses direct ordinal character checks for three decimal digits, separators, kind text, and eight uppercase hex digits.
+
+Rejected Alternatives: Regex validation was rejected because direct character checks are more explicit, avoid regex dependency/allocations, and match the deterministic BioForge naming grammar exactly. Runtime name repair was rejected because prefab identity is an offline asset contract, not runtime behavior. Hashing full YAML names was rejected because the generator already owns deterministic stems and this check should reject malformed identity without becoming brittle to unrelated Unity serialization order.
+
+Scalability potential: Low/MX350 keeps asset library traceability cheap and deterministic for culling, LOD, and content QA. Middle/High/Ultra can raise density or add richer variants while the validator still prevents misnamed payloads from entering Shallows dressing sets. Visual overkill remains an intentional asset-tier choice, not accidental identity drift.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no misnamed or misclassified Shallows prefab can silently enter the static library and force runtime lookup, repair, or QA ambiguity on i3/MX350. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: No dotnet rebuild and no Unity import was run. `PrefabNameContractYamlScan Count=200 Bad=0`. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs` with only the repo CRLF warning. Source scans found `ValidatePrefabNameContract`, `TryResolvePrefabNameContract`, `IsThreeDigitIndex`, `IsUpperHex8`, and `StringRangeEquals`; source brace count remained balanced and `NonAscii=0`. Case-sensitive forbidden source scan found no `Shader.Find`, `mesh.colors`, `renderer.sharedMaterial`, `.material`, `Update`, `LateUpdate`, `FixedUpdate`, or `Regex` hits.
+
+## Decision 29 - Mesh Asset Name Contract
+
+Problem: Prefab mesh references were validated by exact asset path, and mesh payloads were validated by streams, bounds, topology, triangle budget, vertex budget, and color gradient. The internal `Mesh.name` field was still trusted. A mesh asset could keep the correct file path while carrying a stale object name, weakening deterministic QA traceability and confusing editor-side diagnostics.
+
+Solution: Extend `ValidatePrefabMeshReferences` to require every resolved mesh object name to equal `<prefab-stem>_LOD<i>`. This binds prefab identity, file path, mesh object name, and LOD index into one deterministic contract.
+
+Rejected Alternatives: Full mesh YAML hashing was rejected because Unity serialization order and metadata can change without changing the usable payload. Runtime mesh renaming was rejected because generated BioForge meshes must be correct static editor assets. Adding a separate mesh registry was rejected because the existing prefab-to-mesh reference contract already gives the needed decoupled validation path.
+
+Scalability potential: Low/MX350 keeps QA and LOD diagnostics deterministic without runtime lookup or fix-up. Middle/High/Ultra can add richer Shallows variants while mesh identity remains stable across asset folders, prefab references, and validation logs.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no stale mesh object name can create editor ambiguity or push runtime repair/lookup logic into the render path on i3/MX350. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: No dotnet rebuild and no Unity import was run. `MeshNameContractYamlScan Count=600 Bad=0`. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs` with only the repo CRLF warning. Source scans found `expectedMeshName`, `mesh.name`, and `LOD{i} mesh name mismatch`; source brace count remained balanced and `NonAscii=0`. Case-sensitive forbidden source scan found no `Shader.Find`, `mesh.colors`, `renderer.sharedMaterial`, `.material`, `Update`, `LateUpdate`, `FixedUpdate`, or `Regex` hits.

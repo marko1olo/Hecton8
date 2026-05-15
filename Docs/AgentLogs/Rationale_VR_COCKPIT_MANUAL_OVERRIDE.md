@@ -425,3 +425,15 @@ Rejected Alternatives: polling `GlobalRegistry.ScalabilityTier` in `Tick()` was 
 Scalability potential: Low/toaster can downgrade IK smoothing immediately when the governor selects MX350/Low. Middle/High can restore smoother presentation when budget returns. Ultra can keep the richer hand target blend without waiting for lifecycle churn.
 
 Hardware Impact: 0 us steady-state. Lifecycle pays one fixed-bucket listener register/unregister. Tier changes pay one bool write. i3/MX350 avoids stale high-tier IK blend after thermal or battery downgrade.
+
+## Decision 35 - Receiver identity must require runnable lever state
+
+Problem: `TryRegisterReceiver()` could register the manual override collider even when native lever state was not allocated, and dispatcher hot-swap removal only left the tick lane. That can leave a dead receiver in the physical hand table while no dispatcher tick can consume queued samples.
+
+Solution: add `_nativeAllocated` to the receiver registration guard. On dispatcher removal, unregister the receiver along with the tick lane. On dispatcher replacement, recover native state first, then register receiver, then register tick. The scalability event callback also now exits for disabled or latched controls and uses `payload.CurrentTier` directly, avoiding a cold rich-tier conversion.
+
+Rejected Alternatives: keeping the receiver registered and relying on `TryQueueHandPress()` to reject samples was rejected because the overlap path already paid to resolve the receiver. Leaving receivers active while the dispatcher is absent was rejected because no lever simulation lane exists to consume hand samples. Using `payload.CurrentQualityTier` in the callback was rejected because the normalized byte tier is already present.
+
+Scalability potential: Low/toaster avoids wasting scarce fixed receiver capacity on allocation-failed or dispatcher-detached controls. Middle/High keep receiver/tick identity coherent through service rebinding. Ultra can stream more cockpit controls because dead manual override levers vacate hot physical interaction tables faster.
+
+Hardware Impact: 0 us normal steady-state. Cold dispatcher removal pays one idempotent receiver unregister; dispatcher replacement pays one guarded receiver register. i3/MX350 avoids useless overlap-to-receiver callbacks and preserves fixed receiver slots when native allocation or dispatcher availability is not valid.

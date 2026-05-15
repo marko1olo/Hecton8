@@ -43,9 +43,13 @@ namespace Hecton8.Power
         private const float StandardCarbonDioxideKPa = 0.04f;
         private const float StandardNitrogenKPa = 80.065f;
         private const float StandardAmbientKPa = 101.325f;
+        private const float ShiftEpsilonMeters = 0.0001f;
+        private const float MaxAupShiftMeters = 10000f;
         private const uint OutpostNodeCountHash = 0x4F4E4354u; // ONCT
         private const uint WfcPowerBootContextHash = 0x57465042u; // WFPB
         private const uint FaultTelemetryHash = 0x57464654u; // WFFT
+        private const uint FaultFlag = 1u << 31;
+        private const uint AupShiftFlag = 1u << 2;
 
         private readonly LogisticsNetworkGraph _graph; // COLD ALLOC: LogisticsNetworkGraph[1] - WFC outpost power evaluator - owner: WfcOutpostPowerBootRuntime
         private NativeArray<WfcOutpostPowerNode> _nodes;
@@ -121,6 +125,7 @@ namespace Hecton8.Power
                 OwnerName,
                 nameof(_powerEdges),
                 NativeAllocationLifetime.Session);
+            GlobalSignals.InitializeAllQueues();
 
             _initialized = _nodes.IsCreated &&
                            _cellToNode.IsCreated &&
@@ -235,7 +240,7 @@ namespace Hecton8.Power
             for (int i = 0; i < signals.Length; i++)
             {
                 WfcOutpostGeneratedSignal signal = signals[i];
-                if (signal.GridHandle == 0u || signal.CellCount == 0)
+                if (signal.GridHandle == 0u || signal.CellCount == 0 || signal.SectorHash == 0UL || signal.GridHash == 0u)
                     continue;
 
                 latest = signal;
@@ -250,6 +255,9 @@ namespace Hecton8.Power
 
         private bool TryScheduleTranslation(in WfcOutpostGeneratedSignal signal)
         {
+            if (IsActiveGraphCurrent(in signal))
+                return false;
+
             if (!WfcOutpostGridRegistry.TryGetGrid(signal.GridHandle, out WfcOutpostGridLease lease))
                 return false;
 
@@ -272,6 +280,16 @@ namespace Hecton8.Power
             _translationHandle = job.Schedule();
             _translationPending = true;
             return true;
+        }
+
+        private bool IsActiveGraphCurrent(in WfcOutpostGeneratedSignal signal)
+        {
+            return _hasActiveGraph &&
+                   signal.GridHandle == _activeGridHandle &&
+                   signal.SectorHash == _activeDescriptor.SectorHash &&
+                   signal.GenerationSequence == _activeDescriptor.GenerationSequence &&
+                   signal.GridHash == _activeDescriptor.GridHash &&
+                   signal.CellCount == _activeDescriptor.CellCount;
         }
 
         private void CommitTranslation(float now)
@@ -428,7 +446,7 @@ namespace Hecton8.Power
                     Unlocked = (byte)(voltage > DoorUnlockVoltage ? 1 : 0),
                     Flags = (byte)(voltage > DoorUnlockVoltage ? 1 : 0)
                 };
-                GlobalSignals.Publish(in signal);
+                SignalBus<WfcOutpostDoorPowerSignal>.Push(in signal);
             }
         }
 
@@ -449,7 +467,7 @@ namespace Hecton8.Power
                 Priority = (byte)LogisticsBrownoutTier.EmergencyOnly,
                 Flags = 1 << 2
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<BrownoutSignal>.Push(in signal);
         }
 
         private void TrySeedGasRooms()
@@ -491,8 +509,20 @@ namespace Hecton8.Power
             for (int i = 0; i < shifts.Length; i++)
             {
                 float3 shift = shifts[i].ShiftMeters;
-                if (!math.all(math.isfinite(shift)) || math.all(math.abs(shift) < new float3(0.0001f)))
+                if (!math.all(math.isfinite(shift)))
+                {
+                    WriteBlackBox(FaultFlag | AupShiftFlag, 0f, 1f);
                     continue;
+                }
+
+                if (math.all(math.abs(shift) < new float3(ShiftEpsilonMeters)))
+                    continue;
+
+                if (!IsWithinAupShiftLimit(shift))
+                {
+                    WriteBlackBox(FaultFlag | AupShiftFlag, 0f, 1f);
+                    continue;
+                }
 
                 if (_hasActiveGraph)
                     ShiftDescriptor(ref _activeDescriptor, shift);
@@ -515,6 +545,11 @@ namespace Hecton8.Power
             double3 shifted = descriptor.OriginAup.ToAbsoluteDouble3() - new double3(shift.x, shift.y, shift.z);
             AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromAbsolutePosition(shifted);
             descriptor.OriginAup = ToMacroAup(in aup);
+        }
+
+        private static bool IsWithinAupShiftLimit(float3 shiftMeters)
+        {
+            return math.all(math.abs(shiftMeters) <= new float3(MaxAupShiftMeters));
         }
 
         private static Hecton8.Core.Contracts.MacroDatabaseAup ToMacroAup(in AbsoluteUniversePosition aup)
@@ -553,13 +588,17 @@ namespace Hecton8.Power
 
             if (!math.isfinite(supplyRatio) || !math.isfinite(severity01) || !math.isfinite(_reactorOutput01))
             {
-                flags |= 1u << 31;
+                flags |= FaultFlag;
                 supplyRatio = 0f;
                 severity01 = 1f;
                 _reactorOutput01 = 0f;
             }
 
-            int index = _blackBoxCursor % _blackBox.Length;
+            int length = _blackBox.Length;
+            int index = _blackBoxCursor;
+            if ((uint)index >= (uint)length)
+                index = 0;
+
             _blackBox[index] = new WfcOutpostPowerBootTelemetryEntry
             {
                 Frame = unchecked((uint)math.max(0, Time.frameCount)),
@@ -576,9 +615,10 @@ namespace Hecton8.Power
                 Flags = flags,
                 GraphHash = _activeDescriptor.GridHash
             };
-            _blackBoxCursor = (_blackBoxCursor + 1) % _blackBox.Length;
+            index++;
+            _blackBoxCursor = index >= length ? 0 : index;
 
-            if ((flags & (1u << 31)) != 0)
+            if ((flags & FaultFlag) != 0)
                 DumpBlackBox(flags);
         }
 
@@ -596,11 +636,20 @@ namespace Hecton8.Power
                 writer.Write(DumpMagic);
                 writer.Write(DumpVersion);
                 writer.Write(reasonFlags);
-                writer.Write(_blackBox.Length);
-                writer.Write(_blackBoxCursor);
-                for (int i = 0; i < _blackBox.Length; i++)
+                int length = _blackBox.Length;
+                int startIndex = _blackBoxCursor;
+                if ((uint)startIndex >= (uint)length)
+                    startIndex = 0;
+
+                writer.Write(length);
+                writer.Write(startIndex);
+                for (int offset = 0; offset < length; offset++)
                 {
-                    WfcOutpostPowerBootTelemetryEntry entry = _blackBox[i];
+                    int sourceIndex = startIndex + offset;
+                    if (sourceIndex >= length)
+                        sourceIndex -= length;
+
+                    WfcOutpostPowerBootTelemetryEntry entry = _blackBox[sourceIndex];
                     writer.Write(entry.Frame);
                     writer.Write(entry.GridHandle);
                     writer.Write(entry.SectorHash);

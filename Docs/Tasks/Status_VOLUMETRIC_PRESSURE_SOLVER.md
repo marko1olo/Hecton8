@@ -68,6 +68,7 @@ State: IMPLEMENTED - OWNED STATIC CHECKS CLEAN; LATEST BUILD BLOCKED OUTSIDE DOM
 - Loop 26: COMPLETE/NO REBUILD BY USER ORDER - habitat shader stress resolver skips non-finite module radius/distance candidates so corrupted ambience slots cannot select a stress buffer index; scoped checks clean; no `dotnet` or Unity rebuild command run.
 - Loop 27: COMPLETE/NO REBUILD BY USER ORDER - habitat shader peak and buffer stress reads now reject non-finite scalar values before deformation/crease output; scoped checks clean; no `dotnet` or Unity rebuild command run.
 - Loop 28: COMPLETE/NO REBUILD BY USER ORDER - habitat panel UV/mask helpers now collapse non-finite UVs or mask products to zero panel influence; scoped checks clean; no `dotnet` or Unity rebuild command run.
+- Loop 29: COMPLETE/NO REBUILD BY USER ORDER - CoreLit analytical habitat dent now fails closed on non-finite stress/displacement/radius/radius-mask/grid/seed globals; scoped checks clean; no `dotnet` or Unity rebuild command run.
 
 ## Verification Notes
 
@@ -154,3 +155,4 @@ State: IMPLEMENTED - OWNED STATIC CHECKS CLEAN; LATEST BUILD BLOCKED OUTSIDE DOM
 - Latest verification after shader stress scalar gates: no `dotnet` rebuild was run by explicit user instruction. `rg` confirms peak/buffer scalar finite guards; exact shader normalize/sqrt scan produced no matches; managed-offender scan remains clean; mesh mutation scan found no owned `Mesh.vertices` writes; touched shader/doc brace counts are balanced; `git diff --check` reports only CRLF normalization warnings; runtime Unity/profiler proof remains pending.
 - Follow-up correction: habitat panel UV/mask helpers now reject non-finite UVs and non-finite sine mask products before bend or crease math, turning invalid panel input into zero visual influence.
 - Latest verification after panel finite gates: no `dotnet` rebuild was run by explicit user instruction. `rg` confirms panel UV/mask finite gates; exact shader normalize/sqrt scan produced no matches; managed-offender scan remains clean; mesh mutation scan found no owned `Mesh.vertices` writes; touched shader/doc brace counts are balanced; `git diff --check` reports only CRLF normalization warnings; runtime Unity/profiler proof remains pending.
+- Follow-up correction: `HectonCoreLitApplyHabitatAnalyticalStress` now rejects non-finite analytical stress/displacement/radius/grid/seed inputs and non-finite radius masks before world-space dent output.

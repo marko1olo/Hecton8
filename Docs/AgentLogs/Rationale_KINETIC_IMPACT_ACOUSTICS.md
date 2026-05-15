@@ -405,3 +405,22 @@ Solution: Ran source-only checks: `git diff --check`, fixed-symbol scans, method
 Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile or profiler status without Editor console/MCP data would be false.
 Scalability potential: Verification only.
 Hardware Impact: Verification only.
+
+## LOOP 21 SPATIAL PLAYER-CRITICAL RUNTIME HOT-SWAP CACHE H-PHI PASS
+Problem: `SpatialAudioManager` player-critical forwarding is part of the procedural impact/prologue audio lane. The safe target is a cached renderer pointer, not a service-locator read during queue admission. The previous cache path also had a bootstrap edge: an enabled spatial service could receive early prologue forwarding before `_isInitialized` caused `OnEnable()` to seed the cache.
+Solution: Kept the queue methods on `_cachedPlayerCriticalAudio`, cold-seeded runtime service caches from play-mode `OnEnable()` before `_isInitialized`, retained the idempotent `InitializeService()` cold seed, and used `IGlobalRegistryHotSwapListener` plus `IGlobalRegistryHotSwapRefListener` to update `_cachedPlayerCriticalAudio` from `GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime` payloads.
+Rejected Alternatives: A hot fallback `GlobalRegistry.PlayerCriticalAudio` read in `QueuePrologueAudioTransition()` or `QueueHighSpeedImpactSignal()` would hide the same H-Phi debt behind a helper; 30-frame polling would still spend service-locator work after warmup; direct dependency injection would invent a bootstrap dependency between prologue/audio systems that the current `GlobalRegistry` hot-swap lane already solves.
+Scalability potential: Low/MX350 keeps impact/prologue admission to pointer checks and authored cheap fakes. Middle/High/Ultra keep the same procedural collision renderer handoff for richer impact transients, but the saved budget goes to DSP/radar work, not service lookup. Toaster path returns false if the renderer is genuinely absent; high-end path hot-swaps cleanly when the renderer is rebound.
+Hardware Impact: Saves one `GlobalRegistry.PlayerCriticalAudio` service-locator read per prologue transition forwarding and per valid high-speed impact forwarding after cache warmup. Runtime allocation delta remains 0 B/frame; added work is cold lifecycle seeding and one listener callback on service replacement.
+
+Problem: Static coverage for the player-critical runtime cache was too weak to prevent a future direct registry read from returning to the queue methods.
+Solution: Strengthened `AdvancedAcousticsSmokeTester` to assert hot-swap unregister, ref-forwarded rebind callback, `GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime` handling, payload-based `_cachedPlayerCriticalAudio` update, cold-only seed through `RefreshCachedAudioRuntimeServicesCold()`, and absence of any `GlobalRegistry.` access in the prologue and high-speed queue method bodies.
+Rejected Alternatives: Manual-only review, or checking only the exact `GlobalRegistry.PlayerCriticalAudio` string while allowing other registry reads to creep into the queue methods.
+Scalability potential: Editor-only guard; protects both cheap low-tier queue admission and high-tier procedural impact handoff from lookup creep.
+Hardware Impact: 0 us runtime in player builds.
+
+Problem: Compile/profiler proof remains unavailable under the user's no-dotnet-rebuild order and missing Unity MCP resources.
+Solution: Ran source-only checks: duplicate symbol scan, method-body registry counters, `git diff --check`, and scoped forbidden-API scans. Counters: `QueuePrologue GlobalRegistry=0`, `QueueHighSpeed GlobalRegistry=0`, `ColdPlayerCriticalAudio=1`, `CacheRebound GlobalRegistry=0`, `HotSwapCallbacks GlobalRegistry=0`. `git diff --check` passed except CRLF normalization warnings.
+Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile or profiler status without Editor console/MCP data would be false.
+Scalability potential: Verification only.
+Hardware Impact: Verification only.

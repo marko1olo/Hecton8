@@ -222,3 +222,27 @@ Verification:
 - `git diff --check` returned only CRLF warnings.
 - Conflict marker scan returned no active merge markers.
 - Unity compile/playmode/profiler were not run.
+
+## 2026-05-15 - Continued Graphics Tail
+
+What was wrong:
+- After the previous bounded checkpoint, another live dirty tail appeared across graphics, VFX, QA, save migration, and agent documentation.
+- Remote history was still not ahead: `origin/main...HEAD` returned `0 0`.
+
+What was done:
+- Fetched `origin` before staging.
+- Skipped pull/merge because no incoming remote commits existed.
+- Verified no unmerged paths.
+- Ran `git diff --check`; only LF/CRLF normalization warnings were present.
+- Scanned changed files for active `<<<<<<<` / `>>>>>>>` markers; none were found.
+
+Cinematic Cheats used:
+- None. Git-only operation.
+
+Exact Microseconds saved:
+- Runtime saved: 0 us. Dev-path saved: avoided unnecessary merge churn and prepared another validated checkpoint.
+
+Verification:
+- `git rev-list --left-right --count origin/main...HEAD` returned `0 0`.
+- `git diff --check` returned only CRLF warnings.
+- Changed-file conflict marker scan returned no active merge markers.

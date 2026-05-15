@@ -655,3 +655,28 @@ Verification:
 - Static scans confirm public WFC restore still decodes directly and dumps corrupt WFC.
 - `git diff --check` reports no whitespace errors beyond Git CRLF normalization warnings.
 - No `dotnet` rebuild was run.
+
+## Recheck Report: WFC Valid Door Restore Baseline Reset
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- A stale-door restore risk was audited: valid WFC door configuration must not apply saved flags onto current pooled state.
+- Without a baseline reset, a pooled door that was already opened could remain opened when restored with saved flags `0`.
+
+What was done:
+- Verified current `SealedDoor.ConfigureWfcOutpostPersistence()` already calls `ResetState()` before applying saved WFC flags.
+- Verified current `ResetState()` stops cutting and open particle systems.
+- Verified invalid WFC config still clears identity before reset and publishes no fake mutation.
+- No `SealedDoor.cs` source delta was required in this pass.
+
+Cinematic cheats used:
+- Restored binary door truth drives presentation state directly; no replay of cutting, power, or opening history.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime Tick cost: unchanged.
+- Cold configure path: one baseline reset plus optional particle stops.
+
+Verification:
+- Static scans confirm valid config resets before WFC identity assignment and flag application.
+-

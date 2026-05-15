@@ -121,3 +121,27 @@ Verification:
 - Static HLSL review confirms the buffer read is now count/use gated before indexing.
 - First H-Phi static audit attempt timed out at 120 seconds; second no-rebuild static audit completed at 300-second timeout.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` completed with `RuntimeHPhiNarrow=0.010497120`, `RuntimeHPhiRisk=0.000573792`, `ArchitecturalPurity=0.996460177`, `MemoryAlignment=0.503966155`, `UnityUpdateMethods=2`, `StructLayoutAttributes=953`, `AupPrecisionRisk=0`.
+
+## 2026-05-15 04:12:00 +04:00 - Follow-Up No-Rebuild DRS/Shader Global Safety Pass
+What was wrong:
+- Dynamic resolution scale could respond to a one-frame pressure spike and then recover immediately, violating the hysteresis mandate and causing presentation instability.
+- The fallback path wrote directly to the active URP asset render scale, and initialization wrote the upscaling filter. That is project asset mutation risk from a runtime rendering service.
+- Procedural flora tint publishing trusted serialized floats and could publish NaN/Inf into global shader state.
+
+What was done:
+- Added 3-frame pressure hysteresis and 15-frame recovery hysteresis to `ThermalDynamicResolutionAdapter`.
+- Packed DRS hysteresis counters into the existing telemetry `Reserved` field without changing the 32-byte black-box entry size.
+- Removed the runtime upscaling-filter mutation method and stopped writing `UniversalRenderPipelineAsset.renderScale` from the direct fallback path.
+- Added finite guards for procedural flora tint and tint strength before `Shader.SetGlobalVector`.
+
+Cinematic Cheats used:
+- Resolution scaling remains a controlled presentation fake: stable scale changes buy frame time without changing simulation truth.
+- Flora biome color remains a deterministic global shader tint, not per-renderer material mutation.
+
+Exact Microseconds saved:
+- 5-40 us estimated jitter/state-churn reduction during unstable frame-time windows. Pending profiler capture.
+- 0 us claimed for finite tint guard; correctness only.
+
+Verification:
+- No dotnet rebuild was executed.
+- Static review only; runtime/Unity import remains blocked by the external World/GPR compile dependency.

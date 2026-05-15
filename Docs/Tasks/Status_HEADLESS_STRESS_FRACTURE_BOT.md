@@ -49,6 +49,7 @@ Status: PENDING VERIFICATION
 - Loop 16: CI artifact schema clarity pass adds a result schema version, named blackbox magic/capacity/entry-size fields, and a `rigidbodyNanIndex=-1` clean-run sentinel, then reconfirms runtime/editor isolated compiles without `dotnet`.
 - Loop 17: Fallback artifact parity and cold-allocation evidence pass adds schema-v4/blackbox metadata to editor fallback JSON, marks fallback results explicitly, adds canonical `COLD ALLOC` comments around runner-owned cold allocations, and reconfirms runtime/editor isolated compiles without `dotnet`.
 - Loop 18: Lifecycle cleanup pass restores the dispatcher time-dilation scalar on terminal teardown, consumes the activation flag during cold startup to prevent replay runs, exports both states into result JSON, and reconfirms runtime/editor isolated compiles without `dotnet`.
+- Loop 19: Blackbox manifest schema pass bumps result schema to v5, writes a terminal JSON manifest beside `Dump_HEADLESS_STRESS_FRACTURE_BOT.bin`, exports manifest paths from runtime/fallback result artifacts, and reconfirms runtime/editor isolated compiles without `dotnet`.
 
 ## Verification
 - Unity MCP editor state: BLOCKED, no Unity session available.
@@ -105,6 +106,9 @@ Status: PENDING VERIFICATION
 - Isolated editor runner compile after lifecycle cleanup pass: PASS via Unity Mono/Roslyn with `UNITY_EDITOR` defined, UnityEngine/UnityEditor facade references, and `Assembly-CSharp.dll`.
 - `git diff --check` after lifecycle cleanup pass: PASS for whitespace on the QA runner, editor runner, and owned status/rationale/log files; Git emitted LF-to-CRLF normalization warnings only.
 - Temp LifecycleHygiene compiler artifacts after lifecycle cleanup pass: PASS, no `*LifecycleHygiene*.dll` files remain in `Temp`.
+- Focused static audit after blackbox manifest schema pass: PASS for both Race Condition Hunter files; no scene search, component lookup, LINQ, coroutine, `Task<`, `.Complete()`, explicit GC, reflection, managed collection creation, `string.Format`, or `Substring` parser usage. Counts: `ResultSchemaVersion5=2`, `BlackboxManifestFields=12`, `BlackboxFlagLegendFields=9`, `DumpBlackboxManifestMethods=2`, `GlobalRegistryDot=13`.
+- Isolated runtime compile after blackbox manifest schema pass: PASS via Unity Mono/Roslyn using UnityJIT facades, Unity modules, current `Library/ScriptAssemblies`, and `Assembly-CSharp.dll`.
+- Isolated editor runner compile after blackbox manifest schema pass: PASS via Unity Mono/Roslyn with `UNITY_EDITOR` defined, UnityEngine/UnityEditor facade references, and `Assembly-CSharp.dll`.
 - Full `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false`: BLOCKED BY EXISTING DEPENDENCIES, 139 unrelated errors before/around core missing namespaces, duplicate SaveManager members, and interface mismatches.
 - Full `dotnet build Assembly-CSharp.csproj --no-restore -m:2 /nr:false`: BLOCKED BY SAME EXISTING `Hecton8.Core.csproj` dependency failures.
 - No `dotnet` rebuilds were run during the 2026-05-15 continuation pass.

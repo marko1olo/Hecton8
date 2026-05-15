@@ -1549,6 +1549,11 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("audioLog list created");
             }
+            changed |= TrimListToMax(
+                data.audioLogDiscoveredIds,
+                SaveData.MaxLegacyAudioLogDiscoveredIds,
+                "audioLog list capped",
+                steps);
 
             if (!AudioLogDiscoveryBitMask.HasExpectedCapacity(data.audioLogDiscoveryBitWords))
             {
@@ -1693,6 +1698,11 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("quest active list created");
             }
+            changed |= TrimListToMax(
+                data.questActiveIds,
+                SaveData.MaxLegacyQuestIds,
+                "quest active list capped",
+                steps);
 
             if (data.questCompletedIds == null)
             {
@@ -1700,6 +1710,11 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("quest completed list created");
             }
+            changed |= TrimListToMax(
+                data.questCompletedIds,
+                SaveData.MaxLegacyQuestIds,
+                "quest completed list capped",
+                steps);
 
             if (data.suitInstalledUpgradeIds == null)
             {
@@ -1707,6 +1722,11 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("suit upgrades list created");
             }
+            changed |= TrimListToMax(
+                data.suitInstalledUpgradeIds,
+                SaveData.MaxSuitUpgradeIds,
+                "suit upgrades list capped",
+                steps);
 
             if (data.suitUnlockedBlueprintIds == null)
             {
@@ -1714,6 +1734,11 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("suit blueprints list created");
             }
+            changed |= TrimListToMax(
+                data.suitUnlockedBlueprintIds,
+                SaveData.MaxSuitUpgradeIds,
+                "suit blueprints list capped",
+                steps);
 
             if (data.corporateReceivedOrderIds == null)
             {
@@ -1721,6 +1746,11 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("corporate orders list created");
             }
+            changed |= TrimListToMax(
+                data.corporateReceivedOrderIds,
+                SaveData.MaxCorporateOrderIds,
+                "corporate orders list capped",
+                steps);
 
             if (data.corporatePendingOrderIds == null)
             {
@@ -1735,6 +1765,12 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("corporate order timers list created");
             }
+            changed |= TrimPairedListsToMax(
+                data.corporatePendingOrderIds,
+                data.corporatePendingOrderTimers,
+                SaveData.MaxCorporateOrderIds,
+                "corporate pending orders capped",
+                steps);
 
             if (data.missionActiveIds == null)
             {
@@ -1742,6 +1778,11 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("mission active list created");
             }
+            changed |= TrimListToMax(
+                data.missionActiveIds,
+                SaveData.MaxMissionIds,
+                "mission active list capped",
+                steps);
 
             if (data.missionCompletedIds == null)
             {
@@ -1749,6 +1790,11 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("mission completed list created");
             }
+            changed |= TrimListToMax(
+                data.missionCompletedIds,
+                SaveData.MaxMissionIds,
+                "mission completed list capped",
+                steps);
 
             int inferredRevealStage = data.endingConditionMet
                 ? MaxAtlasRevealStage

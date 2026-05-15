@@ -247,3 +247,20 @@ Status: PENDING VERIFICATION
 - Verification avoided dotnet rebuilds and Unity import. `MeshVertexIndexYamlScan TotalBad=0`; maxima were Kelp `6600/1542/282`, TubeCoral `7092/1026/72`, PorousRock `9243/1743/159`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0` with `NonAscii=0`; forbidden source scan remained clean.
 - Rejected alternative: trusting triangle counts alone was rejected because unused vertex buffers still cost memory/bandwidth. Runtime mesh cleanup was rejected because the generated mesh library must be static and correct before runtime.
 - H-Phi impact remains domain-local evidence only: stricter mesh payload limits for culling/render scalability without adding runtime scripts, update cadence, allocations, or cross-domain dependencies.
+
+### Loop 27 - Prefab Deterministic Name Contract
+
+- Re-read status/rationale and rechecked the live `Docs/Tasks/CURRENT_BATCH.md`; the Shallows prompt tag is still absent from the live batch, so disk status/rationale remains operative assignment memory.
+- Found a remaining asset-identity drift path: a generated prefab could keep valid components, meshes, materials, and counts while its file stem or root `GameObject.name` stopped matching the deterministic BioForge family/kind/hash pattern.
+- Patched `ShallowsBioForgeBatchBaker` with `ValidatePrefabNameContract`, family-specific prefix/kind resolution, and allocation-free ASCII digit/uppercase-hex/range checks for `GEN_Shallows_<Family>_###_<Kind>_HHHHHHHH`.
+- Verification avoided dotnet rebuilds and Unity import. `PrefabNameContractYamlScan Count=200 Bad=0`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0` with `NonAscii=0`; case-sensitive forbidden source scan stayed clean and found no regex dependency.
+- Rejected alternative: using regex was rejected because simple deterministic character scans are cheaper, clearer, and allocation-free in the validator. Runtime rename or repair was rejected because generated Shallows assets must be correct static payloads.
+- H-Phi impact remains domain-local evidence only: generated asset identity is now fail-closed without runtime scripts, registry polling, material clones, allocations, or cross-domain dependencies.
+
+### Loop 28 - Mesh Asset Name Contract
+
+- Found the matching mesh-identity drift path: prefab references could point to the correct `.asset` files while the internal mesh object names drifted away from `<prefab-stem>_LOD#`.
+- Patched `ValidatePrefabMeshReferences` so each resolved LOD mesh must keep the deterministic internal name matching its prefab stem and LOD index.
+- Verification avoided dotnet rebuilds and Unity import. `MeshNameContractYamlScan Count=600 Bad=0`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0` with `NonAscii=0`; case-sensitive forbidden source scan stayed clean.
+- Rejected alternative: full mesh serialization hashing was rejected because it would be brittle to Unity YAML churn; the path/name/geometry/stream/budget contracts already cover the deterministic payload surface that matters here.
+- H-Phi impact remains domain-local evidence only: mesh asset identity is now fail-closed with no runtime lookup, fix-up, allocation, or cross-domain dependency added.

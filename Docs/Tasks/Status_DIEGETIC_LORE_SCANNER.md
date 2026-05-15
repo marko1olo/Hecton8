@@ -159,10 +159,15 @@ Mandates read:
 - [x] Focused scan resample determinism | DOD: hold-window checks and `_scientificNextResampleAt` updates now use the same tick timestamp | Rejected: mixed `Time.time` reads during one scanner sample | Estimate: sub-us; determinism hygiene
 - [x] Static no-regression checks after Loop 19 | DOD: `git diff --check` passed with docs line-ending warnings only, `git diff --cached --check` passed, scanner banned-pattern scan found no forbidden UI/scanner patterns, and focused-scan time-read regression scan found no old `Time.time` resample/contact patterns | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 3200 us
 
+## Loop 20 - Diegetic RT Format Probe Cache
+
+- [x] Tool RT format cold cache | DOD: `ToolDiegeticDisplayController` resolves RGB565-vs-ARGB32 support once in `Awake()` and uses the cached `RenderTextureFormat` for future pool rents | Rejected: repeating `SystemInfo.SupportsRenderTextureFormat` during RT reacquisition after visibility churn or pool retry | Estimate: removes one platform capability probe per RT rent
+- [x] Static no-regression checks after Loop 20 | DOD: `git diff --check` passed with line-ending warnings only, `git diff --cached --check` passed, scanner banned-pattern scan found no forbidden UI/scanner patterns, and RT-format scan confirmed the support probe is only in the cold resolver | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 2800 us
+
 ## Verification
 
 - [x] Compile/source validation - `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:quiet -clp:Summary` passed with 0 warnings / 0 errors after Loop 10
-- [ ] Compile/source validation after Loops 11-19 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
+- [ ] Compile/source validation after Loops 11-20 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
 - [ ] Console check - BLOCKED BY UNITY SESSION: MCP validate/console calls cannot connect to Unity MCP HTTP endpoint / session
 - [x] Re-read prompt after core tasks
 - [x] Omega polish mandate after all tasks done or blocked
