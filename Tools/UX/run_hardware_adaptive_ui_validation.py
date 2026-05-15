@@ -64,6 +64,14 @@ COMMANDS = (
         ),
     ),
     (
+        "unity_environment_probe",
+        (
+            sys.executable,
+            "Tools/UX/probe_unity_environment.py",
+            "--write-report",
+        ),
+    ),
+    (
         "unit_harness",
         (
             sys.executable,
@@ -72,7 +80,17 @@ COMMANDS = (
             "Tools.UX.test_hardware_adaptive_ui",
             "Tools.UX.test_unity_verification_gates",
             "Tools.UX.test_unity_report_update_cli",
+            "Tools.UX.test_python_cache_cleanup",
+            "Tools.UX.test_unity_environment_probe",
             "-v",
+        ),
+    ),
+    (
+        "python_cache_cleanup",
+        (
+            sys.executable,
+            "Tools/UX/clean_python_cache.py",
+            "--write-report",
         ),
     ),
 )
@@ -95,10 +113,14 @@ HASHED_ARTIFACTS = (
     "Tools/UX/validate_unity_verification_report.py",
     "Tools/UX/unity_compile_log_audit.py",
     "Tools/UX/update_unity_verification_report.py",
+    "Tools/UX/clean_python_cache.py",
+    "Tools/UX/probe_unity_environment.py",
     "Tools/UX/run_unity_import_check.ps1",
     "Tools/UX/test_hardware_adaptive_ui.py",
     "Tools/UX/test_unity_verification_gates.py",
     "Tools/UX/test_unity_report_update_cli.py",
+    "Tools/UX/test_python_cache_cleanup.py",
+    "Tools/UX/test_unity_environment_probe.py",
     "Tools/UX/run_hardware_adaptive_ui_validation.py",
 )
 

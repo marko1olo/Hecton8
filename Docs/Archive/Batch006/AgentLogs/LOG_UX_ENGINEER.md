@@ -285,3 +285,75 @@ Cinematic Cheats used: None. Tooling correctness only.
 Exact Microseconds saved: 0 us runtime.
 
 Verification: Static/Python aggregate remains PASS. Unity runtime proof remains blocked on editor availability.
+
+## UX_ENGINEER Python Cache Cleanup Tool - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: Direct Python test runs can create `__pycache__` directories, and ad hoc PowerShell cleanup repeatedly timed out.
+
+What was done: Added `Tools/UX/clean_python_cache.py` and `Tools/UX/test_python_cache_cleanup.py`, then wired the cleanup command and test into aggregate validation. The cleaner refuses roots outside the repo and writes `Docs/AgentLogs/UI_PythonCacheCleanup_UX_ENGINEER.json`.
+
+Cinematic Cheats used: None. Offline hygiene only.
+
+Exact Microseconds saved: 0 us runtime.
+
+Verification: Execution pending until the next aggregate run.
+
+## UX_ENGINEER Cache Cleanup Report Path Fix - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: `python -m unittest Tools.UX.test_python_cache_cleanup -v` failed. Root cause: `remove_pycache_dirs()` tried to report removed temp-test paths relative to `C:\Hecton8`.
+
+What was done: Patched removal reporting to be relative to the cleanup root.
+
+Cinematic Cheats used: None.
+
+Exact Microseconds saved: 0 us runtime.
+
+Verification: Rerun required after patch.
+
+## UX_ENGINEER Cache Cleanup Verified - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: The cache cleanup tool needed verification after its reporting bug was fixed.
+
+What was done: Ran `python -m py_compile Tools/UX/clean_python_cache.py Tools/UX/test_python_cache_cleanup.py Tools/UX/run_hardware_adaptive_ui_validation.py`; clean exit. Ran `python -m unittest Tools.UX.test_python_cache_cleanup -v`; 1 test passed. Ran `python Tools/UX/run_hardware_adaptive_ui_validation.py`; PASS and rewrote `Docs/AgentLogs/UI_HardwareAdaptiveValidation_UX_ENGINEER.json`.
+
+Cinematic Cheats used: None. Offline hygiene only.
+
+Exact Microseconds saved: 0 us runtime.
+
+Verification: Static/Python aggregate remains PASS with cleanup included. Unity runtime proof remains blocked on editor availability.
+
+## UX_ENGINEER Unity Environment Probe - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: Unity absence was tracked in prose, but not as a machine-readable aggregate artifact.
+
+What was done: Added `Tools/UX/probe_unity_environment.py` and `Tools/UX/test_unity_environment_probe.py`, then wired the probe into aggregate validation. The probe records required Unity version, Unity executable candidates, default roots checked, and keeps runtime verification pending.
+
+Cinematic Cheats used: None. Offline environment evidence only.
+
+Exact Microseconds saved: 0 us runtime.
+
+Verification: Execution pending until the next aggregate run.
+
+## UX_ENGINEER Unity Environment Probe Verified - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: The Unity environment probe needed focused tests, aggregate execution, and readback of the generated report.
+
+What was done: Ran `python -m py_compile Tools/UX/probe_unity_environment.py Tools/UX/test_unity_environment_probe.py Tools/UX/run_hardware_adaptive_ui_validation.py`; clean exit. Ran `python -m unittest Tools.UX.test_unity_environment_probe -v`; 3 tests passed. Ran `python Tools/UX/run_hardware_adaptive_ui_validation.py`; PASS and rewrote `Docs/AgentLogs/UI_HardwareAdaptiveValidation_UX_ENGINEER.json`. Parsed `Docs/AgentLogs/UI_UnityEnvironmentProbe_UX_ENGINEER.json` with `python -m json.tool`.
+
+Cinematic Cheats used: None. Offline environment evidence only.
+
+Exact Microseconds saved: 0 us runtime.
+
+Verification: Probe status is `UNITY_NOT_FOUND`, required Unity version is `6000.4.1f1`, candidate list is empty, and runtime remains `PENDING_UNITY_VERIFICATION`.
+
+## UX_ENGINEER Aggregate Report Readback - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: The latest PASS needed confirmation from the generated JSON reports, not just stdout.
+
+What was done: Parsed `Docs/AgentLogs/UI_HardwareAdaptiveValidation_UX_ENGINEER.json` and `Docs/AgentLogs/UI_PythonCacheCleanup_UX_ENGINEER.json` with `python -m json.tool`. Scanned `Tools` for `__pycache__` directories.
+
+Cinematic Cheats used: None. Evidence readback only.
+
+Exact Microseconds saved: 0 us runtime.
+
+Verification: Aggregate report status is PASS, unit harness ran 24 tests, `missingArtifacts` is empty, `unityRuntimeStatus` is `PENDING_UNITY_VERIFICATION`, cleanup report status is PASS with 1 cache directory removed, and the follow-up scan found `PYTHON_CACHE_COUNT 0`.

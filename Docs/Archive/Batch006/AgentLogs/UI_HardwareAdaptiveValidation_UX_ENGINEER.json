@@ -13,7 +13,7 @@
         "--write-report"
       ],
       "exitCode": 0,
-      "elapsedMs": 6853.128,
+      "elapsedMs": 4918.459,
       "stdoutTail": "UI_READABILITY_TEST\nTOASTER_800P: contrast=0.709 corr=0.947 ink=1.000 status=PASS\nLOW_900P: contrast=0.700 corr=0.947 ink=1.000 status=PASS\nSTANDARD_1080P: contrast=0.689 corr=0.949 ink=1.000 status=PASS\nHIGH_1440P: contrast=0.678 corr=0.953 ink=1.000 status=PASS\nGOD_MODE_4K: contrast=0.716 corr=0.969 ink=1.000 status=PASS\nreport=C:\\Hecton8\\Docs\\AgentLogs\\UI_Readability_UX_ENGINEER.json\nSTATUS: PASS\n",
       "stderrTail": ""
     },
@@ -25,7 +25,7 @@
         "--write-report"
       ],
       "exitCode": 0,
-      "elapsedMs": 3838.015,
+      "elapsedMs": 2974.685,
       "stdoutTail": "UI_SHADER_SAMPLE_AUDIT\nAssets/_Project/Art/Shaders/Hecton_DiegeticPanelUnlit.shader: material=1 depth=1 total=2 status=PASS\nAssets/_Project/Art/Shaders/Hecton_DiegeticTooltipGlyph.shader: material=1 depth=0 total=1 status=PASS\nAssets/_Project/Art/Shaders/Hecton_DiegeticTooltipIndirect.shader: material=1 depth=0 total=1 status=PASS\nAssets/_Project/Art/Shaders/Hecton_HUD_AcousticRadarOverlay.shader: material=1 depth=0 total=1 status=PASS\nAssets/_Project/Art/Shaders/Hecton_HUD_DiegeticProjectionUnlit.shader: material=2 depth=0 total=2 status=PASS\nAssets/_Project/Art/Shaders/Hecton_ToolScreenDiegetic.shader: material=1 depth=0 total=1 status=PASS\nAssets/_Project/Art/Shaders/Hecton_UI_CompassRibbon.shader: material=1 depth=0 total=1 status=PASS\nAssets/_Project/Shaders/UI/Hecton_DataRecPulse.shader: material=1 depth=0 total=1 status=PASS\nAssets/_Project/Shaders/UI/Hecton_DiegeticPanelDepthFade.shader: material=1 depth=1 total=2 status=PASS\nAssets/_Project/Shaders/UI/Hecton_DiegeticVisorCurvedHUD.shader: material=2 depth=0 total=2 status=PASS\nAssets/_Project/Shaders/UI/Hecton_IGNDitherDissolve.shader: material=1 depth=0 total=1 status=PASS\nAssets/_Project/Shaders/UI/Hecton_IGNDitheredBackground.shader: material=1 depth=0 total=1 status=PASS\nAssets/_Project/Shaders/UI/Hecton_RetinaStressPulse.shader: material=0 depth=0 total=0 status=PASS\nreport=C:\\Hecton8\\Docs\\AgentLogs\\UI_ShaderSampleAudit_UX_ENGINEER.json\nSTATUS: PASS\n",
       "stderrTail": ""
     },
@@ -41,7 +41,7 @@
         "Docs/AgentLogs/IconBaker_UX_ENGINEER_SelfTest/IconBakeManifest.json"
       ],
       "exitCode": 0,
-      "elapsedMs": 10800.502,
+      "elapsedMs": 4096.134,
       "stdoutTail": "ICON_BAKER_STATUS: PASS\nicons=1\nsizes=32,128,512\nmanifest=C:\\Hecton8\\Docs\\AgentLogs\\IconBaker_UX_ENGINEER_SelfTest\\IconBakeManifest.json\n",
       "stderrTail": ""
     },
@@ -53,7 +53,7 @@
         "--write-report"
       ],
       "exitCode": 0,
-      "elapsedMs": 11694.267,
+      "elapsedMs": 2053.98,
       "stdoutTail": "Unity verification template audit PASS\n",
       "stderrTail": ""
     },
@@ -65,8 +65,20 @@
         "--write-audit"
       ],
       "exitCode": 0,
-      "elapsedMs": 14064.597,
+      "elapsedMs": 1639.6,
       "stdoutTail": "Unity verification report audit PASS\n",
+      "stderrTail": ""
+    },
+    {
+      "name": "unity_environment_probe",
+      "command": [
+        "C:\\Users\\User\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "Tools/UX/probe_unity_environment.py",
+        "--write-report"
+      ],
+      "exitCode": 0,
+      "elapsedMs": 2066.867,
+      "stdoutTail": "Unity environment probe UNITY_NOT_FOUND\n",
       "stderrTail": ""
     },
     {
@@ -78,12 +90,26 @@
         "Tools.UX.test_hardware_adaptive_ui",
         "Tools.UX.test_unity_verification_gates",
         "Tools.UX.test_unity_report_update_cli",
+        "Tools.UX.test_python_cache_cleanup",
+        "Tools.UX.test_unity_environment_probe",
         "-v"
       ],
       "exitCode": 0,
-      "elapsedMs": 32039.85,
+      "elapsedMs": 14055.457,
       "stdoutTail": "",
-      "stderrTail": "test_csharp_sdf_matrix_matches_json (Tools.UX.test_hardware_adaptive_ui.HardwareAdaptiveUiTests.test_csharp_sdf_matrix_matches_json) ... ok\ntest_icon_baker_outputs_three_snap_sizes (Tools.UX.test_hardware_adaptive_ui.HardwareAdaptiveUiTests.test_icon_baker_outputs_three_snap_sizes) ... ok\ntest_readability_report_passes_all_buckets (Tools.UX.test_hardware_adaptive_ui.HardwareAdaptiveUiTests.test_readability_report_passes_all_buckets) ... ok\ntest_shader_sample_audit_passes_budget (Tools.UX.test_hardware_adaptive_ui.HardwareAdaptiveUiTests.test_shader_sample_audit_passes_budget) ... ok\ntest_spec_declares_required_profiles (Tools.UX.test_hardware_adaptive_ui.HardwareAdaptiveUiTests.test_spec_declares_required_profiles) ... ok\ntest_written_reports_are_current (Tools.UX.test_hardware_adaptive_ui.HardwareAdaptiveUiTests.test_written_reports_are_current) ... ok\ntest_pending_report_is_valid_but_not_runtime_pass (Tools.UX.test_unity_verification_gates.UnityVerificationGateTests.test_pending_report_is_valid_but_not_runtime_pass) ... ok\ntest_report_accepts_complete_synthetic_pass (Tools.UX.test_unity_verification_gates.UnityVerificationGateTests.test_report_accepts_complete_synthetic_pass) ... ok\ntest_report_rejects_top_level_pass_without_evidence (Tools.UX.test_unity_verification_gates.UnityVerificationGateTests.test_report_rejects_top_level_pass_without_evidence) ... ok\ntest_template_accepts_locked_pending_form (Tools.UX.test_unity_verification_gates.UnityVerificationGateTests.test_template_accepts_locked_pending_form) ... ok\ntest_template_rejects_fake_pass_and_evidence_paths (Tools.UX.test_unity_verification_gates.UnityVerificationGateTests.test_template_rejects_fake_pass_and_evidence_paths) ... ok\ntest_unity_log_audit_accepts_clean_compile_text (Tools.UX.test_unity_verification_gates.UnityVerificationGateTests.test_unity_log_audit_accepts_clean_compile_text) ... ok\ntest_unity_log_audit_rejects_csharp_errors (Tools.UX.test_unity_verification_gates.UnityVerificationGateTests.test_unity_log_audit_rejects_csharp_errors) ... ok\ntest_unity_log_audit_rejects_shader_errors (Tools.UX.test_unity_verification_gates.UnityVerificationGateTests.test_unity_log_audit_rejects_shader_errors) ... ok\ntest_update_helper_finds_required_check (Tools.UX.test_unity_verification_gates.UnityVerificationGateTests.test_update_helper_finds_required_check) ... ok\ntest_update_helper_rejects_unknown_check (Tools.UX.test_unity_verification_gates.UnityVerificationGateTests.test_update_helper_rejects_unknown_check) ... ok\ntest_cli_rejects_pass_without_existing_evidence (Tools.UX.test_unity_report_update_cli.UnityReportUpdateCliTests.test_cli_rejects_pass_without_existing_evidence) ... ok\ntest_cli_rejects_top_level_pass_until_all_checks_complete (Tools.UX.test_unity_report_update_cli.UnityReportUpdateCliTests.test_cli_rejects_top_level_pass_until_all_checks_complete) ... ok\ntest_cli_resolves_relative_evidence_from_repo_root_when_cwd_differs (Tools.UX.test_unity_report_update_cli.UnityReportUpdateCliTests.test_cli_resolves_relative_evidence_from_repo_root_when_cwd_differs) ... ok\ntest_cli_updates_pass_with_existing_evidence (Tools.UX.test_unity_report_update_cli.UnityReportUpdateCliTests.test_cli_updates_pass_with_existing_evidence) ... ok\n\n----------------------------------------------------------------------\nRan 20 tests in 19.152s\n\nOK\n"
+      "stderrTail": "test_csharp_sdf_matrix_matches_json (Tools.UX.test_hardware_adaptive_ui.HardwareAdaptiveUiTests.test_csharp_sdf_matrix_matches_json) ... ok\ntest_icon_baker_outputs_three_snap_sizes (Tools.UX.test_hardware_adaptive_ui.HardwareAdaptiveUiTests.test_icon_baker_outputs_three_snap_sizes) ... ok\ntest_readability_report_passes_all_buckets (Tools.UX.test_hardware_adaptive_ui.HardwareAdaptiveUiTests.test_readability_report_passes_all_buckets) ... ok\ntest_shader_sample_audit_passes_budget (Tools.UX.test_hardware_adaptive_ui.HardwareAdaptiveUiTests.test_shader_sample_audit_passes_budget) ... ok\ntest_spec_declares_required_profiles (Tools.UX.test_hardware_adaptive_ui.HardwareAdaptiveUiTests.test_spec_declares_required_profiles) ... ok\ntest_written_reports_are_current (Tools.UX.test_hardware_adaptive_ui.HardwareAdaptiveUiTests.test_written_reports_are_current) ... ok\ntest_pending_report_is_valid_but_not_runtime_pass (Tools.UX.test_unity_verification_gates.UnityVerificationGateTests.test_pending_report_is_valid_but_not_runtime_pass) ... ok\ntest_report_accepts_complete_synthetic_pass (Tools.UX.test_unity_verification_gates.UnityVerificationGateTests.test_report_accepts_complete_synthetic_pass) ... ok\ntest_report_rejects_top_level_pass_without_evidence (Tools.UX.test_unity_verification_gates.UnityVerificationGateTests.test_report_rejects_top_level_pass_without_evidence) ... ok\ntest_template_accepts_locked_pending_form (Tools.UX.test_unity_verification_gates.UnityVerificationGateTests.test_template_accepts_locked_pending_form) ... ok\ntest_template_rejects_fake_pass_and_evidence_paths (Tools.UX.test_unity_verification_gates.UnityVerificationGateTests.test_template_rejects_fake_pass_and_evidence_paths) ... ok\ntest_unity_log_audit_accepts_clean_compile_text (Tools.UX.test_unity_verification_gates.UnityVerificationGateTests.test_unity_log_audit_accepts_clean_compile_text) ... ok\ntest_unity_log_audit_rejects_csharp_errors (Tools.UX.test_unity_verification_gates.UnityVerificationGateTests.test_unity_log_audit_rejects_csharp_errors) ... ok\ntest_unity_log_audit_rejects_shader_errors (Tools.UX.test_unity_verification_gates.UnityVerificationGateTests.test_unity_log_audit_rejects_shader_errors) ... ok\ntest_update_helper_finds_required_check (Tools.UX.test_unity_verification_gates.UnityVerificationGateTests.test_update_helper_finds_required_check) ... ok\ntest_update_helper_rejects_unknown_check (Tools.UX.test_unity_verification_gates.UnityVerificationGateTests.test_update_helper_rejects_unknown_check) ... ok\ntest_cli_rejects_pass_without_existing_evidence (Tools.UX.test_unity_report_update_cli.UnityReportUpdateCliTests.test_cli_rejects_pass_without_existing_evidence) ... ok\ntest_cli_rejects_top_level_pass_until_all_checks_complete (Tools.UX.test_unity_report_update_cli.UnityReportUpdateCliTests.test_cli_rejects_top_level_pass_until_all_checks_complete) ... ok\ntest_cli_resolves_relative_evidence_from_repo_root_when_cwd_differs (Tools.UX.test_unity_report_update_cli.UnityReportUpdateCliTests.test_cli_resolves_relative_evidence_from_repo_root_when_cwd_differs) ... ok\ntest_cli_updates_pass_with_existing_evidence (Tools.UX.test_unity_report_update_cli.UnityReportUpdateCliTests.test_cli_updates_pass_with_existing_evidence) ... ok\ntest_find_and_remove_pycache_dirs_under_root (Tools.UX.test_python_cache_cleanup.PythonCacheCleanupTests.test_find_and_remove_pycache_dirs_under_root) ... ok\ntest_finds_unity_candidate_in_supplied_root (Tools.UX.test_unity_environment_probe.UnityEnvironmentProbeTests.test_finds_unity_candidate_in_supplied_root) ... ok\ntest_missing_project_version_returns_empty_string (Tools.UX.test_unity_environment_probe.UnityEnvironmentProbeTests.test_missing_project_version_returns_empty_string) ... ok\ntest_reads_project_version (Tools.UX.test_unity_environment_probe.UnityEnvironmentProbeTests.test_reads_project_version) ... ok\n\n----------------------------------------------------------------------\nRan 24 tests in 11.214s\n\nOK\n"
+    },
+    {
+      "name": "python_cache_cleanup",
+      "command": [
+        "C:\\Users\\User\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "Tools/UX/clean_python_cache.py",
+        "--write-report"
+      ],
+      "exitCode": 0,
+      "elapsedMs": 1379.566,
+      "stdoutTail": "Python cache cleanup PASS: removed 1\n",
+      "stderrTail": ""
     }
   ],
   "missingArtifacts": [],
@@ -95,7 +121,7 @@
     "Assets/_Project/Art/Shaders/Hecton_DiegeticPanelUnlit.shader": "a412d662b9d6c65eb6a00e1338bb008a3bd84839065ec50d307686cd4ad16984",
     "Docs/Design/HardwareAdaptiveUIScaler.json": "0fdef3000ff1ff02717dce14de37f7012b6cf0b7f7bf6ac27147075c126c85ce",
     "Docs/Design/HardwareAdaptiveUIScaler.md": "cdc93c6c361483e1ffeda3b0f9fffbe7aa3c7f4258779e2a7ba234f457c4cc9c",
-    "Docs/Design/HardwareAdaptiveUIScaler_Runbook.md": "0b3ad1b99cbc654e1bf3189b35144cfc66869586a1c509474babb81183d7e284",
+    "Docs/Design/HardwareAdaptiveUIScaler_Runbook.md": "c3a8c10ef4eb2e44c8ead7288d5c0946b45cd67cfd4f5f71a1b0f7bcf8be5693",
     "Docs/Design/HardwareAdaptiveUIScaler_UnityVerificationTemplate.json": "09a9628252ef769418c149383ad29252c44f2308a14405dcf801ede2b41958b3",
     "Docs/AgentLogs/UnityVerification_UX_ENGINEER.json": "9a75609276c0ae17590799ea2830c1aa1c9000b88cd39f7a11a4b60b348dc6e9",
     "Tools/IconBaker.py": "9651969f017d4b6549f35af4930c5ddc750b6cb92a6a5e23cd5b4b04311b4d41",
@@ -105,11 +131,15 @@
     "Tools/UX/validate_unity_verification_report.py": "5f30c6fbfb9aeeac5307b871ee49b40322810da1398d0d4b28dbe6c3d49111d6",
     "Tools/UX/unity_compile_log_audit.py": "364923a56ddbdaf558c01290afdac51bbcf872b9bc3a2cd665c4800ed9faf266",
     "Tools/UX/update_unity_verification_report.py": "1670ab848220dcd302ee33a0ada1e755df24fc4d883788bda450457f700229d0",
+    "Tools/UX/clean_python_cache.py": "e680b7f737f4c16d4951185e68f9aab0bfcdaf0efacb5de31b98d5d56febbf46",
+    "Tools/UX/probe_unity_environment.py": "b0e21890345a1121deec182ff19088613bdf7870582d06429dd0485541b483a6",
     "Tools/UX/run_unity_import_check.ps1": "d3f86c826d5091aa455410a8fc4745790abd36d4e9e5e8ff2b06fa9778048471",
     "Tools/UX/test_hardware_adaptive_ui.py": "d56cc737eecfedc6973285cd5c26babe0bf1b8f3daea8791ef1b4fc8667d795e",
     "Tools/UX/test_unity_verification_gates.py": "fcf32531d5f9b32e72fdd5cfe17f7d199ffd49c3ab3fbef8970cc75d818067d7",
     "Tools/UX/test_unity_report_update_cli.py": "f47796016792e78cbbd0ae65a86516418b08e7b9b1d626f8beb2644ea143702a",
-    "Tools/UX/run_hardware_adaptive_ui_validation.py": "157be3ceeab21cca6d9aa59b689e28e08319063ce4e7268e849784e2fa7455ef"
+    "Tools/UX/test_python_cache_cleanup.py": "30a239bc7e841d77c9ccdc7303a1e60709b206d52078a4b38b979615eae94d71",
+    "Tools/UX/test_unity_environment_probe.py": "16753f547baf3ad823b3b43f898387ee0fdc642a673af43a440f76d56812cf34",
+    "Tools/UX/run_hardware_adaptive_ui_validation.py": "8f06845c377f4d3a88b978f2c8e70c3d94601627a4e97e29ae5032622b8bc7f3"
   },
   "note": "Static/Python validation only. Unity import, GCMonitor, Frame Debugger, and in-engine captures remain separate gates."
 }

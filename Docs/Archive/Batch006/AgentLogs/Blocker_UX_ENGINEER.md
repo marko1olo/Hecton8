@@ -24,6 +24,9 @@ Status: STATIC/PYTHON VALIDATION PASS - RUNTIME VERIFICATION BLOCKED
 - Added updater CLI tests in `Tools/UX/test_unity_report_update_cli.py`. Initial run failed due direct-script import path. Fixed `update_unity_verification_report.py`, then `python -m unittest Tools.UX.test_unity_report_update_cli -v` passed 3/3.
 - `python Tools/UX/run_hardware_adaptive_ui_validation.py` returned PASS again after the updater CLI fix.
 - Patched updater path resolution so direct invocations from outside repo still target the project report. `python -m unittest Tools.UX.test_unity_report_update_cli -v` passed 4/4 after increasing wrapper timeout. `python Tools/UX/run_hardware_adaptive_ui_validation.py` returned PASS again.
+- Added deterministic Python cache cleanup tool and test. Initial test exposed a reporting bug; fixed it. `python -m unittest Tools.UX.test_python_cache_cleanup -v` passed 1/1. `python Tools/UX/run_hardware_adaptive_ui_validation.py` returned PASS again with cleanup included.
+- Added Unity environment probe and tests. `python -m unittest Tools.UX.test_unity_environment_probe -v` passed 3/3. `python Tools/UX/run_hardware_adaptive_ui_validation.py` returned PASS again. `UI_UnityEnvironmentProbe_UX_ENGINEER.json` reports `UNITY_NOT_FOUND`, required Unity `6000.4.1f1`, and zero candidates.
+- Aggregate report readback: `UI_HardwareAdaptiveValidation_UX_ENGINEER.json` parsed clean with PASS, 24 unit tests, no missing artifacts, and runtime pending. Cache cleanup report parsed clean; `Tools` scan found `PYTHON_CACHE_COUNT 0`.
 
 ## Completed Static Scope
 

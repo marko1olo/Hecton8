@@ -189,6 +189,48 @@ Solution: Python compile returned clean. A 60s focused unittest attempt timed ou
 Rejected Alternatives: Treating the first timeout as a test failure was rejected because the same test passed cleanly with a longer wrapper timeout. Ignoring aggregate rerun was rejected because hashes and command coverage changed.
 Scalability potential: Evidence update commands remain stable when launched from arbitrary directories for all required Unity proof checks.
 Hardware Impact: Runtime impact is 0 us. Offline workflow only.
+
+## Decision - Deterministic Python Cache Cleanup
+Problem: Repeated ad hoc cache cleanup attempts through PowerShell timed out, leaving cleanup state unclear after direct unittest runs.
+Solution: Added `Tools/UX/clean_python_cache.py` and `Tools/UX/test_python_cache_cleanup.py`. The cleaner removes `__pycache__` directories only under a repo-contained root and writes a cleanup report.
+Rejected Alternatives: Continuing ad hoc shell deletion was rejected because it repeatedly timed out. Broad cleanup outside `Tools` was rejected to avoid touching unrelated agents' caches.
+Scalability potential: Offline validation remains source-first and avoids bytecode churn across multi-agent runs.
+Hardware Impact: Runtime impact is 0 us. Offline hygiene only.
+
+## Decision - Cache Cleanup Report Path Fix
+Problem: The first focused cleanup unittest failed because `remove_pycache_dirs()` reported removed paths relative to the repo root even when the cleanup root was a temporary test directory.
+Solution: Changed removal reporting to use paths relative to the cleanup root.
+Rejected Alternatives: Weakening the test to use only repo paths was rejected; the function should be reusable and deterministic for injected roots.
+Scalability potential: Offline tooling is more robust for temp-root CI tests and repo-root cleanup.
+Hardware Impact: Runtime impact is 0 us.
+
+## Decision - Cache Cleanup Verified
+Problem: The cleanup tool needed a clean rerun after the report path fix.
+Solution: Python compile returned clean, focused cache cleanup test passed 1/1, and aggregate validation returned PASS with cleanup included.
+Rejected Alternatives: Skipping aggregate rerun was rejected because the cleanup command is now in the aggregate command list.
+Scalability potential: Offline validation can remove test bytecode noise deterministically.
+Hardware Impact: Runtime impact is 0 us.
+
+## Decision - Unity Environment Probe
+Problem: Unity absence was noted in logs, but the aggregate validation report did not include a machine-readable environment probe.
+Solution: Added `Tools/UX/probe_unity_environment.py` and `Tools/UX/test_unity_environment_probe.py`. The probe reads the required Unity version, scans `UNITY_EXE`, PATH, and normal install roots, writes `UI_UnityEnvironmentProbe_UX_ENGINEER.json`, and explicitly keeps runtime verification pending.
+Rejected Alternatives: Failing aggregate validation when Unity is absent was rejected because aggregate validation is static/Python proof, not runtime proof. Claiming Unity unavailable from stale notes was rejected; the probe refreshes evidence.
+Scalability potential: Runtime verification can start immediately when Unity appears, with the required version and candidate path recorded.
+Hardware Impact: Runtime impact is 0 us. Offline environment evidence only.
+
+## Decision - Unity Environment Probe Verified
+Problem: The environment probe needed command proof and its generated result had to be read back.
+Solution: Python compile returned clean, focused probe tests passed 3/3, aggregate validation returned PASS, and `UI_UnityEnvironmentProbe_UX_ENGINEER.json` was parsed with `python -m json.tool`.
+Rejected Alternatives: Treating previous manual path checks as sufficient was rejected; the aggregate now emits a fresh machine-readable probe.
+Scalability potential: The runtime blocker is now precise: Unity `6000.4.1f1` is required, no candidates are present, and the next integrator can provide `UNITY_EXE` or install Unity.
+Hardware Impact: Runtime impact is 0 us. Runtime measurement remains absent until Unity exists.
+
+## Decision - Aggregate Report Readback
+Problem: A console PASS line is weaker than reading the generated aggregate and cleanup reports back from disk.
+Solution: Parsed `UI_HardwareAdaptiveValidation_UX_ENGINEER.json` and `UI_PythonCacheCleanup_UX_ENGINEER.json` with `python -m json.tool`; scanned `Tools` for remaining `__pycache__` directories.
+Rejected Alternatives: Trusting the aggregate stdout alone was rejected because generated report integrity matters under multi-agent churn.
+Scalability potential: The report now confirms no missing artifacts, 24 tests executed, cleanup ran, and Unity runtime status stayed pending.
+Hardware Impact: Runtime impact is 0 us. Offline evidence readback only.
 Hardware Impact: Static estimate 0.05-0.20 ms GPU avoided across HUD-heavy frames on MX350. Evidence class is STATIC_SOURCE + PYTHON_STATIC_AUDIT; Frame Debugger proof absent.
 
 ## Decision - Offline Icon Baker

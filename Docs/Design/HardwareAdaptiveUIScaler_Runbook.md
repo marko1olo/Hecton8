@@ -24,7 +24,9 @@ python Tools/UX/ui_shader_sample_audit.py --write-report
 python Tools/IconBaker.py --self-test --output Docs/AgentLogs/IconBaker_UX_ENGINEER_SelfTest --manifest Docs/AgentLogs/IconBaker_UX_ENGINEER_SelfTest/IconBakeManifest.json
 python Tools/UX/validate_unity_verification_template.py --write-report
 python Tools/UX/validate_unity_verification_report.py --write-audit
-python -m unittest Tools.UX.test_hardware_adaptive_ui Tools.UX.test_unity_verification_gates Tools.UX.test_unity_report_update_cli -v
+python Tools/UX/probe_unity_environment.py --write-report
+python -m unittest Tools.UX.test_hardware_adaptive_ui Tools.UX.test_unity_verification_gates Tools.UX.test_unity_report_update_cli Tools.UX.test_python_cache_cleanup Tools.UX.test_unity_environment_probe -v
+python Tools/UX/clean_python_cache.py --write-report
 ```
 
 The Unity evidence-template audit can also be run directly:
@@ -55,6 +57,8 @@ Expected local artifacts:
 - `Docs/AgentLogs/UI_UnityTemplateAudit_UX_ENGINEER.json`
 - `Docs/AgentLogs/UnityVerification_UX_ENGINEER.json`
 - `Docs/AgentLogs/UI_UnityReportAudit_UX_ENGINEER.json`
+- `Docs/AgentLogs/UI_PythonCacheCleanup_UX_ENGINEER.json`
+- `Docs/AgentLogs/UI_UnityEnvironmentProbe_UX_ENGINEER.json`
 
 ## Unity Gate
 
@@ -75,6 +79,12 @@ Batchmode import can be attempted with:
 
 ```powershell
 Tools/UX/run_unity_import_check.ps1 -UnityPath "C:\Path\To\Unity.exe"
+```
+
+Before that, the local Unity availability probe can be rerun with:
+
+```powershell
+python Tools/UX/probe_unity_environment.py --write-report
 ```
 
 If a Unity import log already exists, audit it with:
