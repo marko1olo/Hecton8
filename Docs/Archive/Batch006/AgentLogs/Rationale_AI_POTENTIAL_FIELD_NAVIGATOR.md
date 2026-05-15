@@ -141,3 +141,9 @@ Solution: Promote source contract text to a shared simulator constant and requir
 Rejected Alternatives: Validate only numeric steering evidence; leave ownership/source-boundary drift to manual review.
 Scalability potential: Low/Middle/High/Ultra tuning artifacts remain bound to the correct agent and no-GPU-readback flow contract before runtime porting.
 Hardware Impact: No runtime cost. Offline artifact validation only.
+
+Problem: The steering formula was exported as text but not validated, so a hand-edited artifact could mislead the Unity porter while keeping deterministic metrics intact.
+Solution: Promote the formula strings to `FORMULA_CONTRACT`, reuse them for export, and require exact formula equality in `validate_export`.
+Rejected Alternatives: Validate only selected weights and metrics; leave formula drift to documentation review.
+Scalability potential: Low/Middle/High/Ultra runtime ports inherit the same immediate-SDF, EWMA-soft-intent, and idle-flow-drift contract.
+Hardware Impact: No runtime cost. Offline artifact validation only.

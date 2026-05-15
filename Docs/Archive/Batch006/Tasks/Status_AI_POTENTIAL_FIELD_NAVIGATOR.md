@@ -127,3 +127,8 @@ Status: NAVIGATION OPTIMIZED (PY_SIM) / PENDING UNITY VERIFICATION
 
 - [x] Validate `promptId` and `sourceContracts` in the checker | Justification: ownership and source-boundary fields are now hard contract data, so a hand-edited artifact cannot pass with the wrong agent id or a forbidden flow boundary. Alternative rejected: treating these fields as decorative JSON metadata. Estimate: 16,000,000 us.
 - [x] Re-run authority-field verification chain | Justification: simulator stayed `NAVIGATION OPTIMIZED`, both checker paths passed, regression suite stayed 17 tests OK with new authority-field assertions, py_compile passed, diff guard passed, debt scan had no hits, and JSON hash stayed stable. Alternative rejected: accepting validator changes without proving deterministic export. Estimate: 176,000,000 us.
+
+## Iterative Loop 20 - Formula Contract Guard
+
+- [x] Validate exported steering formula text | Justification: `formula` is now a shared contract constant and `validate_export` rejects corrupted EWMA/SDF/flow formula text. Alternative rejected: treating formula strings as comments while metrics remain valid. Estimate: 14,000,000 us.
+- [x] Re-run formula-contract verification chain | Justification: simulator stayed `NAVIGATION OPTIMIZED`, both checker paths passed, regression suite reached 18 tests OK, py_compile passed, diff guard passed, debt scan had no hits, and JSON hash stayed stable. Alternative rejected: accepting formula validation changes without replay and deterministic export proof. Estimate: 177,000,000 us.

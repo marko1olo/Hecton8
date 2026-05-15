@@ -55,6 +55,15 @@ class AiPathSimTests(unittest.TestCase):
         valid, errors = self.sim.validate_export(self.tuning)
         self.assertTrue(valid, errors)
 
+    def test_formula_contract_is_validated(self) -> None:
+        self.assertEqual(self.tuning["formula"], self.sim.FORMULA_CONTRACT)
+
+        bad_formula = copy.deepcopy(self.tuning)
+        bad_formula["formula"]["ewma"] = "smooth target, flow, and SDF together"
+        valid, errors = self.sim.validate_export(bad_formula)
+        self.assertFalse(valid)
+        self.assertTrue(any("formula contract mismatch" in error for error in errors))
+
     def test_malformed_numeric_fields_fail_closed(self) -> None:
         bad_tuning = copy.deepcopy(self.tuning)
         bad_tuning["tierProfiles"]["Low"]["hysteresis"]["distanceMeters"] = "invalid"

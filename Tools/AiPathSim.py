@@ -64,6 +64,14 @@ SOURCE_CONTRACTS = {
     "phase": "SIMULATION for steering solve; POST_SIMULATION for blackbox write; VISUAL_SYNC only consumes output",
 }
 
+FORMULA_CONTRACT = {
+    "targetAttraction": "normalize(target - position) * targetAttractionWeight",
+    "flowBoostResistance": "flowDir * flowSpeed * (dot(flowDir,targetDir) >= 0 ? boost : -resistance)",
+    "obstacleRepulsion": "normal * min(maxRepulsion, sdfObstacleRepulsionWeight / max(distanceMeters,0.25)^2)",
+    "ewma": "intent = lerp(previousSteering, targetAttraction + flowBoostResistance, ewmaSteeringAlpha); steering = intent + immediateSdfRepulsion",
+    "idleDrift": "idleVelocity += flowVector * idleFlowCoupling * dt",
+}
+
 BLACK_BOX_TELEMETRY_SCHEMA = {
     "capacityFrames": 300,
     "storage": "NativeArray<AiPotentialFieldTelemetryEntry> circular buffer",
@@ -721,6 +729,7 @@ def validate_export(data: object) -> Tuple[bool, list[str]]:
     expect(data.get("evidenceClass") == "PY_SIM_STATIC_MODEL", "evidence class mismatch")
     expect(data.get("promptId") == "AI_POTENTIAL_FIELD_NAVIGATOR", "promptId mismatch")
     expect(data.get("sourceContracts") == SOURCE_CONTRACTS, "source contracts mismatch")
+    expect(data.get("formula") == FORMULA_CONTRACT, "formula contract mismatch")
 
     snapshot = data.get("sourceParameterSnapshot")
     if not isinstance(snapshot, dict):
@@ -927,13 +936,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "promptId": "AI_POTENTIAL_FIELD_NAVIGATOR",
         "sourceContracts": SOURCE_CONTRACTS,
         "sourceParameterSnapshot": SOURCE_PARAMETER_SNAPSHOT,
-        "formula": {
-            "targetAttraction": "normalize(target - position) * targetAttractionWeight",
-            "flowBoostResistance": "flowDir * flowSpeed * (dot(flowDir,targetDir) >= 0 ? boost : -resistance)",
-            "obstacleRepulsion": "normal * min(maxRepulsion, sdfObstacleRepulsionWeight / max(distanceMeters,0.25)^2)",
-            "ewma": "intent = lerp(previousSteering, targetAttraction + flowBoostResistance, ewmaSteeringAlpha); steering = intent + immediateSdfRepulsion",
-            "idleDrift": "idleVelocity += flowVector * idleFlowCoupling * dt",
-        },
+        "formula": FORMULA_CONTRACT,
         "search": {
             "candidatesEvaluated": evaluated,
             "candidatesReachedTarget": reached_count,
