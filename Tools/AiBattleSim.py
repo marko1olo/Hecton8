@@ -38,6 +38,18 @@ EXPECTED_STATUS = "INSTINCTS DEFINED"
 EXPECTED_CONTEXT_COUNT = 10
 EXPECTED_UTILITY_SCORE_COUNT = 50
 EXPECTED_BEHAVIORS = ("Circle", "Hide", "Breach", "FalseCharge", "RealAttack")
+EXPECTED_CONTEXT_IDS = (
+    "far_silent_dark",
+    "far_lit_scan",
+    "mid_soft_noise",
+    "mid_panic_movement",
+    "close_light_stare",
+    "close_loud_engine",
+    "close_quiet_drift",
+    "pack_flank_ready",
+    "post_strike_cooldown",
+    "visual_overkill_ultra",
+)
 EXPECTED_FEATURES = (
     "distanceSq01",
     "sound01",
@@ -356,19 +368,35 @@ def validate_brain(brain: Mapping[str, object], known_buffers: set[str] | None =
 
     contexts = brain.get("contexts")
     context_names = set()
+    context_order: List[str] = []
     if not isinstance(contexts, list):
         errors.append("contexts missing")
     else:
         if len(contexts) != EXPECTED_CONTEXT_COUNT:
             errors.append(f"contexts count != {EXPECTED_CONTEXT_COUNT}")
-        for context in contexts:
+        valid_distance_bands = {"far", "mid", "close", "mid_close", "any"}
+        valid_signal_bands = {"low", "light", "low_mid", "movement", "sound_movement", "any", "high"}
+        valid_pack_bands = {"low", "low_mid", "high", "mid_high", "any"}
+        for index, context in enumerate(contexts):
             if isinstance(context, dict) and isinstance(context.get("id"), str):
                 context_id = str(context["id"])
                 if context_id in context_names:
                     errors.append(f"duplicate context {context_id}")
                 context_names.add(context_id)
+                context_order.append(context_id)
+                if context.get("distanceBand") not in valid_distance_bands:
+                    errors.append(f"contexts[{index}].distanceBand invalid")
+                if context.get("signalBand") not in valid_signal_bands:
+                    errors.append(f"contexts[{index}].signalBand invalid")
+                if context.get("packBand") not in valid_pack_bands:
+                    errors.append(f"contexts[{index}].packBand invalid")
+                description = context.get("description")
+                if not isinstance(description, str) or len(description.strip()) < 24:
+                    errors.append(f"contexts[{index}].description missing")
             else:
                 errors.append("context id invalid")
+        if tuple(context_order) != EXPECTED_CONTEXT_IDS:
+            errors.append("contexts order/id set drift")
 
     utility_scores = brain.get("utilityScores")
     behavior_counts = {behavior: 0 for behavior in EXPECTED_BEHAVIORS}
@@ -386,6 +414,8 @@ def validate_brain(brain: Mapping[str, object], known_buffers: set[str] | None =
             row_id = row.get("id")
             if not isinstance(row_id, int) or row_id in seen_ids:
                 errors.append(f"utilityScores[{index}].id invalid")
+            elif row_id != index + 1:
+                errors.append(f"utilityScores[{index}].id sequence drift")
             seen_ids.add(row_id)
             behavior = row.get("behavior")
             if behavior not in EXPECTED_BEHAVIORS:
@@ -405,6 +435,9 @@ def validate_brain(brain: Mapping[str, object], known_buffers: set[str] | None =
                 for item in inputs:
                     if item not in feature_names:
                         errors.append(f"utilityScores[{index}] input {item} has no GlobalDataVault feed")
+            reason = row.get("reason")
+            if not isinstance(reason, str) or len(reason.strip()) < 24:
+                errors.append(f"utilityScores[{index}].reason missing")
             if context in context_names and behavior in EXPECTED_BEHAVIORS:
                 pair_counts[(str(context), str(behavior))] = pair_counts.get((str(context), str(behavior)), 0) + 1
 
@@ -426,6 +459,20 @@ def validate_brain(brain: Mapping[str, object], known_buffers: set[str] | None =
                 total += float(value)
         if abs(total - 1.0) > 0.0001:
             errors.append("sensoryWeights sound/light/movement sum != 1")
+        line_of_sight_multiplier = sensory.get("lineOfSightMultiplier")
+        if not is_number(line_of_sight_multiplier) or not 0.0 <= float(line_of_sight_multiplier) <= 1.0:
+            errors.append("sensoryWeights.lineOfSightMultiplier invalid")
+        pack_synergy_multiplier = sensory.get("packSynergyMultiplier")
+        if not is_number(pack_synergy_multiplier) or not 0.0 <= float(pack_synergy_multiplier) <= 0.5:
+            errors.append("sensoryWeights.packSynergyMultiplier invalid")
+        formula = sensory.get("weightedAggressionFormula")
+        if not isinstance(formula, str) or "saturate" not in formula or "lineOfSight01" not in formula:
+            errors.append("sensoryWeights.weightedAggressionFormula invalid")
+        elif any(token not in formula for token in ("sound01", "light01", "movement01", "packSynergy01")):
+            errors.append("sensoryWeights.weightedAggressionFormula missing feature token")
+        design_intent = sensory.get("designIntent")
+        if not isinstance(design_intent, str) or len(design_intent.strip()) < 48:
+            errors.append("sensoryWeights.designIntent missing")
     else:
         errors.append("sensoryWeights missing")
 
@@ -470,6 +517,25 @@ def validate_brain(brain: Mapping[str, object], known_buffers: set[str] | None =
             cheat = row.get("cinematicCheat")
             if not isinstance(cheat, str) or len(cheat.strip()) < 24:
                 errors.append(f"behaviorParameters.{behavior}.cinematicCheat missing")
+        if isinstance(cadence, dict):
+            real_attack = behavior_parameters.get("RealAttack")
+            false_charge = behavior_parameters.get("FalseCharge")
+            min_attack_cooldown = cadence.get("minimumAttackCooldownSeconds")
+            min_false_charge_cooldown = cadence.get("minimumFalseChargeCooldownSeconds")
+            if (
+                isinstance(real_attack, dict)
+                and is_number(real_attack.get("cooldownSeconds"))
+                and is_number(min_attack_cooldown)
+                and float(real_attack["cooldownSeconds"]) < float(min_attack_cooldown)
+            ):
+                errors.append("behaviorParameters.RealAttack.cooldownSeconds below decisionCadence minimum")
+            if (
+                isinstance(false_charge, dict)
+                and is_number(false_charge.get("cooldownSeconds"))
+                and is_number(min_false_charge_cooldown)
+                and float(false_charge["cooldownSeconds"]) < float(min_false_charge_cooldown)
+            ):
+                errors.append("behaviorParameters.FalseCharge.cooldownSeconds below decisionCadence minimum")
         if set(behavior_parameters.keys()) != set(EXPECTED_BEHAVIORS):
             errors.append("behaviorParameters behavior set drift")
     else:

@@ -503,3 +503,87 @@ Failure modes:
 Status:
 - INSTINCTS DEFINED for data and Python evidence.
 - Unity runtime verification remains PENDING VERIFICATION.
+
+## 2026-05-15 - Sensory Formula and Cooldown Contract Hardening
+
+What was wrong:
+- `decisionCadence.minimumAttackCooldownSeconds` declared 18 seconds, but `behaviorParameters.RealAttack.cooldownSeconds` was 16 seconds.
+- The validator checked sensory weights numerically, but did not prove the formula text still referenced the required decision feature lanes.
+
+What was done:
+- Changed `Data/AI/Leviathan_Brain.json` so RealAttack cooldown is 18.0 seconds.
+- Hardened `Tools/AiBattleSim.py` to validate sensory multipliers, formula tokens, sensory design intent, and RealAttack/FalseCharge cooldowns against declared cadence minima.
+- Added tests for missing sensory formula feature tokens, RealAttack cooldown below minimum, and FalseCharge cooldown below minimum.
+- Regenerated `Tools/AiBattleSim_Report.json` after the data change.
+
+Cinematic cheats used:
+- Longer lethal cooldown buys more non-lethal Circle/Breach/FalseCharge terror time instead of simulating heavier combat truth.
+
+Exact microseconds saved:
+- Unity runtime saving remains 0 us measured because no Unity runtime path changed.
+- Runtime impact if imported: fewer repeated lethal commits; saved decision pressure can be spent on presentation-tier spectacle instead of attack spam.
+
+Evidence:
+- `python -B -c "import ast, pathlib; ..."` -> `SYNTAX_OK`.
+- `python -B -m unittest Tools.test_ai_battle_sim` -> 48 tests passed in 14.871 s.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json` -> `INSTINCTS DEFINED`, kills 4220, killRate 0.422, under30KillRate 0.0.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts --verify-rerun` -> `ARTIFACT_CHECK_PASSED`, `rerunVerified=True`.
+- `brainDigest=b63fdd1d29a145997834fd386abd2bbc362aa14030913b3337b64cbbeceb33ed`.
+- `simulationDigest=8d2131741fc2d1fc03900eec6a8aba4631c753e143a6b2e068db21bf1db92d7b`.
+
+Regression model:
+- CPU: no Unity runtime CPU added. Python validation and simulator only.
+- GC: no Unity hot path changed. Runtime GC proof remains PENDING VERIFICATION until importer/playmode.
+- Memory: JSON/report changed only; no runtime memory allocation added.
+- Cadence: authored RealAttack cooldown now matches declared minimum attack cadence.
+- Correctness: sensory formula and cooldown contract drift now fail before report generation is accepted.
+
+Failure modes:
+- Future tuning that reduces attack or false-charge cooldown below declared minima will fail validation.
+- Unity runtime importer remains separate work; no runtime behavior is claimed beyond data/tooling evidence.
+
+Status:
+- INSTINCTS DEFINED for data and Python evidence.
+- Unity runtime verification remains PENDING VERIFICATION.
+
+## 2026-05-15 - Context and Utility Metadata Hardening
+
+What was wrong:
+- The validator proved 10 context ids and 50 context/behavior pairs, but it did not prove exact context order, context band validity, context descriptions, sequential utility ids, or utility reason text.
+
+What was done:
+- Added `EXPECTED_CONTEXT_IDS` to `Tools/AiBattleSim.py`.
+- Hardened context validation for exact id/order set, distanceBand, signalBand, packBand, and description.
+- Hardened utility-score validation for sequential ids and non-empty reason text.
+- Added regression tests for context order drift, invalid context band, utility id sequence drift, and missing utility reason.
+
+Cinematic cheats used:
+- No new physical simulation truth. This pass protects authored table semantics before runtime import.
+
+Exact microseconds saved:
+- Unity runtime saving remains 0 us measured because no Unity runtime path changed.
+- Integration value: broken context metadata now fails in Python before any importer packs the table into runtime arrays.
+
+Evidence:
+- `python -B -c "import ast, pathlib; ..."` -> `SYNTAX_OK`.
+- `python -B -m unittest Tools.test_ai_battle_sim` -> 52 tests passed in 9.118 s.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts` -> `ARTIFACT_CHECK_PASSED`.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts --verify-rerun` -> `ARTIFACT_CHECK_PASSED`, `rerunVerified=True`.
+- killRate 0.422, under30KillRate 0.0.
+- `brainDigest=b63fdd1d29a145997834fd386abd2bbc362aa14030913b3337b64cbbeceb33ed`.
+- `simulationDigest=8d2131741fc2d1fc03900eec6a8aba4631c753e143a6b2e068db21bf1db92d7b`.
+
+Regression model:
+- CPU: no Unity runtime CPU added. Python validation only.
+- GC: no Unity hot path changed. Runtime GC proof remains PENDING VERIFICATION until importer/playmode.
+- Memory: no runtime memory allocation added.
+- Cadence: no gameplay cadence changed.
+- Correctness: context semantics and utility row identity now fail closed before report acceptance.
+
+Failure modes:
+- Future context additions require explicit tuple/test/report updates.
+- Unity runtime importer remains separate work; no runtime behavior is claimed beyond data/tooling evidence.
+
+Status:
+- INSTINCTS DEFINED for data and Python evidence.
+- Unity runtime verification remains PENDING VERIFICATION.

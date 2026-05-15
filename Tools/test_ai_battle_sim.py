@@ -199,6 +199,34 @@ class AiBattleSimTests(unittest.TestCase):
         self.assertEqual(validation["status"], "BRAIN_VALIDATION_FAILED")
         self.assertTrue(any("duplicate context" in error for error in validation["errors"]))
 
+    def test_context_order_drift_is_rejected(self) -> None:
+        brain = json.loads(BRAIN_PATH.read_text(encoding="utf-8"))
+        brain["contexts"][0], brain["contexts"][1] = brain["contexts"][1], brain["contexts"][0]
+        validation = self.sim.validate_brain(brain)
+        self.assertEqual(validation["status"], "BRAIN_VALIDATION_FAILED")
+        self.assertTrue(any("contexts order/id set drift" in error for error in validation["errors"]))
+
+    def test_context_band_drift_is_rejected(self) -> None:
+        brain = json.loads(BRAIN_PATH.read_text(encoding="utf-8"))
+        brain["contexts"][0]["distanceBand"] = "nearish"
+        validation = self.sim.validate_brain(brain)
+        self.assertEqual(validation["status"], "BRAIN_VALIDATION_FAILED")
+        self.assertTrue(any("contexts[0].distanceBand invalid" in error for error in validation["errors"]))
+
+    def test_utility_score_id_sequence_drift_is_rejected(self) -> None:
+        brain = json.loads(BRAIN_PATH.read_text(encoding="utf-8"))
+        brain["utilityScores"][0]["id"] = 99
+        validation = self.sim.validate_brain(brain)
+        self.assertEqual(validation["status"], "BRAIN_VALIDATION_FAILED")
+        self.assertTrue(any("utilityScores[0].id sequence drift" in error for error in validation["errors"]))
+
+    def test_utility_score_reason_missing_is_rejected(self) -> None:
+        brain = json.loads(BRAIN_PATH.read_text(encoding="utf-8"))
+        brain["utilityScores"][0]["reason"] = ""
+        validation = self.sim.validate_brain(brain)
+        self.assertEqual(validation["status"], "BRAIN_VALIDATION_FAILED")
+        self.assertTrue(any("utilityScores[0].reason missing" in error for error in validation["errors"]))
+
     def test_missing_behavior_parameters_are_rejected(self) -> None:
         brain = json.loads(BRAIN_PATH.read_text(encoding="utf-8"))
         del brain["behaviorParameters"]["RealAttack"]
@@ -212,6 +240,27 @@ class AiBattleSimTests(unittest.TestCase):
         validation = self.sim.validate_brain(brain)
         self.assertEqual(validation["status"], "BRAIN_VALIDATION_FAILED")
         self.assertTrue(any("decisionCadence.hysteresisSeconds" in error for error in validation["errors"]))
+
+    def test_missing_sensory_formula_feature_is_rejected(self) -> None:
+        brain = json.loads(BRAIN_PATH.read_text(encoding="utf-8"))
+        brain["sensoryWeights"]["weightedAggressionFormula"] = "aggression01=saturate(sound01*0.42 + light01*0.26) * lineOfSight01"
+        validation = self.sim.validate_brain(brain)
+        self.assertEqual(validation["status"], "BRAIN_VALIDATION_FAILED")
+        self.assertTrue(any("weightedAggressionFormula missing feature token" in error for error in validation["errors"]))
+
+    def test_real_attack_cooldown_below_declared_minimum_is_rejected(self) -> None:
+        brain = json.loads(BRAIN_PATH.read_text(encoding="utf-8"))
+        brain["behaviorParameters"]["RealAttack"]["cooldownSeconds"] = 16.0
+        validation = self.sim.validate_brain(brain)
+        self.assertEqual(validation["status"], "BRAIN_VALIDATION_FAILED")
+        self.assertTrue(any("RealAttack.cooldownSeconds below decisionCadence minimum" in error for error in validation["errors"]))
+
+    def test_false_charge_cooldown_below_declared_minimum_is_rejected(self) -> None:
+        brain = json.loads(BRAIN_PATH.read_text(encoding="utf-8"))
+        brain["behaviorParameters"]["FalseCharge"]["cooldownSeconds"] = 4.0
+        validation = self.sim.validate_brain(brain)
+        self.assertEqual(validation["status"], "BRAIN_VALIDATION_FAILED")
+        self.assertTrue(any("FalseCharge.cooldownSeconds below decisionCadence minimum" in error for error in validation["errors"]))
 
     def test_invalid_black_box_contract_is_rejected(self) -> None:
         brain = json.loads(BRAIN_PATH.read_text(encoding="utf-8"))

@@ -205,3 +205,21 @@ Solution: Added an `initial_aggression` parameter to `build_report` and wired `a
 Rejected Alternatives: Leaving the mismatch was rejected because it would corrupt calibration evidence on non-default verifier runs.
 Scalability potential: Release gates can now exercise alternate aggression seeds without lying in the calibration block.
 Hardware Impact: Offline report metadata only. No Unity runtime impact.
+
+Problem: Authored cooldown metadata drifted from behavior truth. `decisionCadence.minimumAttackCooldownSeconds` declared 18 seconds, while `behaviorParameters.RealAttack.cooldownSeconds` was 16 seconds.
+Solution: Aligned `RealAttack.cooldownSeconds` to 18 seconds and regenerated the 10,000 encounter report. New killRate is 0.422 and under30KillRate remains 0.0, so the terror target still passes.
+Rejected Alternatives: Leaving the shorter attack cooldown was rejected because the data contract lied to future importers and reviewers.
+Scalability potential: Future attack tuning must now pass the explicit cooldown-minimum validator before report generation.
+Hardware Impact: Runtime remains data-only in this task. If imported, the longer cooldown reduces repeated lethal commits and buys presentation budget for non-lethal terror states on low-end hardware.
+
+Problem: The validator accepted sensory formula text and cooldown metadata too loosely.
+Solution: Added checks for sensory multipliers, sensory formula tokens, sensory design intent, and RealAttack/FalseCharge cooldowns against declared cadence minima. Added regression tests for missing formula tokens and both cooldown-minimum violations.
+Rejected Alternatives: Trusting comments/formula strings as documentation-only was rejected because designers and importers read those fields as contract evidence.
+Scalability potential: Low/Middle/High/Ultra tuning can change weights deliberately while preserving formula-token coverage and cooldown consistency.
+Hardware Impact: Offline validation only. Strict 10,000 rerun passed with new `brainDigest=b63fdd1d29a145997834fd386abd2bbc362aa14030913b3337b64cbbeceb33ed` and `simulationDigest=8d2131741fc2d1fc03900eec6a8aba4631c753e143a6b2e068db21bf1db92d7b`.
+
+Problem: Context rows and utility-row metadata were only partially validated. A context could drift bands/description or a utility row id/reason could be corrupted while the 50-pair matrix still passed.
+Solution: Added exact context id/order validation, context band validation, context description validation, sequential utility-score id validation, and utility reason validation in `Tools/AiBattleSim.py`.
+Rejected Alternatives: Treating context metadata and reason text as harmless documentation was rejected because importers and designers use them to understand table semantics.
+Scalability potential: Future context additions must update the explicit context tuple, tests, and report proof rather than silently shifting the table.
+Hardware Impact: Offline validation only. No Unity runtime impact; strict 10,000 rerun passed with unchanged brain/simulation digests.
