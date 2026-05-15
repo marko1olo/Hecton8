@@ -43,3 +43,19 @@ Rejected Alternatives: Editing tests, hand-editing binary blobs, or leaving the 
 Scalability potential: Generated data remains cheap on low hardware; high-tier visual/AI behavior is not changed by this repository hygiene repair.
 Hardware Impact: 0 us gameplay runtime gain measured; CLI report generation time was 41.955 seconds for 10,000 encounters on this machine, but Unity/player runtime remains pending.
 
+## Decision 6
+
+Problem: Continued repository scans found Unity/dotnet compile proof unavailable: Unity executable is absent, Visual Studio-local `dotnet.exe` has no SDK, and MSBuild can parse `Hecton8.slnx` but fails because referenced `.csproj` files are absent while only `.csproj.lscache` files exist.
+Solution: Record the exact tooling failure as environment evidence and continue with static/CLI repository guards that can run locally.
+Rejected Alternatives: Generating fake `.csproj` files or claiming compile success from `.lscache` metadata. Both would create false evidence and risk Unity project drift.
+Scalability potential: None for runtime tiers; this is verification infrastructure debt.
+Hardware Impact: 0 us runtime gain; compile/runtime proof remains blocked until Unity regenerates project files or a proper .NET SDK/project surface exists.
+
+## Decision 7
+
+Problem: Refined Unity meta scan found two first-party orphan folder metas: `Assets/_Project/Art/TEXTURES/VFX.meta` and `Assets/_Project/Scripts/Core/Memory/Layout.meta`; their base folders do not exist.
+Solution: Delete only those two orphan `.meta` files. Leave third-party package/import debris untouched because it is outside this task and AGENTS forbids casual third-party asset surgery.
+Rejected Alternatives: Broad cleanup of third-party metas, native bundle internals, Addressables metas, or RealtimeCSG internals. That would be high-risk and outside repository hygiene for this agent.
+Scalability potential: No runtime tier impact; reduces Unity asset database noise and avoids unreachable GUID residue.
+Hardware Impact: 0 us runtime gain measured.
+
