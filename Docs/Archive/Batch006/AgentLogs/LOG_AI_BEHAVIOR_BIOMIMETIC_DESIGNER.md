@@ -56,6 +56,36 @@ Status:
 - INSTINCTS DEFINED for data and Python evidence.
 - Unity runtime verification remains PENDING VERIFICATION.
 
+## 2026-05-15 - Report Breakdown Consistency Hardening
+
+What was wrong:
+- Normal artifact validation checked the top-line summary, but not whether `profileBreakdown`, `tierBreakdown`, and `packCountBreakdown` still summed back to that summary.
+
+What was done:
+- Added breakdown consistency validation for encounters, kills, escaped, timeouts, under-30 kills, kill rates, and under-30 rates.
+- Added regression tests for tampered profile totals, tampered tier rates, and missing pack breakdown.
+
+Cinematic cheats used:
+- No new simulation truth. This is report integrity hardening.
+
+Exact microseconds saved:
+- Unity runtime saving remains 0 us measured because no Unity runtime path changed.
+- Offline validation saves strict-rerun time for common report tampering cases.
+
+Evidence:
+- `python -B -c "import ast, pathlib; ..."`
+- Result: syntax parse passed.
+- `python -B -m unittest Tools.test_ai_battle_sim`
+- Result: 32 tests passed in 3.001 s.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts`
+- Result: `ARTIFACT_CHECK_PASSED`.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts --verify-rerun`
+- Result: `ARTIFACT_CHECK_PASSED`, `rerunVerified=True`.
+
+Status:
+- INSTINCTS DEFINED for data and Python evidence.
+- Unity runtime verification remains PENDING VERIFICATION.
+
 ## 2026-05-15 - Identity and Source Binding
 
 What was wrong:
@@ -305,6 +335,47 @@ Evidence:
 - Result: 9 tests passed in 3.618 s on final readback.
 - `python -B -c "import ast, pathlib; ..."`
 - Result: syntax parse passed for simulator and tests without writing bytecode.
+
+Status:
+- INSTINCTS DEFINED for data and Python evidence.
+- Unity runtime verification remains PENDING VERIFICATION.
+
+## 2026-05-15 - Breakdown Key Hardening Pass
+
+What was wrong:
+- Breakdown totals and per-row rates were validated, but the checker did not require the exact subgroup key universe. Missing profiles, invented tiers, or wrong pack labels could still pass if totals were manually balanced.
+- A previous prompt extraction attempt timed out and printed a neighboring agent fragment; that was not accepted as parsing evidence.
+
+What was done:
+- Hardened `Tools/AiBattleSim.py` to require exact profile keys, tier keys, and pack-count keys in the report breakdowns.
+- Added regression tests rejecting missing profile keys, extra tier keys, and wrong pack-count keys.
+- Re-extracted the exact `AI_BEHAVIOR_BIOMIMETIC_DESIGNER` prompt block with a bounded CLI regex and confirmed the XML contains 7 concrete tasks.
+
+Cinematic cheats used:
+- No new physical simulation truth was added. This pass hardened offline evidence around the existing deterministic utility brain.
+
+Exact microseconds saved:
+- Unity runtime saving remains 0 us measured because no Unity runtime path changed.
+- Integration value: subgroup evidence drift now fails in the CLI checker before import or playmode testing.
+
+Evidence:
+- `python -B -c "import ast, pathlib; ..."` -> `SYNTAX_OK`.
+- `python -B -m unittest Tools.test_ai_battle_sim` -> 35 tests passed in 12.411 s.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts --verify-rerun` -> `ARTIFACT_CHECK_PASSED`, `rerunVerified=True`.
+- killRate 0.5224, under30KillRate 0.0.
+- `brainDigest=07dad20de885023d068e93c97ae468732cb077efd6fc0b01420279900389e246`.
+- `simulationDigest=97a10330bb86ded1a29b82aa896ac9acbe46d768fe0c403360c80e08bca50867`.
+
+Regression model:
+- CPU: no Unity runtime CPU added. Strict rerun is offline and intentionally expensive.
+- GC: no Unity hot path changed. Runtime GC proof remains PENDING VERIFICATION until importer/playmode.
+- Memory: no runtime memory allocation added.
+- Cadence: no gameplay cadence changed.
+- Correctness: subgroup breakdown evidence now proves both numeric consistency and exact expected subgroup labels.
+
+Failure modes:
+- Adding/removing player profiles, tiers, or pack-count classes requires deliberate simulator/report/test updates.
+- Unity runtime importer remains separate work; no runtime behavior is claimed beyond data/tooling evidence.
 
 Status:
 - INSTINCTS DEFINED for data and Python evidence.

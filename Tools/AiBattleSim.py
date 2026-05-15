@@ -152,7 +152,9 @@ PLAYER_PROFILES = (
     PlayerProfile("engine_sprint", 0.94, 0.86, 0.18, 0.34, 0.34, 0.00),
     PlayerProfile("disciplined_escape", 0.58, 0.34, 0.18, 0.84, 0.66, 0.10),
 )
+EXPECTED_PROFILE_NAMES = tuple(profile.name for profile in PLAYER_PROFILES)
 TIERS = ("low", "middle", "high", "ultra")
+EXPECTED_PACK_COUNT_KEYS = ("0", "1", "2", "3")
 PACK_DIRECTIONS = (
     (1.0, 0.0),
     (0.70710678, 0.70710678),
@@ -1125,6 +1127,115 @@ def check_artifacts(brain_path: Path, report_path: Path, expected_encounters: in
     under30_rate = summary.get("under30KillRate")
     if not isinstance(under30_rate, (int, float)) or isinstance(under30_rate, bool) or float(under30_rate) > fast_max:
         errors.append("summary.under30KillRate exceeds guard")
+
+    def validate_breakdown(name: str, breakdown: object, expected_keys: Tuple[str, ...]) -> None:
+        if not isinstance(breakdown, dict) or not breakdown:
+            errors.append(f"{name} missing")
+            return
+        breakdown_keys = set(str(key) for key in breakdown.keys())
+        expected_key_set = set(expected_keys)
+        if breakdown_keys != expected_key_set:
+            missing_keys = [key for key in expected_keys if key not in breakdown_keys]
+            extra_keys = sorted(key for key in breakdown_keys if key not in expected_key_set)
+            if missing_keys:
+                errors.append(f"{name} missing keys {','.join(missing_keys)}")
+            if extra_keys:
+                errors.append(f"{name} extra keys {','.join(extra_keys)}")
+        totals = {
+            "encounters": 0,
+            "kills": 0,
+            "escaped": 0,
+            "timeouts": 0,
+            "under30Kills": 0,
+        }
+        for key, row in breakdown.items():
+            if not isinstance(row, dict):
+                errors.append(f"{name}.{key} invalid")
+                continue
+            encounters_value = row.get("encounters")
+            kills_value = row.get("kills")
+            if not isinstance(encounters_value, int) or isinstance(encounters_value, bool) or encounters_value <= 0:
+                errors.append(f"{name}.{key}.encounters invalid")
+                continue
+            if not isinstance(kills_value, int) or isinstance(kills_value, bool) or kills_value < 0:
+                errors.append(f"{name}.{key}.kills invalid")
+                continue
+            for field in totals:
+                value = row.get(field)
+                if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+                    errors.append(f"{name}.{key}.{field} invalid")
+                else:
+                    totals[field] += value
+            expected_kill_rate = round(kills_value / max(1, encounters_value), 5)
+            if row.get("killRate") != expected_kill_rate:
+                errors.append(f"{name}.{key}.killRate inconsistent")
+            under30_value = row.get("under30Kills")
+            if isinstance(under30_value, int) and not isinstance(under30_value, bool):
+                expected_under30_rate = round(under30_value / max(1, encounters_value), 5)
+                if row.get("under30KillRate") != expected_under30_rate:
+                    errors.append(f"{name}.{key}.under30KillRate inconsistent")
+
+        for field, value in totals.items():
+            if summary.get(field) != value:
+                errors.append(f"{name}.{field} total mismatch")
+
+    validate_breakdown("profileBreakdown", report.get("profileBreakdown"), EXPECTED_PROFILE_NAMES)
+    validate_breakdown("tierBreakdown", report.get("tierBreakdown"), TIERS)
+    validate_breakdown("packCountBreakdown", report.get("packCountBreakdown"), EXPECTED_PACK_COUNT_KEYS)
+
+    samples = report.get("samples")
+    expected_sample_count = min(20, expected_encounters)
+    if not isinstance(samples, list) or len(samples) != expected_sample_count:
+        errors.append("report.samples count mismatch")
+    else:
+        for expected_index, sample in enumerate(samples):
+            if not isinstance(sample, dict):
+                errors.append(f"report.samples.{expected_index} invalid")
+                continue
+            if sample.get("index") != expected_index:
+                errors.append(f"report.samples.{expected_index}.index drift")
+            if sample.get("profile") not in EXPECTED_PROFILE_NAMES:
+                errors.append(f"report.samples.{expected_index}.profile invalid")
+            if sample.get("tier") not in TIERS:
+                errors.append(f"report.samples.{expected_index}.tier invalid")
+            pack_count = sample.get("packCount")
+            if not isinstance(pack_count, int) or isinstance(pack_count, bool) or str(pack_count) not in EXPECTED_PACK_COUNT_KEYS:
+                errors.append(f"report.samples.{expected_index}.packCount invalid")
+            killed = sample.get("killed")
+            escaped = sample.get("escaped")
+            timeout = sample.get("timeout")
+            if not isinstance(killed, bool) or not isinstance(escaped, bool) or not isinstance(timeout, bool):
+                errors.append(f"report.samples.{expected_index}.outcome type invalid")
+            elif (int(killed) + int(escaped) + int(timeout)) != 1:
+                errors.append(f"report.samples.{expected_index}.outcome invalid")
+            kill_time = sample.get("killTime")
+            if not isinstance(kill_time, int) or isinstance(kill_time, bool):
+                errors.append(f"report.samples.{expected_index}.killTime invalid")
+            elif killed and not (0 < kill_time <= MAX_SECONDS):
+                errors.append(f"report.samples.{expected_index}.killTime killed range")
+            elif not killed and kill_time != 0:
+                errors.append(f"report.samples.{expected_index}.killTime nonkill range")
+            for field in ("finalHp", "maxTerror", "meanTerror"):
+                value = sample.get(field)
+                if not isinstance(value, (int, float)) or isinstance(value, bool) or not math.isfinite(float(value)):
+                    errors.append(f"report.samples.{expected_index}.{field} invalid")
+            final_hp = sample.get("finalHp")
+            max_terror = sample.get("maxTerror")
+            mean_terror = sample.get("meanTerror")
+            if isinstance(final_hp, (int, float)) and not isinstance(final_hp, bool) and not (0.0 <= float(final_hp) <= 100.0):
+                errors.append(f"report.samples.{expected_index}.finalHp range")
+            if isinstance(max_terror, (int, float)) and not isinstance(max_terror, bool) and not (0.0 <= float(max_terror) <= 1.0):
+                errors.append(f"report.samples.{expected_index}.maxTerror range")
+            if isinstance(mean_terror, (int, float)) and not isinstance(mean_terror, bool) and not (0.0 <= float(mean_terror) <= 1.0):
+                errors.append(f"report.samples.{expected_index}.meanTerror range")
+            if (
+                isinstance(max_terror, (int, float))
+                and not isinstance(max_terror, bool)
+                and isinstance(mean_terror, (int, float))
+                and not isinstance(mean_terror, bool)
+                and float(mean_terror) > float(max_terror)
+            ):
+                errors.append(f"report.samples.{expected_index}.terror inconsistent")
 
     audit = report.get("globalDataVaultAudit")
     if not isinstance(audit, dict) or audit.get("status") != "PASSED":

@@ -282,6 +282,81 @@ class AiBattleSimTests(unittest.TestCase):
         self.assertEqual(check["status"], "ARTIFACT_CHECK_FAILED")
         self.assertTrue(any("report.generatedBy" in error for error in check["errors"]))
 
+    def test_profile_breakdown_total_drift_is_rejected(self) -> None:
+        report = json.loads(REPORT_PATH.read_text(encoding="utf-8"))
+        first_key = next(iter(report["profileBreakdown"]))
+        report["profileBreakdown"][first_key]["kills"] += 1
+        report_path = self.write_temp_report("profile_breakdown", report)
+        check = self.sim.check_artifacts(BRAIN_PATH, report_path, 10_000)
+        self.assertEqual(check["status"], "ARTIFACT_CHECK_FAILED")
+        self.assertTrue(any("profileBreakdown.kills total mismatch" in error for error in check["errors"]))
+
+    def test_tier_breakdown_rate_drift_is_rejected(self) -> None:
+        report = json.loads(REPORT_PATH.read_text(encoding="utf-8"))
+        first_key = next(iter(report["tierBreakdown"]))
+        report["tierBreakdown"][first_key]["killRate"] = 0.0
+        report_path = self.write_temp_report("tier_breakdown", report)
+        check = self.sim.check_artifacts(BRAIN_PATH, report_path, 10_000)
+        self.assertEqual(check["status"], "ARTIFACT_CHECK_FAILED")
+        self.assertTrue(any("tierBreakdown" in error and "killRate inconsistent" in error for error in check["errors"]))
+
+    def test_pack_breakdown_missing_is_rejected(self) -> None:
+        report = json.loads(REPORT_PATH.read_text(encoding="utf-8"))
+        del report["packCountBreakdown"]
+        report_path = self.write_temp_report("pack_breakdown_missing", report)
+        check = self.sim.check_artifacts(BRAIN_PATH, report_path, 10_000)
+        self.assertEqual(check["status"], "ARTIFACT_CHECK_FAILED")
+        self.assertTrue(any("packCountBreakdown missing" in error for error in check["errors"]))
+
+    def test_missing_profile_breakdown_key_is_rejected(self) -> None:
+        report = json.loads(REPORT_PATH.read_text(encoding="utf-8"))
+        del report["profileBreakdown"]["quiet_drift"]
+        report_path = self.write_temp_report("profile_key_missing", report)
+        check = self.sim.check_artifacts(BRAIN_PATH, report_path, 10_000)
+        self.assertEqual(check["status"], "ARTIFACT_CHECK_FAILED")
+        self.assertTrue(any("profileBreakdown missing keys quiet_drift" in error for error in check["errors"]))
+
+    def test_extra_tier_breakdown_key_is_rejected(self) -> None:
+        report = json.loads(REPORT_PATH.read_text(encoding="utf-8"))
+        report["tierBreakdown"]["cinematic"] = dict(report["tierBreakdown"]["low"])
+        report_path = self.write_temp_report("tier_key_extra", report)
+        check = self.sim.check_artifacts(BRAIN_PATH, report_path, 10_000)
+        self.assertEqual(check["status"], "ARTIFACT_CHECK_FAILED")
+        self.assertTrue(any("tierBreakdown extra keys cinematic" in error for error in check["errors"]))
+
+    def test_wrong_pack_breakdown_key_is_rejected(self) -> None:
+        report = json.loads(REPORT_PATH.read_text(encoding="utf-8"))
+        report["packCountBreakdown"]["4"] = report["packCountBreakdown"].pop("3")
+        report_path = self.write_temp_report("pack_key_wrong", report)
+        check = self.sim.check_artifacts(BRAIN_PATH, report_path, 10_000)
+        self.assertEqual(check["status"], "ARTIFACT_CHECK_FAILED")
+        self.assertTrue(any("packCountBreakdown missing keys 3" in error for error in check["errors"]))
+        self.assertTrue(any("packCountBreakdown extra keys 4" in error for error in check["errors"]))
+
+    def test_missing_report_sample_is_rejected(self) -> None:
+        report = json.loads(REPORT_PATH.read_text(encoding="utf-8"))
+        report["samples"].pop()
+        report_path = self.write_temp_report("sample_missing", report)
+        check = self.sim.check_artifacts(BRAIN_PATH, report_path, 10_000)
+        self.assertEqual(check["status"], "ARTIFACT_CHECK_FAILED")
+        self.assertTrue(any("report.samples count mismatch" in error for error in check["errors"]))
+
+    def test_report_sample_profile_drift_is_rejected(self) -> None:
+        report = json.loads(REPORT_PATH.read_text(encoding="utf-8"))
+        report["samples"][0]["profile"] = "tourist"
+        report_path = self.write_temp_report("sample_profile", report)
+        check = self.sim.check_artifacts(BRAIN_PATH, report_path, 10_000)
+        self.assertEqual(check["status"], "ARTIFACT_CHECK_FAILED")
+        self.assertTrue(any("report.samples.0.profile invalid" in error for error in check["errors"]))
+
+    def test_report_sample_outcome_collision_is_rejected(self) -> None:
+        report = json.loads(REPORT_PATH.read_text(encoding="utf-8"))
+        report["samples"][0]["escaped"] = True
+        report_path = self.write_temp_report("sample_outcome", report)
+        check = self.sim.check_artifacts(BRAIN_PATH, report_path, 10_000)
+        self.assertEqual(check["status"], "ARTIFACT_CHECK_FAILED")
+        self.assertTrue(any("report.samples.0.outcome invalid" in error for error in check["errors"]))
+
     def test_artifact_checker_invalid_self_audit_fails_closed(self) -> None:
         brain = json.loads(BRAIN_PATH.read_text(encoding="utf-8"))
         report = json.loads(REPORT_PATH.read_text(encoding="utf-8"))

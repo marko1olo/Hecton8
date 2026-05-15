@@ -151,3 +151,27 @@ Solution: Regenerated `Tools/AiBattleSim_Report.json`, reran artifact validation
 Rejected Alternatives: Reusing old evidence was rejected because source identity is part of the batch contract.
 Scalability potential: Future source-prompt changes must be updated deliberately in constants and tests.
 Hardware Impact: No runtime impact. Strict rerun remains offline and passed with unchanged brain/simulation digests.
+
+Problem: Normal artifact validation checked the top-line summary and relied on strict rerun for full consistency, but profile/tier/pack breakdown tables could be tampered without being caught by the cheap check.
+Solution: Added breakdown consistency validation to `Tools/AiBattleSim.py`: profile, tier, and pack-count breakdowns must exist; their encounters, kills, escaped, timeouts, and under-30 totals must match the summary; per-row kill rates and under-30 rates must match row counts.
+Rejected Alternatives: Requiring `--verify-rerun` for every subgroup consistency check was rejected because cheap internal consistency catches common report drift faster.
+Scalability potential: CI can run normal artifact checks frequently and reserve strict reruns for release gates.
+Hardware Impact: Offline validation only. Runtime impact remains 0 us.
+
+Problem: Breakdown consistency needed regression coverage.
+Solution: Added tests for tampered `profileBreakdown` kill totals, tampered `tierBreakdown` kill rate, and missing `packCountBreakdown`. Test suite now has 32 tests.
+Rejected Alternatives: Depending on strict rerun only was rejected because normal artifact validation should be meaningful on its own.
+Scalability potential: Future breakdown groups can reuse the same validator pattern.
+Hardware Impact: No runtime impact. Strict rerun remains offline and passed with unchanged brain/simulation digests.
+
+Problem: Breakdown consistency still allowed the wrong subgroup universe if totals matched. A report could omit `disciplined_escape`, invent a tier, or use a non-contract pack-count key while preserving summary totals.
+Solution: Added exact subgroup-key validation to `Tools/AiBattleSim.py`: profile keys must match all six dummy-player profiles, tier keys must match Low/Middle/High/Ultra, and pack keys must match 0/1/2/3. Added tests for missing profile key, extra tier key, and wrong pack key.
+Rejected Alternatives: Trusting whatever subgroup labels appear in the JSON was rejected because it allows silent evidence drift after profile/tier changes.
+Scalability potential: Future profile, tier, or pack-count expansion must update constants, report generation, validation, and tests deliberately.
+Hardware Impact: Offline validation only. Runtime impact remains 0 us; the strict 10,000 rerun still passed with unchanged brain and simulation digests.
+
+Problem: The previous prompt extraction readback command timed out and printed a neighboring prompt fragment, which is unusable evidence.
+Solution: Re-extracted the agent prompt with a bounded CLI regex against `Docs/Tasks/CURRENT_BATCH.md` and confirmed the exact `AI_BEHAVIOR_BIOMIMETIC_DESIGNER` block: 7 numbered tasks and required status `INSTINCTS DEFINED`.
+Rejected Alternatives: Treating the timed-out neighboring fragment as acceptable was rejected. Batch parsing evidence must point to this agent tag only.
+Scalability potential: Bounded tag extraction avoids contamination from neighboring agents during later anti-amnesia checks.
+Hardware Impact: Offline documentation/readback only. Runtime impact remains 0 us.
