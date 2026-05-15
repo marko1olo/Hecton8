@@ -376,6 +376,10 @@ def run_sim(constants: dict, days: int, total_overharvest: bool) -> tuple[dict, 
 
 
 def calculate_balance(final: dict, constants: dict, total_overharvest: bool) -> tuple[bool, float, float]:
+    if not total_overharvest:
+        raise ValueError("calculate_balance only supports total_overharvest mode")
+
+    validate_constants(constants)
     safe_day = final["firstHalfRecoveryDays"][0]
     abyss_day = final["firstHalfRecoveryDays"][3]
     has_required_recovery = safe_day is not None and abyss_day is not None and safe_day > 0
@@ -385,11 +389,7 @@ def calculate_balance(final: dict, constants: dict, total_overharvest: bool) -> 
     final_mature_ratio = final_mature_total / max(1, final_count_total)
     required_ratio = float(constants["acceptance"]["safeShallowsVsDeepAbyssMinRecoveryRatio"])
     required_mature = float(constants["acceptance"]["minFinalMatureRatio"])
-    if total_overharvest:
-        balanced = has_required_recovery and ratio >= required_ratio and final_mature_ratio >= required_mature
-    else:
-        balanced = final_mature_ratio >= required_mature
-
+    balanced = has_required_recovery and ratio >= required_ratio and final_mature_ratio >= required_mature
     return balanced, ratio, final_mature_ratio
 
 

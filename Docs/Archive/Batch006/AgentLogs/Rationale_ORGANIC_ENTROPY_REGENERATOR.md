@@ -488,3 +488,14 @@ Rejected Alternatives: Keeping the dead baseline path was rejected because this 
 Scalability potential: Low/Middle/High/Ultra validation paths now share one acceptance mode. Any future baseline validation must define a separate schema instead of piggybacking on total-overharvest constants.
 
 Hardware Impact: Tooling-only. Unity runtime backend unchanged; invalid direct mode aborts before state allocation.
+
+## Decision 45 - Direct Balance Mode Guard
+Problem: `calculate_balance()` still contained a non-overharvest branch after the CLI and `run_sim()` had been narrowed to total-overharvest only. Direct callers could therefore publish baseline balance evidence under the wrong constants contract.
+
+Solution: Added a `ValueError` guard for `total_overharvest=False` in `calculate_balance()` and removed the stale baseline branch. Added a regression that calls the function directly with the invalid mode.
+
+Rejected Alternatives: Leaving the branch as harmless legacy code was rejected because evidence generation surfaces must fail closed. Adding a second acceptance schema was rejected as outside the XML task.
+
+Scalability potential: Low/Middle/High/Ultra validation paths now use one balance calculation contract. Future alternate validation modes must become explicit data/schema work.
+
+Hardware Impact: Tooling-only. Unity runtime backend unchanged; invalid direct balance calls abort before publishing a status.

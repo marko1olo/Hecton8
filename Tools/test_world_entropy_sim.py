@@ -133,6 +133,20 @@ class WorldEntropySimTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             entropy.run_sim(self.constants, 1, False)
 
+    def test_calculate_balance_rejects_non_overharvest_direct_mode(self) -> None:
+        final, _ = entropy.run_sim(self.constants, 1, True)
+
+        with self.assertRaises(ValueError):
+            entropy.calculate_balance(final, self.constants, False)
+
+    def test_calculate_balance_rejects_invalid_constants(self) -> None:
+        final, _ = entropy.run_sim(self.constants, 365, True)
+        constants = deepcopy(self.constants)
+        constants["acceptance"]["safeShallowsVsDeepAbyssMinRecoveryRatio"] = 0.0
+
+        with self.assertRaises(ValueError):
+            entropy.calculate_balance(final, constants, True)
+
     def test_run_sim_rejects_misaligned_biome_contract(self) -> None:
         constants = deepcopy(self.constants)
         constants["biomes"][3]["id"] = 0
