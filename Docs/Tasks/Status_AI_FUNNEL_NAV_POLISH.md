@@ -198,6 +198,14 @@ Task Count: 15
 - [x] Full graph count composition | DOD: `ResolveAbyssalNavGraphViewCount` now composes conduit proof plus node-type proof, preserving stricter full-graph export while avoiding duplicated conduit clamps; rejected two diverging graph count implementations; estimate 2 us.
 - [x] Conduit payload scan | DOD: changed conduit/view-count ranges report no raw division, forbidden hot math, managed allocation, or `foreach`; `git diff --check` was rerun with dotnet rebuilds prohibited; estimate 3 us.
 
+## Loop 27 - Voxel Macro Obstacle Snapshot Proof
+
+- [x] Cross-domain justification | DOD: limited `VoxelDynamicNavGridRuntime` edit to the vegetation-to-voxel macro-obstacle interface used by macro portal routing before funnel smoothing; rejected broad voxel navgrid math rewrites outside this prompt; estimate 1 us.
+- [x] Count/write parity proof | DOD: macro flora obstacle counting now uses the same `TryResolveMacroFloraObstacleWorldBounds` proof as writing, preventing uninitialized snapshot tails when invalid matrices are skipped; rejected metadata-only pre-counting; estimate 5 us.
+- [x] Finite bounds gate | DOD: obstacle bounds now require finite runtime root, offset, center, and positive finite extents before entering the snapshot; rejected fabricating obstacle centers from corrupt matrices; estimate 4 us.
+- [x] Snapshot capacity clamp | DOD: macro flora writer clamps to remaining snapshot capacity before writes; rejected assuming count/write never drift under concurrent payload churn; estimate 3 us.
+- [x] Macro obstacle static scan | DOD: changed VoxelDynamic nav ranges report no raw division, forbidden hot math, managed allocation, or `foreach`; dotnet rebuilds remain prohibited; estimate 4 us.
+
 ## Verification
 
 - [x] Static scan | PASS: `StringPullPathJob`, `NativeAStarJob`, `TryResolveAbyssalNavNodeCandidate`, abyssal nav support/hash, nav graph ingress, and funnel telemetry conversion regions have no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/` code matches after loop 19.
@@ -208,6 +216,7 @@ Task Count: 15
 - [x] Direct native view targeted scan | PASS: direct flow/nav-node/path view helpers report no raw division, forbidden hot math, managed allocation, or `foreach`.
 - [x] Nav graph payload targeted scan | PASS: thermal/flow exports, anchor/nav-node/conduit payload getters, native nav graph getter, and new node-type view-count helper report no raw division, forbidden hot math, managed allocation, or `foreach`.
 - [x] Conduit payload targeted scan | PASS: `ResolveAbyssalConduitViewCount`, `ResolveAbyssalNavGraphViewCount`, and `TryGetAbyssalCurrentConduitPayload` report no raw division, forbidden hot math, managed allocation, or `foreach`.
+- [x] Voxel macro obstacle targeted scan | PASS: macro flora obstacle count/write and finite-bounds ranges in `VoxelDynamicNavGridRuntime.cs` report no raw division, forbidden hot math, managed allocation, or `foreach`.
 - [x] Diff hygiene | PASS: `git diff --check` passed for touched source/status/rationale/log files; only LF-to-CRLF working-copy warnings were emitted.
 - [x] Static H-Phi audit | ATTEMPTED: `Tools/Architecture/HectonPhiAudit.ps1 -Json` timed out after 120 seconds under current repo load; no score claimed from this pass.
 - [x] Compile check | BLOCKED BY DEPENDENCY: bounded no-reference `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false /p:BuildProjectReferences=false` completed with 63 unrelated errors in `VRAMEnforcer`, `VoxelDeltaProcessor`, `SealedDoor`, `BinaryLayoutManifest`, and `HardwareTierDetector`; none were reported in `VegetationFlowFieldIntegrator.cs`, `VegetationNavGridSynchronizer.cs`, or `HectonMapMagicVegetationBridge.cs`.

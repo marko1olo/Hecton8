@@ -1468,11 +1468,11 @@ namespace Hecton8.Gameplay
         public override string GetOperationalSummary()
         {
             float now = Time.time;
-            int frame = Time.frameCount;
             int cacheBucket = ResolveOperationalStringCacheBucket(now);
             if (_summaryStringCacheBucket == cacheBucket)
                 return _cachedOperationalSummaryString;
 
+            int frame = Time.frameCount;
             _scanHudBuffer.Clear();
             WriteOperationalSummaryInternal(ref _scanHudBuffer, now, frame);
             return ResolveCachedOperationalString(

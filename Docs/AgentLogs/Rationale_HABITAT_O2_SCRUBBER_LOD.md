@@ -228,3 +228,10 @@ Solution: `TrySetBulkhead` now requires current room-lane readiness before accep
 Rejected Alternatives: Letting the Burst job skip invalid endpoint rooms was rejected for API consistency; the public setter should not admit edges against incoherent room state. Keeping constant dump capacity was rejected because future telemetry ring migration should produce truthful dump metadata.
 Scalability potential: Low through Ultra keep the 300-frame default black box. Future smaller diagnostic rings on low-end devices remain safe, while higher-tier builds can expand the ring without code changes.
 Hardware Impact: One room readiness check per bulkhead edit and one live-length branch on post-step telemetry fault checks. No frame-time saving claimed.
+
+## Self-Review 26 - H-Phi Audit Recheck
+Problem: Continued H-Phi work needed fresh source evidence after the additional native-capacity hardening, but full Unity/Burst validation remains blocked by the no-rebuild instruction.
+Solution: Re-ran `Tools/Architecture/HectonPhiAudit.ps1 -Summary` as a source-only check. The script emitted its STATIC_SOURCE summary before timing out at 240s, so the captured metrics are recorded as partial evidence only: RuntimeHPhiRisk 0.000591666, DataSovereignty 0.021395609, DataVaultRefs 153, NativeArrayRefs 6998.
+Rejected Alternatives: Treating the timed-out run as a clean pass was rejected. Running dotnet or Unity compilation was rejected by explicit user instruction.
+Scalability potential: The metrics show the awake-mask DataVault path is still present and AUP precision risk remains zero; broader Dalton array sovereignty is still a separate owner-migration pass.
+Hardware Impact: Audit-only pass; no runtime impact and no microsecond savings claimed.

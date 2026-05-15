@@ -184,6 +184,12 @@ Rejected Alternatives: Assuming every restore path uses the binary codec; adding
 Scalability potential: Low devices avoid oversized post-load compatibility containers even from non-binary saves; Middle keeps migration repair bounded and explicit; High and Ultra can keep rich primary DTO state without compatibility baggage growing beyond producer limits.
 Hardware Impact: 0 us frame impact. Cold migration adds O(extra entries) list trims and O(extra entries * remaining dictionary count) dictionary/hash-set removal only when corrupt or oversized data is present.
 
+Problem: Individual binary strings were only bounded by remaining payload bytes. A single corrupt length could still allocate a large managed string, and unused unbounded array helper methods remained as reconnection points beside the bounded helpers.
+Solution: Capped every `SaveBinaryPayloadCodec` UTF-16 string at one protected 16 KiB block (`8192` chars) before writer copy or reader allocation, removed unused unbounded `WriteStringArray`, `ReadStringArray`, `WriteStructArray`, and `ReadStructArray` helper surfaces, and documented the string cap in `Save_Binary_Header.md`.
+Rejected Alternatives: Per-field string limits in all 74 call sites; leaving dead unbounded helpers for convenience; permitting root `CustomModData` to carry large mod payloads. Mod persistent data already has protected indexed sectors, so root compatibility strings should remain bounded metadata.
+Scalability potential: Low devices reject string bombs before heap pressure; Middle keeps root compatibility payloads predictable; High and Ultra can reserve large mod payloads for the protected sector path instead of expanding the root DTO surface.
+Hardware Impact: 0 us frame impact. Cold save/read adds one integer compare per string. Worst single-string managed allocation is now bounded to 16 KiB of UTF-16 payload instead of being constrained only by full save payload length.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Polish audit required removal of fake precision, managed iteration/string debt, and any code outside the DataVault domain without justification.

@@ -493,33 +493,6 @@ Verification state:
 - Unity import/compile and profiler capture remain unverified.
 - No dotnet rebuild was run.
 
-## 2026-05-15 - Applied AUP Shift Blackbox Fidelity
-
-What was wrong:
-- The compute path applied `_pendingAupShift`, then cleared it before blackbox telemetry was written.
-- The 300-frame crash ring could therefore record zero shift on a frame that actually rebased GPU debris.
-
-What was done:
-- Added `_lastAppliedAupShift` as a one-frame snapshot of the shift submitted to compute.
-- `WriteBlackBox()` now stores `AppliedAupShift` and includes the shift bits in the FNV telemetry hash.
-- The snapshot is cleared after the telemetry entry is written or when no debris/shift work is dispatched.
-- Did not run dotnet build, dotnet rebuild, or Unity batch compile.
-
-Cinematic cheats used:
-- No simulation was added.
-- This improves blackbox truth for the existing GPU rock-chip fake during AUP origin shifts.
-
-Exact microseconds saved:
-- Direct frame saving: 0 us.
-- Added cost: one `float3` assignment when compute dispatches and three integer FNV mixes during blackbox write.
-- Avoided cost: no GPU readback and no CPU particle rebase upload.
-
-Verification state:
-- Static verification completed: focused `git diff --check` returned clean.
-- Forbidden VFX scan returned no matches for CPU readback, ParticleSystem, ComputeBuffer, scene search, job scheduling fences, private `H8Memory.Allocate`, private `H8Memory.Release`, `MaterialPropertyBlock`, `matProps`, stale `nextFluidRebind`, `VaultLeaseCheckStride`, `TierRefreshStrideFrames`, or `_nextTierRefreshFrame`.
-- Unity import/compile and profiler capture remain unverified.
-- No dotnet rebuild was run.
-
 ## 2026-05-15 - Camera-Scoped Indirect Draw
 
 What was wrong:
@@ -637,5 +610,56 @@ Verification state:
 - Forbidden hot-path scan returned no matches for CPU readback, ParticleSystem, ComputeBuffer, scene search, job scheduling fences, private `H8Memory.Allocate`, private `H8Memory.Release`, `MaterialPropertyBlock`, `matProps`, stale `nextFluidRebind`, or `VaultLeaseCheckStride`.
 - Shader hot-math scan returned no matches for `sincos`, raw trig, `pow`, `exp`, `log`, or raw `normalize`.
 - `CURRENT_BATCH.md` exact prompt tag count for `VFX_SDF_CARVE_DEBRIS`: 0.
+- Unity import/compile and profiler capture remain unverified.
+- No dotnet rebuild was run.
+
+## 2026-05-15 - Applied AUP Shift Blackbox Fidelity
+
+What was wrong:
+- The compute path applied `_pendingAupShift`, then cleared it before blackbox telemetry was written.
+- The 300-frame crash ring could therefore record zero shift on a frame that actually rebased GPU debris.
+
+What was done:
+- Added `_lastAppliedAupShift` as a one-frame snapshot of the shift submitted to compute.
+- `WriteBlackBox()` now stores `AppliedAupShift` and includes the shift bits in the FNV telemetry hash.
+- The snapshot is cleared after the telemetry entry is written or when no debris/shift work is dispatched.
+- Did not run dotnet build, dotnet rebuild, or Unity batch compile.
+
+Cinematic cheats used:
+- No simulation was added.
+- This improves blackbox truth for the existing GPU rock-chip fake during AUP origin shifts.
+
+Exact microseconds saved:
+- Direct frame saving: 0 us.
+- Added cost: one `float3` assignment when compute dispatches and three integer FNV mixes during blackbox write.
+- Avoided cost: no GPU readback and no CPU particle rebase upload.
+
+Verification state:
+- Static verification completed: focused `git diff --check` returned clean.
+- Forbidden VFX scan returned no matches for CPU readback, ParticleSystem, ComputeBuffer, scene search, job scheduling fences, private `H8Memory.Allocate`, private `H8Memory.Release`, `MaterialPropertyBlock`, `matProps`, stale `nextFluidRebind`, `VaultLeaseCheckStride`, `TierRefreshStrideFrames`, or `_nextTierRefreshFrame`.
+- Unity import/compile and profiler capture remain unverified.
+- No dotnet rebuild was run.
+
+## 2026-05-15 - Scalability Event-Lane Reconciliation
+
+What was wrong:
+- Status/rationale still described a 30-frame scalability registry sample.
+- The renderer currently implements `IScalabilityChangedEventListener` and uses `ScalabilityEvents`, so the disk record was stale.
+
+What was done:
+- Updated the status loop and second-pass checklist to state typed scalability event ownership.
+- Updated Decision 13 to describe cold registry seed plus event-driven tier updates with 120 tick hysteresis.
+- Did not run dotnet build, dotnet rebuild, or Unity batch compile.
+
+Cinematic cheats used:
+- No visual simulation was changed.
+- This preserves the existing Math LOD split: Low/MX350 buys stability; High/Ultra spends saved budget on richer SDF/flow/shading.
+
+Exact microseconds saved:
+- Documentation-only pass: 0 us new runtime saving.
+- Existing event lane removes steady registry tier reads and prevents repeated 1024/4096 capacity churn during transient tier oscillation.
+
+Verification state:
+- Static verification only.
 - Unity import/compile and profiler capture remain unverified.
 - No dotnet rebuild was run.

@@ -250,9 +250,12 @@ H8UberNoirInstanceData H8UberNoirLoadInstance(uint instanceID)
 {
     H8UberNoirInstanceData instanceData = H8UberNoirBuildDefaultInstance();
 #if defined(H8_UBERNOIR_USE_INSTANCE_BUFFER)
-    uint bufferCount = (uint)max(_UberNoirInstanceParams.y, 0.0);
-    uint bufferOffset = (uint)max(_UberNoirInstanceParams.x, 0.0);
-    uint useBuffer = (uint)step(0.5, _UberNoirInstanceParams.z);
+    float bufferOffsetSource = _UberNoirInstanceParams.x;
+    float bufferCountSource = _UberNoirInstanceParams.y;
+    float useBufferSource = _UberNoirInstanceParams.z;
+    uint bufferCount = (uint)(isfinite(bufferCountSource) ? max(bufferCountSource, 0.0) : 0.0);
+    uint bufferOffset = (uint)(isfinite(bufferOffsetSource) ? max(bufferOffsetSource, 0.0) : 0.0);
+    uint useBuffer = (uint)(isfinite(useBufferSource) ? step(0.5, useBufferSource) : 0.0);
     [branch]
     if ((useBuffer != 0u) && (bufferCount > 0u))
     {

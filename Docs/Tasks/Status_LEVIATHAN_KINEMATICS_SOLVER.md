@@ -368,3 +368,15 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 - Static grep confirms all `_pendingSolverHandle` completion/finalization sites now feed `WriteTelemetryFrame()` when they consume a scheduled job.
 - `git diff --check` on touched code/docs exits 0.
 - No `dotnet` rebuild, compile, Unity import, or response-file probe was run.
+
+### Loop 34: Tentacle Runtime Scalar Boundary Recheck
+
+- Added centralized default constants for tentacle rest length, max stretch, damping, radius, flow, pulse, and grab damage scalars.
+- Added finite/min/range runtime sanitizers that set `_invalidInputDetected` on corrupted scalar input.
+- Fed sanitized scalars into Burst job scheduling, seed/reset matrices, material radius references, and combat damage requests.
+- DOD: non-finite or out-of-contract authored floats no longer enter native solve payloads, material properties, or combat signals unchecked.
+- Alternative Rejected: relying on `OnValidate()` because runtime/script mutation and corrupted serialized data can bypass editor validation in builds.
+- Estimate: under 0.05 us per scheduled frame for fixed scalar guards; no profiler-backed saving claimed.
+- Static grep over the tentacle solver still finds no direct `new NativeArray<`, direct `array.Dispose(`, `Time.frameCount`, `GlobalRegistry.Get`, forbidden Unity object searches, or legacy Animator/SkinnedMeshRenderer paths.
+- `git diff --check` on `LeviathanTentacleVerletSolver.cs` exits 0.
+- No `dotnet` rebuild, compile, Unity import, or response-file probe was run.

@@ -39,6 +39,16 @@ namespace Hecton8.AI
         private const float ConstraintIterationHysteresisSeconds = 2.5f;
         private const int AbyssalFlowVectorStrideBytes = 16;
         private const int MaxSupportedAbyssalFlowAxis = 4096;
+        private const float DefaultRestLength = 1.15f;
+        private const float DefaultMaxStretchLength = 23f;
+        private const float DefaultDamping = 0.985f;
+        private const float DefaultBaseRadius = 0.22f;
+        private const float DefaultTipRadius = 0.055f;
+        private const float DefaultFlowStrength = 1f;
+        private const float DefaultFlowNoiseStrength = 0.28f;
+        private const float DefaultSuctionPulseStrength = 0.16f;
+        private const float DefaultGrabDamageAmount = 12f;
+        private const float DefaultGrabDamageImpulse = 35f;
 
         private static readonly int _MatrixBufferId = Shader.PropertyToID("_H8LeviathanTentacleMatrices");
         private static readonly int _RadiusBufferId = Shader.PropertyToID("_H8LeviathanTentacleRadius");
@@ -328,13 +338,13 @@ namespace Hecton8.AI
 
         [Header("Verlet Settings")]
         [Tooltip("Meters between tentacle solver nodes.")]
-        [SerializeField, Min(0.01f)] private float restLength = 1.15f;
+        [SerializeField, Min(0.01f)] private float restLength = DefaultRestLength;
 
         [Tooltip("Maximum root-to-tip reach before the target point is clamped.")]
-        [SerializeField, Min(0.01f)] private float maxStretchLength = 23f;
+        [SerializeField, Min(0.01f)] private float maxStretchLength = DefaultMaxStretchLength;
 
         [Tooltip("Velocity retention applied to Verlet displacement.")]
-        [SerializeField, Range(0f, 1f)] private float damping = 0.985f;
+        [SerializeField, Range(0f, 1f)] private float damping = DefaultDamping;
 
         [Tooltip("Presentation gravity/current bias applied to nodes.")]
         [SerializeField] private Vector3 gravity = new Vector3(0f, -0.18f, 0f);
@@ -344,19 +354,19 @@ namespace Hecton8.AI
 
         [Header("Flow and Visual Shape")]
         [Tooltip("Root node render radius.")]
-        [SerializeField, Min(0.001f)] private float baseRadius = 0.22f;
+        [SerializeField, Min(0.001f)] private float baseRadius = DefaultBaseRadius;
 
         [Tooltip("Tip node render radius.")]
-        [SerializeField, Min(0.001f)] private float tipRadius = 0.055f;
+        [SerializeField, Min(0.001f)] private float tipRadius = DefaultTipRadius;
 
         [Tooltip("Multiplier applied to the sampled abyssal flow vector.")]
-        [SerializeField, Min(0f)] private float flowStrength = 1f;
+        [SerializeField, Min(0f)] private float flowStrength = DefaultFlowStrength;
 
         [Tooltip("Cheap middle-segment triangle-wave turbulence amplitude.")]
-        [SerializeField, Min(0f)] private float flowNoiseStrength = 0.28f;
+        [SerializeField, Min(0f)] private float flowNoiseStrength = DefaultFlowNoiseStrength;
 
         [Tooltip("Triangle-wave suction cup pulse radius while grabbing.")]
-        [SerializeField, Range(0f, 0.5f)] private float suctionPulseStrength = 0.16f;
+        [SerializeField, Range(0f, 0.5f)] private float suctionPulseStrength = DefaultSuctionPulseStrength;
 
         [Header("Rendering")]
         [Tooltip("Segment mesh rendered once per solver segment via RenderMeshIndirect.")]
@@ -379,10 +389,10 @@ namespace Hecton8.AI
 
         [Header("Grab Damage")]
         [Tooltip("Combat damage amount queued once per second while a target is grabbed.")]
-        [SerializeField, Min(0f)] private float grabDamageAmount = 12f;
+        [SerializeField, Min(0f)] private float grabDamageAmount = DefaultGrabDamageAmount;
 
         [Tooltip("Impulse magnitude passed to CombatDamageRuntime while grabbing.")]
-        [SerializeField, Min(0f)] private float grabDamageImpulse = 35f;
+        [SerializeField, Min(0f)] private float grabDamageImpulse = DefaultGrabDamageImpulse;
 
         private Transform _cachedTransform;
         private Transform _grabTarget;
@@ -576,6 +586,12 @@ namespace Hecton8.AI
             ResolveFlowInput();
             TryQueueGrabDamage(deltaTime);
             float safeDeltaTime = math.isfinite(deltaTime) ? math.min(math.max(0f, deltaTime), 0.05f) : 0f;
+            float safeRestLength = SanitizeFiniteMinInput(restLength, DefaultRestLength, 0.01f);
+            float safeMaxStretchLength = SanitizeFiniteMinInput(
+                maxStretchLength,
+                math.max(DefaultMaxStretchLength, safeRestLength * SegmentLastIndex),
+                safeRestLength * SegmentLastIndex);
+            float3 safeGravity = SanitizeFiniteInputFloat3(new float3(gravity.x, gravity.y, gravity.z), float3.zero);
             int constraintIterations = ResolveConstraintIterationsWithHysteresis(safeDeltaTime);
             _solverTimeSeconds += safeDeltaTime;
             if (_solverTimeSeconds > 4096f)
@@ -594,16 +610,16 @@ namespace Hecton8.AI
                 TargetPositions = _targetPositions,
                 TentacleStates = _tentacleStates,
                 DeltaTime = safeDeltaTime,
-                Damping = damping,
-                RestLength = restLength,
-                MaxStretchLength = maxStretchLength,
-                BaseRadius = baseRadius,
-                TipRadius = tipRadius,
-                FlowStrength = flowStrength,
-                FlowNoiseStrength = flowNoiseStrength,
-                SuctionPulseStrength = suctionPulseStrength,
+                Damping = SanitizeFiniteRangeInput(damping, DefaultDamping, 0f, 1f),
+                RestLength = safeRestLength,
+                MaxStretchLength = safeMaxStretchLength,
+                BaseRadius = SanitizeFiniteMinInput(baseRadius, DefaultBaseRadius, 0.001f),
+                TipRadius = SanitizeFiniteMinInput(tipRadius, DefaultTipRadius, 0.001f),
+                FlowStrength = SanitizeFiniteMinInput(flowStrength, DefaultFlowStrength, 0f),
+                FlowNoiseStrength = SanitizeFiniteMinInput(flowNoiseStrength, DefaultFlowNoiseStrength, 0f),
+                SuctionPulseStrength = SanitizeFiniteRangeInput(suctionPulseStrength, DefaultSuctionPulseStrength, 0f, 0.5f),
                 TimeSeconds = _solverTimeSeconds,
-                Gravity = new float3(gravity.x, gravity.y, gravity.z),
+                Gravity = safeGravity,
                 FlowVector = _lastFlowVector,
                 TentacleCount = math.clamp(activeTentacleCount, 0, MaxTentacles),
                 ConstraintIterations = constraintIterations
@@ -817,9 +833,9 @@ namespace Hecton8.AI
 
             float3 ownerFallback = ResolveOwnerRuntimePosition();
             float3 back = SanitizeFiniteInputFloat3(-(float3)_cachedTransform.forward, new float3(0f, 0f, -1f));
-            float safeRestLength = math.max(0.01f, restLength);
-            float safeBaseRadius = math.max(0.001f, baseRadius);
-            float safeTipRadius = math.max(0.001f, tipRadius);
+            float safeRestLength = SanitizeFiniteMinInput(restLength, DefaultRestLength, 0.01f);
+            float safeBaseRadius = SanitizeFiniteMinInput(baseRadius, DefaultBaseRadius, 0.001f);
+            float safeTipRadius = SanitizeFiniteMinInput(tipRadius, DefaultTipRadius, 0.001f);
             int safeTentacleCount = math.clamp(activeTentacleCount, 0, MaxTentacles);
             for (int tentacleIndex = 0; tentacleIndex < MaxTentacles; tentacleIndex++)
             {
@@ -916,7 +932,8 @@ namespace Hecton8.AI
         private bool TryQueueGrabDamage(float deltaTime)
         {
             Transform target = _grabTarget != null ? _grabTarget : defaultGrabTarget;
-            if (target == null || grabDamageAmount <= 0f)
+            float safeDamageAmount = SanitizeFiniteMinInput(grabDamageAmount, 0f, 0f);
+            if (target == null || safeDamageAmount <= 0f)
             {
                 _grabDamageTimer = 0f;
                 return false;
@@ -951,8 +968,8 @@ namespace Hecton8.AI
             {
                 TargetId = targetId,
                 SourceId = DamageSourceIds.FaunaLeviathanBite,
-                Amount = grabDamageAmount,
-                ImpulseMagnitude = grabDamageImpulse,
+                Amount = safeDamageAmount,
+                ImpulseMagnitude = SanitizeFiniteMinInput(grabDamageImpulse, DefaultGrabDamageImpulse, 0f),
                 Direction = direction,
                 PackedMeta = CombatDamageRuntime.PackSignalMeta(
                     CombatDamageTypes.Impact,
@@ -1019,8 +1036,8 @@ namespace Hecton8.AI
 
         private void BindRadiusReferenceToMaterial()
         {
-            float safeBaseRadius = math.max(0.001f, baseRadius);
-            float safeTipRadius = math.max(0.001f, tipRadius);
+            float safeBaseRadius = SanitizeFiniteMinInput(baseRadius, DefaultBaseRadius, 0.001f);
+            float safeTipRadius = SanitizeFiniteMinInput(tipRadius, DefaultTipRadius, 0.001f);
             tentacleMaterial.SetFloat(_BaseRadiusReferenceId, safeBaseRadius);
             tentacleMaterial.SetFloat(_TipRadiusReferenceId, safeTipRadius);
         }
@@ -1387,6 +1404,26 @@ namespace Hecton8.AI
 
             _invalidInputDetected = true;
             return fallback;
+        }
+
+        private float SanitizeFiniteMinInput(float value, float fallback, float minValue)
+        {
+            if (math.isfinite(value) && value >= minValue)
+                return value;
+
+            _invalidInputDetected = true;
+            return math.max(fallback, minValue);
+        }
+
+        private float SanitizeFiniteRangeInput(float value, float fallback, float minValue, float maxValue)
+        {
+            if (math.isfinite(value) && value >= minValue && value <= maxValue)
+                return value;
+
+            _invalidInputDetected = true;
+            return math.isfinite(value)
+                ? math.clamp(value, minValue, maxValue)
+                : math.clamp(fallback, minValue, maxValue);
         }
 
         private static AbsoluteUniversePosition ToAbsoluteUniversePosition(float3 runtimePosition)

@@ -666,3 +666,33 @@ Verification:
 - `git diff --check -- Assets/_Project/Scripts/Audio/Prologue/PrologueAcousticOrchestrator.cs Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs` passed.
 - Scoped forbidden scan found only pre-existing editor smoke diagnostics/assertion strings.
 - Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.
+
+## 2026-05-15 - DSP_ACOUSTIC_LEAD - Loop 25 Player Thruster Fallback Mixer Cache H-Phi Pass
+Status: PENDING VERIFICATION
+
+What was wrong:
+- `PlayerThrusterAudio.TryAssignMixerRoute()` read `GlobalRegistry.Audio` directly to find the spatial audio mixer route.
+- The fallback thruster component can run before the procedural renderer disables legacy AudioSource loops, so its service lookup should be explicit and cold.
+- Smoke coverage did not guard this legacy fallback audio path.
+
+What was done:
+- Added `_cachedSpatialAudioManager`.
+- Added `RefreshRuntimeAudioServicesCold()` and `CacheSpatialAudioManager()`.
+- Changed `TryAssignMixerRoute()` to consume the cached spatial manager and accept a force refresh for rebinds.
+- Added `IGlobalRegistryHotSwapListener` and `IGlobalRegistryHotSwapRefListener` to refresh the cached manager and mixer group on `GlobalRegistryServiceSlot.Audio`.
+- Added smoke assertions for hot-swap implementation, cold-only audio service resolution, cached route use, and no `GlobalRegistry.Audio` in `TryAssignMixerRoute()`.
+
+Cinematic cheats used:
+- Legacy thruster audio stays a simple loop/fade fallback and is suppressed when procedural critical audio is active.
+- Mixer routing is a cached pointer assignment, not repeated service discovery.
+- High-tier procedural audio remains authoritative; low-tier fallback stays cheap and deterministic.
+
+Exact microseconds saved:
+- Saves one audio service-locator read per fallback mixer route attempt after cold seed.
+- Runtime allocation delta remains 0 B/frame.
+
+Verification:
+- Method-body counters: `ThrusterColdRuntime GlobalRegistryAudio=1`, `ThrusterMixerRoute GlobalRegistryAudio=0`, `ThrusterTick GlobalRegistryAudio=0`, `ThrusterHotSwapCallback GlobalRegistryAudio=0`.
+- `git diff --check -- Assets/_Project/Scripts/PlayerThrusterAudio.cs Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs` passed.
+- Scoped forbidden scan found only editor smoke diagnostics/assertion strings.
+- Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.

@@ -14,6 +14,7 @@ param(
     [int]$MaxFindObjectCalls = -1,
     [int]$MaxLegacyEventPublish = -1,
     [int]$MaxDuplicateSignalNames = -1,
+    [int]$MaxUnityUpdateMethods = -1,
     [int]$MaxGlobalRegistrySurface = -1,
     [int]$MaxGetComponentCalls = -1,
     [int]$MaxNativeArrayRefs = -1,
@@ -47,6 +48,8 @@ function New-CounterSet {
         GlobalRegistryGet = 0
         GlobalRegistrySurface = 0
         EventPublish = 0
+        UnityUpdateMethodsRaw = 0
+        UnityLoopShellMethods = 0
         UnityUpdateMethods = 0
         ISlowTickable = 0
         IJob = 0
@@ -80,6 +83,8 @@ function New-DomainRow {
         NativeArrayRefs = 0
         GlobalDataVaultRefs = 0
         RegistryRefs = 0
+        UnityUpdateMethodsRaw = 0
+        UnityLoopShellMethods = 0
         UpdateMethods = 0
         Structs = 0
         Layout = 0
@@ -147,6 +152,9 @@ function New-FileRow {
         SignalBusPush = [int]$Counters['SignalBusPush']
         GlobalRegistrySurface = [int]$Counters['GlobalRegistrySurface']
         EventPublish = [int]$Counters['EventPublish']
+        UnityUpdateMethodsRaw = [int]$Counters['UnityUpdateMethodsRaw']
+        UnityLoopShellMethods = [int]$Counters['UnityLoopShellMethods']
+        UnityUpdateMethods = [int]$Counters['UnityUpdateMethods']
         StaticInstance = [int]$Counters['StaticInstance']
         NativeArrayRefs = [int]$Counters['NativeArrayRefs']
         GlobalDataVaultRefs = [int]$Counters['GlobalDataVaultRefs']
@@ -1591,6 +1599,25 @@ function Add-PatternCounts {
     }
 }
 
+function Normalize-UnityLoopCounters {
+    param(
+        [System.Collections.Specialized.OrderedDictionary]$Counters,
+        [string]$RelativePath
+    )
+
+    $rawCount = [int]$Counters['UnityUpdateMethods']
+    $Counters['UnityUpdateMethodsRaw'] = [int]$Counters['UnityUpdateMethodsRaw'] + $rawCount
+    if ($rawCount -le 0) {
+        return
+    }
+
+    $normalizedPath = $RelativePath.Replace('/', '\')
+    if ($normalizedPath -eq 'Core\SystemDispatcher.cs') {
+        $Counters['UnityLoopShellMethods'] = [int]$Counters['UnityLoopShellMethods'] + $rawCount
+        $Counters['UnityUpdateMethods'] = 0
+    }
+}
+
 function Add-DomainMetrics {
     param(
         [System.Collections.Specialized.OrderedDictionary]$Row,
@@ -1603,6 +1630,8 @@ function Add-DomainMetrics {
     $Row['NativeArrayRefs'] = [int]$Row['NativeArrayRefs'] + [int]$Counters['NativeArrayRefs']
     $Row['GlobalDataVaultRefs'] = [int]$Row['GlobalDataVaultRefs'] + [int]$Counters['GlobalDataVaultRefs']
     $Row['RegistryRefs'] = [int]$Row['RegistryRefs'] + [int]$Counters['GlobalRegistrySurface']
+    $Row['UnityUpdateMethodsRaw'] = [int]$Row['UnityUpdateMethodsRaw'] + [int]$Counters['UnityUpdateMethodsRaw']
+    $Row['UnityLoopShellMethods'] = [int]$Row['UnityLoopShellMethods'] + [int]$Counters['UnityLoopShellMethods']
     $Row['UpdateMethods'] = [int]$Row['UpdateMethods'] + [int]$Counters['UnityUpdateMethods']
     $Row['Structs'] = [int]$Row['Structs'] + [int]$Counters['StructDeclarations']
     $Row['Layout'] = [int]$Row['Layout'] + [int]$Counters['StructLayoutAttributes']
@@ -1858,6 +1887,8 @@ function New-AuditSummary {
             SignalBusPush = $Audit.Counts.SignalBusPush
             GlobalRegistrySurface = $Audit.Counts.GlobalRegistrySurface
             EventPublish = $Audit.Counts.EventPublish
+            UnityUpdateMethodsRaw = $Audit.Counts.UnityUpdateMethodsRaw
+            UnityLoopShellMethods = $Audit.Counts.UnityLoopShellMethods
             UnityUpdateMethods = $Audit.Counts.UnityUpdateMethods
             DataVaultRefs = $Audit.Counts.GlobalDataVaultRefs
             NativeArrayRefs = $Audit.Counts.NativeArrayRefs
@@ -1922,6 +1953,10 @@ if ($CoreGraphOnly) {
 
     if ($MaxDuplicateSignalNames -ge 0) {
         throw 'Duplicate signal-name budget requires full source scan. Remove -CoreGraphOnly when using -MaxDuplicateSignalNames.'
+    }
+
+    if ($MaxUnityUpdateMethods -ge 0) {
+        throw 'Unity update-method budget requires full source scan. Remove -CoreGraphOnly when using -MaxUnityUpdateMethods.'
     }
 
     if ($MaxGlobalRegistrySurface -ge 0) {
@@ -2136,17 +2171,18 @@ foreach ($file in $files) {
     $codeContent = if ($LexicalScrub) { ConvertTo-CodeSurface $content } else { $content }
     $lineCount = Count-Lines $content
     $isEditorFile = Test-IsEditorFile $file
+    $domain = Get-DomainName $file
+    $relativePath = Get-RelativeSourcePath $file
     $fileCounters = New-CounterSet
     Add-Count $fileCounters 'CsFiles' 1
     Add-Count $fileCounters 'Lines' $lineCount
     Add-PatternCounts $fileCounters $codeContent $patterns $patternLiteralHints
+    Normalize-UnityLoopCounters $fileCounters $relativePath
 
     foreach ($key in $fileCounters.Keys) {
         Add-Count $allCounters $key $fileCounters[$key]
     }
 
-    $domain = Get-DomainName $file
-    $relativePath = Get-RelativeSourcePath $file
     if ($isEditorFile) {
         foreach ($key in $fileCounters.Keys) {
             Add-Count $editorCounters $key $fileCounters[$key]
@@ -2179,6 +2215,7 @@ foreach ($file in $files) {
         Add-Count $runtimeFileCounters 'CsFiles' 1
         Add-Count $runtimeFileCounters 'Lines' $lineCount
         Add-PatternCounts $runtimeFileCounters $runtimeCodeContent $patterns $patternLiteralHints
+        Normalize-UnityLoopCounters $runtimeFileCounters $relativePath
     }
 
     foreach ($key in $fileCounters.Keys) {

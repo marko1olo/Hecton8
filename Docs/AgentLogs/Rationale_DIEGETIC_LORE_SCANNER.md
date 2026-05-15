@@ -533,8 +533,8 @@ Hardware Impact: No runtime impact.
 ## LOOP 26 OPERATIONAL TEXT TIMESTAMP COHESION
 
 Problem: Scanner operational summary/directive generation still sampled `Time.time` and `Time.frameCount` inside cache-bucket and lore-decryption helper methods. One generated scanner line could use one timestamp for cache cadence, another for cooldown/last-result text, and a later frame for title scramble.
-Solution: Snapshot `now` and `frame` at the operational text entry point, route summary/directive writes through timestamped internal helpers, pass `now` into the low-tier decryption gate, and pass `frame` into `ScrambleDecryptionSpan()`.
-Rejected Alternatives: Leaving helper-local time reads; adding a global clock service for one UI text path; disabling title scramble on high tiers.
+Solution: Snapshot `now` at the operational text entry point, route summary/directive writes through timestamped internal helpers, pass `now` into the low-tier decryption gate, and snapshot/pass `frame` only after a summary cache miss for `ScrambleDecryptionSpan()`.
+Rejected Alternatives: Leaving helper-local time reads; reading `Time.frameCount` before a summary cache-hit check; adding a global clock service for one UI text path; disabling title scramble on high tiers.
 Scalability potential: Low/MX350 keeps the cheap `DECRYPT xx%` path with no rich scramble cost. Middle/High/Ultra keep richer title scramble, but it now keys from one coherent frame snapshot per summary refresh.
 Hardware Impact: Removes 2-4 repeated engine time/frame reads per uncached operational text refresh. Exact microseconds remain PENDING PROFILER.
 
@@ -545,3 +545,9 @@ Solution: Pass the scheduler timestamp into voxel/spatial consumers and pass a c
 Rejected Alternatives: Re-reading `Time.time` in every consumer; reusing the original raycast scheduling timestamp for an asynchronous occlusion result; moving contact timing into a new global scanner clock service.
 Scalability potential: Low/MX350 reduces redundant engine time reads on focused contact acquisition. Middle/High/Ultra preserve tight resampling and rich scientific presentation while keeping contact hold windows coherent.
 Hardware Impact: Removes up to 3 helper-local engine time reads across active contact acquisition paths; async occlusion keeps one boundary read when the raycast result returns. Exact microseconds remain PENDING PROFILER.
+
+Problem: Verification after operational/contact timestamp cohesion needed evidence that the old helper-local reads and stale no-argument helper call were gone without using the forbidden rebuild path.
+Solution: Ran source-only checks: `git diff --check` passed with source/doc line-ending warnings only, `git diff --cached --check` passed, scanner/UI banned-pattern scan found no forbidden patterns, and targeted timestamp scan found no no-arg operational cache helper, no no-arg decryption/tier helpers, no direct scramble `Time.frameCount`, and no `_scientificLastContactTime = Time.time`.
+Rejected Alternatives: Running prohibited `dotnet build`; trusting a visual source pass over a staged/unstaged mixed worktree.
+Scalability potential: Process hygiene only.
+Hardware Impact: No runtime impact.

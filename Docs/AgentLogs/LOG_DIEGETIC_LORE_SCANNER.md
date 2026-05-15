@@ -601,7 +601,7 @@ What was wrong:
 - Scanner operational text generation still mixed timestamps between cache-bucket selection, cooldown/last-result text, low-tier decryption gates, and high-tier title scramble.
 
 What was done:
-- `GetOperationalSummary()` snapshots `Time.time` and `Time.frameCount` once before cache/write work.
+- `GetOperationalSummary()` snapshots `Time.time` before cache/write work and snapshots `Time.frameCount` only after a cache miss.
 - `GetOperationalDirective()` snapshots `Time.time` once before cache/write work.
 - Summary/directive writes now use timestamped internal helpers.
 - Lore decryption summary receives caller `now`/`frame` for tier gating and scramble.
@@ -614,7 +614,10 @@ Exact Microseconds saved:
 - Removes 2-4 repeated engine time/frame reads per uncached operational text refresh.
 
 Verification:
-- Static verification pending final pass in this session.
+- `git diff --check` on scanner/UI/doc edits: pass, source/doc line-ending warnings only.
+- `git diff --cached --check` on scanner/UI/doc edits: pass.
+- Scanner/UI banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, `SetText(`, and `.text =`: no matches.
+- Operational timestamp scan: no no-arg cache-bucket helper, no no-arg decryption/tier helper, and no direct `Time.frameCount` scramble call remain.
 - `dotnet build` / rebuild: NOT RUN.
 
 ## Follow-Up Hardening Pass 23
@@ -635,5 +638,8 @@ Exact Microseconds saved:
 - Removes up to 3 helper-local engine time reads across active focused-contact acquisition paths.
 
 Verification:
-- Static verification pending final pass in this session.
+- `git diff --check` on scanner/UI/doc edits: pass, source/doc line-ending warnings only.
+- `git diff --cached --check` on scanner/UI/doc edits: pass.
+- Scanner/UI banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, `SetText(`, and `.text =`: no matches.
+- Contact timestamp scan: no `_scientificLastContactTime = Time.time` and no old no-timestamp scientific contact consumer calls remain.
 - `dotnet build` / rebuild: NOT RUN.

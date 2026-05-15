@@ -84,3 +84,8 @@ Task loop 15:
 - [x] Validate active tail | DOD: 34 tracked/untracked-file tail checked with `git diff --stat`, `git diff --check`, unmerged-path scan, and marker scan | Rejected: staging unchecked edits | Estimate: 0 us runtime.
 - [x] Review runtime surface | DOD: inspected GasDynamicsSolver, GlobalSignals, ShallowsBioForgeBatchBaker, LeviathanTentacleVerletSolver, WFC power boot, headless stress fracture, SaveBinaryPayloadCodec, and ScannerTool hunks | Rejected: docs-only validation while runtime code changed | Estimate: 0 us runtime.
 - [BLOCKED BY DEPENDENCY] CLI compile green proof | DOD attempted: `dotnet build Assembly-CSharp.csproj --no-restore -v:minimal` | Rejected: claiming Unity/build green without a completed artifact | Estimate: 0 us runtime. Blocker: MSBuild process ended without success result after partial output; Unity Console/build log still required.
+
+Task loop 16:
+- [x] Verify pushed runtime audit checkpoint | DOD: `23c8203c5` pushed to `origin/main`; post-fetch divergence returned `0 0` | Rejected: relying on local commit only | Estimate: 0 us runtime.
+- [x] Classify post-push live tail | DOD: 22-file tail checked with `git diff --stat`, `git diff --check`, and marker scan | Rejected: pretending the working tree was clean while agents still wrote files | Estimate: 0 us runtime.
+- [x] Prepare continued checkpoint | DOD: loop 16 evidence appended before staging the next small tail | Rejected: force-push/reset/amend | Estimate: 0 us runtime.

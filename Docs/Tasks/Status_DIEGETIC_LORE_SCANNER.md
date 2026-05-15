@@ -192,13 +192,14 @@ Mandates read:
 
 ## Loop 26 - Operational Text Timestamp Cohesion
 
-- [x] Summary/directive cache timestamp snapshot | DOD: `GetOperationalSummary()` and `GetOperationalDirective()` now snapshot `Time.time` once for cache bucket selection and fixed-buffer writing, and `GetOperationalSummary()` snapshots `Time.frameCount` once for lore-title scramble | Rejected: helper-local time/frame reads that can disagree inside one generated scanner line | Estimate: removes 2-4 repeated engine time/frame reads per uncached operational text refresh
+- [x] Summary/directive cache timestamp snapshot | DOD: `GetOperationalSummary()` and `GetOperationalDirective()` now snapshot `Time.time` once for cache bucket selection and fixed-buffer writing, and `GetOperationalSummary()` snapshots `Time.frameCount` only after a cache miss for lore-title scramble | Rejected: helper-local time/frame reads that can disagree inside one generated scanner line or frame reads on cache hits | Estimate: removes 2-4 repeated engine time/frame reads per uncached operational text refresh
 - [x] Low-tier decryption gate timestamp threading | DOD: lore decryption summary passes caller `now` into `ResolveScannerQualityTier(now)` and caller `frame` into `ScrambleDecryptionSpan()` | Rejected: hidden `Time.time`/`Time.frameCount` reads inside presentation helpers | Estimate: removes one time read and one frame read from rich lore summary refresh
 
 ## Loop 27 - Scientific Contact Timestamp Cohesion
 
 - [x] Focused scanner contact writes use caller timestamp | DOD: voxel, spatial, and occlusion lore contact consumers now receive the scheduler/callback timestamp and write `_scientificLastContactTime` from that value | Rejected: hidden `Time.time` reads inside scientific contact consumers | Estimate: removes up to 3 helper-local engine time reads across active contact acquisition paths
 - [x] Raycast callback timestamp boundary isolated | DOD: dispatcher raycast callback snapshots `Time.time` at the asynchronous boundary and passes it through occlusion/lore consumption | Rejected: using old scheduling timestamp for a later async result or reading time inside the lore consumer | Estimate: one callback-boundary time read only when a queued occlusion result returns
+- [x] Static no-regression checks after Loops 26-27 | DOD: `git diff --check` passed with source/doc line-ending warnings only, `git diff --cached --check` passed, scanner/UI banned-pattern scan found no forbidden patterns, and targeted timestamp scan found no no-arg operational cache helper, no helper-local decryption/tier/frame calls, and no `_scientificLastContactTime = Time.time` | Rejected: dotnet rebuild; static source checks only | Estimate: 3600 us
 
 ## Verification
 

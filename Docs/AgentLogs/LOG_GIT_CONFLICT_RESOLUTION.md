@@ -327,3 +327,15 @@ Cinematic Cheats used -> None. Git integration and evidence gate only.
 Exact Microseconds saved -> 0 us runtime. Dev-path gain is smaller conflict exposure and a clear boundary between pushed history and Unity compile proof.
 
 Verification -> Conflict-marker scan clean. `git diff --check` reported only LF-to-CRLF warnings. `dotnet build Assembly-CSharp.csproj --no-restore -v:minimal` did not produce a completed green artifact; Unity Console/build verification remains pending.
+
+## 2026-05-15 - Loop 16 Continued Tail
+
+What was wrong -> `23c8203c5` was pushed and verified, then another 22-file local tail appeared from parallel agents.
+
+What was done -> Verified `origin/main...HEAD = 0 0`, classified the tail as local live output, and prepared another bounded checkpoint without reset, amend, or force-push.
+
+Cinematic Cheats used -> None. Git-only integration pass.
+
+Exact Microseconds saved -> 0 us runtime. Dev-path gain is another reduced local merge surface for GitHub Desktop and the other laptop.
+
+Verification -> Conflict-marker scan clean; `git diff --check` only reported LF-to-CRLF warnings. Unity compile/profiler proof remains pending.

@@ -483,3 +483,26 @@ Verification:
 - Targeted conduit/view-count range scan reported no raw division, forbidden hot math, managed allocation, or `foreach`.
 - `git diff --check` on touched source/status/rationale/log files was rerun without invoking dotnet rebuilds.
 - Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.
+
+## 2026-05-15 - Voxel Macro Obstacle Snapshot Proof
+
+What was wrong:
+- Macro flora obstacle counting used metadata/type checks only, while the writer used matrix-derived world bounds and could skip invalid entries.
+- That mismatch could allocate a native obstacle snapshot larger than the number of valid writes, leaving uninitialized tail entries visible to macro portal routing.
+
+What was done:
+- Count macro flora obstacles through the same `TryResolveMacroFloraObstacleWorldBounds` proof used by the writer.
+- Hardened macro flora bounds resolution with finite runtime-root, finite offset, finite center, finite positive extents, and no fabricated fallback centers.
+- Clamped the macro flora writer to remaining snapshot capacity before writes.
+
+Cinematic Cheats used:
+- Invalid flora transforms now disappear from route-obstacle authority instead of being repaired or zero-filled.
+- Low tier keeps conservative portal routing with fewer corrupt obstacle primitives; High/Ultra keep dense flora obstacle fields only when bounds proof is complete.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. This is cold snapshot fault avoidance, not a claimed hot-loop speedup; no new allocations or containers were added.
+
+Verification:
+- Targeted macro-obstacle ranges reported no raw division, forbidden hot math, managed allocation, or `foreach`.
+- `git diff --check` on staged and working copies passed without invoking dotnet rebuilds.
+- Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.

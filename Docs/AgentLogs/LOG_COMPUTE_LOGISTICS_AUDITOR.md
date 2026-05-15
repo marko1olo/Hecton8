@@ -313,3 +313,45 @@ Verification:
 - No runtime compile run. Current workspace remains dirty from concurrent runtime agents, so a compile would not isolate this audit pass.
 
 STATUS: AUDIT COMPLETE. C++ TRANSFER STATUS: NOT VERIFIED / NO PATCH EVIDENCE.
+
+## 2026-05-15 - Rate Efficiency Recheck
+
+What was wrong:
+- The old token/cost snapshot was no longer current because `.codex` kept moving.
+- Prior pricing was useful but needed a clearer split between model-aware lower bound and all-GPT-5.5 scenarios.
+- Token/sec, token/min, token/hour, token/day, token/byte, and file-burn-per-LOC needed one durable near-root artifact.
+
+What was done:
+- Re-read `Docs/Tasks/Status_COMPUTE_LOGISTICS_AUDITOR.md` and `Docs/AgentLogs/Rationale_COMPUTE_LOGISTICS_AUDITOR.md`.
+- Checked official OpenAI pricing page on 2026-05-15.
+- Ran a read-only optimized JSONL scan over 765 `.codex` session files.
+- Joined session paths to `state_5.sqlite` for model attribution.
+- Created `COMPUTE_RATE_EFFICIENCY_AUDIT.md`.
+- Updated `COMPUTE_AUDIT_INDEX.md`, `COMPUTE_AUDIT_BRIEF.md`, and `Docs/Reports/COMPUTE_DOMINANCE_REPORT.md`.
+
+Evidence captured:
+- JSONL final total tokens: 44,590,504,461.
+- JSONL input tokens: 44,439,003,137.
+- JSONL cached input tokens: 42,661,425,024.
+- JSONL output tokens: 151,242,924.
+- SQLite token sum: 44,567,638,432.
+- Cached-input ratio: 95.99996%.
+- Last 6h token flow: 97,652.24 tokens/sec.
+- Tokens per meaningful LOC: 57,503.86.
+- Tokens per script source byte: 1,070.477.
+- Model-aware local lower-bound cost: USD 28,860.62.
+- All-GPT-5.5 standard cache-aware scenario: USD 34,755.89.
+- All-GPT-5.5 standard no-cache scenario: USD 226,732.30.
+
+Cinematic Cheats used:
+- None. Audit-only evidence accounting.
+
+Exact microseconds saved:
+- Runtime: 0 us.
+- Process: not claimed as measured saving. The new file prevents stale token/cost numbers from being mistaken for current truth.
+
+Verification:
+- Markdown-only audit continuation.
+- No runtime compile run. Current workspace remains dirty from concurrent runtime agents, and this pass changed no C#.
+
+STATUS: AUDIT COMPLETE.

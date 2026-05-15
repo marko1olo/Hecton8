@@ -416,18 +416,6 @@ Scalability potential: No runtime behavior change. This preserves clean verifica
 
 Hardware Impact: Removes local build CPU pressure only; no gameplay frame-time claim.
 
-## Decision 34 - Dotnet Fan-Out Wrapper Stop
-
-Problem: External wrappers spawned both `Hecton8.Core.csproj` and `Assembly-CSharp.csproj` dotnet builds, with several child MSBuild dotnet processes.
-
-Solution: Stop every observed dotnet child plus the immediate wrapper parent ids, then re-query with `Get-Process -Name dotnet`.
-
-Rejected Alternatives: Killing the root IDE/Codex host was rejected because it is outside this task boundary. Letting the fan-out finish was rejected because the user explicitly forbids dotnet rebuilds.
-
-Scalability potential: No runtime behavior change. This protects verification evidence under aggressive external build watchers.
-
-Hardware Impact: Removes local build CPU pressure only; no gameplay frame-time claim.
-
 ## Decision 33 - Mandatory Read Dotnet Stop
 
 Problem: A new external `dotnet.exe` process appeared during the mandatory final status/rationale read.
@@ -437,5 +425,17 @@ Solution: Stop the observed process id immediately and re-query with `Get-Proces
 Rejected Alternatives: Ending the turn with the process active was rejected because it would violate the user's no-dotnet-rebuild instruction. Killing the root IDE/Codex host remains rejected because it is outside this task and risks workspace loss.
 
 Scalability potential: No runtime behavior change. This preserves verification hygiene while watcher processes are unstable.
+
+Hardware Impact: Removes local build CPU pressure only; no gameplay frame-time claim.
+
+## Decision 34 - Dotnet Fan-Out Wrapper Stop
+
+Problem: External wrappers spawned both `Hecton8.Core.csproj` and `Assembly-CSharp.csproj` dotnet builds, with several child MSBuild dotnet processes.
+
+Solution: Stop every observed dotnet child plus the immediate wrapper parent ids, then re-query with `Get-Process -Name dotnet`.
+
+Rejected Alternatives: Killing the root IDE/Codex host was rejected because it is outside this task boundary. Letting the fan-out finish was rejected because the user explicitly forbids dotnet rebuilds.
+
+Scalability potential: No runtime behavior change. This protects verification evidence under aggressive external build watchers.
 
 Hardware Impact: Removes local build CPU pressure only; no gameplay frame-time claim.

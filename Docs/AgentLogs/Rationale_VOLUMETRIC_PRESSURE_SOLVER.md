@@ -441,3 +441,11 @@ Solution: Return `safePositionWS` immediately when bend feature/strength cannot 
 Rejected Alternatives: Leaving the existing final zero displacement path, or adding a new material keyword. Final zero displacement preserves correctness but wastes vertex ALU; a new keyword widens shader variant pressure for a local no-op case.
 Scalability potential: Low/MX350 remains bypassed by `_MATH_LOD_LOW`. Mid/High/Ultra skip dead bend work on disabled/calm materials while keeping full visual overkill once crush or habitat pressure actually contributes.
 Hardware Impact: Saves crush/habitat mask and buckling work on non-low no-op vertices. Estimated 2-8 us saved per 1k UberNoir vertices in disabled/calm bend states on MX350-class GPUs; active bend behavior is unchanged.
+
+## Follow-Up Correction - UberNoir Instance Buffer Finite Gates
+
+Problem: `H8UberNoirLoadInstance` cast `_UberNoirInstanceParams` count/offset/use-buffer globals directly to `uint`. A non-finite count or offset could produce unstable StructuredBuffer indexing before the clamped instance read.
+Solution: Finite-gated buffer offset, buffer count, and use-buffer scalars before the `uint` casts. Invalid values now fall back to the default per-object instance data and skip the buffer read.
+Rejected Alternatives: Trusting CPU publication, clamping after the cast, or adding a separate buffer metadata structure. CPU-only trust is insufficient for shared shader globals; post-cast clamping is too late for NaN conversion; a new metadata structure adds interface surface for a local guard.
+Scalability potential: Low/MX350 keeps default instance fallback on corrupted metadata with no extra buffer traffic. Mid/High/Ultra keep instanced visual overkill when metadata is valid and fail closed when it is not.
+Hardware Impact: Adds three scalar finite checks only when the instance-buffer variant is compiled. Fault frames avoid bad StructuredBuffer reads; valid-frame overhead is negligible compared with the existing instanced vertex path.

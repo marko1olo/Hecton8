@@ -357,7 +357,6 @@ namespace Hecton8.VFX
         private bool _registered;
         private bool _registeredLateFrame;
         private bool _serviceRegistered;
-        private bool _survivalEventsHooked;
         private bool _movementEventsHooked;
         private float _nextDependencyResolveTime;
 
@@ -1053,16 +1052,6 @@ namespace Hecton8.VFX
         {
             if (!_sprintFOVEnabled) return;
             TriggerFOVKick(0f, 0.3f);
-        }
-
-        private void HandleIntegrityChanged(float integrity)
-        {
-            // Integrity deltas now enter camera trauma through CombatDamageRuntime, not this legacy scalar callback.
-        }
-
-        private void HandleOxygenCritical(float o2Normalized)
-        {
-            // Handled in UpdateO2PostProcessing via SlowTick
         }
 
         private void HandleHoverChanged(IInteractable target)
@@ -2129,13 +2118,6 @@ namespace Hecton8.VFX
 
         private void SyncDependencySubscriptions()
         {
-            if (_survivalSystem != null && !_survivalEventsHooked)
-            {
-                _survivalSystem.OnIntegrityChanged += HandleIntegrityChanged;
-                _survivalSystem.OnOxygenCritical += HandleOxygenCritical;
-                _survivalEventsHooked = true;
-            }
-
             if (_playerMovement != null && !_movementEventsHooked)
             {
                 _playerMovement.OnSprintStarted += HandleSprintStarted;
@@ -2146,13 +2128,6 @@ namespace Hecton8.VFX
 
         private void UnhookDependencyEvents()
         {
-            if (_survivalSystem != null && _survivalEventsHooked)
-            {
-                _survivalSystem.OnIntegrityChanged -= HandleIntegrityChanged;
-                _survivalSystem.OnOxygenCritical -= HandleOxygenCritical;
-                _survivalEventsHooked = false;
-            }
-
             if (_playerMovement != null && _movementEventsHooked)
             {
                 _playerMovement.OnSprintStarted -= HandleSprintStarted;

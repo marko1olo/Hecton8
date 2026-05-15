@@ -358,3 +358,20 @@ Cinematic Cheats used:
 
 Exact microseconds saved:
 - None claimed. This prevents capacity-skew faults and preserves truthful crash evidence; no dotnet rebuild was run.
+
+## 2026-05-15 - H-Phi Audit Recheck Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- Fresh source-level H-Phi evidence was needed after the latest native-capacity hardening.
+
+What was done:
+- Re-ran `Tools/Architecture/HectonPhiAudit.ps1 -Summary`.
+- The script emitted STATIC_SOURCE metrics before timing out at 240s, so this is recorded as partial evidence, not a clean pass.
+- Captured metrics: RuntimeHPhiRisk 0.000591666; DataSovereignty 0.021395609; DataVaultRefs 153; NativeArrayRefs 6998; AupPrecisionRisk 0.
+
+Cinematic Cheats used:
+- None new.
+
+Exact microseconds saved:
+- None. This was an audit-only source pass; no dotnet rebuild was run.

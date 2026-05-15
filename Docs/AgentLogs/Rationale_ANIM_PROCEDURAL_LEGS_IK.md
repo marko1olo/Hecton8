@@ -186,6 +186,14 @@ Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instructio
 Scalability potential: Low/MX350 keeps the same cheap finite clamps and no-sqrt math. Middle keeps stable two-bone and appendage targets. High keeps breathing, cold shiver, wall-touch, and tool recoil polish without NaN amplification. Ultra can spend the same saved cycles on richer secondary/muscle presentation because transient latches now fail closed before publication.
 Hardware Impact: Added work is scalar finite/clamp operations, one `math.floor` phase wrap per active breathing/shiver tick, integer length guards, and no new allocations/jobs/rays. Estimated below 0.4 us/frame on i3/MX350 for the active rig. Prevented cost is native target faulting, IK latch spikes, disappearing/corrupt hand contacts, and shader bulge NaNs.
 
+## Decision 24: Runtime job publication sanitization
+
+Problem: The rig side was hardened, but the Burst runtime jobs still had two remaining trust windows. Ground detection command origins could fall back to `entity.RootPosition` even when that root was already corrupt, and predictive latch blend alone could suppress fallback wall rays even if the predictive position was invalid. The response job also wrote smooth-scalar output directly into tunnel blend, contact blends, packed foot data, and COM lean before the final target-frame sanitizer.
+Solution: Add a finite `safeRootPosition` fallback for all command origins, validate predictive latch position before using latch state to disable wall probes, make both job-local `SanitizeFloat3` helpers sanitize their fallback, and route all unit-blend smoothing through `SmoothBlend`. COM lean now uses `SmoothFiniteScalar` so non-unit angular scalars also fail closed before target-frame publication.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Adding more ray lanes or physical validation was rejected because the issue is data publication, not sensing fidelity. Logging invalid command origins was rejected as hot-path noise.
+Scalability potential: Low/MX350 keeps the same ray count and same lower-body fake with safer neutral fallback. Middle keeps stable hand/foot targets under bad state. High keeps wall-touch, predictive repair, and COM lean polish without letting invalid latch data disable fallback probes. Ultra can keep secondary/muscle overkill on top of finite published targets.
+Hardware Impact: Added work is finite checks, two unit-blend clamps per active latch decision, and sanitized smooth scalar wrappers inside existing jobs. Estimated below 0.4 us/frame on i3/MX350. No allocations, no new jobs, no new ray lanes, no public API change.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Final anti-bloat pass required checking the lower-body implementation for honest simulation, unbounded math, GC leaks, and out-of-domain edits.

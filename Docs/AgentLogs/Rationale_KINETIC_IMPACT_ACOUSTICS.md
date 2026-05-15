@@ -481,3 +481,22 @@ Solution: Ran source-only checks: method-body registry counters, `git diff --che
 Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile or profiler status without Editor console/MCP data would be false.
 Scalability potential: Verification only.
 Hardware Impact: Verification only.
+
+## LOOP 25 PLAYER THRUSTER FALLBACK MIXER CACHE H-PHI PASS
+Problem: `PlayerThrusterAudio.TryAssignMixerRoute()` read `GlobalRegistry.Audio` directly to find `SpatialAudioManager.SfxGroup`. This is a legacy fallback path, but it still runs during audio component lifecycle and can be called again on enable. The procedural renderer should be authoritative; the fallback route should not hide a service-locator read behind a mixer assignment helper.
+Solution: Added `_cachedSpatialAudioManager`, cold-seeded it through `RefreshRuntimeAudioServicesCold()`, and changed `TryAssignMixerRoute()` to use the cached manager only. Added `IGlobalRegistryHotSwapListener` and `IGlobalRegistryHotSwapRefListener` handling for `GlobalRegistryServiceSlot.Audio` so a runtime audio-service replacement refreshes the cached route.
+Rejected Alternatives: Leaving the direct lookup was small but inconsistent with the rest of the audio H-Phi cleanup; forcing all fallback consumers through the procedural renderer would change gameplay/audio ownership; scene search or component lookup for a mixer group would be slower and less deterministic.
+Scalability potential: Low/MX350 legacy fallback audio keeps a cheap cached mixer route until the procedural renderer disables it. Middle/High/Ultra keep procedural critical audio authoritative, and fallback routing remains correct when the audio service is rebound.
+Hardware Impact: Saves one `GlobalRegistry.Audio` read per fallback mixer route attempt after cold seed. Runtime allocation delta remains 0 B/frame; added work is one cached field and a hot-swap callback only on service replacement.
+
+Problem: Static smoke coverage did not guard legacy thruster fallback mixer routing.
+Solution: Extended `AdvancedAcousticsSmokeTester` to read `PlayerThrusterAudio.cs`, assert hot-swap listener implementation, cold-only audio-service resolution, cached mixer route use, and no `GlobalRegistry.Audio` in `TryAssignMixerRoute()`.
+Rejected Alternatives: Manual-only review or relying on the procedural critical renderer to make the fallback component irrelevant.
+Scalability potential: Editor-only guard; keeps the fallback path cheap on low-tier machines and compatible with high-tier procedural audio ownership.
+Hardware Impact: 0 us runtime in player builds.
+
+Problem: Compile/profiler proof remains unavailable under the user's no-dotnet-rebuild order and missing Unity MCP resources.
+Solution: Ran source-only checks: method-body counters, `git diff --check`, and scoped forbidden-API scan. Counters: `ThrusterColdRuntime GlobalRegistryAudio=1`, `ThrusterMixerRoute GlobalRegistryAudio=0`, `ThrusterTick GlobalRegistryAudio=0`, `ThrusterHotSwapCallback GlobalRegistryAudio=0`.
+Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile or profiler status without Editor console/MCP data would be false.
+Scalability potential: Verification only.
+Hardware Impact: Verification only.

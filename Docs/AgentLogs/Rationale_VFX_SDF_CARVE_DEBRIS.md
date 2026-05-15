@@ -106,13 +106,13 @@ Rejected Alternatives: Keeping one `Schedule()+Complete()` per carve was rejecte
 Scalability potential: Low = one 1024-slot batch pass for up to 32 carve events and no SDF sample. Middle = one 4096-slot batch pass with validated flow binding. High = SDF plus validated published flow texture/buffer. Ultra = same fixed storage with richer flow-driven motion and CoreLit response, not unbounded particle count.
 Hardware Impact: MX350/i3 saves an estimated 20-70 us on 2-32 carve burst frames by replacing per-carve scheduler fences with one synchronous Burst run. Active mirror frames save an estimated 5-20 us by avoiding job scheduler overhead. Flow validation prevents false active sampling and wrong-center buffer lookup; frame-time saving is scene-dependent, correctness impact is higher than raw CPU gain.
 
-## Decision 13 - Tier Cache and Capacity Hysteresis
+## Decision 13 - Scalability Event Lane and Capacity Hysteresis
 
-Problem: Low/high tier selection was sampled from `GlobalRegistry` every frame and changed active capacity immediately. That violates the project hysteresis rule and can cause repeated capacity shed/upload churn if the scalability dictator oscillates during frame-time spikes.
-Solution: Cache the low-tier decision for 30 frames, initialize from the first sampled value, and require 120 frames of consistent opposite-tier samples before switching. Reset the cache on GPU state release. Low remains the fail-closed default before first sample.
-Rejected Alternatives: Per-frame registry reads were rejected because they waste hot-path work and couple VFX cadence to scaler noise. Instant low/high active-capacity changes were rejected because they can repeatedly clear/upload tail ranges and change dispatch group counts during transient spikes.
+Problem: Low/high tier selection must not poll the registry from the VFX tick path, and active capacity must not flip immediately when the scalability dictator emits a transient tier change.
+Solution: Seed the low-tier state once from cold registry values, register through `ScalabilityEvents`, update the sampled tier from `IScalabilityChangedEventListener.OnScalabilityChanged`, and require 120 ticks of consistent opposite-tier state before changing active capacity. Reset the cache on GPU state release. Low remains the fail-closed default before first seed.
+Rejected Alternatives: Per-frame or cadenced registry reads were rejected because they keep a service-locator dependency in the renderer cadence. Instant low/high active-capacity changes were rejected because they can repeatedly clear/upload tail ranges and change dispatch group counts during transient spikes.
 Scalability potential: Low = stable 1024 active slots after confirmed downgrade. Middle/High/Ultra = stable 4096 active slots after confirmed upgrade. Ultra can still get visual overkill, but only after the device is consistently classified above low tier.
-Hardware Impact: Removes 4-5 registry property reads per frame from this renderer and prevents repeated 1024/4096 capacity churn. CPU gain is sub-microsecond per steady frame; avoided churn can save 10-40 us during transient tier oscillation frames.
+Hardware Impact: Removes steady registry property reads from this renderer and prevents repeated 1024/4096 capacity churn. CPU gain is sub-microsecond per steady frame; avoided churn can save 10-40 us during transient tier oscillation frames.
 
 ## Decision 14 - Monotonic Batch Injection Scan
 

@@ -472,3 +472,29 @@ Verification:
 - `rg` found no visor `OnTemperatureChanged +=`, `OnTemperatureChanged -=`, `OnPressureChanged +=`, or `OnPressureChanged -=` remnants.
 - `rg` confirmed `SurvivalVitalsChangedSignalFlags.Pressure` publication from `HectonSurvivalSystem`.
 - `git diff --check` on touched code reported only standard LF/CRLF notices.
+
+## 2026-05-15 - Camera Survival Dead-Callback Addendum
+
+What was wrong:
+- `CameraJuiceSystem` subscribed to `HectonSurvivalSystem.OnIntegrityChanged` and `OnOxygenCritical`.
+- The integrity handler was a no-op and oxygen-critical presentation already comes from `UpdateO2PostProcessing()` on the existing slow tick.
+- The dead subscription path still created delegate fanout and unhook bookkeeping.
+
+What was done:
+- Removed `_survivalEventsHooked`.
+- Removed `HandleIntegrityChanged()` and `HandleOxygenCritical()`.
+- Removed direct survival subscribe and unsubscribe blocks from `SyncDependencySubscriptions()` and `UnhookDependencyEvents()`.
+- Kept movement sprint callbacks intact because they still drive immediate FOV kick behavior.
+
+Cinematic Cheats used:
+- Camera oxygen and health presentation stays slow-tick driven instead of event driven.
+- No survival-vitals SignalBus scan was added because the deleted callbacks carried no active behavior.
+
+Exact microseconds saved:
+- Estimated 0.1-0.4 us on survival integrity/oxygen mutation bursts by removing no-op delegate dispatch.
+- Steady-state improvement is lower leak/bookkeeping risk with zero new frame work.
+
+Verification:
+- No dotnet build, restore, or rebuild was run.
+- `rg` found no `CameraJuiceSystem` remnants of `_survivalEventsHooked`, `HandleIntegrityChanged`, `HandleOxygenCritical`, `OnIntegrityChanged`, or `OnOxygenCritical`.
+- Full `Assets/_Project/Scripts` exact survival subscription scan now leaves only `PDALogbookManager.OnDeath` as the intentionally rejected survival death callback in that surface set.

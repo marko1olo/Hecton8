@@ -77,3 +77,9 @@ Solution: Re-open the pull gate, inspect runtime hunks before staging, attempt a
 Rejected Alternatives: Blind commit, fake compile-green report, reset, amend/force-push, or treating line-ending warnings as conflicts. The correct path is evidence-first checkpointing.
 Scalability potential: Git-only integration pass. Runtime tier behavior belongs to the producing agents; this pass does not claim Low/Middle/High/Ultra performance changes.
 Hardware Impact: 0 us runtime impact on i3/MX350. Dev-path improvement is reduced conflict exposure plus explicit compile-proof boundary.
+
+Problem: After `23c8203c5` pushed cleanly, a smaller post-push local tail remained from active parallel agents.
+Solution: Verify remote sync, classify the tail as live local output, and checkpoint it separately without rewriting pushed history.
+Rejected Alternatives: Reporting clean state, dropping files, or amending/force-pushing the prior checkpoint. These would either misrepresent state or risk other agents' work.
+Scalability potential: Git-only operation. No runtime tier claims.
+Hardware Impact: 0 us runtime impact. Compile/profiler proof remains pending.

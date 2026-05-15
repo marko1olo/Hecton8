@@ -68,6 +68,37 @@ Verification:
 Status:
 - VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
 
+## 2026-05-15 - String Payload Bounds And Dead Surface Gate
+
+What was wrong:
+- Binary string reads were bounded by remaining payload bytes but not by a domain maximum, so a single corrupt string length could allocate a large managed string.
+- Unused unbounded string/struct array helper APIs remained beside the bounded helpers.
+
+What was done:
+- Capped every serialized UTF-16 string in `SaveBinaryPayloadCodec` at one protected 16 KiB block (`8192` chars) before writer copy or reader allocation.
+- Removed unused unbounded `WriteStringArray`, `ReadStringArray`, `WriteStructArray`, and `ReadStructArray` helper surfaces.
+- Documented the string cap in `Docs/Design/Save_Binary_Header.md`.
+- Re-extracted the batch prompt with PowerShell raw regex; `CURRENT_BATCH.md` still returns `PROMPT_NOT_FOUND`, so disk status/rationale remain authority.
+
+Cinematic Cheats used:
+- Large mod state stays in protected indexed sectors; root compatibility strings stay bounded metadata.
+
+Exact Microseconds saved:
+- Frame cost: 0 us.
+- Cold corrupt-load protection rejects a single string above 16 KiB before managed allocation.
+
+Verification:
+- `SaveBinaryPayloadCodec.cs` brace/parenthesis balance passed.
+- `rg` found `MaxSerializedStringChars` guarding both `WriteString` and `ReadString`.
+- Unused unbounded array helper scan returned `NO_UNBOUNDED_UNUSED_ARRAY_SURFACES`.
+- Root unbounded codec read/write scans returned clean.
+- DataVault live compaction scan returned no `UnsafeUtility.MemMove`, `RunCompactionSlice`, `TryCompactFreeGapAt`, `VaultMemMoveJob`, `System.Threading`, `Stopwatch`, or `BurstCompile`.
+- `git diff --check` passed with CRLF warnings only.
+- No dotnet rebuild was run per user order.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
 ## 2026-05-15 - Procedural DTO Payload Bounds Pass
 
 What was wrong:
