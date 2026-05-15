@@ -3,7 +3,7 @@
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
 Domain: ECHELON 1 / Origin Shift (AUP Manager), with audit reach into Physics, Voxel, Kinematics, AI trigger math, Biome trigger math, and deterministic seed callsites.
 Assignment Source: User-supplied XML block. `Docs/Tasks/CURRENT_BATCH.md` extraction returned `PROMPT_NOT_FOUND` for this ID on initial pass.
-Status: VERIFIED AUP INTEGRITY - LOOP 41 APPLIED; REAL H-PHI SOURCE REPAIRS REMOVED WORLD SPATIAL HASH ORIGIN-SHIFT NATIVE SCRATCH, FAR-UNLOAD LIST SCRATCH, AND RESTORED EDITOR GHOST DOUBLE AUP HISTORY; STRICT AUP SCANS RETURN NO_MATCHES; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
+Status: VERIFIED AUP INTEGRITY - LOOP 42 APPLIED; REAL H-PHI SOURCE REPAIRS REMOVED WORLD SPATIAL HASH ORIGIN-SHIFT NATIVE SCRATCH, FAR-UNLOAD LIST SCRATCH, RESTORED EDITOR GHOST DOUBLE AUP HISTORY, AND KEPT PDA DIAGNOSTIC UNIVERSE OFFSET IN DOUBLE UNTIL TEXT OUTPUT; STRICT AUP SCANS RETURN NO_MATCHES; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
 
 ## Selected Mandates
 
@@ -497,3 +497,17 @@ Loop 41 - Real H-Phi Source Repair / WorldSpatialHashGrid Far-Unload List Scratc
 - Temporary capture `TEMP_HECTON_PHI_SUMMARY_LOOP41.json` was removed after extracting metrics.
 - `git diff --check -- Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs` reports a line-ending warning only, no whitespace errors.
 - No `dotnet build` or rebuild was run in Loop 41 because the user explicitly forbade rebuilds.
+
+Loop 42 - Real AUP Precision Boundary Repair / PDA Diagnostic Universe Offset:
+- Re-read status/rationale and kept the rebuild ban active.
+- Patched `PDADiagnosticTerminal` in `Assets/_Project/Scripts/PlayerPDA.cs` so diagnostic universe offset caching stays in `double3` instead of reducing to `Vector3`.
+- Replaced float `Mathf.RoundToInt` formatting with double rounding and `long.TryFormat`, with finite/overflow guards, so the diagnostic text path is the final presentation boundary.
+- Removed the `Vector3 universeOffset` construction, exact `Vector3` cache comparison, and float rounded-vector formatter from the AUP diagnostic line.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 124.602 seconds.
+- Latest full static H-Phi summary: `RuntimeHPhiRisk=0.000628383`, `RuntimeHPhiNarrow=0.010784754`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=362`, `AupPrecisionRisk=0`, `NativeArrayRefs=7072`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, `NativeOwnershipRisk=8196`, `RuntimeFiles=1278`, `RuntimeLines=869663`.
+- Final targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Final direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run and returned 233 broad residual matches, down from 237 after Loop 41. Residuals remain broad `universe` text and known final-cast/presentation payload names.
+- Temporary capture `TEMP_HECTON_PHI_SUMMARY_LOOP42.json` was removed after extracting metrics.
+- `git diff --check -- Assets/_Project/Scripts/PlayerPDA.cs` reports a line-ending warning only, no whitespace errors.
+- No `dotnet build` or rebuild was run in Loop 42 because the user explicitly forbade rebuilds.

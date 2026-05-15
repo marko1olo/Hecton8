@@ -465,6 +465,34 @@ Status: VERIFIED AUP INTEGRITY - LOOP 39 REAL H-PHI SOURCE REPAIR REMOVED DEAD O
 - Unity import/Console verification remains pending because no Unity editor session is available.
 - H-Phi result is static-source evidence, not profiler proof.
 
+## Loop 42 Real AUP Precision Boundary Repair - PDA Diagnostic Universe Offset
+
+### Findings
+
+- `PDADiagnosticTerminal` converted the active universe offset from `double3` to `Vector3` before state-cache comparison and text formatting.
+- The PDA diagnostic terminal is a visible AUP evidence surface; reducing to float before formatting can hide large-coordinate drift symptoms.
+
+### Source Changes
+
+- `Assets/_Project/Scripts/PlayerPDA.cs`: changed `_lastUniverseOffset` from `Vector3` to `double3`.
+- Removed the intermediate `Vector3 universeOffset` construction.
+- Changed diagnostic vector formatting to accept `double3`, round in double, and write integer text with `long.TryFormat`.
+
+### Verification
+
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 124.602 seconds with `RuntimeHPhiRisk=0.000628383`, `RuntimeHPhiNarrow=0.010784754`, `AupPrecisionIntegrity=1`, `AupPrecisionRisk=0`, `NativeArrayRefs=7072`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, and `NativeOwnershipRisk=8196`.
+- Final targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Final direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` returned 233 broad residual matches, down from 237 after Loop 41. Residuals remain broad `universe` text plus known final-cast/presentation payload names.
+- `git diff --check -- Assets/_Project/Scripts/PlayerPDA.cs` reports a line-ending warning only, no whitespace errors.
+- Temporary Loop 42 capture is absent after cleanup.
+- No `dotnet build` or rebuild was run in Loop 42 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- H-Phi result is static-source evidence, not profiler proof.
+
 ## Loop 41 Real H-Phi Source Repair - WorldSpatialHashGrid Far-Unload List Scratch Removal
 
 ### Findings

@@ -724,3 +724,76 @@ Residual risk:
 
 Current Status:
 - BUILD SUCCESSFUL / PLATINUM GRADE / FRESH50 CURRENT-DISK GREEN.
+
+## 2026-05-15 - Fresh88/Fresh89 Current-Disk Compile And H-Phi Closure
+
+What was wrong:
+- Fresh85/Fresh86 evidence was invalidated by later C# edits.
+- Fresh87 reported a `PlayerBuilder` input wall, but current disk had already moved to `SignalBus<PlayerInputSignal>` snapshot consumption.
+- Earlier moving walls exposed two real integration hazards: `SaveManager` WFC save append churn and stale `WorldSpatialHashGrid` NativeArray lifetime calls around a managed origin-shift scratch buffer.
+- The H-Phi documentation command still allowed older Fresh62 ceilings after the current scan improved several counters.
+
+What was done:
+- Preserved the current `PlayerBuilder` signal-lane implementation instead of adding obsolete input-service event subscriptions.
+- Kept the `SaveContextFrameData` binary-layout marker and the `WorldSpatialHashGrid` origin-shift scratch lifetime correction from the current green disk.
+- Ran a fresh serial Core compile without `dotnet rebuild`; final accepted compile is `Fresh88`.
+- Ran a full source H-Phi gate as `Fresh89`.
+- Tightened `Docs/ARCHITECTURE/HECTON_PHI_STATIC_METRIC.md` to the Fresh89 source ceilings and score floors.
+
+Cinematic Cheats used:
+- Compile/static architecture surgery only.
+- No gameplay, physics, rendering, shader, prefab, package, generated `.csproj`, or leaf NativeArray ownership rewrite was performed.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Final compile verification time: 115,364,057 us.
+- Final H-Phi verification time: 77,916,702 us.
+- Static source impact versus Fresh62: `GlobalRegistrySurface` 5086 -> 5081, `NativeArrayRefs` 7090 -> 7072, `OwnerBlockedNativeArrayRefs` 6280 -> 6262, `PrimaryOwnerBlockedNativeArrayRefs` 5696 -> 5678, `RuntimeHPhiRisk` 0.000612591 -> 0.000628383.
+
+Verification:
+- Compile artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh88.log`.
+- Compile result: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh89.json`.
+- H-Phi result: `EXIT=0`, `RuntimeHPhiRisk=0.000628383`, `DataSovereignty=0.021311929`, `MemoryAlignment=0.506043090`, `GlobalRegistrySurface=5081`, `GetComponentCalls=321`, `NativeArrayRefs=7072`, `ManagedFormatSurface=681`, `JobCompleteSurface=61`, `PrimaryManagedRuntimeRisk=330`, `OwnerBlockedNativeArrayRefs=6262`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, `UnityUpdateMethods=0`, `DuplicateSignalNameCount=0`, `AupPrecisionRisk=0`.
+- Freshness: no C# source under `Assets/_Project/Scripts` was newer than either the Fresh88 build log or Fresh89 H-Phi artifact at verification time.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals were not run.
+- Runtime microsecond savings are not claimed without profiler evidence.
+
+Current Status:
+- BUILD SUCCESSFUL / PLATINUM GRADE / FRESH88 CURRENT-DISK GREEN.
+
+## 2026-05-15 - CurrentDisk3/CurrentDiskBudgetGate2 Freshness Correction
+
+What was wrong:
+- Fresh88 was made stale by later C# edits even though it had compiled cleanly.
+- Fresh89 H-Phi was superseded by a later budgeted gate with the same tightened metric envelope.
+
+What was done:
+- Recompiled `Hecton8.Core.csproj` after the later edits with build servers disabled.
+- Accepted `CurrentDisk3` only after timestamp freshness showed no C# source newer than the build log.
+- Kept `CurrentDiskBudgetGate2` as the final H-Phi gate after confirming no C# source was newer than it.
+
+Cinematic Cheats used:
+- Evidence correction only.
+- No gameplay, physics, rendering, shader, prefab, package, generated `.csproj`, or leaf ownership rewrite was performed.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Final compile verification time: 4,808,549 us.
+- Final H-Phi verification time: 148,361,184 us.
+
+Verification:
+- Compile artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_164538_CurrentDisk3.log`.
+- Compile result: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_164225_CurrentDiskBudgetGate2.json`.
+- H-Phi result: `EXIT=0`, `RuntimeHPhiRisk=0.000628383`, `DataSovereignty=0.021311929`, `MemoryAlignment=0.506043090`, `GlobalRegistrySurface=5081`, `GetComponentCalls=321`, `NativeArrayRefs=7072`, `ManagedFormatSurface=681`, `JobCompleteSurface=61`, `PrimaryManagedRuntimeRisk=330`, `OwnerBlockedNativeArrayRefs=6262`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, `UnityUpdateMethods=0`, `FindObjectCalls=0`, `AupPrecisionRisk=0`.
+- Freshness: no C# source under `Assets/_Project/Scripts` was newer than either final artifact at verification time.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals were not run.
+- Runtime microsecond savings are not claimed without profiler evidence.
+
+Current Status:
+- BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK3 CURRENT-DISK GREEN.

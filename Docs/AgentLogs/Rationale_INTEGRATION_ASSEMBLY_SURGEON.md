@@ -275,3 +275,43 @@ Solution: Kept the documented full H-Phi gate honest by budgeting both total Nat
 Rejected Alternatives: Lowering the H-Phi floors to hide the churn was rejected. Blindly moving NativeArray storage into Vault-owned memory was rejected because ownership and lifetime differ by domain. Ignoring the churn was rejected because the CTO-facing evidence must explain why the total count moved while the build stayed green.
 Scalability potential: Low tier still receives a hard no-regression gate around owner-blocked NativeArray growth. Middle tier keeps migration pressure visible without breaking leaf behavior. High and Ultra tiers retain domain-owned native buffers for visual overkill until owners can migrate them with profiler and lifetime evidence.
 Hardware Impact: Runtime frame savings are 0 us measured. Fresh62 H-Phi verification cost: 138,599,793 us. The documented gate now captures `NativeArrayRefs=7090`, `OwnerBlockedNativeArrayRefs=6280`, `PrimaryOwnerBlockedNativeArrayRefs=5696`, `DataSovereignty=0.021123844`, and `MemoryAlignment=0.505783386`.
+
+## Decision 35 - Save Context Layout And Moving WFC Wall
+
+Problem: A compile pass saw missing WFC save-append helpers while `SaveManager.cs` was being edited by another worker. The source changed during the wall read, and the H-Phi memory-alignment gate also showed one safe unmanaged record still lacked explicit layout metadata.
+Solution: Treated the helper errors as a moving-write wall after disk inspection showed the WFC append surface present, then added an explicit sequential packed layout to the pure `SaveContextFrameData` value record. This improved the static binary-layout signal without touching save behavior.
+Rejected Alternatives: Reverting the concurrent WFC save work was rejected. Adding layout attributes to managed-reference save structs was rejected because it would be false safety. Stubbing helper methods from stale compiler output was rejected because current disk already contained the intended implementation.
+Scalability potential: Low tier keeps save-append evidence deterministic without extra runtime allocation. Middle tier keeps the existing save path behavior. High and Ultra tiers retain richer WFC persistence data without increasing Core compile drift.
+Hardware Impact: Runtime frame savings are 0 us measured. The layout marker is metadata over an unmanaged integer record; expected i3/MX350 frame impact is 0 us.
+
+## Decision 36 - WorldSpatialHash Origin-Shift Scratch Lifetime
+
+Problem: `WorldSpatialHashGrid` converted `_originShiftHandles` into a fixed managed scratch array, but stale NativeArray registration/disposal calls still treated it as native memory. That produced a real compile wall and also misrepresented ownership lifetime.
+Solution: Removed the obsolete NativeArray registration and disposal hooks for `_originShiftHandles`. The origin-shift scratch remains a bounded main-thread managed buffer; native lifetime methods now no-op or return the incoming dependency unchanged.
+Rejected Alternatives: Reintroducing a NativeArray just to satisfy stale lifecycle code was rejected because the data is a small main-thread scratch surface. Deleting the origin-shift path was rejected because it is live spatial-grid behavior. Reverting concurrent layout markers in the file was rejected as unrelated user/agent work.
+Scalability potential: Low tier avoids unnecessary native allocation/lifetime bookkeeping for a fixed scratch buffer. Middle tier keeps deterministic origin shifting. High and Ultra tiers can spend native-memory budget where the spatial grid actually benefits from jobified storage.
+Hardware Impact: Runtime frame savings are 0 us measured. Expected low-end benefit is avoiding redundant native-lifetime work on origin-shift setup; no profiler claim is made.
+
+## Decision 37 - PlayerBuilder Input Wall Staleness
+
+Problem: `Fresh87` reported missing `ConsumeBuilderInputSignals` and `_subscribedInputService` symbols in `PlayerBuilder.cs`, but current disk no longer matched that wall. The file now uses a `SignalBus<PlayerInputSignal>` frame snapshot and has no `_subscribedInputService` references.
+Solution: Inspected current `PlayerBuilder` before patching and rejected the stale event-subscription repair. `Fresh88` proved the current signal snapshot implementation compiles with `0 Warning(s)` and `0 Error(s)`.
+Rejected Alternatives: Adding an obsolete `IInputService` subscription cache back into `PlayerBuilder` was rejected because it would widen coupling and duplicate the signal-lane input path. Reverting the current signal consumer was rejected because it already matches the zero-GC bounded signal mandate and compiled green.
+Scalability potential: Low tier gets one bounded input signal lane instead of per-tool service event subscriptions. Middle tier keeps deterministic sequence filtering. High and Ultra tiers can add richer builder feedback downstream without coupling the tool directly to input service events.
+Hardware Impact: Runtime frame savings are 0 us measured. Static build verification cost: 115,364,057 us for Fresh88.
+
+## Decision 38 - Fresh89 H-Phi Budget Tightening
+
+Problem: The status and architecture doc still advertised Fresh62/Fresh86 H-Phi floors after current source improved the actual counts. Leaving loose budgets would allow regressions in registry surface, GetComponent calls, NativeArray refs, and owner-blocked memory debt.
+Solution: Ran the full source H-Phi gate on current disk as Fresh89 and tightened the documented regression command to the current verified ceilings: `GlobalRegistrySurface=5081`, `GetComponentCalls=321`, `NativeArrayRefs=7072`, `OwnerBlockedNativeArrayRefs=6262`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, with score floors just below the measured values.
+Rejected Alternatives: Keeping old Fresh62 budgets was rejected because it would hide real debt regression. Tightening graph-only budgets was rejected as insufficient for source-count metrics. Claiming runtime performance gains from static H-Phi was rejected by the evidence mandate.
+Scalability potential: Low tier gains stricter guardrails against registry and memory-owner sprawl. Middle tier keeps source debt visible without cross-domain rewrites. High and Ultra tiers retain visual-overkill freedom in leaf systems while the Integrator gate blocks renewed Core coupling.
+Hardware Impact: Runtime frame savings are 0 us measured. Fresh89 H-Phi verification cost: 77,916,702 us. Static impact versus Fresh62: `GlobalRegistrySurface` 5086 -> 5081, `NativeArrayRefs` 7090 -> 7072, `OwnerBlockedNativeArrayRefs` 6280 -> 6262, and `RuntimeHPhiRisk` 0.000612591 -> 0.000628383.
+
+## Decision 39 - CurrentDisk3 Artifact Supersession
+
+Problem: Fresh88/Fresh89 were valid when produced, but parallel edits landed afterward and made the Fresh88 build artifact stale. Reporting it as final current-disk proof would violate the evidence mandate.
+Solution: Re-ran the Core compile after the later `MainMenuController`, `PlayerPDA`, and `HectonDiscoveryManager` edits. Accepted `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_164538_CurrentDisk3.log` as the final build artifact only after timestamp freshness showed zero C# files newer than both compile and H-Phi evidence.
+Rejected Alternatives: Reusing Fresh88 because it was green was rejected. Re-running H-Phi again after no source changed was rejected as evidence churn. Touching unrelated gameplay files to chase cosmetic debt was rejected under the Integrator domain boundary.
+Scalability potential: Low tier keeps deterministic build evidence during concurrent work. Middle tier keeps the H-Phi budget gate current without broad rewrites. High and Ultra tiers retain visual-overkill freedom in leaf systems while the compile medic enforces fresh artifact proof.
+Hardware Impact: Runtime frame savings are 0 us measured. CurrentDisk3 compile verification cost: 4,808,549 us. CurrentDiskBudgetGate2 H-Phi verification cost: 148,361,184 us. Static H-Phi final values: `RuntimeHPhiRisk=0.000628383`, `GlobalRegistrySurface=5081`, `GetComponentCalls=321`, `FindObjectCalls=0`, `AupPrecisionRisk=0`.

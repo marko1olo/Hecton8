@@ -476,3 +476,14 @@ Cinematic cheats used: No visual change. This keeps diegetic panel receivers det
 Exact microseconds saved: None claimed. Normal frames keep the same four-event cap; clear-state calls can drain the existing 16-event ring once.
 
 Verification: No dotnet rebuilds were run. Static scans confirmed `DispatchReleaseBeforeClear()` drains queued events through the ordered dispatch overload before sending Up.
+
+## 2026-05-15 Tooltip Text-Sink Stale Payload Clear
+What was wrong: The optional world-space TMP validation sink received prompt text but was not cleared when signal or diagnostic payloads disappeared, leaving stale prompt text in-world.
+
+What was done: Added a sink payload latch, captured the non-UGUI sink that received text, and clear it once with `SetCharArray(_promptBuffer, 0, 0)` when no payload is active or layout cannot produce glyphs.
+
+Cinematic cheats used: No change to primary indirect glyph rendering. This keeps the auxiliary authoring surface from becoming a non-diegetic stale overlay.
+
+Exact microseconds saved: None claimed. Normal frames pay a boolean check; the clear runs once per payload loss without string assignment.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed `ClearTextSink()` is gated and called from no-payload, diagnostic clear, hard clear, and missing-font paths.

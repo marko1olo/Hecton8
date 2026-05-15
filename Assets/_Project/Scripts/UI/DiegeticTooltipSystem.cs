@@ -46,6 +46,8 @@ namespace Hecton8.UI
         private const float IconVerticalBias = -0.002f;
         private const float IconGapMultiplier = 0.42f;
         private const float DefaultFadeDurationSeconds = 0.2f;
+        private const float MinVisibleDistanceMeters = 0.5f;
+        private const float MaxVisibleDistanceMeters = 20f;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_CONTEXTUAL_UX_PROMPTER.bin";
         private const string DefaultGlyphMaterialResourcePath = "UI/MAT_DiegeticTooltipGlyph";
         private const string DefaultIconMaterialResourcePath = "UI/MAT_DiegeticTooltipIcon";
@@ -103,7 +105,7 @@ namespace Hecton8.UI
         private float fadeDurationSeconds = DefaultFadeDurationSeconds;
         [SerializeField, Range(0.02f, 0.25f), Tooltip("VR-only shift toward the camera to avoid stereo clipping.")]
         private float vrDepthOffsetMeters = 0.1f;
-        [SerializeField, Range(0.5f, 20f), Tooltip("Maximum camera distance where a diegetic tooltip remains visible.")]
+        [SerializeField, Range(MinVisibleDistanceMeters, MaxVisibleDistanceMeters), Tooltip("Maximum camera distance where a diegetic tooltip remains visible.")]
         private float maxVisibleDistance = 6f;
         [SerializeField, Tooltip("Base tooltip tint. Alpha is multiplied by hover fade state.")]
         private Color glyphColor = new Color(0.86f, 0.98f, 1f, 0.96f);
@@ -1101,7 +1103,8 @@ namespace Hecton8.UI
             if (distanceSq <= 0.0001f)
                 return anchor;
 
-            return anchor + toCamera * (vrDepthOffsetMeters * math.rsqrt(distanceSq));
+            float depthOffset = math.isfinite(vrDepthOffsetMeters) ? math.max(0f, vrDepthOffsetMeters) : 0f;
+            return anchor + toCamera * (depthOffset * math.rsqrt(distanceSq));
         }
 
         private Camera ResolveCamera()
@@ -1198,7 +1201,8 @@ namespace Hecton8.UI
 
         private void RefreshVisibleDistanceCache()
         {
-            float distance = maxVisibleDistance;
+            float authoredDistance = math.isfinite(maxVisibleDistance) ? maxVisibleDistance : MinVisibleDistanceMeters;
+            float distance = math.clamp(authoredDistance, MinVisibleDistanceMeters, MaxVisibleDistanceMeters);
             if (_cachedMaxVisibleDistance == distance)
                 return;
 

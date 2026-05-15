@@ -319,3 +319,17 @@ Solution: Added a high-bit `SanitizedBaseCenterFlag` to the player base transiti
 Rejected Alternatives: Dropping the packet inside the generic `SignalBus<T>.Push` path was rejected because that would change all guarded signal semantics. Rejecting default AUP in gas was rejected because origin can be a legitimate authored location. Adding a managed diagnostic queue was rejected under zero-GC.
 Scalability potential: Low through Ultra avoid poisoning hibernation distance authority with sanitized coordinates while keeping the same fixed-size 64-byte signal lane and native deferred buffer.
 Hardware Impact: One ushort bit test per base transition packet only. No frame-time claim; this is a correctness guard for rare corrupt producer data.
+
+## Self-Review 39 - Post-Signal H-Phi Core Graph Recheck
+Problem: The sanitized base signal fix touched Core signal contracts, so H-Phi evidence needed to be refreshed without using a forbidden rebuild.
+Solution: Re-ran `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`. The source-only audit exited 0 with STATIC_SOURCE evidence; core build graph gate remains true/opt-in and existing debt counts are unchanged.
+Rejected Alternatives: Running a dotnet/Unity compile was rejected by the explicit no-rebuild instruction. Treating the previous audit as current after a Core touch was rejected because it would be stale evidence.
+Scalability potential: The gas hibernation signal lane stays fixed-size and decoupled; remaining Core graph debt is unchanged and still outside this agent's direct domain.
+Hardware Impact: Audit-only; no runtime impact and no microsecond saving claimed.
+
+## Self-Review 40 - Read-Only Alias Initialization Gate
+Problem: `GlobalRegistry` publication was gated on `IsInitialized`, but a caller holding a direct `IGasDynamicsSolver` reference could still read room/base aliases when only one native lane was created.
+Solution: The explicit `IGasDynamicsSolver` room and base read-only properties now return default until the full initialization invariant passes.
+Rejected Alternatives: Trusting consumers to check `IsInitialized` was rejected because read-only aliases are cross-domain H-Phi surfaces. Throwing was rejected because the safe alias contract should fail closed without allocations or exceptions.
+Scalability potential: Low through Ultra keep identical aliases when coherent; partial native recovery windows no longer leak stale buffers into power/UI consumers.
+Hardware Impact: One `IsInitialized` branch per alias request, not per frame job. No profiler microsecond claim; this is alias safety.

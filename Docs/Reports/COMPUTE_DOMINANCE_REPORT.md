@@ -839,3 +839,44 @@ Top active sources:
 | 5 | `019e2804-f244-7ba0-a863-982e85d123fd` | 175,185 | 1,934.46 | Read batch prompt |
 
 Two active threads produced 50.59% of the 90-second burn. This is the current throttle target. Token volume alone still does not prove waste; it proves where live spend is happening.
+
+## Continuation Addendum - Model Bucket Reconciliation
+
+Snapshot: 2026-05-15T16:39:22+04:00
+
+The model attribution correction is preserved at `COMPUTE_MODEL_BUCKET_RECONCILIATION.md`.
+
+The previous model-aware ledger used exact `rollout_path` matching only. That created a false `unknown` bucket. Corrected scan uses exact path first, then UUID from `rollout-...UUID.jsonl` matched to `threads.id`.
+
+| Metric | Value |
+|---|---:|
+| Session files scanned | 766 |
+| Final-usage sessions matched by exact path | 731 |
+| Final-usage sessions matched by UUID fallback | 17 |
+| Unmatched session files | 1 |
+| Unmatched final-usage tokens | 0 |
+| Files without final token usage | 18 |
+| Parsed token-count rows | 366,921 |
+| JSONL final total tokens | 45,652,088,834 |
+| SQLite `threads.tokens_used` | 45,644,663,325 |
+| JSONL/SQLite drift | 0.01627% |
+| Cached-input ratio | 96.00453% |
+
+Corrected cost:
+
+| Scenario | Cache-aware cost | No-cache equivalent | Cache avoided |
+|---|---:|---:|---:|
+| Model-aware corrected | USD 30,613.26 | USD 201,374.74 | USD 170,761.48 |
+| All tokens as GPT-5.5 standard | USD 35,582.98 | USD 232,137.91 | USD 196,554.93 |
+| All tokens as GPT-5.5 long-context | USD 68,838.71 | USD 461,948.57 | USD 393,109.86 |
+
+Corrected model split:
+
+| Model bucket | Sessions | Final tokens | Share | Cost |
+|---|---:|---:|---:|---:|
+| `gpt-5.5` | 476 | 33,766,761,807 | 73.965% | USD 25,849.12 |
+| `gpt-5.4` | 237 | 11,592,726,837 | 25.394% | USD 4,696.15 |
+| Other known buckets | 35 | 292,600,190 | 0.641% | USD 67.99 |
+| `unknown` with final usage | 0 | 0 | 0.000% | USD 0.00 |
+
+Verdict: the `unknown` final-usage bucket was an attribution bug, not a real model bucket. Future `.codex` model scans must use path-or-UUID matching.

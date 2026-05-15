@@ -396,3 +396,17 @@ Solution: Split `DispatchInputEvents()` into a bounded overload and drain the qu
 Rejected Alternatives: Keeping direct Up dispatch first, dropping queued events, or increasing `MaxInputEventsPerTick`. Up-first can invert receiver state; dropping queued events hides input; raising the per-tick cap changes normal-frame budget instead of solving clear-state ordering.
 Scalability potential: Low keeps deterministic event order without extra allocations. Middle/High/Ultra preserve richer panel interactions because receivers see the same ordered Down/Hold/Scroll/Up stream even during abrupt state changes.
 Hardware Impact: Normal frames keep the same dispatch cap. Clear-state calls can drain up to the existing 16-event ring once, which is bounded and off the steady hover path.
+
+## Decision 56: Tooltip Text-Sink Stale Payload Clear
+Problem: The optional world-space TMP validation sink received prompt text through `SetCharArray()` but was not cleared when signal/diagnostic payloads disappeared, leaving stale in-world authoring text.
+Solution: Track whether a non-UGUI text sink currently owns payload, capture the sink reference that received it, and clear it once with `SetCharArray(_promptBuffer, 0, 0)` on no-payload, diagnostic clear, hard clear, or missing-font layout paths.
+Rejected Alternatives: Assigning `TMP_Text.text`, clearing every frame, or ignoring the optional sink because indirect glyphs are primary. `.text` risks managed string churn; repeated clears waste UI work; stale validation text breaks the diegetic UX during authoring and QA.
+Scalability potential: Low avoids stale validation overlays on simple prompts. Middle/High/Ultra preserve the indirect-render path while keeping auxiliary authoring surfaces deterministic.
+Hardware Impact: Normal frames pay one boolean branch when no payload is visible; the actual TMP clear runs once per payload loss and allocates no new string.
+
+## Decision 57: Tooltip Culling Authoring Clamp
+Problem: Tooltip culling and XR depth offset trusted serialized floats. Bad runtime/serialized values such as NaN, negative visible distance, or negative XR offset could poison bounds/culling math or push XR prompts away from the camera.
+Solution: Add finite clamps to the visible-distance cache and clamp VR depth offset to a finite non-negative value before applying it.
+Rejected Alternatives: Relying on `[Range]` attributes, mutating serialized fields every render, or ignoring bad values until a NaN dump. Range does not protect runtime mutation; render-time serialization mutation is noisy; preventing NaN/culling poison is cheaper than post-crash analysis.
+Scalability potential: Low fails to a predictable compact range. Middle/High/Ultra preserve the same authored defaults while keeping richer tooltip rendering from inheriting invalid culling state.
+Hardware Impact: Adds small scalar checks on render-visible paths; prevents expensive bad-state debugging and keeps culling deterministic. No profiler proof.

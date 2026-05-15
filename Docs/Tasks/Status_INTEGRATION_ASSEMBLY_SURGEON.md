@@ -4,7 +4,40 @@ Agent: INTEGRATION_ASSEMBLY_SURGEON
 Role: SYSTEMS_ARCHITECT
 Domain: Unity Compilation Graph / Integrator
 Prompt task count: 15 (current in-chat XML; older 17-task static pass retained below)
-Current state: BUILD SUCCESSFUL / PLATINUM GRADE / FRESH64 CURRENT-DISK GREEN (Hecton8.Core --no-restore 0 warnings / 0 errors); latest static H-Phi gate: FRESH62 DOCUMENTED FLOOR PASS
+Current state: BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK3 CURRENT-DISK GREEN (Hecton8.Core --no-restore 0 warnings / 0 errors); latest static H-Phi gate: CURRENTDISKBUDGETGATE2 SOURCE PASS
+
+## 2026-05-15 CurrentDisk3/CurrentDiskBudgetGate2 Freshness Correction
+
+Directive: continue careful build repair, reduce Integrator-domain H-Phi debt, and reject stale green artifacts under parallel edits.
+Domain: Echelon 9 / The Integrator (Compile Medic).
+Current state: BUILD SUCCESSFUL / PLATINUM GRADE.
+Compile artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_164538_CurrentDisk3.log`.
+Compile exit artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_164538_CurrentDisk3.exit.txt`.
+H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_164225_CurrentDiskBudgetGate2.json`.
+H-Phi exit artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_164225_CurrentDiskBudgetGate2.exit.txt`.
+
+- [x] Fresh88/Fresh89 stale wording superseded | Justification: later edits to `MainMenuController.cs`, `PlayerPDA.cs`, and `HectonDiscoveryManager.cs` landed after Fresh88, so the Fresh88 build artifact was not final current-disk proof | Alternatives rejected: reporting Fresh88 as current after source timestamps disproved it | Estimate: 400 us scan
+- [x] Current-disk Core compile reverified | Justification: `CurrentDisk3` reports `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0` after the later source edits | Alternatives rejected: reusing Fresh88 or editing generated `.csproj` files | Estimate: 4,808,549 us build verification
+- [x] Current-disk H-Phi gate reverified | Justification: `CurrentDiskBudgetGate2` exits 0 with `RuntimeHPhiRisk=0.000628383`, `GlobalRegistrySurface=5081`, `GetComponentCalls=321`, `NativeArrayRefs=7072`, `OwnerBlockedNativeArrayRefs=6262`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, `UnityUpdateMethods=0`, `FindObjectCalls=0`, and `AupPrecisionRisk=0` | Alternatives rejected: leaving only descriptive no-budget H-Phi output or stale Fresh89 evidence | Estimate: 148,361,184 us tooling verification
+- [x] Current-disk freshness checked | Justification: no C# source under `Assets/_Project/Scripts` was newer than either the `CurrentDisk3` build log or the `CurrentDiskBudgetGate2` H-Phi artifact | Alternatives rejected: trusting artifact names instead of timestamps | Estimate: 400 us scan
+- [x] Diff hygiene checked | Justification: `git diff --check` on touched code/report paths returned exit 0; only known CRLF normalization warnings were seen in earlier scoped checks | Alternatives rejected: broad line-ending normalization during active multi-agent edits | Estimate: 0 us runtime
+
+## 2026-05-15 Fresh88/Fresh89 Current-Disk Compile And H-Phi Closure
+
+Directive: continue careful build repair, reduce Integrator-domain H-Phi debt, and avoid `dotnet rebuild`.
+Domain: Echelon 9 / The Integrator (Compile Medic).
+Current state: BUILD SUCCESSFUL / PLATINUM GRADE.
+Compile artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh88.log`.
+Compile exit artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh88.exit.txt`.
+H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh89.json`.
+H-Phi exit artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh89.exit.txt`.
+
+- [x] Status, rationale, and prompt extraction refreshed | Justification: disk state was reloaded and `CURRENT_BATCH.md` still exposes no `INTEGRATION_ASSEMBLY_SURGEON` tag or operative `<POLISH_MANDATE>` | Alternatives rejected: stale chat memory and neighboring batch prompts | Estimate: 300 us process
+- [x] Stale PlayerBuilder wall rejected | Justification: `Fresh87` named missing input-subscription symbols, but current disk had already converged on no-alloc `SignalBus<PlayerInputSignal>` snapshot consumption with no `_subscribedInputService` reference | Alternatives rejected: adding obsolete event-subscription fields back into the hot path | Estimate: 0 us runtime
+- [x] Current-disk Core compile verified | Justification: `Fresh88` reports `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0` | Alternatives rejected: reporting stale `Fresh85` after later C# edits | Estimate: 115,364,057 us build verification
+- [x] Current-disk H-Phi gate verified | Justification: `Fresh89` exits 0 with `RuntimeHPhiRisk=0.000628383`, `DataSovereignty=0.021311929`, `MemoryAlignment=0.506043090`, `GlobalRegistrySurface=5081`, `GetComponentCalls=321`, `NativeArrayRefs=7072`, `OwnerBlockedNativeArrayRefs=6262`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, `UnityUpdateMethods=0`, `DuplicateSignalNameCount=0`, and `AupPrecisionRisk=0` | Alternatives rejected: retaining Fresh62/Fresh86 budgets after current source improved | Estimate: 77,916,702 us tooling verification
+- [x] H-Phi documentation tightened | Justification: `HECTON_PHI_STATIC_METRIC.md` now records the Fresh89 regression command with no-regression ceilings for registry, GetComponent, NativeArray, owner-blocked NativeArray, and current score floors | Alternatives rejected: loose source-count budgets or graph-only proof for full-source metrics | Estimate: 0 us runtime
+- [x] Current-disk freshness checked | Justification: no C# source under `Assets/_Project/Scripts` was newer than either the Fresh88 build log or Fresh89 H-Phi artifact | Alternatives rejected: trusting green logs during parallel agent edits | Estimate: 400 us scan
 
 ## 2026-05-15 Fresh64 Bootstrap Readiness And H-Phi Budget Closure
 

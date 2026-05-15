@@ -74,3 +74,40 @@ Verification:
 - Freshness: no C# source under `Assets/_Project/Scripts` was newer than the Fresh50 build or H-Phi artifacts at verification time.
 
 Current Status: BUILD SUCCESSFUL / PLATINUM GRADE.
+
+## 2026-05-15 - CurrentDisk3/CurrentDiskBudgetGate2 Triage Record
+
+Errors Fixed: Moving compile wall closed; final Core build is 0 warnings / 0 errors. Stale Fresh88 proof was superseded by CurrentDisk3 after later source edits.
+
+Files Moved:
+- None.
+
+ASMDEFs Repaired:
+- None.
+
+What was wrong:
+- Parallel C# edits invalidated earlier green build evidence.
+- H-Phi counters had improved, but stale artifact names risked false current-disk reporting.
+
+What was done:
+- Re-ran `dotnet build Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal`.
+- Preserved the budgeted H-Phi source gate after confirming it was newer than all C# source files.
+- Updated Integrator status, rationale, and log evidence to point at the final current artifacts.
+
+Cinematic Cheats used:
+- Compile/static evidence closure only.
+- No feature work, simulation rewrite, package change, generated `.csproj` edit, or leaf-domain refactor.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Compile verification time: 4,808,549 us.
+- H-Phi verification time: 148,361,184 us.
+
+Verification:
+- Build artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_164538_CurrentDisk3.log`.
+- Build result: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_164225_CurrentDiskBudgetGate2.json`.
+- H-Phi result: `EXIT=0`, `RuntimeHPhiRisk=0.000628383`, `GlobalRegistrySurface=5081`, `GetComponentCalls=321`, `NativeArrayRefs=7072`, `UnityUpdateMethods=0`, `FindObjectCalls=0`, `AupPrecisionRisk=0`.
+- Freshness: no C# source under `Assets/_Project/Scripts` was newer than either final artifact at verification time.
+
+Current Status: BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK3 CURRENT-DISK GREEN.

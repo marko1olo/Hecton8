@@ -546,12 +546,10 @@ namespace Hecton8.Core.Database
             lock (_fileGate)
             {
                 if (_dirtyPayloads.IsCreated &&
-                    _dirtyPayloads.TryGetValue(sectorHash, out MacroDatabasePayloadHandle deferredDirty) &&
+                    _dirtyPayloads.TryGetValue(sectorHash, out _) &&
                     IsCompactionWriteLocked())
                 {
-                    return deferredDirty.Pointer != IntPtr.Zero &&
-                           deferredDirty.ByteLength > 0 &&
-                           deferredDirty.ByteLength <= _config.MaxPayloadBytes;
+                    return false;
                 }
 
                 if (!_dirtyPayloads.IsCreated ||

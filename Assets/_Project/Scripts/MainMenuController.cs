@@ -1,6 +1,7 @@
 using Hecton.Localization;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Input;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
@@ -100,6 +101,7 @@ namespace Hecton.UI.MainMenu
         private CanvasGroup _currentPanel;
         private InputManager _inputManager;
         private bool _cancelRequested;
+        private uint _lastPlayerInputSignalSequence;
         private PanelTransitionState _panelTransitionState;
         private UnityAction _newGameClickAction;
         private UnityAction _loadGameClickAction;
@@ -109,6 +111,7 @@ namespace Hecton.UI.MainMenu
         private UnityAction _backFromSettingsClickAction;
         private bool _runtimeBindingsReady;
         private bool _inputRoutingReady;
+        private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
 
 
         private void Awake()
@@ -150,6 +153,7 @@ namespace Hecton.UI.MainMenu
             BlockCancelInputBriefly();
             MainMenuInputRoutingGuard.EnsureInputSystemEventRouting();
             BindMenuInput();
+            BaselineCancelInputSignalSequence();
             _inputRoutingReady = false;
             LocalizationEvents.RegisterLanguageListener(this);
             
@@ -882,9 +886,43 @@ namespace Hecton.UI.MainMenu
                 return;
 
             EnsureMenuInputRoutingReady();
+            ConsumeCancelInputSignals();
             HandleCancelInput();
             UpdatePanelTransition(unscaledDeltaTime);
             RefreshSelectionIfNeeded();
+        }
+
+        private void ConsumeCancelInputSignals()
+        {
+            System.ReadOnlySpan<PlayerInputSignal> signals = SignalBus<PlayerInputSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PlayerInputSignal signal = signals[i];
+                if (signal.SourceHash != PlayerInputSignalSourceHash ||
+                    signal.Command != PlayerInputSignalCommands.Cancel ||
+                    !IsNewerInputSequence(signal.Sequence, _lastPlayerInputSignalSequence))
+                    continue;
+
+                _lastPlayerInputSignalSequence = signal.Sequence;
+                _cancelRequested = true;
+            }
+        }
+
+        private void BaselineCancelInputSignalSequence()
+        {
+            System.ReadOnlySpan<PlayerInputSignal> signals = SignalBus<PlayerInputSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PlayerInputSignal signal = signals[i];
+                if (signal.SourceHash == PlayerInputSignalSourceHash &&
+                    IsNewerInputSequence(signal.Sequence, _lastPlayerInputSignalSequence))
+                    _lastPlayerInputSignalSequence = signal.Sequence;
+            }
+        }
+
+        private static bool IsNewerInputSequence(uint candidate, uint current)
+        {
+            return candidate != 0u && candidate != current && unchecked(candidate - current) < 0x80000000u;
         }
 
         private void EnsureMenuInputRoutingReady()
@@ -985,23 +1023,15 @@ namespace Hecton.UI.MainMenu
             if (_inputManager == null)
                 return;
 
-            _inputManager.OnCancel += HandleMenuCancelPerformed;
+            BaselineCancelInputSignalSequence();
             if (_inputManager.CanSwitchActionMaps)
                 _inputManager.SwitchToUIInput();
         }
 
         private void UnbindMenuInput()
         {
-            if (_inputManager != null)
-                _inputManager.OnCancel -= HandleMenuCancelPerformed;
-
             _inputManager = null;
             _cancelRequested = false;
-        }
-
-        private void HandleMenuCancelPerformed()
-        {
-            _cancelRequested = true;
         }
 
         private void RequestSelectionRefresh()

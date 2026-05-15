@@ -483,3 +483,15 @@ Cinematic Cheats used -> None. Git integration only.
 Exact Microseconds saved -> 0 us runtime. Dev-path gain is one more checked checkpoint before reporting file ownership by commit source.
 
 Verification -> `git diff --cached --check` passed. Strict staged conflict-marker scan returned clean. Build evidence is mixed: Fresh87 EXIT=1, CurrentDisk2 EXIT=0, Fresh88 EXIT=0. HPhi CurrentDisk, Fresh86, and CurrentDiskBudgetGate report EXIT=0. Full Unity/player/profiler green is not claimed.
+
+## 2026-05-15 - Loop 29 Compute And Integrator Tail
+
+What was wrong -> After `e648947ce` pushed cleanly, another live tail appeared: discovery/menu/PDA/save-slot runtime edits, compute audit docs, integrator proof docs, and new CurrentDisk3/HPhi evidence.
+
+What was done -> Fetched remote and verified divergence `0 0`, inspected runtime diffs, fixed `HectonDiscoveryManager` signed biome id formatting so the allocation cleanup preserves old negative-id text behavior, and prepared the current non-empty evidence/doc tail as a separate checkpoint.
+
+Cinematic Cheats used -> None. Git integration only.
+
+Exact Microseconds saved -> 0 us runtime by this operator pass. Producer evidence reports CurrentDisk3 compile verification at 4,808,549 us and CurrentDiskBudgetGate2 HPhi verification at 148,361,184 us.
+
+Verification -> Conflict-marker scan clean. `git diff --check` produced only CRLF warnings. CurrentDisk3 build EXIT=0 and CurrentDiskBudgetGate2 HPhi EXIT=0 are preserved. Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals are not claimed.

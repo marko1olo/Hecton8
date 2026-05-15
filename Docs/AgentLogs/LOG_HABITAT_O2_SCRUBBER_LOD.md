@@ -590,3 +590,34 @@ Verification:
 - Confirmed gas carries the flag into deferred packets and rejects flagged payloads through `TryEnsureBaseSlotFromSignal(in signal)`.
 - Targeted scan found no forbidden `.Complete`, component lookup, managed collection, coroutine, string-format, interpolation, or `foreach` matches in touched runtime files.
 - `git diff --check` passed with only the existing CRLF working-copy warning.
+
+## 2026-05-15 - Post-Signal H-Phi Core Graph Recheck
+STATUS: SOURCE VERIFIED
+
+What was wrong:
+- The sanitized base signal rejection touched Core signal contracts, making the previous H-Phi graph evidence stale.
+
+What was done:
+- Re-ran `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`.
+- Result: exit 0, STATIC_SOURCE evidence, core build graph gate still true/opt-in. Existing debt counts remain: Core asmdef 25, generated project 10, source-backed bridge 14, source-backed compile bridge 8, project-reference replacement 6.
+
+Cinematic Cheats used:
+- None; audit-only pass.
+
+Exact microseconds saved:
+- None. This is source evidence only; no dotnet rebuild was run.
+
+## 2026-05-15 - Read-Only Alias Initialization Gate Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- Registry publication was initialization-gated, but explicit `IGasDynamicsSolver` aliases could still expose partial native state to a retained direct reference.
+
+What was done:
+- `RoomO2`, `RoomCO2`, `RoomPressure`, and `BaseAwakeState` read-only aliases now return default until `IsInitialized` is true.
+
+Cinematic Cheats used:
+- None. This is H-Phi alias hygiene.
+
+Exact microseconds saved:
+- None claimed. Cost is one initialization branch per alias request; no dotnet rebuild was run.

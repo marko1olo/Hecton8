@@ -1862,6 +1862,7 @@ namespace Hecton8.SaveSystem
         private async Awaitable FlushWfcOutpostDirtyPayloadAsync(ulong sectorHash, ulong payloadHash, uint frame)
         {
             bool appended = false;
+            bool deferredByCompaction = false;
             IMacroDatabaseService macroDatabase = _macroDatabaseService;
             try
             {
@@ -1869,6 +1870,7 @@ namespace Hecton8.SaveSystem
                 appended = macroDatabase != null &&
                            macroDatabase.IsOpen &&
                            macroDatabase.TryAppendDirtyPayload(sectorHash);
+                deferredByCompaction = !appended && IsWfcOutpostAppendDeferredByCompaction(macroDatabase);
             }
             catch (Exception)
             {
@@ -1887,6 +1889,15 @@ namespace Hecton8.SaveSystem
                 return;
             }
 
+            if (!appended && (deferredByCompaction || IsWfcOutpostAppendDeferredByCompaction(macroDatabase)))
+            {
+                if (payloadHash != 0UL)
+                    MarkWfcOutpostAppendFailed(sectorHash, payloadHash, frame);
+
+                RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationAppend, WfcOutpostPersistenceStatus.DirtyQueued, sectorHash, frame: frame);
+                return;
+            }
+
             if (appended)
             {
                 if (payloadHash != 0UL)
@@ -1900,6 +1911,18 @@ namespace Hecton8.SaveSystem
                 RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationAppend, WfcOutpostPersistenceStatus.Rejected, sectorHash, frame: frame);
                 PublishWfcWriteFailureWarning(frame);
             }
+        }
+
+        private static bool IsWfcOutpostAppendDeferredByCompaction(IMacroDatabaseService macroDatabase)
+        {
+            if (macroDatabase == null)
+                return false;
+
+            byte state = macroDatabase.Compaction.State;
+            return state == (byte)MacroDatabaseCompactionState.Copying ||
+                   state == (byte)MacroDatabaseCompactionState.Paused ||
+                   state == (byte)MacroDatabaseCompactionState.ReadyToSwap ||
+                   state == (byte)MacroDatabaseCompactionState.Swapping;
         }
 
         private static void PublishWfcBytesSaved(int payloadBytes)

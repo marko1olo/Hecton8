@@ -167,3 +167,9 @@ Solution: Fetch first, prove `origin/main...HEAD` is `0 0`, inspect runtime diff
 Rejected Alternatives: Reporting from a dirty uncommitted tree, committing an empty proof file, pulling with no incoming commits, or force-pushing over shared history.
 Scalability potential: Git-only integration pass. Runtime scalability behavior remains owned by producing agents; this pass only prevents merge drift and preserves evidence boundaries.
 Hardware Impact: 0 us runtime impact. Dev-path gain is a smaller conflict surface for GitHub Desktop and a clearer split between pushed facts and remaining generated debris.
+
+Problem: The next live tail included allocation-cleanup edits in discovery/save/menu/PDA code plus updated compute and integrator evidence while parallel agents continued writing.
+Solution: Treat it as a bounded checkpoint after remote sync, repair the one observed semantic regression in signed biome id formatting, preserve non-empty CurrentDisk3/CurrentDiskBudgetGate2 evidence, and commit without amending prior pushed checkpoints.
+Rejected Alternatives: Chasing an infinite live stream, reverting other agents' domains, committing stale/empty evidence, or claiming Unity/player/profiler green from Core compile and static HPhi artifacts.
+Scalability potential: Git-only operator pass. Low/Middle/High/Ultra runtime behavior remains producer-owned; this pass preserves evidence and avoids merge churn.
+Hardware Impact: 0 us runtime impact. Dev-path gain is another published checkpoint with explicit proof boundaries.

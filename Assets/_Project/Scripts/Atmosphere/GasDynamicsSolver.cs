@@ -171,10 +171,10 @@ namespace Hecton8.Atmosphere
         public float LastCadenceSeconds => _lastCadenceSeconds;
         public GasDynamicsMathLod LastMathLod => _lastMathLod;
 
-        NativeArray<float>.ReadOnly IGasDynamicsSolver.RoomO2 => RoomO2.IsCreated ? RoomO2.AsReadOnly() : default;
-        NativeArray<float>.ReadOnly IGasDynamicsSolver.RoomCO2 => RoomCO2.IsCreated ? RoomCO2.AsReadOnly() : default;
-        NativeArray<float>.ReadOnly IGasDynamicsSolver.RoomPressure => RoomPressure.IsCreated ? RoomPressure.AsReadOnly() : default;
-        NativeArray<byte>.ReadOnly IGasDynamicsSolver.BaseAwakeState => BaseAwakeState.IsCreated ? BaseAwakeState.AsReadOnly() : default;
+        NativeArray<float>.ReadOnly IGasDynamicsSolver.RoomO2 => IsInitialized ? RoomO2.AsReadOnly() : default;
+        NativeArray<float>.ReadOnly IGasDynamicsSolver.RoomCO2 => IsInitialized ? RoomCO2.AsReadOnly() : default;
+        NativeArray<float>.ReadOnly IGasDynamicsSolver.RoomPressure => IsInitialized ? RoomPressure.AsReadOnly() : default;
+        NativeArray<byte>.ReadOnly IGasDynamicsSolver.BaseAwakeState => IsInitialized ? BaseAwakeState.AsReadOnly() : default;
         int ISystem.TickCount => _tickCount;
 
         private void OnEnable()

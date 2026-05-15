@@ -499,7 +499,39 @@ namespace Hecton.UI.MainMenu
             int hours = totalMinutes / 60;
             int minutes = totalMinutes % 60;
 
-            return string.Format("{0:D2}:{1:D2}", hours, minutes);
+            int hourDigits = CountTwoDigitMinimumDecimalDigits(hours);
+            return string.Create(
+                hourDigits + 3,
+                (hours, minutes, hourDigits),
+                static (buffer, state) =>
+                {
+                    WritePaddedPositiveDecimal(state.hours, buffer.Slice(0, state.hourDigits));
+                    buffer[state.hourDigits] = ':';
+                    WritePaddedPositiveDecimal(state.minutes, buffer.Slice(state.hourDigits + 1, 2));
+                });
+        }
+
+        private static int CountTwoDigitMinimumDecimalDigits(int value)
+        {
+            int safeValue = value < 0 ? -value : value;
+            int digits = 1;
+            while (safeValue >= 10)
+            {
+                safeValue /= 10;
+                digits++;
+            }
+
+            return digits < 2 ? 2 : digits;
+        }
+
+        private static void WritePaddedPositiveDecimal(int value, Span<char> destination)
+        {
+            int safeValue = value < 0 ? -value : value;
+            for (int i = destination.Length - 1; i >= 0; i--)
+            {
+                destination[i] = (char)('0' + safeValue % 10);
+                safeValue /= 10;
+            }
         }
 
         private static string ExtractSlotNumber(string slotId)

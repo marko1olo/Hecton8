@@ -323,3 +323,15 @@ Rejected Alternatives: Running another full JSONL parse immediately was rejected
 Scalability potential: Low/Middle/High/Ultra process gains a live throttle map. Instead of pausing all agents blindly, an integrator can inspect the 11 active threads and decide whether the top two, which produced 50.59% of the sample burn, are doing necessary work.
 
 Hardware Impact: 0 runtime microseconds on i3/MX350. No runtime code changed. Process impact: current live burn measured at 30,099.39 tokens/sec and USD 1.38/min cache-aware.
+
+## Decision 27 - Model Bucket Reconciliation
+
+Problem: The current token ledger had a large `unknown` model bucket. That made the model-aware cost too low and hid the real GPT-5.5 share.
+
+Solution: Reconcile JSONL session files with SQLite using exact `rollout_path` first and UUID fallback from `rollout-...UUID.jsonl` to `threads.id`. Re-run the final-usage JSONL scan and write `COMPUTE_MODEL_BUCKET_RECONCILIATION.md`.
+
+Rejected Alternatives: Keeping the path-only `unknown` bucket was rejected because 17 final-usage sessions resolved cleanly by UUID. Guessing all unknown as GPT-5.5 without a SQLite join was rejected because it would be right by accident, not evidence. Mixing the partial live correction into the old full snapshot was rejected because timestamps differed.
+
+Scalability potential: Low/Middle/High/Ultra process gains a cleaner cost model. Future rate scans must use path-or-UUID matching; otherwise active sessions are underpriced and attribution degrades.
+
+Hardware Impact: 0 runtime microseconds on i3/MX350. No runtime code changed. Process impact: unknown final-usage model bucket reduced to 0 tokens; corrected model-aware estimate is USD 30,613.26.

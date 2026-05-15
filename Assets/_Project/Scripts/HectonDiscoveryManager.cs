@@ -130,7 +130,7 @@ namespace Hecton8.Gameplay
             LogBiomeDiscovered(biomeName, biomeId, this);
 
             OnBiomeDiscovered?.Invoke(biomeId);
-            NotificationEvents.PushInfo(string.Format(
+            NotificationEvents.PushInfo(FormatSingleArgument(
                 ResolveLocalized(LocalizationKeys.DISCOVERY_NEW_BIOME, "NEW BIOME DISCOVERED: {0}"),
                 biomeName));
         }
@@ -158,7 +158,7 @@ namespace Hecton8.Gameplay
                     return entry.name.ToUpperInvariant();
             }
 
-            return $"BIOME {id}";
+            return CreateBiomeFallbackName(id);
         }
 
         /// <summary>
@@ -253,6 +253,87 @@ namespace Hecton8.Gameplay
                 : fallback;
         }
 
+        private static string FormatSingleArgument(string template, string argument)
+        {
+            if (string.IsNullOrEmpty(template))
+                return argument ?? string.Empty;
+
+            argument ??= string.Empty;
+            int tokenIndex = template.IndexOf("{0}", StringComparison.Ordinal);
+            if (tokenIndex < 0)
+            {
+                return string.Create(
+                    template.Length + 1 + argument.Length,
+                    (template, argument),
+                    static (buffer, state) =>
+                    {
+                        state.template.AsSpan().CopyTo(buffer);
+                        buffer[state.template.Length] = ' ';
+                        state.argument.AsSpan().CopyTo(buffer.Slice(state.template.Length + 1));
+                    });
+            }
+
+            int suffixStart = tokenIndex + 3;
+            return string.Create(
+                template.Length - 3 + argument.Length,
+                (template, argument, tokenIndex, suffixStart),
+                static (buffer, state) =>
+                {
+                    state.template.AsSpan(0, state.tokenIndex).CopyTo(buffer);
+                    state.argument.AsSpan().CopyTo(buffer.Slice(state.tokenIndex));
+                    state.template.AsSpan(state.suffixStart).CopyTo(buffer.Slice(state.tokenIndex + state.argument.Length));
+                });
+        }
+
+        private static string CreateBiomeFallbackName(int biomeId)
+        {
+            const string prefix = "BIOME ";
+            int digitCount = CountSignedDecimalChars(biomeId);
+            return string.Create(
+                prefix.Length + digitCount,
+                (prefix, biomeId, digitCount),
+                static (buffer, state) =>
+                {
+                    state.prefix.AsSpan().CopyTo(buffer);
+                    WriteSignedDecimal(state.biomeId, buffer.Slice(state.prefix.Length, state.digitCount));
+                });
+        }
+
+        private static int CountSignedDecimalChars(int value)
+        {
+            long safeValue = value;
+            int digits = safeValue < 0 ? 2 : 1;
+            if (safeValue < 0)
+                safeValue = -safeValue;
+
+            while (safeValue >= 10)
+            {
+                safeValue /= 10;
+                digits++;
+            }
+
+            return digits;
+        }
+
+        private static void WriteSignedDecimal(int value, Span<char> destination)
+        {
+            long safeValue = value;
+            bool negative = safeValue < 0;
+            if (negative)
+                safeValue = -safeValue;
+
+            int cursor = destination.Length;
+            do
+            {
+                destination[--cursor] = (char)('0' + (int)(safeValue % 10));
+                safeValue /= 10;
+            }
+            while (safeValue > 0 && cursor > 0);
+
+            if (negative && cursor > 0)
+                destination[--cursor] = '-';
+        }
+
         private int ResolveFallbackLastDiscoveredId()
         {
             for (int biomeId = MinBiomeId; biomeId <= MaxBiomeId; biomeId++)
@@ -267,7 +348,35 @@ namespace Hecton8.Gameplay
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         private static void LogBiomeDiscovered(string biomeName, int biomeId, UnityEngine.Object context)
         {
-            UnityEngine.Debug.Log($"[Discovery] New biome discovered: {biomeName} (ID {biomeId}).", context);
+            UnityEngine.Debug.Log(CreateBiomeDiscoveredLogMessage(biomeName, biomeId), context);
+        }
+
+        private static string CreateBiomeDiscoveredLogMessage(string biomeName, int biomeId)
+        {
+            const string prefix = "[Discovery] New biome discovered: ";
+            const string idPrefix = " (ID ";
+            const string suffix = ").";
+            biomeName ??= string.Empty;
+            int digitCount = CountSignedDecimalChars(biomeId);
+            return string.Create(
+                prefix.Length + biomeName.Length + idPrefix.Length + digitCount + suffix.Length,
+                (biomeName, biomeId, digitCount),
+                static (buffer, state) =>
+                {
+                    const string localPrefix = "[Discovery] New biome discovered: ";
+                    const string localIdPrefix = " (ID ";
+                    const string localSuffix = ").";
+                    int cursor = 0;
+                    localPrefix.AsSpan().CopyTo(buffer);
+                    cursor += localPrefix.Length;
+                    state.biomeName.AsSpan().CopyTo(buffer.Slice(cursor));
+                    cursor += state.biomeName.Length;
+                    localIdPrefix.AsSpan().CopyTo(buffer.Slice(cursor));
+                    cursor += localIdPrefix.Length;
+                    WriteSignedDecimal(state.biomeId, buffer.Slice(cursor, state.digitCount));
+                    cursor += state.digitCount;
+                    localSuffix.AsSpan().CopyTo(buffer.Slice(cursor));
+                });
         }
 
 

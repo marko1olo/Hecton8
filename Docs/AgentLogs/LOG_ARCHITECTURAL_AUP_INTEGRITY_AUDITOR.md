@@ -863,6 +863,36 @@ Verification:
 Integrator notes:
 - Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
 
+## 2026-05-15 - Loop 42 Real AUP Precision Boundary Repair - PDA Diagnostic Offset
+
+What was wrong:
+- PDA diagnostics converted the universe offset to `Vector3` before cache comparison and text formatting.
+- That made an AUP diagnostic surface hide precision loss at large coordinates.
+
+What was done:
+- Changed the cached diagnostic offset to `double3`.
+- Removed the intermediate `Vector3 universeOffset`.
+- Formatted the final text by rounding double values and writing `long` values directly into the existing char buffer.
+
+Cinematic Cheats used:
+- No simulation fake added. This is a diagnostic precision-boundary fix.
+- Low-tier devices keep the same zero-GC slow-tick terminal. High/Ultra QA gets more trustworthy long-session AUP diagnostics.
+
+Exact Microseconds saved:
+- Gameplay simulation frame time: 0 us claimed.
+- PDA diagnostics are visible-only slow-tick work; extra double formatting is bounded and stays zero-GC.
+
+Verification:
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 124.602 seconds with `AupPrecisionRisk=0`, `AupPrecisionIntegrity=1`, `NativeArrayRefs=7072`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, and `NativeOwnershipRisk=8196`.
+- Qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory AUP regex scan returned 233 broad residual matches, down from 237 after Loop 41.
+- Temporary Loop 42 capture is absent after cleanup.
+- No `dotnet build` or rebuild was run because the user explicitly forbade rebuilds.
+
+Integrator notes:
+- Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
+
 ## 2026-05-15 - Loop 41 Real H-Phi Source Repair - WorldSpatialHashGrid Far-Unload Scratch
 
 What was wrong:

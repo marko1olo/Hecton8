@@ -1716,7 +1716,7 @@ namespace Hecton8.UI
         private int _lastFps = int.MinValue;
         private int _lastBoidCount = int.MinValue;
         private int _lastHullStressPercent = int.MinValue;
-        private Vector3 _lastUniverseOffset = new Vector3(float.NaN, float.NaN, float.NaN);
+        private double3 _lastUniverseOffset = new double3(double.NaN, double.NaN, double.NaN);
 
         private void Awake()
         {
@@ -1842,17 +1842,13 @@ namespace Hecton8.UI
             double3 universeOffsetDouble = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             if (math.lengthsq(universeOffsetDouble) <= 0.000000001d)
                 universeOffsetDouble = HectonMapMagicVegetationBridge.GlobalTotalUniverseOffsetDouble;
-            Vector3 universeOffset = new Vector3(
-                (float)universeOffsetDouble.x,
-                (float)universeOffsetDouble.y,
-                (float)universeOffsetDouble.z);
 
             if (!force &&
                 fps == _lastFps &&
                 memoryMb == _lastMemoryMb &&
                 boidCount == _lastBoidCount &&
                 hullStressPercent == _lastHullStressPercent &&
-                universeOffset == _lastUniverseOffset)
+                math.all(universeOffsetDouble == _lastUniverseOffset))
             {
                 return;
             }
@@ -1861,7 +1857,7 @@ namespace Hecton8.UI
             _lastMemoryMb = memoryMb;
             _lastBoidCount = boidCount;
             _lastHullStressPercent = hullStressPercent;
-            _lastUniverseOffset = universeOffset;
+            _lastUniverseOffset = universeOffsetDouble;
 
             Span<char> buffer = _diagnosticTextBuffer.AsSpan();
             int cursor = 0;
@@ -1879,7 +1875,7 @@ namespace Hecton8.UI
                 TryAppendInt(buffer, ref cursor, hullStressPercent) &&
                 TryAppendLine(buffer, ref cursor, "%".AsSpan()) &&
                 TryAppend(buffer, ref cursor, "UNIV OFFSET  ".AsSpan()) &&
-                TryAppendSignedRoundedVector(buffer, ref cursor, universeOffset) &&
+                TryAppendSignedRoundedVector(buffer, ref cursor, universeOffsetDouble) &&
                 TryAppendNewLine(buffer, ref cursor) &&
                 TryAppendLine(buffer, ref cursor, "SLOW TICK    2 HZ".AsSpan()) &&
                 TryAppend(buffer, ref cursor, "STATUS       ONLINE".AsSpan());
@@ -1997,7 +1993,7 @@ namespace Hecton8.UI
             return null;
         }
 
-        private static bool TryAppendSignedRoundedVector(Span<char> buffer, ref int cursor, Vector3 value)
+        private static bool TryAppendSignedRoundedVector(Span<char> buffer, ref int cursor, double3 value)
         {
             return TryAppend(buffer, ref cursor, "[".AsSpan()) &&
                 TryAppendSignedRounded(buffer, ref cursor, value.x) &&
@@ -2008,13 +2004,23 @@ namespace Hecton8.UI
                 TryAppend(buffer, ref cursor, "]".AsSpan());
         }
 
-        private static bool TryAppendSignedRounded(Span<char> buffer, ref int cursor, float value)
+        private static bool TryAppendSignedRounded(Span<char> buffer, ref int cursor, double value)
         {
-            int rounded = Mathf.RoundToInt(value);
+            if (!math.isfinite(value))
+                return TryAppend(buffer, ref cursor, "NaN".AsSpan());
+
+            double roundedDouble = math.round(value);
+            long rounded;
+            if (roundedDouble >= (double)long.MaxValue)
+                rounded = long.MaxValue;
+            else if (roundedDouble <= (double)long.MinValue)
+                rounded = long.MinValue;
+            else
+                rounded = (long)roundedDouble;
             if (rounded >= 0 && !TryAppend(buffer, ref cursor, "+".AsSpan()))
                 return false;
 
-            return TryAppendInt(buffer, ref cursor, rounded);
+            return TryAppendLong(buffer, ref cursor, rounded);
         }
 
         private static bool TryAppendLine(Span<char> buffer, ref int cursor, ReadOnlySpan<char> value)
@@ -2032,6 +2038,18 @@ namespace Hecton8.UI
         }
 
         private static bool TryAppendInt(Span<char> buffer, ref int cursor, int value)
+        {
+            if ((uint)cursor > (uint)buffer.Length ||
+                !value.TryFormat(buffer.Slice(cursor), out int written))
+            {
+                return false;
+            }
+
+            cursor += written;
+            return true;
+        }
+
+        private static bool TryAppendLong(Span<char> buffer, ref int cursor, long value)
         {
             if ((uint)cursor > (uint)buffer.Length ||
                 !value.TryFormat(buffer.Slice(cursor), out int written))

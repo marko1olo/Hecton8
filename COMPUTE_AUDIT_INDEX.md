@@ -1,7 +1,7 @@
 # COMPUTE AUDIT INDEX
 
 Status: AUDIT COMPLETE
-Snapshot: 2026-05-15T15:03+04:00
+Snapshot: 2026-05-15T16:39+04:00
 Agent: COMPUTE_LOGISTICS_AUDITOR
 
 ## Read Order
@@ -16,22 +16,24 @@ Agent: COMPUTE_LOGISTICS_AUDITOR
 | 6 | `COMPUTE_THREAD_VALUE_AUDIT.md` | Top-100 work-trace/value/collision/C++ evidence audit |
 | 7 | `COMPUTE_FILE_BURN_ATTRIBUTION.md` | Weighted token burn by patch target |
 | 8 | `COMPUTE_TOKEN_BURN_RATE_LEDGER.md` | Current rolling token burn, cost/min, cost/hour, cost/day, model/cache split |
-| 9 | `COMPUTE_LIVE_BURN_SOURCES.md` | Current short-window active thread token deltas |
-| 10 | `COMPUTE_RATE_EFFICIENCY_AUDIT.md` | Previous detailed token rates, cache economics, and token/code ratios |
-| 11 | `COMPUTE_CODEX_DIALOGUE_AUDIT.md` | `.codex` dialogue/log topology and `logs_2.sqlite` boundaries |
-| 12 | `COMPUTE_COLLISION_RISK.md` | Current dirty-tree collision gate |
+| 9 | `COMPUTE_MODEL_BUCKET_RECONCILIATION.md` | Corrected model attribution using path-or-UUID matching |
+| 10 | `COMPUTE_LIVE_BURN_SOURCES.md` | Current short-window active thread token deltas |
+| 11 | `COMPUTE_RATE_EFFICIENCY_AUDIT.md` | Previous detailed token rates, cache economics, and token/code ratios |
+| 12 | `COMPUTE_CODEX_DIALOGUE_AUDIT.md` | `.codex` dialogue/log topology and `logs_2.sqlite` boundaries |
+| 13 | `COMPUTE_COLLISION_RISK.md` | Current dirty-tree collision gate |
 
 ## Current Hard Boundaries
 
 | Claim | Status |
 |---|---|
 | HECTON-8 first-party meaningful LOC | 788,619 script LOC |
-| Latest JSONL final tokens | 45,453,534,197 |
-| Latest live SQLite token mass observed | 45,528,781,582 |
-| Model-aware cache-aware local estimate | USD 28,362.44 |
-| Model-aware no-cache equivalent | USD 186,377.89 |
-| All-GPT-5.5 standard cache-aware scenario | USD 35,431.80 |
-| All-GPT-5.5 standard no-cache scenario | USD 231,128.29 |
+| Latest JSONL final tokens | 45,652,088,834 |
+| Latest live SQLite token mass observed | 45,644,663,325 |
+| Model-aware cache-aware corrected estimate | USD 30,613.26 |
+| Model-aware no-cache equivalent | USD 201,374.74 |
+| All-GPT-5.5 standard cache-aware scenario | USD 35,582.98 |
+| All-GPT-5.5 standard no-cache scenario | USD 232,137.91 |
+| Unknown final-usage model bucket | 0 tokens after UUID reconciliation |
 | Latest last-24h token flow | 3,236,618,901 tokens; USD 1,039.59 cache-aware |
 | Latest post-scan SQLite tail delta | +102,151,525 tokens; 27,749.37 tokens/sec |
 | Latest 90s active-source sample | 2,725,800 tokens; 30,099.39 tokens/sec; 11 active threads |
@@ -42,7 +44,7 @@ Agent: COMPUTE_LOGISTICS_AUDITOR
 | Current dirty hot intersections | `SargassumMicroFaunaBoids.cs`, `HabitatGraphManager.cs` |
 | C++ transfer evidence in top-100 patch targets | 0 hits; NOT VERIFIED / NO PATCH EVIDENCE |
 | Latest last-6h token flow | 24,429.23 tokens/sec |
-| Latest tokens per meaningful script LOC | 57,636.87 |
+| Latest tokens per meaningful script LOC | 57,888.65 |
 | `.codex` JSONL dialogue lines | 2,410,138 |
 | `.codex` user role markers | 14,473 |
 | `.codex` function-call markers | 518,303 |

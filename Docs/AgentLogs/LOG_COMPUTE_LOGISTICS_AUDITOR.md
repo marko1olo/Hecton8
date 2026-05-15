@@ -34,6 +34,45 @@ Verification:
 
 STATUS: AUDIT COMPLETE.
 
+## 2026-05-15 - Model Bucket Reconciliation
+
+What was wrong:
+- The prior model-aware ledger used exact `rollout_path` matching only.
+- Active/recent JSONL files can fail exact path matching even when their UUID exists in `state_5.sqlite.threads`.
+- This created a false `unknown` model bucket and underpriced the model-aware estimate.
+
+What was done:
+- Re-read `Docs/Tasks/Status_COMPUTE_LOGISTICS_AUDITOR.md` and `Docs/AgentLogs/Rationale_COMPUTE_LOGISTICS_AUDITOR.md`.
+- Matched JSONL sessions by exact path first, then by UUID to `threads.id`.
+- Re-ran the final-usage JSONL scan over 766 session files.
+- Created `COMPUTE_MODEL_BUCKET_RECONCILIATION.md`.
+- Updated root brief, audit index, token ledger note, full report, status, and rationale.
+
+Evidence captured:
+- Final-usage sessions matched by path: 731.
+- Final-usage sessions matched by UUID fallback: 17.
+- Unmatched final-usage tokens: 0.
+- Corrected JSONL final tokens: 45,652,088,834.
+- SQLite `threads.tokens_used`: 45,644,663,325.
+- JSONL/SQLite drift: 0.01627%.
+- Corrected model-aware cache-aware estimate: USD 30,613.26.
+- Corrected model-aware no-cache equivalent: USD 201,374.74.
+- Corrected `gpt-5.5` final tokens: 33,766,761,807, 73.965% of final usage.
+- `unknown` final-usage bucket: 0 tokens.
+
+Cinematic Cheats used:
+- None. Audit-only evidence accounting.
+
+Exact microseconds saved:
+- Runtime: 0 us.
+- Process: not claimed as measured saving. The correction prevents underpricing active sessions by path-match failure.
+
+Verification:
+- Markdown-only audit continuation.
+- No runtime compile run because no C# or C++ runtime source changed.
+
+STATUS: AUDIT COMPLETE.
+
 ## 2026-05-15 - Live Active-Source Burn Sample
 
 What was wrong:

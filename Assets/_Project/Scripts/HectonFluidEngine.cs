@@ -969,9 +969,9 @@ namespace Hecton8.Physics
         {
             WeatherRuntimeSnapshot weatherSnapshot = ResolveWeatherSnapshot();
             double3 aupOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
-            float2 absoluteXZ = new float2(
-                (float)(position.x + aupOffset.x),
-                (float)(position.z + aupOffset.z));
+            double2 absoluteXZ = new double2(
+                (double)position.x + aupOffset.x,
+                (double)position.z + aupOffset.z);
             float waveOffset = SampleWeatherGerstnerHeight(
                 absoluteXZ,
                 in weatherSnapshot,
@@ -2363,7 +2363,7 @@ namespace Hecton8.Physics
         }
 
         private static float SampleWeatherGerstnerHeight(
-            float2 absoluteXZ,
+            double2 absoluteXZ,
             in WeatherRuntimeSnapshot weatherSnapshot,
             int activeWaveCount)
         {
@@ -2559,7 +2559,7 @@ namespace Hecton8.Physics
                 : default;
             int vectorNoiseLength = _prebakedVectorNoiseField.IsCreated ? _prebakedVectorNoiseField.Length : 0;
             double3 vectorNoiseAupOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
-            float2 waveAupOffsetXZ = new float2((float)vectorNoiseAupOffset.x, (float)vectorNoiseAupOffset.z);
+            double2 waveAupOffsetXZ = new double2(vectorNoiseAupOffset.x, vectorNoiseAupOffset.z);
             byte highScalabilityTier = ResolveCachedHighScalabilityTierByte();
 
             JobHandle waveHandle = default;
@@ -6896,7 +6896,7 @@ namespace Hecton8.Physics
         public float TimeSeconds;
         public float WaterLevelY;
         public float MaxWaveEnvelope;
-        public float2 AupOffsetXZ;
+        public double2 AupOffsetXZ;
         public float3 TerrainPosition;
         public float3 TerrainSize;
         public int TerrainHeightmapResolution;
@@ -6936,7 +6936,7 @@ namespace Hecton8.Physics
                 return;
             }
 
-            float2 absoluteWaveXZ = centerXZ + AupOffsetXZ;
+            double2 absoluteWaveXZ = new double2(centerXZ.x, centerXZ.y) + AupOffsetXZ;
             float waveOffset = ResolveFiniteFloatOrZero(SampleWaveHeight(absoluteWaveXZ));
             float resolvedSurfaceY = WaterLevelY + waveOffset;
             if (HasTerrainHeightPayload != 0 &&
@@ -6960,7 +6960,7 @@ namespace Hecton8.Physics
             }
         }
 
-        private float SampleWaveHeight(float2 worldXZ)
+        private float SampleWaveHeight(double2 worldXZ)
         {
             return HectonGerstnerWater.SampleHeight(worldXZ, Waves, WaveCount, TimeSeconds);
         }
@@ -7505,7 +7505,32 @@ namespace Hecton8.Physics
         }
 
         public static float SampleHeight(
+            double2 worldXZ,
+            GerstnerWaveComponent wave,
+            float timeSeconds)
+        {
+            return ComputeHeight(worldXZ, wave, timeSeconds);
+        }
+
+        public static float SampleHeight(
             float2 worldXZ,
+            NativeArray<GerstnerWaveComponent> waves,
+            int waveCount,
+            float timeSeconds)
+        {
+            if (!waves.IsCreated || waveCount <= 0)
+                return 0f;
+
+            int count = math.min(math.max(0, waveCount), waves.Length);
+            float height = 0f;
+            for (int i = 0; i < count; i++)
+                height += ComputeHeight(worldXZ, waves[i], timeSeconds);
+
+            return ResolveFiniteFloatOrZero(height);
+        }
+
+        public static float SampleHeight(
+            double2 worldXZ,
             NativeArray<GerstnerWaveComponent> waves,
             int waveCount,
             float timeSeconds)
@@ -7539,6 +7564,24 @@ namespace Hecton8.Physics
             return ResolveNormalOrUp(normal);
         }
 
+        public static float3 SampleFiniteDifferenceNormal(
+            double2 worldXZ,
+            NativeArray<GerstnerWaveComponent> waves,
+            int waveCount,
+            float timeSeconds,
+            float sampleDistanceMeters)
+        {
+            double sampleDistance = math.max(0.05d, (double)sampleDistanceMeters);
+            double2 offsetX = new double2(sampleDistance, 0d);
+            double2 offsetZ = new double2(0d, sampleDistance);
+            float left = SampleHeight(worldXZ - offsetX, waves, waveCount, timeSeconds);
+            float right = SampleHeight(worldXZ + offsetX, waves, waveCount, timeSeconds);
+            float down = SampleHeight(worldXZ - offsetZ, waves, waveCount, timeSeconds);
+            float up = SampleHeight(worldXZ + offsetZ, waves, waveCount, timeSeconds);
+            float3 normal = new float3(left - right, (float)(sampleDistance * 2d), down - up);
+            return ResolveNormalOrUp(normal);
+        }
+
         private static float ComputeHeight(float2 worldXZ, GerstnerWaveComponent wave, float timeSeconds)
         {
             if (wave.Amplitude <= 0f || wave.Wavelength <= 0.01f)
@@ -7551,6 +7594,23 @@ namespace Hecton8.Physics
             float phase = waveNumber * math.dot(direction, worldXZ) - phaseVelocity * waveNumber * timeSeconds + wave.PhaseOffset;
             math.sincos(phase, out _, out float cosPhase);
             float height = wave.Amplitude * cosPhase;
+            return ResolveFiniteFloatOrZero(height);
+        }
+
+        private static float ComputeHeight(double2 worldXZ, GerstnerWaveComponent wave, float timeSeconds)
+        {
+            if (wave.Amplitude <= 0f || wave.Wavelength <= 0.01f)
+                return 0f;
+
+            float2 directionFloat = ResolveDirectionOrDefault(wave.DirectionXZ, new float2(1f, 0f));
+            double2 direction = new double2(directionFloat.x, directionFloat.y);
+            double waveNumber = (double)TwoPi * math.rcp(math.max(0.01d, (double)wave.Wavelength));
+            double phaseVelocity = (CinematicPhaseSpeedBase + (double)wave.Wavelength * CinematicPhaseSpeedPerMeter) *
+                                   math.max(0.01d, (double)wave.SpeedMultiplier);
+            double phase = waveNumber * math.dot(direction, worldXZ) -
+                           phaseVelocity * waveNumber * (double)timeSeconds +
+                           (double)wave.PhaseOffset;
+            float height = (float)((double)wave.Amplitude * math.cos(phase));
             return ResolveFiniteFloatOrZero(height);
         }
 
