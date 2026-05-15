@@ -25,6 +25,9 @@ EXPECTED_COMMANDS = (
     "python_cache_cleanup",
 )
 
+EXPECTED_UNIT_HARNESS_TESTS = 38
+EXPECTED_ARTIFACT_HASHES = 30
+
 ALLOWED_UNITY_PROBE_STATUSES = {
     "UNITY_NOT_FOUND",
     "UNITY_REQUIRED_VERSION_FOUND",
@@ -73,6 +76,10 @@ def validate_aggregate_report(report: dict[str, Any], environment_probe: dict[st
     if not isinstance(command_records, list):
         failures.append("commands must be a list")
         command_records = []
+    elif report.get("commandCount") != len(command_records):
+        failures.append("commandCount must match commands length")
+    elif report.get("commandCount") != len(EXPECTED_COMMANDS):
+        failures.append(f"commandCount must be {len(EXPECTED_COMMANDS)}")
 
     command_names = [record.get("name") for record in command_records if isinstance(record, dict)]
     for expected_command in EXPECTED_COMMANDS:
@@ -92,12 +99,25 @@ def validate_aggregate_report(report: dict[str, Any], environment_probe: dict[st
         match = re.search(r"Ran\s+(\d+)\s+tests", combined_output)
         if not match:
             failures.append("unit_harness output must include test count")
-        elif int(match.group(1)) < 27:
-            failures.append("unit_harness must run at least 27 tests")
+        else:
+            test_count = int(match.group(1))
+            if test_count != EXPECTED_UNIT_HARNESS_TESTS:
+                failures.append(f"unit_harness must run exactly {EXPECTED_UNIT_HARNESS_TESTS} tests")
+            if report.get("unitHarnessTestCount") != test_count:
+                failures.append("unitHarnessTestCount must match unit_harness output")
+            if report.get("unitHarnessTestCount") != EXPECTED_UNIT_HARNESS_TESTS:
+                failures.append(f"unitHarnessTestCount must be {EXPECTED_UNIT_HARNESS_TESTS}")
 
     artifact_hashes = report.get("artifactSha256")
-    if not isinstance(artifact_hashes, dict) or len(artifact_hashes) < 20:
+    if not isinstance(artifact_hashes, dict):
         failures.append("artifactSha256 must contain the owned artifact hash set")
+    else:
+        if len(artifact_hashes) != EXPECTED_ARTIFACT_HASHES:
+            failures.append(f"artifactSha256 must contain exactly {EXPECTED_ARTIFACT_HASHES} owned artifact hashes")
+        if report.get("artifactHashCount") != len(artifact_hashes):
+            failures.append("artifactHashCount must match artifactSha256 length")
+        if report.get("artifactHashCount") != EXPECTED_ARTIFACT_HASHES:
+            failures.append(f"artifactHashCount must be {EXPECTED_ARTIFACT_HASHES}")
 
     if environment_probe.get("schema") != "hecton8.hardware_adaptive_ui_scaler.unity_environment_probe.v1":
         failures.append("environment probe schema mismatch")

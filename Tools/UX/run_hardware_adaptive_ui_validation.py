@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -154,6 +155,8 @@ def _sha256(path: Path) -> str:
 def _run_command(root: Path, name: str, command: tuple[str, ...]) -> dict[str, object]:
     env = os.environ.copy()
     env["PYTHONDONTWRITEBYTECODE"] = "1"
+    if name == "unit_harness":
+        env["H8_UX_AGGREGATE_RUNNING"] = "1"
 
     start = time.perf_counter()
     completed = subprocess.run(
@@ -177,6 +180,16 @@ def _run_command(root: Path, name: str, command: tuple[str, ...]) -> dict[str, o
     }
 
 
+def _extract_unit_harness_test_count(results: list[dict[str, object]]) -> int:
+    for result in results:
+        if result.get("name") != "unit_harness":
+            continue
+        output = str(result.get("stdoutTail", "")) + "\n" + str(result.get("stderrTail", ""))
+        match = re.search(r"Ran\s+(\d+)\s+tests", output)
+        return int(match.group(1)) if match else -1
+    return -1
+
+
 def main() -> int:
     root = ROOT
     results = [_run_command(root, name, command) for name, command in COMMANDS]
@@ -197,9 +210,12 @@ def main() -> int:
         "promptId": "HARDWARE_ADAPTIVE_UI_BAKER",
         "status": "PASS" if not failures and not missing_artifacts else "FAIL",
         "unityRuntimeStatus": "PENDING_UNITY_VERIFICATION",
+        "commandCount": len(results),
         "commands": results,
         "missingArtifacts": missing_artifacts,
+        "artifactHashCount": len(hashes),
         "artifactSha256": hashes,
+        "unitHarnessTestCount": _extract_unit_harness_test_count(results),
         "note": "Static/Python validation only. Unity import, GCMonitor, Frame Debugger, and in-engine captures remain separate gates.",
     }
 
