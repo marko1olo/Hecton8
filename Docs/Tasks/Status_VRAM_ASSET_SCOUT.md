@@ -26,5 +26,5 @@ Evidence class: STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST
 - PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --validate-reports: PASS; reports valid: textures=1652 meshes=302 render_textures=1 texture_redlines=946 mesh_redlines=293 rt_redlines=1 rt_hotspots=61 scan_roots=Assets,Packages,Data
 - PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py: PASS, 18 tests, elapsed 9.490 seconds
 - PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --ci: EXPECTED FAIL, ci_exit_code=2 because static redlines/overflow remain present
-- Docs/AgentLogs/LOG_VRAM_ASSET_SCOUT.md chronology: PASS, LOG_ORDER_OK headers=3 through 2026-05-15T22:41:00+03:00
+- Docs/AgentLogs/LOG_VRAM_ASSET_SCOUT.md chronology: PASS, LOG_ORDER_OK headers=4 through 2026-05-15T22:50:00+03:00
 - C# dotnet build: NOT RUN. No .csproj files are present in current root scan; this continuation changed Python tooling and docs only.
