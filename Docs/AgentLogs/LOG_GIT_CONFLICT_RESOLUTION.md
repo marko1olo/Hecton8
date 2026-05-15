@@ -701,3 +701,15 @@ Cinematic Cheats used -> None. Git reference hygiene only.
 Exact Microseconds saved -> 0 runtime us. Process gain is removing stale Desktop prompts without losing the original stash commits.
 
 Verification -> Backup tags pushed: `stash-backup/codex-git-conflict-resolution-20260514` -> `27b471ac2c61e84e8810654d3c38cebdeeb1a1ab`; `stash-backup/github-desktop-main-20260514` -> `f36fe5df62a4b60a4d0dd080f316b1ec1dbf57bb`. `git stash list` is empty. Runtime build, Unity Editor import, Play Mode, profiler, GCMonitor, player build, and visuals are not claimed.
+
+## 2026-05-16 - Loop 48 Docs Source Hygiene
+
+What was wrong -> A new local documentation tail appeared after the clean Desktop state. It included useful Subnautica research updates, but one QModManager archive-date sentence was not supported by GitHub API evidence, and a raw prompt transcript sat under active `Docs/Tasks` with a profane filename.
+
+What was done -> Fetched remote and confirmed `origin/main...HEAD = 0 0`, checked GitHub API for the volatile external source claims, corrected QModManager wording, and moved the raw prompt transcript to `Docs/Archive/Batch006/Tasks_Combined/Raw_SUBNAUTICA_RESEARCHER_UserPrompt_20260515_mojibake.txt`.
+
+Cinematic Cheats used -> None. Documentation and Git hygiene only.
+
+Exact Microseconds saved -> 0 runtime us.
+
+Verification -> GitHub API confirms TerrainPatcher latest `v1.2.5` published `2026-05-01T22:15:08Z`, Nitrox latest `1.8.1.0` published `2026-01-07T18:50:51Z`, QModManager `archived=True` with last push `2023-05-09T23:22:51Z`, Nautilus release endpoint returns `sml/2.15.0.1`, and BepInEx.Subnautica is not archived with last push `2026-05-14T12:12:36Z`. Runtime build, Unity Editor import, Play Mode, profiler, GCMonitor, player build, and visuals are not claimed.

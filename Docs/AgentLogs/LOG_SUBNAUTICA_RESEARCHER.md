@@ -136,3 +136,67 @@ Cinematic Cheats used:
 Exact Microseconds saved:
 - This pass changed no runtime code. Exact measured runtime savings: 0us.
 - Expected future gain category: fewer main-thread load stalls and cleaner memory residency. Exact microseconds require Unity player profiling after groups/bundles/monolith output exist.
+---
+
+## 2026-05-15 - Third Research Pass: Gates, Cache Contracts, Audio, PDA
+
+Agent: SUBNAUTICA_RESEARCHER
+Scope: research-only. Runtime code/assets were not changed.
+
+What was wrong:
+- Addressables readiness was over-signaled by package/folder presence. `Assets/AddressableAssetsData` is empty, `Assets/StreamingAssets` is absent, and no `BuildPlayerContent` call was found in first-party editor code.
+- Critical world/content validators exist, but several are menu diagnostics rather than build-blocking gates: `WorldStreamingWiringValidator`, `MapMagicWorldValidator`, `HectonProjectAuditor`, `HeadlessSimulationValidator`.
+- `PlatformCompatibilityAudit` marks Addressables project data as PASS if the directory exists, which is a false readiness signal for production payloads.
+- `HectonTextureImportDictator.ResolveTieredTextureGroup()` returns `settings.DefaultGroup` before looking for/creating `Hecton_TextureStreaming_Auto`, so tier labels can land in the default group instead of a dedicated texture streaming group.
+- H8 save/pager architecture is strong, but explicit base-world cache payload families are not named: terrain base cells, object batches, visibility/proxy cells, physics proxy cells, audio biome banks.
+- Audio import policy still has large risks: 45 WAV, 89 OGG, 3 MP3 under `Assets/_Project/Audio`; 52 audio metas with `loadType: 0`, 45 with `preloadAudioData: 1`, 98 with `forceToMono: 0`. `Atmos 1.wav` is a 25.27 MB ambience source with `loadType: 0`, `quality: 1`, `preloadAudioData: 1`, `loadInBackground: 0`.
+- PDA/scanner/lore runtime systems exist, but first-hour route/data density is not build-blocked. Lore data currently includes small authored sets: AudioLogs, Quests, DepthZones, SuitUpgrades, Registries.
+- Modding has content-only foundations, but is not BepInEx/Nautilus-equivalent: external managed DLL loading is explicitly blocked without factory registration, `ModBuilderWindow` writes `EntryAssembly` but omits `RequiredAPIVersion`, no callers register `ModCommandDispatcher.RegisterKernel`, and `Mods` root does not exist.
+
+What was done:
+- Re-read AGENTS.md, project domain file, and task-relevant mandates for Addressables, world streaming, save persistence, bootstrap gates, audio, UI/lore streaming.
+- Re-counted local Subnautica topology:
+  - StreamingAssets directories: `aa`, `AssetBundles`, `SNUnmanagedData`, `SteamVR`.
+  - Addressables bundle prefixes: `duplicateassetssorted` 1718 bundles / 2016.66 MB; `precursor` 386 / 628.42 MB; `main-discrete` 3 / 216.87 MB; `main.unity` 1 / 163.26 MB; `lost` 79 / 150.53 MB.
+  - SNUnmanagedData Build18: `CompiledOctreesCache` 5416 files / 1147.35 MB; `CellsCache` 1606 / 159.8 MB; `BatchObjectsCache` 2975 / 3.07 MB.
+  - Saves: `slot0000` has 31 files / 22,039,715 bytes; options has 2 files / 13,022 bytes.
+  - Audio banks: largest are `music.bank` 183.28 MB, `Player.bank` 170.68 MB, `Creatures.bank` 56.65 MB, `Env.bank` 56.21 MB, `Cyclops.bank` 40.52 MB.
+- Checked public sources as clean-room pattern evidence only:
+  - Unknown Worlds terrain format: 160 m batches, 125 octrees per batch, 32 m octrees, 1 m voxel resolution, binary versioned optoctree data.
+  - Nautilus current docs/API: handlers for prefabs, crafting, known tech, loot distribution, PDA/story goals, save data, sprites/audio/options.
+  - TerrainPatcher: AGPL-3.0, patch file/load-order model, current release v1.2.5 on May 1 2026.
+  - Nitrox: GPL-3.0, multiplayer sync foundation with latest release 1.8.1.0 on Jan 7 2026.
+  - QModManager: GitHub API reports archived=True; archive timestamp is not exposed by the checked API response. Last repository push is 2023-05-09. Treat QMods layout as historical/deprecated only.
+- Compared those patterns against Hecton8 runtime/editor code and documented P0/P1 foundation priorities.
+
+Cinematic Cheats used / recommended:
+- Prefer base-world baked caches and proxy payloads over runtime simulation truth: terrain/object/visibility/physics/audio cells.
+- Treat Subnautica optoctree/cell/cache topology as evidence for chunk contracts, not as source material.
+- Audio should buy immersion through categorized residency and tiered layers, not through always-preloaded giant WAVs.
+- PDA/route density should be validated as authored data graphs, not generated through expensive runtime discovery.
+
+Exact Microseconds saved:
+- Current pass: 0us, research-only, no runtime code changed.
+- Projected savings remain PENDING VERIFICATION. Expected wins are hitch/memory-risk reduction after build gates and payload contracts are implemented; exact values require Unity player build, Profiler, memory and Addressables telemetry.
+
+Foundation priorities:
+1. P0: Add a build-blocking Addressables/content gate: non-empty settings, required groups/labels, catalog build result, bundle-size caps, `StreamingAssets`/remote catalog policy, and no false PASS from directory existence.
+2. P0: Convert world streaming/map stack validators into a prebuild/CI acceptance path or create a strict wrapper that fails the build for missing critical scene/profile/content wiring.
+3. P0: Add AudioImportPolicy gate for large clips, preload flags, load type, mono rules for 3D SFX, and per-category residency.
+4. P0: Define base-world cache payload families beside current save deltas: TerrainCellBase, ObjectBatchBase, VisibilityProxy, PhysicsProxy, AudioBiomeBank, Route/DiscoveryGraph.
+5. P1: Fix mod SDK manifest/runtime mismatch: builder writes `RequiredAPIVersion`, content-only/mod-DLL behavior is explicit, command kernels are either registered or blocked at package validation.
+6. P1: Add first-hour route coverage validation: scan fragments, PDA entries, known-tech unlocks, quest beats, depth/biome discovery, resource/crafting path.
+7. P1: Fix texture Addressables group selection so tiered textures do not silently enter DefaultGroup.
+
+Regression model:
+- CPU: no change now. Future validators add editor/build time only.
+- GC: no runtime change now. Future import/content gates should reduce runtime churn risk but must be profiled.
+- Memory: no change now. Audio/import and Addressables grouping should reduce accidental residency, pending measurement.
+- Cadence: no runtime cadence change now. Future streaming payload gates must preserve async cadence and release queues.
+- Correctness: no code correctness risk introduced by this research pass. Risk remains that current content pipeline can look valid while shipping no real Addressables catalog.
+External source verification, 2026-05-16:
+- TerrainPatcher GitHub API latest release: v1.2.5, published 2026-05-01T22:15:08Z.
+- Nitrox GitHub API latest release: 1.8.1.0, published 2026-01-07T18:50:51Z.
+- QModManager GitHub API repository state: archived=True, pushed_at=2023-05-09T23:22:51Z.
+- Nautilus GitHub API latest release endpoint currently returns sml/2.15.0.1 from 2023; current handler taxonomy must be treated as source/docs evidence, not release-fresh proof.
+- BepInEx.Subnautica GitHub API repository state: archived=False, pushed_at=2026-05-14T12:12:36Z.

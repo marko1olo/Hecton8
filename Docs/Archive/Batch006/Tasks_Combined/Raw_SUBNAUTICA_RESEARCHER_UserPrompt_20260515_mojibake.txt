@@ -1,0 +1,197 @@
+Изучить сабнавтику и проект
+No tasks in progress
+
+
+Изучи сабнавтику на компе. Изучи мой проект. Что из сабнавтики (файлов) мы можем тактически выкопать и позаимствовать? изучай, думай. может какие-то опенсорс моды или исходники сабнавтики, полезные вещи. прочиатй что унас за проетк. изучай
+Friday 10:41 PM
+
+
+Worked for 34m 56s
+ну почему нельзя. ты их изучи все дотошно и думай и смотр ичег оу нас нет допустим и тп
+ЕСЛИ ЧТО, СЕЙЧАС У НАС УПОР НА КОДОВУЮ БАЗУ, ФУНДАМЕНТ СТРОИМ
+Понял. Я пересобрал вывод именно под фундамент кодовой базы, не под “стащить контент”.
+
+Короткий вердикт: из Subnautica нам сейчас полезны не модели/текстуры/звуки, а топология production-пайплайна:
+
+Addressables как реальный payload graph, а не пакет в manifest. У них 5,467 .bundle на ~4.675 GB, catalog.json ~12 MB, 21,090 internal IDs. У нас Assets/AddressableAssetsData есть, но 0 файлов. Это P0.
+World cache split: CompiledOctreesCache, CellsCache, BatchObjectsCache. У нас есть WorldChunkResidencyManager, HectonVoxelEngine, H8BinaryWorldPager, но нет доказанного базового world-payload контракта уровня TerrainCells/ObjectBatches/CompiledVisibility/PhysicsProxy.
+Save split: у Subnautica слот не монолитный: gameinfo.json, global-objects.bin, scene-objects.bin, zipped cell cache. У нас pager сильный: 256 KB sectors, 8,192 sectors, payload types VoxelDeltaRle, InventoryState, ChunkDehydratedMetadata, WfcOutpostState. Нужно довести внешний slot layout до такого же явного контракта.
+Modding/API taxonomy: Nautilus/TerrainPatcher полезны как чистая архитектурная карта: prefab/recipe/PDA/save/world entity handlers, patch files, load order, ignore markers. Код не брать: GPL/AGPL.
+Build gates: у нас уже есть WorldStreamingWiringValidator, MapMagicWorldValidator, WorldRuntimeBootstrapAuthoring. Их надо поднимать из “editor helpers” в обязательные foundation gates.
+Я записал полный отчет сюда: LOG_SUBNAUTICA_RESEARCHER.md. Статус и rationale тоже обновлены.
+
+Что делать первым: P0 Addressables proof. Не “папка существует”, а группы, labels, catalog, build output, runtime smoke load. Потом world payload schema: macro/chunk/cell naming, payload types, baked cache, validation gate.
+
+Источники: Unknown Worlds terrain format https://unknownworlds.com/news/terrain-data-format, Nautilus https://github.com/SubnauticaModding/Nautilus, BepInEx.Subnautica https://github.com/toebeann/BepInEx.Subnautica, TerrainPatcher https://github.com/Esper89/Subnautica-TerrainPatcher, Nitrox https://github.com/SubnauticaNitrox/Nitrox, QModManager https://github.com/SubnauticaModding/QModManager.
+
+
+LOG_SUBNAUTICA_RESEARCHER.md
+Document · MD
+Open
+
+Rationale_SUBNAUTICA_RESEARCHER.md
+Document · MD
+Open
+
+Status_SUBNAUTICA_RESEARCHER.md
+Document · MD
+Open
+Show 9 more
+
+Edited 15 files
++112
+-38
+Undo
+Review
+Hecton8/Docs/AgentLogs/LOG_SUBNAUTICA_RESEARCHER.md
+Hecton8/Docs/AgentLogs/Rationale_SUBNAUTICA_RESEARCHER.md
+Hecton8/Docs/Tasks/Status_SUBNAUTICA_RESEARCHER.md
+
+Show 12 more files
+
+
+
+
+Friday 11:16 PM
+у нас что-то вместо адрессаблс есть7 изучи нашу структуру глубоко блядь. . модинг также изучи и все такое нахуй да работай
+Friday 11:25 PM
+
+
+Worked for 14m 47s
+Изучил глубже. Коротко: полноценной замены Addressables у нас нет.
+
+У нас есть куски системы, но не единый content pipeline:
+
+com.unity.addressables стоит в Packages/manifest.json, define UNITY_ADDRESSABLES_EXIST активен.
+Assets/AddressableAssetsData пустой.
+Assets/StreamingAssets отсутствует.
+AsyncLoadHelper.cs (line 59) прямо отключает runtime Resources/Addressables loading.
+AssetLoadDispatcher.cs (line 16) это traffic controller по приоритетам, не загрузчик.
+AssetLifecycleGovernor.cs (line 166) это residency/refcount/release policy.
+WorldChunkResidencyManager.cs (line 508) выглядит как правильный будущий владелец world chunk streaming, но он зависит от реальных addressable addresses/additive scenes.
+H8StaticDataArena.cs (line 57) ждёт StreamingAssets/Hecton8/DataMonolith/static_data.h8bin, но output сейчас не существует.
+По моддингу: база есть, но не такая, как BepInEx/Nautilus.
+
+Реально рабочий слой сейчас: content-only mods через Mods/[ModId], AssetBundle, raw PNG, localization, save overlays, hash-based resources. Это видно в ModLoader.cs (line 170) и ModAssetManager.cs (line 9).
+
+Проблемы:
+
+ModBuilderWindow.cs (line 11) копирует DLL и пишет EntryAssembly, но ModLoader.cs (line 623) не reflection-load’ит внешние assembly, требует explicit factory registration.
+Builder не пишет RequiredAPIVersion, а loader отключает manifest при RequiredAPIVersion <= 0.
+В PROJECT_CONTENT_LEDGER.md нет MOD_COMPATIBLE, значит first-party prefab path/GUID для модов сейчас фактически заблокированы.
+ModCommandDispatcher.cs (line 540) имеет RegisterKernel, но caller’ов по проекту нет. Часть opcode будет падать в MissingKernel.
+Тактический вывод:
+
+Выбрать один главный content pipeline: реальные Unity Addressables или свой AssetBundle manifest. Сейчас у нас ложное промежуточное состояние.
+Сделать Addressables audit жёстким: не “папка существует”, а settings/groups/labels/entries/build output/catalog/runtime smoke load.
+Оставить AssetLoadDispatcher + AssetLifecycleGovernor + WorldChunkResidencyManager как фундамент, но признать: это не catalog/build pipeline.
+Починить mod SDK: RequiredAPIVersion = 2, честно определить managed mod story.
+Зарегистрировать command kernels или убрать публичные opcode, которые сейчас не исполняются.
+Либо собрать Data Monolith, либо перестать считать его активной частью фундамента.
+Отчёт записал в LOG_SUBNAUTICA_RESEARCHER.md. Также обновил Status_SUBNAUTICA_RESEARCHER.md и Rationale_SUBNAUTICA_RESEARCHER.md. Runtime-код не менял, компиляцию не запускал.
+
+
+Status_SUBNAUTICA_RESEARCHER.md
+Document · MD
+Open
+
+Rationale_SUBNAUTICA_RESEARCHER.md
+Document · MD
+Open
+
+LOG_SUBNAUTICA_RESEARCHER.md
+Document · MD
+Open
+
+Edited 3 files
++79
+-10
+Undo
+Review
+Hecton8/Docs/Tasks/Status_SUBNAUTICA_RESEARCHER.md
+Hecton8/Docs/AgentLogs/Rationale_SUBNAUTICA_RESEARCHER.md
+Hecton8/Docs/AgentLogs/LOG_SUBNAUTICA_RESEARCHER.md
+
+
+
+
+Friday 11:40 PM
+что еще найдешь сравнишь узнаешь что будет полезное?
+Friday 11:55 PM
+
+
+
+Worked for 11m 35s
+Нашёл ещё полезное. Главный вывод: у нас проблема не в отсутствии систем, а в отсутствии жестких build/content acceptance gates.
+
+Что важно:
+
+Addressables у нас не заменены. Есть пакет и кодовые хуки, но Assets/AddressableAssetsData пустой, Assets/StreamingAssets отсутствует, BuildPlayerContent в first-party editor code не найден. PlatformCompatibilityAudit сейчас может дать ложный PASS просто за существование папки: PlatformCompatibilityAudit.cs (line 178).
+
+Валидаторы есть, но часть не блокирует билд. WorldStreamingWiringValidator, MapMagicWorldValidator, HeadlessSimulationValidator, HectonProjectAuditor полезны, но это в основном menu/batch diagnostics, не гарант “плохой билд не выйдет”. Это надо поднимать в prebuild/CI gate.
+
+Наш save/pager фундамент сильный. H8BinaryWorldPager уже имеет 256 KB sectors, queues, telemetry ring, dump: H8BinaryWorldPager.cs (line 21). Но Subnautica показывает недостающий слой: отдельные base-world cache families. У нас payload-типы пока VoxelDeltaRle, InventoryState, ChunkDehydratedMetadata, WfcOutpostState: PersistencePagingContracts.cs (line 16). Нужны TerrainCellBase, ObjectBatchBase, VisibilityProxy, PhysicsProxy, AudioBiomeBank.
+
+Аудио импорт сейчас опаснее, чем рантайм-аудио код. В Assets/_Project/Audio: 45 WAV, 89 OGG, 3 MP3; 52 audio meta с loadType: 0, 45 с preloadAudioData: 1. Пример: Atmos 1.wav 25.27 MB, preload/decompress style: Atmos 1.wav.meta (line 7). Subnautica держит аудио категориями/banks: music/player/creatures/env/vehicles/interface. Нам нужен AudioImportPolicyGate.
+
+PDA/scanner/lore код есть, но плотность маршрута не доказана. PDADataLogTab зависит от authored allLogs: PDADataLogTab.cs (line 70), а empty-state прямо говорит про пустой архив: PDADataLogTab.cs (line 202). Нужно валидировать first-hour graph: scan fragments, PDA entries, known-tech unlocks, quest beats, resource/crafting route.
+
+Моддинг не равен Nautilus/BepInEx. Content-only lane реальный, но external managed DLL story противоречивый: builder пишет EntryAssembly, runtime требует explicit factory и RequiredAPIVersion; RegisterKernel нигде не вызывается: ModBuilderWindow.cs (line 25), ModLoader.cs (line 284), ModCommandDispatcher.cs (line 540).
+
+P0 тактически:
+
+Build-blocking Addressables/content gate.
+Build-blocking world/map streaming wiring gate.
+Audio import policy gate.
+Base-world cache payload contracts.
+Mod SDK manifest/runtime alignment.
+First-hour progression coverage validator.
+Я обновил:
+
+Status_SUBNAUTICA_RESEARCHER.md
+Rationale_SUBNAUTICA_RESEARCHER.md
+LOG_SUBNAUTICA_RESEARCHER.md
+Внешние источники: Unknown Worlds terrain format, Nautilus, Nautilus handlers, TerrainPatcher, Nitrox, BepInEx.Subnautica, QModManager archive.
+
+Компиляцию/Unity Play Mode не запускал. Это static/file taxonomy audit, runtime code не трогал.
+
+
+Status_SUBNAUTICA_RESEARCHER.md
+Document · MD
+Open
+
+Rationale_SUBNAUTICA_RESEARCHER.md
+Document · MD
+Open
+
+LOG_SUBNAUTICA_RESEARCHER.md
+Document · MD
+Open
+
+Edited 2 files
++31
+-1
+Undo
+Review
+Hecton8/Docs/Tasks/Status_SUBNAUTICA_RESEARCHER.md
+Hecton8/Docs/AgentLogs/Rationale_SUBNAUTICA_RESEARCHER.md
+
+
+
+
+12:06 AM
+
+
+
+
+
+Full access
+
+5.5
+Extra High
+
+IDE context
+
+
+Work locally
+ы

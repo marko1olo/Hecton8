@@ -275,3 +275,9 @@ Solution: Preserve both stash commits as pushed annotated backup tags, verify th
 Rejected Alternatives: Leaving the stale Desktop-visible stash queue, using `git stash clear` without recovery refs, applying stale stash patches, force-pushing, or resetting current `main`.
 Scalability potential: Git-only hygiene. Runtime tier behavior is unchanged. Process scalability improves because stale local recovery state no longer appears as active work.
 Hardware Impact: 0 us runtime impact. Dev-path gain is a clean GitHub Desktop state while preserving exact old stash commits through pushed tags.
+
+Problem: A new docs-only tail appeared after the Desktop cleanup: Subnautica research updates plus an untracked raw prompt transcript with a profane filename under active `Docs/Tasks`.
+Solution: Fetch first, prove remote sync, verify volatile external source claims with GitHub API, fix the unsupported QModManager exact archive-date wording, and move the raw prompt transcript into Batch006 archive under a sanitized filename.
+Rejected Alternatives: Deleting the raw prompt artifact, committing the active profane filename, or pushing source-date claims without current source checks.
+Scalability potential: Git/documentation hygiene only. Runtime tier behavior is unchanged; research quality improves because stale/unsupported source claims are removed before publication.
+Hardware Impact: 0 us runtime impact.
