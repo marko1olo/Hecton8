@@ -31,3 +31,11 @@ Solution: Removed exact orphan files `Assets/_Project/Art/TEXTURES/VFX.meta` and
 Rejected Alternatives: Leaving orphan metadata was rejected because it corrupts Unity asset-database hygiene and future imports.
 Scalability potential: Cleaner asset metadata reduces false-positive import churn.
 Hardware Impact: 0us runtime. Asset database hygiene only.
+
+## Decision 5: Final Remote Advancement Rebase
+
+Problem: The last pre-push fetch showed `origin/main` had advanced by 5 commits after local validation.
+Solution: Rebasing the full local queue over fresh `origin/main` completed without conflicts; post-rebase divergence was `0 126`, then full Tools unittest and artifact gates were rerun.
+Rejected Alternatives: Pushing against stale remote was rejected. Merge commit was rejected for history hygiene.
+Scalability potential: Keeps local agent output linear on top of the newest integrator state.
+Hardware Impact: 0us runtime. Git-only operation; Unity runtime remains PENDING VERIFICATION.

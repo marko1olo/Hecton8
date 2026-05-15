@@ -35,3 +35,36 @@ Verification:
 Evidence boundary:
 - Git/static/Python evidence only.
 - Unity import, Play Mode, Profiler, GCMonitor, Frame Debugger, and Player Build remain PENDING VERIFICATION.
+
+## 2026-05-15 - Final Rebase And Gate Rerun
+
+What was wrong:
+- Fresh `git fetch origin main` showed remote advanced by 5 commits after the previous local validation.
+
+What was done:
+- Rebased 126 local commits over fresh `origin/main` without conflicts.
+- Reran full Tools unittest and artifact gates on the rebased HEAD.
+
+Cinematic Cheats used:
+- None. Repository operation only.
+
+Exact Microseconds saved:
+- Runtime code changed by GIT_SYNC itself: none.
+- Immediate runtime CPU saving: 0us.
+
+Verification:
+- Final divergence before push: `origin/main...HEAD` = `0 126`.
+- Full Tools unittest PASS: 295 tests, 158.447 seconds.
+- Memory budget report validator PASS.
+- UX aggregate validator PASS.
+- AtlasCheck PASS, references=5531.
+- AI path, AI battle artifact, hardware profile, and VR comfort gates PASS.
+- `git diff --check` PASS.
+- `git ls-files -u` empty.
+- `CONFLICT_MARKERS 0`.
+- `ORPHAN_META_COUNT 0`.
+- `PYTHON_CACHE_COUNT 0`.
+
+Evidence boundary:
+- Git/static/Python evidence only.
+- Unity import, Play Mode, Profiler, GCMonitor, Frame Debugger, and Player Build remain PENDING VERIFICATION.
