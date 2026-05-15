@@ -676,3 +676,43 @@ Worst file-burn-per-LOC signal from the current attribution layer:
 | `Assets/_Project/Scripts/BaseModule.cs` | code | 32,380.26 |
 
 Verdict: the cache is carrying the economy. Roughly 96% of input tokens are cached. That makes the bill survivable; it does not make 57,504 tokens per meaningful LOC a clean engineering pipeline.
+
+## Continuation Addendum - Codex Dialogue Topology
+
+Snapshot: 2026-05-15T12:30+04:00
+
+The dialogue/log topology audit is preserved at `COMPUTE_CODEX_DIALOGUE_AUDIT.md`.
+
+| Metric | Value |
+|---|---:|
+| `.codex/sessions/**/*.jsonl` files | 765 |
+| JSONL bytes | 8,165,855,838 |
+| JSONL lines scanned | 2,410,138 |
+| JSONL `response_item` markers | 1,553,782 |
+| JSONL `event_msg` markers | 839,797 |
+| JSONL `role:user` markers | 14,473 |
+| JSONL `role:assistant` markers | 102,453 |
+| JSONL `function_call` markers | 518,303 |
+| JSONL `function_call_output` markers | 518,160 |
+| JSONL `shell_command` markers | 461,485 |
+| JSONL `apply_patch` markers | 81,114 |
+| JSONL `turn_aborted` markers | 326 |
+| `logs_2.sqlite` rows | 474,415 |
+| `logs_2.sqlite` rows with `thread_id` | 467,415 |
+| `logs_2.sqlite` distinct thread IDs | 871 |
+| `logs_2.sqlite` threads with exactly 1,000 rows | 298 |
+
+Dialogue ratios:
+
+| Ratio | Value |
+|---|---:|
+| User markers per session | 18.92 |
+| Assistant markers per session | 133.93 |
+| Function-call markers per session | 677.52 |
+| Shell-command markers per session | 603.25 |
+| Assistant markers per user marker | 7.08 |
+| Function-call markers per user marker | 35.81 |
+| Shell-command markers per user marker | 31.89 |
+| Apply-patch markers per user marker | 5.60 |
+
+`logs_2.sqlite` is retention-capped evidence, not complete history. The 1,000-row plateau on 298 threads proves a cap or export boundary. JSONL marker counts are topology evidence, not exact executed tool-call counts. The valid conclusion is narrower and harder: this project is not normal chat prompting; it is a tool-saturated automation funnel with long-context memory drag.

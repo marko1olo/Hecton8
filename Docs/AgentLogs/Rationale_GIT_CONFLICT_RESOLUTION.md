@@ -107,3 +107,9 @@ Solution: Treat it as a separate post-merge checkpoint. Scan for unmerged paths,
 Rejected Alternatives: Pushing with a dirty tree, squashing into the merge by amend, resetting the new files, or committing the truncated staged memory file. These would either hide local state, rewrite merge evidence, or break compile.
 Scalability potential: Git-only operator pass. Authored runtime changes preserve the producing agents' tier intent; this pass only verifies no obvious conflict debris.
 Hardware Impact: 0 us runtime impact. Dev-path gain is reducing the next GitHub Desktop merge surface while leaving compile proof explicitly blocked/pending.
+
+Problem: A second incoming remote commit appeared while the local tree had another runtime/docs tail, and the newest HPhi evidence file is a failing gate.
+Solution: Commit the local tail first, then merge `origin/main`; record `HPhi Fresh54` as failed evidence (`GlobalRegistrySurface=5095 > 5094`) instead of masking it as a pass.
+Rejected Alternatives: Pushing stale history, pulling over dirty files, force-pushing, or changing the budget line just to silence the failure without an owner-approved HPhi reduction.
+Scalability potential: Git-only integration pass. Runtime tier behavior is not claimed by this operator step.
+Hardware Impact: 0 us runtime impact. Dev-path gain is a precise failure boundary for the HPhi owner and a smaller merge surface for the next sync.

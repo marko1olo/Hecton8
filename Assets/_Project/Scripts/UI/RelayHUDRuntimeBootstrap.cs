@@ -120,7 +120,7 @@ namespace Hecton8.UI
             GameObject markerLayerObject = new GameObject(MarkerLayerName, typeof(RectTransform));
             markerLayerObject.transform.SetParent(overlayRect, false);
 
-            RectTransform markerLayer = markerLayerObject.GetComponent<RectTransform>();
+            markerLayerObject.TryGetComponent(out RectTransform markerLayer);
             markerLayer.anchorMin = Vector2.zero;
             markerLayer.anchorMax = Vector2.one;
             markerLayer.offsetMin = Vector2.zero;
@@ -142,18 +142,18 @@ namespace Hecton8.UI
                 typeof(RelayHUDElement));
             markerRoot.transform.SetParent(parent, false);
 
-            RectTransform rootRect = markerRoot.GetComponent<RectTransform>();
+            markerRoot.TryGetComponent(out RectTransform rootRect);
             rootRect.anchorMin = new Vector2(0.5f, 0.5f);
             rootRect.anchorMax = new Vector2(0.5f, 0.5f);
             rootRect.pivot = new Vector2(0.5f, 0.5f);
             rootRect.sizeDelta = new Vector2(260f, 72f);
 
-            CanvasGroup canvasGroup = markerRoot.GetComponent<CanvasGroup>();
+            markerRoot.TryGetComponent(out CanvasGroup canvasGroup);
             canvasGroup.alpha = 0f;
             canvasGroup.interactable = false;
             canvasGroup.blocksRaycasts = false;
 
-            Image background = markerRoot.GetComponent<Image>();
+            markerRoot.TryGetComponent(out Image background);
             background.color = new Color(0.02f, 0.08f, 0.12f, 0.18f);
             background.raycastTarget = false;
 
@@ -164,7 +164,7 @@ namespace Hecton8.UI
             labelText.SetText("EMERGENCY SERVICE RELAY");
             distanceText.SetText("0M");
 
-            RelayHUDElement marker = markerRoot.GetComponent<RelayHUDElement>();
+            markerRoot.TryGetComponent(out RelayHUDElement marker);
             marker.ConfigureRuntimeBindings(markerIcon, distanceText, labelText);
         }
 
@@ -201,7 +201,7 @@ namespace Hecton8.UI
             GameObject child = new GameObject(name, typeof(RectTransform));
             child.transform.SetParent(parent, false);
 
-            RectTransform rect = child.GetComponent<RectTransform>();
+            child.TryGetComponent(out RectTransform rect);
             rect.anchorMin = new Vector2(0.5f, 0.5f);
             rect.anchorMax = new Vector2(0.5f, 0.5f);
             rect.pivot = new Vector2(0.5f, 0.5f);

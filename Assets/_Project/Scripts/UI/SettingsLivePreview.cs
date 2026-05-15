@@ -209,7 +209,7 @@ namespace Hecton8.UI
                 return true;
             }
 
-            Camera parentCamera = GetComponentInParent<Camera>();
+            Camera parentCamera = ResolveNearestParentCamera(transform);
             if (parentCamera != null)
             {
                 mainCamera = parentCamera;
@@ -218,6 +218,17 @@ namespace Hecton8.UI
 
             mainCamera = null;
             return false;
+        }
+
+        private static Camera ResolveNearestParentCamera(Transform start)
+        {
+            for (Transform current = start; current != null; current = current.parent)
+            {
+                if (current.TryGetComponent(out Camera camera))
+                    return camera;
+            }
+
+            return null;
         }
 
         private void ApplyPostProcessing()

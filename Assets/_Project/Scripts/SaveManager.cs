@@ -65,6 +65,7 @@ namespace Hecton8.SaveSystem
         private const uint ScreenshotSizeKbTelemetryHash = 0x53534B42u; // SSKB
         private const int MaxChunkDehydrationSignalsPerTick = 2;
         private const int MaxWfcSectorHydrationProbesPerTick = 4;
+        private const int MaxWfcDirtySectorStackEntries = 256;
         private const float SafeAupSnapGroundPaddingMeters = 0.28f;
         private const float SafeAupSnapMinimumLiftMeters = 0.35f;
         private const string CriticalSectorCorruptionMessage = "CRITICAL ERROR: LOCALIZED DATA CORRUPTION. TERRAIN RE-INITIALIZED.";
@@ -1188,6 +1189,12 @@ namespace Hecton8.SaveSystem
             if (signals.Length == 0)
                 return;
 
+            if (signals.Length > MaxWfcDirtySectorStackEntries)
+            {
+                DrainWfcOutpostStateChangedSignalsStorm(signals);
+                return;
+            }
+
             NativeArray<byte> wfcGrid = default;
             bool hasGrid = false;
             Span<ulong> dirtySectors = stackalloc ulong[signals.Length];
@@ -1199,16 +1206,7 @@ namespace Hecton8.SaveSystem
                 if (!IsPersistableWfcOutpostStateSignal(in signal))
                     continue;
 
-                RecordWfcOutpostEventBlackBox(
-                    WfcOutpostBlackBoxOperationSignal,
-                    WfcOutpostPersistenceStatus.None,
-                    signal.SectorHash,
-                    cellIndex: signal.CellIndex,
-                    previousFlags: signal.PreviousFlags,
-                    currentFlags: signal.CurrentFlags,
-                    signalSourceHash: signal.SourceHash,
-                    flags: signal.Flags,
-                    frame: signal.Frame);
+                RecordWfcOutpostStateChangedSignalEvent(in signal);
 
                 if (!ContainsWfcOutpostSector(dirtySectors, dirtySectorCount, signal.SectorHash))
                     dirtySectors[dirtySectorCount++] = signal.SectorHash;
@@ -1248,6 +1246,71 @@ namespace Hecton8.SaveSystem
             }
         }
 
+        private void DrainWfcOutpostStateChangedSignalsStorm(ReadOnlySpan<WfcOutpostStateChangedSignal> signals)
+        {
+            for (int i = 0; i < signals.Length; i++)
+            {
+                WfcOutpostStateChangedSignal signal = signals[i];
+                if (IsPersistableWfcOutpostStateSignal(in signal))
+                    RecordWfcOutpostStateChangedSignalEvent(in signal);
+            }
+
+            NativeArray<byte> wfcGrid = default;
+            bool hasGrid = false;
+            for (int i = 0; i < signals.Length; i++)
+            {
+                WfcOutpostStateChangedSignal firstSignal = signals[i];
+                if (!IsPersistableWfcOutpostStateSignal(in firstSignal) ||
+                    HasEarlierWfcOutpostSectorSignal(signals, i, firstSignal.SectorHash))
+                {
+                    continue;
+                }
+
+                if (!hasGrid)
+                {
+                    if (!TryEnsureWfcOutpostGrid(out wfcGrid))
+                        return;
+
+                    hasGrid = true;
+                }
+
+                uint dirtyFrame = 0u;
+                bool hasDirtySignal = false;
+                PrepareWfcOutpostMutableGridForSector(firstSignal.SectorHash, wfcGrid);
+
+                for (int signalIndex = i; signalIndex < signals.Length; signalIndex++)
+                {
+                    WfcOutpostStateChangedSignal signal = signals[signalIndex];
+                    if (signal.SectorHash != firstSignal.SectorHash ||
+                        !IsPersistableWfcOutpostStateSignal(in signal))
+                    {
+                        continue;
+                    }
+
+                    wfcGrid[signal.CellIndex] = (byte)(signal.CurrentFlags & WfcOutpostPersistenceConstants.MutableFlagMask);
+                    dirtyFrame = signal.Frame;
+                    hasDirtySignal = true;
+                }
+
+                if (hasDirtySignal)
+                    TryPersistWfcOutpostStateSnapshotInternal(firstSignal.SectorHash, wfcGrid, dirtyFrame, out _);
+            }
+        }
+
+        private void RecordWfcOutpostStateChangedSignalEvent(in WfcOutpostStateChangedSignal signal)
+        {
+            RecordWfcOutpostEventBlackBox(
+                WfcOutpostBlackBoxOperationSignal,
+                WfcOutpostPersistenceStatus.None,
+                signal.SectorHash,
+                cellIndex: signal.CellIndex,
+                previousFlags: signal.PreviousFlags,
+                currentFlags: signal.CurrentFlags,
+                signalSourceHash: signal.SourceHash,
+                flags: signal.Flags,
+                frame: signal.Frame);
+        }
+
         private static bool IsPersistableWfcOutpostStateSignal(in WfcOutpostStateChangedSignal signal)
         {
             return signal.SectorHash != 0UL &&
@@ -1261,6 +1324,24 @@ namespace Hecton8.SaveSystem
             {
                 if (sectors[i] == sectorHash)
                     return true;
+            }
+
+            return false;
+        }
+
+        private static bool HasEarlierWfcOutpostSectorSignal(
+            ReadOnlySpan<WfcOutpostStateChangedSignal> signals,
+            int currentIndex,
+            ulong sectorHash)
+        {
+            for (int i = 0; i < currentIndex; i++)
+            {
+                WfcOutpostStateChangedSignal signal = signals[i];
+                if (signal.SectorHash == sectorHash &&
+                    IsPersistableWfcOutpostStateSignal(in signal))
+                {
+                    return true;
+                }
             }
 
             return false;

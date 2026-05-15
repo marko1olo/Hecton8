@@ -803,3 +803,26 @@ Verification:
 - Targeted scheduler range reported no raw division, forbidden hot math, managed allocation, or `foreach`.
 - `git diff --check` passed without invoking dotnet rebuilds.
 - Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.
+
+## 2026-05-15 - Pure Void Job Fail-Closed Proof
+
+What was wrong:
+- `PureVoidBlockScanJob.Execute` detected invalid block indices but still reached `BlockFlags[blockIndex] = pure`.
+- Block range math used int multiplication/addition.
+
+What was done:
+- Returned before writing when `BlockFlags` is missing or `blockIndex` is outside bounds.
+- Computed block start/end in 64-bit.
+- Wrote a bounded zero flag and returned when the computed block start is outside `PointCount`.
+
+Cinematic Cheats used:
+- Corrupt pure-void job state fails closed to non-pure instead of risking an invalid metadata write.
+- Low tier avoids route-record faults; High/Ultra keep exact scheduling with job-local proof.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Static gain is invalid write avoidance; valid path pays only cheap scalar guards.
+
+Verification:
+- Targeted pure-void job range reported no raw division, forbidden hot math, managed allocation, or `foreach`.
+- `git diff --check` passed without invoking dotnet rebuilds.
+- Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.

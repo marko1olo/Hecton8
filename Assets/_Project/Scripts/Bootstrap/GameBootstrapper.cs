@@ -402,7 +402,7 @@ namespace Hecton8.Bootstrap
         /// </summary>
         public static bool ArePreWarmAssetsReady => _preWarmAssetsReady;
 
-        internal static bool HasRuntimeInstance => GlobalRegistry.BootstrapperRuntime != null;
+        internal static bool HasRuntimeInstance => ActiveInstance != null;
 
         /// <summary>
         /// True when all mandatory core services are registered and scene routing may proceed.
@@ -783,7 +783,7 @@ namespace Hecton8.Bootstrap
         /// <returns>Live bootstrap component.</returns>
         public static GameBootstrapper EnsureRuntimeInstance()
         {
-            GameBootstrapper bootstrapper = GlobalRegistry.BootstrapperRuntime;
+            GameBootstrapper bootstrapper = ActiveInstance;
             if (bootstrapper != null)
                 return bootstrapper;
 
@@ -805,7 +805,7 @@ namespace Hecton8.Bootstrap
         /// <returns>Live bootstrap component.</returns>
         public static GameBootstrapper EnsureRuntimeInstance(GameObject owner)
         {
-            GameBootstrapper runtimeBootstrapper = GlobalRegistry.BootstrapperRuntime;
+            GameBootstrapper runtimeBootstrapper = ActiveInstance;
             if (runtimeBootstrapper != null)
             {
                 TryAdoptBootstrapControllerCausticsCompute(runtimeBootstrapper, owner);
@@ -861,7 +861,7 @@ namespace Hecton8.Bootstrap
 
         private void Awake()
         {
-            GameBootstrapper runtimeBootstrapper = GlobalRegistry.BootstrapperRuntime;
+            GameBootstrapper runtimeBootstrapper = ActiveInstance;
             if (runtimeBootstrapper != null && runtimeBootstrapper != this)
             {
                 Destroy(this);
@@ -2595,7 +2595,7 @@ namespace Hecton8.Bootstrap
             PersistRuntimeService(dispatcher);
 
             dispatcher.InitializeService();
-            GlobalRegistry.BootstrapperRuntime?.TryRegisterBootstrapSlowTickable();
+            ActiveInstance?.TryRegisterBootstrapSlowTickable();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             EnsureRuntimeWatchdogRegistered();
             EnsureGCMonitorRegistered();
@@ -2658,8 +2658,9 @@ namespace Hecton8.Bootstrap
                 return false;
 
             PersistRuntimeService(serviceComponent);
-            ComputeShader computeShader = GlobalRegistry.BootstrapperRuntime != null
-                ? GlobalRegistry.BootstrapperRuntime.analyticalCausticsCompute
+            GameBootstrapper bootstrapper = ActiveInstance;
+            ComputeShader computeShader = bootstrapper != null
+                ? bootstrapper.analyticalCausticsCompute
                 : null;
             if (computeShader != null)
             {
@@ -2688,7 +2689,7 @@ namespace Hecton8.Bootstrap
             if (!Application.isPlaying || component == null)
                 return;
 
-            GameBootstrapper bootstrapper = GlobalRegistry.BootstrapperRuntime;
+            GameBootstrapper bootstrapper = ActiveInstance;
             if (bootstrapper == null)
                 return;
 
@@ -3104,7 +3105,7 @@ namespace Hecton8.Bootstrap
             if (activeAudioService != null)
                 return activeAudioService;
 
-            GameBootstrapper bootstrapper = GlobalRegistry.BootstrapperRuntime;
+            GameBootstrapper bootstrapper = ActiveInstance;
             if (bootstrapper == null)
                 return null;
 
@@ -3519,7 +3520,7 @@ namespace Hecton8.Bootstrap
 
         private static void EnforceProjectPersistentRoot()
         {
-            GameBootstrapper bootstrapper = GlobalRegistry.BootstrapperRuntime;
+            GameBootstrapper bootstrapper = ActiveInstance;
             if (bootstrapper == null)
                 return;
 

@@ -607,3 +607,17 @@ Scalability potential: Low/MX350 editor-side bake avoids repeated large allocati
 Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. Bake-time allocation prevention is approximately three avoided 4 MiB transient arrays per full four-atlas bake after the first cold scratch allocation; exact editor microseconds are not profiled.
 
 Verification: No dotnet rebuild and no Unity import was run. `AtlasPixelScratchSourceScan LocalAlloc=0 ColdAlloc=1 Writes=1 SetPixels=1`. `git diff --check` passed for the touched Shallows files with only repo CRLF warnings. Source brace count remained `Delta=0` and `NonAscii=0`; case-sensitive forbidden source scan remained clean.
+
+## Decision 44 - Atlas Default Platform Override Contract
+
+Problem: The atlas importer contract validated DefaultTexturePlatform max size, compression, and crunched state. It did not reject an overridden DefaultTexturePlatform or a non-automatic default format. A manual edit could introduce hidden fallback platform drift while Standalone and general importer checks still passed.
+
+Solution: Set `defaultPlatform.overridden=false` and `defaultPlatform.format=TextureImporterFormat.Automatic` in `ConfigureAtlasImporter`, then validate both fields in `ValidateAtlasImporter`.
+
+Rejected Alternatives: Trusting current meta defaults was rejected because the project already carries many editor tools and platform settings are manually mutable. Locking DefaultTexturePlatform to BC7/BC5 was rejected because Standalone is the explicit target platform and Default should remain automatic non-overridden fallback. Runtime texture policy correction was rejected because this is an offline atlas import contract.
+
+Scalability potential: Low/MX350 keeps deterministic Standalone BC7/BC5 atlas compression without hidden Default platform overrides. Middle/High/Ultra can add platform-specific overkill only through explicit platform contract expansion.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no hidden default platform override can create inconsistent compression/import behavior that later leaks into MX350 builds. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: No dotnet rebuild and no Unity import was run. `AtlasDefaultPlatformMetaScan Count=4 Bad=0`. Source scan found one setter/check pair for `defaultPlatform.overridden` and `TextureImporterFormat.Automatic`. `git diff --check` passed for the touched Shallows files with only repo CRLF warnings. Source brace count remained `Delta=0` and `NonAscii=0`; case-sensitive forbidden source scan remained clean.

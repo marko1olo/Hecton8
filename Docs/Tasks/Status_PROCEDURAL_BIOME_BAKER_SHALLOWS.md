@@ -376,3 +376,11 @@ Status: PENDING VERIFICATION
 - Verification avoided dotnet rebuilds and Unity import. `AtlasPixelScratchSourceScan LocalAlloc=0 ColdAlloc=1 Writes=1 SetPixels=1`; `git diff --check` passed with only repo CRLF warnings; source brace balance stayed `Delta=0` with `NonAscii=0`; case-sensitive forbidden source scan stayed clean.
 - Rejected alternative: keeping per-atlas arrays was rejected because the bake loop is deterministic and sequential, so one scratch buffer is sufficient. Pooling was rejected because a single fixed scratch array is simpler and avoids pool lifetime ambiguity.
 - H-Phi impact remains domain-local evidence only: the offline bake path now avoids repeated large transient allocations without runtime changes, cross-domain ownership, or altered atlas pixels.
+
+### Loop 43 - Atlas Default Platform Override Contract
+
+- Found an atlas platform drift path: Standalone format was locked, but DefaultTexturePlatform could silently become overridden or carry a non-automatic format while size/compression checks still passed.
+- Patched `ConfigureAtlasImporter` and `ValidateAtlasImporter` to force and require `DefaultTexturePlatform.overridden=false` and `DefaultTexturePlatform.format=TextureImporterFormat.Automatic`.
+- Verification avoided dotnet rebuilds and Unity import. `AtlasDefaultPlatformMetaScan Count=4 Bad=0`; source scan found one setter/check pair for `defaultPlatform.overridden` and `TextureImporterFormat.Automatic`; `git diff --check` passed with only repo CRLF warnings; source brace balance stayed `Delta=0` with `NonAscii=0`; case-sensitive forbidden source scan stayed clean.
+- Rejected alternative: trusting Unity defaults was rejected because platform settings can be manually overridden and still keep max size/compression values. Locking Default to BC7/BC5 was rejected because Standalone already owns the concrete runtime format while Default should remain non-overridden automatic fallback.
+- H-Phi impact remains domain-local evidence only: Shallows atlas platform settings are now fail-closed against hidden default override drift without runtime texture policy or cross-domain asset management.

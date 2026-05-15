@@ -106,13 +106,13 @@ namespace Hecton8.UI
         {
             if (survival == null)
             {
-                survival = GetComponent<HectonSurvivalSystem>();
+                TryGetComponent(out survival);
 
                 if (survival == null &&
                     GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                     playerTransform != null)
                 {
-                    survival = playerTransform.GetComponent<HectonSurvivalSystem>();
+                    playerTransform.TryGetComponent(out survival);
                 }
             }
 

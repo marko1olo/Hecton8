@@ -164,21 +164,36 @@ namespace Hecton8.World
 
             public void Execute(int blockIndex)
             {
-                int start = blockIndex * PureVoidScanBlockSize;
-                int end = math.min(start + PureVoidScanBlockSize, PointCount);
+                if (!BlockFlags.IsCreated ||
+                    (uint)blockIndex >= (uint)BlockFlags.Length)
+                {
+                    return;
+                }
+
                 int pure = 1;
                 if (!Passability.IsCreated ||
                     !DistanceMap.IsCreated ||
-                    !BlockFlags.IsCreated ||
                     PointCount <= 0 ||
                     Passability.Length < PointCount ||
-                    DistanceMap.Length < PointCount ||
-                    (uint)blockIndex >= (uint)BlockFlags.Length)
+                    DistanceMap.Length < PointCount)
                 {
                     pure = 0;
                 }
                 else
                 {
+                    long startLong = (long)blockIndex * PureVoidScanBlockSize;
+                    if (startLong < 0L || startLong >= PointCount)
+                    {
+                        BlockFlags[blockIndex] = 0;
+                        return;
+                    }
+
+                    int start = (int)startLong;
+                    long endLong = startLong + PureVoidScanBlockSize;
+                    if (endLong > PointCount)
+                        endLong = PointCount;
+
+                    int end = (int)endLong;
                     for (int i = start; i < end; i++)
                     {
                         if (Passability[i] == OpenCell && DistanceMap[i] == ushort.MaxValue)
@@ -1137,10 +1152,7 @@ namespace Hecton8.World
                 VolumeRecord record = enumerator.Current.Value;
                 if (!HasValidRecordBounds(record) ||
                     record.HasPendingDynamicUpdate ||
-                    !record.Next.IsCreated ||
-                    !record.BaseCurrent.IsCreated ||
-                    !record.CurrentDistance.IsCreated ||
-                    !record.NextDistance.IsCreated)
+                    !HasCompleteDynamicUpdateBuffers(record))
                 {
                     continue;
                 }
@@ -2519,10 +2531,44 @@ namespace Hecton8.World
             return HasCompleteVoxelCellCoverage(record.Dimensions, record.Current.Length);
         }
 
+        private static bool HasCompleteDynamicUpdateBuffers(VolumeRecord record)
+        {
+            if (!HasValidRecordBounds(record) ||
+                !record.Next.IsCreated ||
+                !record.BaseCurrent.IsCreated ||
+                !record.CurrentDistance.IsCreated ||
+                !record.NextDistance.IsCreated ||
+                !record.PureVoidBlockFlags.IsCreated)
+            {
+                return false;
+            }
+
+            if (!TryResolveVoxelCellCount(record.Dimensions, out int requiredCellCount))
+                return false;
+
+            if (record.Next.Length < requiredCellCount ||
+                record.BaseCurrent.Length < requiredCellCount ||
+                record.CurrentDistance.Length < requiredCellCount ||
+                record.NextDistance.Length < requiredCellCount)
+            {
+                return false;
+            }
+
+            int requiredBlockCount = ResolvePureVoidBlockCount(requiredCellCount);
+            return requiredBlockCount > 0 &&
+                   record.PureVoidBlockFlags.Length >= requiredBlockCount;
+        }
+
         private static bool HasCompleteVoxelCellCoverage(int3 dimensions, int availableCellCount)
         {
-            if (availableCellCount <= 0 ||
-                dimensions.x <= 0 ||
+            return TryResolveVoxelCellCount(dimensions, out int expectedCellCount) &&
+                   availableCellCount >= expectedCellCount;
+        }
+
+        private static bool TryResolveVoxelCellCount(int3 dimensions, out int expectedCellCount)
+        {
+            expectedCellCount = 0;
+            if (dimensions.x <= 0 ||
                 dimensions.y <= 0 ||
                 dimensions.z <= 0)
             {
@@ -2530,12 +2576,15 @@ namespace Hecton8.World
             }
 
             long xyCount = (long)dimensions.x * dimensions.y;
-            if (xyCount <= 0L || xyCount > availableCellCount)
+            if (xyCount <= 0L || xyCount > int.MaxValue)
                 return false;
 
             long expectedCellCount = xyCount * dimensions.z;
-            return expectedCellCount > 0L &&
-                   expectedCellCount <= availableCellCount;
+            if (expectedCellCount <= 0L || expectedCellCount > int.MaxValue)
+                return false;
+
+            expectedCellCount = (int)expectedCellCount;
+            return true;
         }
 
         private static bool IsValidPortalNode(in PortalNode node)

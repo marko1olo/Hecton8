@@ -16,7 +16,8 @@ Agent: COMPUTE_LOGISTICS_AUDITOR
 | 6 | `COMPUTE_THREAD_VALUE_AUDIT.md` | Top-100 work-trace/value/collision/C++ evidence audit |
 | 7 | `COMPUTE_FILE_BURN_ATTRIBUTION.md` | Weighted token burn by patch target |
 | 8 | `COMPUTE_RATE_EFFICIENCY_AUDIT.md` | Latest token rates, cache economics, and token/code ratios |
-| 9 | `COMPUTE_COLLISION_RISK.md` | Current dirty-tree collision gate |
+| 9 | `COMPUTE_CODEX_DIALOGUE_AUDIT.md` | `.codex` dialogue/log topology and `logs_2.sqlite` boundaries |
+| 10 | `COMPUTE_COLLISION_RISK.md` | Current dirty-tree collision gate |
 
 ## Current Hard Boundaries
 
@@ -36,6 +37,11 @@ Agent: COMPUTE_LOGISTICS_AUDITOR
 | C++ transfer evidence in top-100 patch targets | 0 hits; NOT VERIFIED / NO PATCH EVIDENCE |
 | Latest last-6h token flow | 97,652.24 tokens/sec |
 | Latest tokens per meaningful script LOC | 57,503.86 |
+| `.codex` JSONL dialogue lines | 2,410,138 |
+| `.codex` user role markers | 14,473 |
+| `.codex` function-call markers | 518,303 |
+| `.codex/logs_2.sqlite` rows | 474,415 |
+| `logs_2.sqlite` exact-1000-row thread cap hits | 298 threads |
 
 ## Do Not Misstate
 

@@ -258,6 +258,9 @@ namespace Hecton8.UI
                 return false;
 
             int frame = sampleFrame >= 0 ? sampleFrame : Time.frameCount;
+            if (frame < _lastHandInsideFrame)
+                return false;
+
             _lastHandInsideFrame = frame;
             TryRegister();
             if (_pressDispatched)

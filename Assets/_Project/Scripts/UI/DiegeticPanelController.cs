@@ -874,13 +874,13 @@ namespace Hecton8.UI
         private void ResolveSerializedReferences(bool resolveGraphicRaycaster)
         {
             if (targetCanvas == null)
-                targetCanvas = GetComponent<Canvas>();
+                TryGetComponent(out targetCanvas);
 
             if (panelRect == null && targetCanvas != null)
                 panelRect = targetCanvas.transform as RectTransform;
 
             if (panelCollider == null)
-                panelCollider = GetComponent<Collider>();
+                TryGetComponent(out panelCollider);
 
             _resolvedPanelRect = panelRect;
             _resolvedPanelTransform = _resolvedPanelRect != null ? _resolvedPanelRect.transform : transform;
@@ -918,13 +918,39 @@ namespace Hecton8.UI
             cursorTransform.TryGetComponent(out _cursorCollider);
 
             if (_cursorGraphic == null)
-                _cursorGraphic = cursorTransform.GetComponentInChildren<Graphic>(true);
+                _cursorGraphic = ResolveFirstChildComponent<Graphic>(cursorTransform, includeInactive: true);
 
             if (_cursorRenderer == null)
-                _cursorRenderer = cursorTransform.GetComponentInChildren<Renderer>(true);
+                _cursorRenderer = ResolveFirstChildComponent<Renderer>(cursorTransform, includeInactive: true);
 
             if (_cursorCollider == null)
-                _cursorCollider = cursorTransform.GetComponentInChildren<Collider>(true);
+                _cursorCollider = ResolveFirstChildComponent<Collider>(cursorTransform, includeInactive: true);
+        }
+
+        private static T ResolveFirstChildComponent<T>(Transform root, bool includeInactive) where T : Component
+        {
+            if (root == null)
+                return null;
+
+            if (includeInactive || root.gameObject.activeInHierarchy)
+            {
+                if (root.TryGetComponent(out T component))
+                    return component;
+            }
+
+            int childCount = root.childCount;
+            for (int i = 0; i < childCount; i++)
+            {
+                Transform child = root.GetChild(i);
+                if (!includeInactive && !child.gameObject.activeInHierarchy)
+                    continue;
+
+                T component = ResolveFirstChildComponent<T>(child, includeInactive);
+                if (component != null)
+                    return component;
+            }
+
+            return null;
         }
 
         private void ResolveInterfaces()

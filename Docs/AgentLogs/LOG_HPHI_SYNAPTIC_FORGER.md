@@ -553,3 +553,29 @@ Verification:
 - No dotnet build, restore, or rebuild was run.
 - `rg` confirms `SignalBus<ScannerToolActiveSignal>` is configured, pushed, and consumed by PDA/GPR snapshots.
 - `PDADecryptionSpectrogramPanel` no longer calls `TryDequeueScannerToolActive()`.
+
+## 2026-05-15 - Movement Acoustic SignalBus Delivery Addendum
+
+What was wrong:
+- `SargassumMicroFaunaBoids` consumed `SignalBus<MovementAcousticSignal>` snapshots.
+- `GlobalSignals.Publish(in MovementAcousticSignal)` did not configure or push the SignalBus lane.
+- `HectonBiolumManager` destructively drained the legacy movement queue, making movement acoustic presentation single-consumer by accident.
+
+What was done:
+- Added `SignalBus<MovementAcousticSignal>.Configure(...)` and `EnsureInitialized()` in `GlobalSignals`.
+- Added `SignalBus<MovementAcousticSignal>.Push(in signal)` to the movement acoustic publisher.
+- Changed `HectonBiolumManager` to read `SignalBus<MovementAcousticSignal>.GetFrameSnapshot()` with the same `MovementSignalMaxDrainPerTick` cap.
+- Left the legacy native queue API in place for compatibility.
+
+Cinematic Cheats used:
+- Biolum ripples and sargassum panic now share one 64-byte movement packet instead of competing for queue ownership.
+- No movement-component polling was added to world/VFX consumers.
+
+Exact microseconds saved:
+- Estimated 0.1-0.4 us avoided in movement acoustic queue contention/retry paths.
+- Main gain is correctness and scalability: biolum and fauna can now observe the same movement acoustic frame.
+
+Verification:
+- No dotnet build, restore, or rebuild was run.
+- `rg` confirms `SignalBus<MovementAcousticSignal>` is configured, pushed, and consumed by biolum/sargassum snapshots.
+- `HectonBiolumManager` no longer calls `TryDequeueMovementAcoustic()`.

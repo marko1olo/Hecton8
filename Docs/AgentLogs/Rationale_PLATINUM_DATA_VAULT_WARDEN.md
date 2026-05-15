@@ -202,6 +202,12 @@ Rejected Alternatives: Keeping the old `Dump_VAULT_MEMORY_RELOCATOR.bin` path; t
 Scalability potential: Low devices get deterministic first-fault postmortem files without live compaction cost; Middle keeps repair behavior centralized; High and Ultra can expand DTO capacity or diagnostics without adding unbounded helper debt.
 Hardware Impact: Valid defrag maintenance adds four scalar non-finite checks on a cold maintenance path, 0 us frame impact. Fault path writes the fixed 300-entry native telemetry ring once. Removing the duplicate helper and dead wrapper has no runtime cost.
 
+Problem: `H8Memory.RegisterPointer` could silently return after native memory was already acquired if tracking or descriptor registration failed. Public allocation callers did not verify that registration succeeded, and block descriptor registration returned `-1` instead of growing when the descriptor list filled.
+Solution: Made pointer registration return success/failure, made `Allocate<T>`, `AllocateRaw`, and `ReallocateRaw` free the new allocation and throw `FatalMemoryException` if registration fails, and made raw reallocation register the replacement before freeing the old tracked block. Descriptor registration now grows to `MaxTrackingCapacity` before returning `-1`.
+Rejected Alternatives: Trusting pre-allocation capacity checks alone; returning default/null after a post-allocation tracking failure; freeing the old raw block before proving the replacement is tracked. Those paths either leak ownership evidence or risk losing the only valid block on tracker failure.
+Scalability potential: Low devices avoid silent native leaks when tracking pressure rises; Middle keeps H8 owner byte telemetry and descriptor maps reliable; High and Ultra can run larger native pools without letting tracking failure corrupt memory sovereignty.
+Hardware Impact: 0 us steady-frame impact. Valid allocation paths add one boolean check after registration. Failure path frees native memory immediately and throws; descriptor growth is cold and bounded by `MaxTrackingCapacity`.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Polish audit required removal of fake precision, managed iteration/string debt, and any code outside the DataVault domain without justification.
@@ -213,7 +219,7 @@ Hardware Impact: Direct habitat DTO write is 32 bytes per module and 0 B GC. Rem
 Final Git Diff Summary:
 - Assets/_Project/Scripts/Core/HectonArenaAllocator.cs: owner-tagged H8Memory.FreeRaw release.
 - Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs: GenerationID handle exposure, stale-handle fatal path, VaultGenerationID telemetry, owner-tagged macro/vault frees, macro copy switched to MemCpy, live defrag memmove code deleted, agent-scoped black-box dump paths, and non-finite defrag input dumping.
-- Assets/_Project/Scripts/Core/Memory/H8Memory.cs: FatalMemoryException, owner-gated raw/native allocation, tracked-byte raw reallocation, and owner-checked FreeRaw.
+- Assets/_Project/Scripts/Core/Memory/H8Memory.cs: FatalMemoryException, owner-gated raw/native allocation, all-or-nothing allocation tracking, tracked-byte raw reallocation, descriptor capacity growth, and owner-checked FreeRaw.
 - Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs: v72 first-hour DTO payload write/read, direct habitat flood struct loop, bounded root compatibility collections, 16 KiB string cap, and removed unbounded helper wrappers.
 - Assets/_Project/Scripts/SaveData.cs: first-hour DTO mirrors and packed DTO definitions/metadata.
 - Assets/_Project/Scripts/SaveDataMigration.cs: bounded cold restore clamps and canonical `SaveData.EnsureExactArrayCapacity` repair helper use.

@@ -289,11 +289,11 @@ namespace Hecton8.UI
                     playerPda = playerContext.PlayerPDA;
 
                 if (playerPda == null)
-                    playerPda = GetComponentInParent<PlayerPDA>();
+                    playerPda = ResolveNearestParentComponent<PlayerPDA>(transform);
             }
 
             if (diegeticPanel == null)
-                diegeticPanel = GetComponentInChildren<DiegeticPanelController>(true);
+                diegeticPanel = ResolveFirstChildComponent<DiegeticPanelController>(transform, includeInactive: true);
 
             if (diegeticPanelRoot == null)
             {
@@ -304,7 +304,7 @@ namespace Hecton8.UI
             }
 
             if (diegeticPanelCanvasGroup == null && diegeticPanelRoot != null)
-                diegeticPanelCanvasGroup = diegeticPanelRoot.GetComponent<CanvasGroup>();
+                diegeticPanelRoot.TryGetComponent(out diegeticPanelCanvasGroup);
 
             if (diegeticPanel != null && _panelCanvas == null)
                 _panelCanvas = diegeticPanel.TargetCanvas;
@@ -331,7 +331,7 @@ namespace Hecton8.UI
             }
 
             if (tabletScreenRenderer == null && tabletRoot != null)
-                tabletScreenRenderer = tabletRoot.GetComponentInChildren<Renderer>(true);
+                tabletScreenRenderer = ResolveFirstChildComponent<Renderer>(tabletRoot.transform, includeInactive: true);
 
             if (!ReferenceEquals(_cachedTabletRoot, tabletRoot))
                 RebuildTabletVisibilityCache();
@@ -572,7 +572,7 @@ namespace Hecton8.UI
                 if (_eventSystem == null && allowColdCreateFallback)
                 {
                     GameObject eventSystemRoot = new GameObject("DiegeticPDA_EventSystem", typeof(EventSystem)); // COLD ALLOC: GameObject[1] — PDA pointer-dispatch fallback event system — owner: DiegeticPDAController
-                    _eventSystem = eventSystemRoot.GetComponent<EventSystem>();
+                    eventSystemRoot.TryGetComponent(out _eventSystem);
                 }
             }
 
@@ -788,7 +788,7 @@ namespace Hecton8.UI
                     break;
                 }
 
-                CanvasGroup canvasGroup = handler.GetComponentInParent<CanvasGroup>();
+                CanvasGroup canvasGroup = ResolveNearestParentComponent<CanvasGroup>(handler.transform);
                 handler.TryGetComponent(out Selectable selectable);
                 handler.TryGetComponent(out Graphic graphic);
 
@@ -802,6 +802,43 @@ namespace Hecton8.UI
             }
 
             _pointerHandlerScratch.Clear();
+        }
+
+        private static T ResolveNearestParentComponent<T>(Transform start) where T : Component
+        {
+            for (Transform current = start; current != null; current = current.parent)
+            {
+                if (current.TryGetComponent(out T component))
+                    return component;
+            }
+
+            return null;
+        }
+
+        private static T ResolveFirstChildComponent<T>(Transform root, bool includeInactive) where T : Component
+        {
+            if (root == null)
+                return null;
+
+            if (includeInactive || root.gameObject.activeInHierarchy)
+            {
+                if (root.TryGetComponent(out T component))
+                    return component;
+            }
+
+            int childCount = root.childCount;
+            for (int i = 0; i < childCount; i++)
+            {
+                Transform child = root.GetChild(i);
+                if (!includeInactive && !child.gameObject.activeInHierarchy)
+                    continue;
+
+                T component = ResolveFirstChildComponent<T>(child, includeInactive);
+                if (component != null)
+                    return component;
+            }
+
+            return null;
         }
 
         private void ClearPointerTargetCache()

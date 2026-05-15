@@ -12,6 +12,7 @@ Thread value audit: `COMPUTE_THREAD_VALUE_AUDIT.md`
 Collision risk: `COMPUTE_COLLISION_RISK.md`
 File burn attribution: `COMPUTE_FILE_BURN_ATTRIBUTION.md`
 Rate efficiency audit: `COMPUTE_RATE_EFFICIENCY_AUDIT.md`
+Codex dialogue audit: `COMPUTE_CODEX_DIALOGUE_AUDIT.md`
 Status/Rationale/Log:
 - `Docs/Tasks/Status_COMPUTE_LOGISTICS_AUDITOR.md`
 - `Docs/AgentLogs/Rationale_COMPUTE_LOGISTICS_AUDITOR.md`
@@ -68,6 +69,14 @@ Status/Rationale/Log:
 | File burn attribution targets | 1,647 |
 | Code target weighted-token share | 78.073% |
 | Top weighted file target | `SargassumMicroFaunaBoids.cs`, 261,401,331 tokens |
+| `.codex` JSONL dialogue lines | 2,410,138 |
+| `.codex` user role markers | 14,473 |
+| `.codex` assistant role markers | 102,453 |
+| `.codex` function-call markers | 518,303 |
+| `.codex` shell-command markers | 461,485 |
+| `.codex/logs_2.sqlite` rows | 474,415 |
+| `logs_2.sqlite` distinct thread IDs | 871 |
+| `logs_2.sqlite` exact-1000-row thread cap hits | 298 |
 
 ## Evidence Rules
 
@@ -100,3 +109,5 @@ Collision snapshot has been refreshed. Current hot-target intersections are `Ass
 File burn attribution has been written to `COMPUTE_FILE_BURN_ATTRIBUTION.md`. It distributes top-30 thread tokens across patch targets by per-thread patch-hit share. This is probabilistic work-trace attribution, not final value proof.
 
 Rate efficiency audit has been written to `COMPUTE_RATE_EFFICIENCY_AUDIT.md`. It preserves the latest token/sec, token/min, token/hour, token/day, cache economics, and token/code-byte ratios.
+
+Codex dialogue audit has been written to `COMPUTE_CODEX_DIALOGUE_AUDIT.md`. It preserves `logs_2.sqlite` schema/count boundaries and a marker-based JSONL dialogue topology. The valid interpretation is automation density, not exact executed tool-call count.

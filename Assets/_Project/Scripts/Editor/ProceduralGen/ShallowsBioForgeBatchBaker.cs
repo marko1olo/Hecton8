@@ -445,9 +445,11 @@ namespace Hecton8.Editor.ProceduralGen
             importer.maxTextureSize = AtlasSize;
 
             TextureImporterPlatformSettings defaultPlatform = importer.GetPlatformTextureSettings("DefaultTexturePlatform");
+            defaultPlatform.overridden = false;
             defaultPlatform.maxTextureSize = AtlasSize;
             defaultPlatform.textureCompression = TextureImporterCompression.Compressed;
             defaultPlatform.crunchedCompression = false;
+            defaultPlatform.format = TextureImporterFormat.Automatic;
             importer.SetPlatformTextureSettings(defaultPlatform);
 
             TextureImporterPlatformSettings standalone = importer.GetPlatformTextureSettings("Standalone");
@@ -1160,9 +1162,11 @@ namespace Hecton8.Editor.ProceduralGen
 
             TextureImporterFormat expectedFormat = kind == AtlasKind.Normal ? TextureImporterFormat.BC5 : TextureImporterFormat.BC7;
             TextureImporterPlatformSettings defaultPlatform = importer.GetPlatformTextureSettings("DefaultTexturePlatform");
-            if (defaultPlatform.maxTextureSize != AtlasSize ||
+            if (defaultPlatform.overridden ||
+                defaultPlatform.maxTextureSize != AtlasSize ||
                 defaultPlatform.textureCompression != TextureImporterCompression.Compressed ||
-                defaultPlatform.crunchedCompression)
+                defaultPlatform.crunchedCompression ||
+                defaultPlatform.format != TextureImporterFormat.Automatic)
             {
                 failures++;
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] Atlas DefaultTexturePlatform contract failed at {path}.");

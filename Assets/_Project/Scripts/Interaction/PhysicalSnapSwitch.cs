@@ -74,6 +74,7 @@ namespace Hecton8.Interaction
         private bool _isOn;
         private bool _registered;
         private bool _receiverRegistered;
+        private int _lastSampleFrame = -1;
         private Collider _registeredActivationVolume;
 
         public bool IsOn => _isOn;
@@ -90,10 +91,15 @@ namespace Hecton8.Interaction
             if (activationVolume == null || !IsFiniteVector(handPosition))
                 return false;
 
+            int resolvedSampleFrame = sampleFrame >= 0 ? sampleFrame : Time.frameCount;
+            if (resolvedSampleFrame < _lastSampleFrame)
+                return false;
+
             Vector3 localPoint = activationVolume.transform.InverseTransformPoint(handPosition) - activationVolume.center;
             if (!IsFiniteVector(localPoint))
                 return false;
 
+            _lastSampleFrame = resolvedSampleFrame;
             bool desiredOn = ResolveDesiredState(localPoint);
             if (desiredOn == _isOn || _snapCooldownRemaining > 0f)
                 return true;
@@ -102,7 +108,7 @@ namespace Hecton8.Interaction
             _targetAngle = _isOn ? ResolveSafeOnAngleDegrees() : ResolveSafeOffAngleDegrees();
             _snapCooldownRemaining = ResolveSafeSnapCooldownSeconds();
             TryRegister();
-            PublishSwitchSignal(handPosition, handForward, interactionSignals, sampleFrame >= 0 ? sampleFrame : Time.frameCount);
+            PublishSwitchSignal(handPosition, handForward, interactionSignals, resolvedSampleFrame);
             EnqueueClickHaptic(handSourceCollider, fallbackHandSide);
             QueueSnapAudio(handPosition);
             return true;
@@ -144,6 +150,7 @@ namespace Hecton8.Interaction
             Unregister();
             UnregisterCollider();
             _snapCooldownRemaining = 0f;
+            _lastSampleFrame = -1;
         }
 
         private void OnDestroy()

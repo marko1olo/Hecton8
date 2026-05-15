@@ -122,7 +122,7 @@ namespace Hecton8.UI
                     if (_particleInstance != null)
                     {
                         _particleInstance.transform.SetParent(transform, false);
-                        _particleSystem = _particleInstance.GetComponent<ParticleSystem>();
+                        _particleInstance.TryGetComponent(out _particleSystem);
                         _particleInstanceOwnedByPool = _particleInstance.TryGetComponent(out ObjectPoolManager.PoolItemMarker _);
                     }
                 }
@@ -166,7 +166,7 @@ namespace Hecton8.UI
             shape.shapeType = ParticleSystemShapeType.Circle;
             shape.radius = 50f;
 
-            ParticleSystemRenderer renderer = _particleSystem.GetComponent<ParticleSystemRenderer>();
+            _particleSystem.TryGetComponent(out ParticleSystemRenderer renderer);
             if (renderer != null)
             {
                 renderer.renderMode = ParticleSystemRenderMode.Billboard;

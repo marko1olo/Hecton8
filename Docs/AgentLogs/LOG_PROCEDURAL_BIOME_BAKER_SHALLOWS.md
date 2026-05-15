@@ -465,3 +465,15 @@ Cinematic Cheats used: Procedural atlas fakes, fixed 1024 atlas size, mipmapped 
 Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. Bake-time allocation prevention is approximately three avoided 4 MiB transient arrays per full four-atlas bake after the first cold scratch allocation; exact editor microseconds were not profiled.
 
 Verification: No dotnet rebuild and no Unity import was run. `AtlasPixelScratchSourceScan LocalAlloc=0 ColdAlloc=1 Writes=1 SetPixels=1`; `git diff --check` passed with only repo CRLF warnings; source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.
+
+## 2026-05-15 Atlas Default Platform Override Contract
+
+What was wrong: DefaultTexturePlatform could be manually overridden or assigned a non-automatic format while the existing importer checks still passed.
+
+What was done: Set and validate `DefaultTexturePlatform.overridden=false` and `DefaultTexturePlatform.format=Automatic` for every Shallows atlas.
+
+Cinematic Cheats used: Standalone BC7/BC5 atlas compression, fixed 1024 atlas size, and no runtime texture policy correction remain unchanged.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents hidden platform import drift; exact runtime microseconds were not profiled.
+
+Verification: No dotnet rebuild and no Unity import was run. `AtlasDefaultPlatformMetaScan Count=4 Bad=0`; `git diff --check` passed with only repo CRLF warnings; source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.

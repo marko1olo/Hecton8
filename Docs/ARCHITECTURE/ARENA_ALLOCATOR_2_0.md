@@ -86,6 +86,15 @@ The allocator records:
 
 OOM path publishes through `GlobalTelemetryBus.PublishPerformanceWarning(...)` with `ArenaOomHash`.
 
+## H8Memory Tracking Gate
+
+Persistent H8 allocations are all-or-nothing:
+
+- native arrays and raw allocations are exposed only after owner tracking succeeds;
+- raw reallocation registers the replacement block before freeing the old block;
+- if allocation tracking or memory-map descriptor registration fails after native memory is acquired, the new allocation is freed and `FatalMemoryException` is thrown;
+- block descriptor storage grows up to `MaxTrackingCapacity` instead of silently dropping new descriptor evidence.
+
 ## Legal Uses
 
 - frame-transient scratch buffers

@@ -363,3 +363,9 @@ Solution: Require created passability/distance/block buffers, require passabilit
 Rejected Alternatives: Relying on job-side guards was rejected because the scheduler is the route-record authority boundary. Scheduling full flag capacity was rejected because spare capacity can carry stale metadata semantics even when ignored later.
 Scalability potential: Low/MX350 avoids extra pure-void scan work and stale flag exposure. Middle/High/Ultra keep larger records with exact block scheduling.
 Hardware Impact: Removes unnecessary block iterations when capacity exceeds required count and avoids invalid job dispatch; exact microseconds remain pending Unity profiler data because dotnet rebuilds are prohibited.
+
+Problem: `PureVoidBlockScanJob.Execute` had an out-of-range block-index guard but still wrote `BlockFlags[blockIndex]` after the guarded branch.
+Solution: Return before writing when the flag buffer is missing or the block index is outside bounds, compute block start/end in 64-bit, and write a bounded zero flag for starts beyond `PointCount`.
+Rejected Alternatives: Trusting scheduler correctness alone was rejected because Burst jobs must fail closed when invoked with stale or corrupt native state.
+Scalability potential: Low/MX350 avoids rare invalid pure-void metadata writes. Middle/High/Ultra keep exact pure-void scheduling without unsafe job fallback behavior.
+Hardware Impact: Adds cheap branch proof inside one Burst job; expected gain is fault avoidance, not throughput. Dotnet rebuilds remain prohibited.

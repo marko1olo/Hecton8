@@ -689,3 +689,35 @@ Verification:
 
 Status:
 - VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-15 - H8Memory All-Or-Nothing Tracking Gate
+
+What was wrong:
+- `H8Memory.RegisterPointer` could silently return after native memory had already been acquired.
+- Public allocation paths did not prove that owner tracking and descriptor registration succeeded before exposing the allocation.
+- Block descriptor registration returned `-1` on a full descriptor list instead of growing cold storage.
+
+What was done:
+- Changed pointer registration to return success/failure.
+- `Allocate<T>`, `AllocateRaw`, and `ReallocateRaw` now free the new allocation and throw `FatalMemoryException` if tracking fails.
+- Raw reallocation now registers the replacement before unregistering/freeing the old tracked pointer.
+- Descriptor storage now grows up to `MaxTrackingCapacity` before registration can return `-1`.
+- Documented the all-or-nothing tracking gate in `Docs/ARCHITECTURE/ARENA_ALLOCATOR_2_0.md`.
+
+Cinematic Cheats used:
+- None. This is native ownership correctness, not presentation.
+
+Exact Microseconds saved:
+- Frame cost: 0 us.
+- Valid allocation path adds one boolean check after registration.
+- Failure path avoids untracked native memory escaping; descriptor growth is cold and bounded.
+
+Verification:
+- `H8Memory.cs` brace/parenthesis balance passed.
+- Register-pointer call scan found only checked call sites.
+- DataVault live compaction scan remained clean.
+- `git diff --check` passed with CRLF warnings only.
+- No dotnet rebuild was run per user order.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.

@@ -387,3 +387,15 @@ Cinematic Cheats used -> None. Git integration only.
 Exact Microseconds saved -> 0 us runtime. Dev-path gain is a clean pushed boundary instead of leaving a dirty post-merge tail for GitHub Desktop.
 
 Verification -> Conflict-marker scan clean. `git diff --check` reported only LF-to-CRLF warnings. Compile green remains unproven because the prior CLI build timed out.
+
+## 2026-05-15 - Loop 21 Second Remote Gate
+
+What was wrong -> `origin/main` advanced again to `38feb8f11` while a new 24-file local tail existed.
+
+What was done -> Classified the local tail, inspected SaveManager WFC storm draining, voxel pure-void guards, Shallows importer validation, diegetic UI lookup replacements, and HPhi report evidence, then prepared it for a separate checkpoint before merging remote.
+
+Cinematic Cheats used -> None. Git integration only.
+
+Exact Microseconds saved -> 0 us runtime. Dev-path gain is avoiding a pull over dirty runtime files.
+
+Verification -> Conflict-marker scan clean. `git diff --check` reported only LF-to-CRLF warnings. HPhi Fresh54 is a failure evidence file: `GlobalRegistrySurface=5095 > 5094`; no HPhi green claim is made.
