@@ -4,9 +4,8 @@
   "promptId": "HARDWARE_ADAPTIVE_UI_BAKER",
   "status": "PASS",
   "root": "C:\\Hecton8\\Tools",
-  "removedCount": 2,
+  "removedCount": 1,
   "removed": [
-    "__pycache__",
     "UX\\__pycache__"
   ]
 }

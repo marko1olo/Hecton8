@@ -587,3 +587,45 @@ Failure modes:
 Status:
 - INSTINCTS DEFINED for data and Python evidence.
 - Unity runtime verification remains PENDING VERIFICATION.
+
+## 2026-05-15 - Pack Math.Dot Contract Hardening
+
+What was wrong:
+- The XML prompt explicitly required pack flanking synergy using `math.dot`, but the authored brain and validator still accepted generic `dot(...)` text.
+- Generic dot text allowed angle/acos-style math to drift back into the data contract without failing the normal artifact check.
+
+What was done:
+- Updated `Data/AI/Leviathan_Brain.json` so the pack synergy formula and all four `dotCondition` entries use literal `math.dot(...)`.
+- Hardened `Tools/AiBattleSim.py` validation to require `math.dot`, reject `angle`/`acos`, enforce exact pack rule id/order, validate the 12 m to 42 m range gate, and require rule descriptions/effects.
+- Added regression tests for generic formula rejection, missing `math.dot` in a rule, rule-order drift, and angle-math fallback.
+- Revalidated the current report against the current brain digest and strict deterministic 10,000 encounter rerun.
+
+Cinematic cheats used:
+- Pack behavior stays scalar and deterministic: dot-product flank gates buy the feeling of coordinated predators without NavMesh group planning, A* tactics, or per-agent physical truth.
+
+Exact microseconds saved:
+- Unity runtime saving remains 0 us measured because no Unity runtime path changed.
+- Projected importer cost remains low single-digit microseconds for pack dot gates by tier; avoiding acos/angle comparisons preserves weak-CPU budget for breach/circle presentation.
+
+Evidence:
+- `python -B -c "import ast, pathlib; ..."` -> `SYNTAX_OK`.
+- `python -B -m unittest Tools.test_ai_battle_sim` -> 55 tests passed in 7.321 s.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts` -> `ARTIFACT_CHECK_PASSED`, killRate 0.422, under30KillRate 0.0.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts --verify-rerun` -> `ARTIFACT_CHECK_PASSED`, `rerunVerified=True`.
+- `brainDigest=8f96fe1c84c9b136aac2a4a0fcc3550e62ddaae28d0b6d66c782e064eae80edf`.
+- `simulationDigest=8d2131741fc2d1fc03900eec6a8aba4631c753e143a6b2e068db21bf1db92d7b`.
+
+Regression model:
+- CPU: no Unity runtime CPU added. Python validation only; strict rerun remains offline.
+- GC: no Unity hot path changed. Runtime GC proof remains PENDING VERIFICATION until importer/playmode.
+- Memory: no runtime memory allocation added.
+- Cadence: no gameplay cadence changed; attack cooldown remains 18.0 s and false-charge cooldown remains 10.0 s against declared minima.
+- Correctness: pack flanking now fails closed unless the authored formula and every rule preserve the literal `math.dot` contract.
+
+Failure modes:
+- Future pack tactic changes must preserve the exact rule id/order or deliberately update constants, tests, report validation, and rationale.
+- Unity runtime importer remains separate work; no runtime behavior is claimed beyond data/tooling evidence.
+
+Status:
+- INSTINCTS DEFINED for data and Python evidence.
+- Unity runtime verification remains PENDING VERIFICATION.
