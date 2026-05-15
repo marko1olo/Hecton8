@@ -611,3 +611,30 @@ Verification:
 - Target scans: no forbidden hot-path token matches; no raw `new NativeArray`; no raw native dispose.
 - `git diff --check`: clean.
 - `dotnet --info`: unavailable; full Unity import/build remains PENDING VERIFICATION.
+
+## 2026-05-15 - Acceptance Threshold Fail-Closed Guard
+
+What was wrong:
+- `calculate_balance()` trusted acceptance thresholds from JSON without prior validation.
+- A malformed constants file could weaken the Safe/Abyss ratio or final maturity target and publish false balance evidence.
+
+What was done:
+- Validated acceptance simulation days, acceptance mode, final maturity ratio, and Safe/Abyss recovery ratio before simulation.
+- Added `test_run_sim_rejects_invalid_acceptance_thresholds`.
+- Re-ran unit, entropy, syntax, and static checks.
+
+Cinematic cheats used:
+- None. This is offline acceptance-data validation.
+
+Exact microseconds saved:
+- Runtime microseconds saved: 0. Unity runtime backend was not changed.
+- Failure avoided: invalid acceptance thresholds now abort before Python state allocation and day loops.
+
+Verification:
+- `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`: exit code 0.
+- `python -m unittest Tools.test_world_entropy_sim -v`: 12 tests passed in 26.951 s.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
+- Target scans: no forbidden hot-path token matches; no raw `new NativeArray`; no raw native dispose.
+- `git diff --check`: CRLF warnings only for edited text files.
+- `dotnet --info`: timed out/unavailable; full Unity import/build remains PENDING VERIFICATION.

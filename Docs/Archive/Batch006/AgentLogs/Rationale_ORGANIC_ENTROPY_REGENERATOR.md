@@ -378,3 +378,14 @@ Rejected Alternatives: Relying on machine memory pressure was rejected because v
 Scalability potential: Low-end validation machines avoid accidental huge allocations. High-end validation can still use up to the same cap as the runtime backend and must explicitly change both systems if a larger cap is required.
 
 Hardware Impact: Tooling-only. Unity runtime backend unchanged; invalid oversized grids now abort before Python allocates per-cell lanes.
+
+## Decision 35 - Acceptance Threshold Fail-Closed Guard
+Problem: `calculate_balance()` consumed acceptance thresholds from JSON without prior validation. A malformed constants file could set a zero or negative Safe/Abyss ratio or invalid maturity target and make false balance easier to publish.
+
+Solution: Extended `validate_constants` to require positive acceptance simulation days, `total_overharvest` acceptance mode, `minFinalMatureRatio` in `(0, 1]`, and positive Safe/Abyss recovery ratio. Added a regression that sets the ratio threshold to `0.0` and expects `ValueError`.
+
+Rejected Alternatives: Validating only the shipped constants was rejected because future automation can call `run_sim()` with arbitrary constants. Clamping invalid thresholds was rejected because it would mutate acceptance authority silently.
+
+Scalability potential: Low/Middle/High/Ultra validation runs now share fail-closed acceptance metadata before any day loop starts. High-end validation can still run longer day spans, but the exported acceptance threshold contract stays explicit.
+
+Hardware Impact: Tooling-only. Unity runtime backend unchanged; invalid acceptance data now aborts before Python allocates per-cell lanes.

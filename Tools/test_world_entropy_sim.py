@@ -130,6 +130,13 @@ class WorldEntropySimTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             entropy.run_sim(constants, 1, True)
 
+    def test_run_sim_rejects_invalid_acceptance_thresholds(self) -> None:
+        constants = deepcopy(self.constants)
+        constants["acceptance"]["safeShallowsVsDeepAbyssMinRecoveryRatio"] = 0.0
+
+        with self.assertRaises(ValueError):
+            entropy.run_sim(constants, 1, True)
+
     def test_absent_biome_cannot_pass_total_overharvest_acceptance(self) -> None:
         constants = deepcopy(self.constants)
         constants["gridWidth"] = 1

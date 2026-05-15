@@ -51,6 +51,16 @@ def validate_constants(constants: dict) -> None:
         raise ValueError("minApexRespawnDays must be positive")
     if int(constants["maxApexRespawnDays"]) < int(constants["minApexRespawnDays"]):
         raise ValueError("maxApexRespawnDays must be >= minApexRespawnDays")
+    acceptance = constants["acceptance"]
+    if int(acceptance["simulationDays"]) < 1:
+        raise ValueError("acceptance simulationDays must be positive")
+    if acceptance["mode"] != "total_overharvest":
+        raise ValueError("acceptance mode must be total_overharvest")
+    minimum_mature_ratio = float(acceptance["minFinalMatureRatio"])
+    if minimum_mature_ratio <= 0.0 or minimum_mature_ratio > 1.0:
+        raise ValueError("minFinalMatureRatio must be in (0, 1]")
+    if float(acceptance["safeShallowsVsDeepAbyssMinRecoveryRatio"]) <= 0.0:
+        raise ValueError("safeShallowsVsDeepAbyssMinRecoveryRatio must be positive")
 
     biomes = constants["biomes"]
     if len(biomes) != len(EXPECTED_BIOME_NAMES):
