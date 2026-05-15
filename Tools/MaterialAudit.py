@@ -113,6 +113,7 @@ GATE_EXIT_CODES = {
     "material_issues": 3,
     "unresolved_texture_refs": 4,
     "texture_budget": 5,
+    "texture_read_errors": 6,
 }
 GOD_MODE_TEXTURE_OVERRIDES = [
     {
@@ -784,6 +785,7 @@ def summarize_textures(textures: list[dict[str, Any]]) -> dict[str, Any]:
     normals = [item for item in textures if item.get("is_normal")]
     energy_fail = [item for item in albedo if item.get("energy_status") == "FAIL"]
     energy_warn = [item for item in albedo if item.get("energy_status") == "WARN"]
+    read_error_textures = [item for item in textures if item.get("read_error")]
     import_issue_textures = [item for item in textures if item.get("import_issues")]
     import_issue_counts: dict[str, int] = {}
     for item in import_issue_textures:
@@ -815,6 +817,8 @@ def summarize_textures(textures: list[dict[str, Any]]) -> dict[str, Any]:
         "detail_candidate_count": len(detail),
         "energy_fail_count": len(energy_fail),
         "energy_warn_count": len(energy_warn),
+        "read_error_count": len(read_error_textures),
+        "read_error_textures": read_error_textures[:100],
         "import_issue_count": len(import_issue_textures),
         "import_issue_counts": import_issue_counts,
         "detail_suggestions": detail_sorted[:10],
@@ -971,6 +975,7 @@ def write_markdown_report(report: dict[str, Any], output: Path) -> None:
         markdown_row(["Albedo candidates", texture_summary["albedo_candidate_count"]]),
         markdown_row(["Albedo energy failures", texture_summary["energy_fail_count"]]),
         markdown_row(["Albedo energy warnings", texture_summary["energy_warn_count"]]),
+        markdown_row(["Texture read errors", texture_summary.get("read_error_count", 0)]),
         markdown_row(["Import issue textures", texture_summary["import_issue_count"]]),
         markdown_row(["Estimated texture residency MiB", texture_summary.get("estimated_texture_mib", 0)]),
         markdown_row(["ORM candidates", texture_summary["orm_candidate_count"]]),
@@ -1104,6 +1109,15 @@ def write_markdown_report(report: dict[str, Any], output: Path) -> None:
     else:
         lines.append("No import issues detected.")
 
+    lines.extend(["", "## Texture Read Errors", ""])
+    read_error_textures = texture_summary.get("read_error_textures", [])
+    if read_error_textures:
+        lines.extend([markdown_row(["Path", "Error"]), markdown_row(["---", "---"])])
+        for item in read_error_textures:
+            lines.append(markdown_row([item["path"], item.get("read_error", "")]))
+    else:
+        lines.append("No texture read errors detected.")
+
     lines.extend(["", "## Material Slot Issues", ""])
     if material_summary["issue_materials"]:
         lines.extend([markdown_row(["Material", "Issues", "Recommendations"]), markdown_row(["---", "---", "---"])])
@@ -1184,6 +1198,12 @@ def write_csv_reports(report: dict[str, Any], prefix: Path) -> None:
                 ";".join(issues),
                 " | ".join(recommend_texture_fix(issue) for issue in issues),
             ])
+
+    with Path(f"{prefix}_texture_read_errors.csv").open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["path", "read_error"])
+        for item in texture_summary.get("read_error_textures", []):
+            writer.writerow([item["path"], item.get("read_error", "")])
 
     with Path(f"{prefix}_material_issues.csv").open("w", encoding="utf-8", newline="") as handle:
         writer = csv.writer(handle)
@@ -1335,6 +1355,11 @@ def main() -> int:
         action="store_true",
         help="Return non-zero when estimated texture residency exceeds --texture-budget-mib.",
     )
+    parser.add_argument(
+        "--fail-on-texture-read-errors",
+        action="store_true",
+        help="Return non-zero when texture files cannot be decoded.",
+    )
     args = parser.parse_args()
 
     root = Path(args.root).resolve()
@@ -1370,6 +1395,7 @@ def main() -> int:
     print(f"albedo_candidates={texture_summary['albedo_candidate_count']}")
     print(f"energy_failures={texture_summary['energy_fail_count']}")
     print(f"energy_warnings={texture_summary['energy_warn_count']}")
+    print(f"texture_read_errors={texture_summary['read_error_count']}")
     print(f"import_issue_textures={texture_summary['import_issue_count']}")
     print(f"estimated_texture_mib={texture_summary['estimated_texture_mib']}")
     print(f"texture_budget_mib={report['texture_budget']['budget_mib']}")
@@ -1396,6 +1422,8 @@ def main() -> int:
         print(f"csv_prefix={args.csv_prefix}")
     if texture_summary["energy_fail_count"]:
         return 1
+    if args.fail_on_texture_read_errors and texture_summary["read_error_count"]:
+        return 6
     if args.fail_on_import_issues and texture_summary["import_issue_count"]:
         return 2
     if args.fail_on_unresolved_refs and material_summary["unresolved_texture_ref_count"]:
