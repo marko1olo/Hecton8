@@ -233,8 +233,13 @@ def main(argv: list[str] | None = None) -> int:
 
         root = pathlib.Path(__file__).resolve().parents[2]
         replay = load_replay_hasher(root / "Tools" / "Security" / "ReplayHasher.py")
-        xxh_cases = verify_xxh3(replay, xxhash_module, args.fuzz_count)
-        shuffle_cases = verify_shuffle_inverse(replay, args.fuzz_count)
+        try:
+            xxh_cases = verify_xxh3(replay, xxhash_module, args.fuzz_count)
+            shuffle_cases = verify_shuffle_inverse(replay, args.fuzz_count)
+        except AssertionError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+
         print(f"XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK xxh3={xxh_cases} shuffle={shuffle_cases}")
         return 0
     finally:

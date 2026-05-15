@@ -551,3 +551,15 @@ Rejected Alternatives: Trusting `ReplayHasher.py` because its self-test currentl
 Scalability potential: No runtime impact. All tiers retain the same save ABI; offline comparison diagnostics are stricter.
 
 Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 47
+
+Problem: Real vector mismatches in `VerifyReplayHasherReference.py` still surfaced as uncaught `AssertionError` tracebacks from CLI execution. The mismatch text was precise, but the command output was noisy and less suitable for CI parsing.
+
+Solution: Wrapped `verify_xxh3()` and `verify_shuffle_inverse()` in `main()` with an `AssertionError` catch that prints the exact assertion message and returns exit code `1`, while preserving import-state cleanup in `finally`.
+
+Rejected Alternatives: Leaving raw tracebacks was rejected because verification tools should report failure facts without stack noise. Returning code `2` was rejected because `2` already represents usage/environment errors in this verifier.
+
+Scalability potential: No runtime impact. All tiers retain the same save ABI; CLI verification failure output is cleaner.
+
+Hardware Impact: 0 us frame impact. Offline validation only.

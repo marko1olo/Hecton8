@@ -480,6 +480,18 @@ Exact Microseconds saved: 0 runtime microseconds. This improves verifier failure
 
 Verification: full owned suite returned `PY_AST_OK files=3`, `SELFTEST_OK`, `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=2 resultCtor=4 blitAttrs=2`, `REPLAY_DIGEST_TYPE_GUARD=PASS`, `REPLAY_DIGEST_RANGE_GUARD=PASS`, `XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK xxh3=338 shuffle=128`, and `XXHASH_TMP_REMOVED`. `git diff --check` passed with line-ending warnings only.
 
+## 2026-05-15 - Reference Verifier Controlled Mismatch Failure
+
+What was wrong: Real XXH3 or shuffle mismatches still surfaced as uncaught `AssertionError` tracebacks in CLI mode. That is noisy for CI and for future agents reading command output.
+
+What was done: Caught vector `AssertionError` failures in `main()`, printed the exact mismatch message, returned exit code `1`, and preserved import-state cleanup.
+
+Cinematic Cheats used: None. Offline verification tooling only.
+
+Exact Microseconds saved: 0 runtime microseconds. This improves verifier failure clarity; no runtime save path changed.
+
+Verification: full owned suite returned `PY_AST_OK files=3`, `SELFTEST_OK`, `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=2 resultCtor=4 blitAttrs=2`, `XXHASH_MISMATCH_CONTROLLED_FAILURE_GUARD=PASS`, `XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK xxh3=338 shuffle=128`, and `XXHASH_TMP_REMOVED`. `git diff --check` passed with line-ending warnings only.
+
 ## 2026-05-15 - Shuffle Mask Preimage Byte Fixtures
 
 What was wrong: Shuffle mask output vectors were frozen, but the raw low/high mask preimage bytes were not. That makes lane-order drift harder to diagnose.
