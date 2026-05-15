@@ -195,3 +195,19 @@ Solution: Add a static C# source hotspot scan for `new RenderTexture(...)`, `Ren
 Rejected Alternatives: Estimating all dynamic RT memory from source lines. That would be fake precision because many dimensions are runtime-scaled, XR-driven, or descriptor-derived. The correct output is a profiler follow-up queue.
 Scalability potential: Low/MX350 gets a concrete list of RT allocation owners to measure and downgrade; High/Ultra can spend saved RT budget on richer post/visor effects only after runtime captures prove headroom.
 Hardware Impact: 0us runtime measured. Static scan now reports 61 RT source hotspots, 53 non-editor/runtime hotspots, with pattern split 19 `new RenderTexture`, 18 `RTHandles.Alloc`, 16 `RenderTextureDescriptor`, and 8 `RenderTexture.GetTemporary`.
+
+## Decision 25: RenderTexture Hotspot CSV And Scan Reuse
+
+Problem: Runtime RT hotspots were visible in Markdown/JSON but not as a dedicated sortable CSV, and the first implementation rescanned source multiple times during full report generation.
+Solution: Generate `Docs/Reports/VRAM_RenderTexture_SourceHotspots.csv` and compute hotspot rows once in `main()` for reuse by CSV, Markdown, JSON, and remediation writers.
+Rejected Alternatives: Scraping Markdown tables downstream or leaving repeated source scans in the full report path. Both make the gate slower and weaker for follow-up owners.
+Scalability potential: Low/MX350 owners can sort `P1_RUNTIME_PROFILER` rows first; High/Ultra can justify larger RT effects only after the same owner queue has profiler evidence.
+Hardware Impact: 0us runtime measured. Tooling impact: report generation returned to bounded execution after removing repeated hotspot scans; CSV contains 61 hotspot rows, 53 runtime-priority rows, and 0 malformed rows.
+
+## Decision 26: CI Hotspot Scan Boundary
+
+Problem: After adding the dynamic RT hotspot queue, the CI path must not pay for source-hotspot reporting because `--ci` is a gate, not a full report generator.
+Solution: Keep the `args.ci` return before `find_render_texture_source_hotspots(root)` and document the remaining bottleneck honestly: broad static asset enumeration still dominates the latest 47.86-second CI run.
+Rejected Alternatives: Claiming CI is fast because one expensive report-only scan is skipped. That would be false evidence and would hide the next real tooling bottleneck.
+Scalability potential: Low/MX350 remains protected by the same redline failure gate. Middle/High/Ultra content stays report-driven through the non-CI path where the RT hotspot CSV is generated deliberately.
+Hardware Impact: 0us runtime measured. This is build/tooling behavior only; no game memory or frame-time improvement is claimed.

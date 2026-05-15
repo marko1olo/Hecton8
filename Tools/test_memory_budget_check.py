@@ -165,8 +165,15 @@ class MemoryBudgetCheckTests(unittest.TestCase):
             estimated_bytes=1280 * 720 * 8,
             flags=["RENDER_TEXTURE_DEPTH_STENCIL_PRESENT_STATIC_SUSPECT"],
         )
+        rt_hit = budget.RenderTextureSourceHit(
+            path=PROJECT_ROOT / "Assets" / "_Project" / "Scripts" / "DemoRt.cs",
+            line=12,
+            pattern="new RenderTexture",
+            snippet="RenderTexture texture = new RenderTexture(width, height, 0);",
+            editor_only=False,
+        )
 
-        payload = budget.build_summary_payload(PROJECT_ROOT, [texture_record], [mesh_record], [rt_record], [], "LINK_XML_MISSING", [])
+        payload = budget.build_summary_payload(PROJECT_ROOT, [texture_record], [mesh_record], [rt_record], [], "LINK_XML_MISSING", [], [rt_hit])
 
         self.assertEqual(payload["texture_count"], 1)
         self.assertEqual(payload["render_texture_count"], 1)
@@ -178,7 +185,7 @@ class MemoryBudgetCheckTests(unittest.TestCase):
         self.assertIn("mesh_extension_summary", payload)
         self.assertIn("render_textures", payload)
         self.assertIn("render_texture_source_hotspots", payload)
-        self.assertGreater(payload["runtime_render_texture_source_hotspot_rows"], 0)
+        self.assertEqual(payload["runtime_render_texture_source_hotspot_rows"], 1)
         self.assertIn(".codex-build", payload["skipped_directory_names"])
         self.assertEqual(payload["mesh_redline_rows"], 1)
         self.assertGreater(payload["mesh_geometry_static_estimate_mib"], 0)

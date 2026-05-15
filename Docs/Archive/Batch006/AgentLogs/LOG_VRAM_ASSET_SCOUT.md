@@ -484,3 +484,69 @@ Verification:
 Evidence boundary:
 - STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
 - Dynamic RT dimensions, lifetime, residency, and RT+Depth budget compliance remain PENDING UNITY MEMORY PROFILER.
+
+## 2026-05-15T16:42:00+03:00 - RT HOTSPOT CSV PASS
+
+What was wrong:
+- Runtime RT source hotspots were present in JSON/Markdown but not in a dedicated sortable CSV.
+- Full report generation became too slow because hotspot scanning was repeated by multiple report writers.
+
+What was done:
+- Added `Docs/Reports/VRAM_RenderTexture_SourceHotspots.csv`.
+- Added `--render-texture-hotspots` CLI output path to `Tools/MemoryBudgetCheck.py`.
+- Changed report generation to compute RT source hotspots once in `main()` and pass the result into CSV, Markdown, JSON, and remediation writers.
+- Updated tests to inject a synthetic hotspot into summary payload tests instead of forcing an extra source-tree scan.
+
+Cinematic cheats used:
+- No runtime simulation. The CSV is a profiler queue for deciding where Low/MX350 can use half-res, depth-free, pooled, or disabled RT paths, and where High/Ultra can afford visual overkill.
+
+Exact microseconds saved:
+- 0us game runtime measured.
+- Tooling improvement only: full report generation no longer rescans RT hotspot source multiple times.
+- CSV output: 61 hotspot rows, 53 runtime-priority rows, pattern split 19 `new RenderTexture`, 18 `RTHandles.Alloc`, 16 `RenderTextureDescriptor`, 8 `RenderTexture.GetTemporary`.
+
+Verification:
+- PYTHONDONTWRITEBYTECODE=1 python AST syntax parse for `Tools/MemoryBudgetCheck.py` and `Tools/test_memory_budget_check.py`: PASS.
+- PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py: PASS, 14 tests.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root .: PASS as full report generation; emitted expected `[CRITICAL_VRAM_OVERFLOW]`.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --ci: expected failure with ci_exit_code=2.
+- CSV structural validation: PASS. Broad CSV 1,972 rows / 43 columns / 0 bad rows; texture redlines 963 rows / 7 columns / 0 bad rows; mesh redlines 294 rows / 14 columns / 0 bad rows; RenderTexture redlines 2 rows / 11 columns / 0 bad rows; RT source hotspots 62 rows / 8 columns / 0 bad rows.
+- Generated `MemoryBudgetCheck` and `test_memory_budget_check` bytecode under `Tools/__pycache__` was removed after verification.
+
+Evidence boundary:
+- STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
+- The CSV is not runtime residency proof. Dynamic RT dimensions, lifetime, and budget compliance remain PENDING UNITY MEMORY PROFILER.
+
+## 2026-05-15T17:50:00+03:00 - CI HOTSPOT BOUNDARY AND FINAL VERIFICATION PASS
+
+What was wrong:
+- The code path correctly returns from `--ci` before dynamic RT source-hotspot scanning, but the persistent status/rationale did not state the remaining timing boundary.
+- The first write of this log block landed above older 00:08-16:42 entries, violating top-old/bottom-new chronology. That was caught by `rg -n "^## "` and repaired.
+
+What was done:
+- Added Loop 21 to `Docs/Tasks/Status_VRAM_ASSET_SCOUT.md`.
+- Added Decision 26 to `Docs/AgentLogs/Rationale_VRAM_ASSET_SCOUT.md`.
+- Recorded fresh verification: `--ci` still fails correctly with `ci_exit_code=2`; latest measured runtime was 47.86 seconds because broad static asset enumeration remains the dominant cost.
+- Re-ran full report generation after the documentation patch.
+
+Cinematic cheats used:
+- None. Tooling/report hygiene only.
+
+Exact microseconds saved:
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0us.
+- Tooling behavior: dynamic RT source-hotspot scanning is bypassed in CI, but no false speed claim is made.
+
+Verification:
+- Source inspection confirms `if args.ci:` returns before `find_render_texture_source_hotspots(root)`.
+- PYTHONDONTWRITEBYTECODE=1 python AST syntax parse for `Tools/MemoryBudgetCheck.py` and `Tools/test_memory_budget_check.py`: PASS.
+- PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py: PASS, 14 tests.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --ci: expected failure with `ci_exit_code=2`; elapsed 47.86 seconds.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root .: PASS as full report generation; emitted expected `[CRITICAL_VRAM_OVERFLOW]`; elapsed 155.97 seconds.
+- CSV structural validation: PASS. Broad CSV 1,972 rows / 43 columns / 0 bad rows; texture redlines 963 rows / 7 columns / 0 bad rows; mesh redlines 294 rows / 14 columns / 0 bad rows; RenderTexture redlines 2 rows / 11 columns / 0 bad rows; RT source hotspots 62 rows / 8 columns / 0 bad rows.
+- JSON schema validation: PASS. `texture_count=1668`, `mesh_count=302`, `render_texture_count=1`, `render_texture_source_hotspot_rows=61`, `runtime_render_texture_source_hotspot_rows=53`, and gate reasons include `CRITICAL_VRAM_OVERFLOW`.
+- Log chronology validation: PASS. `LOG_VRAM_ASSET_SCOUT.md` headers now run top-old/bottom-new through this block.
+
+Evidence boundary:
+- STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
+- Unity import, Memory Profiler, player build, and runtime frame time remain PENDING VERIFICATION.

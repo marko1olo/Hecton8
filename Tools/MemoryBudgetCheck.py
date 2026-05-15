@@ -1114,6 +1114,15 @@ def find_render_texture_source_hotspots(root: Path) -> List[RenderTextureSourceH
     return hits
 
 
+def resolve_render_texture_hotspots(
+    root: Path,
+    hotspots: Optional[Sequence[RenderTextureSourceHit]],
+) -> Sequence[RenderTextureSourceHit]:
+    if hotspots is not None:
+        return hotspots
+    return find_render_texture_source_hotspots(root)
+
+
 def mib(value: float) -> float:
     return value / (1024.0 * 1024.0)
 
@@ -1438,6 +1447,42 @@ def write_render_texture_redlines_csv(path: Path, root: Path, render_textures: S
             )
 
 
+def write_render_texture_source_hotspots_csv(path: Path, root: Path, hotspots: Sequence[RenderTextureSourceHit]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(
+            [
+                "path",
+                "line",
+                "pattern",
+                "editor_only",
+                "profiler_priority",
+                "snippet",
+                "required_action",
+                "evidence_class",
+            ]
+        )
+        for hit in hotspots:
+            runtime = not hit.editor_only
+            priority = "P1_RUNTIME_PROFILER" if runtime else "P3_EDITOR_ONLY_VERIFY_EXCLUDED"
+            action = "Capture owner lifetime, dimensions, format, and residency in Unity Memory Profiler; static source cannot prove RT+Depth cost."
+            if hit.editor_only:
+                action = "Confirm editor-only assembly/folder exclusion from player build; no runtime profiler action unless referenced by player code."
+            writer.writerow(
+                [
+                    rel(hit.path, root),
+                    hit.line,
+                    hit.pattern,
+                    str(hit.editor_only).lower(),
+                    priority,
+                    hit.snippet,
+                    action,
+                    "STATIC_SOURCE",
+                ]
+            )
+
+
 def find_link_xml(root: Path) -> List[Path]:
     result: List[Path] = []
     for current_root, dirs, files in os.walk(root):
@@ -1582,6 +1627,7 @@ def write_remediation_plan(
     meshes: Sequence[MeshRecord],
     render_textures: Sequence[RenderTextureRecord],
     atlas_groups: Sequence[Tuple[str, List[TextureRecord], int]],
+    render_texture_hotspots: Optional[Sequence[RenderTextureSourceHit]] = None,
 ) -> None:
     texture_crimes = [record for record in textures if any(flag.startswith("VRAM CRIME") for flag in record.flags)]
     texture_container_risks = [record for record in textures if has_texture_container_risk(record)]
@@ -1594,7 +1640,7 @@ def write_remediation_plan(
     mesh_geometry_redlines = [record for record in meshes if "MESH_GEOMETRY_ESTIMATE_GT_16MIB_STATIC" in record.flags]
     render_texture_bytes = sum(record.estimated_bytes for record in render_textures)
     render_texture_redlines = [record for record in render_textures if record.flags]
-    render_texture_source_hits = find_render_texture_source_hotspots(root)
+    render_texture_source_hits = resolve_render_texture_hotspots(root, render_texture_hotspots)
     runtime_render_texture_source_hits = [hit for hit in render_texture_source_hits if not hit.editor_only]
     runtime_full_mips = sum(record.bc7_bytes for record in textures if is_runtime_candidate(record.path, root)) * FULL_MIP_FACTOR
     first_party_full_mips = sum(record.bc7_bytes for record in textures if is_first_party_production_candidate(record.path, root)) * FULL_MIP_FACTOR
@@ -1716,6 +1762,7 @@ def build_summary_payload(
     atlas_groups: Sequence[Tuple[str, List[TextureRecord], int]],
     link_status: str,
     link_notes: Sequence[str],
+    render_texture_hotspots: Optional[Sequence[RenderTextureSourceHit]] = None,
 ) -> Dict[str, object]:
     total_bc7 = sum(record.bc7_bytes for record in textures)
     runtime_bc7 = sum(record.bc7_bytes for record in textures if is_runtime_candidate(record.path, root))
@@ -1732,7 +1779,7 @@ def build_summary_payload(
     mesh_geometry_redlines = [record for record in meshes if "MESH_GEOMETRY_ESTIMATE_GT_16MIB_STATIC" in record.flags]
     render_texture_bytes = sum(record.estimated_bytes for record in render_textures)
     render_texture_redlines = [record for record in render_textures if record.flags]
-    render_texture_source_hits = find_render_texture_source_hotspots(root)
+    render_texture_source_hits = resolve_render_texture_hotspots(root, render_texture_hotspots)
     runtime_render_texture_source_hits = [hit for hit in render_texture_source_hits if not hit.editor_only]
     first_party_streaming_off = large_streaming_mipmap_off(textures, root, limit=100000)
     all_streaming_off = [record for record in textures if "STREAMING_MIPMAPS_OFF_LARGE" in record.flags]
@@ -1889,9 +1936,10 @@ def write_summary_json(
     atlas_groups: Sequence[Tuple[str, List[TextureRecord], int]],
     link_status: str,
     link_notes: Sequence[str],
+    render_texture_hotspots: Optional[Sequence[RenderTextureSourceHit]] = None,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    payload = build_summary_payload(root, textures, meshes, render_textures, atlas_groups, link_status, link_notes)
+    payload = build_summary_payload(root, textures, meshes, render_textures, atlas_groups, link_status, link_notes, render_texture_hotspots)
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
@@ -1904,6 +1952,7 @@ def write_summary(
     atlas_groups: Sequence[Tuple[str, List[TextureRecord], int]],
     link_status: str,
     link_notes: Sequence[str],
+    render_texture_hotspots: Optional[Sequence[RenderTextureSourceHit]] = None,
 ) -> None:
     total_bc7 = sum(record.bc7_bytes for record in textures)
     runtime_bc7 = sum(record.bc7_bytes for record in textures if is_runtime_candidate(record.path, root))
@@ -1922,7 +1971,7 @@ def write_summary(
     mesh_geometry_redlines = [record for record in meshes if "MESH_GEOMETRY_ESTIMATE_GT_16MIB_STATIC" in record.flags]
     render_texture_bytes = sum(record.estimated_bytes for record in render_textures)
     render_texture_redlines = [record for record in render_textures if record.flags]
-    render_texture_source_hits = find_render_texture_source_hotspots(root)
+    render_texture_source_hits = resolve_render_texture_hotspots(root, render_texture_hotspots)
     runtime_render_texture_source_hits = [hit for hit in render_texture_source_hits if not hit.editor_only]
     first_party_streaming_off = large_streaming_mipmap_off(textures, root, limit=100000)
     overflow = total_bc7_mips > CRITICAL_TEXTURE_POOL_MIB * 1024 * 1024
@@ -2102,6 +2151,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser.add_argument("--texture-redlines", default="Docs/Reports/VRAM_Texture_Redlines.csv", help="Texture redline CSV path.")
     parser.add_argument("--mesh-redlines", default="Docs/Reports/VRAM_Mesh_Redlines.csv", help="Mesh redline CSV path.")
     parser.add_argument("--render-texture-redlines", default="Docs/Reports/VRAM_RenderTexture_Redlines.csv", help="RenderTexture redline CSV path.")
+    parser.add_argument("--render-texture-hotspots", default="Docs/Reports/VRAM_RenderTexture_SourceHotspots.csv", help="RenderTexture source hotspot CSV path.")
     parser.add_argument("--ci", action="store_true", help="Exit non-zero if static redlines or overflow are detected.")
     args = parser.parse_args(argv)
 
@@ -2115,15 +2165,17 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if args.ci:
         return 2 if ci_failure else 0
 
+    render_texture_hotspots = find_render_texture_source_hotspots(root)
     atlas_groups = assign_atlas_groups(textures, root)
 
     write_csv(root / args.csv, root, textures, meshes, render_textures)
     write_texture_redlines_csv(root / args.texture_redlines, root, textures)
     write_mesh_redlines_csv(root / args.mesh_redlines, root, meshes)
     write_render_texture_redlines_csv(root / args.render_texture_redlines, root, render_textures)
-    write_summary(root / args.summary, root, textures, meshes, render_textures, atlas_groups, link_status, link_notes)
-    write_remediation_plan(root / args.plan, root, textures, meshes, render_textures, atlas_groups)
-    write_summary_json(root / args.json, root, textures, meshes, render_textures, atlas_groups, link_status, link_notes)
+    write_render_texture_source_hotspots_csv(root / args.render_texture_hotspots, root, render_texture_hotspots)
+    write_summary(root / args.summary, root, textures, meshes, render_textures, atlas_groups, link_status, link_notes, render_texture_hotspots)
+    write_remediation_plan(root / args.plan, root, textures, meshes, render_textures, atlas_groups, render_texture_hotspots)
+    write_summary_json(root / args.json, root, textures, meshes, render_textures, atlas_groups, link_status, link_notes, render_texture_hotspots)
     return 0
 
 
