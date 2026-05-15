@@ -465,6 +465,35 @@ Status: VERIFIED AUP INTEGRITY - LOOP 39 REAL H-PHI SOURCE REPAIR REMOVED DEAD O
 - Unity import/Console verification remains pending because no Unity editor session is available.
 - H-Phi result is static-source evidence, not profiler proof.
 
+## Loop 43 Real AUP Precision Repair - Fluid CPU Gerstner Phase Double Input
+
+### Findings
+
+- CPU buoyancy wave sampling in `HectonFluidEngine` reduced AUP XZ to `float2` before constructing Gerstner wave phase.
+- `GetWaterHeightAtPosition` also reduced runtime+AUP XZ to `float2` before sampling the weather wave spectrum.
+
+### Source Changes
+
+- `Assets/_Project/Scripts/HectonFluidEngine.cs`: changed CPU wave AUP XZ payload from `float2` to `double2`.
+- `GetWaterHeightAtPosition` now builds absolute XZ with double runtime+AUP addition.
+- Added `HectonGerstnerWater.SampleHeight(double2, ...)` and `SampleFiniteDifferenceNormal(double2, ...)` overloads.
+- Gerstner wave phase now uses double direction dot, wave number, phase velocity, and phase before final float output.
+
+### Verification
+
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 144.999 seconds with `RuntimeHPhiRisk=0.000628209`, `RuntimeHPhiNarrow=0.01078177`, `AupPrecisionIntegrity=1`, `AupPrecisionRisk=0`, `NativeArrayRefs=7074`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, and `NativeOwnershipRisk=8196`.
+- Final targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Final direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` returned 233 broad residual matches. Residuals remain broad `universe` text plus known final-cast/presentation payload names.
+- `git diff --check -- Assets/_Project/Scripts/HectonFluidEngine.cs` returns no whitespace errors.
+- Temporary Loop 43 capture is absent after cleanup.
+- No `dotnet build` or rebuild was run in Loop 43 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- H-Phi result is static-source evidence, not profiler proof.
+
 ## Loop 42 Real AUP Precision Boundary Repair - PDA Diagnostic Universe Offset
 
 ### Findings

@@ -863,6 +863,36 @@ Verification:
 Integrator notes:
 - Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
 
+## 2026-05-15 - Loop 43 Real AUP Precision Repair - Fluid CPU Gerstner Phase
+
+What was wrong:
+- CPU buoyancy wave sampling reduced AUP XZ to `float2` before Gerstner phase construction.
+- Public water-height sampling also collapsed runtime+AUP XZ into `float2` before wave evaluation.
+
+What was done:
+- Changed CPU wave AUP XZ payload to `double2`.
+- Added double-backed Gerstner height and finite-difference normal overloads.
+- Kept final wave height and normal output as float because the physics force path and GPU/render contracts consume float payloads.
+
+Cinematic Cheats used:
+- No visual fake added. This is a precision-boundary repair for CPU water physics.
+- Low-tier devices keep wave-count LOD; High/Ultra can use richer wave budgets without long-session AUP phase jitter.
+
+Exact Microseconds saved:
+- No direct frame-time win claimed.
+- Drift/jitter correction pressure is reduced in CPU buoyancy samples after long AUP sessions.
+
+Verification:
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 144.999 seconds with `AupPrecisionRisk=0`, `AupPrecisionIntegrity=1`, `NativeArrayRefs=7074`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, and `NativeOwnershipRisk=8196`.
+- Qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory AUP regex scan returned 233 broad residual matches.
+- Temporary Loop 43 capture is absent after cleanup.
+- No `dotnet build` or rebuild was run because the user explicitly forbade rebuilds.
+
+Integrator notes:
+- Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
+
 ## 2026-05-15 - Loop 42 Real AUP Precision Boundary Repair - PDA Diagnostic Offset
 
 What was wrong:

@@ -843,3 +843,44 @@ Regression Model:
 - Correctness: bootstrap resolution is now scene-local. Inactive spawner recovery remains supported by the `includeInactive` traversal branch.
 
 STATUS: H-PHI VERIFIED / CORE BUILD GREEN / UNITY RUNTIME PENDING
+
+## 2026-05-15 Managed Formatting Debt Surgery
+
+What was wrong:
+- `HectonDiscoveryManager` used `string.Format` for a discovery notification and string interpolation for biome fallback/debug presentation.
+- `SaveSlotUI.FormatPlaytime` used `string.Format("{0:D2}:{1:D2}")` for playtime text.
+- These were static managed-format debt in runtime source. They were not profiler-proven hot-frame defects.
+
+What was done:
+- Replaced discovery notification formatting with a `string.Create` `{0}` token inserter.
+- Replaced biome fallback/debug text interpolation with `string.Create` and manual positive-decimal writing.
+- Replaced save-slot playtime `string.Format` with `string.Create`, preserving two-digit minute output and expanding hours above 99.
+- Left culture-sensitive save timestamp `DateTime.ToString("g")` unchanged pending UI/localization contract.
+
+Cinematic Cheats used:
+- None. Presentation string assembly only.
+
+Exact Microseconds saved:
+- Runtime hot path: 0 us measured.
+- Cold UI/discovery formatting: removed four static managed-format tokens from first-party runtime source. No microsecond claim without profiler.
+
+Compile Status:
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:GenerateFullPaths=true -v:minimal`: passed, `0 Warning(s)`, `0 Error(s)`.
+- `git diff --check -- Assets/_Project/Scripts/HectonDiscoveryManager.cs Assets/_Project/Scripts/SaveSlotUI.cs`: passed.
+- Full static H-Phi budget gate passed at `2026-05-15 16:53:39 +04:00`.
+
+Phi Gain:
+- Runtime managed-format surface: `681 -> 677` since the build-and-lookup closure baseline.
+- Primary managed-runtime risk: `330 -> 327`.
+- Runtime narrow H-Phi: `0.010773555 -> 0.010784754`.
+- Runtime risk H-Phi: `0.000627514 -> 0.000628383`.
+- Memory alignment: `0.505517604 -> 0.506043090` due current-tree struct/layout ratio movement.
+- `FindObjectCalls` remains `0`.
+
+Regression Model:
+- CPU: no Tick/job/render cadence changed.
+- GC: final UI/notification strings still exist where API contracts require strings; `string.Format` params-array/parser debt was removed.
+- Memory: no native ownership changed.
+- Correctness: localized discovery template token `{0}` is preserved; save playtime keeps two-digit minute output and natural hour expansion.
+
+STATUS: H-PHI VERIFIED / CORE BUILD GREEN / UNITY RUNTIME PENDING

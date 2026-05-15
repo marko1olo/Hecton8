@@ -1602,3 +1602,74 @@ Residual bottlenecks:
 - Data Sovereignty remains the hard floor: `154 / (154 + 7072) = 0.021311929`.
 - Primary owner-blocked NativeArray refs remain high at `5678`; those migrations need domain-owner BufferID/SystemID/generation/disposal proof.
 - Runtime H-Phi remains pending Unity Console, PlayMode, Profiler, and GCMonitor evidence.
+
+## 2026-05-15 Live Addendum - Managed Formatting Debt Surgery
+
+Evidence class: `STATIC_SOURCE_COMPILE`.
+
+What changed:
+- `HectonDiscoveryManager` discovery notification formatting no longer uses `string.Format`.
+- `HectonDiscoveryManager` biome fallback/debug presentation no longer uses string interpolation.
+- `SaveSlotUI.FormatPlaytime` no longer uses `string.Format("{0:D2}:{1:D2}")`.
+- Culture-sensitive save timestamp formatting was intentionally left unchanged.
+
+Current static scores after this pass:
+
+| Coefficient | Score |
+|---|---:|
+| Runtime H-Phi narrow | 0.010784754 |
+| Runtime H-Phi risk-adjusted | 0.000628383 |
+| All-source H-Phi narrow | 0.009609441 |
+| All-source H-Phi risk-adjusted | 0.000512403 |
+| Risk integration | 0.058265816 |
+| Architectural purity | 1.000000000 |
+| Data sovereignty | 0.021311929 |
+| Memory alignment | 0.506043090 |
+| Binary-safe ratio | 0.018392013 |
+| AUP precision integrity | 1.000000000 |
+
+Current runtime counts:
+
+| Counter | Value |
+|---|---:|
+| Typed/queued signal push surface | 338 |
+| Legacy/direct event publish surface | 28 |
+| `GlobalRegistry.` surface refs | 5,081 |
+| DataVault access surface refs | 154 |
+| `NativeArray<T>` refs | 7,072 |
+| Runtime `Find*` calls | 0 |
+| Runtime `GetComponent*` calls | 321 |
+| AUP precision risk refs | 0 |
+| LINQ surface | 5 |
+| Coroutine surface | 0 |
+| Managed formatting surface | 677 |
+| Job `.Complete()` surface | 61 |
+| Primary managed-runtime risk | 327 |
+| Primary owner-blocked NativeArray refs | 5,678 |
+
+Budget gates:
+
+| Gate | Budget/Floor | Current | Status |
+|---|---:|---:|---|
+| Runtime `Find*` calls | <= 0 | 0 | PASS |
+| Runtime H-Phi risk | >= 0.000628000 | 0.000628383 | PASS |
+| Data sovereignty | >= 0.021310000 | 0.021311929 | PASS |
+| Memory alignment | >= 0.506000000 | 0.506043090 | PASS |
+| Managed formatting surface | <= 677 | 677 | PASS |
+| Primary managed-runtime risk | <= 327 | 327 | PASS |
+| AUP precision risk | <= 0 | 0 | PASS |
+| Legacy event publish | <= 28 | 28 | PASS |
+| Duplicate signal names | <= 0 | 0 | PASS |
+| `GlobalRegistry.` surface refs | <= 5,085 | 5,081 | PASS |
+| `GetComponent*` calls | <= 321 | 321 | PASS |
+| `NativeArray<T>` refs | <= 7,072 | 7,072 | PASS |
+| Primary owner-blocked NativeArray refs | <= 5,678 | 5,678 | PASS |
+
+Build evidence:
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:GenerateFullPaths=true -v:minimal`: passed, `0 Warning(s)`, `0 Error(s)`.
+- Full static H-Phi gate completed at local timestamp `2026-05-15 16:53:39 +04:00`.
+
+Residual bottlenecks:
+- Data Sovereignty remains the hard floor: `154 / (154 + 7072) = 0.021311929`.
+- ScannerTool, localization, persistence, and save-storage still dominate managed-format debt; larger edits need owner review and runtime call-stack evidence.
+- Runtime H-Phi remains pending Unity Console, PlayMode, Profiler, and GCMonitor evidence.

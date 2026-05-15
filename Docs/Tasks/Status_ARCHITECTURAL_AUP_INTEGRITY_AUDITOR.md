@@ -3,7 +3,7 @@
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
 Domain: ECHELON 1 / Origin Shift (AUP Manager), with audit reach into Physics, Voxel, Kinematics, AI trigger math, Biome trigger math, and deterministic seed callsites.
 Assignment Source: User-supplied XML block. `Docs/Tasks/CURRENT_BATCH.md` extraction returned `PROMPT_NOT_FOUND` for this ID on initial pass.
-Status: VERIFIED AUP INTEGRITY - LOOP 42 APPLIED; REAL H-PHI SOURCE REPAIRS REMOVED WORLD SPATIAL HASH ORIGIN-SHIFT NATIVE SCRATCH, FAR-UNLOAD LIST SCRATCH, RESTORED EDITOR GHOST DOUBLE AUP HISTORY, AND KEPT PDA DIAGNOSTIC UNIVERSE OFFSET IN DOUBLE UNTIL TEXT OUTPUT; STRICT AUP SCANS RETURN NO_MATCHES; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
+Status: VERIFIED AUP INTEGRITY - LOOP 43 APPLIED; REAL H-PHI SOURCE REPAIRS REMOVED WORLD SPATIAL HASH ORIGIN-SHIFT NATIVE SCRATCH, FAR-UNLOAD LIST SCRATCH, RESTORED EDITOR GHOST DOUBLE AUP HISTORY, KEPT PDA DIAGNOSTIC UNIVERSE OFFSET IN DOUBLE UNTIL TEXT OUTPUT, AND MOVED FLUID CPU GERSTNER PHASE INPUT TO DOUBLE AUP; STRICT AUP SCANS RETURN NO_MATCHES; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
 
 ## Selected Mandates
 
@@ -511,3 +511,18 @@ Loop 42 - Real AUP Precision Boundary Repair / PDA Diagnostic Universe Offset:
 - Temporary capture `TEMP_HECTON_PHI_SUMMARY_LOOP42.json` was removed after extracting metrics.
 - `git diff --check -- Assets/_Project/Scripts/PlayerPDA.cs` reports a line-ending warning only, no whitespace errors.
 - No `dotnet build` or rebuild was run in Loop 42 because the user explicitly forbade rebuilds.
+
+Loop 43 - Real AUP Precision Repair / Fluid CPU Gerstner Phase Double Input:
+- Re-read status/rationale and kept the rebuild ban active.
+- Patched `Assets/_Project/Scripts/HectonFluidEngine.cs` so `GetWaterHeightAtPosition` builds absolute XZ as `double2` from runtime position plus `CurrentTotalOffsetDouble`.
+- Changed `WaveQueryJob.AupOffsetXZ` from `float2` to `double2`; CPU buoyancy wave sampling now adds runtime XZ to AUP XZ in double before wave phase evaluation.
+- Added `HectonGerstnerWater.SampleHeight(double2, ...)` and `SampleFiniteDifferenceNormal(double2, ...)` overloads. Gerstner wave phase now uses double dot/wave-number/phase math before the final float wave height and normal output.
+- Rejected changing terrain height sampling or GPU wave buffers in this loop; those are runtime-local terrain/GPU presentation contracts and were outside the safe AUP phase repair.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 144.999 seconds.
+- Latest full static H-Phi summary: `RuntimeHPhiRisk=0.000628209`, `RuntimeHPhiNarrow=0.01078177`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=362`, `AupPrecisionRisk=0`, `NativeArrayRefs=7074`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, `NativeOwnershipRisk=8196`, `RuntimeFiles=1278`, `RuntimeLines=869819`.
+- Final targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Final direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run and returned 233 broad residual matches. Residuals remain broad `universe` text and known final-cast/presentation payload names.
+- Temporary capture `TEMP_HECTON_PHI_SUMMARY_LOOP43.json` was removed after extracting metrics.
+- `git diff --check -- Assets/_Project/Scripts/HectonFluidEngine.cs` returns no whitespace errors.
+- No `dotnet build` or rebuild was run in Loop 43 because the user explicitly forbade rebuilds.
