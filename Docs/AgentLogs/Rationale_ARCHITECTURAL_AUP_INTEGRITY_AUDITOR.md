@@ -591,3 +591,11 @@ Solution: Resolve AUP deltas from long grid differences plus local offsets in do
 Rejected Alternatives: Use runtime `Vector3` world-center distance, keep full absolute subtraction, or add managed telemetry/logging. Runtime positions are presentation-only after rebase; full absolute subtraction still loses low bits; managed logs violate zero-GC and do not repair the force vector.
 Scalability potential: Low devices keep the same non-alloc overlap and rigidbody caps. Middle gets stable shockwave falloff after long sessions. High/Ultra can spend saved correction/debug budget on stronger cave-collapse visual feedback without physics jitter.
 Hardware Impact: 0 B/frame added. Runtime cost is bounded to bodies already collected by the non-alloc seismic overlap. Measured gameplay microseconds are absent; static H-Phi gate reports `AupPrecisionRisk=0`, and no rebuild was run per user ban.
+
+## Decision 74 - Surface Thunder Grid-Delta Propagation Distance
+
+Problem: `HectonSurfaceWeatherDirector.ResolveAupThunderDistanceMeters` subtracted full absolute `double3` AUP coordinates for thunder delay and volume falloff. The thunder itself is a cinematic fake, but its delay must still be driven by stable AUP distance after long sessions.
+Solution: Resolve strike-listener AUP deltas from long grid differences plus local offsets in double, then feed the existing cheap approximate magnitude. The final output remains a float because audio delay/volume lanes consume float seconds/meters.
+Rejected Alternatives: Use runtime `Vector3` distance, keep full absolute subtraction, or simulate richer thunder propagation. Runtime distance is presentation-only after origin shifts; full absolute subtraction can cancel low bits; richer propagation is not justified for this deterministic audio fake.
+Scalability potential: Low devices keep the same cheap thunder model. Middle gets stable lightning audio timing after long sessions. High/Ultra can spend visual/audio budget on layered thunder tails without unstable propagation input.
+Hardware Impact: 0 B/frame added. Runtime cost is a few scalar double operations per planned lightning strike. Measured gameplay microseconds are absent; static H-Phi gate reports `AupPrecisionRisk=0`, and no rebuild was run per user ban.

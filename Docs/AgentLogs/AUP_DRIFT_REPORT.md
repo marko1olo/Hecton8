@@ -465,6 +465,33 @@ Status: VERIFIED AUP INTEGRITY - LOOP 39 REAL H-PHI SOURCE REPAIR REMOVED DEAD O
 - Unity import/Console verification remains pending because no Unity editor session is available.
 - H-Phi result is static-source evidence, not profiler proof.
 
+## Loop 47 Real AUP Precision Repair - Surface Thunder Propagation Grid-Delta Distance
+
+### Findings
+
+- `HectonSurfaceWeatherDirector.ResolveAupThunderDistanceMeters` used full absolute-double AUP subtraction for thunder delay and volume falloff.
+- This is a cinematic audio fake, but the input distance must remain stable across origin shifts and large AUP grids.
+
+### Source Changes
+
+- `Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs`: thunder distance now resolves strike-listener AUP deltas from grid/local double axis math.
+- Existing approximate magnitude, delay, volume, pitch, and audio event behavior were preserved.
+
+### Verification
+
+- `git diff --check -- Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs` reports a line-ending warning only, no whitespace errors.
+- Final targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Final direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` returned 233 broad residual matches. Residuals remain broad `universe` text plus known final-cast/presentation payload names.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 167.067 seconds with `RuntimeHPhiRisk=0.000633457`, `RuntimeHPhiNarrow=0.01078177`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=362`, `AupPrecisionRisk=0`, `NativeArrayRefs=7074`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, and `NativeOwnershipRisk=8196`.
+- Temporary Loop 47 capture is absent after cleanup.
+- No `dotnet build` or rebuild was run in Loop 47 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- H-Phi result is static-source evidence, not profiler proof.
+
 ## Loop 46 Real AUP Precision Repair - Seismic Shockwave Grid-Delta Force Direction
 
 ### Findings

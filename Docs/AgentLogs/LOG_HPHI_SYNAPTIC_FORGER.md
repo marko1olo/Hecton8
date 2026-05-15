@@ -800,3 +800,56 @@ Verification:
 - No dotnet build, restore, test, or rebuild was run.
 - Static snapshot/push audit now leaves only alias-qualified false positives.
 - `git diff --check` on `SystemDispatcher.cs` passed cleanly.
+
+## 2026-05-15 - Tool Manager Inventory Signal Addendum
+
+What was wrong:
+- `PlayerToolManager` already ticks but still subscribed to `PlayerInventory.InventoryChanged`.
+- Missing-equipped-tool holster logic was therefore tied to a managed inventory callback despite `InventoryChangedSignal` already existing.
+
+What was done:
+- Removed `PlayerToolManager` inventory subscribe/unsubscribe.
+- Added source-filtered `SignalBus<InventoryChangedSignal>` snapshot consumption in the existing player tick.
+- Cached the inventory signal hash and baselined inventory revision on enable.
+- Re-baselined after self-suppressed inventory remove/add paths so local drop/break cleanup does not replay through the signal lane later in the same frame.
+
+Cinematic Cheats used:
+- Tool inventory validity now rides one compact inventory dirty packet instead of a dedicated delegate wakeup.
+- The actual expensive truth check still reads the current inventory only on matching mutation packets.
+
+Exact microseconds saved:
+- Estimated 0.05-0.2 us on inventory mutation bursts.
+- Lower leak risk from one less player-tool inventory delegate.
+
+Verification:
+- No dotnet build, restore, test, or rebuild was run.
+- `rg` confirms `PlayerToolManager` has no `InventoryChanged +=` or `InventoryChanged -=` remnants.
+- `rg` confirms remaining inventory callbacks are `SuitUpgradeManager` and `HectonPlayerMovement`, intentionally left as stat/load authority paths.
+- `git diff --check` on `PlayerToolManager.cs` and `SystemDispatcher.cs` passed with only standard LF/CRLF notices.
+
+## 2026-05-15 - Residual SignalBus Audit Classification Addendum
+
+What was wrong:
+- The simple static audit still reports alias-qualified and fully-qualified generic rows as missing push/configuration.
+- `DockingRequestSignal` also reports as no-push because it is an external command lane, not a locally authored state broadcast.
+
+What was done:
+- Rechecked the residual rows against source:
+  - Fully qualified camera rows point to the existing `GlobalRenderContext` producer.
+  - `CoreCombatDamageSignal` is an alias for configured/pushed `CombatDamageSignal`.
+  - Fully qualified combat and macro database rows are type-name normalization misses.
+  - Residency rows are aliases for configured/pushed sector residency signals.
+  - `DockingRequestSignal` is owner-configured and failure-validated by `DroneFleetManager`, but has no in-repo sender.
+- No fake docking producer was added.
+
+Cinematic Cheats used:
+- Classification prevents a bogus docking polling owner and keeps the lane ready for a real submarine OS/hangar UI command producer later.
+
+Exact microseconds saved:
+- 0.0 us direct runtime change.
+- Prevented cost: no unnecessary producer, no extra tick owner, no cross-domain audit-churn edits.
+
+Verification:
+- No dotnet build, restore, test, or rebuild was run.
+- `rg` confirms `DockingRequestSignal` has consumer/configuration/failure response but no in-repo push.
+- Static audit residuals are documented as alias/type-name normalization rows plus the intentionally external docking command lane.

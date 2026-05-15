@@ -519,3 +519,15 @@ Cinematic Cheats used -> None. Git integration only.
 Exact Microseconds saved -> 0 us runtime by this operator pass.
 
 Verification -> Merge completed with no conflicts. `git diff --check` returned only CRLF warnings. Strict conflict-marker scan returned clean. No Unity Editor import, Play Mode, profiler, GCMonitor, player build, or runtime visual proof is claimed.
+
+## 2026-05-15 - Loop 32 Live Compile And Evidence Tail
+
+What was wrong -> A new live tail accumulated after the previous push/merge: AUP thunder grid-delta distance, `PlayerToolManager` inventory signal consumption, WFC dirty-cache packing, tooltip SDF/black-box updates, compute live burn trend, H-Phi/AUP/WFC docs, and multiple build/HPhi evidence files. Direct Core build evidence was mixed because default obj output was contested by parallel agents.
+
+What was done -> Inspected the runtime/evidence surface, tested the `SaveManager` dirty flag path against the actual generated Core compile surface, kept the local dirty-bit constant because the referenced legacy contracts DLL does not export `MacroDatabasePayloadFlags`, and verified a clean Core compile in an isolated output directory.
+
+Cinematic Cheats used -> None. Git integration and compile-boundary repair only.
+
+Exact Microseconds saved -> 0 us runtime by this operator pass.
+
+Verification -> Isolated `dotnet build Hecton8.Core.csproj` using `Temp\obj\CodexGitCheck` and `Temp\bin\CodexGitCheck` passed with `0 Warning(s)` and `0 Error(s)`. Default obj build hit a file-lock from another process. Latest preserved generated evidence remains mixed: several CurrentDisk build exits are `1`, later CurrentDisk9 and CurrentDisk12 exits are `0`, and HPhi CurrentDiskBudgetGate4 exits `0`. Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals are not claimed.

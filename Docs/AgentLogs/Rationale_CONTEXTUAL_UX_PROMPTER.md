@@ -431,3 +431,17 @@ Solution: Replace the raw comparison with `IsNewAupShift()` using the project-st
 Rejected Alternatives: Keeping raw ordering, resetting the last frame every origin shift, or applying all shift packets blindly. Raw ordering breaks at wrap; resets can duplicate shifts; blind application double-shifts cached anchors.
 Scalability potential: Low keeps prompt anchors correct across long sessions. Middle/High/Ultra preserve stable diegetic prompt placement while richer visual treatment remains independent of floating-origin churn.
 Hardware Impact: One unsigned delta check per AUP shift packet; no steady render cost when no shift packets exist.
+
+## Decision 61: Tooltip SDF Scalar Clamp
+Problem: Tooltip material dirty binding compared `gradientScale` and `faceDilate` directly. Runtime-mutated NaN or out-of-range values could bypass the cache forever and push invalid SDF constants into the glyph shader.
+Solution: Resolve both SDF tuning scalars through finite clamps before dirty comparison and property-block upload. Range attributes now share constants with the runtime clamps.
+Rejected Alternatives: Trusting `[Range]`, mutating serialized values during render, or clearing the property block every draw. Range does not protect runtime mutation; serialized mutation is noisy; unconditional clearing wastes steady render budget.
+Scalability potential: Low fails to stable default SDF values if authoring is bad. Middle/High/Ultra keep richer glyph sharpness control while invalid data cannot poison the draw path.
+Hardware Impact: Two finite clamp checks only when the property-block bind path runs; expected gain is avoiding repeated property-block churn and invalid shader constants after bad authoring. No profiler proof.
+
+## Decision 62: Tooltip Layout/Fade Scalar Clamp
+Problem: `glyphWorldHeight`, `glyphAdvanceScale`, and `fadeDurationSeconds` were used directly in layout and alpha math. Runtime-mutated NaNs could create invalid glyph geometry or make `_visibleAlpha` non-finite before the anchor black-box guard noticed anything.
+Solution: Add shared default/min/max constants and resolve all three scalars through finite clamps before glyph-scale, icon-gap, advance, and fade calculations.
+Rejected Alternatives: Trusting inspector `[Range]`, clamping only in `OnValidate`, or clearing the prompt after NaN alpha appears. Runtime mutation bypasses inspector range; `OnValidate` is editor-only; preventing invalid geometry is cheaper than trying to recover after shader payloads are poisoned.
+Scalability potential: Low keeps prompt geometry compact and predictable after bad authoring. Middle/High/Ultra retain authored sizing/fade control while invalid values fall back to stable defaults.
+Hardware Impact: Three scalar checks on layout/fade paths; expected gain is correctness and avoiding invalid indirect payloads rather than measurable frame-time savings. No profiler proof.

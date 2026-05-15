@@ -34,6 +34,42 @@ Verification:
 
 STATUS: AUDIT COMPLETE.
 
+## 2026-05-15 - Live Burn Trend
+
+What was wrong:
+- Corrected rolling windows showed historical burn, but the live burn could still be changing minute to minute.
+- A single live source sample did not show volatility.
+
+What was done:
+- Re-read `Docs/Tasks/Status_COMPUTE_LOGISTICS_AUDITOR.md` and `Docs/AgentLogs/Rationale_COMPUTE_LOGISTICS_AUDITOR.md`.
+- Sampled `state_5.sqlite.threads.tokens_used` for three consecutive 60-second intervals.
+- Created `COMPUTE_LIVE_BURN_TREND.md`.
+- Updated root brief, audit index, full report, status, and rationale.
+
+Evidence captured:
+- Current SQLite tokens: 45,817,071,457.
+- Delta since corrected snapshot: 58,816,887 tokens over 650.720049 seconds.
+- Rate since corrected snapshot: 90,387.39 tokens/sec.
+- Three-minute sample: 10,233,903 tokens.
+- Three-minute average: 56,671.11 tokens/sec, 3,400,266.79 tokens/min.
+- Cache-aware sample cost: USD 7.83.
+- Average cache-aware cost: USD 2.60/min, USD 156.18/hour.
+- Active threads: 19, all `gpt-5.5`, all under `\\?\C:\hades`.
+- Top five active threads: 63.87% of sample burn.
+
+Cinematic Cheats used:
+- None. Audit-only evidence accounting.
+
+Exact microseconds saved:
+- Runtime: 0 us.
+- Process: not claimed as measured saving. The pass identifies current live throttle concentration.
+
+Verification:
+- Markdown-only audit continuation.
+- No runtime compile run because no C# or C++ runtime source changed.
+
+STATUS: AUDIT COMPLETE.
+
 ## 2026-05-15 - Corrected Rolling Rates
 
 What was wrong:

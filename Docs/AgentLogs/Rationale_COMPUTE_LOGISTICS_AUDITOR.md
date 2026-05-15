@@ -347,3 +347,15 @@ Rejected Alternatives: Editing the old rolling ledger in place was rejected beca
 Scalability potential: Low/Middle/High/Ultra process gains a more reliable live spend throttle. Window costs now reflect actual `gpt-5.5` dominance instead of a cheap `unknown` proxy.
 
 Hardware Impact: 0 runtime microseconds on i3/MX350. No runtime code changed. Process impact: latest corrected 24h burn is 3.399B tokens and USD 2.60k cache-aware.
+
+## Decision 29 - Live Burn Trend Sampling
+
+Problem: A single live sample identifies active threads, but it does not show volatility across adjacent minutes.
+
+Solution: Sample `state_5.sqlite.threads.tokens_used` for three consecutive 60-second intervals, price each interval with corrected `gpt-5.5` blended rates, and write `COMPUTE_LIVE_BURN_TREND.md`.
+
+Rejected Alternatives: Re-running another full JSONL pass was rejected because the question here is short-window live trend, not historical final usage. Treating the three-minute day equivalent as a real daily invoice was rejected because short-window extrapolation is volatile.
+
+Scalability potential: Low/Middle/High/Ultra process gains a live throttle trend. The top five active threads produced 63.87% of the sample burn, so intervention can be targeted instead of global.
+
+Hardware Impact: 0 runtime microseconds on i3/MX350. No runtime code changed. Process impact: three-minute live burn measured at 56,671.11 tokens/sec and USD 2.60/min cache-aware.

@@ -63,6 +63,7 @@ namespace Hecton8.Atmosphere
         private const float ThunderAcousticShockEnergyScale = 120000f;
         private const float ThunderCameraShakeScale = 0.35f;
         private const float ScreenSpaceRainFrameTimeShedMs = 14f;
+        private const long AupAxisClampCells = 1000000L;
         private const int SurfaceWeatherPerformanceWarningCooldownFrames = 30;
         private const uint SurfaceWeatherSolveBudgetWarningHash = 0x53574657u;
         private const uint SurfaceWeatherSolveBudgetContextHash = 0x53574654u;
@@ -1266,7 +1267,7 @@ namespace Hecton8.Atmosphere
         {
             AbsoluteUniversePosition strikeAup = AbsoluteUniversePosition.FromRuntimePosition(strikePosition);
             AbsoluteUniversePosition listenerAup = AbsoluteUniversePosition.FromRuntimePosition(listenerPosition);
-            return ApproximateDistanceMeters(strikeAup.ToAbsoluteDouble3() - listenerAup.ToAbsoluteDouble3());
+            return ApproximateDistanceMeters(ResolveAupDeltaMeters(in strikeAup, in listenerAup));
         }
 
         private static Vector2 RotateDirection(Vector2 direction, float angleRadians)
@@ -1289,6 +1290,37 @@ namespace Hecton8.Atmosphere
             double midAxis = absolute.x + absolute.y + absolute.z - maxAxis - minAxis;
             double approximateDistance = maxAxis + (midAxis * 0.375d) + (minAxis * 0.25d);
             return (float)math.min(approximateDistance, (double)float.MaxValue);
+        }
+
+        private static double3 ResolveAupDeltaMeters(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
+        {
+            return new double3(
+                ResolveAupAxisDeltaMeters(a.GridX, b.GridX, a.LocalX, b.LocalX),
+                ResolveAupAxisDeltaMeters(a.GridY, b.GridY, a.LocalY, b.LocalY),
+                ResolveAupAxisDeltaMeters(a.GridZ, b.GridZ, a.LocalZ, b.LocalZ));
+        }
+
+        private static double ResolveAupAxisDeltaMeters(long aGrid, long bGrid, float aLocal, float bLocal)
+        {
+            if (aGrid > bGrid)
+            {
+                long positiveLimit = bGrid > long.MaxValue - AupAxisClampCells
+                    ? long.MaxValue
+                    : bGrid + AupAxisClampCells;
+                if (aGrid > positiveLimit)
+                    return double.MaxValue * 0.25d;
+            }
+            else if (aGrid < bGrid)
+            {
+                long negativeLimit = bGrid < long.MinValue + AupAxisClampCells
+                    ? long.MinValue
+                    : bGrid - AupAxisClampCells;
+                if (aGrid < negativeLimit)
+                    return double.MinValue * 0.25d;
+            }
+
+            long gridDelta = aGrid - bGrid;
+            return (gridDelta * (double)AbsoluteUniversePosition.CellSizeMeters) + ((double)aLocal - bLocal);
         }
 
         private float ResolveNextLightningCooldown(float electricalActivity)

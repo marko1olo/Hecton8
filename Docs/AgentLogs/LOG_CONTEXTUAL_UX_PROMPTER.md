@@ -531,3 +531,25 @@ Cinematic cheats used: No visual change for normal sessions. This keeps diegetic
 Exact microseconds saved: None claimed. Cost is one unsigned delta check per shift packet, not per render frame.
 
 Verification: No dotnet rebuilds were run. Static scans confirmed the raw `ShiftFrameId <=` comparison is gone from `DiegeticTooltipSystem`.
+
+## 2026-05-15 Tooltip SDF Scalar Clamp
+What was wrong: Tooltip SDF material binding compared and uploaded raw `gradientScale` and `faceDilate` values. Bad runtime authoring such as NaN could force repeated property-block rebinds and send invalid shader constants.
+
+What was done: Added shared SDF range constants and resolved both scalars through finite clamps before dirty comparison and shader upload.
+
+Cinematic cheats used: No visual change for valid authoring. Invalid tuning now falls back to predictable SDF values instead of breaking diegetic glyph legibility.
+
+Exact microseconds saved: None claimed. The value is preventing repeated property-block churn and invalid shader constants after bad authoring.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed material binding uses `resolvedGradientScale` and `resolvedFaceDilate`, and the tooltip hot-path marker scan stayed clean.
+
+## 2026-05-15 Tooltip Layout/Fade Scalar Clamp
+What was wrong: Tooltip glyph height, advance scale, and fade duration were used directly. Runtime-mutated NaNs could poison indirect glyph geometry or visibility alpha.
+
+What was done: Added shared default/min/max constants and routed layout/fade math through finite clamp helpers before glyph-scale, icon-gap, advance, and alpha movement calculations.
+
+Cinematic cheats used: No visual change for valid authoring. Bad tuning now collapses to stable defaults instead of producing non-diegetic broken prompt geometry.
+
+Exact microseconds saved: None claimed. The patch prevents invalid payloads; scalar checks are bounded and only on layout/fade paths.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed layout/fade use `ResolveGlyphWorldHeight()`, `ResolveGlyphAdvanceScale()`, and `ResolveFadeDurationSeconds()`.

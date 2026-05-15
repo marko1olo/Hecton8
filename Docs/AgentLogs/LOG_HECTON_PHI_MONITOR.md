@@ -844,6 +844,46 @@ Regression Model:
 
 STATUS: H-PHI VERIFIED / CORE BUILD GREEN / UNITY RUNTIME PENDING
 
+## 2026-05-15 Field Target Formatter And Compile Repair
+
+What was wrong:
+- `FieldTargetSemantics.cs` used repeated interpolation for tool-assessment mass/distance/range strings in first-party runtime source.
+- Concurrent integration drift broke the Core build: `SaveManager.cs` referenced `MacroDatabasePayloadFlags`, which is not present in the default legacy contracts DLL compile surface, and `SystemDispatcher.cs` had ambiguous `CameraPositionSignal` / `CameraFrustumSignal` names after a world-side duplicate type appeared.
+
+What was done:
+- Replaced 20 repeated `FieldTargetSemantics` interpolation sites with `string.Create`/`float.TryFormat` helpers preserving current-culture `0.0` formatting and existing text.
+- Added a local `MacroDatabasePayloadDirtyFlag` constant in `SaveManager.cs` for the WFC outpost snapshot-cache dirty bit.
+- Fully qualified `Hecton8.Core.Signals.CameraPositionSignal` and `Hecton8.Core.Signals.CameraFrustumSignal` in `SystemDispatcher.cs`.
+- Ran Core build, formatter source scan for the touched file, and a tightened full static H-Phi gate.
+
+Cinematic Cheats used:
+- None. This pass changed presentation string assembly and compile namespace resolution only.
+
+Exact Microseconds saved:
+- Runtime hot path: 0 us measured.
+- Tool assessment path: removed 20 static managed-format tokens from first-party runtime source. No frame-time or GC claim without Unity Profiler/GCMonitor evidence.
+
+Compile Status:
+- First build after formatter patch failed on concurrent integration drift: missing `MacroDatabasePayloadFlags`, then ambiguous camera signal names.
+- Strike 1 analyze: identified generated Core compile surface and duplicate signal namespace conflict.
+- Strike 2 fix: local dirty-bit constant and explicit Core signal qualification.
+- Recovery build: `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:GenerateFullPaths=true -v:minimal` passed, `0 Warning(s)`, `0 Error(s)`.
+
+Phi Gain:
+- Runtime H-Phi risk: `0.000628383 -> 0.000633457`.
+- Risk integration: `0.058265816 -> 0.058752584`.
+- Managed formatting surface: `677 -> 657`.
+- Primary managed-runtime risk: `327 -> 307`.
+- `FindObjectCalls` remains `0`; `UnityUpdateMethods` remains `0`.
+
+Regression Model:
+- CPU: composite formatter/parser pressure reduced in target-assessment string assembly; no Tick/render/job cadence changed.
+- GC: final `string` allocations remain because `SemanticAssessment` is a string contract; formatter overhead was reduced, not eliminated.
+- Memory: no NativeArray/DataVault ownership changed.
+- Correctness: current-culture `0.0` output is preserved via `TryFormat`; Core render context now explicitly publishes Core signal lanes.
+
+STATUS: H-PHI VERIFIED / CORE BUILD GREEN / UNITY RUNTIME PENDING
+
 ## 2026-05-15 Managed Formatting Debt Surgery
 
 What was wrong:

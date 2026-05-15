@@ -45,9 +45,23 @@ namespace Hecton8.UI
         private const float IconScaleMultiplier = 1.06f;
         private const float IconVerticalBias = -0.002f;
         private const float IconGapMultiplier = 0.42f;
+        private const float DefaultGlyphWorldHeight = 0.018f;
+        private const float DefaultGlyphAdvanceScale = 1f;
         private const float DefaultFadeDurationSeconds = 0.2f;
+        private const float MinGlyphWorldHeight = 0.002f;
+        private const float MaxGlyphWorldHeight = 0.05f;
+        private const float MinGlyphAdvanceScale = 0.8f;
+        private const float MaxGlyphAdvanceScale = 1.6f;
+        private const float MinFadeDurationSeconds = 0.05f;
+        private const float MaxFadeDurationSeconds = 1f;
         private const float MinVisibleDistanceMeters = 0.5f;
         private const float MaxVisibleDistanceMeters = 20f;
+        private const float MinGradientScale = 1f;
+        private const float MaxGradientScale = 24f;
+        private const float DefaultGradientScale = 8f;
+        private const float MinFaceDilate = -1f;
+        private const float MaxFaceDilate = 1f;
+        private const float DefaultFaceDilate = 0f;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_CONTEXTUAL_UX_PROMPTER.bin";
         private const string DefaultGlyphMaterialResourcePath = "UI/MAT_DiegeticTooltipGlyph";
         private const string DefaultIconMaterialResourcePath = "UI/MAT_DiegeticTooltipIcon";
@@ -97,11 +111,11 @@ namespace Hecton8.UI
         [Header("Tooltip Layout")]
         [SerializeField, Tooltip("Runtime-space offset above the looked-at AUP anchor.")]
         private Vector3 worldOffset = new Vector3(0f, 0.5f, 0f);
-        [SerializeField, Range(0.002f, 0.05f), Tooltip("World height of one tooltip glyph quad.")]
-        private float glyphWorldHeight = 0.018f;
-        [SerializeField, Range(0.8f, 1.6f), Tooltip("Horizontal advance multiplier applied to glyph metrics.")]
-        private float glyphAdvanceScale = 1f;
-        [SerializeField, Range(0.05f, 1f), Tooltip("Dither fade duration in seconds. Low tier snaps instead.")]
+        [SerializeField, Range(MinGlyphWorldHeight, MaxGlyphWorldHeight), Tooltip("World height of one tooltip glyph quad.")]
+        private float glyphWorldHeight = DefaultGlyphWorldHeight;
+        [SerializeField, Range(MinGlyphAdvanceScale, MaxGlyphAdvanceScale), Tooltip("Horizontal advance multiplier applied to glyph metrics.")]
+        private float glyphAdvanceScale = DefaultGlyphAdvanceScale;
+        [SerializeField, Range(MinFadeDurationSeconds, MaxFadeDurationSeconds), Tooltip("Dither fade duration in seconds. Low tier snaps instead.")]
         private float fadeDurationSeconds = DefaultFadeDurationSeconds;
         [SerializeField, Range(0.02f, 0.25f), Tooltip("VR-only shift toward the camera to avoid stereo clipping.")]
         private float vrDepthOffsetMeters = 0.1f;
@@ -117,10 +131,10 @@ namespace Hecton8.UI
         [SerializeField, Min(0)] private int xrInteractSpriteIndex = XRInteractGlyphIndex;
 
         [Header("SDF Tuning")]
-        [SerializeField, Range(1f, 24f), Tooltip("Distance-field edge sharpness multiplier forwarded into the tooltip glyph shader.")]
-        private float gradientScale = 8f;
-        [SerializeField, Range(-1f, 1f), Tooltip("Face dilate forwarded into the tooltip glyph shader for minor legibility tuning.")]
-        private float faceDilate;
+        [SerializeField, Range(MinGradientScale, MaxGradientScale), Tooltip("Distance-field edge sharpness multiplier forwarded into the tooltip glyph shader.")]
+        private float gradientScale = DefaultGradientScale;
+        [SerializeField, Range(MinFaceDilate, MaxFaceDilate), Tooltip("Face dilate forwarded into the tooltip glyph shader for minor legibility tuning.")]
+        private float faceDilate = DefaultFaceDilate;
 
         private readonly Vector2[] _textGlyphLocalCenters = new Vector2[MaxGlyphCount];
         private readonly Vector2[] _textGlyphLocalScales = new Vector2[MaxGlyphCount];
@@ -223,7 +237,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            float fadeDuration = math.max(0.001f, fadeDurationSeconds);
+            float fadeDuration = ResolveFadeDurationSeconds();
             _visibleAlpha = MoveTowardsFast(_visibleAlpha, targetAlpha, math.max(0f, deltaTime) * math.rcp(fadeDuration));
         }
 
@@ -625,7 +639,8 @@ namespace Hecton8.UI
             RefreshAsciiCharacterCache(font);
             int atlasWidth = math.max(1, font.atlasWidth);
             int atlasHeight = math.max(1, font.atlasHeight);
-            float glyphScale = glyphWorldHeight * math.rcp(math.max(1f, font.faceInfo.pointSize));
+            float resolvedGlyphWorldHeight = ResolveGlyphWorldHeight();
+            float glyphScale = resolvedGlyphWorldHeight * math.rcp(math.max(1f, font.faceInfo.pointSize));
 
             float iconWidth = 0f;
             float iconHeight = 0f;
@@ -637,7 +652,7 @@ namespace Hecton8.UI
             if (_iconCount > 0)
             {
                 _iconGlyphIndices[0] = iconGlyphIndex;
-                iconAdvance = iconWidth + glyphWorldHeight * IconGapMultiplier;
+                iconAdvance = iconWidth + resolvedGlyphWorldHeight * IconGapMultiplier;
             }
 
             float baselineOffset = font.faceInfo.ascentLine * glyphScale * 0.36f;
@@ -667,7 +682,7 @@ namespace Hecton8.UI
 
             float invAtlasWidth = math.rcp(math.max(1f, atlasWidth));
             float invAtlasHeight = math.rcp(math.max(1f, atlasHeight));
-            float advanceScale = glyphScale * glyphAdvanceScale;
+            float advanceScale = glyphScale * ResolveGlyphAdvanceScale();
             for (int i = 0; i < text.Length && _textGlyphCount < MaxGlyphCount; i++)
             {
                 char c = text[i];
@@ -1065,27 +1080,54 @@ namespace Hecton8.UI
             ref float boundFaceDilate,
             ref float boundDitherEnabled)
         {
+            float resolvedGradientScale = ResolveGradientScale();
+            float resolvedFaceDilate = ResolveFaceDilate();
             if (ReferenceEquals(boundTexture, mainTexture)
                 && ReferenceEquals(boundInstanceBuffer, instanceBuffer)
                 && ReferenceEquals(boundUvBuffer, uvBuffer)
-                && boundGradientScale == gradientScale
-                && boundFaceDilate == faceDilate
+                && boundGradientScale == resolvedGradientScale
+                && boundFaceDilate == resolvedFaceDilate
                 && boundDitherEnabled == ditherEnabled)
                 return;
 
             propertyBlock.Clear();
             propertyBlock.SetTexture(MainTexId, mainTexture);
-            propertyBlock.SetFloat(GradientScaleId, gradientScale);
-            propertyBlock.SetFloat(FaceDilateId, faceDilate);
+            propertyBlock.SetFloat(GradientScaleId, resolvedGradientScale);
+            propertyBlock.SetFloat(FaceDilateId, resolvedFaceDilate);
             propertyBlock.SetFloat(DitherEnabledId, ditherEnabled);
             propertyBlock.SetBuffer(InstanceBufferId, instanceBuffer);
             propertyBlock.SetBuffer(UvRectBufferId, uvBuffer);
             boundTexture = mainTexture;
             boundInstanceBuffer = instanceBuffer;
             boundUvBuffer = uvBuffer;
-            boundGradientScale = gradientScale;
-            boundFaceDilate = faceDilate;
+            boundGradientScale = resolvedGradientScale;
+            boundFaceDilate = resolvedFaceDilate;
             boundDitherEnabled = ditherEnabled;
+        }
+
+        private float ResolveGradientScale()
+        {
+            return math.isfinite(gradientScale) ? math.clamp(gradientScale, MinGradientScale, MaxGradientScale) : DefaultGradientScale;
+        }
+
+        private float ResolveFaceDilate()
+        {
+            return math.isfinite(faceDilate) ? math.clamp(faceDilate, MinFaceDilate, MaxFaceDilate) : DefaultFaceDilate;
+        }
+
+        private float ResolveGlyphWorldHeight()
+        {
+            return math.isfinite(glyphWorldHeight) ? math.clamp(glyphWorldHeight, MinGlyphWorldHeight, MaxGlyphWorldHeight) : DefaultGlyphWorldHeight;
+        }
+
+        private float ResolveGlyphAdvanceScale()
+        {
+            return math.isfinite(glyphAdvanceScale) ? math.clamp(glyphAdvanceScale, MinGlyphAdvanceScale, MaxGlyphAdvanceScale) : DefaultGlyphAdvanceScale;
+        }
+
+        private float ResolveFadeDurationSeconds()
+        {
+            return math.isfinite(fadeDurationSeconds) ? math.clamp(fadeDurationSeconds, MinFadeDurationSeconds, MaxFadeDurationSeconds) : DefaultFadeDurationSeconds;
         }
 
         private Vector3 ResolveAnchorPosition(Vector3 cameraPosition)

@@ -138,7 +138,10 @@ namespace Hecton8.Gameplay
         private bool _suppressToolLoadoutSignal;
         private uint _toolLoadoutSignalSourceId;
         private uint _toolLoadoutSignalSequence;
+        private uint _inventorySignalHash;
+        private uint _lastInventorySignalRevision;
         private PlayerRuntimeContext _runtimeContext;
+        private PlayerInventory _boundInventorySignalSource;
         private PlayerTool _externallyDockedTool;
         private PlayerTool _batterySiphonTool;
         private IBatteryTool _batterySiphonBatteryTool;
@@ -222,9 +225,7 @@ namespace Hecton8.Gameplay
             SubscribeModuleStatusEvents();
             RefreshInteriorCarrierCache(true);
             WarmRuntimePoolsIfNeeded();
-
-            if (playerInventory != null)
-                playerInventory.InventoryChanged += HandleInventoryChanged;
+            BaselineInventoryChangedSignalRevision();
         }
 
         private void OnDisable()
@@ -232,9 +233,6 @@ namespace Hecton8.Gameplay
             TryUnregisterFromTickManager();
             UnsubscribeModuleStatusEvents();
             ClearInteriorCarrierCache();
-
-            if (playerInventory != null)
-                playerInventory.InventoryChanged -= HandleInventoryChanged;
 
             // Despavnim tekuschiy instrument pri otklyuchenii menedzhera
             DespawnCurrentTool();
@@ -272,6 +270,9 @@ namespace Hecton8.Gameplay
         public void Tick(float deltaTime)
         {
             ConsumeToolSlotInputSignals();
+            if (ConsumeInventoryChangedSignals())
+                HandleInventoryChanged();
+
             if (_externallyDockedTool != null)
             {
                 if (!ReferenceEquals(_externallyDockedTool, _currentTool))
@@ -460,6 +461,7 @@ namespace Hecton8.Gameplay
             finally
             {
                 _suppressInventoryChangedHandling = false;
+                BaselineInventoryChangedSignalRevision();
             }
 
             if (!removedFromInventory)
@@ -485,6 +487,7 @@ namespace Hecton8.Gameplay
             finally
             {
                 _suppressInventoryChangedHandling = false;
+                BaselineInventoryChangedSignalRevision();
             }
 
             DespawnCurrentTool();
@@ -1764,6 +1767,7 @@ namespace Hecton8.Gameplay
             finally
             {
                 _suppressInventoryChangedHandling = false;
+                BaselineInventoryChangedSignalRevision();
             }
         }
 
@@ -1898,6 +1902,55 @@ namespace Hecton8.Gameplay
 
             ActiveSlotChanged?.Invoke(_currentSlotIndex);
             PublishToolLoadoutChanged(ToolLoadoutChangedSignal.ReasonActiveSlotChanged);
+        }
+
+        private void RefreshInventorySignalFilter()
+        {
+            if (ReferenceEquals(_boundInventorySignalSource, playerInventory))
+                return;
+
+            _boundInventorySignalSource = playerInventory;
+            _inventorySignalHash = ResolveInventorySignalHash(playerInventory);
+            _lastInventorySignalRevision = playerInventory != null ? unchecked((uint)playerInventory.InventoryVersion) : 0u;
+        }
+
+        private void BaselineInventoryChangedSignalRevision()
+        {
+            RefreshInventorySignalFilter();
+            _lastInventorySignalRevision = playerInventory != null ? unchecked((uint)playerInventory.InventoryVersion) : 0u;
+        }
+
+        private bool ConsumeInventoryChangedSignals()
+        {
+            RefreshInventorySignalFilter();
+            uint inventoryHash = _inventorySignalHash;
+            if (inventoryHash == 0u)
+                return false;
+
+            bool changed = false;
+            ReadOnlySpan<InventoryChangedSignal> signals = SignalBus<InventoryChangedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ref readonly InventoryChangedSignal signal = ref signals[i];
+                if (signal.InventoryHash != inventoryHash ||
+                    signal.Revision == 0u ||
+                    (_lastInventorySignalRevision != 0u && signal.Revision <= _lastInventorySignalRevision))
+                {
+                    continue;
+                }
+
+                _lastInventorySignalRevision = signal.Revision;
+                changed = true;
+            }
+
+            return changed;
+        }
+
+        private static uint ResolveInventorySignalHash(PlayerInventory inventory)
+        {
+            return inventory != null && inventory.gameObject != null
+                ? unchecked((uint)EntityId.ToULong(inventory.gameObject.GetEntityId()))
+                : 0u;
         }
 
         private void HandleInventoryChanged()

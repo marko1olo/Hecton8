@@ -909,3 +909,42 @@ Corrected rolling windows:
 | Last 30d | 42,821,381,540 | 16,520.59 | 991,235.68 | 59,474,141.03 | 1,427,379,384.67 | USD 29,550.86 | USD 0.68 | USD 41.04 |
 
 Verdict: the prior rolling-day cost was under-attributed. Corrected path-or-UUID matching prices the latest 24h at USD 2,601.80 cache-aware, not USD 1,039.59.
+
+## Continuation Addendum - Live Burn Trend
+
+Snapshot: 2026-05-15T17:29:14+04:00
+
+The live trend sample is preserved at `COMPUTE_LIVE_BURN_TREND.md`.
+
+| Metric | Value |
+|---|---:|
+| Current SQLite tokens | 45,817,071,457 |
+| Delta since corrected snapshot | 58,816,887 |
+| Seconds since corrected snapshot | 650.720049 |
+| Rate since corrected snapshot | 90,387.39 tokens/sec |
+| Three-minute sample tokens | 10,233,903 |
+| Three-minute sample rate | 56,671.11 tokens/sec |
+| Three-minute day equivalent | 4,896,384,183.69 tokens/day |
+| Three-minute cache-aware cost | USD 7.83 |
+| Three-minute average cost/min | USD 2.60 |
+| Three-minute day-equivalent cost | USD 3,748.23 |
+| Active threads in three-minute sample | 19 |
+
+Interval trend:
+
+| Interval | Tokens | Tokens/sec | USD/min |
+|---|---:|---:|---:|
+| 1 | 2,884,767 | 47,887.84 | USD 2.20 |
+| 2 | 4,529,639 | 75,420.62 | USD 3.46 |
+| 3 | 2,819,497 | 46,768.94 | USD 2.15 |
+
+Top concentration:
+
+| Slice | Tokens | Share |
+|---|---:|---:|
+| Top 1 thread | 1,821,461 | 17.80% |
+| Top 2 threads | 3,388,464 | 33.11% |
+| Top 5 threads | 6,536,418 | 63.87% |
+| Top 10 threads | 8,745,897 | 85.46% |
+
+Verdict: live burn remains concentrated and volatile. The middle minute spiked to 75.4k tokens/sec. Token volume alone still does not prove waste, but it identifies current throttle targets.

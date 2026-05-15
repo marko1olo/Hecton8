@@ -185,3 +185,9 @@ Solution: Merge remote main normally, keep both histories, then validate and che
 Rejected Alternatives: Force-pushing the local checkpoint over remote lore/regrowth/hash work, rebasing shared history, or pushing a dirty post-merge tree.
 Scalability potential: Git-only operator pass. Low/Middle/High/Ultra runtime behavior remains producer-owned; this pass preserves shared history and conflict boundaries.
 Hardware Impact: 0 us runtime impact.
+
+Problem: The next live tail included runtime edits plus mixed generated build evidence. A direct Core build first failed on `SaveManager` when using `MacroDatabasePayloadFlags`, then a default rebuild hit an obj DLL file lock from parallel agents.
+Solution: Treat the dirty tail as a bounded integration checkpoint, use the compile surface that is actually visible to `Hecton8.Core.csproj`, keep the local WFC dirty bit constant matching the existing `GlobalDataVault` pattern, and verify with an isolated build output directory.
+Rejected Alternatives: Editing generated csproj files, forcing a contract type from source that the legacy DLL does not export, killing unknown build processes, or claiming Unity/runtime green from CLI compile only.
+Scalability potential: Git-only operator pass. Low/Middle/High/Ultra runtime behavior remains producer-owned; this pass preserves compile evidence and reduces shared-history drift.
+Hardware Impact: 0 us runtime impact. Dev-path gain is one green isolated Core compile boundary despite parallel build locks.

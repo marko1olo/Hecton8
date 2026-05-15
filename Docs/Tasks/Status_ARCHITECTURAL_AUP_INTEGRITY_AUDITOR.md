@@ -3,7 +3,7 @@
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
 Domain: ECHELON 1 / Origin Shift (AUP Manager), with audit reach into Physics, Voxel, Kinematics, AI trigger math, Biome trigger math, and deterministic seed callsites.
 Assignment Source: User-supplied XML block. `Docs/Tasks/CURRENT_BATCH.md` extraction returned `PROMPT_NOT_FOUND` for this ID on initial pass.
-Status: VERIFIED AUP INTEGRITY - LOOP 46 APPLIED; REAL H-PHI SOURCE REPAIRS REMOVED WORLD SPATIAL HASH ORIGIN-SHIFT NATIVE SCRATCH, FAR-UNLOAD LIST SCRATCH, RESTORED EDITOR GHOST DOUBLE AUP HISTORY, KEPT PDA DIAGNOSTIC UNIVERSE OFFSET IN DOUBLE UNTIL TEXT OUTPUT, MOVED FLUID CPU GERSTNER PHASE INPUT TO DOUBLE AUP, KEPT SCANNER MARKER AUP DISTANCE IN DOUBLE UNTIL PIXEL SIZING, MOVED ACOUSTIC ECHOLOCATION CLASSIFICATION DISTANCE TO GRID-DELTA DOUBLE MATH, AND MOVED SEISMIC SHOCKWAVE FORCE DIRECTION TO GRID-DELTA DOUBLE MATH; STRICT AUP SCANS RETURN NO_MATCHES; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
+Status: VERIFIED AUP INTEGRITY - LOOP 47 APPLIED; REAL H-PHI SOURCE REPAIRS REMOVED WORLD SPATIAL HASH ORIGIN-SHIFT NATIVE SCRATCH, FAR-UNLOAD LIST SCRATCH, RESTORED EDITOR GHOST DOUBLE AUP HISTORY, KEPT PDA DIAGNOSTIC UNIVERSE OFFSET IN DOUBLE UNTIL TEXT OUTPUT, MOVED FLUID CPU GERSTNER PHASE INPUT TO DOUBLE AUP, KEPT SCANNER MARKER AUP DISTANCE IN DOUBLE UNTIL PIXEL SIZING, MOVED ACOUSTIC ECHOLOCATION CLASSIFICATION DISTANCE TO GRID-DELTA DOUBLE MATH, MOVED SEISMIC SHOCKWAVE FORCE DIRECTION TO GRID-DELTA DOUBLE MATH, AND MOVED SURFACE THUNDER PROPAGATION DISTANCE TO GRID-DELTA DOUBLE MATH; STRICT AUP SCANS RETURN NO_MATCHES; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
 
 ## Selected Mandates
 
@@ -568,3 +568,16 @@ Loop 46 - Real AUP Precision Repair / Seismic Shockwave Grid-Delta Force Directi
 - Temporary capture `TEMP_HECTON_PHI_SUMMARY_LOOP46.json` was removed after extracting metrics.
 - `git diff --check -- Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs` reports a line-ending warning only, no whitespace errors.
 - No `dotnet build` or rebuild was run in Loop 46 because the user explicitly forbade rebuilds.
+
+Loop 47 - Real AUP Precision Repair / Surface Thunder Propagation Grid-Delta Distance:
+- Re-read status/rationale and kept the rebuild ban active.
+- Patched `Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs` so lightning thunder delay/volume distance uses direct grid/local double AUP delta math instead of subtracting full absolute double coordinates.
+- Preserved the existing cheap thunder distance approximation and cinematic audio fake; only the AUP input subtraction changed.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 167.067 seconds.
+- Latest full static H-Phi summary: `RuntimeHPhiRisk=0.000633457`, `RuntimeHPhiNarrow=0.01078177`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=362`, `AupPrecisionRisk=0`, `NativeArrayRefs=7074`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, `NativeOwnershipRisk=8196`, `RuntimeFiles=1278`, `RuntimeLines=870218`.
+- Final targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Final direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run and returned 233 broad residual matches. Residuals remain broad `universe` text and known final-cast/presentation payload names.
+- Temporary capture `TEMP_HECTON_PHI_SUMMARY_LOOP47.json` was removed after extracting metrics.
+- `git diff --check -- Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs` reports a line-ending warning only, no whitespace errors.
+- No `dotnet build` or rebuild was run in Loop 47 because the user explicitly forbade rebuilds.

@@ -27,7 +27,6 @@ using Hecton8.Optimization;
 using Hecton8.Quest;
 using Hecton8.UI;
 using Hecton8.World;
-using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -662,12 +661,7 @@ namespace Hecton8.SaveSystem
             }
 
             EnsureWfcOutpostNativeBuffers();
-            PackWfcOutpostMutableStateJob packJob = new PackWfcOutpostMutableStateJob
-            {
-                Grid = wfcGrid,
-                PackedWords = _wfcOutpostPackedWords
-            };
-            packJob.Run();
+            PackWfcOutpostMutableStateGrid(wfcGrid, _wfcOutpostPackedWords);
 
             ulong packedHash = ComputeWfcOutpostPackedHash(_wfcOutpostPackedWords);
             if (TryGetCachedWfcOutpostSnapshotHash(sectorHash, out ulong cachedPayloadHash) &&
@@ -1647,7 +1641,8 @@ namespace Hecton8.SaveSystem
 
         private static uint ResolveWfcOutpostSnapshotCacheFlags(in MacroDatabasePayloadHandle handle)
         {
-            return (handle.Flags & MacroDatabasePayloadFlags.Dirty) != 0
+            const byte DirtyFlag = 1 << 0;
+            return (handle.Flags & DirtyFlag) != 0
                 ? WfcOutpostSnapshotCacheFlagAppendPending
                 : 0u;
         }
@@ -1781,32 +1776,46 @@ namespace Hecton8.SaveSystem
             return hash != 0UL ? hash : 1UL;
         }
 
-        [BurstCompile]
-        private struct PackWfcOutpostMutableStateJob : IJob
+        private static unsafe void PackWfcOutpostMutableStateGrid(
+            NativeArray<byte> wfcGrid,
+            NativeArray<ulong> packedWords)
         {
-            [ReadOnly] public NativeArray<byte> Grid;
-            public NativeArray<ulong> PackedWords;
+            int wordCount = math.min(packedWords.Length, WfcOutpostPersistenceConstants.PackedWordCount);
+            ulong* words = (ulong*)packedWords.GetUnsafePtr();
+            for (int word = 0; word < wordCount; word++)
+                words[word] = 0UL;
 
-            public void Execute()
+            int cellCount = math.min(wfcGrid.Length, WfcOutpostPersistenceConstants.CellCount);
+            byte* cells = (byte*)wfcGrid.GetUnsafeReadOnlyPtr();
+            for (int cell = 0; cell < cellCount; cell++)
             {
-                for (int word = 0; word < WfcOutpostPersistenceConstants.PackedWordCount; word++)
-                    PackedWords[word] = 0UL;
-
-                for (int cell = 0; cell < WfcOutpostPersistenceConstants.CellCount; cell++)
-                {
-                    ulong flags = Grid[cell];
-                    OrBit(cell, flags & 1UL);
-                    OrBit(cell + WfcOutpostPersistenceConstants.CellCount, (flags >> 1) & 1UL);
-                    OrBit(cell + (WfcOutpostPersistenceConstants.CellCount * 2), (flags >> 2) & 1UL);
-                    OrBit(cell + (WfcOutpostPersistenceConstants.CellCount * 3), (flags >> 3) & 1UL);
-                }
+                ulong flags = cells[cell];
+                OrWfcOutpostPackedBit(words, wordCount, cell, flags & 1UL);
+                OrWfcOutpostPackedBit(
+                    words,
+                    wordCount,
+                    cell + WfcOutpostPersistenceConstants.CellCount,
+                    (flags >> 1) & 1UL);
+                OrWfcOutpostPackedBit(
+                    words,
+                    wordCount,
+                    cell + (WfcOutpostPersistenceConstants.CellCount * 2),
+                    (flags >> 2) & 1UL);
+                OrWfcOutpostPackedBit(
+                    words,
+                    wordCount,
+                    cell + (WfcOutpostPersistenceConstants.CellCount * 3),
+                    (flags >> 3) & 1UL);
             }
+        }
 
-            private void OrBit(int bitIndex, ulong enabled)
-            {
-                int wordIndex = bitIndex >> 6;
-                PackedWords[wordIndex] = PackedWords[wordIndex] | (enabled << (bitIndex & 63));
-            }
+        private static unsafe void OrWfcOutpostPackedBit(ulong* packedWords, int wordCount, int bitIndex, ulong enabled)
+        {
+            int wordIndex = bitIndex >> 6;
+            if ((uint)wordIndex >= (uint)wordCount)
+                return;
+
+            packedWords[wordIndex] = packedWords[wordIndex] | (enabled << (bitIndex & 63));
         }
 
         private void RetryPendingWfcOutpostDirtyAppends()

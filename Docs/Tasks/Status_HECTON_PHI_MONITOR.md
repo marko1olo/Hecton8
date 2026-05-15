@@ -1,6 +1,6 @@
 # Status_HECTON_PHI_MONITOR
 
-Status: CORE BUILD GREEN / H-PHI STATIC GATE PASSED / RUNTIME PENDING UNITY VERIFICATION
+Status: CORE BUILD GREEN / TIGHTENED H-PHI STATIC GATE PASSED / RUNTIME PENDING UNITY VERIFICATION
 Agent: HECTON_PHI_MONITOR
 Domain: ECHELON 9 / Architecture metrics / static H-Phi audit
 Task Count: 6
@@ -54,16 +54,19 @@ Task Count: 6
 - [x] Task 32: Current H-Phi build/gate verification | DOD: full static H-Phi budget gate passed with `FindObjectCalls=0` and Core build passed with `0` warnings/errors | Rejected: reporting stale `SubscribeToInputManager` blocker after source changed | Estimate: 0 us runtime
 - [x] Task 33: Managed formatting debt surgery | DOD: removed `string.Format`/interpolation debt from `HectonDiscoveryManager` discovery notifications and `SaveSlotUI` playtime formatting using `string.Create`; Core build passed | Rejected: changing culture-sensitive save timestamp formatting without UI/localization contract | Estimate: cold UI/discovery formatting, hot path 0 us measured
 - [x] Task 34: Tightened H-Phi managed-format gate | DOD: full static H-Phi gate passed with `ManagedFormatSurface=677`, `PrimaryManagedRuntimeRisk=327`, and `RuntimeHPhiRisk=0.000628383` | Rejected: claiming profiler/GC savings from static source only | Estimate: 0 us runtime
+- [x] Task 35: Field target formatter debt surgery | DOD: replaced repeated `mass/distance/range` interpolation in `FieldTargetSemantics.cs` with `string.Create`/`TryFormat` helpers while preserving current-culture `0.0` output | Rejected: broad UI/string cleanup in owner-heavy panels and fake NativeArray migrations | Estimate: tool-assessment string path only, hot path 0 us measured
+- [x] Task 36: Concurrent compile break repair | DOD: fixed current Core build blockers by using a local macro-database dirty flag in `SaveManager.cs` and fully-qualified Core camera signal payloads in `SystemDispatcher.cs`; Core build passed | Rejected: reverting dirty owner files or changing signal contracts | Estimate: 0 us runtime behavior change
+- [x] Task 37: Tightened H-Phi formatter/build gate | DOD: full static H-Phi budget gate passed with `ManagedFormatSurface=657`, `PrimaryManagedRuntimeRisk=307`, and `RuntimeHPhiRisk=0.000633457` | Rejected: reporting static improvements without a regression budget | Estimate: 0 us runtime
 
 ## Latest Static Scores
-- H-Phi runtime static narrow: `0.010784754`
-- H-Phi runtime static risk-adjusted: `0.000628383`
-- H-Phi all-source static narrow: `0.009609441`
-- H-Phi all-source static risk-adjusted: `0.000512403`
+- H-Phi runtime static narrow: `0.010781770`
+- H-Phi runtime static risk-adjusted: `0.000633457`
+- H-Phi all-source static narrow: `0.009606942`
+- H-Phi all-source static risk-adjusted: `0.000516535`
 - Narrow integration: `1.0`
-- Risk integration: `0.058265816` (derived from latest gated runtime H-Phi components)
+- Risk integration: `0.058752584` (derived from latest gated runtime H-Phi components)
 - Architectural purity: `1.000000000`
-- Data sovereignty: `0.021311929`
+- Data sovereignty: `0.021306032`
 - Memory alignment: `0.506043090`
 - Binary-safe ratio: `0.018392013`
 - AUP precision integrity: `1.000000000`
@@ -121,4 +124,8 @@ Task Count: 6
 - Latest managed-format repair build: `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:GenerateFullPaths=true -v:minimal` passed at `2026-05-15 16:42 +04:00` with `0 Warning(s)` and `0 Error(s)`.
 - Latest full static H-Phi gate passed at `2026-05-15 16:53:39 +04:00` with `ManagedFormatSurface=677`, `PrimaryManagedRuntimeRisk=327`, `RuntimeHPhiRisk=0.000628383`, `RuntimeHPhiNarrow=0.010784754`, `MemoryAlignment=0.506043090`, `FindObjectCalls=0`, `GetComponentCalls=321`, and all Core graph budgets green.
 - `HectonDiscoveryManager.cs` now has no `string.Format`, string interpolation, or `.ToString()` static hits; `SaveSlotUI.FormatPlaytime` no longer uses `string.Format`.
+- Latest compile repair: `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:GenerateFullPaths=true -v:minimal` passed at `2026-05-15 17:25 +04:00` with `0 Warning(s)` and `0 Error(s)`.
+- `FieldTargetSemantics.cs` now has no `string.Format`, interpolation, or `.ToString()` static hits; repeated target-assessment `mass/distance/range` formatting uses `string.Create` and `float.TryFormat`.
+- Build repair details: `SaveManager.cs` uses a local `MacroDatabasePayloadDirtyFlag` because the default Core build uses the legacy contracts DLL surface, and `SystemDispatcher.cs` fully qualifies `Hecton8.Core.Signals.CameraPositionSignal` / `CameraFrustumSignal` to avoid the new `Hecton8.World` duplicate-name ambiguity.
+- Latest tightened static H-Phi gate passed at `2026-05-15 17:34:12 +04:00` with `ManagedFormatSurface=657`, `PrimaryManagedRuntimeRisk=307`, `JobCompleteSurface=58`, `RuntimeHPhiRisk=0.000633457`, `FindObjectCalls=0`, `UnityUpdateMethods=0`, `SignalBusPush=341`, and all Core graph budgets green.
 - Unity Console / PlayMode / Profiler / GCMonitor: PENDING VERIFICATION.

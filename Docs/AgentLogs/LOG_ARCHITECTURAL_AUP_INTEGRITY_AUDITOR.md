@@ -863,6 +863,36 @@ Verification:
 Integrator notes:
 - Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
 
+## 2026-05-15 - Loop 47 Real AUP Precision Repair - Surface Thunder Distance
+
+What was wrong:
+- `HectonSurfaceWeatherDirector` subtracted full absolute `double3` AUP coordinates for lightning thunder distance.
+- The thunder is cinematic, but its timing/volume input still needs stable AUP math after long origin travel.
+
+What was done:
+- Moved thunder propagation distance to direct grid/local double AUP delta math.
+- Preserved the existing cheap approximate magnitude and audio fake.
+
+Cinematic Cheats used:
+- Kept deterministic thunder delay/volume approximation instead of adding propagation simulation.
+- Low-tier keeps cheap audio timing; High/Ultra can layer richer thunder tails over stable distance input.
+
+Exact Microseconds saved:
+- Gameplay frame time: 0 us measured; profiler proof is absent.
+- No allocation added; cost is a few scalar double operations per lightning strike plan.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs` reports line-ending warning only.
+- Qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory AUP regex scan returned 233 broad residual matches: broad `universe` text and known final-cast/presentation payload names.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 167.067 seconds with `AupPrecisionRisk=0`, `AupPrecisionIntegrity=1`, `RuntimeHPhiRisk=0.000633457`, `NativeArrayRefs=7074`, and `PrimaryOwnerBlockedNativeArrayRefs=5678`.
+- Temporary Loop 47 capture is absent after cleanup.
+- No `dotnet build` or rebuild was run because the user explicitly forbade rebuilds.
+
+Integrator notes:
+- Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
+
 ## 2026-05-15 - Loop 46 Real AUP Precision Repair - Seismic Shockwave Direction
 
 What was wrong:

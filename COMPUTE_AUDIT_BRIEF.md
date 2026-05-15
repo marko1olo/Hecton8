@@ -14,6 +14,7 @@ File burn attribution: `COMPUTE_FILE_BURN_ATTRIBUTION.md`
 Token burn rate ledger: `COMPUTE_TOKEN_BURN_RATE_LEDGER.md`
 Corrected rolling rates: `COMPUTE_CORRECTED_ROLLING_RATES.md`
 Model bucket reconciliation: `COMPUTE_MODEL_BUCKET_RECONCILIATION.md`
+Live burn trend: `COMPUTE_LIVE_BURN_TREND.md`
 Live burn sources: `COMPUTE_LIVE_BURN_SOURCES.md`
 Rate efficiency audit: `COMPUTE_RATE_EFFICIENCY_AUDIT.md`
 Codex dialogue audit: `COMPUTE_CODEX_DIALOGUE_AUDIT.md`
@@ -58,7 +59,7 @@ Status/Rationale/Log:
 | Model-aware cost per meaningful LOC | USD 0.03893 |
 | All-GPT-5.5 standard cost per meaningful LOC | USD 0.04524 |
 | Energy by prompt constant | 2,288.57 MWh |
-| Live SQLite all-thread tokens, 17:18 snapshot | 45,758,254,570 |
+| Live SQLite all-thread tokens, 17:29 snapshot | 45,817,071,457 |
 | UUID-resolved final-usage sessions | 17 |
 | Tail delta after full scan | +102,151,525 tokens |
 | Tail delta model bucket | `gpt-5.5` |
@@ -66,6 +67,9 @@ Status/Rationale/Log:
 | Live 90s active-source sample | 2,725,800 tokens |
 | Live 90s active-source rate | 30,099.39 tokens/sec; USD 1.38/min |
 | Live active threads | 11, all `gpt-5.5` |
+| Live 3-minute trend | 10,233,903 tokens |
+| Live 3-minute trend rate | 56,671.11 tokens/sec; USD 2.60/min |
+| Live 3-minute day equivalent | 4.896B tokens/day; USD 3,748.23/day |
 | Top-30 attribution patch calls | 14,015 |
 | Top-30 attribution unique patch targets | 1,647 |
 | Top-30 attribution patch churn | +354,203 / -75,895 lines |
@@ -132,6 +136,8 @@ Token burn rate ledger has been written to `COMPUTE_TOKEN_BURN_RATE_LEDGER.md`. 
 Corrected rolling rates have been written to `COMPUTE_CORRECTED_ROLLING_RATES.md`. They supersede earlier rolling-window costs because they use path-or-UUID model matching.
 
 Live burn sources have been written to `COMPUTE_LIVE_BURN_SOURCES.md`. It identifies which active thread IDs generated token deltas during a 90-second sample.
+
+Live burn trend has been written to `COMPUTE_LIVE_BURN_TREND.md`. It preserves three consecutive 60-second samples and shows live volatility plus concentration.
 
 Rate efficiency audit remains in `COMPUTE_RATE_EFFICIENCY_AUDIT.md` as the previous detailed rate snapshot.
 

@@ -1133,3 +1133,30 @@ Verification:
 - `git diff --check` reports only Git CRLF normalization warnings.
 - `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` exited 0 at 2026-05-15 17:18:51 +04:00; core graph debt counts unchanged.
 - No `dotnet` rebuild was run.
+
+## Recheck Report: WFC Pack Path Job Fence Removal
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- WFC persist still used an `IJob` wrapper for a fixed-size 500-cell bit pack.
+- The source had moved away from `Schedule().Complete()` to immediate `Run()`, but this kept false parallelism, stale Burst decoration, and unnecessary job ceremony on a Tick-drain persistence path.
+
+What was done:
+- Replaced `PackWfcOutpostMutableStateJob` with `PackWfcOutpostMutableStateGrid()`, a direct deterministic pack loop.
+- Removed the `BurstCompile` attribute path and the `Unity.Burst` import from `SaveManager`.
+- Kept payload bit layout, payload hash input, and MacroDB payload format unchanged.
+
+Cinematic cheats used:
+- Chose the cheaper fixed-loop pack path over fake job parallelism. The workload is 32 word clears and 500 cells; scheduling machinery is not buying immersion here.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation: 0 B by static inspection.
+- Work remains fixed: 32 packed-word clears plus 500 cell bit packs.
+- Removed job wrapper/Burst ceremony from this persist path.
+
+Verification:
+- Static scan confirms no `PackWfcOutpostMutableStateJob`, no `BurstCompile`, no `packJob.Run()`, and no WFC `Schedule().Complete()` path remain in `SaveManager`.
+- `git diff --check -- Assets/_Project/Scripts/SaveManager.cs` reports only Git CRLF normalization warnings.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` exited 0 at 2026-05-15 17:38:38 +04:00; core graph debt counts unchanged.
+- No `dotnet` rebuild was run.
