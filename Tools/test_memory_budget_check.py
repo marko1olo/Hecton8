@@ -1,4 +1,6 @@
+import contextlib
 import csv
+import io
 import json
 import sys
 import unittest
@@ -254,6 +256,29 @@ class MemoryBudgetCheckTests(unittest.TestCase):
         self.assertTrue(all(row["path"].startswith(allowed_prefixes) for row in render_texture_rows))
         self.assertFalse(any(row["path"].startswith("Docs/") for row in texture_rows))
         self.assertFalse(any("_agent_screen_capture" in row["path"] for row in texture_rows))
+
+    def test_validate_reports_cli_path_accepts_current_generated_reports(self) -> None:
+        ok, messages = budget.validate_generated_reports(
+            PROJECT_ROOT,
+            PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit.csv",
+            PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit.json",
+            PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Texture_Redlines.csv",
+            PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Mesh_Redlines.csv",
+            PROJECT_ROOT / "Docs" / "Reports" / "VRAM_RenderTexture_Redlines.csv",
+            PROJECT_ROOT / "Docs" / "Reports" / "VRAM_RenderTexture_SourceHotspots.csv",
+        )
+
+        self.assertTrue(ok, messages)
+        self.assertIn("reports valid", messages[0])
+        self.assertIn("rt_hotspots=61", messages[0])
+        buffer = io.StringIO()
+        with contextlib.redirect_stdout(buffer):
+            exit_code = budget.main(["--root", str(PROJECT_ROOT), "--validate-reports"])
+        self.assertEqual(
+            exit_code,
+            0,
+        )
+        self.assertIn("reports valid", buffer.getvalue())
 
     def test_iter_assets_uses_case_insensitive_generated_tree_exclusion(self) -> None:
         self.assertIn(".codex-build", budget.SKIP_DIRS)

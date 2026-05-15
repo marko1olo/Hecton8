@@ -235,3 +235,19 @@ Solution: Add a read-only unit test that loads `Docs/Reports/VRAM_Budget_Audit.j
 Rejected Alternatives: Hardcoding the current 1,652 texture count or relying on manual Markdown inspection. Hardcoded totals would fail legitimate asset additions; manual checks are not a gate.
 Scalability potential: Low/MX350 keeps clean import-root residency evidence; Middle/High/Ultra reports can grow with new assets while preserving machine-checkable scope discipline.
 Hardware Impact: 0us runtime measured. Tooling impact: unit suite now runs 16 tests in 5.172 seconds and catches report drift without regenerating assets or touching Unity import settings.
+
+## Decision 30: No-Scan Report Validation Gate
+
+Problem: The checker can generate reports and tests can verify them, but another agent or CI lane had no cheap first-class command to validate existing JSON/CSV artifacts without paying for the full asset scan.
+Solution: Add `--validate-reports`, backed by `validate_generated_reports()`, to read the existing broad CSV and JSON summary, verify report presence, JSON parse, CSV headers, asset count parity, scan-root scope, unknown asset types, screenshot/doc pollution, and overflow gate consistency.
+Rejected Alternatives: Requiring `python Tools/MemoryBudgetCheck.py --root .` for every report consistency check. That rebuilds the full audit and costs roughly 90 seconds in the latest measured pass. Requiring unit tests only was also rejected because artifact validation should be callable as a standalone gate.
+Scalability potential: Low/MX350 content gates can validate report integrity cheaply before expensive scans; Middle/High/Ultra asset growth remains allowed as long as generated artifacts stay internally consistent and import-root scoped.
+Hardware Impact: 0us runtime measured. Tooling impact: `python Tools/MemoryBudgetCheck.py --root . --validate-reports` passes on current reports with `textures=1652 meshes=302 render_textures=1 scan_roots=Assets,Packages,Data`; unit coverage is now 17 tests in 10.023 seconds.
+
+## Decision 31: Split Report Parity Gate
+
+Problem: The no-scan validator checked the broad CSV against JSON but still trusted the dedicated remediation queues: texture redlines, mesh redlines, RenderTexture redlines, and RenderTexture source hotspots.
+Solution: Extend `validate_generated_reports()` so `--validate-reports` reads the split CSVs and compares their row counts to JSON counters, including runtime/non-editor RT hotspot count.
+Rejected Alternatives: Leaving split CSVs to manual inspection. Those files are the asset-owner queues; stale rows there would route cleanup work to the wrong targets.
+Scalability potential: Low/MX350 remediation queues stay mechanically tied to the machine summary; Middle/High/Ultra tier asset growth can expand the reports without breaking parity if generation remains correct.
+Hardware Impact: 0us runtime measured. Tooling impact: `python Tools/MemoryBudgetCheck.py --root . --validate-reports` now passes with `texture_redlines=946 mesh_redlines=293 rt_redlines=1 rt_hotspots=61`; unit coverage remains 17 tests and ran in 8.496 seconds.

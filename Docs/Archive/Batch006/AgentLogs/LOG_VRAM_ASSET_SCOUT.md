@@ -648,3 +648,35 @@ Verification:
 Evidence boundary:
 - STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
 - Unity import, Memory Profiler, player build, and runtime frame time remain PENDING VERIFICATION.
+
+## 2026-05-15T20:49:00+03:00 - NO-SCAN REPORT VALIDATOR PASS
+
+What was wrong:
+- Existing report consistency could be checked by unit tests, but there was no direct CLI gate for another agent or CI lane to validate already-generated JSON/CSV artifacts without a full asset scan.
+- Running the full scanner just to prove report integrity is wasteful; latest full report generation was 89.33 seconds.
+
+What was done:
+- Added `validate_generated_reports()` to `Tools/MemoryBudgetCheck.py`.
+- Added `--validate-reports` to `Tools/MemoryBudgetCheck.py`.
+- The validator checks report presence, JSON parsing, CSV `asset_type/path` headers, texture/mesh/RenderTexture count parity, resolved scan roots, unknown asset types, `Docs/` and `_agent_screen_capture` texture pollution, and overflow gate consistency.
+- Added unit coverage for the function and CLI path in `Tools/test_memory_budget_check.py`, with stdout captured inside the test.
+
+Cinematic cheats used:
+- None. This is tooling gate hardening, not runtime rendering work.
+
+Exact microseconds saved:
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0us.
+- Tooling path improvement: current report integrity can now be checked through `--validate-reports` instead of rebuilding the full audit.
+
+Verification:
+- PYTHONDONTWRITEBYTECODE=1 python AST syntax parse for `Tools/MemoryBudgetCheck.py` and `Tools/test_memory_budget_check.py`: PASS.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --validate-reports: PASS; `reports valid: textures=1652 meshes=302 render_textures=1 scan_roots=Assets,Packages,Data`.
+- PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py: PASS, 17 tests, elapsed 10.023 seconds.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --ci: EXPECTED FAIL with `ci_exit_code=2`; current redlines/overflow still produce `textures=1652 meshes=302 render_textures=1`, `[CRITICAL_VRAM_OVERFLOW]`, 801 texture crimes, 293 mesh risk rows, and 1 RenderTexture risk row.
+- LOG_ORDER_OK: 21 chronological report headers, latest `2026-05-15T20:49:00+03:00`.
+- Python bytecode cleanup for `MemoryBudgetCheck*` and `test_memory_budget_check*`: PASS.
+
+Evidence boundary:
+- STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
+- Unity import, Memory Profiler, player build, and runtime frame time remain PENDING VERIFICATION.

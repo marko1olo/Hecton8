@@ -1992,6 +1992,112 @@ def write_summary_json(
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
+def validate_generated_reports(
+    root: Path,
+    csv_path: Path,
+    json_path: Path,
+    texture_redlines_path: Optional[Path] = None,
+    mesh_redlines_path: Optional[Path] = None,
+    render_texture_redlines_path: Optional[Path] = None,
+    render_texture_hotspots_path: Optional[Path] = None,
+) -> Tuple[bool, List[str]]:
+    messages: List[str] = []
+    if not csv_path.exists():
+        return False, [f"missing CSV report: {rel(csv_path, root)}"]
+    if not json_path.exists():
+        return False, [f"missing JSON report: {rel(json_path, root)}"]
+
+    try:
+        payload = json.loads(json_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return False, [f"invalid JSON report: {rel(json_path, root)} line={exc.lineno} column={exc.colno}"]
+
+    with csv_path.open(newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        fieldnames = set(reader.fieldnames or [])
+        rows = list(reader)
+
+    if "asset_type" not in fieldnames or "path" not in fieldnames:
+        return False, [f"CSV report missing asset_type/path columns: {rel(csv_path, root)}"]
+
+    def read_split_report(path: Optional[Path], label: str, required_columns: Sequence[str]) -> List[Dict[str, str]]:
+        if path is None:
+            return []
+        if not path.exists():
+            messages.append(f"missing {label} report: {rel(path, root)}")
+            return []
+        with path.open(newline="", encoding="utf-8") as handle:
+            reader = csv.DictReader(handle)
+            split_fieldnames = set(reader.fieldnames or [])
+            split_rows = list(reader)
+        missing_columns = [column for column in required_columns if column not in split_fieldnames]
+        if missing_columns:
+            messages.append(f"{label} report missing columns: {','.join(missing_columns)}")
+        return split_rows
+
+    texture_rows = [row for row in rows if row.get("asset_type") == "texture"]
+    mesh_rows = [row for row in rows if row.get("asset_type") == "mesh"]
+    render_texture_rows = [row for row in rows if row.get("asset_type") == "render_texture"]
+    unknown_type_rows = [row for row in rows if row.get("asset_type") not in {"texture", "mesh", "render_texture"}]
+    texture_redline_rows = read_split_report(texture_redlines_path, "texture redline", ("path", "flags"))
+    mesh_redline_rows = read_split_report(mesh_redlines_path, "mesh redline", ("path", "flags"))
+    render_texture_redline_rows = read_split_report(render_texture_redlines_path, "RenderTexture redline", ("path", "flags"))
+    render_texture_hotspot_rows = read_split_report(render_texture_hotspots_path, "RenderTexture hotspot", ("path", "line", "editor_only"))
+    runtime_hotspot_rows = [
+        row
+        for row in render_texture_hotspot_rows
+        if row.get("editor_only", "").strip().lower() not in {"1", "true", "yes"}
+    ]
+    expected_roots = [rel(path, root) for path in resolve_scan_roots(root)]
+    allowed_prefixes = tuple(f"{name}/" for name in expected_roots)
+
+    if payload.get("texture_count") != len(texture_rows):
+        messages.append(f"texture_count mismatch json={payload.get('texture_count')} csv={len(texture_rows)}")
+    if payload.get("mesh_count") != len(mesh_rows):
+        messages.append(f"mesh_count mismatch json={payload.get('mesh_count')} csv={len(mesh_rows)}")
+    if payload.get("render_texture_count") != len(render_texture_rows):
+        messages.append(f"render_texture_count mismatch json={payload.get('render_texture_count')} csv={len(render_texture_rows)}")
+    if payload.get("resolved_scan_roots") != expected_roots:
+        messages.append(f"resolved_scan_roots mismatch json={payload.get('resolved_scan_roots')} expected={expected_roots}")
+    if unknown_type_rows:
+        messages.append(f"unknown asset_type rows={len(unknown_type_rows)}")
+    if texture_redlines_path is not None and payload.get("texture_flagged_rows") != len(texture_redline_rows):
+        messages.append(f"texture redline mismatch json={payload.get('texture_flagged_rows')} csv={len(texture_redline_rows)}")
+    if mesh_redlines_path is not None and payload.get("mesh_redline_rows") != len(mesh_redline_rows):
+        messages.append(f"mesh redline mismatch json={payload.get('mesh_redline_rows')} csv={len(mesh_redline_rows)}")
+    if render_texture_redlines_path is not None and payload.get("render_texture_redline_rows") != len(render_texture_redline_rows):
+        messages.append(f"RenderTexture redline mismatch json={payload.get('render_texture_redline_rows')} csv={len(render_texture_redline_rows)}")
+    if render_texture_hotspots_path is not None and payload.get("render_texture_source_hotspot_rows") != len(render_texture_hotspot_rows):
+        messages.append(f"RenderTexture hotspot mismatch json={payload.get('render_texture_source_hotspot_rows')} csv={len(render_texture_hotspot_rows)}")
+    if render_texture_hotspots_path is not None and payload.get("runtime_render_texture_source_hotspot_rows") != len(runtime_hotspot_rows):
+        messages.append(f"runtime RenderTexture hotspot mismatch json={payload.get('runtime_render_texture_source_hotspot_rows')} csv={len(runtime_hotspot_rows)}")
+    if any(not row.get("path", "").startswith(allowed_prefixes) for row in texture_rows):
+        messages.append("texture rows outside import roots")
+    if any(not row.get("path", "").startswith(allowed_prefixes) for row in mesh_rows):
+        messages.append("mesh rows outside import roots")
+    if any(not row.get("path", "").startswith(allowed_prefixes) for row in render_texture_rows):
+        messages.append("RenderTexture rows outside import roots")
+    if any(row.get("path", "").startswith("Docs/") for row in texture_rows):
+        messages.append("texture rows include Docs/ paths")
+    if any("_agent_screen_capture" in row.get("path", "") for row in texture_rows):
+        messages.append("texture rows include _agent_screen_capture")
+    if payload.get("critical_vram_overflow") and "CRITICAL_VRAM_OVERFLOW" not in payload.get("gate_reasons", []):
+        messages.append("critical_vram_overflow missing CRITICAL_VRAM_OVERFLOW gate reason")
+
+    if messages:
+        return False, messages
+
+    messages.append(
+        "reports valid: "
+        f"textures={len(texture_rows)} meshes={len(mesh_rows)} "
+        f"render_textures={len(render_texture_rows)} "
+        f"texture_redlines={len(texture_redline_rows)} mesh_redlines={len(mesh_redline_rows)} "
+        f"rt_redlines={len(render_texture_redline_rows)} rt_hotspots={len(render_texture_hotspot_rows)} "
+        f"scan_roots={','.join(expected_roots)}"
+    )
+    return True, messages
+
+
 def write_summary(
     path: Path,
     root: Path,
@@ -2204,9 +2310,24 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser.add_argument("--render-texture-hotspots", default="Docs/Reports/VRAM_RenderTexture_SourceHotspots.csv", help="RenderTexture source hotspot CSV path.")
     parser.add_argument("--workers", type=int, default=DEFAULT_AUDIT_WORKERS, help=f"Parallel asset audit workers, 1-{MAX_AUDIT_WORKERS}; <=0 uses default {DEFAULT_AUDIT_WORKERS}.")
     parser.add_argument("--ci", action="store_true", help="Exit non-zero if static redlines or overflow are detected.")
+    parser.add_argument("--validate-reports", action="store_true", help="Validate existing CSV/JSON reports without scanning assets.")
     args = parser.parse_args(argv)
 
     root = Path(args.root).resolve()
+    if args.validate_reports:
+        ok, messages = validate_generated_reports(
+            root,
+            root / args.csv,
+            root / args.json,
+            root / args.texture_redlines,
+            root / args.mesh_redlines,
+            root / args.render_texture_redlines,
+            root / args.render_texture_hotspots,
+        )
+        for message in messages:
+            print(message)
+        return 0 if ok else 2
+
     workers = normalize_worker_count(args.workers)
     textures_paths, mesh_paths, render_texture_paths, link_xml_paths = iter_asset_and_link_paths(root)
     textures = audit_textures(textures_paths, root, workers)
