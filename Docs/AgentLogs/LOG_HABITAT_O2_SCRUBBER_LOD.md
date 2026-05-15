@@ -843,3 +843,29 @@ Verification:
 - `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` exited 0 with STATIC_SOURCE evidence.
 - H-Phi counts after the pass: RuntimeHPhiRisk 0.000636091, DataSovereignty 0.021306032, MemoryAlignment 0.506309148, AUP risk 0, FindObject 0, GlobalRegistrySurface 5060, ManagedFormatSurface 534, PrimaryManagedRuntimeRisk 147, JobCompleteSurface 58.
 - `git diff --check` on the touched runtime files exits 0 with CRLF working-copy warnings only.
+
+## 2026-05-15 - Continuation Current-Disk Closure
+STATUS: BUILD VERIFIED / H-PHI VERIFIED
+
+What was wrong:
+- After the prior report, new C# edits landed after the 22:09 build.
+- A normal current-disk build then failed on transient visor RenderGraph API drift: `HectonDryVolumeFeature.cs` called an unavailable `AddBlitPass` overload, then `HectonVisorUberPostFeature.cs` referenced an unavailable/inaccessible `AddBlitPass` / `RenderGraphUtils` surface.
+
+What was done:
+- Re-read current source before editing and did not overwrite concurrent render-graph fixes.
+- Verified both visor files had settled to explicit raster render-graph passes.
+- Ran another normal current-disk build with `/p:UseSharedCompilation=false`; no `dotnet rebuild` was run.
+- Re-ran full source-only H-Phi summary after the final build.
+
+Cinematic Cheats used:
+- None in habitat gas. The continuation work is build repair and evidence freshness only.
+
+Exact microseconds saved:
+- No new measured runtime claim. The earlier Dalton hibernation and WFC bridge work remain the runtime savings; this continuation restores verified compile stability.
+
+Verification:
+- Failed intermediate build evidence: `Build_HABITAT_O2_SCRUBBER_LOD_20260515_221220_CurrentDisk_NoSharedCompiler.log`, then `Build_HABITAT_O2_SCRUBBER_LOD_20260515_222007_CurrentDisk_NoSharedCompiler.log`.
+- Final build evidence: `Build_HABITAT_O2_SCRUBBER_LOD_20260515_222206_CurrentDisk_NoSharedCompiler.log`, 0 warnings, 0 errors.
+- No C# source under `Assets/_Project/Scripts` is newer than the 22:24:06 build log.
+- H-Phi evidence: `HPhi_HABITAT_O2_SCRUBBER_LOD_20260515_222431_CurrentSummary.json`, STATIC_SOURCE, exit 0.
+- H-Phi counts: RuntimeHPhiRisk 0.000636091, DataSovereignty 0.021306032, MemoryAlignment 0.506309148, AUP risk 0, FindObject 0, GlobalRegistrySurface 5060, ManagedFormatSurface 534, PrimaryManagedRuntimeRisk 147, JobCompleteSurface 58.

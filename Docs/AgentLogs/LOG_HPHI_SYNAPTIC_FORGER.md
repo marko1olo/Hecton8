@@ -998,3 +998,32 @@ Verification:
 - `dotnet build Assembly-CSharp.csproj --no-restore -v:minimal -m:1 /nr:false` succeeded.
 - Result: 0 warnings, 0 errors, elapsed 00:03:15.37.
 - No `dotnet restore` and no `dotnet rebuild` was run.
+
+## 2026-05-15 - Final Build Closure Addendum
+
+What was wrong:
+- `MountablePlayerTransport` still used a mounted `OnInteract` delegate even though it already ticks while mounted.
+- `PrologueSequenceRegistryBridge` had an illegal `return` inside a `finally` block.
+- Core generated project references were missing GPR/SpaceEngine terrain visibility needed by compiled source.
+- `Unity.ShaderGraph.Editor.csproj` pointed to missing `Library/PackageCache/com.unity.shadergraph@6ab0d236faac` files while the lockfile embeds ShaderGraph at `Packages/com.unity.shadergraph`.
+
+What was done:
+- Moved mounted dismount input to `SignalBus<PlayerInputSignal>` inside the existing mounted tick and baselined the input sequence on mount.
+- Replaced the prologue `finally` return with an in-block guard.
+- Added `Hecton8.World.GPR` and `Hecton8.SpaceEngine098Terrain` visibility to Core assembly/project boundaries.
+- Mechanically rewired generated ShaderGraph editor paths to the embedded package path.
+
+Cinematic Cheats used:
+- No simulation work added. Input dismount uses the existing compact command lane and mounted tick.
+
+Exact microseconds saved:
+- Estimated 0.03-0.15 us on mounted interact bursts.
+- 0.0 us runtime gain for build-boundary repair; compile debt removed.
+
+Verification:
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -m:1 /nr:false`: 0 warnings, 0 errors.
+- `dotnet build Unity.ShaderGraph.Editor.csproj --no-restore -v:minimal -m:1 /nr:false`: 5 package warnings, 0 errors.
+- `dotnet build Assembly-CSharp.csproj --no-restore -v:minimal -m:1 /nr:false`: 195 external/editor/package warnings, 0 errors.
+- `git diff --check` passed for touched source/docs/generated project files.
+- Build servers were shut down after verification.
+- No `dotnet restore` and no `dotnet rebuild` was run.

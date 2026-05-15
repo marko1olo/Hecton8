@@ -898,6 +898,43 @@ Verification:
 Current Status:
 - YELLOW / ACTIVE MOVING WALL.
 
+## 2026-05-15 - CurrentDisk46/CurrentDiskBudgetGate18 Fresh Current-Disk Closure
+
+What was wrong:
+- Later source and render-feature writes invalidated the previous `CurrentDisk39` closure.
+- `CurrentDisk45` reported `HectonDryVolumeFeature.cs` using a simple `RenderGraph.AddBlitPass` overload unavailable in this Unity/URP compile lane.
+
+What was done:
+- Re-read current disk before patching; the live dry-volume feature now uses the project-compatible RasterGraph copy helper and shader `Copy` pass.
+- Recompiled the latest source snapshot and accepted `CurrentDisk46`.
+- Re-ran the strict full-source H-Phi budget gate and accepted `CurrentDiskBudgetGate18`.
+- Updated `HECTON_PHI_STATIC_METRIC.md` to the verified ceilings/floor: `GlobalRegistrySurface=5060`, `ManagedFormatSurface=534`, `PrimaryManagedRuntimeRisk=147`, `MinRuntimeHPhiRisk=0.000636000`.
+
+Cinematic Cheats used:
+- Compile/static evidence closure only.
+- The dry-volume copy remains a single fullscreen shader pass, not a simulated volume or package-dependent generated-project workaround.
+- No generated `.csproj`, package, prefab, scene, or broad cross-domain rewrite was made in this closure.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Compile verification time: 102,243,667 us.
+- H-Phi verification time: 152,525,160 us.
+- Freshness scan estimate: 400 us.
+
+Verification:
+- Compile artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_222020_CurrentDisk46.log`.
+- Compile result: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_222240_CurrentDiskBudgetGate18.json`.
+- H-Phi result: `EXIT=0`, `RuntimeHPhiRisk=0.000636091`, `DataSovereignty=0.021306032`, `MemoryAlignment=0.506309148`, `GlobalRegistrySurface=5060`, `GetComponentCalls=321`, `NativeArrayRefs=7074`, `ManagedFormatSurface=534`, `JobCompleteSurface=58`, `PrimaryManagedRuntimeRisk=147`, `UnityUpdateMethods=0`, `FindObjectCalls=0`, `AupPrecisionRisk=0`.
+- Freshness: `CS_NEWER_THAN_BUILD_COUNT=0`; `HPHI_INPUTS_NEWER_THAN_HPHI_COUNT=0`.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, player build, runtime visuals, Quest/IL2CPP, and platform build were not run.
+- Runtime microsecond savings are not claimed without profiler evidence.
+
+Current Status:
+- BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK46 CURRENT-DISK GREEN.
+
 ## 2026-05-15 - CurrentDisk28/CurrentDiskBudgetGate10 Fresh Current-Disk Closure
 
 What was wrong:
