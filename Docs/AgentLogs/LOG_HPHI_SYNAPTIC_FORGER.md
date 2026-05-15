@@ -728,3 +728,28 @@ Verification:
 - No dotnet build, restore, test, or rebuild was run.
 - `rg` confirms `PlayerBuilder` has no input-service subscription remnants.
 - `git diff --check` on `PlayerBuilder.cs` passed with only standard LF/CRLF notices.
+
+## 2026-05-15 - Main Menu Cancel Signal Addendum
+
+What was wrong:
+- `MainMenuController` already ticks in the UI layer but still subscribed to native cancel input.
+- The same cancel edge is now published by `InputDispatcher` as `PlayerInputSignalCommands.Cancel`.
+
+What was done:
+- Added source-filtered cancel command consumption inside `MainMenuController.Tick()`.
+- Baselines command sequence on enable/input-manager binding to avoid stale cancel replay.
+- Removed native cancel subscribe/unsubscribe and the callback method.
+- Preserved native input-manager binding for UI action-map routing only.
+
+Cinematic Cheats used:
+- Main-menu back/quit intent now rides the same compact input command packet as PDA, pause, and fabricator cancel.
+
+Exact microseconds saved:
+- Estimated 0.05-0.2 us on main-menu cancel bursts.
+- Lower long-session leak risk from one less menu input delegate.
+
+Verification:
+- No dotnet build, restore, test, or rebuild was run.
+- `rg` confirms `MainMenuController` has no native cancel subscription remnants.
+- `rg` now leaves only InputDispatcher bridges, gameplay authority interact paths, prologue skip, and non-ticking rebind panels as discrete input callback surfaces.
+- `git diff --check` on `MainMenuController.cs` passed with only standard LF/CRLF notices.

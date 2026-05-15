@@ -1045,3 +1045,31 @@ Verification:
 - Static scan confirms the stale-service guard in `FlushWfcOutpostDirtyPayloadAsync`.
 - `git diff --check -- Assets/_Project/Scripts/SaveManager.cs` reports only Git CRLF normalization warnings.
 - No `dotnet` rebuild was run.
+
+## Recheck Report: MacroDB Compaction Deferred Append Truth
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- `TryAppendDirtyPayload` returned true while compaction write-lock was active if the dirty payload handle was valid.
+- WFC interpreted that true as durable append completion and cleared native retry flags.
+- If compaction later faulted or stayed deferred, WFC no longer owned an active retry for the sector.
+
+What was done:
+- `H8MacroDatabaseService.TryAppendDirtyPayload` now returns false for dirty payloads blocked by compaction.
+- `SaveManager` detects active MacroDB compaction around a false append result and records `DirtyQueued` instead of write failure.
+- The matching WFC cache entry remains pending and can retry after compaction clears.
+
+Cinematic cheats used:
+- Reused the existing compaction snapshot and native retry flags instead of adding a new append-status contract.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation: 0 B by static inspection.
+- Hot Tick cost: unchanged.
+- Append-completion cost: one compaction-state read only on false append.
+
+Verification:
+- Static scan confirms MacroDB returns false for compaction-deferred dirty append.
+- Static scan confirms SaveManager records `DirtyQueued` and skips write-failure dump on compaction-deferred append.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` exited 0; core graph debt counts unchanged.
+- No `dotnet` rebuild was run.

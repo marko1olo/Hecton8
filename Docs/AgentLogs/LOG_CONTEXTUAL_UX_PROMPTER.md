@@ -487,3 +487,14 @@ Cinematic cheats used: No change to primary indirect glyph rendering. This keeps
 Exact microseconds saved: None claimed. Normal frames pay a boolean check; the clear runs once per payload loss without string assignment.
 
 Verification: No dotnet rebuilds were run. Static scans confirmed `ClearTextSink()` is gated and called from no-payload, diagnostic clear, hard clear, and missing-font paths.
+
+## 2026-05-15 Tooltip Culling Authoring Clamp
+What was wrong: Tooltip culling and XR depth offset trusted serialized/runtime floats, allowing bad values to poison visible-distance bounds or move XR prompts away from the camera.
+
+What was done: Added finite clamps for visible distance cache writes and a finite non-negative clamp for VR depth offset application.
+
+Cinematic cheats used: No visual change for valid authoring. Invalid values now fail to predictable culling/offset ranges instead of creating non-diegetic prompt behavior.
+
+Exact microseconds saved: None claimed. This is correctness hardening; added scalar checks are tiny and only on visible render paths.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed visible distance is clamped to finite `[0.5, 20]` and XR depth offset is finite/non-negative before use.

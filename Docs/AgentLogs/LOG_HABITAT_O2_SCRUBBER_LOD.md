@@ -621,3 +621,8 @@ Cinematic Cheats used:
 
 Exact microseconds saved:
 - None claimed. Cost is one initialization branch per alias request; no dotnet rebuild was run.
+
+Verification:
+- Confirmed all explicit `IGasDynamicsSolver` room/base aliases now gate on `IsInitialized`.
+- Targeted scan found no forbidden `.Complete`, component lookup, managed collection, coroutine, string-format, interpolation, or `foreach` matches in touched runtime files.
+- `git diff --check` exited 0.
