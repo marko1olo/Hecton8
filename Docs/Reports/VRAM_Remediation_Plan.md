@@ -1,6 +1,6 @@
 # VRAM Remediation Plan
 
-Generated: 2026-05-15T17:18:13
+Generated: 2026-05-15T17:21:04
 Evidence class: STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST. No asset/import mutation performed.
 
 ## Gate Status
@@ -18,7 +18,7 @@ Evidence class: STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST. No asset/import mutat
 - First-party mesh importer risk rows: 16
 - Static RenderTexture estimate: 7.03 MiB / 320 MiB RT+Depth budget
 - RenderTexture redline/risk rows: 1
-- Runtime RenderTexture source hotspots: 54
+- Runtime RenderTexture source hotspots: 53
 - CI behavior: `python Tools/MemoryBudgetCheck.py --root . --ci` must fail until redlines are resolved or explicitly suppressed by future policy.
 
 ## Priority 1 - Quarantine Non-Production Runtime Payloads
@@ -66,9 +66,9 @@ Evidence class: STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST. No asset/import mutat
 | Assets/_Project/Scripts/Core/HectonXRManager.cs | 41 | RenderTextureDescriptor | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
 | Assets/_Project/Scripts/Core/HectonXRManager.cs | 60 | RenderTextureDescriptor | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
 | Assets/_Project/Scripts/Core/HectonXRManager.cs | 64 | RenderTextureDescriptor | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
-| Assets/_Project/Scripts/Core/HectonXRManager.cs | 69 | new RenderTexture | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
+| Assets/_Project/Scripts/Core/HectonXRManager.cs | 69 | RenderTextureDescriptor | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
 | Assets/_Project/Scripts/Core/OculusFfrEnforcer.cs | 290 | RenderTextureDescriptor | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
-| Assets/_Project/Scripts/Graphics/Caustics/AnalyticalCausticsService.cs | 334 | new RenderTexture | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
+| Assets/_Project/Scripts/Graphics/Caustics/AnalyticalCausticsService.cs | 334 | RenderTextureDescriptor | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
 | Assets/_Project/Scripts/Graphics/Caustics/AnalyticalCausticsService.cs | 342 | new RenderTexture | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
 | Assets/_Project/Scripts/HectonCelestialEngine.cs | 3057 | new RenderTexture | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
 | Assets/_Project/Scripts/HectonCelestialEngine.cs | 3088 | new RenderTexture | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
@@ -80,16 +80,15 @@ Evidence class: STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST. No asset/import mutat
 | Assets/_Project/Scripts/HectonFluidEngine.cs | 3837 | RTHandles.Alloc | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
 | Assets/_Project/Scripts/HectonFluidEngine.cs | 5690 | RTHandles.Alloc | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
 | Assets/_Project/Scripts/HectonFluidEngine.cs | 5693 | RTHandles.Alloc | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
-| Assets/_Project/Scripts/HectonFluidEngine.cs | 5716 | new RenderTexture | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
+| Assets/_Project/Scripts/HectonFluidEngine.cs | 5716 | RenderTextureDescriptor | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
 | Assets/_Project/Scripts/HectonFluidEngine.cs | 5731 | new RenderTexture | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
-| Assets/_Project/Scripts/HectonUnderwaterVisuals.cs | 5464 | new RenderTexture | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
+| Assets/_Project/Scripts/HectonUnderwaterVisuals.cs | 5464 | RenderTextureDescriptor | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
 | Assets/_Project/Scripts/HectonUnderwaterVisuals.cs | 5476 | new RenderTexture | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
-| Assets/_Project/Scripts/HectonUnderwaterVisuals.cs | 5670 | new RenderTexture | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
+| Assets/_Project/Scripts/HectonUnderwaterVisuals.cs | 5670 | RenderTextureDescriptor | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
 | Assets/_Project/Scripts/HectonUnderwaterVisuals.cs | 5684 | new RenderTexture | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
-| Assets/_Project/Scripts/Optimization/RenderTextureLifecycleTracker.cs | 148 | new RenderTexture | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
 | Assets/_Project/Scripts/Optimization/RenderTexturePool.cs | 159 | new RenderTexture | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
 | Assets/_Project/Scripts/SaveThumbnailCaptureFeature.cs | 119 | RTHandles.Alloc | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
-| Assets/_Project/Scripts/UI/DiegeticPanelController.cs | 1180 | new RenderTexture | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
+| Assets/_Project/Scripts/UI/DiegeticPanelController.cs | 1180 | RenderTextureDescriptor | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
 | Assets/_Project/Scripts/UI/DiegeticPanelController.cs | 1194 | new RenderTexture | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
 | Assets/_Project/Scripts/UI/DiegeticPanelController.cs | 1278 | RenderTextureDescriptor | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
 | Assets/_Project/Scripts/UI/DiegeticPanelController.cs | 1326 | RenderTextureDescriptor | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
@@ -106,7 +105,7 @@ Evidence class: STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST. No asset/import mutat
 | Assets/_Project/Scripts/Visor/HectonVoxelSsaoFeature.cs | 181 | RTHandles.Alloc | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
 | Assets/_Project/Scripts/Visor/VolumetricLightFeature.cs | 422 | RTHandles.Alloc | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
 | Assets/_Project/Scripts/Visor/VolumetricLightFeature.cs | 435 | RTHandles.Alloc | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
-| Assets/_Project/Scripts/World/Biolum/HectonBiolumDiffusionVolume.cs | 295 | new RenderTexture | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
+| Assets/_Project/Scripts/World/Biolum/HectonBiolumDiffusionVolume.cs | 295 | RenderTextureDescriptor | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
 | Assets/_Project/Scripts/World/Biolum/HectonBiolumDiffusionVolume.cs | 308 | new RenderTexture | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
 | Assets/_Project/Scripts/World/FloraInteractionManager.cs | 5258 | new RenderTexture | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
 | Assets/_Project/Scripts/World/GPUScatterDirector.cs | 1379 | new RenderTexture | false | Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely. |
