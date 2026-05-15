@@ -493,3 +493,14 @@ Follow-up upgrade 49:
 Exact microseconds saved after follow-up 49:
 - Fault frames avoid NaN buckling and biolum phase propagation from bad instance seed/fade data.
 - Valid-frame overhead is two scalar finite checks in the vertex path, with duplicated seed expression removed.
+
+Follow-up upgrade 50:
+- What was wrong: `bufferOffset + clampedId` could wrap as `uint` before the UberNoir instance StructuredBuffer read.
+- What was done: split the sum into `bufferIndex` and read the buffer only when `bufferIndex >= bufferOffset`; overflow keeps the default per-object instance data.
+- Cinematic cheat used: corrupted instance metadata falls back to non-instanced hull presentation instead of attempting a risky indexed recovery.
+- Static checks: `rg` confirms `bufferIndex`, the wrap guard, seed/fade gates, low-tier finite return, and no-op bend exits; exact shader `normalize()`/`sqrt()` scan produced no matches; managed-offender scan remains clean; mesh mutation scan found no owned `Mesh.vertices` writes; touched shader/doc braces are balanced; `git diff --check` reports only CRLF normalization warnings.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by standing user instruction.
+
+Exact microseconds saved after follow-up 50:
+- Fault frames avoid wrapped StructuredBuffer reads from corrupt instance metadata.
+- Valid-frame overhead is one unsigned compare in the instance-buffer variant; no valid visual output changes.

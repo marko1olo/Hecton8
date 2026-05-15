@@ -509,7 +509,9 @@ namespace Hecton8.Gameplay.Loot
                 _entityItemHashes[activeCount] = itemHash;
                 _entityQuantities[activeCount] = (ushort)math.clamp(pickup.Quantity, 1, (int)ushort.MaxValue);
                 _entityFlags[activeCount] = slotFlags;
-                registryFlagsHash = FoldTelemetryHash(FoldTelemetryHash(registryFlagsHash, slotFlags), itemHash);
+                registryFlagsHash = FoldEntityIdHash(
+                    FoldTelemetryHash(FoldTelemetryHash(registryFlagsHash, slotFlags), itemHash),
+                    entityId);
                 activeCount++;
             }
 
@@ -634,11 +636,13 @@ namespace Hecton8.Gameplay.Loot
                     continue;
                 }
 
+                ulong pickupEntityId = EntityId.ToULong(pickup.GetEntityId());
                 uint pickupItemHash = unchecked((uint)pickup.ItemHashId);
                 if (!pickup.isActiveAndEnabled ||
                     pickup.Quantity <= 0 ||
                     pickupItemHash == 0u ||
-                    pickupItemHash != _entityItemHashes[index])
+                    pickupItemHash != _entityItemHashes[index] ||
+                    pickupEntityId != _pickupEntityIds[index])
                 {
                     telemetryFlags |= TelemetryPickupProxyInvalidFlag;
                     ClearVaultSlot(index);
@@ -753,8 +757,17 @@ namespace Hecton8.Gameplay.Loot
             if ((flags & LootEntityFlags.Active) == 0u)
                 return;
 
-            hash = FoldTelemetryHash(FoldTelemetryHash(hash, flags), _entityItemHashes[index]);
+            hash = FoldEntityIdHash(
+                FoldTelemetryHash(FoldTelemetryHash(hash, flags), _entityItemHashes[index]),
+                _pickupEntityIds[index]);
             lastActiveIndex = index;
+        }
+
+        private static uint FoldEntityIdHash(uint hash, ulong entityId)
+        {
+            return FoldTelemetryHash(
+                FoldTelemetryHash(hash, unchecked((uint)entityId)),
+                unchecked((uint)(entityId >> 32)));
         }
 
         private static uint FoldTelemetryHash(uint hash, uint value)

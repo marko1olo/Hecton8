@@ -254,6 +254,12 @@ Execution lane: SIMULATION / `PriorityLayer.Player`
 - [x] Dispatcher hot-swap recovery still restores receiver/tick in order. DOD: dispatcher removal already unregisters the receiver; dispatcher replacement still runs `EnsureNativeStateForLifecycle()`, `TryRegisterReceiver()`, and `TryRegisterTick()`. Rejected: moving receiver registration into tick registration because the receiver table and dispatcher lane have separate lifecycle keys. Estimate: verification only.
 - [x] Reverification without dotnet. DOD: `git diff --check` passed for `OpenXRManualOverrideLever.cs`; scoped counter reports `ReceiverRequiresDispatcher=1`, `TickRequiresDispatcher=1`, `DispatcherNullUnregistersReceiver=1`, `DispatcherRecoveryRegistersReceiver=1`, `ForbiddenPatternTotal=0`, `DotnetMention=0`. Rejected: dotnet rebuild/probe by explicit user instruction. Estimate: verification only.
 
+## Loop 39 - VR Release Target Coherence
+
+- [x] VR grip release returns the non-latched target closed. DOD: `UpdateVrGrab()` now writes `_leverTargets[0] = minAngleDegrees` when grip is no longer held, matching the non-VR fallback release path instead of preserving a stale pulled target. Rejected: leaving the target at the last hand angle because that creates partial-pull drift with no physical owner. Estimate: one scalar NativeArray write on release branch only.
+- [x] Stale tracking release returns the non-latched target closed. DOD: after `MaxStaleGrabFrames`, the lever clears grab state and targets closed; the existing 2-3 frame short-gap freeze remains intact to hide transient hand-tracking holes. Rejected: freezing forever on stale pose because tracking loss is not lever authority. Estimate: one scalar write on stale-release branch only.
+- [x] Reverification without dotnet. DOD: `git diff --check` passed for `OpenXRManualOverrideLever.cs`; scoped counter reports `VrReleaseTargetsClosed=1`, `StaleReleaseTargetsClosed=1`, `ShortGapFreezePreserved=1`, `NonVrReleaseStillDecays=1`, `ForbiddenPatternTotal=0`, `DotnetMention=0`. Rejected: dotnet rebuild/probe by explicit user instruction. Estimate: verification only.
+
 STATUS: PENDING VERIFICATION - Unity editor/global Core compile dependency wall prevents full player compile proof in this session.
 
 ## Compile Attempts

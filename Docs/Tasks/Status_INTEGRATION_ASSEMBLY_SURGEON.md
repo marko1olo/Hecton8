@@ -4,7 +4,27 @@ Agent: INTEGRATION_ASSEMBLY_SURGEON
 Role: SYSTEMS_ARCHITECT
 Domain: Unity Compilation Graph / Integrator
 Prompt task count: 15 (current in-chat XML; older 17-task static pass retained below)
-Current state: BUILD SUCCESSFUL / PLATINUM GRADE / FRESH50 CURRENT-DISK GREEN (Hecton8.Core --no-restore 0 warnings / 0 errors); latest static H-Phi gate: FRESH50 DOCUMENTED FLOOR PASS
+Current state: BUILD SUCCESSFUL / PLATINUM GRADE / FRESH64 CURRENT-DISK GREEN (Hecton8.Core --no-restore 0 warnings / 0 errors); latest static H-Phi gate: FRESH62 DOCUMENTED FLOOR PASS
+
+## 2026-05-15 Fresh64 Bootstrap Readiness And H-Phi Budget Closure
+
+Directive: continue careful build repair, reduce Integrator-domain H-Phi debt, and avoid `dotnet rebuild`.
+Domain: Echelon 9 / The Integrator (Compile Medic).
+Current state: BUILD SUCCESSFUL / PLATINUM GRADE.
+Compile artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh64.log`.
+Compile exit artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh64.exit.txt`.
+H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh62.json`.
+H-Phi exit artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh62.exit.txt`.
+
+- [x] Status and rationale reloaded | Justification: disk state was read before the current continuation and before logging | Alternatives rejected: compressed chat memory and stale Fresh50 closure | Estimate: 200 us process
+- [x] Relevant mandates re-read | Justification: LTS compile boundary, GlobalRegistry, signal-lane, zero-GC, and text-audit rules constrained the fix to bootstrap readiness and static gates | Alternatives rejected: broad leaf NativeArray refactors, package churn, or generated `.csproj` surgery | Estimate: 1200 us process
+- [x] Prompt extraction refreshed | Justification: `Select-String` against `Docs/Tasks/CURRENT_BATCH.md` still exposes no `INTEGRATION_ASSEMBLY_SURGEON` tag and no operative `<POLISH_MANDATE>`; current in-chat XML remains authority | Alternatives rejected: borrowing neighboring batch prompts | Estimate: 300 us process
+- [x] Bootstrap readiness coupling reduced | Justification: `GameBootstrapper` now resolves dependency service once for heartbeat fallback readiness, uses an overload for exact node readiness, and uses `ActiveInstance` self-read facade where safe | Alternatives rejected: changing `GlobalRegistry`, removing post-ensure verification, or caching lifecycle-sensitive `AddComponent` registration paths | Estimate: 0 us measured runtime
+- [x] Moving compile wall handled | Justification: `Fresh52` failed on transient `RebindingManager` logging signatures during parallel edits, current disk already contained the one-argument logging repair, and `Fresh53`, `Fresh55`, `Fresh63`, and `Fresh64` all compiled green | Alternatives rejected: reverting other agents' edits or reporting a stale green artifact | Estimate: 115,650,249 us final build verification
+- [x] Documented H-Phi budget hardened | Justification: the full gate now includes `-MaxUnityUpdateMethods 0` and Fresh62-count budgets for registry, GetComponent, NativeArray, owner-blocked NativeArray, managed-format, and runtime-risk floors | Alternatives rejected: loose doc floors and graph-only proof for source-count budgets | Estimate: 138,599,793 us tooling verification
+- [x] Current-disk freshness checked | Justification: no C# source under `Assets/_Project/Scripts` was newer than `Fresh64` after the final compile pass | Alternatives rejected: trusting `Fresh63` after newer C# timestamps appeared | Estimate: 400 us scan
+- [x] Diff hygiene checked | Justification: `git diff --check` on touched code/docs/status/log paths returned exit 0 with no output | Alternatives rejected: unrelated CRLF normalization or broad formatting passes during active multi-agent work | Estimate: 0 us runtime
+- [x] Residual non-Integrator NativeArray churn recorded | Justification: concurrent leaf edits increased total NativeArray surface while the owner-blocked budgets remained documented; this pass did not cross domain boundaries into voxel/audio/inventory/logistics ownership | Alternatives rejected: blind native-memory rewrites outside Integrator authority | Estimate: 0 us runtime
 
 ## 2026-05-15 Fresh50 Layout And Bootstrap Readback Pass
 

@@ -285,9 +285,16 @@ State: PENDING VERIFICATION
 - [x] Re-ran source-only audits. DOD: scoped outpost failure scan reports `DumpFaultHash=2`, `DumpContextHash=2`, `DebugLogError=0`, `ExceptionMessage=0`, `DumpFaultTelemetry=1`, `StringConcatDumpFault=0`; scoped outpost signal scan still shows direct WFC typed lanes and no wrapper publishes; `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json` passed at `2026-05-15 13:33:07 +04:00` with `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`; `git diff --check` passed with repository CRLF warnings only. Alternative rejected: `dotnet` rebuild, forbidden by user. Estimate: verification only.
 - [ ] Compile proof [NOT RUN BY USER REQUEST]. DOD: no `dotnet` rebuild or response-file compile was executed in Loop 36. Alternative rejected: violating explicit "do not make dotnet rebuilds". Estimate: no runtime cost.
 
+### Loop 37 - WFC Edge Capacity Fault Precision
+
+- [x] Re-read persisted state/rationale and re-audited the Loop 34 edge-capacity gate. DOD: found the early `directedEdges >= edgeCapacity` break could stop an under-sized map without proving that a real extra valid edge existed. Alternative rejected: treating exact capacity as automatic overflow. Estimate: source audit only.
+- [x] Tightened overflow reporting. DOD: horizontal and vertical helpers now return `bool`; skipped/non-edge neighbors return true, actual bidirectional overflow returns false after writing `CapacityExceeded`, and `BuildEdges` exits only after that real overflow attempt. Alternative rejected: repeatedly scanning after capacity failure or flagging capacity merely because the count equals capacity. Estimate: one boolean check per candidate direction in cold translation only, 0 B/frame.
+- [x] Re-ran source-only audits. DOD: targeted translator scan reports `EdgeCapacityZeroGate=1`, `EdgeCapacityPreBreak=0`, `HorizontalBool=1`, `VerticalBool=1`, `OverflowReturn=1`, `FailedAddReturns=2`, `CapacityFaultWrites=3`, `RawPowerAdds=2`, `LegacyReturnAdds=0`, `ForeachTokens=0`, `ModuloOperators=0`; `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json` passed at `2026-05-15 13:46:24 +04:00` with `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`; `git diff --check` passed with repository CRLF warnings only. Alternative rejected: `dotnet` rebuild, forbidden by user. Estimate: verification only.
+- [ ] Compile proof [NOT RUN BY USER REQUEST]. DOD: no `dotnet` rebuild or response-file compile was executed in Loop 37. Alternative rejected: violating explicit "do not make dotnet rebuilds". Estimate: no runtime cost.
+
 ## Verification Ledger
 
-- Compile status: NOT RUN IN LOOP 36 BY USER REQUEST / PRIOR BLOCKER STILL RECORDED. Last attempted compile path could not resolve `Hecton8.Core.ref.dll`; Core rebuild failed in `SaveMasterHashV10.cs(237,26)` on missing `xxHash3`, outside Habitat/Outposts ownership.
+- Compile status: NOT RUN IN LOOP 37 BY USER REQUEST / PRIOR BLOCKER STILL RECORDED. Last attempted compile path could not resolve `Hecton8.Core.ref.dll`; Core rebuild failed in `SaveMasterHashV10.cs(237,26)` on missing `xxHash3`, outside Habitat/Outposts ownership.
 - Unity Console status: MCP unavailable; console/scene validation not accessible from this session.
 - GC proof: code audit only; hot Tick/Render path uses spans/native buffers and no LINQ/managed allocation.
 - Frame/VRAM proof: static estimate only; runtime profiling blocked by Unity MCP transport failure; no console/profiler capture is available from this session.

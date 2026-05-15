@@ -4,6 +4,7 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.World;
 using UnityEditor;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Editor.DebugTools
@@ -283,14 +284,21 @@ namespace Hecton8.Editor.DebugTools
 
         private static Vector3 ToAbsoluteUniversePosition(Vector3 runtimePosition)
         {
-            Vector3 bridgeAbsolutePosition = HectonMapMagicVegetationBridge.ToUniverseSpace(runtimePosition);
-            if ((bridgeAbsolutePosition - runtimePosition).sqrMagnitude > 0.000001f)
-                return bridgeAbsolutePosition;
+            double3 bridgeAbsolutePosition = HectonMapMagicVegetationBridge.ToUniverseSpaceDouble3(runtimePosition);
+            double3 runtimePositionDouble = new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            double3 bridgeDelta = bridgeAbsolutePosition - runtimePositionDouble;
+            if (math.lengthsq(bridgeDelta) > 0.000001d)
+                return ToVector3(bridgeAbsolutePosition);
 
             HectonFloatingOrigin floatingOrigin = GlobalRegistry.FloatingOrigin;
             return floatingOrigin != null
-                ? HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimePosition)
+                ? ToVector3(HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition))
                 : runtimePosition;
+        }
+
+        private static Vector3 ToVector3(double3 value)
+        {
+            return new Vector3((float)value.x, (float)value.y, (float)value.z);
         }
 
         private int GetHistoryIndex(int orderedIndex)

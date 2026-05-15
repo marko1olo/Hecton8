@@ -326,3 +326,29 @@ Verification:
 - `git diff --check` on edited files: no whitespace errors; LF-to-CRLF warnings only.
 - Brace scan: `PauseControlsPanel 125/125`, `PDAAtlasSignalTab 84/84`, `PDADataLogTab 161/161`, `PDABarterTab 92/92`, `PDAConstructionTab 210/210`, `PDAControlsRebindUI 164/164`, `PDALoadoutTab 185/185`.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`: `RuntimeHPhiNarrow=0.010671906`, `RuntimeHPhiRisk=0.000610856`, `AllSourceHPhiNarrow=0.009509931`, `AllSourceHPhiRisk=0.000498829`, `ArchitecturalPurity=1`, `DataSovereignty=0.021132597`, `MemoryAlignment=0.50499737`, `GetComponentCalls=416`, `UnityUpdateMethods=0`, `StructLayoutAttributes=960`, `AupPrecisionRisk=0`.
+
+## 2026-05-15 14:11:53 +04:00 - Follow-Up No-Rebuild Large UI Owner Lookup Consolidation
+What was wrong:
+- `PauseMenuController`, `PDAShellChrome`, and `SettingsManager` still carried the largest clean runtime UI lookup cluster after the smaller tab passes.
+- The remaining non-edited lookup matches are editor-only fallback scans or outside the safe runtime UI cleanup slice.
+
+What was done:
+- Replaced pause menu canvas/button/panel/event-system probes with `TryGetComponent(out T)` and explicit parent canvas walks.
+- Replaced PDA shell owner/intrusion binding probes with `TryGetComponent(out T)` and bounded parent walks.
+- Replaced settings parent camera/volume fallback lookups with bounded `Transform` walks.
+- Left generated menu hierarchy, PDA shell binding semantics, settings profile cache, and event-system fallback behavior unchanged.
+
+Cinematic Cheats used:
+- None added. This pass removed setup lookup debt only.
+- Existing presentation cheats remain: generated pause/menu panels, PDA shell chrome, cached settings preview, and no physical UI simulation.
+
+Exact Microseconds saved:
+- Estimated 0-10 us CPU on cold menu/shell/settings recovery frames.
+- No steady-state Tick saving claimed; static lookup count is the measured output.
+
+Verification:
+- No dotnet rebuild was executed.
+- `rg` over runtime UI/visor/graphics scope now leaves only editor-only fallback scan matches and no remaining targeted runtime UI builder matches.
+- `git diff --check` on changed files: no whitespace errors; LF-to-CRLF warnings only.
+- Brace scan: `PauseMenuController 185/185`, `SettingsManager 194/194`; `PDAShellChrome` regex brace count is unchanged from HEAD baseline offset because strings contain braces.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`: `RuntimeHPhiNarrow=0.010752435`, `RuntimeHPhiRisk=0.000618924`, `AllSourceHPhiNarrow=0.009581932`, `AllSourceHPhiRisk=0.00050517`, `ArchitecturalPurity=1`, `DataSovereignty=0.021258973`, `MemoryAlignment=0.505783386`, `GetComponentCalls=384`, `UnityUpdateMethods=0`, `StructLayoutAttributes=962`, `AupPrecisionRisk=0`.

@@ -982,3 +982,34 @@ Verification:
 
 Integrator notes:
 - Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
+
+## 2026-05-15 - Loop 38 H-Phi Masking Fast Path and Editor AUP Repair
+
+What was wrong:
+- Lexical-scrubbed masking looped through every character for single-line comments and strings.
+- `KinematicGhostDebugger` had editor-only legacy AUP bridge calls in the working tree.
+
+What was done:
+- Added a single-line fast path to `ConvertTo-MaskedCodeSurface`.
+- Restored editor ghost preview reconstruction to `ToUniverseSpaceDouble3` and `ToAbsoluteUniversePositionDouble3`.
+
+Cinematic Cheats used:
+- Static tooling and editor preview only. Gameplay runtime simulation/rendering are unchanged.
+- Low-tier development machines avoid needless per-character masking in lexical scrub; High/Ultra QA gets a completed lexical-scrub source gate when deeper evidence is needed.
+
+Exact Microseconds saved:
+- Gameplay frame time: 0 us.
+- Tooling-only change. Standard full static gate completed in 172.219 seconds under current workstation load; lexical-scrubbed full static gate completed in 228.162 seconds after the fast path.
+
+Verification:
+- PowerShell parser reports `PARSE_OK`.
+- Standard full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed with `AupPrecisionRisk=0`.
+- Lexical-scrubbed full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -LexicalScrub -MaxAupPrecisionRisk 0` completed with `AupPrecisionRisk=0`, `RuntimeHPhiRisk=0.000697743`, and `LinqSurface=5`.
+- Qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory AUP regex scan returned 237 broad residual matches: broad `universe` text and known final-cast/presentation payload names.
+- Temporary Loop 38 captures are absent after cleanup.
+- No `dotnet build` or rebuild was run because the user explicitly forbade rebuilds.
+
+Integrator notes:
+- Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.

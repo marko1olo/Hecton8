@@ -632,6 +632,7 @@ namespace Hecton8.UI
 
             float invAtlasWidth = math.rcp(math.max(1f, atlasWidth));
             float invAtlasHeight = math.rcp(math.max(1f, atlasHeight));
+            float advanceScale = glyphScale * glyphAdvanceScale;
             for (int i = 0; i < text.Length && _textGlyphCount < MaxGlyphCount; i++)
             {
                 char c = text[i];
@@ -640,14 +641,14 @@ namespace Hecton8.UI
                     continue;
 
                 Glyph glyph = character.glyph;
+                GlyphMetrics metrics = glyph.metrics;
                 if (c == ' ')
                 {
-                    penX += glyph.metrics.horizontalAdvance * glyphScale * glyphAdvanceScale;
+                    penX += metrics.horizontalAdvance * advanceScale;
                     continue;
                 }
 
                 GlyphRect rect = glyph.glyphRect;
-                GlyphMetrics metrics = glyph.metrics;
                 float width = math.max(MinimumGlyphScale, metrics.width * glyphScale);
                 float height = math.max(MinimumGlyphScale, metrics.height * glyphScale);
                 float bearingX = metrics.horizontalBearingX * glyphScale;
@@ -667,7 +668,7 @@ namespace Hecton8.UI
                 if (WriteUvRectIfChanged(_fontUvTable, glyphIndex, uvRect))
                     _fontUvTableDirty = true;
 
-                penX += metrics.horizontalAdvance * glyphScale * glyphAdvanceScale;
+                penX += metrics.horizontalAdvance * advanceScale;
                 _textGlyphCount++;
             }
 
@@ -730,8 +731,9 @@ namespace Hecton8.UI
             GlyphMetrics metrics = glyph.metrics;
             float invAtlasWidth = math.rcp(math.max(1f, atlasWidth));
             float invAtlasHeight = math.rcp(math.max(1f, atlasHeight));
-            width = math.max(MinimumGlyphScale, metrics.width * glyphScale * IconScaleMultiplier);
-            height = math.max(MinimumGlyphScale, metrics.height * glyphScale * IconScaleMultiplier);
+            float iconScale = glyphScale * IconScaleMultiplier;
+            width = math.max(MinimumGlyphScale, metrics.width * iconScale);
+            height = math.max(MinimumGlyphScale, metrics.height * iconScale);
             Vector4 uvRect = new Vector4(
                 rect.x * invAtlasWidth,
                 rect.y * invAtlasHeight,

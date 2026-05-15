@@ -1046,8 +1046,13 @@ namespace Hecton8.World
 
         internal static void EnqueueDynamicObstacleGrowth(float3 center, float3 extents, float expansionMeters)
         {
-            if (extents.x <= 0.0001f || extents.y <= 0.0001f || extents.z <= 0.0001f)
+            if (!math.all(math.isfinite(center)) ||
+                !math.all(math.isfinite(extents)) ||
+                !math.isfinite(expansionMeters) ||
+                !HasPositiveObstacleExtents(extents))
+            {
                 return;
+            }
 
             EnsureInitialized();
             float lateralExpansion = math.max(0f, expansionMeters);
@@ -1084,14 +1089,15 @@ namespace Hecton8.World
 
         private static void EnqueueDestroyedOrganicEvent(in DestroyedOrganicEvent destroyedEvent)
         {
+            float3 center = destroyedEvent.NavObstacleCenter;
             float3 extents = destroyedEvent.NavObstacleExtents;
-            if (extents.x <= 0.0001f || extents.y <= 0.0001f || extents.z <= 0.0001f)
+            if (!IsValidDynamicObstacleBounds(center, extents))
                 return;
 
-            RemovePersistentDynamicObstacles(destroyedEvent.NavObstacleCenter, extents);
+            RemovePersistentDynamicObstacles(center, extents);
             TryEnqueueDynamicObstacleClear(new DynamicObstacleClearRequest
             {
-                Center = destroyedEvent.NavObstacleCenter,
+                Center = center,
                 Extents = extents
             });
         }
@@ -1267,12 +1273,8 @@ namespace Hecton8.World
                 if (_pendingObstacleClearQueueCount > 0)
                     _pendingObstacleClearQueueCount--;
 
-                if (candidate.Extents.x <= 0.0001f ||
-                    candidate.Extents.y <= 0.0001f ||
-                    candidate.Extents.z <= 0.0001f)
-                {
+                if (!IsValidDynamicObstacleBounds(candidate.Center, candidate.Extents))
                     continue;
-                }
 
                 request = candidate;
                 return true;
@@ -1948,9 +1950,7 @@ namespace Hecton8.World
         private static void TryEnqueueDynamicObstacleClear(DynamicObstacleClearRequest request)
         {
             if (!_pendingObstacleClears.IsCreated ||
-                request.Extents.x <= 0.0001f ||
-                request.Extents.y <= 0.0001f ||
-                request.Extents.z <= 0.0001f)
+                !IsValidDynamicObstacleBounds(request.Center, request.Extents))
             {
                 return;
             }
@@ -1963,6 +1963,20 @@ namespace Hecton8.World
 
             _pendingObstacleClears.Enqueue(request);
             _pendingObstacleClearQueueCount++;
+        }
+
+        private static bool IsValidDynamicObstacleBounds(float3 center, float3 extents)
+        {
+            return math.all(math.isfinite(center)) &&
+                   math.all(math.isfinite(extents)) &&
+                   HasPositiveObstacleExtents(extents);
+        }
+
+        private static bool HasPositiveObstacleExtents(float3 extents)
+        {
+            return extents.x > 0.0001f &&
+                   extents.y > 0.0001f &&
+                   extents.z > 0.0001f;
         }
 
         private static void EnsureBuffer(ref NativeArray<byte> buffer, int length, string label)
@@ -2286,23 +2300,33 @@ namespace Hecton8.World
             if (!_persistentDynamicObstacles.IsCreated || !snapshot.IsCreated)
                 return;
 
-            int safeCount = math.min(_persistentDynamicObstacles.Length, snapshot.Length - writeIndex);
-            for (int i = 0; i < safeCount; i++)
+            int capacity = snapshot.Length;
+            for (int i = 0; i < _persistentDynamicObstacles.Length && writeIndex < capacity; i++)
             {
-                snapshot[writeIndex] = _persistentDynamicObstacles[i];
+                NavObstaclePrimitive obstacle = _persistentDynamicObstacles[i];
+                if (!IsValidDynamicObstacleBounds(obstacle.Center, obstacle.Extents))
+                    continue;
+
+                snapshot[writeIndex] = obstacle;
                 writeIndex++;
             }
         }
 
         private static void RegisterPersistentDynamicObstacle(float3 center, float3 extents)
         {
-            if (!_persistentDynamicObstacles.IsCreated)
+            if (!_persistentDynamicObstacles.IsCreated ||
+                !IsValidDynamicObstacleBounds(center, extents))
+            {
                 return;
+            }
 
             float mergeDistanceSq = PersistentObstacleMergeDistanceMeters * PersistentObstacleMergeDistanceMeters;
             for (int i = 0; i < _persistentDynamicObstacles.Length; i++)
             {
                 NavObstaclePrimitive obstacle = _persistentDynamicObstacles[i];
+                if (!IsValidDynamicObstacleBounds(obstacle.Center, obstacle.Extents))
+                    continue;
+
                 if (math.lengthsq(obstacle.Center - center) > mergeDistanceSq)
                     continue;
 
@@ -2333,8 +2357,12 @@ namespace Hecton8.World
 
         private static void RemovePersistentDynamicObstacles(float3 center, float3 extents)
         {
-            if (!_persistentDynamicObstacles.IsCreated || _persistentDynamicObstacles.Length <= 0)
+            if (!_persistentDynamicObstacles.IsCreated ||
+                _persistentDynamicObstacles.Length <= 0 ||
+                !IsValidDynamicObstacleBounds(center, extents))
+            {
                 return;
+            }
 
             float removeRadius = math.max(
                 PersistentObstacleMergeDistanceMeters,
@@ -2343,6 +2371,12 @@ namespace Hecton8.World
             for (int i = _persistentDynamicObstacles.Length - 1; i >= 0; i--)
             {
                 NavObstaclePrimitive obstacle = _persistentDynamicObstacles[i];
+                if (!IsValidDynamicObstacleBounds(obstacle.Center, obstacle.Extents))
+                {
+                    _persistentDynamicObstacles.RemoveAtSwapBack(i);
+                    continue;
+                }
+
                 if (math.lengthsq(obstacle.Center - center) > removeRadiusSq)
                     continue;
 

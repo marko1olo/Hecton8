@@ -952,11 +952,23 @@ namespace Hecton8.SaveSystem
 
         private void RefreshWfcOutpostDependencies()
         {
-            _macroDatabaseService = GlobalRegistry.MacroDatabase;
-            _dataVault = GlobalRegistry.DataVault;
+            IMacroDatabaseService macroDatabase = GlobalRegistry.MacroDatabase;
+            IDataVault dataVault = GlobalRegistry.DataVault;
+            bool macroDatabaseChanged = !ReferenceEquals(_macroDatabaseService, macroDatabase);
+            bool dataVaultChanged = !ReferenceEquals(_dataVault, dataVault);
+            if (macroDatabaseChanged || dataVaultChanged)
+            {
+                ResetWfcOutpostSectorCaches(clearMutableGrid: !dataVaultChanged && dataVault != null);
+            }
+
+            _macroDatabaseService = macroDatabase;
+            _dataVault = dataVault;
             _wfcOutpostDependenciesReady = _macroDatabaseService != null &&
                                            _macroDatabaseService.IsOpen &&
                                            _dataVault != null;
+            if (!_wfcOutpostDependenciesReady)
+                ResetWfcOutpostSectorCaches(clearMutableGrid: !dataVaultChanged && _dataVault != null);
+
             TryEnsureWfcOutpostGrid(out _);
         }
 
@@ -1368,6 +1380,7 @@ namespace Hecton8.SaveSystem
         {
             ReadOnlySpan<Hecton8.Core.Signals.MacroDatabaseSectorHydrationSignal> signals =
                 SignalBus<Hecton8.Core.Signals.MacroDatabaseSectorHydrationSignal>.GetFrameSnapshot();
+            IMacroDatabaseService macroDatabase = _macroDatabaseService;
             NativeArray<byte> wfcGrid = default;
             bool hasGrid = false;
             Span<ulong> hydrationSectors = stackalloc ulong[MaxWfcSectorHydrationProbesPerTick];
@@ -1378,7 +1391,8 @@ namespace Hecton8.SaveSystem
                 Hecton8.Core.Signals.MacroDatabaseSectorHydrationSignal signal = signals[i];
                 if (signal.SectorHash == 0UL ||
                     signal.PayloadBytes < WfcOutpostPersistenceConstants.PayloadHeaderBytes ||
-                    signal.PayloadBytes > WfcOutpostPersistenceConstants.PayloadMaxBytes)
+                    signal.PayloadBytes > WfcOutpostPersistenceConstants.PayloadMaxBytes ||
+                    !IsWfcOutpostHydrationCandidate(in signal, macroDatabase))
                 {
                     continue;
                 }
@@ -1545,6 +1559,40 @@ namespace Hecton8.SaveSystem
             _wfcOutpostMutableGridSectorHash = sectorHash;
             RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationHydration, WfcOutpostPersistenceStatus.Ready, sectorHash, hydratedPayloadHash, handle.ByteLength);
             return true;
+        }
+
+        private void ResetWfcOutpostSectorCaches(bool clearMutableGrid)
+        {
+            _hasLastWfcOutpostSnapshot = false;
+            _lastWfcOutpostSectorHash = 0UL;
+            _lastWfcOutpostPayloadHash = 0UL;
+            _wfcOutpostMutableGridSectorHash = 0UL;
+            _wfcOutpostSnapshotCacheCount = 0;
+            _wfcOutpostSnapshotCacheNextIndex = 0;
+            if (clearMutableGrid && IsValidWfcOutpostGrid(_wfcOutpostGrid))
+                ClearWfcOutpostMutableStateGrid(_wfcOutpostGrid);
+
+            _wfcOutpostGrid = default;
+        }
+
+        private static unsafe bool IsWfcOutpostHydrationCandidate(
+            in Hecton8.Core.Signals.MacroDatabaseSectorHydrationSignal signal,
+            IMacroDatabaseService macroDatabase)
+        {
+            if (macroDatabase == null || !macroDatabase.IsOpen)
+                return true;
+
+            if (!macroDatabase.TryGetPayload(signal.SectorHash, out MacroDatabasePayloadHandle handle))
+                return true;
+
+            if (handle.Pointer == IntPtr.Zero ||
+                handle.ByteLength < WfcOutpostPersistenceConstants.PayloadHeaderBytes ||
+                handle.ByteLength > WfcOutpostPersistenceConstants.PayloadMaxBytes)
+            {
+                return true;
+            }
+
+            return SaveBinaryPayloadCodec.HasWfcOutpostBitmaskMagic((byte*)handle.Pointer, handle.ByteLength);
         }
 
         private bool TryGetCachedWfcOutpostSnapshotHash(ulong sectorHash, out ulong payloadHash)

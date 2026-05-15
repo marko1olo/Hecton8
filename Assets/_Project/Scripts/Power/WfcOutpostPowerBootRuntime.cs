@@ -48,6 +48,10 @@ namespace Hecton8.Power
         private const uint OutpostNodeCountHash = 0x4F4E4354u; // ONCT
         private const uint WfcPowerBootContextHash = 0x57465042u; // WFPB
         private const uint FaultTelemetryHash = 0x57464654u; // WFFT
+        private const int FatalGraphFaultMask = WfcOutpostGraphFaultFlags.CapacityExceeded |
+                                                WfcOutpostGraphFaultFlags.InvalidDimensions |
+                                                WfcOutpostGraphFaultFlags.InvalidBuffers |
+                                                WfcOutpostGraphFaultFlags.NoPowerNodes;
         private const uint FaultFlag = 1u << 31;
         private const uint AupShiftFlag = 1u << 2;
 
@@ -255,7 +259,7 @@ namespace Hecton8.Power
 
         private bool TryScheduleTranslation(in WfcOutpostGeneratedSignal signal)
         {
-            if (IsActiveGraphCurrent(in signal))
+            if (IsActiveGraphCurrent(in signal) || IsKnownFatalGraphCurrent(in signal))
                 return false;
 
             if (!WfcOutpostGridRegistry.TryGetGrid(signal.GridHandle, out WfcOutpostGridLease lease))
@@ -284,8 +288,17 @@ namespace Hecton8.Power
 
         private bool IsActiveGraphCurrent(in WfcOutpostGeneratedSignal signal)
         {
-            return _hasActiveGraph &&
-                   signal.GridHandle == _activeGridHandle &&
+            return _hasActiveGraph && IsSignalForActiveDescriptor(in signal);
+        }
+
+        private bool IsKnownFatalGraphCurrent(in WfcOutpostGeneratedSignal signal)
+        {
+            return HasFatalGraphFault(_lastGraphFaultFlags) && IsSignalForActiveDescriptor(in signal);
+        }
+
+        private bool IsSignalForActiveDescriptor(in WfcOutpostGeneratedSignal signal)
+        {
+            return signal.GridHandle == _activeGridHandle &&
                    signal.SectorHash == _activeDescriptor.SectorHash &&
                    signal.GenerationSequence == _activeDescriptor.GenerationSequence &&
                    signal.GridHash == _activeDescriptor.GridHash &&
@@ -304,8 +317,9 @@ namespace Hecton8.Power
             _lastGraphFaultFlags = ReadCount(WfcOutpostGraphCountSlots.FaultFlags);
             _reactorOutput01 = InitialReactorOutput01;
             _lastReactorUpdateTime = now;
-            _gasSeedPending = true;
-            _hasActiveGraph = _activeNodeCount > 0;
+            bool hasFatalGraphFault = HasFatalGraphFault(_lastGraphFaultFlags);
+            _gasSeedPending = !hasFatalGraphFault;
+            _hasActiveGraph = _activeNodeCount > 0 && !hasFatalGraphFault;
 
             GlobalTelemetryBus.PublishPerformanceWarning(OutpostNodeCountHash, WfcPowerBootContextHash, _activeNodeCount);
             if (_lastGraphFaultFlags != 0)
@@ -315,14 +329,15 @@ namespace Hecton8.Power
                 DumpBlackBox((uint)_lastGraphFaultFlags);
             }
 
-            TrySeedGasRooms();
+            if (!hasFatalGraphFault)
+                TrySeedGasRooms();
             if (_hasActiveGraph)
                 ScheduleGraphEvaluation();
         }
 
         private void ScheduleGraphEvaluation()
         {
-            if (_activeNodeCount <= 0)
+            if (_activeNodeCount <= 0 || HasFatalGraphFault(_lastGraphFaultFlags))
                 return;
 
             TryBindGraphBaseAwakeState();
@@ -386,7 +401,7 @@ namespace Hecton8.Power
         private void TryBindGraphBaseAwakeState()
         {
             IGasDynamicsSolver gas = _gasDynamics;
-            if (gas == null)
+            if (gas == null || !gas.IsInitialized)
             {
                 _graph.TryBindBaseAwakeState(default, 0);
                 return;
@@ -423,6 +438,9 @@ namespace Hecton8.Power
 
         private void PublishDoorPowerSignals()
         {
+            if (!_hasActiveGraph)
+                return;
+
             int nodeCount = math.clamp(_activeNodeCount, 0, MaxCells);
             for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
             {
@@ -472,6 +490,12 @@ namespace Hecton8.Power
 
         private void TrySeedGasRooms()
         {
+            if (!_hasActiveGraph || HasFatalGraphFault(_lastGraphFaultFlags))
+            {
+                _gasSeedPending = false;
+                return;
+            }
+
             IGasDynamicsSolver gas = _gasDynamics;
             if (gas == null || !gas.IsInitialized || _activeRoomCount <= 0)
             {
@@ -487,17 +511,19 @@ namespace Hecton8.Power
             }
 
             float o2 = StandardOxygenKPa * 0.05f;
+            bool allSeeded = true;
             for (int nodeIndex = 0; nodeIndex < _activeNodeCount; nodeIndex++)
             {
                 WfcOutpostPowerNode node = _nodes[nodeIndex];
                 if (node.RoomId == ushort.MaxValue || node.RoomId >= roomLimit)
                     continue;
 
-                gas.TryConfigureRoom(node.RoomId, o2, StandardCarbonDioxideKPa, StandardNitrogenKPa, StandardAmbientKPa, 0);
-                gas.TrySetScrubberPowered(node.RoomId, false);
+                bool configured = gas.TryConfigureRoom(node.RoomId, o2, StandardCarbonDioxideKPa, StandardNitrogenKPa, StandardAmbientKPa, 0);
+                bool scrubberSet = gas.TrySetScrubberPowered(node.RoomId, false);
+                allSeeded &= configured && scrubberSet;
             }
 
-            _gasSeedPending = false;
+            _gasSeedPending = !allSeeded;
         }
 
         private void ApplyAupShiftSignals()
@@ -674,6 +700,11 @@ namespace Hecton8.Power
         private int ReadCount(int slot)
         {
             return _counts.IsCreated && (uint)slot < (uint)_counts.Length ? math.max(0, _counts[slot]) : 0;
+        }
+
+        private static bool HasFatalGraphFault(int faultFlags)
+        {
+            return (faultFlags & FatalGraphFaultMask) != 0;
         }
 
         private static float ResolveDemandWatts(byte kind)

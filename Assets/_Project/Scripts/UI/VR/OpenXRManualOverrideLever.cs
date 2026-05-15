@@ -258,6 +258,7 @@ namespace Hecton8.UI.VR
             {
                 _grabbed = false;
                 _projectionSingular = false;
+                _leverTargets[0] = minAngleDegrees;
                 return;
             }
 
@@ -265,6 +266,7 @@ namespace Hecton8.UI.VR
             {
                 _grabbed = false;
                 _projectionSingular = false;
+                _leverTargets[0] = minAngleDegrees;
                 return;
             }
 

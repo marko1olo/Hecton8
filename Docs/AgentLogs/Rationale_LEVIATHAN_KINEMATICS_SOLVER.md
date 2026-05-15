@@ -340,3 +340,11 @@ Solution: Add `_H8LeviathanTentacleFxTier`, cache the scalability tier in `Levia
 Rejected Alternatives: Cutting tentacle count was rejected because the fixed 8 tentacle / 20 segment buffer contract is predictable and already cheap on CPU. Removing all glow was rejected because low tier still needs readable suction/emission silhouettes.
 Scalability potential: Low - indirect silhouettes with base lighting and pulse emission only. Middle/High/Ultra - full normal map, flow sheen, SSS, caustics, and biolum. Cheap devices shed fragment effects; top-tier devices keep visual overkill.
 Hardware Impact: Low-tier saves one normal texture sample/reconstruction plus SSS/caustics/biolum/flow-sheen work per tentacle pixel. No GPU profiler measurement exists; this is a static shader-path reduction pending Unity shader compile and RenderDoc/profiler confirmation.
+
+## Decision 36: Tentacle Blackbox Dump Ordering
+
+Problem: `LeviathanTentacleVerletSolver.DumpTelemetryBlackBox()` wrote the physical 300-slot ring and always advertised 300 entries. Cold-start dumps could include empty slots, wrapped dumps were not oldest-to-newest, and an `int.MaxValue` cursor rollover reset retained-history semantics.
+Solution: Write valid entry count, keep the cursor in the header, serialize entries oldest-to-newest, and preserve full-ring semantics after cursor rollover by keeping the cursor at `TelemetryCapacity + nextIndex`.
+Rejected Alternatives: Dumping every slot was rejected because empty cold-start entries are diagnostic noise. Writing a sorted copy was rejected because it needs managed staging memory; modulo index walking gives deterministic order without new containers. Resetting the cursor to zero was rejected because the ring still contains valid retained frames.
+Scalability potential: Low/MX350/high/ultra visual behavior is unchanged. All tiers get better postmortem evidence for tentacle faults without changing solver math or indirect rendering.
+Hardware Impact: 0 us normal frame-time savings are claimed. The only normal-path change is a rollover branch that is effectively never taken during ordinary sessions; dump ordering runs only on blackbox fault export.

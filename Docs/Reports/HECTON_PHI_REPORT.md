@@ -1301,6 +1301,7 @@ What changed:
 - Added primary-runtime owner-blocked DataVault backlog accounting to `Tools/Architecture/HectonPhiAudit.ps1`.
 - Added `PrimaryOwnerBlockedNativeArrayRefs`, `PrimaryOwnerBlockedDisposeCalls`, and `PrimaryNativeOwnershipRisk`.
 - Added `-MaxPrimaryOwnerBlockedNativeArrayRefs` full-source budget gate.
+- Added source-file snapshot reuse for duplicate-signal and main H-Phi scan phases.
 - No gameplay code, buffer ownership, tick cadence, job scheduling, scene, prefab, or Unity project setting was changed by this H-Phi monitor pass.
 
 Current runtime static scores:

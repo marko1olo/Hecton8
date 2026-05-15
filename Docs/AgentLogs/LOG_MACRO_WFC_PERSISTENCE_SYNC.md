@@ -880,3 +880,61 @@ Verification:
 - Static scan confirms the storm fallback and shared event helper exist.
 - `git diff --check -- Assets/_Project/Scripts/SaveManager.cs` reports only Git CRLF normalization warnings.
 - No `dotnet` rebuild was run.
+
+## Recheck Report: WFC Per-Sector Snapshot Cache
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- WFC unchanged-payload suppression remembered only the last sector/hash.
+- Interleaved A/B/A sector traffic could requeue an identical A payload after B replaced the one-slot cache.
+- Dependency churn could leave cached sector identity stale unless explicitly reset.
+
+What was done:
+- Added a 256-entry native per-sector payload-hash cache in `SaveManager`.
+- Registered/disposed the cache through `NativeMemorySentinel`.
+- Reused the cache from persist, restore, and hydration paths.
+- Reset snapshot and mutable-grid sector caches when MacroDB/DataVault dependencies change or are unavailable.
+
+Cinematic cheats used:
+- Fixed native hash cache instead of managed maps, DB contract changes, or replaying WFC interaction history.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation: 0 B by static inspection.
+- Memory cost: 4096 bytes persistent native cache.
+- Avoided work: duplicate 32-288 byte MacroDB dirty copies and append attempts for unchanged interleaved sectors.
+
+Verification:
+- Static scan confirms cache allocation/disposal and reset wiring.
+- Static scan confirms `_hasLastWfcOutpostSnapshot = true` now flows through `RememberWfcOutpostSnapshotHash`.
+- `git diff --check -- Assets/_Project/Scripts/SaveManager.cs Docs/Tasks/Status_MACRO_WFC_PERSISTENCE_SYNC.md Docs/AgentLogs/Rationale_MACRO_WFC_PERSISTENCE_SYNC.md Docs/AgentLogs/LOG_MACRO_WFC_PERSISTENCE_SYNC.md` reports only Git CRLF normalization warnings.
+- No `dotnet` rebuild was run.
+
+## Recheck Report: WFC Hydration Magic Fairness And Reset Safety
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- Hydration collection counted any 32-288 byte MacroDB payload toward the four WFC restore probes.
+- Known non-WFC small payloads could starve later real WFC hydrations in the same snapshot.
+- Cache reset could clear a cached DataVault-owned `NativeArray` after the DataVault reference changed.
+
+What was done:
+- Added `IsWfcOutpostHydrationCandidate()` to prefilter known non-WFC payloads by WFC magic bytes before cap consumption.
+- Preserved existing telemetry/dump behavior for missing, null, or structurally corrupt candidates by letting them pass to the restore path.
+- Changed sector-cache reset to clear the mutable grid only when the DataVault owner is known to be unchanged.
+
+Cinematic cheats used:
+- Four-byte magic prefilter instead of signal contract churn or higher hydration caps.
+- Ownership-aware cache reset instead of reconstructing persistence state globally.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation: 0 B by static inspection.
+- Added work: one cached MacroDB lookup and four byte reads per WFC-sized hydration candidate when MacroDB is open.
+- Avoided work: false WFC restore attempts and black-box noise for known non-WFC small payloads.
+
+Verification:
+- Static scan confirms pre-cap `IsWfcOutpostHydrationCandidate()` filtering.
+- Static scan confirms `ResetWfcOutpostSectorCaches(bool clearMutableGrid)` call-site wiring.
+- `git diff --check -- Assets/_Project/Scripts/SaveManager.cs Docs/Tasks/Status_MACRO_WFC_PERSISTENCE_SYNC.md Docs/AgentLogs/Rationale_MACRO_WFC_PERSISTENCE_SYNC.md Docs/AgentLogs/LOG_MACRO_WFC_PERSISTENCE_SYNC.md` reports only Git CRLF normalization warnings.
+- No `dotnet` rebuild was run.

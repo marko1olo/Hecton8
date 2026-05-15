@@ -287,3 +287,15 @@ Rejected Alternatives: Full grouping by `target`/`level` over the whole 3.2GB lo
 Scalability potential: Low/Middle/High/Ultra process gains a realistic view of automation density. Future audits can see that the main risk is not just token mass, but one user marker driving dozens of tool markers and transport/log events.
 
 Hardware Impact: 0 runtime microseconds on i3/MX350. No C# source, scene, prefab, shader, project setting, or Unity asset was changed. Process impact: identifies `logs_2.sqlite` as capped recent evidence and JSONL as the durable but expensive dialogue source.
+
+## Decision 24 - Timaert/Samosbor Transfer Boundary
+
+Problem: The user ordered Timaert/Samosbor docs, tasks, and logs to live in the Timaert folder, not Hecton. Exact Timaert/Samosbor/TMA labels were not present under Hecton, while active Hecton agents were still mutating docs/logs.
+
+Solution: Keep all transferred material in the existing quarantined Timaert import tree under `C:\Timaert\timaert_c\Docs\Imported\Hecton8\2026-05-15_docs_tasks_logs`. Refresh selected documentation/log scopes non-destructively, preserve source-relative paths, and record manifests in Timaert. Do not delete Hecton sources and do not write Timaert project docs into Hecton.
+
+Rejected Alternatives: Moving files out of Hecton was rejected because the current matches are Hecton docs without exact Timaert labels and deletion would destroy Hecton provenance. Copying into active Timaert `Docs\Tasks` or `Docs\AgentLogs` was rejected because it would pollute live Timaert agent state. Chasing a permanent zero-delta state was rejected because concurrent Hecton agents kept writing new logs/status files during verification.
+
+Scalability potential: Low/Middle/High/Ultra process gains isolation: Timaert can inspect Hecton-imported docs without contaminating active Timaert task/log state, and Hecton no longer has to be used as a storage target for Timaert documentation.
+
+Hardware Impact: 0 runtime microseconds on i3/MX350. No C# source, C++ source, Unity asset, or Timaert runtime source was changed. Documentation import only.

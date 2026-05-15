@@ -339,3 +339,23 @@ No dotnet rebuild was run per user instruction. `git diff --check` and `git diff
 
 Status:
 PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
+
+## 2026-05-15 Recursive QA Addendum 17
+
+What was wrong:
+Rig setup still had authoring-to-Burst H-Phi trust windows. Inspector range metadata was trusted for reach safety margin, pelvis blends, over-extension resistance, appendage iterations, and appendage tolerance. Transform-derived limb lengths could preserve non-finite positions into reach caches. Secondary-chain initial state copied raw transform positions. Native muscle bulge accumulation accepted any finite scalar until a later render clamp. Appendage/spine chain continuation did not explicitly stop after a corrupt world-state update.
+
+What was done:
+`ContextualPhysicalIkRig` now sanitizes pelvis blends and over-extension radians before AnimationJob publication and refreshes those fields when target buffers/slots are updated. Two-bone setup reach margin is non-negative clamped. Appendage iterations are clamped to 1..12 and tolerance is finite/non-negative clamped before native publication; the Burst apply job rejects out-of-range appendage metadata. `ComputeLength` now rejects non-finite transforms and invalid squared lengths while keeping the no-sqrt `rsqrt` length path. Secondary initial states fall back to zero on invalid transform positions. Native muscle bulge output is unit-bounded at accumulation. Appendage and spine processors now bail after invalid world-chain state updates.
+
+Cinematic cheats used:
+No full-body solver, no Unity Animator IK, no physical lower-body simulation, no extra probes. The patch keeps the visual fake: bounded authoring scalars, two-bone limbs, FABRIK appendage polish, spine lean, and muscle shader output, with corrupt setup data collapsing to neutral or skipped solve paths.
+
+Exact microseconds saved:
+Added hot cost is finite/unit/non-negative clamps and two chain-state guards inside existing paths, estimated below 0.2 us/frame on i3/MX350. Cold setup guards prevent NaN reach caches, runaway FABRIK iteration counts, and shader bulge spikes before they can force visible correction or native fault investigation.
+
+Verification:
+No dotnet rebuild was run per user instruction. `Select-String` forbidden-pattern scan scoped to `ContextualPhysicalIkRig.cs` returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `.ToString(`, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`. `git diff --check` over `ContextualPhysicalIkRig.cs` passed with CRLF warning only. MCP resource listing returned no Unity resources.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.

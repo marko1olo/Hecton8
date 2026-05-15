@@ -809,3 +809,29 @@ Verification:
 - `git diff --check` and `git diff --cached --check` on touched code/shader/docs exit 0; working-copy output only reports LF-to-CRLF warnings.
 - Static forbidden scan over Leviathan IK code/shader scope remains clean for `new NativeArray<`, direct `array.Dispose(`, `Time.frameCount`, `GlobalRegistry.Get`, forbidden Unity object searches, `Animator`, and `SkinnedMeshRenderer`.
 - Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, RenderDoc/profiler evidence, and visual validation exist.
+
+## 2026-05-15T14:13+04:00
+
+Status: PENDING VERIFICATION. Continued Leviathan tentacle blackbox audit. No `dotnet` rebuild/compile, Unity import, shader compile, or response-file probe was run.
+
+What was wrong:
+- `LeviathanTentacleVerletSolver` dumped the physical telemetry ring order and always emitted 300 entries, so cold-start dumps could contain unused slots and wrapped dumps required extra reconstruction.
+- The cursor reset to zero at `int.MaxValue`, which would hide retained 300-frame history after extreme uptime.
+
+What was done:
+- Changed the dump header to write valid entry count plus cursor.
+- Serialized entries oldest-to-newest with modulo index walking and no managed staging container.
+- Preserved full-ring cursor semantics after rollover.
+- Kept the existing 64-byte entry payload layout and magic header.
+
+Cinematic cheats used:
+- No new physical simulation. This is forensic hygiene for the existing deterministic tentacle fake: Burst Verlet state stays explainable without adding gameplay-visible cost.
+
+Exact microseconds saved:
+- 0 us normal frame-time saving claimed.
+- Fault-path dumps avoid postmortem reconstruction work; normal path adds only a practically unreachable cursor rollover branch.
+
+Verification:
+- `git diff --check` on `LeviathanTentacleVerletSolver.cs` exits 0 with only LF-to-CRLF warning.
+- Static forbidden scan over the tentacle solver remains clean for direct native allocations/disposals, `Time.frameCount`, `GlobalRegistry.Get`, forbidden Unity searches, `Animator`, and `SkinnedMeshRenderer`.
+- Runtime status remains pending until Unity Editor import, shader compile, PlayMode behavior, GC, profiler evidence, and dump parsing proof exist.

@@ -34,6 +34,37 @@ Verification:
 
 STATUS: AUDIT COMPLETE.
 
+## 2026-05-15 - Timaert/Samosbor Transfer Boundary Pass
+
+What was wrong:
+- The user explicitly ordered Timaert/Samosbor docs/tasks/logs to live under the Timaert folder, not Hecton.
+- Exact search still found no Timaert/Samosbor/TMA-labeled docs under Hecton, so a label-only transfer would copy nothing.
+- Hecton docs/logs were actively changing during verification.
+
+What was done:
+- Re-read `Docs/Tasks/Status_COMPUTE_LOGISTICS_AUDITOR.md` and `Docs/AgentLogs/Rationale_COMPUTE_LOGISTICS_AUDITOR.md`.
+- Verified target repo: `C:\Timaert\timaert_c`.
+- Refreshed the quarantined import tree:
+  `C:\Timaert\timaert_c\Docs\Imported\Hecton8\2026-05-15_docs_tasks_logs`.
+- Initial selected-source pass: 1906 files checked, 1 missing copied, 17 stale refreshed.
+- Live-settle manifests captured additional concurrent Hecton deltas through `LIVE6`.
+- Updated Timaert-side import audit:
+  `C:\Timaert\timaert_c\Docs\Imported\Hecton8_Timaert_Samosbor_Import_Audit.md`.
+- Left all Hecton source files intact.
+
+Cinematic Cheats used:
+- None.
+
+Exact microseconds saved:
+- Runtime: 0 us.
+
+Verification:
+- Source and destination absolute paths were resolved before copy.
+- Copy destination was constrained under `C:\Timaert\timaert_c`.
+- No runtime compile run. This pass changed documentation/import artifacts only.
+
+STATUS: AUDIT COMPLETE.
+
 ## 2026-05-15 - Codex Dialogue Topology
 
 What was wrong:

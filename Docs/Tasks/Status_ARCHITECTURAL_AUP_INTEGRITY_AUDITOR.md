@@ -3,7 +3,7 @@
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
 Domain: ECHELON 1 / Origin Shift (AUP Manager), with audit reach into Physics, Voxel, Kinematics, AI trigger math, Biome trigger math, and deterministic seed callsites.
 Assignment Source: User-supplied XML block. `Docs/Tasks/CURRENT_BATCH.md` extraction returned `PROMPT_NOT_FOUND` for this ID on initial pass.
-Status: VERIFIED AUP INTEGRITY - LOOP 37 APPLIED; H-PHI SOURCE SCAN HAS ALL-PATTERN LITERAL GATE AND FIXED LINQ PREFILTER HINTS; FULL `-MaxAupPrecisionRisk 0` SCAN PASSES IN 39.931S; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
+Status: VERIFIED AUP INTEGRITY - LOOP 38 APPLIED; H-PHI MASKING FAST PATH VERIFIED; EDITOR GHOST DEBUGGER DOUBLE AUP BRIDGE RESTORED; STRICT AUP SCANS RETURN NO_MATCHES; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
 
 ## Selected Mandates
 
@@ -432,3 +432,17 @@ Loop 37 - H-Phi All-Pattern Literal Gate:
 - Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run and returned 237 broad residual matches. Residuals remain broad `universe` text and known final-cast fluid/scatter/shader payload names, not qualified legacy AUP authority leaks.
 - `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1` reports line-ending warning only, no whitespace errors.
 - No `dotnet build` or rebuild was run in Loop 37 because the user explicitly forbade rebuilds.
+
+Loop 38 - H-Phi Masking Fast Path and Editor AUP Regression Repair:
+- Re-read status/rationale and kept the rebuild ban active.
+- Patched `ConvertTo-MaskedCodeSurface` in `Tools/Architecture/HectonPhiAudit.ps1` so single-line comments/strings return a space string directly; multiline spans still preserve newline positions with the existing loop.
+- Standard `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 172.219 seconds under current workstation load and reported `RuntimeHPhiRisk=0.000612591`, `RuntimeHPhiNarrow=0.010684089`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=363`, `AupPrecisionRisk=0`, `AllSourceAuditLiteralSkippedFiles=205`, `RuntimeAuditLiteralSkippedFiles=209`, `DuplicateSignalCandidateFiles=225`, `DuplicateSignalSkippedFiles=1280`, `PrimaryManagedRuntimeRisk=330`, `PrimaryOwnerBlockedNativeArrayRefs=5696`, `RuntimeFiles=1278`, `RuntimeLines=867905`.
+- Optional lexical-scrubbed full source pass now completes: `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -LexicalScrub -MaxAupPrecisionRisk 0` completed in 228.162 seconds with `AupPrecisionRisk=0`, `RuntimeHPhiRisk=0.000697743`, and `LinqSurface=5`.
+- The post-verification strict scan caught two editor-only legacy bridge calls in `Assets/_Project/Scripts/Editor/KinematicGhostDebugger.cs`.
+- Patched `KinematicGhostDebugger` to use `HectonMapMagicVegetationBridge.ToUniverseSpaceDouble3` and `HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3`, casting to `Vector3` only at the editor Handles preview boundary.
+- Final targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Final direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run and returned 237 broad residual matches. Residuals remain broad `universe` text and known final-cast/presentation payload names.
+- Temporary captures `TEMP_HECTON_PHI_SUMMARY_LOOP38.json` and `TEMP_HECTON_PHI_SUMMARY_LOOP38_LEXICAL.json` are absent after cleanup.
+- `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1 Assets/_Project/Scripts/Editor/KinematicGhostDebugger.cs` reports line-ending warnings only, no whitespace errors.
+- No `dotnet build` or rebuild was run in Loop 38 because the user explicitly forbade rebuilds.

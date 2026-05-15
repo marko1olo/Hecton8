@@ -838,3 +838,33 @@ Verification state:
 - `CURRENT_BATCH.md` exact prompt tag count for `VFX_SDF_CARVE_DEBRIS`: 0.
 - Unity import/compile/profiler evidence remains unavailable.
 - No dotnet build or rebuild was run.
+
+## 2026-05-15 - SDF Matrix Finite Guard
+
+What was wrong:
+- SDF inverse extents were validated, but the authored/global world-to-local matrix could still contain NaN or Inf.
+- A bad matrix would make compute SDF sample coordinates invalid and produce undefined debris collision/dissolve behavior.
+
+What was done:
+- Added a full 16-component finite check for `Matrix4x4`.
+- Authored `voxelSdfWorldToLocal` must pass the guard before enabling SDF collision.
+- Published `_HectonCaveVoxelWorldToLocal` must pass the guard before the global SDF cache is marked active.
+- Invalid SDF transforms fail closed to the empty texture path; Low/MX350 remains unchanged.
+- Did not run dotnet build or dotnet rebuild.
+
+Cinematic cheats used:
+- Fail-closed collision: bad SDF publication disables chip collision instead of trying to simulate through corrupt space.
+- Low-tier stays visually acceptable with gravity-only debris; High/Ultra only spend SDF collision when the cave transform is trustworthy.
+
+Exact Microseconds saved:
+- Direct saving: 0 us in normal valid-SDF frames.
+- Added cost: 16 finite scalar checks on authored bind/global refresh, estimated sub-microsecond on i3/MX350.
+- Avoided cost/risk: invalid GPU samples, NaN-driven collision artifacts, and false blackbox state.
+
+Verification state:
+- Focused `git diff --check` returned clean.
+- Forbidden VFX scan returned no matches for CPU readback, ParticleSystem, ComputeBuffer, scene search, job scheduling fences, private `H8Memory.Allocate`, private `H8Memory.Release`, `MaterialPropertyBlock`, `matProps`, managed hot strings, `Vector3.magnitude`, or `math.sqrt`.
+- Shader hot-math scan returned no matches.
+- `CURRENT_BATCH.md` exact prompt tag count for `VFX_SDF_CARVE_DEBRIS`: 0.
+- Unity import/compile/profiler evidence remains unavailable.
+- No dotnet build or rebuild was run.

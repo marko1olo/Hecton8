@@ -497,3 +497,15 @@ Rejected Alternatives: keeping early receiver registration was rejected because 
 Scalability potential: Low/toaster avoids wasting a receiver slot during boot, scene streaming, or dispatcher reload. Middle/High keep receiver and tick identity coherent as cockpit controls stream in. Ultra can support denser physical panels because dead manual override levers no longer occupy overlap dispatch capacity.
 
 Hardware Impact: 0 us steady-state. Cold registration pays one static dispatcher-null branch and prevents useless overlap-to-receiver dispatch while no runnable lever simulation lane exists.
+
+## Decision 41 - VR release must not preserve stale pull targets
+
+Problem: the non-VR fallback decays toward `minAngleDegrees` when grip is released, but VR release and stale tracking release only cleared `_grabbed` and `_projectionSingular`. `_leverTargets[0]` remained at the last hand-solved angle, so a non-latched manual override could rest partially pulled without a current hand owner.
+
+Solution: on VR grip release and stale hand sample release, set `_leverTargets[0] = minAngleDegrees`. Preserve the existing short-gap behavior that freezes target for 2-3 frame tracking holes while the hand was already grabbed, because that hides transient XR sample loss without accepting stale authority forever.
+
+Rejected Alternatives: leaving the target unchanged was rejected because partial-pull drift contradicts the non-VR fallback and makes release behavior inconsistent. Snapping the angle directly to closed was rejected because the scalar spring already provides the tactile/visual return motion. Removing the short-gap freeze was rejected because brief XR tracking gaps should not produce visible lever jitter.
+
+Scalability potential: Low/Middle/High/Ultra now share the same gameplay truth: current hand/fallback input owns the target, release returns closed until latch. Ultra can add richer return audio/haptics later without changing lever authority.
+
+Hardware Impact: one scalar NativeArray write only on release/stale-release branches. No steady-frame cost, no allocation, no transform work. MX350 avoids persistent partial-pull state that would keep downstream presentation misleading.

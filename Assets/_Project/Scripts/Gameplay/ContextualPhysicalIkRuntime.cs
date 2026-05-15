@@ -422,6 +422,8 @@ namespace Hecton8.Gameplay
             if (entity.UpdateThisFrame == 0)
             {
                 SanitizeTargetFrame(ref next);
+                SanitizeFootDataLane(baseFootIndex + ContextualPhysicalIkLowerBodyConstants.LeftFootIndex);
+                SanitizeFootDataLane(baseFootIndex + ContextualPhysicalIkLowerBodyConstants.RightFootIndex);
                 WriteIkSoa(baseIkIndex, in next);
                 WriteFootSoa(baseFootIndex, in next);
                 NextTargets[index] = next;
@@ -778,7 +780,15 @@ namespace Hecton8.Gameplay
             if (!FootData.IsCreated || footIndex < 0 || footIndex >= FootData.Length)
                 return default;
 
-            return FootData[footIndex];
+            return SanitizeFootData(FootData[footIndex]);
+        }
+
+        private void SanitizeFootDataLane(int footIndex)
+        {
+            if (!FootData.IsCreated || footIndex < 0 || footIndex >= FootData.Length)
+                return;
+
+            FootData[footIndex] = SanitizeFootData(FootData[footIndex]);
         }
 
         private void FadeFootLane(int footIndex, in ContextualPhysicalIkContactTarget target, float fadeSharpness, float deltaTime)
@@ -815,7 +825,9 @@ namespace Hecton8.Gameplay
             in ContextualPhysicalIkContactTarget previousTarget,
             out ContextualPhysicalIkContactTarget resolvedTarget)
         {
-            float3 safeTarget = math.select(targetPosition, entity.PelvisPosition, !math.all(math.isfinite(targetPosition)));
+            data = SanitizeFootData(data);
+            float3 safePelvis = SanitizeFloat3(entity.PelvisPosition, float3.zero);
+            float3 safeTarget = math.select(targetPosition, safePelvis, !math.all(math.isfinite(targetPosition)));
             float3 safeNormal = ContextualPhysicalIkMath.SafeNormalize(targetNormal, new float3(0.0f, 1.0f, 0.0f));
             float3 currentPosition = ResolveFootCurrentPosition(in data, in previousTarget, safeTarget);
             byte flags = candidateFlags;
@@ -877,7 +889,12 @@ namespace Hecton8.Gameplay
                 }
             }
 
-            currentPosition = math.select(currentPosition, safeTarget, !math.all(math.isfinite(currentPosition)));
+            if (!math.all(math.isfinite(currentPosition)))
+            {
+                currentPosition = safeTarget;
+                flags |= ContextualPhysicalIkLowerBodyConstants.FlagInvalid;
+            }
+
             float smoothedBlend = SmoothBlend(data.Blend, targetBlend, entity.BlendFadeSharpness, entity.DeltaTime);
             data.TargetPosition = safeTarget;
             data.CurrentPosition = currentPosition;
@@ -948,17 +965,20 @@ namespace Hecton8.Gameplay
             float3 rootUp = ContextualPhysicalIkMath.SafeNormalize(
                 math.mul(entity.RootRotation, new float3(0.0f, 1.0f, 0.0f)),
                 new float3(0.0f, 1.0f, 0.0f));
-            float3 planarVelocity = entity.KccVelocity - (rootUp * math.dot(entity.KccVelocity, rootUp));
+            float3 safePelvis = SanitizeFloat3(entity.PelvisPosition, float3.zero);
+            float3 safeKccVelocity = SanitizeFloat3(entity.KccVelocity, float3.zero);
+            float3 planarVelocity = safeKccVelocity - (rootUp * math.dot(safeKccVelocity, rootUp));
             float3 swimDirection = ContextualPhysicalIkMath.SafeNormalize(planarVelocity, rootForward);
-            if (math.lengthsq(planarVelocity) <= 0.0025f)
+            float planarSpeedSq = math.lengthsq(planarVelocity);
+            if (!math.isfinite(planarSpeedSq) || planarSpeedSq <= 0.0025f)
                 swimDirection = rootForward;
 
             targetNormal = rootUp;
-            targetPosition = entity.PelvisPosition -
+            targetPosition = safePelvis -
                 (swimDirection * ContextualPhysicalIkRuntime.SwimBackDistanceMeters) -
                 (rootUp * ContextualPhysicalIkRuntime.SwimDownDistanceMeters) +
                 (rootRight * (side * ContextualPhysicalIkRuntime.SwimSideOffsetMeters));
-            targetPosition = math.select(targetPosition, entity.PelvisPosition, !math.all(math.isfinite(targetPosition)));
+            targetPosition = SanitizeFloat3(targetPosition, safePelvis);
         }
 
         private static float ResolvePelvisYawRadians(in ContextualPhysicalIkEntityState entity)
@@ -1012,16 +1032,19 @@ namespace Hecton8.Gameplay
 
         private static void CancelStep(ref ContextualPhysicalIkFootData data)
         {
+            data = SanitizeFootData(data);
             data.Flags = (byte)(data.Flags & ~ContextualPhysicalIkLowerBodyConstants.FlagStepping);
             data.StepProgress01 = 1.0f;
-            data.StepStartPosition = data.CurrentPosition;
+            data.StepStartPosition = SanitizeFloat3(data.CurrentPosition, float3.zero);
         }
 
         private static bool IsStepping(in ContextualPhysicalIkFootData data)
         {
             return (data.Flags & ContextualPhysicalIkLowerBodyConstants.FlagStepping) != 0 &&
                 math.isfinite(data.StepProgress01) &&
-                data.StepProgress01 < 0.999f;
+                SanitizeBlend(data.StepProgress01) < 0.999f &&
+                math.all(math.isfinite(data.CurrentPosition)) &&
+                math.all(math.isfinite(data.StepStartPosition));
         }
 
         private static float3 ResolveFootCurrentPosition(
@@ -1029,13 +1052,49 @@ namespace Hecton8.Gameplay
             in ContextualPhysicalIkContactTarget previousTarget,
             float3 fallback)
         {
-            if (data.Blend > 0.0001f && math.all(math.isfinite(data.CurrentPosition)))
+            fallback = SanitizeFloat3(fallback, float3.zero);
+            if (SanitizeBlend(data.Blend) > 0.0001f && math.all(math.isfinite(data.CurrentPosition)))
                 return data.CurrentPosition;
 
-            if (previousTarget.Blend > 0.0001f && math.all(math.isfinite(previousTarget.WorldPosition)))
+            if (SanitizeBlend(previousTarget.Blend) > 0.0001f && math.all(math.isfinite(previousTarget.WorldPosition)))
                 return previousTarget.WorldPosition;
 
             return fallback;
+        }
+
+        private static ContextualPhysicalIkFootData SanitizeFootData(ContextualPhysicalIkFootData data)
+        {
+            bool validPositions =
+                math.all(math.isfinite(data.TargetPosition)) &&
+                math.all(math.isfinite(data.CurrentPosition)) &&
+                math.all(math.isfinite(data.StepStartPosition));
+            bool validScalars =
+                math.isfinite(data.StepProgress01) &&
+                math.isfinite(data.StepThresholdSq) &&
+                math.isfinite(data.StepHeightMeters) &&
+                math.isfinite(data.Blend);
+            if (!validPositions || !validScalars)
+            {
+                data = default;
+                data.SurfaceNormal = new float3(0.0f, 1.0f, 0.0f);
+                data.StepProgress01 = 1.0f;
+                return data;
+            }
+
+            data.SurfaceNormal = ContextualPhysicalIkMath.SafeNormalize(data.SurfaceNormal, new float3(0.0f, 1.0f, 0.0f));
+            data.StepProgress01 = SanitizeBlend(data.StepProgress01);
+            data.StepThresholdSq = SanitizeNonNegative(data.StepThresholdSq);
+            data.StepHeightMeters = SanitizeNonNegative(data.StepHeightMeters);
+            data.Blend = SanitizeBlend(data.Blend);
+            data.Side = data.Side == 0 ? (byte)0 : (byte)1;
+            data.Flags = (byte)(data.Flags & (
+                ContextualPhysicalIkLowerBodyConstants.FlagGrounded |
+                ContextualPhysicalIkLowerBodyConstants.FlagStepping |
+                ContextualPhysicalIkLowerBodyConstants.FlagSwimming |
+                ContextualPhysicalIkLowerBodyConstants.FlagInvalid));
+            if (data.StepProgress01 >= 0.999f)
+                data.Flags = (byte)(data.Flags & ~ContextualPhysicalIkLowerBodyConstants.FlagStepping);
+            return data;
         }
 
         private static float2 ResolveSlopeLeanRadians(

@@ -1253,7 +1253,17 @@ namespace Hecton8.AI
             if (telemetryWriteIndex < 0)
                 telemetryWriteIndex += TelemetryCapacity;
             _telemetryRing[telemetryWriteIndex] = entry;
-            _telemetryCursor = _telemetryCursor == int.MaxValue ? 0 : _telemetryCursor + 1;
+            if (_telemetryCursor == int.MaxValue)
+            {
+                int nextIndex = telemetryWriteIndex + 1;
+                if (nextIndex >= TelemetryCapacity)
+                    nextIndex = 0;
+                _telemetryCursor = TelemetryCapacity + nextIndex;
+            }
+            else
+            {
+                _telemetryCursor++;
+            }
             _frameIndex = _frameIndex == int.MaxValue ? 0 : _frameIndex + 1;
             if (invalid)
                 DumpTelemetryBlackBoxOnce();
@@ -1285,13 +1295,18 @@ namespace Hecton8.AI
 
             using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
             using BinaryWriter writer = new BinaryWriter(stream);
+            int ringLength = math.min(TelemetryCapacity, _telemetryRing.Length);
+            int entryCount = _telemetryCursor >= ringLength ? ringLength : math.max(0, _telemetryCursor);
+            int firstEntryIndex = entryCount == ringLength && ringLength > 0 ? _telemetryCursor % ringLength : 0;
+
             writer.Write(TelemetryDumpMagic);
-            writer.Write(TelemetryCapacity);
+            writer.Write(entryCount);
             writer.Write(_telemetryCursor);
             writer.Write(TelemetryEntryPayloadBytes);
-            for (int i = 0; i < TelemetryCapacity; i++)
+            for (int i = 0; i < entryCount; i++)
             {
-                LeviathanTentacleTelemetryEntry entry = _telemetryRing[i];
+                int sourceIndex = (firstEntryIndex + i) % ringLength;
+                LeviathanTentacleTelemetryEntry entry = _telemetryRing[sourceIndex];
                 writer.Write(entry.FrameIndex);
                 writer.Write(entry.ActiveTentacleCount);
                 writer.Write(entry.Flags);

@@ -676,4 +676,4 @@ Scalability potential: Low/MX350 benefits because corrupted or migrated authorin
 
 Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: serialized type drift becomes a deterministic validation failure instead of ambiguous getter behavior. Exact runtime microseconds are not profiled because this is editor validation.
 
-Verification: Pending static verification. Planned checks: no dotnet rebuild and no Unity import; source token scan for helper type guards; rule/material YAML scans; `git diff --check`; source brace/non-ASCII balance; case-sensitive forbidden source scan.
+Verification: No dotnet rebuild and no Unity import was run. Source scan found expected `SerializedPropertyType` guards for int, bool, float, string, object references, raw rule symbol/replacement, and material saved-property keys. `RuleSerializedSchemaYamlScan Count=3 Bad=0`; `MaterialSerializedSchemaYamlScan Bad=0`. `git diff --check` passed for the touched Shallows files with only repo CRLF warnings. Source brace count remained `Delta=0` and `NonAscii=0`; case-sensitive forbidden source scan remained clean.

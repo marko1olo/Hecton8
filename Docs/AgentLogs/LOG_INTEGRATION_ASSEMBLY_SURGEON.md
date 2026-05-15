@@ -678,6 +678,44 @@ Verification:
 - H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh50.json`.
 - H-Phi result: `EXIT=0`, `RuntimeHPhiRisk=0.000598725`, `GlobalRegistrySurface=5142`, `StructLayoutAttributes=957`, `MemoryAlignment=0.506081438`, `UnityUpdateMethods=0`, duplicate signal budget actual `0`, `AupPrecisionRisk=0`.
 - Freshness: no C# source under `Assets/_Project/Scripts` was newer than the Fresh50 build or H-Phi artifacts at verification time.
+
+## 2026-05-15 - Fresh64 Bootstrap Readiness And H-Phi Budget Closure
+
+What was wrong:
+- Fresh50 was no longer sufficient evidence after parallel C# edits landed.
+- `GameBootstrapper` still had avoidable readiness-side `GlobalRegistry` self-read/coupling debt.
+- The H-Phi doc command drifted away from the Fresh62 verified gate by missing `-MaxUnityUpdateMethods 0` and by retaining looser source counters.
+
+What was done:
+- Ran fresh serial Core compile passes without `dotnet rebuild`; final accepted compile is `Fresh64`.
+- Reduced bootstrap dependency readiness coupling by resolving the dependency service once for heartbeat fallback and by using a node-readiness overload.
+- Preserved lifecycle-sensitive bootstrap paths where `AddComponent` may register services during `Awake/OnEnable`.
+- Updated the H-Phi documentation gate to the Fresh62 verified source budgets, including Unity loop debt zero and owner-blocked NativeArray ceilings.
+
+Cinematic Cheats used:
+- Compile/static architecture surgery only.
+- No gameplay, physics, rendering, shader, prefab, package, generated `.csproj`, or leaf NativeArray ownership path was changed.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Final compile verification time: 115,650,249 us.
+- Final H-Phi verification time: 138,599,793 us.
+- Static coupling impact versus Fresh50: `GlobalRegistrySurface` 5142 -> 5086, `GetComponentCalls` 530 -> 405, `ManagedFormatSurface` 704 -> 681, `PrimaryManagedRuntimeRisk` 353 -> 330.
+
+Verification:
+- Compile artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh64.log`.
+- Compile result: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh62.json`.
+- H-Phi result: `EXIT=0`, `RuntimeHPhiRisk=0.000612591`, `DataSovereignty=0.021123844`, `MemoryAlignment=0.505783386`, `GlobalRegistrySurface=5086`, `GetComponentCalls=405`, `NativeArrayRefs=7090`, `OwnerBlockedNativeArrayRefs=6280`, `PrimaryOwnerBlockedNativeArrayRefs=5696`, `UnityUpdateMethods=0`, duplicate signal budget actual `0`, `AupPrecisionRisk=0`.
+- Freshness: no C# source under `Assets/_Project/Scripts` was newer than the Fresh64 build log at verification time.
+- Diff hygiene: `git diff --check` on touched code/docs/status/log paths returned exit 0 with no output.
+
+Residual risk:
+- No Unity import, scene play, GCMonitor session, profiler capture, or player build was run.
+- NativeArray count movement is partly concurrent leaf-domain churn; this pass recorded the budget boundary instead of editing non-Integrator owners blindly.
+
+Current Status:
+- BUILD SUCCESSFUL / PLATINUM GRADE / FRESH64 CURRENT-DISK GREEN.
 - `git diff --check`: exit 0 with CRLF normalization warnings only.
 
 Residual risk:

@@ -344,3 +344,36 @@ Cinematic cheats used: No visual change. The same integer-index TMP sprite atlas
 Exact microseconds saved: Estimate only. Expected gain is sub-1 us per binding-icon layout rebuild on i3/MX350; no profiler proof is claimed.
 
 Verification: No dotnet rebuilds were run. Static scans confirmed the local-cache shape in `TryResolveBindingIcon()` and forbidden allocation/text/LINQ plus bootstrap/direct-time fallback scans stayed clean.
+
+## 2026-05-15 Tooltip Single-Pass Text Layout
+What was wrong: Prompt layout measured text with one TMP character lookup pass and then built glyph payloads with a second pass over the same staged buffer.
+
+What was done: Removed `MeasureAdvance()`. Text glyphs are now built once at zero, the returned advance is used for centering, and finished glyph centers are shifted in a tight numeric loop.
+
+Cinematic cheats used: No visual change. The same centered diegetic glyph layout remains; this only reduces CPU work before indirect draw submission.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per prompt layout rebuild on i3/MX350, with larger savings on longer fixed-buffer prompts; no profiler proof is claimed.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed `MeasureAdvance()` is removed, `BuildTextRun()` is the only TMP text glyph traversal, and forbidden allocation/text/LINQ plus bootstrap/direct-time fallback scans stayed clean.
+
+## 2026-05-15 Tooltip Advance-Scale Hoist
+What was wrong: Text layout recomputed `glyphScale * glyphAdvanceScale` per glyph and read glyph metrics around the space/non-space branch.
+
+What was done: Hoisted the advance-scale product once per `BuildTextRun()` call and cached `GlyphMetrics` before branching.
+
+Cinematic cheats used: No visual change. Prompt spacing and atlas output are identical; the layout loop just pays less arithmetic/property cost.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per prompt layout rebuild on i3/MX350; no profiler proof is claimed.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed the hoisted `advanceScale`, cached metrics, and forbidden allocation/text/LINQ plus bootstrap/direct-time fallback scans stayed clean.
+
+## 2026-05-15 Tooltip Icon-Scale Hoist
+What was wrong: Binding-icon layout multiplied `glyphScale * IconScaleMultiplier` separately for width and height.
+
+What was done: Hoisted that product once into `iconScale` before applying icon width and height clamps.
+
+Cinematic cheats used: No visual change. The same authored icon sizing remains; the branch just avoids repeated scalar math.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per binding-icon layout rebuild on i3/MX350; no profiler proof is claimed.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed the hoisted `iconScale` and forbidden allocation/text/LINQ plus bootstrap/direct-time fallback scans stayed clean.

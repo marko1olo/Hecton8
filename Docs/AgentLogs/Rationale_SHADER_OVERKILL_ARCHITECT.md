@@ -205,3 +205,17 @@ Solution: Ran only `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`, scope
 Rejected Alternatives: Running a build was rejected by the direct no-rebuild order. Expanding to dirty files owned by other agents was rejected by the parallel-execution rule.
 Scalability potential: Low-tier tab setup remains cheaper and deterministic; high-tier diegetic PDA/pause presentation remains visually unchanged with no extra per-frame cost.
 Hardware Impact: 0 us runtime from the audit itself. Latest static audit: `RuntimeHPhiNarrow=0.010671906`, `RuntimeHPhiRisk=0.000610856`, `AllSourceHPhiNarrow=0.009509931`, `AllSourceHPhiRisk=0.000498829`, `GetComponentCalls=416`, `UnityUpdateMethods=0`, `StructLayoutAttributes=960`, `AupPrecisionRisk=0`.
+
+## Decision 030 - Late Large UI Owner Lookup Consolidation
+Problem: After the tab pass, the remaining clean runtime UI lookup debt was concentrated in `PauseMenuController`, `PDAShellChrome`, and `SettingsManager`; these are broad owners, so careless edits could break menu or PDA boot behavior.
+Solution: Kept edits mechanical: local/self lookups now use `TryGetComponent(out T)`, parent camera/PDA/volume/canvas discovery uses explicit `Transform` walks, and generated menu/PDA construction stays behavior-equivalent.
+Rejected Alternatives: Editing editor-only fallback scans was rejected because it does not affect runtime H-Phi. Rewriting pause/PDA ownership was rejected as a refactor loop during parallel agent work.
+Scalability potential: Low/MX350 gets lower cold pause/PDA/settings recovery debt. Middle/High/Ultra keep the same premium diegetic shell, pause menu, controls, settings preview, and PDA visual behavior.
+Hardware Impact: Estimated runtime gain is 0-10 us on cold menu/shell/settings recovery frames only. Static `GetComponentCalls` improved from 416 to 384; full-source risk scores also include concurrent checkpoint changes from other agents.
+
+## Decision 031 - No-Rebuild Fifth UI H-Phi Reverification
+Problem: The large UI owner lookup pass changed source state after the `13:32:15` H-Phi run.
+Solution: Ran only `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`, scoped `rg`, brace counts, and `git diff --check`. No `dotnet build`, `dotnet rebuild`, Unity compile, or Unity import was executed.
+Rejected Alternatives: Running a build was rejected by the direct no-rebuild order. Claiming runtime readiness from static evidence was rejected by AGENTS.
+Scalability potential: Low-tier runtime UI recovery avoids the last large avoidable lookup cluster; high-tier presentation remains unchanged and can spend budget on actual visual richness rather than setup churn.
+Hardware Impact: 0 us runtime from the audit itself. Latest static audit: `RuntimeHPhiNarrow=0.010752435`, `RuntimeHPhiRisk=0.000618924`, `AllSourceHPhiNarrow=0.009581932`, `AllSourceHPhiRisk=0.00050517`, `GetComponentCalls=384`, `UnityUpdateMethods=0`, `StructLayoutAttributes=962`, `AupPrecisionRisk=0`.

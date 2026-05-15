@@ -463,3 +463,15 @@ Rejected Alternatives: Trusting the next SlowTick refresh was rejected because t
 Scalability potential: Low = pooled/depleted pickups are removed before snap acquisition. Middle = stale sidecars do not leak wrong presentation. High/Ultra = dense fields with object pooling retain deterministic truth under reconfiguration pressure.
 
 Hardware Impact: Adds a small branch cluster only for scheduled commit slots. MX350 avoids wrong inventory/presentation side effects that are more expensive than the validation.
+
+## Decision 37 - Entity Identity In Telemetry Hash
+
+Problem: The telemetry hash folded flags and item hashes but not pickup identity. Two same-item pickup fields could produce the same black-box hash after object pooling or slot swaps.
+
+Solution: Fold the full 64-bit pickup entity id into the existing FNV-style active-slot hash during SlowTick refresh and LateFrame commit. Also reject commit slots whose live pickup entity id no longer matches the sidecar id.
+
+Rejected Alternatives: Expanding the black-box dump with per-slot identity arrays was rejected because the ring must stay fixed-size and high-level. Trusting item hash alone was rejected because same-item pooled pickups are common in dense loot fields.
+
+Scalability potential: Low = no new FastTick cost. Middle = same-item swaps become diagnosable. High/Ultra = dense pooled loot fields keep identity evidence without larger telemetry memory.
+
+Hardware Impact: Adds two integer hash folds per active slot inside loops that already scan/commit loot. MX350 pays only existing cadence/commit loops and gains clearer postmortem evidence.

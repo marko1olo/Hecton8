@@ -113,6 +113,12 @@ namespace Hecton8.Logistics.Grid
                 nodeCount++;
             }
 
+            if (nodeCount <= 0)
+            {
+                WriteFault(WfcOutpostGraphFaultFlags.NoPowerNodes);
+                return;
+            }
+
             if (generatorNode < 0 && firstPowerNode >= 0)
             {
                 generatorNode = firstPowerNode;

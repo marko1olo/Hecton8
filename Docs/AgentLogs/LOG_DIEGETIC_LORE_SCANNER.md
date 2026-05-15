@@ -663,7 +663,31 @@ Exact Microseconds saved:
 - Removes one display-side frame read per scanner title repaint and up to two helper-local time reads across voxel/spatial focused contact samples.
 
 Verification:
-- `git diff --check` on scanner/UI edits: pass, source line-ending warnings only.
+- `git diff HEAD --check` on scanner/UI/doc full owned diff: pass, docs line-ending warnings only.
+- `git diff --check` on scanner/UI/doc edits: pass, docs line-ending warnings only.
 - `git diff --cached --check` on scanner/UI/doc edits: pass.
 - Scanner/UI banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, `SetText(`, and `.text =`: no matches.
+- Targeted timestamp scans: no display-side `Time.frameCount` scramble and no helper-local attractant `Time.time` read.
+- `dotnet build` / rebuild: NOT RUN.
+
+## Follow-Up Hardening Pass 25
+
+What was wrong:
+- The flat scanner hologram gate ignored valid non-fragment spatial/scientific contacts. Material-only hits, fauna contacts, chemical load, toxicity, and attractant vectors could be present while the scanner UI hid the hologram.
+
+What was done:
+- Added `HasScannerHologramPayload()` in `SuitHUDV4CanvasOverlay`.
+- The scanner hologram now remains valid for active material, fauna, chemical, toxicity, and attractant evidence, not only fragment/proxy-mesh payloads.
+
+Cinematic Cheats used:
+- Preserved the existing flat canvas scanner fake. No mesh/material/resource path was added.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Runtime cost is one bounded boolean gate during scanner hologram refresh; no spatial query, no allocation, no extra draw path.
+
+Verification:
+- `git diff HEAD --check` on scanner/UI/doc full owned diff: pass, SuitHUD/docs line-ending warnings only.
+- `git diff --check` on scanner/UI/doc edits: pass, SuitHUD/docs line-ending warnings only.
+- Added-line banned-pattern scan: no new `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, `SetText(`, or `.text =`.
 - `dotnet build` / rebuild: NOT RUN.

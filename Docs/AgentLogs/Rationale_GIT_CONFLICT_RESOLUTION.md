@@ -119,3 +119,9 @@ Solution: Treat the 107-file staged tail as a new bounded checkpoint. Fetch firs
 Rejected Alternatives: Blind pull with no incoming main commits, reset, amend/force-push, or reporting compile/HPhi green from git checks. These would misrepresent the repository state or destroy active agent output.
 Scalability potential: Git-only operator pass. Authored runtime tier behavior remains owned by the producing agents; this pass only verifies no obvious merge debris and records that Low/Middle/High/Ultra claims are not proven here.
 Hardware Impact: 0 us runtime impact. Dev-path gain is reduced GitHub Desktop conflict surface; Unity compile/profiler and HPhi pass proof remain pending.
+
+Problem: Immediately after `8213d7838` was pushed and verified, a new staged tail appeared, including runtime scripts and build/HPhi evidence files.
+Solution: Keep the same checkpoint boundary. Validate the 70-file staged tail with git checks, inspect the runtime surfaces, record build/HPhi evidence explicitly, and leave zero-byte HPhi JSON files unstaged instead of committing empty proof.
+Rejected Alternatives: Claiming the worktree is clean, folding the tail into `8213d7838` by amend/force-push, or treating partial EXIT=0 files as full HPhi budget proof while prior HPhi failures still exist.
+Scalability potential: Git-only operator pass. Runtime tier claims stay with the producing agents; this pass only reduces integration conflict surface.
+Hardware Impact: 0 us runtime impact. Dev-path gain is smaller post-push residue for GitHub Desktop; full green proof remains pending.

@@ -409,3 +409,15 @@ Cinematic Cheats used: no simulation change. This keeps the manual override as a
 Exact microseconds saved/spent: 0 us steady-state. Cold lifecycle registration pays one dispatcher-null branch. During dispatcher outages, it saves a fixed receiver slot and avoids useless overlap-to-receiver dispatch.
 
 Verification: `git diff --check` passed for `OpenXRManualOverrideLever.cs`. Scoped counter reports `ReceiverRequiresDispatcher=1`, `TickRequiresDispatcher=1`, `DispatcherNullUnregistersReceiver=1`, `DispatcherRecoveryRegistersReceiver=1`, `ForbiddenPatternTotal=0`, `DotnetMention=0`. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - VR Release Target Coherence
+
+What was wrong: VR grip release and stale tracking release cleared grab state but left `_leverTargets[0]` at the last hand-solved angle. A non-latched lever could stay partially pulled without a live hand owner.
+
+What was done: `UpdateVrGrab()` now targets `minAngleDegrees` on grip release and stale sample release. The short 2-3 frame tracking-gap freeze remains unchanged.
+
+Cinematic Cheats used: no simulation change. The lever stays a scalar damped-spring fake; release now drives the existing spring back closed instead of adding physics or a joint.
+
+Exact microseconds saved/spent: one scalar NativeArray write on release/stale-release branches only. 0 us steady-state, 0 B/frame.
+
+Verification: `git diff --check` passed for `OpenXRManualOverrideLever.cs`. Scoped counter reports `VrReleaseTargetsClosed=1`, `StaleReleaseTargetsClosed=1`, `ShortGapFreezePreserved=1`, `NonVrReleaseStillDecays=1`, `ForbiddenPatternTotal=0`, `DotnetMention=0`. No dotnet rebuild/probe was run by user instruction.

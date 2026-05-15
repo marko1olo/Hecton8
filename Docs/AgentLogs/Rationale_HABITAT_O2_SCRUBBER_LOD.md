@@ -242,3 +242,24 @@ Solution: `IsInitialized` now requires the same length-aware readiness helpers u
 Rejected Alternatives: Letting the Burst job clamp partial state was rejected because the solver could still advertise itself as valid to power/registry consumers. Checking only `RoomO2` was rejected as a stale single-lane proxy.
 Scalability potential: Low through Ultra keep identical fast paths when state is coherent; partial H-Phi/native migration now fails closed before scheduling work.
 Hardware Impact: A few cold/main-thread readiness branches before scheduling. No frame-time saving claimed; this prevents invalid native job submission.
+
+## Self-Review 28 - Power Awake Mask Binding Guard
+Problem: The WFC power graph bridge could bind `BaseAwakeState` when the gas solver existed but did not satisfy the strengthened initialization invariant.
+Solution: `WfcOutpostPowerBootRuntime.TryBindGraphBaseAwakeState` now clears the graph binding whenever `IGasDynamicsSolver.IsInitialized` is false, before reading the mask alias.
+Rejected Alternatives: Trusting `BaseAwakeState.IsCreated` was rejected because the byte mask alone no longer proves full gas/native telemetry readiness. Pulling power graph logic into gas was rejected because the domains must stay decoupled through `IGasDynamicsSolver`.
+Scalability potential: Low through Ultra keep the same read-only mask binding when gas is coherent; stale aliases fail closed so sleeping-base skips cannot run from partial gas state.
+Hardware Impact: One boolean check on binding refresh only. No frame-time saving claimed; this prevents stale cross-domain aliasing.
+
+## Self-Review 29 - Gas Seed Retry Honesty
+Problem: WFC outpost gas seeding ignored the return values from `TryConfigureRoom` and `TrySetScrubberPowered`, so a transient gas step or partial readiness window could permanently drop initial atmosphere seeding.
+Solution: `TrySeedGasRooms` now tracks both writes and keeps `_gasSeedPending` true if any targeted gas room write fails.
+Rejected Alternatives: Forcing the gas job to complete before seeding was rejected because room seeding must not introduce a sync stall. Assuming failures are impossible was rejected because the gas API explicitly returns `bool` for step/readiness contention.
+Scalability potential: Low through Ultra keep identical room seed values; failed writes retry on the next boot runtime pass instead of leaving modules with stale gas state.
+Hardware Impact: Two boolean operations per seeded room during boot/graph refresh only. No frame-time saving claimed.
+
+## Self-Review 30 - Registry Publication Readiness Gate
+Problem: The gas solver could publish itself into `GlobalRegistry` after partial native creation, relying on every consumer to check `IsInitialized`.
+Solution: `TryRegisterRegistry` now returns until the strengthened `IsInitialized` invariant is true.
+Rejected Alternatives: Publishing early with a false `IsInitialized` flag was rejected because not every future consumer can be trusted to perform the check before reading read-only aliases. Throwing on partial state was rejected because fail-closed registration is sufficient without taking down the scene.
+Scalability potential: Low through Ultra keep identical behavior when native state is coherent; partial H-Phi/native migration produces no registry-visible gas service until ready.
+Hardware Impact: One cold registry-publication branch. No frame-time saving claimed.

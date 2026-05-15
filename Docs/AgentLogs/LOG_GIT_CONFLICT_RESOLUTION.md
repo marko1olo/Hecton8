@@ -411,3 +411,15 @@ Cinematic Cheats used -> None by this operator pass. Reviewed authored FX-tier g
 Exact Microseconds saved -> 0 us runtime by the Git pass. Dev-path gain is reduced Desktop merge exposure by publishing another checked snapshot.
 
 Verification -> Conflict-marker scan clean. `git diff --check` reported only LF-to-CRLF warnings. `HectonPhiAudit.ps1` parsed successfully. Unity compile/profiler green and HPhi green are not claimed.
+
+## 2026-05-15 - Loop 23 Post-Push Residue
+
+What was wrong -> `8213d7838` pushed and verified cleanly, then another 70-file staged local tail appeared from active agents.
+
+What was done -> Classified the tail with status/stat/check/marker scans, inspected KinematicGhostDebugger AUP precision, LootMagnet entity identity hashing, WFC gas/fatal fault guards, SaveManager dependency cache reset, Contextual IK foot sanitation, VoxelDynamicNav bounds validation, WorldSpatialHash origin-shift buffer removal, DiegeticTooltip glyph advance, PauseMenu lookup replacements, VR singular fallback, and new AUP/HPhi/build evidence. Left two zero-byte HPhi JSON files unstaged.
+
+Cinematic Cheats used -> None. Git integration only.
+
+Exact Microseconds saved -> 0 us runtime. Dev-path gain is reducing the post-push dirty surface before GitHub Desktop sees another pull.
+
+Verification -> Conflict-marker scan clean. `git diff --cached --check` passed. Fresh63 and Fresh64 build exit files report EXIT=0, and HPhi lexical scrub reports EXIT=0; full HPhi green is not claimed because prior budget-failure evidence remains.

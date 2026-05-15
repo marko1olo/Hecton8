@@ -205,12 +205,17 @@ Mandates read:
 
 - [x] Physical screen scanner scramble uses signal frame | DOD: `ToolDiegeticDisplayController` now stores `ScannerToolActiveSignal.Frame` and passes it into scanner title scramble instead of reading `Time.frameCount` inside the UI text writer | Rejected: helper-local frame reads on physical screen repaint or forcing a new frame read before every dirty-state refresh | Estimate: removes one engine frame read per scanner title repaint
 - [x] Focused attractant gradient uses scan timestamp | DOD: `TrySampleScientificAttractantGradient()` now receives the focused scan timestamp from voxel/spatial consumers and no longer reads `Time.time` internally | Rejected: hidden breadcrumb-expiry timestamp reads inside sensory sampling | Estimate: removes up to 2 helper-local engine time reads across voxel/spatial focused contact samples
-- [x] Static no-regression checks after Loop 28 | DOD: `git diff --check` passed with source line-ending warnings only, `git diff --cached --check` passed, and scanner/UI banned-pattern scan found no forbidden patterns | Rejected: dotnet rebuild; static source checks only | Estimate: 3000 us
+- [x] Static no-regression checks after Loop 28 | DOD: `git diff HEAD --check` passed with docs line-ending warnings only, `git diff --check` passed with docs line-ending warnings only, `git diff --cached --check` passed, scanner/UI banned-pattern scan found no forbidden patterns, and targeted scans found no display-side `Time.frameCount` scramble or helper-local attractant `Time.time` read | Rejected: dotnet rebuild; static source checks only | Estimate: 3000 us
+
+## Loop 29 - Spatial Hash Hologram Payload Gate
+
+- [x] Spatial/scientific contact hologram gate widened | DOD: `SuitHUDV4CanvasOverlay` now treats active material, fauna, chemical, toxicity, and attractant evidence as valid scanner hologram payload, not only fragment/proxy mesh hits | Rejected: hiding the spatial-hash scanner fake during valid non-fragment scientific contacts | Estimate: no new allocation; one bounded boolean gate per scanner hologram refresh
+- [x] Static no-regression checks after Loop 29 | DOD: `git diff HEAD --check` and `git diff --check` passed with SuitHUD/docs line-ending warnings only, and added-line banned-pattern scan found no new forbidden UI/text/physics patterns | Rejected: dotnet rebuild; static source checks only | Estimate: 1700 us
 
 ## Verification
 
 - [x] Compile/source validation - `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:quiet -clp:Summary` passed with 0 warnings / 0 errors after Loop 10
-- [ ] Compile/source validation after Loops 11-28 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
+- [ ] Compile/source validation after Loops 11-29 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
 - [ ] Console check - BLOCKED BY UNITY SESSION: MCP validate/console calls cannot connect to Unity MCP HTTP endpoint / session
 - [x] Re-read prompt after core tasks
 - [x] Omega polish mandate after all tasks done or blocked

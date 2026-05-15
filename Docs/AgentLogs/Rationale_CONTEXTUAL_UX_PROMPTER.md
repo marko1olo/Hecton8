@@ -312,3 +312,24 @@ Solution: Cache the sprite asset, sheet texture, and character table in locals b
 Rejected Alternatives: Leaving repeated property reads, caching the sprite table across frames, or adding a dictionary from scheme to sprite character. Repeated reads are avoidable; cross-frame table caching risks stale authored assets; a dictionary violates the integer-index contract.
 Scalability potential: Low removes tiny repeated property traffic during layout. Middle/High/Ultra preserve the same TMP sprite atlas contract for richer device glyphs.
 Hardware Impact: Expected gain is sub-microsecond per binding-icon layout rebuild on i3/MX350; no profiler proof.
+
+## Decision 44: Tooltip Single-Pass Text Layout
+Problem: Tooltip layout measured prompt text with one TMP character lookup loop, then built the same text with a second lookup loop.
+Solution: Removed `MeasureAdvance()`. `BuildTextRun()` now builds glyph payloads at zero, returns the final advance, and `OffsetTextGlyphCenters()` shifts completed glyph centers after total icon+text width is known.
+Rejected Alternatives: Keeping the duplicate measure/build loops, adding per-character temporary metric arrays, or centering with a transform-scale trick. Duplicate loops waste layout CPU; temporary arrays add memory/state; transform tricks would complicate icon/text batching and bounds.
+Scalability potential: Low removes one prompt-length traversal per rebuild. Middle/High/Ultra keep the same atlas visual quality while preserving budget for richer material effects.
+Hardware Impact: Expected gain is sub-microsecond per prompt layout rebuild on i3/MX350, larger for long fixed-buffer prompts; no profiler proof.
+
+## Decision 45: Tooltip Advance-Scale Hoist
+Problem: `BuildTextRun()` recomputed `glyphScale * glyphAdvanceScale` for every text glyph and read glyph metrics separately around the space/non-space branch.
+Solution: Hoisted the advance scale once per run and cached `GlyphMetrics` before branching, reusing it for spaces and visible glyph quads.
+Rejected Alternatives: Leaving repeated multiplications, precomputing per-character advances in another table, or changing authored glyph advance scale semantics. Repeated multiplication is avoidable; another table adds cache invalidation; semantics must stay designer-authored.
+Scalability potential: Low removes tiny repeated arithmetic from layout. Middle/High/Ultra keep identical spacing while preserving budget for richer prompt treatment.
+Hardware Impact: Expected gain is sub-microsecond per prompt layout rebuild on i3/MX350; no profiler proof.
+
+## Decision 46: Tooltip Icon-Scale Hoist
+Problem: Binding-icon layout multiplied `glyphScale * IconScaleMultiplier` separately for width and height.
+Solution: Hoisted the icon scale once before applying width/height clamps.
+Rejected Alternatives: Leaving repeated scalar multiplication, caching icon dimensions across frames, or quantizing icon scale by tier. Repeated multiplication is trivial but avoidable; cross-frame dimension caching risks stale sprite assets; tier quantization would change authored layout.
+Scalability potential: Low removes tiny repeated arithmetic from binding-icon rebuilds. Middle/High/Ultra keep the same authored icon sizing and atlas contract.
+Hardware Impact: Expected gain is sub-microsecond per binding-icon layout rebuild on i3/MX350; no profiler proof.

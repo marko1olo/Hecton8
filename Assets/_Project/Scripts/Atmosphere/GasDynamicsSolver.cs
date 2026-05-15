@@ -651,6 +651,8 @@ namespace Hecton8.Atmosphere
         {
             if (_registeredRegistry)
                 return;
+            if (!IsInitialized)
+                return;
 
             GlobalRegistry.RegisterGasDynamicsSolver(this);
             _registeredRegistry = ReferenceEquals(GlobalRegistry.GasDynamics, this);

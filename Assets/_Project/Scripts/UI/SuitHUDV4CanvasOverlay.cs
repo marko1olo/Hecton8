@@ -2744,7 +2744,19 @@ namespace Hecton8.UI
                 return false;
             }
 
-            return snapshot.Fragment != null || snapshot.ProxyMeshIndex >= 0;
+            return HasScannerHologramPayload(snapshot);
+        }
+
+        private static bool HasScannerHologramPayload(ScannerTool.ScientificScanSnapshot snapshot)
+        {
+            return snapshot.IsActive &&
+                (snapshot.Fragment != null ||
+                 snapshot.ProxyMeshIndex >= 0 ||
+                 snapshot.MaterialClass != ScannerTool.ScientificMaterialClass.None ||
+                 snapshot.HasFaunaContact ||
+                 snapshot.ChemicalLoad01 > 0.0001f ||
+                 snapshot.Toxicity01 > 0.0001f ||
+                 snapshot.HasAttractantTrace);
         }
 
         private void RenderScannerInterference(float deltaTime)

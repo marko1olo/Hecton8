@@ -631,3 +631,11 @@ Solution: Add `TelemetryDumpFaultHash` and `TelemetryContextHash`, then report d
 Rejected Alternatives: Keeping `Debug.LogError` was rejected because it allocates and is editor/development-only evidence. Adding both debug log and telemetry was rejected because duplicate failure channels add noise without stronger runtime proof.
 Scalability potential: Low devices avoid managed string work during dump failure; Middle/High/Ultra get the same numeric telemetry path without changing rendering, graph, or save payloads.
 Hardware Impact: Failure path only. Normal Tick/Render remains 0 B/frame; blackbox dump success path remains unchanged.
+
+## LOOP 37 WFC EDGE CAPACITY FAULT PRECISION
+
+Problem: The Loop 34 capacity gate could stop scanning when `directedEdges >= edgeCapacity` before proving that any further valid edge existed. That was safe against overflow, but it could create a silent truncation or a false capacity assumption depending on exact-fit layouts.
+Solution: Remove the pre-scan break. Horizontal and vertical edge helpers now return `bool`: true for no edge or successful insert, false only when a valid bidirectional edge would exceed capacity. `BuildEdges` exits immediately after that precise overflow fault.
+Rejected Alternatives: Keeping the early break was rejected because it hid the distinction between exact fit and real overflow. Continuing to scan after the first overflow was rejected because one `CapacityExceeded` fault is enough and further scanning burns cold cycles without better graph output.
+Scalability potential: Low devices get accurate fail-closed edge storage evidence without false capacity noise. Middle/High/Ultra retain identical graph output for valid maps and cleaner diagnostics if future allocation budgets are reduced.
+Hardware Impact: Cold translation only: one boolean result check for each candidate direction. Steady Tick/Render remains 0 B/frame.

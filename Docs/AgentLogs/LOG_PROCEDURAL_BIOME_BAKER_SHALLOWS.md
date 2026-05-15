@@ -524,4 +524,4 @@ Cinematic Cheats used: Static offline validation remains the contract. No runtim
 
 Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents ambiguous editor validation behavior; exact runtime microseconds were not profiled.
 
-Verification: Pending static verification. No dotnet rebuild and no Unity import will be run.
+Verification: No dotnet rebuild and no Unity import was run. Source scan found expected serialized type guards; `RuleSerializedSchemaYamlScan Count=3 Bad=0`; `MaterialSerializedSchemaYamlScan Bad=0`; `git diff --check` passed with only repo CRLF warnings; source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.

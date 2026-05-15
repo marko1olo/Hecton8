@@ -86,6 +86,7 @@ namespace Hecton8.Logistics.Grid.Contracts
         public const int CapacityExceeded = 1 << 1;
         public const int InvalidDimensions = 1 << 2;
         public const int InvalidBuffers = 1 << 3;
+        public const int NoPowerNodes = 1 << 4;
     }
 
     /// <summary>

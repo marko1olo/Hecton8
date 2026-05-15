@@ -1203,3 +1203,30 @@ Verification:
 - `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
 
 Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
+## 2026-05-15 - WFC Outpost Loop 37 Edge Capacity Fault Precision
+
+What was wrong:
+- The previous edge-capacity gate could stop scanning when the edge count equaled capacity, before proving a real extra valid edge existed.
+- That was overflow-safe but less precise for exact-fit layouts.
+
+What was done:
+- Removed the early `directedEdges >= edgeCapacity` break.
+- `TryAddHorizontalEdge` and `TryAddVerticalEdge` now return `bool`.
+- `BuildEdges` exits only when `TryAddBidirectionalEdge` reports a real overflow and writes `CapacityExceeded`.
+
+Cinematic Cheats used:
+- Power stays a deterministic SOA graph fake. No physics adjacency, object graph, or runtime simulation was added.
+
+Exact Microseconds saved:
+- New cost: boolean result checks on cold candidate-edge traversal.
+- Saved cost: avoids extra scanning after first real capacity overflow while avoiding false capacity faults on exact-fit maps.
+- Steady Tick/Render remains 0 B/frame.
+
+Verification:
+- Targeted translator scan: PASS; `EdgeCapacityZeroGate=1`, `EdgeCapacityPreBreak=0`, `HorizontalBool=1`, `VerticalBool=1`, `OverflowReturn=1`, `FailedAddReturns=2`, `CapacityFaultWrites=3`, `RawPowerAdds=2`, `LegacyReturnAdds=0`, `ForeachTokens=0`, `ModuloOperators=0`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS at `2026-05-15 13:46:24 +04:00`; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
+- `git diff --check`: PASS with repository CRLF warnings only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.

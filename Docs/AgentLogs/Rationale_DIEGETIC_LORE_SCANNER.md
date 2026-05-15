@@ -567,7 +567,21 @@ Scalability potential: Low/MX350 trims hidden time reads from active scanner sen
 Hardware Impact: Removes up to two helper-local engine time reads across voxel/spatial contact samples. Exact microseconds remain PENDING PROFILER.
 
 Problem: Verification after signal-owned timing needed to prove no forbidden UI/text/physics patterns were introduced without using rebuilds.
-Solution: Ran source-only checks: `git diff --check` passed with source line-ending warnings only, `git diff --cached --check` passed, and scanner/UI banned-pattern scan found no forbidden patterns.
+Solution: Ran source-only checks: `git diff HEAD --check` passed with docs line-ending warnings only, `git diff --check` passed with docs line-ending warnings only, `git diff --cached --check` passed, scanner/UI banned-pattern scan found no forbidden patterns, and targeted scans found no display-side `Time.frameCount` scramble or helper-local attractant `Time.time` read.
 Rejected Alternatives: Running prohibited `dotnet build`; trusting the signal-frame and attractant timestamp edits without static scans.
+Scalability potential: Process hygiene only.
+Hardware Impact: No runtime impact.
+
+## LOOP 29 SPATIAL HASH HOLOGRAM PAYLOAD GATE
+
+Problem: The flat scanner hologram only displayed active scientific snapshots when a fragment or proxy mesh was present. Valid spatial-hash contacts such as fauna, material-only voxel/spatial hits, chemical traces, toxicity, and attractant vectors could produce scanner evidence while the UI gate returned false.
+Solution: Add `HasScannerHologramPayload()` and treat active material, fauna, chemical, toxicity, and attractant evidence as valid hologram payload in `SuitHUDV4CanvasOverlay`.
+Rejected Alternatives: Requiring every spatial contact to own a hologram proxy mesh; showing the hologram for any active snapshot without evidence guard; adding new UI allocations or mesh/material resources.
+Scalability potential: Low/MX350 keeps the existing flat canvas fake with no extra render resource. Middle/High/Ultra keep the same richer scanner animation while now covering more valid spatial-hash evidence paths.
+Hardware Impact: Adds one bounded boolean gate during scanner hologram refresh; no allocation, no new draw path, and no spatial query. Exact microseconds remain PENDING PROFILER.
+
+Problem: Verification after the hologram gate change needed to prove no new UI/text/physics hot-path violations were added.
+Solution: Ran source-only checks: `git diff HEAD --check` and `git diff --check` passed with SuitHUD/docs line-ending warnings only, and added-line banned-pattern scan found no new forbidden patterns.
+Rejected Alternatives: Running prohibited `dotnet build`; scanning the entire legacy HUD file as if pre-existing unrelated findings were introduced by this pass.
 Scalability potential: Process hygiene only.
 Hardware Impact: No runtime impact.

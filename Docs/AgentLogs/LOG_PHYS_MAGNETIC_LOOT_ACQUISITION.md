@@ -567,3 +567,30 @@ Verification:
 
 Final Status:
 - PENDING VERIFICATION.
+
+## 2026-05-15 - Entity Identity Telemetry Hash Pass
+
+What was wrong:
+- Active-slot telemetry hashes folded flags and item hashes, but not pickup entity identity.
+- Same-item pickup swaps or pooled sidecars could produce ambiguous black-box hashes.
+
+What was done:
+- Folded full 64-bit pickup entity ids into the existing active-slot telemetry hash.
+- Applied the identity fold during both SlowTick registry refresh and LateFrame commit.
+- Rejected commit slots whose live pickup entity id no longer matches the sidecar id.
+
+Cinematic Cheats used:
+- None. This is black-box evidence integrity.
+
+Exact Microseconds saved:
+- No profiler number claimed. Adds two integer hash folds per active slot in existing loops.
+- Avoids expanding the telemetry dump with per-slot arrays while making same-item pooled swaps diagnosable.
+
+Verification:
+- User forbade dotnet rebuilds; none were run.
+- `git diff --check` passed for `LootMagnetSystem.cs`.
+- Static loot anti-bloat scan returned no matches.
+- External dotnet watcher processes respawned during verification, were stopped, and the follow-up process query was clean.
+
+Final Status:
+- PENDING VERIFICATION.

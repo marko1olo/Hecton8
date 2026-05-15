@@ -394,3 +394,15 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 - `git diff --check` and `git diff --cached --check` on touched code/shader/docs exit 0; working-copy output only reports LF-to-CRLF warnings.
 - Static forbidden scan over Leviathan IK code/shader scope remains clean for `new NativeArray<`, direct `array.Dispose(`, `Time.frameCount`, `GlobalRegistry.Get`, forbidden Unity object searches, `Animator`, and `SkinnedMeshRenderer`.
 - No `dotnet` rebuild, compile, Unity import, shader compile, or response-file probe was run.
+
+### Loop 36: Tentacle Blackbox Dump Ordering Recheck
+
+- Changed `LeviathanTentacleVerletSolver.DumpTelemetryBlackBox()` to write valid entry count and dump entries oldest-to-newest instead of physical ring order.
+- Preserved the existing 64-byte per-entry payload layout and magic header.
+- Fixed tentacle telemetry cursor wrap so an `int.MaxValue` rollover keeps the ring marked full instead of resetting retained count to zero.
+- DOD: postmortem dump readers can reconstruct the last retained tentacle states without reverse-engineering circular-buffer wrap, and extreme-uptime rollover does not discard the visible 300-frame history.
+- Alternative Rejected: always dumping all 300 slots because cold-start dumps include uninitialized entries; resetting cursor at `int.MaxValue` because it lies about retained history after rollover.
+- Estimate: 0 us normal render hot-path savings. One branch is added only in telemetry write bookkeeping; dump ordering work is cold fault-path only.
+- `git diff --check` on `LeviathanTentacleVerletSolver.cs` exits 0; output only reports LF-to-CRLF normalization warning.
+- Static forbidden scan over the tentacle solver still finds no direct `new NativeArray<`, direct `array.Dispose(`, `Time.frameCount`, `GlobalRegistry.Get`, forbidden Unity object searches, `Animator`, or `SkinnedMeshRenderer`.
+- No `dotnet` rebuild, compile, Unity import, shader compile, or response-file probe was run.

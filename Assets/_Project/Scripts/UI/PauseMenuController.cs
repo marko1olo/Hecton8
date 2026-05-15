@@ -505,7 +505,15 @@ namespace Hecton8.UI
                 if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                     playerTransform != null)
                 {
-                    playerPDA = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerPDA != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerPDA : playerTransform.GetComponent<PlayerPDA>());
+                    IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
+                    if (playerContext != null && playerContext.PlayerPDA != null)
+                    {
+                        playerPDA = playerContext.PlayerPDA;
+                    }
+                    else
+                    {
+                        playerTransform.TryGetComponent(out playerPDA);
+                    }
                 }
             }
             labelFont = LocalizedFontResolver.ResolveReadableFont(labelFont);
@@ -530,18 +538,22 @@ namespace Hecton8.UI
 
             Stretch(_root, 0f, 0f, 0f, 0f);
 
-            Canvas canvas = GetComponentInParent<Canvas>();
+            Canvas canvas = null;
+            for (Transform current = transform; current != null; current = current.parent)
+            {
+                if (current.TryGetComponent(out canvas))
+                    break;
+            }
+
             if (canvas == null)
             {
-                canvas = gameObject.GetComponent<Canvas>();
-                if (canvas == null)
+                if (!TryGetComponent(out canvas))
                     canvas = gameObject.AddComponent<Canvas>();
 
                 canvas.renderMode = RenderMode.ScreenSpaceOverlay;
                 canvas.sortingOrder = 1000; // High order to appear on top
 
-                UnityEngine.UI.CanvasScaler scaler = gameObject.GetComponent<UnityEngine.UI.CanvasScaler>();
-                if (scaler == null)
+                if (!TryGetComponent(out UnityEngine.UI.CanvasScaler scaler))
                     scaler = gameObject.AddComponent<UnityEngine.UI.CanvasScaler>();
 
                 scaler.uiScaleMode = UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -549,17 +561,14 @@ namespace Hecton8.UI
                 scaler.screenMatchMode = UnityEngine.UI.CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
                 scaler.matchWidthOrHeight = 0.5f;
 
-                UnityEngine.UI.GraphicRaycaster raycaster = gameObject.GetComponent<UnityEngine.UI.GraphicRaycaster>();
-                if (raycaster == null)
-                    raycaster = gameObject.AddComponent<UnityEngine.UI.GraphicRaycaster>();
+                if (!TryGetComponent(out UnityEngine.UI.GraphicRaycaster _))
+                    gameObject.AddComponent<UnityEngine.UI.GraphicRaycaster>();
             }
 
-            _canvasGroup = _root.gameObject.GetComponent<CanvasGroup>();
-            if (_canvasGroup == null)
+            if (!_root.TryGetComponent(out _canvasGroup))
                 _canvasGroup = _root.gameObject.AddComponent<CanvasGroup>();
 
-            _background = _root.gameObject.GetComponent<Image>();
-            if (_background == null)
+            if (!_root.TryGetComponent(out _background))
                 _background = _root.gameObject.AddComponent<Image>();
             _background.color = ShellBg;
             _background.raycastTarget = true;
@@ -638,7 +647,7 @@ namespace Hecton8.UI
 
             GameObject go = new GameObject(PauseMenuRootName, typeof(RectTransform));
             go.layer = gameObject.layer;
-            RectTransform root = go.GetComponent<RectTransform>();
+            go.TryGetComponent(out RectTransform root);
             root.SetParent(self, false);
             root.localScale = Vector3.one;
             return root;
@@ -649,16 +658,14 @@ namespace Hecton8.UI
             if (ReferenceEquals(_root, self))
                 return;
 
-            CanvasGroup hostCanvasGroup = self.GetComponent<CanvasGroup>();
-            if (hostCanvasGroup != null)
+            if (self.TryGetComponent(out CanvasGroup hostCanvasGroup))
             {
                 hostCanvasGroup.alpha = 1f;
                 hostCanvasGroup.interactable = false;
                 hostCanvasGroup.blocksRaycasts = false;
             }
 
-            Image hostImage = self.GetComponent<Image>();
-            if (hostImage != null)
+            if (self.TryGetComponent(out Image hostImage))
             {
                 hostImage.enabled = false;
                 hostImage.raycastTarget = false;
@@ -697,7 +704,7 @@ namespace Hecton8.UI
 
                 if (i == 0)
                 {
-                    _mainResumeButton = btn.GetComponent<Button>();
+                    btn.TryGetComponent(out _mainResumeButton);
                     GetText(btn, "Label")?.SetText("RESUME EXPEDITION");
                 }
             }
@@ -717,7 +724,7 @@ namespace Hecton8.UI
                     new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
                     new Vector2(0f, -108f - i * 56f), new Vector2(420f, 40f),
                     () => SaveSlot(slotName));
-                Button slotButton = btn.GetComponent<Button>();
+                btn.TryGetComponent(out Button slotButton);
                 _saveSlotButtons[i] = slotButton;
 
                 if (i == 0)
@@ -773,7 +780,7 @@ namespace Hecton8.UI
                 ResolveLocalized(LocalizationKeys.SETTINGS_CYCLE_LANGUAGE, "CYCLE LANGUAGE"),
                 new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
                 new Vector2(0f, -98f), new Vector2(420f, 38f), CycleLanguage);
-            _settingsLanguageButton = languageButton.GetComponent<Button>();
+            languageButton.TryGetComponent(out _settingsLanguageButton);
 
             _settingsLanguageStatus = CreateText(panel, "LanguageStatus", numericFont, 10.5f, FontStyles.Normal, TextAlignmentOptions.Center);
             Anchor(_settingsLanguageStatus.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(26f, -146f), new Vector2(-26f, -118f));
@@ -1228,8 +1235,7 @@ namespace Hecton8.UI
             if (panel == null)
                 return null;
 
-            CanvasGroup group = panel.GetComponent<CanvasGroup>();
-            if (group == null)
+            if (!panel.TryGetComponent(out CanvasGroup group))
                 group = panel.gameObject.AddComponent<CanvasGroup>();
 
             return group;
@@ -1286,7 +1292,8 @@ namespace Hecton8.UI
         {
             RectTransform buttonRoot = CreateButton(parent, "BackButton", "BACK", new Vector2(1f, 0f), new Vector2(1f, 0f),
                 new Vector2(-108f, 28f), new Vector2(180f, 34f), onClick);
-            return buttonRoot.GetComponent<Button>();
+            buttonRoot.TryGetComponent(out Button button);
+            return button;
         }
 
         private TextMeshProUGUI CreateSectionTitle(Transform parent, string value)
@@ -1310,7 +1317,7 @@ namespace Hecton8.UI
         private static TextMeshProUGUI GetText(Transform parent, string childName)
         {
             Transform child = parent.Find(childName);
-            return child != null ? child.GetComponent<TextMeshProUGUI>() : null;
+            return child != null && child.TryGetComponent(out TextMeshProUGUI text) ? text : null;
         }
 
         private static void ClearChildren(Transform parent)
@@ -1342,7 +1349,7 @@ namespace Hecton8.UI
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
             go.layer = parent.gameObject.layer;
-            RectTransform rect = go.GetComponent<RectTransform>();
+            go.TryGetComponent(out RectTransform rect);
             rect.SetParent(parent, false);
             rect.localScale = Vector3.one;
             return rect;
@@ -1350,8 +1357,7 @@ namespace Hecton8.UI
 
         private static Image EnsureImage(GameObject target)
         {
-            Image image = target.GetComponent<Image>();
-            if (image == null)
+            if (!target.TryGetComponent(out Image image))
                 image = target.AddComponent<Image>();
             return image;
         }
@@ -1361,7 +1367,7 @@ namespace Hecton8.UI
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
             go.layer = parent.gameObject.layer;
-            RectTransform rect = go.GetComponent<RectTransform>();
+            go.TryGetComponent(out RectTransform rect);
             rect.SetParent(parent, false);
             rect.localScale = Vector3.one;
 
@@ -1764,13 +1770,13 @@ namespace Hecton8.UI
             {
                 GameObject eventSystemRoot = new GameObject("EventSystem", typeof(EventSystem)); // COLD ALLOC: GameObject[1] — pause-menu fallback event system root — owner: PauseMenuController
                 eventSystemRoot.hideFlags = HideFlags.DontSave;
-                eventSystem = eventSystemRoot.GetComponent<EventSystem>();
+                eventSystemRoot.TryGetComponent(out eventSystem);
             }
 
             if (eventSystem == null)
                 return;
 
-            StandaloneInputModule legacyInputModule = eventSystem.GetComponent<StandaloneInputModule>();
+            eventSystem.TryGetComponent(out StandaloneInputModule legacyInputModule);
             if (!eventSystem.TryGetComponent(out InputSystemUIInputModule inputSystemModule))
             {
                 if (legacyInputModule != null)

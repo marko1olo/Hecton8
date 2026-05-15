@@ -240,11 +240,6 @@ namespace Hecton8.World
         private static bool _validationScheduled;
         private static int _validationCount;
         private static NativeArray<int> _originShiftHandles;
-        private static NativeArray<float3> _originShiftRuntimePositions;
-        private static NativeArray<float3> _originShiftAbsolutePositions;
-        private static JobHandle _originShiftRefreshHandle;
-        private static bool _originShiftRefreshScheduled;
-        private static int _originShiftRefreshCount;
         private static NativeArray<int> _farUnloadHandles;
         private static NativeArray<double3> _farUnloadAbsolutePositions;
         private static NativeArray<byte> _farUnloadEligibilityMask;
@@ -277,7 +272,7 @@ namespace Hecton8.World
             _handleByTransformId.Clear();
             JobHandle teardownDependency = JobHandle.CombineDependencies(
                 CancelValidationForTeardown(),
-                JobHandle.CombineDependencies(CancelOriginShiftForTeardown(), CancelFarUnloadForTeardown()));
+                CancelFarUnloadForTeardown());
             teardownDependency = DisposeValidationBuffers(teardownDependency);
             teardownDependency = DisposeOriginShiftBuffers(teardownDependency);
             teardownDependency = DisposeFarUnloadBuffers(teardownDependency);
@@ -297,9 +292,6 @@ namespace Hecton8.World
             _validationHandle = default;
             _validationScheduled = false;
             _validationCount = 0;
-            _originShiftRefreshHandle = default;
-            _originShiftRefreshScheduled = false;
-            _originShiftRefreshCount = 0;
             _farUnloadHandle = default;
             _farUnloadScheduled = false;
             _farUnloadCount = 0;
@@ -1062,9 +1054,6 @@ namespace Hecton8.World
 
             using (_maintenanceProfilerMarker.Auto())
             {
-                if (_originShiftRefreshScheduled && _originShiftRefreshHandle.IsCompleted)
-                    ConsumeCompletedOriginShiftRefresh();
-
                 if (_validationScheduled && _validationHandle.IsCompleted)
                     ConsumeCompletedValidation();
 
@@ -1109,13 +1098,6 @@ namespace Hecton8.World
 
             EnsureInitialized();
             ClearAcousticDensityMapForOriginShift();
-            if (_originShiftRefreshScheduled)
-            {
-                // [BLOCKING_SYNC_POINT] Origin shift is a simulation barrier; shared refresh buffers must not be overwritten while a prior job reads them.
-                DispatcherJobSwap.TryComplete(ref _originShiftRefreshHandle, forceComplete: true);
-                _originShiftRefreshScheduled = false;
-                _originShiftRefreshCount = 0;
-            }
 
             int count = _entries.Count;
             RebaseTransientSignalRuntimePositions(runtimeOffset);
@@ -1155,7 +1137,6 @@ namespace Hecton8.World
                 _entries[handle] = entry;
             }
 
-            _originShiftRefreshCount = 0;
         }
 
         private static void EnsureInitialized()
@@ -1626,39 +1607,6 @@ namespace Hecton8.World
             _farUnloadHandleScratch.Clear();
         }
 
-        private static void ConsumeCompletedOriginShiftRefresh()
-        {
-            if (!DispatcherJobSwap.TryComplete(ref _originShiftRefreshHandle, forceComplete: false))
-                return;
-
-            _originShiftRefreshScheduled = false;
-
-            for (int i = 0; i < _originShiftRefreshCount; i++)
-            {
-                int handle = _originShiftHandles[i];
-                if (!_entries.TryGetValue(handle, out Entry entry))
-                    continue;
-
-                entry.RuntimePosition = _originShiftRuntimePositions[i];
-                AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromAbsolutePosition(_originShiftAbsolutePositions[i]);
-                entry.AbsolutePosition = positionAup;
-                if (entry.EntityFlags == 0UL)
-                    entry.EntityFlags = ResolveEntityFlags(entry.Kind);
-                if (!_nativeHash.TryUpdateEntry(handle, positionAup, entry.HalfExtents, (int)entry.Kind, entry.EntityFlags, entry.PayloadId))
-                {
-                    _nativeHash.Unregister(handle);
-                    RemoveTransformHandle(handle, entry.Transform);
-                    _entries.Remove(handle);
-                    continue;
-                }
-
-                entry.IsResidentInNativeHash = 1;
-                _entries[handle] = entry;
-            }
-
-            _originShiftRefreshCount = 0;
-        }
-
         private static void EnsureValidationCapacity(int requiredCapacity)
         {
             if (_validationAbsolutePositions.IsCreated &&
@@ -1689,29 +1637,15 @@ namespace Hecton8.World
 
         private static void EnsureOriginShiftCapacity(int requiredCapacity)
         {
-            if (_originShiftHandles.IsCreated &&
-                _originShiftRuntimePositions.IsCreated &&
-                _originShiftAbsolutePositions.IsCreated)
+            if (_originShiftHandles.IsCreated)
                 return;
 
             DisposeOriginShiftBuffers();
             _originShiftHandles = new NativeArray<int>(MaxSpatialMaintenanceEntryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _originShiftRuntimePositions = new NativeArray<float3>(MaxSpatialMaintenanceEntryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _originShiftAbsolutePositions = new NativeArray<float3>(MaxSpatialMaintenanceEntryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             NativeMemorySentinel.RegisterNativeArray(
                 _originShiftHandles,
                 nameof(WorldSpatialHashGrid),
                 nameof(_originShiftHandles),
-                NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(
-                _originShiftRuntimePositions,
-                nameof(WorldSpatialHashGrid),
-                nameof(_originShiftRuntimePositions),
-                NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(
-                _originShiftAbsolutePositions,
-                nameof(WorldSpatialHashGrid),
-                nameof(_originShiftAbsolutePositions),
                 NativeMemoryLifetime);
         }
 
@@ -1790,46 +1724,12 @@ namespace Hecton8.World
 
         private static void DisposeOriginShiftBuffers()
         {
-            if (_originShiftRefreshScheduled)
-            {
-                DispatcherJobSwap.TryComplete(ref _originShiftRefreshHandle, forceComplete: true);
-                _originShiftRefreshScheduled = false;
-            }
-
             if (_originShiftHandles.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_originShiftHandles);
                 _originShiftHandles.Dispose();
                 _originShiftHandles = default;
             }
-
-            if (_originShiftRuntimePositions.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_originShiftRuntimePositions);
-                _originShiftRuntimePositions.Dispose();
-                _originShiftRuntimePositions = default;
-            }
-
-            if (_originShiftAbsolutePositions.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_originShiftAbsolutePositions);
-                _originShiftAbsolutePositions.Dispose();
-                _originShiftAbsolutePositions = default;
-            }
-
-            _originShiftRefreshCount = 0;
-        }
-
-        private static JobHandle CancelOriginShiftForTeardown()
-        {
-            if (!_originShiftRefreshScheduled)
-                return _originShiftRefreshHandle;
-
-            JobHandle dependency = _originShiftRefreshHandle;
-            _originShiftRefreshHandle = default;
-            _originShiftRefreshScheduled = false;
-            _originShiftRefreshCount = 0;
-            return dependency;
         }
 
         private static JobHandle DisposeOriginShiftBuffers(JobHandle dependency)
@@ -1843,21 +1743,6 @@ namespace Hecton8.World
                 _originShiftHandles = default;
             }
 
-            if (_originShiftRuntimePositions.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_originShiftRuntimePositions);
-                disposeHandle = _originShiftRuntimePositions.Dispose(disposeHandle);
-                _originShiftRuntimePositions = default;
-            }
-
-            if (_originShiftAbsolutePositions.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_originShiftAbsolutePositions);
-                disposeHandle = _originShiftAbsolutePositions.Dispose(disposeHandle);
-                _originShiftAbsolutePositions = default;
-            }
-
-            _originShiftRefreshCount = 0;
             return disposeHandle;
         }
 

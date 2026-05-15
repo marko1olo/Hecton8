@@ -392,3 +392,49 @@ Cinematic Cheats used:
 
 Exact microseconds saved:
 - None claimed. This is invalid-job prevention for H-Phi/native lane migration; no dotnet rebuild was run.
+
+## 2026-05-15 - Power Awake Binding Guard Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- WFC power graph binding could accept a gas awake-mask alias from a solver that was not fully initialized under the stronger native readiness contract.
+
+What was done:
+- `WfcOutpostPowerBootRuntime.TryBindGraphBaseAwakeState` now clears the binding when `IGasDynamicsSolver.IsInitialized` is false.
+
+Cinematic Cheats used:
+- None new.
+
+Exact microseconds saved:
+- None claimed. This prevents stale cross-domain aliasing; no dotnet rebuild was run.
+
+## 2026-05-15 - Gas Seed Retry Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- WFC gas seeding ignored failed gas API writes.
+- A gas step in progress could cause initial room gas configuration to fail once and never retry.
+
+What was done:
+- `TrySeedGasRooms` now keeps `_gasSeedPending` true when `TryConfigureRoom` or `TrySetScrubberPowered` fails.
+
+Cinematic Cheats used:
+- None new.
+
+Exact microseconds saved:
+- None claimed. This is correctness/retry containment; no dotnet rebuild was run.
+
+## 2026-05-15 - Registry Readiness Gate Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- Gas registry publication could happen after partial native state creation.
+
+What was done:
+- `TryRegisterRegistry` now requires the strengthened `IsInitialized` invariant before calling `GlobalRegistry.RegisterGasDynamicsSolver`.
+
+Cinematic Cheats used:
+- None new.
+
+Exact microseconds saved:
+- None claimed. This is registry visibility hardening; no dotnet rebuild was run.
