@@ -68,37 +68,6 @@ Verification:
 Status:
 - VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
 
-## 2026-05-15 - String Payload Bounds And Dead Surface Gate
-
-What was wrong:
-- Binary string reads were bounded by remaining payload bytes but not by a domain maximum, so a single corrupt string length could allocate a large managed string.
-- Unused unbounded string/struct array helper APIs remained beside the bounded helpers.
-
-What was done:
-- Capped every serialized UTF-16 string in `SaveBinaryPayloadCodec` at one protected 16 KiB block (`8192` chars) before writer copy or reader allocation.
-- Removed unused unbounded `WriteStringArray`, `ReadStringArray`, `WriteStructArray`, and `ReadStructArray` helper surfaces.
-- Documented the string cap in `Docs/Design/Save_Binary_Header.md`.
-- Re-extracted the batch prompt with PowerShell raw regex; `CURRENT_BATCH.md` still returns `PROMPT_NOT_FOUND`, so disk status/rationale remain authority.
-
-Cinematic Cheats used:
-- Large mod state stays in protected indexed sectors; root compatibility strings stay bounded metadata.
-
-Exact Microseconds saved:
-- Frame cost: 0 us.
-- Cold corrupt-load protection rejects a single string above 16 KiB before managed allocation.
-
-Verification:
-- `SaveBinaryPayloadCodec.cs` brace/parenthesis balance passed.
-- `rg` found `MaxSerializedStringChars` guarding both `WriteString` and `ReadString`.
-- Unused unbounded array helper scan returned `NO_UNBOUNDED_UNUSED_ARRAY_SURFACES`.
-- Root unbounded codec read/write scans returned clean.
-- DataVault live compaction scan returned no `UnsafeUtility.MemMove`, `RunCompactionSlice`, `TryCompactFreeGapAt`, `VaultMemMoveJob`, `System.Threading`, `Stopwatch`, or `BurstCompile`.
-- `git diff --check` passed with CRLF warnings only.
-- No dotnet rebuild was run per user order.
-
-Status:
-- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
-
 ## 2026-05-15 - Procedural DTO Payload Bounds Pass
 
 What was wrong:
@@ -620,6 +589,101 @@ Verification:
 - Migration cap scan found all root cap constants wired.
 - Root unbounded codec read/write scans remained clean.
 - DataVault live compaction scan returned no `UnsafeUtility.MemMove`, `RunCompactionSlice`, `TryCompactFreeGapAt`, `VaultMemMoveJob`, `System.Threading`, `Stopwatch`, or `BurstCompile`.
+- `git diff --check` passed with CRLF warnings only.
+- No dotnet rebuild was run per user order.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-15 - String Payload Bounds And Dead Surface Gate
+
+What was wrong:
+- Binary string reads were bounded by remaining payload bytes but not by a domain maximum, so a single corrupt string length could allocate a large managed string.
+- Unused unbounded string/struct array helper APIs remained beside the bounded helpers.
+
+What was done:
+- Capped every serialized UTF-16 string in `SaveBinaryPayloadCodec` at one protected 16 KiB block (`8192` chars) before writer copy or reader allocation.
+- Removed unused unbounded `WriteStringArray`, `ReadStringArray`, `WriteStructArray`, and `ReadStructArray` helper surfaces.
+- Documented the string cap in `Docs/Design/Save_Binary_Header.md`.
+- Re-extracted the batch prompt with PowerShell raw regex; `CURRENT_BATCH.md` still returns `PROMPT_NOT_FOUND`, so disk status/rationale remain authority.
+
+Cinematic Cheats used:
+- Large mod state stays in protected indexed sectors; root compatibility strings stay bounded metadata.
+
+Exact Microseconds saved:
+- Frame cost: 0 us.
+- Cold corrupt-load protection rejects a single string above 16 KiB before managed allocation.
+
+Verification:
+- `SaveBinaryPayloadCodec.cs` brace/parenthesis balance passed.
+- `rg` found `MaxSerializedStringChars` guarding both `WriteString` and `ReadString`.
+- Unused unbounded array helper scan returned `NO_UNBOUNDED_UNUSED_ARRAY_SURFACES`.
+- Root unbounded codec read/write scans returned clean.
+- DataVault live compaction scan returned no `UnsafeUtility.MemMove`, `RunCompactionSlice`, `TryCompactFreeGapAt`, `VaultMemMoveJob`, `System.Threading`, `Stopwatch`, or `BurstCompile`.
+- `git diff --check` passed with CRLF warnings only.
+- No dotnet rebuild was run per user order.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-15 - Compatibility Helper Surface Lockdown
+
+What was wrong:
+- Private compatibility helper overloads still forwarded collection reads/writes through `int.MaxValue`.
+- Those overloads were unused by current root call sites, but they remained reconnection points for unbounded list, dictionary, hash-set, and custom-array payloads.
+
+What was done:
+- Removed no-cap wrappers for string lists, float lists, string-float dictionaries, string-bool dictionaries, string-string dictionaries, int hash sets, and custom arrays.
+- Removed optional default max parameters from legacy array conversion helpers so every caller must pass a producer/domain cap.
+- Documented the explicit-cap helper rule in `Docs/Design/Save_Binary_Header.md`.
+
+Cinematic Cheats used:
+- Compatibility metadata stays capped and boring; scalable state belongs in fixed DTO arrays or protected indexed sectors.
+
+Exact Microseconds saved:
+- Frame cost: 0 us.
+- Cold save/load loop cost is unchanged or one wrapper call shorter. Main gain is preventing future corrupt-load allocation paths from compiling without a named cap.
+
+Verification:
+- `SaveBinaryPayloadCodec.cs` brace/parenthesis balance passed.
+- `rg int.MaxValue` in the codec now returns only timestamp/range/overflow guards.
+- Wrapper-resurrection scan returned clean for the removed no-cap helper overloads.
+- `MaxSerializedStringChars` still guards both writer and reader string payload paths.
+- DataVault live compaction scan returned no `UnsafeUtility.MemMove`, `RunCompactionSlice`, `TryCompactFreeGapAt`, `VaultMemMoveJob`, `System.Threading`, `Stopwatch`, or `BurstCompile`.
+- `git diff --check` passed with CRLF warnings only.
+- No dotnet rebuild was run per user order.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-15 - DataVault Black Box And Repair Helper Gate
+
+What was wrong:
+- DataVault defrag black-box dumps still used an old relocation-specific filename instead of the agent dump path.
+- `FrostTickDefrag` did not fail fast on NaN/Infinity inputs before telemetry analysis.
+- `SaveDataMigration` carried a duplicate exact-capacity helper, and the codec still had one unused custom-array writer wrapper without a named domain cap.
+
+What was done:
+- Changed the fault dump path to `Docs/AgentLogs/Dump_PLATINUM_DATA_VAULT_WARDEN.bin`.
+- Kept stale-handle PHI/VOD dumps in `Docs/AgentLogs/Dump_PLATINUM_DATA_VAULT_WARDEN_PHIVOD.bin`.
+- Added non-finite `elapsedSeconds` / `systemStress01` checks that set the fault flag, record the 300-frame black box, and dump before gap analysis.
+- Removed the local migration capacity helper and routed repair through `SaveData.EnsureExactArrayCapacity`.
+- Removed the unused `WriteCustomArray` wrapper so custom-array writing only goes through explicit capped slices.
+
+Cinematic Cheats used:
+- Fragmentation remains telemetry-only. The black box records enough state for postmortem without spending frame time on live relocation or managed diagnostics.
+
+Exact Microseconds saved:
+- Frame cost: 0 us.
+- Valid cold defrag adds four scalar non-finite checks; fault path writes the fixed native telemetry ring once.
+- Removing duplicate helper/wrapper code is API hardening, not a measurable runtime optimization.
+
+Verification:
+- `GlobalDataVault.cs`, `SaveDataMigration.cs`, and `SaveBinaryPayloadCodec.cs` brace/parenthesis balance passed.
+- DataVault live compaction scan returned no `UnsafeUtility.MemMove`, `RunCompactionSlice`, `TryCompactFreeGapAt`, `VaultMemMoveJob`, `System.Threading`, `Stopwatch`, or `BurstCompile`.
+- Source dump path scan found only agent-scoped dump filenames; the old path remains only in this rationale as a rejected alternative.
+- Wrapper-resurrection scan returned `NO_UNBOUNDED_WRAPPER_SURFACES`.
+- `CURRENT_BATCH.md` still returns `PROMPT_NOT_FOUND`.
 - `git diff --check` passed with CRLF warnings only.
 - No dotnet rebuild was run per user order.
 

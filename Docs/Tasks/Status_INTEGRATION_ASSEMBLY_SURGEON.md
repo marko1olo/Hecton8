@@ -4,7 +4,59 @@ Agent: INTEGRATION_ASSEMBLY_SURGEON
 Role: SYSTEMS_ARCHITECT
 Domain: Unity Compilation Graph / Integrator
 Prompt task count: 15 (current in-chat XML; older 17-task static pass retained below)
-Current state: BUILD SUCCESSFUL / FRESH27 CURRENT-DISK GREEN (Hecton8.Core --no-restore 0 warnings / 0 errors)
+Current state: BUILD SUCCESSFUL / PLATINUM GRADE / FRESH50 CURRENT-DISK GREEN (Hecton8.Core --no-restore 0 warnings / 0 errors); latest static H-Phi gate: FRESH50 DOCUMENTED FLOOR PASS
+
+## 2026-05-15 Fresh50 Layout And Bootstrap Readback Pass
+
+Directive: continue careful build repair and H-Phi debt reduction under the current in-chat `INTEGRATION_ASSEMBLY_SURGEON` XML.
+Domain: Echelon 9 / The Integrator (Compile Medic).
+Current state: BUILD SUCCESSFUL / PLATINUM GRADE.
+Compile artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh50.log`.
+H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh50.json`.
+H-Phi exit artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh50.exit.txt`.
+
+- [x] Status, rationale, and inquisition reloaded | Justification: disk state and current corruption report were read before touching bootstrap/Core marker code | Alternatives rejected: chat memory and stale Fresh48 closure | Estimate: 200 us process
+- [x] Relevant mandates re-read | Justification: LTS assembly boundaries, zero-GC policy, native-memory layout, and text-audit evidence rules controlled the scope | Alternatives rejected: broad gameplay refactor or package dependency churn | Estimate: 1200 us process
+- [x] Core binary-layout marker gaps closed | Justification: `MacroDatabaseSignalBridge` and `PersistenceAssemblyMarker` are now explicitly `[StructLayout(LayoutKind.Sequential)]`; managed-reference structs were left alone because explicit layout would be false safety | Alternatives rejected: adding layout to `GameStartContext`, `FixedCharBuffer`, or service events that contain managed references | Estimate: 0 us runtime
+- [x] Bootstrap registry readbacks reduced | Justification: `EnsureFaunaSimulationRegistered`, `EnsureNativeInputManagerRegistered`, and `TryRegisterNoOpAudioFallback` now cache registry readbacks where lifecycle side effects are not hidden; settings/beacon component paths were not cached because `AddComponent` can trigger registration in `Awake/OnEnable` | Alternatives rejected: changing `GlobalRegistry` contracts or caching side-effect-sensitive component lookups | Estimate: 0 us measured runtime
+- [x] Prompt extraction refreshed | Justification: `cat Docs/Tasks/CURRENT_BATCH.md | Select-String ...` still finds no `INTEGRATION_ASSEMBLY_SURGEON` tag and no `<POLISH_MANDATE>`; current in-chat XML remains operative | Alternatives rejected: borrowing another agent prompt | Estimate: 300 us process
+- [x] Fresh compile revalidated | Justification: `Fresh50` reports `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0` | Alternatives rejected: reporting Fresh48 after source edits | Estimate: 26,670,000 us build verification
+- [x] Fresh static H-Phi gate revalidated | Justification: `Fresh50` exits 0 with `RuntimeHPhiRisk=0.000598725`, `GlobalRegistrySurface=5142`, `StructLayoutAttributes=957`, `MemoryAlignment=0.506081438`, `UnityUpdateMethods=0`, duplicate signal budget actual `0`, `AupPrecisionRisk=0` | Alternatives rejected: lowering thresholds or claiming profiler proof | Estimate: 39,700,000 us tooling verification
+- [x] Current-disk freshness checked | Justification: no C# source under `Assets/_Project/Scripts` was newer than the Fresh50 build or H-Phi artifacts | Alternatives rejected: trusting green logs under parallel agent edits | Estimate: 400 us scan
+- [x] Diff hygiene checked | Justification: `git diff --check` on touched code/docs returned exit 0; only CRLF normalization warnings were emitted | Alternatives rejected: normalizing unrelated files during active multi-agent work | Estimate: 0 us runtime
+
+## 2026-05-15 Fresh48 Current-Disk Closure
+
+Directive: keep fixing the build and H-Phi debt under the current in-chat `INTEGRATION_ASSEMBLY_SURGEON` XML.
+Domain: Echelon 9 / The Integrator (Compile Medic).
+Current state: BUILD SUCCESSFUL / PLATINUM GRADE.
+Compile artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh48.log`.
+H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh48.json`.
+H-Phi exit artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh48.exit.txt`.
+
+- [x] Status and rationale reloaded | Justification: disk state was read before editing the current continuation | Alternatives rejected: compressed chat memory | Estimate: 200 us process
+- [x] Fresh compile wall rechecked | Justification: earlier `Fresh39` exposed `VoxelDynamicNavGridRuntime.cs` `safeCellSize` drift; current disk now compiles with valid voxel record bounds and no source newer than `Fresh48` | Alternatives rejected: claiming stale `Fresh46`/`Fresh47` after timestamp invalidation | Estimate: 34,270,000 us build verification
+- [x] Audio registry debt reduced | Justification: `DeepPsychosisController` and `HectonMusicDirector` now use `GlobalRegistry.TryRegisterUpdatable` / `TryRegisterSlowTickable`, removing redundant dispatcher bucket probes while retaining the dispatcher readiness guard | Alternatives rejected: removing the guard and causing missing-dispatcher dev logs | Estimate: 0 us measured runtime
+- [x] Documented H-Phi floor restored | Justification: full gate passed with `RuntimeHPhiRisk=0.000597081`, floor `0.000597000`, `GlobalRegistrySurface=5146`, `UnityUpdateMethods=0`, `AupPrecisionRisk=0`, duplicate signal budget actual `0` | Alternatives rejected: lowering the floor or reporting the previous failing artifact | Estimate: 55,700,000 us tooling verification
+- [x] Current-disk freshness checked | Justification: no C# source under `Assets/_Project/Scripts` was newer than the Fresh48 build log or H-Phi artifact | Alternatives rejected: trusting a green log under parallel edits | Estimate: 400 us scan
+- [x] Diff hygiene checked | Justification: `git diff --check` on touched code/docs returned exit 0; only CRLF normalization warnings were emitted | Alternatives rejected: normalizing unrelated files during active multi-agent work | Estimate: 0 us runtime
+
+## 2026-05-15 Unity Loop Debt Zero Pass
+
+Directive: continue accurate H-Phi debt improvement after duplicate signal zero.
+Domain: Echelon 9 / The Integrator (static metric contract and compile authority).
+Current compile state: BUILD SUCCESSFUL / FRESH27 CURRENT-DISK GREEN.
+Compile artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh27.log`.
+H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_UnityLoopDebtZero.json`.
+
+- [x] Status and rationale reloaded | Justification: file-backed state was read before the pass and before logging | Alternatives rejected: compressed chat memory | Estimate: 200 us process
+- [x] Raw Unity loop ownership scanned | Justification: exact `Update/LateUpdate/FixedUpdate` scan found only `Core/SystemDispatcher.cs` lines 1663 and 1835 | Alternatives rejected: treating the old aggregate count as gameplay debt | Estimate: 2,100,000 us static scan
+- [x] H-Phi audit budget hardened | Justification: `HectonPhiAudit.ps1` now enforces `-MaxUnityUpdateMethods` in full scans and reports the budget row in JSON | Alternatives rejected: documentation-only zero loop claim | Estimate: 0 us runtime
+- [x] Dispatcher shell separated from debt | Justification: `UnityUpdateMethodsRaw=2`, `UnityLoopShellMethods=2`, and `UnityUpdateMethods=0`; architectural purity now measures stray runtime loop ownership instead of the canonical dispatcher shell | Alternatives rejected: whitelisting without transparent raw counters | Estimate: 0 us runtime
+- [x] H-Phi metric documentation tightened | Justification: `HECTON_PHI_STATIC_METRIC.md` now defines raw/shell/debt counters, adds `-MaxUnityUpdateMethods 0`, and raises the runtime H-Phi risk floor to `0.000597000` | Alternatives rejected: stale `0.000590000` floor after improved purity | Estimate: 0 us runtime
+- [x] Full static regression gate verified | Justification: `UnityLoopDebtZero.json` exits 0 with `RuntimeHPhiRisk=0.000597474`, `ArchitecturalPurity=1`, `DuplicateSignalNameCount=0`, and `AupPrecisionRisk=0` | Alternatives rejected: raw grep as final evidence | Estimate: 154,600,000 us tooling verification
+- [x] Source-budget misuse path verified | Justification: `-CoreGraphOnly -MaxUnityUpdateMethods 0` rejects with `EXPECTED_UNITY_UPDATE_COREGRAPH_REJECT_OK` | Alternatives rejected: letting graph-only output masquerade as full source proof | Estimate: 1,900,000 us tooling verification
+- [x] No dotnet command run in this pass | Justification: only PowerShell static audit, grep, parser, docs, and log edits were executed | Alternatives rejected: unnecessary compile after non-C# changes | Estimate: 0 us runtime
 
 ## 2026-05-15 Duplicate Signal Zero Pass
 

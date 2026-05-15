@@ -1197,3 +1197,72 @@ Verification:
 - `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1`: no whitespace errors; LF/CRLF warning only.
 - Final full static gate completed at local timestamp `2026-05-15 05:14:05 +04:00`.
 - Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.
+
+## 2026-05-15 Live Addendum - CORE_RESONANCE_ORCHESTRATOR
+
+Evidence class: `STATIC_SOURCE`.
+
+User constraint for this pass: no `dotnet build` and no rebuild.
+
+What changed:
+- `SubmarineFluidDynamics` now caches `IPowerGridService` behind the existing runtime-context cache pattern.
+- Submarine disable/destroy now clears cached player/submarine/fluid/power service pointers and invalidates the flood-state math-LOD frame cache.
+- Flood-state signal publishing now uses `ResolveFloodStateMathLod()` instead of sampling `GlobalRegistry.ScalabilityTier` directly at publish time.
+- `HectonFluidEngine` was rechecked: direct scalability and low-memory reads remain centralized in its per-frame cache helper only.
+- No new `ScalabilityEvents` listener was added, preserving the fixed listener lane capacity.
+
+Current static scores after this pass:
+
+| Coefficient | Score |
+|---|---:|
+| Runtime H-Phi narrow | 0.010800761 |
+| Runtime H-Phi risk-adjusted | 0.000597671 |
+| All-source H-Phi narrow | 0.009615216 |
+| All-source H-Phi risk-adjusted | 0.000490085 |
+| Risk integration | 0.055335968 |
+| Architectural purity | 1.000000000 |
+| Data sovereignty | 0.021386637 |
+| Memory alignment | 0.505023797 |
+| Binary-safe ratio | 0.018508726 |
+| AUP precision integrity | 1.000000000 |
+
+Current static counts:
+
+| Counter | Value |
+|---|---:|
+| Typed/queued signal push surface | 336 |
+| Legacy/direct event publish surface | 28 |
+| `GlobalRegistry.` surface refs | 5,140 |
+| DataVault access surface refs | 153 |
+| `NativeArray<T>` refs | 7,001 |
+| Runtime `Find*` calls | 5 |
+| Runtime `GetComponent*` calls | 530 |
+| AUP precision risk refs | 0 |
+| LINQ surface | 5 |
+| Coroutine surface | 0 |
+| Managed formatting surface | 704 |
+| Job `.Complete()` surface | 61 |
+| Primary managed-runtime risk | 353 |
+| Primary job `.Complete()` risk | 44 |
+
+Core graph debt counts:
+
+| Counter | Value |
+|---|---:|
+| Core asmdef debt refs | 25 |
+| Generated project debt refs | 10 |
+| Source-backed bridge debt refs | 14 |
+| Source-backed compile bridge debt refs | 8 |
+| Project-reference replacement debt refs | 6 |
+
+Residual bottlenecks:
+- Data Sovereignty remains the hard floor: `153 / (153 + 7001) = 0.021386637`.
+- `GlobalRegistry.` surface did not reduce because this pass moved submarine reads behind cache helpers; it improves hot cadence, not source-count debt.
+- Signal push surface is moving under parallel agent work; this pass added no new signal producer.
+- Runtime verification remains absent by user order.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/SubmarineFluidDynamics.cs`: passed; LF/CRLF warning only.
+- Static diff scan: no new managed containers, LINQ, `ToArray`, `ToList`, `FindObject`, coroutine, or `ScalabilityEvents` registration in the edited hunk.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary`: completed at local timestamp `2026-05-15 05:25:05 +04:00`.
+- Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.

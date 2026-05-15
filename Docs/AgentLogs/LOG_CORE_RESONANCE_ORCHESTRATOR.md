@@ -132,3 +132,36 @@ Verification:
 
 Status:
 - ENGINE RESONATING / COMPILE BLOCKED BY DEPENDENCY / RUNTIME PENDING VERIFICATION.
+
+## 2026-05-15 05:25 +04:00 - Submarine Fluid Service Cache Hardening
+
+What was wrong:
+- `SubmarineFluidDynamics` still sampled `GlobalRegistry.ScalabilityTier` while publishing flood-state signal metadata.
+- Deep-freeze ice-expansion logic resolved `GlobalRegistry.PowerGrid` through a static helper instead of a cached service pointer.
+- Adding another `ScalabilityEvents` listener would have spent fixed listener capacity for one byte of math-LOD metadata.
+
+What was done:
+- Added cached `IPowerGridService` resolution beside the existing player/submarine/fluid runtime caches.
+- Cleared cached player/submarine/fluid/power service pointers on disable/destroy.
+- Replaced publish-time scalability polling with a per-frame cached `ResolveFloodStateMathLod()` byte.
+- Kept signal payload shape unchanged and added no new signal producer path.
+
+Cinematic Cheats used:
+- Deep-freeze starvation remains a cheap aggregate power ratio fake instead of per-device thermal truth.
+- Flood-state math LOD stays a one-byte metadata surface; low tier keeps the cheap path and high/ultra keep full hydro fidelity.
+
+Exact Microseconds saved:
+- Power-grid service cache: estimated 1-2 microseconds saved during deep-freeze flood frames on i3/MX350 class hardware.
+- Flood-state math-LOD cache: estimated 0.5-1 microsecond saved when flood signals publish multiple times in a rendered frame.
+- GC impact: 0 managed allocations added by diff/static scan.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/SubmarineFluidDynamics.cs` passed; LF/CRLF warning only.
+- Diff scan found no new managed containers, LINQ, `ToArray`, `ToList`, `FindObject`, coroutine, `ScalabilityEvents` registration, or new signal bus producer.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary` completed at `2026-05-15 05:25:05 +04:00`.
+- Static scores after the pass: runtime H-Phi risk `0.000597671`, runtime H-Phi narrow `0.010800761`, Data Sovereignty `0.021386637`, GlobalRegistry surface `5140`.
+- Core graph debt unchanged: core asmdef `25`, generated project `10`, source-backed bridge `14`, compile-bridge `8`, project-reference replacement `6`.
+- No `dotnet build`, rebuild, PlayMode profiler, or Unity console verification was run.
+
+Status:
+- ENGINE RESONATING / COMPILE BLOCKED BY DEPENDENCY / RUNTIME PENDING VERIFICATION.

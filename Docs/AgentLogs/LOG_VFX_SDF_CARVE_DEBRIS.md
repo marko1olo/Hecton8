@@ -663,3 +663,89 @@ Verification state:
 - Static verification only.
 - Unity import/compile and profiler capture remain unverified.
 - No dotnet rebuild was run.
+
+## 2026-05-15 - Cold Render Resource Hygiene
+
+What was wrong:
+- The renderer still refreshed mesh indirect draw metadata once per active frame even though carve debris mesh topology is static presentation data.
+- The authored material clone path accepted any material assigned to the slot, which risked cloning a wrong-shader or third-party material into a GPU-buffer-driven renderer.
+- The fallback octahedron kept CPU-readable mesh data after cold construction.
+
+What was done:
+- `CarveDebrisComputeRenderer` now caches index count/start/base-vertex until the mesh reference changes or authoring reset/validation invalidates the cache.
+- The owned material path now clones only materials using `Hecton8/VFX/CarveDebrisIndirect`; unsupported assignments fall back to the owned first-party debris material.
+- The cold fallback octahedron calls `UploadMeshData(true)` after normals/bounds are baked.
+- Did not run dotnet build, dotnet rebuild, or Unity batch compile.
+
+Cinematic cheats used:
+- Static chip mesh assumption: debris silhouette variety stays shader/hash-driven, so per-frame mesh metadata truth is unnecessary.
+- First-party shader gate: visual overkill remains in the approved debris shader path instead of accepting arbitrary material behavior.
+
+Exact microseconds saved:
+- CPU: estimated sub-10 us on active frames by removing repeated mesh metadata reads after first bind.
+- Memory: tiny fallback CPU mesh copy removed; small object, but correct policy for MX350-class memory discipline.
+- Risk reduction: prevents wrong material/shader buffer mismatch and unauthorized third-party material cloning in this VFX lane.
+
+Verification state:
+- Focused `git diff --check` returned no whitespace errors, only Git LF/CRLF notices.
+- Forbidden VFX scan returned no matches for CPU readback, ParticleSystem, ComputeBuffer, scene search, job scheduling fences, private `H8Memory.Allocate`, private `H8Memory.Release`, `MaterialPropertyBlock`, `matProps`, or stale draw-frame cache.
+- Shader hot-math scan returned no matches.
+- `CURRENT_BATCH.md` exact prompt tag count for `VFX_SDF_CARVE_DEBRIS`: 0.
+- Unity import/compile and profiler capture remain unverified.
+- No dotnet rebuild was run.
+
+## 2026-05-15 - Directional Carve Ejection Cone
+
+What was wrong:
+- Injected chips used a generic random/upward burst and ignored the carve packet's impulse direction.
+- Side cuts and downward drilling therefore had less readable material ejection, even though the packet already carries the axis needed for a better fake.
+
+What was done:
+- Added an `EjectionAxis` lane to the DataVault-owned `CarveDebrisRequest`.
+- Resolved the axis from `VoxelCarveEvent.AbsoluteImpulseDirection`, falling back to hit-to-segment direction and then world up.
+- Biased Burst injection direction and initial velocity around that axis with deterministic cone math.
+- Did not add particles, draw calls, CPU raycasts, Rigidbody fragments, or readback.
+- Did not run dotnet build, dotnet rebuild, or Unity batch compile.
+
+Cinematic cheats used:
+- Directional cone fake: uses packet intent instead of physical surface-normal solving.
+- Visual force readability: spends cheap Burst scalar math to make chips leave the carved face convincingly.
+
+Exact Microseconds saved:
+- Direct saving: 0 us; this is visual quality, not a cheaper path.
+- Added CPU cost: estimated below 5 us at the 32-request cap on i3/MX350.
+- Avoided cost versus physical fragments: hundreds of microseconds plus allocation/physics risk are avoided by staying in the existing compute/indirect debris lane.
+
+Verification state:
+- Focused `git diff --check` returned no whitespace errors, only Git LF/CRLF notices.
+- Forbidden VFX scan returned no matches for CPU readback, ParticleSystem, ComputeBuffer, scene search, job scheduling fences, private `H8Memory.Allocate`, private `H8Memory.Release`, `MaterialPropertyBlock`, `matProps`, stale draw-frame cache, `Vector3.magnitude`, or `math.sqrt`.
+- Shader hot-math scan returned no matches.
+- `CURRENT_BATCH.md` exact prompt tag count for `VFX_SDF_CARVE_DEBRIS`: 0.
+- Unity import/compile and profiler capture remain unverified.
+- No dotnet rebuild was run.
+
+## 2026-05-15 - Continued H-Phi Static Closeout
+
+What was wrong:
+- Two remaining VFX weaknesses were still worth fixing without touching other domains: stale per-frame draw metadata refresh and generic non-directional chip ejection.
+- The material fallback path also needed stricter first-party shader ownership to avoid cloning arbitrary authored materials into this GPU-buffer renderer.
+
+What was done:
+- Persistent draw metadata cache now invalidates on mesh source changes instead of every active frame.
+- Fallback octahedron mesh uploads as non-readable after cold build.
+- Runtime material cloning is gated to `Hecton8/VFX/CarveDebrisIndirect`.
+- Carve injection uses `AbsoluteImpulseDirection` or hit-to-segment fallback to cone-bias chip position and velocity.
+- Status and rationale files were updated after the code changes.
+
+Cinematic cheats used:
+- Directional cone fake instead of CPU surface-normal solving or rigidbody fragments.
+- Static chip mesh plus shader/hash orientation instead of mesh mutation.
+
+Exact Microseconds saved:
+- Mesh metadata cache: estimated sub-10 us CPU on active frames after first bind.
+- Directional ejection: adds below 5 us at the 32-request cap, buying better carve readability without more particles.
+- Avoided physical-fragment path remains the real saving: no ParticleSystem, no Rigidbody debris, no readback, no extra draw calls.
+
+Verification state:
+- Static verification only; Unity import/compile/profiler evidence is still unavailable.
+- No dotnet build or rebuild was run.

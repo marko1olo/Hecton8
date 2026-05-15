@@ -63,7 +63,7 @@ The audit computes these coefficients from static text counters.
 |---|---|---|
 | `NarrowIntegration` | `SignalBusPush / (SignalBusPush + GlobalRegistryGet)` | Prompt-continuity signal-vs-registry score. |
 | `RiskIntegration` | `SignalBusPush / (SignalBusPush + GlobalRegistrySurface + EventPublish + StaticInstance + FindObjectCalls + GetComponentCalls)` | Broader coupling-risk score. |
-| `ArchitecturalPurity` | `(ISlowTickable + IJob) / (UnityUpdateMethods + ISlowTickable + IJob)` | Dispatcher/job discipline versus raw Unity loop methods. |
+| `ArchitecturalPurity` | `(ISlowTickable + IJob) / (UnityUpdateMethods + ISlowTickable + IJob)` | Dispatcher/job discipline versus stray Unity loop ownership. The canonical dispatcher shell is reported separately and does not count as debt. |
 | `ArchitecturalPurityExpanded` | `(ISlowTickable + IJob + ITickable + IFixedTickable) / (UnityUpdateMethods + ISlowTickable + IJob + ITickable + IFixedTickable)` | Tick-interface-inclusive purity. |
 | `DataSovereignty` | `GlobalDataVaultRefs / (GlobalDataVaultRefs + NativeArrayRefs)` | Visible Vault/access ownership versus scattered native buffer references. |
 | `MemoryAlignment` | `StructLayoutAttributes / StructDeclarations` | Explicit layout coverage for structs. |
@@ -92,8 +92,14 @@ The tool uses regex-based static counters. Important surfaces:
 - `GlobalRegistrySurface`: any `GlobalRegistry.`
 - `EventPublish`: remaining legacy/direct fan-out publisher surfaces:
   `HectonEventBus`, `WaterTransitionEvents`, and `SuitDamageEvents`.
-- `UnityUpdateMethods`: method declarations for `Update`, `LateUpdate`, and
-  `FixedUpdate`
+- `UnityUpdateMethodsRaw`: all method declarations for `Update`, `LateUpdate`,
+  and `FixedUpdate`.
+- `UnityLoopShellMethods`: raw Unity loop declarations inside
+  `Core/SystemDispatcher.cs`. This is the bounded Unity-to-dispatcher shell
+  required by Unity's player loop.
+- `UnityUpdateMethods`: non-exempt runtime method declarations for `Update`,
+  `LateUpdate`, and `FixedUpdate`. This is the actual H-Phi debt counter used by
+  `ArchitecturalPurity`.
 - `GlobalDataVaultRefs`: `GlobalDataVault`, `IDataVault`,
   `VaultBufferHandle<T>`, `GetBuffer<T>`, `TryGetBuffer`, buffer handle
   accessors, and `ResolveBuffer<T>`
@@ -214,6 +220,14 @@ renaming non-canonical payloads:
 This was source and CLI-compile verified. It is not runtime or Unity-import
 proof.
 
+Unity loop debt is also a hard zero-regression gate. The only current raw Unity
+loop declarations are the two `SystemDispatcher` shell methods that bridge
+Unity's player loop into the project dispatcher. The audit reports them as
+`UnityLoopShellMethods=2` and `UnityUpdateMethodsRaw=2`, but the debt counter is
+`UnityUpdateMethods=0`. New gameplay/system `Update`, `LateUpdate`, or
+`FixedUpdate` methods must fail `-MaxUnityUpdateMethods 0` unless the integrator
+updates this contract with a bounded dispatcher-shell justification.
+
 ## Optional Unused Core Reference Scan
 
 The Core graph audit can also run a static candidate scan:
@@ -324,7 +338,7 @@ Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0
 Full H-Phi regression budget gate:
 
 ```powershell
-Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0 -MaxFindObjectCalls 5 -MaxLegacyEventPublish 28 -MaxDuplicateSignalNames 0 -MaxGlobalRegistrySurface 5160 -MaxGetComponentCalls 550 -MaxNativeArrayRefs 7035 -MaxLinqSurface 5 -MaxCoroutineSurface 0 -MaxManagedFormatSurface 704 -MaxJobCompleteSurface 61 -MaxPrimaryManagedRuntimeRisk 353 -MinDataSovereignty 0.021300000 -MinMemoryAlignment 0.505000000 -MinRuntimeHPhiRisk 0.000590000 -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 14 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 6
+Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0 -MaxFindObjectCalls 5 -MaxLegacyEventPublish 28 -MaxDuplicateSignalNames 0 -MaxUnityUpdateMethods 0 -MaxGlobalRegistrySurface 5160 -MaxGetComponentCalls 550 -MaxNativeArrayRefs 7035 -MaxLinqSurface 5 -MaxCoroutineSurface 0 -MaxManagedFormatSurface 704 -MaxJobCompleteSurface 61 -MaxPrimaryManagedRuntimeRisk 353 -MinDataSovereignty 0.021300000 -MinMemoryAlignment 0.505000000 -MinRuntimeHPhiRisk 0.000597000 -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 14 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 6
 ```
 
 Source-count and score-floor gates require a full source scan. `-CoreGraphOnly`
@@ -340,6 +354,12 @@ Duplicate signal-name budget gate:
 
 ```powershell
 Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxDuplicateSignalNames 0
+```
+
+Unity loop debt budget gate:
+
+```powershell
+Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxUnityUpdateMethods 0
 ```
 
 Core graph with unused-reference candidates:

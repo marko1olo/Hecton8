@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.SaveSystem;
@@ -443,6 +444,7 @@ namespace Hecton8.Tools
             float repairedDurability = state.durability * safeMaxDurability;
             _durabilityMap[toolID] = repairedDurability;
             _brokenMap[toolID] = false;
+            PublishDurabilityChangedSignal(slotIndex, repairedDurability, safeMaxDurability, ItemDurabilityChangedSignal.ReasonRepair);
             OnToolRepaired?.Invoke(toolID, repairedDurability);
             OnDurabilityChanged?.Invoke(toolID, repairedDurability, safeMaxDurability);
         }
@@ -484,7 +486,9 @@ namespace Hecton8.Tools
             _itemStates[slotIndex] = state;
             _durabilityMap[toolID] = 0f;
             _brokenMap[toolID] = true;
-            OnDurabilityChanged?.Invoke(toolID, 0f, math.max(1f, _maxDurabilityBySlot[slotIndex]));
+            float maxDurability = math.max(1f, _maxDurabilityBySlot[slotIndex]);
+            PublishDurabilityChangedSignal(slotIndex, 0f, maxDurability, ItemDurabilityChangedSignal.ReasonBreak);
+            OnDurabilityChanged?.Invoke(toolID, 0f, maxDurability);
             OnToolBroken?.Invoke(toolID);
         }
 
@@ -520,6 +524,7 @@ namespace Hecton8.Tools
 
             _durabilityMap[toolID] = safeMaxDurability;
             _brokenMap[toolID] = false;
+            PublishDurabilityChangedSignal(slotIndex, safeMaxDurability, safeMaxDurability, ItemDurabilityChangedSignal.ReasonRepair);
             OnDurabilityChanged?.Invoke(toolID, safeMaxDurability, safeMaxDurability);
         }
 
@@ -931,6 +936,28 @@ namespace Hecton8.Tools
                 : -1;
         }
 
+        private void PublishDurabilityChangedSignal(int slotIndex, float currentDurability, float maxDurability, byte reason)
+        {
+            if ((uint)slotIndex >= MaxTrackedTools || !_itemStates.IsCreated)
+                return;
+
+            float safeMaxDurability = math.max(1f, maxDurability);
+            uint itemHash = _itemHashBySlot[slotIndex];
+            byte flags = (_itemStates[slotIndex].flags & BrokenFlag) != 0 ? (byte)1 : (byte)0;
+            GlobalSignals.Publish(new ItemDurabilityChangedSignal
+            {
+                InventoryHash = 0u,
+                ItemHash = itemHash,
+                Durability01 = math.saturate(currentDurability / safeMaxDurability),
+                AverageEquippedDurability01 = 1f,
+                Frame = (uint)math.max(0, Time.frameCount),
+                SlotIndex = (ushort)slotIndex,
+                Reason = reason,
+                Flags = flags,
+                BiomeHash = 0u
+            });
+        }
+
         private bool HasNativeState()
         {
             return _itemStates.IsCreated &&
@@ -980,7 +1007,13 @@ namespace Hecton8.Tools
                 _brokenMap[toolId] = broken;
 
                 if (math.abs(previousDurability - currentDurability) > 0.0001f || previousBroken != broken)
+                {
+                    byte reason = !previousBroken && broken
+                        ? ItemDurabilityChangedSignal.ReasonBreak
+                        : ItemDurabilityChangedSignal.ReasonCorrosion;
+                    PublishDurabilityChangedSignal(i, currentDurability, maxDurability, reason);
                     OnDurabilityChanged?.Invoke(toolId, currentDurability, maxDurability);
+                }
             }
 
             _managedMirrorDirty = false;

@@ -57,7 +57,7 @@ namespace Hecton8.Audio
     [DisallowMultipleComponent]
     [RequireComponent(typeof(AudioListener))]
     [RequireComponent(typeof(AudioReverbFilter))]
-    public sealed class PlayerCriticalProceduralAudioRenderer : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IUpdatable, IProceduralAudioEventListener, IPhysicsImpactEventListener, IPhysicsAcousticImpulseEventListener, ISonarPingEventListener, IAcousticEchoEventListener, ILaserCutterEventListener, IScalabilityChangedEventListener
+    public sealed class PlayerCriticalProceduralAudioRenderer : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IUpdatable, IProceduralAudioEventListener, IPhysicsImpactEventListener, IPhysicsAcousticImpulseEventListener, ISonarPingEventListener, IAcousticEchoEventListener, ILaserCutterEventListener, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         private const float TwoPi = 6.28318530718f;
         private const float InvTwoPi = 0.15915494309f;
@@ -777,6 +777,7 @@ namespace Hecton8.Audio
         private bool _kineticImpactLowTierFallback;
         private IAudioService _kineticLowTierAudioService;
         private SpatialAudioManager _spatialAudioManager;
+        private int _audioServiceLookupFrame = -4096;
         private int _lastDirectSonarPingFrame = -4096;
         private float _lastDirectSonarPingIntensity;
         private Vector3 _lastDirectSonarPingOrigin;
@@ -786,6 +787,7 @@ namespace Hecton8.Audio
         private bool _slowTickRegistered;
         private bool _lateFrameRegistered;
         private bool _scalabilityEventsRegistered;
+        private bool _hotSwapRegistered;
         private int _playerContextLookupFrame = -4096;
         private int _ecosystemDirectorLookupFrame = -4096;
         private int _structuralHullLookupFrame = -4096;
@@ -1660,7 +1662,9 @@ namespace Hecton8.Audio
             AcousticOcclusionUtility.AcquireRuntime();
             AudioSettings.OnAudioConfigurationChanged += HandleAudioConfigurationChanged;
             RefreshAudioQualityPolicyCold();
+            RefreshAudioRuntimeServicesCold();
             TryRegisterScalabilityEvents();
+            TryRegisterHotSwapListener();
             PhysicsEvents.Register(this);
             PhysicsEventBus.Register(this);
             ProceduralAudioEvents.Register(this);
@@ -1675,6 +1679,7 @@ namespace Hecton8.Audio
         private void OnDisable()
         {
             TryUnregisterScalabilityEvents();
+            TryUnregisterHotSwapListener();
             LaserCutterEvents.Unregister(this);
             SpectrumEvents.UnregisterAcousticEchoListener(this);
             SpectrumEvents.UnregisterSonarPingListener(this);
@@ -1687,6 +1692,7 @@ namespace Hecton8.Audio
             TryUnregisterRuntimeService();
             _kineticLowTierAudioService = null;
             _spatialAudioManager = null;
+            _audioServiceLookupFrame = -4096;
             _playerRuntimeContext = null;
             _ecosystemDirectorService = null;
             _mapMagicBridge = null;
@@ -1710,6 +1716,7 @@ namespace Hecton8.Audio
         private void OnDestroy()
         {
             TryUnregisterScalabilityEvents();
+            TryUnregisterHotSwapListener();
             LaserCutterEvents.Unregister(this);
             PhysicsEventBus.Unregister(this);
             SpectrumEvents.UnregisterAcousticEchoListener(this);
@@ -1732,9 +1739,31 @@ namespace Hecton8.Audio
             TryUnregisterRuntimeService();
             _kineticLowTierAudioService = null;
             _spatialAudioManager = null;
+            _audioServiceLookupFrame = -4096;
             _playerRuntimeContext = null;
             _ecosystemDirectorService = null;
             _mapMagicBridge = null;
+        }
+
+        public void OnGlobalRegistryServiceRebound(
+            GlobalRegistryServiceSlot serviceSlot,
+            ref object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Audio)
+                return;
+
+            CacheAudioRuntimeService(currentService as IAudioService, Time.frameCount);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Audio)
+                return;
+
+            CacheAudioRuntimeService(currentService as IAudioService, Time.frameCount);
         }
 
         /// <summary>
@@ -3327,6 +3356,23 @@ namespace Hecton8.Audio
             _scalabilityEventsRegistered = false;
         }
 
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
         private bool TryQueueLowTierKineticImpactClip(Vector3 runtimePosition, float energy01, float proximity)
         {
             if (lowTierKineticImpactClip == null || !IsFiniteVector(runtimePosition))
@@ -3348,8 +3394,7 @@ namespace Hecton8.Audio
             if (audio != null && audio.IsInitialized)
                 return audio;
 
-            audio = GlobalRegistry.Audio;
-            _kineticLowTierAudioService = audio != null && audio.IsInitialized ? audio : null;
+            RefreshAudioRuntimeServicesIfStale();
             return _kineticLowTierAudioService;
         }
 
@@ -3359,9 +3404,34 @@ namespace Hecton8.Audio
             if (audioManager != null && audioManager.IsInitialized)
                 return audioManager;
 
-            audioManager = GlobalRegistry.Audio as SpatialAudioManager;
-            _spatialAudioManager = audioManager != null && audioManager.IsInitialized ? audioManager : null;
+            RefreshAudioRuntimeServicesIfStale();
             return _spatialAudioManager;
+        }
+
+        private void RefreshAudioRuntimeServicesCold()
+        {
+            CacheAudioRuntimeService(GlobalRegistry.Audio, Time.frameCount);
+        }
+
+        private void RefreshAudioRuntimeServicesIfStale()
+        {
+            int frame = Time.frameCount;
+            if (frame >= _audioServiceLookupFrame &&
+                frame - _audioServiceLookupFrame < AudioServiceLookupRetryFrames)
+            {
+                return;
+            }
+
+            CacheAudioRuntimeService(GlobalRegistry.Audio, frame);
+        }
+
+        private void CacheAudioRuntimeService(IAudioService audioService, int frame)
+        {
+            _kineticLowTierAudioService = audioService != null && audioService.IsInitialized ? audioService : null;
+
+            SpatialAudioManager spatialAudioManager = audioService as SpatialAudioManager;
+            _spatialAudioManager = spatialAudioManager != null && spatialAudioManager.IsInitialized ? spatialAudioManager : null;
+            _audioServiceLookupFrame = frame;
         }
 
         private float ResolveKineticImpactWaterlineY()

@@ -514,6 +514,9 @@ namespace Hecton8.Physics
         private IPlayerRuntimeContext _playerRuntime;
         private ISubmarineRuntimeContext _submarineRuntime;
         private HectonFluidEngine _fluidRuntime;
+        private IPowerGridService _powerGridService;
+        private int _cachedFloodStateMathLodFrame = int.MinValue;
+        private byte _cachedFloodStateMathLod;
         private bool _registered;
         private bool _registeredOriginShiftListener;
         private bool _fluidJobRunning;
@@ -1102,6 +1105,7 @@ namespace Hecton8.Physics
             ResetBrineHullState();
             RestoreRigidbodyDynamics();
             DisposeNativeStateDeferred();
+            ClearRuntimeServiceCaches();
         }
 
         private void OnDestroy()
@@ -1114,6 +1118,7 @@ namespace Hecton8.Physics
             ResetBrineHullState();
             RestoreRigidbodyDynamics();
             DisposeNativeStateDeferred();
+            ClearRuntimeServiceCaches();
         }
 
         /// <summary>
@@ -1770,6 +1775,7 @@ namespace Hecton8.Physics
 
             _dataVault ??= GlobalRegistry.DataVault;
             RefreshRuntimeActorContextsIfMissing();
+            ResolvePowerGridService();
 
             if (_structuralBreachReadModel == null)
             {
@@ -2419,7 +2425,7 @@ namespace Hecton8.Physics
             signal.SourceBodyId = _rigidbody != null ? unchecked((uint)EntityId.ToULong(_rigidbody.GetEntityId())) : 0u;
             signal.Frame = unchecked((uint)Time.frameCount);
             signal.RoomCount = (ushort)math.min(ushort.MaxValue, math.max(0, _configuredCompartmentCount));
-            signal.MathLod = DistanceMath.IsHighQualityTier(GlobalRegistry.ScalabilityTier) ? (byte)1 : (byte)0;
+            signal.MathLod = ResolveFloodStateMathLod();
             signal.Flags = flags;
             GlobalSignals.Publish(in signal);
         }
@@ -3069,9 +3075,9 @@ namespace Hecton8.Physics
             GetComponentsInChildren(includeInactive: true, result: _pipeBindingBuffer);
         }
 
-        private static float ResolveAggregatePowerSupplyRatio()
+        private float ResolveAggregatePowerSupplyRatio()
         {
-            IPowerGridService powerGridService = GlobalRegistry.PowerGrid;
+            IPowerGridService powerGridService = ResolvePowerGridService();
             if (powerGridService == null)
                 return 1f;
 
@@ -4930,11 +4936,39 @@ namespace Hecton8.Physics
             return _fluidRuntime;
         }
 
+        private IPowerGridService ResolvePowerGridService()
+        {
+            if (_powerGridService == null || IsUnityObjectInvalid(_powerGridService))
+                _powerGridService = GlobalRegistry.PowerGrid;
+
+            return _powerGridService;
+        }
+
+        private byte ResolveFloodStateMathLod()
+        {
+            int frame = Time.frameCount;
+            if (_cachedFloodStateMathLodFrame == frame)
+                return _cachedFloodStateMathLod;
+
+            _cachedFloodStateMathLod = DistanceMath.IsHighQualityTier(GlobalRegistry.ScalabilityTier) ? (byte)1 : (byte)0;
+            _cachedFloodStateMathLodFrame = frame;
+            return _cachedFloodStateMathLod;
+        }
+
         private void RefreshRuntimeActorContextsIfMissing()
         {
             ResolvePlayerRuntimeContext();
             ResolveSubmarineRuntimeContext();
             ResolveFluidRuntime();
+        }
+
+        private void ClearRuntimeServiceCaches()
+        {
+            _playerRuntime = null;
+            _submarineRuntime = null;
+            _fluidRuntime = null;
+            _powerGridService = null;
+            _cachedFloodStateMathLodFrame = int.MinValue;
         }
 
         private static bool IsUnityObjectInvalid(object context)

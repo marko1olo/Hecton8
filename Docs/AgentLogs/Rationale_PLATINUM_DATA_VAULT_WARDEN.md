@@ -190,6 +190,18 @@ Rejected Alternatives: Per-field string limits in all 74 call sites; leaving dea
 Scalability potential: Low devices reject string bombs before heap pressure; Middle keeps root compatibility payloads predictable; High and Ultra can reserve large mod payloads for the protected sector path instead of expanding the root DTO surface.
 Hardware Impact: 0 us frame impact. Cold save/read adds one integer compare per string. Worst single-string managed allocation is now bounded to 16 KiB of UTF-16 payload instead of being constrained only by full save payload length.
 
+Problem: Private compatibility helper overloads still routed list/dictionary/hash-set/custom-array reads and writes through `int.MaxValue`, leaving dead surfaces that future root metadata could reconnect to unbounded allocation paths.
+Solution: Deleted the no-cap wrapper overloads for string lists, float lists, string-float/string-bool/string-string dictionaries, int hash sets, and custom arrays. Removed optional default max parameters from legacy array conversion helpers so each caller must pass the domain cap explicitly.
+Rejected Alternatives: Leaving private wrappers unused; adding comments that callers should prefer capped overloads. This project has repeatedly reconnected dead private code, so the safer contract is no unbounded overload.
+Scalability potential: Low devices keep corrupt root metadata bounded before allocation; Middle keeps migration and binary compatibility lanes aligned; High and Ultra can grow fixed DTO capacity without widening compatibility helper debt.
+Hardware Impact: 0 us frame impact. Cold save/load code loses wrapper calls and keeps the same capped loops; the gain is compile-time/API pressure against future unbounded reads.
+
+Problem: DataVault black-box dumps used an old relocation-specific filename and `FrostTickDefrag` accepted NaN/Infinity inputs until later telemetry validation. Save migration also had a duplicate exact-capacity helper that could drift from `SaveData`, and the codec still had one unused custom-array wrapper that serialized by backing length instead of a named domain cap.
+Solution: Renamed the defrag black-box path to `Docs/AgentLogs/Dump_PLATINUM_DATA_VAULT_WARDEN.bin`, kept PHI/VOD stale-handle dumps in an agent-scoped sidecar, added immediate non-finite input fault capture before gap analysis, routed migration capacity repair through `SaveData.EnsureExactArrayCapacity`, and removed the dead `WriteCustomArray` wrapper.
+Rejected Alternatives: Keeping the old `Dump_VAULT_MEMORY_RELOCATOR.bin` path; treating non-finite defrag inputs as harmless because the current elapsed/stress values are not used for relocation; keeping duplicate helper code for locality; leaving a private wrapper because no current call site used it.
+Scalability potential: Low devices get deterministic first-fault postmortem files without live compaction cost; Middle keeps repair behavior centralized; High and Ultra can expand DTO capacity or diagnostics without adding unbounded helper debt.
+Hardware Impact: Valid defrag maintenance adds four scalar non-finite checks on a cold maintenance path, 0 us frame impact. Fault path writes the fixed 300-entry native telemetry ring once. Removing the duplicate helper and dead wrapper has no runtime cost.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Polish audit required removal of fake precision, managed iteration/string debt, and any code outside the DataVault domain without justification.
@@ -200,9 +212,10 @@ Hardware Impact: Direct habitat DTO write is 32 bytes per module and 0 B GC. Rem
 
 Final Git Diff Summary:
 - Assets/_Project/Scripts/Core/HectonArenaAllocator.cs: owner-tagged H8Memory.FreeRaw release.
-- Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs: GenerationID handle exposure, stale-handle fatal path, VaultGenerationID telemetry, owner-tagged macro/vault frees, macro copy switched to MemCpy, live defrag memmove code deleted.
+- Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs: GenerationID handle exposure, stale-handle fatal path, VaultGenerationID telemetry, owner-tagged macro/vault frees, macro copy switched to MemCpy, live defrag memmove code deleted, agent-scoped black-box dump paths, and non-finite defrag input dumping.
 - Assets/_Project/Scripts/Core/Memory/H8Memory.cs: FatalMemoryException, owner-gated raw/native allocation, tracked-byte raw reallocation, and owner-checked FreeRaw.
-- Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs: v72 first-hour DTO payload write/read, direct habitat flood struct loop.
+- Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs: v72 first-hour DTO payload write/read, direct habitat flood struct loop, bounded root compatibility collections, 16 KiB string cap, and removed unbounded helper wrappers.
 - Assets/_Project/Scripts/SaveData.cs: first-hour DTO mirrors and packed DTO definitions/metadata.
+- Assets/_Project/Scripts/SaveDataMigration.cs: bounded cold restore clamps and canonical `SaveData.EnsureExactArrayCapacity` repair helper use.
 - Assets/_Project/Scripts/Core/BinaryLayoutManifest.cs: first-hour DTO size/offset assertions.
 - Docs/Tasks/Status_PLATINUM_DATA_VAULT_WARDEN.md and this rationale log updated.

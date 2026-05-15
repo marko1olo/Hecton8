@@ -63,6 +63,42 @@ namespace Hecton8.Editor.ProceduralGen
         private static readonly bool[] FamilyIndexScratch = new bool[KelpCount];
         // COLD ALLOC: bool[300] - reusable editor mesh LOD triplet completeness scratch - owner: ShallowsBioForgeBatchBaker
         private static readonly bool[] MeshLodIndexScratch = new bool[KelpCount * 3];
+        // COLD ALLOC: Color32[1048576] - reusable editor atlas bake scratch - owner: ShallowsBioForgeBatchBaker
+        private static readonly Color32[] AtlasPixelScratch = new Color32[AtlasSize * AtlasSize];
+        // COLD ALLOC: string[4] - serialized material texture key contract - owner: ShallowsBioForgeBatchBaker
+        private static readonly string[] MaterialTexEnvNames =
+        {
+            "_AlbedoAtlas",
+            "_MatCap",
+            "_NormalAtlas",
+            "_ORMAtlas"
+        };
+        // COLD ALLOC: string[14] - serialized material float key contract - owner: ShallowsBioForgeBatchBaker
+        private static readonly string[] MaterialFloatNames =
+        {
+            "_AmbientStrength",
+            "_BiolumPulseSharpness",
+            "_BiomeTintStrength",
+            "_Cull",
+            "_EmissionStrength",
+            "_MatCapStrength",
+            "_MetallicBoost",
+            "_NormalScale",
+            "_RimStrength",
+            "_SeedOffsetScale",
+            "_SmoothnessBoost",
+            "_SubsurfaceStrength",
+            "_TriplanarScale",
+            "_TriplanarSharpness"
+        };
+        // COLD ALLOC: string[4] - serialized material color key contract - owner: ShallowsBioForgeBatchBaker
+        private static readonly string[] MaterialColorNames =
+        {
+            "_BaseColor",
+            "_EmissionColor",
+            "_RootTint",
+            "_TipTint"
+        };
 
         [MenuItem("HECTON-8/Bio-Forge/Bake Safe Shallows Assets", false, 172)]
         public static void BakeSafeShallowsAssets()
@@ -302,16 +338,15 @@ namespace Hecton8.Editor.ProceduralGen
             {
                 name = Path.GetFileNameWithoutExtension(path)
             };
-            Color32[] pixels = new Color32[AtlasSize * AtlasSize];
             for (int y = 0; y < AtlasSize; y++)
             {
                 for (int x = 0; x < AtlasSize; x++)
                 {
-                    pixels[x + y * AtlasSize] = SampleAtlas(kind, x, y);
+                    AtlasPixelScratch[x + y * AtlasSize] = SampleAtlas(kind, x, y);
                 }
             }
 
-            texture.SetPixels32(pixels);
+            texture.SetPixels32(AtlasPixelScratch);
             texture.Apply(true, false);
             File.WriteAllBytes(path, texture.EncodeToPNG());
             UnityEngine.Object.DestroyImmediate(texture);
@@ -399,9 +434,12 @@ namespace Hecton8.Editor.ProceduralGen
             importer.anisoLevel = 1;
             importer.mipMapBias = 0f;
             importer.mipmapEnabled = true;
+            importer.streamingMipmaps = false;
+            importer.streamingMipmapsPriority = 0;
             importer.isReadable = false;
             importer.textureCompression = TextureImporterCompression.Compressed;
             importer.crunchedCompression = false;
+            importer.alphaIsTransparency = false;
             importer.sRGBTexture = kind == AtlasKind.Albedo || kind == AtlasKind.MatCap;
             importer.textureType = kind == AtlasKind.Normal ? TextureImporterType.NormalMap : TextureImporterType.Default;
             importer.maxTextureSize = AtlasSize;
@@ -511,6 +549,30 @@ namespace Hecton8.Editor.ProceduralGen
                 failures++;
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] Shared material keyword arrays must stay empty. Valid={(validKeywords != null ? validKeywords.arraySize : -1)}, Invalid={(invalidKeywords != null ? invalidKeywords.arraySize : -1)}.");
             }
+
+            ValidateMaterialSerializedPayloadContract(serialized, ref failures);
+        }
+
+        private static void ValidateMaterialSerializedPayloadContract(SerializedObject serialized, ref int failures)
+        {
+            bool valid = SerializedObjectReferenceIsNull(serialized, "m_Parent") &&
+                         SerializedBoolEquals(serialized, "m_ModifiedSerializedProperties", false) &&
+                         SerializedIntEquals(serialized, "m_LightmapFlags", 0) &&
+                         SerializedBoolEquals(serialized, "m_EnableInstancingVariants", true) &&
+                         SerializedBoolEquals(serialized, "m_DoubleSidedGI", false) &&
+                         SerializedArraySizeEquals(serialized, "disabledShaderPasses", 0) &&
+                         SerializedStringEquals(serialized, "m_LockedProperties", string.Empty) &&
+                         SerializedSavedPropertyKeysEqual(serialized, "m_SavedProperties.m_TexEnvs", MaterialTexEnvNames) &&
+                         SerializedArraySizeEquals(serialized, "m_SavedProperties.m_Ints", 0) &&
+                         SerializedSavedPropertyKeysEqual(serialized, "m_SavedProperties.m_Floats", MaterialFloatNames) &&
+                         SerializedSavedPropertyKeysEqual(serialized, "m_SavedProperties.m_Colors", MaterialColorNames) &&
+                         SerializedArraySizeEquals(serialized, "m_BuildTextureStacks", 0) &&
+                         SerializedBoolEquals(serialized, "m_AllowLocking", true);
+            if (valid)
+                return;
+
+            failures++;
+            Debug.LogError("[ShallowsBioForgeBatchBaker] Shared material serialized payload contract failed.");
         }
 
         private static void ValidateMaterialFolderContract(ref int failures)
@@ -1082,9 +1144,12 @@ namespace Hecton8.Editor.ProceduralGen
                 importer.anisoLevel != 1 ||
                 !Approximately(importer.mipMapBias, 0f) ||
                 !importer.mipmapEnabled ||
+                importer.streamingMipmaps ||
+                importer.streamingMipmapsPriority != 0 ||
                 importer.isReadable ||
                 importer.textureCompression != TextureImporterCompression.Compressed ||
                 importer.crunchedCompression ||
+                importer.alphaIsTransparency ||
                 importer.sRGBTexture != expectedSrgb ||
                 importer.textureType != expectedType ||
                 importer.maxTextureSize != AtlasSize)
@@ -1565,6 +1630,12 @@ namespace Hecton8.Editor.ProceduralGen
             return property != null && property.intValue == expected;
         }
 
+        private static bool SerializedBoolEquals(SerializedObject serialized, string propertyName, bool expected)
+        {
+            SerializedProperty property = serialized.FindProperty(propertyName);
+            return property != null && property.boolValue == expected;
+        }
+
         private static bool SerializedFloatEquals(SerializedObject serialized, string propertyName, float expected)
         {
             SerializedProperty property = serialized.FindProperty(propertyName);
@@ -1587,6 +1658,29 @@ namespace Hecton8.Editor.ProceduralGen
         {
             SerializedProperty property = serialized.FindProperty(propertyName);
             return property != null && property.objectReferenceValue == null;
+        }
+
+        private static bool SerializedArraySizeEquals(SerializedObject serialized, string propertyName, int expected)
+        {
+            SerializedProperty property = serialized.FindProperty(propertyName);
+            return property != null && property.isArray && property.arraySize == expected;
+        }
+
+        private static bool SerializedSavedPropertyKeysEqual(SerializedObject serialized, string propertyName, string[] expectedKeys)
+        {
+            SerializedProperty property = serialized.FindProperty(propertyName);
+            if (property == null || !property.isArray || property.arraySize != expectedKeys.Length)
+                return false;
+
+            for (int i = 0; i < expectedKeys.Length; i++)
+            {
+                SerializedProperty element = property.GetArrayElementAtIndex(i);
+                SerializedProperty key = element.FindPropertyRelative("first");
+                if (key == null || !string.Equals(key.stringValue, expectedKeys[i], StringComparison.Ordinal))
+                    return false;
+            }
+
+            return true;
         }
 
         private static void ValidateLodGroupContract(string path, LODGroup lodGroup, LOD[] lods, ref int failures)

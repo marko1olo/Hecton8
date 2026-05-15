@@ -404,6 +404,115 @@ Verification:
 Current Status:
 - BUILD SUCCESSFUL / FRESH25 CURRENT-DISK GREEN.
 
+## 2026-05-15 - Fresh48 Bottom Authority Addendum
+
+What was wrong:
+- The previous bottom addendum was stale. Current authority is no longer Fresh25.
+- Fresh47 was rejected as final compile proof because a C# source timestamp was newer than its build log.
+
+What was done:
+- Accepted `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh48.log` as the current compile artifact.
+- Accepted `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh48.json` as the current static H-Phi artifact.
+
+Cinematic Cheats used:
+- No runtime simulation changes.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Final build verification time: 34,270,000 us.
+- Final H-Phi verification time: 55,700,000 us.
+
+Verification:
+- `Hecton8.Core.csproj --no-restore`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- H-Phi static gate: `EXIT=0`, `RuntimeHPhiRisk=0.000597081`, `GlobalRegistrySurface=5146`, `UnityUpdateMethods=0`, duplicate signal budget actual `0`, `AupPrecisionRisk=0`.
+- Freshness: no C# source under `Assets/_Project/Scripts` was newer than the Fresh48 build or H-Phi artifacts at verification time.
+
+Current Status:
+- BUILD SUCCESSFUL / PLATINUM GRADE / FRESH48 CURRENT-DISK GREEN.
+
+## 2026-05-15 - Fresh48 Current-Disk Closure
+
+What was wrong:
+- Earlier green compile/H-Phi artifacts were stale under parallel edits.
+- `Fresh39` exposed a Voxel compile drift around unsafe cell-size usage.
+- `Fresh46` compiled cleanly but the documented H-Phi floor failed by `0.000000116`; `Fresh47` then compiled cleanly but was rejected after Voxel source mtime proved newer than the build log.
+
+What was done:
+- Accepted the current Voxel record-bound validation on disk and recompiled `Hecton8.Core.csproj` from the current source as `Fresh48`.
+- Replaced redundant audio dispatcher registration probes in `DeepPsychosisController` and `HectonMusicDirector` with the established `GlobalRegistry.TryRegisterUpdatable` and `TryRegisterSlowTickable` APIs.
+- Preserved dispatcher readiness guards and hot-swap/cached-service behavior.
+- Reran the full documented H-Phi gate without lowering any threshold.
+
+Cinematic Cheats used:
+- No runtime simulation or gameplay feature was added.
+- Static coupling debt was reduced by removing real registry bucket probes instead of changing audio behavior.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Compile verification time: 34,270,000 us (`Fresh48`).
+- H-Phi verification time: 55,700,000 us.
+- Static graph impact: `GlobalRegistrySurface=5146`, `RuntimeHPhiRisk=0.000597081`, documented floor `0.000597000`.
+
+Verification:
+- `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh48.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh48.exit.txt`: `EXIT=0`.
+- H-Phi: `UnityUpdateMethods=0`, duplicate signal budget actual `0`, `AupPrecisionRisk=0`, `ArchitecturalPurity=1`.
+- No C# source under `Assets/_Project/Scripts` was newer than the Fresh48 build or H-Phi artifacts at verification time.
+- `git diff --check` on touched files returned exit 0 with CRLF normalization warnings only.
+
+Errors Fixed:
+- 1 current compile wall item closed in this continuation: Voxel cell-size/record-bound compile drift that appeared in `Fresh39`.
+- 1 H-Phi gate failure closed: `RuntimeHPhiRisk` restored above the documented floor.
+
+Files Moved:
+- None.
+
+ASMDEFs Repaired:
+- None.
+
+Current Status:
+- BUILD SUCCESSFUL / PLATINUM GRADE / FRESH48 CURRENT-DISK GREEN.
+
+## 2026-05-15 - Unity Loop Debt Zero H-Phi Correction
+
+What was wrong:
+- H-Phi still counted two Unity loop methods as runtime debt after gameplay loop debt was gone.
+- Exact source scan showed both raw methods are the bounded `Core/SystemDispatcher.cs` Unity shell: `Update()` and `LateUpdate()`.
+- The audit had no enforceable `-MaxUnityUpdateMethods 0` budget row, so future gameplay loops could regress without a dedicated gate.
+
+What was done:
+- Completed `Tools/Architecture/HectonPhiAudit.ps1` enforcement for `-MaxUnityUpdateMethods`.
+- Kept raw transparency with `UnityUpdateMethodsRaw` and `UnityLoopShellMethods`, while `UnityUpdateMethods` now means non-exempt runtime debt.
+- Added JSON budget reporting for the Unity update-method gate.
+- Updated `Docs/ARCHITECTURE/HECTON_PHI_STATIC_METRIC.md` to define the raw/shell/debt counters and the hard zero loop-debt gate.
+- Tightened the documented full H-Phi risk floor from `0.000590000` to `0.000597000`.
+
+Cinematic Cheats used:
+- Static metric correction only.
+- No physics, rendering, AI, gameplay, prefab, package, generated project, or runtime simulation path changed.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Final tightened H-Phi verification time: 154,600,000 us.
+- Static metric impact: `UnityUpdateMethods=0`, `UnityUpdateMethodsRaw=2`, `UnityLoopShellMethods=2`, `ArchitecturalPurity=1`, `RuntimeHPhiRisk=0.000597474`.
+
+Verification:
+- Evidence class: STATIC_SOURCE + STATIC_DOC.
+- H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_UnityLoopDebtZero.json`.
+- Full static regression gate: `EXIT=0`, `AupPrecisionRisk=0`, `DuplicateSignalNameCount=0`, `UnityUpdateMethods=0`, `RuntimeHPhiRisk=0.000597474`, Core asmdef debt `25`, total bridge debt `14`.
+- Raw Unity loop scan: only `Assets/_Project/Scripts/Core/SystemDispatcher.cs:1663` and `:1835`.
+- PowerShell parser: `PS_PARSE_OK`.
+- Source-budget misuse path: `EXPECTED_UNITY_UPDATE_COREGRAPH_REJECT_OK`.
+- `git diff --check` on touched script/doc files: exit 0 with CRLF normalization warnings only.
+
+Residual risk:
+- No `dotnet build`, `dotnet rebuild`, Unity import, Play Mode, profiler, GCMonitor, or player build was run in this pass.
+- Fresh compile proof remains `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh27.log`.
+
+Current Status:
+- BUILD SUCCESSFUL / FRESH27 CURRENT-DISK GREEN.
+- Latest static H-Phi gate: UNITY LOOP DEBT ZERO.
+
 ## 2026-05-15 - Duplicate Signal Name Zero Closure
 
 What was wrong:
@@ -515,28 +624,65 @@ Residual risk:
 - This is not fresh compile proof. `Fresh19` remains the latest compile artifact on disk.
 - Generated `Hecton8.Core.csproj` still lists stale project references until Unity regenerates project files or a compile-enabled lane validates generated-project cleanup.
 
-## 2026-05-15 - Fresh25 Bottom Addendum
+## 2026-05-15 - Fresh48 Final Bottom Addendum
 
 What was wrong:
-- Earlier log sections are historical. The current compile authority is `Fresh25`, not Fresh19 and not any static-only pass.
+- Earlier bottom sections are historical. The current compile authority is `Fresh48`, not Fresh25 and not Fresh47.
+- Fresh47 was rejected as final evidence because a C# source timestamp was newer than its build log.
 
 What was done:
-- Revalidated the current disk after concurrent edits.
-- Accepted `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh25.log` as the latest compile artifact.
-- Accepted `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_FinalBudgetPass2.json` as the latest static H-Phi artifact.
+- Revalidated the current disk after timestamp invalidation.
+- Accepted `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh48.log` as the latest compile artifact.
+- Accepted `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh48.json` as the latest static H-Phi artifact.
 
 Cinematic Cheats used:
 - No runtime simulation changes.
 
 Exact Microseconds saved:
 - Runtime frame time saved: 0 us measured.
-- Final build verification time: 117,770,000 us.
-- Final H-Phi verification time: 296,100,000 us.
+- Final build verification time: 34,270,000 us.
+- Final H-Phi verification time: 55,700,000 us.
 
 Verification:
 - `Hecton8.Core.csproj --no-restore`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
-- H-Phi static gate: `EXIT=0`, `AupPrecisionRisk=0`, `DuplicateSignalNameCount=6`, `DuplicateSignalDeclarationCount=12`.
+- H-Phi static gate: `EXIT=0`, `RuntimeHPhiRisk=0.000597081`, `GlobalRegistrySurface=5146`, `UnityUpdateMethods=0`, duplicate signal budget actual `0`, `AupPrecisionRisk=0`.
+- Freshness: no C# source under `Assets/_Project/Scripts` was newer than the Fresh48 build or H-Phi artifacts at verification time.
 - `git diff --check`: exit 0 with CRLF normalization warnings only.
 
 Current Status:
-- BUILD SUCCESSFUL / FRESH25 CURRENT-DISK GREEN.
+- BUILD SUCCESSFUL / PLATINUM GRADE / FRESH48 CURRENT-DISK GREEN.
+
+## 2026-05-15 - Fresh50 Layout And Bootstrap Readback Closure
+
+What was wrong:
+- Fresh48 was green, but current disk still had two Core boundary marker structs without explicit layout metadata and a few bootstrap paths with avoidable duplicate `GlobalRegistry` readbacks.
+- The inquisition report's binary-layout warning required classification, not blanket attributes on managed-reference structs.
+
+What was done:
+- Added `[StructLayout(LayoutKind.Sequential)]` to `MacroDatabaseSignalBridge` and `PersistenceAssemblyMarker`.
+- Reduced safe bootstrap registry readbacks in fauna simulation registration, native input manager registration, and no-op audio fallback.
+- Left side-effect-sensitive settings and beacon component paths untouched after confirming `Awake/OnEnable` can register services during `AddComponent`.
+
+Cinematic Cheats used:
+- Static architecture debt surgery only.
+- No gameplay, rendering, physics, simulation, package, asmdef, prefab, or generated `.csproj` path was changed.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Final build verification time: 26,670,000 us.
+- Final H-Phi verification time: 39,700,000 us.
+
+Verification:
+- Build artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh50.log`.
+- Build result: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh50.json`.
+- H-Phi result: `EXIT=0`, `RuntimeHPhiRisk=0.000598725`, `GlobalRegistrySurface=5142`, `StructLayoutAttributes=957`, `MemoryAlignment=0.506081438`, `UnityUpdateMethods=0`, duplicate signal budget actual `0`, `AupPrecisionRisk=0`.
+- Freshness: no C# source under `Assets/_Project/Scripts` was newer than the Fresh50 build or H-Phi artifacts at verification time.
+- `git diff --check`: exit 0 with CRLF normalization warnings only.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals were not run.
+- Runtime microsecond savings are not claimed without profiler evidence.
+
+Current Status:
+- BUILD SUCCESSFUL / PLATINUM GRADE / FRESH50 CURRENT-DISK GREEN.

@@ -3030,11 +3030,13 @@ namespace Hecton8.Bootstrap
             if (faunaDirector != null)
                 faunaDirector.InitializeService();
 
-            if (GlobalRegistry.FaunaSimulation != null)
-                return GlobalRegistry.FaunaSimulation.IsReady;
+            registeredFaunaSimulation = GlobalRegistry.FaunaSimulation;
+            if (registeredFaunaSimulation != null)
+                return registeredFaunaSimulation.IsReady;
 
             GlobalRegistry.RegisterFaunaSimulationService(DemiurgeFaunaSimulationService.Shared);
-            return GlobalRegistry.FaunaSimulation != null && GlobalRegistry.FaunaSimulation.IsReady;
+            registeredFaunaSimulation = GlobalRegistry.FaunaSimulation;
+            return registeredFaunaSimulation != null && registeredFaunaSimulation.IsReady;
         }
 
         private static InputDispatcher EnsureInputDispatcherRegistered()
@@ -3059,13 +3061,14 @@ namespace Hecton8.Bootstrap
 
         private static InputManager EnsureNativeInputManagerRegistered()
         {
+            InputManager registeredInputManager = GlobalRegistry.NativeInputManager;
             if (_bootstrapInputManager == null)
-                _bootstrapInputManager = GlobalRegistry.NativeInputManager;
+                _bootstrapInputManager = registeredInputManager;
 
             if (_bootstrapInputManager == null)
                 return null;
 
-            if (!ReferenceEquals(GlobalRegistry.NativeInputManager, _bootstrapInputManager))
+            if (!ReferenceEquals(registeredInputManager, _bootstrapInputManager))
                 GlobalRegistry.RegisterNativeInputManagerRuntime(_bootstrapInputManager);
 
             PersistRuntimeService(_bootstrapInputManager);
@@ -3195,10 +3198,11 @@ namespace Hecton8.Bootstrap
 
         private static bool TryRegisterNoOpAudioFallback(string reason)
         {
-            if (ReferenceEquals(GlobalRegistry.Audio, NoOpAudioService.Shared))
+            IAudioService audioService = GlobalRegistry.Audio;
+            if (ReferenceEquals(audioService, NoOpAudioService.Shared))
                 return true;
 
-            if (GlobalRegistry.Audio == null)
+            if (audioService == null)
                 GlobalRegistry.RegisterAudioService(NoOpAudioService.Shared);
             else
                 GlobalRegistry.ReplaceAudioServiceForBootstrap(NoOpAudioService.Shared);
@@ -3206,7 +3210,8 @@ namespace Hecton8.Bootstrap
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             LogOptionalBootstrapWarning("Injected NoOp audio service. Reason: " + reason);
 #endif
-            return GlobalRegistry.Audio != null;
+            audioService = GlobalRegistry.Audio;
+            return audioService != null;
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]

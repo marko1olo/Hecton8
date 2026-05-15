@@ -417,3 +417,51 @@ Cinematic Cheats used: Static offline generated families remain the contract. No
 Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents stale generated families from adding hidden mesh/material/VRAM load; exact runtime microseconds were not profiled.
 
 Verification: No dotnet rebuild and no Unity import was run. `FamilySubfolderExactnessScan Bad=0`, `git diff --check` passed for the baker, source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.
+
+## 2026-05-15 Shared Material Serialized Payload Envelope
+
+What was wrong: Public material checks did not reject hidden serialized payload drift such as material inheritance, disabled shader passes, build texture stacks, extra saved properties, or raw instancing/GI flag drift.
+
+What was done: Added `ValidateMaterialSerializedPayloadContract`, `SerializedBoolEquals`, and `SerializedArraySizeEquals`. The shared material now requires a flat non-inherited serialized envelope with exact saved texture/float/color array counts and no disabled pass/build-stack payload.
+
+Cinematic Cheats used: One opaque shared material, four shared atlases, dithered LOD crossfade, and no runtime material normalization remain unchanged.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents hidden material payload drift from splitting render state or forcing runtime repair; exact runtime microseconds were not profiled.
+
+Verification: No dotnet rebuild and no Unity import was run. `MaterialSerializedPayloadYamlScan TexEnvs=4 Floats=14 Colors=4 Bad=0`; `git diff --check` passed with only repo CRLF warnings; source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.
+
+## 2026-05-15 Shared Material Saved Property Key Contract
+
+What was wrong: The material envelope checked saved-property array sizes but not the exact serialized texture/float/color keys.
+
+What was done: Added fixed cold key arrays and `SerializedSavedPropertyKeysEqual`, requiring exact saved-property keys for the Shallows shared material payload.
+
+Cinematic Cheats used: One opaque shared material, four shared atlases, bounded shader properties, and no runtime material normalization remain unchanged.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents stale serialized material keys from forcing runtime repair or material clones; exact runtime microseconds were not profiled.
+
+Verification: No dotnet rebuild and no Unity import was run. `MaterialSavedPropertyKeyYamlScan Tex=_AlbedoAtlas,_MatCap,_NormalAtlas,_ORMAtlas Floats=14 Colors=_BaseColor,_EmissionColor,_RootTint,_TipTint Bad=0`; `git diff --check` passed with only repo CRLF warnings; source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.
+
+## 2026-05-15 Atlas Streaming And Alpha Importer Contract
+
+What was wrong: Atlas importer validation did not explicitly lock mip streaming or alpha-transparency import flags.
+
+What was done: Set and validate `streamingMipmaps=false`, `streamingMipmapsPriority=0`, and `alphaIsTransparency=false` in the Shallows atlas importer contract.
+
+Cinematic Cheats used: Fixed 1024 shared atlases, mipmapped bilinear sampling, BC7/BC5 Standalone compression, and no runtime texture streaming policy remain unchanged.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents hidden texture residency or alpha-import drift; exact runtime microseconds were not profiled.
+
+Verification: No dotnet rebuild and no Unity import was run. `AtlasStreamingAlphaMetaScan Count=4 Bad=0`; `git diff --check` passed with only repo CRLF warnings; source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.
+
+## 2026-05-15 Atlas Bake Pixel Scratch Reuse
+
+What was wrong: Each atlas bake allocated a fresh 1024x1024 `Color32[]`, creating four large transient editor arrays per full Shallows atlas bake.
+
+What was done: Added one documented cold `AtlasPixelScratch` buffer and reused it for Albedo, Normal, ORM, and MatCap atlas writes.
+
+Cinematic Cheats used: Procedural atlas fakes, fixed 1024 atlas size, mipmapped bilinear sampling, and no runtime atlas generation remain unchanged.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. Bake-time allocation prevention is approximately three avoided 4 MiB transient arrays per full four-atlas bake after the first cold scratch allocation; exact editor microseconds were not profiled.
+
+Verification: No dotnet rebuild and no Unity import was run. `AtlasPixelScratchSourceScan LocalAlloc=0 ColdAlloc=1 Writes=1 SetPixels=1`; `git diff --check` passed with only repo CRLF warnings; source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.

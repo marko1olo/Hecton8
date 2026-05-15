@@ -1210,7 +1210,7 @@ namespace Hecton8.SaveSystem
                     flags: signal.Flags,
                     frame: signal.Frame);
 
-                if (!ContainsWfcOutpostDirtySector(dirtySectors, dirtySectorCount, signal.SectorHash))
+                if (!ContainsWfcOutpostSector(dirtySectors, dirtySectorCount, signal.SectorHash))
                     dirtySectors[dirtySectorCount++] = signal.SectorHash;
             }
 
@@ -1255,11 +1255,11 @@ namespace Hecton8.SaveSystem
                    ((signal.PreviousFlags ^ signal.CurrentFlags) & WfcOutpostPersistenceConstants.MutableFlagMask) != 0;
         }
 
-        private static bool ContainsWfcOutpostDirtySector(ReadOnlySpan<ulong> dirtySectors, int dirtySectorCount, ulong sectorHash)
+        private static bool ContainsWfcOutpostSector(ReadOnlySpan<ulong> sectors, int sectorCount, ulong sectorHash)
         {
-            for (int i = 0; i < dirtySectorCount; i++)
+            for (int i = 0; i < sectorCount; i++)
             {
-                if (dirtySectors[i] == sectorHash)
+                if (sectors[i] == sectorHash)
                     return true;
             }
 
@@ -1272,9 +1272,10 @@ namespace Hecton8.SaveSystem
                 SignalBus<Hecton8.Core.Signals.MacroDatabaseSectorHydrationSignal>.GetFrameSnapshot();
             NativeArray<byte> wfcGrid = default;
             bool hasGrid = false;
-            int probes = 0;
+            Span<ulong> hydrationSectors = stackalloc ulong[MaxWfcSectorHydrationProbesPerTick];
+            int hydrationSectorCount = 0;
 
-            for (int i = 0; i < signals.Length && probes < MaxWfcSectorHydrationProbesPerTick; i++)
+            for (int i = 0; i < signals.Length && hydrationSectorCount < MaxWfcSectorHydrationProbesPerTick; i++)
             {
                 Hecton8.Core.Signals.MacroDatabaseSectorHydrationSignal signal = signals[i];
                 if (signal.SectorHash == 0UL ||
@@ -1284,6 +1285,12 @@ namespace Hecton8.SaveSystem
                     continue;
                 }
 
+                if (!ContainsWfcOutpostSector(hydrationSectors, hydrationSectorCount, signal.SectorHash))
+                    hydrationSectors[hydrationSectorCount++] = signal.SectorHash;
+            }
+
+            for (int sectorIndex = 0; sectorIndex < hydrationSectorCount; sectorIndex++)
+            {
                 if (!hasGrid)
                 {
                     if (!TryEnsureWfcOutpostGrid(out wfcGrid))
@@ -1292,8 +1299,7 @@ namespace Hecton8.SaveSystem
                     hasGrid = true;
                 }
 
-                probes++;
-                TryApplyWfcOutpostStateOverrideFromHydration(signal.SectorHash, wfcGrid);
+                TryApplyWfcOutpostStateOverrideFromHydration(hydrationSectors[sectorIndex], wfcGrid);
             }
         }
 

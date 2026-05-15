@@ -107,7 +107,6 @@ namespace Hecton8.UI
         private CanvasGroup _recommendedActionCanvasGroup;
         private Image _recommendedActionBg;
         private TextMeshProUGUI _recommendedActionLabel;
-        private ToolDurabilitySystem _subscribedDurabilitySystem;
         private PlayerInventoryManager _inventoryManager;
         private bool _registeredToDispatcher;
         private uint _inventorySignalHash;
@@ -156,7 +155,6 @@ namespace Hecton8.UI
             EnsureBuilt();
             Subscribe();
             RegisterToTickManager();
-            RefreshDurabilityBindings();
             _refreshDirty = true;
             RefreshAll();
         }
@@ -174,6 +172,7 @@ namespace Hecton8.UI
             {
                 bool signalDirty = ConsumeInventoryChangedSignals();
                 signalDirty |= ConsumeToolLoadoutChangedSignals();
+                signalDirty |= ConsumeDurabilityChangedSignals();
                 if (signalDirty)
                 {
                     _refreshDirty = true;
@@ -264,40 +263,12 @@ namespace Hecton8.UI
         {
             PDAEvents.Unregister(this);
             PlayerExpressionEvents.Unregister(this);
-            UnsubscribeDurabilitySystem();
         }
 
         private void OnDestroy()
         {
             Unsubscribe();
             PDAEvents.AssertUnregistered(this, nameof(PDALoadoutTab));
-        }
-
-        private void RefreshDurabilityBindings()
-        {
-            ToolDurabilitySystem durabilitySystem = Hecton8.Core.GlobalRegistry.ToolDurability;
-            if (_subscribedDurabilitySystem == durabilitySystem)
-                return;
-
-            UnsubscribeDurabilitySystem();
-            if (durabilitySystem == null)
-                return;
-
-            durabilitySystem.OnDurabilityChanged += HandleDurabilityChanged;
-            durabilitySystem.OnToolBroken += HandleToolBroken;
-            durabilitySystem.OnToolRepaired += HandleToolRepaired;
-            _subscribedDurabilitySystem = durabilitySystem;
-        }
-
-        private void UnsubscribeDurabilitySystem()
-        {
-            if (_subscribedDurabilitySystem == null)
-                return;
-
-            _subscribedDurabilitySystem.OnDurabilityChanged -= HandleDurabilityChanged;
-            _subscribedDurabilitySystem.OnToolBroken -= HandleToolBroken;
-            _subscribedDurabilitySystem.OnToolRepaired -= HandleToolRepaired;
-            _subscribedDurabilitySystem = null;
         }
 
         private bool ConsumeInventoryChangedSignals()
@@ -322,6 +293,19 @@ namespace Hecton8.UI
             }
 
             return dirty;
+        }
+
+        private bool ConsumeDurabilityChangedSignals()
+        {
+            ReadOnlySpan<ItemDurabilityChangedSignal> signals = SignalBus<ItemDurabilityChangedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ref readonly ItemDurabilityChangedSignal signal = ref signals[i];
+                if (signal.InventoryHash == 0u)
+                    return true;
+            }
+
+            return false;
         }
 
         private void RefreshInventorySignalBinding()
@@ -382,27 +366,6 @@ namespace Hecton8.UI
                 : 0u;
         }
 
-        private void HandleDurabilityChanged(string _, float __, float ___)
-        {
-            _refreshDirty = true;
-            if (IsTabActive)
-                RefreshAll();
-        }
-
-        private void HandleToolBroken(string _)
-        {
-            _refreshDirty = true;
-            if (IsTabActive)
-                RefreshAll();
-        }
-
-        private void HandleToolRepaired(string _, float __)
-        {
-            _refreshDirty = true;
-            if (IsTabActive)
-                RefreshAll();
-        }
-
         public void OnPlayerExpressionEvent(in PlayerExpressionEventPayload payload)
         {
             if ((PlayerExpressionEventType)payload.EventType != PlayerExpressionEventType.ProfileChanged)
@@ -435,7 +398,6 @@ namespace Hecton8.UI
         {
             if (tab != loadoutTabIndex) return;
             AutoResolve();
-            RefreshDurabilityBindings();
             _refreshDirty = true;
             RefreshAll();
         }
@@ -444,7 +406,6 @@ namespace Hecton8.UI
         {
             if (newTab != loadoutTabIndex) return;
             AutoResolve();
-            RefreshDurabilityBindings();
             _refreshDirty = true;
             RefreshAll();
         }

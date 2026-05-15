@@ -316,9 +316,10 @@ namespace Hecton8.UI
         {
             bool hadSignal = false;
             ScannerToolActiveSignal latest = default;
-            while (GlobalSignals.TryDequeueScannerToolActive(out ScannerToolActiveSignal signal))
+            ReadOnlySpan<ScannerToolActiveSignal> signals = SignalBus<ScannerToolActiveSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
             {
-                latest = signal;
+                latest = signals[i];
                 hadSignal = true;
             }
 

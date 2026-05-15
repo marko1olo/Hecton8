@@ -95,3 +95,9 @@ Task loop 17:
 - [x] Validate small live tail | DOD: 12-file tail checked with `git diff --stat`, `git diff --check`, unmerged-path scan, and marker scan | Rejected: staging unchecked parallel-agent edits | Estimate: 0 us runtime.
 - [x] Review runtime surface | DOD: inspected Prologue acoustic lifecycle reset, VoxelDynamicNavGrid finite/bounds hardening, SaveManager WFC sector batching, Leviathan grab damage guard, and OrbitalDrop reentry reset hunks before commit | Rejected: docs-only validation while runtime code changed | Estimate: 0 us runtime.
 - [x] Prepare checkpoint evidence | DOD: loop 17 evidence appended before staging | Rejected: chat-only report | Estimate: 0 us runtime.
+
+Task loop 18:
+- [x] Detect incoming remote commits | DOD: `git fetch origin` advanced `origin/main` from `8f96b8eca` to `5e93fb931`; post-fetch `rev-list origin/main...HEAD` returned `10 0` | Rejected: pulling over a dirty worktree | Estimate: 0 us runtime.
+- [x] Validate large local live tail | DOD: 66 tracked-file tail plus HPhi/integrator logs checked with `git diff --stat`, `git diff --check`, unmerged-path scan, and changed-file conflict-marker scan | Rejected: staging unchecked parallel-agent edits | Estimate: 0 us runtime.
+- [x] Review runtime surface before checkpoint | DOD: inspected hot-swap audio services, prologue acoustic finite guards, voxel nav finite/bounds hardening, carve debris ejection/material fallback, save codec caps, WFC graph edge guards, durability SignalBus bridge, and UI signal consumers | Rejected: docs-only validation while runtime code changed | Estimate: 0 us runtime.
+- [x] Prepare merge-safe checkpoint evidence | DOD: recorded that remote incoming files are economy/docs/tools and do not overlap the inspected local runtime tail by path before staging | Rejected: force-push/reset/stash-pop over unknown state | Estimate: 0 us runtime.

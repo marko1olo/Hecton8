@@ -530,7 +530,7 @@ Rejected Alternatives: Running response-file compiles through `dotnet` was rejec
 Scalability potential: Static registry handoff proof improved without changing graph capacity, render path, or signal lane count.
 Hardware Impact: Verification only. Core graph summary still reports `CoreAsmdefDebtReferenceCount=25` and `GeneratedProjectDebtReferenceCount=10`, both project-level debts outside this outpost edit.
 
-## LOOP 31 WFC MUTABLE STATE SIGNAL DIRECT LANE
+## LOOP 31 WFC MUTABLE STATE SIGNAL DIRECT LANE [HISTORICAL; CURRENT SOURCE RESET]
 
 Problem: The WFC outpost sealed-door, terminal, and datapad proxy producers were publishing `WfcOutpostStateChangedSignal` through the generic `GlobalSignals.Publish` wrapper. That wrapper is functional, but for a known outpost persistence lane it adds avoidable dispatch surface and weakens the evidence that mutable WFC state stays in a typed lane.
 Solution: Keep the existing bounded interaction semantics, call `GlobalSignals.InitializeAllQueues()` at the cold publish point, and push directly through `SignalBus<WfcOutpostStateChangedSignal>.Push(in signal)` in `SealedDoor`, `MessageTerminal`, and `AudioLogPickup`.
@@ -542,4 +542,46 @@ Problem: The active instruction still forbids dotnet rebuilds, so runtime compil
 Solution: Verification stayed source-only: targeted WFC state producer scan, scoped WFC/source count, `git diff --check`, and `HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`.
 Rejected Alternatives: Running response-file compiles or `dotnet` rebuilds was rejected because it violates the active user instruction.
 Scalability potential: Static lane proof improved without adding registries, buffers, proxies, or render-path work.
+Hardware Impact: Verification only. Core graph summary still reports `CoreAsmdefDebtReferenceCount=25` and `GeneratedProjectDebtReferenceCount=10`, both project-level debts outside this outpost edit.
+
+Current Source Correction: Loop 32 re-audit shows the producer edits described above are not present in the current working tree. Treat this section as historical rationale, not current implementation proof.
+
+## LOOP 32 WFC POWER TOPOLOGY EXIT-MASK GATE
+
+Problem: The WFC generator writes planar adjacency masks into each packed cell, but `WfcOutpostGraphTranslationJob` ignored those masks and connected every adjacent solid power module. That allowed the logistics graph to move power through sealed walls. The same method connected stacked floors by position alone, allowing power through floor slabs without a hatch bridge.
+Solution: Split edge construction into horizontal and vertical gates. Horizontal edges now require reciprocal exit bits (`East/West`, `North/South`) before writing a bidirectional power edge. Vertical edges now require at least one endpoint to be a hatch. Edge insertion is centralized through `AddBidirectionalEdge` to keep the directed-edge count and graph writes consistent.
+Rejected Alternatives: Physics or collider probing was rejected because logistics flow is authored graph truth, not runtime physical simulation. Leaving all adjacent cells connected was rejected because it contradicts the packed WFC exit-mask contract. Requiring a new vertical bit was rejected because it expands the binary cell contract and would require generator/save migration outside this loop.
+Scalability potential: Low devices evaluate fewer false power edges and avoid misleading door-power unlocks across walls. Middle/High/Ultra keep the same SOA graph path and can spend saved graph work on richer outpost visual feedback; no GameObjects, components, polling, or material mutations are added.
+Hardware Impact: Cold Burst translation only: three candidate directions still checked per cell, with cheap byte-mask tests before edge writes. Estimated below 0.1 us for the 500-cell WFC outpost on i3/MX350, with fewer downstream logistics edges in wall-separated layouts. Steady Tick/Render remains 0 B/frame.
+
+Problem: The active instruction still forbids dotnet rebuilds, so runtime compile/profiler proof cannot be claimed.
+Solution: Verification stayed source-only: targeted translator scan, `git diff --check`, and `HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`.
+Rejected Alternatives: Running response-file compiles or `dotnet` rebuilds was rejected because it violates the active user instruction.
+Scalability potential: Static topology proof improved without changing WFC cell layout, save payloads, graph capacity, or render path.
+Hardware Impact: Verification only. Core graph summary still reports `CoreAsmdefDebtReferenceCount=25` and `GeneratedProjectDebtReferenceCount=10`, both project-level debts outside this outpost edit.
+
+Problem: Current source no longer matches the Loop 31 direct-producer claim. The WFC producer files were observed reverting to `GlobalSignals.Publish(in signal)` during Loop 32, likely due concurrent workspace activity.
+Solution: Treat Loop 31 as historical log evidence only and record current-source reality in this loop. No current-source direct producer claim is made for `SealedDoor`, `MessageTerminal`, `AudioLogPickup`, or `WfcOutpostPowerBootRuntime`.
+Rejected Alternatives: Staging against the concurrent overwrite loop or claiming the source was direct-lane clean was rejected. That would corrupt other agents' staging state and create false evidence.
+Scalability potential: No runtime change from this correction; it prevents integrator decisions from being based on stale source claims.
+Hardware Impact: Documentation/evidence correction only.
+
+## LOOP 33 WFC GRAPH NATIVE BUFFER GATE
+
+Problem: `WfcOutpostGraphTranslationJob` is a public Burst job struct with native containers assigned by the caller. It cleared outputs and later wrote fixed `Counts` slots assuming every output container was valid and that the count buffer had all expected slots. Current boot code passes correct buffers, but the job boundary itself had no fail-closed proof.
+Solution: Add `HasValidOutputBuffers()` and `WfcOutpostGraphFaultFlags.InvalidBuffers`. The job now verifies `Cells`, `Nodes`, `CellToNode`, `Counts`, and `PowerEdges` are created and that `Counts.Length >= WfcOutpostGraphCountSlots.Count` before output clearing or topology work. Normal count outputs now go through `WriteCount`.
+Rejected Alternatives: Trusting the current caller was rejected because public job structs are cross-boundary native surfaces. Throwing from Burst was rejected; the existing graph fault channel is the deterministic failure path. Allocating fallback buffers was rejected because native ownership belongs to the boot runtime.
+Scalability potential: Low devices avoid undefined native writes if a future caller regresses the buffer contract. Middle/High/Ultra keep identical valid graph output and can spend saved fault-isolation time on richer outpost presentation; no extra buffers, GameObjects, polling, or render work are added.
+Hardware Impact: Cold translation preflight only: five `IsCreated` checks and one length check, plus four bounded count writes. Estimated below 0.1 us per WFC graph translation on i3/MX350. Steady Tick/Render remains 0 B/frame.
+
+Problem: Final source reread found the buffer gate was initially placed after `ClearOutputs()`. That still left `CellToNode.Length` and `Counts.Length` touched before the invalid-buffer branch.
+Solution: Move `HasValidOutputBuffers()` to the first executable statement in `Execute()`. `WriteFault` remains guarded by `Counts.IsCreated` and the fault-slot length check, so a valid fault buffer can still receive `InvalidBuffers` without touching other invalid containers.
+Rejected Alternatives: Keeping the gate after clearing was rejected because it is weaker evidence at the native boundary. Clearing only whichever buffers are valid was rejected because partial clear semantics can hide ownership errors.
+Scalability potential: Low devices avoid safety exceptions or undefined native container reads on bad future callers. Middle/High/Ultra keep identical valid graph output; no new buffers or render work are introduced.
+Hardware Impact: Same cold preflight cost as above. Moving the branch earlier has no steady-frame cost.
+
+Problem: The active instruction still forbids dotnet rebuilds, so runtime compile/profiler proof cannot be claimed.
+Solution: Verification stayed source-only: targeted translator/contract scan, `git diff --check`, and `HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`.
+Rejected Alternatives: Running response-file compiles or `dotnet` rebuilds was rejected because it violates the active user instruction.
+Scalability potential: Static native-boundary proof improved without changing graph capacity, signal lanes, save payloads, or render path.
 Hardware Impact: Verification only. Core graph summary still reports `CoreAsmdefDebtReferenceCount=25` and `GeneratedProjectDebtReferenceCount=10`, both project-level debts outside this outpost edit.

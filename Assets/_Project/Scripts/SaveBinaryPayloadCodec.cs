@@ -1423,7 +1423,7 @@ namespace Hecton8.SaveSystem
         private static bool ReadLegacyUInt32ArrayAsUInt64(
             ref BufferReader reader,
             out ulong[] value,
-            int maxCount = int.MaxValue)
+            int maxCount)
         {
             value = null;
             if (!reader.ReadStructArrayBounded(out uint[] legacyValues, maxCount, "Legacy uint array"))
@@ -1448,7 +1448,7 @@ namespace Hecton8.SaveSystem
         private static bool ReadLegacyUInt32ArrayAsByte(
             ref BufferReader reader,
             out byte[] value,
-            int maxCount = int.MaxValue)
+            int maxCount)
         {
             value = null;
             if (!reader.ReadStructArrayBounded(out uint[] legacyValues, maxCount, "Legacy uint array"))
@@ -1473,7 +1473,7 @@ namespace Hecton8.SaveSystem
         private static bool ReadLegacyUInt64ArrayAsByte(
             ref BufferReader reader,
             out byte[] value,
-            int maxCount = int.MaxValue)
+            int maxCount)
         {
             value = null;
             if (!reader.ReadStructArrayBounded(out ulong[] legacyValues, maxCount, "Legacy ulong array"))
@@ -3313,11 +3313,6 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static bool WriteStringList(ref BufferWriter writer, List<string> values)
-        {
-            return WriteStringList(ref writer, values, int.MaxValue);
-        }
-
         private static bool WriteStringList(ref BufferWriter writer, List<string> values, int maxCount)
         {
             int count = ClampListCount(values, maxCount);
@@ -3334,11 +3329,6 @@ namespace Hecton8.SaveSystem
             }
 
             return true;
-        }
-
-        private static bool ReadStringList(ref BufferReader reader, out List<string> values)
-        {
-            return ReadStringList(ref reader, out values, int.MaxValue, "String list");
         }
 
         private static bool ReadStringList(
@@ -3369,11 +3359,6 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static bool WriteFloatList(ref BufferWriter writer, List<float> values)
-        {
-            return WriteFloatList(ref writer, values, int.MaxValue);
-        }
-
         private static bool WriteFloatList(ref BufferWriter writer, List<float> values, int maxCount)
         {
             int count = ClampListCount(values, maxCount);
@@ -3390,11 +3375,6 @@ namespace Hecton8.SaveSystem
             }
 
             return true;
-        }
-
-        private static bool ReadFloatList(ref BufferReader reader, out List<float> values)
-        {
-            return ReadFloatList(ref reader, out values, int.MaxValue, "Float list");
         }
 
         private static bool ReadFloatList(
@@ -3425,11 +3405,6 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static bool WriteStringFloatDictionary(ref BufferWriter writer, Dictionary<string, float> values)
-        {
-            return WriteStringFloatDictionary(ref writer, values, int.MaxValue);
-        }
-
         private static bool WriteStringFloatDictionary(
             ref BufferWriter writer,
             Dictionary<string, float> values,
@@ -3455,11 +3430,6 @@ namespace Hecton8.SaveSystem
 
             enumerator.Dispose();
             return true;
-        }
-
-        private static bool ReadStringFloatDictionary(ref BufferReader reader, out Dictionary<string, float> values)
-        {
-            return ReadStringFloatDictionary(ref reader, out values, int.MaxValue, "String-float dictionary");
         }
 
         private static bool ReadStringFloatDictionary(
@@ -3490,11 +3460,6 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static bool WriteStringBoolDictionary(ref BufferWriter writer, Dictionary<string, bool> values)
-        {
-            return WriteStringBoolDictionary(ref writer, values, int.MaxValue);
-        }
-
         private static bool WriteStringBoolDictionary(
             ref BufferWriter writer,
             Dictionary<string, bool> values,
@@ -3520,11 +3485,6 @@ namespace Hecton8.SaveSystem
 
             enumerator.Dispose();
             return true;
-        }
-
-        private static bool ReadStringBoolDictionary(ref BufferReader reader, out Dictionary<string, bool> values)
-        {
-            return ReadStringBoolDictionary(ref reader, out values, int.MaxValue, "String-bool dictionary");
         }
 
         private static bool ReadStringBoolDictionary(
@@ -3555,11 +3515,6 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static bool WriteStringStringDictionary(ref BufferWriter writer, Dictionary<string, string> values)
-        {
-            return WriteStringStringDictionary(ref writer, values, int.MaxValue);
-        }
-
         private static bool WriteStringStringDictionary(
             ref BufferWriter writer,
             Dictionary<string, string> values,
@@ -3585,11 +3540,6 @@ namespace Hecton8.SaveSystem
 
             enumerator.Dispose();
             return true;
-        }
-
-        private static bool ReadStringStringDictionary(ref BufferReader reader, out Dictionary<string, string> values)
-        {
-            return ReadStringStringDictionary(ref reader, out values, int.MaxValue, "String-string dictionary");
         }
 
         private static bool ReadStringStringDictionary(
@@ -3620,11 +3570,6 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static bool WriteIntHashSet(ref BufferWriter writer, HashSet<int> values)
-        {
-            return WriteIntHashSet(ref writer, values, int.MaxValue);
-        }
-
         private static bool WriteIntHashSet(ref BufferWriter writer, HashSet<int> values, int maxCount)
         {
             int count = ClampHashSetCount(values, maxCount);
@@ -3646,11 +3591,6 @@ namespace Hecton8.SaveSystem
 
             enumerator.Dispose();
             return true;
-        }
-
-        private static bool ReadIntHashSet(ref BufferReader reader, out HashSet<int> values)
-        {
-            return ReadIntHashSet(ref reader, out values, int.MaxValue, "Int hash set");
         }
 
         private static bool ReadIntHashSet(
@@ -3681,12 +3621,6 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static bool WriteCustomArray<T>(ref BufferWriter writer, T[] values, WriteItemDelegate<T> writeItem)
-        {
-            int count = values != null ? values.Length : NullCollectionCount;
-            return WriteCustomArraySlice(ref writer, values, count, values != null ? values.Length : 0, writeItem);
-        }
-
         private static bool WriteCustomArraySlice<T>(
             ref BufferWriter writer,
             T[] values,
@@ -3708,20 +3642,6 @@ namespace Hecton8.SaveSystem
             }
 
             return true;
-        }
-
-        private static bool ReadCustomArray<T>(
-            ref BufferReader reader,
-            out T[] values,
-            ReadItemDelegate<T> readItem,
-            int minimumBytesPerElement)
-        {
-            return ReadCustomArray(
-                ref reader,
-                out values,
-                readItem,
-                minimumBytesPerElement,
-                int.MaxValue);
         }
 
         private static bool ReadCustomArray<T>(

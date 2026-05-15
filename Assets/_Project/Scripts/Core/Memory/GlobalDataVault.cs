@@ -292,8 +292,8 @@ namespace Hecton8.Core.Memory
         private const byte DefragFlagFault = 1 << 4;
         private const byte DefragFlagUnaligned = 1 << 6;
         private const int DefragBlackBoxFrameCount = 300;
-        private const string DefragDumpPath = "Docs/AgentLogs/Dump_VAULT_MEMORY_RELOCATOR.bin";
-        private const string PhiVodDumpPath = "Docs/AgentLogs/Dump_PHI_VOD.bin";
+        private const string DefragDumpPath = "Docs/AgentLogs/Dump_PLATINUM_DATA_VAULT_WARDEN.bin";
+        private const string PhiVodDumpPath = "Docs/AgentLogs/Dump_PLATINUM_DATA_VAULT_WARDEN_PHIVOD.bin";
 
         private UnsafeHashMap<int, IntPtr> _buffers;
         private UnsafeHashMap<int, VaultBufferMeta> _metadata;
@@ -833,12 +833,24 @@ namespace Hecton8.Core.Memory
         /// <inheritdoc />
         public void FrostTickDefrag(float elapsedSeconds, float systemStress01)
         {
-            if (!_initialized || _arenaBase == null || elapsedSeconds < 0f)
+            if (!_initialized || _arenaBase == null)
                 return;
 
-            _ = systemStress01;
             uint sequence = ++_defragTickSequence;
             ResetDefragTelemetry();
+            if (elapsedSeconds < 0f ||
+                float.IsNaN(elapsedSeconds) ||
+                float.IsInfinity(elapsedSeconds) ||
+                float.IsNaN(systemStress01) ||
+                float.IsInfinity(systemStress01))
+            {
+                LastDefragFlags |= DefragFlagFault;
+                RecordDefragBlackBox(sequence);
+                DumpDefragBlackBox();
+                return;
+            }
+
+            _ = systemStress01;
             AnalyzeGaps();
             if (!ValidateDefragTelemetry() || !ValidateBlockMap())
             {

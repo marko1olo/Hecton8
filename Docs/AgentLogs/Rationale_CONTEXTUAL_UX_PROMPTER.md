@@ -270,3 +270,10 @@ Solution: Require `isActiveAndEnabled` for authored and player cameras, clear in
 Rejected Alternatives: Trusting serialized camera state, using `Camera.main`, or drawing with a null/current fallback. Serialized cameras can be disabled at runtime; `Camera.main` is a scene search; drawing against an arbitrary current camera duplicates or misorients prompts.
 Scalability potential: Low avoids duplicate or invalid submissions on weak devices. Middle/High/Ultra keep deterministic camera ownership for richer prompt materials and glyph effects.
 Hardware Impact: Expected gain is mostly correctness and avoiding invalid draw attempts; worst-case auxiliary camera passes skip earlier. No profiler proof.
+
+## Decision 38: Tooltip Scheme Read Gating
+Problem: `LateFrameTick()` resolved the current input scheme every tooltip tick even when no signal prompt was visible or when diagnostics were masking the signal prompt and no binding icon could use the result.
+Solution: Gate scheme refresh to active non-diagnostic signal prompts, and make layout rebuilds refresh the scheme once before resolving the binding icon.
+Rejected Alternatives: Keeping unconditional scheme reads, moving scheme reads into render, or freezing the scheme until prompt changes. Unconditional reads waste idle frames; render-time reads couple input to draw submission; frozen schemes miss live device swaps while hovering.
+Scalability potential: Low avoids input-service reads during idle tooltip frames. Middle/High/Ultra keep dynamic glyph swaps for richer prompt materials while paying only when a prompt can display them.
+Hardware Impact: Expected gain is sub-microsecond per idle tooltip late frame on i3/MX350; no profiler proof.

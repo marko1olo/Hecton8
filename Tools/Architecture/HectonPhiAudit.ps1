@@ -2252,6 +2252,7 @@ $primaryJobCompleteRisk = [int](@($runtimeFileRows |
     Measure-Object -Property PrimaryJobCompleteRisk -Sum).Sum)
 
 Assert-AupPrecisionBudget $runtimeCounters $runtimeFileRows
+Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'UnityUpdateMethods' $MaxUnityUpdateMethods 'Unity update-method runtime debt'
 Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'FindObjectCalls' $MaxFindObjectCalls 'FindObject runtime lookup'
 Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'EventPublish' $MaxLegacyEventPublish 'Legacy event publish'
 Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'GlobalRegistrySurface' $MaxGlobalRegistrySurface 'GlobalRegistry surface'
@@ -2269,7 +2270,7 @@ Assert-StaticScoreFloor $runtimeScores 'HPhiStaticRisk' $MinRuntimeHPhiRisk 'Run
 $result = [ordered]@{
     Timestamp = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss zzz')
     Scope = 'Assets/_Project/Scripts'
-    MetricModel = 'Runtime H-Phi excludes Scripts/Editor from runtime debt counters; Data Sovereignty counts DataVault access surface including IDataVault, VaultBufferHandle, GetBuffer, TryGetBuffer, and GlobalDataVault; risk-adjusted score includes AUP precision integrity from qualified legacy bridge and double-safe AUP patterns; AllSourceCounts is retained for hygiene tracking.'
+    MetricModel = 'Runtime H-Phi excludes Scripts/Editor from runtime debt counters; UnityUpdateMethods excludes the Core/SystemDispatcher.cs Unity shell and reports it separately as UnityLoopShellMethods/UnityUpdateMethodsRaw; Data Sovereignty counts DataVault access surface including IDataVault, VaultBufferHandle, GetBuffer, TryGetBuffer, and GlobalDataVault; risk-adjusted score includes AUP precision integrity from qualified legacy bridge and double-safe AUP patterns; AllSourceCounts is retained for hygiene tracking.'
     CoreGraphAudit = $coreGraphAudit
     DuplicateSignalNameAudit = $duplicateSignalNameAudit
     Counts = $runtimeCounters
@@ -2309,6 +2310,13 @@ $result = [ordered]@{
             Max = $MaxDuplicateSignalNames
             Actual = [int]$duplicateSignalNameAudit.DuplicateSignalNameCount
             Passed = $MaxDuplicateSignalNames -lt 0 -or [int]$duplicateSignalNameAudit.DuplicateSignalNameCount -le $MaxDuplicateSignalNames
+            EvidenceClass = 'STATIC_SOURCE_FULL_SCAN'
+        }
+        UnityUpdateMethods = [ordered]@{
+            Enabled = $MaxUnityUpdateMethods -ge 0
+            Max = $MaxUnityUpdateMethods
+            Actual = [int]$runtimeCounters.UnityUpdateMethods
+            Passed = $MaxUnityUpdateMethods -lt 0 -or [int]$runtimeCounters.UnityUpdateMethods -le $MaxUnityUpdateMethods
             EvidenceClass = 'STATIC_SOURCE_FULL_SCAN'
         }
         GlobalRegistrySurface = [ordered]@{

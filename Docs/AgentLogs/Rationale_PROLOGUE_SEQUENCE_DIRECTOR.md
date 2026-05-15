@@ -468,3 +468,35 @@ Solution: Sample `GlobalRegistry.H8_LOW_MEMORY_PROFILE` inside the scalability e
 Rejected Alternatives: Treat scalability events as tier-only, or poll registry every audio frame. Tier-only leaves a stale policy edge; per-frame polling wastes hot-path budget for a cold policy transition.
 Scalability potential: Low/MX350 and emergency low-memory paths keep proxy DSP flags current. Middle/High/Ultra keep granular overkill enabled only when the current policy allows it.
 Hardware Impact: One registry bool read per scalability event, 0 us steady-state per frame. Verification static only; no rebuild.
+
+## Decision 57 - VFX Disable Global-State Reset
+
+Problem: `OrbitalDropReentryVfxController.OnDisable()` cleared heat and opacity but could leave the global re-entry phase and ambient blend at hydrated/ocean values. In non-reload transitions, later scenes or re-enabled components could inherit stale presentation state.
+Solution: Reuse `ResetTransientState()` on disable, force `_lastAppliedAmbientBlend` dirty, apply the configured space ambient baseline, and publish idle shader globals.
+Rejected Alternatives: Keep clearing only heat/opacity, or wait for next enable. Heat/opacity alone leaves stale phase; next enable does not protect other systems reading globals before re-enable.
+Scalability potential: Low/MX350 avoids stale whiteout/ocean ambient after cheap-device scene churn. Middle/High/Ultra keep expensive plasma/ocean visuals scoped to active prologue lifecycle.
+Hardware Impact: Disable-only scalar reset and one forced ambient/shader publish, 0 us steady-state. Verification static only; no rebuild.
+
+## Decision 58 - Audio Transition Timestamp and Finite-State Guard
+
+Problem: `PrologueAcousticOrchestrator` still stamped transition packets with raw Unity unscaled time and trusted cached velocity/heat state once upstream signal validation had run. A corrupted private state edge could therefore reach the DSP queue and depend on the downstream audio sanitizer to recover.
+Solution: Sanitize cached velocity/heat at the producer, mark `AudioTransitionState.FlagNonFiniteGuard` if local cached state was contaminated, and resolve `AbsoluteTimeSeconds` from cached `ITickDispatcher.TimeSnapshot.UnscaledTime` with finite fallback to `SystemDispatcher.CurrentUnscaledTimeSeconds` and Unity time only as the last resort.
+Rejected Alternatives: Rely on `PlayerCriticalProceduralAudioRenderer.SanitizePrologueAudioTransition()`, or leave raw `Time.unscaledTimeAsDouble` in the producer. Downstream sanitizing is a second wall, not a producer contract; raw Unity time diverges from the dispatcher-owned project time source.
+Scalability potential: Low/MX350 gets cheap, finite DSP control packets under scene churn or corrupted tooling state. Middle/High/Ultra preserve granular stress, splashdown gain, and portal blend overkill while keeping the audio lane deterministic.
+Hardware Impact: One dispatcher snapshot read and scalar finite checks per prologue audio publish, below 1 us. Avoids invalid DSP queue churn and makes non-finite incidents visible through the existing transition flag. Verification static only; no rebuild.
+
+## Decision 59 - VFX Dispatcher Hot-Swap Discipline
+
+Problem: `OrbitalDropReentryVfxController` cached `ITickDispatcher` for presentation delta time, but only refreshed it when the cached pointer was null. A dispatcher rebind could leave plasma/whiteout integration tied to a stale clock until the component disabled and re-enabled.
+Solution: Implement `IGlobalRegistryHotSwapListener`, register while enabled, unregister on disable, and update `_tickDispatcher` when `GlobalRegistryServiceSlot.Dispatcher` is replaced.
+Rejected Alternatives: Poll `GlobalRegistry.TickDispatcher` every late-frame, or rely on scene lifecycle to refresh the pointer. Per-frame polling spends budget on a cold dependency edge; lifecycle-only refresh misses runtime rebinds during bootstrap/scalability transitions.
+Scalability potential: Low/MX350 keeps cheap whiteout and ambient fades synchronized after dispatcher replacement. Middle/High/Ultra preserve richer plasma/splash presentation on the same authoritative clock without extra hot-path registry traffic.
+Hardware Impact: One cold hot-swap listener registration, one unregister on disable, and one pointer write when the dispatcher actually changes. Steady-state frame cost is 0 us. Verification static only; no rebuild.
+
+## Decision 60 - Audio Disable Neutralization
+
+Problem: `PrologueAcousticOrchestrator.OnDisable()` unregistered from tick/hot-swap lanes and cleared cached services without telling the DSP renderer to exit an active prologue filter state. If the component disabled during plasma, whiteout, or portal sweep, the last closed/transition packet could persist until another audio producer changed it.
+Solution: Before clearing service references, queue one neutral `AudioTransitionState` with open low-pass, zero heat, zero LFE/granular/splash, no portal blend, and dispatcher-resolved absolute time. The helper only runs when local state indicates an active or previously published prologue transition.
+Rejected Alternatives: Depend on audio renderer reset lifecycle, or queue neutral every disable. Renderer reset may not run on prologue component teardown; unconditional neutral packets waste SPSC capacity on untouched components.
+Scalability potential: Low/MX350 avoids stale muffling or plasma stress after scene churn. Middle/High/Ultra keep expensive splash/portal DSP overkill scoped to active prologue ownership.
+Hardware Impact: One disable-only SPSC enqueue when needed, 0 us steady-state. Prevents stale audio state without per-frame polling or extra audio renderer coupling. Verification static only; no rebuild.

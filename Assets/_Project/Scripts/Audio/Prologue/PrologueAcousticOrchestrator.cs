@@ -107,6 +107,7 @@ namespace Hecton8.Audio.Prologue
                 _hotSwapRegistered = false;
             }
 
+            PublishNeutralTransitionOnDisable();
             _audioService = null;
             _tickDispatcher = null;
         }
@@ -208,7 +209,7 @@ namespace Hecton8.Audio.Prologue
                     continue;
 
                 _prologueArmed = true;
-                _velocityMetersPerSecond = math.max(0f, signal.UniverseVelocityMetersPerSecond);
+                _velocityMetersPerSecond = NonNegativeFiniteOrZero(signal.UniverseVelocityMetersPerSecond);
                 _heat01 = ResolveHeat01(in signal);
 
                 if (_stage == AudioTransitionState.StageOceanHandoff)
@@ -318,8 +319,12 @@ namespace Hecton8.Audio.Prologue
             if (audioService == null || !audioService.IsInitialized)
                 return;
 
-            float velocity01 = ResolveVelocity01(_velocityMetersPerSecond);
-            float heat01 = math.saturate(_heat01);
+            bool nonFiniteGuard = !math.isfinite(_velocityMetersPerSecond) ||
+                                  !math.isfinite(_heat01) ||
+                                  !math.isfinite(_currentLowPassCutoffHertz);
+            float velocityMetersPerSecond = NonNegativeFiniteOrZero(_velocityMetersPerSecond);
+            float velocity01 = ResolveVelocity01(velocityMetersPerSecond);
+            float heat01 = SaturateFiniteOrZero(_heat01);
             bool plasmaStage = _stage == AudioTransitionState.StagePlasma || _stage == AudioTransitionState.StageWhiteout;
             bool portalStage = _stage == AudioTransitionState.StageOceanHandoff;
             bool granularEnabled = plasmaStage && !_lowTier;
@@ -333,6 +338,8 @@ namespace Hecton8.Audio.Prologue
                 flags |= AudioTransitionState.FlagGranularEnabled;
             if (plasmaStage && _lowTier)
                 flags |= AudioTransitionState.FlagLowTierProxy;
+            if (nonFiniteGuard)
+                flags |= AudioTransitionState.FlagNonFiniteGuard;
 
             float lowPassCutoffHertz = ClampCutoff(_currentLowPassCutoffHertz);
             float lfeGain = ResolveLfeGain(velocity01, plasmaStage, portalStage);
@@ -345,7 +352,7 @@ namespace Hecton8.Audio.Prologue
 
             var state = new AudioTransitionState
             {
-                UniverseVelocityMetersPerSecond = _velocityMetersPerSecond,
+                UniverseVelocityMetersPerSecond = velocityMetersPerSecond,
                 Heat01 = heat01,
                 LowPassCutoffHz = lowPassCutoffHertz,
                 LfeGain01 = lfeGain,
@@ -358,7 +365,7 @@ namespace Hecton8.Audio.Prologue
                 Stage = _stage,
                 Flags = flags,
                 QualityTier = _qualityTierByte,
-                AbsoluteTimeSeconds = Time.unscaledTimeAsDouble
+                AbsoluteTimeSeconds = ResolveAbsoluteTimeSeconds()
             };
 
             if (!audioService.QueuePrologueAudioTransition(in state))
@@ -373,6 +380,41 @@ namespace Hecton8.Audio.Prologue
             _lastPublishedPortalBlend = portalBlend01;
             _forcePublishTransition = false;
             _splashdownPending = false;
+        }
+
+        private void PublishNeutralTransitionOnDisable()
+        {
+            bool activeTransition = _prologueArmed ||
+                                    _sweepActive ||
+                                    _splashdownPending ||
+                                    _stage != AudioTransitionState.StageSpace ||
+                                    (_lastPublishedStage != 0 && _lastPublishedStage != AudioTransitionState.StageSpace);
+            if (!activeTransition)
+                return;
+
+            IAudioService audioService = _audioService;
+            if (audioService == null || !audioService.IsInitialized)
+                return;
+
+            var state = new AudioTransitionState
+            {
+                UniverseVelocityMetersPerSecond = 0f,
+                Heat01 = 0f,
+                LowPassCutoffHz = ClampCutoff(oceanLowPassCutoffHertz),
+                LfeGain01 = 0f,
+                GranularStress01 = 0f,
+                SplashdownGain01 = 0f,
+                PortalBlend01 = 0f,
+                Frame = unchecked((uint)Time.frameCount),
+                Sequence = ++_transitionSequence,
+                SourceHash = SourceHash,
+                Stage = AudioTransitionState.StageSpace,
+                Flags = 0,
+                QualityTier = _qualityTierByte,
+                AbsoluteTimeSeconds = ResolveAbsoluteTimeSeconds()
+            };
+
+            audioService.QueuePrologueAudioTransition(in state);
         }
 
         private void CacheAudioService(IAudioService audioService)
@@ -425,7 +467,7 @@ namespace Hecton8.Audio.Prologue
         private float ResolveHeat01(in AtmosphericReentrySignal signal)
         {
             if ((signal.Flags & AtmosphericReentrySignal.FlagAuthoritativeHeat) != 0)
-                return math.saturate(signal.Heat01);
+                return SaturateFiniteOrZero(signal.Heat01);
 
             float velocity01 = ResolveVelocity01(signal.UniverseVelocityMetersPerSecond);
             return math.saturate(math.max(signal.Heat01, velocity01));
@@ -434,7 +476,8 @@ namespace Hecton8.Audio.Prologue
         private float ResolveVelocity01(float velocityMetersPerSecond)
         {
             float velocityScale = PositiveFiniteOrMinimum(plasmaFullStressVelocityMetersPerSecond, 1f);
-            return math.saturate(math.max(0f, velocityMetersPerSecond) * math.rcp(velocityScale));
+            float safeVelocity = NonNegativeFiniteOrZero(velocityMetersPerSecond);
+            return math.saturate(safeVelocity * math.rcp(velocityScale));
         }
 
         private static bool IsValidAtmosphericSignal(in AtmosphericReentrySignal signal)
@@ -527,6 +570,24 @@ namespace Hecton8.Audio.Prologue
             return math.isfinite(fallback) && fallback > 0f ? math.min(fallback, MaxPresentationDeltaSeconds) : 0f;
         }
 
+        private double ResolveAbsoluteTimeSeconds()
+        {
+            ITickDispatcher dispatcher = _tickDispatcher;
+            if (dispatcher != null)
+            {
+                double dispatcherTime = dispatcher.TimeSnapshot.UnscaledTime;
+                if (dispatcherTime >= 0d && double.IsFinite(dispatcherTime))
+                    return dispatcherTime;
+            }
+
+            double fallback = SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (fallback >= 0d && double.IsFinite(fallback))
+                return fallback;
+
+            double unityTime = Time.unscaledTimeAsDouble;
+            return unityTime >= 0d && double.IsFinite(unityTime) ? unityTime : 0d;
+        }
+
         private static float PositiveFiniteOrMinimum(float value, float minimum)
         {
             return math.isfinite(value) && value > minimum ? value : minimum;
@@ -535,6 +596,11 @@ namespace Hecton8.Audio.Prologue
         private static float SaturateFiniteOrZero(float value)
         {
             return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        private static float NonNegativeFiniteOrZero(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
         }
 
         private void OnValidate()

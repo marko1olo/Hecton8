@@ -291,3 +291,57 @@ Solution: Count macro flora obstacles through `TryResolveMacroFloraObstacleWorld
 Rejected Alternatives: Zero-filling skipped snapshot entries was rejected because it creates false obstacles at plausible coordinates. Broad voxel navgrid reciprocal rewrites were rejected because this cross-domain touch is justified only at the vegetation-to-voxel route-obstacle interface.
 Scalability potential: Low/MX350 avoids route rebuilds and steering corrections from corrupt obstacle primitives. Middle/High/Ultra can keep richer flora obstacle density without letting invalid vegetation transforms poison portal routing.
 Hardware Impact: Adds a second bounds proof during cold snapshot counting, not per-frame funnel math. Expected gain is fault avoidance and removal of invalid-route recovery churn; exact microseconds remain pending Unity profiler data because dotnet rebuilds are prohibited.
+
+Problem: Macro route record lookup and passability sampling still accepted stale voxel records with non-finite bounds and used raw cell-size division in safe-node/passability/dynamic-obstacle conversion paths.
+Solution: Add `HasValidRecordBounds`, fail closed on non-finite route inputs, use `math.rcp(record.CellSize)` after proof, and convert dynamic obstacle chunk sizing/timing to reciprocal math.
+Rejected Alternatives: `math.max(cellSize, epsilon)` was rejected because it hides corrupt record metadata and fabricates plausible voxel coordinates. Rewriting unrelated portal graph internals was rejected because this pass only owns the route handoff feeding funnel smoothing.
+Scalability potential: Low/MX350 avoids bad nearest-node probes and dynamic obstacle updates from corrupt voxel records. Middle/High/Ultra can keep larger route volumes and obstacle density without invalid record metadata poisoning macro routing.
+Hardware Impact: Removes several scalar float divisions from route sampling/update paths and adds cheap finite checks. Exact microseconds remain pending Unity profiler data because dotnet rebuilds are prohibited.
+
+Problem: Macro portal A* could seed route scratch state from invalid portal centroids/radii, accept non-finite edge costs, and void-reconstruct a partial or cyclic parent chain into the path scratch used before funnel smoothing.
+Solution: Add portal-node finite validation, skip invalid portals at graph rebuild, compute portal centroid with reciprocal math, finite-gate G/F/edge scores, make open-set pop reject non-finite priorities, and make route reconstruction bounded and boolean.
+Rejected Alternatives: Clamping NaN centroids to zero was rejected because it creates fake portals. Leaving reconstruction void was rejected because path scratch is route authority for the funnel feeder. Replacing the list-based macro A* with new native containers was rejected because the existing capped cold scratch lists are already zero-GC and outside the Burst funnel job.
+Scalability potential: Low/MX350 fails closed on corrupt portal records instead of spending steering/funnel work on invalid macro routes. Middle/High/Ultra can keep dense portal graphs and richer obstacle geometry without letting corrupt portal geometry poison route smoothing.
+Hardware Impact: Adds scalar finite checks and removes one centroid division via `math.rcp`; expected gain is invalid-route fault avoidance and fewer downstream corrections. Exact microseconds remain pending Unity profiler data because dotnet rebuilds are prohibited.
+
+Problem: Shared voxel route-record validation still proved positive dimensions but not that the native passability buffer covered the declared `x*y*z` volume, and inverted finite bounds could pass containment math.
+Solution: Extend `HasValidRecordBounds` with a 64-bit expected-cell-count proof against `record.Current.Length` and require finite `record.Max >= record.Origin`.
+Rejected Alternatives: Relying on every caller to re-check flat indices was rejected because route record validity is the shared authority boundary. Clamping inverted bounds was rejected because it fabricates route volume geometry.
+Scalability potential: Low/MX350 rejects corrupt voxel records before nearest-node, portal, and passability probes. Middle/High/Ultra keep larger route volumes without risking stale native length reads.
+Hardware Impact: Adds one 64-bit multiply chain and length compare per record candidate; expected benefit is avoided invalid memory reads and downstream route recovery. Exact microseconds remain pending Unity profiler data because dotnet rebuilds are prohibited.
+
+Problem: Direct passability payload getters could still expose a created native array from a stale voxel record without reusing the shared complete-record proof.
+Solution: Route `TryGetPassabilityPayload(HectonVoxelVolume)` and `TryGetContainingPassabilityPayload` through `HasValidRecordBounds` before exporting passability, dimensions, origin, and cell size.
+Rejected Alternatives: Keeping local `record.Current.IsCreated` checks was rejected because created native memory says nothing about dimensions, bounds ordering, cell size, or complete length. Copying passability into a repaired buffer was rejected because this boundary must stay zero-GC and side-effect-light.
+Scalability potential: Low/MX350 rejects corrupt direct LoS payloads before funnel smoothing spends DDA work. Middle/High/Ultra keep direct native readback only when backing voxel records are complete.
+Hardware Impact: Adds a shared scalar proof before direct payload export; expected benefit is avoided invalid LoS sampling and downstream route repair. Exact microseconds remain pending Unity profiler data because dotnet rebuilds are prohibited.
+
+Problem: Hybrid navigation mode sampling could accept non-finite probe positions, non-finite cached terrain heights, or weakly validated voxel records before selecting cave/open-water route modes.
+Solution: Reject non-finite world positions, accept terrain fallback only when finite, reuse `HasValidRecordBounds`, and finite-check the resolved voxel cell origin before returning cave/solid mode.
+Rejected Alternatives: Falling back to open water on NaN was rejected because it hides corrupt route probes and can route through geometry. Clamping terrain height or cell origin was rejected because it fabricates navigable floor data.
+Scalability potential: Low/MX350 avoids wasted macro route attempts from corrupt probes. Middle/High/Ultra keep hybrid terrain/voxel routing only when the selected mode is backed by finite data.
+Hardware Impact: Adds scalar finite checks before mode selection; expected benefit is avoided failed route scheduling and invalid funnel input. Exact microseconds remain pending Unity profiler data because dotnet rebuilds are prohibited.
+
+Problem: Macro portal route emitters still trusted `_routePathScratch` after solve when writing managed-array and `NativeList` waypoint outputs.
+Solution: Add `CanEmitPortalRoutePath` as a shared zero-GC emit gate that proves non-empty bounded scratch count, output capacity, portal graph index bounds, and portal-node validity before any waypoint write.
+Rejected Alternatives: Duplicating index checks in both emitters was rejected because the two output paths would drift. Trusting `ReconstructRoute` alone was rejected because output emission is the last authority boundary before funnel consumers.
+Scalability potential: Low/MX350 fails closed before writing corrupt macro waypoints. Middle/High/Ultra keep dense portal route output only when the path scratch and graph are coherent, preserving budget for richer route visuals and steering polish.
+Hardware Impact: Adds one bounded linear scratch validation before route output; expected gain is avoided invalid waypoint emission and downstream funnel recovery. Exact microseconds remain pending Unity profiler data because dotnet rebuilds are prohibited.
+
+Problem: Portal rebuild and reconstruction still had weaker local proofs than the shared route-record and portal-node authority.
+Solution: Recheck nearest/fallback records with `HasValidRecordBounds`, require the shared record proof before portal rebuild, validate current graph nodes during matching, validate neighbor-relax indices before graph access, and validate portal graph indices/nodes during reconstruction before adding scratch path entries.
+Rejected Alternatives: Trusting dictionary traversal, `Current.IsCreated`, or the final emit guard alone was rejected because route authority should be proven at every boundary where stale state can enter or persist. Adding new route containers was rejected because the existing capped scratch lists remain allocation-free.
+Scalability potential: Low/MX350 avoids corrupt portal rebuilds and invalid scratch paths before funnel smoothing. Middle/High/Ultra preserve dense portal routing only when record, graph, and scratch state stay coherent.
+Hardware Impact: Adds scalar guards on cold/warm route boundaries; expected gain is avoided route rebuild faults and downstream funnel recovery. Exact microseconds remain pending Unity profiler data because dotnet rebuilds are prohibited.
+
+Problem: Full H-Phi source audit timing was unstable under current repo load, and claiming a domain score from route-boundary edits would be false evidence.
+Solution: Run the fast `-CoreGraphOnly -Summary` audit as static graph evidence and record exact debt counts without claiming score movement from source-only changes.
+Rejected Alternatives: Rerunning the timed-out full JSON audit was rejected because it already exceeded 120 seconds. Claiming H-Phi improvement from local code hardening without the metric completing was rejected as fake reporting.
+Scalability potential: No runtime effect; keeps architecture evidence honest while runtime route hardening improves domain reliability.
+Hardware Impact: None at runtime; audit-only documentation evidence.
+
+Problem: Nav-grid build metadata and chunk-id generation could still accept non-finite origin/cell-size state or use raw scalar division before portal graph identity was established.
+Solution: Add finite/positive build metadata proof, 64-bit expected point-count coverage, SDF patch finite fallback to dirty rebuild, shared record proof for dynamic-update scheduling, and reciprocal chunk coordinate mapping via `math.rcp(chunkSpan)`.
+Rejected Alternatives: Keeping `math.max(cellSize, epsilon)` and raw division in `ComputeChunkId` was rejected because it masks corrupt metadata and still violates the reciprocal math gate. Scheduling dynamic clears from non-finite patch extents was rejected because it can poison portal route updates.
+Scalability potential: Low/MX350 avoids corrupt chunk IDs and failed dynamic obstacle clears before funnel smoothing. Middle/High/Ultra keep larger route volumes and richer obstacle updates only when build metadata is finite and buffer coverage is proven.
+Hardware Impact: Removes three scalar divisions from chunk-id mapping and adds cheap scalar validation at build/update ingress; exact microseconds remain pending Unity profiler data because dotnet rebuilds are prohibited.

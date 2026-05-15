@@ -24,6 +24,12 @@ namespace Hecton8.Logistics.Grid
 
         public void Execute()
         {
+            if (!HasValidOutputBuffers())
+            {
+                WriteFault(WfcOutpostGraphFaultFlags.InvalidBuffers);
+                return;
+            }
+
             ClearOutputs();
 
             int3 dimensions = Descriptor.Dimensions;
@@ -114,10 +120,10 @@ namespace Hecton8.Logistics.Grid
             }
 
             int directedEdges = BuildEdges(cellCount, dimensions);
-            Counts[WfcOutpostGraphCountSlots.NodeCount] = nodeCount;
-            Counts[WfcOutpostGraphCountSlots.DirectedEdgeCount] = directedEdges;
-            Counts[WfcOutpostGraphCountSlots.DoorCount] = doorCount;
-            Counts[WfcOutpostGraphCountSlots.RoomCount] = roomCount;
+            WriteCount(WfcOutpostGraphCountSlots.NodeCount, nodeCount);
+            WriteCount(WfcOutpostGraphCountSlots.DirectedEdgeCount, directedEdges);
+            WriteCount(WfcOutpostGraphCountSlots.DoorCount, doorCount);
+            WriteCount(WfcOutpostGraphCountSlots.RoomCount, roomCount);
             if (GeneratorNodeIndex.IsCreated && GeneratorNodeIndex.Length > 0)
                 GeneratorNodeIndex[0] = generatorNode;
         }
@@ -134,6 +140,16 @@ namespace Hecton8.Logistics.Grid
                 GeneratorNodeIndex[0] = -1;
         }
 
+        private bool HasValidOutputBuffers()
+        {
+            return Cells.IsCreated &&
+                   Nodes.IsCreated &&
+                   CellToNode.IsCreated &&
+                   Counts.IsCreated &&
+                   PowerEdges.IsCreated &&
+                   Counts.Length >= WfcOutpostGraphCountSlots.Count;
+        }
+
         private int BuildEdges(int cellCount, int3 dimensions)
         {
             int directedEdges = 0;
@@ -144,15 +160,16 @@ namespace Hecton8.Logistics.Grid
                     continue;
 
                 int3 cell = Unflatten(cellIndex, dimensions);
-                directedEdges += TryAddEdge(sourceNode, cell.x + 1, cell.y, cell.z, dimensions);
-                directedEdges += TryAddEdge(sourceNode, cell.x, cell.y + 1, cell.z, dimensions);
-                directedEdges += TryAddEdge(sourceNode, cell.x, cell.y, cell.z + 1, dimensions);
+                byte sourcePacked = Cells[cellIndex];
+                directedEdges += TryAddHorizontalEdge(sourceNode, sourcePacked, cell.x + 1, cell.y, cell.z, dimensions, WfcOutpostGridConstants.East, WfcOutpostGridConstants.West);
+                directedEdges += TryAddVerticalEdge(sourceNode, sourcePacked, cell.x, cell.y + 1, cell.z, dimensions);
+                directedEdges += TryAddHorizontalEdge(sourceNode, sourcePacked, cell.x, cell.y, cell.z + 1, dimensions, WfcOutpostGridConstants.North, WfcOutpostGridConstants.South);
             }
 
             return directedEdges;
         }
 
-        private int TryAddEdge(int sourceNode, int x, int y, int z, int3 dimensions)
+        private int TryAddHorizontalEdge(int sourceNode, byte sourcePacked, int x, int y, int z, int3 dimensions, byte sourceExit, byte destinationExit)
         {
             if (x < 0 || y < 0 || z < 0 || x >= dimensions.x || y >= dimensions.y || z >= dimensions.z)
                 return 0;
@@ -165,9 +182,46 @@ namespace Hecton8.Logistics.Grid
             if (destinationNode < 0)
                 return 0;
 
+            byte destinationPacked = Cells[destinationCell];
+            if ((sourcePacked & sourceExit) == 0 || (destinationPacked & destinationExit) == 0)
+                return 0;
+
+            AddBidirectionalEdge(sourceNode, destinationNode);
+            return 2;
+        }
+
+        private int TryAddVerticalEdge(int sourceNode, byte sourcePacked, int x, int y, int z, int3 dimensions)
+        {
+            if (x < 0 || y < 0 || z < 0 || x >= dimensions.x || y >= dimensions.y || z >= dimensions.z)
+                return 0;
+
+            int destinationCell = WfcOutpostGridConstants.Flatten(x, y, z, dimensions);
+            if ((uint)destinationCell >= (uint)CellToNode.Length)
+                return 0;
+
+            int destinationNode = CellToNode[destinationCell];
+            if (destinationNode < 0)
+                return 0;
+
+            if (!IsVerticalBridge(sourcePacked, Cells[destinationCell]))
+                return 0;
+
+            AddBidirectionalEdge(sourceNode, destinationNode);
+            return 2;
+        }
+
+        private void AddBidirectionalEdge(int sourceNode, int destinationNode)
+        {
             PowerEdges.Add(sourceNode, destinationNode);
             PowerEdges.Add(destinationNode, sourceNode);
-            return 2;
+        }
+
+        private static bool IsVerticalBridge(byte sourcePacked, byte destinationPacked)
+        {
+            byte sourceKind = (byte)(sourcePacked & WfcOutpostGridConstants.CellMask);
+            byte destinationKind = (byte)(destinationPacked & WfcOutpostGridConstants.CellMask);
+            return sourceKind == WfcOutpostGridConstants.Hatch ||
+                   destinationKind == WfcOutpostGridConstants.Hatch;
         }
 
         private static int3 Unflatten(int index, int3 dimensions)
@@ -213,6 +267,12 @@ namespace Hecton8.Logistics.Grid
         {
             if (Counts.IsCreated && Counts.Length > WfcOutpostGraphCountSlots.FaultFlags)
                 Counts[WfcOutpostGraphCountSlots.FaultFlags] = Counts[WfcOutpostGraphCountSlots.FaultFlags] | faultFlag;
+        }
+
+        private void WriteCount(int slot, int value)
+        {
+            if (Counts.IsCreated && (uint)slot < (uint)Counts.Length)
+                Counts[slot] = value;
         }
     }
 }

@@ -380,3 +380,35 @@ What was done -> `OnScalabilityChanged()` now samples `GlobalRegistry.H8_LOW_MEM
 Cinematic Cheats used -> Low-tier proxy DSP remains the cheap presentation path; high/ultra granular stress remains reserved for current non-low-memory policy.
 Exact Microseconds saved -> One cold registry bool read per scalability event, 0 us per-frame steady-state. Prevents wrong-tier DSP transition packets after policy changes.
 Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms the current low-memory registry read; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only for the touched working-tree files.
+
+## 2026-05-15 - Loop 52 VFX Disable Global-State Reset Review
+
+What was wrong -> Re-entry VFX disabled by clearing heat/opacity only, leaving global re-entry phase and ambient blend able to remain in hydrated/ocean state.
+What was done -> `OnDisable()` now uses `ResetTransientState()`, forces ambient reapplication to the configured space baseline, and republishes idle shader globals.
+Cinematic Cheats used -> None; this keeps plasma/ocean shader and ambient fakes scoped to the active prologue lifecycle.
+Exact Microseconds saved -> Disable-only scalar reset and forced publish, 0 us steady-state. Prevents stale shader/ambient work leaking into later scenes.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms disable reset, ambient reapply, and idle shader publish; forbidden-pattern scan returned no hits; `git diff --check` exits clean for the scoped files.
+
+## 2026-05-15 - Loop 53 Audio Transition Timestamp and Finite-State Guard Review
+
+What was wrong -> Prologue audio still stamped DSP transition packets with raw Unity time and trusted cached velocity/heat state after upstream validation.
+What was done -> Transition publish now sanitizes cached velocity/heat, sets `FlagNonFiniteGuard` when local state was contaminated, and resolves absolute packet time from dispatcher unscaled time with finite fallbacks.
+Cinematic Cheats used -> Portal/ocean audio remains a deterministic DSP fake. This patch keeps that fake on dispatcher-owned time and finite control data.
+Exact Microseconds saved -> Adds one dispatcher snapshot read and scalar finite checks below 1 us per prologue audio publish. Prevents invalid queue churn and avoids relying on downstream sanitizer as the first defense.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms finite helpers, dispatcher-time stamp, and guard flag; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only for the audio source.
+
+## 2026-05-15 - Loop 54 VFX Dispatcher Hot-Swap Review
+
+What was wrong -> Re-entry VFX cached `ITickDispatcher` but did not refresh it on dispatcher replacement, leaving timing vulnerable to stale-clock integration until component lifecycle reset.
+What was done -> `OrbitalDropReentryVfxController` now implements `IGlobalRegistryHotSwapListener`, registers while enabled, unregisters on disable, and replaces `_tickDispatcher` when the dispatcher slot rebinds.
+Cinematic Cheats used -> Plasma/whiteout timing remains a shader/ambient fake driven by the authoritative clock; no simulation truth added.
+Exact Microseconds saved -> 0 us steady-state. Adds one cold listener registration/unregistration and one pointer write on dispatcher rebind; avoids per-frame registry polling.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms hot-swap registration and dispatcher replacement handling; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only for audio/VFX sources.
+
+## 2026-05-15 - Loop 55 Audio Disable Neutralization Review
+
+What was wrong -> Audio teardown could unregister the prologue producer while the renderer still held the last closed/plasma/portal transition packet.
+What was done -> `OnDisable()` now queues one neutral open-low-pass `AudioTransitionState` before clearing the cached audio service when the orchestrator had active or previously published prologue DSP state.
+Cinematic Cheats used -> The neutral packet shuts down the prologue DSP fake cleanly instead of relying on scene lifecycle to reset audio truth.
+Exact Microseconds saved -> 0 us steady-state. One disable-only SPSC enqueue when needed; prevents stale muffling and granular stress carrying into later presentation.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms neutral disable publish before cache clear; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only for audio/VFX sources.

@@ -46,6 +46,7 @@ namespace Hecton8.VFX.Debris
         private const int TierSwitchConfirmFrames = 120;
         private const int MissingRegistryRefreshStrideFrames = 30;
         private const float MinimumCarveSpawnRadiusMeters = 0.05f;
+        private const string DebrisShaderName = "Hecton8/VFX/CarveDebrisIndirect";
 #if UNITY_EDITOR
         private const string FluidAdvectionComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_FluidAdvection.compute";
 #endif
@@ -146,7 +147,6 @@ namespace Hecton8.VFX.Debris
         private int _nextGlobalSdfRefreshFrame;
         private int _nextMissingRegistryRefreshFrame;
         private int _pendingTierFrames;
-        private int _cachedDrawMeshFrame = -1;
         private int _bufferParity;
         private int _activeMirrorCount;
         private int _blackBoxCursor;
@@ -220,6 +220,7 @@ namespace Hecton8.VFX.Debris
         {
             drawBounds = new Bounds(Vector3.zero, new Vector3(400f, 400f, 400f));
             renderLayer = gameObject.layer;
+            InvalidateDrawMeshCache();
 #if UNITY_EDITOR
             ResolveEditorAssets();
 #endif
@@ -229,6 +230,7 @@ namespace Hecton8.VFX.Debris
         private void OnValidate()
         {
             renderLayer = math.clamp(renderLayer, 0, 31);
+            InvalidateDrawMeshCache();
             ResolveEditorAssets();
         }
 
@@ -678,6 +680,7 @@ namespace Hecton8.VFX.Debris
                 _carveRequests[requestCount] = new CarveDebrisRequest
                 {
                     Center = runtimeCenter,
+                    EjectionAxis = ResolveCarveEjectionAxis(in carveEvent),
                     Radius = radius,
                     ParticlesToInject = particlesPerCarve,
                     InitialSpeed = initialVelocityMetersPerSecond,
@@ -1140,11 +1143,9 @@ namespace Hecton8.VFX.Debris
                 return false;
             }
 
-            int frame = Time.frameCount;
-            if (!ReferenceEquals(mesh, _cachedDrawMesh) || _cachedDrawMeshFrame != frame)
+            if (!ReferenceEquals(mesh, _cachedDrawMesh))
             {
                 _cachedDrawMesh = mesh;
-                _cachedDrawMeshFrame = frame;
                 _cachedDrawIndexCount = mesh.GetIndexCount(0);
                 _cachedDrawIndexStart = mesh.GetIndexStart(0);
                 _cachedDrawBaseVertex = (uint)math.max(0, mesh.GetBaseVertex(0));
@@ -1173,17 +1174,25 @@ namespace Hecton8.VFX.Debris
                 if (_ownedMaterial != null && ReferenceEquals(_ownedMaterialSource, debrisMaterial))
                     return;
 
-                DestroyOwnedMaterial();
-                _ownedMaterial = new Material(debrisMaterial)
+                if (IsSupportedDebrisMaterial(debrisMaterial))
                 {
-                    name = debrisMaterial.name + " Runtime Carve Debris Material"
-                }; // COLD ALLOC: Material[1] - private indirect debris material copy, avoids shared material mutation and MPB geometry path - owner: VFX_SDF_CARVE_DEBRIS
-                _ownedMaterialSource = debrisMaterial;
-                _materialFallbackAttempted = false;
-                return;
-            }
+                    DestroyOwnedMaterial();
+                    _ownedMaterial = new Material(debrisMaterial)
+                    {
+                        name = debrisMaterial.name + " Runtime Carve Debris Material"
+                    }; // COLD ALLOC: Material[1] - private indirect debris material copy, avoids shared material mutation and MPB geometry path - owner: VFX_SDF_CARVE_DEBRIS
+                    _ownedMaterialSource = debrisMaterial;
+                    _materialFallbackAttempted = false;
+                    return;
+                }
 
-            if (_ownedMaterialSource != null)
+                if (_ownedMaterial != null && _ownedMaterialSource == null && _materialFallbackAttempted)
+                    return;
+
+                DestroyOwnedMaterial();
+                _materialFallbackAttempted = false;
+            }
+            else if (_ownedMaterialSource != null)
             {
                 DestroyOwnedMaterial();
                 _materialFallbackAttempted = false;
@@ -1193,7 +1202,7 @@ namespace Hecton8.VFX.Debris
                 return;
 
             _materialFallbackAttempted = true;
-            Shader shader = Shader.Find("Hecton8/VFX/CarveDebrisIndirect");
+            Shader shader = Shader.Find(DebrisShaderName);
             if (shader == null)
                 return;
 
@@ -1201,6 +1210,13 @@ namespace Hecton8.VFX.Debris
             {
                 name = "Hecton Runtime Carve Debris Material"
             }; // COLD ALLOC: Material[1] - fallback first-party indirect debris material - owner: VFX_SDF_CARVE_DEBRIS
+        }
+
+        private static bool IsSupportedDebrisMaterial(Material material)
+        {
+            return material != null &&
+                   material.shader != null &&
+                   string.Equals(material.shader.name, DebrisShaderName, StringComparison.Ordinal);
         }
 
         private Material ResolveMaterial()
@@ -1391,6 +1407,38 @@ namespace Hecton8.VFX.Debris
             return new double3(legacyCoordinate.x, legacyCoordinate.y, legacyCoordinate.z);
         }
 
+        private static float3 ResolveCarveEjectionAxis(in VoxelCarveEvent carveEvent)
+        {
+            float3 impulse = carveEvent.AbsoluteImpulseDirection;
+            float impulseLengthSq = math.lengthsq(impulse);
+            if (math.all(math.isfinite(impulse)) && impulseLengthSq > 0.0001f)
+                return -impulse * math.rsqrt(impulseLengthSq);
+
+            double3 segmentDelta = ResolveCarveHitPointDouble(in carveEvent) - ResolveCarveSegmentEndDouble(in carveEvent);
+            if (math.all(math.isfinite(segmentDelta)))
+            {
+                double segmentLengthSq = math.lengthsq(segmentDelta);
+                if (segmentLengthSq > 0.000001)
+                {
+                    float3 axis = new float3((float)segmentDelta.x, (float)segmentDelta.y, (float)segmentDelta.z);
+                    float axisLengthSq = math.lengthsq(axis);
+                    if (math.all(math.isfinite(axis)) && axisLengthSq > 0.0001f)
+                        return axis * math.rsqrt(axisLengthSq);
+                }
+            }
+
+            return new float3(0f, 1f, 0f);
+        }
+
+        private void InvalidateDrawMeshCache()
+        {
+            _cachedDrawMesh = null;
+            _cachedDrawIndexCount = 0u;
+            _cachedDrawIndexStart = 0u;
+            _cachedDrawBaseVertex = 0u;
+            _cachedDrawMeshValid = false;
+        }
+
         private static uint MixDouble(uint hash, double value)
         {
             long bits = BitConverter.DoubleToInt64Bits(value);
@@ -1499,12 +1547,7 @@ namespace Hecton8.VFX.Debris
             _pendingLowTier = true;
             _sampledLowTier = true;
             _tierCacheInitialized = false;
-            _cachedDrawMesh = null;
-            _cachedDrawMeshFrame = -1;
-            _cachedDrawIndexCount = 0u;
-            _cachedDrawIndexStart = 0u;
-            _cachedDrawBaseVertex = 0u;
-            _cachedDrawMeshValid = false;
+            InvalidateDrawMeshCache();
             _lastAppliedAupShift = default;
             _registryDataVault = null;
             _fluidEngine = null;
@@ -1573,6 +1616,7 @@ namespace Hecton8.VFX.Debris
             mesh.triangles = indices;
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
+            mesh.UploadMeshData(true);
             return mesh;
         }
 
@@ -1658,6 +1702,7 @@ namespace Hecton8.VFX.Debris
                 {
                     CarveDebrisRequest request = Requests[requestIndex];
                     if (!math.all(math.isfinite(request.Center)) ||
+                        !math.all(math.isfinite(request.EjectionAxis)) ||
                         !math.isfinite(request.Radius) ||
                         request.Radius <= 0f ||
                         request.ParticlesToInject <= 0)
@@ -1711,6 +1756,7 @@ namespace Hecton8.VFX.Debris
                 {
                     CarveDebrisRequest request = Requests[requestIndex];
                     if (!math.all(math.isfinite(request.Center)) ||
+                        !math.all(math.isfinite(request.EjectionAxis)) ||
                         !math.isfinite(request.Radius) ||
                         request.Radius <= 0f ||
                         request.ParticlesToInject <= 0)
@@ -1724,6 +1770,9 @@ namespace Hecton8.VFX.Debris
                     float safeRadius = math.max(0.025f, request.Radius);
                     float safeSpeed = math.max(0f, request.InitialSpeed);
                     float safeLife = math.max(0.001f, request.Life);
+                    float3 ejectionAxis = request.EjectionAxis;
+                    float ejectionLengthSq = math.lengthsq(ejectionAxis);
+                    ejectionAxis = ejectionLengthSq > 0.0001f ? ejectionAxis * math.rsqrt(ejectionLengthSq) : new float3(0f, 1f, 0f);
                     for (; writeIndex < writeEnd && injectedForRequest < requested; writeIndex++)
                     {
                         if (Positions[writeIndex].w > 0f)
@@ -1737,11 +1786,15 @@ namespace Hecton8.VFX.Debris
                             random.NextFloat(-0.15f, 1f),
                             random.NextFloat(-1f, 1f));
                         float lengthSq = math.lengthsq(raw);
-                        float3 direction = lengthSq > 0.0001f ? raw * math.rsqrt(lengthSq) : new float3(0f, 1f, 0f);
+                        float3 randomDirection = lengthSq > 0.0001f ? raw * math.rsqrt(lengthSq) : ejectionAxis;
+                        float coneBias = random.NextFloat(0.42f, 0.82f);
+                        float3 biasedDirection = randomDirection * (1f - coneBias) + ejectionAxis * coneBias;
+                        float biasedLengthSq = math.lengthsq(biasedDirection);
+                        float3 direction = biasedLengthSq > 0.0001f ? biasedDirection * math.rsqrt(biasedLengthSq) : ejectionAxis;
                         float radius = safeRadius * random.NextFloat(0.05f, 1f);
                         float speed = safeSpeed * random.NextFloat(0.45f, 1.15f);
                         float3 position = request.Center + direction * radius;
-                        float3 velocity = direction * speed + new float3(0f, safeSpeed * 0.35f, 0f);
+                        float3 velocity = direction * speed + ejectionAxis * (safeSpeed * 0.35f);
                         if (!math.all(math.isfinite(position)) || !math.all(math.isfinite(velocity)))
                         {
                             flags |= (int)InvalidStateFlag;
@@ -1770,6 +1823,7 @@ namespace Hecton8.VFX.Debris
         private struct CarveDebrisRequest
         {
             public float3 Center;
+            public float3 EjectionAxis;
             public float Radius;
             public int ParticlesToInject;
             public float InitialSpeed;

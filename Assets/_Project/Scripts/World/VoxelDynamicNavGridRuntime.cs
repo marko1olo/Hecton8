@@ -746,15 +746,15 @@ namespace Hecton8.World
 
         internal static void QueueLocalizedSdfPatch(HectonVoxelVolume volume, int3 minAbsoluteCell, int3 maxAbsoluteCell, float voxelSize)
         {
-            if (volume == null || voxelSize <= 0f)
+            if (volume == null ||
+                voxelSize <= 0f ||
+                !math.isfinite(voxelSize))
                 return;
 
             EnsureInitialized();
             int volumeInstanceId = GetStableVolumeEntityId(volume);
             if (!_records.TryGetValue(volumeInstanceId, out VolumeRecord record) ||
-                record == null ||
-                !record.Current.IsCreated ||
-                record.CellSize <= 0f)
+                !HasValidRecordBounds(record))
             {
                 QueueDirtyVolume(volume);
                 return;
@@ -764,6 +764,13 @@ namespace Hecton8.World
             float3 maxAup = (new float3(maxAbsoluteCell.x, maxAbsoluteCell.y, maxAbsoluteCell.z) + 1f) * voxelSize;
             float3 centerAup = (minAup + maxAup) * 0.5f;
             float3 extents = math.max((maxAup - minAup) * 0.5f, new float3(voxelSize));
+            if (!math.all(math.isfinite(centerAup)) ||
+                !math.all(math.isfinite(extents)))
+            {
+                QueueDirtyVolume(volume);
+                return;
+            }
+
             Vector3 runtimeCenter = HectonFloatingOrigin.ToRuntimePosition(new Vector3(centerAup.x, centerAup.y, centerAup.z));
             TryEnqueueDynamicObstacleClear(new DynamicObstacleClearRequest
             {
@@ -792,7 +799,11 @@ namespace Hecton8.World
                 pointCount <= 0 ||
                 dimensions.x <= 0 ||
                 dimensions.y <= 0 ||
-                dimensions.z <= 0)
+                dimensions.z <= 0 ||
+                cellSize <= 0f ||
+                !math.isfinite(cellSize) ||
+                !math.all(math.isfinite(origin)) ||
+                !HasCompleteVoxelCellCoverage(dimensions, pointCount))
             {
                 return false;
             }
@@ -1123,14 +1134,12 @@ namespace Hecton8.World
             while (enumerator.MoveNext())
             {
                 VolumeRecord record = enumerator.Current.Value;
-                if (record == null ||
+                if (!HasValidRecordBounds(record) ||
                     record.HasPendingDynamicUpdate ||
-                    !record.Current.IsCreated ||
                     !record.Next.IsCreated ||
                     !record.BaseCurrent.IsCreated ||
                     !record.CurrentDistance.IsCreated ||
-                    !record.NextDistance.IsCreated ||
-                    record.CellSize <= 0f)
+                    !record.NextDistance.IsCreated)
                 {
                     continue;
                 }
@@ -1287,7 +1296,7 @@ namespace Hecton8.World
 
             int volumeInstanceId = GetStableVolumeEntityId(volume);
             if (!_records.TryGetValue(volumeInstanceId, out VolumeRecord record) ||
-                !record.Current.IsCreated)
+                !HasValidRecordBounds(record))
             {
                 return false;
             }
@@ -1328,8 +1337,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            int requiredWaypointCount = _routePathScratch.Count + 2;
-            if (requiredWaypointCount > outputWaypoints.Length)
+            if (!CanEmitPortalRoutePath(outputWaypoints.Length))
                 return false;
 
             outputWaypoints[waypointCount++] = new Vector3(startWorldPosition.x, startWorldPosition.y, startWorldPosition.z);
@@ -1355,8 +1363,7 @@ namespace Hecton8.World
             origin = float3.zero;
             cellSize = 0f;
             if (!TryResolveContainingRecord(worldPosition, out VolumeRecord record) ||
-                record == null ||
-                !record.Current.IsCreated)
+                !HasValidRecordBounds(record))
             {
                 return false;
             }
@@ -1409,7 +1416,8 @@ namespace Hecton8.World
                 }
             }
 
-            if (nearestRecord == null)
+            if (nearestRecord == null ||
+                !HasValidRecordBounds(nearestRecord))
                 return false;
 
             // Prefer containing volumes, otherwise allow nearest-volume binding for edge probes near cave mouths.
@@ -1442,8 +1450,7 @@ namespace Hecton8.World
                     continue;
                 }
 
-                float safeCellSize = math.max(record.CellSize, 0.0001f);
-                float invCellSize = math.rcp(safeCellSize);
+                float invCellSize = math.rcp(record.CellSize);
                 float3 local = (worldPosition - record.Origin) * invCellSize;
                 int3 centerCell = new int3(
                     math.clamp((int)math.floor(local.x), 0, math.max(0, record.Dimensions.x - 1)),
@@ -1486,7 +1493,7 @@ namespace Hecton8.World
                                 }
 
                                 float3 candidatePosition = record.Origin +
-                                                           ((new float3(candidate.x, candidate.y, candidate.z) + 0.5f) * safeCellSize);
+                                                           ((new float3(candidate.x, candidate.y, candidate.z) + 0.5f) * record.CellSize);
                                 float distanceSq = math.lengthsq(candidatePosition - worldPosition);
                                 if (distanceSq >= bestDistanceSq)
                                     continue;
@@ -1521,10 +1528,14 @@ namespace Hecton8.World
         {
             sample = default;
             sample.Mode = HybridNavigationMode.OpenWaterHeightmap;
+            if (!math.all(math.isfinite(worldPosition)))
+                return false;
+
             sample.FloorBoundaryY = worldPosition.y;
             HectonMapMagicVegetationBridge activeBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
             if (activeBridge != null &&
-                activeBridge.TryGetCachedTerrainHeight(worldPosition.x, worldPosition.z, out float terrainHeight))
+                activeBridge.TryGetCachedTerrainHeight(worldPosition.x, worldPosition.z, out float terrainHeight) &&
+                math.isfinite(terrainHeight))
             {
                 sample.TerrainHeight = terrainHeight;
                 sample.FloorBoundaryY = terrainHeight;
@@ -1532,8 +1543,7 @@ namespace Hecton8.World
             }
 
             if (!TryResolveContainingRecord(worldPosition, out VolumeRecord record) ||
-                record == null ||
-                !record.Current.IsCreated)
+                !HasValidRecordBounds(record))
             {
                 return sample.HasTerrainHeight != 0;
             }
@@ -1544,6 +1554,9 @@ namespace Hecton8.World
             sample.Passability = passability;
             sample.CellSize = record.CellSize;
             sample.CellOrigin = record.Origin + (new float3(voxel.x, voxel.y, voxel.z) * record.CellSize);
+            if (!math.all(math.isfinite(sample.CellOrigin)))
+                return false;
+
             sample.FloorBoundaryY = sample.CellOrigin.y;
             sample.Mode = passability == OpenCell
                 ? HybridNavigationMode.CaveVoxel
@@ -1577,8 +1590,7 @@ namespace Hecton8.World
             if (!TrySolvePortalRoute(startRecord, endRecord, startWorldPosition, endWorldPosition))
                 return false;
 
-            int requiredWaypointCount = _routePathScratch.Count + 2;
-            if (outputWaypoints.Capacity < requiredWaypointCount)
+            if (!CanEmitPortalRoutePath(outputWaypoints.Capacity))
                 return false;
 
             outputWaypoints.Clear();
@@ -2469,15 +2481,73 @@ namespace Hecton8.World
 
         private static bool HasValidRecordBounds(VolumeRecord record)
         {
-            return record != null &&
-                   record.Current.IsCreated &&
-                   record.Dimensions.x > 0 &&
-                   record.Dimensions.y > 0 &&
-                   record.Dimensions.z > 0 &&
-                   record.CellSize > 0f &&
-                   math.isfinite(record.CellSize) &&
-                   math.all(math.isfinite(record.Origin)) &&
-                   math.all(math.isfinite(record.Max));
+            if (record == null ||
+                !record.Current.IsCreated ||
+                record.Dimensions.x <= 0 ||
+                record.Dimensions.y <= 0 ||
+                record.Dimensions.z <= 0 ||
+                record.CellSize <= 0f ||
+                !math.isfinite(record.CellSize) ||
+                !math.all(math.isfinite(record.Origin)) ||
+                !math.all(math.isfinite(record.Max)) ||
+                !math.all(record.Max >= record.Origin))
+            {
+                return false;
+            }
+
+            return HasCompleteVoxelCellCoverage(record.Dimensions, record.Current.Length);
+        }
+
+        private static bool HasCompleteVoxelCellCoverage(int3 dimensions, int availableCellCount)
+        {
+            if (availableCellCount <= 0 ||
+                dimensions.x <= 0 ||
+                dimensions.y <= 0 ||
+                dimensions.z <= 0)
+            {
+                return false;
+            }
+
+            long xyCount = (long)dimensions.x * dimensions.y;
+            if (xyCount <= 0L || xyCount > availableCellCount)
+                return false;
+
+            long expectedCellCount = xyCount * dimensions.z;
+            return expectedCellCount > 0L &&
+                   expectedCellCount <= availableCellCount;
+        }
+
+        private static bool IsValidPortalNode(in PortalNode node)
+        {
+            return node.Face < FaceCount &&
+                   node.Radius > 0f &&
+                   math.isfinite(node.Radius) &&
+                   math.all(math.isfinite(node.Centroid));
+        }
+
+        private static bool CanEmitPortalRoutePath(int outputCapacity)
+        {
+            int routeNodeCount = _routePathScratch.Count;
+            if (routeNodeCount <= 0 ||
+                routeNodeCount > MaxPortalGraphNodeCapacity ||
+                outputCapacity < 2 ||
+                routeNodeCount + 2 > outputCapacity)
+            {
+                return false;
+            }
+
+            for (int routeIndex = 0; routeIndex < routeNodeCount; routeIndex++)
+            {
+                int nodeIndex = _routePathScratch[routeIndex];
+                if (nodeIndex < 0 || nodeIndex >= _portalGraphNodes.Count)
+                    return false;
+
+                PortalNode node = _portalGraphNodes[nodeIndex];
+                if (!IsValidPortalNode(in node))
+                    return false;
+            }
+
+            return true;
         }
 
         private static bool ContainsPoint(VolumeRecord record, float3 worldPosition)
@@ -2517,12 +2587,22 @@ namespace Hecton8.World
             while (enumerator.MoveNext() && _portalGraphNodes.Count < MaxPortalGraphNodeCapacity)
             {
                 VolumeRecord record = enumerator.Current.Value;
-                if (record == null || !record.PortalsReady || record.PortalCount <= 0)
+                if (!HasValidRecordBounds(record) ||
+                    !record.PortalsReady ||
+                    record.PortalCount <= 0 ||
+                    record.Portals == null ||
+                    record.Portals.Length <= 0)
+                {
                     continue;
+                }
 
-                for (int portalIndex = 0; portalIndex < record.PortalCount && _portalGraphNodes.Count < MaxPortalGraphNodeCapacity; portalIndex++)
+                int safePortalCount = math.min(record.PortalCount, record.Portals.Length);
+                for (int portalIndex = 0; portalIndex < safePortalCount && _portalGraphNodes.Count < MaxPortalGraphNodeCapacity; portalIndex++)
                 {
                     PortalNode portal = record.Portals[portalIndex];
+                    if (!IsValidPortalNode(in portal))
+                        continue;
+
                     portal.ConnectedPortalIndex = InvalidPortalIndex;
                     record.Portals[portalIndex] = portal;
                     _portalGraphNodes.Add(portal);
@@ -2532,6 +2612,9 @@ namespace Hecton8.World
             for (int portalIndex = 0; portalIndex < _portalGraphNodes.Count; portalIndex++)
             {
                 PortalNode current = _portalGraphNodes[portalIndex];
+                if (!IsValidPortalNode(in current))
+                    continue;
+
                 int bestMatchIndex = InvalidPortalIndex;
                 float bestMatchScore = float.MaxValue;
                 for (int candidateIndex = 0; candidateIndex < _portalGraphNodes.Count; candidateIndex++)
@@ -2540,12 +2623,16 @@ namespace Hecton8.World
                         continue;
 
                     PortalNode candidate = _portalGraphNodes[candidateIndex];
-                    if (candidate.ChunkId == current.ChunkId || !AreOppositeFaces(current.Face, candidate.Face))
+                    if (!IsValidPortalNode(in candidate) ||
+                        candidate.ChunkId == current.ChunkId ||
+                        !AreOppositeFaces(current.Face, candidate.Face))
                         continue;
 
                     float centroidDistanceSq = math.lengthsq(current.Centroid - candidate.Centroid);
                     float maxJoinDistance = math.max(current.Radius + candidate.Radius + BoundsMatchEpsilon, BoundsMatchEpsilon);
-                    if (centroidDistanceSq > maxJoinDistance * maxJoinDistance)
+                    if (!math.isfinite(centroidDistanceSq) ||
+                        !math.isfinite(maxJoinDistance) ||
+                        centroidDistanceSq > maxJoinDistance * maxJoinDistance)
                         continue;
 
                     if (centroidDistanceSq < bestMatchScore)
@@ -2593,7 +2680,8 @@ namespace Hecton8.World
                 }
             }
 
-            return record != null && nearestDistanceSq <= math.max(record.CellSize * record.CellSize, 1f);
+            return HasValidRecordBounds(record) &&
+                   nearestDistanceSq <= math.max(record.CellSize * record.CellSize, 1f);
         }
 
         private static bool TryResolveContainingRecord(float3 worldPosition, out VolumeRecord record)
@@ -2624,7 +2712,7 @@ namespace Hecton8.World
             if (record == null)
                 return;
 
-            if (!record.Current.IsCreated ||
+            if (!HasValidRecordBounds(record) ||
                 record.Dimensions.x <= 1 ||
                 record.Dimensions.y <= 1 ||
                 record.Dimensions.z <= 1)
@@ -2664,7 +2752,7 @@ namespace Hecton8.World
                     }
 
                     PortalNode portal = ExtractFacePortal(record, face, faceIndex, width, height);
-                    if (portal.Radius <= 0f)
+                    if (!IsValidPortalNode(in portal))
                         continue;
 
                     if (record.PortalCount >= record.Portals.Length)
@@ -2713,11 +2801,20 @@ namespace Hecton8.World
 
             float faceSpanU = (maxU - minU + 1) * record.CellSize;
             float faceSpanV = (maxV - minV + 1) * record.CellSize;
+            float3 centroid = sum * math.rcp((float)cellCount);
+            float radius = math.max(record.CellSize * 0.5f, math.max(faceSpanU, faceSpanV) * 0.5f);
+            if (!math.all(math.isfinite(centroid)) ||
+                !math.isfinite(radius) ||
+                radius <= 0f)
+            {
+                return default;
+            }
+
             return new PortalNode
             {
                 ChunkId = record.ChunkId,
-                Centroid = sum / cellCount,
-                Radius = math.max(record.CellSize * 0.5f, math.max(faceSpanU, faceSpanV) * 0.5f),
+                Centroid = centroid,
+                Radius = radius,
                 ConnectedPortalIndex = InvalidPortalIndex,
                 Face = face
             };
@@ -2745,8 +2842,15 @@ namespace Hecton8.World
         private static bool TrySolvePortalRoute(VolumeRecord startRecord, VolumeRecord endRecord, float3 startWorldPosition, float3 endWorldPosition)
         {
             int nodeCount = _portalGraphNodes.Count;
-            if (nodeCount <= 0 || !EnsureRouteNodeCapacity(nodeCount))
+            if (nodeCount <= 0 ||
+                !HasValidRecordBounds(startRecord) ||
+                !HasValidRecordBounds(endRecord) ||
+                !math.all(math.isfinite(startWorldPosition)) ||
+                !math.all(math.isfinite(endWorldPosition)) ||
+                !EnsureRouteNodeCapacity(nodeCount))
+            {
                 return false;
+            }
 
             _routeOpenSetScratch.Clear();
             _routePathScratch.Clear();
@@ -2763,12 +2867,16 @@ namespace Hecton8.World
             for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
             {
                 PortalNode node = _portalGraphNodes[nodeIndex];
-                if (node.ChunkId != startRecord.ChunkId)
+                if (node.ChunkId != startRecord.ChunkId ||
+                    !IsValidPortalNode(in node))
                     continue;
 
                 RouteNodeState state = _routeNodeScratch[nodeIndex];
                 state.GScore = EstimateLength3D(startWorldPosition - node.Centroid);
                 state.FScore = state.GScore + EstimateLength3D(node.Centroid - endWorldPosition);
+                if (!math.isfinite(state.GScore) || !math.isfinite(state.FScore))
+                    continue;
+
                 state.ParentIndex = InvalidPortalIndex;
                 state.Flags = 1;
                 _routeNodeScratch[nodeIndex] = state;
@@ -2781,15 +2889,20 @@ namespace Hecton8.World
             while (_routeOpenSetScratch.Count > 0)
             {
                 int currentNodeIndex = PopLowestCostOpenNode();
+                if (currentNodeIndex < 0 || currentNodeIndex >= _portalGraphNodes.Count)
+                    return false;
+
                 RouteNodeState currentState = _routeNodeScratch[currentNodeIndex];
+                if (!math.isfinite(currentState.GScore))
+                    return false;
+
                 currentState.Flags = 2;
                 _routeNodeScratch[currentNodeIndex] = currentState;
 
                 PortalNode currentNode = _portalGraphNodes[currentNodeIndex];
                 if (currentNode.ChunkId == endRecord.ChunkId)
                 {
-                    ReconstructRoute(currentNodeIndex);
-                    return _routePathScratch.Count > 0;
+                    return ReconstructRoute(currentNodeIndex);
                 }
 
                 RelaxPortalNeighbors(currentNodeIndex, currentState.GScore, endWorldPosition);
@@ -2800,7 +2913,17 @@ namespace Hecton8.World
 
         private static void RelaxPortalNeighbors(int currentNodeIndex, float currentGScore, float3 endWorldPosition)
         {
+            if (currentNodeIndex < 0 ||
+                currentNodeIndex >= _portalGraphNodes.Count ||
+                !math.isfinite(currentGScore))
+            {
+                return;
+            }
+
             PortalNode currentNode = _portalGraphNodes[currentNodeIndex];
+            if (!IsValidPortalNode(in currentNode))
+                return;
+
             if (currentNode.ConnectedPortalIndex >= 0)
                 RelaxPortalEdge(currentNodeIndex, currentNode.ConnectedPortalIndex, currentGScore, endWorldPosition);
 
@@ -2819,17 +2942,39 @@ namespace Hecton8.World
 
         private static void RelaxPortalEdge(int currentNodeIndex, int candidateIndex, float currentGScore, float3 endWorldPosition)
         {
+            if (currentNodeIndex < 0 ||
+                candidateIndex < 0 ||
+                currentNodeIndex >= _portalGraphNodes.Count ||
+                candidateIndex >= _portalGraphNodes.Count ||
+                !math.isfinite(currentGScore))
+            {
+                return;
+            }
+
+            PortalNode currentNode = _portalGraphNodes[currentNodeIndex];
+            PortalNode candidateNode = _portalGraphNodes[candidateIndex];
+            if (!IsValidPortalNode(in currentNode) ||
+                !IsValidPortalNode(in candidateNode))
+            {
+                return;
+            }
+
             RouteNodeState candidateState = _routeNodeScratch[candidateIndex];
             if ((candidateState.Flags & 2) != 0)
                 return;
 
-            float edgeCost = EstimateLength3D(_portalGraphNodes[currentNodeIndex].Centroid - _portalGraphNodes[candidateIndex].Centroid);
+            float edgeCost = EstimateLength3D(currentNode.Centroid - candidateNode.Centroid);
             float tentativeG = currentGScore + edgeCost;
-            if (tentativeG >= candidateState.GScore)
+            if (!math.isfinite(edgeCost) ||
+                !math.isfinite(tentativeG) ||
+                tentativeG >= candidateState.GScore)
                 return;
 
             candidateState.GScore = tentativeG;
-            candidateState.FScore = tentativeG + EstimateLength3D(_portalGraphNodes[candidateIndex].Centroid - endWorldPosition);
+            candidateState.FScore = tentativeG + EstimateLength3D(candidateNode.Centroid - endWorldPosition);
+            if (!math.isfinite(candidateState.FScore))
+                return;
+
             candidateState.ParentIndex = currentNodeIndex;
             if ((candidateState.Flags & 1) == 0)
             {
@@ -2845,17 +2990,26 @@ namespace Hecton8.World
 
         private static int PopLowestCostOpenNode()
         {
-            int bestListIndex = 0;
+            int bestListIndex = InvalidPortalIndex;
             float bestScore = float.MaxValue;
             for (int listIndex = 0; listIndex < _routeOpenSetScratch.Count; listIndex++)
             {
                 int nodeIndex = _routeOpenSetScratch[listIndex];
+                if (nodeIndex < 0 || nodeIndex >= _routeNodeScratch.Count)
+                    continue;
+
                 float score = _routeNodeScratch[nodeIndex].FScore;
-                if (score < bestScore)
+                if (math.isfinite(score) && score < bestScore)
                 {
                     bestScore = score;
                     bestListIndex = listIndex;
                 }
+            }
+
+            if (bestListIndex < 0 || !math.isfinite(bestScore))
+            {
+                _routeOpenSetScratch.Clear();
+                return InvalidPortalIndex;
             }
 
             int selectedNodeIndex = _routeOpenSetScratch[bestListIndex];
@@ -2865,15 +3019,41 @@ namespace Hecton8.World
             return selectedNodeIndex;
         }
 
-        private static void ReconstructRoute(int endNodeIndex)
+        private static bool ReconstructRoute(int endNodeIndex)
         {
             _routePathScratch.Clear();
             int currentIndex = endNodeIndex;
-            while (currentIndex >= 0 && _routePathScratch.Count < _routePathScratch.Capacity)
+            int iterationCount = 0;
+            while (currentIndex >= 0 &&
+                   currentIndex < _routeNodeScratch.Count &&
+                   _routePathScratch.Count < _routePathScratch.Capacity &&
+                   iterationCount < MaxPortalGraphNodeCapacity)
             {
+                if (currentIndex >= _portalGraphNodes.Count)
+                {
+                    _routePathScratch.Clear();
+                    return false;
+                }
+
+                PortalNode node = _portalGraphNodes[currentIndex];
+                if (!IsValidPortalNode(in node))
+                {
+                    _routePathScratch.Clear();
+                    return false;
+                }
+
                 _routePathScratch.Add(currentIndex);
                 currentIndex = _routeNodeScratch[currentIndex].ParentIndex;
+                iterationCount++;
             }
+
+            if (currentIndex >= 0 || _routePathScratch.Count <= 0)
+            {
+                _routePathScratch.Clear();
+                return false;
+            }
+
+            return true;
         }
 
         private static bool IsFaceCellOpen(VolumeRecord record, byte face, int faceIndex, int width)
@@ -2960,11 +3140,24 @@ namespace Hecton8.World
 
         private static uint ComputeChunkId(float3 origin, float cellSize, int3 dimensions)
         {
-            float safeCellSize = math.max(cellSize, 0.001f);
-            float chunkSpan = safeCellSize * math.max(1, math.max(dimensions.x - 1, math.max(dimensions.y - 1, dimensions.z - 1)));
-            int chunkX = math.clamp((int)math.floor(origin.x / chunkSpan) + ChunkIdAxisBias, 0, 1023);
-            int chunkY = math.clamp((int)math.floor(origin.y / chunkSpan) + ChunkIdAxisBias, 0, 1023);
-            int chunkZ = math.clamp((int)math.floor(origin.z / chunkSpan) + ChunkIdAxisBias, 0, 1023);
+            if (!math.all(math.isfinite(origin)) ||
+                cellSize <= 0f ||
+                !math.isfinite(cellSize) ||
+                dimensions.x <= 0 ||
+                dimensions.y <= 0 ||
+                dimensions.z <= 0)
+            {
+                return 0u;
+            }
+
+            float chunkSpan = cellSize * math.max(1, math.max(dimensions.x - 1, math.max(dimensions.y - 1, dimensions.z - 1)));
+            if (chunkSpan <= 0f || !math.isfinite(chunkSpan))
+                return 0u;
+
+            float invChunkSpan = math.rcp(chunkSpan);
+            int chunkX = math.clamp((int)math.floor(origin.x * invChunkSpan) + ChunkIdAxisBias, 0, 1023);
+            int chunkY = math.clamp((int)math.floor(origin.y * invChunkSpan) + ChunkIdAxisBias, 0, 1023);
+            int chunkZ = math.clamp((int)math.floor(origin.z * invChunkSpan) + ChunkIdAxisBias, 0, 1023);
             return Part1By2((uint)chunkX) | (Part1By2((uint)chunkY) << 1) | (Part1By2((uint)chunkZ) << 2);
         }
 

@@ -3,7 +3,7 @@
 Agent: CORE_RESONANCE_ORCHESTRATOR
 Domain: SYSTEMS_ARCHITECT / ECHELON 1-9 Resonance Orchestration
 Task Count: 13
-Status: ENGINE RESONATING / COMPILE BLOCKED BY DEPENDENCY
+Status: ENGINE RESONATING / COMPILE BLOCKED BY DEPENDENCY / RUNTIME PENDING VERIFICATION
 Prompt Source: in-chat XML. `Docs/Tasks/CURRENT_BATCH.md` contains no matching prompt block for this agent.
 
 ## Mandates Loaded
@@ -104,3 +104,14 @@ Prompt Source: in-chat XML. `Docs/Tasks/CURRENT_BATCH.md` contains no matching p
 - Cleared cached player/submarine runtime contexts with DataVault and bucketer references on fluid teardown to avoid stale cross-domain pointers after domain reload, scene unload, or duplicate-owner rejection.
 - `git diff --check -- Assets/_Project/Scripts/HectonFluidEngine.cs Assets/_Project/Scripts/SubmarineFluidDynamics.cs` passed; LF/CRLF warning only.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Summary -CoreGraphOnly` completed at `2026-05-15 04:44:02 +04:00` with unchanged core graph debt: source-backed bridge `14`, compile-bridge `8`, project-reference replacement `6`.
+
+### Loop 9 - Submarine Service and Math-LOD Cache Hardening
+
+- Re-read status/rationale after context handoff and stayed inside the already-owned submarine/fluid resonance surface.
+- Confirmed `HectonFluidEngine` scalability policy now reads `GlobalRegistry.ScalabilityTier` and `GlobalRegistry.H8_LOW_MEMORY_PROFILE` only through the per-frame cache helper.
+- Cached `IPowerGridService` in `SubmarineFluidDynamics` behind the same runtime-context pattern as player/submarine/fluid services; teardown now clears those cached service pointers.
+- Replaced flood-state publish-time scalability polling with `ResolveFloodStateMathLod()`, which reads the global tier at most once per frame and returns a cached byte to the signal payload.
+- Rejected `ScalabilityEvents.Register(this)` for submarine fluid because the shared scalability listener lane has fixed capacity and this system only needs a single byte for signal metadata.
+- `git diff --check -- Assets/_Project/Scripts/SubmarineFluidDynamics.cs` passed; LF/CRLF warning only.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary` completed at `2026-05-15 05:25:05 +04:00`: runtime H-Phi risk `0.000597671`, Data Sovereignty `0.021386637`, GlobalRegistry surface `5140`, core graph debt unchanged at source-backed bridge `14`, compile-bridge `8`, project-reference replacement `6`.
+- No `dotnet build`, rebuild, PlayMode profiler, or Unity console verification was run by user constraint.

@@ -551,3 +551,59 @@ Scalability potential: Low/MX350 gets canonical generated family roots only, red
 Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no stale Shallows generated family folder can silently add draw, mesh, material, or VRAM load on i3/MX350. Exact runtime microseconds are not profiled because this is editor validation.
 
 Verification: No dotnet rebuild and no Unity import was run. `FamilySubfolderExactnessScan Bad=0`, with `Count=3` under both Shallows mesh and prefab roots. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs`; source scans found `ValidateFamilySubfolderContracts`, `ValidateFamilySubfolderContract`, `AssetDatabase.GetSubFolders`, and `family subfolder contract failed`; source brace count remained `Delta=0` and `NonAscii=0`; case-sensitive forbidden source scan remained clean.
+
+## Decision 40 - Shared Material Serialized Payload Envelope
+
+Problem: The shared material validator checked shader identity, public material properties, texture bindings, keyword arrays, and custom render queue. It did not lock several raw serialized material fields: parent material inheritance, modified serialized properties, disabled shader passes, build texture stacks, saved property array counts, and raw instancing/GI flags. Those hidden fields can create render-state drift while public getters still return the expected values.
+
+Solution: Add `ValidateMaterialSerializedPayloadContract` under `ValidateMaterialAssetContract`. The validator now requires null `m_Parent`, `m_ModifiedSerializedProperties=false`, `m_LightmapFlags=0`, `m_EnableInstancingVariants=true`, `m_DoubleSidedGI=false`, zero `disabledShaderPasses`, empty `m_LockedProperties`, exact saved property counts (`TexEnvs=4`, `Ints=0`, `Floats=14`, `Colors=4`), zero `m_BuildTextureStacks`, and `m_AllowLocking=true`. Added `SerializedBoolEquals` and `SerializedArraySizeEquals` helpers.
+
+Rejected Alternatives: Relying only on public material getters was rejected because Unity can retain hidden material payload state that is not visible through scalar/texture checks. Runtime material normalization was rejected because Shallows uses one static shared material and the validator must fail closed before assets enter scenes. Rewriting the material asset was rejected because the existing YAML already matches the stricter envelope.
+
+Scalability potential: Low/MX350 keeps one flat shared material with no hidden disabled passes, build texture stacks, or inherited override chain. Middle/High/Ultra can add visual overkill only by changing the material envelope contract and documenting the render-state cost.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no hidden material payload can silently split render state, add disabled pass confusion, or force runtime material repair on i3/MX350. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: No dotnet rebuild and no Unity import was run. `MaterialSerializedPayloadYamlScan TexEnvs=4 Floats=14 Colors=4 Bad=0`. `git diff --check` passed for the touched Shallows files with only repo CRLF warnings. Source scans found `ValidateMaterialSerializedPayloadContract`, `SerializedBoolEquals`, `SerializedArraySizeEquals`, `m_SavedProperties.m_TexEnvs`, `m_BuildTextureStacks`, and `disabledShaderPasses`; source brace count remained `Delta=0` and `NonAscii=0`; case-sensitive forbidden source scan remained clean.
+
+## Decision 41 - Shared Material Saved Property Key Contract
+
+Problem: The serialized material envelope locked saved-property array sizes but not the exact keys in those arrays. A material could retain four texture entries, fourteen float entries, and four color entries while one serialized key was stale, duplicated, or swapped. Public getters can still make the visible contract look correct while stale serialized payload remains in the asset.
+
+Solution: Add fixed cold arrays for the expected serialized texture, float, and color keys, then validate them with `SerializedSavedPropertyKeysEqual`. The contract now requires exact ordered keys in `m_SavedProperties.m_TexEnvs`, `m_SavedProperties.m_Floats`, and `m_SavedProperties.m_Colors`.
+
+Rejected Alternatives: Relying on public getters plus array counts was rejected because it proves visible values and count, not serialized-key identity. Sorting or hash sets were rejected because Unity serializes the current material in stable key order and a direct ordered comparison is cheaper and stricter. Runtime material scrubbing was rejected because Shallows material state must be deterministic before runtime.
+
+Scalability potential: Low/MX350 keeps a single flat material with no stale serialized property payload that could become a render-state or authoring hazard. Middle/High/Ultra can add visual overkill only through explicit property-key contract expansion.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no stale or duplicated saved material property key can silently force runtime repair, material cloning, or shader/property mismatch diagnosis on i3/MX350. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: No dotnet rebuild and no Unity import was run. `MaterialSavedPropertyKeyYamlScan Tex=_AlbedoAtlas,_MatCap,_NormalAtlas,_ORMAtlas Floats=14 Colors=_BaseColor,_EmissionColor,_RootTint,_TipTint Bad=0`. `git diff --check` passed for the touched Shallows files with only repo CRLF warnings. Source scans found `MaterialTexEnvNames`, `MaterialFloatNames`, `MaterialColorNames`, `SerializedSavedPropertyKeysEqual`, and `FindPropertyRelative("first")`; source brace count remained `Delta=0` and `NonAscii=0`; case-sensitive forbidden source scan remained clean.
+
+## Decision 42 - Atlas Streaming And Alpha Importer Contract
+
+Problem: `ValidateAtlasImporter` locked wrap/filter, mipmaps, readability, compression, sRGB, texture type, max size, and Standalone BC format. It did not explicitly lock mip streaming or alpha-transparency import flags. Those flags can change residency behavior or importer semantics while the atlas still appears to satisfy size/compression checks.
+
+Solution: Set and validate `streamingMipmaps=false`, `streamingMipmapsPriority=0`, and `alphaIsTransparency=false` in the Shallows atlas importer path.
+
+Rejected Alternatives: Trusting current `.meta` defaults was rejected because defaults can drift through Unity upgrades or manual importer edits. Runtime texture streaming policy overrides were rejected because this batch owns offline atlas assets, not runtime texture managers. Turning mipmaps off was rejected because LOD flora still benefits from mip filtering; only streaming is rejected for deterministic residency.
+
+Scalability potential: Low/MX350 keeps predictable 1024 atlas residency without hidden streaming churn or alpha-import semantic changes. Middle/High/Ultra can expand atlas tiering only through explicit importer-contract changes and documented VRAM cost.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no hidden streaming mip flag or alpha-transparency import change can cause residency churn, unexpected texture policy, or debugging cost on i3/MX350. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: No dotnet rebuild and no Unity import was run. `AtlasStreamingAlphaMetaScan Count=4 Bad=0`. Project source already uses `alphaIsTransparency`, and the Shallows baker now sets/checks `streamingMipmaps`, `streamingMipmapsPriority`, and `alphaIsTransparency`. `git diff --check` passed for the touched Shallows files with only repo CRLF warnings. Source scans found one setter and one validator check each for `streamingMipmaps`, `streamingMipmapsPriority`, and `alphaIsTransparency`; source brace count remained `Delta=0` and `NonAscii=0`; case-sensitive forbidden source scan remained clean.
+
+## Decision 43 - Atlas Bake Pixel Scratch Reuse
+
+Problem: `CreateOrUpdateAtlas` allocated a fresh `Color32[AtlasSize * AtlasSize]` for every atlas. A full Shallows bake writes four 1024 atlases, so the editor path produced four large transient arrays even though atlas generation is sequential and deterministic.
+
+Solution: Add one documented cold `AtlasPixelScratch` buffer and write all sampled atlas pixels into it before `Texture2D.SetPixels32`. The scratch is reused for Albedo, Normal, ORM, and MatCap bakes.
+
+Rejected Alternatives: Keeping per-atlas arrays was rejected because it creates avoidable large transient editor allocations. `ArrayPool<Color32>` was rejected because the buffer size is fixed, the tool is editor-only, and a single owned scratch buffer has clearer lifetime and zero pool misuse risk. Reducing atlas size was rejected because visual budget and existing 1024 contract remain correct.
+
+Scalability potential: Low/MX350 editor-side bake avoids repeated large allocations and GC pressure while preserving atlas quality. Middle/High/Ultra can increase atlas richness later by changing explicit atlas budgets, not by accepting transient allocation churn.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. Bake-time allocation prevention is approximately three avoided 4 MiB transient arrays per full four-atlas bake after the first cold scratch allocation; exact editor microseconds are not profiled.
+
+Verification: No dotnet rebuild and no Unity import was run. `AtlasPixelScratchSourceScan LocalAlloc=0 ColdAlloc=1 Writes=1 SetPixels=1`. `git diff --check` passed for the touched Shallows files with only repo CRLF warnings. Source brace count remained `Delta=0` and `NonAscii=0`; case-sensitive forbidden source scan remained clean.

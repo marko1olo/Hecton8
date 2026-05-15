@@ -196,3 +196,15 @@ Rejected Alternatives: Re-reading `GlobalRegistry.Fluid` on every cavitation bur
 Scalability potential: Low/Middle avoid stale fluid static routes during scene churn. High/Ultra preserve cached cavitation/static entrypoint behavior while keeping reload and duplicate-owner cleanup deterministic.
 
 Hardware Impact: Runtime cost is 0 in active loops. Teardown adds four reference stores and two identity checks; hot-path benefit is preserving the existing cached static route without stale-owner risk.
+
+## Decision 15 - Submarine Fluid Service and Math-LOD Cache
+
+Problem: `SubmarineFluidDynamics` still resolved `GlobalRegistry.PowerGrid` during deep-freeze supply checks and read `GlobalRegistry.ScalabilityTier` while publishing flood-state math LOD. Both are small, repeated registry touches inside the physics/signal cadence.
+
+Solution: Cache `IPowerGridService` through the existing runtime-context pattern, clear it with player/submarine/fluid service caches on teardown, and move flood-state math LOD behind a per-frame byte cache. The signal payload still publishes the same high/low math flag, but the publish path no longer samples scalability directly every call.
+
+Rejected Alternatives: Registering `SubmarineFluidDynamics` on `ScalabilityEvents` would consume fixed listener capacity for one metadata byte. Polling the power grid every fixed step was simpler but keeps a direct service lookup in deep-freeze logic. Removing the fallback registry read entirely would break late service registration and scene reload.
+
+Scalability potential: Low tier keeps the cheapest flood-state metadata and power-starvation fake while skipping repeated service lookups. Middle keeps deterministic event output. High and Ultra keep the same hydro/flood fidelity and spend saved registry traffic on visible fluid and damage work.
+
+Hardware Impact: Estimated 1-3 microseconds saved in submarine flood/deep-freeze frames on i3/MX350 class hardware when the power grid and quality tier are stable. Active-loop GC impact remains 0 by static scan.

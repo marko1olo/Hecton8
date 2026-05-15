@@ -696,3 +696,126 @@ Verification:
 - `git diff --check -- Assets/_Project/Scripts/PlayerThrusterAudio.cs Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs` passed.
 - Scoped forbidden scan found only editor smoke diagnostics/assertion strings.
 - Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.
+
+## 2026-05-15 - DSP_ACOUSTIC_LEAD - Loop 26 Critical Renderer Audio-Service Hot-Swap Cache H-Phi Pass
+Status: PENDING VERIFICATION
+
+What was wrong:
+- `ResolveKineticLowTierAudioService()` and `ResolveSpatialAudioManager()` still fell back to `GlobalRegistry.Audio` directly when their cached references were absent.
+- Those helpers feed low-tier kinetic impact fallback, cave reverb, and binaural sampling surfaces.
+- Smoke coverage asserted resolver presence but not registry confinement.
+
+What was done:
+- Added `_audioServiceLookupFrame`.
+- Added `RefreshAudioRuntimeServicesCold()`, `RefreshAudioRuntimeServicesIfStale()`, and `CacheAudioRuntimeService()`.
+- Converted `ResolveKineticLowTierAudioService()` and `ResolveSpatialAudioManager()` to use the bounded refresh helper.
+- Added renderer `IGlobalRegistryHotSwapListener` and `IGlobalRegistryHotSwapRefListener` handling for `GlobalRegistryServiceSlot.Audio`.
+- Registered/unregistered the hot-swap listener during renderer lifecycle.
+- Extended smoke coverage for cold/stale audio-service refresh and resolver no-registry assertions.
+
+Cinematic cheats used:
+- Low-tier kinetic impact fallback remains an authored cheap clip route.
+- High-tier spatial sampling still uses cached spatial audio telemetry and cave state, not per-call service discovery.
+- Audio service replacement is handled by a callback, not polling.
+
+Exact microseconds saved:
+- Saves repeated `GlobalRegistry.Audio` reads when low-tier fallback or spatial sampling touches the resolver with a cold/missing cache.
+- Runtime allocation delta remains 0 B/frame.
+
+Verification:
+- Method-body counters: `ResolveKineticLowTierAudioService GlobalRegistryAudio=0`, `ResolveSpatialAudioManager GlobalRegistryAudio=0`, `RefreshAudioRuntimeServicesCold GlobalRegistryAudio=1`, `RefreshAudioRuntimeServicesIfStale GlobalRegistryAudio=1`, `Tick GlobalRegistryAudio=0`, `UpdateCaveReverb GlobalRegistryAudio=0`, `UpdateBinauralTargets GlobalRegistryAudio=0`.
+- `git diff --check -- Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs` passed except CRLF normalization warnings.
+- Scoped forbidden scan found only pre-existing renderer diagnostics and editor smoke strings.
+- Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.
+
+## 2026-05-15 - DSP_ACOUSTIC_LEAD - Loop 27 Prologue Scalability Event Cache H-Phi Pass
+Status: PENDING VERIFICATION
+
+What was wrong:
+- `PrologueAcousticOrchestrator.OnScalabilityChanged()` still read `GlobalRegistry.H8_LOW_MEMORY_PROFILE` on the typed scalability event lane.
+- Existing smoke coverage expected the prologue event update to reuse `_lowMemoryProfile`, so code and guard were out of sync.
+
+What was done:
+- Changed the event handler to call `CacheQualityPolicy(payload.CurrentQualityTier, payload.CurrentTier, _lowMemoryProfile)`.
+- Preserved cold low-memory seeding in `RefreshQualityPolicyCold()`.
+- Kept smoke coverage strict; no assertion was weakened.
+
+Cinematic cheats used:
+- Prologue transition audio policy remains scalar cached state.
+- Profile changes reuse event payloads and cached low-memory state instead of querying global policy during the event.
+
+Exact microseconds saved:
+- Saves one `GlobalRegistry.H8_LOW_MEMORY_PROFILE` read per prologue scalability event after cold seed.
+- Runtime allocation delta remains 0 B/frame.
+
+Verification:
+- Method-body counters: `OnScalabilityChanged_GlobalRegistry=0`, `OnScalabilityChanged_CachedLowMemory=True`.
+- Smoke guard string matches the implementation: `CacheQualityPolicy(payload.CurrentQualityTier, payload.CurrentTier, _lowMemoryProfile)`.
+- `git diff --check -- Assets/_Project/Scripts/Audio/Prologue/PrologueAcousticOrchestrator.cs Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs` passed except CRLF normalization warnings.
+- Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.
+
+## 2026-05-15 - DSP_ACOUSTIC_LEAD - Loop 28 Deep Psychosis Runtime Hot-Swap Cache H-Phi Pass
+Status: PENDING VERIFICATION
+
+What was wrong:
+- `DeepPsychosisController` relied on 30-frame registry retries for player context, environmental strain, audio service, and acoustic-zone service.
+- Runtime service replacement could leave psychosis stress/cue routing stale until the retry window elapsed.
+- Resolver bodies still owned direct registry reads even though cue playback and SlowTick were clean.
+
+What was done:
+- Added `IGlobalRegistryHotSwapListener` and `IGlobalRegistryHotSwapRefListener`.
+- Added lifecycle hot-swap registration/unregistration.
+- Added cold runtime service seeding.
+- Added service-slot cache handling for `Player`, `EnvironmentalStrainRuntime`, `Audio`, and `AcousticZoneRuntime`.
+- Moved fallback registry reads into stale-refresh helpers.
+- Reset movement/survival component probes when player service hot-swaps.
+- Extended smoke coverage for hot-swap support, cold/stale lookup ownership, and no-registry resolver/cue bodies.
+
+Cinematic cheats used:
+- Deep psychosis remains scalar stress gating plus authored 3D cue placement.
+- Low-tier uses cached service pointers and cheap cue offsets.
+- High-tier acoustic-zone/helmet whisper routing hot-swaps immediately without polling.
+
+Exact microseconds saved:
+- Saves repeated service-locator reads from deep-psychosis resolver bodies after warmup.
+- Removes up to 30-frame stale-service delay after player/strain/audio/acoustic-zone replacement.
+- Runtime allocation delta remains 0 B/frame.
+
+Verification:
+- Method-body counters: `ResolvePlayerRuntimeContext GlobalRegistry=0`, `ResolveEnvironmentalStrainManager GlobalRegistry=0`, `ResolveAudioService GlobalRegistry=0`, `ResolveAcousticZone GlobalRegistry=0`, `SlowTick GlobalRegistry=0`, `PlayPsychosisCue GlobalRegistry=0`, `RefreshCachedRuntimeServicesCold GlobalRegistry=4`, `CacheReboundRuntimeService GlobalRegistry=0`, each stale refresh helper `GlobalRegistry=1`.
+- `git diff --check -- Assets/_Project/Scripts/Audio/DeepPsychosisController.cs Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs` passed except CRLF normalization warnings.
+- Scoped forbidden scan found only editor smoke diagnostics/assertion strings.
+- Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.
+
+## 2026-05-15 - DSP_ACOUSTIC_LEAD - Loop 29 Music Director Runtime Hot-Swap Cache H-Phi Pass
+Status: PENDING VERIFICATION
+
+What was wrong:
+- `HectonMusicDirector` relied on 30-frame registry retries for player, audio, acoustic-zone, depth-zone, surface-weather, and first-hour services.
+- Runtime service replacement could leave music pressure, mixer routing, and stinger gates stale until the retry window elapsed.
+- Runtime depth-zone cache reused the serialized `_depthZoneDirector` field without an authored-vs-runtime ownership marker.
+
+What was done:
+- Added `IGlobalRegistryHotSwapListener`.
+- Added lifecycle hot-swap registration/unregistration.
+- Added service-slot cache handling for `Player`, `Audio`, `AcousticZoneRuntime`, `DepthZoneRuntime`, `SurfaceWeatherRuntime`, and `FirstHourRuntime`.
+- Moved fallback registry reads into stale-refresh helpers.
+- Added `_depthZoneDirectorRuntimeCached` so runtime depth-zone cache can be cleared/rebound without erasing authored scene references.
+- Reapplied voice-pool mixer routing on audio-service hot swap.
+- Extended smoke coverage for music resolver confinement, service-slot handling, and depth runtime-cache ownership.
+
+Cinematic cheats used:
+- Music routing remains scalar context resolution: biome/depth/weather/stress pressure into layer gains and stingers.
+- Low-tier keeps cached context and cheap mixer-layer fades.
+- High-tier keeps richer world-state routing without per-call service discovery.
+
+Exact microseconds saved:
+- Saves repeated service-locator reads from music resolver bodies after warmup.
+- Removes up to 30-frame stale-service delay after player/audio/acoustic/depth/weather/first-hour replacement.
+- Runtime allocation delta remains 0 B/frame.
+
+Verification:
+- Method-body counters: `ResolvePlayerRuntimeContext GlobalRegistry=0`, `ResolveAudioService GlobalRegistry=0`, `ResolveAcousticZone GlobalRegistry=0`, `ResolveDepthZoneDirector GlobalRegistry=0`, `ResolveSurfaceWeatherDirector GlobalRegistry=0`, `ResolveFirstHourDirector GlobalRegistry=0`, `Tick GlobalRegistry=0`, `SlowTick GlobalRegistry=0`, `CacheReboundRuntimeService GlobalRegistry=0`, each stale refresh helper `GlobalRegistry=1`.
+- `git diff --check -- Assets/_Project/Scripts/Audio/HectonMusicDirector.cs Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs` passed except CRLF normalization warnings.
+- Scoped forbidden scan found only development/editor diagnostics and editor smoke strings.
+- Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.

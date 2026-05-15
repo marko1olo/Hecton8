@@ -506,3 +506,232 @@ Verification:
 - Targeted macro-obstacle ranges reported no raw division, forbidden hot math, managed allocation, or `foreach`.
 - `git diff --check` on staged and working copies passed without invoking dotnet rebuilds.
 - Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.
+
+## 2026-05-15 - Macro Route Record Bounds And Reciprocal Pass
+
+What was wrong:
+- Macro route record lookup accepted records with stale/non-finite bounds and cell sizes.
+- Safe-node lookup, passability sampling, dynamic obstacle chunk sizing, and clearance timing still used raw scalar division in route-support paths.
+
+What was done:
+- Added `HasValidRecordBounds` for voxel route records: created current buffer, positive dimensions, finite positive cell size, finite origin, and finite max bounds.
+- Gated nearest passability, containing-record lookup, route record lookup, safe-node lookup, passability sampling, and dynamic obstacle update regions with finite input/record proof.
+- Replaced cell-size and stopwatch-frequency divisions in the touched route-support paths with `math.rcp` multipliers.
+
+Cinematic Cheats used:
+- Corrupt voxel records now vanish from route authority instead of being epsilon-masked into plausible coordinates.
+- Low tier keeps conservative route sampling; High/Ultra keep richer dynamic obstacle density only on finite route records.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Static gain is fewer scalar divisions in route sampling/update support and avoided bad-record recovery churn.
+
+Verification:
+- Targeted route-record ranges reported no raw float division, forbidden hot math, managed allocation, or `foreach`; exact integer chunk bucket divisions were retained.
+- `git diff --check` passed without invoking dotnet rebuilds.
+- Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.
+
+## 2026-05-15 - Macro Portal Route Finite A* Proof
+
+What was wrong:
+- Macro portal route A* could accept invalid portal centroids/radii into route scratch.
+- Open-set scoring and reconstruction did not fully fail closed on non-finite costs or broken parent chains.
+
+What was done:
+- Added portal-node validation and skipped invalid portal records during graph rebuild and edge relaxation.
+- Converted face-portal centroid calculation to reciprocal math and finite-checked centroid/radius before export.
+- Finite-gated route G/F/edge scores, rejected non-finite open-set priorities, and made reconstruction bounded with a boolean success result.
+
+Cinematic Cheats used:
+- Corrupt portals vanish from macro route authority instead of being repaired into plausible geometry.
+- Low tier keeps conservative macro routes; High/Ultra retain dense portal routing only when finite portal proof is complete.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Static gain is fault avoidance plus one centroid division removed; no new allocations or containers.
+
+Verification:
+- Targeted portal graph/extraction/solve ranges reported no raw float division, forbidden hot math, managed allocation, or `foreach`; exact integer face-index divisions were retained.
+- `git diff --check` passed without invoking dotnet rebuilds.
+- Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.
+
+## 2026-05-15 - Voxel Record Native Length Proof
+
+What was wrong:
+- Shared voxel route-record validation proved positive dimensions but not complete native passability length.
+- Finite but inverted record bounds could pass into containment and distance math.
+
+What was done:
+- Extended `HasValidRecordBounds` with a 64-bit `x*y*z` expected-length proof against `record.Current.Length`.
+- Required finite `record.Max >= record.Origin` before route record use.
+
+Cinematic Cheats used:
+- Corrupt route records vanish from navigation authority instead of being clamped into plausible space.
+- Low tier avoids invalid probes; High/Ultra can keep larger route volumes and denser portal graphs only when native backing data is complete.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Static gain is invalid-read and recovery avoidance; no allocations or new containers.
+
+Verification:
+- Targeted record-validator range reported no raw division, forbidden hot math, managed allocation, or `foreach`.
+- `git diff --check` passed without invoking dotnet rebuilds.
+- Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.
+
+## 2026-05-15 - Direct Passability Payload Export Proof
+
+What was wrong:
+- Direct passability payload getters could expose created native arrays from stale voxel records without the shared complete-record proof.
+- Direct LoS consumers could then receive dimensions/origin/cell-size metadata that no longer matched native backing memory.
+
+What was done:
+- Routed `TryGetPassabilityPayload(HectonVoxelVolume)` through `HasValidRecordBounds`.
+- Routed `TryGetContainingPassabilityPayload` through the same shared proof after containing-record lookup.
+- Re-extracted `CURRENT_BATCH.md`; `AI_FUNNEL_NAV_POLISH` remains absent, so persisted task files remain authority.
+
+Cinematic Cheats used:
+- Corrupt direct voxel payloads now vanish from route authority instead of being repaired into plausible LoS data.
+- Low tier avoids invalid DDA/funnel work; High/Ultra keep direct native readback only when voxel records are complete.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Static gain is avoided invalid LoS sampling and route recovery; no allocations or new containers.
+
+Verification:
+- Targeted passability payload getter ranges reported no raw division, forbidden hot math, managed allocation, or `foreach`.
+- `git diff --check` passed without invoking dotnet rebuilds.
+- Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.
+
+## 2026-05-15 - Hybrid Navigation Sample Finite Gate
+
+What was wrong:
+- Hybrid navigation sampling could accept non-finite route probes or non-finite cached terrain heights.
+- Cave/open-water mode selection used a weaker record check than the shared voxel proof.
+
+What was done:
+- Rejected non-finite `worldPosition` before terrain or voxel sampling.
+- Accepted cached terrain height only when finite.
+- Reused `HasValidRecordBounds` and finite-checked resolved voxel cell origin before returning cave/solid voxel mode.
+
+Cinematic Cheats used:
+- Invalid hybrid probes now fail closed instead of being routed through open-water fallback.
+- Low tier avoids wasted route attempts; High/Ultra keep hybrid mode richness only with finite terrain/voxel data.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Static gain is avoided failed route scheduling and invalid funnel input; no allocations or new containers.
+
+Verification:
+- Targeted hybrid sample range reported no raw division, forbidden hot math, managed allocation, or `foreach`.
+- `git diff --check` passed without invoking dotnet rebuilds.
+- Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.
+
+## 2026-05-15 - Macro Portal Route Emit Proof
+
+What was wrong:
+- Managed-array and `NativeList` macro portal route emitters trusted `_routePathScratch` after route solve.
+- A stale scratch index could reach `_portalGraphNodes` at the final waypoint emission boundary.
+
+What was done:
+- Added `CanEmitPortalRoutePath` as a shared emit gate.
+- Required non-empty bounded route scratch, sufficient output capacity, valid portal graph indices, and valid portal-node geometry before writing start/portal/end waypoints.
+- Reused the same proof for both output paths.
+
+Cinematic Cheats used:
+- Invalid macro routes fail closed before waypoint emission instead of being repaired into plausible funnel input.
+- Low tier avoids corrupt waypoint writes; High/Ultra keep dense portal route output only when scratch and graph state are coherent.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Static gain is invalid waypoint/funnel recovery avoidance; no allocations or new containers.
+
+Verification:
+- Targeted managed-array emitter, `NativeList` emitter, and route emit helper ranges reported no raw division, forbidden hot math, managed allocation, or `foreach`.
+- `git diff --check` passed without invoking dotnet rebuilds.
+- Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.
+
+## 2026-05-15 - Portal Rebuild And Reconstruction Closure
+
+What was wrong:
+- Nearest passability fallback and route-record fallback trusted earlier traversal state without a final shared record proof.
+- Portal rebuild used `Current.IsCreated` and dimensions checks instead of the complete route-record proof.
+- Reconstruction could add scratch indices after proving only route-node scratch bounds, not portal graph bounds.
+
+What was done:
+- Rechecked nearest/fallback records with `HasValidRecordBounds`.
+- Required `HasValidRecordBounds` before portal rebuild.
+- Validated current portal nodes during graph matching.
+- Added index/current-G proof before neighbor relaxation graph access.
+- Validated portal graph index and portal-node geometry before adding each reconstruction scratch entry.
+
+Cinematic Cheats used:
+- Corrupt portal rebuilds and scratch chains fail closed instead of being repaired into believable macro routes.
+- Low tier avoids invalid route/funnel recovery; High/Ultra keep dense route graphs only when record, graph, and scratch proofs are coherent.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Static gain is invalid route rebuild and funnel recovery avoidance; no allocations or new containers.
+
+Verification:
+- Targeted nearest-payload fallback, portal rebuild, graph matching, neighbor relaxation, and reconstruction ranges reported no raw division, forbidden hot math, managed allocation, or `foreach`.
+- `git diff --check` passed without invoking dotnet rebuilds.
+- Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.
+
+## 2026-05-15 - H-Phi Core Graph Evidence
+
+What was wrong:
+- The previous full static H-Phi JSON audit timed out under current repo load.
+- A source-only route-boundary hardening pass should not claim graph-score movement without metric evidence.
+
+What was done:
+- Ran `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary`.
+- Recorded the completed static graph debt counts: Core asmdef 25, generated project 10, source-backed bridge 14, source-backed compile bridge 8, project-reference replacement 6.
+- Did not run any dotnet rebuild.
+
+Cinematic Cheats used:
+- None. Audit evidence only.
+
+Exact Microseconds saved:
+- None. This is architecture evidence, not runtime code.
+
+Verification:
+- Core graph summary completed in the current workspace.
+- No build or rebuild command was invoked.
+
+## 2026-05-15 - Batch Prompt Re-Extraction
+
+What was wrong:
+- `CURRENT_BATCH.md` can rotate while this task continues, so prompt isolation must be rechecked from disk.
+
+What was done:
+- Re-ran CLI regex extraction for `<AGENT_PROMPT id="AI_FUNNEL_NAV_POLISH">`.
+- The prompt remains absent from the live batch file.
+- Continued from persisted status/rationale/log files only.
+
+Cinematic Cheats used:
+- None. Prompt isolation evidence only.
+
+Exact Microseconds saved:
+- None. Documentation integrity only.
+
+Verification:
+- CLI extraction returned `ABSENT`.
+
+## 2026-05-15 - Nav Build Metadata And Chunk Reciprocal Proof
+
+What was wrong:
+- Localized SDF patch ingress could schedule dynamic clears from non-finite voxel size or non-finite AUP extents.
+- `TryPrepareBuild` did not prove finite origin/cell size or point-count coverage before route record metadata was written.
+- Dynamic obstacle scheduling repeated weaker record checks.
+- `ComputeChunkId` used raw scalar division on the portal route identity path.
+
+What was done:
+- Rejected non-finite SDF patch voxel sizes and fell back to dirty rebuild when patch AUP center/extents are non-finite.
+- Required `HasValidRecordBounds` before localized dynamic clear scheduling and dynamic obstacle record scheduling.
+- Added finite origin, positive finite cell size, and 64-bit expected point-count coverage to `TryPrepareBuild`.
+- Replaced chunk coordinate division with `math.rcp(chunkSpan)` and fail-closed invalid chunk metadata to chunk id `0u`.
+
+Cinematic Cheats used:
+- Corrupt patch/update metadata triggers coarse dirty rebuild or fail-closed chunk identity instead of fabricating plausible portal routing data.
+- Low tier avoids invalid dynamic clear churn; High/Ultra keep dense route volumes only when metadata is finite.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Static gain includes three scalar divisions removed from chunk-id mapping plus invalid-update recovery avoidance; no allocations or new containers.
+
+Verification:
+- Targeted SDF ingress, nav build metadata, dynamic update, and chunk-id ranges reported no raw division, forbidden hot math, managed allocation, or `foreach`.
+- `git diff --check` passed without invoking dotnet rebuilds.
+- Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.

@@ -500,3 +500,73 @@ Solution: Ran source-only checks: method-body counters, `git diff --check`, and 
 Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile or profiler status without Editor console/MCP data would be false.
 Scalability potential: Verification only.
 Hardware Impact: Verification only.
+
+## LOOP 26 CRITICAL RENDERER AUDIO-SERVICE HOT-SWAP CACHE H-PHI PASS
+Problem: `PlayerCriticalProceduralAudioRenderer.ResolveKineticLowTierAudioService()` and `ResolveSpatialAudioManager()` returned cached services when available, but fell back to `GlobalRegistry.Audio` directly when the cache was absent. Those resolvers feed low-tier kinetic fallback, cave reverb, and binaural sampling surfaces, so the registry read needed a bounded owner and a hot-swap rebind path.
+Solution: Added `_audioServiceLookupFrame`, `RefreshAudioRuntimeServicesCold()`, `RefreshAudioRuntimeServicesIfStale()`, and `CacheAudioRuntimeService()`. The two resolvers now call the bounded refresh helper instead of polling the registry directly. The renderer now implements `IGlobalRegistryHotSwapListener` and `IGlobalRegistryHotSwapRefListener`, registers during enable, unregisters during disable/destroy, and updates audio-service caches on `GlobalRegistryServiceSlot.Audio`.
+Rejected Alternatives: Leaving direct fallback reads would keep lookup spikes in renderer helper paths; relying only on a 30-frame cadence would still miss immediate service replacement; hard dependency injection would complicate bootstrap and duplicate the existing registry hot-swap lane.
+Scalability potential: Low/MX350 kinetic fallback keeps cheap AudioSource-based impact fallback without repeated service discovery. Middle/High/Ultra keep native cave reverb and binaural sampling using cached spatial audio state, with cycles spent on DSP rather than locator lookups.
+Hardware Impact: Saves repeated `GlobalRegistry.Audio` reads from low-tier kinetic fallback and spatial audio sampling when caches are cold or temporarily absent. Runtime allocation delta remains 0 B/frame; added work is one integer stale check and hot-swap callback writes.
+
+Problem: Static smoke coverage only asserted that the resolver names existed, not that direct registry reads were confined.
+Solution: Extended `AdvancedAcousticsSmokeTester` to extract the two resolver bodies and the cold/stale refresh helpers. It now asserts hot-swap listener support, cold audio-service seed, cadence-gated stale refresh, and no `GlobalRegistry.Audio` inside `ResolveKineticLowTierAudioService()` or `ResolveSpatialAudioManager()`.
+Rejected Alternatives: Manual-only review or relying on previous generic `AudioServiceLookupRetryFrames` assertions.
+Scalability potential: Editor-only guard; prevents future lookup creep in both low-tier fallback and high-tier spatial DSP sampling paths.
+Hardware Impact: 0 us runtime in player builds.
+
+Problem: Compile/profiler proof remains unavailable under the user's no-dotnet-rebuild order and missing Unity MCP resources.
+Solution: Ran source-only checks: method-body registry counters, `git diff --check`, and scoped forbidden-API scan. Counters: `ResolveKineticLowTierAudioService GlobalRegistryAudio=0`, `ResolveSpatialAudioManager GlobalRegistryAudio=0`, `RefreshAudioRuntimeServicesCold GlobalRegistryAudio=1`, `RefreshAudioRuntimeServicesIfStale GlobalRegistryAudio=1`, `Tick GlobalRegistryAudio=0`, `UpdateCaveReverb GlobalRegistryAudio=0`, `UpdateBinauralTargets GlobalRegistryAudio=0`.
+Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile or profiler status without Editor console/MCP data would be false.
+Scalability potential: Verification only.
+Hardware Impact: Verification only.
+
+## LOOP 27 PROLOGUE SCALABILITY EVENT CACHE H-PHI PASS
+Problem: `PrologueAcousticOrchestrator.OnScalabilityChanged()` still read `GlobalRegistry.H8_LOW_MEMORY_PROFILE` while processing a typed scalability event. That event lane is not per-frame, but it violated the established cold/hot boundary and contradicted the existing smoke assertion that prologue event updates reuse the cached low-memory flag.
+Solution: Changed the event handler to call `CacheQualityPolicy(payload.CurrentQualityTier, payload.CurrentTier, _lowMemoryProfile)`. The low-memory flag remains seeded through `RefreshQualityPolicyCold()`; scalability payloads update quality tier/profile byte without another registry read.
+Rejected Alternatives: Keeping the direct global read would leave hidden service-locator debt in an event callback; extending `ScalabilityChangedEvent` would require core contract ownership; weakening the smoke assertion would hide the regression.
+Scalability potential: Low/MX350 keeps prologue transition policy deterministic from the cold low-memory profile and event payload. Middle/High/Ultra preserve quality-tier handoff without registry traffic during profile changes.
+Hardware Impact: Saves one `GlobalRegistry.H8_LOW_MEMORY_PROFILE` read per prologue scalability event after cold seed. Runtime allocation delta remains 0 B/frame.
+
+Problem: Compile/profiler proof remains unavailable under the user's no-dotnet-rebuild order and missing Unity MCP resources.
+Solution: Ran source-only checks: `OnScalabilityChanged_GlobalRegistry=0`, `OnScalabilityChanged_CachedLowMemory=True`, smoke-assert string match, and `git diff --check` for prologue/smoke files.
+Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile or profiler status without Editor console/MCP data would be false.
+Scalability potential: Verification only.
+Hardware Impact: Verification only.
+
+## LOOP 28 DEEP PSYCHOSIS RUNTIME HOT-SWAP CACHE H-PHI PASS
+Problem: `DeepPsychosisController` used bounded 30-frame registry retries for player context, environmental strain, audio service, and acoustic-zone service. That protected Tick/SlowTick from direct registry polling, but service replacement still waited for the retry window and resolver bodies still owned the registry reads.
+Solution: Added `IGlobalRegistryHotSwapListener` and `IGlobalRegistryHotSwapRefListener`, lifecycle registration/unregistration, cold runtime service seeding, service-slot cache updates for `Player`, `EnvironmentalStrainRuntime`, `Audio`, and `AcousticZoneRuntime`, and stale-refresh helpers that own the fallback registry reads. Player hot-swap resets movement/survival component probes so the next dependency pass rebinds to the new player transform.
+Rejected Alternatives: Full dependency injection would duplicate the existing GlobalRegistry hot-swap lane; keeping only 30-frame polling leaves stale psychosis stress/cue routing after runtime replacement; broad player/survival edits would cross ownership.
+Scalability potential: Low/MX350 keeps psychosis cues as cheap scalar stress gates, cached service pointers, and authored 3D cue offsets. Middle/High/Ultra keep richer hallucination/acoustic routing without spending cue playback or SlowTick time on service discovery.
+Hardware Impact: Removes service replacement latency and saves repeated registry reads from deep-psychosis resolver bodies after warmup. Runtime allocation delta remains 0 B/frame; added cost is one hot-swap listener and callback assignments on service replacement.
+
+Problem: Static coverage did not prove deep-psychosis service lookup confinement or hot-swap handling.
+Solution: Extended `AdvancedAcousticsSmokeTester` with resolver body extraction, cold/stale helper checks, service-slot handling checks, and no-registry assertions for `SlowTick()` and `PlayPsychosisCue()`.
+Rejected Alternatives: Manual-only review or relying on the old generic `DependencyRetryFrameInterval = 30` assertion.
+Scalability potential: Editor-only guard; protects low-tier psychosis cue admission and high-tier acoustic-zone cue routing from lookup creep.
+Hardware Impact: 0 us runtime in player builds.
+
+Problem: Compile/profiler proof remains unavailable under the user's no-dotnet-rebuild order and missing Unity MCP resources.
+Solution: Ran source-only checks: method-body registry counters and `git diff --check` for `DeepPsychosisController` plus `AdvancedAcousticsSmokeTester`. Counters: resolver/cue/SlowTick direct registry reads are 0; cold refresh has 4 expected reads; stale refresh helpers have 1 expected read each.
+Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile or profiler status without Editor console/MCP data would be false.
+Scalability potential: Verification only.
+Hardware Impact: Verification only.
+
+## LOOP 29 MUSIC DIRECTOR RUNTIME HOT-SWAP CACHE H-PHI PASS
+Problem: `HectonMusicDirector` used 30-frame retry resolvers for player, audio, acoustic-zone, depth-zone, surface-weather, and first-hour dependencies. Runtime replacements could leave music routing stale for up to the retry window. Depth-zone runtime caching also reused the serialized `_depthZoneDirector` field without tracking whether it was authored or runtime-resolved.
+Solution: Added `IGlobalRegistryHotSwapListener`, lifecycle registration/unregistration, service-slot cache handling, and stale-refresh helper ownership for resolver registry reads. Added `_depthZoneDirectorRuntimeCached` so clear/rebind logic can drop runtime depth-zone cache without erasing an authored inspector reference. Audio service hot-swap reapplies voice-pool mixer routing immediately.
+Rejected Alternatives: Full injection would widen cross-domain contracts; keeping retry-only resolution leaves stale music pressure/stinger gating; blindly clearing `_depthZoneDirector` risks losing authored scene wiring.
+Scalability potential: Low/MX350 keeps music routing as scalar cached context and cheap mixer-layer updates. Middle/High/Ultra preserve richer biome/depth/weather stinger logic while service replacement cost stays callback-only.
+Hardware Impact: Removes up to 30-frame stale-service delay after runtime service replacement and keeps music resolver bodies free of direct service-locator reads. Runtime allocation delta remains 0 B/frame.
+
+Problem: Static smoke coverage only proved some music call sites avoided registry reads; it did not guard resolver bodies, hot-swap slot handling, or depth runtime-cache ownership.
+Solution: Extended `AdvancedAcousticsSmokeTester` to extract all music resolver bodies, assert service-slot handling, assert `_depthZoneDirectorRuntimeCached`, and reject direct registry reads in those resolvers.
+Rejected Alternatives: Manual-only review or broad source grep without method boundaries.
+Scalability potential: Editor-only guard; protects low-tier music context resolution and high-tier stinger pressure routing from lookup creep.
+Hardware Impact: 0 us runtime in player builds.
+
+Problem: Compile/profiler proof remains unavailable under the user's no-dotnet-rebuild order and missing Unity MCP resources.
+Solution: Ran source-only checks: method-body registry counters and `git diff --check` for `HectonMusicDirector` plus `AdvancedAcousticsSmokeTester`. Counters: resolver/Tick/SlowTick direct registry reads are 0; each stale refresh helper owns one expected registry read.
+Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile or profiler status without Editor console/MCP data would be false.
+Scalability potential: Verification only.
+Hardware Impact: Verification only.

@@ -206,6 +206,63 @@ Task Count: 15
 - [x] Snapshot capacity clamp | DOD: macro flora writer clamps to remaining snapshot capacity before writes; rejected assuming count/write never drift under concurrent payload churn; estimate 3 us.
 - [x] Macro obstacle static scan | DOD: changed VoxelDynamic nav ranges report no raw division, forbidden hot math, managed allocation, or `foreach`; dotnet rebuilds remain prohibited; estimate 4 us.
 
+## Loop 28 - Macro Route Record Bounds And Reciprocal Pass
+
+- [x] Record-bounds proof | DOD: macro route record selection and containing-record lookup now require created buffers, positive dimensions, finite positive cell size, and finite origin/max bounds; rejected trusting stale voxel records; estimate 5 us.
+- [x] Safe-node reciprocal pass | DOD: nearest-safe-node and passability sampling now use `math.rcp(record.CellSize)` after finite proof; rejected `math.max(cellSize, epsilon)` masking of corrupt records; estimate 4 us.
+- [x] Dynamic update reciprocal pass | DOD: dynamic obstacle update chunk sizing and world-to-voxel conversion now reuse reciprocal cell size after record/request finite checks; rejected repeated float division in route-obstacle updates; estimate 4 us.
+- [x] Route record static scan | DOD: changed macro-route record, sampling, timing, and dynamic-update ranges report no raw float division, forbidden hot math, managed allocation, or `foreach`; integer chunk bucket divisions were retained as exact grid math; estimate 5 us.
+- [x] Batch prompt re-extraction | DOD: CLI regex rechecked `CURRENT_BATCH.md` after three loops and confirmed `AI_FUNNEL_NAV_POLISH` is still absent; continued from persisted status/rationale; estimate 0 us.
+
+## Loop 29 - Macro Portal Route Finite A* Proof
+
+- [x] Portal graph finite gate | DOD: portal graph rebuild now skips stale records, null portal arrays, invalid faces, non-finite centroids, and non-positive/non-finite radii before route solve; rejected letting corrupt portals enter A* scratch state; estimate 6 us.
+- [x] Portal centroid reciprocal pass | DOD: face portal centroid now uses `math.rcp((float)cellCount)` and validates finite centroid/radius before export; rejected raw centroid division and partial invalid portal repair; estimate 3 us.
+- [x] Macro route cost sanitation | DOD: start-node seeding and edge relaxation now require finite G/F/edge costs and valid portal nodes before writing route scratch state; rejected NaN route priorities; estimate 6 us.
+- [x] Route reconstruction proof | DOD: reconstruction now returns bool, bounds parent indices, caps iterations to `MaxPortalGraphNodeCapacity`, and clears partial/cyclic paths; rejected void reconstruction with stale path scratch; estimate 5 us.
+- [x] Portal route static scan | DOD: changed portal graph, extraction, solve, edge-relax, pop, and reconstruction ranges report no raw float division, forbidden hot math, managed allocation, or `foreach`; integer face-index divisions are retained as exact grid math; estimate 5 us.
+
+## Loop 30 - Voxel Record Native Length Proof
+
+- [x] Complete passability length proof | DOD: `HasValidRecordBounds` now validates `Dimensions.x * Dimensions.y * Dimensions.z` in 64-bit and requires the native passability buffer to cover it before any macro route lookup; rejected trusting positive dimensions alone; estimate 4 us.
+- [x] Record bounds ordering proof | DOD: route records now require finite `Max >= Origin` before containment/distance/world-to-voxel math; rejected plausible coordinates from inverted bounds; estimate 2 us.
+- [x] Record proof static scan | DOD: changed record validator range reports no raw division, forbidden hot math, managed allocation, or `foreach`; dotnet rebuilds remain prohibited; estimate 3 us.
+
+## Loop 31 - Direct Passability Payload Export Proof
+
+- [x] Direct volume payload proof | DOD: `TryGetPassabilityPayload(HectonVoxelVolume)` now routes through `HasValidRecordBounds` before exporting native passability memory; rejected exposing created but undersized/stale records; estimate 3 us.
+- [x] Containing payload proof | DOD: `TryGetContainingPassabilityPayload` now reuses the shared record proof after lookup so direct LoS consumers inherit complete native length and finite bounds; rejected duplicating weaker checks; estimate 2 us.
+- [x] Batch prompt re-extraction | DOD: CLI regex rechecked `CURRENT_BATCH.md` after three more loops and confirmed `AI_FUNNEL_NAV_POLISH` is still absent; continued from persisted status/rationale; estimate 0 us.
+- [x] Direct passability static scan | DOD: changed passability payload getter ranges report no raw division, forbidden hot math, managed allocation, or `foreach`; dotnet rebuilds remain prohibited; estimate 3 us.
+
+## Loop 32 - Hybrid Navigation Sample Finite Gate
+
+- [x] Hybrid input finite proof | DOD: `TrySampleHybridNavigation` now rejects non-finite world positions before terrain or voxel sampling; rejected letting NaN route probes choose a mode; estimate 2 us.
+- [x] Terrain fallback finite proof | DOD: cached terrain height is accepted only when finite; rejected poisoning open-water floor fallback with NaN height; estimate 2 us.
+- [x] Voxel sample finite proof | DOD: hybrid voxel sampling now reuses `HasValidRecordBounds` and verifies finite cell origin before returning cave/solid voxel mode; rejected weaker created-array checks; estimate 3 us.
+- [x] Hybrid sample static scan | DOD: changed hybrid sample range reports no raw division, forbidden hot math, managed allocation, or `foreach`; dotnet rebuilds remain prohibited; estimate 3 us.
+
+## Loop 33 - Macro Portal Route Emit Proof
+
+- [x] Output capacity proof | DOD: both managed-array and `NativeList` macro route emitters now use `CanEmitPortalRoutePath` before writing start/portal/end waypoints; rejected trusting route scratch after solve; estimate 2 us.
+- [x] Route scratch index proof | DOD: `CanEmitPortalRoutePath` rejects empty/over-capacity scratch paths, insufficient output capacity, out-of-range portal graph indices, and invalid portal nodes; rejected duplicate per-emitter checks; estimate 3 us.
+- [x] Route emit static scan | DOD: changed emitter/helper ranges report no raw division, forbidden hot math, managed allocation, or `foreach`; dotnet rebuilds remain prohibited; estimate 3 us.
+
+## Loop 34 - Portal Rebuild And Reconstruction Closure
+
+- [x] Nearest payload final proof | DOD: nearest passability payload and route-record fallback now recheck `HasValidRecordBounds` before exporting or accepting the fallback record; rejected relying only on earlier dictionary traversal state; estimate 2 us.
+- [x] Portal rebuild record proof | DOD: `RebuildPortals` now requires the shared complete record proof before portal extraction; rejected weaker `Current.IsCreated` plus dimensions checks; estimate 3 us.
+- [x] Portal graph/reconstruction closure | DOD: graph matching validates current nodes, neighbor relaxation validates index/current-G before list access, and reconstruction validates portal graph indices/nodes before filling scratch; rejected leaving final proof solely to emitters; estimate 4 us.
+- [x] Portal closure static scan | DOD: changed nearest payload, portal rebuild, neighbor relaxation, and reconstruction ranges report no raw division, forbidden hot math, managed allocation, or `foreach`; dotnet rebuilds remain prohibited; estimate 3 us.
+
+## Loop 35 - Nav Build Metadata And Chunk Reciprocal Proof
+
+- [x] Localized SDF patch finite proof | DOD: SDF patch ingress now rejects non-finite voxel size, requires complete record proof before clear enqueue, and falls back to dirty rebuild on non-finite AUP center/extents; rejected scheduling corrupt dynamic clears; estimate 3 us.
+- [x] Nav build metadata proof | DOD: `TryPrepareBuild` now requires finite origin, positive finite cell size, and 64-bit expected point count covered by the output point count; rejected building route records from undersized metadata; estimate 4 us.
+- [x] Dynamic update record proof | DOD: pending dynamic obstacle scheduling now uses `HasValidRecordBounds` before requiring next/base/distance buffers; rejected repeating weaker local current/cell-size checks; estimate 2 us.
+- [x] Chunk-id reciprocal proof | DOD: `ComputeChunkId` now fail-closes on non-finite/invalid metadata and uses `math.rcp(chunkSpan)` instead of raw scalar division for chunk coordinate mapping; rejected epsilon-masked raw division; estimate 3 us.
+- [x] Build/chunk static scan | DOD: changed SDF ingress, build metadata, dynamic update, and chunk-id ranges report no raw division, forbidden hot math, managed allocation, or `foreach`; dotnet rebuilds remain prohibited; estimate 3 us.
+
 ## Verification
 
 - [x] Static scan | PASS: `StringPullPathJob`, `NativeAStarJob`, `TryResolveAbyssalNavNodeCandidate`, abyssal nav support/hash, nav graph ingress, and funnel telemetry conversion regions have no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/` code matches after loop 19.
@@ -217,7 +274,17 @@ Task Count: 15
 - [x] Nav graph payload targeted scan | PASS: thermal/flow exports, anchor/nav-node/conduit payload getters, native nav graph getter, and new node-type view-count helper report no raw division, forbidden hot math, managed allocation, or `foreach`.
 - [x] Conduit payload targeted scan | PASS: `ResolveAbyssalConduitViewCount`, `ResolveAbyssalNavGraphViewCount`, and `TryGetAbyssalCurrentConduitPayload` report no raw division, forbidden hot math, managed allocation, or `foreach`.
 - [x] Voxel macro obstacle targeted scan | PASS: macro flora obstacle count/write and finite-bounds ranges in `VoxelDynamicNavGridRuntime.cs` report no raw division, forbidden hot math, managed allocation, or `foreach`.
+- [x] Macro route record targeted scan | PASS: record selection, safe-node/passability sampling, dynamic update conversion, and clearance timing ranges in `VoxelDynamicNavGridRuntime.cs` report no raw float division, forbidden hot math, managed allocation, or `foreach`; remaining `/ chunkCells` hits are integer bucket math.
+- [x] Macro portal route targeted scan | PASS: portal graph rebuild, portal extraction, macro route solve, edge relaxation, open-set pop, and reconstruction ranges in `VoxelDynamicNavGridRuntime.cs` report no raw float division, forbidden hot math, managed allocation, or `foreach`; remaining face-index `/ width` is integer grid math.
+- [x] Voxel record proof targeted scan | PASS: `HasValidRecordBounds` range in `VoxelDynamicNavGridRuntime.cs` reports no raw division, forbidden hot math, managed allocation, or `foreach`.
+- [x] Direct passability payload targeted scan | PASS: direct/containing/nearest passability payload getter ranges in `VoxelDynamicNavGridRuntime.cs` report no raw division, forbidden hot math, managed allocation, or `foreach`.
+- [x] Hybrid navigation sample targeted scan | PASS: `TrySampleHybridNavigation` range in `VoxelDynamicNavGridRuntime.cs` reports no raw division, forbidden hot math, managed allocation, or `foreach`.
+- [x] Macro portal emit targeted scan | PASS: managed-array and `NativeList` macro route emitters plus `CanEmitPortalRoutePath` report no raw division, forbidden hot math, managed allocation, or `foreach`.
+- [x] Portal rebuild/reconstruction targeted scan | PASS: nearest-payload fallback, portal rebuild, graph current-node validation, neighbor relaxation, and reconstruction closure ranges report no raw division, forbidden hot math, managed allocation, or `foreach`.
+- [x] Build metadata/chunk-id targeted scan | PASS: localized SDF ingress, nav build metadata, dynamic obstacle scheduling, and `ComputeChunkId` reciprocal mapping report no raw division, forbidden hot math, managed allocation, or `foreach`.
+- [x] Batch prompt re-extraction | PASS: CLI regex rechecked `CURRENT_BATCH.md` after loop 34 and confirmed `AI_FUNNEL_NAV_POLISH` remains absent; persisted task files remain authority.
 - [x] Diff hygiene | PASS: `git diff --check` passed for touched source/status/rationale/log files; only LF-to-CRLF working-copy warnings were emitted.
+- [x] Core graph H-Phi summary | PASS STATIC: `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` completed without build; graph debt counts are Core asmdef 25, generated project 10, source-backed bridge 14, source-backed compile bridge 8, project-reference replacement 6; no source-only route hardening score was claimed.
 - [x] Static H-Phi audit | ATTEMPTED: `Tools/Architecture/HectonPhiAudit.ps1 -Json` timed out after 120 seconds under current repo load; no score claimed from this pass.
 - [x] Compile check | BLOCKED BY DEPENDENCY: bounded no-reference `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false /p:BuildProjectReferences=false` completed with 63 unrelated errors in `VRAMEnforcer`, `VoxelDeltaProcessor`, `SealedDoor`, `BinaryLayoutManifest`, and `HardwareTierDetector`; none were reported in `VegetationFlowFieldIntegrator.cs`, `VegetationNavGridSynchronizer.cs`, or `HectonMapMagicVegetationBridge.cs`.
 - [x] Dotnet rebuilds | NOT RERUN AFTER LOOP 13: user explicitly prohibited dotnet rebuilds; static scans and diff hygiene only.

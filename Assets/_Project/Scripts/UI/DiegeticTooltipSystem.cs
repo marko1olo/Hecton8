@@ -202,13 +202,8 @@ namespace Hecton8.UI
             ConsumeLookTargetSignals();
             ConsumeAupShiftSignals();
 
-            uint schemeHash = ResolveCurrentSchemeHash();
-            if (schemeHash != _activeSchemeHash)
-            {
-                _activeSchemeHash = schemeHash;
-                if (_hasSignalTarget && !_diagnosticActive)
-                    RebuildActiveTooltipLayout();
-            }
+            if (_hasSignalTarget && !_diagnosticActive && RefreshActiveSchemeHash())
+                RebuildActiveTooltipLayout(refreshScheme: false);
 
             bool hasVisiblePayload = (_textGlyphCount > 0 || _iconCount > 0) && (_hasSignalTarget || _diagnosticActive);
             float targetAlpha = hasVisiblePayload ? 1f : 0f;
@@ -549,8 +544,16 @@ namespace Hecton8.UI
 
         private void RebuildActiveTooltipLayout()
         {
+            RebuildActiveTooltipLayout(refreshScheme: true);
+        }
+
+        private void RebuildActiveTooltipLayout(bool refreshScheme)
+        {
             if (_promptLength <= 0)
                 StageDefaultPrompt();
+
+            if (refreshScheme)
+                RefreshActiveSchemeHash();
 
             EnsureResources();
             BuildGlyphLayout(new ReadOnlySpan<char>(_promptBuffer, 0, _promptLength), includeBindingIcon: true);
@@ -705,7 +708,7 @@ namespace Hecton8.UI
 
             Texture spriteSheet = spriteAsset.spriteSheet;
             _runtimeSpriteAtlasTexture = spriteSheet;
-            int spriteIndex = ResolveInteractSpriteIndex(_activeSchemeHash != 0u ? _activeSchemeHash : ResolveCurrentSchemeHash());
+            int spriteIndex = ResolveInteractSpriteIndex(_activeSchemeHash);
             if ((uint)spriteIndex >= (uint)spriteAsset.spriteCharacterTable.Count || (uint)spriteIndex >= UvTableCapacity)
                 return false;
 
@@ -1130,6 +1133,16 @@ namespace Hecton8.UI
             return state.CurrentInputSchemeHash != 0u
                 ? state.CurrentInputSchemeHash
                 : InputSchemeHashKeyboardMouse;
+        }
+
+        private bool RefreshActiveSchemeHash()
+        {
+            uint schemeHash = ResolveCurrentSchemeHash();
+            if (schemeHash == _activeSchemeHash)
+                return false;
+
+            _activeSchemeHash = schemeHash;
+            return true;
         }
 
         private void RefreshInputDeterminismService()

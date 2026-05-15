@@ -23,21 +23,6 @@ namespace Hecton8.SaveSystem
         private const int InvalidBiomeId = BiomeDiscoveryBitMask.InvalidBiomeId;
         private const int MaxAtlasRevealStage = 4;
 
-        private static void EnsureExactArrayCapacity<T>(ref T[] values, int capacity)
-        {
-            if (values != null && values.Length == capacity)
-                return;
-
-            T[] replacement = new T[capacity];
-            if (values != null && values.Length > 0)
-            {
-                int copyCount = values.Length < capacity ? values.Length : capacity;
-                Array.Copy(values, replacement, copyCount);
-            }
-
-            values = replacement;
-        }
-
         private static bool TrimListToMax<T>(List<T> values, int maxCount, string step, List<string> steps)
         {
             if (values == null)
@@ -672,7 +657,7 @@ namespace Hecton8.SaveSystem
 
             if (data.narrativeDiscoveryIds == null || data.narrativeDiscoveryIds.Length != SaveData.MaxNarrativeDiscoveries)
             {
-                EnsureExactArrayCapacity(ref data.narrativeDiscoveryIds, SaveData.MaxNarrativeDiscoveries);
+                SaveData.EnsureExactArrayCapacity(ref data.narrativeDiscoveryIds, SaveData.MaxNarrativeDiscoveries);
                 changed = true;
                 steps.Add("narrative discovery capacity repaired");
             }
@@ -1572,7 +1557,7 @@ namespace Hecton8.SaveSystem
             if (data.audioLogEncryptedFragmentHashes == null ||
                 data.audioLogEncryptedFragmentHashes.Length != SaveData.MaxEncryptedAudioLogFragments)
             {
-                EnsureExactArrayCapacity(
+                SaveData.EnsureExactArrayCapacity(
                     ref data.audioLogEncryptedFragmentHashes,
                     SaveData.MaxEncryptedAudioLogFragments);
                 changed = true;
@@ -1582,7 +1567,7 @@ namespace Hecton8.SaveSystem
             if (data.audioLogEncryptedFragmentBits == null ||
                 data.audioLogEncryptedFragmentBits.Length != SaveData.MaxEncryptedAudioLogFragments)
             {
-                EnsureExactArrayCapacity(
+                SaveData.EnsureExactArrayCapacity(
                     ref data.audioLogEncryptedFragmentBits,
                     SaveData.MaxEncryptedAudioLogFragments);
                 changed = true;
@@ -1626,7 +1611,7 @@ namespace Hecton8.SaveSystem
             if (data.dataArchaeologyPartialScanHashes == null ||
                 data.dataArchaeologyPartialScanHashes.Length != SaveData.MaxDataArchaeologyPartialScans)
             {
-                EnsureExactArrayCapacity(
+                SaveData.EnsureExactArrayCapacity(
                     ref data.dataArchaeologyPartialScanHashes,
                     SaveData.MaxDataArchaeologyPartialScans);
                 changed = true;
@@ -1636,7 +1621,7 @@ namespace Hecton8.SaveSystem
             if (data.dataArchaeologyPartialScanProgressPermille == null ||
                 data.dataArchaeologyPartialScanProgressPermille.Length != SaveData.MaxDataArchaeologyPartialScans)
             {
-                EnsureExactArrayCapacity(
+                SaveData.EnsureExactArrayCapacity(
                     ref data.dataArchaeologyPartialScanProgressPermille,
                     SaveData.MaxDataArchaeologyPartialScans);
                 changed = true;
@@ -1664,7 +1649,7 @@ namespace Hecton8.SaveSystem
             if (data.dataArchaeologyScanStateKeys == null ||
                 data.dataArchaeologyScanStateKeys.Length != SaveData.MaxDataArchaeologyScanStates)
             {
-                EnsureExactArrayCapacity(
+                SaveData.EnsureExactArrayCapacity(
                     ref data.dataArchaeologyScanStateKeys,
                     SaveData.MaxDataArchaeologyScanStates);
                 changed = true;
@@ -1674,7 +1659,7 @@ namespace Hecton8.SaveSystem
             if (data.dataArchaeologyScanStateValues == null ||
                 data.dataArchaeologyScanStateValues.Length != SaveData.MaxDataArchaeologyScanStates)
             {
-                EnsureExactArrayCapacity(
+                SaveData.EnsureExactArrayCapacity(
                     ref data.dataArchaeologyScanStateValues,
                     SaveData.MaxDataArchaeologyScanStates);
                 changed = true;

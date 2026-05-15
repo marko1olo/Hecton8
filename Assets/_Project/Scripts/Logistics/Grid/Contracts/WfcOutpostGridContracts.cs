@@ -85,6 +85,7 @@ namespace Hecton8.Logistics.Grid.Contracts
         public const int MissingGenerator = 1 << 0;
         public const int CapacityExceeded = 1 << 1;
         public const int InvalidDimensions = 1 << 2;
+        public const int InvalidBuffers = 1 << 3;
     }
 
     /// <summary>

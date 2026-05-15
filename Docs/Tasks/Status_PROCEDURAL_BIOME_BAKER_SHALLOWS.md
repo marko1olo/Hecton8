@@ -344,3 +344,35 @@ Status: PENDING VERIFICATION
 - Verification avoided dotnet rebuilds and Unity import. `FamilySubfolderExactnessScan Bad=0` with `Count=3` for both mesh and prefab roots; `git diff --check` passed for the baker; source brace balance stayed `Delta=0` with `NonAscii=0`; forbidden source scan stayed clean.
 - Rejected alternative: ignoring extra subfolders was rejected because stale generated families can be selected or streamed by future tooling outside the canonical batch contract. Automatic cleanup was rejected because validation must fail closed and report.
 - H-Phi impact remains domain-local evidence only: Shallows generated-family roots are now fail-closed without runtime registries, runtime filtering, asset deletion, or cross-domain dependencies.
+
+### Loop 39 - Shared Material Serialized Payload Envelope
+
+- Found a hidden material drift path: public material getters and keyword/queue checks did not reject material inheritance, disabled shader passes, build texture stacks, extra saved properties, or raw serialized instancing/GI flag drift.
+- Patched `ValidateMaterialAssetContract` with `ValidateMaterialSerializedPayloadContract`, `SerializedBoolEquals`, and `SerializedArraySizeEquals`, requiring a flat non-inherited material with empty disabled pass/build-stack arrays and exact saved property array counts.
+- Verification avoided dotnet rebuilds and Unity import. `MaterialSerializedPayloadYamlScan TexEnvs=4 Floats=14 Colors=4 Bad=0`; `git diff --check` passed with only repo CRLF warnings; source brace balance stayed `Delta=0` with `NonAscii=0`; case-sensitive forbidden source scan stayed clean.
+- Rejected alternative: relying only on public getters was rejected because Unity can retain hidden serialized material payloads that affect render state or future authoring. Runtime material repair was rejected because Shallows must stay one shared static material.
+- H-Phi impact remains domain-local evidence only: the shared material envelope is now fail-closed without runtime material mutation, disabled-pass repair, material clones, or cross-domain ownership.
+
+### Loop 40 - Shared Material Saved Property Key Contract
+
+- Found a tighter material drift path: the serialized material envelope checked saved-property array counts, but did not prove the exact texture/float/color keys occupying those slots.
+- Patched `ValidateMaterialSerializedPayloadContract` with fixed cold key arrays and `SerializedSavedPropertyKeysEqual`, requiring exact ordered saved-property keys for the Shallows texture, float, and color payloads.
+- Verification avoided dotnet rebuilds and Unity import. `MaterialSavedPropertyKeyYamlScan Tex=_AlbedoAtlas,_MatCap,_NormalAtlas,_ORMAtlas Floats=14 Colors=_BaseColor,_EmissionColor,_RootTint,_TipTint Bad=0`; `git diff --check` passed with only repo CRLF warnings; source brace balance stayed `Delta=0` with `NonAscii=0`; case-sensitive forbidden source scan stayed clean.
+- Rejected alternative: trusting counts plus public getters was rejected because stale saved-property keys can preserve the same array sizes while carrying hidden serialized drift. A runtime material scrubber was rejected because the material must stay authoring-time deterministic.
+- H-Phi impact remains domain-local evidence only: the shared material saved-property map is now fail-closed without runtime material normalization, material clones, or cross-domain render ownership.
+
+### Loop 41 - Atlas Streaming And Alpha Importer Contract
+
+- Found an atlas importer drift path: compression, size, readability, and platform format were locked, but mip streaming and alpha-transparency import flags were not explicitly set or validated.
+- Patched `ConfigureAtlasImporter` and `ValidateAtlasImporter` to force `streamingMipmaps=false`, `streamingMipmapsPriority=0`, and `alphaIsTransparency=false` for every Shallows atlas.
+- Verification avoided dotnet rebuilds and Unity import. `AtlasStreamingAlphaMetaScan Count=4 Bad=0`; project source already uses `alphaIsTransparency`, and the Shallows baker now sets/checks `streamingMipmaps`, `streamingMipmapsPriority`, and `alphaIsTransparency`; `git diff --check` passed with only repo CRLF warnings; source brace balance stayed `Delta=0` with `NonAscii=0`; case-sensitive forbidden source scan stayed clean.
+- Rejected alternative: relying on existing meta defaults was rejected because importer defaults can drift per Unity version or manual edit. Runtime texture streaming compensation was rejected because atlas import state must be deterministic before runtime.
+- H-Phi impact remains domain-local evidence only: Shallows atlases are now fail-closed against hidden streaming/alpha import drift without runtime texture repair, streaming policies, or cross-domain asset ownership.
+
+### Loop 42 - Atlas Bake Pixel Scratch Reuse
+
+- Found a bake-time allocation cost: each generated 1024 atlas allocated a fresh `Color32[1048576]`, producing four large transient editor arrays per full Shallows atlas bake.
+- Patched `CreateOrUpdateAtlas` to reuse one documented cold `AtlasPixelScratch` buffer for all four atlas writes.
+- Verification avoided dotnet rebuilds and Unity import. `AtlasPixelScratchSourceScan LocalAlloc=0 ColdAlloc=1 Writes=1 SetPixels=1`; `git diff --check` passed with only repo CRLF warnings; source brace balance stayed `Delta=0` with `NonAscii=0`; case-sensitive forbidden source scan stayed clean.
+- Rejected alternative: keeping per-atlas arrays was rejected because the bake loop is deterministic and sequential, so one scratch buffer is sufficient. Pooling was rejected because a single fixed scratch array is simpler and avoids pool lifetime ambiguity.
+- H-Phi impact remains domain-local evidence only: the offline bake path now avoids repeated large transient allocations without runtime changes, cross-domain ownership, or altered atlas pixels.

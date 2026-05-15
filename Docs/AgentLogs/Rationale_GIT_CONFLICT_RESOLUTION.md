@@ -89,3 +89,9 @@ Solution: Fetch first, prove no incoming commits, scan for conflict markers, ins
 Rejected Alternatives: Blind pull, reset, amend/force-push, or skipping runtime inspection. The changed files include audio lifecycle, voxel navigation bounds, save batching, Leviathan grab damage guard, and prologue VFX reset logic.
 Scalability potential: Git-only integration pass. Runtime tier effects are owned by the producing agents; no new performance claims are made here.
 Hardware Impact: 0 us runtime impact. Unity compile/profiler proof remains pending.
+
+Problem: `origin/main` advanced by 10 commits while the local worktree had a large runtime/docs live tail.
+Solution: Do not pull over dirty files. Fetch, classify divergence as incoming-only committed history (`10 0`), validate the local tail with marker/whitespace scans, inspect the runtime surfaces, then checkpoint local work before merging `origin/main`.
+Rejected Alternatives: Blind pull, force-push, reset, amend, or stash-pop into an unknown live tail. Incoming files are economy/docs/tools by path, but the dirty runtime tail still needs its own evidence-backed commit before merge.
+Scalability potential: Git-only integration pass. Low/Middle/High/Ultra runtime behavior is not claimed by this operator step; the producing agents own authored runtime tier changes.
+Hardware Impact: 0 us runtime impact on i3/MX350. Dev-path gain is avoiding Desktop merge overwrite while keeping a clear conflict boundary. Unity compile/profiler proof remains pending.

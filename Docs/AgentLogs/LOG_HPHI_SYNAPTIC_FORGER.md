@@ -498,3 +498,58 @@ Verification:
 - No dotnet build, restore, or rebuild was run.
 - `rg` found no `CameraJuiceSystem` remnants of `_survivalEventsHooked`, `HandleIntegrityChanged`, `HandleOxygenCritical`, `OnIntegrityChanged`, or `OnOxygenCritical`.
 - Full `Assets/_Project/Scripts` exact survival subscription scan now leaves only `PDALogbookManager.OnDeath` as the intentionally rejected survival death callback in that surface set.
+
+## 2026-05-15 - Tool Durability UI SignalLane Addendum
+
+What was wrong:
+- `HUDQuickBar` and `PDALoadoutTab` subscribed directly to `ToolDurabilitySystem` durability delegates.
+- The project already had `ItemDurabilityChangedSignal`, but tool durability mutations were not mirrored into that lane.
+- Passive UI refreshes were paying delegate fanout and subscription bookkeeping instead of reading numeric packets from existing UI ticks.
+
+What was done:
+- `ToolDurabilitySystem` now publishes `ItemDurabilityChangedSignal` for repair, reset, break, and native decay mirror changes.
+- Tool-system packets use `InventoryHash = 0` so UI consumers can ignore inventory equipment corrosion packets.
+- `HUDQuickBar` consumes durability packets in its existing tick and marks slot/status visuals dirty once per dirty frame.
+- `PDALoadoutTab` consumes durability packets only while its tab is active.
+- Removed direct durability subscribe/unsubscribe and string handler invalidation from both passive UI consumers.
+
+Cinematic Cheats used:
+- Reused the existing item durability packet instead of creating a second tool-specific lane.
+- Material rust/acoustic consumers can now see tool durability packets without adding producer references.
+- UI refreshes are dirty-mask driven rather than string event driven.
+
+Exact microseconds saved:
+- Estimated 0.3-0.9 us on tool durability UI bursts by removing six passive UI delegate hooks.
+- Steady-state cost is a bounded snapshot read in already ticking UI paths, with no extra dispatcher registration.
+
+Verification:
+- No dotnet build, restore, or rebuild was run.
+- `rg` found no durability delegate subscriptions or removed handler names in `HUDQuickBar` and `PDALoadoutTab`.
+- Project durability delegate scan now leaves gameplay authority paths only: `PlayerTool` and `PlayerToolManager`.
+- `git diff --check` on touched runtime files reported only standard LF/CRLF notices.
+
+## 2026-05-15 - Scanner Active SignalBus Delivery Addendum
+
+What was wrong:
+- `GroundPenetratingRadarRuntime` read `SignalBus<ScannerToolActiveSignal>` snapshots.
+- `GlobalSignals.Publish(in ScannerToolActiveSignal)` did not push that SignalBus lane or configure it.
+- `PDADecryptionSpectrogramPanel` used destructive `TryDequeueScannerToolActive()` draining, which is single-consumer behavior.
+
+What was done:
+- Added `SignalBus<ScannerToolActiveSignal>.Configure(...)` and `EnsureInitialized()` in `GlobalSignals`.
+- Added `SignalBus<ScannerToolActiveSignal>.Push(in signal)` to the scanner-active publisher.
+- Changed `PDADecryptionSpectrogramPanel` to read `SignalBus<ScannerToolActiveSignal>.GetFrameSnapshot()` and keep the latest aggregate fallback.
+- Left the legacy native queue API in place for compatibility.
+
+Cinematic Cheats used:
+- Scanner activity now fans out as a shared 32-byte packet instead of PDA consuming the only queue copy.
+- GPR and PDA can read the same scanner packet without polling `ScannerTool`.
+
+Exact microseconds saved:
+- Estimated 0.1-0.3 us avoided in scanner-active contention/retry paths.
+- Main gain is correctness and scalability: no accidental single-consumer starvation for scanner-active visuals.
+
+Verification:
+- No dotnet build, restore, or rebuild was run.
+- `rg` confirms `SignalBus<ScannerToolActiveSignal>` is configured, pushed, and consumed by PDA/GPR snapshots.
+- `PDADecryptionSpectrogramPanel` no longer calls `TryDequeueScannerToolActive()`.

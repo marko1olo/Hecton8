@@ -278,3 +278,14 @@ Cinematic cheats used: No visual change. The same indirect quad prompt remains; 
 Exact microseconds saved: Estimate only. Steady single-camera frames are neutral; invalid/auxiliary camera paths avoid unnecessary render preparation.
 
 Verification: No dotnet rebuilds were run. Static scans confirmed active-camera checks in tooltip resolution and no forbidden allocation/text/LINQ, bootstrap fallback, direct `Time`, old phosphor fallback, or `resolvedCamera.transform` markers.
+
+## 2026-05-15 Tooltip Scheme Read Gating
+What was wrong: Tooltip late-frame work resolved the input scheme even when no signal prompt was active or when diagnostics were hiding the signal prompt and no binding icon could use the scheme.
+
+What was done: Gated scheme refresh to active non-diagnostic signal prompts and made prompt layout rebuilds refresh the scheme once before binding-icon selection.
+
+Cinematic cheats used: No visual change. The same integer-index glyph atlas remains; input scheme reads now happen only when the diegetic prompt can display a device glyph.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per idle tooltip late frame on i3/MX350; no profiler proof is claimed.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed gated scheme reads and no forbidden allocation/text/LINQ, bootstrap fallback, direct `Time`, old phosphor fallback, or `resolvedCamera.transform` markers.

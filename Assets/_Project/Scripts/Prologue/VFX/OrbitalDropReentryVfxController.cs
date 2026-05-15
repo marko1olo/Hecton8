@@ -19,7 +19,7 @@ namespace Hecton8.Prologue.VFX
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6910)]
     [AddComponentMenu("Hecton/Prologue/VFX/Orbital Drop Reentry VFX Controller")]
-    public sealed class OrbitalDropReentryVfxController : MonoBehaviour, ILateFrameTickable
+    public sealed class OrbitalDropReentryVfxController : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int TelemetryCapacity = 300;
         private const int TelemetryEntrySizeBytes = 48;
@@ -134,6 +134,7 @@ namespace Hecton8.Prologue.VFX
         private byte _qualityTierByte;
         private bool _lowTier = true;
         private bool _registeredLateFrame;
+        private bool _hotSwapRegistered;
         private bool _blackBoxDumped;
         private bool _plasmaRoarPublished;
         private bool _oceanWavesPublished;
@@ -150,6 +151,7 @@ namespace Hecton8.Prologue.VFX
             ApplyConfiguredMaterial();
             RefreshQualityTier(force: true);
             RegisterLateFrame();
+            TryRegisterHotSwap();
             PublishShaderState(force: true);
         }
 
@@ -161,11 +163,21 @@ namespace Hecton8.Prologue.VFX
                 _registeredLateFrame = false;
             }
 
+            TryUnregisterHotSwap();
             ResetTransientState();
             _lastAppliedAmbientBlend = float.PositiveInfinity;
             ApplyAmbientBlend();
             PublishShaderState(force: true);
             _tickDispatcher = null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+                _tickDispatcher = currentService as ITickDispatcher;
         }
 
         private void OnDestroy()
@@ -251,6 +263,23 @@ namespace Hecton8.Prologue.VFX
                 return;
 
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryRegisterHotSwap()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwap()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private void ApplyConfiguredMaterial()

@@ -351,3 +351,15 @@ Cinematic Cheats used -> None. Git integration only.
 Exact Microseconds saved -> 0 us runtime. Dev-path gain is reduced local conflict surface without rewriting pushed history.
 
 Verification -> Conflict-marker scan clean. `git diff --check` reported only LF-to-CRLF warnings. Unity compile/profiler proof remains pending.
+
+## 2026-05-15 - Loop 18 Incoming Remote Gate
+
+What was wrong -> `origin/main` advanced by 10 commits to `5e93fb931` while the local worktree carried a 66-file tracked runtime/docs tail plus HPhi/integrator output files.
+
+What was done -> Fetched remote, proved divergence was incoming-only committed history (`10 0`), scanned the local tail for unmerged paths and conflict markers, inspected the runtime diff surface, and prepared a merge-safe local checkpoint before pulling/merging the remote economy/docs/tools commits.
+
+Cinematic Cheats used -> None. Git integration only.
+
+Exact Microseconds saved -> 0 us runtime. Dev-path gain is preventing GitHub Desktop from overwriting the dirty runtime tail during the incoming merge.
+
+Verification -> Conflict-marker scan clean. `git diff --check` reported only LF-to-CRLF warnings. Unity compile/profiler proof remains pending.

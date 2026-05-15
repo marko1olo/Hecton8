@@ -2350,6 +2350,7 @@ namespace Hecton8.Core
             _latestScannerToolActiveSignal = signal;
             AdvanceSignalSequence(ref _latestScannerToolActiveSignalSequence);
             _scannerToolActiveSignals.Enqueue(signal);
+            SignalBus<ScannerToolActiveSignal>.Push(in signal);
         }
 
         /// <summary>Queues one scan-complete packet from the main thread.</summary>
@@ -3192,6 +3193,8 @@ namespace Hecton8.Core
             SignalBus<CpuStarvationSignal>.EnsureInitialized();
             SignalBus<LoreFragmentScannedSignal>.Configure(LoreFragmentScannedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(LoreFragmentScannedSignal)));
             SignalBus<LoreFragmentScannedSignal>.EnsureInitialized();
+            SignalBus<ScannerToolActiveSignal>.Configure(ScannerToolActiveSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(ScannerToolActiveSignal)));
+            SignalBus<ScannerToolActiveSignal>.EnsureInitialized();
             SignalBus<MemoryAddressShiftSignal>.Configure(MemoryAddressShiftSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(MemoryAddressShiftSignal)));
             SignalBus<MemoryAddressShiftSignal>.EnsureInitialized();
             SignalBus<ResolutionChangedSignal>.Configure(ResolutionChangedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(ResolutionChangedSignal)));

@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Signals;
 using MacroDatabaseHydratedSignal = Hecton8.Core.Contracts.SectorHydratedSignal;
@@ -7,6 +8,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Contract-facing bridge that lets the isolated macro database assembly emit only typed native signals.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public readonly struct MacroDatabaseSignalBridge : IMacroDatabaseSignalSink
     {
         public void PublishSectorHydrated(in MacroDatabaseHydratedSignal signal)

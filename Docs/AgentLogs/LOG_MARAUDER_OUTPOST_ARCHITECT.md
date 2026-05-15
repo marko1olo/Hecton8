@@ -461,6 +461,123 @@ Verification:
 
 Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
 
+## 2026-05-15 - WFC Outpost Loop 33 Final Ledger Addendum
+
+What was wrong:
+- The WFC power graph translator now had an invalid-buffer fault path, but the first placement was after `ClearOutputs()`.
+- That meant an invalid `CellToNode` or `Counts` container could still be touched before the fail-closed branch.
+
+What was done:
+- Moved `HasValidOutputBuffers()` to the first executable instruction in `WfcOutpostGraphTranslationJob.Execute()`.
+- Kept `InvalidBuffers` reporting through the guarded `WriteFault` path when a usable fault-count slot exists.
+- Reconfirmed the Loop 32 exit-mask/hatch power-edge gate remains intact.
+
+Cinematic Cheats used:
+- Power flow stays a deterministic SOA graph fake. No physics probes, colliders, GameObjects, polling loops, or material mutations were added.
+
+Exact Microseconds saved:
+- New cost: five `IsCreated` checks, one count-slot length check, and four guarded count writes in a cold translation job.
+- Saved cost: avoids invalid native container touch and false graph work on bad future callers.
+- Steady Tick/Render remains 0 B/frame.
+
+Verification:
+- Targeted translator/contract scan: PASS; `ExecuteBufferGateBeforeClear=True`, `InvalidBuffersMentions=2`, `BufferGate=2`, `CountWriter=5`, `LegacyTryAddEdge=0`, `GlobalSignalsPublish=0`, `ForeachTokens=0`, `ModuloOperators=0`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS at `2026-05-15 05:34:18 +04:00`; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
+- `git diff --check`: PASS with repository CRLF warnings only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
+## 2026-05-15 - WFC Outpost Loop 33 Native Buffer Gate
+
+What was wrong:
+- The WFC graph translator assumed every native output container was created.
+- Normal graph count outputs wrote fixed slots directly.
+- A future caller with a short or missing `Counts` buffer could turn a bad handoff into a Burst job fault instead of a typed graph fault.
+
+What was done:
+- Added `WfcOutpostGraphFaultFlags.InvalidBuffers`.
+- Added `HasValidOutputBuffers()` to verify required native containers and count-slot capacity before output clearing or graph work.
+- Routed normal count writes through `WriteCount`.
+
+Cinematic Cheats used:
+- The logistics graph remains a deterministic data fake. No fallback GameObjects, physics probes, or runtime allocation recovery were added.
+
+Exact Microseconds saved:
+- New cost: cold preflight checks and four bounded count writes, estimated below 0.1 us per WFC graph translation on i3/MX350.
+- Saved cost: prevents invalid native-output handoffs from reaching topology traversal and downstream graph build.
+- Steady Tick/Render remains 0 B/frame.
+
+Verification:
+- Targeted translator/contract scan: PASS; `InvalidBuffersFlag=2`, `BufferGate=2`, `CountWriter=5`, `LegacyTryAddEdge=0`, `GlobalSignalsPublish=0`, `ForeachTokens=0`, `ModuloOperators=0`.
+- `HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS at `2026-05-15 05:29:36 +04:00`; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
+- `git diff --check`: PASS with repository CRLF warnings only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
+## 2026-05-15 - WFC Outpost Loop 32 Final Ledger Addendum
+
+What was wrong:
+- The WFC power translator still treated adjacency as connectivity, ignoring packed cell exit bits and hatch-only vertical movement.
+- Earlier Loop 31 producer-direct-lane evidence is historical only; current source has reverted those producer files to wrapper publishes.
+
+What was done:
+- Current source change is limited to `WfcOutpostGraphTranslationJob`.
+- Horizontal logistics edges now require reciprocal `East/West` or `North/South` exit bits.
+- Vertical logistics edges now require a hatch endpoint.
+- Docs were corrected so Loop 31 is not claimed as current source state.
+
+Cinematic Cheats used:
+- Power flow remains a deterministic SOA graph fake. No physics, colliders, GameObjects, or MonoBehaviour power nodes were added.
+
+Exact Microseconds saved:
+- New cost: byte-mask checks on cold WFC graph translation only.
+- Saved cost: fewer false power edges in wall-separated layouts; steady Tick/Render remains 0 B/frame.
+
+Verification:
+- Translator scan: PASS; legacy unfiltered edge helper removed, no `%`, no `foreach`, no `GlobalSignals.Publish` in the translator.
+- `HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS at `2026-05-15 05:17:59 +04:00`.
+- `git diff --check`: PASS with repository CRLF warnings only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
+## 2026-05-15 - WFC Outpost Loop 32 Power Topology Exit-Mask Gate
+
+What was wrong:
+- The WFC generator writes `North/East/South/West` exit bits into each packed cell.
+- The logistics graph translator ignored those exit bits and connected every adjacent solid power module.
+- Stacked floors were connected by position alone, so power could flow through floor slabs without a hatch bridge.
+
+What was done:
+- Replaced unfiltered adjacent edge construction with `TryAddHorizontalEdge` and `TryAddVerticalEdge`.
+- Horizontal edges now require reciprocal exit bits: `East/West` or `North/South`.
+- Vertical edges now require at least one hatch endpoint.
+- Bidirectional power edge writes now flow through one helper.
+
+Cinematic Cheats used:
+- Kept the data-only logistics fake. No physics queries, colliders, MonoBehaviour power nodes, or runtime object graph simulation were introduced.
+- Player-facing result is better believability: doors and rooms no longer inherit power through sealed walls in the abstract graph.
+
+Exact Microseconds saved:
+- New cost: byte-mask checks on three candidate directions per active power cell during cold WFC graph translation.
+- Saved cost: fewer false edges reach the logistics evaluator in wall-separated layouts.
+- Estimated below 0.1 us for the 500-cell outpost translation on i3/MX350; steady Tick/Render remains 0 B/frame.
+
+Verification:
+- Targeted translator scan: PASS; `TryAddEdgeLegacy=0`, `HorizontalMaskEdges=3`, `VerticalHatchBridge=2`, `BidirectionalHelper=3`, `GlobalSignalsPublish=0`, `ModuloOperators=0`, `ForeachTokens=0`.
+- `HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS at `2026-05-15 05:17:59 +04:00`; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
+- `git diff --check`: PASS with repository CRLF warning only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+
+Evidence correction:
+- Current source re-audit during Loop 32 shows the Loop 31 direct producer edits are not present in `SealedDoor`, `MessageTerminal`, `AudioLogPickup`, or `WfcOutpostPowerBootRuntime`.
+- Those producers currently remain wrapper-based via `GlobalSignals.Publish(in signal)`.
+- I did not stage against the concurrent reset loop and do not claim that producer direct-lane cleanup as current source state.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
 ## 2026-05-15 - WFC Outpost Loop 27 Origin-Relative Heightmap Overflow Guard
 
 What was wrong:
@@ -574,7 +691,7 @@ Verification:
 
 Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
 
-## 2026-05-15 - WFC Outpost Loop 31 WFC Mutable State Signal Direct Lane
+## 2026-05-15 - WFC Outpost Loop 31 WFC Mutable State Signal Direct Lane [HISTORICAL; CURRENT SOURCE RESET]
 
 What was wrong:
 - Outpost sealed-door, terminal, and datapad proxy producers used the generic `GlobalSignals.Publish` wrapper for `WfcOutpostStateChangedSignal`.
@@ -601,7 +718,7 @@ Verification:
 - `git diff --check`: PASS with repository CRLF warning only.
 - `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
 
-Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+Status: PENDING VERIFICATION. Historical source audits passed at the time; Loop 32 re-audit shows the producer edits are not present in current source. Compile/runtime proof remains pending by user instruction and external Core blocker.
 
 ## 2026-05-15 - WFC Outpost Loop 30 Grid Registry Descriptor Gate
 
@@ -890,5 +1007,59 @@ Verification:
 - `git diff --check`: PASS with repository CRLF warning only.
 - `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
 - Unity MCP console/profiler: unavailable from this session.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
+## 2026-05-15 - WFC Outpost Loop 32 Final Ledger Addendum
+
+What was wrong:
+- The WFC power translator treated adjacency as connectivity, ignoring packed cell exit bits and hatch-only vertical movement.
+- Earlier Loop 31 producer-direct-lane evidence is historical only; current source has reverted those producer files to wrapper publishes.
+
+What was done:
+- Current source change is limited to `WfcOutpostGraphTranslationJob`.
+- Horizontal logistics edges now require reciprocal `East/West` or `North/South` exit bits.
+- Vertical logistics edges now require a hatch endpoint.
+- Docs were corrected so Loop 31 is not claimed as current source state.
+
+Cinematic Cheats used:
+- Power flow remains a deterministic SOA graph fake. No physics, colliders, GameObjects, or MonoBehaviour power nodes were added.
+
+Exact Microseconds saved:
+- New cost: byte-mask checks on cold WFC graph translation only.
+- Saved cost: fewer false power edges in wall-separated layouts; steady Tick/Render remains 0 B/frame.
+
+Verification:
+- Translator scan: PASS; legacy unfiltered edge helper removed, no `%`, no `foreach`, no `GlobalSignals.Publish` in the translator.
+- `HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS at `2026-05-15 05:17:59 +04:00`.
+- `git diff --check`: PASS with repository CRLF warnings only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
+## 2026-05-15 - WFC Outpost Loop 33 Bottom Ledger Addendum
+
+What was wrong:
+- The latest native-buffer hardening entry existed earlier in this log, but the file bottom still ended with Loop 32 evidence.
+- The first Loop 33 implementation placed the invalid-buffer branch after `ClearOutputs()`, leaving a native-container touch before the fail-closed gate.
+
+What was done:
+- Moved `HasValidOutputBuffers()` to the first executable instruction in `WfcOutpostGraphTranslationJob.Execute()`.
+- Added/retained `WfcOutpostGraphFaultFlags.InvalidBuffers` and guarded count-slot writes through `WriteCount`.
+- Reconfirmed reciprocal exit-mask power edges and hatch-gated vertical edges remain in the current translator source.
+
+Cinematic Cheats used:
+- The outpost power handoff remains a deterministic SOA graph fake. No physics probes, colliders, GameObjects, polling loops, or material mutation were added.
+
+Exact Microseconds saved:
+- New cost: five native-container `IsCreated` checks, one count-slot length check, and four guarded count writes in a cold graph translation job.
+- Saved cost: invalid native-output handoffs fail before clear/topology traversal; wall-separated layouts keep fewer false downstream power edges.
+- Steady Tick/Render remains 0 B/frame.
+
+Verification:
+- Targeted translator/contract scan: PASS; `ExecuteBufferGateBeforeClear=True`, `InvalidBuffersMentions=2`, `BufferGate=2`, `CountWriter=5`, `LegacyTryAddEdge=0`, `GlobalSignalsPublish=0`, `ForeachTokens=0`, `ModuloOperators=0`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS at `2026-05-15 05:34:18 +04:00`; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
+- `git diff --check`: PASS with repository CRLF warnings only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
 
 Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.

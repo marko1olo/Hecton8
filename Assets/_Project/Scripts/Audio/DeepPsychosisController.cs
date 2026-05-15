@@ -11,7 +11,7 @@ namespace Hecton8.Audio
     /// Drives low-frequency hallucination cues when the player is deep, oxygen-starved, or psychologically overloaded by pollution pressure.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class DeepPsychosisController : MonoBehaviour, ITickable, IUpdatable, ISlowTickable
+    public sealed class DeepPsychosisController : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         private const int DependencyRetryFrameInterval = 30;
         private const float DiagonalCueAxis = 0.70710678f;
@@ -64,6 +64,7 @@ namespace Hecton8.Audio
 
         private bool _registeredTick;
         private bool _registeredSlowTick;
+        private bool _hotSwapRegistered;
         private HectonSurvivalSystem _survivalSystem;
         private Transform _playerTransform;
         private Transform _dependencyPlayerTransform;
@@ -86,6 +87,7 @@ namespace Hecton8.Audio
         private void Awake()
         {
             _playerTransform = transform;
+            RefreshCachedRuntimeServicesCold();
             TryResolveDependencies();
             _cueTimerSeconds = cueIntervalMaxSeconds;
             _psychosisRandomState = unchecked(((uint)EntityId.ToULong(GetEntityId()) * 747796405u) ^ 0x9E3779B9u);
@@ -95,11 +97,15 @@ namespace Hecton8.Audio
 
         private void OnEnable()
         {
+            RefreshCachedRuntimeServicesCold();
+            TryRegisterHotSwapListener();
+            TryResolveDependencies();
             TryRegisterTickHandlers();
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             TryUnregisterTickHandlers();
             _cueTimerSeconds = cueIntervalMaxSeconds;
             _psychosisIntensity01 = 0f;
@@ -109,8 +115,24 @@ namespace Hecton8.Audio
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             TryUnregisterTickHandlers();
             ClearCachedRuntimeServices();
+        }
+
+        public void OnGlobalRegistryServiceRebound(
+            GlobalRegistryServiceSlot serviceSlot,
+            ref object currentService)
+        {
+            CacheReboundRuntimeService(serviceSlot, currentService);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            CacheReboundRuntimeService(serviceSlot, currentService);
         }
 
         /// <summary>
@@ -242,14 +264,12 @@ namespace Hecton8.Audio
 
             if (!_registeredTick)
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-                _registeredTick = GlobalRegistry.Updatables.Contains(this);
+                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
             }
 
             if (!_registeredSlowTick)
             {
-                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Player);
-                _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
             }
         }
 
@@ -268,6 +288,23 @@ namespace Hecton8.Audio
             }
         }
 
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
         private void ClearCachedRuntimeServices()
         {
             _playerRuntimeContext = null;
@@ -280,6 +317,41 @@ namespace Hecton8.Audio
             _nextAcousticZoneRetryFrame = 0;
         }
 
+        private void RefreshCachedRuntimeServicesCold()
+        {
+            int frame = Time.frameCount;
+            CachePlayerRuntimeContext(GlobalRegistry.Player, frame);
+            CacheEnvironmentalStrainManager(GlobalRegistry.EnvironmentalStrain, frame);
+            CacheAudioService(GlobalRegistry.Audio, frame);
+            CacheAcousticZone(GlobalRegistry.AcousticZone, frame);
+        }
+
+        private void CacheReboundRuntimeService(GlobalRegistryServiceSlot serviceSlot, object currentService)
+        {
+            int frame = Time.frameCount;
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext, frame);
+                    _dependencyPlayerTransform = null;
+                    _playerMovement = null;
+                    _survivalSystem = null;
+                    _movementLookupAttempted = false;
+                    _survivalLookupAttempted = false;
+                    _nextDependencyRetryFrame = 0;
+                    break;
+                case GlobalRegistryServiceSlot.EnvironmentalStrainRuntime:
+                    CacheEnvironmentalStrainManager(currentService as EnvironmentalStrainManager, frame);
+                    break;
+                case GlobalRegistryServiceSlot.Audio:
+                    CacheAudioService(currentService as IAudioService, frame);
+                    break;
+                case GlobalRegistryServiceSlot.AcousticZoneRuntime:
+                    CacheAcousticZone(currentService as AcousticZoneController, frame);
+                    break;
+            }
+        }
+
         private IPlayerRuntimeContext ResolvePlayerRuntimeContext()
         {
             int frame = Time.frameCount;
@@ -290,9 +362,7 @@ namespace Hecton8.Audio
             if (frame < _nextPlayerContextRetryFrame)
                 return null;
 
-            _nextPlayerContextRetryFrame = frame + DependencyRetryFrameInterval;
-            playerContext = GlobalRegistry.Player;
-            _playerRuntimeContext = playerContext != null && playerContext.IsInitialized ? playerContext : null;
+            RefreshPlayerRuntimeContextIfStale(frame);
             return _playerRuntimeContext;
         }
 
@@ -306,8 +376,7 @@ namespace Hecton8.Audio
             if (frame < _nextEnvironmentalStrainRetryFrame)
                 return null;
 
-            _nextEnvironmentalStrainRetryFrame = frame + DependencyRetryFrameInterval;
-            _environmentalStrainManager = GlobalRegistry.EnvironmentalStrain;
+            RefreshEnvironmentalStrainManagerIfStale(frame);
             return _environmentalStrainManager;
         }
 
@@ -321,9 +390,7 @@ namespace Hecton8.Audio
             if (frame < _nextAudioServiceRetryFrame)
                 return null;
 
-            _nextAudioServiceRetryFrame = frame + DependencyRetryFrameInterval;
-            audioService = GlobalRegistry.Audio;
-            _audioService = audioService != null && audioService.IsInitialized ? audioService : null;
+            RefreshAudioServiceIfStale(frame);
             return _audioService;
         }
 
@@ -337,9 +404,52 @@ namespace Hecton8.Audio
             if (frame < _nextAcousticZoneRetryFrame)
                 return null;
 
-            _nextAcousticZoneRetryFrame = frame + DependencyRetryFrameInterval;
-            _acousticZone = GlobalRegistry.AcousticZone;
+            RefreshAcousticZoneIfStale(frame);
             return _acousticZone;
+        }
+
+        private void RefreshPlayerRuntimeContextIfStale(int frame)
+        {
+            CachePlayerRuntimeContext(GlobalRegistry.Player, frame);
+        }
+
+        private void RefreshEnvironmentalStrainManagerIfStale(int frame)
+        {
+            CacheEnvironmentalStrainManager(GlobalRegistry.EnvironmentalStrain, frame);
+        }
+
+        private void RefreshAudioServiceIfStale(int frame)
+        {
+            CacheAudioService(GlobalRegistry.Audio, frame);
+        }
+
+        private void RefreshAcousticZoneIfStale(int frame)
+        {
+            CacheAcousticZone(GlobalRegistry.AcousticZone, frame);
+        }
+
+        private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext, int frame)
+        {
+            _playerRuntimeContext = playerContext != null && playerContext.IsInitialized ? playerContext : null;
+            _nextPlayerContextRetryFrame = frame + DependencyRetryFrameInterval;
+        }
+
+        private void CacheEnvironmentalStrainManager(EnvironmentalStrainManager strainManager, int frame)
+        {
+            _environmentalStrainManager = strainManager;
+            _nextEnvironmentalStrainRetryFrame = frame + DependencyRetryFrameInterval;
+        }
+
+        private void CacheAudioService(IAudioService audioService, int frame)
+        {
+            _audioService = audioService != null && audioService.IsInitialized ? audioService : null;
+            _nextAudioServiceRetryFrame = frame + DependencyRetryFrameInterval;
+        }
+
+        private void CacheAcousticZone(AcousticZoneController acousticZone, int frame)
+        {
+            _acousticZone = acousticZone;
+            _nextAcousticZoneRetryFrame = frame + DependencyRetryFrameInterval;
         }
 
         private void PlayHelmetWhisperCue()

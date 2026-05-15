@@ -105,7 +105,6 @@ namespace Hecton8.UI
         private readonly int[] _slotItemHashCache = new int[SlotCount]; // COLD ALLOC: int[4] - quickbar resolved item hash cache - owner: HUDQuickBar
         private readonly bool[] _slotItemHashResolved = new bool[SlotCount]; // COLD ALLOC: bool[4] - quickbar item hash cache validity flags - owner: HUDQuickBar
         private int _lastInventoryVersion = -1;
-        private ToolDurabilitySystem _subscribedDurabilitySystem;
         [SerializeField] private float fieldAdviceRange = 18f;
         [SerializeField] private LayerMask fieldAdviceMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
@@ -133,9 +132,9 @@ namespace Hecton8.UI
         public void Tick(float deltaTime)
         {
             TryAutoResolveForTick();
-            RefreshDurabilitySubscription();
 
             ConsumeToolLoadoutChangedSignals();
+            ConsumeDurabilityChangedSignals();
 
             if (_playerInventory != null && _lastInventoryVersion != _playerInventory.InventoryVersion)
             {
@@ -247,42 +246,11 @@ namespace Hecton8.UI
         private void Subscribe()
         {
             RefreshToolManagerSubscription();
-            RefreshDurabilitySubscription();
         }
 
         private void Unsubscribe()
         {
             UnsubscribeToolManager(_subscribedToolManager);
-
-            if (_subscribedDurabilitySystem != null)
-            {
-                _subscribedDurabilitySystem.OnDurabilityChanged -= HandleDurabilityChanged;
-                _subscribedDurabilitySystem.OnToolBroken -= HandleToolBroken;
-                _subscribedDurabilitySystem.OnToolRepaired -= HandleToolRepaired;
-                _subscribedDurabilitySystem = null;
-            }
-        }
-
-        private void RefreshDurabilitySubscription()
-        {
-            ToolDurabilitySystem currentSystem = Hecton8.Core.GlobalRegistry.ToolDurability;
-            if (ReferenceEquals(_subscribedDurabilitySystem, currentSystem))
-                return;
-
-            if (_subscribedDurabilitySystem != null)
-            {
-                _subscribedDurabilitySystem.OnDurabilityChanged -= HandleDurabilityChanged;
-                _subscribedDurabilitySystem.OnToolBroken -= HandleToolBroken;
-                _subscribedDurabilitySystem.OnToolRepaired -= HandleToolRepaired;
-            }
-
-            _subscribedDurabilitySystem = currentSystem;
-            if (_subscribedDurabilitySystem != null)
-            {
-                _subscribedDurabilitySystem.OnDurabilityChanged += HandleDurabilityChanged;
-                _subscribedDurabilitySystem.OnToolBroken += HandleToolBroken;
-                _subscribedDurabilitySystem.OnToolRepaired += HandleToolRepaired;
-            }
         }
 
         private void RefreshToolManagerSubscription()
@@ -363,6 +331,29 @@ namespace Hecton8.UI
             return dirty;
         }
 
+        private bool ConsumeDurabilityChangedSignals()
+        {
+            bool dirty = false;
+            ReadOnlySpan<ItemDurabilityChangedSignal> signals = SignalBus<ItemDurabilityChangedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ref readonly ItemDurabilityChangedSignal signal = ref signals[i];
+                if (signal.InventoryHash != 0u)
+                    continue;
+
+                dirty = true;
+                break;
+            }
+
+            if (dirty)
+            {
+                _slotVisualsDirty = true;
+                _statusDirty = true;
+            }
+
+            return dirty;
+        }
+
         private void RefreshToolLoadoutSignalBinding()
         {
             uint resolvedSourceId = ResolveToolLoadoutSignalSourceId(toolManager);
@@ -378,21 +369,6 @@ namespace Hecton8.UI
             return manager != null && manager.gameObject != null
                 ? GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(manager.gameObject.GetEntityId()))
                 : 0u;
-        }
-
-        private void HandleDurabilityChanged(string toolId, float _, float __)
-        {
-            InvalidateToolSlotVisuals(toolId);
-        }
-
-        private void HandleToolBroken(string toolId)
-        {
-            InvalidateToolSlotVisuals(toolId);
-        }
-
-        private void HandleToolRepaired(string toolId, float _)
-        {
-            InvalidateToolSlotVisuals(toolId);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -524,33 +500,6 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
         //  REFRESH
         // ══════════════════════════════════════════════════════════
-
-        private void InvalidateToolSlotVisuals(string toolId)
-        {
-            if (string.IsNullOrEmpty(toolId) || !IsAssignedToolIdTracked(toolId))
-                return;
-
-            _slotVisualsDirty = true;
-            _statusDirty = true;
-        }
-
-        private bool IsAssignedToolIdTracked(string toolId)
-        {
-            if (toolManager == null || string.IsNullOrEmpty(toolId))
-                return false;
-
-            for (int i = 0; i < SlotCount; i++)
-            {
-                GameObject prefab = toolManager.GetAssignedToolPrefab(i);
-                if (prefab == null || !prefab.TryGetComponent(out PlayerTool tool) || tool.Metadata == null)
-                    continue;
-
-                if (string.Equals(tool.Metadata.toolID, toolId, System.StringComparison.Ordinal))
-                    return true;
-            }
-
-            return false;
-        }
 
         private void Refresh(bool forceStatus = false)
         {
