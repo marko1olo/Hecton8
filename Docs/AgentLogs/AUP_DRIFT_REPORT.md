@@ -465,6 +465,35 @@ Status: VERIFIED AUP INTEGRITY - LOOP 39 REAL H-PHI SOURCE REPAIR REMOVED DEAD O
 - Unity import/Console verification remains pending because no Unity editor session is available.
 - H-Phi result is static-source evidence, not profiler proof.
 
+## Loop 46 Real AUP Precision Repair - Seismic Shockwave Grid-Delta Force Direction
+
+### Findings
+
+- `RandomEventSystem.ResolveAupDirectionAndDistance` used full absolute-double AUP subtraction for cave-collapse shockwave direction and distance.
+- This path feeds physics impulse falloff, so it must not depend on cancellation-prone absolute coordinates.
+
+### Source Changes
+
+- `Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs`: seismic impulse direction now uses direct AUP grid/local double delta math.
+- Added finite fallback to skip impulse when distance math is non-finite.
+- Added zero-distance fallback before rsqrt/direction division.
+- Existing non-alloc physics overlap, rigidbody de-dup buffer, and queued force routing were preserved.
+
+### Verification
+
+- `git diff --check -- Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs` reports a line-ending warning only, no whitespace errors.
+- Final targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Final direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` returned 233 broad residual matches. Residuals remain broad `universe` text plus known final-cast/presentation payload names.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 184.827 seconds with `RuntimeHPhiRisk=0.000633457`, `RuntimeHPhiNarrow=0.01078177`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=362`, `AupPrecisionRisk=0`, `NativeArrayRefs=7074`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, and `NativeOwnershipRisk=8196`.
+- Temporary Loop 46 capture is absent after cleanup.
+- No `dotnet build` or rebuild was run in Loop 46 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- H-Phi result is static-source evidence, not profiler proof.
+
 ## Loop 45 Real AUP Precision Repair - Acoustic Echolocation Classification Grid-Delta Distance
 
 ### Findings

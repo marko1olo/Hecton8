@@ -520,3 +520,14 @@ Cinematic cheats used: No visual change. This preserves crash evidence without c
 Exact microseconds saved: None claimed for healthy frames. Fault frames avoid repeated file creation and binary writes after the first dump.
 
 Verification: No dotnet rebuilds were run. Static scans confirmed `_blackBoxDumped` gates `DumpBlackBox()` and resets on lifecycle/resource reset plus valid `RecordBlackBox()` samples.
+
+## 2026-05-15 Tooltip AUP Shift Wrap-Safe Frame Check
+What was wrong: Tooltip AUP shift consumption used a raw unsigned `<=` comparison, which can reject valid shifts after sequence wraparound.
+
+What was done: Added `IsNewAupShift()` with the project-standard unsigned delta check and zero-id guard, then routed tooltip shift consumption through it.
+
+Cinematic cheats used: No visual change for normal sessions. This keeps diegetic prompt anchors stable across long floating-origin runs.
+
+Exact microseconds saved: None claimed. Cost is one unsigned delta check per shift packet, not per render frame.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed the raw `ShiftFrameId <=` comparison is gone from `DiegeticTooltipSystem`.

@@ -583,3 +583,11 @@ Solution: Use direct grid-delta/local double axis math, keep the existing cheap 
 Rejected Alternatives: Leave the code because it already used `double3`, use runtime `Vector3` distance, or replace the approximation with sqrt. Full absolute doubles are still vulnerable to cancellation at extreme grids; runtime positions are presentation-only; sqrt is unnecessary for a diegetic classification label.
 Scalability potential: Low devices keep the capped 24 bioform / 64 anchor scan and cheap approximation. Middle gets stable sonar contact distances after long sessions. High/Ultra can spend visual budget on richer acoustic overlays without the classification gate inheriting float/cancellation drift.
 Hardware Impact: 0 B/frame added. Runtime cost is a few scalar double operations in already bounded UI/contact loops. Measured gameplay microseconds are absent; static H-Phi gate reports `AupPrecisionRisk=0`, and no rebuild was run per user ban.
+
+## Decision 73 - Seismic Shockwave Grid-Delta Force Direction
+
+Problem: `RandomEventSystem.ResolveAupDirectionAndDistance` subtracted full absolute `double3` AUP coordinates to compute cave-collapse impulse direction and falloff distance. This is a physics-facing force path, so cancellation at large grid values can corrupt force direction or produce unstable falloff.
+Solution: Resolve AUP deltas from long grid differences plus local offsets in double, keep rsqrt after double length calculation, and add explicit non-finite/zero-distance fallbacks before force routing.
+Rejected Alternatives: Use runtime `Vector3` world-center distance, keep full absolute subtraction, or add managed telemetry/logging. Runtime positions are presentation-only after rebase; full absolute subtraction still loses low bits; managed logs violate zero-GC and do not repair the force vector.
+Scalability potential: Low devices keep the same non-alloc overlap and rigidbody caps. Middle gets stable shockwave falloff after long sessions. High/Ultra can spend saved correction/debug budget on stronger cave-collapse visual feedback without physics jitter.
+Hardware Impact: 0 B/frame added. Runtime cost is bounded to bodies already collected by the non-alloc seismic overlap. Measured gameplay microseconds are absent; static H-Phi gate reports `AupPrecisionRisk=0`, and no rebuild was run per user ban.

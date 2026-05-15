@@ -863,6 +863,37 @@ Verification:
 Integrator notes:
 - Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
 
+## 2026-05-15 - Loop 46 Real AUP Precision Repair - Seismic Shockwave Direction
+
+What was wrong:
+- `RandomEventSystem` used full absolute `double3` AUP subtraction for seismic shockwave force direction and falloff distance.
+- That is a physics-facing path; cancellation can corrupt impulse direction after long-session origin travel.
+
+What was done:
+- Moved seismic impulse delta resolution to direct grid/local double math.
+- Kept rsqrt after double length calculation.
+- Added non-finite and zero-distance fallbacks before force routing.
+
+Cinematic Cheats used:
+- No new simulation. Preserved the existing cheap cave-collapse impulse model and non-alloc body caps.
+- Low-tier keeps the same bounded overlap path; High/Ultra can add stronger shockwave visuals on top of stable force math.
+
+Exact Microseconds saved:
+- Gameplay frame time: 0 us measured; profiler proof is absent.
+- No allocation added; cost is bounded to already-collected seismic bodies.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs` reports line-ending warning only.
+- Qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory AUP regex scan returned 233 broad residual matches: broad `universe` text and known final-cast/presentation payload names.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 184.827 seconds with `AupPrecisionRisk=0`, `AupPrecisionIntegrity=1`, `RuntimeHPhiRisk=0.000633457`, `NativeArrayRefs=7074`, and `PrimaryOwnerBlockedNativeArrayRefs=5678`.
+- Temporary Loop 46 capture is absent after cleanup.
+- No `dotnet build` or rebuild was run because the user explicitly forbade rebuilds.
+
+Integrator notes:
+- Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
+
 ## 2026-05-15 - Loop 45 Real AUP Precision Repair - Acoustic Echolocation Distance
 
 What was wrong:
