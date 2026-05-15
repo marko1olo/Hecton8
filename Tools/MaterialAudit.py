@@ -102,6 +102,7 @@ SEPARATE_OCCLUSION_PROPS = {"_OcclusionMap", "_AOMap", "_AmbientOcclusionMap"}
 SEPARATE_ROUGHNESS_PROPS = {"_RoughnessMap", "_SmoothnessMap", "_GlossMap", "_SpecGlossMap"}
 SEPARATE_METALLIC_PROPS = {"_MetallicMap", "_MetallicGlossMap"}
 DETAIL_MAP_PROPS = {"_DetailAlbedoMap", "_DetailNormalMap", "_DetailMask"}
+IGNORED_TEXTURE_PROP_PREFIXES = ("unity_",)
 STANDARD_MATERIAL_MIB = 6.65
 OPTIMIZED_MATERIAL_MIB = 2.99
 GOD_MODE_TEXTURE_OVERRIDES = [
@@ -214,9 +215,92 @@ GOD_MODE_TEXTURE_OVERRIDES = [
         "fallback": "Close-read UI only; regular UI is outside world PBR budget.",
     },
 ]
+GLOBAL_DETAIL_OVERLAY_PLAN = [
+    {
+        "overlay_role": "fine_cockpit_scratches",
+        "source_status": "MISSING_AUTHORING",
+        "target_surfaces": "Cockpit glass, painted metal, polished hand-contact panels",
+        "toaster_rule": "Disabled except inspection props.",
+        "god_mode_rule": "BC4/BC5 1024 overlay at 8x-16x tiling.",
+        "expected_detail_gain_percent": 20,
+    },
+    {
+        "overlay_role": "panel_dust_grit",
+        "source_status": "MISSING_AUTHORING",
+        "target_surfaces": "Habitat panels, wall seams, low-traffic module floors",
+        "toaster_rule": "Use baked albedo dirt only.",
+        "god_mode_rule": "BC4 1024 mask blended into roughness and albedo breakup.",
+        "expected_detail_gain_percent": 20,
+    },
+    {
+        "overlay_role": "carbon_fiber_weave",
+        "source_status": "MISSING_AUTHORING",
+        "target_surfaces": "Tool grips, suit hardpoints, high-end cockpit inserts",
+        "toaster_rule": "Normal overlay disabled.",
+        "god_mode_rule": "BC5 1024 tangent-aligned weave normal.",
+        "expected_detail_gain_percent": 25,
+    },
+    {
+        "overlay_role": "worn_rubber",
+        "source_status": "MISSING_AUTHORING",
+        "target_surfaces": "Gaskets, grips, boot contact zones, black utility trim",
+        "toaster_rule": "Use scalar roughness only.",
+        "god_mode_rule": "BC4 1024 pitted roughness detail plus low-strength normal.",
+        "expected_detail_gain_percent": 20,
+    },
+    {
+        "overlay_role": "brushed_steel_streaks",
+        "source_status": "MISSING_AUTHORING",
+        "target_surfaces": "Cockpit frames, rails, latches, exposed machined metal",
+        "toaster_rule": "Use anisotropic fake without detail sample.",
+        "god_mode_rule": "BC4 1024 directional streak mask for anisotropic fake.",
+        "expected_detail_gain_percent": 25,
+    },
+    {
+        "overlay_role": "oxidized_aluminum_pitting",
+        "source_status": "MISSING_AUTHORING",
+        "target_surfaces": "Exterior module shells, old brackets, pressure fittings",
+        "toaster_rule": "Baked AO/roughness only.",
+        "god_mode_rule": "BC4 1024 pitting mask into roughness and edge darkening.",
+        "expected_detail_gain_percent": 20,
+    },
+    {
+        "overlay_role": "salt_deposit_speckle",
+        "source_status": "MISSING_AUTHORING",
+        "target_surfaces": "Wet glass edges, flooded doors, submarine exterior seams",
+        "toaster_rule": "Use static decal or base-map stain.",
+        "god_mode_rule": "BC4 1024 speckle mask blended by wetness depth.",
+        "expected_detail_gain_percent": 20,
+    },
+    {
+        "overlay_role": "grease_hand_smudges",
+        "source_status": "MISSING_AUTHORING",
+        "target_surfaces": "Switch panels, handles, lockers, tool drawers",
+        "toaster_rule": "Use low-frequency decal only.",
+        "god_mode_rule": "BC4 1024 roughness-darkening overlay in interaction zones.",
+        "expected_detail_gain_percent": 20,
+    },
+    {
+        "overlay_role": "edge_chipped_paint",
+        "source_status": "MISSING_AUTHORING",
+        "target_surfaces": "Painted industrial panels, doors, crates, railings",
+        "toaster_rule": "Vertex color or baked mask only.",
+        "god_mode_rule": "BC4 1024 edge wear mask multiplied by curvature/AO author data.",
+        "expected_detail_gain_percent": 20,
+    },
+    {
+        "overlay_role": "condensation_micro_droplets",
+        "source_status": "MISSING_AUTHORING",
+        "target_surfaces": "Cold glass, wet acrylic, instrument covers, exterior windows",
+        "toaster_rule": "Disabled; rely on fake clearcoat.",
+        "god_mode_rule": "BC5 1024 tiny droplet normal at 0.05-0.12 strength.",
+        "expected_detail_gain_percent": 25,
+    },
+]
 
 TEXTURE_PROPERTY_RE = re.compile(r"^\s*-\s+([A-Za-z0-9_]+):\s*$")
 GUID_RE = re.compile(r"guid:\s*([0-9a-fA-F]{32})")
+HEX_GUID_RE = re.compile(r"^[0-9a-fA-F]{32}$")
 
 
 def normalized(path: Path) -> str:
@@ -422,6 +506,8 @@ def recommend_texture_fix(issue: str) -> str:
 
 
 def recommend_material_fix(issue: str) -> str:
+    if issue == "UNRESOLVED_TEXTURE_GUID":
+        return "Resolve the texture GUID inside first-party assets or quarantine the external dependency."
     if issue == "NO_PROMPT_ORM_SLOT":
         return "Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved."
     if issue == "NO_PACKED_ORM_OR_MASK_SLOT":
@@ -576,6 +662,16 @@ def property_paths(props: dict[str, str], names: set[str]) -> list[str]:
     return [f"{name}:{props[name]}" for name in sorted(names.intersection(props.keys()))]
 
 
+def unresolved_texture_refs(props: dict[str, str]) -> list[str]:
+    unresolved: list[str] = []
+    for prop, value in sorted(props.items()):
+        if prop.startswith(IGNORED_TEXTURE_PROP_PREFIXES):
+            continue
+        if HEX_GUID_RE.fullmatch(value):
+            unresolved.append(f"{prop}:{value}")
+    return unresolved
+
+
 def build_channel_packing_candidate(
     path: str,
     props: dict[str, str],
@@ -633,6 +729,9 @@ def resolve_material(raw: dict[str, Any], guid_map: dict[str, str]) -> dict[str,
     has_normal = bool(prop_names.intersection(NORMAL_MAP_PROPS))
 
     issues: list[str] = []
+    unresolved_refs = unresolved_texture_refs(props)
+    if unresolved_refs:
+        issues.append("UNRESOLVED_TEXTURE_GUID")
     if has_base and not has_prompt_orm:
         issues.append("NO_PROMPT_ORM_SLOT")
     if has_base and not has_packed:
@@ -663,6 +762,7 @@ def resolve_material(raw: dict[str, Any], guid_map: dict[str, str]) -> dict[str,
         "has_legacy_packed_mask": has_legacy_packed_mask,
         "has_packed_mask": has_packed,
         "has_detail": has_detail,
+        "unresolved_texture_refs": unresolved_refs,
         "channel_packing_candidate": channel_candidate,
         "issues": issues,
     }
@@ -722,11 +822,17 @@ def summarize_materials(materials: list[dict[str, Any]]) -> dict[str, Any]:
     issue_materials: list[dict[str, Any]] = []
     channel_candidates: list[dict[str, Any]] = []
     channel_priority_counts: dict[str, int] = {}
+    unresolved_materials: list[dict[str, Any]] = []
+    unresolved_ref_count = 0
     for material in materials:
         for issue in material.get("issues", []):
             issue_counts[issue] = issue_counts.get(issue, 0) + 1
         if material.get("issues"):
             issue_materials.append(material)
+        unresolved_refs = material.get("unresolved_texture_refs", [])
+        if unresolved_refs:
+            unresolved_materials.append(material)
+            unresolved_ref_count += len(unresolved_refs)
         candidate = material.get("channel_packing_candidate")
         if candidate:
             channel_candidates.append(candidate)
@@ -740,6 +846,9 @@ def summarize_materials(materials: list[dict[str, Any]]) -> dict[str, Any]:
         "materials_with_packed_mask": sum(1 for item in materials if item.get("has_packed_mask")),
         "materials_with_detail": sum(1 for item in materials if item.get("has_detail")),
         "materials_with_issues": len(issue_materials),
+        "materials_with_unresolved_texture_refs": len(unresolved_materials),
+        "unresolved_texture_ref_count": unresolved_ref_count,
+        "unresolved_texture_ref_materials": unresolved_materials[:100],
         "channel_packing_candidate_count": len(channel_candidates),
         "channel_packing_priority_counts": channel_priority_counts,
         "channel_packing_candidates": channel_candidates[:100],
@@ -795,6 +904,7 @@ def run_audit(root: Path, sample_size: int, include_third_party: bool) -> dict[s
         "texture_summary": summarize_textures(textures),
         "material_summary": summarize_materials(materials),
         "god_mode_texture_overrides": GOD_MODE_TEXTURE_OVERRIDES,
+        "global_detail_overlay_plan": GLOBAL_DETAIL_OVERLAY_PLAN,
     }
 
 
@@ -831,6 +941,11 @@ def write_markdown_report(report: dict[str, Any], output: Path) -> None:
         markdown_row(["Materials with packed mask", material_summary["materials_with_packed_mask"]]),
         markdown_row(["Materials with detail", material_summary["materials_with_detail"]]),
         markdown_row(["Materials with issues", material_summary["materials_with_issues"]]),
+        markdown_row([
+            "Materials with unresolved texture refs",
+            material_summary.get("materials_with_unresolved_texture_refs", 0),
+        ]),
+        markdown_row(["Unresolved texture refs", material_summary.get("unresolved_texture_ref_count", 0)]),
         markdown_row(["Channel packing candidates", material_summary.get("channel_packing_candidate_count", 0)]),
         "",
         "## Import Issue Counts",
@@ -873,6 +988,26 @@ def write_markdown_report(report: dict[str, Any], output: Path) -> None:
         lines.append("No GOD_MODE texture overrides defined.")
     lines.append("")
 
+    lines.extend(["## Global Detail Overlay Plan", ""])
+    overlay_plan = report.get("global_detail_overlay_plan", [])
+    if overlay_plan:
+        lines.extend([
+            markdown_row(["Role", "Status", "Targets", "TOASTER", "GOD_MODE", "Detail gain %"]),
+            markdown_row(["---", "---", "---", "---", "---", "---"]),
+        ])
+        for item in overlay_plan:
+            lines.append(markdown_row([
+                item["overlay_role"],
+                item["source_status"],
+                item["target_surfaces"],
+                item["toaster_rule"],
+                item["god_mode_rule"],
+                item["expected_detail_gain_percent"],
+            ]))
+    else:
+        lines.append("No global detail overlay plan defined.")
+    lines.append("")
+
     if texture_summary["import_issue_counts"]:
         lines.extend([markdown_row(["Issue", "Count"]), markdown_row(["---", "---"])])
         for issue, count in sorted(texture_summary["import_issue_counts"].items()):
@@ -912,6 +1047,15 @@ def write_markdown_report(report: dict[str, Any], output: Path) -> None:
             lines.append(markdown_row([item["path"], ", ".join(issues), recommendations]))
     else:
         lines.append("No material slot issues detected.")
+
+    lines.extend(["", "## Unresolved Material Texture GUIDs", ""])
+    unresolved_materials = material_summary.get("unresolved_texture_ref_materials", [])
+    if unresolved_materials:
+        lines.extend([markdown_row(["Material", "Unresolved refs"]), markdown_row(["---", "---"])])
+        for item in unresolved_materials:
+            lines.append(markdown_row([item["path"], "; ".join(item.get("unresolved_texture_refs", []))]))
+    else:
+        lines.append("No unresolved material texture GUIDs detected.")
 
     lines.extend(["", "## Texture Memory Hotspots", ""])
     hotspots = texture_summary.get("largest_estimated_textures", [])
@@ -986,6 +1130,12 @@ def write_csv_reports(report: dict[str, Any], prefix: Path) -> None:
                 " | ".join(recommend_material_fix(issue) for issue in issues),
             ])
 
+    with Path(f"{prefix}_unresolved_texture_refs.csv").open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["path", "unresolved_texture_refs"])
+        for item in material_summary.get("unresolved_texture_ref_materials", []):
+            writer.writerow([item["path"], ";".join(item.get("unresolved_texture_refs", []))])
+
     with Path(f"{prefix}_detail_candidates.csv").open("w", encoding="utf-8", newline="") as handle:
         writer = csv.writer(handle)
         writer.writerow(["path", "import_issues"])
@@ -1056,6 +1206,26 @@ def write_csv_reports(report: dict[str, Any], prefix: Path) -> None:
                 item["fallback"],
             ])
 
+    with Path(f"{prefix}_global_detail_overlay_plan.csv").open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow([
+            "overlay_role",
+            "source_status",
+            "target_surfaces",
+            "toaster_rule",
+            "god_mode_rule",
+            "expected_detail_gain_percent",
+        ])
+        for item in report.get("global_detail_overlay_plan", []):
+            writer.writerow([
+                item["overlay_role"],
+                item["source_status"],
+                item["target_surfaces"],
+                item["toaster_rule"],
+                item["god_mode_rule"],
+                item["expected_detail_gain_percent"],
+            ])
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Audit HECTON-8 surface textures/materials.")
@@ -1114,9 +1284,12 @@ def main() -> int:
     print(f"materials_with_packed_mask={material_summary['materials_with_packed_mask']}")
     print(f"materials_with_detail={material_summary['materials_with_detail']}")
     print(f"materials_with_issues={material_summary['materials_with_issues']}")
+    print(f"materials_with_unresolved_texture_refs={material_summary['materials_with_unresolved_texture_refs']}")
+    print(f"unresolved_texture_refs={material_summary['unresolved_texture_ref_count']}")
     print(f"channel_packing_candidates={material_summary['channel_packing_candidate_count']}")
     print(f"channel_candidate_saved_mib={material_summary['vram_model']['candidate_saved_mib']}")
     print(f"god_mode_override_count={len(report['god_mode_texture_overrides'])}")
+    print(f"global_detail_overlay_count={len(report['global_detail_overlay_plan'])}")
     if args.json:
         print(f"json={args.json}")
     if args.markdown:

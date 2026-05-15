@@ -93,3 +93,24 @@ Task count: 8 numbered tasks in extracted XML. Header claims 15; rejected as sta
 - [x] Added channel-packing savings model to audit output | DOD: JSON/Markdown now report 31 channel candidates as 206.15 MiB standard -> 92.69 MiB optimized, saving 113.46 MiB or 55.0% under the documented model. Alternatives Rejected: unquantified "50% less VRAM" claim. Estimate: 0 us runtime impact.
 - [x] Re-ran full audit after residency model | DOD: final audit reports 497.565 MiB estimated texture residency, 0 energy failures, 5 import issue textures, 0 prompt ORM slots, 9 legacy mask slots, and 31 channel candidates. Alternatives Rejected: stale JSON/Markdown/CSV artifacts. Estimate: 0 us runtime impact.
 - [x] Re-verified fail gates after residency model | DOD: import-debt scoped run returned exit 2 and material-debt scoped run returned exit 3 with the new summary fields present. Alternatives Rejected: assuming added summary fields did not affect exit paths. Estimate: 0 us runtime impact.
+
+### Loop 12 - GOD_MODE Override Export Pass
+
+- [x] Converted GOD_MODE overrides to audit data | DOD: `Tools/MaterialAudit.py` now emits 12 tiered texture override rows in JSON/Markdown and `MaterialAudit_TECHNICAL_ARTIST_DATA_god_mode_texture_overrides.csv`. Alternatives Rejected: prose-only batch updater handoff. Estimate: 0 us runtime impact.
+- [x] Re-tested export path | DOD: `python -m unittest Tools.test_material_audit` passed 6 tests including GOD_MODE override export assertion. Alternatives Rejected: assuming CSV generation from implementation only. Estimate: 0 us runtime impact.
+- [x] Re-ran full audit after override export | DOD: final audit reports `god_mode_override_count=12` with prior surface counts preserved. Alternatives Rejected: stale artifacts without the new override CSV. Estimate: 0 us runtime impact.
+- [x] Re-verified fail gates after override export | DOD: import-debt scoped run still returned exit 2 and material-debt scoped run still returned exit 3 with `god_mode_override_count=12` present. Alternatives Rejected: assuming new summary output did not disturb fail exits. Estimate: 0 us runtime impact.
+
+### Loop 13 - Global Detail Overlay Plan Pass
+
+- [x] Converted detail-overlay target into audit data | DOD: `Tools/MaterialAudit.py` now emits 10 global detail overlay roles with TOASTER/GOD_MODE rules and expected detail-gain percentages. Alternatives Rejected: detail-map guidance only in prose. Estimate: 0 us runtime impact.
+- [x] Added global detail overlay CSV | DOD: generated `MaterialAudit_TECHNICAL_ARTIST_DATA_global_detail_overlay_plan.csv`; minimum expected detail gain is 20%. Alternatives Rejected: leaving the "20% more detail" target unstructured. Estimate: 0 us runtime impact.
+- [x] Re-ran full audit after detail plan export | DOD: final audit reports `global_detail_overlay_count=10` with 138 textures, 0 energy failures, 31 channel candidates, and 12 GOD_MODE override rows preserved. Alternatives Rejected: stale artifacts without the new CSV. Estimate: 0 us runtime impact.
+- [x] Re-verified fail gates after detail plan export | DOD: import-debt scoped run still returned exit 2 and material-debt scoped run still returned exit 3 with `global_detail_overlay_count=10` present. Alternatives Rejected: assuming new report sections could not affect exit paths. Estimate: 0 us runtime impact.
+
+### Loop 14 - Unresolved Material Reference Pass
+
+- [x] Added unresolved texture GUID detection | DOD: validator now flags material texture slots that remain raw GUIDs after first-party GUID resolution, while ignoring Unity internal `unity_` lighting properties. Alternatives Rejected: treating raw GUID leakage in reports as acceptable evidence. Estimate: 0 us runtime impact.
+- [x] Added unresolved texture reference CSV | DOD: generated `MaterialAudit_TECHNICAL_ARTIST_DATA_unresolved_texture_refs.csv` with 9 affected materials and 27 unresolved refs. Alternatives Rejected: burying unresolved refs inside channel candidate rows. Estimate: 0 us runtime impact.
+- [x] Re-ran full audit after unresolved-reference pass | DOD: final audit reports 37 material issue materials, 9 unresolved-reference materials, 27 unresolved refs, 0 energy failures, 31 channel candidates, and prior GOD_MODE/detail exports preserved. Alternatives Rejected: stale material debt counts. Estimate: 0 us runtime impact.
+- [x] Re-verified fail gates after unresolved-reference pass | DOD: import-debt scoped run still returned exit 2 and material-debt scoped run still returned exit 3 with unresolved-reference summary fields present. Alternatives Rejected: assuming new material issue type did not affect exit paths. Estimate: 0 us runtime impact.

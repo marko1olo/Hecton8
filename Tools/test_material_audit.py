@@ -112,10 +112,12 @@ class MaterialAuditTests(unittest.TestCase):
 
             resolved = audit.resolve_material(audit.parse_material(material, root), {})
 
+            self.assertIn("UNRESOLVED_TEXTURE_GUID", resolved["issues"])
             self.assertIn("NO_PROMPT_ORM_SLOT", resolved["issues"])
             self.assertIn("LEGACY_MASK_SLOT_REQUIRES_CHANNEL_REVIEW", resolved["issues"])
             self.assertIn("SEPARATE_OCCLUSION_AND_METALLIC_MAPS", resolved["issues"])
             self.assertIn("NO_DETAIL_MAP_SLOT", resolved["issues"])
+            self.assertEqual(3, len(resolved["unresolved_texture_refs"]))
             self.assertEqual("HIGH", resolved["channel_packing_candidate"]["priority"])
 
     def test_markdown_and_csv_exports_include_recommendations(self) -> None:
@@ -198,6 +200,16 @@ class MaterialAuditTests(unittest.TestCase):
                     "fallback": "Demote one mip tier when VRAM used/total > 0.90.",
                 },
             ],
+            "global_detail_overlay_plan": [
+                {
+                    "overlay_role": "fine_cockpit_scratches",
+                    "source_status": "MISSING_AUTHORING",
+                    "target_surfaces": "Cockpit glass",
+                    "toaster_rule": "Disabled except inspection props.",
+                    "god_mode_rule": "BC4/BC5 1024 overlay at 8x-16x tiling.",
+                    "expected_detail_gain_percent": 20,
+                },
+            ],
         }
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -213,17 +225,20 @@ class MaterialAuditTests(unittest.TestCase):
             channel_csv = Path(f"{csv_prefix}_channel_packing_candidates.csv").read_text(encoding="utf-8")
             memory_csv = Path(f"{csv_prefix}_texture_memory_hotspots.csv").read_text(encoding="utf-8")
             overrides_csv = Path(f"{csv_prefix}_god_mode_texture_overrides.csv").read_text(encoding="utf-8")
+            detail_plan_csv = Path(f"{csv_prefix}_global_detail_overlay_plan.csv").read_text(encoding="utf-8")
 
             self.assertIn("Disable sRGB", markdown_text)
             self.assertIn("Channel Packing Candidates", markdown_text)
             self.assertIn("Candidate saved MiB", markdown_text)
             self.assertIn("Texture Memory Hotspots", markdown_text)
             self.assertIn("GOD_MODE Texture Overrides", markdown_text)
+            self.assertIn("Global Detail Overlay Plan", markdown_text)
             self.assertIn("Hull_ORM.png", texture_csv)
             self.assertIn("NO_DETAIL_MAP_SLOT", material_csv)
             self.assertIn("MAT_Test.mat", channel_csv)
             self.assertIn("BC7_ORM_LINEAR_8BPP", memory_csv)
             self.assertIn("Hero cockpit albedo", overrides_csv)
+            self.assertIn("fine_cockpit_scratches", detail_plan_csv)
 
 
 if __name__ == "__main__":

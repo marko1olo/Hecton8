@@ -95,3 +95,27 @@ Solution: Add a deterministic BC-class memory estimate per texture from image di
 Rejected Alternatives: Using Unity profiler numbers was not possible without Unity logs. Claiming exact runtime VRAM from Python was rejected; the report labels this as an offline estimate, not Unity import proof.
 Scalability potential: Low = texture hotspots can be demoted before MX350 import. Middle = CI artifacts can flag oversized source data. High = saved ORM memory buys detail overlays. Ultra = GOD_MODE can spend the same model deliberately after residency checks.
 Hardware Impact: 0 us runtime impact. Offline audit estimates 497.565 MiB scanned texture residency and 113.46 MiB potential savings across 31 channel-packing candidates under the documented 6.65 -> 2.99 MiB material model.
+
+## GOD_MODE Override Export
+
+Problem: Task 8 required a texture resolution override list for GOD_MODE, but the strongest form of that handoff is machine-readable audit data, not prose only.
+Solution: Add 12 tiered override rows to the audit report and CSV export, covering TOASTER/DECK/PRO/GOD_MODE maxima, format, and fallback rule per asset class.
+Rejected Alternatives: Creating or changing Unity quality/import settings was rejected because this scout owns doctrine and audit data, not project settings. Leaving only the Markdown doctrine table was rejected because other agents need parseable handoff data.
+Scalability potential: Low = TOASTER caps stay explicit. Middle/PRO = texture raises are bounded. Ultra = GOD_MODE gets specific higher limits with fallback/demotion rules.
+Hardware Impact: 0 us runtime impact. The generated CSV gives import/runtime owners deterministic caps without touching asset importers.
+
+## Global Detail Overlay Plan
+
+Problem: The prompt target includes 20% more detail, but the audit had only discovered detail candidates and did not export the hard-surface overlay roles needed for NASA-Punk surfaces.
+Solution: Add 10 global detail overlay roles with source status, target surfaces, TOASTER fallback, GOD_MODE rule, and expected detail-gain percentage. Export the plan to JSON, Markdown, and CSV.
+Rejected Alternatives: Claiming the existing flora detail candidates solved cockpit scratches/dust/carbon was rejected because those hard-surface overlays are missing authoring data. Mutating materials was rejected because no shader slot convention is finalized.
+Scalability potential: Low = overlays disabled or baked. Middle = limited shared masks. High = richer shared detail for inspection surfaces. Ultra = GOD_MODE gets stronger 1024 overlays without per-material duplication.
+Hardware Impact: 0 us runtime impact. The plan defines 10 shared overlays with minimum 20% expected detail gain, but all source statuses are explicit and material wiring remains pending shader/import authority.
+
+## Unresolved Material References
+
+Problem: Several material texture slots were still emitted as raw 32-character GUIDs in audit artifacts, which hides broken, external, or out-of-scope texture references.
+Solution: Add unresolved texture GUID detection after first-party GUID mapping, ignore Unity internal `unity_` lighting properties, and export affected materials to a dedicated CSV.
+Rejected Alternatives: Counting `unity_ShadowMasks` as material debt was rejected as noise. Silently leaving raw GUIDs in migration CSVs was rejected because integrators need exact reference debt before material migration.
+Scalability potential: Low = broken/external references can be fixed before MX350 import passes. Middle = CI can flag missing dependencies. High/Ultra = high-tier material upgrades do not inherit broken texture slots.
+Hardware Impact: 0 us runtime impact. Updated audit reports 9 materials with 27 unresolved first-party texture refs and 37 total material issue materials.

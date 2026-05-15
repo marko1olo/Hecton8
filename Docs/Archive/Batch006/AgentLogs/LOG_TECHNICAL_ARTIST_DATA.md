@@ -256,3 +256,91 @@ Verification:
 - `python -m unittest Tools.test_material_audit`: passed 6 tests.
 - Full first-party audit: estimated texture residency 497.565 MiB, channel candidate standard 206.15 MiB, optimized 92.69 MiB, saved 113.46 MiB, reduction 55.0%.
 - Scoped fail gates after residency model: import-debt root returned exit 2; material-debt root returned exit 3.
+
+## 2026-05-15 - GOD_MODE Override Export Pass
+
+What was wrong:
+
+- Task 8's texture override list existed in doctrine but was not exported as structured batch data.
+
+What was done:
+
+- Added 12 tiered GOD_MODE texture override rows to the audit JSON and Markdown.
+- Added `MaterialAudit_TECHNICAL_ARTIST_DATA_god_mode_texture_overrides.csv`.
+- Added regression coverage for override CSV generation.
+
+Cinematic Cheats used:
+
+- Texture escalation is tier-gated: low hardware keeps tight caps, high hardware spends saved ORM/detail memory on controlled visual density.
+
+Exact Microseconds saved:
+
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0 us.
+- The export prevents uncontrolled high-tier texture bloat by pairing every GOD_MODE cap with a fallback.
+
+Verification:
+
+- `python -m py_compile Tools\MaterialAudit.py Tools\test_material_audit.py`: passed.
+- `python -m unittest Tools.test_material_audit`: passed 6 tests.
+- Full first-party audit: `god_mode_override_count=12` with prior material and energy counts preserved.
+- Scoped fail gates after override export: import-debt root returned exit 2; material-debt root returned exit 3.
+
+## 2026-05-15 - Global Detail Overlay Plan Pass
+
+What was wrong:
+
+- The audit listed discovered detail candidates but did not export the hard-surface overlay plan required for the 20% more detail target.
+
+What was done:
+
+- Added 10 global detail overlay roles to JSON and Markdown.
+- Added `MaterialAudit_TECHNICAL_ARTIST_DATA_global_detail_overlay_plan.csv`.
+- Each row includes source status, target surfaces, TOASTER fallback, GOD_MODE rule, and expected detail gain.
+
+Cinematic Cheats used:
+
+- Shared overlays buy perceived micro-surface richness without unique per-material 4K textures or extra passes.
+
+Exact Microseconds saved:
+
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0 us.
+- Future shader cost stays bounded because these are shared overlays and tier-gated samples, not material clones.
+
+Verification:
+
+- `python -m py_compile Tools\MaterialAudit.py Tools\test_material_audit.py`: passed.
+- `python -m unittest Tools.test_material_audit`: passed 6 tests.
+- Full first-party audit: `global_detail_overlay_count=10`, minimum expected detail gain 20%, existing surface counts preserved.
+- Scoped fail gates after detail plan export: import-debt root returned exit 2; material-debt root returned exit 3.
+
+## 2026-05-15 - Unresolved Material Reference Pass
+
+What was wrong:
+
+- Raw material texture GUIDs leaked into audit artifacts after GUID resolution.
+- Unity internal `unity_ShadowMasks` initially polluted the unresolved reference count and had to be filtered out.
+
+What was done:
+
+- Added `UNRESOLVED_TEXTURE_GUID` issue detection.
+- Ignored Unity internal `unity_` texture properties.
+- Added `MaterialAudit_TECHNICAL_ARTIST_DATA_unresolved_texture_refs.csv`.
+
+Cinematic Cheats used:
+
+- None. This is dependency hygiene for material migration.
+
+Exact Microseconds saved:
+
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0 us.
+- Prevents future material migration from inheriting missing/external texture references.
+
+Verification:
+
+- `python -m py_compile Tools\MaterialAudit.py Tools\test_material_audit.py`: passed.
+- `python -m unittest Tools.test_material_audit`: passed 6 tests.
+- Full first-party audit: 9 materials with unresolved texture refs, 27 unresolved refs, 37 material issue materials, 0 energy failures.
+- Scoped fail gates after unresolved-reference pass: import-debt root returned exit 2; material-debt root returned exit 3.

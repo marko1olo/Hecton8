@@ -21,7 +21,9 @@ Include third-party: `False`
 | Materials with legacy mask | 9 |
 | Materials with packed mask | 9 |
 | Materials with detail | 0 |
-| Materials with issues | 31 |
+| Materials with issues | 37 |
+| Materials with unresolved texture refs | 9 |
+| Unresolved texture refs | 27 |
 | Channel packing candidates | 31 |
 
 ## Import Issue Counts
@@ -54,6 +56,21 @@ Include third-party: `False`
 | Brush/scratch globals | 512 | 1024 | 1024 | 1024 | BC4/BC5 linear | Shared globally across cockpit, habitat, and vehicle materials. |
 | Diegetic UI atlas | 1024 | 1024 | 2048 | 2048 | BC7 sRGB | Close-read UI only; regular UI is outside world PBR budget. |
 
+## Global Detail Overlay Plan
+
+| Role | Status | Targets | TOASTER | GOD_MODE | Detail gain % |
+| --- | --- | --- | --- | --- | --- |
+| fine_cockpit_scratches | MISSING_AUTHORING | Cockpit glass, painted metal, polished hand-contact panels | Disabled except inspection props. | BC4/BC5 1024 overlay at 8x-16x tiling. | 20 |
+| panel_dust_grit | MISSING_AUTHORING | Habitat panels, wall seams, low-traffic module floors | Use baked albedo dirt only. | BC4 1024 mask blended into roughness and albedo breakup. | 20 |
+| carbon_fiber_weave | MISSING_AUTHORING | Tool grips, suit hardpoints, high-end cockpit inserts | Normal overlay disabled. | BC5 1024 tangent-aligned weave normal. | 25 |
+| worn_rubber | MISSING_AUTHORING | Gaskets, grips, boot contact zones, black utility trim | Use scalar roughness only. | BC4 1024 pitted roughness detail plus low-strength normal. | 20 |
+| brushed_steel_streaks | MISSING_AUTHORING | Cockpit frames, rails, latches, exposed machined metal | Use anisotropic fake without detail sample. | BC4 1024 directional streak mask for anisotropic fake. | 25 |
+| oxidized_aluminum_pitting | MISSING_AUTHORING | Exterior module shells, old brackets, pressure fittings | Baked AO/roughness only. | BC4 1024 pitting mask into roughness and edge darkening. | 20 |
+| salt_deposit_speckle | MISSING_AUTHORING | Wet glass edges, flooded doors, submarine exterior seams | Use static decal or base-map stain. | BC4 1024 speckle mask blended by wetness depth. | 20 |
+| grease_hand_smudges | MISSING_AUTHORING | Switch panels, handles, lockers, tool drawers | Use low-frequency decal only. | BC4 1024 roughness-darkening overlay in interaction zones. | 20 |
+| edge_chipped_paint | MISSING_AUTHORING | Painted industrial panels, doors, crates, railings | Vertex color or baked mask only. | BC4 1024 edge wear mask multiplied by curvature/AO author data. | 20 |
+| condensation_micro_droplets | MISSING_AUTHORING | Cold glass, wet acrylic, instrument covers, exterior windows | Disabled; rely on fake clearcoat. | BC5 1024 tiny droplet normal at 0.05-0.12 strength. | 25 |
+
 | Issue | Count |
 | --- | --- |
 | DATA_TEXTURE_SRGB_ON | 3 |
@@ -68,6 +85,7 @@ Include third-party: `False`
 | NO_DETAIL_MAP_SLOT | 31 |
 | NO_PACKED_ORM_OR_MASK_SLOT | 22 |
 | NO_PROMPT_ORM_SLOT | 31 |
+| UNRESOLVED_TEXTURE_GUID | 9 |
 
 ## Detail Candidates
 
@@ -100,14 +118,20 @@ Include third-party: `False`
 | --- | --- | --- |
 | Art/Materials/MAT_Diegetic_HUD_V4_Projection.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
 | Art/Materials/Mat_GasGiant.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
+| Art/Materials/Mat_HectonSky.mat | UNRESOLVED_TEXTURE_GUID | Resolve the texture GUID inside first-party assets or quarantine the external dependency. |
+| Art/Materials/Mat_HectonSky_CloudOverlay.mat | UNRESOLVED_TEXTURE_GUID | Resolve the texture GUID inside first-party assets or quarantine the external dependency. |
+| Art/Materials/Mat_TriplanarRock.mat | UNRESOLVED_TEXTURE_GUID | Resolve the texture GUID inside first-party assets or quarantine the external dependency. |
 | Art/Materials/Meshy_AI_Alien_barnacles_clust_0301230506_texture.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
-| Art/Materials/terrain.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
+| Art/Materials/Skybox.mat | UNRESOLVED_TEXTURE_GUID | Resolve the texture GUID inside first-party assets or quarantine the external dependency. |
+| Art/Materials/Snow.mat | UNRESOLVED_TEXTURE_GUID | Resolve the texture GUID inside first-party assets or quarantine the external dependency. |
+| Art/Materials/terrain.mat | UNRESOLVED_TEXTURE_GUID, NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Resolve the texture GUID inside first-party assets or quarantine the external dependency.; Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
 | Art/Materials/Celestial/MAT_CelestialMoon_Ione.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
 | Art/Materials/Celestial/MAT_CelestialMoon_Khepri.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
 | Art/Materials/Celestial/MAT_CelestialMoon_Nammu.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
 | Art/Materials/Celestial/MAT_CelestialMoon_Pelagia.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
 | Art/Materials/Celestial/MAT_CelestialMoon_Thalos.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
 | Art/Materials/Celestial/MAT_CelestialMoon_Varda.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
+| Art/Materials/Construction/Mat_LeakWetSheen.mat | UNRESOLVED_TEXTURE_GUID | Resolve the texture GUID inside first-party assets or quarantine the external dependency. |
 | Art/Materials/Construction/Mat_RuinSeepSheen.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
 | Art/Materials/WorldProceduralProxy/MAT_family_coral_branching.mat | NO_PROMPT_ORM_SLOT, LEGACY_MASK_SLOT_REQUIRES_CHANNEL_REVIEW, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Review legacy mask/gloss channel order before treating it as prompt ORM.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
 | Art/Materials/WorldProceduralProxy/MAT_family_coral_brittle.mat | NO_PROMPT_ORM_SLOT, LEGACY_MASK_SLOT_REQUIRES_CHANNEL_REVIEW, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Review legacy mask/gloss channel order before treating it as prompt ORM.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
@@ -123,12 +147,26 @@ Include third-party: `False`
 | Art/Materials/WorldProceduralProxy/MAT_family_rock_small_floor.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
 | Art/Models/Rocks/Rock 6/rock6/rock_6.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
 | Art/Models/Rocks/Rock 7/Materials/2.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
-| Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/mat_Rock2.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
-| Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/mat_Rock_Shared.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
+| Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/mat_Rock2.mat | UNRESOLVED_TEXTURE_GUID, NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Resolve the texture GUID inside first-party assets or quarantine the external dependency.; Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
+| Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/mat_Rock_Shared.mat | UNRESOLVED_TEXTURE_GUID, NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Resolve the texture GUID inside first-party assets or quarantine the external dependency.; Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
 | Materials/WorldRuntime/ProceduralPlaceholders/TerrainLod/MAT_family_rock_arch_large_Placeholder.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
 | _PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonClouds.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
 | _PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonSurface.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
 | _PROLOGUE_CONTENT/Textures/Planets/pLANET/Materials/clouds0_diff.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
+
+## Unresolved Material Texture GUIDs
+
+| Material | Unresolved refs |
+| --- | --- |
+| Art/Materials/Mat_HectonSky.mat | _HighCloudTex:97dacc0c8637b304f9451ecd290acffb; _MainCloudAtlas:161f2ad7f77e8bf408b29aa7e3d29966 |
+| Art/Materials/Mat_HectonSky_CloudOverlay.mat | _HighCloudTex:97dacc0c8637b304f9451ecd290acffb; _MainCloudAtlas:161f2ad7f77e8bf408b29aa7e3d29966 |
+| Art/Materials/Mat_TriplanarRock.mat | _Rock_Albedo:47f0a231c050423488e0ff6f7d66f813 |
+| Art/Materials/Skybox.mat | _BackTex:1227708538876854fa69e8d12b770599; _DownTex:bb8086d1d88f4454291b183304b77a9c; _FrontTex:e4b329141c218da4e85a06e04de20385; _LeftTex:f783f7d87033f2d46aa0213fe99ebeae; _RightTex:c14d76bd0519285429da8d1ca6420ffb; _UpTex:3c564301b9820a14e9455ebdcc20a898 |
+| Art/Materials/Snow.mat | _BumpMap:e80c3c84ea861404d8a427db8b7abf04; _ParallaxMap:e80c3c84ea861404d8a427db8b7abf04 |
+| Art/Materials/terrain.mat | _BaseMap:47f0a231c050423488e0ff6f7d66f813; _MainTex:47f0a231c050423488e0ff6f7d66f813; _Rock_Albedo:47f0a231c050423488e0ff6f7d66f813 |
+| Art/Materials/Construction/Mat_LeakWetSheen.mat | _BumpMap:7d09e7c7fffa5a94eadbfb28633eaa1e; _Normal:a116c6e469d15244ea70d6a8403f52d9; _NormalMap:a116c6e469d15244ea70d6a8403f52d9 |
+| Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/mat_Rock2.mat | _BaseMap:920eb4a5d89009b42a522ff2aa1e6ef3; _BumpMap:5189dcc817bc5e24095d445209499d1f; _MainTex:920eb4a5d89009b42a522ff2aa1e6ef3; _OcclusionMap:df147ac10298ce44e9557850251a533a |
+| Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/mat_Rock_Shared.mat | _BaseMap:920eb4a5d89009b42a522ff2aa1e6ef3; _BumpMap:5189dcc817bc5e24095d445209499d1f; _MainTex:920eb4a5d89009b42a522ff2aa1e6ef3; _OcclusionMap:df147ac10298ce44e9557850251a533a |
 
 ## Texture Memory Hotspots
 

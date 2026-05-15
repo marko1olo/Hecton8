@@ -21,10 +21,14 @@ Audit source: `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA.json`
 - Materials with legacy/unknown packed mask slots: 9
 - Materials with any packed mask slots: 9
 - Materials with detail slots: 0
-- Materials with audit issues: 31
+- Materials with audit issues: 37
+- Materials with unresolved first-party texture references: 9
+- Unresolved first-party texture references: 27
 - Channel-packing migration candidates: 31 (`LOW` = 22, `MEDIUM` = 9)
 - Channel-packing candidate model: 206.15 MiB standard -> 92.69 MiB optimized, saving 113.46 MiB (55.0%)
-- Issue counts: `NO_PROMPT_ORM_SLOT` = 31, `NO_PACKED_ORM_OR_MASK_SLOT` = 22, `NO_DETAIL_MAP_SLOT` = 31, `LEGACY_MASK_SLOT_REQUIRES_CHANNEL_REVIEW` = 9
+- Machine-readable GOD_MODE texture override rows: 12
+- Machine-readable global detail overlay rows: 10, minimum expected detail gain 20%
+- Issue counts: `NO_PROMPT_ORM_SLOT` = 31, `NO_PACKED_ORM_OR_MASK_SLOT` = 22, `NO_DETAIL_MAP_SLOT` = 31, `UNRESOLVED_TEXTURE_GUID` = 9, `LEGACY_MASK_SLOT_REQUIRES_CHANNEL_REVIEW` = 9
 
 Conclusion: the current albedo set does not break the offline energy test. The material system has zero prompt-authoritative ORM slots, nine legacy/unknown mask slots, and zero wired detail slots. Five texture import settings are suspect and must be reviewed before material migration. The offline residency estimate is not Unity profiler proof; it is a deterministic BC-class triage model for asset prioritization.
 
@@ -218,7 +222,18 @@ Load-shed:
 python Tools\MaterialAudit.py --root Assets\_Project --sample-size 256 --json Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.json --markdown Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.md --csv-prefix Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA
 ```
 
-Current result: `energy_failures=0`, `energy_warnings=0`, `import_issue_textures=5`, `estimated_texture_mib=497.565`, `materials_with_prompt_orm=0`, `materials_with_legacy_mask=9`, `channel_packing_candidates=31`, `channel_candidate_saved_mib=113.46`, `materials_with_issues=31`.
+Current result: `energy_failures=0`, `energy_warnings=0`, `import_issue_textures=5`, `estimated_texture_mib=497.565`, `materials_with_prompt_orm=0`, `materials_with_legacy_mask=9`, `channel_packing_candidates=31`, `channel_candidate_saved_mib=113.46`, `god_mode_override_count=12`, `global_detail_overlay_count=10`, `materials_with_unresolved_texture_refs=9`, `unresolved_texture_refs=27`, `materials_with_issues=37`.
+
+Generated CSV artifacts:
+
+- `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_texture_import_issues.csv`
+- `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_material_issues.csv`
+- `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_unresolved_texture_refs.csv`
+- `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_detail_candidates.csv`
+- `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_channel_packing_candidates.csv`
+- `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_texture_memory_hotspots.csv`
+- `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_god_mode_texture_overrides.csv`
+- `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_global_detail_overlay_plan.csv`
 
 CI gate modes:
 
