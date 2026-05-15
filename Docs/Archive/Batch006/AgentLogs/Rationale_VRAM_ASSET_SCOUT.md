@@ -227,3 +227,11 @@ Solution: Split the implementation into `find_render_texture_source_hotspots_in_
 Rejected Alternatives: Removing RT hotspot test coverage or keeping a full source-tree walk in the unit test. Both weaken the checker: one loses coverage, the other makes fast local verification too expensive.
 Scalability potential: Low/MX350 owners still get the full RT hotspot report from normal scanner runs; tests now stay cheap enough to run during every tooling edit. High/Ultra RT effects remain profiler-gated.
 Hardware Impact: 0us runtime measured. Tooling impact: unit suite time dropped from 83.68 seconds to 8.65 seconds in this run while report output stayed at 61 total RT hotspots and 53 runtime-priority hotspots.
+
+## Decision 29: Generated Report Drift Guard
+
+Problem: After tightening scan scope to `Assets`, `Packages`, and `Data`, the generated JSON and CSV reports could drift apart or silently reintroduce non-import texture rows if future edits changed one writer path but not the other.
+Solution: Add a read-only unit test that loads `Docs/Reports/VRAM_Budget_Audit.json` and `Docs/Reports/VRAM_Budget_Audit.csv`, cross-checks texture/mesh/RenderTexture counts, verifies resolved scan roots, and rejects `Docs/` plus `_agent_screen_capture` texture rows.
+Rejected Alternatives: Hardcoding the current 1,652 texture count or relying on manual Markdown inspection. Hardcoded totals would fail legitimate asset additions; manual checks are not a gate.
+Scalability potential: Low/MX350 keeps clean import-root residency evidence; Middle/High/Ultra reports can grow with new assets while preserving machine-checkable scope discipline.
+Hardware Impact: 0us runtime measured. Tooling impact: unit suite now runs 16 tests in 5.172 seconds and catches report drift without regenerating assets or touching Unity import settings.

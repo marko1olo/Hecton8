@@ -617,3 +617,33 @@ Verification:
 Evidence boundary:
 - STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
 - Unity import, Memory Profiler, player build, and runtime frame time remain PENDING VERIFICATION.
+
+## 2026-05-15T20:05:00+03:00 - REPORT DRIFT GUARD PASS
+
+What was wrong:
+- The import-root correction was documented and reflected in generated reports, but no unit test cross-checked the broad CSV against the JSON summary.
+- Future edits could quietly reintroduce `Docs/` screenshot rows or mismatched asset counts.
+
+What was done:
+- Added `test_generated_reports_match_import_root_scope_and_counts` to `Tools/test_memory_budget_check.py`.
+- The test loads `Docs/Reports/VRAM_Budget_Audit.json` and `Docs/Reports/VRAM_Budget_Audit.csv`.
+- It verifies texture, mesh, and RenderTexture counts match between JSON and CSV.
+- It enforces `resolved_scan_roots = Assets/Packages/Data`.
+- It rejects broad texture rows under `Docs/` and rows containing `_agent_screen_capture`.
+
+Cinematic cheats used:
+- None. This is evidence gate hardening, not runtime rendering work.
+
+Exact microseconds saved:
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0us.
+- Tooling cost: unit suite now runs 16 tests in 5.172 seconds on this workstation.
+
+Verification:
+- PYTHONDONTWRITEBYTECODE=1 python AST syntax parse for `Tools/MemoryBudgetCheck.py` and `Tools/test_memory_budget_check.py`: PASS.
+- PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py: PASS, 16 tests, elapsed 5.172 seconds.
+- Python bytecode cleanup for `MemoryBudgetCheck*` and `test_memory_budget_check*`: PASS.
+
+Evidence boundary:
+- STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
+- Unity import, Memory Profiler, player build, and runtime frame time remain PENDING VERIFICATION.

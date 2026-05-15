@@ -1,3 +1,5 @@
+import csv
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -229,6 +231,29 @@ class MemoryBudgetCheckTests(unittest.TestCase):
         self.assertEqual(payload["first_party_mesh_import_risk_rows"], 0)
         self.assertFalse(payload["critical_vram_overflow"])
         self.assertEqual(payload["ci_expected_exit_code"], 2)
+
+    def test_generated_reports_match_import_root_scope_and_counts(self) -> None:
+        json_path = PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit.json"
+        csv_path = PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit.csv"
+
+        payload = json.loads(json_path.read_text(encoding="utf-8"))
+        with csv_path.open(newline="", encoding="utf-8") as handle:
+            rows = list(csv.DictReader(handle))
+
+        texture_rows = [row for row in rows if row["asset_type"] == "texture"]
+        mesh_rows = [row for row in rows if row["asset_type"] == "mesh"]
+        render_texture_rows = [row for row in rows if row["asset_type"] == "render_texture"]
+        allowed_prefixes = ("Assets/", "Packages/", "Data/")
+
+        self.assertEqual(payload["texture_count"], len(texture_rows))
+        self.assertEqual(payload["mesh_count"], len(mesh_rows))
+        self.assertEqual(payload["render_texture_count"], len(render_texture_rows))
+        self.assertEqual(payload["resolved_scan_roots"], ["Assets", "Packages", "Data"])
+        self.assertTrue(all(row["path"].startswith(allowed_prefixes) for row in texture_rows))
+        self.assertTrue(all(row["path"].startswith(allowed_prefixes) for row in mesh_rows))
+        self.assertTrue(all(row["path"].startswith(allowed_prefixes) for row in render_texture_rows))
+        self.assertFalse(any(row["path"].startswith("Docs/") for row in texture_rows))
+        self.assertFalse(any("_agent_screen_capture" in row["path"] for row in texture_rows))
 
     def test_iter_assets_uses_case_insensitive_generated_tree_exclusion(self) -> None:
         self.assertIn(".codex-build", budget.SKIP_DIRS)
