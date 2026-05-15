@@ -466,3 +466,14 @@ Rejected Alternatives: Clamping in `InitializeRegrowthGridJob` was rejected beca
 Scalability potential: Low/Middle/High/Ultra validation and runtime scheduling now share one nutrient-floor contract. Higher tiers can spend presentation budget on richer regrowth visuals without carrying a separate invalid nutrient baseline.
 
 Hardware Impact: Runtime impact is branch-only at scheduler entry. Valid default constants pay no job cost change; invalid data aborts before scheduling.
+
+## Decision 43 - Direct Helper Allocation Guard
+Problem: `run_sim()` validated constants before state allocation, but direct callers could still invoke `build_initial_state()` with malformed constants and allocate oversized per-cell Python lists.
+
+Solution: Added `validate_constants(constants)` at the start of `build_initial_state()` and a regression that calls the helper directly with a `1025x1025` grid.
+
+Rejected Alternatives: Trusting callers to enter through `run_sim()` was rejected because the test suite and future automation can use helper functions directly. Catching `MemoryError` was rejected because validation should fail deterministically before allocation.
+
+Scalability potential: Low-end validation machines avoid accidental large allocations from direct helper use. High-end validation still uses the same explicit `1,048,576` cell cap.
+
+Hardware Impact: Tooling-only. Unity runtime backend unchanged; invalid helper calls abort before Python state allocation.
