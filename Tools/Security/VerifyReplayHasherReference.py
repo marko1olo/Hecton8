@@ -76,7 +76,7 @@ def to_signed64(value: int) -> int:
 
 
 def require_u64_digest(label: str, value, length: int, seed: int) -> int:
-    if not isinstance(value, int):
+    if type(value) is not int:
         raise AssertionError(
             f"{label} returned non-int digest len={length} "
             f"seed=0x{seed:016X} type={type(value).__name__}"
@@ -88,6 +88,33 @@ def require_u64_digest(label: str, value, length: int, seed: int) -> int:
         )
 
     return value
+
+
+def require_u64_lane(label: str, value, context: str, lane: str) -> int:
+    if type(value) is not int:
+        raise AssertionError(
+            f"{label} returned non-int {lane} lane {context} "
+            f"type={type(value).__name__}"
+        )
+    if value < 0 or value > MASK64:
+        raise AssertionError(
+            f"{label} returned out-of-range {lane} lane {context} value={value}"
+        )
+
+    return value
+
+
+def require_u64_pair(label: str, value, context: str) -> tuple[int, int]:
+    if not isinstance(value, tuple) or len(value) != 2:
+        raise AssertionError(
+            f"{label} returned invalid lane pair {context} "
+            f"type={type(value).__name__}"
+        )
+
+    return (
+        require_u64_lane(label, value[0], context, "lo"),
+        require_u64_lane(label, value[1], context, "hi"),
+    )
 
 
 def verify_xxh3(replay, xxhash_module, fuzz_count: int) -> int:
@@ -128,8 +155,17 @@ def verify_shuffle_inverse(replay, fuzz_count: int) -> int:
         state = lcg_next(state)
         sector_hash = to_signed64(state)
 
-        stored = replay.shuffle_hash128(plain_lo, plain_hi, world_seed, sector_hash)
-        recovered = replay.unshuffle_hash128(stored[0], stored[1], world_seed, sector_hash)
+        context = f"world_seed={world_seed} sector_hash={sector_hash}"
+        stored = require_u64_pair(
+            "ReplayHasher.py shuffle_hash128",
+            replay.shuffle_hash128(plain_lo, plain_hi, world_seed, sector_hash),
+            context,
+        )
+        recovered = require_u64_pair(
+            "ReplayHasher.py unshuffle_hash128",
+            replay.unshuffle_hash128(stored[0], stored[1], world_seed, sector_hash),
+            context,
+        )
         if recovered != (plain_lo, plain_hi):
             raise AssertionError(
                 "shuffle inverse mismatch "

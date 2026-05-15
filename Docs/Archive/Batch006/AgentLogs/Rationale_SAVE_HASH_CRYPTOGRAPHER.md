@@ -563,3 +563,27 @@ Rejected Alternatives: Leaving raw tracebacks was rejected because verification 
 Scalability potential: No runtime impact. All tiers retain the same save ABI; CLI verification failure output is cleaner.
 
 Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 48
+
+Problem: The verifier validated XXH3 digest shape, but the 128-bit shuffle path still assumed `shuffle_hash128` and `unshuffle_hash128` returned two unsigned 64-bit lanes. A malformed tuple, list, string, or out-of-range lane would fail later through indexing or inverse comparison noise.
+
+Solution: Added `require_u64_lane()` and `require_u64_pair()` to reject malformed shuffle/unshuffle results before indexing or comparing the recovered lanes.
+
+Rejected Alternatives: Letting tuple unpacking or indexing fail naturally was rejected because verifier output must identify the exact ABI contract violation. Masking lanes with `MASK64` was rejected because it would hide an invalid replay implementation.
+
+Scalability potential: No runtime impact. Low/Middle/High/Ultra retain the same V10 save ABI; the offline verifier now rejects malformed 128-bit lane contracts deterministically.
+
+Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 49
+
+Problem: Python `bool` is a subclass of `int`, so `isinstance(value, int)` accepted `True` or `False` as a valid digest or 64-bit lane. That weakens the verifier ABI contract because a fake module could return booleans and pass the type gate.
+
+Solution: Changed digest and lane validation to require `type(value) is int`, rejecting bool while preserving normal unbounded Python integer support plus the explicit unsigned 64-bit range check.
+
+Rejected Alternatives: Keeping `isinstance` was rejected because it silently accepts invalid boolean values. Converting values with `int(value)` was rejected because it would normalize a bad implementation instead of exposing it.
+
+Scalability potential: No runtime impact. Low/Middle/High/Ultra retain the same V10 save ABI; the offline verifier now enforces exact scalar lane types.
+
+Hardware Impact: 0 us frame impact. Offline validation only.
