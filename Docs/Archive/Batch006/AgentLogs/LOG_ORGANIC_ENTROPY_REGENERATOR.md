@@ -956,6 +956,30 @@ Verification:
 - `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
 - `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
 
+## 2026-05-15 - Strict Scalar Edge Regression
+
+What was wrong:
+- Strict scalar helpers rejected bools and non-finite numbers.
+- The regression suite did not explicitly lock `bool`-as-`int` and `NaN` acceptance edges.
+
+What was done:
+- Added `gridWidth=True` to the coerced numeric constants regression.
+- Added `minFinalMatureRatio=float("nan")` to the same regression.
+
+Cinematic cheats used:
+- None. This is offline schema regression hardening.
+
+Exact microseconds saved:
+- Runtime microseconds saved: 0. Unity runtime backend was not changed.
+- Failure avoided: bool and NaN scalar constants abort before state allocation.
+
+Verification:
+- `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`: exit code 0.
+- Scalar edge scan found the bool and NaN regression values.
+- `python -m unittest Tools.test_world_entropy_sim -v`: 23 tests passed in 79.514 s.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
+
 ## 2026-05-15 - Direct Day Count Type Guard
 
 What was wrong:
@@ -981,3 +1005,90 @@ Verification:
 - `python -m unittest Tools.test_world_entropy_sim -v`: 23 tests passed in 48.667 s.
 - `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
 - `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
+- `git diff --check`: exit code 0 with a CRLF warning only.
+- `dotnet --info`: unavailable; full Unity import/build remains PENDING VERIFICATION.
+- `.codex_tmp`: absent.
+
+## 2026-05-15 - Direct Mode Type Guard
+
+What was wrong:
+- Direct mode guards used Python truthiness.
+- Truthy non-bool values could pass `run_sim()` or `calculate_balance()` even though the CLI has one explicit mode.
+
+What was done:
+- Added `require_total_overharvest_mode()`.
+- Routed `run_sim()` and `calculate_balance()` through the strict mode helper.
+- Added `test_direct_mode_rejects_truthy_non_bool`.
+
+Cinematic cheats used:
+- None. This is offline evidence-contract hardening.
+
+Exact microseconds saved:
+- Runtime microseconds saved: 0. Unity runtime backend was not changed.
+- Failure avoided: malformed direct mode values abort before state allocation or status publication.
+
+Verification:
+- `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`: exit code 0.
+- Mode guard scan found `require_total_overharvest_mode`, the shared mode error, and the new regression test.
+- Target forbidden-token scan: no matches.
+- `python -m unittest Tools.test_world_entropy_sim -v`: 24 tests passed in 77.154 s.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
+- `git diff --check`: exit code 0 with CRLF warnings only.
+- `dotnet --info`: unavailable; full Unity import/build remains PENDING VERIFICATION.
+- `.codex_tmp`: absent.
+
+## 2026-05-15 - Build Initial State Mode Type Guard
+
+What was wrong:
+- `build_initial_state()` accepted truthy/falsy non-bool mode values.
+- Direct helper callers could allocate state from ambiguous mode input.
+
+What was done:
+- Added `require_bool_mode()`.
+- Routed `build_initial_state()` through the strict helper-mode validator.
+- Added `test_build_initial_state_rejects_non_bool_mode`.
+
+Cinematic cheats used:
+- None. This is offline helper-contract hardening.
+
+Exact microseconds saved:
+- Runtime microseconds saved: 0. Unity runtime backend was not changed.
+- Failure avoided: malformed helper mode values abort before Python list allocation.
+
+Verification:
+- `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`: exit code 0.
+- Helper mode scan found `require_bool_mode`, the helper mode error, and the new regression test.
+- Target forbidden-token scan: no matches.
+- `python -m unittest Tools.test_world_entropy_sim -v`: 25 tests passed in 107.456 s.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
+- `git diff --check`: exit code 0 with CRLF warnings only.
+- `dotnet --info`: unavailable; full Unity import/build remains PENDING VERIFICATION.
+- `.codex_tmp`: absent.
+
+## 2026-05-15 - Missing Constants Key Guard
+
+What was wrong:
+- Missing required JSON fields produced raw `KeyError` exceptions.
+- Root identity, acceptance mode, and biome-name gaps could fail outside the explicit `ValueError` validation surface.
+
+What was done:
+- Added `require_key()`.
+- Routed root identity fields, acceptance mode, biome list, biome names, and numeric helper lookups through the helper.
+- Added `test_run_sim_rejects_missing_constants_keys`.
+
+Cinematic cheats used:
+- None. This is offline evidence-contract hardening.
+
+Exact microseconds saved:
+- Runtime microseconds saved: 0. Unity runtime backend was not changed.
+- Failure avoided: incomplete constants abort before Python state allocation or status publication.
+
+Verification:
+- `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`: exit code 0.
+- Target forbidden-token scan: no matches.
+- `python -m unittest Tools.test_world_entropy_sim -v`: 26 tests passed in 97.696 s.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
+- `git diff --check`: exit code 0 with CRLF warnings only.

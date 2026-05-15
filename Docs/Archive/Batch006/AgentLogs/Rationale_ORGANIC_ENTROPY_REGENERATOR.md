@@ -532,3 +532,47 @@ Rejected Alternatives: Keeping CLI-only validation was rejected because tests an
 Scalability potential: Low/Middle/High/Ultra validation paths now share one strict day-count contract. Long-horizon high-end validation still works with explicit integer day spans.
 
 Hardware Impact: Tooling-only. Unity runtime backend unchanged; malformed direct day counts abort before Python state allocation.
+
+## Decision 49 - Strict Scalar Edge Regression
+Problem: The strict scalar helpers reject bools and non-finite numbers, but the regression coverage did not explicitly lock the two easiest Python-specific failures: `bool` passing as `int`, and `NaN` passing as a float.
+
+Solution: Extended `test_run_sim_rejects_coerced_numeric_constants` with `gridWidth=True` and `minFinalMatureRatio=float("nan")`.
+
+Rejected Alternatives: Trusting helper source review was rejected because Python scalar edge cases are easy to reintroduce during later cleanup. Adding broader property tests was rejected as unnecessary dependency/runtime cost for this batch.
+
+Scalability potential: Low/Middle/High/Ultra validation paths keep the same strict scalar contract under direct automation.
+
+Hardware Impact: Tooling-only. Unity runtime backend unchanged; malformed scalar constants abort before Python state allocation.
+
+## Decision 50 - Direct Mode Type Guard
+Problem: The direct `run_sim()` and `calculate_balance()` guards rejected `False`, but truthy non-bool values such as `1` or `"total_overharvest"` still passed. That weakens the acceptance-mode contract outside argparse.
+
+Solution: Added `require_total_overharvest_mode()` and routed both direct evidence helpers through it. The helper requires the exact boolean `True`. Added a regression covering `run_sim(..., 1)` and `calculate_balance(..., "total_overharvest")`.
+
+Rejected Alternatives: Keeping truthiness checks was rejected because evidence APIs need strict mode identity, not Python coercion. Relying on CLI mode choices was rejected because automation can call module helpers directly.
+
+Scalability potential: Low/Middle/High/Ultra validation paths now share the same explicit acceptance-mode type contract.
+
+Hardware Impact: Tooling-only. Unity runtime backend unchanged; malformed direct mode values abort before state allocation or status publication.
+
+## Decision 51 - Build Initial State Mode Type Guard
+Problem: `build_initial_state()` is a direct helper used by tests for deterministic biome layout. It accepted any truthy/falsy Python value for `total_overharvest`, so callers could pass `1` or `0` and get state from an ambiguous mode input.
+
+Solution: Added `require_bool_mode()` and called it inside `build_initial_state()` after constants validation but before list allocation. The helper still permits explicit `False` for non-acceptance biome-layout inspection and explicit `True` for overharvest state construction. Added a direct regression for `build_initial_state(constants, 1)`.
+
+Rejected Alternatives: Forcing `build_initial_state()` to accept only `True` was rejected because the existing seeded layout test legitimately needs a non-overharvest initial state. Leaving truthiness in place was rejected because future automation can consume the helper directly.
+
+Scalability potential: Low/Middle/High/Ultra validation paths retain deterministic helper behavior while removing ambiguous mode coercion.
+
+Hardware Impact: Tooling-only. Unity runtime backend unchanged; malformed helper mode values abort before Python list allocation.
+
+## Decision 52 - Missing Constants Key Guard
+Problem: Missing JSON keys in the entropy constants failed as raw Python `KeyError` exceptions. That leaves a stack-trace surface instead of a controlled fail-closed evidence contract.
+
+Solution: Added `require_key()` and routed root identity fields, acceptance mode, biome list, biome names, and numeric helper lookups through it. Added regression coverage for missing root `schema`, missing acceptance `mode`, missing biome `name`, and non-object constants.
+
+Rejected Alternatives: Leaving `KeyError` was rejected because it proves parser fragility, not intentional validation. Wrapping the full CLI in a broad exception handler was rejected because it would hide the exact malformed field.
+
+Scalability potential: Low/Middle/High/Ultra validation paths now fail before state allocation when constants are incomplete. High-end long-run validation still uses the same deterministic constants once validation passes.
+
+Hardware Impact: Tooling-only. Unity runtime backend unchanged; incomplete constants abort before Python state allocation or status publication.

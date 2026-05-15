@@ -26,15 +26,21 @@ def load_constants(path: Path) -> dict:
         return json.load(handle)
 
 
+def require_key(source: dict, key: str):
+    if key not in source:
+        raise ValueError(f"{key} is required")
+    return source[key]
+
+
 def require_int(source: dict, key: str) -> int:
-    value = source[key]
+    value = require_key(source, key)
     if isinstance(value, bool) or not isinstance(value, int):
         raise ValueError(f"{key} must be an integer")
     return value
 
 
 def require_number(source: dict, key: str) -> float:
-    value = source[key]
+    value = require_key(source, key)
     if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
         raise ValueError(f"{key} must be a finite number")
     return float(value)
@@ -48,14 +54,26 @@ def require_day_count(days: int) -> int:
     return days
 
 
+def require_total_overharvest_mode(total_overharvest: bool, caller: str) -> None:
+    if not isinstance(total_overharvest, bool) or not total_overharvest:
+        raise ValueError(f"{caller} only supports total_overharvest mode")
+
+
+def require_bool_mode(total_overharvest: bool, caller: str) -> None:
+    if not isinstance(total_overharvest, bool):
+        raise ValueError(f"{caller} total_overharvest must be a boolean")
+
+
 def validate_constants(constants: dict) -> None:
-    if constants["schema"] != "H8_Regrowth_Constants":
+    if not isinstance(constants, dict):
+        raise ValueError("constants must be an object")
+    if require_key(constants, "schema") != "H8_Regrowth_Constants":
         raise ValueError("schema must be H8_Regrowth_Constants")
     if require_int(constants, "version") != 1:
         raise ValueError("version must be 1")
-    if constants["status"] != "ENTROPY BALANCED":
+    if require_key(constants, "status") != "ENTROPY BALANCED":
         raise ValueError("status must be ENTROPY BALANCED")
-    if constants["unityVerificationStatus"] != "PENDING_UNITY_VERIFICATION":
+    if require_key(constants, "unityVerificationStatus") != "PENDING_UNITY_VERIFICATION":
         raise ValueError("unityVerificationStatus must be PENDING_UNITY_VERIFICATION")
 
     width = require_int(constants, "gridWidth")
@@ -106,13 +124,13 @@ def validate_constants(constants: dict) -> None:
         raise ValueError("minApexRespawnDays must be in 1..255")
     if max_apex_respawn_days < min_apex_respawn_days or max_apex_respawn_days > BYTE_MAX:
         raise ValueError("maxApexRespawnDays must be in minApexRespawnDays..255")
-    acceptance = constants["acceptance"]
+    acceptance = require_key(constants, "acceptance")
     if not isinstance(acceptance, dict):
         raise ValueError("acceptance must be an object")
     acceptance_days = require_int(acceptance, "simulationDays")
     if acceptance_days < 1:
         raise ValueError("acceptance simulationDays must be positive")
-    if acceptance["mode"] != "total_overharvest":
+    if require_key(acceptance, "mode") != "total_overharvest":
         raise ValueError("acceptance mode must be total_overharvest")
     minimum_mature_ratio = require_number(acceptance, "minFinalMatureRatio")
     if minimum_mature_ratio <= 0.0 or minimum_mature_ratio > 1.0:
@@ -120,7 +138,7 @@ def validate_constants(constants: dict) -> None:
     if require_number(acceptance, "safeShallowsVsDeepAbyssMinRecoveryRatio") <= 0.0:
         raise ValueError("safeShallowsVsDeepAbyssMinRecoveryRatio must be positive")
 
-    biomes = constants["biomes"]
+    biomes = require_key(constants, "biomes")
     if not isinstance(biomes, list):
         raise ValueError("biomes must be an array")
     if len(biomes) != len(EXPECTED_BIOME_NAMES):
@@ -131,7 +149,7 @@ def validate_constants(constants: dict) -> None:
         biome = biomes[index]
         if not isinstance(biome, dict):
             raise ValueError("biome constants must be objects")
-        if require_int(biome, "id") != index or biome["name"] != expected_name:
+        if require_int(biome, "id") != index or require_key(biome, "name") != expected_name:
             raise ValueError("biome ids and names must match runtime indices")
         temperature_q = require_int(biome, "temperatureQ")
         if temperature_q < 1 or temperature_q > BYTE_MAX:
@@ -179,6 +197,7 @@ def resolve_biome(sector_x: int, sector_z: int, seed: int, height: int) -> int:
 
 def build_initial_state(constants: dict, total_overharvest: bool) -> dict:
     validate_constants(constants)
+    require_bool_mode(total_overharvest, "build_initial_state")
     width = int(constants["gridWidth"])
     height = int(constants["gridHeight"])
     count = width * height
@@ -392,8 +411,7 @@ def summarize(state: dict, day: int, first_half_recovery: list[int | None]) -> d
 
 def run_sim(constants: dict, days: int, total_overharvest: bool) -> tuple[dict, list[dict]]:
     day_count = require_day_count(days)
-    if not total_overharvest:
-        raise ValueError("run_sim only supports total_overharvest mode")
+    require_total_overharvest_mode(total_overharvest, "run_sim")
 
     validate_constants(constants)
     state = build_initial_state(constants, total_overharvest)
@@ -416,8 +434,7 @@ def run_sim(constants: dict, days: int, total_overharvest: bool) -> tuple[dict, 
 
 
 def calculate_balance(final: dict, constants: dict, total_overharvest: bool) -> tuple[bool, float, float]:
-    if not total_overharvest:
-        raise ValueError("calculate_balance only supports total_overharvest mode")
+    require_total_overharvest_mode(total_overharvest, "calculate_balance")
 
     validate_constants(constants)
     safe_day = final["firstHalfRecoveryDays"][0]

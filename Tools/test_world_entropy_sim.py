@@ -139,6 +139,14 @@ class WorldEntropySimTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             entropy.run_sim(self.constants, 1, False)
 
+    def test_direct_mode_rejects_truthy_non_bool(self) -> None:
+        with self.assertRaises(ValueError):
+            entropy.run_sim(self.constants, 1, 1)
+
+        final, _ = entropy.run_sim(self.constants, 1, True)
+        with self.assertRaises(ValueError):
+            entropy.calculate_balance(final, self.constants, "total_overharvest")
+
     def test_calculate_balance_rejects_non_overharvest_direct_mode(self) -> None:
         final, _ = entropy.run_sim(self.constants, 1, True)
 
@@ -159,6 +167,25 @@ class WorldEntropySimTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             entropy.run_sim(constants, 1, True)
+
+    def test_run_sim_rejects_missing_constants_keys(self) -> None:
+        constants = deepcopy(self.constants)
+        del constants["schema"]
+        with self.assertRaises(ValueError):
+            entropy.run_sim(constants, 1, True)
+
+        constants = deepcopy(self.constants)
+        del constants["acceptance"]["mode"]
+        with self.assertRaises(ValueError):
+            entropy.run_sim(constants, 1, True)
+
+        constants = deepcopy(self.constants)
+        del constants["biomes"][0]["name"]
+        with self.assertRaises(ValueError):
+            entropy.run_sim(constants, 1, True)
+
+        with self.assertRaises(ValueError):
+            entropy.validate_constants([])
 
     def test_run_sim_rejects_invalid_fast_path_constants(self) -> None:
         constants = deepcopy(self.constants)
@@ -266,6 +293,10 @@ class WorldEntropySimTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             entropy.build_initial_state(constants, True)
+
+    def test_build_initial_state_rejects_non_bool_mode(self) -> None:
+        with self.assertRaises(ValueError):
+            entropy.build_initial_state(self.constants, 1)
 
     def test_run_sim_rejects_invalid_acceptance_thresholds(self) -> None:
         constants = deepcopy(self.constants)
