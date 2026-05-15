@@ -98,6 +98,13 @@ class VerifyLoreTests(unittest.TestCase):
             "Docs/Lore/Lore_Bible.md",
         )
 
+    def test_cli_rejects_hash_and_source_path_together(self) -> None:
+        with contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit) as context:
+                VerifyLore.main(["0xD1880394", "--source-path", "Docs/Lore/Lore_Bible.md"])
+
+        self.assertNotEqual(context.exception.code, 0)
+
     def test_missing_hash_returns_none(self) -> None:
         record = VerifyLore.LoreRecord(0x10, 32, 4)
         self.assertIsNone(VerifyLore.find_record([record], 0x20))

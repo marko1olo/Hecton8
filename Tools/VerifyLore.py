@@ -521,6 +521,9 @@ def main(argv: list[str]) -> int:
     manifest_path = resolve_repo_path(Path(args.manifest))
     source_dir = resolve_repo_path(Path(args.source_dir))
 
+    if args.hash and args.source_path:
+        parser.error("Use either a numeric hash or --source-path, not both.")
+
     if args.hash_source:
         entries = load_source_entries(source_dir)
         for entry in sorted(entries, key=lambda item: item.hash_value):

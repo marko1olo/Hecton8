@@ -223,3 +223,11 @@ Solution: Pass expected repository-relative blob and source directory labels fro
 Rejected Alternatives: Ignoring labels would make the manifest less useful as a handoff contract; embedding path labels in the binary would bloat the runtime artifact and exceed the prompt's fixed record table.
 Scalability potential: Low/Middle/High/Ultra packaging keeps sidecars tied to exact source roots as future lore shards scale across subdirectories.
 Hardware Impact: 0 us/frame on i3/MX350; this is offline verification. Runtime blob size and layout remain unchanged.
+
+## Decision 029 - Reject Ambiguous Extraction Inputs
+
+Problem: The CLI accepted both a positional numeric hash and `--source-path` in one extraction command, then silently preferred the source path. That creates operator ambiguity and can hide a bad copied hash.
+Solution: Add a parser-level error when both selectors are present and add a regression test that expects nonzero `SystemExit`.
+Rejected Alternatives: Keeping path precedence would make extraction less auditable; choosing numeric hash precedence would surprise users who supplied `--source-path`; allowing both only when they match would add unnecessary blob reads before argument validation.
+Scalability potential: Low/Middle/High/Ultra packaging keeps extraction commands unambiguous as the lore table grows beyond one record.
+Hardware Impact: 0 us/frame on i3/MX350; CLI validation only, runtime blob unchanged.

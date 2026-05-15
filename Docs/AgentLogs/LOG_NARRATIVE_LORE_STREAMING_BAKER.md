@@ -390,6 +390,44 @@ Failure modes:
 - Unity/C# compile proof remains blocked by missing local toolchain/generation state.
 - Runtime loader remains out of explicit prompt scope.
 
+## 2026-05-15 - Ambiguous Extraction Rejection
+
+STATUS: LORE BAKED / CLI SELECTOR AMBIGUITY REJECTED
+
+What was wrong:
+- The extractor accepted both a positional numeric hash and `--source-path` in the same command.
+- The previous behavior silently preferred the path, which could hide a bad copied hash in operator verification.
+
+What was done:
+- Added parser-level rejection for commands that supply both selectors.
+- Added regression coverage for the nonzero parser exit.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Fixed binary layout and zlib payloads remain unchanged.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- No runtime loader cost claimed.
+
+Verification:
+- `python Tools\VerifyLore.py --bake --check --list` -> `LORE BAKED`, `CHECK OK`, record `0xD1880394 offset=48 length=10281`.
+- `python Tools\VerifyLore.py 0xD1880394 --source-path Docs\Lore\Lore_Bible.md` -> rejected with parser error.
+- `python -B -m unittest Tools.test_verify_lore -v` -> 22 tests passed.
+- `$env:PYTHONPYCACHEPREFIX='.codex-artifacts\pycache'; python -m py_compile Tools\VerifyLore.py Tools\test_verify_lore.py` -> passed.
+- Source/extract SHA-256 match -> `6B529A808B25D18DA276747DB9149C61BACDF90A33DCC667FC85375DE13E69CD`.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: extraction selector intent is now single-source and fail-fast.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.
+
 ## 2026-05-15 - Repository-Root Path Hardening
 
 STATUS: LORE BAKED / CWD-INDEPENDENT VERIFIER / STRICT TABLE GUARD VERIFIED
@@ -587,6 +625,41 @@ Regression model:
 - Memory: runtime blob remains 10329 bytes.
 - Cadence: no Tick/Update/FixedUpdate path touched.
 - Correctness: manifest verification now binds content, blob label, and source directory label to the current package.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.
+
+## 2026-05-15 - Ambiguous Extraction Input Guard
+
+STATUS: LORE BAKED / AMBIGUOUS CLI REJECTED
+
+What was wrong:
+- The extractor accepted a positional numeric hash and `--source-path` in the same command.
+- That silently preferred `--source-path`, hiding a copied or stale numeric hash.
+
+What was done:
+- Added a parser-level error when both extraction selectors are present.
+- Added regression coverage for the ambiguous hash plus `--source-path` command.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Fixed binary layout and zlib payloads remain unchanged.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- CLI validation only; no runtime loader cost claimed.
+
+Verification:
+- `python Tools\VerifyLore.py 0xD1880394 --source-path Docs\Lore\Lore_Bible.md` -> rejected with parser error.
+- `python -B -m unittest Tools.test_verify_lore -v` -> 22 tests passed.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: extraction commands now have exactly one selector, avoiding silent precedence.
 
 Failure modes:
 - Unity/C# compile proof remains blocked by missing local toolchain/generation state.
