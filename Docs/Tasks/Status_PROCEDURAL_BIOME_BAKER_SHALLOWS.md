@@ -392,3 +392,11 @@ Status: PENDING VERIFICATION
 - Verification avoided dotnet rebuilds and Unity import. `AtlasCompressionAlphaSplitMetaScan Count=4 Bad=0`; source scan found global, Default, and Standalone compression-quality setters/checks plus Default/Standalone alpha-split setters/checks; `git diff --check` passed with only repo CRLF warnings; source brace balance stayed `Delta=0` with `NonAscii=0`; case-sensitive forbidden source scan stayed clean.
 - Rejected alternative: trusting importer defaults was rejected because these values are manually mutable and can change import behavior without changing asset names or platform formats. Raising quality blindly was rejected because the current atlas contract prioritizes deterministic 1024 BC payloads over import-time churn.
 - H-Phi impact remains domain-local evidence only: Shallows atlas import quality/alpha split state is now fail-closed without runtime texture repair or cross-domain texture policy.
+
+### Loop 45 - BioRule Serialized Rule Element Null-Safe Contract
+
+- Found a validator robustness defect: raw `_rules` validation dereferenced `_symbol` and `_replacement` child properties directly, so malformed rule YAML could throw instead of reporting contract drift.
+- Patched `ValidateRuleAsset` with `SerializedRuleReplacementEquals`, requiring exactly one raw rule element with symbol `F` and the expected replacement while null-checking every serialized property.
+- Verification pending. Planned static checks: source token scan for helper usage and removed direct dereference pattern, rule YAML scan for three valid raw rule entries, `git diff --check`, source brace/non-ASCII balance, and case-sensitive forbidden source scan. No dotnet rebuild or Unity import will be run.
+- Rejected alternative: leaving the dereference was rejected because validators must fail closed with actionable diagnostics, not crash on corrupted serialized assets. Catching exceptions was rejected because explicit null checks make the contract clearer.
+- H-Phi impact remains domain-local evidence only: Shallows BioRule validation now stays deterministic under malformed authoring data without runtime rule normalization or cross-domain error handling.

@@ -635,3 +635,17 @@ Scalability potential: Low/MX350 keeps predictable atlas import behavior and no 
 Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no hidden compression-quality or alpha-splitting drift can change imported atlas behavior for MX350 builds. Exact runtime microseconds are not profiled because this is editor validation.
 
 Verification: No dotnet rebuild and no Unity import was run. `AtlasCompressionAlphaSplitMetaScan Count=4 Bad=0`. Source scan found global, Default, and Standalone compression-quality setters/checks plus Default/Standalone alpha-split setters/checks. `git diff --check` passed for the touched Shallows files with only repo CRLF warnings. Source brace count remained `Delta=0` and `NonAscii=0`; case-sensitive forbidden source scan remained clean.
+
+## Decision 46 - BioRule Serialized Rule Element Null-Safe Contract
+
+Problem: `ValidateRuleAsset` checked raw `_rules` array size, then directly dereferenced `_symbol` and `_replacement` child properties. A malformed or partially serialized rule asset could throw a null-reference during validation instead of producing a controlled contract failure.
+
+Solution: Replace the direct dereference block with `SerializedRuleReplacementEquals`. The helper validates `_rules` existence, array shape, element existence, child property existence, symbol identity, and replacement identity before returning true.
+
+Rejected Alternatives: Keeping direct property dereferences was rejected because validation code must be robust against corrupted authoring assets. Wrapping the block in try/catch was rejected because explicit property checks produce cleaner deterministic failure behavior. Runtime rule normalization was rejected because these are editor-only bake inputs.
+
+Scalability potential: Low/MX350 benefits indirectly because malformed rule assets cannot interrupt validation and leave stale generated payloads unchecked. Middle/High/Ultra can expand rule complexity only through explicit raw rule contracts.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: corrupted BioRule serialized data now becomes a deterministic editor validation failure instead of an exception path. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: Pending static verification. Planned checks: no dotnet rebuild and no Unity import; source token scan for `SerializedRuleReplacementEquals`; absence of direct `_symbol`/`_replacement` dereference pattern; rule YAML scan for three valid raw rule entries; `git diff --check`; source brace/non-ASCII balance; case-sensitive forbidden source scan.

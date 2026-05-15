@@ -291,3 +291,10 @@ Solution: Added exact `WriteUvRectIfChanged()` gating for font and sprite UV tab
 Rejected Alternatives: Uploading the full UV table after every layout rebuild, keeping a managed set of changed glyph indices, or adding partial buffer uploads now. Full uploads waste API traffic; a managed set violates zero-GC goals; partial uploads are unnecessary for the current 128-slot table and would add complexity.
 Scalability potential: Low avoids redundant buffer uploads when repeated prompt layouts reuse the same atlas rects. Middle/High/Ultra keep the same atlas contract and can spend saved CPU/API budget on richer glyph materials.
 Hardware Impact: Expected gain is sub-microsecond on i3/MX350 during device hot-swap or prompt layout rebuilds with unchanged atlas rects; no profiler proof.
+
+## Decision 41: Tooltip Normalized-Span Layout
+Problem: Prompt staging already normalizes characters into the fixed prompt buffer, but `MeasureAdvance()` and `BuildTextRun()` normalized the same characters again during layout.
+Solution: Treat layout input as a normalized private span and read characters directly in measurement/build loops; keep normalization only in `StagePrompt()` and `StagePromptFromHash()`.
+Rejected Alternatives: Keeping duplicate normalization for defensive programming, adding a second normalized buffer, or accepting arbitrary raw spans in layout. Defensive duplication costs per layout glyph; a second buffer is unnecessary memory; raw spans would weaken the fixed-buffer contract.
+Scalability potential: Low removes small repeated layout work when prompts rebuild. Middle/High/Ultra keep the same glyph atlas path and preserve budget for richer material treatment.
+Hardware Impact: Expected gain is sub-microsecond per prompt layout rebuild on i3/MX350; no profiler proof.

@@ -1057,18 +1057,7 @@ namespace Hecton8.Editor.ProceduralGen
             failed |= !SerializedFloatEquals(serialized, "_rockPoreSurfaceBias", expected.RockPoreSurfaceBias);
             failed |= !SerializedStringEquals(serialized, "_meshOutputFolder", expected.MeshFolder);
             failed |= !SerializedStringEquals(serialized, "_prefabOutputFolder", expected.PrefabFolder);
-
-            SerializedProperty rules = serialized.FindProperty("_rules");
-            if (rules == null || !rules.isArray || rules.arraySize != 1)
-            {
-                failed = true;
-            }
-            else
-            {
-                SerializedProperty element = rules.GetArrayElementAtIndex(0);
-                failed |= element.FindPropertyRelative("_symbol").stringValue != "F";
-                failed |= element.FindPropertyRelative("_replacement").stringValue != expected.Replacement;
-            }
+            failed |= !SerializedRuleReplacementEquals(serialized, expected.Replacement);
 
             if (failed)
             {
@@ -1677,6 +1666,21 @@ namespace Hecton8.Editor.ProceduralGen
         {
             SerializedProperty property = serialized.FindProperty(propertyName);
             return property != null && property.objectReferenceValue == null;
+        }
+
+        private static bool SerializedRuleReplacementEquals(SerializedObject serialized, string expectedReplacement)
+        {
+            SerializedProperty rules = serialized.FindProperty("_rules");
+            if (rules == null || !rules.isArray || rules.arraySize != 1)
+                return false;
+
+            SerializedProperty element = rules.GetArrayElementAtIndex(0);
+            SerializedProperty symbol = element.FindPropertyRelative("_symbol");
+            SerializedProperty replacement = element.FindPropertyRelative("_replacement");
+            return symbol != null &&
+                   replacement != null &&
+                   string.Equals(symbol.stringValue, "F", StringComparison.Ordinal) &&
+                   string.Equals(replacement.stringValue, expectedReplacement, StringComparison.Ordinal);
         }
 
         private static bool SerializedArraySizeEquals(SerializedObject serialized, string propertyName, int expected)

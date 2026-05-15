@@ -849,3 +849,26 @@ Verification:
 - Targeted dynamic scheduling and buffer-proof ranges reported no raw division, forbidden hot math, managed allocation, or `foreach`.
 - `git diff --check` passed without invoking dotnet rebuilds.
 - Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.
+
+## 2026-05-15 - Pure Void Snapshot Authority Closure
+
+What was wrong:
+- `IsPureVoidSnapshot` accepted equal `Current` and `CurrentDistance` lengths without proving those buffers covered the declared dimensions.
+- `PureVoidBlockCount` only had to be positive and within flag-buffer length, so a stale shorter scan count could falsely mark a partial volume as pure.
+
+What was done:
+- Reused `HasValidRecordBounds` and `TryResolveVoxelCellCount` before pure-void acceptance.
+- Recomputed the required block count and required exact `PureVoidBlockCount` before releasing voxel buffers.
+- Kept the scan zero-GC and static-only; no new containers, no managed allocation, no dotnet rebuild.
+
+Cinematic Cheats used:
+- Stale pure-void metadata now fails closed to normal voxel routing instead of claiming an invisible clean volume.
+- Low tier avoids false-pure route records; High/Ultra retain pure-void fast paths only under complete dimension and flag proof.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Static gain is avoided false-pure route repair and downstream funnel/steering recovery.
+
+Verification:
+- Targeted `IsPureVoidSnapshot` range reported no raw division, forbidden hot math, managed allocation, or `foreach`.
+- `CURRENT_BATCH.md` recheck confirmed the `AI_FUNNEL_NAV_POLISH` prompt tag remains absent, so persisted files remain authority.
+- Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.

@@ -208,6 +208,12 @@ Rejected Alternatives: Trusting pre-allocation capacity checks alone; returning 
 Scalability potential: Low devices avoid silent native leaks when tracking pressure rises; Middle keeps H8 owner byte telemetry and descriptor maps reliable; High and Ultra can run larger native pools without letting tracking failure corrupt memory sovereignty.
 Hardware Impact: 0 us steady-frame impact. Valid allocation paths add one boolean check after registration. Failure path frees native memory immediately and throws; descriptor growth is cold and bounded by `MaxTrackingCapacity`.
 
+Problem: Read-only alias creation accepted a `SystemID reader` but did not enforce that it was known, leaving an ownerless read-alias lane beside the owner-gated allocation/free paths.
+Solution: Added `FatalMemoryException.ThrowUnknownAliasReader` and reject `SystemID.Unknown` in `GlobalDataVault.CreateAlias`, `H8Memory.CreateAlias(NativeArray<T>, SystemID)`, and the raw pointer alias helper.
+Rejected Alternatives: Treating read aliases as harmless because they are read-only; read aliases still expose persistent vault memory and must be attributable during PHI/VOD triage.
+Scalability potential: Low keeps alias access deterministic and attributable; Middle keeps shared-buffer debugging honest; High and Ultra can add more read-heavy consumers without widening anonymous memory access.
+Hardware Impact: One branch on alias creation only, estimated <0.05 us on i3/MX350; 0 us steady-frame cost for already-held aliases.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Polish audit required removal of fake precision, managed iteration/string debt, and any code outside the DataVault domain without justification.
@@ -219,7 +225,7 @@ Hardware Impact: Direct habitat DTO write is 32 bytes per module and 0 B GC. Rem
 Final Git Diff Summary:
 - Assets/_Project/Scripts/Core/HectonArenaAllocator.cs: owner-tagged H8Memory.FreeRaw release.
 - Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs: GenerationID handle exposure, stale-handle fatal path, VaultGenerationID telemetry, owner-tagged macro/vault frees, macro copy switched to MemCpy, live defrag memmove code deleted, agent-scoped black-box dump paths, and non-finite defrag input dumping.
-- Assets/_Project/Scripts/Core/Memory/H8Memory.cs: FatalMemoryException, owner-gated raw/native allocation, all-or-nothing allocation tracking, tracked-byte raw reallocation, descriptor capacity growth, and owner-checked FreeRaw.
+- Assets/_Project/Scripts/Core/Memory/H8Memory.cs: FatalMemoryException, owner-gated raw/native allocation, alias-reader gate, all-or-nothing allocation tracking, tracked-byte raw reallocation, descriptor capacity growth, and owner-checked FreeRaw.
 - Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs: v72 first-hour DTO payload write/read, direct habitat flood struct loop, bounded root compatibility collections, 16 KiB string cap, and removed unbounded helper wrappers.
 - Assets/_Project/Scripts/SaveData.cs: first-hour DTO mirrors and packed DTO definitions/metadata.
 - Assets/_Project/Scripts/SaveDataMigration.cs: bounded cold restore clamps and canonical `SaveData.EnsureExactArrayCapacity` repair helper use.

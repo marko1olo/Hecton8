@@ -311,3 +311,14 @@ Cinematic cheats used: No visual change. The same atlas-driven glyph fake remain
 Exact microseconds saved: Estimate only. Expected gain is sub-1 us on i3/MX350 during device hot-swap or prompt layout rebuilds with unchanged atlas rects; no profiler proof is claimed.
 
 Verification: No dotnet rebuilds were run. Static scans confirmed UV dirty flags now pass through `WriteUvRectIfChanged()`, render-path scheme reads remain removed, and forbidden allocation/text/LINQ plus bootstrap/direct-time fallback scans stayed clean.
+
+## 2026-05-15 Tooltip Normalized-Span Layout
+What was wrong: Tooltip prompt staging already writes normalized uppercase/safe characters into the fixed prompt buffer, but layout measurement and glyph building normalized those same characters again.
+
+What was done: Removed duplicate normalization from `MeasureAdvance()` and `BuildTextRun()`; normalization remains only at prompt staging boundaries.
+
+Cinematic cheats used: No visual change. The same fixed-buffer, atlas-driven prompt fake remains; the layout path just stops paying for redundant text sanitation.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per prompt layout rebuild on i3/MX350; no profiler proof is claimed.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed `NormalizeTooltipCharacter()` is isolated to staging, layout reads the staged span directly, and forbidden allocation/text/LINQ plus bootstrap/direct-time fallback scans stayed clean.

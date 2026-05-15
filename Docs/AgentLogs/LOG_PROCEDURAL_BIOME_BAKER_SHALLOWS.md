@@ -489,3 +489,15 @@ Cinematic Cheats used: Fixed 1024 procedural atlas fakes, Standalone BC7/BC5 com
 Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents hidden import-quality or alpha-split drift; exact runtime microseconds were not profiled.
 
 Verification: No dotnet rebuild and no Unity import was run. `AtlasCompressionAlphaSplitMetaScan Count=4 Bad=0`; `git diff --check` passed with only repo CRLF warnings; source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.
+
+## 2026-05-15 BioRule Serialized Rule Element Null-Safe Contract
+
+What was wrong: Raw BioRule `_rules` validation dereferenced child properties directly and could throw on malformed serialized assets.
+
+What was done: Added `SerializedRuleReplacementEquals` with explicit null/array/field checks for the single canonical `F` replacement rule.
+
+Cinematic Cheats used: Static offline L-system rule validation remains the contract. No runtime rule normalization or fallback generation was added.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents editor validation exception paths; exact runtime microseconds were not profiled.
+
+Verification: Pending static verification. No dotnet rebuild and no Unity import will be run.

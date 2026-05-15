@@ -385,3 +385,15 @@ Cinematic Cheats used: no simulation change. The controls remain deterministic s
 Exact microseconds saved/spent: one integer compare per receiver callback. Stale panel callbacks skip registration, AUP conversion, signal construction, and haptics. Stale switch callbacks skip one `InverseTransformPoint`, state solve, signal publish, haptic, and audio. 0 B/frame.
 
 Verification: `git diff --check` passed for `PhysicalPanelButton.cs` and `PhysicalSnapSwitch.cs`. Scoped counter reports `PanelStaleFrameReject=1`, `SwitchLastSampleField=1`, `SwitchResolvedSampleFrame=1`, `SwitchStaleFrameReject=1`, `SwitchPublishUsesResolvedFrame=1`, `ForbiddenPatternTotal=0`, `DotnetMention=0`. `CURRENT_BATCH.md` extraction still returns no matching prompt block. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - Receiver Future Frame Poisoning Guard
+
+What was wrong: stale-sample guards still accepted future `sampleFrame` values. One malformed direct caller or test bridge could set a future receiver frame and cause valid later samples to be rejected until the global frame counter caught up.
+
+What was done: manual override lever, physical panel button, and snap switch receiver callbacks now capture `Time.frameCount`, resolve the optional sample frame against it, and reject frames newer than current before mutating receiver state.
+
+Cinematic Cheats used: no simulation change. This preserves overlap-probe physical controls as deterministic kinematic fakes and avoids adding queues, polling, or Unity joint behavior.
+
+Exact microseconds saved/spent: one frame read and integer compare pair per receiver callback. Future samples skip lever transform projection, panel AUP/signal/haptic work, and snap-switch transform/signal/haptic/audio work. 0 B/frame.
+
+Verification: `git diff --check` passed for the three receiver files. Scoped counter reports `CurrentFrameCaptures=3`, `LeverFutureReject=1`, `PanelFutureReject=1`, `SwitchFutureReject=1`, `FutureRejectBeforeLeverTransform=1`, `FutureRejectBeforePanelState=1`, `FutureRejectBeforeSwitchTransform=1`, `ForbiddenPatternTotal=0`, `DotnetMention=0`. No dotnet rebuild/probe was run by user instruction.

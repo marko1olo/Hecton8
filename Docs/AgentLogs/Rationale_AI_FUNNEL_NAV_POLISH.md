@@ -375,3 +375,9 @@ Solution: Add `HasCompleteDynamicUpdateBuffers` and `TryResolveVoxelCellCount`; 
 Rejected Alternatives: Relying on downstream job index guards was rejected because the scheduler is the route update authority boundary. Duplicating dimension products in each caller was rejected because integer overflow proof must remain single-source.
 Scalability potential: Low/MX350 fails closed before corrupt dynamic obstacle jobs. Middle/High/Ultra keep larger voxel records and richer dynamic obstacle updates only when buffer coverage is explicit.
 Hardware Impact: Adds scalar length checks before job scheduling; expected gain is avoided invalid dispatch and route recovery. Dotnet rebuilds remain prohibited.
+
+Problem: Pure-void snapshot acceptance could still compare `Current.Length` to `CurrentDistance.Length` and trust `PureVoidBlockCount` without proving that the scan count matched the declared voxel dimensions.
+Solution: Reuse `HasValidRecordBounds`, recompute the required voxel cell count with `TryResolveVoxelCellCount`, recompute the required pure-void block count, and require exact `PureVoidBlockCount` plus flag coverage before releasing voxel buffers.
+Rejected Alternatives: Keeping length equality was rejected because two stale equal buffers do not prove dimensional coverage. Accepting `PureVoidBlockCount <= flags.Length` was rejected because a stale shorter count can mark only part of a record as pure and release route authority buffers.
+Scalability potential: Low/MX350 fails closed on stale pure-void metadata instead of routing through partially scanned volumes. Middle/High/Ultra keep pure-void fast paths only when the full declared voxel record is proven clean.
+Hardware Impact: Adds scalar proof before a cold pure-void release path; expected gain is avoided false-pure route records and downstream funnel/steering recovery. Dotnet rebuilds remain prohibited.

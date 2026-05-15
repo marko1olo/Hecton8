@@ -473,3 +473,15 @@ Rejected Alternatives: accepting last-writer-wins was rejected because probe ord
 Scalability potential: Low keeps receiver callbacks scalar and allocation-free while stale samples skip transform/signal work. Middle/High keep dense cockpit panels deterministic under multi-hand or delayed callback paths. Ultra can layer richer haptics/audio on top of truthful sample frames without increasing gameplay state cost.
 
 Hardware Impact: i3/MX350 pays one integer compare per receiver callback. Stale panel callbacks skip registration/signal/AUP/haptic work; stale switch callbacks skip `InverseTransformPoint`, desired-state solve, signal publish, haptic, and audio. 0 B/frame, no new service dependency, no physics simulation.
+
+## Decision 39 - Receiver frame stamps must not accept future poison values
+
+Problem: monotonic receiver guards prevent older samples from overwriting newer state, but a malformed future `sampleFrame` could still poison `_lastHandFrame`, `_lastHandInsideFrame`, or `_lastSampleFrame`. That would reject valid later samples until `Time.frameCount` caught up and could leave cockpit controls visually or tactilely unresponsive.
+
+Solution: capture the current frame inside each receiver callback, resolve the optional sample frame against it, and reject samples that are either older than the cached receiver frame or newer than the current frame. The guard runs before lever world-to-local conversion, before panel hand-inside mutation, and before snap-switch collider transform work.
+
+Rejected Alternatives: clamping future frames to current was rejected because it masks malformed input and can still let an invalid sample drive state. Keeping only stale rejection was rejected because it solves ordering but not poisoning. Adding an error log was rejected because receiver callbacks can be hot and repeated logging would violate frame-time and allocation discipline.
+
+Scalability potential: Low/toaster avoids long-lived unresponsive cockpit controls after one bad tool/test callback. Middle/High keep receiver frame semantics strict as cockpit density and multi-hand probes increase. Ultra can layer richer feedback knowing that only current-or-past truthful samples enter control state.
+
+Hardware Impact: one `Time.frameCount` read and integer comparison pair per receiver callback. Future samples skip transform, AUP, signal, haptic, audio, and state writes. 0 B/frame and no extra registry/signal dependency.
