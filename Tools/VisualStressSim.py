@@ -22,6 +22,36 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_MATRIX_PATH = ROOT / "Data/System/Visual_Scalability_Matrix.json"
 DEFAULT_REPORT_PATH = ROOT / "Docs/AgentLogs/VisualStressSim_VISUAL_LOD_GRADE_ARCHITECT.json"
 REQUIRED_TIERS = ("TOASTER", "DECK", "PRO", "GOD_MODE")
+REQUIRED_TOP_LEVEL_PATHS = (
+    "selfAuditExpectations.toasterMaxVramMbIncludingDriverReserve",
+    "selfAuditExpectations.godModeMinimumDensityRatioVsPro",
+    "godModeFallbacks",
+)
+REQUIRED_TIER_PATHS = (
+    "vramGuardMb",
+    "estimatedVramMb",
+    "dynamicResolution.defaultRenderScale",
+    "shaderFeatures.pom.tapCount",
+    "shaderFeatures.ssr.enabled",
+    "shaderFeatures.ssr.maxSteps",
+    "shaderFeatures.ssr.resolutionFraction",
+    "shaderFeatures.screenSpaceRefractions.enabled",
+    "shaderFeatures.screenSpaceRefractions.sampleCount",
+    "shaderFeatures.ssdo.tapCount",
+    "shaderFeatures.waterSurfaceSubdivisions",
+    "shaderFeatures.shadowPcfTaps",
+    "shaderFeatures.dynamicShadowCasters",
+    "shaderFeatures.bloom",
+    "volumetricScattering.raymarchSteps",
+    "volumetricScattering.resolutionFraction",
+    "volumetricScattering.noise.layers",
+    "volumetricScattering.noise.octavesPerLayer",
+    "particles.totalBudget",
+    "particles.gpuParticles",
+    "textures.detailNormalMaps",
+    "textures.microDetailOrm",
+    "textures.streamingBudgetMb",
+)
 REQUIRED_GOD_FALLBACK_KEYS = (
     "renderScale",
     "pom",
@@ -210,6 +240,27 @@ def stress_tier(tier: Dict[str, Any], seed: int, frame_count: int) -> Dict[str, 
     }
 
 
+def required_shape_failures(data: Dict[str, Any], tiers: Dict[str, Dict[str, Any]]) -> List[str]:
+    failures: List[str] = []
+    for path in REQUIRED_TOP_LEVEL_PATHS:
+        require(get_nested(data, path) is not None, f"missing top-level field {path}", failures)
+
+    for tier_name in REQUIRED_TIERS:
+        tier = tiers.get(tier_name)
+        if tier is None:
+            failures.append(f"missing tier {tier_name}")
+            continue
+        for path in REQUIRED_TIER_PATHS:
+            require(get_nested(tier, path) is not None, f"missing tier field {tier_name}.{path}", failures)
+
+    god = tiers.get("GOD_MODE")
+    if god is not None:
+        for path in REQUIRED_GOD_FALLBACK_REFS:
+            require(get_nested(god, path) is not None, f"missing tier field GOD_MODE.{path}", failures)
+
+    return failures
+
+
 def validate_matrix(data: Dict[str, Any], report: Dict[str, Any]) -> List[str]:
     failures: List[str] = []
     tiers = tiers_by_name(data)
@@ -257,12 +308,16 @@ def validate_matrix(data: Dict[str, Any], report: Dict[str, Any]) -> List[str]:
     for path in REQUIRED_GOD_FALLBACK_REFS:
         value = get_nested(god, path)
         require(isinstance(value, str) and value.startswith("godModeFallbacks."), f"GOD_MODE missing fallback ref {path}", failures)
+        if isinstance(value, str) and value.startswith("godModeFallbacks."):
+            fallback_key = value.split(".", 1)[1]
+            require(fallback_key in fallback_map, f"GOD_MODE fallback ref {path} points to missing key {fallback_key}", failures)
 
     return failures
 
 
 def build_report(data: Dict[str, Any], matrix_path: Path, seed: int, frame_count: int) -> Dict[str, Any]:
     tiers = tiers_by_name(data)
+    expectations = data.get("selfAuditExpectations", {})
     report = {
         "tool": "Tools/VisualStressSim.py",
         "matrixPath": str(matrix_path.as_posix()),
@@ -271,14 +326,14 @@ def build_report(data: Dict[str, Any], matrix_path: Path, seed: int, frame_count
         "frameCount": frame_count,
         "tiers": {},
         "selfAudit": {
-            "toasterMaxVramMbIncludingDriverReserve": data["selfAuditExpectations"]["toasterMaxVramMbIncludingDriverReserve"],
-            "godModeMinimumDensityRatioVsPro": data["selfAuditExpectations"]["godModeMinimumDensityRatioVsPro"],
+            "toasterMaxVramMbIncludingDriverReserve": expectations.get("toasterMaxVramMbIncludingDriverReserve"),
+            "godModeMinimumDensityRatioVsPro": expectations.get("godModeMinimumDensityRatioVsPro"),
             "status": "PENDING"
         }
     }
-    missing_tiers = [name for name in REQUIRED_TIERS if name not in tiers]
-    if missing_tiers:
-        report["selfAudit"]["failures"] = [f"missing tier {name}" for name in missing_tiers]
+    shape_failures = required_shape_failures(data, tiers)
+    if shape_failures:
+        report["selfAudit"]["failures"] = shape_failures
         report["selfAudit"]["status"] = "FAIL"
         return report
 
@@ -295,14 +350,19 @@ def print_summary(report: Dict[str, Any]) -> None:
     print(f"matrix={report['matrixPath']}")
     print(f"evidence={report['evidenceBoundary']}")
     for name in REQUIRED_TIERS:
-        tier = report["tiers"][name]
+        tier = report["tiers"].get(name)
+        if tier is None:
+            print(f"{name}: MISSING")
+            continue
         print(
             f"{name}: vram={tier['estimatedVramMb']:.1f}MiB "
             f"density={tier['visualDensityScore']:.3f} "
             f"gpuCyclesP95={tier['gpuCyclesP95']:.3f} "
             f"gpuCyclesPeak={tier['gpuCyclesPeak']:.3f}"
         )
-    print(f"GOD_MODE/PRO density ratio={report['selfAudit']['godModeDensityRatioVsPro']:.3f}")
+    density_ratio = report["selfAudit"].get("godModeDensityRatioVsPro")
+    if density_ratio is not None:
+        print(f"GOD_MODE/PRO density ratio={density_ratio:.3f}")
     print(f"STATUS={report['selfAudit']['status']}")
     if report["selfAudit"]["failures"]:
         for failure in report["selfAudit"]["failures"]:

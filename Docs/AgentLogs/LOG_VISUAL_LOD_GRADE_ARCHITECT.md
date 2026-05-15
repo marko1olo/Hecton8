@@ -184,3 +184,53 @@ Why kept:
 Why rejected:
 - Adding a JSON schema dependency was rejected as bloat.
 - Editing the batch file to invent a polish mandate was rejected.
+
+## 2026-05-15 - Required Field Preflight Pass
+
+What was wrong:
+- Missing required nested tier fields could still throw before the simulator returned a structured report.
+- Broken GOD_MODE fallback references only had test-side coverage, not simulator-side validation.
+- `print_summary()` assumed all four tier rows existed, which undermined partial failure reporting.
+
+What was done:
+- Added `REQUIRED_TOP_LEVEL_PATHS` and `REQUIRED_TIER_PATHS`.
+- Added `required_shape_failures()` before stress math.
+- Hardened GOD_MODE fallback validation so refs must point to existing `godModeFallbacks` keys.
+- Updated `print_summary()` to print `MISSING` rows for absent tier reports.
+- Expanded tests from 4 to 7.
+
+Cinematic Cheats used:
+- None added. This is offline validation hardening only.
+
+Exact Microseconds saved:
+- Measured runtime microseconds saved: 0 us. No Unity runtime code changed.
+
+Verification:
+- `python -m py_compile Tools/VisualStressSim.py Tools/test_visual_stress_sim.py` passed.
+- `python -m unittest Tools.test_visual_stress_sim` passed: 7 tests.
+- `python Tools/VisualStressSim.py --write-report` passed.
+- `python -m json.tool Data/System/Visual_Scalability_Matrix.json` passed.
+- `python -m json.tool Docs/AgentLogs/VisualStressSim_VISUAL_LOD_GRADE_ARCHITECT.json` passed.
+- `git diff --check` passed for owned changed files.
+- Offline stress results remain TOASTER 1560.0 MiB, PRO density 338.4, GOD_MODE density 3078.4, GOD_MODE/PRO ratio 9.097.
+
+Regression model:
+- CPU: runtime unchanged.
+- GC: runtime unchanged.
+- Memory: runtime unchanged.
+- Cadence: runtime unchanged.
+- Correctness: missing field, broken fallback ref, missing tier, and partial summary paths now have deterministic coverage.
+
+Hot path impact:
+- None.
+
+Failure modes:
+- Unity runtime verification remains absent.
+- Invalid JSON syntax still fails at JSON parsing; this is acceptable because corrupt JSON cannot be safely interpreted.
+
+Why kept:
+- The patch removes real unstructured failure paths from the offline gate.
+
+Why rejected:
+- Broad exception swallowing was rejected.
+- Schema dependency was rejected.

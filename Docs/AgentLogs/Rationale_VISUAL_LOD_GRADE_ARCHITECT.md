@@ -161,3 +161,15 @@ Rejected Alternatives: Leaving the throw path was rejected because stress toolin
 Scalability potential: Not runtime. The matrix handoff becomes harder to corrupt during future tier edits.
 
 Hardware Impact: No runtime impact. Offline validation still reports TOASTER 1560 MiB and GOD_MODE/PRO density ratio 9.097.
+
+## Decision 14 - Required Field Preflight Before Stress Math
+
+Problem: The first polish hardening handled missing tier rows, but a missing nested field such as `GOD_MODE.shaderFeatures.pom.tapCount` could still throw before the report returned structured failures. The CLI summary also assumed every tier row existed.
+
+Solution: Add required top-level and per-tier field preflight before stress math, validate that every GOD_MODE fallback reference resolves to an existing `godModeFallbacks` key, and make `print_summary()` emit `MISSING` rows for partial failure reports.
+
+Rejected Alternatives: Wrapping broad `try/except` around stress math was rejected because it would hide the exact missing contract field. Adding a full schema dependency was again rejected as unnecessary weight for this fixed matrix.
+
+Scalability potential: Not runtime. The adapter handoff now has stricter drift detection for missing fields and broken fallback references.
+
+Hardware Impact: No runtime impact. Offline validation still reports TOASTER 1560 MiB and GOD_MODE/PRO density ratio 9.097.

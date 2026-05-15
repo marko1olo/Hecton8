@@ -1,5 +1,7 @@
+import io
 import sys
 import unittest
+from contextlib import redirect_stdout
 from copy import deepcopy
 from pathlib import Path
 
@@ -68,6 +70,43 @@ class VisualStressSimTests(unittest.TestCase):
         self.assertEqual(report["selfAudit"]["status"], "FAIL")
         self.assertIn("missing tier GOD_MODE", report["selfAudit"]["failures"])
         self.assertNotIn("GOD_MODE", report["tiers"])
+
+    def test_missing_required_nested_field_reports_failure_without_throwing(self) -> None:
+        data = deepcopy(visual_stress.load_matrix(MATRIX_PATH))
+        tiers = visual_stress.tiers_by_name(data)
+        del tiers["GOD_MODE"]["shaderFeatures"]["pom"]["tapCount"]
+
+        report = visual_stress.build_report(data, MATRIX_PATH, seed=8808, frame_count=16)
+
+        self.assertEqual(report["selfAudit"]["status"], "FAIL")
+        self.assertIn("missing tier field GOD_MODE.shaderFeatures.pom.tapCount", report["selfAudit"]["failures"])
+        self.assertEqual(report["tiers"], {})
+
+    def test_summary_prints_partial_failure_report_without_throwing(self) -> None:
+        data = deepcopy(visual_stress.load_matrix(MATRIX_PATH))
+        data["tiers"] = [tier for tier in data["tiers"] if tier["tier"] != "GOD_MODE"]
+        report = visual_stress.build_report(data, MATRIX_PATH, seed=8808, frame_count=16)
+        output = io.StringIO()
+
+        with redirect_stdout(output):
+            visual_stress.print_summary(report)
+
+        summary = output.getvalue()
+        self.assertIn("GOD_MODE: MISSING", summary)
+        self.assertIn("STATUS=FAIL", summary)
+
+    def test_broken_god_mode_fallback_reference_reports_failure(self) -> None:
+        data = deepcopy(visual_stress.load_matrix(MATRIX_PATH))
+        tiers = visual_stress.tiers_by_name(data)
+        tiers["GOD_MODE"]["shaderFeatures"]["pom"]["fallback"] = "godModeFallbacks.notDefined"
+
+        report = visual_stress.build_report(data, MATRIX_PATH, seed=8808, frame_count=16)
+
+        self.assertEqual(report["selfAudit"]["status"], "FAIL")
+        self.assertIn(
+            "GOD_MODE fallback ref shaderFeatures.pom.fallback points to missing key notDefined",
+            report["selfAudit"]["failures"],
+        )
 
 
 if __name__ == "__main__":

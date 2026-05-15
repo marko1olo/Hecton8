@@ -52,3 +52,7 @@ Loop log:
 24. Loop 21 complete: `Tools/VisualStressSim.py` now reports missing required tiers as `selfAudit.status=FAIL` without throwing; fallback reference paths are exposed as a reusable constant.
 25. Loop 22 complete: `Tools/test_visual_stress_sim.py` expanded from 2 to 4 tests, adding declared VRAM guard coverage and missing-tier failure coverage.
 26. Loop 23 complete: `python -m py_compile`, `python -m unittest Tools.test_visual_stress_sim`, `python Tools/VisualStressSim.py --write-report`, JSON validation, and `git diff --check` passed after polish hardening.
+27. Loop 24 complete: second hardening audit found missing nested tier fields could still throw before stress reporting, and CLI summary could assume all tier rows existed.
+28. Loop 25 complete: `Tools/VisualStressSim.py` now preflights required top-level fields, required tier fields, GOD_MODE fallback fields, and fallback references before stress math.
+29. Loop 26 complete: `Tools/test_visual_stress_sim.py` expanded from 4 to 7 tests, adding nested-field failure, broken fallback target, and partial summary output coverage.
+30. Loop 27 complete: `python -m py_compile`, `python -m unittest Tools.test_visual_stress_sim`, `python Tools/VisualStressSim.py --write-report`, JSON validation, and `git diff --check` passed after second hardening.
