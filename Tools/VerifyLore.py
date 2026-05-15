@@ -403,7 +403,14 @@ def verify_manifest(blob_path: Path, manifest_path: Path, source_dir: Path) -> N
     blob, records = read_blob(blob_path)
     entries = load_source_entries(source_dir)
     manifest_text = resolve_repo_path(manifest_path).read_text(encoding="utf-8")
-    verify_manifest_data(blob, records, entries, json.loads(manifest_text))
+    verify_manifest_data(
+        blob,
+        records,
+        entries,
+        json.loads(manifest_text),
+        expected_blob_label=format_repo_path(blob_path),
+        expected_source_dir_label=format_repo_path(source_dir),
+    )
 
 
 def verify_manifest_data(
@@ -411,6 +418,8 @@ def verify_manifest_data(
     records: list[LoreRecord],
     entries: list[SourceEntry],
     manifest: object,
+    expected_blob_label: str | None = None,
+    expected_source_dir_label: str | None = None,
 ) -> None:
     record_by_hash = {record.hash_value: record for record in records}
     entry_by_hash = {entry.hash_value: entry for entry in entries}
@@ -429,6 +438,10 @@ def verify_manifest_data(
         raise ValueError("Manifest alignment mismatch.")
     if manifest.get("record_layout") != RECORD_LAYOUT:
         raise ValueError("Manifest record layout mismatch.")
+    if expected_blob_label is not None and manifest.get("blob") != expected_blob_label:
+        raise ValueError("Manifest blob path mismatch.")
+    if expected_source_dir_label is not None and manifest.get("source_dir") != expected_source_dir_label:
+        raise ValueError("Manifest source directory mismatch.")
     if manifest.get("entry_count") != len(records):
         raise ValueError("Manifest entry count mismatch.")
     if int(manifest.get("blob_length", -1)) != len(blob):

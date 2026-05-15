@@ -552,3 +552,42 @@ Regression model:
 Failure modes:
 - Unity/C# compile proof remains blocked by missing local toolchain/generation state.
 - Runtime loader remains out of explicit prompt scope.
+
+## 2026-05-15 - Manifest Label Binding
+
+STATUS: LORE BAKED / MANIFEST LABELS VERIFIED
+
+What was wrong:
+- Manifest payload and digest checks were strict, but the sidecar `blob` and `source_dir` labels were not bound to the paths being verified.
+- A copied sidecar could pass if bytes matched while still pointing operators at the wrong package/source labels.
+
+What was done:
+- `verify_manifest` now passes expected repository-relative blob and source directory labels into `verify_manifest_data`.
+- `verify_manifest_data` rejects manifest blob path mismatches and source directory mismatches when expected labels are supplied.
+- Added regressions for wrong blob label and wrong source directory label.
+- Appended this report at the bottom of the log after correcting the patch insertion point.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Fixed binary layout and zlib payloads remain unchanged.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- No runtime loader cost claimed.
+
+Verification:
+- `python Tools\VerifyLore.py --bake --check --list` -> `LORE BAKED`, `CHECK OK`, record `0xD1880394 offset=48 length=10281`.
+- `python -B -m unittest Tools.test_verify_lore -v` -> 21 tests passed.
+- `$env:PYTHONPYCACHEPREFIX='.codex-artifacts\pycache'; python -m py_compile Tools\VerifyLore.py Tools\test_verify_lore.py` -> passed.
+- Source/extract SHA-256 match -> `6B529A808B25D18DA276747DB9149C61BACDF90A33DCC667FC85375DE13E69CD`.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: manifest verification now binds content, blob label, and source directory label to the current package.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.

@@ -281,6 +281,50 @@ class VerifyLoreTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             VerifyLore.verify_manifest_data(blob, records, entries, manifest)
 
+    def test_manifest_blob_label_mismatch_is_rejected_when_expected(self) -> None:
+        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
+        blob = VerifyLore.bake_blob(entries)
+        records = VerifyLore.parse_blob(blob)
+        manifest = VerifyLore.build_manifest_data(
+            "Data/Lore/Stale.h8bin",
+            blob,
+            records,
+            entries,
+            "Docs/Lore",
+        )
+
+        with self.assertRaises(ValueError):
+            VerifyLore.verify_manifest_data(
+                blob,
+                records,
+                entries,
+                manifest,
+                expected_blob_label="Data/Lore/Encyclopedia.h8bin",
+                expected_source_dir_label="Docs/Lore",
+            )
+
+    def test_manifest_source_dir_label_mismatch_is_rejected_when_expected(self) -> None:
+        entries = [self.make_entry("Docs/Lore/entry.md", b"Entry\n")]
+        blob = VerifyLore.bake_blob(entries)
+        records = VerifyLore.parse_blob(blob)
+        manifest = VerifyLore.build_manifest_data(
+            "Data/Lore/Encyclopedia.h8bin",
+            blob,
+            records,
+            entries,
+            "Docs/Design",
+        )
+
+        with self.assertRaises(ValueError):
+            VerifyLore.verify_manifest_data(
+                blob,
+                records,
+                entries,
+                manifest,
+                expected_blob_label="Data/Lore/Encyclopedia.h8bin",
+                expected_source_dir_label="Docs/Lore",
+            )
+
     def test_source_path_outside_repo_is_rejected(self) -> None:
         with self.assertRaises(ValueError):
             VerifyLore.canonicalize_path(Path.cwd().parent)

@@ -215,3 +215,11 @@ Solution: Make `build_manifest_data` and `verify_manifest_data` reject payload m
 Rejected Alternatives: Requiring operators to always remember `--check` would keep `--verify-manifest` weaker than its help text; trusting only SHA-256 values stored in the manifest would let stale packages self-certify.
 Scalability potential: Low/Middle/High/Ultra all get stricter offline package gates as lore shards scale; stale shard detection remains content-byte exact before any future runtime loader sees the blob.
 Hardware Impact: 0 us/frame on i3/MX350; this is offline validation. Runtime artifact size and layout remain unchanged.
+
+## Decision 028 - Bind Manifest Labels To Verification Paths
+
+Problem: Manifest payload and digest checks were strict, but `blob` and `source_dir` labels were still advisory. A sidecar copied from another package path could pass if the bytes matched, weakening operator auditability.
+Solution: Pass expected repository-relative blob and source directory labels from `verify_manifest` into `verify_manifest_data`, reject label mismatches, and add regressions for wrong blob and wrong source directory labels.
+Rejected Alternatives: Ignoring labels would make the manifest less useful as a handoff contract; embedding path labels in the binary would bloat the runtime artifact and exceed the prompt's fixed record table.
+Scalability potential: Low/Middle/High/Ultra packaging keeps sidecars tied to exact source roots as future lore shards scale across subdirectories.
+Hardware Impact: 0 us/frame on i3/MX350; this is offline verification. Runtime blob size and layout remain unchanged.
