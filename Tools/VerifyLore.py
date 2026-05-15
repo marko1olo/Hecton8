@@ -136,6 +136,40 @@ def canonicalize_path(path: Path) -> str:
     return canonical
 
 
+def require_utf8_markdown(canonical_id: str, payload: bytes) -> None:
+    try:
+        payload.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError(f"Markdown source is not valid UTF-8: {canonical_id}") from exc
+
+
+def validate_source_entries(entries: list[SourceEntry]) -> None:
+    seen_hashes: dict[int, str] = {}
+    seen_ids: set[str] = set()
+
+    for entry in entries:
+        if not entry.canonical_id:
+            raise ValueError("Lore source canonical id is empty.")
+        if entry.canonical_id in seen_ids:
+            raise ValueError(f"Duplicate lore source canonical id: {entry.canonical_id}")
+        seen_ids.add(entry.canonical_id)
+
+        expected_hash = compute_fnv1a32(entry.canonical_id)
+        if entry.hash_value != expected_hash:
+            raise ValueError(
+                f"Hash mismatch for {entry.canonical_id}: "
+                f"{format_hash(entry.hash_value)} != {format_hash(expected_hash)}"
+            )
+
+        owner = seen_hashes.get(entry.hash_value)
+        if owner is not None:
+            raise ValueError(
+                f"FNV-1a collision: {owner} and {entry.canonical_id} both use {format_hash(entry.hash_value)}"
+            )
+        seen_hashes[entry.hash_value] = entry.canonical_id
+        require_utf8_markdown(entry.canonical_id, entry.payload)
+
+
 def discover_markdown_sources(source_dir: Path) -> list[Path]:
     resolved_source_dir = resolve_repo_path(source_dir)
     if resolved_source_dir.exists():
@@ -164,26 +198,21 @@ def atomic_write_text(path: Path, payload: str) -> None:
 def load_source_entries(source_dir: Path) -> list[SourceEntry]:
     source_paths = discover_markdown_sources(source_dir)
     entries: list[SourceEntry] = []
-    seen_hashes: dict[int, str] = {}
 
     for path in source_paths:
         canonical_id = canonicalize_path(path)
         hash_value = compute_fnv1a32(canonical_id)
-        owner = seen_hashes.get(hash_value)
-        if owner is not None:
-            raise ValueError(
-                f"FNV-1a collision: {owner} and {canonical_id} both use {format_hash(hash_value)}"
-            )
-        seen_hashes[hash_value] = canonical_id
+        payload = path.read_bytes()
         entries.append(
             SourceEntry(
                 source_path=path,
                 canonical_id=canonical_id,
                 hash_value=hash_value,
-                payload=path.read_bytes(),
+                payload=payload,
             )
         )
 
+    validate_source_entries(entries)
     return entries
 
 
@@ -191,6 +220,7 @@ def bake_blob(entries: list[SourceEntry]) -> bytes:
     if not entries:
         raise ValueError("No Markdown lore sources found.")
 
+    validate_source_entries(entries)
     sorted_entries = sorted(entries, key=lambda entry: entry.hash_value)
     table_offset = HEADER_SIZE
     table_bytes = len(sorted_entries) * RECORD_SIZE

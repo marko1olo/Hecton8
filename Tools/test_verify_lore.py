@@ -64,6 +64,29 @@ class VerifyLoreTests(unittest.TestCase):
         self.assertEqual(manifest["alignment_bytes"], VerifyLore.ALIGNMENT)
         self.assertEqual(len(manifest["entries"]), 2)
 
+    def test_bake_rejects_non_utf8_markdown_payload(self) -> None:
+        entries = [self.make_entry("Docs/Lore/bad.md", b"# Bad\n\xff\n")]
+
+        with self.assertRaisesRegex(ValueError, "not valid UTF-8"):
+            VerifyLore.bake_blob(entries)
+
+    def test_bake_rejects_hash_mismatched_entries(self) -> None:
+        entry = VerifyLore.SourceEntry(
+            source_path=Path("Docs/Lore/wrong.md"),
+            canonical_id="Docs/Lore/wrong.md",
+            hash_value=0x12345678,
+            payload=b"# Wrong\n",
+        )
+
+        with self.assertRaisesRegex(ValueError, "Hash mismatch"):
+            VerifyLore.bake_blob([entry])
+
+    def test_bake_rejects_duplicate_canonical_ids(self) -> None:
+        first = self.make_entry("Docs/Lore/alpha.md", b"# Alpha\n")
+
+        with self.assertRaisesRegex(ValueError, "Duplicate lore source canonical id"):
+            VerifyLore.bake_blob([first, first])
+
     def test_absolute_and_relative_paths_hash_to_same_canonical_id(self) -> None:
         source_path = Path("Docs/Lore/Lore_Bible.md")
         self.assertTrue(source_path.exists())

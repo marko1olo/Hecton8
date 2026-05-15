@@ -814,6 +814,46 @@ Failure modes:
 - Unity/C# compile proof remains blocked by missing local toolchain/generation state.
 - Runtime loader remains out of explicit prompt scope.
 
+## 2026-05-15 - Source Entry Contract Guard
+
+STATUS: LORE BAKED / SOURCE CONTRACT HARDENED
+
+What was wrong:
+- The blob format declared UTF-8 Markdown, but direct bake helpers accepted arbitrary bytes before compression.
+- Direct `SourceEntry` values could also carry stale/mismatched hashes or duplicate canonical IDs in tests and future tooling.
+
+What was done:
+- Added `validate_source_entries` before compression.
+- The validator now rejects empty/duplicate canonical IDs, hash mismatches, FNV hash collisions, and non-UTF-8 Markdown payloads.
+- Added regression coverage for invalid UTF-8, mismatched source-entry hash, and duplicate canonical IDs.
+- Documented the UTF-8 source requirement in `Data/Lore/README.md`.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Fixed binary layout and zlib payloads remain unchanged.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- Offline validation only; no runtime loader cost claimed.
+
+Verification:
+- `python Tools\VerifyLore.py --bake --check --list` -> `LORE BAKED`, `CHECK OK`, record `0xD1880394 offset=48 length=10281`.
+- `python Tools\VerifyLore.py --verify-manifest --verify-source --list` -> `VERIFY OK`, `MANIFEST VERIFY OK`.
+- `python -B -m unittest Tools.test_verify_lore -v` -> 28 tests passed.
+- `python -B -m unittest discover -s Tools -p 'test_verify_lore.py' -v` -> 28 tests passed.
+- `$env:PYTHONPYCACHEPREFIX='.codex-artifacts\pycache'; python -m py_compile Tools\VerifyLore.py Tools\test_verify_lore.py` -> passed.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: invalid source bytes and stale hash metadata fail before a package is accepted.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.
+
 ## 2026-05-15 - Scoped Lore Discovery Verification
 
 STATUS: LORE BAKED / SCOPED DISCOVERY VERIFIED

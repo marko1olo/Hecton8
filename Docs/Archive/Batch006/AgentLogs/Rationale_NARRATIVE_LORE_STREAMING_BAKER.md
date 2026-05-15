@@ -263,3 +263,11 @@ Solution: Treat `Tools.test_verify_lore` and `discover -p 'test_verify_lore.py'`
 Rejected Alternatives: Claiming the entire `Tools/` suite passed would be false; expanding this prompt to debug unrelated AI/audio/hardware/material tests would violate the assigned domain boundary.
 Scalability potential: Low/Middle/High/Ultra lore packaging keeps a bounded deterministic verification gate as unrelated tool suites grow.
 Hardware Impact: 0 us/frame on i3/MX350; test scope documentation only.
+
+## Decision 034 - Enforce Source Entry Contract Before Compression
+
+Problem: The blob declares zlib-compressed UTF-8 Markdown, but the bake helper accepted arbitrary bytes and direct `SourceEntry` values could carry mismatched hashes or duplicate canonical IDs.
+Solution: Add `validate_source_entries` before compression, require UTF-8-decodable payloads, require `hash_value == FNV1a(canonical_id)`, reject duplicate canonical IDs, and document the UTF-8 rule in `Data/Lore/README.md`.
+Rejected Alternatives: Letting invalid bytes compress would push decode failure to a future runtime loader; trusting direct test/helper entries would leave the binary contract weaker than the manifest claims.
+Scalability potential: Low/Middle/High/Ultra lore packaging fails fast as additional Markdown shards are added, preserving one stable hash namespace and UTF-8 payload contract.
+Hardware Impact: 0 us/frame on i3/MX350; validation is offline only and runtime blob size remains 10329 bytes.
