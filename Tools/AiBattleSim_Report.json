@@ -1,5 +1,5 @@
 {
-  "brainDigest": "b63fdd1d29a145997834fd386abd2bbc362aa14030913b3337b64cbbeceb33ed",
+  "brainDigest": "8f96fe1c84c9b136aac2a4a0fcc3550e62ddaae28d0b6d66c782e064eae80edf",
   "brainPath": "Data/AI/Leviathan_Brain.json",
   "calibration": {
     "aggressionLowered": false,
@@ -7,7 +7,7 @@
     "initialAggressionScalar": 1.0,
     "passes": 1
   },
-  "elapsedSeconds": 131.016,
+  "elapsedSeconds": 78.985,
   "evidenceClass": "CLI_PYTHON_BATTLE_SIMULATION",
   "frustrationAudit": {
     "allKillsUnder30": false,

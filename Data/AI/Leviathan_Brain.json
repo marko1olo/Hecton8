@@ -297,31 +297,31 @@
     {"id": 50, "context": "visual_overkill_ultra", "behavior": "RealAttack", "score": 0.62, "inputs": ["distanceSq01", "sound01", "movement01", "packSynergy01", "attackCooldown01"], "reason": "Lethal commit remains gated under the spectacle layer."}
   ],
   "packHuntingSynergy": {
-    "formula": "flankScore=saturate(max(0,dot(normalize(stalkerToPlayer),normalize(playerForward*-1))) * max(0,dot(normalize(stalkerVelocity),normalize(playerToLeviathan))) * rangeGate)",
+    "formula": "flankScore=saturate(max(0,math.dot(normalize(stalkerToPlayer),normalize(playerForward*-1))) * max(0,math.dot(normalize(stalkerVelocity),normalize(playerToLeviathan))) * rangeGate)",
     "rangeGate": "1.0 when stalker distance is 12m..42m, fades to 0 outside that band",
     "rules": [
       {
         "id": "bait_front_lock",
         "description": "One stalker holds frontal attention while Leviathan stays outside direct line.",
-        "dotCondition": "dot(playerForward, normalize(stalkerPosition-playerPosition)) > 0.35",
+        "dotCondition": "math.dot(playerForward, normalize(stalkerPosition-playerPosition)) > 0.35",
         "effect": "FalseCharge +0.08, RealAttack +0.04"
       },
       {
         "id": "rear_flank_commit",
         "description": "Rear/side stalker movement opens the real attack lane.",
-        "dotCondition": "dot(normalize(stalkerPosition-playerPosition), -playerForward) > 0.55",
+        "dotCondition": "math.dot(normalize(stalkerPosition-playerPosition), -playerForward) > 0.55",
         "effect": "RealAttack +0.16, Circle -0.05"
       },
       {
         "id": "cross_current_herd",
         "description": "Two stalker velocities crossing the player's escape direction create a herd gate.",
-        "dotCondition": "dot(normalize(stalkerVelocityA), normalize(stalkerVelocityB)) < -0.25",
+        "dotCondition": "math.dot(normalize(stalkerVelocityA), normalize(stalkerVelocityB)) < -0.25",
         "effect": "Breach +0.10, FalseCharge +0.12"
       },
       {
         "id": "bad_pack_geometry",
         "description": "Aligned stalkers are noise, not a flanking advantage.",
-        "dotCondition": "dot(normalize(stalkerPositionA-playerPosition), normalize(stalkerPositionB-playerPosition)) > 0.80",
+        "dotCondition": "math.dot(normalize(stalkerPositionA-playerPosition), normalize(stalkerPositionB-playerPosition)) > 0.80",
         "effect": "packSynergy01 *= 0.25"
       }
     ]

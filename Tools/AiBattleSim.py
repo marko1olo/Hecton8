@@ -61,6 +61,12 @@ EXPECTED_FEATURES = (
 )
 EXPECTED_MATH_LOD_TIERS = ("low", "middle", "high", "ultra")
 EXPECTED_PACK_RULE_COUNT = 4
+EXPECTED_PACK_RULE_IDS = (
+    "bait_front_lock",
+    "rear_flank_commit",
+    "cross_current_herd",
+    "bad_pack_geometry",
+)
 EXPECTED_BLACK_BOX_FRAMES = 300
 EXPECTED_BLACK_BOX_DUMP_PATH = "Docs/AgentLogs/Dump_AI_BEHAVIOR_BIOMIMETIC_DESIGNER.bin"
 REQUIRED_BLACK_BOX_FIELDS = (
@@ -585,8 +591,13 @@ def validate_brain(brain: Mapping[str, object], known_buffers: set[str] | None =
     pack_rule_count = 0
     if isinstance(pack_hunting, dict):
         formula = pack_hunting.get("formula")
-        if not isinstance(formula, str) or "dot" not in formula:
-            errors.append("packHuntingSynergy.formula missing dot")
+        if not isinstance(formula, str) or formula.count("math.dot") < 2:
+            errors.append("packHuntingSynergy.formula missing math.dot")
+        elif "acos" in formula or "angle" in formula.lower():
+            errors.append("packHuntingSynergy.formula uses angle math")
+        range_gate = pack_hunting.get("rangeGate")
+        if not isinstance(range_gate, str) or "12m" not in range_gate or "42m" not in range_gate:
+            errors.append("packHuntingSynergy.rangeGate invalid")
         rules = pack_hunting.get("rules")
         if not isinstance(rules, list) or len(rules) != EXPECTED_PACK_RULE_COUNT:
             errors.append(f"packHuntingSynergy.rules count != {EXPECTED_PACK_RULE_COUNT}")
@@ -601,9 +612,22 @@ def validate_brain(brain: Mapping[str, object], known_buffers: set[str] | None =
                     errors.append(f"packHuntingSynergy.rules[{index}].id invalid")
                 else:
                     rule_ids.add(rule_id)
-                if "dot" not in str(rule.get("dotCondition", "")):
-                    errors.append(f"packHuntingSynergy.rules[{index}].dotCondition missing dot")
+                if index < len(EXPECTED_PACK_RULE_IDS) and rule_id != EXPECTED_PACK_RULE_IDS[index]:
+                    errors.append(f"packHuntingSynergy.rules[{index}].id sequence drift")
+                dot_condition = rule.get("dotCondition")
+                if not isinstance(dot_condition, str) or "math.dot" not in dot_condition:
+                    errors.append(f"packHuntingSynergy.rules[{index}].dotCondition missing math.dot")
+                elif "acos" in dot_condition or "angle" in dot_condition.lower():
+                    errors.append(f"packHuntingSynergy.rules[{index}].dotCondition uses angle math")
+                description = rule.get("description")
+                if not isinstance(description, str) or len(description.strip()) < 24:
+                    errors.append(f"packHuntingSynergy.rules[{index}].description missing")
+                effect = rule.get("effect")
+                if not isinstance(effect, str) or len(effect.strip()) < 12:
+                    errors.append(f"packHuntingSynergy.rules[{index}].effect missing")
             pack_rule_count = len(rule_ids)
+            if tuple(str(rule.get("id")) for rule in rules if isinstance(rule, dict)) != EXPECTED_PACK_RULE_IDS:
+                errors.append("packHuntingSynergy.rules id set drift")
     else:
         errors.append("packHuntingSynergy missing")
 

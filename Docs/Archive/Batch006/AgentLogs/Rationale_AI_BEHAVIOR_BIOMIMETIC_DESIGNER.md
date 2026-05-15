@@ -223,3 +223,9 @@ Solution: Added exact context id/order validation, context band validation, cont
 Rejected Alternatives: Treating context metadata and reason text as harmless documentation was rejected because importers and designers use them to understand table semantics.
 Scalability potential: Future context additions must update the explicit context tuple, tests, and report proof rather than silently shifting the table.
 Hardware Impact: Offline validation only. No Unity runtime impact; strict 10,000 rerun passed with unchanged brain/simulation digests.
+
+Problem: The prompt explicitly required pack flanking with `math.dot`, but the authored brain and validator accepted generic `dot(...)` text.
+Solution: Updated `Data/AI/Leviathan_Brain.json` pack formula and all rule conditions to use `math.dot(...)`. Hardened validation to require `math.dot`, reject angle/acos math, enforce exact rule id/order, validate range gate, and require rule descriptions/effects.
+Rejected Alternatives: Accepting generic `dot` was rejected because it weakens the prompt contract and allows angle-based math to sneak back in.
+Scalability potential: Future pack tactics must preserve the explicit dot-product contract and rule order, keeping runtime import simple and deterministic.
+Hardware Impact: Offline validation/data only. Runtime remains 0 us in this task; if imported, explicit dot-product gates avoid acos/angle cost on weak CPUs. Strict 10,000 rerun passed with new `brainDigest=8f96fe1c84c9b136aac2a4a0fcc3550e62ddaae28d0b6d66c782e064eae80edf` and unchanged `simulationDigest=8d2131741fc2d1fc03900eec6a8aba4631c753e143a6b2e068db21bf1db92d7b`.

@@ -276,12 +276,36 @@ class AiBattleSimTests(unittest.TestCase):
         self.assertEqual(validation["status"], "BRAIN_VALIDATION_FAILED")
         self.assertTrue(any("mathLods.ultra" in error for error in validation["errors"]))
 
-    def test_missing_pack_dot_rule_is_rejected(self) -> None:
+    def test_missing_pack_math_dot_rule_is_rejected(self) -> None:
         brain = json.loads(BRAIN_PATH.read_text(encoding="utf-8"))
         brain["packHuntingSynergy"]["rules"][0]["dotCondition"] = "angle check"
         validation = self.sim.validate_brain(brain)
         self.assertEqual(validation["status"], "BRAIN_VALIDATION_FAILED")
-        self.assertTrue(any("dotCondition missing dot" in error for error in validation["errors"]))
+        self.assertTrue(any("dotCondition missing math.dot" in error for error in validation["errors"]))
+
+    def test_pack_formula_without_math_dot_is_rejected(self) -> None:
+        brain = json.loads(BRAIN_PATH.read_text(encoding="utf-8"))
+        brain["packHuntingSynergy"]["formula"] = "flankScore=dot(a,b)"
+        validation = self.sim.validate_brain(brain)
+        self.assertEqual(validation["status"], "BRAIN_VALIDATION_FAILED")
+        self.assertTrue(any("packHuntingSynergy.formula missing math.dot" in error for error in validation["errors"]))
+
+    def test_pack_rule_order_drift_is_rejected(self) -> None:
+        brain = json.loads(BRAIN_PATH.read_text(encoding="utf-8"))
+        brain["packHuntingSynergy"]["rules"][0], brain["packHuntingSynergy"]["rules"][1] = (
+            brain["packHuntingSynergy"]["rules"][1],
+            brain["packHuntingSynergy"]["rules"][0],
+        )
+        validation = self.sim.validate_brain(brain)
+        self.assertEqual(validation["status"], "BRAIN_VALIDATION_FAILED")
+        self.assertTrue(any("packHuntingSynergy.rules id set drift" in error for error in validation["errors"]))
+
+    def test_pack_rule_angle_math_is_rejected(self) -> None:
+        brain = json.loads(BRAIN_PATH.read_text(encoding="utf-8"))
+        brain["packHuntingSynergy"]["rules"][0]["dotCondition"] = "math.dot(a,b) + angle(a,b) > 0.35"
+        validation = self.sim.validate_brain(brain)
+        self.assertEqual(validation["status"], "BRAIN_VALIDATION_FAILED")
+        self.assertTrue(any("dotCondition uses angle math" in error for error in validation["errors"]))
 
     def test_invalid_self_audit_contract_is_rejected(self) -> None:
         brain = json.loads(BRAIN_PATH.read_text(encoding="utf-8"))

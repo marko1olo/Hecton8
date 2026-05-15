@@ -52,19 +52,20 @@ Rule quote: "All AI decisions are based on data available in the GlobalDataVault
 - [x] Loop 17 - Frustration/calibration audit hardening: artifact checker now validates `frustrationAudit` fields against summary/selfAudit/subgroup maxima and validates calibration shape, passes, lowered flag, and aggression scalar consistency
 - [x] Loop 18 - Sensory/cooldown contract hardening: aligned RealAttack cooldown to the declared 18 s minimum and added validator coverage for sensory formula tokens, sensory multipliers, and RealAttack/FalseCharge cooldown minimums
 - [x] Loop 19 - Context/utility metadata hardening: artifact checker now validates exact context order/id set, context band fields, context descriptions, sequential utility score ids, and utility reason text
+- [x] Loop 20 - Pack `math.dot` contract hardening: authored pack flanking formula/rules now use explicit `math.dot`, and validator rejects generic dot, angle/acos math, rule id/order drift, missing range gate, and missing rule descriptions/effects
 
 ## Evidence
 - `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json` -> regenerated schema v2 report with `brainDigest` and `simulationDigest`; status `INSTINCTS DEFINED`, kills 4220, killRate 0.422, under30KillRate 0.0.
 - `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts` -> `ARTIFACT_CHECK_PASSED`; hardened checker confirms live BufferID source, matching report validation, killRate 0.422 inside target, under30KillRate 0.0, subgroup caps intact.
 - `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts --verify-rerun` -> `ARTIFACT_CHECK_PASSED`, `rerunVerified=True`; digest rerun matched `8d2131741fc2d1fc03900eec6a8aba4631c753e143a6b2e068db21bf1db92d7b`.
 - `python -B -c "import ast, pathlib; ..."` -> syntax parse passed for `Tools/AiBattleSim.py` and `Tools/test_ai_battle_sim.py` without writing bytecode.
-- `python -B -m unittest Tools.test_ai_battle_sim` -> 52 tests passed in 9.118 s after context/utility metadata hardening.
+- `python -B -m unittest Tools.test_ai_battle_sim` -> 55 tests passed in 8.684 s after pack `math.dot` contract hardening.
 - Prompt extraction -> bounded CLI regex extracted the complete `<AGENT_PROMPT id="AI_BEHAVIOR_BIOMIMETIC_DESIGNER">` block with 7 numbered tasks and status `INSTINCTS DEFINED`.
 - `.sln/.csproj` scan -> none found in workspace, so `dotnet build` was not applicable for this data/Python task.
 - Polish mandate extraction -> `<POLISH_MANDATE>` tag not found in `Docs/Tasks/CURRENT_BATCH.md`.
 - Anti-bloat scan -> only expected hits: `AudioSource` appears in a JSON note rejecting AudioSource queries; `math.sqrt` appears only inside the Python `rsqrt()` helper for offline dot normalization.
 - GlobalDataVault source -> `Assets/_Project/Scripts/Core/Memory/H8Memory.cs` parsed live; current BufferID count in report is 66.
-- Digest evidence -> `brainDigest=b63fdd1d29a145997834fd386abd2bbc362aa14030913b3337b64cbbeceb33ed`; `simulationDigest=8d2131741fc2d1fc03900eec6a8aba4631c753e143a6b2e068db21bf1db92d7b`.
+- Digest evidence -> `brainDigest=8f96fe1c84c9b136aac2a4a0fcc3550e62ddaae28d0b6d66c782e064eae80edf`; `simulationDigest=8d2131741fc2d1fc03900eec6a8aba4631c753e143a6b2e068db21bf1db92d7b`.
 - Matrix evidence -> report validation records `contextCount=10` and `utilityPairCount=50`.
 - Contract evidence -> report validation records `behaviorParameterCount=5`, `mathLodTierCount=4`, `packRuleCount=4`, `blackBoxCapacityFrames=300`.
 - Fail-closed evidence -> tests cover missing `behaviorOrder`, invalid `selfAudit.targetKillRateMin`, and report `behaviorCounts` drift.
@@ -77,4 +78,5 @@ Rule quote: "All AI decisions are based on data available in the GlobalDataVault
 - Audit evidence -> tests reject frustration target-range drift, frustration max-rate drift, and calibration final-aggression drift.
 - Cooldown/formula evidence -> tests reject missing sensory formula feature tokens, RealAttack cooldown below declared minimum, and FalseCharge cooldown below declared minimum.
 - Context/utility metadata evidence -> tests reject context order drift, invalid context bands, utility score id sequence drift, and missing utility reasons.
+- Pack math evidence -> tests reject generic dot formulas without `math.dot`, pack rule id/order drift, and angle-math fallback in pack dot conditions.
 - Temp hygiene -> updated tests to use system temp directories; no `Temp/AiBattleSimTests` or `Temp/AiBattleSimVerify.*` artifact remains in the repo.
