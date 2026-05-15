@@ -521,7 +521,11 @@ namespace Hecton8.World
                    config.SafeShallowsTemperatureQ > 0 &&
                    config.TemperateReefTemperatureQ > 0 &&
                    config.ThermalVentTemperatureQ > 0 &&
-                   config.DeepAbyssTemperatureQ > 0;
+                   config.DeepAbyssTemperatureQ > 0 &&
+                   config.SafeShallowsNutrientStartQ >= config.MinimumNutrientsQ &&
+                   config.TemperateReefNutrientStartQ >= config.MinimumNutrientsQ &&
+                   config.ThermalVentNutrientStartQ >= config.MinimumNutrientsQ &&
+                   config.DeepAbyssNutrientStartQ >= config.MinimumNutrientsQ;
         }
 
         /// <summary>

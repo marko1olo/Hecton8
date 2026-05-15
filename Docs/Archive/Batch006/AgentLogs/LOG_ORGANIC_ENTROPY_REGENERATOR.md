@@ -772,7 +772,9 @@ Verification:
 - `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
 - `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
 - Target scans: no forbidden hot-path token matches.
-- Full Unity import/build remains PENDING VERIFICATION.
+- `git diff --check`: exit code 0 with CRLF warnings only.
+- `dotnet --info`: unavailable; full Unity import/build remains PENDING VERIFICATION.
+- `.codex_tmp`: absent.
 
 ## 2026-05-15 - Unity Assembly Reference Guard
 

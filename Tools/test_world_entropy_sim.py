@@ -164,6 +164,12 @@ class WorldEntropySimTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             entropy.run_sim(constants, 1, True)
 
+        constants = deepcopy(self.constants)
+        constants["minimumNutrientsQ"] = 128
+        constants["biomes"][0]["nutrientStartQ"] = 127
+        with self.assertRaises(ValueError):
+            entropy.run_sim(constants, 1, True)
+
     def test_run_sim_rejects_invalid_lifecycle_byte_constants(self) -> None:
         constants = deepcopy(self.constants)
         constants["seedToMatureProgressQ"] = 256
