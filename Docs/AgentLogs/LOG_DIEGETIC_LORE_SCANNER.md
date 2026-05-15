@@ -691,3 +691,50 @@ Verification:
 - `git diff --check` on scanner/UI/doc edits: pass, SuitHUD/docs line-ending warnings only.
 - Added-line banned-pattern scan: no new `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, `SetText(`, or `.text =`.
 - `dotnet build` / rebuild: NOT RUN.
+
+## Follow-Up Hardening Pass 26
+
+What was wrong:
+- Scanner status override used a weaker `snapshot.IsActive` gate than the scanner hologram evidence gate.
+- Scanner status text printed scent vector components, but the cache version did not include those components, so vector-only changes could leave stale text.
+
+What was done:
+- `TryApplyScannerStatusLabelOverride()` now uses `HasScannerHologramPayload(snapshot)` before acquiring a char-buffer lease.
+- Scent vector X/Y/Z are quantized once, reused for text emission, and included in the status version hash.
+
+Cinematic Cheats used:
+- Preserved the flat scanner/status fake; no new physical or spatial query path was added.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Avoids unnecessary char-buffer lease attempts on evidence-empty snapshots and removes duplicate vector quantization in attractant status text.
+
+Verification:
+- `git diff HEAD --check` on SuitHUD/doc edits: pass, SuitHUD/docs line-ending warnings only.
+- `git diff --check` on SuitHUD/doc edits: pass, SuitHUD/docs line-ending warnings only.
+- Added-line banned-pattern scan: no new `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, `SetText(`, or `.text =`.
+- Targeted diff scan: scent vector buckets now feed both text and version.
+- `dotnet build` / rebuild: NOT RUN.
+
+## Follow-Up Hardening Pass 27
+
+What was wrong:
+- The scanner hologram accepted non-fragment scientific/spatial evidence, but its visual intensity still used fragment `Progress01` only. Material, fauna, chemical, toxicity, and attractant contacts could render as a zero-progress hologram.
+
+What was done:
+- Added `ResolveScannerHologramSignal01()`.
+- Hologram jitter, color, alpha, and scanline position now use max evidence strength from progress, density, chemical load, toxicity, blood, attractant scent, and fauna contact.
+
+Cinematic Cheats used:
+- Used a scalar visual fake for scanner evidence strength. No new spatial query, mesh, material, or simulation was added.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Cost is bounded scalar math per active hologram refresh: six saturate/max ops plus one fauna branch.
+
+Verification:
+- `git diff HEAD --check` on SuitHUD/doc edits: pass, SuitHUD/docs line-ending warnings only.
+- `git diff --check` on SuitHUD/doc edits: pass, SuitHUD/docs line-ending warnings only.
+- Added-line banned-pattern scan: no new `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, `SetText(`, or `.text =`.
+- Targeted diff scan: scanner hologram visual state now uses `signal01` evidence strength.
+- `dotnet build` / rebuild: NOT RUN.

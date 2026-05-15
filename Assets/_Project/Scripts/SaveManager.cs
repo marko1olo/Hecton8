@@ -67,6 +67,7 @@ namespace Hecton8.SaveSystem
         private const int MaxWfcSectorHydrationProbesPerTick = 4;
         private const int MaxWfcDirtySectorStackEntries = 256;
         private const int WfcOutpostSnapshotCacheCapacity = 256;
+        private const int MaxWfcDirtyAppendRetriesPerSlowTick = 2;
         private const float SafeAupSnapGroundPaddingMeters = 0.28f;
         private const float SafeAupSnapMinimumLiftMeters = 0.35f;
         private const string CriticalSectorCorruptionMessage = "CRITICAL ERROR: LOCALIZED DATA CORRUPTION. TERRAIN RE-INITIALIZED.";
@@ -90,6 +91,8 @@ namespace Hecton8.SaveSystem
         private const uint WfcOutpostBlackBoxOperationSignal = 0x5349474Eu; // SIGN
         private const uint WfcOutpostBlackBoxOperationAppend = 0x41504E44u; // APND
         private const uint WfcOutpostBlackBoxOperationFrame = 0x4652414Du; // FRAM
+        private const uint WfcOutpostSnapshotCacheFlagAppendPending = 1u << 0;
+        private const uint WfcOutpostSnapshotCacheFlagAppendInFlight = 1u << 1;
 
         // ══════════════════════════════════════════════════════════
         //  SAVE STATE
@@ -247,6 +250,8 @@ namespace Hecton8.SaveSystem
         {
             public ulong SectorHash;
             public ulong PayloadHash;
+            public uint Flags;
+            public uint LastAppendFrame;
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
@@ -696,11 +701,15 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            RememberWfcOutpostSnapshotHash(sectorHash, packedHash);
+            RememberWfcOutpostSnapshotHash(
+                sectorHash,
+                packedHash,
+                WfcOutpostSnapshotCacheFlagAppendPending,
+                frame);
             status = WfcOutpostPersistenceStatus.DirtyQueued;
             RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationPersist, status, sectorHash, packedHash, payloadBytes, frame: frame);
             PublishWfcBytesSaved(payloadBytes);
-            QueueWfcOutpostDirtyAppend(sectorHash, frame);
+            QueueWfcOutpostDirtyAppend(sectorHash, packedHash, frame);
             return true;
         }
 
@@ -759,7 +768,7 @@ namespace Hecton8.SaveSystem
 
             UnpackWfcOutpostMutableStateGrid(_wfcOutpostRestoreWords, wfcGrid);
             ulong restoredPayloadHash = ComputeWfcOutpostPackedHash(_wfcOutpostRestoreWords);
-            RememberWfcOutpostSnapshotHash(sectorHash, restoredPayloadHash);
+            RememberWfcOutpostSnapshotHash(sectorHash, restoredPayloadHash, 0u, 0u);
             status = WfcOutpostPersistenceStatus.Ready;
             RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationRestore, status, sectorHash, restoredPayloadHash, handle.ByteLength);
             return true;
@@ -1163,6 +1172,8 @@ namespace Hecton8.SaveSystem
             {
                 RefreshWfcOutpostDependencies();
             }
+
+            RetryPendingWfcOutpostDirtyAppends();
         }
 
         public void FrostTick()
@@ -1555,7 +1566,7 @@ namespace Hecton8.SaveSystem
 
             UnpackWfcOutpostMutableStateGrid(_wfcOutpostRestoreWords, wfcGrid);
             ulong hydratedPayloadHash = ComputeWfcOutpostPackedHash(_wfcOutpostRestoreWords);
-            RememberWfcOutpostSnapshotHash(sectorHash, hydratedPayloadHash);
+            RememberWfcOutpostSnapshotHash(sectorHash, hydratedPayloadHash, 0u, 0u);
             _wfcOutpostMutableGridSectorHash = sectorHash;
             RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationHydration, WfcOutpostPersistenceStatus.Ready, sectorHash, hydratedPayloadHash, handle.ByteLength);
             return true;
@@ -1622,7 +1633,11 @@ namespace Hecton8.SaveSystem
             return false;
         }
 
-        private void RememberWfcOutpostSnapshotHash(ulong sectorHash, ulong payloadHash)
+        private void RememberWfcOutpostSnapshotHash(
+            ulong sectorHash,
+            ulong payloadHash,
+            uint cacheFlags,
+            uint frame)
         {
             if (sectorHash == 0UL || payloadHash == 0UL)
                 return;
@@ -1641,6 +1656,10 @@ namespace Hecton8.SaveSystem
                 if (entry.SectorHash == sectorHash)
                 {
                     entry.PayloadHash = payloadHash;
+                    entry.Flags = cacheFlags != 0u
+                        ? cacheFlags | (entry.Flags & WfcOutpostSnapshotCacheFlagAppendInFlight)
+                        : 0u;
+                    entry.LastAppendFrame = frame;
                     _wfcOutpostSnapshotCache[i] = entry;
                     return;
                 }
@@ -1666,7 +1685,9 @@ namespace Hecton8.SaveSystem
             _wfcOutpostSnapshotCache[writeIndex] = new WfcOutpostSnapshotCacheEntry
             {
                 SectorHash = sectorHash,
-                PayloadHash = payloadHash
+                PayloadHash = payloadHash,
+                Flags = cacheFlags,
+                LastAppendFrame = frame
             };
         }
 
@@ -1750,15 +1771,95 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        private void QueueWfcOutpostDirtyAppend(ulong sectorHash, uint frame)
+        private void RetryPendingWfcOutpostDirtyAppends()
+        {
+            if (!_wfcOutpostSnapshotCache.IsCreated ||
+                !TryResolveWfcOutpostMacroDatabase(out _))
+            {
+                return;
+            }
+
+            int count = math.min(_wfcOutpostSnapshotCacheCount, _wfcOutpostSnapshotCache.Length);
+            int retries = 0;
+            uint frame = unchecked((uint)Time.frameCount);
+            for (int i = 0; i < count && retries < MaxWfcDirtyAppendRetriesPerSlowTick; i++)
+            {
+                WfcOutpostSnapshotCacheEntry entry = _wfcOutpostSnapshotCache[i];
+                if (entry.SectorHash == 0UL ||
+                    entry.PayloadHash == 0UL ||
+                    (entry.Flags & WfcOutpostSnapshotCacheFlagAppendPending) == 0u ||
+                    (entry.Flags & WfcOutpostSnapshotCacheFlagAppendInFlight) != 0u ||
+                    entry.LastAppendFrame == frame)
+                {
+                    continue;
+                }
+
+                QueueWfcOutpostDirtyAppend(entry.SectorHash, entry.PayloadHash, frame);
+                retries++;
+            }
+        }
+
+        private void MarkWfcOutpostAppendInFlight(ulong sectorHash, ulong payloadHash, uint frame)
+        {
+            UpdateWfcOutpostAppendFlags(
+                sectorHash,
+                payloadHash,
+                WfcOutpostSnapshotCacheFlagAppendPending | WfcOutpostSnapshotCacheFlagAppendInFlight,
+                frame);
+        }
+
+        private void MarkWfcOutpostAppendCompleted(ulong sectorHash, ulong payloadHash)
+        {
+            UpdateWfcOutpostAppendFlags(sectorHash, payloadHash, 0u, 0u);
+        }
+
+        private void MarkWfcOutpostAppendFailed(ulong sectorHash, ulong payloadHash, uint frame)
+        {
+            UpdateWfcOutpostAppendFlags(sectorHash, payloadHash, WfcOutpostSnapshotCacheFlagAppendPending, frame);
+        }
+
+        private void UpdateWfcOutpostAppendFlags(
+            ulong sectorHash,
+            ulong payloadHash,
+            uint flags,
+            uint frame)
+        {
+            if (!_wfcOutpostSnapshotCache.IsCreated ||
+                sectorHash == 0UL ||
+                payloadHash == 0UL)
+            {
+                return;
+            }
+
+            int count = math.min(_wfcOutpostSnapshotCacheCount, _wfcOutpostSnapshotCache.Length);
+            for (int i = 0; i < count; i++)
+            {
+                WfcOutpostSnapshotCacheEntry entry = _wfcOutpostSnapshotCache[i];
+                if (entry.SectorHash != sectorHash ||
+                    entry.PayloadHash != payloadHash)
+                {
+                    continue;
+                }
+
+                entry.Flags = flags;
+                entry.LastAppendFrame = frame;
+                _wfcOutpostSnapshotCache[i] = entry;
+                return;
+            }
+        }
+
+        private void QueueWfcOutpostDirtyAppend(ulong sectorHash, ulong payloadHash, uint frame)
         {
             if (sectorHash == 0UL)
                 return;
 
-            _ = FlushWfcOutpostDirtyPayloadAsync(sectorHash, frame);
+            if (payloadHash != 0UL)
+                MarkWfcOutpostAppendInFlight(sectorHash, payloadHash, frame);
+
+            _ = FlushWfcOutpostDirtyPayloadAsync(sectorHash, payloadHash, frame);
         }
 
-        private async Awaitable FlushWfcOutpostDirtyPayloadAsync(ulong sectorHash, uint frame)
+        private async Awaitable FlushWfcOutpostDirtyPayloadAsync(ulong sectorHash, ulong payloadHash, uint frame)
         {
             bool appended = false;
             try
@@ -1773,8 +1874,16 @@ namespace Hecton8.SaveSystem
             }
 
             await Awaitable.MainThreadAsync();
-            if (!appended)
+            if (appended)
             {
+                if (payloadHash != 0UL)
+                    MarkWfcOutpostAppendCompleted(sectorHash, payloadHash);
+            }
+            else
+            {
+                if (payloadHash != 0UL)
+                    MarkWfcOutpostAppendFailed(sectorHash, payloadHash, frame);
+
                 RecordWfcOutpostEventBlackBox(WfcOutpostBlackBoxOperationAppend, WfcOutpostPersistenceStatus.Rejected, sectorHash, frame: frame);
                 PublishWfcWriteFailureWarning(frame);
             }

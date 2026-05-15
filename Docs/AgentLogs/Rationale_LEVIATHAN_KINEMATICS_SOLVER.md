@@ -348,3 +348,19 @@ Solution: Write valid entry count, keep the cursor in the header, serialize entr
 Rejected Alternatives: Dumping every slot was rejected because empty cold-start entries are diagnostic noise. Writing a sorted copy was rejected because it needs managed staging memory; modulo index walking gives deterministic order without new containers. Resetting the cursor to zero was rejected because the ring still contains valid retained frames.
 Scalability potential: Low/MX350/high/ultra visual behavior is unchanged. All tiers get better postmortem evidence for tentacle faults without changing solver math or indirect rendering.
 Hardware Impact: 0 us normal frame-time savings are claimed. The only normal-path change is a rollover branch that is effectively never taken during ordinary sessions; dump ordering runs only on blackbox fault export.
+
+## Decision 37: Organic Body Low-Tier Shader Cost Gate
+
+Problem: The main Leviathan body shader already received `_H8LeviathanIkTier`, but active low-tier body pixels still ran high-tier normal-map reconstruction, wetness normal wobble, organic SSS, projected caustics, and volume biolum sampling.
+Solution: Derive `bodyFxTier` from `_H8LeviathanGpuSkinning` and `_H8LeviathanIkTier`. When active GPU skinning is low-tier, use vertex normals and skip the expensive organic fragment effects. When GPU skinning is not active, keep the previous high-quality preview/default path.
+Rejected Alternatives: Adding a new UnityPerMaterial FX property was rejected because material defaults can defeat global runtime tier publication. Removing mask/emission/wound/sonar work was rejected because low tier still needs readable silhouette, damage feedback, and sonar readability.
+Scalability potential: Low/MX350 - base/mask lighting, wounds, shadows, sonar, hit flash, and direct emission with vertex normals. Middle/High/Ultra - full normal map, wetness wobble, SSS, caustics, and biolum volume. Cheap devices shed fragment luxuries; high-end keeps visual overkill.
+Hardware Impact: Low-tier saves one normal texture sample/reconstruction plus SSS/caustics/volume-biolum work per organic body pixel. No GPU profiler measurement exists; this is static shader-path reduction pending Unity shader compile and visual/profiler confirmation.
+
+## Decision 38: Tail-Whip Shader Scalar Boundary
+
+Problem: `LeviathanTerrainIkJob` sanitized `TailWhipSecondsRemaining`, but `FaunaKinematicsRuntime.UploadBonesToGpu()` multiplied `_tailWhipSecondsRemaining` directly into `_H8LeviathanTailWhip01`. Runtime NaN corruption could therefore reach shader state even while the Burst solver protected itself.
+Solution: Add `ResolveSafeTailWhipSecondsRemaining()`, repair the runtime field to a finite non-negative value, use that value for job scheduling and shader upload, and dump the blackbox once when the raw countdown is non-finite.
+Rejected Alternatives: Sanitizing only in the Burst job was rejected because shader publication is a separate Mono path. Clamping inside the shader was rejected because bad CPU-side state should be caught before publication and recorded in the blackbox.
+Scalability potential: Low/MX350/high/ultra visuals are unchanged for valid input. Corrupt tail-whip state now collapses to no whip on all tiers, preserving low-tier stability and high-tier visual overkill only with finite state.
+Hardware Impact: Normal frame cost is a few scalar ops, estimated below 0.01 us and not profiler-backed. The benefit is preventing NaN shader publication and preserving postmortem evidence.

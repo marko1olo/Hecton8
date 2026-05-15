@@ -286,14 +286,14 @@ namespace Hecton8.Dev
                 {
                     PauseMenuHost host = FindSceneObjectIncludingInactive<PauseMenuHost>();
                     if (host != null)
-                        pauseMenu = host.GetComponent<PauseMenuController>();
+                        host.TryGetComponent(out pauseMenu);
                 }
 
                 if (pauseMenu == null)
                 {
                     GameObject pauseRoot = FindSceneGameObjectIncludingInactive("PauseMenu_Root");
                     if (pauseRoot != null)
-                        pauseMenu = pauseRoot.GetComponent<PauseMenuController>();
+                        pauseRoot.TryGetComponent(out pauseMenu);
                 }
             }
             if (constructionTab == null)

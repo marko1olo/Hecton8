@@ -240,8 +240,12 @@ namespace Hecton8.AI
                 out float3 terrainSize,
                 out int terrainResolution);
 
-            if (_tailWhipSecondsRemaining > 0f)
-                _tailWhipSecondsRemaining = math.max(0f, _tailWhipSecondsRemaining - safeDeltaTime);
+            float safeTailWhipSecondsRemaining = ResolveSafeTailWhipSecondsRemaining();
+            if (safeTailWhipSecondsRemaining > 0f)
+            {
+                safeTailWhipSecondsRemaining = math.max(0f, safeTailWhipSecondsRemaining - safeDeltaTime);
+                _tailWhipSecondsRemaining = safeTailWhipSecondsRemaining;
+            }
 
             uint runtimeFlags = ResolveRuntimeFlags(qualityTier);
             LeviathanTerrainIkJob job = new LeviathanTerrainIkJob
@@ -265,7 +269,7 @@ namespace Hecton8.AI
                 SegmentLength = _segmentLength,
                 BodyRadius = _bodyRadius,
                 TerrainClearance = _terrainClearance,
-                TailWhipSecondsRemaining = _tailWhipSecondsRemaining,
+                TailWhipSecondsRemaining = safeTailWhipSecondsRemaining,
                 TailWhipDurationSeconds = _tailWhipDurationSeconds,
                 TailWhipAmplitudeMeters = _tailWhipAmplitudeMeters,
                 HeadTargetPosition = _motionIntentHeadTarget,
@@ -732,7 +736,8 @@ namespace Hecton8.AI
             float ikTier = IsLowTier(_qualityTier) ? 0f : 1f;
             float safeSegmentLength = SanitizePositiveFinite(_segmentLength, LeviathanTerrainIkConstants.DefaultSegmentLength, LeviathanTerrainIkConstants.MinSegmentLength);
             float safeTailWhipDuration = SanitizePositiveFinite(_tailWhipDurationSeconds, 1f, 0.0001f);
-            float tailWhip01 = math.saturate(_tailWhipSecondsRemaining * math.rcp(safeTailWhipDuration));
+            float safeTailWhipSecondsRemaining = ResolveSafeTailWhipSecondsRemaining();
+            float tailWhip01 = math.saturate(safeTailWhipSecondsRemaining * math.rcp(safeTailWhipDuration));
             if (_skinningMaterial != null)
             {
                 _skinningMaterial.SetBuffer(_LeviathanBonesId, writeBuffer);
@@ -1063,6 +1068,16 @@ namespace Hecton8.AI
         private static float SanitizePositiveFinite(float value, float fallback, float minValue)
         {
             return math.isfinite(value) ? math.max(value, minValue) : fallback;
+        }
+
+        private float ResolveSafeTailWhipSecondsRemaining()
+        {
+            float rawTailWhipSecondsRemaining = _tailWhipSecondsRemaining;
+            float safeTailWhipSecondsRemaining = SanitizePositiveFinite(rawTailWhipSecondsRemaining, 0f, 0f);
+            _tailWhipSecondsRemaining = safeTailWhipSecondsRemaining;
+            if (!math.isfinite(rawTailWhipSecondsRemaining))
+                DumpTelemetryBlackBoxOnce();
+            return safeTailWhipSecondsRemaining;
         }
 
         private static float3 NormalizeSafe(float3 value, float3 fallback)

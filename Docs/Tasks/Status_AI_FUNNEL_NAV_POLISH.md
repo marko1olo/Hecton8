@@ -320,6 +320,20 @@ Task Count: 15
 - [x] Dynamic pure-void metadata static scan | DOD: changed dynamic scheduling range reports no raw division, forbidden hot math, managed allocation, or `foreach`; dotnet rebuilds remain prohibited; estimate 2 us.
 - [x] Batch prompt re-extraction | DOD: CLI regex rechecked `CURRENT_BATCH.md` after three more route-record loops and confirmed `AI_FUNNEL_NAV_POLISH` remains absent; persisted files remain authority; estimate 0 us.
 
+## Loop 45 - Dynamic Obstacle Ingress Sanitation
+
+- [x] Dynamic obstacle finite ingress proof | DOD: growth, destroyed-organic, queue enqueue, and queue dequeue now require finite center/extents and positive extents before route-record updates; rejected letting later region guards absorb corrupt persistent data; estimate 3 us.
+- [x] Persistent obstacle snapshot proof | DOD: persistent dynamic obstacle writes now skip invalid entries and reuse invalid slots before capped overwrite; rejected exporting stale NaN obstacle primitives into macro route snapshots; estimate 3 us.
+- [x] Modulo wrap removal | DOD: capped overwrite cursor now uses branch wrap instead of `%`; rejected integer modulo in the route-obstacle hot-adjacent maintenance path; estimate 1 us.
+- [x] Dynamic obstacle ingress static scan | DOD: changed growth/queue/persistent-obstacle ranges report no raw division, forbidden hot math, managed allocation, or `foreach`; dotnet rebuilds remain prohibited; estimate 2 us.
+- [x] Batch prompt re-extraction | DOD: CLI regex rechecked `CURRENT_BATCH.md` after loop 45 and confirmed `AI_FUNNEL_NAV_POLISH` remains absent; persisted files remain authority; estimate 0 us.
+
+## Loop 46 - Dynamic Obstacle Overflow Closure
+
+- [x] Dynamic request min/max finite proof | DOD: update-region resolution now rejects request min/max world bounds that overflow after center/extents arithmetic; rejected passing infinities into voxel conversion; estimate 2 us.
+- [x] Persistent obstacle merge finite proof | DOD: merged persistent obstacle center/extents must remain finite and positive, otherwise the slot is replaced with the new valid obstacle; rejected storing overflowed merged centers; estimate 2 us.
+- [x] Dynamic overflow static scan | DOD: changed request-bound and merge ranges report no forbidden normalization, sqrt, managed allocation, or `foreach`; retained exact integer chunk division; dotnet rebuilds remain prohibited; estimate 2 us.
+
 ## Verification
 
 - [x] Static scan | PASS: `StringPullPathJob`, `NativeAStarJob`, `TryResolveAbyssalNavNodeCandidate`, abyssal nav support/hash, nav graph ingress, and funnel telemetry conversion regions have no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/` code matches after loop 19.
@@ -348,7 +362,9 @@ Task Count: 15
 - [x] Build metadata drift targeted scan | PASS: `TryPrepareBuild` change-detection range reports no raw division, forbidden hot math, managed allocation, or `foreach`.
 - [x] Dynamic exact-count targeted scan | PASS: dynamic update copy/schedule range reports no raw division, forbidden hot math, managed allocation, or `foreach`.
 - [x] Dynamic pure-void metadata targeted scan | PASS: dynamic update block-count metadata range reports no raw division, forbidden hot math, managed allocation, or `foreach`.
-- [x] Batch prompt re-extraction | PASS: CLI regex rechecked `CURRENT_BATCH.md` after loop 44 and confirmed `AI_FUNNEL_NAV_POLISH` remains absent; persisted task files remain authority.
+- [x] Dynamic obstacle ingress targeted scan | PASS: growth, destroyed-organic, clear-queue, and persistent-obstacle ranges report no raw division, forbidden hot math, managed allocation, or `foreach`.
+- [x] Dynamic obstacle overflow targeted scan | PASS: request-bound and merge ranges report no forbidden normalization, sqrt, managed allocation, or `foreach`; exact integer chunk divisions remain documented bucket math.
+- [x] Batch prompt re-extraction | PASS: CLI regex rechecked `CURRENT_BATCH.md` after loop 45 and confirmed `AI_FUNNEL_NAV_POLISH` remains absent; persisted task files remain authority.
 - [x] Diff hygiene | PASS: `git diff --check` passed for touched source/status/rationale/log files; only LF-to-CRLF working-copy warnings were emitted.
 - [x] Core graph H-Phi summary | PASS STATIC: `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` completed without build; graph debt counts are Core asmdef 25, generated project 10, source-backed bridge 14, source-backed compile bridge 8, project-reference replacement 6; no source-only route hardening score was claimed.
 - [x] Static H-Phi audit | ATTEMPTED: `Tools/Architecture/HectonPhiAudit.ps1 -Json` timed out after 120 seconds under current repo load; no score claimed from this pass.

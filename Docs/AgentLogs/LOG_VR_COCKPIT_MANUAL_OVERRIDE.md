@@ -421,3 +421,15 @@ Cinematic Cheats used: no simulation change. The lever stays a scalar damped-spr
 Exact microseconds saved/spent: one scalar NativeArray write on release/stale-release branches only. 0 us steady-state, 0 B/frame.
 
 Verification: `git diff --check` passed for `OpenXRManualOverrideLever.cs`. Scoped counter reports `VrReleaseTargetsClosed=1`, `StaleReleaseTargetsClosed=1`, `ShortGapFreezePreserved=1`, `NonVrReleaseStillDecays=1`, `ForbiddenPatternTotal=0`, `DotnetMention=0`. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - Receiver Requires Registered Tick Lane
+
+What was wrong: receiver registration could happen before a successful player-lane tick registration. Dispatcher availability is not enough; `TryRegisterUpdatable()` can still fail or be in hot-swap recovery.
+
+What was done: `OnEnable()` now registers tick before receiver. `TryRegisterReceiver()` refuses `_registeredTick == false`. Dispatcher replacement unregisters receiver before tick teardown and recovers tick before receiver.
+
+Cinematic Cheats used: no simulation change. This keeps the lever as a kinematic/probe control and prevents dead receiver occupancy instead of adding polling or physics.
+
+Exact microseconds saved/spent: 0 us steady-state. Cold lifecycle/hot-swap pays only branch/order changes and avoids overlap callbacks into non-ticking levers.
+
+Verification: `git diff --check` passed for `OpenXRManualOverrideLever.cs`. Scoped counter reports `OnEnableTickBeforeReceiver=1`, `DispatcherUnregisterReceiverBeforeTick=1`, `DispatcherRecoveryTickBeforeReceiver=1`, `ReceiverRequiresRegisteredTick=1`, `OldRecoveryReceiverBeforeTick=0`, `ForbiddenPatternTotal=0`, `DotnetMention=0`. No dotnet rebuild/probe was run by user instruction.

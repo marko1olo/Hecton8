@@ -1066,6 +1066,7 @@ namespace Hecton8.Core
         private const int UIRescaleRequestSignalCapacity = 64;
         private const int FluidIncursionSignalCapacity = 64;
         private const int FluidDensityChangedSignalCapacity = 64;
+        private const int SubmarineFloodStateSignalCapacity = 64;
         private const int PipeRuptureSignalCapacity = 64;
         private const int SpectrumScanSignalCapacity = 128;
         private const int RigidbodySleepSignalCapacity = 128;
@@ -3227,6 +3228,8 @@ namespace Hecton8.Core
             SignalBus<SwarmDispersedSignal>.EnsureInitialized();
             SignalBus<FluidImpulseSignal>.Configure(FluidImpulseSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(FluidImpulseSignal)));
             SignalBus<FluidImpulseSignal>.EnsureInitialized();
+            SignalBus<SubmarineFloodStateSignal>.Configure(SubmarineFloodStateSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(SubmarineFloodStateSignal)));
+            SignalBus<SubmarineFloodStateSignal>.EnsureInitialized();
             SignalBus<MacroDatabaseSectorHydrationSignal>.Configure(64, laneHash: ComputeStableSignalLaneHash(nameof(MacroDatabaseSectorHydrationSignal)));
             SignalBus<MacroDatabaseSectorHydrationSignal>.EnsureInitialized();
             SignalBus<WfcOutpostGeneratedSignal>.Configure(WfcOutpostGeneratedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(WfcOutpostGeneratedSignal)));

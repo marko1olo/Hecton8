@@ -1057,6 +1057,9 @@ namespace Hecton8.World
             EnsureInitialized();
             float lateralExpansion = math.max(0f, expansionMeters);
             float3 expandedExtents = extents + new float3(lateralExpansion, math.max(0f, lateralExpansion * 0.25f), lateralExpansion);
+            if (!IsValidDynamicObstacleBounds(center, expandedExtents))
+                return;
+
             RegisterPersistentDynamicObstacle(center, expandedExtents);
             MarkAllVolumesDirty();
             TryEnqueueDynamicObstacleClear(new DynamicObstacleClearRequest
@@ -2325,13 +2328,32 @@ namespace Hecton8.World
             {
                 NavObstaclePrimitive obstacle = _persistentDynamicObstacles[i];
                 if (!IsValidDynamicObstacleBounds(obstacle.Center, obstacle.Extents))
-                    continue;
+                {
+                    _persistentDynamicObstacles[i] = new NavObstaclePrimitive
+                    {
+                        Center = center,
+                        Extents = extents
+                    };
+                    return;
+                }
 
                 if (math.lengthsq(obstacle.Center - center) > mergeDistanceSq)
                     continue;
 
-                obstacle.Center = (obstacle.Center + center) * 0.5f;
-                obstacle.Extents = math.max(obstacle.Extents, extents);
+                float3 mergedCenter = obstacle.Center + ((center - obstacle.Center) * 0.5f);
+                float3 mergedExtents = math.max(obstacle.Extents, extents);
+                if (!IsValidDynamicObstacleBounds(mergedCenter, mergedExtents))
+                {
+                    _persistentDynamicObstacles[i] = new NavObstaclePrimitive
+                    {
+                        Center = center,
+                        Extents = extents
+                    };
+                    return;
+                }
+
+                obstacle.Center = mergedCenter;
+                obstacle.Extents = mergedExtents;
                 _persistentDynamicObstacles[i] = obstacle;
                 return;
             }
@@ -2352,7 +2374,10 @@ namespace Hecton8.World
                 Center = center,
                 Extents = extents
             };
-            _persistentDynamicObstacleWriteCursor = (_persistentDynamicObstacleWriteCursor + 1) % math.max(1, _persistentDynamicObstacles.Length);
+            int nextWriteIndex = writeIndex + 1;
+            _persistentDynamicObstacleWriteCursor = nextWriteIndex >= _persistentDynamicObstacles.Length
+                ? 0
+                : nextWriteIndex;
         }
 
         private static void RemovePersistentDynamicObstacles(float3 center, float3 extents)
@@ -2528,6 +2553,12 @@ namespace Hecton8.World
             int clearanceCells = ResolveClearanceRadiusCells(record.CellSize);
             float3 requestMinWorld = request.Center - request.Extents;
             float3 requestMaxWorld = request.Center + request.Extents;
+            if (!math.all(math.isfinite(requestMinWorld)) ||
+                !math.all(math.isfinite(requestMaxWorld)))
+            {
+                return false;
+            }
+
             if (!BoundsOverlapRecord(record, requestMinWorld, requestMaxWorld))
                 return false;
 

@@ -940,3 +940,50 @@ Verification:
 - Targeted dynamic update block metadata range reported no raw division, forbidden hot math, managed allocation, or `foreach`.
 - `CURRENT_BATCH.md` recheck confirmed the `AI_FUNNEL_NAV_POLISH` prompt tag remains absent, so persisted files remain authority.
 - Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.
+
+## 2026-05-15 - Dynamic Obstacle Ingress Sanitation
+
+What was wrong:
+- Dynamic obstacle growth and destroyed-organic ingress only checked positive extents, not finite centers/extents or finite expansion.
+- Invalid persistent obstacle entries could be copied into macro route snapshots later.
+- Capped persistent obstacle overwrite used `%` wrap.
+
+What was done:
+- Added shared finite/positive obstacle bounds proof.
+- Applied it to growth ingress, destroyed-organic ingress, clear enqueue/dequeue, persistent registration/removal, and snapshot export.
+- Reused invalid persistent slots for new valid obstacles.
+- Replaced modulo cursor wrap with branch wrap.
+
+Cinematic Cheats used:
+- Invalid obstacle primitives now fail closed before route snapshot authority.
+- Low tier avoids route rebuild/recovery churn; High/Ultra keep dense persistent obstacle updates without allowing corrupt primitives to poison macro routing.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Static gain is avoided corrupt snapshot recovery plus one modulo removed from capped overwrite maintenance.
+
+Verification:
+- Targeted growth, destroyed-organic, clear-queue, and persistent-obstacle ranges reported no raw division, forbidden hot math, managed allocation, or `foreach`.
+- `CURRENT_BATCH.md` recheck confirmed the `AI_FUNNEL_NAV_POLISH` prompt tag remains absent, so persisted files remain authority.
+- Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.
+
+## 2026-05-15 - Dynamic Obstacle Overflow Closure
+
+What was wrong:
+- Finite obstacle center/extents could overflow into non-finite request min/max bounds before voxel conversion.
+- Persistent obstacle merge used center averaging that could store an overflowed merged center.
+
+What was done:
+- Added finite request min/max proof in dynamic update region resolution.
+- Switched merge-center calculation to center plus half-delta.
+- Replaced the slot with the new already-proven valid obstacle if the merged primitive becomes invalid.
+
+Cinematic Cheats used:
+- Huge corrupt obstacle arithmetic now fails closed or self-heals to a valid primitive instead of fabricating an infinite route volume.
+- Low tier avoids invalid region conversions; High/Ultra keep dense obstacle polish without corrupt persistent merge state.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Static gain is avoided invalid voxel conversion and route rebuild recovery.
+
+Verification:
+- Targeted request-bound and merge ranges reported no forbidden normalization, sqrt, managed allocation, or `foreach`; exact integer chunk divisions remain documented bucket math.
+- Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.

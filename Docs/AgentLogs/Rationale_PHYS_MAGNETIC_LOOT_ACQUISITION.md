@@ -468,7 +468,7 @@ Hardware Impact: Adds a small branch cluster only for scheduled commit slots. MX
 
 Problem: The telemetry hash folded flags and item hashes but not pickup identity. Two same-item pickup fields could produce the same black-box hash after object pooling or slot swaps.
 
-Solution: Fold the full 64-bit pickup entity id into the existing FNV-style active-slot hash during SlowTick refresh and LateFrame commit. Also reject commit slots whose live pickup entity id no longer matches the sidecar id.
+Solution: Fold the full 64-bit pickup entity id into the existing FNV-style active-slot hash during SlowTick refresh and LateFrame commit. Also reject commit slots whose live pickup entity id no longer matches the sidecar id, and bump the dump version to 4 for the new hash semantics.
 
 Rejected Alternatives: Expanding the black-box dump with per-slot identity arrays was rejected because the ring must stay fixed-size and high-level. Trusting item hash alone was rejected because same-item pooled pickups are common in dense loot fields.
 

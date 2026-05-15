@@ -406,3 +406,27 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 - `git diff --check` on `LeviathanTentacleVerletSolver.cs` exits 0; output only reports LF-to-CRLF normalization warning.
 - Static forbidden scan over the tentacle solver still finds no direct `new NativeArray<`, direct `array.Dispose(`, `Time.frameCount`, `GlobalRegistry.Get`, forbidden Unity object searches, `Animator`, or `SkinnedMeshRenderer`.
 - No `dotnet` rebuild, compile, Unity import, shader compile, or response-file probe was run.
+
+### Loop 37: Organic Body Low-Tier Shader Cost Gate Recheck
+
+- Reused existing `_H8LeviathanIkTier` and `_H8LeviathanGpuSkinning` in `Hecton_LeviathanOrganic.shader` to derive a body FX tier.
+- Low-tier active GPU-skinned Leviathan body now uses vertex normals and skips normal-map reconstruction, wetness normal wobble, organic SSS, projected caustics, and volume biolum sampling.
+- Unbound/editor material preview keeps the previous high-quality default because `_H8LeviathanGpuSkinning <= 0.5` forces the body FX tier to 1.
+- DOD: low/MX350 active body presentation sheds expensive fragment effects while preserving base/mask textures, wounds, shadows, sonar reveal, panic glow, hit flash, and direct emission.
+- Alternative Rejected: adding a new material property because UnityPerMaterial defaults can block global tier publication; gating all emission because low tier still needs readable silhouette and combat/sonar feedback.
+- Estimate: low-tier saves one normal texture sample/reconstruction plus SSS/caustics/volume-biolum work per organic body pixel; no GPU profiler proof yet.
+- `git diff --check` on `Hecton_LeviathanOrganic.shader` exits 0; output only reports LF-to-CRLF normalization warning.
+- Static forbidden scan over Leviathan IK code/shader scope remains clean for `new NativeArray<`, direct `array.Dispose(`, `Time.frameCount`, `GlobalRegistry.Get`, forbidden Unity object searches, `Animator`, and `SkinnedMeshRenderer`.
+- No `dotnet` rebuild, compile, Unity import, shader compile, or response-file probe was run.
+
+### Loop 38: Tail-Whip Shader Scalar Boundary Recheck
+
+- Added `ResolveSafeTailWhipSecondsRemaining()` in `FaunaKinematicsRuntime`.
+- Job scheduling and GPU upload now consume the same sanitized tail-whip countdown.
+- Non-finite tail-whip countdown repairs to zero and triggers the existing one-shot blackbox dump path before `_H8LeviathanTailWhip01` can receive NaN.
+- DOD: corrupted runtime tail-whip state cannot enter Burst job payload or shader tail-whip scalar unchecked.
+- Alternative Rejected: relying only on `LeviathanTerrainIkJob` sanitization because `_H8LeviathanTailWhip01` is produced in Mono upload code before the shader sees it.
+- Estimate: under 0.01 us normal hot-path scalar work; no measured saving claimed.
+- `git diff --check` on `FaunaKinematicsRuntime.cs` exits 0; output only reports LF-to-CRLF normalization warning.
+- Static forbidden scan over `FaunaKinematicsRuntime.cs` remains clean for direct native allocations/disposals, `Time.frameCount`, `GlobalRegistry.Get`, forbidden Unity object searches, `Animator`, and `SkinnedMeshRenderer`.
+- No `dotnet` rebuild, compile, Unity import, shader compile, or response-file probe was run.

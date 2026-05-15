@@ -721,8 +721,15 @@ namespace Hecton8.Core.Memory
             {
                 H8AllocationRecord record = _records[i];
                 newRecords[i] = record;
-                if (record.Pointer != IntPtr.Zero)
-                    newOwners.TryAdd(record.Pointer.ToInt64(), record.Owner);
+                if (record.Pointer == IntPtr.Zero)
+                    continue;
+
+                if (!newOwners.TryAdd(record.Pointer.ToInt64(), record.Owner))
+                {
+                    newRecords.Dispose();
+                    newOwners.Dispose();
+                    return false;
+                }
             }
 
             if (_records.IsCreated)

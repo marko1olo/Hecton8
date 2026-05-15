@@ -960,7 +960,7 @@ namespace Hecton8.Core.Memory
             {
                 if (existing.Pointer != IntPtr.Zero)
                     H8Memory.FreeRaw(existing.Pointer.ToPointer(), Allocator.Persistent, SystemID.CoreDataVault);
-                _macroDatabasePayloadBytes -= existing.ByteLength;
+                SubtractMacroDatabasePayloadBytes(existing.ByteLength);
                 _macroDatabasePayloadCache[sectorHash] = handle;
                 TouchMacroDatabasePayload(sectorHash);
             }
@@ -1012,7 +1012,7 @@ namespace Hecton8.Core.Memory
             _macroDatabasePayloadCache.Remove(sectorHash);
             if (_macroDatabasePayloadAccessTicks.IsCreated)
                 _macroDatabasePayloadAccessTicks.Remove(sectorHash);
-            _macroDatabasePayloadBytes -= removed.ByteLength;
+            SubtractMacroDatabasePayloadBytes(removed.ByteLength);
             _macroDatabasePayloadEvictions++;
             RemoveMacroDatabaseKey(sectorHash);
             BumpVaultGeneration();
@@ -1169,12 +1169,25 @@ namespace Hecton8.Core.Memory
 
             _macroDatabaseCacheAccessClock++;
             if (_macroDatabaseCacheAccessClock == 0u)
+            {
+                _macroDatabasePayloadAccessTicks.Clear();
                 _macroDatabaseCacheAccessClock = 1u;
+            }
 
             if (_macroDatabasePayloadAccessTicks.ContainsKey(sectorHash))
                 _macroDatabasePayloadAccessTicks[sectorHash] = _macroDatabaseCacheAccessClock;
             else
                 _macroDatabasePayloadAccessTicks.TryAdd(sectorHash, _macroDatabaseCacheAccessClock);
+        }
+
+        private void SubtractMacroDatabasePayloadBytes(int byteLength)
+        {
+            if (byteLength <= 0)
+                return;
+
+            _macroDatabasePayloadBytes = _macroDatabasePayloadBytes > byteLength
+                ? _macroDatabasePayloadBytes - byteLength
+                : 0L;
         }
 
         private bool TryEvictLeastRecentlyUsedMacroDatabasePayload()

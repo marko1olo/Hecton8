@@ -263,3 +263,10 @@ Solution: `TryRegisterRegistry` now returns until the strengthened `IsInitialize
 Rejected Alternatives: Publishing early with a false `IsInitialized` flag was rejected because not every future consumer can be trusted to perform the check before reading read-only aliases. Throwing on partial state was rejected because fail-closed registration is sufficient without taking down the scene.
 Scalability potential: Low through Ultra keep identical behavior when native state is coherent; partial H-Phi/native migration produces no registry-visible gas service until ready.
 Hardware Impact: One cold registry-publication branch. No frame-time saving claimed.
+
+## Self-Review 31 - Partial Native State Self-Recovery
+Problem: After the stronger readiness invariant, a partial native state could fail closed forever because `EnsureNativeState` returned as soon as `RoomO2` existed.
+Solution: `EnsureNativeState` now treats `RoomO2.IsCreated && !IsInitialized` as a cold recovery case: unregister from `GlobalRegistry`, retire the partial native lanes through the existing deferred disposal path, and recreate only after disposal finalizes.
+Rejected Alternatives: Keeping the solver invisible but unrecovered was rejected because a single missing native lane could strand atmosphere for the scene. Forcing immediate job completion was rejected; the existing deferred disposal handle remains the correct no-stall path.
+Scalability potential: Low through Ultra keep normal startup unchanged; partial H-Phi/native migration now recovers to coherent SOA state instead of staying disabled.
+Hardware Impact: Cold fault-recovery path only. No steady-state frame cost and no microsecond saving claimed.

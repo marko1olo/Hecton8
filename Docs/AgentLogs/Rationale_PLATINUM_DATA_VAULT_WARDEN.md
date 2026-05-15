@@ -226,6 +226,18 @@ Rejected Alternatives: Allowing `H8BlockIndex = -1` as best-effort telemetry; mi
 Scalability potential: Low devices fail closed instead of running with incomplete memory evidence; Middle keeps block-map telemetry exact; High and Ultra can tolerate larger sub-block maps because descriptor storage already grows to `MaxTrackingCapacity`.
 Hardware Impact: One cold descriptor-index branch during vault init and one during block split. 0 us frame impact after buffers are allocated.
 
+Problem: MacroDB native cache access ticks used unsigned increment with no wrap policy, and byte accounting subtracted trusted handle lengths directly. Long sessions could make newly touched payloads look oldest after tick wrap, and stale/corrupt metadata could drive cache byte stats negative.
+Solution: `TouchMacroDatabasePayload` now clears the access-tick sidecar when the unsigned clock wraps and restarts at tick 1. Payload overwrite/removal subtracts through a saturating helper before adding replacement bytes.
+Rejected Alternatives: Widening ticks to `ulong` inside the cache contract; the current sidecar remains compact and wrap is cold. Trusting handle lengths was rejected because stats are part of memory-pressure decisions.
+Scalability potential: Low devices keep LRU eviction deterministic across long sessions; Middle keeps cache telemetry stable; High and Ultra can run larger macro-cache capacities without wrap-biased eviction.
+Hardware Impact: Normal touch path adds no new allocation and only the existing branch. Wrap path clears the tick map once per 4,294,967,296 touches. Saturating byte subtract is cold store/remove path only, 0 us frame impact.
+
+Problem: `H8Memory.EnsureTrackingCapacity` copied records into a larger table but ignored `newOwners.TryAdd` failure. Duplicate/corrupt pointer evidence during growth could dispose the old owner map and expose a new map missing ownership entries.
+Solution: Tracking growth now fails all-or-nothing: if any pointer cannot be inserted into the rebuilt owner map, the temporary records/map are disposed and the old tracking tables remain active.
+Rejected Alternatives: Trusting pointer uniqueness because earlier registration checks it; growth is the last chance to preserve evidence when memory pressure is already high.
+Scalability potential: Low devices avoid losing native ownership evidence under tracking pressure; Middle keeps leak attribution stable; High and Ultra can run larger native pools without accepting silent owner-map erosion.
+Hardware Impact: Cold growth path adds one checked branch per active record. 0 us steady-frame impact after tracking capacity is established.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Polish audit required removal of fake precision, managed iteration/string debt, and any code outside the DataVault domain without justification.

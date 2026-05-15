@@ -554,11 +554,19 @@ namespace Hecton8.SaveSystem
             {
                 _cachedCaptureCamera = GlobalRegistry.Player != null && GlobalRegistry.Player.PlayerCamera != null
                     ? GlobalRegistry.Player.PlayerCamera
-                    : playerTransform.GetComponent<Camera>();
+                    : ResolveCaptureCamera(playerTransform);
             }
 
             captureCamera = _cachedCaptureCamera;
             return captureCamera != null;
+        }
+
+        private static Camera ResolveCaptureCamera(Transform playerTransform)
+        {
+            if (playerTransform == null)
+                return null;
+
+            return playerTransform.TryGetComponent(out Camera captureCamera) ? captureCamera : null;
         }
 
         private static bool HasCapturePoseChanged(Camera captureCamera)

@@ -399,3 +399,15 @@ Solution: Derive `requiredBlockCount` from the declared voxel cell count, prove 
 Rejected Alternatives: Leaving stale block metadata was rejected because it wastes the pure-void shortcut after safe updates. Blindly setting the count without flag coverage was rejected because it would make metadata claim more blocks than the native buffer can hold.
 Scalability potential: Low/MX350 avoids avoidable portal rebuilds after clean dynamic updates. Middle/High/Ultra preserve the high-density obstacle update path while still releasing buffers for fully pure records.
 Hardware Impact: Adds a scalar block-count proof and preserves the cold pure-void fast path; expected gain is avoided portal rebuild churn. Dotnet rebuilds remain prohibited.
+
+Problem: Dynamic obstacle ingress could accept non-finite centers, non-finite extents, or overflowed expansion results into the persistent obstacle list before later region guards rejected the clear request.
+Solution: Add shared finite/positive obstacle bounds proof across growth ingress, destroyed-organic ingress, clear enqueue/dequeue, persistent list registration/removal, and snapshot export; reuse invalid persistent slots and branch-wrap the overwrite cursor instead of modulo.
+Rejected Alternatives: Relying on `TryResolveDynamicUpdateRegion` was rejected because persistent obstacles can poison future macro snapshots before a clear request is processed. Clearing the whole list on one invalid entry was rejected because it would drop valid long-lived route obstacles.
+Scalability potential: Low/MX350 avoids route snapshot corruption and unnecessary rebuilds from bad obstacle primitives. Middle/High/Ultra keep dense persistent obstacle polish while invalid slots self-heal under bounded registration.
+Hardware Impact: Adds scalar finite checks and removes one integer modulo from capped overwrite maintenance; expected gain is avoided macro-route recovery and stale obstacle churn. Dotnet rebuilds remain prohibited.
+
+Problem: Finite obstacle centers/extents could still overflow when converted into min/max request bounds or when two persistent obstacle centers were averaged during merge.
+Solution: Reject non-finite request min/max bounds before voxel conversion, compute merged centers with `center + delta * 0.5f`, and replace the slot with the new valid obstacle if the merged primitive is not finite and positive.
+Rejected Alternatives: Clamping infinities back into the record bounds was rejected because it fabricates a route obstacle. Dropping the new obstacle on merge overflow was rejected because the new primitive is already proven valid and should keep route authority.
+Scalability potential: Low/MX350 avoids invalid giant route update regions. Middle/High/Ultra can retain dense persistent obstacles without overflowed merge data poisoning macro routing.
+Hardware Impact: Adds scalar finite checks on cold dynamic-obstacle maintenance; expected gain is avoided invalid voxel conversion and route rebuild churn. Dotnet rebuilds remain prohibited.

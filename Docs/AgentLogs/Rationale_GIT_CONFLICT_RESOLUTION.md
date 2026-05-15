@@ -125,3 +125,9 @@ Solution: Keep the same checkpoint boundary. Validate the 70-file staged tail wi
 Rejected Alternatives: Claiming the worktree is clean, folding the tail into `8213d7838` by amend/force-push, or treating partial EXIT=0 files as full HPhi budget proof while prior HPhi failures still exist.
 Scalability potential: Git-only operator pass. Runtime tier claims stay with the producing agents; this pass only reduces integration conflict surface.
 Hardware Impact: 0 us runtime impact. Dev-path gain is smaller post-push residue for GitHub Desktop; full green proof remains pending.
+
+Problem: After pushing the merge checkpoint, `origin/main` advanced again with git-sync docs, while another shader/runtime/docs tail accumulated locally.
+Solution: Fast-forward the non-overlapping git-sync commit first, then validate and checkpoint the 95-file staged tail separately. Record mixed build exits instead of converting them into a false green report, and verify the staged `H8Memory.cs` tail is complete before commit.
+Rejected Alternatives: Force-push over `e1a6a489f`, pulling without overlap checks, or hiding failed build exit files. These would break shared history or corrupt evidence.
+Scalability potential: Git-only integration pass. Authored shader/runtime scalability gates remain owned by the producing agents; this pass only validates no obvious conflict debris.
+Hardware Impact: 0 us runtime impact. Dev-path gain is a smaller dirty tail and a synchronized main before the next checkpoint.

@@ -359,3 +359,23 @@ No dotnet rebuild was run per user instruction. `Select-String` forbidden-patter
 
 Status:
 PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
+
+## 2026-05-15 Recursive QA Addendum 18
+
+What was wrong:
+Packed lower-body `FootData` could preserve stale or corrupt state across cadence-skipped frames. A bad stepping flag, progress scalar, step start/current position, or zero-blend lane with old flags could survive until the next full foot solve. Swim fallback also still trusted pelvis/KCC inputs locally before deriving planar foot direction.
+
+What was done:
+`ContextualPhysicalIkGroundResponseJob` now sanitizes packed foot data on read and on skipped-frame lanes. Foot surface normals, step progress, threshold, height, blend, side, and flags are bounded; inactive zero-blend lanes clear flags and force completed progress. Step cancellation writes a finite start position. Foot-current fallback sanitizes prior data. Post-step non-finite current positions are flagged invalid and collapsed to the safe target. Swim foot candidates sanitize pelvis and KCC velocity before planar direction and final target publication.
+
+Cinematic cheats used:
+No gait planner, no physical legs, no new probes, no solver expansion. The same visual fake remains: two packed foot lanes, batched hip rays, triangle-wave step lift, and swim posture offsets. Bad packed state collapses to neutral or completed state instead of simulating recovery.
+
+Exact microseconds saved:
+Added work is fixed two-lane finite/scalar checks on skipped and active foot paths, estimated below 0.2 us/frame on i3/MX350. Prevented cost is stuck alternating foot locks, NaN swim targets, and visible correction after cadence-skipped state corruption.
+
+Verification:
+No dotnet rebuild was run per user instruction. `Select-String` forbidden-pattern scan scoped to `ContextualPhysicalIkRuntime.cs` returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `.ToString(`, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`. `git diff --check` over `ContextualPhysicalIkRuntime.cs` passed with CRLF warning only. MCP resource listing returned no Unity resources.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.

@@ -423,3 +423,15 @@ Cinematic Cheats used -> None. Git integration only.
 Exact Microseconds saved -> 0 us runtime. Dev-path gain is reducing the post-push dirty surface before GitHub Desktop sees another pull.
 
 Verification -> Conflict-marker scan clean. `git diff --cached --check` passed. Fresh63 and Fresh64 build exit files report EXIT=0, and HPhi lexical scrub reports EXIT=0; full HPhi green is not claimed because prior budget-failure evidence remains.
+
+## 2026-05-15 - Loop 24 Git-Sync Fast-Forward And Live Tail
+
+What was wrong -> After pushing `922da919d`, remote advanced to `e1a6a489f` with GIT_SYNC documentation while another 95-file staged shader/runtime/docs tail accumulated.
+
+What was done -> Fast-forwarded the non-overlapping GIT_SYNC commit, checked the staged tail for whitespace and conflict markers, inspected shader finite guards, GasDynamics reinit, GlobalSignals submarine flood lane, shadow budget enforcement, H8Memory duplicate owner guard, habitat stress clamps, Fauna tail-whip sanitation, LootMagnet authoring clamps, SaveManager append retry, SuitHUD scanner signal display, PlayerPDA lookup replacement, VoxelDelta debris signal, WorldSpatialHash finite bounds, and VoxelDynamicNav finite obstacle guards.
+
+Cinematic Cheats used -> None by this Git pass. Reviewed authored FX-tier and finite shader gates only as integration surface.
+
+Exact Microseconds saved -> 0 us runtime. Dev-path gain is preventing the next GitHub Desktop pull from colliding with already-validated local work.
+
+Verification -> Conflict-marker scan clean. `git diff --cached --check` passed. Staged `H8Memory.cs` ends with complete class/namespace braces. Build exits are mixed: Fresh66=-1, Fresh67=0, Fresh68=-1, Fresh69=1, Fresh70=0, Fresh71=1. HPhi lexical scrub exits Fresh60=0 and Fresh65=0. Full green is not claimed.

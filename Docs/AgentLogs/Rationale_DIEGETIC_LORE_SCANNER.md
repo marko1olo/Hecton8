@@ -585,3 +585,37 @@ Solution: Ran source-only checks: `git diff HEAD --check` and `git diff --check`
 Rejected Alternatives: Running prohibited `dotnet build`; scanning the entire legacy HUD file as if pre-existing unrelated findings were introduced by this pass.
 Scalability potential: Process hygiene only.
 Hardware Impact: No runtime impact.
+
+## LOOP 30 SCANNER STATUS VECTOR CACHE INTEGRITY
+
+Problem: The scanner status-label override accepted any active scientific snapshot, while the hologram now uses a stricter evidence gate. That allowed edge/empty active snapshots to acquire a char-buffer lease and override status text even when the scanner hologram correctly had no payload.
+Solution: Reuse `HasScannerHologramPayload(snapshot)` in `TryApplyScannerStatusLabelOverride()` before acquiring the char-buffer lease.
+Rejected Alternatives: Keeping a separate weaker `snapshot.IsActive` check; duplicating the evidence predicate; acquiring the pooled lease before rejecting evidence-empty snapshots.
+Scalability potential: Low/MX350 avoids unnecessary status-buffer work for evidence-empty scanner snapshots. Middle/High/Ultra keep the richer scanner status only when actual scientific evidence exists.
+Hardware Impact: One bounded boolean helper call and fewer buffer-lease attempts on empty snapshots. Exact microseconds remain PENDING PROFILER.
+
+Problem: The scanner status text printed quantized attractant vector components, but the status cache version did not include those components. If only scent direction changed, `SetDisplayBufferIfChanged()` could skip the update and leave stale vector text.
+Solution: Quantize scent X/Y/Z once, reuse those buckets for text emission, and fold them into the scanner status version hash.
+Rejected Alternatives: Forcing scanner status text to update every frame; leaving stale vector text; recomputing rounded vector components separately for text and version.
+Scalability potential: Low/MX350 avoids unnecessary forced text refreshes while still updating when visible vector data changes. Middle/High/Ultra keep richer attractant-vector readouts without stale-cache artifacts.
+Hardware Impact: Removes duplicate vector quantization in the attractant branch and fixes stale-cache risk. Exact microseconds remain PENDING PROFILER.
+
+Problem: Verification after status cache integrity work needed source evidence without using rebuilds.
+Solution: Ran source-only checks: `git diff HEAD --check` and `git diff --check` passed with SuitHUD line-ending warning only, added-line banned-pattern scan found no new forbidden UI/text/physics patterns, and targeted diff scan confirmed scent vector buckets feed both text and version.
+Rejected Alternatives: Running prohibited `dotnet build`; claiming status cache correctness without a targeted diff scan.
+Scalability potential: Process hygiene only.
+Hardware Impact: No runtime impact.
+
+## LOOP 31 SCANNER HOLOGRAM SIGNAL STRENGTH FAKE
+
+Problem: After accepting non-fragment spatial/scientific contacts as valid scanner hologram payload, the actual hologram still used `snapshot.Progress01` as its only visual driver. Material-only, fauna, chemical, toxicity, or attractant contacts can have valid evidence while progress remains zero, leaving the hologram visually stuck at the start state.
+Solution: Add `ResolveScannerHologramSignal01()` and drive hologram jitter, color, alpha, and scanline position from the max of progress, density, chemical load, toxicity, organic blood, attractant scent, and a fixed fauna-contact intensity.
+Rejected Alternatives: Adding a new spatial query from the UI; requiring every contact to generate fragment progress; showing all non-fragment contacts at full intensity; simulating a separate scanner meter.
+Scalability potential: Low/MX350 keeps the flat canvas fake and pays only bounded scalar math. Middle/High/Ultra get clearer scanner feedback for spatial-hash evidence without new resources or draw paths.
+Hardware Impact: Adds six saturate/max ops and one fauna branch per active hologram refresh. No allocation, no new query, no extra draw call. Exact microseconds remain PENDING PROFILER.
+
+Problem: Verification after the signal-strength fake needed to prove the pass did not introduce new UI allocation or physics patterns.
+Solution: Ran source-only checks: `git diff HEAD --check` and `git diff --check` passed with SuitHUD/docs line-ending warnings only, added-line banned-pattern scan found no forbidden UI/text/physics patterns, and targeted diff scan confirmed scanner hologram visual state now uses `signal01` evidence strength.
+Rejected Alternatives: Running prohibited `dotnet build`; claiming the visual fake is safe without static evidence.
+Scalability potential: Process hygiene only.
+Hardware Impact: No runtime impact.

@@ -358,6 +358,9 @@ namespace Hecton8.UI
         private RenderTexture _phosphorBackTexture;
         private Material _phosphorDecayMaterial;
         private Material _cachedPanelOutputMaterial;
+        private Texture _appliedPanelOutputTexture;
+        private Texture _appliedPhosphorPreviousTexture;
+        private Texture _appliedPhosphorCurrentTexture;
         private MonoBehaviour _cachedPanelInteractableSource;
         private MonoBehaviour _cachedPanelPowerSourceSource;
         private int2 _activeRenderResolution;
@@ -860,6 +863,8 @@ namespace Hecton8.UI
             damageGlitchDurationSeconds = math.clamp(damageGlitchDurationSeconds, 0.02f, 1f);
             _phosphorMaterialResolveAttempted = false;
             _phosphorMaterialResolveFailed = false;
+            _appliedPhosphorPreviousTexture = null;
+            _appliedPhosphorCurrentTexture = null;
             _appliedPhosphorDecay = -1f;
 
             RefreshFingertipBindingMask();
@@ -1230,6 +1235,7 @@ namespace Hecton8.UI
         private void ReleaseRenderTexture()
         {
             ReleasePhosphorTextures();
+            _appliedPanelOutputTexture = null;
 
             if (panelCamera != null && panelCamera.targetTexture == _panelRenderTexture)
                 panelCamera.targetTexture = null;
@@ -1296,6 +1302,8 @@ namespace Hecton8.UI
                     ? phosphorDecayMaterial
                     : Resources.Load<Material>(DefaultPhosphorDecayMaterialResourcePath);
                 _phosphorMaterialResolveAttempted = true;
+                _appliedPhosphorPreviousTexture = null;
+                _appliedPhosphorCurrentTexture = null;
                 _appliedPhosphorDecay = -1f;
             }
 
@@ -1342,8 +1350,18 @@ namespace Hecton8.UI
             if (_phosphorFrontTexture == null || _phosphorBackTexture == null)
                 return;
 
-            _phosphorDecayMaterial.SetTexture(_PreviousTexId, _phosphorFrontTexture);
-            _phosphorDecayMaterial.SetTexture(_CurrentTexId, _panelRenderTexture);
+            if (!ReferenceEquals(_appliedPhosphorPreviousTexture, _phosphorFrontTexture))
+            {
+                _appliedPhosphorPreviousTexture = _phosphorFrontTexture;
+                _phosphorDecayMaterial.SetTexture(_PreviousTexId, _phosphorFrontTexture);
+            }
+
+            if (!ReferenceEquals(_appliedPhosphorCurrentTexture, _panelRenderTexture))
+            {
+                _appliedPhosphorCurrentTexture = _panelRenderTexture;
+                _phosphorDecayMaterial.SetTexture(_CurrentTexId, _panelRenderTexture);
+            }
+
             if (math.abs(_appliedPhosphorDecay - phosphorDecay) > 0.0001f)
             {
                 _appliedPhosphorDecay = phosphorDecay;
@@ -1363,11 +1381,22 @@ namespace Hecton8.UI
             _phosphorDecayMaterial = null;
             _phosphorMaterialResolveAttempted = false;
             _phosphorMaterialResolveFailed = false;
+            _appliedPhosphorPreviousTexture = null;
+            _appliedPhosphorCurrentTexture = null;
             _appliedPhosphorDecay = -1f;
         }
 
         private void ReleasePhosphorTextures()
         {
+            if (ReferenceEquals(_appliedPanelOutputTexture, _phosphorFrontTexture) ||
+                ReferenceEquals(_appliedPanelOutputTexture, _phosphorBackTexture))
+            {
+                _appliedPanelOutputTexture = null;
+            }
+
+            _appliedPhosphorPreviousTexture = null;
+            _appliedPhosphorCurrentTexture = null;
+
             if (_phosphorFrontTexture != null)
             {
                 _phosphorFrontTexture.Release();
@@ -1416,6 +1445,7 @@ namespace Hecton8.UI
             _panelOutputHasPanelPowerLevel = outputMaterial != null && outputMaterial.HasProperty(_PanelPowerLevelId);
             _panelOutputHasTerminalDamageGlitch = outputMaterial != null && outputMaterial.HasProperty(_TerminalDamageGlitchId);
             _panelOutputHasFlashlightGlare = outputMaterial != null && outputMaterial.HasProperty(_FlashlightGlareId);
+            _appliedPanelOutputTexture = null;
             _appliedDepthFadeRange = -1f;
             _appliedPanelMaterialPowerLevel = -1f;
             _appliedTerminalDamageGlitch = -1f;
@@ -1435,10 +1465,14 @@ namespace Hecton8.UI
                 Texture outputTexture = enablePhosphorDecay && _phosphorFrontTexture != null
                     ? _phosphorFrontTexture
                     : _panelRenderTexture;
-                if (_panelOutputHasBaseMap)
-                    outputMaterial.SetTexture(_BaseMapId, outputTexture);
-                if (_panelOutputHasMainTex)
-                    outputMaterial.SetTexture(_MainTexId, outputTexture);
+                if (!ReferenceEquals(_appliedPanelOutputTexture, outputTexture))
+                {
+                    _appliedPanelOutputTexture = outputTexture;
+                    if (_panelOutputHasBaseMap)
+                        outputMaterial.SetTexture(_BaseMapId, outputTexture);
+                    if (_panelOutputHasMainTex)
+                        outputMaterial.SetTexture(_MainTexId, outputTexture);
+                }
             }
 
             float resolvedFadeRange = enableDepthOcclusion ? depthFadeRange : 0f;

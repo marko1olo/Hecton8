@@ -835,3 +835,54 @@ Verification:
 - `git diff --check` on `LeviathanTentacleVerletSolver.cs` exits 0 with only LF-to-CRLF warning.
 - Static forbidden scan over the tentacle solver remains clean for direct native allocations/disposals, `Time.frameCount`, `GlobalRegistry.Get`, forbidden Unity searches, `Animator`, and `SkinnedMeshRenderer`.
 - Runtime status remains pending until Unity Editor import, shader compile, PlayMode behavior, GC, profiler evidence, and dump parsing proof exist.
+
+## 2026-05-15T14:21+04:00
+
+Status: PENDING VERIFICATION. Continued Leviathan organic body shader scalability audit. No `dotnet` rebuild/compile, Unity import, shader compile, or response-file probe was run.
+
+What was wrong:
+- `Hecton_LeviathanOrganic.shader` received `_H8LeviathanIkTier` but still ran high-tier body fragment effects on active low-tier Leviathan pixels.
+- Normal-map reconstruction, wetness normal wobble, SSS, projected caustics, and volume biolum had no low/MX350 gate.
+
+What was done:
+- Derived `bodyFxTier` from `_H8LeviathanGpuSkinning` and `_H8LeviathanIkTier`.
+- Low-tier active GPU-skinned body pixels now use vertex normals and skip high-tier organic effects.
+- Unbound/editor material preview keeps the previous high-quality default when GPU skinning is off.
+- Preserved base/mask textures, wounds, shadows, sonar reveal, panic glow, hit flash, and direct emission on low tier.
+
+Cinematic cheats used:
+- Low tier keeps the readable deep-sea silhouette and gameplay feedback while dropping expensive organic luxury effects. High/Ultra keep the full visual-overkill path.
+
+Exact microseconds saved:
+- No measured saving claimed.
+- Static shader-path reduction: one normal texture sample/reconstruction plus SSS/caustics/volume-biolum work avoided per low-tier organic body pixel.
+
+Verification:
+- `git diff --check` on `Hecton_LeviathanOrganic.shader` exits 0 with only LF-to-CRLF warning.
+- Static forbidden scan over Leviathan IK code/shader scope remains clean for direct native allocations/disposals, `Time.frameCount`, `GlobalRegistry.Get`, forbidden Unity searches, `Animator`, and `SkinnedMeshRenderer`.
+- Runtime status remains pending until Unity Editor import, shader compile, PlayMode behavior, GC, RenderDoc/profiler evidence, and visual validation exist.
+
+## 2026-05-15T14:42+04:00
+
+Status: PENDING VERIFICATION. Continued Leviathan runtime scalar-boundary audit. No `dotnet` rebuild/compile, Unity import, shader compile, or response-file probe was run.
+
+What was wrong:
+- The Burst IK job sanitized `TailWhipSecondsRemaining`, but GPU upload used `_tailWhipSecondsRemaining` directly for `_H8LeviathanTailWhip01`.
+- Runtime NaN corruption could reach shader state even if the solver itself clamped the job input.
+
+What was done:
+- Added `ResolveSafeTailWhipSecondsRemaining()` in `FaunaKinematicsRuntime`.
+- Job scheduling and shader upload now use the same sanitized tail-whip countdown.
+- Non-finite countdown repairs to zero and triggers the existing one-shot blackbox dump path.
+
+Cinematic cheats used:
+- Corrupt strike-whip state collapses to no whip instead of trying to simulate through bad data. Valid high-tier strike visuals remain unchanged.
+
+Exact microseconds saved:
+- No frame-time saving claimed.
+- Added scalar guard cost is estimated below 0.01 us on normal frames, pending profiler proof.
+
+Verification:
+- `git diff --check` on `FaunaKinematicsRuntime.cs` exits 0 with only LF-to-CRLF warning.
+- Static forbidden scan over `FaunaKinematicsRuntime.cs` remains clean for direct native allocations/disposals, `Time.frameCount`, `GlobalRegistry.Get`, forbidden Unity searches, `Animator`, and `SkinnedMeshRenderer`.
+- Runtime status remains pending until Unity Editor import, shader compile, PlayMode behavior, GC, profiler evidence, and fault-dump proof exist.

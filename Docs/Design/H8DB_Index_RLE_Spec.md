@@ -91,6 +91,8 @@ Rules implemented for the macro payload cache:
 - `TryGetMacroDatabasePayload` and successful store refresh an unsigned access tick.
 - When capacity is full, `TryStoreMacroDatabasePayload` evicts the clean payload with the oldest access tick.
 - Dirty payloads are not evicted by automatic LRU; caller must flush or explicitly evict after persistence.
+- Access tick wrap clears the tick sidecar and restarts at `1`, making old entries eligible before the newly touched payload.
+- Cache byte accounting subtracts through a saturating helper so corrupt/stale handles cannot drive stats below zero.
 - Manual `EvictDistant` remains authoritative for distance-based shedding.
 - No managed collections are added to runtime cache state.
 

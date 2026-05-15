@@ -390,7 +390,7 @@ namespace Hecton8.UI
             }
 
             if (playerPDA == null)
-                playerPDA = GetComponentInParent<PlayerPDA>();
+                playerPDA = ResolvePlayerPdaInParents(transform);
             if (hudNotification == null)
                 HUDNotification.TryGetActive(out hudNotification);
             if (labelFont == null)
@@ -942,8 +942,7 @@ namespace Hecton8.UI
                    new Vector2(14f, -144f), new Vector2(-28f, 80f));
             _detailDesc.color = A(Dim, 0.7f);
             _detailDesc.textWrappingMode = TextWrappingModes.Normal;
-            _detailDescMadnessFx = _detailDesc.gameObject.GetComponent<LocalizedTextMadnessFx>();
-            if (_detailDescMadnessFx == null)
+            if (!_detailDesc.gameObject.TryGetComponent(out _detailDescMadnessFx))
                 _detailDescMadnessFx = _detailDesc.gameObject.AddComponent<LocalizedTextMadnessFx>();
 
             _detailDescMadnessFx.Bind(_detailDesc);
@@ -2286,7 +2285,7 @@ namespace Hecton8.UI
         private RectTransform CreateRect(string name, RectTransform parent)
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
-            RectTransform r = go.GetComponent<RectTransform>();
+            RectTransform r = (RectTransform)go.transform;
             r.SetParent(parent, false);
             r.localScale = Vector3.one;
             if (parent != null) go.layer = parent.gameObject.layer;
@@ -2317,6 +2316,20 @@ namespace Hecton8.UI
             return t;
         }
 
+        private static PlayerPDA ResolvePlayerPdaInParents(Transform start)
+        {
+            Transform current = start;
+            while (current != null)
+            {
+                if (current.TryGetComponent(out PlayerPDA playerPda))
+                    return playerPda;
+
+                current = current.parent;
+            }
+
+            return null;
+        }
+
         private static void Stretch(RectTransform r, float l = 0, float r2 = 0,
             float t = 0, float b = 0)
         {
@@ -2341,8 +2354,7 @@ namespace Hecton8.UI
             if (rect == null)
                 return null;
 
-            CanvasGroup group = rect.GetComponent<CanvasGroup>();
-            if (group == null)
+            if (!rect.TryGetComponent(out CanvasGroup group))
                 group = rect.gameObject.AddComponent<CanvasGroup>();
 
             return group;
@@ -2353,8 +2365,7 @@ namespace Hecton8.UI
             if (rect == null)
                 return null;
 
-            HorizontalLayoutGroup layout = rect.GetComponent<HorizontalLayoutGroup>();
-            if (layout == null)
+            if (!rect.TryGetComponent(out HorizontalLayoutGroup layout))
                 layout = rect.gameObject.AddComponent<HorizontalLayoutGroup>();
 
             layout.spacing = spacing;
@@ -2374,8 +2385,7 @@ namespace Hecton8.UI
             if (rect == null)
                 return null;
 
-            LayoutElement layoutElement = rect.GetComponent<LayoutElement>();
-            if (layoutElement == null)
+            if (!rect.TryGetComponent(out LayoutElement layoutElement))
                 layoutElement = rect.gameObject.AddComponent<LayoutElement>();
 
             layoutElement.minWidth = width;
@@ -3084,7 +3094,9 @@ namespace Hecton8.UI
             if (IsSelectedItemAssignableTool())
             {
                 GameObject prefab = toolManager != null ? toolManager.GetKnownToolPrefabForItem(_selectedItem) : null;
-                PlayerTool tool = prefab != null ? prefab.GetComponent<PlayerTool>() : null;
+                PlayerTool tool = null;
+                if (prefab != null)
+                    prefab.TryGetComponent(out tool);
                 if (tool != null && tool.Metadata != null)
                 {
                     return TryWriteLiteral(destination, ref length, "TOOL PROFILE: DURABILITY ".AsSpan()) &&

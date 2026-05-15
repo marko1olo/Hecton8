@@ -509,3 +509,15 @@ Rejected Alternatives: leaving the target unchanged was rejected because partial
 Scalability potential: Low/Middle/High/Ultra now share the same gameplay truth: current hand/fallback input owns the target, release returns closed until latch. Ultra can add richer return audio/haptics later without changing lever authority.
 
 Hardware Impact: one scalar NativeArray write only on release/stale-release branches. No steady-frame cost, no allocation, no transform work. MX350 avoids persistent partial-pull state that would keep downstream presentation misleading.
+
+## Decision 42 - Receiver registration must require successful tick registration
+
+Problem: dispatcher existence alone did not prove the manual override lever was actually in the player tick lane. If `GlobalRegistry.TryRegisterUpdatable()` failed or tick identity was being rebuilt during dispatcher hot-swap, the collider receiver could remain registered while no tick consumed queued hand samples.
+
+Solution: order lifecycle registration as tick first, receiver second. `TryRegisterReceiver()` now refuses `_registeredTick == false`. Dispatcher hot-swap unregisters receiver before tick, then recovers native state, registers tick, and only then registers receiver.
+
+Rejected Alternatives: leaving receiver-first order was rejected because it can strand a physical hand receiver without simulation. Rolling receiver registration into `TryRegisterTick()` was rejected because receiver table identity and dispatcher lane identity have different cleanup keys. Retrying every frame was rejected because this is a lifecycle/state transition problem, not a Tick concern.
+
+Scalability potential: Low/toaster avoids wasting fixed receiver slots after dispatcher lane saturation or service replacement. Middle/High keep dense cockpit controls coherent under streaming. Ultra can support more authored controls because only runnable levers occupy overlap receiver capacity.
+
+Hardware Impact: 0 us steady-state. Cold lifecycle/hot-swap pays only branch/order changes and prevents useless overlap callbacks into non-ticking levers.

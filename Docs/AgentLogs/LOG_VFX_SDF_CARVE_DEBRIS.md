@@ -868,3 +868,32 @@ Verification state:
 - `CURRENT_BATCH.md` exact prompt tag count for `VFX_SDF_CARVE_DEBRIS`: 0.
 - Unity import/compile/profiler evidence remains unavailable.
 - No dotnet build or rebuild was run.
+
+## 2026-05-15 - AUP-Triggered SDF Cache Refresh
+
+What was wrong:
+- The global cave SDF cache refreshes on a four-frame cadence.
+- Accepted floating-origin shifts can invalidate the cached SDF world-to-local matrix immediately.
+- High-tier debris collision could therefore sample stale cave space for a few frames after a rebase.
+
+What was done:
+- `DrainAupShiftSignals()` now resets `_nextGlobalSdfRefreshFrame` to zero after accepting a finite AUP shift.
+- Invalid AUP packets still flag blackbox invalid state and do not force a stale refresh.
+- Low/MX350 remains unchanged because SDF sampling is disabled there.
+- Did not run dotnet build or dotnet rebuild.
+
+Cinematic cheats used:
+- Cache most frames, force truth only on origin-shift frames.
+- Keep Low gravity-only debris cheap; spend High/Ultra SDF collision only when cave-space data is current.
+
+Exact Microseconds saved:
+- Normal-frame saving preserved: no new per-frame global SDF polling.
+- Added rebase-frame cost: one forced SDF global refresh, estimated sub-microsecond to a few microseconds.
+- Avoided risk: up to four frames of stale SDF collision after floating-origin rebases.
+
+Verification state:
+- Focused `git diff --check` returned clean except Git LF/CRLF notices.
+- Forbidden VFX scan returned no matches for CPU readback, ParticleSystem, ComputeBuffer, scene search, job scheduling fences, private `H8Memory.Allocate`, private `H8Memory.Release`, `MaterialPropertyBlock`, `matProps`, managed hot strings, `Vector3.magnitude`, or `math.sqrt`.
+- `CURRENT_BATCH.md` exact prompt tag count for `VFX_SDF_CARVE_DEBRIS`: 0.
+- Unity import/compile/profiler evidence remains unavailable.
+- No dotnet build or rebuild was run.

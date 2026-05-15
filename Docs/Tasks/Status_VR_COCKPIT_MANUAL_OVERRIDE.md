@@ -260,6 +260,12 @@ Execution lane: SIMULATION / `PriorityLayer.Player`
 - [x] Stale tracking release returns the non-latched target closed. DOD: after `MaxStaleGrabFrames`, the lever clears grab state and targets closed; the existing 2-3 frame short-gap freeze remains intact to hide transient hand-tracking holes. Rejected: freezing forever on stale pose because tracking loss is not lever authority. Estimate: one scalar write on stale-release branch only.
 - [x] Reverification without dotnet. DOD: `git diff --check` passed for `OpenXRManualOverrideLever.cs`; scoped counter reports `VrReleaseTargetsClosed=1`, `StaleReleaseTargetsClosed=1`, `ShortGapFreezePreserved=1`, `NonVrReleaseStillDecays=1`, `ForbiddenPatternTotal=0`, `DotnetMention=0`. Rejected: dotnet rebuild/probe by explicit user instruction. Estimate: verification only.
 
+## Loop 40 - Receiver Requires Registered Tick Lane
+
+- [x] Enable lifecycle registers tick before receiver. DOD: `OnEnable()` now calls `TryRegisterTick()` before `TryRegisterReceiver()`, and receiver registration refuses `_registeredTick == false`. Rejected: registering a collider receiver before proving the player tick lane accepted the lever because fixed receiver slots are scarce. Estimate: cold lifecycle order change only.
+- [x] Dispatcher hot-swap removes receiver before tick and recovers tick before receiver. DOD: dispatcher replacement now calls `TryUnregisterReceiver()` before `TryUnregisterTick()`, then after native recovery calls `TryRegisterTick()` before `TryRegisterReceiver()`. Rejected: leaving an old receiver active while tick identity is being rebuilt. Estimate: cold hot-swap only.
+- [x] Reverification without dotnet. DOD: `git diff --check` passed for `OpenXRManualOverrideLever.cs`; scoped counter reports `OnEnableTickBeforeReceiver=1`, `DispatcherUnregisterReceiverBeforeTick=1`, `DispatcherRecoveryTickBeforeReceiver=1`, `ReceiverRequiresRegisteredTick=1`, `OldRecoveryReceiverBeforeTick=0`, `ForbiddenPatternTotal=0`, `DotnetMention=0`. Rejected: dotnet rebuild/probe by explicit user instruction. Estimate: verification only.
+
 STATUS: PENDING VERIFICATION - Unity editor/global Core compile dependency wall prevents full player compile proof in this session.
 
 ## Compile Attempts

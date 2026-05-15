@@ -377,3 +377,25 @@ Cinematic cheats used: No visual change. The same authored icon sizing remains; 
 Exact microseconds saved: Estimate only. Expected gain is sub-1 us per binding-icon layout rebuild on i3/MX350; no profiler proof is claimed.
 
 Verification: No dotnet rebuilds were run. Static scans confirmed the hoisted `iconScale` and forbidden allocation/text/LINQ plus bootstrap/direct-time fallback scans stayed clean.
+
+## 2026-05-15 Diegetic Panel Output Texture Dirty Cache
+What was wrong: Physical panel forced material refreshes could write the same output texture into `_BaseMap` and `_MainTex` repeatedly when the resolved RT reference had not changed.
+
+What was done: Added `_appliedPanelOutputTexture`, reset it on material/RT/phosphor ownership changes, and gated output texture property writes by texture reference.
+
+Cinematic cheats used: Preserved the phosphor front/back history fake. Swapped phosphor textures still rebind every composite because the output texture reference changes.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per forced material refresh on i3/MX350 when the output texture is unchanged; no profiler proof is claimed.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed output texture writes are gated by `_appliedPanelOutputTexture`, cache resets exist on material/texture release paths, and forbidden allocation/text/LINQ plus bootstrap/direct-time fallback scans stayed clean.
+
+## 2026-05-15 Diegetic Panel Phosphor Material Texture Cache
+What was wrong: The phosphor composite material rebound `_PreviousTex` and `_CurrentTex` every composite frame, even though `_CurrentTex` usually remains the same panel RT.
+
+What was done: Added previous/current phosphor texture reference caches and reset them on material resolve, validation reset, phosphor texture release, and material release paths.
+
+Cinematic cheats used: Preserved the phosphor history fake. `_PreviousTex` still updates on front/back swaps because its texture reference changes.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per phosphor composite on i3/MX350; no profiler proof is claimed.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed gated phosphor texture writes and cache resets on material/texture ownership paths, and forbidden allocation/text/LINQ plus bootstrap/direct-time fallback scans stayed clean.

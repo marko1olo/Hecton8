@@ -1013,3 +1013,35 @@ Verification:
 
 Integrator notes:
 - Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
+
+## 2026-05-15 - Loop 39 Real H-Phi Source Repair - WorldSpatialHashGrid Origin-Shift Buffers
+
+What was wrong:
+- `WorldSpatialHashGrid` kept two persistent origin-shift refresh payload buffers and refresh scheduling state after the live origin-shift path became synchronous.
+- Those buffers were never written by a scheduled job and only inflated native ownership debt.
+
+What was done:
+- Removed `_originShiftRuntimePositions` and `_originShiftAbsolutePositions`.
+- Removed dead origin-shift refresh scheduling state and consumer/teardown methods.
+- Kept the live `_originShiftHandles` scratch buffer used by synchronous rebase.
+
+Cinematic Cheats used:
+- No simulation fake added. This is a hard removal of dead maintenance state.
+- Low-tier devices save persistent native memory; High/Ultra keep the same native spatial-hash capacity without dead refresh payloads.
+
+Exact Microseconds saved:
+- Normal gameplay frame time: 0 us claimed.
+- Origin-shift allocation/teardown path does less sentinel/register/dispose work.
+- Persistent memory saved: two `NativeArray<float3>[8192]` buffers, approximately 192 KiB.
+
+Verification:
+- `WorldSpatialHashGrid.cs` `NativeArray<T>` references dropped from 30 in `HEAD` to 26 in the working tree.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed with `AupPrecisionRisk=0`, `NativeArrayRefs=7086`, `PrimaryOwnerBlockedNativeArrayRefs=5692`, and `NativeOwnershipRisk=8218`.
+- Qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Dead origin-shift refresh symbol scan returns `NO_MATCHES`.
+- Mandatory AUP regex scan returned 237 broad residual matches: broad `universe` text and known final-cast/presentation payload names.
+- No `dotnet build` or rebuild was run because the user explicitly forbade rebuilds.
+
+Integrator notes:
+- Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.

@@ -1500,9 +1500,10 @@ namespace Hecton8.Construction
 
         private void UploadModuleStressMatrix(int moduleCount, float peakStress01, HectonQualityTier tier)
         {
-            int safeModuleCount = math.max(0, moduleCount);
+            int safeModuleCount = math.min(math.max(0, moduleCount), ModuleStressShaderCapacity);
+            float safePeakStress01 = math.isfinite(peakStress01) ? math.saturate(peakStress01) : 0f;
             bool lowTier = safeModuleCount > 0 && IsModuleStressLowTier(tier);
-            bool hasVisibleStress = safeModuleCount > 0 && !lowTier && peakStress01 > ModuleStressUploadEpsilon;
+            bool hasVisibleStress = safeModuleCount > 0 && !lowTier && safePeakStress01 > ModuleStressUploadEpsilon;
             if (hasVisibleStress)
             {
                 EnsureModuleStressBuffer(safeModuleCount);
@@ -1513,9 +1514,9 @@ namespace Hecton8.Construction
                 }
             }
 
-            PublishModuleStressShader(safeModuleCount, peakStress01, tier);
+            PublishModuleStressShader(safeModuleCount, safePeakStress01, tier);
             _lastUploadedModuleStressCount = safeModuleCount;
-            _lastUploadedPeakModuleStress01 = peakStress01;
+            _lastUploadedPeakModuleStress01 = safePeakStress01;
             _lastUploadedModuleStressLowTier = lowTier;
             _lastUploadedModuleStressTier = tier;
             _moduleStressSequence++;
@@ -1523,9 +1524,10 @@ namespace Hecton8.Construction
 
         private void PublishModuleStressShader(int moduleCount, float peakStress01, HectonQualityTier tier)
         {
-            int safeModuleCount = math.max(0, moduleCount);
+            int safeModuleCount = math.min(math.max(0, moduleCount), ModuleStressShaderCapacity);
+            float safePeakStress01 = math.isfinite(peakStress01) ? math.saturate(peakStress01) : 0f;
             bool lowTier = safeModuleCount > 0 && IsModuleStressLowTier(tier);
-            bool hasVisibleStress = safeModuleCount > 0 && !lowTier && peakStress01 > ModuleStressUploadEpsilon;
+            bool hasVisibleStress = safeModuleCount > 0 && !lowTier && safePeakStress01 > ModuleStressUploadEpsilon;
             float displacementMaxMeters = hasVisibleStress
                 ? ResolveModuleStressDisplacementMaxMeters(tier)
                 : 0f;
@@ -1535,7 +1537,7 @@ namespace Hecton8.Construction
                     safeModuleCount,
                     displacementMaxMeters,
                     lowTier ? 1f : 0f,
-                    math.saturate(peakStress01)));
+                    safePeakStress01));
         }
 
         private void EnsureModuleStressBuffer(int moduleCount)

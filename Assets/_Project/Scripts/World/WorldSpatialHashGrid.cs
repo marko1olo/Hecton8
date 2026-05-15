@@ -228,6 +228,8 @@ namespace Hecton8.World
         private static readonly Dictionary<ulong, int> _handleByTransformId = new Dictionary<ulong, int>(MaxSpatialMaintenanceEntryCapacity);
         // COLD ALLOC: List<int>[128] â€” deferred far-unload handle scratch for dynamic native-hash eviction â€” owner: WorldSpatialHashGrid
         private static readonly List<int> _farUnloadHandleScratch = new List<int>(MaxSpatialMaintenanceEntryCapacity);
+        // COLD ALLOC: int[8192] - main-thread origin-shift key scratch, not a job payload - owner: WorldSpatialHashGrid
+        private static readonly int[] _originShiftHandles = new int[MaxSpatialMaintenanceEntryCapacity];
 
         private static readonly TransientSignalEntry[] _transientSignals = new TransientSignalEntry[MaxTransientSignalCount]; // COLD ALLOC: TransientSignalEntry[16] - transient PDA sonar signal ring - owner: WorldSpatialHashGrid
 
@@ -239,7 +241,6 @@ namespace Hecton8.World
         private static JobHandle _validationHandle;
         private static bool _validationScheduled;
         private static int _validationCount;
-        private static NativeArray<int> _originShiftHandles;
         private static NativeArray<int> _farUnloadHandles;
         private static NativeArray<double3> _farUnloadAbsolutePositions;
         private static NativeArray<byte> _farUnloadEligibilityMask;

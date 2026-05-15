@@ -578,6 +578,7 @@ What was done:
 - Folded full 64-bit pickup entity ids into the existing active-slot telemetry hash.
 - Applied the identity fold during both SlowTick registry refresh and LateFrame commit.
 - Rejected commit slots whose live pickup entity id no longer matches the sidecar id.
+- Bumped loot telemetry dump version to 4 for the new hash semantics.
 
 Cinematic Cheats used:
 - None. This is black-box evidence integrity.

@@ -228,50 +228,7 @@ namespace Hecton8.Core
             if (!HasLoadedRuntimeScene())
                 return;
 
-            if (TryEnforceTrackedShadowDictatorship())
-                return;
-
-            Light[] sceneLights = Object.FindObjectsByType<Light>(FindObjectsInactive.Include);
-            Light bestForwardSpot = null;
-            float bestForwardSpotScore = float.MinValue;
-
-            for (int i = 0; i < sceneLights.Length; i++)
-            {
-                Light light = sceneLights[i];
-                if (light == null)
-                    continue;
-
-                if (!IsAllowedForwardSpotlightCold(light))
-                    continue;
-
-                float spotScore = light.intensity * Mathf.Max(0.1f, light.range);
-                if (spotScore > bestForwardSpotScore)
-                {
-                    bestForwardSpotScore = spotScore;
-                    bestForwardSpot = light;
-                }
-            }
-
-            for (int i = 0; i < sceneLights.Length; i++)
-            {
-                Light light = sceneLights[i];
-                if (light == null)
-                    continue;
-
-                bool allowedForwardSpot = light == bestForwardSpot && IsAllowedForwardSpotlightCold(light);
-                if (allowedForwardSpot)
-                {
-                    if (light.shadows == LightShadows.None)
-                        light.shadows = LightShadows.Soft;
-                    continue;
-                }
-
-                if (light.shadows != LightShadows.None)
-                    light.shadows = LightShadows.None;
-            }
-
-            if (bestForwardSpot != null)
-                RegisterDynamicShadowLight(bestForwardSpot);
+            TryEnforceTrackedShadowDictatorship();
         }
 
         private static bool TryEnforceTrackedShadowDictatorship()

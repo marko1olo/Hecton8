@@ -175,7 +175,7 @@ namespace Hecton.Localization
             _registeredLocalizationRuntime = ReferenceEquals(GlobalRegistry.Localization, this);
             GameBootstrapper.PersistRuntimeService(this);
 
-            if (GetComponent<FontStreamingManager>() == null)
+            if (!TryGetComponent<FontStreamingManager>(out _))
                 gameObject.AddComponent<FontStreamingManager>(); // COLD ALLOC: FontStreamingManager[1] — runtime staged localized font swap owner — owner: LocalizationManager
 
             LoadAllTables();
@@ -897,7 +897,10 @@ namespace Hecton.Localization
             if (!GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) || playerTransform == null)
                 return null;
 
-            _cachedPlayerToolManager = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.ToolManager != null) ? Hecton8.Core.GlobalRegistry.Player.ToolManager : playerTransform.GetComponent<PlayerToolManager>());
+            _cachedPlayerToolManager =
+                Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.ToolManager != null
+                    ? Hecton8.Core.GlobalRegistry.Player.ToolManager
+                    : ResolvePlayerToolManager(playerTransform);
             return _cachedPlayerToolManager;
         }
 
@@ -1217,8 +1220,16 @@ namespace Hecton.Localization
             if (!GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) || playerTransform == null)
                 return null;
 
-            _cachedPlayerMovement = playerTransform.GetComponent<HectonPlayerMovement>();
+            playerTransform.TryGetComponent(out _cachedPlayerMovement);
             return _cachedPlayerMovement;
+        }
+
+        private static PlayerToolManager ResolvePlayerToolManager(Transform playerTransform)
+        {
+            if (playerTransform == null)
+                return null;
+
+            return playerTransform.TryGetComponent(out PlayerToolManager toolManager) ? toolManager : null;
         }
 
         private static string NormalizeExpandedText(string text)

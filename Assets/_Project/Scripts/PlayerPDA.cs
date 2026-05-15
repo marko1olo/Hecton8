@@ -745,8 +745,7 @@ namespace Hecton8.UI
             // Auto-resolve CanvasGroup if not assigned
             if (pdaCanvasGroup == null && pdaPanel != null)
             {
-                pdaCanvasGroup = pdaPanel.GetComponent<CanvasGroup>();
-                if (pdaCanvasGroup == null)
+                if (!pdaPanel.TryGetComponent(out pdaCanvasGroup))
                 {
                     Debug.LogWarning(
                         "[PlayerPDA] No CanvasGroup found. Adding one for fade animation.");
@@ -826,7 +825,7 @@ namespace Hecton8.UI
             }
 
             if (pdaPanel != null && pdaCanvasGroup == null)
-                pdaCanvasGroup = pdaPanel.GetComponent<CanvasGroup>();
+                pdaPanel.TryGetComponent(out pdaCanvasGroup);
         }
 
         private void ResolveTabReferences(bool createMissingTabs)
@@ -908,14 +907,17 @@ namespace Hecton8.UI
             Transform existing = root.Find(name);
             if (existing != null)
             {
-                if (tabComponentType != null && existing.GetComponent(tabComponentType) == null)
+                if (tabComponentType != null &&
+                    !existing.gameObject.TryGetComponent(tabComponentType, out Component _))
+                {
                     existing.gameObject.AddComponent(tabComponentType);
+                }
                 return existing.gameObject;
             }
 
             GameObject tab = new GameObject(name, typeof(RectTransform));
             tab.layer = root.gameObject.layer;
-            RectTransform rect = tab.GetComponent<RectTransform>();
+            RectTransform rect = (RectTransform)tab.transform;
             rect.SetParent(root, false);
             rect.anchorMin = Vector2.zero;
             rect.anchorMax = Vector2.one;
@@ -924,8 +926,7 @@ namespace Hecton8.UI
             if (tabComponentType != null)
                 tab.AddComponent(tabComponentType);
 
-            CanvasGroup canvasGroup = tab.GetComponent<CanvasGroup>();
-            if (canvasGroup == null)
+            if (!tab.TryGetComponent(out CanvasGroup canvasGroup))
                 canvasGroup = tab.AddComponent<CanvasGroup>();
 
             canvasGroup.alpha = 0f;
@@ -1441,8 +1442,7 @@ namespace Hecton8.UI
 
             if (pdaCanvasGroup == null)
             {
-                pdaCanvasGroup = pdaPanel.GetComponent<CanvasGroup>();
-                if (pdaCanvasGroup == null)
+                if (!pdaPanel.TryGetComponent(out pdaCanvasGroup))
                     pdaCanvasGroup = pdaPanel.AddComponent<CanvasGroup>();
             }
 
@@ -1491,8 +1491,7 @@ namespace Hecton8.UI
                 CanvasGroup group = _tabCanvasGroups[i];
                 if (group == null)
                 {
-                    group = tab.GetComponent<CanvasGroup>();
-                    if (group == null)
+                    if (!tab.TryGetComponent(out group))
                         group = tab.AddComponent<CanvasGroup>();
                     _tabCanvasGroups[i] = group;
                 }
@@ -1729,7 +1728,7 @@ namespace Hecton8.UI
         private void Awake()
         {
             if (playerPda == null)
-                playerPda = GetComponentInParent<PlayerPDA>();
+                playerPda = ResolvePlayerPdaInParents(transform);
 
             ResolvePlayerMovementFromRuntimeContext();
 
@@ -1806,17 +1805,14 @@ namespace Hecton8.UI
             if (_built)
                 return;
 
-            RectTransform root = GetComponent<RectTransform>();
-            if (root == null)
+            if (!TryGetComponent(out RectTransform root))
                 return;
 
-            Image background = gameObject.GetComponent<Image>();
-            if (background == null)
+            if (!TryGetComponent(out Image background))
                 background = gameObject.AddComponent<Image>();
             background.color = BackgroundColor;
 
-            _group = gameObject.GetComponent<CanvasGroup>();
-            if (_group == null)
+            if (!TryGetComponent(out _group))
                 _group = gameObject.AddComponent<CanvasGroup>();
             _group.alpha = 1f;
             _group.blocksRaycasts = false;
@@ -1960,10 +1956,10 @@ namespace Hecton8.UI
             // COLD ALLOC: GameObject[1] — PDA diagnostics divider rule — owner: PDADiagnosticTerminal
             GameObject ruleObject = new GameObject(name, typeof(RectTransform), typeof(Image));
             ruleObject.layer = parent.gameObject.layer;
-            RectTransform rect = ruleObject.GetComponent<RectTransform>();
+            RectTransform rect = (RectTransform)ruleObject.transform;
             rect.SetParent(parent, false);
             Anchor(rect, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(16f, anchoredY - 1f), new Vector2(-16f, anchoredY + 1f));
-            Image image = ruleObject.GetComponent<Image>();
+            ruleObject.TryGetComponent(out Image image);
             image.color = RuleColor;
             image.raycastTarget = false;
         }
@@ -1980,7 +1976,7 @@ namespace Hecton8.UI
             // COLD ALLOC: GameObject[1] — PDA diagnostics TMP label — owner: PDADiagnosticTerminal
             GameObject textObject = new GameObject(name, typeof(RectTransform));
             textObject.layer = parent.gameObject.layer;
-            RectTransform rect = textObject.GetComponent<RectTransform>();
+            RectTransform rect = (RectTransform)textObject.transform;
             rect.SetParent(parent, false);
 
             TextMeshProUGUI text = textObject.AddComponent<TextMeshProUGUI>();
@@ -1992,6 +1988,20 @@ namespace Hecton8.UI
             text.raycastTarget = false;
             Hecton8.UI.TMP_TextRegistry.EnsureRegistered(text);
             return text;
+        }
+
+        private static PlayerPDA ResolvePlayerPdaInParents(Transform start)
+        {
+            Transform current = start;
+            while (current != null)
+            {
+                if (current.TryGetComponent(out PlayerPDA playerPda))
+                    return playerPda;
+
+                current = current.parent;
+            }
+
+            return null;
         }
 
         private static bool TryAppendSignedRoundedVector(Span<char> buffer, ref int cursor, Vector3 value)

@@ -14,6 +14,7 @@ namespace Hecton8.Gameplay
         private const string FlareToolSocketName = "VR_SomaticSocket_FlareTool";
 
         private static VRSomaticRuntimeBootstrap _runtime;
+        private static Transform _decoupledRootTransform;
 
         private Transform _boundPlayerTransform;
         private Transform _vrRootTransform;
@@ -30,6 +31,7 @@ namespace Hecton8.Gameplay
         {
             HectonXRRuntimeState.XRActiveChanged -= HandleXRActiveChanged;
             _runtime = null;
+            _decoupledRootTransform = null;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -222,7 +224,7 @@ namespace Hecton8.Gameplay
                 allowSocketHierarchyLookup,
                 ref runtime._flareSocketTransform,
                 ref runtime._createdFlareSocketTransform);
-            Transform vrRoot = runtime.EnsureDecoupledRootTransform(allowSocketHierarchyLookup);
+            Transform vrRoot = runtime.EnsureDecoupledRootTransform();
 
             provider.BindRig(
                 hmdTransform,
@@ -275,10 +277,17 @@ namespace Hecton8.Gameplay
             return playerTransform;
         }
 
-        private Transform EnsureDecoupledRootTransform(bool allowHierarchyLookup)
+        private Transform EnsureDecoupledRootTransform()
         {
             if (_vrRootTransform != null)
                 return _vrRootTransform;
+
+            if (_decoupledRootTransform != null)
+            {
+                _vrRootTransform = _decoupledRootTransform;
+                _createdVrRootTransform = false;
+                return _vrRootTransform;
+            }
 
             if (_createdVrRootTransform && _vrRootTransform != null)
                 Destroy(_vrRootTransform.gameObject);
@@ -286,19 +295,9 @@ namespace Hecton8.Gameplay
             _vrRootTransform = null;
             _createdVrRootTransform = false;
 
-            if (allowHierarchyLookup)
-            {
-                GameObject existingRoot = GameObject.Find(DecoupledRootName); // COLD LOOKUP: bootstrap/GameReady only.
-                if (existingRoot != null)
-                {
-                    _vrRootTransform = existingRoot.transform;
-                    GameBootstrapper.PersistRuntimeService(_vrRootTransform);
-                    return _vrRootTransform;
-                }
-            }
-
             GameObject rootObject = new GameObject(DecoupledRootName); // COLD ALLOC: GameObject[1] - decoupled VR somatic root - owner: VRSomaticRuntimeBootstrap
             _vrRootTransform = rootObject.transform;
+            _decoupledRootTransform = _vrRootTransform;
             _createdVrRootTransform = true;
             GameBootstrapper.PersistRuntimeService(_vrRootTransform);
             return _vrRootTransform;

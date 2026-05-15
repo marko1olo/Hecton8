@@ -660,8 +660,7 @@ namespace Hecton.UI.MainMenu
                 if (child == null)
                     continue;
 
-                SaveSlotUI slotUi = child.GetComponent<SaveSlotUI>();
-                if (slotUi == null)
+                if (!child.TryGetComponent(out SaveSlotUI slotUi))
                     continue;
 
                 child.gameObject.name = SlotNames[found];
@@ -902,8 +901,7 @@ namespace Hecton.UI.MainMenu
             if (eventSystem == null || !eventSystem.enabled)
                 return;
 
-            InputSystemUIInputModule inputModule = eventSystem.GetComponent<InputSystemUIInputModule>();
-            if (inputModule == null || !inputModule.enabled)
+            if (!eventSystem.TryGetComponent(out InputSystemUIInputModule inputModule) || !inputModule.enabled)
                 return;
 
             _inputRoutingReady = MainMenuInputRoutingGuard.HasUsableUiModuleActions(inputModule);

@@ -938,3 +938,31 @@ Verification:
 - Static scan confirms `ResetWfcOutpostSectorCaches(bool clearMutableGrid)` call-site wiring.
 - `git diff --check -- Assets/_Project/Scripts/SaveManager.cs Docs/Tasks/Status_MACRO_WFC_PERSISTENCE_SYNC.md Docs/AgentLogs/Rationale_MACRO_WFC_PERSISTENCE_SYNC.md Docs/AgentLogs/LOG_MACRO_WFC_PERSISTENCE_SYNC.md` reports only Git CRLF normalization warnings.
 - No `dotnet` rebuild was run.
+
+## Recheck Report: WFC Dirty Append Retry
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- A successful `MarkDirty` followed by a failed background append could leave a WFC dirty payload dependent on later unrelated MacroDB eviction/compaction.
+- The sector hash cache could then skip identical future payloads as unchanged without queuing another append.
+
+What was done:
+- Added append pending/in-flight bits to the fixed native WFC sector cache.
+- MarkDirty success records pending; queueing records in-flight; append success clears; append failure keeps pending.
+- `SlowTick()` retries up to two pending non-in-flight WFC dirty appends through the existing background append path.
+- Append callbacks are payload-hash guarded so stale async completions do not mutate a newer sector cache entry.
+
+Cinematic cheats used:
+- Tiny native retry flags inside the existing sector cache instead of managed retry queues or MacroDB contract expansion.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation: 0 B by static inspection.
+- Memory cost: +2048 bytes persistent native cache versus Loop 37.
+- SlowTick work: scan <=256 cache entries, queue <=2 background append attempts.
+
+Verification:
+- Static scan confirms retry, in-flight, completed, and failed append flag transitions.
+- Static scan confirms no same-frame retry and no Tick retry path.
+- `git diff --check -- Assets/_Project/Scripts/SaveManager.cs Docs/Tasks/Status_MACRO_WFC_PERSISTENCE_SYNC.md Docs/AgentLogs/Rationale_MACRO_WFC_PERSISTENCE_SYNC.md Docs/AgentLogs/LOG_MACRO_WFC_PERSISTENCE_SYNC.md` reports only Git CRLF normalization warnings.
+- No `dotnet` rebuild was run.

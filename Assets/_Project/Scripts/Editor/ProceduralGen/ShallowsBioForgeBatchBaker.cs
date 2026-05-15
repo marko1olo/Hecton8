@@ -50,6 +50,9 @@ namespace Hecton8.Editor.ProceduralGen
         private const float Lod2FadeWidth = 0.04f;
         private const float TransformEpsilonSq = 0.000001f;
         private const int AtlasCompressionQuality = 50;
+        private const int ExpectedMeshVertexAttributeCount = 5;
+        private const int ExpectedMeshVertexBufferCount = 1;
+        private const int ExpectedMeshVertexBufferStrideBytes = 64;
         private const int DefaultLayer = 0;
         private const string UntaggedTag = "Untagged";
         // COLD ALLOC: List<Color>[9600] - reusable editor vertex color validation scratch - owner: ShallowsBioForgeBatchBaker
@@ -681,6 +684,7 @@ namespace Hecton8.Editor.ProceduralGen
             ValidateShaderRequiredToken(shaderPath, source, "#pragma shader_feature_local _QUALITY_HIGH", ref failures);
             ValidateShaderRequiredToken(shaderPath, source, "CBUFFER_START(UnityPerMaterial)", ref failures);
             ValidateShaderRequiredToken(shaderPath, source, "LODFadeCrossFade(input.positionCS);", ref failures);
+            ValidateShaderVertexInputContract(shaderPath, source, ref failures);
             ValidateShaderPassBudget(shaderPath, source, ref failures);
             ValidateShaderPragmaBudget(shaderPath, source, ref failures);
             ValidateShaderForbiddenToken(shaderPath, source, "ZWrite Off", ref failures);
@@ -712,6 +716,23 @@ namespace Hecton8.Editor.ProceduralGen
 
             failures++;
             Debug.LogError($"[ShallowsBioForgeBatchBaker] Shader source contract contains forbidden token at {shaderPath}: {token}.");
+        }
+
+        private static void ValidateShaderVertexInputContract(string shaderPath, string source, ref int failures)
+        {
+            bool valid = source.IndexOf("float4 positionOS : POSITION;", StringComparison.Ordinal) >= 0 &&
+                         source.IndexOf("float3 normalOS : NORMAL;", StringComparison.Ordinal) >= 0 &&
+                         source.IndexOf("half4 color : COLOR;", StringComparison.Ordinal) >= 0 &&
+                         source.IndexOf("VertexNormalInputs normalInputs = GetVertexNormalInputs(normalOS);", StringComparison.Ordinal) >= 0 &&
+                         source.IndexOf("TANGENT", StringComparison.Ordinal) < 0 &&
+                         source.IndexOf("uv : TEXCOORD", StringComparison.Ordinal) < 0 &&
+                         source.IndexOf("input.uv", StringComparison.Ordinal) < 0 &&
+                         source.IndexOf("GetVertexNormalInputs(normalOS,", StringComparison.Ordinal) < 0;
+            if (valid)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] Shader vertex input contract failed at {shaderPath}.");
         }
 
         private static void ValidateShaderPassBudget(string shaderPath, string source, ref int failures)
@@ -1821,8 +1842,36 @@ namespace Hecton8.Editor.ProceduralGen
             Bounds bounds = mesh.bounds;
             bool hasPosition = mesh.HasVertexAttribute(VertexAttribute.Position);
             bool hasNormal = mesh.HasVertexAttribute(VertexAttribute.Normal);
+            bool hasTangent = mesh.HasVertexAttribute(VertexAttribute.Tangent);
             bool hasColor = mesh.HasVertexAttribute(VertexAttribute.Color);
             bool hasUv0 = mesh.HasVertexAttribute(VertexAttribute.TexCoord0);
+            bool hasUv1 = mesh.HasVertexAttribute(VertexAttribute.TexCoord1);
+            bool hasUv2 = mesh.HasVertexAttribute(VertexAttribute.TexCoord2);
+            bool hasUv3 = mesh.HasVertexAttribute(VertexAttribute.TexCoord3);
+            bool hasUv4 = mesh.HasVertexAttribute(VertexAttribute.TexCoord4);
+            bool hasUv5 = mesh.HasVertexAttribute(VertexAttribute.TexCoord5);
+            bool hasUv6 = mesh.HasVertexAttribute(VertexAttribute.TexCoord6);
+            bool hasUv7 = mesh.HasVertexAttribute(VertexAttribute.TexCoord7);
+            bool hasBlendWeight = mesh.HasVertexAttribute(VertexAttribute.BlendWeight);
+            bool hasBlendIndices = mesh.HasVertexAttribute(VertexAttribute.BlendIndices);
+            bool hasUnexpectedVertexPayload = hasUv1 ||
+                                              hasUv2 ||
+                                              hasUv3 ||
+                                              hasUv4 ||
+                                              hasUv5 ||
+                                              hasUv6 ||
+                                              hasUv7 ||
+                                              hasBlendWeight ||
+                                              hasBlendIndices;
+            int vertexAttributeCount = mesh.vertexAttributeCount;
+            int vertexBufferCount = mesh.vertexBufferCount;
+            int vertexBufferStride = vertexBufferCount == ExpectedMeshVertexBufferCount ? mesh.GetVertexBufferStride(0) : 0;
+            int blendShapeCount = mesh.blendShapeCount;
+            int bindposeCount = mesh.bindposeCount;
+            bool hasExpectedVertexStreamLayout = vertexAttributeCount == ExpectedMeshVertexAttributeCount &&
+                                                 vertexBufferCount == ExpectedMeshVertexBufferCount &&
+                                                 vertexBufferStride == ExpectedMeshVertexBufferStrideBytes &&
+                                                 ValidateVertexAttributeLayout(mesh);
             bool hasSingleSubMesh = mesh.subMeshCount == 1;
             ulong indexCount = hasSingleSubMesh ? mesh.GetIndexCount(0) : 0ul;
             MeshTopology topology = hasSingleSubMesh ? mesh.GetTopology(0) : MeshTopology.Triangles;
@@ -1836,8 +1885,13 @@ namespace Hecton8.Editor.ProceduralGen
                           mesh.indexFormat != IndexFormat.UInt16 ||
                           !hasPosition ||
                           !hasNormal ||
+                          !hasTangent ||
                           !hasColor ||
                           !hasUv0 ||
+                          hasUnexpectedVertexPayload ||
+                          !hasExpectedVertexStreamLayout ||
+                          blendShapeCount != 0 ||
+                          bindposeCount != 0 ||
                           !IsFinite(bounds.center) ||
                           !IsFinite(bounds.extents) ||
                           boundsExtentSq <= TransformEpsilonSq ||
@@ -1847,7 +1901,22 @@ namespace Hecton8.Editor.ProceduralGen
                 return;
 
             failures++;
-            Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{lodIndex} mesh geometry contract failed at {path}. Vertices={mesh.vertexCount}, SubMeshes={mesh.subMeshCount}, IndexCount={indexCount}, Topology={topology}, Readable={mesh.isReadable}, IndexFormat={mesh.indexFormat}, Position={hasPosition}, Normal={hasNormal}, Color={hasColor}, Uv0={hasUv0}, BoundsExtentSq={boundsExtentSq:0.000000}, MaxBoundsExtentSq={maxBoundsExtentSq:0.000000}.");
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{lodIndex} mesh geometry contract failed at {path}. Vertices={mesh.vertexCount}, SubMeshes={mesh.subMeshCount}, IndexCount={indexCount}, Topology={topology}, Readable={mesh.isReadable}, IndexFormat={mesh.indexFormat}, Position={hasPosition}, Normal={hasNormal}, Tangent={hasTangent}, Color={hasColor}, Uv0={hasUv0}, VertexAttributes={vertexAttributeCount}, VertexBuffers={vertexBufferCount}, VertexStride={vertexBufferStride}, Uv1={hasUv1}, Uv2={hasUv2}, Uv3={hasUv3}, Uv4={hasUv4}, Uv5={hasUv5}, Uv6={hasUv6}, Uv7={hasUv7}, BlendWeight={hasBlendWeight}, BlendIndices={hasBlendIndices}, BlendShapes={blendShapeCount}, Bindposes={bindposeCount}, BoundsExtentSq={boundsExtentSq:0.000000}, MaxBoundsExtentSq={maxBoundsExtentSq:0.000000}.");
+        }
+
+        private static bool ValidateVertexAttributeLayout(Mesh mesh)
+        {
+            return ValidateVertexAttributeLayout(mesh, VertexAttribute.Position, 3) &&
+                   ValidateVertexAttributeLayout(mesh, VertexAttribute.Normal, 3) &&
+                   ValidateVertexAttributeLayout(mesh, VertexAttribute.Tangent, 4) &&
+                   ValidateVertexAttributeLayout(mesh, VertexAttribute.Color, 4) &&
+                   ValidateVertexAttributeLayout(mesh, VertexAttribute.TexCoord0, 2);
+        }
+
+        private static bool ValidateVertexAttributeLayout(Mesh mesh, VertexAttribute attribute, int expectedDimension)
+        {
+            return mesh.GetVertexAttributeDimension(attribute) == expectedDimension &&
+                   mesh.GetVertexAttributeFormat(attribute) == VertexAttributeFormat.Float32;
         }
 
         private static void ValidateLodTriangleBudget(string path, string familyFolder, int lodIndex, Mesh mesh, ref int failures)

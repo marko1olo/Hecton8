@@ -16,16 +16,16 @@ namespace Hecton8.PDA
             if (playerObject == null)
                 return;
 
-            if (playerObject.GetComponent<PlayerExplorationTracker>() == null)
+            if (!playerObject.TryGetComponent<PlayerExplorationTracker>(out _))
                 playerObject.AddComponent<PlayerExplorationTracker>();
 
-            if (playerObject.GetComponent<PDALogbookManager>() == null)
+            if (!playerObject.TryGetComponent<PDALogbookManager>(out _))
                 playerObject.AddComponent<PDALogbookManager>();
 
-            if (playerObject.GetComponent<PDAMarkerRegistry>() == null)
+            if (!playerObject.TryGetComponent<PDAMarkerRegistry>(out _))
                 playerObject.AddComponent<PDAMarkerRegistry>();
 
-            if (playerObject.GetComponent<PDAIntrusionManager>() == null)
+            if (!playerObject.TryGetComponent<PDAIntrusionManager>(out _))
                 playerObject.AddComponent<PDAIntrusionManager>();
         }
     }

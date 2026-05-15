@@ -504,3 +504,36 @@ Follow-up upgrade 50:
 Exact microseconds saved after follow-up 50:
 - Fault frames avoid wrapped StructuredBuffer reads from corrupt instance metadata.
 - Valid-frame overhead is one unsigned compare in the instance-buffer variant; no valid visual output changes.
+
+Follow-up upgrade 51:
+- What was wrong: `Hecton_HabitatInterior.hlsl` still cast module stress count to `uint` without a finite gate and allowed non-finite deformation amplitude, stress, panel mask, or detail mask to reach bend/normal/crease math.
+- What was done: finite-gated module count source, converted bad deformation amplitude to zero, rejected non-finite stress before bend/normal bias, and rejected non-finite panel/detail inputs before low-tier crease.
+- Cinematic cheat used: corrupted shader scalars collapse to no bend/no crease instead of trying to recover a physical deformation state.
+- Static checks: `rg` confirms `stressCountSource`, `maxDeformationSource`, stress finite guards, panel-mask finite guard, and detail-mask finite guard; exact shader `normalize()`/`sqrt()` scan produced no matches; managed-offender scan remains clean; mesh mutation scan found no owned `Mesh.vertices` writes; touched shader/doc braces are balanced; `git diff --check` reports only CRLF normalization warnings.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by standing user instruction.
+
+Exact microseconds saved after follow-up 51:
+- Fault frames avoid NaN bend, normal-bias, and low-tier crease propagation.
+- Valid-frame overhead is scalar finite checks in existing helper gates; no new buffer read, texture sample, or mesh mutation is introduced.
+
+Follow-up upgrade 52:
+- What was wrong: DryZone vertex setup seeded `habitatStress01` directly from `_HectonHabitatModuleStressParams.w`, so bad peak stress could cross the vertex/fragment boundary as an interpolated habitat stress varying.
+- What was done: added `habitatPeakStress01` and finite-gated it before resolver selection, bend gating, and varying output.
+- Cinematic cheat used: invalid habitat peak stress becomes zero visual pressure instead of trying to preserve corrupted deformation state.
+- Static checks: `rg` confirms `habitatPeakStress01` and finite-gated `habitatStress01` are wired before the resolver branch; exact shader `normalize()`/`sqrt()` scan produced no matches; managed-offender scan remains clean; mesh mutation scan found no owned `Mesh.vertices` writes; touched shader/doc braces are balanced; `git diff --check` reports only CRLF normalization warnings.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by standing user instruction.
+
+Exact microseconds saved after follow-up 52:
+- Fault frames avoid NaN habitat stress interpolation into low-tier crease or bend gates.
+- Valid-frame overhead is one scalar finite check in the DryZone vertex path.
+
+Follow-up upgrade 53:
+- What was wrong: CPU module-stress shader publication trusted method-level `peakStress01` for upload visibility, cached peak state, and `_HectonHabitatModuleStressParams` output.
+- What was done: `UploadModuleStressMatrix` and `PublishModuleStressShader` now clamp module count to shader capacity and sanitize peak stress before upload decisions, cache assignment, and global vector publication.
+- Cinematic cheat used: corrupted peak stress collapses to zero visual deformation/crease instead of pushing bad pressure truth into the shader.
+- Static checks: `rg` confirms `safePeakStress01`, shader-capacity count clamp, upload visibility gate, cached peak assignment, and shader vector publication use sanitized data; exact shader `normalize()`/`sqrt()` scan produced no matches; managed-offender scan remains clean; mesh mutation scan found no owned `Mesh.vertices` writes; touched C#/shader/doc braces are balanced; `git diff --check` reports only CRLF normalization warnings.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by standing user instruction.
+
+Exact microseconds saved after follow-up 53:
+- Fault frames avoid non-finite shader global publication and stale peak-cache state.
+- Valid-frame overhead is one finite check and one capacity clamp at the upload/publish boundary; 0 B/frame.

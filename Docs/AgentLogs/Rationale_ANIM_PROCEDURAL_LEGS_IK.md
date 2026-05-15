@@ -202,6 +202,14 @@ Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instructio
 Scalability potential: Low/MX350 keeps bounded scalar setup and the same cheap two-bone fake. Middle keeps appendage/spine support with deterministic metadata. High can use pelvis lean, over-extension resistance, and muscle polish without unbounded scalar amplification. Ultra can spend visual budget on secondary/muscle presentation while setup corruption fails closed.
 Hardware Impact: Hot-path additions are a few finite/unit/non-negative clamps and chain-state guards, estimated below 0.2 us/frame on i3/MX350. Cold authoring-cache guards prevent NaN limb reach, runaway FABRIK iteration counts, and shader bulge spikes without allocations, new jobs, new rays, or public API churn.
 
+## Decision 26: Packed lower-body foot state quarantine
+
+Problem: Target frames were sanitized, but packed `FootData` could still carry stale or corrupt step state across skipped compute frames. A bad stepping flag, progress value, start/current position, or stale zero-blend flag could block alternating footsteps or contaminate swim/step smoothing before the next full solve repaired it.
+Solution: Sanitize packed foot data on read and on skipped-frame lanes, normalize foot surface normals, clamp progress/threshold/height/blend, clear flags on inactive zero-blend lanes, and reject out-of-range side/flag data. Step cancellation now uses a finite current position, foot-current fallback sanitizes previous data, post-step non-finite positions set the invalid flag, and swim foot candidates sanitize pelvis and KCC velocity before deriving planar direction.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Adding a gait planner, extra foot ray, or physical leg simulation was rejected because the issue is packed-state integrity, not sensing or solver authority. Clearing all foot state on every skipped frame was rejected because it would cause visible foot popping under distance cadence throttling.
+Scalability potential: Low/MX350 keeps cadence-skipped lower-body state stable without extra sensing. Middle keeps deterministic two-foot stepping. High keeps velocity-led swim/stride polish without stale step locks. Ultra can layer secondary/muscle presentation over foot lanes that are finite and bounded even after skipped frames.
+Hardware Impact: Added work is fixed two-lane scalar/vector checks on skipped/active foot paths, estimated below 0.2 us/frame on i3/MX350. No allocations, no new jobs, no new ray lanes, and no public API changes.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Final anti-bloat pass required checking the lower-body implementation for honest simulation, unbounded math, GC leaks, and out-of-domain edits.

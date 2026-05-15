@@ -145,8 +145,8 @@ namespace Hecton8.UI.VR
             _lowTierMath = ResolveLowTierMath();
             TryRegisterHotSwapListener();
             TryRegisterScalabilityListener();
-            TryRegisterReceiver();
             TryRegisterTick();
+            TryRegisterReceiver();
         }
 
         private void OnDisable()
@@ -517,16 +517,14 @@ namespace Hecton8.UI.VR
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
+                TryUnregisterReceiver();
                 TryUnregisterTick();
                 if (currentService == null)
-                {
-                    TryUnregisterReceiver();
                     return;
-                }
 
                 EnsureNativeStateForLifecycle();
-                TryRegisterReceiver();
                 TryRegisterTick();
+                TryRegisterReceiver();
             }
         }
 
@@ -774,7 +772,7 @@ namespace Hecton8.UI.VR
 
         private void TryRegisterReceiver()
         {
-            if (_latched || !_nativeAllocated || activationVolume == null || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_latched || !_nativeAllocated || !_registeredTick || activationVolume == null || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             Collider registeredVolume = _registeredActivationVolume;

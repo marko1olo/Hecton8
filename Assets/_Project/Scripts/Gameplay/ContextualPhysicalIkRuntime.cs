@@ -1092,8 +1092,16 @@ namespace Hecton8.Gameplay
                 ContextualPhysicalIkLowerBodyConstants.FlagStepping |
                 ContextualPhysicalIkLowerBodyConstants.FlagSwimming |
                 ContextualPhysicalIkLowerBodyConstants.FlagInvalid));
-            if (data.StepProgress01 >= 0.999f)
+            if (data.Blend <= 0.0001f)
+            {
+                data.Flags = 0;
+                data.StepProgress01 = 1.0f;
+            }
+            else if (data.StepProgress01 >= 0.999f)
+            {
                 data.Flags = (byte)(data.Flags & ~ContextualPhysicalIkLowerBodyConstants.FlagStepping);
+            }
+
             return data;
         }
 

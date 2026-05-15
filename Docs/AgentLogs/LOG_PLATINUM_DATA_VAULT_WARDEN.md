@@ -68,6 +68,66 @@ Verification:
 Status:
 - VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
 
+## 2026-05-15 - H8Memory Tracking Growth All-Or-Nothing Gate
+
+What was wrong:
+- `EnsureTrackingCapacity` rebuilt the owner map during tracking-table growth.
+- It ignored `newOwners.TryAdd` failure, so duplicate/corrupt pointer evidence could produce a grown map missing owner entries.
+
+What was done:
+- Tracking growth now checks every owner-map insert.
+- On insert failure, temporary growth tables are disposed and old tracking tables remain active.
+- Documented the tracking-growth rule in `Docs/ARCHITECTURE/ARENA_ALLOCATOR_2_0.md`.
+
+Cinematic Cheats used:
+- None. This is native ownership evidence integrity.
+
+Exact Microseconds saved:
+- Frame cost: 0 us.
+- Cold growth path adds one checked branch per active record.
+- Avoids silent owner-map erosion during high native-allocation pressure.
+
+Verification:
+- `H8Memory.cs` brace/parenthesis balance passed.
+- Owner-map growth failure branch is present and returns before old tables are disposed.
+- `git diff --check` passed with CRLF warnings only.
+- No dotnet rebuild was run per user order.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-15 - MacroDB Cache Tick Wrap And Byte Accounting Gate
+
+What was wrong:
+- MacroDB native cache access ticks wrapped without a policy.
+- After unsigned wrap, newly touched payloads could look older than stale high-tick entries.
+- Cache byte accounting subtracted trusted handle lengths directly and could go negative after stale/corrupt metadata.
+
+What was done:
+- `TouchMacroDatabasePayload` now clears the access-tick sidecar on clock wrap and restarts at tick `1`.
+- Payload overwrite/removal now subtracts through `SubtractMacroDatabasePayloadBytes`.
+- Updated `Docs/Design/H8DB_Index_RLE_Spec.md` with the LRU wrap and saturating byte-accounting rules.
+
+Cinematic Cheats used:
+- None. This is deterministic cache telemetry and eviction behavior.
+
+Exact Microseconds saved:
+- Frame cost: 0 us.
+- Normal touch path stays branch-only and allocation-free.
+- Wrap path clears the tick sidecar once per 4,294,967,296 touches.
+- Saturating byte subtract is cold store/remove path only.
+
+Verification:
+- `GlobalDataVault.cs` brace/parenthesis balance passed.
+- No direct `_macroDatabasePayloadBytes -=` remains.
+- Access tick wrap path clears `_macroDatabasePayloadAccessTicks`.
+- DataVault live compaction scan remained clean.
+- `git diff --check` passed with CRLF warnings only.
+- No dotnet rebuild was run per user order.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
 ## 2026-05-15 - Procedural DTO Payload Bounds Pass
 
 What was wrong:

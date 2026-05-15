@@ -401,6 +401,11 @@ namespace Hecton8.VFX.Debris
             IDataVault vault = _registryDataVault;
             if (vault == null)
                 return false;
+            if (vault.IsCompactionFenceActive)
+            {
+                InvalidateDataVaultLease();
+                return false;
+            }
 
             _advectKernel = ResolveKernel(fluidAdvectionCompute, "AdvectCarveDebris");
             _clearArgsKernel = ResolveKernel(fluidAdvectionCompute, "ClearCarveDebrisIndirectArgs");
@@ -1346,7 +1351,10 @@ namespace Hecton8.VFX.Debris
                 {
                     _jobState[JobStateFlagsIndex] |= (int)InvalidStateFlag;
                     _pendingAupShift = default;
+                    continue;
                 }
+
+                _nextGlobalSdfRefreshFrame = 0;
             }
 
             if (_activeMirrorCount <= 0)

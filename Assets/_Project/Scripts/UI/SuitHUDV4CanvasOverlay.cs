@@ -2696,19 +2696,19 @@ namespace Hecton8.UI
 
             _scannerHologramAnimationTime += math.max(0f, deltaTime);
 
-            float progress01 = math.saturate(snapshot.Progress01);
+            float signal01 = ResolveScannerHologramSignal01(snapshot);
             Vector2 size = ResolveScannerFlatHologramSize();
             float pulsePixels = EvaluateCheapSignedWave(_scannerHologramAnimationTime * 5.2f) * math.max(0f, scannerHologramPulsePixels);
-            float jitterPixels = EvaluateCheapSignedWave((_scannerHologramAnimationTime * 23.0f) + (progress01 * 5.0f)) * math.max(0f, scannerHologramJitterPixels);
+            float jitterPixels = EvaluateCheapSignedWave((_scannerHologramAnimationTime * 23.0f) + (signal01 * 5.0f)) * math.max(0f, scannerHologramJitterPixels);
             _scannerFlatHologramRoot.anchoredPosition = scannerHologramOffsetPixels + new Vector2(jitterPixels, pulsePixels * 0.18f);
             _scannerFlatHologramRoot.sizeDelta = size + (Vector2.one * pulsePixels);
             _scannerFlatHologramRoot.localEulerAngles = Vector3.zero;
 
             Color hologramColor = new Color(
-                math.lerp(scannerHologramScanStartColor.r, scannerHologramScanCompleteColor.r, progress01),
-                math.lerp(scannerHologramScanStartColor.g, scannerHologramScanCompleteColor.g, progress01),
-                math.lerp(scannerHologramScanStartColor.b, scannerHologramScanCompleteColor.b, progress01),
-                math.lerp(scannerHologramScanStartColor.a, scannerHologramScanCompleteColor.a, progress01));
+                math.lerp(scannerHologramScanStartColor.r, scannerHologramScanCompleteColor.r, signal01),
+                math.lerp(scannerHologramScanStartColor.g, scannerHologramScanCompleteColor.g, signal01),
+                math.lerp(scannerHologramScanStartColor.b, scannerHologramScanCompleteColor.b, signal01),
+                math.lerp(scannerHologramScanStartColor.a, scannerHologramScanCompleteColor.a, signal01));
             float glitchAmount = math.saturate((_stressPulseIntensity * 0.45f) + (_traumaGlitchIntensity * 0.55f));
             Color bodyColor = hologramColor;
             bodyColor.a *= 0.44f + glitchAmount * 0.18f;
@@ -2719,10 +2719,10 @@ namespace Hecton8.UI
             _scannerFlatHologramCore.color = coreColor;
 
             Color lineColor = scannerHologramScanCompleteColor;
-            lineColor.a = math.saturate(0.35f + progress01 * 0.5f + glitchAmount * 0.15f);
+            lineColor.a = math.saturate(0.35f + signal01 * 0.5f + glitchAmount * 0.15f);
             _scannerFlatHologramScanline.color = lineColor;
             _scannerFlatHologramScanline.rectTransform.anchoredPosition = new Vector2(
-                math.lerp(size.x * -0.42f, size.x * 0.42f, progress01),
+                math.lerp(size.x * -0.42f, size.x * 0.42f, signal01),
                 0f);
 
             SetScannerFlatHologramVisible(true);
@@ -2757,6 +2757,20 @@ namespace Hecton8.UI
                  snapshot.ChemicalLoad01 > 0.0001f ||
                  snapshot.Toxicity01 > 0.0001f ||
                  snapshot.HasAttractantTrace);
+        }
+
+        private static float ResolveScannerHologramSignal01(ScannerTool.ScientificScanSnapshot snapshot)
+        {
+            float signal01 = math.saturate(snapshot.Progress01);
+            signal01 = math.max(signal01, math.saturate(snapshot.Density01));
+            signal01 = math.max(signal01, math.saturate(snapshot.ChemicalLoad01));
+            signal01 = math.max(signal01, math.saturate(snapshot.Toxicity01));
+            signal01 = math.max(signal01, math.saturate(snapshot.OrganicBlood01));
+            signal01 = math.max(signal01, math.saturate(snapshot.AttractantScent01));
+            if (snapshot.HasFaunaContact)
+                signal01 = math.max(signal01, 0.85f);
+
+            return signal01;
         }
 
         private void RenderScannerInterference(float deltaTime)
@@ -5771,7 +5785,7 @@ namespace Hecton8.UI
                 _toolManager == null ||
                 !(_toolManager.CurrentTool is ScannerTool scanner) ||
                 !scanner.TryGetScientificScanSnapshot(out ScannerTool.ScientificScanSnapshot snapshot) ||
-                !snapshot.IsActive ||
+                !HasScannerHologramPayload(snapshot) ||
                 !CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
             {
                 return false;
@@ -5831,6 +5845,15 @@ namespace Hecton8.UI
             int purityPercent = math.clamp(RoundToIntFast(snapshot.Purity01 * 100f), 0, 100);
             int temperatureRounded = RoundToIntFast(snapshot.TemperatureC);
             int toxicityPercent = math.clamp(RoundToIntFast(snapshot.Toxicity01 * 100f), 0, 100);
+            int scentX = 0;
+            int scentY = 0;
+            int scentZ = 0;
+            if (snapshot.HasAttractantTrace)
+            {
+                scentX = RoundToIntFast(snapshot.ScentDirection.x * 100f);
+                scentY = RoundToIntFast(snapshot.ScentDirection.y * 100f);
+                scentZ = RoundToIntFast(snapshot.ScentDirection.z * 100f);
+            }
 
             cursor = AppendLiteral("SCAN ", buffer, cursor);
             cursor = AppendInt(progressPercent, buffer, cursor);
@@ -5847,11 +5870,11 @@ namespace Hecton8.UI
                 cursor = AppendLiteral(" // ", buffer, cursor);
                 cursor = AppendLiteral(DescribeScientificAttractantChannel(snapshot.AttractantChannel), buffer, cursor);
                 cursor = AppendLiteral(" V ", buffer, cursor);
-                cursor = AppendSignedInt(RoundToIntFast(snapshot.ScentDirection.x * 100f), buffer, cursor);
+                cursor = AppendSignedInt(scentX, buffer, cursor);
                 cursor = AppendLiteral(",", buffer, cursor);
-                cursor = AppendSignedInt(RoundToIntFast(snapshot.ScentDirection.y * 100f), buffer, cursor);
+                cursor = AppendSignedInt(scentY, buffer, cursor);
                 cursor = AppendLiteral(",", buffer, cursor);
-                cursor = AppendSignedInt(RoundToIntFast(snapshot.ScentDirection.z * 100f), buffer, cursor);
+                cursor = AppendSignedInt(scentZ, buffer, cursor);
             }
             else if (snapshot.OrganicBlood01 > 0.1f)
             {
@@ -5869,6 +5892,9 @@ namespace Hecton8.UI
                 (toxicityPercent * 19) ^
                 (snapshot.OrganicBlood01 > 0.1f ? 251 : 0) ^
                 ((int)snapshot.AttractantChannel * 67) ^
+                (scentX * 23) ^
+                (scentY * 29) ^
+                (scentZ * 31) ^
                 (snapshot.HasFaunaContact ? 911 : 0) ^
                 (snapshot.ThreatPredictionUnlocked ? 577 : 0) ^
                 (snapshot.FlankingManeuverDetected ? 839 : 0));

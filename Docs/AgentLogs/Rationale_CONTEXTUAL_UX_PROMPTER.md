@@ -333,3 +333,17 @@ Solution: Hoisted the icon scale once before applying width/height clamps.
 Rejected Alternatives: Leaving repeated scalar multiplication, caching icon dimensions across frames, or quantizing icon scale by tier. Repeated multiplication is trivial but avoidable; cross-frame dimension caching risks stale sprite assets; tier quantization would change authored layout.
 Scalability potential: Low removes tiny repeated arithmetic from binding-icon rebuilds. Middle/High/Ultra keep the same authored icon sizing and atlas contract.
 Hardware Impact: Expected gain is sub-microsecond per binding-icon layout rebuild on i3/MX350; no profiler proof.
+
+## Decision 47: Diegetic Panel Output Texture Dirty Cache
+Problem: Physical panel material refreshes could rebind the same `_BaseMap` and `_MainTex` texture during forced refresh paths, especially non-phosphor refreshes where the output RT reference is unchanged.
+Solution: Added `_appliedPanelOutputTexture`, reset it on material/RT/phosphor texture ownership changes, and only write texture properties when the resolved output texture reference changes.
+Rejected Alternatives: Keeping unconditional forced texture writes, skipping forced refreshes entirely, or caching only phosphor state. Unconditional writes waste API traffic; skipping forced refreshes can miss material changes; phosphor-only caching misses non-phosphor RT refreshes.
+Scalability potential: Low avoids redundant material texture API calls on simple panels. Middle/High/Ultra keep phosphor front/back swaps correct because swapped textures still force a reference change.
+Hardware Impact: Expected gain is sub-microsecond per forced material refresh on i3/MX350 when the output texture is unchanged; no profiler proof.
+
+## Decision 48: Diegetic Panel Phosphor Material Texture Cache
+Problem: The phosphor composite material rebound `_PreviousTex` and `_CurrentTex` every composite frame even when the current panel RT reference did not change.
+Solution: Added `_appliedPhosphorPreviousTexture` and `_appliedPhosphorCurrentTexture`; texture properties are written only when their source reference changes, and material/texture release paths reset the cache.
+Rejected Alternatives: Keeping unconditional phosphor texture writes, caching only `_CurrentTex`, or skipping `_PreviousTex` updates. Unconditional writes waste API traffic; current-only caching leaves asymmetry; previous texture must still update when front/back swaps.
+Scalability potential: Low removes redundant composite material writes for stable current RTs. Middle/High/Ultra preserve phosphor history correctness because swapped previous textures still rebind.
+Hardware Impact: Expected gain is sub-microsecond per phosphor composite on i3/MX350; no profiler proof.

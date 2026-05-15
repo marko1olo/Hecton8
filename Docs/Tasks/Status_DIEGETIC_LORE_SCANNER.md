@@ -212,10 +212,21 @@ Mandates read:
 - [x] Spatial/scientific contact hologram gate widened | DOD: `SuitHUDV4CanvasOverlay` now treats active material, fauna, chemical, toxicity, and attractant evidence as valid scanner hologram payload, not only fragment/proxy mesh hits | Rejected: hiding the spatial-hash scanner fake during valid non-fragment scientific contacts | Estimate: no new allocation; one bounded boolean gate per scanner hologram refresh
 - [x] Static no-regression checks after Loop 29 | DOD: `git diff HEAD --check` and `git diff --check` passed with SuitHUD/docs line-ending warnings only, and added-line banned-pattern scan found no new forbidden UI/text/physics patterns | Rejected: dotnet rebuild; static source checks only | Estimate: 1700 us
 
+## Loop 30 - Scanner Status Vector Cache Integrity
+
+- [x] Status override shares scanner evidence gate | DOD: `TryApplyScannerStatusLabelOverride()` now uses `HasScannerHologramPayload(snapshot)` before acquiring a char-buffer lease, matching the hologram payload truth and avoiding empty scanner snapshots stealing the status label | Rejected: separate `snapshot.IsActive` gate with weaker semantics | Estimate: one boolean helper call; avoids unnecessary buffer lease on evidence-empty snapshots
+- [x] Attractant vector status cache includes vector buckets | DOD: scanner status text now quantizes scent X/Y/Z once, uses those values for text, and includes them in the cache version so direction changes update the status label | Rejected: repeated vector quantization and stale status text when only scent direction changed | Estimate: removes duplicate quantization and fixes stale-cache risk
+- [x] Static no-regression checks after Loop 30 | DOD: `git diff HEAD --check` and `git diff --check` passed with SuitHUD line-ending warning only, added-line banned-pattern scan found no new forbidden UI/text/physics patterns, and targeted diff scan confirmed scent vector buckets feed both text and version | Rejected: dotnet rebuild; static source checks only | Estimate: 2200 us
+
+## Loop 31 - Scanner Hologram Signal Strength Fake
+
+- [x] Non-fragment scanner hologram uses evidence strength | DOD: `RenderScannerHologram()` now resolves a cheap `signal01` from progress, density, chemical load, toxicity, blood, attractant scent, and fauna contact before driving hologram color, jitter, alpha, and scanline position | Rejected: leaving widened spatial-hash contacts visually stuck at zero-progress start state | Estimate: six saturate/max ops and one fauna branch per active hologram refresh
+- [x] Static no-regression checks after Loop 31 | DOD: `git diff HEAD --check` and `git diff --check` passed with SuitHUD/docs line-ending warnings only, added-line banned-pattern scan found no forbidden UI/text/physics patterns, and targeted diff scan confirmed scanner hologram visual state now uses `signal01` evidence strength | Rejected: dotnet rebuild; static source checks only | Estimate: 1900 us
+
 ## Verification
 
 - [x] Compile/source validation - `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:quiet -clp:Summary` passed with 0 warnings / 0 errors after Loop 10
-- [ ] Compile/source validation after Loops 11-29 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
+- [ ] Compile/source validation after Loops 11-31 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
 - [ ] Console check - BLOCKED BY UNITY SESSION: MCP validate/console calls cannot connect to Unity MCP HTTP endpoint / session
 - [x] Re-read prompt after core tasks
 - [x] Omega polish mandate after all tasks done or blocked

@@ -197,6 +197,7 @@ namespace Hecton8.Caves
         private int _pendingCarveHead;
         private int _pendingCarveCount;
         private NativeQueue<VoxelCarveEvent> _queuedCarveEvents;
+        private static bool _carveSignalLaneConfigured;
         private int _queuedCarveEventCount;
         private int _thermalMeltCount;
         private JobHandle _scheduledCarveHandle;
@@ -627,6 +628,7 @@ namespace Hecton8.Caves
 
         private void EnsureCarveEventQueue()
         {
+            EnsureCarveSignalLane();
             if (_queuedCarveEvents.IsCreated)
                 return;
 
@@ -639,6 +641,16 @@ namespace Hecton8.Caves
                 NativeMemoryLifetime);
             PrewarmCarveEventQueue(ref _queuedCarveEvents, InitialCarveEventQueueCapacity);
             _queuedCarveEventCount = 0;
+        }
+
+        private static void EnsureCarveSignalLane()
+        {
+            if (_carveSignalLaneConfigured)
+                return;
+
+            SignalBus<VoxelCarveEvent>.Configure(InitialCarveEventQueueCapacity);
+            SignalBus<VoxelCarveEvent>.EnsureInitialized();
+            _carveSignalLaneConfigured = true;
         }
 
         private void DisposeCarveEventQueue()

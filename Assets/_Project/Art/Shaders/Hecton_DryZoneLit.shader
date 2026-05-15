@@ -404,7 +404,8 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 HECTON_CORE_LIT_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
                 half hullDentShadow;
                 float3 safePositionOS = HectonCoreLitApplyHullDentsOS(input.positionOS.xyz, input.normalOS, hullDentShadow);
-                float habitatStress01 = saturate(_HectonHabitatModuleStressParams.w);
+                float habitatPeakStress01 = _HectonHabitatModuleStressParams.w;
+                float habitatStress01 = isfinite(habitatPeakStress01) ? saturate(habitatPeakStress01) : 0.0;
                 if (_HectonHabitatModuleStressParams.z <= 0.5 &&
                     _HectonHabitatModuleStressParams.x > 0.5 &&
                     habitatStress01 > HECTON_HABITAT_INTERIOR_STRESS_EPSILON)

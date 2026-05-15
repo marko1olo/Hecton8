@@ -193,12 +193,10 @@ namespace Hecton8.PDA
             {
                 // COLD ALLOC: marker HUD icon instance - scene lifetime UI element - owner: PDAMarkerHUDElement
                 GameObject iconObject = Instantiate(markerIconPrefab, iconContainer);
-                RectTransform rectTransform = iconObject.GetComponent<RectTransform>();
-                if (rectTransform == null)
+                if (!iconObject.TryGetComponent(out RectTransform rectTransform))
                     rectTransform = iconObject.AddComponent<RectTransform>();
 
-                CanvasGroup canvasGroup = iconObject.GetComponent<CanvasGroup>();
-                if (canvasGroup == null)
+                if (!iconObject.TryGetComponent(out CanvasGroup canvasGroup))
                     canvasGroup = iconObject.AddComponent<CanvasGroup>();
 
                 DisableGraphicRaycasts(iconObject);
@@ -207,7 +205,7 @@ namespace Hecton8.PDA
                 {
                     rectTransform = rectTransform,
                     canvasGroup = canvasGroup,
-                    iconImage = iconObject.GetComponent<Image>(),
+                    iconImage = ResolveIconImage(iconObject),
                     titleText = ResolveChildText(iconObject.transform, "Label"),
                     distanceText = ResolveChildText(iconObject.transform, "Distance"),
                     cachedTitleHash = uint.MaxValue,
@@ -366,7 +364,15 @@ namespace Hecton8.PDA
                 return null;
 
             Transform child = root.Find(childName);
-            return child != null ? child.GetComponent<TMP_Text>() : null;
+            if (child == null)
+                return null;
+
+            return child.TryGetComponent(out TMP_Text text) ? text : null;
+        }
+
+        private static Image ResolveIconImage(GameObject iconObject)
+        {
+            return iconObject != null && iconObject.TryGetComponent(out Image image) ? image : null;
         }
 
         private static void SetDisplayVisible(MarkerIconDisplay display, bool visible)

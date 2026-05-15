@@ -33,8 +33,9 @@ namespace Hecton8.Gameplay.Loot
         private const uint TelemetryPickupPoseNonFiniteFlag = 1u << 8;
         private const uint TelemetryPlayerPoseNonFiniteFlag = 1u << 9;
         private const uint TelemetryPickupProxyInvalidFlag = 1u << 10;
+        private const uint TelemetryAuthoringClampFlag = 1u << 11;
         private const uint TelemetryDumpMagic = 0x48384C4Du;
-        private const uint TelemetryDumpVersion = 3u;
+        private const uint TelemetryDumpVersion = 5u;
         private const uint TelemetryHashOffset = 2166136261u;
         private const uint TelemetryHashPrime = 16777619u;
 
@@ -44,12 +45,12 @@ namespace Hecton8.Gameplay.Loot
         [Header("Pull")]
         [Tooltip("Maximum pickup proxies mirrored into loot vault buffers. Clamped again at runtime.")]
         [SerializeField, Range(1, LootMagnetConstants.MaxEntitiesHardCap)] private int maxLootEntities = LootMagnetConstants.DefaultMaxEntities;
-        [Tooltip("Magnet acquisition radius in meters. Values below auto-stow distance are clamped at runtime.")]
-        [SerializeField, Min(LootMagnetConstants.AcquireDistanceMeters)] private float pullRadiusMeters = LootMagnetConstants.DefaultPullRadiusMeters;
+        [Tooltip("Magnet acquisition radius in meters. Values are sanitized before Burst scheduling.")]
+        [SerializeField, Range(LootMagnetConstants.AcquireDistanceMeters, LootMagnetConstants.MaxStablePullRadiusMeters)] private float pullRadiusMeters = LootMagnetConstants.DefaultPullRadiusMeters;
         [Tooltip("AUP-space pull acceleration scalar applied by the Burst job.")]
-        [SerializeField, Min(0f)] private float pullStrength = LootMagnetConstants.DefaultPullStrength;
+        [SerializeField, Range(0f, LootMagnetConstants.MaxStablePullStrength)] private float pullStrength = LootMagnetConstants.DefaultPullStrength;
         [Tooltip("Maximum loot velocity applied by the Burst job in meters per second.")]
-        [SerializeField, Min(0.01f)] private float maxVelocityMetersPerSecond = LootMagnetConstants.DefaultMaxVelocityMetersPerSecond;
+        [SerializeField, Range(0.01f, LootMagnetConstants.MaxStableVelocityMetersPerSecond)] private float maxVelocityMetersPerSecond = LootMagnetConstants.DefaultMaxVelocityMetersPerSecond;
 
         private IDataVault _vault;
         private IPlayerRuntimeContext _playerContext;
@@ -183,7 +184,7 @@ namespace Hecton8.Gameplay.Loot
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
                 return;
 
-            SchedulePull(math.max(0.0001f, dt), playerAup, lowTierSnap: false);
+            SchedulePull(dt, playerAup, lowTierSnap: false);
         }
 
         /// <inheritdoc />
@@ -580,18 +581,40 @@ namespace Hecton8.Gameplay.Loot
             _scheduledCount = count;
             _scheduledCapacity = scheduledCapacity;
             _frameCounter++;
-            float safeRadiusMeters = math.max(LootMagnetConstants.AcquireDistanceMeters, pullRadiusMeters);
+            uint authoringTelemetryFlags = 0u;
+            float safeDeltaTime = SanitizeFiniteRange(
+                dt,
+                0.0001f,
+                0.0001f,
+                LootMagnetConstants.MaxIntegrationDeltaTimeSeconds,
+                ref authoringTelemetryFlags);
+            float safeRadiusMeters = SanitizeFiniteRange(
+                pullRadiusMeters,
+                LootMagnetConstants.DefaultPullRadiusMeters,
+                LootMagnetConstants.AcquireDistanceMeters,
+                LootMagnetConstants.MaxStablePullRadiusMeters,
+                ref authoringTelemetryFlags);
             _scheduledPullRadiusMeters = safeRadiusMeters;
             _scheduledPullRadiusSq = safeRadiusMeters * safeRadiusMeters;
-            float safeMaxVelocity = math.max(0.01f, maxVelocityMetersPerSecond);
+            float safePullStrength = SanitizeFiniteRange(
+                pullStrength,
+                LootMagnetConstants.DefaultPullStrength,
+                0f,
+                LootMagnetConstants.MaxStablePullStrength,
+                ref authoringTelemetryFlags);
+            float safeMaxVelocity = SanitizeFiniteRange(
+                maxVelocityMetersPerSecond,
+                LootMagnetConstants.DefaultMaxVelocityMetersPerSecond,
+                0.01f,
+                LootMagnetConstants.MaxStableVelocityMetersPerSecond,
+                ref authoringTelemetryFlags);
+            _dependencyTelemetryFlags |= authoringTelemetryFlags;
             LootMagnetPullJob job = new LootMagnetPullJob
             {
                 PlayerAup = playerAup,
-                DeltaTimeSeconds = math.min(
-                    math.max(0.0001f, dt),
-                    LootMagnetConstants.MaxIntegrationDeltaTimeSeconds),
+                DeltaTimeSeconds = safeDeltaTime,
                 PullRadiusSq = _scheduledPullRadiusSq,
-                PullStrength = math.max(0f, pullStrength),
+                PullStrength = safePullStrength,
                 MaxVelocityMetersPerSecond = safeMaxVelocity,
                 Frame = _frameCounter,
                 LowTierSnap = lowTierSnap ? (byte)1 : (byte)0,
@@ -787,6 +810,34 @@ namespace Hecton8.Gameplay.Loot
             return math.isfinite(position.x) &&
                    math.isfinite(position.y) &&
                    math.isfinite(position.z);
+        }
+
+        private static float SanitizeFiniteRange(
+            float value,
+            float fallback,
+            float minimum,
+            float maximum,
+            ref uint telemetryFlags)
+        {
+            if (!math.isfinite(value))
+            {
+                telemetryFlags |= TelemetryAuthoringClampFlag;
+                return math.clamp(fallback, minimum, maximum);
+            }
+
+            if (value < minimum)
+            {
+                telemetryFlags |= TelemetryAuthoringClampFlag;
+                return minimum;
+            }
+
+            if (value > maximum)
+            {
+                telemetryFlags |= TelemetryAuthoringClampFlag;
+                return maximum;
+            }
+
+            return value;
         }
 
         private void PublishItemAcquired(in LootMagnetSignalEvent signalEvent, int addedQuantity)

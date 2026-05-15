@@ -473,3 +473,27 @@ Solution: Compute `bufferIndex` separately and read `_H8UberNoirInstanceData` on
 Rejected Alternatives: Inventing a shader-side buffer-length constant, or relying only on CPU metadata. A fake length constant risks hiding actual buffer ownership; CPU metadata can still be corrupted in shared global state.
 Scalability potential: Low/MX350 invalid metadata falls back without buffer traffic. Mid/High/Ultra keep instanced rendering when metadata is valid and avoid wraparound reads when it is not.
 Hardware Impact: Adds one unsigned compare in the instance-buffer variant. Fault frames avoid wrapped StructuredBuffer reads; valid-frame overhead is negligible.
+
+## Follow-Up Correction - Habitat Interior Scalar Gates
+
+Problem: The shared habitat include still cast `_HectonHabitatModuleStressParams.x` to `uint` without a finite gate and let non-finite deformation amplitude, stress, panel mask, or crease detail reach bend/normal/crease math.
+Solution: Added a finite-gated count source before the `uint` cast, converted non-finite deformation amplitude to zero, rejected non-finite stress before bend and normal bias, and rejected non-finite panel/detail inputs before low-tier crease output.
+Rejected Alternatives: Relying only on CPU shader publication, or adding checks at every DryZone callsite. CPU publication should be clean, but the shared include is the contract boundary; callsite checks duplicate policy and leave future users exposed.
+Scalability potential: Low/MX350 crease-only mode now fails closed on corrupted panel/detail input. Mid/High/Ultra keep localized sine bow and normal bias when data is valid and degrade invalid scalars to no-op.
+Hardware Impact: Adds scalar finite checks at existing helper gates. Fault frames avoid NaN bend, normal, and crease propagation; valid-frame cost is negligible compared with existing stress resolver and panel math.
+
+## Follow-Up Correction - DryZone Habitat Peak Gate
+
+Problem: DryZone vertex setup seeded `habitatStress01` directly with `saturate(_HectonHabitatModuleStressParams.w)`. The shared include rejects bad stress values later, but the interpolated varying could still carry a non-finite peak in low-tier or zero-count states.
+Solution: Added a `habitatPeakStress01` local and finite-gated it before assigning `habitatStress01`; invalid peak stress now becomes zero before resolver selection, bend gating, and varying output.
+Rejected Alternatives: Relying on the low-tier crease helper to reject the value, or only checking in the fragment. That leaves a bad varying crossing the vertex/fragment boundary and duplicates policy outside the source of the value.
+Scalability potential: Low/MX350 crease-only path now gets zero stress for invalid peaks. Mid/High/Ultra keep localized resolver behavior when the peak is valid.
+Hardware Impact: Adds one scalar finite check in the DryZone vertex path. Fault frames avoid NaN habitat stress interpolation; valid-frame overhead is negligible.
+
+## Follow-Up Correction - CPU Module Stress Publish Gate
+
+Problem: CPU module-stress publication still accepted the method-level `peakStress01` parameter directly for upload visibility, cached peak state, and `_HectonHabitatModuleStressParams`. A future bad caller could write a non-finite peak into the shader global even though the current stress loop sanitizes per-module values.
+Solution: `UploadModuleStressMatrix` and `PublishModuleStressShader` now clamp module count to `ModuleStressShaderCapacity` and sanitize `peakStress01` to `safePeakStress01` before visibility checks, cache assignment, and global vector publication.
+Rejected Alternatives: Trusting only the current call chain, or relying on shader-side finite gates. The shader guard is necessary, but CPU publication is the contract owner and must not emit corrupt globals when a cheap gate is available.
+Scalability potential: Low/MX350 and high tiers receive the same valid shader globals; corrupted peaks collapse to zero deformation/crease instead of leaking to render code.
+Hardware Impact: Adds one finite check and one count clamp at the upload/publish boundary. Fault frames avoid bad global writes; valid-frame overhead is negligible and remains 0 B/frame.

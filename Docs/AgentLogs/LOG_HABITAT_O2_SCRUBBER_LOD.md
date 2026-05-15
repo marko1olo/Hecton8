@@ -438,3 +438,18 @@ Cinematic Cheats used:
 
 Exact microseconds saved:
 - None claimed. This is registry visibility hardening; no dotnet rebuild was run.
+
+## 2026-05-15 - Partial Native Recovery Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- A partial gas native state could fail `IsInitialized` but never rebuild because `EnsureNativeState` only checked `RoomO2.IsCreated`.
+
+What was done:
+- `EnsureNativeState` now unregisters the gas solver, retires partial lanes through deferred disposal, and recreates native state only after disposal is finalized.
+
+Cinematic Cheats used:
+- None new.
+
+Exact microseconds saved:
+- None claimed. This is cold-path fault recovery; no dotnet rebuild was run.

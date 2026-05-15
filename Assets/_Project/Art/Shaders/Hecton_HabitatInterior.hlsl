@@ -11,7 +11,10 @@ float4 _HectonHabitatModuleStressParams; // x=count, y=max deformation, z=low-ti
 
 uint HectonHabitatInteriorModuleCount()
 {
-    uint stressCount = min((uint)max(_HectonHabitatModuleStressParams.x, 0.0), (uint)HECTON_HABITAT_INTERIOR_MAX_MODULES);
+    float stressCountSource = _HectonHabitatModuleStressParams.x;
+    uint stressCount = min(
+        (uint)(isfinite(stressCountSource) ? max(stressCountSource, 0.0) : 0.0),
+        (uint)HECTON_HABITAT_INTERIOR_MAX_MODULES);
     uint ambienceCount = min((uint)max(_ModuleWaterLevelCount, 0), (uint)HECTON_HABITAT_INTERIOR_MAX_MODULES);
     return min(stressCount, ambienceCount);
 }
@@ -108,8 +111,12 @@ float3 HectonHabitatInteriorApplyPanelBendOS(
     shadow01 = 0.0h;
     panelMask01 = 0.0h;
     panelCenteredUv = half2(0.0h, 0.0h);
-    float maxDeformation = max(_HectonHabitatModuleStressParams.y, 0.0);
-    if (_HectonHabitatModuleStressParams.z > 0.5 || maxDeformation <= 0.00001 || stress01 <= HECTON_HABITAT_INTERIOR_STRESS_EPSILON)
+    float maxDeformationSource = _HectonHabitatModuleStressParams.y;
+    float maxDeformation = isfinite(maxDeformationSource) ? max(maxDeformationSource, 0.0) : 0.0;
+    if (_HectonHabitatModuleStressParams.z > 0.5 ||
+        maxDeformation <= 0.00001 ||
+        !isfinite(stress01) ||
+        stress01 <= HECTON_HABITAT_INTERIOR_STRESS_EPSILON)
         return positionOS;
 
     float2 panelUv = HectonHabitatInteriorPanelUv(uv);
@@ -126,7 +133,11 @@ float3 HectonHabitatInteriorApplyPanelBendOS(
 
 half3 HectonHabitatInteriorApplyCheapNormalBiasWS(half3 normalWS, float stress01, half panelMask01, half2 panelCenteredUv)
 {
-    if (_HectonHabitatModuleStressParams.z > 0.5 || stress01 <= HECTON_HABITAT_INTERIOR_STRESS_EPSILON || panelMask01 <= 0.0001h)
+    if (_HectonHabitatModuleStressParams.z > 0.5 ||
+        !isfinite(stress01) ||
+        stress01 <= HECTON_HABITAT_INTERIOR_STRESS_EPSILON ||
+        !isfinite(panelMask01) ||
+        panelMask01 <= 0.0001h)
         return normalWS;
 
     half3 baseNormal = HectonHabitatInteriorSafeNormalizeHalf3(normalWS, half3(0.0h, 1.0h, 0.0h));
@@ -146,10 +157,10 @@ void HectonHabitatInteriorApplyLowTierCrease(
     inout half3 albedo,
     inout half smoothness)
 {
-    if (_HectonHabitatModuleStressParams.z <= 0.5 || stress01 <= HECTON_HABITAT_INTERIOR_STRESS_EPSILON_HALF)
+    if (_HectonHabitatModuleStressParams.z <= 0.5 || !isfinite(stress01) || stress01 <= HECTON_HABITAT_INTERIOR_STRESS_EPSILON_HALF)
         return;
 
-    if (panelMask <= 0.0001h)
+    if (!isfinite(panelMask) || panelMask <= 0.0001h || !isfinite(detailMask))
         return;
 
     half crease = saturate(stress01 * panelMask * lerp(0.38h, 1.0h, detailMask));

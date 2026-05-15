@@ -707,8 +707,15 @@ namespace Hecton8.Atmosphere
 
         private void EnsureNativeState()
         {
-            if (RoomO2.IsCreated)
+            if (RoomO2.IsCreated && IsInitialized)
                 return;
+            if (RoomO2.IsCreated)
+            {
+                TryUnregisterRegistry();
+                DisposeNativeStateDeferred();
+                if (RoomO2.IsCreated || !TryFinalizeDeferredNativeDisposal())
+                    return;
+            }
 
             int safeRoomCapacity = math.clamp(roomCapacity, 1, MaxRoomCapacity);
             int safeBulkheadCapacity = math.clamp(bulkheadCapacity, 0, MaxBulkheadCapacity);

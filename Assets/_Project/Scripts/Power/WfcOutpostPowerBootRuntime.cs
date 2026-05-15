@@ -656,7 +656,7 @@ namespace Hecton8.Power
             _faultDumped = true;
             try
             {
-                string path = Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", "Dump_OUTPOST_LOGISTICS_INITIALIZER.bin");
+                string path = Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", "Dump_MARAUDER_OUTPOST_ARCHITECT.bin");
                 using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
                 using BinaryWriter writer = new BinaryWriter(stream);
                 writer.Write(DumpMagic);

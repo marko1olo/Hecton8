@@ -525,3 +525,15 @@ Cinematic Cheats used: Static offline validation remains the contract. No runtim
 Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents ambiguous editor validation behavior; exact runtime microseconds were not profiled.
 
 Verification: No dotnet rebuild and no Unity import was run. Source scan found expected serialized type guards; `RuleSerializedSchemaYamlScan Count=3 Bad=0`; `MaterialSerializedSchemaYamlScan Bad=0`; `git diff --check` passed with only repo CRLF warnings; source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.
+
+## 2026-05-15 Mesh Vertex Stream Payload Envelope
+
+What was wrong: Mesh validation did not reject secondary UVs, skinning attributes, bindposes, blend shapes, extra vertex buffers, or vertex-stride drift.
+
+What was done: Added an explicit Shallows vertex stream contract to `ValidateMeshGeometryContract`: five active Float32 attributes, one vertex buffer, 64-byte stride, required Position/Normal/Tangent/Color/TexCoord0 dimensions, and zero UV1-UV7, BlendWeight, BlendIndices, bindposes, or blend shapes.
+
+Cinematic Cheats used: Static baked L-system meshes, triplanar shader projection, vertex-color height masking, and no runtime mesh repair remain unchanged.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents hidden mesh payload growth that would increase memory bandwidth on low-end GPUs; exact runtime microseconds were not profiled.
+
+Verification: No dotnet rebuild and no Unity import was run. `MeshVertexPayloadYamlScan Count=600 Bad=0 BadShape=0 ActiveAttributesMin=5 ActiveAttributesMax=5 StrideMin=64 StrideMax=64`; source scan found the new vertex attribute, vertex buffer, stride, blendshape, bindpose, and Float32 layout checks; `git diff --check` passed with only repo CRLF warnings; source brace balance stayed `Delta=0`, `NonAscii=0`.

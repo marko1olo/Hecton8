@@ -1230,3 +1230,58 @@ Verification:
 - `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
 
 Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
+## 2026-05-15 - WFC Outpost Loop 38 Fatal Graph Fault Quarantine
+
+What was wrong:
+- Fatal graph translation faults could still leave partial native output marked active if `_activeNodeCount > 0`.
+- An empty or pillar-only WFC payload produced zero nodes without a fault, causing repeated useless signal handling.
+
+What was done:
+- Added `WfcOutpostGraphFaultFlags.NoPowerNodes`.
+- `WfcOutpostGraphTranslationJob` now faults and exits when no power modules are extracted.
+- `WfcOutpostPowerBootRuntime` now treats `CapacityExceeded`, `InvalidDimensions`, `InvalidBuffers`, and `NoPowerNodes` as fatal.
+- Fatal translations no longer seed gas rooms, schedule graph evaluation, publish door-power state, or reschedule for the same unchanged generated signal.
+- `MissingGenerator` remains nonfatal and keeps the deterministic first-power-node fallback.
+
+Cinematic Cheats used:
+- Power remains data-only logistics truth. No physics probes, no GameObject power nodes, no collider validation, no polling bridge.
+
+Exact Microseconds saved:
+- Valid path: a few scalar branches in cold commit/schedule paths; steady Tick/Render stays 0 B/frame.
+- Failure path: avoids repeated graph translation/evaluation for unchanged fatal signal payloads, estimated 20-250 us avoided per repeated retry on i3/MX350 depending grid size and Burst warm state.
+
+Verification:
+- Targeted scan: PASS; `FatalMask=True`, `NoPowerInMask=True`, `KnownFatalCurrent=True`, `FatalCommitGate=True`, `FatalGasSkip=True`, `ScheduleFatalGate=True`, `DoorPublishActiveGate=True`, `GasSeedFatalGate=True`, `NoPowerFaultConst=True`, `NoPowerJobFault=True`, `MissingGeneratorFallback=True`, `WrapperPublishOutpost=0`, `ForeachTokens=0`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS at `2026-05-15 14:17:14 +04:00`; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
+- `git diff --check` and `git diff --cached --check`: PASS.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
+## 2026-05-15 - WFC Outpost Loop 39 Power Blackbox Agent Dump Path
+
+What was wrong:
+- `WfcOutpostPowerBootRuntime` dumped to `Dump_OUTPOST_LOGISTICS_INITIALIZER.bin`.
+- The batch blackbox mandate requires this agent's dump evidence under `Dump_MARAUDER_OUTPOST_ARCHITECT.bin`.
+
+What was done:
+- Power-boot dump export now writes `Docs/AgentLogs/Dump_MARAUDER_OUTPOST_ARCHITECT.bin`.
+- Existing dump magic/version fields remain intact, so the `OPBW` power-boot payload is still identifiable.
+- Generation-service dump path already used the mandated file and was not changed.
+
+Cinematic Cheats used:
+- No simulation or visual work was added. This is fault-path evidence routing only.
+
+Exact Microseconds saved:
+- Normal path: 0 us; no Tick/Render code changed.
+- Fault path: same binary write cost, corrected target path; no extra allocation or telemetry lane added.
+
+Verification:
+- Targeted dump scan: PASS; `PowerBootAgentDump=True`, `PowerBootOldDump=False`, `GenerationAgentDump=True`, `PowerBootMagic=True`, `PowerBootDumpTelemetry=True`, `FatalMask=True`, `NoPowerInMask=True`, `WrapperPublishOutpost=0`, `ForeachTokens=0`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS at `2026-05-15 14:26:38 +04:00`; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
+- `git diff --check`: PASS with repository CRLF warnings only.
+- `git diff --cached --check`: PASS.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.

@@ -434,11 +434,17 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
 
             half4 surface = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv) * _BaseColor;
             half4 packedMask = SAMPLE_TEXTURE2D(_MaskMap, sampler_MaskMap, input.uv);
-            half3 tangentNormal = UnpackNormalScale(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, input.uv), _NormalScale);
-            float3x3 tangentToWorld = BuildTangentToWorld(NormalizeApprox3D(input.normalWS), input.tangentWS);
-            half3 normalWS = NormalizeApprox3D(TransformTangentToWorld(tangentNormal, tangentToWorld));
+            half bodyFxTier = _H8LeviathanGpuSkinning > 0.5 ? saturate((half)_H8LeviathanIkTier) : 1.0h;
+            half3 normalWS = NormalizeApprox3D(input.normalWS);
             float wetnessVelocityMagnitudeSq = dot(_WetnessVelocityWS.xyz, _WetnessVelocityWS.xyz);
-            normalWS = ApplyWetnessNormalWobble(normalWS, input.positionWS, wetnessVelocityMagnitudeSq);
+            [branch]
+            if (bodyFxTier > 0.5h)
+            {
+                half3 tangentNormal = UnpackNormalScale(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, input.uv), _NormalScale);
+                float3x3 tangentToWorld = BuildTangentToWorld((float3)normalWS, input.tangentWS);
+                normalWS = NormalizeApprox3D(TransformTangentToWorld(tangentNormal, tangentToWorld));
+                normalWS = ApplyWetnessNormalWobble(normalWS, input.positionWS, wetnessVelocityMagnitudeSq);
+            }
             half3 ambientSh = input.ambientSH;
             surface.rgb = ApplyFaunaCamouflage(surface.rgb, input.positionWS, ambientSh);
             half mutationHue01 = saturate((half)_FaunaMutationHueShift);
@@ -497,18 +503,24 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             half mainShadow = HectonCoreLitResolveMx350ShadowDither((half)mainLight.shadowAttenuation, input.positionCS);
             color += (surface.rgb * nDotL + specular) * mainLight.color * (mainLight.distanceAttenuation * mainShadow * contactShadow);
 
-            half3 sss = HectonCoreLitEvaluateOrganicSss(
-                viewDirWS,
-                lightDir,
-                normalWS,
-                _SssColor.rgb,
-                _SssDistortion,
-                _SssPower,
-                _SssScale);
-
-            half3 caustics = HectonCoreLitEvaluateProjectedCausticsScattering(input.positionWS, normalWS) * surface.rgb;
             half faunaBiolumDim = saturate((half)_FaunaBiolumDim);
-            half3 biolum = (half3)HectonCoreLitSampleBiolumVolumeRadiance(input.positionWS) * emissionMask;
+            half3 sss = half3(0.0h, 0.0h, 0.0h);
+            half3 caustics = half3(0.0h, 0.0h, 0.0h);
+            half3 biolum = half3(0.0h, 0.0h, 0.0h);
+            [branch]
+            if (bodyFxTier > 0.5h)
+            {
+                sss = HectonCoreLitEvaluateOrganicSss(
+                    viewDirWS,
+                    lightDir,
+                    normalWS,
+                    _SssColor.rgb,
+                    _SssDistortion,
+                    _SssPower,
+                    _SssScale);
+                caustics = HectonCoreLitEvaluateProjectedCausticsScattering(input.positionWS, normalWS) * surface.rgb;
+                biolum = (half3)HectonCoreLitSampleBiolumVolumeRadiance(input.positionWS) * emissionMask;
+            }
             half3 woundEmission = woundColor * (woundMask * _WoundEmissionBoost);
             half oceanPanic = saturate((half)_GlobalOceanPanic);
             half3 panicEmissionColor = lerp(_EmissionColor.rgb, _GlobalOceanPanicColor.rgb, oceanPanic);

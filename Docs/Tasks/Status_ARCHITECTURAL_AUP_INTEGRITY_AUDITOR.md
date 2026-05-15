@@ -3,7 +3,7 @@
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
 Domain: ECHELON 1 / Origin Shift (AUP Manager), with audit reach into Physics, Voxel, Kinematics, AI trigger math, Biome trigger math, and deterministic seed callsites.
 Assignment Source: User-supplied XML block. `Docs/Tasks/CURRENT_BATCH.md` extraction returned `PROMPT_NOT_FOUND` for this ID on initial pass.
-Status: VERIFIED AUP INTEGRITY - LOOP 38 APPLIED; H-PHI MASKING FAST PATH VERIFIED; EDITOR GHOST DEBUGGER DOUBLE AUP BRIDGE RESTORED; STRICT AUP SCANS RETURN NO_MATCHES; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
+Status: VERIFIED AUP INTEGRITY - LOOP 39 APPLIED; REAL H-PHI SOURCE REPAIR REMOVED DEAD ORIGIN-SHIFT NATIVE BUFFERS FROM WORLD SPATIAL HASH; STRICT AUP SCANS RETURN NO_MATCHES; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
 
 ## Selected Mandates
 
@@ -446,3 +446,20 @@ Loop 38 - H-Phi Masking Fast Path and Editor AUP Regression Repair:
 - Temporary captures `TEMP_HECTON_PHI_SUMMARY_LOOP38.json` and `TEMP_HECTON_PHI_SUMMARY_LOOP38_LEXICAL.json` are absent after cleanup.
 - `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1 Assets/_Project/Scripts/Editor/KinematicGhostDebugger.cs` reports line-ending warnings only, no whitespace errors.
 - No `dotnet build` or rebuild was run in Loop 38 because the user explicitly forbade rebuilds.
+
+Loop 39 - Real H-Phi Source Repair / WorldSpatialHashGrid Origin-Shift Buffer Removal:
+- Re-read status/rationale and kept the rebuild ban active.
+- Stopped counter polishing and targeted actual AUP-domain runtime source.
+- Verified the core AUP files had no LINQ/coroutine/string-format/job-complete managed-risk hits; the remaining H-Phi pressure in this domain was native ownership and precision maintenance state.
+- Found `WorldSpatialHashGrid` still allocated `_originShiftRuntimePositions` and `_originShiftAbsolutePositions` persistent `NativeArray<float3>` buffers plus `_originShiftRefresh*` state even though no refresh job is scheduled and the active origin-shift path only uses `_originShiftHandles`.
+- Removed the two dead persistent origin-shift buffers, dead refresh handle/scheduled/count state, dead `ConsumeCompletedOriginShiftRefresh`, and dead `CancelOriginShiftForTeardown`.
+- `WorldSpatialHashGrid.cs` `NativeArray<T>` references dropped from 30 in `HEAD` to 26 in the working tree.
+- Memory impact: removes two 8192-element `float3` persistent buffers, approximately 196608 bytes / 192 KiB, plus their NativeMemorySentinel registration/unregistration work.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 180.742 seconds under current workstation load.
+- Latest full static H-Phi summary: `RuntimeHPhiRisk=0.000619266`, `RuntimeHPhiNarrow=0.010758376`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=362`, `AupPrecisionRisk=0`, `NativeArrayRefs=7086`, `PrimaryOwnerBlockedNativeArrayRefs=5692`, `NativeOwnershipRisk=8218`, `RuntimeFiles=1278`, `RuntimeLines=868035`.
+- Targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Dead origin-shift refresh symbol scan in `WorldSpatialHashGrid.cs` returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run and returned 237 broad residual matches. Residuals remain broad `universe` text and known final-cast/presentation payload names.
+- Temporary capture `TEMP_HECTON_PHI_SUMMARY_LOOP39.json` was removed after extracting metrics.
+- No `dotnet build` or rebuild was run in Loop 39 because the user explicitly forbade rebuilds.

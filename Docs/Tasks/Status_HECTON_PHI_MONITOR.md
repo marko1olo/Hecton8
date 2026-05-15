@@ -48,18 +48,19 @@ Task Count: 6
 - [x] Task 26: Primary-runtime risk role routing | DOD: classified managed-risk counters by file role and added `PrimaryManagedRuntimeRisk` gate so smoke, diagnostics, persistence, and UI debt do not masquerade as core gameplay hot-path debt | Rejected: blindly fixing static `string.Format`/`.Complete()` hits in owner runtime files without profiler/call-stack proof | Estimate: 0 us runtime
 - [x] Task 27: DataVault backlog regression gate | DOD: added owner-blocked NativeArray refs, dispose pressure, native ownership risk, domain/role backlog routing, and `-MaxOwnerBlockedNativeArrayRefs` gate | Rejected: migrating NativeArray owners without BufferID/SystemID/generation/disposal/job-handle proof | Estimate: 0 us runtime
 - [x] Task 28: Primary DataVault backlog isolation | DOD: added primary-runtime owner-blocked NativeArray refs/dispose/risk counters, source-file snapshot reuse, and `-MaxPrimaryOwnerBlockedNativeArrayRefs` gate; verified current full static gate without rebuild | Rejected: hiding instrumentation/persistence/UI backlog or treating it as gameplay hot-path debt | Estimate: 0 us runtime
+- [x] Task 29: Runtime lookup debt surgery | DOD: removed two remaining non-bootstrap runtime scene-wide/name lookup surfaces from URP shadow budget and VR somatic root ownership; verified `FindObjectCalls <= 3` with full static budget gate | Rejected: editing `GameBootstrapper` player/spawner recovery without integrator scene evidence | Estimate: two cold scene queries removed, hot path 0 us measured
 
 ## Latest Static Scores
-- H-Phi runtime static narrow: `0.010687040`
-- H-Phi runtime static risk-adjusted: `0.000611619`
-- H-Phi all-source static narrow: `0.009582622`
-- H-Phi all-source static risk-adjusted: `0.000486713`
+- H-Phi runtime static narrow: `0.010758376`
+- H-Phi runtime static risk-adjusted: `0.000623300`
+- H-Phi all-source static narrow: `0.009586908`
+- H-Phi all-source static risk-adjusted: `0.000508577`
 - Narrow integration: `1.0`
-- Risk integration: `0.057434000` (derived from latest gated runtime H-Phi components)
-- Architectural purity: `0.996447602`
-- Data sovereignty: `0.021129678`
+- Risk integration: `0.057936236` (derived from latest gated runtime H-Phi components)
+- Architectural purity: `1.000000000`
+- Data sovereignty: `0.021270718`
 - Memory alignment: `0.505783386`
-- Binary-safe ratio: `0.018508726`
+- Binary-safe ratio: `0.018401682`
 - AUP precision integrity: `1.000000000`
 
 ## Current Verification Notes
@@ -104,8 +105,9 @@ Task Count: 6
 - Latest static score after current workspace changes: `RuntimeHPhiNarrow=0.010823380`, `RuntimeHPhiRisk=0.000606109`, `DataSovereignty=0.021386637`, `MemoryAlignment=0.506081438`, `PrimaryManagedRuntimeRisk=330`, `PrimaryJobCompleteRisk=44`.
 - Latest primary DataVault backlog full gate passed at `2026-05-15 13:48:00 +04:00`: `-MaxPrimaryOwnerBlockedNativeArrayRefs 5696` plus current H-Phi budgets.
 - Latest primary backlog summary after concurrent owner changes: `OwnerBlockedNativeArrayRefs=6280`, `OwnerBlockedDisposeCalls=975`, `NativeOwnershipRisk=8230`, `PrimaryOwnerBlockedNativeArrayRefs=5696`, `PrimaryOwnerBlockedDisposeCalls=850`, `PrimaryNativeOwnershipRisk=7396`.
-- Latest current-tree score: `RuntimeHPhiNarrow=0.010687040`, `RuntimeHPhiRisk=0.000611619`, `DataSovereignty=0.021129678`, `MemoryAlignment=0.505783386`, `NativeArrayRefs=7088`, `DataVaultRefs=153`, `GlobalRegistrySurface=5086`, `GetComponentCalls=416`.
+- Latest current-tree score after runtime lookup surgery: `RuntimeHPhiNarrow=0.010758376`, `RuntimeHPhiRisk=0.000623300`, `DataSovereignty=0.021270718`, `MemoryAlignment=0.505783386`, `NativeArrayRefs=7086`, `DataVaultRefs=154`, `GlobalRegistrySurface=5084`, `GetComponentCalls=348`.
 - Duplicate signal-name scan currently reports `0` duplicate names in the static source scan; compile/runtime proof remains pending.
-- Remaining runtime `Find*` debt is concentrated in `GameBootstrapper` bootstrap handoff, `HectonUrpShadowBudgetGuard` cold light scan, and `VRSomaticRuntimeBootstrap` decoupled root lookup; one textual `HectonUnderwaterVisuals` hit is editor-only and excluded from runtime score.
+- Runtime `Find*` debt is now reduced to `3` scored calls, all in `GameBootstrapper` bootstrap handoff/player-spawner recovery; one textual `HectonUnderwaterVisuals` hit is editor-only and excluded from runtime score.
+- Latest full static budget gate passed at `2026-05-15 14:39:21 +04:00`: `-MaxFindObjectCalls 3 -MinRuntimeHPhiRisk 0.000623000` plus current coupling, DataVault, managed-risk, and Core graph budgets.
 - `git diff --check` on touched H-Phi files reports only LF/CRLF normalization warnings.
 - Unity Console / PlayMode / Profiler / GCMonitor: PENDING VERIFICATION.

@@ -55,7 +55,7 @@ namespace Hecton.UI.MainMenu
             {
                 GameObject eventSystemRoot = new GameObject("EventSystem", typeof(EventSystem)); // COLD ALLOC: GameObject[1] - menu fallback event system root - owner: MainMenuInputRoutingGuard
                 eventSystemRoot.hideFlags = HideFlags.DontSave;
-                eventSystem = eventSystemRoot.GetComponent<EventSystem>();
+                eventSystemRoot.TryGetComponent(out eventSystem);
                 createdEventSystem = true;
             }
 
@@ -82,8 +82,7 @@ namespace Hecton.UI.MainMenu
             eventSystem.enabled = true;
             eventSystem.sendNavigationEvents = true;
 
-            StandaloneInputModule legacyInputModule = eventSystem.GetComponent<StandaloneInputModule>();
-            if (legacyInputModule != null)
+            if (eventSystem.TryGetComponent(out StandaloneInputModule legacyInputModule))
             {
                 removedLegacyModule = true;
                 legacyInputModule.enabled = false;
