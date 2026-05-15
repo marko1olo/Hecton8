@@ -2059,6 +2059,9 @@ def validate_generated_reports(
     texture_path_set = set(texture_paths)
     mesh_path_set = set(mesh_paths)
     render_texture_path_set = set(render_texture_paths)
+    broad_texture_redline_paths = {path for path, flags in texture_flags_by_path.items() if flags}
+    broad_mesh_redline_paths = {path for path, flags in mesh_flags_by_path.items() if flags}
+    broad_render_texture_redline_paths = {path for path, flags in render_texture_flags_by_path.items() if flags}
     texture_redline_paths = [row.get("path", "") for row in texture_redline_rows]
     mesh_redline_paths = [row.get("path", "") for row in mesh_redline_rows]
     render_texture_redline_paths = [row.get("path", "") for row in render_texture_redline_rows]
@@ -2101,6 +2104,12 @@ def validate_generated_reports(
         messages.append(f"RenderTexture hotspot mismatch json={payload.get('render_texture_source_hotspot_rows')} csv={len(render_texture_hotspot_rows)}")
     if render_texture_hotspots_path is not None and payload.get("runtime_render_texture_source_hotspot_rows") != len(runtime_hotspot_rows):
         messages.append(f"runtime RenderTexture hotspot mismatch json={payload.get('runtime_render_texture_source_hotspot_rows')} csv={len(runtime_hotspot_rows)}")
+    if payload.get("texture_flagged_rows") != len(broad_texture_redline_paths):
+        messages.append(f"broad texture redline mismatch json={payload.get('texture_flagged_rows')} csv={len(broad_texture_redline_paths)}")
+    if payload.get("mesh_redline_rows") != len(broad_mesh_redline_paths):
+        messages.append(f"broad mesh redline mismatch json={payload.get('mesh_redline_rows')} csv={len(broad_mesh_redline_paths)}")
+    if payload.get("render_texture_redline_rows") != len(broad_render_texture_redline_paths):
+        messages.append(f"broad RenderTexture redline mismatch json={payload.get('render_texture_redline_rows')} csv={len(broad_render_texture_redline_paths)}")
     if len(texture_paths) != len(texture_path_set):
         messages.append("duplicate texture paths in broad CSV")
     if len(mesh_paths) != len(mesh_path_set):
@@ -2119,6 +2128,12 @@ def validate_generated_reports(
         messages.append("mesh redline paths missing from broad CSV")
     if render_texture_redlines_path is not None and any(path not in render_texture_path_set for path in render_texture_redline_paths):
         messages.append("RenderTexture redline paths missing from broad CSV")
+    if texture_redlines_path is not None and set(texture_redline_paths) != broad_texture_redline_paths:
+        messages.append("texture redline path set mismatch broad CSV")
+    if mesh_redlines_path is not None and set(mesh_redline_paths) != broad_mesh_redline_paths:
+        messages.append("mesh redline path set mismatch broad CSV")
+    if render_texture_redlines_path is not None and set(render_texture_redline_paths) != broad_render_texture_redline_paths:
+        messages.append("RenderTexture redline path set mismatch broad CSV")
     if texture_redlines_path is not None and any(texture_flags_by_path.get(row.get("path", ""), "") != row.get("flags", "") for row in texture_redline_rows):
         messages.append("texture redline flags mismatch broad CSV")
     if mesh_redlines_path is not None and any(mesh_flags_by_path.get(row.get("path", ""), "") != row.get("flags", "") for row in mesh_redline_rows):

@@ -2,19 +2,19 @@
   "schema_version": 1,
   "status": "ATLAS VERIFIED PENDING RUNTIME VERIFICATION",
   "evidence_class": "STATIC_SOURCE/STATIC_DOC/FILESYSTEM/PY_TOOL",
-  "generated": "2026-05-15 19:11:20",
+  "generated": "2026-05-15 22:35:29",
   "summary": {
     "source_file_count": 5034,
     "source_line_count": 1709155,
     "first_party_source_file_count": 1505,
     "first_party_source_line_count": 960494,
-    "asmdef_count": 152,
-    "first_party_asmdef_count": 91,
-    "exact_core_dependent_count": 35,
-    "core_family_dependent_count": 60,
+    "asmdef_count": 153,
+    "first_party_asmdef_count": 92,
+    "exact_core_dependent_count": 36,
+    "core_family_dependent_count": 61,
     "signal_count": 147,
     "queue_lane_count": 56,
-    "sherst_hit_count": 10,
+    "sherst_hit_count": 0,
     "phi_exact_rationale_present": false
   },
   "assemblies": {
@@ -56,6 +56,17 @@
         ]
       },
       {
+        "name": "Hecton8.Dev.SpaceEngine098",
+        "path": "Assets/_Project/Scripts/Dev/SpaceEngine098/Hecton8.Dev.SpaceEngine098.asmdef",
+        "refs": [
+          "Hecton8.Core",
+          "Hecton8.SpaceEngine098Terrain",
+          "Unity.Collections",
+          "Unity.Jobs",
+          "Unity.Mathematics"
+        ]
+      },
+      {
         "name": "Hecton8.EditModeTests",
         "path": "Assets/_Project/Tests/Editor/Hecton8.EditModeTests.asmdef",
         "refs": [
@@ -78,6 +89,7 @@
         "refs": [
           "Hecton8.Core",
           "Hecton8.Plugins",
+          "Hecton8.Dev.SpaceEngine098",
           "UnityEngine.TestRunner",
           "UnityEditor.TestRunner",
           "Unity.Collections",
@@ -396,6 +408,7 @@
         "path": "Assets/_Project/Scripts/World/Resources/Hecton8.World.Economy.asmdef",
         "refs": [
           "Hecton8.Core",
+          "Hecton8.Core.Memory",
           "Hecton8.World.Contracts",
           "Unity.Burst",
           "Unity.Collections",
@@ -592,6 +605,17 @@
         ]
       },
       {
+        "name": "Hecton8.Dev.SpaceEngine098",
+        "path": "Assets/_Project/Scripts/Dev/SpaceEngine098/Hecton8.Dev.SpaceEngine098.asmdef",
+        "refs": [
+          "Hecton8.Core",
+          "Hecton8.SpaceEngine098Terrain",
+          "Unity.Collections",
+          "Unity.Jobs",
+          "Unity.Mathematics"
+        ]
+      },
+      {
         "name": "Hecton8.EditModeTests",
         "path": "Assets/_Project/Tests/Editor/Hecton8.EditModeTests.asmdef",
         "refs": [
@@ -614,6 +638,7 @@
         "refs": [
           "Hecton8.Core",
           "Hecton8.Plugins",
+          "Hecton8.Dev.SpaceEngine098",
           "UnityEngine.TestRunner",
           "UnityEditor.TestRunner",
           "Unity.Collections",
@@ -1030,6 +1055,7 @@
         "path": "Assets/_Project/Scripts/World/Resources/Hecton8.World.Economy.asmdef",
         "refs": [
           "Hecton8.Core",
+          "Hecton8.Core.Memory",
           "Hecton8.World.Contracts",
           "Unity.Burst",
           "Unity.Collections",
@@ -1438,6 +1464,17 @@
         ]
       },
       {
+        "name": "Hecton8.Dev.SpaceEngine098",
+        "path": "Assets/_Project/Scripts/Dev/SpaceEngine098/Hecton8.Dev.SpaceEngine098.asmdef",
+        "refs": [
+          "Hecton8.Core",
+          "Hecton8.SpaceEngine098Terrain",
+          "Unity.Collections",
+          "Unity.Jobs",
+          "Unity.Mathematics"
+        ]
+      },
+      {
         "name": "Hecton8.EditModeTests",
         "path": "Assets/_Project/Tests/Editor/Hecton8.EditModeTests.asmdef",
         "refs": [
@@ -1460,6 +1497,7 @@
         "refs": [
           "Hecton8.Core",
           "Hecton8.Plugins",
+          "Hecton8.Dev.SpaceEngine098",
           "UnityEngine.TestRunner",
           "UnityEditor.TestRunner",
           "Unity.Collections",
@@ -2046,6 +2084,7 @@
         "path": "Assets/_Project/Scripts/World/Resources/Hecton8.World.Economy.asmdef",
         "refs": [
           "Hecton8.Core",
+          "Hecton8.Core.Memory",
           "Hecton8.World.Contracts",
           "Unity.Burst",
           "Unity.Collections",
@@ -5182,8 +5221,8 @@
     ],
     "bc7_full_mip_first_party_production_mib": 505.623,
     "bc7_full_mip_runtime_candidate_mib": 1298.652,
-    "bc7_full_mip_total_mib": 1329.881,
-    "bc7_no_mip_mib": 997.41,
+    "bc7_full_mip_total_mib": 1298.652,
+    "bc7_no_mip_mib": 973.989,
     "ci_expected_exit_code": 2,
     "critical_texture_pool_mib": 1228.8,
     "critical_vram_overflow": true,
@@ -5201,8 +5240,8 @@
       "MESH_REDLINE_OR_RISK",
       "RENDER_TEXTURE_REDLINE_OR_RISK"
     ],
-    "generated": "2026-05-15T17:57:01",
-    "generated_utc": "2026-05-15T14:57:01+00:00",
+    "generated": "2026-05-15T19:49:47",
+    "generated_utc": "2026-05-15T16:49:47+00:00",
     "geometry_buffer_budget_mib": 200.0,
     "link_xml_notes": [
       "Assets/AstarPathfindingProject/link.xml assemblies=1 types=18 preserve_all=18",
@@ -10414,35 +10453,35 @@
       },
       {
         "editor_only": false,
-        "line": 1180,
+        "line": 1198,
         "path": "Assets/_Project/Scripts/UI/DiegeticPanelController.cs",
         "pattern": "RenderTextureDescriptor",
         "snippet": "RenderTextureDescriptor descriptor = new RenderTextureDescriptor(requiredResolution.x, requiredResolution.y)"
       },
       {
         "editor_only": false,
-        "line": 1194,
+        "line": 1212,
         "path": "Assets/_Project/Scripts/UI/DiegeticPanelController.cs",
         "pattern": "new RenderTexture",
         "snippet": "_panelRenderTexture = new RenderTexture(descriptor)"
       },
       {
         "editor_only": false,
-        "line": 1278,
+        "line": 1296,
         "path": "Assets/_Project/Scripts/UI/DiegeticPanelController.cs",
         "pattern": "RenderTextureDescriptor",
         "snippet": "RenderTextureDescriptor descriptor = _panelRenderTexture.descriptor;"
       },
       {
         "editor_only": false,
-        "line": 1326,
+        "line": 1342,
         "path": "Assets/_Project/Scripts/UI/DiegeticPanelController.cs",
         "pattern": "RenderTextureDescriptor",
         "snippet": "private static RenderTexture CreatePhosphorTexture(RenderTextureDescriptor descriptor, string textureName)"
       },
       {
         "editor_only": false,
-        "line": 1328,
+        "line": 1344,
         "path": "Assets/_Project/Scripts/UI/DiegeticPanelController.cs",
         "pattern": "new RenderTexture",
         "snippet": "RenderTexture texture = new RenderTexture(descriptor)"
@@ -10661,8 +10700,18 @@
         "width": 1280
       }
     ],
+    "resolved_scan_roots": [
+      "Assets",
+      "Packages",
+      "Data"
+    ],
     "root": "C:\\Hecton8",
     "runtime_render_texture_source_hotspot_rows": 53,
+    "scan_root_names": [
+      "Assets",
+      "Packages",
+      "Data"
+    ],
     "schema_version": 1,
     "skipped_directory_names": [
       ".codex-artifacts",
@@ -10675,7 +10724,7 @@
       "Obj",
       "Temp"
     ],
-    "texture_count": 1668,
+    "texture_count": 1652,
     "texture_extension_summary": [
       {
         "bc7_full_mip_mib": 1132.123,
@@ -10741,7 +10790,7 @@
         "vram_crime_rows": 0
       }
     ],
-    "texture_flagged_rows": 962,
+    "texture_flagged_rows": 946,
     "texture_source_container_risk_rows": 23,
     "texture_vram_crime_rows": 801,
     "top_non_first_party_runtime_directories": [
@@ -10819,172 +10868,12 @@
       }
     ]
   },
-  "sherst": [
-    {
-      "path": "Docs/AgentLogs/AUP_DRIFT_REPORT.md",
-      "line": 126,
-      "text": "- `Assets/_Project/Scripts/HectonVoxelVolume.cs`: added `double3` overloads for `ApplyPlasmaCutDda` and `ApplyRepairWeldDda`; existing `Vector3` overloads now wrap through `ToDo..."
-    },
-    {
-      "path": "Docs/AgentLogs/LOG_FAUNA_BEHAVIOR_SIMULATOR.md",
-      "line": 70,
-      "text": "- Source self-review for `TODO`, Dotnet, subprocess, `os.system`, `eval`, `exec`, `random.` -> no matches in `Tools/AI_Sim/FaunaBalanceSim.py`."
-    },
-    {
-      "path": "Docs/AgentLogs/LOG_NARRATIVE_LORE_WEAVER.md",
-      "line": 73,
-      "text": "- Sentinel scan returned no generated-hash, todo, or placeholder-token hits in the handoff files."
-    },
-    {
-      "path": "Docs/AgentLogs/LOG_QUEST_STATE_GRAPH_VALIDATOR.md",
-      "line": 73,
-      "text": "- Anti-bloat pass still ran on `Tools/QuestStressTest.py`: no TODO/FIXME markers, no Unity runtime writes, no quest runtime source edits, and the only optional dependency is laz..."
-    },
-    {
-      "path": "Docs/AgentLogs/LOG_SOMATIC_COMFORT_ANALYST.md",
-      "line": 349,
-      "text": "- Executable-source hygiene scan: one `validate_runtime_integration()` definition remains; no `TODO`, `FIXME`, `pass`, `eval`, `exec`, `subprocess`, `shell=True`, `pickle`, or `..."
-    },
-    {
-      "path": "Docs/AgentLogs/LOG_SOMATIC_COMFORT_ANALYST.md",
-      "line": 433,
-      "text": "- Executable-source hygiene scan: one `validate_runtime_integration()` definition remains; no `TODO`, `FIXME`, `pass`, `eval`, `exec`, `subprocess`, `shell=True`, `pickle`, or `..."
-    },
-    {
-      "path": "Docs/AgentLogs/LOG_TECH_RESEARCHER.md",
-      "line": 10,
-      "text": "- Active `Docs/AgentLogs` contained six `TODO` / `HACK` / `FIX LATER` text hits. They are text evidence only; most are log statements about scans, not confirmed executable debt."
-    },
-    {
-      "path": "Docs/AgentLogs/LOG_VAULT_MEMORY_RELOCATOR.md",
-      "line": 20,
-      "text": "Checked for duplicate compaction helpers, stale `FatalMemoryException.ThrowStaleVaultHandle()` use, live memmove presence, relocation signal bridge, and TODO/HACK/FIXME markers...."
-    },
-    {
-      "path": "Docs/AgentLogs/Rationale_MACRO_WFC_PERSISTENCE_SYNC.md",
-      "line": 312,
-      "text": "Rejected Alternatives: Only trusting the old status log; changing `ApplyWfcOutpostFlagsToDoor()` without proving current behavior; publishing a reset mutation. Stale logs are no..."
-    },
-    {
-      "path": "Docs/AgentLogs/Rationale_VISUAL_EXTINCTION_LUT_BAKER.md",
-      "line": 52,
-      "text": "Hardware Impact: Prevents shader-side red compensation and color-grade hacks that would cost runtime and break deep-sea noir."
-    }
-  ],
+  "sherst": [],
   "phi": {
     "exact_rationale_present": false,
     "near_match_logs": [
-      "Docs/AgentLogs/Build_HPHI_SYNAPTIC_FORGER_AssemblyCSharp_latest.txt",
-      "Docs/AgentLogs/Build_HPHI_SYNAPTIC_FORGER_latest.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_161901_CurrentDisk.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_161901_CurrentDisk.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_163004_CurrentDiskBudgetGate.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_163004_CurrentDiskBudgetGate.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_164225_CurrentDiskBudgetGate2.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_164225_CurrentDiskBudgetGate2.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_165347_CurrentDiskBudgetGate3.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_165347_CurrentDiskBudgetGate3.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_165615_CurrentDiskBudgetGate3.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_165615_CurrentDiskBudgetGate3.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_170301_CurrentDiskDiagnostic.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_170301_CurrentDiskDiagnostic.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_170434_CurrentDiskDiagnostic2.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_170434_CurrentDiskDiagnostic2.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_171038_CurrentDiskBudgetGate4.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_171038_CurrentDiskBudgetGate4.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_172829_CurrentDiskBudgetGate4.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_172829_CurrentDiskBudgetGate4.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_175322_CurrentDiskBudgetGate5.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_175322_CurrentDiskBudgetGate5.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_175740_CurrentDiskBudgetGate5.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_175740_CurrentDiskBudgetGate5.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_181640_CurrentDiskBudgetGate6.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_181640_CurrentDiskBudgetGate6.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_182617_CurrentDiskBudgetGate7.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_182617_CurrentDiskBudgetGate7.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_182858_CurrentDiskBudgetGate6.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_182858_CurrentDiskBudgetGate6.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_183432_CurrentDiskBudgetGate8.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_183432_CurrentDiskBudgetGate8.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_DuplicateZero.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_FinalBudgetPass.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_FinalBudgetPass2.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh41.err.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh41.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh41.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh42.err.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh42.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh42.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh44.err.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh44.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh44.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh46.err.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh46.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh46.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh47.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh47.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh48.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh48.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh49.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh49.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh50.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh50.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh51.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh51.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh53.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh53.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh54.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh54.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh55.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh55.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh56.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh56.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh56_LexicalScrub.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh56_LexicalScrub.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh57.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh57.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh58.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh58.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh59.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh59.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh60.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh60.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh60_LexicalScrub.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh60_LexicalScrub.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh61_Unbudgeted.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh61_Unbudgeted.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh62.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh62.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh65.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh65.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh79.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh79.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh80_Unbudgeted.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh80_Unbudgeted.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh84.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh84.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh86.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh86.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh89.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh89.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh90_Tightened.exit.txt",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh90_Tightened.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_PostPatchBudgetPass.json",
-      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_UnityLoopDebtZero.json",
-      "Docs/AgentLogs/HphiUiUpdateDeletion_UX_HPHI_SIGNAL_WIRING.md",
-      "Docs/AgentLogs/LOG_AUDIO_MATERIAL_SYNTHESIZER.md",
-      "Docs/AgentLogs/LOG_GIT_SYNC.md",
-      "Docs/AgentLogs/LOG_HECTON_PHI_MONITOR.md",
-      "Docs/AgentLogs/LOG_HPHI_SYNAPTIC_FORGER.md",
-      "Docs/AgentLogs/LOG_MACRO_WFC_PERSISTENCE_SYNC.md",
-      "Docs/AgentLogs/LOG_UX_HPHI_SIGNAL_WIRING.md",
-      "Docs/AgentLogs/Rationale_AUDIO_MATERIAL_SYNTHESIZER.md",
-      "Docs/AgentLogs/Rationale_GIT_SYNC.md",
-      "Docs/AgentLogs/Rationale_HECTON_PHI_MONITOR.md",
-      "Docs/AgentLogs/Rationale_HPHI_SYNAPTIC_FORGER.md",
-      "Docs/AgentLogs/Rationale_MACRO_WFC_PERSISTENCE_SYNC.md",
-      "Docs/AgentLogs/Rationale_NET_SYNC_MERKLE_ARCHITECT.md",
-      "Docs/AgentLogs/Rationale_UX_HPHI_SIGNAL_WIRING.md"
+      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.exit.txt",
+      "Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.json"
     ]
   },
   "artifacts": {

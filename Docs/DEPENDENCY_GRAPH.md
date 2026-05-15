@@ -1,12 +1,11 @@
 # HECTON-8 Architecture Atlas - Dependency Graph
 
-Generated: 2026-05-15 19:11:18
+Generated: 2026-05-15 22:35:28
 Status: ATLAS VERIFIED PENDING RUNTIME VERIFICATION
 Evidence class: STATIC_SOURCE / STATIC_DOC / FILESYSTEM / PY_TOOL. No Unity Editor, Play Mode, Memory Profiler, Frame Debugger, or player build evidence is claimed here.
 
 ## Source Of Authority
 - `AGENTS.md`
-- `Docs/Tasks/CURRENT_BATCH.md`
 - `Docs/Actual Domains of Project.txt`
 - `Docs/ARCHITECTURE/SYSTEM_INTERCONNECT_MATRIX.md`
 - `Docs/Reports/VRAM_Budget_Audit.json`
@@ -35,9 +34,9 @@ Evidence class: STATIC_SOURCE / STATIC_DOC / FILESYSTEM / PY_TOOL. No Unity Edit
 - C# line count scanned under `Assets/` and `Packages/`: 1,709,155
 - First-party C# source files under `Assets/_Project/Scripts/`: 1505
 - First-party C# line count under `Assets/_Project/Scripts/`: 960,494
-- Assembly definitions scanned: 152
-- First-party assembly definitions under `Assets/_Project/`: 91
-- Markdown docs under `Docs/`: 1453
+- Assembly definitions scanned: 153
+- First-party assembly definitions under `Assets/_Project/`: 92
+- Markdown docs under `Docs/`: 1507
 
 ## Assembly Dependency Graph
 
@@ -90,13 +89,14 @@ Core assembly: `Assets/_Project/Scripts/Hecton8.Core.asmdef`
 
 Core contracts assembly: `Assets/_Project/Scripts/Core/Contracts/Hecton8.Core.Contracts.asmdef` references `Unity.Collections`, `Unity.Mathematics`.
 
-Assemblies directly depending on exact `Hecton8.Core`: 35
+Assemblies directly depending on exact `Hecton8.Core`: 36
 
 | Assembly | Path |
 |---|---|
 | `Hecton8.Audio.Prologue` | `Assets/_Project/Scripts/Audio/Prologue/Hecton8.Audio.Prologue.asmdef` |
 | `Hecton8.Core.Determinism` | `Assets/_Project/Scripts/Core/Determinism/Hecton8.Core.Determinism.asmdef` |
 | `Hecton8.Core.Hardware` | `Assets/_Project/Scripts/Core/Hardware/Hecton8.Core.Hardware.asmdef` |
+| `Hecton8.Dev.SpaceEngine098` | `Assets/_Project/Scripts/Dev/SpaceEngine098/Hecton8.Dev.SpaceEngine098.asmdef` |
 | `Hecton8.EditModeTests` | `Assets/_Project/Tests/Editor/Hecton8.EditModeTests.asmdef` |
 | `Hecton8.Editor` | `Assets/_Project/Scripts/Editor/Hecton8.Editor.asmdef` |
 | `Hecton8.Gameplay.Loot` | `Assets/_Project/Scripts/Gameplay/Loot/Hecton8.Gameplay.Loot.asmdef` |
@@ -130,7 +130,7 @@ Assemblies directly depending on exact `Hecton8.Core`: 35
 | `Hecton8.World.Outposts` | `Assets/_Project/Scripts/World/Outposts/Hecton8.World.Outposts.asmdef` |
 | `Hecton8.World.Streaming` | `Assets/_Project/Scripts/World/Streaming/Hecton8.World.Streaming.asmdef` |
 
-Assemblies depending on any `Hecton8.Core*` assembly: 60
+Assemblies depending on any `Hecton8.Core*` assembly: 61
 
 | Assembly | Core-family references | Path |
 |---|---|---|
@@ -150,6 +150,7 @@ Assemblies depending on any `Hecton8.Core*` assembly: 60
 | `Hecton8.Core.Persistence` | `Hecton8.Core.Contracts` | `Assets/_Project/Scripts/Core/Persistence/Hecton8.Core.Persistence.asmdef` |
 | `Hecton8.Core.Persistence.Paging` | `Hecton8.Core.Contracts` | `Assets/_Project/Scripts/Core/Persistence/Paging/Hecton8.Core.Persistence.Paging.asmdef` |
 | `Hecton8.Core.Scheduling` | `Hecton8.Core.Contracts` | `Assets/_Project/Scripts/Core/Scheduling/Hecton8.Core.Scheduling.asmdef` |
+| `Hecton8.Dev.SpaceEngine098` | `Hecton8.Core` | `Assets/_Project/Scripts/Dev/SpaceEngine098/Hecton8.Dev.SpaceEngine098.asmdef` |
 | `Hecton8.EditModeTests` | `Hecton8.Core` | `Assets/_Project/Tests/Editor/Hecton8.EditModeTests.asmdef` |
 | `Hecton8.Editor` | `Hecton8.Core` | `Assets/_Project/Scripts/Editor/Hecton8.Editor.asmdef` |
 | `Hecton8.Gameplay.Loot` | `Hecton8.Core`, `Hecton8.Core.Memory` | `Assets/_Project/Scripts/Gameplay/Loot/Hecton8.Gameplay.Loot.asmdef` |
@@ -191,7 +192,7 @@ Assemblies depending on any `Hecton8.Core*` assembly: 60
 | `Hecton8.VFX.Materials` | `Hecton8.Core.Contracts`, `Hecton8.Core` | `Assets/_Project/Scripts/VFX/Materials/Hecton8.VFX.Materials.asmdef` |
 | `Hecton8.VFX.Sonar` | `Hecton8.Core.Contracts` | `Assets/_Project/Scripts/VFX/Sonar/Hecton8.VFX.Sonar.asmdef` |
 | `Hecton8.Vehicles.VFX` | `Hecton8.Core.Contracts`, `Hecton8.Core` | `Assets/_Project/Scripts/Vehicles/VFX/Hecton8.Vehicles.VFX.asmdef` |
-| `Hecton8.World.Economy` | `Hecton8.Core` | `Assets/_Project/Scripts/World/Resources/Hecton8.World.Economy.asmdef` |
+| `Hecton8.World.Economy` | `Hecton8.Core`, `Hecton8.Core.Memory` | `Assets/_Project/Scripts/World/Resources/Hecton8.World.Economy.asmdef` |
 | `Hecton8.World.Outposts` | `Hecton8.Core`, `Hecton8.Core.Contracts` | `Assets/_Project/Scripts/World/Outposts/Hecton8.World.Outposts.asmdef` |
 | `Hecton8.World.Streaming` | `Hecton8.Core` | `Assets/_Project/Scripts/World/Streaming/Hecton8.World.Streaming.asmdef` |
 
@@ -506,9 +507,9 @@ Mandate target for MX350 from performance budget: total VRAM ceiling 1800 MiB; t
 
 | Metric | Value | Evidence |
 |---|---:|---|
-| Texture files scanned | `1668` | `Docs/Reports/VRAM_Budget_Audit.json` |
+| Texture files scanned | `1652` | `Docs/Reports/VRAM_Budget_Audit.json` |
 | Mesh files scanned | `302` | `Docs/Reports/VRAM_Budget_Audit.json` |
-| All scanned full-mip BC7 MiB | `1329.881` | `Docs/Reports/VRAM_Budget_Audit.json` |
+| All scanned full-mip BC7 MiB | `1298.652` | `Docs/Reports/VRAM_Budget_Audit.json` |
 | Runtime-candidate full-mip BC7 MiB | `1298.652` | `Docs/Reports/VRAM_Budget_Audit.json` |
 | First-party production full-mip BC7 MiB | `505.623` | `Docs/Reports/VRAM_Budget_Audit.json` |
 | MX350 texture budget MiB | `900.0` | `Docs/Reports/VRAM_Budget_Audit.json` |
@@ -850,133 +851,15 @@ Pattern scan: active `Docs/AgentLogs/` only; terms: `TODO`, `HACK`, `FIX LATER`.
 
 | File | Line | Text |
 |---|---:|---|
-| `Docs/AgentLogs/AUP_DRIFT_REPORT.md` | 126 | - `Assets/_Project/Scripts/HectonVoxelVolume.cs`: added `double3` overloads for `ApplyPlasmaCutDda` and `ApplyRepairWeldDda`; existing `Vector3` overloads now wrap through `ToDo... |
-| `Docs/AgentLogs/LOG_FAUNA_BEHAVIOR_SIMULATOR.md` | 70 | - Source self-review for `TODO`, Dotnet, subprocess, `os.system`, `eval`, `exec`, `random.` -> no matches in `Tools/AI_Sim/FaunaBalanceSim.py`. |
-| `Docs/AgentLogs/LOG_NARRATIVE_LORE_WEAVER.md` | 73 | - Sentinel scan returned no generated-hash, todo, or placeholder-token hits in the handoff files. |
-| `Docs/AgentLogs/LOG_QUEST_STATE_GRAPH_VALIDATOR.md` | 73 | - Anti-bloat pass still ran on `Tools/QuestStressTest.py`: no TODO/FIXME markers, no Unity runtime writes, no quest runtime source edits, and the only optional dependency is laz... |
-| `Docs/AgentLogs/LOG_SOMATIC_COMFORT_ANALYST.md` | 349 | - Executable-source hygiene scan: one `validate_runtime_integration()` definition remains; no `TODO`, `FIXME`, `pass`, `eval`, `exec`, `subprocess`, `shell=True`, `pickle`, or `... |
-| `Docs/AgentLogs/LOG_SOMATIC_COMFORT_ANALYST.md` | 433 | - Executable-source hygiene scan: one `validate_runtime_integration()` definition remains; no `TODO`, `FIXME`, `pass`, `eval`, `exec`, `subprocess`, `shell=True`, `pickle`, or `... |
-| `Docs/AgentLogs/LOG_TECH_RESEARCHER.md` | 10 | - Active `Docs/AgentLogs` contained six `TODO` / `HACK` / `FIX LATER` text hits. They are text evidence only; most are log statements about scans, not confirmed executable debt. |
-| `Docs/AgentLogs/LOG_VAULT_MEMORY_RELOCATOR.md` | 20 | Checked for duplicate compaction helpers, stale `FatalMemoryException.ThrowStaleVaultHandle()` use, live memmove presence, relocation signal bridge, and TODO/HACK/FIXME markers.... |
-| `Docs/AgentLogs/Rationale_MACRO_WFC_PERSISTENCE_SYNC.md` | 312 | Rejected Alternatives: Only trusting the old status log; changing `ApplyWfcOutpostFlagsToDoor()` without proving current behavior; publishing a reset mutation. Stale logs are no... |
-| `Docs/AgentLogs/Rationale_VISUAL_EXTINCTION_LUT_BAKER.md` | 52 | Hardware Impact: Prevents shader-side red compensation and color-grade hacks that would cost runtime and break deep-sea noir. |
+| none | 0 | no active matches |
 
 ## PHI Self-Audit
 
 Exact PHI_SYN rationale file is absent from active logs. Near-match H-Phi rationale files were scanned as supporting evidence, but this is not treated as the exact requested artifact.
 
 Near-match active logs:
-- `Docs/AgentLogs/Build_HPHI_SYNAPTIC_FORGER_AssemblyCSharp_latest.txt`
-- `Docs/AgentLogs/Build_HPHI_SYNAPTIC_FORGER_latest.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_161901_CurrentDisk.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_161901_CurrentDisk.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_163004_CurrentDiskBudgetGate.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_163004_CurrentDiskBudgetGate.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_164225_CurrentDiskBudgetGate2.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_164225_CurrentDiskBudgetGate2.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_165347_CurrentDiskBudgetGate3.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_165347_CurrentDiskBudgetGate3.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_165615_CurrentDiskBudgetGate3.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_165615_CurrentDiskBudgetGate3.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_170301_CurrentDiskDiagnostic.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_170301_CurrentDiskDiagnostic.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_170434_CurrentDiskDiagnostic2.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_170434_CurrentDiskDiagnostic2.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_171038_CurrentDiskBudgetGate4.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_171038_CurrentDiskBudgetGate4.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_172829_CurrentDiskBudgetGate4.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_172829_CurrentDiskBudgetGate4.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_175322_CurrentDiskBudgetGate5.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_175322_CurrentDiskBudgetGate5.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_175740_CurrentDiskBudgetGate5.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_175740_CurrentDiskBudgetGate5.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_181640_CurrentDiskBudgetGate6.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_181640_CurrentDiskBudgetGate6.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_182617_CurrentDiskBudgetGate7.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_182617_CurrentDiskBudgetGate7.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_182858_CurrentDiskBudgetGate6.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_182858_CurrentDiskBudgetGate6.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_183432_CurrentDiskBudgetGate8.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_183432_CurrentDiskBudgetGate8.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_DuplicateZero.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_FinalBudgetPass.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_FinalBudgetPass2.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh41.err.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh41.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh41.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh42.err.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh42.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh42.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh44.err.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh44.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh44.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh46.err.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh46.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh46.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh47.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh47.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh48.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh48.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh49.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh49.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh50.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh50.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh51.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh51.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh53.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh53.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh54.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh54.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh55.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh55.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh56.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh56.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh56_LexicalScrub.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh56_LexicalScrub.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh57.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh57.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh58.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh58.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh59.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh59.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh60.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh60.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh60_LexicalScrub.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh60_LexicalScrub.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh61_Unbudgeted.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh61_Unbudgeted.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh62.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh62.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh65.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh65.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh79.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh79.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh80_Unbudgeted.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh80_Unbudgeted.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh84.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh84.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh86.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh86.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh89.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh89.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh90_Tightened.exit.txt`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_Fresh90_Tightened.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_PostPatchBudgetPass.json`
-- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_UnityLoopDebtZero.json`
-- `Docs/AgentLogs/HphiUiUpdateDeletion_UX_HPHI_SIGNAL_WIRING.md`
-- `Docs/AgentLogs/LOG_AUDIO_MATERIAL_SYNTHESIZER.md`
-- `Docs/AgentLogs/LOG_GIT_SYNC.md`
-- `Docs/AgentLogs/LOG_HECTON_PHI_MONITOR.md`
-- `Docs/AgentLogs/LOG_HPHI_SYNAPTIC_FORGER.md`
-- `Docs/AgentLogs/LOG_MACRO_WFC_PERSISTENCE_SYNC.md`
-- `Docs/AgentLogs/LOG_UX_HPHI_SIGNAL_WIRING.md`
-- `Docs/AgentLogs/Rationale_AUDIO_MATERIAL_SYNTHESIZER.md`
-- `Docs/AgentLogs/Rationale_GIT_SYNC.md`
-- `Docs/AgentLogs/Rationale_HECTON_PHI_MONITOR.md`
-- `Docs/AgentLogs/Rationale_HPHI_SYNAPTIC_FORGER.md`
-- `Docs/AgentLogs/Rationale_MACRO_WFC_PERSISTENCE_SYNC.md`
-- `Docs/AgentLogs/Rationale_NET_SYNC_MERKLE_ARCHITECT.md`
-- `Docs/AgentLogs/Rationale_UX_HPHI_SIGNAL_WIRING.md`
+- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.exit.txt`
+- `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.json`
 
 | H-Phi / UX signal | Declared at | Producers | Consumers |
 |---|---|---|---|
