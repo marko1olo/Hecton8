@@ -390,6 +390,50 @@ Failure modes:
 - Unity/C# compile proof remains blocked by missing local toolchain/generation state.
 - Runtime loader remains out of explicit prompt scope.
 
+## 2026-05-15 - Repository-Root Path Hardening
+
+STATUS: LORE BAKED / CWD-INDEPENDENT VERIFIER / STRICT TABLE GUARD VERIFIED
+
+What was wrong:
+- The verifier previously resolved relative paths from process cwd. Running from `Tools/` or another shell could break default source/blob paths and could change canonical source hash behavior.
+- Blob and manifest writes were direct writes, which is weaker than atomic package replacement.
+- Record sorting was checked, but there was no explicit regression test that corrupted table order and proved rejection.
+
+What was done:
+- Added `REPO_ROOT` anchored path resolution in `Tools/VerifyLore.py`.
+- Kept CLI defaults as repository-relative labels while resolving actual IO from the repo root.
+- Added atomic `.tmp` + replace writes for blob, manifest, and extracted Markdown output.
+- Added regression tests for cwd-independent `--check` and unsorted record-table rejection.
+- Updated `Data/Lore/README.md` to document cwd-independent operation and atomic writes.
+
+Cinematic Cheats used:
+- No runtime simulation touched.
+- Offline deterministic binary packaging remains the delivery mechanism.
+
+Exact microseconds saved:
+- Current runtime frame impact remains 0 us/frame.
+- No Unity runtime loader was added, so no new frame-time cost exists from this pass.
+
+Verification:
+- `python Tools\VerifyLore.py --bake --check --list` -> `LORE BAKED`, `CHECK OK`, record `0xD1880394 offset=48 length=10281`.
+- `Push-Location Tools; python ..\Tools\VerifyLore.py --check; Pop-Location` -> `CHECK OK` from a subdirectory.
+- `python -B -m unittest Tools.test_verify_lore -v` -> 17 tests passed.
+- AST syntax parse -> `AST OK`.
+- `$env:PYTHONPYCACHEPREFIX='.codex-artifacts\pycache'; python -m py_compile Tools\VerifyLore.py Tools\test_verify_lore.py` -> passed.
+- Source/extract SHA-256 match -> `6B529A808B25D18DA276747DB9149C61BACDF90A33DCC667FC85375DE13E69CD`.
+- Blob SHA-256 remains `8FDBAC8752B5DB10B98226D88BC5A27EEDA049207E139E6F2F3FB15ECDBDDC00`.
+
+Regression model:
+- CPU: no runtime code touched.
+- GC: no runtime allocation path touched.
+- Memory: runtime blob remains 10329 bytes.
+- Cadence: no Tick/Update/FixedUpdate path touched.
+- Correctness: verifier now behaves from subdirectories, preserves stable repo-relative lore IDs, writes package outputs atomically, and rejects unsorted record tables.
+
+Failure modes:
+- Unity/C# compile proof remains blocked by missing local toolchain/generation state.
+- Runtime loader remains out of explicit prompt scope.
+
 ## 2026-05-15 - Artifact Runbook Handoff
 
 STATUS: LORE BAKED / RUNBOOK ADDED / SOURCE SCAN CLEAN

@@ -25,6 +25,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
 FNV_OFFSET_BASIS = 2166136261
 FNV_PRIME = 16777619
 MAGIC = b"H8LR"
@@ -47,9 +48,12 @@ FLAGS = (
 HASH_ALGORITHM = "FNV-1a 32-bit over repository-relative ASCII path, A-Z folded to lowercase"
 COMPRESSION = "zlib"
 RECORD_LAYOUT = "uint32 hash, uint64 absolute_offset, uint32 compressed_length"
-DEFAULT_BLOB = Path("Data/Lore/Encyclopedia.h8bin")
-DEFAULT_MANIFEST = Path("Data/Lore/Encyclopedia.manifest.json")
-PRIMARY_SOURCE_DIR = Path("Docs/Lore")
+DEFAULT_BLOB_RELATIVE = Path("Data/Lore/Encyclopedia.h8bin")
+DEFAULT_MANIFEST_RELATIVE = Path("Data/Lore/Encyclopedia.manifest.json")
+PRIMARY_SOURCE_DIR_RELATIVE = Path("Docs/Lore")
+DEFAULT_BLOB = REPO_ROOT / DEFAULT_BLOB_RELATIVE
+DEFAULT_MANIFEST = REPO_ROOT / DEFAULT_MANIFEST_RELATIVE
+PRIMARY_SOURCE_DIR = REPO_ROOT / PRIMARY_SOURCE_DIR_RELATIVE
 
 
 @dataclass(frozen=True)
@@ -96,10 +100,25 @@ def format_hash(value: int) -> str:
     return f"0x{value & 0xFFFFFFFF:08X}"
 
 
-def canonicalize_path(path: Path) -> str:
-    resolved = path.resolve()
+def resolve_repo_path(path: Path) -> Path:
+    expanded = path.expanduser()
+    if expanded.is_absolute():
+        return expanded.resolve()
+    return (REPO_ROOT / expanded).resolve()
+
+
+def format_repo_path(path: Path) -> str:
+    resolved = resolve_repo_path(path)
     try:
-        relative = resolved.relative_to(Path.cwd().resolve())
+        return resolved.relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        return str(resolved)
+
+
+def canonicalize_path(path: Path) -> str:
+    resolved = resolve_repo_path(path)
+    try:
+        relative = resolved.relative_to(REPO_ROOT)
     except ValueError:
         raise ValueError(f"Lore source path must be inside the repository root: {resolved}")
 
@@ -110,15 +129,28 @@ def canonicalize_path(path: Path) -> str:
 
 
 def discover_markdown_sources(source_dir: Path) -> list[Path]:
-    if source_dir.exists():
+    resolved_source_dir = resolve_repo_path(source_dir)
+    if resolved_source_dir.exists():
         paths = sorted(
-            [path for path in source_dir.rglob("*.md") if path.is_file()],
-            key=lambda path: path.as_posix().lower(),
+            [path for path in resolved_source_dir.rglob("*.md") if path.is_file()],
+            key=lambda path: format_repo_path(path).lower(),
         )
         if paths:
             return paths
 
     return []
+
+
+def atomic_write_bytes(path: Path, payload: bytes) -> None:
+    resolved = resolve_repo_path(path)
+    resolved.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = resolved.with_name(resolved.name + ".tmp")
+    temp_path.write_bytes(payload)
+    temp_path.replace(resolved)
+
+
+def atomic_write_text(path: Path, payload: str) -> None:
+    atomic_write_bytes(path, payload.encode("utf-8"))
 
 
 def load_source_entries(source_dir: Path) -> list[SourceEntry]:
@@ -193,7 +225,7 @@ def bake_blob(entries: list[SourceEntry]) -> bytes:
 
 
 def read_blob(path: Path) -> tuple[bytes, list[LoreRecord]]:
-    blob = path.read_bytes()
+    blob = resolve_repo_path(path).read_bytes()
     return blob, parse_blob(blob)
 
 
@@ -308,10 +340,9 @@ def verify_against_sources(blob_path: Path, source_dir: Path) -> None:
 def write_manifest(blob_path: Path, manifest_path: Path, source_dir: Path) -> None:
     blob, records = read_blob(blob_path)
     entries = load_source_entries(source_dir)
-    manifest = build_manifest_data(blob_path.as_posix(), blob, records, entries, source_dir.as_posix())
+    manifest = build_manifest_data(format_repo_path(blob_path), blob, records, entries, format_repo_path(source_dir))
 
-    manifest_path.parent.mkdir(parents=True, exist_ok=True)
-    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    atomic_write_text(manifest_path, json.dumps(manifest, indent=2) + "\n")
 
 
 def build_manifest_data(
@@ -367,7 +398,8 @@ def build_manifest_data(
 def verify_manifest(blob_path: Path, manifest_path: Path, source_dir: Path) -> None:
     blob, records = read_blob(blob_path)
     entries = load_source_entries(source_dir)
-    verify_manifest_data(blob, records, entries, json.loads(manifest_path.read_text(encoding="utf-8")))
+    manifest_text = resolve_repo_path(manifest_path).read_text(encoding="utf-8")
+    verify_manifest_data(blob, records, entries, json.loads(manifest_text))
 
 
 def verify_manifest_data(
@@ -448,9 +480,9 @@ def print_record_list(records: list[LoreRecord]) -> None:
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Bake or verify HECTON-8 lore encyclopedia h8bin.")
     parser.add_argument("hash", nargs="?", help="Hash to extract, e.g. 0x1234ABCD.")
-    parser.add_argument("--blob", default=str(DEFAULT_BLOB), help="Path to Encyclopedia.h8bin.")
-    parser.add_argument("--manifest", default=str(DEFAULT_MANIFEST), help="Path to write the source manifest during bake.")
-    parser.add_argument("--source-dir", default=str(PRIMARY_SOURCE_DIR), help="Primary Markdown source directory.")
+    parser.add_argument("--blob", default=str(DEFAULT_BLOB_RELATIVE), help="Path to Encyclopedia.h8bin.")
+    parser.add_argument("--manifest", default=str(DEFAULT_MANIFEST_RELATIVE), help="Path to write the source manifest during bake.")
+    parser.add_argument("--source-dir", default=str(PRIMARY_SOURCE_DIR_RELATIVE), help="Primary Markdown source directory.")
     parser.add_argument("--bake", action="store_true", help="Bake Markdown sources into the blob path.")
     parser.add_argument("--list", action="store_true", help="List hash records in the blob.")
     parser.add_argument("--check", action="store_true", help="Run source and manifest verification in one packaging check.")
@@ -466,9 +498,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
 def main(argv: list[str]) -> int:
     parser = build_arg_parser()
     args = parser.parse_args(argv)
-    blob_path = Path(args.blob)
-    manifest_path = Path(args.manifest)
-    source_dir = Path(args.source_dir)
+    blob_path = resolve_repo_path(Path(args.blob))
+    manifest_path = resolve_repo_path(Path(args.manifest))
+    source_dir = resolve_repo_path(Path(args.source_dir))
 
     if args.hash_source:
         entries = load_source_entries(source_dir)
@@ -479,28 +511,30 @@ def main(argv: list[str]) -> int:
     if args.bake:
         entries = load_source_entries(source_dir)
         blob = bake_blob(entries)
-        blob_path.parent.mkdir(parents=True, exist_ok=True)
-        blob_path.write_bytes(blob)
-        print(f"LORE BAKED: entries={len(entries)} bytes={len(blob)} output={blob_path}")
+        atomic_write_bytes(blob_path, blob)
+        print(f"LORE BAKED: entries={len(entries)} bytes={len(blob)} output={format_repo_path(blob_path)}")
         for entry in sorted(entries, key=lambda item: item.hash_value):
             print(f"{format_hash(entry.hash_value)} {entry.canonical_id}")
         if not args.no_manifest:
             write_manifest(blob_path, manifest_path, source_dir)
-            print(f"MANIFEST WRITTEN: {manifest_path}")
+            print(f"MANIFEST WRITTEN: {format_repo_path(manifest_path)}")
 
     if args.verify_source:
         verify_against_sources(blob_path, source_dir)
-        print(f"VERIFY OK: {blob_path}")
+        print(f"VERIFY OK: {format_repo_path(blob_path)}")
 
     if args.verify_manifest:
         verify_manifest(blob_path, manifest_path, source_dir)
-        print(f"MANIFEST VERIFY OK: {manifest_path}")
+        print(f"MANIFEST VERIFY OK: {format_repo_path(manifest_path)}")
 
     if args.check:
         verify_against_sources(blob_path, source_dir)
         verify_manifest(blob_path, manifest_path, source_dir)
         _, records = read_blob(blob_path)
-        print(f"CHECK OK: entries={len(records)} blob={blob_path} manifest={manifest_path}")
+        print(
+            f"CHECK OK: entries={len(records)} "
+            f"blob={format_repo_path(blob_path)} manifest={format_repo_path(manifest_path)}"
+        )
 
     if args.list:
         _, records = read_blob(blob_path)
@@ -517,9 +551,7 @@ def main(argv: list[str]) -> int:
             raise ValueError(f"Hash not found: {format_hash(hash_value)}")
         payload = extract_payload(blob, record)
         if args.output_text:
-            output_text_path = Path(args.output_text)
-            output_text_path.parent.mkdir(parents=True, exist_ok=True)
-            output_text_path.write_bytes(payload)
+            atomic_write_bytes(Path(args.output_text), payload)
         else:
             sys.stdout.buffer.write(payload)
             if not payload.endswith(b"\n"):
