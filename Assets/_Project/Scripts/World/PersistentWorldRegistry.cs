@@ -109,6 +109,35 @@ namespace Hecton8.World
             return AUPMath.ToAbsoluteDouble3(in this);
         }
 
+        public double3 OffsetAbsoluteMeters(double3 deltaMeters)
+        {
+            return AUPMath.OffsetAbsoluteMeters(in this, deltaMeters);
+        }
+
+        public AbsoluteUniversePosition OffsetMeters(double3 deltaMeters)
+        {
+            return FromAbsolutePosition(OffsetAbsoluteMeters(deltaMeters));
+        }
+
+        public static double3 OffsetAbsoluteMeters(in AbsoluteUniversePosition origin, double3 deltaMeters)
+        {
+            return AUPMath.OffsetAbsoluteMeters(in origin, deltaMeters);
+        }
+
+        public static AbsoluteUniversePosition OffsetMeters(in AbsoluteUniversePosition origin, double3 deltaMeters)
+        {
+            return FromAbsolutePosition(OffsetAbsoluteMeters(in origin, deltaMeters));
+        }
+
+        public static AbsoluteUniversePosition WeightedAverage3(
+            in AbsoluteUniversePosition a,
+            in AbsoluteUniversePosition b,
+            in AbsoluteUniversePosition c,
+            double weight)
+        {
+            return FromAbsolutePosition(AUPMath.WeightedAbsoluteAverage3(in a, in b, in c, weight));
+        }
+
         public float3 ToRuntimeFloat3()
         {
             double3 committedOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
@@ -4272,11 +4301,12 @@ namespace Hecton8.World
                 float2 jitterDirection = ResolveScatterPlanarDirection(jitterHash);
                 float radius = (((jitterHash >> 8) & 0xFFFFu) * (EcosystemFaunaCloneJitterRadiusMeters / 65535f));
                 AbsoluteUniversePosition templateAup = AbsoluteUniversePosition.FromAlignedBlit(in template.Position);
-                double3 seededAbsolute = templateAup.ToAbsoluteDouble3() + new double3(
-                    (double)jitterDirection.x * radius,
-                    0d,
-                    (double)jitterDirection.y * radius);
-                AbsoluteUniversePosition seededAup = AbsoluteUniversePosition.FromAbsolutePosition(seededAbsolute);
+                AbsoluteUniversePosition seededAup = AbsoluteUniversePosition.OffsetMeters(
+                    in templateAup,
+                    new double3(
+                        (double)jitterDirection.x * radius,
+                        0d,
+                        (double)jitterDirection.y * radius));
                 EntityDataRecord seededState = CreateFaunaHibernationState(
                     instanceUid,
                     GetFaunaHibernationSpeciesId(in template),

@@ -247,3 +247,52 @@ Solution: Reran static H-Phi and scoped render-debt scans only. No `dotnet build
 Rejected Alternatives: Claiming RenderGraph completion was rejected because the remaining `Graphics.Blit` is still present for high-tier phosphor persistence and needs a separate renderer-feature migration. Running Unity verification was rejected by the no-rebuild order and external compile blocker.
 Scalability potential: Low/MX350 now avoids the phosphor history buffer and blit-backed persistence; High/Ultra retain the effect. Broader RenderGraph `AddUnsafePass` debt remains visible and should be handled as a feature-level migration, not a local MonoBehaviour patch.
 Hardware Impact: 0 us runtime from the audit itself. Latest static audit: `RuntimeHPhiNarrow=0.010787439`, `RuntimeHPhiRisk=0.000634336`, `AllSourceHPhiNarrow=0.009611624`, `AllSourceHPhiRisk=0.00051719`, `FindObjectCalls=0`, `GetComponentCalls=321`, `LinqSurface=3`, `ManagedFormatSurface=564`, `PrimaryManagedRuntimeRisk=177`, `MemoryAlignment=0.506309148`, `StructLayoutAttributes=963`, `AupPrecisionRisk=0`.
+
+## Decision 036 - Visor Fullscreen Blit RenderGraph Migration
+Problem: The visor renderer still carried many first-party fullscreen `AddUnsafePass` blocks whose only job was a material blit from one graph texture to another. That keeps Unity 6 RenderGraph dependencies less explicit and violates the project preference for graph utility blits when no custom command-buffer work is required.
+Solution: Converted the simple fullscreen chains to `RenderGraphUtils.AddBlitPass`: atmosphere soot, VR brownout, retina distortion, BIOS diagnostic, scanner projection, noir depth fog, visor fluid distortion, deferred decal composite, reflection sheen mask/composite, biolum SSGI composite, half-res particles composite, sonar history/world/composite, abyssal SSDO gather/blur/composite, and underwater noir shafts/blur/composite. Depth, history, half-res, occlusion, and exposure-buffer dependencies are still declared through returned `IBaseRenderGraphBuilder` handles.
+Rejected Alternatives: A blanket rewrite of all remaining unsafe passes was rejected. Dry-volume needs stencil/depth writes in one sequence, holographic edge uses custom renderer draws, and fluid advection is a compute bridge with cross-domain binding helpers. Rewriting those without Frame Debugger/RenderGraph Viewer proof would be architectural theater.
+Scalability potential: Low/MX350 gets less manual native-command-buffer surface in fullscreen post chains and clearer graph visibility for dependency pruning. Middle/High/Ultra keep the same noir/visor/sonar/SSDO/shaft visuals while the graph owns the blit plumbing.
+Hardware Impact: Estimated 5-60 us CPU/render-graph scheduling hygiene in heavy visor stacks pending capture. Scoped Visor `AddUnsafePass` count reduced from 28 to 4. Remaining 4 are intentionally documented, not hidden.
+
+## Decision 037 - No-Rebuild Eighth Presentation H-Phi Reverification
+Problem: The RenderGraph blit migration changed many visor render features after the phosphor H-Phi pass, while the user explicitly forbade dotnet rebuilds.
+Solution: Reran only static H-Phi, scoped `rg`, brace counting, and `git diff --check`. No `dotnet build`, no `dotnet rebuild`, no Unity import, and no player build were executed.
+Rejected Alternatives: Running a compiler was rejected by user order and the external World/GPR blocker. Reporting the pass as a full H-Phi scalar improvement was rejected because `RuntimeHPhiRisk` moved slightly upward even though primary managed risk improved.
+Scalability potential: Low tier now relies on official RenderGraph utility blits for the cheap visor fullscreen stack, while high/ultra preserve layered noir features and the overkill post chain.
+Hardware Impact: 0 us runtime from the audit itself. Latest static audit: `RuntimeHPhiNarrow=0.010787439`, `RuntimeHPhiRisk=0.000636091`, `AllSourceHPhiRisk=0.000518488`, `FindObjectCalls=0`, `GetComponentCalls=321`, `ManagedFormatSurface=534`, `PrimaryManagedRuntimeRisk=147`, `AupPrecisionRisk=0`.
+
+## Decision 038 - Holographic Edge RasterGraph Migration
+Problem: `HectonHolographicEdgeFeature` still used `AddUnsafePass` solely to issue custom scan-renderer draws, which kept a native command-buffer unwrap in the Visor stack.
+Solution: Added a raster-command overload to `HectonScanRenderRegistry.DrawRenderers` and recorded the edge pass through `AddRasterRenderPass`, with color/depth attachments declared through RenderGraph.
+Rejected Alternatives: Leaving the native unwrap was rejected because Unity 6 `IRasterCommandBuffer.DrawRenderer` covers the required operation. Moving scan registration into a new renderer system was rejected as unnecessary cross-domain churn.
+Scalability potential: Low tier keeps the same cheap edge mask path with graph-visible dependencies. High/Ultra keep the stylized holographic edge draw while removing one unsafe scheduling island.
+Hardware Impact: Estimated 1-10 us CPU/render-graph scheduling hygiene in scan-heavy views pending Frame Debugger capture; no visual algorithm change.
+
+## Decision 039 - Fluid Advection ComputeGraph Migration
+Problem: `HectonFluidAdvectionRenderFeature` used `AddUnsafePass` and native command-buffer access to dispatch a compute kernel that already had stable payload data.
+Solution: Added `IComputeCommandBuffer` bind/unbind overloads in `HectonFluidEngine` and moved the feature to `AddComputePass`, importing graph textures for flow, SDF, and fallback empty SDF handles.
+Rejected Alternatives: Keeping the bridge unsafe was rejected after project/package APIs proved compute buffer, texture, and dispatch methods exist on `IComputeCommandBuffer`. Rewriting the fluid solver was rejected as outside presentation RenderGraph debt.
+Scalability potential: Low/MX350 keeps the same feature gating and compute payload size. High/Ultra keep the same fluid distortion/advection visuals with explicit graph ownership of texture dependencies.
+Hardware Impact: Estimated 1-10 us CPU scheduling hygiene; GPU cost unchanged. The main gain is removing native-command-buffer surface from a compute bridge.
+
+## Decision 040 - Dry Volume Explicit Raster/Blit Sequence
+Problem: Dry-volume restore and underwater resolve bundled stencil writes, render-target switches, copies, fullscreen resolves, and stencil clears inside unsafe RenderGraph passes.
+Solution: Split the logic into explicit graph-visible phases: raster stencil write, graph blit color copy, raster restore/resolve, and stencil clear. `DrawDryStencil` now accepts `IRasterCommandBuffer`, and the underwater resolve declares source/depth/composite resources directly.
+Rejected Alternatives: A single unsafe pass with mid-pass `CoreUtils.SetRenderTarget` was rejected because it hides resource transitions from RenderGraph. Removing dry-volume stencil behavior was rejected because it is a core underwater/noir composition fake.
+Scalability potential: Low tier keeps predictable dry-volume masking without extra simulation. High/Ultra keep cinematic dry interiors and underwater noir composition while RenderGraph sees the dependency chain.
+Hardware Impact: Estimated 2-20 us scheduling/debuggability improvement pending Frame Debugger capture; GPU visual work is intentionally unchanged.
+
+## Decision 041 - Visor Uber Post BlitPass Migration
+Problem: `HectonVisorUberPostFeature` still suppressed obsolete RenderGraph warnings around `AddRenderPass<PassData>` and called `Blitter.BlitCameraTexture` for a plain fullscreen material pass.
+Solution: Replaced the obsolete pass with `RenderGraphUtils.AddBlitPass` and retained the depth dependency through the returned builder when depthless TBDR mode is off.
+Rejected Alternatives: Keeping the 0618 suppression was rejected because the pass has no custom command-buffer requirement. Removing the depth dependency was rejected because pressure, waterline, and wet-lens shader paths can depend on camera depth.
+Scalability potential: Low/Quest-style depthless TBDR keeps the cheaper no-depth dependency path. Middle/High/Ultra keep the full visor post stack with graph-visible depth reads.
+Hardware Impact: Estimated 1-5 us CPU/render-graph hygiene pending capture; no shader or material feature changed.
+
+## Decision 042 - No-Rebuild Ninth Presentation H-Phi Reverification
+Problem: The final RenderGraph pass changed Visor and fluid rendering source after the `21:16:28` H-Phi reading, while the active user order still forbids dotnet rebuilds.
+Solution: Reran only static H-Phi, scoped `rg`, brace counting, and `git diff --check`. The scoped runtime Visor debt scan now reports zero project-owned `AddUnsafePass`, obsolete `AddRenderPass<`, native command-buffer unwraps, `CoreUtils.SetRenderTarget`, or `Blitter.BlitCameraTexture`.
+Rejected Alternatives: Running a dotnet/Unity build was rejected by the direct user order and known external World/GPR compile blocker. Claiming runtime proof from static RenderGraph edits was rejected; Frame Debugger/Profiler proof remains pending a clean project compile.
+Scalability potential: Low tier gets clearer graph pruning for cheap visor passes and no hidden unsafe scheduling islands. High/Ultra keep all noir, scanner, sonar, dry-volume, edge, and fluid visuals with explicit raster/compute/blit graph ownership.
+Hardware Impact: 0 us runtime from the audit itself. Latest static audit: `RuntimeHPhiNarrow=0.010787439`, `RuntimeHPhiRisk=0.000636091`, `AllSourceHPhiNarrow=0.009611624`, `AllSourceHPhiRisk=0.000518488`, `FindObjectCalls=0`, `GetComponentCalls=321`, `ManagedFormatSurface=534`, `PrimaryManagedRuntimeRisk=147`, `AupPrecisionRisk=0`.

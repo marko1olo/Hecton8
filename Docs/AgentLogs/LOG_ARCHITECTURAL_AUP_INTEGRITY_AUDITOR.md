@@ -1444,3 +1444,66 @@ Verification:
 Integrator notes:
 - Assembly-CSharp Loop 53 remains log-green but wrapper-timeout classified: build log says 200 warnings and 0 errors.
 - Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
+
+## 2026-05-15 - Loop 55 AUP Offset Helpers and Core Build Repair
+
+What was wrong:
+- Local-offset AUP construction was scattered as raw `ToAbsoluteDouble3() +/-` arithmetic across player prediction, physiology, Atlas, voxel, power, fauna, and transport paths.
+- Core verification hit active kinematics debt: `PlayerKinematicsRuntime.cs` had a duplicate storage/fault helper block during concurrent edits.
+
+What was done:
+- Added central zero-GC AUP offset/centroid helpers in `AUPMath`, `AbsoluteUniversePosition`, and `MacroDatabaseAup`.
+- Moved local-offset AUP construction to the helpers in 8 runtime systems.
+- Removed the duplicate kinematics helper block while preserving the guarded NativeArray/fault helper behavior.
+
+Cinematic Cheats used:
+- No heavier simulation, new physics query, or managed telemetry path was added.
+- Existing cheap distance/projection behavior remains; only the AUP construction surface changed.
+
+Exact Microseconds saved:
+- Gameplay frame time: 0 us claimed without profiler evidence.
+- Build debt removed: Core went from duplicate/missing helper compile failure to 0 warnings / 0 errors.
+- Audit debt removed: direct full-absolute `ToAbsoluteDouble3()` add/sub scans are now `NO_MATCHES`.
+
+Verification:
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_build_loop55_after_pk_stabilized.log;verbosity=normal"` passed with 0 warnings and 0 errors.
+- Direct same-line and multiline full-absolute add/sub scans return `NO_MATCHES`.
+- Mandatory AUP regex scan returned `MANDATORY_SCAN_LINES=233`, broad/presentation/final-cast names only.
+- Full H-Phi gate completed with `RuntimeHPhiRisk=0.000636091`, `AupPrecisionIntegrity=1`, and `AupPrecisionRisk=0`.
+
+Integrator notes:
+- `Docs\AgentLogs\AUP_loop55_hphi_summary.json` contains the full H-Phi JSON output.
+- Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
+
+## 2026-05-15 - Loop 56 Final Core Build Repair
+
+What was wrong:
+- Final `Hecton8.Core.csproj` verification failed in `HectonDryVolumeFeature.cs`.
+- The dirty visor RenderGraph migration called `AddBlitPass`, but the file did not import `UnityEngine.Rendering.RenderGraphModule.Util`, where the local Unity package exposes the extension.
+
+What was done:
+- Added the missing RenderGraph utility namespace import.
+- Did not revert the dirty visor migration and did not add legacy blit or compatibility-mode code.
+- Re-ran AUP precision scans, Core build, and full H-Phi gate.
+
+Cinematic Cheats used:
+- No new physical/render simulation was added.
+- Existing graph-visible blit path was preserved instead of hidden command-buffer work.
+
+Exact Microseconds saved:
+- Gameplay frame time: 0 us claimed without profiler evidence.
+- Build debt removed: Core went from 2 `AddBlitPass` binding errors to 0 warnings / 0 errors.
+- AUP audit status unchanged and clean: direct full-absolute add/sub scans remain `NO_MATCHES`.
+
+Verification:
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_build_loop56_after_rendergraph_namespace.log;verbosity=normal"` passed with 0 warnings and 0 errors.
+- Direct same-line and multiline full-absolute add/sub scans return `NO_MATCHES`.
+- Mandatory AUP regex scan returned `MANDATORY_LINES=233`, broad/presentation/final-cast names only.
+- Full H-Phi gate completed with `RuntimeHPhiRisk=0.000636091`, `RuntimeHPhiNarrow=0.010787439`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=357`, and `AupPrecisionRisk=0`.
+- `git diff --check` on Loop 55/56 touched source and report files returned exit 0; only line-ending warnings were printed.
+
+Integrator notes:
+- `Docs\AgentLogs\AUP_loop56_hphi_summary.json` contains the full H-Phi JSON output.
+- `Docs\AgentLogs\AUP_build_loop56_final.log` records the initial 2-error failure; `Docs\AgentLogs\AUP_build_loop56_after_rendergraph_namespace.log` records the green build.
+- Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
+- No `dotnet rebuild` was run.

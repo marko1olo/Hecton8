@@ -228,7 +228,7 @@ Unity's player loop into the project dispatcher. The audit reports them as
 `FixedUpdate` methods must fail `-MaxUnityUpdateMethods 0` unless the integrator
 updates this contract with a bounded dispatcher-shell justification.
 
-## 2026-05-15 Current Verified Static Baseline
+## 2026-05-15 Current Static Baseline
 
 Artifact: `../AgentLogs/HPhi_DOC_AUDIT_R49_20260515_210144_AfterKinematicsTierCacheBudgetGate.json`
 with exit summary
@@ -258,7 +258,7 @@ Current static counters passed:
 - `CoroutineSurface=0/0`
 - `AupPrecisionRisk=0`
 
-Current Core graph debt remains at the accepted ceiling:
+R49 Core graph debt was at the accepted ceiling:
 `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`,
 `SourceBackedBridgeDebtReferenceCount=14`,
 `SourceBackedCompileBridgeDebtReferenceCount=8`, and
@@ -269,6 +269,32 @@ interim R47 `GlobalRegistrySurface=5076 > 5075` failure for current-disk static
 H-Phi status only. It is not compile proof, Unity import
 proof, Play Mode proof, profiler proof, GC proof, player-build proof, or visual
 quality proof.
+
+## 2026-05-15 DOC_HONEST_ANALYSIS R3 Core Graph Prune
+
+Artifact: `../AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CoreGraphAfterGprPrune.json`
+with exit summary
+`../AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CoreGraphAfterGprPrune.exit.txt`.
+
+Result: `EXIT=0` on a Core graph summary after removing unused
+`Hecton8.World.GPR` from `Assets/_Project/Scripts/Hecton8.Core.asmdef`.
+
+Current Core graph debt after the prune:
+
+- `CoreAsmdefDebtReferenceCount=25`
+- `GeneratedProjectDebtReferenceCount=10`
+- `SourceBackedBridgeDebtReferenceCount=14`
+- `SourceBackedCompileBridgeDebtReferenceCount=8`
+- `ProjectReferenceReplacementDebtReferenceCount=6`
+- unused Core asmdef reference candidates: none reported by the optional scan
+
+Compile follow-up:
+`../AgentLogs/Build_DOC_HONEST_ANALYSIS_R3_20260515_AfterGprAsmdefPrune_Hecton8Core.log`
+reports `Hecton8.Core.csproj` CLI compile `EXIT=0`, `Build succeeded`,
+`0 Warning(s)`, and `0 Error(s)`.
+
+This is static/CLI evidence only. It is not Unity import proof, Play Mode proof,
+profiler proof, GC proof, player-build proof, or visual-quality proof.
 
 ## Optional Unused Core Reference Scan
 

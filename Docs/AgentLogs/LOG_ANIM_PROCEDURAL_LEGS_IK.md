@@ -519,3 +519,23 @@ No dotnet rebuild was run per user instruction. Unity MCP resources are unavaila
 
 Status:
 PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
+
+## 2026-05-15 Recursive QA Addendum 26
+
+What was wrong:
+The single-entity player kinematics SOA still had creation-only lane checks in several support paths. Origin shift, sync-fence fallback, telemetry snapshots, stamina, VAT scalar, ladder support, and hand probe support could read lane zero after `IsCreated` without proving the lane length was still valid.
+
+What was done:
+Added length-aware helpers for motion SOA, velocity, intended movement, sync-state read/write, and fault flags. Routed position/velocity/intended telemetry snapshots, origin-shift rebasing, sync-fence fallback, state-correction fallback, VAT scalar, stamina, and hand/ladder support reads through sanitized helper accessors.
+
+Cinematic cheats used:
+No extra sensing, no physical body solver, no runtime NativeArray repair. Invalid or partial storage now collapses to neutral snapshots or no kinematics tick, preserving the cheap deterministic presentation fake.
+
+Exact microseconds saved:
+Added work is inline integer length checks and sanitized fallback reads, estimated below 0.04 us/frame on i3/MX350. Prevented cost is hard native lane faults, corrupt telemetry, bad sync-fence hashes, and invalid origin-shift rebases.
+
+Verification:
+No dotnet rebuild was run per user instruction. Unity MCP resources are unavailable in this session. `Select-String` forbidden-pattern scan scoped to `PlayerKinematicsRuntime.cs` returned no matches for `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`. Direct scan for creation-only lane-zero ternaries/fault-flag writes in `PlayerKinematicsRuntime.cs` returned no matches. `git diff --check` over `PlayerKinematicsRuntime.cs` passed with CRLF warning only.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.

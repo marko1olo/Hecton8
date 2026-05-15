@@ -647,3 +647,27 @@ Solution: Restore `double3[96]` absolute-universe history, use `HectonMapMagicVe
 Rejected Alternatives: Ignore the file because it is editor-only, or keep the `Vector3` path to avoid touching another agent's dirty file. Editor diagnostics drive AUP investigation quality; the dirty change directly violated the AUP scan gate, so working with the file and restoring the precision lane was required.
 Scalability potential: Low devices pay editor-only cold memory and a few double operations at debug sample cadence. Middle gets trustworthy long-session ghost previews. High/Ultra QA can inspect origin-shift drift without the diagnostic tool adding float aliasing.
 Hardware Impact: Gameplay frame impact is 0 us and 0 B/frame because the file is editor-only. Verification: strict AUP scan returns `NO_MATCHES`; `Hecton8.Editor.csproj` passed with 48 package/third-party warnings and 0 errors; full H-Phi reports `AupPrecisionRisk=0`.
+
+## Decision 81 - Centralized AUP Offset Construction
+
+Problem: Several systems still constructed nearby AUPs by expanding an origin with `ToAbsoluteDouble3() + localOffset` or padding with `ToAbsoluteDouble3() +/- padding`. Those sites were not float leaks, but they scattered finite policy and kept future precision audits noisy.
+Solution: Add central double-backed offset helpers on `AbsoluteUniversePosition`/`AUPMath` and a matching `MacroDatabaseAup` contract helper, then route player prediction, stress metrics, Atlas centroid, fauna prediction/wander, transport platform projection, voxel proxy bounds, persistent fauna jitter, and WFC power macro AUP shifts through those helpers.
+Rejected Alternatives: Leave local construction arithmetic because it already used `double3`, or hide the scan by reformatting expressions. Leaving it duplicates policy; reformatting without a helper would be fake cleanup. The helper gives one reviewed non-finite fallback and one audit surface.
+Scalability potential: Low devices keep stack-only math and no allocations. Middle gets stable local-offset AUP construction after long sessions. High/Ultra can add richer AI/Atlas/voxel presentation without each caller reinventing AUP offset safety.
+Hardware Impact: 0 B/frame added. Runtime cost is equivalent stack double math; invalid offset cases now fall back to the origin and increment the existing AUP invalid-result counter. Verification: direct full-absolute add/subtract scans return `NO_MATCHES`; Core build passes with 0 warnings and 0 errors; full H-Phi reports `AupPrecisionRisk=0`.
+
+## Decision 82 - Kinematics Duplicate Helper Build Repair
+
+Problem: While verifying Loop 55, `PlayerKinematicsRuntime.cs` alternated between duplicate helper definitions and missing helper compile errors because concurrent edits inserted the same storage/fault helper block twice, then moved it while the compiler was running.
+Solution: Keep a single helper block near the first callsites, remove the duplicate copy, and re-run the Core build after the file stabilized. No kinematic algorithm, force mode, KCC snap, or telemetry format was changed.
+Rejected Alternatives: Revert the whole dirty kinematics file, edit generated project files, or mark the build blocked. Reverting would destroy another agent's unrelated safety edits; project edits would not fix duplicate source members; blocking was unnecessary after the local source debt was isolated.
+Scalability potential: Low devices benefit from the retained guarded storage checks instead of unsafe direct NativeArray reads. Middle/High/Ultra keep the same deterministic KCC pipeline and 300-frame sync-fence behavior without duplicate source debt.
+Hardware Impact: 0 us gameplay change claimed. Build/integration impact is concrete: `Hecton8.Core.csproj` went from 16 duplicate-member errors / 40 missing-helper errors to 0 warnings and 0 errors. Full H-Phi gate reports `RuntimeHPhiRisk=0.000636091` and `AupPrecisionRisk=0`.
+
+## Decision 83 - RenderGraph Blit Namespace Build Repair
+
+Problem: Final Core verification failed after a concurrent dirty RenderGraph migration in `HectonDryVolumeFeature.cs`. The file used `renderGraph.AddBlitPass(...)`, but did not import `UnityEngine.Rendering.RenderGraphModule.Util`, where the local Unity 6000.4 package exposes the extension methods.
+Solution: Add the missing namespace import only. The repair matches the existing first-party visor features, keeps the RenderGraph path, and avoids any compatibility-mode, unsafe-pass, or `Graphics.Blit` fallback.
+Rejected Alternatives: Revert the whole dirty visor migration, replace the copy pass with legacy command-buffer blits, or edit generated project references. Reverting would erase another agent's RenderGraph work; legacy blits violate the URP RenderGraph mandate; project references would not fix a missing source namespace.
+Scalability potential: Low devices keep the same pass cost and load-shed behavior already encoded by the visor feature. Middle/High/Ultra keep graph-visible render passes instead of hidden command-buffer work, preserving future RenderGraph viewer/debuggability.
+Hardware Impact: 0 us gameplay change claimed. Compile impact is concrete: `Hecton8.Core.csproj` went from 2 `AddBlitPass` extension binding errors to 0 warnings and 0 errors. Full H-Phi gate reports `RuntimeHPhiRisk=0.000636091`, `AupPrecisionIntegrity=1`, and `AupPrecisionRisk=0`.

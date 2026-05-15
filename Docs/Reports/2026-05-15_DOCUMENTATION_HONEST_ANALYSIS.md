@@ -173,6 +173,35 @@ What was done:
 
 Residual risk: This continuation did not read or rewrite every historical report. It corrected active navigation surfaces found by focused text scan. Runtime remains unverified.
 
+## Continuation R3 - H-Phi Core Graph Debt Cleanup
+
+Claim: Current H-Phi static summary should not rely on stale R49 evidence after concurrent project churn.
+
+Evidence Class: STATIC_SOURCE + CLI_COMPILE
+
+Artifacts:
+
+- `Docs/AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CurrentStaticSummary.json`
+- `Docs/AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CurrentStaticSummary.exit.txt`
+- `Docs/AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CoreGraphAfterGprPrune.json`
+- `Docs/AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CoreGraphAfterGprPrune.exit.txt`
+- `Docs/AgentLogs/Build_DOC_HONEST_ANALYSIS_R3_20260515_AfterGprAsmdefPrune_Hecton8Core.log`
+- `Docs/AgentLogs/Build_DOC_HONEST_ANALYSIS_R3_20260515_AfterGprAsmdefPrune_Hecton8Core.exit.txt`
+
+What was wrong:
+
+- Fresh H-Phi summary still had `HPhiStaticRisk=0.000636091`, but Core asmdef debt had drifted to `26`.
+- Optional unused-reference scan identified `Hecton8.World.GPR` as a high-confidence unused Core asmdef reference.
+
+What was done:
+
+- Removed only `Hecton8.World.GPR` from `Assets/_Project/Scripts/Hecton8.Core.asmdef`.
+- Left World GPR runtime source and contracts untouched.
+- Re-ran Core graph H-Phi gate: post-prune Core graph debt is `25/10/14/8/6`, and unused Core asmdef candidates are clear.
+- Re-ran `Hecton8.Core.csproj` CLI compile: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`.
+
+Residual risk: This is not Unity import, Unity Console, Play Mode, profiler, GCMonitor, player-build, frame-time, memory, scene wiring, save/load, or visual proof. It is a narrow static dependency cleanup.
+
 ## Regression Model
 
 CPU: No runtime code changed. Runtime CPU delta: `0` claimed.

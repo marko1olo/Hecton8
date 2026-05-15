@@ -19,6 +19,9 @@ namespace Hecton8.Visor
             private sealed class PassData
             {
                 internal HectonFluidEngine.FluidAdvectionRenderGraphPayload Payload;
+                internal TextureHandle FlowTexture;
+                internal TextureHandle SdfTexture;
+                internal TextureHandle EmptyTexture;
             }
 
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Fluid Advection");
@@ -57,10 +60,14 @@ namespace Hecton8.Visor
                 BufferHandle dynamicWakeVectors = renderGraph.ImportBuffer(payload.DynamicWakeVectors);
                 TextureHandle flowTexture = renderGraph.ImportTexture(payload.AbyssalFlowTextureHandle);
                 TextureHandle sdfTexture = renderGraph.ImportTexture(payload.VoxelSdfTextureHandle);
+                TextureHandle emptyTexture = renderGraph.ImportTexture(payload.EmptyVoxelSdfTextureHandle);
 
-                using (var builder = renderGraph.AddUnsafePass<PassData>("Hecton Fluid Advection", out PassData passData, _profilingSampler))
+                using (var builder = renderGraph.AddComputePass("Hecton Fluid Advection", out PassData passData, _profilingSampler))
                 {
                     passData.Payload = payload;
+                    passData.FlowTexture = flowTexture;
+                    passData.SdfTexture = sdfTexture;
+                    passData.EmptyTexture = emptyTexture;
 
                     builder.UseBuffer(siltRead, AccessFlags.Read);
                     builder.UseBuffer(siltWrite, AccessFlags.Write);
@@ -73,20 +80,19 @@ namespace Hecton8.Visor
                     builder.UseBuffer(dynamicWakeVectors, AccessFlags.Read);
                     builder.UseTexture(flowTexture, AccessFlags.Read);
                     builder.UseTexture(sdfTexture, AccessFlags.Read);
+                    builder.UseTexture(emptyTexture, AccessFlags.Read);
                     builder.AllowPassCulling(false);
-                    builder.AllowGlobalStateModification(true);
 
-                    builder.SetRenderFunc((PassData data, UnsafeGraphContext context) =>
+                    builder.SetRenderFunc((PassData data, ComputeGraphContext context) =>
                     {
-                        CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
-                        HectonFluidEngine.BindFluidAdvectionCompute(cmd, in data.Payload);
-                        cmd.DispatchCompute(
+                        HectonFluidEngine.BindFluidAdvectionCompute(context.cmd, in data.Payload, data.FlowTexture, data.SdfTexture);
+                        context.cmd.DispatchCompute(
                             data.Payload.Compute,
                             data.Payload.Kernel,
                             data.Payload.DispatchGroups,
                             1,
                             1);
-                        HectonFluidEngine.UnbindFluidAdvectionCompute(cmd, in data.Payload);
+                        HectonFluidEngine.UnbindFluidAdvectionCompute(context.cmd, in data.Payload, data.EmptyTexture);
                     });
                 }
             }

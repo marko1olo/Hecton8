@@ -1198,3 +1198,60 @@ Status: VERIFIED AUP INTEGRITY - LOOP 39 REAL H-PHI SOURCE REPAIR REMOVED DEAD O
 ### Evidence Queue
 
 - Unity import/Console, PlayMode, profiler, and GCMonitor proof remain pending because no Unity editor session is available.
+
+## Loop 55 AUP Offset Construction Centralization and Kinematics Build Repair
+
+### Findings
+
+- Direct full-absolute add/subtract scans still found AUP construction sites that expanded origins through `ToAbsoluteDouble3() +/- localOffset`.
+- These were mostly local-offset construction paths, not early float subtraction, but they scattered finite policy and kept future AUP audits noisy.
+- Verification initially hit a real build wall in `PlayerKinematicsRuntime.cs`: concurrent edits had duplicated the same storage/fault helper block, then the compiler alternated between duplicate-member and missing-helper states while the file was changing.
+
+### Source Changes
+
+- `Assets/_Project/Scripts/World/AUPMath.cs`: added `OffsetAbsoluteMeters` and `WeightedAbsoluteAverage3`, both stack-only and finite-guarded.
+- `Assets/_Project/Scripts/World/PersistentWorldRegistry.cs`: exposed `AbsoluteUniversePosition.OffsetMeters`, `OffsetAbsoluteMeters`, and `WeightedAverage3` as the shared AUP construction surface.
+- `Assets/_Project/Scripts/Core/Contracts/MacroDatabaseContracts.cs`: added double-backed `MacroDatabaseAup.OffsetAbsoluteMeters` / `OffsetMeters` without taking a World assembly dependency.
+- Refactored AUP local-offset construction in `HectonPlayerState`, `PlayerStressMetricsRuntime`, `SignalBeacon`, `PersistentWorldRegistry`, `HectonVoxelEngine`, `WfcOutpostPowerBootRuntime`, `FaunaBrain`, and `HectonPlayerMovement`.
+- `Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs`: retained one guarded storage/fault helper block and removed the duplicate build-breaking copy. No KCC algorithm or sync-fence cadence was changed.
+
+### Verification
+
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_build_loop55_after_pk_stabilized.log;verbosity=normal"` succeeded with 0 warnings and 0 errors.
+- Direct same-line full-absolute add/subtract scan returned `NO_MATCHES`.
+- Direct multiline `ToAbsoluteDouble3()` followed by `+/-` scan returned `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` returned `MANDATORY_SCAN_LINES=233`; residuals remain broad `universe` text and known final-cast/presentation payload names.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed with `RuntimeHPhiRisk=0.000636091`, `RuntimeHPhiNarrow=0.010787439`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=357`, `AupPrecisionRisk=0`, `NativeArrayRefs=7074`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, `NativeOwnershipRisk=8196`, `RuntimeFiles=1278`, and `RuntimeLines=872600`.
+- `git diff --check` on Loop 55 touched files reports line-ending warning only, no whitespace errors.
+
+### Evidence Queue
+
+- Unity import/Console, PlayMode, profiler, and GCMonitor proof remain pending.
+- `Hecton8.Core.AUP` asmdef isolation is still blocked by architecture; current AUP authority remains embedded in `PersistentWorldRegistry.cs`.
+
+## Loop 56 Final Build Recheck and RenderGraph Namespace Repair
+
+### Findings
+
+- Final Core build recheck exposed a non-AUP build break in `Assets/_Project/Scripts/Visor/HectonDryVolumeFeature.cs`.
+- The file had already been migrated from unsafe RenderGraph passes to `AddBlitPass`, but lacked `UnityEngine.Rendering.RenderGraphModule.Util`, the namespace that defines the local package extension methods.
+- This was build debt, not AUP drift debt. It blocked final verification, so a narrow cross-domain build repair was justified.
+
+### Source Changes
+
+- `Assets/_Project/Scripts/Visor/HectonDryVolumeFeature.cs`: added `using UnityEngine.Rendering.RenderGraphModule.Util;`.
+- No render pass ordering, material creation, texture allocation policy, or AUP math changed.
+
+### Verification
+
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_build_loop56_after_rendergraph_namespace.log;verbosity=normal"` succeeded with 0 warnings and 0 errors.
+- Direct same-line full-absolute add/subtract scan returned `NO_MATCHES`.
+- Direct multiline `ToAbsoluteDouble3()` followed by `+/-` scan returned `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` returned `MANDATORY_LINES=233`; residuals remain broad `universe` text and known final-cast/presentation payload names.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed with `RuntimeHPhiRisk=0.000636091`, `RuntimeHPhiNarrow=0.010787439`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=357`, `AupPrecisionRisk=0`, `NativeArrayRefs=7074`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, `NativeOwnershipRisk=8196`, `RuntimeFiles=1278`, and `RuntimeLines=872640`.
+- `git diff --check` on Loop 55/56 touched source and report files returned exit 0; only line-ending warnings were printed.
+
+### Evidence Queue
+
+- Unity import/Console, PlayMode, profiler, and GCMonitor proof remain pending.
+- No `dotnet rebuild` was run.

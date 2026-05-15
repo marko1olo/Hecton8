@@ -56,6 +56,7 @@ using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.RenderGraphModule;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -2880,6 +2881,41 @@ namespace Hecton8.Physics
             cmd.SetComputeVectorParam(compute, _FluidAdvectionSdfParamsId, payload.SdfParams);
         }
 
+        internal static void BindFluidAdvectionCompute(
+            IComputeCommandBuffer cmd,
+            in FluidAdvectionRenderGraphPayload payload,
+            TextureHandle abyssalFlowTexture,
+            TextureHandle voxelSdfTexture)
+        {
+            ComputeShader compute = payload.Compute;
+            int kernel = payload.Kernel;
+            cmd.SetComputeBufferParam(compute, kernel, _SiltReadId, payload.SiltRead);
+            cmd.SetComputeBufferParam(compute, kernel, _SiltWriteId, payload.SiltWrite);
+            cmd.SetComputeBufferParam(compute, kernel, _BubbleReadId, payload.BubbleRead);
+            cmd.SetComputeBufferParam(compute, kernel, _BubbleWriteId, payload.BubbleWrite);
+            cmd.SetComputeBufferParam(compute, kernel, _DebrisReadId, payload.DebrisRead);
+            cmd.SetComputeBufferParam(compute, kernel, _DebrisWriteId, payload.DebrisWrite);
+            cmd.SetComputeBufferParam(compute, kernel, _AbyssalFlowFieldResultId, payload.AbyssalFlowBuffer);
+            cmd.SetComputeBufferParam(compute, kernel, _DynamicWakesId, payload.DynamicWakes);
+            cmd.SetComputeBufferParam(compute, kernel, _DynamicWakeVectorsId, payload.DynamicWakeVectors);
+            cmd.SetComputeTextureParam(compute, kernel, _AbyssalFlowFieldTextureId, abyssalFlowTexture);
+            cmd.SetComputeTextureParam(compute, kernel, _VoxelSdfTexture3DId, voxelSdfTexture);
+            cmd.SetComputeVectorParam(compute, _FluidAdvectionCountsId, payload.Counts);
+            cmd.SetComputeVectorParam(compute, _FluidAdvectionParamsId, payload.Params);
+            cmd.SetComputeVectorParam(compute, _FluidAdvectionBuoyancyId, payload.Buoyancy);
+            cmd.SetComputeVectorParam(compute, _FluidAdvectionAupShiftDeltaId, payload.AupShiftDelta);
+            cmd.SetComputeVectorParam(compute, _DynamicWakeParamsId, payload.DynamicWakeParams);
+            cmd.SetComputeVectorParam(compute, _AbyssalGridResolutionId, payload.AbyssalGridResolution);
+            cmd.SetComputeVectorParam(compute, _AbyssalFlowCenterId, payload.AbyssalFlowCenter);
+            cmd.SetComputeVectorParam(compute, _AbyssalFlowSpacingId, payload.AbyssalFlowSpacing);
+            cmd.SetComputeVectorParam(compute, _AbyssalFlowTextureParamsId, payload.AbyssalFlowTextureParams);
+            cmd.SetComputeFloatParam(compute, _AbyssalFlowTextureActiveId, payload.AbyssalFlowTextureActive);
+            cmd.SetComputeFloatParam(compute, _AbyssalFlowInterpolationAlphaId, payload.AbyssalFlowInterpolationAlpha);
+            cmd.SetComputeMatrixParam(compute, _VoxelSdfWorldToLocalId, payload.VoxelSdfWorldToLocal);
+            cmd.SetComputeVectorParam(compute, _VoxelSdfInvDoubleHalfExtentsId, payload.VoxelSdfInvDoubleHalfExtents);
+            cmd.SetComputeVectorParam(compute, _FluidAdvectionSdfParamsId, payload.SdfParams);
+        }
+
         internal static void UnbindFluidAdvectionCompute(CommandBuffer cmd, in FluidAdvectionRenderGraphPayload payload)
         {
             ComputeShader compute = payload.Compute;
@@ -2895,6 +2931,26 @@ namespace Hecton8.Physics
             cmd.SetComputeBufferParam(compute, kernel, _DynamicWakeVectorsId, payload.EmptyDynamicWakeVectors);
             cmd.SetComputeTextureParam(compute, kernel, _AbyssalFlowFieldTextureId, payload.EmptyVoxelSdfTexture);
             cmd.SetComputeTextureParam(compute, kernel, _VoxelSdfTexture3DId, payload.EmptyVoxelSdfTexture);
+        }
+
+        internal static void UnbindFluidAdvectionCompute(
+            IComputeCommandBuffer cmd,
+            in FluidAdvectionRenderGraphPayload payload,
+            TextureHandle emptyTexture)
+        {
+            ComputeShader compute = payload.Compute;
+            int kernel = payload.Kernel;
+            cmd.SetComputeBufferParam(compute, kernel, _SiltReadId, payload.EmptySiltBuffer);
+            cmd.SetComputeBufferParam(compute, kernel, _SiltWriteId, payload.EmptySiltBuffer);
+            cmd.SetComputeBufferParam(compute, kernel, _BubbleReadId, payload.EmptyBubbleBuffer);
+            cmd.SetComputeBufferParam(compute, kernel, _BubbleWriteId, payload.EmptyBubbleBuffer);
+            cmd.SetComputeBufferParam(compute, kernel, _DebrisReadId, payload.EmptyDebrisBuffer);
+            cmd.SetComputeBufferParam(compute, kernel, _DebrisWriteId, payload.EmptyDebrisBuffer);
+            cmd.SetComputeBufferParam(compute, kernel, _AbyssalFlowFieldResultId, payload.EmptyAbyssalFlowBuffer);
+            cmd.SetComputeBufferParam(compute, kernel, _DynamicWakesId, payload.EmptyDynamicWakes);
+            cmd.SetComputeBufferParam(compute, kernel, _DynamicWakeVectorsId, payload.EmptyDynamicWakeVectors);
+            cmd.SetComputeTextureParam(compute, kernel, _AbyssalFlowFieldTextureId, emptyTexture);
+            cmd.SetComputeTextureParam(compute, kernel, _VoxelSdfTexture3DId, emptyTexture);
         }
 
         private void DrainSplashdownFluidSignals(float cinematicWaterLevel)

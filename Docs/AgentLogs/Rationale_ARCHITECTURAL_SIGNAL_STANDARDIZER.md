@@ -1,7 +1,7 @@
 # Rationale - ARCHITECTURAL_SIGNAL_STANDARDIZER
 
-Status: CORE CLI BUILD GREEN / GLOBAL LEGACY BLOCKED
-Evidence class: CLI_COMPILE for Core project; STATIC_SOURCE for global legacy eradication and runtime GC until Unity profiler/console artifacts exist.
+Status: CORE STATIC PASS / CLI BUILD BLOCKED BY UNITY PACKAGE ARTIFACTS / GLOBAL LEGACY BLOCKED
+Evidence class: last-known CLI_COMPILE through Loop 13; STATIC_SOURCE for Loop 14-15 guard expansion; DEPENDENCY_BLOCKED for fresh Core CLI build until Unity package assemblies/surfaces regenerate; STATIC_SOURCE for global legacy eradication and runtime GC until Unity profiler/console artifacts exist.
 
 ## Intake Decisions
 
@@ -142,6 +142,24 @@ Solution: Convert Core camera/input/time/memory signal producers to `default` pa
 Rejected Alternatives: Leaving value-type `new` as "technically no GC" was rejected because the local audit policy intentionally uses strict text filters; changing the static audit rule was rejected because this agent owns code, not policy.
 Scalability potential: Runtime behavior is unchanged; cleaner producers make later Low/Middle/High/Ultra signal-lane audits faster and reduce false positives when reserving performance budget for visual consumers.
 Hardware Impact: Expected runtime neutral. Microseconds saved are audit/integration time, not frame time; profiler proof absent.
+
+Problem: Several already-configured typed lanes still carried finite-sensitive floats without Push-level vaccination: radiation dose/source, thermodynamics, culling, wake/fluid, biome blend, memory pressure, resolution, system health, CPU starvation, acoustic pings, streaming turbulence, re-entry, vehicle depth modifiers, save progress, light level, submarine lights, physiology, stress, and trauma.
+Solution: Extend the cached guard-kind switch with explicit scalar/vector sanitizers for those lanes. Use `SanitizeFiniteZero` where signed values may be valid, `SanitizeNonNegative` for magnitudes/budgets/radii, `SanitizeUnit01` for normalized presentation values, and AUP/vector finite fallbacks for spatial packets. DOD pattern: validate once at typed-bus ingress, emit numeric telemetry through the existing invalid-number path, and keep consumers defensive-light.
+Rejected Alternatives: Reflection field walking was rejected because it moves metadata work into signal admission; consumer-side validation was rejected because it duplicates checks and still allows poisoned snapshots to reach other consumers; clamping every signed scalar to non-negative was rejected because temperature delta and signed safe-depth bonus can be meaningful.
+Scalability potential: Low tier gets deterministic fallbacks for visual and physiology lanes with bounded snapshot cost; Middle/High/Ultra can consume clean packets for richer fog/light/acoustic/physiology presentation without each visual consumer paying its own NaN guard tax.
+Hardware Impact: Normal path remains a cached byte switch plus lane-specific scalar checks only for guarded lanes. Expected cost is sub-1us per affected push on i3/MX350; measured proof is absent.
+
+Problem: Fresh CLI compilation is red after Loop 14 even though no source-level syntax error is visible in the guard edit.
+Solution: Classify this as a dependency/tooling wall, not a green build: `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false /p:UseSharedCompilation=false` exits 1 because Unity-generated `Library/ScriptAssemblies` package assemblies are absent and package project references fail on Unity/TMP/InputSystem/URP surfaces. Focused static scans remain clean, and `git diff --check` reports only CRLF normalization.
+Rejected Alternatives: Faking a fresh green build was rejected; reverting the finite-guard chunk was rejected because the compile errors are missing Unity package/reference artifacts and unresolved external types, not diagnostics introduced by the guard logic.
+Scalability potential: N/A runtime; this is verification hygiene.
+Hardware Impact: 0us runtime. Verification impact is a blocked compile gate until Unity regenerates package assemblies.
+
+Problem: After the broader finite pass, a static sweep still found typed `SignalBus<T>`-referenced contracts with explicit floats or AUP locals that were not covered by cached ingress guards: haptic, action cancel, item durability, brownout, entity death, movement acoustic, swarm dispersion, scanner active, storage debt, prologue complete, manual override, WFC outpost, and AUP-only drop-pod/item/biome/sector residency lanes.
+Solution: Add the remaining cached guard kinds and explicit sanitizers for those typed lanes. The AUP-only lanes reuse `SanitizeAup`, haptic/action/item/scanner/storage use normalized and non-negative scalar guards, and WFC/prologue/manual-override lanes use finite/positive fallbacks that preserve contract shape.
+Rejected Alternatives: Editing producers across QA, World, Power, UI, and inventory domains was rejected for this pass because the safer Core-contract move is to sanitize at typed-bus ingress; leaving AUP-only lanes out was rejected because `AbsoluteUniversePosition.Local*` fields are still floats even when the struct block does not contain an explicit `float` token.
+Scalability potential: Low tier can trust typed snapshots from prologue/world residency/WFC and avoid per-consumer AUP recovery; High/Ultra can use the same clean signals for denser world streaming masks, haptic intensity, brownout lighting, and scanner presentation without widening packets.
+Hardware Impact: Normal-path cost remains a cached byte switch and a few scalar checks on guarded lanes. Static sweep now shows no `SignalBus<T>`-referenced Core contract with explicit float/AUP payload lacking an ingress guard; runtime proof remains pending.
 
 ## Mandates Loaded
 

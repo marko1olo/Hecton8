@@ -2526,10 +2526,9 @@ namespace Hecton8.AI
         private static AbsoluteUniversePosition PredictTargetAup(in AbsoluteUniversePosition targetAup, Vector3 velocityVector, float deltaTime)
         {
             double leadSeconds = math.max(0d, (double)deltaTime);
-            double3 predictedAbsolute = targetAup.ToAbsoluteDouble3() +
-                                        new double3(velocityVector.x, velocityVector.y, velocityVector.z) *
-                                        leadSeconds;
-            return AbsoluteUniversePosition.FromAbsolutePosition(predictedAbsolute);
+            return AbsoluteUniversePosition.OffsetMeters(
+                in targetAup,
+                new double3(velocityVector.x, velocityVector.y, velocityVector.z) * leadSeconds);
         }
 
         private void ClearVoxelPathGuidance()
@@ -3715,9 +3714,9 @@ namespace Hecton8.AI
                 away = new float3(awayDirection.x, awayDirection.y, awayDirection.z);
             }
 
-            double3 wanderAbsolute = selfAup.ToAbsoluteDouble3() +
-                                     new double3(away.x, away.y, away.z) * PredatorDeafenedWanderRadiusMeters;
-            _predatorDeafenedWanderAup = AbsoluteUniversePosition.FromAbsolutePosition(wanderAbsolute);
+            _predatorDeafenedWanderAup = AbsoluteUniversePosition.OffsetMeters(
+                in selfAup,
+                new double3(away.x, away.y, away.z) * PredatorDeafenedWanderRadiusMeters);
             _hasPredatorDeafenedWanderAup = true;
             float3 runtimeTarget = _predatorDeafenedWanderAup.ToRuntimeFloat3();
             Vector3 target = new Vector3(runtimeTarget.x, runtimeTarget.y, runtimeTarget.z);

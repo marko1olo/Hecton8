@@ -814,3 +814,32 @@ Cinematic Cheats used:
 
 Exact microseconds saved:
 - None. This is evidence freshness after another agent's adjacent string-format cleanup.
+
+## 2026-05-15 - H-Phi Budget Surface And Current Build Repair
+STATUS: BUILD VERIFIED / H-PHI VERIFIED
+
+What was wrong:
+- H-Phi budget gates briefly failed on `GlobalRegistrySurface`, partly from counted comment-only literals.
+- Unity regenerated `Library/ScriptAssemblies` during a build, producing a transient wall of missing Unity package and generated Hecton references.
+- After references returned, the real compile failures were concrete: WFC bridge calls to stale `MacroDatabaseAup` helper members and a `PlayerKinematicsRuntime` helper visibility/stale compiler state issue.
+
+What was done:
+- Reduced comment-only H-Phi surface in adjacent save/audio files without changing runtime behavior.
+- Kept `SaveManager.ResolveWfcOutpostSnapshotCacheFlags` on a local dirty-bit byte mask.
+- Updated `WfcOutpostPowerBootRuntime` to resolve MacroDB AUP absolute/shifted positions from public fields with finite guards, removing dependency on regenerated contracts helper methods.
+- Preserved and tightened `PlayerKinematicsRuntime` storage helper predicates so motion SOA readiness includes position, velocity, and last-valid lanes.
+- Used `/p:UseSharedCompilation=false` for normal `dotnet build` invocations to bypass stale VBCSCompiler state. No `dotnet rebuild` was run.
+
+Cinematic Cheats used:
+- No new simulation. This pass preserves analytical gas hibernation and WFC power masking; it removes build/runtime coupling debt rather than adding physical fidelity.
+
+Exact microseconds saved:
+- No new measured runtime claim. Existing savings remain the Dalton hibernation skip path and the WFC bridge's removed main-thread job wait. This pass buys stability and H-Phi headroom.
+
+Verification:
+- `Build_HABITAT_O2_SCRUBBER_LOD_20260515_215339_CurrentDisk_NoSharedCompiler.log`: 0 warnings, 0 errors.
+- `Build_HABITAT_O2_SCRUBBER_LOD_20260515_220859_CurrentDisk_NoSharedCompiler.log`: 0 warnings, 0 errors.
+- No C# source under `Assets/_Project/Scripts` is newer than the 22:09:01 build log.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` exited 0 with STATIC_SOURCE evidence.
+- H-Phi counts after the pass: RuntimeHPhiRisk 0.000636091, DataSovereignty 0.021306032, MemoryAlignment 0.506309148, AUP risk 0, FindObject 0, GlobalRegistrySurface 5060, ManagedFormatSurface 534, PrimaryManagedRuntimeRisk 147, JobCompleteSurface 58.
+- `git diff --check` on the touched runtime files exits 0 with CRLF working-copy warnings only.

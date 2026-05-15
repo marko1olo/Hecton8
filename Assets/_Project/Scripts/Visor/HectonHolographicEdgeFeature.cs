@@ -40,8 +40,6 @@ namespace Hecton8.Visor
         {
             private sealed class PassData
             {
-                internal TextureHandle color;
-                internal TextureHandle depth;
                 internal Material material;
                 internal uint requiredFlags;
                 internal int maxDrawnTargets;
@@ -87,22 +85,21 @@ namespace Hecton8.Visor
                 if (!colorTexture.IsValid() || !depthTexture.IsValid())
                     return;
 
-                using (var builder = renderGraph.AddUnsafePass<PassData>("Hecton Holographic Edge", out PassData passData, _profilingSampler))
+                using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<PassData>(
+                           "Hecton Holographic Edge",
+                           out PassData passData,
+                           _profilingSampler))
                 {
-                    passData.color = colorTexture;
-                    passData.depth = depthTexture;
                     passData.material = _material;
                     passData.requiredFlags = _requiredFlags;
                     passData.maxDrawnTargets = _maxDrawnTargets;
 
-                    builder.UseTexture(colorTexture, AccessFlags.ReadWrite);
-                    builder.UseTexture(depthTexture, AccessFlags.Read);
+                    builder.SetRenderAttachment(colorTexture, 0, AccessFlags.ReadWrite);
+                    builder.SetRenderAttachmentDepth(depthTexture, AccessFlags.Read);
 
-                    builder.SetRenderFunc((PassData data, UnsafeGraphContext context) =>
+                    builder.SetRenderFunc((PassData data, RasterGraphContext context) =>
                     {
-                        CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
-                        CoreUtils.SetRenderTarget(cmd, data.color, data.depth, ClearFlag.None);
-                        HectonScanRenderRegistry.DrawRenderers(cmd, data.material, data.requiredFlags, data.maxDrawnTargets);
+                        HectonScanRenderRegistry.DrawRenderers(context.cmd, data.material, data.requiredFlags, data.maxDrawnTargets);
                     });
                 }
             }

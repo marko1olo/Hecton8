@@ -645,6 +645,25 @@ namespace Hecton8.Core.Signals
         private const int PhysiologyStateSignalGuardCode = unchecked((int)0x51A1002Du);
         private const int PlayerStressSignalGuardCode = unchecked((int)0x51A1002Eu);
         private const int TraumaSignalGuardCode = unchecked((int)0x51A1002Fu);
+        private const int ItemDurabilityChangedSignalGuardCode = unchecked((int)0x51A10030u);
+        private const int BrownoutSignalGuardCode = unchecked((int)0x51A10031u);
+        private const int EntityDeathSignalGuardCode = unchecked((int)0x51A10032u);
+        private const int MovementAcousticSignalGuardCode = unchecked((int)0x51A10033u);
+        private const int SwarmDispersedSignalGuardCode = unchecked((int)0x51A10034u);
+        private const int ScannerToolActiveSignalGuardCode = unchecked((int)0x51A10035u);
+        private const int StorageDebtSignalGuardCode = unchecked((int)0x51A10036u);
+        private const int PrologueCompleteSignalGuardCode = unchecked((int)0x51A10037u);
+        private const int ManualOverridePulledSignalGuardCode = unchecked((int)0x51A10038u);
+        private const int WfcOutpostGeneratedSignalGuardCode = unchecked((int)0x51A10039u);
+        private const int WfcOutpostDoorPowerSignalGuardCode = unchecked((int)0x51A1003Au);
+        private const int HapticRequestGuardCode = unchecked((int)0x51A1003Bu);
+        private const int PlayerActionCancelledSignalGuardCode = unchecked((int)0x51A1003Cu);
+        private const int DropPodLandedSignalGuardCode = unchecked((int)0x51A1003Du);
+        private const int ItemAcquiredSignalGuardCode = unchecked((int)0x51A1003Eu);
+        private const int BiomeChangedSignalGuardCode = unchecked((int)0x51A1003Fu);
+        private const int SectorResidencyHydratedSignalGuardCode = unchecked((int)0x51A10040u);
+        private const int SectorDehydratedSignalGuardCode = unchecked((int)0x51A10041u);
+        private const int ChunkDehydratedSignalGuardCode = unchecked((int)0x51A10042u);
         private const byte GuardNone = 0;
         private const byte GuardDamage = 1;
         private const byte GuardImpact = 2;
@@ -693,6 +712,25 @@ namespace Hecton8.Core.Signals
         private const byte GuardPhysiologyState = 45;
         private const byte GuardPlayerStress = 46;
         private const byte GuardTrauma = 47;
+        private const byte GuardItemDurabilityChanged = 48;
+        private const byte GuardBrownout = 49;
+        private const byte GuardEntityDeath = 50;
+        private const byte GuardMovementAcoustic = 51;
+        private const byte GuardSwarmDispersed = 52;
+        private const byte GuardScannerToolActive = 53;
+        private const byte GuardStorageDebt = 54;
+        private const byte GuardPrologueComplete = 55;
+        private const byte GuardManualOverridePulled = 56;
+        private const byte GuardWfcOutpostGenerated = 57;
+        private const byte GuardWfcOutpostDoorPower = 58;
+        private const byte GuardHapticRequest = 59;
+        private const byte GuardPlayerActionCancelled = 60;
+        private const byte GuardDropPodLanded = 61;
+        private const byte GuardItemAcquired = 62;
+        private const byte GuardBiomeChanged = 63;
+        private const byte GuardSectorResidencyHydrated = 64;
+        private const byte GuardSectorDehydrated = 65;
+        private const byte GuardChunkDehydrated = 66;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int Sanitize<T>(ref T signal)
@@ -935,6 +973,101 @@ namespace Hecton8.Core.Signals
                     ref TraumaSignal typed = ref UnsafeUtility.As<T, TraumaSignal>(ref signal);
                     return SanitizeTraumaSignal(ref typed);
                 }
+                case GuardItemDurabilityChanged:
+                {
+                    ref ItemDurabilityChangedSignal typed = ref UnsafeUtility.As<T, ItemDurabilityChangedSignal>(ref signal);
+                    return SanitizeItemDurabilityChangedSignal(ref typed);
+                }
+                case GuardBrownout:
+                {
+                    ref BrownoutSignal typed = ref UnsafeUtility.As<T, BrownoutSignal>(ref signal);
+                    return SanitizeBrownoutSignal(ref typed);
+                }
+                case GuardEntityDeath:
+                {
+                    ref EntityDeathSignal typed = ref UnsafeUtility.As<T, EntityDeathSignal>(ref signal);
+                    return SanitizeEntityDeathSignal(ref typed);
+                }
+                case GuardMovementAcoustic:
+                {
+                    ref MovementAcousticSignal typed = ref UnsafeUtility.As<T, MovementAcousticSignal>(ref signal);
+                    return SanitizeMovementAcousticSignal(ref typed);
+                }
+                case GuardSwarmDispersed:
+                {
+                    ref SwarmDispersedSignal typed = ref UnsafeUtility.As<T, SwarmDispersedSignal>(ref signal);
+                    return SanitizeSwarmDispersedSignal(ref typed);
+                }
+                case GuardScannerToolActive:
+                {
+                    ref ScannerToolActiveSignal typed = ref UnsafeUtility.As<T, ScannerToolActiveSignal>(ref signal);
+                    return SanitizeScannerToolActiveSignal(ref typed);
+                }
+                case GuardStorageDebt:
+                {
+                    ref StorageDebtSignal typed = ref UnsafeUtility.As<T, StorageDebtSignal>(ref signal);
+                    return SanitizeStorageDebtSignal(ref typed);
+                }
+                case GuardPrologueComplete:
+                {
+                    ref PrologueCompleteSignal typed = ref UnsafeUtility.As<T, PrologueCompleteSignal>(ref signal);
+                    return SanitizePrologueCompleteSignal(ref typed);
+                }
+                case GuardManualOverridePulled:
+                {
+                    ref ManualOverridePulledSignal typed = ref UnsafeUtility.As<T, ManualOverridePulledSignal>(ref signal);
+                    return SanitizeManualOverridePulledSignal(ref typed);
+                }
+                case GuardWfcOutpostGenerated:
+                {
+                    ref WfcOutpostGeneratedSignal typed = ref UnsafeUtility.As<T, WfcOutpostGeneratedSignal>(ref signal);
+                    return SanitizeWfcOutpostGeneratedSignal(ref typed);
+                }
+                case GuardWfcOutpostDoorPower:
+                {
+                    ref WfcOutpostDoorPowerSignal typed = ref UnsafeUtility.As<T, WfcOutpostDoorPowerSignal>(ref signal);
+                    return SanitizeWfcOutpostDoorPowerSignal(ref typed);
+                }
+                case GuardHapticRequest:
+                {
+                    ref HapticRequest typed = ref UnsafeUtility.As<T, HapticRequest>(ref signal);
+                    return SanitizeHapticRequest(ref typed);
+                }
+                case GuardPlayerActionCancelled:
+                {
+                    ref PlayerActionCancelledSignal typed = ref UnsafeUtility.As<T, PlayerActionCancelledSignal>(ref signal);
+                    return SanitizePlayerActionCancelledSignal(ref typed);
+                }
+                case GuardDropPodLanded:
+                {
+                    ref DropPodLandedSignal typed = ref UnsafeUtility.As<T, DropPodLandedSignal>(ref signal);
+                    return SanitizeDropPodLandedSignal(ref typed);
+                }
+                case GuardItemAcquired:
+                {
+                    ref ItemAcquiredSignal typed = ref UnsafeUtility.As<T, ItemAcquiredSignal>(ref signal);
+                    return SanitizeItemAcquiredSignal(ref typed);
+                }
+                case GuardBiomeChanged:
+                {
+                    ref BiomeChangedSignal typed = ref UnsafeUtility.As<T, BiomeChangedSignal>(ref signal);
+                    return SanitizeBiomeChangedSignal(ref typed);
+                }
+                case GuardSectorResidencyHydrated:
+                {
+                    ref SectorResidencyHydratedSignal typed = ref UnsafeUtility.As<T, SectorResidencyHydratedSignal>(ref signal);
+                    return SanitizeSectorResidencyHydratedSignal(ref typed);
+                }
+                case GuardSectorDehydrated:
+                {
+                    ref SectorDehydratedSignal typed = ref UnsafeUtility.As<T, SectorDehydratedSignal>(ref signal);
+                    return SanitizeSectorDehydratedSignal(ref typed);
+                }
+                case GuardChunkDehydrated:
+                {
+                    ref ChunkDehydratedSignal typed = ref UnsafeUtility.As<T, ChunkDehydratedSignal>(ref signal);
+                    return SanitizeChunkDehydratedSignal(ref typed);
+                }
             }
 
             return 0;
@@ -1037,6 +1170,44 @@ namespace Hecton8.Core.Signals
                 return GuardPlayerStress;
             if (typeof(T) == typeof(TraumaSignal))
                 return GuardTrauma;
+            if (typeof(T) == typeof(ItemDurabilityChangedSignal))
+                return GuardItemDurabilityChanged;
+            if (typeof(T) == typeof(BrownoutSignal))
+                return GuardBrownout;
+            if (typeof(T) == typeof(EntityDeathSignal))
+                return GuardEntityDeath;
+            if (typeof(T) == typeof(MovementAcousticSignal))
+                return GuardMovementAcoustic;
+            if (typeof(T) == typeof(SwarmDispersedSignal))
+                return GuardSwarmDispersed;
+            if (typeof(T) == typeof(ScannerToolActiveSignal))
+                return GuardScannerToolActive;
+            if (typeof(T) == typeof(StorageDebtSignal))
+                return GuardStorageDebt;
+            if (typeof(T) == typeof(PrologueCompleteSignal))
+                return GuardPrologueComplete;
+            if (typeof(T) == typeof(ManualOverridePulledSignal))
+                return GuardManualOverridePulled;
+            if (typeof(T) == typeof(WfcOutpostGeneratedSignal))
+                return GuardWfcOutpostGenerated;
+            if (typeof(T) == typeof(WfcOutpostDoorPowerSignal))
+                return GuardWfcOutpostDoorPower;
+            if (typeof(T) == typeof(HapticRequest))
+                return GuardHapticRequest;
+            if (typeof(T) == typeof(PlayerActionCancelledSignal))
+                return GuardPlayerActionCancelled;
+            if (typeof(T) == typeof(DropPodLandedSignal))
+                return GuardDropPodLanded;
+            if (typeof(T) == typeof(ItemAcquiredSignal))
+                return GuardItemAcquired;
+            if (typeof(T) == typeof(BiomeChangedSignal))
+                return GuardBiomeChanged;
+            if (typeof(T) == typeof(SectorResidencyHydratedSignal))
+                return GuardSectorResidencyHydrated;
+            if (typeof(T) == typeof(SectorDehydratedSignal))
+                return GuardSectorDehydrated;
+            if (typeof(T) == typeof(ChunkDehydratedSignal))
+                return GuardChunkDehydrated;
 
             return GuardNone;
         }
@@ -1665,6 +1836,219 @@ namespace Hecton8.Core.Signals
                 return 0;
 
             return TraumaSignalGuardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeItemDurabilityChangedSignal(ref ItemDurabilityChangedSignal signal)
+        {
+            int guardCode = 0;
+            if (SanitizeUnit01(ref signal.Durability01))
+                guardCode = ItemDurabilityChangedSignalGuardCode;
+            if (SanitizeUnit01(ref signal.AverageEquippedDurability01))
+                guardCode = ItemDurabilityChangedSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeBrownoutSignal(ref BrownoutSignal signal)
+        {
+            int guardCode = 0;
+            if (SanitizeUnit01(ref signal.SupplyRatio))
+                guardCode = BrownoutSignalGuardCode;
+            if (SanitizeUnit01(ref signal.Severity01))
+                guardCode = BrownoutSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeEntityDeathSignal(ref EntityDeathSignal signal)
+        {
+            int guardCode = SanitizeAup(ref signal.PositionAup) ? EntityDeathSignalGuardCode : 0;
+            if (SanitizeUnit01(ref signal.Intensity01))
+                guardCode = EntityDeathSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeMovementAcousticSignal(ref MovementAcousticSignal signal)
+        {
+            int guardCode = SanitizeAup(ref signal.PositionAup) ? MovementAcousticSignalGuardCode : 0;
+            if (SanitizeNonNegative(ref signal.Volume))
+                guardCode = MovementAcousticSignalGuardCode;
+            if (SanitizeNonNegative(ref signal.VelocitySq))
+                guardCode = MovementAcousticSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeSwarmDispersedSignal(ref SwarmDispersedSignal signal)
+        {
+            int guardCode = SanitizeAup(ref signal.PositionAup) ? SwarmDispersedSignalGuardCode : 0;
+            if (SanitizeNonNegative(ref signal.RadiusMeters))
+                guardCode = SwarmDispersedSignalGuardCode;
+            if (SanitizeUnit01(ref signal.Intensity01))
+                guardCode = SwarmDispersedSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeScannerToolActiveSignal(ref ScannerToolActiveSignal signal)
+        {
+            int guardCode = 0;
+            if (SanitizeUnit01(ref signal.Progress01))
+                guardCode = ScannerToolActiveSignalGuardCode;
+            if (SanitizeUnit01(ref signal.Battery01))
+                guardCode = ScannerToolActiveSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeStorageDebtSignal(ref StorageDebtSignal signal)
+        {
+            int guardCode = 0;
+            if (SanitizeUnit01(ref signal.Debt01))
+                guardCode = StorageDebtSignalGuardCode;
+            if (SanitizeNonNegative(ref signal.LatencyEwmaMs))
+                guardCode = StorageDebtSignalGuardCode;
+            if (SanitizeNonNegative(ref signal.OldestPendingMs))
+                guardCode = StorageDebtSignalGuardCode;
+            if (SanitizeNonNegative(ref signal.CriticalHoleDebtMs))
+                guardCode = StorageDebtSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizePrologueCompleteSignal(ref PrologueCompleteSignal signal)
+        {
+            int guardCode = SanitizeAup(ref signal.CapsuleAup) ? PrologueCompleteSignalGuardCode : 0;
+            if (SanitizeNonNegative(ref signal.WhiteoutHoldSeconds))
+                guardCode = PrologueCompleteSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeManualOverridePulledSignal(ref ManualOverridePulledSignal signal)
+        {
+            int guardCode = 0;
+            if (SanitizeFloat3Zero(ref signal.LeverLocalPosition))
+                guardCode = ManualOverridePulledSignalGuardCode;
+            if (SanitizeFiniteZero(ref signal.AngleDegrees))
+                guardCode = ManualOverridePulledSignalGuardCode;
+            if (SanitizeUnit01(ref signal.GripStrength01))
+                guardCode = ManualOverridePulledSignalGuardCode;
+            if (SanitizeFloat3Zero(ref signal.PivotLocalPosition))
+                guardCode = ManualOverridePulledSignalGuardCode;
+            if (SanitizeFiniteZero(ref signal.VelocityDegreesPerSecond))
+                guardCode = ManualOverridePulledSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeWfcOutpostGeneratedSignal(ref WfcOutpostGeneratedSignal signal)
+        {
+            int guardCode = SanitizeAup(ref signal.OriginAup) ? WfcOutpostGeneratedSignalGuardCode : 0;
+            if (SanitizePositiveDefault(ref signal.CellSizeMeters, 1f))
+                guardCode = WfcOutpostGeneratedSignalGuardCode;
+            if (SanitizePositiveDefault(ref signal.FloorHeightMeters, 1f))
+                guardCode = WfcOutpostGeneratedSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeWfcOutpostDoorPowerSignal(ref WfcOutpostDoorPowerSignal signal)
+        {
+            int guardCode = SanitizeAup(ref signal.DoorAup) ? WfcOutpostDoorPowerSignalGuardCode : 0;
+            if (SanitizeFiniteZero(ref signal.Voltage))
+                guardCode = WfcOutpostDoorPowerSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeHapticRequest(ref HapticRequest signal)
+        {
+            int guardCode = 0;
+            if (SanitizeUnit01(ref signal.Intensity01))
+                guardCode = HapticRequestGuardCode;
+            if (SanitizeNonNegative(ref signal.DurationSeconds))
+                guardCode = HapticRequestGuardCode;
+            if (SanitizeUnit01(ref signal.Frequency01))
+                guardCode = HapticRequestGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizePlayerActionCancelledSignal(ref PlayerActionCancelledSignal signal)
+        {
+            if (!SanitizeUnit01(ref signal.Progress01))
+                return 0;
+
+            return PlayerActionCancelledSignalGuardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeDropPodLandedSignal(ref DropPodLandedSignal signal)
+        {
+            if (!SanitizeAup(ref signal.PositionAup))
+                return 0;
+
+            return DropPodLandedSignalGuardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeItemAcquiredSignal(ref ItemAcquiredSignal signal)
+        {
+            if (!SanitizeAup(ref signal.PositionAup))
+                return 0;
+
+            return ItemAcquiredSignalGuardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeBiomeChangedSignal(ref BiomeChangedSignal signal)
+        {
+            if (!SanitizeAup(ref signal.PositionAup))
+                return 0;
+
+            return BiomeChangedSignalGuardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeSectorResidencyHydratedSignal(ref SectorResidencyHydratedSignal signal)
+        {
+            if (!SanitizeAup(ref signal.CenterAup))
+                return 0;
+
+            return SectorResidencyHydratedSignalGuardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeSectorDehydratedSignal(ref SectorDehydratedSignal signal)
+        {
+            if (!SanitizeAup(ref signal.CenterAup))
+                return 0;
+
+            return SectorDehydratedSignalGuardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeChunkDehydratedSignal(ref ChunkDehydratedSignal signal)
+        {
+            if (!SanitizeAup(ref signal.CenterAup))
+                return 0;
+
+            return ChunkDehydratedSignalGuardCode;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

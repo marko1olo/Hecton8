@@ -89,6 +89,49 @@ rg -l "<pattern>" Assets/_Project/Scripts --glob "*.cs"
   - `PlayerBaseExitSignal`
   - `AupPreShiftSignal`
   - `AupShiftSignal`
+  - `RadiationDoseSignal`
+  - `TemperatureChangedSignal`
+  - `RadiationSourceSignal`
+  - `CullingOverloadSignal`
+  - `WakeGeneratedSignal`
+  - `BiomeGradientSignal`
+  - `MemoryPressureSignal`
+  - `ResolutionChangedSignal`
+  - `SystemHealthIndexSignal`
+  - `CpuStarvationSignal`
+  - `AcousticPingSignal`
+  - `FluidIncursionSignal`
+  - `SubmarineFloodStateSignal`
+  - `FluidDensityChangedSignal`
+  - `StreamingTurbulenceSignal`
+  - `AtmosphericReentrySignal`
+  - `VehicleUpgradesChangedSignal`
+  - `SaveLifecycleSignal`
+  - `SaveStatusSignal`
+  - `LightLevelSignal`
+  - `SubmarineLightsChangedSignal`
+  - `PhysiologyStateSignal`
+  - `PlayerStressSignal`
+  - `TraumaSignal`
+  - `HapticRequest`
+  - `PlayerActionCancelledSignal`
+  - `DropPodLandedSignal`
+  - `ItemAcquiredSignal`
+  - `BiomeChangedSignal`
+  - `SectorResidencyHydratedSignal`
+  - `SectorDehydratedSignal`
+  - `ChunkDehydratedSignal`
+  - `ItemDurabilityChangedSignal`
+  - `BrownoutSignal`
+  - `EntityDeathSignal`
+  - `MovementAcousticSignal`
+  - `SwarmDispersedSignal`
+  - `ScannerToolActiveSignal`
+  - `StorageDebtSignal`
+  - `PrologueCompleteSignal`
+  - `ManualOverridePulledSignal`
+  - `WfcOutpostGeneratedSignal`
+  - `WfcOutpostDoorPowerSignal`
 - Added source-publish finite vaccination before legacy queue enqueue for:
   - `TimeDilationSignal`
   - `SimulationPauseSignal`
@@ -122,6 +165,7 @@ Status: BLOCKED BY DOMAIN BLAST RADIUS for global eradication. This pass only st
 - `GlobalSignals.cs` string hits are SignalBus cold labels or method parameters (`OwnerLabel`, `ResolveQueueLabel`, `ComputeStableSignalLaneHash`, native sentinel labels), not signal DTO payload fields.
 - Focused scan found no `FixedString` in `GlobalSignals.cs`, `PlayerInteraction.cs`, or `DiegeticTooltipSystem.cs` after the look-target prompt rewrite.
 - `new` hits in `GlobalSignals.cs` are cold static arrays/adapters or native collection allocation; hot bridge signal DTO construction was removed from mirror paths. Runtime GC proof remains unavailable without Unity Profiler/GCMonitor.
+- Loop 15 static sweep found no remaining `SignalBus<T>`-referenced Core contract struct with explicit `float`, `float2`, `float3`, `float4`, or `AbsoluteUniversePosition` fields lacking a cached ingress guard in `GlobalSignals.cs`. Legacy-only queues still require domain-owner migration.
 
 ## Compile Evidence
 
@@ -131,6 +175,6 @@ Command:
 dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false /p:UseSharedCompilation=false
 ```
 
-Result: latest errors-only run succeeded with 0 warnings / 0 errors after expanded finite guards and no-grow snapshot flush cleanup. Earlier warnings-only compile passes recorded generated-project/package duplicate-type warnings from the ignored CLI project after including IK job source beside a stale imported assembly. The repair included existing Unity-imported source paths for the prompt-cache, WFC/blueprint, and IK job source, plus restoration of a referenced private audio Burst probe job; no stub contracts were invented.
+Result: last known green errors-only run succeeded with 0 warnings / 0 errors after Loop 13 Core producer cleanup. Latest Loop 14 errors-only run exits 1 before source-level verification because Unity-generated package assemblies/surfaces are missing from `Library/ScriptAssemblies` and package project references. Filtered diagnostics on touched files are unresolved external Unity/TMP/InputSystem/URP types, not new guard syntax. Earlier warnings-only compile passes recorded generated-project/package duplicate-type warnings from the ignored CLI project after including IK job source beside a stale imported assembly. The repair included existing Unity-imported source paths for the prompt-cache, WFC/blueprint, and IK job source, plus restoration of a referenced private audio Burst probe job; no stub contracts were invented.
 
-Evidence class: CLI_COMPILE for `Hecton8.Core.csproj`. Runtime GC, Unity Console, and full global event eradication remain PENDING because Unity MCP refresh was unavailable and the mandatory legacy scan still returns 2230 non-zero hits.
+Evidence class: STATIC_SOURCE for Loop 14 guard expansion, last-known CLI_COMPILE for Loop 13, and DEPENDENCY_BLOCKED for fresh Loop 14 build. Runtime GC, Unity Console, and full global event eradication remain PENDING because Unity MCP refresh was unavailable and the mandatory legacy scan still returns 2230 non-zero hits.

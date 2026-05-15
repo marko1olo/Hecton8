@@ -1264,7 +1264,13 @@ namespace Hecton8.SaveSystem
                 if (!hasGrid)
                 {
                     if (!TryEnsureWfcOutpostGrid(out wfcGrid))
+                    {
+                        RecordWfcOutpostEventBlackBox(
+                            WfcOutpostBlackBoxOperationPersist,
+                            WfcOutpostPersistenceStatus.InvalidGrid,
+                            dirtySectors[sectorIndex]);
                         return;
+                    }
 
                     hasGrid = true;
                 }
@@ -1316,7 +1322,13 @@ namespace Hecton8.SaveSystem
                 if (!hasGrid)
                 {
                     if (!TryEnsureWfcOutpostGrid(out wfcGrid))
+                    {
+                        RecordWfcOutpostEventBlackBox(
+                            WfcOutpostBlackBoxOperationPersist,
+                            WfcOutpostPersistenceStatus.InvalidGrid,
+                            firstSignal.SectorHash);
                         return;
+                    }
 
                     hasGrid = true;
                 }
@@ -1411,7 +1423,7 @@ namespace Hecton8.SaveSystem
             {
                 Hecton8.Core.Signals.MacroDatabaseSectorHydrationSignal signal = signals[i];
                 if (signal.SectorHash == 0UL ||
-                    signal.PayloadBytes < WfcOutpostPersistenceConstants.PayloadHeaderBytes ||
+                    signal.PayloadBytes < sizeof(uint) ||
                     signal.PayloadBytes > WfcOutpostPersistenceConstants.PayloadMaxBytes ||
                     !IsWfcOutpostHydrationCandidate(in signal, macroDatabase))
                 {
@@ -1427,7 +1439,13 @@ namespace Hecton8.SaveSystem
                 if (!hasGrid)
                 {
                     if (!TryEnsureWfcOutpostGrid(out wfcGrid))
+                    {
+                        RecordWfcOutpostEventBlackBox(
+                            WfcOutpostBlackBoxOperationHydration,
+                            WfcOutpostPersistenceStatus.InvalidGrid,
+                            hydrationSectors[sectorIndex]);
                         return;
+                    }
 
                     hasGrid = true;
                 }
@@ -1607,17 +1625,16 @@ namespace Hecton8.SaveSystem
             IMacroDatabaseService macroDatabase)
         {
             if (macroDatabase == null || !macroDatabase.IsOpen)
-                return true;
+                return signal.PayloadBytes >= WfcOutpostPersistenceConstants.PayloadHeaderBytes;
 
             if (!macroDatabase.TryGetPayload(signal.SectorHash, out MacroDatabasePayloadHandle handle))
-                return true;
+                return signal.PayloadBytes >= WfcOutpostPersistenceConstants.PayloadHeaderBytes;
 
-            if (handle.Pointer == IntPtr.Zero ||
-                handle.ByteLength < WfcOutpostPersistenceConstants.PayloadHeaderBytes ||
-                handle.ByteLength > WfcOutpostPersistenceConstants.PayloadMaxBytes)
-            {
+            if (handle.Pointer == IntPtr.Zero)
+                return signal.PayloadBytes >= WfcOutpostPersistenceConstants.PayloadHeaderBytes;
+
+            if (handle.ByteLength > WfcOutpostPersistenceConstants.PayloadMaxBytes)
                 return true;
-            }
 
             return SaveBinaryPayloadCodec.HasWfcOutpostBitmaskMagic((byte*)handle.Pointer, handle.ByteLength);
         }

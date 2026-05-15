@@ -155,6 +155,11 @@ Shader "Hidden/Hecton8/DryVolumeRestore"
             return SAMPLE_TEXTURE2D_X(_Crest_CameraColorTexture, sampler_LinearClamp, input.screenUV);
         }
 
+        half4 FragCopy(Varyings input) : SV_Target
+        {
+            return SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, input.screenUV);
+        }
+
         half4 FragResolve(Varyings input) : SV_Target
         {
             half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, input.screenUV);
@@ -225,6 +230,18 @@ Shader "Hidden/Hecton8/DryVolumeRestore"
             #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHT_SHADOWS
             #pragma vertex Vert
             #pragma fragment FragResolve
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "Copy"
+            Tags { "LightMode" = "SRPDefaultUnlit" }
+
+            HLSLPROGRAM
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHT_SHADOWS
+            #pragma vertex Vert
+            #pragma fragment FragCopy
             ENDHLSL
         }
     }

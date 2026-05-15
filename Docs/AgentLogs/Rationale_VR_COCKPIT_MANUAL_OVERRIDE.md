@@ -545,3 +545,51 @@ Rejected Alternatives: visual depression on rejected publish was rejected becaus
 Scalability potential: Low/toaster avoids stray UI ticks and visual work when the interaction lane is saturated. Middle/High keep dense physical panels honest under backpressure. Ultra can layer richer panel click visuals later because they now inherit the accepted-signal boundary.
 
 Hardware Impact: successful press cost is unchanged aside from moved scalar writes. Failed publish saves one `_lastHandInsideFrame` state write, one UI tick registration attempt, and any follow-on visual depression frame. i3/MX350 gain is small but removes a correctness leak under overload with 0 B/frame impact.
+
+## Decision 45 - Physical panel hand probe must not poll registry services in tick helpers
+
+Problem: `PhysicalInteractionHandler.TickPhysicalPanelButtons()` depended on the interaction signal service while running every active XR player tick, and `RefreshTickRegistration()` hid a dispatcher availability read inside a helper reachable from tick/fixed/late-frame state transitions. That violates the hot-path service-cache mandate and makes disable/hot-swap ordering easier to get wrong.
+
+Solution: cache `IInteractionSignalService` in `_interactionSignals` during `OnEnable` and update it through `IGlobalRegistryHotSwapListener`. Cache dispatcher availability in `_dispatcherAvailable`, clear it before `CancelActiveInteraction()` during disable, and update it on dispatcher hot-swap by unregistering current tick lanes before re-admission.
+
+Rejected Alternatives: keeping direct `GlobalRegistry.InteractionSignals` in the tick path was rejected because service lookup is not a signal lane. Polling `GlobalRegistry.Dispatcher` from `RefreshTickRegistration()` was rejected because that helper is reachable from frame-state transitions. Adding a retry loop was rejected because missing services already fail closed.
+
+Scalability potential: Low/toaster removes registry reads from dense physical panel probing and prevents disable-time re-registration churn. Middle/High keep physical panels stable through dispatcher and signal-service replacement. Ultra can support denser cockpit panels because service rebinding is cold and panel probing stays direct-field based.
+
+Hardware Impact: removes one interaction-service registry property read per active XR physical panel probe tick and one dispatcher property read from registration-refresh paths. i3/MX350 gain is small per call but repeats in cockpit-dense XR scenes; no heap allocation or public API change.
+
+## Decision 46 - Manual override lever must not re-query dispatcher state in admission helpers
+
+Problem: `OpenXRManualOverrideLever` already implemented a GlobalRegistry hot-swap listener, but `TryRegisterTick()` and `TryRegisterReceiver()` still queried `GlobalRegistry.Dispatcher == null`. The input hot-swap branch also fell back to `GlobalRegistry.Input` if the payload was null or wrong-typed. That keeps hidden registry reads inside lifecycle helpers and masks invalid service rebound payloads.
+
+Solution: add `_dispatcherAvailable` as lifecycle/hot-swap state. `OnEnable()` seeds it once, disable/destroy clear it, dispatcher hot-swap writes it from `currentService != null`, and receiver/tick registration gates use the field. Input hot-swap now assigns only `currentService as IInputService`, so a missing or invalid payload fails closed to default input instead of doing a second registry lookup.
+
+Rejected Alternatives: keeping dispatcher reads was rejected because the lever already receives dispatcher rebound events and does not need helper-level polling. Adding a retry loop was rejected because receiver/tick admission is lifecycle work. Keeping the input fallback was rejected because it hides malformed hot-swap state and reintroduces service lookup during a callback.
+
+Scalability potential: Low/toaster avoids extra service reads when dense cockpit controls are enabled, disabled, or dispatcher-rebound under scene streaming. Middle/High keep receiver/tick identity event-driven. Ultra can support more cockpit controls because manual override levers vacate and re-enter fixed lanes through cached service state, not helper polling.
+
+Hardware Impact: removes two direct dispatcher-null registry checks from manual override receiver/tick admission paths and one fallback input registry read during malformed hot-swap payloads. i3/MX350 gain is cold-path small but improves deterministic service rebinding and preserves 0 B/frame.
+
+## Decision 47 - Shared physical UI controls must unregister ticks on destroy
+
+Problem: `PhysicalPanelButton` and `PhysicalSnapSwitch` relied on `OnDisable()` to leave the UI dispatcher lane. In normal Unity object destruction that is usually sufficient, but this project already treats lifecycle flags as non-authoritative because pooled/destruction/domain-teardown paths can drift. A stale UI-lane owner would keep receiving dispatcher calls after its receiver identity was gone.
+
+Solution: call the existing idempotent `Unregister()` from each `OnDestroy()` before receiver cleanup. This reuses the unconditional `GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI)` path already hardened in Loop 34 and adds no new state, listener, or registration model.
+
+Rejected Alternatives: adding hot-swap listeners to every button/switch was rejected because the GlobalRegistry hot-swap listener bucket is fixed at 256 and cockpit panels can be dense. Relying on `OnDisable()` only was rejected because destroy cleanup should be idempotent. Checking `_registered` before unregister was rejected because stale flags were the original lifecycle debt.
+
+Scalability potential: Low/toaster avoids persistent stale UI dispatcher entries after scene streaming or pooled object destruction. Middle/High keep dense cockpit panels stable. Ultra can add more physical buttons and switches without accumulating dead UI tick owners.
+
+Hardware Impact: 0 us active-frame cost. Cold destroy pays one idempotent unregister scan and prevents a stale per-frame UI tick on i3/MX350 if lifecycle ordering drifts.
+
+## Decision 48 - Snap switch scalar sanitation belongs to lifecycle config
+
+Problem: `PhysicalSnapSwitch` sanitized serialized off/on angles, snap speed, cooldown, and signal range through helper calls in active snap movement and accepted-toggle publish paths. Those values only change during authoring/lifecycle refresh, so the runtime path was repeatedly paying finite/clamp work that did not buy correctness.
+
+Solution: cache `_resolvedOffAngleDegrees`, `_resolvedOnAngleDegrees`, `_resolvedSnapSpeed`, `_resolvedSnapCooldownSeconds`, and `_resolvedSignalRangeDegrees` through `CacheScalarConfig()`. Refresh that cache from `ResolveReferences()` and `OnValidate()`. Runtime snap animation and signal publish now consume cached finite values.
+
+Rejected Alternatives: leaving helper calls in `Tick()` was rejected because dense cockpit switch banks multiply small scalar costs. Moving sanitation into every receiver callback was rejected because accepted toggles are rarer than lifecycle config changes. Adding a ScriptableObject config was rejected as ownership expansion outside the existing component contract.
+
+Scalability potential: Low/toaster removes redundant scalar sanitation from active switch movement. Middle/High keep the same deterministic switch truth. Ultra can run denser switch panels and spend saved cycles on haptic/audio/visual overkill without changing the gameplay event contract.
+
+Hardware Impact: removes up to four finite/clamp helper calls from active switch snap ticks and one runtime range recomputation from accepted toggles. i3/MX350 gain is small per switch but repeats across dense cockpit panels; 0 B/frame and no public API change.

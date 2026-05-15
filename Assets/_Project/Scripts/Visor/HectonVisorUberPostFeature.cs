@@ -157,9 +157,8 @@ namespace Hecton8.Visor
         {
             private sealed class PassData
             {
-                internal TextureHandle source;
-                internal TextureHandle destination;
-                internal Material material;
+                internal TextureHandle Source;
+                internal Material Material;
             }
 
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Visor Uber Post"); // COLD ALLOC: ProfilingSampler[1] - RenderGraph marker reused for every frame - owner: VisorUberPostPass
@@ -245,31 +244,26 @@ namespace Hecton8.Visor
 
                 UpdateMaterialParameters(_material, _settings, _runtimeState);
 
-#pragma warning disable 0618
-                using (var builder = renderGraph.AddRenderPass<PassData>("Hecton Visor Uber Post", out PassData passData, _profilingSampler))
+                using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<PassData>(
+                           "Hecton Visor Uber Post",
+                           out PassData passData,
+                           _profilingSampler))
                 {
-                    passData.source = sourceTexture;
-                    passData.destination = destinationTexture;
-                    passData.material = _material;
+                    passData.Source = sourceTexture;
+                    passData.Material = _material;
 
-                    builder.ReadTexture(sourceTexture);
-                    builder.UseColorBuffer(destinationTexture, 0);
+                    builder.UseTexture(sourceTexture, AccessFlags.Read);
+                    builder.SetRenderAttachment(destinationTexture, 0, AccessFlags.Write);
                     if (!depthlessTBDR)
-                        builder.UseDepthBuffer(depthTexture, DepthAccess.Read);
+                        builder.UseTexture(depthTexture, AccessFlags.Read);
+                    builder.AllowGlobalStateModification(true);
 
-                    builder.SetRenderFunc((PassData data, RenderGraphContext context) =>
+                    builder.SetRenderFunc((PassData data, RasterGraphContext context) =>
                     {
-                        Blitter.BlitCameraTexture(
-                            context.cmd,
-                            data.source,
-                            data.destination,
-                            RenderBufferLoadAction.DontCare,
-                            RenderBufferStoreAction.Store,
-                            data.material,
-                            0);
+                        context.cmd.SetGlobalTexture(ShaderConstants.BlitTextureId, data.Source);
+                        CoreUtils.DrawFullScreen(context.cmd, data.Material, null, 0);
                     });
                 }
-#pragma warning restore 0618
 
                 resourceData.cameraColor = destinationTexture;
             }
@@ -426,6 +420,7 @@ namespace Hecton8.Visor
             internal static readonly int AmbientPressureGlobalId = Shader.PropertyToID("_AmbientPressure");
             internal static readonly int FrequencyTuningErrorGlobalId = Shader.PropertyToID("_HectonFrequencyTuningError01");
             internal static readonly int LightShaftParamsId = Shader.PropertyToID("_HectonLightShaftParams");
+            internal static readonly int BlitTextureId = Shader.PropertyToID("_BlitTexture");
         }
 
         [SerializeField] private FeatureSettings settings = new FeatureSettings(); // COLD ALLOC: FeatureSettings[1] - serialized renderer feature settings - owner: HectonVisorUberPostFeature

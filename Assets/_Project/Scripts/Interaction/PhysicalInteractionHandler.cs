@@ -172,6 +172,7 @@ namespace Hecton8.Interaction
         private bool _registeredFixedTick;
         private bool _registeredLateFrameTick;
         private bool _registeredHotSwapListener;
+        private bool _dispatcherAvailable;
         private float _stateTimer;
         private Vector3 _pullSmoothDampVelocity;
         private const int MaxPanelButtonOverlaps = 8;
@@ -260,6 +261,7 @@ namespace Hecton8.Interaction
             HectonXRRuntimeState.XRActiveChanged -= HandleXRActiveChanged;
             HectonXRRuntimeState.XRActiveChanged += HandleXRActiveChanged;
             _interactionSignals = GlobalRegistry.InteractionSignals;
+            _dispatcherAvailable = GlobalRegistry.Dispatcher != null;
             TryRegisterHotSwapListener();
             RefreshPanelButtonLayerMask();
             if (enablePhysicalPanelButtons && HectonXRRuntimeState.IsXRActive)
@@ -270,6 +272,7 @@ namespace Hecton8.Interaction
         private void OnDisable()
         {
             HectonXRRuntimeState.XRActiveChanged -= HandleXRActiveChanged;
+            _dispatcherAvailable = false;
             TryUnregisterHotSwapListener();
             _interactionSignals = null;
             CancelActiveInteraction();
@@ -278,6 +281,7 @@ namespace Hecton8.Interaction
 
         private void OnDestroy()
         {
+            _dispatcherAvailable = false;
             TryUnregisterHotSwapListener();
             _interactionSignals = null;
         }
@@ -291,10 +295,19 @@ namespace Hecton8.Interaction
             if (!isActiveAndEnabled)
                 return;
 
-            if (serviceSlot != GlobalRegistryServiceSlot.InteractionSignals)
+            if (serviceSlot == GlobalRegistryServiceSlot.InteractionSignals)
+            {
+                _interactionSignals = currentService as IInteractionSignalService;
+                return;
+            }
+
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            _interactionSignals = currentService as IInteractionSignalService;
+            UnregisterFromTickSystems();
+            _dispatcherAvailable = currentService != null;
+            if (_dispatcherAvailable)
+                RefreshTickRegistration();
         }
 
         /// <summary>
@@ -1158,7 +1171,7 @@ namespace Hecton8.Interaction
 
         private void RefreshTickRegistration()
         {
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying || !_dispatcherAvailable)
                 return;
 
             bool needsTick =

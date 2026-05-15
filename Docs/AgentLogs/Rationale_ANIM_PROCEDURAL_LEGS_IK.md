@@ -266,6 +266,14 @@ Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instructio
 Scalability potential: Low/MX350 gets neutral hand IK if storage or normal data is suspicious. Middle keeps stable wall-brace hand placement. High/Ultra can keep richer brace, scrape, haptic, and external-wall IK flavor without amplifying corrupt native lanes.
 Hardware Impact: Added work is integer length checks plus non-zero normal validation on existing hand target lanes, estimated below 0.03 us/frame on i3/MX350. No allocations, no new jobs, no new rays, no public API change.
 
+## Decision 34: Player kinematics SOA lane boundary helpers
+
+Problem: `PlayerKinematicsRuntime` is a single-entity SOA owner, but several paths still treated `NativeArray.IsCreated` as sufficient before reading lane zero. Origin shift, telemetry snapshots, sync-fence fallback, state correction fallback, stamina, VAT scalar, and hand probe support could therefore index a zero-length or partially rebuilt native lane.
+Solution: Add length-aware motion, velocity, intended-movement, sync-state, and fault-flag helpers. Route hot reads through sanitized position/velocity/intended snapshots, fail closed on missing core entity storage, gate origin-shift rebasing with motion storage, and centralize fault flag set/clear/read behavior.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Reallocating or repairing NativeArrays in the hot path was rejected because native ownership must remain cold and deterministic. Scattered one-off checks were rejected because they invite future creation-only regressions.
+Scalability potential: Low/MX350 gets neutral no-work behavior if native lanes are invalid instead of a hard fault. Middle keeps deterministic KCC and hand/ladder support. High/Ultra can keep richer brace, VAT, sync, and telemetry output while every lane-zero read has a bounded storage contract.
+Hardware Impact: Added work is inline integer length checks and sanitized fallback reads, estimated below 0.04 us/frame on i3/MX350. No allocations, no new jobs, no new ray lanes, no public API change.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Final anti-bloat pass required checking the lower-body implementation for honest simulation, unbounded math, GC leaks, and out-of-domain edits.

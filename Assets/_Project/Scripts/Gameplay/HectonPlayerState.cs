@@ -41,8 +41,9 @@ namespace Hecton8.Gameplay
 
         private static AbsoluteUniversePosition OffsetAup(in AbsoluteUniversePosition origin, float3 runtimeOffset)
         {
-            double3 absolute = origin.ToAbsoluteDouble3() + new double3(runtimeOffset.x, runtimeOffset.y, runtimeOffset.z);
-            return AbsoluteUniversePosition.FromAbsolutePosition(absolute);
+            return AbsoluteUniversePosition.OffsetMeters(
+                in origin,
+                new double3(runtimeOffset.x, runtimeOffset.y, runtimeOffset.z));
         }
 
         public void SyncExternalKinematic(Vector3 acceleration, Vector3 velocityChange)

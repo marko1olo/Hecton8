@@ -615,3 +615,27 @@ Cinematic Cheats used -> None. Git checkpoint and evidence preservation only.
 Exact Microseconds saved -> 0 us runtime by this operator pass.
 
 Verification -> Latest successful generated-project compile remains the earlier `CodexGitCheckTail7b`/`Tail8` boundary before the moving wall expanded. Current `CodexGitCheckTail10` is blocked by missing Unity package references across unrelated project files, so Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals are not claimed.
+
+## 2026-05-15 - Loop 40 Kinematics Storage Helper Repair
+
+What was wrong -> Remote was synchronized, but the worktree held a new runtime/docs/evidence tail. The first isolated build on the current disk (`CurrentTail40`) failed because `PlayerKinematicsRuntime` referenced storage/snapshot helper methods that were absent from the compiled class surface. A concurrent write then briefly left two helper blocks, which would have produced duplicate-member errors.
+
+What was done -> Reviewed the runtime tail, restored exactly one helper block for kinematics NativeArray storage/snapshot reads, removed the duplicate, kept non-empty build/evidence files, and left two zero-byte HPhi JSON artifacts out of the checkpoint.
+
+Cinematic Cheats used -> None by this operator pass. Producer runtime edits keep deterministic AUP math, RenderGraph pass routing, and storage guards; this pass only repaired compile visibility.
+
+Exact Microseconds saved -> 0 us measured. Avoided invalid NativeArray access paths by checking `.IsCreated` and `.Length` before indexed reads/writes; profiler/GCMonitor proof is pending.
+
+Verification -> `Docs/AgentLogs/Build_GIT_CONFLICT_RESOLUTION_20260515_CurrentTail40.exit.txt` records the failed helper-miss build. `Docs/AgentLogs/Build_GIT_CONFLICT_RESOLUTION_20260515_CurrentTail41.exit.txt` records `EXIT=0`; the referenced log reports build succeeded with `0 Warning(s)` and `0 Error(s)`. `git diff --check` and strict marker scans are clean except CRLF warnings. Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals are not claimed.
+
+## 2026-05-15 - Loop 41 Visor RenderGraph Closure
+
+What was wrong -> After the staged checkpoint, a late nonzero tail appeared: `SpaceEngine098` dev smoke tester, DOC_RELOCATE logs, AUP/HPhi/build evidence, and zero-byte HPhi artifacts. A final isolated build then failed in `HectonVisorUberPostFeature` because the current generated project cannot access `RenderGraphUtils`/`AddBlitPass`.
+
+What was done -> Added the smoke tester with asmdef/meta companions, kept only nonzero evidence, left zero-byte HPhi JSON files unstaged, and converted the visor post pass to a public raster RenderGraph pass that binds `_BlitTexture` and draws fullscreen.
+
+Cinematic Cheats used -> The visor remains a fullscreen compositing cheat. No physical simulation was added; the pass routes the same material through supported RenderGraph API.
+
+Exact Microseconds saved -> 0 us measured. Compile integrity restored; runtime/profiler proof is pending.
+
+Verification -> `CurrentTail43` records the RenderGraph compile failure. `CurrentTail44` records `EXIT=0`; the referenced log reports build succeeded with `0 Warning(s)` and `0 Error(s)`. Mixed external evidence remains recorded: some integrator builds failed before later successful exits, and one DOC_AUDIT HPhi exit has an empty `EXIT=` field. Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals are not claimed.

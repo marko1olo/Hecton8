@@ -524,8 +524,9 @@ namespace Hecton8.Physiology
 
         private static AbsoluteUniversePosition OffsetAupByRuntimeDelta(in AbsoluteUniversePosition origin, float3 runtimeDelta)
         {
-            double3 absolute = origin.ToAbsoluteDouble3() + new double3(runtimeDelta.x, runtimeDelta.y, runtimeDelta.z);
-            return AbsoluteUniversePosition.FromAbsolutePosition(absolute);
+            return AbsoluteUniversePosition.OffsetMeters(
+                in origin,
+                new double3(runtimeDelta.x, runtimeDelta.y, runtimeDelta.z));
         }
 
         private bool TryResolvePlayerPose(out PlayerPose pose)

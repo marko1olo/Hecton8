@@ -201,3 +201,45 @@ Cinematic cheats used:
 Exact microseconds saved:
 - Measured proof absent.
 - Runtime expected neutral. Integration/audit time saved by eliminating strict-scan false positives in Core signal producers.
+
+## Entry - Environment Platform Save Finite Vaccination
+
+Status: CORE STATIC PASS / CLI BUILD BLOCKED BY UNITY PACKAGE ARTIFACTS. Mandatory communication scan reports 2230 legacy hits, still not zero.
+
+What was wrong:
+- Several configured typed lanes still admitted finite-sensitive floats without Push-level vaccination.
+- A fresh CLI build is not currently usable as proof because Unity-generated package assemblies/surfaces are absent from `Library/ScriptAssemblies` and package references fail before source-level verification.
+
+What was done:
+- Added cached guard-kind sanitizers for radiation dose/source, temperature, culling overload, wake, biome gradient, memory pressure, resolution, system health, CPU starvation, acoustic ping, fluid incursion/density/flood state, streaming turbulence, atmospheric reentry, vehicle depth modifiers, save progress, light level, submarine lights, physiology, player stress, and trauma signals.
+- Added `SanitizeFiniteZero` for signed finite values where zero is a safe fallback but negative values can be valid.
+- Re-ran focused strict scans: no `new float3`, `FixedString64Bytes Prompt`, `signal.Prompt`, direct `SignalBus<T>.Push(new ...Signal)`, or `new ...Signal` text in the touched signal path.
+- Ran `git diff --check -- Assets/_Project/Scripts/Core/GlobalSignals.cs`; only existing CRLF normalization warning reported.
+
+Cinematic cheats used:
+- Invalid visual/physiology/environment payloads collapse to deterministic scalar/vector fallbacks at ingress. Low tier avoids per-consumer recovery branches; High/Ultra can spend clean packets on denser fog, light, audio, visor, and body-feedback presentation.
+
+Exact microseconds saved:
+- Measured proof absent.
+- Expected normal-path cost remains sub-1us per affected push on i3/MX350 because guard routing is cached per generic lane.
+- 0us claimed for compile tooling; fresh CLI green is blocked until Unity regenerates package assemblies.
+
+## Entry - Typed Lane AUP / Float Sweep
+
+Status: CORE STATIC PASS / CLI BUILD BLOCKED BY UNITY PACKAGE ARTIFACTS. Fresh Core CLI compile still exits 1 because Unity package assemblies/surfaces are missing; filtered output contains no `GlobalSignals.cs` diagnostics after this pass.
+
+What was wrong:
+- The first Loop 14 sweep still missed `SignalBus<T>`-referenced contracts where `AbsoluteUniversePosition` carried float locals without a visible `float` token in the struct block.
+- A few configured typed lanes still had scalar floats: haptic requests, action cancellation progress, item durability, brownout, movement acoustics, scanner activity, storage debt, prologue completion, manual override, and WFC outpost signals.
+
+What was done:
+- Added cached ingress guard kinds and sanitizers for `HapticRequest`, `PlayerActionCancelledSignal`, `DropPodLandedSignal`, `ItemAcquiredSignal`, `BiomeChangedSignal`, `SectorResidencyHydratedSignal`, `SectorDehydratedSignal`, `ChunkDehydratedSignal`, `ItemDurabilityChangedSignal`, `BrownoutSignal`, `EntityDeathSignal`, `MovementAcousticSignal`, `SwarmDispersedSignal`, `ScannerToolActiveSignal`, `StorageDebtSignal`, `PrologueCompleteSignal`, `ManualOverridePulledSignal`, `WfcOutpostGeneratedSignal`, and `WfcOutpostDoorPowerSignal`.
+- Re-ran static sweep: no remaining `SignalBus<T>`-referenced Core contract struct with explicit float/vector or AUP payload lacks a cached ingress guard in `GlobalSignals.cs`.
+
+Cinematic cheats used:
+- Bad spatial/world-streaming packets collapse to AUP local zero; bad haptic/lighting/scanner values clamp to deterministic presentation-safe ranges.
+- This protects low-tier consumers from recovery branches and lets high-tier consumers spend clean signals on stronger haptics, brownout light response, scanner effects, and WFC presentation.
+
+Exact microseconds saved:
+- Measured proof absent.
+- Static estimate remains sub-1us per affected push because routing is cached per generic lane and each sanitizer is straight scalar math.

@@ -76,7 +76,7 @@ These are new enough and important enough to stay active.
 | `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md` | PRIMARY TERRAIN/BIOME REPORT | yes | Canonical terrain/biome report; former root duplicate moved to `Docs/DEPRECATED/Root_Compatibility_Mirrors_2026-05-15/`. |
 | `Docs/Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_METEOR_REPORT.md` | ACTIVE CELESTIAL REPORT | yes | Source/build/controlled-console evidence only; no PlayMode visual/audio/profiler proof. |
 | `Docs/Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_REPORT.md` | ACTIVE CELESTIAL REPORT | yes | Source/build evidence only; no PlayMode smoke/profiler proof. |
-| `Docs/Reports/2026-05-04_CELESTIAL_ENVIRONMENT_ORBITAL_SYNC_REPORT.md` | ACTIVE CELESTIAL REPORT | yes | Historical task evidence; superseded by May 4 sweep for global current-state truth. |
+| `Docs/Reports/2026-05-04_CELESTIAL_ENVIRONMENT_ORBITAL_SYNC_REPORT.md` | ACTIVE CELESTIAL REPORT | yes | Historical task evidence; May 4 sweep is older global context, while current doc/status boundary starts at May 13/May 15. |
 | `Docs/Reports/2026-05-04_HYDRAULIC_EROSION_ENGINE_SURGERY_LOG.md` | ACTIVE WORLD IMPLEMENTATION REPORT | yes | Hydraulic erosion source/surgery report; Unity import/compile, MapMagic execution, harness output, GCMonitor, and profiler proof remain pending. |
 | `Docs/SPACE_ENGINE_RESEARCH/SPACE_ENGINE_MATH_INTEGRATION_2026-05-05.md` | PRIMARY SPACEENGINE INTEGRATION | yes | Current SpaceEngine 0.9.8 terrain math integration and Burst kernel evidence. |
 | `Docs/SPACE_ENGINE_RESEARCH/TERRAIN_AND_NOISE_098.md` | PRIMARY SPACEENGINE RESEARCH | yes | Current extracted SpaceEngine terrain/noise research; use before adapting SpaceEngine shape language. |
@@ -85,7 +85,7 @@ These are new enough and important enough to stay active.
 | `Docs/Reports/2026-05-05_ARCHIVARIUS_REALITY_DELTA.md` | PRIMARY REALITY DELTA | yes | Current Archivarius delta and untracked inventory snapshot. |
 | `Docs/Reports/2026-05-15_COMPUTE_AUDIT/README.md` | ACTIVE COMPUTE AUDIT BUNDLE | yes | Same-day compute report slices moved out of repository root; static/report evidence only. |
 | `Docs/Reports/2026-05-13_BROKEN_PREFABS_STATIC_SNAPSHOT.md` | GENERATED STATIC SNAPSHOT | yes | Former root generated prefab snapshot; not Unity import, Console, Play Mode, or player-build proof. |
-| `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` | HISTORICAL DOCSET ACTUALITY | yes | Previous documentation read-pass and May 2 build evidence. Read after May 4 sweep. |
+| `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` | HISTORICAL DOCSET ACTUALITY | yes | Previous documentation read-pass and May 2 build evidence. Read after May 13/May 15 overrides and the May 4 historical sweep. |
 | `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md` | PRIMARY PROJECT VERDICT | yes | Honest project-level verdict after current docs/source scan; not Play Mode proof. |
 | `Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md` | ACTIVE COMPILE DELTA | yes | Latest editor compile/MCP console evidence for Sargassum/Emergency relay listener migration and spatial-hash fix. |
 | `Docs/Reports/2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md` | ACTIVE COMPILE DELTA | yes | Supersedes latest compile line numbers after `VegetationJobRecovery.cs.meta` restoration; records Bee/backend recovery and final MCP console zero-entry check. |
@@ -143,13 +143,13 @@ These are preserved, not active.
 
 ## 5.1 Historical 2026-04-29 Handling
 
-All 2026-04-29 reports and patch artifacts are historical unless a current May 5 or May 4 authority file explicitly promotes a narrow claim.
+All 2026-04-29 reports and patch artifacts are historical unless a current override or later specific authority file explicitly promotes a narrow claim.
 
 | Pattern | Authority class | Current handling |
 |---|---|---|
-| `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-29_*.md` | HISTORICAL EVIDENCE | Preserve for provenance; do not use as current runtime/source truth without a May 5/May 4 supersession note. |
+| `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-29_*.md` | HISTORICAL EVIDENCE | Preserve for provenance; do not use as current runtime/source truth without May 13/May 15 or later supersession. |
 | `Docs/Reports/2026-04-29_*.patch` | HISTORICAL PATCH ARTIFACT | Evidence only; paired current report or source diff must carry authority. |
-| `Docs/DEPRECATED/2026-04-29_Audit_Bundles/` | DEPRECATED SNAPSHOT | Superseded by May 5/May 4 counts, interface scan, naming sweep, and source inventory. |
+| `Docs/DEPRECATED/2026-04-29_Audit_Bundles/` | DEPRECATED SNAPSHOT | Superseded by later reports; counts and source inventory must be checked against May 13/May 15 or newer authority. |
 | `Docs/Reports/DEPRECATED/2026-04-29_Static_Audit_Snapshots/` | DEPRECATED REPORT SNAPSHOTS | Do not cite for current file counts, interface ownership, AUP compliance, or Zero-GC status. |
 
 ## 6. Root Text Surface

@@ -103,6 +103,8 @@ Persistent H8 allocations are all-or-nothing:
 - read-only aliases require a concrete `SystemID` reader at the DataVault and H8Memory boundaries;
 - generation handles and direct buffer aliases fail closed unless the target block is marked as externally viewed before returning;
 - DataVault arena initialization and block splitting fail closed if H8 sub-block descriptors cannot be registered.
+- DataVault bootstrap clamps caller capacity to `MaxBufferCapacity`; MacroDB native-cache reserve requests above that ceiling fail closed before persistent maps/lists are allocated.
+- MacroDB native payload insertion is rejected above the DataVault-local 256 KiB payload ceiling before native memory is allocated.
 
 ## Legal Uses
 

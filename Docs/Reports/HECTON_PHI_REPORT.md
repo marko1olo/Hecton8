@@ -2,8 +2,8 @@
 
 Agent: HECTON_PHI_MONITOR
 Domain: ECHELON 9 / Meta, Polish & Integration / Architecture Metrics
-Status: H-PHI VERIFIED FOR STATIC-SOURCE AUDIT / RUNTIME PENDING VERIFICATION
-Evidence Class: STATIC_SOURCE + STATIC_DOC + CLI_COMPILE_ATTEMPT
+Status: STATIC H-PHI SNAPSHOT / RUNTIME PENDING VERIFICATION
+Evidence Class: STATIC_SOURCE + STATIC_DOC + CLI_COMPILE
 Date: 2026-05-13
 
 ## Evidence Window
@@ -117,7 +117,7 @@ Correctness: compile is currently blocked before Unity verification. Representat
 
 Unity Console / PlayMode / Profiler / GCMonitor: not verified. Static scan cannot prove runtime 0 GC, frame time, scene wiring, or memory stability.
 
-Final status: H-PHI VERIFIED for static-source audit. Runtime H-Phi remains PENDING VERIFICATION until compile and Unity evidence exist.
+Final status for the original May 13 snapshot: static-source H-Phi audit complete. Runtime H-Phi remains PENDING VERIFICATION until compile and Unity evidence exist.
 
 ## 2026-05-14 Live Addendum 2
 
@@ -1927,3 +1927,53 @@ Residual bottlenecks:
 - Data Sovereignty remains the hard floor: `154 / (154 + 7074) = 0.021306032`.
 - Next high-value work is owner-led NativeArray/DataVault migration in files like `PlayerCriticalProceduralAudioRenderer.cs`, `HectonVoxelEngine.cs`, `World/EcosystemDirector.cs`, and `PlayerInventory.cs`; this monitor did not touch those owner domains.
 - Runtime H-Phi remains pending Unity Console, PlayMode, Profiler, and GCMonitor evidence.
+
+## 2026-05-15 Live Addendum - DOC_HONEST_ANALYSIS R3 Core Graph Prune
+
+Evidence class: `STATIC_SOURCE` + `CLI_COMPILE`.
+
+What changed:
+- Removed unused `Hecton8.World.GPR` from `Assets/_Project/Scripts/Hecton8.Core.asmdef`.
+- No C# runtime logic, GPR runtime code, contracts, save data, DataVault ownership, signal dispatch, or public API was changed.
+- The removed reference was identified by `Tools/Architecture/HectonPhiAudit.ps1 -Summary -CoreGraphOnly -IncludeUnusedCoreReferenceScan` as a high-confidence unused Core asmdef candidate: `SourceFileCount=1`, `DeclaredTypeCount=3`, `SourceInCoreCompileSurfaceCount=0`.
+
+Current R3 static summary before the prune:
+
+| Counter / Score | Value |
+|---|---:|
+| Runtime files | 1278 |
+| Runtime lines | 872473 |
+| Runtime H-Phi narrow | 0.010787439 |
+| Runtime H-Phi risk-adjusted | 0.000636091 |
+| Data sovereignty | 0.021306032 |
+| Memory alignment | 0.506309148 |
+| `GlobalRegistry.` surface refs | 5060 |
+| Managed formatting surface | 534 |
+| Primary managed-runtime risk | 147 |
+| `UnityUpdateMethods` debt | 0 |
+| Core asmdef debt references before prune | 26 |
+
+Post-prune Core graph result:
+
+| Core graph counter | Value |
+|---|---:|
+| Core asmdef references | 43 |
+| Core asmdef H-Phi debt references | 25 |
+| Generated project debt references | 10 |
+| Source-backed bridge debt references | 14 |
+| Source-backed compile bridge debt references | 8 |
+| Project-reference replacement debt references | 6 |
+| Unused Core asmdef reference candidates | 0 |
+
+Artifacts:
+- `Docs/AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CurrentStaticSummary.json`
+- `Docs/AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CurrentStaticSummary.exit.txt`
+- `Docs/AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CoreGraphAfterGprPrune.json`
+- `Docs/AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CoreGraphAfterGprPrune.exit.txt`
+- `Docs/AgentLogs/Build_DOC_HONEST_ANALYSIS_R3_20260515_AfterGprAsmdefPrune_Hecton8Core.log`
+- `Docs/AgentLogs/Build_DOC_HONEST_ANALYSIS_R3_20260515_AfterGprAsmdefPrune_Hecton8Core.exit.txt`
+
+Verification:
+- Core graph H-Phi budget gate passed with `-MaxCoreAsmdefDebtReferences 25`, `-MaxGeneratedProjectDebtReferences 10`, `-MaxSourceBackedBridgeDebtReferences 14`, `-MaxSourceBackedCompileBridgeDebtReferences 8`, and `-MaxProjectReferenceReplacementDebtReferences 6`.
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:GenerateFullPaths=true -v:minimal` passed with `0 Warning(s)` and `0 Error(s)`.
+- Runtime H-Phi remains pending Unity Console, PlayMode, Profiler, GCMonitor, player-build, frame-time, memory, scene-wiring, and visual proof.

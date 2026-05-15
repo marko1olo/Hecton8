@@ -1440,3 +1440,133 @@ Verification:
 - `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` exited 0 at 2026-05-15 21:14:53 +04:00; core graph debt counts unchanged.
 - Latest integrator build `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_210454_CurrentDisk40` fails on project-wide generated-project reference loss (`Unity.Mathematics`, TMPro, UnityEngine.UI, InputSystem, local contracts). Source scan finds no remaining `ScalabilityTierBindingBridge` under `Assets/_Project/Scripts`.
 - No `dotnet` rebuild was run by this agent.
+
+## 2026-05-15 21:20 +04:00 - WFC Stale-Service Exception Dump Closure
+
+What was wrong:
+- A caught append exception could be followed by MacroDB service churn.
+- That branch recorded `ServiceUnavailable` with exception flag/HResult, but returned before write-failure telemetry and the one-shot WFC black-box dump.
+
+What was done:
+- Added a stale-service branch guard: if `WfcOutpostBlackBoxAppendFlagException` is present, call `PublishWfcWriteFailureWarning()` after the event is recorded.
+- Left normal stale callbacks quiet.
+- Left compaction-deferred and successful append paths unchanged.
+
+Cinematic cheats used:
+- Reused the fixed WFC event ring and existing dump helper instead of text exception logs or a wider telemetry contract.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation: 0 B steady state by static inspection.
+- Normal stale callback cost: one uint flag check.
+- Exception-stale path: existing warning plus one-shot dump after event write.
+
+Verification:
+- Static scan confirms the exception-flag guard in the append `ServiceUnavailable` branch before return.
+- `git diff --check` and `git diff --cached --check` report no whitespace errors beyond Git CRLF normalization warning.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` exited 0 at 2026-05-15 21:20:16 +04:00; core graph debt counts unchanged.
+- Source scan finds no remaining `ScalabilityTierBindingBridge` under `Assets/_Project/Scripts`.
+- No `dotnet` rebuild was run by this agent.
+
+## 2026-05-15 21:30 +04:00 - WFC Hydration Short-Payload Prefilter
+
+What was wrong:
+- `IsWfcOutpostHydrationCandidate()` force-passed actual cached payloads shorter than the WFC header.
+- Short non-WFC cached payloads could consume one of the four WFC hydration probes before magic bytes were checked.
+
+What was done:
+- Removed the actual-handle `< PayloadHeaderBytes` force-pass.
+- Pointer-null and over-max payloads still pass through for corrupt evidence.
+- Short non-null payloads now use the WFC magic prefilter: WFC-magic shorts remain corrupt candidates; non-WFC shorts are skipped before the cap.
+
+Cinematic cheats used:
+- Four-byte magic prefilter instead of full decode, payload-type contract expansion, or managed side tracking.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation: 0 B by static inspection.
+- Potential saving: avoids wasting one of four hydration probes plus a restore attempt on short non-WFC cached records.
+
+Verification:
+- Static scan confirms the short-length force-pass is removed from `IsWfcOutpostHydrationCandidate()`.
+- `git diff --check` and `git diff --cached --check` report no whitespace errors beyond Git CRLF normalization warning.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` exited 0 at 2026-05-15 21:30:41 +04:00; core graph debt counts unchanged.
+- Source scan finds no remaining `ScalabilityTierBindingBridge` under `Assets/_Project/Scripts`.
+- No `dotnet` rebuild was run by this agent.
+
+## 2026-05-15 21:37 +04:00 - WFC Hydration Short-Magic Signal Gate Reconciliation
+
+What was wrong:
+- Loop 58 removed the actual cached-handle short-length bypass, but the outer hydration signal filter still rejected `< PayloadHeaderBytes` before the magic prefilter.
+- The rationale was therefore too broad: WFC-magic short payloads still could not reach corrupt restore.
+
+What was done:
+- Changed the signal lower bound to `sizeof(uint)`, matching the four-byte WFC magic prefilter.
+- Missing service, missing handle, and null handle short signals still require header-sized signal bytes before consuming a probe.
+- Non-null 4..31 byte cached handles are now decided by actual WFC magic bytes.
+
+Cinematic cheats used:
+- Four-byte magic gate instead of full binary decode in the prefilter or a new MacroDB payload-type contract.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation: 0 B by static inspection.
+- Saves one hydration probe and restore attempt for short non-WFC cached records; preserves corrupt dump path for short WFC-magic records.
+
+Verification:
+- Static scan confirms `signal.PayloadBytes < sizeof(uint)` in the hydration drain and header-sized fallback checks for missing/null handles.
+- `git diff --check` and `git diff --cached --check` report no whitespace errors beyond Git CRLF normalization warning.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` exited 0 at 2026-05-15 21:37:33 +04:00; `CoreAsmdefDebtReferenceCount` increased externally to 26 because `Hecton8.World.GPR` was added elsewhere.
+- Latest integrator build `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_213352_CurrentDisk42` fails on unrelated `Gameplay/PlayerKinematicsRuntime.cs` missing helper symbols; no `SaveManager` or `ScalabilityTierBindingBridge` errors appear.
+- No `dotnet` rebuild was run by this agent.
+
+## 2026-05-15 21:50 +04:00 - WFC Grid-Resolve Failure Evidence
+
+What was wrong:
+- WFC dirty/hydration drains could find sector candidates, then return silently if DataVault did not provide a valid WFC mutable grid.
+- The frame ring exposed dependency state, but the event ring did not identify the affected sector.
+
+What was done:
+- Added `Persist/InvalidGrid` black-box events before normal dirty drain grid-resolution returns.
+- Added `Persist/InvalidGrid` black-box events before storm dirty drain grid-resolution returns.
+- Added `Hydration/InvalidGrid` black-box events before hydration drain grid-resolution returns.
+
+Cinematic cheats used:
+- Fixed event-ring breadcrumbs instead of fallback grid allocation, text logs, or new public contracts.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation: 0 B steady state by static inspection.
+- Failure path adds one 64-byte native event-ring write before return.
+
+Verification:
+- Static scan confirms all three `TryEnsureWfcOutpostGrid()` failure exits record `InvalidGrid` before return.
+- Targeted `git diff --check` and `git diff --cached --check` for `SaveManager.cs` report no whitespace errors.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` exited 0 at 2026-05-15 21:50:11 +04:00; core graph debt increased externally to 27 with `Hecton8.World.GPR` and `Hecton8.SpaceEngine098Terrain` listed.
+- Latest integrator build `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_215137_CurrentDisk46` exits 0.
+- No `dotnet` rebuild was run by this agent.
+
+## 2026-05-15 22:10 +04:00 - Final Closure Verification
+
+What was wrong:
+- The WFC persistence pass had source and log changes complete, but needed a final disk-backed closure record after the user's finish request.
+
+What was done:
+- Re-read status and rationale files.
+- Rechecked touched-source invariants for stale bridge symbols, stale dirty-flag binding, stale Burst pack job, and old hydration lower bound.
+- Verified latest integrator build evidence and core H-Phi graph audit.
+
+Cinematic cheats used:
+- No new runtime cheat added; this was closure verification only.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation from this closure step: 0 B.
+- Implemented source changes from the pass remain failure/candidate-path only.
+
+Verification:
+- `git diff --check` and `git diff --cached --check` over WFC persistence source/logs report no whitespace errors beyond Git CRLF normalization warnings.
+- Latest integrator build `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_220017_CurrentDisk47` exits 0 and contains no `SaveManager` or stale bridge errors.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` exited 0 at 2026-05-15 22:10:25 +04:00; `CoreAsmdefDebtReferenceCount=25`.
+- Static scans find no stale `ScalabilityTierBindingBridge`, `MacroDatabasePayloadFlags.Dirty`, WFC Burst pack job, or old hydration header-sized signal lower bound in `SaveManager`.
+- No `dotnet` rebuild was run by this agent.

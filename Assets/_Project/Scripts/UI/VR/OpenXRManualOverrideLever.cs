@@ -93,6 +93,7 @@ namespace Hecton8.UI.VR
         private bool _registeredHotSwapListener;
         private bool _registeredScalabilityListener;
         private bool _receiverRegistered;
+        private bool _dispatcherAvailable;
         private bool _grabbed;
         private bool _latched;
         private bool _lowTierMath;
@@ -142,6 +143,7 @@ namespace Hecton8.UI.VR
             EnsureNativeStateForLifecycle();
             _blackBoxDumped = false;
             _inputService = GlobalRegistry.Input;
+            _dispatcherAvailable = GlobalRegistry.Dispatcher != null;
             _lowTierMath = ResolveLowTierMath();
             TryRegisterHotSwapListener();
             TryRegisterScalabilityListener();
@@ -152,6 +154,7 @@ namespace Hecton8.UI.VR
         private void OnDisable()
         {
             _grabbed = false;
+            _dispatcherAvailable = false;
             TryUnregisterTick();
             TryUnregisterReceiver();
             TryUnregisterScalabilityListener();
@@ -160,6 +163,7 @@ namespace Hecton8.UI.VR
 
         private void OnDestroy()
         {
+            _dispatcherAvailable = false;
             TryUnregisterTick();
             TryUnregisterReceiver();
             TryUnregisterScalabilityListener();
@@ -511,7 +515,7 @@ namespace Hecton8.UI.VR
 
             if (serviceSlot == GlobalRegistryServiceSlot.Input)
             {
-                _inputService = currentService as IInputService ?? GlobalRegistry.Input;
+                _inputService = currentService as IInputService;
                 return;
             }
 
@@ -519,7 +523,8 @@ namespace Hecton8.UI.VR
             {
                 TryUnregisterReceiver();
                 TryUnregisterTick();
-                if (currentService == null)
+                _dispatcherAvailable = currentService != null;
+                if (!_dispatcherAvailable)
                     return;
 
                 EnsureNativeStateForLifecycle();
@@ -772,7 +777,7 @@ namespace Hecton8.UI.VR
 
         private void TryRegisterReceiver()
         {
-            if (_latched || !_nativeAllocated || !_registeredTick || activationVolume == null || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_latched || !_nativeAllocated || !_registeredTick || activationVolume == null || !Application.isPlaying || !_dispatcherAvailable)
                 return;
 
             Collider registeredVolume = _registeredActivationVolume;
@@ -806,7 +811,7 @@ namespace Hecton8.UI.VR
 
         private void TryRegisterTick()
         {
-            if (_registeredTick || _latched || !_nativeAllocated || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registeredTick || _latched || !_nativeAllocated || !Application.isPlaying || !_dispatcherAvailable)
                 return;
 
             _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);

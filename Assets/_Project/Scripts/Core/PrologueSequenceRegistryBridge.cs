@@ -739,11 +739,11 @@ namespace Hecton8.Core
             }
             finally
             {
-                if (!ReferenceEquals(_runCancellationSource, source))
-                    return;
-
-                _runCancellationSource = null;
-                source.Dispose();
+                if (ReferenceEquals(_runCancellationSource, source))
+                {
+                    _runCancellationSource = null;
+                    source.Dispose();
+                }
             }
         }
 

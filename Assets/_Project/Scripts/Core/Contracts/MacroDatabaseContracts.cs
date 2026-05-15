@@ -31,6 +31,35 @@ namespace Hecton8.Core.Contracts
                 (GridY * CellSize) + LocalY,
                 (GridZ * CellSize) + LocalZ);
         }
+
+        public double3 OffsetAbsoluteMeters(double3 deltaMeters)
+        {
+            double3 absolute = ToAbsoluteDouble3();
+            if (!math.all(math.isfinite(deltaMeters)))
+                return absolute;
+
+            double3 shifted = absolute + deltaMeters;
+            return math.all(math.isfinite(shifted)) ? shifted : absolute;
+        }
+
+        public MacroDatabaseAup OffsetMeters(double3 deltaMeters)
+        {
+            double3 absolute = OffsetAbsoluteMeters(deltaMeters);
+            const double CellSize = CellSizeMeters;
+            long gridX = (long)math.floor(absolute.x / CellSize);
+            long gridY = (long)math.floor(absolute.y / CellSize);
+            long gridZ = (long)math.floor(absolute.z / CellSize);
+
+            return new MacroDatabaseAup
+            {
+                GridX = gridX,
+                GridY = gridY,
+                GridZ = gridZ,
+                LocalX = (float)(absolute.x - (gridX * CellSize)),
+                LocalY = (float)(absolute.y - (gridY * CellSize)),
+                LocalZ = (float)(absolute.z - (gridZ * CellSize))
+            };
+        }
     }
 
     public enum MacroDatabaseTier : byte

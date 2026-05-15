@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
+using UnityEngine.Rendering.RenderGraphModule.Util;
 using UnityEngine.Rendering.Universal;
 
 namespace Hecton8.Visor
@@ -33,7 +34,13 @@ namespace Hecton8.Visor
 
         private abstract class DryVolumePassBase : ScriptableRenderPass
         {
-            protected static void DrawDryStencil(CommandBuffer cmd, Material material)
+            private sealed class ColorCopyPassData
+            {
+                internal TextureHandle source;
+                internal Material copyMaterial;
+            }
+
+            protected static void DrawDryStencil(IRasterCommandBuffer cmd, Material material)
             {
                 int sourceCount = HectonDryVolumeStencilSource.ActiveSources.Count;
                 for (int sourceIndex = 0; sourceIndex < sourceCount; sourceIndex++)
@@ -72,16 +79,45 @@ namespace Hecton8.Visor
                 depthTexture = resourceData.activeDepthTexture;
                 return resourceData.isActiveTargetBackBuffer || !sourceTexture.IsValid() || !depthTexture.IsValid();
             }
+
+            protected static void AddColorCopyPass(
+                RenderGraph renderGraph,
+                TextureHandle sourceTexture,
+                TextureHandle destinationTexture,
+                Material copyMaterial,
+                ProfilingSampler profilingSampler,
+                string passName)
+            {
+                using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<ColorCopyPassData>(
+                           passName,
+                           out ColorCopyPassData passData,
+                           profilingSampler))
+                {
+                    passData.source = sourceTexture;
+                    passData.copyMaterial = copyMaterial;
+
+                    builder.UseTexture(sourceTexture, AccessFlags.Read);
+                    builder.SetRenderAttachment(destinationTexture, 0, AccessFlags.Write);
+                    builder.AllowGlobalStateModification(true);
+
+                    builder.SetRenderFunc((ColorCopyPassData data, RasterGraphContext context) =>
+                    {
+                        context.cmd.SetGlobalTexture(ShaderConstants.BlitTextureId, data.source);
+                        CoreUtils.DrawFullScreen(context.cmd, data.copyMaterial, null, 2);
+                    });
+                }
+            }
         }
 
         private sealed class DryRestorePass : DryVolumePassBase
         {
-            private sealed class PassData
+            private sealed class StencilPassData
             {
-                internal TextureHandle source;
-                internal TextureHandle depth;
-                internal TextureHandle destination;
                 internal Material stencilWriteMaterial;
+            }
+
+            private sealed class RestorePassData
+            {
                 internal Material restoreMaterial;
                 internal Material clearMaterial;
                 internal int stencilRef;
@@ -141,33 +177,47 @@ namespace Hecton8.Visor
                 _stencilWriteMaterial.SetFloat(ShaderConstants.StencilRefId, _settings.stencilRef);
                 _restoreMaterial.SetFloat(ShaderConstants.StencilRefId, _settings.stencilRef);
 
-                using (var builder = renderGraph.AddUnsafePass<PassData>("Hecton Dry Volume Restore", out PassData passData, _profilingSampler))
+                using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<StencilPassData>(
+                           "Hecton Dry Volume Stencil",
+                           out StencilPassData passData,
+                           _profilingSampler))
                 {
-                    passData.source = sourceTexture;
-                    passData.depth = depthTexture;
-                    passData.destination = compositeTexture;
                     passData.stencilWriteMaterial = _stencilWriteMaterial;
+
+                    builder.SetRenderAttachment(sourceTexture, 0, AccessFlags.ReadWrite);
+                    builder.SetRenderAttachmentDepth(depthTexture, AccessFlags.ReadWrite);
+
+                    builder.SetRenderFunc((StencilPassData data, RasterGraphContext context) =>
+                    {
+                        DrawDryStencil(context.cmd, data.stencilWriteMaterial);
+                    });
+                }
+
+                AddColorCopyPass(
+                    renderGraph,
+                    sourceTexture,
+                    compositeTexture,
+                    _restoreMaterial,
+                    _profilingSampler,
+                    "Hecton Dry Volume Color Copy");
+
+                using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<RestorePassData>(
+                           "Hecton Dry Volume Restore",
+                           out RestorePassData passData,
+                           _profilingSampler))
+                {
                     passData.restoreMaterial = _restoreMaterial;
                     passData.clearMaterial = _clearMaterial;
                     passData.stencilRef = _settings.stencilRef;
 
-                    builder.UseTexture(sourceTexture, AccessFlags.Read);
-                    builder.UseTexture(depthTexture, AccessFlags.ReadWrite);
-                    builder.UseTexture(compositeTexture, AccessFlags.Write);
+                    builder.SetRenderAttachment(compositeTexture, 0, AccessFlags.ReadWrite);
+                    builder.SetRenderAttachmentDepth(depthTexture, AccessFlags.ReadWrite);
 
-                    builder.SetRenderFunc((PassData data, UnsafeGraphContext context) =>
+                    builder.SetRenderFunc((RestorePassData data, RasterGraphContext context) =>
                     {
-                        CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                         data.restoreMaterial.SetFloat(ShaderConstants.StencilRefId, data.stencilRef);
-
-                        CoreUtils.SetRenderTarget(cmd, data.source, data.depth, ClearFlag.None);
-                        DrawDryStencil(cmd, data.stencilWriteMaterial);
-
-                        Blitter.BlitCameraTexture(cmd, data.source, data.destination, 0f, true);
-
-                        CoreUtils.SetRenderTarget(cmd, data.destination, data.depth, ClearFlag.None);
-                        CoreUtils.DrawFullScreen(cmd, data.restoreMaterial, null, 0);
-                        CoreUtils.DrawFullScreen(cmd, data.clearMaterial);
+                        CoreUtils.DrawFullScreen(context.cmd, data.restoreMaterial, null, 0);
+                        CoreUtils.DrawFullScreen(context.cmd, data.clearMaterial);
                     });
                 }
 
@@ -178,12 +228,14 @@ namespace Hecton8.Visor
 
         private sealed class UnderwaterResolvePass : DryVolumePassBase
         {
-            private sealed class PassData
+            private sealed class StencilPassData
+            {
+                internal Material stencilWriteMaterial;
+            }
+
+            private sealed class ResolvePassData
             {
                 internal TextureHandle source;
-                internal TextureHandle depth;
-                internal TextureHandle destination;
-                internal Material stencilWriteMaterial;
                 internal Material resolveMaterial;
                 internal Material clearMaterial;
                 internal float hasDryVolumes;
@@ -241,40 +293,59 @@ namespace Hecton8.Visor
 
                 _stencilWriteMaterial.SetFloat(ShaderConstants.StencilRefId, _settings.stencilRef);
                 _resolveMaterial.SetFloat(ShaderConstants.StencilRefId, _settings.stencilRef);
+                bool hasDryVolumes = HectonDryVolumeStencilSource.ActiveSources.Count > 0;
 
-                using (var builder = renderGraph.AddUnsafePass<PassData>("Hecton Underwater Noir Resolve", out PassData passData, _profilingSampler))
+                if (hasDryVolumes)
+                {
+                    using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<StencilPassData>(
+                               "Hecton Underwater Dry Stencil",
+                               out StencilPassData passData,
+                               _profilingSampler))
+                    {
+                        passData.stencilWriteMaterial = _stencilWriteMaterial;
+
+                        builder.SetRenderAttachment(sourceTexture, 0, AccessFlags.ReadWrite);
+                        builder.SetRenderAttachmentDepth(depthTexture, AccessFlags.ReadWrite);
+
+                        builder.SetRenderFunc((StencilPassData data, RasterGraphContext context) =>
+                        {
+                            DrawDryStencil(context.cmd, data.stencilWriteMaterial);
+                        });
+                    }
+                }
+
+                AddColorCopyPass(
+                    renderGraph,
+                    sourceTexture,
+                    compositeTexture,
+                    _resolveMaterial,
+                    _profilingSampler,
+                    "Hecton Underwater Noir Color Copy");
+
+                using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<ResolvePassData>(
+                           "Hecton Underwater Noir Resolve",
+                           out ResolvePassData passData,
+                           _profilingSampler))
                 {
                     passData.source = sourceTexture;
-                    passData.depth = depthTexture;
-                    passData.destination = compositeTexture;
-                    passData.stencilWriteMaterial = _stencilWriteMaterial;
                     passData.resolveMaterial = _resolveMaterial;
                     passData.clearMaterial = _clearMaterial;
-                    passData.hasDryVolumes = HectonDryVolumeStencilSource.ActiveSources.Count > 0 ? 1f : 0f;
+                    passData.hasDryVolumes = hasDryVolumes ? 1f : 0f;
                     passData.stencilRef = _settings.stencilRef;
 
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
-                    builder.UseTexture(depthTexture, AccessFlags.ReadWrite);
-                    builder.UseTexture(compositeTexture, AccessFlags.Write);
+                    builder.SetRenderAttachment(compositeTexture, 0, AccessFlags.ReadWrite);
+                    builder.SetRenderAttachmentDepth(depthTexture, AccessFlags.ReadWrite);
+                    builder.AllowGlobalStateModification(true);
 
-                    builder.SetRenderFunc((PassData data, UnsafeGraphContext context) =>
+                    builder.SetRenderFunc((ResolvePassData data, RasterGraphContext context) =>
                     {
-                        CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                         data.resolveMaterial.SetFloat(ShaderConstants.StencilRefId, data.stencilRef);
+                        context.cmd.SetGlobalTexture(ShaderConstants.BlitTextureId, data.source);
+                        CoreUtils.DrawFullScreen(context.cmd, data.resolveMaterial, null, 1);
 
                         if (data.hasDryVolumes > 0.5f)
-                        {
-                            CoreUtils.SetRenderTarget(cmd, data.source, data.depth, ClearFlag.None);
-                            DrawDryStencil(cmd, data.stencilWriteMaterial);
-                        }
-
-                        Blitter.BlitCameraTexture(cmd, data.source, data.destination, 0f, true);
-
-                        CoreUtils.SetRenderTarget(cmd, data.destination, data.depth, ClearFlag.None);
-                        CoreUtils.DrawFullScreen(cmd, data.resolveMaterial, null, 1);
-
-                        if (data.hasDryVolumes > 0.5f)
-                            CoreUtils.DrawFullScreen(cmd, data.clearMaterial);
+                            CoreUtils.DrawFullScreen(context.cmd, data.clearMaterial);
                     });
                 }
 
@@ -286,6 +357,7 @@ namespace Hecton8.Visor
         private static class ShaderConstants
         {
             internal static readonly int StencilRefId = Shader.PropertyToID("_StencilRef");
+            internal static readonly int BlitTextureId = Shader.PropertyToID("_BlitTexture");
             internal static readonly int CrestCameraColorTextureId = Shader.PropertyToID("_Crest_CameraColorTexture");
         }
 

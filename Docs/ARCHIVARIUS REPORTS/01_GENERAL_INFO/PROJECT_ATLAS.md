@@ -131,7 +131,7 @@ Current build-master compile state:
 - The previously cited May 11 build artifact `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt` is absent from the current filesystem, as is the matching raw log.
 - Treat the May 11 compile-success line as dated report text. Current May 14 R43 evidence is the external root `Hecton8*.csproj` no-restore CLI sweep at `0 Warning(s)` / `0 Error(s)` after restore assets and referenced `Temp\bin\Debug` DLLs exist, not Unity runtime proof.
 - Unity MCP proof was not run in the May 11 continuation or DOC_AUDIT R5; do not use prior MCP-clean wording as current evidence.
-- Latest current-state override: `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`.
+- Latest current-state overrides: `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` and `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md`.
 - Official Unity release-page check on 2026-05-11 found `6000.4.6f1` released on `2026-05-05`; local project evidence still pins `6000.4.1f1`. This is version drift, not upgrade approval.
 
 ## 4. External / Package Surface
@@ -594,7 +594,7 @@ Current source-only guard artifact:
 - `Tools/ReloadAudit/Scan-FoundationGuards.ps1`
 - `Docs/Reports/2026-05-03_FOUNDATION_GUARD_SCAN.md`
 
-Current guard result from the May 4 scan:
+Last documented guard result from the May 4 scan:
 
 - Scanner exit code after the May 4 unsafe-copy/menu-loop repair: `0`.
 - Global registry self-registration inventory: `500` informational sites from the broad `GlobalRegistry.Register*(this)` scan.

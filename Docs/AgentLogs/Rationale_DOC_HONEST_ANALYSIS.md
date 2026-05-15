@@ -2,7 +2,7 @@
 
 Date: 2026-05-15
 Domain: Documentation Integrity / Echelon 9 Meta, Polish & Integration
-Evidence class: STATIC_DOC + FILESYSTEM
+Evidence class: STATIC_DOC + FILESYSTEM + STATIC_SOURCE + CLI_COMPILE
 
 ## Decision 1: Audit Scope
 
@@ -13,18 +13,6 @@ Solution: Audit active/stable documentation and current report indexes for stale
 Rejected Alternatives: Full recursive rewrite was rejected because historical dated reports should remain snapshots. Chat-only conclusions were rejected because project protocol requires file-backed status/rationale/logs.
 
 Scalability potential: Low/Middle/High/Ultra runtime behavior unchanged. Cleaner docs reduce agent context pollution and false work.
-
-Hardware Impact: Runtime microseconds saved on i3/MX350: 0 claimed.
-
-## Decision 4: Demote Stale Current/Latest Pointers In Archivarius Navigation
-
-Problem: Active Archivarius navigation files still treated May 11 manifest/continuation and May 4 actuality sweep as latest/current counter or project-truth boundaries. That misroutes future agents even though the reports themselves are historical snapshots.
-
-Solution: Patch only active navigation surfaces and domain-map trust notes so May 13 DOC_AUDIT X-Ray and May 15 documentation honest analysis are read before older counters, root paths, and build-artifact claims. Keep historical report files intact.
-
-Rejected Alternatives: Rewriting every dated report was rejected because it destroys forensic snapshot value. Leaving domain-map top notes unchanged was rejected because they are active entry points, not archival prose.
-
-Scalability potential: Runtime Low/Middle/High/Ultra unchanged. Documentation routing is cleaner for cheap and high-end hardware work because agents start from current evidence boundaries before consuming old subsystem notes.
 
 Hardware Impact: Runtime microseconds saved on i3/MX350: 0 claimed.
 
@@ -51,3 +39,27 @@ Rejected Alternatives: Promoting the narrow scan to a full manifest was rejected
 Scalability potential: Process-only; runtime unchanged.
 
 Hardware Impact: Runtime microseconds saved on i3/MX350: 0 claimed.
+
+## Decision 4: Demote Stale Current/Latest Pointers In Archivarius Navigation
+
+Problem: Active Archivarius navigation files still treated May 11 manifest/continuation and May 4 actuality sweep as latest/current counter or project-truth boundaries. That misroutes future agents even though the reports themselves are historical snapshots.
+
+Solution: Patch only active navigation surfaces and domain-map trust notes so May 13 DOC_AUDIT X-Ray and May 15 documentation honest analysis are read before older counters, root paths, and build-artifact claims. Keep historical report files intact.
+
+Rejected Alternatives: Rewriting every dated report was rejected because it destroys forensic snapshot value. Leaving domain-map top notes unchanged was rejected because they are active entry points, not archival prose.
+
+Scalability potential: Runtime Low/Middle/High/Ultra unchanged. Documentation routing is cleaner for cheap and high-end hardware work because agents start from current evidence boundaries before consuming old subsystem notes.
+
+Hardware Impact: Runtime microseconds saved on i3/MX350: 0 claimed.
+
+## Decision 5: Remove Unused Core GPR Reference, Not World GPR Runtime
+
+Problem: A fresh H-Phi summary after concurrent churn showed Core asmdef debt at `26`, one above the R49 accepted ceiling. The optional unused-reference scan identified `Hecton8.World.GPR` as a high-confidence unused Core asmdef reference with `SourceInCoreCompileSurfaceCount=0`.
+
+Solution: Remove only `Hecton8.World.GPR` from `Assets/_Project/Scripts/Hecton8.Core.asmdef`, then rerun the Core graph gate and Core CLI compile. World GPR runtime and contracts were not changed.
+
+Rejected Alternatives: Broad Core graph cleanup was rejected because it crosses many owner domains. Editing C# GPR/runtime code was rejected because this task owns documentation/integration hygiene, not World implementation. Keeping the unused reference was rejected because it is measurable H-Phi dependency debt with direct tool evidence.
+
+Scalability potential: Low/Middle/High/Ultra runtime behavior unchanged. Smaller Core dependency surface reduces compile graph coupling and helps future hardware-specific systems stay isolated behind contracts.
+
+Hardware Impact: Runtime microseconds saved on i3/MX350: 0 claimed; no runtime path changed.

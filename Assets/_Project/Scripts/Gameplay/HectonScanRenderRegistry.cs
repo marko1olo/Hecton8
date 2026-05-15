@@ -189,6 +189,24 @@ namespace Hecton8.Gameplay
             if (cmd == null || material == null || maxDraws <= 0)
                 return 0;
 
+            return DrawRenderersCore(cmd, null, material, requiredMask, maxDraws);
+        }
+
+        public static int DrawRenderers(IRasterCommandBuffer cmd, Material material, uint requiredMask, int maxDraws)
+        {
+            if (cmd == null || material == null || maxDraws <= 0)
+                return 0;
+
+            return DrawRenderersCore(null, cmd, material, requiredMask, maxDraws);
+        }
+
+        private static int DrawRenderersCore(
+            CommandBuffer cmd,
+            IRasterCommandBuffer rasterCmd,
+            Material material,
+            uint requiredMask,
+            int maxDraws)
+        {
             int drawCount = 0;
             for (int i = 0; i < s_count && drawCount < maxDraws; i++)
             {
@@ -208,7 +226,10 @@ namespace Hecton8.Gameplay
                 int subMeshCount = math.max(1, s_subMeshCounts[i]);
                 for (int subMeshIndex = 0; subMeshIndex < subMeshCount && drawCount < maxDraws; subMeshIndex++)
                 {
-                    cmd.DrawRenderer(renderer, material, subMeshIndex, 0);
+                    if (rasterCmd != null)
+                        rasterCmd.DrawRenderer(renderer, material, subMeshIndex, 0);
+                    else
+                        cmd.DrawRenderer(renderer, material, subMeshIndex, 0);
                     drawCount++;
                 }
             }

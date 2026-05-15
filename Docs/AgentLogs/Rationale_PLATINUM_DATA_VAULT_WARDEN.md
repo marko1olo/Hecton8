@@ -268,6 +268,24 @@ Rejected Alternatives: Leaving raw `++` because wrap is rare; trusting the recor
 Scalability potential: Low devices get deterministic owner drift faults instead of silent native accounting erosion; Middle keeps memory-map chronology stable; High and Ultra can run larger persistent pools without weakening leak/postmortem evidence.
 Hardware Impact: Free/reallocation cold paths add one NativeParallelHashMap lookup and a normalized scalar generation increment. 0 us steady-frame impact.
 
+Problem: DataVault dump latches were set before the binary black-box write completed, and the PHI/VOD path latched even when the native telemetry buffer was not created.
+Solution: Moved defrag and PHI/VOD dump latches after successful `FileStream.Write`, and made PHI/VOD use the same early `IsCreated` guard as the defrag dump path.
+Rejected Alternatives: Keeping one-shot latch-before-write to avoid repeated IO attempts; the black-box mandate values first valid postmortem evidence over suppressing a cold fault retry.
+Scalability potential: Low devices retain the first valid native dump under fault pressure; Middle keeps fault triage deterministic; High and Ultra can carry richer memory consumers without losing crash evidence if an initial dump attempt fails.
+Hardware Impact: 0 us steady-frame impact. Fault-only path changes latch order and may retry on an IO failure instead of permanently suppressing the dump.
+
+Problem: `GlobalDataVault.Initialize` and MacroDB native-cache reserve accepted oversized positive capacities directly, allowing a bad caller/config to allocate huge persistent hash maps/lists before gameplay.
+Solution: Added DataVault-local `MaxBufferCapacity`, `MaxBlockCapacity`, `ResolveBufferCapacity`, and `ResolveBlockCapacity`; routed boot allocation through the clamps and made over-limit MacroDB cache reserve requests fail closed before allocation.
+Rejected Alternatives: Trusting bootstrap and MacroDB config values because current defaults are small. Startup/config values are public memory-contract input and must be bounded inside the allocator authority.
+Scalability potential: Low devices cap persistent metadata allocation before the arena is exposed; Middle keeps MacroDB cache memory predictable; High and Ultra can still use up to the documented cap without unbounded metadata growth.
+Hardware Impact: 0 us frame impact. Cold boot adds two integer clamps and bounds DataVault metadata to 32768 buffer records / 65536 block records instead of caller-controlled counts.
+
+Problem: `GlobalDataVault.TryStoreMacroDatabasePayload` relied on upstream MacroDB service checks for payload size, so any direct cache-owner caller could allocate an oversized native payload.
+Solution: Added a DataVault-local 256 KiB `MaxMacroDatabasePayloadBytes` ceiling and reject over-limit payload insertion before native allocation or copy.
+Rejected Alternatives: Trusting `H8MacroDatabaseService._config.MaxPayloadBytes`; the vault owns native memory and must enforce the same upper bound at its public cache-owner boundary.
+Scalability potential: Low devices reject payload bombs before native pressure; Middle keeps cache residency predictable; High and Ultra can store more sectors by capacity, not by allowing single-sector payload bloat.
+Hardware Impact: One cold insert-path integer compare. 0 us steady-frame impact. Worst single MacroDB native payload is capped at 256 KiB before `H8Memory.AllocateRaw`.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Polish audit required removal of fake precision, managed iteration/string debt, and any code outside the DataVault domain without justification.
@@ -278,7 +296,7 @@ Hardware Impact: Direct habitat DTO write is 32 bytes per module and 0 B GC. Rem
 
 Final Git Diff Summary:
 - Assets/_Project/Scripts/Core/HectonArenaAllocator.cs: owner-tagged H8Memory.FreeRaw release.
-- Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs: GenerationID handle exposure, fail-closed external-view marking, stale-handle fatal path, VaultGenerationID telemetry, owner-tagged macro/vault frees, macro copy switched to MemCpy, live defrag memmove code deleted, agent-scoped black-box dump paths, and non-finite defrag input dumping.
+- Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs: GenerationID handle exposure, fail-closed external-view marking, stale-handle fatal path, VaultGenerationID telemetry, owner-tagged macro/vault frees, MacroDB/DataVault capacity and payload clamps, macro copy switched to MemCpy, live defrag memmove code deleted, agent-scoped black-box dump paths with post-write latches, and non-finite defrag input dumping.
 - Assets/_Project/Scripts/Core/Memory/H8Memory.cs: FatalMemoryException, owner-gated raw/native allocation, alias-reader gate, all-or-nothing allocation tracking, tracked-byte raw reallocation with pointer-owner map validation, descriptor capacity growth/reuse tombstones with normalized monotonic generation, cold-start capacity clamp, and owner-checked FreeRaw.
 - Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs: v72 first-hour DTO payload write/read, direct habitat flood struct loop, bounded root compatibility collections, 16 KiB string cap, and removed unbounded helper wrappers.
 - Assets/_Project/Scripts/SaveData.cs: first-hour DTO mirrors and packed DTO definitions/metadata.

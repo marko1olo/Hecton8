@@ -5232,10 +5232,10 @@ namespace Hecton8.Gameplay
                 return fallbackTarget;
 
             Vector3 rotatedOffset = _transportPlatformDeltaRotation * new Vector3(bodyOffset.x, bodyOffset.y, bodyOffset.z);
-            double3 targetAbsolute =
-                _currentTransportPlatformAup.ToAbsoluteDouble3() +
-                new double3(rotatedOffset.x, rotatedOffset.y, rotatedOffset.z);
-            float3 runtimeTarget = AbsoluteUniversePosition.FromAbsolutePosition(targetAbsolute).ToRuntimeFloat3();
+            AbsoluteUniversePosition targetAup = AbsoluteUniversePosition.OffsetMeters(
+                in _currentTransportPlatformAup,
+                new double3(rotatedOffset.x, rotatedOffset.y, rotatedOffset.z));
+            float3 runtimeTarget = targetAup.ToRuntimeFloat3();
             Vector3 targetPosition = new Vector3(runtimeTarget.x, runtimeTarget.y, runtimeTarget.z);
             return IsFiniteVector(targetPosition) ? targetPosition : fallbackTarget;
         }

@@ -457,3 +457,51 @@ Cinematic Cheats used: no physics or joint simulation. The button remains a chea
 Exact microseconds saved/spent: successful press cost is effectively unchanged. Failed publish avoids one hand-inside write, one UI-lane registration attempt, and follow-on visual depression work. 0 B/frame.
 
 Verification: `git diff --check` passed for `PhysicalPanelButton.cs` with CRLF warnings only. Scoped counter reports `PanelRequiresSignalService=1`, `PublishFailureBeforeInsideFrame=1`, `FirstPressRegisterAfterPublish=1`, `PressDispatchedUpdatesInsideFrame=1`, `CooldownUpdatesInsideFrame=1`, `OldInsideFrameBeforePressDispatched=0`, `HapticAfterPublish=1`, `DirectInput=0`, `HingeJoint=0`, `ForbiddenFind=0`, `DotnetMention=0`. `CURRENT_BATCH.md` extraction still returns no matching prompt block. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - Physical Handler Hot-Path Registry Cache
+
+What was wrong: `PhysicalInteractionHandler` still had service registry reads in the active physical panel path and in the tick-registration helper reachable from frame-state transitions.
+
+What was done: the handler now implements `IGlobalRegistryHotSwapListener`, uses cached `_interactionSignals` in `TickPhysicalPanelButtons()`, caches `_dispatcherAvailable`, clears that flag before disable-time cancellation, and re-admits tick lanes only after dispatcher replacement.
+
+Cinematic Cheats used: no simulation change. The cockpit controls remain cheap overlap-probe and scalar presentation fakes; service rebinding is cold lifecycle work.
+
+Exact microseconds saved/spent: removes one interaction-service registry property read per active XR physical panel probe tick and one dispatcher property read from registration-refresh paths. 0 B/frame.
+
+Verification: `git diff --check` passed for `PhysicalInteractionHandler.cs` with CRLF warnings only. Scoped counter reports `ImplementsHotSwap=1`, `CachedSignalField=1`, `CachedDispatcherFlag=1`, `OnEnableSeedsDispatcher=1`, `DisableClearsBeforeCancel=1`, `CallbackHandlesDispatcher=1`, `CallbackUnregistersOnDispatcherSwap=1`, `RefreshUsesCachedDispatcher=1`, `RefreshRegistryDispatcherLookup=0`, `TickUsesCachedSignal=1`, `TickRegistryInteractionLookup=0`, `DirectInput=0`, `HingeJoint=0`, `ForbiddenFind=0`, `DotnetMention=0`. `CURRENT_BATCH.md` extraction still returns no matching prompt block. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - Manual Override Dispatcher Cache
+
+What was wrong: `OpenXRManualOverrideLever` still queried dispatcher availability inside receiver/tick admission helpers even though it already subscribed to registry hot-swap events. Its input hot-swap branch also fell back to another registry read when the callback payload was null or wrong-typed.
+
+What was done: the lever now caches `_dispatcherAvailable`, seeds it on enable, clears it on disable/destroy, updates it from dispatcher hot-swap payloads, and uses it in `TryRegisterTick()` and `TryRegisterReceiver()`. Input hot-swap now fails closed with `currentService as IInputService` instead of re-querying `GlobalRegistry.Input`.
+
+Cinematic Cheats used: no simulation change. The manual override remains a scalar kinematic lever with overlap-probe receiver admission; service rebinding is kept in cold lifecycle/hot-swap paths.
+
+Exact microseconds saved/spent: removes two dispatcher-null registry checks from manual override admission helpers and one fallback input registry read on malformed input hot-swap. 0 B/frame, no new listener, no public API change.
+
+Verification: `git diff --check` passed for `OpenXRManualOverrideLever.cs` with CRLF warning only. Scoped counter reports `LeverCachedDispatcherField=1`, `LeverOnEnableSeedsDispatcher=1`, `LeverDisableDestroyClearDispatcher=2`, `LeverCallbackSetsDispatcher=1`, `LeverTickGuardUsesCachedDispatcher=3`, `LeverRegistrationDispatcherNullLookups=0`, `LeverInputCallbackRegistryFallback=0`, `LeverColdInputSeed=1`, `DirectInputApiCalls=0`, `HingeJoint=0`, `ForbiddenFind=0`, `DotnetMention=0`. `CURRENT_BATCH.md` extraction still returns no matching prompt block. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - Shared UI Tick Destroy Cleanup
+
+What was wrong: physical panel buttons and snap switches left UI tick cleanup solely to `OnDisable()`. If destruction or pooled teardown skips that path or local registration flags drift, stale UI update owners can remain after receiver cleanup.
+
+What was done: `PhysicalPanelButton.OnDestroy()` and `PhysicalSnapSwitch.OnDestroy()` now call their existing idempotent `Unregister()` before final receiver/runtime teardown.
+
+Cinematic Cheats used: no simulation change. Buttons and switches remain overlap-probe scalar cockpit controls; this only tightens lifecycle cleanup.
+
+Exact microseconds saved/spent: 0 us active-frame cost. Cold destroy pays one fixed-bucket unregister scan and can prevent one stale UI tick per destroyed control.
+
+Verification: `git diff --check` passed for `PhysicalPanelButton.cs` and `PhysicalSnapSwitch.cs` with CRLF warnings only. Scoped counter reports `PanelDestroyUnregister=1`, `SwitchDestroyUnregister=1`, `PanelUnregisterUnconditional=1`, `SwitchUnregisterUnconditional=1`, `PanelDirectInput=0`, `SwitchDirectInput=0`, `HingeJointTotal=0`, `ForbiddenFindTotal=0`, `DotnetMention=0`. `CURRENT_BATCH.md` extraction still returns no matching prompt block. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - Snap Switch Cached Scalar Config
+
+What was wrong: `PhysicalSnapSwitch` repeatedly reclamped serialized angles, speed, cooldown, and signal range while animating or publishing a toggle, even though those values only change on lifecycle/editor refresh.
+
+What was done: added cached finite scalar fields and `CacheScalarConfig()`. Tick animation, angle blending, cooldown commit, cached rotations, and switch signal payload now use resolved values.
+
+Cinematic Cheats used: no physics or joint simulation. The switch remains a scalar snap fake; the pass removes bookkeeping from the active fake so dense cockpit panels stay cheaper.
+
+Exact microseconds saved/spent: removes up to four finite/clamp helper calls from active snap ticks and one range recomputation on accepted toggles. 0 B/frame, no public API change.
+
+Verification: `git diff --check` passed for `PhysicalSnapSwitch.cs` with CRLF warning only. Forbidden-pattern scan over the four task files returned no matches. Scoped counter reports `CacheScalarConfigCalls=2`, `AwakeDuplicateCacheSnap=0`, `ResolveReferencesCacheSnap=2`, `OldResolveSafeMethods=0`, `PublishSignalUsesCachedRange=1`, `PublishSignalRuntimeAbs=0`, `TickUsesCachedSpeed=1`, `ApplyAngleUsesCachedAngles=1`, `DirectInput=0`, `HingeJoint=0`, `ForbiddenFind=0`, `DotnetMention=0`. `CURRENT_BATCH.md` extraction still returns no matching prompt block. No dotnet rebuild/probe was run by user instruction.

@@ -988,3 +988,130 @@ Verification:
 
 Status:
 - VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-15 - H8Memory Owner-Map Drift Gate
+
+What was wrong:
+- Descriptor generation mutation still had raw increment sites.
+- Owner-gated free and raw reallocation trusted the allocation record scan before proving the pointer-owner sidecar map was coherent.
+
+What was done:
+- Added `AdvanceDescriptorGeneration`.
+- Routed descriptor reuse, free tombstone, and owner-key mutation through the normalized positive-generation helper.
+- Added `ValidateOwnerMap`.
+- Owner-gated free and raw reallocation now fail closed if the pointer-owner map is missing or disagrees with the requester before record-table mutation.
+- Documented the gate in `Docs/ARCHITECTURE/ARENA_ALLOCATOR_2_0.md`.
+
+Cinematic Cheats used:
+- None. This is memory evidence integrity.
+
+Exact Microseconds saved:
+- Frame cost: 0 us.
+- Free/reallocation cold paths add one NativeParallelHashMap lookup.
+- Descriptor mutation uses one scalar normalized increment.
+
+Verification:
+- `H8Memory.cs`, `GlobalDataVault.cs`, `SaveBinaryPayloadCodec.cs`, and `SaveDataMigration.cs` brace/parenthesis balance passed.
+- Owner-map/generation helper scan shows `ValidateOwnerMap` on owner-gated free and raw reallocation, and `AdvanceDescriptorGeneration` on descriptor reuse/free/owner-key mutation.
+- DataVault live compaction scan remained clean.
+- Direct `SystemID.Unknown` H8 allocation/free/alias call scan remained clean.
+- `CURRENT_BATCH.md` prompt re-extraction still returns `PROMPT_NOT_FOUND`.
+- `git diff --check` and `git diff --cached --check` passed with CRLF warnings only.
+- No dotnet rebuild was run per user order.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-15 - DataVault Dump Latch Hardening
+
+What was wrong:
+- Defrag and PHI/VOD dump latches were set before the binary write completed.
+- PHI/VOD could latch even when the native telemetry ring was not created, suppressing a later valid dump attempt.
+
+What was done:
+- Moved `_defragDumpWritten` and `_phiVodDumpWritten` assignment after successful `FileStream.Write`.
+- Added the native telemetry ring `IsCreated` guard to the PHI/VOD entry condition.
+- Removed the inner no-op PHI/VOD guard that could return after latching.
+
+Cinematic Cheats used:
+- None. This is black-box postmortem evidence integrity.
+
+Exact Microseconds saved:
+- Frame cost: 0 us.
+- Fault-only path changes latch order and may retry after IO failure instead of permanently suppressing the dump.
+
+Verification:
+- `GlobalDataVault.cs`, `H8Memory.cs`, `SaveBinaryPayloadCodec.cs`, and `SaveDataMigration.cs` brace/parenthesis balance passed.
+- Dump latch order scan shows defrag and PHI/VOD latch after stream write, with both guards checking native telemetry ring creation before latching.
+- DataVault live compaction scan remained clean.
+- H8 owner-map/generation helper scan remained clean.
+- `CURRENT_BATCH.md` prompt re-extraction still returns `PROMPT_NOT_FOUND`.
+- `git diff --check` and `git diff --cached --check` passed with CRLF warnings only.
+- No dotnet rebuild was run per user order.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-15 - DataVault Capacity Clamp
+
+What was wrong:
+- `GlobalDataVault.Initialize` and MacroDB native-cache reserve trusted oversized positive caller capacities.
+- A bad bootstrap/config value could allocate huge persistent maps/lists before the vault arena contract had meaningful bounds.
+
+What was done:
+- Added `MaxBufferCapacity` and `MaxBlockCapacity`.
+- Added `ResolveBufferCapacity` and `ResolveBlockCapacity`.
+- Routed DataVault boot maps/lists through the clamps.
+- Over-limit MacroDB native-cache reserve requests fail closed before allocation.
+- Documented the cap in `Docs/ARCHITECTURE/ARENA_ALLOCATOR_2_0.md`.
+
+Cinematic Cheats used:
+- None. This is allocator-budget containment.
+
+Exact Microseconds saved:
+- Frame cost: 0 us.
+- Cold boot adds integer clamps.
+- Prevents caller-controlled persistent metadata growth beyond 32768 buffer records and 65536 block records.
+
+Verification:
+- `GlobalDataVault.cs`, `H8Memory.cs`, `SaveBinaryPayloadCodec.cs`, and `SaveDataMigration.cs` brace/parenthesis balance passed.
+- Capacity helper scan shows boot and MacroDB reserve routed through `ResolveBufferCapacity`, with old direct `capacity > 0 ? capacity : DefaultBufferCapacity` and `safeCapacity << 1` patterns absent.
+- DataVault live compaction scan remained clean.
+- Agent log ordering scan places Loop 35, 36, and 37 at the bottom after the cold-start capacity section.
+- `CURRENT_BATCH.md` prompt re-extraction still returns `PROMPT_NOT_FOUND`.
+- `git diff --check` and `git diff --cached --check` passed with CRLF warnings only.
+- No dotnet rebuild was run per user order.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-15 - MacroDB Payload Byte Ceiling
+
+What was wrong:
+- `GlobalDataVault.TryStoreMacroDatabasePayload` trusted upstream MacroDB service checks for payload size.
+- A direct cache-owner caller could request an oversized native payload allocation.
+
+What was done:
+- Added `MaxMacroDatabasePayloadBytes = 256 * 1024`.
+- Reject over-limit payload insertion before `H8Memory.AllocateRaw` and before the memory copy.
+- Documented the cap in `Docs/ARCHITECTURE/ARENA_ALLOCATOR_2_0.md`.
+
+Cinematic Cheats used:
+- None. This is native payload containment.
+
+Exact Microseconds saved:
+- Frame cost: 0 us.
+- Cold insert path adds one integer compare.
+- Prevents single MacroDB payloads above 256 KiB from entering DataVault native memory.
+
+Verification:
+- `GlobalDataVault.cs`, `H8Memory.cs`, `SaveBinaryPayloadCodec.cs`, and `SaveDataMigration.cs` brace/parenthesis balance passed.
+- Payload ceiling scan shows `byteLength > MaxMacroDatabasePayloadBytes` before `H8Memory.AllocateRaw` and `UnsafeUtility.MemCpy`.
+- DataVault live compaction scan remained clean.
+- Newest log sections are bottom-ordered after the cold-start capacity section.
+- `CURRENT_BATCH.md` prompt re-extraction still returns `PROMPT_NOT_FOUND`.
+- `git diff --check` and `git diff --cached --check` passed with CRLF warnings only.
+- No dotnet rebuild was run per user order.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.

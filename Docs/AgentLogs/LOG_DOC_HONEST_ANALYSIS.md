@@ -61,3 +61,31 @@ Verification:
 
 - Focused stale-phrase scan no longer finds the targeted `current/latest` May 11 phrases in active navigation surfaces.
 - Markdown diff whitespace check and root filtered scan completed separately in the continuation pass.
+
+## Continuation R3 - H-Phi Core Graph Prune
+
+What was wrong:
+
+- Fresh H-Phi summary found current Core asmdef debt at `26`, while the accepted R49 ceiling was `25`.
+- `Hecton8.World.GPR` was present as a high-confidence unused Core asmdef reference candidate.
+
+What was done:
+
+- Removed `Hecton8.World.GPR` from `Assets/_Project/Scripts/Hecton8.Core.asmdef`.
+- Kept World GPR runtime code untouched.
+- Updated H-Phi/stable documentation with the new static and CLI evidence boundary.
+
+Cinematic Cheats used:
+
+- Not applicable. No runtime simulation, visual, physics, VFX, water, fog, light, or gameplay path changed.
+
+Exact Microseconds saved:
+
+- Runtime: `0` claimed. No profiler evidence was collected and no runtime path changed.
+- Tooling elapsed: H-Phi summary `142717567` us, Core graph post-prune `26030675` us, Core CLI compile `85479750` us.
+
+Verification:
+
+- `HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CoreGraphAfterGprPrune.json`: `EXIT=0`, Core graph debt `25/10/14/8/6`, unused Core candidates cleared.
+- `Build_DOC_HONEST_ANALYSIS_R3_20260515_AfterGprAsmdefPrune_Hecton8Core.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`.
+- Runtime proof remains `PENDING VERIFICATION`.

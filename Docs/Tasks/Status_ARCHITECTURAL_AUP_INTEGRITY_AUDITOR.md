@@ -3,7 +3,7 @@
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
 Domain: ECHELON 1 / Origin Shift (AUP Manager), with audit reach into Physics, Voxel, Kinematics, AI trigger math, Biome trigger math, and deterministic seed callsites.
 Assignment Source: User-supplied XML block. `Docs/Tasks/CURRENT_BATCH.md` extraction returned `PROMPT_NOT_FOUND` for this ID on initial pass.
-Status: VERIFIED AUP INTEGRITY - LOOP 54 APPLIED; REAL SOURCE REPAIRS MOVED WORLD GRID, ATLAS SIGNAL, PDA SIGNAL, DOCKING, BASE DEPTH, SHARED AUP DIRECTION/DISTANCE, AND EDITOR KINEMATIC GHOST DIAGNOSTICS OFF LEGACY FLOAT/ABSOLUTE AUP PATHS; CORE BUILD GREEN WITH 0 WARNINGS / 0 ERRORS; EDITOR BUILD GREEN WITH 48 PACKAGE/THIRD-PARTY WARNINGS / 0 ERRORS; ASSEMBLY-CSHARP WRAPPER TIMED OUT BUT LOG REPORTS BUILD SUCCEEDED WITH 200 WARNINGS / 0 ERRORS; STRICT AUP SCANS RETURN NO_MATCHES; H-PHI AUP PRECISION RISK IS 0; ASMDEF BLOCKED BY ARCHITECTURE
+Status: VERIFIED AUP INTEGRITY - LOOP 56 FINAL BUILD RECHECK PASSED; RENDERGRAPH NAMESPACE BUILD DEBT REPAIRED; AUP OFFSET/CENTROID CONSTRUCTION CENTRALIZED; DIRECT FULL-ABSOLUTE `ToAbsoluteDouble3()` ADD/SUB SCANS RETURN NO_MATCHES; CORE BUILD GREEN WITH 0 WARNINGS / 0 ERRORS; FULL H-PHI AUP PRECISION RISK IS 0; MANDATORY BROAD SCAN REMAINS 233 PRESENTATION/TEXT RESIDUALS; ASMDEF BLOCKED BY ARCHITECTURE
 
 ## Selected Mandates
 
@@ -652,3 +652,27 @@ Loop 54 - Editor Kinematic Ghost AUP Regression Repair:
 - `git diff --check -- Assets/_Project/Scripts/Editor/KinematicGhostDebugger.cs` reports line-ending warning only, no whitespace errors.
 - `dotnet build .\Hecton8.Editor.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_editor_build_loop54.log;verbosity=normal"` succeeded with 48 warnings and 0 errors. Warnings are package/third-party deprecation/unassigned-field warnings, not AUP source errors.
 - Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 158.474 seconds with `RuntimeHPhiRisk=0.000634336`, `RuntimeHPhiNarrow=0.010787439`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=362`, `AupPrecisionRisk=0`, `NativeArrayRefs=7074`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, `NativeOwnershipRisk=8196`, `RuntimeFiles=1278`, and `RuntimeLines=871433`.
+
+Loop 55 - AUP Offset Construction Centralization and Kinematics Build Repair:
+- Re-read status/rationale, re-opened the Unity MCP operator skill, and kept the `dotnet rebuild` ban active. Used `dotnet build` only for requested build repair/verification.
+- Added central zero-GC AUP offset helpers: `AUPMath.OffsetAbsoluteMeters`, `AUPMath.WeightedAbsoluteAverage3`, `AbsoluteUniversePosition.OffsetMeters`, `AbsoluteUniversePosition.OffsetAbsoluteMeters`, and `AbsoluteUniversePosition.WeightedAverage3`.
+- Added `MacroDatabaseAup.OffsetAbsoluteMeters` / `OffsetMeters` so logistics/power macro AUP payloads can shift in double without depending on the World assembly.
+- Refactored local-offset AUP construction in player state prediction, stress metrics, Atlas beacon centroid, fauna target prediction/deafened wander, transport platform carrier projection, voxel proxy bounds, persistent fauna jitter, and WFC outpost power node/shift math away from scattered raw full-absolute add/subtract callsites.
+- Repaired active kinematics build debt in `PlayerKinematicsRuntime.cs` by leaving exactly one storage/fault helper block after concurrent duplicate insertion; this cleared alternating missing-helper/duplicate-helper compile failures.
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_build_loop55_after_pk_stabilized.log;verbosity=normal"` succeeded with 0 warnings and 0 errors.
+- Direct full-absolute add/subtract scans returned `NO_MATCHES`: same-line `ToAbsoluteDouble3() +/-` scan and multiline `ToAbsoluteDouble3()` followed by `+/-` scan are clean under `Assets/_Project/Scripts`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` returned `MANDATORY_SCAN_LINES=233`; residuals remain broad `universe` text and final-cast/presentation payload names.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed with `RuntimeHPhiRisk=0.000636091`, `RuntimeHPhiNarrow=0.010787439`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=357`, `AupPrecisionRisk=0`, `NativeArrayRefs=7074`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, `NativeOwnershipRisk=8196`, `RuntimeFiles=1278`, and `RuntimeLines=872600`.
+- `git diff --check` on Loop 55 touched files reports line-ending warning only, no whitespace errors.
+
+Loop 56 - Final Build Recheck / RenderGraph Namespace Repair:
+- Re-read status/rationale, AGENTS.md, the domain map, the Unity MCP operator skill, and render compatibility mandates before touching the final build failure.
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_build_loop56_final.log;verbosity=normal"` initially failed with 2 errors in `Assets/_Project/Scripts/Visor/HectonDryVolumeFeature.cs`: dirty RenderGraph migration called `AddBlitPass` without importing `UnityEngine.Rendering.RenderGraphModule.Util`.
+- Patched only that namespace import. No render algorithm, pass ordering, material ownership, or AUP logic was changed.
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_build_loop56_after_rendergraph_namespace.log;verbosity=normal"` succeeded with 0 warnings and 0 errors.
+- Direct full-absolute add/subtract scans remain `NO_MATCHES`: same-line `ToAbsoluteDouble3() +/-` scan and multiline `ToAbsoluteDouble3()` followed by `+/-` scan are clean under `Assets/_Project/Scripts`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` returned `MANDATORY_LINES=233`; residuals remain broad `universe` text and known final-cast/presentation payload names.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed with `RuntimeHPhiRisk=0.000636091`, `RuntimeHPhiNarrow=0.010787439`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=357`, `AupPrecisionRisk=0`, `NativeArrayRefs=7074`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, `NativeOwnershipRisk=8196`, `RuntimeFiles=1278`, and `RuntimeLines=872640`.
+- `git diff --check` on Loop 55/56 touched source and report files returned exit 0; only line-ending warnings were printed.
+- `Docs\Tasks\CURRENT_BATCH.md` was checked again; this agent prompt is still absent there, so the user-supplied XML remains the authoritative assignment.
+- No `dotnet rebuild` was run.

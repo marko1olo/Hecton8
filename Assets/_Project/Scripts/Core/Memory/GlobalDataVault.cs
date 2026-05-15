@@ -279,11 +279,14 @@ namespace Hecton8.Core.Memory
     public sealed unsafe class GlobalDataVault : IDataVault
     {
         private const int DefaultBufferCapacity = 128;
+        private const int MaxBufferCapacity = 32768;
+        private const int MaxBlockCapacity = MaxBufferCapacity << 1;
         internal const int VaultBlockAlignment = 64;
         private const long DefaultArenaBytes = 128L * 1024L * 1024L;
         private const float FragmentationRatioThreshold = 0.15f;
         private const long MassiveMoveThresholdBytes = 50L * 1024L * 1024L;
         private const byte MacroDatabasePayloadDirtyFlag = 1 << 0;
+        private const int MaxMacroDatabasePayloadBytes = 256 * 1024;
         internal const byte BlockStateFree = 0;
         internal const byte BlockStateOccupied = 1;
         private const byte BlockFlagExternalView = 1 << 0;
@@ -390,10 +393,8 @@ namespace Hecton8.Core.Memory
             if (_initialized)
                 return;
 
-            int safeCapacity = capacity > 0 ? capacity : DefaultBufferCapacity;
-            int blockCapacity = safeCapacity << 1;
-            if (blockCapacity < safeCapacity)
-                blockCapacity = safeCapacity;
+            int safeCapacity = ResolveBufferCapacity(capacity);
+            int blockCapacity = ResolveBlockCapacity(safeCapacity);
 
             H8Memory.Initialize();
             _buffers = new UnsafeHashMap<int, IntPtr>(safeCapacity, Allocator.Persistent);
@@ -917,7 +918,10 @@ namespace Hecton8.Core.Memory
         public bool TryReserveMacroDatabaseCache(int capacity)
         {
             EnsureInitialized();
-            int safeCapacity = capacity > 0 ? capacity : DefaultBufferCapacity;
+            if (capacity > MaxBufferCapacity)
+                return false;
+
+            int safeCapacity = ResolveBufferCapacity(capacity);
             if (!_macroDatabasePayloadCache.IsCreated)
                 _macroDatabasePayloadCache = new NativeParallelHashMap<ulong, MacroDatabasePayloadHandle>(safeCapacity, Allocator.Persistent);
             if (!_macroDatabasePayloadAccessTicks.IsCreated)
@@ -947,8 +951,13 @@ namespace Hecton8.Core.Memory
             out MacroDatabasePayloadHandle handle)
         {
             handle = default;
-            if (sectorHash == 0UL || source == IntPtr.Zero || byteLength <= 0)
+            if (sectorHash == 0UL ||
+                source == IntPtr.Zero ||
+                byteLength <= 0 ||
+                byteLength > MaxMacroDatabasePayloadBytes)
+            {
                 return false;
+            }
 
             EnsureInitialized();
             if (!_macroDatabasePayloadCache.IsCreated && !TryReserveMacroDatabaseCache(DefaultBufferCapacity))
@@ -1464,7 +1473,6 @@ namespace Hecton8.Core.Memory
             if (_defragDumpWritten || !_defragBlackBox.IsCreated)
                 return;
 
-            _defragDumpWritten = true;
             try
             {
                 string directory = Path.GetDirectoryName(DefragDumpPath);
@@ -1477,6 +1485,8 @@ namespace Hecton8.Core.Memory
                     void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_defragBlackBox);
                     stream.Write(new ReadOnlySpan<byte>(source, bytes));
                 }
+
+                _defragDumpWritten = true;
             }
             catch
             {
@@ -1485,10 +1495,9 @@ namespace Hecton8.Core.Memory
 
         private void DumpPhiVodBlackBox()
         {
-            if (_phiVodDumpWritten)
+            if (_phiVodDumpWritten || !_defragBlackBox.IsCreated)
                 return;
 
-            _phiVodDumpWritten = true;
             try
             {
                 string directory = Path.GetDirectoryName(PhiVodDumpPath);
@@ -1497,13 +1506,12 @@ namespace Hecton8.Core.Memory
 
                 using (FileStream stream = new FileStream(PhiVodDumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
-                    if (!_defragBlackBox.IsCreated)
-                        return;
-
                     int bytes = _defragBlackBox.Length * UnsafeUtility.SizeOf<MemoryDefragTelemetryEntry>();
                     void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_defragBlackBox);
                     stream.Write(new ReadOnlySpan<byte>(source, bytes));
                 }
+
+                _phiVodDumpWritten = true;
             }
             catch
             {
@@ -1555,6 +1563,26 @@ namespace Hecton8.Core.Memory
         {
             uint next = generation + 1u;
             return next == 0u ? 1u : next;
+        }
+
+        private static int ResolveBufferCapacity(int capacity)
+        {
+            if (capacity <= 0)
+                return DefaultBufferCapacity;
+
+            return capacity > MaxBufferCapacity ? MaxBufferCapacity : capacity;
+        }
+
+        private static int ResolveBlockCapacity(int bufferCapacity)
+        {
+            if (bufferCapacity <= 0)
+                return DefaultBufferCapacity << 1;
+
+            int blockCapacity = bufferCapacity << 1;
+            if (blockCapacity < bufferCapacity || blockCapacity > MaxBlockCapacity)
+                return MaxBlockCapacity;
+
+            return blockCapacity;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

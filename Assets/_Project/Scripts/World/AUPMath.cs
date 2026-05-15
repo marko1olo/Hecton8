@@ -141,6 +141,55 @@ namespace Hecton8.World
         }
 
         /// <summary>
+        /// Resolves an AUP plus a meter offset while keeping the offset in double precision.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static double3 OffsetAbsoluteMeters(in AbsoluteUniversePosition position, double3 deltaMeters)
+        {
+            double3 absolute = ToAbsoluteDouble3(in position);
+            if (!math.all(math.isfinite(deltaMeters)))
+            {
+                ReportInvalidFloatResult();
+                return absolute;
+            }
+
+            double3 shifted = absolute + deltaMeters;
+            if (!math.all(math.isfinite(shifted)))
+            {
+                ReportInvalidFloatResult();
+                return absolute;
+            }
+
+            return shifted;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static double3 WeightedAbsoluteAverage3(
+            in AbsoluteUniversePosition a,
+            in AbsoluteUniversePosition b,
+            in AbsoluteUniversePosition c,
+            double weight)
+        {
+            if (!math.isfinite(weight))
+            {
+                ReportInvalidFloatResult();
+                weight = 1.0d / 3.0d;
+            }
+
+            double3 sum = ToAbsoluteDouble3(in a);
+            sum += ToAbsoluteDouble3(in b);
+            sum += ToAbsoluteDouble3(in c);
+            double3 weighted = sum * weight;
+            if (!math.all(math.isfinite(weighted)))
+            {
+                ReportInvalidFloatResult();
+                return ToAbsoluteDouble3(in a);
+            }
+
+            return weighted;
+        }
+
+        /// <summary>
         /// Drains invalid downcast detections for the fixed-step NaN Inquisitor.
         /// </summary>
         internal static int ConsumeInvalidResultCount()

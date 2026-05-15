@@ -174,6 +174,7 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
+            Unregister();
             ReleaseAcousticRuntime();
             UnregisterCollider();
         }

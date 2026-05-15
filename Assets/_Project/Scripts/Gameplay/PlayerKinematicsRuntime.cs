@@ -853,7 +853,7 @@ namespace Hecton8.Gameplay
 
         public void FixedTick(float fixedDeltaTime)
         {
-            if (!_positions.IsCreated || _body == null)
+            if (!HasCoreEntityStorage() || _body == null)
                 return;
 
             if (_cachedTransform == null)
@@ -872,10 +872,10 @@ namespace Hecton8.Gameplay
                 bool authorityInputInvalid =
                     !math.all(math.isfinite(rawAuthorityPosition)) ||
                     !math.all(math.isfinite(rawAuthorityVelocity));
-                float3 authorityPosition = SanitizeFloat3(rawAuthorityPosition, _lastValidPositions.IsCreated ? _lastValidPositions[0] : float3.zero);
+                float3 authorityPosition = SanitizeFloat3(rawAuthorityPosition, ReadLastValidPosition());
                 float3 authorityVelocity = SanitizeFloat3(rawAuthorityVelocity, float3.zero);
-                if (authorityInputInvalid && _faultFlags.IsCreated)
-                    _faultFlags[0] |= FaultNaN;
+                if (authorityInputInvalid)
+                    AddFaultFlag(FaultNaN);
 
                 PublishKccVelocitySignal(
                     SnapMillimeter(authorityPosition),
@@ -900,7 +900,7 @@ namespace Hecton8.Gameplay
                 : PlayerKinematicsBodyJob.SdfSampleModeAxis6;
             float3 rawBodyPosition = ToFloat3(_body.position);
             float3 rawBodyVelocity = ToFloat3(_body.linearVelocity);
-            float3 bodyPosition = SanitizeFloat3(rawBodyPosition, _lastValidPositions.IsCreated ? _lastValidPositions[0] : float3.zero);
+            float3 bodyPosition = SanitizeFloat3(rawBodyPosition, ReadLastValidPosition());
             float3 bodyVelocity = SanitizeFloat3(rawBodyVelocity, float3.zero);
             bool rawBodyStateInvalid = !math.all(math.isfinite(rawBodyPosition)) || !math.all(math.isfinite(rawBodyVelocity));
             Vector3 safeBodyPosition = ToVector3(bodyPosition);
@@ -965,8 +965,8 @@ namespace Hecton8.Gameplay
                                math.select(0u, BodyFlagMaelstromActive, activeMaelstromCount > 0)
             };
             bodyJob.Run();
-            if (rawBodyStateInvalid && _faultFlags.IsCreated)
-                _faultFlags[0] |= FaultNaN;
+            if (rawBodyStateInvalid)
+                AddFaultFlag(FaultNaN);
 
             float3 resolvedPosition3 = SnapMillimeter(_positions[0]);
             float3 resolvedVelocity3 = SnapMillimeter(_velocities[0]);
@@ -974,7 +974,7 @@ namespace Hecton8.Gameplay
             _velocities[0] = resolvedVelocity3;
             Vector3 resolvedPosition = ToVector3(resolvedPosition3);
             Vector3 resolvedVelocity = ToVector3(resolvedVelocity3);
-            int faultFlags = _faultFlags[0];
+            int faultFlags = ReadFaultFlags();
             StageStateWrite(resolvedPosition3, resolvedVelocity3, _body.rotation, (uint)faultFlags);
             PublishKccVelocitySignal(
                 resolvedPosition3,
@@ -1024,7 +1024,7 @@ namespace Hecton8.Gameplay
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            if (!_positions.IsCreated)
+            if (!HasMotionSoaStorage())
                 return;
 
             float3 offset = ToFloat3(shiftData.ShiftOffset);
@@ -1033,26 +1033,25 @@ namespace Hecton8.Gameplay
                 !math.isfinite(offsetLengthSq) ||
                 offsetLengthSq > 100000000.0f)
             {
-                if (_faultFlags.IsCreated)
-                    _faultFlags[0] |= FaultInvalidOriginShift;
+                AddFaultFlag(FaultInvalidOriginShift);
                 DumpFaultTelemetryIfNeeded();
                 return;
             }
 
             _positions[0] = SanitizeFloat3(_positions[0] - offset, float3.zero);
             _lastValidPositions[0] = SanitizeFloat3(_lastValidPositions[0] - offset, float3.zero);
-            if (_stateRead.IsCreated)
+            if (HasSyncStateReadStorage())
             {
                 PlayerKinematicsSyncState state = _stateRead[0];
-                state.Position = SanitizeFloat3(state.Position - offset, _lastValidPositions[0]);
+                state.Position = SanitizeFloat3(state.Position - offset, ReadLastValidPosition());
                 state = RehashState(state);
                 _stateRead[0] = state;
             }
 
-            if (_stateWrite.IsCreated)
+            if (HasSyncStateWriteStorage())
             {
                 PlayerKinematicsSyncState state = _stateWrite[0];
-                state.Position = SanitizeFloat3(state.Position - offset, _lastValidPositions[0]);
+                state.Position = SanitizeFloat3(state.Position - offset, ReadLastValidPosition());
                 state = RehashState(state);
                 _stateWrite[0] = state;
             }
@@ -1278,13 +1277,13 @@ namespace Hecton8.Gameplay
 
         private void WarmRuntimeStateOnEnable()
         {
-            if (!_positions.IsCreated || !_lastValidPositions.IsCreated)
+            if (!HasCoreEntityStorage())
                 return;
 
             Vector3 runtimePosition = _body != null
                 ? _body.position
                 : (_cachedTransform != null ? _cachedTransform.position : transform.position);
-            float3 position = SanitizeFloat3(ToFloat3(runtimePosition), _lastValidPositions.IsCreated ? _lastValidPositions[0] : float3.zero);
+            float3 position = SanitizeFloat3(ToFloat3(runtimePosition), ReadLastValidPosition());
             if (!math.all(math.isfinite(position)))
                 return;
             position = SnapMillimeter(position);
@@ -1292,14 +1291,12 @@ namespace Hecton8.Gameplay
             float3 velocity = _body != null ? ToFloat3(_body.linearVelocity) : float3.zero;
             velocity = SnapMillimeter(SanitizeFloat3(velocity, float3.zero));
             _positions[0] = position;
-            if (_velocities.IsCreated)
-                _velocities[0] = velocity;
+            _velocities[0] = velocity;
             _lastValidPositions[0] = position;
             StageStateWrite(position, velocity, _body != null ? ToQuaternion(_body.rotation) : quaternion.identity, 0u);
             CommitStateWrite();
 
-            if (_faultFlags.IsCreated)
-                _faultFlags[0] = 0;
+            ClearFaultFlags();
             _dumpWrittenForFault = false;
         }
 
@@ -1339,13 +1336,12 @@ namespace Hecton8.Gameplay
             _hasImpactBracePoint = false;
             _lastProbeLowTier = false;
             _wasBraceActive = false;
-            if (_intendedMovement.IsCreated)
+            if (_intendedMovement.IsCreated && _intendedMovement.Length >= EntityCount)
                 _intendedMovement[0] = float3.zero;
-            if (_flowVelocity.IsCreated)
+            if (_flowVelocity.IsCreated && _flowVelocity.Length >= EntityCount)
                 _flowVelocity[0] = float3.zero;
-            if (_faultFlags.IsCreated)
-                _faultFlags[0] = 0;
-            if (_telemetryWriteIndex.IsCreated)
+            ClearFaultFlags();
+            if (_telemetryWriteIndex.IsCreated && _telemetryWriteIndex.Length > 0)
                 _telemetryWriteIndex[0] = 0;
             if (_telemetry.IsCreated)
             {
@@ -1608,7 +1604,7 @@ namespace Hecton8.Gameplay
         private void SnapshotLadder(out byte ladderActive, out float3 ladderPoint)
         {
             ladderActive = 0;
-            ladderPoint = _positions.IsCreated ? _positions[0] : float3.zero;
+            ladderPoint = ReadPositionSnapshot(float3.zero);
             if (_motor == null ||
                 !_motor.TryGetRecentBatchedLadderHit(MaxLadderFrameAge, out RaycastHit ladderHit))
             {
@@ -1706,7 +1702,7 @@ namespace Hecton8.Gameplay
 
             float3 safePosition = SanitizeFloat3(
                 ToFloat3(position),
-                _positions.IsCreated ? _positions[0] : float3.zero);
+                ReadPositionSnapshot(float3.zero));
 
             MovementAcousticSignal signal = default;
             signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(SnapMillimeter(safePosition)));
@@ -1861,7 +1857,7 @@ namespace Hecton8.Gameplay
             {
                 Position = SanitizeFloat3(ToFloat3(runtimePosition), float3.zero),
                 Velocity = SanitizeFloat3(ToFloat3(runtimeVelocity), float3.zero),
-                IntendedMovement = _intendedMovement.IsCreated ? SanitizeFloat3(_intendedMovement[0], float3.zero) : float3.zero,
+                IntendedMovement = ReadIntendedMovementSnapshot(),
                 DragCoefficient = SanitizeNonNegative(dragCoefficient),
                 WaterDensity = ResolveRuntimeWaterDensityScale(),
                 SolidDensity = SanitizeUnit(signal.Intensity01),
@@ -1874,6 +1870,9 @@ namespace Hecton8.Gameplay
 
         private void TickStamina()
         {
+            if (!HasIntendedMovementStorage())
+                return;
+
             float intendedSq = math.lengthsq(_intendedMovement[0]);
             if (_survival == null || intendedSq <= 0.0001f)
                 return;
@@ -1913,7 +1912,7 @@ namespace Hecton8.Gameplay
             float3 sourceForward = ToFloat3(source.forward);
             float3 sourceRight = ToFloat3(source.right);
             float3 sourceUp = ToFloat3(source.up);
-            float3 velocity = _velocities.IsCreated ? _velocities[0] : _body != null ? ToFloat3(_body.linearVelocity) : float3.zero;
+            float3 velocity = ReadVelocitySnapshot(_body != null ? ToFloat3(_body.linearVelocity) : float3.zero);
             if (!math.all(math.isfinite(sourcePosition)) ||
                 !IsFiniteNonZero(sourceForward) ||
                 !IsFiniteNonZero(sourceRight) ||
@@ -2266,9 +2265,9 @@ namespace Hecton8.Gameplay
 
             _telemetry[wrappedIndex] = new PlayerKinematicsRuntimeTelemetryEntry
             {
-                Position = SanitizeFloat3(_positions.IsCreated ? _positions[0] : _lastProbeSourcePosition, float3.zero),
-                Velocity = SanitizeFloat3(_velocities.IsCreated ? _velocities[0] : _lastProbeVelocity, float3.zero),
-                IntendedMovement = _intendedMovement.IsCreated ? SanitizeFloat3(_intendedMovement[0], float3.zero) : float3.zero,
+                Position = ReadPositionSnapshot(_lastProbeSourcePosition),
+                Velocity = ReadVelocitySnapshot(_lastProbeVelocity),
+                IntendedMovement = ReadIntendedMovementSnapshot(),
                 DragCoefficient = SanitizeNonNegative(dragCoefficient),
                 WaterDensity = ResolveRuntimeWaterDensityScale(),
                 SolidDensity = safeActiveBlend,
@@ -2281,7 +2280,7 @@ namespace Hecton8.Gameplay
 
         private void PushVatScalar()
         {
-            float speedSq = _velocities.IsCreated ? math.lengthsq(_velocities[0]) : 0.0f;
+            float speedSq = HasVelocityStorage() ? math.lengthsq(_velocities[0]) : 0.0f;
             float scalar = SanitizeUnit(speedSq * 0.05f);
             float lastScalar = math.select(_lastVatSpeedScalar, -1.0f, !math.isfinite(_lastVatSpeedScalar));
             if (math.abs(scalar - lastScalar) <= 0.0025f)
@@ -2326,6 +2325,133 @@ namespace Hecton8.Gameplay
             return _movement != null && _movement.isActiveAndEnabled;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool HasCoreEntityStorage()
+        {
+            return HasMotionSoaStorage() &&
+                   HasIntendedMovementStorage() &&
+                   _flowVelocity.IsCreated &&
+                   _flowVelocity.Length >= EntityCount &&
+                   _telemetry.IsCreated &&
+                   _telemetry.Length > 0 &&
+                   _telemetryWriteIndex.IsCreated &&
+                   _telemetryWriteIndex.Length > 0 &&
+                   HasFaultFlagStorage();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool HasMotionSoaStorage()
+        {
+            return _positions.IsCreated &&
+                   _velocities.IsCreated &&
+                   _lastValidPositions.IsCreated &&
+                   _positions.Length >= EntityCount &&
+                   _velocities.Length >= EntityCount &&
+                   _lastValidPositions.Length >= EntityCount;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool HasVelocityStorage()
+        {
+            return _velocities.IsCreated && _velocities.Length >= EntityCount;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool HasIntendedMovementStorage()
+        {
+            return _intendedMovement.IsCreated && _intendedMovement.Length >= EntityCount;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool HasSyncStateReadStorage()
+        {
+            return _stateRead.IsCreated && _stateRead.Length >= EntityCount;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool HasSyncStateWriteStorage()
+        {
+            return _stateWrite.IsCreated && _stateWrite.Length >= EntityCount;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool HasFaultFlagStorage()
+        {
+            return _faultFlags.IsCreated && _faultFlags.Length >= EntityCount;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float3 ReadLastValidPosition()
+        {
+            return _lastValidPositions.IsCreated && _lastValidPositions.Length >= EntityCount
+                ? SanitizeFloat3(_lastValidPositions[0], float3.zero)
+                : float3.zero;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float3 ReadPositionSnapshot(float3 fallback)
+        {
+            float3 safeFallback = SanitizeFloat3(fallback, float3.zero);
+            return _positions.IsCreated && _positions.Length >= EntityCount
+                ? SanitizeFloat3(_positions[0], safeFallback)
+                : safeFallback;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float3 ReadVelocitySnapshot(float3 fallback)
+        {
+            float3 safeFallback = SanitizeFloat3(fallback, float3.zero);
+            return HasVelocityStorage()
+                ? SanitizeFloat3(_velocities[0], safeFallback)
+                : safeFallback;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float3 ReadIntendedMovementSnapshot()
+        {
+            return HasIntendedMovementStorage()
+                ? SanitizeFloat3(_intendedMovement[0], float3.zero)
+                : float3.zero;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float3 ReadStatePositionSnapshot(float3 fallback)
+        {
+            float3 safeFallback = SanitizeFloat3(fallback, float3.zero);
+            return HasSyncStateReadStorage()
+                ? SanitizeFloat3(_stateRead[0].Position, safeFallback)
+                : safeFallback;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float3 ReadStateVelocitySnapshot(float3 fallback)
+        {
+            float3 safeFallback = SanitizeFloat3(fallback, float3.zero);
+            return HasSyncStateReadStorage()
+                ? SanitizeFloat3(_stateRead[0].Velocity, safeFallback)
+                : safeFallback;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int ReadFaultFlags()
+        {
+            return HasFaultFlagStorage() ? _faultFlags[0] : 0;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void AddFaultFlag(int flag)
+        {
+            if (HasFaultFlagStorage())
+                _faultFlags[0] |= flag;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ClearFaultFlags()
+        {
+            if (HasFaultFlagStorage())
+                _faultFlags[0] = 0;
+        }
+
         private void StageStateWrite(float3 position, float3 velocity, Quaternion rotation, uint flags)
         {
             StageStateWrite(position, velocity, ToQuaternion(rotation), flags);
@@ -2333,12 +2459,10 @@ namespace Hecton8.Gameplay
 
         private void StageStateWrite(float3 position, float3 velocity, quaternion rotation, uint flags)
         {
-            if (!_stateWrite.IsCreated)
+            if (!HasSyncStateWriteStorage())
                 return;
 
-            float3 fallbackPosition = _stateRead.IsCreated
-                ? _stateRead[0].Position
-                : (_lastValidPositions.IsCreated ? _lastValidPositions[0] : float3.zero);
+            float3 fallbackPosition = ReadStatePositionSnapshot(ReadLastValidPosition());
             bool inputInvalid =
                 !math.all(math.isfinite(position)) ||
                 !math.all(math.isfinite(velocity));
@@ -2365,8 +2489,13 @@ namespace Hecton8.Gameplay
 
         private void CommitStateWrite()
         {
-            if (!_stateWriteReady || !_stateWrite.IsCreated || !_stateRead.IsCreated)
+            if (!_stateWriteReady ||
+                !HasSyncStateReadStorage() ||
+                !HasSyncStateWriteStorage() ||
+                !HasMotionSoaStorage())
+            {
                 return;
+            }
 
             PlayerKinematicsSyncState state = _stateWrite[0];
             _stateRead[0] = state;
@@ -2439,15 +2568,15 @@ namespace Hecton8.Gameplay
             if (_body == null)
                 return;
 
-            float3 position = _stateRead.IsCreated
+            float3 position = HasSyncStateReadStorage()
                 ? _stateRead[0].Position
-                : SnapMillimeter(SanitizeFloat3(ToFloat3(_body.position), _lastValidPositions.IsCreated ? _lastValidPositions[0] : float3.zero));
-            float3 velocity = _stateRead.IsCreated
+                : SnapMillimeter(SanitizeFloat3(ToFloat3(_body.position), ReadLastValidPosition()));
+            float3 velocity = HasSyncStateReadStorage()
                 ? _stateRead[0].Velocity
                 : SnapMillimeter(SanitizeFloat3(ToFloat3(_body.linearVelocity), float3.zero));
-            position = SanitizeFloat3(position, _lastValidPositions.IsCreated ? _lastValidPositions[0] : float3.zero);
+            position = SanitizeFloat3(position, ReadLastValidPosition());
             velocity = SanitizeFloat3(velocity, float3.zero);
-            quaternion rotation = _stateRead.IsCreated ? _stateRead[0].Rotation : CanonicalizeRotation(ToQuaternion(_body.rotation));
+            quaternion rotation = HasSyncStateReadStorage() ? _stateRead[0].Rotation : CanonicalizeRotation(ToQuaternion(_body.rotation));
             Vector3 runtimePosition = ToVector3(position);
             AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
             uint hash = BuildSyncFenceHash(in aup, velocity, rotation);
@@ -2476,7 +2605,7 @@ namespace Hecton8.Gameplay
             {
                 Position = SanitizeFloat3(signal.RuntimePosition, float3.zero),
                 Velocity = SanitizeFloat3(signal.Velocity, float3.zero),
-                IntendedMovement = _intendedMovement.IsCreated ? SanitizeFloat3(_intendedMovement[0], float3.zero) : float3.zero,
+                IntendedMovement = ReadIntendedMovementSnapshot(),
                 DragCoefficient = SanitizeNonNegative(dragCoefficient),
                 WaterDensity = ResolveRuntimeWaterDensityScale(),
                 SolidDensity = 0.0f,
@@ -2497,17 +2626,16 @@ namespace Hecton8.Gameplay
             signal.LastFenceFrame = _lastSyncFenceFrame;
             signal.Flags = flags;
             PhysicsDeterminismSignals.Publish(in signal);
-            if (_faultFlags.IsCreated)
-                _faultFlags[0] |= FaultDesync;
+            AddFaultFlag(FaultDesync);
             DumpFaultTelemetryIfNeeded();
         }
 
         private uint BuildCurrentSyncFenceHash()
         {
-            if (_stateRead.IsCreated)
+            if (HasSyncStateReadStorage())
             {
                 PlayerKinematicsSyncState state = _stateRead[0];
-                float3 position = SanitizeFloat3(state.Position, _lastValidPositions.IsCreated ? _lastValidPositions[0] : float3.zero);
+                float3 position = SanitizeFloat3(state.Position, ReadLastValidPosition());
                 float3 velocity = SanitizeFloat3(state.Velocity, float3.zero);
                 AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(position));
                 return BuildSyncFenceHash(in aup, velocity, CanonicalizeRotation(state.Rotation));
@@ -2516,7 +2644,7 @@ namespace Hecton8.Gameplay
             if (_body == null)
                 return 0u;
 
-            float3 bodyPosition = SanitizeFloat3(ToFloat3(_body.position), _lastValidPositions.IsCreated ? _lastValidPositions[0] : float3.zero);
+            float3 bodyPosition = SanitizeFloat3(ToFloat3(_body.position), ReadLastValidPosition());
             float3 bodyVelocity = SanitizeFloat3(ToFloat3(_body.linearVelocity), float3.zero);
             AbsoluteUniversePosition bodyAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(bodyPosition));
             return BuildSyncFenceHash(in bodyAup, bodyVelocity, CanonicalizeRotation(ToQuaternion(_body.rotation)));
@@ -2552,8 +2680,14 @@ namespace Hecton8.Gameplay
 
         private void DumpFaultTelemetryIfNeeded()
         {
-            if ((_dumpWrittenForFault && _desyncDumpWritten) || !_faultFlags.IsCreated || !_telemetry.IsCreated || _faultFlags[0] == 0)
+            if ((_dumpWrittenForFault && _desyncDumpWritten) ||
+                !HasFaultFlagStorage() ||
+                !_telemetry.IsCreated ||
+                _telemetry.Length <= 0 ||
+                _faultFlags[0] == 0)
+            {
                 return;
+            }
 
             _dumpWrittenForFault = true;
             if ((_faultFlags[0] & FaultDesync) != 0)
@@ -2707,9 +2841,9 @@ namespace Hecton8.Gameplay
                 correction.PositionAup.LocalY != 0.0f ||
                 correction.PositionAup.LocalZ != 0.0f;
             if (!hasAupPayload)
-                return _stateRead.IsCreated ? _stateRead[0].Position : _positions.IsCreated ? _positions[0] : float3.zero;
+                return ReadStatePositionSnapshot(ReadPositionSnapshot(float3.zero));
 
-            return SnapMillimeter(SanitizeFloat3(correction.PositionAup.ToRuntimeFloat3(), _stateRead.IsCreated ? _stateRead[0].Position : float3.zero));
+            return SnapMillimeter(SanitizeFloat3(correction.PositionAup.ToRuntimeFloat3(), ReadStatePositionSnapshot(float3.zero)));
         }
 
         private float3 ResolveCorrectionVelocity(in StateCorrectionSignal correction)
@@ -2720,7 +2854,7 @@ namespace Hecton8.Gameplay
                 return SnapMillimeter(correction.Velocity);
             }
 
-            return _stateRead.IsCreated ? _stateRead[0].Velocity : _velocities.IsCreated ? _velocities[0] : float3.zero;
+            return ReadStateVelocitySnapshot(ReadVelocitySnapshot(float3.zero));
         }
 
         private quaternion ResolveCorrectionRotation(in StateCorrectionSignal correction)

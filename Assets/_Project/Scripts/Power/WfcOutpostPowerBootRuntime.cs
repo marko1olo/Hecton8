@@ -45,6 +45,7 @@ namespace Hecton8.Power
         private const float StandardAmbientKPa = 101.325f;
         private const float ShiftEpsilonMeters = 0.0001f;
         private const float MaxAupShiftMeters = 10000f;
+        private const double MacroAupCellSizeMeters = 5000.0;
         private const uint OutpostNodeCountHash = 0x4F4E4354u; // ONCT
         private const uint WfcPowerBootContextHash = 0x57465042u; // WFPB
         private const uint FaultTelemetryHash = 0x57464654u; // WFFT
@@ -568,23 +569,59 @@ namespace Hecton8.Power
 
         private AbsoluteUniversePosition ResolveNodeAup(in WfcOutpostPowerNode node)
         {
-            double3 absolute = _activeDescriptor.OriginAup.ToAbsoluteDouble3() + new double3(
+            double3 origin = ResolveMacroAupAbsolute(in _activeDescriptor.OriginAup);
+            double3 delta = new double3(
                 node.LocalOffsetMeters.x,
                 node.LocalOffsetMeters.y,
                 node.LocalOffsetMeters.z);
+            double3 absolute = math.all(math.isfinite(delta)) ? origin + delta : origin;
+            if (!math.all(math.isfinite(absolute)))
+                absolute = origin;
             return AbsoluteUniversePosition.FromAbsolutePosition(absolute);
         }
 
         private static void ShiftDescriptor(ref WfcOutpostGridDescriptor descriptor, float3 shift)
         {
-            double3 shifted = descriptor.OriginAup.ToAbsoluteDouble3() - new double3(shift.x, shift.y, shift.z);
-            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromAbsolutePosition(shifted);
-            descriptor.OriginAup = ToMacroAup(in aup);
+            double3 origin = ResolveMacroAupAbsolute(in descriptor.OriginAup);
+            double3 shifted = origin + new double3(-shift.x, -shift.y, -shift.z);
+            if (math.all(math.isfinite(shifted)))
+                descriptor.OriginAup = ToMacroAup(shifted);
         }
 
         private static bool IsWithinAupShiftLimit(float3 shiftMeters)
         {
             return math.all(math.abs(shiftMeters) <= new float3(MaxAupShiftMeters));
+        }
+
+        private static double3 ResolveMacroAupAbsolute(in Hecton8.Core.Contracts.MacroDatabaseAup aup)
+        {
+            double3 local = new double3(aup.LocalX, aup.LocalY, aup.LocalZ);
+            if (!math.all(math.isfinite(local)))
+                local = double3.zero;
+
+            return new double3(
+                (aup.GridX * MacroAupCellSizeMeters) + local.x,
+                (aup.GridY * MacroAupCellSizeMeters) + local.y,
+                (aup.GridZ * MacroAupCellSizeMeters) + local.z);
+        }
+
+        private static Hecton8.Core.Contracts.MacroDatabaseAup ToMacroAup(double3 absolute)
+        {
+            if (!math.all(math.isfinite(absolute)))
+                return default;
+
+            long gridX = (long)math.floor(absolute.x / MacroAupCellSizeMeters);
+            long gridY = (long)math.floor(absolute.y / MacroAupCellSizeMeters);
+            long gridZ = (long)math.floor(absolute.z / MacroAupCellSizeMeters);
+            return new Hecton8.Core.Contracts.MacroDatabaseAup
+            {
+                GridX = gridX,
+                GridY = gridY,
+                GridZ = gridZ,
+                LocalX = (float)(absolute.x - (gridX * MacroAupCellSizeMeters)),
+                LocalY = (float)(absolute.y - (gridY * MacroAupCellSizeMeters)),
+                LocalZ = (float)(absolute.z - (gridZ * MacroAupCellSizeMeters))
+            };
         }
 
         private static Hecton8.Core.Contracts.MacroDatabaseAup ToMacroAup(in AbsoluteUniversePosition aup)

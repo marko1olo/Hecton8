@@ -4608,8 +4608,10 @@ public class HectonVoxelEngine : MonoBehaviour
             return false;
 
         double padding = PredictiveVoxelProxyCinematicPaddingMeters;
-        proxyMinAup = AbsoluteUniversePosition.FromRuntimePosition(bounds.min).ToAbsoluteDouble3() - new double3(padding);
-        proxyMaxAup = AbsoluteUniversePosition.FromRuntimePosition(bounds.max).ToAbsoluteDouble3() + new double3(padding);
+        AbsoluteUniversePosition minAup = AbsoluteUniversePosition.FromRuntimePosition(bounds.min);
+        AbsoluteUniversePosition maxAup = AbsoluteUniversePosition.FromRuntimePosition(bounds.max);
+        proxyMinAup = AbsoluteUniversePosition.OffsetAbsoluteMeters(in minAup, new double3(-padding));
+        proxyMaxAup = AbsoluteUniversePosition.OffsetAbsoluteMeters(in maxAup, new double3(padding));
         return true;
     }
 

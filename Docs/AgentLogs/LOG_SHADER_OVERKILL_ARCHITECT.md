@@ -404,3 +404,22 @@ Verification:
 - Brace scan: `DiegeticPanelController 201/201`.
 - Render-debt scan still shows high-tier `Graphics.Blit` in `DiegeticPanelController` and multiple existing RenderGraph `AddUnsafePass` debts in visor features; not claimed fixed.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`: `RuntimeHPhiNarrow=0.010787439`, `RuntimeHPhiRisk=0.000634336`, `AllSourceHPhiNarrow=0.009611624`, `AllSourceHPhiRisk=0.00051719`, `ArchitecturalPurity=1`, `DataSovereignty=0.021306032`, `MemoryAlignment=0.506309148`, `FindObjectCalls=0`, `GetComponentCalls=321`, `LinqSurface=3`, `ManagedFormatSurface=564`, `PrimaryManagedRuntimeRisk=177`, `UnityUpdateMethods=0`, `StructLayoutAttributes=963`, `AupPrecisionRisk=0`.
+
+## 2026-05-15 21:16:28 +04:00 - Follow-Up No-Rebuild Visor RenderGraph Blit Migration
+What was wrong:
+- Visor fullscreen post chains still had first-party `AddUnsafePass` wrappers whose render funcs only unwrapped native command buffers to call `Blitter.BlitCameraTexture` / `Blitter.BlitTexture`.
+- That is legacy RenderGraph surface for passes that are otherwise ordinary material blits.
+
+What was done:
+- Migrated the simple material-blit passes to Unity 6 `RenderGraphUtils.AddBlitPass` across atmosphere soot, VR brownout, retina distortion, BIOS diagnostic, scanner projection, noir depth fog, visor fluid distortion, deferred decals, reflection sheen, biolum SSGI composite, half-res particle composite, sonar history/composite, abyssal SSDO, and underwater noir shafts.
+- Kept explicit graph reads for depth/history/occlusion/half-res/exposure resources through returned builders.
+- Left 4 unsafe passes documented because they are stencil/custom-draw/compute bridges: `HectonDryVolumeFeature` x2, `HectonHolographicEdgeFeature`, and `HectonFluidAdvectionRenderFeature`.
+
+Cinematic Cheats used:
+- No visual algorithm changed. The same noir fog, CRT diagnostics, scanner projection, sonar memory, SSDO, and shaft fakes now use graph-visible blit plumbing.
+
+Exact Microseconds saved:
+- Estimated 5-60 us CPU/render-graph scheduling hygiene in heavy visor stacks pending Frame Debugger capture.
+- Scoped Visor `AddUnsafePass` count reduced from 28 to 4.
+- Static H-Phi: `RuntimeHPhiNarrow=0.010787439`, `RuntimeHPhiRisk=0.000636091`, `AllSourceHPhiRisk=0.000518488`, `ManagedFormatSurface=534`, `PrimaryManagedRuntimeRisk=147`, `FindObjectCalls=0`, `GetComponentCalls=321`, `AupPrecisionRisk=0`.
+- No dotnet rebuild or Unity rebuild was run.

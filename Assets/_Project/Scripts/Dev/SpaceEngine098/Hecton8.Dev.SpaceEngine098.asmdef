@@ -1,0 +1,20 @@
+{
+    "name": "Hecton8.Dev.SpaceEngine098",
+    "rootNamespace": "Hecton8.Dev",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.SpaceEngine098Terrain",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

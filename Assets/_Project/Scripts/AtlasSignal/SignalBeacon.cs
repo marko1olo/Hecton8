@@ -324,10 +324,11 @@ namespace Hecton8.AtlasSignal
             if (!_aupCacheValid)
                 RefreshAupCache(force: true);
 
-            double3 centroid =
-                (_pointAup0.ToAbsoluteDouble3() + _pointAup1.ToAbsoluteDouble3() + _pointAup2.ToAbsoluteDouble3()) *
-                TriangulationCentroidWeight;
-            _beaconAup = AbsoluteUniversePosition.FromAbsolutePosition(centroid);
+            _beaconAup = AbsoluteUniversePosition.WeightedAverage3(
+                in _pointAup0,
+                in _pointAup1,
+                in _pointAup2,
+                TriangulationCentroidWeight);
             _cachedBeaconRuntimePosition = _beaconAup.ToRuntimeFloat3();
             _cachedBeaconRuntimeFrame = currentFrame;
             _beaconAupCacheValid = true;

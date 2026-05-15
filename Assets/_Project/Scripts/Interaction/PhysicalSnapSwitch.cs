@@ -71,6 +71,11 @@ namespace Hecton8.Interaction
         private float _currentAngle;
         private float _targetAngle;
         private float _snapCooldownRemaining;
+        private float _resolvedOffAngleDegrees = -28f;
+        private float _resolvedOnAngleDegrees = 28f;
+        private float _resolvedSnapSpeed = 36f;
+        private float _resolvedSnapCooldownSeconds = 0.08f;
+        private float _resolvedSignalRangeDegrees = 56f;
         private bool _isOn;
         private bool _registered;
         private bool _receiverRegistered;
@@ -109,8 +114,8 @@ namespace Hecton8.Interaction
                 return false;
 
             _isOn = desiredOn;
-            _targetAngle = _isOn ? ResolveSafeOnAngleDegrees() : ResolveSafeOffAngleDegrees();
-            _snapCooldownRemaining = ResolveSafeSnapCooldownSeconds();
+            _targetAngle = _isOn ? _resolvedOnAngleDegrees : _resolvedOffAngleDegrees;
+            _snapCooldownRemaining = _resolvedSnapCooldownSeconds;
             TryRegister();
             EnqueueClickHaptic(handSourceCollider, fallbackHandSide);
             QueueSnapAudio(handPosition);
@@ -133,11 +138,8 @@ namespace Hecton8.Interaction
             _cachedTransform = transform;
             ResolveReferences();
             _isOn = initialOn;
-            _currentAngle = _isOn ? ResolveSafeOnAngleDegrees() : ResolveSafeOffAngleDegrees();
+            _currentAngle = _isOn ? _resolvedOnAngleDegrees : _resolvedOffAngleDegrees;
             _targetAngle = _currentAngle;
-            if (leverTransform != null)
-                _baseLocalRotation = leverTransform.localRotation;
-            CacheSnapRotations();
             ApplyAngle(_currentAngle);
         }
 
@@ -158,6 +160,7 @@ namespace Hecton8.Interaction
 
         private void OnDestroy()
         {
+            Unregister();
             UnregisterCollider();
         }
 
@@ -179,7 +182,7 @@ namespace Hecton8.Interaction
                 return;
             }
 
-            float alpha = FastDecayBlend(ResolveSafeSnapSpeed(), safeDeltaTime);
+            float alpha = FastDecayBlend(_resolvedSnapSpeed, safeDeltaTime);
             _currentAngle = math.lerp(_currentAngle, _targetAngle, alpha);
             ApplyAngle(_currentAngle);
         }
@@ -209,6 +212,7 @@ namespace Hecton8.Interaction
                 activationVolume.isTrigger = true;
             if (_baseLocalRotation == default && leverTransform != null)
                 _baseLocalRotation = leverTransform.localRotation;
+            CacheScalarConfig();
             CacheSnapRotations();
         }
 
@@ -286,8 +290,8 @@ namespace Hecton8.Interaction
             if (leverTransform == null)
                 return;
 
-            float offAngle = ResolveSafeOffAngleDegrees();
-            float onAngle = ResolveSafeOnAngleDegrees();
+            float offAngle = _resolvedOffAngleDegrees;
+            float onAngle = _resolvedOnAngleDegrees;
             float span = onAngle - offAngle;
             float blend = math.abs(span) > MinimumAngleSpanDegrees
                 ? math.saturate((angleDegrees - offAngle) * math.rcp(span))
@@ -298,8 +302,8 @@ namespace Hecton8.Interaction
         private void CacheSnapRotations()
         {
             Vector3 axis = ResolveAxisVector();
-            _offLocalRotation = _baseLocalRotation * ApproximateAxisRotationNoTrig(axis, ResolveSafeOffAngleDegrees() * RadiansPerDegree);
-            _onLocalRotation = _baseLocalRotation * ApproximateAxisRotationNoTrig(axis, ResolveSafeOnAngleDegrees() * RadiansPerDegree);
+            _offLocalRotation = _baseLocalRotation * ApproximateAxisRotationNoTrig(axis, _resolvedOffAngleDegrees * RadiansPerDegree);
+            _onLocalRotation = _baseLocalRotation * ApproximateAxisRotationNoTrig(axis, _resolvedOnAngleDegrees * RadiansPerDegree);
         }
 
         private Vector3 ResolveAxisVector()
@@ -384,26 +388,15 @@ namespace Hecton8.Interaction
             return math.isfinite(value) ? math.clamp(value, 0f, MaximumSwitchDeltaTime) : 0f;
         }
 
-        private float ResolveSafeOffAngleDegrees()
+        private void CacheScalarConfig()
         {
-            return math.isfinite(offAngleDegrees) ? math.clamp(offAngleDegrees, -90f, 90f) : -28f;
-        }
-
-        private float ResolveSafeOnAngleDegrees()
-        {
-            return math.isfinite(onAngleDegrees) ? math.clamp(onAngleDegrees, -90f, 90f) : 28f;
-        }
-
-        private float ResolveSafeSnapSpeed()
-        {
-            return math.isfinite(snapSpeed) ? math.clamp(snapSpeed, 4f, 80f) : 36f;
-        }
-
-        private float ResolveSafeSnapCooldownSeconds()
-        {
-            return math.isfinite(snapCooldownSeconds)
+            _resolvedOffAngleDegrees = math.isfinite(offAngleDegrees) ? math.clamp(offAngleDegrees, -90f, 90f) : -28f;
+            _resolvedOnAngleDegrees = math.isfinite(onAngleDegrees) ? math.clamp(onAngleDegrees, -90f, 90f) : 28f;
+            _resolvedSnapSpeed = math.isfinite(snapSpeed) ? math.clamp(snapSpeed, 4f, 80f) : 36f;
+            _resolvedSnapCooldownSeconds = math.isfinite(snapCooldownSeconds)
                 ? math.clamp(snapCooldownSeconds, MinimumSnapCooldownSeconds, MaximumSnapCooldownSeconds)
                 : 0.08f;
+            _resolvedSignalRangeDegrees = math.abs(_resolvedOnAngleDegrees - _resolvedOffAngleDegrees);
         }
 
         private static void ApproximateSinCosFullNoTrig(float radians, out float sin, out float cos)
@@ -445,13 +438,12 @@ namespace Hecton8.Interaction
             if (!math.all(math.isfinite(absoluteHitPoint)) || !IsFiniteVector(safeDirection))
                 return false;
 
-            float signalRange = math.abs(ResolveSafeOnAngleDegrees() - ResolveSafeOffAngleDegrees());
             InteractionPacket packet = new InteractionPacket(
                 PhysicalSwitchToolId,
                 new float3((float)absoluteHitPoint.x, (float)absoluteHitPoint.y, (float)absoluteHitPoint.z),
                 (float3)safeDirection,
                 desiredOn ? 1f : 0.5f,
-                signalRange,
+                _resolvedSignalRangeDegrees,
                 (byte)ToolActionMode.Primary,
                 (byte)ToolStateBits.Active,
                 unchecked((uint)sampleFrame));
@@ -538,6 +530,7 @@ namespace Hecton8.Interaction
             snapAudioVolume = math.saturate(snapAudioVolume);
             snapAudioPitch = math.clamp(snapAudioPitch, 0.25f, 2.5f);
 
+            CacheScalarConfig();
             CacheSnapRotations();
         }
 #endif
