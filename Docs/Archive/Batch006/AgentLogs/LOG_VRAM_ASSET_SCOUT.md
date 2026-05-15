@@ -452,3 +452,35 @@ Verification:
 Evidence boundary:
 - STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
 - Unity import, Memory Profiler, player build, and runtime frame time remain PENDING VERIFICATION.
+
+## 2026-05-15T16:08:00+03:00 - RUNTIME RT SOURCE HOTSPOT PASS
+
+What was wrong:
+- Static `.renderTexture` asset coverage still missed code-created render targets and RTHandles.
+- Those dynamic allocations cannot be safely estimated from source alone, but they need a profiler follow-up queue under the 320 MiB RT+Depth budget.
+
+What was done:
+- Added static C# hotspot scanning for `new RenderTexture(...)`, `RenderTextureDescriptor`, `RTHandles.Alloc(...)`, `RenderTexture.GetTemporary(...)`, and `GetTemporaryRT(...)`.
+- Added `render_texture_source_hotspot_rows`, `runtime_render_texture_source_hotspot_rows`, and `render_texture_source_hotspots` to `Docs/Reports/VRAM_Budget_Audit.json`.
+- Added `Runtime RenderTexture Source Hotspots` sections to `Docs/Reports/VRAM_Budget_Audit_Summary.md` and `Docs/Reports/VRAM_Remediation_Plan.md`.
+- Tightened pattern matching so `new RenderTextureDescriptor(...)` is not mislabeled as `new RenderTexture(...)`.
+
+Cinematic cheats used:
+- No runtime simulation. This is a measurement queue: Low/MX350 must use lower RT resolution, half-res paths, pooled RTs, and depth-free formats where profiler proof allows it; High/Ultra can buy richer post/visor effects only after RT+Depth headroom exists.
+
+Exact microseconds saved:
+- 0us runtime measured. Static tooling only.
+- RT source hotspots: 61 total, 53 non-editor/runtime.
+- Pattern split: 19 `new RenderTexture`, 18 `RTHandles.Alloc`, 16 `RenderTextureDescriptor`, 8 `RenderTexture.GetTemporary`.
+
+Verification:
+- PYTHONDONTWRITEBYTECODE=1 python AST syntax parse for `Tools/MemoryBudgetCheck.py` and `Tools/test_memory_budget_check.py`: PASS.
+- PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py: PASS, 14 tests.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root .: scanner executed with expected `[CRITICAL_VRAM_OVERFLOW]`; counts 1,668 textures / 302 meshes / 1 RenderTexture.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --ci: expected failure with ci_exit_code=2.
+- CSV structural validation: PASS. Broad CSV 1,972 rows / 43 columns / 0 bad rows; texture redlines 963 rows / 7 columns / 0 bad rows; mesh redlines 294 rows / 14 columns / 0 bad rows; RenderTexture redlines 2 rows / 11 columns / 0 bad rows.
+- Generated `MemoryBudgetCheck` and `test_memory_budget_check` bytecode under `Tools/__pycache__` was removed after verification.
+
+Evidence boundary:
+- STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
+- Dynamic RT dimensions, lifetime, residency, and RT+Depth budget compliance remain PENDING UNITY MEMORY PROFILER.

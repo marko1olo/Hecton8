@@ -52,13 +52,14 @@ Evidence class: STATIC_SOURCE / STATIC_DOC / FILESYSTEM
 - Loop 16: Complete. Probed Unity-importable blind spots, found one first-party .glb mesh outside the scanner, added GLB/GLTF triangle counting and runtime mesh extension summaries, regenerated all reports.
 - Loop 17: Complete. Attempted CURRENT_BATCH POLISH_MANDATE extraction; tag is absent because CURRENT_BATCH now belongs to a different batch. Performed final anti-bloat checks: GLB is the only remaining non-FBX/OBJ Unity mesh-format hit and is now scanned; exotic texture probe returned zero hits; no MemoryBudgetCheck/test bytecode remained.
 - Loop 18: Complete. Added static RenderTexture audit coverage, generated `Docs/Reports/VRAM_RenderTexture_Redlines.csv`, and exposed RT+Depth estimate/gate fields in the summary payload. DOD: `.renderTexture` assets are counted separately from source textures/meshes and flagged for depth/MSAA/mips/random-write risks. Alternatives Rejected: waiting for Unity profiler before static triage of assets that can hit the 320 MiB RT+Depth budget. Microseconds estimate: 0us runtime, offline scanner only.
+- Loop 19: Complete. Added static runtime RenderTexture source hotspot reporting for code-created RTs; JSON/summary/remediation now expose 61 total RT source hits, 53 non-editor/runtime hits, and pattern counts for profiler follow-up.
 
 ## Verification
 
 - python -m py_compile Tools/MemoryBudgetCheck.py: PASS
 - python -m py_compile Tools/MemoryBudgetCheck.py Tools/test_memory_budget_check.py: PASS
 - PYTHONDONTWRITEBYTECODE=1 python AST syntax parse for Tools/MemoryBudgetCheck.py and Tools/test_memory_budget_check.py: PASS
-- PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py: PASS, 13 tests
+- PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py: PASS, 14 tests
 - PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root .: PASS as scanner execution, with expected [CRITICAL_VRAM_OVERFLOW] finding; current counts 1,668 textures / 302 meshes / 1 RenderTexture; texture crime rows 801; source-container risk rows 23; mesh redline/risk rows 293; RenderTexture redline/risk rows 1; static mesh geometry estimate 48.05 MiB; static RenderTexture estimate 7.03 MiB
 - PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --ci: EXPECTED FAIL, ci_exit_code=2 because static redlines/overflow are present; current counts 1,668 textures / 302 meshes / 1 RenderTexture; texture crime rows 801; source-container risk rows 23; mesh redline/risk rows 293; RenderTexture redline/risk rows 1; static mesh geometry estimate 48.05 MiB; static RenderTexture estimate 7.03 MiB
 - Docs/Reports/VRAM_Remediation_Plan.md: generated with non-production quarantine, first-party clamp, streaming mipmap, atlas, and mesh LOD action queues
@@ -66,7 +67,7 @@ Evidence class: STATIC_SOURCE / STATIC_DOC / FILESYSTEM
 - Docs/Reports/VRAM_Texture_Redlines.csv and Docs/Reports/VRAM_Mesh_Redlines.csv: generated; mesh redline CSV now includes geometry estimate and ModelImporter metadata columns
 - Docs/Reports/VRAM_RenderTexture_Redlines.csv: generated; one row for Assets/_Project/Art/TEXTURES/RT_HUD_Display.renderTexture with 7.03 MiB static estimate and depth-stencil risk flag
 - CSV structural validation: PASS. VRAM_Budget_Audit.csv rows=1972 columns=43 bad_rows=0; texture redlines rows=963 columns=7 bad_rows=0; mesh redlines rows=294 columns=14 bad_rows=0; RenderTexture redlines rows=2 columns=11 bad_rows=0.
-- RenderTexture source-hotspot validation: `python -B -m unittest Tools.test_memory_budget_check -v` passed 14 tests; scanner report now records 62 RT source hotspots and 62 runtime RT source hotspots for profiler follow-up.
+- RenderTexture source-hotspot validation: scanner report now records 61 RT source hotspots, 53 runtime/non-editor RT source hotspots, pattern split = 19 new RenderTexture / 18 RTHandles.Alloc / 16 RenderTextureDescriptor / 8 RenderTexture.GetTemporary.
 - Docs/AgentLogs/LOG_VRAM_ASSET_SCOUT.md: chronological block order repaired after self-audit found MACHINE GATE above REMEDIATION
 - Test hygiene: read-only test suite now avoids Python temp-file writes under workspace-write sandbox; MemoryBudgetCheck pyc temp files removed
 - Prompt re-extraction note: Docs/Tasks/CURRENT_BATCH.md no longer contains AGENT_PROMPT id VRAM_ASSET_SCOUT as of this loop; current file belongs to a new batch. Continued from persisted Status/Rationale by user instruction.

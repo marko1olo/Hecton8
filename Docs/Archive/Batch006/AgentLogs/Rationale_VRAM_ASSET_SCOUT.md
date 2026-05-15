@@ -187,3 +187,11 @@ Solution: Add RenderTexture discovery, YAML field parsing, conservative byte est
 Rejected Alternatives: Waiting for Unity Memory Profiler was rejected because static assets can be triaged before import. Folding RTs into texture rows was rejected because RT+Depth has a separate budget and different failure modes.
 Scalability potential: Low/MX350 catches depth/MSAA/mips before runtime; High/Ultra can raise RT quality deliberately against explicit RT+Depth budget data.
 Hardware Impact: 0us runtime measured. Offline scan reports 1 render texture, 7.03 MiB static RT estimate, and 1 RT redline/risk row.
+
+## Decision 24: Runtime RenderTexture Source Hotspots
+
+Problem: `.renderTexture` asset coverage still misses code-created render targets, RTHandles, descriptors, and temporary RT calls that can dominate the RT+Depth budget at runtime.
+Solution: Add a static C# source hotspot scan for `new RenderTexture(...)`, `RenderTextureDescriptor`, `RTHandles.Alloc(...)`, `RenderTexture.GetTemporary(...)`, and `GetTemporaryRT(...)`, with editor-only separation and JSON/Markdown/remediation output.
+Rejected Alternatives: Estimating all dynamic RT memory from source lines. That would be fake precision because many dimensions are runtime-scaled, XR-driven, or descriptor-derived. The correct output is a profiler follow-up queue.
+Scalability potential: Low/MX350 gets a concrete list of RT allocation owners to measure and downgrade; High/Ultra can spend saved RT budget on richer post/visor effects only after runtime captures prove headroom.
+Hardware Impact: 0us runtime measured. Static scan now reports 61 RT source hotspots, 53 non-editor/runtime hotspots, with pattern split 19 `new RenderTexture`, 18 `RTHandles.Alloc`, 16 `RenderTextureDescriptor`, and 8 `RenderTexture.GetTemporary`.
