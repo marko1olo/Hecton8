@@ -334,6 +334,7 @@ Persistence contract:
 - `TryUnpack` verifies magic, version, width, height, cell count, fixed lane offsets, and FNV-style checksum before restoring lanes.
 - Scratch diffusion memory is not serialized; it is restored from `SoilNutrients` on load, then overwritten by the next deterministic diffusion pass.
 - Scene-lifetime NativeArray lanes allocate/release through `H8Memory` with `SystemID.WorldStreaming`, while `NativeMemorySentinel` keeps field-level labels.
+- `Hecton8.World.Economy.asmdef` directly references `Hecton8.Core.Memory`; the regrowth backend must not rely on transitive access to `H8Memory`.
 - Initialization uses allocated grid dimensions after clamp, not raw config dimensions.
 - Regrowth memory lanes are scene-lifetime state and are allocated with `Allocator.Persistent`; Temp/TempJob allocation is not allowed for this data block.
 - Allocation failure rolls back any partially allocated SOA lanes through an H8Memory-only pre-registration release path; reallocation first disposes any partial old lane set; max macro-sector allocation is capped at `1,048,576` cells.
@@ -352,6 +353,7 @@ Persistence contract:
 - The Python harness validates the biome constants contract before simulation: exactly four biomes with ids/names matching runtime indices `0..3`.
 - The Python harness also validates the same fast-path config envelope as the C# scheduler before simulation: base growth `1..255`, permille coefficients `0..1000`, positive lifecycle thresholds, and valid apex min/max days.
 - Byte-lane constants are validated before simulation: passive nutrient recovery, mining nutrient penalty, and minimum nutrients must be `0..255`; biome temperature must be `1..255`; biome nutrient start must be `minimumNutrientsQ..255`.
+- C# `HasValidConfig` rejects biome nutrient starts below `MinimumNutrientsQ`, so invalid config cannot seed a lane below its own nutrient floor before the first diffusion pass.
 - Lifecycle byte thresholds are validated before simulation: seed-to-mature progress, tombstone decay, and apex respawn day bounds must fit the C# byte-field envelope.
 - The Python harness rejects grids above `1,048,576` cells before allocating per-cell lists, matching the C# backend cell-budget cap.
 - The Python harness validates acceptance metadata before simulation: positive acceptance days, `total_overharvest` mode, maturity ratio in `(0, 1]`, and positive Safe/Abyss recovery ratio.

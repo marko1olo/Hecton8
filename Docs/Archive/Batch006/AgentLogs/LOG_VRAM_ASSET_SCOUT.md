@@ -586,3 +586,34 @@ Evidence boundary:
 - STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
 - Unity import, Memory Profiler, player build, and runtime frame time remain PENDING VERIFICATION.
 - CURRENT_BATCH.md no longer contains VRAM_ASSET_SCOUT; continued from persisted status/rationale under direct user instruction.
+
+## 2026-05-15T19:50:00+03:00 - RT HOTSPOT TEST COST PASS
+
+What was wrong:
+- The RT source hotspot unit test walked the full `Assets/_Project/Scripts` tree just to prove pattern detection.
+- That made the unit suite expensive enough to discourage running it after each tooling edit.
+
+What was done:
+- Added `find_render_texture_source_hotspots_in_paths(root, paths)` to `Tools/MemoryBudgetCheck.py`.
+- Kept the full report path unchanged: it still scans all project scripts through `find_render_texture_source_hotspots(root)`.
+- Changed `test_render_texture_source_hotspots_find_runtime_allocations` to scan `HectonBiolumDiffusionVolume.cs` directly.
+
+Cinematic cheats used:
+- None. This is tooling verification cleanup, not runtime rendering work.
+
+Exact microseconds saved:
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0us.
+- Tooling saving: unit suite elapsed time dropped from 83.68 seconds to 8.65 seconds in this run.
+
+Verification:
+- PYTHONDONTWRITEBYTECODE=1 python AST syntax parse for `Tools/MemoryBudgetCheck.py` and `Tools/test_memory_budget_check.py`: PASS.
+- PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py: PASS, 15 tests, elapsed 8.65 seconds.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --ci: expected failure with `ci_exit_code=2`; counts 1,652 import-root textures / 302 meshes / 1 RenderTexture; elapsed 57.17 seconds.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root .: PASS as full report generation; emitted expected `[CRITICAL_VRAM_OVERFLOW]`; elapsed 89.33 seconds.
+- CSV structural validation: PASS. Broad CSV 1,956 rows / 43 columns / 0 bad rows; texture redlines 947 rows / 7 columns / 0 bad rows; mesh redlines 294 rows / 14 columns / 0 bad rows; RenderTexture redlines 2 rows / 11 columns / 0 bad rows; RT source hotspots 62 rows / 8 columns / 0 bad rows.
+- JSON schema validation: PASS. `texture_count=1652`, `mesh_count=302`, `render_texture_count=1`, `resolved_scan_roots=Assets,Packages,Data`, `render_texture_source_hotspot_rows=61`, `runtime_render_texture_source_hotspot_rows=53`, and gate reasons include `CRITICAL_VRAM_OVERFLOW`.
+
+Evidence boundary:
+- STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
+- Unity import, Memory Profiler, player build, and runtime frame time remain PENDING VERIFICATION.

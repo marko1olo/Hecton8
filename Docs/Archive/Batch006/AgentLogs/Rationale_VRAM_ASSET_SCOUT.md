@@ -219,3 +219,11 @@ Solution: Restrict default discovery to Unity/importable roots `Assets`, `Packag
 Rejected Alternatives: Continuing to count documentation screenshots as VRAM assets. That is "all files" accounting, not asset residency evidence.
 Scalability potential: Low/MX350 now sees cleaner residency pressure from importable content only; Middle/High/Ultra decisions keep the same runtime-candidate pressure and still require Unity Memory Profiler proof.
 Hardware Impact: 0us runtime measured. Static total full-mip BC7 dropped from 1,329.88 MiB to 1,298.65 MiB by removing 16 non-import screenshot/doc rows. Runtime-candidate pressure remains 1,298.65 MiB and still exceeds the 1.2GB trigger.
+
+## Decision 28: Targeted RT Hotspot Unit Test
+
+Problem: The unit test for dynamic RenderTexture source hotspots walked every `Assets/_Project/Scripts/**/*.cs` file, turning a pattern test into an expensive project scan.
+Solution: Split the implementation into `find_render_texture_source_hotspots_in_paths(root, paths)` and keep the full report path calling it with the project script list. The unit test now validates a known runtime source file directly.
+Rejected Alternatives: Removing RT hotspot test coverage or keeping a full source-tree walk in the unit test. Both weaken the checker: one loses coverage, the other makes fast local verification too expensive.
+Scalability potential: Low/MX350 owners still get the full RT hotspot report from normal scanner runs; tests now stay cheap enough to run during every tooling edit. High/Ultra RT effects remain profiler-gated.
+Hardware Impact: 0us runtime measured. Tooling impact: unit suite time dropped from 83.68 seconds to 8.65 seconds in this run while report output stayed at 61 total RT hotspots and 53 runtime-priority hotspots.
