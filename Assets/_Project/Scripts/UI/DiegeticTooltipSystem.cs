@@ -63,8 +63,6 @@ namespace Hecton8.UI
         private const float MaxFaceDilate = 1f;
         private const float DefaultFaceDilate = 0f;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_CONTEXTUAL_UX_PROMPTER.bin";
-        private const string DefaultGlyphMaterialResourcePath = "UI/MAT_DiegeticTooltipGlyph";
-        private const string DefaultIconMaterialResourcePath = "UI/MAT_DiegeticTooltipIcon";
 
         private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
         private static readonly int GradientScaleId = Shader.PropertyToID("_GradientScale");
@@ -97,9 +95,9 @@ namespace Hecton8.UI
         private TMP_FontAsset fontAsset;
         [SerializeField, Tooltip("Optional explicit TMP sprite asset used for interact binding icons.")]
         private TMP_SpriteAsset spriteAsset;
-        [SerializeField, Tooltip("Optional authored font material. Runtime fallback loads Resources/UI/MAT_DiegeticTooltipGlyph.")]
+        [SerializeField, Tooltip("Required authored font material for diegetic tooltip glyphs.")]
         private Material glyphMaterial;
-        [SerializeField, Tooltip("Optional authored icon material. Runtime fallback loads Resources/UI/MAT_DiegeticTooltipIcon.")]
+        [SerializeField, Tooltip("Required authored icon material for diegetic tooltip binding icons.")]
         private Material iconMaterial;
         [SerializeField, Tooltip("Optional tooltip shader contract reference. Runtime uses authored material assets only.")]
         private Shader glyphShader;
@@ -915,10 +913,10 @@ namespace Hecton8.UI
             if (!_materialResolveAttempted)
             {
                 if (_runtimeGlyphMaterial == null)
-                    _runtimeGlyphMaterial = ResolveTooltipMaterial(glyphMaterial, DefaultGlyphMaterialResourcePath);
+                    _runtimeGlyphMaterial = glyphMaterial;
 
                 if (_runtimeIconMaterial == null)
-                    _runtimeIconMaterial = ResolveTooltipMaterial(iconMaterial, DefaultIconMaterialResourcePath);
+                    _runtimeIconMaterial = iconMaterial;
 
                 _materialResolveAttempted = true;
             }
@@ -940,13 +938,6 @@ namespace Hecton8.UI
 
             EnsurePropertyBlocks();
             _materialsReady = _textPropertyBlock != null && _iconPropertyBlock != null;
-        }
-
-        private static Material ResolveTooltipMaterial(Material explicitMaterial, string resourcePath)
-        {
-            return explicitMaterial != null
-                ? explicitMaterial
-                : Resources.Load<Material>(resourcePath);
         }
 
         private void EnsurePropertyBlocks()

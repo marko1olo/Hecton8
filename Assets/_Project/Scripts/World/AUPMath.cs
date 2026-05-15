@@ -20,6 +20,7 @@ namespace Hecton8.World
     internal static class AUPMath
     {
         private const double CellSizeMeters = AbsoluteUniversePosition.CellSizeMeters;
+        private const long DeltaClampCells = 1000000L;
         private static int _invalidResultCount;
 
         /// <summary>
@@ -30,6 +31,34 @@ namespace Hecton8.World
         {
             double3 delta = AUPDelta(in a, in b);
             return math.dot(delta, delta);
+        }
+
+        /// <summary>
+        /// Computes grid-local meter delta with clamp rails for impossible sector separation.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static double3 AUPDeltaClamped(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
+        {
+            return new double3(
+                AUPAxisDeltaClamped(a.GridX, b.GridX, a.LocalX, b.LocalX),
+                AUPAxisDeltaClamped(a.GridY, b.GridY, a.LocalY, b.LocalY),
+                AUPAxisDeltaClamped(a.GridZ, b.GridZ, a.LocalZ, b.LocalZ));
+        }
+
+        /// <summary>
+        /// Computes a cheap max/mid/min AUP distance approximation using clamped double grid-local deltas.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static double ApproximateAUPDistanceMetersClamped(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
+        {
+            double3 delta = AUPDeltaClamped(in a, in b);
+            double ax = math.abs(delta.x);
+            double ay = math.abs(delta.y);
+            double az = math.abs(delta.z);
+            double max = math.max(ax, math.max(ay, az));
+            double min = math.min(ax, math.min(ay, az));
+            double mid = ax + ay + az - max - min;
+            return max + (0.375d * mid) + (0.125d * min);
         }
 
         /// <summary>
@@ -129,6 +158,30 @@ namespace Hecton8.World
                 (gridDeltaX * CellSizeMeters) + ((double)a.LocalX - b.LocalX),
                 (gridDeltaY * CellSizeMeters) + ((double)a.LocalY - b.LocalY),
                 (gridDeltaZ * CellSizeMeters) + ((double)a.LocalZ - b.LocalZ));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static double AUPAxisDeltaClamped(long aGrid, long bGrid, float aLocal, float bLocal)
+        {
+            if (aGrid > bGrid)
+            {
+                long positiveLimit = bGrid > long.MaxValue - DeltaClampCells
+                    ? long.MaxValue
+                    : bGrid + DeltaClampCells;
+                if (aGrid > positiveLimit)
+                    return double.MaxValue * 0.25d;
+            }
+            else if (aGrid < bGrid)
+            {
+                long negativeLimit = bGrid < long.MinValue + DeltaClampCells
+                    ? long.MinValue
+                    : bGrid - DeltaClampCells;
+                if (aGrid < negativeLimit)
+                    return double.MinValue * 0.25d;
+            }
+
+            long gridDelta = aGrid - bGrid;
+            return (gridDelta * CellSizeMeters) + ((double)aLocal - bLocal);
         }
 
         [BurstDiscard]

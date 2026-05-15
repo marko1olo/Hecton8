@@ -1,6 +1,6 @@
 # Status_HECTON_PHI_MONITOR
 
-Status: CORE BUILD GREEN / TIGHTENED H-PHI STATIC GATE PASSED / RUNTIME PENDING UNITY VERIFICATION
+Status: CORE BUILD GREEN / GEOLOGY NAME CACHE PATCHED / TIGHTENED H-PHI STATIC GATE PASSED / RUNTIME PENDING UNITY VERIFICATION
 Agent: HECTON_PHI_MONITOR
 Domain: ECHELON 9 / Architecture metrics / static H-Phi audit
 Task Count: 6
@@ -57,14 +57,17 @@ Task Count: 6
 - [x] Task 35: Field target formatter debt surgery | DOD: replaced repeated `mass/distance/range` interpolation in `FieldTargetSemantics.cs` with `string.Create`/`TryFormat` helpers while preserving current-culture `0.0` output | Rejected: broad UI/string cleanup in owner-heavy panels and fake NativeArray migrations | Estimate: tool-assessment string path only, hot path 0 us measured
 - [x] Task 36: Concurrent compile break repair | DOD: fixed current Core build blockers by using a local macro-database dirty flag in `SaveManager.cs` and fully-qualified Core camera signal payloads in `SystemDispatcher.cs`; Core build passed | Rejected: reverting dirty owner files or changing signal contracts | Estimate: 0 us runtime behavior change
 - [x] Task 37: Tightened H-Phi formatter/build gate | DOD: full static H-Phi budget gate passed with `ManagedFormatSurface=657`, `PrimaryManagedRuntimeRisk=307`, and `RuntimeHPhiRisk=0.000633457` | Rejected: reporting static improvements without a regression budget | Estimate: 0 us runtime
+- [x] Task 38: Geology mesh-name cache | DOD: replaced per-build interpolated geology mesh names with deterministic cached names per archetype/variant/LOD slot in `WorldGenerativeGeologyMeshBuilder.cs`; Core build passed | Rejected: changing mesh generation math, LOD shape, collider construction, or asset naming semantics | Estimate: removes 24 managed formatting source surfaces and repeated build-path name formatting; exact runtime us pending profiler
+- [x] Task 39: Cave graph release diagnostic gate | DOD: current tree gates cave validation `Debug.Log*` interpolation behind `UNITY_EDITOR || DEVELOPMENT_BUILD` while preserving validation booleans | Rejected: silencing validation failures in editor/dev builds or changing cave graph topology | Estimate: release runtime skips debug-string construction on validation branches; exact runtime us pending profiler
+- [x] Task 40: Verifier role classifier and tightened gate | DOD: `HectonPhiAudit.ps1` now classifies `*Verifier` files as instrumentation, PowerShell parser passed, Core build passed, and full tightened H-Phi static gate passed | Rejected: classifying real player tools as instrumentation by folder name alone | Estimate: 0 us runtime; metric routing correction only
 
 ## Latest Static Scores
 - H-Phi runtime static narrow: `0.010781770`
-- H-Phi runtime static risk-adjusted: `0.000633457`
+- H-Phi runtime static risk-adjusted: `0.000633566`
 - H-Phi all-source static narrow: `0.009606942`
 - H-Phi all-source static risk-adjusted: `0.000516535`
 - Narrow integration: `1.0`
-- Risk integration: `0.058752584` (derived from latest gated runtime H-Phi components)
+- Risk integration: `0.058762706` (derived from latest gated runtime H-Phi components)
 - Architectural purity: `1.000000000`
 - Data sovereignty: `0.021306032`
 - Memory alignment: `0.506043090`
@@ -128,4 +131,9 @@ Task Count: 6
 - `FieldTargetSemantics.cs` now has no `string.Format`, interpolation, or `.ToString()` static hits; repeated target-assessment `mass/distance/range` formatting uses `string.Create` and `float.TryFormat`.
 - Build repair details: `SaveManager.cs` uses a local `MacroDatabasePayloadDirtyFlag` because the default Core build uses the legacy contracts DLL surface, and `SystemDispatcher.cs` fully qualifies `Hecton8.Core.Signals.CameraPositionSignal` / `CameraFrustumSignal` to avoid the new `Hecton8.World` duplicate-name ambiguity.
 - Latest tightened static H-Phi gate passed at `2026-05-15 17:34:12 +04:00` with `ManagedFormatSurface=657`, `PrimaryManagedRuntimeRisk=307`, `JobCompleteSurface=58`, `RuntimeHPhiRisk=0.000633457`, `FindObjectCalls=0`, `UnityUpdateMethods=0`, `SignalBusPush=341`, and all Core graph budgets green.
+- Latest continuation build: `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:GenerateFullPaths=true -v:minimal` passed after the geology/cave/audit changes with `0 Warning(s)` and `0 Error(s)`.
+- `WorldGenerativeGeologyMeshBuilder.cs` current tree has no `string.Format`, string interpolation, or `.ToString()` static hits; mesh names are cached strings per archetype/variant/LOD slot.
+- `CaveGraphGenerator.cs` current tree gates cave validation `Debug.Log*` interpolation behind `UNITY_EDITOR || DEVELOPMENT_BUILD`; validation still returns `false` for bad data in release.
+- `Tools/Architecture/HectonPhiAudit.ps1` now treats `*Verifier` files as `Instrumentation`, preventing diagnostic verification tooling from inflating `PrimaryManagedRuntimeRisk`.
+- Latest tightened static H-Phi gate passed at `2026-05-15 18:18:28 +04:00` / gate replay after parser check: `ManagedFormatSurface=621`, `PrimaryManagedRuntimeRisk=236`, `JobCompleteSurface=58`, `RuntimeHPhiRisk=0.000633566`, `FindObjectCalls=0`, `UnityUpdateMethods=0`, `SignalBusPush=341`, `GlobalRegistrySurface=5080`, `GetComponentCalls=321`, `NativeArrayRefs=7074`, and all Core graph budgets green.
 - Unity Console / PlayMode / Profiler / GCMonitor: PENDING VERIFICATION.

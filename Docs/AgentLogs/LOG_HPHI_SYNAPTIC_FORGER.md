@@ -853,3 +853,28 @@ Verification:
 - No dotnet build, restore, test, or rebuild was run.
 - `rg` confirms `DockingRequestSignal` has consumer/configuration/failure response but no in-repo push.
 - Static audit residuals are documented as alias/type-name normalization rows plus the intentionally external docking command lane.
+
+## 2026-05-15 - Player Movement Inventory Load Signal Addendum
+
+What was wrong:
+- `HectonPlayerMovement` subscribed to `PlayerInventory.InventoryChanged`.
+- `PlayerInventory` also cached a concrete `HectonPlayerMovement` sink and called movement directly after mass recomputation.
+- The existing `InventoryChangedSignal` lane already carries the revision edge needed for movement to pull cached load values.
+
+What was done:
+- Removed movement inventory subscribe/unsubscribe.
+- Removed the concrete movement sink and direct `ApplyRuntimeInventoryMassLoad()` call from `PlayerInventory`.
+- Added source-filtered `InventoryChangedSignal` consumption in the existing `HectonPlayerMovement.Tick()`.
+- Baselines inventory signal revision on bind/rebind and handles GlobalRegistry inventory service replacement immediately.
+
+Cinematic Cheats used:
+- Movement reads precomputed inventory load scalars on a compact dirty packet instead of forcing the inventory producer to know movement.
+
+Exact microseconds saved:
+- Estimated 0.1-0.4 us on inventory mutation frames.
+- Removed one managed delegate wake path and one concrete gameplay sink from inventory recompute.
+
+Verification:
+- No dotnet build, restore, test, or rebuild was run.
+- `rg` confirms `HectonPlayerMovement` / `PlayerInventory` have no inventory subscribe/unsubscribe and no `_movementLoadSink`.
+- `git diff --check` on `HectonPlayerMovement.cs` and `PlayerInventory.cs` passed with only standard LF/CRLF notices.

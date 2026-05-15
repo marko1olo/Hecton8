@@ -1090,35 +1090,25 @@ namespace Hecton8.World
             return names;
         }
 
-        private readonly struct MeshNameBuildState
-        {
-            public readonly string ArchetypeName;
-            public readonly int Variant;
-            public readonly string Suffix;
-
-            public MeshNameBuildState(string archetypeName, int variant, string suffix)
-            {
-                ArchetypeName = archetypeName;
-                Variant = variant;
-                Suffix = suffix;
-            }
-        }
-
         private static string CreateMeshName(string archetypeName, int variant, string suffix)
         {
             int variantDigits = CountDecimalDigits(variant);
             int suffixStart = archetypeName.Length + 2 + variantDigits;
-            return string.Create(suffixStart + suffix.Length, new MeshNameBuildState(archetypeName, variant, suffix), (buffer, state) =>
+            return string.Create(suffixStart + suffix.Length, (archetypeName, variant, suffix), (buffer, state) =>
             {
-                for (int i = 0; i < state.ArchetypeName.Length; i++)
-                    buffer[i] = state.ArchetypeName[i];
+                string stateArchetypeName = state.Item1;
+                int stateVariant = state.Item2;
+                string stateSuffix = state.Item3;
 
-                int tokenStart = state.ArchetypeName.Length;
+                for (int i = 0; i < stateArchetypeName.Length; i++)
+                    buffer[i] = stateArchetypeName[i];
+
+                int tokenStart = stateArchetypeName.Length;
                 buffer[tokenStart] = '_';
                 buffer[tokenStart + 1] = 'v';
 
-                int digitWrite = tokenStart + 1 + CountDecimalDigits(state.Variant);
-                int remaining = state.Variant;
+                int digitWrite = tokenStart + 1 + CountDecimalDigits(stateVariant);
+                int remaining = stateVariant;
                 do
                 {
                     buffer[digitWrite--] = (char)('0' + remaining % 10);
@@ -1126,9 +1116,9 @@ namespace Hecton8.World
                 }
                 while (digitWrite > tokenStart + 1);
 
-                int write = tokenStart + 2 + CountDecimalDigits(state.Variant);
-                for (int i = 0; i < state.Suffix.Length; i++)
-                    buffer[write + i] = state.Suffix[i];
+                int write = tokenStart + 2 + CountDecimalDigits(stateVariant);
+                for (int i = 0; i < stateSuffix.Length; i++)
+                    buffer[write + i] = stateSuffix[i];
             });
         }
 

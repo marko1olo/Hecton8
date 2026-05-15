@@ -34,6 +34,42 @@ Verification:
 
 STATUS: AUDIT COMPLETE.
 
+## 2026-05-15 - Burn Trajectory Ledger
+
+What was wrong:
+- Live burn samples existed as separate snapshots.
+- A single spike or five-minute average could be misread as the whole current truth.
+- The user explicitly asked to keep counting honestly.
+
+What was done:
+- Re-read `Docs/Tasks/Status_COMPUTE_LOGISTICS_AUDITOR.md` and `Docs/AgentLogs/Rationale_COMPUTE_LOGISTICS_AUDITOR.md`.
+- Rechecked the official OpenAI pricing source boundary.
+- Queried current `C:\Users\danat\.codex\state_5.sqlite`.
+- Created `COMPUTE_BURN_TRAJECTORY_LEDGER.md`.
+- Updated `COMPUTE_AUDIT_BRIEF.md`, `COMPUTE_AUDIT_INDEX.md`, `Docs/Reports/COMPUTE_DOMINANCE_REPORT.md`, status, and rationale.
+
+Evidence captured:
+- Current SQLite token mass: 45,946,566,942.
+- Delta beyond corrected JSONL final: 175,067,826 tokens.
+- Estimated live cost beyond corrected JSONL final: USD 117.43 cache-aware.
+- Current live cost estimate: USD 30,821.79.
+- 17:43 -> 18:16 tail: 88,687,951 tokens, 44,072.67 tokens/sec, USD 1.774/min cache-aware.
+- 17:18 -> 18:16 combined: 188,312,372 tokens, 53,813.47 tokens/sec, USD 2.166/min cache-aware.
+- Current cumulative model split: `gpt-5.5` 74.14%, `gpt-5.4` 25.23%, other known models 0.64%.
+
+Cinematic Cheats used:
+- None. Audit-only evidence accounting.
+
+Exact microseconds saved:
+- Runtime: 0 us.
+- Process: not claimed as measured saving. The trajectory ledger prevents stale short-window samples from being treated as stable current truth.
+
+Verification:
+- Markdown-only audit continuation.
+- No runtime compile run. This pass changed no C# or Unity assets.
+
+STATUS: AUDIT COMPLETE.
+
 ## 2026-05-15 - Five-Minute Live Burn Forecast
 
 What was wrong:

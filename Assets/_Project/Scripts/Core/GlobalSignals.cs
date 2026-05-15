@@ -103,6 +103,7 @@ namespace Hecton8.Core.Signals
         public const byte ToolSlot2 = 10;
         public const byte ToolSlot3 = 11;
         public const byte ToolSlot4 = 12;
+        public const byte Flashlight = 13;
     }
 
     /// <summary>Discrete player input lane for command-style consumers. Size: 32 bytes.</summary>

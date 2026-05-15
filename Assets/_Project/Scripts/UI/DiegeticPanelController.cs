@@ -126,7 +126,6 @@ namespace Hecton8.UI
     public sealed class DiegeticPanelController : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, ICursorHost, IDepthOcclusionReceiver, IDamageReceiver, IGlobalRegistryHotSwapListener
     {
         private const string WorldGeometrySortingLayer = "WorldGeometry";
-        private const string DefaultPhosphorDecayMaterialResourcePath = "UI/MAT_DiegeticPanelPhosphorDecay";
         private const float MinCanvasExtent = 0.0001f;
         private const float MaximumInteractionReachMeters = 2f;
         private const float DamageGlitchDecaySharpness = 16f;
@@ -143,6 +142,8 @@ namespace Hecton8.UI
         private const float DefaultProxyLightIntensity = 0.22f;
         private const float MaxProxyLightFlicker = 0.3f;
         private const float DefaultProxyLightFlicker = 0.06f;
+        private const float InvalidPowerSourceFallback = 0f;
+        private const float InvalidFlashlightGlareFallback = 0f;
         private const float FarPanelDistanceSq = 25f;
         private const float MediumPanelDistanceSq = 4f;
         private const float NearPanelDistanceSq = 0.64f;
@@ -310,7 +311,7 @@ namespace Hecton8.UI
         [SerializeField, Tooltip("Hidden full-screen material shader used to accumulate phosphor decay.")]
         private Shader phosphorDecayShader;
 
-        [SerializeField, Tooltip("Authored full-screen material used to accumulate phosphor decay. Runtime fallback loads Resources/UI/MAT_DiegeticPanelPhosphorDecay.")]
+        [SerializeField, Tooltip("Required authored full-screen material used to accumulate phosphor decay.")]
         private Material phosphorDecayMaterial;
 
         [SerializeField, Range(MinPhosphorDecay, MaxPhosphorDecay), Tooltip("Multiplier applied to the previous PDA frame before adding the current panel frame.")]
@@ -634,7 +635,7 @@ namespace Hecton8.UI
         /// </summary>
         public void SetFlashlightGlare(float glare01)
         {
-            float safeGlare = math.saturate(math.isfinite(glare01) ? glare01 : 0f);
+            float safeGlare = ResolveFlashlightGlare(glare01);
             if (math.abs(flashlightGlare - safeGlare) <= 0.0001f)
                 return;
 
@@ -869,7 +870,7 @@ namespace Hecton8.UI
             fingerHoverDistance = math.max(fingerReleaseDistance, fingerHoverDistance);
             phosphorDecay = ResolvePhosphorDecay(phosphorDecay);
             depthFadeRange = ResolveDepthFadeRange();
-            flashlightGlare = math.saturate(flashlightGlare);
+            flashlightGlare = ResolveFlashlightGlare(flashlightGlare);
             damageGlitchDurationSeconds = ResolveAuthoredDamageGlitchDuration();
             proxyLightRangeMeters = ResolveProxyLightRange();
             proxyLightIntensity = ResolveProxyLightIntensity();
@@ -1313,9 +1314,7 @@ namespace Hecton8.UI
 
             if (!_phosphorMaterialResolveAttempted)
             {
-                _phosphorDecayMaterial = phosphorDecayMaterial != null
-                    ? phosphorDecayMaterial
-                    : Resources.Load<Material>(DefaultPhosphorDecayMaterialResourcePath);
+                _phosphorDecayMaterial = phosphorDecayMaterial;
                 _phosphorMaterialResolveAttempted = true;
                 _appliedPhosphorPreviousTexture = null;
                 _appliedPhosphorCurrentTexture = null;
@@ -1432,7 +1431,7 @@ namespace Hecton8.UI
         {
             float powerLevel = 1f;
             if (_panelPowerSource != null)
-                powerLevel = math.clamp(_panelPowerSource.GetPowerLevel(panelId), 0f, 1f);
+                powerLevel = ResolvePanelPowerLevel(_panelPowerSource.GetPowerLevel(panelId));
 
             if (powerLevel > 0.0001f)
                 _panelData.StateFlags |= PanelStateFlags.Powered;
@@ -1516,11 +1515,12 @@ namespace Hecton8.UI
                     outputMaterial.SetFloat(_TerminalDamageGlitchId, math.saturate(_terminalDamageGlitch));
             }
 
-            if (math.abs(_appliedFlashlightGlare - flashlightGlare) > 0.0001f)
+            float resolvedFlashlightGlare = ResolveFlashlightGlare(flashlightGlare);
+            if (math.abs(_appliedFlashlightGlare - resolvedFlashlightGlare) > 0.0001f)
             {
-                _appliedFlashlightGlare = flashlightGlare;
+                _appliedFlashlightGlare = resolvedFlashlightGlare;
                 if (_panelOutputHasFlashlightGlare)
-                    outputMaterial.SetFloat(_FlashlightGlareId, math.saturate(flashlightGlare));
+                    outputMaterial.SetFloat(_FlashlightGlareId, resolvedFlashlightGlare);
             }
         }
 
@@ -1620,7 +1620,9 @@ namespace Hecton8.UI
 
         private static float ResolveDamageGlitchDuration(float durationSeconds)
         {
-            return math.isfinite(durationSeconds) ? math.max(MinDamageGlitchDurationSeconds, durationSeconds) : DefaultDamageGlitchDurationSeconds;
+            return math.isfinite(durationSeconds)
+                ? math.clamp(durationSeconds, MinDamageGlitchDurationSeconds, MaxDamageGlitchDurationSeconds)
+                : DefaultDamageGlitchDurationSeconds;
         }
 
         private float ResolveProxyLightRange()
@@ -1636,6 +1638,16 @@ namespace Hecton8.UI
         private float ResolveProxyLightFlicker()
         {
             return math.isfinite(proxyLightFlicker) ? math.clamp(proxyLightFlicker, 0f, MaxProxyLightFlicker) : DefaultProxyLightFlicker;
+        }
+
+        private static float ResolvePanelPowerLevel(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : InvalidPowerSourceFallback;
+        }
+
+        private static float ResolveFlashlightGlare(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : InvalidFlashlightGlareFallback;
         }
 
         private static float EvaluateCheapFlicker01(float phaseRadians)

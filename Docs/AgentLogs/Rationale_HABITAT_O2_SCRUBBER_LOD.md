@@ -361,3 +361,24 @@ Solution: Kept edits scoped. `GasDynamicsSolver`, `GlobalSignals`, and the WFC g
 Rejected Alternatives: Replacing cold `SubmarineAtmosphereSystem` component discovery with a new active-module spatial resolver was rejected because it would change ownership and behavior without a failing test or build error. Editing surface weather was rejected as visual/weather ownership.
 Scalability potential: Low through Ultra keep the current green build and deterministic hibernation path. Future owner-specific passes can reduce weather/submarine lookup counts without risking the base hibernation solver.
 Hardware Impact: No runtime change. This decision avoids speculative churn; no microseconds claimed.
+
+## Self-Review 45 - Transient World Build Break Verification
+Problem: New integration artifacts briefly failed on `WorldGenerativeGeologyMeshBuilder.cs` missing mesh-name helpers while that unrelated world file was being edited.
+Solution: Read the current file, confirmed the helper methods and mesh-name cache now exist, and reran a targeted build. The manual build and the latest integration artifact both succeed with zero warnings/errors; no C# source is newer than the latest integration build log.
+Rejected Alternatives: Rewriting the world geology mesh builder was rejected because current source already contained the intended helper implementation and the failure was stale sequencing from a half-written file.
+Scalability potential: Build recovery preserves the current project state; no gas hibernation scalability change.
+Hardware Impact: Build verification only. No runtime microsecond claim.
+
+## Self-Review 46 - Final Build Artifact Refresh
+Problem: Additional integration builds started after the previous green artifact, so the final report needed the newest current-disk evidence.
+Solution: Waited for the active dotnet processes to exit and read the completed build artifacts. `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_182016_CurrentDisk18.log` and `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_182054_CurrentDisk17.log` both succeed with zero warnings and errors; no C# source is newer than the latest log.
+Rejected Alternatives: Ending with an older green artifact while new compilers were running was rejected as stale reporting. Running `dotnet rebuild` remains rejected.
+Scalability potential: No behavior change; preserves verified current-disk baseline for follow-on domain work.
+Hardware Impact: Build verification only. No runtime microsecond claim.
+
+## Self-Review 47 - Moving Workspace Evidence Boundary
+Problem: A later UI edit landed after the latest green build artifact, making a whole-tree-current compile claim stale again.
+Solution: Recorded the exact boundary: `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_182522_CurrentDisk19.log` is green and covers gas/WFC/SaveManager/world-geology sources under review, while `UI/DiegeticPanelController.cs` is newer and outside this domain.
+Rejected Alternatives: Waiting indefinitely for unrelated agents to stop editing was rejected. Claiming whole-tree current after the UI edit was rejected.
+Scalability potential: No behavior change; this keeps reporting precise in a moving multi-agent workspace.
+Hardware Impact: Reporting-only boundary. No runtime microsecond claim.

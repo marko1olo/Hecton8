@@ -185,3 +185,7 @@ Task loop 32:
 Task loop 33:
 - [x] Catch moving-wall UI compile break | DOD: isolated `CodexGitCheck2` build failed on missing `DiegeticPanelController.Resolve*` helpers after a parallel partial edit; re-read the file and confirmed the helper block was later present in working tree | Rejected: committing the partial UI panel diff or reverting owner work | Estimate: 0 us runtime.
 - [x] Re-verify latest runtime tail | DOD: isolated `CodexGitCheck3` build passed after the `DiegeticPanelController` helper block was present, `0 Warning(s)`, `0 Error(s)` | Rejected: using stale CurrentDisk12/13 proof after newer C# edits | Estimate: 0 us runtime.
+
+Task loop 34:
+- [x] Repair inventory signal compile drift | DOD: CurrentDisk15 exposed `HectonPlayerMovement` missing `System.ReadOnlySpan`; added `using System` and preserved the inventory-load `SignalBus<InventoryChangedSignal>` conversion | Rejected: reverting the movement/inventory callback conversion | Estimate: 0 us runtime.
+- [x] Classify final moving-wall proof | DOD: CurrentDisk17 exit reports `EXIT=0`, build succeeded with `0 Warning(s)`, `0 Error(s)` after CaveGraph debug-log guards, mesh-name cache helpers, panel clamps, WFC direct pack writes, and inventory signal edits | Rejected: claiming Unity/player/profiler green from CLI compile | Estimate: 0 us runtime.

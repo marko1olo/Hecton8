@@ -543,3 +543,15 @@ Cinematic Cheats used -> None by this operator pass. Producer changes kept AUP d
 Exact Microseconds saved -> 0 us runtime by this operator pass.
 
 Verification -> `dotnet build Hecton8.Core.csproj` using `Temp\obj\CodexGitCheck3` and `Temp\bin\CodexGitCheck3` passed with `0 Warning(s)` and `0 Error(s)`. Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals are not claimed.
+
+## 2026-05-15 - Loop 34 CurrentDisk17 Moving-Wall Closure
+
+What was wrong -> The next moving-wall pass converted movement inventory-load handling to signal consumption but `HectonPlayerMovement` lacked `using System` for `ReadOnlySpan<InventoryChangedSignal>`. CurrentDisk14/15 evidence captured intermediate failures while geology mesh-name helpers and WFC direct pack writes were still settling.
+
+What was done -> Added the missing `System` import, kept the owner edits intact, staged non-empty failed and successful evidence files, and accepted CurrentDisk17 as the latest CLI compile proof.
+
+Cinematic Cheats used -> None by this operator pass.
+
+Exact Microseconds saved -> 0 us runtime by this operator pass.
+
+Verification -> `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_181409_CurrentDisk17.exit.txt` reports `EXIT=0`; the referenced log reports build succeeded with `0 Warning(s)` and `0 Error(s)`. Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals are not claimed.

@@ -197,3 +197,9 @@ Solution: Re-read the current file, confirm the helper block was present after t
 Rejected Alternatives: Reverting the panel clamp work, committing stale failed evidence as the final state, or trusting CurrentDisk12/13 after newer C# edits.
 Scalability potential: Git-only operator pass. The panel clamp work protects Low through Ultra authored UI scalar ranges; this pass only verifies the compile boundary.
 Hardware Impact: 0 us runtime impact. Dev-path gain is a green isolated Core compile on the current UI/AUP tail.
+
+Problem: Another moving-wall pass converted player inventory load handling to `InventoryChangedSignal` and introduced `ReadOnlySpan<InventoryChangedSignal>` in a file without `using System`, while WFC/geology/CaveGraph edits kept updating the compile surface.
+Solution: Add the missing `System` import, keep the signal conversion, preserve failed CurrentDisk14/15 evidence, and accept CurrentDisk17 as the latest green CLI compile boundary.
+Rejected Alternatives: Reverting the signal conversion, deleting failed evidence, or reporting the branch clean from an older build artifact.
+Scalability potential: Git-only operator pass. The movement/inventory signal path reduces delegate coupling for Low through Ultra; this pass only fixes compile visibility.
+Hardware Impact: 0 us runtime impact. Dev-path gain is a current green compile artifact after moving edits settled.

@@ -61,7 +61,6 @@ namespace Hecton8.Gameplay
         private const float HalfPi = 1.57079632679f;
         private const float DegreesToRadians = 0.01745329252f;
         private const int MaxDamageReceivers = 4;
-        private const long AupAxisClampCells = 1000000L;
 
         [Header("-- Preset ---------------------------")]
         [Tooltip("Shared transport preset driving locomotion, prompts, and feel.")]
@@ -1379,40 +1378,8 @@ namespace Hecton8.Gameplay
 
         private static float ApproximateAupDistance(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
         {
-            double dx = ResolveAupAxisDeltaMeters(a.GridX, b.GridX, a.LocalX, b.LocalX);
-            double dy = ResolveAupAxisDeltaMeters(a.GridY, b.GridY, a.LocalY, b.LocalY);
-            double dz = ResolveAupAxisDeltaMeters(a.GridZ, b.GridZ, a.LocalZ, b.LocalZ);
-            double ax = math.abs(dx);
-            double ay = math.abs(dy);
-            double az = math.abs(dz);
-            double max = math.max(ax, math.max(ay, az));
-            double min = math.min(ax, math.min(ay, az));
-            double mid = ax + ay + az - max - min;
-            double distance = max + (0.375d * mid) + (0.125d * min);
+            double distance = AbsoluteUniversePosition.ApproximateDistanceMetersClamped(in a, in b);
             return distance >= float.MaxValue ? float.MaxValue : (float)distance;
-        }
-
-        private static double ResolveAupAxisDeltaMeters(long aGrid, long bGrid, float aLocal, float bLocal)
-        {
-            if (aGrid > bGrid)
-            {
-                long positiveLimit = bGrid > long.MaxValue - AupAxisClampCells
-                    ? long.MaxValue
-                    : bGrid + AupAxisClampCells;
-                if (aGrid > positiveLimit)
-                    return double.MaxValue * 0.25d;
-            }
-            else if (aGrid < bGrid)
-            {
-                long negativeLimit = bGrid < long.MinValue + AupAxisClampCells
-                    ? long.MinValue
-                    : bGrid - AupAxisClampCells;
-                if (aGrid < negativeLimit)
-                    return double.MinValue * 0.25d;
-            }
-
-            long gridDelta = aGrid - bGrid;
-            return (gridDelta * (double)AbsoluteUniversePosition.CellSizeMeters) + ((double)aLocal - bLocal);
         }
 
         private void MoveRiderToDismountPoint()

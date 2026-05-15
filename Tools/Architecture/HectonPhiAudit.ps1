@@ -118,7 +118,7 @@ function Get-FileRiskRole {
     }
 
     if ($path -match '(^|/)(QA|Dev|Debug|Tests?)(/|$)' -or
-        $fileName -match '(Smoke|SmokeTester|Stress|Profiler|Diagnostic|Verification|Validator|Benchmark|Harness|Runner|Test)') {
+        $fileName -match '(Smoke|SmokeTester|Stress|Profiler|Diagnostic|Verification|Verifier|Validator|Benchmark|Harness|Runner|Test)') {
         return 'Instrumentation'
     }
 

@@ -149,7 +149,6 @@ namespace Hecton8.UI
         private const float FadeDuration = 0.42f;
         private const float PulseDecaySharpness = 3.6f;
         private const float AnchorClassificationRadius = 112f;
-        private const long AupAxisClampCells = 1000000L;
         private const int MaxBioformContacts = 24;
         private const int MaxAbyssalAnchorClassificationScan = 64;
         private const int HeaderTextCapacity = 64;
@@ -605,40 +604,8 @@ namespace Hecton8.UI
 
         private static double ApproximateAupDistanceMeters(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
         {
-            double dx = ResolveAupAxisDeltaMeters(a.GridX, b.GridX, a.LocalX, b.LocalX);
-            double dy = ResolveAupAxisDeltaMeters(a.GridY, b.GridY, a.LocalY, b.LocalY);
-            double dz = ResolveAupAxisDeltaMeters(a.GridZ, b.GridZ, a.LocalZ, b.LocalZ);
-            double ax = math.abs(dx);
-            double ay = math.abs(dy);
-            double az = math.abs(dz);
-            double maxAxis = math.max(ax, math.max(ay, az));
-            double minAxis = math.min(ax, math.min(ay, az));
-            double midAxis = ax + ay + az - maxAxis - minAxis;
-            double approximateDistance = maxAxis + midAxis * 0.375d + minAxis * 0.125d;
+            double approximateDistance = AbsoluteUniversePosition.ApproximateDistanceMetersClamped(in a, in b);
             return approximateDistance >= int.MaxValue ? int.MaxValue : approximateDistance;
-        }
-
-        private static double ResolveAupAxisDeltaMeters(long aGrid, long bGrid, float aLocal, float bLocal)
-        {
-            if (aGrid > bGrid)
-            {
-                long positiveLimit = bGrid > long.MaxValue - AupAxisClampCells
-                    ? long.MaxValue
-                    : bGrid + AupAxisClampCells;
-                if (aGrid > positiveLimit)
-                    return double.MaxValue * 0.25d;
-            }
-            else if (aGrid < bGrid)
-            {
-                long negativeLimit = bGrid < long.MinValue + AupAxisClampCells
-                    ? long.MinValue
-                    : bGrid - AupAxisClampCells;
-                if (aGrid < negativeLimit)
-                    return double.MinValue * 0.25d;
-            }
-
-            long gridDelta = aGrid - bGrid;
-            return (gridDelta * (double)AbsoluteUniversePosition.CellSizeMeters) + ((double)aLocal - bLocal);
         }
 
         private void ShowClassification(ContactClassification classification, int distanceMeters)

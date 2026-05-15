@@ -143,6 +143,28 @@ namespace Hecton8.World
         {
             return AUPMath.AUPDistanceSq(in a, in b);
         }
+
+        /// <summary>
+        /// Resolves the AUP delta in meters with guard rails for impossible sector separation.
+        /// </summary>
+        /// <param name="a">Target AUP.</param>
+        /// <param name="b">Origin AUP.</param>
+        /// <returns>Meter delta from <paramref name="b"/> to <paramref name="a"/>.</returns>
+        public static double3 DeltaMetersClamped(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
+        {
+            return AUPMath.AUPDeltaClamped(in a, in b);
+        }
+
+        /// <summary>
+        /// Computes a cheap AUP distance approximation without reducing grid-local deltas to float first.
+        /// </summary>
+        /// <param name="a">First AUP.</param>
+        /// <param name="b">Second AUP.</param>
+        /// <returns>Approximate distance in meters.</returns>
+        public static double ApproximateDistanceMetersClamped(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
+        {
+            return AUPMath.ApproximateAUPDistanceMetersClamped(in a, in b);
+        }
     }
 
     /// <summary>

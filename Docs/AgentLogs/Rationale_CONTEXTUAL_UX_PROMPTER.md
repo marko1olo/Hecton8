@@ -452,3 +452,24 @@ Solution: Add finite resolver helpers for those scalar lanes and route material/
 Rejected Alternatives: Relying on editor validation, clearing the effect when a NaN appears, or writing every property unconditionally. Runtime mutation bypasses editor validation; clearing effects hides authoring faults; unconditional writes waste the steady panel path.
 Scalability potential: Low keeps CRT/panel feedback stable on weak devices. Middle/High/Ultra keep richer phosphor, glare, glitch, and proxy-light visuals without accepting invalid scalar payloads.
 Hardware Impact: Small finite checks on effect update paths; expected gain is preventing repeated dirty-check failure and invalid registry/material writes, not measurable frame-time savings. No profiler proof.
+
+## Decision 64: Panel Power And Glare Finite Inputs
+Problem: External panel power sources and flashlight glare could provide NaN values. Those values could propagate into material writes, powered-state tests, and proxy-light intensity math.
+Solution: Resolve power through a finite saturate helper that fails invalid source values to off, and resolve glare through a finite saturate helper that fails invalid glare to zero.
+Rejected Alternatives: Trusting every power source, clamping only serialized glare, or suppressing proxy-light registration after NaN reaches intensity. Source contracts can drift; serialized clamps do not protect runtime calls; late suppression still leaves material state vulnerable.
+Scalability potential: Low avoids invalid light/material payloads on weak devices. Middle/High/Ultra keep the same richer panel lighting while invalid inputs collapse to deterministic non-emissive states.
+Hardware Impact: Two finite saturate checks on state-change/effect paths; correctness gain only, no frame-time saving claimed.
+
+## Decision 65: Panel Damage-Glitch Duration Cap
+Problem: `TriggerDamageGlitch()` accepted arbitrary finite durations through public calls. A bad caller could pin CRT glitch visuals for minutes or longer, bypassing the authored one-second maximum.
+Solution: Clamp public finite durations to the same `[0.02, 1]` second range used by the serialized authoring field.
+Rejected Alternatives: Trusting all callers, only clamping `ReceiveDamage()`, or adding a separate timeout watchdog. Public callers are not all trustworthy; `ReceiveDamage()` is not the only entry point; a watchdog adds state for a scalar validation problem.
+Scalability potential: Low avoids stuck glitch effects on cheap devices. Middle/High/Ultra keep dramatic CRT damage feedback while preventing invalid duration latches.
+Hardware Impact: One clamp on damage-glitch trigger only; no steady-frame cost.
+
+## Decision 66: UI Runtime Resources.Load Purge
+Problem: Tooltip and panel material resolution still used `Resources.Load` fallback paths. `AGENTS.md` and the asset lifecycle mandate forbid first-party runtime Resources loading because it hides dependency ownership and can hitch.
+Solution: Removed those fallbacks. Tooltip glyph/icon materials and panel phosphor material now resolve only from authored serialized references and fail closed if missing or shader-mismatched.
+Rejected Alternatives: Keeping a cold fallback, moving the load behind a latch, or introducing Addressables from this UI pass. A latched fallback is still a forbidden hidden runtime load; Addressables would widen ownership and asset-group scope.
+Scalability potential: Low avoids unexpected sync disk work. Middle/High/Ultra keep deterministic authored material ownership for richer glyph and phosphor visuals.
+Hardware Impact: Removes synchronous runtime asset lookup risk; no microsecond saving claimed without profiler capture.

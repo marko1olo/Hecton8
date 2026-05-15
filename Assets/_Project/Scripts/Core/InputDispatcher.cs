@@ -1026,6 +1026,7 @@ namespace Hecton8.Core
             _nativeInputManager.OnTabNext += HandleTabNextPressed;
             _nativeInputManager.OnTabPrevious += HandleTabPreviousPressed;
             _nativeInputManager.OnSprint += HandleSprintPressed;
+            _nativeInputManager.OnFlashlight += HandleFlashlightPressed;
             _subscribedToNativeInput = true;
         }
 
@@ -1049,6 +1050,7 @@ namespace Hecton8.Core
             _nativeInputManager.OnTabNext -= HandleTabNextPressed;
             _nativeInputManager.OnTabPrevious -= HandleTabPreviousPressed;
             _nativeInputManager.OnSprint -= HandleSprintPressed;
+            _nativeInputManager.OnFlashlight -= HandleFlashlightPressed;
             _subscribedToNativeInput = false;
         }
 
@@ -2196,6 +2198,12 @@ namespace Hecton8.Core
             InputLatencyTracker.MarkInputCaptured();
             PublishPlayerInputCommand(PlayerInputSignalCommands.TabPrevious);
             OnTabPrevious?.Invoke();
+        }
+
+        private void HandleFlashlightPressed()
+        {
+            InputLatencyTracker.MarkInputCaptured();
+            PublishPlayerInputCommand(PlayerInputSignalCommands.Flashlight);
         }
 
         private void PublishPlayerInputCommand(byte command)

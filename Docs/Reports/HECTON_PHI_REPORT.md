@@ -1744,3 +1744,46 @@ Residual bottlenecks:
 - Data Sovereignty remains the hard floor: `154 / (154 + 7074) = 0.021306032`.
 - Primary owner-blocked NativeArray refs remain high at `5,678`; those migrations still require BufferID/SystemID/generation/disposal proof from domain owners.
 - Runtime H-Phi remains pending Unity Console, PlayMode, Profiler, and GCMonitor evidence.
+
+## 2026-05-15 Live Addendum - Geology Name Cache And Diagnostic Gate
+
+Evidence class: `STATIC_SOURCE_COMPILE`.
+
+What changed:
+- `WorldGenerativeGeologyMeshBuilder.cs` now reuses deterministic cached mesh-name strings per archetype, variant, LOD, and collider slot instead of formatting names during every geology build.
+- `CaveGraphGenerator.cs` validation/debug logs are gated behind `UNITY_EDITOR || DEVELOPMENT_BUILD`; release validation still returns failure booleans.
+- `HectonPhiAudit.ps1` classifies `*Verifier` source files as instrumentation, not primary gameplay runtime.
+
+Current static scores after this pass:
+
+| Coefficient | Score |
+|---|---:|
+| Runtime H-Phi narrow | 0.010781770 |
+| Runtime H-Phi risk-adjusted | 0.000633566 |
+| Data sovereignty | 0.021306032 |
+| Memory alignment | 0.506043090 |
+
+Current runtime counts:
+
+| Counter | Value |
+|---|---:|
+| Typed/queued signal push surface | 341 |
+| Legacy/direct event publish surface | 28 |
+| Runtime `Find*` calls | 0 |
+| Runtime `GetComponent*` calls | 321 |
+| `GlobalRegistry.` surface refs | 5,080 |
+| `NativeArray<T>` refs | 7,074 |
+| Managed formatting surface | 621 |
+| Primary managed-runtime risk | 236 |
+| Job `.Complete()` surface | 58 |
+| Primary owner-blocked NativeArray refs | 5,678 |
+
+Verification:
+- Core build passed with `0 Warning(s)` and `0 Error(s)`.
+- PowerShell parser check for the H-Phi audit script passed.
+- Tightened full static H-Phi budget gate passed with `-MaxManagedFormatSurface 621`, `-MaxPrimaryManagedRuntimeRisk 236`, `-MinRuntimeHPhiRisk 0.000633000`, `-MaxFindObjectCalls 0`, and the existing Core graph/DataVault/layout budgets.
+
+Residual bottlenecks:
+- Data Sovereignty remains the hard floor: `154 / (154 + 7074) = 0.021306032`.
+- Remaining top primary managed-risk files are owner-heavy: `PlayerBuilder.cs`, `WorldPopulationRule.cs`, `ModdingAPI/ModLoader.cs`, `Quest/QuestStateManager.cs`, and `ModdingAPI/ModAssetManager.cs`.
+- Runtime H-Phi remains pending Unity Console, PlayMode, Profiler, and GCMonitor evidence.

@@ -1008,3 +1008,38 @@ Stop-loss projection at the five-minute average:
 | 1B tokens | 5.00 h | same token time |
 
 Verdict: live burn remains material but volatile. The five-minute average is slightly below the earlier three-minute rate, but still projects to 4.80B tokens/day. The top 10 active threads hold 74.54% of the sample, so the honest control point is targeted thread review, not global panic and not waste conviction.
+
+## Continuation Addendum - Burn Trajectory Ledger
+
+Snapshot: 2026-05-15T18:16:42+04:00
+
+The burn trajectory ledger is preserved at `COMPUTE_BURN_TRAJECTORY_LEDGER.md`.
+
+| Metric | Value |
+|---|---:|
+| Current SQLite tokens | 45,946,566,942 |
+| Delta beyond corrected JSONL final | 175,067,826 |
+| Estimated live cost beyond corrected JSONL final | USD 117.43 |
+| Current live cost estimate | USD 30,821.79 |
+| Prompt-constant energy equivalent | 2,297.33 MWh |
+| Live tokens per meaningful script LOC | 58,262.06 |
+| Live tokens per script source byte | 1,092.202 |
+
+Segment trajectory:
+
+| Segment | Delta tokens | Tokens/sec | Cache-aware USD/min | No-cache USD/min |
+|---|---:|---:|---:|---:|
+| 17:18 corrected -> 17:29 live3 | 58,816,887 | 90,428.35 | USD 3.639 | USD 23.948 |
+| 17:29 live3 -> 17:43 live5 | 40,807,534 | 48,776.85 | USD 1.963 | USD 12.917 |
+| 17:43 live5 -> 18:16 instant | 88,687,951 | 44,072.67 | USD 1.774 | USD 11.672 |
+| 17:18 -> 18:16 combined | 188,312,372 | 53,813.47 | USD 2.166 | USD 14.251 |
+
+Current cumulative model split:
+
+| Model | Tokens | Share |
+|---|---:|---:|
+| `gpt-5.5` | 34,062,371,796 | 74.14% |
+| `gpt-5.4` | 11,591,437,853 | 25.23% |
+| Other known models | 292,757,293 | 0.64% |
+
+Verdict: the post-forecast tail cooled to 44.07k tokens/sec, but this is still sustained high burn. The last 58.32 minutes averaged 53.81k tokens/sec and USD 2.166/min cache-aware.

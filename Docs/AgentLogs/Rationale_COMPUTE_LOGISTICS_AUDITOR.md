@@ -371,3 +371,15 @@ Rejected Alternatives: Re-running the full JSONL parser was rejected because thi
 Scalability potential: Low/Middle/High/Ultra process gains a practical stop-loss dashboard. At the measured five-minute rate, 100M tokens arrive in 30 minutes, USD 100 cache-aware burn arrives in 44.72 minutes, and the top 10 threads carry 74.54% of live burn.
 
 Hardware Impact: 0 runtime microseconds on i3/MX350. No runtime code changed. Process impact: five-minute live burn measured at 55,562.22 tokens/sec, USD 2.236/min cache-aware, USD 14.714/min no-cache equivalent.
+
+## Decision 31 - Burn Trajectory Ledger
+
+Problem: Repeated live samples were becoming isolated snapshots. Without a trajectory ledger, later readers could mistake a one-minute spike or a five-minute average for the current state.
+
+Solution: Query current `state_5.sqlite.threads.tokens_used`, bind it to the prior fixed snapshots, and write `COMPUTE_BURN_TRAJECTORY_LEDGER.md` with per-segment token/sec, token/min, token/hour, token/day, cache-aware cost, and no-cache equivalent.
+
+Rejected Alternatives: Another five-minute wait was rejected because the immediate need was connecting existing snapshots, not producing another isolated interval. Re-running full JSONL was rejected because segment trajectory only needs SQLite cumulative totals. Averaging all history was rejected because it hides the live tail.
+
+Scalability potential: Low/Middle/High/Ultra process gains a trend view. The current tail is no longer described as either panic spike or cooldown; it is quantified as sustained high burn: 44.07k tokens/sec after 17:43 and 53.81k tokens/sec across the 58.32-minute combined window.
+
+Hardware Impact: 0 runtime microseconds on i3/MX350. No runtime code changed. Process impact: the ledger shows the live cost since corrected JSONL final grew by about USD 117.43 cache-aware.

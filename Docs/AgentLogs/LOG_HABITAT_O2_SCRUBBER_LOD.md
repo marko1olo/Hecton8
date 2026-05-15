@@ -645,6 +645,24 @@ Cinematic Cheats used:
 Exact microseconds saved:
 - None. This was a boundary and risk-control pass.
 
+## 2026-05-15 - Current Build State Refresh
+STATUS: BUILD VERIFIED
+
+What was wrong:
+- Integration artifacts briefly failed on an unrelated `WorldGenerativeGeologyMeshBuilder.cs` half-patch: missing `BuildMeshNameCache` and `SetMeshNames`.
+
+What was done:
+- Confirmed current `WorldGenerativeGeologyMeshBuilder.cs` contains the mesh-name cache/helper methods.
+- Ran `dotnet build Hecton8.Core.csproj --no-restore --nologo -v:minimal`; result: build succeeded, 0 warnings, 0 errors, 00:01:34.48.
+- Confirmed latest integration artifact `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_181552_CurrentDisk16.log` exits 0 with 0 warnings and 0 errors.
+- Confirmed no C# source under `Assets/_Project/Scripts` is newer than that integration build log.
+
+Cinematic Cheats used:
+- None.
+
+Exact microseconds saved:
+- None. This is build-state verification, not runtime work.
+
 ## 2026-05-15 - Read-Only Alias Initialization Gate Addendum
 STATUS: PENDING VERIFICATION
 
@@ -702,3 +720,56 @@ Cinematic Cheats used:
 
 Exact microseconds saved:
 - None. This is source evidence only; no dotnet rebuild was run.
+
+## 2026-05-15 - Final Current Build State
+STATUS: BUILD VERIFIED
+
+What was wrong:
+- Latest active build failures moved outside gas into transient `WorldGenerativeGeologyMeshBuilder.cs` helper timing while another agent edited that file.
+
+What was done:
+- Verified current source contains the missing mesh-name helpers.
+- Ran `dotnet build Hecton8.Core.csproj --no-restore --nologo -v:minimal`; build succeeded with 0 warnings and 0 errors.
+- Confirmed integration artifact `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_181552_CurrentDisk16.log` exits 0, with no C# source under `Assets/_Project/Scripts` newer than that log.
+
+Cinematic Cheats used:
+- None.
+
+Exact microseconds saved:
+- None. Build verification only.
+
+## 2026-05-15 - Final Current Build Artifact Refresh
+STATUS: BUILD VERIFIED
+
+What was wrong:
+- New integration compilers started after the previous green artifact, making the report stale until they finished.
+
+What was done:
+- Waited for active `dotnet` processes to exit.
+- Confirmed `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_182016_CurrentDisk18.log` exits 0 with 0 warnings and 0 errors.
+- Confirmed `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_182054_CurrentDisk17.log` exits 0 with 0 warnings and 0 errors.
+- Confirmed no C# source under `Assets/_Project/Scripts` is newer than the 18:20:54 integration build log.
+
+Cinematic Cheats used:
+- None.
+
+Exact microseconds saved:
+- None. Build verification only.
+
+## 2026-05-15 - Moving Workspace Build Boundary
+STATUS: SOURCE/BUILD BOUNDARY RECORDED
+
+What was wrong:
+- A later unrelated UI edit landed after the newest green build artifact, so whole-tree-current build proof would be stale.
+
+What was done:
+- Confirmed `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_182522_CurrentDisk19.log` exits 0 with 0 warnings and 0 errors.
+- Confirmed gas/core-signal/WFC bridge, `SaveManager.cs`, and `WorldGenerativeGeologyMeshBuilder.cs` are older than that build.
+- Recorded that `Assets/_Project/Scripts/UI/DiegeticPanelController.cs` is newer than the build and outside this agent domain.
+- Confirmed no active `dotnet` process before reporting.
+
+Cinematic Cheats used:
+- None.
+
+Exact microseconds saved:
+- None. Evidence boundary only.

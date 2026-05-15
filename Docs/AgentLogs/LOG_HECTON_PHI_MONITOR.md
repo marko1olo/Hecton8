@@ -924,3 +924,43 @@ Regression Model:
 - Correctness: localized discovery template token `{0}` is preserved; save playtime keeps two-digit minute output and natural hour expansion.
 
 STATUS: H-PHI VERIFIED / CORE BUILD GREEN / UNITY RUNTIME PENDING
+
+## 2026-05-15 Geology Name Cache And Diagnostic Gate
+
+What was wrong:
+- `WorldGenerativeGeologyMeshBuilder.cs` formatted deterministic mesh names every time geology LOD bundles were built.
+- `CaveGraphGenerator.cs` validation/debug paths built interpolated diagnostic strings in runtime source.
+- `HectonPhiAudit.ps1` misrouted `*Verifier` diagnostic files as primary gameplay runtime risk.
+
+What was done:
+- Added deterministic cached mesh-name tables for geology archetype/variant/LOD/collider slots and replaced 24 interpolated `SetMeshName(...)` calls.
+- Gated cave validation `Debug.Log*` interpolation behind `UNITY_EDITOR || DEVELOPMENT_BUILD` while preserving validation failure state in release.
+- Added `Verifier` to the H-Phi instrumentation classifier and replayed the tightened static gate.
+
+Cinematic Cheats used:
+- None. This pass removed repeated naming/diagnostic string work; cave and geology visuals/math are unchanged.
+
+Exact Microseconds saved:
+- Runtime hot path: 0 us measured.
+- Procedural geology build path: repeated mesh-name interpolation removed; cached names allocate once at static initialization.
+- Release cave validation: debug-string construction is compiled out for the gated validation logs. No exact us claim without Unity Profiler.
+
+Compile Status:
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:GenerateFullPaths=true -v:minimal`: passed, `0 Warning(s)`, `0 Error(s)`.
+- PowerShell parser check for `Tools/Architecture/HectonPhiAudit.ps1`: passed.
+- Tightened full static H-Phi budget gate: passed after the changes.
+
+Phi Gain:
+- Managed formatting surface: `657 -> 621`.
+- Primary managed-runtime risk: `307 -> 236`.
+- Runtime risk H-Phi: `0.000633457 -> 0.000633566`.
+- Runtime narrow H-Phi: `0.010781770`.
+- `FindObjectCalls=0`; `UnityUpdateMethods=0`; `JobCompleteSurface=58`.
+
+Regression Model:
+- CPU: less repeated string formatting in procedural mesh naming; release cave validation no longer builds diagnostic strings.
+- GC: final mesh-name strings are cached once; debug strings remain available in editor/development builds.
+- Memory: no NativeArray/DataVault ownership changed.
+- Correctness: mesh names preserve the existing `Archetype_vN_LOD*` / `Archetype_vN_COL` format; cave validation still returns failure booleans in release.
+
+STATUS: H-PHI VERIFIED / CORE BUILD GREEN / UNITY RUNTIME PENDING

@@ -21,7 +21,6 @@ namespace Hecton8.Gameplay
         private const float FadeDurationSeconds = 1f;
         private const float ProjectionPaddingMeters = 0.05f;
         private const float DegreesToHalfRadians = 0.00872664626f;
-        private const long MarkerAupAxisClampCells = 1000000L;
 
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int FlickerFrequencyId = Shader.PropertyToID("_FlickerFrequency");
@@ -486,39 +485,14 @@ namespace Hecton8.Gameplay
 
         private static double EstimateAupDistanceMeters(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
         {
-            double dx = ResolveAupAxisDeltaMeters(a.GridX, b.GridX, a.LocalX, b.LocalX);
-            double dy = ResolveAupAxisDeltaMeters(a.GridY, b.GridY, a.LocalY, b.LocalY);
-            double dz = ResolveAupAxisDeltaMeters(a.GridZ, b.GridZ, a.LocalZ, b.LocalZ);
-            double ax = math.abs(dx);
-            double ay = math.abs(dy);
-            double az = math.abs(dz);
+            double3 delta = AbsoluteUniversePosition.DeltaMetersClamped(in a, in b);
+            double ax = math.abs(delta.x);
+            double ay = math.abs(delta.y);
+            double az = math.abs(delta.z);
             double max = math.max(ax, math.max(ay, az));
             double min = math.min(ax, math.min(ay, az));
             double mid = ax + ay + az - max - min;
             return max + (mid * 0.375d) + (min * 0.25d);
-        }
-
-        private static double ResolveAupAxisDeltaMeters(long aGrid, long bGrid, float aLocal, float bLocal)
-        {
-            if (aGrid > bGrid)
-            {
-                long positiveLimit = bGrid > long.MaxValue - MarkerAupAxisClampCells
-                    ? long.MaxValue
-                    : bGrid + MarkerAupAxisClampCells;
-                if (aGrid > positiveLimit)
-                    return double.MaxValue * 0.25d;
-            }
-            else if (aGrid < bGrid)
-            {
-                long negativeLimit = bGrid < long.MinValue + MarkerAupAxisClampCells
-                    ? long.MinValue
-                    : bGrid - MarkerAupAxisClampCells;
-                if (aGrid < negativeLimit)
-                    return double.MinValue * 0.25d;
-            }
-
-            long gridDelta = aGrid - bGrid;
-            return (gridDelta * (double)AbsoluteUniversePosition.CellSizeMeters) + ((double)aLocal - bLocal);
         }
     }
 }

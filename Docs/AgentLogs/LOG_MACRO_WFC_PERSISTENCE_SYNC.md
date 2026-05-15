@@ -1158,5 +1158,60 @@ Exact microseconds saved:
 Verification:
 - Static scan confirms no `PackWfcOutpostMutableStateJob`, no `BurstCompile`, no `packJob.Run()`, and no WFC `Schedule().Complete()` path remain in `SaveManager`.
 - `git diff --check -- Assets/_Project/Scripts/SaveManager.cs` reports only Git CRLF normalization warnings.
-- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` exited 0 at 2026-05-15 17:38:38 +04:00; core graph debt counts unchanged.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` exited 0 at 2026-05-15 17:52:50 +04:00; core graph debt counts unchanged.
 - No `dotnet` rebuild was run.
+
+## Recheck Report: WFC Pack Helper Branch Removal
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- The post-job direct pack loop still used `OrWfcOutpostPackedBit()` four times per cell.
+- That helper carried a word-count bounds branch that is redundant under the private validated grid plus fixed packed-buffer invariant.
+
+What was done:
+- Inlined the four mutable plane writes inside `PackWfcOutpostMutableStateGrid()`.
+- Packed the low mutable nibble directly into door-open, unlocked, power, and datapad bit planes.
+- Removed the `OrWfcOutpostPackedBit()` helper.
+- Kept payload layout, payload hash input, and MacroDB payload format unchanged.
+
+Cinematic cheats used:
+- Fixed binary bit planes instead of generic bitset machinery or managed helper abstractions.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation: 0 B by static inspection.
+- Removed four helper calls and four bounds branches per cell, 2,000 helper invocations per full 500-cell pack.
+
+Verification:
+- Source scan confirms `OrWfcOutpostPackedBit` is gone from `SaveManager` and `PackWfcOutpostMutableStateGrid()` contains direct pointer writes.
+- `git diff --check` reports only Git CRLF normalization warnings.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` exited 0 at 2026-05-15 18:04:50 +04:00; core graph debt counts unchanged.
+- Latest completed integrator build evidence, `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_182016_CurrentDisk18`, exits 0 with 0 warnings and 0 errors.
+- No `dotnet` rebuild was run by this agent.
+
+## Recheck Report: MacroDB Dirty Flag Contract De-Duplication
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- `SaveManager.ResolveWfcOutpostSnapshotCacheFlags()` duplicated the MacroDB dirty payload flag as private `1 << 0`.
+- The duplicated bit could drift from `MacroDatabasePayloadFlags.Dirty`, breaking WFC retry preservation when restore/hydration reads dirty in-memory payload handles.
+
+What was done:
+- Replaced the private dirty-bit duplicate with `MacroDatabasePayloadFlags.Dirty`.
+- Kept WFC retry/hydration behavior unchanged: dirty handles preserve append-pending state, clean committed handles clear retry state.
+
+Cinematic cheats used:
+- Contract-bound byte flag instead of new append status APIs, managed side maps, or payload format expansion.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation: 0 B by static inspection.
+- Runtime work unchanged: one byte flag test on restore/hydration success.
+
+Verification:
+- Static scan confirms no private `DirtyFlag` remains in `SaveManager`.
+- Static scan confirms MacroDB and SaveManager both use `MacroDatabasePayloadFlags.Dirty`.
+- `git diff --check` reports only Git CRLF normalization warnings.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` exited 0 at 2026-05-15 18:34:51 +04:00; core graph debt counts unchanged.
+- Latest completed integrator build evidence, `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_182016_CurrentDisk18`, exits 0 with 0 warnings and 0 errors.
+- No `dotnet` rebuild was run by this agent.

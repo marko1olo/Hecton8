@@ -564,3 +564,36 @@ Cinematic cheats used: No visual change for valid authoring. The CRT persistence
 Exact microseconds saved: None claimed. This is correctness hardening; checks are bounded and run only on effect update paths.
 
 Verification: No dotnet rebuilds were run. Static scans confirmed the panel effect paths use the new resolver helpers before material or registry writes.
+
+## 2026-05-15 Panel Power And Glare Finite Inputs
+What was wrong: Power-source output and flashlight glare could still propagate NaN into material writes or proxy-light intensity calculations.
+
+What was done: Added finite saturate helpers for panel power and glare; invalid power now resolves to off, invalid glare resolves to zero.
+
+Cinematic cheats used: No visual change for valid inputs. Bad inputs collapse to deterministic non-emissive states instead of broken lighting.
+
+Exact microseconds saved: None claimed. This is bounded correctness hardening on state-change/effect paths.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed power and glare pass through `ResolvePanelPowerLevel()` and `ResolveFlashlightGlare()`.
+
+## 2026-05-15 Panel Damage-Glitch Duration Cap
+What was wrong: Public damage-glitch calls could pass very large finite durations and keep CRT glitch visuals latched far beyond authored timing.
+
+What was done: Changed `ResolveDamageGlitchDuration()` to clamp finite values to the same `[0.02, 1]` second range as the serialized authoring field.
+
+Cinematic cheats used: The CRT glitch remains a bounded visual fake, not a long-lived simulation state.
+
+Exact microseconds saved: None claimed. The change is one clamp at glitch trigger time.
+
+Verification: No dotnet rebuilds were run. Static scan confirmed `ResolveDamageGlitchDuration()` now uses `math.clamp(..., MinDamageGlitchDurationSeconds, MaxDamageGlitchDurationSeconds)`.
+
+## 2026-05-15 UI Runtime Resources.Load Purge
+What was wrong: Tooltip and panel material resolution still used forbidden first-party runtime `Resources.Load` fallback paths.
+
+What was done: Removed the fallback loads. Tooltip glyph/icon materials and panel phosphor material now require authored serialized references and fail closed when missing or shader-mismatched.
+
+Cinematic cheats used: No visual cheat change. This makes dependency ownership explicit so rich diegetic materials are authored, not path-loaded at runtime.
+
+Exact microseconds saved: No measured claim. Removes synchronous runtime asset lookup risk.
+
+Verification: No dotnet rebuilds were run. Static scan confirmed no `Resources.Load` remains in `DiegeticTooltipSystem.cs` or `DiegeticPanelController.cs`.
