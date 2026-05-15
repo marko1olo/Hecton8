@@ -53,3 +53,9 @@ Solution: Fetch first, prove no incoming remote commits, scan for unmerged paths
 Rejected Alternatives: Blind pull, force push, reset, or assuming docs-only risk. Runtime scripts changed, so the script diff surface required a separate sanity pass before staging.
 Scalability potential: Git-only operation. Low/Middle/High/Ultra runtime behavior is not changed by the repository operation; any authored runtime tier effects remain owned by the producing agents.
 Hardware Impact: 0 us runtime impact on i3/MX350. Compile/profiler proof remains absent; this pass only reduces integration conflict exposure.
+
+Problem: Immediately after pushing `2b7a88602`, another large live tail appeared, but the committed branch still matched `origin/main`.
+Solution: Treat pushed history and working-tree state as separate facts. Verify the push by fetch/divergence, then classify the new tail with stat, whitespace, and conflict-marker checks before another bounded checkpoint.
+Rejected Alternatives: Reporting "all clean", deleting the new work, or pulling when no remote commits exist. Those would hide active local agent output or create needless merge churn.
+Scalability potential: Git-only operation. No gameplay tier behavior changes are claimed by this integration pass.
+Hardware Impact: 0 us runtime impact. The only measured gain is integration hygiene; Unity compile/profiler proof remains pending.

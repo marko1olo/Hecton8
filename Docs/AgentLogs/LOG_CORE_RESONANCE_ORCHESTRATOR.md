@@ -71,3 +71,35 @@ Verification:
 
 Status:
 - ENGINE RESONATING / COMPILE BLOCKED BY DEPENDENCY / RUNTIME PENDING VERIFICATION.
+
+## 2026-05-15 04:33 +04:00 - Submarine Cargo Mass Fallback Bucketing
+
+What was wrong:
+- `SubmarineFluidDynamics` still used a fixed-tick fallback read of `GlobalRegistry.PlayerInventoryMassKg`.
+- The inventory event lane already carries mass for `EncumbranceChanged`, so the per-physics-step global read was unnecessary in the stable case.
+- `InventoryChanged` carries no mass, so deleting the fallback entirely would be unsafe.
+
+What was done:
+- Added a 1/16 frame fallback bucket for submarine cargo mass refresh.
+- Routed `EncumbranceChanged` to commit payload mass directly with no global lookup.
+- Kept a forced one-shot fallback refresh for coarse `InventoryChanged` events.
+- Centralized cargo mass commit bookkeeping so event and fallback paths update the same cached mass/scalar pair.
+- Confirmed current fluid/submarine runtime context caches are already present in source and did not add duplicate service-cache structure.
+
+Cinematic Cheats used:
+- Cargo buoyancy uses event-driven truth for visible responsiveness, with a cheap modulo fallback poll as a safety net instead of continuous inventory inspection.
+
+Exact Microseconds saved:
+- Submarine cargo mass fallback bucketing: estimated 1-3 microseconds saved per active submarine physics frame on i3/MX350 class hardware when cargo mass is stable.
+- Global fallback read reduction: 15 of 16 fixed-tick fallback reads skipped after initial sync.
+- GC impact: 0 managed allocations added.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/SubmarineFluidDynamics.cs` passed; LF/CRLF warning only.
+- Diff scan found no new managed containers, LINQ, `ToArray`, `FindObject`, coroutine, or signal producer path in the edited hunk.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -CoreGraphOnly` completed at `2026-05-15 04:32:55 +04:00`.
+- Core graph counts: core asmdef debt `25`, generated project debt `10`, source-backed bridge debt `14`, compile-bridge debt `8`, project-reference replacement debt `6`.
+- No `dotnet build` or rebuild was run.
+
+Status:
+- ENGINE RESONATING / COMPILE BLOCKED BY DEPENDENCY / RUNTIME PENDING VERIFICATION.

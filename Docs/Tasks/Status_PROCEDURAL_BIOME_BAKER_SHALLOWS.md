@@ -280,3 +280,19 @@ Status: PENDING VERIFICATION
 - Verification avoided dotnet rebuilds and Unity import. `MeshLodIndexContractYamlScan Count=600 Bad=0`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0` with `NonAscii=0`; case-sensitive forbidden source scan found no regex, hash set, sort, or hot-path render ownership patterns.
 - Rejected alternative: relying on suffix distribution was rejected because it allows missing triplets masked by duplicate or orphan mesh assets. Sorting or hash sets were rejected because a fixed bitset is cheaper and bounded by authored Shallows family sizes.
 - H-Phi impact remains domain-local evidence only: generated mesh triplets are now fail-closed without runtime registries, lookup repair, renderer mutations, allocations on the render path, or cross-domain dependencies.
+
+### Loop 31 - Renderer Serialized State Contract
+
+- Found a remaining renderer drift path: public renderer flags, material slots, and static flags were locked, but serialized renderer state such as rendering layer, renderer priority, probe anchors, sorting state, and static shadow caster could still drift.
+- Patched `ShallowsBioForgeBatchBaker` with `ValidateRendererSerializedStateContract`, `SerializedIntEquals`, and `SerializedObjectReferenceIsNull` so all 600 Shallows MeshRenderers must keep default render-layer/priority/probe/sorting/static-shadow serialized state.
+- Verification avoided dotnet rebuilds and Unity import. `RendererSerializedStateYamlScan Renderers=600 Bad=0`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0` with `NonAscii=0`; case-sensitive forbidden source scan stayed clean.
+- Rejected alternative: runtime renderer repair was rejected because MeshRenderer-owned flora must remain static GPU Resident Drawer-friendly payload. Public-property-only checks were rejected because the hidden serialized fields are the drift surface being locked.
+- H-Phi impact remains domain-local evidence only: render visibility/layer state is now fail-closed without runtime renderer mutation, material clones, allocations on the render path, or cross-domain dependencies.
+
+### Loop 32 - Shader Pass Budget Contract
+
+- Re-audited `Hecton_ProceduralBio.shader` and found the current Shallows material shader has exactly two intended passes: `ForwardLit` and `ShadowCaster`, with no `UsePass`, `GrabPass`, or `Fallback`.
+- Patched `ValidateShaderSourceContract` with `ValidateShaderPassBudget` and `CountShaderLineToken` so the shared shader source must keep the two-pass budget and explicit UniversalForward/ShadowCaster pass identities.
+- Verification avoided dotnet rebuilds and Unity import. `ShaderPassBudgetScan Pass=2 UsePass=0 GrabPass=0 Fallback=0 Forward=True Shadow=True`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0`, `NonAscii=0`, and no literal brace char remained in the source scan.
+- Rejected alternative: trusting renderer `shadowCastingMode=Off` alone was rejected because an added shader pass can still become render debt if renderer state drifts later. A full shader rewrite was rejected because the current shader source already satisfies the locked budget.
+- H-Phi impact remains domain-local evidence only: shader pass count is now fail-closed without changing runtime rendering, adding material variants, or adding cross-domain shader ownership.

@@ -936,6 +936,18 @@ namespace Hecton8.World
             return math.max(0, safeCount);
         }
 
+        private int ResolveAbyssalNavNodeTypeViewCount()
+        {
+            int safeCount = ResolveAbyssalNavNodeViewCount();
+            if (safeCount <= 0 ||
+                !_nativeMemory.AbyssalNavNodeTypesSnapshotNative.IsCreated)
+            {
+                return 0;
+            }
+
+            return math.max(0, math.min(safeCount, _nativeMemory.AbyssalNavNodeTypesSnapshotNative.Length));
+        }
+
         private int ResolveAbyssalNavGraphViewCount()
         {
             int safeCount = ResolveAbyssalNavNodeViewCount();

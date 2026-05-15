@@ -437,3 +437,26 @@ Verification:
 - Targeted direct-view scan reported no raw division, forbidden hot math, managed allocation, or `foreach`.
 - `git diff --check` on touched source/status/rationale/log files passed; only LF-to-CRLF working-copy warnings were emitted.
 - Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.
+
+## 2026-05-15 - Nav Graph Payload Count Proof
+
+What was wrong:
+- `TryGetActiveAbyssalNavNodeTypePayload` could still export raw `_abyssalNavNodeCount`.
+- The type payload needed its own count proof: using the full graph/conduit clamp would make node classifications disappear when optional conduit metadata is unavailable.
+
+What was done:
+- Added `ResolveAbyssalNavNodeTypeViewCount`, clamping type payload count to the proven node snapshot count and node-type native array length.
+- Updated `TryGetActiveAbyssalNavNodeTypePayload` to use the new count proof.
+- Rechecked thermal/flow and anchor/native graph boundary helpers already present in source.
+
+Cinematic Cheats used:
+- Stale type payloads now vanish by count proof instead of being repaired or copied.
+- Low tier keeps cheap native classification reads; High/Ultra keep node classifications independent from conduit polish data.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Static gain is invalid-read avoidance; no allocations, no new containers, no managed copies.
+
+Verification:
+- Targeted nav graph payload scan reported no raw division, forbidden hot math, managed allocation, or `foreach`.
+- `git diff --check` on touched source/status/rationale/log files passed; only LF-to-CRLF working-copy warnings were emitted.
+- Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.

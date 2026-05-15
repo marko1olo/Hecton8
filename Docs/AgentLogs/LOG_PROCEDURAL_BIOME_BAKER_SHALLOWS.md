@@ -321,3 +321,27 @@ Cinematic Cheats used: Static offline L-system/SDF mesh triplets, strict determi
 Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents runtime fallback or renderer mutation for missing/duplicate LOD mesh slots; exact runtime microseconds were not profiled.
 
 Verification: No dotnet rebuild and no Unity import was run. `MeshLodIndexContractYamlScan Count=600 Bad=0`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0`, `NonAscii=0`, and case-sensitive forbidden source scan stayed clean.
+
+## 2026-05-15 Renderer Serialized State Contract
+
+What was wrong: Renderer public flags were validated, but serialized render-layer, renderer priority, probe anchor, LPPV override, sorting, and static-shadow-caster fields could still drift.
+
+What was done: Added `ValidateRendererSerializedStateContract` and serialized property helpers. Every generated Shallows MeshRenderer now has default render layer, priority, probe, sorting, and static shadow caster state enforced.
+
+Cinematic Cheats used: Static MeshRenderer-owned flora/rock payload, shared atlas/material, dithered LOD crossfade, no runtime renderer repair, no flora colliders, and rock-only LOD2 convex proxies remain unchanged.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents runtime renderer fix-up and hidden probe/render-layer work; exact runtime microseconds were not profiled.
+
+Verification: No dotnet rebuild and no Unity import was run. `RendererSerializedStateYamlScan Renderers=600 Bad=0`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0`, `NonAscii=0`, and case-sensitive forbidden source scan stayed clean.
+
+## 2026-05-15 Shader Pass Budget Contract
+
+What was wrong: The shared Shallows shader source contract did not lock explicit pass count or reject inherited/grab/fallback passes.
+
+What was done: Added `ValidateShaderPassBudget` and direct line-token counting. The shader must keep exactly `ForwardLit` and `ShadowCaster`, with zero `UsePass`, `GrabPass`, or `Fallback`.
+
+Cinematic Cheats used: Opaque shared material, dithered LOD crossfade, GPU Resident Drawer-friendly MeshRenderers, and no runtime material mutation remain unchanged.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents future hidden shader pass bloat; exact runtime microseconds were not profiled.
+
+Verification: No dotnet rebuild and no Unity import was run. `ShaderPassBudgetScan Pass=2 UsePass=0 GrabPass=0 Fallback=0 Forward=True Shadow=True`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.

@@ -4801,7 +4801,7 @@ namespace Hecton8.Inventory
             if (survival != null)
                 survival.TakeDamage(damage);
 
-            global::Hecton8.Gameplay.DamageSignal signal = new global::Hecton8.Gameplay.DamageSignal
+            global::Hecton8.Gameplay.HabitatDamageSignal signal = new global::Hecton8.Gameplay.HabitatDamageSignal
             {
                 magnitude = damage,
                 localPoint = float3.zero,
@@ -4907,7 +4907,7 @@ namespace Hecton8.Inventory
             if (hazard01 <= 0f)
                 return;
 
-            global::Hecton8.Gameplay.DamageSignal signal = new global::Hecton8.Gameplay.DamageSignal
+            global::Hecton8.Gameplay.HabitatDamageSignal signal = new global::Hecton8.Gameplay.HabitatDamageSignal
             {
                 magnitude = hazard01,
                 localPoint = float3.zero,

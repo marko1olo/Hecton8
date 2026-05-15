@@ -449,3 +449,15 @@ Rejected Alternatives: leaving these controls unchanged was rejected because the
 Scalability potential: Low/toaster avoids permanent stale receiver slots and UI ticks after scene streaming, disable ordering, or lifecycle drift. Middle/High keep the physical cockpit table deterministic across buttons, switches, and manual levers. Ultra can ship denser cockpit panels without paying for dead receiver entries.
 
 Hardware Impact: 0 us active-frame cost. Cold teardown pays an idempotent fixed-bucket unregister scan. i3/MX350 gain is prevention of persistent stale overlap receivers and inert UI dispatcher calls after lifecycle drift.
+
+## Decision 37 - Receiver registration must repair cached identity before replacing it
+
+Problem: cached-volume unregister fixes teardown, but registration still used `_receiverRegistered` as the only change-detection gate in manual levers, panel buttons, and snap switches. If the flag drifted false while `_registeredActivationVolume` still held an old collider, registering a new activation volume could overwrite the cache and strand the old collider in `PhysicalHandReceiverRegistry`.
+
+Solution: make receiver registration inspect `_registeredActivationVolume` directly. If the same collider is already registered and the flag is live, return. If any cached collider exists or the flag is true for a different state, call the idempotent unregister helper before registering the current activation volume.
+
+Rejected Alternatives: keeping registration unchanged was rejected because the prior cleanup pass made the cached collider the authoritative teardown key. A registry-wide scan was rejected because exact old collider identity is already cached locally. Clearing the cache without unregistering was rejected because it hides the leak.
+
+Scalability potential: Low/toaster avoids stale receiver slots after runtime prefab repair, scene streaming, or enable-order drift. Middle/High keep dense cockpit receiver tables stable across authored control replacement. Ultra can support more physical panel controls without carrying dead collider entries.
+
+Hardware Impact: 0 us active-frame cost. Cold registration pays one cached-reference branch and, only on drift, one idempotent unregister before re-registering. i3/MX350 gain is fixed receiver capacity preservation and avoided stale overlap dispatch.

@@ -1634,7 +1634,7 @@ namespace Hecton8.UI
             HandleTraumaHudSignal(in signal);
         }
 
-        void IPlayerSignalEventListener.OnInteractionSignal(in InteractionSignal signal)
+        void IPlayerSignalEventListener.OnInteractionSignal(in PlayerInteractionStressSignal signal)
         {
         }
 

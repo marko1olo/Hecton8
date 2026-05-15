@@ -732,3 +732,28 @@ Verification:
 - Static scans find no raw pointer-cast scalar helpers left in the WFC payload codec path.
 - Targeted `git diff --check` reports only Git CRLF normalization warnings.
 - No `dotnet` rebuild was run.
+
+## Recheck Report: WFC Dependency Flag Reacquire Truth
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- A direct WFC DataVault grid reacquire could leave `_wfcOutpostDependenciesReady` stale.
+- Black-box frame flags could then under-report actual cached readiness until SlowTick refreshed.
+
+What was done:
+- Successful `TryEnsureWfcOutpostGrid()` now recomputes readiness from cached MacroDB/DataVault state.
+- Tick drains still avoid `GlobalRegistry` dependency refresh.
+
+Cinematic cheats used:
+- Cached-state truth bit instead of hot registry probing.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation: 0 B by static inspection.
+- Cost: one cached MacroDB-open check plus one DataVault null check on cold grid reacquire.
+
+Verification:
+- Static scans confirm no `RefreshWfcOutpostDependencies()` call was added to Tick drains.
+- `Select-String` still finds no rotated batch XML tag for this ID.
+- Targeted `git diff --check` reports only Git CRLF normalization warnings.
+- No `dotnet` rebuild was run.

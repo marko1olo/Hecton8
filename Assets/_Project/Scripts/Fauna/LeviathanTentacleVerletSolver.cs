@@ -948,7 +948,7 @@ namespace Hecton8.AI
             Vector3 localPointVector = target.InverseTransformPoint(new Vector3(tip.x, tip.y, tip.z));
             float3 localPoint = SanitizeFiniteInputFloat3(new float3(localPointVector.x, localPointVector.y, localPointVector.z), float3.zero);
 
-            CombatDamageSignal signal = new CombatDamageSignal
+            CombatDamageRequest signal = new CombatDamageRequest
             {
                 TargetId = targetId,
                 SourceId = DamageSourceIds.FaunaLeviathanBite,

@@ -1703,16 +1703,16 @@ namespace Hecton8.Gameplay
 
             if (_terminalRightHandActive)
             {
-                _terminalRightHandHoldTimer = math.max(0.0f, _terminalRightHandHoldTimer - safeDeltaTime);
+                _terminalRightHandHoldTimer = math.max(0.0f, SanitizeNonNegativeScalar(_terminalRightHandHoldTimer) - safeDeltaTime);
                 if (_terminalRightHandHoldTimer <= 0.0f)
                     _terminalRightHandTargetBlend = 0.0f;
             }
 
-            _terminalRightHandBlend = ContextualPhysicalIkMath.SmoothScalar(
+            _terminalRightHandBlend = SanitizeUnitScalar(ContextualPhysicalIkMath.SmoothScalar(
                 _terminalRightHandBlend,
                 _terminalRightHandActive ? _terminalRightHandTargetBlend : 0.0f,
                 terminalSnapBlendSharpness,
-                safeDeltaTime);
+                safeDeltaTime));
 
             if (_terminalRightHandActive &&
                 _terminalRightHandHoldTimer <= 0.0f &&
@@ -1757,13 +1757,13 @@ namespace Hecton8.Gameplay
         private void TickExternalSqueezePoleState(float deltaTime)
         {
             float safeDeltaTime = math.max(0.0001f, SanitizeNonNegativeScalar(deltaTime));
-            _externalSqueezePoleHoldTimer = math.max(0.0f, _externalSqueezePoleHoldTimer - safeDeltaTime);
+            _externalSqueezePoleHoldTimer = math.max(0.0f, SanitizeNonNegativeScalar(_externalSqueezePoleHoldTimer) - safeDeltaTime);
             float targetBlend = _externalSqueezePoleHoldTimer > 0.0f ? 1.0f : 0.0f;
-            _externalSqueezePoleBlend = ContextualPhysicalIkMath.SmoothScalar(
+            _externalSqueezePoleBlend = SanitizeUnitScalar(ContextualPhysicalIkMath.SmoothScalar(
                 _externalSqueezePoleBlend,
                 targetBlend,
                 predictiveRepairBlendSharpness,
-                safeDeltaTime);
+                safeDeltaTime));
         }
 
         private void ApplyExternalSqueezePoleBias()
@@ -1928,8 +1928,16 @@ namespace Hecton8.Gameplay
             }
             else
             {
-                _predictiveLeftHandBlend = ContextualPhysicalIkMath.SmoothScalar(_predictiveLeftHandBlend, 0.0f, predictiveRepairBlendSharpness, safeDeltaTime);
-                _predictiveRightHandBlend = ContextualPhysicalIkMath.SmoothScalar(_predictiveRightHandBlend, 0.0f, predictiveRepairBlendSharpness, safeDeltaTime);
+                _predictiveLeftHandBlend = SanitizeUnitScalar(ContextualPhysicalIkMath.SmoothScalar(
+                    _predictiveLeftHandBlend,
+                    0.0f,
+                    predictiveRepairBlendSharpness,
+                    safeDeltaTime));
+                _predictiveRightHandBlend = SanitizeUnitScalar(ContextualPhysicalIkMath.SmoothScalar(
+                    _predictiveRightHandBlend,
+                    0.0f,
+                    predictiveRepairBlendSharpness,
+                    safeDeltaTime));
             }
 
             ApplyExternalWallHandTargetsToPredictiveLatch(safeDeltaTime, wallTouchEnabled);
@@ -1937,13 +1945,26 @@ namespace Hecton8.Gameplay
 
         private void ApplyExternalWallHandTargetsToPredictiveLatch(float deltaTime, bool wallTouchEnabled)
         {
+            _externalWallLeftHandHoldTimer = SanitizeNonNegativeScalar(_externalWallLeftHandHoldTimer);
+            _externalWallRightHandHoldTimer = SanitizeNonNegativeScalar(_externalWallRightHandHoldTimer);
+            _externalWallLeftHandBlend = SanitizeUnitScalar(_externalWallLeftHandBlend);
+            _externalWallRightHandBlend = SanitizeUnitScalar(_externalWallRightHandBlend);
+
             bool hasExternalWallTargets =
                 _externalWallLeftHandHoldTimer > 0.0f ||
                 _externalWallRightHandHoldTimer > 0.0f;
             if (!wallTouchEnabled && !hasExternalWallTargets)
             {
-                _externalWallLeftHandBlend = ContextualPhysicalIkMath.SmoothScalar(_externalWallLeftHandBlend, 0.0f, predictiveRepairBlendSharpness, deltaTime);
-                _externalWallRightHandBlend = ContextualPhysicalIkMath.SmoothScalar(_externalWallRightHandBlend, 0.0f, predictiveRepairBlendSharpness, deltaTime);
+                _externalWallLeftHandBlend = SanitizeUnitScalar(ContextualPhysicalIkMath.SmoothScalar(
+                    _externalWallLeftHandBlend,
+                    0.0f,
+                    predictiveRepairBlendSharpness,
+                    deltaTime));
+                _externalWallRightHandBlend = SanitizeUnitScalar(ContextualPhysicalIkMath.SmoothScalar(
+                    _externalWallRightHandBlend,
+                    0.0f,
+                    predictiveRepairBlendSharpness,
+                    deltaTime));
                 _externalWallLeftHandHoldTimer = 0.0f;
                 _externalWallRightHandHoldTimer = 0.0f;
                 return;
@@ -1951,7 +1972,11 @@ namespace Hecton8.Gameplay
 
             if (_externalWallLeftHandHoldTimer <= 0.0f || !leftHandEmptyForWallTouch)
             {
-                _externalWallLeftHandBlend = ContextualPhysicalIkMath.SmoothScalar(_externalWallLeftHandBlend, 0.0f, predictiveRepairBlendSharpness, deltaTime);
+                _externalWallLeftHandBlend = SanitizeUnitScalar(ContextualPhysicalIkMath.SmoothScalar(
+                    _externalWallLeftHandBlend,
+                    0.0f,
+                    predictiveRepairBlendSharpness,
+                    deltaTime));
                 _externalWallLeftHandHoldTimer = 0.0f;
             }
             else
@@ -1967,7 +1992,11 @@ namespace Hecton8.Gameplay
 
             if (_externalWallRightHandHoldTimer <= 0.0f)
             {
-                _externalWallRightHandBlend = ContextualPhysicalIkMath.SmoothScalar(_externalWallRightHandBlend, 0.0f, predictiveRepairBlendSharpness, deltaTime);
+                _externalWallRightHandBlend = SanitizeUnitScalar(ContextualPhysicalIkMath.SmoothScalar(
+                    _externalWallRightHandBlend,
+                    0.0f,
+                    predictiveRepairBlendSharpness,
+                    deltaTime));
             }
             else
             {
@@ -1994,13 +2023,13 @@ namespace Hecton8.Gameplay
         {
             if (controllerSource == null || _predictiveRepairTarget == null || !IsFiniteVector(controllerVelocity))
             {
-                predictiveBlend = ContextualPhysicalIkMath.SmoothScalar(predictiveBlend, 0.0f, predictiveRepairBlendSharpness, deltaTime);
+                predictiveBlend = SanitizeUnitScalar(ContextualPhysicalIkMath.SmoothScalar(predictiveBlend, 0.0f, predictiveRepairBlendSharpness, deltaTime));
                 return;
             }
 
             if (!IsFiniteVector(controllerPosition))
             {
-                predictiveBlend = ContextualPhysicalIkMath.SmoothScalar(predictiveBlend, 0.0f, predictiveRepairBlendSharpness, deltaTime);
+                predictiveBlend = SanitizeUnitScalar(ContextualPhysicalIkMath.SmoothScalar(predictiveBlend, 0.0f, predictiveRepairBlendSharpness, deltaTime));
                 return;
             }
 
@@ -2019,14 +2048,14 @@ namespace Hecton8.Gameplay
             float distanceSqFloat = (float)distanceSq;
             if (!math.isfinite(distanceSqFloat) || distanceSqFloat > PredictiveRepairLatchDistanceSq)
             {
-                predictiveBlend = ContextualPhysicalIkMath.SmoothScalar(predictiveBlend, 0.0f, predictiveRepairBlendSharpness, deltaTime);
+                predictiveBlend = SanitizeUnitScalar(ContextualPhysicalIkMath.SmoothScalar(predictiveBlend, 0.0f, predictiveRepairBlendSharpness, deltaTime));
                 return;
             }
 
             float3 targetRuntime = targetAup.ToRuntimeFloat3();
             if (!math.all(math.isfinite(targetRuntime)))
             {
-                predictiveBlend = ContextualPhysicalIkMath.SmoothScalar(predictiveBlend, 0.0f, predictiveRepairBlendSharpness, deltaTime);
+                predictiveBlend = SanitizeUnitScalar(ContextualPhysicalIkMath.SmoothScalar(predictiveBlend, 0.0f, predictiveRepairBlendSharpness, deltaTime));
                 return;
             }
 

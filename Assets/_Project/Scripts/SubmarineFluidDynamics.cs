@@ -59,6 +59,7 @@ namespace Hecton8.Physics
         private const int RingBufferLength = 8;
         private const int RingBufferMask = RingBufferLength - 1;
         private const int SloshDelayFrames = 3;
+        private const int CargoMassFallbackPollFrameMask = 15;
         private const float WaterDensityKgPerCubicMeter = 1025f;
         private const float MinimumMassForReciprocal = 0.01f;
         private const float GravityMetersPerSecondSquared = 9.81f;
@@ -549,6 +550,7 @@ namespace Hecton8.Physics
         private float _cargoMassScalar;
         private float _lastResolvedCargoMassKilograms = -1f;
         private float _lastResolvedCargoScalar = -1f;
+        private int _lastCargoMassFallbackPollFrame = -1;
         private float _ballastBlowTimer;
         private float _targetBuoyancyBias01;
         private float _thrustInput01;
@@ -1273,10 +1275,13 @@ namespace Hecton8.Physics
                 return;
             }
 
-            float massKg = eventType == (ushort)InventoryEventType.EncumbranceChanged
-                ? payload.TotalMassKg
-                : GlobalRegistry.PlayerInventoryMassKg;
-            SetCargoMassScalar(massKg);
+            if (eventType == (ushort)InventoryEventType.EncumbranceChanged)
+            {
+                CommitCargoMassScalar(payload.TotalMassKg);
+                return;
+            }
+
+            RefreshCargoMassScalarFromGlobalCache(force: true);
         }
 
         /// <summary>
@@ -2541,11 +2546,22 @@ namespace Hecton8.Physics
             return math.all(math.isfinite(flow)) ? flow : float3.zero;
         }
 
-        private void RefreshCargoMassScalarFromGlobalCache()
+        private void RefreshCargoMassScalarFromGlobalCache(bool force = false)
         {
             if (!syncCargoMassFromInventoryEvents)
                 return;
 
+            int currentFrame = Time.frameCount;
+            if (!force && _lastResolvedCargoMassKilograms >= 0f)
+            {
+                if (_lastCargoMassFallbackPollFrame == currentFrame ||
+                    (currentFrame & CargoMassFallbackPollFrameMask) != 0)
+                {
+                    return;
+                }
+            }
+
+            _lastCargoMassFallbackPollFrame = currentFrame;
             float cachedMass = GlobalRegistry.PlayerInventoryMassKg;
             if (!math.isfinite(cachedMass))
                 cachedMass = 0f;
@@ -2556,7 +2572,12 @@ namespace Hecton8.Physics
                 return;
             }
 
-            SetCargoMassScalar(cachedMass);
+            CommitCargoMassScalar(cachedMass);
+        }
+
+        private void CommitCargoMassScalar(float massKg)
+        {
+            SetCargoMassScalar(massKg);
             _lastResolvedCargoMassKilograms = _totalCargoMassKilograms;
             _lastResolvedCargoScalar = _cargoMassScalar;
         }

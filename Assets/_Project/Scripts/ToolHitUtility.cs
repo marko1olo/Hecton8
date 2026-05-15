@@ -99,7 +99,7 @@ namespace Hecton8.Gameplay
 
             CombatDamageRuntime.ResolveLocalizedHit(hitCollider, out CombatWeakspotTier weakspotTier, out uint statusBits);
             Vector3 localPoint = receiverComponent.transform.InverseTransformPoint(hitPoint);
-            CombatDamageSignal signal = new CombatDamageSignal
+            CombatDamageRequest signal = new CombatDamageRequest
             {
                 TargetId = targetId,
                 SourceId = DamageSourceIds.EnvironmentHazard,

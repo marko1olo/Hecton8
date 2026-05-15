@@ -87,3 +87,12 @@ Prompt Source: in-chat XML. `Docs/Tasks/CURRENT_BATCH.md` contains no matching p
 - Confirmed current source already routes fauna fluid/submarine/encounter/beacon/decal access through cached runtime fields and bucket uniforms through cached `ISimulationBucketer`.
 - Static allocation scan found no new hot-path `new` containers, LINQ, `ToArray`, `FindObject`, coroutine, or string-format surface in the touched resonance files.
 - `HectonPhiAudit.ps1 -Summary -CoreGraphOnly` completed at `2026-05-15 03:40:33 +04:00`: source-backed bridge debt now `16`, project-reference replacement debt now `8`. No runtime/profiler proof was produced.
+
+### Loop 7 - Submarine Cargo Mass Fallback Bucketing
+
+- Re-read status/rationale before editing and stayed out of unrelated dirty save/UI/audio files.
+- Rechecked fluid/submarine runtime context caches; current source already resolves player/submarine/fluid services through cached fields with lazy missing-service fallback.
+- Reduced `SubmarineFluidDynamics` fixed-tick cargo mass fallback polling from every physics step to event-first with a 1/16 frame fallback bucket.
+- Preserved immediate inventory lane response: `EncumbranceChanged` commits payload mass directly; coarse `InventoryChanged` forces one scalar refresh because that payload carries no mass.
+- `git diff --check -- Assets/_Project/Scripts/SubmarineFluidDynamics.cs` passed; LF/CRLF warning only.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -CoreGraphOnly` completed at `2026-05-15 04:32:55 +04:00`: source-backed bridge debt `14`, compile-bridge debt `8`, project-reference replacement debt `6`. No `dotnet build` or rebuild was run.

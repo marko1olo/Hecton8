@@ -107,7 +107,7 @@ namespace Hecton8.AI
         private int _activeSegmentCount = LowTierSegments;
         private int _resolvedConstraintIterations = 1;
         private int _pendingConstraintIterations = 1;
-        private int _motionIntentFrame = -1;
+        private bool _motionIntentPending;
         private float _constraintIterationSwitchTimer;
         private float _tailWhipSecondsRemaining;
         private float _attackTelegraphBlend;
@@ -364,7 +364,7 @@ namespace Hecton8.AI
         {
             _motionIntentVelocity = SanitizeFiniteInputFloat3((float3)intendedVelocity, float3.zero);
             _motionIntentHeadTarget = SanitizeFiniteInputFloat3((float3)headTargetWorldPosition, ResolveOwnerRuntimePosition());
-            _motionIntentFrame = Time.frameCount;
+            _motionIntentPending = true;
         }
 
         internal void SetStrikeIntent(Transform target, Vector3 targetWorldPosition, bool strikeActive)
@@ -483,7 +483,7 @@ namespace Hecton8.AI
             _motionIntentHeadTarget = origin + forward * segmentLength;
             _headLookTargetWorldPosition = _motionIntentHeadTarget;
             _strikeTargetWorldPosition = _motionIntentHeadTarget;
-            _motionIntentFrame = -1;
+            _motionIntentPending = false;
             _gpuUploadDirty = true;
             _gpuBufferDataValid = false;
         }
@@ -492,8 +492,11 @@ namespace Hecton8.AI
         {
             float3 ownerPosition = ResolveOwnerRuntimePosition();
             float3 ownerForward = ResolveOwnerForward();
-            if (_motionIntentFrame == Time.frameCount)
+            if (_motionIntentPending)
+            {
+                _motionIntentPending = false;
                 return;
+            }
 
             float3 velocity = _body != null
                 ? SanitizeFiniteInputFloat3((float3)_body.linearVelocity, float3.zero)

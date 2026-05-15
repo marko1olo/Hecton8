@@ -541,7 +541,7 @@ namespace Hecton8.UI
                 State = 2,
                 Flags = 0
             });
-            PlayerSignalEvents.RaiseInteractionSignal(new InteractionSignal(
+            PlayerSignalEvents.RaiseInteractionSignal(new PlayerInteractionStressSignal(
                 safeError * 0.15f,
                 math.saturate(0.25f + safeError * 0.65f),
                 math.lerp(0.62f, 1.12f, match01),

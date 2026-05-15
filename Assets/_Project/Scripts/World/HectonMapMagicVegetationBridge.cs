@@ -2995,7 +2995,7 @@ namespace Hecton8.World
         public bool TryGetActiveAbyssalNavNodeTypePayload(out NativeArray<byte> nodeTypes, out int count)
         {
             nodeTypes = _nativeMemory.AbyssalNavNodeTypesSnapshotNative;
-            count = ResolveAbyssalNavGraphViewCount();
+            count = ResolveAbyssalNavNodeTypeViewCount();
             return count > 0 && nodeTypes.IsCreated;
         }
 

@@ -469,3 +469,35 @@ Verification:
 - No temp `*ManifestSchema*.dll` probe artifacts remain in `Temp`.
 - No `dotnet` rebuild was run.
 - Full Unity/editor/player execution remains PENDING VERIFICATION because no Unity MCP/editor session is available in this tool context.
+
+## 2026-05-15 - Event Hash Legend And Header Size Addendum
+Status: PENDING VERIFICATION
+Evidence Class: CLI_COMPILE_PLUS_STATIC_SOURCE
+
+What was wrong:
+- The manifest exposed flag bits and binary paths, but not the binary header size.
+- Event hashes in the 64-byte blackbox entries still required source lookup.
+
+What was done:
+- Bumped `ResultSchemaVersion` to 6.
+- Added `BlackboxHeaderSizeBytes=16`.
+- Runtime and fallback result artifacts now write `blackboxHeaderSizeBytes`.
+- Manifest now writes event hash legend fields for frame, success, job stall, NaN poisoning, native leak, allocation denial, timeout, AUP shift, ecosystem stress, and DataVault API gap.
+
+Cinematic Cheats used:
+- None. This is postmortem artifact decoding hygiene only.
+
+Exact Microseconds saved:
+- Hot path: 0 us; only constants and terminal manifest/result writes changed.
+- Binary ring stays 300 entries x 64 bytes.
+- Avoided source lookup for event hash decoding: estimated 1000000+ us saved per dump review.
+
+Verification:
+- Focused static audit: PASS for both Race Condition Hunter files; no scene search, component lookup, LINQ, coroutine, `Task<`, `.Complete()`, explicit GC, reflection, managed collection creation, `string.Format`, or `Substring` parser usage.
+- Scoped source counts: `ResultSchemaVersion6=2`, `BlackboxHeaderSizeBytes=5`, `EventHashLegendFields=10`, `GlobalRegistryDot=13`.
+- Runtime isolated Unity compiler probe: PASS via Unity Mono/Roslyn with UnityJIT facades, Unity modules, current `Library/ScriptAssemblies`, and `Assembly-CSharp.dll`.
+- Editor runner isolated Unity compiler probe: PASS via Unity Mono/Roslyn with UnityEngine/UnityEditor facade references and `UNITY_EDITOR` defined.
+- `git diff --check`: PASS for whitespace on the QA runner, editor runner, and owned status/rationale/log files; Git emitted LF-to-CRLF normalization warnings only.
+- No temp `*EventLegend*.dll` probe artifacts remain in `Temp`.
+- No `dotnet` rebuild was run.
+- Full Unity/editor/player execution remains PENDING VERIFICATION because no Unity MCP/editor session is available in this tool context.

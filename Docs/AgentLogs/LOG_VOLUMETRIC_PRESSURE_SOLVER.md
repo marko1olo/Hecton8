@@ -432,9 +432,20 @@ Follow-up upgrade 44:
 - What was wrong: UberNoir dynamic hull bending still used raw `positionWS` in buckling and final fallback after radius-mask sanitation.
 - What was done: sanitized `positionWS` once into `safePositionWS` and reused it for crush/habitat radius masks, buckling mask, and final output fallback.
 - Cinematic cheat used: non-finite vertex position becomes deterministic safe fallback instead of attempting to preserve a corrupt deformation.
-- Static checks: `rg` confirms `safePositionWS` drives radius masks, buckling mask, and final fallback.
+- Static checks: `rg` confirms `safePositionWS` drives radius masks, buckling mask, and final fallback; exact shader `normalize()`/`sqrt()` scan produced no matches; managed-offender scan remains clean; mesh mutation scan found no owned `Mesh.vertices` writes; touched shader/doc braces are balanced; `git diff --check` reports only CRLF normalization warnings.
 - Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction.
 
 Exact microseconds saved after follow-up 44:
 - Fault frames avoid NaN buckling/displacement propagation.
 - Valid-frame overhead is one vector finite sanitize in the non-low bend path, below the existing bending ALU budget.
+
+Follow-up upgrade 45:
+- What was wrong: UberNoir dynamic hull bending still trusted bend feature/strength, crush depth/current/displacement, buckling grid scale, and instance seed after the position and habitat-scalar gates.
+- What was done: added finite gates for those scalar lanes, rechecked computed crush/habitat displacement after multiplication, re-sanitized buckling `stablePosition` after grid scaling, skipped crush radius-mask evaluation when crush displacement is zero, and zeroed final displacement if it becomes non-finite.
+- Cinematic cheat used: invalid scalar pressure inputs collapse to no-op contribution while valid crush/habitat bending keeps the same visual fake.
+- Static checks: `rg` confirms `gridScaleSource`, `safeInstanceSeed`, `featureSource`, crush scalar gates, computed crush/habitat displacement finite gates, zero-crush radius-mask branch, and final displacement finite gate are wired; exact shader `normalize()`/`sqrt()` scan produced no matches; managed-offender scan remains clean; mesh mutation scan found no owned `Mesh.vertices` writes; touched shader/doc braces are balanced; `git diff --check` reports only CRLF normalization warnings.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction.
+
+Exact microseconds saved after follow-up 45:
+- Calm-crush states skip one radius-mask evaluation per UberNoir vertex.
+- Estimated 1-4 us saved per 1k affected UberNoir vertices on MX350-class GPUs; active-crush valid-frame overhead is scalar finite checks inside the already-active bending path.

@@ -227,9 +227,18 @@ State: PENDING VERIFICATION
 - [x] Re-ran source-only audits. DOD: targeted scan confirms no `GlobalSignals.Publish`, no blackbox modulo, no raw descriptor `math.max`, two descriptor scalar sanitizers, and `StructLayoutAttributes=8` across owned WFC outpost/logistics files; `HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json` passed with `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`; `git diff --check` passed with repository CRLF warnings only. Alternative rejected: `dotnet` rebuild, forbidden by user. Estimate: verification only.
 - [ ] Compile proof [NOT RUN BY USER REQUEST]. DOD: no `dotnet` rebuild or response-file compile was executed in Loop 29. Alternative rejected: violating explicit "do not make dotnet rebuilds". Estimate: no runtime cost.
 
+### Loop 30 - WFC Grid Registry Descriptor Gate
+
+- [x] Re-read persisted state and re-extracted the current batch marker before work. DOD: `CURRENT_BATCH.md` still contains other agents only, so disk state remains authoritative. Alternative rejected: acting from chat memory. Estimate: disk/source audit only.
+- [x] Hardened fixed-slot WFC grid registry ingress. DOD: `RegisterGrid` now rejects invalid descriptors before copying native bytes: zero sector, zero generation, zero/oversized cell count, invalid/out-of-contract dimensions, non-finite AUP local offsets, and non-finite or sub-meter cell/floor metrics. Alternative rejected: relying on downstream graph translation to catch every bad registry payload. Estimate: cold registry handoff only.
+- [x] Prevented stale handle exposure during slot reuse. DOD: the target slot handle and descriptor are cleared before byte copy and new handle publication, so an overwritten slot cannot present old metadata during the handoff. Alternative rejected: keeping the old handle live until the new descriptor is ready. Estimate: two scalar assignments on cold publish.
+- [x] Added explicit size proof to WFC grid contracts. DOD: `WfcOutpostGridDescriptor` now has `Size = 96`; `WfcOutpostPowerNode` now has `Size = 40`. Alternative rejected: implicit sequential padding across native/logistics boundaries. Estimate: metadata-only runtime impact.
+- [x] Re-ran source-only audits. DOD: targeted scan confirms registry descriptor gate, explicit size layouts, no `GlobalSignals.Publish`, no blackbox modulo, scoped `StructLayoutAttributes=10`, `ExplicitSizeLayouts=6`; `HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json` passed with `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`; `git diff --check` passed with repository CRLF warnings only. Alternative rejected: `dotnet` rebuild, forbidden by user. Estimate: verification only.
+- [ ] Compile proof [NOT RUN BY USER REQUEST]. DOD: no `dotnet` rebuild or response-file compile was executed in Loop 30. Alternative rejected: violating explicit "do not make dotnet rebuilds". Estimate: no runtime cost.
+
 ## Verification Ledger
 
-- Compile status: NOT RUN IN LOOP 29 BY USER REQUEST / PRIOR BLOCKER STILL RECORDED. Last attempted compile path could not resolve `Hecton8.Core.ref.dll`; Core rebuild failed in `SaveMasterHashV10.cs(237,26)` on missing `xxHash3`, outside Habitat/Outposts ownership.
+- Compile status: NOT RUN IN LOOP 30 BY USER REQUEST / PRIOR BLOCKER STILL RECORDED. Last attempted compile path could not resolve `Hecton8.Core.ref.dll`; Core rebuild failed in `SaveMasterHashV10.cs(237,26)` on missing `xxHash3`, outside Habitat/Outposts ownership.
 - Unity Console status: MCP unavailable; console/scene validation not accessible from this session.
 - GC proof: code audit only; hot Tick/Render path uses spans/native buffers and no LINQ/managed allocation.
 - Frame/VRAM proof: static estimate only; runtime profiling blocked by Unity MCP transport failure; no console/profiler capture is available from this session.

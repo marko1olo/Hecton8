@@ -619,7 +619,8 @@ namespace Hecton8.Gameplay
                 SourceHash = WfcOutpostDatapadSourceHash,
                 Flags = 0
             };
-            GlobalSignals.Publish(in signal);
+            GlobalSignals.InitializeAllQueues();
+            SignalBus<WfcOutpostStateChangedSignal>.Push(in signal);
         }
 
         private void UpdatePendingMessage()

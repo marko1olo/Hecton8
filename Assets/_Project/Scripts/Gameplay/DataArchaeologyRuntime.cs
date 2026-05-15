@@ -1381,7 +1381,7 @@ namespace Hecton8.Gameplay
                 return;
 
             float intensity = math.saturate(result.Match01);
-            PlayerSignalEvents.RaiseInteractionSignal(new InteractionSignal(
+            PlayerSignalEvents.RaiseInteractionSignal(new PlayerInteractionStressSignal(
                 0f,
                 intensity,
                 result.FeedbackPitchScale,

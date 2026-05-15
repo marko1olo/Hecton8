@@ -382,9 +382,9 @@ Hardware Impact: MX350 avoids repeated Burst execution over cleared trailing slo
 
 ## Decision 30 - Continued Dotnet Process Hygiene
 
-Problem: The user forbids dotnet rebuilds, but an external PowerShell wrapper spawned `dotnet build Hecton8.Core.csproj` again during static verification hygiene.
+Problem: The user forbids dotnet rebuilds, but an external PowerShell wrapper spawned `dotnet build Hecton8.Core.csproj` again during static verification hygiene and respawned it once more during final state reads.
 
-Solution: Inspect the dotnet process and its parent command, stop both the build process and parent wrapper, and rerun process inspection before final reporting.
+Solution: Inspect the dotnet process and its parent command, stop both the build process and parent wrapper each time they appear, and rerun process inspection before final reporting.
 
 Rejected Alternatives: Allowing the process to finish was rejected because it violates the active user constraint and contaminates verification evidence. Starting a replacement build was rejected for the same reason.
 

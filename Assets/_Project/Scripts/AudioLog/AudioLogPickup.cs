@@ -264,7 +264,8 @@ namespace Hecton8.Narrative
                 SourceHash = WfcOutpostDatapadSourceHash,
                 Flags = 0
             };
-            GlobalSignals.Publish(in signal);
+            GlobalSignals.InitializeAllQueues();
+            SignalBus<WfcOutpostStateChangedSignal>.Push(in signal);
         }
 
 #if UNITY_EDITOR

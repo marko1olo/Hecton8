@@ -172,3 +172,15 @@ Rejected Alternatives: Running `dotnet build` violated the user order. Moving ec
 Scalability potential: Low/Middle avoid repeated service lookup in swarm budget refresh. High/Ultra keep the same ecosystem-driven population fidelity without extra hot-path registry traffic.
 
 Hardware Impact: Estimated 1-4 microseconds saved during Sargassum population refresh on low-end silicon; 0 managed allocations added.
+
+## Decision 13 - Submarine Cargo Mass Fallback Bucketing
+
+Problem: `SubmarineFluidDynamics.FixedTick()` still called `RefreshCargoMassScalarFromGlobalCache()` every physics step, and that fallback read `GlobalRegistry.PlayerInventoryMassKg` even though the inventory system already publishes a queued event lane.
+
+Solution: Keep the event lane authoritative. `EncumbranceChanged` now commits the payload mass directly, `InventoryChanged` forces one compatibility refresh because the coarse payload carries no mass, and the fixed-tick global fallback is limited to one out of sixteen frames after initial sync.
+
+Rejected Alternatives: Removing the fallback entirely would break cargo mass if an inventory producer emits only coarse `InventoryChanged`. Polling `PlayerInventory` directly would reintroduce a concrete cross-domain dependency. Moving submarine cargo math into inventory would violate physics ownership.
+
+Scalability potential: Low/Middle reduce global scalar traffic during submarine physics. High/Ultra keep full cargo buoyancy fidelity on event delivery and still have a bounded safety poll if an event is missed.
+
+Hardware Impact: Estimated 1-3 microseconds saved per active submarine physics frame on i3/MX350 class hardware when inventory mass is stable; 0 managed allocations added.

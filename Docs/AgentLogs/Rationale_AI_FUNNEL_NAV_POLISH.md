@@ -273,3 +273,9 @@ Solution: Route `EcosystemFlowField` through complete square-grid and finite-met
 Rejected Alternatives: Removing direct native properties was rejected because existing consumers may use them as low-overhead read-only views. Returning raw buffers with separate unclamped counts was rejected because it exports stale state across the navigation boundary.
 Scalability potential: Low/MX350 avoids invalid native reads and steering work from stale snapshots. Middle keeps current valid-data behavior. High/Ultra can keep direct native readback without adding managed copies.
 Hardware Impact: Adds only scalar count clamps and created checks at property access. Expected gain is fault avoidance and lower recovery pressure rather than measurable throughput until runtime profiling is available.
+
+Problem: The node-type payload getter could export `_abyssalNavNodeCount` directly and either overrun a shorter node-type array or become over-strict if reused through the full nav-graph conduit count clamp.
+Solution: Add `ResolveAbyssalNavNodeTypeViewCount`, clamping node-type payload count to the proven node snapshot count and the node-type native length, while keeping conduit-vector/strength requirements only in the full nav-graph/conduit payload getters.
+Rejected Alternatives: Reusing the full graph clamp for node types was rejected because node classifications should not fail just because conduit metadata is unavailable. Keeping `_abyssalNavNodeCount` was rejected because stale counts are exactly the boundary fault this pass is removing.
+Scalability potential: Low/MX350 gets cheap fail-closed payload counts without extra copies. Middle/High/Ultra keep direct native readback while preserving node classification availability independent from conduit polish data.
+Hardware Impact: Adds one native length clamp at payload access; expected gain is avoidance of invalid indexed reads and recovery churn, not measurable throughput until profiler capture.

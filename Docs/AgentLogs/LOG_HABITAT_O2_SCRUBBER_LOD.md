@@ -270,7 +270,7 @@ What was wrong:
 - Several base hibernation methods checked `BaseAwakeState` but then indexed other base SOA lanes that are separate native buffers.
 
 What was done:
-- Added `AreBaseStateLanesReady`.
+- Added length-aware `AreBaseStateLanesReady`.
 - Base snapshots, configuration, signal drain, player-inside writes, hibernation scans, and wake/sleep transitions now fail closed unless the full base lane set exists.
 
 Cinematic Cheats used:

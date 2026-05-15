@@ -503,3 +503,29 @@ Solution: Verification stayed source-only: targeted descriptor scan, WFC power/o
 Rejected Alternatives: Running response-file compiles through `dotnet` was rejected because it violates the active user instruction.
 Scalability potential: Static logistics handoff proof improved without changing graph capacity, signal lane count, or render path.
 Hardware Impact: Verification only. Core graph summary still reports `CoreAsmdefDebtReferenceCount=25` and `GeneratedProjectDebtReferenceCount=10`, both project-level debts outside this outpost edit.
+
+## LOOP 30 WFC GRID REGISTRY DESCRIPTOR GATE
+
+Problem: `WfcOutpostGridRegistry.RegisterGrid` copied native WFC bytes into fixed slots before proving the descriptor was a valid outpost payload. A bad caller could register zero-sector, zero-generation, oversized dimension, non-finite AUP-local, or NaN scalar metadata and leave downstream graph translation as the only safety net.
+Solution: Add `IsValidDescriptor(in descriptor)` and reject invalid sector/generation/cell count, dimensions outside `FullWidth/FullHeight/FullDepth`, descriptor cell count above expected dimensions, non-finite local AUP offsets, and non-finite or sub-meter cell/floor metrics before any slot mutation.
+Rejected Alternatives: Only hardening `WfcOutpostGraphTranslationJob` was rejected because the registry is the cross-domain handoff boundary and should not store invalid public payloads. Clamping registry descriptors was rejected because it would hide bad generation ownership data.
+Scalability potential: Low/Middle/High/Ultra all receive the same fail-closed registry semantics. Cheap devices avoid copying invalid grids and scheduling graph work; high-end devices retain full WFC topology when the descriptor is sane.
+Hardware Impact: Cold handoff only: a few scalar/vector finite checks and one expected-count multiply. Estimated below 0.1 us per outpost registration on i3/MX350; no steady Tick/Render cost.
+
+Problem: Fixed-slot reuse kept the old handle/descriptor live until after byte copy and new handle assignment.
+Solution: Clear `_handles[slot]` and `_descriptors[slot]` before copying the new grid into the selected slot.
+Rejected Alternatives: Keeping the old handle live through mutation was rejected because a stale lease can represent mismatched metadata if any consumer queries during handoff. Allocating new per-registration slot storage was rejected because the fixed 4-slot registry is the intended bounded memory shape.
+Scalability potential: All tiers retain four fixed registry slots and deterministic overwrite behavior. Slot reuse now has cleaner ownership handoff without increasing memory.
+Hardware Impact: Two scalar assignments on cold publish. No extra native memory, no new registry surface, no signal traffic.
+
+Problem: `WfcOutpostGridDescriptor` and `WfcOutpostPowerNode` had sequential layout but no explicit byte-size proof.
+Solution: Add explicit sizes: 96 bytes for `WfcOutpostGridDescriptor`, 40 bytes for `WfcOutpostPowerNode`.
+Rejected Alternatives: Relying on implicit sequential padding was rejected because these payloads cross native/logistics boundaries and H-Phi rewards explicit binary shape.
+Scalability potential: Same payloads across all tiers; stronger layout evidence without runtime work.
+Hardware Impact: Metadata-only runtime impact.
+
+Problem: The active instruction still forbids dotnet rebuilds.
+Solution: Verification stayed source-only: targeted registry descriptor scan, scoped WFC H-Phi counts, `git diff --check`, and `HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`.
+Rejected Alternatives: Running response-file compiles through `dotnet` was rejected because it violates the active user instruction.
+Scalability potential: Static registry handoff proof improved without changing graph capacity, render path, or signal lane count.
+Hardware Impact: Verification only. Core graph summary still reports `CoreAsmdefDebtReferenceCount=25` and `GeneratedProjectDebtReferenceCount=10`, both project-level debts outside this outpost edit.

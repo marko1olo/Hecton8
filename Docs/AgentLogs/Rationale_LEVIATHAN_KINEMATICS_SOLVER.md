@@ -292,3 +292,11 @@ Solution: Delete the unused legacy `.cs` and matching `.meta` together after ver
 Rejected Alternatives: Leaving the file as "unused" was rejected because dead components with forbidden dependencies keep architectural drift alive and can be rebound accidentally by parallel work. Porting the legacy class to the new API was rejected because `FaunaKinematicsRuntime` is already the domain owner.
 Scalability potential: Low/MX350/high/ultra runtime behavior is unchanged through the active path. The cleanup removes a fallback route that could reintroduce CPU skinning/transform writeback instead of the eight-to-twenty matrix GPU deformation contract.
 Hardware Impact: No runtime microsecond savings are claimed because no references were found. The hardware gain is risk removal: no accidental Animator/SkinnedMeshRenderer presentation path for Leviathan on i3/MX350-class hardware.
+
+## Decision 30: Motion Intent Freshness Without Unity Frame Globals
+
+Problem: `FaunaKinematicsRuntime` used `Time.frameCount` to decide whether `FaunaBrain` had supplied motion intent for the current frame. That creates a subtle ordering dependency between dispatcher phases and Unity's rendered-frame counter: intent published after the IK runtime tick can be overwritten by fallback velocity on the next solver tick.
+Solution: Replace the integer frame marker with `_motionIntentPending`. `SetMotionIntent()` marks pending intent, `CaptureFallbackMotionIntent()` consumes it once, and `SeedSpineFromOwner()` clears it during lifecycle reseed.
+Rejected Alternatives: Passing frame indices through `SetMotionIntent()` was rejected because it widens the internal call contract and still couples the runtime to external frame bookkeeping. Keeping `Time.frameCount` was rejected because dispatcher cadence, not Unity frame equality, is the authoritative update boundary.
+Scalability potential: Low/MX350/high/ultra behavior is unchanged for valid ordering. All tiers now tolerate intent publication on either side of the runtime tick without losing the next solver input; high/ultra keep smoother body pursuit because authored intent is not discarded by frame-count drift.
+Hardware Impact: No profiler-backed saving is claimed. The change replaces one `int` field with one `bool` and removes two Unity frame-global reads from the IK runtime hot/caller path.

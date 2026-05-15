@@ -276,7 +276,7 @@ namespace Hecton8.Atmosphere
         public bool TryGetRoomSnapshot(int roomId, out GasRoomSnapshot snapshot)
         {
             snapshot = default;
-            if (_stepRunning || !RoomO2.IsCreated || roomId < 0 || roomId >= _roomCount)
+            if (_stepRunning || roomId < 0 || roomId >= _roomCount || !AreRoomStateLanesReady(roomId + 1))
                 return false;
 
             float oxygen = FiniteNonNegativeOrZero(RoomO2[roomId]);
@@ -330,7 +330,7 @@ namespace Hecton8.Atmosphere
             float ambientPressureKPa,
             ushort flags)
         {
-            if (_stepRunning || !RoomO2.IsCreated || roomId < 0 || roomId >= RoomO2.Length)
+            if (_stepRunning || roomId < 0 || !AreRoomStateLanesReady(roomId + 1))
                 return false;
 
             oxygenKPa = FiniteNonNegativeOrZero(oxygenKPa);
@@ -438,8 +438,13 @@ namespace Hecton8.Atmosphere
 
         public bool TrySetBulkhead(int edgeIndex, int roomA, int roomB, bool sealedBulkhead)
         {
-            if (_stepRunning || !_bulkheadRoomA.IsCreated || edgeIndex < 0 || edgeIndex >= _bulkheadCapacityLimit)
+            if (_stepRunning ||
+                edgeIndex < 0 ||
+                edgeIndex >= _bulkheadCapacityLimit ||
+                !AreBulkheadLanesReady(edgeIndex + 1))
+            {
                 return false;
+            }
 
             if (roomA < 0 || roomB < 0 || roomA >= _roomCount || roomB >= _roomCount || roomA == roomB)
                 return false;
@@ -454,7 +459,7 @@ namespace Hecton8.Atmosphere
 
         public bool TrySetPlayerRoom(int roomId, float playerStress01, float heartRateBpm)
         {
-            if (_stepRunning || !RoomO2.IsCreated)
+            if (_stepRunning || !AreRoomStateLanesReady(_roomCount))
                 return false;
 
             if (roomId >= _roomCount)
@@ -482,16 +487,13 @@ namespace Hecton8.Atmosphere
         public bool TryApplyPlayerRoomCarbonDioxideEquivalentPressure(float carbonDioxideKPa)
         {
             if (_stepRunning ||
-                !RoomO2.IsCreated ||
-                !RoomCO2.IsCreated ||
-                !RoomPressure.IsCreated ||
-                !_roomCO2Back.IsCreated ||
-                !_roomPressureBack.IsCreated ||
                 _roomCount <= 0)
+            {
                 return false;
+            }
 
             int roomId = _activePlayerRoom >= 0 ? _activePlayerRoom : 0;
-            if ((uint)roomId >= (uint)_roomCount)
+            if ((uint)roomId >= (uint)_roomCount || !AreRoomStateLanesReady(roomId + 1))
                 return false;
 
             float targetCarbonDioxide = StandardCarbonDioxideKPa + FiniteNonNegativeOrZero(carbonDioxideKPa);
@@ -509,7 +511,7 @@ namespace Hecton8.Atmosphere
 
         public bool TrySetRoomFlags(int roomId, ushort setMask, ushort clearMask)
         {
-            if (_stepRunning || !_roomFlags.IsCreated || roomId < 0 || roomId >= _roomCount)
+            if (_stepRunning || roomId < 0 || roomId >= _roomCount || !AreRoomStateLanesReady(roomId + 1))
                 return false;
 
             ushort flags = (ushort)((_roomFlags[roomId] | setMask) & ~clearMask);
@@ -521,7 +523,7 @@ namespace Hecton8.Atmosphere
 
         public bool TrySetRoomSubmergedFraction(int roomId, float submerged01)
         {
-            if (_stepRunning || !_roomSubmerged01.IsCreated || roomId < 0 || roomId >= _roomCount)
+            if (_stepRunning || roomId < 0 || roomId >= _roomCount || !AreRoomStateLanesReady(roomId + 1))
                 return false;
 
             _roomSubmerged01[roomId] = FiniteSaturate01(submerged01);
@@ -530,7 +532,7 @@ namespace Hecton8.Atmosphere
 
         public bool TrySetAmbientPressure(int roomId, float ambientPressureKPa)
         {
-            if (_stepRunning || !_roomAmbientPressure.IsCreated || roomId < 0 || roomId >= _roomCount)
+            if (_stepRunning || roomId < 0 || roomId >= _roomCount || !AreRoomStateLanesReady(roomId + 1))
                 return false;
 
             _roomAmbientPressure[roomId] = FiniteNonNegativeOrZero(ambientPressureKPa);
@@ -539,7 +541,7 @@ namespace Hecton8.Atmosphere
 
         public bool TrySetScrubberPowered(int roomId, bool powerActive)
         {
-            if (_stepRunning || !_roomScrubberPowered.IsCreated || roomId < 0 || roomId >= _roomCount)
+            if (_stepRunning || roomId < 0 || roomId >= _roomCount || !AreRoomStateLanesReady(roomId + 1))
                 return false;
 
             _roomScrubberPowered[roomId] = (byte)(powerActive ? 1 : 0);
@@ -548,7 +550,7 @@ namespace Hecton8.Atmosphere
 
         public bool TrySetRoomTemperatureCelsius(int roomId, float temperatureCelsius)
         {
-            if (_stepRunning || !_roomTemperatureCelsius.IsCreated || roomId < 0 || roomId >= _roomCount)
+            if (_stepRunning || roomId < 0 || roomId >= _roomCount || !AreRoomStateLanesReady(roomId + 1))
                 return false;
 
             _roomTemperatureCelsius[roomId] = math.isfinite(temperatureCelsius)

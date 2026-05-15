@@ -979,6 +979,7 @@ namespace Hecton8.SaveSystem
             }
 
             _wfcOutpostGrid = wfcGrid;
+            _wfcOutpostDependenciesReady = TryResolveWfcOutpostMacroDatabase(out _) && _dataVault != null;
             return true;
         }
 

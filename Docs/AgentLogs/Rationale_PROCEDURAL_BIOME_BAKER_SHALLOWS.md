@@ -439,3 +439,31 @@ Scalability potential: Low/MX350 gets guaranteed complete LOD triplets with no r
 Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no missing or duplicated LOD mesh slot can force runtime fallback, renderer mutation, or diagnostic ambiguity on i3/MX350. Exact runtime microseconds are not profiled because this is editor validation.
 
 Verification: No dotnet rebuild and no Unity import was run. `MeshLodIndexContractYamlScan Count=600 Bad=0`. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs` with only the repo CRLF warning. Source scans found `MeshLodIndexScratch`, `ValidateMeshLodIndexContract`, `TryParseMeshLodStem`, `Array.Clear(MeshLodIndexScratch`, and `mesh LOD index completeness contract failed`; source brace count remained balanced and `NonAscii=0`. Case-sensitive forbidden source scan found no `Shader.Find`, `mesh.colors`, `renderer.sharedMaterial`, `.material`, `Update`, `LateUpdate`, `FixedUpdate`, `Regex`, `HashSet<`, or `OrderBy` hits.
+
+## Decision 32 - Renderer Serialized State Contract
+
+Problem: Renderer validation rejected disabled renderers, shadow casting, received shadows, motion vectors, probe usage, dynamic occludee state, material-slot drift, static editor flags, and transform drift. It still did not lock several serialized renderer fields that can affect visibility, render ordering, or hidden lighting/probe hookups: static shadow caster, rendering layer mask, renderer priority, probe anchor, LPPV override, sorting layer, and sorting order.
+
+Solution: Add `ValidateRendererSerializedStateContract` and serialized property helpers. The validator now requires `m_StaticShadowCaster=0`, `m_RenderingLayerMask=1`, `m_RendererPriority=0`, null `m_ProbeAnchor`, null `m_LightProbeVolumeOverride`, `m_SortingLayerID=0`, `m_SortingLayer=0`, and `m_SortingOrder=0` for every Shallows MeshRenderer. It also rejects `renderer.forceRenderingOff`.
+
+Rejected Alternatives: Runtime renderer repair was rejected because Shallows flora/rocks are static MeshRenderer-owned assets intended for GPU Resident Drawer ownership. Relying only on public high-level flags was rejected because the remaining risk was serialized prefab drift. Adding custom render layers was rejected because this batch has no cross-domain lighting or visor ownership justification.
+
+Scalability potential: Low/MX350 gets deterministic render-layer and ordering state with no surprise camera exclusion, priority sorting, or probe hookups. Middle/High/Ultra can raise density or visual tier while renderer state remains stable and batcher-friendly.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no hidden renderer serialized state can force runtime fix-up, unexpected render-layer filtering, or probe work on i3/MX350. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: No dotnet rebuild and no Unity import was run. `RendererSerializedStateYamlScan Renderers=600 Bad=0`. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs` with only the repo CRLF warning. Source scans found `ValidateRendererSerializedStateContract`, `SerializedIntEquals`, `SerializedObjectReferenceIsNull`, `m_RenderingLayerMask`, `m_RendererPriority`, `m_ProbeAnchor`, and `m_LightProbeVolumeOverride`; source brace count remained balanced and `NonAscii=0`. Case-sensitive forbidden source scan found no `Shader.Find`, `mesh.colors`, `renderer.sharedMaterial`, `.material`, `Update`, `LateUpdate`, `FixedUpdate`, `Regex`, `HashSet<`, or `OrderBy` hits.
+
+## Decision 33 - Shader Pass Budget Contract
+
+Problem: The shared Shallows material shader source was validated for opaque queue, instancing, LOD fade, material CBUFFER, and forbidden blend states. It did not explicitly lock the number and identity of shader passes. A future shader edit could add an extra pass, `UsePass`, `GrabPass`, or `Fallback` and increase draw/SetPass risk while material and renderer contracts still passed.
+
+Solution: Add `ValidateShaderPassBudget` to the shader source contract. The validator now requires exactly two explicit line-start `Pass` blocks, zero `UsePass`, zero `GrabPass`, zero `Fallback`, and the expected `ForwardLit`/`UniversalForward` plus `ShadowCaster`/`ShadowCaster` identities. `CountShaderLineToken` uses direct line scanning rather than regex.
+
+Rejected Alternatives: Relying only on `renderer.shadowCastingMode=Off` was rejected because shader-source pass drift is still render debt and can become active if renderer state changes. Removing the ShadowCaster pass was rejected because that is a shader asset design change outside this validator pass; current renderer assets disable shadow casting, so the cost path remains closed. Regex parsing was rejected because direct token scanning is simpler and avoids adding a regex dependency to the validator source.
+
+Scalability potential: Low/MX350 keeps the Shallows shader pass footprint bounded and auditable. Middle/High/Ultra can add richer visuals only by explicitly changing this pass budget contract and the rationale, not by silent shader-source drift.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no extra shader pass, inherited pass, grab pass, or fallback can silently inflate draw/SetPass work on i3/MX350. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: No dotnet rebuild and no Unity import was run. `ShaderPassBudgetScan Pass=2 UsePass=0 GrabPass=0 Fallback=0 Forward=True Shadow=True`. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs` with only the repo CRLF warning. Source scans found `ValidateShaderPassBudget` and `CountShaderLineToken`; source brace count remained balanced with `Delta=0`, `NonAscii=0`, and no literal brace char remained. Case-sensitive forbidden source scan remained clean.

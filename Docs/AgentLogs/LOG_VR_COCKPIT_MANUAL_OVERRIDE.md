@@ -361,3 +361,15 @@ Cinematic Cheats used: no simulation change. This preserves the existing cheap p
 Exact microseconds saved/spent: 0 us active-frame cost. Cold teardown pays an idempotent fixed-bucket scan and prevents permanent stale receiver slots or stray UI ticks.
 
 Verification: `git diff --check` passed for `PhysicalPanelButton.cs` and `PhysicalSnapSwitch.cs`. Scoped counter reports `PanelReceiverCachedUnregister=1`, `SwitchReceiverCachedUnregister=1`, `PanelFlagGatedUpdatableUnregister=0`, `SwitchFlagGatedUpdatableUnregister=0`, `PanelUnregisterUpdatable=1`, `SwitchUnregisterUpdatable=1`. `CURRENT_BATCH.md` extraction still returns no matching prompt block. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - Receiver Rebind Identity Repair
+
+What was wrong: receiver registration still treated `_receiverRegistered` as authoritative. If that flag drifted false while `_registeredActivationVolume` still pointed at an old collider, registering a new activation volume could overwrite the cache and leave the old collider in `PhysicalHandReceiverRegistry`.
+
+What was done: manual override levers, physical panel buttons, and snap switches now inspect cached collider identity during registration. Same live collider fast-returns; stale cached identity is unregistered before the new activation volume is written.
+
+Cinematic Cheats used: no simulation change. This is lifecycle table hygiene for the existing zero-GC physical cockpit controls.
+
+Exact microseconds saved/spent: 0 us active-frame cost. Cold registration adds a cached-reference check and pays one idempotent unregister only on drift.
+
+Verification: `git diff --check` passed for the three receiver files. Scoped counter reports `LeverRegisterAllowsIdentityRepair=1`, `LeverSameColliderFastReturn=1`, `PanelRegisterRepairsCachedVolume=1`, `SwitchRegisterRepairsCachedVolume=1`, `OldLeverEarlyRegisteredGuard=0`, `OldPanelRegisteredOnlyBlock=0`, `OldSwitchRegisteredOnlyBlock=0`. `CURRENT_BATCH.md` extraction still returns no matching prompt block. No dotnet rebuild/probe was run by user instruction.

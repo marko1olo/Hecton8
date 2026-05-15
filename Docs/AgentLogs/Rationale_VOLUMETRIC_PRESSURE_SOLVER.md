@@ -425,3 +425,11 @@ Solution: Sanitized `positionWS` once to `safePositionWS` at the non-low bending
 Rejected Alternatives: Sanitizing only the final output, or repeating finite checks in each mask call. Final-only sanitation still burns NaN intermediate work; repeated checks duplicate policy and cost.
 Scalability potential: Low/MX350 remains bypassed. High/Ultra dynamic hull bending keeps full valid visuals while non-finite input becomes deterministic zero-origin fallback instead of NaN output.
 Hardware Impact: Adds one vector finite sanitize in the non-low bend path and removes repeated risk downstream. Fault frames avoid NaN buckling/displacement; valid-frame cost is negligible versus existing bending ALU.
+
+## Follow-Up Correction - UberNoir Dynamic Scalar Gates
+
+Problem: UberNoir dynamic hull bending still trusted bend feature/strength, crush depth/current/displacement, buckling grid scale, and instance seed. A non-finite scalar in those lanes could keep radius-mask work alive or poison buckle/displacement math after the habitat-specific gates.
+Solution: Added finite gates for bend feature, local strength, crush depth/current/displacement, buckling grid scale, and instance seed. Computed crush/habitat displacement values are rechecked after multiplication, crush radius-mask evaluation now runs only when crush displacement is positive, `stablePosition` is re-sanitized after grid scaling, and final displacement is zeroed when non-finite.
+Rejected Alternatives: Relying on final output sanitation, clamping every shared helper globally, or removing the crush contribution. Final-only sanitation wastes NaN intermediate work; global helper clamps would tax unrelated fragment paths; removing crush contribution breaks vehicle pressure visuals.
+Scalability potential: Low/MX350 remains bypassed by `_MATH_LOD_LOW` and spends no extra ALU. Mid/High/Ultra keep full valid dynamic hull bending while malformed scalar globals degrade to deterministic no-op contribution.
+Hardware Impact: Saves one crush radius-mask evaluation whenever crush displacement is zero and prevents fault-frame NaN propagation through buckle/displacement math. Estimated 1-4 us saved per 1k affected UberNoir vertices on MX350-class GPUs in calm-crush states; valid active-crush overhead is scalar finite checks inside the already-active bending path.

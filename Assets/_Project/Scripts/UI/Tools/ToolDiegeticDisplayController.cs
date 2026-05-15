@@ -415,16 +415,16 @@ namespace Hecton8.UI.Tools
                 _renderRequested = true;
             }
 
-            ApplyGlobalFloat(_ToolHeat01Id, _heat01, ref _appliedHeat01);
-            ApplyGlobalFloat(_ToolBattery01Id, _battery01, ref _appliedBattery01);
-            ApplyGlobalFloat(_ToolBatteryNormalizedId, _battery01, ref _appliedVisorBatteryNormalized);
-            ApplyGlobalFloat(_ToolDistanceMetersId, _distanceMeters, ref _appliedDistanceMeters);
-            ApplyGlobalFloat(_ToolAmmoUnitsId, ammoBucket, ref _appliedAmmoUnits);
             float criticalFlash = _heat01 > 0.9f ? 1f : 0f;
-            ApplyGlobalFloat(_ToolCriticalFlash01Id, criticalFlash, ref _appliedCriticalFlash);
-            ApplyGlobalFloat(_ToolVisualOverkill01Id, ResolveVisualOverkill01(_currentTier), ref _appliedVisualOverkill01);
-            ApplyGlobalFloat(_ToolFault01Id, ResolveFault01(_statusMask), ref _appliedFault01);
-            ApplyGlobalFloat(_ToolTypeHue01Id, ResolveToolTypeHue01(_toolTypeId), ref _appliedToolTypeHue01);
+            ApplyScreenScalarState(
+                _heat01,
+                _battery01,
+                _distanceMeters,
+                ammoBucket,
+                criticalFlash,
+                ResolveVisualOverkill01(_currentTier),
+                ResolveFault01(_statusMask),
+                ResolveToolTypeHue01(_toolTypeId));
             _stateDirty = false;
         }
 
@@ -655,6 +655,50 @@ namespace Hecton8.UI.Tools
             _screenRenderer.SetPropertyBlock(_screenPropertyBlock);
             _boundScreenTexture = texture;
             _appliedLowTierFallback = lowTierFallback ? 1f : 0f;
+        }
+
+        private void ApplyScreenScalarState(
+            float heat01,
+            float battery01,
+            float distanceMeters,
+            float ammoUnits,
+            float criticalFlash,
+            float visualOverkill01,
+            float fault01,
+            float toolTypeHue01)
+        {
+            bool changed = !NearlyEqual(_appliedHeat01, heat01) ||
+                !NearlyEqual(_appliedBattery01, battery01) ||
+                !NearlyEqual(_appliedVisorBatteryNormalized, battery01) ||
+                !NearlyEqual(_appliedDistanceMeters, distanceMeters) ||
+                !NearlyEqual(_appliedAmmoUnits, ammoUnits) ||
+                !NearlyEqual(_appliedCriticalFlash, criticalFlash) ||
+                !NearlyEqual(_appliedVisualOverkill01, visualOverkill01) ||
+                !NearlyEqual(_appliedFault01, fault01) ||
+                !NearlyEqual(_appliedToolTypeHue01, toolTypeHue01);
+            if (!changed || _screenRenderer == null)
+                return;
+
+            _screenRenderer.GetPropertyBlock(_screenPropertyBlock);
+            SetScreenFloat(_ToolHeat01Id, heat01, ref _appliedHeat01);
+            SetScreenFloat(_ToolBattery01Id, battery01, ref _appliedBattery01);
+            SetScreenFloat(_ToolBatteryNormalizedId, battery01, ref _appliedVisorBatteryNormalized);
+            SetScreenFloat(_ToolDistanceMetersId, distanceMeters, ref _appliedDistanceMeters);
+            SetScreenFloat(_ToolAmmoUnitsId, ammoUnits, ref _appliedAmmoUnits);
+            SetScreenFloat(_ToolCriticalFlash01Id, criticalFlash, ref _appliedCriticalFlash);
+            SetScreenFloat(_ToolVisualOverkill01Id, visualOverkill01, ref _appliedVisualOverkill01);
+            SetScreenFloat(_ToolFault01Id, fault01, ref _appliedFault01);
+            SetScreenFloat(_ToolTypeHue01Id, toolTypeHue01, ref _appliedToolTypeHue01);
+            _screenRenderer.SetPropertyBlock(_screenPropertyBlock);
+        }
+
+        private void SetScreenFloat(int propertyId, float value, ref float cachedValue)
+        {
+            if (NearlyEqual(cachedValue, value))
+                return;
+
+            _screenPropertyBlock.SetFloat(propertyId, value);
+            cachedValue = value;
         }
 
         private void ApplyCameraRenderState(bool renderThisFrame)
@@ -1004,15 +1048,6 @@ namespace Hecton8.UI.Tools
         private static bool NearlyEqual(float lhs, float rhs)
         {
             return math.abs(lhs - rhs) <= PropertyEpsilon;
-        }
-
-        private static void ApplyGlobalFloat(int propertyId, float value, ref float cachedValue)
-        {
-            if (NearlyEqual(cachedValue, value))
-                return;
-
-            Shader.SetGlobalFloat(propertyId, value);
-            cachedValue = value;
         }
 
 #if UNITY_EDITOR

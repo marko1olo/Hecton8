@@ -1423,7 +1423,7 @@ namespace Hecton8.Gameplay
                 uint damageType = _integrityComponent.FailureMode == BaseModuleFailureMode.Fire
                     ? (uint)DamageTypeMask.Thermal
                     : (uint)DamageTypeMask.Pressure;
-                DamageSignal signal = default;
+                HabitatDamageSignal signal = default;
                 signal.magnitude = Mathf.Max(0f, amount);
                 signal.localPoint = hasBreachLocalPointOverride
                     ? new Unity.Mathematics.float3(breachLocalPointOverride.x, breachLocalPointOverride.y, breachLocalPointOverride.z)

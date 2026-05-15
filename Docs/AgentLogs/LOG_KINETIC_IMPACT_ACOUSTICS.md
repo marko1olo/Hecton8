@@ -606,3 +606,34 @@ Verification:
 - Method-body counters: `HabitatPortalGraph GlobalRegistry=0`, `PortalPath GlobalRegistry=0`, `ColdConstructionRuntime=1`, `CacheRebound GlobalRegistry=0`.
 - Scoped forbidden scan found only pre-existing editor/cold diagnostics, comments, and assertion strings.
 - Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.
+
+## 2026-05-15 - DSP_ACOUSTIC_LEAD - Loop 23 Critical Renderer Install Flag H-Phi Pass
+Status: PENDING VERIFICATION
+
+What was wrong:
+- `PlayerCriticalProceduralAudioRenderer.IsRuntimeInstalled` read `GlobalRegistry.PlayerCriticalAudio` every time it was queried.
+- The property is used by fallback audio consumers to suppress legacy AudioSource loops when procedural critical audio is active.
+- Static smoke coverage did not prevent that public API from hiding a registry lookup.
+
+What was done:
+- Added `s_runtimeInstalled`.
+- Changed `IsRuntimeInstalled` to `Volatile.Read(ref s_runtimeInstalled) != 0`.
+- Updated `TryRegisterRuntimeService()` to write the flag when an existing renderer is detected and after successful registration.
+- Updated `TryUnregisterRuntimeService()` to refresh the flag from cold registry state after unregister.
+- Extended `AdvancedAcousticsSmokeTester` with assertions for the static flag, volatile property, absence of the old registry-backed property, and lifecycle writes.
+
+Cinematic cheats used:
+- Legacy fallback suppression is a scalar lifecycle flag, not repeated service discovery.
+- Missing procedural renderer allows legacy loops to continue; installed renderer suppresses them with one volatile read.
+- High-tier procedural audio keeps ownership without spending lookup budget in fallback gates.
+
+Exact microseconds saved:
+- Saves one player-critical service-locator read per `IsRuntimeInstalled` check after lifecycle registration.
+- Runtime allocation delta remains 0 B/frame.
+
+Verification:
+- Property/method counters: `PropertyGlobalRegistry=0`, `RegisterWrites=2`, `RegisterRegistry=2 cold/lifecycle`, `UnregisterWrites=1`, `UnregisterRegistry=1 cold/lifecycle`.
+- `git diff --cached --check -- Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs` passed.
+- `git diff --check -- Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs Docs/Tasks/Status_KINETIC_IMPACT_ACOUSTICS.md Docs/AgentLogs/Rationale_KINETIC_IMPACT_ACOUSTICS.md Docs/AgentLogs/LOG_KINETIC_IMPACT_ACOUSTICS.md` passed except CRLF normalization warnings.
+- Scoped forbidden scan found only pre-existing renderer diagnostics and editor smoke strings.
+- Dotnet build/rebuild was not run by explicit user order. Unity compile remains PENDING VERIFICATION until Editor console/MCP validation is available.

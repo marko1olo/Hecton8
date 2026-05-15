@@ -279,3 +279,15 @@ Cinematic Cheats used -> None. This is a Git integration pass; no physical simul
 Exact Microseconds saved -> 0 us runtime. Dev-path impact is reduced merge/conflict exposure by publishing a bounded validated snapshot instead of leaving the changes only local.
 
 Verification -> `git diff --check` reported only LF-to-CRLF warnings. No Unity compile or profiler run was performed in this pass.
+
+## 2026-05-15 - Loop 12 Post-Push Live Tail
+
+What was wrong -> `2b7a88602` pushed cleanly and matched `origin/main`, but parallel agents produced another local 74-file dirty tail before the worktree could stay clean.
+
+What was done -> Verified remote synchronization with fetch/divergence, scanned the new tail for unmerged paths, conflict markers, and whitespace errors, and classified it as live local work rather than a Git conflict.
+
+Cinematic Cheats used -> None. Git-only integration checkpoint; no runtime or visual system authored here.
+
+Exact Microseconds saved -> 0 us runtime. Dev-path savings come from reducing unresolved local merge surface before the next laptop/Desktop pull.
+
+Verification -> `origin/main...HEAD = 0 0`; conflict-marker scan clean; `git diff --check` only reported LF-to-CRLF warnings. Unity compile/profiler not run.

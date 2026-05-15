@@ -5300,7 +5300,7 @@ namespace Hecton8.AI
             Vector3 localPoint = playerHealth.transform.InverseTransformPoint(impactPoint);
             float impulseMagnitude = ResolvePredatorBiteImpulseMagnitude();
             uint statusBits = IsApexPredator() ? CombatStatusBits.Stunned : 0u;
-            Hecton8.Gameplay.CombatDamageSignal signal = new Hecton8.Gameplay.CombatDamageSignal
+            Hecton8.Gameplay.CombatDamageRequest signal = new Hecton8.Gameplay.CombatDamageRequest
             {
                 TargetId = targetId,
                 SourceId = IsApexPredator() ? DamageSourceIds.FaunaLeviathanBite : DamageSourceIds.FaunaBite,

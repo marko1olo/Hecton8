@@ -489,6 +489,7 @@ namespace Hecton8.Physics
         private static readonly ProfilerMarker _gpuReadbackProfilerMarker = new ProfilerMarker("H8.Fluid.ConsumeGpuReadback");
         private static readonly int _buoyancyForceNanErrorCode = unchecked((int)Hecton.Localization.LocHash.Compute("NAN_ERROR_HASH_BUOYANCY_FORCE"));
         private static readonly int _buoyancyTorqueNanErrorCode = unchecked((int)Hecton.Localization.LocHash.Compute("NAN_ERROR_HASH_BUOYANCY_TORQUE"));
+        private static HectonFluidEngine s_runtimeInstance;
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
@@ -496,6 +497,8 @@ namespace Hecton8.Physics
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            s_runtimeInstance = null;
+
             for (int i = 0; i < CavitationShockwaveHitCapacity; i++)
             {
                 s_CavitationShockwaveColliders[i] = null;
@@ -511,7 +514,13 @@ namespace Hecton8.Physics
                 if (!Application.isPlaying)
                     return null;
 #endif
-                return GlobalRegistry.Fluid;
+                HectonFluidEngine instance = s_runtimeInstance;
+                if (instance != null)
+                    return instance;
+
+                instance = GlobalRegistry.Fluid;
+                s_runtimeInstance = instance;
+                return instance;
             }
         }
 
@@ -838,7 +847,7 @@ namespace Hecton8.Physics
             float acceleration,
             int sourceBodyInstanceId)
         {
-            HectonFluidEngine instance = GlobalRegistry.Fluid;
+            HectonFluidEngine instance = Instance;
             return instance != null &&
                    instance.EnqueueCavitationBurst(position, direction, intensity01, radius, acceleration, sourceBodyInstanceId);
         }
@@ -1570,6 +1579,8 @@ namespace Hecton8.Physics
 
                 GlobalRegistry.RegisterFluidRuntime(this);
                 _fluidRuntimeRegistered = ReferenceEquals(GlobalRegistry.Fluid, this);
+                if (_fluidRuntimeRegistered)
+                    s_runtimeInstance = this;
             }
 
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)

@@ -914,7 +914,7 @@ namespace Hecton8.Gameplay
             if (_playerTraumaDispatcher == null || integrityDeltaNormalized <= 0.0001f)
                 return;
 
-            DamageSignal signal = default;
+            HabitatDamageSignal signal = default;
             signal.magnitude = damageMagnitude;
             signal.localPoint = float3.zero;
             signal.damageType = (uint)DamageTypeMask.Parasite;
@@ -1802,7 +1802,7 @@ namespace Hecton8.Gameplay
             if (clarityImpulse <= 0.001f)
                 return;
 
-            DamageSignal signal = default;
+            HabitatDamageSignal signal = default;
             signal.magnitude = clarityImpulse;
             signal.localPoint = float3.zero;
             signal.damageType = damageMask;

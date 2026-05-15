@@ -443,3 +443,22 @@ Solution: Ran source-only checks: fixed-symbol scan, method-body registry counte
 Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile or profiler status without Editor console/MCP data would be false.
 Scalability potential: Verification only.
 Hardware Impact: Verification only.
+
+## LOOP 23 CRITICAL RENDERER INSTALL FLAG H-PHI PASS
+Problem: `PlayerCriticalProceduralAudioRenderer.IsRuntimeInstalled` was a public convenience property used by fallback audio consumers, but it read `GlobalRegistry.PlayerCriticalAudio` every time. Even if most calls are event/lifecycle driven, a public status property should not hide a service-locator read from downstream systems.
+Solution: Added `s_runtimeInstalled` and changed `IsRuntimeInstalled` to `Volatile.Read(ref s_runtimeInstalled) != 0`. `TryRegisterRuntimeService()` writes the flag when an existing renderer is detected and after successful registration. `TryUnregisterRuntimeService()` refreshes the flag from cold registry state after unregister.
+Rejected Alternatives: Editing all external consumers would cross domain ownership and duplicate the same state check; leaving a direct property registry read keeps H-Phi debt in a shared audio API; a non-volatile bool would be weaker because the renderer owns a producer thread and already uses `Volatile` for published state.
+Scalability potential: Low/MX350 fallback systems can branch on procedural critical-audio availability without service lookup. Middle/High/Ultra preserve richer procedural renderer ownership while legacy AudioSource fallback suppression stays a cheap flag read.
+Hardware Impact: Saves one `GlobalRegistry.PlayerCriticalAudio` read per `IsRuntimeInstalled` check after renderer lifecycle registration. Runtime allocation delta remains 0 B/frame; added work is lifecycle `Volatile.Write` only.
+
+Problem: Static smoke coverage did not guard `IsRuntimeInstalled` from regressing to a registry-backed property.
+Solution: Extended `AdvancedAcousticsSmokeTester` to assert `s_runtimeInstalled`, the volatile property read, absence of the old registry-backed property expression, and lifecycle writes in `TryRegisterRuntimeService()` and `TryUnregisterRuntimeService()`.
+Rejected Alternatives: Manual-only review or checking only current call sites while leaving the public API itself unguarded.
+Scalability potential: Editor-only guard; keeps low-tier fallback gating and high-tier procedural ownership checks lookup-free.
+Hardware Impact: 0 us runtime in player builds.
+
+Problem: Compile/profiler proof remains unavailable under the user's no-dotnet-rebuild order and missing Unity MCP resources.
+Solution: Ran source-only checks: fixed-symbol scan, property/method counters, cached diff whitespace check for the staged renderer change, worktree diff whitespace check for smoke/docs, and scoped forbidden-API scan. Counters: `PropertyGlobalRegistry=0`, `RegisterWrites=2`, `RegisterRegistry=2 cold/lifecycle`, `UnregisterWrites=1`, `UnregisterRegistry=1 cold/lifecycle`.
+Rejected Alternatives: Running dotnet build/rebuild would violate explicit user order; claiming Unity compile or profiler status without Editor console/MCP data would be false.
+Scalability potential: Verification only.
+Hardware Impact: Verification only.

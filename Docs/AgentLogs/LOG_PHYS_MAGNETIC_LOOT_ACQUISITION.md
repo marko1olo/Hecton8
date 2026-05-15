@@ -39,56 +39,6 @@ Verification:
 Final Status:
 - PENDING VERIFICATION.
 
-## 2026-05-15 - Dotnet Process Hygiene Tail Pass
-
-What was wrong:
-- An external PowerShell wrapper spawned `dotnet build Hecton8.Core.csproj` while the user instruction explicitly forbids dotnet rebuilds.
-
-What was done:
-- Inspected the dotnet process and parent PowerShell wrapper.
-- Stopped both processes.
-- No dotnet build/rebuild was started by this agent.
-
-Cinematic Cheats used:
-- None. This is verification hygiene.
-
-Exact Microseconds saved:
-- No gameplay saving claimed. This removes local build CPU pressure and forbidden verification noise.
-
-Verification:
-- Follow-up dotnet process query was clean.
-
-Final Status:
-- PENDING VERIFICATION.
-
-## 2026-05-15 - Idle Hash Truth And Dead-Tail Trim Pass
-
-What was wrong:
-- Idle black-box telemetry could preserve an old commit hash after the registry refresh had changed active loot truth.
-- Failed writable-lane refreshes could leave stale active-count evidence.
-- Mass acquisition cleared slots but left the old active window until the next SlowTick, causing useless FastTick job iterations over dead trailing slots.
-
-What was done:
-- Added named telemetry hash constants and a cached `_registryFlagsHash`.
-- SlowTick registry refresh now folds the current active slot flags/item hashes while it already scans pickups.
-- Idle telemetry writes the cached registry hash instead of stale commit data.
-- Failed refresh clears runtime active state and hash evidence.
-- Commit now folds final active slots after managed pickup transfer and trims `_activeCount` to the highest remaining active slot.
-
-Cinematic Cheats used:
-- No physical simulation added. Acquisition truth remains vault-driven; cosmetic zip/wake budgets remain load-shed separately.
-
-Exact Microseconds saved:
-- No profiler number claimed. This avoids dead-tail Burst iterations after mass pickup without adding a separate idle scan.
-- Added work is integer hash folding in existing refresh/commit loops only.
-
-Verification:
-- User forbade dotnet rebuilds; none were run.
-- Static verification pending below in this same pass.
-
-Final Status:
-- PENDING VERIFICATION.
-
 ## 2026-05-14 - Professional Recheck Pass
 
 What was wrong:
@@ -410,6 +360,60 @@ Verification:
 - Static loot anti-bloat scan returned no matches for LINQ/string/runtime scene-search/math-sqrt/math-normalize patterns.
 - Native allocation scan under the loot module shows only `H8Memory.Allocate/Release` owner paths for persistent loot-owned arrays.
 - Dotnet process query was clean.
+
+Final Status:
+- PENDING VERIFICATION.
+
+## 2026-05-15 - Idle Hash Truth And Dead-Tail Trim Pass
+
+What was wrong:
+- Idle black-box telemetry could preserve an old commit hash after the registry refresh had changed active loot truth.
+- Failed writable-lane refreshes could leave stale active-count evidence.
+- Mass acquisition cleared slots but left the old active window until the next SlowTick, causing useless FastTick job iterations over dead trailing slots.
+
+What was done:
+- Added named telemetry hash constants and a cached `_registryFlagsHash`.
+- SlowTick registry refresh now folds the current active slot flags/item hashes while it already scans pickups.
+- Idle telemetry writes the cached registry hash instead of stale commit data.
+- Failed refresh clears runtime active state and hash evidence.
+- Commit now folds final active slots after managed pickup transfer and trims `_activeCount` to the highest remaining active slot.
+
+Cinematic Cheats used:
+- No physical simulation added. Acquisition truth remains vault-driven; cosmetic zip/wake budgets remain load-shed separately.
+
+Exact Microseconds saved:
+- No profiler number claimed. This avoids dead-tail Burst iterations after mass pickup without adding a separate idle scan.
+- Added work is integer hash folding in existing refresh/commit loops only.
+
+Verification:
+- User forbade dotnet rebuilds; none were run.
+- `git diff --check` passed.
+- Static loot anti-bloat scan returned no matches for LINQ/string/runtime scene-search/math-sqrt/math-normalize patterns.
+- Native allocation scan under the loot module shows only `H8Memory.Allocate/Release` owner paths for persistent loot-owned arrays.
+- Dotnet process query was clean after stopping external respawns.
+
+Final Status:
+- PENDING VERIFICATION.
+
+## 2026-05-15 - Dotnet Process Hygiene Tail Pass
+
+What was wrong:
+- An external PowerShell wrapper spawned `dotnet build Hecton8.Core.csproj` while the user instruction explicitly forbids dotnet rebuilds.
+- The same wrapper respawned the build again during final state reads.
+
+What was done:
+- Inspected the dotnet process and parent PowerShell wrapper.
+- Stopped both process pairs.
+- No dotnet build/rebuild was started by this agent.
+
+Cinematic Cheats used:
+- None. This is verification hygiene.
+
+Exact Microseconds saved:
+- No gameplay saving claimed. This removes local build CPU pressure and forbidden verification noise.
+
+Verification:
+- Follow-up dotnet process query was clean.
 
 Final Status:
 - PENDING VERIFICATION.

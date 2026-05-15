@@ -658,3 +658,28 @@ Verification:
 - Post-delete `rg` found no remaining `ProceduralLeviathanSpineIK` or `409e50cc5c5dffc4790462e3a0eafe0f` references.
 - Both deleted paths return `False` from `Test-Path`.
 - Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
+
+## 2026-05-15T04:36+04:00
+
+Status: PENDING VERIFICATION. Continued dispatcher-cadence hygiene. No `dotnet` rebuild/compile, Unity import, or response-file probe was run.
+
+What was wrong:
+- `FaunaKinematicsRuntime` used `Time.frameCount` to decide whether authored motion intent was current.
+- That tied the IK solver to Unity rendered-frame equality instead of dispatcher consumption, so intent published after the runtime tick could be overwritten by fallback motion before being used.
+
+What was done:
+- Replaced `_motionIntentFrame` with `_motionIntentPending`.
+- `SetMotionIntent()` now marks intent pending.
+- `CaptureFallbackMotionIntent()` consumes pending intent once and otherwise resolves fallback body velocity.
+- `SeedSpineFromOwner()` clears pending intent on lifecycle reseed.
+
+Cinematic cheats used:
+- None. Existing low-tier eight-bone and shader tail-wave cheats are unchanged.
+
+Exact microseconds saved:
+- No frame-time saving claimed.
+- One `bool` replaces one `int`; two `Time.frameCount` reads are removed from the IK runtime path.
+
+Verification:
+- `rg` confirms no `_motionIntentFrame` or `Time.frameCount` references remain in `FaunaKinematicsRuntime`.
+- Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.

@@ -50,7 +50,7 @@ namespace Hecton8.Gameplay
     /// Canonical event packet for integrity/power/clarity damage signals.
     /// </summary>
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
-    public struct DamageSignal
+    public struct HabitatDamageSignal
     {
         public float magnitude;
         public float depth;
@@ -66,13 +66,13 @@ namespace Hecton8.Gameplay
     public interface IDamageSignalReceiver
     {
         /// <summary>Receives an integrity-channel change.</summary>
-        void OnIntegrityChanged(float prev, float next, DamageSignal src);
+        void OnIntegrityChanged(float prev, float next, HabitatDamageSignal src);
 
         /// <summary>Receives a power-channel change.</summary>
-        void OnPowerChanged(float prev, float next, DamageSignal src);
+        void OnPowerChanged(float prev, float next, HabitatDamageSignal src);
 
         /// <summary>Receives a clarity-channel change.</summary>
-        void OnClarityChanged(float prev, float next, DamageSignal src);
+        void OnClarityChanged(float prev, float next, HabitatDamageSignal src);
 
         /// <summary>Receives a discrete trauma threshold crossing.</summary>
         void OnTraumaThresholdCrossed(TraumaLevel level);
@@ -343,7 +343,7 @@ namespace Hecton8.Gameplay
         /// <summary>
         /// Reacts to integrity-channel damage and arms a breach when the packet satisfies the habitat rules.
         /// </summary>
-        public void OnIntegrityChanged(float prev, float next, DamageSignal src)
+        public void OnIntegrityChanged(float prev, float next, HabitatDamageSignal src)
         {
             if ((src.damageType & (uint)DamageTypeMask.Pressure) == 0u)
                 return;
@@ -357,14 +357,14 @@ namespace Hecton8.Gameplay
         /// <summary>
         /// Habitat flood logic does not respond directly to power-channel packets.
         /// </summary>
-        public void OnPowerChanged(float prev, float next, DamageSignal src)
+        public void OnPowerChanged(float prev, float next, HabitatDamageSignal src)
         {
         }
 
         /// <summary>
         /// Habitat flood logic does not respond directly to clarity-channel packets.
         /// </summary>
-        public void OnClarityChanged(float prev, float next, DamageSignal src)
+        public void OnClarityChanged(float prev, float next, HabitatDamageSignal src)
         {
         }
 
@@ -406,7 +406,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void ReceiveDamage(in DamagePacket packet)
         {
-            DamageSignal signal = new DamageSignal
+            HabitatDamageSignal signal = new HabitatDamageSignal
             {
                 magnitude = packet.Magnitude,
                 localPoint = packet.LocalPoint,
@@ -486,7 +486,7 @@ namespace Hecton8.Gameplay
         /// <summary>
         /// Routes an integrity-channel packet through the local habitat logic and downstream listeners.
         /// </summary>
-        public void DispatchIntegrityChanged(float prev, float next, DamageSignal src)
+        public void DispatchIntegrityChanged(float prev, float next, HabitatDamageSignal src)
         {
             MarkCombatDamageSyncDirty();
             OnIntegrityChanged(prev, next, src);
@@ -497,7 +497,7 @@ namespace Hecton8.Gameplay
         /// <summary>
         /// Routes a power-channel packet through downstream listeners.
         /// </summary>
-        public void DispatchPowerChanged(float prev, float next, DamageSignal src)
+        public void DispatchPowerChanged(float prev, float next, HabitatDamageSignal src)
         {
             OnPowerChanged(prev, next, src);
             for (int i = 0; i < _damageReceivers.Count; i++)
@@ -507,7 +507,7 @@ namespace Hecton8.Gameplay
         /// <summary>
         /// Routes a clarity-channel packet through downstream listeners.
         /// </summary>
-        public void DispatchClarityChanged(float prev, float next, DamageSignal src)
+        public void DispatchClarityChanged(float prev, float next, HabitatDamageSignal src)
         {
             OnClarityChanged(prev, next, src);
             for (int i = 0; i < _damageReceivers.Count; i++)
@@ -557,7 +557,7 @@ namespace Hecton8.Gameplay
                 : 1f;
             if (Mathf.Abs(nextPowerChannel - previousPowerChannel) > 0.0001f)
             {
-                DamageSignal powerSignal = BuildSignal(
+                HabitatDamageSignal powerSignal = BuildSignal(
                     _pressureDelta,
                     _breachLocalPoint,
                     (uint)DamageTypeMask.Pressure,
@@ -897,14 +897,14 @@ namespace Hecton8.Gameplay
             return Mathf.Max(0f, (depthMeters / 1000f) * BasePressureAtm);
         }
 
-        private DamageSignal BuildSignal(
+        private HabitatDamageSignal BuildSignal(
             float magnitude,
             float3 localPoint,
             uint damageType,
             float depthMeters,
             float normalizedDelta)
         {
-            DamageSignal signal = default;
+            HabitatDamageSignal signal = default;
             signal.magnitude = magnitude;
             signal.localPoint = localPoint;
             signal.damageType = damageType;
@@ -921,7 +921,7 @@ namespace Hecton8.Gameplay
             for (int i = 0; i < _damageReceivers.Count; i++)
                 _damageReceivers[i].OnHullBreach(localPoint, depth, pressureDelta);
 
-            DamageSignal claritySignal = BuildSignal(
+            HabitatDamageSignal claritySignal = BuildSignal(
                 pressureDelta,
                 localPoint,
                 (uint)DamageTypeMask.Pressure,

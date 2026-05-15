@@ -1082,7 +1082,7 @@ namespace Hecton8.Physics
         }
 
         /// <inheritdoc />
-        public void OnIntegrityChanged(float prev, float next, Hecton8.Gameplay.DamageSignal src)
+        public void OnIntegrityChanged(float prev, float next, Hecton8.Gameplay.HabitatDamageSignal src)
         {
             float damageDelta = math.max(0f, prev - next);
             if (damageDelta <= 0f)
@@ -1092,10 +1092,10 @@ namespace Hecton8.Physics
         }
 
         /// <inheritdoc />
-        public void OnPowerChanged(float prev, float next, Hecton8.Gameplay.DamageSignal src) { }
+        public void OnPowerChanged(float prev, float next, Hecton8.Gameplay.HabitatDamageSignal src) { }
 
         /// <inheritdoc />
-        public void OnClarityChanged(float prev, float next, Hecton8.Gameplay.DamageSignal src) { }
+        public void OnClarityChanged(float prev, float next, Hecton8.Gameplay.HabitatDamageSignal src) { }
 
         /// <inheritdoc />
         public void OnTraumaThresholdCrossed(TraumaLevel level) { }

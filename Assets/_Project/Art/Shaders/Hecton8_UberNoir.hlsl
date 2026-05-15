@@ -292,10 +292,13 @@ void H8UberNoirBuildTangentFrame(
 
 float H8UberNoirBucklingMask(float3 positionWS, half instanceSeed)
 {
-    float gridScale = max(_UberNoirBendParams.y, H8_UBER_NOIR_EPS);
+    float gridScaleSource = _UberNoirBendParams.y;
+    float gridScale = isfinite(gridScaleSource) ? max(gridScaleSource, H8_UBER_NOIR_EPS) : 1.0;
+    float safeInstanceSeed = isfinite((float)instanceSeed) ? (float)instanceSeed : 0.0;
     float3 stablePosition = (positionWS + H8UberNoirFinite3(_TotalUniverseOffset.xyz, float3(0.0, 0.0, 0.0))) * gridScale;
-    float2 cellA = floor(stablePosition.xz + instanceSeed * 17.0);
-    float2 cellB = floor(stablePosition.xy * 1.37 + instanceSeed * 29.0);
+    stablePosition = H8UberNoirFinite3(stablePosition, float3(0.0, 0.0, 0.0));
+    float2 cellA = floor(stablePosition.xz + safeInstanceSeed * 17.0);
+    float2 cellB = floor(stablePosition.xy * 1.37 + safeInstanceSeed * 29.0);
     float panelA = H8UberNoirTriangle01(dot(cellA, float2(0.31, 0.47)));
     float panelB = H8UberNoirTriangle01(dot(cellB, float2(0.23, 0.41)));
     float crease = H8UberNoirTriangle01(dot(stablePosition, float3(0.019, 0.031, 0.043)));
@@ -319,12 +322,23 @@ float3 H8UberNoirApplyDynamicHullBendingWS(float3 positionWS, float3 normalWS, h
     return positionWS;
 #else
     float3 safePositionWS = H8UberNoirFinite3(positionWS, float3(0.0, 0.0, 0.0));
-    float featureMask = step(0.5, _UberNoirFeatureFlags.z);
-    float localStrength = max(_UberNoirBendParams.x, 0.0);
-    float crushDepth = max(_HectonSubmarineCrushDepthParams.y, H8_UBER_NOIR_EPS);
-    float crush01 = saturate(max(_HectonSubmarineCrushDepthParams.x, 0.0) * rcp(crushDepth));
-    float crushDisplacement = max(_HectonSubmarineCrushDepthParams.z, 0.0) * crush01;
-    float crushMask = H8UberNoirRadiusMask(safePositionWS, _HectonSubmarineCrushCenterRadius);
+    float featureSource = _UberNoirFeatureFlags.z;
+    float featureMask = isfinite(featureSource) ? step(0.5, featureSource) : 0.0;
+    float localStrengthSource = _UberNoirBendParams.x;
+    float localStrength = isfinite(localStrengthSource) ? max(localStrengthSource, 0.0) : 0.0;
+
+    float crushDepthSource = _HectonSubmarineCrushDepthParams.y;
+    float crushCurrentSource = _HectonSubmarineCrushDepthParams.x;
+    float crushDisplacementSource = _HectonSubmarineCrushDepthParams.z;
+    float crushDepth = isfinite(crushDepthSource) ? max(crushDepthSource, H8_UBER_NOIR_EPS) : H8_UBER_NOIR_EPS;
+    float crushCurrent = isfinite(crushCurrentSource) ? max(crushCurrentSource, 0.0) : 0.0;
+    float crush01 = saturate(crushCurrent * rcp(crushDepth));
+    float crushDisplacement = isfinite(crushDisplacementSource) ? max(crushDisplacementSource, 0.0) * crush01 : 0.0;
+    crushDisplacement = isfinite(crushDisplacement) ? crushDisplacement : 0.0;
+    float crushMask = 0.0;
+    [branch]
+    if (crushDisplacement > H8_UBER_NOIR_EPS)
+        crushMask = H8UberNoirRadiusMask(safePositionWS, _HectonSubmarineCrushCenterRadius);
 
     float habitatStressSource = _HectonHabitatStressParams.x;
     float habitatDisplacementSource = _HectonHabitatStressParams.y;
@@ -332,6 +346,7 @@ float3 H8UberNoirApplyDynamicHullBendingWS(float3 positionWS, float3 normalWS, h
     float habitatDisplacement = isfinite(habitatDisplacementSource)
         ? max(habitatDisplacementSource, 0.0) * habitatStress01
         : 0.0;
+    habitatDisplacement = isfinite(habitatDisplacement) ? habitatDisplacement : 0.0;
     float habitatMask = 0.0;
     [branch]
     if (habitatDisplacement > H8_UBER_NOIR_EPS)
@@ -339,6 +354,7 @@ float3 H8UberNoirApplyDynamicHullBendingWS(float3 positionWS, float3 normalWS, h
 
     float buckle = H8UberNoirBucklingMask(safePositionWS, instanceSeed) * 2.0 - 1.0;
     float displacement = (crushDisplacement * crushMask + habitatDisplacement * habitatMask) * buckle * localStrength * featureMask;
+    displacement = isfinite(displacement) ? displacement : 0.0;
     return H8UberNoirFinite3(safePositionWS + H8UberNoirSafeNormalize(normalWS, float3(0.0, 1.0, 0.0)) * displacement, safePositionWS);
 #endif
 }

@@ -556,6 +556,7 @@ namespace Hecton8.Editor.ProceduralGen
             ValidateShaderRequiredToken(shaderPath, source, "#pragma shader_feature_local _QUALITY_HIGH", ref failures);
             ValidateShaderRequiredToken(shaderPath, source, "CBUFFER_START(UnityPerMaterial)", ref failures);
             ValidateShaderRequiredToken(shaderPath, source, "LODFadeCrossFade(input.positionCS);", ref failures);
+            ValidateShaderPassBudget(shaderPath, source, ref failures);
             ValidateShaderForbiddenToken(shaderPath, source, "ZWrite Off", ref failures);
             ValidateShaderForbiddenToken(shaderPath, source, "Blend SrcAlpha", ref failures);
             ValidateShaderForbiddenToken(shaderPath, source, "Blend One One", ref failures);
@@ -585,6 +586,56 @@ namespace Hecton8.Editor.ProceduralGen
 
             failures++;
             Debug.LogError($"[ShallowsBioForgeBatchBaker] Shader source contract contains forbidden token at {shaderPath}: {token}.");
+        }
+
+        private static void ValidateShaderPassBudget(string shaderPath, string source, ref int failures)
+        {
+            int passCount = CountShaderLineToken(source, "Pass");
+            int usePassCount = CountShaderLineToken(source, "UsePass");
+            int grabPassCount = CountShaderLineToken(source, "GrabPass");
+            int fallbackCount = CountShaderLineToken(source, "Fallback");
+            if (passCount == 2 &&
+                usePassCount == 0 &&
+                grabPassCount == 0 &&
+                fallbackCount == 0 &&
+                source.IndexOf("Name \"ForwardLit\"", StringComparison.Ordinal) >= 0 &&
+                source.IndexOf("Name \"ShadowCaster\"", StringComparison.Ordinal) >= 0 &&
+                source.IndexOf("\"LightMode\" = \"UniversalForward\"", StringComparison.Ordinal) >= 0 &&
+                source.IndexOf("\"LightMode\" = \"ShadowCaster\"", StringComparison.Ordinal) >= 0)
+            {
+                return;
+            }
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] Shader pass budget contract failed at {shaderPath}. Pass={passCount}, UsePass={usePassCount}, GrabPass={grabPassCount}, Fallback={fallbackCount}.");
+        }
+
+        private static int CountShaderLineToken(string source, string token)
+        {
+            int count = 0;
+            int index = 0;
+            while (index < source.Length)
+            {
+                int lineEnd = source.IndexOf('\n', index);
+                if (lineEnd < 0)
+                    lineEnd = source.Length;
+
+                int cursor = index;
+                while (cursor < lineEnd && char.IsWhiteSpace(source[cursor]))
+                    cursor++;
+
+                int tokenEnd = cursor + token.Length;
+                if (tokenEnd <= lineEnd &&
+                    string.CompareOrdinal(source, cursor, token, 0, token.Length) == 0 &&
+                    (tokenEnd == lineEnd || char.IsWhiteSpace(source[tokenEnd]) || source[tokenEnd] == (char)123))
+                {
+                    count++;
+                }
+
+                index = lineEnd + 1;
+            }
+
+            return count;
         }
 
         private static void ValidateMaterialColor(Material material, string propertyName, Color expected, ref int failures)
@@ -1090,6 +1141,7 @@ namespace Hecton8.Editor.ProceduralGen
                     Debug.LogError($"[ShallowsBioForgeBatchBaker] Renderer hot-path flags invalid at {path}.");
                 }
 
+                ValidateRendererSerializedStateContract(path, renderer, ref failures);
                 ValidateRendererTransformContract(path, renderer.transform, ref failures);
             }
 
@@ -1312,6 +1364,38 @@ namespace Hecton8.Editor.ProceduralGen
 
             failures++;
             Debug.LogError($"[ShallowsBioForgeBatchBaker] Renderer material slot contract failed at {path}. Materials={materialCount}.");
+        }
+
+        private static void ValidateRendererSerializedStateContract(string path, Renderer renderer, ref int failures)
+        {
+            SerializedObject serialized = new SerializedObject(renderer);
+            if (!renderer.forceRenderingOff &&
+                SerializedIntEquals(serialized, "m_StaticShadowCaster", 0) &&
+                SerializedIntEquals(serialized, "m_RenderingLayerMask", 1) &&
+                SerializedIntEquals(serialized, "m_RendererPriority", 0) &&
+                SerializedObjectReferenceIsNull(serialized, "m_ProbeAnchor") &&
+                SerializedObjectReferenceIsNull(serialized, "m_LightProbeVolumeOverride") &&
+                SerializedIntEquals(serialized, "m_SortingLayerID", 0) &&
+                SerializedIntEquals(serialized, "m_SortingLayer", 0) &&
+                SerializedIntEquals(serialized, "m_SortingOrder", 0))
+            {
+                return;
+            }
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] Renderer serialized state contract failed at {path}. Renderer={renderer.name}.");
+        }
+
+        private static bool SerializedIntEquals(SerializedObject serialized, string propertyName, int expected)
+        {
+            SerializedProperty property = serialized.FindProperty(propertyName);
+            return property != null && property.intValue == expected;
+        }
+
+        private static bool SerializedObjectReferenceIsNull(SerializedObject serialized, string propertyName)
+        {
+            SerializedProperty property = serialized.FindProperty(propertyName);
+            return property != null && property.objectReferenceValue == null;
         }
 
         private static void ValidateLodGroupContract(string path, LODGroup lodGroup, LOD[] lods, ref int failures)

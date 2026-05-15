@@ -358,6 +358,8 @@ namespace Hecton8.UI
         private RenderTexture _phosphorBackTexture;
         private Material _phosphorDecayMaterial;
         private Material _cachedPanelOutputMaterial;
+        private MonoBehaviour _cachedPanelInteractableSource;
+        private MonoBehaviour _cachedPanelPowerSourceSource;
         private int2 _activeRenderResolution;
         private int2 _fixedRenderResolution;
         private bool _retainRenderTextureOnDisable;
@@ -927,8 +929,17 @@ namespace Hecton8.UI
 
         private void ResolveInterfaces()
         {
-            _panelInteractable = panelInteractable as IPanelInteractable;
-            _panelPowerSource = panelPowerSource as IPanelPowerSource;
+            if (!ReferenceEquals(_cachedPanelInteractableSource, panelInteractable))
+            {
+                _cachedPanelInteractableSource = panelInteractable;
+                _panelInteractable = panelInteractable as IPanelInteractable;
+            }
+
+            if (!ReferenceEquals(_cachedPanelPowerSourceSource, panelPowerSource))
+            {
+                _cachedPanelPowerSourceSource = panelPowerSource;
+                _panelPowerSource = panelPowerSource as IPanelPowerSource;
+            }
         }
 
         private void DetermineTargetHardwareTier()

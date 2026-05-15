@@ -326,3 +326,12 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 - Static reference scan after deletion found no remaining `ProceduralLeviathanSpineIK` or `409e50cc5c5dffc4790462e3a0eafe0f` references.
 - `.cs` and `.meta` are both absent on disk after the deletion.
 - No `dotnet` rebuild, compile, Unity import, or response-file probe was run.
+
+### Loop 30: Dispatcher Intent Freshness Recheck
+
+- Replaced the `Time.frameCount`-based motion-intent gate in `FaunaKinematicsRuntime` with a consumed `_motionIntentPending` flag.
+- DOD: runtime motion intent survives scheduler ordering until the next solver tick consumes it once, then falls back to owner velocity on later ticks.
+- Alternative Rejected: Unity frame-count equality because dispatcher order can move intent publication before or after the IK runtime within the same rendered frame.
+- Estimate: 0 us meaningful hot-path savings; one `bool` replaces one `int` and removes two Unity frame-global reads from the IK runtime.
+- `rg` confirms no `_motionIntentFrame` or `Time.frameCount` references remain in `FaunaKinematicsRuntime`.
+- No `dotnet` rebuild, compile, Unity import, or response-file probe was run.

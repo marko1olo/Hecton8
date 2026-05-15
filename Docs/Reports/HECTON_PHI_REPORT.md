@@ -974,3 +974,29 @@ Verification:
 - `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: completed.
 - Final full static gate completed at local timestamp `2026-05-15 04:20:55 +04:00`.
 - Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.
+
+## 2026-05-15 04:33 +04:00 - Resonance Cargo Mass Follow-Up
+
+Scope:
+- Runtime code touched: `Assets/_Project/Scripts/SubmarineFluidDynamics.cs`.
+- User constraint retained: no `dotnet build` and no rebuild.
+
+Change:
+- Converted submarine cargo mass synchronization to event-first behavior with a 1/16 frame fallback poll of `GlobalRegistry.PlayerInventoryMassKg`.
+- `EncumbranceChanged` commits payload mass directly; `InventoryChanged` still forces one compatibility refresh because that payload carries no mass.
+- No new signal producer, managed allocation, LINQ, scene search, coroutine, or direct inventory component dependency was added.
+
+Core graph measurement:
+
+| Counter | Value |
+|---|---:|
+| Core asmdef debt refs | 25 |
+| Generated project debt refs | 10 |
+| Source-backed bridge debt refs | 14 |
+| Source-backed compile bridge debt refs | 8 |
+| Project-reference replacement debt refs | 6 |
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/SubmarineFluidDynamics.cs`: passed; LF/CRLF warning only.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -CoreGraphOnly`: completed at `2026-05-15 04:32:55 +04:00`.
+- Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.

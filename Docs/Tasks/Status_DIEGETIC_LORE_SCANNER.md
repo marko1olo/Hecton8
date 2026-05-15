@@ -174,10 +174,15 @@ Mandates read:
 - [x] Display filter rebind consumes latest state | DOD: `SetToolHashFilter()` now clears scanner display state and resets both latest-signal sequence sentinels so the newly selected filter can consume the current latest tool/scanner packets immediately | Rejected: waiting for a future signal after a filter change while the physical screen shows fallback/stale state | Estimate: cold authoring/spawn path only
 - [x] Static no-regression checks after Loop 22 | DOD: `git diff --check` passed with line-ending warnings only, `git diff --cached --check` passed, scanner banned-pattern scan found no forbidden UI/scanner patterns, and filter-rebind scan confirmed sequence resets plus scanner-cache clearing | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 2600 us
 
+## Loop 23 - Per-Screen Shader State Isolation
+
+- [x] Tool screen shader state moved off globals | DOD: `ToolDiegeticDisplayController` no longer calls `Shader.SetGlobalFloat` for heat, battery, distance, ammo, critical flash, visual overkill, fault, or tool hue; changed values are batched into the existing cached `MaterialPropertyBlock` for the physical UI renderer | Rejected: global shader floats that let multiple physical tool screens overwrite each other's visual state | Estimate: replaces up to 9 global shader writes with one per-renderer property-block write on changed display state
+- [x] Static no-regression checks after Loop 23 | DOD: `git diff --check` passed with line-ending warning only, `git diff --cached --check` passed, scanner banned-pattern scan found no forbidden UI/scanner patterns, and shader-state scan found no `Shader.SetGlobalFloat` or `ApplyGlobalFloat` in the tool display controller | Rejected: dotnet rebuild; static source checks only | Estimate: 2700 us
+
 ## Verification
 
 - [x] Compile/source validation - `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:quiet -clp:Summary` passed with 0 warnings / 0 errors after Loop 10
-- [ ] Compile/source validation after Loops 11-22 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
+- [ ] Compile/source validation after Loops 11-23 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
 - [ ] Console check - BLOCKED BY UNITY SESSION: MCP validate/console calls cannot connect to Unity MCP HTTP endpoint / session
 - [x] Re-read prompt after core tasks
 - [x] Omega polish mandate after all tasks done or blocked

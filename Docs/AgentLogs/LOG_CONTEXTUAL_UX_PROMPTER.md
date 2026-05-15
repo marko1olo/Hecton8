@@ -234,3 +234,14 @@ Cinematic cheats used: Preserved the same RT-history phosphor fake; only removed
 Exact microseconds saved: Estimate only. Expected gain is sub-1 us per phosphor-enabled panel late frame on i3/MX350; no profiler proof is claimed.
 
 Verification: No dotnet rebuilds were run. Static scans confirmed `_Decay` writes pass through `_appliedPhosphorDecay` and no forbidden allocation/text/LINQ, bootstrap fallback, direct `Time`, old phosphor fallback, or `resolvedCamera.transform` markers returned.
+
+## 2026-05-15 Diegetic Panel Interface Source Cache
+What was wrong: Runtime-state validation called `ResolveInterfaces()` every active tick, and that method recast the same serialized panel receiver and power-source components each time.
+
+What was done: Added cached source references for `panelInteractable` and `panelPowerSource`; interface casts now run only when those serialized sources change.
+
+Cinematic cheats used: No visual change. This preserves the same physical panel receiver and power hooks while removing repeated type checks from active panels.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per active physical panel tick; no profiler proof is claimed.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed source-change-driven casts and no forbidden allocation/text/LINQ, bootstrap fallback, direct `Time`, old phosphor fallback, or `resolvedCamera.transform` markers returned.

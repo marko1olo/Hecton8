@@ -3356,7 +3356,7 @@ namespace Hecton8.Gameplay
 
             ScientificMaterialClass materialClass = ClassifyScientificMaterial(density01);
             _scientificLastContactTime = Time.time;
-            PlayerSignalEvents.RaiseInteractionSignal(new InteractionSignal(
+            PlayerSignalEvents.RaiseInteractionSignal(new PlayerInteractionStressSignal(
                 0f,
                 math.saturate(density01),
                 materialClass == ScientificMaterialClass.Basalt ? 1.08f : 0.96f,
@@ -3493,7 +3493,7 @@ namespace Hecton8.Gameplay
 
             if (densitySampleCount > 0)
             {
-                PlayerSignalEvents.RaiseInteractionSignal(new InteractionSignal(
+                PlayerSignalEvents.RaiseInteractionSignal(new PlayerInteractionStressSignal(
                     0f,
                     math.saturate(density01),
                     materialClass == ScientificMaterialClass.Basalt ? 1.08f : 0.96f,

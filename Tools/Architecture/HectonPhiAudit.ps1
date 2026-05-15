@@ -1092,6 +1092,12 @@ function Get-DuplicateSignalNameAudit {
         }
 
         $content = [System.IO.File]::ReadAllText($file)
+
+        if ($content.IndexOf('Signal', [StringComparison]::Ordinal) -lt 0 -or
+            $content.IndexOf('struct', [StringComparison]::Ordinal) -lt 0) {
+            continue
+        }
+
         $codeSurface = ConvertTo-CodeSurface $content
         $lines = $codeSurface -split "`r?`n", -1
         $namespace = ''
@@ -1854,6 +1860,22 @@ if ($CoreGraphOnly) {
         throw 'NativeArray budget requires full source scan. Remove -CoreGraphOnly when using -MaxNativeArrayRefs.'
     }
 
+    if ($MaxLinqSurface -ge 0) {
+        throw 'LINQ surface budget requires full source scan. Remove -CoreGraphOnly when using -MaxLinqSurface.'
+    }
+
+    if ($MaxCoroutineSurface -ge 0) {
+        throw 'Coroutine surface budget requires full source scan. Remove -CoreGraphOnly when using -MaxCoroutineSurface.'
+    }
+
+    if ($MaxManagedFormatSurface -ge 0) {
+        throw 'Managed format surface budget requires full source scan. Remove -CoreGraphOnly when using -MaxManagedFormatSurface.'
+    }
+
+    if ($MaxJobCompleteSurface -ge 0) {
+        throw 'Job Complete surface budget requires full source scan. Remove -CoreGraphOnly when using -MaxJobCompleteSurface.'
+    }
+
     if ($MinDataSovereignty -ge 0.0) {
         throw 'Data Sovereignty floor requires full source scan. Remove -CoreGraphOnly when using -MinDataSovereignty.'
     }
@@ -1970,6 +1992,10 @@ $patternSource = [ordered]@{
     DisposeCalls = '\.Dispose\s*\('
     AupPrecisionSafe = '\b(?:CurrentTotalOffsetDouble|ToAbsoluteUniversePositionDouble3|ToUniverseSpaceDouble3|ToRuntimeSpaceDouble3|FromAbsolutePosition|DistanceSq\s*\(|ToRuntimeSpace\s*\(\s*double3)'
     AupPrecisionRisk = '\bHectonFloatingOrigin\s*\.\s*ToAbsoluteUniversePosition\s*\(|\bHectonMapMagicVegetationBridge\s*\.\s*ToUniverseSpace\s*\(|\bCurrentTotalOffset\s*(?:;|\.)|\b(?:New|Previous)TotalOffset\s*\.|\(float3\)\s*AUP|\bVector3\s+universePosition\b|\bVector3\s+stableUniverseRoot\b'
+    LinqSurface = '\.(?:Where|Select|SelectMany|Any|All|First|FirstOrDefault|Last|LastOrDefault|Single|SingleOrDefault|ToList|ToArray|OrderBy|OrderByDescending|ThenBy|ThenByDescending|GroupBy|Sum|Average)\s*\('
+    CoroutineSurface = '\bStartCoroutine\s*\('
+    ManagedFormatSurface = '(?:\$@?|@?\$)"|(?:string|String)\s*\.\s*Format\s*\(|\.ToString\s*\('
+    JobCompleteSurface = '\.Complete\s*\('
 }
 
 $patterns = @{}
@@ -2000,6 +2026,10 @@ $patternLiteralHints = @{
     DisposeCalls = @('.Dispose')
     AupPrecisionSafe = @('CurrentTotalOffsetDouble', 'ToAbsoluteUniversePositionDouble3', 'ToUniverseSpaceDouble3', 'ToRuntimeSpaceDouble3', 'FromAbsolutePosition', 'DistanceSq', 'ToRuntimeSpace')
     AupPrecisionRisk = @('HectonFloatingOrigin', 'HectonMapMagicVegetationBridge', 'CurrentTotalOffset', 'NewTotalOffset', 'PreviousTotalOffset', 'AUP', 'universePosition', 'stableUniverseRoot')
+    LinqSurface = @('.Where', '.Select', '.Any', '.First', '.ToList', '.ToArray', '.OrderBy', '.GroupBy', '.Sum', '.Average')
+    CoroutineSurface = @('StartCoroutine')
+    ManagedFormatSurface = @('$"', '$@"', '@$"', 'string.Format', 'String.Format', '.ToString')
+    JobCompleteSurface = @('.Complete')
 }
 
 $allCounters = New-CounterSet
@@ -2087,6 +2117,10 @@ foreach ($file in $files) {
         [int]$runtimeFileCounters['StaticInstance'] -gt 0 -or
         [int]$runtimeFileCounters['FindObjectCalls'] -gt 0 -or
         [int]$runtimeFileCounters['GetComponentCalls'] -gt 0 -or
+        [int]$runtimeFileCounters['LinqSurface'] -gt 0 -or
+        [int]$runtimeFileCounters['CoroutineSurface'] -gt 0 -or
+        [int]$runtimeFileCounters['ManagedFormatSurface'] -gt 0 -or
+        [int]$runtimeFileCounters['JobCompleteSurface'] -gt 0 -or
         [int]$runtimeFileCounters['AupPrecisionRisk'] -gt 0) {
         [void]$runtimeFileRows.Add([pscustomobject](New-FileRow $relativePath $domain $runtimeFileCounters $lineCount))
     }
@@ -2102,6 +2136,10 @@ Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'EventPublish' $Max
 Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'GlobalRegistrySurface' $MaxGlobalRegistrySurface 'GlobalRegistry surface'
 Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'GetComponentCalls' $MaxGetComponentCalls 'GetComponent'
 Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'NativeArrayRefs' $MaxNativeArrayRefs 'NativeArray'
+Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'LinqSurface' $MaxLinqSurface 'LINQ runtime surface'
+Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'CoroutineSurface' $MaxCoroutineSurface 'Coroutine runtime surface'
+Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'ManagedFormatSurface' $MaxManagedFormatSurface 'Managed format runtime surface'
+Assert-StaticCounterBudget $runtimeCounters $runtimeFileRows 'JobCompleteSurface' $MaxJobCompleteSurface 'Job Complete runtime surface'
 Assert-StaticScoreFloor $runtimeScores 'DataSovereignty' $MinDataSovereignty 'Data Sovereignty'
 Assert-StaticScoreFloor $runtimeScores 'MemoryAlignment' $MinMemoryAlignment 'Memory Alignment'
 Assert-StaticScoreFloor $runtimeScores 'HPhiStaticRisk' $MinRuntimeHPhiRisk 'Runtime risk-adjusted H-Phi'
@@ -2168,6 +2206,34 @@ $result = [ordered]@{
             Passed = $MaxNativeArrayRefs -lt 0 -or [int]$runtimeCounters.NativeArrayRefs -le $MaxNativeArrayRefs
             EvidenceClass = 'STATIC_SOURCE_FULL_SCAN'
         }
+        LinqSurface = [ordered]@{
+            Enabled = $MaxLinqSurface -ge 0
+            Max = $MaxLinqSurface
+            Actual = [int]$runtimeCounters.LinqSurface
+            Passed = $MaxLinqSurface -lt 0 -or [int]$runtimeCounters.LinqSurface -le $MaxLinqSurface
+            EvidenceClass = 'STATIC_SOURCE_FULL_SCAN'
+        }
+        CoroutineSurface = [ordered]@{
+            Enabled = $MaxCoroutineSurface -ge 0
+            Max = $MaxCoroutineSurface
+            Actual = [int]$runtimeCounters.CoroutineSurface
+            Passed = $MaxCoroutineSurface -lt 0 -or [int]$runtimeCounters.CoroutineSurface -le $MaxCoroutineSurface
+            EvidenceClass = 'STATIC_SOURCE_FULL_SCAN'
+        }
+        ManagedFormatSurface = [ordered]@{
+            Enabled = $MaxManagedFormatSurface -ge 0
+            Max = $MaxManagedFormatSurface
+            Actual = [int]$runtimeCounters.ManagedFormatSurface
+            Passed = $MaxManagedFormatSurface -lt 0 -or [int]$runtimeCounters.ManagedFormatSurface -le $MaxManagedFormatSurface
+            EvidenceClass = 'STATIC_SOURCE_FULL_SCAN'
+        }
+        JobCompleteSurface = [ordered]@{
+            Enabled = $MaxJobCompleteSurface -ge 0
+            Max = $MaxJobCompleteSurface
+            Actual = [int]$runtimeCounters.JobCompleteSurface
+            Passed = $MaxJobCompleteSurface -lt 0 -or [int]$runtimeCounters.JobCompleteSurface -le $MaxJobCompleteSurface
+            EvidenceClass = 'STATIC_SOURCE_FULL_SCAN'
+        }
         DataSovereignty = [ordered]@{
             Enabled = $MinDataSovereignty -ge 0.0
             Min = $MinDataSovereignty
@@ -2214,6 +2280,20 @@ $result = [ordered]@{
             @{ Expression = 'GlobalRegistrySurface'; Descending = $true },
             @{ Expression = 'GetComponentCalls'; Descending = $true }) |
         Select-Object -First 25)
+    TopManagedRuntimeRiskFiles = @($runtimeFileRows |
+        Where-Object { $_.ManagedRuntimeRisk -gt 0 } |
+        Sort-Object -Property @(
+            @{ Expression = 'ManagedRuntimeRisk'; Descending = $true },
+            @{ Expression = 'ManagedFormatSurface'; Descending = $true },
+            @{ Expression = 'LinqSurface'; Descending = $true },
+            @{ Expression = 'CoroutineSurface'; Descending = $true }) |
+        Select-Object -First 25)
+    TopJobCompleteRiskFiles = @($runtimeFileRows |
+        Where-Object { $_.JobCompleteSurface -gt 0 } |
+        Sort-Object -Property @(
+            @{ Expression = 'JobCompleteSurface'; Descending = $true },
+            @{ Expression = 'CouplingRisk'; Descending = $true }) |
+        Select-Object -First 25)
     TopEditorNativeArrayDomains = @($editorDomainRows.Values |
         ForEach-Object { [pscustomobject]$_ } |
         Sort-Object NativeArrayRefs -Descending |
@@ -2257,6 +2337,12 @@ if ($Summary) {
     Write-Output ''
     Write-Output 'Top coupling risk files:'
     $summaryResult.TopCouplingRiskFiles | Format-Table -AutoSize
+    Write-Output ''
+    Write-Output 'Top managed runtime risk files:'
+    $summaryResult.TopManagedRuntimeRiskFiles | Format-Table -AutoSize
+    Write-Output ''
+    Write-Output 'Top job Complete risk files:'
+    $summaryResult.TopJobCompleteRiskFiles | Format-Table -AutoSize
     Write-Output ''
     Write-Output 'Top owner-blocked DataVault candidate files:'
     $summaryResult.TopOwnerBlockedDataVaultCandidates | Format-Table -AutoSize

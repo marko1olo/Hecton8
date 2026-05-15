@@ -1453,7 +1453,7 @@ namespace Hecton8.World
             if (!(amount > 0f) || !math.isfinite(amount))
                 return;
 
-            Hecton8.Gameplay.CombatDamageSignal signal = new Hecton8.Gameplay.CombatDamageSignal
+            Hecton8.Gameplay.CombatDamageRequest signal = new Hecton8.Gameplay.CombatDamageRequest
             {
                 TargetId = targetId,
                 SourceId = sourceId != 0 ? sourceId : _instanceId,

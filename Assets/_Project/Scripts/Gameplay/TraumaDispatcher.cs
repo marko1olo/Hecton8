@@ -262,7 +262,7 @@ namespace Hecton8.Gameplay
         /// <summary>
         /// Applies incoming integrity-channel trauma.
         /// </summary>
-        public void OnIntegrityChanged(float prev, float next, DamageSignal src)
+        public void OnIntegrityChanged(float prev, float next, HabitatDamageSignal src)
         {
             PromoteChannel(ref _integrityChannel01, math.max(math.abs(next - prev), src.integrityDelta / (float)byte.MaxValue));
 
@@ -287,7 +287,7 @@ namespace Hecton8.Gameplay
         /// <summary>
         /// Applies incoming power-channel trauma.
         /// </summary>
-        public void OnPowerChanged(float prev, float next, DamageSignal src)
+        public void OnPowerChanged(float prev, float next, HabitatDamageSignal src)
         {
             PromoteChannel(ref _powerChannel01, math.max(math.abs(next - prev), next));
         }
@@ -295,7 +295,7 @@ namespace Hecton8.Gameplay
         /// <summary>
         /// Applies incoming clarity-channel trauma.
         /// </summary>
-        public void OnClarityChanged(float prev, float next, DamageSignal src)
+        public void OnClarityChanged(float prev, float next, HabitatDamageSignal src)
         {
             PromoteChannel(ref _clarityChannel01, math.max(math.abs(next - prev), next));
 
@@ -564,7 +564,7 @@ namespace Hecton8.Gameplay
             if (force || interactionSignature != _lastPublishedInteractionSignature)
             {
                 _lastPublishedInteractionSignature = interactionSignature;
-                PlayerSignalEvents.RaiseInteractionSignal(new InteractionSignal(
+                PlayerSignalEvents.RaiseInteractionSignal(new PlayerInteractionStressSignal(
                     stress01,
                     volume01,
                     pitchScale,

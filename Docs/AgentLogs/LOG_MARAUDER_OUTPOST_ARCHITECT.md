@@ -461,6 +461,41 @@ Verification:
 
 Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
 
+## 2026-05-15 - WFC Outpost Loop 30 Grid Registry Descriptor Gate
+
+What was wrong:
+- `WfcOutpostGridRegistry.RegisterGrid` accepted descriptor metadata before proving it was a valid WFC outpost payload.
+- Invalid sector/generation, oversized dimensions, impossible cell counts, non-finite AUP local offsets, or NaN meter scalars could enter the fixed-slot registry.
+- Slot reuse kept the old handle/descriptor live until after new bytes were copied.
+- `WfcOutpostGridDescriptor` and `WfcOutpostPowerNode` had sequential layout but no explicit byte-size proof.
+
+What was done:
+- Added `IsValidDescriptor(in descriptor)` to reject invalid WFC registry payloads before slot mutation.
+- Clamped registry copy length to the descriptor's expected dimensions as well as source length and max cell count.
+- Cleared the target slot handle/descriptor before copying a replacement grid.
+- Added explicit sizes: `WfcOutpostGridDescriptor = 96 bytes`, `WfcOutpostPowerNode = 40 bytes`.
+
+Cinematic Cheats used:
+- Invalid generated topology fails closed at the registry boundary instead of attempting a physical/logistics recovery pass.
+- Valid outposts keep the existing cheap fake: packed WFC bytes, fixed-slot native handoff, scalar power graph, bounded door-power signals.
+
+Exact Microseconds saved:
+- New cost: descriptor finite/dimension checks and one expected-count multiply on cold registration, estimated below 0.1 us on i3/MX350.
+- Saved cost on corrupt inputs: avoids native grid copy, graph translation, graph evaluation, and door-power signal churn from invalid descriptors.
+- Hot Tick/Render remains 0 B/frame.
+
+Verification:
+- Targeted registry scan: PASS; descriptor gate, zero-sector/zero-generation guards, expected-count guard, finite local AUP/scalar guards, and pre-copy slot invalidation are present.
+- Layout scan: PASS; `WfcOutpostGridDescriptor` has `Size = 96`, `WfcOutpostPowerNode` has `Size = 40`.
+- Scoped WFC counts: `GlobalRegistrySurface=12`, `SignalBusPush=3`, `GlobalSignalsPublish=0`, `EventPublish=0`, `StructLayoutAttributes=10`, `ExplicitSizeLayouts=6`, `BlackboxModulo=0`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
+- `git diff --check`: PASS with repository CRLF warnings only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+- Unity MCP console/profiler: unavailable from this session.
+- Worktree note: descriptor size contract changes and docs had staged changes present; registry gate is unstaged. No staging state was changed by this pass.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
 ## 2026-05-15 - WFC Outpost Loop 29 Logistics Graph Descriptor Gate
 
 What was wrong:

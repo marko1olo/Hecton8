@@ -633,7 +633,8 @@ namespace Hecton8.Gameplay
                 SourceHash = WfcOutpostDoorSourceHash,
                 Flags = 0
             };
-            GlobalSignals.Publish(in signal);
+            GlobalSignals.InitializeAllQueues();
+            SignalBus<WfcOutpostStateChangedSignal>.Push(in signal);
         }
 
         private static bool TryResolveOwnedComponent<T>(Transform root, out T component) where T : Component

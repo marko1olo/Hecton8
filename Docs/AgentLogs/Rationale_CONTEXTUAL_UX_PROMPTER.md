@@ -242,3 +242,10 @@ Solution: Added `_appliedPhosphorDecay`, reset it on phosphor material cache res
 Rejected Alternatives: Leaving the scalar write in the per-frame blit path, moving decay into a global material, or skipping texture rebinding. The scalar is stable most frames; global material mutation is unsafe; textures swap every frame and must still be rebound.
 Scalability potential: Low reduces API traffic for the same CRT persistence fake. Middle/High/Ultra can spend the saved overhead on richer authored panel effects without changing the compositing contract.
 Hardware Impact: Expected gain is sub-microsecond per phosphor-enabled panel late frame on i3/MX350; no profiler proof.
+
+## Decision 34: Diegetic Panel Interface Source Cache
+Problem: `ResolveInterfaces()` is called during runtime-state validation and recast the same serialized `MonoBehaviour` references to `IPanelInteractable` and `IPanelPowerSource` every active tick.
+Solution: Added cached source references and recast only when `panelInteractable` or `panelPowerSource` changes.
+Rejected Alternatives: Removing runtime resolution entirely, caching only in `Awake`, or using scene searches. Runtime overrides still need to work; `Awake`-only would miss injected sources; scene searches violate ownership and cost rules.
+Scalability potential: Low removes tiny repeated cast work from active panels. Middle/High/Ultra keep the same extension hooks for richer physical panel receivers and power visualization.
+Hardware Impact: Expected gain is sub-microsecond per active physical panel tick; no profiler proof.

@@ -1619,7 +1619,7 @@ namespace Hecton8.Environment
             }
             else if (authoredGameplayCamera == null && playerCamera != null)
             {
-                Camera playerOwnedCamera = playerCamera.GetComponent<Camera>();
+                playerCamera.TryGetComponent(out Camera playerOwnedCamera);
                 if (IsRuntimeMainCamera(playerOwnedCamera))
                     authoredGameplayCamera = playerOwnedCamera;
             }
@@ -4396,7 +4396,7 @@ namespace Hecton8.Environment
             {
                 if (playerCamera != null)
                 {
-                    Camera playerOwnedCamera = playerCamera.GetComponent<Camera>();
+                    playerCamera.TryGetComponent(out Camera playerOwnedCamera);
                     if (IsRuntimeMainCamera(playerOwnedCamera))
                     {
                         mainCamera = playerOwnedCamera;
@@ -4438,7 +4438,7 @@ namespace Hecton8.Environment
                     Transform rootMainCameraTransform = root.Find("Main Camera");
                     if (rootMainCameraTransform != null)
                     {
-                        Camera rootMainCamera = rootMainCameraTransform.GetComponent<Camera>();
+                        rootMainCameraTransform.TryGetComponent(out Camera rootMainCamera);
                         if (IsRuntimeMainCamera(rootMainCamera))
                         {
                             mainCamera = rootMainCamera;
@@ -4474,7 +4474,7 @@ namespace Hecton8.Environment
 
             if (playerCamera != null)
             {
-                Camera playerOwnedCamera = playerCamera.GetComponent<Camera>();
+                playerCamera.TryGetComponent(out Camera playerOwnedCamera);
                 if (playerOwnedCamera != null && HasUnderwaterRenderer(playerOwnedCamera))
                 {
                     _gameplayMainCamera = playerOwnedCamera;
@@ -4504,7 +4504,7 @@ namespace Hecton8.Environment
                 mainCameraTransform = root.parent.Find("Main Camera");
 
             if (mainCameraTransform != null)
-                _gameplayMainCamera = mainCameraTransform.GetComponent<Camera>();
+                mainCameraTransform.TryGetComponent(out _gameplayMainCamera);
         }
 
         private void ResolveGameplaySpaceCameraForEditor()
@@ -4523,7 +4523,7 @@ namespace Hecton8.Environment
             if (spaceCameraTransform == null)
                 return;
 
-            _editorGameplaySpaceCamera = spaceCameraTransform.GetComponent<Camera>();
+            spaceCameraTransform.TryGetComponent(out _editorGameplaySpaceCamera);
             ResolveValidCameraReference(ref _editorGameplaySpaceCamera);
         }
 
@@ -4551,7 +4551,7 @@ namespace Hecton8.Environment
             if (spaceCameraTransform == null)
                 return;
 
-            Camera resolvedSpaceCamera = spaceCameraTransform.GetComponent<Camera>();
+            spaceCameraTransform.TryGetComponent(out Camera resolvedSpaceCamera);
             if (!IsCameraReferenceValid(resolvedSpaceCamera))
             {
                 _spaceCamera = null;
@@ -5158,7 +5158,7 @@ namespace Hecton8.Environment
             if (ReferenceEquals(_underwaterMarineSnowSearchCamera, mainCamera))
                 return;
 
-            underwaterMarineSnow = mainCamera.GetComponent<HectonMarineSnowRenderer>();
+            mainCamera.TryGetComponent(out underwaterMarineSnow);
             _underwaterMarineSnowSearchCamera = mainCamera;
             if (underwaterMarineSnow != null)
                 underwaterMarineSnow.BindTargetCamera(mainCamera.transform);
@@ -6685,7 +6685,7 @@ namespace Hecton8.Environment
                 }
                 else if (playerCamera != null)
                 {
-                    Camera playerOwnedCamera = playerCamera.GetComponent<Camera>();
+                    playerCamera.TryGetComponent(out Camera playerOwnedCamera);
                     if (playerOwnedCamera != null && playerOwnedCamera.enabled && playerOwnedCamera.gameObject.activeInHierarchy)
                         editorPreviewCamera = playerOwnedCamera;
                 }
