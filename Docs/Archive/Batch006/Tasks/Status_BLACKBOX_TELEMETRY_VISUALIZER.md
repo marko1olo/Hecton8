@@ -59,3 +59,4 @@ Source prompt: `Docs/Tasks/CURRENT_BATCH.md` / `<AGENT_PROMPT id="BLACKBOX_TELEM
 - [x] Response cache guard: `/`, `/api/summary`, and `/api/health` return `no-store`, `no-cache`, and `nosniff` headers.
 - [x] Workspace-local smoke harness: `Tools/TelemetryDashboard/smoke_test.py` writes synthetic telemetry under `Temp/CodexValidation/BLACKBOX_TELEMETRY_VISUALIZER_SMOKE` instead of OS temp, so sandboxed verification executes without external temp permissions.
 - [x] Live endpoint verification: dashboard started on `http://127.0.0.1:8000` with Python PID `11956`; `/`, `/api/summary`, and `/api/health` returned HTTP 200 with no-store/nosniff headers.
+- [x] Per-file parser fault isolation: `collect_dumps()` now labels unexpected single-file parser faults as `parse_failed` without degrading the whole summary payload; smoke test forces a parser exception and verifies other telemetry still appears.

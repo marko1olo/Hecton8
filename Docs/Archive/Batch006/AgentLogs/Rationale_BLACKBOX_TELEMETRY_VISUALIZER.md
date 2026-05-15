@@ -125,3 +125,10 @@ Solution: Route synthetic dump/CSV fixtures to `Temp/CodexValidation/BLACKBOX_TE
 Rejected Alternatives: Requesting escalation for every smoke run was rejected because normal parser verification should be sandbox-runnable. Keeping OS temp was rejected because it moves evidence outside project-owned disk state.
 Scalability potential: Low/Middle/High/Ultra dashboard verification now runs in restricted CI-style environments without Unity or OS-temp write assumptions.
 Hardware Impact: 0 us Unity frame impact. External test harness only; dashboard runtime behavior unchanged.
+
+## Decision 019 - Per-File Parser Fault Isolation
+Problem: `collect_dumps()` parsed every candidate file in one pass, so one unexpected parser exception could force `/api/summary` into whole-payload degraded mode and hide valid telemetry from other files.
+Solution: Catch unexpected parser exceptions per candidate file and emit a bounded `parse_failed` file record with warning and exception type. Valid dumps continue feeding charts, thermal state, ecology, and memory maps.
+Rejected Alternatives: Leaving only the route-level degraded guard was rejected because it is too coarse for a forensic dashboard. Retrying or mutating the bad dump was rejected because read endpoints must not rewrite evidence artifacts.
+Scalability potential: Low tier keeps a stable small payload even with one corrupt dump. Middle/High/Ultra can render partial forensic data and a clear failed-file row without changing Unity emitters.
+Hardware Impact: 0 us Unity frame impact. External Python branch only; auxiliary request timing remains PENDING MEASUREMENT.

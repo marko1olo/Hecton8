@@ -342,3 +342,26 @@ Verification:
 - `/`: HTTP 200, 16769 bytes, `cache-control: no-store, max-age=0`, `x-content-type-options: nosniff`.
 - `/api/health`: HTTP 200, `ok`, `cache-control: no-store, max-age=0`, `x-content-type-options: nosniff`.
 - C# boundary: no `Assets/_Project/Scripts` edits by this task.
+
+## 2026-05-15 - Per-File Parser Fault Isolation
+
+What was wrong:
+- `collect_dumps()` depended on every candidate file parser returning cleanly.
+- A single unexpected parser exception could force `/api/summary` into whole-dashboard degraded mode and hide valid telemetry from other files.
+
+What was done:
+- Added `parse_failed_dump_file()` in `Tools/TelemetryDashboard/server.py`.
+- Replaced the dump parser list comprehension with an explicit guarded loop.
+- Extended `Tools/TelemetryDashboard/smoke_test.py` to force one parser exception and verify the failed file is labeled while `runtime_telemetry.bin` still appears.
+
+Cinematic Cheats used:
+- No telemetry values are invented. The failed artifact is labeled as failed evidence while valid artifacts remain file-backed.
+
+Exact Microseconds saved:
+- Unity gameplay frame: 0 us changed.
+- Dashboard/API: whole-payload failure path avoided for single corrupt dumps; exact auxiliary-process timing is PENDING MEASUREMENT.
+
+Verification:
+- `python -B Tools\TelemetryDashboard\smoke_test.py`: PASS, output `telemetry dashboard smoke ok`.
+- `python -B -m py_compile Tools\TelemetryDashboard\server.py Tools\TelemetryDashboard\smoke_test.py`: PASS.
+- Evidence class: CLI_COMPILE + parser smoke. Unity runtime telemetry content remains PENDING VERIFICATION.
