@@ -270,7 +270,8 @@ class MemoryBudgetCheckTests(unittest.TestCase):
 
         self.assertTrue(ok, messages)
         self.assertIn("reports valid", messages[0])
-        self.assertIn("rt_hotspots=61", messages[0])
+        payload = json.loads((PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit.json").read_text(encoding="utf-8"))
+        self.assertIn(f"rt_hotspots={payload['render_texture_source_hotspot_rows']}", messages[0])
         buffer = io.StringIO()
         with contextlib.redirect_stdout(buffer):
             exit_code = budget.main(["--root", str(PROJECT_ROOT), "--validate-reports"])
