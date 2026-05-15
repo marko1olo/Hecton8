@@ -1,0 +1,1094 @@
+{
+  "schema_id": "hecton8.submarine_hydrodynamics.v1",
+  "status": "HYDRODYNAMICS DEFINED",
+  "expensive_weight_feel": {
+    "design_intent": "Submarines are heavy pressure vessels pushing water, not free-flying spacecraft in blue fog.",
+    "control_rule": "Forward acceleration is limited by operational mass plus surge added mass; lateral and vertical motion pay larger added-mass penalties.",
+    "drag_rule": "Steady speed costs cubic power because drag is quadratic and shaft power is drag force times speed.",
+    "rotation_rule": "Pitch, yaw, and roll use separate angular damping tensors so hull shape controls attitude feel.",
+    "cavitation_rule": "Speed and depth thresholds drive acoustic/VFX feedback; bubble microphysics remains a presentation fake."
+  },
+  "units": {
+    "density": "kg/m^3",
+    "drag_tensor": "Cd * projected_area in m^2",
+    "square_drag_accel_tensor": "1/m; runtime analytical drag v=v0/(1+k*abs(v0)*dt)",
+    "added_mass_tensor": "kg",
+    "angular_damping_tensor": "N*m per (rad/s)^2"
+  },
+  "runtime_contract": {
+    "force_application": "Route final force packets through PhysicsApplySystem; do not call Rigidbody.AddForce from vehicle gameplay code.",
+    "integration_hint": "Use force * rcp(operational_mass + added_mass_axis) and analytical quadratic drag.",
+    "hot_path_gc": "Load this data into preallocated structs or NativeArrays. Do not parse JSON in Tick/FixedTick.",
+    "black_box": "Runtime vehicle physics owner must write 300 fixed frames of state to Dump_HYDRODYNAMIC_DRAG_MATRIX_BAKER.bin on NaN/crash."
+  },
+  "global_constants": {
+    "sea_water_density_kg_m3": 1027.0,
+    "gravity_m_s2": 9.80665,
+    "atmospheric_pressure_pa": 101325.0,
+    "water_vapor_pressure_pa": 1700.0,
+    "stop_target_speed_ratio": 0.05,
+    "min_stop_distance_hull_lengths": 3.0
+  },
+  "hulls": [
+    {
+      "shape_id": "SLEEK",
+      "display_name": "Sleek Scout",
+      "role": "fast narrow exploration hull",
+      "dimensions_m": {
+        "length": 16.0,
+        "beam": 3.2,
+        "height": 2.8
+      },
+      "operational_mass_kg": 70000.0,
+      "displaced_volume_m3": 78.848,
+      "displaced_water_mass_kg": 80976.896,
+      "max_thrust_n": 220000.0,
+      "rated_cruise_speed_mps": 13.85123,
+      "terminal_speed_at_max_thrust_mps": 19.23782,
+      "reference_projected_areas": {
+        "frontal_x_m2": 6.0928,
+        "side_y_m2": 34.944,
+        "top_z_m2": 37.888
+      },
+      "hydrodynamic_coefficients": {
+        "Cd_axial_forward": 0.19,
+        "Cd_axial_reverse": 0.24,
+        "Cd_lateral_sway": 0.92,
+        "Cd_vertical_heave": 0.74,
+        "Cl_pitch_per_rad": 0.18,
+        "Cl_yaw_per_rad": 0.16,
+        "Cl_control_surface_max": 0.72
+      },
+      "drag_tensor_cd_area_m2_local_xyz": [
+        [
+          1.157632,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          32.14848,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          28.03712
+        ]
+      ],
+      "reverse_axial_cd_area_m2": 1.462272,
+      "square_drag_accel_tensor_per_meter_local_xyz": [
+        [
+          0.007773,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.11822,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.108117
+        ]
+      ],
+      "added_mass_coefficients_local_xyz": {
+        "x_surge": 0.08,
+        "y_sway": 0.86,
+        "z_heave": 0.78
+      },
+      "added_mass_tensor_kg_local_xyz": [
+        [
+          6478.15168,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          69640.13056,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          63161.97888
+        ]
+      ],
+      "effective_mass_tensor_kg_local_xyz": [
+        [
+          76478.15168,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          139640.13056,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          133161.97888
+        ]
+      ],
+      "rigid_angular_inertia_tensor_kg_m2_local_xyz": [
+        [
+          105466.666667,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1539066.666667,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1553066.666667
+        ]
+      ],
+      "added_angular_inertia_tensor_kg_m2_local_xyz": [
+        [
+          19520.830396,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          818989.529225,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          898303.699627
+        ]
+      ],
+      "angular_quadratic_damping_torque_tensor_n_m_per_rad_s_sq_local_xyz": [
+        [
+          2306.693136,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          5696062.09536,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          5777501.71648
+        ]
+      ],
+      "cavitation": {
+        "model": "sigma=(p_ambient-p_vapor)/(0.5*rho*v_effective_prop^2); cavitates when sigma <= sigma_critical",
+        "sigma_critical": 1.8,
+        "quiet_prop_rpm": 145.0,
+        "prop_radius_m": 0.62,
+        "wake_fraction": 0.18,
+        "thresholds_by_depth": [
+          {
+            "depth_m": 0.0,
+            "ambient_pressure_kpa": 101.325,
+            "critical_effective_prop_speed_mps": 10.38192,
+            "quiet_prop_tip_speed_mps": 9.414306,
+            "hull_speed_onset_mps": 5.337385
+          },
+          {
+            "depth_m": 25.0,
+            "ambient_pressure_kpa": 353.110739,
+            "critical_effective_prop_speed_mps": 19.498493,
+            "quiet_prop_tip_speed_mps": 9.414306,
+            "hull_speed_onset_mps": 20.8234
+          },
+          {
+            "depth_m": 50.0,
+            "ambient_pressure_kpa": 604.896477,
+            "critical_effective_prop_speed_mps": 25.546001,
+            "quiet_prop_tip_speed_mps": 9.414306,
+            "hull_speed_onset_mps": 28.961014
+          },
+          {
+            "depth_m": 100.0,
+            "ambient_pressure_kpa": 1108.467955,
+            "critical_effective_prop_speed_mps": 34.603642,
+            "quiet_prop_tip_speed_mps": 9.414306,
+            "hull_speed_onset_mps": 40.607795
+          },
+          {
+            "depth_m": 300.0,
+            "ambient_pressure_kpa": 3122.753865,
+            "critical_effective_prop_speed_mps": 58.109101,
+            "quiet_prop_tip_speed_mps": 9.414306,
+            "hull_speed_onset_mps": 69.928561
+          }
+        ],
+        "gameplay_output": "Use threshold crossing for acoustic/noise/VFX state. Do not simulate bubble microphysics."
+      },
+      "verification": {
+        "acceleration_gate": {
+          "duration_seconds": 90.0,
+          "dt_seconds": 0.02,
+          "max_speed_mps": 19.23782,
+          "time_to_50_mps_seconds": null
+        },
+        "stop_distance_to_5_percent_terminal_speed_m": 385.415708,
+        "stop_distance_hull_lengths": 24.088482,
+        "min_required_stop_distance_m": 48.0
+      }
+    },
+    {
+      "shape_id": "INDUSTRIAL",
+      "display_name": "Industrial Hauler",
+      "role": "workhorse vehicle with external equipment mass",
+      "dimensions_m": {
+        "length": 22.0,
+        "beam": 5.0,
+        "height": 4.5
+      },
+      "operational_mass_kg": 260000.0,
+      "displaced_volume_m3": 306.9,
+      "displaced_water_mass_kg": 315186.3,
+      "max_thrust_n": 420000.0,
+      "rated_cruise_speed_mps": 8.689071,
+      "terminal_speed_at_max_thrust_mps": 12.068155,
+      "reference_projected_areas": {
+        "frontal_x_m2": 17.55,
+        "side_y_m2": 85.14,
+        "top_z_m2": 90.2
+      },
+      "hydrodynamic_coefficients": {
+        "Cd_axial_forward": 0.32,
+        "Cd_axial_reverse": 0.38,
+        "Cd_lateral_sway": 1.14,
+        "Cd_vertical_heave": 0.95,
+        "Cl_pitch_per_rad": 0.1,
+        "Cl_yaw_per_rad": 0.09,
+        "Cl_control_surface_max": 0.44
+      },
+      "drag_tensor_cd_area_m2_local_xyz": [
+        [
+          5.616,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          97.0596,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          85.69
+        ]
+      ],
+      "reverse_axial_cd_area_m2": 6.669,
+      "square_drag_accel_tensor_per_meter_local_xyz": [
+        [
+          0.009683,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.088592,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.081885
+        ]
+      ],
+      "added_mass_coefficients_local_xyz": {
+        "x_surge": 0.12,
+        "y_sway": 0.96,
+        "z_heave": 0.88
+      },
+      "added_mass_tensor_kg_local_xyz": [
+        [
+          37822.356,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          302578.848,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          277363.944
+        ]
+      ],
+      "effective_mass_tensor_kg_local_xyz": [
+        [
+          297822.356,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          562578.848,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          537363.944
+        ]
+      ],
+      "rigid_angular_inertia_tensor_kg_m2_local_xyz": [
+        [
+          980416.666667,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          10925416.666667,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          11028333.333333
+        ]
+      ],
+      "added_angular_inertia_tensor_kg_m2_local_xyz": [
+        [
+          237703.00125,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          7681746.769125,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          8288874.3795
+        ]
+      ],
+      "angular_quadratic_damping_torque_tensor_n_m_per_rad_s_sq_local_xyz": [
+        [
+          35202.832031,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          47716216.6338,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          46853132.612
+        ]
+      ],
+      "cavitation": {
+        "model": "sigma=(p_ambient-p_vapor)/(0.5*rho*v_effective_prop^2); cavitates when sigma <= sigma_critical",
+        "sigma_critical": 1.9,
+        "quiet_prop_rpm": 130.0,
+        "prop_radius_m": 0.8,
+        "wake_fraction": 0.25,
+        "thresholds_by_depth": [
+          {
+            "depth_m": 0.0,
+            "ambient_pressure_kpa": 101.325,
+            "critical_effective_prop_speed_mps": 10.105019,
+            "quiet_prop_tip_speed_mps": 10.890855,
+            "hull_speed_onset_mps": 0.0
+          },
+          {
+            "depth_m": 25.0,
+            "ambient_pressure_kpa": 353.110739,
+            "critical_effective_prop_speed_mps": 18.978439,
+            "quiet_prop_tip_speed_mps": 10.890855,
+            "hull_speed_onset_mps": 20.723382
+          },
+          {
+            "depth_m": 50.0,
+            "ambient_pressure_kpa": 604.896477,
+            "critical_effective_prop_speed_mps": 24.864651,
+            "quiet_prop_tip_speed_mps": 10.890855,
+            "hull_speed_onset_mps": 29.80351
+          },
+          {
+            "depth_m": 100.0,
+            "ambient_pressure_kpa": 1108.467955,
+            "critical_effective_prop_speed_mps": 33.680712,
+            "quiet_prop_tip_speed_mps": 10.890855,
+            "hull_speed_onset_mps": 42.495064
+          },
+          {
+            "depth_m": 300.0,
+            "ambient_pressure_kpa": 3122.753865,
+            "critical_effective_prop_speed_mps": 56.559246,
+            "quiet_prop_tip_speed_mps": 10.890855,
+            "hull_speed_onset_mps": 74.001052
+          }
+        ],
+        "gameplay_output": "Use threshold crossing for acoustic/noise/VFX state. Do not simulate bubble microphysics."
+      },
+      "verification": {
+        "acceleration_gate": {
+          "duration_seconds": 90.0,
+          "dt_seconds": 0.02,
+          "max_speed_mps": 12.068155,
+          "time_to_50_mps_seconds": null
+        },
+        "stop_distance_to_5_percent_terminal_speed_m": 309.380364,
+        "stop_distance_hull_lengths": 14.062744,
+        "min_required_stop_distance_m": 66.0
+      }
+    },
+    {
+      "shape_id": "BOXY",
+      "display_name": "Boxy Salvage Tug",
+      "role": "short slab-sided salvage hull",
+      "dimensions_m": {
+        "length": 14.0,
+        "beam": 5.6,
+        "height": 4.8
+      },
+      "operational_mass_kg": 240000.0,
+      "displaced_volume_m3": 282.24,
+      "displaced_water_mass_kg": 289860.48,
+      "max_thrust_n": 600000.0,
+      "rated_cruise_speed_mps": 6.429028,
+      "terminal_speed_at_max_thrust_mps": 8.929206,
+      "reference_projected_areas": {
+        "frontal_x_m2": 25.2672,
+        "side_y_m2": 63.168,
+        "top_z_m2": 70.56
+      },
+      "hydrodynamic_coefficients": {
+        "Cd_axial_forward": 0.58,
+        "Cd_axial_reverse": 0.66,
+        "Cd_lateral_sway": 1.42,
+        "Cd_vertical_heave": 1.25,
+        "Cl_pitch_per_rad": 0.05,
+        "Cl_yaw_per_rad": 0.04,
+        "Cl_control_surface_max": 0.24
+      },
+      "drag_tensor_cd_area_m2_local_xyz": [
+        [
+          14.654976,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          89.69856,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          88.2
+        ]
+      ],
+      "reverse_axial_cd_area_m2": 16.676352,
+      "square_drag_accel_tensor_per_meter_local_xyz": [
+        [
+          0.025756,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.079136,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.081893
+        ]
+      ],
+      "added_mass_coefficients_local_xyz": {
+        "x_surge": 0.18,
+        "y_sway": 1.18,
+        "z_heave": 1.08
+      },
+      "added_mass_tensor_kg_local_xyz": [
+        [
+          52174.8864,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          342035.3664,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          313049.3184
+        ]
+      ],
+      "effective_mass_tensor_kg_local_xyz": [
+        [
+          292174.8864,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          582035.3664,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          553049.3184
+        ]
+      ],
+      "rigid_angular_inertia_tensor_kg_m2_local_xyz": [
+        [
+          1088000.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          4380800.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          4547200.0
+        ]
+      ],
+      "added_angular_inertia_tensor_kg_m2_local_xyz": [
+        [
+          341648.88576,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          3703643.97312,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          4063998.521856
+        ]
+      ],
+      "angular_quadratic_damping_torque_tensor_n_m_per_rad_s_sq_local_xyz": [
+        [
+          96839.062634,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          12015876.33792,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          12676323.4416
+        ]
+      ],
+      "cavitation": {
+        "model": "sigma=(p_ambient-p_vapor)/(0.5*rho*v_effective_prop^2); cavitates when sigma <= sigma_critical",
+        "sigma_critical": 2.0,
+        "quiet_prop_rpm": 150.0,
+        "prop_radius_m": 0.7,
+        "wake_fraction": 0.32,
+        "thresholds_by_depth": [
+          {
+            "depth_m": 0.0,
+            "ambient_pressure_kpa": 101.325,
+            "critical_effective_prop_speed_mps": 9.849154,
+            "quiet_prop_tip_speed_mps": 10.995574,
+            "hull_speed_onset_mps": 0.0
+          },
+          {
+            "depth_m": 25.0,
+            "ambient_pressure_kpa": 353.110739,
+            "critical_effective_prop_speed_mps": 18.497894,
+            "quiet_prop_tip_speed_mps": 10.995574,
+            "hull_speed_onset_mps": 21.875188
+          },
+          {
+            "depth_m": 50.0,
+            "ambient_pressure_kpa": 604.896477,
+            "critical_effective_prop_speed_mps": 24.235064,
+            "quiet_prop_tip_speed_mps": 10.995574,
+            "hull_speed_onset_mps": 31.760474
+          },
+          {
+            "depth_m": 100.0,
+            "ambient_pressure_kpa": 1108.467955,
+            "critical_effective_prop_speed_mps": 32.827897,
+            "quiet_prop_tip_speed_mps": 10.995574,
+            "hull_speed_onset_mps": 45.48775
+          },
+          {
+            "depth_m": 300.0,
+            "ambient_pressure_kpa": 3122.753865,
+            "critical_effective_prop_speed_mps": 55.127133,
+            "quiet_prop_tip_speed_mps": 10.995574,
+            "hull_speed_onset_mps": 79.44033
+          }
+        ],
+        "gameplay_output": "Use threshold crossing for acoustic/noise/VFX state. Do not simulate bubble microphysics."
+      },
+      "verification": {
+        "acceleration_gate": {
+          "duration_seconds": 90.0,
+          "dt_seconds": 0.02,
+          "max_speed_mps": 8.929206,
+          "time_to_50_mps_seconds": null
+        },
+        "stop_distance_to_5_percent_terminal_speed_m": 116.310875,
+        "stop_distance_hull_lengths": 8.30792,
+        "min_required_stop_distance_m": 42.0
+      }
+    },
+    {
+      "shape_id": "ALIEN",
+      "display_name": "Alien Manta",
+      "role": "wide biological silhouette with clean pressure recovery",
+      "dimensions_m": {
+        "length": 20.0,
+        "beam": 6.2,
+        "height": 2.6
+      },
+      "operational_mass_kg": 120000.0,
+      "displaced_volume_m3": 145.08,
+      "displaced_water_mass_kg": 148997.16,
+      "max_thrust_n": 280000.0,
+      "rated_cruise_speed_mps": 13.295447,
+      "terminal_speed_at_max_thrust_mps": 18.465898,
+      "reference_projected_areas": {
+        "frontal_x_m2": 9.9944,
+        "side_y_m2": 37.44,
+        "top_z_m2": 101.68
+      },
+      "hydrodynamic_coefficients": {
+        "Cd_axial_forward": 0.16,
+        "Cd_axial_reverse": 0.2,
+        "Cd_lateral_sway": 0.78,
+        "Cd_vertical_heave": 0.62,
+        "Cl_pitch_per_rad": 0.24,
+        "Cl_yaw_per_rad": 0.21,
+        "Cl_control_surface_max": 0.86
+      },
+      "drag_tensor_cd_area_m2_local_xyz": [
+        [
+          1.599104,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          29.2032,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          63.0416
+        ]
+      ],
+      "reverse_axial_cd_area_m2": 1.99888,
+      "square_drag_accel_tensor_per_meter_local_xyz": [
+        [
+          0.006368,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.058332,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.144325
+        ]
+      ],
+      "added_mass_coefficients_local_xyz": {
+        "x_surge": 0.06,
+        "y_sway": 0.92,
+        "z_heave": 0.7
+      },
+      "added_mass_tensor_kg_local_xyz": [
+        [
+          8939.8296,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          137077.3872,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          104298.012
+        ]
+      ],
+      "effective_mass_tensor_kg_local_xyz": [
+        [
+          128939.8296,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          257077.3872,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          224298.012
+        ]
+      ],
+      "rigid_angular_inertia_tensor_kg_m2_local_xyz": [
+        [
+          452000.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          4067600.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          4384400.0
+        ]
+      ],
+      "added_angular_inertia_tensor_kg_m2_local_xyz": [
+        [
+          78571.16904,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          2222223.109392,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          2830806.975984
+        ]
+      ],
+      "angular_quadratic_damping_torque_tensor_n_m_per_rad_s_sq_local_xyz": [
+        [
+          24462.57888,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          10381737.6,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          26106340.0
+        ]
+      ],
+      "cavitation": {
+        "model": "sigma=(p_ambient-p_vapor)/(0.5*rho*v_effective_prop^2); cavitates when sigma <= sigma_critical",
+        "sigma_critical": 1.7,
+        "quiet_prop_rpm": 120.0,
+        "prop_radius_m": 0.75,
+        "wake_fraction": 0.15,
+        "thresholds_by_depth": [
+          {
+            "depth_m": 0.0,
+            "ambient_pressure_kpa": 101.325,
+            "critical_effective_prop_speed_mps": 10.682908,
+            "quiet_prop_tip_speed_mps": 9.424778,
+            "hull_speed_onset_mps": 5.917317
+          },
+          {
+            "depth_m": 25.0,
+            "ambient_pressure_kpa": 353.110739,
+            "critical_effective_prop_speed_mps": 20.063783,
+            "quiet_prop_tip_speed_mps": 9.424778,
+            "hull_speed_onset_mps": 20.838113
+          },
+          {
+            "depth_m": 50.0,
+            "ambient_pressure_kpa": 604.896477,
+            "critical_effective_prop_speed_mps": 26.286618,
+            "quiet_prop_tip_speed_mps": 9.424778,
+            "hull_speed_onset_mps": 28.869348
+          },
+          {
+            "depth_m": 100.0,
+            "ambient_pressure_kpa": 1108.467955,
+            "critical_effective_prop_speed_mps": 35.606854,
+            "quiet_prop_tip_speed_mps": 9.424778,
+            "hull_speed_onset_mps": 40.396334
+          },
+          {
+            "depth_m": 300.0,
+            "ambient_pressure_kpa": 3122.753865,
+            "critical_effective_prop_speed_mps": 59.793771,
+            "quiet_prop_tip_speed_mps": 9.424778,
+            "hull_speed_onset_mps": 69.466266
+          }
+        ],
+        "gameplay_output": "Use threshold crossing for acoustic/noise/VFX state. Do not simulate bubble microphysics."
+      },
+      "verification": {
+        "acceleration_gate": {
+          "duration_seconds": 90.0,
+          "dt_seconds": 0.02,
+          "max_speed_mps": 18.465898,
+          "time_to_50_mps_seconds": null
+        },
+        "stop_distance_to_5_percent_terminal_speed_m": 470.406087,
+        "stop_distance_hull_lengths": 23.520304,
+        "min_required_stop_distance_m": 60.0
+      }
+    },
+    {
+      "shape_id": "ARMORED_CRAWLER",
+      "display_name": "Armored Crawler",
+      "role": "heavy pressure-rated mobile habitat hull",
+      "dimensions_m": {
+        "length": 28.0,
+        "beam": 6.4,
+        "height": 5.2
+      },
+      "operational_mass_kg": 560000.0,
+      "displaced_volume_m3": 633.6512,
+      "displaced_water_mass_kg": 650759.7824,
+      "max_thrust_n": 620000.0,
+      "rated_cruise_speed_mps": 7.133464,
+      "terminal_speed_at_max_thrust_mps": 9.907589,
+      "reference_projected_areas": {
+        "frontal_x_m2": 27.9552,
+        "side_y_m2": 128.128,
+        "top_z_m2": 154.112
+      },
+      "hydrodynamic_coefficients": {
+        "Cd_axial_forward": 0.44,
+        "Cd_axial_reverse": 0.52,
+        "Cd_lateral_sway": 1.3,
+        "Cd_vertical_heave": 1.08,
+        "Cl_pitch_per_rad": 0.06,
+        "Cl_yaw_per_rad": 0.05,
+        "Cl_control_surface_max": 0.3
+      },
+      "drag_tensor_cd_area_m2_local_xyz": [
+        [
+          12.300288,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          166.5664,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          166.44096
+        ]
+      ],
+      "reverse_axial_cd_area_m2": 14.536704,
+      "square_drag_accel_tensor_per_meter_local_xyz": [
+        [
+          0.009701,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.068436,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.071357
+        ]
+      ],
+      "added_mass_coefficients_local_xyz": {
+        "x_surge": 0.14,
+        "y_sway": 1.06,
+        "z_heave": 0.98
+      },
+      "added_mass_tensor_kg_local_xyz": [
+        [
+          91106.369536,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          689805.369344,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          637744.586752
+        ]
+      ],
+      "effective_mass_tensor_kg_local_xyz": [
+        [
+          651106.369536,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1249805.369344,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1197744.586752
+        ]
+      ],
+      "rigid_angular_inertia_tensor_kg_m2_local_xyz": [
+        [
+          3173333.333333,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          37848533.333333,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          38498133.333333
+        ]
+      ],
+      "added_angular_inertia_tensor_kg_m2_local_xyz": [
+        [
+          885033.304064,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          29028571.765473,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          30421544.771693
+        ]
+      ],
+      "angular_quadratic_damping_torque_tensor_n_m_per_rad_s_sq_local_xyz": [
+        [
+          141115.344814,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          176927229.83936,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          199778541.81376
+        ]
+      ],
+      "cavitation": {
+        "model": "sigma=(p_ambient-p_vapor)/(0.5*rho*v_effective_prop^2); cavitates when sigma <= sigma_critical",
+        "sigma_critical": 2.0,
+        "quiet_prop_rpm": 115.0,
+        "prop_radius_m": 0.95,
+        "wake_fraction": 0.3,
+        "thresholds_by_depth": [
+          {
+            "depth_m": 0.0,
+            "ambient_pressure_kpa": 101.325,
+            "critical_effective_prop_speed_mps": 9.849154,
+            "quiet_prop_tip_speed_mps": 11.440633,
+            "hull_speed_onset_mps": 0.0
+          },
+          {
+            "depth_m": 25.0,
+            "ambient_pressure_kpa": 353.110739,
+            "critical_effective_prop_speed_mps": 18.497894,
+            "quiet_prop_tip_speed_mps": 11.440633,
+            "hull_speed_onset_mps": 20.765159
+          },
+          {
+            "depth_m": 50.0,
+            "ambient_pressure_kpa": 604.896477,
+            "critical_effective_prop_speed_mps": 24.235064,
+            "quiet_prop_tip_speed_mps": 11.440633,
+            "hull_speed_onset_mps": 30.520995
+          },
+          {
+            "depth_m": 100.0,
+            "ambient_pressure_kpa": 1108.467955,
+            "critical_effective_prop_speed_mps": 32.827897,
+            "quiet_prop_tip_speed_mps": 11.440633,
+            "hull_speed_onset_mps": 43.956907
+          },
+          {
+            "depth_m": 300.0,
+            "ambient_pressure_kpa": 3122.753865,
+            "critical_effective_prop_speed_mps": 55.127133,
+            "quiet_prop_tip_speed_mps": 11.440633,
+            "hull_speed_onset_mps": 77.038458
+          }
+        ],
+        "gameplay_output": "Use threshold crossing for acoustic/noise/VFX state. Do not simulate bubble microphysics."
+      },
+      "verification": {
+        "acceleration_gate": {
+          "duration_seconds": 90.0,
+          "dt_seconds": 0.02,
+          "max_speed_mps": 9.907588,
+          "time_to_50_mps_seconds": null
+        },
+        "stop_distance_to_5_percent_terminal_speed_m": 308.815588,
+        "stop_distance_hull_lengths": 11.029128,
+        "min_required_stop_distance_m": 84.0
+      }
+    }
+  ],
+  "verification": {
+    "passed": true,
+    "failures": [],
+    "task_6_self_audit": "No Square_Drag increase required"
+  }
+}

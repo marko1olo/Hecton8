@@ -111,3 +111,59 @@ Solution: Rewrote the verifier as a standalone PNG readback tool with its own IG
 Rejected Alternatives: Keeping the generator-backed verifier, or adding a second wrapper that still imported generator internals.
 Scalability potential: No runtime effect. Stronger offline proof keeps Low, Middle, High, and Ultra tiers consuming verified source pixels.
 Hardware Impact: 0 us runtime. Offline verification only.
+
+## Decision 015 - CLI Input Validation And Seed Consistency
+
+Problem: Bad CLI values could fail as Python tracebacks or be silently clamped; custom seeds also did not affect the void/cluster tie-break jitter because that path used `DEFAULT_SEED`.
+Solution: Added argparse validators for uint32 seed values and non-negative swap counts. Passed the validated seed into void/cluster tie-break jitter so non-default seeds are internally consistent.
+Rejected Alternatives: Silent `max(0, swaps)` clamping, accepting out-of-range seeds, or leaving custom-seed output partially tied to the default seed.
+Scalability potential: No runtime effect. Offline baker behavior is deterministic and explicit for every hardware tier consuming the generated pixels.
+Hardware Impact: 0 us runtime. Offline CLI failure behavior only.
+
+## Decision 016 - PNG Optimizer Temp Output And Pillow Mode Hygiene
+
+Problem: `zopflipng` was configured with the same PNG as input and output, and the Pillow save path passed an explicit `mode="RGBA"` even though the array already carries RGBA shape/type.
+Solution: Make `zopflipng` write to `*.zopfli.tmp.png` and replace the source only after success; delete temp output on failure/timeout; continue to later optimizers after a failure. Remove the redundant Pillow mode parameter.
+Rejected Alternatives: Same-file zopfli input/output, stopping after the first failing external optimizer, or keeping redundant mode arguments in the save path.
+Scalability potential: No runtime effect. Low, Middle, High, and Ultra tiers still consume identical texture bytes; offline optimizer reliability improves when external tools are installed.
+Hardware Impact: 0 us runtime. Offline file safety only.
+
+## Decision 017 - External Optimizer Candidate Replacement
+
+Problem: `optipng` and `oxipng` mutate files in place, so running them directly against source PNGs risks larger output or source mutation before size checks.
+Solution: Run each external optimizer against a temporary candidate copy. Replace the source only if the candidate/output exists and is not larger than the original. Delete candidate/output files after success or failure.
+Rejected Alternatives: Trusting in-place optimizer mutation, accepting larger optimized output, or limiting candidate protection to `zopflipng`.
+Scalability potential: No runtime effect. All hardware tiers consume the same verified PNG bytes; offline optimizer installation cannot silently bloat source textures.
+Hardware Impact: 0 us runtime. Offline file safety only.
+
+## Decision 018 - Flow Field Content Verification
+
+Problem: The flow lookup verifier only proved the PNG shape and byte size. A flat or low-variety 128x128 RGBA texture could pass despite not representing a useful low-tier flow field.
+Solution: Add per-channel dynamic range and unique-value thresholds to both the baker verifier and the independent verifier. Regenerate all tracked metrics with flow channel stats.
+Rejected Alternatives: Shape-only proof, visual inspection, or relying on the generator formula without PNG readback gates.
+Scalability potential: No runtime effect. Low tier gets a proven non-flat lookup; Middle, High, and Ultra tiers keep the same source data for fallback or blending.
+Hardware Impact: 0 us runtime. Offline verification only.
+
+## Decision 019 - Verifier Negative Self-Test
+
+Problem: The independent verifier proved that current assets pass, but did not prove its rejection gates fail bad in-memory data.
+Solution: Added `--self-test` to run negative verifier cases for flat noise, bad noise shape, flat flow, and bad flow shape without writing files.
+Rejected Alternatives: Positive-only verification, or adding tracked bad PNG fixtures that increase repository noise.
+Scalability potential: No runtime effect. Stronger offline confidence for all hardware tiers consuming the baked source textures.
+Hardware Impact: 0 us runtime. Offline verifier self-test only.
+
+## Decision 020 - Active Batch Rotation
+
+Problem: The current `Docs/Tasks/CURRENT_BATCH.md` no longer contains `<AGENT_PROMPT id="PROCEDURAL_NOISE_BAKER">`, so the anti-amnesia re-extraction cannot be repeated from the rotated batch file.
+Solution: Record the drift and keep the persisted `Status_PROCEDURAL_NOISE_BAKER.md`, `Rationale_PROCEDURAL_NOISE_BAKER.md`, and `LOG_PROCEDURAL_NOISE_BAKER.md` as the active task memory for this already-started assignment.
+Rejected Alternatives: Reading unrelated current-batch prompts, pulling from deprecated archive prompts, or pretending the XML tag still exists in the active batch.
+Scalability potential: No runtime effect. Prevents cross-agent prompt contamination for all hardware tiers.
+Hardware Impact: 0 us runtime. Documentation integrity only.
+
+## Decision 021 - Metrics Byte Identity Binding
+
+Problem: The JSON metrics proved thresholds but did not carry the exact PNG SHA256 inside the machine-readable verification payload; hashes existed only in status/log text.
+Solution: Add `sha256_file()` to the baker and independent verifier, then embed `sha256` and `bytes` under both `noise` and `flow` sections in every metrics JSON.
+Rejected Alternatives: Keeping hashes only in chat/log text, or hand-editing metrics without making both tools produce the same evidence fields.
+Scalability potential: No runtime effect. Low, Middle, High, and Ultra tiers consume the same verified source bytes; the evidence now binds those bytes directly to pass/fail status.
+Hardware Impact: 0 us runtime. Offline evidence hardening only.

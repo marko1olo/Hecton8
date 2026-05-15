@@ -1,0 +1,137 @@
+{
+  "cycles": [],
+  "dangerous_breaks": [],
+  "dead_ends": [],
+  "elapsed_seconds": 147.33277399999497,
+  "end_active_sequences": 0,
+  "end_completed_sequences": 388415,
+  "end_ids": [
+    "quest_atlas_core_reached"
+  ],
+  "event_candidate_count": 18,
+  "evidence_class": "STATIC_SOURCE+CLI_COMPILE+CLI_EXECUTION",
+  "impossible_requirements": [],
+  "manual_stall_sequences": 0,
+  "missing_prerequisites": [],
+  "no_active_softlocks": 0,
+  "paths_to_end": [
+    [
+      "quest_first_breath",
+      "quest_atlas_core_reached"
+    ],
+    [
+      "quest_atlas_signal_detected",
+      "quest_atlas_signal_decoded",
+      "quest_atlas_core_reached"
+    ]
+  ],
+  "quest_count": 11,
+  "quests": [
+    {
+      "activation_hits": 1000000,
+      "completion": "DiscoveryMade",
+      "completion_hits": 746444,
+      "phase_gate": "None",
+      "quest_id": "quest_arrival",
+      "source": "C:\\Hecton8\\Data\\Narrative\\Quest_Graph.json",
+      "trigger": "None"
+    },
+    {
+      "activation_hits": 746351,
+      "completion": "BiomeEntered",
+      "completion_hits": 746351,
+      "phase_gate": "None",
+      "quest_id": "quest_biome_spine",
+      "source": "C:\\Hecton8\\Data\\Narrative\\Quest_Graph.json",
+      "trigger": "BiomeEntered"
+    },
+    {
+      "activation_hits": 746444,
+      "completion": "ItemCollected",
+      "completion_hits": 387870,
+      "phase_gate": "None",
+      "quest_id": "quest_copper_sample",
+      "source": "C:\\Hecton8\\Data\\Narrative\\Quest_Graph.json",
+      "trigger": "DiscoveryMade"
+    },
+    {
+      "activation_hits": 388415,
+      "completion": "DepthReached",
+      "completion_hits": 388415,
+      "phase_gate": "Thermal",
+      "quest_id": "quest_atlas_core_reached",
+      "source": "C:\\Hecton8\\Data\\Narrative\\Quest_Graph.json",
+      "trigger": "DepthReached"
+    },
+    {
+      "activation_hits": 997598,
+      "completion": "DepthReached",
+      "completion_hits": 987334,
+      "phase_gate": "None",
+      "quest_id": "quest_first_breath",
+      "source": "C:\\Hecton8\\Data\\Narrative\\Quest_Graph.json",
+      "trigger": "DepthReached"
+    },
+    {
+      "activation_hits": 746444,
+      "completion": "ItemCollected",
+      "completion_hits": 388419,
+      "phase_gate": "None",
+      "quest_id": "quest_first_hour_collect_titanium",
+      "source": "C:\\Hecton8\\Data\\Narrative\\Quest_Graph.json",
+      "trigger": "DiscoveryMade"
+    },
+    {
+      "activation_hits": 388419,
+      "completion": "CraftCompleted",
+      "completion_hits": 146260,
+      "phase_gate": "None",
+      "quest_id": "quest_first_hour_craft_scanner",
+      "source": "C:\\Hecton8\\Data\\Narrative\\Quest_Graph.json",
+      "trigger": "ItemCollected"
+    },
+    {
+      "activation_hits": 1000000,
+      "completion": "DiscoveryMade",
+      "completion_hits": 746444,
+      "phase_gate": "None",
+      "quest_id": "quest_first_hour_exit_lifepod",
+      "source": "C:\\Hecton8\\Data\\Narrative\\Quest_Graph.json",
+      "trigger": "None"
+    },
+    {
+      "activation_hits": 746016,
+      "completion": "ItemCollected",
+      "completion_hits": 388546,
+      "phase_gate": "None",
+      "quest_id": "quest_rad_shield",
+      "source": "C:\\Hecton8\\Data\\Narrative\\Quest_Graph.json",
+      "trigger": "DiscoveryMade"
+    },
+    {
+      "activation_hits": 388092,
+      "completion": "DepthReached",
+      "completion_hits": 224027,
+      "phase_gate": "Thermal",
+      "quest_id": "quest_atlas_signal_decoded",
+      "source": "C:\\Hecton8\\Data\\Narrative\\Quest_Graph.json",
+      "trigger": "DiscoveryMade"
+    },
+    {
+      "activation_hits": 388250,
+      "completion": "DiscoveryMade",
+      "completion_hits": 146124,
+      "phase_gate": "Abyssal",
+      "quest_id": "quest_atlas_signal_detected",
+      "source": "C:\\Hecton8\\Data\\Narrative\\Quest_Graph.json",
+      "trigger": "DiscoveryMade"
+    }
+  ],
+  "requested_graph_missing": false,
+  "seed": 1211650375,
+  "sequence_length": 24,
+  "sequences": 1000000,
+  "source_kind": "json",
+  "source_path": "C:\\Hecton8\\Data\\Narrative\\Quest_Graph.json",
+  "status": "QUESTS VALIDATED"
+}

@@ -33,13 +33,65 @@ PRESSURE_CONSTANTS = {
     "EMERGENCY_LEVEL_3": "EmergencyLevel3Mask",
 }
 
+SPLIT_PROFILE_FILES = {
+    "QUEST_3": "HARDWARE_TIER_QUEST_3.json",
+    "STEAM_DECK_LCD": "HARDWARE_TIER_STEAM_DECK_LCD.json",
+}
+
 PROFILE_FIELD_CONSTANTS = (
     ("profileStableHash32", "StableHash32"),
     ("profileGraphicsBudgetMb", "GraphicsBudgetMegabytes"),
     ("profileTextureBudgetMb", "TextureBudgetMegabytes"),
     ("profileRenderTargetBudgetMb", "RenderTargetBudgetMegabytes"),
     ("profileTargetFps", "TargetFps"),
+    ("profileBaselineRenderScaleMilli", "BaselineRenderScaleMilli"),
     ("profileJobWorkerBudget", "JobWorkerBudget"),
+)
+
+SPLIT_PROFILE_FIELDS = (
+    "profileStableHash32",
+    "profileDisplayName",
+    "profilePlatformClass",
+    "profileGpuClass",
+    "profileTierIndex",
+    "profileTargetFps",
+    "profileTargetFpsKind",
+    "profileRefreshHzNominal",
+    "profileRefreshHzMax",
+    "profileFrameBudgetMs",
+    "profileCpuPhysicalCores",
+    "profileCpuCoreCountKind",
+    "profileCpuHardwareThreads",
+    "profileCpuHardwareThreadKind",
+    "profileJobWorkerBudget",
+    "profileDefaultComputeGroupThreads",
+    "profileDedicatedVramMb",
+    "profileUnifiedMemoryMb",
+    "profileGraphicsBudgetMb",
+    "profileTextureBudgetMb",
+    "profileRenderTargetBudgetMb",
+    "profileMemoryBandwidthGBs",
+    "profileMemoryBandwidthKind",
+    "profileMemoryBandwidthFormula",
+    "profileMemoryBusBits",
+    "profileMemoryDataRateMTs",
+    "profileVrsAllowed",
+    "profileFixedFoveationAllowed",
+    "profileDynamicResolutionAllowed",
+    "profileBaselineRenderScaleMilli",
+)
+
+SPLIT_SACRIFICE_FIELDS = (
+    ("sacrificeLevel1MaskHex", "profileSacrificeLevel1MaskHex"),
+    ("sacrificeLevel2MaskHex", "profileSacrificeLevel2MaskHex"),
+    ("sacrificeLevel3MaskHex", "profileSacrificeLevel3MaskHex"),
+    ("sacrificeLevel1FrameMs", "profileSacrificeLevel1FrameMs"),
+    ("sacrificeLevel2FrameMs", "profileSacrificeLevel2FrameMs"),
+    ("sacrificeLevel3FrameMs", "profileSacrificeLevel3FrameMs"),
+    ("sacrificeLevel1MemoryRatio", "profileSacrificeLevel1MemoryRatio"),
+    ("sacrificeLevel2MemoryRatio", "profileSacrificeLevel2MemoryRatio"),
+    ("sacrificeLevel1BatteryRatio", "profileSacrificeLevel1BatteryRatio"),
+    ("sacrificeLevel1Thermal01", "profileSacrificeLevel1Thermal01"),
 )
 
 FORBIDDEN_CATALOG_PATTERNS = (
@@ -246,7 +298,76 @@ def validate_phase_methods(data: dict, csharp: str, errors: list[str]) -> None:
                 require(abs(actual - expected) <= 0.0001, f"{profile_id} {phase_name} budget drift", errors)
 
 
-def validate_call_sites(catalog: str, detector: str, enforcer: str, errors: list[str]) -> None:
+def validate_split_profile_jsons(root: Path, data: dict, errors: list[str]) -> None:
+    for profile_id, file_name in SPLIT_PROFILE_FILES.items():
+        split_path = root / "Data" / "Hardware" / file_name
+        require(split_path.exists(), f"missing split profile JSON: {file_name}", errors)
+        if not split_path.exists():
+            continue
+
+        split = load_json(split_path)
+        for key, value in split.items():
+            require(not isinstance(value, dict), f"{file_name} nested object is not flat: {key}", errors)
+            if isinstance(value, list):
+                nested = [index for index, item in enumerate(value) if isinstance(item, (dict, list))]
+                require(not nested, f"{file_name} nested list/object entries in {key}: {nested}", errors)
+
+        require(split.get("schema") == "H8_HARDWARE_TIER_PROFILE_V1", f"{file_name} schema drift", errors)
+        require(split.get("sourceCatalog") == "Data/Hardware/Profiles.json", f"{file_name} sourceCatalog drift", errors)
+        require(split.get("stableHashAlgorithm") == data["stableHashAlgorithm"], f"{file_name} hash algorithm drift", errors)
+        require(split.get("profileId") == profile_id, f"{file_name} profileId drift", errors)
+
+        if profile_id not in data["profileId"]:
+            errors.append(f"catalog missing profile row for {profile_id}")
+            continue
+
+        profile_index = data["profileId"].index(profile_id)
+        for key in SPLIT_PROFILE_FIELDS:
+            expected = data[key][profile_index]
+            actual = split.get(key)
+            if actual is None:
+                errors.append(f"{file_name} {key} missing")
+                continue
+            if isinstance(expected, float):
+                require(abs(float(actual) - expected) <= 0.0001, f"{file_name} {key} drift", errors)
+            else:
+                require(actual == expected, f"{file_name} {key} drift", errors)
+
+        phase_count = int(data["phaseCount"])
+        phase_start = profile_index * phase_count
+        expected_phase_budget = data["profilePhaseBudgetMsRowMajor"][phase_start : phase_start + phase_count]
+        require(split.get("phaseIds") == data["phaseName"], f"{file_name} phaseIds drift", errors)
+        actual_phase_budget = split.get("phaseBudgetMs")
+        require(isinstance(actual_phase_budget, list), f"{file_name} phaseBudgetMs missing", errors)
+        if isinstance(actual_phase_budget, list):
+            require(len(actual_phase_budget) == phase_count, f"{file_name} phaseBudgetMs length drift", errors)
+            for index, expected in enumerate(expected_phase_budget):
+                if index < len(actual_phase_budget):
+                    require(abs(float(actual_phase_budget[index]) - expected) <= 0.0001, f"{file_name} phaseBudgetMs[{index}] drift", errors)
+
+        for split_key, catalog_key in SPLIT_SACRIFICE_FIELDS:
+            expected = data[catalog_key][profile_index]
+            actual = split.get(split_key)
+            if actual is None:
+                errors.append(f"{file_name} {split_key} missing")
+                continue
+            if isinstance(expected, float):
+                require(abs(float(actual) - expected) <= 0.0001, f"{file_name} {split_key} drift", errors)
+            else:
+                require(actual == expected, f"{file_name} {split_key} drift", errors)
+
+
+def validate_call_sites(
+    catalog: str,
+    detector: str,
+    enforcer: str,
+    governor: str,
+    bootstrapper: str,
+    budget_thresholds: str,
+    vram_monitor: str,
+    pressure_monitor: str,
+    errors: list[str],
+) -> None:
     for forbidden in FORBIDDEN_CATALOG_PATTERNS:
         require(forbidden not in catalog, f"forbidden runtime catalog pattern: {forbidden}", errors)
 
@@ -270,19 +391,114 @@ def validate_call_sites(catalog: str, detector: str, enforcer: str, errors: list
         "VRAMEnforcer no longer gates Steam Deck texture budget",
         errors,
     )
+    require(
+        "HardwareProfileCatalog.Quest3BaselineRenderScaleMilli" in governor,
+        "PlatformAdaptiveBudgetGovernor is missing Quest 3 catalog render-scale split",
+        errors,
+    )
+    require(
+        "HardwareTierDetector.IsQuest3Like" in governor,
+        "PlatformAdaptiveBudgetGovernor does not route Quest 3 shared-memory render scale",
+        errors,
+    )
+    require(
+        "HardwareProfileCatalog.SteamDeckLcdBaselineRenderScaleMilli" in governor,
+        "PlatformAdaptiveBudgetGovernor is missing Steam Deck catalog render-scale split",
+        errors,
+    )
+    require(
+        "ResolveTargetFrameTimeMs" in governor and "HardwareProfileCatalog.Quest3TargetFps" in governor,
+        "PlatformAdaptiveBudgetGovernor does not derive Quest 3 frame pressure from target FPS",
+        errors,
+    )
+    require(
+        "ResolveTargetFrameTimeMs" in governor and "HardwareProfileCatalog.SteamDeckLcdTargetFps" in governor,
+        "PlatformAdaptiveBudgetGovernor does not derive Steam Deck frame pressure from target FPS",
+        errors,
+    )
+    require(
+        "HardwareProfileCatalog.Quest3TargetFps" in bootstrapper,
+        "GameBootstrapper does not route Quest 3 target FPS from catalog",
+        errors,
+    )
+    require(
+        "HardwareProfileCatalog.SteamDeckLcdTargetFps" in bootstrapper,
+        "GameBootstrapper does not route Steam Deck target FPS from catalog",
+        errors,
+    )
+    require(
+        "HardwareProfileCatalog.Quest3TextureBudgetMegabytes" in bootstrapper,
+        "GameBootstrapper does not route Quest 3 streaming mip budget from catalog",
+        errors,
+    )
+    require(
+        "HardwareProfileCatalog.SteamDeckLcdTextureBudgetMegabytes" in bootstrapper,
+        "GameBootstrapper does not route Steam Deck streaming mip budget from catalog",
+        errors,
+    )
+    require(
+        "HardwareProfileCatalog.Quest3JobWorkerBudget" in bootstrapper,
+        "GameBootstrapper does not route Quest 3 job worker budget from catalog",
+        errors,
+    )
+    require(
+        "HardwareProfileCatalog.SteamDeckLcdJobWorkerBudget" in bootstrapper,
+        "GameBootstrapper does not route Steam Deck job worker budget from catalog",
+        errors,
+    )
+    require(
+        "VRAMBudgetThresholds RuntimeDefault" in budget_thresholds,
+        "VRAMBudgetThresholds is missing profile-aware runtime defaults",
+        errors,
+    )
+    require(
+        "HardwareProfileCatalog.Quest3RenderTargetBudgetMegabytes" in budget_thresholds,
+        "VRAMBudgetThresholds does not consume Quest 3 RT budget",
+        errors,
+    )
+    require(
+        "HardwareProfileCatalog.SteamDeckLcdRenderTargetBudgetMegabytes" in budget_thresholds,
+        "VRAMBudgetThresholds does not consume Steam Deck RT budget",
+        errors,
+    )
+    require(
+        "VRAMBudgetThresholds.ResolveRuntimeBudget(_budgetThresholds)" in vram_monitor,
+        "VRAMMonitor does not preserve custom thresholds while applying runtime profile defaults",
+        errors,
+    )
+    require(
+        "IsUnsetBudget(current) || IsDefaultBudget(current)" in budget_thresholds,
+        "VRAMBudgetThresholds does not recover unset serialized budgets",
+        errors,
+    )
+    require(
+        "VRAMBudgetThresholds.RuntimeDefault" in pressure_monitor,
+        "VRAMPressureMonitor does not cache profile-aware runtime thresholds",
+        errors,
+    )
 
 
-def validate() -> list[str]:
+def validate() -> tuple[list[str], dict[str, int]]:
     root = Path(__file__).resolve().parents[2]
     data_path = root / "Data" / "Hardware" / "Profiles.json"
     catalog_path = root / "Assets" / "_Project" / "Scripts" / "Core" / "HardwareProfileCatalog.cs"
     detector_path = root / "Assets" / "_Project" / "Scripts" / "Core" / "HardwareTierDetector.cs"
     enforcer_path = root / "Assets" / "_Project" / "Scripts" / "Optimization" / "VRAMEnforcer.cs"
+    governor_path = root / "Assets" / "_Project" / "Scripts" / "Core" / "PlatformAdaptiveBudgetGovernor.cs"
+    bootstrapper_path = root / "Assets" / "_Project" / "Scripts" / "Bootstrap" / "GameBootstrapper.cs"
+    budget_thresholds_path = root / "Assets" / "_Project" / "Scripts" / "Optimization" / "VRAMBudgetThresholds.cs"
+    vram_monitor_path = root / "Assets" / "_Project" / "Scripts" / "Optimization" / "VRAMMonitor.cs"
+    pressure_monitor_path = root / "Assets" / "_Project" / "Scripts" / "Optimization" / "VRAMPressureMonitor.cs"
 
     data = load_json(data_path)
     catalog = catalog_path.read_text(encoding="utf-8-sig")
     detector = detector_path.read_text(encoding="utf-8-sig")
     enforcer = enforcer_path.read_text(encoding="utf-8-sig")
+    governor = governor_path.read_text(encoding="utf-8-sig")
+    bootstrapper = bootstrapper_path.read_text(encoding="utf-8-sig")
+    budget_thresholds = budget_thresholds_path.read_text(encoding="utf-8-sig")
+    vram_monitor = vram_monitor_path.read_text(encoding="utf-8-sig")
+    pressure_monitor = pressure_monitor_path.read_text(encoding="utf-8-sig")
     constants = extract_constants(catalog)
 
     errors: list[str] = []
@@ -290,19 +506,43 @@ def validate() -> list[str]:
     validate_hashes(data, errors)
     validate_catalog_constants(data, constants, errors)
     validate_phase_methods(data, catalog, errors)
-    validate_call_sites(catalog, detector, enforcer, errors)
-    return errors
+    validate_split_profile_jsons(root, data, errors)
+    validate_call_sites(
+        catalog,
+        detector,
+        enforcer,
+        governor,
+        bootstrapper,
+        budget_thresholds,
+        vram_monitor,
+        pressure_monitor,
+        errors)
+    stats = {
+        "profiles": int(data["profileCount"]),
+        "phases": int(data["phaseCount"]),
+        "masks": int(data["pressureLevelCount"]),
+        "constants": len(constants),
+        "split_jsons": len(SPLIT_PROFILE_FILES),
+    }
+    return errors, stats
 
 
 def main() -> int:
-    errors = validate()
+    errors, stats = validate()
     if errors:
         print("HARDWARE_PROFILE_CATALOG_GUARD=FAIL", file=sys.stderr)
         for error in errors:
             print(error, file=sys.stderr)
         return 1
 
-    print("HARDWARE_PROFILE_CATALOG_GUARD=PASS profiles=2 phases=4 masks=4 constants=19")
+    print(
+        "HARDWARE_PROFILE_CATALOG_GUARD=PASS "
+        f"profiles={stats['profiles']} "
+        f"phases={stats['phases']} "
+        f"masks={stats['masks']} "
+        f"constants={stats['constants']} "
+        f"split_jsons={stats['split_jsons']}"
+    )
     return 0
 
 

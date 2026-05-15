@@ -191,8 +191,7 @@ Shader "Hecton8/UI/DiegeticPanelUnlit"
                     analogWave * analogStrength * 0.0015);
                 panelUv = saturate(panelUv);
                 half4 baseSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, panelUv);
-                half4 mainSample = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, panelUv);
-                half4 screenSample = max(baseSample, mainSample);
+                half4 screenSample = baseSample;
                 float rgbAlpha = saturate(max(max(screenSample.r, screenSample.g), screenSample.b) * 2.0);
                 float3 emissive = screenSample.rgb * _Color.rgb * lerp(0.45, 1.0, powerLevel);
                 float alpha = max(screenSample.a, rgbAlpha) * _Color.a * crtBounds;

@@ -1,0 +1,1957 @@
+{
+  "binary": {
+    "bytes": 25936,
+    "curveSamples": 256,
+    "godColorCount": 10,
+    "maxHarmonics": 8,
+    "paletteCount": 8,
+    "paletteStride": 156,
+    "path": "Data\\Visuals\\Biolum_Profiles.bin",
+    "payloadBytes": 25888,
+    "payloadCrc32": "0x0D545E74",
+    "profileCount": 20,
+    "profileStride": 1232,
+    "toasterColorCount": 2
+  },
+  "palettes": [
+    {
+      "godMode": [
+        [
+          0.0015,
+          0.0023,
+          0.0031
+        ],
+        [
+          0.001,
+          0.061533,
+          0.118733
+        ],
+        [
+          0.0005,
+          0.120767,
+          0.234367
+        ],
+        [
+          0.0,
+          0.18,
+          0.35
+        ],
+        [
+          0.0,
+          0.413333,
+          0.683333
+        ],
+        [
+          0.0,
+          0.646667,
+          1.016667
+        ],
+        [
+          0.0,
+          0.88,
+          1.35
+        ],
+        [
+          0.093333,
+          1.186667,
+          1.766667
+        ],
+        [
+          0.186667,
+          1.493333,
+          2.183333
+        ],
+        [
+          0.28,
+          1.8,
+          2.6
+        ]
+      ],
+      "idHash": "0x996BCA1C",
+      "name": "Abyssal Trench",
+      "toaster": [
+        [
+          0.0,
+          0.2,
+          0.34
+        ],
+        [
+          0.08,
+          1.55,
+          2.4
+        ]
+      ]
+    },
+    {
+      "godMode": [
+        [
+          0.01,
+          0.006,
+          0.004
+        ],
+        [
+          0.173333,
+          0.037333,
+          0.016
+        ],
+        [
+          0.336667,
+          0.068667,
+          0.028
+        ],
+        [
+          0.5,
+          0.1,
+          0.04
+        ],
+        [
+          1.033333,
+          0.206667,
+          0.053333
+        ],
+        [
+          1.566667,
+          0.313333,
+          0.066667
+        ],
+        [
+          2.1,
+          0.42,
+          0.08
+        ],
+        [
+          2.666667,
+          0.73,
+          0.133333
+        ],
+        [
+          3.233333,
+          1.04,
+          0.186667
+        ],
+        [
+          3.8,
+          1.35,
+          0.24
+        ]
+      ],
+      "idHash": "0x1DB4B99F",
+      "name": "Hydrothermal Vent",
+      "toaster": [
+        [
+          0.18,
+          0.06,
+          0.02
+        ],
+        [
+          2.8,
+          0.72,
+          0.18
+        ]
+      ]
+    },
+    {
+      "godMode": [
+        [
+          0.008,
+          0.012,
+          0.018
+        ],
+        [
+          0.045333,
+          0.068,
+          0.065333
+        ],
+        [
+          0.082667,
+          0.124,
+          0.112667
+        ],
+        [
+          0.12,
+          0.18,
+          0.16
+        ],
+        [
+          0.233333,
+          0.36,
+          0.246667
+        ],
+        [
+          0.346667,
+          0.54,
+          0.333333
+        ],
+        [
+          0.46,
+          0.72,
+          0.42
+        ],
+        [
+          0.7,
+          0.946667,
+          0.52
+        ],
+        [
+          0.94,
+          1.173333,
+          0.62
+        ],
+        [
+          1.18,
+          1.4,
+          0.72
+        ]
+      ],
+      "idHash": "0x94F5C239",
+      "name": "Silt Cathedral",
+      "toaster": [
+        [
+          0.05,
+          0.1,
+          0.11
+        ],
+        [
+          0.8,
+          1.1,
+          0.62
+        ]
+      ]
+    },
+    {
+      "godMode": [
+        [
+          0.01,
+          0.004,
+          0.018
+        ],
+        [
+          0.133333,
+          0.012667,
+          0.152
+        ],
+        [
+          0.256667,
+          0.021333,
+          0.286
+        ],
+        [
+          0.38,
+          0.03,
+          0.42
+        ],
+        [
+          0.703333,
+          0.06,
+          0.63
+        ],
+        [
+          1.026667,
+          0.09,
+          0.84
+        ],
+        [
+          1.35,
+          0.12,
+          1.05
+        ],
+        [
+          1.65,
+          0.23,
+          1.3
+        ],
+        [
+          1.95,
+          0.34,
+          1.55
+        ],
+        [
+          2.25,
+          0.45,
+          1.8
+        ]
+      ],
+      "idHash": "0xB9352781",
+      "name": "Coral Ruins",
+      "toaster": [
+        [
+          0.12,
+          0.02,
+          0.1
+        ],
+        [
+          1.75,
+          0.28,
+          1.38
+        ]
+      ]
+    },
+    {
+      "godMode": [
+        [
+          0.002,
+          0.01,
+          0.006
+        ],
+        [
+          0.014667,
+          0.12,
+          0.037333
+        ],
+        [
+          0.027333,
+          0.23,
+          0.068667
+        ],
+        [
+          0.04,
+          0.34,
+          0.1
+        ],
+        [
+          0.093333,
+          0.593333,
+          0.14
+        ],
+        [
+          0.146667,
+          0.846667,
+          0.18
+        ],
+        [
+          0.2,
+          1.1,
+          0.22
+        ],
+        [
+          0.373333,
+          1.433333,
+          0.306667
+        ],
+        [
+          0.546667,
+          1.766667,
+          0.393333
+        ],
+        [
+          0.72,
+          2.1,
+          0.48
+        ]
+      ],
+      "idHash": "0xD374E1CB",
+      "name": "Kelp Ghost Forest",
+      "toaster": [
+        [
+          0.02,
+          0.16,
+          0.06
+        ],
+        [
+          0.52,
+          1.65,
+          0.34
+        ]
+      ]
+    },
+    {
+      "godMode": [
+        [
+          0.006,
+          0.008,
+          0.014
+        ],
+        [
+          0.037333,
+          0.065333,
+          0.089333
+        ],
+        [
+          0.068667,
+          0.122667,
+          0.164667
+        ],
+        [
+          0.1,
+          0.18,
+          0.24
+        ],
+        [
+          0.25,
+          0.213333,
+          0.173333
+        ],
+        [
+          0.4,
+          0.246667,
+          0.106667
+        ],
+        [
+          0.55,
+          0.28,
+          0.04
+        ],
+        [
+          0.85,
+          0.433333,
+          0.113333
+        ],
+        [
+          1.15,
+          0.586667,
+          0.186667
+        ],
+        [
+          1.45,
+          0.74,
+          0.26
+        ]
+      ],
+      "idHash": "0xF8C38BFF",
+      "name": "Wreckyard Noir",
+      "toaster": [
+        [
+          0.04,
+          0.07,
+          0.1
+        ],
+        [
+          1.15,
+          0.62,
+          0.24
+        ]
+      ]
+    },
+    {
+      "godMode": [
+        [
+          0.004,
+          0.01,
+          0.012
+        ],
+        [
+          0.049333,
+          0.146667,
+          0.134667
+        ],
+        [
+          0.094667,
+          0.283333,
+          0.257333
+        ],
+        [
+          0.14,
+          0.42,
+          0.38
+        ],
+        [
+          0.293333,
+          0.74,
+          0.636667
+        ],
+        [
+          0.446667,
+          1.06,
+          0.893333
+        ],
+        [
+          0.6,
+          1.38,
+          1.15
+        ],
+        [
+          0.893333,
+          1.836667,
+          1.516667
+        ],
+        [
+          1.186667,
+          2.293333,
+          1.883333
+        ],
+        [
+          1.48,
+          2.75,
+          2.25
+        ]
+      ],
+      "idHash": "0x559B3875",
+      "name": "Alabaster Pools",
+      "toaster": [
+        [
+          0.08,
+          0.18,
+          0.18
+        ],
+        [
+          1.1,
+          2.3,
+          1.85
+        ]
+      ]
+    },
+    {
+      "godMode": [
+        [
+          0.002,
+          0.004,
+          0.02
+        ],
+        [
+          0.014667,
+          0.056,
+          0.253333
+        ],
+        [
+          0.027333,
+          0.108,
+          0.486667
+        ],
+        [
+          0.04,
+          0.16,
+          0.72
+        ],
+        [
+          0.166667,
+          0.286667,
+          1.096667
+        ],
+        [
+          0.293333,
+          0.413333,
+          1.473333
+        ],
+        [
+          0.42,
+          0.54,
+          1.85
+        ],
+        [
+          0.78,
+          0.666667,
+          2.366667
+        ],
+        [
+          1.14,
+          0.793333,
+          2.883333
+        ],
+        [
+          1.5,
+          0.92,
+          3.4
+        ]
+      ],
+      "idHash": "0x3744FC59",
+      "name": "Hadal Aurora",
+      "toaster": [
+        [
+          0.03,
+          0.05,
+          0.18
+        ],
+        [
+          1.3,
+          0.74,
+          2.9
+        ]
+      ]
+    }
+  ],
+  "profiles": [
+    {
+      "acousticPing": {
+        "decaySeconds": 2.8,
+        "effectiveStrobeHz": 3.5,
+        "gain": 0.42,
+        "phaseKickRad": 0.3141592653589793,
+        "rawStrobeHz": 3.5,
+        "refractorySeconds": 1.1,
+        "strobeWidth01": 0.36,
+        "transport": "EnvironmentSignal/AcousticPing scalar input; no string event names."
+      },
+      "amplitude": 2.25,
+      "baseline": 0.08,
+      "biome": "Hadal Aurora",
+      "flags": 10,
+      "gamma": 1.55,
+      "harmonics": [
+        {
+          "amplitude": 0.78,
+          "effectiveHz": 0.02632,
+          "multiplier": 1.0,
+          "phaseRad": 0.0,
+          "rawHz": 0.02632,
+          "shapePower": 1.1
+        },
+        {
+          "amplitude": 0.26,
+          "effectiveHz": 0.04474,
+          "multiplier": 1.7,
+          "phaseRad": 1.117010721276371,
+          "rawHz": 0.04474,
+          "shapePower": 1.35
+        },
+        {
+          "amplitude": 0.16,
+          "effectiveHz": 0.07632,
+          "multiplier": 2.9,
+          "phaseRad": 3.1590459461097367,
+          "rawHz": 0.07632,
+          "shapePower": 1.7
+        },
+        {
+          "amplitude": 0.08,
+          "effectiveHz": 0.11053,
+          "multiplier": 4.2,
+          "phaseRad": 5.078908123303499,
+          "rawHz": 0.11053,
+          "shapePower": 1.25
+        }
+      ],
+      "idHash": "0x34726ABF",
+      "name": "Deep-Sea Aurora",
+      "noiseRateHz": 0.018,
+      "noiseScale": 0.32,
+      "periodSeconds": 38.0,
+      "safety": {
+        "effectiveMaxHz": 3.5,
+        "policy": "Any harmonic or AcousticPing strobe above 15Hz is clamped before export and preview.",
+        "rawMaxHz": 3.5,
+        "safetyClampActive": false,
+        "safetyClampHz": 15.0
+      }
+    },
+    {
+      "acousticPing": {
+        "decaySeconds": 0.85,
+        "effectiveStrobeHz": 11.0,
+        "gain": 1.2,
+        "phaseKickRad": 1.5707963267948966,
+        "rawStrobeHz": 11.0,
+        "refractorySeconds": 0.42,
+        "strobeWidth01": 0.42,
+        "transport": "EnvironmentSignal/AcousticPing scalar input; no string event names."
+      },
+      "amplitude": 3.4,
+      "baseline": 0.12,
+      "biome": "Abyssal Trench",
+      "flags": 6,
+      "gamma": 1.2,
+      "harmonics": [
+        {
+          "amplitude": 0.62,
+          "effectiveHz": 0.41667,
+          "multiplier": 1.0,
+          "phaseRad": 0.0,
+          "rawHz": 0.41667,
+          "shapePower": 1.05
+        },
+        {
+          "amplitude": 0.48,
+          "effectiveHz": 0.83333,
+          "multiplier": 2.0,
+          "phaseRad": 0.6457718232379019,
+          "rawHz": 0.83333,
+          "shapePower": 1.45
+        },
+        {
+          "amplitude": 0.32,
+          "effectiveHz": 1.25,
+          "multiplier": 3.0,
+          "phaseRad": 2.059488517353309,
+          "rawHz": 1.25,
+          "shapePower": 1.8
+        },
+        {
+          "amplitude": 0.22,
+          "effectiveHz": 2.08333,
+          "multiplier": 5.0,
+          "phaseRad": 4.380776422505767,
+          "rawHz": 2.08333,
+          "shapePower": 1.2
+        },
+        {
+          "amplitude": 0.11,
+          "effectiveHz": 2.91667,
+          "multiplier": 7.0,
+          "phaseRad": 5.3930673886624785,
+          "rawHz": 2.91667,
+          "shapePower": 1.1
+        }
+      ],
+      "idHash": "0x220B7F5A",
+      "name": "Predator Warning",
+      "noiseRateHz": 0.09,
+      "noiseScale": 0.18,
+      "periodSeconds": 2.4,
+      "safety": {
+        "effectiveMaxHz": 11.0,
+        "policy": "Any harmonic or AcousticPing strobe above 15Hz is clamped before export and preview.",
+        "rawMaxHz": 11.0,
+        "safetyClampActive": false,
+        "safetyClampHz": 15.0
+      }
+    },
+    {
+      "acousticPing": {
+        "decaySeconds": 2.2,
+        "effectiveStrobeHz": 5.0,
+        "gain": 0.55,
+        "phaseKickRad": 0.4188790204786391,
+        "rawStrobeHz": 5.0,
+        "refractorySeconds": 0.9,
+        "strobeWidth01": 0.34,
+        "transport": "EnvironmentSignal/AcousticPing scalar input; no string event names."
+      },
+      "amplitude": 2.7,
+      "baseline": 0.1,
+      "biome": "Coral Ruins",
+      "flags": 10,
+      "gamma": 1.42,
+      "harmonics": [
+        {
+          "amplitude": 0.72,
+          "effectiveHz": 0.06897,
+          "multiplier": 1.0,
+          "phaseRad": 0.20943951023931956,
+          "rawHz": 0.06897,
+          "shapePower": 1.25
+        },
+        {
+          "amplitude": 0.31,
+          "effectiveHz": 0.10345,
+          "multiplier": 1.5,
+          "phaseRad": 1.6755160819145565,
+          "rawHz": 0.10345,
+          "shapePower": 1.6
+        },
+        {
+          "amplitude": 0.2,
+          "effectiveHz": 0.15517,
+          "multiplier": 2.25,
+          "phaseRad": 3.001966313430247,
+          "rawHz": 0.15517,
+          "shapePower": 1.35
+        },
+        {
+          "amplitude": 0.12,
+          "effectiveHz": 0.24138,
+          "multiplier": 3.5,
+          "phaseRad": 4.5553093477052,
+          "rawHz": 0.24138,
+          "shapePower": 1.15
+        },
+        {
+          "amplitude": 0.07,
+          "effectiveHz": 0.37931,
+          "multiplier": 5.5,
+          "phaseRad": 5.480333851262195,
+          "rawHz": 0.37931,
+          "shapePower": 1.1
+        }
+      ],
+      "idHash": "0xBE8DBDDD",
+      "name": "Mating Call",
+      "noiseRateHz": 0.032,
+      "noiseScale": 0.28,
+      "periodSeconds": 14.5,
+      "safety": {
+        "effectiveMaxHz": 5.0,
+        "policy": "Any harmonic or AcousticPing strobe above 15Hz is clamped before export and preview.",
+        "rawMaxHz": 5.0,
+        "safetyClampActive": false,
+        "safetyClampHz": 15.0
+      }
+    },
+    {
+      "acousticPing": {
+        "decaySeconds": 1.4,
+        "effectiveStrobeHz": 6.2,
+        "gain": 0.7,
+        "phaseKickRad": 0.6108652381980153,
+        "rawStrobeHz": 6.2,
+        "refractorySeconds": 0.7,
+        "strobeWidth01": 0.4,
+        "transport": "EnvironmentSignal/AcousticPing scalar input; no string event names."
+      },
+      "amplitude": 3.1,
+      "baseline": 0.18,
+      "biome": "Hydrothermal Vent",
+      "flags": 2,
+      "gamma": 1.35,
+      "harmonics": [
+        {
+          "amplitude": 0.7,
+          "effectiveHz": 0.1087,
+          "multiplier": 1.0,
+          "phaseRad": 0.06981317007977318,
+          "rawHz": 0.1087,
+          "shapePower": 1.1
+        },
+        {
+          "amplitude": 0.28,
+          "effectiveHz": 0.21739,
+          "multiplier": 2.0,
+          "phaseRad": 1.3788101090755203,
+          "rawHz": 0.21739,
+          "shapePower": 1.5
+        },
+        {
+          "amplitude": 0.17,
+          "effectiveHz": 0.35326,
+          "multiplier": 3.25,
+          "phaseRad": 2.6354471705114375,
+          "rawHz": 0.35326,
+          "shapePower": 1.8
+        },
+        {
+          "amplitude": 0.1,
+          "effectiveHz": 0.5,
+          "multiplier": 4.6,
+          "phaseRad": 4.328416544945937,
+          "rawHz": 0.5,
+          "shapePower": 1.2
+        },
+        {
+          "amplitude": 0.06,
+          "effectiveHz": 0.65217,
+          "multiplier": 6.0,
+          "phaseRad": 5.759586531581287,
+          "rawHz": 0.65217,
+          "shapePower": 1.1
+        }
+      ],
+      "idHash": "0xF5B1EFB9",
+      "name": "Vent Communion",
+      "noiseRateHz": 0.045,
+      "noiseScale": 0.22,
+      "periodSeconds": 9.2,
+      "safety": {
+        "effectiveMaxHz": 6.2,
+        "policy": "Any harmonic or AcousticPing strobe above 15Hz is clamped before export and preview.",
+        "rawMaxHz": 6.2,
+        "safetyClampActive": false,
+        "safetyClampHz": 15.0
+      }
+    },
+    {
+      "acousticPing": {
+        "decaySeconds": 3.4,
+        "effectiveStrobeHz": 2.4,
+        "gain": 0.33,
+        "phaseKickRad": 0.20943951023931956,
+        "rawStrobeHz": 2.4,
+        "refractorySeconds": 1.7,
+        "strobeWidth01": 0.28,
+        "transport": "EnvironmentSignal/AcousticPing scalar input; no string event names."
+      },
+      "amplitude": 1.85,
+      "baseline": 0.06,
+      "biome": "Wreckyard Noir",
+      "flags": 2,
+      "gamma": 1.8,
+      "harmonics": [
+        {
+          "amplitude": 0.82,
+          "effectiveHz": 0.03704,
+          "multiplier": 1.0,
+          "phaseRad": 0.0,
+          "rawHz": 0.03704,
+          "shapePower": 1.35
+        },
+        {
+          "amplitude": 0.26,
+          "effectiveHz": 0.04926,
+          "multiplier": 1.33,
+          "phaseRad": 1.9198621771937625,
+          "rawHz": 0.04926,
+          "shapePower": 1.7
+        },
+        {
+          "amplitude": 0.14,
+          "effectiveHz": 0.09852,
+          "multiplier": 2.66,
+          "phaseRad": 3.612831551628262,
+          "rawHz": 0.09852,
+          "shapePower": 1.25
+        },
+        {
+          "amplitude": 0.08,
+          "effectiveHz": 0.14444,
+          "multiplier": 3.9,
+          "phaseRad": 5.288347633542818,
+          "rawHz": 0.14444,
+          "shapePower": 1.1
+        }
+      ],
+      "idHash": "0xAC880964",
+      "name": "Wreck Memory",
+      "noiseRateHz": 0.014,
+      "noiseScale": 0.36,
+      "periodSeconds": 27.0,
+      "safety": {
+        "effectiveMaxHz": 2.4,
+        "policy": "Any harmonic or AcousticPing strobe above 15Hz is clamped before export and preview.",
+        "rawMaxHz": 2.4,
+        "safetyClampActive": false,
+        "safetyClampHz": 15.0
+      }
+    },
+    {
+      "acousticPing": {
+        "decaySeconds": 4.5,
+        "effectiveStrobeHz": 1.8,
+        "gain": 0.24,
+        "phaseKickRad": 0.13962634015954636,
+        "rawStrobeHz": 1.8,
+        "refractorySeconds": 2.4,
+        "strobeWidth01": 0.24,
+        "transport": "EnvironmentSignal/AcousticPing scalar input; no string event names."
+      },
+      "amplitude": 1.3,
+      "baseline": 0.04,
+      "biome": "Abyssal Trench",
+      "flags": 2,
+      "gamma": 2.1,
+      "harmonics": [
+        {
+          "amplitude": 0.86,
+          "effectiveHz": 0.02381,
+          "multiplier": 1.0,
+          "phaseRad": 0.3141592653589793,
+          "rawHz": 0.02381,
+          "shapePower": 1.6
+        },
+        {
+          "amplitude": 0.22,
+          "effectiveHz": 0.04286,
+          "multiplier": 1.8,
+          "phaseRad": 2.4609142453120048,
+          "rawHz": 0.04286,
+          "shapePower": 1.85
+        },
+        {
+          "amplitude": 0.11,
+          "effectiveHz": 0.06429,
+          "multiplier": 2.7,
+          "phaseRad": 4.153883619746504,
+          "rawHz": 0.06429,
+          "shapePower": 1.3
+        },
+        {
+          "amplitude": 0.05,
+          "effectiveHz": 0.09762,
+          "multiplier": 4.1,
+          "phaseRad": 5.445427266222308,
+          "rawHz": 0.09762,
+          "shapePower": 1.15
+        }
+      ],
+      "idHash": "0x399CA9A9",
+      "name": "Abyssal Lull",
+      "noiseRateHz": 0.011,
+      "noiseScale": 0.42,
+      "periodSeconds": 42.0,
+      "safety": {
+        "effectiveMaxHz": 1.8,
+        "policy": "Any harmonic or AcousticPing strobe above 15Hz is clamped before export and preview.",
+        "rawMaxHz": 1.8,
+        "safetyClampActive": false,
+        "safetyClampHz": 15.0
+      }
+    },
+    {
+      "acousticPing": {
+        "decaySeconds": 2.0,
+        "effectiveStrobeHz": 4.2,
+        "gain": 0.46,
+        "phaseKickRad": 0.3665191429188092,
+        "rawStrobeHz": 4.2,
+        "refractorySeconds": 0.8,
+        "strobeWidth01": 0.36,
+        "transport": "EnvironmentSignal/AcousticPing scalar input; no string event names."
+      },
+      "amplitude": 2.05,
+      "baseline": 0.09,
+      "biome": "Alabaster Pools",
+      "flags": 10,
+      "gamma": 1.48,
+      "harmonics": [
+        {
+          "amplitude": 0.68,
+          "effectiveHz": 0.05556,
+          "multiplier": 1.0,
+          "phaseRad": 0.08726646259971647,
+          "rawHz": 0.05556,
+          "shapePower": 1.15
+        },
+        {
+          "amplitude": 0.24,
+          "effectiveHz": 0.13333,
+          "multiplier": 2.4,
+          "phaseRad": 1.4311699866353502,
+          "rawHz": 0.13333,
+          "shapePower": 1.45
+        },
+        {
+          "amplitude": 0.19,
+          "effectiveHz": 0.17222,
+          "multiplier": 3.1,
+          "phaseRad": 2.8448866807507573,
+          "rawHz": 0.17222,
+          "shapePower": 1.6
+        },
+        {
+          "amplitude": 0.09,
+          "effectiveHz": 0.28889,
+          "multiplier": 5.2,
+          "phaseRad": 4.258603374866164,
+          "rawHz": 0.28889,
+          "shapePower": 1.2
+        },
+        {
+          "amplitude": 0.05,
+          "effectiveHz": 0.40556,
+          "multiplier": 7.3,
+          "phaseRad": 5.619960191421741,
+          "rawHz": 0.40556,
+          "shapePower": 1.1
+        }
+      ],
+      "idHash": "0x42103F00",
+      "name": "Larval Drift",
+      "noiseRateHz": 0.028,
+      "noiseScale": 0.31,
+      "periodSeconds": 18.0,
+      "safety": {
+        "effectiveMaxHz": 4.2,
+        "policy": "Any harmonic or AcousticPing strobe above 15Hz is clamped before export and preview.",
+        "rawMaxHz": 4.2,
+        "safetyClampActive": false,
+        "safetyClampHz": 15.0
+      }
+    },
+    {
+      "acousticPing": {
+        "decaySeconds": 1.1,
+        "effectiveStrobeHz": 8.5,
+        "gain": 0.88,
+        "phaseKickRad": 0.8377580409572782,
+        "rawStrobeHz": 8.5,
+        "refractorySeconds": 0.52,
+        "strobeWidth01": 0.38,
+        "transport": "EnvironmentSignal/AcousticPing scalar input; no string event names."
+      },
+      "amplitude": 2.95,
+      "baseline": 0.14,
+      "biome": "Coral Ruins",
+      "flags": 6,
+      "gamma": 1.26,
+      "harmonics": [
+        {
+          "amplitude": 0.66,
+          "effectiveHz": 0.17241,
+          "multiplier": 1.0,
+          "phaseRad": 0.0,
+          "rawHz": 0.17241,
+          "shapePower": 1.05
+        },
+        {
+          "amplitude": 0.36,
+          "effectiveHz": 0.34483,
+          "multiplier": 2.0,
+          "phaseRad": 1.0122909661567112,
+          "rawHz": 0.34483,
+          "shapePower": 1.35
+        },
+        {
+          "amplitude": 0.23,
+          "effectiveHz": 0.60345,
+          "multiplier": 3.5,
+          "phaseRad": 2.3911010752322315,
+          "rawHz": 0.60345,
+          "shapePower": 1.7
+        },
+        {
+          "amplitude": 0.14,
+          "effectiveHz": 0.86207,
+          "multiplier": 5.0,
+          "phaseRad": 3.9968039870670147,
+          "rawHz": 0.86207,
+          "shapePower": 1.25
+        },
+        {
+          "amplitude": 0.07,
+          "effectiveHz": 1.17241,
+          "multiplier": 6.8,
+          "phaseRad": 5.410520681182422,
+          "rawHz": 1.17241,
+          "shapePower": 1.1
+        }
+      ],
+      "idHash": "0xC61BB1D7",
+      "name": "Territorial Bloom",
+      "noiseRateHz": 0.07,
+      "noiseScale": 0.2,
+      "periodSeconds": 5.8,
+      "safety": {
+        "effectiveMaxHz": 8.5,
+        "policy": "Any harmonic or AcousticPing strobe above 15Hz is clamped before export and preview.",
+        "rawMaxHz": 8.5,
+        "safetyClampActive": false,
+        "safetyClampHz": 15.0
+      }
+    },
+    {
+      "acousticPing": {
+        "decaySeconds": 0.72,
+        "effectiveStrobeHz": 13.5,
+        "gain": 1.05,
+        "phaseKickRad": 1.2566370614359172,
+        "rawStrobeHz": 13.5,
+        "refractorySeconds": 0.38,
+        "strobeWidth01": 0.42,
+        "transport": "EnvironmentSignal/AcousticPing scalar input; no string event names."
+      },
+      "amplitude": 3.25,
+      "baseline": 0.1,
+      "biome": "Hydrothermal Vent",
+      "flags": 6,
+      "gamma": 1.18,
+      "harmonics": [
+        {
+          "amplitude": 0.54,
+          "effectiveHz": 0.27778,
+          "multiplier": 1.0,
+          "phaseRad": 0.0,
+          "rawHz": 0.27778,
+          "shapePower": 1.0
+        },
+        {
+          "amplitude": 0.4,
+          "effectiveHz": 0.55556,
+          "multiplier": 2.0,
+          "phaseRad": 1.064650843716541,
+          "rawHz": 0.55556,
+          "shapePower": 1.35
+        },
+        {
+          "amplitude": 0.28,
+          "effectiveHz": 1.11111,
+          "multiplier": 4.0,
+          "phaseRad": 2.600540585471551,
+          "rawHz": 1.11111,
+          "shapePower": 1.75
+        },
+        {
+          "amplitude": 0.16,
+          "effectiveHz": 1.80556,
+          "multiplier": 6.5,
+          "phaseRad": 4.1887902047863905,
+          "rawHz": 1.80556,
+          "shapePower": 1.2
+        },
+        {
+          "amplitude": 0.08,
+          "effectiveHz": 2.5,
+          "multiplier": 9.0,
+          "phaseRad": 5.550147021341968,
+          "rawHz": 2.5,
+          "shapePower": 1.1
+        }
+      ],
+      "idHash": "0x121DDF6D",
+      "name": "Stress Bleed",
+      "noiseRateHz": 0.105,
+      "noiseScale": 0.16,
+      "periodSeconds": 3.6,
+      "safety": {
+        "effectiveMaxHz": 13.5,
+        "policy": "Any harmonic or AcousticPing strobe above 15Hz is clamped before export and preview.",
+        "rawMaxHz": 13.5,
+        "safetyClampActive": false,
+        "safetyClampHz": 15.0
+      }
+    },
+    {
+      "acousticPing": {
+        "decaySeconds": 3.8,
+        "effectiveStrobeHz": 2.1,
+        "gain": 0.28,
+        "phaseKickRad": 0.2617993877991494,
+        "rawStrobeHz": 2.1,
+        "refractorySeconds": 1.9,
+        "strobeWidth01": 0.24,
+        "transport": "EnvironmentSignal/AcousticPing scalar input; no string event names."
+      },
+      "amplitude": 1.65,
+      "baseline": 0.05,
+      "biome": "Silt Cathedral",
+      "flags": 2,
+      "gamma": 1.95,
+      "harmonics": [
+        {
+          "amplitude": 0.76,
+          "effectiveHz": 0.03226,
+          "multiplier": 1.0,
+          "phaseRad": 0.3839724354387525,
+          "rawHz": 0.03226,
+          "shapePower": 1.45
+        },
+        {
+          "amplitude": 0.28,
+          "effectiveHz": 0.05161,
+          "multiplier": 1.6,
+          "phaseRad": 1.8151424220741028,
+          "rawHz": 0.05161,
+          "shapePower": 1.8
+        },
+        {
+          "amplitude": 0.16,
+          "effectiveHz": 0.07097,
+          "multiplier": 2.2,
+          "phaseRad": 3.5779249665883754,
+          "rawHz": 0.07097,
+          "shapePower": 1.25
+        },
+        {
+          "amplitude": 0.09,
+          "effectiveHz": 0.11935,
+          "multiplier": 3.7,
+          "phaseRad": 5.044001538263612,
+          "rawHz": 0.11935,
+          "shapePower": 1.12
+        }
+      ],
+      "idHash": "0xB1906A36",
+      "name": "Silt Ghost",
+      "noiseRateHz": 0.013,
+      "noiseScale": 0.44,
+      "periodSeconds": 31.0,
+      "safety": {
+        "effectiveMaxHz": 2.1,
+        "policy": "Any harmonic or AcousticPing strobe above 15Hz is clamped before export and preview.",
+        "rawMaxHz": 2.1,
+        "safetyClampActive": false,
+        "safetyClampHz": 15.0
+      }
+    },
+    {
+      "acousticPing": {
+        "decaySeconds": 2.7,
+        "effectiveStrobeHz": 3.2,
+        "gain": 0.44,
+        "phaseKickRad": 0.4886921905584123,
+        "rawStrobeHz": 3.2,
+        "refractorySeconds": 1.2,
+        "strobeWidth01": 0.3,
+        "transport": "EnvironmentSignal/AcousticPing scalar input; no string event names."
+      },
+      "amplitude": 2.15,
+      "baseline": 0.07,
+      "biome": "Kelp Ghost Forest",
+      "flags": 10,
+      "gamma": 1.62,
+      "harmonics": [
+        {
+          "amplitude": 0.74,
+          "effectiveHz": 0.04762,
+          "multiplier": 1.0,
+          "phaseRad": 0.0,
+          "rawHz": 0.04762,
+          "shapePower": 1.18
+        },
+        {
+          "amplitude": 0.3,
+          "effectiveHz": 0.06667,
+          "multiplier": 1.4,
+          "phaseRad": 1.2566370614359172,
+          "rawHz": 0.06667,
+          "shapePower": 1.5
+        },
+        {
+          "amplitude": 0.19,
+          "effectiveHz": 0.13333,
+          "multiplier": 2.8,
+          "phaseRad": 2.670353755551324,
+          "rawHz": 0.13333,
+          "shapePower": 1.65
+        },
+        {
+          "amplitude": 0.1,
+          "effectiveHz": 0.20952,
+          "multiplier": 4.4,
+          "phaseRad": 4.380776422505767,
+          "rawHz": 0.20952,
+          "shapePower": 1.22
+        },
+        {
+          "amplitude": 0.05,
+          "effectiveHz": 0.28571,
+          "multiplier": 6.0,
+          "phaseRad": 5.567600313861911,
+          "rawHz": 0.28571,
+          "shapePower": 1.1
+        }
+      ],
+      "idHash": "0x8FE0EDC2",
+      "name": "Kelp Constellation",
+      "noiseRateHz": 0.024,
+      "noiseScale": 0.38,
+      "periodSeconds": 21.0,
+      "safety": {
+        "effectiveMaxHz": 3.2,
+        "policy": "Any harmonic or AcousticPing strobe above 15Hz is clamped before export and preview.",
+        "rawMaxHz": 3.2,
+        "safetyClampActive": false,
+        "safetyClampHz": 15.0
+      }
+    },
+    {
+      "acousticPing": {
+        "decaySeconds": 5.0,
+        "effectiveStrobeHz": 1.4,
+        "gain": 0.25,
+        "phaseKickRad": 0.10471975511965978,
+        "rawStrobeHz": 1.4,
+        "refractorySeconds": 2.5,
+        "strobeWidth01": 0.22,
+        "transport": "EnvironmentSignal/AcousticPing scalar input; no string event names."
+      },
+      "amplitude": 1.75,
+      "baseline": 0.04,
+      "biome": "Abyssal Trench",
+      "flags": 10,
+      "gamma": 1.7,
+      "harmonics": [
+        {
+          "amplitude": 0.88,
+          "effectiveHz": 0.01667,
+          "multiplier": 1.0,
+          "phaseRad": 0.0,
+          "rawHz": 0.01667,
+          "shapePower": 1.3
+        },
+        {
+          "amplitude": 0.21,
+          "effectiveHz": 0.03333,
+          "multiplier": 2.0,
+          "phaseRad": 2.1467549799530254,
+          "rawHz": 0.03333,
+          "shapePower": 1.6
+        },
+        {
+          "amplitude": 0.12,
+          "effectiveHz": 0.05,
+          "multiplier": 3.0,
+          "phaseRad": 4.171336912266447,
+          "rawHz": 0.05,
+          "shapePower": 1.25
+        },
+        {
+          "amplitude": 0.05,
+          "effectiveHz": 0.08333,
+          "multiplier": 5.0,
+          "phaseRad": 5.427973973702365,
+          "rawHz": 0.08333,
+          "shapePower": 1.1
+        }
+      ],
+      "idHash": "0x799C0F10",
+      "name": "Moon-Tide Choir",
+      "noiseRateHz": 0.009,
+      "noiseScale": 0.4,
+      "periodSeconds": 60.0,
+      "safety": {
+        "effectiveMaxHz": 1.4,
+        "policy": "Any harmonic or AcousticPing strobe above 15Hz is clamped before export and preview.",
+        "rawMaxHz": 1.4,
+        "safetyClampActive": false,
+        "safetyClampHz": 15.0
+      }
+    },
+    {
+      "acousticPing": {
+        "decaySeconds": 1.0,
+        "effectiveStrobeHz": 9.0,
+        "gain": 0.82,
+        "phaseKickRad": 1.0471975511965976,
+        "rawStrobeHz": 9.0,
+        "refractorySeconds": 0.5,
+        "strobeWidth01": 0.36,
+        "transport": "EnvironmentSignal/AcousticPing scalar input; no string event names."
+      },
+      "amplitude": 2.45,
+      "baseline": 0.11,
+      "biome": "Wreckyard Noir",
+      "flags": 2,
+      "gamma": 1.32,
+      "harmonics": [
+        {
+          "amplitude": 0.6,
+          "effectiveHz": 0.15152,
+          "multiplier": 1.0,
+          "phaseRad": 0.12217304763960307,
+          "rawHz": 0.15152,
+          "shapePower": 1.1
+        },
+        {
+          "amplitude": 0.34,
+          "effectiveHz": 0.30303,
+          "multiplier": 2.0,
+          "phaseRad": 1.53588974175501,
+          "rawHz": 0.30303,
+          "shapePower": 1.5
+        },
+        {
+          "amplitude": 0.21,
+          "effectiveHz": 0.45455,
+          "multiplier": 3.0,
+          "phaseRad": 3.1590459461097367,
+          "rawHz": 0.45455,
+          "shapePower": 1.3
+        },
+        {
+          "amplitude": 0.11,
+          "effectiveHz": 0.68182,
+          "multiplier": 4.5,
+          "phaseRad": 4.642575810304916,
+          "rawHz": 0.68182,
+          "shapePower": 1.15
+        },
+        {
+          "amplitude": 0.06,
+          "effectiveHz": 0.98485,
+          "multiplier": 6.5,
+          "phaseRad": 5.811946409141117,
+          "rawHz": 0.98485,
+          "shapePower": 1.05
+        }
+      ],
+      "idHash": "0x0C67B484",
+      "name": "Scanner Sympathy",
+      "noiseRateHz": 0.052,
+      "noiseScale": 0.24,
+      "periodSeconds": 6.6,
+      "safety": {
+        "effectiveMaxHz": 9.0,
+        "policy": "Any harmonic or AcousticPing strobe above 15Hz is clamped before export and preview.",
+        "rawMaxHz": 9.0,
+        "safetyClampActive": false,
+        "safetyClampHz": 15.0
+      }
+    },
+    {
+      "acousticPing": {
+        "decaySeconds": 4.6,
+        "effectiveStrobeHz": 1.6,
+        "gain": 0.2,
+        "phaseKickRad": 0.12217304763960307,
+        "rawStrobeHz": 1.6,
+        "refractorySeconds": 2.2,
+        "strobeWidth01": 0.2,
+        "transport": "EnvironmentSignal/AcousticPing scalar input; no string event names."
+      },
+      "amplitude": 1.4,
+      "baseline": 0.03,
+      "biome": "Coral Ruins",
+      "flags": 2,
+      "gamma": 2.25,
+      "harmonics": [
+        {
+          "amplitude": 0.83,
+          "effectiveHz": 0.02083,
+          "multiplier": 1.0,
+          "phaseRad": 0.24434609527920614,
+          "rawHz": 0.02083,
+          "shapePower": 1.55
+        },
+        {
+          "amplitude": 0.27,
+          "effectiveHz": 0.02604,
+          "multiplier": 1.25,
+          "phaseRad": 2.0420352248333655,
+          "rawHz": 0.02604,
+          "shapePower": 1.9
+        },
+        {
+          "amplitude": 0.12,
+          "effectiveHz": 0.05208,
+          "multiplier": 2.5,
+          "phaseRad": 3.857177646907468,
+          "rawHz": 0.05208,
+          "shapePower": 1.32
+        },
+        {
+          "amplitude": 0.06,
+          "effectiveHz": 0.08333,
+          "multiplier": 4.0,
+          "phaseRad": 5.305800926062762,
+          "rawHz": 0.08333,
+          "shapePower": 1.14
+        }
+      ],
+      "idHash": "0x7DC08AD3",
+      "name": "Coral Sleep Cycle",
+      "noiseRateHz": 0.01,
+      "noiseScale": 0.46,
+      "periodSeconds": 48.0,
+      "safety": {
+        "effectiveMaxHz": 1.6,
+        "policy": "Any harmonic or AcousticPing strobe above 15Hz is clamped before export and preview.",
+        "rawMaxHz": 1.6,
+        "safetyClampActive": false,
+        "safetyClampHz": 15.0
+      }
+    },
+    {
+      "acousticPing": {
+        "decaySeconds": 1.8,
+        "effectiveStrobeHz": 6.8,
+        "gain": 0.96,
+        "phaseKickRad": 0.7330382858376184,
+        "rawStrobeHz": 6.8,
+        "refractorySeconds": 0.7,
+        "strobeWidth01": 0.44,
+        "transport": "EnvironmentSignal/AcousticPing scalar input; no string event names."
+      },
+      "amplitude": 3.6,
+      "baseline": 0.16,
+      "biome": "Hadal Aurora",
+      "flags": 14,
+      "gamma": 1.16,
+      "harmonics": [
+        {
+          "amplitude": 0.68,
+          "effectiveHz": 0.08696,
+          "multiplier": 1.0,
+          "phaseRad": 0.0,
+          "rawHz": 0.08696,
+          "shapePower": 1.08
+        },
+        {
+          "amplitude": 0.36,
+          "effectiveHz": 0.15652,
+          "multiplier": 1.8,
+          "phaseRad": 1.239183768915974,
+          "rawHz": 0.15652,
+          "shapePower": 1.35
+        },
+        {
+          "amplitude": 0.24,
+          "effectiveHz": 0.26087,
+          "multiplier": 3.0,
+          "phaseRad": 2.91469985083053,
+          "rawHz": 0.26087,
+          "shapePower": 1.6
+        },
+        {
+          "amplitude": 0.15,
+          "effectiveHz": 0.36522,
+          "multiplier": 4.2,
+          "phaseRad": 4.328416544945937,
+          "rawHz": 0.36522,
+          "shapePower": 1.25
+        },
+        {
+          "amplitude": 0.09,
+          "effectiveHz": 0.49565,
+          "multiplier": 5.7,
+          "phaseRad": 5.410520681182422,
+          "rawHz": 0.49565,
+          "shapePower": 1.1
+        },
+        {
+          "amplitude": 0.05,
+          "effectiveHz": 0.65217,
+          "multiplier": 7.5,
+          "phaseRad": 6.03883921190038,
+          "rawHz": 0.65217,
+          "shapePower": 1.05
+        }
+      ],
+      "idHash": "0x863AA28B",
+      "name": "Leviathan Wake",
+      "noiseRateHz": 0.04,
+      "noiseScale": 0.22,
+      "periodSeconds": 11.5,
+      "safety": {
+        "effectiveMaxHz": 6.8,
+        "policy": "Any harmonic or AcousticPing strobe above 15Hz is clamped before export and preview.",
+        "rawMaxHz": 6.8,
+        "safetyClampActive": false,
+        "safetyClampHz": 15.0
+      }
+    },
+    {
+      "acousticPing": {
+        "decaySeconds": 2.1,
+        "effectiveStrobeHz": 4.6,
+        "gain": 0.5,
+        "phaseKickRad": 0.5235987755982988,
+        "rawStrobeHz": 4.6,
+        "refractorySeconds": 0.9,
+        "strobeWidth01": 0.34,
+        "transport": "EnvironmentSignal/AcousticPing scalar input; no string event names."
+      },
+      "amplitude": 2.35,
+      "baseline": 0.1,
+      "biome": "Alabaster Pools",
+      "flags": 2,
+      "gamma": 1.44,
+      "harmonics": [
+        {
+          "amplitude": 0.65,
+          "effectiveHz": 0.07812,
+          "multiplier": 1.0,
+          "phaseRad": 0.06981317007977318,
+          "rawHz": 0.07812,
+          "shapePower": 1.12
+        },
+        {
+          "amplitude": 0.3,
+          "effectiveHz": 0.13281,
+          "multiplier": 1.7,
+          "phaseRad": 1.5882496193148399,
+          "rawHz": 0.13281,
+          "shapePower": 1.45
+        },
+        {
+          "amplitude": 0.19,
+          "effectiveHz": 0.20312,
+          "multiplier": 2.6,
+          "phaseRad": 3.2288591161895095,
+          "rawHz": 0.20312,
+          "shapePower": 1.6
+        },
+        {
+          "amplitude": 0.11,
+          "effectiveHz": 0.32031,
+          "multiplier": 4.1,
+          "phaseRad": 4.71238898038469,
+          "rawHz": 0.32031,
+          "shapePower": 1.2
+        },
+        {
+          "amplitude": 0.06,
+          "effectiveHz": 0.45312,
+          "multiplier": 5.8,
+          "phaseRad": 5.777039824101231,
+          "rawHz": 0.45312,
+          "shapePower": 1.08
+        }
+      ],
+      "idHash": "0xEBCCAAA5",
+      "name": "Harvest Invitation",
+      "noiseRateHz": 0.035,
+      "noiseScale": 0.3,
+      "periodSeconds": 12.8,
+      "safety": {
+        "effectiveMaxHz": 4.6,
+        "policy": "Any harmonic or AcousticPing strobe above 15Hz is clamped before export and preview.",
+        "rawMaxHz": 4.6,
+        "safetyClampActive": false,
+        "safetyClampHz": 15.0
+      }
+    },
+    {
+      "acousticPing": {
+        "decaySeconds": 0.95,
+        "effectiveStrobeHz": 10.5,
+        "gain": 0.92,
+        "phaseKickRad": 1.1693705988362009,
+        "rawStrobeHz": 10.5,
+        "refractorySeconds": 0.48,
+        "strobeWidth01": 0.4,
+        "transport": "EnvironmentSignal/AcousticPing scalar input; no string event names."
+      },
+      "amplitude": 2.85,
+      "baseline": 0.13,
+      "biome": "Kelp Ghost Forest",
+      "flags": 6,
+      "gamma": 1.24,
+      "harmonics": [
+        {
+          "amplitude": 0.58,
+          "effectiveHz": 0.20833,
+          "multiplier": 1.0,
+          "phaseRad": 0.0,
+          "rawHz": 0.20833,
+          "shapePower": 1.06
+        },
+        {
+          "amplitude": 0.37,
+          "effectiveHz": 0.41667,
+          "multiplier": 2.0,
+          "phaseRad": 1.1519173063162575,
+          "rawHz": 0.41667,
+          "shapePower": 1.4
+        },
+        {
+          "amplitude": 0.24,
+          "effectiveHz": 0.79167,
+          "multiplier": 3.8,
+          "phaseRad": 2.4958208303518914,
+          "rawHz": 0.79167,
+          "shapePower": 1.72
+        },
+        {
+          "amplitude": 0.13,
+          "effectiveHz": 1.14583,
+          "multiplier": 5.5,
+          "phaseRad": 3.944444109507185,
+          "rawHz": 1.14583,
+          "shapePower": 1.25
+        },
+        {
+          "amplitude": 0.07,
+          "effectiveHz": 1.77083,
+          "multiplier": 8.5,
+          "phaseRad": 5.480333851262195,
+          "rawHz": 1.77083,
+          "shapePower": 1.1
+        }
+      ],
+      "idHash": "0xD8B622FB",
+      "name": "Infection Pulse",
+      "noiseRateHz": 0.082,
+      "noiseScale": 0.26,
+      "periodSeconds": 4.8,
+      "safety": {
+        "effectiveMaxHz": 10.5,
+        "policy": "Any harmonic or AcousticPing strobe above 15Hz is clamped before export and preview.",
+        "rawMaxHz": 10.5,
+        "safetyClampActive": false,
+        "safetyClampHz": 15.0
+      }
+    },
+    {
+      "acousticPing": {
+        "decaySeconds": 0.55,
+        "effectiveStrobeHz": 15.0,
+        "gain": 1.35,
+        "phaseKickRad": 1.6580627893946132,
+        "rawStrobeHz": 18.0,
+        "refractorySeconds": 0.32,
+        "strobeWidth01": 0.46,
+        "transport": "EnvironmentSignal/AcousticPing scalar input; no string event names."
+      },
+      "amplitude": 3.55,
+      "baseline": 0.17,
+      "biome": "Hydrothermal Vent",
+      "flags": 7,
+      "gamma": 1.14,
+      "harmonics": [
+        {
+          "amplitude": 0.48,
+          "effectiveHz": 0.625,
+          "multiplier": 1.0,
+          "phaseRad": 0.0,
+          "rawHz": 0.625,
+          "shapePower": 1.05
+        },
+        {
+          "amplitude": 0.3,
+          "effectiveHz": 1.5,
+          "multiplier": 2.4,
+          "phaseRad": 1.2740903539558606,
+          "rawHz": 1.5,
+          "shapePower": 1.28
+        },
+        {
+          "amplitude": 0.2,
+          "effectiveHz": 2.75,
+          "multiplier": 4.4,
+          "phaseRad": 2.600540585471551,
+          "rawHz": 2.75,
+          "shapePower": 1.42
+        },
+        {
+          "amplitude": 0.11,
+          "effectiveHz": 4.375,
+          "multiplier": 7.0,
+          "phaseRad": 4.258603374866164,
+          "rawHz": 4.375,
+          "shapePower": 1.15
+        },
+        {
+          "amplitude": 0.05,
+          "effectiveHz": 6.25,
+          "multiplier": 10.0,
+          "phaseRad": 5.550147021341968,
+          "rawHz": 6.25,
+          "shapePower": 1.05
+        }
+      ],
+      "idHash": "0x0183FEB2",
+      "name": "Thermal Vent Alarm",
+      "noiseRateHz": 0.09,
+      "noiseScale": 0.16,
+      "periodSeconds": 1.6,
+      "safety": {
+        "effectiveMaxHz": 15.0,
+        "policy": "Any harmonic or AcousticPing strobe above 15Hz is clamped before export and preview.",
+        "rawMaxHz": 18.0,
+        "safetyClampActive": true,
+        "safetyClampHz": 15.0
+      }
+    },
+    {
+      "acousticPing": {
+        "decaySeconds": 2.6,
+        "effectiveStrobeHz": 3.6,
+        "gain": 0.42,
+        "phaseKickRad": 0.29670597283903605,
+        "rawStrobeHz": 3.6,
+        "refractorySeconds": 1.1,
+        "strobeWidth01": 0.3,
+        "transport": "EnvironmentSignal/AcousticPing scalar input; no string event names."
+      },
+      "amplitude": 2.1,
+      "baseline": 0.08,
+      "biome": "Silt Cathedral",
+      "flags": 10,
+      "gamma": 1.5,
+      "harmonics": [
+        {
+          "amplitude": 0.78,
+          "effectiveHz": 0.06061,
+          "multiplier": 1.0,
+          "phaseRad": 0.0,
+          "rawHz": 0.06061,
+          "shapePower": 1.22
+        },
+        {
+          "amplitude": 0.25,
+          "effectiveHz": 0.11515,
+          "multiplier": 1.9,
+          "phaseRad": 1.7802358370342162,
+          "rawHz": 0.11515,
+          "shapePower": 1.52
+        },
+        {
+          "amplitude": 0.16,
+          "effectiveHz": 0.16364,
+          "multiplier": 2.7,
+          "phaseRad": 3.473205211468716,
+          "rawHz": 0.16364,
+          "shapePower": 1.38
+        },
+        {
+          "amplitude": 0.09,
+          "effectiveHz": 0.29091,
+          "multiplier": 4.8,
+          "phaseRad": 5.096361415823442,
+          "rawHz": 0.29091,
+          "shapePower": 1.12
+        },
+        {
+          "amplitude": 0.05,
+          "effectiveHz": 0.37576,
+          "multiplier": 6.2,
+          "phaseRad": 5.951572749300664,
+          "rawHz": 0.37576,
+          "shapePower": 1.08
+        }
+      ],
+      "idHash": "0x38971901",
+      "name": "Colony Respiration",
+      "noiseRateHz": 0.03,
+      "noiseScale": 0.34,
+      "periodSeconds": 16.5,
+      "safety": {
+        "effectiveMaxHz": 3.6,
+        "policy": "Any harmonic or AcousticPing strobe above 15Hz is clamped before export and preview.",
+        "rawMaxHz": 3.6,
+        "safetyClampActive": false,
+        "safetyClampHz": 15.0
+      }
+    },
+    {
+      "acousticPing": {
+        "decaySeconds": 0.45,
+        "effectiveStrobeHz": 15.0,
+        "gain": 1.5,
+        "phaseKickRad": 1.9198621771937625,
+        "rawStrobeHz": 22.0,
+        "refractorySeconds": 0.3,
+        "strobeWidth01": 0.48,
+        "transport": "EnvironmentSignal/AcousticPing scalar input; no string event names."
+      },
+      "amplitude": 3.95,
+      "baseline": 0.2,
+      "biome": "Wreckyard Noir",
+      "flags": 7,
+      "gamma": 1.1,
+      "harmonics": [
+        {
+          "amplitude": 0.42,
+          "effectiveHz": 0.55556,
+          "multiplier": 1.0,
+          "phaseRad": 0.0,
+          "rawHz": 0.55556,
+          "shapePower": 1.04
+        },
+        {
+          "amplitude": 0.3,
+          "effectiveHz": 1.66667,
+          "multiplier": 3.0,
+          "phaseRad": 0.8203047484373349,
+          "rawHz": 1.66667,
+          "shapePower": 1.18
+        },
+        {
+          "amplitude": 0.22,
+          "effectiveHz": 3.05556,
+          "multiplier": 5.5,
+          "phaseRad": 2.007128639793479,
+          "rawHz": 3.05556,
+          "shapePower": 1.26
+        },
+        {
+          "amplitude": 0.13,
+          "effectiveHz": 4.44444,
+          "multiplier": 8.0,
+          "phaseRad": 3.8048177693476384,
+          "rawHz": 4.44444,
+          "shapePower": 1.12
+        },
+        {
+          "amplitude": 0.06,
+          "effectiveHz": 6.38889,
+          "multiplier": 11.5,
+          "phaseRad": 5.305800926062762,
+          "rawHz": 6.38889,
+          "shapePower": 1.05
+        }
+      ],
+      "idHash": "0x2BCCA4C2",
+      "name": "Emergency Beacon",
+      "noiseRateHz": 0.105,
+      "noiseScale": 0.12,
+      "periodSeconds": 1.8,
+      "safety": {
+        "effectiveMaxHz": 15.0,
+        "policy": "Any harmonic or AcousticPing strobe above 15Hz is clamped before export and preview.",
+        "rawMaxHz": 22.0,
+        "safetyClampActive": true,
+        "safetyClampHz": 15.0
+      }
+    }
+  ],
+  "runtimeContract": {
+    "masterPhaseName": "_BiolumMasterPhase",
+    "qualityTiers": {
+      "HIGH": "10-color GOD_MODE ramp, full harmonic reconstruction in shader.",
+      "LOW": "2-color lerp plus one harmonic phase scalar per material family.",
+      "MIDDLE": "5 sampled GOD_MODE colors and AcousticPing overlay.",
+      "TOASTER": "2-color biome lerp, fixed 256-sample profile curve, no dynamic light spam.",
+      "ULTRA": "10-color ramp plus richer SSGI/volumetric consumers in VISUAL_SYNC only."
+    }
+  },
+  "schema": "H8_BIOLUM_PROFILES",
+  "status": "RHYTHMS COMPOSED",
+  "version": 1
+}

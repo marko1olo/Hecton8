@@ -3383,7 +3383,7 @@ namespace Hecton8.Bootstrap
             QualitySettings.asyncUploadBufferSize = ResolveAsyncUploadBufferSizeMb(in hardwareProfile);
             QualitySettings.asyncUploadTimeSlice = ResolveAsyncUploadTimeSliceMs(in hardwareProfile);
             QualitySettings.asyncUploadPersistentBuffer = true;
-            ConfigureJobWorkerThreads(hardwareProfile.ProcessorCount);
+            ConfigureJobWorkerThreads(in hardwareProfile);
         }
 
         private static void DisableGarbageCollectorAfterCoreReady()
@@ -3400,6 +3400,11 @@ namespace Hecton8.Bootstrap
 
         private static int ResolveTargetFrameRate(in HectonHardwareProfile hardwareProfile)
         {
+            if (HardwareTierDetector.IsQuest3Like)
+                return HardwareProfileCatalog.Quest3TargetFps;
+            if (HardwareTierDetector.IsSteamDeckLike)
+                return HardwareProfileCatalog.SteamDeckLcdTargetFps;
+
             return DefaultTargetFrameRate;
         }
 
@@ -3418,6 +3423,11 @@ namespace Hecton8.Bootstrap
 
         private static float ResolveStreamingMipBudgetMb(in HectonHardwareProfile hardwareProfile)
         {
+            if (HardwareTierDetector.IsQuest3Like)
+                return HardwareProfileCatalog.Quest3TextureBudgetMegabytes;
+            if (HardwareTierDetector.IsSteamDeckLike)
+                return HardwareProfileCatalog.SteamDeckLcdTextureBudgetMegabytes;
+
             switch (hardwareProfile.QualityTier)
             {
                 case HectonQualityTier.Ultra:
@@ -3461,10 +3471,20 @@ namespace Hecton8.Bootstrap
             }
         }
 
-        private static void ConfigureJobWorkerThreads(int processorCount)
+        private static void ConfigureJobWorkerThreads(in HectonHardwareProfile hardwareProfile)
         {
-            int requestedWorkerCount = math.max(1, processorCount - 1);
+            int requestedWorkerCount = ResolveJobWorkerBudget(in hardwareProfile);
             JobsUtility.JobWorkerCount = math.min(requestedWorkerCount, JobsUtility.JobWorkerMaximumCount);
+        }
+
+        private static int ResolveJobWorkerBudget(in HectonHardwareProfile hardwareProfile)
+        {
+            if (HardwareTierDetector.IsQuest3Like)
+                return HardwareProfileCatalog.Quest3JobWorkerBudget;
+            if (HardwareTierDetector.IsSteamDeckLike)
+                return HardwareProfileCatalog.SteamDeckLcdJobWorkerBudget;
+
+            return math.max(1, hardwareProfile.ProcessorCount - 1);
         }
 
         private static bool TryRunBootstrapStep(BootstrapStepToken stepToken, string phaseName, Action initializeAction)

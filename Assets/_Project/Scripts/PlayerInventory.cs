@@ -3374,7 +3374,14 @@ namespace Hecton8.Inventory
             ushort resolvedQualityMilli = NormalizeQualityMilli(qualityMilli);
             byte compressedGenetics = CompressItemGenetics(geneticsMask);
 
-            bool allAdded = true;
+            int requestedQuantity = quantity;
+            if (!TryResolveCapacityLimitedQuantity(in runtimeDescriptor, requestedQuantity, out quantity))
+            {
+                InventoryEvents.NotifyInventoryFull(itemHashId);
+                return false;
+            }
+
+            bool allAdded = quantity == requestedQuantity;
             int remainingQuantity = quantity;
             if (descriptor.Stackable)
             {
@@ -3495,7 +3502,9 @@ namespace Hecton8.Inventory
                 !_stackCounts.IsCreated ||
                 !_scavengeSimStackCounts.IsCreated ||
                 !_simulationOccupiedCells.IsCreated ||
-                !TryBuildDescriptor(itemHashId, out InventoryGrid.InventoryItemDescriptor descriptor))
+                !TryBuildDescriptor(itemHashId, out InventoryGrid.InventoryItemDescriptor descriptor) ||
+                !TryGetRuntimeDescriptor(itemHashId, out ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor) ||
+                !CanAcceptAdditionalPhysicalCapacity(in runtimeDescriptor, quantity))
             {
                 return false;
             }
@@ -3558,12 +3567,32 @@ namespace Hecton8.Inventory
             CopyNativeArray(_stackCounts, _scavengeSimStackCounts);
             _grid.CopyOccupiedMask(_simulationOccupiedCells);
 
+            if (!TryResolveCurrentPhysicalTotals(out float currentWeightKg, out float currentVolumeLiters))
+                return false;
+
+            float additionalWeightKg = 0f;
+            float additionalVolumeLiters = 0f;
             for (int groupIndex = 0; groupIndex < count; groupIndex++)
             {
                 int itemHashId = itemHashIds[groupIndex];
                 int remaining = quantities[groupIndex];
-                if (itemHashId == 0 || remaining <= 0 || !TryBuildDescriptor(itemHashId, out InventoryGrid.InventoryItemDescriptor descriptor))
+                if (itemHashId == 0 ||
+                    remaining <= 0 ||
+                    !TryBuildDescriptor(itemHashId, out InventoryGrid.InventoryItemDescriptor descriptor) ||
+                    !TryGetRuntimeDescriptor(itemHashId, out ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor) ||
+                    !TryResolveAdditionalPhysicalDemand(in runtimeDescriptor, remaining, out float groupWeightKg, out float groupVolumeLiters))
+                {
                     return false;
+                }
+
+                additionalWeightKg += groupWeightKg;
+                additionalVolumeLiters += groupVolumeLiters;
+                if (!math.isfinite(additionalWeightKg) ||
+                    !math.isfinite(additionalVolumeLiters) ||
+                    WouldExceedPhysicalCapacity(currentWeightKg, currentVolumeLiters, additionalWeightKg, additionalVolumeLiters))
+                {
+                    return false;
+                }
 
                 if (descriptor.Stackable)
                 {
@@ -3601,6 +3630,148 @@ namespace Hecton8.Inventory
             }
 
             return true;
+        }
+
+        private bool TryResolveCapacityLimitedQuantity(
+            in ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor,
+            int requestedQuantity,
+            out int allowedQuantity)
+        {
+            allowedQuantity = 0;
+            if (requestedQuantity <= 0 ||
+                !TryResolveCurrentPhysicalTotals(out float currentWeightKg, out float currentVolumeLiters) ||
+                !TryResolveUnitPhysicalDemand(in runtimeDescriptor, out float unitMassKg, out float unitVolumeLiters))
+            {
+                return false;
+            }
+
+            allowedQuantity = requestedQuantity;
+            allowedQuantity = ResolveCapacityLimitedQuantity(
+                currentWeightKg,
+                MaxWeightKg,
+                unitMassKg,
+                allowedQuantity);
+            allowedQuantity = ResolveCapacityLimitedQuantity(
+                currentVolumeLiters,
+                MaxVolumeLiters,
+                unitVolumeLiters,
+                allowedQuantity);
+            return allowedQuantity > 0;
+        }
+
+        private bool CanAcceptAdditionalPhysicalCapacity(in ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor, int quantity)
+        {
+            return TryResolveCapacityLimitedQuantity(in runtimeDescriptor, quantity, out int allowedQuantity) &&
+                   allowedQuantity == quantity;
+        }
+
+        private bool TryResolveAdditionalPhysicalDemand(
+            in ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor,
+            int quantity,
+            out float weightKg,
+            out float volumeLiters)
+        {
+            weightKg = 0f;
+            volumeLiters = 0f;
+            if (quantity <= 0 || !TryResolveUnitPhysicalDemand(in runtimeDescriptor, out float unitMassKg, out float unitVolumeLiters))
+                return false;
+
+            float quantityFloat = quantity;
+            weightKg = unitMassKg * quantityFloat;
+            volumeLiters = unitVolumeLiters * quantityFloat;
+            return math.isfinite(weightKg) && math.isfinite(volumeLiters);
+        }
+
+        private static bool TryResolveUnitPhysicalDemand(
+            in ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor,
+            out float unitMassKg,
+            out float unitVolumeLiters)
+        {
+            unitMassKg = math.max(0f, math.isfinite(runtimeDescriptor.MassKg) ? runtimeDescriptor.MassKg : 0f);
+            float unitVolumeM3 = math.max(0f, math.isfinite(runtimeDescriptor.VolumeM3) ? runtimeDescriptor.VolumeM3 : 0f);
+            unitVolumeLiters = unitVolumeM3 * VolumeM3ToLiters;
+            return math.isfinite(unitMassKg) &&
+                   math.isfinite(unitVolumeLiters) &&
+                   unitMassKg > 0f &&
+                   unitVolumeLiters > 0f;
+        }
+
+        private bool TryResolveCurrentPhysicalTotals(out float weightKg, out float volumeLiters)
+        {
+            weightKg = math.max(0f, math.isfinite(_currentWeightKg) ? _currentWeightKg : 0f);
+            volumeLiters = math.max(0f, math.isfinite(_currentVolumeLiters) ? _currentVolumeLiters : 0f);
+            if (_grid == null ||
+                !_stackCounts.IsCreated ||
+                !_anchorUnitMassKg.IsCreated ||
+                !_anchorUnitVolumeM3.IsCreated)
+            {
+                return true;
+            }
+
+            NativeArray<int>.ReadOnly anchorHashIds = _grid.AnchorHashIds;
+            int count = math.min(
+                math.min(anchorHashIds.Length, _stackCounts.Length),
+                math.min(_anchorUnitMassKg.Length, _anchorUnitVolumeM3.Length));
+            float totalWeightKg = 0f;
+            float totalVolumeM3 = 0f;
+            for (int anchorIndex = 0; anchorIndex < count; anchorIndex++)
+            {
+                if (anchorHashIds[anchorIndex] == 0 || _stackCounts[anchorIndex] == 0)
+                    continue;
+
+                int stackCount = math.max(1, (int)_stackCounts[anchorIndex]);
+                float unitMassKg = math.max(0f, math.isfinite(_anchorUnitMassKg[anchorIndex]) ? _anchorUnitMassKg[anchorIndex] : 0f);
+                float unitVolumeM3 = math.max(0f, math.isfinite(_anchorUnitVolumeM3[anchorIndex]) ? _anchorUnitVolumeM3[anchorIndex] : 0f);
+                totalWeightKg += unitMassKg * stackCount;
+                totalVolumeM3 += unitVolumeM3 * stackCount;
+            }
+
+            if (!math.isfinite(totalWeightKg) || !math.isfinite(totalVolumeM3))
+                return false;
+
+            weightKg = math.max(0f, totalWeightKg);
+            volumeLiters = math.max(0f, totalVolumeM3) * VolumeM3ToLiters;
+            return math.isfinite(weightKg) && math.isfinite(volumeLiters);
+        }
+
+        private bool WouldExceedPhysicalCapacity(
+            float currentWeightKg,
+            float currentVolumeLiters,
+            float additionalWeightKg,
+            float additionalVolumeLiters)
+        {
+            float nextWeightKg = currentWeightKg + math.max(0f, additionalWeightKg);
+            if (!math.isfinite(nextWeightKg) || nextWeightKg > MaxWeightKg)
+                return true;
+
+            float nextVolumeLiters = currentVolumeLiters + math.max(0f, additionalVolumeLiters);
+            return !math.isfinite(nextVolumeLiters) || nextVolumeLiters > MaxVolumeLiters;
+        }
+
+        private static int ResolveCapacityLimitedQuantity(
+            float currentValue,
+            float maxValue,
+            float unitValue,
+            int requestedQuantity)
+        {
+            if (requestedQuantity <= 0)
+                return 0;
+
+            if (!math.isfinite(currentValue) || !math.isfinite(maxValue) || !math.isfinite(unitValue))
+                return 0;
+
+            if (unitValue <= 0f)
+                return 0;
+
+            float remaining = maxValue - currentValue;
+            if (remaining <= 0f || !math.isfinite(remaining))
+                return 0;
+
+            float resolved = math.floor(remaining * math.rcp(math.max(0.0001f, unitValue)) + 0.0001f);
+            if (!math.isfinite(resolved) || resolved <= 0f)
+                return 0;
+
+            return resolved >= requestedQuantity ? requestedQuantity : (int)resolved;
         }
 
         private bool TryReservePlacementInSimulation(in InventoryGrid.InventoryItemDescriptor descriptor)

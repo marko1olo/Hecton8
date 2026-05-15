@@ -1,0 +1,264 @@
+{
+  "schema": "hecton8.vr_comfort_profile.v1",
+  "owner": "SOMATIC_COMFORT_ANALYST",
+  "status": "COMFORT DEFINED",
+  "verificationStatus": "PENDING_RUNTIME_VERIFICATION",
+  "profileCount": 2,
+  "units": {
+    "angularVelocity": "radians_per_second",
+    "angularAcceleration": "radians_per_second_squared",
+    "angularJerk": "radians_per_second_cubed",
+    "speed": "meters_per_second",
+    "opacity": "normalized_0_1"
+  },
+  "deviceTable": {
+    "deviceId": [
+      "Quest2_72Hz",
+      "Quest3_90Hz"
+    ],
+    "refreshHz": [
+      72.0,
+      90.0
+    ],
+    "accelSoftTunnelStartRadS2": [
+      42.0,
+      50.0
+    ],
+    "accelStrongTunnelRadS2": [
+      96.0,
+      112.0
+    ],
+    "accelEmergencyClampRadS2": [
+      150.0,
+      180.0
+    ],
+    "releaseBelowRadS2": [
+      24.0,
+      30.0
+    ],
+    "opacityMax": [
+      0.52,
+      0.46
+    ],
+    "attackSlewPerFrame": [
+      0.055,
+      0.050
+    ],
+    "releaseSlewPerFrame": [
+      0.025,
+      0.022
+    ]
+  },
+  "devices": [
+    {
+      "id": "Quest2_72Hz",
+      "device": "Quest 2",
+      "refreshHz": 72.0,
+      "accelUntunneledMaxRadS2": 42.0,
+      "accelSoftTunnelStartRadS2": 42.0,
+      "accelStrongTunnelRadS2": 96.0,
+      "accelEmergencyClampRadS2": 150.0,
+      "releaseBelowRadS2": 24.0,
+      "releaseHysteresisSeconds": 0.25,
+      "opacityMax": 0.52,
+      "attackSlewPerFrame": 0.055,
+      "releaseSlewPerFrame": 0.025,
+      "frameSafetyDeltaMs": 16.67,
+      "frameSafetyConsecutiveFrames": 2,
+      "frameSafetyMinOpacity": 0.12,
+      "frameSafetyReleaseStableFrames": 12
+    },
+    {
+      "id": "Quest3_90Hz",
+      "device": "Quest 3",
+      "refreshHz": 90.0,
+      "accelUntunneledMaxRadS2": 50.0,
+      "accelSoftTunnelStartRadS2": 50.0,
+      "accelStrongTunnelRadS2": 112.0,
+      "accelEmergencyClampRadS2": 180.0,
+      "releaseBelowRadS2": 30.0,
+      "releaseHysteresisSeconds": 0.22,
+      "opacityMax": 0.46,
+      "attackSlewPerFrame": 0.050,
+      "releaseSlewPerFrame": 0.022,
+      "frameSafetyDeltaMs": 13.89,
+      "frameSafetyConsecutiveFrames": 2,
+      "frameSafetyMinOpacity": 0.10,
+      "frameSafetyReleaseStableFrames": 12
+    }
+  ],
+  "jerk": {
+    "softRadS3": 180.0,
+    "fullEventRadS3": 320.0,
+    "hardCapRadS3": 1440.0,
+    "eventDebounceSeconds": 0.20,
+    "maxVignetteContribution": 0.28
+  },
+  "speedVignetteLutQuest3": [
+    { "speed": 0.0, "opacity": 0.000 },
+    { "speed": 0.5, "opacity": 0.000 },
+    { "speed": 1.0, "opacity": 0.010 },
+    { "speed": 1.5, "opacity": 0.035 },
+    { "speed": 2.0, "opacity": 0.070 },
+    { "speed": 2.5, "opacity": 0.105 },
+    { "speed": 3.0, "opacity": 0.145 },
+    { "speed": 3.5, "opacity": 0.185 },
+    { "speed": 4.0, "opacity": 0.225 },
+    { "speed": 4.5, "opacity": 0.260 },
+    { "speed": 5.0, "opacity": 0.295 },
+    { "speed": 6.0, "opacity": 0.350 },
+    { "speed": 7.0, "opacity": 0.395 },
+    { "speed": 8.0, "opacity": 0.425 },
+    { "speed": 10.0, "opacity": 0.450 },
+    { "speed": 12.0, "opacity": 0.460 }
+  ],
+  "quest2SpeedLutMultiplier": 1.13,
+  "quest2SpeedLutClamp": 0.52,
+  "combineRule": "max",
+  "phaseOwnership": {
+    "comfortScalarWritePhase": "VISUAL_SYNC",
+    "hapticRequestPhase": "VISUAL_SYNC",
+    "runtimeOwner": "VRSomaticProvider",
+    "hapticOwner": "ToolHapticsRuntime",
+    "loadShedFallback": "max-combine scalar vignette, no extra blit, no camera FOV mutation"
+  },
+  "visualTeleportShock": {
+    "maxOpacityDeltaPerFrame": 0.10,
+    "maxUntunneledAngleDeltaDeg": 7.0,
+    "minOpacityForLargeAngleDelta": 0.24
+  },
+  "stabilization": {
+    "formula": "alpha = (sharpness * dt) / (1 + sharpness * dt)",
+    "maxAlpha": 0.33,
+    "modes": [
+      {
+        "id": "low",
+        "sharpness": 10.0,
+        "alphaQuest2_72Hz": 0.122,
+        "alphaQuest3_90Hz": 0.100,
+        "use": "weak device smoothing"
+      },
+      {
+        "id": "middle",
+        "sharpness": 14.0,
+        "alphaQuest2_72Hz": 0.163,
+        "alphaQuest3_90Hz": 0.135,
+        "use": "default current runtime profile"
+      },
+      {
+        "id": "high",
+        "sharpness": 19.0,
+        "alphaQuest2_72Hz": 0.209,
+        "alphaQuest3_90Hz": 0.174,
+        "use": "tighter cockpit lock after profiling"
+      },
+      {
+        "id": "ultra",
+        "sharpness": 24.0,
+        "alphaQuest2_72Hz": 0.250,
+        "alphaQuest3_90Hz": 0.211,
+        "use": "visual overkill stability"
+      },
+      {
+        "id": "jerk_clamp_transient",
+        "sharpness": 34.0,
+        "alphaQuest2_72Hz": 0.321,
+        "alphaQuest3_90Hz": 0.274,
+        "maxSeconds": 0.18,
+        "use": "short jerk event clamp"
+      },
+      {
+        "id": "settle_after_snap",
+        "sharpness": 6.0,
+        "alphaQuest2_72Hz": 0.077,
+        "alphaQuest3_90Hz": 0.062,
+        "maxSeconds": 0.10,
+        "use": "snap-turn completion settle"
+      }
+    ]
+  },
+  "runtimeIntegration": {
+    "profileLoadPolicy": "cold_bootstrap_or_editor_baked_only",
+    "executionPhase": "VISUAL_SYNC",
+    "combineRule": "max",
+    "hotPathRules": {
+      "noJsonParsingInTick": true,
+      "noCameraProjectionMutation": true,
+      "zeroGcDispatch": true,
+      "hapticDispatchThroughToolHapticsRuntimeOnly": true
+    },
+    "ownerComponents": {
+      "VRSomaticProvider": "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs",
+      "ToolHapticsRuntime": "Assets/_Project/Scripts/Tools/ToolHapticsRuntime.cs"
+    },
+    "fieldBindings": [
+      {
+        "runtimeField": "VRSomaticProvider.rotationJerkLimitRadiansPerSecondCubed",
+        "profilePath": "jerk.fullEventRadS3"
+      },
+      {
+        "runtimeField": "VRSomaticProvider.MaxSomaticHeadAngularJerkRadiansPerSecondCubed",
+        "profilePath": "jerk.hardCapRadS3"
+      },
+      {
+        "runtimeField": "VRSomaticProvider.JerkEventDebounceSeconds",
+        "profilePath": "jerk.eventDebounceSeconds"
+      },
+      {
+        "runtimeField": "VRSomaticProvider.rotationJerkVignetteContribution",
+        "profilePath": "jerk.maxVignetteContribution"
+      },
+      {
+        "runtimeField": "VRSomaticProvider.rootRotationSmoothingSharpness",
+        "profilePath": "stabilization.modes.middle.sharpness"
+      },
+      {
+        "runtimeField": "VRSomaticProvider.comfortVignetteMaximum",
+        "profilePath": "devices.Quest3_90Hz.opacityMax"
+      },
+      {
+        "runtimeField": "VRSomaticProvider.comfortAccelerationSoftTunnelStartRadS2",
+        "profilePath": "devices.Quest3_90Hz.accelSoftTunnelStartRadS2"
+      },
+      {
+        "runtimeField": "VRSomaticProvider.comfortAccelerationEmergencyClampRadS2",
+        "profilePath": "devices.Quest3_90Hz.accelEmergencyClampRadS2"
+      },
+      {
+        "runtimeField": "VRSomaticProvider.comfortAccelerationReleaseBelowRadS2",
+        "profilePath": "devices.Quest3_90Hz.releaseBelowRadS2"
+      },
+      {
+        "runtimeField": "VRSomaticProvider.comfortAccelerationReleaseHysteresisSeconds",
+        "profilePath": "devices.Quest3_90Hz.releaseHysteresisSeconds"
+      },
+      {
+        "runtimeField": "VRSomaticProvider.comfortVignetteAttackSlewPerFrame",
+        "profilePath": "devices.Quest3_90Hz.attackSlewPerFrame"
+      },
+      {
+        "runtimeField": "VRSomaticProvider.comfortVignetteReleaseSlewPerFrame",
+        "profilePath": "devices.Quest3_90Hz.releaseSlewPerFrame"
+      },
+      {
+        "runtimeField": "ToolHapticsRuntime.BufferCapacity",
+        "profilePath": "haptic.limits.bufferCapacity"
+      },
+      {
+        "runtimeField": "ToolHapticsRuntime.MaxCommandDurationSeconds",
+        "profilePath": "haptic.limits.durationMaxSeconds"
+      },
+      {
+        "runtimeField": "ToolHapticsRuntime.MaxCommandFrequencyHz",
+        "profilePath": "haptic.limits.frequencyMaxHz"
+      }
+    ]
+  },
+  "selfAudit": {
+    "DeviceTableParity": "PASS",
+    "SourceContractValidation": "PASS",
+    "RuntimeAccelerationIntegration": "PASS",
+    "SnapTurnSimulation": "PASS",
+    "RuntimeVerification": "PENDING"
+  }
+}

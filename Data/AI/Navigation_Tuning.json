@@ -1,0 +1,169 @@
+{
+  "evidenceClass": "PY_SIM_STATIC_MODEL",
+  "failureModes": [
+    "No finite flow sample: use target attraction plus SDF repulsion only.",
+    "Inside solid or negative SDF clearance: override with strongest positive SDF gradient and suppress attack thrust.",
+    "JitterEvents rising over 3-frame window: increase EWMA alpha toward Low tier and cap flow boost.",
+    "Frame budget pressure: reduce cadence to 5Hz and share flow samples by 16m goal cluster."
+  ],
+  "formula": {
+    "ewma": "intent = lerp(previousSteering, targetAttraction + flowBoostResistance, ewmaSteeringAlpha); steering = intent + immediateSdfRepulsion",
+    "flowBoostResistance": "flowDir * flowSpeed * (dot(flowDir,targetDir) >= 0 ? boost : -resistance)",
+    "idleDrift": "idleVelocity += flowVector * idleFlowCoupling * dt",
+    "obstacleRepulsion": "normal * min(maxRepulsion, sdfObstacleRepulsionWeight / max(distanceMeters,0.25)^2)",
+    "targetAttraction": "normalize(target - position) * targetAttractionWeight"
+  },
+  "idleDriftVerification": {
+    "drift_distance_meters": 28.5097,
+    "duration_seconds": 18.0,
+    "final_position": [
+      -27.0059,
+      -339.5952,
+      -8.0496
+    ],
+    "mean_velocity_flow_alignment01": 0.9979
+  },
+  "performanceModel": {
+    "cadenceHz": 10,
+    "estimatedScalarOpsPerFrameHigh": 7166.67,
+    "estimatedScalarOpsPerFrameLow": 3500.0,
+    "estimatedScalarOpsPerSampleHigh": 430,
+    "estimatedScalarOpsPerSampleLow": 210,
+    "mx350BudgetStatus": "PENDING VERIFICATION; designed below 0.1ms by cadence and O(1) samples",
+    "predators": 100,
+    "runtimeEvidence": "STATIC_MODEL_ONLY - requires Burst profiler/GCMonitor for acceptance",
+    "samplesPerFrameAt60Hz": 16.6667,
+    "samplesPerSecond": 1000
+  },
+  "promptId": "AI_POTENTIAL_FIELD_NAVIGATOR",
+  "pythonMicroBenchmark": {
+    "pythonElapsedMs": 64.7093,
+    "pythonIterations": 1000,
+    "pythonMicrosecondsPerSample": 64.7093,
+    "runtimeEvidence": "PYTHON_TOOL_ONLY - not Unity runtime proof"
+  },
+  "rawNoSmoothingMetrics": {
+    "finalDistanceMeters": 2.453,
+    "jitterEvents": 2,
+    "meanCurrentTargetAlignment": 0.5417,
+    "meanPositiveFlowUse": 0.5593,
+    "minObstacleClearanceMeters": 0.8735,
+    "pathLengthMeters": 243.7471,
+    "reached": true,
+    "score": 8401.7354,
+    "sdfPushoutEvents": 0,
+    "seconds": 23.8,
+    "steps": 238
+  },
+  "schema": "H8.NavigationTuning.PotentialField.v1",
+  "search": {
+    "candidatesEvaluated": 48,
+    "candidatesReachedTarget": 30,
+    "dtSeconds": 0.1,
+    "maxSteps": 360,
+    "scenario": "predator crosses a bounded 3D hurricane current with four SDF obstacle proxies"
+  },
+  "selectedWeights": {
+    "ewmaSteeringAlpha": 0.28,
+    "flowAlignmentBoostWeight": 0.18,
+    "flowResistanceWeight": 0.12,
+    "idleFlowCoupling": 0.32,
+    "maxRepulsionAcceleration": 44.0,
+    "sdfObstacleRepulsionWeight": 144.0,
+    "targetAttractionWeight": 8.5,
+    "wallInfluenceMeters": 20.0
+  },
+  "smoothedMetrics": {
+    "finalDistanceMeters": 2.8104,
+    "jitterEvents": 1,
+    "meanCurrentTargetAlignment": 0.61,
+    "meanPositiveFlowUse": 0.617,
+    "minObstacleClearanceMeters": 2.2249,
+    "pathLengthMeters": 332.0306,
+    "reached": true,
+    "score": 9126.3395,
+    "sdfPushoutEvents": 0,
+    "seconds": 34.6,
+    "steps": 346
+  },
+  "sourceContracts": {
+    "flowField": "AbyssalFlowField analytical current sample; no GPU readback",
+    "obstacle": "Voxel SDF / hybrid nav clearance snapshot; 1/d^2 repulsion",
+    "phase": "SIMULATION for steering solve; POST_SIMULATION for blackbox write; VISUAL_SYNC only consumes output",
+    "target": "player/prey biomass pull vector from cognition input"
+  },
+  "sourceParameterSnapshot": {
+    "abyssalThermoclineDepthMeters": 120.0,
+    "flowTextureCellSizeMeters": 3.125,
+    "flowTextureResolution": 32,
+    "flowTextureWorldSizeMeters": 100.0,
+    "heatSourceCapacity": 8,
+    "sourceFiles": [
+      "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "Docs/ARCHITECTURE/FLOW_FIELD_MATH.md",
+      ".agents-skills/CORE_Weather_Abyssal_FlowField_Currents.txt"
+    ],
+    "stormSurfaceTurbulenceStrength": 0.4,
+    "surfaceStormLayerDepthMeters": 50.0,
+    "vectorNoiseResolution": 32
+  },
+  "status": "NAVIGATION OPTIMIZED",
+  "tierProfiles": {
+    "High": {
+      "cadenceHz": 15,
+      "mathLod": "flow alignment plus richer local SDF gradient, tighter smoothing for pursuit",
+      "weights": {
+        "ewmaSteeringAlpha": 0.28,
+        "flowAlignmentBoostWeight": 0.207,
+        "flowResistanceWeight": 0.102,
+        "idleFlowCoupling": 0.34,
+        "maxRepulsionAcceleration": 14.0,
+        "sdfObstacleRepulsionWeight": 144.0,
+        "targetAttractionWeight": 8.925,
+        "wallInfluenceMeters": 8.0
+      }
+    },
+    "Low": {
+      "cadenceHz": 10,
+      "mathLod": "one flow sample, one nearest SDF/bounds repulsion, strongest current axis only",
+      "weights": {
+        "ewmaSteeringAlpha": 0.46,
+        "flowAlignmentBoostWeight": 0.135,
+        "flowResistanceWeight": 0.12,
+        "idleFlowCoupling": 0.26,
+        "maxRepulsionAcceleration": 10.0,
+        "sdfObstacleRepulsionWeight": 122.4,
+        "targetAttractionWeight": 8.5,
+        "wallInfluenceMeters": 6.0
+      }
+    },
+    "Middle": {
+      "cadenceHz": 10,
+      "mathLod": "one flow sample, obstacle loop capped to local SDF proxies, EWMA final steering",
+      "weights": {
+        "ewmaSteeringAlpha": 0.28,
+        "flowAlignmentBoostWeight": 0.18,
+        "flowResistanceWeight": 0.12,
+        "idleFlowCoupling": 0.32,
+        "maxRepulsionAcceleration": 44.0,
+        "sdfObstacleRepulsionWeight": 144.0,
+        "targetAttractionWeight": 8.5,
+        "wallInfluenceMeters": 20.0
+      }
+    },
+    "Ultra": {
+      "cadenceHz": 20,
+      "mathLod": "adds local vortex interest and visual-overkill path curvature while retaining O(1) steering",
+      "weights": {
+        "ewmaSteeringAlpha": 0.28,
+        "flowAlignmentBoostWeight": 0.225,
+        "flowResistanceWeight": 0.09,
+        "idleFlowCoupling": 0.38,
+        "maxRepulsionAcceleration": 16.0,
+        "sdfObstacleRepulsionWeight": 158.4,
+        "targetAttractionWeight": 9.18,
+        "wallInfluenceMeters": 10.0
+      }
+    }
+  }
+}

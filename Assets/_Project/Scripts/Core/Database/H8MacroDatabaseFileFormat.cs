@@ -7,6 +7,8 @@ namespace Hecton8.Core.Database
     {
         internal const string Extension = ".h8db";
         internal const string CompactionTempFileName = "world_data_compact.tmp";
+        internal const int NodeAlignmentBytes = 4096;
+        internal const int PayloadAlignmentBytes = 16;
         internal const int NodeSizeBytes = 4096;
         internal const int HeaderSizeBytes = 4096;
         internal const int NodeMaxKeys = 169;
@@ -16,6 +18,7 @@ namespace Hecton8.Core.Database
         internal const int NodeFileOffsetsOffset = NodeSectorHashesOffset + (NodeMaxKeys * sizeof(ulong));
         internal const int NodeChildOffsetsOffset = NodeFileOffsetsOffset + (NodeMaxKeys * sizeof(long));
         internal const int NodeComputedBytes = NodeChildOffsetsOffset + ((NodeMaxKeys + 1) * sizeof(long));
+        internal const int NodePaddingBytes = NodeSizeBytes - NodeComputedBytes;
         internal const int PayloadHeaderSizeBytes = 32;
         internal const uint FileMagic = 0x42443848u;
         internal const uint PayloadMagic = 0x4C503848u;

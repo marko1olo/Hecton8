@@ -104,3 +104,17 @@ Solution: Add `objectArray()` and `normalizeMemoryMap()` so chart points, CSV ro
 Rejected Alternatives: Adding scattered null checks inside every widget was rejected because it duplicates the contract and still leaves gaps. Trusting only backend-generated payloads was rejected because this dashboard is diagnostic infrastructure and must tolerate partial failure.
 Scalability potential: Low tier keeps one static page with predictable empty fallbacks. High/Ultra can add more panels on the same normalized contract without adding per-widget exception traps.
 Hardware Impact: 0 us Unity frame impact. Browser-only defensive normalization; exact render timing remains PENDING MEASUREMENT.
+
+## Decision 016 - API Degraded-Response Guard
+Problem: `/api/summary` directly returned `build_summary()`, so any unexpected parser exception could turn the dashboard API into a hard 500 and leave the browser without structured telemetry status.
+Solution: Add explicit empty CSV/dump payload builders and `build_degraded_summary()`. Route-level exception handling now returns `DASHBOARD DEGRADED`, empty telemetry arrays, and an error type/message instead of fabricated values.
+Rejected Alternatives: Letting FastAPI emit a generic 500 was rejected because this is a diagnostic dashboard and needs a stable failure shape. Returning stale data was rejected because it would be a false report.
+Scalability potential: Low tier receives a tiny degraded payload during failures. High/Ultra can build richer error panels later using the same `errors` contract.
+Hardware Impact: 0 us Unity frame impact. External Python route guard only; exact auxiliary timing remains PENDING MEASUREMENT.
+
+## Decision 017 - Response Cache Guard
+Problem: The frontend fetch requested `cache: no-store`, but the server did not explicitly mark HTML/API responses as non-cacheable. Stale dashboard telemetry is a false diagnostic signal.
+Solution: Add shared `NO_STORE_HEADERS` and route all dashboard JSON through `dashboard_json()`. `/`, `/api/summary`, and `/api/health` now return `Cache-Control: no-store, max-age=0`, `Pragma: no-cache`, and `X-Content-Type-Options: nosniff`.
+Rejected Alternatives: Relying only on browser fetch options was rejected because intermediaries and manual reloads should receive the same no-store contract. Adding broad CSP was rejected for now because the current page uses Chart.js from CDN and CSP would need a separate asset decision.
+Scalability potential: Low tier avoids stale local telemetry after refresh. High/Ultra can add more endpoints later through the same `dashboard_json()` helper without repeating header logic.
+Hardware Impact: 0 us Unity frame impact. External HTTP header change only; exact auxiliary timing remains PENDING MEASUREMENT.

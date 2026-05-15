@@ -321,6 +321,31 @@ float HectonCoreLitTaaAccumulatedInterleavedGradientNoise(float2 pixel)
     return HectonCoreLitInterleavedGradientNoise(pixel + HectonCoreLitResolveTaaDitherPhasePixel(pixel));
 }
 
+half HectonCoreLitBlueNoise4x4(float2 pixel)
+{
+    uint2 pixel4 = (uint2)pixel & 3u;
+    uint index = pixel4.x + pixel4.y * 4u;
+    switch (index)
+    {
+        case 0u: return 0.90625h;
+        case 1u: return 0.53125h;
+        case 2u: return 0.71875h;
+        case 3u: return 0.84375h;
+        case 4u: return 0.03125h;
+        case 5u: return 0.78125h;
+        case 6u: return 0.15625h;
+        case 7u: return 0.34375h;
+        case 8u: return 0.40625h;
+        case 9u: return 0.65625h;
+        case 10u: return 0.59375h;
+        case 11u: return 0.96875h;
+        case 12u: return 0.09375h;
+        case 13u: return 0.46875h;
+        case 14u: return 0.28125h;
+        default: return 0.21875h;
+    }
+}
+
 float HectonCoreLitHash12(float2 value)
 {
     float3 hash = frac(float3(value.xyx) * float3(0.1031, 0.1030, 0.0973));
@@ -678,7 +703,11 @@ half HectonCoreLitResolveDitheredFadeNoise(float4 positionCS)
     float safeW = max(abs(positionCS.w), 0.0001);
     float2 screenUV = positionCS.xy * rcp(safeW) * 0.5 + 0.5;
     float2 pixel = floor(screenUV * _ScaledScreenParams.xy);
+#if defined(HECTON_USE_4X4_BLUE_NOISE_FALLBACK)
+    return HectonCoreLitBlueNoise4x4(pixel);
+#else
     return (half)HectonCoreLitTaaAccumulatedInterleavedGradientNoise(pixel);
+#endif
 }
 
 void HectonCoreLitClipDitheredTransparencyFade(half fadeAmount, float4 positionCS)

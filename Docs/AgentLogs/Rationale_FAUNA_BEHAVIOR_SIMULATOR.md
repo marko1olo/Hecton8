@@ -112,6 +112,34 @@ Rejected Alternatives: Turning `Tools/AI_Sim` into a package or modifying produc
 Scalability potential: Keeps the regression harness self-contained and path-stable.
 Hardware Impact: No runtime hardware impact.
 
+## Selected Constant Range Decisions
+
+Problem: Artifact equality checks catch drift between files, but they do not catch both files drifting together into absurd selected constants.
+Solution: Add `SELECTED_CONSTANT_RANGES` and validate required keys, numeric type, finite values, and ranges in compact constants and detailed report.
+Rejected Alternatives: Relying on the million-frame result alone. A hand-edited JSON could bypass simulation evidence.
+Scalability potential: Runtime consumers receive bounded constants; balancing tools can widen ranges deliberately in code review if design needs change.
+Hardware Impact: Runtime impact remains 0 microseconds. Validation is offline/read-only.
+
+Problem: Runtime-loading helper could ingest bad constants without a clear error.
+Solution: `load_selected_weights()` now calls the same selected-constant validator and raises `ValueError` with explicit reasons.
+Rejected Alternatives: Letting `KeyError` or bad math surface later in simulation. That is less diagnostic.
+Scalability potential: Faster failure when future agents or CI consume corrupted handoff data.
+Hardware Impact: No runtime hardware impact.
+
+## Non-Finite Guard Decisions
+
+Problem: Python JSON serialization allows `NaN` and `Infinity` by default, which would poison a balance handoff and can break strict parsers.
+Solution: Set `allow_nan=False` in `write_json()` and add recursive non-finite scans to `--check-artifacts`.
+Rejected Alternatives: Trusting the current math path to stay finite forever. Future coefficient changes could introduce non-finite values.
+Scalability potential: Runtime consumers get strict JSON. Offline tooling fails fast before bad constants reach Unity.
+Hardware Impact: Runtime impact remains 0 microseconds. Check is offline/read-only.
+
+Problem: The non-finite guard needed proof against an actual bad artifact.
+Solution: Add `test_artifact_checker_rejects_nonfinite_numbers`, which writes a temporary constants JSON containing `NaN` and expects `ARTIFACT_CHECK_FAILED`.
+Rejected Alternatives: Only testing happy-path artifacts. That does not prove the guard catches the failure mode.
+Scalability potential: Prevents silent bad-data propagation as the simulator evolves.
+Hardware Impact: No runtime hardware impact.
+
 ## Artifact Checker Decisions
 
 Problem: The regression tests validate artifacts, but humans and CI need a direct CLI check that fails with a nonzero exit code when JSON artifacts drift.
@@ -124,4 +152,92 @@ Problem: The test harness did not cover the new checker.
 Solution: Add `test_artifact_checker_passes_current_outputs`.
 Rejected Alternatives: Manual-only checker verification, which would regress silently.
 Scalability potential: Keeps the checker contract stable as schema evolves.
+Hardware Impact: No runtime hardware impact.
+
+## Artifact Header Contract Decisions
+
+Problem: The checker could accept artifacts whose numeric constants still matched while the schema, producer, evidence class, Unity-proof status, species targets, or report paths had drifted.
+Solution: Add canonical header/path/species-target constants in `Tools/AI_Sim/FaunaBalanceSim.py` and validate them in `--check-artifacts` for constants, detailed report, and replicate validation files.
+Rejected Alternatives: Trusting matching selected constants alone. That permits fake provenance and fake runtime verification claims.
+Scalability potential: Low-tier runtime consumers keep a small, bounded handoff. High/Ultra tooling can inspect detailed reports without changing the contract.
+Hardware Impact: Runtime impact remains 0 microseconds. Validation is offline/read-only.
+
+Problem: Header hardening needed proof against real bad edits.
+Solution: Add regression tests for schema drift, `runtimeUnityProof` drift, report path drift, non-finite numbers, out-of-range constants, and bad selected-weight loads.
+Rejected Alternatives: Happy-path-only checks. They do not prove the guard rejects corrupted artifacts.
+Scalability potential: Future batch agents can change simulator internals while the artifact boundary fails fast on contract breakage.
+Hardware Impact: No runtime hardware impact.
+
+Problem: The current sandbox denies writes inside `tempfile.TemporaryDirectory()` paths and `py_compile` fails while atomically replacing `.pyc` files under `__pycache__`.
+Solution: Use deterministic workspace-local test artifact folders, set `sys.dont_write_bytecode = True`, verify with `python -B`, and use direct source `compile()` as the syntax gate.
+Rejected Alternatives: Requesting Dotnet/Unity verification or relying on `py_compile` despite known filesystem denial. Both are inappropriate for this Python-only task.
+Scalability potential: The test harness stays runnable in restricted CI/sandbox contexts.
+Hardware Impact: No runtime hardware impact. Remaining untracked `__pycache__` cleanup is blocked by `WinError 5` filesystem permissions.
+
+## Replicate Contract Decisions
+
+Problem: Replicate validation could claim `REPLICATE_STABLE` while the compact summary drifted on frame count, replicate count, or the weights used by the detailed replicate report.
+Solution: Compare `framesPerReplicate`, `replicates`, and the replicate report's weight subset against the compact selected constants in `--check-artifacts`.
+Rejected Alternatives: Trusting `status`, `failureCount`, and population summary alone. That does not prove the repeat-seed evidence used the exported weights.
+Scalability potential: Runtime consumers keep one compact constants file; offline validation proves the selected values and repeat-seed evidence remain tied together.
+Hardware Impact: Runtime impact remains 0 microseconds. Validation is offline/read-only.
+
+Problem: The new replicate comparisons needed failure-mode evidence.
+Solution: Add regression tests that corrupt compact replicate frame/replicate counts and detailed replicate `fearScalar`; both must produce `ARTIFACT_CHECK_FAILED`.
+Rejected Alternatives: Updating checker logic without negative tests.
+Scalability potential: Future agents can regenerate replicate reports without silently breaking the compact-to-detail contract.
+Hardware Impact: No runtime hardware impact.
+
+## Original Task Evidence Decisions
+
+Problem: Artifact consistency did not prove that all original primary task evidence remained present after future edits.
+Solution: Extend `--check-artifacts` to validate heatmap rows, exact noise case coverage, retinal-blind acoustic compensation, and quadratic-vs-linear fear evidence.
+Rejected Alternatives: Relying on manual JSON inspection or assuming the full report still contains the required proof.
+Scalability potential: The compact constants file stays small while the detailed tool report remains machine-auditable.
+Hardware Impact: Runtime impact remains 0 microseconds. Validation is offline/read-only.
+
+Problem: The compact million-frame summary could drift on score or stability while frame count and population still matched.
+Solution: Compare `score` and `stability` as well as `frames` and `population` against the detailed million-frame run.
+Rejected Alternatives: Partial summary validation. It can hide a hand-edited stability claim.
+Scalability potential: Runtime consumers receive a compact but fully tied summary.
+Hardware Impact: No runtime hardware impact.
+
+Problem: `load_selected_weights()` could ingest constants with a bad artifact header if the selected constants themselves looked valid.
+Solution: Reuse artifact header validation inside the loader before constructing `UtilityWeights`.
+Rejected Alternatives: Letting invalid status/provenance flow into validation runs.
+Scalability potential: Future automation fails before running replicate validation on untrusted data.
+Hardware Impact: No runtime hardware impact.
+
+Problem: Generated Python cache directories could not be deleted under this sandbox (`WinError 5`) and polluted `git status`.
+Solution: Add standard Python bytecode cache ignore patterns to `.gitignore`.
+Rejected Alternatives: Repeated cleanup attempts after permission denial.
+Scalability potential: Python tooling can run without creating visible repository noise.
+Hardware Impact: No runtime hardware impact.
+
+## Sweet Spot and Run-Weight Contract Decisions
+
+Problem: The detailed heatmap could stop proving the exported aggression/fear sweet spot if the top heatmap row drifted away from selected constants.
+Solution: Validate that `report.heatmapTop10[0].weights.aggressionScalar` and `fearScalar` match the exported selected constants.
+Rejected Alternatives: Counting heatmap rows only. That proves data presence but not sweet-spot linkage.
+Scalability potential: Future sweeps can change internal scoring while preserving a machine-checked selection boundary.
+Hardware Impact: Runtime impact remains 0 microseconds. Validation is offline/read-only.
+
+Problem: The million-frame run could report population/score evidence produced by weights different from the exported constants.
+Solution: Reuse the weight-subset validator against `report.millionFrameRun.weights`.
+Rejected Alternatives: Trusting compact summary values alone.
+Scalability potential: Runtime consumers receive constants tied to the million-frame proof that selected them.
+Hardware Impact: No runtime hardware impact.
+
+## Million-Frame Timeline Decisions
+
+Problem: The detailed report could keep a correct final score and population while losing the timeline evidence that tracks prey and predator state across the million-frame run.
+Solution: Validate `report.millionFrameRun.samples` count, first frame, last frame, integer frame type, and strict frame ordering.
+Rejected Alternatives: Checking only the compact million-frame summary. That proves endpoint data, not tracking evidence.
+Scalability potential: Runtime consumers still parse only compact constants; offline tooling keeps the detailed time series auditable.
+Hardware Impact: Runtime impact remains 0 microseconds. Validation is offline/read-only.
+
+Problem: Timeline validation needed failure-mode proof.
+Solution: Add regression tests for sample truncation and frame-order drift.
+Rejected Alternatives: Relying on code review or human JSON scrolling.
+Scalability potential: Future report compaction cannot silently remove tracking evidence without failing tests.
 Hardware Impact: No runtime hardware impact.

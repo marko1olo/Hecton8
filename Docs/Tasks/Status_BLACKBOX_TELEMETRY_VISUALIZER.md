@@ -38,7 +38,7 @@ Source prompt: `Docs/Tasks/CURRENT_BATCH.md` / `<AGENT_PROMPT id="BLACKBOX_TELEM
 ## Loop 5 - Standalone, Docs, Boundary
 - [x] 13. STANDALONE | Justification: FastAPI server runs without Unity; `/` and `/api/summary` return HTTP 200 with missing-log-safe empty data. | Alternatives Rejected: Unity MCP/Editor dependency rejected. | Estimate: 0 us Unity hot path; auxiliary server startup only.
 - [x] 14. DOCS | Justification: `Tools/TelemetryDashboard/README.md` documents launch, localhost URL, data sources, and parser contracts. | Alternatives Rejected: chat-only instructions rejected by reporting protocol. | Estimate: docs-only.
-- [x] 15. NO C# | Justification: `git status --short -- Tools/TelemetryDashboard Docs/Tasks/Status_BLACKBOX_TELEMETRY_VISUALIZER.md Docs/AgentLogs/Rationale_BLACKBOX_TELEMETRY_VISUALIZER.md Assets/_Project/Scripts` shows only dashboard/docs additions under this task and no `Assets/_Project/Scripts` edits. | Alternatives Rejected: normalizing dump emitters in C# rejected by explicit prompt boundary. | Estimate: 0 us runtime.
+- [x] 15. NO C# | Justification: dashboard-task edits remain confined to `Tools/TelemetryDashboard` and BLACKBOX ledger files; unrelated C# changes exist under `Assets/_Project/Scripts` and were not touched by this task. | Alternatives Rejected: normalizing dump emitters in C# rejected by explicit prompt boundary. | Estimate: 0 us runtime.
 
 ## Verification
 - [x] Python syntax compile.
@@ -55,3 +55,5 @@ Source prompt: `Docs/Tasks/CURRENT_BATCH.md` / `<AGENT_PROMPT id="BLACKBOX_TELEM
 - [x] Read-only dump collection regression check: `collect_dumps()` on a missing `AgentLogs` path returns empty files and does not create the directory.
 - [x] Frontend partial-payload guard: `index.html` normalizes missing `csv`, `dumps`, `frameSeries`, and `ecologySeries` before rendering.
 - [x] Frontend nested-shape guard: array elements and memory-map block lists are normalized before chart/table/map rendering.
+- [x] API degraded-response guard: `/api/summary` catches summary generation failures and returns explicit empty telemetry with `DASHBOARD DEGRADED` status.
+- [x] Response cache guard: `/`, `/api/summary`, and `/api/health` return `no-store`, `no-cache`, and `nosniff` headers.

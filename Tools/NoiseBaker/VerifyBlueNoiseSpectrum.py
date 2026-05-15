@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 from typing import Any
@@ -18,6 +19,8 @@ DC_POWER_MAX = 0.0001
 LOW_MEAN_TO_MID_MEAN_MAX = 0.12
 LOW_PEAK_TO_MID_MEAN_MAX = 0.5
 MAX_SEAM_RATIO_MAX = 1.35
+FLOW_MIN_DYNAMIC_RANGES = (64, 48, 128, 128)
+FLOW_MIN_UNIQUE_VALUES = (48, 32, 96, 96)
 
 
 def repository_root() -> Path:
@@ -31,6 +34,17 @@ def artifact_path(path: Path) -> str:
         return resolved.relative_to(root).as_posix()
     except ValueError:
         return str(resolved)
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        while True:
+            chunk = stream.read(1024 * 1024)
+            if not chunk:
+                break
+            digest.update(chunk)
+    return digest.hexdigest().upper()
 
 
 def frac(value: np.ndarray) -> np.ndarray:
@@ -121,17 +135,70 @@ def verify_noise(noise: np.ndarray) -> dict[str, Any]:
     }
 
 
+def channel_stats(image: np.ndarray) -> list[dict[str, float | int]]:
+    stats: list[dict[str, float | int]] = []
+    for channel in range(image.shape[2]):
+        values = image[:, :, channel]
+        minimum = int(np.min(values))
+        maximum = int(np.max(values))
+        stats.append(
+            {
+                "min": minimum,
+                "max": maximum,
+                "dynamic_range": maximum - minimum,
+                "mean": float(np.mean(values)),
+                "unique_values": int(np.unique(values).size),
+            }
+        )
+    return stats
+
+
+def verify_flow(flow: np.ndarray) -> dict[str, Any]:
+    if flow.shape != (FLOW_SIZE, FLOW_SIZE, 4):
+        return {"passed": False, "error": f"expected {FLOW_SIZE}x{FLOW_SIZE} RGBA, got {flow.shape}"}
+    stats = channel_stats(flow)
+    passed = True
+    for channel, item in enumerate(stats):
+        if int(item["dynamic_range"]) < FLOW_MIN_DYNAMIC_RANGES[channel]:
+            passed = False
+        if int(item["unique_values"]) < FLOW_MIN_UNIQUE_VALUES[channel]:
+            passed = False
+    return {
+        "passed": bool(passed),
+        "shape": list(flow.shape),
+        "channel_stats": stats,
+        "thresholds": {
+            "min_dynamic_ranges_rgba": list(FLOW_MIN_DYNAMIC_RANGES),
+            "min_unique_values_rgba": list(FLOW_MIN_UNIQUE_VALUES),
+        },
+    }
+
+
 def verify_assets(noise_path: Path, flow_path: Path) -> dict[str, Any]:
     noise = verify_noise(read_rgba(noise_path))
-    flow = read_rgba(flow_path)
-    flow_passed = flow.shape == (FLOW_SIZE, FLOW_SIZE, 4)
+    flow = verify_flow(read_rgba(flow_path))
     return {
-        "passed": bool(noise["passed"] and flow_passed),
+        "passed": bool(noise["passed"] and flow["passed"]),
         "noise_path": artifact_path(noise_path),
         "flow_path": artifact_path(flow_path),
-        "noise": noise,
-        "flow": {"passed": bool(flow_passed), "shape": list(flow.shape), "bytes": int(flow_path.stat().st_size)},
+        "noise": {**noise, "bytes": int(noise_path.stat().st_size), "sha256": sha256_file(noise_path)},
+        "flow": {**flow, "bytes": int(flow_path.stat().st_size), "sha256": sha256_file(flow_path)},
     }
+
+
+def run_self_test() -> dict[str, Any]:
+    tests = []
+    flat_noise = np.zeros((BLUE_SIZE, BLUE_SIZE, 4), dtype=np.uint8)
+    flat_flow = np.zeros((FLOW_SIZE, FLOW_SIZE, 4), dtype=np.uint8)
+    bad_noise_shape = np.zeros((BLUE_SIZE, BLUE_SIZE, 3), dtype=np.uint8)
+    bad_flow_shape = np.zeros((FLOW_SIZE, FLOW_SIZE, 3), dtype=np.uint8)
+
+    tests.append({"name": "flat_noise_rejected", "passed": not verify_noise(flat_noise)["passed"]})
+    tests.append({"name": "bad_noise_shape_rejected", "passed": not verify_noise(bad_noise_shape)["passed"]})
+    tests.append({"name": "flat_flow_rejected", "passed": not verify_flow(flat_flow)["passed"]})
+    tests.append({"name": "bad_flow_shape_rejected", "passed": not verify_flow(bad_flow_shape)["passed"]})
+
+    return {"passed": all(bool(test["passed"]) for test in tests), "tests": tests}
 
 
 def write_json(path: Path, payload: dict[str, Any]) -> None:
@@ -145,11 +212,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--noise", type=Path, default=root / "Data" / "Textures" / "BlueNoise_RGBA.png")
     parser.add_argument("--flow", type=Path, default=root / "Data" / "Textures" / "AbyssalFlowField_LowTier_RGBA.png")
     parser.add_argument("--metrics", type=Path, default=root / "Data" / "Textures" / "NoiseBakeMetrics.verify.json")
+    parser.add_argument("--self-test", action="store_true", help="Run negative tests for verifier rejection gates.")
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
+    if args.self_test:
+        metrics = run_self_test()
+        print(json.dumps(metrics, indent=2, sort_keys=True))
+        return 0 if metrics["passed"] else 1
+
     metrics = verify_assets(args.noise.resolve(), args.flow.resolve())
     write_json(args.metrics.resolve(), metrics)
     print(json.dumps(metrics, indent=2, sort_keys=True))

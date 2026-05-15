@@ -16,11 +16,11 @@ namespace Hecton8.Core
         private const int CriticalFrostTickFrames = 600;
         private const int VramPressurePermille = 900;
         private const int DefaultRenderScaleMilli = 1000;
-        private const int DeckRenderScaleMilli = 780;
         private const int VramPressureRenderScaleMilli = 720;
         private const int FramePressureRenderScaleMilli = 700;
         private const int CriticalRenderScaleMilli = 620;
-        private const float TargetFrameTimeMs = 16.67f;
+        private const float MillisecondsPerSecond = 1000f;
+        private const float DefaultTargetFrameTimeMs = 16.67f;
         private const float CriticalFrameTimeMs = 25f;
         private const float FrameTrendAlpha = 0.125f;
         private const int SustainedFramePressureSamples = 3;
@@ -35,8 +35,9 @@ namespace Hecton8.Core
         private static int _recommendedRenderScaleMilli = DefaultRenderScaleMilli;
         private static int _frostTickIntervalFrames = StableFrostTickFrames;
         private static bool _secondaryHudEffectsAllowed = true;
-        private static float _frameTimeTrendMs = TargetFrameTimeMs;
+        private static float _frameTimeTrendMs = DefaultTargetFrameTimeMs;
         private static int _sustainedFramePressureSamples;
+        private static bool _hasFrameTimeSample;
 
         /// <summary>Current platform pressure flags packed for zero-allocation diagnostics.</summary>
         public static PlatformAdaptivePressureFlags PressureFlags =>
@@ -64,8 +65,9 @@ namespace Hecton8.Core
             _recommendedRenderScaleMilli = DefaultRenderScaleMilli;
             _frostTickIntervalFrames = StableFrostTickFrames;
             _secondaryHudEffectsAllowed = true;
-            _frameTimeTrendMs = TargetFrameTimeMs;
+            _frameTimeTrendMs = DefaultTargetFrameTimeMs;
             _sustainedFramePressureSamples = 0;
+            _hasFrameTimeSample = false;
             s_tickable.Reset();
         }
 
@@ -167,18 +169,28 @@ namespace Hecton8.Core
 
         private static bool IsFrameOverBudget(float deltaTime)
         {
-            float frameTimeMs = deltaTime > 0f ? deltaTime * 1000f : TargetFrameTimeMs;
+            float targetFrameTimeMs = ResolveTargetFrameTimeMs();
+            float frameTimeMs = deltaTime > 0f ? deltaTime * MillisecondsPerSecond : targetFrameTimeMs;
             if (float.IsNaN(frameTimeMs) || float.IsInfinity(frameTimeMs))
-                frameTimeMs = TargetFrameTimeMs;
+                frameTimeMs = targetFrameTimeMs;
 
-            _frameTimeTrendMs += (frameTimeMs - _frameTimeTrendMs) * FrameTrendAlpha;
+            if (!_hasFrameTimeSample)
+            {
+                _frameTimeTrendMs = frameTimeMs;
+                _hasFrameTimeSample = true;
+            }
+            else
+            {
+                _frameTimeTrendMs += (frameTimeMs - _frameTimeTrendMs) * FrameTrendAlpha;
+            }
+
             if (_frameTimeTrendMs >= CriticalFrameTimeMs)
             {
                 _sustainedFramePressureSamples = SustainedFramePressureSamples;
                 return true;
             }
 
-            if (_frameTimeTrendMs > TargetFrameTimeMs)
+            if (_frameTimeTrendMs > targetFrameTimeMs)
             {
                 _sustainedFramePressureSamples++;
                 return _sustainedFramePressureSamples >= SustainedFramePressureSamples;
@@ -186,6 +198,16 @@ namespace Hecton8.Core
 
             _sustainedFramePressureSamples = 0;
             return false;
+        }
+
+        private static float ResolveTargetFrameTimeMs()
+        {
+            if (HardwareTierDetector.IsQuest3Like)
+                return MillisecondsPerSecond / HardwareProfileCatalog.Quest3TargetFps;
+            if (HardwareTierDetector.IsSteamDeckLike)
+                return MillisecondsPerSecond / HardwareProfileCatalog.SteamDeckLcdTargetFps;
+
+            return DefaultTargetFrameTimeMs;
         }
 
         private static int ResolveRenderScaleMilli(uint flags)
@@ -199,8 +221,14 @@ namespace Hecton8.Core
                 return VramPressureRenderScaleMilli;
             if ((flags & (uint)PlatformAdaptivePressureFlags.FrameOverBudget) != 0u)
                 return FramePressureRenderScaleMilli;
-            if ((flags & (uint)(PlatformAdaptivePressureFlags.SharedMemory | PlatformAdaptivePressureFlags.SteamDeckLike)) != 0u)
-                return DeckRenderScaleMilli;
+            if ((flags & (uint)PlatformAdaptivePressureFlags.SteamDeckLike) != 0u)
+                return HardwareProfileCatalog.SteamDeckLcdBaselineRenderScaleMilli;
+            if ((flags & (uint)PlatformAdaptivePressureFlags.SharedMemory) != 0u)
+            {
+                return HardwareTierDetector.IsQuest3Like
+                    ? HardwareProfileCatalog.Quest3BaselineRenderScaleMilli
+                    : HardwareProfileCatalog.SteamDeckLcdBaselineRenderScaleMilli;
+            }
 
             return DefaultRenderScaleMilli;
         }

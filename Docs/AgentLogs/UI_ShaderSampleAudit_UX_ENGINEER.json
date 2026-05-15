@@ -1,0 +1,102 @@
+{
+  "errors": [],
+  "maxSamplesPerUiElement": 2,
+  "owner": "UX_ENGINEER",
+  "promptId": "HARDWARE_ADAPTIVE_UI_BAKER",
+  "records": [
+    {
+      "depthTextureSamples": 1,
+      "materialTextureSamples": 1,
+      "path": "Assets/_Project/Art/Shaders/Hecton_DiegeticPanelUnlit.shader",
+      "status": "PASS",
+      "totalTextureSamples": 2
+    },
+    {
+      "depthTextureSamples": 0,
+      "materialTextureSamples": 1,
+      "path": "Assets/_Project/Art/Shaders/Hecton_DiegeticTooltipGlyph.shader",
+      "status": "PASS",
+      "totalTextureSamples": 1
+    },
+    {
+      "depthTextureSamples": 0,
+      "materialTextureSamples": 1,
+      "path": "Assets/_Project/Art/Shaders/Hecton_DiegeticTooltipIndirect.shader",
+      "status": "PASS",
+      "totalTextureSamples": 1
+    },
+    {
+      "depthTextureSamples": 0,
+      "materialTextureSamples": 1,
+      "path": "Assets/_Project/Art/Shaders/Hecton_HUD_AcousticRadarOverlay.shader",
+      "status": "PASS",
+      "totalTextureSamples": 1
+    },
+    {
+      "depthTextureSamples": 0,
+      "materialTextureSamples": 2,
+      "path": "Assets/_Project/Art/Shaders/Hecton_HUD_DiegeticProjectionUnlit.shader",
+      "status": "PASS",
+      "totalTextureSamples": 2
+    },
+    {
+      "depthTextureSamples": 0,
+      "materialTextureSamples": 1,
+      "path": "Assets/_Project/Art/Shaders/Hecton_ToolScreenDiegetic.shader",
+      "status": "PASS",
+      "totalTextureSamples": 1
+    },
+    {
+      "depthTextureSamples": 0,
+      "materialTextureSamples": 1,
+      "path": "Assets/_Project/Art/Shaders/Hecton_UI_CompassRibbon.shader",
+      "status": "PASS",
+      "totalTextureSamples": 1
+    },
+    {
+      "depthTextureSamples": 0,
+      "materialTextureSamples": 1,
+      "path": "Assets/_Project/Shaders/UI/Hecton_DataRecPulse.shader",
+      "status": "PASS",
+      "totalTextureSamples": 1
+    },
+    {
+      "depthTextureSamples": 1,
+      "materialTextureSamples": 1,
+      "path": "Assets/_Project/Shaders/UI/Hecton_DiegeticPanelDepthFade.shader",
+      "status": "PASS",
+      "totalTextureSamples": 2
+    },
+    {
+      "depthTextureSamples": 0,
+      "materialTextureSamples": 2,
+      "path": "Assets/_Project/Shaders/UI/Hecton_DiegeticVisorCurvedHUD.shader",
+      "status": "PASS",
+      "totalTextureSamples": 2
+    },
+    {
+      "depthTextureSamples": 0,
+      "materialTextureSamples": 1,
+      "path": "Assets/_Project/Shaders/UI/Hecton_IGNDitherDissolve.shader",
+      "status": "PASS",
+      "totalTextureSamples": 1
+    },
+    {
+      "depthTextureSamples": 0,
+      "materialTextureSamples": 1,
+      "path": "Assets/_Project/Shaders/UI/Hecton_IGNDitheredBackground.shader",
+      "status": "PASS",
+      "totalTextureSamples": 1
+    },
+    {
+      "depthTextureSamples": 0,
+      "materialTextureSamples": 0,
+      "path": "Assets/_Project/Shaders/UI/Hecton_RetinaStressPulse.shader",
+      "status": "PASS",
+      "totalTextureSamples": 0
+    }
+  ],
+  "schema": "hecton8.ui_shader_sample_audit.v1",
+  "shaderCount": 13,
+  "status": "PASS"
+}

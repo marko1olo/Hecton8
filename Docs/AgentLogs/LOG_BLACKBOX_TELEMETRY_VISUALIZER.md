@@ -235,3 +235,62 @@ Verification:
 - Dashboard process remains PID `7244` on `http://127.0.0.1:8000`.
 - Removed `.codex_tmp`; `Tools/TelemetryDashboard/__pycache__` absent after verification.
 - C# boundary: no `Assets/_Project/Scripts` edits by this task. Unrelated modified/untracked C# files exist and were not touched.
+
+## 2026-05-14 - API Degraded-Response Guard
+
+What was wrong:
+- `/api/summary` directly returned `build_summary()`. One unexpected parser bug or filesystem edge case could make the whole dashboard API return a hard framework error instead of a structured diagnostic payload.
+
+What was done:
+- Added `empty_csv_data()`, `empty_dump_data()`, and `build_degraded_summary()`.
+- Wrapped `/api/summary` summary generation in route-level exception handling.
+- Extended `smoke_test.py` to monkeypatch `build_summary()` into a forced route failure and verify the response remains HTTP 200 with `DASHBOARD DEGRADED` and explicit error metadata.
+- Corrected the stale status wording for the C# boundary: unrelated C# worktree changes exist, but this dashboard task did not touch them.
+
+Cinematic Cheats used:
+- Failure mode renders as empty telemetry plus an explicit error contract. No stale or invented runtime values are shown.
+
+Exact Microseconds saved:
+- Unity gameplay frame: 0 us changed.
+- Dashboard/API: avoided hard 500 response path during unexpected summary exceptions; exact auxiliary-process cost is PENDING MEASUREMENT.
+
+Verification:
+- `python -B Tools\TelemetryDashboard\smoke_test.py`: PASS, output `telemetry dashboard smoke ok`.
+- `py_compile` for `server.py` and `smoke_test.py`: PASS.
+- `git diff --check -- Tools\TelemetryDashboard\server.py Tools\TelemetryDashboard\smoke_test.py Tools\TelemetryDashboard\index.html`: PASS; Git reports only LF-to-CRLF warnings.
+- Static source scan confirms degraded response functions and route `except Exception` guard are present.
+- Safety scan on executable dashboard sources: no `eval`, `new Function`, `document.write`, `innerHTML`, `console.log`, or `debugger`.
+- Restarted dashboard on `http://127.0.0.1:8000`, Python PID `4084`.
+- `/api/summary`: `DASHBOARD OPERATIONAL`, `frameSeries=0`, `memoryMaps=0`, `files=0`, `HPHI=0.00062`, no `errors` in normal state.
+- `/`: HTTP 200, 16769 bytes.
+- Removed `.codex_tmp`; `Tools/TelemetryDashboard/__pycache__` absent after verification.
+- C# boundary: no `Assets/_Project/Scripts` edits by this task. Unrelated modified/untracked C# files exist and were not touched.
+
+## 2026-05-15 - Response Cache Guard
+
+What was wrong:
+- The browser used `cache: no-store`, but the server did not explicitly send no-store/no-cache headers. A stale HTML or JSON response would be a false telemetry view.
+
+What was done:
+- Added shared `NO_STORE_HEADERS`.
+- Added `dashboard_json()` for all dashboard JSON responses.
+- Applied no-store/no-cache/nosniff headers to `/`, `/api/summary`, and `/api/health`.
+- Extended `smoke_test.py` to assert summary, index, and health route headers.
+
+Cinematic Cheats used:
+- No telemetry value is invented. Header hardening prevents stale cached views from masquerading as live file-backed evidence.
+
+Exact Microseconds saved:
+- Unity gameplay frame: 0 us changed.
+- Dashboard/API: stale-cache failure mode removed; exact auxiliary-process cost is PENDING MEASUREMENT.
+
+Verification:
+- `python -B Tools\TelemetryDashboard\smoke_test.py`: PASS, output `telemetry dashboard smoke ok`.
+- `py_compile` for `server.py` and `smoke_test.py`: PASS.
+- `git diff --check -- Tools\TelemetryDashboard\server.py Tools\TelemetryDashboard\smoke_test.py Tools\TelemetryDashboard\index.html`: PASS; Git reports only LF-to-CRLF warnings.
+- Restarted dashboard on `http://127.0.0.1:8000`, Python PID `5920`.
+- `curl -D - -o NUL /api/summary`: HTTP 200 with `cache-control: no-store, max-age=0`, `pragma: no-cache`, `x-content-type-options: nosniff`.
+- `curl -D - -o NUL /`: HTTP 200 with `cache-control: no-store, max-age=0`, `pragma: no-cache`, `x-content-type-options: nosniff`.
+- `curl -D - -o NUL /api/health`: HTTP 200 with `cache-control: no-store, max-age=0`, `pragma: no-cache`, `x-content-type-options: nosniff`.
+- Removed `.codex_tmp`; `Tools/TelemetryDashboard/__pycache__` absent after verification.
+- C# boundary: no `Assets/_Project/Scripts` edits by this task. Unrelated modified/untracked C# files exist and were not touched.

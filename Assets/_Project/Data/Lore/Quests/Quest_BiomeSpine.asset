@@ -26,8 +26,8 @@ MonoBehaviour:
   triggerType: 2
   triggerId: 
   triggerValue: 1
-  completionType: 99
-  completionId: 
-  completionValue: 0
+  completionType: 2
+  completionId:
+  completionValue: 1
   autoActivateOnStart: 0
   oneTimeOnly: 1

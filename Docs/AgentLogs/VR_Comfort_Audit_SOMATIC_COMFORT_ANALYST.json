@@ -1,0 +1,60 @@
+{
+  "comfortMarkdown": "Docs/Design/VR_Comfort_Profile_Quest.md",
+  "comfortProfile": "Docs/Design/VR_Comfort_Profile_Quest.json",
+  "errors": [],
+  "hapticWaveformCount": 10,
+  "hapticWaveforms": "Docs/Design/VR_Haptic_Waveforms_Quest.json",
+  "owner": "SOMATIC_COMFORT_ANALYST",
+  "results": [
+    {
+      "frames": 33,
+      "max_abs_accel_rad_s2": 101.41317431021737,
+      "max_abs_jerk_rad_s3": 1440.0,
+      "max_angle_delta_deg": 3.888479476112395,
+      "max_opacity": 0.28,
+      "max_opacity_delta": 0.05500000000000002,
+      "profile": "Quest2_72Hz",
+      "shock_frames": 0
+    },
+    {
+      "frames": 41,
+      "max_abs_accel_rad_s2": 105.67423205434416,
+      "max_abs_jerk_rad_s3": 1440.0,
+      "max_angle_delta_deg": 3.114551183127576,
+      "max_opacity": 0.28,
+      "max_opacity_delta": 0.05000000000000002,
+      "profile": "Quest3_90Hz",
+      "shock_frames": 0
+    }
+  ],
+  "schema": "hecton8.vr_comfort_audit.v1",
+  "settleSeconds": 0.28,
+  "snapTurnDegrees": 30.0,
+  "snapTurnSeconds": 0.16,
+  "sourceContract": {
+    "hapticBufferCapacity": 16.0,
+    "hapticMaxDurationSeconds": 2.0,
+    "hapticMaxFrequencyHz": 60.0,
+    "runtimeAccelerationEmergencyClampRadS2": 180.0,
+    "runtimeAccelerationReleaseBelowRadS2": 30.0,
+    "runtimeAccelerationReleaseHysteresisSeconds": 0.22,
+    "runtimeAccelerationSoftTunnelStartRadS2": 50.0,
+    "runtimeComfortVignetteAttackSlewPerFrame": 0.05,
+    "runtimeComfortVignetteMaximum": 0.46,
+    "runtimeComfortVignetteReleaseSlewPerFrame": 0.022,
+    "runtimeJerkDebounceSeconds": 0.2,
+    "runtimeJerkFullRadS3": 320.0,
+    "runtimeJerkHardCapRadS3": 1440.0,
+    "runtimeJerkVignetteContribution": 0.28,
+    "runtimeRootSharpness": 14.0
+  },
+  "sourceHashes": {
+    "auditScriptSha256": "62b6d44403a921803ca1fa9c7406b465361210a813e733a14cc3fdc752abd7fd",
+    "comfortMarkdownSha256": "e79c5c14dafa8aadc9a1e76ec91f43d7a6e693596c408717f9e1c2a291489bf2",
+    "comfortProfileSha256": "8dbe24fbe94529df6ebe9a6d48b6a2a22caa683be46554eedf88757acf39f322",
+    "hapticWaveformsSha256": "06caeab19935392a206209ce6ca89b62efa2a096bdca94f186b187a88e63e1b0",
+    "toolHapticsRuntimeSha256": "b9d6d5a107fde54704c2d663e20fe4d0cb5be306478b82d7fec0c078182fd06c",
+    "vrSomaticProviderSha256": "1709e238ddaf081c3c52c8e6fa3d50e43f93d752fcf3305e2da3bf8c6e0087d1"
+  },
+  "status": "PASS"
+}

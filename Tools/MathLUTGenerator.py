@@ -291,6 +291,102 @@ def validate_bin_sizes(output_dir: Path) -> Dict[str, Any]:
     }
 
 
+def validate_existing_output(output_dir: Path = DEFAULT_OUTPUT_DIR) -> Dict[str, Any]:
+    """Validate existing generated files against byte-size and manifest hash metadata."""
+
+    size_validation = validate_bin_sizes(output_dir)
+    status = size_validation["status"]
+    files: Dict[str, Any] = {}
+    manifest_errors = []
+    manifest_path = output_dir / "math_lut_manifest.json"
+    manifest: Dict[str, Any] = {}
+
+    if manifest_path.exists():
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            status = "FAIL"
+            manifest_errors.append(f"manifest json decode failed: {exc}")
+    else:
+        status = "FAIL"
+        manifest_errors.append("math_lut_manifest.json missing")
+
+    if manifest:
+        expected_header = {
+            "byteOrder": "little-endian",
+            "scalarFormat": "float32",
+            "scalarBytes": FLOAT32_BYTES,
+            "binaryHeader": "none",
+            "structPackFormat": "<f",
+        }
+        for key, expected_value in expected_header.items():
+            if manifest.get(key) != expected_value:
+                status = "FAIL"
+                manifest_errors.append(
+                    f"{key} expected {expected_value!r}, got {manifest.get(key)!r}"
+                )
+
+    manifest_files = manifest.get("files", {}) if manifest else {}
+    for file_name, size_info in size_validation["files"].items():
+        file_path = output_dir / file_name
+        manifest_info = manifest_files.get(file_name, {})
+        expected_sha = manifest_info.get("sha256", "")
+        actual_sha = file_sha256(file_path) if file_path.exists() else ""
+        expected_bytes = size_info["expectedBytes"]
+        manifest_bytes = manifest_info.get("bytes")
+        bytes_match_manifest = manifest_bytes == expected_bytes
+        hash_matches = bool(expected_sha) and actual_sha == expected_sha
+
+        if not size_info["matches"] or not bytes_match_manifest or not hash_matches:
+            status = "FAIL"
+
+        files[file_name] = {
+            **size_info,
+            "manifestBytes": manifest_bytes,
+            "manifestBytesMatch": bytes_match_manifest,
+            "expectedSha256": expected_sha,
+            "actualSha256": actual_sha,
+            "hashMatches": hash_matches,
+        }
+
+    json_files: Dict[str, Any] = {}
+    ecosystem_name = "ecosystem_coefficients.json"
+    ecosystem_path = output_dir / ecosystem_name
+    ecosystem_info = manifest.get("jsonFiles", {}).get(ecosystem_name, {}) if manifest else {}
+    expected_ecosystem_sha = ecosystem_info.get("sha256", "")
+    actual_ecosystem_sha = file_sha256(ecosystem_path) if ecosystem_path.exists() else ""
+    actual_ecosystem_bytes = ecosystem_path.stat().st_size if ecosystem_path.exists() else -1
+    manifest_ecosystem_bytes = ecosystem_info.get("bytes")
+    ecosystem_bytes_match = (
+        ecosystem_path.exists()
+        and manifest_ecosystem_bytes == actual_ecosystem_bytes
+    )
+    ecosystem_hash_matches = (
+        ecosystem_path.exists()
+        and bool(expected_ecosystem_sha)
+        and actual_ecosystem_sha == expected_ecosystem_sha
+    )
+    if not ecosystem_hash_matches or not ecosystem_bytes_match:
+        status = "FAIL"
+
+    json_files[ecosystem_name] = {
+        "exists": ecosystem_path.exists(),
+        "actualBytes": actual_ecosystem_bytes,
+        "manifestBytes": manifest_ecosystem_bytes,
+        "manifestBytesMatch": ecosystem_bytes_match,
+        "expectedSha256": expected_ecosystem_sha,
+        "actualSha256": actual_ecosystem_sha,
+        "hashMatches": ecosystem_hash_matches,
+    }
+
+    return {
+        "status": status,
+        "files": files,
+        "jsonFiles": json_files,
+        "manifestErrors": manifest_errors,
+    }
+
+
 def generate_all(output_dir: Path = DEFAULT_OUTPUT_DIR) -> Dict[str, Any]:
     """Generate all LUTs, the manifest, and the ecosystem coefficient JSON."""
 
@@ -389,6 +485,7 @@ def generate_all(output_dir: Path = DEFAULT_OUTPUT_DIR) -> Dict[str, Any]:
         json.dumps(ecosystem, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+    coefficient_bytes = coefficient_path.stat().st_size
     for file_name, file_info in files.items():
         file_info["sha256"] = file_sha256(output_dir / file_name)
 
@@ -405,6 +502,7 @@ def generate_all(output_dir: Path = DEFAULT_OUTPUT_DIR) -> Dict[str, Any]:
         "jsonFiles": {
             "ecosystem_coefficients.json": {
                 "purpose": "Predator/prey biomass constants for the Ecosystem Director.",
+                "bytes": coefficient_bytes,
                 "sha256": file_sha256(coefficient_path),
                 "keys": [
                     "BirthRate",
@@ -430,7 +528,7 @@ def generate_all(output_dir: Path = DEFAULT_OUTPUT_DIR) -> Dict[str, Any]:
         "outputDir": str(output_dir),
         "files": files,
         "ecosystem": ecosystem,
-        "validation": validation,
+        "validation": validate_existing_output(output_dir),
     }
 
 
@@ -442,11 +540,16 @@ def main() -> int:
         default=DEFAULT_OUTPUT_DIR,
         help="Output directory for generated LUT assets.",
     )
+    parser.add_argument(
+        "--verify",
+        action="store_true",
+        help="Validate existing generated LUT assets without regenerating files.",
+    )
     args = parser.parse_args()
 
-    result = generate_all(args.out)
-    print(json.dumps(result["validation"], indent=2, sort_keys=True))
-    return 0 if result["validation"]["status"] == "PASS" else 1
+    validation = validate_existing_output(args.out) if args.verify else generate_all(args.out)["validation"]
+    print(json.dumps(validation, indent=2, sort_keys=True))
+    return 0 if validation["status"] == "PASS" else 1
 
 
 if __name__ == "__main__":

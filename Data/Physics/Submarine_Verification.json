@@ -1,0 +1,31 @@
+{
+  "status": "HYDRODYNAMICS DEFINED",
+  "specs": "Submarine_Specs.json",
+  "power_csv": "Submarine_SpeedPower.csv",
+  "power_svg": "Submarine_SpeedPower.svg",
+  "power_png": "Submarine_SpeedPower.png",
+  "artifacts": {
+    "specs": {
+      "file": "Submarine_Specs.json",
+      "bytes": 28756,
+      "sha256": "CEE9D581989DFB46D92FED1F5592CF338BBB5CECFAF55F58FD9B7FCE841A2579"
+    },
+    "power_csv": {
+      "file": "Submarine_SpeedPower.csv",
+      "bytes": 3922,
+      "sha256": "49DD8F4C245906F37984260830FD7C083F5866AA499B302FCFEDF94F2E8F8A35"
+    },
+    "power_svg": {
+      "file": "Submarine_SpeedPower.svg",
+      "bytes": 9231,
+      "sha256": "F914C0F201747AB2CF750E63BF08D00BF6E628C8CB09351BC53931B6E7340023"
+    },
+    "power_png": {
+      "file": "Submarine_SpeedPower.png",
+      "bytes": 12325,
+      "sha256": "BC7A8882B8A3F861648E883677BCF30FFA516CC384413E2B822A315BE6D886D7"
+    }
+  },
+  "verification_passed": true,
+  "failures": []
+}

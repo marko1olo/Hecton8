@@ -1,0 +1,232 @@
+# HECTON-8 PBR Surface Doctrine
+
+Owner: TECHNICAL_ARTIST_DATA
+Prompt: PBR_MATERIAL_REFACTOR_SCOUT
+Status: SURFACE DOCTRINE READY - PENDING UNITY IMPORT VERIFICATION
+Audit source: `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA.json`
+
+## Audit Facts
+
+- First-party scan root: `Assets/_Project`
+- Textures scanned by filename/material audit: 138
+- Albedo energy candidates decoded by Python/Pillow: 28
+- Albedo energy failures: 0
+- Albedo energy warnings: 0
+- Texture import-setting issues: 6
+- ORM/mask candidates found: 17
+- Detail candidates found: 13
+- Materials scanned: 173
+- Materials with packed mask slots: 9
+- Materials with detail slots: 0
+- Materials with audit issues: 31
+- Issue counts: `NO_PACKED_ORM_OR_MASK_SLOT` = 22, `NO_DETAIL_MAP_SLOT` = 31
+
+Conclusion: the current albedo set does not break the offline energy test. The material system is underusing channel-packing and detail overlays. Six texture import settings are suspect and must be reviewed before material migration.
+
+## ORM Packing Spec
+
+Prompt-authoritative ORM layout:
+
+- `R = Ambient Occlusion`
+- `G = Roughness`
+- `B = Metallic`
+- `A = reserved`, default `1.0` if present
+
+Import rules:
+
+- File suffix: `_ORM`.
+- sRGB: Off.
+- Mipmaps: On for world materials.
+- Compression: BC7 for hero/inspection materials, BC1/BC3 acceptable for low-risk world masks if banding is not visible.
+- Wrap: Repeat for tileable world surfaces, Clamp only for authored one-off masks.
+- Default fallback: `R=1.0`, `G=0.65`, `B=0.0`.
+
+Conflict note: `REND_URP_Graphics_HotPath_Optimization_HLOD.txt` contains an older packed-mask convention: `R=Metallic, G=AO, B=Smoothness, A=Emission`. Do not mix the two layouts in one shader family. This scout pass follows the extracted prompt: ORM = AO/Roughness/Metallic.
+
+## Detail Map Library
+
+Actual first-party candidates found:
+
+1. `Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.branching/detail___family.coral.branching.png`
+2. `Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.branching.v2/detail___family.coral.branching.v2.png`
+3. `Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.brittle/detail___family.coral.brittle.png`
+4. `Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.low/detail___family.coral.low.png`
+5. `Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.massive/detail___family.coral.massive.png`
+6. `Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.massive.2/detail___family.coral.massive.2.png`
+7. `Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.plate/detail___family.coral.plate.png`
+8. `Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.abyssal/detail___family.kelp.abyssal.png`
+9. `Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.canopy/detail___family.kelp.canopy.png`
+10. `Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.patch.dense/detail___family.kelp.patch.dense.png`
+
+Missing hard-surface overlays:
+
+- Fine cockpit scratches.
+- Dust/grit in panel seams.
+- Carbon fiber weave.
+- Worn rubber.
+- Brushed steel streaking.
+- Oxidized aluminum pitting.
+- Salt deposit speckle.
+- Grease-hand smudges.
+- Edge-chipped paint.
+- Condensation micro-droplets.
+
+These should be shared global overlays, not duplicated per material. They are surface belief fakes: one 512-1024 tileable map can buy apparent high-frequency wear on dozens of materials.
+
+## Clearcoat Fake
+
+Goal: wet glass and polished chrome without a second pass.
+
+Shader parameters:
+
+- `_FakeClearcoat`: 0..1
+- `_FakeClearcoatRoughness`: 0.04..0.35
+- `_WetEdgeBias`: 0..1
+- `_NoirGrazingBoost`: 0..2
+- `_ClearcoatTint`: RGB, default white
+
+Single-pass math:
+
+```hlsl
+half NoV = saturate(dot(normalWS, viewDirWS));
+half invNoV = 1.0h - NoV;
+half fresnel = invNoV * invNoV;
+fresnel *= fresnel * invNoV;
+
+half coatTightness = saturate(1.0h - _FakeClearcoatRoughness);
+half coatMask = saturate(_FakeClearcoat * (fresnel + _WetEdgeBias * coatTightness));
+half3 coatedSpec = specularColor + (_ClearcoatTint.rgb * coatMask * _NoirGrazingBoost);
+half3 coatedBase = lerp(baseColor, baseColor * 0.72h, coatMask * 0.35h);
+```
+
+Wet glass profile:
+
+- Metallic: 0.0
+- Roughness: 0.03..0.12
+- `_FakeClearcoat`: 0.75..1.0
+- `_WetEdgeBias`: 0.35
+- Use detail normal at 0.05..0.12 strength for film breakup.
+
+Polished chrome profile:
+
+- Metallic: 1.0
+- Roughness: 0.06..0.18
+- `_FakeClearcoat`: 0.25..0.45
+- `_WetEdgeBias`: 0.08
+- Keep albedo dark; chrome brightness comes from reflection/specular, not white base color.
+
+## Anisotropic Fake
+
+Goal: brushed cockpit metal without ray-traced or multi-pass reflection truth.
+
+Required per-material data:
+
+- Tangent direction from mesh UV/tangent.
+- `_AnisoStrength`: 0..1
+- `_AnisoDirection`: -1..1, flips tangent/bitangent bias.
+- `_BrushScale`: 16..96
+- Optional brushed detail mask from a shared grayscale overlay.
+
+Cheap lobe modulation:
+
+```hlsl
+half3 halfVec = normalize(lightDirWS + viewDirWS);
+half tangentH = dot(tangentWS, halfVec);
+half bitangentH = dot(bitangentWS, halfVec);
+
+half tangentBand = saturate(1.0h - tangentH * tangentH);
+half bitangentBand = saturate(1.0h - bitangentH * bitangentH);
+half brushBand = lerp(bitangentBand, tangentBand, step(0.0h, _AnisoDirection));
+brushBand = brushBand * brushBand * (3.0h - 2.0h * brushBand);
+
+half brushNoise = SAMPLE_TEXTURE2D(_GlobalBrushDetail, sampler_GlobalBrushDetail, uv * _BrushScale).r;
+half aniso = lerp(1.0h, brushBand * lerp(0.75h, 1.25h, brushNoise), _AnisoStrength);
+specularTerm *= aniso;
+```
+
+This is a visual fake. It does not simulate full anisotropic GGX. It is predictable, cheap, and controllable for cockpit readability.
+
+## Standard vs Optimized Spec
+
+Standard material assumption:
+
+- Albedo 1024 BC7: 1.33 MB with mips.
+- Normal 1024 BC5: 1.33 MB with mips.
+- AO 1024 grayscale/BC7-equivalent: 1.33 MB with mips.
+- Roughness 1024 grayscale/BC7-equivalent: 1.33 MB with mips.
+- Metallic 1024 grayscale/BC7-equivalent: 1.33 MB with mips.
+- Total: 6.65 MB per material set.
+
+Optimized material assumption:
+
+- Albedo 1024 BC7: 1.33 MB with mips.
+- Normal 1024 BC5: 1.33 MB with mips.
+- ORM 512 BC7/BC3: 0.33 MB with mips.
+- Detail maps: shared global overlays, not unique per material.
+- Total unique set: 2.99 MB per material set.
+
+Result:
+
+- VRAM reduction: about 55% per material set under this import model.
+- Detail increase: shared detail overlay tiled at 4x-16x adds visible high-frequency wear without raising unique albedo size.
+- Runtime cost: one extra detail sample only on MED+ or inspection/hero material tiers. Low tier can disable detail normal and keep ORM only.
+
+## NASA-Punk Noir Rationale
+
+Surface rule: everything is functional, everything is worn.
+
+- NASA-Punk means panels, tools, habitat modules, cockpit metals, suit gear, and vehicles must read as engineered objects with service history.
+- Deep Sea Noir means the values stay controlled: dark bases, high grazing response, wet edges, salt/oxidation breakup, and no baked studio highlights in albedo.
+- White albedo is suspect. Brightness belongs in lighting/specular/emission, not diffuse color.
+- Wear should describe use: hand contact, maintenance scrapes, pressure seals, latch arcs, bolt halos, cable abrasion, salt traces, and flood-line stains.
+- On low hardware, material richness comes from packed masks and shared detail, not extra draw passes.
+- On high hardware, saved VRAM buys stronger detail overlays, longer mip residency, richer wetness response, and brushed-metal directionality.
+
+## GOD_MODE Texture Resolution Overrides
+
+These are tier overrides, not MX350 defaults. Apply only after hardware tier selection and memory residency checks.
+
+| Asset class | GOD_MODE max | Format | Notes |
+|---|---:|---|---|
+| Hero cockpit albedo | 4096 | BC7 sRGB | Inspection-radius only. |
+| Hero cockpit normal | 4096 | BC5 linear | Use detail normals before unique 4K normals. |
+| Hero cockpit ORM | 2048 | BC7/BC3 linear | ORM stays below albedo resolution unless mask aliasing is visible. |
+| World module albedo | 2048 | BC7 sRGB | Do not push all habitat panels to 4K. |
+| World module normal | 2048 | BC5 linear | Shared trimsheets preferred. |
+| Terrain albedo | 4096 | BC7/BC1 sRGB | Only for near hero terrain material families. |
+| Terrain ORM | 2048 | BC7/BC3 linear | Shared packed masks. |
+| Flora albedo atlas | 2048 | BC7 sRGB | Current detail maps must wire into shader before increasing size. |
+| Flora detail atlas | 1024 | BC4/BC5 linear | Global tiling; no per-family duplication above 1024 unless proven. |
+| Decal sheet | 1024 | BC7/BC3 | Damage/wear decals get priority over raw base-map resolution. |
+| Brush/scratch globals | 1024 | BC4/BC5 linear | Shared globally across cockpit/habitat/vehicle materials. |
+| UI atlas | 2048 | BC7 sRGB | Only for diegetic close-read surfaces. |
+
+Load-shed:
+
+- If VRAM used/total exceeds 0.90, demote GOD_MODE material overrides by one mip tier.
+- If sustained frame time exceeds 25 ms, disable MED+ detail normal overlays before dropping base albedo.
+- If texture upload spikes appear, keep async upload persistent buffer enabled and stage hero material residency behind loading/transition gates.
+
+## Validator Command
+
+```powershell
+python Tools\MaterialAudit.py --root Assets\_Project --sample-size 256 --json Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.json --markdown Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.md
+```
+
+Current result: `energy_failures=0`, `energy_warnings=0`, `import_issue_textures=6`, `materials_with_issues=31`.
+
+CI gate modes:
+
+```powershell
+python Tools\MaterialAudit.py --root Assets\_Project --fail-on-import-issues
+python Tools\MaterialAudit.py --root Assets\_Project --fail-on-material-issues
+```
+
+Known import issues from the current audit:
+
+- `Assets/_Project/Art/TEXTURES/Detali/Soft Plume Noise - second try.png` - data texture has sRGB enabled.
+- `Assets/_Project/Art/TEXTURES/Detali/soft_plume_noise_-_kakoy_to_seryy_nu_norm.png` - normal/data texture has sRGB enabled and is not imported as Normal Map.
+- `Assets/_Project/Art/TEXTURES/WorldProceduralFlora/TX_ProceduralBio_Shallows_ORMAtlas.png` - ORM data texture has sRGB enabled.
+- `Assets/_Project/_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_bump.png` - normal/bump map has sRGB enabled and is not imported as Normal Map.
+- `Assets/_Project/_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_norm.png` - normal map has sRGB enabled and is not imported as Normal Map.
+- `Assets/_Project/_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_spec.png` - specular/data texture has sRGB enabled.

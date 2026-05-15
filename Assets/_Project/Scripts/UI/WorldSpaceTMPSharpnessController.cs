@@ -14,6 +14,8 @@ namespace Hecton8.UI
     {
         private static readonly int FaceDilateId = Shader.PropertyToID("_FaceDilate");
         private static readonly int OutlineSoftnessId = Shader.PropertyToID("_OutlineSoftness");
+        private static readonly int WeightNormalId = Shader.PropertyToID("_WeightNormal");
+        private static readonly int WeightBoldId = Shader.PropertyToID("_WeightBold");
 
         [Header("── Sharpness ──────────────────")]
         [SerializeField, Tooltip("Distance where the near-field SDF profile is fully applied.")]
@@ -37,6 +39,13 @@ namespace Hecton8.UI
         [SerializeField, Range(0.02f, 0.5f), Tooltip("Seconds between SDF sharpness updates. Material padding writes are intentionally not per-frame.")]
         private float updateIntervalSeconds = 0.1f;
 
+        [Header("Hardware SDF Matrix")]
+        [SerializeField, Tooltip("Applies short-side resolution buckets to TMP SDF weight/dilate so 800p remains readable without changing font assets.")]
+        private bool enableHardwareAdaptiveSdfWeighting = true;
+
+        [SerializeField, Range(0f, 1f), Tooltip("Blend factor for the hardware SDF matrix. 1 = full bucket values, 0 = distance-only legacy profile.")]
+        private float hardwareAdaptiveSdfInfluence = 1f;
+
         private TMP_Text _target;
         private Transform _targetTransform;
         private Camera _camera;
@@ -46,6 +55,8 @@ namespace Hecton8.UI
         private bool _registered;
         private float _lastFaceDilate = float.MinValue;
         private float _lastOutlineSoftness = float.MinValue;
+        private float _lastWeightNormal = float.MinValue;
+        private float _lastWeightBold = float.MinValue;
         private float _nearDistanceSq = 0.0036f;
         private float _farDistanceSq = 12.25f;
         private float _sharpnessUpdateRemaining;
@@ -149,20 +160,41 @@ namespace Hecton8.UI
                 return;
 
             float distanceT = math.saturate((distanceSq - _nearDistanceSq) / math.max(0.001f, _farDistanceSq - _nearDistanceSq));
-            float faceDilate = math.lerp(nearFaceDilate, farFaceDilate, distanceT);
-            float outlineSoftness = math.lerp(nearOutlineSoftness, farOutlineSoftness, distanceT);
+            float distanceFaceDilate = math.lerp(nearFaceDilate, farFaceDilate, distanceT);
+            float distanceOutlineSoftness = math.lerp(nearOutlineSoftness, farOutlineSoftness, distanceT);
+            ResolveHardwareSdfProfile(
+                Screen.width,
+                Screen.height,
+                out float weightNormal,
+                out float weightBold,
+                out float dilateOffset,
+                out float softnessOffset);
+
+            float adaptiveInfluence = enableHardwareAdaptiveSdfWeighting
+                ? math.saturate(hardwareAdaptiveSdfInfluence)
+                : 0f;
+            float faceDilate = math.clamp(distanceFaceDilate + (dilateOffset * adaptiveInfluence), -1f, 1f);
+            float outlineSoftness = math.clamp(distanceOutlineSoftness + (softnessOffset * adaptiveInfluence), 0f, 1f);
+            weightNormal = math.lerp(0f, weightNormal, adaptiveInfluence);
+            weightBold = math.lerp(0.5f, weightBold, adaptiveInfluence);
             if (!force &&
                 math.abs(faceDilate - _lastFaceDilate) <= 0.0001f &&
-                math.abs(outlineSoftness - _lastOutlineSoftness) <= 0.0001f)
+                math.abs(outlineSoftness - _lastOutlineSoftness) <= 0.0001f &&
+                math.abs(weightNormal - _lastWeightNormal) <= 0.0001f &&
+                math.abs(weightBold - _lastWeightBold) <= 0.0001f)
             {
                 return;
             }
 
             _materialInstance.SetFloat(FaceDilateId, faceDilate);
             _materialInstance.SetFloat(OutlineSoftnessId, outlineSoftness);
+            _materialInstance.SetFloat(WeightNormalId, weightNormal);
+            _materialInstance.SetFloat(WeightBoldId, weightBold);
             _target.UpdateMeshPadding();
             _lastFaceDilate = faceDilate;
             _lastOutlineSoftness = outlineSoftness;
+            _lastWeightNormal = weightNormal;
+            _lastWeightBold = weightBold;
         }
 
         private Camera ResolveCamera()
@@ -229,6 +261,8 @@ namespace Hecton8.UI
             _targetTransform = _target.transform;
             _lastFaceDilate = float.MinValue;
             _lastOutlineSoftness = float.MinValue;
+            _lastWeightNormal = float.MinValue;
+            _lastWeightBold = float.MinValue;
         }
 
         private void ReleaseMaterialInstance()
@@ -248,6 +282,8 @@ namespace Hecton8.UI
             _sourceMaterial = null;
             _lastFaceDilate = float.MinValue;
             _lastOutlineSoftness = float.MinValue;
+            _lastWeightNormal = float.MinValue;
+            _lastWeightBold = float.MinValue;
         }
 
         private void RefreshDistanceCacheIfDirty()
@@ -274,6 +310,57 @@ namespace Hecton8.UI
             return math.isfinite(deltaTime) ? math.clamp(deltaTime, 0f, 0.5f) : 0f;
         }
 
+        private static void ResolveHardwareSdfProfile(
+            int screenWidth,
+            int screenHeight,
+            out float weightNormal,
+            out float weightBold,
+            out float dilateOffset,
+            out float softnessOffset)
+        {
+            int shortSide = math.max(1, math.min(screenWidth, screenHeight));
+            if (shortSide <= 800)
+            {
+                weightNormal = 0.24f;
+                weightBold = 0.82f;
+                dilateOffset = 0.065f;
+                softnessOffset = -0.055f;
+                return;
+            }
+
+            if (shortSide <= 900)
+            {
+                weightNormal = 0.18f;
+                weightBold = 0.74f;
+                dilateOffset = 0.045f;
+                softnessOffset = -0.04f;
+                return;
+            }
+
+            if (shortSide <= 1080)
+            {
+                weightNormal = 0.12f;
+                weightBold = 0.66f;
+                dilateOffset = 0.025f;
+                softnessOffset = -0.02f;
+                return;
+            }
+
+            if (shortSide <= 1440)
+            {
+                weightNormal = 0.06f;
+                weightBold = 0.58f;
+                dilateOffset = 0f;
+                softnessOffset = 0f;
+                return;
+            }
+
+            weightNormal = 0f;
+            weightBold = 0.5f;
+            dilateOffset = -0.018f;
+            softnessOffset = 0.018f;
+        }
+
         private void RegisterToTickManager()
         {
             if (_registered || _target == null || !Application.isPlaying)
@@ -298,6 +385,7 @@ namespace Hecton8.UI
         private void OnValidate()
         {
             updateIntervalSeconds = ResolveUpdateInterval();
+            hardwareAdaptiveSdfInfluence = math.saturate(hardwareAdaptiveSdfInfluence);
             _distanceCacheDirty = true;
         }
 #endif

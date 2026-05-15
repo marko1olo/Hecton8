@@ -20,10 +20,11 @@ namespace Hecton8.Environment
         private const float BiolumeSurgeDurationSeconds = 4f;
         private const int ThreadGroupSize = 64;
         private const int ThreadGroupShift = 6;
-        private const int Mx350MarineSnowParticleCapacity = 32768;
-        private const int MidMarineSnowParticleCapacity = 65536;
-        private const int HighMarineSnowParticleCapacity = 100000;
-        private const int MaxMarineSnowParticleCapacity = HighMarineSnowParticleCapacity;
+        private const int Mx350MarineSnowParticleCapacity = VfxComputeParticleBudgetCatalog.LowMarineSnowCount;
+        private const int MidMarineSnowParticleCapacity = VfxComputeParticleBudgetCatalog.MidMarineSnowCount;
+        private const int HighMarineSnowParticleCapacity = VfxComputeParticleBudgetCatalog.HighMarineSnowCount;
+        private const int UltraMarineSnowParticleCapacity = VfxComputeParticleBudgetCatalog.UltraMarineSnowCount;
+        private const int MaxMarineSnowParticleCapacity = UltraMarineSnowParticleCapacity;
         private const HectonQualityTier InvalidQualityTier = (HectonQualityTier)255;
         private const int ParticleStride = 64;
         private const int FrameConstantsStride = 112;
@@ -40,9 +41,10 @@ namespace Hecton8.Environment
         private static readonly Vector4 DefaultFlowSynchronyParams = new Vector4(1f, 0.26f, 0f, 0f);
         private static readonly Vector4 DisabledTerrainHeightScale = new Vector4(0f, 0f, 0f, 0f);
         private static readonly Vector4 DefaultPropwashParams = new Vector4(2f, 0.08f, 0.025f, 1f);
-        private static readonly Vector4 LowScalabilityParams = new Vector4(0f, 7f, 0f, 0f);
-        private static readonly Vector4 MidScalabilityParams = new Vector4(1f, 3f, 1f, 1f);
+        private static readonly Vector4 LowScalabilityParams = new Vector4(0f, 15f, 0f, 0f);
+        private static readonly Vector4 MidScalabilityParams = new Vector4(1f, 7f, 1f, 1f);
         private static readonly Vector4 HighScalabilityParams = new Vector4(2f, 3f, 1f, 1f);
+        private static readonly Vector4 UltraScalabilityParams = new Vector4(2f, 1f, 1f, 1f);
         private static readonly Vector4 InvalidVector = new Vector4(float.NaN, float.NaN, float.NaN, float.NaN);
         private static readonly Matrix4x4 IdentityMatrix = Matrix4x4.identity;
         private static readonly Matrix4x4 InvalidMatrix = new Matrix4x4(InvalidVector, InvalidVector, InvalidVector, InvalidVector);
@@ -258,6 +260,9 @@ namespace Hecton8.Environment
         private int _allocatedParticleCapacity;
         private int _resolvedParticleCapacity = Mx350MarineSnowParticleCapacity;
         private HectonQualityTier _resolvedQualityTier = InvalidQualityTier;
+        private VFXEmissionProfile.FluidType _resolvedFluidType = (VFXEmissionProfile.FluidType)255;
+        private byte _resolvedPressureLevel = byte.MaxValue;
+        private ulong _resolvedKillSwitchMask = ulong.MaxValue;
         private bool _registeredTick;
         private bool _buffersReady;
         private bool _staticBindingsDirty = true;
@@ -359,6 +364,10 @@ namespace Hecton8.Environment
         [SerializeField] private float _debugAdaptiveBudgetScale = 1f;
         [SerializeField] private VRAMMonitor.VRAMPressureState _debugAdaptiveVramPressureState;
         [SerializeField] private float _debugBiolumeSurgeBlend;
+        [SerializeField] private int _debugHomeostasisPressureLevel;
+        [SerializeField] private uint _debugHomeostasisKillSwitchMaskLow32;
+        [SerializeField] private float _debugBudgetedStepDistanceMeters;
+        [SerializeField] private int _debugBudgetedShadowTaps;
 
         private readonly Vector4[] _emptyAbyssalFlowUpload = new Vector4[1]; // COLD ALLOC: Vector4[1] - zeroed fallback abyssal-flow buffer upload cache - owner: HectonMarineSnowRenderer
         private readonly float2[] _emptyFlowFieldUpload = new float2[1]; // COLD ALLOC: float2[1] - zeroed fallback ecosystem flow-field buffer upload cache - owner: HectonMarineSnowRenderer
@@ -632,11 +641,11 @@ namespace Hecton8.Environment
                 return;
             }
 
-            // COLD ALLOC: ParticleGpuData[clampedParticleCount] - up to 100000 * 64B = 6.1 MiB hardware-tier bootstrap upload cache, required to seed both GPU ping-pong buffers without runtime allocations - owner: HectonMarineSnowRenderer
+            // COLD ALLOC: ParticleGpuData[clampedParticleCount] - up to 32768 * 64B = 2.0 MiB hardware-tier bootstrap upload cache, required to seed both GPU ping-pong buffers without runtime allocations - owner: HectonMarineSnowRenderer
             _bootstrapParticles = new ParticleGpuData[clampedParticleCount];
-            // COLD ALLOC: GraphicsBuffer[clampedParticleCount] - up to 100000 * 64B = 6.1 MiB persistent marine-snow particle state ping-pong buffer A - owner: HectonMarineSnowRenderer
+            // COLD ALLOC: GraphicsBuffer[clampedParticleCount] - up to 32768 * 64B = 2.0 MiB persistent marine-snow particle state ping-pong buffer A - owner: HectonMarineSnowRenderer
             _particleBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ParticleGpuData>(clampedParticleCount);
-            // COLD ALLOC: GraphicsBuffer[clampedParticleCount] - up to 100000 * 64B = 6.1 MiB persistent marine-snow particle state ping-pong buffer B - owner: HectonMarineSnowRenderer
+            // COLD ALLOC: GraphicsBuffer[clampedParticleCount] - up to 32768 * 64B = 2.0 MiB persistent marine-snow particle state ping-pong buffer B - owner: HectonMarineSnowRenderer
             _particleBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ParticleGpuData>(clampedParticleCount);
             // COLD ALLOC: GraphicsBuffer[1] - per-frame marine-snow constant buffer - owner: HectonMarineSnowRenderer
             _frameConstantsBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<FrameConstantsData>(1);
@@ -683,11 +692,11 @@ namespace Hecton8.Environment
             ReleaseBuffer(ref _particleBufferB);
             ReleaseBuffer(ref _visibleParticleIndexBuffer);
 
-            // COLD ALLOC: ParticleGpuData[particleCount] - up to 100000 * 64B = 6.1 MiB hardware-tier resize bootstrap upload cache, only rebuilt when the scalability matrix capacity changes - owner: HectonMarineSnowRenderer
+            // COLD ALLOC: ParticleGpuData[particleCount] - up to 32768 * 64B = 2.0 MiB hardware-tier resize bootstrap upload cache, only rebuilt when the scalability matrix capacity changes - owner: HectonMarineSnowRenderer
             _bootstrapParticles = new ParticleGpuData[particleCount];
-            // COLD ALLOC: GraphicsBuffer[particleCount] - up to 100000 * 64B = 6.1 MiB resized marine-snow particle state ping-pong buffer A - owner: HectonMarineSnowRenderer
+            // COLD ALLOC: GraphicsBuffer[particleCount] - up to 32768 * 64B = 2.0 MiB resized marine-snow particle state ping-pong buffer A - owner: HectonMarineSnowRenderer
             _particleBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ParticleGpuData>(particleCount);
-            // COLD ALLOC: GraphicsBuffer[particleCount] - up to 100000 * 64B = 6.1 MiB resized marine-snow particle state ping-pong buffer B - owner: HectonMarineSnowRenderer
+            // COLD ALLOC: GraphicsBuffer[particleCount] - up to 32768 * 64B = 2.0 MiB resized marine-snow particle state ping-pong buffer B - owner: HectonMarineSnowRenderer
             _particleBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ParticleGpuData>(particleCount);
             _visibleParticleIndexBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<uint>(particleCount); // COLD ALLOC: GraphicsBuffer[particleCount] - resized GPU-written visible-particle index list - owner: HectonMarineSnowRenderer
 
@@ -1953,6 +1962,15 @@ namespace Hecton8.Environment
             }
 
             float budgetScale = 1f;
+            byte pressureLevel = HomeostasisBrain.PressureLevel;
+            ulong killSwitchMask = HomeostasisBrain.CurrentKillSwitchMask;
+            VfxComputeParticleBudget pressureBudget =
+                VfxComputeParticleBudgetCatalog.ResolveBudgetForPressure(_resolvedQualityTier, pressureLevel);
+            capacity = math.min(capacity, pressureBudget.ResolvePoolCapacity(fluidType));
+            _debugHomeostasisPressureLevel = pressureLevel;
+            _debugHomeostasisKillSwitchMaskLow32 = unchecked((uint)killSwitchMask);
+            _debugBudgetedStepDistanceMeters = pressureBudget.StepDistanceMeters;
+            _debugBudgetedShadowTaps = ResolveEffectiveShadowTaps(pressureBudget, killSwitchMask);
 
             DynamicResolutionScaler scaler = GlobalRegistry.DynamicResolution;
             float renderScale = scaler != null ? math.saturate(scaler.CurrentRenderScale) : 1f;
@@ -1981,6 +1999,10 @@ namespace Hecton8.Environment
             _debugAdaptiveBudgetScale = budgetScale;
 
             int resolvedCount = math.clamp((int)(capacity * budgetScale + 0.5f), 64, capacity);
+            resolvedCount = VfxComputeParticleBudgetCatalog.ApplyKillSwitchCount(
+                resolvedCount,
+                fluidType,
+                killSwitchMask);
             _debugActiveParticleCount = resolvedCount;
             return resolvedCount;
         }
@@ -1999,37 +2021,77 @@ namespace Hecton8.Environment
         private void RefreshScalabilityProfile()
         {
             HectonQualityTier qualityTier = GlobalRegistry.QualityTier;
-            if (qualityTier == _resolvedQualityTier)
+            byte pressureLevel = HomeostasisBrain.PressureLevel;
+            ulong killSwitchMask = HomeostasisBrain.CurrentKillSwitchMask;
+            if (qualityTier == _resolvedQualityTier &&
+                pressureLevel == _resolvedPressureLevel &&
+                killSwitchMask == _resolvedKillSwitchMask &&
+                fluidType == _resolvedFluidType)
                 return;
 
-            int particleCapacity;
-            Vector4 scalabilityParams;
-            switch (qualityTier)
-            {
-                case HectonQualityTier.Ultra:
-                case HectonQualityTier.High:
-                    particleCapacity = HighMarineSnowParticleCapacity;
-                    scalabilityParams = HighScalabilityParams;
-                    break;
-                case HectonQualityTier.Mid:
-                    particleCapacity = MidMarineSnowParticleCapacity;
-                    scalabilityParams = MidScalabilityParams;
-                    break;
-                case HectonQualityTier.Low:
-                case HectonQualityTier.Mx350:
-                case HectonQualityTier.Unknown:
-                default:
-                    particleCapacity = Mx350MarineSnowParticleCapacity;
-                    scalabilityParams = LowScalabilityParams;
-                    break;
-            }
+            VfxComputeParticleBudget qualityBudget = VfxComputeParticleBudgetCatalog.ResolveBudget(qualityTier);
+            VfxComputeParticleBudget pressureBudget =
+                VfxComputeParticleBudgetCatalog.ResolveBudgetForPressure(qualityTier, pressureLevel);
+            int particleCapacity = qualityBudget.ResolvePoolCapacity(fluidType);
+            Vector4 scalabilityParams = ResolveScalabilityParams(
+                pressureBudget,
+                pressureLevel,
+                killSwitchMask);
 
             _resolvedQualityTier = qualityTier;
+            _resolvedPressureLevel = pressureLevel;
+            _resolvedKillSwitchMask = killSwitchMask;
+            _resolvedFluidType = fluidType;
             _resolvedParticleCapacity = math.clamp(particleCapacity, 64, MaxMarineSnowParticleCapacity);
             _resolvedScalabilityParams = scalabilityParams;
             _debugScalabilityQualityTier = qualityTier;
             _debugScalabilityParticleCapacity = _resolvedParticleCapacity;
+            _debugHomeostasisPressureLevel = pressureLevel;
+            _debugHomeostasisKillSwitchMaskLow32 = unchecked((uint)killSwitchMask);
+            _debugBudgetedStepDistanceMeters = pressureBudget.StepDistanceMeters;
+            _debugBudgetedShadowTaps = ResolveEffectiveShadowTaps(pressureBudget, killSwitchMask);
             _staticBindingsDirty = _buffersReady;
+        }
+
+        private static Vector4 ResolveScalabilityParams(
+            VfxComputeParticleBudget budget,
+            byte pressureLevel,
+            ulong killSwitchMask)
+        {
+            if (pressureLevel >= 2 ||
+                (killSwitchMask & VfxComputeParticleBudgetCatalog.ParticleAdvectionMask) != 0UL)
+            {
+                return LowScalabilityParams;
+            }
+
+            if ((killSwitchMask & VfxComputeParticleBudgetCatalog.VolumetricFogHighResMask) != 0UL &&
+                budget.ParticleCount > VfxComputeParticleBudgetCatalog.MidParticleCount)
+            {
+                return MidScalabilityParams;
+            }
+
+            if (budget.ParticleCount >= VfxComputeParticleBudgetCatalog.UltraParticleCount)
+                return UltraScalabilityParams;
+            if (budget.ParticleCount >= VfxComputeParticleBudgetCatalog.HighParticleCount)
+                return HighScalabilityParams;
+            if (budget.ParticleCount >= VfxComputeParticleBudgetCatalog.MidParticleCount)
+                return MidScalabilityParams;
+
+            return LowScalabilityParams;
+        }
+
+        private static int ResolveEffectiveShadowTaps(
+            VfxComputeParticleBudget budget,
+            ulong killSwitchMask)
+        {
+            int shadowTaps = budget.ShadowTaps;
+            if ((killSwitchMask & VfxComputeParticleBudgetCatalog.VolumetricFogHighResMask) != 0UL &&
+                shadowTaps > 1)
+            {
+                return 1;
+            }
+
+            return shadowTaps;
         }
     }
 }

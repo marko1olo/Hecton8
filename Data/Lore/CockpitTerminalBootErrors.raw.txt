@@ -1,0 +1,50 @@
+BOOT_001|BIOS cold wake. Manual gauges first.
+BOOT_002|Cabin bus online. Do not trust cabin comfort.
+BOOT_003|Oxygen ledger unlocked. Count reserve, not hope.
+BOOT_004|Pressure skin test pending. Listen for ticks.
+BOOT_005|Atlas-6 handshake refused. Good.
+BOOT_006|Marauder routing cache loaded. Exit before prize.
+BOOT_007|Flood memory clear. Last crew data retained.
+BOOT_008|Battery spine warmed. Keep lamps narrow.
+BOOT_009|Scrubber fan spin confirmed. Smell check required.
+BOOT_010|Hull microphones awake. Silence is still data.
+BOOT_011|Thermal map stale. Probe before crossing orange water.
+BOOT_012|Sonar teeth cleaned. False crowds remain possible.
+BOOT_013|Payroll archive mounted. Names beat numbers.
+BOOT_014|Corp lock grammar loaded. Lies will sound official.
+BOOT_015|Manual ballast armed. Automation lost jurisdiction.
+BOOT_016|Helmet recorder active. Do not edit fear.
+BOOT_017|Suit relay cold. Warm it with procedure.
+BOOT_018|Return-line marker synced. No marker, no salvage.
+BOOT_019|Dead-channel filter enabled. Voices may still leak.
+BOOT_020|Dive lamp narrowed. Light is a tool, not a blanket.
+BOOT_021|Biomass overlay cached. Corp mass is not life.
+BOOT_022|Depth palette saturated beyond factory drop.
+BOOT_023|Emergency O2 Canister count visible on hard gauge.
+BOOT_024|Auxiliary Reservoir bit check complete.
+BOOT_025|Launch permission irrelevant. Hatch manual is live.
+ERROR_026|ERR O2 PARTIAL LOW. Count breaths, then exits.
+ERROR_027|ERR SCRUBBER HEAT RISING. CO2 eats judgment first.
+ERROR_028|ERR PRESSURE NOTE CONFLICT. Trust the lower rating.
+ERROR_029|ERR DEPTH COLOR SATURATED. Use sonar and silhouettes.
+ERROR_030|ERR ATLAS QUOTA LOOP. Human count missing.
+ERROR_031|ERR BLOOM INTAKE LOAD. Green water is not food.
+ERROR_032|ERR PAYROLL LOCKED. Corp hiding body count.
+ERROR_033|ERR SONAR CROWD STATIC. Biomass may be dead mass.
+ERROR_034|ERR HATCH CLAIMS SAFE. Verify seal by hand.
+ERROR_035|ERR LAMP BLOOMBACK. Narrow beam or blind yourself.
+ERROR_036|ERR THERMAL FALSE COMFORT. Heat is not shelter.
+ERROR_037|ERR PREDATOR ROUTE MEMORY. You made a habit.
+ERROR_038|ERR WORKER ID DAMAGED. Recover anyway.
+ERROR_039|ERR OXYGEN TANK NAME. Runtime bit is HighCapacityTank.
+ERROR_040|ERR RESERVOIR DEPTH CLAIM. Hull module required.
+ERROR_041|ERR RADIO ECHO PERSONAL. Mute and keep moving.
+ERROR_042|ERR MODULE STILL BREATHING. Find who pays the air.
+ERROR_043|ERR FLOODPLAIN QUIET. Quiet can be a corpse field.
+ERROR_044|ERR SCRAP VALUE NEGATIVE. Evidence outranks salvage.
+ERROR_045|ERR RETURN LINE LOST. Stop taking new rooms.
+ERROR_046|ERR CURRENT MAP LYING. Silt moved faster than paper.
+ERROR_047|ERR SUIT COMFORT SPIKE. Sensor damage suspected.
+ERROR_048|ERR CORP MEMO CLEAN. Clean language hides dirty water.
+ERROR_049|ERR LEVIATHAN INTENT RISE. Artifact harmonic detected.
+ERROR_050|ERR AUDIT FEED MISSING. Treat absence as system failure.

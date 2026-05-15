@@ -25,6 +25,12 @@ MAX_DUMP_ENTRIES = 600
 MAX_DUMP_BYTES = 10 * 1024 * 1024
 FRAME_SPIKE_MS = 16.6
 
+NO_STORE_HEADERS = {
+    "Cache-Control": "no-store, max-age=0",
+    "Pragma": "no-cache",
+    "X-Content-Type-Options": "nosniff",
+}
+
 HECTON8_MAGIC = 0x00384E4F54434548
 BIOMASS_MAGIC = 0x0038424D53434548
 MACRO_SWARM_MAGIC = 0x004D57534F434548
@@ -52,6 +58,10 @@ app = FastAPI(title="HECTON-8 Telemetry Dashboard", version="1.0.0")
 
 def utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def dashboard_json(payload: dict[str, Any]) -> JSONResponse:
+    return JSONResponse(payload, headers=NO_STORE_HEADERS)
 
 
 def file_stamp(path: Path) -> dict[str, Any]:
@@ -757,21 +767,74 @@ def build_summary() -> dict[str, Any]:
     }
 
 
+def empty_csv_data() -> dict[str, Any]:
+    return {
+        "sources": [],
+        "frameSeries": [],
+        "ecologySeries": [],
+        "latestThermal": None,
+        "latestHphi": None,
+    }
+
+
+def empty_dump_data() -> dict[str, Any]:
+    return {
+        "files": [],
+        "memoryMaps": [],
+        "latestThermal": None,
+        "ecologySeries": [],
+        "frameSeries": [],
+    }
+
+
+def build_degraded_summary(exc: Exception) -> dict[str, Any]:
+    return {
+        "status": "DASHBOARD DEGRADED",
+        "generatedUtc": utc_now_iso(),
+        "projectRoot": str(PROJECT_ROOT),
+        "agentLogs": str(AGENT_LOGS),
+        "frameSpikeMs": FRAME_SPIKE_MS,
+        "csv": empty_csv_data(),
+        "dumps": empty_dump_data(),
+        "hphi": {
+            "value": None,
+            "status": "unavailable",
+            "source": "api_exception",
+            "evidenceClass": "ERROR",
+        },
+        "thermal": None,
+        "frameSeries": [],
+        "ecologySeries": [],
+        "errors": [{"type": exc.__class__.__name__, "message": str(exc)[:240]}],
+        "evidence": {
+            "runtimeUnityVerified": False,
+            "class": "ERROR",
+            "note": "Dashboard summary generation failed; returned degraded empty telemetry instead of fabricated values.",
+        },
+    }
+
+
 @app.get("/")
 def index() -> FileResponse:
-    return FileResponse(INDEX_HTML)
+    return FileResponse(INDEX_HTML, headers=NO_STORE_HEADERS)
 
 
 @app.get("/api/summary")
 def api_summary() -> JSONResponse:
-    return JSONResponse(build_summary())
+    try:
+        payload = build_summary()
+    except Exception as exc:
+        payload = build_degraded_summary(exc)
+    return dashboard_json(payload)
 
 
 @app.get("/api/health")
-def api_health() -> dict[str, Any]:
-    return {
-        "status": "ok",
-        "generatedUtc": utc_now_iso(),
-        "projectRoot": str(PROJECT_ROOT),
-        "agentLogsExists": AGENT_LOGS.exists(),
-    }
+def api_health() -> JSONResponse:
+    return dashboard_json(
+        {
+            "status": "ok",
+            "generatedUtc": utc_now_iso(),
+            "projectRoot": str(PROJECT_ROOT),
+            "agentLogsExists": AGENT_LOGS.exists(),
+        }
+    )

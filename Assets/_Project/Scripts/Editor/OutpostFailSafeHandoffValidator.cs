@@ -16,8 +16,18 @@ namespace Hecton8.Editor.Validation
         private const string MenuPath = "Hecton-8/Validate Outpost Fail-Safe Handoff";
         private const string ExpectedSchema = "H8.OUTPOST.FAILSAFE.HANDOFF.V1";
         private const string ExpectedAgent = "MISSION_FAIL_SAFE_ARCHITECT";
+        private const string ExpectedRole = "SCENARIO_DESIGNER";
+        private const string ExpectedEvidenceClass = "STATIC_DOC";
+        private const string ExpectedSourceBatch = "Docs/Tasks/CURRENT_BATCH.md";
+        private const string ExpectedRequestedBatch = "CURRENT_BATCH_OSHINO.md";
+        private const string ExpectedSourceAuthorityMatched = "ACTIVE_BATCH_MATCHED";
+        private const string ExpectedSourceAuthorityDrifted = "ACTIVE_BATCH_DRIFT_DETECTED";
+        private const string ExpectedRuntimeLocalizationTable = "Assets/_Project/Scripts/English.json";
+        private const string ExpectedHashAlgorithm = "FNV-1a 32-bit over UTF-16LE code units";
+        private const string ExpectedHashRuntimeMatch = "Hecton.Localization.LocHash.Compute";
         private const string HandoffRelativePath = "Docs/Design/Missions/Outpost_FailSafe_Handoff.json";
         private const string MissionDocRelativePath = "Docs/Design/Missions/Outpost_Failure_Modes.md";
+        private const string StaleActivePromptExtractedPhrase = "The active prompt was extracted from";
         private const string OutpostPrefix = "outpost.";
         private const string GasDynamicsRoomFlagPrefix = "GasDynamicsRoomFlags.";
         private const string LegacyRoomFlagPrefix = "roomflag.";
@@ -26,7 +36,13 @@ namespace Hecton8.Editor.Validation
         private const int ExpectedTooltipCount = 10;
         private const int ExpectedLogCount = 5;
         private const int ExpectedFallbackCount = 3;
+        private const float ExpectedOxygenStandardKpa = 21.22f;
+        private const float ExpectedPlayerOxygenDrainKpaPerSecond = 0.012f;
+        private const float ExpectedPlayerCo2ProductionKpaPerSecond = 0.010f;
+        private const float ExpectedFireOxygenDrainKpaPerSecond = 0.080f;
+        private const float ExpectedScrubberCo2RemovalKpaPerSecond = 0.055f;
         private const float MaxUnpoweredCriticalReadSeconds = 90f;
+        private const float GasConstraintEpsilon = 0.0001f;
 
         // COLD ALLOC: string[4] — editor-only gas flag allowlist — owner: OutpostFailSafeHandoffValidator
         private static readonly string[] AllowedGasDynamicsRoomFlags =
@@ -120,16 +136,21 @@ namespace Hecton8.Editor.Validation
             }
 
             ValidateRootIdentity(root, errors);
+            ValidateMetadata(root, errors);
+            ValidateSourceAuthority(projectRoot, root.sourceAuthority, root.sourceBatch, errors);
+            ValidateRuntimeAssetDecision(root.runtimeAssetDecision, errors);
+            ValidateHashContract(root.hashContract, errors);
             ValidateStaleNeedles(jsonText, HandoffRelativePath, errors);
 
             var declaredFlags = new HashSet<string>(ExpectedFlagCount, StringComparer.Ordinal); // COLD ALLOC: HashSet<string>[32] — editor-only declared outpost flags — owner: OutpostFailSafeHandoffValidator
-            ValidateMissionFlags(root.missionFlags, declaredFlags, errors);
+            var declaredFlagHashes = new HashSet<int>(ExpectedFlagCount); // COLD ALLOC: HashSet<int>[32] — editor-only flag hash collision check — owner: OutpostFailSafeHandoffValidator
+            ValidateMissionFlags(root.missionFlags, declaredFlags, declaredFlagHashes, errors);
             ValidateTopologicalOrder(root.topologicalOrder, declaredFlags, errors);
             ValidateFallbacks(root.fallbacks, declaredFlags, errors);
             ValidateLocalizationEntries(root.localizationEntries, declaredFlags, errors);
             ValidateGasConstraints(root.gasConstraints, errors);
             ValidateJsonOutpostReferences(jsonText, declaredFlags, errors);
-            ValidateMissionDoc(projectRoot, declaredFlags, errors, warnings);
+            ValidateMissionDoc(projectRoot, root.sourceAuthority, declaredFlags, errors, warnings);
         }
 
         private static void ValidateRootIdentity(HandoffRoot root, List<string> errors)
@@ -141,9 +162,113 @@ namespace Hecton8.Editor.Validation
                 errors.Add("Handoff agent must be '" + ExpectedAgent + "'.");
         }
 
+        private static void ValidateMetadata(HandoffRoot root, List<string> errors)
+        {
+            if (!StringEquals(root.evidenceClass, ExpectedEvidenceClass))
+                errors.Add("Handoff evidenceClass must be '" + ExpectedEvidenceClass + "'.");
+
+            if (!StringEquals(root.sourceBatch, ExpectedSourceBatch))
+                errors.Add("Handoff sourceBatch must be '" + ExpectedSourceBatch + "'.");
+
+            if (!StringEquals(root.requestedBatch, ExpectedRequestedBatch))
+                errors.Add("Handoff requestedBatch must be '" + ExpectedRequestedBatch + "'.");
+
+            if (root.requestedBatchPresent)
+                errors.Add("Handoff requestedBatchPresent must remain false unless the handoff is regenerated from the requested batch file.");
+        }
+
+        private static void ValidateSourceAuthority(
+            string projectRoot,
+            SourceAuthority sourceAuthority,
+            string sourceBatch,
+            List<string> errors)
+        {
+            if (sourceAuthority == null)
+            {
+                errors.Add("sourceAuthority is missing.");
+                return;
+            }
+
+            if (!StringEquals(sourceAuthority.expectedPromptId, ExpectedAgent))
+                errors.Add("sourceAuthority.expectedPromptId must be '" + ExpectedAgent + "'.");
+
+            if (!StringEquals(sourceAuthority.expectedPromptRole, ExpectedRole))
+                errors.Add("sourceAuthority.expectedPromptRole must be '" + ExpectedRole + "'.");
+
+            if (IsBlank(sourceAuthority.policy))
+                errors.Add("sourceAuthority.policy is missing.");
+
+            if (IsBlank(sourceBatch))
+            {
+                errors.Add("sourceAuthority cannot validate a blank sourceBatch.");
+                return;
+            }
+
+            string sourceBatchPath = Path.Combine(projectRoot, sourceBatch);
+            if (!File.Exists(sourceBatchPath))
+            {
+                errors.Add("sourceAuthority sourceBatch file is missing at " + sourceBatch + ".");
+                return;
+            }
+
+            string sourceText = File.ReadAllText(sourceBatchPath);
+            bool containsPrompt =
+                sourceText.IndexOf(ExpectedAgent, StringComparison.Ordinal) >= 0 &&
+                sourceText.IndexOf(ExpectedRole, StringComparison.Ordinal) >= 0;
+
+            if (sourceAuthority.activeBatchContainsPrompt != containsPrompt)
+                errors.Add("sourceAuthority.activeBatchContainsPrompt does not match current sourceBatch contents.");
+
+            string expectedStatus = containsPrompt ? ExpectedSourceAuthorityMatched : ExpectedSourceAuthorityDrifted;
+            if (!StringEquals(sourceAuthority.status, expectedStatus))
+                errors.Add("sourceAuthority.status must be '" + expectedStatus + "' for the current sourceBatch contents.");
+        }
+
+        private static void ValidateRuntimeAssetDecision(RuntimeAssetDecision runtimeAssetDecision, List<string> errors)
+        {
+            if (runtimeAssetDecision == null)
+            {
+                errors.Add("runtimeAssetDecision is missing.");
+                return;
+            }
+
+            if (runtimeAssetDecision.mutatedRuntimeLocalizationAssets)
+                errors.Add("runtimeAssetDecision.mutatedRuntimeLocalizationAssets must be false for this handoff.");
+
+            if (!StringEquals(runtimeAssetDecision.activeEnglishTableObserved, ExpectedRuntimeLocalizationTable))
+                errors.Add("runtimeAssetDecision.activeEnglishTableObserved must be '" + ExpectedRuntimeLocalizationTable + "'.");
+
+            if (IsBlank(runtimeAssetDecision.reason))
+                errors.Add("runtimeAssetDecision.reason is missing.");
+        }
+
+        private static void ValidateHashContract(HashContract hashContract, List<string> errors)
+        {
+            if (hashContract == null)
+            {
+                errors.Add("hashContract is missing.");
+                return;
+            }
+
+            if (!StringEquals(hashContract.algorithm, ExpectedHashAlgorithm))
+                errors.Add("hashContract.algorithm must be '" + ExpectedHashAlgorithm + "'.");
+
+            if (!StringEquals(hashContract.runtimeMatch, ExpectedHashRuntimeMatch))
+                errors.Add("hashContract.runtimeMatch must be '" + ExpectedHashRuntimeMatch + "'.");
+
+            string runtimeOffsetBasis = "0x" + LocHash.FnvOffsetBasis.ToString("X8");
+            if (!StringEquals(hashContract.offsetBasis, runtimeOffsetBasis))
+                errors.Add("hashContract.offsetBasis must match LocHash.FnvOffsetBasis '" + runtimeOffsetBasis + "'.");
+
+            string runtimePrime = "0x" + LocHash.FnvPrime.ToString("X8");
+            if (!StringEquals(hashContract.prime, runtimePrime))
+                errors.Add("hashContract.prime must match LocHash.FnvPrime '" + runtimePrime + "'.");
+        }
+
         private static void ValidateMissionFlags(
             MissionFlagEntry[] missionFlags,
             HashSet<string> declaredFlags,
+            HashSet<int> declaredFlagHashes,
             List<string> errors)
         {
             if (missionFlags == null)
@@ -176,8 +301,12 @@ namespace Hecton8.Editor.Validation
                 if (!declaredFlags.Add(entry.flag))
                     errors.Add("missionFlags duplicate flag '" + entry.flag + "'.");
 
-                if (unchecked((uint)LocHash.Compute(entry.flag)) == 0u)
+                int flagHash = LocHash.Compute(entry.flag);
+                if (flagHash == 0)
                     errors.Add("missionFlags[" + i + "] '" + entry.flag + "' resolves to LocHash 0.");
+
+                if (!declaredFlagHashes.Add(flagHash))
+                    errors.Add("missionFlags hash collision at '" + entry.flag + "' hash 0x" + unchecked((uint)flagHash).ToString("X8") + ".");
 
                 if (IsBlank(entry.band))
                     errors.Add("missionFlags[" + i + "] '" + entry.flag + "' has no band.");
@@ -273,6 +402,7 @@ namespace Hecton8.Editor.Validation
             int tooltipCount = 0;
             int logCount = 0;
             var locIds = new HashSet<string>(localizationEntries.Length, StringComparer.Ordinal); // COLD ALLOC: HashSet<string>[localizationEntries.Length] — editor-only LocID duplicate check — owner: OutpostFailSafeHandoffValidator
+            var locHashes = new HashSet<int>(localizationEntries.Length); // COLD ALLOC: HashSet<int>[localizationEntries.Length] — editor-only LocHash collision check — owner: OutpostFailSafeHandoffValidator
 
             for (int i = 0; i < localizationEntries.Length; i++)
             {
@@ -292,9 +422,13 @@ namespace Hecton8.Editor.Validation
                 if (!locIds.Add(entry.locId))
                     errors.Add("localizationEntries duplicate locId '" + entry.locId + "'.");
 
-                string expectedHash = "0x" + unchecked((uint)LocHash.Compute(entry.locId)).ToString("X8");
+                int locHash = LocHash.Compute(entry.locId);
+                string expectedHash = "0x" + unchecked((uint)locHash).ToString("X8");
                 if (!StringEquals(entry.hash, expectedHash))
                     errors.Add("localizationEntries[" + i + "] '" + entry.locId + "' hash mismatch. Expected " + expectedHash + ", found '" + entry.hash + "'.");
+
+                if (!locHashes.Add(locHash))
+                    errors.Add("localizationEntries hash collision at '" + entry.locId + "' hash " + expectedHash + ".");
 
                 if (!StringEquals(entry.layer, "Narrative"))
                     errors.Add("localizationEntries[" + i + "] '" + entry.locId + "' must use Narrative layer.");
@@ -342,18 +476,48 @@ namespace Hecton8.Editor.Validation
 
             if (gasConstraints.oxygenStandardKpa <= 0f)
                 errors.Add("gasConstraints.oxygenStandardKpa must be positive.");
+            else
+                ValidateFloatEquals(
+                    gasConstraints.oxygenStandardKpa,
+                    ExpectedOxygenStandardKpa,
+                    "gasConstraints.oxygenStandardKpa",
+                    errors);
 
             if (gasConstraints.playerOxygenDrainKpaPerSecond <= 0f)
                 errors.Add("gasConstraints.playerOxygenDrainKpaPerSecond must be positive.");
+            else
+                ValidateFloatEquals(
+                    gasConstraints.playerOxygenDrainKpaPerSecond,
+                    ExpectedPlayerOxygenDrainKpaPerSecond,
+                    "gasConstraints.playerOxygenDrainKpaPerSecond",
+                    errors);
 
             if (gasConstraints.playerCo2ProductionKpaPerSecond <= 0f)
                 errors.Add("gasConstraints.playerCo2ProductionKpaPerSecond must be positive.");
+            else
+                ValidateFloatEquals(
+                    gasConstraints.playerCo2ProductionKpaPerSecond,
+                    ExpectedPlayerCo2ProductionKpaPerSecond,
+                    "gasConstraints.playerCo2ProductionKpaPerSecond",
+                    errors);
 
             if (gasConstraints.fireOxygenDrainKpaPerSecond <= 0f)
                 errors.Add("gasConstraints.fireOxygenDrainKpaPerSecond must be positive.");
+            else
+                ValidateFloatEquals(
+                    gasConstraints.fireOxygenDrainKpaPerSecond,
+                    ExpectedFireOxygenDrainKpaPerSecond,
+                    "gasConstraints.fireOxygenDrainKpaPerSecond",
+                    errors);
 
             if (gasConstraints.scrubberCo2RemovalKpaPerSecond <= 0f)
                 errors.Add("gasConstraints.scrubberCo2RemovalKpaPerSecond must be positive.");
+            else
+                ValidateFloatEquals(
+                    gasConstraints.scrubberCo2RemovalKpaPerSecond,
+                    ExpectedScrubberCo2RemovalKpaPerSecond,
+                    "gasConstraints.scrubberCo2RemovalKpaPerSecond",
+                    errors);
 
             if (gasConstraints.unpoweredSealedCriticalReadCapSeconds > MaxUnpoweredCriticalReadSeconds)
             {
@@ -372,6 +536,7 @@ namespace Hecton8.Editor.Validation
 
         private static void ValidateMissionDoc(
             string projectRoot,
+            SourceAuthority sourceAuthority,
             HashSet<string> declaredFlags,
             List<string> errors,
             List<string> warnings)
@@ -384,6 +549,7 @@ namespace Hecton8.Editor.Validation
             }
 
             string missionDocText = File.ReadAllText(missionDocPath);
+            ValidateMissionDocSourceAuthority(missionDocText, sourceAuthority, errors);
             ValidateStaleNeedles(missionDocText, MissionDocRelativePath, errors);
 
             var docReferences = new HashSet<string>(declaredFlags.Count, StringComparer.Ordinal); // COLD ALLOC: HashSet<string>[declaredFlags.Count] — editor-only prose/json flag parity check — owner: OutpostFailSafeHandoffValidator
@@ -400,6 +566,24 @@ namespace Hecton8.Editor.Validation
 
             for (int i = 0; i < missingInDoc.Count; i++)
                 errors.Add(MissionDocRelativePath + " does not reference declared flag '" + missingInDoc[i] + "'.");
+        }
+
+        private static void ValidateMissionDocSourceAuthority(
+            string missionDocText,
+            SourceAuthority sourceAuthority,
+            List<string> errors)
+        {
+            if (missionDocText.IndexOf(StaleActivePromptExtractedPhrase, StringComparison.Ordinal) >= 0)
+                errors.Add(MissionDocRelativePath + " contains stale live-source wording: '" + StaleActivePromptExtractedPhrase + "'.");
+
+            if (sourceAuthority == null)
+                return;
+
+            if (StringEquals(sourceAuthority.status, ExpectedSourceAuthorityDrifted) &&
+                missionDocText.IndexOf(ExpectedSourceAuthorityDrifted, StringComparison.Ordinal) < 0)
+            {
+                errors.Add(MissionDocRelativePath + " must state '" + ExpectedSourceAuthorityDrifted + "' when the JSON sourceAuthority is drifted.");
+            }
         }
 
         private static void ValidateJsonOutpostReferences(
@@ -460,6 +644,11 @@ namespace Hecton8.Editor.Validation
             if (text.IndexOf(LegacyRoomFlagPrefix, StringComparison.Ordinal) >= 0)
                 errors.Add(context + " uses legacy '" + LegacyRoomFlagPrefix + "' token; use GasDynamicsRoomFlags.*.");
 
+            ValidateBareGasFlagToken(text, "InternalFire", context, errors);
+            ValidateBareGasFlagToken(text, "Breached", context, errors);
+            ValidateBareGasFlagToken(text, "ScrubberInstalled", context, errors);
+            ValidateBareGasFlagToken(text, "Occupied", context, errors);
+
             if (text.IndexOf("Submerged", StringComparison.Ordinal) >= 0 &&
                 text.IndexOf(SubmergedScalarToken, StringComparison.Ordinal) < 0)
             {
@@ -480,6 +669,38 @@ namespace Hecton8.Editor.Validation
                 string token = text.Substring(foundIndex, endIndex - foundIndex);
                 if (!IsAllowedGasDynamicsRoomFlag(token))
                     errors.Add(context + " references unsupported gas room flag '" + token + "'.");
+
+                searchIndex = endIndex;
+            }
+        }
+
+        private static void ValidateBareGasFlagToken(
+            string text,
+            string token,
+            string context,
+            List<string> errors)
+        {
+            int searchIndex = 0;
+            while (searchIndex < text.Length)
+            {
+                int foundIndex = text.IndexOf(token, searchIndex, StringComparison.Ordinal);
+                if (foundIndex < 0)
+                    break;
+
+                int endIndex = foundIndex + token.Length;
+                bool tokenStartsClean = foundIndex == 0 || !IsGasFlagChar(text[foundIndex - 1]);
+                bool tokenEndsClean = endIndex >= text.Length || !IsGasFlagChar(text[endIndex]);
+                bool hasRequiredPrefix =
+                    foundIndex >= GasDynamicsRoomFlagPrefix.Length &&
+                    string.CompareOrdinal(
+                        text,
+                        foundIndex - GasDynamicsRoomFlagPrefix.Length,
+                        GasDynamicsRoomFlagPrefix,
+                        0,
+                        GasDynamicsRoomFlagPrefix.Length) == 0;
+
+                if (tokenStartsClean && tokenEndsClean && !hasRequiredPrefix)
+                    errors.Add(context + " uses bare gas room flag '" + token + "'; use GasDynamicsRoomFlags." + token + ".");
 
                 searchIndex = endIndex;
             }
@@ -563,6 +784,12 @@ namespace Hecton8.Editor.Validation
             return false;
         }
 
+        private static void ValidateFloatEquals(float actual, float expected, string label, List<string> errors)
+        {
+            if (Mathf.Abs(actual - expected) > GasConstraintEpsilon)
+                errors.Add(label + " must match GasDynamicsSolver default " + expected + ".");
+        }
+
         private static bool IsBlank(string value)
         {
             return string.IsNullOrWhiteSpace(value);
@@ -587,11 +814,45 @@ namespace Hecton8.Editor.Validation
         {
             public string schema;
             public string agent;
+            public string evidenceClass;
+            public string sourceBatch;
+            public string requestedBatch;
+            public bool requestedBatchPresent;
+            public SourceAuthority sourceAuthority;
+            public RuntimeAssetDecision runtimeAssetDecision;
+            public HashContract hashContract;
             public MissionFlagEntry[] missionFlags;
             public string[] topologicalOrder;
             public FallbackEntry[] fallbacks;
             public LocalizationEntry[] localizationEntries;
             public GasConstraints gasConstraints;
+        }
+
+        [Serializable]
+        private sealed class SourceAuthority
+        {
+            public string status;
+            public string expectedPromptId;
+            public string expectedPromptRole;
+            public bool activeBatchContainsPrompt;
+            public string policy;
+        }
+
+        [Serializable]
+        private sealed class RuntimeAssetDecision
+        {
+            public bool mutatedRuntimeLocalizationAssets;
+            public string activeEnglishTableObserved;
+            public string reason;
+        }
+
+        [Serializable]
+        private sealed class HashContract
+        {
+            public string algorithm;
+            public string runtimeMatch;
+            public string offsetBasis;
+            public string prime;
         }
 
         [Serializable]

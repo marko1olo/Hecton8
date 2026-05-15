@@ -309,3 +309,46 @@ Regrowth does not spawn new flora. The existing indirect instance is restored by
 3. removing the destroyed-flora delta only after regrowth completes
 
 That keeps persistence authoritative while the visual return is gradual.
+
+## 2026-05-15 Macro Regrowth Simulation
+
+Implementation surface:
+
+- `Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs`
+- `Tools/WorldEntropySim.py`
+- `Data/Economy/Regrowth_Constants.json`
+
+The macro regrowth model is a data-only world-economy layer. It does not instantiate resource or predator GameObjects. It stores one byte lane per macro-sector for soil nutrients, temperature, biome id, lifecycle stage, tombstone age, regrowth progress, ore stock, flora stock, prey biomass, predator biomass, and apex respawn days.
+
+Daily growth is fixed-point:
+
+```csharp
+GrowthRate = BaseGrowthProgressPerDayQ * SoilNutrientsQ * TemperatureQ / (255 * 255);
+```
+
+Mining maps a sector cell to `WorldRegrowthStage.Tombstone`, clears progress, applies a nutrient penalty, and lets the tombstone decay into `Seed`. Predator recovery is not random; it derives apex respawn days from a byte-quantized Lotka-Volterra projection of prey and predator biomass.
+
+Persistence contract:
+
+- `WorldRegrowthMacroDatabaseCodec.TryPack` writes a contiguous H8_MacroDB payload.
+- `TryUnpack` verifies magic, version, width, height, cell count, fixed lane offsets, and FNV-style checksum before restoring lanes.
+- Scratch diffusion memory is not serialized; it is restored from `SoilNutrients` on load, then overwritten by the next deterministic diffusion pass.
+- Initialization uses allocated grid dimensions after clamp, not raw config dimensions.
+- Mining tombstone writes are serial and deterministic for duplicate cell indices.
+- `WorldRegrowthSimulation.TryDumpBlackBox` writes the fixed 300-entry telemetry ring to `Docs/AgentLogs/Dump_ORGANIC_ENTROPY_REGENERATOR.bin` on cold diagnostic paths.
+
+Entropy-test result:
+
+- Command: `python Tools/WorldEntropySim.py --days 365 --mode total_overharvest`
+- Result: `STATUS=ENTROPY BALANCED`
+- Safe Shallows half recovery: `28` days.
+- Deep Abyss half recovery: `95` days.
+- Ratio: `3.393`, satisfying the 3x requirement.
+
+Verification boundary: this is static source plus Python harness evidence. Unity import, Play Mode, profiler, GCMonitor, and player build remain `PENDING VERIFICATION`.
+
+Post-hardening verification:
+
+- `python -m unittest Tools.test_world_entropy_sim -v`: 3 tests passed.
+- Visual Studio Roslyn C# 9 probe compile against Unity/Hecton8 stubs: exit code `0`; re-run after black box dump hook remained exit code `0`.
+- Full Unity import and Burst compile remain `PENDING VERIFICATION` because no Unity CLI/editor route was available in-session.

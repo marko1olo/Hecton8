@@ -31,7 +31,7 @@ No Unity C# was authored for this task.
 - Header bytes: none.
 - Alignment assumption: payload can be copied into a tightly packed `float` buffer.
 - Indexing: C-order row-major.
-- Integrity metadata: `math_lut_manifest.json` records SHA-256 for each binary payload and
+- Integrity metadata: `math_lut_manifest.json` records byte counts and SHA-256 for each binary payload and
   `ecosystem_coefficients.json`. Check hashes during cold load only; do not compute them in gameplay hot paths.
 
 Burst-side reader contract:
@@ -143,7 +143,12 @@ Run:
 
 ```powershell
 python Tools/MathLUTGenerator.py
+python Tools/MathLUTGenerator.py --verify
 python Tools/test_math_lut_generator.py
 ```
 
 Expected validation status: `PASS`.
+
+`--verify` checks existing files without regenerating them. It validates exact byte counts,
+manifest scalar contract fields, and SHA-256 values for the four `.bin` payloads plus byte
+count and SHA-256 metadata for `ecosystem_coefficients.json`.

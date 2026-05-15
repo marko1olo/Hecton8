@@ -42,7 +42,7 @@ Exact Microseconds saved:
 Verification:
 
 - `python -B Tools/MathLUTGenerator.py`: PASS.
-- `python -B Tools/test_math_lut_generator.py`: OK, 5 tests.
+- `python -B Tools/test_math_lut_generator.py`: OK, 6 tests.
 - Python `compile(...)` syntax check for both Python files: `syntax ok`.
 - Final rerun used `python -B` to avoid baker-owned bytecode cache output.
 - `struct.calcsize("<f")`: 4 bytes.
@@ -228,6 +228,72 @@ Verification:
 
 - Report wording no longer undercounts remote push attempts.
 - The local feature branch remains the reliable publication artifact until a remote push is confirmed.
+
+Blocked:
+
+- Remote push remains unconfirmed.
+
+## 2026-05-14 - JSON Byte Metadata Verification
+
+What was wrong:
+
+- `ecosystem_coefficients.json` had SHA-256 metadata but no manifest byte count.
+- Verify-only validation could catch JSON content corruption by hash, but not a stale or malformed JSON byte-count declaration in the manifest.
+
+What was done:
+
+- Added `bytes` metadata for `ecosystem_coefficients.json` in `math_lut_manifest.json`.
+- Extended `validate_existing_output()` to compare the manifest byte count against the actual JSON file size.
+- Added `test_verify_existing_output_detects_json_manifest_byte_mismatch` to prove verify-only validation fails when JSON byte metadata is wrong while the JSON hash remains valid.
+- Updated `Docs/Design/LUT_Memory_Layout.md` to include JSON byte-count validation.
+
+Cinematic Cheats used:
+
+- None. This is offline integrity tooling, not runtime simulation.
+
+Exact Microseconds saved:
+
+- None measured. No Unity runtime code changed; runtime savings remain PENDING VERIFICATION.
+
+Verification:
+
+- `python -B Tools/MathLUTGenerator.py`: PASS.
+- `python -B Tools/MathLUTGenerator.py --verify`: PASS.
+- `python -B Tools/test_math_lut_generator.py`: OK, 7 tests.
+- Python syntax check: `syntax ok`.
+- New manifest hash: `A61691B5B5E91F225966E083E665F10AE7BDC1BA83C744B505A158041910D2F7`.
+
+Blocked:
+
+- Remote push remains unconfirmed.
+
+## 2026-05-14 - Verify-Only CLI
+
+What was wrong:
+
+- Existing baked outputs could not be validated without regenerating them.
+- Same-size corruption needed an automated failure test.
+
+What was done:
+
+- Added `validate_existing_output()` to `Tools/MathLUTGenerator.py`.
+- Added `python Tools/MathLUTGenerator.py --verify`.
+- Added a test that flips one byte in `sabine_reverb_rt60.bin` without changing file size and confirms verify-only validation fails on SHA-256 mismatch.
+
+Cinematic Cheats used:
+
+- None. This was offline validation tooling.
+
+Exact Microseconds saved:
+
+- None. No runtime code changed.
+
+Verification:
+
+- `python -B Tools/MathLUTGenerator.py`: PASS.
+- `python -B Tools/MathLUTGenerator.py --verify`: PASS.
+- `python -B Tools/test_math_lut_generator.py`: OK, 6 tests.
+- Python syntax check: `syntax ok`.
 
 Blocked:
 

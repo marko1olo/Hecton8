@@ -1,0 +1,317 @@
+{
+  "allMaterialClippingAudit": {
+    "failedCount": 0,
+    "materialCount": 20,
+    "rows": [
+      {
+        "appliedGain": 0.03423858,
+        "materialId": "aluminum_panel",
+        "peakBound16Voices": 0.98,
+        "status": "PASS",
+        "tapAmplitudeSum": 0.78891785,
+        "tapCount": 12
+      },
+      {
+        "appliedGain": 0.03329186,
+        "materialId": "basalt_rock",
+        "peakBound16Voices": 0.98,
+        "status": "PASS",
+        "tapAmplitudeSum": 0.83978902,
+        "tapCount": 12
+      },
+      {
+        "appliedGain": 0.04506231,
+        "materialId": "cable_bundle",
+        "peakBound16Voices": 0.98,
+        "status": "PASS",
+        "tapAmplitudeSum": 0.3592291,
+        "tapCount": 12
+      },
+      {
+        "appliedGain": 0.03740866,
+        "materialId": "ceramic_insulator",
+        "peakBound16Voices": 0.98,
+        "status": "PASS",
+        "tapAmplitudeSum": 0.63732124,
+        "tapCount": 12
+      },
+      {
+        "appliedGain": 0.04516189,
+        "materialId": "coral_calcified",
+        "peakBound16Voices": 0.98,
+        "status": "PASS",
+        "tapAmplitudeSum": 0.35623196,
+        "tapCount": 12
+      },
+      {
+        "appliedGain": 0.0529318,
+        "materialId": "creature_cartilage",
+        "peakBound16Voices": 0.98,
+        "status": "PASS",
+        "tapAmplitudeSum": 0.15714935,
+        "tapCount": 12
+      },
+      {
+        "appliedGain": 0.058,
+        "materialId": "flooded_fabric",
+        "peakBound16Voices": 0.95338602,
+        "status": "PASS",
+        "tapAmplitudeSum": 0.02735563,
+        "tapCount": 12
+      },
+      {
+        "appliedGain": 0.04956367,
+        "materialId": "glass_port",
+        "peakBound16Voices": 0.98,
+        "status": "PASS",
+        "tapAmplitudeSum": 0.23578424,
+        "tapCount": 12
+      },
+      {
+        "appliedGain": 0.03546294,
+        "materialId": "ice_hydrate",
+        "peakBound16Voices": 0.98,
+        "status": "PASS",
+        "tapAmplitudeSum": 0.72715528,
+        "tapCount": 12
+      },
+      {
+        "appliedGain": 0.058,
+        "materialId": "kelp_mass",
+        "peakBound16Voices": 0.97226567,
+        "status": "PASS",
+        "tapAmplitudeSum": 0.04770008,
+        "tapCount": 12
+      },
+      {
+        "appliedGain": 0.05167872,
+        "materialId": "methane_bubble_foam",
+        "peakBound16Voices": 0.98,
+        "status": "PASS",
+        "tapAmplitudeSum": 0.18520744,
+        "tapCount": 12
+      },
+      {
+        "appliedGain": 0.05438121,
+        "materialId": "pressurized_air_pocket",
+        "peakBound16Voices": 0.98,
+        "status": "PASS",
+        "tapAmplitudeSum": 0.12630821,
+        "tapCount": 12
+      },
+      {
+        "appliedGain": 0.0368949,
+        "materialId": "reactor_concrete",
+        "peakBound16Voices": 0.98,
+        "status": "PASS",
+        "tapAmplitudeSum": 0.66012094,
+        "tapCount": 12
+      },
+      {
+        "appliedGain": 0.04770028,
+        "materialId": "reinforced_acrylic",
+        "peakBound16Voices": 0.98,
+        "status": "PASS",
+        "tapAmplitudeSum": 0.28405967,
+        "tapCount": 12
+      },
+      {
+        "appliedGain": 0.05702596,
+        "materialId": "rubber_gasket",
+        "peakBound16Voices": 0.98,
+        "status": "PASS",
+        "tapAmplitudeSum": 0.07407227,
+        "tapCount": 12
+      },
+      {
+        "appliedGain": 0.05674884,
+        "materialId": "sand_silt",
+        "peakBound16Voices": 0.98,
+        "status": "PASS",
+        "tapAmplitudeSum": 0.07931727,
+        "tapCount": 12
+      },
+      {
+        "appliedGain": 0.04868133,
+        "materialId": "shale_sediment",
+        "peakBound16Voices": 0.98,
+        "status": "PASS",
+        "tapAmplitudeSum": 0.25818254,
+        "tapCount": 12
+      },
+      {
+        "appliedGain": 0.03174151,
+        "materialId": "steel_hull",
+        "peakBound16Voices": 0.98,
+        "status": "PASS",
+        "tapAmplitudeSum": 0.92964981,
+        "tapCount": 12
+      },
+      {
+        "appliedGain": 0.03040568,
+        "materialId": "titanium_bulkhead",
+        "peakBound16Voices": 0.98,
+        "status": "PASS",
+        "tapAmplitudeSum": 1.01442617,
+        "tapCount": 12
+      },
+      {
+        "appliedGain": 0.058,
+        "materialId": "water_open",
+        "peakBound16Voices": 0.94692311,
+        "status": "PASS",
+        "tapAmplitudeSum": 0.02039128,
+        "tapCount": 12
+      }
+    ],
+    "status": "PASS",
+    "worstMaterialId": "aluminum_panel",
+    "worstPeakBound16Voices": 0.98
+  },
+  "clippingAudit": {
+    "appliedGain": 0.03174151,
+    "nominalGain": 0.058,
+    "peakBound16Voices": 0.98,
+    "singleVoiceUnscaledPeakBound": 1.92964981,
+    "status": "PASS",
+    "tapAmplitudeSum": 0.92964981,
+    "tapCount": 12,
+    "targetPeakCeiling": 0.98,
+    "voiceCount": 16
+  },
+  "constants": {
+    "sonarDecayK": 0.0035,
+    "soundSpeedMps": 1480.0
+  },
+  "elapsedUs": 232059.0,
+  "materialId": "steel_hull",
+  "profilePath": "Data\\Audio\\Acoustic_Material_Profiles.json",
+  "roomMeters": {
+    "depth": 10.0,
+    "height": 3.0,
+    "width": 10.0
+  },
+  "status": "ACOUSTIC_TAPS_SIMULATED",
+  "virtualTaps": [
+    {
+      "amplitude": 0.2313202,
+      "channelHint": "C+Height",
+      "delayMs": 2.027027,
+      "distanceM": 3.0,
+      "lowPassHz": 8200.0,
+      "materialId": "steel_hull",
+      "order": 1,
+      "surface": "ceiling"
+    },
+    {
+      "amplitude": 0.2313202,
+      "channelHint": "LFE",
+      "delayMs": 2.027027,
+      "distanceM": 3.0,
+      "lowPassHz": 8200.0,
+      "materialId": "steel_hull",
+      "order": 1,
+      "surface": "floor"
+    },
+    {
+      "amplitude": 0.06920059,
+      "channelHint": "RR",
+      "delayMs": 6.756757,
+      "distanceM": 10.0,
+      "lowPassHz": 8200.0,
+      "materialId": "steel_hull",
+      "order": 1,
+      "surface": "back_wall"
+    },
+    {
+      "amplitude": 0.06920059,
+      "channelHint": "C",
+      "delayMs": 6.756757,
+      "distanceM": 10.0,
+      "lowPassHz": 8200.0,
+      "materialId": "steel_hull",
+      "order": 1,
+      "surface": "front_wall"
+    },
+    {
+      "amplitude": 0.06920059,
+      "channelHint": "SL",
+      "delayMs": 6.756757,
+      "distanceM": 10.0,
+      "lowPassHz": 8200.0,
+      "materialId": "steel_hull",
+      "order": 1,
+      "surface": "left_wall"
+    },
+    {
+      "amplitude": 0.06920059,
+      "channelHint": "SR",
+      "delayMs": 6.756757,
+      "distanceM": 10.0,
+      "lowPassHz": 8200.0,
+      "materialId": "steel_hull",
+      "order": 1,
+      "surface": "right_wall"
+    },
+    {
+      "amplitude": 0.03843682,
+      "channelHint": "C",
+      "delayMs": 7.054261,
+      "distanceM": 10.440307,
+      "lowPassHz": 8200.0,
+      "materialId": "steel_hull",
+      "order": 2,
+      "surface": "ceiling_right_edge"
+    },
+    {
+      "amplitude": 0.03843682,
+      "channelHint": "C",
+      "delayMs": 7.054261,
+      "distanceM": 10.440307,
+      "lowPassHz": 8200.0,
+      "materialId": "steel_hull",
+      "order": 2,
+      "surface": "floor_left_edge"
+    },
+    {
+      "amplitude": 0.02833335,
+      "channelHint": "RL+RR",
+      "delayMs": 9.555497,
+      "distanceM": 14.142136,
+      "lowPassHz": 8200.0,
+      "materialId": "steel_hull",
+      "order": 2,
+      "surface": "back_left_corner"
+    },
+    {
+      "amplitude": 0.02833335,
+      "channelHint": "RL+RR",
+      "delayMs": 9.555497,
+      "distanceM": 14.142136,
+      "lowPassHz": 8200.0,
+      "materialId": "steel_hull",
+      "order": 2,
+      "surface": "back_right_corner"
+    },
+    {
+      "amplitude": 0.02833335,
+      "channelHint": "RL+RR",
+      "delayMs": 9.555497,
+      "distanceM": 14.142136,
+      "lowPassHz": 8200.0,
+      "materialId": "steel_hull",
+      "order": 2,
+      "surface": "front_left_corner"
+    },
+    {
+      "amplitude": 0.02833335,
+      "channelHint": "RL+RR",
+      "delayMs": 9.555497,
+      "distanceM": 14.142136,
+      "lowPassHz": 8200.0,
+      "materialId": "steel_hull",
+      "order": 2,
+      "surface": "front_right_corner"
+    }
+  ]
+}

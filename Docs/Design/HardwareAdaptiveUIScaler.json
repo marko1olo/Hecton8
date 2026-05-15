@@ -1,0 +1,166 @@
+{
+  "schema": "hecton8.hardware_adaptive_ui_scaler.v1",
+  "owner": "UX_ENGINEER",
+  "promptId": "HARDWARE_ADAPTIVE_UI_BAKER",
+  "status": "UI SCALED",
+  "verificationStatus": "PY_READABILITY_PASS_PENDING_UNITY_PROFILER",
+  "sampleText": "O2 LOW",
+  "sdfProfiles": [
+    {
+      "id": "TOASTER_800P",
+      "resolution": "1280x800",
+      "shortSideMax": 800,
+      "tmpWeightNormal": 0.24,
+      "tmpWeightBold": 0.82,
+      "faceDilateOffset": 0.065,
+      "outlineSoftnessOffset": -0.055,
+      "readabilityFontPx": 46,
+      "readabilityStrokePx": 4,
+      "blurRadiusPx": 2.1,
+      "downsampleScale": 0.44
+    },
+    {
+      "id": "LOW_900P",
+      "resolution": "1600x900",
+      "shortSideMax": 900,
+      "tmpWeightNormal": 0.18,
+      "tmpWeightBold": 0.74,
+      "faceDilateOffset": 0.045,
+      "outlineSoftnessOffset": -0.04,
+      "readabilityFontPx": 44,
+      "readabilityStrokePx": 3,
+      "blurRadiusPx": 1.8,
+      "downsampleScale": 0.5
+    },
+    {
+      "id": "STANDARD_1080P",
+      "resolution": "1920x1080",
+      "shortSideMax": 1080,
+      "tmpWeightNormal": 0.12,
+      "tmpWeightBold": 0.66,
+      "faceDilateOffset": 0.025,
+      "outlineSoftnessOffset": -0.02,
+      "readabilityFontPx": 42,
+      "readabilityStrokePx": 2,
+      "blurRadiusPx": 1.45,
+      "downsampleScale": 0.58
+    },
+    {
+      "id": "HIGH_1440P",
+      "resolution": "2560x1440",
+      "shortSideMax": 1440,
+      "tmpWeightNormal": 0.06,
+      "tmpWeightBold": 0.58,
+      "faceDilateOffset": 0.0,
+      "outlineSoftnessOffset": 0.0,
+      "readabilityFontPx": 40,
+      "readabilityStrokePx": 1,
+      "blurRadiusPx": 1.1,
+      "downsampleScale": 0.68
+    },
+    {
+      "id": "GOD_MODE_4K",
+      "resolution": "3840x2160",
+      "shortSideMax": 2160,
+      "tmpWeightNormal": 0.0,
+      "tmpWeightBold": 0.5,
+      "faceDilateOffset": -0.018,
+      "outlineSoftnessOffset": 0.018,
+      "readabilityFontPx": 38,
+      "readabilityStrokePx": 1,
+      "blurRadiusPx": 0.85,
+      "downsampleScale": 0.78
+    }
+  ],
+  "hmdFovLayoutRules": [
+    {
+      "device": "Quest2",
+      "verticalFovDegBake": 89.0,
+      "horizontalInsetPx": 72,
+      "verticalInsetPx": 48,
+      "edgeClusterShiftPx": -24,
+      "criticalWarningYOffsetPx": -18,
+      "reticleScale": 1.06
+    },
+    {
+      "device": "Quest3",
+      "verticalFovDegBake": 96.0,
+      "horizontalInsetPx": 48,
+      "verticalInsetPx": 36,
+      "edgeClusterShiftPx": 16,
+      "criticalWarningYOffsetPx": -10,
+      "reticleScale": 1.0
+    }
+  ],
+  "layoutHysteresis": {
+    "fovDeltaDegrees": 2.0,
+    "minimumStableSeconds": 2.0,
+    "phase": "VISUAL_SYNC",
+    "runtimeRule": "Use projectionCamera.fieldOfView as authority; device rows are bake presets only."
+  },
+  "contrastProfiles": [
+    {
+      "id": "TOASTER",
+      "background": "#020706E6",
+      "primary": "#B8FFF4",
+      "warning": "#FFB02E",
+      "critical": "#FF3B1F",
+      "blur": false,
+      "chromaticAberration": false,
+      "maxElementTextureSamples": 2
+    },
+    {
+      "id": "MIDDLE",
+      "background": "#03110FCC",
+      "primary": "#98F7E8",
+      "warning": "#FFC45A",
+      "critical": "#FF4A35",
+      "blur": false,
+      "chromaticAberration": false,
+      "maxElementTextureSamples": 2
+    },
+    {
+      "id": "HIGH",
+      "background": "#03110F99",
+      "primary": "#82FFE8",
+      "warning": "#FFD66A",
+      "critical": "#FF5E47",
+      "blur": true,
+      "chromaticAberration": false,
+      "maxElementTextureSamples": 2
+    },
+    {
+      "id": "GOD_MODE",
+      "background": "#03110F73",
+      "primary": "#D8FFF8",
+      "warning": "#FFE08A",
+      "critical": "#FF6D5A",
+      "blur": true,
+      "chromaticAberration": true,
+      "maxElementTextureSamples": 2,
+      "note": "Blur/chromatic treatment is a gated post pass, not per-element shader samples."
+    }
+  ],
+  "iconBake": {
+    "tool": "Tools/IconBaker.py",
+    "sizes": [32, 128, 512],
+    "paddingRatio": 0.08,
+    "alphaThreshold": 8
+  },
+  "readability": {
+    "tool": "Tools/UX/ui_readability_test.py",
+    "minimumContrastDelta": 0.38,
+    "minimumTemplateCorrelation": 0.58,
+    "minimumInkSurvival": 0.72
+  },
+  "textureSampleBudget": {
+    "maxSamplesPerUiElement": 2,
+    "auditGlobs": [
+      "Assets/_Project/Shaders/UI/*.shader",
+      "Assets/_Project/Art/Shaders/Hecton_*HUD*.shader",
+      "Assets/_Project/Art/Shaders/Hecton_*Diegetic*.shader",
+      "Assets/_Project/Art/Shaders/Hecton_ToolScreenDiegetic.shader",
+      "Assets/_Project/Art/Shaders/Hecton_UI_CompassRibbon.shader"
+    ]
+  }
+}

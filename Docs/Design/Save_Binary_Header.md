@@ -133,6 +133,15 @@ python .\Tools\Security\ReplayHasher.py self-test
 python .\Tools\Security\ReplayHasher.py master --flags 0x0C --timestamp-unix-ms 0x0000018F3D123456 --checksum 0xDEADBEEF --delta-count 37 --entity-count 1024 --player-offset 72 --delta-offset 4096 --entity-offset 8192 --hash-payload64 0x0123456789ABCDEF --world-seed 123456789 --sector-hash -987654321
 ```
 
+Optional external reference check, keeping `ReplayHasher.py` dependency-free:
+
+```powershell
+python -m pip install --target .\.codex_tmp\xxhash_check xxhash
+python -B .\Tools\Security\VerifyReplayHasherReference.py --xxhash-path .\.codex_tmp\xxhash_check --fuzz-count 128
+```
+
+`--xxhash-path` is mandatory. The verifier rejects a globally installed `xxhash` module so the reference proof remains isolated from the developer machine state.
+
 Expected master vector for the second command:
 
 ```text
@@ -177,14 +186,16 @@ Commands used:
 - `Select-String` against `SaveBinaryStorage.cs` for `SaveFileHeader`, `CurrentHeaderSize`, `HashPayload64`, `HashHeader64`.
 - `Select-String` against `SaveData.cs` for `[StructLayout]`, `[BinaryBlittableSafe]`, `bool`, managed collections, and string fields.
 - `python -m compileall .\Tools\Security\ReplayHasher.py` -> PASS.
-- `python .\Tools\Security\ReplayHasher.py self-test` -> PASS, including embedded branch and shuffle vectors.
+- `python .\Tools\Security\ReplayHasher.py self-test` -> PASS, including embedded branch, signed lane packing, lane roundtrip, exact master and shuffle preimage bytes, shuffle, four master vectors, and 128-bit rotate edge vectors.
 - `python .\Tools\Security\ReplayHasher.py master ...` -> PASS, expected `stored_le=6d24c9a87e8ec3322681980ad2b6b28c`.
-- Isolated comparison against Python `xxhash.xxh3_64_intdigest` across 136 deterministic seed/length vectors plus 128 randomized seeded/fuzz cases -> PASS (`XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK 264 cases`).
+- Optional isolated comparison against Python `xxhash.xxh3_64_intdigest` via `Tools\Security\VerifyReplayHasherReference.py` -> PASS (`XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK xxh3=338 shuffle=128`).
 - Independent rotate formula check for the C# 128-bit lane algorithm -> PASS (`ROT128_FORMULA_OK`).
 - `SaveMasterHashV10.cs` added with stackalloc-only preimage/mask buffers and manual little-endian writes.
 - `SaveFileHeaderV10` added as a concrete 72-byte implementation header; independent packed-struct check -> PASS (`V10_HEADER_LAYOUT_OK`).
 - `BinaryLayoutManifest.cs` extended with `SaveFileHeaderV10` and `SaveMasterHashV10Result` size/offset assertions.
 - C# static guard for the helper -> PASS (`CS_STATIC_GUARD_OK`).
+- Executable C# parity guard -> PASS (`SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=2 resultCtor=4 blitAttrs=2`).
+- Direct Roslyn parser-level probe reached only standalone missing-reference diagnostics; no syntax diagnostics were emitted before `Hecton8.Core.Memory.Layout`/`Unity.Mathematics` reference failures.
 - `<POLISH_MANDATE>` extraction from `Docs/Tasks/CURRENT_BATCH.md` -> TAG ABSENT; local anti-bloat pass executed on owned artifacts.
 
-Unity import, Unity Console, Play Mode, GCMonitor, profiler, player build, and IL2CPP/ARM runtime proof remain `PENDING VERIFICATION`. Local C# compile is also blocked in this shell: `dotnet`, `csc`, `mcs`, and `Unity.exe` are not available on PATH.
+Unity import, Unity Console, Play Mode, GCMonitor, profiler, player build, and IL2CPP/ARM runtime proof remain `PENDING VERIFICATION`. Local full C# compile is blocked: `dotnet`, PATH `csc`, `mcs`, and `Unity.exe` are unavailable; direct Visual Studio Roslyn exists but standalone compilation lacks Unity/project assembly references.
