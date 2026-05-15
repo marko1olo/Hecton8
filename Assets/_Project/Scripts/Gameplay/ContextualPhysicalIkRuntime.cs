@@ -1493,6 +1493,7 @@ namespace Hecton8.Gameplay
         internal const float FootRayVelocityLeadMaxMeters = 0.18f;
         private const float KccVelocityBindingDistanceMeters = 4.0f;
         private const float KccVelocityBindingDistanceSq = KccVelocityBindingDistanceMeters * KccVelocityBindingDistanceMeters;
+        private const uint KccVelocityMaxAgeFrames = 8u;
         internal const float SwimFootBlend = 0.68f;
         internal const float SwimBackDistanceMeters = 0.42f;
         internal const float SwimDownDistanceMeters = 0.55f;
@@ -2202,23 +2203,49 @@ namespace Hecton8.Gameplay
             uint currentFrame = unchecked((uint)Time.frameCount);
             if (PhysicsDeterminismSignals.TryGetLatestKccVelocity(out KccVelocitySignal signal))
             {
-                uint signalFrame = signal.Frame != 0u ? signal.Frame : currentFrame;
-                uint signalAge = currentFrame >= signalFrame ? currentFrame - signalFrame : 0u;
+                uint fallbackSignalFrame = currentFrame != 0u ? currentFrame : fallbackFrame;
+                uint signalFrame = signal.Frame != 0u ? signal.Frame : fallbackSignalFrame;
+                bool signalFrameValid = signalFrame != 0u && signalFrame <= currentFrame;
+                uint signalAge = signalFrameValid ? currentFrame - signalFrame : KccVelocityMaxAgeFrames + 1u;
                 float3 bodyPosition = signal.BodyAup.ToRuntimeFloat3();
-                if (signalAge <= 8u &&
+                if (signalAge <= KccVelocityMaxAgeFrames &&
                     math.all(math.isfinite(signal.Velocity)) &&
                     math.all(math.isfinite(bodyPosition)))
                 {
                     _lastKccVelocity = signal.Velocity;
                     _lastKccBodyPosition = bodyPosition;
-                    _lastKccVelocityFrame = signalFrame != 0u ? signalFrame : fallbackFrame;
+                    _lastKccVelocityFrame = signalFrame;
+                }
+                else
+                {
+                    ClearCachedKccVelocity();
+                    return float3.zero;
                 }
             }
 
-            uint cachedAge = currentFrame >= _lastKccVelocityFrame ? currentFrame - _lastKccVelocityFrame : 0u;
-            return _lastKccVelocityFrame != 0u && cachedAge <= 8u && math.all(math.isfinite(_lastKccVelocity))
-                ? _lastKccVelocity
-                : float3.zero;
+            if (_lastKccVelocityFrame == 0u ||
+                _lastKccVelocityFrame > currentFrame ||
+                !math.all(math.isfinite(_lastKccVelocity)))
+            {
+                ClearCachedKccVelocity();
+                return float3.zero;
+            }
+
+            uint cachedAge = currentFrame - _lastKccVelocityFrame;
+            if (cachedAge > KccVelocityMaxAgeFrames)
+            {
+                ClearCachedKccVelocity();
+                return float3.zero;
+            }
+
+            return _lastKccVelocity;
+        }
+
+        private void ClearCachedKccVelocity()
+        {
+            _lastKccVelocity = float3.zero;
+            _lastKccBodyPosition = float3.zero;
+            _lastKccVelocityFrame = 0u;
         }
 
         private float3 ResolveKccVelocityForEntity(in ContextualPhysicalIkEntityState entity, float3 kccVelocity)

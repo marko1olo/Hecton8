@@ -221,3 +221,27 @@ Solution: Added `SignalBus<AcousticPingSignal>`, `SignalBus<BiomeChangedSignal>`
 Rejected Alternatives: Polling biome managers from audio/GI/flora/inventory was rejected because the numeric biome packets already exist. Adding separate audio/GI biome messages was rejected because it would split one domain fact into parallel lanes. Removing legacy biome/acoustic queues was rejected because they remain compatibility surfaces for older consumers.
 Scalability potential: Low/toaster tier avoids cold-lane misses and direct biome polling. Middle can add more flora/audio/GI consumers to the same packets. High/Ultra can spend the restored packet fanout on richer biome crossfades, GI tinting, music blending, and fauna acoustic response without producer coupling.
 Hardware Impact: Estimated i3/MX350 gain is 0.1-0.5 us avoided in cold-lane fallback/retry paths, with larger correctness gain from deterministic biome/acoustic packet visibility. No dotnet build/restore/rebuild was run by user order.
+
+### 2026-05-15 - Item and Radiation Lane Prewarm Closure
+
+Problem: Static SignalBus audit found item/radiation consumers already reading typed snapshots, so missing or lazy lane setup would risk cold first-use allocation and accidental producer coupling in inventory, hazard, and ecosystem reactions.
+Solution: Verified the existing central capacities and prewarm calls for `ItemAcquiredSignal`, `RadiationDoseSignal`, `RadiationSourceSignal`, and `ResourceDepletionDeltaSignal`; confirmed producers push typed packets and consumers use `GetFrameSnapshot()` instead of owner polling.
+Rejected Alternatives: Polling `PlayerInventory` or `RadiationHazardGrid` directly from ecosystem/hazard consumers was rejected because it recreates direct dependencies. Removing legacy queues was rejected because compatibility consumers still exist.
+Scalability potential: Low/toaster tier gets deterministic packet lanes and no lazy first-use allocation spikes. Middle tier can attach more hazard, UI, and ecosystem consumers to the same spans. High/Ultra can spend the saved coupling budget on richer Geiger, bloom, and ecology reactions without new producer references.
+Hardware Impact: Estimated i3/MX350 gain is 0.1-0.4 us avoided in cold-lane fallback and item/radiation burst contention paths. No dotnet build/restore/rebuild was run by user order.
+
+### 2026-05-15 - Flood and Voxel Carve Lane Boundary Closure
+
+Problem: Flood and voxel carving lanes cross important visual/physics boundaries: ballast reads `SubmarineFloodStateSignal` snapshots, debris reads `VoxelCarveEvent` snapshots, and both must be visible without lazy allocation or Core-to-Caves dependency inversion.
+Solution: Verified `SubmarineFloodStateSignal` is configured centrally in `GlobalSignals` and `VoxelCarveEvent` is configured owner-locally in `VoxelDeltaProcessor` before any queued carve push. The voxel lane remains in the Caves owner path and uses SignalBus default type hashing instead of widening private Core hash helpers.
+Rejected Alternatives: Adding `using Hecton8.Caves` to `GlobalSignals` was rejected as domain inversion. Moving voxel carve prewarm into the debris renderer was rejected because the producer/owner should own lane capacity. Replacing carve debris with direct processor polling was rejected because the typed packet lane already exists.
+Scalability potential: Low/toaster tier avoids first-carve/flood hitches and keeps debris visuals bounded. Middle tier can add more carve/flood presentation from the same packet spans. High/Ultra can spend stable packet fanout on richer debris, hull seepage, and diagnostic overlays without touching producers.
+Hardware Impact: Estimated i3/MX350 gain is 0.1-0.4 us avoided on first flood/carve packet plus deterministic snapshot visibility. No dotnet build/restore/rebuild was run by user order.
+
+### 2026-05-15 - Drone Docking Lane Owner Prewarm
+
+Problem: `DroneFleetManager` consumed `DockingRequestSignal` snapshots and pushed completion/failure packets, but the three docking lanes were not owner-configured before use. Lazy default SignalBus initialization on the first docking burst is small but violates the prewarm discipline used elsewhere.
+Solution: Added `DockingSignalCapacity = HeadlessDroneCapacity`, a one-shot `EnsureDockingSignalLanes()` helper, and owner-local `Configure()` / `EnsureInitialized()` for `DockingRequestSignal`, `DockingCompleteSignal`, and `DockingFailedSignal` before fleet native memory allocation and request scans.
+Rejected Alternatives: Centralizing vehicle automation lanes in `GlobalSignals` was rejected because Core should not own vehicle docking semantics. Using generated hash constants was rejected because SignalBus already computes stable type hashes when no lane hash is supplied. Leaving lazy first-push initialization was rejected because docking diagnostics should have stable telemetry before the first failure or completion.
+Scalability potential: Low/toaster tier gets deterministic 64-drone docking packet capacity and no first-dock allocation spike. Middle tier can add hangar UI or submarine OS consumers to complete/failed packets. High/Ultra can spend saved certainty on richer docking corridor visualization, warning audio, and fleet diagnostics.
+Hardware Impact: Estimated i3/MX350 gain is 0.1-0.3 us avoided on first docking burst and lower telemetry ambiguity. No dotnet build/restore/rebuild was run by user order.

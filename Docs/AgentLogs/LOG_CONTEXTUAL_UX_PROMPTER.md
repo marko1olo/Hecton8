@@ -399,3 +399,36 @@ Cinematic cheats used: Preserved the phosphor history fake. `_PreviousTex` still
 Exact microseconds saved: Estimate only. Expected gain is sub-1 us per phosphor composite on i3/MX350; no profiler proof is claimed.
 
 Verification: No dotnet rebuilds were run. Static scans confirmed gated phosphor texture writes and cache resets on material/texture ownership paths, and forbidden allocation/text/LINQ plus bootstrap/direct-time fallback scans stayed clean.
+
+## 2026-05-15 Diegetic Panel Interaction Distance Hoist
+What was wrong: The desktop panel ray path resolved the same effective interaction distance twice in one tick: once for AUP range validation and once for panel projection.
+
+What was done: Resolved the clamped interaction distance once and passed it to both range and projection checks.
+
+Cinematic cheats used: No visual change. The same physical panel ray fake remains; the path just avoids duplicate range clamp math before cursor projection.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per desktop panel interaction tick on i3/MX350; no profiler proof is claimed.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed `ResolveEffectiveInteractionDistance()` is called once in the desktop ray path, `IsRayOriginWithinAupInteractionRange()` consumes the cached distance, and forbidden allocation/text/LINQ plus bootstrap/direct-time fallback scans stayed clean.
+
+## 2026-05-15 Diegetic Panel Projection Reciprocal Cache
+What was wrong: Panel projection helpers rebuilt inverse canvas/reference sizes from already-clamped panel data during projection calls.
+
+What was done: Added cached inverse canvas and reference sizes to `PanelData`, populated them in `RefreshPanelData()`, and reused them in canvas-to-world, pixel-basis, and local-hit-to-canvas projection helpers.
+
+Cinematic cheats used: No visual change. The same diegetic panel surface projection remains; this only moves stable derived math out of the projection path.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per active panel projection on i3/MX350, most visible on fingertip hover paths that project every tick; no profiler proof is claimed.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed the cached reciprocal fields are written from clamped panel data and consumed by projection helpers.
+
+## 2026-05-15 Diegetic Panel Projection Direction Math
+What was wrong: The panel ray projection helper recomputed direction length even for the normalized desktop ray path and rebuilt a panel-normal fallback despite already caching a safe panel normal during panel-data refresh.
+
+What was done: Kept direction-length validation for non-normalized public ray projections only, switched plane projection to `_panelData.PanelNormal`, and cached `maxDistanceSq` before comparing travel distance.
+
+Cinematic cheats used: No visual change. The same physical panel ray projection fake remains; the hot desktop path just pays less validation math.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per desktop panel ray projection on i3/MX350; no profiler proof is claimed.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed normalized desktop projection skips the duplicate `math.lengthsq(rayDirection)` path, public non-normalized projection still validates length, and panel projection uses the cached safe panel normal.

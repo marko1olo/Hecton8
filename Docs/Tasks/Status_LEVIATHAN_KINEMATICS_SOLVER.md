@@ -440,3 +440,14 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 - `git diff --check` on `FaunaKinematicsRuntime.cs` exits 0; output only reports LF-to-CRLF normalization warning.
 - Static forbidden scan over `FaunaKinematicsRuntime.cs` remains clean for direct native allocations/disposals, `Time.frameCount`, `GlobalRegistry.Get`, forbidden Unity object searches, `Animator`, and `SkinnedMeshRenderer`.
 - No `dotnet` rebuild, compile, Unity import, shader compile, or response-file probe was run.
+
+### Loop 40: Leviathan Rebind First-Upload LOD Recheck
+
+- Added `ResetConstraintIterationHysteresis()` to `FaunaKinematicsRuntime.BindFromFauna()` after reseeding persistent spine data.
+- Kept `Awake()` free of the tier read; bootstrap order remains unchanged.
+- DOD: rebind-driven GPU uploads use the current `GlobalRegistry.ScalabilityTier` segment count and IK tier before the next visual publish.
+- Alternative Rejected: waiting for the next Tick because a rebind can mark GPU upload dirty before solver cadence refreshes quality state.
+- Estimate: 0 us hot-path cost; cold rebind path only.
+- `git diff --check` on `FaunaKinematicsRuntime.cs` exits 0; output only reports LF-to-CRLF normalization warning.
+- Static grep confirms `Awake()` still only seeds, while `OnEnable()` and `BindFromFauna()` both reset constraint/LOD state after seed.
+- No `dotnet` rebuild, compile, Unity import, shader compile, or response-file probe was run.

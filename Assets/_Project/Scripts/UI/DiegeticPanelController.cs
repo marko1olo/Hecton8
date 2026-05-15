@@ -187,7 +187,9 @@ namespace Hecton8.UI
             public float3 PanelNormal;
             public float3 PanelUp;
             public float2 CanvasSize;
+            public float2 InvCanvasSize;
             public float2 HalfSize;
+            public float2 InvReferenceSize;
             public int ReferenceWidth;
             public int ReferenceHeight;
             public PanelStateFlags StateFlags;
@@ -649,16 +651,9 @@ namespace Hecton8.UI
         {
             RefreshPanelData(forceRefresh: false);
 
-            float referenceWidth = math.max(1, _panelData.ReferenceWidth);
-            float referenceHeight = math.max(1, _panelData.ReferenceHeight);
-            float2 invReferenceResolution = math.rcp(new float2(referenceWidth, referenceHeight));
-            float2 uv = new float2(
-                math.clamp(canvasPosition.x * invReferenceResolution.x, 0f, 1f),
-                math.clamp(canvasPosition.y * invReferenceResolution.y, 0f, 1f));
+            float2 uv = math.clamp(canvasPosition * _panelData.InvReferenceSize, 0f, 1f);
 
-            float2 localXY = new float2(
-                (uv.x * _panelData.CanvasSize.x) - _panelData.HalfSize.x,
-                (uv.y * _panelData.CanvasSize.y) - _panelData.HalfSize.y);
+            float2 localXY = (uv * _panelData.CanvasSize) - _panelData.HalfSize;
 
             float3 localPoint = new float3(localXY.x, localXY.y, surfaceOffset);
             worldPosition = math.transform(_panelData.LocalToWorld, localPoint);
@@ -732,8 +727,8 @@ namespace Hecton8.UI
         {
             RefreshPanelData(forceRefresh: false);
 
-            float xStep = _panelData.ReferenceWidth > 0 ? _panelData.CanvasSize.x * math.rcp(_panelData.ReferenceWidth) : 0f;
-            float yStep = _panelData.ReferenceHeight > 0 ? _panelData.CanvasSize.y * math.rcp(_panelData.ReferenceHeight) : 0f;
+            float xStep = _panelData.CanvasSize.x * _panelData.InvReferenceSize.x;
+            float yStep = _panelData.CanvasSize.y * _panelData.InvReferenceSize.y;
             worldRightPerPixel = (Vector3)(_panelData.LocalToWorld.c0.xyz * xStep);
             worldUpPerPixel = (Vector3)(_panelData.LocalToWorld.c1.xyz * yStep);
             return xStep > 0f && yStep > 0f;
@@ -1084,9 +1079,11 @@ namespace Hecton8.UI
             _panelData.PanelNormal = ResolveSafePanelAxis(_panelData.LocalToWorld.c2.xyz, new float3(0f, 0f, 1f));
             _panelData.PanelUp = ResolveSafePanelAxis(_panelData.LocalToWorld.c1.xyz, new float3(0f, 1f, 0f));
             _panelData.CanvasSize = math.max(new float2(rect.width, rect.height), new float2(MinCanvasExtent, MinCanvasExtent));
+            _panelData.InvCanvasSize = math.rcp(_panelData.CanvasSize);
             _panelData.HalfSize = _panelData.CanvasSize * 0.5f;
             _panelData.ReferenceWidth = math.max(1, referenceResolution.x);
             _panelData.ReferenceHeight = math.max(1, referenceResolution.y);
+            _panelData.InvReferenceSize = math.rcp(new float2(_panelData.ReferenceWidth, _panelData.ReferenceHeight));
             _panelData.StateFlags |= PanelStateFlags.Active;
 
             _resolvedPanelTransform.hasChanged = false;
@@ -1651,14 +1648,15 @@ namespace Hecton8.UI
             worldHit = float3.zero;
 
             float3 rayDirection = rayDirectionWs;
-            float directionLengthSq = math.lengthsq(rayDirection);
-            if (directionLengthSq <= 0.0001f)
-                return false;
+            float directionLengthSq = 1f;
+            if (!rayDirectionIsNormalized)
+            {
+                directionLengthSq = math.lengthsq(rayDirection);
+                if (directionLengthSq <= 0.0001f)
+                    return false;
+            }
 
-            float3 panelNormal = _panelData.LocalToWorld.c2.xyz;
-            if (math.lengthsq(panelNormal) <= 0.0001f)
-                panelNormal = new float3(0f, 0f, 1f);
-
+            float3 panelNormal = _panelData.PanelNormal;
             float3 panelOrigin = _panelData.LocalToWorld.c3.xyz;
             float denom = math.dot(rayDirection, panelNormal);
             if (math.abs(denom) < 0.01f)
@@ -1666,9 +1664,10 @@ namespace Hecton8.UI
 
             float planeDistance = math.dot(panelOrigin - rayOriginWs, panelNormal) * math.rcp(denom);
             float maxDistanceSafe = math.max(0.001f, maxDistance);
+            float maxDistanceSq = maxDistanceSafe * maxDistanceSafe;
             float planeDistanceSq = planeDistance * planeDistance;
             float travelDistanceSq = rayDirectionIsNormalized ? planeDistanceSq : planeDistanceSq * directionLengthSq;
-            if (planeDistance < 0f || travelDistanceSq > maxDistanceSafe * maxDistanceSafe)
+            if (planeDistance < 0f || travelDistanceSq > maxDistanceSq)
                 return false;
 
             worldHit = rayOriginWs + rayDirection * planeDistance;
@@ -1678,11 +1677,9 @@ namespace Hecton8.UI
 
         private bool TryProjectLocalHitToCanvas(float3 localHit, out float2 canvasPos)
         {
-            float2 safeCanvasSize = math.max(_panelData.CanvasSize, new float2(MinCanvasExtent, MinCanvasExtent));
-            float2 invCanvasSize = math.rcp(safeCanvasSize);
             float2 uv = new float2(
-                (localHit.x + _panelData.HalfSize.x) * invCanvasSize.x,
-                (localHit.y + _panelData.HalfSize.y) * invCanvasSize.y);
+                (localHit.x + _panelData.HalfSize.x) * _panelData.InvCanvasSize.x,
+                (localHit.y + _panelData.HalfSize.y) * _panelData.InvCanvasSize.y);
 
             if (uv.x < 0f || uv.x > 1f || uv.y < 0f || uv.y > 1f)
             {

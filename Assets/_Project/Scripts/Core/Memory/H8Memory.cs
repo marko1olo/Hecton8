@@ -888,7 +888,13 @@ namespace Hecton8.Core.Memory
                 if (existing.Bytes != 0L)
                     continue;
 
-                _blockDescriptors[i] = descriptor;
+                BlockDescriptor replacement = descriptor;
+                int nextGeneration = unchecked(existing.Generation + 1);
+                if (nextGeneration <= 0)
+                    nextGeneration = 1;
+                if (replacement.Generation < nextGeneration)
+                    replacement.Generation = nextGeneration;
+                _blockDescriptors[i] = replacement;
                 return i;
             }
 

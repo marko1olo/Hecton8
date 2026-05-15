@@ -208,3 +208,27 @@ Rejected Alternatives: Registering `SubmarineFluidDynamics` on `ScalabilityEvent
 Scalability potential: Low tier keeps the cheapest flood-state metadata and power-starvation fake while skipping repeated service lookups. Middle keeps deterministic event output. High and Ultra keep the same hydro/flood fidelity and spend saved registry traffic on visible fluid and damage work.
 
 Hardware Impact: Estimated 1-3 microseconds saved in submarine flood/deep-freeze frames on i3/MX350 class hardware when the power grid and quality tier are stable. Active-loop GC impact remains 0 by static scan.
+
+## Decision 16 - Editor Build Dependency Debt
+
+Problem: `Hecton8.Editor.csproj` failed on `KinematicGhostDebugger` because the generated editor project did not carry `Unity.Mathematics`, while the editor window used `double3` and `math.lengthsq`.
+
+Solution: Keep the diagnostic editor tool on existing Vector3 APIs: `HectonMapMagicVegetationBridge.ToUniverseSpace()` and `HectonFloatingOrigin.ToAbsoluteUniversePosition()`. This removes the stale generated-project dependency without touching generated `.csproj` files.
+
+Rejected Alternatives: Editing generated `.csproj` files would be overwritten by Unity. Adding a new asmdef dependency for one editor visualization helper increases graph coupling. Touching plugin/package code to satisfy a Hecton editor tool would cross ownership.
+
+Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged because the fix is editor-only. It reduces build graph coupling and keeps editor diagnostics available without adding runtime weight.
+
+Hardware Impact: 0 runtime microseconds. Editor compile reliability improved; the tool still allocates only its existing cold history arrays.
+
+## Decision 17 - Generated Graph vs Source Compile Gate
+
+Problem: Full generated Unity project-reference traversal for `Assembly-CSharp.csproj` and later `Hecton8.Editor.csproj` exited `-1` with no compiler/MSBuild diagnostic after child-project traversal, sometimes leaving orphaned `dotnet` processes.
+
+Solution: Build child outputs serially, then use `BuildProjectReferences=false` for source assembly gates. `Hecton8.Editor`, `Assembly-CSharp-firstpass`, and `Assembly-CSharp` compile green with `0 Warning(s)` and `0 Error(s)` under that deterministic gate.
+
+Rejected Alternatives: Claiming the full graph green would be false. Continuing infinite full-graph retries wastes time and leaves stale processes. Editing vendor/generated project files would create churn outside the resonance domain.
+
+Scalability potential: Build pipeline determinism protects all tiers by preventing broken editor tooling from masking runtime source status. Runtime H-Phi is unchanged by the build-gate tactic.
+
+Hardware Impact: 0 runtime microseconds. Developer-loop impact is material: direct source gates finish in roughly 28-51 seconds each instead of non-diagnostic full-graph exits after minutes.

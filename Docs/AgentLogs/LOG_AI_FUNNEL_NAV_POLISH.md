@@ -987,3 +987,27 @@ Exact Microseconds saved:
 Verification:
 - Targeted request-bound and merge ranges reported no forbidden normalization, sqrt, managed allocation, or `foreach`; exact integer chunk divisions remain documented bucket math.
 - Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.
+
+## 2026-05-15 - Obstacle Snapshot Count/Write Parity
+
+What was wrong:
+- Snapshot allocation counted live colliders and persistent dynamic obstacles before proving finite positive obstacle bounds.
+- Writers could skip invalid entries, leaving uninitialized native snapshot slots.
+- The Burst stamp job scanned every snapshot slot and trusted obstacle primitives before min/max arithmetic.
+
+What was done:
+- Shared collider finite/positive bounds proof between count and write.
+- Counted only valid persistent dynamic obstacles.
+- Added Burst-side primitive and min/max finite guards before stamping a cell solid.
+
+Cinematic Cheats used:
+- Invalid obstacle snapshot entries become non-authoritative instead of fake solids.
+- Low tier avoids route recovery from false solid cells; High/Ultra keep dense obstacle snapshots with exact count/write parity.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Static gain is avoided false-solid route rebuild churn; valid path pays scalar finite checks.
+
+Verification:
+- Targeted collider count/write, persistent count/write, and Burst stamp guard ranges reported no forbidden normalization, sqrt, modulo, managed allocation, or `foreach`; exact integer index divisions and cold snapshot allocation remain documented.
+- `CURRENT_BATCH.md` recheck confirmed the `AI_FUNNEL_NAV_POLISH` prompt tag remains absent, so persisted files remain authority.
+- Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.

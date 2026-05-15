@@ -842,12 +842,119 @@ namespace Hecton8.Bootstrap
             if (!Application.isPlaying || !IsBootstrapScene(activeScene))
                 return false;
 
-            BootstrapController bootstrapController = UnityEngine.Object.FindAnyObjectByType<BootstrapController>(); // COLD SCENE QUERY: bootstrap scene owner handoff only - owner: GameBootstrapper
-            if (bootstrapController == null || bootstrapController.gameObject.scene != activeScene)
+            if (!TryResolveSceneComponent(activeScene, includeInactive: false, out BootstrapController bootstrapController) ||
+                bootstrapController == null ||
+                bootstrapController.gameObject.scene != activeScene)
                 return false;
 
             owner = bootstrapController.gameObject;
             return owner != null;
+        }
+
+        private static bool TryResolveSceneComponent<T>(
+            Scene scene,
+            bool includeInactive,
+            out T component)
+            where T : Component
+        {
+            component = null;
+            if (!scene.IsValid() || !scene.isLoaded)
+                return false;
+
+            _bootstrapSceneRootScratch.Clear();
+            _bootstrapTransformScratch.Clear();
+            scene.GetRootGameObjects(_bootstrapSceneRootScratch);
+
+            for (int i = 0; i < _bootstrapSceneRootScratch.Count; i++)
+            {
+                GameObject root = _bootstrapSceneRootScratch[i];
+                if (root == null)
+                    continue;
+
+                if (!includeInactive && !root.activeInHierarchy)
+                    continue;
+
+                _bootstrapTransformScratch.Add(root.transform);
+            }
+
+            while (_bootstrapTransformScratch.Count > 0)
+            {
+                int lastIndex = _bootstrapTransformScratch.Count - 1;
+                Transform current = _bootstrapTransformScratch[lastIndex];
+                _bootstrapTransformScratch.RemoveAt(lastIndex);
+
+                if (current == null)
+                    continue;
+
+                GameObject currentObject = current.gameObject;
+                if ((includeInactive || currentObject.activeInHierarchy) &&
+                    currentObject.TryGetComponent(out component) &&
+                    component != null)
+                {
+                    _bootstrapSceneRootScratch.Clear();
+                    _bootstrapTransformScratch.Clear();
+                    return true;
+                }
+
+                int childCount = current.childCount;
+                for (int i = 0; i < childCount; i++)
+                    _bootstrapTransformScratch.Add(current.GetChild(i));
+            }
+
+            _bootstrapSceneRootScratch.Clear();
+            _bootstrapTransformScratch.Clear();
+            component = null;
+            return false;
+        }
+
+        private static bool TryResolveSceneTaggedObject(
+            Scene scene,
+            string tag,
+            out GameObject taggedObject)
+        {
+            taggedObject = null;
+            if (!scene.IsValid() || !scene.isLoaded || string.IsNullOrEmpty(tag))
+                return false;
+
+            _bootstrapSceneRootScratch.Clear();
+            _bootstrapTransformScratch.Clear();
+            scene.GetRootGameObjects(_bootstrapSceneRootScratch);
+
+            for (int i = 0; i < _bootstrapSceneRootScratch.Count; i++)
+            {
+                GameObject root = _bootstrapSceneRootScratch[i];
+                if (root == null || !root.activeInHierarchy)
+                    continue;
+
+                _bootstrapTransformScratch.Add(root.transform);
+            }
+
+            while (_bootstrapTransformScratch.Count > 0)
+            {
+                int lastIndex = _bootstrapTransformScratch.Count - 1;
+                Transform current = _bootstrapTransformScratch[lastIndex];
+                _bootstrapTransformScratch.RemoveAt(lastIndex);
+
+                if (current == null)
+                    continue;
+
+                GameObject currentObject = current.gameObject;
+                if (currentObject.activeInHierarchy && currentObject.CompareTag(tag))
+                {
+                    taggedObject = currentObject;
+                    _bootstrapSceneRootScratch.Clear();
+                    _bootstrapTransformScratch.Clear();
+                    return true;
+                }
+
+                int childCount = current.childCount;
+                for (int i = 0; i < childCount; i++)
+                    _bootstrapTransformScratch.Add(current.GetChild(i));
+            }
+
+            _bootstrapSceneRootScratch.Clear();
+            _bootstrapTransformScratch.Clear();
+            return false;
         }
 
         /// <summary>
@@ -3890,15 +3997,14 @@ namespace Hecton8.Bootstrap
 
             if (playerObject == null)
             {
-                GameObject taggedPlayer = GameObject.FindGameObjectWithTag("Player");
+                TryResolveSceneTaggedObject(scene, "Player", out GameObject taggedPlayer);
                 if (taggedPlayer != null && !IsTemporaryRuntimeShellObject(taggedPlayer))
                     playerObject = taggedPlayer;
             }
 
             if (playerSpawner == null)
             {
-                HectonPlayerSpawner spawner =
-                    UnityEngine.Object.FindAnyObjectByType<HectonPlayerSpawner>(FindObjectsInactive.Include);
+                TryResolveSceneComponent(scene, includeInactive: true, out HectonPlayerSpawner spawner);
                 if (spawner != null && !IsTemporaryRuntimeShellObject(spawner.gameObject))
                     playerSpawner = spawner;
             }

@@ -591,6 +591,14 @@ namespace Hecton8.Celestial
                 _meshRadius = 0.5f;
         }
 
+        private static T ResolveComponentOnTransform<T>(Transform source) where T : Component
+        {
+            if (source == null)
+                return null;
+
+            return source.TryGetComponent(out T component) ? component : null;
+        }
+
         private float ResolveTimeSeconds()
         {
             ResolveAtmosphereManager();

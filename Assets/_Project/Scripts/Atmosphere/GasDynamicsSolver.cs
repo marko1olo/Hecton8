@@ -25,6 +25,8 @@ namespace Hecton8.Atmosphere
         private const int TelemetryCapacity = 300;
         private const int TelemetryEntrySizeBytes = 32;
         private const int ToxicitySignalSoftCapacity = 128;
+        private const int PendingBaseTransitionCapacity = 128;
+        private const double TransitionOverflowAwakeSeconds = 2.0d;
         private const uint DumpMagic = 0x48384744u; // H8GD
         private const int DumpFormatVersion = 2;
         private const float KPaPerAtmosphere = 101.325f;
@@ -130,6 +132,7 @@ namespace Hecton8.Atmosphere
         private NativeArray<byte> _bulkheadSealed;
         private NativeArray<GasDynamicsTelemetryEntry> _telemetryRing;
         private NativeQueue<ToxicitySignal> _toxicitySignals;
+        private NativeList<PendingBaseTransitionSignal> _deferredBaseTransitions;
         private JobHandle _stepHandle;
         private JobHandle _disposeHandle;
         private bool _stepRunning;
@@ -138,6 +141,8 @@ namespace Hecton8.Atmosphere
         private bool _baseAwakeVaultOwned;
         private bool _seededStandardAtmosphere;
         private bool _blackBoxDumped;
+        private bool _deferredBaseTransitionOverflow;
+        private double _transitionOverflowAwakeUntil;
         private int _roomCount;
         private int _bulkheadCapacityLimit;
         private int _bulkheadCount;
@@ -156,6 +161,7 @@ namespace Hecton8.Atmosphere
 
         public bool IsInitialized =>
             _toxicitySignals.IsCreated &&
+            _deferredBaseTransitions.IsCreated &&
             _telemetryRing.IsCreated &&
             AreRoomStateLanesReady(_roomCount) &&
             AreBulkheadLanesReady(_bulkheadCount) &&
@@ -613,6 +619,7 @@ namespace Hecton8.Atmosphere
             AccumulateAudit(_bulkheadRoomB, nameof(_bulkheadRoomB), ref accumulator);
             AccumulateAudit(_bulkheadSealed, nameof(_bulkheadSealed), ref accumulator);
             AccumulateAudit(_telemetryRing, nameof(_telemetryRing), ref accumulator);
+            AccumulateAudit(_deferredBaseTransitions, nameof(_deferredBaseTransitions), ref accumulator);
             if (_toxicitySignals.IsCreated)
             {
                 long queueBytes = (long)UnsafeUtility.SizeOf<ToxicitySignal>() * ToxicitySignalSoftCapacity;
@@ -763,6 +770,7 @@ namespace Hecton8.Atmosphere
             _bulkheadSealed = new NativeArray<byte>(math.max(1, safeBulkheadCapacity), Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _telemetryRing = new NativeArray<GasDynamicsTelemetryEntry>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _toxicitySignals = new NativeQueue<ToxicitySignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ToxicitySignal>[128] - gas-to-physiology event lane - owner: GasDynamicsSolver
+            _deferredBaseTransitions = new NativeList<PendingBaseTransitionSignal>(PendingBaseTransitionCapacity, Allocator.Persistent); // COLD ALLOC: NativeList<PendingBaseTransitionSignal>[128] - base transition buffer held while gas job is running - owner: GasDynamicsSolver
 
             RegisterNativeArray(RoomO2, nameof(RoomO2));
             RegisterNativeArray(RoomCO2, nameof(RoomCO2));
@@ -798,6 +806,7 @@ namespace Hecton8.Atmosphere
             RegisterNativeArray(_bulkheadSealed, nameof(_bulkheadSealed));
             RegisterNativeArray(_telemetryRing, nameof(_telemetryRing));
             NativeMemorySentinel.RegisterNativeQueue(_toxicitySignals, ToxicitySignalSoftCapacity, NativeMemoryOwner, nameof(_toxicitySignals), NativeAllocationLifetime.Scene);
+            RegisterNativeList(_deferredBaseTransitions, nameof(_deferredBaseTransitions));
             for (int i = 0; i < _roomCount; i++)
             {
                 _roomTemperatureCelsius[i] = DefaultRoomTemperatureCelsius;
@@ -991,37 +1000,166 @@ namespace Hecton8.Atmosphere
             if (_baseCapacityLimit <= 0)
                 return;
 
-            if (SignalBus<PlayerBaseExitSignal>.SnapshotCount <= 0 &&
+            if (_stepRunning)
+            {
+                CaptureBaseTransitionSignalsForLater();
+                return;
+            }
+
+            bool hasDeferred = _deferredBaseTransitionOverflow ||
+                               (_deferredBaseTransitions.IsCreated && _deferredBaseTransitions.Length > 0);
+            if (!hasDeferred &&
+                SignalBus<PlayerBaseExitSignal>.SnapshotCount <= 0 &&
                 SignalBus<PlayerBaseEnterSignal>.SnapshotCount <= 0)
             {
                 return;
             }
 
             double now = ResolveUnscaledTimeSeconds();
+            ApplyDeferredBaseTransitions(now, allowWake);
             while (SignalBus<PlayerBaseExitSignal>.TryReadFrame(out PlayerBaseExitSignal signal))
-            {
-                if (!TryEnsureBaseSlotFromSignal(signal.BaseId, signal.RoomId, in signal.BaseCenterAup))
-                    continue;
-
-                int insideCount = math.max(0, _basePlayerInsideCount[signal.BaseId] - 1);
-                _basePlayerInsideCount[signal.BaseId] = insideCount;
-                _basePlayerInside[signal.BaseId] = (byte)(insideCount > 0 ? 1 : 0);
-                _baseCenterAup[signal.BaseId] = signal.BaseCenterAup;
-            }
+                ApplyBaseExitSignal(in signal);
 
             // Enter wins over exit for same-frame module-to-module trigger handoffs.
             while (SignalBus<PlayerBaseEnterSignal>.TryReadFrame(out PlayerBaseEnterSignal signal))
-            {
-                if (!TryEnsureBaseSlotFromSignal(signal.BaseId, signal.RoomId, in signal.BaseCenterAup))
-                    continue;
+                ApplyBaseEnterSignal(in signal, now, allowWake);
+        }
 
-                int insideCount = _basePlayerInsideCount[signal.BaseId];
-                _basePlayerInsideCount[signal.BaseId] = insideCount < int.MaxValue ? insideCount + 1 : int.MaxValue;
-                _basePlayerInside[signal.BaseId] = 1;
-                _baseCenterAup[signal.BaseId] = signal.BaseCenterAup;
-                if (allowWake)
-                    WakeBase(signal.BaseId, now);
+        private void CaptureBaseTransitionSignalsForLater()
+        {
+            while (SignalBus<PlayerBaseExitSignal>.TryReadFrame(out PlayerBaseExitSignal signal))
+                EnqueueDeferredBaseTransition(in signal, isEnter: false);
+
+            // Keep the existing same-frame rule: exit packets are staged before enter packets.
+            while (SignalBus<PlayerBaseEnterSignal>.TryReadFrame(out PlayerBaseEnterSignal signal))
+                EnqueueDeferredBaseTransition(in signal, isEnter: true);
+        }
+
+        private void EnqueueDeferredBaseTransition(in PlayerBaseExitSignal signal, bool isEnter)
+        {
+            if (!_deferredBaseTransitions.IsCreated || _deferredBaseTransitions.Length >= _deferredBaseTransitions.Capacity)
+            {
+                _deferredBaseTransitionOverflow = true;
+                return;
             }
+
+            _deferredBaseTransitions.AddNoResize(new PendingBaseTransitionSignal
+            {
+                BaseCenterAup = signal.BaseCenterAup,
+                BaseId = signal.BaseId,
+                RoomId = signal.RoomId,
+                IsEnter = (byte)(isEnter ? 1 : 0)
+            });
+        }
+
+        private void EnqueueDeferredBaseTransition(in PlayerBaseEnterSignal signal, bool isEnter)
+        {
+            if (!_deferredBaseTransitions.IsCreated || _deferredBaseTransitions.Length >= _deferredBaseTransitions.Capacity)
+            {
+                _deferredBaseTransitionOverflow = true;
+                return;
+            }
+
+            _deferredBaseTransitions.AddNoResize(new PendingBaseTransitionSignal
+            {
+                BaseCenterAup = signal.BaseCenterAup,
+                BaseId = signal.BaseId,
+                RoomId = signal.RoomId,
+                IsEnter = (byte)(isEnter ? 1 : 0)
+            });
+        }
+
+        private void ApplyDeferredBaseTransitions(double now, bool allowWake)
+        {
+            if (!_deferredBaseTransitions.IsCreated)
+            {
+                _deferredBaseTransitionOverflow = false;
+                return;
+            }
+
+            for (int i = 0; i < _deferredBaseTransitions.Length; i++)
+            {
+                PendingBaseTransitionSignal signal = _deferredBaseTransitions[i];
+                if (signal.IsEnter != 0)
+                    ApplyBaseEnterSignal(in signal, now, allowWake);
+                else
+                    ApplyBaseExitSignal(in signal);
+            }
+
+            _deferredBaseTransitions.Clear();
+            if (!_deferredBaseTransitionOverflow)
+                return;
+
+            _deferredBaseTransitionOverflow = false;
+            ApplyTransitionOverflowFailOpen(now, allowWake);
+        }
+
+        private void ApplyTransitionOverflowFailOpen(double now, bool allowWake)
+        {
+            if (!allowWake ||
+                _baseCount <= 0 ||
+                !AreBaseStateLanesReady(_baseCount))
+            {
+                return;
+            }
+
+            double safeNow = double.IsFinite(now) && now >= 0d ? now : 0d;
+            _transitionOverflowAwakeUntil = Math.Max(_transitionOverflowAwakeUntil, safeNow + TransitionOverflowAwakeSeconds);
+            for (int baseId = 0; baseId < _baseCount; baseId++)
+            {
+                if (BaseAwakeState[baseId] == 0)
+                    WakeBase(baseId, safeNow);
+            }
+        }
+
+        private void ApplyBaseExitSignal(in PendingBaseTransitionSignal signal)
+        {
+            AbsoluteUniversePosition centerAup = signal.BaseCenterAup;
+            if (!TryEnsureBaseSlotFromSignal(signal.BaseId, signal.RoomId, in centerAup))
+                return;
+
+            int insideCount = math.max(0, _basePlayerInsideCount[signal.BaseId] - 1);
+            _basePlayerInsideCount[signal.BaseId] = insideCount;
+            _basePlayerInside[signal.BaseId] = (byte)(insideCount > 0 ? 1 : 0);
+            _baseCenterAup[signal.BaseId] = centerAup;
+        }
+
+        private void ApplyBaseExitSignal(in PlayerBaseExitSignal signal)
+        {
+            PendingBaseTransitionSignal deferredSignal = new PendingBaseTransitionSignal
+            {
+                BaseCenterAup = signal.BaseCenterAup,
+                BaseId = signal.BaseId,
+                RoomId = signal.RoomId,
+                IsEnter = 0
+            };
+            ApplyBaseExitSignal(in deferredSignal);
+        }
+
+        private void ApplyBaseEnterSignal(in PendingBaseTransitionSignal signal, double now, bool allowWake)
+        {
+            AbsoluteUniversePosition centerAup = signal.BaseCenterAup;
+            if (!TryEnsureBaseSlotFromSignal(signal.BaseId, signal.RoomId, in centerAup))
+                return;
+
+            int insideCount = _basePlayerInsideCount[signal.BaseId];
+            _basePlayerInsideCount[signal.BaseId] = insideCount < int.MaxValue ? insideCount + 1 : int.MaxValue;
+            _basePlayerInside[signal.BaseId] = 1;
+            _baseCenterAup[signal.BaseId] = centerAup;
+            if (allowWake)
+                WakeBase(signal.BaseId, now);
+        }
+
+        private void ApplyBaseEnterSignal(in PlayerBaseEnterSignal signal, double now, bool allowWake)
+        {
+            PendingBaseTransitionSignal deferredSignal = new PendingBaseTransitionSignal
+            {
+                BaseCenterAup = signal.BaseCenterAup,
+                BaseId = signal.BaseId,
+                RoomId = signal.RoomId,
+                IsEnter = 1
+            };
+            ApplyBaseEnterSignal(in deferredSignal, now, allowWake);
         }
 
         private void WakePlayerInsideSleepingBases(double now)
@@ -1097,6 +1235,7 @@ namespace Hecton8.Atmosphere
             float wakeDistance = math.max(0f, sleepDistance - math.max(3f, hibernationHysteresisMeters));
             double sleepDistanceSq = (double)sleepDistance * sleepDistance;
             double wakeDistanceSq = (double)wakeDistance * wakeDistance;
+            bool transitionOverflowAwakeGuard = double.IsFinite(_transitionOverflowAwakeUntil) && now <= _transitionOverflowAwakeUntil;
             int sleepingCount = 0;
 
             for (int baseId = 0; baseId < _baseCount; baseId++)
@@ -1111,13 +1250,20 @@ namespace Hecton8.Atmosphere
 
                 if (awake)
                 {
-                    if (hasRooms && !playerInside && hasPlayerAup && double.IsFinite(distanceSq) && distanceSq > sleepDistanceSq)
+                    if (!transitionOverflowAwakeGuard &&
+                        hasRooms &&
+                        !playerInside &&
+                        hasPlayerAup &&
+                        double.IsFinite(distanceSq) &&
+                        distanceSq > sleepDistanceSq)
+                    {
                         HibernateBase(baseId, now);
+                    }
                 }
                 else
                 {
                     bool playerNear = hasPlayerAup && double.IsFinite(distanceSq) && distanceSq <= wakeDistanceSq;
-                    if (playerInside || playerNear)
+                    if (transitionOverflowAwakeGuard || playerInside || playerNear)
                         WakeBase(baseId, now);
                 }
 
@@ -1452,6 +1598,7 @@ namespace Hecton8.Atmosphere
             DisposeArray(ref _bulkheadRoomB, ref disposeHandle, waitForStep);
             DisposeArray(ref _bulkheadSealed, ref disposeHandle, waitForStep);
             DisposeArray(ref _telemetryRing, ref disposeHandle, waitForStep);
+            DisposeList(ref _deferredBaseTransitions, nameof(_deferredBaseTransitions));
 
             if (_toxicitySignals.IsCreated)
             {
@@ -1476,6 +1623,8 @@ namespace Hecton8.Atmosphere
             _stepHandle = default;
             _stepRunning = false;
             _seededStandardAtmosphere = false;
+            _deferredBaseTransitionOverflow = false;
+            _transitionOverflowAwakeUntil = 0d;
             _roomCount = 0;
             _bulkheadCapacityLimit = 0;
             _bulkheadCount = 0;
@@ -1490,6 +1639,11 @@ namespace Hecton8.Atmosphere
             NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.Scene);
         }
 
+        private static void RegisterNativeList<T>(NativeList<T> list, string label) where T : unmanaged
+        {
+            NativeMemorySentinel.RegisterNativeList(list, NativeMemoryOwner, label, NativeAllocationLifetime.Scene);
+        }
+
         private static void DisposeArray<T>(ref NativeArray<T> array, ref JobHandle disposeHandle, bool deferred) where T : struct
         {
             if (!array.IsCreated)
@@ -1501,6 +1655,16 @@ namespace Hecton8.Atmosphere
             else
                 array.Dispose();
             array = default;
+        }
+
+        private static void DisposeList<T>(ref NativeList<T> list, string label) where T : unmanaged
+        {
+            if (!list.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, label);
+            list.Dispose();
+            list = default;
         }
 
         private void DisposeBaseAwakeState(ref JobHandle disposeHandle, bool deferred)
@@ -1545,6 +1709,18 @@ namespace Hecton8.Atmosphere
                 return;
 
             long bytes = (long)UnsafeUtility.SizeOf<T>() * array.Length;
+            AccumulateAudit(bytes, label, ref accumulator);
+        }
+
+        private static void AccumulateAudit<T>(
+            NativeList<T> list,
+            string label,
+            ref GasDynamicsMemoryAuditAccumulator accumulator) where T : unmanaged
+        {
+            if (!list.IsCreated)
+                return;
+
+            long bytes = (long)UnsafeUtility.SizeOf<T>() * list.Capacity;
             AccumulateAudit(bytes, label, ref accumulator);
         }
 
@@ -1632,6 +1808,14 @@ namespace Hecton8.Atmosphere
             NativeArray<float> temp = first;
             first = second;
             second = temp;
+        }
+
+        private struct PendingBaseTransitionSignal
+        {
+            public AbsoluteUniversePosition BaseCenterAup;
+            public int BaseId;
+            public int RoomId;
+            public byte IsEnter;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = false)]

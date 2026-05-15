@@ -1,7 +1,7 @@
 # COMPUTE AUDIT INDEX
 
 Status: AUDIT COMPLETE
-Snapshot: 2026-05-15T04:00+04:00
+Snapshot: 2026-05-15T15:03+04:00
 Agent: COMPUTE_LOGISTICS_AUDITOR
 
 ## Read Order
@@ -15,28 +15,32 @@ Agent: COMPUTE_LOGISTICS_AUDITOR
 | 5 | `COMPUTE_VALIDATION_FORENSICS.md` | Top-30 historical validation attempts and failure signals |
 | 6 | `COMPUTE_THREAD_VALUE_AUDIT.md` | Top-100 work-trace/value/collision/C++ evidence audit |
 | 7 | `COMPUTE_FILE_BURN_ATTRIBUTION.md` | Weighted token burn by patch target |
-| 8 | `COMPUTE_RATE_EFFICIENCY_AUDIT.md` | Latest token rates, cache economics, and token/code ratios |
-| 9 | `COMPUTE_CODEX_DIALOGUE_AUDIT.md` | `.codex` dialogue/log topology and `logs_2.sqlite` boundaries |
-| 10 | `COMPUTE_COLLISION_RISK.md` | Current dirty-tree collision gate |
+| 8 | `COMPUTE_TOKEN_BURN_RATE_LEDGER.md` | Current rolling token burn, cost/min, cost/hour, cost/day, model/cache split |
+| 9 | `COMPUTE_RATE_EFFICIENCY_AUDIT.md` | Previous detailed token rates, cache economics, and token/code ratios |
+| 10 | `COMPUTE_CODEX_DIALOGUE_AUDIT.md` | `.codex` dialogue/log topology and `logs_2.sqlite` boundaries |
+| 11 | `COMPUTE_COLLISION_RISK.md` | Current dirty-tree collision gate |
 
 ## Current Hard Boundaries
 
 | Claim | Status |
 |---|---|
-| HECTON-8 first-party meaningful LOC | 775,435 script LOC |
-| Latest JSONL final tokens | 44,590,504,461 |
-| Latest live SQLite token mass observed | 44,567,638,432 |
-| Model-aware cache-aware lower-bound estimate | USD 28,860.62 |
-| All-GPT-5.5 standard cache-aware scenario | USD 34,755.89 |
-| All-GPT-5.5 standard no-cache scenario | USD 226,732.30 |
+| HECTON-8 first-party meaningful LOC | 788,619 script LOC |
+| Latest JSONL final tokens | 45,453,534,197 |
+| Latest live SQLite token mass observed | 45,528,781,582 |
+| Model-aware cache-aware local estimate | USD 28,362.44 |
+| Model-aware no-cache equivalent | USD 186,377.89 |
+| All-GPT-5.5 standard cache-aware scenario | USD 35,431.80 |
+| All-GPT-5.5 standard no-cache scenario | USD 231,128.29 |
+| Latest last-24h token flow | 3,236,618,901 tokens; USD 1,039.59 cache-aware |
+| Latest post-scan SQLite tail delta | +102,151,525 tokens; 27,749.37 tokens/sec |
 | Top-100 thread share | 49.752% at 03:42 snapshot |
 | Top-30 validation non-zero outputs | 2,374 |
 | Reliable test-success evidence in top-30 validation scan | 0 |
 | Top weighted file target | `Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs` |
 | Current dirty hot intersections | `SargassumMicroFaunaBoids.cs`, `HabitatGraphManager.cs` |
 | C++ transfer evidence in top-100 patch targets | 0 hits; NOT VERIFIED / NO PATCH EVIDENCE |
-| Latest last-6h token flow | 97,652.24 tokens/sec |
-| Latest tokens per meaningful script LOC | 57,503.86 |
+| Latest last-6h token flow | 24,429.23 tokens/sec |
+| Latest tokens per meaningful script LOC | 57,636.87 |
 | `.codex` JSONL dialogue lines | 2,410,138 |
 | `.codex` user role markers | 14,473 |
 | `.codex` function-call markers | 518,303 |

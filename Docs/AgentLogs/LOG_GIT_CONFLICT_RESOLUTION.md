@@ -447,3 +447,15 @@ Cinematic Cheats used -> None. Git integration only.
 Exact Microseconds saved -> 0 us runtime. Dev-path gain is a smaller local tail and one more pushed checkpoint boundary.
 
 Verification -> Conflict-marker scan clean. `git diff --cached --check` passed. Build Fresh72 and Fresh73 report EXIT=0. Full branch green is not claimed because prior build and HPhi evidence in the same run was mixed.
+
+## 2026-05-15 - Loop 26 Remote Fast-Forward And Tail Checkpoint
+
+What was wrong -> `origin/main` advanced by three commits after `10914f2ae`, and another local runtime/docs/build evidence tail existed.
+
+What was done -> Fetched remote, confirmed no dirty-path overlap with incoming files, fast-forwarded to `abe92af42`, verified divergence `0 0`, scanned the 79-file staged tail for unmerged paths, conflict markers, and whitespace errors, reviewed runtime hunks, and prepared the local tail as a separate checkpoint.
+
+Cinematic Cheats used -> None. Git integration only.
+
+Exact Microseconds saved -> 0 us runtime. Dev-path gain is avoiding a Desktop overwrite/merge conflict by publishing a checked snapshot on top of the latest remote head.
+
+Verification -> Conflict-marker scan clean. `git diff --cached --check` passed. Build evidence is mixed: Fresh74=-1, Fresh76=-1, Fresh77=-1, Fresh78=0. HPhi Fresh79 reports EXIT=1 with Memory Alignment floor failure; Fresh80_Unbudgeted reports EXIT=0 with valid JSON but is explicitly unbudgeted evidence. Full build/HPhi green is not claimed.

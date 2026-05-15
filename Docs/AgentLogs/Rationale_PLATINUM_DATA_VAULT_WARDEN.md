@@ -244,6 +244,12 @@ Rejected Alternatives: Reusing any descriptor with `State=Free`; DataVault inten
 Scalability potential: Low devices avoid descriptor-table exhaustion during scene churn; Middle keeps native leak scans bounded; High and Ultra can run more transient persistent buffers without eroding H8 memory-map capacity.
 Hardware Impact: Free path adds scalar field clears on an existing descriptor scan. 0 us steady-frame impact; cold allocation churn avoids eventual `MaxTrackingCapacity` pressure.
 
+Problem: Reusing a tombstoned descriptor slot could overwrite the slot with an incoming `Generation=1`, erasing descriptor-generation evidence after free/reuse churn.
+Solution: `RegisterBlockDescriptorNoInit` now writes a local replacement descriptor and advances its generation from the previous slot generation with explicit unchecked wrap normalized back to `1`, while preserving higher incoming domain generations such as DataVault block versions.
+Rejected Alternatives: Accepting generation reset because no current hot handle resolves directly through H8 block descriptors; PHI/VOD evidence should not depend on current callers staying narrow.
+Scalability potential: Low devices keep descriptor telemetry coherent under churn; Middle keeps leak/postmortem diffing stable; High and Ultra can tolerate more persistent-buffer churn without losing chronological memory-map evidence.
+Hardware Impact: Reuse path adds two scalar compares and one local copy on cold descriptor registration only. 0 us steady-frame impact.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Polish audit required removal of fake precision, managed iteration/string debt, and any code outside the DataVault domain without justification.
@@ -255,7 +261,7 @@ Hardware Impact: Direct habitat DTO write is 32 bytes per module and 0 B GC. Rem
 Final Git Diff Summary:
 - Assets/_Project/Scripts/Core/HectonArenaAllocator.cs: owner-tagged H8Memory.FreeRaw release.
 - Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs: GenerationID handle exposure, handle external-view marking, stale-handle fatal path, VaultGenerationID telemetry, owner-tagged macro/vault frees, macro copy switched to MemCpy, live defrag memmove code deleted, agent-scoped black-box dump paths, and non-finite defrag input dumping.
-- Assets/_Project/Scripts/Core/Memory/H8Memory.cs: FatalMemoryException, owner-gated raw/native allocation, alias-reader gate, all-or-nothing allocation tracking, tracked-byte raw reallocation, descriptor capacity growth, and owner-checked FreeRaw.
+- Assets/_Project/Scripts/Core/Memory/H8Memory.cs: FatalMemoryException, owner-gated raw/native allocation, alias-reader gate, all-or-nothing allocation tracking, tracked-byte raw reallocation, descriptor capacity growth/reuse tombstones with monotonic reuse generation, and owner-checked FreeRaw.
 - Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs: v72 first-hour DTO payload write/read, direct habitat flood struct loop, bounded root compatibility collections, 16 KiB string cap, and removed unbounded helper wrappers.
 - Assets/_Project/Scripts/SaveData.cs: first-hour DTO mirrors and packed DTO definitions/metadata.
 - Assets/_Project/Scripts/SaveDataMigration.cs: bounded cold restore clamps and canonical `SaveData.EnsureExactArrayCapacity` repair helper use.

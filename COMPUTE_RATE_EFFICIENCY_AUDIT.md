@@ -9,6 +9,8 @@ Source: `.codex` JSONL + `state_5.sqlite` + source byte scan
 
 This is not an invoice. It is local token-ledger accounting.
 
+Current superseding rate ledger: `COMPUTE_TOKEN_BURN_RATE_LEDGER.md`, snapshot 2026-05-15T15:03+04:00. This file remains a preserved earlier detailed snapshot.
+
 Pricing reference: official OpenAI API pricing checked on 2026-05-15 at `https://openai.com/api/pricing/`. Legacy local Codex SKUs that are absent from the current public table are treated as proxy estimates. The exact bill requires a billing export.
 
 ## Latest Ledger

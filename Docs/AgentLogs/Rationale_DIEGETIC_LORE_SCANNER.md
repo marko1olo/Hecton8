@@ -619,3 +619,31 @@ Solution: Ran source-only checks: `git diff HEAD --check` and `git diff --check`
 Rejected Alternatives: Running prohibited `dotnet build`; claiming the visual fake is safe without static evidence.
 Scalability potential: Process hygiene only.
 Hardware Impact: No runtime impact.
+
+## LOOP 32 SCANNER HOLOGRAM EVIDENCE FLOORS
+
+Problem: The scanner hologram now consumes multiple scientific evidence lanes, but very weak confirmed payloads still produced near-zero `signal01`. A material class or trace contact could therefore be technically active while looking like an inert acquisition line.
+Solution: Add named scalar floors for fragment/proxy, material, chemical/toxicity/attractant trace, and fauna-contact evidence inside `ResolveScannerHologramSignal01()`. The floor only applies after the existing payload gate has proven that the snapshot carries scanner evidence.
+Rejected Alternatives: Forcing every non-fragment contact to full intensity; adding a new UI-side spatial query; requiring extra proxy meshes/material resources; leaving near-zero confirmed evidence visually unreadable.
+Scalability potential: Low/MX350 keeps the flat canvas fake and pays only a few branch/max gates. Middle/High/Ultra get stronger scanner readability for trace/material/fauna contacts without increasing draw calls or memory.
+Hardware Impact: Adds at most four bounded branch/max gates per active hologram refresh. No allocation, no new query, no new resource lifetime. Exact microseconds remain PENDING PROFILER.
+
+Problem: Verification after evidence-floor hardening needed source proof without violating the user's rebuild ban.
+Solution: Ran source-only checks: `git diff HEAD --check` and `git diff --check` passed with SuitHUD line-ending warning only, added-line banned-pattern scan found no forbidden UI/text/physics patterns, and targeted diff scan confirmed named floors plus shared evidence epsilon.
+Rejected Alternatives: Running prohibited `dotnet build`; claiming visual legibility improvement without checking the final added lines.
+Scalability potential: Process hygiene only.
+Hardware Impact: No runtime impact.
+
+## LOOP 33 ORGANIC BLOOD TRACE GATE CONSISTENCY
+
+Problem: Scanner status text could display `BLOOD TRACE` for `OrganicBlood01 > 0.1f`, but the shared scanner payload gate did not include organic blood unless the directional attractant trace predicate also passed. A blood-only trace could therefore be valid status evidence but fail the hologram/status override gate.
+Solution: Introduce `ScannerTraceEvidenceThreshold01` and route organic-blood evidence through the shared payload gate, hologram trace floor, status text branch, and status cache version.
+Rejected Alternatives: Keeping the hidden `0.1f` literals; widening the gate to any nonzero blood noise; requiring directional scent data before acknowledging blood trace evidence.
+Scalability potential: Low/MX350 keeps one scalar compare and the existing flat canvas fake. Middle/High/Ultra get consistent blood-trace readability without extra draw calls or memory.
+Hardware Impact: Adds one scalar compare in the existing evidence gate/floor path and removes duplicate literal-threshold drift. Exact microseconds remain PENDING PROFILER.
+
+Problem: Verification after organic-blood gate consistency needed source evidence without a rebuild.
+Solution: Ran source-only checks: `git diff HEAD --check` passed with SuitHUD line-ending warning only, added-line banned-pattern scan found no forbidden UI/text/physics patterns, and targeted diff scan confirmed organic blood threshold reuse in gate, floor, text, and version.
+Rejected Alternatives: Running prohibited `dotnet build`; marking the mismatch fixed without checking all four threshold sites.
+Scalability potential: Process hygiene only.
+Hardware Impact: No runtime impact.

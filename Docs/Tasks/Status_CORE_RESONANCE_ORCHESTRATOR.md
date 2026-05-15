@@ -3,7 +3,7 @@
 Agent: CORE_RESONANCE_ORCHESTRATOR
 Domain: SYSTEMS_ARCHITECT / ECHELON 1-9 Resonance Orchestration
 Task Count: 13
-Status: ENGINE RESONATING / COMPILE BLOCKED BY DEPENDENCY / RUNTIME PENDING VERIFICATION
+Status: ENGINE RESONATING / SOURCE COMPILE GREEN / FULL GENERATED GRAPH UNSTABLE / RUNTIME PENDING VERIFICATION
 Prompt Source: in-chat XML. `Docs/Tasks/CURRENT_BATCH.md` contains no matching prompt block for this agent.
 
 ## Mandates Loaded
@@ -29,7 +29,7 @@ Prompt Source: in-chat XML. `Docs/Tasks/CURRENT_BATCH.md` contains no matching p
 - [x] Task 8 - Pointer Rebinding | Justification: `HectonPlayerMovement.OnDependencyInject()` caches `GlobalRegistry.DataVault` and passes it to `PlayerKinematicsNativeState`; submarine caches vault in cold reference binding and allocation helper | Alternatives Rejected: hot-path registry lookups in physics/render loops | Estimate: 0-5 microseconds saved on cold rebind and no hot-loop allocation
 - [x] Task 9 - Kill-Switch Wiring | Justification: fauna and abyssal flow read `GlobalRegistry.SystemKillSwitchMask & SystemKillSwitchLane4VfxMask`; no new global booleans | Alternatives Rejected: independent kill flags outside Homeostasis authority | Estimate: one volatile mask read per active tick/dispatch
 - [x] Task 10 - Degradation Logic | Justification: fauna suppresses simulation and renders cached ambient drift; abyssal flow ages impulse timers and keeps previous published flow field under VFX pressure | Alternatives Rejected: hard renderer disable and global resolution drop | Estimate: 370-1020 microseconds saved during kill-switch pressure on low-end silicon
-- [x] Task 11 - Batched Compile [BLOCKED BY DEPENDENCY] | Justification: `Assembly-CSharp` first failed without restore assets, then full graph failed before stable Assembly compile; `Hecton8.Core.csproj` independently fails on unrelated `xxHash3` and PDA inventory binding symbols | Alternatives Rejected: editing unrelated save/UI owner files or claiming a green build | Estimate: verification blocked, 0 runtime microseconds
+- [x] Task 11 - Batched Compile | Justification: build medic isolated and fixed the editor `Unity.Mathematics/double3` dependency leak in `KinematicGhostDebugger`; `Hecton8.Editor.csproj`, `Assembly-CSharp-firstpass.csproj`, and `Assembly-CSharp.csproj` compile green with `BuildProjectReferences=false`; full generated Unity graph still exits `-1` without compiler/MSBuild diagnostics after child-project traversal | Alternatives Rejected: editing generated `.csproj` files or unrelated plugin/package code | Estimate: source compile verified, 0 runtime microseconds
 - [x] Task 12 - H-PHI Measurement | Justification: full `HectonPhiAudit.ps1 -Summary` timed out after 600s; `-Summary -CoreGraphOnly` completed with 43 core refs / 25 debt refs, 12 generated refs / 10 debt refs, and target `R=0.05` not objectively proven | Alternatives Rejected: hand-computing a vanity resonance score | Estimate: audit-only, 0 runtime microseconds
 - [x] Task 13 - Zero-GC Verification | Justification: static scan of edited hot paths found no managed allocation/LINQ/list conversion; new hot work is mask math, shader uniform writes, `Stopwatch.GetTimestamp`, and watchdog cost reporting; allocations remain cold vault/H8Memory init paths | Alternatives Rejected: fake profiler `0 B` claim without PlayMode | Estimate: 0 managed allocations in edited resonant loops by static proof
 
@@ -115,3 +115,15 @@ Prompt Source: in-chat XML. `Docs/Tasks/CURRENT_BATCH.md` contains no matching p
 - `git diff --check -- Assets/_Project/Scripts/SubmarineFluidDynamics.cs` passed; LF/CRLF warning only.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Summary` completed at `2026-05-15 05:25:05 +04:00`: runtime H-Phi risk `0.000597671`, Data Sovereignty `0.021386637`, GlobalRegistry surface `5140`, core graph debt unchanged at source-backed bridge `14`, compile-bridge `8`, project-reference replacement `6`.
 - No `dotnet build`, rebuild, PlayMode profiler, or Unity console verification was run by user constraint.
+
+### Loop 10 - Build Medic and Editor Dependency Debt
+
+- Re-read status/rationale before build repair and avoided generated `.csproj` edits.
+- Fixed `Assets/_Project/Scripts/Editor/KinematicGhostDebugger.cs` by removing the editor-only `Unity.Mathematics/double3` dependency and using existing Vector3 bridge/floating-origin APIs.
+- Built missing Unity child outputs serially after the generated graph exited `-1` without diagnostics: `WaveHarmonic.Crest.Scripting`, `Lofelt.NiceVibrations.Editor`, `Crest.Helpers.Editor`, `VolumetricLightBeam.Editor`.
+- `dotnet build .\Hecton8.Editor.csproj ... -p:BuildProjectReferences=false`: passed, `0 Warning(s)`, `0 Error(s)`.
+- `dotnet build .\Assembly-CSharp-firstpass.csproj ... -p:BuildProjectReferences=false`: passed, `0 Warning(s)`, `0 Error(s)`.
+- `dotnet build .\Assembly-CSharp.csproj ... -p:BuildProjectReferences=false`: passed, `0 Warning(s)`, `0 Error(s)`.
+- Full generated `Assembly-CSharp.csproj` and `Hecton8.Editor.csproj` graph traversals still exit `-1` without `: error`, `CS`, `MSB`, exception, or unhandled diagnostics; stale `dotnet` processes from those graph passes were killed.
+- `git diff --check` on touched files passed; LF/CRLF warnings only.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -CoreGraphOnly` completed at `2026-05-15 14:45:33 +04:00` with source-backed bridge debt `14`, compile-bridge debt `8`, project-reference replacement debt `6`.

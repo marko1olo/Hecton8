@@ -738,3 +738,48 @@ Verification:
 - Added-line banned-pattern scan: no new `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, `SetText(`, or `.text =`.
 - Targeted diff scan: scanner hologram visual state now uses `signal01` evidence strength.
 - `dotnet build` / rebuild: NOT RUN.
+
+## Follow-Up Hardening Pass 28
+
+What was wrong:
+- Confirmed scanner payloads could still resolve to a near-zero hologram intensity when the raw scalar evidence was tiny. That made material, trace, or proxy evidence technically present but visually weak.
+
+What was done:
+- Added named evidence floors in `ResolveScannerHologramSignal01()` for fragment/proxy, material, chemical/toxicity/attractant trace, and fauna contact.
+- Replaced duplicated scanner evidence epsilon literals with `ScannerEvidenceEpsilon`.
+
+Cinematic Cheats used:
+- Kept the flat scalar hologram fake. No new mesh, material, physics, spatial query, or simulation path was added.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Cost is bounded scalar math per active hologram refresh: at most four branch/max gates after the existing payload gate.
+
+Verification:
+- `git diff HEAD --check` on SuitHUD source: pass, SuitHUD line-ending warning only.
+- `git diff --check` on SuitHUD source: pass, SuitHUD line-ending warning only.
+- Added-line banned-pattern scan: no new `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, `SetText(`, or `.text =`.
+- Targeted diff scan: named evidence floors and shared evidence epsilon are present.
+- `dotnet build` / rebuild: NOT RUN.
+
+## Follow-Up Hardening Pass 29
+
+What was wrong:
+- Organic blood trace evidence used a hidden `0.1f` status-text threshold, but the shared scanner payload gate only accepted directional attractant trace. Blood-only trace evidence could be valid for text but rejected before the hologram/status override path.
+
+What was done:
+- Added `ScannerTraceEvidenceThreshold01`.
+- Reused it in the scanner payload gate, hologram trace floor, status text branch, and status cache version.
+
+Cinematic Cheats used:
+- Kept the scalar flat hologram/status fake. No new spatial query, physics, material, mesh, or resource path was added.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Runtime delta is one scalar compare in existing evidence gate/floor paths; main value is removing threshold drift and false-negative blood trace presentation.
+
+Verification:
+- `git diff HEAD --check` on SuitHUD source: pass, SuitHUD line-ending warning only.
+- Added-line banned-pattern scan: no new `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, `SetText(`, or `.text =`.
+- Targeted diff scan: organic blood threshold feeds payload gate, hologram floor, status text, and cache version.
+- `dotnet build` / rebuild: NOT RUN.

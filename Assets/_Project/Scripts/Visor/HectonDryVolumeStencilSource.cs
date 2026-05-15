@@ -110,8 +110,7 @@ namespace Hecton8.Visor
         {
             if (renderer is MeshRenderer meshRenderer)
             {
-                MeshFilter meshFilter = meshRenderer.GetComponent<MeshFilter>();
-                if (meshFilter != null && meshFilter.sharedMesh != null)
+                if (meshRenderer.TryGetComponent(out MeshFilter meshFilter) && meshFilter.sharedMesh != null)
                     return Mathf.Max(1, meshFilter.sharedMesh.subMeshCount);
             }
             else if (renderer is SkinnedMeshRenderer skinnedMeshRenderer && skinnedMeshRenderer.sharedMesh != null)

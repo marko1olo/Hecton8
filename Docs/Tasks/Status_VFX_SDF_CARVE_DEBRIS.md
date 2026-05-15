@@ -90,6 +90,8 @@ Status: PENDING VERIFICATION / STATIC CHECKS ONLY / UNITY COMPILE BLOCKED (NO DO
 - Loop 51: Static verification after AUP/SDF cache refresh. DOD: focused `git diff --check` returned clean except Git LF/CRLF notices; forbidden VFX scan returned no matches for CPU readback, ParticleSystem, ComputeBuffer, scene search, job scheduling fences, private `H8Memory.Allocate`, private `H8Memory.Release`, `MaterialPropertyBlock`, `matProps`, managed hot strings, `Vector3.magnitude`, or `math.sqrt`; exact current batch prompt tag count remains 0. Rejected alternative: dotnet rebuild or fake Unity compile pass. Estimate: verification saves 0 us.
 - Loop 52: DataVault compaction fail-closed pass. DOD: `TryEnsureGpuState()` now returns before `GetBuffer()` reacquisition when `IDataVault.IsCompactionFenceActive` is true, invalidating the local lease instead of touching moving H-Phi memory. Rejected alternatives: reacquiring aliases during compaction, clearing mirrors while the vault is fenced, or throwing from presentation VFX. Estimate: 0 us steady-state; prevents compaction-frame memory alias risk.
 - Loop 53: Static verification after compaction guard. DOD: focused `git diff --check` returned clean except Git LF/CRLF notices; forbidden VFX scan returned no matches; exact current batch prompt tag count remains 0. Rejected alternative: dotnet rebuild or fake Unity compile pass. Estimate: verification saves 0 us.
+- Loop 54: Flow buffer advertised-count guard pass. DOD: validated structured-flow payloads now require `gridResolution.w <= flowBuffer.count` before compute can mark buffer flow active. Rejected alternatives: trusting publisher metadata, shader-side bounds rescue after accepting bad metadata, or CPU readback. Estimate: one scalar compare only on non-low flow bind; prevents out-of-range GPU structured-buffer reads.
+- Loop 55: Static verification after flow buffer count guard. DOD: focused `git diff --check` returned clean except Git LF/CRLF notices; forbidden VFX scan returned no matches; shader hot-math scan returned no matches; exact current batch prompt tag count remains 0. Rejected alternative: dotnet rebuild or fake Unity compile pass. Estimate: verification saves 0 us.
 
 ## Second-Pass Upgrade Status
 
@@ -133,6 +135,7 @@ Status: PENDING VERIFICATION / STATIC CHECKS ONLY / UNITY COMPILE BLOCKED (NO DO
 - [x] SDF collision binding now rejects non-finite authored or globally published world-to-local matrices before enabling compute SDF sampling.
 - [x] Accepted AUP origin shifts force a global SDF cache refresh before high-tier SDF collision uses cached cave transforms again.
 - [x] GPU state rebind now fails closed while `GlobalDataVault` compaction is fenced, avoiding alias reacquisition and mirror clearing during H-Phi relocation.
+- [x] Flow buffer binding verifies advertised voxel count does not exceed the published `GraphicsBuffer.count` before enabling structured-buffer sampling.
 
 ## OMEGA Polish Status
 

@@ -925,3 +925,32 @@ Verification state:
 - `CURRENT_BATCH.md` exact prompt tag count for `VFX_SDF_CARVE_DEBRIS`: 0.
 - Unity import/compile/profiler evidence remains unavailable.
 - No dotnet build or rebuild was run.
+
+## 2026-05-15 - Flow Buffer Advertised Count Guard
+
+What was wrong:
+- Structured-flow binding accepted positive finite grid metadata but did not prove the published buffer had enough elements for `gridResolution.w`.
+- A malformed publisher could therefore advertise more cells than the `GraphicsBuffer` owns and let compute sample past the actual buffer count.
+
+What was done:
+- `IsValidFlowBufferPayload()` now requires `gridResolution.w <= flowBuffer.count`.
+- Bad structured-flow payloads fail closed to the zero fallback buffer.
+- Texture flow remains separately validated and can still provide high-tier motion when valid.
+- Did not run dotnet build or dotnet rebuild.
+
+Cinematic cheats used:
+- Flow is optional visual richness; invalid structured flow is discarded rather than patched with CPU work.
+- Low/MX350 still skips flow resolution entirely; High/Ultra only spend on trustworthy flow payloads.
+
+Exact Microseconds saved:
+- Direct saving: 0 us.
+- Added cost: one scalar compare on non-low flow binding.
+- Avoided risk: undefined GPU structured-buffer reads and false debris drift from bad flow metadata.
+
+Verification state:
+- Focused `git diff --check` returned clean except Git LF/CRLF notices.
+- Forbidden VFX scan returned no matches.
+- Shader hot-math scan returned no matches.
+- `CURRENT_BATCH.md` exact prompt tag count for `VFX_SDF_CARVE_DEBRIS`: 0.
+- Unity import/compile/profiler evidence remains unavailable.
+- No dotnet build or rebuild was run.

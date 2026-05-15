@@ -655,3 +655,19 @@ Solution: Route the power-boot dump to `Dump_MARAUDER_OUTPOST_ARCHITECT.bin` and
 Rejected Alternatives: Adding a second custom dump path was rejected because the mandate names the agent dump file explicitly. Renaming `OwnerName` was rejected because it is also used for memory sentinel ownership and does not need to match the dump filename. Chat-only reporting was rejected because CTO evidence lives on disk.
 Scalability potential: Low/Middle/High/Ultra behavior is unchanged for valid play. Fault evidence now lands in the mandated agent-owned file regardless of tier, preserving post-mortem recovery without adding gameplay work.
 Hardware Impact: Fault-path string literal only. Normal Tick/Render remains 0 B/frame; blackbox write cost is unchanged except for the target filename.
+
+## LOOP 40 WFC REACTOR CLOCK AND GAS SEED BOUNDS
+
+Problem: `WfcOutpostPowerBootRuntime` accepted the dispatcher `now` value directly into `_lastReactorUpdateTime`. A non-finite timestamp could remain dormant while no graph is active, then later turn reactor decay into NaN math. The gas-room seeding loop also trusted `_activeNodeCount` directly when reading `_nodes`.
+Solution: Add `SanitizeClockSeconds(now)` for commit and reactor decay state, report non-finite current or previous reactor timestamps through `FaultFlag | ReactorClockFaultFlag`, and compute reactor `dt` from sanitized values only. Clamp gas seeding to `math.clamp(_activeNodeCount, 0, MaxCells)` before reading the native node array.
+Rejected Alternatives: Waiting for `_reactorOutput01` to become non-finite and relying on the later blackbox sanitizer was rejected because it lets bad time state propagate. Adding a new timing service or polling global time was rejected as cross-domain and unnecessary. Trusting count slots forever was rejected because previous loops explicitly hardened native-boundary drift.
+Scalability potential: Low devices avoid repeated fault-path gas seed reads and NaN decay churn. Middle/High/Ultra preserve the same valid reactor decay and gas seed behavior, with stronger diagnostics for corrupted dispatcher or count input.
+Hardware Impact: SlowTick-only scalar finite checks and one clamp per gas seed attempt. Estimated below 0.1 us on i3/MX350, with 0 B/frame managed allocation.
+
+## LOOP 41 WFC FRAME PAYLOAD CLAMP
+
+Problem: `MarauderOutpostGenerationService` cast `Time.frameCount` directly to `uint` in generated-grid signals and blackbox telemetry. Power boot already used a non-negative clamp, so the two owned outpost payload surfaces were inconsistent.
+Solution: Add `CurrentFrameU32()` and route both generated-grid signal and outpost telemetry frame fields through `unchecked((uint)math.max(0, Time.frameCount))`.
+Rejected Alternatives: Duplicating the clamp inline was rejected because two payload writers should share one small helper. Ignoring it was rejected because typed signal and blackbox payloads should not depend on an implicit Unity invariant when a scalar guard is free.
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged for normal frames. Fault evidence and signal snapshots now share the same non-negative frame representation across tiers.
+Hardware Impact: One scalar max at signal publish/telemetry write boundaries, 0 B/frame managed allocation, no renderer or graph cost.

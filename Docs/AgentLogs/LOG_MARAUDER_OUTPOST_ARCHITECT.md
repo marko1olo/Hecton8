@@ -461,6 +461,34 @@ Verification:
 
 Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
 
+## 2026-05-15 - WFC Outpost Loop 41 Frame Payload Clamp
+
+What was wrong:
+- `MarauderOutpostGenerationService` cast `Time.frameCount` directly to `uint` in generated-grid signal and telemetry payloads.
+- Power boot already used a non-negative clamped form, so outpost frame payloads were inconsistent.
+
+What was done:
+- Added `CurrentFrameU32()`.
+- `WfcOutpostGeneratedSignal.Frame` now uses the helper.
+- `OutpostTelemetryEntry.Frame` now uses the helper.
+- Removed raw `(uint)Time.frameCount` casts from the generation service.
+
+Cinematic Cheats used:
+- No visual or simulation work was added. This is payload hygiene for signal/blackbox evidence.
+
+Exact Microseconds saved:
+- Valid path cost: one scalar max at publish/telemetry write boundaries, below measurement noise.
+- Saved cost: prevents bad frame identifiers from corrupting signal/blackbox chronology if the underlying frame value is ever invalid.
+- Steady Tick/Render remains 0 B/frame.
+
+Verification:
+- Targeted scan: PASS; `CurrentFrameHelper=True`, `HelperUses=2`, `RawFrameCasts=0`, `SafeFrameMath=True`, `DirectSignalPush=True`, `ForeachTokens=0`, `StringInterpolation=0`, `LinqTokens=0`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS at `2026-05-15 15:12:58 +04:00`; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
+- `git diff --check`: PASS with repository CRLF warnings only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
 ## 2026-05-15 - WFC Outpost Loop 34 Bottom Ledger Addendum
 
 What was wrong:
@@ -1282,6 +1310,36 @@ Verification:
 - `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS at `2026-05-15 14:26:38 +04:00`; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
 - `git diff --check`: PASS with repository CRLF warnings only.
 - `git diff --cached --check`: PASS.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
+## 2026-05-15 - WFC Outpost Loop 40 Reactor Clock And Gas Seed Bounds
+
+What was wrong:
+- Reactor decay accepted `now` directly into `_lastReactorUpdateTime`.
+- A non-finite timestamp could later poison reactor decay math.
+- Gas-room seeding read `_nodes` up to `_activeNodeCount` without a final clamp to the fixed native buffer capacity.
+
+What was done:
+- Added `ReactorClockFaultFlag` and `SanitizeClockSeconds(now)`.
+- `CommitTranslation` stores a sanitized reactor timestamp.
+- `UpdateReactorDecay` now writes blackbox fault telemetry and returns if current or previous reactor time is non-finite.
+- Reactor decay `dt` now uses sanitized time only.
+- `TrySeedGasRooms` clamps `_activeNodeCount` to `MaxCells` before reading `_nodes`.
+
+Cinematic Cheats used:
+- No new simulation. Reactor decay remains scalar storytelling math; gas seeding remains a bounded data handoff.
+
+Exact Microseconds saved:
+- Valid path cost: two finite checks in SlowTick and one gas seed clamp, below 0.1 us estimated on i3/MX350.
+- Failure path savings: avoids NaN reactor churn and native out-of-range risk from corrupted count state.
+- Steady Tick/Render remains 0 B/frame.
+
+Verification:
+- Targeted scan: PASS; `ReactorClockFaultFlag=True`, `CommitSanitizedClock=True`, `UpdateSafeNow=True`, `NonFiniteNowBlackbox=True`, `NonFiniteLastBlackbox=True`, `SafeDt=True`, `NodeLimitClamp=True`, `GasLoopBounded=True`, `RawGasLoop=False`, `Sanitizer=True`, `ForeachTokens=0`, `StringInterpolation=0`, `LinqTokens=0`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS at `2026-05-15 15:00:42 +04:00`; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
+- `git diff --check`: PASS.
 - `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
 
 Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.

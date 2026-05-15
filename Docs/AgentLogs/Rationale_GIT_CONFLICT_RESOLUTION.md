@@ -137,3 +137,15 @@ Solution: Validate the 54-file staged tail as a separate checkpoint, include lat
 Rejected Alternatives: Reporting a clean tree, amending the pushed commit, or claiming global green from Fresh72/Fresh73 alone.
 Scalability potential: Git-only integration pass. Runtime/scalability behavior remains owned by the producers; this pass reduces Git conflict surface only.
 Hardware Impact: 0 us runtime impact. Dev-path gain is another published integration boundary.
+
+Problem: `origin/main` advanced by three commits after `10914f2ae` while the local tree had another runtime/docs/build evidence tail.
+Solution: Fetch first, prove the incoming paths do not overlap local dirty paths, fast-forward to `abe92af42`, then validate and checkpoint the local tail on top of the synchronized remote head.
+Rejected Alternatives: Force-pushing over incoming commits, resetting live agent work, or creating a merge commit where a clean fast-forward was available.
+Scalability potential: Git-only integration pass. Authored runtime tier behavior remains owned by the producing agents; this operator step only reduces merge/conflict exposure. Low/Middle/High/Ultra runtime claims remain pending verification.
+Hardware Impact: 0 us runtime impact. Dev-path gain is a synchronized main baseline before publishing the next local integration checkpoint.
+
+Problem: New build/HPhi evidence is mixed; HPhi Fresh79 is a budgeted failure and Fresh80_Unbudgeted is valid but explicitly unbudgeted.
+Solution: Commit non-empty build/HPhi evidence as audit trail and report full green proof as blocked because the budgeted HPhi gate still failed.
+Rejected Alternatives: Deleting generated evidence without owner context, committing an empty HPhi file as proof, or claiming branch health from Fresh78/Fresh80_Unbudgeted alone.
+Scalability potential: Not a runtime system. This preserves evidence classification discipline across hardware tiers.
+Hardware Impact: 0 us runtime impact. Prevents false CTO-facing green reports from partial local artifacts.

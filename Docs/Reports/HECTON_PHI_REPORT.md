@@ -1503,3 +1503,32 @@ Verification:
 - `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`: completed at local timestamp `2026-05-15 14:30:08 +04:00`.
 - Final full static gate completed at local timestamp `2026-05-15 14:39:21 +04:00`.
 - Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.
+
+## 2026-05-15 Live Addendum - CORE_RESONANCE Build Medic
+
+Evidence class: `STATIC_SOURCE_COMPILE`.
+
+What changed:
+- `KinematicGhostDebugger` no longer depends on `Unity.Mathematics`/`double3` inside `Hecton8.Editor`.
+- The editor diagnostic now uses existing Vector3 universe-space bridge APIs, matching the precision actually drawn by the gizmo.
+- Missing Unity generated child outputs were built serially to unblock direct source gates.
+
+Compile evidence:
+- `Hecton8.Editor.csproj -p:BuildProjectReferences=false`: passed, `0 Warning(s)`, `0 Error(s)`.
+- `Assembly-CSharp-firstpass.csproj -p:BuildProjectReferences=false`: passed, `0 Warning(s)`, `0 Error(s)`.
+- `Assembly-CSharp.csproj -p:BuildProjectReferences=false`: passed, `0 Warning(s)`, `0 Error(s)`.
+- Full generated project-reference traversal still exits `-1` without diagnostics; this is recorded as generated graph instability, not source compile failure.
+
+Core graph H-Phi audit at `2026-05-15 14:45:33 +04:00`:
+
+| Counter | Value |
+|---|---:|
+| Core asmdef debt refs | 25 |
+| Generated project debt refs | 10 |
+| Source-backed bridge debt refs | 14 |
+| Source-backed compile-bridge debt refs | 8 |
+| Project-reference replacement debt refs | 6 |
+
+Residual bottlenecks:
+- Runtime H-Phi remains pending Unity Console, PlayMode, Profiler, and GCMonitor evidence.
+- Generated Unity full graph traversal needs integrator/toolchain attention because it exits without diagnostic text while direct source gates pass.

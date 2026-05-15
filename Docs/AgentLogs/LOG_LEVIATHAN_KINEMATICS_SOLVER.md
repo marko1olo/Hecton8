@@ -909,3 +909,27 @@ Verification:
 - `git diff --check` on `FaunaKinematicsRuntime.cs` exits 0 with only LF-to-CRLF warning.
 - Static forbidden scan over `FaunaKinematicsRuntime.cs` remains clean for direct native allocations/disposals, `Time.frameCount`, `GlobalRegistry.Get`, forbidden Unity searches, `Animator`, and `SkinnedMeshRenderer`.
 - Runtime status remains pending until Unity Editor import, shader compile, PlayMode behavior, GC, profiler evidence, and failure-path visual proof exist.
+
+## 2026-05-15T15:00+04:00
+
+Status: PENDING VERIFICATION. Continued Leviathan cold lifecycle/rebind audit. No `dotnet` rebuild/compile, Unity import, shader compile, or response-file probe was run.
+
+What was wrong:
+- `BindFromFauna()` reseeded spine data and marked GPU upload dirty without refreshing current scalability tier and resolved segment/iteration state.
+- `OnEnable()` already performed the reset, but rebinds could publish one visual sync with stale tier state.
+
+What was done:
+- Added `ResetConstraintIterationHysteresis()` after `SeedSpineFromOwner()` in `BindFromFauna()`.
+- Kept `Awake()` free of the tier read to avoid changing bootstrap-order assumptions.
+
+Cinematic cheats used:
+- No new simulation. This preserves the existing Math LOD fake: low tier publishes the cheap eight-segment contract immediately, high/ultra publish the high-detail contract immediately.
+
+Exact microseconds saved:
+- 0 us hot-path saving claimed.
+- Cold rebind pays one scalability-tier read and scalar reset only.
+
+Verification:
+- `git diff --check` on `FaunaKinematicsRuntime.cs` exits 0 with only LF-to-CRLF warning.
+- Static grep confirms `Awake()` only seeds, while `OnEnable()` and `BindFromFauna()` reset constraint/LOD state after seed.
+- Runtime status remains pending until Unity Editor import, shader compile, PlayMode behavior, GC, profiler evidence, and rebind visual proof exist.

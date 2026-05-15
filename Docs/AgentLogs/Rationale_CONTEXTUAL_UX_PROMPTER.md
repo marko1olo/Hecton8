@@ -354,3 +354,17 @@ Solution: Resolve the clamped interaction distance once per ray tick and pass it
 Rejected Alternatives: Keeping duplicate clamp calls, caching distance across frames, or removing the AUP range check. Duplicate calls are avoidable; cross-frame caching risks stale designer tuning; the AUP range check is required for floating-origin safety.
 Scalability potential: Low removes tiny repeated math from panel interaction. Middle/High/Ultra keep identical interaction behavior while retaining AUP correctness.
 Hardware Impact: Expected gain is sub-microsecond per desktop interaction tick on i3/MX350; no profiler proof.
+
+## Decision 50: Diegetic Panel Projection Reciprocal Cache
+Problem: Panel projection helpers repeatedly rebuilt inverse canvas/reference sizes even though `RefreshPanelData()` already clamps those values and owns the derived panel math state.
+Solution: Cache `InvCanvasSize` and `InvReferenceSize` in `PanelData` during panel transform refresh, then reuse them in canvas-to-world, pixel-basis, and local-hit-to-canvas projection helpers.
+Rejected Alternatives: Keeping per-projection reciprocal math, caching global static sizes, or changing the authored reference-resolution contract. Per-projection reciprocal work is avoidable; global state breaks multi-panel ownership; changing reference resolution semantics would risk UI placement.
+Scalability potential: Low removes tiny repeated math from simple physical panels. Middle/High/Ultra keep the same projection contract while preserving budget for richer cursor, phosphor, and panel-surface visuals.
+Hardware Impact: Expected gain is sub-microsecond per active panel projection on i3/MX350, with the largest benefit on fingertip hover paths that can project every tick; no profiler proof.
+
+## Decision 51: Diegetic Panel Projection Direction Math
+Problem: The private panel ray projection helper recomputed ray direction length even for the normalized desktop path that `TryResolveRay()` had already validated, and it rebuilt a panel-normal fallback instead of using the sanitized cached normal.
+Solution: Keep direction-length validation only for non-normalized public ray projections, use `_panelData.PanelNormal` from `RefreshPanelData()`, and cache `maxDistanceSq` before the travel-distance comparison.
+Rejected Alternatives: Leaving the duplicate dot product, trusting all public rays as normalized, or re-normalizing every ray. Duplicate math wastes the hot desktop path; public rays still need validation; per-call normalization changes distance semantics and adds unnecessary cost.
+Scalability potential: Low removes tiny repeated math from cursor projection. Middle/High/Ultra preserve the same physical panel hit behavior while keeping CPU budget available for richer diegetic surface effects.
+Hardware Impact: Expected gain is sub-microsecond per desktop ray projection on i3/MX350; no profiler proof.

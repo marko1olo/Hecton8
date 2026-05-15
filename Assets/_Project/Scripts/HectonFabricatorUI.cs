@@ -4,6 +4,7 @@ using Stopwatch = System.Diagnostics.Stopwatch;
 using Hecton8.Bootstrap;
 using Hecton8.Building;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Crafting;
 using Hecton8.Economy;
 using Hecton8.Input;
@@ -177,6 +178,8 @@ namespace Hecton8.UI
         private bool _hotSwapListenerRegistered;
         private bool _originShiftListenerRegistered;
         private InputManager _subscribedInputManager;
+        private uint _lastPlayerInputSignalSequence;
+        private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
         private int _selectedHologramRecipeHash;
         private bool _selectedHologramMatrixInitialized;
         private float4x4 _selectedHologramBaseMatrix = float4x4.identity;
@@ -335,6 +338,12 @@ namespace Hecton8.UI
         public void Tick(float deltaTime)
         {
             long solveStartTimestamp = Stopwatch.GetTimestamp();
+            ConsumePlayerInputSignals();
+            if (!_isOpen)
+            {
+                PublishSolveWarningIfNeeded(solveStartTimestamp);
+                return;
+            }
 
             if (_isOpen && _currentFabricator == null)
             {
@@ -598,9 +607,6 @@ namespace Hecton8.UI
             _subscribedInputManager = inputManager;
             _subscribedInputManager.OnNavigate += HandleNavigateInput;
             _subscribedInputManager.OnSubmit += HandleSubmitInput;
-            _subscribedInputManager.OnCancel += HandleCancelInput;
-            _subscribedInputManager.OnTabNext += HandleBatchNextInput;
-            _subscribedInputManager.OnTabPrevious += HandleBatchPreviousInput;
         }
 
         private void UnsubscribeInputManager()
@@ -610,10 +616,38 @@ namespace Hecton8.UI
 
             _subscribedInputManager.OnNavigate -= HandleNavigateInput;
             _subscribedInputManager.OnSubmit -= HandleSubmitInput;
-            _subscribedInputManager.OnCancel -= HandleCancelInput;
-            _subscribedInputManager.OnTabNext -= HandleBatchNextInput;
-            _subscribedInputManager.OnTabPrevious -= HandleBatchPreviousInput;
             _subscribedInputManager = null;
+        }
+
+        private void ConsumePlayerInputSignals()
+        {
+            ReadOnlySpan<PlayerInputSignal> signals = SignalBus<PlayerInputSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PlayerInputSignal signal = signals[i];
+                if (signal.SourceHash != PlayerInputSignalSourceHash ||
+                    !IsNewerInputSequence(signal.Sequence, _lastPlayerInputSignalSequence))
+                    continue;
+
+                _lastPlayerInputSignalSequence = signal.Sequence;
+                switch (signal.Command)
+                {
+                    case PlayerInputSignalCommands.Cancel:
+                        HandleCancelInput();
+                        break;
+                    case PlayerInputSignalCommands.TabNext:
+                        HandleBatchNextInput();
+                        break;
+                    case PlayerInputSignalCommands.TabPrevious:
+                        HandleBatchPreviousInput();
+                        break;
+                }
+            }
+        }
+
+        private static bool IsNewerInputSequence(uint candidate, uint current)
+        {
+            return candidate != 0u && candidate != current && unchecked(candidate - current) < 0x80000000u;
         }
 
         private void HandleBatchNextInput()

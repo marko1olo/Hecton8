@@ -372,3 +372,11 @@ Solution: Call `ClearGpuSkinningBinding()` on those upload failure paths so `_H8
 Rejected Alternatives: Depending on callers to query `_gpuBufferDataValid` was rejected because bound shaders do not consult that C# boolean. Releasing graphics buffers on every failure was rejected because the invalid-buffer branch already goes through `EnsureGraphicsBuffers()`/`HasValidGraphicsBuffer()` and the needed fix is shader state cleanup.
 Scalability potential: Low/MX350/high/ultra visuals are unchanged when upload succeeds. On failure, all tiers stop stale deformation instead of showing old bones; low tier remains cheap and high tier only keeps visual overkill with fresh buffers.
 Hardware Impact: 0 us normal-path cost. Failure path pays material/global float clears only when upload cannot produce a valid buffer; no measured frame-time saving is claimed.
+
+## Decision 40: Leviathan Rebind First-Upload LOD
+
+Problem: `BindFromFauna()` reseeded spine data and marked GPU upload dirty, but did not refresh `_activeSegmentCount`, `_qualityTier`, or resolved constraint iteration state before the next upload. `OnEnable()` handled this, but cold rebinds could publish one visual sync with stale tier state.
+Solution: Call `ResetConstraintIterationHysteresis()` after `SeedSpineFromOwner()` in `BindFromFauna()`, while leaving `Awake()` without an early `GlobalRegistry` tier read.
+Rejected Alternatives: Waiting for the next Tick was rejected because `SeedSpineFromOwner()` marks upload dirty immediately. Moving the reset into `Awake()` was rejected because bootstrap order may not have stable scalability state yet and `OnEnable()` already owns normal activation refresh.
+Scalability potential: Low/MX350 rebinds publish the eight-segment cheap contract immediately; high/ultra rebinds publish the high-tier segment count immediately. No change to valid steady-state visuals.
+Hardware Impact: 0 us hot-path cost. Cold rebind pays one `GlobalRegistry.ScalabilityTier` read and scalar reset, preventing a one-frame LOD mismatch rather than saving measured frame time.

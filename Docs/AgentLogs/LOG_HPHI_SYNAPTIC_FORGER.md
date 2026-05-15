@@ -604,3 +604,29 @@ Verification:
 - No dotnet build, restore, or rebuild was run.
 - `rg` confirms all three lanes are configured and their existing consumers read snapshots.
 - `git diff --check` on `GlobalSignals.cs` reported only standard LF/CRLF notices.
+
+## 2026-05-15 - Item/Radiation, Flood/Voxel, and Docking Lane Audit Addendum
+
+What was wrong:
+- The broad SignalBus audit produced false positives for legacy `CreateQueue` lanes and aliases, but it also exposed one real owner gap: drone docking signals were read/pushed without explicit owner prewarm.
+- Item/radiation and flood/voxel lanes required proof on disk because their consumers already depend on non-destructive snapshots.
+
+What was done:
+- Confirmed `ItemAcquiredSignal`, `RadiationDoseSignal`, `RadiationSourceSignal`, and `ResourceDepletionDeltaSignal` are centrally configured, prewarmed, and pushed/read through typed SignalBus lanes.
+- Confirmed `SubmarineFloodStateSignal` is centrally configured and `VoxelCarveEvent` is configured owner-locally in `VoxelDeltaProcessor`, preserving Core/Caves boundaries.
+- Added owner-local docking lane configuration in `DroneFleetManager` for `DockingRequestSignal`, `DockingCompleteSignal`, and `DockingFailedSignal` with capacity tied to `HeadlessDroneCapacity`.
+
+Cinematic Cheats used:
+- Docking, flood, voxel debris, radiation, and inventory reactions use compact numeric packets instead of polling live owners.
+- Voxel carve fanout stays domain-local so debris visuals can scale independently from the carve authority.
+
+Exact microseconds saved:
+- Item/radiation: estimated 0.1-0.4 us avoided on cold-lane and burst contention paths.
+- Flood/voxel: estimated 0.1-0.4 us avoided on first packet and restored deterministic debris/flood snapshot visibility.
+- Docking: estimated 0.1-0.3 us avoided on first docking request/completion/failure burst.
+
+Verification:
+- No dotnet build, restore, test, or rebuild was run.
+- `rg` confirms docking lanes are configured before request scans and completion/failure pushes.
+- One-pass SignalBus audit after the docking fix leaves only alias/legacy queue false positives: `AupPreShiftSignal`, `AupShiftSignal`, `ImpactSignal`, `EntityDeathSignal`, `MemoryPressureSignal`, residency aliases, and namespaced combat/macro aliases.
+- `git diff --check` on touched runtime and report files passed with only standard LF/CRLF notices.

@@ -92,6 +92,17 @@ namespace Hecton8.Core.Signals
     public static class PlayerInputSignalCommands
     {
         public const byte ToggleInventory = 1;
+        public const byte TogglePda = 2;
+        public const byte Cancel = 3;
+        public const byte TabNext = 4;
+        public const byte TabPrevious = 5;
+        public const byte Interact = 6;
+        public const byte PrimaryAction = 7;
+        public const byte SecondaryAction = 8;
+        public const byte ToolSlot1 = 9;
+        public const byte ToolSlot2 = 10;
+        public const byte ToolSlot3 = 11;
+        public const byte ToolSlot4 = 12;
     }
 
     /// <summary>Discrete player input lane for command-style consumers. Size: 32 bytes.</summary>

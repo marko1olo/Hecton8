@@ -433,3 +433,27 @@ Cinematic Cheats used: no simulation change. This keeps the lever as a kinematic
 Exact microseconds saved/spent: 0 us steady-state. Cold lifecycle/hot-swap pays only branch/order changes and avoids overlap callbacks into non-ticking levers.
 
 Verification: `git diff --check` passed for `OpenXRManualOverrideLever.cs`. Scoped counter reports `OnEnableTickBeforeReceiver=1`, `DispatcherUnregisterReceiverBeforeTick=1`, `DispatcherRecoveryTickBeforeReceiver=1`, `ReceiverRequiresRegisteredTick=1`, `OldRecoveryReceiverBeforeTick=0`, `ForbiddenPatternTotal=0`, `DotnetMention=0`. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - Snap Switch Signal Commit Gate
+
+What was wrong: `PhysicalSnapSwitch` could toggle state, register a UI tick, haptic-click, and queue audio even when the interaction signal service was absent or `Publish()` failed. That made presentation feedback outrun gameplay-authoritative interaction state.
+
+What was done: `TryQueueHandPress()` now rejects missing/uninitialized signal service. `PublishSwitchSignal()` returns `bool`, uses the desired switch state in the payload, and local state commits only after `interactionSignals.Publish(...)` succeeds.
+
+Cinematic Cheats used: no physics or joint simulation. The switch remains a scalar snap fake driven by the existing overlap receiver and typed interaction signal.
+
+Exact microseconds saved/spent: one branch per receiver callback. Failed publishes now avoid a UI-lane registration attempt, haptic enqueue, and audio queue. Successful switch path keeps 0 B/frame behavior.
+
+Verification: `git diff --check` passed for `PhysicalSnapSwitch.cs`. Scoped counter reports `SnapRequiresSignalService=1`, `PublishSwitchSignalReturnsBool=1`, `SnapPublishBeforeStateMutation=1`, `PublishUsesDesiredOn=2`, `PublishReturnsResult=1`, `OldVoidPublishMethod=0`, `DirectInput=0`, `HingeJoint=0`, `ForbiddenFind=0`, `DotnetMention=0`. `CURRENT_BATCH.md` extraction still returns no matching prompt block. No dotnet rebuild/probe was run by user instruction.
+
+## 2026-05-15 - Panel Button First-Press Commit Gate
+
+What was wrong: `PhysicalPanelButton` published before haptics, but it marked `_lastHandInsideFrame` and registered UI ticking before publish success. A rejected first press could still depress the visual button without accepted interaction truth.
+
+What was done: first-press `_lastHandInsideFrame` and `TryRegister()` now happen only after `interactionSignals.Publish(...)` succeeds. Already-dispatched and cooldown contacts still keep the button visually held without republishing every frame.
+
+Cinematic Cheats used: no physics or joint simulation. The button remains a cheap scalar visual depression fake driven by overlap probes and the typed interaction queue.
+
+Exact microseconds saved/spent: successful press cost is effectively unchanged. Failed publish avoids one hand-inside write, one UI-lane registration attempt, and follow-on visual depression work. 0 B/frame.
+
+Verification: `git diff --check` passed for `PhysicalPanelButton.cs` with CRLF warnings only. Scoped counter reports `PanelRequiresSignalService=1`, `PublishFailureBeforeInsideFrame=1`, `FirstPressRegisterAfterPublish=1`, `PressDispatchedUpdatesInsideFrame=1`, `CooldownUpdatesInsideFrame=1`, `OldInsideFrameBeforePressDispatched=0`, `HapticAfterPublish=1`, `DirectInput=0`, `HingeJoint=0`, `ForbiddenFind=0`, `DotnetMention=0`. `CURRENT_BATCH.md` extraction still returns no matching prompt block. No dotnet rebuild/probe was run by user instruction.

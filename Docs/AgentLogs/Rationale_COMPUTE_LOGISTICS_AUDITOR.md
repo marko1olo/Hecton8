@@ -299,3 +299,15 @@ Rejected Alternatives: Moving files out of Hecton was rejected because the curre
 Scalability potential: Low/Middle/High/Ultra process gains isolation: Timaert can inspect Hecton-imported docs without contaminating active Timaert task/log state, and Hecton no longer has to be used as a storage target for Timaert documentation.
 
 Hardware Impact: 0 runtime microseconds on i3/MX350. No C# source, C++ source, Unity asset, or Timaert runtime source was changed. Documentation import only.
+
+## Decision 25 - Rolling Token Burn Ledger
+
+Problem: The user asked for continued token accounting by second, minute, hour, day, cost per minute/hour/day, cache, and model mix. The previous rate audit was already stale and the first continuation script failed to map models because it used an obsolete `codex_threads` table name.
+
+Solution: Inspect the current `state_5.sqlite` schema, use `threads.rollout_path`, `threads.model`, and `threads.tokens_used`, then run a read-only JSONL pass over token-count rows. Preserve the current rolling 1h/6h/24h/7d/14d/30d burn and cost rates in `COMPUTE_TOKEN_BURN_RATE_LEDGER.md`. Add a light SQLite tail check after the full pass to capture live drift without repeating the full JSONL scan.
+
+Rejected Alternatives: Treating all unmatched sessions as GPT-5.5 was rejected because 40 final-usage sessions did not cleanly map to SQLite. Treating the first failed `unknown`-only scan as valid was rejected because it erased the actual model split. Claiming invoice precision was rejected because no billing export was read.
+
+Scalability potential: Low/Middle/High/Ultra process gains an explicit spend throttle. Future agents can see that the last 24h alone burned 3.237B tokens and about USD 1.04k cache-aware, and that the live tail added another 102.15M tokens at 27,749.37 tokens/sec after the full scan.
+
+Hardware Impact: 0 runtime microseconds on i3/MX350. No runtime code changed. Process impact: identifies 96.003% cache dependence and 57,636.87 tokens per meaningful script LOC as the current context-recursion signature.

@@ -521,3 +521,27 @@ Rejected Alternatives: leaving receiver-first order was rejected because it can 
 Scalability potential: Low/toaster avoids wasting fixed receiver slots after dispatcher lane saturation or service replacement. Middle/High keep dense cockpit controls coherent under streaming. Ultra can support more authored controls because only runnable levers occupy overlap receiver capacity.
 
 Hardware Impact: 0 us steady-state. Cold lifecycle/hot-swap pays only branch/order changes and prevents useless overlap callbacks into non-ticking levers.
+
+## Decision 43 - Snap switches must not commit without signal backpressure success
+
+Problem: `PhysicalSnapSwitch.TryQueueHandPress()` could mutate `_isOn`, register a UI-lane tick, enqueue haptics, and queue audio even when `IInteractionSignalService` was null, uninitialized, or rejected the publish. That creates local-only cockpit state and presentation feedback without gameplay-authoritative interaction truth.
+
+Solution: fail fast when the signal service is unavailable. Convert `PublishSwitchSignal()` from fire-and-forget to a boolean gate and publish using the computed desired state before mutating `_isOn`. Only successful signal publication allows target-angle assignment, cooldown, tick registration, haptic click, and audio.
+
+Rejected Alternatives: accepting local-only switch state was rejected because cockpit controls must not diverge from typed interaction lanes. Rolling back after haptics/audio was rejected because presentation side effects would already be visible. Adding a retry queue was rejected because the physical receiver path already carries current frame samples and adding storage would increase state without solving authority.
+
+Scalability potential: Low/toaster avoids wasting UI tick, haptic, and audio work when the lane is unavailable or saturated. Middle/High keep dense cockpit panels coherent under signal backpressure. Ultra can add richer click visuals and haptic layers later because feedback now depends on an accepted authoritative event.
+
+Hardware Impact: one null/initialized branch per receiver callback. On failure it saves one transform-independent state commit, one UI-lane registration attempt, one haptic enqueue, and one audio queue. i3/MX350 gain is small per event but prevents persistent wrong switch state and stray presentation work under overload.
+
+## Decision 44 - Panel buttons must gate first-press visuals behind accepted signals
+
+Problem: `PhysicalPanelButton.TryQueueHandPress()` already required an initialized signal service and successful `Publish()` before haptics, but it still wrote `_lastHandInsideFrame` and registered the UI tick before publish success. If the signal lane rejected the first press, the button could visually depress for that frame without an accepted gameplay event.
+
+Solution: keep stale/future frame validation first, but defer `_lastHandInsideFrame` and `TryRegister()` on the first-press path until after `interactionSignals.Publish(...)` returns true. Preserve the already-dispatched and cooldown paths so a previously accepted hold continues to animate without flooding the signal lane.
+
+Rejected Alternatives: visual depression on rejected publish was rejected because it makes the cockpit lie during backpressure. Republish on every held frame was rejected because the existing cooldown is the correct pressure valve. Adding a local pending-press queue was rejected because the physical hand probe provides fresh frame samples and queued local presentation would drift from interaction authority.
+
+Scalability potential: Low/toaster avoids stray UI ticks and visual work when the interaction lane is saturated. Middle/High keep dense physical panels honest under backpressure. Ultra can layer richer panel click visuals later because they now inherit the accepted-signal boundary.
+
+Hardware Impact: successful press cost is unchanged aside from moved scalar writes. Failed publish saves one `_lastHandInsideFrame` state write, one UI tick registration attempt, and any follow-on visual depression frame. i3/MX350 gain is small but removes a correctness leak under overload with 0 B/frame impact.

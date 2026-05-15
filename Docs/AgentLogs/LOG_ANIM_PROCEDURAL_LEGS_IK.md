@@ -399,3 +399,23 @@ No dotnet rebuild was run per user instruction. `Select-String` forbidden-patter
 
 Status:
 PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
+
+## 2026-05-15 Recursive QA Addendum 20
+
+What was wrong:
+`ContextualPhysicalIkRuntime` treated future or wrapped `KccVelocitySignal.Frame` values as age zero. That made malformed external velocity look fresh and could keep stale player velocity eligible for foot-ray velocity lead, squared step-threshold allowance, and swim foot posture. The cached velocity path had the same future-frame age-zero behavior.
+
+What was done:
+Added `KccVelocityMaxAgeFrames` and tightened `ConsumeKccVelocitySignal()`. The runtime now rejects future-frame, stale, or non-finite latest KCC velocity signals, clears cached KCC velocity/body AUP/frame on invalid state, and only returns cached velocity when the cache frame is nonzero, not in the future, finite, and within the 8-frame window.
+
+Cinematic cheats used:
+No movement dependency, no gait planner, no extra probes, no physical lower-body simulation. Bad velocity timing now collapses to neutral zero lead while the existing cinematic fake keeps hip-origin batched rays, triangle-wave foot lift, and velocity-led swim pose only from sane signal data.
+
+Exact microseconds saved:
+Added cost is fixed integer frame checks and one cache-clear path, estimated below 0.05 us/frame on i3/MX350 for active IK capture. Prevented cost is stale stride/swim prediction, cross-rig velocity contamination, and invalid black-box chronology from a future-frame signal.
+
+Verification:
+No dotnet rebuild was run per user instruction. `Select-String` forbidden-pattern scan scoped to `ContextualPhysicalIkRuntime.cs` returned no matches for `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, or `ikPass`. `git diff --check` over `ContextualPhysicalIkRuntime.cs` passed with CRLF warning only. MCP resource listing returned no Unity resources.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.

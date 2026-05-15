@@ -1300,7 +1300,7 @@ namespace Hecton8.World.Outposts
                 CellSizeMeters = ResolveCellSizeMeters(),
                 FloorHeightMeters = ResolveFloorHeightMeters(),
                 GridHash = _activeGridHash,
-                Frame = (uint)Time.frameCount,
+                Frame = CurrentFrameU32(),
                 CellCount = (ushort)math.min(ResolveActiveCellCount(), ushort.MaxValue),
                 Flags = ResolveDescriptorFlags()
             };
@@ -1327,6 +1327,11 @@ namespace Hecton8.World.Outposts
             return math.max(0, _activeDimensions.x) *
                    math.max(0, _activeDimensions.y) *
                    math.max(0, _activeDimensions.z);
+        }
+
+        private static uint CurrentFrameU32()
+        {
+            return unchecked((uint)math.max(0, Time.frameCount));
         }
 
         private uint ComputeGridHash()
@@ -1365,7 +1370,7 @@ namespace Hecton8.World.Outposts
 
             _telemetryRing[index] = new OutpostTelemetryEntry
             {
-                Frame = (uint)Time.frameCount,
+                Frame = CurrentFrameU32(),
                 Flags = flags,
                 SectorHash = sectorHash,
                 Seed = _activeSolveSeed,

@@ -452,3 +452,19 @@ What was done -> Added `_lastPublishedQualityTierByte`, reset it on transient re
 Cinematic Cheats used -> Low-tier proxy DSP and high/ultra granular stress remain presentation fakes; this keeps the fake selected from current quality policy.
 Exact Microseconds saved -> Adds one byte compare below 1 us per armed publish check. Avoids stale downstream DSP policy without per-frame registry polling or event-time queue spam.
 Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted readback confirms the tier reset/update/gate paths; forbidden-pattern scan returned no hits; scoped `git diff --check` reports line-ending warnings only.
+
+## 2026-05-15 - Loop 61 Audio Smoke-Test Contract Sync Review
+
+What was wrong -> `AdvancedAcousticsSmokeTester` still enforced the pre-Loop-51 prologue audio scalability policy string, so the editor smoke check could reject the intended event-time low-memory refresh.
+What was done -> Updated the assertion to require `CacheQualityPolicy(payload.CurrentQualityTier, payload.CurrentTier, GlobalRegistry.H8_LOW_MEMORY_PROFILE)` and adjusted the cold-policy wording.
+Cinematic Cheats used -> None; this protects verification for the low-tier DSP proxy and high/ultra granular stress presentation path.
+Exact Microseconds saved -> 0 us runtime. Editor-only check now matches the runtime no-frame-polling policy.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms the smoke-test expected string matches the prologue audio implementation.
+
+## 2026-05-15 - Loop 62 VFX Ambient Finite Wall Review
+
+What was wrong -> Re-entry VFX sanitized scalar config but could still apply NaN/Inf ambient colors or blend values to global Unity lighting before the runtime state guard recovered.
+What was done -> Added finite color helpers, finite blend resolution, authored fallback colors, telemetry flagging, and black-box dump on malformed ambient color config before `RenderSettings` writes.
+Cinematic Cheats used -> Plasma whiteout and ocean ambient transition remain shader/lighting fakes; this keeps the fake finite and scoped to the active prologue lifecycle.
+Exact Microseconds saved -> Adds color finite checks only when ambient blend publishes, below 1 us. Prevents invalid global lighting contamination and later scene cleanup work.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Runtime forbidden-pattern scan returned no hits; scoped `git diff --check` reports line-ending warnings only.

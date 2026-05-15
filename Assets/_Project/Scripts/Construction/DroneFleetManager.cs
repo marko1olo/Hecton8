@@ -407,6 +407,7 @@ namespace Hecton8.Construction
         private const int HeadlessTaskCapacity = 64;
         private const int HeadlessPendingLaunchCapacity = HeadlessDroneCapacity;
         private const int DroneServiceCommandCapacity = HeadlessDroneCapacity * 3;
+        private const int DockingSignalCapacity = HeadlessDroneCapacity;
         private const int DockingObstacleProbeMaxSegments = 3;
         private const int DockingRaycastCapacity = HeadlessDroneCapacity * DockingObstacleProbeMaxSegments;
         private const int DockingRaycastMinCommandsPerJob = 8;
@@ -569,6 +570,7 @@ namespace Hecton8.Construction
         private static int s_HeadlessDroneIdSequence;
         private static int s_HeadlessStasisSlotCount;
         private static bool s_Initialized;
+        private static bool s_DockingSignalLanesConfigured;
         private static bool s_HeadlessDriverRegistered;
         private static bool s_HeadlessJobScheduled;
         private static JobHandle s_HeadlessJobHandle;
@@ -710,6 +712,7 @@ namespace Hecton8.Construction
             s_LastSnapshot = default;
             s_LastFleetStatusSnapshot = default;
             s_Initialized = false;
+            s_DockingSignalLanesConfigured = false;
             s_HeadlessJobScheduled = false;
             s_DroneRenderMesh = null;
             s_DroneRenderMaterial = null;
@@ -1098,6 +1101,7 @@ namespace Hecton8.Construction
 
         private static void EnsureInitialized()
         {
+            EnsureDockingSignalLanes();
             if (!s_DroneStates.IsCreated)
                 AllocateHeadlessNativeMemory();
 
@@ -1111,6 +1115,20 @@ namespace Hecton8.Construction
             }
 
             TryRegisterHeadlessDriver();
+        }
+
+        private static void EnsureDockingSignalLanes()
+        {
+            if (s_DockingSignalLanesConfigured)
+                return;
+
+            SignalBus<DockingRequestSignal>.Configure(DockingSignalCapacity);
+            SignalBus<DockingRequestSignal>.EnsureInitialized();
+            SignalBus<DockingCompleteSignal>.Configure(DockingSignalCapacity);
+            SignalBus<DockingCompleteSignal>.EnsureInitialized();
+            SignalBus<DockingFailedSignal>.Configure(DockingSignalCapacity);
+            SignalBus<DockingFailedSignal>.EnsureInitialized();
+            s_DockingSignalLanesConfigured = true;
         }
 
         private static void AllocateHeadlessNativeMemory()

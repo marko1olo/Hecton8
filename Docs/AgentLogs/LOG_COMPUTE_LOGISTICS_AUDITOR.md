@@ -34,6 +34,48 @@ Verification:
 
 STATUS: AUDIT COMPLETE.
 
+## 2026-05-15 - Rolling Token Burn Rate Ledger
+
+What was wrong:
+- The previous rate snapshot was stale because `.codex` is live.
+- A first continuation script used the obsolete `codex_threads` table name and therefore collapsed the model split into `unknown`.
+
+What was done:
+- Re-read `Docs/Tasks/Status_COMPUTE_LOGISTICS_AUDITOR.md` and `Docs/AgentLogs/Rationale_COMPUTE_LOGISTICS_AUDITOR.md`.
+- Checked official OpenAI API pricing on 2026-05-15.
+- Inspected `state_5.sqlite` schema and corrected the join to `threads.rollout_path`, `threads.model`, and `threads.tokens_used`.
+- Parsed 765 `.codex` JSONL session files read-only.
+- Created `COMPUTE_TOKEN_BURN_RATE_LEDGER.md`.
+- Updated `COMPUTE_AUDIT_BRIEF.md`, `COMPUTE_AUDIT_INDEX.md`, `COMPUTE_RATE_EFFICIENCY_AUDIT.md`, status, and rationale.
+
+Evidence captured:
+- JSONL final total tokens: 45,453,534,197.
+- SQLite `threads.tokens_used`: 45,426,630,057.
+- Input tokens: 45,298,799,461.
+- Cached input tokens: 43,488,107,392.
+- Output tokens: 154,476,336.
+- Cached-input ratio: 96.00278%.
+- Model-aware cache-aware local estimate: USD 28,362.44.
+- Model-aware no-cache equivalent: USD 186,377.89.
+- Last 24h: 3,236,618,901 tokens, USD 1,039.59 cache-aware, USD 6,584.06 no-cache.
+- Last 1h: 238,176,241 tokens, USD 71.56 cache-aware.
+- Tail SQLite check: 45,528,781,582 tokens, +102,151,525 after full scan, 27,749.37 tokens/sec, USD 1.27/min cache-aware.
+- Tokens per meaningful script LOC: 57,636.87.
+- Tokens per script source byte: 1,080.482.
+
+Cinematic Cheats used:
+- None. Audit-only evidence accounting.
+
+Exact microseconds saved:
+- Runtime: 0 us.
+- Process: not claimed as measured saving. The ledger prevents stale cost/rate numbers from being reused as current truth.
+
+Verification:
+- Markdown-only audit continuation.
+- No runtime compile run because no C# or C++ runtime source changed.
+
+STATUS: AUDIT COMPLETE.
+
 ## 2026-05-15 - Timaert/Samosbor Transfer Boundary Pass
 
 What was wrong:

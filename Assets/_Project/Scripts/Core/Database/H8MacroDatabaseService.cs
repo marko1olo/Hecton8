@@ -732,6 +732,7 @@ namespace Hecton8.Core.Database
 
                     _deadBytes = 0L;
                     WriteDeadBytes(0L);
+                    MarkDirtyPayloadCacheCleanAfterSwapLocked();
                     ClearDirtyPayloadQueueLocked();
                     _dirtyAppendCount += flushedDirtyPayloads;
                     _compactionTempBytes = 0L;
@@ -1031,11 +1032,35 @@ namespace Hecton8.Core.Database
                     return false;
                 }
 
-                MarkPayloadCleanInCacheLocked(sectorHash, in dirty, newPayloadOffset);
                 flushedDirtyPayloads++;
             }
 
             return true;
+        }
+
+        private void MarkDirtyPayloadCacheCleanAfterSwapLocked()
+        {
+            if (_cacheOwner == null || !_dirtyPayloadKeys.IsCreated || _dirtyPayloadKeys.Length == 0)
+                return;
+
+            int dirtyCount = _dirtyPayloadKeys.Length;
+            for (int index = 0; index < dirtyCount; index++)
+            {
+                ulong sectorHash = _dirtyPayloadKeys[index];
+                if (!_dirtyPayloads.TryGetValue(sectorHash, out MacroDatabasePayloadHandle dirty) ||
+                    dirty.Pointer == IntPtr.Zero ||
+                    dirty.ByteLength <= 0 ||
+                    dirty.ByteLength > _config.MaxPayloadBytes)
+                {
+                    _cacheOwner.TryRemoveMacroDatabasePayload(sectorHash, out _);
+                    continue;
+                }
+
+                if (TryFindPayloadOffset(sectorHash, out long payloadOffset))
+                    MarkPayloadCleanInCacheLocked(sectorHash, in dirty, payloadOffset);
+                else
+                    _cacheOwner.TryRemoveMacroDatabasePayload(sectorHash, out _);
+            }
         }
 
         private void MarkPayloadCleanInCacheLocked(

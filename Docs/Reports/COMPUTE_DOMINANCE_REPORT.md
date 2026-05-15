@@ -716,3 +716,92 @@ Dialogue ratios:
 | Apply-patch markers per user marker | 5.60 |
 
 `logs_2.sqlite` is retention-capped evidence, not complete history. The 1,000-row plateau on 298 threads proves a cap or export boundary. JSONL marker counts are topology evidence, not exact executed tool-call counts. The valid conclusion is narrower and harder: this project is not normal chat prompting; it is a tool-saturated automation funnel with long-context memory drag.
+
+## Continuation Addendum - Rolling Token Burn Rate Ledger
+
+Snapshot: 2026-05-15T15:03+04:00
+
+The current rolling burn ledger is preserved at `COMPUTE_TOKEN_BURN_RATE_LEDGER.md`.
+
+| Metric | Value |
+|---|---:|
+| JSONL session files | 765 |
+| JSONL files with final usage | 747 |
+| Parsed token-count rows | 364,838 |
+| Observation start UTC | 2026-04-03T17:10:34.949Z |
+| Latest token timestamp UTC | 2026-05-15T11:02:34.235Z |
+| JSONL final total tokens | 45,453,534,197 |
+| Positive-delta token flow | 45,443,684,518 |
+| SQLite `threads.tokens_used` | 45,426,630,057 |
+| JSONL/SQLite drift | 0.0592% |
+| Input tokens | 45,298,799,461 |
+| Cached input tokens | 43,488,107,392 |
+| Non-cached input tokens | 1,810,692,069 |
+| Output tokens | 154,476,336 |
+| Reasoning output tokens | 53,416,102 |
+| Cached-input ratio | 96.00278% |
+| Energy by prompt constant | 2,272.68 MWh |
+
+Cost scenarios:
+
+| Scenario | Cache-aware cost | No-cache equivalent | Cache avoided |
+|---|---:|---:|---:|
+| Model-aware local estimate | USD 28,362.44 | USD 186,377.89 | USD 158,015.45 |
+| All tokens as GPT-5.5 standard | USD 35,431.80 | USD 231,128.29 | USD 195,696.48 |
+| All tokens as GPT-5.5 long-context | USD 68,546.46 | USD 459,939.43 | USD 391,392.97 |
+
+Rolling burn rates:
+
+| Window | Tokens | Tokens/sec | Tokens/min | Tokens/hour | Tokens/day equiv | Cost | USD/min | USD/hour | USD/day equiv |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Last 1h | 238,176,241 | 66,160.07 | 3,969,604.02 | 238,176,241.00 | 5,716,229,784.00 | USD 71.56 | USD 1.19 | USD 71.56 | USD 1,717.40 |
+| Last 6h | 527,671,396 | 24,429.23 | 1,465,753.88 | 87,945,232.67 | 2,110,685,584.00 | USD 156.18 | USD 0.43 | USD 26.03 | USD 624.73 |
+| Last 24h | 3,236,618,901 | 37,460.87 | 2,247,652.01 | 134,859,120.88 | 3,236,618,901.00 | USD 1,039.59 | USD 0.72 | USD 43.32 | USD 1,039.59 |
+| Last 7d | 19,978,482,276 | 33,033.20 | 1,981,992.29 | 118,919,537.36 | 2,854,068,896.57 | USD 13,226.50 | USD 1.31 | USD 78.73 | USD 1,889.50 |
+| Last 14d | 29,928,430,817 | 24,742.42 | 1,484,545.18 | 89,072,710.76 | 2,137,745,058.36 | USD 20,820.70 | USD 1.03 | USD 61.97 | USD 1,487.19 |
+| Last 30d | 42,503,434,268 | 16,397.93 | 983,875.79 | 59,032,547.59 | 1,416,781,142.27 | USD 27,209.39 | USD 0.63 | USD 37.79 | USD 906.98 |
+| Whole observed | 45,443,684,518 | 12,599.73 | 755,983.72 | 45,359,023.34 | 1,088,616,560.10 | USD 28,354.91 | USD 0.47 | USD 28.30 | USD 679.25 |
+
+Model split:
+
+| Model bucket | Sessions | Final tokens | Cache ratio | Cache-aware cost |
+|---|---:|---:|---:|---:|
+| `gpt-5.5` | 435 | 29,326,222,059 | 96.158% | USD 22,382.94 |
+| `gpt-5.4` | 237 | 11,592,726,837 | 95.717% | USD 4,696.15 |
+| `unknown` | 40 | 4,241,985,111 | 96.164% | USD 1,215.37 |
+| `gpt-5.4-mini` | 24 | 192,533,099 | 87.407% | USD 36.71 |
+| `gpt-5.2` / Codex proxy | 6 | 85,655,151 | 93.728% | USD 29.88 |
+| `gpt-5.1-codex-mini` | 2 | 13,315,827 | 91.750% | USD 0.77 |
+| `gpt-5.3-codex` | 3 | 1,096,113 | 80.819% | USD 0.63 |
+
+Latest rolling-day answer: 3.237B tokens in 24h, USD 1,039.59 cache-aware, USD 6,584.06 no-cache equivalent. Cache avoided USD 5,544.47 in that 24h window.
+
+Live SQLite tail check after the full scan:
+
+| Metric | Value |
+|---|---:|
+| Tail check UTC | 2026-05-15T12:03:55.455Z |
+| SQLite tokens at tail check | 45,528,781,582 |
+| Delta after full scan | 102,151,525 |
+| Delta model bucket | `gpt-5.5` |
+| Delta tokens/sec | 27,749.37 |
+| Delta tokens/min | 1,664,962.08 |
+| Delta tokens/hour | 99,897,725.04 |
+| Delta tokens/day equivalent | 2,397,545,401.05 |
+| Delta cache-aware estimated cost | USD 77.97 |
+| Delta average cost/min | USD 1.27 |
+| Delta average cost/hour | USD 76.25 |
+
+Current code ratios:
+
+| Ratio | Value |
+|---|---:|
+| Script files | 1,505 |
+| Physical script LOC | 961,111 |
+| Meaningful script LOC | 788,619 |
+| Script source bytes | 42,067,847 |
+| Tokens per meaningful LOC | 57,636.87 |
+| Tokens per script source byte | 1,080.482 |
+| Context amplification vs 50-token/LOC heuristic | 1,152.74x |
+
+Verdict: cache is carrying the economy. The project is not cheap because it is lean. It is cheap because 96.003% of input tokens are discounted cached context. The engineering smell is still the same: long-context recursion at 57.6k tokens per meaningful line.

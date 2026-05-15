@@ -140,6 +140,12 @@ namespace Hecton8.UI
         private const float ProjectionPosePositionTolerance = 0.0001f;
         private const float ProjectionPoseScaleTolerance = 0.000001f;
         private const float MaterialFloatWriteEpsilon = 0.0005f;
+        private const float ScannerEvidenceEpsilon = 0.0001f;
+        private const float ScannerTraceEvidenceThreshold01 = 0.1f;
+        private const float ScannerHologramFragmentSignalFloor = 0.18f;
+        private const float ScannerHologramMaterialSignalFloor = 0.24f;
+        private const float ScannerHologramTraceSignalFloor = 0.32f;
+        private const float ScannerHologramFaunaSignalFloor = 0.85f;
         private const string AcousticRadarShaderPath = "Assets/_Project/Art/Shaders/Hecton_HUD_AcousticRadarOverlay.shader";
         private const string ThreatChevronShaderPath = "Assets/_Project/Art/Shaders/Hecton_ScannerMarkerInstanced.shader";
         private const string DitheredUiBackgroundShaderPath = "Assets/_Project/Shaders/UI/Hecton_IGNDitheredBackground.shader";
@@ -2754,8 +2760,9 @@ namespace Hecton8.UI
                  snapshot.ProxyMeshIndex >= 0 ||
                  snapshot.MaterialClass != ScannerTool.ScientificMaterialClass.None ||
                  snapshot.HasFaunaContact ||
-                 snapshot.ChemicalLoad01 > 0.0001f ||
-                 snapshot.Toxicity01 > 0.0001f ||
+                 snapshot.ChemicalLoad01 > ScannerEvidenceEpsilon ||
+                 snapshot.Toxicity01 > ScannerEvidenceEpsilon ||
+                 snapshot.OrganicBlood01 > ScannerTraceEvidenceThreshold01 ||
                  snapshot.HasAttractantTrace);
         }
 
@@ -2767,8 +2774,22 @@ namespace Hecton8.UI
             signal01 = math.max(signal01, math.saturate(snapshot.Toxicity01));
             signal01 = math.max(signal01, math.saturate(snapshot.OrganicBlood01));
             signal01 = math.max(signal01, math.saturate(snapshot.AttractantScent01));
+            if (snapshot.Fragment != null || snapshot.ProxyMeshIndex >= 0)
+                signal01 = math.max(signal01, ScannerHologramFragmentSignalFloor);
+
+            if (snapshot.MaterialClass != ScannerTool.ScientificMaterialClass.None)
+                signal01 = math.max(signal01, ScannerHologramMaterialSignalFloor);
+
+            if (snapshot.ChemicalLoad01 > ScannerEvidenceEpsilon ||
+                snapshot.Toxicity01 > ScannerEvidenceEpsilon ||
+                snapshot.OrganicBlood01 > ScannerTraceEvidenceThreshold01 ||
+                snapshot.HasAttractantTrace)
+            {
+                signal01 = math.max(signal01, ScannerHologramTraceSignalFloor);
+            }
+
             if (snapshot.HasFaunaContact)
-                signal01 = math.max(signal01, 0.85f);
+                signal01 = math.max(signal01, ScannerHologramFaunaSignalFloor);
 
             return signal01;
         }
@@ -5876,7 +5897,7 @@ namespace Hecton8.UI
                 cursor = AppendLiteral(",", buffer, cursor);
                 cursor = AppendSignedInt(scentZ, buffer, cursor);
             }
-            else if (snapshot.OrganicBlood01 > 0.1f)
+            else if (snapshot.OrganicBlood01 > ScannerTraceEvidenceThreshold01)
             {
                 cursor = AppendLiteral(" // BLOOD TRACE", buffer, cursor);
             }
@@ -5890,7 +5911,7 @@ namespace Hecton8.UI
                 ((int)snapshot.MaterialClass * 13) ^
                 (temperatureRounded * 31) ^
                 (toxicityPercent * 19) ^
-                (snapshot.OrganicBlood01 > 0.1f ? 251 : 0) ^
+                (snapshot.OrganicBlood01 > ScannerTraceEvidenceThreshold01 ? 251 : 0) ^
                 ((int)snapshot.AttractantChannel * 67) ^
                 (scentX * 23) ^
                 (scentY * 29) ^

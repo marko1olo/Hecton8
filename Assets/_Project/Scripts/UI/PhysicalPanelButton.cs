@@ -262,13 +262,19 @@ namespace Hecton8.UI
             if (frame > currentFrame || frame < _lastHandInsideFrame)
                 return false;
 
-            _lastHandInsideFrame = frame;
-            TryRegister();
             if (_pressDispatched)
+            {
+                _lastHandInsideFrame = frame;
+                TryRegister();
                 return true;
+            }
 
             if (_signalCooldownRemaining > 0f)
+            {
+                _lastHandInsideFrame = frame;
+                TryRegister();
                 return true;
+            }
 
             double3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(handPosition);
             Vector3 fallbackForward = _cachedTransform != null ? _cachedTransform.forward : Vector3.forward;
@@ -299,6 +305,8 @@ namespace Hecton8.UI
             if (!interactionSignals.Publish(in signal, activationVolume))
                 return false;
 
+            _lastHandInsideFrame = frame;
+            TryRegister();
             _signalCooldownRemaining = _resolvedSignalCooldownSeconds;
             EmitPressHaptic(handSourceCollider, fallbackHandSide);
             return true;

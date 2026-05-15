@@ -218,6 +218,14 @@ Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instructio
 Scalability potential: Low/MX350 pays no steady-state cost; the sync is disable-only. Middle/High/Ultra get deterministic lifecycle behavior for pooled rigs, scene transitions, and future multi-rig contextual IK without adding runtime sensing or solver work.
 Hardware Impact: 0.0 us steady-state. Disable-only cost is a forced job completion if one is outstanding; this is safer than carrying stale target writes across origin/lifecycle state.
 
+## Decision 28: KCC velocity timestamp quarantine
+
+Problem: `ContextualPhysicalIkRuntime` consumed the latest decoupled `KccVelocitySignal` with `currentFrame >= signalFrame ? currentFrame - signalFrame : 0u`. A future or wrapped signal frame therefore looked brand new, and the cached velocity path used the same pattern, allowing stale player velocity to keep driving foot-ray lead and swim posture.
+Solution: Add `KccVelocityMaxAgeFrames`, reject future-frame, stale, or non-finite latest KCC velocity signals, and clear the cached KCC velocity/body AUP/frame when the external signal or cache is invalid. Cached velocity is now only returned when its frame is nonzero, not in the future, finite, and within the 8-frame window.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Accepting wrapped frame arithmetic was rejected because this is presentation IK and fail-closed neutral velocity is cheaper than preserving a suspicious signal. Pulling movement state directly from `PlayerKinematicsRuntime` was rejected because the system must remain decoupled through the signal lane.
+Scalability potential: Low/MX350 falls back to zero stride/swim lead on suspicious timestamp data while keeping the same low-cost lower-body fake. Middle keeps stable velocity-led steps without direct KCC coupling. High/Ultra can spend visual budget on richer lower-body/secondary presentation without a future-frame signal pinning stale movement into every rig near the player body.
+Hardware Impact: Added work is two integer frame checks, one named max-age comparison, and cache clearing on invalid state, estimated below 0.05 us/frame on i3/MX350 for active IK capture. No allocations, no new jobs, no ray lanes, no public API change.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Final anti-bloat pass required checking the lower-body implementation for honest simulation, unbounded math, GC leaks, and out-of-domain edits.

@@ -540,3 +540,19 @@ Solution: Track `_lastPublishedQualityTierByte`, reset it with transient audio s
 Rejected Alternatives: Force-publish directly from `OnScalabilityChanged()`, or poll registry every audio frame. Event-time force-publish can waste SPSC capacity while prologue audio is idle; per-frame registry polling violates the hot-path cache rule.
 Scalability potential: Low/MX350 receives low-tier proxy DSP metadata promptly. Middle/High/Ultra receive quality-tier metadata even when scalar values are otherwise stable, allowing richer granular/binaural paths to engage from current policy.
 Hardware Impact: One byte compare per armed prologue audio publish check, below 1 us on i3/MX350. No allocation, no extra registry read, no audio-thread work. Verification static only; no rebuild.
+
+## Decision 66 - Audio Smoke-Test Contract Sync
+
+Problem: The prologue audio smoke tester still asserted the old `_lowMemoryProfile` scalability-event path after the runtime producer was corrected to sample `GlobalRegistry.H8_LOW_MEMORY_PROFILE` on the event edge.
+Solution: Update the editor smoke-test string and wording so it enforces the current cold+event low-memory policy instead of failing on the intended runtime code.
+Rejected Alternatives: Revert the runtime event refresh to satisfy stale test text, or delete the assertion. Reverting would restore the stale low-memory edge; deleting the assertion would remove the guard against future drift.
+Scalability potential: Low/MX350 keeps editor verification aligned with emergency low-memory DSP proxy behavior. Middle/High/Ultra keep granular overkill policy guarded by tests rather than stale text.
+Hardware Impact: 0 us runtime; editor-only assertion update. It prevents false verification failure and keeps the no-frame-polling DSP policy documented in executable smoke checks. Verification static only; no rebuild.
+
+## Decision 67 - VFX Ambient Finite Wall
+
+Problem: Re-entry VFX clamped scalar presentation config but still let non-finite serialized ambient colors or a poisoned ambient blend reach `RenderSettings.ambientLight`/`ambientProbe` before `IsFiniteRuntimeState()` sanitized local state.
+Solution: Add finite color resolution and a finite ambient blend wall in `ApplyAmbientBlend()`, fall back to authored space/ocean defaults, write `FlagNaNGuard` telemetry, and dump the VFX black box when malformed ambient color config is detected.
+Rejected Alternatives: Trust Unity color serialization, or rely on post-apply runtime sanitize. Unity/tool-mutated serialized data can carry NaN/Inf; post-apply sanitize is too late because global lighting has already been contaminated.
+Scalability potential: Low/MX350 gets stable cheap whiteout/ocean ambient even under corrupt config. Middle/High/Ultra keep richer ambient transition overkill without allowing invalid globals to poison later scenes.
+Hardware Impact: Finite color checks run only when ambient blend publishes, below 1 us on i3/MX350. No allocation, no per-frame registry read, and fault-only black-box dump. Verification static only; no rebuild.

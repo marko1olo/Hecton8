@@ -223,10 +223,20 @@ Mandates read:
 - [x] Non-fragment scanner hologram uses evidence strength | DOD: `RenderScannerHologram()` now resolves a cheap `signal01` from progress, density, chemical load, toxicity, blood, attractant scent, and fauna contact before driving hologram color, jitter, alpha, and scanline position | Rejected: leaving widened spatial-hash contacts visually stuck at zero-progress start state | Estimate: six saturate/max ops and one fauna branch per active hologram refresh
 - [x] Static no-regression checks after Loop 31 | DOD: `git diff HEAD --check` and `git diff --check` passed with SuitHUD/docs line-ending warnings only, added-line banned-pattern scan found no forbidden UI/text/physics patterns, and targeted diff scan confirmed scanner hologram visual state now uses `signal01` evidence strength | Rejected: dotnet rebuild; static source checks only | Estimate: 1900 us
 
+## Loop 32 - Scanner Hologram Evidence Floors
+
+- [x] Confirmed-evidence scanner hologram floors | DOD: `ResolveScannerHologramSignal01()` now applies named scalar floors for fragment/proxy, material, chemical/toxicity/attractant trace, and fauna contacts so confirmed payloads remain visibly legible even when raw scalar evidence is near zero | Rejected: full-intensity non-fragment contacts, new UI query path, and new mesh/material resources | Estimate: four bounded branch/max gates per active hologram refresh
+- [x] Static no-regression checks after Loop 32 | DOD: `git diff HEAD --check` and `git diff --check` passed with SuitHUD line-ending warning only, added-line banned-pattern scan found no forbidden UI/text/physics patterns, and targeted diff scan confirmed named evidence floors and shared evidence epsilon | Rejected: dotnet rebuild; static source checks only | Estimate: 1800 us
+
+## Loop 33 - Organic Blood Trace Gate Consistency
+
+- [x] Organic blood trace shares scanner evidence truth | DOD: `HasScannerHologramPayload()`, `ResolveScannerHologramSignal01()`, status text, and status cache version now use `ScannerTraceEvidenceThreshold01` for organic blood trace evidence | Rejected: keeping a hidden `0.1f` literal and letting blood-only traces fail the shared payload gate | Estimate: one scalar compare in existing evidence gate/floor path
+- [x] Static no-regression checks after Loop 33 | DOD: `git diff HEAD --check` passed with SuitHUD line-ending warning only, added-line banned-pattern scan found no forbidden UI/text/physics patterns, and targeted diff scan confirmed organic blood threshold reuse in gate, floor, text, and version | Rejected: dotnet rebuild; static source checks only | Estimate: 1600 us
+
 ## Verification
 
 - [x] Compile/source validation - `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:quiet -clp:Summary` passed with 0 warnings / 0 errors after Loop 10
-- [ ] Compile/source validation after Loops 11-31 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
+- [ ] Compile/source validation after Loops 11-33 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
 - [ ] Console check - BLOCKED BY UNITY SESSION: MCP validate/console calls cannot connect to Unity MCP HTTP endpoint / session
 - [x] Re-read prompt after core tasks
 - [x] Omega polish mandate after all tasks done or blocked

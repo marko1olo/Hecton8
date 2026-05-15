@@ -37,6 +37,7 @@
 
 using Hecton8.Audio;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Crafting;
 using Hecton8.Gameplay;
 using Hecton8.Input;
@@ -694,11 +695,11 @@ namespace Hecton8.UI
         private int _activeTab = -1;
         private bool _registered;
         private bool _craftingEventsRegistered;
-        private bool _inputSubscribed;
         private bool _missingUiShellReported;
         private bool _missingInputServiceReported;
         private uint _observedUIStateCommandSequence;
-        private IInputService _subscribedInputManager;
+        private uint _lastPlayerInputSignalSequence;
+        private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
 
         // Fade animation
         private float _targetAlpha;
@@ -766,7 +767,6 @@ namespace Hecton8.UI
 
             TryRegister();
             TryRegisterCraftingEvents();
-            SubscribeToInputManager();
         }
 
         private void Start()
@@ -774,8 +774,6 @@ namespace Hecton8.UI
             ResolveTabReferences(createMissingTabs: false);
             TryRegister();
             TryRegisterCraftingEvents();
-
-            SubscribeToInputManager();
 
             if (!_registered)
             {
@@ -982,7 +980,6 @@ namespace Hecton8.UI
         {
             TryUnregister();
             UnregisterCraftingEvents();
-            UnsubscribeFromInputManager();
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
 
@@ -994,47 +991,8 @@ namespace Hecton8.UI
         {
             TryUnregister();
             UnregisterCraftingEvents();
-            UnsubscribeFromInputManager();
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
-        }
-
-        private void SubscribeToInputManager()
-        {
-            IInputService inputManager = GlobalRegistry.Input;
-            if (inputManager == null)
-                return;
-
-            if (_inputSubscribed && ReferenceEquals(_subscribedInputManager, inputManager))
-                return;
-
-            UnsubscribeFromInputManager();
-
-            inputManager.OnPDA += HandlePDAInput;
-            inputManager.OnInventory += HandleInventoryInput;
-            inputManager.OnCancel += HandleCancelInput;
-            inputManager.OnTabPrevious += HandleBackInput;
-            inputManager.OnTabNext += HandleTabNextInput;
-            _subscribedInputManager = inputManager;
-            _inputSubscribed = true;
-        }
-
-        private void UnsubscribeFromInputManager()
-        {
-            if (!_inputSubscribed)
-                return;
-
-            if (_subscribedInputManager != null)
-            {
-                _subscribedInputManager.OnPDA -= HandlePDAInput;
-                _subscribedInputManager.OnInventory -= HandleInventoryInput;
-                _subscribedInputManager.OnCancel -= HandleCancelInput;
-                _subscribedInputManager.OnTabPrevious -= HandleBackInput;
-                _subscribedInputManager.OnTabNext -= HandleTabNextInput;
-            }
-
-            _subscribedInputManager = null;
-            _inputSubscribed = false;
         }
 
         private void TryRegister()
@@ -1082,10 +1040,8 @@ namespace Hecton8.UI
 
         public void Tick(float deltaTime)
         {
-            SubscribeToInputManager();
+            ConsumePlayerInputSignals();
             ApplyHeadlessUIState();
-
-            // Input is now handled via events in HandlePDAInput, etc.
 
             // ── Fade animation ──
             if (_isFading)
@@ -1643,6 +1599,43 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
         //  INPUT CALLBACKS (ZERO GC)
         // ══════════════════════════════════════════════════════════
+
+        private void ConsumePlayerInputSignals()
+        {
+            ReadOnlySpan<PlayerInputSignal> signals = SignalBus<PlayerInputSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PlayerInputSignal signal = signals[i];
+                if (signal.SourceHash != PlayerInputSignalSourceHash ||
+                    !IsNewerInputSequence(signal.Sequence, _lastPlayerInputSignalSequence))
+                    continue;
+
+                _lastPlayerInputSignalSequence = signal.Sequence;
+                switch (signal.Command)
+                {
+                    case PlayerInputSignalCommands.TogglePda:
+                        HandlePDAInput();
+                        break;
+                    case PlayerInputSignalCommands.ToggleInventory:
+                        HandleInventoryInput();
+                        break;
+                    case PlayerInputSignalCommands.Cancel:
+                        HandleCancelInput();
+                        break;
+                    case PlayerInputSignalCommands.TabPrevious:
+                        HandleBackInput();
+                        break;
+                    case PlayerInputSignalCommands.TabNext:
+                        HandleTabNextInput();
+                        break;
+                }
+            }
+        }
+
+        private static bool IsNewerInputSequence(uint candidate, uint current)
+        {
+            return candidate != 0u && candidate != current && unchecked(candidate - current) < 0x80000000u;
+        }
 
         private void HandlePDAInput()
         {

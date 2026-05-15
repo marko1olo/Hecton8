@@ -95,6 +95,7 @@ Persistent H8 allocations are all-or-nothing:
 - if allocation tracking or memory-map descriptor registration fails after native memory is acquired, the new allocation is freed and `FatalMemoryException` is thrown;
 - block descriptor storage grows up to `MaxTrackingCapacity` instead of silently dropping new descriptor evidence;
 - freed non-vault allocation descriptors are tombstoned with `Bytes=0` so descriptor slots are reusable across allocation churn;
+- reused tombstone descriptor slots advance generation from the previous slot unless the incoming domain generation is already higher;
 - tracking-table growth rebuilds the pointer-owner map all-or-nothing; duplicate/corrupt pointer evidence aborts growth before old tables are disposed;
 - read-only aliases require a concrete `SystemID` reader at the DataVault and H8Memory boundaries;
 - generation handles mark the target block as externally viewed before returning the post-mark generation;

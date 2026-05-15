@@ -4,6 +4,7 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.World;
 using UnityEditor;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Editor.DebugTools
@@ -50,8 +51,8 @@ namespace Hecton8.Editor.DebugTools
         // COLD ALLOC: Quaternion[96] - platform-local rotation history ring buffer - owner: KinematicGhostDebugger
         private readonly Quaternion[] _localRotationHistory = new Quaternion[MaxHistorySamples];
 
-        // COLD ALLOC: Vector3[96] - absolute universe position history ring buffer - owner: KinematicGhostDebugger
-        private readonly Vector3[] _universeHistory = new Vector3[MaxHistorySamples];
+        // COLD ALLOC: double3[96] - absolute universe position history ring buffer - owner: KinematicGhostDebugger
+        private readonly double3[] _universeHistory = new double3[MaxHistorySamples];
 
         // COLD ALLOC: Quaternion[96] - world rotation history ring buffer - owner: KinematicGhostDebugger
         private readonly Quaternion[] _worldRotationHistory = new Quaternion[MaxHistorySamples];
@@ -189,7 +190,7 @@ namespace Hecton8.Editor.DebugTools
         {
             Vector3 playerWorldPosition = _playerTransform.position;
             Quaternion playerWorldRotation = _playerTransform.rotation;
-            Vector3 absolutePreviewPosition = ToAbsoluteUniversePosition(playerWorldPosition);
+            double3 absoluteUniversePosition = ToAbsoluteUniversePositionDouble3(playerWorldPosition);
 
             Vector3 localPosition = playerWorldPosition;
             Quaternion localRotation = playerWorldRotation;
@@ -202,7 +203,7 @@ namespace Hecton8.Editor.DebugTools
 
             _localHistory[_historyHead] = localPosition;
             _localRotationHistory[_historyHead] = localRotation;
-            _universeHistory[_historyHead] = absolutePreviewPosition;
+            _universeHistory[_historyHead] = absoluteUniversePosition;
             _worldRotationHistory[_historyHead] = playerWorldRotation;
 
             _historyHead = (_historyHead + 1) % MaxHistorySamples;
@@ -276,21 +277,37 @@ namespace Hecton8.Editor.DebugTools
         private Vector3 ResolveUniversePreviewPosition(int historyIndex)
         {
             Vector3 currentWorldPosition = _playerTransform.position;
-            Vector3 currentUniversePosition = ToAbsoluteUniversePosition(currentWorldPosition);
-            Vector3 absoluteDelta = _universeHistory[historyIndex] - currentUniversePosition;
-            return currentWorldPosition + absoluteDelta;
+            double3 currentWorldPositionDouble = new double3(
+                currentWorldPosition.x,
+                currentWorldPosition.y,
+                currentWorldPosition.z);
+            double3 currentUniversePosition = ToAbsoluteUniversePositionDouble3(currentWorldPosition);
+            double3 absoluteDelta = _universeHistory[historyIndex] - currentUniversePosition;
+            return ToVector3(currentWorldPositionDouble + absoluteDelta);
         }
 
-        private static Vector3 ToAbsoluteUniversePosition(Vector3 runtimePosition)
+        private static double3 ToAbsoluteUniversePositionDouble3(Vector3 runtimePosition)
         {
-            Vector3 bridgeAbsolutePosition = HectonMapMagicVegetationBridge.ToUniverseSpace(runtimePosition);
-            if ((bridgeAbsolutePosition - runtimePosition).sqrMagnitude > 0.000001f)
+            double3 runtimePositionDouble = new double3(
+                runtimePosition.x,
+                runtimePosition.y,
+                runtimePosition.z);
+            double3 bridgeAbsolutePosition = HectonMapMagicVegetationBridge.ToUniverseSpaceDouble3(runtimePosition);
+            if (math.lengthsq(bridgeAbsolutePosition - runtimePositionDouble) > 0.000001d)
                 return bridgeAbsolutePosition;
 
             HectonFloatingOrigin floatingOrigin = GlobalRegistry.FloatingOrigin;
             return floatingOrigin != null
-                ? HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimePosition)
-                : runtimePosition;
+                ? HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition)
+                : runtimePositionDouble;
+        }
+
+        private static Vector3 ToVector3(double3 value)
+        {
+            return new Vector3(
+                (float)value.x,
+                (float)value.y,
+                (float)value.z);
         }
 
         private int GetHistoryIndex(int orderedIndex)

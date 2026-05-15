@@ -353,7 +353,7 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable
         if (targetCamera == null)
             return;
 
-        HectonPlayerMovement movement = targetCamera.GetComponentInParent<HectonPlayerMovement>();
+        HectonPlayerMovement movement = ResolveComponentInParents<HectonPlayerMovement>(targetCamera.transform);
         if (movement != null)
             playerMovement = movement;
     }
@@ -364,5 +364,19 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable
             return;
 
         playerTransform.TryGetComponent(out playerMovement);
+    }
+
+    private static T ResolveComponentInParents<T>(Transform start) where T : Component
+    {
+        Transform current = start;
+        while (current != null)
+        {
+            if (current.TryGetComponent(out T component))
+                return component;
+
+            current = current.parent;
+        }
+
+        return null;
     }
 }

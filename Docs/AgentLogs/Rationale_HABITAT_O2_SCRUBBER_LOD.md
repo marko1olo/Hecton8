@@ -270,3 +270,17 @@ Solution: `EnsureNativeState` now treats `RoomO2.IsCreated && !IsInitialized` as
 Rejected Alternatives: Keeping the solver invisible but unrecovered was rejected because a single missing native lane could strand atmosphere for the scene. Forcing immediate job completion was rejected; the existing deferred disposal handle remains the correct no-stall path.
 Scalability potential: Low through Ultra keep normal startup unchanged; partial H-Phi/native migration now recovers to coherent SOA state instead of staying disabled.
 Hardware Impact: Cold fault-recovery path only. No steady-state frame cost and no microsecond saving claimed.
+
+## Self-Review 32 - Base Transition Job Race Closure
+Problem: Per-frame base transition draining could run while `GasDynamicsStepJob` was active and mutate `_roomBaseIndex` or `BaseAwakeState`, both of which the job reads.
+Solution: Added a fixed-capacity `NativeList<PendingBaseTransitionSignal>` owned by the gas solver. When a step is running, frame snapshots are captured into this native buffer only; after the job completes, deferred packets are applied in captured order before current-frame packets.
+Rejected Alternatives: Forcing the gas job to complete on base entry was rejected because a trigger event must not introduce a sync stall. Dropping frame snapshots while the job runs was rejected because it can lose the inside override and falsely hibernate an occupied base. Managed queues were rejected by the zero-GC mandate.
+Scalability potential: Low tier pays one preallocated native list sized for two full transition frames; High/Ultra keep the same deterministic transition authority without a main-thread job stall.
+Hardware Impact: Expected steady-state cost is zero when no transition occurs. Transition storm cost is bounded by 128 native records and prevents a race-class fault; no profiler microsecond claim without Unity verification.
+
+## Self-Review 33 - Transition Overflow Fail-Open
+Problem: The fixed deferred transition buffer originally dropped excess packets silently when full, which could lose the only player-inside wake override.
+Solution: Overflow now sets a native-domain fail-open flag. After the active gas job completes, the solver wakes configured bases and blocks hibernation for a two-second unscaled guard window.
+Rejected Alternatives: Growing the native list on demand was rejected because transition capture runs on the gameplay frame path and must not allocate. Keeping silent drops was rejected because hibernation correctness beats saving a few microseconds under a storm. Permanent player-inside marking was rejected because one overflow could pin a base awake forever.
+Scalability potential: Low devices get bounded memory and fail-open correctness under storms; High/Ultra keep the same path and can absorb the short awake guard without extra simulation complexity.
+Hardware Impact: Steady-state cost is one boolean branch. Overflow cost wakes at most `MaxBaseCapacity` bases once and temporarily spends extra gas/power work rather than risking an occupied-base sleep. No profiler microsecond claim without Unity verification.

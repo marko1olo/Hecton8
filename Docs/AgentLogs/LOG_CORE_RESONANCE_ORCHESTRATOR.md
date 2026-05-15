@@ -72,6 +72,37 @@ Verification:
 Status:
 - ENGINE RESONATING / COMPILE BLOCKED BY DEPENDENCY / RUNTIME PENDING VERIFICATION.
 
+## 2026-05-15 15:07 +04:00 - Build Medic: Editor Math Dependency and Source Gates
+
+What was wrong:
+- `KinematicGhostDebugger` used `Unity.Mathematics`, `double3`, and `math.lengthsq` in an editor assembly whose generated project did not reference `Unity.Mathematics`.
+- Full generated Unity graph builds for `Assembly-CSharp` and `Hecton8.Editor` exited `-1` without source/compiler diagnostics and sometimes left stale `dotnet` processes.
+
+What was done:
+- Removed the editor-only `Unity.Mathematics` dependency from `Assets/_Project/Scripts/Editor/KinematicGhostDebugger.cs`.
+- Replaced double precision helper calls with existing Vector3 bridge/floating-origin APIs.
+- Built missing reference outputs serially: `WaveHarmonic.Crest.Scripting`, `Lofelt.NiceVibrations.Editor`, `Crest.Helpers.Editor`, and `VolumetricLightBeam.Editor`.
+- Verified source assemblies through deterministic direct gates:
+  - `Hecton8.Editor.csproj -p:BuildProjectReferences=false`: passed, `0 Warning(s)`, `0 Error(s)`.
+  - `Assembly-CSharp-firstpass.csproj -p:BuildProjectReferences=false`: passed, `0 Warning(s)`, `0 Error(s)`.
+  - `Assembly-CSharp.csproj -p:BuildProjectReferences=false`: passed, `0 Warning(s)`, `0 Error(s)`.
+
+Cinematic Cheats used:
+- No runtime simulation was made more expensive. The fix keeps editor visualization on float Vector3 data because the previous path cast back to Vector3 before drawing anyway.
+
+Exact Microseconds saved:
+- Runtime: 0 microseconds, editor-only.
+- Build/debug loop: avoids a stale editor dependency and keeps source compile gates in the 28-51 second range after child outputs exist.
+
+Verification:
+- `rg "Unity\.Mathematics|double3|math\." Assets/_Project/Scripts/Editor/KinematicGhostDebugger.cs`: no matches.
+- `git diff --check` on touched files passed; LF/CRLF warnings only.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -CoreGraphOnly` completed at `2026-05-15 14:45:33 +04:00`.
+- Full generated graph traversal remains unstable: exits `-1` without `: error`, `CS`, `MSB`, exception, or unhandled diagnostics.
+
+Status:
+- ENGINE RESONATING / SOURCE COMPILE GREEN / FULL GENERATED GRAPH UNSTABLE / RUNTIME PENDING VERIFICATION.
+
 ## 2026-05-15 04:45 +04:00 - Fluid Runtime Cache Teardown Hardening
 
 What was wrong:

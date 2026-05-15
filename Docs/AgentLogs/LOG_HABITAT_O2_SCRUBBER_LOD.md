@@ -453,3 +453,38 @@ Cinematic Cheats used:
 
 Exact microseconds saved:
 - None claimed. This is cold-path fault recovery; no dotnet rebuild was run.
+
+## 2026-05-15 - Base Transition Race Closure Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- Base enter/exit frame snapshots could be consumed while `GasDynamicsStepJob` was still reading `BaseAwakeState` and `_roomBaseIndex`.
+- That made the no-stall signal path race the Dalton job on native memory.
+
+What was done:
+- Added a preallocated native deferred transition list.
+- While the gas job is running, transition snapshots are captured only into that list.
+- After the job completes, deferred transitions apply in captured order before current-frame transition packets.
+
+Cinematic Cheats used:
+- None new. This preserves the existing analytical hibernation fake without adding a physical replay.
+
+Exact microseconds saved:
+- None claimed. The value is race removal and stall avoidance; no dotnet rebuild was run.
+
+## 2026-05-15 - Transition Overflow Fail-Open Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- The deferred transition buffer was fixed-capacity, but overflow originally failed by dropping packets.
+- Dropping an enter packet could lose the player-inside wake override and allow false base hibernation.
+
+What was done:
+- Added an overflow flag and a two-second unscaled awake guard.
+- When overflow is observed after the active gas job completes, configured bases are woken and hibernation is temporarily blocked.
+
+Cinematic Cheats used:
+- Conservative fail-open awake guard. It spends extra gas/power work briefly instead of simulating missing transition history.
+
+Exact microseconds saved:
+- None claimed. This deliberately spends bounded work under a transition storm to preserve correctness; no dotnet rebuild was run.
