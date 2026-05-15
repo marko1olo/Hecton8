@@ -5,6 +5,8 @@
 
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Signals;
 using Hecton8.Interaction;
 using Hecton8.Quest;
 using UnityEngine;
@@ -15,6 +17,8 @@ namespace Hecton8.Narrative
     [RequireComponent(typeof(Collider))]
     public sealed class AudioLogPickup : MonoBehaviour, IInteractable, ILocalizationLanguageChangedListener
     {
+        private const uint WfcOutpostDatapadSourceHash = 0x57464341u; // WFCA
+        private const byte WfcDatapadLootedFlag = (byte)WfcOutpostCellStateFlags.DatapadLooted;
         private const int MaxRegisteredPickupTemplates = 64;
         private const string DefaultPlaybackVerbRu = "Vosproizvesti zapis";
         private const string DefaultPlaybackVerbEn = "Play Log";
@@ -49,14 +53,59 @@ namespace Hecton8.Narrative
         private string _cachedInteractText;
         private bool _alreadyDiscovered;
         private bool _pickupTemplateRegistered;
+        private ulong _wfcOutpostSectorHash;
+        private ushort _wfcOutpostCellIndex;
+        private byte _wfcOutpostFlags;
+        private bool _wfcOutpostPersistenceConfigured;
 
         internal static int RegisteredPickupTemplateCount => _registeredPickupTemplates.Count;
+
+        public void ConfigureWfcOutpostPersistence(ulong sectorHash, ushort cellIndex, byte initialFlags)
+        {
+            if (sectorHash == 0UL || cellIndex >= WfcOutpostPersistenceConstants.CellCount)
+            {
+                ClearWfcOutpostPersistence();
+                RestoreWfcOutpostDatapadBaselineState(true);
+                return;
+            }
+
+            _wfcOutpostSectorHash = sectorHash;
+            _wfcOutpostCellIndex = cellIndex;
+            _wfcOutpostFlags = (byte)(initialFlags & WfcOutpostPersistenceConstants.MutableFlagMask);
+            _wfcOutpostPersistenceConfigured = true;
+
+            if ((_wfcOutpostFlags & WfcDatapadLootedFlag) != 0)
+            {
+                ApplyWfcOutpostDatapadLootedState();
+                return;
+            }
+
+            RestoreWfcOutpostDatapadBaselineState(true);
+        }
+
+        public void ClearWfcOutpostPersistence()
+        {
+            _wfcOutpostPersistenceConfigured = false;
+            _wfcOutpostSectorHash = 0UL;
+            _wfcOutpostCellIndex = 0;
+            _wfcOutpostFlags = 0;
+        }
 
         private void OnEnable()
         {
             TryRegisterPickupTemplate();
             LocalizationEvents.RegisterLanguageListener(this);
             _alreadyDiscovered = false;
+
+            if (_wfcOutpostPersistenceConfigured)
+            {
+                if ((_wfcOutpostFlags & WfcDatapadLootedFlag) != 0)
+                    ApplyWfcOutpostDatapadLootedState();
+                else
+                    RestoreWfcOutpostDatapadBaselineState(false);
+
+                return;
+            }
 
             if (logData != null && Hecton8.Core.GlobalRegistry.AudioLogs != null)
             {
@@ -75,6 +124,7 @@ namespace Hecton8.Narrative
 
         private void OnDisable()
         {
+            ClearWfcOutpostPersistence();
             TryUnregisterPickupTemplate();
             LocalizationEvents.UnregisterLanguageListener(this);
 
@@ -155,7 +205,21 @@ namespace Hecton8.Narrative
                 return;
             }
 
+            bool wasDiscovered = _alreadyDiscovered;
             system.PlayLog(logData);
+            _alreadyDiscovered = true;
+            BuildCache();
+            if (!wasDiscovered)
+                SetWfcOutpostFlags((byte)(_wfcOutpostFlags | WfcDatapadLootedFlag), (uint)Time.frameCount);
+
+            if (deactivateAfterPickup)
+                gameObject.SetActive(false);
+        }
+
+        public string GetInteractText() => _cachedInteractText;
+
+        private void ApplyWfcOutpostDatapadLootedState()
+        {
             _alreadyDiscovered = true;
             BuildCache();
 
@@ -163,7 +227,45 @@ namespace Hecton8.Narrative
                 gameObject.SetActive(false);
         }
 
-        public string GetInteractText() => _cachedInteractText;
+        private void RestoreWfcOutpostDatapadBaselineState(bool allowReactivate)
+        {
+            _alreadyDiscovered = false;
+            BuildCache();
+
+            if (allowReactivate && deactivateAfterPickup && !gameObject.activeSelf)
+                gameObject.SetActive(true);
+        }
+
+        private void SetWfcOutpostFlags(byte flags, uint frame)
+        {
+            byte previous = _wfcOutpostFlags;
+            byte current = (byte)(flags & WfcOutpostPersistenceConstants.MutableFlagMask);
+            _wfcOutpostFlags = current;
+            PublishWfcOutpostFlags(previous, current, frame);
+        }
+
+        private void PublishWfcOutpostFlags(byte previous, byte current, uint frame)
+        {
+            if (!_wfcOutpostPersistenceConfigured)
+                return;
+
+            previous = (byte)(previous & WfcOutpostPersistenceConstants.MutableFlagMask);
+            current = (byte)(current & WfcOutpostPersistenceConstants.MutableFlagMask);
+            if (previous == current)
+                return;
+
+            WfcOutpostStateChangedSignal signal = new WfcOutpostStateChangedSignal
+            {
+                SectorHash = _wfcOutpostSectorHash,
+                CellIndex = _wfcOutpostCellIndex,
+                PreviousFlags = previous,
+                CurrentFlags = current,
+                Frame = frame,
+                SourceHash = WfcOutpostDatapadSourceHash,
+                Flags = 0
+            };
+            GlobalSignals.Publish(in signal);
+        }
 
 #if UNITY_EDITOR
         private void OnValidate()

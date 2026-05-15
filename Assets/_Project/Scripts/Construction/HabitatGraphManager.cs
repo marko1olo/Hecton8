@@ -33,6 +33,7 @@ namespace Hecton8.Construction
         CascadeFailure = 1 << 6
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
     internal struct HabitatSiegeTargetSnapshot
     {
         public float3 ModuleCenter;
@@ -65,6 +66,7 @@ namespace Hecton8.Construction
         Ruptured = 1 << 1
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
     internal struct HabitatFloodConnection
     {
         public int DestinationIndex;
@@ -137,6 +139,9 @@ namespace Hecton8.Construction
         private const float AnalyticalGroundedStressScale = 0.5f;
         private const float AnalyticalGroundProbeMeters = 1f;
         private const float AnalyticalShaderStressEpsilon = 0.0025f;
+        private const float AnalyticalShaderCenterEpsilonMeters = 0.05f;
+        private const float AnalyticalShaderCenterEpsilonSq = AnalyticalShaderCenterEpsilonMeters * AnalyticalShaderCenterEpsilonMeters;
+        private const float AnalyticalShaderRadiusEpsilonMeters = 0.05f;
         private const float AnalyticalShaderRadiusPaddingMeters = 2f;
         private const float AnalyticalShaderDisplacementMaxMeters = 0.055f;
         private const float ModuleStressMidDisplacementMaxMeters = 0.036f;
@@ -161,6 +166,7 @@ namespace Hecton8.Construction
         private const int AnalyticalBreachMaximumThreshold = 96;
         private const float HabitatVibrationDecayPerSecond = 0.75f;
         private const float HabitatVibrationImpulseScale = 0.0015f;
+        private const float HabitatVibrationPublishEpsilon = 0.002f;
         private const float PressureBucklingCompressionDeltaThreshold = 0.15f;
         private const float RuptureCascadeNeighborStressMultiplier = 0.5f;
         private const float StructuralGroanStressThreshold01 = 0.8f;
@@ -267,12 +273,15 @@ namespace Hecton8.Construction
         private float _analyticalIntegrity;
         private float _lastPublishedAnalyticalStress01 = -1f;
         private float _lastPublishedAnalyticalDisplacementMaxMeters = -1f;
+        private float3 _lastPublishedAnalyticalCenter;
+        private float _lastPublishedAnalyticalRadius = -1f;
         private float _nextAnalyticalLowTierFeedbackTime;
         private uint _lastPublishedAnalyticalBreachNodeId;
         private uint _analyticalBreachNodeId;
-        private uint _lastCelestialVibrationSequence;
         private float _habitatVibration01;
         private float _lastPublishedHabitatVibration01 = -1f;
+        private int _lastPublishedBaseEmergencyState = int.MinValue;
+        private float _runtimeSeaLevelY;
         private int _graphFloodSliceCursor;
         private int _floodedRoomCount;
         private int _floodBlackBoxCursor;
@@ -291,6 +300,9 @@ namespace Hecton8.Construction
         private int _lastUploadedModuleStressCount = -1;
         private int _lastProcessedModuleStressSignalFrame = -1;
         private GraphicsBuffer _moduleStressBuffer;
+        private HectonAtmosphereManager _atmosphereManager;
+        private IAudioService _audioService;
+        private AbyssalFluidDecalManager _fluidDecals;
 
         internal HabitatGraphManager(int initialModuleCapacity)
         {
@@ -417,11 +429,15 @@ namespace Hecton8.Construction
 
         public void Dispose()
         {
-            PublishAnalyticalStressShader(float3.zero, 0f, 0f);
-            Shader.SetGlobalInt(BaseEmergencyStateId, 0);
-            Shader.SetGlobalFloat(HabitatVibrationId, 0f);
+            PublishAnalyticalStressShader(float3.zero, 0f, 0f, HectonQualityTier.Unknown, true);
+            PublishBaseEmergencyState(0, true);
+            _habitatVibration01 = 0f;
+            PublishHabitatVibration(true);
             ClearVisualLinks();
             DisposeNativeBuffers();
+            _atmosphereManager = null;
+            _audioService = null;
+            _fluidDecals = null;
             _graph.Dispose();
         }
 
@@ -437,6 +453,7 @@ namespace Hecton8.Construction
             _nodeCount = 0;
             _edgeCount = 0;
             ClearModuleStressState();
+            _runtimeSeaLevelY = ResolveRuntimeSeaLevelY();
             BaseDegradationSystem.BeginRuptureSync();
 
             if (modules == null || modules.Count <= 0)
@@ -480,11 +497,19 @@ namespace Hecton8.Construction
 
         internal void ApplyHydrodynamicStress(float deltaTime)
         {
+            if (!math.isfinite(deltaTime))
+            {
+                RecordNonFinitePressureIngress();
+                return;
+            }
+
             if (deltaTime <= 0f || _moduleBuffer.Count <= 0)
                 return;
 
+            HectonQualityTier scalabilityTier = GlobalRegistry.ScalabilityTier;
+            _runtimeSeaLevelY = ResolveRuntimeSeaLevelY();
             UpdateHabitatVibration(deltaTime);
-            ApplyGraphFluidIncursion(deltaTime);
+            ApplyGraphFluidIncursion(deltaTime, scalabilityTier);
             ApplyWaterPumpDrainage(deltaTime);
             ApplyOxygenScrubberFilterConsumption(deltaTime);
             ApplyThermalCondensationState();
@@ -495,8 +520,8 @@ namespace Hecton8.Construction
             if (runtimeTopologyChanged)
                 PublishRuntimeRuptureTopologyState();
 
-            EvaluateAnalyticalIntegrityStress();
-            UpdateHabitatModuleStressMatrix(deltaTime);
+            EvaluateAnalyticalIntegrityStress(scalabilityTier);
+            UpdateHabitatModuleStressMatrix(deltaTime, scalabilityTier);
             SyncFloodRoomStateSnapshot();
             WriteFloodBlackBoxSample(0u);
             PublishSiegeTargetSnapshot();
@@ -507,8 +532,23 @@ namespace Hecton8.Construction
 
         internal void RegisterSeismicVibration(Vector3 epicenter, float radiusMeters, float impulseMagnitude)
         {
-            if (!float.IsFinite(impulseMagnitude) || impulseMagnitude <= 0f || _moduleBuffer.Count <= 0)
+            if (!float.IsFinite(impulseMagnitude) ||
+                !float.IsFinite(epicenter.x) ||
+                !float.IsFinite(epicenter.y) ||
+                !float.IsFinite(epicenter.z))
+            {
+                RecordNonFinitePressureIngress();
                 return;
+            }
+
+            if (impulseMagnitude <= 0f || _moduleBuffer.Count <= 0)
+                return;
+
+            if (!float.IsFinite(radiusMeters))
+            {
+                RecordNonFinitePressureIngress();
+                radiusMeters = 1f;
+            }
 
             float safeRadiusMeters = float.IsFinite(radiusMeters) && radiusMeters > 0f ? radiusMeters : 1f;
             float radiusSq = Mathf.Max(1f, safeRadiusMeters * safeRadiusMeters);
@@ -537,45 +577,50 @@ namespace Hecton8.Construction
 
         private void UpdateHabitatVibration(float deltaTime)
         {
-            uint celestialSequence = GlobalRegistry.CelestialRuntimeSnapshotSequence;
-            if (celestialSequence != _lastCelestialVibrationSequence)
-                _lastCelestialVibrationSequence = celestialSequence;
-
             if (_habitatVibration01 > 0f)
                 _habitatVibration01 = math.max(0f, _habitatVibration01 - (HabitatVibrationDecayPerSecond * deltaTime));
 
             PublishHabitatVibration();
         }
 
-        private void PublishHabitatVibration()
+        private void PublishHabitatVibration(bool force = false)
         {
-            if (math.abs(_habitatVibration01 - _lastPublishedHabitatVibration01) <= 0.002f)
+            float publishValue = _habitatVibration01 <= HabitatVibrationPublishEpsilon
+                ? 0f
+                : _habitatVibration01;
+            if (!force && publishValue > 0f)
+            {
+                if (math.abs(publishValue - _lastPublishedHabitatVibration01) <= HabitatVibrationPublishEpsilon)
+                    return;
+            }
+            else if (!force && _lastPublishedHabitatVibration01 == 0f)
+            {
                 return;
+            }
 
-            _lastPublishedHabitatVibration01 = _habitatVibration01;
-            Shader.SetGlobalFloat(HabitatVibrationId, _habitatVibration01);
+            _lastPublishedHabitatVibration01 = publishValue;
+            Shader.SetGlobalFloat(HabitatVibrationId, publishValue);
         }
 
-        private void EvaluateAnalyticalIntegrityStress()
+        private void EvaluateAnalyticalIntegrityStress(HectonQualityTier scalabilityTier)
         {
             int moduleCount = math.min(_nodeCount, _moduleBuffer.Count);
             if (moduleCount <= 0)
             {
-                ResetAnalyticalIntegrityStress();
+                ResetAnalyticalIntegrityStress(scalabilityTier);
                 return;
             }
 
-            HectonQualityTier scalabilityTier = GlobalRegistry.ScalabilityTier;
             if (IsAnalyticalHighScalabilityTier(scalabilityTier))
             {
-                EvaluateHighTierAnalyticalIntegrityStress(moduleCount);
+                EvaluateHighTierAnalyticalIntegrityStress(moduleCount, scalabilityTier);
                 return;
             }
 
-            EvaluateLowTierAnalyticalIntegrityStress(moduleCount);
+            EvaluateLowTierAnalyticalIntegrityStress(moduleCount, scalabilityTier);
         }
 
-        private void EvaluateHighTierAnalyticalIntegrityStress(int moduleCount)
+        private void EvaluateHighTierAnalyticalIntegrityStress(int moduleCount, HectonQualityTier scalabilityTier)
         {
             float stressSum = 0f;
             float reinforcementSum = 0f;
@@ -604,15 +649,15 @@ namespace Hecton8.Construction
 
             if (activeModuleCount <= 0)
             {
-                ResetAnalyticalIntegrityStress();
+                ResetAnalyticalIntegrityStress(scalabilityTier);
                 return;
             }
 
             float netStress = math.max(0f, stressSum - reinforcementSum);
-            CommitAnalyticalStressResult(moduleCount, activeModuleCount, centerSum, netStress, integritySum);
+            CommitAnalyticalStressResult(moduleCount, activeModuleCount, centerSum, netStress, integritySum, scalabilityTier);
         }
 
-        private void EvaluateLowTierAnalyticalIntegrityStress(int moduleCount)
+        private void EvaluateLowTierAnalyticalIntegrityStress(int moduleCount, HectonQualityTier scalabilityTier)
         {
             float integritySum = 0f;
             float depthSum = 0f;
@@ -634,13 +679,13 @@ namespace Hecton8.Construction
 
             if (activeModuleCount <= 0)
             {
-                ResetAnalyticalIntegrityStress();
+                ResetAnalyticalIntegrityStress(scalabilityTier);
                 return;
             }
 
             float averageDepthMeters = depthSum * math.rcp(activeModuleCount);
             float netStress = integritySum * ResolveAnalyticalDepthScale(averageDepthMeters);
-            CommitAnalyticalStressResult(moduleCount, activeModuleCount, centerSum, netStress, integritySum);
+            CommitAnalyticalStressResult(moduleCount, activeModuleCount, centerSum, netStress, integritySum, scalabilityTier);
         }
 
         private static bool IsAnalyticalHighScalabilityTier(HectonQualityTier scalabilityTier)
@@ -648,13 +693,13 @@ namespace Hecton8.Construction
             return scalabilityTier == HectonQualityTier.High || scalabilityTier == HectonQualityTier.Ultra;
         }
 
-        private void ResetAnalyticalIntegrityStress()
+        private void ResetAnalyticalIntegrityStress(HectonQualityTier scalabilityTier)
         {
             _analyticalStress = 0f;
             _analyticalIntegrity = 0f;
             _analyticalBreachNodeId = 0u;
-            Shader.SetGlobalInt(BaseEmergencyStateId, 0);
-            PublishAnalyticalStressShader(float3.zero, 0f, 0f);
+            PublishBaseEmergencyState(0);
+            PublishAnalyticalStressShader(float3.zero, 0f, 0f, scalabilityTier);
         }
 
         private void CommitAnalyticalStressResult(
@@ -662,7 +707,8 @@ namespace Hecton8.Construction
             int activeModuleCount,
             float3 centerSum,
             float netStress,
-            float integritySum)
+            float integritySum,
+            HectonQualityTier scalabilityTier)
         {
             _analyticalStress = math.isfinite(netStress) ? math.max(0f, netStress) : 0f;
             _analyticalIntegrity = math.isfinite(integritySum) ? math.max(1f, integritySum) : 1f;
@@ -675,14 +721,12 @@ namespace Hecton8.Construction
 
             float3 center = centerSum * math.rcp(activeModuleCount);
             float radius = ResolveAnalyticalBaseRadius(center, moduleCount) + AnalyticalShaderRadiusPaddingMeters;
-            Shader.SetGlobalInt(
-                BaseEmergencyStateId,
-                stress01 >= 1f - AnalyticalEmergencyRemainingIntegrityThreshold01 ? 1 : 0);
-            PublishAnalyticalStressShader(center, radius, stress01);
-            TryPublishLowTierAnalyticalStressFeedback(center, stress01);
+            PublishBaseEmergencyState(stress01 >= 1f - AnalyticalEmergencyRemainingIntegrityThreshold01 ? 1 : 0);
+            PublishAnalyticalStressShader(center, radius, stress01, scalabilityTier);
+            TryPublishLowTierAnalyticalStressFeedback(center, stress01, scalabilityTier);
         }
 
-        private static float ResolveHighTierAnalyticalModuleStress(ModuleRecord module, BaseModule baseModule, float moduleIntegrity)
+        private float ResolveHighTierAnalyticalModuleStress(ModuleRecord module, BaseModule baseModule, float moduleIntegrity)
         {
             float depthMeters = ResolveAnalyticalModuleDepthMeters(module, baseModule);
             float depthScale = ResolveAnalyticalDepthScale(depthMeters);
@@ -690,7 +734,7 @@ namespace Hecton8.Construction
             return moduleIntegrity * (depthScale + currentScale);
         }
 
-        private static float ResolveAnalyticalModuleDepthMeters(ModuleRecord module, BaseModule baseModule)
+        private float ResolveAnalyticalModuleDepthMeters(ModuleRecord module, BaseModule baseModule)
         {
             float depthMeters = baseModule.PressureCompressionDepthMeters;
             if (depthMeters <= 0.25f || !math.isfinite(depthMeters))
@@ -739,13 +783,26 @@ namespace Hecton8.Construction
             return reinforcement;
         }
 
-        private static float ResolveRuntimeDepthMeters(float3 runtimePosition)
+        private float ResolveRuntimeSeaLevelY()
         {
-            HectonAtmosphereManager atmosphereManager = GlobalRegistry.Atmosphere;
-            if (atmosphereManager == null)
-                return math.max(0f, -runtimePosition.y);
+            HectonAtmosphereManager atmosphereManager = ResolveAtmosphereManager();
+            return atmosphereManager != null && math.isfinite(atmosphereManager.SeaLevelY)
+                ? atmosphereManager.SeaLevelY
+                : 0f;
+        }
 
-            return math.max(0f, atmosphereManager.SeaLevelY - runtimePosition.y);
+        private HectonAtmosphereManager ResolveAtmosphereManager()
+        {
+            if (_atmosphereManager != null)
+                return _atmosphereManager;
+
+            _atmosphereManager = GlobalRegistry.Atmosphere;
+            return _atmosphereManager;
+        }
+
+        private float ResolveRuntimeDepthMeters(float3 runtimePosition)
+        {
+            return math.max(0f, _runtimeSeaLevelY - runtimePosition.y);
         }
 
         private static bool IsAnalyticalGrounded(ModuleRecord module)
@@ -785,35 +842,67 @@ namespace Hecton8.Construction
             return ResolveFastLengthFromSq(radiusSq);
         }
 
-        private void PublishAnalyticalStressShader(float3 center, float radius, float stress01)
+        private void PublishBaseEmergencyState(int emergencyState, bool force = false)
         {
-            float displacementMaxMeters = IsAnalyticalHighScalabilityTier(GlobalRegistry.ScalabilityTier)
+            int safeState = emergencyState != 0 ? 1 : 0;
+            if (!force && _lastPublishedBaseEmergencyState == safeState)
+                return;
+
+            _lastPublishedBaseEmergencyState = safeState;
+            Shader.SetGlobalInt(BaseEmergencyStateId, safeState);
+        }
+
+        private void PublishAnalyticalStressShader(float3 center, float radius, float stress01, HectonQualityTier scalabilityTier, bool force = false)
+        {
+            bool validCenter = math.all(math.isfinite(center));
+            if (!validCenter)
+                center = float3.zero;
+
+            float safeRadius = math.isfinite(radius)
+                ? math.max(0f, radius)
+                : 0f;
+            float sourceStress01 = validCenter && math.isfinite(stress01)
+                ? math.saturate(stress01)
+                : 0f;
+            float visibleStress01 = sourceStress01 > AnalyticalShaderStressEpsilon
+                ? sourceStress01
+                : 0f;
+            float displacementMaxMeters = IsAnalyticalHighScalabilityTier(scalabilityTier) && visibleStress01 > 0f
                 ? AnalyticalShaderDisplacementMaxMeters
                 : 0f;
-            if (_lastPublishedAnalyticalBreachNodeId == _analyticalBreachNodeId &&
-                math.abs(stress01 - _lastPublishedAnalyticalStress01) <= AnalyticalShaderStressEpsilon &&
-                math.abs(displacementMaxMeters - _lastPublishedAnalyticalDisplacementMaxMeters) <= 0.00001f &&
-                stress01 > 0f)
+            bool stressStable = visibleStress01 > 0f
+                ? math.abs(visibleStress01 - _lastPublishedAnalyticalStress01) <= AnalyticalShaderStressEpsilon
+                : _lastPublishedAnalyticalStress01 == 0f;
+            bool spatialStable = visibleStress01 <= 0f ||
+                                 (math.lengthsq(center - _lastPublishedAnalyticalCenter) <= AnalyticalShaderCenterEpsilonSq &&
+                                  math.abs(safeRadius - _lastPublishedAnalyticalRadius) <= AnalyticalShaderRadiusEpsilonMeters);
+            if (!force &&
+                _lastPublishedAnalyticalBreachNodeId == _analyticalBreachNodeId &&
+                stressStable &&
+                spatialStable &&
+                math.abs(displacementMaxMeters - _lastPublishedAnalyticalDisplacementMaxMeters) <= 0.00001f)
             {
                 return;
             }
 
-            _lastPublishedAnalyticalStress01 = stress01;
+            _lastPublishedAnalyticalStress01 = visibleStress01;
             _lastPublishedAnalyticalDisplacementMaxMeters = displacementMaxMeters;
+            _lastPublishedAnalyticalCenter = center;
+            _lastPublishedAnalyticalRadius = safeRadius;
             _lastPublishedAnalyticalBreachNodeId = _analyticalBreachNodeId;
             Shader.SetGlobalVector(
                 HabitatStressCenterRadiusId,
-                new Vector4(center.x, center.y, center.z, math.max(0f, radius)));
+                new Vector4(center.x, center.y, center.z, safeRadius));
             Shader.SetGlobalVector(
                 HabitatStressParamsId,
                 new Vector4(
-                    stress01,
+                    visibleStress01,
                     displacementMaxMeters,
                     AnalyticalShaderGridScale,
                     (float)(_analyticalBreachNodeId & 1023u)));
         }
 
-        private void UpdateHabitatModuleStressMatrix(float deltaTime)
+        private void UpdateHabitatModuleStressMatrix(float deltaTime, HectonQualityTier moduleStressTier)
         {
             if (!_moduleStressScalars.IsCreated)
             {
@@ -843,7 +932,7 @@ namespace Hecton8.Construction
 
             float safeDeltaTime = math.max(0.0001f, deltaTime);
             float peakStress01 = 0f;
-            HectonQualityTier moduleStressTier = GlobalRegistry.ScalabilityTier;
+            byte moduleStressTierProfile = ResolveModuleStressQualityTierProfileByte(moduleStressTier);
             bool lowTier = stressCount > 0 && IsModuleStressLowTier(moduleStressTier);
             bool changed = orderChanged ||
                            stressCount != _lastUploadedModuleStressCount ||
@@ -860,13 +949,18 @@ namespace Hecton8.Construction
                 float stress01 = 0f;
                 float depthMeters = 0f;
                 float3 modulePosition = float3.zero;
-                bool hasGraphRecord = TryResolveGraphModuleRecord(baseModule, out int graphNodeIndex, out ModuleRecord module);
+                bool hasGraphRecord = TryResolveGraphModuleRecord(baseModule, nodeIndex, out int graphNodeIndex, out ModuleRecord module);
                 if (baseModule != null && baseModule.isActiveAndEnabled)
                 {
                     modulePosition = hasGraphRecord ? module.Position : ResolveActiveModulePosition(baseModule);
                     depthMeters = ResolveActiveModuleDepthMeters(baseModule, modulePosition);
                     float floodStress01 = ResolveActiveModuleFloodStress01(baseModule, graphNodeIndex, hasGraphRecord);
-                    stress01 = ResolveModuleStress01(nodeIndex, baseModule, depthMeters, floodStress01, safeDeltaTime);
+                    stress01 = ResolveModuleStress01(nodeIndex, baseModule, depthMeters, floodStress01, safeDeltaTime, out bool invalidStressInput);
+                    if (invalidStressInput)
+                    {
+                        WriteFloodBlackBoxSample(FloodBlackBoxModuleStressInvalidFlag);
+                        DumpModuleStressBlackBoxOnce(FloodBlackBoxModuleStressInvalidFlag);
+                    }
                 }
 
                 bool finiteStress = math.isfinite(stress01);
@@ -896,7 +990,7 @@ namespace Hecton8.Construction
                 peakStress01 = math.max(peakStress01, stress01);
 
                 if (baseModule != null && stress01 >= ModuleStressCompromisedThreshold01)
-                    TryPublishBaseModuleCompromisedSignal(nodeIndex, baseModule, module, hasGraphRecord, modulePosition, stress01, peakStress01, depthMeters);
+                    TryPublishBaseModuleCompromisedSignal(nodeIndex, baseModule, module, hasGraphRecord, modulePosition, stress01, peakStress01, depthMeters, moduleStressTier, moduleStressTierProfile);
                 else if (nodeIndex < _moduleCompromisedFlags.Length && stress01 < ModuleStressCompromisedThreshold01 * 0.82f)
                     _moduleCompromisedFlags[nodeIndex] = 0;
             }
@@ -966,10 +1060,14 @@ namespace Hecton8.Construction
             }
 
             if (publishShaderClear && shouldPublishClear)
+            {
+                ReleaseModuleStressBuffer(false);
                 PublishModuleStressShader(0, 0f, HectonQualityTier.Unknown);
+                _lastUploadedModuleStressCount = 0;
+            }
         }
 
-        private static float ResolveActiveModuleDepthMeters(BaseModule baseModule, float3 runtimePosition)
+        private float ResolveActiveModuleDepthMeters(BaseModule baseModule, float3 runtimePosition)
         {
             float depthMeters = baseModule != null ? baseModule.PressureCompressionDepthMeters : 0f;
             if (depthMeters <= 0.25f || !math.isfinite(depthMeters))
@@ -993,14 +1091,33 @@ namespace Hecton8.Construction
 
         private bool TryResolveGraphModuleRecord(BaseModule baseModule, out int nodeIndex, out ModuleRecord module)
         {
+            return TryResolveGraphModuleRecord(baseModule, -1, out nodeIndex, out module);
+        }
+
+        private bool TryResolveGraphModuleRecord(BaseModule baseModule, int indexHint, out int nodeIndex, out ModuleRecord module)
+        {
             nodeIndex = -1;
             module = default;
             if (baseModule == null || _moduleBuffer == null)
                 return false;
 
             int moduleCount = math.min(_nodeCount, _moduleBuffer.Count);
+            if ((uint)indexHint < (uint)moduleCount)
+            {
+                ModuleRecord hinted = _moduleBuffer[indexHint];
+                if (hinted.BaseModule == baseModule)
+                {
+                    nodeIndex = indexHint;
+                    module = hinted;
+                    return true;
+                }
+            }
+
             for (int i = 0; i < moduleCount; i++)
             {
+                if (i == indexHint)
+                    continue;
+
                 ModuleRecord candidate = _moduleBuffer[i];
                 if (candidate.BaseModule != baseModule)
                     continue;
@@ -1019,7 +1136,7 @@ namespace Hecton8.Construction
             for (int i = 0; i < moduleCount; i++)
             {
                 BaseModule baseModule = BaseModule.GetActiveModuleAt(i);
-                bool hasGraphRecord = TryResolveGraphModuleRecord(baseModule, out _, out ModuleRecord module);
+                bool hasGraphRecord = TryResolveGraphModuleRecord(baseModule, i, out _, out ModuleRecord module);
                 uint moduleHash = ResolveModuleStressRuntimeKey(baseModule, module, hasGraphRecord);
                 if (moduleHash == 0u)
                     moduleHash = (uint)(i + 1);
@@ -1039,28 +1156,64 @@ namespace Hecton8.Construction
             return baseModule != null && baseModule.IsFlooded ? 1f : 0f;
         }
 
-        private float ResolveModuleStress01(int nodeIndex, BaseModule baseModule, float depthMeters, float floodStress01, float deltaTime)
+        private float ResolveModuleStress01(
+            int nodeIndex,
+            BaseModule baseModule,
+            float depthMeters,
+            float floodStress01,
+            float deltaTime,
+            out bool invalidState)
         {
+            invalidState = false;
+            if (!math.isfinite(depthMeters))
+            {
+                invalidState = true;
+                depthMeters = 0f;
+            }
+
             float depth01 = math.saturate(depthMeters * AnalyticalFullStressDepthInv);
             float ambientPressure01 = math.saturate(ResolveAnalyticalDepthScale(depthMeters) * depth01);
-            float integrity01 = baseModule.MaxIntegrity > 0.01f
-                ? math.saturate(baseModule.CurrentIntegrity * math.rcp(baseModule.MaxIntegrity))
-                : 1f;
-            float impactDamage01 = math.saturate(1f - integrity01);
-            impactDamage01 = math.max(impactDamage01, math.saturate(baseModule.JointShearStress01));
-            impactDamage01 = math.max(impactDamage01, math.saturate(baseModule.PressureCompressionAlpha01));
+            float maxIntegrity = baseModule.MaxIntegrity;
+            float currentIntegrity = baseModule.CurrentIntegrity;
+            float integrity01 = 1f;
+            if (math.isfinite(maxIntegrity) && maxIntegrity > 0.01f && math.isfinite(currentIntegrity))
+                integrity01 = math.saturate(currentIntegrity * math.rcp(maxIntegrity));
+            else if (!math.isfinite(maxIntegrity) || !math.isfinite(currentIntegrity))
+                invalidState = true;
 
-            impactDamage01 = math.max(impactDamage01, math.saturate(floodStress01) * ModuleStressFloodWeight);
+            float impactDamage01 = math.saturate(1f - integrity01);
+            impactDamage01 = math.max(impactDamage01, SaturateFinite01(baseModule.JointShearStress01, ref invalidState));
+            impactDamage01 = math.max(impactDamage01, SaturateFinite01(baseModule.PressureCompressionAlpha01, ref invalidState));
+
+            impactDamage01 = math.max(impactDamage01, SaturateFinite01(floodStress01, ref invalidState) * ModuleStressFloodWeight);
 
             float spike01 = 0f;
-            if (_moduleImpactStressSpikes.IsCreated && nodeIndex < _moduleImpactStressSpikes.Length)
+            if (_moduleImpactStressSpikes.IsCreated && (uint)nodeIndex < (uint)_moduleImpactStressSpikes.Length)
             {
-                spike01 = math.saturate(_moduleImpactStressSpikes[nodeIndex]);
-                _moduleImpactStressSpikes[nodeIndex] = math.max(0f, spike01 - ModuleStressImpactSpikeDecayPerSecond * deltaTime);
+                float storedSpike01 = _moduleImpactStressSpikes[nodeIndex];
+                if (math.isfinite(storedSpike01))
+                {
+                    spike01 = math.saturate(storedSpike01);
+                    _moduleImpactStressSpikes[nodeIndex] = math.max(0f, spike01 - ModuleStressImpactSpikeDecayPerSecond * deltaTime);
+                }
+                else
+                {
+                    invalidState = true;
+                    _moduleImpactStressSpikes[nodeIndex] = 0f;
+                }
             }
 
             float stress01 = (ambientPressure01 * ModuleStressDepthWeight) + (impactDamage01 * ModuleStressDamageWeight) + spike01;
             return math.saturate(stress01);
+        }
+
+        private static float SaturateFinite01(float value, ref bool invalidState)
+        {
+            if (math.isfinite(value))
+                return math.saturate(value);
+
+            invalidState = true;
+            return 0f;
         }
 
         private void ConsumeModuleStressSignals(int moduleCount)
@@ -1122,46 +1275,74 @@ namespace Hecton8.Construction
             if (moduleCount <= 0)
                 return false;
 
-            for (int nodeIndex = 0; nodeIndex < moduleCount; nodeIndex++)
-            {
-                BaseModule baseModule = BaseModule.GetActiveModuleAt(nodeIndex);
-                if (baseModule == null || !baseModule.isActiveAndEnabled)
-                    continue;
-
-                bool hasGraphRecord = TryResolveGraphModuleRecord(baseModule, out _, out ModuleRecord module);
-                uint moduleHash = ResolveModuleStressHash(baseModule, module, hasGraphRecord);
-                if (targetHash != 0u &&
-                    (moduleHash == targetHash || ResolveModuleStressEntityKey(baseModule) == targetHash))
-                {
-                    moduleIndex = nodeIndex;
-                    return true;
-                }
-
-                if (targetId != 0 && hasGraphRecord && (ushort)(module.NodeId & 0xFFFFu) == targetId)
-                {
-                    moduleIndex = nodeIndex;
-                    return true;
-                }
-            }
-
-            if (!allowNearest || !math.all(math.isfinite(worldPoint)))
+            int targetIdMatchIndex = -1;
+            int targetIdMatchCount = 0;
+            int interiorMatchIndex = -1;
+            int nearestMatchIndex = -1;
+            bool hasTargetIdentity = targetHash != 0u || targetId != 0;
+            bool canResolveNearest = allowNearest && math.all(math.isfinite(worldPoint));
+            if (!hasTargetIdentity && !canResolveNearest)
                 return false;
 
             float bestDistanceSq = float.MaxValue;
-            Vector3 runtimePoint = new Vector3(worldPoint.x, worldPoint.y, worldPoint.z);
+            Vector3 runtimePoint = canResolveNearest
+                ? new Vector3(worldPoint.x, worldPoint.y, worldPoint.z)
+                : Vector3.zero;
+
             for (int nodeIndex = 0; nodeIndex < moduleCount; nodeIndex++)
             {
                 BaseModule baseModule = BaseModule.GetActiveModuleAt(nodeIndex);
                 if (baseModule == null || !baseModule.isActiveAndEnabled)
                     continue;
 
-                if (baseModule.TryContainsInteriorRuntimePoint(runtimePoint))
+                bool hasGraphRecord = false;
+                ModuleRecord module = default;
+                if (hasTargetIdentity)
                 {
-                    moduleIndex = nodeIndex;
-                    return true;
+                    hasGraphRecord = TryResolveGraphModuleRecord(baseModule, nodeIndex, out _, out module);
+                    uint moduleHash = ResolveModuleStressHash(baseModule, module, hasGraphRecord);
+                    if (targetHash != 0u && moduleHash == targetHash)
+                    {
+                        moduleIndex = nodeIndex;
+                        return true;
+                    }
+
+                    uint entityKey = ResolveModuleStressEntityKey(baseModule);
+                    if (targetHash != 0u && entityKey == targetHash)
+                    {
+                        moduleIndex = nodeIndex;
+                        return true;
+                    }
+
+                    if (IsModuleStressTargetIdMatch(targetId, moduleHash, entityKey, module, hasGraphRecord))
+                    {
+                        targetIdMatchIndex = nodeIndex;
+                        targetIdMatchCount++;
+                    }
                 }
 
-                bool hasGraphRecord = TryResolveGraphModuleRecord(baseModule, out _, out ModuleRecord module);
+                if (!canResolveNearest)
+                    continue;
+
+                if (interiorMatchIndex < 0 &&
+                    baseModule.TryContainsInteriorRuntimePoint(runtimePoint))
+                {
+                    if (!hasTargetIdentity)
+                    {
+                        moduleIndex = nodeIndex;
+                        return true;
+                    }
+
+                    interiorMatchIndex = nodeIndex;
+                    continue;
+                }
+
+                if (interiorMatchIndex >= 0)
+                    continue;
+
+                if (!hasTargetIdentity)
+                    hasGraphRecord = TryResolveGraphModuleRecord(baseModule, nodeIndex, out _, out module);
+
                 float3 modulePosition = hasGraphRecord ? module.Position : ResolveActiveModulePosition(baseModule);
                 float allowedRadiusMeters = ModuleStressNearestSignalFallbackRadiusMeters;
                 if (baseModule.TryGetInteriorHazardBounds(out Vector3 interiorCenter, out float interiorRadius) &&
@@ -1182,10 +1363,28 @@ namespace Hecton8.Construction
                     continue;
 
                 bestDistanceSq = distanceSq;
-                moduleIndex = nodeIndex;
+                nearestMatchIndex = nodeIndex;
             }
 
-            return moduleIndex >= 0;
+            if (targetIdMatchCount == 1)
+            {
+                moduleIndex = targetIdMatchIndex;
+                return true;
+            }
+
+            if (interiorMatchIndex >= 0)
+            {
+                moduleIndex = interiorMatchIndex;
+                return true;
+            }
+
+            if (nearestMatchIndex >= 0)
+            {
+                moduleIndex = nearestMatchIndex;
+                return true;
+            }
+
+            return false;
         }
 
         private static uint ResolveModuleStressHash(BaseModule baseModule, ModuleRecord module, bool hasGraphRecord)
@@ -1208,6 +1407,25 @@ namespace Hecton8.Construction
             return ResolveModuleStressEntityKey(baseModule);
         }
 
+        private static bool IsModuleStressTargetIdMatch(
+            ushort targetId,
+            uint moduleHash,
+            uint entityKey,
+            ModuleRecord module,
+            bool hasGraphRecord)
+        {
+            if (targetId == 0)
+                return false;
+
+            if (moduleHash != 0u && (ushort)(moduleHash & 0xFFFFu) == targetId)
+                return true;
+
+            if (entityKey != 0u && (ushort)(entityKey & 0xFFFFu) == targetId)
+                return true;
+
+            return hasGraphRecord && (ushort)(module.NodeId & 0xFFFFu) == targetId;
+        }
+
         private static uint ResolveModuleStressEntityKey(BaseModule baseModule)
         {
             if (baseModule == null)
@@ -1222,8 +1440,23 @@ namespace Hecton8.Construction
             if (!_moduleImpactStressSpikes.IsCreated || (uint)moduleIndex >= (uint)_moduleImpactStressSpikes.Length)
                 return;
 
+            if (!math.isfinite(magnitude))
+            {
+                WriteFloodBlackBoxSample(FloodBlackBoxModuleStressInvalidFlag);
+                DumpModuleStressBlackBoxOnce(FloodBlackBoxModuleStressInvalidFlag);
+                return;
+            }
+
+            float previousSpike01 = _moduleImpactStressSpikes[moduleIndex];
+            if (!math.isfinite(previousSpike01))
+            {
+                WriteFloodBlackBoxSample(FloodBlackBoxModuleStressInvalidFlag);
+                DumpModuleStressBlackBoxOnce(FloodBlackBoxModuleStressInvalidFlag);
+                previousSpike01 = 0f;
+            }
+
             float spike01 = math.saturate(math.max(0f, magnitude) * ModuleStressImpactSpikeStrength);
-            _moduleImpactStressSpikes[moduleIndex] = math.max(_moduleImpactStressSpikes[moduleIndex], spike01);
+            _moduleImpactStressSpikes[moduleIndex] = math.max(previousSpike01, spike01);
         }
 
         private void TryPublishBaseModuleCompromisedSignal(
@@ -1234,7 +1467,9 @@ namespace Hecton8.Construction
             float3 modulePosition,
             float stress01,
             float peakStress01,
-            float depthMeters)
+            float depthMeters,
+            HectonQualityTier tier,
+            byte tierProfile)
         {
             if (!_moduleCompromisedFlags.IsCreated || (uint)moduleIndex >= (uint)_moduleCompromisedFlags.Length)
                 return;
@@ -1254,11 +1489,11 @@ namespace Hecton8.Construction
                 Frame = unchecked((uint)Time.frameCount),
                 Sequence = ++_moduleStressSequence,
                 SourceId = DamageSourceIds.HabitatIntegrity,
-                Flags = IsModuleStressLowTier(GlobalRegistry.ScalabilityTier)
+                Flags = IsModuleStressLowTier(tier)
                     ? BaseModuleCompromisedSignal.LowTierVisualOnlyFlag
                     : BaseModuleCompromisedSignal.MaxDeformationFlag,
                 StressIndex = (byte)math.min(byte.MaxValue, moduleIndex),
-                QualityTier = GlobalRegistry.ScalabilityTierProfileByte
+                QualityTier = tierProfile
             };
             GlobalSignals.Publish(in signal);
         }
@@ -1266,7 +1501,9 @@ namespace Hecton8.Construction
         private void UploadModuleStressMatrix(int moduleCount, float peakStress01, HectonQualityTier tier)
         {
             int safeModuleCount = math.max(0, moduleCount);
-            if (safeModuleCount > 0)
+            bool lowTier = safeModuleCount > 0 && IsModuleStressLowTier(tier);
+            bool hasVisibleStress = safeModuleCount > 0 && !lowTier && peakStress01 > ModuleStressUploadEpsilon;
+            if (hasVisibleStress)
             {
                 EnsureModuleStressBuffer(safeModuleCount);
                 if (_moduleStressBuffer != null)
@@ -1276,7 +1513,6 @@ namespace Hecton8.Construction
                 }
             }
 
-            bool lowTier = safeModuleCount > 0 && IsModuleStressLowTier(tier);
             PublishModuleStressShader(safeModuleCount, peakStress01, tier);
             _lastUploadedModuleStressCount = safeModuleCount;
             _lastUploadedPeakModuleStress01 = peakStress01;
@@ -1289,7 +1525,8 @@ namespace Hecton8.Construction
         {
             int safeModuleCount = math.max(0, moduleCount);
             bool lowTier = safeModuleCount > 0 && IsModuleStressLowTier(tier);
-            float displacementMaxMeters = safeModuleCount > 0
+            bool hasVisibleStress = safeModuleCount > 0 && !lowTier && peakStress01 > ModuleStressUploadEpsilon;
+            float displacementMaxMeters = hasVisibleStress
                 ? ResolveModuleStressDisplacementMaxMeters(tier)
                 : 0f;
             Shader.SetGlobalVector(
@@ -1307,7 +1544,7 @@ namespace Hecton8.Construction
             if (_moduleStressBuffer != null && _moduleStressBuffer.count >= safeCount)
                 return;
 
-            ReleaseModuleStressBuffer();
+            ReleaseModuleStressBuffer(false);
             _moduleStressBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float>(
                 NextPowerOfTwo(math.max(safeCount, InitialNodeCapacity)));
             _lastUploadedModuleStressCount = -1;
@@ -1335,9 +1572,16 @@ namespace Hecton8.Construction
             }
         }
 
-        private void TryPublishLowTierAnalyticalStressFeedback(float3 center, float stress01)
+        private static byte ResolveModuleStressQualityTierProfileByte(HectonQualityTier tier)
         {
-            if (IsAnalyticalHighScalabilityTier(GlobalRegistry.ScalabilityTier) ||
+            return tier == HectonQualityTier.High || tier == HectonQualityTier.Ultra
+                ? (byte)1
+                : (byte)0;
+        }
+
+        private void TryPublishLowTierAnalyticalStressFeedback(float3 center, float stress01, HectonQualityTier scalabilityTier)
+        {
+            if (IsAnalyticalHighScalabilityTier(scalabilityTier) ||
                 stress01 < AnalyticalLowTierFeedbackThreshold01)
             {
                 return;
@@ -1406,7 +1650,7 @@ namespace Hecton8.Construction
             return stress01 > 0f;
         }
 
-        private static void PublishHullStressSignal(
+        private void PublishHullStressSignal(
             Vector3 worldPosition,
             float stress01,
             float pressureDelta,
@@ -1419,11 +1663,20 @@ namespace Hecton8.Construction
                 pressureDelta,
                 depthMeters,
                 pitchScale);
-            IAudioService audioService = GlobalRegistry.Audio;
+            IAudioService audioService = ResolveAudioService();
             if (audioService != null && audioService.QueueHullStressSignal(in signal))
                 return;
 
             ProceduralAudioEvents.RaiseHullStressSignal(in signal);
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            if (_audioService != null)
+                return _audioService;
+
+            _audioService = GlobalRegistry.Audio;
+            return _audioService;
         }
 
         private void TryFlagAnalyticalIntegrityLeak(int moduleCount, float stress)
@@ -1538,7 +1791,7 @@ namespace Hecton8.Construction
             return seed;
         }
 
-        private void ApplyGraphFluidIncursion(float deltaTime)
+        private void ApplyGraphFluidIncursion(float deltaTime, HectonQualityTier scalabilityTier)
         {
             if (deltaTime <= 0f ||
                 _nodeCount <= 0 ||
@@ -1555,7 +1808,6 @@ namespace Hecton8.Construction
             if (moduleCount <= 0)
                 return;
 
-            HectonQualityTier scalabilityTier = GlobalRegistry.ScalabilityTier;
             int graphFloodNodeBudget = ResolveGraphFloodNodeBudget(scalabilityTier);
             bool anyFloodStateChanged = false;
             int seedBudget = moduleCount > graphFloodNodeBudget
@@ -1917,6 +2169,11 @@ namespace Hecton8.Construction
                 _roomConnections.Clear();
         }
 
+        private void RecordNonFinitePressureIngress()
+        {
+            WriteFloodBlackBoxSample(FloodBlackBoxNonFiniteFlag);
+        }
+
         private void WriteFloodBlackBoxSample(uint reasonFlags)
         {
             if (!_floodBlackBox.IsCreated || _floodBlackBox.Length <= 0)
@@ -2040,7 +2297,7 @@ namespace Hecton8.Construction
             return unchecked((hash ^ value) * 16777619u);
         }
 
-        private static float ResolveGraphIngressPressureDeltaKPa(
+        private float ResolveGraphIngressPressureDeltaKPa(
             ModuleRecord module,
             BaseModule baseModule,
             float internalPressureAtm)
@@ -2529,9 +2786,9 @@ namespace Hecton8.Construction
                 if (!sourceGroanAllowed && !destinationGroanAllowed)
                     continue;
 
-                Vector3 startAup = HectonFloatingOrigin.ToAbsoluteUniversePosition((Vector3)edge.StartSocketPosition);
-                Vector3 endAup = HectonFloatingOrigin.ToAbsoluteUniversePosition((Vector3)edge.EndSocketPosition);
-                Vector3 midpoint = HectonFloatingOrigin.ToRuntimePosition((startAup + endAup) * 0.5f);
+                double3 startAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3((Vector3)edge.StartSocketPosition);
+                double3 endAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3((Vector3)edge.EndSocketPosition);
+                Vector3 midpoint = HectonFloatingOrigin.ToRuntimePosition((startAup + endAup) * 0.5d);
                 float depthMeters = math.max(
                     ResolveAnalyticalModuleDepthMeters(_moduleBuffer[edge.SourceIndex], sourceModule),
                     ResolveAnalyticalModuleDepthMeters(_moduleBuffer[edge.DestinationIndex], destinationModule));
@@ -3395,13 +3652,13 @@ namespace Hecton8.Construction
             if (_emittedRuptureEdgeVfxLookup.Contains(linkId))
                 return;
 
-            AbyssalFluidDecalManager fluidDecals = Hecton8.Core.GlobalRegistry.AbyssalFluidDecals;
+            AbyssalFluidDecalManager fluidDecals = ResolveFluidDecalManager();
             if (fluidDecals == null || _emittedRuptureEdgeVfxKeys.Count >= _emittedRuptureEdgeVfxKeys.Capacity)
                 return;
 
-            Vector3 startAup = HectonFloatingOrigin.ToAbsoluteUniversePosition((Vector3)edge.StartSocketPosition);
-            Vector3 endAup = HectonFloatingOrigin.ToAbsoluteUniversePosition((Vector3)edge.EndSocketPosition);
-            Vector3 midpointRuntime = HectonFloatingOrigin.ToRuntimePosition((startAup + endAup) * 0.5f);
+            double3 startAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3((Vector3)edge.StartSocketPosition);
+            double3 endAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3((Vector3)edge.EndSocketPosition);
+            Vector3 midpointRuntime = HectonFloatingOrigin.ToRuntimePosition((startAup + endAup) * 0.5d);
             float3 spanDelta = edge.EndSocketPosition - edge.StartSocketPosition;
             float spanSq = math.lengthsq(spanDelta);
             float unsupportedSpanMeters = LogisticsPipeBuilder.UnsupportedSpanMeters;
@@ -3410,6 +3667,15 @@ namespace Hecton8.Construction
             fluidDecals.RegisterRuptureFluid(midpointRuntime, radiusScale);
             _emittedRuptureEdgeVfxKeys.Add(linkId);
             _emittedRuptureEdgeVfxLookup.Add(linkId);
+        }
+
+        private AbyssalFluidDecalManager ResolveFluidDecalManager()
+        {
+            if (_fluidDecals != null)
+                return _fluidDecals;
+
+            _fluidDecals = Hecton8.Core.GlobalRegistry.AbyssalFluidDecals;
+            return _fluidDecals;
         }
 
         private void EvaluateAnchorReachability()
@@ -4469,13 +4735,19 @@ namespace Hecton8.Construction
 
         private void ReleaseModuleStressBuffer()
         {
+            ReleaseModuleStressBuffer(true);
+        }
+
+        private void ReleaseModuleStressBuffer(bool clearShaderParams)
+        {
             if (_moduleStressBuffer == null)
                 return;
 
             _moduleStressBuffer.Release();
             _moduleStressBuffer = null;
             _lastUploadedModuleStressCount = -1;
-            Shader.SetGlobalVector(HabitatModuleStressParamsId, Vector4.zero);
+            if (clearShaderParams)
+                Shader.SetGlobalVector(HabitatModuleStressParamsId, Vector4.zero);
         }
 
         private static void DisposeNativeParallelMultiHashMap<TKey, TValue>(
@@ -4504,6 +4776,7 @@ namespace Hecton8.Construction
             return power > 0 ? power : int.MaxValue;
         }
 
+        [StructLayout(LayoutKind.Sequential)]
         [BurstCompile(FloatPrecision.Low, FloatMode.Fast, CompileSynchronously = false)]
         private struct DeconstructionDfsValidationJob : IJob
         {

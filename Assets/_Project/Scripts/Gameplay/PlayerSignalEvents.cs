@@ -33,9 +33,9 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Audio-directed internal stress packet for heartbeat / breathing consumers.
     /// </summary>
-    public readonly struct InteractionSignal
+    public readonly struct PlayerInteractionStressSignal
     {
-        public InteractionSignal(
+        public PlayerInteractionStressSignal(
             float stress01,
             float volume01,
             float pitchScale,
@@ -77,7 +77,7 @@ namespace Hecton8.Gameplay
 
         /// <summary>Called when player interaction stress should update VFX/audio coupling.</summary>
         /// <param name="signal">Interaction stress payload.</param>
-        void OnInteractionSignal(in InteractionSignal signal);
+        void OnInteractionSignal(in PlayerInteractionStressSignal signal);
 
         /// <summary>Called when an equipped tool was depleted.</summary>
         /// <param name="signal">Tool depletion payload.</param>
@@ -98,8 +98,8 @@ namespace Hecton8.Gameplay
         private static readonly RegistryBucket<IPlayerSignalEventListener> _listeners = new RegistryBucket<IPlayerSignalEventListener>(ListenerCapacity);
         private static NativeQueue<TraumaHudSignal> _pendingTraumaHudSignals;
         private static NativeQueue<TraumaHudSignal> _nextFrameTraumaHudSignals;
-        private static NativeQueue<InteractionSignal> _pendingInteractionSignals;
-        private static NativeQueue<InteractionSignal> _nextFrameInteractionSignals;
+        private static NativeQueue<PlayerInteractionStressSignal> _pendingInteractionSignals;
+        private static NativeQueue<PlayerInteractionStressSignal> _nextFrameInteractionSignals;
         private static NativeQueue<ToolDepletedSignal> _pendingToolDepletedSignals;
         private static NativeQueue<ToolDepletedSignal> _nextFrameToolDepletedSignals;
         private static int _pendingTraumaHudSignalCount;
@@ -270,7 +270,7 @@ namespace Hecton8.Gameplay
         /// Queues one interaction stress signal.
         /// </summary>
         /// <param name="signal">Signal payload.</param>
-        public static void RaiseInteractionSignal(in InteractionSignal signal)
+        public static void RaiseInteractionSignal(in PlayerInteractionStressSignal signal)
         {
             if (_listeners.Count <= 0)
                 return;
@@ -342,7 +342,7 @@ namespace Hecton8.Gameplay
             }
             if (!_pendingInteractionSignals.IsCreated)
             {
-                _pendingInteractionSignals = new NativeQueue<InteractionSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<InteractionSignal>[16] - deferred interaction stress lane - owner: PlayerSignalEvents
+                _pendingInteractionSignals = new NativeQueue<PlayerInteractionStressSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PlayerInteractionStressSignal>[16] - deferred interaction stress lane - owner: PlayerSignalEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingInteractionSignals,
                     PendingInteractionSignalCapacity,
@@ -353,7 +353,7 @@ namespace Hecton8.Gameplay
             }
             if (!_nextFrameInteractionSignals.IsCreated)
             {
-                _nextFrameInteractionSignals = new NativeQueue<InteractionSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<InteractionSignal>[16] - next-frame interaction stress lane - owner: PlayerSignalEvents
+                _nextFrameInteractionSignals = new NativeQueue<PlayerInteractionStressSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PlayerInteractionStressSignal>[16] - next-frame interaction stress lane - owner: PlayerSignalEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameInteractionSignals,
                     PendingInteractionSignalCapacity,
@@ -445,7 +445,7 @@ namespace Hecton8.Gameplay
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                     return false;
 
-                if (!_pendingInteractionSignals.TryDequeue(out InteractionSignal signal))
+                if (!_pendingInteractionSignals.TryDequeue(out PlayerInteractionStressSignal signal))
                     return true;
 
                 _pendingInteractionSignalCount--;
@@ -585,7 +585,7 @@ namespace Hecton8.Gameplay
 
             if (_nextFrameInteractionSignals.IsCreated)
             {
-                while (_nextFrameInteractionSignalCount > 0 && _nextFrameInteractionSignals.TryDequeue(out InteractionSignal signal))
+                while (_nextFrameInteractionSignalCount > 0 && _nextFrameInteractionSignals.TryDequeue(out PlayerInteractionStressSignal signal))
                 {
                     _nextFrameInteractionSignalCount--;
                     _pendingInteractionSignals.Enqueue(signal);

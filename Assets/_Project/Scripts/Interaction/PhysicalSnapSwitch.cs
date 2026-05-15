@@ -15,7 +15,6 @@ namespace Hecton8.Interaction
     public sealed class PhysicalSnapSwitch : MonoBehaviour, IUpdatable, IPhysicalPanelButtonReceiver
     {
         private const uint PhysicalSwitchToolId = 0x53574954u;
-        private const float MinimumDeltaTime = 0.0001f;
         private const float RadiansPerDegree = 0.0174532924f;
         private const float HalfPi = 1.57079637f;
         private const float Pi = 3.14159274f;
@@ -23,6 +22,7 @@ namespace Hecton8.Interaction
         private const float InvTwoPi = 0.159154943f;
         private const byte LeftMotorMask = 0b0001;
         private const byte RightMotorMask = 0b0010;
+        private const byte BothMotorMask = LeftMotorMask | RightMotorMask;
         private const byte CriticalPriority = 3;
         private const float MaximumSwitchDeltaTime = 0.05f;
         private const float MinimumSnapCooldownSeconds = 0.02f;
@@ -73,6 +73,8 @@ namespace Hecton8.Interaction
         private float _snapCooldownRemaining;
         private bool _isOn;
         private bool _registered;
+        private bool _receiverRegistered;
+        private Collider _registeredActivationVolume;
 
         public bool IsOn => _isOn;
         public Collider ActivationCollider => activationVolume;
@@ -82,7 +84,8 @@ namespace Hecton8.Interaction
             Vector3 handForward,
             IInteractionSignalService interactionSignals,
             Collider handSourceCollider,
-            PhysicalHandSide fallbackHandSide)
+            PhysicalHandSide fallbackHandSide,
+            int sampleFrame = -1)
         {
             if (activationVolume == null || !IsFiniteVector(handPosition))
                 return false;
@@ -99,7 +102,7 @@ namespace Hecton8.Interaction
             _targetAngle = _isOn ? ResolveSafeOnAngleDegrees() : ResolveSafeOffAngleDegrees();
             _snapCooldownRemaining = ResolveSafeSnapCooldownSeconds();
             TryRegister();
-            PublishSwitchSignal(handPosition, handForward, interactionSignals);
+            PublishSwitchSignal(handPosition, handForward, interactionSignals, sampleFrame >= 0 ? sampleFrame : Time.frameCount);
             EnqueueClickHaptic(handSourceCollider, fallbackHandSide);
             QueueSnapAudio(handPosition);
             return true;
@@ -110,9 +113,10 @@ namespace Hecton8.Interaction
             Vector3 handForward,
             IInteractionSignalService interactionSignals,
             Collider handSourceCollider,
-            PhysicalHandSide fallbackHandSide)
+            PhysicalHandSide fallbackHandSide,
+            int sampleFrame)
         {
-            return TryQueueHandPress(handPosition, handForward, interactionSignals, handSourceCollider, fallbackHandSide);
+            return TryQueueHandPress(handPosition, handForward, interactionSignals, handSourceCollider, fallbackHandSide, sampleFrame);
         }
 
         private void Awake()
@@ -153,6 +157,9 @@ namespace Hecton8.Interaction
             if (_snapCooldownRemaining > 0f)
                 _snapCooldownRemaining = math.max(0f, _snapCooldownRemaining - safeDeltaTime);
 
+            if (safeDeltaTime <= 0f)
+                return;
+
             if (math.abs(_targetAngle - _currentAngle) < 0.001f)
             {
                 _currentAngle = _targetAngle;
@@ -169,7 +176,12 @@ namespace Hecton8.Interaction
 
         private static float FastDecayBlend(float speed, float deltaTime)
         {
-            float x = math.min(math.max(0f, speed) * math.max(deltaTime, MinimumDeltaTime), 3f);
+            float safeSpeed = math.isfinite(speed) ? math.max(0f, speed) : 0f;
+            float safeDeltaTime = SanitizeDeltaTime(deltaTime);
+            if (safeSpeed <= 0f || safeDeltaTime <= 0f)
+                return 0f;
+
+            float x = math.min(safeSpeed * safeDeltaTime, 3f);
             float x2 = x * x;
             return math.saturate(1f - math.rcp(1f + x + (0.5f * x2)));
         }
@@ -192,14 +204,36 @@ namespace Hecton8.Interaction
 
         private void RegisterCollider()
         {
-            if (activationVolume != null)
-                PhysicalHandReceiverRegistry.Register(activationVolume, this);
+            Collider registeredVolume = _registeredActivationVolume;
+            if (_receiverRegistered || registeredVolume != null)
+            {
+                if (_receiverRegistered && ReferenceEquals(registeredVolume, activationVolume))
+                    return;
+
+                UnregisterCollider();
+            }
+
+            if (activationVolume == null || !Application.isPlaying)
+                return;
+
+            if (!PhysicalHandReceiverRegistry.TryRegister(activationVolume, this))
+                return;
+
+            _registeredActivationVolume = activationVolume;
+            _receiverRegistered = true;
         }
 
         private void UnregisterCollider()
         {
-            if (activationVolume != null)
-                PhysicalHandReceiverRegistry.Unregister(activationVolume, this);
+            Collider registeredVolume = _registeredActivationVolume;
+            if (!_receiverRegistered && registeredVolume == null)
+                return;
+
+            if (registeredVolume != null)
+                PhysicalHandReceiverRegistry.Unregister(registeredVolume, this);
+
+            _registeredActivationVolume = null;
+            _receiverRegistered = false;
         }
 
         private void TryRegister()
@@ -220,9 +254,6 @@ namespace Hecton8.Interaction
 
         private void Unregister()
         {
-            if (!_registered)
-                return;
-
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registered = false;
         }
@@ -385,34 +416,34 @@ namespace Hecton8.Interaction
             cos = cosSign * (1f - (x2 * (0.5f - (x2 * 0.041666667f))));
         }
 
-        private void PublishSwitchSignal(Vector3 handPosition, Vector3 handForward, IInteractionSignalService interactionSignals)
+        private void PublishSwitchSignal(Vector3 handPosition, Vector3 handForward, IInteractionSignalService interactionSignals, int sampleFrame)
         {
             if (interactionSignals == null || !interactionSignals.IsInitialized || !IsFiniteVector(handPosition))
                 return;
 
-            Vector3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePosition(handPosition);
+            double3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(handPosition);
             Vector3 fallbackForward = _cachedTransform != null ? _cachedTransform.forward : Vector3.forward;
             if (!IsFiniteVector(fallbackForward))
                 fallbackForward = Vector3.forward;
 
             Vector3 safeDirection = NormalizeVectorApproxNoSqrt(handForward, fallbackForward);
-            if (!IsFiniteVector(absoluteHitPoint) || !IsFiniteVector(safeDirection))
+            if (!math.all(math.isfinite(absoluteHitPoint)) || !IsFiniteVector(safeDirection))
                 return;
 
             float signalRange = math.abs(ResolveSafeOnAngleDegrees() - ResolveSafeOffAngleDegrees());
             InteractionPacket packet = new InteractionPacket(
                 PhysicalSwitchToolId,
-                (float3)absoluteHitPoint,
+                new float3((float)absoluteHitPoint.x, (float)absoluteHitPoint.y, (float)absoluteHitPoint.z),
                 (float3)safeDirection,
                 _isOn ? 1f : 0.5f,
                 signalRange,
                 (byte)ToolActionMode.Primary,
                 (byte)ToolStateBits.Active,
-                unchecked((uint)Time.frameCount));
+                unchecked((uint)sampleFrame));
             InteractionSignal signal = new InteractionSignal(
                 packet,
                 0,
-                (float3)absoluteHitPoint,
+                new float3((float)absoluteHitPoint.x, (float)absoluteHitPoint.y, (float)absoluteHitPoint.z),
                 (float3)(-safeDirection),
                 _isOn ? 1f : 0.5f,
                 (byte)InteractionEffectType.Drill,
@@ -462,7 +493,13 @@ namespace Hecton8.Interaction
                     return RightMotorMask;
             }
 
-            return fallbackHandSide == PhysicalHandSide.Left ? LeftMotorMask : RightMotorMask;
+            if (fallbackHandSide == PhysicalHandSide.Left)
+                return LeftMotorMask;
+
+            if (fallbackHandSide == PhysicalHandSide.Right)
+                return RightMotorMask;
+
+            return BothMotorMask;
         }
 
 #if UNITY_EDITOR

@@ -13,6 +13,7 @@ namespace Hecton8.Core.Signals
         public const byte FlagWhiteout = 1 << 1;
         public const byte FlagHydrated = 1 << 2;
         public const byte FlagNaNGuard = 1 << 3;
+        public const byte FlagSpatialAnchor = 1 << 4;
 
         [FieldOffset(0)] public AbsoluteUniversePosition CapsuleAup;
         [FieldOffset(48)] public float Heat01;

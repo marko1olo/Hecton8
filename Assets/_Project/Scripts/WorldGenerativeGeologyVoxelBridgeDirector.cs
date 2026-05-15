@@ -405,7 +405,8 @@ namespace Hecton8.World
                 return;
 
             WorldGenerativeGeologyTerrainSeamApplier terrainApplier = WorldGenerativeGeologyTerrainSeamApplier.ActiveRuntimeInstance;
-            Vector3 epicenterAbsolute = HectonFloatingOrigin.ToAbsoluteUniversePosition(payload.EpicenterWS);
+            double3 epicenterAbsoluteDouble = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(payload.EpicenterWS);
+            Vector3 epicenterAbsolute = ToVector3(epicenterAbsoluteDouble);
             float trenchLength = Mathf.Clamp(
                 payload.ImpulseRadiusMeters * 1.35f,
                 Mathf.Max(4f, seismicTrenchLengthMin),
@@ -416,20 +417,24 @@ namespace Hecton8.World
             float trenchSlope = Mathf.Max(0.05f, seismicTrenchSlope);
             float trenchRadius = trenchDepth / trenchSlope;
             float halfLength = trenchLength * 0.5f;
-            Vector3 trenchDirection = ResolveSeismicTrenchDirection(epicenterAbsolute);
-            Vector3 absoluteStart = payload.HasAupLineSegment
-                ? payload.AupStart
-                : epicenterAbsolute - trenchDirection * halfLength;
-            Vector3 absoluteEnd = payload.HasAupLineSegment
-                ? payload.AupEnd
-                : epicenterAbsolute + trenchDirection * halfLength;
+            Vector3 trenchDirection = ResolveSeismicTrenchDirection(epicenterAbsoluteDouble);
+            double3 trenchDirectionDouble = new double3(trenchDirection.x, trenchDirection.y, trenchDirection.z);
+            double3 absoluteStartDouble = payload.HasAupLineSegment
+                ? payload.AupStartDouble
+                : epicenterAbsoluteDouble - trenchDirectionDouble * halfLength;
+            double3 absoluteEndDouble = payload.HasAupLineSegment
+                ? payload.AupEndDouble
+                : epicenterAbsoluteDouble + trenchDirectionDouble * halfLength;
+            Vector3 absoluteStart = ToVector3(absoluteStartDouble);
+            Vector3 absoluteEnd = ToVector3(absoluteEndDouble);
             if (payload.HasAupLineSegment)
             {
-                trenchLength = Mathf.Max(0.001f, (absoluteEnd - absoluteStart).magnitude);
+                double segmentLengthSq = math.lengthsq(absoluteEndDouble - absoluteStartDouble);
+                trenchLength = Mathf.Max(0.001f, segmentLengthSq > 0d ? (float)(segmentLengthSq * math.rsqrt(segmentLengthSq)) : 0f);
                 trenchRadius = trenchDepth / trenchSlope;
             }
 
-            long trenchId = BuildSeismicTrenchId(epicenterAbsolute, trenchLength, trenchDepth);
+            long trenchId = BuildSeismicTrenchId(epicenterAbsoluteDouble, trenchLength, trenchDepth);
 
             if (terrainApplier != null)
             {
@@ -548,10 +553,10 @@ namespace Hecton8.World
             }
         }
 
-        private Vector3 ResolveSeismicTrenchDirection(Vector3 absoluteEpicenter)
+        private Vector3 ResolveSeismicTrenchDirection(double3 absoluteEpicenter)
         {
-            uint seedA = unchecked((uint)Mathf.RoundToInt(absoluteEpicenter.x * 0.25f));
-            uint seedB = unchecked((uint)Mathf.RoundToInt(absoluteEpicenter.z * 0.25f));
+            uint seedA = FoldLongToUInt(FastRoundToLong(absoluteEpicenter.x * 0.25d));
+            uint seedB = FoldLongToUInt(FastRoundToLong(absoluteEpicenter.z * 0.25d));
             float angle = HashToFloat01(seedA, seedB, 0x93D765A1u) * Mathf.PI * 2f;
             Vector3 direction = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
             if (direction.sqrMagnitude <= 0.0001f)
@@ -560,13 +565,43 @@ namespace Hecton8.World
             return direction.normalized;
         }
 
-        private static long BuildSeismicTrenchId(Vector3 absoluteEpicenter, float trenchLength, float trenchDepth)
+        private static long BuildSeismicTrenchId(double3 absoluteEpicenter, float trenchLength, float trenchDepth)
         {
-            long x = Mathf.RoundToInt(absoluteEpicenter.x * 10f);
-            long z = Mathf.RoundToInt(absoluteEpicenter.z * 10f);
+            long x = FastRoundToLong(absoluteEpicenter.x * 10d);
+            long z = FastRoundToLong(absoluteEpicenter.z * 10d);
             long length = Mathf.RoundToInt(trenchLength * 10f);
             long depth = Mathf.RoundToInt(trenchDepth * 10f);
             return unchecked((x << 32) ^ (z << 8) ^ length ^ (depth << 40));
+        }
+
+        private static Vector3 ToVector3(double3 value)
+        {
+            return new Vector3((float)value.x, (float)value.y, (float)value.z);
+        }
+
+        private static uint FoldLongToUInt(long value)
+        {
+            unchecked
+            {
+                ulong bits = (ulong)value;
+                return (uint)bits ^ (uint)(bits >> 32);
+            }
+        }
+
+        private static long FastRoundToLong(double value)
+        {
+            if (!math.isfinite(value))
+                return 0L;
+
+            if (value >= long.MaxValue)
+                return long.MaxValue;
+
+            if (value <= long.MinValue)
+                return long.MinValue;
+
+            return value >= 0d
+                ? (long)(value + 0.5d)
+                : (long)(value - 0.5d);
         }
 
         private static float HashToFloat01(uint a, uint b, uint salt)

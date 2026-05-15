@@ -28,8 +28,10 @@ namespace Hecton8.World
             cellSize = threatGridCellSize;
             return _flowFieldInitialized &&
                    flowVectors.IsCreated &&
-                   gridResolution > 0 &&
-                   cellSize > 0f;
+                   HasCompleteEcosystemSquareGridState(flowVectors.Length) &&
+                   cellSize > 0f &&
+                   math.isfinite(cellSize) &&
+                   IsFinite(gridCenter);
         }
 
         /// <summary>
@@ -37,7 +39,20 @@ namespace Hecton8.World
         /// </summary>
         public void RegisterSwarmWakeImpulse(Vector3 positionWS, Vector3 flowVectorWS, float radiusMeters, float lifetimeSeconds)
         {
-            EnsureFlowFieldBuffers();
+            if (!IsFinite(positionWS) ||
+                !IsFinite(flowVectorWS) ||
+                radiusMeters <= 0f ||
+                lifetimeSeconds <= 0f ||
+                !math.isfinite(radiusMeters) ||
+                !math.isfinite(lifetimeSeconds))
+            {
+                _swarmWakeImpulseCount = 0;
+                _swarmWakeImpulseExpireTime = float.NegativeInfinity;
+                if (_nativeMemory.SwarmWakeImpulseNative.IsCreated)
+                    _nativeMemory.SwarmWakeImpulseNative[0] = default;
+                return;
+            }
+
             float strength = EstimateLength3D(flowVectorWS);
             if (strength <= 0.0001f)
             {
@@ -48,6 +63,7 @@ namespace Hecton8.World
                 return;
             }
 
+            EnsureFlowFieldBuffers();
             _nativeMemory.SwarmWakeImpulseNative[0] = new SwarmWakeImpulse
             {
                 Position = new float3(positionWS.x, positionWS.y, positionWS.z),
@@ -62,8 +78,8 @@ namespace Hecton8.World
         private static float2 DominantAxisOrDefault(float2 value, float2 fallback)
         {
             float lengthSq = math.lengthsq(value);
-            if (lengthSq <= 0.000001f)
-                return fallback;
+            if (lengthSq <= 0.000001f || !math.all(math.isfinite(value)))
+                return math.all(math.isfinite(fallback)) ? fallback : float2.zero;
 
             float ax = math.abs(value.x);
             float ay = math.abs(value.y);
@@ -75,8 +91,8 @@ namespace Hecton8.World
         private static float3 DominantAxisOrDefault(float3 value, float3 fallback)
         {
             float lengthSq = math.lengthsq(value);
-            if (lengthSq <= 0.000001f)
-                return fallback;
+            if (lengthSq <= 0.000001f || !math.all(math.isfinite(value)))
+                return math.all(math.isfinite(fallback)) ? fallback : float3.zero;
 
             float3 absValue = math.abs(value);
             if (absValue.x >= absValue.y && absValue.x >= absValue.z)
@@ -101,7 +117,8 @@ namespace Hecton8.World
         {
             float minSq = minSpeed * minSpeed;
             float maxSq = maxSpeed * maxSpeed;
-            return math.saturate((math.max(0f, speedSq) - minSq) / math.max(0.000001f, maxSq - minSq));
+            float inverseRangeSq = math.rcp(math.max(0.000001f, maxSq - minSq));
+            return math.saturate((math.max(0f, speedSq) - minSq) * inverseRangeSq);
         }
 
         private static float LerpClamped(float a, float b, float t)
@@ -113,7 +130,7 @@ namespace Hecton8.World
         {
             decay = math.max(0f, decay);
             float decaySq = decay * decay;
-            return math.saturate(1f / (1f + decay + (decaySq * 0.48f) + (decaySq * decay * 0.235f)));
+            return math.saturate(math.rcp(1f + decay + (decaySq * 0.48f) + (decaySq * decay * 0.235f)));
         }
 
         /// <summary>
@@ -135,10 +152,7 @@ namespace Hecton8.World
             verticalCellSize = thermalGridVerticalCellSize;
             return _abyssalThermalGridInitialized &&
                    temperatures.IsCreated &&
-                   horizontalResolution > 0 &&
-                   verticalResolution > 0 &&
-                   horizontalCellSize > 0f &&
-                   verticalCellSize > 0f;
+                   HasCompleteAbyssalGridState(temperatures.Length);
         }
 
         /// <summary>
@@ -160,10 +174,7 @@ namespace Hecton8.World
             verticalCellSize = thermalGridVerticalCellSize;
             return _abyssalFlowVolumeInitialized &&
                    flowVectors.IsCreated &&
-                   horizontalResolution > 0 &&
-                   verticalResolution > 0 &&
-                   horizontalCellSize > 0f &&
-                   verticalCellSize > 0f;
+                   HasCompleteAbyssalGridState(flowVectors.Length);
         }
 
         /// <summary>
@@ -196,10 +207,12 @@ namespace Hecton8.World
 
             return _abyssalFlowVolumeInitialized &&
                    flowVolume.IsCreated &&
+                   HasCompleteAbyssalGridState(flowVolume.Length) &&
                    resolutionXZ > 1 &&
                    resolutionY > 1 &&
-                   horizontalCellSize > 0f &&
-                   verticalCellSize > 0f;
+                   depthMeters > 0f &&
+                   math.isfinite(surfaceY) &&
+                   math.isfinite(depthMeters);
         }
 
         /// <summary>
@@ -273,8 +286,9 @@ namespace Hecton8.World
             if (_lastThreatPropagationTime > float.NegativeInfinity)
                 deltaTime = math.clamp(Time.time - _lastThreatPropagationTime, 0.05f, 5f);
 
-            int shiftX = (int)math.round((targetCenter.x - previousCenter.x) / threatGridCellSize);
-            int shiftZ = (int)math.round((targetCenter.z - previousCenter.z) / threatGridCellSize);
+            float inverseThreatGridCellSize = math.rcp(threatGridCellSize);
+            int shiftX = (int)math.round((targetCenter.x - previousCenter.x) * inverseThreatGridCellSize);
+            int shiftZ = (int)math.round((targetCenter.z - previousCenter.z) * inverseThreatGridCellSize);
             float halfExtent = (_ecosystemThreatGridResolution - 1) * 0.5f * threatGridCellSize;
             Vector3 voxelOrigin = new Vector3(
                 targetCenter.x - halfExtent,
@@ -729,8 +743,16 @@ namespace Hecton8.World
 
         private void ApplyExternalThreatPulseToSnapshot(ref Vector3 emissionPosition, ref float emissionRadius, ref float emissionStrength)
         {
-            if (_externalThreatPulseHoldTimer <= 0f || _externalThreatPulseStrength <= 0f || _externalThreatPulseRadius <= 0f)
+            if (_externalThreatPulseHoldTimer <= 0f ||
+                _externalThreatPulseStrength <= 0f ||
+                _externalThreatPulseRadius <= 0f ||
+                !math.isfinite(_externalThreatPulseHoldTimer) ||
+                !math.isfinite(_externalThreatPulseStrength) ||
+                !math.isfinite(_externalThreatPulseRadius) ||
+                !IsFinite(_externalThreatPulsePosition))
+            {
                 return;
+            }
 
             emissionPosition = _externalThreatPulsePosition;
             emissionRadius = math.max(emissionRadius, _externalThreatPulseRadius);
@@ -740,16 +762,28 @@ namespace Hecton8.World
         private void UpdateThreatHotspot()
         {
             _currentThreatHotspotLevel = 0f;
-            _currentThreatHotspotPosition = _ecosystemThreatGridCenter;
-            if (!_nativeMemory.EcosystemThreatGridCurrentNative.IsCreated || _ecosystemThreatGridResolution <= 0)
+            _currentThreatHotspotPosition = IsFinite(_ecosystemThreatGridCenter) ? _ecosystemThreatGridCenter : Vector3.zero;
+            if (!_nativeMemory.EcosystemThreatGridCurrentNative.IsCreated ||
+                _ecosystemThreatGridResolution <= 0 ||
+                _ecosystemThreatGridCellCount <= 0 ||
+                threatGridCellSize <= 0f ||
+                !math.isfinite(threatGridCellSize) ||
+                !IsFinite(_ecosystemThreatGridCenter) ||
+                !TryResolveSquareGridCellCount(
+                    _ecosystemThreatGridResolution,
+                    _nativeMemory.EcosystemThreatGridCurrentNative.Length,
+                    out int threatGridCellCount) ||
+                _ecosystemThreatGridCellCount < threatGridCellCount)
+            {
                 return;
+            }
 
             int bestIndex = -1;
             float bestThreat = 0f;
-            for (int i = 0; i < _ecosystemThreatGridCellCount; i++)
+            for (int i = 0; i < threatGridCellCount; i++)
             {
                 float threat = _nativeMemory.EcosystemThreatGridCurrentNative[i];
-                if (threat <= bestThreat)
+                if (!math.isfinite(threat) || threat <= bestThreat)
                     continue;
 
                 bestThreat = threat;
@@ -762,19 +796,281 @@ namespace Hecton8.World
             int halfExtent = _ecosystemThreatGridResolution >> 1;
             int bestX = bestIndex % _ecosystemThreatGridResolution;
             int bestZ = bestIndex / _ecosystemThreatGridResolution;
+            float hotspotY = _ecosystemThreatGridCenter.y;
+            if (TryResolvePlayerRuntimePositionFromAup(out Vector3 playerRuntimePosition) &&
+                IsFinite(playerRuntimePosition))
+            {
+                hotspotY = playerRuntimePosition.y;
+            }
+
             _currentThreatHotspotLevel = bestThreat;
             _currentThreatHotspotPosition = new Vector3(
                 _ecosystemThreatGridCenter.x + ((bestX - halfExtent) * threatGridCellSize),
-                TryResolvePlayerRuntimePositionFromAup(out Vector3 playerRuntimePosition) ? playerRuntimePosition.y : _ecosystemThreatGridCenter.y,
+                hotspotY,
                 _ecosystemThreatGridCenter.z + ((bestZ - halfExtent) * threatGridCellSize));
         }
 
         private NativeArray<float> GetThreatGridFloatView()
         {
-            if (!_threatGridInitialized || !_nativeMemory.EcosystemThreatGridCurrentNative.IsCreated || _ecosystemThreatGridCellCount <= 0)
+            if (!_threatGridInitialized ||
+                !_nativeMemory.EcosystemThreatGridCurrentNative.IsCreated ||
+                !HasCompleteEcosystemSquareGridState(_nativeMemory.EcosystemThreatGridCurrentNative.Length))
+            {
                 return default;
+            }
 
             return _nativeMemory.EcosystemThreatGridCurrentNative;
+        }
+
+        private NativeArray<float2> GetFlowFieldView()
+        {
+            if (!_flowFieldInitialized ||
+                !_nativeMemory.EcosystemFlowFieldCurrentNative.IsCreated ||
+                !HasCompleteEcosystemSquareGridState(_nativeMemory.EcosystemFlowFieldCurrentNative.Length) ||
+                threatGridCellSize <= 0f ||
+                !math.isfinite(threatGridCellSize) ||
+                !IsFinite(_ecosystemFlowFieldCenter))
+            {
+                return default;
+            }
+
+            return _nativeMemory.EcosystemFlowFieldCurrentNative;
+        }
+
+        private NativeArray<float> GetAbyssalThermalGridView()
+        {
+            if (!_abyssalThermalGridInitialized ||
+                !_nativeMemory.AbyssalThermalGridNative.IsCreated ||
+                !HasCompleteAbyssalGridState(_nativeMemory.AbyssalThermalGridNative.Length))
+            {
+                return default;
+            }
+
+            return _nativeMemory.AbyssalThermalGridNative;
+        }
+
+        private NativeArray<float3> GetAbyssalFlowVolumeView()
+        {
+            if (!_abyssalFlowVolumeInitialized ||
+                !_nativeMemory.AbyssalFlowVolumeCurrentNative.IsCreated ||
+                !HasCompleteAbyssalGridState(_nativeMemory.AbyssalFlowVolumeCurrentNative.Length))
+            {
+                return default;
+            }
+
+            return _nativeMemory.AbyssalFlowVolumeCurrentNative;
+        }
+
+        private NativeArray<byte> GetThreatGridByteView(NativeArray<byte> threatGrid)
+        {
+            if (!_threatGridInitialized ||
+                !threatGrid.IsCreated ||
+                !HasCompleteEcosystemSquareGridState(threatGrid.Length))
+            {
+                return default;
+            }
+
+            return threatGrid;
+        }
+
+        private NativeArray<Vector3> GetAbyssalAnchorNativeView()
+        {
+            return ResolveAbyssalAnchorViewCount() > 0
+                ? _nativeMemory.AbyssalAnchorPositionsNative
+                : default;
+        }
+
+        private NativeArray<AbsoluteUniversePosition> GetAbyssalAnchorAupNativeView()
+        {
+            return ResolveAbyssalAnchorAupViewCount() > 0
+                ? _nativeMemory.AbyssalAnchorAupPositionsNative
+                : default;
+        }
+
+        private int ResolveAbyssalAnchorViewCount()
+        {
+            if (_abyssalAnchorCount <= 0 ||
+                _abyssalAnchorPositions == null ||
+                _abyssalAnchorPositions.Length <= 0 ||
+                !_nativeMemory.AbyssalAnchorPositionsNative.IsCreated)
+            {
+                return 0;
+            }
+
+            int safeCount = math.min(_abyssalAnchorCount, _abyssalAnchorPositions.Length);
+            safeCount = math.min(safeCount, _nativeMemory.AbyssalAnchorPositionsNative.Length);
+            return math.max(0, safeCount);
+        }
+
+        private int ResolveAbyssalAnchorAupViewCount()
+        {
+            int safeCount = ResolveAbyssalAnchorViewCount();
+            if (safeCount <= 0 ||
+                !_nativeMemory.AbyssalAnchorAupPositionsNative.IsCreated)
+            {
+                return 0;
+            }
+
+            return math.max(0, math.min(safeCount, _nativeMemory.AbyssalAnchorAupPositionsNative.Length));
+        }
+
+        private NativeArray<Vector3> GetAbyssalNavNodeSnapshotNativeView()
+        {
+            return ResolveAbyssalNavNodeViewCount() > 0
+                ? _nativeMemory.AbyssalNavNodeSnapshotNative
+                : default;
+        }
+
+        private int ResolveAbyssalNavNodeViewCount()
+        {
+            if (_abyssalNavNodeCount <= 0 ||
+                _abyssalNavNodeSnapshot == null ||
+                _abyssalNavNodeSnapshot.Length <= 0 ||
+                !_nativeMemory.AbyssalNavNodeSnapshotNative.IsCreated)
+            {
+                return 0;
+            }
+
+            int safeCount = math.min(_abyssalNavNodeCount, _abyssalNavNodeSnapshot.Length);
+            safeCount = math.min(safeCount, _nativeMemory.AbyssalNavNodeSnapshotNative.Length);
+            return math.max(0, safeCount);
+        }
+
+        private int ResolveAbyssalNavNodeTypeViewCount()
+        {
+            int safeCount = ResolveAbyssalNavNodeViewCount();
+            if (safeCount <= 0 ||
+                !_nativeMemory.AbyssalNavNodeTypesSnapshotNative.IsCreated)
+            {
+                return 0;
+            }
+
+            return math.max(0, math.min(safeCount, _nativeMemory.AbyssalNavNodeTypesSnapshotNative.Length));
+        }
+
+        private int ResolveAbyssalConduitViewCount()
+        {
+            int safeCount = ResolveAbyssalNavNodeViewCount();
+            if (safeCount <= 0 ||
+                !_nativeMemory.AbyssalNavConduitVectorsSnapshotNative.IsCreated ||
+                !_nativeMemory.AbyssalNavConduitStrengthSnapshotNative.IsCreated)
+            {
+                return 0;
+            }
+
+            safeCount = math.min(safeCount, _nativeMemory.AbyssalNavConduitVectorsSnapshotNative.Length);
+            safeCount = math.min(safeCount, _nativeMemory.AbyssalNavConduitStrengthSnapshotNative.Length);
+            return math.max(0, safeCount);
+        }
+
+        private int ResolveAbyssalNavGraphViewCount()
+        {
+            int safeCount = ResolveAbyssalConduitViewCount();
+            if (safeCount <= 0 ||
+                !_nativeMemory.AbyssalNavNodeTypesSnapshotNative.IsCreated)
+            {
+                return 0;
+            }
+
+            safeCount = math.min(safeCount, _nativeMemory.AbyssalNavNodeTypesSnapshotNative.Length);
+            return math.max(0, safeCount);
+        }
+
+        private NativeArray<Vector3> GetAbyssalPathNativeView()
+        {
+            return ResolveAbyssalPathViewCount() > 0
+                ? _nativeMemory.AbyssalPathSnapshotNative
+                : default;
+        }
+
+        private int ResolveAbyssalPathViewCount()
+        {
+            if (_abyssalPathCount <= 0 ||
+                !_nativeMemory.AbyssalPathSnapshotNative.IsCreated)
+            {
+                return 0;
+            }
+
+            return math.max(0, math.min(_abyssalPathCount, _nativeMemory.AbyssalPathSnapshotNative.Length));
+        }
+
+        private bool HasCompleteEcosystemSquareGridState(int payloadLength)
+        {
+            return _ecosystemThreatGridCellCount > 0 &&
+                   TryResolveSquareGridCellCount(
+                       _ecosystemThreatGridResolution,
+                       payloadLength,
+                       out int threatGridCellCount) &&
+                   _ecosystemThreatGridCellCount >= threatGridCellCount;
+        }
+
+        private bool HasCompleteAbyssalGridState(int payloadLength)
+        {
+            return TryResolveAbyssalGridCellCount(
+                       _abyssalThermalGridResolutionXZ,
+                       _abyssalThermalGridResolutionY,
+                       payloadLength,
+                       out _) &&
+                   thermalGridHorizontalCellSize > 0f &&
+                   thermalGridVerticalCellSize > 0f &&
+                   math.isfinite(thermalGridHorizontalCellSize) &&
+                   math.isfinite(thermalGridVerticalCellSize) &&
+                   IsFinite(_abyssalThermalGridCenter);
+        }
+
+        private static bool TryResolveSquareGridCellCount(int resolution, int payloadLength, out int cellCount)
+        {
+            cellCount = 0;
+            long expectedLength = (long)resolution * resolution;
+            if (resolution <= 0 ||
+                expectedLength <= 0L ||
+                expectedLength > int.MaxValue ||
+                payloadLength < expectedLength)
+            {
+                return false;
+            }
+
+            cellCount = (int)expectedLength;
+            return true;
+        }
+
+        private static bool TryResolveVoxelGridCellCount(Vector3Int dimensions, int payloadLength, out int cellCount)
+        {
+            cellCount = 0;
+            if (dimensions.x <= 0 ||
+                dimensions.y <= 0 ||
+                dimensions.z <= 0)
+            {
+                return false;
+            }
+
+            long expectedLength = (long)dimensions.x * dimensions.y * dimensions.z;
+            if (expectedLength <= 0L ||
+                expectedLength > int.MaxValue ||
+                payloadLength < expectedLength)
+            {
+                return false;
+            }
+
+            cellCount = (int)expectedLength;
+            return true;
+        }
+
+        private static bool TryResolveAbyssalGridCellCount(int horizontalResolution, int verticalResolution, int payloadLength, out int cellCount)
+        {
+            cellCount = 0;
+            long expectedLength = (long)horizontalResolution * horizontalResolution * verticalResolution;
+            if (horizontalResolution <= 0 ||
+                verticalResolution <= 0 ||
+                expectedLength <= 0L ||
+                expectedLength > int.MaxValue ||
+                payloadLength < expectedLength)
+            {
+                return false;
+            }
+
+            cellCount = (int)expectedLength;
+            return true;
         }
 
         private static float2 SampleFlowFieldAtPosition(
@@ -784,17 +1080,36 @@ namespace Hecton8.World
             int resolution,
             NativeArray<float2> flowField)
         {
-            if (!flowField.IsCreated || resolution <= 0 || cellSize <= 0f)
+            if (!flowField.IsCreated ||
+                resolution <= 0 ||
+                cellSize <= 0f ||
+                !math.isfinite(cellSize) ||
+                !IsFinite(position) ||
+                !IsFinite(gridCenter))
+            {
                 return float2.zero;
+            }
+
+            long expectedLength = (long)resolution * resolution;
+            if (expectedLength <= 0L || expectedLength > int.MaxValue || flowField.Length < expectedLength)
+            {
+                return float2.zero;
+            }
 
             float halfExtent = (resolution - 1) * 0.5f * cellSize;
+            if (!math.isfinite(halfExtent))
+            {
+                return float2.zero;
+            }
+
             float localX = position.x - (gridCenter.x - halfExtent);
             float localZ = position.z - (gridCenter.z - halfExtent);
             if (localX < 0f || localZ < 0f || localX > halfExtent * 2f || localZ > halfExtent * 2f)
                 return float2.zero;
 
-            float normalizedX = math.clamp(localX / cellSize, 0f, resolution - 1);
-            float normalizedZ = math.clamp(localZ / cellSize, 0f, resolution - 1);
+            float inverseCellSize = math.rcp(cellSize);
+            float normalizedX = math.clamp(localX * inverseCellSize, 0f, resolution - 1);
+            float normalizedZ = math.clamp(localZ * inverseCellSize, 0f, resolution - 1);
             int cellX = math.clamp((int)math.floor(normalizedX), 0, resolution - 1);
             int cellZ = math.clamp((int)math.floor(normalizedZ), 0, resolution - 1);
             int nextCellX = math.min(cellX + 1, resolution - 1);
@@ -1014,7 +1329,7 @@ namespace Hecton8.World
                             else if (biomeLayer == (byte)VegetationBiomeLayer.DeadZone)
                             {
                                 float deadZoneDepth = math.max(0f, WaterLevel - worldY);
-                                float deadZoneDepthT = math.saturate((deadZoneDepth - DeadZoneStartDepth) / 2000f);
+                                float deadZoneDepthT = math.saturate((deadZoneDepth - DeadZoneStartDepth) * 0.0005f);
                                 float deadZoneThreshold = math.max(0f, TechnoJungleThreshold - (hasPermanentEcho ? EchoTechnoJungleThresholdBias * 0.75f : 0f));
                                 if (!TryEvaluateTechnoJungle(
                                         sampleX,
@@ -1161,6 +1476,20 @@ namespace Hecton8.World
                 out int minCellZ,
                 out int maxCellZ)
             {
+                if (ThreatGridResolution <= 0 ||
+                    ThreatGridCellSize <= 0f ||
+                    !math.isfinite(ThreatGridCellSize) ||
+                    !math.all(math.isfinite(ThreatGridCenter)) ||
+                    !math.all(math.isfinite(aabbMin)) ||
+                    !math.all(math.isfinite(aabbMax)))
+                {
+                    minCellX = 0;
+                    maxCellX = 0;
+                    minCellZ = 0;
+                    maxCellZ = 0;
+                    return false;
+                }
+
                 float halfExtent = (ThreatGridResolution - 1) * 0.5f * ThreatGridCellSize;
                 float minGridX = ThreatGridCenter.x - halfExtent;
                 float maxGridX = ThreatGridCenter.x + halfExtent;
@@ -1175,10 +1504,11 @@ namespace Hecton8.World
                     return false;
                 }
 
-                minCellX = math.clamp((int)math.floor((aabbMin.x - minGridX) / ThreatGridCellSize), 0, ThreatGridResolution - 1);
-                maxCellX = math.clamp((int)math.floor((aabbMax.x - minGridX) / ThreatGridCellSize), 0, ThreatGridResolution - 1);
-                minCellZ = math.clamp((int)math.floor((aabbMin.z - minGridZ) / ThreatGridCellSize), 0, ThreatGridResolution - 1);
-                maxCellZ = math.clamp((int)math.floor((aabbMax.z - minGridZ) / ThreatGridCellSize), 0, ThreatGridResolution - 1);
+                float inverseThreatGridCellSize = math.rcp(ThreatGridCellSize);
+                minCellX = math.clamp((int)math.floor((aabbMin.x - minGridX) * inverseThreatGridCellSize), 0, ThreatGridResolution - 1);
+                maxCellX = math.clamp((int)math.floor((aabbMax.x - minGridX) * inverseThreatGridCellSize), 0, ThreatGridResolution - 1);
+                minCellZ = math.clamp((int)math.floor((aabbMin.z - minGridZ) * inverseThreatGridCellSize), 0, ThreatGridResolution - 1);
+                maxCellZ = math.clamp((int)math.floor((aabbMax.z - minGridZ) * inverseThreatGridCellSize), 0, ThreatGridResolution - 1);
                 return minCellX <= maxCellX && minCellZ <= maxCellZ;
             }
 
@@ -1231,14 +1561,24 @@ namespace Hecton8.World
 
             private int ComputeStructureGridCellIndex(float3 position)
             {
+                if (ThreatGridResolution <= 0 ||
+                    ThreatGridCellSize <= 0f ||
+                    !math.isfinite(ThreatGridCellSize) ||
+                    !math.all(math.isfinite(ThreatGridCenter)) ||
+                    !math.all(math.isfinite(position)))
+                {
+                    return -1;
+                }
+
                 float halfExtent = (ThreatGridResolution - 1) * 0.5f * ThreatGridCellSize;
                 float localX = position.x - (ThreatGridCenter.x - halfExtent);
                 float localZ = position.z - (ThreatGridCenter.z - halfExtent);
                 if (localX < 0f || localZ < 0f || localX > halfExtent * 2f || localZ > halfExtent * 2f)
                     return -1;
 
-                int cellX = math.clamp((int)math.floor(localX / ThreatGridCellSize), 0, ThreatGridResolution - 1);
-                int cellZ = math.clamp((int)math.floor(localZ / ThreatGridCellSize), 0, ThreatGridResolution - 1);
+                float inverseThreatGridCellSize = math.rcp(ThreatGridCellSize);
+                int cellX = math.clamp((int)math.floor(localX * inverseThreatGridCellSize), 0, ThreatGridResolution - 1);
+                int cellZ = math.clamp((int)math.floor(localZ * inverseThreatGridCellSize), 0, ThreatGridResolution - 1);
                 return (cellZ * ThreatGridResolution) + cellX;
             }
         }
@@ -1505,7 +1845,7 @@ namespace Hecton8.World
                     float emissionRadiusSq = emissionRadius * emissionRadius;
                     if (distanceSq <= emissionRadiusSq)
                     {
-                        float falloff = 1f - math.saturate(distanceSq / emissionRadiusSq);
+                        float falloff = 1f - math.saturate(distanceSq * math.rcp(emissionRadiusSq));
                         float accumulationBoost = 1f + (attractor.x * SargassumAccumulationBoost) + (attractor.y * TechnoJungleAccumulationBoost);
                         localDeposit = EmissionStrength * DeltaTime * falloff * accumulationBoost;
                     }
@@ -1571,7 +1911,7 @@ namespace Hecton8.World
                 AccumulateThreatSample(x + 1, z - 1, 1f, ref weightedSum, ref totalWeight);
                 AccumulateThreatSample(x - 1, z + 1, 1f, ref weightedSum, ref totalWeight);
                 AccumulateThreatSample(x + 1, z + 1, 1f, ref weightedSum, ref totalWeight);
-                return weightedSum / math.max(1f, totalWeight);
+                return weightedSum * math.rcp(math.max(1f, totalWeight));
             }
 
             private void AccumulateThreatSample(int x, int z, float weight, ref float weightedSum, ref float totalWeight)
@@ -1850,7 +2190,8 @@ namespace Hecton8.World
 
                 float centerObstacle = SampleObstacle(position);
                 float2 obstacleGradient = ComputeObstacleGradient(position);
-                float obstacleFactor = math.saturate((centerObstacle - ObstacleSoftThreshold) / math.max(0.0001f, ObstacleHardThreshold - ObstacleSoftThreshold));
+                float obstacleRange = math.max(0.0001f, ObstacleHardThreshold - ObstacleSoftThreshold);
+                float obstacleFactor = math.saturate((centerObstacle - ObstacleSoftThreshold) * math.rcp(obstacleRange));
                 float2 avoidanceDir = DominantAxisOrDefault(-obstacleGradient, new float2(0f, 0f));
 
                 float navSupport = SampleNavSupport(cellX, cellZ);
@@ -1994,11 +2335,12 @@ namespace Hecton8.World
                     if (planarDistanceSq > radiusSq)
                         continue;
 
-                    float planarGate = math.saturate(1f - (planarDistanceSq / radiusSq));
+                    float inverseRadiusSq = math.rcp(radiusSq);
+                    float planarGate = math.saturate(1f - (planarDistanceSq * inverseRadiusSq));
                     if (planarGate <= 0f)
                         continue;
 
-                    float verticalGate = math.saturate(1f - (math.abs(position.y - impulse.Position.y) / radius));
+                    float verticalGate = math.saturate(1f - (math.abs(position.y - impulse.Position.y) * math.rcp(radius)));
                     float weight = planarGate * planarGate * verticalGate * impulse.Strength;
                     wake += DominantAxisOrDefault(new float2(impulse.FlowVector.x, impulse.FlowVector.z), float2.zero) * weight;
                 }
@@ -2068,15 +2410,16 @@ namespace Hecton8.World
 
             private float ResolveBaseTemperature(float depthMeters)
             {
-                float normalizedDepth = math.saturate(depthMeters / math.max(1f, GridDepthMeters));
+                float inverseGridDepth = math.rcp(math.max(1f, GridDepthMeters));
+                float normalizedDepth = math.saturate(depthMeters * inverseGridDepth);
                 float thermocline01 = ThermoclineDepth <= 0.01f
                     ? normalizedDepth
-                    : math.saturate(depthMeters / math.max(1f, ThermoclineDepth)) * 0.24f;
+                    : math.saturate(depthMeters * math.rcp(math.max(1f, ThermoclineDepth))) * 0.24f;
 
                 if (depthMeters > ThermoclineDepth)
                 {
                     float remainingDepth = math.max(1f, GridDepthMeters - ThermoclineDepth);
-                    float deep01 = math.saturate((depthMeters - ThermoclineDepth) / remainingDepth);
+                    float deep01 = math.saturate((depthMeters - ThermoclineDepth) * math.rcp(remainingDepth));
                     thermocline01 = 0.24f + (ApproximateDepthFalloff01(deep01, DepthFalloffExponent) * 0.76f);
                 }
 
@@ -2100,17 +2443,17 @@ namespace Hecton8.World
                 float2 attractor = ChunkCount > 0 && ThreatChunks.IsCreated && ThreatAttractorGrid.IsCreated
                     ? SampleThreatAttractorAtPosition(position, ThreatChunks, ThreatAttractorGrid, ChunkCount)
                     : float2.zero;
-                float colony01 = math.saturate((depthMeters - ColonyBiomeStartDepth) / math.max(1f, DeadZoneStartDepth - ColonyBiomeStartDepth));
+                float colony01 = math.saturate((depthMeters - ColonyBiomeStartDepth) * math.rcp(math.max(1f, DeadZoneStartDepth - ColonyBiomeStartDepth)));
                 colony01 *= math.saturate(attractor.y * ColonyPocketStrength);
 
-                float deadZone01 = math.saturate((depthMeters - DeadZoneStartDepth) / math.max(1f, GridDepthMeters - DeadZoneStartDepth));
+                float deadZone01 = math.saturate((depthMeters - DeadZoneStartDepth) * math.rcp(math.max(1f, GridDepthMeters - DeadZoneStartDepth)));
                 deadZone01 *= DeadZonePocketStrength;
 
                 float pocketNoise = SampleValueNoise(
                     ((position.x + (position.y * 0.37f)) * HotPocketNoiseScale) + 13.17f,
                     ((position.z - (position.y * 0.19f)) * HotPocketNoiseScale) + 29.41f,
                     0x91E10DA5u);
-                float pocketMask = math.saturate((pocketNoise - HotPocketThreshold) / math.max(0.0001f, 1f - HotPocketThreshold));
+                float pocketMask = math.saturate((pocketNoise - HotPocketThreshold) * math.rcp(math.max(0.0001f, 1f - HotPocketThreshold)));
                 float pocketBias = math.max(colony01, deadZone01);
                 return HotPocketBoostCelsius * pocketMask * pocketBias;
             }
@@ -2201,7 +2544,7 @@ namespace Hecton8.World
 
                 if ((WeatherStateMask & (uint)WeatherState.Storm) != 0u)
                 {
-                    float surfaceLayer01 = 1f - math.saturate(depthMeters / math.max(SurfaceStormLayerDepthMeters, 0.0001f));
+                    float surfaceLayer01 = 1f - math.saturate(depthMeters * math.rcp(math.max(SurfaceStormLayerDepthMeters, 0.0001f)));
                     float stormBiasScale = WeatherCurrentSpeed * math.max(0.35f, WeatherIntensity);
                     horizontalCurrent += weatherDirection * stormBiasScale;
                     if (surfaceLayer01 > 0.0001f)
@@ -2218,7 +2561,7 @@ namespace Hecton8.World
 
                 if ((WeatherStateMask & ((uint)WeatherState.ThermoclineActive | (uint)WeatherState.HaloclineActive)) != 0u)
                 {
-                    float thermoclineBand01 = 1f - math.saturate(math.abs(depthMeters - ThermoclineDepthMeters) / math.max(ThermoclineHalfBandMeters, 0.0001f));
+                    float thermoclineBand01 = 1f - math.saturate(math.abs(depthMeters - ThermoclineDepthMeters) * math.rcp(math.max(ThermoclineHalfBandMeters, 0.0001f)));
                     if (thermoclineBand01 > 0.0001f)
                         flow.y = math.lerp(flow.y, flow.y * ThermoclineVerticalAttenuation, thermoclineBand01);
                 }
@@ -2245,7 +2588,7 @@ namespace Hecton8.World
                     if (distanceSq > radiusSq)
                         continue;
 
-                    float weight = math.saturate(1f - (distanceSq / radiusSq));
+                    float weight = math.saturate(1f - (distanceSq * math.rcp(radiusSq)));
                     if (weight <= 0f)
                         continue;
 
@@ -2323,7 +2666,13 @@ namespace Hecton8.World
                     StartNode < 0 ||
                     EndNode < 0 ||
                     StartNode >= Nodes.Length ||
-                    EndNode >= Nodes.Length)
+                    EndNode >= Nodes.Length ||
+                    MaxExpandedNodes <= 0 ||
+                    NeighborRadius <= 0f ||
+                    !math.isfinite(NeighborRadius) ||
+                    !math.isfinite(VerticalTolerance) ||
+                    !math.all(math.isfinite(StartPosition)) ||
+                    !math.all(math.isfinite(EndPosition)))
                 {
                     if (Path.IsCreated)
                         Path.Clear();
@@ -2332,7 +2681,22 @@ namespace Hecton8.World
 
                 Path.Clear();
                 int nodeCount = Nodes.Length;
+                if (!HasCompleteAStarWorkspace(nodeCount))
+                    return;
+
+                if (!math.all(math.isfinite(ToFloat3(Nodes[StartNode]))) ||
+                    !math.all(math.isfinite(ToFloat3(Nodes[EndNode]))))
+                {
+                    return;
+                }
+
                 float neighborRadiusSq = NeighborRadius * NeighborRadius;
+                if (!math.isfinite(neighborRadiusSq))
+                    return;
+
+                float threatPenaltyWeight = SanitizeNonNegative(ThreatPenaltyWeight);
+                float conduitMisalignmentPenalty = SanitizeNonNegative(ConduitMisalignmentPenalty);
+                float conduitAlignmentReward = SanitizeSaturate(ConduitAlignmentReward);
                 int heapCount = 0;
 
                 for (int i = 0; i < nodeCount; i++)
@@ -2345,7 +2709,11 @@ namespace Hecton8.World
                 }
 
                 GScore[StartNode] = 0f;
-                FScore[StartNode] = HeuristicCost(StartNode);
+                float startHeuristic = HeuristicCost(StartNode);
+                if (!math.isfinite(startHeuristic))
+                    return;
+
+                FScore[StartNode] = startHeuristic;
                 HeapPushOrDecrease(StartNode, ref heapCount);
 
                 int expandedNodes = 0;
@@ -2368,36 +2736,56 @@ namespace Hecton8.World
                     }
 
                     float3 currentNode = ToFloat3(Nodes[current]);
+                    if (!math.all(math.isfinite(currentNode)))
+                        continue;
+                    if (!math.isfinite(GScore[current]))
+                        continue;
+
                     for (int neighbor = 0; neighbor < nodeCount; neighbor++)
                     {
                         if (neighbor == current || ClosedFlags[neighbor] != 0)
                             continue;
 
                         float3 neighborNode = ToFloat3(Nodes[neighbor]);
+                        if (!math.all(math.isfinite(neighborNode)))
+                            continue;
+
                         float verticalDelta = neighborNode.y - currentNode.y;
                         float3 delta = neighborNode - currentNode;
                         float distanceSq = math.lengthsq(delta);
-                        if (distanceSq <= 0.000001f || distanceSq > neighborRadiusSq)
+                        if (distanceSq <= 0.000001f ||
+                            distanceSq > neighborRadiusSq ||
+                            !math.isfinite(distanceSq))
+                        {
                             continue;
+                        }
 
                         float distance = EstimateLength3D(delta);
+                        if (distance <= 0.0001f || !math.isfinite(distance))
+                            continue;
+
                         float conduitStrength = ResolveConduitStrength(current, neighbor, currentNode, neighborNode, delta, distance, out float conduitAlignment, out float verticalBonus);
-                        float allowedVertical = VerticalTolerance + verticalBonus;
+                        float allowedVertical = math.max(0f, VerticalTolerance + verticalBonus);
                         if ((verticalDelta * verticalDelta) > (allowedVertical * allowedVertical))
                             continue;
 
-                        float threatPenalty = math.saturate(SampleThreatAtWorldPosition(neighborNode)) * ThreatPenaltyWeight;
-                        float conduitPenalty = conduitStrength * ((1f - conduitAlignment) * ConduitMisalignmentPenalty);
-                        float conduitThreatReduction = threatPenalty * conduitStrength * conduitAlignment * math.saturate(ConduitAlignmentReward);
+                        float threatPenalty = math.saturate(SampleThreatAtWorldPosition(neighborNode)) * threatPenaltyWeight;
+                        float conduitPenalty = conduitStrength * ((1f - conduitAlignment) * conduitMisalignmentPenalty);
+                        float conduitThreatReduction = threatPenalty * conduitStrength * conduitAlignment * conduitAlignmentReward;
                         float traversalMultiplier = math.max(1f, ResolveTraversalMultiplier(current, neighbor));
                         float traversalCost = distance * traversalMultiplier;
                         float tentativeG = GScore[current] + traversalCost + math.max(0f, threatPenalty - conduitThreatReduction) + conduitPenalty;
-                        if (tentativeG >= GScore[neighbor])
+                        if (tentativeG >= GScore[neighbor] || !math.isfinite(tentativeG))
+                            continue;
+
+                        float neighborHeuristic = HeuristicCost(neighbor);
+                        float resolvedFScore = tentativeG + neighborHeuristic;
+                        if (!math.isfinite(neighborHeuristic) || !math.isfinite(resolvedFScore))
                             continue;
 
                         Parents[neighbor] = current;
                         GScore[neighbor] = tentativeG;
-                        FScore[neighbor] = tentativeG + HeuristicCost(neighbor);
+                        FScore[neighbor] = resolvedFScore;
                         HeapPushOrDecrease(neighbor, ref heapCount);
                     }
                 }
@@ -2408,19 +2796,72 @@ namespace Hecton8.World
                 Path.AddNoResize(new Vector3(EndPosition.x, EndPosition.y, EndPosition.z));
                 int nodeIndex = EndNode;
                 int pathIterations = 0;
-                while (nodeIndex >= 0 && pathIterations < MaxPathReconstructionIterations)
+                int reconstructionLimit = math.min(nodeCount, MaxPathReconstructionIterations);
+                bool reachedStartNode = false;
+                while (nodeIndex >= 0 && pathIterations < reconstructionLimit)
                 {
                     pathIterations++;
                     float3 node = ToFloat3(Nodes[nodeIndex]);
+                    if (!math.all(math.isfinite(node)))
+                    {
+                        Path.Clear();
+                        return;
+                    }
+
                     Path.AddNoResize(new Vector3(node.x, node.y, node.z));
                     if (nodeIndex == StartNode)
+                    {
+                        reachedStartNode = true;
                         break;
+                    }
 
-                    nodeIndex = Parents[nodeIndex];
+                    int parentIndex = Parents[nodeIndex];
+                    if (parentIndex < 0 || parentIndex >= nodeCount)
+                    {
+                        nodeIndex = -1;
+                        break;
+                    }
+
+                    nodeIndex = parentIndex;
+                }
+
+                if (!reachedStartNode)
+                {
+                    Path.Clear();
+                    return;
                 }
 
                 Path.AddNoResize(new Vector3(StartPosition.x, StartPosition.y, StartPosition.z));
                 ReversePath();
+            }
+
+            private bool HasCompleteAStarWorkspace(int nodeCount)
+            {
+                int requiredPathCapacity = math.min(nodeCount, MaxPathReconstructionIterations) + 2;
+                return Parents.IsCreated &&
+                       GScore.IsCreated &&
+                       FScore.IsCreated &&
+                       ClosedFlags.IsCreated &&
+                       HeapNodes.IsCreated &&
+                       HeapPositions.IsCreated &&
+                       Path.IsCreated &&
+                       Path.Capacity >= requiredPathCapacity &&
+                       Parents.Length >= nodeCount &&
+                       GScore.Length >= nodeCount &&
+                       FScore.Length >= nodeCount &&
+                       ClosedFlags.Length >= nodeCount &&
+                       HeapNodes.Length >= nodeCount &&
+                       HeapPositions.Length >= nodeCount;
+            }
+
+            private static float SanitizeNonNegative(float value)
+            {
+                return math.isfinite(value) ? math.max(0f, value) : 0f;
+            }
+
+            private static float SanitizeSaturate(float value)
+            {
+                return math.isfinite(value) ? math.saturate(value) : 0f;
             }
 
             private void ReversePath()
@@ -2456,52 +2897,96 @@ namespace Hecton8.World
             {
                 conduitAlignment = 0f;
                 verticalBonus = 0f;
+                if (currentIndex < 0 ||
+                    neighborIndex < 0 ||
+                    !math.all(math.isfinite(currentNode)) ||
+                    !math.all(math.isfinite(neighborNode)))
+                {
+                    return 0f;
+                }
+
+                if (!math.isfinite(WaterLevel) || !math.isfinite(ConduitStartDepth))
+                    return 0f;
+
+                float conduitStartDepth = math.max(0f, ConduitStartDepth);
                 float depthMeters = math.max(0f, WaterLevel - math.min(currentNode.y, neighborNode.y));
-                if (depthMeters < ConduitStartDepth ||
+                if (depthMeters < conduitStartDepth ||
                     !ConduitVectors.IsCreated ||
                     !ConduitStrengths.IsCreated ||
                     currentIndex >= ConduitVectors.Length ||
                     neighborIndex >= ConduitVectors.Length ||
                     currentIndex >= ConduitStrengths.Length ||
                     neighborIndex >= ConduitStrengths.Length ||
-                    distance <= 0.0001f)
+                    distance <= 0.0001f ||
+                    !math.isfinite(distance) ||
+                    !math.all(math.isfinite(delta)))
                 {
                     return 0f;
                 }
 
-                float currentStrength = math.saturate(ConduitStrengths[currentIndex]);
-                float neighborStrength = math.saturate(ConduitStrengths[neighborIndex]);
+                float currentStrengthValue = ConduitStrengths[currentIndex];
+                float neighborStrengthValue = ConduitStrengths[neighborIndex];
+                if (!math.isfinite(currentStrengthValue))
+                    currentStrengthValue = 0f;
+                if (!math.isfinite(neighborStrengthValue))
+                    neighborStrengthValue = 0f;
+
+                float currentStrength = math.saturate(currentStrengthValue);
+                float neighborStrength = math.saturate(neighborStrengthValue);
                 float combinedStrength = math.max(currentStrength, neighborStrength);
                 if (combinedStrength <= 0.0001f)
                     return 0f;
 
-                float3 conduitVector = (ToFloat3(ConduitVectors[currentIndex]) * currentStrength) + (ToFloat3(ConduitVectors[neighborIndex]) * neighborStrength);
+                float3 currentConduit = ToFloat3(ConduitVectors[currentIndex]);
+                float3 neighborConduit = ToFloat3(ConduitVectors[neighborIndex]);
+                if (!math.all(math.isfinite(currentConduit)) ||
+                    !math.all(math.isfinite(neighborConduit)))
+                {
+                    return 0f;
+                }
+
+                float3 conduitVector = (currentConduit * currentStrength) + (neighborConduit * neighborStrength);
                 if (math.lengthsq(conduitVector) <= 0.0001f)
                     return 0f;
 
-                float3 edgeDirection = delta / distance;
+                float edgeLengthSq = math.lengthsq(delta);
+                if (edgeLengthSq <= 0.000001f || !math.isfinite(edgeLengthSq))
+                    return 0f;
+
+                float3 edgeDirection = delta * math.rsqrt(edgeLengthSq);
                 float3 conduitDirection = DominantAxisOrDefault(conduitVector, edgeDirection);
                 conduitAlignment = math.saturate((math.dot(edgeDirection, conduitDirection) * 0.5f) + 0.5f);
-                verticalBonus = ConduitVerticalToleranceBonus * combinedStrength * conduitAlignment * math.abs(conduitDirection.y);
+                verticalBonus = SanitizeNonNegative(ConduitVerticalToleranceBonus) * combinedStrength * conduitAlignment * math.abs(conduitDirection.y);
                 return combinedStrength;
             }
 
             private float SampleThreatAtWorldPosition(float3 position)
             {
+                if (!math.all(math.isfinite(position)))
+                    return 1f;
+
                 float voxelThreat = SampleThreatVoxelAtWorldPosition(position);
                 float predatorFearThreat = SamplePredatorFearAtWorldPosition(position);
 
-                if (!ThreatGrid.IsCreated || ThreatGridResolution <= 0 || ThreatGridCellSize <= 0f)
+                if (!ThreatGrid.IsCreated ||
+                    ThreatGridResolution <= 0 ||
+                    ThreatGridCellSize <= 0f ||
+                    !math.isfinite(ThreatGridCellSize) ||
+                    !math.all(math.isfinite(ThreatGridCenter)) ||
+                    !HasCompleteThreatGrid())
+                {
                     return math.max(voxelThreat, predatorFearThreat);
+                }
 
                 float halfExtent = (ThreatGridResolution - 1) * 0.5f * ThreatGridCellSize;
                 float localX = position.x - (ThreatGridCenter.x - halfExtent);
                 float localZ = position.z - (ThreatGridCenter.z - halfExtent);
                 if (localX < 0f || localZ < 0f || localX > halfExtent * 2f || localZ > halfExtent * 2f)
-                    return voxelThreat;
+                    return math.max(voxelThreat, predatorFearThreat);
 
-                float cellCoordX = localX / ThreatGridCellSize;
-                float cellCoordZ = localZ / ThreatGridCellSize;
+                float inverseThreatGridCellSize = math.rcp(math.max(ThreatGridCellSize, 0.0001f));
+                float cellCoordX = localX * inverseThreatGridCellSize;
+                float cellCoordZ = localZ * inverseThreatGridCellSize;
                 int x0 = math.clamp((int)math.floor(cellCoordX), 0, ThreatGridResolution - 1);
                 int z0 = math.clamp((int)math.floor(cellCoordZ), 0, ThreatGridResolution - 1);
                 int x1 = math.min(x0 + 1, ThreatGridResolution - 1);
@@ -2521,20 +3006,32 @@ namespace Hecton8.World
 
             private float SamplePredatorFearAtWorldPosition(float3 position)
             {
-                if (!PredatorFearNodes.IsCreated || PredatorFearNodeCount <= 0 || TraversalSpeciesId == 0 || PredatorFearPenaltyWeight <= 0f)
+                if (!PredatorFearNodes.IsCreated ||
+                    PredatorFearNodeCount <= 0 ||
+                    TraversalSpeciesId == 0 ||
+                    PredatorFearPenaltyWeight <= 0f ||
+                    !math.isfinite(PredatorFearPenaltyWeight))
+                {
                     return 0f;
+                }
 
                 float strongest = 0f;
                 int count = math.min(PredatorFearNodeCount, PredatorFearNodes.Length);
                 for (int i = 0; i < count; i++)
                 {
                     PredatorFearNodeSnapshot node = PredatorFearNodes[i];
-                    if (node.SpeciesId != TraversalSpeciesId || node.Weight <= 0f)
+                    if (node.SpeciesId != TraversalSpeciesId ||
+                        node.Weight <= 0f ||
+                        !math.isfinite(node.Weight) ||
+                        !math.isfinite(node.Radius) ||
+                        !math.all(math.isfinite(node.Position)))
+                    {
                         continue;
+                    }
 
                     float radius = math.max(node.Radius, 1f);
                     float2 delta = new float2(position.x - node.Position.x, position.z - node.Position.z);
-                    float gate = 1f - math.saturate(EstimateLength2D(delta) / radius);
+                    float gate = 1f - math.saturate(EstimateLength2D(delta) * math.rcp(radius));
                     if (gate <= 0f)
                         continue;
 
@@ -2546,22 +3043,29 @@ namespace Hecton8.World
 
             private float SampleThreatVoxelAtWorldPosition(float3 position)
             {
-                if (!ThreatVoxelGrid.IsCreated ||
+                if (!ThreatVoxelGrid.IsCreated)
+                    return 0f;
+
+                if (!math.all(math.isfinite(position)) ||
+                    !math.all(math.isfinite(ThreatVoxelOrigin)) ||
+                    !HasUsableThreatVoxelCellSize() ||
                     ThreatVoxelDimensions.x <= 0 ||
                     ThreatVoxelDimensions.y <= 0 ||
-                    ThreatVoxelDimensions.z <= 0)
+                    ThreatVoxelDimensions.z <= 0 ||
+                    !HasCompleteThreatVoxelGrid())
                 {
-                    return 0f;
+                    return 1f;
                 }
 
                 float3 local = position - ThreatVoxelOrigin;
                 if (local.x < 0f || local.y < 0f || local.z < 0f)
                     return 0f;
 
+                float3 inverseCellSize = math.rcp(math.max(ThreatVoxelCellSize, new float3(0.0001f, 0.0001f, 0.0001f)));
                 int3 voxel = new int3(
-                    (int)math.floor(local.x / math.max(ThreatVoxelCellSize.x, 0.001f)),
-                    (int)math.floor(local.y / math.max(ThreatVoxelCellSize.y, 0.001f)),
-                    (int)math.floor(local.z / math.max(ThreatVoxelCellSize.z, 0.001f)));
+                    (int)math.floor(local.x * inverseCellSize.x),
+                    (int)math.floor(local.y * inverseCellSize.y),
+                    (int)math.floor(local.z * inverseCellSize.z));
                 if (voxel.x < 0 || voxel.y < 0 || voxel.z < 0 ||
                     voxel.x >= ThreatVoxelDimensions.x ||
                     voxel.y >= ThreatVoxelDimensions.y ||
@@ -2572,10 +3076,10 @@ namespace Hecton8.World
 
                 int flatIndex = voxel.x + (voxel.y * ThreatVoxelDimensions.x) + (voxel.z * ThreatVoxelDimensions.x * ThreatVoxelDimensions.y);
                 if (flatIndex < 0 || flatIndex >= ThreatVoxelGrid.Length)
-                    return 0f;
+                    return 1f;
 
                 byte encoded = ThreatVoxelGrid[flatIndex];
-                return encoded >= 255 ? 1f : (encoded / 254f);
+                return encoded >= 255 ? 1f : encoded * math.rcp(254f);
             }
 
             private float ResolveTraversalMultiplier(int currentIndex, int neighborIndex)
@@ -2708,6 +3212,42 @@ namespace Hecton8.World
                 float mid = ax + ay + az - max - min;
                 return max + (mid * 0.375f) + (min * 0.25f);
             }
+
+            private bool HasCompleteThreatGrid()
+            {
+                if (!ThreatGrid.IsCreated || ThreatGridResolution <= 0)
+                    return false;
+
+                long resolution = ThreatGridResolution;
+                long expectedLength = resolution * resolution;
+                return expectedLength > 0L &&
+                       expectedLength <= int.MaxValue &&
+                       ThreatGrid.Length >= expectedLength;
+            }
+
+            private bool HasCompleteThreatVoxelGrid()
+            {
+                if (!ThreatVoxelGrid.IsCreated ||
+                    ThreatVoxelDimensions.x <= 0 ||
+                    ThreatVoxelDimensions.y <= 0 ||
+                    ThreatVoxelDimensions.z <= 0)
+                {
+                    return false;
+                }
+
+                long expectedLength = (long)ThreatVoxelDimensions.x * ThreatVoxelDimensions.y * ThreatVoxelDimensions.z;
+                return expectedLength > 0L &&
+                       expectedLength <= int.MaxValue &&
+                       ThreatVoxelGrid.Length >= expectedLength;
+            }
+
+            private bool HasUsableThreatVoxelCellSize()
+            {
+                return math.all(math.isfinite(ThreatVoxelCellSize)) &&
+                       ThreatVoxelCellSize.x > 0.000001f &&
+                       ThreatVoxelCellSize.y > 0.000001f &&
+                       ThreatVoxelCellSize.z > 0.000001f;
+            }
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
@@ -2764,6 +3304,9 @@ namespace Hecton8.World
                     return;
 
                 int pathCount = InputPath.Length;
+                if (OutputPath.Capacity < pathCount || !HasFiniteInputPath(pathCount))
+                    return;
+
                 if (pathCount <= 2)
                 {
                     for (int i = 0; i < pathCount; i++)
@@ -2854,6 +3397,20 @@ namespace Hecton8.World
                     OutputPath.AddNoResize(endPoint);
 
                 CompactPathByVoxelLineOfSight();
+            }
+
+            private bool HasFiniteInputPath(int pathCount)
+            {
+                if (!InputPath.IsCreated || pathCount <= 0)
+                    return false;
+
+                for (int i = 0; i < pathCount; i++)
+                {
+                    if (!math.all(math.isfinite(ToFloat3(InputPath[i]))))
+                        return false;
+                }
+
+                return true;
             }
 
             private NavPortal BuildPortal(int index, out float3 portalAxis)
@@ -3043,7 +3600,8 @@ namespace Hecton8.World
                 tDelta = math.select(new float3(1000000f, 1000000f, 1000000f), tDelta, activeAxisMask);
 
                 int sampleStepCap = math.clamp(MaxSamplesPerSegment, 1, MaxThreatDdaSteps);
-                int gridStepCap = math.min(activeVoxelDimensions.x + activeVoxelDimensions.y + activeVoxelDimensions.z + 1, MaxThreatDdaSteps);
+                long gridTraversalCap = (long)activeVoxelDimensions.x + activeVoxelDimensions.y + activeVoxelDimensions.z + 1L;
+                int gridStepCap = gridTraversalCap > MaxThreatDdaSteps ? MaxThreatDdaSteps : (int)gridTraversalCap;
                 int maxSteps = math.min(gridStepCap, sampleStepCap);
                 for (int stepIndex = 0; stepIndex < maxSteps; stepIndex++)
                 {
@@ -3067,6 +3625,14 @@ namespace Hecton8.World
             {
                 float3 activeVoxelOrigin = GetActiveVoxelOrigin();
                 float3 activeVoxelCellSize = GetActiveVoxelCellSize();
+                if (!math.all(math.isfinite(worldPosition)) ||
+                    !math.all(math.isfinite(activeVoxelOrigin)) ||
+                    !HasUsableVoxelCellSize(activeVoxelCellSize))
+                {
+                    voxel = int3.zero;
+                    return false;
+                }
+
                 float3 local = worldPosition - activeVoxelOrigin;
                 if (local.x < 0f || local.y < 0f || local.z < 0f)
                 {
@@ -3108,14 +3674,14 @@ namespace Hecton8.World
                 {
                     int flatIndex = FlattenThreatVoxelIndex(voxel, NavPassabilityDimensions);
                     if (flatIndex < 0 || flatIndex >= NavPassabilityGrid.Length)
-                        return 0;
+                        return SolidThreatVoxel;
 
                     return NavPassabilityGrid[flatIndex];
                 }
 
                 int legacyFlatIndex = FlattenThreatVoxelIndex(voxel, ThreatVoxelDimensions);
                 if (legacyFlatIndex < 0 || legacyFlatIndex >= ThreatVoxelGrid.Length)
-                    return 0;
+                    return SolidThreatVoxel;
 
                 return ThreatVoxelGrid[legacyFlatIndex];
             }
@@ -3128,19 +3694,44 @@ namespace Hecton8.World
             private bool HasAnyVoxelGrid()
             {
                 return HasNavPassabilityGrid() ||
-                       (ThreatVoxelGrid.IsCreated &&
-                        ThreatVoxelDimensions.x > 0 &&
-                        ThreatVoxelDimensions.y > 0 &&
-                        ThreatVoxelDimensions.z > 0);
+                       (HasCompleteVoxelGrid(ThreatVoxelGrid, ThreatVoxelDimensions) &&
+                        HasUsableVoxelCellSize(ThreatVoxelCellSize));
             }
 
             private bool HasNavPassabilityGrid()
             {
-                return NavPassabilityGrid.IsCreated &&
-                       NavPassabilityDimensions.x > 0 &&
-                       NavPassabilityDimensions.y > 0 &&
-                       NavPassabilityDimensions.z > 0 &&
-                       NavPassabilityCellSize > 0f;
+                return HasCompleteVoxelGrid(NavPassabilityGrid, NavPassabilityDimensions) &&
+                       HasUsableUniformVoxelCellSize(NavPassabilityCellSize);
+            }
+
+            private static bool HasCompleteVoxelGrid(NativeArray<byte> grid, int3 dimensions)
+            {
+                if (!grid.IsCreated ||
+                    dimensions.x <= 0 ||
+                    dimensions.y <= 0 ||
+                    dimensions.z <= 0)
+                {
+                    return false;
+                }
+
+                long expectedLength = (long)dimensions.x * dimensions.y * dimensions.z;
+                return expectedLength > 0L &&
+                       expectedLength <= int.MaxValue &&
+                       grid.Length >= expectedLength;
+            }
+
+            private static bool HasUsableUniformVoxelCellSize(float cellSize)
+            {
+                return cellSize > DdaEpsilon &&
+                       math.isfinite(cellSize);
+            }
+
+            private static bool HasUsableVoxelCellSize(float3 cellSize)
+            {
+                return math.all(math.isfinite(cellSize)) &&
+                       cellSize.x > DdaEpsilon &&
+                       cellSize.y > DdaEpsilon &&
+                       cellSize.z > DdaEpsilon;
             }
 
             private int3 GetActiveVoxelDimensions()
@@ -3212,9 +3803,15 @@ namespace Hecton8.World
 
             private static NavPortal BuildNavPortal(float3 left, float3 right)
             {
-                left = math.select(float3.zero, left, math.isfinite(left));
-                right = math.select(left, right, math.isfinite(right));
+                if (!math.all(math.isfinite(left)))
+                    left = float3.zero;
+                if (!math.all(math.isfinite(right)))
+                    right = left;
+
                 float widthSq = math.lengthsq(right - left);
+                if (!math.isfinite(widthSq))
+                    widthSq = FunnelEpsilon;
+
                 return new NavPortal
                 {
                     Left = left,
@@ -3227,10 +3824,14 @@ namespace Hecton8.World
             private static float3 NormalizeRsqrtOrFallback(float3 value, float3 fallback)
             {
                 float lengthSq = math.lengthsq(value);
-                bool useFallback = lengthSq <= FunnelEpsilon || !math.all(math.isfinite(value));
-                float safeLengthSq = math.max(lengthSq, FunnelEpsilon);
-                float3 normalized = value * math.rsqrt(safeLengthSq);
-                return math.select(normalized, fallback, useFallback);
+                if (lengthSq > FunnelEpsilon && math.all(math.isfinite(value)))
+                    return value * math.rsqrt(lengthSq);
+
+                float fallbackLengthSq = math.lengthsq(fallback);
+                if (fallbackLengthSq > FunnelEpsilon && math.all(math.isfinite(fallback)))
+                    return fallback * math.rsqrt(fallbackLengthSq);
+
+                return new float3(0f, 0f, 1f);
             }
 
             private static bool IsDegenerateRay(float3 apex, float3 point)

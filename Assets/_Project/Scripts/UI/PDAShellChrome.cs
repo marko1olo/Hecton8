@@ -1,6 +1,7 @@
 using System;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton.Localization;
@@ -92,9 +93,10 @@ namespace Hecton8.UI
         private int _lastOxygenPercent = int.MinValue;
         private int _lastEnergyPercent = int.MinValue;
         private bool _lastPdaOpen;
-        private PlayerInventory _subscribedInventory;
-        private PlayerToolManager _subscribedToolManager;
-        private HectonSurvivalSystem _subscribedSurvivalSystem;
+        private uint _inventorySignalHash;
+        private uint _lastInventorySignalRevision;
+        private uint _toolLoadoutSignalSourceId;
+        private uint _lastToolLoadoutSignalSequence;
         private string _localizedTitle = TitleTextValue;
         private string _localizedTabInventory = ActiveTabInventory;
         private string _localizedTabLoadout = ActiveTabLoadout;
@@ -233,28 +235,17 @@ namespace Hecton8.UI
 
         private void RefreshBindings()
         {
-            PlayerInventory previousInventory = playerInventory;
-            PlayerToolManager previousToolManager = toolManager;
             HectonSurvivalSystem previousSurvivalSystem = survivalSystem;
 
             AutoResolve();
-
-            if (!ReferenceEquals(previousInventory, playerInventory))
-            {
-                UnsubscribeInventory(previousInventory);
-                SubscribeInventory(playerInventory);
-            }
-
-            if (!ReferenceEquals(previousToolManager, toolManager))
-            {
-                UnsubscribeToolManager(previousToolManager);
-                SubscribeToolManager(toolManager);
-            }
+            RefreshInventorySignalBinding();
+            RefreshToolLoadoutSignalBinding();
 
             if (!ReferenceEquals(previousSurvivalSystem, survivalSystem))
             {
-                UnsubscribeSurvival(previousSurvivalSystem);
-                SubscribeSurvival(survivalSystem);
+                _lastOxygenPercent = int.MinValue;
+                _lastEnergyPercent = int.MinValue;
+                _appliedRightFooterVersion = int.MinValue;
             }
         }
 
@@ -262,81 +253,12 @@ namespace Hecton8.UI
         {
             PDAEvents.Register(this);
             LocalizationEvents.RegisterLanguageListener(this);
-
-            SubscribeInventory(playerInventory);
-            SubscribeToolManager(toolManager);
-            SubscribeSurvival(survivalSystem);
         }
 
         private void Unsubscribe()
         {
             PDAEvents.Unregister(this);
             LocalizationEvents.UnregisterLanguageListener(this);
-
-            UnsubscribeInventory(_subscribedInventory);
-            UnsubscribeToolManager(_subscribedToolManager);
-            UnsubscribeSurvival(_subscribedSurvivalSystem);
-        }
-
-        private void SubscribeInventory(PlayerInventory inventory)
-        {
-            if (inventory == null || ReferenceEquals(_subscribedInventory, inventory))
-                return;
-
-            inventory.InventoryChanged += HandleInventoryChanged;
-            _subscribedInventory = inventory;
-        }
-
-        private void UnsubscribeInventory(PlayerInventory inventory)
-        {
-            if (inventory == null)
-                return;
-
-            inventory.InventoryChanged -= HandleInventoryChanged;
-            if (ReferenceEquals(_subscribedInventory, inventory))
-                _subscribedInventory = null;
-        }
-
-        private void SubscribeToolManager(PlayerToolManager manager)
-        {
-            if (manager == null || ReferenceEquals(_subscribedToolManager, manager))
-                return;
-
-            manager.ActiveSlotChanged += HandleSlotChanged;
-            manager.ToolAssignmentsChanged += HandleAssignmentsChanged;
-            _subscribedToolManager = manager;
-        }
-
-        private void UnsubscribeToolManager(PlayerToolManager manager)
-        {
-            if (manager == null)
-                return;
-
-            manager.ActiveSlotChanged -= HandleSlotChanged;
-            manager.ToolAssignmentsChanged -= HandleAssignmentsChanged;
-            if (ReferenceEquals(_subscribedToolManager, manager))
-                _subscribedToolManager = null;
-        }
-
-        private void SubscribeSurvival(HectonSurvivalSystem system)
-        {
-            if (system == null || ReferenceEquals(_subscribedSurvivalSystem, system))
-                return;
-
-            system.OnOxygenChanged += HandleOxygenChanged;
-            system.OnEnergyChanged += HandleEnergyChanged;
-            _subscribedSurvivalSystem = system;
-        }
-
-        private void UnsubscribeSurvival(HectonSurvivalSystem system)
-        {
-            if (system == null)
-                return;
-
-            system.OnOxygenChanged -= HandleOxygenChanged;
-            system.OnEnergyChanged -= HandleEnergyChanged;
-            if (ReferenceEquals(_subscribedSurvivalSystem, system))
-                _subscribedSurvivalSystem = null;
         }
 
         public void OnPDAEvent(in PDAEventPayload payload)
@@ -396,14 +318,27 @@ namespace Hecton8.UI
             int rebootProgressPercent = intrusionActive
                 ? (int)math.round(_intrusionManager.RebootProgressNormalized * 100f)
                 : 0;
+            bool inventoryDirty = ConsumeInventoryChangedSignals();
+            bool toolDirty = ConsumeToolLoadoutChangedSignals();
+            ResolveSurvivalPercentBuckets(out int oxygenPercent, out int energyPercent);
+            bool vitalsDirty = oxygenPercent != _lastOxygenPercent ||
+                energyPercent != _lastEnergyPercent;
 
-            if (stressBucket == _lastStressCorruptionBucket &&
-                intrusionActive == _lastIntrusionActive &&
-                mechModeActive == _lastMechModeActive &&
-                dataLinkDegraded == _lastDataLinkDegraded &&
-                storageDebtBucket == _lastStorageDebtBucket &&
-                rebootProgressPercent == _lastRebootProgressPercent)
+            bool reactiveDirty = stressBucket != _lastStressCorruptionBucket ||
+                intrusionActive != _lastIntrusionActive ||
+                mechModeActive != _lastMechModeActive ||
+                dataLinkDegraded != _lastDataLinkDegraded ||
+                storageDebtBucket != _lastStorageDebtBucket ||
+                rebootProgressPercent != _lastRebootProgressPercent;
+
+            if (!inventoryDirty && !toolDirty && !vitalsDirty && !reactiveDirty)
                 return;
+
+            if (!reactiveDirty)
+            {
+                RefreshChrome();
+                return;
+            }
 
             _lastStressCorruptionBucket = stressBucket;
             _lastIntrusionActive = intrusionActive;
@@ -422,28 +357,97 @@ namespace Hecton8.UI
             RefreshChrome();
         }
 
-        private void HandleInventoryChanged()
+        private bool ConsumeInventoryChangedSignals()
         {
-            if (PlayerPDA.IsOpen)
-                RefreshChrome();
+            uint inventoryHash = _inventorySignalHash;
+            if (inventoryHash == 0u)
+                return false;
+
+            ReadOnlySpan<InventoryChangedSignal> signals = SignalBus<InventoryChangedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ref readonly InventoryChangedSignal signal = ref signals[i];
+                if (signal.InventoryHash != inventoryHash)
+                    continue;
+
+                if (signal.Revision == _lastInventorySignalRevision && _lastInventorySignalRevision != 0u)
+                    continue;
+
+                _lastInventorySignalRevision = signal.Revision;
+                return true;
+            }
+
+            return false;
         }
 
-        private void HandleSlotChanged(int _)
+        private void RefreshInventorySignalBinding()
         {
-            if (PlayerPDA.IsOpen)
-                RefreshChrome();
+            uint resolvedHash = ResolveInventorySignalHash(playerInventory);
+            if (_inventorySignalHash == resolvedHash)
+                return;
+
+            _inventorySignalHash = resolvedHash;
+            _lastInventorySignalRevision = 0u;
         }
 
-        private void HandleAssignmentsChanged()
+        private static uint ResolveInventorySignalHash(PlayerInventory inventory)
         {
-            if (PlayerPDA.IsOpen)
-                RefreshChrome();
+            return inventory != null && inventory.gameObject != null
+                ? unchecked((uint)EntityId.ToULong(inventory.gameObject.GetEntityId()))
+                : 0u;
         }
 
-        private void HandleOxygenChanged(float _)
+        private bool ConsumeToolLoadoutChangedSignals()
         {
-            if (PlayerPDA.IsOpen)
-                RefreshChrome();
+            uint sourceId = _toolLoadoutSignalSourceId;
+            if (sourceId == 0u)
+                return false;
+
+            ReadOnlySpan<ToolLoadoutChangedSignal> signals = SignalBus<ToolLoadoutChangedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ref readonly ToolLoadoutChangedSignal signal = ref signals[i];
+                if (signal.SourceId != sourceId)
+                    continue;
+
+                if (signal.Sequence == _lastToolLoadoutSignalSequence && _lastToolLoadoutSignalSequence != 0u)
+                    continue;
+
+                _lastToolLoadoutSignalSequence = signal.Sequence;
+                return true;
+            }
+
+            return false;
+        }
+
+        private void RefreshToolLoadoutSignalBinding()
+        {
+            uint resolvedSourceId = ResolveToolLoadoutSignalSourceId(toolManager);
+            if (_toolLoadoutSignalSourceId == resolvedSourceId)
+                return;
+
+            _toolLoadoutSignalSourceId = resolvedSourceId;
+            _lastToolLoadoutSignalSequence = 0u;
+        }
+
+        private static uint ResolveToolLoadoutSignalSourceId(PlayerToolManager manager)
+        {
+            return manager != null && manager.gameObject != null
+                ? GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(manager.gameObject.GetEntityId()))
+                : 0u;
+        }
+
+        private void ResolveSurvivalPercentBuckets(out int oxygenPercent, out int energyPercent)
+        {
+            if (survivalSystem == null)
+            {
+                oxygenPercent = 0;
+                energyPercent = 0;
+                return;
+            }
+
+            oxygenPercent = (int)math.round(survivalSystem.OxygenNormalized * 100f);
+            energyPercent = (int)math.round(survivalSystem.EnergyNormalized * 100f);
         }
 
         private void EnsureBuilt()
@@ -525,12 +529,6 @@ namespace Hecton8.UI
             _built = true;
         }
 
-        private void HandleEnergyChanged(float _)
-        {
-            if (PlayerPDA.IsOpen)
-                RefreshChrome();
-        }
-
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
 
         {
@@ -601,14 +599,13 @@ namespace Hecton8.UI
                 ? playerInventory.Grid.Columns * playerInventory.Grid.Rows
                 : 48;
             float weight = playerInventory != null ? playerInventory.TotalWeight : 0f;
-            float energy = survivalSystem != null ? survivalSystem.EnergyNormalized : 0f;
-            float oxygen = survivalSystem != null ? survivalSystem.OxygenNormalized : 0f;
             int readyTools = CountReadyTools();
             int assignedTools = toolManager != null ? CountAssignedTools() : 0;
             int activeTabIndex = playerPDA != null ? playerPDA.ActiveTab : -1;
             int weightDeci = (int)math.round(weight * 10f);
-            int oxygenPercent = (int)math.round(oxygen * 100f);
-            int energyPercent = (int)math.round(energy * 100f);
+            ResolveSurvivalPercentBuckets(out int oxygenPercent, out int energyPercent);
+            float oxygen = math.saturate(oxygenPercent * 0.01f);
+            float energy = math.saturate(energyPercent * 0.01f);
             bool pdaOpen = PlayerPDA.IsOpen;
             bool intrusionActive = _intrusionManager != null && _intrusionManager.IsHacked;
             bool mechModeActive = _playerMovement != null && _playerMovement.CurrentLocomotionMode == PlayerLocomotionMode.ExosuitLocomotion;

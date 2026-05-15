@@ -470,8 +470,8 @@ namespace Hecton8.Interaction
             if (!IsFinite(runtimeHitPoint) || !IsFinite(runtimeHitNormal))
                 return;
 
-            Vector3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimeHitPoint);
-            signal.HitPoint = new Unity.Mathematics.float3(absoluteHitPoint.x, absoluteHitPoint.y, absoluteHitPoint.z);
+            double3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeHitPoint);
+            signal.HitPoint = new float3((float)absoluteHitPoint.x, (float)absoluteHitPoint.y, (float)absoluteHitPoint.z);
             signal.HitNormal = new Unity.Mathematics.float3(runtimeHitNormal.x, runtimeHitNormal.y, runtimeHitNormal.z);
         }
 

@@ -74,9 +74,9 @@ Largest first-party runtime files are mostly real code, not empty filler. The pr
 Highest pileup risk:
 
 - `Assets/_Project/Scripts/HectonPlayerMovement.cs` - 740,426 bytes / 13,240 lines.
-- `Assets/_Project/Scripts/WorldProceduralScatterDirector.cs` - 526.5 KB.
+- `Assets/_Project/Scripts/WorldProceduralScatterDirector.cs` - 539,165 bytes / 11,907 lines.
 - `Assets/_Project/Scripts/HectonUnderwaterVisuals.cs` - 355.3 KB.
-- `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs` - 323.9 KB.
+- `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs` - 336,953 bytes / 7,041 lines.
 - `Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs` - 315 KB.
 - `Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs` - 308.6 KB.
 - `Assets/_Project/Scripts/Fauna/FaunaBrain.cs` - 277.6 KB.
@@ -141,7 +141,7 @@ Decision:
 
 Evidence:
 
-- About 526.5 KB and 10620 lines.
+- R46 static scan: `539165` bytes / `11907` lines.
 - Still the live owner for scatter.
 - Contains backend shadow mode, rescue placement, reconciliation, candidate maps, pool warmup, sampling, diagnostics, MapMagic/geology/flora hooks.
 - `Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md` already states the Entities/DOTS scatter backend is prototype/shadow-only and not proven as optimization.
@@ -161,11 +161,12 @@ Evidence class: STATIC_SOURCE / FILESYSTEM. No Unity scene load, inspector readb
 
 World runtime code inventory:
 
-- `Assets/_Project/Scripts/WorldProceduralScatterDirector.cs`: about `526.5 KB` / `10620` lines.
-- `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs`: about `323.9 KB` / `6029` lines.
-- `Assets/_Project/Scripts/WorldProceduralFieldSampler.cs`: about `257.7 KB` / `4592` lines.
-- `Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs`: about `114.3 KB` / `2412` lines.
-- Supporting runtime directors exist for sampling pipeline, working memory, vegetation residency, slice/streaming, scatter budget, state registry, backend integration, and streaming profiles.
+- `Assets/_Project/Scripts/WorldProceduralScatterDirector.cs`: `539165` bytes / `11907` lines.
+- `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs`: `336953` bytes / `7041` lines.
+- `Assets/_Project/Scripts/WorldProceduralFieldSampler.cs`: `263836` bytes / `5133` lines.
+- `Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs`: `187902` bytes / `4368` lines.
+- `Assets/_Project/Scripts/World/PersistentWorldRegistry.cs`: `273872` bytes / `6159` lines.
+- Supporting runtime directors/helpers exist for sampling pipeline, working memory, vegetation residency, slice/streaming, scatter budget, state registry, backend integration, diagnostics, heuristics, and streaming profiles.
 
 Good evidence:
 
@@ -173,6 +174,7 @@ Good evidence:
 - `WorldChunkStreamingProfile.asset` exists and describes a real 15 km world model: `15000 m` world, `192 m` chunks, `64 m` cells, `768 m` macro zones, and radius bands `180/420/900/1800`.
 - The profile has per-layer policy: Terrain/Flora/Debris/Resources/Fauna/Construction/LargeThreats, including low activation budgets and a special LargeThreats layer with chunk residency disabled but full simulation enabled.
 - `WorldProceduralScatterDirector` registers as `IWorldGenService`, registers dispatcher update/slow/late-frame lanes, defers on bootstrap where configured, uses bootstrap prime passes, and supports cheap proxy vs final variants.
+- R46 source recheck found partial scatter refactor pieces already present: `SamplingSnapshot.cs`, `WorldProceduralScatterWorkingMemory.cs`, `ScatterHeuristicsUtility.cs`, and `ScatterDiagnosticsTracker.cs`. `ScatterRescueContext` exists only as a private readonly struct in a director partial, `GetGridPlacements()` returns bucketed placement lists, and no `ScatterSpawningService` source/class was found.
 - `WorldProceduralFieldSampler` registers into `GlobalRegistry.ProceduralFieldSampler`, owns Burst sampling data, graphics-buffer output, biome/event integration, and fallback synthetic sampling.
 - `WorldChunkResidencyManager` is a real data-driven residency manager: authoring `ChunkDefinition[]`, native chunk tables, predictive load/unload jobs, memory guard, Addressables handle release, additive scene loading, and `Docs/AgentLogs/Dump_ASSET_STREAMING_PREDICTIVE.bin` telemetry dump path.
 - `HectonMapMagicVegetationBridge` is not a trivial bridge. It owns resident vegetation chunk selection, predictive forward radius, native vegetation pools, threat/flow/thermal/abyssal/HLOD jobs, late-frame job recovery, and renderer-source binding.
@@ -193,7 +195,7 @@ Memory / toaster risk:
 
 - `HectonMapMagicVegetationBridge` defaults to a `256 MB` native vegetation pool budget with a `64 MB` minimum and preallocates fixed threat sampling hash buffers of `65536` entries. This may be justified by visual density, but it is not a toaster-safe claim until Memory Profiler evidence exists.
 - `WorldChunkResidencyManager` has tier dispatch budgets (`1/2/3/4`) and predictive VRAM abort logic, but the authored chunk definition count and live Addressables payload are not statically proven.
-- `WorldProceduralScatterDirector` still has heavy managed working memory around lists/dictionaries/hashsets plus NativeCollections. It may be cold/prewarmed, but the static audit cannot certify zero-GC runtime behavior.
+- `WorldProceduralScatterDirector` still has heavy managed working memory around lists/dictionaries/hashsets plus NativeCollections. `ScatterWorkingMemory` is real and prewarms some pools/buckets, but the static audit cannot certify zero-GC runtime behavior without profiler/GCMonitor proof.
 
 Decision:
 
@@ -1002,8 +1004,8 @@ Positive architecture:
 - `SaveManager.LoadGameAsync()` builds primary/backup candidates, migrates save data, validates runtime world seed, preloads tombstones, loads mod MMF payloads, stages packed quest state, applies saveables in load-priority order, restores voxel native deltas, and falls back from indexed persistent-world directory restore to loaded record arrays when needed.
 - DOC_AUDIT R29 added a `SaveManager` async world-pager bridge for chunk page writes/reads/copy/retire/telemetry/flush. DOC_AUDIT R30/R31 corrected the overclaim: chunk dehydration is now bounded to at most `2` signals per tick and stages inventory shadow plus chunk metadata only. It no longer captures the entire global `VoxelDeltaProcessor` snapshot per dehydrated chunk.
 - `H8BinaryWorldPager` now fail-closes on `IOException` / `UnauthorizedAccessException` while opening `world_data.h8bin`: it records an initialization fault and rejects pager IO instead of throwing through bootstrap. R30 also changes page-file sharing to `FileShare.Read` for single-writer semantics, adds a bounded worker-stop handshake before native disposal, releases invalid read results, and treats sparse/collided page headers as `Missing` rather than `Corrupt`. R31 removes pager initialization from `SaveManager.InitializeNativeBuffers()`, so the sidecar page file is opened only on first actual chunk page IO.
-- DOC_AUDIT R32 splits `SaveManager` boot buffers from persistence working buffers: boot now keeps the save telemetry ring and tiny load-candidate scratch only, while the 64 MB raw payload, about 68 MB compressed payload, and 10 MB staging arenas allocate on first save/load/chunk-sidecar use. R33 tightens the fault path so a faulted/uninitialized pager does not allocate the 10 MB staging arena, and load first-use allocation sits inside the normal failure/cleanup envelope. R36 re-removed a concurrent regression where chunk dehydration captured the global voxel snapshot as `worldPagerVoxelDeltaSnapshot`; R37 rechecked the latest churn, restored a joinable pager worker thread, and locally compiled `Hecton8.Core.Memory` plus `Hecton8.Core` through Unity Bee/Roslyn temp response files with exit code `0`. R38 hardens unexpected pager worker command faults so dequeued pending counters decrement in `finally`, records current WFC outpost MacroDB bitmask persist/restore contract coverage in `SaveManager`, and demotes the old full-Core success as stale because the current full `Hecton8.Core` probe is blocked by unrelated active churn in audio/scanner/submarine-buffer/arena/fluid/UI/fauna files.
-- DOC_AUDIT R39 identified the first blocker for external Core builds as generated-project drift: `Hecton8.Core.asmdef` references `23` first-party assemblies that were absent from generated `Hecton8.Core.csproj`. `HectonComplianceValidator` now has an editor-only `CSPROJ001` tripwire for this exact mismatch. R40 attempted a non-destructive Unity batchmode project refresh, found the root generated projects still stale, and added a source-backed `Directory.Build.targets` bridge instead of editing generated `.csproj` files. R41 serially rechecked the root `Hecton8*.csproj` compile surface after restoring missing MSBuild assets for Editor/PlayModeTests/World.Dots, then re-ran after `Temp\obj\Hecton8.Core\project.assets.json` also disappeared. Final no-restore CLI builds now pass for `Hecton8.Core.csproj`, `Hecton8.Editor.csproj`, `Hecton8.PlayModeTests.csproj`, `Hecton8.World.Contracts.csproj`, `Hecton8.World.Dots.csproj`, `Hecton8.Bootstrap.Contracts.csproj`, `Hecton8.Input.Generated.csproj`, and `Hecton8.Input.csproj` at `0 Warning(s)` / `0 Error(s)`. Full restore graphs still emit vendor/package warnings from URP/GPUInstancer/Crest/ShaderGraph and MapMagic/Den.Tools. This is external compile evidence only, not Unity Console, Play Mode, profiler, GCMonitor, player build, or scene wiring proof.
+- DOC_AUDIT R32 splits `SaveManager` boot buffers from persistence working buffers: boot now keeps the save telemetry ring and tiny load-candidate scratch only, while the 64 MB raw payload, about 68 MB compressed payload, and 10 MB staging arenas allocate on first save/load/chunk-sidecar use. R33 tightens the fault path so a faulted/uninitialized pager does not allocate the 10 MB staging arena, and load first-use allocation sits inside the normal failure/cleanup envelope. R36 re-removed a concurrent regression where chunk dehydration captured the global voxel snapshot as `worldPagerVoxelDeltaSnapshot`; R37 rechecked the latest churn, restored a joinable pager worker thread, and locally compiled `Hecton8.Core.Memory` plus `Hecton8.Core` through Unity Bee/Roslyn temp response files with exit code `0`. R38 hardens unexpected pager worker command faults so dequeued pending counters decrement in `finally`, records current WFC outpost MacroDB bitmask persist/restore contract coverage in `SaveManager`, and demoted the old full-Core success as stale under then-current churn; R43 later superseded that compile-blocked note with a clean external root `Hecton8*.csproj` no-restore CLI recheck.
+- DOC_AUDIT R39 identified the first blocker for external Core builds as generated-project drift: `Hecton8.Core.asmdef` references `23` first-party assemblies that were absent from generated `Hecton8.Core.csproj`. `HectonComplianceValidator` now has an editor-only `CSPROJ001` tripwire for this exact mismatch. R40 attempted a non-destructive Unity batchmode project refresh, found the root generated projects still stale, and added a source-backed `Directory.Build.targets` bridge instead of editing generated `.csproj` files. R41 serially rechecked the root `Hecton8*.csproj` compile surface after restoring missing MSBuild assets; R43 rechecked the same root surface under current churn. Final single-project no-restore CLI builds now pass for `Hecton8.Core.csproj`, `Hecton8.Editor.csproj`, `Hecton8.PlayModeTests.csproj`, `Hecton8.World.Contracts.csproj`, `Hecton8.World.Dots.csproj`, `Hecton8.Bootstrap.Contracts.csproj`, `Hecton8.Input.Generated.csproj`, and `Hecton8.Input.csproj` at `0 Warning(s)` / `0 Error(s)` with `LASTEXITCODE=0`. Fresh no-restore attempts can still fail before source compilation on missing `Temp\obj` restore assets, missing referenced `Temp\bin\Debug` DLLs, or shared `Temp\obj` locks; restore/build plus build-server cleanup clears those evidence hazards. Full restore graphs still emit vendor/package warnings from URP/GPUInstancer/Crest/ShaderGraph and MapMagic/Den.Tools. This is external compile evidence only, not Unity Console, Play Mode, profiler, GCMonitor, player build, or scene wiring proof.
 - `PersistentWorldRegistry` is a real persistence authority, not a thin list dump. It owns save snapshots, tombstone preload, indexed-sector restore, paging disable/fallback, sector override temp files, and corruption/quarantine surfaces.
 - `ISaveable` documents ownership rules: each owner writes only its own DTO section, validates on load, and should avoid new array allocation in the contract.
 - PlayMode and smoke surfaces exist: `SmokeTests_SaveLoad.cs`, `InquisitionStabilityPlayModeTests.cs`, `SavePersistenceOmegaSmokeTester`, `SaveRecoverySmokeTester`, and `SaveSystemRuntimeSmokeTester`.

@@ -104,6 +104,42 @@ Rejected Alternatives: Keeping the stale blocked status was rejected because cur
 Scalability potential: Build-valid code can now enter Unity/Burst profiler verification without assembly noise.
 Hardware Impact: Runtime hardware claims still require Unity profiler capture; compile proof only verifies C# integration.
 
+Problem: LOS smoothing could still trust voxel transforms with non-finite origins, non-finite world positions, zero/NaN cell sizes, undersized payloads, or hostile dimensions that overflow an int DDA cap.
+Solution: Added complete-grid and finite positive cell-size guards, fail-closed `TryWorldToVoxel` checks, `long` dimension summing for DDA caps, and `SolidThreatVoxel` fallback for invalid flat samples.
+Rejected Alternatives: Letting `math.max(cellSize, epsilon)` hide corrupted cell sizes was rejected because it converts invalid payloads into plausible motion proof. Editing upstream voxel payload ownership was rejected because it is outside this agent domain.
+Scalability potential: Low/MX350 preserves raw waypoints when voxel proof is corrupt instead of spending cycles on invalid compaction. Middle keeps bounded DDA. High/Ultra still get aggressive smoothing only inside complete, finite voxel payloads.
+Hardware Impact: Normal valid payload cost is a few scalar finite/positive checks before DDA. Low-end gain is indirect but important: avoids downstream steering correction and repeated failed smoothing on corrupted grid payloads. Exact microseconds remain pending Unity profiler data.
+
+Problem: Latest Core compile verification is blocked again by unrelated global changes outside the funnel domain.
+Solution: Recorded the dependency wall and kept this patch scoped. The latest bounded no-reference Core build reports 63 unrelated errors in `VRAMEnforcer`, `VoxelDeltaProcessor`, `SealedDoor`, `BinaryLayoutManifest`, and `HardwareTierDetector`; no errors are reported in `VegetationFlowFieldIntegrator.cs`, `VegetationNavGridSynchronizer.cs`, or `HectonMapMagicVegetationBridge.cs`.
+Rejected Alternatives: Editing optimization, core save-layout, hardware-tier, or fluid-engine files from this AI navigation polish pass was rejected as cross-domain damage.
+Scalability potential: Funnel changes stay reviewable and can be Burst-verified once global compile owners clear their dependency breaks.
+Hardware Impact: Runtime hardware claims remain unfinalized until Unity/Burst validation and profiler capture are available.
+
+Problem: The live `NormalizeRsqrtOrFallback` returned fallback vectors raw, so a non-unit or non-finite fallback could leak into portal axes, winding axes, or DDA ray directions.
+Solution: Keep the common valid-vector path as `value * math.rsqrt(lengthSq)`, normalize finite fallback vectors with `math.rsqrt`, and return +Z only when both inputs are unusable.
+Rejected Alternatives: Returning raw fallbacks was rejected because secondary axes are still path authority. Branchlessly normalizing both primary and fallback every call was rejected because it burns math on the common valid path.
+Scalability potential: Low/MX350 pays no extra work on valid vectors. Middle/High/Ultra get deterministic axis sanitation in degenerate corridor corners without changing visual smoothing budgets.
+Hardware Impact: Normal path remains one rsqrt multiply. Extra fallback work only occurs on degenerate or non-finite inputs; exact microseconds remain pending Unity profiler data.
+
+Problem: The live black-box dump still derived valid telemetry count from `_abyssalPathTelemetrySequence`, which can wrap and is semantically an event ID, not a count.
+Solution: Added `_abyssalPathTelemetryWrittenCount`, reset it with the ring, increment it up to `AbyssalPathTelemetryFrameCount`, and use it for dump valid-entry count.
+Rejected Alternatives: Widening sequence to 64-bit was rejected because the dump needs valid occupancy, not only identity. Leaving sequence-as-count was rejected as long-soak postmortem drift.
+Scalability potential: No hot-path allocation. Low and High tiers get the same 300-frame diagnostic ring with stable oldest-to-newest dump semantics.
+Hardware Impact: One capped integer increment per completed path; negligible on i3/MX350 and no extra Burst-job work.
+
+Problem: The live conduit scorer still used raw managed divisions and allowed non-finite flow vectors to poison average-current and conduit-strength calculations.
+Solution: Ignore non-finite flow vectors for conduit strength, replace average and strength divisions with `math.rcp` multiplies, and keep obstacle/deep-affinity accumulation intact.
+Rejected Alternatives: Trusting managed compiler division lowering was rejected by the math gate. Treating non-finite flow as zero-length but still counting it was rejected because it biases conduit strength.
+Scalability potential: Low/MX350 avoids divide latency and corrupt flow amplification. Middle/High/Ultra retain visual conduit fidelity when flow payloads are valid.
+Hardware Impact: Two scalar divisions become reciprocal multiplies per conduit-qualified candidate; exact microseconds remain pending Unity profiler data.
+
+Problem: `NormalizeVector3Fast` and `BuildNavPortal` still had weak fallback/finite handling in live source.
+Solution: `NormalizeVector3Fast` now finite-checks and rsqrt-normalizes both primary and fallback vectors. `BuildNavPortal` rejects whole non-finite endpoints and clamps non-finite width squared to `FunnelEpsilon`.
+Rejected Alternatives: Component-splicing invalid portal endpoints with `math.select` was rejected because it can create artificial portal geometry. Raw fallback vectors were rejected because secondary axes are still path authority.
+Scalability potential: Valid-path cost remains the same for normal vectors and finite portals. Degenerate/corrupt inputs fail into deterministic cheap axes rather than heavier recovery logic.
+Hardware Impact: Normal paths remain one rsqrt or simple finite checks; extra branches only execute on corrupt/degenerate payloads.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Final anti-bloat pass required checking for honest math, divisions, managed strings, and allocation paths after task completion/blocking.
@@ -111,3 +147,147 @@ Solution: Static scan confirmed no `math.normalize`, `math.length(`, `math.dista
 Rejected Alternatives: Adding a LUT was rejected because the portal is built from dynamic obstacle/threat/voxel geometry and the current rsqrt/rcp path is cheaper than maintaining cache state in this context.
 Scalability potential: Low/Middle run the same deterministic cheap path. High/Ultra can later increase visual navigation polish through a tier-owned lookahead budget.
 Hardware Impact: Exact microseconds saved are pending Unity/Burst profiler verification; the new owner-side telemetry will collect real funnel completion timing at runtime.
+
+Problem: H-Phi in the navigation domain was still capped by upstream A* feeder cost quality: `NativeAStarJob` had raw divisions in conduit direction, threat-grid sampling, predator falloff, and threat-voxel decode.
+Solution: Replaced those divisions with `math.rcp` multiplies and normalized conduit edge direction with `math.rsqrt(math.lengthsq(delta))` instead of the approximate path-cost distance.
+Rejected Alternatives: Trusting Burst or the C# compiler to lower `/` was rejected because the rsqrt/reciprocal mandate requires explicit math. Replacing the A* cost model was rejected because this pass owns polish, not route-authority redesign.
+Scalability potential: Low/MX350 removes divide latency from every feeder candidate and threat lookup. Middle/High/Ultra can spend the saved scalar budget on higher authored smoothing caps without changing behavior.
+Hardware Impact: Expected gain is small per candidate but broad across A* expansion. Exact microseconds remain pending Unity profiler data because dotnet rebuilds are prohibited by current user instruction.
+
+Problem: Non-finite or incomplete feeder payloads could poison path costs before the funnel ever saw the route.
+Solution: Added finite guards for conduit nodes/vectors/strengths, threat grid center/cell size, predator fear nodes, and threat voxel origin/cell size. Surface threat and voxel threat grids now require complete native lengths using 64-bit expected-size checks.
+Rejected Alternatives: Treating malformed payloads as zero threat/open water was rejected because it hides corrupt data as cheap navigation. Managed repair/rebuild of payloads was rejected as outside this domain and too expensive for the hot path.
+Scalability potential: Low keeps conservative, predictable navigation when payloads are corrupt. Middle/High/Ultra preserve high-quality smoothing only when upstream data has enough proof.
+Hardware Impact: Adds cheap finite/length checks before indexed reads; on low-end hardware the expected win is avoiding invalid route expansion and downstream steering correction.
+
+Problem: Predator fear was dropped when a point was outside the 2D surface threat grid, even though species-specific fear is independent route pressure.
+Solution: Outside-surface-grid sampling now returns `max(voxelThreat, predatorFearThreat)` instead of only voxel threat.
+Rejected Alternatives: Forcing predator fear into the 2D grid was rejected because it creates a coupling to heatmap coverage. A second fear field resample was rejected as waste.
+Scalability potential: Low gets correct cheap fear avoidance without more containers. High/Ultra keep stronger route intent while still using the same fixed snapshots.
+Hardware Impact: No extra loop was added; predator fear was already sampled before the branch. The change prevents bad routes rather than claiming a measurable CPU save.
+
+Problem: The project-level static H-Phi audit was requested by context but current user instruction prohibits rebuilds and the PowerShell audit exceeded the 120 second tool window under repo load.
+Solution: Record the audit timeout as attempted evidence and do not claim a project-wide H-Phi score from this navigation pass. Use domain-local static scans and code deltas as the valid evidence.
+Rejected Alternatives: Running dotnet rebuilds was rejected by explicit user instruction. Editing the central H-Phi report without a completed audit was rejected because it would create fake evidence.
+Scalability potential: Domain-local navigation hardening remains valid even without a fresh global score; project-wide H-Phi measurement belongs to a successful audit run or the H-Phi monitor owner.
+Hardware Impact: None; the timed-out audit was offline tooling only.
+
+Problem: The abyssal path scheduler read `GlobalRegistry.ScalabilityTier` twice in the same schedule pass, adding redundant registry surface to the navigation H-Phi pressure.
+Solution: Cache the tier once in a local `HectonQualityTier` and pass that primitive to both Math LOD resolvers.
+Rejected Alternatives: Moving tier ownership into the Burst job was rejected. Adding a new service dependency for one cached primitive was rejected as overengineering.
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged; the scheduler now has one authoritative tier sample for both lookahead and DDA budgets.
+Hardware Impact: Removes one global property read per abyssal path schedule. Exact microseconds are below meaningful profiler resolution, but the H-Phi registry surface is cleaner.
+
+Problem: Abyssal nav graph ingress could write non-finite nodes, conduit vectors, or conduit strengths into persistent snapshots and the spatial hash before later path guards ran.
+Solution: Clamp payload iteration to the actual native node buffer length, reject non-finite nodes at snapshot ingress, sanitize conduit vectors/strengths, and keep corrupt payloads out of the searchable hash.
+Rejected Alternatives: Trusting serialized `Count` over native buffer length was rejected. Hashing corrupt nodes into a default bucket was rejected because it turns invalid payloads into discoverable route candidates. Repairing payload producers was rejected as cross-domain for this pass.
+Scalability potential: Low avoids wasted nearest-node scans and invalid A* expansions. Middle/High/Ultra keep richer route smoothing only on valid graph payloads.
+Hardware Impact: Adds cheap finite checks during snapshot rebuild; avoids downstream path expansion and steering correction against corrupt nodes.
+
+Problem: Abyssal spatial hash lookup and flow-field nav support still used raw divisions and weak finite guards in the navigation hot/warm path.
+Solution: Precompute reciprocal cell/radius terms with `math.rcp`, reject invalid grid centers/origins/cell sizes, and skip non-finite support nodes.
+Rejected Alternatives: Leaving `/` in managed route support was rejected by the math gate. Masking bad cell sizes with epsilon only was rejected because it fabricates plausible coordinates from invalid transforms.
+Scalability potential: Low/MX350 gets fewer scalar divisions and safer hash lookups. High/Ultra can reuse the same clean support grid for denser visual navigation without corrupting path authority.
+Hardware Impact: Removes repeated divisions from nav support and hash lookup paths. Exact microseconds remain pending Unity profiler data because dotnet rebuilds are prohibited.
+
+Problem: Abyssal chunk node generation still divided by sample step/count and trusted terrain cache dimensions before sampling height.
+Solution: Validate finite chunk bounds and positive finite node step, use `math.rcp` for sample counts and per-sample step, and require finite terrain transforms plus complete heightmap length before sampling.
+Rejected Alternatives: Letting `math.max` hide invalid terrain dimensions was rejected because it creates route nodes from corrupt tile transforms. Rebuilding terrain caches here was rejected as outside the AI navigation domain.
+Scalability potential: Low avoids wasting nodes on invalid chunks and removes warm-path divides. Middle/High/Ultra get cleaner source nodes for smoother pathing without extra containers.
+Hardware Impact: Removes four graph-generation divisions and prevents corrupt heightmap reads. Exact microseconds remain pending Unity profiler data because dotnet rebuilds are prohibited.
+
+Problem: The node candidate resolver indexed biome, semantic, and flow arrays using only matrix length and computed slice end with `payload.UnderwaterOffset + payload.UnderwaterCount` in `int`.
+Solution: Require complete matrix/biome/semantic arrays, clamp candidate and deep-biome slice bounds with a `long` requested end, and treat flow vectors as optional zero vectors when the flow array is absent or shorter.
+Rejected Alternatives: Indexing parallel arrays by matrix length alone was rejected because mismatched native payloads can crash the route snapshot pass. Int `offset + count` slice math was rejected because corrupted chunk metadata can overflow. Requiring flow vectors for obstacle/deep-affinity evaluation was rejected because flow is conduit polish, not baseline passability.
+Scalability potential: Low keeps route graph rebuilds from crashing on partial payloads. High/Ultra still get conduit quality when flow data exists.
+Hardware Impact: Adds fixed scalar bounds checks per snapshot rebuild and avoids invalid memory reads; exact microseconds remain pending Unity profiler data.
+
+Problem: Abyssal funnel completion timing still used a raw division by `Stopwatch.Frequency`.
+Solution: Convert ticks to milliseconds with `math.rcp((double)Stopwatch.Frequency)` inside `ResolveAbyssalPathElapsedMs`.
+Rejected Alternatives: Leaving `/` was rejected by the reciprocal math gate. Caching a mutable managed timing service was rejected as unnecessary registry surface.
+Scalability potential: All tiers keep identical telemetry semantics with cleaner scalar math.
+Hardware Impact: Removes one scalar division per completed abyssal path timing sample; exact microseconds are below practical profiler resolution.
+
+Problem: `NativeAStarJob` trusted scheduler-provided workspace arrays and finite node data before writing scores, parents, closed flags, and heap positions.
+Solution: Add a complete-workspace guard for all native arrays, reject non-finite start/end payloads, skip non-finite current/neighbor nodes, reject non-finite edge distance/cost, clamp threat weighting non-negative, and clamp vertical allowance to non-negative.
+Rejected Alternatives: Relying on `EnsureAbyssalPathBuffers` alone was rejected because Burst jobs must fail closed when called with corrupted or stale native state. Letting negative threat weights invert edge costs was rejected by the pathfinding mandate.
+Scalability potential: Low avoids invalid heap churn and route crashes from corrupt graph payloads. High/Ultra keep the same A* behavior on valid data and spend smoothing budget only after route authority is proven.
+Hardware Impact: Adds scalar guards inside A* expansion; expected savings come from early rejection of corrupt candidates and prevention of downstream steering/telemetry faults. Exact microseconds remain pending profiler data.
+
+Problem: `NativeAStarJob` still trusted raw path-list capacity and could append the requested start position after a broken or over-budget parent chain.
+Solution: Require native path capacity before `AddNoResize`, sanitize heuristic/F-score math before heap writes, and clear the path unless reconstruction proves a bounded parent chain back to `StartNode`; reconstruction is capped by `min(Nodes.Length, MaxPathReconstructionIterations)` so a cyclic parent chain cannot outgrow the proven path-list capacity.
+Rejected Alternatives: Increasing `MaxPathReconstructionIterations` was rejected because it hides corrupt parent state with more work. Emitting partial paths was rejected because it creates visually smooth but unproven navigation authority.
+Scalability potential: Low/MX350 fails closed without invalid steering corrections. Middle/High/Ultra keep identical valid-path behavior and spend smoothing budget only after A* proof is complete.
+Hardware Impact: Adds cheap scalar checks and one capacity read; expected win is prevention of invalid path tails and downstream correction churn. Exact microseconds remain pending profiler data because dotnet rebuilds are prohibited.
+
+Problem: `StringPullPathJob` could consume non-finite raw waypoints from a macro route or corrupted upstream path and the black-box telemetry only inspected raw endpoints when smoothing emitted no output.
+Solution: Gate string-pull execution on output capacity plus full raw-waypoint finite proof, and scan all raw waypoints for finite telemetry when output is empty.
+Rejected Alternatives: Clamping individual waypoint components was rejected because it fabricates path geometry. Waiting for post-copy NaN detection was rejected because the funnel should not emit invalid output in the first place.
+Scalability potential: Low pays a bounded O(n) finite scan on the raw path and avoids expensive recovery. High/Ultra keep the same route fidelity for valid payloads and get cleaner crash evidence for invalid payloads.
+Hardware Impact: The scan is linear in waypoint count and allocation-free; expected low-end gain is from avoiding invalid smoothing/steering paths rather than from a pure CPU micro-optimization. Exact microseconds remain pending profiler data.
+
+Problem: The live `Docs/Tasks/CURRENT_BATCH.md` rotated and no longer contains `AI_FUNNEL_NAV_POLISH`.
+Solution: Treat the persisted status, rationale, and log files as the authoritative anti-amnesia record for this resumed task, and record the missing prompt instead of extracting a neighboring block.
+Rejected Alternatives: Borrowing the active fauna/noise/mission prompts was rejected because that would violate strict prompt isolation. Fabricating a new XML extraction was rejected as false evidence.
+Scalability potential: No runtime effect; keeps parallel-agent documentation coherent under batch rotation.
+Hardware Impact: None; documentation integrity only.
+
+Problem: Adjacent vegetation-navigation support code still had floating divisions and weak finite handling in shared direction and structure-grid helpers.
+Solution: Replace float divisions in speed inverse-lerp, retention, flow-field sampling, structure-grid mapping, threat propagation, flow obstacle gating, thermal/depth bands, wake falloff, and HLOD fade with reciprocal/multiply or literal reciprocal constants. `DominantAxisOrDefault` now rejects non-finite input/fallback vectors, and structure-grid range/index helpers reject corrupt transforms before hash lookup.
+Rejected Alternatives: Rewriting integer index decomposition divisions was rejected because those are exact grid-coordinate operations, not scalar normalization. Adding new caches or containers was rejected because this is hot native code and the reciprocal sweep removes enough scalar cost without state.
+Scalability potential: Low/MX350 removes recurring divide latency and avoids corrupt structure-grid probes. Middle/High/Ultra keep identical valid-data behavior while retaining budget for denser flow/navigation visuals.
+Hardware Impact: Expected low-end gain is from replacing repeated scalar divides in Burst jobs with reciprocal multiplies and avoiding invalid hash probes. Exact microseconds remain pending profiler data because dotnet rebuilds are prohibited.
+
+Problem: Bridge-side threat/flow feeder code could still bypass the hardened funnel/A* path by sampling incomplete native grids or non-finite environmental extents.
+Solution: Threat chunk hashes, artificial-structure hashes, abyssal flow sampling, surface threat sampling, and echo sampling now reject corrupt transforms and require 64-bit complete native lengths before indexed reads. Flow output is finite-checked after trilinear interpolation, and non-finite interpolated threat resolves to zero influence instead of a NaN path-cost contaminant.
+Rejected Alternatives: Trusting initialization flags or native array creation alone was rejected because stale resolution metadata can outlive payload resize failures. Broadly rewriting canopy/terrain samplers was rejected because those are outside the AI funnel/navigation domain for this prompt.
+Scalability potential: Low/MX350 avoids invalid threat/flow probes and the steering correction they cause. Middle keeps the same cheap reciprocal mapping. High/Ultra can spend saved cycles on richer threat/flow visuals only when the payload has complete proof.
+Hardware Impact: Adds a few scalar finite and length checks before sampled reads, while removing divide pressure from target hash/sampler paths. Expected low-end win is fewer corrupt-grid expansions and no NaN recovery churn; exact microseconds remain pending Unity profiler data because dotnet rebuilds are prohibited.
+
+Problem: Threat service APIs could still accept corrupt inputs and stale snapshot counts after the lower-level samplers were hardened.
+Solution: External threat pulses now fail closed on non-finite inputs; artificial structure registration rejects non-finite or non-positive bounds; flow fallback and conduit APIs reject non-finite inputs/outputs and stale managed arrays; threat hotspot scanning proves complete grid length before O(N) reads; nearest-node lookup clamps search count to both managed and native snapshot lengths.
+Rejected Alternatives: Clamping NaN pulse data into zero-radius state was rejected because it still mutates route pressure. Relying on later hash/sampler guards was rejected because public service APIs are the domain boundary for fauna steering. Rebuilding or reallocating snapshots was rejected because this pass is hot-path fail-closed hardening, not ownership migration.
+Scalability potential: Low/MX350 gets deterministic cheap rejection of corrupt route pressure and stale node snapshots. Middle retains existing behavior on valid data. High/Ultra can keep stronger conduit/threat visuals without increasing recovery logic because invalid inputs never enter the route consumers.
+Hardware Impact: Adds scalar guards and count clamps; expected low-end win is avoiding invalid nearest-node scans, NaN steering vectors, and corrupt hotspot loops. Exact microseconds remain pending Unity profiler data because dotnet rebuilds are prohibited.
+
+Problem: The shared flow-field sampler guarded finite coordinates but still indexed by `resolution` without proving the native flow buffer length matched that metadata.
+Solution: Add 64-bit complete-grid length proof and finite half-extent proof before bilinear flow-field reads. Existing `DominantAxisOrDefault` remains the cheap Low-tier output sanitizer for non-finite sampled vectors.
+Rejected Alternatives: Relying on flow-field initialization was rejected because stale resolution metadata can survive partial resize failures. Rebuilding the flow field inside the sampler was rejected because sampling must stay O(1), zero-GC, and side-effect-free.
+Scalability potential: Low/MX350 gets cheap rejection of corrupt flow payloads instead of invalid steering. Middle/High/Ultra retain the same valid-data flow fidelity and can spend cycles on denser visual current fields without changing the sampler contract.
+Hardware Impact: Adds one 64-bit multiply and length compare before sampled reads; expected win is fault avoidance, not a pure throughput claim. Exact microseconds remain pending Unity profiler data because dotnet rebuilds are prohibited.
+
+Problem: Public threat/flow payload exports and local hotspot updates still trusted initialized native arrays and resolution metadata without proving declared cell-count coherence at the API boundary.
+Solution: Add shared square-grid and voxel-grid cell-count proof helpers, route public float/compressed/echo threat views through complete-grid guards, require finite metadata in payload getters, and harden hotspot scans against stale native lengths and non-finite threat samples.
+Rejected Alternatives: Trusting `_threatGridInitialized` or `NativeArray.IsCreated` was rejected because partial resize failures can leave created arrays with stale metadata. Repairing or reallocating payloads inside getters was rejected because these APIs must remain zero-GC, side-effect-light, and safe for hot fauna/path consumers.
+Scalability potential: Low/MX350 gets cheap fail-closed rejection of corrupt threat/flow payloads and avoids invalid steering correction. Middle keeps identical valid-data behavior. High/Ultra can spend navigation budget on richer threat/flow visuals only when exported payloads have complete proof.
+Hardware Impact: Adds fixed scalar length/finite checks before exposing native arrays and before O(N) hotspot scans. Expected low-end gain is avoided invalid route pressure and stale-grid scanning; exact microseconds remain pending Unity profiler data because dotnet rebuilds are prohibited.
+
+Problem: Swarm wake and external threat pulse ingress could still retain corrupt route-pressure state even after service-level ingress guards, due to local cached state and public wake registration.
+Solution: Reject non-finite wake positions/vectors/radius/lifetime before allocating/using flow buffers, and reject non-finite external pulse position/radius/strength/timer before merging pulse state into emission snapshots.
+Rejected Alternatives: Clamping NaN to zero was rejected because it mutates route-pressure state into plausible but false steering. Allocating diagnostic containers was rejected because the hot route-pressure path must stay zero-GC.
+Scalability potential: Low tier drops invalid impulses cheaply. Middle/High/Ultra keep stronger valid wake/threat visuals without carrying corrupt cached pressure.
+Hardware Impact: Avoids invalid flow/threat writes and later steering recovery. Valid wake registration pays only a few finite checks before the existing native write.
+
+Problem: Direct native view properties could bypass the safer payload getters and expose stale flow, nav-node, or completed-path buffers with counts that no longer matched backing native memory.
+Solution: Route `EcosystemFlowField` through complete square-grid and finite-metadata proof, clamp `ActiveAbyssalNavNodeCount` to both managed and native snapshots, and clamp `ActiveAbyssalPathCount` to the native path buffer before returning direct views.
+Rejected Alternatives: Removing direct native properties was rejected because existing consumers may use them as low-overhead read-only views. Returning raw buffers with separate unclamped counts was rejected because it exports stale state across the navigation boundary.
+Scalability potential: Low/MX350 avoids invalid native reads and steering work from stale snapshots. Middle keeps current valid-data behavior. High/Ultra can keep direct native readback without adding managed copies.
+Hardware Impact: Adds only scalar count clamps and created checks at property access. Expected gain is fault avoidance and lower recovery pressure rather than measurable throughput until runtime profiling is available.
+
+Problem: The node-type payload getter could export `_abyssalNavNodeCount` directly and either overrun a shorter node-type array or become over-strict if reused through the full nav-graph conduit count clamp.
+Solution: Add `ResolveAbyssalNavNodeTypeViewCount`, clamping node-type payload count to the proven node snapshot count and the node-type native length, while keeping conduit-vector/strength requirements only in the full nav-graph/conduit payload getters.
+Rejected Alternatives: Reusing the full graph clamp for node types was rejected because node classifications should not fail just because conduit metadata is unavailable. Keeping `_abyssalNavNodeCount` was rejected because stale counts are exactly the boundary fault this pass is removing.
+Scalability potential: Low/MX350 gets cheap fail-closed payload counts without extra copies. Middle/High/Ultra keep direct native readback while preserving node classification availability independent from conduit polish data.
+Hardware Impact: Adds one native length clamp at payload access; expected gain is avoidance of invalid indexed reads and recovery churn, not measurable throughput until profiler capture.
+
+Problem: The conduit-only payload getter still reused the full nav-graph count proof, so current steering could disappear when node-type metadata was unavailable even though conduit vectors and strengths were complete.
+Solution: Add `ResolveAbyssalConduitViewCount` for node/conduit-vector/conduit-strength proof, use it in `TryGetAbyssalCurrentConduitPayload`, and make the full graph proof compose conduit proof plus node-type proof.
+Rejected Alternatives: Keeping `ResolveAbyssalNavGraphViewCount` in the conduit getter was rejected because node classifications are not required to expose current conductor metadata. Duplicating all conduit clamps inside the full graph helper was rejected because two count proofs can drift under parallel edits.
+Scalability potential: Low/MX350 keeps cheap current steering available when optional classification metadata is missing. Middle/High/Ultra preserve stricter full-graph export while keeping high-fidelity conduit visuals independent from node-type payload churn.
+Hardware Impact: Adds no allocation and no extra native containers. Static gain is fault isolation at payload boundaries; expected low-end benefit is avoided fallback steering/recovery when only node-type metadata is stale.
+
+Problem: Voxel macro-obstacle snapshot allocation counted flora obstacles from metadata only, while writing skipped entries whose matrix-derived world bounds were invalid. That can leave uninitialized native snapshot tail entries consumed by macro portal routing before funnel smoothing.
+Solution: Count macro flora obstacles through `TryResolveMacroFloraObstacleWorldBounds`, add finite/positive bounds proof to that resolver, and clamp the writer to remaining snapshot capacity.
+Rejected Alternatives: Zero-filling skipped snapshot entries was rejected because it creates false obstacles at plausible coordinates. Broad voxel navgrid reciprocal rewrites were rejected because this cross-domain touch is justified only at the vegetation-to-voxel route-obstacle interface.
+Scalability potential: Low/MX350 avoids route rebuilds and steering corrections from corrupt obstacle primitives. Middle/High/Ultra can keep richer flora obstacle density without letting invalid vegetation transforms poison portal routing.
+Hardware Impact: Adds a second bounds proof during cold snapshot counting, not per-frame funnel math. Expected gain is fault avoidance and removal of invalid-route recovery churn; exact microseconds remain pending Unity profiler data because dotnet rebuilds are prohibited.

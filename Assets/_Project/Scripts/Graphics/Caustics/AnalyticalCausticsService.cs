@@ -51,6 +51,8 @@ namespace Hecton8.Graphics.Caustics
         private static readonly int _OceanSurfaceWave2BId = Shader.PropertyToID("_HectonOceanSurfaceWave2B");
         private static readonly int _OceanSurfaceWaveMetaId = Shader.PropertyToID("_HectonOceanSurfaceWaveMeta");
 
+        private static AnalyticalCausticsService s_runtimeInstance;
+
         [Header("Projection")]
         [Tooltip("World-space square meters covered by the analytical caustics map.")]
         [SerializeField, Min(32f)] private float worldSizeMeters = DefaultWorldSizeMeters;
@@ -99,6 +101,12 @@ namespace Hecton8.Graphics.Caustics
         public bool IsServiceReady => _isInitialized;
         public int TickCount => _tickCount;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_runtimeInstance = null;
+        }
+
         /// <summary>
         /// Injects the compute shader from bootstrap or scene-owned serialized references.
         /// </summary>
@@ -119,9 +127,8 @@ namespace Hecton8.Graphics.Caustics
             if (GlobalRegistry.Caustics is AnalyticalCausticsService runtime)
                 return runtime;
 
-            AnalyticalCausticsService existing = Object.FindAnyObjectByType<AnalyticalCausticsService>();
-            if (existing != null)
-                return existing;
+            if (s_runtimeInstance != null)
+                return s_runtimeInstance;
 
             GameObject runtimeRoot = new GameObject("[AnalyticalCausticsService]"); // COLD ALLOC: GameObject[1] - bootstrap-owned analytical caustics root - owner: AnalyticalCausticsService
             return runtimeRoot.AddComponent<AnalyticalCausticsService>();
@@ -172,7 +179,7 @@ namespace Hecton8.Graphics.Caustics
                                   (stateFlags & ((uint)CausticStateFlags.LowTierFallback | (uint)CausticStateFlags.DepthDisabled | (uint)CausticStateFlags.ComputeMissing)) == 0u;
             _isComputeActive = computeAllowed;
 
-            PublishShaderGlobals(anchor, waterLevel, dispatchWaveCount, computeAllowed, depthDisabled);
+            PublishShaderGlobals(anchor, waterLevel, dispatchWaveCount, computeAllowed, lowTier, depthDisabled);
             WriteBlackBox(anchor, waterLevel, waveCount, dispatchWaveCount, stateFlags);
             PublishStateTelemetryIfChanged(stateFlags, waveCount, dispatchWaveCount);
 
@@ -209,11 +216,25 @@ namespace Hecton8.Graphics.Caustics
 
         private void Awake()
         {
+            if (s_runtimeInstance != null && !ReferenceEquals(s_runtimeInstance, this))
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            s_runtimeInstance = this;
             EnsureSingletonOwnership();
         }
 
         private void OnEnable()
         {
+            if (s_runtimeInstance != null && !ReferenceEquals(s_runtimeInstance, this))
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            s_runtimeInstance = this;
             if (_isInitialized)
             {
                 TryRegisterLateFrame();
@@ -230,6 +251,8 @@ namespace Hecton8.Graphics.Caustics
             TryUnregisterOriginShift();
             if (ReferenceEquals(GlobalRegistry.Caustics, this))
                 GlobalRegistry.UnregisterCausticsService(this);
+            if (ReferenceEquals(s_runtimeInstance, this))
+                s_runtimeInstance = null;
             _isComputeActive = false;
             PublishDisabledGlobals();
             ReleaseComputeOnlyResources();
@@ -501,12 +524,12 @@ namespace Hecton8.Graphics.Caustics
                    tier == HectonQualityTier.Mx350;
         }
 
-        private void PublishShaderGlobals(in Vector3 anchor, float waterLevel, int waveCount, bool computeActive, bool depthDisabled)
+        private void PublishShaderGlobals(in Vector3 anchor, float waterLevel, int waveCount, bool computeActive, bool lowTier, bool depthDisabled)
         {
             float size = math.max(32f, worldSizeMeters);
             float invSize = math.rcp(size);
             float halfSize = size * 0.5f;
-            float intensity = depthDisabled ? 0f : baseIntensity * (1f - _weatherCloudCover01 * cloudFadePenalty);
+            float intensity = (lowTier || depthDisabled) ? 0f : baseIntensity * (1f - _weatherCloudCover01 * cloudFadePenalty);
             intensity = math.max(0f, intensity);
 
             _lastAnchor = anchor;
@@ -764,6 +787,8 @@ namespace Hecton8.Graphics.Caustics
             TryUnregisterOriginShift();
             if (ReferenceEquals(GlobalRegistry.Caustics, this))
                 GlobalRegistry.UnregisterCausticsService(this);
+            if (ReferenceEquals(s_runtimeInstance, this))
+                s_runtimeInstance = null;
 
             ReleaseComputeOnlyResources();
 
@@ -771,6 +796,7 @@ namespace Hecton8.Graphics.Caustics
             {
                 NativeMemorySentinel.UnregisterNativeArray(_blackBox);
                 _blackBox.Dispose();
+                _blackBox = default;
             }
 
             _isInitialized = false;
@@ -786,6 +812,7 @@ namespace Hecton8.Graphics.Caustics
             {
                 NativeMemorySentinel.UnregisterNativeArray(_waveUploadScratch);
                 _waveUploadScratch.Dispose();
+                _waveUploadScratch = default;
             }
 
             _waveBuffer?.Release();
@@ -803,14 +830,14 @@ namespace Hecton8.Graphics.Caustics
             _isComputeActive = false;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
         private struct CausticsWaveGpuData
         {
             public Vector4 WaveA;
             public Vector4 WaveB;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 48)]
         private struct CausticTelemetryEntry
         {
             public uint FrameIndex;

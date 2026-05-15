@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Signals;
 using Hecton8.World;
 using Unity.Collections;
@@ -24,12 +25,15 @@ namespace Hecton8.Prologue.VFX
         private const int TelemetryEntrySizeBytes = 48;
         private const uint DumpMagic = 0x4F525646u; // ORVF
         private const int DumpVersion = 1;
+        private const uint PrologueSequenceSourceHash = PrologueSignalSourceHashes.SequenceDirector;
         private const uint PlasmaRoarHash = 0x50524F52u; // PROR
         private const uint OceanWavesHash = 0x4F574156u; // OWAV
         private const uint MassiveSplashHash = 0x4D53504Cu; // MSPL
         private const byte MassiveSplashDebrisKind = 32;
         private const float DefaultWhiteoutAltitudeMeters = 500f;
         private const float ShaderEpsilon = 0.0005f;
+        private const float MaxPresentationDeltaSeconds = 0.25f;
+        private const float MinimumOverlayLocalDistanceMeters = 0.02f;
         private const string DumpFileName = "Dump_ORBITAL_DROP_REENTRY_VFX.bin";
 
         private static readonly ProfilerMarker _lateFrameMarker = new ProfilerMarker("H8.PrologueVFX.Reentry.LateFrame");
@@ -103,11 +107,9 @@ namespace Hecton8.Prologue.VFX
         private int _telemetryCursor;
         private int _lastProcessedAtmosphericFrame = int.MinValue;
         private int _lastProcessedCompleteFrame = int.MinValue;
-        private int _lastProcessedHydrationFrame = int.MinValue;
         private int _qualityRefreshFrame = int.MinValue;
         private ushort _stateSequence;
         private ushort _hydrationSequence;
-        private ulong _lastSectorHash;
         private float _heat01;
         private float _targetHeat01;
         private float _opacity01;
@@ -137,11 +139,13 @@ namespace Hecton8.Prologue.VFX
         private bool _oceanWavesPublished;
         private bool _splashPublished;
         private bool _audioCrossfadeActive;
+        private bool _hasSpatialAnchor;
 
         private void OnEnable()
         {
             EnsureNativeTelemetry();
             PrologueReentrySignalLanes.Warm();
+            ResetTransientState();
             ResolveDependencies();
             ApplyConfiguredMaterial();
             RefreshQualityTier(force: true);
@@ -157,10 +161,9 @@ namespace Hecton8.Prologue.VFX
                 _registeredLateFrame = false;
             }
 
-            _targetHeat01 = 0f;
-            _targetOpacity01 = 0f;
-            _heat01 = 0f;
-            _opacity01 = 0f;
+            ResetTransientState();
+            _lastAppliedAmbientBlend = float.PositiveInfinity;
+            ApplyAmbientBlend();
             PublishShaderState(force: true);
             _tickDispatcher = null;
         }
@@ -188,7 +191,6 @@ namespace Hecton8.Prologue.VFX
                 float deltaTime = ResolveUnscaledDeltaTime();
                 ConsumeAtmosphericSignals();
                 ConsumePrologueCompleteSignals();
-                ConsumeHydrationSignals();
                 UpdateTargetsFromPhase();
                 IntegrateState(deltaTime);
                 MaintainCameraLocalOverlay();
@@ -204,6 +206,31 @@ namespace Hecton8.Prologue.VFX
                 return;
 
             _telemetry = new NativeArray<ReentryVfxTelemetryEntry>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ReentryVfxTelemetryEntry>[300] - fixed re-entry VFX blackbox ring - owner: OrbitalDropReentryVfxController
+        }
+
+        private void ResetTransientState()
+        {
+            _lastCapsuleAup = default;
+            _phase = ReentryPhase.Idle;
+            _lastProcessedAtmosphericFrame = int.MinValue;
+            _lastProcessedCompleteFrame = int.MinValue;
+            _hydrationSequence = 0;
+            _heat01 = 0f;
+            _targetHeat01 = 0f;
+            _opacity01 = 0f;
+            _targetOpacity01 = 0f;
+            _altitudeMeters = float.PositiveInfinity;
+            _velocityMetersPerSecond = 0f;
+            _ambientBlend01 = 0f;
+            _whiteoutHoldSecondsRemaining = 0f;
+            _audioCrossfadeElapsedSeconds = 0f;
+            _audioCrossfadeTimer = 0f;
+            _audioCrossfadeActive = false;
+            _blackBoxDumped = false;
+            _plasmaRoarPublished = false;
+            _oceanWavesPublished = false;
+            _splashPublished = false;
+            _hasSpatialAnchor = false;
         }
 
         private void ResolveDependencies()
@@ -277,16 +304,32 @@ namespace Hecton8.Prologue.VFX
                     continue;
                 }
 
+                if (!IsRecognizedAtmosphericPhase(signal.Phase))
+                    continue;
+
+                if (!IsFiniteRuntimeAup(in signal.CapsuleAup))
+                {
+                    WriteTelemetry(ReentryVfxStateSignal.FlagNaNGuard);
+                    DumpBlackBoxOnce();
+                    continue;
+                }
+
                 _lastCapsuleAup = signal.CapsuleAup;
+                _hasSpatialAnchor = true;
+                if (_phase == ReentryPhase.Whiteout && !_plasmaRoarPublished)
+                    PublishPlasmaRoar();
+
                 _altitudeMeters = math.max(0f, signal.AltitudeMeters);
                 _velocityMetersPerSecond = math.max(0f, signal.UniverseVelocityMetersPerSecond);
                 _targetHeat01 = ResolveHeat01(in signal);
-                if (_phase == ReentryPhase.Idle)
+                bool plasmaOrWhiteout = signal.Phase == AtmosphericReentrySignal.PhasePlasma ||
+                                         signal.Phase == AtmosphericReentrySignal.PhaseWhiteout;
+                if (_phase == ReentryPhase.Idle && plasmaOrWhiteout)
                     BeginHeating();
 
-                if (signal.Phase >= AtmosphericReentrySignal.PhaseWhiteout ||
+                if (signal.Phase == AtmosphericReentrySignal.PhaseWhiteout ||
                     (signal.Flags & AtmosphericReentrySignal.FlagWhiteoutRequested) != 0 ||
-                    signal.AltitudeMeters <= math.max(1f, whiteoutAltitudeMeters))
+                    signal.AltitudeMeters <= PositiveFiniteOrMinimum(whiteoutAltitudeMeters, 1f))
                 {
                     EnterWhiteout();
                 }
@@ -311,30 +354,36 @@ namespace Hecton8.Prologue.VFX
                     continue;
                 }
 
-                _lastCapsuleAup = signal.CapsuleAup;
+                if (signal.WhiteoutHoldSeconds < 0f)
+                    continue;
+
+                bool sequenceOceanHandoff = signal.Phase == PrologueCompleteSignal.PhaseOceanHandoff &&
+                                             signal.SourceHash == PrologueSequenceSourceHash;
+                if (!sequenceOceanHandoff && !IsWhiteoutOnlyComplete(in signal))
+                    continue;
+
+                if (!sequenceOceanHandoff && _phase >= ReentryPhase.HydratedFade)
+                    continue;
+
+                if (sequenceOceanHandoff && !IsFiniteRuntimeAup(in signal.CapsuleAup))
+                {
+                    WriteTelemetry(ReentryVfxStateSignal.FlagNaNGuard);
+                    DumpBlackBoxOnce();
+                    continue;
+                }
+
+                if (sequenceOceanHandoff)
+                {
+                    _lastCapsuleAup = signal.CapsuleAup;
+                    _hasSpatialAnchor = true;
+                }
+
                 _whiteoutHoldSecondsRemaining = math.max(_whiteoutHoldSecondsRemaining, math.max(0f, signal.WhiteoutHoldSeconds));
                 EnterWhiteout();
-            }
-        }
-
-        private void ConsumeHydrationSignals()
-        {
-            int frame = Time.frameCount;
-            if (_lastProcessedHydrationFrame == frame)
-                return;
-
-            _lastProcessedHydrationFrame = frame;
-            ReadOnlySpan<SectorHydratedSignal> signals = SignalBus<SectorHydratedSignal>.GetFrameSnapshot();
-            if (signals.Length == 0)
-                return;
-
-            SectorHydratedSignal signal = signals[signals.Length - 1];
-            _lastSectorHash = signal.SectorHash;
-            _hydrationSequence++;
-            if (_phase == ReentryPhase.Whiteout)
-            {
-                _phase = ReentryPhase.HydratedFade;
-                BeginAudioCrossfade();
+                if (sequenceOceanHandoff)
+                {
+                    EnterHydratedFade();
+                }
             }
         }
 
@@ -351,6 +400,18 @@ namespace Hecton8.Prologue.VFX
 
             _targetOpacity01 = 1f;
             PublishPlasmaRoar();
+        }
+
+        private void EnterHydratedFade()
+        {
+            if (_phase < ReentryPhase.Whiteout)
+                EnterWhiteout();
+
+            if (_phase != ReentryPhase.HydratedFade)
+                _hydrationSequence++;
+
+            _phase = ReentryPhase.HydratedFade;
+            BeginAudioCrossfade();
         }
 
         private void UpdateTargetsFromPhase()
@@ -380,7 +441,7 @@ namespace Hecton8.Prologue.VFX
 
         private void IntegrateState(float deltaTime)
         {
-            float safeDeltaTime = math.clamp(deltaTime, 0f, 0.25f);
+            float safeDeltaTime = math.clamp(deltaTime, 0f, MaxPresentationDeltaSeconds);
             if (_whiteoutHoldSecondsRemaining > 0f)
             {
                 _whiteoutHoldSecondsRemaining = math.max(0f, _whiteoutHoldSecondsRemaining - safeDeltaTime);
@@ -388,9 +449,13 @@ namespace Hecton8.Prologue.VFX
                     _targetOpacity01 = 1f;
             }
 
-            float heatRate = _targetHeat01 > _heat01 ? heatRisePerSecond : opacityFadePerSecond;
+            float heatRate = _targetHeat01 > _heat01
+                ? PositiveFiniteOrMinimum(heatRisePerSecond, 0.05f)
+                : PositiveFiniteOrMinimum(opacityFadePerSecond, 0.05f);
             _heat01 = MoveTowards01(_heat01, _targetHeat01, safeDeltaTime * heatRate);
-            float opacityRate = _targetOpacity01 > _opacity01 ? opacityRisePerSecond : opacityFadePerSecond;
+            float opacityRate = _targetOpacity01 > _opacity01
+                ? PositiveFiniteOrMinimum(opacityRisePerSecond, 0.05f)
+                : PositiveFiniteOrMinimum(opacityFadePerSecond, 0.05f);
             float previousOpacity = _opacity01;
             _opacity01 = MoveTowards01(_opacity01, _targetOpacity01, safeDeltaTime * opacityRate);
 
@@ -401,7 +466,7 @@ namespace Hecton8.Prologue.VFX
                 _phase = ReentryPhase.Complete;
 
             float targetAmbient = _phase == ReentryPhase.HydratedFade || _phase == ReentryPhase.Complete ? 1f : 0f;
-            float ambientRate = safeDeltaTime * math.rcp(math.max(0.1f, ambientTransitionSeconds));
+            float ambientRate = safeDeltaTime * math.rcp(PositiveFiniteOrMinimum(ambientTransitionSeconds, 0.1f));
             _ambientBlend01 = MoveTowards01(_ambientBlend01, targetAmbient, ambientRate);
             ApplyAmbientBlend();
             UpdateAudioCrossfade(safeDeltaTime);
@@ -420,7 +485,7 @@ namespace Hecton8.Prologue.VFX
                 return;
 
             Vector3 localPosition = plasmaOverlayTransform.localPosition;
-            float targetZ = math.max(0.02f, overlayLocalDistanceMeters);
+            float targetZ = ResolveOverlayLocalDistanceMeters();
             if (math.abs(localPosition.z - targetZ) > 0.0001f)
             {
                 localPosition.z = targetZ;
@@ -434,7 +499,8 @@ namespace Hecton8.Prologue.VFX
         private void PublishShaderState(bool force)
         {
             Material material = _activeMaterial;
-            float velocity01 = math.saturate(_velocityMetersPerSecond * math.rcp(math.max(1f, fullHeatVelocityMetersPerSecond)));
+            float velocityScale = PositiveFiniteOrMinimum(fullHeatVelocityMetersPerSecond, 1f);
+            float velocity01 = math.saturate(_velocityMetersPerSecond * math.rcp(velocityScale));
             float altitude01 = 1f - ResolveAltitudeOpacity01(_altitudeMeters);
             float lowTier01 = _lowTier ? 1f : 0f;
             float phase = (float)_phase;
@@ -488,7 +554,7 @@ namespace Hecton8.Prologue.VFX
             if (!_audioCrossfadeActive)
                 return;
 
-            float duration = math.max(0.25f, audioCrossfadeSeconds);
+            float duration = PositiveFiniteOrMinimum(audioCrossfadeSeconds, 0.25f);
             _audioCrossfadeElapsedSeconds = math.min(duration, _audioCrossfadeElapsedSeconds + deltaTime);
             _audioCrossfadeTimer -= deltaTime;
 
@@ -497,7 +563,7 @@ namespace Hecton8.Prologue.VFX
                 float blend01 = math.saturate(_audioCrossfadeElapsedSeconds * math.rcp(duration));
                 PublishAcousticBlend(PlasmaRoarHash, math.lerp(250f, 80f, blend01), 1f - blend01);
                 PublishAcousticBlend(OceanWavesHash, math.lerp(90f, 180f, blend01), blend01 * 0.82f);
-                _audioCrossfadeTimer = math.max(0.05f, audioCrossfadeIntervalSeconds);
+                _audioCrossfadeTimer = PositiveFiniteOrMinimum(audioCrossfadeIntervalSeconds, 0.05f);
             }
 
             if (_audioCrossfadeElapsedSeconds >= duration)
@@ -509,14 +575,18 @@ namespace Hecton8.Prologue.VFX
 
         private void PublishAcousticBlend(uint sourceId, float radiusMeters, float intensity01)
         {
+            if (!_hasSpatialAnchor)
+                return;
+
             float safeIntensity01 = math.saturate(intensity01);
             if (safeIntensity01 <= 0.001f)
                 return;
 
+            float safeRadiusMeters = PositiveFiniteOrMinimum(radiusMeters, 1f);
             AcousticPingSignal ping = new AcousticPingSignal
             {
                 PositionAup = _lastCapsuleAup,
-                RadiusMeters = math.max(1f, radiusMeters),
+                RadiusMeters = safeRadiusMeters,
                 Intensity01 = safeIntensity01,
                 SourceId = sourceId,
                 Channel = 0,
@@ -527,7 +597,7 @@ namespace Hecton8.Prologue.VFX
 
         private void PublishPlasmaRoar()
         {
-            if (_plasmaRoarPublished)
+            if (_plasmaRoarPublished || !_hasSpatialAnchor)
                 return;
 
             _plasmaRoarPublished = true;
@@ -545,7 +615,7 @@ namespace Hecton8.Prologue.VFX
 
         private void PublishOceanWaves()
         {
-            if (_oceanWavesPublished || _audioCrossfadeActive)
+            if (_oceanWavesPublished || _audioCrossfadeActive || !_hasSpatialAnchor)
                 return;
 
             _oceanWavesPublished = true;
@@ -563,7 +633,7 @@ namespace Hecton8.Prologue.VFX
 
         private void PublishMassiveSplash()
         {
-            if (_splashPublished)
+            if (_splashPublished || !_hasSpatialAnchor)
                 return;
 
             _splashPublished = true;
@@ -602,6 +672,8 @@ namespace Hecton8.Prologue.VFX
                 flags |= ReentryVfxStateSignal.FlagWhiteout;
             if (_phase == ReentryPhase.HydratedFade || _phase == ReentryPhase.Complete)
                 flags |= ReentryVfxStateSignal.FlagHydrated;
+            if (_hasSpatialAnchor)
+                flags |= ReentryVfxStateSignal.FlagSpatialAnchor;
 
             ReentryVfxStateSignal signal = new ReentryVfxStateSignal
             {
@@ -630,6 +702,8 @@ namespace Hecton8.Prologue.VFX
                 flags |= ReentryVfxStateSignal.FlagWhiteout;
             if (_phase == ReentryPhase.HydratedFade || _phase == ReentryPhase.Complete)
                 flags |= ReentryVfxStateSignal.FlagHydrated;
+            if (_hasSpatialAnchor)
+                flags |= ReentryVfxStateSignal.FlagSpatialAnchor;
 
             ReentryVfxTelemetryEntry entry = new ReentryVfxTelemetryEntry
             {
@@ -641,13 +715,13 @@ namespace Hecton8.Prologue.VFX
                 AltitudeMeters = _altitudeMeters,
                 VelocityMetersPerSecond = _velocityMetersPerSecond,
                 AmbientBlend01 = _ambientBlend01,
-                OverlayDistanceMeters = overlayLocalDistanceMeters,
+                OverlayDistanceMeters = ResolveOverlayLocalDistanceMeters(),
                 Phase = (byte)_phase,
                 QualityTier = _qualityTierByte,
                 Flags = flags,
                 Reserved = 0,
                 StateHash = ResolveStateHash(),
-                SectorHashLo = (uint)_lastSectorHash,
+                SectorHashLo = 0u,
                 Reserved2 = 0
             };
 
@@ -710,11 +784,11 @@ namespace Hecton8.Prologue.VFX
             {
                 double dispatcherDelta = dispatcher.TimeSnapshot.UnscaledDeltaTime;
                 if (dispatcherDelta > 0d && double.IsFinite(dispatcherDelta))
-                    return dispatcherDelta > 0.25d ? 0.25f : (float)dispatcherDelta;
+                    return dispatcherDelta > MaxPresentationDeltaSeconds ? MaxPresentationDeltaSeconds : (float)dispatcherDelta;
             }
 
             float fallback = Time.unscaledDeltaTime;
-            return math.isfinite(fallback) && fallback > 0f ? math.min(fallback, 0.25f) : 0f;
+            return math.isfinite(fallback) && fallback > 0f ? math.min(fallback, MaxPresentationDeltaSeconds) : 0f;
         }
 
         private float ResolveHeat01(in AtmosphericReentrySignal signal)
@@ -722,7 +796,8 @@ namespace Hecton8.Prologue.VFX
             if ((signal.Flags & AtmosphericReentrySignal.FlagAuthoritativeHeat) != 0 && math.isfinite(signal.Heat01))
                 return math.saturate(signal.Heat01);
 
-            float velocity01 = signal.UniverseVelocityMetersPerSecond * math.rcp(math.max(1f, fullHeatVelocityMetersPerSecond));
+            float velocityScale = PositiveFiniteOrMinimum(fullHeatVelocityMetersPerSecond, 1f);
+            float velocity01 = signal.UniverseVelocityMetersPerSecond * math.rcp(velocityScale);
             return math.saturate(velocity01);
         }
 
@@ -731,8 +806,13 @@ namespace Hecton8.Prologue.VFX
             if (!math.isfinite(altitudeMeters))
                 return 0f;
 
-            float threshold = math.max(1f, whiteoutAltitudeMeters);
+            float threshold = PositiveFiniteOrMinimum(whiteoutAltitudeMeters, 1f);
             return 1f - math.saturate(altitudeMeters * math.rcp(threshold));
+        }
+
+        private float ResolveOverlayLocalDistanceMeters()
+        {
+            return ClampFinite(overlayLocalDistanceMeters, MinimumOverlayLocalDistanceMeters, 0.35f);
         }
 
         private static void SetMaterialFloatIfChanged(Material material, int shaderId, float value, ref float cachedValue, bool force)
@@ -758,11 +838,56 @@ namespace Hecton8.Prologue.VFX
             return math.saturate(current + math.clamp(target - current, -math.max(0f, maxDelta), math.max(0f, maxDelta)));
         }
 
+        private static float PositiveFiniteOrMinimum(float value, float minimum)
+        {
+            return math.isfinite(value) && value > minimum ? value : minimum;
+        }
+
+        private static float ClampFinite(float value, float minimum, float maximum)
+        {
+            return math.isfinite(value) ? math.clamp(value, minimum, maximum) : minimum;
+        }
+
+        private void OnValidate()
+        {
+            overlayLocalDistanceMeters = ClampFinite(overlayLocalDistanceMeters, MinimumOverlayLocalDistanceMeters, 0.35f);
+            fullHeatVelocityMetersPerSecond = PositiveFiniteOrMinimum(fullHeatVelocityMetersPerSecond, 1f);
+            whiteoutAltitudeMeters = PositiveFiniteOrMinimum(whiteoutAltitudeMeters, 1f);
+            heatRisePerSecond = ClampFinite(heatRisePerSecond, 0.05f, 8f);
+            opacityRisePerSecond = ClampFinite(opacityRisePerSecond, 0.05f, 8f);
+            opacityFadePerSecond = ClampFinite(opacityFadePerSecond, 0.05f, 8f);
+            ambientTransitionSeconds = ClampFinite(ambientTransitionSeconds, 0.1f, 4f);
+            audioCrossfadeSeconds = ClampFinite(audioCrossfadeSeconds, 0.25f, 4f);
+            audioCrossfadeIntervalSeconds = ClampFinite(audioCrossfadeIntervalSeconds, 0.05f, 0.5f);
+        }
+
         private static bool IsFiniteAtmosphericSignal(in AtmosphericReentrySignal signal)
         {
             return math.isfinite(signal.AltitudeMeters) &&
                    math.isfinite(signal.UniverseVelocityMetersPerSecond) &&
                    math.isfinite(signal.Heat01);
+        }
+
+        private static bool IsRecognizedAtmosphericPhase(byte phase)
+        {
+            return phase == AtmosphericReentrySignal.PhaseApproach ||
+                   phase == AtmosphericReentrySignal.PhasePlasma ||
+                   phase == AtmosphericReentrySignal.PhaseWhiteout;
+        }
+
+        private static bool IsWhiteoutOnlyComplete(in PrologueCompleteSignal signal)
+        {
+            if (signal.Phase == PrologueCompleteSignal.PhaseWhiteout)
+                return true;
+
+            return signal.Phase == PrologueCompleteSignal.PhaseOceanHandoff &&
+                   (signal.Flags & PrologueCompleteSignal.FlagForceWhiteout) != 0;
+        }
+
+        private static bool IsFiniteRuntimeAup(in AbsoluteUniversePosition position)
+        {
+            float3 runtimePosition = position.ToRuntimeFloat3();
+            return math.all(math.isfinite(runtimePosition));
         }
 
         private bool IsFiniteRuntimeState()

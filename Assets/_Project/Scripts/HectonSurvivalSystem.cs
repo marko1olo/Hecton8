@@ -227,6 +227,8 @@ namespace Hecton8.Gameplay
         private float _slowTickDt = 0.5f;
         private bool _registeredUpdatable;
         private bool _registeredSlowTickable;
+        private uint _survivalVitalsSignalSourceId;
+        private uint _survivalVitalsSignalSequence;
 
         // Throttling / Event publishing
         private float lastPubOxygen;
@@ -550,6 +552,7 @@ namespace Hecton8.Gameplay
             EnsurePhysiologyScalarBuffer();
             int ownerId = unchecked((int)EntityId.ToULong(GetEntityId()));
             int statsId = stats != null ? unchecked((int)EntityId.ToULong(stats.GetEntityId())) : 0;
+            _survivalVitalsSignalSourceId = GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
             _traumaRandom = CreateDeterministicRandom(ownerId, statsId);
             TryBootstrapInjectedSurvivalDatabase();
             NotificationEvents.RegisterMessage(NitrogenLoadWarningMessage);
@@ -942,6 +945,7 @@ namespace Hecton8.Gameplay
                 _coldSeverity01 = 0f;
                 _heatSeverity01 = 0f;
                 ThermalStateChanged?.Invoke();
+                PublishSurvivalVitalsChanged(SurvivalVitalsChangedSignalFlags.Thermal);
                 return;
             }
 
@@ -951,6 +955,7 @@ namespace Hecton8.Gameplay
             _heatSeverity01 = ResolveThermalSeverity01(heatExcess);
             _tempGraceTimer += dt;
             ThermalStateChanged?.Invoke();
+            PublishSurvivalVitalsChanged(SurvivalVitalsChangedSignalFlags.Thermal);
             if (_tempGraceTimer < HazardGraceDuration)
                 return;
 
@@ -1977,34 +1982,46 @@ namespace Hecton8.Gameplay
 
         private void PublishDirty()
         {
+            uint survivalVitalsFlags = 0u;
+
             if (math.abs(oxygen - lastPubOxygen) > Epsilon)
             {
                 lastPubOxygen = oxygen;
+                survivalVitalsFlags |= SurvivalVitalsChangedSignalFlags.Oxygen;
                 OnOxygenChanged?.Invoke(oxygen);
-                if (OxygenNormalized < 0.15f) OnOxygenCritical?.Invoke(OxygenNormalized);
+                float oxygenNormalized = OxygenNormalized;
+                if (oxygenNormalized < 0.15f)
+                {
+                    survivalVitalsFlags |= SurvivalVitalsChangedSignalFlags.OxygenCritical;
+                    OnOxygenCritical?.Invoke(oxygenNormalized);
+                }
             }
 
             if (math.abs(energy - lastPubEnergy) > Epsilon)
             {
                 lastPubEnergy = energy;
+                survivalVitalsFlags |= SurvivalVitalsChangedSignalFlags.Energy;
                 OnEnergyChanged?.Invoke(energy);
             }
 
             if (math.abs(depth - lastPubDepth) > Epsilon)
             {
                 lastPubDepth = depth;
+                survivalVitalsFlags |= SurvivalVitalsChangedSignalFlags.Depth;
                 OnDepthChanged?.Invoke(depth);
             }
 
             if (math.abs(integrity - lastPubIntegrity) > Epsilon)
             {
                 lastPubIntegrity = integrity;
+                survivalVitalsFlags |= SurvivalVitalsChangedSignalFlags.Integrity;
                 OnIntegrityChanged?.Invoke(integrity);
             }
 
             if (math.abs(pressure - lastPubPressure) > Epsilon)
             {
                 lastPubPressure = pressure;
+                survivalVitalsFlags |= SurvivalVitalsChangedSignalFlags.Pressure;
                 OnPressureChanged?.Invoke(pressure);
             }
 
@@ -2018,6 +2035,7 @@ namespace Hecton8.Gameplay
             if (math.abs(totalTemp - lastPubTemp) > Epsilon)
             {
                 lastPubTemp = totalTemp;
+                survivalVitalsFlags |= SurvivalVitalsChangedSignalFlags.Temperature;
                 OnTemperatureChanged?.Invoke(totalTemp);
             }
 
@@ -2047,6 +2065,39 @@ namespace Hecton8.Gameplay
                 OnThirstChanged?.Invoke(thirst);
                 if (ThirstNormalized < 0.15f) OnThirstCritical?.Invoke(ThirstNormalized);
             }
+
+            PublishSurvivalVitalsChanged(survivalVitalsFlags);
+        }
+
+        private void PublishSurvivalVitalsChanged(uint flags)
+        {
+            if (flags == 0u || stats == null)
+                return;
+
+            uint sourceId = _survivalVitalsSignalSourceId;
+            if (sourceId == 0u)
+            {
+                sourceId = GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
+                _survivalVitalsSignalSourceId = sourceId;
+            }
+
+            _survivalVitalsSignalSequence++;
+            if (_survivalVitalsSignalSequence == 0u)
+                _survivalVitalsSignalSequence = 1u;
+
+            float maxOxygen = math.max(0.01f, ResolveRuntimeMaxOxygenCapacity());
+            SurvivalVitalsChangedSignal signal = new SurvivalVitalsChangedSignal
+            {
+                SourceId = sourceId,
+                Frame = unchecked((uint)Time.frameCount),
+                Sequence = _survivalVitalsSignalSequence,
+                Flags = flags,
+                Oxygen01 = math.saturate(oxygen / maxOxygen),
+                Energy01 = math.saturate(energy / math.max(0.01f, stats.MaxEnergy)),
+                Integrity01 = math.saturate(integrity / math.max(0.01f, stats.MaxIntegrity)),
+                DeathCause = (byte)_lastDeathCause
+            };
+            GlobalSignals.Publish(in signal);
         }
 
         private void CheckLethalConditions()
@@ -2060,6 +2111,7 @@ namespace Hecton8.Gameplay
             _lastDeathCause = ResolveDeathCause();
             CaptureDeathRecord();
             RecordDeathTelemetry();
+            PublishSurvivalVitalsChanged(SurvivalVitalsChangedSignalFlags.Death);
             OnDeath?.Invoke();
             HectonEventBus.Publish(new PlayerDiedEvent(this, _lastDeathCause, _lastDeathRecord));
             enabled = false;
@@ -3501,6 +3553,7 @@ namespace Hecton8.Gameplay
 
         private void NotifyInjuryStateChanged()
         {
+            PublishSurvivalVitalsChanged(SurvivalVitalsChangedSignalFlags.Injury);
             InjuryStateChanged?.Invoke();
         }
 

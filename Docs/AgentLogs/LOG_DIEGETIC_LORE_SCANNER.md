@@ -217,3 +217,429 @@ Verification:
 - `rg Camera.main`, `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =` over scanner/UI/target files: no matches.
 - Filtered `dotnet build Hecton8.Core.csproj`: exit 0, 0 error lines, 0 scanner-file matches.
 - Plain `dotnet build Hecton8.Core.csproj`: Build succeeded, 0 warnings, 0 errors, elapsed 00:00:07.86.
+
+## Follow-Up Hardening Pass 7
+
+What was wrong:
+- Scanner acquisition/progress had no scanner-local 300-frame black box. Invalid pose/progress could reach signals/UI with weak postmortem evidence.
+- `CURRENT_BATCH.md` no longer contains the `DIEGETIC_LORE_SCANNER` prompt; it now contains other agents.
+
+What was done:
+- Added a fixed `NativeArray<ScannerBlackBoxEntry>[300]` scanner ring in `ScannerTool`.
+- Ring entries record frame, runtime tool hash, artifact/blueprint hashes, active/pending lore hashes, progress, battery, dt, contact age, pending occlusion distance, tool pose, active probe, pending occlusion position, flags, and quality tier.
+- Non-finite scanner state now writes finite fallbacks, publishes math-guard telemetry, and dumps `Docs/AgentLogs/Dump_DIEGETIC_LORE_SCANNER.bin` once.
+- Scanner signal and scientific snapshot writes now sanitize progress/battery/density/toxicity/chemical/depth/direction values before display-facing state.
+- Scanner summary and diegetic RT decryption reveal math now sanitize progress before percent/reveal calculations and dirty-state comparison.
+- No-contact idle no longer counts as invalid just because `_scientificLastContactTime` starts at negative infinity.
+
+Cinematic Cheats used:
+- No extra physical truth. The scanner remains highest-dot fake targeting plus exactly one post-selection `RaycastCommand`; the new ring only records the lie and its state.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Added normal-path cost: estimated below 1 us per equipped scanner fast tick for one sequential native write plus finite branches.
+- Added repaint-path cost: one finite branch before scanner decryption reveal math.
+- Fault-path cost: one binary dump only after invalid state.
+- Saved integration/debug cost: scanner postmortem no longer depends on transient UI or chat logs.
+
+Verification:
+- Raw CLI prompt extraction attempted; `DIEGETIC_LORE_SCANNER` absent from current batch, neighboring prompts ignored.
+- `git diff --check` on scanner edit: pass, line-ending warning only.
+- `rg Camera.main`, `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =` over scanner/UI/target files: no matches.
+- `dotnet build` / rebuild: NOT RUN by explicit user order.
+
+## Follow-Up Hardening Pass 8
+
+What was wrong:
+- Scanner tier decisions were scattered: signal publishing, low-tier decryption, and focused resample cadence each reached for `GlobalRegistry.ScalabilityTier`.
+- The physical tool RT display had hysteresis but still polled the registry every UI tick.
+- Display tick delta was clamped without an explicit finite gate.
+
+What was done:
+- Added `ScannerTool.ResolveScannerQualityTier()` with 0.5s probe cadence and 2s candidate hysteresis.
+- Routed scanner signal tier, black-box tier stamp, low-tier decryption choice, and focused resample cadence through the cached scanner tier.
+- Added a 0.5s quality-tier probe countdown to `ToolDiegeticDisplayController` while preserving its 2s low-tier hysteresis.
+- Added `SanitizeSeconds()` for display tick delta before timer math.
+
+Cinematic Cheats used:
+- Tier changes are now deliberately sticky. Low-tier percentage display and High/Ultra visual-overkill scanner responsiveness change only after stable evidence, not transient tier noise.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Source-level `GlobalRegistry.ScalabilityTier` refs: `ScannerTool.cs` 3 -> 1; `ToolDiegeticDisplayController.cs` 2 -> 1.
+- Runtime registry tier polling target: active display 60 Hz -> 2 Hz; active scanner tier reads are shared and probe-capped.
+
+Verification:
+- `git diff --check` on scanner/UI/doc edits: pass, line-ending warnings only.
+- `rg Camera.main`, `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =` over scanner/UI/target files: no matches.
+- `dotnet build` / rebuild: NOT RUN by explicit user order.
+
+## Follow-Up Hardening Pass 9
+
+What was wrong:
+- The previous scanner H-Phi tier fix still performed timed registry probes from helpers reached by active scanner/UI ticks.
+- Focused scanner acquisition read `GlobalRegistry.Player` while resolving the held-scan camera pose.
+
+What was done:
+- `ScannerTool` now consumes `ScalabilityEvents` through `IScalabilityChangedEventListener`, queues tier candidates, and accepts them after the existing 2s hysteresis.
+- `ToolDiegeticDisplayController` now consumes the same scalability event lane and removed its per-display tier probe countdown.
+- Both scanner systems use `ISlowTickable` as a fallback for platform pressure overrides that currently do not raise scalability events.
+- Scanner player-camera acquisition now uses a cached `IPlayerRuntimeContext` refreshed on Awake, OnSpawn, and OnEquip.
+
+Cinematic Cheats used:
+- Tier presentation remains a controlled lie: low hardware gets percentage/fallback after stable evidence; High/Ultra keeps richer scanner RT visual scalar without polling a global bus.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Active fast/late/UI tier registry polling: removed. Silent override fallback runs on SlowTick only.
+- Focused acquisition: one `GlobalRegistry.Player` read removed per focused resample.
+
+Verification:
+- `git diff HEAD --check` and `git diff --cached --check` on scanner/UI edits: pass.
+- Scanner/UI/target banned-pattern scan for `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =`: no matches.
+- Direct registry reads remaining in scanner-owned files are cold lifecycle seed reads only.
+- `dotnet build` / rebuild: NOT RUN by explicit user order.
+
+## Follow-Up Hardening Pass 10
+
+What was wrong:
+- Scanner Atlas presentation had been moved behind a cached helper, but the localization helper used a non-existent `ILocalizationService` local type.
+- Operational summary/directive Atlas state needed verification that it now funnels through one cached ingress, not repeated presentation-path service locator calls.
+- `ScannerTool` already implemented `IAtlasSignalEventListener`, but the equipped scanner lanes did not register/unregister that listener, so the callback could remain inert.
+
+What was done:
+- Corrected scanner localization resolution to use the actual project `LocalizationManager` type while keeping one registry property read per localized string resolve.
+- Verified scanner Atlas reads now go through `ResolveCachedAtlasSignalCold()`; only the cold helper touches `GlobalRegistry.AtlasSignal`.
+- Registered equipped scanners with `AtlasSignalEvents` and unregister on scientific lane shutdown, using `AtlasSignalEvents.IsRegistered()` to avoid unregister-miss spam if listener capacity rejects the scanner.
+- Re-ran the raw batch prompt search and confirmed this agent tag is still absent from `CURRENT_BATCH.md`.
+
+Cinematic Cheats used:
+- No new physical truth. Atlas scanner text remains a presentation fake over cached signal state; target authority stays in the spatial-hash/highest-dot scanner path.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Atlas service refs in scanner presentation: constrained to one cold helper ingress.
+- Atlas cache invalidation: event-driven while equipped, no extra per-frame polling.
+- Localization helper: one registry property read per call, with compile-risk type fixed.
+
+Verification:
+- `git diff HEAD --check` on scanner/doc edits: pass.
+- Scanner banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =`: no matches.
+- `dotnet build` / rebuild: NOT RUN by explicit user order.
+
+## Follow-Up Hardening Pass 11
+
+What was wrong:
+- Diegetic tool RT slow-tick fallback could retry registration from UI `Tick()` every frame if the slow-tick lane was unavailable.
+- Scanner pulse audio and threat-prediction lore checks still had duplicate service property reads.
+- Scanner cached mode labels/summaries could survive a runtime language change in the old language.
+- Cached Atlas/lore/player handles needed a hot-swap rebind path to avoid stale service references.
+
+What was done:
+- Added a 0.5s retry fence for failed `ToolDiegeticDisplayController` slow-tick registration; OnEnable/Start still force immediate registration attempts.
+- Collapsed scanner ping audio to one local `GlobalRegistry.Audio` read.
+- Added cached lore database resolution and equipped-scanner hot-swap listener rebinding for player, Atlas, lore, and localization service replacements.
+- Added scanner localization-language listener; language changes refresh cached mode strings and invalidate operational text caches.
+
+Cinematic Cheats used:
+- No new physical truth. The scanner still uses spatial-hash/highest-dot target authority and one occlusion command; these edits only protect presentation/cache plumbing.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Failed slow-tick registration retry: worst-case 60Hz UI tick -> 2Hz retry.
+- Audio pulse: one duplicate service property read removed per pulse.
+- Threat prediction: one duplicate lore service property read removed per sampled threat hash.
+- Localization/hot-swap handling: event-only while equipped, no per-frame polling.
+
+Verification:
+- `git diff --check` on scanner/UI/doc edits: pass, line-ending warnings only.
+- Scanner banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =`: no matches.
+- `dotnet build` / rebuild: NOT RUN by explicit user order.
+
+## Follow-Up Hardening Pass 12
+
+What was wrong:
+- Scanner cached runtime-service handles could survive unequip, despawn, pool reuse, or service replacement while the scanner was not registered for hot-swap events.
+- Diegetic tool display cached `RenderTexturePool` without a service replacement path.
+
+What was done:
+- Scanner now clears cached player, survival, Atlas, and lore handles on spawn/equip/unequip/despawn/destroy.
+- Player service hot-swap now clears the cached survival component so scientific water/body metrics rebind to the current player.
+- `ToolDiegeticDisplayController` now implements `IGlobalRegistryHotSwapListener`.
+- On `RenderTexturePoolRuntime` replacement, the display releases any RT owned by the previous pool, binds the new pool, clears pool retry fallback, and marks rendering dirty.
+- On disable, the display unregisters from hot-swap events and clears the cached pool handle.
+
+Cinematic Cheats used:
+- None added. This is lifecycle and ownership hygiene for the existing physical-tool RT display and scanner presentation caches.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Active scanner remains cache-based without reintroducing per-sample service polling.
+- RT pool rebind is event-only; no per-frame pool lookup added.
+
+Verification:
+- `git diff --cached --check` on scanner/UI/doc edits: pass.
+- Scanner banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =`: no matches.
+- `dotnet build` / rebuild: NOT RUN by explicit user order.
+
+## Follow-Up Hardening Pass 13
+
+What was wrong:
+- Scanner black-box dumps serialized the 300-entry ring in raw storage order. After wrap, timeline order was not oldest-to-newest.
+- `ScannerBlackBoxEntry` was stored in a NativeArray and serialized as telemetry evidence without an explicit layout declaration.
+- The physical scanner RT display cached successful lore-title lookups only; unresolved artifact hashes could trigger repeated title registry scans on progress repaints.
+
+What was done:
+- Added `_scannerBlackBoxRecordedCount` and ordered dump traversal in `ScannerTool`.
+- Added sequential layout declaration to `ScannerBlackBoxEntry`.
+- Added a versioned negative title-cache sentinel in `ToolDiegeticDisplayController`; misses retry only when `ScannableTarget.LoreTitleLookupVersion` changes.
+
+Cinematic Cheats used:
+- No new physical truth. The scanner still uses the controlled diegetic presentation path: low hardware falls back to percentage text, high tiers keep title/scramble visuals when the title exists.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Black-box normal path: one bounded integer increment per active scanner frame.
+- Black-box fault path: ordered traversal only during one-shot dump.
+- Unresolved artifact title path: repeated cold registry scans removed until title registry version changes.
+
+Verification:
+- `git diff --check` on scanner/UI/doc edits: pass, docs line-ending warnings only.
+- `git diff --cached --check` on scanner/UI/doc edits: pass.
+- Scanner banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =`: no matches.
+- `dotnet build` / rebuild: NOT RUN by explicit user order.
+
+## Follow-Up Hardening Pass 14
+
+What was wrong:
+- Scanner scientific metrics cached `HectonSurvivalSystem` on success, but an unavailable survival component could still trigger player-transform/component resolution on repeated active samples.
+
+What was done:
+- Added a 0.5s miss retry fence for survival-system resolution.
+- Reset the retry timer when scanner runtime-service caches are cleared for equip/spawn/despawn/player replacement.
+
+Cinematic Cheats used:
+- No physical simulation added. Missing survival physiology continues to use deterministic fallback water/body metrics until the real component is available.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Missing survival component retry cadence: active scanner sample frequency -> 2Hz.
+- Cached-success path remains one null check.
+
+Verification:
+- `git diff --check` on scanner/doc edits: pass, line-ending warnings only.
+- `git diff --cached --check` on scanner/doc edits: pass.
+- Scanner banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =`: no matches.
+- `dotnet build` / rebuild: NOT RUN by explicit user order.
+
+## Follow-Up Hardening Pass 15
+
+What was wrong:
+- Scanner fast tick read time/frame values repeatedly inside one logical scientific scanner sample.
+
+What was done:
+- `FastTick` now snapshots `Time.time` and `Time.frameCount` once.
+- Scientific scan update, focused resample scheduling, and black-box writes now share that tick timestamp/frame.
+
+Cinematic Cheats used:
+- No new simulation. This is deterministic presentation/acquisition hygiene for the existing scanner fake.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Removes roughly 3-5 repeated time/frame property reads per active scanner fast tick.
+
+Verification:
+- `git diff --check` on scanner/doc edits: pass, docs line-ending warnings only.
+- `git diff --cached --check` on scanner/doc edits: pass.
+- Scanner banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =`: no matches.
+- Focused scan time-read regression scan: no old `Time.time` contact/resample patterns remain.
+- `dotnet build` / rebuild: NOT RUN by explicit user order.
+
+## Follow-Up Hardening Pass 16
+
+What was wrong:
+- The physical scanner/tool display rechecked RGB565 support every time it reacquired a render texture.
+
+What was done:
+- Added `_renderTextureFormat` cached in `Awake()`.
+- `EnsureRenderTexture()` now rents from the pool with that cached format.
+
+Cinematic Cheats used:
+- RGB565 remains the low-memory visual cheat for MX350-class hardware when supported; ARGB32 remains fallback.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Removes one `SystemInfo.SupportsRenderTextureFormat` platform capability probe per tool RT rent.
+
+Verification:
+- `git diff --check` on scanner/UI/doc edits: pass, line-ending warnings only.
+- `git diff --cached --check` on scanner/UI/doc edits: pass.
+- Scanner banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =`: no matches.
+- RT format support scan: support query only in `ResolveRenderTextureFormatCold()`.
+- `dotnet build` / rebuild: NOT RUN by explicit user order.
+
+## Follow-Up Hardening Pass 17
+
+What was wrong:
+- Filtered physical tool displays could still let rejected scanner-active packets carry artifact/progress into scanner cache comparison, causing unnecessary dirty-state refreshes on unrelated scanner traffic.
+
+What was done:
+- Rejected scanner packets now map to artifact `0` and progress `0` before comparison.
+- Accepted scanner packets keep the existing title/scramble path.
+
+Cinematic Cheats used:
+- None added. This keeps diegetic scanner visuals scoped to displays that intentionally accept scanner packets.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Avoids one dirty-state refresh per unrelated scanner artifact transition on filtered displays.
+
+Verification:
+- `git diff --check` on scanner/UI/doc edits: pass, line-ending warnings only.
+- `git diff --cached --check` on scanner/UI/doc edits: pass.
+- Scanner banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =`: no matches.
+- Filter regression scan: rejected scanner packets use zero artifact/progress; no direct `signal.ArtifactHash` scanner-cache writes remain.
+- `dotnet build` / rebuild: NOT RUN by explicit user order.
+
+## Follow-Up Hardening Pass 18
+
+What was wrong:
+- Changing the physical display tool-hash filter did not reset consumed signal sequence IDs. A newly selected filter could miss the current latest tool/scanner packets until another signal arrived.
+
+What was done:
+- `SetToolHashFilter()` now clears scanner display state and resets `_lastSignalSequence` / `_lastScannerSignalSequence`.
+- Scanner progress/artifact cache buckets are reset with the filter change.
+
+Cinematic Cheats used:
+- None added. This keeps diegetic screens responsive during spawn/equip rebinding without new signal lanes.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Runtime hot path unchanged; cold rebind now avoids a stale/fallback display wait.
+
+Verification:
+- `git diff --check` on scanner/UI/doc edits: pass, line-ending warnings only.
+- `git diff --cached --check` on scanner/UI/doc edits: pass.
+- Scanner banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =`: no matches.
+- Filter rebind scan: sequence sentinels and scanner artifact/progress cache reset in `SetToolHashFilter()`.
+- `dotnet build` / rebuild: NOT RUN by explicit user order.
+
+## Follow-Up Hardening Pass 19
+
+What was wrong:
+- Physical tool display heat, battery, distance, ammo, fault, visual-overkill, and tool-hue values were written through global shader floats. Multiple physical screens could overwrite each other's visual state.
+
+What was done:
+- Replaced display-local `Shader.SetGlobalFloat` calls with a batched per-renderer `MaterialPropertyBlock` scalar update.
+- Kept texture and low-tier fallback binding in the same existing property-block lane.
+
+Cinematic Cheats used:
+- Per-screen visual overkill remains a renderer-local presentation fake. No simulation, material cloning, or new service lane was added.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Replaces up to 9 global shader writes with one per-renderer property-block commit on changed display scalar state.
+
+Verification:
+- `git diff --check` on tool-display source: pass, line-ending warning only.
+- `git diff --cached --check` on tool-display source: pass.
+- Scanner/UI banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, `SetText(`, and `.text =`: no matches.
+- Shader-state scan: no `Shader.SetGlobalFloat` or `ApplyGlobalFloat` remains in `ToolDiegeticDisplayController`.
+- `dotnet build` / rebuild: NOT RUN.
+
+## Follow-Up Hardening Pass 20
+
+What was wrong:
+- Focused scanner fast-tick work used a tick-level `now` snapshot, but quality-tier hysteresis still re-read `Time.time` through helper methods during the same scientific scan sample.
+
+What was done:
+- `ResolveFocusedScanResampleInterval()` now accepts the tick timestamp.
+- `ResolveScannerQualityTier()` now accepts the caller timestamp and uses it for candidate-age hysteresis.
+- Late-frame scanner signal publication snapshots time once before resolving signal tier.
+
+Cinematic Cheats used:
+- None added. This preserves the existing Math LOD scanner fake and makes its cadence decision deterministic inside the sample.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Removes 1-2 repeated engine time reads from active focused scanner ticks.
+
+Verification:
+- `git diff --check` on scanner/UI/doc edits: pass, line-ending warnings only.
+- `git diff --cached --check` on scanner/UI/doc edits: pass.
+- Scanner/UI banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, `SetText(`, and `.text =`: no matches.
+- Time-threading scan: focused scan path uses `ResolveFocusedScanResampleInterval(now)` and `ResolveScannerQualityTier(now)`; old `Time.time - _scannerQualityTierCandidateSince` pattern is gone.
+- `dotnet build` / rebuild: NOT RUN.
+
+## Follow-Up Hardening Pass 21
+
+What was wrong:
+- Scanner tier initialization and tier-candidate updates still read `Time.time` inside helper methods. Scanner tuning signal payload also read `Time.frameCount` directly inside the object initializer.
+
+What was done:
+- `QueueScannerQualityTierCandidate()` snapshots time once and passes it through initialization/candidate stamps.
+- `InitializeScannerQualityTier()` now receives caller time.
+- `PublishScannerTuningSignal()` snapshots frame once and writes that value into `ScannerToolActiveSignal.Frame`.
+
+Cinematic Cheats used:
+- None added. This is deterministic timing hygiene for the existing tiered scanner presentation fake.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Removes up to 2 repeated engine time reads per tier candidate update and one direct frame read per scanner tuning packet.
+
+Verification:
+- `git diff --check` on scanner source: pass, line-ending warning only.
+- `git diff --cached --check` on scanner source: pass.
+- Scanner/UI banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, `SetText(`, and `.text =`: no matches.
+- Timestamp scan: no direct candidate-stamp `Time.time`, no no-time `InitializeScannerQualityTier(...)`, and no direct scanner active payload `Time.frameCount` write remain.
+- `dotnet build` / rebuild: NOT RUN.
+
+## Follow-Up Hardening Pass 22
+
+What was wrong:
+- Scanner operational text generation still mixed timestamps between cache-bucket selection, cooldown/last-result text, low-tier decryption gates, and high-tier title scramble.
+
+What was done:
+- `GetOperationalSummary()` snapshots `Time.time` before cache/write work and snapshots `Time.frameCount` only after a cache miss.
+- `GetOperationalDirective()` snapshots `Time.time` once before cache/write work.
+- Summary/directive writes now use timestamped internal helpers.
+- Lore decryption summary receives caller `now`/`frame` for tier gating and scramble.
+
+Cinematic Cheats used:
+- Kept the existing title scramble fake; made its frame seed coherent per generated scanner line.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Removes 2-4 repeated engine time/frame reads per uncached operational text refresh.
+
+Verification:
+- `git diff --check` on scanner/UI/doc edits: pass, source/doc line-ending warnings only.
+- `git diff --cached --check` on scanner/UI/doc edits: pass.
+- Scanner/UI banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, `SetText(`, and `.text =`: no matches.
+- Operational timestamp scan: no no-arg cache-bucket helper, no no-arg decryption/tier helper, and no direct `Time.frameCount` scramble call remain.
+- `dotnet build` / rebuild: NOT RUN.
+
+## Follow-Up Hardening Pass 23
+
+What was wrong:
+- Focused scanner contact consumers still wrote `_scientificLastContactTime` from helper-local `Time.time` reads after the fast-tick scheduler had already captured a timestamp.
+
+What was done:
+- Voxel and spatial contact consumers now receive the scheduler timestamp.
+- Queued occlusion raycast completion captures time at the callback boundary and passes it through lore-target consumption.
+- `_scientificLastContactTime` now uses caller-provided time in lore, voxel, and spatial contact paths.
+
+Cinematic Cheats used:
+- None added. This is timing hygiene for the existing scientific scanner presentation path.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Removes up to 3 helper-local engine time reads across active focused-contact acquisition paths.
+
+Verification:
+- `git diff --check` on scanner/UI/doc edits: pass, source/doc line-ending warnings only.
+- `git diff --cached --check` on scanner/UI/doc edits: pass.
+- Scanner/UI banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, `SetText(`, and `.text =`: no matches.
+- Contact timestamp scan: no `_scientificLastContactTime = Time.time` and no old no-timestamp scientific contact consumer calls remain.
+- `dotnet build` / rebuild: NOT RUN.

@@ -1,0 +1,80 @@
+Assets/_Project/Scripts\AI\Ecology\Migration\MacroSwarm.cs:13:    public struct MacroSwarm
+Assets/_Project/Scripts\AI\Ecology\Migration\MacroSwarm.cs:30:    public struct MacroSwarmArrival
+Assets/_Project/Scripts\AI\Ecology\Migration\MacroSwarm.cs:41:    public struct MacroSwarmTravelJob : IJob
+Assets/_Project/Scripts\AI\Ecology\Migration\MacroSwarm.cs:43:        public NativeArray<MacroSwarm> Swarms;
+Assets/_Project/Scripts\AI\Ecology\Migration\MacroSwarm.cs:44:        public NativeArray<MacroSwarmArrival> Arrivals;
+Assets/_Project/Scripts\AI\Ecology\Migration\MacroSwarm.cs:59:                MacroSwarm swarm = Swarms[i];
+Assets/_Project/Scripts\AI\Ecology\Migration\MacroSwarm.cs:74:                        Arrivals[arrivalCount++] = new MacroSwarmArrival
+Assets/_Project/Scripts\AI\Ecology\Migration\MacroSwarm.cs:113:        private static bool IsValid(in MacroSwarm swarm)
+Assets/_Project/Scripts\Atmosphere\GasDynamicsSolver.cs:931:            ReadOnlySpan<PlayerBaseEnterSignal> enterSignals = SignalBus<PlayerBaseEnterSignal>.GetFrameSnapshot();
+Assets/_Project/Scripts\Atmosphere\GasDynamicsSolver.cs:943:            ReadOnlySpan<PlayerBaseExitSignal> exitSignals = SignalBus<PlayerBaseExitSignal>.GetFrameSnapshot();
+Assets/_Project/Scripts\Audio\Virtualization\Contracts\AudioVirtualizationContracts.cs:38:        void SetVirtualListener(in AcousticAup listenerAup);
+Assets/_Project/Scripts\Audio\Virtualization\Contracts\AudioVirtualizationContracts.cs:58:        public AcousticAup SourceAup;
+Assets/_Project/Scripts\Audio\Virtualization\Contracts\AudioVirtualizationContracts.cs:72:            in AcousticAup sourceAup,
+Assets/_Project/Scripts\Audio\Virtualization\Contracts\AudioVirtualizationContracts.cs:105:        public AcousticAup SourceAup;
+Assets/_Project/Scripts\Audio\Virtualization\Contracts\AudioVirtualizationContracts.cs:129:        public AcousticAup SourceAup;
+Assets/_Project/Scripts\Audio\Virtualization\Contracts\AudioVirtualizationContracts.cs:188:        public static uint ComputeStableKey(uint eventID, uint clipHash, int stationaryCacheKey, in AcousticAup sourceAup)
+Assets/_Project/Scripts\Audio\Virtualization\AudioVirtualizationJobs.cs:18:        public AcousticAup ListenerAup;
+Assets/_Project/Scripts\Audio\Virtualization\AudioVirtualizationJobs.cs:36:                if (!AcousticAup.IsFinite(in voice.SourceAup) ||
+Assets/_Project/Scripts\Audio\Virtualization\AudioVirtualizationJobs.cs:45:                float3 relative = AcousticAup.RelativeFloat3(in voice.SourceAup, in ListenerAup);
+Assets/_Project/Scripts\Audio\Propagation\AcousticPortalPropagation.cs:48:    public struct AcousticAup
+Assets/_Project/Scripts\Audio\Propagation\AcousticPortalPropagation.cs:55:        public AcousticAup(long gridX, long gridY, long gridZ, float3 local)
+Assets/_Project/Scripts\Audio\Propagation\AcousticPortalPropagation.cs:63:        public static float3 RelativeFloat3(in AcousticAup position, in AcousticAup origin)
+Assets/_Project/Scripts\Audio\Propagation\AcousticPortalPropagation.cs:76:        public static float DistanceMeters(in AcousticAup a, in AcousticAup b)
+Assets/_Project/Scripts\Audio\Propagation\AcousticPortalPropagation.cs:89:        public static bool IsFinite(in AcousticAup aup)
+Assets/_Project/Scripts\Audio\Propagation\AcousticPortalPropagation.cs:98:        public AcousticAup Position;
+Assets/_Project/Scripts\Audio\Propagation\AcousticPortalPropagation.cs:120:        public AcousticAup SourceAup;
+Assets/_Project/Scripts\Audio\Propagation\AcousticPortalPropagation.cs:121:        public AcousticAup ListenerAup;
+Assets/_Project/Scripts\Audio\Propagation\AcousticPortalPropagation.cs:135:        public readonly AcousticAup SourceAup;
+Assets/_Project/Scripts\Audio\Propagation\AcousticPortalPropagation.cs:143:            AcousticAup sourceAup,
+Assets/_Project/Scripts\Audio\Propagation\AcousticPortalPropagation.cs:177:        public AcousticAup LastPortalAup;
+Assets/_Project/Scripts\Audio\Propagation\AcousticPortalPropagation.cs:182:            float distance = AcousticAup.DistanceMeters(in query.SourceAup, in query.ListenerAup);
+Assets/_Project/Scripts\Audio\Propagation\AcousticPortalPropagation.cs:251:            if (!AcousticAup.IsFinite(in Query.SourceAup) ||
+Assets/_Project/Scripts\Audio\Propagation\AcousticPortalPropagation.cs:252:                !AcousticAup.IsFinite(in Query.ListenerAup))
+Assets/_Project/Scripts\Audio\Propagation\AcousticPortalPropagation.cs:350:                        AcousticAup nodePosition = node.Position;
+Assets/_Project/Scripts\Audio\Propagation\AcousticPortalPropagation.cs:351:                        AcousticAup nextNodePosition = nextNode.Position;
+Assets/_Project/Scripts\Audio\Propagation\AcousticPortalPropagation.cs:352:                        edgeDistance = math.max(0.001f, AcousticAup.DistanceMeters(in nodePosition, in nextNodePosition));
+Assets/_Project/Scripts\Audio\Propagation\AcousticPortalPropagation.cs:380:        private int FindNearestNode(in AcousticAup aup, int nodeCount)
+Assets/_Project/Scripts\Audio\Propagation\AcousticPortalPropagation.cs:387:                AcousticAup nodePosition = node.Position;
+Assets/_Project/Scripts\Audio\Propagation\AcousticPortalPropagation.cs:389:                    !AcousticAup.IsFinite(in nodePosition))
+Assets/_Project/Scripts\Audio\Propagation\AcousticPortalPropagation.cs:394:                float distance = AcousticAup.DistanceMeters(in aup, in nodePosition);
+Assets/_Project/Scripts\Audio\Propagation\AcousticPortalPropagation.cs:455:            AcousticAup sourcePortalPosition = sourcePortalNode.Position;
+Assets/_Project/Scripts\Audio\Propagation\AcousticPortalPropagation.cs:456:            AcousticAup listenerPortalPosition = listenerPortalNode.Position;
+Assets/_Project/Scripts\Audio\Propagation\AcousticPortalPropagation.cs:458:                AcousticAup.DistanceMeters(in Query.SourceAup, in sourcePortalPosition) +
+Assets/_Project/Scripts\Audio\Propagation\AcousticPortalPropagation.cs:459:                AcousticAup.DistanceMeters(in Query.ListenerAup, in listenerPortalPosition);
+Assets/_Project/Scripts\Audio\Propagation\AcousticPortalPropagation.cs:483:            AcousticAup lastPortal = Nodes[math.clamp(lastPortalIndex, 0, nodeCount - 1)].Position;
+Assets/_Project/Scripts\Audio\Propagation\AcousticPortalPropagation.cs:484:            float3 toPortal = AcousticAup.RelativeFloat3(in lastPortal, in Query.ListenerAup);
+Assets/_Project/Scripts\Audio\Prologue\PrologueAcousticOrchestrator.cs:172:            ReadOnlySpan<AtmosphericReentrySignal> signals = SignalBus<AtmosphericReentrySignal>.GetFrameSnapshot();
+Assets/_Project/Scripts\Audio\Prologue\PrologueAcousticOrchestrator.cs:212:            ReadOnlySpan<PrologueCompleteSignal> signals = SignalBus<PrologueCompleteSignal>.GetFrameSnapshot();
+Assets/_Project/Scripts\Audio\PlayerCriticalProceduralAudioRenderer.cs:3012:            ReadOnlySpan<HighSpeedImpactSignal> impactSignals = SignalBus<HighSpeedImpactSignal>.GetFrameSnapshot();
+Assets/_Project/Scripts\Audio\HectonMusicDirector.cs:1177:            ReadOnlySpan<BiomeGradientSignal> signals = SignalBus<BiomeGradientSignal>.GetFrameSnapshot();
+Assets/_Project/Scripts\Audio\Editor\AdvancedAcousticsSmokeTester.cs:190:                AssertContains(renderer, "SignalBus<HighSpeedImpactSignal>.GetFrameSnapshot()", "High-speed CCD impacts are consumed without dequeuing another domain's signal lane", builder, ref failureCount);
+Assets/_Project/Scripts\Ecosystem\FaunaGenome64.cs:263:    public struct MacroSwarmGenomeMutationJob : IJobParallelFor
+Assets/_Project/Scripts\Ecosystem\FaunaGenome64.cs:265:        public NativeArray<MacroSwarm> Swarms;
+Assets/_Project/Scripts\Ecosystem\FaunaGenome64.cs:278:            MacroSwarm swarm = Swarms[index];
+Assets/_Project/Scripts\Core\Signals\PrologueReentrySignals.cs:59:            SignalBus<AtmosphericReentrySignal>.Configure(32, laneHash: ComputeStableSignalLaneHash(nameof(AtmosphericReentrySignal)));
+Assets/_Project/Scripts\Core\Signals\PrologueReentrySignals.cs:60:            SignalBus<AtmosphericReentrySignal>.EnsureInitialized();
+Assets/_Project/Scripts\Core\Signals\PrologueReentrySignals.cs:61:            SignalBus<PrologueCompleteSignal>.Configure(8, laneHash: ComputeStableSignalLaneHash(nameof(PrologueCompleteSignal)));
+Assets/_Project/Scripts\Core\Signals\PrologueReentrySignals.cs:62:            SignalBus<PrologueCompleteSignal>.EnsureInitialized();
+Assets/_Project/Scripts\Core\Signals\PrologueReentrySignals.cs:63:            SignalBus<ManualOverridePulledSignal>.Configure(8, laneHash: ComputeStableSignalLaneHash(nameof(ManualOverridePulledSignal)));
+Assets/_Project/Scripts\Core\Signals\PrologueReentrySignals.cs:64:            SignalBus<ManualOverridePulledSignal>.EnsureInitialized();
+Assets/_Project/Scripts\Core\Signals\PrologueReentrySignals.cs:65:            SignalBus<ReentryVfxStateSignal>.Configure(4, 16, 4, ComputeStableSignalLaneHash(nameof(ReentryVfxStateSignal)));
+Assets/_Project/Scripts\Core\Signals\PrologueReentrySignals.cs:66:            SignalBus<ReentryVfxStateSignal>.EnsureInitialized();
+Assets/_Project/Scripts\Core\Signals\PrologueReentrySignals.cs:67:            SignalBus<VisorDropletSignal>.Configure(8, 32, 8, ComputeStableSignalLaneHash(nameof(VisorDropletSignal)));
+Assets/_Project/Scripts\Core\Signals\PrologueReentrySignals.cs:68:            SignalBus<VisorDropletSignal>.EnsureInitialized();
+Assets/_Project/Scripts\Core\PrologueSequenceRegistryBridge.cs:183:            ReadOnlySpan<AtmosphericReentrySignal> signals = SignalBus<AtmosphericReentrySignal>.GetFrameSnapshot();
+Assets/_Project/Scripts\Core\PrologueSequenceRegistryBridge.cs:217:            ReadOnlySpan<PrologueCompleteSignal> signals = SignalBus<PrologueCompleteSignal>.GetFrameSnapshot();
+Assets/_Project/Scripts\Core\PrologueSequenceRegistryBridge.cs:267:            ReadOnlySpan<SectorResidencyHydratedSignal> signals = SignalBus<SectorResidencyHydratedSignal>.GetFrameSnapshot();
+Assets/_Project/Scripts\Core\PrologueSequenceRegistryBridge.cs:427:            SignalBus<SectorResidencyHydratedSignal>.Push(in signal);
+Assets/_Project/Scripts\Core\PrologueSequenceRegistryBridge.cs:654:            ReadOnlySpan<MemoryPressureSignal> signals = SignalBus<MemoryPressureSignal>.GetFrameSnapshot();
+Assets/_Project/Scripts\Core\PlayerRuntimeContext.cs:264:            SignalBus<Hecton8.Core.Signals.CombatDamageSignal>.Push(in signal);
+Assets/_Project/Scripts\Graphics\Materials\ProceduralFloraBiomeTintBridge.cs:70:            ReadOnlySpan<BiomeChangedSignal> signals = SignalBus<BiomeChangedSignal>.GetFrameSnapshot();
+Assets/_Project/Scripts\Core\InstanceCullingServiceRegistryBridge.cs:75:                SignalBus<CullingOverloadSignal>.Push(in signal);
+Assets/_Project/Scripts\World\WorldChunkResidencyManager.cs:3258:            ReadOnlySpan<AupShiftSignal> shiftSignals = SignalBus<AupShiftSignal>.GetFrameSnapshot();
+Assets/_Project/Scripts\World\WorldChunkResidencyManager.cs:3395:            ReadOnlySpan<MemoryPressureSignal> pressureSignals = SignalBus<MemoryPressureSignal>.GetFrameSnapshot();
+Assets/_Project/Scripts\World\WorldChunkResidencyManager.cs:3403:            ReadOnlySpan<SystemHealthIndexSignal> healthSignals = SignalBus<SystemHealthIndexSignal>.GetFrameSnapshot();
+Assets/_Project/Scripts\World\WorldChunkResidencyManager.cs:3414:            ReadOnlySpan<ResidencySectorDehydratedSignal> dehydratedSignals = SignalBus<ResidencySectorDehydratedSignal>.GetFrameSnapshot();
+Assets/_Project/Scripts\World\WorldChunkResidencyManager.cs:3644:            SignalBus<ResidencySectorHydratedSignal>.Push(new ResidencySectorHydratedSignal
+Assets/_Project/Scripts\World\WorldChunkResidencyManager.cs:3660:            SignalBus<ResidencySectorDehydratedSignal>.Push(new ResidencySectorDehydratedSignal
+Assets/_Project/Scripts\World\WorldChunkResidencyManager.cs:3670:            SignalBus<ChunkDehydratedSignal>.Push(new ChunkDehydratedSignal
+Assets/_Project/Scripts\World\WorldChunkResidencyManager.cs:3714:                SignalBus<ResidencySectorDehydratedSignal>.GetFrameSnapshot();

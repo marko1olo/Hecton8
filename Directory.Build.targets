@@ -1,4 +1,8 @@
 <Project>
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Hecton8.Core' And '$(HectonBuildProjectReferences)' != 'true'">
+    <DefineConstants>$(DefineConstants);HECTON_CORE_CONTRACTS_DLL_LEGACY</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'Hecton8.PlayModeTests' And !$([System.String]::Copy('@(ProjectReference)').Contains('Hecton8.Core.csproj'))">
     <ProjectReference Include="$(MSBuildThisFileDirectory)Hecton8.Core.csproj"
                       ReferenceOutputAssembly="true"
@@ -13,6 +17,8 @@
   </Target>
 
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'Hecton8.Core'">
+    <Reference Remove="Hecton8.Core.Memory" />
+
     <Compile Remove="Assets\_Project\Scripts\Core\JobAdmissionTelemetryBridge.cs" />
     <Compile Remove="Assets\_Project\Scripts\Core\BinaryLayoutManifest.cs" />
     <Compile Remove="Assets\_Project\Scripts\Core\HomeostasisBrain.cs" />
@@ -21,6 +27,7 @@
     <Compile Remove="Assets\_Project\Scripts\Core\Signals\PrologueReentrySignals.cs" />
     <Compile Remove="Assets\_Project\Scripts\Ecosystem\FaunaGenome64.cs" />
     <Compile Remove="Assets\_Project\Scripts\Fauna\FaunaKinematicsRuntime.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Fauna\ProceduralLeviathanSpineIK.cs" />
     <Compile Remove="Assets\_Project\Scripts\Gameplay\PlayerMovementBrineRuntimeSystem.cs" />
     <Compile Remove="Assets\_Project\Scripts\Logistics\Grid\Contracts\WfcOutpostGridContracts.cs" />
     <Compile Remove="Assets\_Project\Scripts\Logistics\Grid\WfcOutpostGraphTranslationJob.cs" />
@@ -33,6 +40,10 @@
     <Compile Include="Assets\_Project\Scripts\Core\JobAdmissionTelemetryBridge.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\JobAdmissionTelemetryBridge.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\BinaryLayoutManifest.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\BinaryLayoutManifest.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\HomeostasisBrain.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\HomeostasisBrain.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\HardwareProfileCatalog.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\HardwareProfileCatalog.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Memory\BinaryBlittableSafeAttribute.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Memory\BinaryBlittableSafeAttribute.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Memory\H8Memory.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Memory\H8Memory.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Memory\GlobalDataVault.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Memory\GlobalDataVault.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\MacroDatabaseSignalBridge.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\MacroDatabaseSignalBridge.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\PlayerLookTargetPromptCache.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\PlayerLookTargetPromptCache.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\Signals\PrologueReentrySignals.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Signals\PrologueReentrySignals.cs'))" />
@@ -43,6 +54,7 @@
     <Compile Include="Assets\_Project\Scripts\Logistics\Grid\WfcOutpostGraphTranslationJob.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Logistics\Grid\WfcOutpostGraphTranslationJob.cs'))" />
     <Compile Include="Assets\_Project\Scripts\ModdingAPI\ModEventProjectionBridge.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\ModdingAPI\ModEventProjectionBridge.cs'))" />
     <Compile Include="Assets\_Project\Scripts\SaveSystem\H8BinaryWorldPager.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\SaveSystem\H8BinaryWorldPager.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\SaveSystem\SaveMasterHashV10.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\SaveSystem\SaveMasterHashV10.cs'))" />
     <Compile Include="Assets\_Project\Scripts\TerrainChunkGeneratedEvents.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\TerrainChunkGeneratedEvents.cs'))" />
     <Compile Include="Assets\_Project\Scripts\UI\HphiReactiveUiTelemetry.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\UI\HphiReactiveUiTelemetry.cs'))" />
     <Compile Include="Assets\_Project\Scripts\World\HectonOctahedralImpostorTypes.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\World\HectonOctahedralImpostorTypes.cs'))" />
@@ -105,10 +117,6 @@
       <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Physics.Tethers.Contracts.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Hecton8.SpaceEngine098Terrain" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.SpaceEngine098Terrain.dll') And !$([System.String]::Copy('@(Reference)').Contains('Hecton8.SpaceEngine098Terrain'))">
-      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.SpaceEngine098Terrain.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Hecton8.UI.Diegetic.Contracts" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.UI.Diegetic.Contracts.dll') And !$([System.String]::Copy('@(Reference)').Contains('Hecton8.UI.Diegetic.Contracts'))">
       <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.UI.Diegetic.Contracts.dll</HintPath>
       <Private>False</Private>
@@ -121,12 +129,40 @@
       <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.World.Contracts.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Hecton8.World.GPR" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.World.GPR.dll') And !$([System.String]::Copy('@(Reference)').Contains('Hecton8.World.GPR'))">
-      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.World.GPR.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Hecton8.World.Terrain" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.World.Terrain.dll') And !$([System.String]::Copy('@(Reference)').Contains('Hecton8.World.Terrain'))">
       <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.World.Terrain.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'Hecton8.Core' And '$(HectonBuildProjectReferences)' != 'true'">
+    <ProjectReference Remove="@(ProjectReference)" />
+    <Reference Include="Crest" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Crest.dll') And !$([System.String]::Copy('@(Reference)').Contains('Crest'))">
+      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Crest.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="GPUInstancer" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\GPUInstancer.dll') And !$([System.String]::Copy('@(Reference)').Contains('GPUInstancer'))">
+      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\GPUInstancer.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Hecton8.Bootstrap.Contracts" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Bootstrap.Contracts.dll') And !$([System.String]::Copy('@(Reference)').Contains('Hecton8.Bootstrap.Contracts'))">
+      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Bootstrap.Contracts.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Hecton8.Input" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Input.dll') And !$([System.String]::Copy('@(Reference)').Contains('Hecton8.Input'))">
+      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Input.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.RenderPipelines.Universal.Runtime" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Unity.RenderPipelines.Universal.Runtime.dll') And !$([System.String]::Copy('@(Reference)').Contains('Unity.RenderPipelines.Universal.Runtime'))">
+      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Unity.RenderPipelines.Universal.Runtime.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="WaveHarmonic.Crest" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\WaveHarmonic.Crest.dll') And !$([System.String]::Copy('@(Reference)').Contains('WaveHarmonic.Crest'))">
+      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\WaveHarmonic.Crest.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="WaveHarmonic.Crest.Shared" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\WaveHarmonic.Crest.Shared.dll') And !$([System.String]::Copy('@(Reference)').Contains('WaveHarmonic.Crest.Shared'))">
+      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\WaveHarmonic.Crest.Shared.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
@@ -151,6 +187,8 @@
                                         Condition="'%(Reference.HintPath)' != '' And !Exists('%(Reference.HintPath)') And ($([System.String]::Copy('%(Reference.HintPath)').Contains('Library\ScriptAssemblies')) Or $([System.String]::Copy('%(Reference.HintPath)').Contains('Library/ScriptAssemblies')) Or $([System.String]::Copy('%(Reference.HintPath)').Contains('Library\PackageCache')) Or $([System.String]::Copy('%(Reference.HintPath)').Contains('Library/PackageCache')))" />
       <_HectonMissingGeneratedReference Include="@(Reference)"
                                         Condition="'%(Reference.HintPath)' != '' And !Exists('%(Reference.HintPath)') And ($([System.String]::Copy('%(Reference.HintPath)').Contains('Temp\bin\Debug')) Or $([System.String]::Copy('%(Reference.HintPath)').Contains('Temp/bin/Debug')))" />
+      <_HectonMissingGeneratedReference Include="@(Reference)"
+                                        Condition="'$(MSBuildProjectName)' == 'Hecton8.Core' And '%(Reference.Identity)' == 'Hecton8.Core.Memory'" />
       <Reference Remove="@(_HectonMissingGeneratedReference)" />
       <_HectonMissingGeneratedReference Remove="@(_HectonMissingGeneratedReference)" />
 
@@ -158,6 +196,29 @@
                                        Condition="$([System.String]::Copy('%(Analyzer.Identity)').Contains('com.unity.entities@')) And !Exists('%(Analyzer.Identity)')" />
       <Analyzer Remove="@(_HectonMissingGeneratedAnalyzer)" />
       <_HectonMissingGeneratedAnalyzer Remove="@(_HectonMissingGeneratedAnalyzer)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="HectonCorePruneGeneratedProjectOutputs"
+          BeforeTargets="ResolveProjectReferences;ResolveAssemblyReferences;CoreCompile"
+          Condition="'$(MSBuildProjectName)' == 'Hecton8.Core' And '$(HectonBuildProjectReferences)' != 'true'">
+    <ItemGroup>
+      <ProjectReference Remove="@(ProjectReference)" />
+      <ReferencePath Remove="@(ReferencePath)"
+                     Condition="!Exists('%(ReferencePath.Identity)') And ($([System.String]::Copy('%(ReferencePath.Identity)').Contains('Temp\bin\Debug')) Or $([System.String]::Copy('%(ReferencePath.Identity)').Contains('Temp/bin/Debug')))" />
+      <ReferenceDependencyPaths Remove="@(ReferenceDependencyPaths)"
+                                Condition="!Exists('%(ReferenceDependencyPaths.Identity)') And ($([System.String]::Copy('%(ReferenceDependencyPaths.Identity)').Contains('Temp\bin\Debug')) Or $([System.String]::Copy('%(ReferenceDependencyPaths.Identity)').Contains('Temp/bin/Debug')))" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="HectonCorePruneMissingReferencePaths"
+          BeforeTargets="CoreCompile"
+          Condition="'$(MSBuildProjectName)' == 'Hecton8.Core' And '$(HectonBuildProjectReferences)' != 'true'">
+    <ItemGroup>
+      <ReferencePath Remove="@(ReferencePath)"
+                     Condition="!Exists('%(ReferencePath.Identity)') And ($([System.String]::Copy('%(ReferencePath.Identity)').Contains('Temp\bin\Debug')) Or $([System.String]::Copy('%(ReferencePath.Identity)').Contains('Temp/bin/Debug')))" />
+      <ReferenceDependencyPaths Remove="@(ReferenceDependencyPaths)"
+                                Condition="!Exists('%(ReferenceDependencyPaths.Identity)') And ($([System.String]::Copy('%(ReferenceDependencyPaths.Identity)').Contains('Temp\bin\Debug')) Or $([System.String]::Copy('%(ReferenceDependencyPaths.Identity)').Contains('Temp/bin/Debug')))" />
     </ItemGroup>
   </Target>
 </Project>

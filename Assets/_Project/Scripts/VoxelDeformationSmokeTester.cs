@@ -398,6 +398,8 @@ namespace Hecton8.Dev
                     AbsoluteSegmentEnd = new float3(12f, -23f, 37f),
                     AbsoluteHalfExtents = new float3(1f, 2f, 3f),
                     AbsoluteImpulseDirection = new float3(0f, 0f, 1f),
+                    AbsoluteHitPointDouble = new double3(11d, -23d, 37d),
+                    AbsoluteSegmentEndDouble = new double3(12d, -23d, 37d),
                     RadiusMeters = 2.5f,
                     BlendStrengthMeters = 0.75f,
                     Operation = (byte)VoxelCarveOperationType.Subtract,
@@ -428,6 +430,7 @@ namespace Hecton8.Dev
                     observedFirst.Shape == (byte)VoxelCarveShapeType.Sphere &&
                     observedSecond.Shape == (byte)VoxelCarveShapeType.Capsule &&
                     math.abs(observedFirst.AbsoluteHitPoint.x - 11f) < 0.0001f &&
+                    math.abs(observedFirst.AbsoluteHitPointDouble.x - 11d) < 0.0000001d &&
                     math.abs(observedFirst.RadiusMeters - 2.5f) < 0.0001f &&
                     math.abs(observedSecond.RadiusMeters - 4f) < 0.0001f;
 
@@ -441,7 +444,7 @@ namespace Hecton8.Dev
 
                 return Require(
                     packetBytes > 0 &&
-                    packetBytes <= 80 &&
+                    packetBytes <= 128 &&
                     queuePreservedPayload &&
                     lodBudgetValid,
                     "Native carve queue packet or Math LOD budget failed.");
@@ -461,6 +464,8 @@ namespace Hecton8.Dev
                 AbsoluteSegmentEnd = new float3(2f, 2f, 3f),
                 AbsoluteHalfExtents = new float3(1f, 1f, 1f),
                 AbsoluteImpulseDirection = new float3(0f, 1f, 0f),
+                AbsoluteHitPointDouble = new double3(1d, 2d, 3d),
+                AbsoluteSegmentEndDouble = new double3(2d, 2d, 3d),
                 RadiusMeters = 1.5f,
                 BlendStrengthMeters = 0.5f,
                 Operation = (byte)VoxelCarveOperationType.Subtract,

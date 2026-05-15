@@ -1898,7 +1898,8 @@ namespace Hecton8.Gameplay
 
         private static Vector3 ResolveAbsoluteUniversePoint(Vector3 runtimePoint)
         {
-            return runtimePoint + HectonFloatingOrigin.CurrentTotalOffset;
+            double3 absolute = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePoint);
+            return new Vector3((float)absolute.x, (float)absolute.y, (float)absolute.z);
         }
 
         private void ApplyRecoilImpulse(Vector3 direction, float normalizedPower)

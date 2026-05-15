@@ -21,7 +21,11 @@ namespace Hecton8.VFX.Debris
     /// GPU-only rock chip feedback for voxel SDF carve events.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class CarveDebrisComputeRenderer : MonoBehaviour, IUpdatable
+    public sealed class CarveDebrisComputeRenderer : MonoBehaviour,
+        IUpdatable,
+        IGlobalRegistryHotSwapListener,
+        IGlobalRegistryHotSwapRefListener,
+        IScalabilityChangedEventListener
     {
         private const int MaxCarveDebrisCount = 4096;
         private const int LowTierActiveCarveDebrisCount = 1024;
@@ -36,7 +40,15 @@ namespace Hecton8.VFX.Debris
         private const int LowTierParticlesPerCarve = 16;
         private const int HighTierParticlesPerCarve = 64;
         private const int MaxCarveSignalsPerFrame = 32;
+        private const int MaxCarveSignalScanPerFrame = 64;
         private const int TelemetryPublishStride = 30;
+        private const int GlobalSdfRefreshStrideFrames = 4;
+        private const int TierSwitchConfirmFrames = 120;
+        private const int MissingRegistryRefreshStrideFrames = 30;
+        private const float MinimumCarveSpawnRadiusMeters = 0.05f;
+#if UNITY_EDITOR
+        private const string FluidAdvectionComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_FluidAdvection.compute";
+#endif
         private const uint TelemetryContextHash = 0x56465844u; // VFXD
         private const uint ActiveCountTelemetryHash = 0x43444252u; // CDBR
         private const uint InvalidStateFlag = 1u;
@@ -71,6 +83,10 @@ namespace Hecton8.VFX.Debris
         private static readonly int VoxelSdfTexture3DId = Shader.PropertyToID("_VoxelSdfTexture3D");
         private static readonly int VoxelSdfWorldToLocalId = Shader.PropertyToID("_VoxelSdfWorldToLocal");
         private static readonly int VoxelSdfInvDoubleHalfExtentsId = Shader.PropertyToID("_VoxelSdfInvDoubleHalfExtents");
+        private static readonly int HectonCaveVoxelSdfTexId = Shader.PropertyToID("_HectonCaveVoxelSdfTex");
+        private static readonly int HectonCaveVoxelActiveId = Shader.PropertyToID("_HectonCaveVoxelActive");
+        private static readonly int HectonCaveVoxelWorldToLocalId = Shader.PropertyToID("_HectonCaveVoxelWorldToLocal");
+        private static readonly int HectonCaveVoxelInvDoubleHalfExtentsId = Shader.PropertyToID("_HectonCaveVoxelInvDoubleHalfExtents");
         private static readonly int FluidAdvectionParamsId = Shader.PropertyToID("_FluidAdvectionParams");
         private static readonly int FluidAdvectionSdfParamsId = Shader.PropertyToID("_FluidAdvectionSdfParams");
 
@@ -102,8 +118,11 @@ namespace Hecton8.VFX.Debris
 
         private NativeArray<float4> _debrisPositions;
         private NativeArray<float4> _debrisVelocities;
+        private NativeArray<CarveDebrisRequest> _carveRequests;
         private NativeArray<int> _jobState;
         private NativeArray<CarveDebrisTelemetryEntry> _blackBox;
+        private IDataVault _registryDataVault;
+        private IDataVault _dataVault;
         private GraphicsBuffer _positionBufferA;
         private GraphicsBuffer _positionBufferB;
         private GraphicsBuffer _velocityBufferA;
@@ -111,9 +130,11 @@ namespace Hecton8.VFX.Debris
         private GraphicsBuffer _visibleIndicesBuffer;
         private GraphicsBuffer _indirectArgsBuffer;
         private GraphicsBuffer _emptyFlowBuffer;
+        private Texture _cachedGlobalSdfTexture;
         private Texture3D _emptyTexture3D;
         private Mesh _ownedMesh;
         private Material _ownedMaterial;
+        private Material _ownedMaterialSource;
         private HectonFluidEngine _fluidEngine;
         private int _advectKernel = -1;
         private int _clearArgsKernel = -1;
@@ -122,20 +143,43 @@ namespace Hecton8.VFX.Debris
         private int _maxDispatchGroups = MaxCarveDebrisCount >> 6;
         private int _lowDispatchGroups = LowTierActiveCarveDebrisCount >> 6;
         private int _lastActiveCapacity = MaxCarveDebrisCount;
+        private int _nextGlobalSdfRefreshFrame;
+        private int _nextMissingRegistryRefreshFrame;
+        private int _pendingTierFrames;
+        private int _cachedDrawMeshFrame = -1;
         private int _bufferParity;
         private int _activeMirrorCount;
         private int _blackBoxCursor;
         private int _lastTelemetryFrame = -1;
         private uint _lastProcessedAupShiftFrameId;
         private uint _frameSequence;
+        private uint _positionVaultGeneration;
+        private uint _velocityVaultGeneration;
+        private uint _jobStateVaultGeneration;
+        private uint _requestVaultGeneration;
+        private uint _blackBoxVaultGeneration;
+        private uint _cachedDrawIndexCount;
+        private uint _cachedDrawIndexStart;
+        private uint _cachedDrawBaseVertex;
         private float3 _pendingAupShift;
+        private float3 _lastAppliedAupShift;
+        private Matrix4x4 _cachedGlobalSdfWorldToLocal = Matrix4x4.identity;
+        private Vector4 _cachedGlobalSdfInvDoubleHalfExtents;
+        private Mesh _cachedDrawMesh;
+        private float _cachedGlobalSdfActive;
         private bool _registered;
         private bool _gpuReady;
         private bool _blackBoxDumped;
-        private bool _cameraResolveAttempted;
         private bool _materialFallbackAttempted;
         private bool _lastFlowActive;
         private bool _lastSdfActive;
+        private bool _cachedDrawMeshValid;
+        private bool _cachedLowTier = true;
+        private bool _pendingLowTier = true;
+        private bool _sampledLowTier = true;
+        private bool _tierCacheInitialized;
+        private bool _hotSwapRegistered;
+        private bool _scalabilityEventsRegistered;
 
         private void Awake()
         {
@@ -145,12 +189,24 @@ namespace Hecton8.VFX.Debris
         private void OnEnable()
         {
             EnsureFallbackRenderResources();
+            TryRegisterHotSwapListener();
+            TryRegisterScalabilityEvents();
+            TryRegisterTick();
+            TryEnsureGpuState();
+        }
+
+        private void Start()
+        {
+            TryRegisterHotSwapListener();
+            TryRegisterScalabilityEvents();
             TryRegisterTick();
             TryEnsureGpuState();
         }
 
         private void OnDisable()
         {
+            TryUnregisterScalabilityEvents();
+            TryUnregisterHotSwapListener();
             if (_registered)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
@@ -164,7 +220,24 @@ namespace Hecton8.VFX.Debris
         {
             drawBounds = new Bounds(Vector3.zero, new Vector3(400f, 400f, 400f));
             renderLayer = gameObject.layer;
+#if UNITY_EDITOR
+            ResolveEditorAssets();
+#endif
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            renderLayer = math.clamp(renderLayer, 0, 31);
+            ResolveEditorAssets();
+        }
+
+        private void ResolveEditorAssets()
+        {
+            if (fluidAdvectionCompute == null)
+                fluidAdvectionCompute = UnityEditor.AssetDatabase.LoadAssetAtPath<ComputeShader>(FluidAdvectionComputeAssetPath);
+        }
+#endif
 
         public void Tick(float deltaTime)
         {
@@ -199,15 +272,127 @@ namespace Hecton8.VFX.Debris
             _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
+        private void TryRegisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+
+            RefreshCachedRegistryServices();
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private void RefreshCachedRegistryServices()
+        {
+            _registryDataVault = GlobalRegistry.DataVault;
+            _fluidEngine = GlobalRegistry.Fluid;
+            _nextMissingRegistryRefreshFrame = Time.frameCount + MissingRegistryRefreshStrideFrames;
+        }
+
+        private void RefreshMissingRegistryServicesIfNeeded()
+        {
+            if (_registryDataVault != null && _fluidEngine != null)
+                return;
+
+            int frame = Time.frameCount;
+            if (frame < _nextMissingRegistryRefreshFrame)
+                return;
+
+            RefreshCachedRegistryServices();
+        }
+
+        void IGlobalRegistryHotSwapRefListener.OnGlobalRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService)
+        {
+            ApplyRegistryServiceRebind(serviceSlot, currentService);
+        }
+
+        void IGlobalRegistryHotSwapListener.OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            ApplyRegistryServiceRebind(serviceSlot, currentService);
+        }
+
+        void IScalabilityChangedEventListener.OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            QueueScalabilityTierCandidate(IsLowTierPayload(payload.CurrentTier, payload.CurrentQualityTier));
+        }
+
+        private void TryRegisterScalabilityEvents()
+        {
+            if (!_scalabilityEventsRegistered)
+            {
+                ScalabilityEvents.Register(this);
+                _scalabilityEventsRegistered = true;
+            }
+
+            RefreshScalabilityTierSeed();
+        }
+
+        private void TryUnregisterScalabilityEvents()
+        {
+            if (!_scalabilityEventsRegistered)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _scalabilityEventsRegistered = false;
+        }
+
+        private void RefreshScalabilityTierSeed()
+        {
+            QueueScalabilityTierCandidate(SampleLowTierFlagCold());
+            if (_tierCacheInitialized)
+                return;
+
+            _cachedLowTier = _sampledLowTier;
+            _pendingLowTier = _sampledLowTier;
+            _pendingTierFrames = 0;
+            _tierCacheInitialized = true;
+        }
+
+        private void QueueScalabilityTierCandidate(bool sampledLowTier)
+        {
+            _sampledLowTier = sampledLowTier;
+        }
+
+        private void ApplyRegistryServiceRebind(GlobalRegistryServiceSlot serviceSlot, object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                IDataVault currentVault = currentService as IDataVault;
+                _registryDataVault = currentVault;
+                if (!ReferenceEquals(_dataVault, currentVault))
+                {
+                    InvalidateDataVaultLease();
+                    _gpuReady = false;
+                }
+
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.FluidRuntime)
+                _fluidEngine = currentService as HectonFluidEngine;
+        }
+
         private bool TryEnsureGpuState()
         {
             if (_gpuReady && IsGpuStateValid())
                 return true;
 
+            _gpuReady = false;
             if (fluidAdvectionCompute == null)
                 return false;
 
-            IDataVault vault = GlobalRegistry.DataVault;
+            RefreshMissingRegistryServicesIfNeeded();
+            IDataVault vault = _registryDataVault;
             if (vault == null)
                 return false;
 
@@ -232,21 +417,41 @@ namespace Hecton8.VFX.Debris
                 MaxCarveDebrisCount,
                 SystemID.Vfx,
                 NativeArrayOptions.ClearMemory);
+            _jobState = vault.GetBuffer<int>(
+                BufferID.CarveDebrisJobState,
+                JobStateLength,
+                SystemID.Vfx,
+                NativeArrayOptions.ClearMemory);
+            _blackBox = vault.GetBuffer<CarveDebrisTelemetryEntry>(
+                BufferID.CarveDebrisBlackBox,
+                BlackBoxCapacity,
+                SystemID.Vfx,
+                NativeArrayOptions.ClearMemory);
+            _carveRequests = vault.GetBuffer<CarveDebrisRequest>(
+                BufferID.CarveDebrisRequests,
+                MaxCarveSignalsPerFrame,
+                SystemID.Vfx,
+                NativeArrayOptions.ClearMemory);
 
             if (!_debrisPositions.IsCreated ||
                 !_debrisVelocities.IsCreated ||
+                !_jobState.IsCreated ||
+                !_blackBox.IsCreated ||
+                !_carveRequests.IsCreated ||
                 _debrisPositions.Length < MaxCarveDebrisCount ||
-                _debrisVelocities.Length < MaxCarveDebrisCount)
+                _debrisVelocities.Length < MaxCarveDebrisCount ||
+                _jobState.Length < JobStateLength ||
+                _blackBox.Length < BlackBoxCapacity ||
+                _carveRequests.Length < MaxCarveSignalsPerFrame)
             {
+                InvalidateDataVaultLease();
                 return false;
             }
 
-            if (!_jobState.IsCreated)
-                _jobState = H8Memory.Allocate<int>(JobStateLength, SystemID.Vfx, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            if (!_blackBox.IsCreated)
-                _blackBox = H8Memory.Allocate<CarveDebrisTelemetryEntry>(BlackBoxCapacity, SystemID.Vfx, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            if (!_jobState.IsCreated || !_blackBox.IsCreated)
+            if (!TryCaptureVaultGenerations(vault))
                 return false;
+
+            _dataVault = vault;
 
             AllocateGraphicsBuffers();
             CreateEmptyResources();
@@ -262,7 +467,8 @@ namespace Hecton8.VFX.Debris
 
         private bool IsGpuStateValid()
         {
-            return _positionBufferA != null && _positionBufferA.IsValid() &&
+            return IsDataVaultLeaseValid() &&
+                   _positionBufferA != null && _positionBufferA.IsValid() &&
                    _positionBufferB != null && _positionBufferB.IsValid() &&
                    _velocityBufferA != null && _velocityBufferA.IsValid() &&
                    _velocityBufferB != null && _velocityBufferB.IsValid() &&
@@ -270,6 +476,67 @@ namespace Hecton8.VFX.Debris
                    _indirectArgsBuffer != null && _indirectArgsBuffer.IsValid() &&
                    _emptyFlowBuffer != null && _emptyFlowBuffer.IsValid() &&
                    _emptyTexture3D != null;
+        }
+
+        private bool TryCaptureVaultGenerations(IDataVault vault)
+        {
+            if (vault == null ||
+                !vault.TryGetBufferGeneration(BufferID.CarveDebris, out _positionVaultGeneration) ||
+                !vault.TryGetBufferGeneration(BufferID.CarveDebrisVelocity, out _velocityVaultGeneration) ||
+                !vault.TryGetBufferGeneration(BufferID.CarveDebrisJobState, out _jobStateVaultGeneration) ||
+                !vault.TryGetBufferGeneration(BufferID.CarveDebrisRequests, out _requestVaultGeneration) ||
+                !vault.TryGetBufferGeneration(BufferID.CarveDebrisBlackBox, out _blackBoxVaultGeneration))
+            {
+                InvalidateDataVaultLease();
+                return false;
+            }
+
+            return true;
+        }
+
+        private void InvalidateDataVaultLease()
+        {
+            _dataVault = null;
+            _positionVaultGeneration = 0u;
+            _velocityVaultGeneration = 0u;
+            _jobStateVaultGeneration = 0u;
+            _requestVaultGeneration = 0u;
+            _blackBoxVaultGeneration = 0u;
+        }
+
+        private bool IsDataVaultLeaseValid()
+        {
+            if (_dataVault == null ||
+                !_debrisPositions.IsCreated ||
+                !_debrisVelocities.IsCreated ||
+                !_jobState.IsCreated ||
+                !_blackBox.IsCreated ||
+                !_carveRequests.IsCreated ||
+                _debrisPositions.Length < MaxCarveDebrisCount ||
+                _debrisVelocities.Length < MaxCarveDebrisCount ||
+                _jobState.Length < JobStateLength ||
+                _blackBox.Length < BlackBoxCapacity ||
+                _carveRequests.Length < MaxCarveSignalsPerFrame ||
+                _dataVault.IsCompactionFenceActive)
+            {
+                return false;
+            }
+
+            if (!_dataVault.TryGetBufferGeneration(BufferID.CarveDebris, out uint positionGeneration) ||
+                !_dataVault.TryGetBufferGeneration(BufferID.CarveDebrisVelocity, out uint velocityGeneration) ||
+                !_dataVault.TryGetBufferGeneration(BufferID.CarveDebrisJobState, out uint jobStateGeneration) ||
+                !_dataVault.TryGetBufferGeneration(BufferID.CarveDebrisRequests, out uint requestGeneration) ||
+                !_dataVault.TryGetBufferGeneration(BufferID.CarveDebrisBlackBox, out uint blackBoxGeneration) ||
+                positionGeneration != _positionVaultGeneration ||
+                velocityGeneration != _velocityVaultGeneration ||
+                jobStateGeneration != _jobStateVaultGeneration ||
+                requestGeneration != _requestVaultGeneration ||
+                blackBoxGeneration != _blackBoxVaultGeneration)
+            {
+                return false;
+            }
+
+            return ReferenceEquals(_dataVault, _registryDataVault);
         }
 
         private void AllocateGraphicsBuffers()
@@ -315,7 +582,7 @@ namespace Hecton8.VFX.Debris
                 name = "Hecton Empty CarveDebris 3D Texture",
                 wrapMode = TextureWrapMode.Clamp,
                 filterMode = FilterMode.Point
-            };
+            }; // COLD ALLOC: Texture3D[1] - zero fallback for unbound SDF/flow 3D textures - owner: VFX_SDF_CARVE_DEBRIS
             _emptyTexture3D.SetPixel(0, 0, 0, Color.clear);
             _emptyTexture3D.Apply(false, true);
         }
@@ -333,6 +600,13 @@ namespace Hecton8.VFX.Debris
             _jobState[JobStateDirtyMinIndex] = MaxCarveDebrisCount;
             _jobState[JobStateDirtyMaxIndex] = -1;
             _jobState[JobStateFlagsIndex] = 0;
+            for (int i = 0; i < MaxCarveSignalsPerFrame; i++)
+                _carveRequests[i] = default;
+            for (int i = 0; i < BlackBoxCapacity; i++)
+                _blackBox[i] = default;
+
+            _blackBoxCursor = 0;
+            _lastTelemetryFrame = -1;
             _activeMirrorCount = 0;
             UploadRange(_positionBufferA, _debrisPositions, 0, MaxCarveDebrisCount);
             UploadRange(_positionBufferB, _debrisPositions, 0, MaxCarveDebrisCount);
@@ -350,14 +624,13 @@ namespace Hecton8.VFX.Debris
 
             float lifetimeRcp = math.rcp(math.max(0.001f, particleLifetimeSeconds));
             float lifeDelta = dt * lifetimeRcp;
-            JobHandle handle = new AgeCarveDebrisMirrorJob
+            new AgeCarveDebrisMirrorJob
             {
                 Positions = _debrisPositions,
                 Capacity = activeCapacity,
                 LifeDelta = lifeDelta,
                 JobState = _jobState
-            }.Schedule();
-            handle.Complete();
+            }.Run();
             _activeMirrorCount = math.clamp(_jobState[JobStateActiveIndex], 0, activeCapacity);
         }
 
@@ -375,55 +648,65 @@ namespace Hecton8.VFX.Debris
         private int DrainCarveSignals(bool lowTier, int activeCapacity)
         {
             ReadOnlySpan<VoxelCarveEvent> carveSignals = SignalBus<VoxelCarveEvent>.GetFrameSnapshot();
-            int signalCount = math.min(carveSignals.Length, MaxCarveSignalsPerFrame);
+            int signalCount = math.min(carveSignals.Length, MaxCarveSignalScanPerFrame);
             if (signalCount <= 0)
                 return 0;
 
             int particlesPerCarve = lowTier ? LowTierParticlesPerCarve : HighTierParticlesPerCarve;
             int queuedCarves = 0;
-            int injectedTotal = 0;
-            for (int i = 0; i < signalCount; i++)
+            int requestCount = 0;
+            for (int i = 0; i < signalCount && requestCount < MaxCarveSignalsPerFrame; i++)
             {
                 VoxelCarveEvent carveEvent = carveSignals[i];
-                if (!IsFiniteCarveEvent(in carveEvent))
+                if (!TryResolveCarveDebrisRadius(in carveEvent, out float sourceRadius))
                 {
-                    _jobState[JobStateFlagsIndex] |= (int)InvalidStateFlag;
+                    if (!IsFiniteCarveEvent(in carveEvent) ||
+                        !IsSupportedCarveOperation(carveEvent.Operation) ||
+                        !IsSupportedCarveShape(carveEvent.Shape))
+                    {
+                        _jobState[JobStateFlagsIndex] |= (int)InvalidStateFlag;
+                    }
+
                     continue;
                 }
 
-                float radius = math.max(0.05f, carveEvent.RadiusMeters * spawnRadiusScale);
-                float3 runtimeCenter = AbsoluteUniversePosition.FromAbsolutePosition(new double3(
-                    carveEvent.AbsoluteHitPoint.x,
-                    carveEvent.AbsoluteHitPoint.y,
-                    carveEvent.AbsoluteHitPoint.z)).ToRuntimeFloat3();
+                float radius = math.max(MinimumCarveSpawnRadiusMeters, sourceRadius * spawnRadiusScale);
+                float3 runtimeCenter = AbsoluteUniversePosition.FromAbsolutePosition(
+                    ResolveCarveHitPointDouble(in carveEvent)).ToRuntimeFloat3();
                 uint seed = BuildStableSeed(_frameSequence, in carveEvent, i);
 
-                JobHandle handle = new CarveDebrisInjectJob
+                _carveRequests[requestCount] = new CarveDebrisRequest
                 {
-                    Positions = _debrisPositions,
-                    Velocities = _debrisVelocities,
-                    Capacity = activeCapacity,
                     Center = runtimeCenter,
                     Radius = radius,
                     ParticlesToInject = particlesPerCarve,
                     InitialSpeed = initialVelocityMetersPerSecond,
                     Life = 1f,
-                    Seed = seed,
-                    JobState = _jobState
-                }.Schedule();
-                handle.Complete();
-
-                int dirtyMin = _jobState[JobStateDirtyMinIndex];
-                int dirtyMax = _jobState[JobStateDirtyMaxIndex];
-                if (dirtyMax >= dirtyMin)
-                    UploadInjectedRange(dirtyMin, dirtyMax - dirtyMin + 1);
-
+                    Seed = seed
+                };
+                requestCount++;
                 queuedCarves++;
-                injectedTotal += math.max(0, _jobState[JobStateInjectedIndex]);
-                _activeMirrorCount = math.clamp(_jobState[JobStateActiveIndex], 0, activeCapacity);
             }
 
-            _jobState[JobStateInjectedIndex] = injectedTotal;
+            if (requestCount <= 0)
+                return 0;
+
+            new CarveDebrisInjectBatchJob
+            {
+                Positions = _debrisPositions,
+                Velocities = _debrisVelocities,
+                Requests = _carveRequests,
+                RequestCount = requestCount,
+                Capacity = activeCapacity,
+                JobState = _jobState
+            }.Run();
+
+            int dirtyMin = _jobState[JobStateDirtyMinIndex];
+            int dirtyMax = _jobState[JobStateDirtyMaxIndex];
+            if (dirtyMax >= dirtyMin)
+                UploadInjectedRange(dirtyMin, dirtyMax - dirtyMin + 1);
+
+            _activeMirrorCount = math.clamp(_jobState[JobStateActiveIndex], 0, activeCapacity);
             return queuedCarves;
         }
 
@@ -444,13 +727,13 @@ namespace Hecton8.VFX.Debris
         {
             if (_activeMirrorCount <= 0 && math.lengthsq(_pendingAupShift) <= 0.000001f)
             {
+                _lastAppliedAupShift = default;
                 _lastFlowActive = false;
                 _lastSdfActive = false;
                 return;
             }
 
-            Mesh mesh = ResolveMesh();
-            if (mesh == null || mesh.GetIndexCount(0) == 0)
+            if (!TryResolveDrawMesh(out _, out Vector4 drawArgsBase))
             {
                 _lastFlowActive = false;
                 _lastSdfActive = false;
@@ -463,7 +746,9 @@ namespace Hecton8.VFX.Debris
             GraphicsBuffer velocityRead = readA ? _velocityBufferA : _velocityBufferB;
             GraphicsBuffer velocityWrite = readA ? _velocityBufferB : _velocityBufferA;
             int dispatchGroups = lowTier ? _lowDispatchGroups : _maxDispatchGroups;
-            Vector4 drawArgs = new Vector4(mesh.GetIndexCount(0), mesh.GetIndexStart(0), mesh.GetBaseVertex(0), activeCapacity);
+            Vector4 drawArgs = drawArgsBase;
+            drawArgs.w = activeCapacity;
+            float3 appliedAupShift = _pendingAupShift;
 
             BindSharedComputeParams(dt, lowTier, activeCapacity, drawArgs);
             fluidAdvectionCompute.SetBuffer(_clearArgsKernel, CarveDebrisIndirectArgsId, _indirectArgsBuffer);
@@ -481,14 +766,15 @@ namespace Hecton8.VFX.Debris
             fluidAdvectionCompute.Dispatch(_cullKernel, dispatchGroups, 1, 1);
 
             _bufferParity ^= 1;
+            _lastAppliedAupShift = appliedAupShift;
             _pendingAupShift = default;
         }
 
         private void BindSharedComputeParams(float dt, bool lowTier, int activeCapacity, Vector4 drawArgs)
         {
-            Camera camera = ResolveCamera();
+            Camera camera = renderCamera;
             Vector3 cameraPosition = camera != null ? camera.transform.position : Vector3.zero;
-            float renderDistanceSq = renderDistanceMeters > 0f ? renderDistanceMeters * renderDistanceMeters : 0f;
+            float renderDistanceSq = camera != null && renderDistanceMeters > 0f ? renderDistanceMeters * renderDistanceMeters : 0f;
             GraphicsBuffer flowBuffer = ResolveFlowPayload(
                 out Texture flowTexture,
                 out Vector4 gridResolution,
@@ -497,7 +783,7 @@ namespace Hecton8.VFX.Debris
                 out Vector4 flowTextureParams,
                 out float flowTextureActive,
                 out float flowBufferActive);
-            Texture sdfTexture = ResolveSdfTexture(lowTier, out float sdfActive);
+            Texture sdfTexture = ResolveSdfTexture(lowTier, out Matrix4x4 sdfWorldToLocal, out Vector4 sdfInvDoubleHalfExtents, out float sdfActive);
             float flowActive = flowBufferActive > 0.5f || flowTextureActive > 0.5f ? 1f : 0f;
             _lastFlowActive = flowActive > 0.5f;
             _lastSdfActive = sdfActive > 0.5f;
@@ -520,8 +806,8 @@ namespace Hecton8.VFX.Debris
             fluidAdvectionCompute.SetVector(AbyssalFlowSpacingId, flowSpacing);
             fluidAdvectionCompute.SetVector(AbyssalFlowTextureParamsId, flowTextureParams);
             fluidAdvectionCompute.SetFloat(AbyssalFlowTextureActiveId, flowTextureActive);
-            fluidAdvectionCompute.SetMatrix(VoxelSdfWorldToLocalId, voxelSdfWorldToLocal);
-            fluidAdvectionCompute.SetVector(VoxelSdfInvDoubleHalfExtentsId, voxelSdfInvDoubleHalfExtents);
+            fluidAdvectionCompute.SetMatrix(VoxelSdfWorldToLocalId, sdfWorldToLocal);
+            fluidAdvectionCompute.SetVector(VoxelSdfInvDoubleHalfExtentsId, sdfInvDoubleHalfExtents);
             fluidAdvectionCompute.SetVector(FluidAdvectionParamsId, new Vector4(dt, lowTier ? 1f : 0f, flowActive, sdfActive));
             fluidAdvectionCompute.SetVector(FluidAdvectionSdfParamsId, new Vector4(sdfActive, solidDensityThreshold, 0f, 0f));
         }
@@ -566,13 +852,7 @@ namespace Hecton8.VFX.Debris
             flowTextureActive = 0f;
             flowBufferActive = 0f;
 
-            HectonFluidEngine fluidEngine = _fluidEngine;
-            if (fluidEngine == null)
-            {
-                fluidEngine = HectonFluidEngine.Instance;
-                _fluidEngine = fluidEngine;
-            }
-
+            HectonFluidEngine fluidEngine = ResolveFluidEngine();
             if (fluidEngine != null &&
                 fluidEngine.TryGetGpuAbyssalFlowFieldBuffer(
                     out GraphicsBuffer publishedFlowBuffer,
@@ -580,45 +860,200 @@ namespace Hecton8.VFX.Debris
                     out Vector4 publishedFlowCenter,
                     out Vector4 publishedFlowSpacing))
             {
-                flowBuffer = publishedFlowBuffer;
-                gridResolution = publishedGridResolution;
-                flowCenter = publishedFlowCenter;
-                flowSpacing = publishedFlowSpacing;
-                flowBufferActive = 1f;
+                if (IsValidFlowBufferPayload(
+                        publishedFlowBuffer,
+                        publishedGridResolution,
+                        publishedFlowCenter,
+                        publishedFlowSpacing))
+                {
+                    flowBuffer = publishedFlowBuffer;
+                    gridResolution = publishedGridResolution;
+                    flowCenter = publishedFlowCenter;
+                    flowSpacing = publishedFlowSpacing;
+                    flowBufferActive = 1f;
+                }
             }
 
             if (fluidEngine != null &&
                 fluidEngine.TryGetGpuAbyssalFlowFieldTexture(
                     out Texture publishedFlowTexture,
-                    out _,
+                    out Vector4 publishedTextureResolution,
                     out Vector4 publishedTextureCenter,
                     out Vector4 publishedTextureSpacing))
             {
-                flowTexture = publishedFlowTexture;
-                flowCenter = publishedTextureCenter;
-                flowTextureParams = publishedTextureSpacing;
-                flowTextureActive = 1f;
+                if (publishedFlowTexture != null &&
+                    IsFiniteVector(publishedTextureCenter) &&
+                    TryResolveFlowTextureParams(publishedTextureSpacing, publishedTextureResolution.x, out Vector4 resolvedTextureParams))
+                {
+                    if (flowBufferActive > 0.5f && !AreFlowCentersCompatible(flowCenter, publishedTextureCenter))
+                        DisableFlowBufferFallback(ref flowBuffer, ref gridResolution, ref flowSpacing, ref flowBufferActive);
+
+                    flowTexture = publishedFlowTexture;
+                    flowCenter = publishedTextureCenter;
+                    flowTextureParams = resolvedTextureParams;
+                    flowTextureActive = 1f;
+                }
             }
             else if (abyssalFlowTextureOverride != null)
             {
-                flowTexture = abyssalFlowTextureOverride;
-                flowCenter = Shader.GetGlobalVector(AbyssalFlowCenterId);
-                flowTextureParams = Shader.GetGlobalVector(AbyssalFlowTextureParamsId);
-                flowTextureActive = flowTextureParams.w > 0f ? 1f : 0f;
+                Vector4 globalTextureParams = Shader.GetGlobalVector(AbyssalFlowTextureParamsId);
+                Vector4 globalFlowCenter = Shader.GetGlobalVector(AbyssalFlowCenterId);
+                if (IsFiniteVector(globalFlowCenter) &&
+                    TryResolveFlowTextureParams(globalTextureParams, globalTextureParams.x, out Vector4 resolvedTextureParams))
+                {
+                    if (flowBufferActive > 0.5f && !AreFlowCentersCompatible(flowCenter, globalFlowCenter))
+                        DisableFlowBufferFallback(ref flowBuffer, ref gridResolution, ref flowSpacing, ref flowBufferActive);
+
+                    flowTexture = abyssalFlowTextureOverride;
+                    flowCenter = globalFlowCenter;
+                    flowTextureParams = resolvedTextureParams;
+                    flowTextureActive = 1f;
+                }
             }
 
             return flowBuffer != null && flowBuffer.IsValid() ? flowBuffer : _emptyFlowBuffer;
         }
 
-        private Texture ResolveSdfTexture(bool lowTier, out float sdfActive)
+        private void DisableFlowBufferFallback(
+            ref GraphicsBuffer flowBuffer,
+            ref Vector4 gridResolution,
+            ref Vector4 flowSpacing,
+            ref float flowBufferActive)
         {
-            bool hasSdf = !lowTier &&
-                          voxelSdfTexture3D != null &&
-                          voxelSdfInvDoubleHalfExtents.x > 0f &&
-                          voxelSdfInvDoubleHalfExtents.y > 0f &&
-                          voxelSdfInvDoubleHalfExtents.z > 0f;
-            sdfActive = hasSdf ? 1f : 0f;
-            return hasSdf ? voxelSdfTexture3D : _emptyTexture3D;
+            flowBuffer = _emptyFlowBuffer;
+            gridResolution = Vector4.zero;
+            flowSpacing = Vector4.zero;
+            flowBufferActive = 0f;
+        }
+
+        private static bool AreFlowCentersCompatible(Vector4 bufferCenter, Vector4 textureCenter)
+        {
+            float dx = bufferCenter.x - textureCenter.x;
+            float dy = bufferCenter.y - textureCenter.y;
+            float dz = bufferCenter.z - textureCenter.z;
+            return math.isfinite(dx) &&
+                   math.isfinite(dy) &&
+                   math.isfinite(dz) &&
+                   dx * dx + dy * dy + dz * dz <= 0.0001f;
+        }
+
+        private HectonFluidEngine ResolveFluidEngine()
+        {
+            return _fluidEngine;
+        }
+
+        private static bool IsValidFlowBufferPayload(
+            GraphicsBuffer flowBuffer,
+            Vector4 gridResolution,
+            Vector4 flowCenter,
+            Vector4 flowSpacing)
+        {
+            return flowBuffer != null &&
+                   flowBuffer.IsValid() &&
+                   flowBuffer.count > 0 &&
+                   gridResolution.x > 0f &&
+                   gridResolution.y > 0f &&
+                   gridResolution.z > 0f &&
+                   gridResolution.w > 0f &&
+                   flowSpacing.x > 0f &&
+                   flowSpacing.y > 0f &&
+                   flowSpacing.z > 0f &&
+                   IsFiniteVector(gridResolution) &&
+                   IsFiniteVector(flowCenter) &&
+                   IsFiniteVector(flowSpacing);
+        }
+
+        private static bool IsFiniteVector(Vector4 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z) &&
+                   math.isfinite(value.w);
+        }
+
+        private static bool TryResolveFlowTextureParams(Vector4 sourceParams, float textureResolution, out Vector4 textureParams)
+        {
+            float worldSize = sourceParams.z > sourceParams.y && sourceParams.z > 1f ? sourceParams.z : sourceParams.y;
+            if (!math.isfinite(worldSize) || worldSize <= 0.001f)
+            {
+                textureParams = Vector4.zero;
+                return false;
+            }
+
+            float inverseWorldSize = sourceParams.w > 0f && sourceParams.w < 1f
+                ? sourceParams.w
+                : math.rcp(worldSize);
+            float resolution = textureResolution > 0f && math.isfinite(textureResolution) ? textureResolution : sourceParams.x;
+            textureParams = new Vector4(resolution, worldSize, sourceParams.z, inverseWorldSize);
+            return math.isfinite(textureParams.x) &&
+                   math.isfinite(textureParams.y) &&
+                   math.isfinite(textureParams.z) &&
+                   math.isfinite(textureParams.w);
+        }
+
+        private Texture ResolveSdfTexture(bool lowTier, out Matrix4x4 sdfWorldToLocal, out Vector4 sdfInvDoubleHalfExtents, out float sdfActive)
+        {
+            sdfWorldToLocal = Matrix4x4.identity;
+            sdfInvDoubleHalfExtents = Vector4.zero;
+            sdfActive = 0f;
+            if (lowTier)
+                return _emptyTexture3D;
+
+            if (voxelSdfTexture3D != null && IsValidSdfInvDoubleHalfExtents(voxelSdfInvDoubleHalfExtents))
+            {
+                sdfWorldToLocal = voxelSdfWorldToLocal;
+                sdfInvDoubleHalfExtents = voxelSdfInvDoubleHalfExtents;
+                sdfActive = 1f;
+                return voxelSdfTexture3D;
+            }
+
+            RefreshGlobalSdfCacheIfNeeded();
+            if (_cachedGlobalSdfActive > 0.5f && _cachedGlobalSdfTexture != null)
+            {
+                sdfWorldToLocal = _cachedGlobalSdfWorldToLocal;
+                sdfInvDoubleHalfExtents = _cachedGlobalSdfInvDoubleHalfExtents;
+                sdfActive = 1f;
+                return _cachedGlobalSdfTexture;
+            }
+
+            return _emptyTexture3D;
+        }
+
+        private void RefreshGlobalSdfCacheIfNeeded()
+        {
+            int frame = Time.frameCount;
+            if (frame < _nextGlobalSdfRefreshFrame)
+                return;
+
+            _nextGlobalSdfRefreshFrame = frame + GlobalSdfRefreshStrideFrames;
+            Texture sdfTexture = Shader.GetGlobalTexture(HectonCaveVoxelSdfTexId);
+            Vector4 invDoubleHalfExtents = Shader.GetGlobalVector(HectonCaveVoxelInvDoubleHalfExtentsId);
+            bool valid = Shader.GetGlobalFloat(HectonCaveVoxelActiveId) > 0.5f &&
+                         sdfTexture != null &&
+                         IsValidSdfInvDoubleHalfExtents(invDoubleHalfExtents);
+            if (!valid)
+            {
+                _cachedGlobalSdfTexture = null;
+                _cachedGlobalSdfWorldToLocal = Matrix4x4.identity;
+                _cachedGlobalSdfInvDoubleHalfExtents = Vector4.zero;
+                _cachedGlobalSdfActive = 0f;
+                return;
+            }
+
+            _cachedGlobalSdfTexture = sdfTexture;
+            _cachedGlobalSdfWorldToLocal = Shader.GetGlobalMatrix(HectonCaveVoxelWorldToLocalId);
+            _cachedGlobalSdfInvDoubleHalfExtents = invDoubleHalfExtents;
+            _cachedGlobalSdfActive = 1f;
+        }
+
+        private static bool IsValidSdfInvDoubleHalfExtents(Vector4 invDoubleHalfExtents)
+        {
+            return invDoubleHalfExtents.x > 0f &&
+                   invDoubleHalfExtents.y > 0f &&
+                   invDoubleHalfExtents.z > 0f &&
+                   math.isfinite(invDoubleHalfExtents.x) &&
+                   math.isfinite(invDoubleHalfExtents.y) &&
+                   math.isfinite(invDoubleHalfExtents.z);
         }
 
         private static int ResolveActiveCapacity(bool lowTier)
@@ -661,18 +1096,20 @@ namespace Hecton8.VFX.Debris
                 return;
             }
 
-            Mesh mesh = ResolveMesh();
             Material material = ResolveMaterial();
-            if (mesh == null || material == null)
+            if (!TryResolveDrawMesh(out Mesh mesh, out _) || material == null)
                 return;
 
             GraphicsBuffer currentPositionBuffer = (_bufferParity & 1) == 0 ? _positionBufferA : _positionBufferB;
+            GraphicsBuffer currentVelocityBuffer = (_bufferParity & 1) == 0 ? _velocityBufferA : _velocityBufferB;
             material.SetBuffer(CarveDebrisReadId, currentPositionBuffer);
+            material.SetBuffer(CarveDebrisVelocityReadId, currentVelocityBuffer);
             material.SetBuffer(CarveDebrisVisibleIndicesId, _visibleIndicesBuffer);
-            material.SetVector(CarveDebrisMaterialParamsId, new Vector4(minRockScale, math.max(minRockScale, maxRockScale), particleLifetimeSeconds, 0f));
+            material.SetVector(CarveDebrisMaterialParamsId, new Vector4(minRockScale, math.max(minRockScale, maxRockScale), particleLifetimeSeconds, _cachedLowTier ? 0f : 1f));
 
             RenderParams renderParams = new RenderParams(material)
             {
+                camera = renderCamera,
                 worldBounds = drawBounds,
                 layer = renderLayer,
                 shadowCastingMode = shadowCastingMode,
@@ -693,12 +1130,66 @@ namespace Hecton8.VFX.Debris
             return _ownedMesh;
         }
 
+        private bool TryResolveDrawMesh(out Mesh mesh, out Vector4 drawArgsBase)
+        {
+            mesh = ResolveMesh();
+            drawArgsBase = Vector4.zero;
+            if (mesh == null || mesh.subMeshCount <= 0)
+            {
+                _cachedDrawMeshValid = false;
+                return false;
+            }
+
+            int frame = Time.frameCount;
+            if (!ReferenceEquals(mesh, _cachedDrawMesh) || _cachedDrawMeshFrame != frame)
+            {
+                _cachedDrawMesh = mesh;
+                _cachedDrawMeshFrame = frame;
+                _cachedDrawIndexCount = mesh.GetIndexCount(0);
+                _cachedDrawIndexStart = mesh.GetIndexStart(0);
+                _cachedDrawBaseVertex = (uint)math.max(0, mesh.GetBaseVertex(0));
+                _cachedDrawMeshValid = _cachedDrawIndexCount > 0u;
+            }
+
+            if (!_cachedDrawMeshValid)
+                return false;
+
+            drawArgsBase = new Vector4(_cachedDrawIndexCount, _cachedDrawIndexStart, _cachedDrawBaseVertex, 0f);
+            return true;
+        }
+
         private void EnsureFallbackRenderResources()
         {
             if (debrisMesh == null && _ownedMesh == null)
                 _ownedMesh = BuildOctahedronMesh();
 
-            if (debrisMaterial != null || _ownedMaterial != null || _materialFallbackAttempted)
+            EnsureOwnedMaterial();
+        }
+
+        private void EnsureOwnedMaterial()
+        {
+            if (debrisMaterial != null)
+            {
+                if (_ownedMaterial != null && ReferenceEquals(_ownedMaterialSource, debrisMaterial))
+                    return;
+
+                DestroyOwnedMaterial();
+                _ownedMaterial = new Material(debrisMaterial)
+                {
+                    name = debrisMaterial.name + " Runtime Carve Debris Material"
+                }; // COLD ALLOC: Material[1] - private indirect debris material copy, avoids shared material mutation and MPB geometry path - owner: VFX_SDF_CARVE_DEBRIS
+                _ownedMaterialSource = debrisMaterial;
+                _materialFallbackAttempted = false;
+                return;
+            }
+
+            if (_ownedMaterialSource != null)
+            {
+                DestroyOwnedMaterial();
+                _materialFallbackAttempted = false;
+            }
+
+            if (_ownedMaterial != null || _materialFallbackAttempted)
                 return;
 
             _materialFallbackAttempted = true;
@@ -709,29 +1200,22 @@ namespace Hecton8.VFX.Debris
             _ownedMaterial = new Material(shader)
             {
                 name = "Hecton Runtime Carve Debris Material"
-            };
+            }; // COLD ALLOC: Material[1] - fallback first-party indirect debris material - owner: VFX_SDF_CARVE_DEBRIS
         }
 
         private Material ResolveMaterial()
         {
-            if (debrisMaterial != null)
-                return debrisMaterial;
-            if (_ownedMaterial != null)
-                return _ownedMaterial;
             EnsureFallbackRenderResources();
             return _ownedMaterial;
         }
 
-        private Camera ResolveCamera()
+        private void DestroyOwnedMaterial()
         {
-            if (renderCamera != null)
-                return renderCamera;
-            if (_cameraResolveAttempted)
-                return null;
+            if (_ownedMaterial != null)
+                DestroyUnityObject(_ownedMaterial);
 
-            _cameraResolveAttempted = true;
-            renderCamera = Camera.main;
-            return renderCamera;
+            _ownedMaterial = null;
+            _ownedMaterialSource = null;
         }
 
         private void DrainAupShiftSignals()
@@ -740,7 +1224,7 @@ namespace Hecton8.VFX.Debris
             for (int i = 0; i < shifts.Length; i++)
             {
                 AupShiftSignal signal = shifts[i];
-                if (signal.ShiftFrameId == 0u || signal.ShiftFrameId == _lastProcessedAupShiftFrameId)
+                if (signal.ShiftFrameId == 0u || signal.ShiftFrameId <= _lastProcessedAupShiftFrameId)
                     continue;
 
                 _lastProcessedAupShiftFrameId = signal.ShiftFrameId;
@@ -751,6 +1235,11 @@ namespace Hecton8.VFX.Debris
                 }
 
                 _pendingAupShift += -signal.ShiftMeters;
+                if (!math.all(math.isfinite(_pendingAupShift)))
+                {
+                    _jobState[JobStateFlagsIndex] |= (int)InvalidStateFlag;
+                    _pendingAupShift = default;
+                }
             }
 
             if (_activeMirrorCount <= 0)
@@ -759,19 +1248,99 @@ namespace Hecton8.VFX.Debris
 
         private bool IsLowTier()
         {
+            if (!_tierCacheInitialized)
+            {
+                _cachedLowTier = _sampledLowTier;
+                _pendingLowTier = _sampledLowTier;
+                _pendingTierFrames = 0;
+                _tierCacheInitialized = true;
+                return _cachedLowTier;
+            }
+
+            if (_sampledLowTier == _cachedLowTier)
+            {
+                _pendingLowTier = _sampledLowTier;
+                _pendingTierFrames = 0;
+                return _cachedLowTier;
+            }
+
+            if (_sampledLowTier != _pendingLowTier)
+            {
+                _pendingLowTier = _sampledLowTier;
+                _pendingTierFrames = 0;
+                return _cachedLowTier;
+            }
+
+            _pendingTierFrames++;
+            if (_pendingTierFrames >= TierSwitchConfirmFrames)
+            {
+                _cachedLowTier = _sampledLowTier;
+                _pendingTierFrames = 0;
+            }
+
+            return _cachedLowTier;
+        }
+
+        private static bool SampleLowTierFlagCold()
+        {
             HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            return GlobalRegistry.H8_LOW_MEMORY_PROFILE ||
-                   GlobalRegistry.ScalabilityTierProfileByte == 0 ||
-                   tier == HectonQualityTier.Unknown ||
-                   tier == HectonQualityTier.Low ||
-                   tier == HectonQualityTier.Mx350;
+            return IsLowTierPayload(GlobalRegistry.ScalabilityTierProfileByte, tier) ||
+                   GlobalRegistry.H8_LOW_MEMORY_PROFILE;
+        }
+
+        private static bool IsLowTierPayload(byte tierProfile, HectonQualityTier qualityTier)
+        {
+            return tierProfile == ScalabilityTierProfiles.LowMx350 ||
+                   qualityTier == HectonQualityTier.Unknown ||
+                   qualityTier == HectonQualityTier.Low ||
+                   qualityTier == HectonQualityTier.Mx350;
         }
 
         private static bool IsFiniteCarveEvent(in VoxelCarveEvent carveEvent)
         {
-            return carveEvent.RadiusMeters > 0f &&
+            return math.all(math.isfinite(carveEvent.AbsoluteHitPoint)) &&
+                   math.all(math.isfinite(carveEvent.AbsoluteSegmentEnd)) &&
+                   math.all(math.isfinite(carveEvent.AbsoluteHalfExtents)) &&
+                   math.all(math.isfinite(carveEvent.AbsoluteImpulseDirection)) &&
+                   math.all(math.isfinite(carveEvent.AbsoluteHitPointDouble)) &&
+                   math.all(math.isfinite(carveEvent.AbsoluteSegmentEndDouble)) &&
                    math.isfinite(carveEvent.RadiusMeters) &&
-                   math.all(math.isfinite(carveEvent.AbsoluteHitPoint));
+                   math.isfinite(carveEvent.BlendStrengthMeters);
+        }
+
+        private static bool TryResolveCarveDebrisRadius(in VoxelCarveEvent carveEvent, out float radiusMeters)
+        {
+            radiusMeters = 0f;
+            if (!IsFiniteCarveEvent(in carveEvent) ||
+                !IsSupportedCarveOperation(carveEvent.Operation) ||
+                !IsSupportedCarveShape(carveEvent.Shape) ||
+                carveEvent.Operation != (byte)VoxelCarveOperationType.Subtract)
+            {
+                return false;
+            }
+
+            float resolvedRadius = math.max(0f, carveEvent.RadiusMeters);
+            if (carveEvent.Shape == (byte)VoxelCarveShapeType.Box)
+            {
+                resolvedRadius = math.max(resolvedRadius, math.cmax(math.abs(carveEvent.AbsoluteHalfExtents)));
+            }
+
+            resolvedRadius = math.max(resolvedRadius, math.max(0f, carveEvent.BlendStrengthMeters));
+            if (resolvedRadius <= 0f)
+                return false;
+
+            radiusMeters = resolvedRadius;
+            return true;
+        }
+
+        private static bool IsSupportedCarveOperation(byte operation)
+        {
+            return operation <= (byte)VoxelCarveOperationType.Replace;
+        }
+
+        private static bool IsSupportedCarveShape(byte shape)
+        {
+            return shape <= (byte)VoxelCarveShapeType.Capsule;
         }
 
         private static uint BuildStableSeed(uint frame, in VoxelCarveEvent carveEvent, int eventIndex)
@@ -780,11 +1349,53 @@ namespace Hecton8.VFX.Debris
             hash = (hash ^ frame) * 16777619u;
             hash = (hash ^ (uint)eventIndex) * 16777619u;
             hash = (hash ^ (uint)carveEvent.VolumeInstanceId) * 16777619u;
-            hash = (hash ^ math.asuint(carveEvent.AbsoluteHitPoint.x)) * 16777619u;
-            hash = (hash ^ math.asuint(carveEvent.AbsoluteHitPoint.y)) * 16777619u;
-            hash = (hash ^ math.asuint(carveEvent.AbsoluteHitPoint.z)) * 16777619u;
+            hash = (hash ^ (uint)((ulong)carveEvent.VolumeInstanceId >> 32)) * 16777619u;
+            double3 absoluteHitPoint = ResolveCarveHitPointDouble(in carveEvent);
+            double3 absoluteSegmentEnd = ResolveCarveSegmentEndDouble(in carveEvent);
+            hash = MixDouble(hash, absoluteHitPoint.x);
+            hash = MixDouble(hash, absoluteHitPoint.y);
+            hash = MixDouble(hash, absoluteHitPoint.z);
+            hash = MixDouble(hash, absoluteSegmentEnd.x);
+            hash = MixDouble(hash, absoluteSegmentEnd.y);
+            hash = MixDouble(hash, absoluteSegmentEnd.z);
+            hash = (hash ^ math.asuint(carveEvent.AbsoluteHalfExtents.x)) * 16777619u;
+            hash = (hash ^ math.asuint(carveEvent.AbsoluteHalfExtents.y)) * 16777619u;
+            hash = (hash ^ math.asuint(carveEvent.AbsoluteHalfExtents.z)) * 16777619u;
             hash = (hash ^ math.asuint(carveEvent.RadiusMeters)) * 16777619u;
+            hash = (hash ^ math.asuint(carveEvent.BlendStrengthMeters)) * 16777619u;
+            hash = (hash ^ carveEvent.Operation) * 16777619u;
+            hash = (hash ^ carveEvent.Shape) * 16777619u;
+            hash = (hash ^ carveEvent.MaterialId) * 16777619u;
+            hash = (hash ^ carveEvent.SourceFlags) * 16777619u;
             return hash == 0u ? 1u : hash;
+        }
+
+        private static double3 ResolveCarveHitPointDouble(in VoxelCarveEvent carveEvent)
+        {
+            return ResolveCarveCoordinateDouble(carveEvent.AbsoluteHitPointDouble, carveEvent.AbsoluteHitPoint);
+        }
+
+        private static double3 ResolveCarveSegmentEndDouble(in VoxelCarveEvent carveEvent)
+        {
+            return ResolveCarveCoordinateDouble(carveEvent.AbsoluteSegmentEndDouble, carveEvent.AbsoluteSegmentEnd);
+        }
+
+        private static double3 ResolveCarveCoordinateDouble(double3 preciseCoordinate, float3 legacyCoordinate)
+        {
+            if (math.all(math.isfinite(preciseCoordinate)) &&
+                (math.any(preciseCoordinate != double3.zero) || math.all(legacyCoordinate == float3.zero)))
+            {
+                return preciseCoordinate;
+            }
+
+            return new double3(legacyCoordinate.x, legacyCoordinate.y, legacyCoordinate.z);
+        }
+
+        private static uint MixDouble(uint hash, double value)
+        {
+            long bits = BitConverter.DoubleToInt64Bits(value);
+            hash = (hash ^ unchecked((uint)bits)) * 16777619u;
+            return (hash ^ unchecked((uint)(bits >> 32))) * 16777619u;
         }
 
         private void WriteBlackBox(int queuedCarves, int injectedParticles, bool lowTier)
@@ -801,7 +1412,8 @@ namespace Hecton8.VFX.Debris
             flags |= lowTier ? LowTierFlag : 0u;
             flags |= _lastSdfActive ? SdfActiveFlag : 0u;
             flags |= _lastFlowActive ? FlowActiveFlag : 0u;
-            uint hash = BuildTelemetryHash(_activeMirrorCount, queuedCarves, injectedParticles, flags);
+            float3 appliedAupShift = _lastAppliedAupShift;
+            uint hash = BuildTelemetryHash(_activeMirrorCount, queuedCarves, injectedParticles, flags, appliedAupShift);
             _blackBox[_blackBoxCursor] = new CarveDebrisTelemetryEntry
             {
                 FrameIndex = (uint)frame,
@@ -810,26 +1422,31 @@ namespace Hecton8.VFX.Debris
                 InjectedParticles = injectedParticles,
                 Flags = flags,
                 StateHash = hash,
-                PendingAupShift = _pendingAupShift
+                AppliedAupShift = appliedAupShift
             };
             _blackBoxCursor = (_blackBoxCursor + 1) % _blackBox.Length;
 
-            if ((frame % TelemetryPublishStride) == 0)
+            if (_activeMirrorCount > 0 && (frame % TelemetryPublishStride) == 0)
                 GlobalTelemetryBus.PublishPerformanceWarning(ActiveCountTelemetryHash, TelemetryContextHash, _activeMirrorCount);
 
             if ((flags & InvalidStateFlag) != 0u)
                 DumpBlackBoxOnce(flags);
 
             _jobState[JobStateFlagsIndex] = 0;
+            _lastAppliedAupShift = default;
         }
 
-        private static uint BuildTelemetryHash(int activeCount, int queuedCarves, int injectedParticles, uint flags)
+        private static uint BuildTelemetryHash(int activeCount, int queuedCarves, int injectedParticles, uint flags, float3 appliedAupShift)
         {
             uint hash = 2166136261u;
             hash = (hash ^ (uint)activeCount) * 16777619u;
             hash = (hash ^ (uint)queuedCarves) * 16777619u;
             hash = (hash ^ (uint)injectedParticles) * 16777619u;
             hash = (hash ^ flags) * 16777619u;
+            uint3 shiftBits = math.asuint(appliedAupShift);
+            hash = (hash ^ shiftBits.x) * 16777619u;
+            hash = (hash ^ shiftBits.y) * 16777619u;
+            hash = (hash ^ shiftBits.z) * 16777619u;
             return hash;
         }
 
@@ -865,24 +1482,44 @@ namespace Hecton8.VFX.Debris
             ReleaseBuffer(ref _visibleIndicesBuffer);
             ReleaseBuffer(ref _indirectArgsBuffer);
             ReleaseBuffer(ref _emptyFlowBuffer);
-            H8Memory.Release(ref _jobState);
-            H8Memory.Release(ref _blackBox);
             if (_ownedMesh != null)
                 DestroyUnityObject(_ownedMesh);
-            if (_ownedMaterial != null)
-                DestroyUnityObject(_ownedMaterial);
+            DestroyOwnedMaterial();
             if (_emptyTexture3D != null)
                 DestroyUnityObject(_emptyTexture3D);
             _ownedMesh = null;
-            _ownedMaterial = null;
+            _cachedGlobalSdfTexture = null;
+            _cachedGlobalSdfWorldToLocal = Matrix4x4.identity;
+            _cachedGlobalSdfInvDoubleHalfExtents = Vector4.zero;
+            _cachedGlobalSdfActive = 0f;
+            _nextGlobalSdfRefreshFrame = 0;
+            _nextMissingRegistryRefreshFrame = 0;
+            _pendingTierFrames = 0;
+            _cachedLowTier = true;
+            _pendingLowTier = true;
+            _sampledLowTier = true;
+            _tierCacheInitialized = false;
+            _cachedDrawMesh = null;
+            _cachedDrawMeshFrame = -1;
+            _cachedDrawIndexCount = 0u;
+            _cachedDrawIndexStart = 0u;
+            _cachedDrawBaseVertex = 0u;
+            _cachedDrawMeshValid = false;
+            _lastAppliedAupShift = default;
+            _registryDataVault = null;
+            _fluidEngine = null;
+            _hotSwapRegistered = false;
+            InvalidateDataVaultLease();
             _emptyTexture3D = null;
             _debrisPositions = default;
             _debrisVelocities = default;
+            _carveRequests = default;
+            _jobState = default;
+            _blackBox = default;
             _gpuReady = false;
             _activeMirrorCount = 0;
             _lastFlowActive = false;
             _lastSdfActive = false;
-            _cameraResolveAttempted = false;
             _materialFallbackAttempted = false;
         }
 
@@ -908,11 +1545,11 @@ namespace Hecton8.VFX.Debris
 
         private static Mesh BuildOctahedronMesh()
         {
-            Mesh mesh = new Mesh
+            Mesh mesh = new Mesh // COLD ALLOC: Mesh[1] - fallback low-poly indirect debris chip mesh - owner: VFX_SDF_CARVE_DEBRIS
             {
                 name = "Hecton Carve Debris Octahedron"
             };
-            Vector3[] vertices =
+            Vector3[] vertices = // COLD ALLOC: Vector3[6] - fallback octahedron vertices - owner: VFX_SDF_CARVE_DEBRIS
             {
                 new Vector3(0f, 1f, 0f),
                 new Vector3(1f, 0f, 0f),
@@ -921,7 +1558,7 @@ namespace Hecton8.VFX.Debris
                 new Vector3(0f, 0f, -1f),
                 new Vector3(0f, -1f, 0f)
             };
-            int[] indices =
+            int[] indices = // COLD ALLOC: int[24] - fallback octahedron index buffer - owner: VFX_SDF_CARVE_DEBRIS
             {
                 0, 2, 1,
                 0, 3, 2,
@@ -997,73 +1634,147 @@ namespace Hecton8.VFX.Debris
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct CarveDebrisInjectJob : IJob
+        private struct CarveDebrisInjectBatchJob : IJob
         {
             public NativeArray<float4> Positions;
             public NativeArray<float4> Velocities;
+            [ReadOnly] public NativeArray<CarveDebrisRequest> Requests;
+            public int RequestCount;
             public int Capacity;
+            public NativeArray<int> JobState;
+
+            public void Execute()
+            {
+                int count = math.min(Capacity, math.min(Positions.Length, Velocities.Length));
+                int injectedTotal = 0;
+                int active = math.clamp(JobState[JobStateActiveIndex], 0, count);
+                int dirtyMin = count;
+                int dirtyMax = -1;
+                int flags = JobState[JobStateFlagsIndex];
+                int safeRequestCount = math.min(math.max(0, RequestCount), Requests.Length);
+                int requestedTotal = 0;
+
+                for (int requestIndex = 0; requestIndex < safeRequestCount; requestIndex++)
+                {
+                    CarveDebrisRequest request = Requests[requestIndex];
+                    if (!math.all(math.isfinite(request.Center)) ||
+                        !math.isfinite(request.Radius) ||
+                        request.Radius <= 0f ||
+                        request.ParticlesToInject <= 0)
+                    {
+                        flags |= (int)InvalidStateFlag;
+                        continue;
+                    }
+
+                    requestedTotal = math.min(count, requestedTotal + math.clamp(request.ParticlesToInject, 0, count));
+                }
+
+                // GPU advection owns live positions; the CPU upload may only cover one dead contiguous span.
+                int bestStart = -1;
+                int bestLength = 0;
+                int currentStart = -1;
+                int currentLength = 0;
+                for (int i = 0; i < count && bestLength < requestedTotal; i++)
+                {
+                    if (Positions[i].w <= 0f)
+                    {
+                        if (currentLength == 0)
+                            currentStart = i;
+
+                        currentLength++;
+                        if (currentLength > bestLength)
+                        {
+                            bestStart = currentStart;
+                            bestLength = currentLength;
+                        }
+
+                        continue;
+                    }
+
+                    currentStart = -1;
+                    currentLength = 0;
+                }
+
+                if (requestedTotal <= 0 || bestStart < 0 || bestLength <= 0)
+                {
+                    JobState[JobStateActiveIndex] = active;
+                    JobState[JobStateInjectedIndex] = 0;
+                    JobState[JobStateDirtyMinIndex] = dirtyMin;
+                    JobState[JobStateDirtyMaxIndex] = dirtyMax;
+                    JobState[JobStateFlagsIndex] = flags;
+                    return;
+                }
+
+                int writeIndex = bestStart;
+                int writeEnd = math.min(count, bestStart + math.min(bestLength, requestedTotal));
+                for (int requestIndex = 0; requestIndex < safeRequestCount && writeIndex < writeEnd; requestIndex++)
+                {
+                    CarveDebrisRequest request = Requests[requestIndex];
+                    if (!math.all(math.isfinite(request.Center)) ||
+                        !math.isfinite(request.Radius) ||
+                        request.Radius <= 0f ||
+                        request.ParticlesToInject <= 0)
+                    {
+                        continue;
+                    }
+
+                    Unity.Mathematics.Random random = new Unity.Mathematics.Random(request.Seed == 0u ? 1u : request.Seed);
+                    int requested = math.clamp(request.ParticlesToInject, 0, count);
+                    int injectedForRequest = 0;
+                    float safeRadius = math.max(0.025f, request.Radius);
+                    float safeSpeed = math.max(0f, request.InitialSpeed);
+                    float safeLife = math.max(0.001f, request.Life);
+                    for (; writeIndex < writeEnd && injectedForRequest < requested; writeIndex++)
+                    {
+                        if (Positions[writeIndex].w > 0f)
+                        {
+                            flags |= (int)InvalidStateFlag;
+                            break;
+                        }
+
+                        float3 raw = new float3(
+                            random.NextFloat(-1f, 1f),
+                            random.NextFloat(-0.15f, 1f),
+                            random.NextFloat(-1f, 1f));
+                        float lengthSq = math.lengthsq(raw);
+                        float3 direction = lengthSq > 0.0001f ? raw * math.rsqrt(lengthSq) : new float3(0f, 1f, 0f);
+                        float radius = safeRadius * random.NextFloat(0.05f, 1f);
+                        float speed = safeSpeed * random.NextFloat(0.45f, 1.15f);
+                        float3 position = request.Center + direction * radius;
+                        float3 velocity = direction * speed + new float3(0f, safeSpeed * 0.35f, 0f);
+                        if (!math.all(math.isfinite(position)) || !math.all(math.isfinite(velocity)))
+                        {
+                            flags |= (int)InvalidStateFlag;
+                            continue;
+                        }
+
+                        Positions[writeIndex] = new float4(position, safeLife);
+                        Velocities[writeIndex] = new float4(velocity, 0f);
+                        dirtyMin = math.min(dirtyMin, writeIndex);
+                        dirtyMax = math.max(dirtyMax, writeIndex);
+                        injectedForRequest++;
+                        injectedTotal++;
+                        active = math.min(count, active + 1);
+                    }
+                }
+
+                JobState[JobStateActiveIndex] = active;
+                JobState[JobStateInjectedIndex] = injectedTotal;
+                JobState[JobStateDirtyMinIndex] = dirtyMin;
+                JobState[JobStateDirtyMaxIndex] = dirtyMax;
+                JobState[JobStateFlagsIndex] = flags;
+            }
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct CarveDebrisRequest
+        {
             public float3 Center;
             public float Radius;
             public int ParticlesToInject;
             public float InitialSpeed;
             public float Life;
             public uint Seed;
-            public NativeArray<int> JobState;
-
-            public void Execute()
-            {
-                int count = math.min(Capacity, math.min(Positions.Length, Velocities.Length));
-                int injected = 0;
-                int active = math.clamp(JobState[JobStateActiveIndex], 0, count);
-                int dirtyMin = count;
-                int dirtyMax = -1;
-                int flags = JobState[JobStateFlagsIndex];
-
-                if (!math.all(math.isfinite(Center)))
-                {
-                    JobState[JobStateFlagsIndex] = flags | (int)InvalidStateFlag;
-                    return;
-                }
-
-                Unity.Mathematics.Random random = new Unity.Mathematics.Random(Seed == 0u ? 1u : Seed);
-                int requested = math.clamp(ParticlesToInject, 0, count);
-                float safeRadius = math.max(0.025f, Radius);
-                float safeSpeed = math.max(0f, InitialSpeed);
-                for (int i = 0; i < count && injected < requested; i++)
-                {
-                    if (Positions[i].w > 0f)
-                        continue;
-
-                    float3 raw = new float3(
-                        random.NextFloat(-1f, 1f),
-                        random.NextFloat(-0.15f, 1f),
-                        random.NextFloat(-1f, 1f));
-                    float lengthSq = math.lengthsq(raw);
-                    float3 direction = lengthSq > 0.0001f ? raw * math.rsqrt(lengthSq) : new float3(0f, 1f, 0f);
-                    float radius = safeRadius * random.NextFloat(0.05f, 1f);
-                    float speed = safeSpeed * random.NextFloat(0.45f, 1.15f);
-                    float3 position = Center + direction * radius;
-                    float3 velocity = direction * speed + new float3(0f, safeSpeed * 0.35f, 0f);
-                    if (!math.all(math.isfinite(position)) || !math.all(math.isfinite(velocity)))
-                    {
-                        flags |= (int)InvalidStateFlag;
-                        continue;
-                    }
-
-                    Positions[i] = new float4(position, math.max(0.001f, Life));
-                    Velocities[i] = new float4(velocity, 0f);
-                    dirtyMin = math.min(dirtyMin, i);
-                    dirtyMax = math.max(dirtyMax, i);
-                    injected++;
-                    active = math.min(count, active + 1);
-                }
-
-                JobState[JobStateActiveIndex] = active;
-                JobState[JobStateInjectedIndex] = injected;
-                JobState[JobStateDirtyMinIndex] = dirtyMin;
-                JobState[JobStateDirtyMaxIndex] = dirtyMax;
-                JobState[JobStateFlagsIndex] = flags;
-            }
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -1075,7 +1786,7 @@ namespace Hecton8.VFX.Debris
             public int InjectedParticles;
             public uint Flags;
             public uint StateHash;
-            public float3 PendingAupShift;
+            public float3 AppliedAupShift;
         }
     }
 }

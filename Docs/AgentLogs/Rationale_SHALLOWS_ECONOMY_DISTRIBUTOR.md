@@ -101,3 +101,39 @@ Scalability potential: Low uses hash clump and small GPR ray count. Middle keeps
 Hardware Impact: Const reciprocal removes one candidate-level reciprocal expression from the new gradient path. Low-tier hash clump avoids a `distancesq` after Copper predecessor. Expected savings remain sub-0.01 ms but remove avoidable ALU on i3/MX350.
 
 Final Git Diff: Edited `GlobalSignals.cs`, `GroundRadarContracts.cs`, `GroundRadarJobs.cs`, `GroundPenetratingRadarRuntime.cs`, `ProceduralOreSpawner.cs`, `Status_SHALLOWS_ECONOMY_DISTRIBUTOR.md`, and this rationale file. Added `Hecton8.World.Economy.asmdef` plus meta.
+
+## Decision 8 - Drop Pod Same-Frame Signal Safety
+
+Problem: The drop-pod signal lane capacity is greater than one, so multiple producers can publish same-frame AUP anchors. The prior gate used frame freshness only; it accepted the first same-frame real signal and skipped later same-frame AUP changes. It also accepted a late real crash-site anchor without forcing the already-generated active sector to rebuild around the new economy center.
+
+Solution: Added `IsNewDropPodSignal(in DropPodLandedSignal)` and exact AUP equality gating. Newer frames pass, same-frame changed AUP values pass, same-frame duplicates are ignored. A real anchor change marks `_dropPodAnchorRequiresGenerationRefresh`; `RefreshSectorAndTerrain()` reschedules the active sector and preserves current-sector depletion masks so collected ore stays collected.
+
+Rejected Alternatives: Accepting every same-frame signal was rejected because duplicate producers could thrash generation. Dequeue-only consumption was rejected because other systems may need the same typed lane snapshot. Rebuilding depletion masks on anchor refresh was rejected because it would resurrect depleted ore.
+
+Scalability potential: Low through Ultra keep the same deterministic gameplay anchor. Low avoids repeated duplicate-sector work; High/Ultra can add richer crash-site dressing without changing the signal contract.
+
+Hardware Impact: Duplicate same-frame signals are one exact AUP compare and one branch. Refresh cost is cold generation only when the real anchor changes; steady-frame cost remains 0 us.
+
+## Decision 9 - GPR Raw Lane And Zero-GC Resolution
+
+Problem: GPR compaction wrote decayed display strength back into `GprSignalStrength`, corrupting the raw read-only lane and compounding decay over time. The configured read-model probe still used `GetComponents<MonoBehaviour>()`, which allocates a managed array. The registry fallback could also be queried from the scheduled scan path when no cached read model existed.
+
+Solution: Kept `GprSignalStrength` as raw signal authority. Compaction now recomputes display strength into `GprPingGpu` and `MaxSignalStrength` only. Replaced the component array probe with a preallocated `List<MonoBehaviour>` and the non-alloc `GetComponents(List<T>)` overload. Registry resolution is limited to cold OnEnable wiring; scheduled scans use the cached interface only.
+
+Rejected Alternatives: Treating the decayed lane as authority was rejected because HUD/API consumers would lose raw signal data. Allocating `GetComponents<T>()` was rejected even though it runs cold because the system already had a simple non-alloc alternative. Repeated registry fallback in the scan path was rejected because dependency lookup belongs in wiring, not scan cadence.
+
+Scalability potential: Low/MX350 gets stable low-cost pings and no managed array churn. Middle/High/Ultra can layer stronger ore-specific presentation on `GprPingGpu` while raw signal consumers remain deterministic.
+
+Hardware Impact: Avoids one managed component array in cold setup and removes registry lookup from missing-dependency scan cadence. GPR compaction cost stays one raw read, one decay multiply, and one filter multiply per retained ping; expected cost remains under 0.005 ms for 128 pings on MX350-class hardware.
+
+## Decision 10 - Verification State
+
+Problem: Full Unity Editor and PlayMode proof is unavailable in this session, and the shared Core project is currently blocked by unrelated concurrent-agent edits.
+
+Solution: Ran the checks available without crossing domain boundaries: scoped forbidden-pattern scan on edited files, `dotnet build Hecton8.World.Contracts.csproj`, Unity response-file csc for `Hecton8.World.GPR` and `Hecton8.World.Economy` through Unity's mono runtime, `git diff --check`, MCP resource discovery, Core dotnet build, and filtered Core response-file csc. Economy/GPR response-file csc passed with Unity analyzer-load warnings only. Core dotnet build failed on locked `Hecton8.Input.Generated.dll`; filtered Core response-file csc failed on unrelated `BinaryLayoutManifest` Save V10 symbols and missing `HardwareProfileCatalog`, with no edited-file errors.
+
+Rejected Alternatives: Fixing save binary layout, hardware catalog, prologue, or generated input locking was rejected as out-of-domain work during a parallel-agent batch. Claiming runtime readiness from static compiler checks was rejected because AGENTS.md requires Unity Console/PlayMode/profiler evidence.
+
+Scalability potential: Verification does not change runtime scalability. The remaining proof gap is runtime evidence: Unity Console, PlayMode behavior, GC allocation samples, and GPR visual capture.
+
+Hardware Impact: No runtime impact. Static proof supports no new managed hot-path allocations in touched code, but measured GC proof is absent.

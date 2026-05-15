@@ -631,7 +631,7 @@ namespace Hecton8.Gameplay
             EnsureLifecycleInitialized();
             _currentIntegrity = math.max(0f, _currentIntegrity - damage);
             float nextIntegrityNormalized = ResolveIntegrityNormalized();
-            DamageSignal damageSignal = BuildDamageSignal(impactSpeed, hitPoint, (uint)DamageTypeMask.Impact, previousIntegrityNormalized, nextIntegrityNormalized);
+            HabitatDamageSignal damageSignal = BuildDamageSignal(impactSpeed, hitPoint, (uint)DamageTypeMask.Impact, previousIntegrityNormalized, nextIntegrityNormalized);
             DispatchIntegrityChanged(previousIntegrityNormalized, nextIntegrityNormalized, damageSignal);
 
             float previousPowerChannel = ResolvePowerChannel(previousIntegrityNormalized);
@@ -660,7 +660,7 @@ namespace Hecton8.Gameplay
             float previousIntegrityNormalized = ResolveIntegrityNormalized();
             _currentIntegrity = math.max(0f, _currentIntegrity - damage);
             float nextIntegrityNormalized = ResolveIntegrityNormalized();
-            DamageSignal damageSignal = BuildDamageSignal(
+            HabitatDamageSignal damageSignal = BuildDamageSignal(
                 signalMagnitude,
                 hitPoint,
                 damageType,
@@ -1761,7 +1761,7 @@ namespace Hecton8.Gameplay
             return baseDrain * drainScale;
         }
 
-        private void DispatchIntegrityChanged(float prev, float next, DamageSignal signal)
+        private void DispatchIntegrityChanged(float prev, float next, HabitatDamageSignal signal)
         {
             for (int i = 0; i < _damageReceivers.Count; i++)
             {
@@ -1771,7 +1771,7 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private void DispatchPowerChanged(float prev, float next, DamageSignal signal)
+        private void DispatchPowerChanged(float prev, float next, HabitatDamageSignal signal)
         {
             for (int i = 0; i < _damageReceivers.Count; i++)
             {
@@ -1781,7 +1781,7 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private void DispatchClarityChanged(float prev, float next, DamageSignal signal)
+        private void DispatchClarityChanged(float prev, float next, HabitatDamageSignal signal)
         {
             for (int i = 0; i < _damageReceivers.Count; i++)
             {
@@ -1804,14 +1804,14 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private DamageSignal BuildDamageSignal(
+        private HabitatDamageSignal BuildDamageSignal(
             float impactSpeed,
             Vector3 hitPoint,
             uint damageType,
             float previousIntegrityNormalized,
             float nextIntegrityNormalized)
         {
-            DamageSignal signal = default;
+            HabitatDamageSignal signal = default;
             signal.magnitude = math.max(0f, impactSpeed);
             signal.localPoint = _cachedTransform != null
                 ? (float3)_cachedTransform.InverseTransformPoint(hitPoint)

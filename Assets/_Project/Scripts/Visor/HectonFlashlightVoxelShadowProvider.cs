@@ -126,7 +126,7 @@ namespace Hecton8.Visor
 
         private void Awake()
         {
-            _flashlight = GetComponent<PlayerFlashlight>();
+            TryGetComponent(out _flashlight);
             _playerRoot = transform.root;
             EnsureResources();
             TryResolveFlashlightLight(force: true);
@@ -319,12 +319,14 @@ namespace Hecton8.Visor
             {
                 NativeMemorySentinel.UnregisterNativeArray(_occupancyVolume);
                 _occupancyVolume.Dispose();
+                _occupancyVolume = default;
             }
 
             if (_sdfVolume.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_sdfVolume);
                 _sdfVolume.Dispose();
+                _sdfVolume = default;
             }
 
             if (_voxelDensityTexture != null)
@@ -359,7 +361,7 @@ namespace Hecton8.Visor
             }
 
             if (_flashlight == null)
-                _flashlight = GetComponent<PlayerFlashlight>();
+                TryGetComponent(out _flashlight);
 
             Light candidate = FindFirstSpotLightInHierarchy(transform);
             if (candidate != null && candidate.type == LightType.Spot)

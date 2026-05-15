@@ -1,7 +1,7 @@
 # AUP Drift Report
 
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
-Status: VERIFIED AUP INTEGRITY - CORE BUILD PASS; ASMDEF BLOCKED BY ARCHITECTURE
+Status: VERIFIED AUP INTEGRITY - LOOP 29 AUP PRECISION H-PHI BUDGET GATE PASSES AND FAILURE OUTPUT IS ACTIONABLE; AUP PRECISION INTEGRITY 1.0; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
 
 ## Authority
 
@@ -78,3 +78,615 @@ Status: VERIFIED AUP INTEGRITY - CORE BUILD PASS; ASMDEF BLOCKED BY ARCHITECTURE
 - Fauna cognition `FloatingOriginOffset` now uses `double3`; remaining `AUPMath.ToRuntimeFloat3(..., float3 offset)` hits are smoke tests or unowned presentation/job payloads.
 - Verify AUP shift consumer coverage across fluid, voxel, world streaming, scatter, foveated simulation, and GPR.
 - Decide whether a future batch may introduce a true `Hecton8.Core.AUP` asmdef; current file placement prevents UnityEngine isolation.
+
+## Loop 14 Runtime Chemical/Wreck Persistent Double Lane
+
+### Findings
+
+- `ChemicalInfluenceGrid` still used float absolute breadcrumb centers and `Vector4` defoliant centers for trigger-distance math after runtime-to-AUP conversion.
+- `ProceduralWreckGenerator` burial cut records stored voxel surgeon absolute box centers as `float3`, then replayed those records into voxel delta processing later.
+- Selected splash, acoustic, and wreck terrain-height callsites still used `HectonFloatingOrigin.ToAbsoluteUniversePosition(Vector3)` instead of the double committed-offset path.
+- `Docs/Tasks/CURRENT_BATCH.md` still does not contain this agent block; the user-supplied XML remains the assignment source.
+
+### Code Changes
+
+- `Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs`: added `double3 AbsolutePositionDouble` for breadcrumbs and a fixed `double3[64]` defoliant center lane. Breadcrumb merge, scent-grid cell resolution, channel sampling, nearest-waypoint search, and dead-zone checks now subtract in double before final float storage.
+- `Assets/_Project/Scripts/World/AcousticOcclusionUtility.cs`: midpoint SDF occlusion sampling now reconstructs AUP through `ToAbsoluteUniversePositionDouble3` before the final `float3` SDF query payload.
+- `Assets/_Project/Scripts/HectonPlayerMovement.cs`: surface-breach splash publication now builds the AUP payload from a double absolute position before final VFX payload casts.
+- `Assets/_Project/Scripts/SubmarineFluidDynamics.cs`: splash and breach payloads now use double AUP reconstruction; splash LCG hashing folds floored double AUP coordinates as `long` entropy before the final seed mix.
+- `Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs`: terrain-height AUP query and burial cut centers now use double AUP reconstruction. `WreckBurialCutRecord.AbsoluteCenter` is `double3` and still fits the 64-byte record; voxel box crater submission calls the `double3` delta overload.
+
+### Verification
+
+- Mandatory scan re-run: `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'`. Residual hits are broad `universe` text plus final-cast fluid/scatter/shader payload names such as `AupOffsetXZ`; no new Loop 14 authority leak was identified.
+- Direct committed-offset leak scan is clean: no `HectonFloatingOrigin.CurrentTotalOffset` without `Double`, no direct `CurrentTotalOffset.x/y/z`, and no direct legacy `NewTotalOffset`/`PreviousTotalOffset` component reads under `Assets/_Project/Scripts`.
+- Targeted `ToAbsoluteUniversePosition(` scan is clean in `ChemicalInfluenceGrid`, `AcousticOcclusionUtility`, `HectonPlayerMovement`, `SubmarineFluidDynamics`, and `ProceduralWreckGenerator`.
+- `git diff --check` on Loop 14 touched files reports line-ending warnings only, no whitespace errors.
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:normal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_build_loop14b.log;verbosity=normal"` failed with 0 warnings and 60 errors from unrelated active dependency work: `HardwareProfileCatalog`, `SaveMasterHashV10Result`/`SaveFileHeaderV10`, and `SystemID` vs `JobHandle`.
+- Filtered build-log scan for `ChemicalInfluenceGrid`, `SubmarineFluidDynamics`, `HectonPlayerMovement`, `AcousticOcclusionUtility`, `ProceduralWreckGenerator`, and previously upgraded AUP/voxel files returned no errors.
+
+### Evidence Queue
+
+- `ChemicalBreadcrumbWaypoint` now carries double authority while legacy `AbsolutePosition` remains for existing consumers; future AI-facing contracts should migrate to the double field explicitly when ownership allows.
+- Wreck burial cut records are double-safe without a native buffer size increase; any future voxel persistence migration should keep the same final-cast rule.
+- Remaining editor-only `KinematicGhostDebugger` float universe history is diagnostic presentation and not a runtime AUP authority leak.
+
+## Loop 15 Construction/Voxel/Seismic AUP Ingress Cleanup
+
+### Findings
+
+- Construction rupture/decal state, habitat edge midpoint feedback, drone voxel edit dispatch, drill placement probes, meteor splash, and seismic geology replay still had selected legacy `HectonFloatingOrigin.ToAbsoluteUniversePosition(Vector3)` callsites.
+- The high-risk subset was authority or persistent-event math: rupture comparison, voxel DDA ingress, spark AUP payload, seismic trench line/id generation, and geology replay length calculation.
+- `Docs/Tasks/CURRENT_BATCH.md` still does not contain this agent block; the user-supplied XML remains the assignment source.
+
+### Code Changes
+
+- `Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs`: added `RuptureNodeState.AbsoluteUniversePositionDouble`, double comparison helpers, and double rupture/module AUP reconstruction before final decal `Vector3` output.
+- `Assets/_Project/Scripts/Construction/HabitatGraphManager.cs`: edge midpoint publication now reconstructs both sockets as `double3`, averages in double, and projects back to runtime only at the event/VFX boundary.
+- `Assets/_Project/Scripts/HectonVoxelVolume.cs`: added `double3` overloads for `ApplyPlasmaCutDda` and `ApplyRepairWeldDda`; existing `Vector3` overloads now wrap through `ToDouble3`.
+- `Assets/_Project/Scripts/Construction/DroneFleetManager.cs`: repair weld, plasma cut, and repair spark publication now preserve the ray hit as double AUP through voxel and persistent spark payload construction.
+- `Assets/_Project/Scripts/Construction/DeepDrillModule.cs`: placement probe AUP sampling now uses `ToAbsoluteUniversePositionDouble3` and casts only into the existing probe packet.
+- `Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs`: meteor splash AUP sampling now uses the double path; `SeismicShockwaveEvent` carries double AUP line endpoints and folds rounded double coordinates for deterministic seed entropy.
+- `Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs`: seismic trench replay now uses double payload endpoints, double line length, and long-rounded trench ids before final legacy voxel plan casts.
+
+### Verification
+
+- Mandatory scan re-run: `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'`. Residual hits are broad `universe` text plus final-cast fluid/scatter/shader payload names.
+- Direct committed-offset leak scan is clean across `Assets/_Project/Scripts`.
+- Targeted `ToAbsoluteUniversePosition(` scan is clean in `BaseDegradationSystem`, `HabitatGraphManager`, `DroneFleetManager`, `DeepDrillModule`, `HectonVoxelVolume`, `RandomEventSystem`, and `WorldGenerativeGeologyVoxelBridgeDirector`.
+- First Loop 15 build found one local error: `DeepDrillModule.cs` needed `using Unity.Mathematics;`. Fixed.
+- After-fix Core build: `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:normal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_build_loop15_afterfix.log;verbosity=normal"` failed with 0 warnings and 60 unrelated dependency errors: missing `SaveMasterHashV10Result`/`SaveFileHeaderV10`, missing `HardwareProfileCatalog`, and `SystemID` passed where `JobHandle` is expected.
+- Filtered build-log scan for Loop 15 touched files returned no errors.
+- `git diff --check` on Loop 15 touched files reports line-ending warnings only, no whitespace errors.
+
+### Evidence Queue
+
+- Remaining runtime legacy `ToAbsoluteUniversePosition(` callsites are outside this Loop 15 patch and remain queued for classification: crash telemetry fallback, interaction tools, localized signage, player builder/tool, MapMagic/Crest helper surfaces, repair tools, submarine structural grid, spatial audio listener fallback, geology integration planning, and physical UI controls.
+- `Vector3` overloads remain intentionally as compatibility wrappers. Future owning-domain patches should route authority callers to `double3` overloads and leave presentation-only callers documented.
+- Seismic event dual lanes preserve existing consumers while allowing geology replay to stay 64-bit until the final voxel-plan boundary.
+
+## Loop 16 Global Legacy Runtime-To-AUP Cleanup
+
+### Findings
+
+- The remaining `HectonFloatingOrigin.ToAbsoluteUniversePosition(Vector3)` runtime callsites covered interaction/tool packet producers, repair weld/debris payloads, geology planning, crash telemetry fallback, spatial audio listener fallback, submarine leak impact signals, and MapMagic/Crest/scatter/sign/player-builder presentation helpers.
+- Several callsites were true authority or persistent-event math: voxel weld ingress, repair spark AUP, geology retained runtime keys, geology terrain/voxel centers, leak impact signals, and crash telemetry fallback.
+- Presentation-only helper endpoints still needed final-cast discipline so no caller would reduce the committed offset before shader/transform/vector output.
+
+### Code Changes
+
+- `Assets/_Project/Scripts/Interaction/EquipmentInteractionHandler.cs`, `Assets/_Project/Scripts/PlayerTool.cs`, `Assets/_Project/Scripts/Interaction/PhysicalSnapSwitch.cs`, and `Assets/_Project/Scripts/UI/PhysicalPanelButton.cs`: interaction packet origins now use `ToAbsoluteUniversePositionDouble3` and cast once into `float3` packet fields.
+- `Assets/_Project/Scripts/RepairTool.cs`: repair weld DDA and repair spark publication now use double AUP; spark payload builds `AbsoluteUniversePosition` from the double hit point.
+- `Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs`: grid snapping now reconstructs absolute coordinates as double, snaps millimeters in double, and projects runtime output through the double overload.
+- `Assets/_Project/Scripts/WorldGenerativeGeologyIntegrationDirector.cs`: retained and newly built plans now use double AUP for world, terrain, and voxel centers; fallback runtime keys use rounded double millimeters instead of `Vector3.GetHashCode()`.
+- `Assets/_Project/Scripts/SubmarineStructuralGrid.cs` and `Assets/_Project/Scripts/SpatialAudioManager.cs`: leak impact and listener fallback AUP now build from double absolute positions.
+- `Assets/_Project/Scripts/CrashTelemetryBuffer.cs`: player AUP fallback now uses MapMagic double universe space or `ToAbsoluteUniversePositionDouble3` before final telemetry `float3`.
+- `Assets/_Project/Scripts/Plugins/MapMagic/MapMagicRuntimeBridge.cs`, `Assets/_Project/Scripts/Plugins/Crest/HectonCrestOceanDepthCacheBootstrap.cs`, `Assets/_Project/Scripts/WorldProceduralScatterDirectorSpatialHelpers.cs`, `Assets/_Project/Scripts/LocalizedWorldSign.cs`, and `Assets/_Project/Scripts/PlayerBuilder.cs`: presentation helper paths now keep double AUP until shader/transform/`Vector3` boundaries. Localized signs retain a double AUP side lane for origin-shift projection.
+
+### Verification
+
+- Global legacy HFO scan is clean: `rg -n "HectonFloatingOrigin\.ToAbsoluteUniversePosition\(" Assets/_Project/Scripts --glob '*.cs'` returned no hits.
+- Direct committed-offset leak scan remains clean: no legacy `CurrentTotalOffset` reads without `Double`, no direct committed-offset component reads, and no legacy shift offset component reads under `Assets/_Project/Scripts`.
+- Mandatory scan re-run: `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'`. Residual hits are broad `universe` text, editor diagnostics, and final-cast fluid/scatter/shader payload names.
+- `git diff --check` on Loop 16 touched files reports line-ending warnings only, no whitespace errors.
+- Core build: `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:normal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_build_loop16.log;verbosity=normal"` failed with 0 warnings and 74 unrelated errors from residency/power/fauna/core save-layout/hardware-profile/scheduler/gameplay dependency drift.
+- Filtered build-log scan for Loop 16 touched files returned no errors.
+
+### Evidence Queue
+
+- All runtime `HectonFloatingOrigin.ToAbsoluteUniversePosition(` callsites under `Assets/_Project/Scripts` are removed. Remaining text hits are local helper names, editor diagnostics, docs/comments, or final-cast payload names.
+- `InteractionPacket` remains float because it is a shared public contract; future contract migration should add a double/AUP lane rather than mutate existing fields in-place.
+- Geology seam-plan storage remains legacy `Vector3` for consumers; a future world-geometry batch can add explicit double plan fields if downstream consumers are ready.
+
+## Loop 17 Organic Vegetation Universe-Space Trigger Cleanup
+
+### Findings
+
+- `DestructibleOrganicManager.ApplyConstructionDecomposition` converted runtime construction centers through `HectonMapMagicVegetationBridge.ToUniverseSpace`, reducing stable universe coordinates to `Vector3` before construction cleanup radius checks.
+- `ApplyDefoliantDeadZone` had the same float-center path and compared active flora roots via `(rootPosition - centerUniversePosition).sqrMagnitude`.
+- Giant-kelp construction checks used a `Vector3` closest-point-on-segment calculation, so the stem/root distance gate lost committed-offset precision before trigger math completed.
+- Titan root mound lookup extracted a stable-universe matrix translation into `Vector3` and projected it through the legacy `ToRuntimeSpace(Vector3)` helper before voxel lookup.
+
+### Code Changes
+
+- `Assets/_Project/Scripts/World/DestructibleOrganicManager.cs`: construction and defoliant trigger centers now use `ToUniverseSpaceDouble3`; radii reject non-finite values and squared-radius math is `double`.
+- `Assets/_Project/Scripts/World/DestructibleOrganicManager.cs`: construction lane and defoliant lane signatures now consume `double3` centers and compare double squared distances against double radius thresholds.
+- `Assets/_Project/Scripts/World/DestructibleOrganicManager.cs`: giant-kelp construction distance now uses a `double3` root/top/center segment projection helper with `math.rcp`, then returns double squared length.
+- `Assets/_Project/Scripts/World/DestructibleOrganicManager.cs`: titan root mound voxel lookup now keeps the stable-universe anchor as `double3` and final-casts only through the bridge runtime projection boundary.
+- `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs`: added `ToRuntimeSpace(double3)` and `ToRuntimeSpaceDouble3(double3)` overloads while keeping existing `Vector3` compatibility.
+
+### Verification
+
+- Prompt extraction from `Docs/Tasks/CURRENT_BATCH.md` still returns `PROMPT_NOT_FOUND`; user-supplied XML remains authoritative.
+- Targeted DestructibleOrganicManager scan is clean for legacy `HectonMapMagicVegetationBridge.ToUniverseSpace(`, `Vector3 universePosition`, Vector3 construction/defoliant lane signatures, and `(rootPosition - centerUniversePosition).sqrMagnitude`.
+- Global `rg -n "HectonFloatingOrigin\.ToAbsoluteUniversePosition\(" Assets/_Project/Scripts --glob '*.cs'` remains clean.
+- Direct committed-offset leak scan remains clean across `Assets/_Project/Scripts`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. Residual hits are broad `universe` text, editor diagnostics, final-cast fluid/scatter/shader payload names, and double-safe vegetation bridge/helper names.
+- `git diff --check -- Assets/_Project/Scripts/World/DestructibleOrganicManager.cs Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs` reports no whitespace errors.
+- Core build log `Docs/AgentLogs/AUP_build_loop17.log` completed with 47 unrelated package warnings and 74 unrelated Core errors; filtered scan for `DestructibleOrganicManager.cs` and `HectonMapMagicVegetationBridge.cs` reports no errors or warnings.
+
+### Evidence Queue
+
+- `HectonMapMagicVegetationBridgeFloraCollisionProxies` still owns a legacy `Vector3` proxy cache path for collision-proxy deactivation; that is a candidate for a future loop if it feeds authority distance math rather than presentation/collider toggling.
+- Editor-only `KinematicGhostDebugger` still has float universe preview history; it remains diagnostic presentation, not runtime AUP authority.
+- Octahedral impostor universe centers remain float shader presentation data and are outside this Loop 17 trigger-math repair.
+
+## Loop 18 Large-Flora Collision Proxy Double Cache
+
+### Findings
+
+- `HectonMapMagicVegetationBridgeFloraCollisionProxies` used `Vector3[] _largeFloraColliderUniverseCenters` for active proxy cache state.
+- Player universe resolution and candidate center resolution used legacy `ToUniverseSpace`, reducing the vegetation bridge double offset before activation checks.
+- Activation and deactivation thresholds used `Vector3.sqrMagnitude`, so proxy pool state could oscillate near distance thresholds after origin shifts.
+- Proxy rebase projected cached `Vector3` universe centers through the legacy `ToRuntimeSpace(Vector3)` helper.
+
+### Code Changes
+
+- `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`: `_largeFloraColliderUniverseCenters` is now `double3[]`; cold allocation comment updated.
+- Player universe resolution now uses `ToUniverseSpaceDouble3`.
+- Candidate center conversion now uses `ToUniverseSpaceDouble3`; activation radius compares `math.lengthsq(double3)` against double radius squared.
+- Deactivation hysteresis compares cached `double3` proxy centers against the `double3` player center.
+- Proxy transform rebase uses `ToRuntimeSpace(double3)` and casts only at the Unity transform boundary.
+
+### Verification
+
+- Prompt extraction from `Docs/Tasks/CURRENT_BATCH.md` still returns `PROMPT_NOT_FOUND`; user-supplied XML remains authoritative.
+- Targeted proxy scan is clean for legacy `ToUniverseSpace(`, `Vector3 playerUniverse`, `Vector3 centerUniverse`, `Vector3 proxyUniverse`, `.sqrMagnitude`, `Vector3[] _largeFloraColliderUniverseCenters`, and the old `ActivateOrUpdateLargeFloraCollisionProxy` `Vector3` center signature.
+- Global `rg -n "HectonFloatingOrigin\.ToAbsoluteUniversePosition\(" Assets/_Project/Scripts --glob '*.cs'` remains clean.
+- Direct committed-offset leak scan remains clean across `Assets/_Project/Scripts`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. Residual hits are broad `universe` text, editor diagnostics, final-cast fluid/scatter/shader payload names, and double-safe vegetation helper/cache names.
+- `git diff --check -- Assets/_Project/Scripts/World/HectonMapMagicVegetationBridgeFloraCollisionProxies.cs` reports line-ending warnings only, no whitespace errors.
+- Core build log `Docs/AgentLogs/AUP_build_loop18.log` completed with 47 unrelated package warnings and 74 unrelated Core errors; filtered scan for `HectonMapMagicVegetationBridgeFloraCollisionProxies.cs` reports no C# errors or warnings.
+
+### Evidence Queue
+
+- Remaining `ToUniverseSpace` runtime hits are the legacy bridge wrapper itself, editor-only `KinematicGhostDebugger`, and `VoxelDynamicNavGridRuntime.ToRuntimeSpace(stableUniverseRoot)` which needs separate authority classification before mutation.
+- Octahedral impostor universe centers remain float shader presentation data.
+- `PlayerPDA` universe-offset display remains a UI presentation path and not authority distance math.
+
+## Loop 19 Voxel Nav Macro-Flora Root Projection Double Bridge
+
+### Findings
+
+- `VoxelDynamicNavGridRuntime.TryResolveMacroFloraObstacleWorldBounds` converted a stable vegetation matrix root into `Vector3` before calling the vegetation runtime projection helper.
+- The method feeds macro-flora obstacle bounds used by dynamic nav-grid/runtime passability, so the bridge hop is authority-adjacent even though the final grid payload remains float.
+- Targeted H-Phi scan found `HphiReactiveUiTelemetry` and headless QA counters only. No H-Phi file consumed AUP/origin/distance math in this agent's domain.
+
+### Code Changes
+
+- `Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs`: matrix translation is now captured as `double3 stableUniverseRoot`.
+- Runtime projection now calls `HectonMapMagicVegetationBridge.ToRuntimeSpace(double3)` and final-casts only when building the `float3` nav obstacle center.
+- No UI/H-Phi file was changed because no AUP authority dependency was present.
+
+### Verification
+
+- Prompt extraction from `Docs/Tasks/CURRENT_BATCH.md` still returns `PROMPT_NOT_FOUND`; user-supplied XML remains authoritative.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. Residual hits remain broad `universe` text, editor diagnostics, and known final-cast fluid/scatter/shader payload names.
+- Direct committed-offset leak scan remains clean across `Assets/_Project/Scripts`.
+- Targeted nav scan confirms no `Vector3 stableUniverseRoot`; `stableUniverseRoot` is now `double3` and resolves to the bridge's double overload.
+- `rg -n "ToUniverseSpace\(|ToRuntimeSpace\(" Assets/_Project/Scripts/World Assets/_Project/Scripts/UI Assets/_Project/Scripts/Gameplay --glob '*.cs'` leaves bridge wrappers plus double-safe runtime callsites.
+- `git diff --check -- Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs` reports line-ending warnings only, no whitespace errors.
+- No `dotnet build` or rebuild was run in Loop 19 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- `PlayerPDA` universe-offset display remains a UI presentation path: it sources `CurrentTotalOffsetDouble` and casts for text output only.
+- Octahedral impostor universe centers remain float shader presentation data.
+- H-Phi UI telemetry should be handled by a UI/QA owner if throttling or metric changes are desired; no AUP precision leak was found there.
+
+## Loop 20 H-Phi Static AUP Precision Hygiene
+
+### Findings
+
+- The existing headless H-Phi static model scored architecture and memory-shape risk but did not include AUP precision hygiene.
+- This meant legacy patterns such as committed-offset component reads or legacy AUP bridge calls were invisible to the H-Phi scalar even though they are first-order drift risks.
+- `HphiReactiveUiTelemetry` remains UI-only and was not changed.
+
+### Code Changes
+
+- `Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs`: added `AupPrecisionSafe` and `AupPrecisionRisk` fields to `HPhiStaticCounters`.
+- Added `CountAupPrecisionSafe` for double-safe AUP patterns: `CurrentTotalOffsetDouble`, `ToAbsoluteUniversePositionDouble3`, `ToUniverseSpaceDouble3`, `ToRuntimeSpaceDouble3`, `ToRuntimeSpace(double3)`, `FromAbsolutePosition`, and AUP `DistanceSq`.
+- Added `CountAupPrecisionRisk` for legacy precision-risk patterns: `CurrentTotalOffset` component reads, legacy shift offset component reads, legacy AUP/vegetation bridge calls, `(float3)AUP`, `Vector3 universePosition`, and `Vector3 stableUniverseRoot`.
+- `CalculateHPhiRisk` now multiplies by an AUP precision integrity factor. Files with no AUP patterns default to neutral `1.0` for that factor.
+- H-Phi model text is now `runtime_aup_risk_adjusted` in JSON output and the `[H-PHI_STATIC]` warning line.
+
+### Verification
+
+- Prompt extraction from `Docs/Tasks/CURRENT_BATCH.md` still returns `PROMPT_NOT_FOUND`; user-supplied XML remains authoritative.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. The scanner's own split literals no longer add `(float3).*AUP` hits.
+- Direct committed-offset leak scan remains clean across `Assets/_Project/Scripts`.
+- Targeted H-Phi scan confirms `runtime_aup_risk_adjusted`, `AupPrecisionSafe`, and `AupPrecisionRisk` are present.
+- `git diff --check -- Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs` reports line-ending warnings only, no whitespace errors.
+- No `dotnet build` or rebuild was run in Loop 20 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Runtime AUP shift signal payloads still expose `ShiftMeters` as `float3`; most consumers are presentation/runtime rebase paths. A future signal-contract loop can add a double side lane if compile validation is allowed.
+- H-Phi now catches newly introduced AUP precision debt statically, but the scalar still requires actual headless execution to produce a measured value.
+
+## Loop 21 H-Phi AUP Precision Counter Export
+
+### Findings
+
+- Loop 20 adjusted the static H-Phi scalar for AUP precision hygiene, but the JSON result did not expose the raw AUP safe/risk evidence.
+- Without raw counters, a reviewer could see the score move but not identify whether the codebase gained double-safe AUP usage or added legacy precision-risk usage.
+
+### Code Changes
+
+- `Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs`: `ComputeStaticHPhiMetric` now returns `HPhiStaticCounters` through an `out` parameter.
+- Startup caches `staticHPhiAupPrecisionIntegrity`, `staticHPhiAupPrecisionSafe`, and `staticHPhiAupPrecisionRisk`.
+- Result JSON now writes those three fields next to `staticHPhi` and `staticHPhiModel`.
+- The one-time `[H-PHI_STATIC]` startup log now includes `aupIntegrity`, `aupSafe`, and `aupRisk`.
+
+### Verification
+
+- Prompt extraction from `Docs/Tasks/CURRENT_BATCH.md` still returns `PROMPT_NOT_FOUND`; user-supplied XML remains authoritative.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. Residual hits remain broad `universe` text, editor diagnostics, and final-cast fluid/scatter/shader payload names.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Targeted H-Phi scan confirms `staticHPhiAupPrecisionIntegrity`, `staticHPhiAupPrecisionSafe`, `staticHPhiAupPrecisionRisk`, `ComputeStaticHPhiMetric(out ...)`, and `CalculateAupPrecisionIntegrity`.
+- Targeted scanner self-pollution scan returns `NO_MATCHES` for literal legacy AUP risk patterns in `HeadlessStressFractureBot.cs`.
+- `git diff --check -- Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs` reports line-ending warnings only, no whitespace errors.
+- No `dotnet build` or rebuild was run in Loop 21 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- This is static-source and report-path evidence only. Actual H-Phi values remain pending until a headless run is allowed.
+- Existing broad mandatory regex residuals are unchanged: final-cast fluid/scatter/shader payload names, editor diagnostics, and broad `universe` text.
+
+## Loop 22 H-Phi Qualified Legacy AUP Risk Scan
+
+### Findings
+
+- The AUP H-Phi risk counter was intentionally conservative, but the broad `ToAbsoluteUniversePosition(` / `ToUniverseSpace(` tokens also matched private helpers and wrapper definitions.
+- Those matches can be false positives when the helper body uses `ToAbsoluteUniversePositionDouble3`, `FromRuntimePosition`, or the double vegetation bridge internally.
+
+### Code Changes
+
+- `Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs`: `CountAupPrecisionRisk` now counts qualified legacy calls to `HectonFloatingOrigin.ToAbsoluteUniversePosition(` and `HectonMapMagicVegetationBridge.ToUniverseSpace(`.
+- Existing risk checks for committed-offset component reads, legacy shift offset component reads, `(float3)AUP`, `Vector3 universePosition`, and `Vector3 stableUniverseRoot` remain.
+- The scanner still splits literal tokens so mandatory AUP regex output is not polluted by the scanner's own source.
+
+### Verification
+
+- Prompt extraction from `Docs/Tasks/CURRENT_BATCH.md` still returns `PROMPT_NOT_FOUND`; user-supplied XML remains authoritative.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. Residual hits remain broad `universe` text, editor diagnostics, and final-cast fluid/scatter/shader payload names.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Targeted scanner self-pollution scan in `HeadlessStressFractureBot.cs` returns `NO_MATCHES` for unsplit legacy AUP bridge literals.
+- `git diff --check -- Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs` reports line-ending warnings only, no whitespace errors.
+- No `dotnet build` or rebuild was run in Loop 22 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- H-Phi remains a static-source signal. It is now less noisy for AUP helper names, but measured values still require a future headless run.
+
+## Loop 23 Global H-Phi Audit AUP Precision Integrity
+
+### Findings
+
+- The headless H-Phi bot now includes AUP precision hygiene, but the global PowerShell H-Phi audit did not.
+- That created a model split: one H-Phi path would penalize precision leaks while the global architecture audit could still report a risk score without AUP drift context.
+
+### Code Changes
+
+- `Tools/Architecture/HectonPhiAudit.ps1`: added `AupPrecisionSafe` and `AupPrecisionRisk` counters.
+- Added `AupPrecisionIntegrity = safe / (safe + risk)`, defaulting to `1.0` when no AUP patterns are present.
+- `HPhiStaticRisk` now includes the AUP precision factor. `HPhiStaticNarrow` remains unchanged for historical trend continuity.
+- Summary JSON now exposes `AupPrecisionIntegrity`, `AupPrecisionSafe`, and `AupPrecisionRisk`.
+- Metric model text now states that the risk-adjusted score includes AUP precision integrity.
+
+### Verification
+
+- Prompt extraction from `Docs/Tasks/CURRENT_BATCH.md` still returns `PROMPT_NOT_FOUND`; user-supplied XML remains authoritative.
+- PowerShell parser reports `PARSE_OK` for `Tools/Architecture/HectonPhiAudit.ps1`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json` completed successfully and emitted Core graph JSON.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` timed out after 120 seconds in the current dirty workspace; no score result was claimed.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. Residual hits remain broad `universe` text, editor diagnostics, and final-cast fluid/scatter/shader payload names.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1` reports no whitespace errors.
+- No `dotnet build` or rebuild was run in Loop 23 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- The full global H-Phi score is still pending because the full PowerShell scan timed out after 120 seconds.
+- H-Phi remains static-source evidence only; Unity Console, PlayMode, profiler, GCMonitor, and player build evidence remain pending.
+
+## Loop 24 Full H-Phi Source Scan Timeout Classification
+
+### Findings
+
+- The full global H-Phi source scan did not complete under a 120-second cap.
+- A second full run with a 240-second cap also timed out.
+- Core graph summary mode still completes, so the failure is isolated to the full source scan path.
+
+### Verification
+
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json` completed successfully.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` timed out after both 120 and 240 seconds.
+- No global H-Phi score was claimed from partial output.
+- No `dotnet build` or rebuild was run in Loop 24 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- `Tools/Architecture/HectonPhiAudit.ps1` needs a future performance pass before full-source H-Phi can be treated as a fast CI/static gate.
+- A separate PowerShell process from another command was observed running a H-Phi summary write; it was not killed because process ownership was ambiguous in this multi-agent workspace.
+
+## Loop 25 Qualified AUP H-Phi Risk Cleanup
+
+### Findings
+
+- The qualified AUP H-Phi risk scan still found one real legacy vegetation bridge call in editor/debug code.
+- It also counted internal double-precision job fields named `CurrentTotalOffset` and public wrapper parameter names as legacy-risk text.
+
+### Code Changes
+
+- `KinematicGhostDebugger`: changed the ghost preview AUP bridge to use `HectonMapMagicVegetationBridge.ToUniverseSpaceDouble3` and fallback through `HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3` before final `Vector3` editor drawing.
+- `HectonFloatingOrigin.AupDriftCheckJob`: renamed `CurrentTotalOffset` to `CommittedTotalOffset`.
+- `WorldSpatialHashGrid.ValidateAupIntegrityJob`: renamed `CurrentTotalOffset` to `CommittedTotalOffset`.
+- `HectonMapMagicVegetationBridge`: renamed `Vector3 universePosition` wrapper parameters to `stableUniversePosition`.
+
+### Verification
+
+- Prompt extraction from `Docs/Tasks/CURRENT_BATCH.md` still returns `PROMPT_NOT_FOUND`; user-supplied XML remains authoritative.
+- Qualified AUP H-Phi risk scan returns `NO_MATCHES` across `Assets/_Project/Scripts`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. Residual hits remain broad `universe` text and final-cast fluid/scatter/shader payload names.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json` completed successfully.
+- `git diff --check` on the Loop 25 touched files reports line-ending warnings only, no whitespace errors.
+- No `dotnet build` or rebuild was run in Loop 25 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- Full `HectonPhiAudit.ps1 -Summary -Json` remains pending due the Loop 24 full source scan timeout.
+
+## Loop 26 H-Phi Full Source Scan Prefilter
+
+### Findings
+
+- Loop 24 classified full H-Phi source scan as timeout debt. After the qualified risk cleanup, the next improvement was tool cost, not gameplay math.
+
+### Tool Changes
+
+- `Tools/Architecture/HectonPhiAudit.ps1`: added literal prefilters to `Add-PatternCounts`.
+- Existing regex patterns still produce the counts; prefilters only skip impossible regex passes when a file lacks required seed text.
+
+### Verification
+
+- PowerShell parser reports `PARSE_OK`.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` completed in 127.735 seconds.
+- Full static summary: `RuntimeHPhiRisk=0.000573763`, `RuntimeHPhiNarrow=0.010539206`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=363`, `AupPrecisionRisk=0`, `RuntimeFiles=1276`, `RuntimeLines=859399`.
+- Targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. Residual hits remain broad `universe` text and known final-cast fluid/scatter/shader payload names.
+- No `dotnet build` or rebuild was run in Loop 26 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- H-Phi result is static-source evidence, not profiler proof.
+
+## Loop 28 AUP Budget CoreGraphOnly Fail-Fast Guard
+
+### Findings
+
+- `-MaxAupPrecisionRisk` depends on runtime source counters. `-CoreGraphOnly` cannot prove those counters.
+
+### Tool Changes
+
+- `Tools/Architecture/HectonPhiAudit.ps1`: added a fail-fast guard for `-CoreGraphOnly -MaxAupPrecisionRisk`.
+
+### Verification
+
+- PowerShell parser reports `PARSE_OK`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json -MaxAupPrecisionRisk 0` returns the expected failure: `AUP precision budget requires full source scan. Remove -CoreGraphOnly when using -MaxAupPrecisionRisk.`
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json` still completes successfully without the source budget switch.
+- No `dotnet build` or rebuild was run in Loop 28 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Full AUP budget proof remains the Loop 27 full-source run: `AupPrecisionRisk=0`.
+- Unity import/Console verification remains pending because no Unity editor session is available.
+
+## Loop 29 Actionable AUP Budget Failure Output
+
+### Findings
+
+- The AUP precision budget gate rejected bad counts, but a future failure would not identify the files responsible.
+
+### Tool Changes
+
+- `Tools/Architecture/HectonPhiAudit.ps1`: `Assert-AupPrecisionBudget` now receives runtime file rows and includes up to 8 top risk files in the thrown error.
+
+### Verification
+
+- PowerShell parser reports `PARSE_OK`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json -MaxAupPrecisionRisk 0` still returns the expected fail-fast message.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 125.752 seconds.
+- Gated full static summary: `RuntimeHPhiRisk=0.000566586`, `RuntimeHPhiNarrow=0.010409098`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=363`, `AupPrecisionRisk=0`, `TopAupPrecisionRiskFiles=0`, `RuntimeFiles=1276`, `RuntimeLines=860158`.
+- Targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. Residual hits remain broad `universe` text and known final-cast fluid/scatter/shader payload names.
+- No `dotnet build` or rebuild was run in Loop 29 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- H-Phi result is static-source evidence, not profiler proof.
+
+## Loop 30 H-Phi AUP Budget Summary Metadata
+
+### Findings
+
+- The AUP precision budget gate was enforceable, but passing summary output did not explicitly record budget enablement, limit, actual count, pass state, or evidence class.
+
+### Tool Changes
+
+- `Tools/Architecture/HectonPhiAudit.ps1`: summary JSON and text now include `Budgets.AupPrecisionRisk`.
+- The budget row records `Enabled`, `Max`, `Actual`, `Passed`, and `EvidenceClass=STATIC_SOURCE_FULL_SCAN`.
+
+### Verification
+
+- PowerShell parser reports `PARSE_OK`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json -MaxAupPrecisionRisk 0` still returns the expected fail-fast message.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 116.463 seconds.
+- Gated full static summary: `RuntimeHPhiRisk=0.00057069`, `RuntimeHPhiNarrow=0.010493115`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=363`, `AupPrecisionRisk=0`, `BudgetEnabled=true`, `BudgetMax=0`, `BudgetActual=0`, `BudgetPassed=true`, `TopAupPrecisionRiskFiles=0`, `RuntimeFiles=1276`, `RuntimeLines=860419`.
+- Targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. Residual hits remain broad `universe` text and known final-cast fluid/scatter/shader payload names.
+- No `dotnet build` or rebuild was run in Loop 30 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- H-Phi result is static-source evidence, not profiler proof.
+
+## Loop 31 H-Phi Core-Graph Budget Summary Metadata
+
+### Findings
+
+- Core graph H-Phi budgets were enforceable, but passing summary output did not explicitly record enabled/max/actual/pass state for those graph debt gates.
+
+### Tool Changes
+
+- `Tools/Architecture/HectonPhiAudit.ps1`: added `New-BudgetState` and `New-CoreGraphBudgetSummary`.
+- `New-CoreGraphSummary` now includes graph budget rows for the core build graph gate, Core asmdef debt, generated project debt, source-backed bridge debt, source-backed compile bridge debt, and project-reference replacement debt.
+- CoreGraphOnly text summary now prints a core graph H-Phi budget table.
+
+### Verification
+
+- PowerShell parser reports `PARSE_OK`.
+- CoreGraphOnly JSON with enabled graph budgets completed; all graph budget rows passed at actual counts: Core asmdef 25, generated project 10, source-backed bridge 14, source-backed compile bridge 8, project-reference replacement 6, core build graph gate `Actual=true`.
+- Deliberate failure check with `-MaxCoreAsmdefDebtReferences 24` returns the expected graph budget violation.
+- Loop 31 full-source retest with AUP and graph budgets timed out after 240 seconds; no full-source JSON was claimed. Loop 30 remains the latest completed full AUP budget run.
+- Targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. Residual hits remain broad `universe` text and known final-cast fluid/scatter/shader payload names.
+- No `dotnet build` or rebuild was run in Loop 31 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- H-Phi result is static-source evidence, not profiler proof.
+
+## Loop 32 H-Phi Budget Text Threshold Display
+
+### Findings
+
+- The H-Phi text budget table did not expose a unified comparator/limit column, making score-floor rows harder to read than count-ceiling rows.
+
+### Tool Changes
+
+- `Tools/Architecture/HectonPhiAudit.ps1`: added `ConvertTo-BudgetDisplayRows`.
+- Source and core-graph text summaries now print `Direction` and `Limit` for budget rows.
+
+### Verification
+
+- PowerShell parser reports `PARSE_OK`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` prints budget columns `Budget`, `Enabled`, `Direction`, `Limit`, `Actual`, and `Passed`.
+- CoreGraphOnly JSON with enabled graph budgets still reports `CoreBuildGraphGate.Passed=True` and `CoreAsmdefDebtReferences.Actual=25`.
+- Targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. Residual hits remain broad `universe` text and known final-cast fluid/scatter/shader payload names.
+- No `dotnet build` or rebuild was run in Loop 32 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- H-Phi result is static-source evidence, not profiler proof.
+
+## Loop 33 Duplicate Signal Scan Prefilter
+
+### Findings
+
+- The duplicate signal-name audit paid code-surface masking cost for every C# file even when a file could not contain a `*Signal` struct declaration.
+
+### Tool Changes
+
+- `Tools/Architecture/HectonPhiAudit.ps1`: `Get-DuplicateSignalNameAudit` now skips masking unless raw file text contains both `Signal` and `struct`.
+
+### Verification
+
+- Candidate measurement: 1501 `.cs` files total, 222 duplicate-signal candidate files, 1279 files skipped before duplicate-signal code-surface masking.
+- PowerShell parser reports `PARSE_OK`.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 221.618 seconds.
+- Full static summary: `RuntimeHPhiRisk=0.000590952`, `RuntimeHPhiNarrow=0.01075037`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=363`, `AupPrecisionRisk=0`, `DuplicateSignalNameCount=0`, `RuntimeFiles=1275`, `RuntimeLines=861684`.
+- Targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. Residual hits remain broad `universe` text and known final-cast fluid/scatter/shader payload names.
+- No `dotnet build` or rebuild was run in Loop 33 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- H-Phi result is static-source evidence, not profiler proof.
+
+## Loop 34 Duplicate Signal Prefilter Counter Export
+
+### Findings
+
+- Duplicate signal prefilter counts were measured manually, but summary JSON did not expose those counts for CI or integrator review.
+
+### Tool Changes
+
+- `Tools/Architecture/HectonPhiAudit.ps1`: `Get-DuplicateSignalNameAudit` now returns `SourceFileCount`, `CandidateFileCount`, and `PrefilterSkippedFileCount`.
+- `New-AuditSummary` now preserves those duplicate-signal prefilter counts.
+
+### Verification
+
+- PowerShell parser reports `PARSE_OK`.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 159.965 seconds.
+- Full static summary: `RuntimeHPhiRisk=0.000590952`, `RuntimeHPhiNarrow=0.01075037`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=363`, `AupPrecisionRisk=0`, `DuplicateSignalSourceFiles=1501`, `DuplicateSignalCandidateFiles=222`, `DuplicateSignalSkippedFiles=1279`, `DuplicateSignalNameCount=0`, `RuntimeFiles=1275`, `RuntimeLines=861928`.
+- Targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. Residual hits remain broad `universe` text and known final-cast fluid/scatter/shader payload names.
+- No `dotnet build` or rebuild was run in Loop 34 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- H-Phi result is static-source evidence, not profiler proof.
+
+## Loop 35 Primary Managed Runtime Risk Lane Verification
+
+### Findings
+
+- The H-Phi audit tool has a working-tree lane that separates primary runtime managed risk from instrumentation, persistence, and UI roles.
+
+### Verification
+
+- CoreGraphOnly fail-fast for `-MaxPrimaryManagedRuntimeRisk 0` returns the expected full-source requirement.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 193.981 seconds.
+- Full static summary: `RuntimeHPhiRisk=0.00059249`, `AupPrecisionRisk=0`, `PrimaryManagedRuntimeRisk=353`, `PrimaryJobCompleteRisk=44`, `PrimaryBudgetActual=353`, `PrimaryBudgetPassed=True`, role split `PrimaryRuntime=353`, `Instrumentation=236`, `Persistence=96`, `UI=24`, `RuntimeFiles=1275`, `RuntimeLines=862084`.
+- No `dotnet build` or rebuild was run in Loop 35 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- H-Phi result is static-source evidence, not profiler proof.
+
+## Loop 27 AUP Precision H-Phi Budget Gate
+
+### Findings
+
+- AUP precision risk was visible in the H-Phi summary, but there was no explicit budget switch to fail the static audit when legacy AUP bridge patterns return.
+
+### Tool Changes
+
+- `Tools/Architecture/HectonPhiAudit.ps1`: added `-MaxAupPrecisionRisk`.
+- Added `Assert-AupPrecisionBudget` after runtime source counters are computed.
+
+### Verification
+
+- Prompt extraction from `Docs/Tasks/CURRENT_BATCH.md` still returns `PROMPT_NOT_FOUND`; user-supplied XML remains authoritative.
+- PowerShell parser reports `PARSE_OK`.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 112.902 seconds.
+- Gated full static summary: `RuntimeHPhiRisk=0.000573523`, `RuntimeHPhiNarrow=0.010534799`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=363`, `AupPrecisionRisk=0`, `RuntimeFiles=1276`, `RuntimeLines=859722`.
+- Targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. Residual hits remain broad `universe` text and known final-cast fluid/scatter/shader payload names.
+- No `dotnet build` or rebuild was run in Loop 27 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- H-Phi result is static-source evidence, not profiler proof.

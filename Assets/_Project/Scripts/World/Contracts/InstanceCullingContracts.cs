@@ -31,7 +31,7 @@ namespace Hecton8.World
     /// <summary>
     /// Camera position payload consumed by culling without polling Camera.main.
     /// </summary>
-    public struct CameraPositionSignal
+    public struct InstanceCullingCameraPositionSignal
     {
         public Vector3 Position;
         public Vector3 Forward;
@@ -42,7 +42,7 @@ namespace Hecton8.World
     /// <summary>
     /// Packed frustum payload consumed by culling without camera-owned concrete dependencies.
     /// </summary>
-    public struct CameraFrustumSignal
+    public struct InstanceCullingCameraFrustumSignal
     {
         public Matrix4x4 ViewProjection;
         public Vector4 Plane0;
@@ -60,8 +60,8 @@ namespace Hecton8.World
     /// </summary>
     public struct InstanceCullingCameraState
     {
-        public CameraPositionSignal Position;
-        public CameraFrustumSignal Frustum;
+        public InstanceCullingCameraPositionSignal Position;
+        public InstanceCullingCameraFrustumSignal Frustum;
     }
 
     /// <summary>
@@ -135,10 +135,10 @@ namespace Hecton8.World
         void Configure(ComputeShader computeShader, int capacity);
 
         /// <summary>Consumes camera position signal payload.</summary>
-        void ConsumeCameraPositionSignal(in CameraPositionSignal signal);
+        void ConsumeCameraPositionSignal(in InstanceCullingCameraPositionSignal signal);
 
         /// <summary>Consumes camera frustum signal payload.</summary>
-        void ConsumeCameraFrustumSignal(in CameraFrustumSignal signal);
+        void ConsumeCameraFrustumSignal(in InstanceCullingCameraFrustumSignal signal);
 
         /// <summary>Sets the optional voxel SDF texture used as the cheap MX350 Hi-Z substitute.</summary>
         void SetVoxelSdf(Texture voxelSdfTexture, Vector3 origin, Vector3 size, bool enabled);

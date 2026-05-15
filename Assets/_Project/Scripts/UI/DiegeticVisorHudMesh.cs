@@ -143,7 +143,7 @@ namespace Hecton8.UI
             _damageGlitch01 = math.saturate(math.max(_damageGlitch01, math.max(signal.GlitchIntensity, hullDamage)));
         }
 
-        public void OnInteractionSignal(in InteractionSignal signal)
+        public void OnInteractionSignal(in PlayerInteractionStressSignal signal)
         {
         }
 

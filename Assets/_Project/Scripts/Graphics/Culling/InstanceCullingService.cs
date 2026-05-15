@@ -77,8 +77,8 @@ namespace Hecton8.Graphics.Culling
         private NativeArray<uint> _indirectArgsReadback;
         private NativeArray<InstanceCullingTelemetryEntry> _telemetryRing;
         private Action<AsyncGPUReadbackRequest> _cachedReadbackCallback;
-        private CameraPositionSignal _cameraPosition;
-        private CameraFrustumSignal _cameraFrustum;
+        private InstanceCullingCameraPositionSignal _cameraPosition;
+        private InstanceCullingCameraFrustumSignal _cameraFrustum;
         private Texture _voxelSdfTexture;
         private Vector3 _voxelSdfOrigin;
         private Vector3 _voxelSdfSize = Vector3.one;
@@ -171,13 +171,13 @@ namespace Hecton8.Graphics.Culling
         }
 
         /// <inheritdoc />
-        public void ConsumeCameraPositionSignal(in CameraPositionSignal signal)
+        public void ConsumeCameraPositionSignal(in InstanceCullingCameraPositionSignal signal)
         {
             _cameraPosition = signal;
         }
 
         /// <inheritdoc />
-        public void ConsumeCameraFrustumSignal(in CameraFrustumSignal signal)
+        public void ConsumeCameraFrustumSignal(in InstanceCullingCameraFrustumSignal signal)
         {
             _cameraFrustum = signal;
         }
@@ -576,6 +576,7 @@ namespace Hecton8.Graphics.Culling
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct ApplyAupShiftJob : IJobParallelFor
         {
             public NativeArray<Matrix4x4> Matrices;

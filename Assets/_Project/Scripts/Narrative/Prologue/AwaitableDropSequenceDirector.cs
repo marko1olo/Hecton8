@@ -19,7 +19,7 @@ namespace Hecton8.Narrative.Prologue
         private const int TelemetryCapacity = 300;
         private const double Mach10MetersPerSecond = 3430d;
         private const double Mach10MetersPerSecondSq = Mach10MetersPerSecond * Mach10MetersPerSecond;
-        private const uint SourceHash = 0x50524C47u; // PRLG
+        private const uint SourceHash = PrologueSignalSourceHashes.SequenceDirector;
         private const uint AwaitHash = 0x41574149u; // AWAI
         private const uint SilenceHash = 0x53494C45u; // SILE
         private const uint BurnHash = 0x4255524Eu; // BURN
@@ -44,6 +44,8 @@ namespace Hecton8.Narrative.Prologue
         private bool _disposed;
         private bool _blackBoxDumped;
         private bool _devSkipHandoffPublished;
+        private bool _inputLockAcquired;
+        private bool _inputLockReleased;
         private byte _cancelReason;
         private PrologueAtmosphericReentrySnapshot _lastAtmosphericReentry;
         private PrologueCompleteSnapshot _lastComplete;
@@ -79,10 +81,18 @@ namespace Hecton8.Narrative.Prologue
             _cancelReason = 0;
             _blackBoxDumped = false;
             _devSkipHandoffPublished = false;
+            _inputLockAcquired = false;
+            _inputLockReleased = false;
             _hasLastOrbitalSnapshot = false;
+            _lastAtmosphericReentry = default;
+            _lastComplete = default;
+            _lastOrbital = default;
+            _hasPublishedTelemetry = false;
 
             try
             {
+                _runtime.PrepareSequenceRun();
+
                 if (!await AwaitAtmosphericReentryAsync(cancellationToken))
                     return;
 
@@ -107,7 +117,7 @@ namespace Hecton8.Narrative.Prologue
             catch (OperationCanceledException)
             {
                 if (_cancelReason == PrologueCancelReasons.DevSkip)
-                    ExecuteDevelopmentSkipHandoff();
+                    TryExecuteDevelopmentSkipHandoff();
                 else
                     RecordStage(
                         PrologueStage.Cancelled,
@@ -118,24 +128,34 @@ namespace Hecton8.Narrative.Prologue
             {
                 RecordStage(PrologueStage.Faulted, FaultHash, PrologueCancelReasons.NonFinite);
                 DumpBlackBox();
-                _runtime.DumpBlackBox();
+                TryDumpRuntimeBlackBox(_runtime);
             }
             finally
             {
-                _runtime.PublishInputLock(PrologueInputLockFlags.None, paused: false);
                 _running = false;
+                ReleaseInputLockNoThrow();
             }
         }
 
         public void CancelSequence(byte reason)
         {
+            byte normalizedReason = reason == 0 ? PrologueCancelReasons.ExplicitCancel : reason;
+            if (_cancelReason == PrologueCancelReasons.DevSkip &&
+                normalizedReason != PrologueCancelReasons.DevSkip)
+            {
+                _cancelRequested = true;
+                return;
+            }
+
             _cancelRequested = true;
-            _cancelReason = reason == 0 ? PrologueCancelReasons.ExplicitCancel : reason;
+            _cancelReason = normalizedReason;
         }
 
         private void OnDisable()
         {
             CancelSequence(PrologueCancelReasons.ExplicitCancel);
+            if (_running)
+                ReleaseInputLockNoThrow();
         }
 
         private void OnDestroy()
@@ -147,6 +167,12 @@ namespace Hecton8.Narrative.Prologue
         {
             if (_disposed)
                 return;
+
+            if (_running)
+            {
+                CancelSequence(PrologueCancelReasons.ExplicitCancel);
+                ReleaseInputLockNoThrow();
+            }
 
             _disposed = true;
             if (_blackBox.IsCreated)
@@ -174,11 +200,22 @@ namespace Hecton8.Narrative.Prologue
                     return true;
                 }
 
-                if (_runtime.TryGetOrbitalSnapshot(out _lastOrbital) && _lastOrbital.ReentryHeat01 > 0.001f)
+                if (_runtime.TryGetOrbitalSnapshot(out _lastOrbital))
                 {
                     _hasLastOrbitalSnapshot = true;
-                    RecordStage(PrologueStage.AwaitingAtmosphericReentry, HashOrbital(in _lastOrbital), _lastOrbital.Flags);
-                    return true;
+                    if (!IsFiniteOrbital(in _lastOrbital))
+                    {
+                        RecordStage(PrologueStage.Faulted, FaultHash, PrologueCancelReasons.NonFinite);
+                        DumpBlackBox();
+                        TryDumpRuntimeBlackBox(_runtime);
+                        return false;
+                    }
+
+                    if (_lastOrbital.ReentryHeat01 > 0.001f)
+                    {
+                        RecordStage(PrologueStage.AwaitingAtmosphericReentry, HashOrbital(in _lastOrbital), _lastOrbital.Flags);
+                        return true;
+                    }
                 }
 
                 RecordStage(PrologueStage.AwaitingAtmosphericReentry, AwaitHash, 0);
@@ -192,7 +229,7 @@ namespace Hecton8.Narrative.Prologue
                 return false;
 
             RecordStage(PrologueStage.OrbitalSilence, SilenceHash, (byte)(PrologueInputLockFlags.Look | PrologueInputLockFlags.Translation));
-            _runtime.PublishInputLock(PrologueInputLockFlags.Look | PrologueInputLockFlags.Translation, paused: true);
+            PublishSequenceInputLock(PrologueInputLockFlags.Look | PrologueInputLockFlags.Translation, paused: true);
             _runtime.PublishMuffledBreathing(1f, 3f);
             await _runtime.DelayDilatedAsync(3f, cancellationToken);
             return !ShouldStopForCancellation(cancellationToken) && !TryHandleDevelopmentSkip();
@@ -218,11 +255,11 @@ namespace Hecton8.Narrative.Prologue
                 if (_runtime.TryGetOrbitalSnapshot(out _lastOrbital))
                 {
                     _hasLastOrbitalSnapshot = true;
-                    if (!math.all(math.isfinite(_lastOrbital.UniverseVelocity)) || !math.isfinite(_lastOrbital.PlanetDistanceMeters))
+                    if (!IsFiniteOrbital(in _lastOrbital))
                     {
                         RecordStage(PrologueStage.Faulted, FaultHash, PrologueCancelReasons.NonFinite);
                         DumpBlackBox();
-                        _runtime.DumpBlackBox();
+                        TryDumpRuntimeBlackBox(_runtime);
                         return false;
                     }
 
@@ -244,7 +281,7 @@ namespace Hecton8.Narrative.Prologue
         private async Awaitable<bool> RunManualOverrideAsync(CancellationToken cancellationToken)
         {
             RecordStage(PrologueStage.ManualOverride, ManualHash, (byte)PrologueInputLockFlags.Translation);
-            _runtime.PublishInputLock(PrologueInputLockFlags.Translation, paused: true);
+            PublishSequenceInputLock(PrologueInputLockFlags.Translation, paused: true);
             _runtime.PublishManualReleasePrompt();
 
             while (true)
@@ -269,19 +306,19 @@ namespace Hecton8.Narrative.Prologue
         private async Awaitable<bool> RunImpactSyncAsync(CancellationToken cancellationToken)
         {
             RecordStage(PrologueStage.ImpactSync, ImpactHash, _lastComplete.Flags);
+            if (ShouldStopForCancellation(cancellationToken))
+                return false;
+
+            if (TryHandleDevelopmentSkip())
+                return false;
+
             await _runtime.NextFrameAsync(cancellationToken);
             return !ShouldStopForCancellation(cancellationToken) && !TryHandleDevelopmentSkip();
         }
 
         private async Awaitable<bool> AwaitOceanHydrationAsync(CancellationToken cancellationToken)
         {
-            bool allowProxy = _runtime.IsLowTier;
-            RecordStage(
-                PrologueStage.AwaitOceanHydration,
-                HydrationHash,
-                allowProxy ? (byte)PrologueHydrationMode.LowTierProxySurface : (byte)PrologueHydrationMode.HighResolutionSurface);
-
-            while (!_runtime.IsOceanSurfaceReady(allowProxy))
+            while (true)
             {
                 if (ShouldStopForCancellation(cancellationToken))
                     return false;
@@ -289,14 +326,23 @@ namespace Hecton8.Narrative.Prologue
                 if (TryHandleDevelopmentSkip())
                     return false;
 
+                bool allowProxy = _runtime.IsLowTier;
+                byte hydrationMode = allowProxy
+                    ? (byte)PrologueHydrationMode.LowTierProxySurface
+                    : (byte)PrologueHydrationMode.HighResolutionSurface;
+
+                if (_runtime.IsOceanSurfaceReady(allowProxy))
+                {
+                    RecordStage(PrologueStage.AwaitOceanHydration, HydrationHash, hydrationMode);
+                    return true;
+                }
+
                 RecordStage(
                     PrologueStage.AwaitOceanHydration,
                     HydrationHash,
-                    allowProxy ? (byte)PrologueHydrationMode.LowTierProxySurface : (byte)PrologueHydrationMode.HighResolutionSurface);
+                    hydrationMode);
                 await _runtime.NextFrameAsync(cancellationToken);
             }
-
-            return true;
         }
 
         private void RunWaterTransition()
@@ -305,7 +351,6 @@ namespace Hecton8.Narrative.Prologue
             _runtime.ZeroUniverseVelocity();
             _runtime.PublishMassiveImpact();
             _runtime.PublishOceanHandoff();
-            _runtime.PublishInputLock(PrologueInputLockFlags.None, paused: false);
         }
 
         private bool ShouldStopForCancellation(CancellationToken cancellationToken)
@@ -313,7 +358,7 @@ namespace Hecton8.Narrative.Prologue
             if (cancellationToken.IsCancellationRequested)
             {
                 if (_cancelReason == PrologueCancelReasons.DevSkip)
-                    ExecuteDevelopmentSkipHandoff();
+                    TryExecuteDevelopmentSkipHandoff();
                 else
                     RecordStage(
                         PrologueStage.Cancelled,
@@ -325,7 +370,7 @@ namespace Hecton8.Narrative.Prologue
             if (_cancelRequested)
             {
                 if (_cancelReason == PrologueCancelReasons.DevSkip)
-                    ExecuteDevelopmentSkipHandoff();
+                    TryExecuteDevelopmentSkipHandoff();
                 else
                     RecordStage(PrologueStage.Cancelled, CancelHash, _cancelReason);
                 return true;
@@ -340,22 +385,37 @@ namespace Hecton8.Narrative.Prologue
                 return false;
 
             CancelSequence(PrologueCancelReasons.DevSkip);
-            ExecuteDevelopmentSkipHandoff();
+            TryExecuteDevelopmentSkipHandoff();
             return true;
         }
 
-        private void ExecuteDevelopmentSkipHandoff()
+        private void TryExecuteDevelopmentSkipHandoff()
         {
             if (_devSkipHandoffPublished)
                 return;
 
             _devSkipHandoffPublished = true;
+            try
+            {
+                ExecuteDevelopmentSkipHandoff();
+            }
+            catch (Exception)
+            {
+                RecordStage(PrologueStage.Faulted, DevSkipHash, PrologueCancelReasons.DevSkip);
+                DumpBlackBox();
+                TryDumpRuntimeBlackBox(_runtime);
+                ReleaseInputLockNoThrow();
+            }
+        }
+
+        private void ExecuteDevelopmentSkipHandoff()
+        {
             RecordStage(PrologueStage.DevSkip, DevSkipHash, (byte)PrologueHydrationMode.DevForcedShallowWater);
             _runtime.ForceShallowWaterHydration();
             _runtime.ZeroUniverseVelocity();
             _runtime.PublishMassiveImpact();
             _runtime.PublishOceanHandoff();
-            _runtime.PublishInputLock(PrologueInputLockFlags.None, paused: false);
+            ReleaseInputLockNoThrow();
         }
 
         private void EnsureBlackBox()
@@ -397,11 +457,72 @@ namespace Hecton8.Narrative.Prologue
                  _lastPublishedStateHash != stateHash ||
                  _lastPublishedFlags != flags))
             {
-                _runtime.PushTelemetry(stage, stateHash, flags);
+                TryPushTelemetryNoThrow(stage, stateHash, flags);
                 _lastPublishedStage = stage;
                 _lastPublishedStateHash = stateHash;
                 _lastPublishedFlags = flags;
                 _hasPublishedTelemetry = true;
+            }
+        }
+
+        private void ReleaseInputLockNoThrow()
+        {
+            if (_inputLockReleased || !_inputLockAcquired)
+                return;
+
+            IPrologueSequenceRuntime runtime = _runtime;
+            if (runtime == null)
+                return;
+
+            try
+            {
+                runtime.PublishInputLock(PrologueInputLockFlags.None, paused: false);
+                _inputLockReleased = true;
+                _inputLockAcquired = false;
+            }
+            catch (Exception)
+            {
+                DumpBlackBox();
+                TryDumpRuntimeBlackBox(runtime);
+            }
+        }
+
+        private void PublishSequenceInputLock(PrologueInputLockFlags flags, bool paused)
+        {
+            _runtime.PublishInputLock(flags, paused);
+            if (flags == PrologueInputLockFlags.None || !paused)
+                return;
+
+            _inputLockAcquired = true;
+            _inputLockReleased = false;
+        }
+
+        private void TryDumpRuntimeBlackBox(IPrologueSequenceRuntime runtime)
+        {
+            if (runtime == null)
+                return;
+
+            try
+            {
+                runtime.DumpBlackBox();
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private void TryPushTelemetryNoThrow(PrologueStage stage, uint stateHash, byte flags)
+        {
+            IPrologueSequenceRuntime runtime = _runtime;
+            if (runtime == null)
+                return;
+
+            try
+            {
+                runtime.PushTelemetry(stage, stateHash, flags);
+            }
+            catch (Exception)
+            {
             }
         }
 
@@ -413,6 +534,14 @@ namespace Hecton8.Narrative.Prologue
 
             float speedSqF = (float)math.min(speedSq, (double)float.MaxValue);
             return speedSqF * math.rsqrt(math.max(speedSqF, 0.000001f));
+        }
+
+        private static bool IsFiniteOrbital(in PrologueOrbitalSnapshot snapshot)
+        {
+            return math.all(math.isfinite(snapshot.UniverseVelocity)) &&
+                   math.isfinite(snapshot.PlanetDistanceMeters) &&
+                   math.isfinite(snapshot.ReentryHeat01) &&
+                   math.isfinite(snapshot.CloudWhiteout01);
         }
 
         private void DumpBlackBox()
@@ -449,7 +578,7 @@ namespace Hecton8.Narrative.Prologue
             }
             catch (Exception)
             {
-                _runtime?.PushTelemetry(PrologueStage.Faulted, DumpFailedHash, 1);
+                TryPushTelemetryNoThrow(PrologueStage.Faulted, DumpFailedHash, 1);
             }
         }
 

@@ -109,10 +109,6 @@ namespace Hecton8.Visor
             if (ActiveRuntimeInstance != null)
                 return ActiveRuntimeInstance;
 
-            InternalFloodWaterlineRuntime existing = FindAnyObjectByType<InternalFloodWaterlineRuntime>();
-            if (existing != null)
-                return existing;
-
             GameObject root = new GameObject("[InternalFloodWaterlineRuntime]"); // COLD ALLOC: GameObject[1] - bootstrap-owned internal flood visor bridge - owner: InternalFloodWaterlineRuntime
             return root.AddComponent<InternalFloodWaterlineRuntime>();
         }

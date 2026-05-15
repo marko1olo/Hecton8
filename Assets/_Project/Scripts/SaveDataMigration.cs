@@ -23,6 +23,134 @@ namespace Hecton8.SaveSystem
         private const int InvalidBiomeId = BiomeDiscoveryBitMask.InvalidBiomeId;
         private const int MaxAtlasRevealStage = 4;
 
+        private static void EnsureExactArrayCapacity<T>(ref T[] values, int capacity)
+        {
+            if (values != null && values.Length == capacity)
+                return;
+
+            T[] replacement = new T[capacity];
+            if (values != null && values.Length > 0)
+            {
+                int copyCount = values.Length < capacity ? values.Length : capacity;
+                Array.Copy(values, replacement, copyCount);
+            }
+
+            values = replacement;
+        }
+
+        private static bool TrimListToMax<T>(List<T> values, int maxCount, string step, List<string> steps)
+        {
+            if (values == null)
+                return false;
+
+            int safeMax = Math.Max(maxCount, 0);
+            if (values.Count <= safeMax)
+                return false;
+
+            values.RemoveRange(safeMax, values.Count - safeMax);
+            steps.Add(step);
+            return true;
+        }
+
+        private static bool TrimPairedListsToMax<T0, T1>(
+            List<T0> values0,
+            List<T1> values1,
+            int maxCount,
+            string step,
+            List<string> steps)
+        {
+            if (values0 == null || values1 == null)
+                return false;
+
+            int safeCount = Math.Min(Math.Max(maxCount, 0), Math.Min(values0.Count, values1.Count));
+            bool changed = false;
+
+            if (values0.Count > safeCount)
+            {
+                values0.RemoveRange(safeCount, values0.Count - safeCount);
+                changed = true;
+            }
+
+            if (values1.Count > safeCount)
+            {
+                values1.RemoveRange(safeCount, values1.Count - safeCount);
+                changed = true;
+            }
+
+            if (changed)
+                steps.Add(step);
+
+            return changed;
+        }
+
+        private static bool TrimDictionaryToMax<TKey, TValue>(
+            Dictionary<TKey, TValue> values,
+            int maxCount,
+            string step,
+            List<string> steps)
+        {
+            if (values == null)
+                return false;
+
+            int safeMax = Math.Max(maxCount, 0);
+            if (values.Count <= safeMax)
+                return false;
+
+            while (values.Count > safeMax)
+            {
+                TKey keyToRemove = default(TKey);
+                bool hasKey = false;
+                Dictionary<TKey, TValue>.Enumerator enumerator = values.GetEnumerator();
+                if (enumerator.MoveNext())
+                {
+                    keyToRemove = enumerator.Current.Key;
+                    hasKey = true;
+                }
+
+                enumerator.Dispose();
+
+                if (!hasKey)
+                    break;
+
+                values.Remove(keyToRemove);
+            }
+
+            steps.Add(step);
+            return true;
+        }
+
+        private static bool TrimHashSetToMax<T>(HashSet<T> values, int maxCount, string step, List<string> steps)
+        {
+            if (values == null)
+                return false;
+
+            int safeMax = Math.Max(maxCount, 0);
+            if (values.Count <= safeMax)
+                return false;
+
+            while (values.Count > safeMax)
+            {
+                T valueToRemove = default(T);
+                bool hasValue = false;
+                HashSet<T>.Enumerator enumerator = values.GetEnumerator();
+                if (enumerator.MoveNext())
+                {
+                    valueToRemove = enumerator.Current;
+                    hasValue = true;
+                }
+
+                enumerator.Dispose();
+
+                if (!hasValue)
+                    break;
+
+                values.Remove(valueToRemove);
+            }
+
+            steps.Add(step);
+            return true;
+        }
+
         public static bool MigrateInPlace(SaveData data, out int originalVersion, out string summary)
         {
             originalVersion = data != null ? data.version : 0;
@@ -48,6 +176,11 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("tool durability map created");
             }
+            changed |= TrimDictionaryToMax(
+                data.toolDurabilityMap,
+                SaveData.MaxToolDurabilityRecords,
+                "tool durability map capped",
+                steps);
 
             if (data.toolBrokenMap == null)
             {
@@ -55,6 +188,11 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("tool broken map created");
             }
+            changed |= TrimDictionaryToMax(
+                data.toolBrokenMap,
+                SaveData.MaxToolDurabilityRecords,
+                "tool broken map capped",
+                steps);
 
             if (data.CustomModData == null)
             {
@@ -62,6 +200,11 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("custom mod data created");
             }
+            changed |= TrimDictionaryToMax(
+                data.CustomModData,
+                SaveData.MaxCustomModDataEntries,
+                "custom mod data capped",
+                steps);
 
             if (data.suitBrokenUpgradeIds == null)
             {
@@ -69,6 +212,11 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("suit broken upgrades created");
             }
+            changed |= TrimListToMax(
+                data.suitBrokenUpgradeIds,
+                SaveData.MaxSuitUpgradeIds,
+                "suit broken upgrades capped",
+                steps);
 
             bool hadPackedBiomeCapacity = BiomeDiscoveryBitMask.HasExpectedCapacity(data.discoveredBiomeBitWords);
             if (!hadPackedBiomeCapacity)
@@ -77,6 +225,12 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("discovered biome bit words created");
             }
+
+            changed |= TrimHashSetToMax(
+                data.discoveredBiomeIds,
+                SaveData.MaxLegacyDiscoveredBiomeIds,
+                "discovered biome set capped",
+                steps);
 
             if (!BiomeDiscoveryBitMask.HasAnySet(data.discoveredBiomeBitWords) &&
                 data.discoveredBiomeIds != null &&
@@ -140,20 +294,27 @@ namespace Hecton8.SaveSystem
         private static bool EnsureInventory(ref InventoryDTO dto, List<string> steps)
         {
             bool changed = false;
+            int cellBound = ClampArrayLength(dto.itemHashIds, InventoryDTO.MaxCells);
+            cellBound = math.min(cellBound, ClampArrayLength(dto.packedCellCoordinates, InventoryDTO.MaxCells));
+            cellBound = math.min(cellBound, ClampArrayLength(dto.stackCounts, InventoryDTO.MaxCells));
+            int durabilityBound = ClampArrayLength(dto.itemDurabilityRle, InventoryDTO.MaxDurabilityRleBytes);
+
             if (dto.itemHashIds == null ||
-                dto.itemHashIds.Length < InventoryDTO.MaxCells ||
+                dto.itemHashIds.Length != InventoryDTO.MaxCells ||
                 dto.packedCellCoordinates == null ||
-                dto.packedCellCoordinates.Length < InventoryDTO.MaxCells ||
+                dto.packedCellCoordinates.Length != InventoryDTO.MaxCells ||
                 dto.stackCounts == null ||
-                dto.stackCounts.Length < InventoryDTO.MaxCells ||
+                dto.stackCounts.Length != InventoryDTO.MaxCells ||
                 dto.itemStateFlags == null ||
-                dto.itemStateFlags.Length < InventoryDTO.MaxCells ||
+                dto.itemStateFlags.Length != InventoryDTO.MaxCells ||
+                dto.itemGeneticsWords == null ||
+                dto.itemGeneticsWords.Length != InventoryDTO.MaxCells ||
                 dto.qualityMilli == null ||
-                dto.qualityMilli.Length < InventoryDTO.MaxCells ||
+                dto.qualityMilli.Length != InventoryDTO.MaxCells ||
                 dto.lastUpdateUnixSeconds == null ||
-                dto.lastUpdateUnixSeconds.Length < InventoryDTO.MaxCells ||
+                dto.lastUpdateUnixSeconds.Length != InventoryDTO.MaxCells ||
                 dto.itemDurabilityRle == null ||
-                dto.itemDurabilityRle.Length < InventoryDTO.MaxDurabilityRleBytes)
+                dto.itemDurabilityRle.Length != InventoryDTO.MaxDurabilityRleBytes)
             {
                 dto.EnsureCapacity();
                 changed = true;
@@ -163,7 +324,7 @@ namespace Hecton8.SaveSystem
             int clampedDurabilityRleLength = math.clamp(
                 dto.itemDurabilityRleLength,
                 0,
-                dto.itemDurabilityRle != null ? dto.itemDurabilityRle.Length : 0);
+                durabilityBound);
             if (clampedDurabilityRleLength != dto.itemDurabilityRleLength)
             {
                 dto.itemDurabilityRleLength = clampedDurabilityRleLength;
@@ -171,12 +332,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("inventory durability RLE length clamped");
             }
 
-            int capacity = math.min(
-                dto.itemHashIds != null ? dto.itemHashIds.Length : 0,
-                math.min(
-                    dto.packedCellCoordinates != null ? dto.packedCellCoordinates.Length : 0,
-                    dto.stackCounts != null ? dto.stackCounts.Length : 0));
-            int clamped = math.clamp(dto.cellCount, 0, capacity);
+            int clamped = math.clamp(dto.cellCount, 0, cellBound);
             if (clamped != dto.cellCount)
             {
                 dto.cellCount = clamped;
@@ -237,18 +393,28 @@ namespace Hecton8.SaveSystem
         private static bool EnsureWorldState(ref WorldStateDTO dto, List<string> steps)
         {
             bool changed = false;
-            if (dto.depletedNodeIds == null || dto.depletedNodeIds.Length < WorldStateDTO.MaxNodes ||
-                dto.depletedPickupChunkKeys == null || dto.depletedPickupChunkKeys.Length < WorldStateDTO.MaxPickupChunks ||
-                dto.depletedPickupChunkWordStarts == null || dto.depletedPickupChunkWordStarts.Length < WorldStateDTO.MaxPickupChunks ||
-                dto.depletedPickupChunkWordCounts == null || dto.depletedPickupChunkWordCounts.Length < WorldStateDTO.MaxPickupChunks ||
-                dto.depletedPickupWords == null || dto.depletedPickupWords.Length < WorldStateDTO.MaxPickupWords)
+            int depletedBound = ClampArrayLength(dto.depletedNodeIds, WorldStateDTO.MaxNodes);
+            int pickupChunkBound = ClampArrayLength(dto.depletedPickupChunkKeys, WorldStateDTO.MaxPickupChunks);
+            pickupChunkBound = math.min(
+                pickupChunkBound,
+                ClampArrayLength(dto.depletedPickupChunkWordStarts, WorldStateDTO.MaxPickupChunks));
+            pickupChunkBound = math.min(
+                pickupChunkBound,
+                ClampArrayLength(dto.depletedPickupChunkWordCounts, WorldStateDTO.MaxPickupChunks));
+            int pickupWordBound = ClampArrayLength(dto.depletedPickupWords, WorldStateDTO.MaxPickupWords);
+
+            if (dto.depletedNodeIds == null || dto.depletedNodeIds.Length != WorldStateDTO.MaxNodes ||
+                dto.depletedPickupChunkKeys == null || dto.depletedPickupChunkKeys.Length != WorldStateDTO.MaxPickupChunks ||
+                dto.depletedPickupChunkWordStarts == null || dto.depletedPickupChunkWordStarts.Length != WorldStateDTO.MaxPickupChunks ||
+                dto.depletedPickupChunkWordCounts == null || dto.depletedPickupChunkWordCounts.Length != WorldStateDTO.MaxPickupChunks ||
+                dto.depletedPickupWords == null || dto.depletedPickupWords.Length != WorldStateDTO.MaxPickupWords)
             {
                 dto.EnsureCapacity();
                 changed = true;
                 steps.Add("world state capacity repaired");
             }
 
-            int clamped = math.clamp(dto.depletedCount, 0, dto.depletedNodeIds != null ? dto.depletedNodeIds.Length : 0);
+            int clamped = math.clamp(dto.depletedCount, 0, depletedBound);
             if (clamped != dto.depletedCount)
             {
                 dto.depletedCount = clamped;
@@ -259,7 +425,7 @@ namespace Hecton8.SaveSystem
             int clampedPickupChunks = math.clamp(
                 dto.depletedPickupChunkCount,
                 0,
-                dto.depletedPickupChunkKeys != null ? dto.depletedPickupChunkKeys.Length : 0);
+                pickupChunkBound);
             if (clampedPickupChunks != dto.depletedPickupChunkCount)
             {
                 dto.depletedPickupChunkCount = clampedPickupChunks;
@@ -270,7 +436,7 @@ namespace Hecton8.SaveSystem
             int clampedPickupWords = math.clamp(
                 dto.depletedPickupWordCount,
                 0,
-                dto.depletedPickupWords != null ? dto.depletedPickupWords.Length : 0);
+                pickupWordBound);
             if (clampedPickupWords != dto.depletedPickupWordCount)
             {
                 dto.depletedPickupWordCount = clampedPickupWords;
@@ -291,6 +457,11 @@ namespace Hecton8.SaveSystem
                 steps.Add("world generation version clamped");
             }
 
+            int infectedBound = ClampArrayLength(dto.infectedChunkKeys, EcosystemStateDTO.MaxInfectedZones);
+            infectedBound = math.min(
+                infectedBound,
+                ClampArrayLength(dto.infectedSeverities, EcosystemStateDTO.MaxInfectedZones));
+
             int existingCount = dto.infectedChunkKeys != null ? dto.infectedChunkKeys.Length : 0;
             long[] previousKeys = null;
             float[] previousSeverities = null;
@@ -302,9 +473,9 @@ namespace Hecton8.SaveSystem
             }
 
             if (dto.infectedChunkKeys == null ||
-                dto.infectedChunkKeys.Length < EcosystemStateDTO.MaxInfectedZones ||
+                dto.infectedChunkKeys.Length != EcosystemStateDTO.MaxInfectedZones ||
                 dto.infectedSeverities == null ||
-                dto.infectedSeverities.Length < EcosystemStateDTO.MaxInfectedZones)
+                dto.infectedSeverities.Length != EcosystemStateDTO.MaxInfectedZones)
             {
                 dto.EnsureCapacity();
                 if (previousKeys != null)
@@ -322,7 +493,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("ecosystem state capacity repaired");
             }
 
-            int clampedCount = math.clamp(dto.infectedZoneCount, 0, dto.infectedChunkKeys != null ? dto.infectedChunkKeys.Length : 0);
+            int clampedCount = math.clamp(dto.infectedZoneCount, 0, infectedBound);
             if (clampedCount != dto.infectedZoneCount)
             {
                 dto.infectedZoneCount = clampedCount;
@@ -497,15 +668,16 @@ namespace Hecton8.SaveSystem
         private static bool EnsureNarrative(ref SaveData data, List<string> steps)
         {
             bool changed = false;
+            int narrativeBound = ClampArrayLength(data.narrativeDiscoveryIds, SaveData.MaxNarrativeDiscoveries);
 
-            if (data.narrativeDiscoveryIds == null || data.narrativeDiscoveryIds.Length < SaveData.MaxNarrativeDiscoveries)
+            if (data.narrativeDiscoveryIds == null || data.narrativeDiscoveryIds.Length != SaveData.MaxNarrativeDiscoveries)
             {
-                data.narrativeDiscoveryIds = new string[SaveData.MaxNarrativeDiscoveries];
+                EnsureExactArrayCapacity(ref data.narrativeDiscoveryIds, SaveData.MaxNarrativeDiscoveries);
                 changed = true;
                 steps.Add("narrative discovery capacity repaired");
             }
 
-            int clampedCount = math.clamp(data.narrativeDiscoveryCount, 0, data.narrativeDiscoveryIds.Length);
+            int clampedCount = math.clamp(data.narrativeDiscoveryCount, 0, narrativeBound);
             if (clampedCount != data.narrativeDiscoveryCount)
             {
                 data.narrativeDiscoveryCount = clampedCount;
@@ -526,43 +698,48 @@ namespace Hecton8.SaveSystem
         private static bool EnsureExplorationMap(ref ExplorationMapDTO dto, List<string> steps)
         {
             bool changed = false;
+            int exploredChunkBound = ClampArrayLength(dto.exploredChunkKeys, ExplorationMapDTO.MaxExploredChunks);
+            int mortonWordBound = ClampArrayLength(dto.exploredMortonMaskWords, ExplorationMapDTO.MortonMaskWordCount);
+            int mortonByteBound = ClampArrayLength(dto.exploredMortonMaskBytes, ExplorationMapDTO.MortonMaskByteCount);
+            int sectorWordBound = ClampArrayLength(dto.discoveredSectorMaskWords, ExplorationMapDTO.CartographyMaskWordCount);
+            int sectorByteBound = ClampArrayLength(dto.discoveredSectorMaskBytes, ExplorationMapDTO.CartographyMaskByteCount);
 
-            if (dto.exploredChunkKeys == null || dto.exploredChunkKeys.Length < ExplorationMapDTO.MaxExploredChunks)
+            if (dto.exploredChunkKeys == null || dto.exploredChunkKeys.Length != ExplorationMapDTO.MaxExploredChunks)
             {
                 dto.EnsureCapacity();
                 changed = true;
                 steps.Add("exploration map capacity repaired");
             }
 
-            if (dto.exploredMortonMaskWords == null || dto.exploredMortonMaskWords.Length < ExplorationMapDTO.MortonMaskWordCount)
+            if (dto.exploredMortonMaskWords == null || dto.exploredMortonMaskWords.Length != ExplorationMapDTO.MortonMaskWordCount)
             {
                 dto.EnsureCapacity();
                 changed = true;
                 steps.Add("exploration morton bitmask capacity repaired");
             }
 
-            if (dto.exploredMortonMaskBytes == null || dto.exploredMortonMaskBytes.Length < ExplorationMapDTO.MortonMaskByteCount)
+            if (dto.exploredMortonMaskBytes == null || dto.exploredMortonMaskBytes.Length != ExplorationMapDTO.MortonMaskByteCount)
             {
                 dto.EnsureCapacity();
                 changed = true;
                 steps.Add("exploration morton byte mask capacity repaired");
             }
 
-            if (dto.discoveredSectorMaskWords == null || dto.discoveredSectorMaskWords.Length < ExplorationMapDTO.CartographyMaskWordCount)
+            if (dto.discoveredSectorMaskWords == null || dto.discoveredSectorMaskWords.Length != ExplorationMapDTO.CartographyMaskWordCount)
             {
                 dto.EnsureCapacity();
                 changed = true;
                 steps.Add("cartography sector bitmask capacity repaired");
             }
 
-            if (dto.discoveredSectorMaskBytes == null || dto.discoveredSectorMaskBytes.Length < ExplorationMapDTO.CartographyMaskByteCount)
+            if (dto.discoveredSectorMaskBytes == null || dto.discoveredSectorMaskBytes.Length != ExplorationMapDTO.CartographyMaskByteCount)
             {
                 dto.EnsureCapacity();
                 changed = true;
                 steps.Add("cartography sector byte mask capacity repaired");
             }
 
-            int clampedCount = math.clamp(dto.exploredChunkCount, 0, dto.exploredChunkKeys != null ? dto.exploredChunkKeys.Length : 0);
+            int clampedCount = math.clamp(dto.exploredChunkCount, 0, exploredChunkBound);
             if (clampedCount != dto.exploredChunkCount)
             {
                 dto.exploredChunkCount = clampedCount;
@@ -570,7 +747,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("exploration map count clamped");
             }
 
-            int clampedWordCount = math.clamp(dto.exploredMortonWordCount, 0, ExplorationMapDTO.MortonMaskWordCount);
+            int clampedWordCount = math.clamp(dto.exploredMortonWordCount, 0, mortonWordBound);
             if (clampedWordCount != dto.exploredMortonWordCount)
             {
                 dto.exploredMortonWordCount = clampedWordCount;
@@ -578,7 +755,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("exploration morton word count clamped");
             }
 
-            int clampedByteCount = math.clamp(dto.exploredMortonByteCount, 0, ExplorationMapDTO.MortonMaskByteCount);
+            int clampedByteCount = math.clamp(dto.exploredMortonByteCount, 0, mortonByteBound);
             clampedByteCount = SaveBinaryStorage.AlignExplorationMortonByteCount(clampedByteCount);
             if (clampedByteCount != dto.exploredMortonByteCount)
             {
@@ -587,7 +764,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("exploration morton byte count aligned");
             }
 
-            int clampedSectorWordCount = math.clamp(dto.discoveredSectorWordCount, 0, ExplorationMapDTO.CartographyMaskWordCount);
+            int clampedSectorWordCount = math.clamp(dto.discoveredSectorWordCount, 0, sectorWordBound);
             if (clampedSectorWordCount != dto.discoveredSectorWordCount)
             {
                 dto.discoveredSectorWordCount = clampedSectorWordCount;
@@ -595,7 +772,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("cartography sector word count clamped");
             }
 
-            int clampedSectorByteCount = math.clamp(dto.discoveredSectorByteCount, 0, ExplorationMapDTO.CartographyMaskByteCount);
+            int clampedSectorByteCount = math.clamp(dto.discoveredSectorByteCount, 0, sectorByteBound);
             clampedSectorByteCount = SaveBinaryStorage.AlignExplorationMortonByteCount(clampedSectorByteCount);
             if (clampedSectorByteCount != dto.discoveredSectorByteCount)
             {
@@ -634,17 +811,21 @@ namespace Hecton8.SaveSystem
         private static bool EnsurePdaLogbook(ref PDALogbookDTO dto, List<string> steps)
         {
             bool changed = false;
+            int entryBound = ClampArrayLength(dto.entries, PDALogbookDTO.MaxEntries);
+            int seenOriginBound = ClampArrayLength(dto.seenOriginHashes, PDALogbookDTO.MaxSeenOrigins);
+            if (seenOriginBound == 0)
+                seenOriginBound = ClampArrayLength(dto.seenOriginKeys, PDALogbookDTO.MaxSeenOrigins);
 
-            if (dto.entries == null || dto.entries.Length < PDALogbookDTO.MaxEntries ||
-                dto.seenOriginKeys == null || dto.seenOriginKeys.Length < PDALogbookDTO.MaxSeenOrigins ||
-                dto.seenOriginHashes == null || dto.seenOriginHashes.Length < PDALogbookDTO.MaxSeenOrigins)
+            if (dto.entries == null || dto.entries.Length != PDALogbookDTO.MaxEntries ||
+                dto.seenOriginKeys == null || dto.seenOriginKeys.Length != PDALogbookDTO.MaxSeenOrigins ||
+                dto.seenOriginHashes == null || dto.seenOriginHashes.Length != PDALogbookDTO.MaxSeenOrigins)
             {
                 dto.EnsureCapacity();
                 changed = true;
                 steps.Add("pda logbook capacity repaired");
             }
 
-            int clampedCount = math.clamp(dto.entryCount, 0, dto.entries != null ? dto.entries.Length : 0);
+            int clampedCount = math.clamp(dto.entryCount, 0, entryBound);
             if (clampedCount != dto.entryCount)
             {
                 dto.entryCount = clampedCount;
@@ -659,7 +840,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("pda logbook sequence repaired");
             }
 
-            int clampedSeenOriginCount = math.clamp(dto.seenOriginCount, 0, dto.seenOriginKeys != null ? dto.seenOriginKeys.Length : 0);
+            int clampedSeenOriginCount = math.clamp(dto.seenOriginCount, 0, seenOriginBound);
             if (clampedSeenOriginCount != dto.seenOriginCount)
             {
                 dto.seenOriginCount = clampedSeenOriginCount;
@@ -673,15 +854,16 @@ namespace Hecton8.SaveSystem
         private static bool EnsurePdaMarkers(ref PDAMarkerRegistryDTO dto, List<string> steps)
         {
             bool changed = false;
+            int markerBound = ClampArrayLength(dto.entries, PDAMarkerRegistryDTO.MaxEntries);
 
-            if (dto.entries == null || dto.entries.Length < PDAMarkerRegistryDTO.MaxEntries)
+            if (dto.entries == null || dto.entries.Length != PDAMarkerRegistryDTO.MaxEntries)
             {
                 dto.EnsureCapacity();
                 changed = true;
                 steps.Add("pda marker capacity repaired");
             }
 
-            int clampedCount = math.clamp(dto.markerCount, 0, dto.entries != null ? dto.entries.Length : 0);
+            int clampedCount = math.clamp(dto.markerCount, 0, markerBound);
             if (clampedCount != dto.markerCount)
             {
                 dto.markerCount = clampedCount;
@@ -779,15 +961,16 @@ namespace Hecton8.SaveSystem
         private static bool EnsureProceduralLore(ref ProceduralLoreStateDTO dto, List<string> steps)
         {
             bool changed = false;
+            int activePlacementBound = ClampArrayLength(dto.activePlacements, ProceduralLoreStateDTO.MaxActivePlacements);
 
-            if (dto.activePlacements == null || dto.activePlacements.Length < ProceduralLoreStateDTO.MaxActivePlacements)
+            if (dto.activePlacements == null || dto.activePlacements.Length != ProceduralLoreStateDTO.MaxActivePlacements)
             {
                 dto.EnsureCapacity();
                 changed = true;
                 steps.Add("procedural lore capacity repaired");
             }
 
-            int clampedCount = math.clamp(dto.activeCount, 0, dto.activePlacements != null ? dto.activePlacements.Length : 0);
+            int clampedCount = math.clamp(dto.activeCount, 0, activePlacementBound);
             if (clampedCount != dto.activeCount)
             {
                 dto.activeCount = clampedCount;
@@ -808,15 +991,16 @@ namespace Hecton8.SaveSystem
         private static bool EnsureAchievements(ref AchievementRegistryDTO dto, List<string> steps)
         {
             bool changed = false;
+            int unlockedBound = ClampArrayLength(dto.unlockedIds, AchievementRegistryDTO.MaxUnlockedAchievements);
 
-            if (dto.unlockedIds == null || dto.unlockedIds.Length < AchievementRegistryDTO.MaxUnlockedAchievements)
+            if (dto.unlockedIds == null || dto.unlockedIds.Length != AchievementRegistryDTO.MaxUnlockedAchievements)
             {
                 dto.EnsureCapacity();
                 changed = true;
                 steps.Add("achievement registry capacity repaired");
             }
 
-            int clampedUnlockedCount = math.clamp(dto.unlockedCount, 0, dto.unlockedIds != null ? dto.unlockedIds.Length : 0);
+            int clampedUnlockedCount = math.clamp(dto.unlockedCount, 0, unlockedBound);
             if (clampedUnlockedCount != dto.unlockedCount)
             {
                 dto.unlockedCount = clampedUnlockedCount;
@@ -881,6 +1065,9 @@ namespace Hecton8.SaveSystem
             bool changed = false;
             int previousHashCapacity = dto.variableHashes != null ? dto.variableHashes.Length : 0;
             int previousValueCapacity = dto.variableValues != null ? dto.variableValues.Length : 0;
+            int variableBound = math.min(
+                MetaCampaignDTO.MaxGlobalVariables,
+                math.min(previousHashCapacity, previousValueCapacity));
 
             dto.EnsureCapacity();
             if (dto.variableHashes.Length != previousHashCapacity ||
@@ -893,7 +1080,7 @@ namespace Hecton8.SaveSystem
             int clampedCount = math.clamp(
                 dto.variableCount,
                 0,
-                math.min(dto.variableHashes.Length, dto.variableValues.Length));
+                variableBound);
             if (clampedCount != dto.variableCount)
             {
                 dto.variableCount = clampedCount;
@@ -918,6 +1105,9 @@ namespace Hecton8.SaveSystem
             int previousHashCapacity = dto.itemHashIds != null ? dto.itemHashIds.Length : 0;
             int previousItemCapacity = dto.itemIds != null ? dto.itemIds.Length : 0;
             int previousCountCapacity = dto.collectedCounts != null ? dto.collectedCounts.Length : 0;
+            int entryBound = math.min(
+                ResourceScarcityDTO.MaxTrackedResources,
+                math.min(previousHashCapacity, math.min(previousItemCapacity, previousCountCapacity)));
 
             dto.EnsureCapacity();
             if (dto.itemHashIds.Length != previousHashCapacity ||
@@ -931,7 +1121,7 @@ namespace Hecton8.SaveSystem
             int clampedEntryCount = math.clamp(
                 dto.entryCount,
                 0,
-                math.min(dto.itemHashIds.Length, math.min(dto.itemIds.Length, dto.collectedCounts.Length)));
+                entryBound);
 
             if (clampedEntryCount != dto.entryCount)
             {
@@ -1027,17 +1217,24 @@ namespace Hecton8.SaveSystem
         private static bool EnsureConstruction(ref ConstructionDTO dto, int sourceVersion, List<string> steps)
         {
             bool changed = false;
-            if (dto.modules == null || dto.modules.Length < ConstructionDTO.MaxModules ||
-                dto.graphNodes == null || dto.graphNodes.Length < ConstructionDTO.MaxModules ||
-                dto.graphEdges == null || dto.graphEdges.Length < ConstructionDTO.MaxGraphEdges ||
-                dto.moduleBlitRecords == null || dto.moduleBlitRecords.Length < ConstructionDTO.MaxModules)
+            int moduleBound = ClampArrayLength(dto.modules, ConstructionDTO.MaxModules);
+            int graphNodeBound = ClampArrayLength(dto.graphNodes, ConstructionDTO.MaxModules);
+            int graphEdgeBound = ClampArrayLength(dto.graphEdges, ConstructionDTO.MaxGraphEdges);
+            int moduleBlitBound = ClampArrayLength(dto.moduleBlitRecords, ConstructionDTO.MaxModules);
+            int habitatFloodBound = ClampArrayLength(dto.habitatFloodStates, ConstructionDTO.MaxModules);
+
+            if (dto.modules == null || dto.modules.Length != ConstructionDTO.MaxModules ||
+                dto.graphNodes == null || dto.graphNodes.Length != ConstructionDTO.MaxModules ||
+                dto.graphEdges == null || dto.graphEdges.Length != ConstructionDTO.MaxGraphEdges ||
+                dto.moduleBlitRecords == null || dto.moduleBlitRecords.Length != ConstructionDTO.MaxModules ||
+                dto.habitatFloodStates == null || dto.habitatFloodStates.Length != ConstructionDTO.MaxModules)
             {
                 dto.EnsureCapacity();
                 changed = true;
                 steps.Add("construction capacity repaired");
             }
 
-            int clamped = math.clamp(dto.moduleCount, 0, dto.modules != null ? dto.modules.Length : 0);
+            int clamped = math.clamp(dto.moduleCount, 0, moduleBound);
             if (clamped != dto.moduleCount)
             {
                 dto.moduleCount = clamped;
@@ -1045,12 +1242,36 @@ namespace Hecton8.SaveSystem
                 steps.Add("construction count clamped");
             }
 
-            int clampedBlitCount = math.clamp(dto.moduleBlitCount, 0, dto.moduleBlitRecords != null ? dto.moduleBlitRecords.Length : 0);
+            int clampedGraphNodeCount = math.clamp(dto.graphNodeCount, 0, graphNodeBound);
+            if (clampedGraphNodeCount != dto.graphNodeCount)
+            {
+                dto.graphNodeCount = clampedGraphNodeCount;
+                changed = true;
+                steps.Add("construction graph node count clamped");
+            }
+
+            int clampedGraphEdgeCount = math.clamp(dto.graphEdgeCount, 0, graphEdgeBound);
+            if (clampedGraphEdgeCount != dto.graphEdgeCount)
+            {
+                dto.graphEdgeCount = clampedGraphEdgeCount;
+                changed = true;
+                steps.Add("construction graph edge count clamped");
+            }
+
+            int clampedBlitCount = math.clamp(dto.moduleBlitCount, 0, moduleBlitBound);
             if (clampedBlitCount != dto.moduleBlitCount)
             {
                 dto.moduleBlitCount = clampedBlitCount;
                 changed = true;
                 steps.Add("construction blit count clamped");
+            }
+
+            int clampedFloodCount = math.clamp(dto.habitatFloodStateCount, 0, habitatFloodBound);
+            if (clampedFloodCount != dto.habitatFloodStateCount)
+            {
+                dto.habitatFloodStateCount = clampedFloodCount;
+                changed = true;
+                steps.Add("construction flood count clamped");
             }
 
             if (sourceVersion < 2 && dto.modules != null)
@@ -1104,18 +1325,24 @@ namespace Hecton8.SaveSystem
         private static bool EnsureProceduralWorldState(ref ProceduralWorldStateDTO dto, List<string> steps)
         {
             bool changed = false;
-            if (dto.suppressedPlacementKeys == null || dto.suppressedPlacementKeys.Length < ProceduralWorldStateDTO.MaxSuppressedPlacements ||
-                dto.faunaStates == null || dto.faunaStates.Length < ProceduralWorldStateDTO.MaxFaunaStates ||
-                dto.hibernatedFaunaStates == null || dto.hibernatedFaunaStates.Length < ProceduralWorldStateDTO.MaxHibernatedFaunaStates ||
-                dto.geologySeamStates == null || dto.geologySeamStates.Length < ProceduralWorldStateDTO.MaxGeologySeamStates ||
-                dto.geologyCaveEntrances == null || dto.geologyCaveEntrances.Length < ProceduralWorldStateDTO.MaxGeologyCaveEntrances)
+            int suppressedPlacementBound = ClampArrayLength(dto.suppressedPlacementKeys, ProceduralWorldStateDTO.MaxSuppressedPlacements);
+            int faunaStateBound = ClampArrayLength(dto.faunaStates, ProceduralWorldStateDTO.MaxFaunaStates);
+            int hibernatedFaunaBound = ClampArrayLength(dto.hibernatedFaunaStates, ProceduralWorldStateDTO.MaxHibernatedFaunaStates);
+            int geologySeamBound = ClampArrayLength(dto.geologySeamStates, ProceduralWorldStateDTO.MaxGeologySeamStates);
+            int geologyCaveBound = ClampArrayLength(dto.geologyCaveEntrances, ProceduralWorldStateDTO.MaxGeologyCaveEntrances);
+
+            if (dto.suppressedPlacementKeys == null || dto.suppressedPlacementKeys.Length != ProceduralWorldStateDTO.MaxSuppressedPlacements ||
+                dto.faunaStates == null || dto.faunaStates.Length != ProceduralWorldStateDTO.MaxFaunaStates ||
+                dto.hibernatedFaunaStates == null || dto.hibernatedFaunaStates.Length != ProceduralWorldStateDTO.MaxHibernatedFaunaStates ||
+                dto.geologySeamStates == null || dto.geologySeamStates.Length != ProceduralWorldStateDTO.MaxGeologySeamStates ||
+                dto.geologyCaveEntrances == null || dto.geologyCaveEntrances.Length != ProceduralWorldStateDTO.MaxGeologyCaveEntrances)
             {
                 dto.EnsureCapacity();
                 changed = true;
                 steps.Add("procedural world state capacity repaired");
             }
 
-            int clampedSuppressed = math.clamp(dto.suppressedPlacementCount, 0, dto.suppressedPlacementKeys != null ? dto.suppressedPlacementKeys.Length : 0);
+            int clampedSuppressed = math.clamp(dto.suppressedPlacementCount, 0, suppressedPlacementBound);
             if (clampedSuppressed != dto.suppressedPlacementCount)
             {
                 dto.suppressedPlacementCount = clampedSuppressed;
@@ -1123,7 +1350,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("procedural suppressed placement count clamped");
             }
 
-            int clampedFauna = math.clamp(dto.faunaStateCount, 0, dto.faunaStates != null ? dto.faunaStates.Length : 0);
+            int clampedFauna = math.clamp(dto.faunaStateCount, 0, faunaStateBound);
             if (clampedFauna != dto.faunaStateCount)
             {
                 dto.faunaStateCount = clampedFauna;
@@ -1131,7 +1358,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("procedural fauna state count clamped");
             }
 
-            int clampedHibernatedFauna = math.clamp(dto.hibernatedFaunaCount, 0, dto.hibernatedFaunaStates != null ? dto.hibernatedFaunaStates.Length : 0);
+            int clampedHibernatedFauna = math.clamp(dto.hibernatedFaunaCount, 0, hibernatedFaunaBound);
             if (clampedHibernatedFauna != dto.hibernatedFaunaCount)
             {
                 dto.hibernatedFaunaCount = clampedHibernatedFauna;
@@ -1139,7 +1366,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("hibernated fauna state count clamped");
             }
 
-            int clampedSeamStates = math.clamp(dto.geologySeamStateCount, 0, dto.geologySeamStates != null ? dto.geologySeamStates.Length : 0);
+            int clampedSeamStates = math.clamp(dto.geologySeamStateCount, 0, geologySeamBound);
             if (clampedSeamStates != dto.geologySeamStateCount)
             {
                 dto.geologySeamStateCount = clampedSeamStates;
@@ -1147,7 +1374,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("procedural geology seam count clamped");
             }
 
-            int clampedCaveEntrances = math.clamp(dto.geologyCaveEntranceCount, 0, dto.geologyCaveEntrances != null ? dto.geologyCaveEntrances.Length : 0);
+            int clampedCaveEntrances = math.clamp(dto.geologyCaveEntranceCount, 0, geologyCaveBound);
             if (clampedCaveEntrances != dto.geologyCaveEntranceCount)
             {
                 dto.geologyCaveEntranceCount = clampedCaveEntrances;
@@ -1158,18 +1385,29 @@ namespace Hecton8.SaveSystem
             return changed;
         }
 
+        private static int ClampArrayLength<T>(T[] values, int maxCount)
+        {
+            if (values == null || maxCount <= 0)
+                return 0;
+
+            return math.min(values.Length, maxCount);
+        }
+
         private static bool EnsureScanLog(ref ScanLogDTO dto, List<string> steps)
         {
             bool changed = false;
-            if (dto.entries == null || dto.entries.Length < ScanLogDTO.MaxEntries ||
-                dto.recentEntryIds == null || dto.recentEntryIds.Length < ScanLogDTO.MaxRecentEntries)
+            int entryBound = ClampArrayLength(dto.entries, ScanLogDTO.MaxEntries);
+            int recentEntryBound = ClampArrayLength(dto.recentEntryIds, ScanLogDTO.MaxRecentEntries);
+
+            if (dto.entries == null || dto.entries.Length != ScanLogDTO.MaxEntries ||
+                dto.recentEntryIds == null || dto.recentEntryIds.Length != ScanLogDTO.MaxRecentEntries)
             {
                 dto.EnsureCapacity();
                 changed = true;
                 steps.Add("scan log capacity repaired");
             }
 
-            int clampedEntries = math.clamp(dto.entryCount, 0, dto.entries != null ? dto.entries.Length : 0);
+            int clampedEntries = math.clamp(dto.entryCount, 0, entryBound);
             if (clampedEntries != dto.entryCount)
             {
                 dto.entryCount = clampedEntries;
@@ -1177,7 +1415,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("scan log count clamped");
             }
 
-            int clampedRecent = math.clamp(dto.recentCount, 0, dto.recentEntryIds != null ? dto.recentEntryIds.Length : 0);
+            int clampedRecent = math.clamp(dto.recentCount, 0, recentEntryBound);
             if (clampedRecent != dto.recentCount)
             {
                 dto.recentCount = clampedRecent;
@@ -1191,15 +1429,18 @@ namespace Hecton8.SaveSystem
         private static bool EnsureBarter(ref BarterDTO dto, List<string> steps)
         {
             bool changed = false;
-            if (dto.offerStates == null || dto.offerStates.Length < BarterDTO.MaxOffers ||
-                dto.recentTransactions == null || dto.recentTransactions.Length < BarterDTO.MaxRecentTransactions)
+            int offerBound = ClampArrayLength(dto.offerStates, BarterDTO.MaxOffers);
+            int transactionBound = ClampArrayLength(dto.recentTransactions, BarterDTO.MaxRecentTransactions);
+
+            if (dto.offerStates == null || dto.offerStates.Length != BarterDTO.MaxOffers ||
+                dto.recentTransactions == null || dto.recentTransactions.Length != BarterDTO.MaxRecentTransactions)
             {
                 dto.EnsureCapacity();
                 changed = true;
                 steps.Add("barter capacity repaired");
             }
 
-            int clampedStates = math.clamp(dto.stateCount, 0, dto.offerStates != null ? dto.offerStates.Length : 0);
+            int clampedStates = math.clamp(dto.stateCount, 0, offerBound);
             if (clampedStates != dto.stateCount)
             {
                 dto.stateCount = clampedStates;
@@ -1207,7 +1448,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("barter state count clamped");
             }
 
-            int clampedTransactions = math.clamp(dto.recentTransactionCount, 0, dto.recentTransactions != null ? dto.recentTransactions.Length : 0);
+            int clampedTransactions = math.clamp(dto.recentTransactionCount, 0, transactionBound);
             if (clampedTransactions != dto.recentTransactionCount)
             {
                 dto.recentTransactionCount = clampedTransactions;
@@ -1221,14 +1462,16 @@ namespace Hecton8.SaveSystem
         private static bool EnsureFieldOperations(ref FieldOperationLogDTO dto, List<string> steps)
         {
             bool changed = false;
-            if (dto.recentEntries == null || dto.recentEntries.Length < FieldOperationLogDTO.MaxRecentEntries)
+            int recentEntryBound = ClampArrayLength(dto.recentEntries, FieldOperationLogDTO.MaxRecentEntries);
+
+            if (dto.recentEntries == null || dto.recentEntries.Length != FieldOperationLogDTO.MaxRecentEntries)
             {
                 dto.EnsureCapacity();
                 changed = true;
                 steps.Add("field log capacity repaired");
             }
 
-            int clamped = math.clamp(dto.recentCount, 0, dto.recentEntries != null ? dto.recentEntries.Length : 0);
+            int clamped = math.clamp(dto.recentCount, 0, recentEntryBound);
             if (clamped != dto.recentCount)
             {
                 dto.recentCount = clamped;
@@ -1242,14 +1485,16 @@ namespace Hecton8.SaveSystem
         private static bool EnsureBeaconNetwork(ref BeaconNetworkDTO dto, List<string> steps)
         {
             bool changed = false;
-            if (dto.entries == null || dto.entries.Length < BeaconNetworkDTO.MaxEntries)
+            int beaconBound = ClampArrayLength(dto.entries, BeaconNetworkDTO.MaxEntries);
+
+            if (dto.entries == null || dto.entries.Length != BeaconNetworkDTO.MaxEntries)
             {
                 dto.EnsureCapacity();
                 changed = true;
                 steps.Add("beacon capacity repaired");
             }
 
-            int clamped = math.clamp(dto.activeCount, 0, dto.entries != null ? dto.entries.Length : 0);
+            int clamped = math.clamp(dto.activeCount, 0, beaconBound);
             if (clamped != dto.activeCount)
             {
                 dto.activeCount = clamped;
@@ -1304,6 +1549,11 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("audioLog list created");
             }
+            changed |= TrimListToMax(
+                data.audioLogDiscoveredIds,
+                SaveData.MaxLegacyAudioLogDiscoveredIds,
+                "audioLog list capped",
+                steps);
 
             if (!AudioLogDiscoveryBitMask.HasExpectedCapacity(data.audioLogDiscoveryBitWords))
             {
@@ -1312,30 +1562,43 @@ namespace Hecton8.SaveSystem
                 steps.Add("audioLog discovery bit words created");
             }
 
+            int encryptedFragmentBound = ClampArrayLength(
+                data.audioLogEncryptedFragmentHashes,
+                SaveData.MaxEncryptedAudioLogFragments);
+            encryptedFragmentBound = math.min(
+                encryptedFragmentBound,
+                ClampArrayLength(data.audioLogEncryptedFragmentBits, SaveData.MaxEncryptedAudioLogFragments));
+
             if (data.audioLogEncryptedFragmentHashes == null ||
-                data.audioLogEncryptedFragmentHashes.Length < SaveData.MaxEncryptedAudioLogFragments)
+                data.audioLogEncryptedFragmentHashes.Length != SaveData.MaxEncryptedAudioLogFragments)
             {
-                data.audioLogEncryptedFragmentHashes = new uint[SaveData.MaxEncryptedAudioLogFragments];
-                data.audioLogEncryptedFragmentCount = 0;
+                EnsureExactArrayCapacity(
+                    ref data.audioLogEncryptedFragmentHashes,
+                    SaveData.MaxEncryptedAudioLogFragments);
                 changed = true;
                 steps.Add("encrypted audio-log hash state created");
             }
 
             if (data.audioLogEncryptedFragmentBits == null ||
-                data.audioLogEncryptedFragmentBits.Length < SaveData.MaxEncryptedAudioLogFragments)
+                data.audioLogEncryptedFragmentBits.Length != SaveData.MaxEncryptedAudioLogFragments)
             {
-                data.audioLogEncryptedFragmentBits = new uint[SaveData.MaxEncryptedAudioLogFragments];
-                data.audioLogEncryptedFragmentCount = 0;
+                EnsureExactArrayCapacity(
+                    ref data.audioLogEncryptedFragmentBits,
+                    SaveData.MaxEncryptedAudioLogFragments);
                 changed = true;
                 steps.Add("encrypted audio-log bit state created");
             }
 
-            data.audioLogEncryptedFragmentCount = math.clamp(
+            int clampedEncryptedFragmentCount = math.clamp(
                 data.audioLogEncryptedFragmentCount,
                 0,
-                math.min(
-                    SaveData.MaxEncryptedAudioLogFragments,
-                    math.min(data.audioLogEncryptedFragmentHashes.Length, data.audioLogEncryptedFragmentBits.Length)));
+                encryptedFragmentBound);
+            if (clampedEncryptedFragmentCount != data.audioLogEncryptedFragmentCount)
+            {
+                data.audioLogEncryptedFragmentCount = clampedEncryptedFragmentCount;
+                changed = true;
+                steps.Add("encrypted audio-log fragment count clamped");
+            }
 
             if (!IndustrialLoreBitMask.HasExpectedCapacity(data.industrialLoreUnlockWords))
             {
@@ -1351,55 +1614,83 @@ namespace Hecton8.SaveSystem
                 steps.Add("data archaeology bit words created");
             }
 
+            int archaeologyPartialBound = ClampArrayLength(
+                data.dataArchaeologyPartialScanHashes,
+                SaveData.MaxDataArchaeologyPartialScans);
+            archaeologyPartialBound = math.min(
+                archaeologyPartialBound,
+                ClampArrayLength(
+                    data.dataArchaeologyPartialScanProgressPermille,
+                    SaveData.MaxDataArchaeologyPartialScans));
+
             if (data.dataArchaeologyPartialScanHashes == null ||
-                data.dataArchaeologyPartialScanHashes.Length < SaveData.MaxDataArchaeologyPartialScans)
+                data.dataArchaeologyPartialScanHashes.Length != SaveData.MaxDataArchaeologyPartialScans)
             {
-                data.dataArchaeologyPartialScanHashes = new uint[SaveData.MaxDataArchaeologyPartialScans];
-                data.dataArchaeologyPartialScanCount = 0;
+                EnsureExactArrayCapacity(
+                    ref data.dataArchaeologyPartialScanHashes,
+                    SaveData.MaxDataArchaeologyPartialScans);
                 changed = true;
                 steps.Add("data archaeology partial hashes created");
             }
 
             if (data.dataArchaeologyPartialScanProgressPermille == null ||
-                data.dataArchaeologyPartialScanProgressPermille.Length < SaveData.MaxDataArchaeologyPartialScans)
+                data.dataArchaeologyPartialScanProgressPermille.Length != SaveData.MaxDataArchaeologyPartialScans)
             {
-                data.dataArchaeologyPartialScanProgressPermille = new ushort[SaveData.MaxDataArchaeologyPartialScans];
-                data.dataArchaeologyPartialScanCount = 0;
+                EnsureExactArrayCapacity(
+                    ref data.dataArchaeologyPartialScanProgressPermille,
+                    SaveData.MaxDataArchaeologyPartialScans);
                 changed = true;
                 steps.Add("data archaeology partial progress created");
             }
 
-            data.dataArchaeologyPartialScanCount = math.clamp(
+            int clampedArchaeologyPartialCount = math.clamp(
                 data.dataArchaeologyPartialScanCount,
                 0,
-                math.min(
-                    SaveData.MaxDataArchaeologyPartialScans,
-                    math.min(data.dataArchaeologyPartialScanHashes.Length, data.dataArchaeologyPartialScanProgressPermille.Length)));
+                archaeologyPartialBound);
+            if (clampedArchaeologyPartialCount != data.dataArchaeologyPartialScanCount)
+            {
+                data.dataArchaeologyPartialScanCount = clampedArchaeologyPartialCount;
+                changed = true;
+                steps.Add("data archaeology partial count clamped");
+            }
+
+            int archaeologyScanStateBound = ClampArrayLength(
+                data.dataArchaeologyScanStateKeys,
+                SaveData.MaxDataArchaeologyScanStates);
+            archaeologyScanStateBound = math.min(
+                archaeologyScanStateBound,
+                ClampArrayLength(data.dataArchaeologyScanStateValues, SaveData.MaxDataArchaeologyScanStates));
 
             if (data.dataArchaeologyScanStateKeys == null ||
-                data.dataArchaeologyScanStateKeys.Length < SaveData.MaxDataArchaeologyScanStates)
+                data.dataArchaeologyScanStateKeys.Length != SaveData.MaxDataArchaeologyScanStates)
             {
-                data.dataArchaeologyScanStateKeys = new int[SaveData.MaxDataArchaeologyScanStates];
-                data.dataArchaeologyScanStateCount = 0;
+                EnsureExactArrayCapacity(
+                    ref data.dataArchaeologyScanStateKeys,
+                    SaveData.MaxDataArchaeologyScanStates);
                 changed = true;
                 steps.Add("data archaeology scan-state keys created");
             }
 
             if (data.dataArchaeologyScanStateValues == null ||
-                data.dataArchaeologyScanStateValues.Length < SaveData.MaxDataArchaeologyScanStates)
+                data.dataArchaeologyScanStateValues.Length != SaveData.MaxDataArchaeologyScanStates)
             {
-                data.dataArchaeologyScanStateValues = new byte[SaveData.MaxDataArchaeologyScanStates];
-                data.dataArchaeologyScanStateCount = 0;
+                EnsureExactArrayCapacity(
+                    ref data.dataArchaeologyScanStateValues,
+                    SaveData.MaxDataArchaeologyScanStates);
                 changed = true;
                 steps.Add("data archaeology scan-state values created");
             }
 
-            data.dataArchaeologyScanStateCount = math.clamp(
+            int clampedArchaeologyScanStateCount = math.clamp(
                 data.dataArchaeologyScanStateCount,
                 0,
-                math.min(
-                    SaveData.MaxDataArchaeologyScanStates,
-                    math.min(data.dataArchaeologyScanStateKeys.Length, data.dataArchaeologyScanStateValues.Length)));
+                archaeologyScanStateBound);
+            if (clampedArchaeologyScanStateCount != data.dataArchaeologyScanStateCount)
+            {
+                data.dataArchaeologyScanStateCount = clampedArchaeologyScanStateCount;
+                changed = true;
+                steps.Add("data archaeology scan-state count clamped");
+            }
 
             if (data.questActiveIds == null)
             {
@@ -1407,6 +1698,11 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("quest active list created");
             }
+            changed |= TrimListToMax(
+                data.questActiveIds,
+                SaveData.MaxLegacyQuestIds,
+                "quest active list capped",
+                steps);
 
             if (data.questCompletedIds == null)
             {
@@ -1414,6 +1710,11 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("quest completed list created");
             }
+            changed |= TrimListToMax(
+                data.questCompletedIds,
+                SaveData.MaxLegacyQuestIds,
+                "quest completed list capped",
+                steps);
 
             if (data.suitInstalledUpgradeIds == null)
             {
@@ -1421,6 +1722,11 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("suit upgrades list created");
             }
+            changed |= TrimListToMax(
+                data.suitInstalledUpgradeIds,
+                SaveData.MaxSuitUpgradeIds,
+                "suit upgrades list capped",
+                steps);
 
             if (data.suitUnlockedBlueprintIds == null)
             {
@@ -1428,6 +1734,11 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("suit blueprints list created");
             }
+            changed |= TrimListToMax(
+                data.suitUnlockedBlueprintIds,
+                SaveData.MaxSuitUpgradeIds,
+                "suit blueprints list capped",
+                steps);
 
             if (data.corporateReceivedOrderIds == null)
             {
@@ -1435,6 +1746,11 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("corporate orders list created");
             }
+            changed |= TrimListToMax(
+                data.corporateReceivedOrderIds,
+                SaveData.MaxCorporateOrderIds,
+                "corporate orders list capped",
+                steps);
 
             if (data.corporatePendingOrderIds == null)
             {
@@ -1449,6 +1765,12 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("corporate order timers list created");
             }
+            changed |= TrimPairedListsToMax(
+                data.corporatePendingOrderIds,
+                data.corporatePendingOrderTimers,
+                SaveData.MaxCorporateOrderIds,
+                "corporate pending orders capped",
+                steps);
 
             if (data.missionActiveIds == null)
             {
@@ -1456,6 +1778,11 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("mission active list created");
             }
+            changed |= TrimListToMax(
+                data.missionActiveIds,
+                SaveData.MaxMissionIds,
+                "mission active list capped",
+                steps);
 
             if (data.missionCompletedIds == null)
             {
@@ -1463,6 +1790,11 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("mission completed list created");
             }
+            changed |= TrimListToMax(
+                data.missionCompletedIds,
+                SaveData.MaxMissionIds,
+                "mission completed list capped",
+                steps);
 
             int inferredRevealStage = data.endingConditionMet
                 ? MaxAtlasRevealStage

@@ -763,6 +763,8 @@ namespace Hecton8.UI
         private Canvas _cachedGraphicRaycasterCanvas;
         private HectonUIScaler _cachedUiScaler;
         private HectonSurvivalSystem _depthSignalSource;
+        private uint _depthSignalSourceId;
+        private uint _lastDepthSignalSequence;
         private IPlayerInventoryService _inventoryService;
         private PlayerInventory _playerInventory;
         private ItemCatalog _itemCatalog;
@@ -1493,6 +1495,7 @@ namespace Hecton8.UI
             if (!Application.isPlaying || _root == null)
                 return;
 
+            ConsumeDepthChangedSignals();
             RunReactiveLateFrameSolve(SystemDispatcher.CurrentFrameUnscaledDeltaTime);
 
             if (renderPath == RenderPath.ProjectionSource && targetCanvas != null)
@@ -1634,7 +1637,7 @@ namespace Hecton8.UI
             HandleTraumaHudSignal(in signal);
         }
 
-        void IPlayerSignalEventListener.OnInteractionSignal(in InteractionSignal signal)
+        void IPlayerSignalEventListener.OnInteractionSignal(in PlayerInteractionStressSignal signal)
         {
         }
 
@@ -4369,13 +4372,11 @@ namespace Hecton8.UI
             if (ReferenceEquals(_depthSignalSource, survival))
                 return;
 
-            if (_depthSignalSource != null)
-                _depthSignalSource.OnDepthChanged -= HandleDepthChanged;
-
             _depthSignalSource = survival;
+            _depthSignalSourceId = ResolveSurvivalSignalSourceId(_depthSignalSource);
+            _lastDepthSignalSequence = 0u;
             if (_depthSignalSource != null)
             {
-                _depthSignalSource.OnDepthChanged += HandleDepthChanged;
                 HandleDepthChanged(_depthSignalSource.Depth);
                 return;
             }
@@ -4385,10 +4386,41 @@ namespace Hecton8.UI
 
         private void ClearDepthSignalSubscription()
         {
-            if (_depthSignalSource != null)
-                _depthSignalSource.OnDepthChanged -= HandleDepthChanged;
-
             _depthSignalSource = null;
+            _depthSignalSourceId = 0u;
+            _lastDepthSignalSequence = 0u;
+        }
+
+        private void ConsumeDepthChangedSignals()
+        {
+            uint sourceId = _depthSignalSourceId;
+            if (sourceId == 0u)
+                return;
+
+            ReadOnlySpan<SurvivalVitalsChangedSignal> signals = SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ref readonly SurvivalVitalsChangedSignal signal = ref signals[i];
+                if (signal.SourceId != sourceId)
+                    continue;
+
+                if ((signal.Flags & SurvivalVitalsChangedSignalFlags.Depth) == 0u)
+                    continue;
+
+                if (signal.Sequence == 0u || signal.Sequence == _lastDepthSignalSequence)
+                    continue;
+
+                _lastDepthSignalSequence = signal.Sequence;
+                if (_depthSignalSource != null)
+                    HandleDepthChanged(_depthSignalSource.Depth);
+            }
+        }
+
+        private static uint ResolveSurvivalSignalSourceId(HectonSurvivalSystem system)
+        {
+            return system != null
+                ? GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(system.GetEntityId()))
+                : 0u;
         }
 
         private void RefreshDepthFromMovementFallback()

@@ -5,6 +5,7 @@ using Hecton8.Core.Contracts;
 using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Logistics.Grid.Contracts;
+using Hecton8.Narrative;
 using Hecton8.Power;
 using Hecton8.World;
 using Unity.Collections;
@@ -29,6 +30,14 @@ namespace Hecton8.World.Outposts
         private const float DefaultCellSizeMeters = 4f;
         private const float DefaultFloorHeightMeters = 3f;
         private const float DefaultStiltClearanceMeters = 1.6f;
+        private const float DefaultOutpostAge01 = 0.92f;
+        private const int GeneratedSignalReplayFrames = 4;
+        private const int GeneratedSignalHeartbeatFrames = 60;
+        private const ulong TelemetryDumpMagic = 0x00384E4F54434548UL; // HECTON8\0 as little-endian bytes.
+        private const uint TelemetryDumpVersion = 1u;
+        private const int TelemetryDumpEntryPayloadBytes = 72;
+        private const float ShiftEpsilonMeters = 0.0001f;
+        private const float MaxAupShiftMeters = 10000f;
 
         private static readonly int OutpostMatricesId = Shader.PropertyToID("_OutpostMatrices");
         private static readonly int OutpostCellTypesId = Shader.PropertyToID("_OutpostCellTypes");
@@ -47,12 +56,14 @@ namespace Hecton8.World.Outposts
         [SerializeField] private ulong firstBaseHash = DefaultFirstBaseHash;
         [SerializeField] private bool generateOnAnyHydratedSectorForDebug;
         [SerializeField] private uint fallbackWorldSeed = DefaultWorldSeed;
+        [SerializeField] private Transform outpostOriginOverride;
+        [SerializeField] private Vector3 localOriginOffsetMeters;
 
         [Header("Shape")]
         [SerializeField, Min(1f)] private float cellSizeMeters = DefaultCellSizeMeters;
         [SerializeField, Min(1f)] private float floorHeightMeters = DefaultFloorHeightMeters;
         [SerializeField, Min(0.25f)] private float stiltClearanceMeters = DefaultStiltClearanceMeters;
-        [SerializeField, Range(0f, 1f)] private float outpostAge01 = 0.92f;
+        [SerializeField, Range(0f, 1f)] private float outpostAge01 = DefaultOutpostAge01;
 
         [Header("Rendering")]
         [SerializeField] private Mesh shellMesh;
@@ -78,8 +89,18 @@ namespace Hecton8.World.Outposts
         private GraphicsBuffer _argsBuffer;
         private Mesh _runtimeShellMesh;
         private Material _runtimeShellMaterial;
+        private MaterialPropertyBlock _renderPropertyBlock;
+        private GraphicsBuffer _renderPropertyMatrixBuffer;
+        private GraphicsBuffer _renderPropertyCellTypeBuffer;
+        private Vector4 _renderPropertyDecayRuntime;
+        private float _renderPropertyAge01;
         private GameObject[] _spawnedInteractables;
         private SealedDoor[] _spawnedDoorControllers;
+        private RegistryBucket<IRenderable> _registeredRenderables;
+        private MapMagicBridge _cachedMapMagicBridge;
+        private IWorldSeedProvider _cachedWorldSeedProvider;
+        private IAsyncPersistenceService _cachedPersistence;
+        private ObjectPoolManager _cachedObjectPool;
         private JobHandle _jobHandle;
         private Bounds _drawBounds;
         private OutpostGenerationSnapshot _latestSnapshot;
@@ -102,17 +123,21 @@ namespace Hecton8.World.Outposts
         private int _solidCellCount;
         private int _supportCount;
         private int _telemetryWriteIndex;
+        private int _registeredOutpostGeneration;
         private int _registeredUpdate;
         private int _registeredLateFrame;
         private int _registeredRenderable;
+        private int _generatedSignalReplayFrames;
+        private int _generatedSignalHeartbeatFrames;
         private bool _generated;
         private bool _matrixUploadDirty;
         private bool _hasPendingShift;
         private bool _heightmapFallback;
+        private bool _renderPropertiesDirty = true;
 
         public bool IsGenerated => _generated;
         public bool IsBusy => _jobPhase != JobPhase.None;
-        public ulong FirstBaseHash => firstBaseHash;
+        public ulong FirstBaseHash => ResolveFirstBaseHash();
         public OutpostGenerationSnapshot LatestSnapshot => _latestSnapshot;
 
         private void OnEnable()
@@ -123,10 +148,12 @@ namespace Hecton8.World.Outposts
             AllocatePersistentState();
             EnsureGraphicsResources();
             BakeInteractableProxyMeshes();
+            _registeredRenderables = GlobalRegistry.Renderables;
             GlobalRegistry.RegisterOutpostGenerationService(this);
+            _registeredOutpostGeneration = 1;
             _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment) ? 1 : 0;
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment) ? 1 : 0;
-            _registeredRenderable = GlobalRegistry.Renderables.TryRegister(this) ? 1 : 0;
+            _registeredRenderable = _registeredRenderables != null && _registeredRenderables.TryRegister(this) ? 1 : 0;
             SetState(OutpostGenerationState.Idle);
         }
 
@@ -142,17 +169,21 @@ namespace Hecton8.World.Outposts
 
         private void OnValidate()
         {
-            cellSizeMeters = Mathf.Max(1f, cellSizeMeters);
-            floorHeightMeters = Mathf.Max(1f, floorHeightMeters);
-            stiltClearanceMeters = Mathf.Max(0.25f, stiltClearanceMeters);
-            outpostAge01 = Mathf.Clamp01(outpostAge01);
+            cellSizeMeters = SanitizeMin(cellSizeMeters, 1f, DefaultCellSizeMeters);
+            floorHeightMeters = SanitizeMin(floorHeightMeters, 1f, DefaultFloorHeightMeters);
+            stiltClearanceMeters = SanitizeMin(stiltClearanceMeters, 0.25f, DefaultStiltClearanceMeters);
+            outpostAge01 = Sanitize01(outpostAge01, DefaultOutpostAge01);
+            if (firstBaseHash == 0UL)
+                firstBaseHash = DefaultFirstBaseHash;
+            if (!IsFinite(localOriginOffsetMeters))
+                localOriginOffsetMeters = Vector3.zero;
         }
 
         public void Dispose()
         {
             if (_registeredRenderable != 0)
             {
-                GlobalRegistry.Renderables.Unregister(this);
+                _registeredRenderables?.Unregister(this);
                 _registeredRenderable = 0;
             }
 
@@ -168,8 +199,11 @@ namespace Hecton8.World.Outposts
                 _registeredUpdate = 0;
             }
 
-            if (ReferenceEquals(GlobalRegistry.OutpostGeneration, this))
+            if (_registeredOutpostGeneration != 0)
+            {
                 GlobalRegistry.UnregisterOutpostGenerationService(this);
+                _registeredOutpostGeneration = 0;
+            }
 
             ReleasePublishedPowerGrid();
 
@@ -207,8 +241,12 @@ namespace Hecton8.World.Outposts
             _interactableCount = 0;
             _matrixUploadDirty = false;
             _hasPendingShift = false;
+            _generatedSignalReplayFrames = 0;
+            _generatedSignalHeartbeatFrames = 0;
             _state = OutpostGenerationState.Idle;
             _latestSnapshot = default;
+            ClearRenderPropertyCache();
+            ClearCachedRegistryDependencies();
         }
 
         public void Tick(float deltaTime)
@@ -218,6 +256,7 @@ namespace Hecton8.World.Outposts
 
             DrainAupShiftSignals();
             DrainSectorHydratedSignals();
+            ReplayGeneratedSignalIfNeeded();
             WriteTelemetry(0u);
         }
 
@@ -272,19 +311,16 @@ namespace Hecton8.World.Outposts
 
         public void Render(float deltaTime)
         {
-            if (!_generated || _matrixCount <= 0 || _matrixBuffer == null || _argsBuffer == null)
+            if (!_generated || _jobPhase == JobPhase.Shifting || _matrixUploadDirty || _matrixCount <= 0 || _matrixBuffer == null || _cellTypeBuffer == null || _argsBuffer == null)
                 return;
 
             Material material = ResolveRenderMaterial();
             Mesh mesh = ResolveRenderMesh();
-            if (material == null || mesh == null)
+            if (material == null || mesh == null || mesh.subMeshCount <= 0)
                 return;
 
-            float age = Mathf.Clamp01(outpostAge01);
-            Shader.SetGlobalFloat(OutpostAge01Id, age);
-            Shader.SetGlobalVector(HectonMaterialDecayRuntimeId, new Vector4(age, 0.55f, _qualityTier == OutpostGenerationQualityTier.Low ? 1f : 0f, (_activeSolveSeed & 0xFFFFu) * MarauderOutpostConstants.HeightUShortToUnit));
-            material.SetBuffer(OutpostMatricesId, _matrixBuffer);
-            material.SetBuffer(OutpostCellTypesId, _cellTypeBuffer);
+            float age = ResolveOutpostAge01();
+            MaterialPropertyBlock renderProperties = ResolveRenderProperties(age);
 
             RenderParams renderParams = new RenderParams(material)
             {
@@ -292,13 +328,20 @@ namespace Hecton8.World.Outposts
                 layer = renderLayer,
                 shadowCastingMode = shadowCastingMode,
                 receiveShadows = receiveShadows,
-                motionVectorMode = MotionVectorGenerationMode.ForceNoMotion
+                motionVectorMode = MotionVectorGenerationMode.ForceNoMotion,
+                matProps = renderProperties
             };
             Graphics.RenderMeshIndirect(renderParams, mesh, _argsBuffer, 1, 0);
         }
 
         public bool TryRequestGeneration(ulong sectorHash, float3 originMeters, uint worldSeed)
         {
+            if (sectorHash == 0UL)
+            {
+                WriteTelemetry(MarauderOutpostConstants.FaultFlag, sectorHash);
+                return false;
+            }
+
             if (!WfcGrid.IsCreated)
                 AllocatePersistentState();
 
@@ -308,10 +351,22 @@ namespace Hecton8.World.Outposts
                 return false;
 
             if (_generated && sectorHash == _activeSectorHash && worldSeed == _activeWorldSeed)
-                return true;
+            {
+                bool published = TryPublishGeneratedSignal();
+                SetState(published ? OutpostGenerationState.Ready : OutpostGenerationState.Faulted);
+                return published;
+            }
 
             if (!math.all(math.isfinite(originMeters)))
-                originMeters = ToFloat3(transform.position);
+                originMeters = ResolveGenerationOriginMeters();
+
+            if (!math.all(math.isfinite(originMeters)))
+            {
+                WriteTelemetry(MarauderOutpostConstants.FaultFlag, sectorHash);
+                DumpBlackBox();
+                SetState(OutpostGenerationState.Faulted);
+                return false;
+            }
 
             DespawnInteractables();
             _generated = false;
@@ -323,7 +378,7 @@ namespace Hecton8.World.Outposts
             ReleasePublishedPowerGrid();
             _activeSectorHash = sectorHash;
             _activeWorldSeed = worldSeed;
-            _activeSolveSeed = MarauderOutpostHash.LcgHash((ulong)worldSeed + firstBaseHash);
+            _activeSolveSeed = MarauderOutpostHash.LcgHash((ulong)worldSeed + ResolveFirstBaseHash());
             _activeGridHash = 0u;
             _generationOrigin = originMeters;
             _qualityTier = ResolveQualityTier();
@@ -351,40 +406,101 @@ namespace Hecton8.World.Outposts
 
         public bool TryGetWfcGrid(out NativeArray<byte>.ReadOnly cells, out int3 dimensions, out int cellCount, out uint gridHash, out uint generationSequence)
         {
-            cells = WfcGrid.IsCreated ? WfcGrid.AsReadOnly() : default;
-            dimensions = _activeDimensions;
-            cellCount = ResolveActiveCellCount();
-            gridHash = _activeGridHash;
             generationSequence = _generationSequence;
-            return _generated && WfcGrid.IsCreated && cellCount > 0;
+            if (!_generated || !WfcGrid.IsCreated)
+            {
+                cells = default;
+                dimensions = default;
+                cellCount = 0;
+                gridHash = 0u;
+                return false;
+            }
+
+            cellCount = math.min(ResolveActiveCellCount(), WfcGrid.Length);
+            if (cellCount <= 0)
+            {
+                cells = default;
+                dimensions = default;
+                gridHash = 0u;
+                return false;
+            }
+
+            cells = WfcGrid.AsReadOnly();
+            dimensions = _activeDimensions;
+            gridHash = _activeGridHash;
+            return true;
         }
 
         public bool TryGetShellMatrices(out NativeArray<float4x4>.ReadOnly matrices, out int matrixCount, out uint generationSequence)
         {
-            matrices = _shellMatrices.IsCreated ? _shellMatrices.AsReadOnly() : default;
-            matrixCount = _matrixCount;
             generationSequence = _generationSequence;
-            return _shellMatrices.IsCreated && _matrixCount > 0;
+            if (!_generated || _jobPhase == JobPhase.Shifting || !_shellMatrices.IsCreated)
+            {
+                matrices = default;
+                matrixCount = 0;
+                return false;
+            }
+
+            matrixCount = math.min(math.max(0, _matrixCount), _shellMatrices.Length);
+            if (matrixCount <= 0)
+            {
+                matrices = default;
+                return false;
+            }
+
+            matrices = _shellMatrices.AsReadOnly();
+            return true;
         }
 
         public bool TryGetShellGraphicsBuffer(out GraphicsBuffer matrixBuffer, out GraphicsBuffer argsBuffer, out int instanceCount, out uint generationSequence)
         {
+            generationSequence = _generationSequence;
+            if (!_generated || _jobPhase == JobPhase.Shifting || _matrixUploadDirty || _matrixBuffer == null || _argsBuffer == null)
+            {
+                matrixBuffer = null;
+                argsBuffer = null;
+                instanceCount = 0;
+                return false;
+            }
+
+            instanceCount = math.min(math.max(0, _matrixCount), _matrixBuffer.count);
+            if (instanceCount <= 0)
+            {
+                matrixBuffer = null;
+                argsBuffer = null;
+                return false;
+            }
+
             matrixBuffer = _matrixBuffer;
             argsBuffer = _argsBuffer;
-            instanceCount = _matrixCount;
-            generationSequence = _generationSequence;
-            return _matrixBuffer != null && _argsBuffer != null && _matrixCount > 0;
+            return true;
         }
 
         public void ApplyAupShift(float3 shiftMeters, uint shiftFrameId)
         {
-            if (!math.all(math.isfinite(shiftMeters)) || math.all(math.abs(shiftMeters) < new float3(0.0001f)))
+            if (!math.all(math.isfinite(shiftMeters)))
+            {
+                WriteTelemetry(MarauderOutpostConstants.FaultFlag | MarauderOutpostConstants.AupShiftFlag);
+                DumpBlackBox();
+                return;
+            }
+
+            if (!IsWithinAupShiftLimit(shiftMeters))
+            {
+                WriteTelemetry(MarauderOutpostConstants.FaultFlag | MarauderOutpostConstants.AupShiftFlag);
+                DumpBlackBox();
+                return;
+            }
+
+            if (math.all(math.abs(shiftMeters) < new float3(ShiftEpsilonMeters)))
                 return;
 
             if (_jobPhase == JobPhase.Solving)
             {
                 _generationOrigin -= shiftMeters;
-                AccumulatePendingShift(default, shiftFrameId);
+                _lastShiftFrameId = shiftFrameId;
+                WriteTelemetry(MarauderOutpostConstants.AupShiftFlag);
+                UpdateSnapshot();
                 return;
             }
 
@@ -417,18 +533,19 @@ namespace Hecton8.World.Outposts
 
         private void DrainSectorHydratedSignals()
         {
-            if (_generated || _jobPhase != JobPhase.None)
+            if (_jobPhase != JobPhase.None || (_generated && _publishedPowerGridHandle != 0u))
                 return;
 
-            ReadOnlySpan<Hecton8.Core.Signals.SectorHydratedSignal> signals =
-                SignalBus<Hecton8.Core.Signals.SectorHydratedSignal>.GetFrameSnapshot();
+            ReadOnlySpan<Hecton8.Core.Signals.MacroDatabaseSectorHydrationSignal> signals =
+                SignalBus<Hecton8.Core.Signals.MacroDatabaseSectorHydrationSignal>.GetFrameSnapshot();
+            ulong targetBaseHash = ResolveFirstBaseHash();
             for (int i = 0; i < signals.Length; i++)
             {
-                Hecton8.Core.Signals.SectorHydratedSignal signal = signals[i];
-                if (!generateOnAnyHydratedSectorForDebug && signal.SectorHash != firstBaseHash)
+                Hecton8.Core.Signals.MacroDatabaseSectorHydrationSignal signal = signals[i];
+                if (!generateOnAnyHydratedSectorForDebug && signal.SectorHash != targetBaseHash)
                     continue;
 
-                TryRequestGeneration(signal.SectorHash, ToFloat3(transform.position), ResolveWorldSeed());
+                TryRequestGeneration(signal.SectorHash, ResolveGenerationOriginMeters(), ResolveWorldSeed());
                 return;
             }
         }
@@ -443,24 +560,25 @@ namespace Hecton8.World.Outposts
         private void ScheduleMatrixExtraction()
         {
             MapMagicBridge.QuantizedHeightmapPayload payload = ResolveHeightmapPayload();
+            bool hasHeightmapPayload = IsValidHeightmapPayload(in payload, _generationOrigin);
             MarauderOutpostMatrixExtractionJob job = new MarauderOutpostMatrixExtractionJob
             {
                 WfcGrid = WfcGrid,
                 MutableGrid = _wfcMutableStateGrid,
-                HeightSamples = payload.IsValid ? payload.HeightSamples : default,
+                HeightSamples = hasHeightmapPayload ? payload.HeightSamples : default,
                 ShellMatrices = _shellMatrices,
                 CellTypes = _shellCellTypes,
                 InteractableSpawns = _interactableSpawns,
                 Counters = _counters,
                 Dimensions = _activeDimensions,
                 OriginMeters = _generationOrigin,
-                TerrainPosition = payload.IsValid ? ToFloat3(payload.TerrainPosition) : _generationOrigin - new float3(16f, stiltClearanceMeters, 16f),
-                TerrainSize = payload.IsValid ? ToFloat3(payload.TerrainSize) : new float3(32f, 8f, 32f),
-                HeightResolution = payload.IsValid ? payload.HeightmapResolution : 0,
-                CellSizeMeters = math.max(1f, cellSizeMeters),
-                FloorHeightMeters = math.max(1f, floorHeightMeters),
-                StiltClearanceMeters = math.max(0.25f, stiltClearanceMeters),
-                OutpostAge01 = math.saturate(outpostAge01),
+                TerrainPosition = hasHeightmapPayload ? ToFloat3(payload.TerrainPosition) : _generationOrigin - new float3(16f, ResolveStiltClearanceMeters(), 16f),
+                TerrainSize = hasHeightmapPayload ? ToFloat3(payload.TerrainSize) : new float3(32f, 8f, 32f),
+                HeightResolution = hasHeightmapPayload ? payload.HeightmapResolution : 0,
+                CellSizeMeters = ResolveCellSizeMeters(),
+                FloorHeightMeters = ResolveFloorHeightMeters(),
+                StiltClearanceMeters = ResolveStiltClearanceMeters(),
+                OutpostAge01 = ResolveOutpostAge01(),
                 Seed = _activeSolveSeed,
                 LowTier = _qualityTier == OutpostGenerationQualityTier.Low ? (byte)1 : (byte)0
             };
@@ -478,48 +596,91 @@ namespace Hecton8.World.Outposts
             _solidCellCount = _counters.IsCreated && _counters.Length > 2 ? math.max(0, _counters[2]) : 0;
             _supportCount = _counters.IsCreated && _counters.Length > 3 ? math.max(0, _counters[3]) : 0;
             _heightmapFallback = _counters.IsCreated && _counters.Length > 4 && _counters[4] != 0;
+            ApplyPendingShiftToExtractedData(_matrixCount, _interactableCount);
             _generated = _matrixCount > 0;
             _activeGridHash = _generated ? ComputeGridHash() : 0u;
             _matrixUploadDirty = _generated;
             UpdateDrawBounds();
             UploadMatricesAndArgs();
             SpawnInteractableProxies();
-            SetState(_generated ? OutpostGenerationState.Ready : OutpostGenerationState.Faulted);
-            WriteTelemetry(_heightmapFallback ? MarauderOutpostConstants.HeightmapFallbackFlag : 0u);
 
             if (!_generated || !math.all(math.isfinite(_generationOrigin)))
             {
+                SetState(OutpostGenerationState.Faulted);
                 WriteTelemetry(MarauderOutpostConstants.FaultFlag);
                 DumpBlackBox();
+                return;
             }
 
-            UpdateSnapshot();
-            PublishGeneratedSignal();
+            bool published = TryPublishGeneratedSignal();
+            SetState(published ? OutpostGenerationState.Ready : OutpostGenerationState.Faulted);
+            WriteTelemetry((_heightmapFallback ? MarauderOutpostConstants.HeightmapFallbackFlag : 0u) |
+                           (published ? 0u : MarauderOutpostConstants.FaultFlag));
         }
 
         private MapMagicBridge.QuantizedHeightmapPayload ResolveHeightmapPayload()
         {
-            MapMagicBridge bridge = GlobalRegistry.MapMagic;
+            MapMagicBridge bridge = ResolveMapMagicBridge();
             if (bridge == null)
                 return default;
 
             Vector3 origin = new Vector3(_generationOrigin.x, _generationOrigin.y, _generationOrigin.z);
-            if (bridge.TryGetQuantizedHeightmapPayloadAUP(origin, out MapMagicBridge.QuantizedHeightmapPayload payload) && payload.IsValid)
+            if (bridge.TryGetQuantizedHeightmapPayloadAUP(origin, out MapMagicBridge.QuantizedHeightmapPayload payload) && IsValidHeightmapPayload(in payload, _generationOrigin))
                 return payload;
 
-            if (bridge.TryGetActiveQuantizedHeightmapPayload(out payload) && payload.IsValid)
+            if (bridge.TryGetActiveQuantizedHeightmapPayload(out payload) && IsValidHeightmapPayload(in payload, _generationOrigin))
                 return payload;
 
             return default;
         }
 
+        private static bool IsValidHeightmapPayload(in MapMagicBridge.QuantizedHeightmapPayload payload, float3 originMeters)
+        {
+            int resolution = payload.HeightmapResolution;
+            if (!payload.HeightSamples.IsCreated || resolution <= 1 || resolution > 46340)
+                return false;
+
+            int requiredLength = resolution * resolution;
+            float3 terrainPosition = ToFloat3(payload.TerrainPosition);
+            float3 terrainSize = ToFloat3(payload.TerrainSize);
+            return payload.HeightSamples.Length >= requiredLength &&
+                   math.all(math.isfinite(originMeters)) &&
+                   IsFinite(payload.TerrainPosition) &&
+                   IsFinite(payload.TerrainSize) &&
+                   payload.TerrainSize.x > 0.001f &&
+                   payload.TerrainSize.y > 0.001f &&
+                   payload.TerrainSize.z > 0.001f &&
+                   math.all(math.isfinite(originMeters - terrainPosition)) &&
+                   math.isfinite(terrainPosition.y + terrainSize.y);
+        }
+
         private uint ResolveWorldSeed()
         {
-            IWorldSeedProvider seedProvider = GlobalRegistry.WorldSeedProvider;
+            IWorldSeedProvider seedProvider = ResolveWorldSeedProvider();
             if (seedProvider != null && seedProvider.IsInitialized)
                 return unchecked((uint)seedProvider.RuntimeWorldSeed);
 
             return fallbackWorldSeed;
+        }
+
+        private ulong ResolveFirstBaseHash()
+        {
+            return firstBaseHash != 0UL ? firstBaseHash : DefaultFirstBaseHash;
+        }
+
+        private float3 ResolveGenerationOriginMeters()
+        {
+            Transform anchor = outpostOriginOverride != null ? outpostOriginOverride : transform;
+            Vector3 position = anchor != null ? anchor.position : Vector3.zero;
+            if (!IsFinite(position))
+                position = Vector3.zero;
+            if (IsFinite(localOriginOffsetMeters))
+            {
+                position += localOriginOffsetMeters;
+                if (!IsFinite(position))
+                    position = Vector3.zero;
+            }
+            return ToFloat3(position);
         }
 
         private OutpostGenerationQualityTier ResolveQualityTier()
@@ -532,6 +693,63 @@ namespace Hecton8.World.Outposts
             if (tier == HectonQualityTier.Ultra)
                 return OutpostGenerationQualityTier.Ultra;
             return OutpostGenerationQualityTier.Middle;
+        }
+
+        private MapMagicBridge ResolveMapMagicBridge()
+        {
+            if (_cachedMapMagicBridge == null)
+                _cachedMapMagicBridge = GlobalRegistry.MapMagic;
+            return _cachedMapMagicBridge;
+        }
+
+        private IWorldSeedProvider ResolveWorldSeedProvider()
+        {
+            if (_cachedWorldSeedProvider == null || IsDestroyedUnityObject(_cachedWorldSeedProvider))
+                _cachedWorldSeedProvider = GlobalRegistry.WorldSeedProvider;
+            return _cachedWorldSeedProvider;
+        }
+
+        private IAsyncPersistenceService ResolveAsyncPersistence()
+        {
+            if (_cachedPersistence == null || IsDestroyedUnityObject(_cachedPersistence))
+                _cachedPersistence = GlobalRegistry.AsyncPersistence;
+            return _cachedPersistence;
+        }
+
+        private ObjectPoolManager ResolveObjectPool()
+        {
+            if (_cachedObjectPool == null)
+                _cachedObjectPool = GlobalRegistry.ObjectPool;
+            return _cachedObjectPool;
+        }
+
+        private void ClearCachedRegistryDependencies()
+        {
+            _registeredRenderables = null;
+            _cachedMapMagicBridge = null;
+            _cachedWorldSeedProvider = null;
+            _cachedPersistence = null;
+            _cachedObjectPool = null;
+        }
+
+        private float ResolveCellSizeMeters()
+        {
+            return SanitizeMin(cellSizeMeters, 1f, DefaultCellSizeMeters);
+        }
+
+        private float ResolveFloorHeightMeters()
+        {
+            return SanitizeMin(floorHeightMeters, 1f, DefaultFloorHeightMeters);
+        }
+
+        private float ResolveStiltClearanceMeters()
+        {
+            return SanitizeMin(stiltClearanceMeters, 0.25f, DefaultStiltClearanceMeters);
+        }
+
+        private float ResolveOutpostAge01()
+        {
+            return Sanitize01(outpostAge01, DefaultOutpostAge01);
         }
 
         private void AllocatePersistentState()
@@ -569,7 +787,7 @@ namespace Hecton8.World.Outposts
             if (sectorHash == 0UL)
                 return;
 
-            IAsyncPersistenceService persistence = GlobalRegistry.AsyncPersistence;
+            IAsyncPersistenceService persistence = ResolveAsyncPersistence();
             if (persistence == null)
                 return;
 
@@ -578,12 +796,33 @@ namespace Hecton8.World.Outposts
 
         private void EnsureGraphicsResources()
         {
+            bool matrixBufferCreated = false;
+            bool cellTypeBufferCreated = false;
+            bool argsBufferCreated = false;
+
             if (_matrixBuffer == null)
+            {
                 _matrixBuffer = CreateStructuredLockBuffer<float4x4>(MarauderOutpostConstants.MaxShellMatrices); // COLD ALLOC: GraphicsBuffer[1024 float4x4] - outpost shell matrices - owner: MARAUDER_OUTPOST_ARCHITECT
+                matrixBufferCreated = true;
+            }
+
             if (_cellTypeBuffer == null)
+            {
                 _cellTypeBuffer = CreateStructuredLockBuffer<uint>(MarauderOutpostConstants.MaxShellMatrices); // COLD ALLOC: GraphicsBuffer[1024 uint] - outpost shell types - owner: MARAUDER_OUTPOST_ARCHITECT
+                cellTypeBufferCreated = true;
+            }
+
             if (_argsBuffer == null)
+            {
                 _argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - outpost indirect draw args - owner: MARAUDER_OUTPOST_ARCHITECT
+                argsBufferCreated = true;
+            }
+
+            if (_renderPropertyBlock == null)
+            {
+                _renderPropertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - per-outpost indirect draw payload - owner: MARAUDER_OUTPOST_ARCHITECT
+                _renderPropertiesDirty = true;
+            }
 
             if (shellMesh == null && _runtimeShellMesh == null)
                 _runtimeShellMesh = CreateCubeMesh();
@@ -602,15 +841,25 @@ namespace Hecton8.World.Outposts
                 }
             }
 
-            UpdateIndirectArgsBuffer(0u);
+            if (matrixBufferCreated || cellTypeBufferCreated || argsBufferCreated)
+                _renderPropertiesDirty = true;
+
+            if (_generated && _matrixCount > 0 && (matrixBufferCreated || cellTypeBufferCreated || argsBufferCreated))
+                UploadMatricesAndArgs();
+            else if (argsBufferCreated)
+                UpdateIndirectArgsBuffer(0u);
         }
 
         private void UploadMatricesAndArgs()
         {
-            if (!_shellMatrices.IsCreated || _matrixBuffer == null || _cellTypeBuffer == null)
+            if (!_shellMatrices.IsCreated || !_shellCellTypes.IsCreated || _matrixBuffer == null || _cellTypeBuffer == null || _argsBuffer == null)
                 return;
 
             int count = math.clamp(_matrixCount, 0, MarauderOutpostConstants.MaxShellMatrices);
+            count = math.min(count, _shellMatrices.Length);
+            count = math.min(count, _shellCellTypes.Length);
+            count = math.min(count, _matrixBuffer.count);
+            count = math.min(count, _cellTypeBuffer.count);
             if (count > 0)
             {
                 UploadNativeArray(_matrixBuffer, _shellMatrices, count);
@@ -627,14 +876,26 @@ namespace Hecton8.World.Outposts
                 return;
 
             Mesh mesh = ResolveRenderMesh();
+            uint indexCount = 0u;
+            uint startIndex = 0u;
+            uint baseVertexIndex = 0u;
+            uint safeInstanceCount = 0u;
+            if (mesh != null && mesh.subMeshCount > 0)
+            {
+                indexCount = mesh.GetIndexCount(0);
+                startIndex = mesh.GetIndexStart(0);
+                baseVertexIndex = (uint)math.max(0, mesh.GetBaseVertex(0));
+                safeInstanceCount = indexCount > 0u ? instanceCount : 0u;
+            }
+
             NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> argsWrite =
                 _argsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
             argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
             {
-                indexCountPerInstance = mesh != null ? mesh.GetIndexCount(0) : 0u,
-                instanceCount = instanceCount,
-                startIndex = mesh != null ? mesh.GetIndexStart(0) : 0u,
-                baseVertexIndex = mesh != null ? (uint)math.max(0, mesh.GetBaseVertex(0)) : 0u,
+                indexCountPerInstance = indexCount,
+                instanceCount = safeInstanceCount,
+                startIndex = startIndex,
+                baseVertexIndex = baseVertexIndex,
                 startInstance = 0u
             };
             _argsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
@@ -645,7 +906,7 @@ namespace Hecton8.World.Outposts
             if (_interactableCount <= 0 || _spawnedInteractables == null)
                 return;
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = ResolveObjectPool();
             if (pool == null)
                 return;
 
@@ -659,13 +920,20 @@ namespace Hecton8.World.Outposts
                 Vector3 position = new Vector3(spawn.PositionMeters.x, spawn.PositionMeters.y, spawn.PositionMeters.z);
                 Quaternion rotation = Quaternion.Euler(0f, spawn.RotationYRadians * Mathf.Rad2Deg, 0f);
                 _spawnedInteractables[i] = pool.Spawn(prefab, position, rotation);
+                GameObject instance = _spawnedInteractables[i];
+                if (instance == null)
+                    continue;
+
                 if (spawn.Kind == MarauderOutpostConstants.SealedDoor &&
-                    _spawnedInteractables[i] != null &&
-                    _spawnedInteractables[i].TryGetComponent(out SealedDoor door))
+                    TryResolveOwnedComponent(instance, out SealedDoor door))
                 {
-                    door.Lock();
+                    door.ConfigureWfcOutpostPersistence(_activeSectorHash, spawn.CellIndex, spawn.Flags);
                     if (_spawnedDoorControllers != null && i < _spawnedDoorControllers.Length)
                         _spawnedDoorControllers[i] = door;
+                }
+                else if (spawn.Kind == MarauderOutpostConstants.Datapad)
+                {
+                    ConfigureDatapadPersistence(instance, spawn.CellIndex, spawn.Flags);
                 }
             }
         }
@@ -679,8 +947,7 @@ namespace Hecton8.World.Outposts
             for (int signalIndex = 0; signalIndex < signals.Length; signalIndex++)
             {
                 WfcOutpostDoorPowerSignal signal = signals[signalIndex];
-                if (signal.SectorHash != _activeSectorHash ||
-                    (_publishedPowerGridHandle != 0u && signal.GridHandle != _publishedPowerGridHandle))
+                if (signal.SectorHash != _activeSectorHash || signal.GridHandle != _publishedPowerGridHandle)
                 {
                     continue;
                 }
@@ -694,13 +961,67 @@ namespace Hecton8.World.Outposts
                     if (door == null)
                         continue;
 
-                    if (signal.Unlocked != 0)
-                        door.Unlock();
-                    else if (door.State != DoorState.Opened)
-                        door.Lock();
+                    door.ApplyWfcOutpostPowerState(signal.Unlocked != 0, signal.Frame);
                     break;
                 }
             }
+        }
+
+        private void ConfigureDatapadPersistence(GameObject instance, ushort cellIndex, byte flags)
+        {
+            if (instance == null)
+                return;
+
+            if (TryResolveOwnedComponent(instance, out MessageTerminal terminal))
+            {
+                terminal.ConfigureWfcOutpostPersistence(_activeSectorHash, cellIndex, flags);
+                return;
+            }
+
+            if (TryResolveOwnedComponent(instance, out AudioLogPickup audioLogPickup))
+                audioLogPickup.ConfigureWfcOutpostPersistence(_activeSectorHash, cellIndex, flags);
+        }
+
+        private static void ClearInteractablePersistence(GameObject instance)
+        {
+            if (instance == null)
+                return;
+
+            if (TryResolveOwnedComponent(instance, out SealedDoor door))
+                door.ClearWfcOutpostPersistence();
+
+            if (TryResolveOwnedComponent(instance, out MessageTerminal terminal))
+                terminal.ClearWfcOutpostPersistence();
+
+            if (TryResolveOwnedComponent(instance, out AudioLogPickup audioLogPickup))
+                audioLogPickup.ClearWfcOutpostPersistence();
+        }
+
+        private static bool TryResolveOwnedComponent<T>(GameObject rootObject, out T component) where T : Component
+        {
+            component = null;
+            if (rootObject == null)
+                return false;
+
+            return TryResolveOwnedComponent(rootObject.transform, out component);
+        }
+
+        private static bool TryResolveOwnedComponent<T>(Transform root, out T component) where T : Component
+        {
+            component = null;
+            if (root == null)
+                return false;
+
+            if (root.TryGetComponent(out component))
+                return true;
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                if (TryResolveOwnedComponent(root.GetChild(i), out component))
+                    return true;
+            }
+
+            return false;
         }
 
         private void BakeInteractableProxyMeshes()
@@ -722,17 +1043,18 @@ namespace Hecton8.World.Outposts
             if (_spawnedInteractables == null)
                 return;
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = ResolveObjectPool();
             for (int i = 0; i < _spawnedInteractables.Length; i++)
             {
                 GameObject instance = _spawnedInteractables[i];
-                if (instance == null)
-                    continue;
-
-                if (pool != null)
-                    pool.Despawn(instance);
-                else
-                    instance.SetActive(false);
+                if (instance != null)
+                {
+                    ClearInteractablePersistence(instance);
+                    if (pool != null)
+                        pool.Despawn(instance);
+                    else
+                        instance.SetActive(false);
+                }
 
                 _spawnedInteractables[i] = null;
                 if (_spawnedDoorControllers != null && i < _spawnedDoorControllers.Length)
@@ -756,17 +1078,87 @@ namespace Hecton8.World.Outposts
 
         private void AccumulatePendingShift(float3 shiftMeters, uint shiftFrameId)
         {
-            if (math.any(math.abs(shiftMeters) > new float3(0.0001f)))
-                _pendingShift += shiftMeters;
+            if (math.any(math.abs(shiftMeters) > new float3(ShiftEpsilonMeters)))
+            {
+                float3 accumulatedShift = _pendingShift + shiftMeters;
+                if (!math.all(math.isfinite(accumulatedShift)) || !IsWithinAupShiftLimit(accumulatedShift))
+                {
+                    _pendingShift = default;
+                    _pendingShiftFrameId = shiftFrameId;
+                    _hasPendingShift = false;
+                    WriteTelemetry(MarauderOutpostConstants.FaultFlag | MarauderOutpostConstants.AupShiftFlag);
+                    DumpBlackBox();
+                    return;
+                }
+
+                _pendingShift = accumulatedShift;
+            }
 
             _pendingShiftFrameId = shiftFrameId;
-            _hasPendingShift = math.any(math.abs(_pendingShift) > new float3(0.0001f));
+            _hasPendingShift = math.any(math.abs(_pendingShift) > new float3(ShiftEpsilonMeters));
+        }
+
+        private void ApplyPendingShiftToExtractedData(int matrixCount, int interactableCount)
+        {
+            if (!_hasPendingShift)
+                return;
+
+            if (!math.all(math.isfinite(_pendingShift)))
+            {
+                _pendingShift = default;
+                _pendingShiftFrameId = 0u;
+                _hasPendingShift = false;
+                WriteTelemetry(MarauderOutpostConstants.FaultFlag | MarauderOutpostConstants.AupShiftFlag);
+                DumpBlackBox();
+                return;
+            }
+
+            if (!IsWithinAupShiftLimit(_pendingShift))
+            {
+                _pendingShift = default;
+                _pendingShiftFrameId = 0u;
+                _hasPendingShift = false;
+                WriteTelemetry(MarauderOutpostConstants.FaultFlag | MarauderOutpostConstants.AupShiftFlag);
+                DumpBlackBox();
+                return;
+            }
+
+            float3 shift = _pendingShift;
+            uint shiftFrameId = _pendingShiftFrameId;
+            _pendingShift = default;
+            _pendingShiftFrameId = 0u;
+            _hasPendingShift = false;
+            if (math.all(math.abs(shift) < new float3(ShiftEpsilonMeters)))
+                return;
+
+            _generationOrigin -= shift;
+            _lastShiftFrameId = shiftFrameId;
+
+            int safeMatrixCount = _shellMatrices.IsCreated ? math.min(math.max(0, matrixCount), _shellMatrices.Length) : 0;
+            for (int i = 0; i < safeMatrixCount; i++)
+            {
+                float4x4 matrix = _shellMatrices[i];
+                matrix.c3.x -= shift.x;
+                matrix.c3.y -= shift.y;
+                matrix.c3.z -= shift.z;
+                _shellMatrices[i] = matrix;
+            }
+
+            int safeInteractableCount = _interactableSpawns.IsCreated ? math.min(math.max(0, interactableCount), _interactableSpawns.Length) : 0;
+            for (int i = 0; i < safeInteractableCount; i++)
+            {
+                OutpostInteractableSpawn spawn = _interactableSpawns[i];
+                spawn.PositionMeters -= shift;
+                _interactableSpawns[i] = spawn;
+            }
+
+            WriteTelemetry(MarauderOutpostConstants.AupShiftFlag);
         }
 
         private void UpdateDrawBounds()
         {
-            float width = math.max(_activeDimensions.x, _activeDimensions.z) * math.max(1f, cellSizeMeters) + 12f;
-            float height = math.max(4f, _activeDimensions.y * math.max(1f, floorHeightMeters) + 12f);
+            float width = math.max(_activeDimensions.x, _activeDimensions.z) * ResolveCellSizeMeters() + 12f;
+            float height = math.max(4f, _activeDimensions.y * ResolveFloorHeightMeters() + 12f);
             _drawBounds = new Bounds(
                 new Vector3(_generationOrigin.x, _generationOrigin.y + height * 0.35f, _generationOrigin.z),
                 new Vector3(width, height, width));
@@ -789,18 +1181,36 @@ namespace Hecton8.World.Outposts
                 Dimensions = _activeDimensions,
                 ShellMatrixCount = _matrixCount,
                 InteractableCount = _interactableCount,
-                OutpostAge01 = outpostAge01,
+                OutpostAge01 = ResolveOutpostAge01(),
                 QualityTier = _qualityTier,
                 State = _state,
-                Flags = (ushort)((_heightmapFallback ? MarauderOutpostConstants.HeightmapFallbackFlag : 0u) |
-                                  (_qualityTier == OutpostGenerationQualityTier.Low ? MarauderOutpostConstants.LowTierFlag : 0u))
+                Flags = ResolveDescriptorFlags()
             };
         }
 
-        private void PublishGeneratedSignal()
+        private ushort ResolveDescriptorFlags()
+        {
+            return (ushort)((_heightmapFallback ? MarauderOutpostConstants.HeightmapFallbackFlag : 0u) |
+                            (_qualityTier == OutpostGenerationQualityTier.Low ? MarauderOutpostConstants.LowTierFlag : 0u));
+        }
+
+        private bool TryPublishGeneratedSignal()
         {
             if (!_generated)
-                return;
+                return false;
+
+            if (_publishedPowerGridHandle != 0u)
+            {
+                if (WfcOutpostGridRegistry.TryGetGrid(_publishedPowerGridHandle, out _))
+                {
+                    PublishGeneratedSignalForHandle();
+                    _generatedSignalReplayFrames = GeneratedSignalReplayFrames;
+                    _generatedSignalHeartbeatFrames = GeneratedSignalHeartbeatFrames;
+                    return true;
+                }
+
+                _publishedPowerGridHandle = 0u;
+            }
 
             AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(new Vector3(_generationOrigin.x, _generationOrigin.y, _generationOrigin.z));
             WfcOutpostGridDescriptor descriptor = new WfcOutpostGridDescriptor
@@ -815,36 +1225,81 @@ namespace Hecton8.World.Outposts
                     LocalZ = originAup.LocalZ
                 },
                 Dimensions = _activeDimensions,
-                CellSizeMeters = math.max(1f, cellSizeMeters),
-                FloorHeightMeters = math.max(1f, floorHeightMeters),
+                CellSizeMeters = ResolveCellSizeMeters(),
+                FloorHeightMeters = ResolveFloorHeightMeters(),
                 SectorHash = _activeSectorHash,
                 WorldSeed = _activeWorldSeed,
                 GenerationSequence = _generationSequence,
                 GridHash = _activeGridHash,
                 CellCount = (ushort)math.min(ResolveActiveCellCount(), ushort.MaxValue),
-                Flags = _latestSnapshot.Flags
+                Flags = ResolveDescriptorFlags()
             };
 
             if (!WfcOutpostGridRegistry.RegisterGrid(in descriptor, WfcGrid, out _publishedPowerGridHandle))
             {
+                _publishedPowerGridHandle = 0u;
+                _generatedSignalReplayFrames = 0;
+                _generatedSignalHeartbeatFrames = GeneratedSignalHeartbeatFrames;
                 WriteTelemetry(MarauderOutpostConstants.FaultFlag);
                 DumpBlackBox();
+                return false;
+            }
+
+            PublishGeneratedSignalForHandle();
+            _generatedSignalReplayFrames = GeneratedSignalReplayFrames;
+            _generatedSignalHeartbeatFrames = GeneratedSignalHeartbeatFrames;
+            return true;
+        }
+
+        private void ReplayGeneratedSignalIfNeeded()
+        {
+            if (!_generated)
+                return;
+
+            if (_generatedSignalReplayFrames <= 0)
+            {
+                if (_generatedSignalHeartbeatFrames > 0)
+                {
+                    _generatedSignalHeartbeatFrames--;
+                    return;
+                }
+            }
+
+            if (_publishedPowerGridHandle == 0u)
+            {
+                TryPublishGeneratedSignal();
                 return;
             }
 
+            if (!WfcOutpostGridRegistry.TryGetGrid(_publishedPowerGridHandle, out _))
+            {
+                _publishedPowerGridHandle = 0u;
+                TryPublishGeneratedSignal();
+                return;
+            }
+
+            PublishGeneratedSignalForHandle();
+            if (_generatedSignalReplayFrames > 0)
+                _generatedSignalReplayFrames--;
+            else
+                _generatedSignalHeartbeatFrames = GeneratedSignalHeartbeatFrames;
+        }
+
+        private void PublishGeneratedSignalForHandle()
+        {
             WfcOutpostGeneratedSignal signal = new WfcOutpostGeneratedSignal
             {
-                OriginAup = originAup,
+                OriginAup = AbsoluteUniversePosition.FromRuntimePosition(new Vector3(_generationOrigin.x, _generationOrigin.y, _generationOrigin.z)),
                 SectorHash = _activeSectorHash,
                 GridHandle = _publishedPowerGridHandle,
                 GenerationSequence = _generationSequence,
                 Dimensions = _activeDimensions,
-                CellSizeMeters = math.max(1f, cellSizeMeters),
-                FloorHeightMeters = math.max(1f, floorHeightMeters),
+                CellSizeMeters = ResolveCellSizeMeters(),
+                FloorHeightMeters = ResolveFloorHeightMeters(),
                 GridHash = _activeGridHash,
                 Frame = (uint)Time.frameCount,
                 CellCount = (ushort)math.min(ResolveActiveCellCount(), ushort.MaxValue),
-                Flags = _latestSnapshot.Flags
+                Flags = ResolveDescriptorFlags()
             };
             GlobalSignals.Publish(in signal);
         }
@@ -852,10 +1307,16 @@ namespace Hecton8.World.Outposts
         private void ReleasePublishedPowerGrid()
         {
             if (_publishedPowerGridHandle == 0u)
+            {
+                _generatedSignalReplayFrames = 0;
+                _generatedSignalHeartbeatFrames = 0;
                 return;
+            }
 
             WfcOutpostGridRegistry.ReleaseGrid(_publishedPowerGridHandle);
             _publishedPowerGridHandle = 0u;
+            _generatedSignalReplayFrames = 0;
+            _generatedSignalHeartbeatFrames = 0;
         }
 
         private int ResolveActiveCellCount()
@@ -886,15 +1347,24 @@ namespace Hecton8.World.Outposts
 
         private void WriteTelemetry(uint flags)
         {
+            WriteTelemetry(flags, _activeSectorHash);
+        }
+
+        private void WriteTelemetry(uint flags, ulong sectorHash)
+        {
             if (!_telemetryRing.IsCreated || _telemetryRing.Length == 0)
                 return;
 
-            int index = _telemetryWriteIndex % _telemetryRing.Length;
+            int length = _telemetryRing.Length;
+            int index = _telemetryWriteIndex;
+            if ((uint)index >= (uint)length)
+                index = 0;
+
             _telemetryRing[index] = new OutpostTelemetryEntry
             {
                 Frame = (uint)Time.frameCount,
                 Flags = flags,
-                SectorHash = _activeSectorHash,
+                SectorHash = sectorHash,
                 Seed = _activeSolveSeed,
                 GenerationSequence = _generationSequence,
                 OriginMeters = _generationOrigin,
@@ -903,10 +1373,11 @@ namespace Hecton8.World.Outposts
                 InteractableCount = _interactableCount,
                 SolidCellCount = _solidCellCount,
                 SupportCount = _supportCount,
-                OutpostAge01 = outpostAge01,
+                OutpostAge01 = ResolveOutpostAge01(),
                 ShiftFrameId = _lastShiftFrameId
             };
-            _telemetryWriteIndex = (_telemetryWriteIndex + 1) % _telemetryRing.Length;
+            index++;
+            _telemetryWriteIndex = index >= length ? 0 : index;
         }
 
         private void DumpBlackBox()
@@ -919,11 +1390,23 @@ namespace Hecton8.World.Outposts
                 string path = Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", "Dump_MARAUDER_OUTPOST_ARCHITECT.bin");
                 using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
                 using BinaryWriter writer = new BinaryWriter(stream);
-                writer.Write(_telemetryRing.Length);
-                writer.Write(_telemetryWriteIndex);
-                for (int i = 0; i < _telemetryRing.Length; i++)
+                int length = _telemetryRing.Length;
+                int startIndex = _telemetryWriteIndex;
+                if ((uint)startIndex >= (uint)length)
+                    startIndex = 0;
+
+                writer.Write(TelemetryDumpMagic);
+                writer.Write(TelemetryDumpVersion);
+                writer.Write(length);
+                writer.Write(TelemetryDumpEntryPayloadBytes);
+                writer.Write(startIndex);
+                for (int offset = 0; offset < length; offset++)
                 {
-                    OutpostTelemetryEntry entry = _telemetryRing[i];
+                    int sourceIndex = startIndex + offset;
+                    if (sourceIndex >= length)
+                        sourceIndex -= length;
+
+                    OutpostTelemetryEntry entry = _telemetryRing[sourceIndex];
                     writer.Write(entry.Frame);
                     writer.Write(entry.Flags);
                     writer.Write(entry.SectorHash);
@@ -961,6 +1444,59 @@ namespace Hecton8.World.Outposts
             return shellMesh != null ? shellMesh : _runtimeShellMesh;
         }
 
+        private MaterialPropertyBlock ResolveRenderProperties(float age)
+        {
+            if (_renderPropertyBlock == null)
+            {
+                _renderPropertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - late fallback indirect draw payload - owner: MARAUDER_OUTPOST_ARCHITECT
+                _renderPropertiesDirty = true;
+            }
+
+            Vector4 decayRuntime = new Vector4(
+                age,
+                0.55f,
+                _qualityTier == OutpostGenerationQualityTier.Low ? 1f : 0f,
+                (_activeSolveSeed & 0xFFFFu) * MarauderOutpostConstants.HeightUShortToUnit);
+
+            if (_renderPropertiesDirty || _renderPropertyMatrixBuffer != _matrixBuffer)
+            {
+                _renderPropertyBlock.SetBuffer(OutpostMatricesId, _matrixBuffer);
+                _renderPropertyMatrixBuffer = _matrixBuffer;
+            }
+
+            if (_renderPropertiesDirty || _renderPropertyCellTypeBuffer != _cellTypeBuffer)
+            {
+                _renderPropertyBlock.SetBuffer(OutpostCellTypesId, _cellTypeBuffer);
+                _renderPropertyCellTypeBuffer = _cellTypeBuffer;
+            }
+
+            if (_renderPropertiesDirty || _renderPropertyAge01 != age)
+            {
+                _renderPropertyBlock.SetFloat(OutpostAge01Id, age);
+                _renderPropertyAge01 = age;
+            }
+
+            if (_renderPropertiesDirty || _renderPropertyDecayRuntime != decayRuntime)
+            {
+                _renderPropertyBlock.SetVector(HectonMaterialDecayRuntimeId, decayRuntime);
+                _renderPropertyDecayRuntime = decayRuntime;
+            }
+
+            _renderPropertiesDirty = false;
+            return _renderPropertyBlock;
+        }
+
+        private void ClearRenderPropertyCache()
+        {
+            if (_renderPropertyBlock != null)
+                _renderPropertyBlock.Clear();
+            _renderPropertyMatrixBuffer = null;
+            _renderPropertyCellTypeBuffer = null;
+            _renderPropertyDecayRuntime = default;
+            _renderPropertyAge01 = 0f;
+            _renderPropertiesDirty = true;
+        }
+
         private static Mesh CreateCubeMesh()
         {
             // COLD ALLOC: Mesh[1] - fallback unit cube shell mesh when no authored mesh is assigned - owner: MARAUDER_OUTPOST_ARCHITECT
@@ -994,6 +1530,44 @@ namespace Hecton8.World.Outposts
         private static float3 ToFloat3(Vector3 value)
         {
             return new float3(value.x, value.y, value.z);
+        }
+
+        private static bool IsDestroyedUnityObject(object instance)
+        {
+            return instance is UnityEngine.Object unityObject && unityObject == null;
+        }
+
+        private static float SanitizeMin(float value, float minValue, float fallback)
+        {
+            float resolvedFallback = IsFinite(fallback) ? fallback : minValue;
+            if (!IsFinite(value))
+                return math.max(minValue, resolvedFallback);
+            return value < minValue ? minValue : value;
+        }
+
+        private static float Sanitize01(float value, float fallback)
+        {
+            if (!IsFinite(value))
+                value = fallback;
+            if (!IsFinite(value))
+                return 0f;
+            return Mathf.Clamp01(value);
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return !float.IsNaN(value.x) && !float.IsNaN(value.y) && !float.IsNaN(value.z) &&
+                   !float.IsInfinity(value.x) && !float.IsInfinity(value.y) && !float.IsInfinity(value.z);
+        }
+
+        private static bool IsWithinAupShiftLimit(float3 shiftMeters)
+        {
+            return math.all(math.abs(shiftMeters) <= new float3(MaxAupShiftMeters));
         }
 
         private static void RegisterNativeArray<T>(NativeArray<T> array, string label) where T : struct

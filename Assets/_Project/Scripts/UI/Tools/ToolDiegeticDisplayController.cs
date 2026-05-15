@@ -14,14 +14,16 @@ namespace Hecton8.UI.Tools
     /// Drives a held-tool diegetic status screen from the native tool-state signal lane.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ToolDiegeticDisplayController : MonoBehaviour, IUpdatable
+    public sealed class ToolDiegeticDisplayController : MonoBehaviour, IUpdatable, ISlowTickable, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener
     {
         private const int RenderTextureSize = 256;
         private const int TextBufferCapacity = 96;
         private const int InvalidDisplayBucket = int.MinValue;
+        private const int ScannerTitleCacheMiss = -1;
         private const float TierHysteresisSeconds = 2f;
         private const float PoolRetrySeconds = 2f;
         private const float InvisibleReleaseSeconds = 0.75f;
+        private const float SlowTickRegistrationRetrySeconds = 0.5f;
         private const float PropertyEpsilon = 0.0005f;
         private const string ToolUiLayerName = "ToolUI";
         private const int StatusOk = 0;
@@ -86,6 +88,7 @@ namespace Hecton8.UI.Tools
         private RenderTexturePool _cachedRenderTexturePool;
         private RenderTexturePool _renderTextureOwnerPool;
         private Texture _boundScreenTexture;
+        private RenderTextureFormat _renderTextureFormat = RenderTextureFormat.ARGB32;
         private bool _registered;
         private bool _hasState;
         private bool _stateDirty = true;
@@ -97,7 +100,10 @@ namespace Hecton8.UI.Tools
         private bool _lowTierCandidate;
         private bool _tierInitialized;
         private HectonQualityTier _currentTier = HectonQualityTier.Unknown;
+        private HectonQualityTier _tierCandidate = HectonQualityTier.Unknown;
+        private float _tierCandidateSeconds;
         private float _lowTierCandidateSeconds;
+        private bool _registeredScalabilityListener;
         private int _lastSignalSequence;
         private int _lastScannerSignalSequence;
         private int _lastAmmoBucket = InvalidDisplayBucket;
@@ -131,6 +137,9 @@ namespace Hecton8.UI.Tools
         private float _appliedFault01 = -1f;
         private float _appliedToolTypeHue01 = -1f;
         private int _toolUiMask;
+        private float _slowTickRetrySeconds;
+        private bool _registeredSlowTick;
+        private bool _registeredHotSwapListener;
 
         /// <summary>
         /// Last runtime tool hash accepted by this display.
@@ -140,6 +149,7 @@ namespace Hecton8.UI.Tools
         private void Awake()
         {
             ResolveLayerMaskCold();
+            ResolveRenderTextureFormatCold();
             ConfigureCameraCold();
         }
 
@@ -148,26 +158,66 @@ namespace Hecton8.UI.Tools
             _stateDirty = true;
             _renderRequested = true;
             _notRenderableSeconds = 0f;
+            _slowTickRetrySeconds = 0f;
             ResolveTierImmediate();
+            TryRegisterHotSwapListener();
+            TryRegisterScalabilityListener();
             TryRegisterUpdatable();
+            TryRegisterSlowTickable(force: true);
             ApplyScreenTexture(_fallbackEmissiveTexture, lowTierFallback: true);
             ApplyCameraRenderState(renderThisFrame: false);
         }
 
         private void Start()
         {
+            TryRegisterHotSwapListener();
             TryRegisterUpdatable();
+            TryRegisterSlowTickable(force: true);
         }
 
         private void OnDisable()
         {
             TryUnregisterUpdatable();
+            TryUnregisterSlowTickable();
+            TryUnregisterScalabilityListener();
+            TryUnregisterHotSwapListener();
             ApplyCameraRenderState(renderThisFrame: false);
             ReleaseRenderTexture();
+            _cachedRenderTexturePool = null;
             _poolUnavailableFallback = false;
             _poolRetrySeconds = 0f;
+            _slowTickRetrySeconds = 0f;
             _notRenderableSeconds = 0f;
             ApplyScreenTexture(_fallbackEmissiveTexture, lowTierFallback: true);
+        }
+
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            QueueTierCandidate(payload.CurrentQualityTier);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.RenderTexturePoolRuntime)
+                return;
+
+            RenderTexturePool newPool = currentService as RenderTexturePool;
+            if (_renderTexture != null &&
+                _renderTextureOwnerPool != null &&
+                !ReferenceEquals(_renderTextureOwnerPool, newPool))
+            {
+                ReleaseRenderTexture();
+                ApplyScreenTexture(_fallbackEmissiveTexture, lowTierFallback: true);
+            }
+
+            _cachedRenderTexturePool = newPool;
+            _poolUnavailableFallback = false;
+            _poolRetrySeconds = 0f;
+            _stateDirty = true;
+            _renderRequested = true;
         }
 
         /// <summary>
@@ -176,10 +226,16 @@ namespace Hecton8.UI.Tools
         /// <param name="deltaTime">Scaled dispatcher delta.</param>
         public void Tick(float deltaTime)
         {
+            float safeDeltaTime = SanitizeSeconds(deltaTime);
             if (!_registered)
                 TryRegisterUpdatable();
+            if (!_registeredSlowTick)
+            {
+                if (_slowTickRetrySeconds > 0f)
+                    _slowTickRetrySeconds = math.max(0f, _slowTickRetrySeconds - safeDeltaTime);
+                TryRegisterSlowTickable(force: false);
+            }
 
-            float safeDeltaTime = math.max(0f, deltaTime);
             if (_poolRetrySeconds > 0f)
                 _poolRetrySeconds = math.max(0f, _poolRetrySeconds - safeDeltaTime);
 
@@ -232,6 +288,11 @@ namespace Hecton8.UI.Tools
             }
         }
 
+        public void SlowTick()
+        {
+            QueueTierCandidate(GlobalRegistry.ScalabilityTier);
+        }
+
         /// <summary>
         /// Overrides the tool hash filter from an authoring or spawn system without string lookup.
         /// </summary>
@@ -243,6 +304,13 @@ namespace Hecton8.UI.Tools
 
             _toolHashFilter = toolHash;
             _hasState = false;
+            _scannerSignalActive = false;
+            _scannerArtifactHash = 0u;
+            _scannerProgress01 = 0f;
+            _lastSignalSequence = InvalidDisplayBucket;
+            _lastScannerSignalSequence = InvalidDisplayBucket;
+            _lastScannerProgressBucket = InvalidDisplayBucket;
+            _lastScannerArtifactHash = 0u;
             _stateDirty = true;
             _renderRequested = true;
             _notRenderableSeconds = 0f;
@@ -287,17 +355,19 @@ namespace Hecton8.UI.Tools
 
             _lastScannerSignalSequence = sequence;
             bool acceptsScanner = _toolHashFilter == 0u || _toolHashFilter == ScannerToolTuningHash || signal.ToolHash == _toolHashFilter;
-            bool active = acceptsScanner && signal.Active != 0 && signal.ArtifactHash != 0u;
+            uint artifactHash = acceptsScanner ? signal.ArtifactHash : 0u;
+            bool active = acceptsScanner && signal.Active != 0 && artifactHash != 0u;
+            float scannerProgress01 = active ? Sanitize01(signal.Progress01) : 0f;
             if (_scannerSignalActive == active &&
-                _scannerArtifactHash == signal.ArtifactHash &&
-                math.abs(_scannerProgress01 - signal.Progress01) < 0.005f)
+                _scannerArtifactHash == artifactHash &&
+                math.abs(_scannerProgress01 - scannerProgress01) < 0.005f)
             {
                 return;
             }
 
             _scannerSignalActive = active;
-            _scannerArtifactHash = signal.ArtifactHash;
-            _scannerProgress01 = math.saturate(signal.Progress01);
+            _scannerArtifactHash = artifactHash;
+            _scannerProgress01 = scannerProgress01;
             _stateDirty = true;
         }
 
@@ -345,16 +415,16 @@ namespace Hecton8.UI.Tools
                 _renderRequested = true;
             }
 
-            ApplyGlobalFloat(_ToolHeat01Id, _heat01, ref _appliedHeat01);
-            ApplyGlobalFloat(_ToolBattery01Id, _battery01, ref _appliedBattery01);
-            ApplyGlobalFloat(_ToolBatteryNormalizedId, _battery01, ref _appliedVisorBatteryNormalized);
-            ApplyGlobalFloat(_ToolDistanceMetersId, _distanceMeters, ref _appliedDistanceMeters);
-            ApplyGlobalFloat(_ToolAmmoUnitsId, ammoBucket, ref _appliedAmmoUnits);
             float criticalFlash = _heat01 > 0.9f ? 1f : 0f;
-            ApplyGlobalFloat(_ToolCriticalFlash01Id, criticalFlash, ref _appliedCriticalFlash);
-            ApplyGlobalFloat(_ToolVisualOverkill01Id, ResolveVisualOverkill01(_currentTier), ref _appliedVisualOverkill01);
-            ApplyGlobalFloat(_ToolFault01Id, ResolveFault01(_statusMask), ref _appliedFault01);
-            ApplyGlobalFloat(_ToolTypeHue01Id, ResolveToolTypeHue01(_toolTypeId), ref _appliedToolTypeHue01);
+            ApplyScreenScalarState(
+                _heat01,
+                _battery01,
+                _distanceMeters,
+                ammoBucket,
+                criticalFlash,
+                ResolveVisualOverkill01(_currentTier),
+                ResolveFault01(_statusMask),
+                ResolveToolTypeHue01(_toolTypeId));
             _stateDirty = false;
         }
 
@@ -438,8 +508,7 @@ namespace Hecton8.UI.Tools
 
             int titleVersion = ScannableTarget.LoreTitleLookupVersion;
             if (_scannerTitleCacheHash != artifactHash ||
-                _scannerTitleCacheVersion != titleVersion ||
-                _scannerTitleCacheLength <= 0)
+                _scannerTitleCacheVersion != titleVersion)
             {
                 _scannerTitleCacheHash = 0u;
                 _scannerTitleCacheVersion = titleVersion;
@@ -450,6 +519,9 @@ namespace Hecton8.UI.Tools
                         out int cachedLength) ||
                     cachedLength <= 0)
                 {
+                    _scannerTitleCacheHash = artifactHash;
+                    _scannerTitleCacheVersion = titleVersion;
+                    _scannerTitleCacheLength = ScannerTitleCacheMiss;
                     return false;
                 }
 
@@ -457,6 +529,9 @@ namespace Hecton8.UI.Tools
                 _scannerTitleCacheVersion = titleVersion;
                 _scannerTitleCacheLength = math.min(cachedLength, _scannerTitleCache.Length);
             }
+
+            if (_scannerTitleCacheLength == ScannerTitleCacheMiss)
+                return false;
 
             int length = math.min(_scannerTitleCacheLength, destination.Length);
             if (length <= 0)
@@ -469,7 +544,7 @@ namespace Hecton8.UI.Tools
 
         private static void ScrambleDecryptionSpan(Span<char> span, uint hash, int frame, float progress01)
         {
-            int revealed = math.clamp((int)math.floor(math.saturate(progress01) * span.Length), 0, span.Length);
+            int revealed = math.clamp((int)math.floor(Sanitize01(progress01) * span.Length), 0, span.Length);
             uint seed = hash ^ unchecked((uint)frame * 747796405u) ^ 0xB5297A4Du;
             for (int i = revealed; i < span.Length; i++)
             {
@@ -499,10 +574,7 @@ namespace Hecton8.UI.Tools
                 return;
             }
 
-            RenderTextureFormat format = SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.RGB565)
-                ? RenderTextureFormat.RGB565
-                : RenderTextureFormat.ARGB32;
-            _renderTexture = pool.Rent(RenderTextureSize, RenderTextureSize, format, this, 16);
+            _renderTexture = pool.Rent(RenderTextureSize, RenderTextureSize, _renderTextureFormat, this, 16);
             if (_renderTexture == null)
             {
                 _poolUnavailableFallback = true;
@@ -585,6 +657,50 @@ namespace Hecton8.UI.Tools
             _appliedLowTierFallback = lowTierFallback ? 1f : 0f;
         }
 
+        private void ApplyScreenScalarState(
+            float heat01,
+            float battery01,
+            float distanceMeters,
+            float ammoUnits,
+            float criticalFlash,
+            float visualOverkill01,
+            float fault01,
+            float toolTypeHue01)
+        {
+            bool changed = !NearlyEqual(_appliedHeat01, heat01) ||
+                !NearlyEqual(_appliedBattery01, battery01) ||
+                !NearlyEqual(_appliedVisorBatteryNormalized, battery01) ||
+                !NearlyEqual(_appliedDistanceMeters, distanceMeters) ||
+                !NearlyEqual(_appliedAmmoUnits, ammoUnits) ||
+                !NearlyEqual(_appliedCriticalFlash, criticalFlash) ||
+                !NearlyEqual(_appliedVisualOverkill01, visualOverkill01) ||
+                !NearlyEqual(_appliedFault01, fault01) ||
+                !NearlyEqual(_appliedToolTypeHue01, toolTypeHue01);
+            if (!changed || _screenRenderer == null)
+                return;
+
+            _screenRenderer.GetPropertyBlock(_screenPropertyBlock);
+            SetScreenFloat(_ToolHeat01Id, heat01, ref _appliedHeat01);
+            SetScreenFloat(_ToolBattery01Id, battery01, ref _appliedBattery01);
+            SetScreenFloat(_ToolBatteryNormalizedId, battery01, ref _appliedVisorBatteryNormalized);
+            SetScreenFloat(_ToolDistanceMetersId, distanceMeters, ref _appliedDistanceMeters);
+            SetScreenFloat(_ToolAmmoUnitsId, ammoUnits, ref _appliedAmmoUnits);
+            SetScreenFloat(_ToolCriticalFlash01Id, criticalFlash, ref _appliedCriticalFlash);
+            SetScreenFloat(_ToolVisualOverkill01Id, visualOverkill01, ref _appliedVisualOverkill01);
+            SetScreenFloat(_ToolFault01Id, fault01, ref _appliedFault01);
+            SetScreenFloat(_ToolTypeHue01Id, toolTypeHue01, ref _appliedToolTypeHue01);
+            _screenRenderer.SetPropertyBlock(_screenPropertyBlock);
+        }
+
+        private void SetScreenFloat(int propertyId, float value, ref float cachedValue)
+        {
+            if (NearlyEqual(cachedValue, value))
+                return;
+
+            _screenPropertyBlock.SetFloat(propertyId, value);
+            cachedValue = value;
+        }
+
         private void ApplyCameraRenderState(bool renderThisFrame)
         {
             if (_toolCamera == null)
@@ -628,6 +744,13 @@ namespace Hecton8.UI.Tools
             _toolUiMask = layer >= 0 ? 1 << layer : _fallbackToolUiMask.value;
         }
 
+        private void ResolveRenderTextureFormatCold()
+        {
+            _renderTextureFormat = SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.RGB565)
+                ? RenderTextureFormat.RGB565
+                : RenderTextureFormat.ARGB32;
+        }
+
         private void ConfigureCameraCold()
         {
             if (_toolCamera == null)
@@ -647,35 +770,49 @@ namespace Hecton8.UI.Tools
 
         private void ResolveTierImmediate()
         {
-            _currentTier = GlobalRegistry.ScalabilityTier;
-            bool lowTier = IsLowTier(_currentTier);
+            InitializeTier(GlobalRegistry.ScalabilityTier);
+        }
+
+        private void InitializeTier(HectonQualityTier tier)
+        {
+            _currentTier = tier;
+            _tierCandidate = tier;
+            bool lowTier = IsLowTier(tier);
             _lowTierActive = lowTier;
             _lowTierCandidate = lowTier;
+            _tierCandidateSeconds = 0f;
             _lowTierCandidateSeconds = 0f;
             _tierInitialized = true;
         }
 
         private void ResolveTierHysteresis(float deltaTime)
         {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            if (tier != _currentTier)
-            {
-                _currentTier = tier;
-                _stateDirty = true;
-                _renderRequested = true;
-            }
-
-            bool requestedLowTier = IsLowTier(tier) ||
-                (_stateFlags & ToolStateChangedSignal.FlagLowTierFallback) != 0;
-
             if (!_tierInitialized)
             {
-                _lowTierActive = requestedLowTier;
-                _lowTierCandidate = requestedLowTier;
-                _tierInitialized = true;
-                _stateDirty = true;
+                InitializeTier(HectonQualityTier.Unknown);
                 return;
             }
+
+            if (_tierCandidate != _currentTier)
+            {
+                _tierCandidateSeconds += deltaTime;
+                if (_tierCandidateSeconds >= TierHysteresisSeconds)
+                {
+                    _currentTier = _tierCandidate;
+                    _tierCandidateSeconds = 0f;
+                    _lowTierCandidate = IsLowTier(_currentTier);
+                    _lowTierCandidateSeconds = TierHysteresisSeconds;
+                    _stateDirty = true;
+                    _renderRequested = true;
+                }
+            }
+            else
+            {
+                _tierCandidateSeconds = 0f;
+            }
+
+            bool requestedLowTier = IsLowTier(_currentTier) ||
+                (_stateFlags & ToolStateChangedSignal.FlagLowTierFallback) != 0;
 
             if (requestedLowTier == _lowTierActive)
             {
@@ -702,6 +839,30 @@ namespace Hecton8.UI.Tools
             _renderRequested = true;
         }
 
+        private void QueueTierCandidate(HectonQualityTier tier)
+        {
+            if (!_tierInitialized)
+            {
+                InitializeTier(tier);
+                _stateDirty = true;
+                _renderRequested = true;
+                return;
+            }
+
+            if (tier == _currentTier)
+            {
+                _tierCandidate = tier;
+                _tierCandidateSeconds = 0f;
+                return;
+            }
+
+            if (tier != _tierCandidate)
+            {
+                _tierCandidate = tier;
+                _tierCandidateSeconds = 0f;
+            }
+        }
+
         private void TryRegisterUpdatable()
         {
             if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
@@ -717,6 +878,69 @@ namespace Hecton8.UI.Tools
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registered = false;
+        }
+
+        private void TryRegisterSlowTickable(bool force)
+        {
+            if (_registeredSlowTick || !Application.isPlaying)
+                return;
+
+            if (!force && _slowTickRetrySeconds > 0f)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+            {
+                _slowTickRetrySeconds = SlowTickRegistrationRetrySeconds;
+                return;
+            }
+
+            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+            _slowTickRetrySeconds = _registeredSlowTick ? 0f : SlowTickRegistrationRetrySeconds;
+        }
+
+        private void TryUnregisterSlowTickable()
+        {
+            if (!_registeredSlowTick)
+                return;
+
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+            _registeredSlowTick = false;
+            _slowTickRetrySeconds = 0f;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        private void TryRegisterScalabilityListener()
+        {
+            if (_registeredScalabilityListener || !Application.isPlaying)
+                return;
+
+            ScalabilityEvents.Register(this);
+            _registeredScalabilityListener = true;
+        }
+
+        private void TryUnregisterScalabilityListener()
+        {
+            if (!_registeredScalabilityListener)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _registeredScalabilityListener = false;
         }
 
         private static bool IsLowTier(HectonQualityTier tier)
@@ -811,6 +1035,11 @@ namespace Hecton8.UI.Tools
             return math.isfinite(value) ? math.max(0f, value) : 0f;
         }
 
+        private static float SanitizeSeconds(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
+        }
+
         private static int ToPercentBucket(float value)
         {
             return math.clamp((int)math.round(Sanitize01(value) * 100f), 0, 100);
@@ -819,15 +1048,6 @@ namespace Hecton8.UI.Tools
         private static bool NearlyEqual(float lhs, float rhs)
         {
             return math.abs(lhs - rhs) <= PropertyEpsilon;
-        }
-
-        private static void ApplyGlobalFloat(int propertyId, float value, ref float cachedValue)
-        {
-            if (NearlyEqual(cachedValue, value))
-                return;
-
-            Shader.SetGlobalFloat(propertyId, value);
-            cachedValue = value;
         }
 
 #if UNITY_EDITOR

@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Signals;
 using Hecton8.Tools;
 using Hecton8.World;
@@ -22,7 +23,7 @@ namespace Hecton8.Prologue.Space
     {
         private const int TelemetryCapacity = 300;
         private const int ControlDrainLimit = 8;
-        private const uint SourceHash = 0x4F524249u; // ORBI
+        private const uint SourceHash = PrologueSignalSourceHashes.OrbitalRelativityDirector;
         private const uint PlasmaRoarHash = 0x504C415Au; // PLAZ
         private const uint NaNHash = 0x4E414E21u; // NAN!
         private const uint AbortHash = 0x41424F52u; // ABOR

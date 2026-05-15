@@ -1751,6 +1751,7 @@ namespace Hecton8.World
         private Vector3 _lastAbyssalPathTargetPosition;
         private NativeArray<AbyssalPathTelemetryEntry> _abyssalPathTelemetry;
         private int _abyssalPathTelemetryCursor;
+        private int _abyssalPathTelemetryWrittenCount;
         private uint _abyssalPathTelemetrySequence;
         private int _lastAbyssalPathPortalLookAhead;
         private int _lastAbyssalPathMaxSamples;
@@ -2301,12 +2302,21 @@ namespace Hecton8.World
         }
 
         /// <summary>Converts stable universe coordinates into current runtime-local coordinates.</summary>
-        public static Vector3 ToRuntimeSpace(Vector3 universePosition) => ToVector3(ToRuntimeSpaceDouble3(universePosition));
+        public static Vector3 ToRuntimeSpace(Vector3 stableUniversePosition) => ToVector3(ToRuntimeSpaceDouble3(stableUniversePosition));
+
+        /// <summary>Converts stable universe coordinates into current runtime-local coordinates.</summary>
+        public static Vector3 ToRuntimeSpace(double3 universePosition) => ToVector3(ToRuntimeSpaceDouble3(universePosition));
 
         /// <summary>Converts stable universe coordinates into current runtime-local coordinates without reducing the bridge offset to float first.</summary>
-        public static double3 ToRuntimeSpaceDouble3(Vector3 universePosition)
+        public static double3 ToRuntimeSpaceDouble3(Vector3 stableUniversePosition)
         {
-            return ToDouble3(universePosition) + GlobalTotalUniverseOffsetDouble;
+            return ToRuntimeSpaceDouble3(ToDouble3(stableUniversePosition));
+        }
+
+        /// <summary>Converts stable universe coordinates into current runtime-local coordinates without reducing the bridge offset to float first.</summary>
+        public static double3 ToRuntimeSpaceDouble3(double3 universePosition)
+        {
+            return universePosition + GlobalTotalUniverseOffsetDouble;
         }
 
         private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
@@ -2385,10 +2395,10 @@ namespace Hecton8.World
         public Vector3[] ActiveAbyssalAnchors => _abyssalAnchorPositions;
 
         /// <summary>Active resident abyssal anchor positions in persistent native memory for direct readback.</summary>
-        public NativeArray<Vector3> ActiveAbyssalAnchorsNative => _nativeMemory.AbyssalAnchorPositionsNative;
+        public NativeArray<Vector3> ActiveAbyssalAnchorsNative => GetAbyssalAnchorNativeView();
 
         /// <summary>Active resident abyssal anchor positions as AUP in persistent native memory for acoustic consumers.</summary>
-        public NativeArray<AbsoluteUniversePosition> ActiveAbyssalAnchorAupsNative => _nativeMemory.AbyssalAnchorAupPositionsNative;
+        public NativeArray<AbsoluteUniversePosition> ActiveAbyssalAnchorAupsNative => GetAbyssalAnchorAupNativeView();
 
         /// <summary>Number of active surface instances.</summary>
         public int ActiveSurfaceInstanceCount => _surfaceFrontCount;
@@ -2403,25 +2413,25 @@ namespace Hecton8.World
         public int ActiveUnderwaterAggregateRevision => _underwaterActiveAggregateRevision;
 
         /// <summary>Number of active resident abyssal anchors currently exported by the bridge.</summary>
-        public int ActiveAbyssalAnchorCount => _abyssalAnchorCount;
+        public int ActiveAbyssalAnchorCount => ResolveAbyssalAnchorViewCount();
 
         /// <summary>Immutable managed snapshot of the current abyssal safe-navigation nodes.</summary>
         public Vector3[] ActiveAbyssalNavNodes => _abyssalNavNodeSnapshot;
 
         /// <summary>Immutable native snapshot of the current abyssal safe-navigation nodes.</summary>
-        public NativeArray<Vector3> ActiveAbyssalNavNodesNative => _nativeMemory.AbyssalNavNodeSnapshotNative;
+        public NativeArray<Vector3> ActiveAbyssalNavNodesNative => GetAbyssalNavNodeSnapshotNativeView();
 
         /// <summary>Number of active abyssal safe-navigation nodes currently exported by the bridge.</summary>
-        public int ActiveAbyssalNavNodeCount => _abyssalNavNodeCount;
+        public int ActiveAbyssalNavNodeCount => ResolveAbyssalNavNodeViewCount();
 
         /// <summary>Current ecosystem threat grid. Treat as read-only and reacquire after each SlowTick.</summary>
         public NativeArray<float> EcosystemThreatGrid => GetThreatGridFloatView();
 
         /// <summary>Compressed ecosystem threat grid used by AI/flow-field consumers that do not need float precision.</summary>
-        public NativeArray<byte> EcosystemThreatGridCompressed => _nativeMemory.EcosystemThreatGridCompressedCurrentNative;
+        public NativeArray<byte> EcosystemThreatGridCompressed => GetThreatGridByteView(_nativeMemory.EcosystemThreatGridCompressedCurrentNative);
 
         /// <summary>Permanent threat-echo flags aligned to the compressed ecosystem threat grid. 1 means the cell never decays below the echo floor.</summary>
-        public NativeArray<byte> EcosystemThreatEchoFlags => _nativeMemory.EcosystemThreatEchoCurrentNative;
+        public NativeArray<byte> EcosystemThreatEchoFlags => GetThreatGridByteView(_nativeMemory.EcosystemThreatEchoCurrentNative);
 
         /// <summary>Current ecosystem threat grid resolution in cells along one axis.</summary>
         public int EcosystemThreatGridResolution => _ecosystemThreatGridResolution;
@@ -2430,16 +2440,16 @@ namespace Hecton8.World
         public Vector3 EcosystemThreatGridCenter => _ecosystemThreatGridCenter;
 
         /// <summary>Current abyssal flow-field. Treat as read-only and reacquire after each SlowTick.</summary>
-        public NativeArray<float2> EcosystemFlowField => _nativeMemory.EcosystemFlowFieldCurrentNative;
+        public NativeArray<float2> EcosystemFlowField => GetFlowFieldView();
 
         /// <summary>Current abyssal flow-field center in world space.</summary>
         public Vector3 EcosystemFlowFieldCenter => _ecosystemFlowFieldCenter;
 
         /// <summary>Current abyssal thermal grid. Treat as read-only and reacquire after each SlowTick.</summary>
-        public NativeArray<float> AbyssalThermalGrid => _nativeMemory.AbyssalThermalGridNative;
+        public NativeArray<float> AbyssalThermalGrid => GetAbyssalThermalGridView();
 
         /// <summary>Current 3D abyssal flow volume. Treat as read-only and reacquire after each SlowTick.</summary>
-        public NativeArray<float3> AbyssalFlowVolume => _nativeMemory.AbyssalFlowVolumeCurrentNative;
+        public NativeArray<float3> AbyssalFlowVolume => GetAbyssalFlowVolumeView();
 
         /// <summary>Current abyssal thermal-grid center in world space.</summary>
         public Vector3 AbyssalThermalGridCenter => _abyssalThermalGridCenter;
@@ -2460,10 +2470,10 @@ namespace Hecton8.World
         public Vector3 CurrentThreatHotspotPosition => _currentThreatHotspotPosition;
 
         /// <summary>Latest native abyssal path result. Treat as read-only and reacquire after each completed path solve.</summary>
-        public NativeArray<Vector3> ActiveAbyssalPathNative => _nativeMemory.AbyssalPathSnapshotNative;
+        public NativeArray<Vector3> ActiveAbyssalPathNative => GetAbyssalPathNativeView();
 
         /// <summary>Number of valid waypoints in the latest completed abyssal path result.</summary>
-        public int ActiveAbyssalPathCount => _abyssalPathCount;
+        public int ActiveAbyssalPathCount => ResolveAbyssalPathViewCount();
 
         /// <summary>Explicit surface draw bounds used for the current indirect payload.</summary>
         public Bounds ActiveSurfaceDrawBounds => _surfaceDrawBounds;
@@ -2784,8 +2794,8 @@ namespace Hecton8.World
         /// </summary>
         public bool TryGetActiveAbyssalAnchorPayload(out NativeArray<Vector3> anchors, out int count)
         {
-            anchors = _nativeMemory.AbyssalAnchorPositionsNative;
-            count = _abyssalAnchorCount;
+            anchors = GetAbyssalAnchorNativeView();
+            count = ResolveAbyssalAnchorViewCount();
             return count > 0 && anchors.IsCreated;
         }
 
@@ -2794,8 +2804,8 @@ namespace Hecton8.World
         /// </summary>
         public bool TryGetActiveAbyssalAnchorAupPayload(out NativeArray<AbsoluteUniversePosition> anchors, out int count)
         {
-            anchors = _nativeMemory.AbyssalAnchorAupPositionsNative;
-            count = _abyssalAnchorCount;
+            anchors = GetAbyssalAnchorAupNativeView();
+            count = ResolveAbyssalAnchorAupViewCount();
             return count > 0 && anchors.IsCreated;
         }
 
@@ -2804,8 +2814,8 @@ namespace Hecton8.World
         /// </summary>
         public bool TryGetActiveAbyssalNavNodePayload(out NativeArray<Vector3> nodes, out int count)
         {
-            nodes = _nativeMemory.AbyssalNavNodeSnapshotNative;
-            count = _abyssalNavNodeCount;
+            nodes = GetAbyssalNavNodeSnapshotNativeView();
+            count = ResolveAbyssalNavNodeViewCount();
             return count > 0 && nodes.IsCreated;
         }
 
@@ -2819,7 +2829,7 @@ namespace Hecton8.World
         {
             conduitVectors = _nativeMemory.AbyssalNavConduitVectorsSnapshotNative;
             conduitStrengths = _nativeMemory.AbyssalNavConduitStrengthSnapshotNative;
-            count = _abyssalNavNodeCount;
+            count = ResolveAbyssalConduitViewCount();
             return count > 0 &&
                    conduitVectors.IsCreated &&
                    conduitStrengths.IsCreated;
@@ -2843,7 +2853,7 @@ namespace Hecton8.World
             conduitVectors = _nativeMemory.AbyssalNavConduitVectorsSnapshotNative;
             conduitStrengths = _nativeMemory.AbyssalNavConduitStrengthSnapshotNative;
             spatialHash = _nativeMemory.AbyssalNavGraphHashNative;
-            count = _abyssalNavNodeCount;
+            count = ResolveAbyssalNavGraphViewCount();
             cellSize = abyssalNavGraphCellSize;
             origin = _abyssalNavGraphOrigin;
             return count > 0 &&
@@ -2851,7 +2861,10 @@ namespace Hecton8.World
                    nodeTypes.IsCreated &&
                    conduitVectors.IsCreated &&
                    conduitStrengths.IsCreated &&
-                   spatialHash.IsCreated;
+                   spatialHash.IsCreated &&
+                   cellSize > 0f &&
+                   math.isfinite(cellSize) &&
+                   IsFinite(origin);
         }
 
         /// <summary>
@@ -2869,8 +2882,10 @@ namespace Hecton8.World
             cellSize = threatGridCellSize;
             return _threatGridInitialized &&
                    threatLevels.IsCreated &&
-                   gridResolution > 0 &&
-                   cellSize > 0f;
+                   HasCompleteEcosystemSquareGridState(threatLevels.Length) &&
+                   cellSize > 0f &&
+                   math.isfinite(cellSize) &&
+                   IsFinite(gridCenter);
         }
 
         /// <summary>
@@ -2882,14 +2897,16 @@ namespace Hecton8.World
             out Vector3 gridCenter,
             out float cellSize)
         {
-            threatLevels = _nativeMemory.EcosystemThreatGridCompressedCurrentNative;
+            threatLevels = GetThreatGridByteView(_nativeMemory.EcosystemThreatGridCompressedCurrentNative);
             gridResolution = _ecosystemThreatGridResolution;
             gridCenter = _ecosystemThreatGridCenter;
             cellSize = threatGridCellSize;
             return _threatGridInitialized &&
                    threatLevels.IsCreated &&
-                   gridResolution > 0 &&
-                   cellSize > 0f;
+                   HasCompleteEcosystemSquareGridState(threatLevels.Length) &&
+                   cellSize > 0f &&
+                   math.isfinite(cellSize) &&
+                   IsFinite(gridCenter);
         }
 
         /// <summary>
@@ -2908,12 +2925,13 @@ namespace Hecton8.World
             voxelCellSize = new Vector3(threatGridCellSize, thermalGridVerticalCellSize, threatGridCellSize);
             return _threatGridInitialized &&
                    threatVoxels.IsCreated &&
-                   gridDimensions.x > 0 &&
-                   gridDimensions.y > 0 &&
-                   gridDimensions.z > 0 &&
+                   TryResolveVoxelGridCellCount(gridDimensions, threatVoxels.Length, out int threatVoxelCellCount) &&
+                   _ecosystemThreatVoxelCellCount >= threatVoxelCellCount &&
                    voxelCellSize.x > 0f &&
                    voxelCellSize.y > 0f &&
-                   voxelCellSize.z > 0f;
+                   voxelCellSize.z > 0f &&
+                   IsFinite(gridOrigin) &&
+                   IsFinite(voxelCellSize);
         }
 
         /// <summary>
@@ -2925,14 +2943,16 @@ namespace Hecton8.World
             out Vector3 gridCenter,
             out float cellSize)
         {
-            echoFlags = _nativeMemory.EcosystemThreatEchoCurrentNative;
+            echoFlags = GetThreatGridByteView(_nativeMemory.EcosystemThreatEchoCurrentNative);
             gridResolution = _ecosystemThreatGridResolution;
             gridCenter = _ecosystemThreatGridCenter;
             cellSize = threatGridCellSize;
             return _threatGridInitialized &&
                    echoFlags.IsCreated &&
-                   gridResolution > 0 &&
-                   cellSize > 0f;
+                   HasCompleteEcosystemSquareGridState(echoFlags.Length) &&
+                   cellSize > 0f &&
+                   math.isfinite(cellSize) &&
+                   IsFinite(gridCenter);
         }
 
         /// Returns the current abyssal flow-field payload and metadata for external consumers.
@@ -2975,7 +2995,7 @@ namespace Hecton8.World
         public bool TryGetActiveAbyssalNavNodeTypePayload(out NativeArray<byte> nodeTypes, out int count)
         {
             nodeTypes = _nativeMemory.AbyssalNavNodeTypesSnapshotNative;
-            count = _abyssalNavNodeCount;
+            count = ResolveAbyssalNavNodeTypeViewCount();
             return count > 0 && nodeTypes.IsCreated;
         }
 
@@ -3030,12 +3050,34 @@ namespace Hecton8.World
                 _abyssalThermalGridResolutionXZ <= 0 ||
                 _abyssalThermalGridResolutionY <= 0 ||
                 thermalGridHorizontalCellSize <= 0f ||
-                thermalGridVerticalCellSize <= 0f)
+                thermalGridVerticalCellSize <= 0f ||
+                !math.isfinite(thermalGridHorizontalCellSize) ||
+                !math.isfinite(thermalGridVerticalCellSize) ||
+                thermalGridDepthMeters <= 0f ||
+                !math.isfinite(thermalGridDepthMeters) ||
+                !math.isfinite(waterLevel) ||
+                !IsFinite(position) ||
+                !IsFinite(_abyssalThermalGridCenter))
+            {
+                return false;
+            }
+
+            long expectedFlowVolumeLength = (long)_abyssalThermalGridResolutionXZ *
+                                            _abyssalThermalGridResolutionXZ *
+                                            _abyssalThermalGridResolutionY;
+            if (expectedFlowVolumeLength <= 0L ||
+                expectedFlowVolumeLength > int.MaxValue ||
+                _nativeMemory.AbyssalFlowVolumeCurrentNative.Length < expectedFlowVolumeLength)
             {
                 return false;
             }
 
             float halfExtent = (_abyssalThermalGridResolutionXZ - 1) * 0.5f * thermalGridHorizontalCellSize;
+            if (!math.isfinite(halfExtent))
+            {
+                return false;
+            }
+
             float minX = _abyssalThermalGridCenter.x - halfExtent;
             float minZ = _abyssalThermalGridCenter.z - halfExtent;
             float maxY = waterLevel;
@@ -3044,9 +3086,11 @@ namespace Hecton8.World
                 return false;
 
             float clampedY = math.clamp(position.y, minY, maxY);
-            float normalizedX = math.clamp((position.x - minX) / thermalGridHorizontalCellSize, 0f, _abyssalThermalGridResolutionXZ - 1);
-            float normalizedZ = math.clamp((position.z - minZ) / thermalGridHorizontalCellSize, 0f, _abyssalThermalGridResolutionXZ - 1);
-            float normalizedY = math.clamp((maxY - clampedY) / thermalGridVerticalCellSize, 0f, _abyssalThermalGridResolutionY - 1);
+            float inverseHorizontalCellSize = math.rcp(thermalGridHorizontalCellSize);
+            float inverseVerticalCellSize = math.rcp(thermalGridVerticalCellSize);
+            float normalizedX = math.clamp((position.x - minX) * inverseHorizontalCellSize, 0f, _abyssalThermalGridResolutionXZ - 1);
+            float normalizedZ = math.clamp((position.z - minZ) * inverseHorizontalCellSize, 0f, _abyssalThermalGridResolutionXZ - 1);
+            float normalizedY = math.clamp((maxY - clampedY) * inverseVerticalCellSize, 0f, _abyssalThermalGridResolutionY - 1);
             int x0 = math.clamp((int)math.floor(normalizedX), 0, _abyssalThermalGridResolutionXZ - 1);
             int z0 = math.clamp((int)math.floor(normalizedZ), 0, _abyssalThermalGridResolutionXZ - 1);
             int y0 = math.clamp((int)math.floor(normalizedY), 0, _abyssalThermalGridResolutionY - 1);
@@ -3072,6 +3116,11 @@ namespace Hecton8.World
             float3 sampleZ0 = math.lerp(sampleX00, sampleX10, fracZ);
             float3 sampleZ1 = math.lerp(sampleX01, sampleX11, fracZ);
             float3 sampledFlow = math.lerp(sampleZ0, sampleZ1, fracY);
+            if (!math.all(math.isfinite(sampledFlow)))
+            {
+                return false;
+            }
+
             flowVector = new Vector3(sampledFlow.x, sampledFlow.y, sampledFlow.z);
             return true;
         }
@@ -3388,13 +3437,13 @@ namespace Hecton8.World
 
         private void InitializeThreatGridMetadata()
         {
-            int resolution = (int)math.round((threatGridRadius * 2f) / math.max(1f, threatGridCellSize)) + 1;
+            int resolution = (int)math.round((threatGridRadius * 2f) * math.rcp(math.max(1f, threatGridCellSize))) + 1;
             if ((resolution & 1) == 0)
                 resolution++;
 
             _ecosystemThreatGridResolution = math.max(3, resolution);
             _ecosystemThreatGridCellCount = _ecosystemThreatGridResolution * _ecosystemThreatGridResolution;
-            _ecosystemThreatGridResolutionY = math.max(2, (int)math.round(thermalGridDepthMeters / math.max(1f, thermalGridVerticalCellSize)) + 1);
+            _ecosystemThreatGridResolutionY = math.max(2, (int)math.round(thermalGridDepthMeters * math.rcp(math.max(1f, thermalGridVerticalCellSize))) + 1);
             long voxelCellCount = (long)_ecosystemThreatGridCellCount * _ecosystemThreatGridResolutionY;
             _ecosystemThreatVoxelCellCount = voxelCellCount > 0L && voxelCellCount <= int.MaxValue
                 ? (int)voxelCellCount
@@ -3492,7 +3541,9 @@ namespace Hecton8.World
                    _ecosystemThreatGridCellCount > 0 &&
                    _ecosystemThreatVoxelCellCount > 0 &&
                    threatGridCellSize > 0f &&
-                   thermalGridVerticalCellSize > 0f;
+                   thermalGridVerticalCellSize > 0f &&
+                   math.isfinite(threatGridCellSize) &&
+                   math.isfinite(thermalGridVerticalCellSize);
         }
 
         private void EnsureCanopyGridBuffer()
@@ -3541,7 +3592,9 @@ namespace Hecton8.World
             if (_threatSamplingChunkCount <= 0 ||
                 !_nativeMemory.ThreatSamplingChunksNative.IsCreated ||
                 _ecosystemThreatGridResolution <= 0 ||
-                threatGridCellSize <= 0f)
+                threatGridCellSize <= 0f ||
+                !math.isfinite(threatGridCellSize) ||
+                !IsFinite(gridCenter))
             {
                 EnsureThreatSamplingChunkHashBuffersCapacity(1);
                 _nativeMemory.ThreatSamplingChunkHashBackNative.Clear();
@@ -3567,8 +3620,17 @@ namespace Hecton8.World
 
         private int EstimateThreatSamplingChunkHashEntries(VegetationDensityChunkRecord chunk, Vector3 gridCenter)
         {
-            if (_ecosystemThreatGridResolution <= 0 || threatGridCellSize <= 0f)
+            if (_ecosystemThreatGridResolution <= 0 ||
+                threatGridCellSize <= 0f ||
+                !math.isfinite(threatGridCellSize) ||
+                !IsFinite(gridCenter) ||
+                !math.isfinite(chunk.MinX) ||
+                !math.isfinite(chunk.MaxX) ||
+                !math.isfinite(chunk.MinZ) ||
+                !math.isfinite(chunk.MaxZ))
+            {
                 return 0;
+            }
 
             GetThreatGridBounds(gridCenter, out float minGridX, out float maxGridX, out float minGridZ, out float maxGridZ);
             float minX = math.max(chunk.MinX, minGridX);
@@ -3578,17 +3640,28 @@ namespace Hecton8.World
             if (minX > maxX || minZ > maxZ)
                 return 0;
 
-            int minCellX = math.clamp((int)math.floor((minX - minGridX) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            int maxCellX = math.clamp((int)math.floor((maxX - minGridX) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            int minCellZ = math.clamp((int)math.floor((minZ - minGridZ) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            int maxCellZ = math.clamp((int)math.floor((maxZ - minGridZ) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            float inverseThreatGridCellSize = math.rcp(threatGridCellSize);
+            int minCellX = math.clamp((int)math.floor((minX - minGridX) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            int maxCellX = math.clamp((int)math.floor((maxX - minGridX) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            int minCellZ = math.clamp((int)math.floor((minZ - minGridZ) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            int maxCellZ = math.clamp((int)math.floor((maxZ - minGridZ) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
             return math.max(0, (maxCellX - minCellX + 1) * (maxCellZ - minCellZ + 1));
         }
 
         private void StampThreatSamplingChunkHash(VegetationDensityChunkRecord chunk, Vector3 gridCenter, int chunkIndex)
         {
-            if (!_nativeMemory.ThreatSamplingChunkHashBackNative.IsCreated || _ecosystemThreatGridResolution <= 0 || threatGridCellSize <= 0f)
+            if (!_nativeMemory.ThreatSamplingChunkHashBackNative.IsCreated ||
+                _ecosystemThreatGridResolution <= 0 ||
+                threatGridCellSize <= 0f ||
+                !math.isfinite(threatGridCellSize) ||
+                !IsFinite(gridCenter) ||
+                !math.isfinite(chunk.MinX) ||
+                !math.isfinite(chunk.MaxX) ||
+                !math.isfinite(chunk.MinZ) ||
+                !math.isfinite(chunk.MaxZ))
+            {
                 return;
+            }
 
             GetThreatGridBounds(gridCenter, out float minGridX, out float maxGridX, out float minGridZ, out float maxGridZ);
             float minX = math.max(chunk.MinX, minGridX);
@@ -3598,10 +3671,11 @@ namespace Hecton8.World
             if (minX > maxX || minZ > maxZ)
                 return;
 
-            int minCellX = math.clamp((int)math.floor((minX - minGridX) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            int maxCellX = math.clamp((int)math.floor((maxX - minGridX) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            int minCellZ = math.clamp((int)math.floor((minZ - minGridZ) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            int maxCellZ = math.clamp((int)math.floor((maxZ - minGridZ) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            float inverseThreatGridCellSize = math.rcp(threatGridCellSize);
+            int minCellX = math.clamp((int)math.floor((minX - minGridX) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            int maxCellX = math.clamp((int)math.floor((maxX - minGridX) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            int minCellZ = math.clamp((int)math.floor((minZ - minGridZ) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            int maxCellZ = math.clamp((int)math.floor((maxZ - minGridZ) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
             for (int cellZ = minCellZ; cellZ <= maxCellZ; cellZ++)
             {
                 int rowOffset = cellZ * _ecosystemThreatGridResolution;
@@ -3679,8 +3753,15 @@ namespace Hecton8.World
 
         private int EstimateArtificialStructureHashEntries(Bounds bounds, Vector3 gridCenter)
         {
-            if (_ecosystemThreatGridResolution <= 0 || threatGridCellSize <= 0f)
+            if (_ecosystemThreatGridResolution <= 0 ||
+                threatGridCellSize <= 0f ||
+                !math.isfinite(threatGridCellSize) ||
+                !IsFinite(gridCenter) ||
+                !IsFinite(bounds.min) ||
+                !IsFinite(bounds.max))
+            {
                 return 0;
+            }
 
             GetThreatGridBounds(gridCenter, out float minGridX, out float maxGridX, out float minGridZ, out float maxGridZ);
             float minX = math.max(bounds.min.x, minGridX);
@@ -3690,17 +3771,28 @@ namespace Hecton8.World
             if (minX > maxX || minZ > maxZ)
                 return 0;
 
-            int minCellX = math.clamp((int)math.floor((minX - minGridX) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            int maxCellX = math.clamp((int)math.floor((maxX - minGridX) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            int minCellZ = math.clamp((int)math.floor((minZ - minGridZ) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            int maxCellZ = math.clamp((int)math.floor((maxZ - minGridZ) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            float inverseThreatGridCellSize = math.rcp(threatGridCellSize);
+            int minCellX = math.clamp((int)math.floor((minX - minGridX) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            int maxCellX = math.clamp((int)math.floor((maxX - minGridX) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            int minCellZ = math.clamp((int)math.floor((minZ - minGridZ) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            int maxCellZ = math.clamp((int)math.floor((maxZ - minGridZ) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
             return math.max(0, (maxCellX - minCellX + 1) * (maxCellZ - minCellZ + 1));
         }
 
         private void StampArtificialStructureHash(ArtificialStructureRecord record, Vector3 gridCenter, int recordIndex)
         {
-            if (!_nativeMemory.ArtificialStructureHashBackNative.IsCreated || _ecosystemThreatGridResolution <= 0 || threatGridCellSize <= 0f)
+            if (!_nativeMemory.ArtificialStructureHashBackNative.IsCreated ||
+                _ecosystemThreatGridResolution <= 0 ||
+                threatGridCellSize <= 0f ||
+                !math.isfinite(threatGridCellSize) ||
+                !IsFinite(gridCenter) ||
+                !math.isfinite(record.MinX) ||
+                !math.isfinite(record.MaxX) ||
+                !math.isfinite(record.MinZ) ||
+                !math.isfinite(record.MaxZ))
+            {
                 return;
+            }
 
             GetThreatGridBounds(gridCenter, out float minGridX, out float maxGridX, out float minGridZ, out float maxGridZ);
             float minX = math.max(record.MinX, minGridX);
@@ -3710,10 +3802,11 @@ namespace Hecton8.World
             if (minX > maxX || minZ > maxZ)
                 return;
 
-            int minCellX = math.clamp((int)math.floor((minX - minGridX) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            int maxCellX = math.clamp((int)math.floor((maxX - minGridX) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            int minCellZ = math.clamp((int)math.floor((minZ - minGridZ) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            int maxCellZ = math.clamp((int)math.floor((maxZ - minGridZ) / threatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            float inverseThreatGridCellSize = math.rcp(threatGridCellSize);
+            int minCellX = math.clamp((int)math.floor((minX - minGridX) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            int maxCellX = math.clamp((int)math.floor((maxX - minGridX) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            int minCellZ = math.clamp((int)math.floor((minZ - minGridZ) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
+            int maxCellZ = math.clamp((int)math.floor((maxZ - minGridZ) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
             for (int cellZ = minCellZ; cellZ <= maxCellZ; cellZ++)
             {
                 int rowOffset = cellZ * _ecosystemThreatGridResolution;
@@ -6851,17 +6944,36 @@ namespace Hecton8.World
             int resolution,
             NativeArray<float> threatGrid)
         {
-            if (!threatGrid.IsCreated || resolution <= 0 || cellSize <= 0f)
+            if (!threatGrid.IsCreated ||
+                resolution <= 0 ||
+                cellSize <= 0f ||
+                !math.isfinite(cellSize) ||
+                !IsFinite(position) ||
+                !IsFinite(gridCenter))
+            {
                 return 0f;
+            }
+
+            long expectedLength = (long)resolution * resolution;
+            if (expectedLength <= 0L || expectedLength > int.MaxValue || threatGrid.Length < expectedLength)
+            {
+                return 0f;
+            }
 
             float halfExtent = (resolution - 1) * 0.5f * cellSize;
+            if (!math.isfinite(halfExtent))
+            {
+                return 0f;
+            }
+
             float localX = position.x - (gridCenter.x - halfExtent);
             float localZ = position.z - (gridCenter.z - halfExtent);
             if (localX < 0f || localZ < 0f || localX > halfExtent * 2f || localZ > halfExtent * 2f)
                 return 0f;
 
-            float normalizedX = math.clamp(localX / cellSize, 0f, resolution - 1);
-            float normalizedZ = math.clamp(localZ / cellSize, 0f, resolution - 1);
+            float inverseCellSize = math.rcp(cellSize);
+            float normalizedX = math.clamp(localX * inverseCellSize, 0f, resolution - 1);
+            float normalizedZ = math.clamp(localZ * inverseCellSize, 0f, resolution - 1);
             int cellX = math.clamp((int)math.floor(normalizedX), 0, resolution - 1);
             int cellZ = math.clamp((int)math.floor(normalizedZ), 0, resolution - 1);
             int nextCellX = math.min(cellX + 1, resolution - 1);
@@ -6875,7 +6987,8 @@ namespace Hecton8.World
             float sample11 = threatGrid[(nextCellZ * resolution) + nextCellX];
             float sampleX0 = math.lerp(sample00, sample10, fracX);
             float sampleX1 = math.lerp(sample01, sample11, fracX);
-            return math.lerp(sampleX0, sampleX1, fracZ);
+            float sampledThreat = math.lerp(sampleX0, sampleX1, fracZ);
+            return math.select(0f, sampledThreat, math.isfinite(sampledThreat));
         }
 
         private static int ComputeThreatGridCellIndex(float3 position, float3 gridCenter, float cellSize, int resolution)
@@ -6906,17 +7019,36 @@ namespace Hecton8.World
             int resolution,
             NativeArray<byte> echoFlags)
         {
-            if (!echoFlags.IsCreated || resolution <= 0 || cellSize <= 0f)
+            if (!echoFlags.IsCreated ||
+                resolution <= 0 ||
+                cellSize <= 0f ||
+                !math.isfinite(cellSize) ||
+                !IsFinite(position) ||
+                !IsFinite(gridCenter))
+            {
                 return 0;
+            }
+
+            long expectedLength = (long)resolution * resolution;
+            if (expectedLength <= 0L || expectedLength > int.MaxValue || echoFlags.Length < expectedLength)
+            {
+                return 0;
+            }
 
             float halfExtent = (resolution - 1) * 0.5f * cellSize;
+            if (!math.isfinite(halfExtent))
+            {
+                return 0;
+            }
+
             float localX = position.x - (gridCenter.x - halfExtent);
             float localZ = position.z - (gridCenter.z - halfExtent);
             if (localX < 0f || localZ < 0f || localX > halfExtent * 2f || localZ > halfExtent * 2f)
                 return 0;
 
-            int cellX = math.clamp((int)math.round(localX / cellSize), 0, resolution - 1);
-            int cellZ = math.clamp((int)math.round(localZ / cellSize), 0, resolution - 1);
+            float inverseCellSize = math.rcp(cellSize);
+            int cellX = math.clamp((int)math.round(localX * inverseCellSize), 0, resolution - 1);
+            int cellZ = math.clamp((int)math.round(localZ * inverseCellSize), 0, resolution - 1);
             return echoFlags[(cellZ * resolution) + cellX];
         }
 
@@ -6928,17 +7060,37 @@ namespace Hecton8.World
             int resolution,
             NativeArray<byte> echoFlags)
         {
-            if (!echoFlags.IsCreated || resolution <= 0 || cellSize <= 0f)
+            if (!echoFlags.IsCreated ||
+                resolution <= 0 ||
+                cellSize <= 0f ||
+                !math.isfinite(cellSize) ||
+                !math.isfinite(worldX) ||
+                !math.isfinite(worldZ) ||
+                !math.all(math.isfinite(gridCenter)))
+            {
                 return 0;
+            }
+
+            long expectedLength = (long)resolution * resolution;
+            if (expectedLength <= 0L || expectedLength > int.MaxValue || echoFlags.Length < expectedLength)
+            {
+                return 0;
+            }
 
             float halfExtent = (resolution - 1) * 0.5f * cellSize;
+            if (!math.isfinite(halfExtent))
+            {
+                return 0;
+            }
+
             float localX = worldX - (gridCenter.x - halfExtent);
             float localZ = worldZ - (gridCenter.z - halfExtent);
             if (localX < 0f || localZ < 0f || localX > halfExtent * 2f || localZ > halfExtent * 2f)
                 return 0;
 
-            int cellX = math.clamp((int)math.round(localX / cellSize), 0, resolution - 1);
-            int cellZ = math.clamp((int)math.round(localZ / cellSize), 0, resolution - 1);
+            float inverseCellSize = math.rcp(cellSize);
+            int cellX = math.clamp((int)math.round(localX * inverseCellSize), 0, resolution - 1);
+            int cellZ = math.clamp((int)math.round(localZ * inverseCellSize), 0, resolution - 1);
             return echoFlags[(cellZ * resolution) + cellX];
         }
 

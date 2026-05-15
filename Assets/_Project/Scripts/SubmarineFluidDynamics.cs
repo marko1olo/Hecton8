@@ -59,6 +59,7 @@ namespace Hecton8.Physics
         private const int RingBufferLength = 8;
         private const int RingBufferMask = RingBufferLength - 1;
         private const int SloshDelayFrames = 3;
+        private const int CargoMassFallbackPollFrameMask = 15;
         private const float WaterDensityKgPerCubicMeter = 1025f;
         private const float MinimumMassForReciprocal = 0.01f;
         private const float GravityMetersPerSecondSquared = 9.81f;
@@ -144,6 +145,28 @@ namespace Hecton8.Physics
         private const int MaxQueuedSplashEvents = 32;
         private const int ExteriorThermalAnomalyCapacity = 8;
         private const int ExteriorThermalContactCapacity = 16;
+        private const int VaultCompartmentFloodVolumesFlag = 1 << 0;
+        private const int VaultCompartmentViscosityFlag = 1 << 1;
+        private const int VaultCompartmentBaseMaxVolumesFlag = 1 << 2;
+        private const int VaultCompartmentMaxVolumesFlag = 1 << 3;
+        private const int VaultCompartmentBreachAreasFlag = 1 << 4;
+        private const int VaultCompartmentLocalCentroidsFlag = 1 << 5;
+        private const int VaultCompartmentFlagsFlag = 1 << 6;
+        private const int VaultBulkheadPairsFlag = 1 << 7;
+        private const int VaultBulkheadSealedFlag = 1 << 8;
+        private const int VaultBulkheadDoorAreasFlag = 1 << 9;
+        private const int VaultComAccumulatorFrontFlag = 1 << 10;
+        private const int VaultComAccumulatorBackFlag = 1 << 11;
+        private const int VaultMassPropertiesFrontFlag = 1 << 12;
+        private const int VaultMassPropertiesBackFlag = 1 << 13;
+        private const int VaultAngularVelocityHistoryFlag = 1 << 14;
+        private const int VaultExteriorSubmersionHistoryFlag = 1 << 15;
+        private const int VaultJobFloodVolumesFlag = 1 << 16;
+        private const int VaultJobCompartmentFlagsFlag = 1 << 17;
+        private const int VaultBulkheadTransferDeltasFlag = 1 << 18;
+        private const int VaultHydroInputFlag = 1 << 19;
+        private const int VaultHydroOutputFlag = 1 << 20;
+        private const int VaultHydroBlackBoxFlag = 1 << 21;
         private const float ExteriorThermalCellSizeMeters = 8f;
         private const float ExteriorWaterSpecificHeatCapacityJoulesPerKilogramCelsius = 3990f;
         private const float ExteriorWaterReferenceTemperatureCelsius = 6f;
@@ -486,7 +509,11 @@ namespace Hecton8.Physics
         private Transform _cachedTransform;
         private Transform _cachedPlayerTransform;
         private HectonPlayerMovement _cachedPlayerMovement;
+        private IDataVault _dataVault;
         private Rigidbody _cachedPlayerRigidbody;
+        private IPlayerRuntimeContext _playerRuntime;
+        private ISubmarineRuntimeContext _submarineRuntime;
+        private HectonFluidEngine _fluidRuntime;
         private bool _registered;
         private bool _registeredOriginShiftListener;
         private bool _fluidJobRunning;
@@ -495,6 +522,7 @@ namespace Hecton8.Physics
         private int _configuredCompartmentCount;
         private int _configuredBulkheadCount;
         private int _ringHead;
+        private int _vaultNativeStateMask;
         private float _externalDepthMeters;
         private float _floodFillRatio;
         private float _totalFloodVolumeCubicMeters;
@@ -522,6 +550,7 @@ namespace Hecton8.Physics
         private float _cargoMassScalar;
         private float _lastResolvedCargoMassKilograms = -1f;
         private float _lastResolvedCargoScalar = -1f;
+        private int _lastCargoMassFallbackPollFrame = -1;
         private float _ballastBlowTimer;
         private float _targetBuoyancyBias01;
         private float _thrustInput01;
@@ -1246,10 +1275,13 @@ namespace Hecton8.Physics
                 return;
             }
 
-            float massKg = eventType == (ushort)InventoryEventType.EncumbranceChanged
-                ? payload.TotalMassKg
-                : GlobalRegistry.PlayerInventoryMassKg;
-            SetCargoMassScalar(massKg);
+            if (eventType == (ushort)InventoryEventType.EncumbranceChanged)
+            {
+                CommitCargoMassScalar(payload.TotalMassKg);
+                return;
+            }
+
+            RefreshCargoMassScalarFromGlobalCache(force: true);
         }
 
         /// <summary>
@@ -1390,7 +1422,7 @@ namespace Hecton8.Physics
             if (!math.isfinite(baseAcceleration) || baseAcceleration <= Epsilon || maximumAcceleration <= Epsilon)
                 return;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = ResolvePlayerRuntimeContext();
             Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : null;
             Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
             HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
@@ -1736,6 +1768,9 @@ namespace Hecton8.Physics
                 _oceanKinematics = oceanKinematicsService != null ? oceanKinematicsService.ActiveProvider : null;
             }
 
+            _dataVault ??= GlobalRegistry.DataVault;
+            RefreshRuntimeActorContextsIfMissing();
+
             if (_structuralBreachReadModel == null)
             {
                 _componentSearchBuffer.Clear();
@@ -1785,50 +1820,49 @@ namespace Hecton8.Physics
             }
 
             // COLD ALLOC: NativeArray<float>[8] â€” compartment flood volume storage â€” owner: SubmarineFluidDynamics
-            _compartmentFloodVolumes = new NativeArray<float>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _compartmentFloodVolumes = AllocateNativeStateArray<float>(BufferID.SubmarineFluidCompartmentFloodVolumes, CompartmentCapacity, nameof(_compartmentFloodVolumes), VaultCompartmentFloodVolumesFlag);
             // COLD ALLOC: NativeArray<float>[8] — per-compartment normalized sludge viscosity state — owner: SubmarineFluidDynamics
-            _compartmentViscosity01 = new NativeArray<float>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _compartmentViscosity01 = AllocateNativeStateArray<float>(BufferID.SubmarineFluidCompartmentViscosity01, CompartmentCapacity, nameof(_compartmentViscosity01), VaultCompartmentViscosityFlag);
             // COLD ALLOC: NativeArray<float>[8] — authored compartment capacities preserved for dynamic crush compression — owner: SubmarineFluidDynamics
-            _compartmentBaseMaxVolumes = new NativeArray<float>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _compartmentBaseMaxVolumes = AllocateNativeStateArray<float>(BufferID.SubmarineFluidCompartmentBaseMaxVolumes, CompartmentCapacity, nameof(_compartmentBaseMaxVolumes), VaultCompartmentBaseMaxVolumesFlag);
             // COLD ALLOC: NativeArray<float>[8] â€” compartment capacity storage â€” owner: SubmarineFluidDynamics
-            _compartmentMaxVolumes = new NativeArray<float>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _compartmentMaxVolumes = AllocateNativeStateArray<float>(BufferID.SubmarineFluidCompartmentMaxVolumes, CompartmentCapacity, nameof(_compartmentMaxVolumes), VaultCompartmentMaxVolumesFlag);
             // COLD ALLOC: NativeArray<float>[8] â€” active breach area storage â€” owner: SubmarineFluidDynamics
-            _compartmentBreachAreas = new NativeArray<float>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _compartmentBreachAreas = AllocateNativeStateArray<float>(BufferID.SubmarineFluidCompartmentBreachAreas, CompartmentCapacity, nameof(_compartmentBreachAreas), VaultCompartmentBreachAreasFlag);
             // COLD ALLOC: NativeArray<float3>[8] â€” local compartment centroids â€” owner: SubmarineFluidDynamics
-            _compartmentLocalCentroids = new NativeArray<float3>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _compartmentLocalCentroids = AllocateNativeStateArray<float3>(BufferID.SubmarineFluidCompartmentLocalCentroids, CompartmentCapacity, nameof(_compartmentLocalCentroids), VaultCompartmentLocalCentroidsFlag);
             // COLD ALLOC: NativeArray<uint>[8] â€” compartment state flags â€” owner: SubmarineFluidDynamics
-            _compartmentFlags = new NativeArray<uint>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _compartmentFlags = AllocateNativeStateArray<uint>(BufferID.SubmarineFluidCompartmentFlags, CompartmentCapacity, nameof(_compartmentFlags), VaultCompartmentFlagsFlag);
             // COLD ALLOC: NativeArray<int2>[7] â€” bulkhead adjacency pairs â€” owner: SubmarineFluidDynamics
-            _bulkheadPairs = new NativeArray<int2>(BulkheadCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _bulkheadPairs = AllocateNativeStateArray<int2>(BufferID.SubmarineFluidBulkheadPairs, BulkheadCapacity, nameof(_bulkheadPairs), VaultBulkheadPairsFlag);
             // COLD ALLOC: NativeArray<byte>[7] â€” bulkhead seal state â€” owner: SubmarineFluidDynamics
-            _bulkheadSealed = new NativeArray<byte>(BulkheadCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _bulkheadSealed = AllocateNativeStateArray<byte>(BufferID.SubmarineFluidBulkheadSealed, BulkheadCapacity, nameof(_bulkheadSealed), VaultBulkheadSealedFlag);
             // COLD ALLOC: NativeArray<float>[7] â€” authored bulkhead doorway areas for pressure blowout math â€” owner: SubmarineFluidDynamics
-            _bulkheadDoorAreas = new NativeArray<float>(BulkheadCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _bulkheadDoorAreas = AllocateNativeStateArray<float>(BufferID.SubmarineFluidBulkheadDoorAreas, BulkheadCapacity, nameof(_bulkheadDoorAreas), VaultBulkheadDoorAreasFlag);
             // COLD ALLOC: NativeArray<float3>[8] â€” ping-pong flood centroid accumulator front buffer â€” owner: SubmarineFluidDynamics
-            _comAccumulatorFront = new NativeArray<float3>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _comAccumulatorFront = AllocateNativeStateArray<float3>(BufferID.SubmarineFluidComAccumulatorFront, CompartmentCapacity, nameof(_comAccumulatorFront), VaultComAccumulatorFrontFlag);
             // COLD ALLOC: NativeArray<float3>[8] â€” ping-pong flood centroid accumulator back buffer â€” owner: SubmarineFluidDynamics
-            _comAccumulatorBack = new NativeArray<float3>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _comAccumulatorBack = AllocateNativeStateArray<float3>(BufferID.SubmarineFluidComAccumulatorBack, CompartmentCapacity, nameof(_comAccumulatorBack), VaultComAccumulatorBackFlag);
             // COLD ALLOC: NativeArray<FloodMassPropertiesResult>[1] â€” front flood mass-properties result buffer â€” owner: SubmarineFluidDynamics
-            _massPropertiesFront = new NativeArray<FloodMassPropertiesResult>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _massPropertiesFront = AllocateNativeStateArray<FloodMassPropertiesResult>(BufferID.SubmarineFluidMassPropertiesFront, 1, nameof(_massPropertiesFront), VaultMassPropertiesFrontFlag);
             // COLD ALLOC: NativeArray<FloodMassPropertiesResult>[1] â€” back flood mass-properties result buffer â€” owner: SubmarineFluidDynamics
-            _massPropertiesBack = new NativeArray<FloodMassPropertiesResult>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _massPropertiesBack = AllocateNativeStateArray<FloodMassPropertiesResult>(BufferID.SubmarineFluidMassPropertiesBack, 1, nameof(_massPropertiesBack), VaultMassPropertiesBackFlag);
             // COLD ALLOC: NativeArray<float3>[16] â€” local angular-velocity slosh history supporting 50â€“150 ms delayed counter-torque taps â€” owner: SubmarineFluidDynamics
-            _angularVelocityHistoryLocal = new NativeArray<float3>(RingBufferLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _angularVelocityHistoryLocal = AllocateNativeStateArray<float3>(BufferID.SubmarineFluidAngularVelocityHistoryLocal, RingBufferLength, nameof(_angularVelocityHistoryLocal), VaultAngularVelocityHistoryFlag);
             // COLD ALLOC: NativeArray<float>[8] â€” previous sampled exterior submersion factors for splash transition detection â€” owner: SubmarineFluidDynamics
-            _previousExteriorSampleSubmersionFactors = new NativeArray<float>(ExteriorBuoyancySampleCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _previousExteriorSampleSubmersionFactors = AllocateNativeStateArray<float>(BufferID.SubmarineFluidPreviousExteriorSampleSubmersionFactors, ExteriorBuoyancySampleCount, nameof(_previousExteriorSampleSubmersionFactors), VaultExteriorSubmersionHistoryFlag);
             // COLD ALLOC: NativeArray<float>[8] Ã¢â‚¬â€ Burst fluid-transfer output volumes Ã¢â‚¬â€ owner: SubmarineFluidDynamics
-            _jobFloodVolumes = new NativeArray<float>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _jobFloodVolumes = AllocateNativeStateArray<float>(BufferID.SubmarineFluidJobFloodVolumes, CompartmentCapacity, nameof(_jobFloodVolumes), VaultJobFloodVolumesFlag);
             // COLD ALLOC: NativeArray<uint>[8] Ã¢â‚¬â€ Burst fluid-transfer output flags Ã¢â‚¬â€ owner: SubmarineFluidDynamics
-            _jobCompartmentFlags = new NativeArray<uint>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _jobCompartmentFlags = AllocateNativeStateArray<uint>(BufferID.SubmarineFluidJobCompartmentFlags, CompartmentCapacity, nameof(_jobCompartmentFlags), VaultJobCompartmentFlagsFlag);
             // COLD ALLOC: NativeArray<float>[7] Ã¢â‚¬â€ per-bulkhead transfer delta scratch Ã¢â‚¬â€ owner: SubmarineFluidDynamics
-            _bulkheadTransferDeltas = new NativeArray<float>(BulkheadCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _bulkheadTransferDeltas = AllocateNativeStateArray<float>(BufferID.SubmarineFluidBulkheadTransferDeltas, BulkheadCapacity, nameof(_bulkheadTransferDeltas), VaultBulkheadTransferDeltasFlag);
             // COLD ALLOC: NativeArray<HydroKinematicJobInput>[1] - submarine true-buoyancy and custom drag input packet - owner: SubmarineFluidDynamics
-            _hydroKinematicInput = new NativeArray<HydroKinematicJobInput>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _hydroKinematicInput = AllocateNativeStateArray<HydroKinematicJobInput>(BufferID.SubmarineHydroKinematicInput, 1, nameof(_hydroKinematicInput), VaultHydroInputFlag);
             // COLD ALLOC: NativeArray<HydroKinematicJobOutput>[1] - one-frame-late custom drag force/torque packet - owner: SubmarineFluidDynamics
-            _hydroKinematicOutput = new NativeArray<HydroKinematicJobOutput>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _hydroKinematicOutput = AllocateNativeStateArray<HydroKinematicJobOutput>(BufferID.SubmarineHydroKinematicOutput, 1, nameof(_hydroKinematicOutput), VaultHydroOutputFlag);
             // COLD ALLOC: NativeArray<HydroBlackBoxEntry>[300] - fixed hydro crash telemetry ring - owner: SubmarineFluidDynamics
-            _hydroBlackBox = new NativeArray<HydroBlackBoxEntry>(HydroBlackBoxCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            RegisterNativeStateBuffers();
+            _hydroBlackBox = AllocateNativeStateArray<HydroBlackBoxEntry>(BufferID.SubmarineHydroBlackBox, HydroBlackBoxCapacity, nameof(_hydroBlackBox), VaultHydroBlackBoxFlag);
             // COLD ALLOC: NativeQueue<SplashEvent>(Persistent) â€” deferred exterior splash payload queue for VFX consumers â€” owner: SubmarineFluidDynamics
             _splashEventQueue = new NativeQueue<SplashEvent>(Allocator.Persistent);
             _splashEventQueueSentinelLabel = string.Concat(
@@ -2012,28 +2046,28 @@ namespace Hecton8.Physics
                 _hydroKinematicOutputReady = false;
             }
 
-            DisposeDeferred(ref _compartmentFloodVolumes);
-            DisposeDeferred(ref _compartmentViscosity01);
-            DisposeDeferred(ref _compartmentBaseMaxVolumes);
-            DisposeDeferred(ref _compartmentMaxVolumes);
-            DisposeDeferred(ref _compartmentBreachAreas);
-            DisposeDeferred(ref _compartmentLocalCentroids);
-            DisposeDeferred(ref _compartmentFlags);
-            DisposeDeferred(ref _bulkheadPairs);
-            DisposeDeferred(ref _bulkheadSealed);
-            DisposeDeferred(ref _bulkheadDoorAreas);
-            DisposeDeferred(ref _comAccumulatorFront);
-            DisposeDeferred(ref _comAccumulatorBack);
-            DisposeDeferred(ref _massPropertiesFront);
-            DisposeDeferred(ref _massPropertiesBack);
-            DisposeDeferred(ref _angularVelocityHistoryLocal);
-            DisposeDeferred(ref _previousExteriorSampleSubmersionFactors);
-            DisposeDeferred(ref _jobFloodVolumes);
-            DisposeDeferred(ref _jobCompartmentFlags);
-            DisposeDeferred(ref _bulkheadTransferDeltas);
-            DisposeDeferred(ref _hydroKinematicInput);
-            DisposeDeferred(ref _hydroKinematicOutput);
-            DisposeDeferred(ref _hydroBlackBox);
+            DisposeDeferred(ref _compartmentFloodVolumes, VaultCompartmentFloodVolumesFlag);
+            DisposeDeferred(ref _compartmentViscosity01, VaultCompartmentViscosityFlag);
+            DisposeDeferred(ref _compartmentBaseMaxVolumes, VaultCompartmentBaseMaxVolumesFlag);
+            DisposeDeferred(ref _compartmentMaxVolumes, VaultCompartmentMaxVolumesFlag);
+            DisposeDeferred(ref _compartmentBreachAreas, VaultCompartmentBreachAreasFlag);
+            DisposeDeferred(ref _compartmentLocalCentroids, VaultCompartmentLocalCentroidsFlag);
+            DisposeDeferred(ref _compartmentFlags, VaultCompartmentFlagsFlag);
+            DisposeDeferred(ref _bulkheadPairs, VaultBulkheadPairsFlag);
+            DisposeDeferred(ref _bulkheadSealed, VaultBulkheadSealedFlag);
+            DisposeDeferred(ref _bulkheadDoorAreas, VaultBulkheadDoorAreasFlag);
+            DisposeDeferred(ref _comAccumulatorFront, VaultComAccumulatorFrontFlag);
+            DisposeDeferred(ref _comAccumulatorBack, VaultComAccumulatorBackFlag);
+            DisposeDeferred(ref _massPropertiesFront, VaultMassPropertiesFrontFlag);
+            DisposeDeferred(ref _massPropertiesBack, VaultMassPropertiesBackFlag);
+            DisposeDeferred(ref _angularVelocityHistoryLocal, VaultAngularVelocityHistoryFlag);
+            DisposeDeferred(ref _previousExteriorSampleSubmersionFactors, VaultExteriorSubmersionHistoryFlag);
+            DisposeDeferred(ref _jobFloodVolumes, VaultJobFloodVolumesFlag);
+            DisposeDeferred(ref _jobCompartmentFlags, VaultJobCompartmentFlagsFlag);
+            DisposeDeferred(ref _bulkheadTransferDeltas, VaultBulkheadTransferDeltasFlag);
+            DisposeDeferred(ref _hydroKinematicInput, VaultHydroInputFlag);
+            DisposeDeferred(ref _hydroKinematicOutput, VaultHydroOutputFlag);
+            DisposeDeferred(ref _hydroBlackBox, VaultHydroBlackBoxFlag);
             DispatcherJobSwap.TryComplete(ref _disposeHandle, true);
 
             if (_splashEventQueue.IsCreated)
@@ -2261,7 +2295,7 @@ namespace Hecton8.Physics
 
         private void PublishSubmarineRoomMassDataVault()
         {
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null ||
                 !_compartmentFloodVolumes.IsCreated ||
                 !_compartmentMaxVolumes.IsCreated ||
@@ -2499,12 +2533,12 @@ namespace Hecton8.Physics
             _hydroKinematicJobRunning = true;
         }
 
-        private static float3 ResolveAnalyticalFlowVelocity(Vector3 samplePosition)
+        private float3 ResolveAnalyticalFlowVelocity(Vector3 samplePosition)
         {
             if (!IsFiniteVector(samplePosition))
                 return float3.zero;
 
-            HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
+            HectonFluidEngine fluidEngine = ResolveFluidRuntime();
             if (fluidEngine == null)
                 return float3.zero;
 
@@ -2512,11 +2546,22 @@ namespace Hecton8.Physics
             return math.all(math.isfinite(flow)) ? flow : float3.zero;
         }
 
-        private void RefreshCargoMassScalarFromGlobalCache()
+        private void RefreshCargoMassScalarFromGlobalCache(bool force = false)
         {
             if (!syncCargoMassFromInventoryEvents)
                 return;
 
+            int currentFrame = Time.frameCount;
+            if (!force && _lastResolvedCargoMassKilograms >= 0f)
+            {
+                if (_lastCargoMassFallbackPollFrame == currentFrame ||
+                    (currentFrame & CargoMassFallbackPollFrameMask) != 0)
+                {
+                    return;
+                }
+            }
+
+            _lastCargoMassFallbackPollFrame = currentFrame;
             float cachedMass = GlobalRegistry.PlayerInventoryMassKg;
             if (!math.isfinite(cachedMass))
                 cachedMass = 0f;
@@ -2527,7 +2572,12 @@ namespace Hecton8.Physics
                 return;
             }
 
-            SetCargoMassScalar(cachedMass);
+            CommitCargoMassScalar(cachedMass);
+        }
+
+        private void CommitCargoMassScalar(float massKg)
+        {
+            SetCargoMassScalar(massKg);
             _lastResolvedCargoMassKilograms = _totalCargoMassKilograms;
             _lastResolvedCargoScalar = _cargoMassScalar;
         }
@@ -3183,7 +3233,7 @@ namespace Hecton8.Physics
             if (maximumAcceleration <= Epsilon)
                 return;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = ResolvePlayerRuntimeContext();
             Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : null;
             Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
             HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
@@ -3997,11 +4047,11 @@ namespace Hecton8.Physics
             if (director == null || !director.TrySampleBrineLayer(runtimePosition, out sample))
                 return false;
 
-            Vector3 shiftOffset = HectonFloatingOrigin.CurrentTotalOffset;
+            double3 shiftOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             return BrineLayerMath.IsRuntimeBelowAbsolutePlane(
                 runtimePosition.y,
                 sample.AbsoluteHeightY,
-                shiftOffset.y);
+                (float)shiftOffset.y);
         }
 
         private void UpdateBrineHullBreachState(bool insideBrine, Vector3 runtimePosition)
@@ -4588,8 +4638,8 @@ namespace Hecton8.Physics
             if (!(kineticEnergyJoules > Epsilon) || !float.IsFinite(kineticEnergyJoules))
                 return;
 
-            Vector3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(worldPoint);
-            if (!IsFiniteVector(absoluteUniversePosition))
+            double3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPoint);
+            if (!math.all(math.isfinite(absoluteUniversePosition)))
                 return;
 
             uint splashHash = ResolveSplashLcgHash(absoluteUniversePosition, sampleIndex);
@@ -4599,7 +4649,10 @@ namespace Hecton8.Physics
             SplashEvent splashEvent = new SplashEvent
             {
                 RuntimePosition = new float3(worldPoint.x, worldPoint.y, worldPoint.z),
-                AbsoluteUniversePosition = new float3(absoluteUniversePosition.x, absoluteUniversePosition.y, absoluteUniversePosition.z),
+                AbsoluteUniversePosition = new float3(
+                    (float)absoluteUniversePosition.x,
+                    (float)absoluteUniversePosition.y,
+                    (float)absoluteUniversePosition.z),
                 SurfaceNormal = new float3(0f, 1f, 0f),
                 ImpactSpeedMetersPerSecond = impactSpeedMetersPerSecond,
                 KineticEnergyJoules = kineticEnergyJoules,
@@ -4613,8 +4666,7 @@ namespace Hecton8.Physics
 
             ImpactSignal impactSignal = new ImpactSignal
             {
-                PointAup = AbsoluteUniversePosition.FromAbsolutePosition(
-                    new double3(absoluteUniversePosition.x, absoluteUniversePosition.y, absoluteUniversePosition.z)),
+                PointAup = AbsoluteUniversePosition.FromAbsolutePosition(absoluteUniversePosition),
                 Force = impactSpeedMetersPerSecond * effectiveSampleMass,
                 Intensity = math.saturate(kineticEnergyJoules * 0.0005f),
                 PrimaryBodyId = _rigidbody != null ? unchecked((uint)EntityId.ToULong(_rigidbody.GetEntityId())) : 0u,
@@ -4639,16 +4691,15 @@ namespace Hecton8.Physics
             if (upwardSpeedMetersPerSecond < math.max(0f, surfacingBreachSpeedMetersPerSecond))
                 return;
 
-            Vector3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(worldPoint);
-            if (!IsFiniteVector(absoluteUniversePosition))
+            double3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPoint);
+            if (!math.all(math.isfinite(absoluteUniversePosition)))
                 return;
 
             float effectiveSampleMass = math.max(sampleHullMass, Epsilon);
             float kineticEnergyJoules = 0.5f * effectiveSampleMass * upwardSpeedMetersPerSecond * upwardSpeedMetersPerSecond;
             ImpactSignal impactSignal = new ImpactSignal
             {
-                PointAup = AbsoluteUniversePosition.FromAbsolutePosition(
-                    new double3(absoluteUniversePosition.x, absoluteUniversePosition.y, absoluteUniversePosition.z)),
+                PointAup = AbsoluteUniversePosition.FromAbsolutePosition(absoluteUniversePosition),
                 Force = upwardSpeedMetersPerSecond * effectiveSampleMass,
                 Intensity = math.saturate(kineticEnergyJoules * 0.00035f),
                 PrimaryBodyId = unchecked((uint)EntityId.ToULong(_rigidbody.GetEntityId())),
@@ -4660,17 +4711,32 @@ namespace Hecton8.Physics
             GlobalSignals.Publish(in impactSignal);
         }
 
-        private static uint ResolveSplashLcgHash(Vector3 absoluteUniversePosition, int sampleIndex)
+        private static uint ResolveSplashLcgHash(double3 absoluteUniversePosition, int sampleIndex)
         {
             unchecked
             {
                 uint state = 2166136261u;
-                state = (state ^ (uint)math.floor(absoluteUniversePosition.x * 16f)) * 1664525u + 1013904223u;
-                state = (state ^ (uint)math.floor(absoluteUniversePosition.y * 16f)) * 1664525u + 1013904223u;
-                state = (state ^ (uint)math.floor(absoluteUniversePosition.z * 16f)) * 1664525u + 1013904223u;
+                state = MixSplashSeed(state, FastFloorToLong(absoluteUniversePosition.x * 16d));
+                state = MixSplashSeed(state, FastFloorToLong(absoluteUniversePosition.y * 16d));
+                state = MixSplashSeed(state, FastFloorToLong(absoluteUniversePosition.z * 16d));
                 state = (state ^ (uint)sampleIndex) * 1664525u + 1013904223u;
                 return state;
             }
+        }
+
+        private static uint MixSplashSeed(uint state, long value)
+        {
+            unchecked
+            {
+                state = (state ^ (uint)value) * 1664525u + 1013904223u;
+                return (state ^ (uint)(value >> 32)) * 1664525u + 1013904223u;
+            }
+        }
+
+        private static long FastFloorToLong(double value)
+        {
+            long truncated = (long)value;
+            return value >= truncated ? truncated : truncated - 1L;
         }
 
         private static byte ResolveSplashWeightClass(float kineticEnergyJoules)
@@ -4833,11 +4899,47 @@ namespace Hecton8.Physics
             if (safeCrushDepthMeters > Epsilon)
                 return safeCrushDepthMeters;
 
-            ISubmarineRuntimeContext submarine = GlobalRegistry.Submarine;
+            ISubmarineRuntimeContext submarine = ResolveSubmarineRuntimeContext();
             if (submarine is SubmarineCoreDirector director)
                 return math.max(Epsilon, director.MaxDepth);
 
             return math.max(Epsilon, hullImplosionDepthThresholdMeters);
+        }
+
+        private IPlayerRuntimeContext ResolvePlayerRuntimeContext()
+        {
+            if (_playerRuntime == null || IsUnityObjectInvalid(_playerRuntime))
+                _playerRuntime = GlobalRegistry.Player;
+
+            return _playerRuntime;
+        }
+
+        private ISubmarineRuntimeContext ResolveSubmarineRuntimeContext()
+        {
+            if (_submarineRuntime == null || IsUnityObjectInvalid(_submarineRuntime))
+                _submarineRuntime = GlobalRegistry.Submarine;
+
+            return _submarineRuntime;
+        }
+
+        private HectonFluidEngine ResolveFluidRuntime()
+        {
+            if (_fluidRuntime == null)
+                _fluidRuntime = GlobalRegistry.Fluid;
+
+            return _fluidRuntime;
+        }
+
+        private void RefreshRuntimeActorContextsIfMissing()
+        {
+            ResolvePlayerRuntimeContext();
+            ResolveSubmarineRuntimeContext();
+            ResolveFluidRuntime();
+        }
+
+        private static bool IsUnityObjectInvalid(object context)
+        {
+            return context is UnityEngine.Object unityObject && unityObject == null;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -5469,6 +5571,40 @@ namespace Hecton8.Physics
             return unchecked((hash ^ value) * 16777619u);
         }
 
+        private NativeArray<T> AllocateNativeStateArray<T>(
+            BufferID bufferId,
+            int length,
+            string label,
+            int vaultFlag) where T : struct
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null)
+            {
+                NativeArray<T> vaultArray = vault.GetBuffer<T>(
+                    bufferId,
+                    length,
+                    SystemID.VehiclesPhysics,
+                    NativeArrayOptions.ClearMemory);
+                if (vaultArray.IsCreated)
+                {
+                    _vaultNativeStateMask |= vaultFlag;
+                    return vaultArray;
+                }
+            }
+
+            _vaultNativeStateMask &= ~vaultFlag;
+            NativeArray<T> array = H8Memory.Allocate<T>(
+                length,
+                SystemID.VehiclesPhysics,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
+            if (!array.IsCreated)
+                return default;
+
+            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+            return array;
+        }
+
         private void RegisterNativeStateBuffers()
         {
             RegisterNativeArray(_compartmentFloodVolumes, nameof(_compartmentFloodVolumes));
@@ -5500,14 +5636,20 @@ namespace Hecton8.Physics
             NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
         }
 
-        private void DisposeDeferred<T>(ref NativeArray<T> array) where T : struct
+        private void DisposeDeferred<T>(ref NativeArray<T> array, int vaultFlag) where T : struct
         {
             if (!array.IsCreated)
                 return;
 
+            if ((_vaultNativeStateMask & vaultFlag) != 0)
+            {
+                array = default;
+                _vaultNativeStateMask &= ~vaultFlag;
+                return;
+            }
+
             NativeMemorySentinel.UnregisterNativeArray(array);
-            _disposeHandle = array.Dispose(_disposeHandle);
-            array = default;
+            _disposeHandle = H8Memory.Release(ref array, _disposeHandle, SystemID.VehiclesPhysics);
         }
     }
 }

@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Unity.Mathematics;
 
 namespace Hecton8.Core.Contracts
@@ -5,6 +6,7 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// Registry-facing dead-reckoning state exposed to cockpit and UI consumers without concrete navigation runtime coupling.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct InertialNavigationSnapshot
     {
         /// <summary>Actual submarine AUP resolved from the authoritative motion read model.</summary>

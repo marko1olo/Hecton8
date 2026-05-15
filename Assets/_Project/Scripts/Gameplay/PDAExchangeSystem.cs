@@ -15,7 +15,7 @@ namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/PDA Exchange System")]
-    public sealed class PDAExchangeSystem : MonoBehaviour, ISaveable
+    public sealed class PDAExchangeSystem : MonoBehaviour, ISaveable, IUpdatable
     {
         [StructLayout(LayoutKind.Sequential)]
         public readonly struct TransactionSnapshot
@@ -160,8 +160,13 @@ namespace Hecton8.Gameplay
         private int _executionStateCount;
         private int _catalogRuntimeHashCount;
         private int _recentTransactionCount;
+        private bool _registered;
         private bool _serviceRegistered;
         private uint _signalSourceId;
+        private PlayerInventory _boundInventory;
+        private ScanLogSystem _boundScanLog;
+        private uint _inventorySignalHash;
+        private uint _scanLogSourceId;
 
         public int SavePriority => 36;
         public int LoadPriority => 36;
@@ -186,21 +191,21 @@ namespace Hecton8.Gameplay
         {
             TryRegisterService();
             AutoResolve();
+            RefreshSignalFilters();
             CacheCatalogRuntimeHashes();
             Hecton8.Core.GlobalRegistry.SaveRuntime?.Register(this);
-            if (playerInventory != null)
-                playerInventory.InventoryChanged += HandleInventoryChanged;
-            if (scanLogSystem != null)
-                scanLogSystem.ScanLogChanged += HandleScanLogChanged;
+            TryRegister();
+        }
+
+        private void Start()
+        {
+            TryRegister();
         }
 
         private void OnDisable()
         {
             Hecton8.Core.GlobalRegistry.SaveRuntime?.Unregister(this);
-            if (playerInventory != null)
-                playerInventory.InventoryChanged -= HandleInventoryChanged;
-            if (scanLogSystem != null)
-                scanLogSystem.ScanLogChanged -= HandleScanLogChanged;
+            TryUnregister();
             TryUnregisterService();
         }
 
@@ -218,6 +223,26 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.RegisterPDAExchangeRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.PDAExchange, this);
+        }
+
+        private void TryRegister()
+        {
+            if (_registered || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+            _registered = false;
         }
 
         private void TryUnregisterService()
@@ -596,10 +621,82 @@ namespace Hecton8.Gameplay
                 HUDNotification.TryGetActive(out hudNotification);
         }
 
-        private void HandleInventoryChanged() => PublishExchangeStateChanged(PdaExchangeStateChangedSignal.ReasonInventoryChanged);
-        private void HandleScanLogChanged() => PublishExchangeStateChanged(PdaExchangeStateChangedSignal.ReasonScanLogChanged);
+        public void Tick(float deltaTime)
+        {
+            if (playerInventory == null || scanLogSystem == null)
+                AutoResolve();
 
-        private void PublishExchangeStateChanged(byte reason)
+            RefreshSignalFilters();
+            byte dirtyFlags = 0;
+            if (ConsumeInventoryChangedSignals())
+                dirtyFlags |= PdaExchangeStateChangedSignal.FlagInventoryDirty;
+            if (ConsumeScanLogChangedSignals())
+                dirtyFlags |= PdaExchangeStateChangedSignal.FlagScanLogDirty;
+
+            if (dirtyFlags == 0)
+                return;
+
+            PublishExchangeStateChanged(
+                (dirtyFlags & PdaExchangeStateChangedSignal.FlagScanLogDirty) != 0
+                    ? PdaExchangeStateChangedSignal.ReasonScanLogChanged
+                    : PdaExchangeStateChangedSignal.ReasonInventoryChanged,
+                dirtyFlags);
+        }
+
+        private void RefreshSignalFilters()
+        {
+            PlayerInventory currentInventory = playerInventory != null ? playerInventory : null;
+            if (!ReferenceEquals(_boundInventory, currentInventory))
+            {
+                _boundInventory = currentInventory;
+                _inventorySignalHash = currentInventory != null ? unchecked((uint)EntityId.ToULong(currentInventory.GetEntityId())) : 0u;
+            }
+
+            ScanLogSystem currentScanLog = scanLogSystem != null ? scanLogSystem : null;
+            if (!ReferenceEquals(_boundScanLog, currentScanLog))
+            {
+                _boundScanLog = currentScanLog;
+                _scanLogSourceId = currentScanLog != null ? GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(currentScanLog.GetEntityId())) : 0u;
+            }
+        }
+
+        private bool ConsumeInventoryChangedSignals()
+        {
+            uint inventoryHash = _inventorySignalHash;
+            if (inventoryHash == 0u)
+                return false;
+
+            ReadOnlySpan<InventoryChangedSignal> signals = SignalBus<InventoryChangedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                if (signals[i].InventoryHash != inventoryHash)
+                    continue;
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool ConsumeScanLogChangedSignals()
+        {
+            uint sourceId = _scanLogSourceId;
+            if (sourceId == 0u)
+                return false;
+
+            ReadOnlySpan<ScanLogChangedSignal> signals = SignalBus<ScanLogChangedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                if (signals[i].SourceId != sourceId)
+                    continue;
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private void PublishExchangeStateChanged(byte reason, byte flags = 0)
         {
             if (_signalSourceId == 0u)
                 _signalSourceId = GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
@@ -612,7 +709,7 @@ namespace Hecton8.Gameplay
                 RecentTransactionCount = _recentTransactionCount,
                 ExecutionStateCount = _executionStateCount,
                 Reason = reason,
-                Flags = 0
+                Flags = flags
             };
 
             GlobalSignals.Publish(in signal);

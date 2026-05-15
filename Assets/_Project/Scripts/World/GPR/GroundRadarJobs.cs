@@ -65,11 +65,8 @@ namespace Hecton8.World.GPR
 
         public void Execute()
         {
-            int writeIndex = CompactExistingPings();
+            int writeIndex = CompactExistingPings(out float highestSignal);
             int addedCount = 0;
-            float highestSignal = MaxSignalStrength.IsCreated && MaxSignalStrength.Length > 0
-                ? math.max(0f, MaxSignalStrength[0])
-                : 0f;
 
             int rayCount = math.clamp(RequestedRayCount, 1, GroundRadarConstants.MaxRays);
             int maxSteps = math.clamp(MaxSteps, 1, GroundRadarConstants.MaxRaymarchSteps);
@@ -135,8 +132,9 @@ namespace Hecton8.World.GPR
                 MaxSignalStrength[0] = highestSignal;
         }
 
-        private int CompactExistingPings()
+        private int CompactExistingPings(out float highestSignal)
         {
+            highestSignal = 0f;
             if (!HasWritablePingStorage())
                 return 0;
 
@@ -151,20 +149,23 @@ namespace Hecton8.World.GPR
                 if (age >= GroundRadarConstants.ScanDecaySeconds)
                     continue;
 
-                float strength = GprSignalStrength[i] * math.saturate(1f - age * math.rcp(GroundRadarConstants.ScanDecaySeconds));
-                if (strength <= 0.0001f)
+                float rawStrength = math.saturate(GprSignalStrength[i]);
+                float displayStrength = rawStrength * math.saturate(1f - age * math.rcp(GroundRadarConstants.ScanDecaySeconds));
+                if (displayStrength <= 0.0001f)
                     continue;
 
                 float3 hit = GprHits[i] - shift;
-                if (!math.all(math.isfinite(hit)) || !math.isfinite(strength))
+                if (!math.all(math.isfinite(hit)) || !math.isfinite(displayStrength))
                     continue;
 
                 int oreType = GprOreTypes[i];
+                float filteredStrength = ApplyOreFilter(displayStrength, oreType);
                 GprHits[writeIndex] = hit;
-                GprSignalStrength[writeIndex] = strength;
+                GprSignalStrength[writeIndex] = rawStrength;
                 GprAgeSeconds[writeIndex] = age;
                 GprOreTypes[writeIndex] = oreType;
-                GprPingGpu[writeIndex] = new float4(hit, ApplyOreFilter(strength, oreType));
+                GprPingGpu[writeIndex] = new float4(hit, filteredStrength);
+                highestSignal = math.max(highestSignal, filteredStrength);
                 writeIndex++;
             }
 

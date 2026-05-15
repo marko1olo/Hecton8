@@ -1172,7 +1172,7 @@ namespace Hecton8.Core.Determinism
                 return;
 
             NativeMemorySentinel.UnregisterNativeArray(array);
-            H8Memory.Release(ref array);
+            H8Memory.Release(ref array, SystemID.CoreDeterminism);
         }
 
         private void EnsureReplayWriter()
@@ -1339,6 +1339,7 @@ namespace Hecton8.Core.Determinism
         }
     }
 
+    [StructLayout(LayoutKind.Sequential)]
     [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct HashFloat3ArrayJob : IJobParallelFor
     {
@@ -1359,6 +1360,7 @@ namespace Hecton8.Core.Determinism
         }
     }
 
+    [StructLayout(LayoutKind.Sequential)]
     [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct HashFloatArrayJob : IJobParallelFor
     {
@@ -1379,6 +1381,7 @@ namespace Hecton8.Core.Determinism
         }
     }
 
+    [StructLayout(LayoutKind.Sequential)]
     [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct HashPlayerKinematicArrayJob : IJobParallelFor
     {
@@ -1412,6 +1415,7 @@ namespace Hecton8.Core.Determinism
         }
     }
 
+    [StructLayout(LayoutKind.Sequential)]
     [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct CombineElementHashesJob : IJob
     {
@@ -1449,6 +1453,7 @@ namespace Hecton8.Core.Determinism
         }
     }
 
+    [StructLayout(LayoutKind.Sequential)]
     [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct MasterStateHashJob : IJob
     {

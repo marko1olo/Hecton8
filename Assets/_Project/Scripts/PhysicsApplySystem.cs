@@ -2722,7 +2722,7 @@ namespace Hecton8.Physics
                     _submarineImpactSignalCount--;
                 scanBudget--;
 
-                Hecton8.Gameplay.DamageSignal signal = default;
+                Hecton8.Gameplay.HabitatDamageSignal signal = default;
                 signal.magnitude = queuedSignal.Magnitude;
                 signal.localPoint = queuedSignal.LocalPoint;
                 signal.damageType = queuedSignal.DamageType;

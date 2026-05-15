@@ -54,6 +54,10 @@ namespace Hecton8.World
         private const int ComputeDisableReasonZeroThreadGroup = 7;
         private const int ComputeDisableReasonKernelValidationFailure = 8;
         private const int ComputeDisableReasonOriginShiftFailure = 9;
+        private const int FaunaSimulationBucketMask = 15;
+        private const float FaunaSimulationBucketInvCount = 1f / (FaunaSimulationBucketMask + 1);
+        private const uint FaunaAmbientDriftKillSwitchMask = GlobalRegistry.SystemKillSwitchLane4VfxMask;
+        private const uint FaunaBucketedSimulationCostHash = 0x46534255u; // FSBU
 #if UNITY_EDITOR
         private const int MaxEditorValidateDepth = 4;
         private static int _editorValidateDepth;
@@ -796,6 +800,9 @@ namespace Hecton8.World
         private static readonly int _AbyssalFlowSpacingId = Shader.PropertyToID("_AbyssalFlowSpacing");
         private static readonly int _AbyssalFlowActiveId = Shader.PropertyToID("_AbyssalFlowActive");
         private static readonly int _AbyssalFlowWeightId = Shader.PropertyToID("_AbyssalFlowWeight");
+        private static readonly int _SimulationBucketIndexId = Shader.PropertyToID("_SimulationBucketIndex");
+        private static readonly int _SimulationBucketMaskId = Shader.PropertyToID("_SimulationBucketMask");
+        private static readonly int _SimulationInterpolationAlphaId = Shader.PropertyToID("_SimulationInterpolationAlpha");
 
         [Header("â”€â”€ Runtime Wiring â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [SerializeField]
@@ -1514,7 +1521,10 @@ namespace Hecton8.World
         private Mesh _boidIndirectArgsMesh;
         private int _boidIndirectArgsInstanceCount = -1;
         private int _frameParity;
+        private ISimulationBucketer _simulationBucketer;
+        private bool _simulationBucketerProbeAttempted;
         private int _lastFieldRevision = -1;
+        private float _simulationInterpolationAlpha = 1f;
         private bool _registeredTick;
         private bool _registeredFixedTick;
         private bool _registeredSlowTick;
@@ -1565,6 +1575,7 @@ namespace Hecton8.World
         private float _renderPropertiesVatInstancePhaseScale;
         private float _renderPropertiesVatPositionScale;
         private float _renderPropertiesVatNormalBlend;
+        private float _renderPropertiesSimulationInterpolationAlpha = -1f;
         private float _spatialGridCellSizeWS = 1f;
         private Vector3 _spatialGridOriginWS = Vector3.zero;
         private Vector3Int _spatialGridResolution = Vector3Int.one;
@@ -1588,6 +1599,11 @@ namespace Hecton8.World
         private BiomeMatrixDirector _biomeMatrixDirector;
         private HectonMapMagicVegetationBridge _mapMagicVegetationBridge;
         private HectonFluidEngine _fluidEngine;
+        private ISubmarineRuntimeContext _submarineRuntime;
+        private IEncounterDirectorService _encounterDirector;
+        private IEcosystemDirectorService _ecosystemDirector;
+        private BeaconNetworkSystem _beaconNetworkRuntime;
+        private AbyssalFluidDecalManager _abyssalFluidDecals;
         private bool _flashlightOn;
         private bool _parasiteModeActive;
         private bool _formationModeActive;
@@ -1656,6 +1672,7 @@ namespace Hecton8.World
         private bool _viewPoseCacheValid;
         private Vector3 _viewPoseCachePosition;
         private Vector3 _viewPoseCacheForward;
+        private bool _playerRuntimeContextProbeAttempted;
         private int _playerRuntimeSnapshotCacheFrame = -1;
         private bool _playerRuntimeSnapshotCacheValid;
         private PlayerMovementRuntimeState _playerRuntimeSnapshotMovement;
@@ -1685,6 +1702,8 @@ namespace Hecton8.World
         /// </summary>
         public int ActiveBoidCount => _activeBoidCount;
 
+        public float SimulationInterpolationAlpha => _simulationInterpolationAlpha;
+
         private void Awake()
         {
             _computeDispatchDisabled = false;
@@ -1694,6 +1713,7 @@ namespace Hecton8.World
             RefreshRenderLayerCache();
             RefreshRenderScaleCache();
             ResetDependencyProbeCache();
+            _simulationBucketerProbeAttempted = false;
             ResolveDependencies();
             EnsureBuffers();
             RefreshThreatVoxelPayload();
@@ -1710,6 +1730,7 @@ namespace Hecton8.World
             _hitFlashPropertiesDirty = true;
             RefreshRenderLayerCache();
             RefreshRenderScaleCache();
+            _simulationBucketerProbeAttempted = false;
             ResolveDependencies();
             EnsureBuffers();
             RefreshThreatVoxelPayload();
@@ -1761,6 +1782,15 @@ namespace Hecton8.World
             _reportedWakeFleeCount = 0;
             _reportedWakeCenterWS = Vector3.zero;
             _reportedWakeFlowDirectionWS = Vector3.zero;
+            _fluidEngine = null;
+            _submarineRuntime = null;
+            _encounterDirector = null;
+            _ecosystemDirector = null;
+            _beaconNetworkRuntime = null;
+            _abyssalFluidDecals = null;
+            _simulationBucketer = null;
+            _simulationBucketerProbeAttempted = false;
+            _simulationInterpolationAlpha = 1f;
             ClearStatisticalPopulationPoint();
             _leviathanModeActive = false;
             _leviathanThreatLevel = 0f;
@@ -1796,6 +1826,14 @@ namespace Hecton8.World
         private void OnDestroy()
         {
             ResetDependencyProbeCache();
+            _fluidEngine = null;
+            _submarineRuntime = null;
+            _encounterDirector = null;
+            _ecosystemDirector = null;
+            _beaconNetworkRuntime = null;
+            _abyssalFluidDecals = null;
+            _simulationBucketer = null;
+            _simulationBucketerProbeAttempted = false;
             TryUnregisterService();
             SargassumGlobalDragManager.Unregister(this);
             FlashlightEvents.Unregister(this);
@@ -1906,6 +1944,13 @@ namespace Hecton8.World
             bool shouldDispatchSimulation = dispatchedSimulation && (shouldRender || ShouldMaintainOffscreenBoidSimulation(simulationLodTier));
             bool leaderFollowerSchooling = _formationModeActive && !_parasiteModeActive && _leviathanModeBlend < 0.001f;
             bool shouldCollectLatchStats = ShouldCollectLatchStats(simulationLodTier, leaderFollowerSchooling);
+            if (IsFaunaAmbientDriftKillSwitchActive())
+            {
+                shouldDispatchSimulation = false;
+                shouldDispatchSleepVelocityWrite = false;
+                hibernation01 = math.max(hibernation01, 1f);
+            }
+
             if (shouldDispatchSimulation || shouldDispatchSleepVelocityWrite)
             {
                 if (simulationLodTier == SimulationLodTier.Full && !leaderFollowerSchooling)
@@ -1913,6 +1958,7 @@ namespace Hecton8.World
 
                 if (BindSimulationUniforms(simulationDeltaTime, currentDriftOffset, driftDelta, hibernation01, simulationLodTier, shouldRender))
                 {
+                    long watchdogStart = System.Diagnostics.Stopwatch.GetTimestamp();
                     try
                     {
                         if (shouldCollectLatchStats)
@@ -1938,6 +1984,8 @@ namespace Hecton8.World
                     {
                         DisableComputeDispatch(ComputeDisableReasonDispatchFailure);
                     }
+
+                    ReportWatchdogCost(FaunaBucketedSimulationCostHash, watchdogStart);
                 }
             }
 
@@ -2030,7 +2078,12 @@ namespace Hecton8.World
                                           _worldZoneDirector == null ||
                                           _biomeMatrixDirector == null ||
                                           _mapMagicVegetationBridge == null ||
-                                          _fluidEngine == null;
+                                          _fluidEngine == null ||
+                                          _submarineRuntime == null ||
+                                          _encounterDirector == null ||
+                                          _ecosystemDirector == null ||
+                                          _beaconNetworkRuntime == null ||
+                                          _abyssalFluidDecals == null;
             if (!_runtimeServiceProbeAttempted && missingRuntimeServices)
             {
                 if (biolumManager == null)
@@ -2054,6 +2107,21 @@ namespace Hecton8.World
                 if (_fluidEngine == null)
                     _fluidEngine = GlobalRegistry.Fluid;
 
+                if (_submarineRuntime == null)
+                    _submarineRuntime = GlobalRegistry.Submarine;
+
+                if (_encounterDirector == null)
+                    _encounterDirector = GlobalRegistry.EncounterDirector;
+
+                if (_ecosystemDirector == null)
+                    _ecosystemDirector = GlobalRegistry.EcosystemDirector;
+
+                if (_beaconNetworkRuntime == null)
+                    _beaconNetworkRuntime = GlobalRegistry.BeaconNetwork;
+
+                if (_abyssalFluidDecals == null)
+                    _abyssalFluidDecals = GlobalRegistry.AbyssalFluidDecals;
+
                 _runtimeServiceProbeAttempted = true;
             }
             else if (!missingRuntimeServices)
@@ -2072,7 +2140,7 @@ namespace Hecton8.World
                 _playerHealth ??= runtimeContext.PlayerHealth;
                 _playerFlashlight ??= runtimeContext.Flashlight;
             }
-            else
+            else if (!_playerRuntimeContextProbeAttempted)
             {
                 IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
                 if (playerContext != null && playerContext.IsInitialized)
@@ -2084,6 +2152,8 @@ namespace Hecton8.World
                     _playerHealth ??= playerContext.PlayerHealth;
                     _playerFlashlight ??= playerContext.Flashlight;
                 }
+
+                _playerRuntimeContextProbeAttempted = true;
             }
 
             if (playerTransform == null && !_playerTransformProbeAttempted)
@@ -2108,6 +2178,12 @@ namespace Hecton8.World
 
             if (_playerFlashlight != null)
                 _flashlightOn = _playerFlashlight.IsOn;
+
+            if (!_simulationBucketerProbeAttempted)
+            {
+                _simulationBucketer = GlobalRegistry.SimulationBucketer;
+                _simulationBucketerProbeAttempted = true;
+            }
         }
 
         private void ResetDependencyProbeCache()
@@ -2115,6 +2191,7 @@ namespace Hecton8.World
             _playerTransformProbeAttempted = false;
             _viewCameraProbeAttempted = false;
             _runtimeServiceProbeAttempted = false;
+            _playerRuntimeContextProbeAttempted = false;
         }
 
         private void SanitizeSettings()
@@ -2455,7 +2532,7 @@ namespace Hecton8.World
         private bool TryResolveEcosystemPopulationCount(out int ecosystemPopulationCount)
         {
             ecosystemPopulationCount = 0;
-            IEcosystemDirectorService ecosystemDirector = GlobalRegistry.EcosystemDirector;
+            IEcosystemDirectorService ecosystemDirector = _ecosystemDirector;
             if (ecosystemDirector == null || !ecosystemDirector.IsInitialized)
             {
                 _ecosystemFitness = 0f;
@@ -3164,7 +3241,7 @@ namespace Hecton8.World
             if (!_deepModeActive)
                 return;
 
-            BeaconNetworkSystem beaconNetwork = Hecton8.Core.GlobalRegistry.BeaconNetwork;
+            BeaconNetworkSystem beaconNetwork = _beaconNetworkRuntime;
             if (beaconNetwork == null || _formationBeaconSnapshots == null)
                 return;
 
@@ -3177,7 +3254,7 @@ namespace Hecton8.World
                 return;
 
             AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
-            HectonFluidEngine fluidRuntime = GlobalRegistry.Fluid;
+            HectonFluidEngine fluidRuntime = _fluidEngine;
             int formationCount = 0;
             for (int i = 0; i < snapshotCount && formationCount < _formationBeacons.Length; i++)
             {
@@ -3918,6 +3995,7 @@ namespace Hecton8.World
             if (!_simulationFrameNative.IsCreated || _simulationFrameBuffer == null)
                 return false;
 
+            ResolveSimulationBucketUniforms(out int simulationBucketIndex, out int simulationBucketMask);
             GraphicsBuffer readBuffer = _frameParity == 0 ? _boidsBufferA : _boidsBufferB;
             GraphicsBuffer writeBuffer = _frameParity == 0 ? _boidsBufferB : _boidsBufferA;
 
@@ -3955,7 +4033,7 @@ namespace Hecton8.World
                 densityTexture = Texture2D.blackTexture;
             Texture activeCutMaskTexture = cutMaskActive && cutMaskTexture != null ? (Texture)cutMaskTexture : Texture2D.blackTexture;
             Vector3 abyssalFlowWeatherCurrent = Vector3.zero;
-            HectonFluidEngine fluidRuntime = GlobalRegistry.Fluid;
+            HectonFluidEngine fluidRuntime = _fluidEngine;
             if (fluidRuntime != null &&
                 fluidRuntime.TrySampleModAbyssalFlow(_fieldCenter, out float3 resolvedAbyssalFlow))
             {
@@ -3991,7 +4069,7 @@ namespace Hecton8.World
             Vector3 submarineWakeVelocity = Vector3.zero;
             float submarineWakeRadius = 0f;
             float submarineWakeHalfLength = 0f;
-            ISubmarineRuntimeContext submarine = GlobalRegistry.Submarine;
+            ISubmarineRuntimeContext submarine = _submarineRuntime;
             Rigidbody submarineHull = submarine != null ? submarine.HullRigidbody : null;
             if (submarineHull != null)
             {
@@ -4011,7 +4089,7 @@ namespace Hecton8.World
 
             GraphicsBuffer predatorAupBuffer = null;
             int predatorAupCount = 0;
-            IEncounterDirectorService encounterDirector = GlobalRegistry.EncounterDirector;
+            IEncounterDirectorService encounterDirector = _encounterDirector;
             if (encounterDirector != null &&
                 encounterDirector.IsInitialized &&
                 encounterDirector.TryGetPredatorAupGpuBuffer(out GraphicsBuffer publishedPredatorAupBuffer, out int publishedPredatorAupCount))
@@ -4221,6 +4299,8 @@ namespace Hecton8.World
                 boidCompute.SetVector(_AbyssalFlowSpacingId, abyssalFlowSpacing);
                 boidCompute.SetFloat(_AbyssalFlowActiveId, abyssalFlowActive);
                 boidCompute.SetFloat(_AbyssalFlowWeightId, 1f);
+                boidCompute.SetInt(_SimulationBucketIndexId, simulationBucketIndex);
+                boidCompute.SetInt(_SimulationBucketMaskId, simulationBucketMask);
 
                 boidCompute.SetBuffer(_buildSpatialGridKernelIndex, _BoidsBufferReadId, readBuffer);
 
@@ -4240,6 +4320,32 @@ namespace Hecton8.World
             _debugSonarScatter01 = sonarScatterStrength01;
             _debugPredatorAupThreatCount = predatorAupThreatLoopCap;
             return true;
+        }
+
+        private void ResolveSimulationBucketUniforms(out int simulationBucketIndex, out int simulationBucketMask)
+        {
+            ISimulationBucketer bucketer = _simulationBucketer;
+            int frameCount = bucketer != null && bucketer.IsInitialized
+                ? bucketer.CurrentFrameCount
+                : Time.frameCount;
+            simulationBucketMask = FaunaSimulationBucketMask;
+            simulationBucketIndex = frameCount & simulationBucketMask;
+            _simulationInterpolationAlpha = (simulationBucketIndex + 1) * FaunaSimulationBucketInvCount;
+        }
+
+        private static bool IsFaunaAmbientDriftKillSwitchActive()
+        {
+            return (GlobalRegistry.SystemKillSwitchMask & FaunaAmbientDriftKillSwitchMask) != 0u;
+        }
+
+        private static void ReportWatchdogCost(uint subsystemHash, long startTimestamp)
+        {
+            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp;
+            if (elapsedTicks <= 0L)
+                return;
+
+            float elapsedMilliseconds = (float)(elapsedTicks * 1000.0 / System.Diagnostics.Stopwatch.Frequency);
+            RuntimeWatchdog.ReportSubsystemCost(subsystemHash, elapsedMilliseconds);
         }
 
         void ISargassumGlobalDragEventListener.OnSargassumEntanglementStrain(in SargassumGlobalDragManager.EntanglementStrainSignal signal)
@@ -4416,7 +4522,7 @@ namespace Hecton8.World
             RecalculateMassiveThreatCount();
             UploadMassiveThreats();
 
-            AbyssalFluidDecalManager fluidDecals = Hecton8.Core.GlobalRegistry.AbyssalFluidDecals;
+            AbyssalFluidDecalManager fluidDecals = _abyssalFluidDecals;
             if ((_deepModeActive || _parasiteModeActive || _formationModeActive || _leviathanModeActive) && fluidDecals != null)
             {
                 float ruptureScale = math.saturate(signal.RadiusWS / math.max(1f, deepBaitBallRadius * 2f));
@@ -4695,7 +4801,7 @@ namespace Hecton8.World
             return drainedCount;
         }
 
-        private static void PublishPredatorKillDebris(in BoidKillSignal killSignal, Vector3 killPositionWS, int boidId)
+        private void PublishPredatorKillDebris(in BoidKillSignal killSignal, Vector3 killPositionWS, int boidId)
         {
             uint sourceId = killSignal.PredatorId != 0u
                 ? killSignal.PredatorId
@@ -4711,7 +4817,7 @@ namespace Hecton8.World
             };
             GlobalSignals.Publish(in debrisSignal);
 
-            AbyssalFluidDecalManager fluidDecals = GlobalRegistry.AbyssalFluidDecals;
+            AbyssalFluidDecalManager fluidDecals = _abyssalFluidDecals;
             if (fluidDecals != null)
                 fluidDecals.RegisterRuptureFluid(killPositionWS, PredatorKillFluidDecalRadiusScale);
         }
@@ -5906,6 +6012,8 @@ namespace Hecton8.World
                 _materialPropertyBlock.SetFloat(_VatPositionScaleId, vatPositionScale);
             if (ShouldUploadRenderFloat(boidVatNormalBlend, ref _renderPropertiesVatNormalBlend))
                 _materialPropertyBlock.SetFloat(_VatNormalBlendId, boidVatNormalBlend);
+            if (ShouldUploadRenderFloat(_simulationInterpolationAlpha, ref _renderPropertiesSimulationInterpolationAlpha))
+                _materialPropertyBlock.SetFloat(_SimulationInterpolationAlphaId, _simulationInterpolationAlpha);
 
             if (vatEnabled)
             {

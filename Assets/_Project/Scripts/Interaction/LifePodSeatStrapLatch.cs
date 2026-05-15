@@ -162,7 +162,8 @@ namespace Hecton8.Interaction
             Vector3 handForward,
             IInteractionSignalService interactionSignals,
             Collider handSourceCollider,
-            PhysicalHandSide fallbackHandSide)
+            PhysicalHandSide fallbackHandSide,
+            int sampleFrame = -1)
         {
             if (_latched || !IsFinite(handPosition))
                 return _latched;
@@ -302,7 +303,9 @@ namespace Hecton8.Interaction
                 UnregisterReceiver();
             }
 
-            PhysicalHandReceiverRegistry.Register(activationCollider, this);
+            if (!Application.isPlaying || !PhysicalHandReceiverRegistry.TryRegister(activationCollider, this))
+                return;
+
             _registeredCollider = activationCollider;
             _registeredReceiver = true;
         }

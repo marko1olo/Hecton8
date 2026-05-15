@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Hecton8.Logistics.Grid.Contracts;
 using Unity.Burst;
 using Unity.Collections;
@@ -9,6 +10,7 @@ namespace Hecton8.Logistics.Grid
     /// <summary>
     /// Converts a packed WFC outpost grid into SOA power nodes and logical adjacency edges.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     [BurstCompile(FloatPrecision.Low, FloatMode.Fast, CompileSynchronously = true)]
     public struct WfcOutpostGraphTranslationJob : IJob
     {
@@ -25,7 +27,12 @@ namespace Hecton8.Logistics.Grid
             ClearOutputs();
 
             int3 dimensions = Descriptor.Dimensions;
-            if (dimensions.x <= 0 || dimensions.y <= 0 || dimensions.z <= 0)
+            if (dimensions.x <= 0 ||
+                dimensions.y <= 0 ||
+                dimensions.z <= 0 ||
+                dimensions.x > WfcOutpostGridConstants.FullWidth ||
+                dimensions.y > WfcOutpostGridConstants.FullHeight ||
+                dimensions.z > WfcOutpostGridConstants.FullDepth)
             {
                 WriteFault(WfcOutpostGraphFaultFlags.InvalidDimensions);
                 return;
@@ -47,8 +54,8 @@ namespace Hecton8.Logistics.Grid
             int roomCount = 0;
             int firstPowerNode = -1;
             int generatorNode = -1;
-            float cellSize = math.max(1f, Descriptor.CellSizeMeters);
-            float floorHeight = math.max(1f, Descriptor.FloorHeightMeters);
+            float cellSize = SanitizeMeters(Descriptor.CellSizeMeters, 1f);
+            float floorHeight = SanitizeMeters(Descriptor.FloorHeightMeters, 1f);
             float halfWidth = (dimensions.x - 1) * cellSize * 0.5f;
             float halfDepth = (dimensions.z - 1) * cellSize * 0.5f;
 
@@ -182,6 +189,13 @@ namespace Hecton8.Logistics.Grid
             value *= 0x846CA68Bu;
             value ^= value >> 16;
             return value == 0u ? 1u : value;
+        }
+
+        private static float SanitizeMeters(float value, float fallback)
+        {
+            if (!math.isfinite(value) || value < 1f)
+                return fallback;
+            return value;
         }
 
         private static byte ResolvePriorityTier(byte kind)

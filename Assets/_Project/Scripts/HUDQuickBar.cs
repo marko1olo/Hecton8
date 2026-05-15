@@ -6,6 +6,7 @@
 
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Items;
@@ -98,6 +99,8 @@ namespace Hecton8.UI
         private PlayerInventory _playerInventory;
         private ItemCatalog _itemCatalog;
         private PlayerToolManager _subscribedToolManager;
+        private uint _toolLoadoutSignalSourceId;
+        private uint _lastToolLoadoutSignalSequence;
         private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
         private readonly int[] _slotItemHashCache = new int[SlotCount]; // COLD ALLOC: int[4] - quickbar resolved item hash cache - owner: HUDQuickBar
         private readonly bool[] _slotItemHashResolved = new bool[SlotCount]; // COLD ALLOC: bool[4] - quickbar item hash cache validity flags - owner: HUDQuickBar
@@ -131,6 +134,8 @@ namespace Hecton8.UI
         {
             TryAutoResolveForTick();
             RefreshDurabilitySubscription();
+
+            ConsumeToolLoadoutChangedSignals();
 
             if (_playerInventory != null && _lastInventoryVersion != _playerInventory.InventoryVersion)
             {
@@ -209,6 +214,8 @@ namespace Hecton8.UI
             }
             if (font == null)
                 font = TMP_Settings.defaultFontAsset;
+
+            RefreshToolLoadoutSignalBinding();
         }
 
         private void TryAutoResolveForTick()
@@ -285,6 +292,7 @@ namespace Hecton8.UI
 
             UnsubscribeToolManager(_subscribedToolManager);
             SubscribeToolManager(toolManager);
+            RefreshToolLoadoutSignalBinding();
             _slotVisualsDirty = true;
             _statusDirty = true;
         }
@@ -294,18 +302,14 @@ namespace Hecton8.UI
             if (manager == null || ReferenceEquals(_subscribedToolManager, manager))
                 return;
 
-            manager.ActiveSlotChanged += OnSlotChanged;
-            manager.ToolAssignmentsChanged += OnAssignmentsChanged;
             _subscribedToolManager = manager;
+            RefreshToolLoadoutSignalBinding();
         }
 
         private void UnsubscribeToolManager(PlayerToolManager manager)
         {
             if (manager == null)
                 return;
-
-            manager.ActiveSlotChanged -= OnSlotChanged;
-            manager.ToolAssignmentsChanged -= OnAssignmentsChanged;
 
             if (ReferenceEquals(_subscribedToolManager, manager))
                 _subscribedToolManager = null;
@@ -320,19 +324,60 @@ namespace Hecton8.UI
             InvalidateSlotBindingCache();
         }
 
-        private void OnSlotChanged(int _)
+        private void MarkToolLoadoutDirty(bool invalidateAssignments)
         {
+            if (invalidateAssignments)
+                InvalidateSlotBindingCache();
+
             _slotVisualsDirty = true;
             _statusDirty = true;
             Refresh(forceStatus: true);
         }
 
-        private void OnAssignmentsChanged()
+        private bool ConsumeToolLoadoutChangedSignals()
         {
-            InvalidateSlotBindingCache();
-            _slotVisualsDirty = true;
-            _statusDirty = true;
-            Refresh(forceStatus: true);
+            uint sourceId = _toolLoadoutSignalSourceId;
+            if (sourceId == 0u)
+                return false;
+
+            bool dirty = false;
+            bool assignmentsDirty = false;
+            ReadOnlySpan<ToolLoadoutChangedSignal> signals = SignalBus<ToolLoadoutChangedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ref readonly ToolLoadoutChangedSignal signal = ref signals[i];
+                if (signal.SourceId != sourceId)
+                    continue;
+
+                if (signal.Sequence == _lastToolLoadoutSignalSequence && _lastToolLoadoutSignalSequence != 0u)
+                    continue;
+
+                _lastToolLoadoutSignalSequence = signal.Sequence;
+                dirty = true;
+                assignmentsDirty |= signal.Reason == ToolLoadoutChangedSignal.ReasonAssignmentsChanged;
+            }
+
+            if (dirty)
+                MarkToolLoadoutDirty(assignmentsDirty);
+
+            return dirty;
+        }
+
+        private void RefreshToolLoadoutSignalBinding()
+        {
+            uint resolvedSourceId = ResolveToolLoadoutSignalSourceId(toolManager);
+            if (_toolLoadoutSignalSourceId == resolvedSourceId)
+                return;
+
+            _toolLoadoutSignalSourceId = resolvedSourceId;
+            _lastToolLoadoutSignalSequence = 0u;
+        }
+
+        private static uint ResolveToolLoadoutSignalSourceId(PlayerToolManager manager)
+        {
+            return manager != null && manager.gameObject != null
+                ? GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(manager.gameObject.GetEntityId()))
+                : 0u;
         }
 
         private void HandleDurabilityChanged(string toolId, float _, float __)

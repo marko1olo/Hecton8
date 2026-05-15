@@ -6,6 +6,7 @@ using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.Profiling;
 using UnityEngine.Rendering;
+using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.AI;
 using Hecton8.Atmosphere;
@@ -32,6 +33,7 @@ using Hecton8.World;
 
 namespace Hecton8.Core
 {
+    [StructLayout(LayoutKind.Sequential)]
     public readonly struct CriticalMemoryPressureEvent
     {
         public readonly int Frame;
@@ -1590,7 +1592,7 @@ namespace Hecton8.Core
             }
 
             NativeMemorySentinel.UnregisterNativeArray(_h8Time);
-            H8Memory.Release(ref _h8Time);
+            H8Memory.Release(ref _h8Time, SystemID.SystemDispatcher);
             _h8TimeHandle = default;
             _h8TimeVaultOwned = false;
         }
@@ -3114,7 +3116,7 @@ namespace Hecton8.Core
                 else
                 {
                     NativeMemorySentinel.UnregisterNativeArray(_scheduledDispatcherRaycastHits);
-                    H8Memory.Release(ref _scheduledDispatcherRaycastHits);
+                    H8Memory.Release(ref _scheduledDispatcherRaycastHits, SystemID.SystemDispatcher);
                     _scheduledDispatcherRaycastHitsHandle = default;
                 }
             }

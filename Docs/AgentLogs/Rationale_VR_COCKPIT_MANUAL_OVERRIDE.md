@@ -142,10 +142,322 @@ Hardware Impact: i3/MX350 pays one branch only on ratchet/latch dispatch frames,
 
 Problem: `ResolveReferenceVector()` used `handleAnchor.localPosition`, which is only correct when the handle anchor is parented directly under the lever root. Real cockpit art rigs often nest the visible handle under a rotating visual child, so the angular solver could be initialized with a reference vector in the wrong local space.
 
-Solution: derive the reference vector from `handleAnchor.position` transformed through the lever root with `InverseTransformPoint`, matching the existing handle-proximity path. Also reset ratchet step state when idle, track hot-swap listener registration locally, keep receiver registration play-mode-only, use increment/compare for blackbox ring wrap, and allow Tick to recover if deferred native disposal delays allocation.
+Solution: derive the reference vector from `handleAnchor.position` transformed through the lever root with `InverseTransformPoint`, matching the existing handle-proximity path. Also reset ratchet step state when idle, track hot-swap listener registration locally, keep receiver registration play-mode-only, use increment/compare for blackbox ring wrap, and keep deferred native recovery in lifecycle/hotswap paths only.
 
 Rejected Alternatives: constraining scene hierarchy was rejected because it makes authoring brittle. Recomputing the reference vector every Tick was rejected because the closed handle basis is static config, not frame state. Leaving modulo in telemetry was rejected because the branch wrap is simpler and cheaper.
 
 Scalability potential: Low/Middle get the same deterministic scalar solve under richer art hierarchy. High/Ultra can use nested mechanical linkages and animated handle meshes without changing the solver contract.
 
 Hardware Impact: i3/MX350 removes one integer modulo from the 60Hz telemetry path, estimated 0.01 us saved per tick. Other changes are cold lifecycle/configuration, edit-mode hygiene, or idle-only branches.
+
+## Decision 12 - Source drift must be corrected by forward patch only
+
+Problem: `OpenXRManualOverrideLever.cs` was observed back at older world-hand solver and tick-side native recovery code while the task evidence expected the hardened implementation. In a 20+ agent workspace, reset-style recovery can erase parallel work and hide drift.
+
+Solution: reapply only task-owned safeguards by forward patch: lifecycle-only native recovery, local hand sample cache, projection singularity hold, XR/frame/basis caches, invalid hand-side fallback, public XML docs, dispatcher hotswap allocation recovery, and IK handle pose caching. Also changed `TryQueueHandPress()` to resolve the handle anchor only when pivot distance already fails.
+
+Rejected Alternatives: `git reset`, checkout, or wholesale file replacement were rejected because they can erase parallel-agent changes. Leaving the regression was rejected because it reintroduced tick-side allocation reachability and false snap-to-min behavior.
+
+Scalability potential: Low/Middle keep the cheap local-space solve and fewer transform/XR/frame property crossings. High/Ultra can scale cockpit controls without multiplying avoidable receiver/telemetry/solver work.
+
+Hardware Impact: i3/MX350 restores the previous 0 B/frame proof, removes repeated transform conversions, and saves one handle transform conversion on pivot-close receiver callbacks. Direct UI response-file probe exits 0 after recovery.
+
+## Decision 13 - Native telemetry must reject corrupted transforms before writes
+
+Problem: world hand input was finite-checked, but transform matrices and inspector pivot values can still produce non-finite local coordinates. That violates the NaN/INF vaccination rule because local hand, pivot, target, and angle feed NativeArray state, visible transform rotation, and the blackbox ring.
+
+Solution: add a shared `IsFiniteFloat3()` guard, reject non-finite transformed hand samples, sanitize non-finite `pivotLocalPosition` during cold configuration, fall back to pivot when handle-anchor world-to-local conversion is non-finite, and validate hand/pivot telemetry before writing `_blackBox`. On invalid telemetry state, dump `Docs/AgentLogs/Dump_VR_COCKPIT_MANUAL_OVERRIDE.bin` and skip the corrupt frame entry.
+
+Rejected Alternatives: trusting Unity Transform output was rejected because corrupted parent transforms are exactly where VR rigs fail badly. Clamping NaN to zero inside the hot solver was rejected because it hides bad authoring and creates false lever motion. Recomputing handle/pivot every frame was rejected because the existing cold config and pivot-first receiver branch are cheaper and deterministic.
+
+Scalability potential: Low keeps the same cheap scalar solve with explicit invalid-state rejection. Middle/High gain stable cockpit interaction under nested rigs. Ultra can spend saved solver simplicity on richer haptic/audio/visual response while the blackbox still records deterministic state.
+
+Hardware Impact: i3/MX350 pays two extra `float3` finite checks in the 60Hz blackbox write and one receiver-side local-hand check only on hand candidate frames; estimated +0.04 us per tick and +0.03 us per receiver callback. This is accepted because it buys crash explainability without heap allocation or physics cost.
+
+## Decision 14 - Presentation writes and input axes need their own guard boundary
+
+Problem: the lever's simulation state was finite-guarded, but presentation and downstream input adaptation still trusted upstream values. A bad input provider, automation override, or corrupted handle transform could push non-finite axes into the local universal signal or write invalid pose data into IK/visual transforms.
+
+Solution: clamp Move, Look, and Vertical to [-1,1] with zero fallback in `BuildUniversalInputSignal()`. Gate lever visual writes behind finite angle and quaternion checks. Gate IK writes behind finite handle pose checks, recover a corrupted IK target by snapping to the valid handle, and use one `SetPositionAndRotation()` call for the interpolated pose.
+
+Rejected Alternatives: relying on upstream `InputDispatcher` sanitation was rejected because UI.VR must remain robust against hot-swap and automation injection. Leaving separate `position` and `rotation` writes was rejected because a single valid combined write is cleaner and avoids half-updated presentation state. Adding smoothing state arrays was rejected because current Math LOD smoothing already exists and extra state would not improve correctness.
+
+Scalability potential: Low/Middle keep the cheap scalar lever while avoiding corrupted presentation output. High/Ultra can use richer cockpit art rigs and IK targets without increasing simulation truth. The same signal remains device-agnostic and bounded for all tiers.
+
+Hardware Impact: i3/MX350 pays roughly +0.03 us per tick for axis sanitation, +0.02 us per visual write guard, and +0.05 us while grabbed for IK pose guards. One combined IK transform write replaces separate position/rotation writes during interpolation.
+
+## Decision 15 - Blackbox dumps must be fault evidence, not repeated frame work
+
+Problem: the blackbox guard could call `DumpBlackBox()` every Tick while native state stayed corrupt. The dump path is intentionally allowed to allocate and touch disk as a crash artifact, but repeating it every frame would damage the same frame pacing the zero-GC mandate is trying to protect.
+
+Solution: add `_blackBoxDumped` as a lifecycle-reset latch. `DumpBlackBox()` exits after the first attempted dump until `OnEnable()` or `InitializeLeverStateAfterAllocation()` resets the latch. Telemetry flag bit 5 records that a dump has already been attempted on later valid frames.
+
+Rejected Alternatives: deleting the dump was rejected because the blackbox rule requires evidence on NaN/crash. Logging every corrupt frame was rejected because managed logs allocate and are noisy. Keeping repeated binary rewrites was rejected because one corrupted rig could create disk I/O every frame.
+
+Scalability potential: Low/toaster path gets one bounded dump and no repeated disk churn. Middle/High stay deterministic. Ultra can spend saved failure-mode headroom on richer cockpit aftermath presentation while the same fault bit tells downstream diagnostics that the blackbox entered dump mode.
+
+Hardware Impact: normal frames pay no extra IO and only a telemetry flag branch. Persistent corrupt state avoids repeated 300-entry binary rewrites; on i3/MX350 this prevents multi-millisecond disk spikes during a fault loop. No numeric H-Phi score is claimed for this local robustness pass because the static formula does not measure fault-dump rate limiting directly.
+
+## Decision 16 - Cold component fallback still counts as H-Phi lookup debt
+
+Problem: scoped H-Phi hygiene found one `GetComponent<BoxCollider>()` fallback in `EnsureReferences()`. It is cold lifecycle code, not a Tick allocation, but the audit pattern treats `GetComponent<...>` as component lookup debt and the fallback is inside the owned VR lever file.
+
+Solution: replace the fallback with `TryGetComponent(out activationVolume)`. The serialized collider reference remains the preferred path, and `[RequireComponent(typeof(BoxCollider))]` still guarantees normal prefab safety.
+
+Rejected Alternatives: deleting the fallback was rejected because a scene instance with an unwired serialized field should still recover. Keeping `GetComponent<...>` was rejected because the H-Phi audit already has a safer lookup pattern available. Runtime scene search or `FindObject*` was rejected as architecture debt.
+
+Scalability potential: Low/Middle/High/Ultra all keep the same cold lifecycle behavior. The local H-Phi hygiene counter over the task scope now reports `GetComponentCalls=0`, `FindObjectCalls=0`, `UnityUpdateMethods=0`, `PublicEvents=0`, `HingeJoint=0`, and `DirectInput=0`.
+
+Hardware Impact: no steady-frame impact. Cold lifecycle cost is equivalent for the expected `RequireComponent` path, and the change removes one audit-counted lookup debt site from the VR lever domain.
+
+## Decision 17 - Do not keep fake Burst surface for a one-lever scalar solve
+
+Problem: the source still contained an unused `LeverAngularSolveJob` with a `Unity.Burst` dependency, while the real Tick path intentionally solves one scalar lever on the main thread. The IK smoothing step also used `blend * max(1, dt * 90)`, which makes the default high-tier blend snap at normal 60 Hz and contradicts the smoother high-tier presentation claim.
+
+Solution: remove the unused Burst job, remove `using Unity.Burst`, and remove `Unity.Burst` from `Hecton8.UI.VR.asmdef`. Keep `Unity.Jobs` because deferred native disposal still owns a `JobHandle`. Change IK step to `saturate(blend * saturate(dt * 60f))` and return early on zero step before transform reads.
+
+Rejected Alternatives: scheduling the job and completing it in Tick was rejected because `Complete()` in frame code violates the native job mandate and would cost more than the scalar solve. Leaving the dead job for static H-Phi optics was rejected as evidence fraud. Keeping the snap-prone IK formula was rejected because richer rigs need visible interpolation, not instant pose jumps.
+
+Scalability potential: Low keeps cheaper low-tier IK smoothing. Middle/High get actual smooth handle following at 60 Hz. Ultra can add denser hand/lever presentation because the solver remains scalar and the assembly no longer depends on Burst for unused code.
+
+Hardware Impact: i3/MX350 avoids an unnecessary Burst package dependency in the VR UI assembly and keeps the hot solve on simple scalar math. Zero-dt pause frames now skip handle/IK transform reads and writes. No project-wide numeric H-Phi gain is claimed because the global audit timed out; scoped hygiene improves by making `BurstRefs=0` and `IJobRefs=0` in the VR lever slice.
+
+## Decision 18 - Receiver unregister must use the collider that was actually registered
+
+Problem: `TryUnregisterReceiver()` used the current `activationVolume` field. If editor tooling, prefab repair, or runtime initialization swaps that field after registration, the old collider can remain in `PhysicalHandReceiverRegistry` and keep routing hand presses to a disabled lever.
+
+Solution: cache the exact collider in `_registeredActivationVolume` immediately after registration, then unregister that cached collider and clear the cache during teardown.
+
+Rejected Alternatives: assuming serialized fields are immutable during play was rejected because this workspace has multiple agents and runtime repair paths. Searching the registry for this receiver was rejected because the registry is intentionally fixed-key and lookup-only for the interaction hot path.
+
+Scalability potential: Low/Middle/High/Ultra all keep the same fixed receiver table. Dense cockpit panels avoid stale receiver entries when authored controls are reconfigured or disabled.
+
+Hardware Impact: no steady-frame cost. Cold lifecycle adds one managed reference field assignment and prevents stale registry probes from surviving after a control is disabled.
+
+## Decision 19 - Registry saturation must not look like successful registration
+
+Problem: `PhysicalHandReceiverRegistry.Register()` logged once when the fixed table saturated, but it returned `void`. The VR lever therefore marked itself registered even when no receiver slot was written. In a dense cockpit, that creates a silent dead lever instead of a truthful lifecycle state.
+
+Solution: add `TryRegister()` to return the actual slot-write result and keep `Register()` as a compatibility wrapper. `OpenXRManualOverrideLever.TryRegisterReceiver()` now sets `_receiverRegistered` and `_registeredActivationVolume` only after `TryRegister()` succeeds.
+
+Rejected Alternatives: raising `MaxReceivers` was rejected because it hides authoring pressure and increases fixed memory without proving the intended cockpit budget. Changing every existing caller was rejected because the compatibility wrapper keeps the old API stable while the VR lever uses the stricter path.
+
+Scalability potential: Low/Middle/High/Ultra all preserve the same fixed-size receiver table and O(1) lookup. Dense cockpit authoring gets truthful failure state instead of false registration.
+
+Hardware Impact: no steady-frame cost and no hot lookup change. Cold registration pays one boolean return. On saturated tables, the lever avoids stale local state and keeps later retry paths possible.
+
+## Decision 20 - Receiver truth must cover all physical-control consumers
+
+Problem: after `TryRegister()` existed, adjacent physical controls still called the compatibility `Register()` wrapper and marked themselves registered even if the fixed table saturated. Two controls also kept `MinimumDeltaTime` fake progress, so a dispatcher `dt=0` frame could still move visuals or repeat a panel Hold event. Their haptic fallback also treated every non-left hand value as right-hand feedback.
+
+Solution: move `PhysicalPanelButton`, `PhysicalSnapSwitch`, and `LifePodSeatStrapLatch` to `TryRegister()` for lifecycle truth. Panel buttons and snap switches now cache the exact registered collider before unregister. `FastDecayBlend()` in both controls now returns zero on sanitized zero-dt; panel buttons skip hold-repeat dispatch and unchanged mesh writes when time is frozen, and snap switches return before visual solve on zero-dt frames. Panel/switch haptics now fall back to both-hand motor masks for invalid/future hand-side values after authored layer masks fail. Public registry methods now document saturation and collider identity semantics.
+
+Rejected Alternatives: leaving old callers on `Register()` was rejected because it creates a split-brain registry contract. Raising `MaxReceivers` was rejected because it hides cockpit density pressure and increases fixed memory without proving budget. Keeping `MinimumDeltaTime` was rejected because deterministic time control must obey dispatcher `dt`, not force visible progress through pause/time-dilation frames. Defaulting unknown hand side to right was rejected because bad hand identity should not create confident wrong tactile localization.
+
+Scalability potential: Low keeps fixed O(1) receiver lookup with truthful saturation failure and less pause-frame work. Middle/High can run denser cockpit panels without stale receiver state. Ultra can spend the saved control stability budget on richer tactile/audio response because the physical controls remain scalar, event-driven, and allocation-free.
+
+Hardware Impact: i3/MX350 pays no steady-frame registration cost. Cold registration adds one boolean result check and one collider-reference cache. Zero-dt frames avoid snap-switch visual solve/write and prevent panel Hold spam risk; stable panel frames skip unchanged mesh writes. Haptic fallback adds one branch only on haptic dispatch frames. No project-wide numeric H-Phi gain is claimed because no full audit completed in this pass.
+
+## Decision 21 - Empty receiver tables must not still pay physics probe cost
+
+Problem: `PhysicalInteractionHandler.TickPhysicalPanelButtons()` ran the physical panel probe path whenever XR panel buttons were enabled and XR was active, even if no collider-backed receiver was registered. In empty or transition cockpit states, that still paid for hand pose reads, signal-service reads, `OverlapSphereNonAlloc`, bounds extraction, and registry lookups that could not produce a press.
+
+Solution: maintain a scalar receiver count inside `PhysicalHandReceiverRegistry` and expose `HasReceivers`. The count increments only when a new open-addressed slot is written and decrements only when an exact collider/receiver pair is removed. `TickPhysicalPanelButtons()` now checks `HasReceivers` before reading probe pose or issuing the physics overlap.
+
+Rejected Alternatives: deregistering the interaction handler when the table is empty was rejected because receiver registration has no event callback and late-spawned cockpit controls must become live on the next dispatcher tick. Scanning the 128-slot table every frame was rejected because it replaces one cheap branch with O(n) registry work. Raising/lowering receiver capacity was rejected because this was not a saturation problem.
+
+Scalability potential: Low/toaster states skip panel physics probes when no usable receiver exists. Middle keeps the same fixed table and next-tick activation for late-spawned controls. High/Ultra can run denser cockpits because active receivers still use the same O(1) hash lookup while empty transitional periods avoid wasted physics queries.
+
+Hardware Impact: i3/MX350 pays one static integer comparison per active XR tick and one int increment/decrement on receiver lifecycle. Empty receiver states save one hand pose read, one interaction-signal service read, one `OverlapSphereNonAlloc`, and up to eight candidate bounds/registry checks per XR frame. Normal registered-control frames keep the existing NonAlloc path and 0 B/frame behavior.
+
+## Decision 22 - Physical hand fixed solve must obey zero dispatcher time
+
+Problem: `PhysicalHandController.SanitizeFixedDeltaSeconds()` converted non-finite or zero fixed-step deltas into `MinimumDeltaTime`. A dispatcher `dt=0` frame could therefore advance haptic cooldowns, harvest snap timers, recoil decay, open/finger pose blending, suit shell movement, virtual hand lag, articulation targets, and grabbed-body force solve despite no simulation time passing.
+
+Solution: sanitize non-finite or non-positive fixed deltas to zero, return early from `StepFixed()` on zero, and keep the positive-step minimum clamp for tiny positive deltas that feed velocity divisions. Preserve `_lastFingerPoseDeltaTime` when a finger pose job is already scheduled so the late-frame completion for a previous valid fixed step still uses its original blend delta.
+
+Rejected Alternatives: leaving `MinimumDeltaTime` as a universal fallback was rejected because it forces fake progress through pause/time-dilation. Allowing the rest of the fixed solve to run with `dt=0` was rejected because the hand solver divides by dt in virtual hand and angular velocity paths. Clearing scheduled finger jobs was rejected because job completion belongs to `LateFrameTick()`.
+
+Scalability potential: Low/toaster pause frames skip the full physical hand fixed solve. Middle keeps deterministic authored hand state during time dilation. High/Ultra can spend the saved zero-time frames on presentation without desynchronizing the physical hand proxy.
+
+Hardware Impact: i3/MX350 pays one zero-dt branch in `StepFixed()`. Zero-time frames avoid haptic cooldown work, harvest snap advance, recoil/open-pose solve, suit shell updates, virtual hand lag, articulation drive writes, grabbed-body force solve, and finger job scheduling. Normal positive fixed steps keep the existing minimum clamp and division safety. 0 B/frame.
+
+## Decision 23 - Late-frame hand work must be job-pending, not grab-lifetime
+
+Problem: `PhysicalHandController.RequiresLateFrameTick` stayed true for the whole grab lifetime even though `LateFrameTick()` only calls `CompleteScheduledFingerPose()`. The XR idle-bypass function also read `InputDispatcher` state before returning false for grabs, harvest snaps, suit shell, or active suit contact. Suit-contact haptics treated every non-left hand side as right-hand output.
+
+Solution: narrow `RequiresLateFrameTick` to `_fingerPoseScheduled`. Move active/contact solve gates before dispatcher access in `ShouldBypassXRHandKinematicUpdate()`. Add explicit XR controller-index resolution that rejects invalid hand side, and add `BothMotorMask`/`ResolveHandMotorMask()` so invalid/future hand sides generate non-localized both-hand contact feedback instead of right-biased feedback.
+
+Rejected Alternatives: leaving late-frame registered for all grabs was rejected because no late-frame work exists without a pending finger job. Keeping dispatcher reads before active solve gates was rejected because the solve state already proves the idle-bypass path cannot be used. Defaulting invalid side to right was rejected for the same reason as panel/switch haptics: bad identity should not create precise wrong tactile routing.
+
+Scalability potential: Low/toaster avoids empty late-frame calls and unnecessary XR input-state reads during active physical interactions. Middle keeps deterministic finger job completion because fixed tick still registers late-frame immediately after scheduling. High/Ultra can run richer hand/contact presentation without paying idle-probe overhead in every grabbed/contact frame.
+
+Hardware Impact: i3/MX350 saves one empty dispatcher late-frame callback per rendered frame during grabs with no pending finger job, and one dispatcher/input-state lookup per fixed step while grabbing, harvest-snapping, suit-shell-enabled, or in suit contact. Haptic fallback adds only branch work on contact haptic dispatch. 0 B/frame.
+
+## Decision 24 - Lever IK smoothing should use presentation-grade math, not spherical interpolation
+
+Problem: `OpenXRManualOverrideLever.UpdateIkTarget()` used `Vector3.Lerp` and `Quaternion.Slerp` every grabbed presentation tick. The target is an IK helper transform, not gameplay truth; the lever angle/latched state remains scalar and authoritative. Slerp buys precision that is not visible here while costing more than a normalized lerp.
+
+Solution: replace position interpolation with `math.lerp(float3)` and rotation interpolation with `ApproximateNlerp()`. The helper performs shortest-arc sign correction, blends quaternion components, validates length squared, and normalizes with `math.rsqrt`.
+
+Rejected Alternatives: keeping Slerp was rejected because this is presentation smoothing, not simulation authority. Snapping directly to the handle was rejected because prior work deliberately restored visible IK smoothing. Adding a Burst job was rejected because one IK transform blend is cheaper on the main thread.
+
+Scalability potential: Low/toaster saves grabbed-frame presentation math. Middle keeps smooth IK output. High/Ultra can spend the saved cycles on denser cockpit tactile/audio/visual feedback while the manual override lever remains a scalar kinematic control.
+
+Hardware Impact: i3/MX350 removes one `Quaternion.Slerp` and one `Vector3.Lerp` from grabbed lever presentation frames, replacing them with struct math and one `rsqrt`. 0 B/frame. Gameplay angle solve and blackbox telemetry are unchanged.
+
+## Decision 25 - Panel hand pose should not be sampled without a signal sink
+
+Problem: `TickPhysicalPanelButtons()` read hand pose and validated it before checking whether `GlobalRegistry.InteractionSignals` existed and was initialized. If the interaction signal service is unavailable during boot or service reload, no receiver can queue a valid press, so the pose read and all later probe work are dead.
+
+Solution: move the existing `InteractionSignals` readiness check before `TryGetInteractionProbePose()`, hand collider fetch, probe radius resolve, and `OverlapSphereNonAlloc`.
+
+Rejected Alternatives: leaving the order unchanged was rejected because service outage is a clear fast-fail condition. Caching the signal service as a long-lived field was rejected because GlobalRegistry can hot-swap services and this path already has a cheap property read.
+
+Scalability potential: Low/toaster boot and service-transition frames avoid wasted physical hand sampling. Middle/High keep identical behavior once the signal service is initialized. Ultra can keep dense cockpit controls without extra bridge work during service reloads.
+
+Hardware Impact: i3/MX350 saves one physical hand pose read and all downstream panel-probe work per XR frame when the signal service is absent/uninitialized. Normal initialized frames pay the same work as before, just in a safer order. 0 B/frame.
+
+## Decision 26 - Physical receiver callbacks must share the probe frame stamp
+
+Problem: the receiver interface had started carrying a `sampleFrame`, but two explicit implementations still declared the old five-argument signature and sampled `Time.frameCount` inside the callback. That is both compile-risk and timing drift: the probe can select a receiver on one frame stamp while concrete controls record or publish a different frame.
+
+Solution: complete the six-argument `IPhysicalPanelButtonReceiver.TryQueueHandPress()` contract across panel buttons and snap switches, document the frame stamp on the interface and manual override lever, and capture one `sampleFrame` in `PhysicalInteractionHandler.TickPhysicalPanelButtons()` before dispatching to the selected receiver. Concrete public receiver methods keep a `sampleFrame = -1` compatibility default, but interface dispatch now forwards the probe-owned value.
+
+Rejected Alternatives: removing the optional fallback from public concrete APIs was rejected because tools or direct scene scripts may still call those APIs outside the physical probe bridge. Sampling `Time.frameCount` inside every receiver was rejected because it is redundant and can desynchronize signal packet frames from the actual probe sample. Adding a managed event envelope was rejected because the existing stack-only interface already carries all required fields.
+
+Scalability potential: Low/toaster path gets fewer receiver callback property reads and no extra allocation. Middle/High keep consistent interaction packet frames across manual levers, panel buttons, switches, and strap latches. Ultra can layer denser cockpit feedback from the same frame stamp without introducing a frame-source race.
+
+Hardware Impact: i3/MX350 saves up to two redundant frame property reads on accepted panel/switch physical receiver callbacks and removes a stale explicit-interface compile-risk. Normal hot path still uses one stack int and existing NonAlloc overlap flow. 0 B/frame.
+
+## Decision 27 - Invalid lever delta must freeze instead of pretending 60 Hz passed
+
+Problem: `OpenXRManualOverrideLever.SanitizeDeltaSeconds()` treated non-finite dispatcher deltas as `0.016666668f`. That silently advanced the spring, non-VR fallback pull, IK target smoothing, ratchet/latch evaluation, and blackbox state during a frame whose time source was corrupt.
+
+Solution: return zero for non-finite deltas and keep the existing clamp for finite values. Delete the now-unused `DefaultDeltaSeconds` constant so fake time is not left as a future regression path.
+
+Rejected Alternatives: keeping a 60 Hz fallback was rejected because it hides upstream timing corruption and creates false cockpit motion. Dumping blackbox on every invalid delta was rejected because delta corruption is already contained by freezing and blackbox dumps are reserved for non-finite state entering native telemetry. Adding another native state flag was rejected because zero dt already records a stable frame without extra memory.
+
+Scalability potential: Low/toaster avoids accidental lever work during scheduler faults or pause-edge cases. Middle/High keep deterministic lever state under invalid timing input. Ultra can spend performance on presentation once a valid frame resumes, without latch state moving during corrupt time.
+
+Hardware Impact: i3/MX350 saves the entire false lever tick on invalid-delta frames: no spring integration progress, no fallback pull progress, no IK smoothing step, no ratchet movement, no latch advancement. Normal valid frames are unchanged. 0 B/frame.
+
+## Decision 28 - Latched manual override must leave hot lanes
+
+Problem: after a successful latch, the manual override lever is a one-shot control, but it remained registered in the `PriorityLayer.Player` dispatcher lane and in `PhysicalHandReceiverRegistry`. Its next frames would still read input/XR state, run the latched branch, apply visual state, evaluate IK/ratchet/latch gates, and write telemetry even though no future hand sample can change the result.
+
+Solution: call `TryUnregisterReceiver()` and `TryUnregisterTick()` at the end of `TryLatch()` after manual override, haptic, and prologue signals are published. Guard `TryRegisterReceiver()` and `TryRegisterTick()` with `_latched` so dispatcher hot-swap or lifecycle re-entry cannot revive the spent control. The current latch tick still executes `WriteBlackBoxFrame(currentAngle)` after unregistering, preserving final-frame telemetry.
+
+Rejected Alternatives: leaving the latched branch in `Tick()` was rejected because it preserves permanent 60 Hz overhead for a one-shot cockpit action. Destroying/disabling the component was rejected because authored visuals, inspector state, and post-latch scene queries may still need the component alive. Unregistering before publishing signals was rejected because the latch event must remain ordered and observable.
+
+Scalability potential: Low/toaster stops paying idle lever work after the override is complete. Middle/High can run denser cockpit panels because spent controls free fixed receiver-table capacity. Ultra can layer persistent post-latch visuals elsewhere without keeping the manual lever simulation alive.
+
+Hardware Impact: i3/MX350 saves one dispatcher `Tick()` call plus one occupied receiver-table slot for every completed manual override lever after latch. On active frames before latch, added cost is two cold `_latched` guard checks in lifecycle registration methods and two unregister calls on the single latch frame. 0 B/frame allocations.
+
+## Decision 29 - Latch-frame telemetry must reflect forced native angle
+
+Problem: `TryLatch(currentAngle)` forces `_leverAngles[0]`, `_leverTargets[0]`, and `_leverVelocities[0]` into the final latched state, but the next `WriteBlackBoxFrame(currentAngle)` call still used the pre-latch local variable. A blackbox frame could therefore carry `FlagLatched` with a non-max angle while target and velocity already showed the forced latch state.
+
+Solution: refresh `currentAngle` from `_leverAngles[0]` immediately after `TryLatch(currentAngle)` and before `WriteBlackBoxFrame(currentAngle)`. This makes the final latch-frame telemetry internally coherent without moving signal publication order or changing latch mechanics.
+
+Rejected Alternatives: changing `TryLatch()` to return a bool/new angle was rejected as unnecessary surface area for one caller. Writing telemetry before latch was rejected because the blackbox must show the post-latch state on the latch frame. Duplicating a second telemetry write was rejected because it burns buffer entries and muddies the last-300-frame record.
+
+Scalability potential: Low/Middle/High/Ultra all get truthful crash evidence with no extra data structure. Ultra post-latch effects can trust the blackbox angle if later diagnostics correlate signal frames with telemetry frames.
+
+Hardware Impact: i3/MX350 pays one scalar NativeArray read per active lever tick after latch evaluation. The read is accepted because it prevents misleading blackbox evidence and adds 0 B/frame.
+
+## Decision 30 - Dispatcher hot-swap must not clear tick identity without unregistering
+
+Problem: the dispatcher hot-swap callback set `_registeredTick = false` before trying to register against the replacement dispatcher. The dispatcher lanes and GlobalRegistry updatable bucket are static fixed buckets, so clearing the local flag first can leave the lever registered while local lifecycle state says it is not. Later `OnDisable()` would then skip unregistering, or a re-register attempt could fail because the item is still present.
+
+Solution: call `TryUnregisterTick()` on dispatcher replacement before inspecting `currentService`. When a replacement exists, keep the existing `EnsureNativeStateForLifecycle()` and guarded `TryRegisterTick()` path. This preserves one authoritative lifecycle identity: registered flag only changes through register/unregister helpers.
+
+Rejected Alternatives: keeping the blind flag clear was rejected because it can create stale dispatcher entries. Directly calling `SystemDispatcher.Unregister()` was rejected because `GlobalRegistry.UnregisterUpdatable()` already removes both the global bucket and dispatcher lane. Adding a second flag for "old dispatcher" was rejected as unnecessary state.
+
+Scalability potential: Low/toaster avoids hidden duplicate or stale update-lane work after service rebinding. Middle/High/Ultra keep deterministic bootstrap/hot-swap behavior as cockpit controls are streamed or service owners are replaced.
+
+Hardware Impact: no steady-frame impact. Cold dispatcher replacement pays one idempotent unregister scan across fixed buckets, preventing a permanent stray `Tick()` slot and missed teardown. 0 B/frame.
+
+## Decision 31 - Unregister helpers must recover from local flag drift
+
+Problem: the unregister helpers still treated local booleans as authoritative in some teardown cases. Previous dispatcher hot-swap work showed those flags can drift from fixed GlobalRegistry or receiver-table state, which means disable, latch, or hot-swap cleanup can leave stale entries alive.
+
+Solution: make receiver cleanup use `_registeredActivationVolume` as the removal key whenever it exists, independent of `_receiverRegistered`, then clear both local fields. Make tick cleanup unconditionally call `GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player)` before clearing `_registeredTick`. Both APIs are idempotent fixed-bucket removals and are only used on cold lifecycle/latch paths.
+
+Rejected Alternatives: keeping flag-only guards was rejected because it fails exactly when lifecycle state is already inconsistent. Searching receiver tables from the lever was rejected because the registry already owns exact-key removal. Raising receiver capacity was rejected because this is stale-state correctness, not density pressure.
+
+Scalability potential: Low/toaster avoids hidden inert lever ticks and stale receiver slots after latch or streamed-scene teardown. Middle/High keep predictable service rebinding under cockpit streaming. Ultra can stack more physical controls because spent or disabled levers vacate fixed tables deterministically.
+
+Hardware Impact: no steady-frame impact. Cold teardown pays at most one fixed-bucket unregister scan and one receiver-table exact-key removal. i3/MX350 gain is prevention of permanent stray work: one avoided player-lane tick and one freed receiver slot per affected lever.
+
+## Decision 32 - Latched levers must leave service hot-swap tables too
+
+Problem: after latch, the lever now leaves the player tick lane and physical receiver table, but it could remain registered as a `GlobalRegistry` hot-swap listener. A completed one-shot lever cannot re-enter active simulation because `_latched` guards block registration, so the listener only consumes fixed table capacity and future service-replacement callback scans.
+
+Solution: call `TryUnregisterHotSwapListener()` at the end of `TryLatch()` after manual override, haptic, prologue, receiver, and tick cleanup. Add the same `_latched` guard to `TryRegisterHotSwapListener()` that tick and receiver registration already use, so disabled/enabled completed controls cannot re-enter the listener table. Make hot-swap unregister always call the idempotent `GlobalRegistry.TryUnregisterHotSwapListener(this)` before clearing the local flag, so stale flags cannot skip cleanup. Existing disable/destroy cleanup remains idempotent.
+
+Rejected Alternatives: keeping the listener until `OnDisable()` was rejected because many cockpit controls remain enabled as post-latch authored scene state. Relying only on latch-time unregister was rejected because streamed scene objects can be disabled and re-enabled after completion. Keeping a local flag-gated unregister was rejected because it preserves stale listener entries when the flag is already wrong. Polling service state from Tick was rejected because the lever no longer ticks after latch. Disabling the component was rejected because designers may still query or display the latched read model.
+
+Scalability potential: Low/toaster avoids dead service callback work in long sessions. Middle/High keep fixed GlobalRegistry listener tables available for streamed cockpit controls. Ultra can stack more animated post-latch presentation without keeping the spent control in service lifecycle machinery.
+
+Hardware Impact: no steady-frame impact. The latch frame pays one idempotent fixed-table listener removal and prevents future hot-swap callback dispatch for the spent lever. i3/MX350 gain is freed listener capacity plus avoided cold callback work during service rebinding.
+
+## Decision 33 - Physical hand sample frames must be monotonic
+
+Problem: `TryQueueHandPress()` accepted any valid local hand position and wrote `_lastHandFrame` afterward. If a bridge, test harness, or future two-hand probe path delivered an older callback after a newer one, the lever could regress to stale hand pose/side data and then release or haptically localize against the wrong hand.
+
+Solution: resolve the incoming sample frame once, using the probe-supplied frame when present and `Time.frameCount` only for direct compatibility callers. Reject samples older than `_lastHandFrame` before world-to-local transform math or distance checks mutate state. The current frame and same-frame samples are still accepted.
+
+Rejected Alternatives: last-writer-wins was rejected because callback order is not authoritative interaction time. A per-hand sample queue was rejected because the manual override lever only needs the freshest physical grab pose, and queues would add unnecessary state. Rejecting same-frame duplicates was rejected because future left/right probes may legitimately report in one frame.
+
+Scalability potential: Low/toaster gets stable hand ownership without extra containers. Middle/High keep deterministic haptic side routing under denser cockpit probes. Ultra can layer richer IK/haptic presentation on the freshest sample without solving a multi-sample history.
+
+Hardware Impact: one integer compare on receiver callbacks only, no steady dispatcher cost, no allocation. i3/MX350 avoids false stale-grab release and wrong-hand haptic work after callback reordering; stale callbacks also skip one transform conversion and any handle-distance fallback.
+
+## Decision 34 - Math LOD must follow typed scalability events
+
+Problem: the lever seeded `_lowTierMath` from `GlobalRegistry.ScalabilityTier` only during enable. If the platform governor or user options changed the active profile while the cockpit was live, IK presentation could stay on the wrong Low/High blend until the component was disabled and re-enabled.
+
+Solution: implement `IScalabilityChangedEventListener`, register with `ScalabilityEvents` on enable, and update `_lowTierMath` directly from `ScalabilityChangedEvent.CurrentQualityTier`. Disable, destroy, and latch unregister the listener; registration refuses latched controls. `Tick()` remains free of scalability registry polling.
+
+Rejected Alternatives: polling `GlobalRegistry.ScalabilityTier` in `Tick()` was rejected because it adds a hot-path service read. Keeping the cold seed only was rejected because runtime profile changes are part of the scalability pillar. Adding a new event lane was rejected because `ScalabilityEvents` already owns a typed fixed listener bucket.
+
+Scalability potential: Low/toaster can downgrade IK smoothing immediately when the governor selects MX350/Low. Middle/High can restore smoother presentation when budget returns. Ultra can keep the richer hand target blend without waiting for lifecycle churn.
+
+Hardware Impact: 0 us steady-state. Lifecycle pays one fixed-bucket listener register/unregister. Tier changes pay one bool write. i3/MX350 avoids stale high-tier IK blend after thermal or battery downgrade.
+
+## Decision 35 - Receiver identity must require runnable lever state
+
+Problem: `TryRegisterReceiver()` could register the manual override collider even when native lever state was not allocated, and dispatcher hot-swap removal only left the tick lane. That can leave a dead receiver in the physical hand table while no dispatcher tick can consume queued samples.
+
+Solution: add `_nativeAllocated` to the receiver registration guard. On dispatcher removal, unregister the receiver along with the tick lane. On dispatcher replacement, recover native state first, then register receiver, then register tick. The scalability event callback also now exits for disabled or latched controls and uses `payload.CurrentTier` directly, avoiding a cold rich-tier conversion.
+
+Rejected Alternatives: keeping the receiver registered and relying on `TryQueueHandPress()` to reject samples was rejected because the overlap path already paid to resolve the receiver. Leaving receivers active while the dispatcher is absent was rejected because no lever simulation lane exists to consume hand samples. Using `payload.CurrentQualityTier` in the callback was rejected because the normalized byte tier is already present.
+
+Scalability potential: Low/toaster avoids wasting scarce fixed receiver capacity on allocation-failed or dispatcher-detached controls. Middle/High keep receiver/tick identity coherent through service rebinding. Ultra can stream more cockpit controls because dead manual override levers vacate hot physical interaction tables faster.
+
+Hardware Impact: 0 us normal steady-state. Cold dispatcher removal pays one idempotent receiver unregister; dispatcher replacement pays one guarded receiver register. i3/MX350 avoids useless overlap-to-receiver callbacks and preserves fixed receiver slots when native allocation or dispatcher availability is not valid.
+
+## Decision 36 - Shared cockpit receivers must not trust stale booleans
+
+Problem: `PhysicalPanelButton` and `PhysicalSnapSwitch` still used flag-gated receiver and UI updatable teardown. If `_receiverRegistered` or `_registered` drifted false while the fixed registry still contained the object, disable/settle cleanup could leave stale physical receiver slots or inert UI-lane ticks.
+
+Solution: make both controls unregister physical receivers from `_registeredActivationVolume` whenever the cached collider exists, then clear local fields. Make both UI updatable `Unregister()` helpers call `GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI)` unconditionally before clearing `_registered`.
+
+Rejected Alternatives: leaving these controls unchanged was rejected because they share the same physical hand receiver table as the manual override lever. Searching the registry from each control was rejected because exact cached collider identity is already owned locally. Adding another registration flag was rejected because the problem is stale flags, not missing flags.
+
+Scalability potential: Low/toaster avoids permanent stale receiver slots and UI ticks after scene streaming, disable ordering, or lifecycle drift. Middle/High keep the physical cockpit table deterministic across buttons, switches, and manual levers. Ultra can ship denser cockpit panels without paying for dead receiver entries.
+
+Hardware Impact: 0 us active-frame cost. Cold teardown pays an idempotent fixed-bucket unregister scan. i3/MX350 gain is prevention of persistent stale overlap receivers and inert UI dispatcher calls after lifecycle drift.
+
+## Decision 37 - Receiver registration must repair cached identity before replacing it
+
+Problem: cached-volume unregister fixes teardown, but registration still used `_receiverRegistered` as the only change-detection gate in manual levers, panel buttons, and snap switches. If the flag drifted false while `_registeredActivationVolume` still held an old collider, registering a new activation volume could overwrite the cache and strand the old collider in `PhysicalHandReceiverRegistry`.
+
+Solution: make receiver registration inspect `_registeredActivationVolume` directly. If the same collider is already registered and the flag is live, return. If any cached collider exists or the flag is true for a different state, call the idempotent unregister helper before registering the current activation volume.
+
+Rejected Alternatives: keeping registration unchanged was rejected because the prior cleanup pass made the cached collider the authoritative teardown key. A registry-wide scan was rejected because exact old collider identity is already cached locally. Clearing the cache without unregistering was rejected because it hides the leak.
+
+Scalability potential: Low/toaster avoids stale receiver slots after runtime prefab repair, scene streaming, or enable-order drift. Middle/High keep dense cockpit receiver tables stable across authored control replacement. Ultra can support more physical panel controls without carrying dead collider entries.
+
+Hardware Impact: 0 us active-frame cost. Cold registration pays one cached-reference branch and, only on drift, one idempotent unregister before re-registering. i3/MX350 gain is fixed receiver capacity preservation and avoided stale overlap dispatch.

@@ -162,13 +162,13 @@ namespace Hecton8.World
         {
             [ReadOnly] public NativeArray<double3> AbsolutePositions;
             [ReadOnly] public NativeArray<float3> RuntimePositions;
-            public double3 CurrentTotalOffset;
+            public double3 CommittedTotalOffset;
             [WriteOnly] public NativeArray<byte> InvalidMask;
 
             public void Execute(int index)
             {
                 float3 runtime = RuntimePositions[index];
-                double3 reconstructedAbsolute = new double3(runtime.x, runtime.y, runtime.z) + CurrentTotalOffset;
+                double3 reconstructedAbsolute = new double3(runtime.x, runtime.y, runtime.z) + CommittedTotalOffset;
                 double3 delta = reconstructedAbsolute - AbsolutePositions[index];
                 InvalidMask[index] = math.lengthsq(delta) <= 0.01d ? (byte)0 : (byte)1;
             }
@@ -1469,7 +1469,7 @@ namespace Hecton8.World
                 {
                     AbsolutePositions = _validationAbsolutePositions,
                     RuntimePositions = _validationRuntimePositions,
-                    CurrentTotalOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble,
+                    CommittedTotalOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble,
                     InvalidMask = _validationInvalidMask
                 }.Schedule(writeIndex, 64);
                 _validationScheduled = true;

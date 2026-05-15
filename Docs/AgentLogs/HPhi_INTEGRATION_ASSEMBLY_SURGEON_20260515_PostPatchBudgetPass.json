@@ -1,0 +1,360 @@
+﻿{
+    "Timestamp":  "2026-05-15 03:47:18 +04:00",
+    "Scope":  "Assets/_Project/Scripts",
+    "EvidenceClass":  "STATIC_SOURCE",
+    "Scores":  {
+                   "RuntimeHPhiNarrow":  0.010498583,
+                   "RuntimeHPhiRisk":  0.000575099,
+                   "AllSourceHPhiNarrow":  0.009349826,
+                   "AllSourceHPhiRisk":  0.00047291,
+                   "RiskIntegration":  0.054778747,
+                   "ArchitecturalPurity":  0.996460177,
+                   "DataSovereignty":  0.020905923,
+                   "MemoryAlignment":  0.503966155,
+                   "BinarySafeRatio":  0.018508726,
+                   "AupPrecisionIntegrity":  1
+               },
+    "Counts":  {
+                   "RuntimeFiles":  1276,
+                   "RuntimeLines":  860874,
+                   "SignalBusPush":  333,
+                   "GlobalRegistrySurface":  5139,
+                   "EventPublish":  28,
+                   "UnityUpdateMethods":  2,
+                   "DataVaultRefs":  150,
+                   "NativeArrayRefs":  7025,
+                   "StructDeclarations":  1891,
+                   "StructLayoutAttributes":  953,
+                   "FindObjectCalls":  5,
+                   "GetComponentCalls":  541,
+                   "DisposeCalls":  1251,
+                   "AupPrecisionSafe":  363,
+                   "AupPrecisionRisk":  0
+               },
+    "Budgets":  {
+                    "AupPrecisionRisk":  {
+                                             "Enabled":  true,
+                                             "Max":  0,
+                                             "Actual":  0,
+                                             "Passed":  true,
+                                             "EvidenceClass":  "STATIC_SOURCE_FULL_SCAN"
+                                         },
+                    "DuplicateSignalNames":  {
+                                                 "Enabled":  true,
+                                                 "Max":  6,
+                                                 "Actual":  6,
+                                                 "Passed":  true,
+                                                 "EvidenceClass":  "STATIC_SOURCE_FULL_SCAN"
+                                             }
+                },
+    "CoreGraph":  {
+                      "CoreAsmdef":  "Assets\\_Project\\Scripts\\Hecton8.Core.asmdef",
+                      "CoreProject":  "Hecton8.Core.csproj",
+                      "BuildGraphGate":  {
+                                             "CoreBuildProjectReferencesDisabledByDefault":  true,
+                                             "CoreBuildInParallelDisabledByDefault":  true,
+                                             "OptInProperty":  "HectonBuildProjectReferences=true"
+                                         },
+                      "Counts":  {
+                                     "CoreAsmdefReferenceCount":  43,
+                                     "CoreAsmdefDebtReferenceCount":  25,
+                                     "GeneratedProjectReferenceCount":  12,
+                                     "GeneratedProjectDebtReferenceCount":  10,
+                                     "SourceBackedBridgeReferenceCount":  25,
+                                     "SourceBackedBridgeDebtReferenceCount":  14,
+                                     "SourceBackedCompileBridgeReferenceCount":  18,
+                                     "SourceBackedCompileBridgeDebtReferenceCount":  8,
+                                     "ProjectReferenceReplacementReferenceCount":  7,
+                                     "ProjectReferenceReplacementDebtReferenceCount":  6
+                                 },
+                      "CoreAsmdefDebtReferences":  [
+                                                       "Hecton8.Animation.IK",
+                                                       "Hecton8.Inventory.Algorithms",
+                                                       "Hecton8.Inventory.Corrosion",
+                                                       "Hecton8.Environment.Fluids",
+                                                       "Hecton8.World.Terrain",
+                                                       "Hecton8.AI.Cognition",
+                                                       "Hecton8.AI.Ecology.Migration",
+                                                       "Hecton8.Physics.Determinism",
+                                                       "Hecton8.Physics.CCD",
+                                                       "Hecton8.Audio.Propagation",
+                                                       "Hecton8.Audio.Virtualization",
+                                                       "Hecton8.Audio.Echolocation",
+                                                       "Hecton8.Logistics",
+                                                       "Hecton8.Logistics.Grid",
+                                                       "Hecton8.Cartography",
+                                                       "Hecton8.Input",
+                                                       "Unity.InputSystem",
+                                                       "Unity.Addressables",
+                                                       "Unity.ResourceManager",
+                                                       "Unity.Profiling.Core",
+                                                       "Unity.TextMeshPro",
+                                                       "UnityEngine.UI",
+                                                       "Unity.RenderPipelines.Core.Runtime",
+                                                       "Unity.RenderPipelines.Universal.Runtime",
+                                                       "GPUInstancer"
+                                                   ],
+                      "GeneratedProjectDebtReferences":  [
+                                                             "Hecton8.Input.csproj",
+                                                             "Hecton8.Input.Generated.csproj",
+                                                             "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                             "GPUInstancer.csproj",
+                                                             "Crest.csproj",
+                                                             "WaveHarmonic.Crest.csproj",
+                                                             "WaveHarmonic.Crest.Shared.csproj",
+                                                             "ShapesRuntime.csproj",
+                                                             "EasySave3.csproj",
+                                                             "VolumetricLightBeam.csproj"
+                                                         ],
+                      "SourceBackedBridgeDebtReferences":  [
+                                                               "Hecton8.AI.Ecology.Migration",
+                                                               "Hecton8.Audio.Echolocation",
+                                                               "Hecton8.Audio.Propagation",
+                                                               "Hecton8.Environment.Fluids",
+                                                               "Hecton8.Inventory.Algorithms",
+                                                               "Hecton8.Inventory.Corrosion",
+                                                               "Hecton8.Physics.CCD",
+                                                               "Hecton8.World.Terrain",
+                                                               "Crest",
+                                                               "GPUInstancer",
+                                                               "Hecton8.Input",
+                                                               "Unity.RenderPipelines.Universal.Runtime",
+                                                               "WaveHarmonic.Crest",
+                                                               "WaveHarmonic.Crest.Shared"
+                                                           ],
+                      "CoreAsmdefUnusedReferenceScan":  {
+                                                            "Enabled":  false
+                                                        }
+                  },
+    "DuplicateSignalNameAudit":  {
+                                     "EvidenceClass":  "STATIC_SOURCE",
+                                     "SignalStructDeclarationCount":  173,
+                                     "DuplicateSignalNameCount":  6,
+                                     "DuplicateSignalDeclarationCount":  12,
+                                     "DuplicateNames":  [
+                                                            {
+                                                                "Name":  "CameraFrustumSignal",
+                                                                "Count":  2,
+                                                                "Files":  [
+                                                                              "Core\\GlobalSignals.cs",
+                                                                              "World\\Contracts\\InstanceCullingContracts.cs"
+                                                                          ]
+                                                            },
+                                                            {
+                                                                "Name":  "CameraPositionSignal",
+                                                                "Count":  2,
+                                                                "Files":  [
+                                                                              "Core\\GlobalSignals.cs",
+                                                                              "World\\Contracts\\InstanceCullingContracts.cs"
+                                                                          ]
+                                                            },
+                                                            {
+                                                                "Name":  "CombatDamageSignal",
+                                                                "Count":  2,
+                                                                "Files":  [
+                                                                              "Core\\GlobalSignals.cs",
+                                                                              "Gameplay\\Combat\\CombatDamageRuntime.cs"
+                                                                          ]
+                                                            },
+                                                            {
+                                                                "Name":  "DamageSignal",
+                                                                "Count":  2,
+                                                                "Files":  [
+                                                                              "Core\\GlobalSignals.cs",
+                                                                              "Gameplay\\HabitatIntegrityManager.cs"
+                                                                          ]
+                                                            },
+                                                            {
+                                                                "Name":  "InteractionSignal",
+                                                                "Count":  2,
+                                                                "Files":  [
+                                                                              "Gameplay\\PlayerSignalEvents.cs",
+                                                                              "Interaction\\EquipmentInteractionContracts.cs"
+                                                                          ]
+                                                            },
+                                                            {
+                                                                "Name":  "SectorHydratedSignal",
+                                                                "Count":  2,
+                                                                "Files":  [
+                                                                              "Core\\Contracts\\MacroDatabaseContracts.cs",
+                                                                              "Core\\GlobalSignals.cs"
+                                                                          ]
+                                                            }
+                                                        ]
+                                 },
+    "TopAupPrecisionRiskFiles":  [
+
+                                 ],
+    "TopOwnerBlockedDataVaultCandidates":  [
+                                               {
+                                                   "File":  "HectonVoxelEngine.cs",
+                                                   "Domain":  "HectonVoxelEngine.cs",
+                                                   "Lines":  8690,
+                                                   "SignalBusPush":  0,
+                                                   "GlobalRegistrySurface":  20,
+                                                   "EventPublish":  0,
+                                                   "StaticInstance":  0,
+                                                   "NativeArrayRefs":  277,
+                                                   "GlobalDataVaultRefs":  0,
+                                                   "DisposeCalls":  19,
+                                                   "FindObjectCalls":  0,
+                                                   "GetComponentCalls":  20,
+                                                   "AupPrecisionSafe":  8,
+                                                   "AupPrecisionRisk":  0,
+                                                   "CouplingRisk":  40
+                                               },
+                                               {
+                                                   "File":  "Audio\\PlayerCriticalProceduralAudioRenderer.cs",
+                                                   "Domain":  "Audio",
+                                                   "Lines":  10461,
+                                                   "SignalBusPush":  0,
+                                                   "GlobalRegistrySurface":  23,
+                                                   "EventPublish":  0,
+                                                   "StaticInstance":  0,
+                                                   "NativeArrayRefs":  232,
+                                                   "GlobalDataVaultRefs":  0,
+                                                   "DisposeCalls":  55,
+                                                   "FindObjectCalls":  0,
+                                                   "GetComponentCalls":  0,
+                                                   "AupPrecisionSafe":  4,
+                                                   "AupPrecisionRisk":  0,
+                                                   "CouplingRisk":  23
+                                               },
+                                               {
+                                                   "File":  "PlayerInventory.cs",
+                                                   "Domain":  "PlayerInventory.cs",
+                                                   "Lines":  5527,
+                                                   "SignalBusPush":  8,
+                                                   "GlobalRegistrySurface":  18,
+                                                   "EventPublish":  2,
+                                                   "StaticInstance":  0,
+                                                   "NativeArrayRefs":  197,
+                                                   "GlobalDataVaultRefs":  0,
+                                                   "DisposeCalls":  3,
+                                                   "FindObjectCalls":  0,
+                                                   "GetComponentCalls":  0,
+                                                   "AupPrecisionSafe":  0,
+                                                   "AupPrecisionRisk":  0,
+                                                   "CouplingRisk":  20
+                                               },
+                                               {
+                                                   "File":  "Fauna\\PredatorCognitionDomain.cs",
+                                                   "Domain":  "Fauna",
+                                                   "Lines":  4715,
+                                                   "SignalBusPush":  1,
+                                                   "GlobalRegistrySurface":  1,
+                                                   "EventPublish":  0,
+                                                   "StaticInstance":  0,
+                                                   "NativeArrayRefs":  173,
+                                                   "GlobalDataVaultRefs":  0,
+                                                   "DisposeCalls":  3,
+                                                   "FindObjectCalls":  0,
+                                                   "GetComponentCalls":  0,
+                                                   "AupPrecisionSafe":  0,
+                                                   "AupPrecisionRisk":  0,
+                                                   "CouplingRisk":  1
+                                               },
+                                               {
+                                                   "File":  "World\\HectonMapMagicVegetationBridge.cs",
+                                                   "Domain":  "World",
+                                                   "Lines":  7190,
+                                                   "SignalBusPush":  0,
+                                                   "GlobalRegistrySurface":  19,
+                                                   "EventPublish":  0,
+                                                   "StaticInstance":  0,
+                                                   "NativeArrayRefs":  166,
+                                                   "GlobalDataVaultRefs":  0,
+                                                   "DisposeCalls":  11,
+                                                   "FindObjectCalls":  0,
+                                                   "GetComponentCalls":  0,
+                                                   "AupPrecisionSafe":  8,
+                                                   "AupPrecisionRisk":  0,
+                                                   "CouplingRisk":  19
+                                               },
+                                               {
+                                                   "File":  "World\\EcosystemDirector.cs",
+                                                   "Domain":  "World",
+                                                   "Lines":  5866,
+                                                   "SignalBusPush":  5,
+                                                   "GlobalRegistrySurface":  29,
+                                                   "EventPublish":  0,
+                                                   "StaticInstance":  0,
+                                                   "NativeArrayRefs":  154,
+                                                   "GlobalDataVaultRefs":  0,
+                                                   "DisposeCalls":  47,
+                                                   "FindObjectCalls":  0,
+                                                   "GetComponentCalls":  0,
+                                                   "AupPrecisionSafe":  5,
+                                                   "AupPrecisionRisk":  0,
+                                                   "CouplingRisk":  29
+                                               },
+                                               {
+                                                   "File":  "Power\\LogisticsNetworkGraph.cs",
+                                                   "Domain":  "Power",
+                                                   "Lines":  3733,
+                                                   "SignalBusPush":  0,
+                                                   "GlobalRegistrySurface":  1,
+                                                   "EventPublish":  0,
+                                                   "StaticInstance":  0,
+                                                   "NativeArrayRefs":  145,
+                                                   "GlobalDataVaultRefs":  0,
+                                                   "DisposeCalls":  8,
+                                                   "FindObjectCalls":  0,
+                                                   "GetComponentCalls":  0,
+                                                   "AupPrecisionSafe":  0,
+                                                   "AupPrecisionRisk":  0,
+                                                   "CouplingRisk":  1
+                                               },
+                                               {
+                                                   "File":  "SaveBinaryStorage.cs",
+                                                   "Domain":  "SaveBinaryStorage.cs",
+                                                   "Lines":  8201,
+                                                   "SignalBusPush":  0,
+                                                   "GlobalRegistrySurface":  0,
+                                                   "EventPublish":  0,
+                                                   "StaticInstance":  0,
+                                                   "NativeArrayRefs":  132,
+                                                   "GlobalDataVaultRefs":  0,
+                                                   "DisposeCalls":  53,
+                                                   "FindObjectCalls":  0,
+                                                   "GetComponentCalls":  0,
+                                                   "AupPrecisionSafe":  2,
+                                                   "AupPrecisionRisk":  0,
+                                                   "CouplingRisk":  0
+                                               },
+                                               {
+                                                   "File":  "SubmarineAtmosphereSystem.cs",
+                                                   "Domain":  "SubmarineAtmosphereSystem.cs",
+                                                   "Lines":  4764,
+                                                   "SignalBusPush":  0,
+                                                   "GlobalRegistrySurface":  14,
+                                                   "EventPublish":  0,
+                                                   "StaticInstance":  0,
+                                                   "NativeArrayRefs":  132,
+                                                   "GlobalDataVaultRefs":  0,
+                                                   "DisposeCalls":  5,
+                                                   "FindObjectCalls":  0,
+                                                   "GetComponentCalls":  1,
+                                                   "AupPrecisionSafe":  0,
+                                                   "AupPrecisionRisk":  0,
+                                                   "CouplingRisk":  15
+                                               },
+                                               {
+                                                   "File":  "World\\DestructibleOrganicManager.cs",
+                                                   "Domain":  "World",
+                                                   "Lines":  4585,
+                                                   "SignalBusPush":  0,
+                                                   "GlobalRegistrySurface":  25,
+                                                   "EventPublish":  0,
+                                                   "StaticInstance":  0,
+                                                   "NativeArrayRefs":  125,
+                                                   "GlobalDataVaultRefs":  0,
+                                                   "DisposeCalls":  7,
+                                                   "FindObjectCalls":  0,
+                                                   "GetComponentCalls":  7,
+                                                   "AupPrecisionSafe":  5,
+                                                   "AupPrecisionRisk":  0,
+                                                   "CouplingRisk":  32
+                                               }
+                                           ]
+}

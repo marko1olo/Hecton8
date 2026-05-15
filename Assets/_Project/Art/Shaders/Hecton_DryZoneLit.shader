@@ -405,25 +405,36 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 half hullDentShadow;
                 float3 safePositionOS = HectonCoreLitApplyHullDentsOS(input.positionOS.xyz, input.normalOS, hullDentShadow);
                 float habitatStress01 = saturate(_HectonHabitatModuleStressParams.w);
-                if (_HectonHabitatModuleStressParams.z <= 0.5 && _HectonHabitatModuleStressParams.x > 0.5)
+                if (_HectonHabitatModuleStressParams.z <= 0.5 &&
+                    _HectonHabitatModuleStressParams.x > 0.5 &&
+                    habitatStress01 > HECTON_HABITAT_INTERIOR_STRESS_EPSILON)
                 {
                     VertexPositionInputs preBendPositionInputs = GetVertexPositionInputs(safePositionOS);
-                    uint habitatStressIndex = HectonHabitatInteriorResolveStressIndex(preBendPositionInputs.positionWS);
-                    habitatStress01 = HectonHabitatInteriorReadStress01(habitatStressIndex);
+                    habitatStress01 = HectonHabitatInteriorResolveStress01(preBendPositionInputs.positionWS);
                 }
-                half habitatBendShadow;
-                half habitatPanelMask01;
-                safePositionOS = HectonHabitatInteriorApplyPanelBendOS(
-                    safePositionOS,
-                    input.normalOS,
-                    input.uv,
-                    habitatStress01,
-                    habitatBendShadow,
-                    habitatPanelMask01);
+                half habitatBendShadow = 0.0h;
+                half habitatPanelMask01 = 0.0h;
+                half2 habitatPanelCenteredUv = half2(0.0h, 0.0h);
+                bool habitatVertexBendActive =
+                    _HectonHabitatModuleStressParams.z <= 0.5 &&
+                    _HectonHabitatModuleStressParams.y > 0.00001 &&
+                    habitatStress01 > HECTON_HABITAT_INTERIOR_STRESS_EPSILON;
+                if (habitatVertexBendActive)
+                {
+                    safePositionOS = HectonHabitatInteriorApplyPanelBendOS(
+                        safePositionOS,
+                        input.normalOS,
+                        input.uv,
+                        habitatStress01,
+                        habitatBendShadow,
+                        habitatPanelMask01,
+                        habitatPanelCenteredUv);
+                }
                 VertexPositionInputs positionInputs = GetVertexPositionInputs(safePositionOS);
                 VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS);
                 half3 normalWS = SafeNormalize3(normalInputs.normalWS);
-                normalWS = HectonHabitatInteriorApplyCheapNormalBiasWS(normalWS, input.uv, habitatStress01, habitatPanelMask01);
+                if (habitatVertexBendActive && habitatPanelMask01 > 0.0001h)
+                    normalWS = HectonHabitatInteriorApplyCheapNormalBiasWS(normalWS, habitatStress01, habitatPanelMask01, habitatPanelCenteredUv);
                 output.positionCS = positionInputs.positionCS;
                 output.positionWS = positionInputs.positionWS;
                 output.normalWS = normalWS;
@@ -527,10 +538,15 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                     hullDentShadow = max(hullDentShadow, (half)_HectonHullDentParams.z * lowTierScarTexture * 0.28h);
                 }
                 [branch]
-                if (_HectonHabitatModuleStressParams.z > 0.5 && input.habitatStress01 > 0.0001h)
+                if (_HectonHabitatModuleStressParams.z > 0.5 && input.habitatStress01 > HECTON_HABITAT_INTERIOR_STRESS_EPSILON_HALF)
                 {
-                    half habitatCreaseMask = SAMPLE_TEXTURE2D(_DetailMask, sampler_DetailMask, input.uv * 3.1).r;
-                    HectonHabitatInteriorApplyLowTierCrease(input.uv, input.habitatStress01, habitatCreaseMask, hullDentShadow, albedo, smoothness);
+                    half habitatPanelMask = HectonHabitatInteriorCheapPanelMask(input.uv);
+                    [branch]
+                    if (habitatPanelMask > 0.0001h)
+                    {
+                        half habitatCreaseMask = SAMPLE_TEXTURE2D(_DetailMask, sampler_DetailMask, input.uv * 3.1).r;
+                        HectonHabitatInteriorApplyLowTierCrease(input.habitatStress01, habitatPanelMask, habitatCreaseMask, hullDentShadow, albedo, smoothness);
+                    }
                 }
                 HectonCoreLitApplyHullDentSurfaceCheat(hullDentShadow, albedo, smoothness);
                 float parasitePulse = 1.0;

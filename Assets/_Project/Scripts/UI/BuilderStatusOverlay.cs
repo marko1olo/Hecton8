@@ -4,6 +4,7 @@ using Hecton8.Building;
 using Hecton8.Bootstrap;
 using Hecton8.Construction;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using TMPro;
@@ -79,8 +80,10 @@ namespace Hecton8.UI
         private readonly char[] _hintBuffer = new char[192];
         private readonly char[] _adviceScratchBuffer = new char[192];
         private bool _tickRegistered;
-        private PlayerInventory _subscribedInventory;
-        private PlayerToolManager _subscribedToolManager;
+        private uint _inventorySignalHash;
+        private uint _lastInventorySignalRevision;
+        private uint _toolLoadoutSignalSourceId;
+        private uint _lastToolLoadoutSignalSequence;
         private int _inventoryRevision;
         private bool _lastVisibleState;
 
@@ -95,7 +98,6 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
-            Unsubscribe();
             UnregisterTick();
         }
 
@@ -105,6 +107,20 @@ namespace Hecton8.UI
             if (!ShouldKeepTicking(safeDeltaTime))
             {
                 UnregisterTick();
+                return;
+            }
+
+            if (ConsumeInventoryChangedSignals())
+            {
+                _inventoryRevision++;
+                ForceRefresh();
+                return;
+            }
+
+            if (ConsumeToolLoadoutChangedSignals())
+            {
+                EvaluateTickRegistration();
+                ForceRefresh();
                 return;
             }
 
@@ -170,31 +186,8 @@ namespace Hecton8.UI
 
         private void RefreshSubscriptions()
         {
-            if (!ReferenceEquals(_subscribedInventory, inventory))
-            {
-                if (_subscribedInventory != null)
-                    _subscribedInventory.InventoryChanged -= HandleInventoryChanged;
-
-                _subscribedInventory = inventory;
-                if (_subscribedInventory != null)
-                    _subscribedInventory.InventoryChanged += HandleInventoryChanged;
-            }
-
-            if (!ReferenceEquals(_subscribedToolManager, toolManager))
-            {
-                if (_subscribedToolManager != null)
-                {
-                    _subscribedToolManager.ActiveSlotChanged -= HandleActiveSlotChanged;
-                    _subscribedToolManager.ToolAssignmentsChanged -= HandleToolAssignmentsChanged;
-                }
-
-                _subscribedToolManager = toolManager;
-                if (_subscribedToolManager != null)
-                {
-                    _subscribedToolManager.ActiveSlotChanged += HandleActiveSlotChanged;
-                    _subscribedToolManager.ToolAssignmentsChanged += HandleToolAssignmentsChanged;
-                }
-            }
+            RefreshInventorySignalBinding();
+            RefreshToolLoadoutSignalBinding();
         }
 
         private void Subscribe()
@@ -202,39 +195,86 @@ namespace Hecton8.UI
             RefreshSubscriptions();
         }
 
-        private void Unsubscribe()
+        private bool ConsumeInventoryChangedSignals()
         {
-            if (_subscribedInventory != null)
+            uint inventoryHash = _inventorySignalHash;
+            if (inventoryHash == 0u)
+                return false;
+
+            bool dirty = false;
+            ReadOnlySpan<InventoryChangedSignal> signals = SignalBus<InventoryChangedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
             {
-                _subscribedInventory.InventoryChanged -= HandleInventoryChanged;
-                _subscribedInventory = null;
+                ref readonly InventoryChangedSignal signal = ref signals[i];
+                if (signal.InventoryHash != inventoryHash)
+                    continue;
+
+                if (signal.Revision == _lastInventorySignalRevision && _lastInventorySignalRevision != 0u)
+                    continue;
+
+                _lastInventorySignalRevision = signal.Revision;
+                dirty = true;
             }
 
-            if (_subscribedToolManager != null)
+            return dirty;
+        }
+
+        private void RefreshInventorySignalBinding()
+        {
+            uint resolvedHash = ResolveInventorySignalHash(inventory);
+            if (_inventorySignalHash == resolvedHash)
+                return;
+
+            _inventorySignalHash = resolvedHash;
+            _lastInventorySignalRevision = 0u;
+        }
+
+        private static uint ResolveInventorySignalHash(PlayerInventory source)
+        {
+            return source != null && source.gameObject != null
+                ? unchecked((uint)EntityId.ToULong(source.gameObject.GetEntityId()))
+                : 0u;
+        }
+
+        private bool ConsumeToolLoadoutChangedSignals()
+        {
+            uint sourceId = _toolLoadoutSignalSourceId;
+            if (sourceId == 0u)
+                return false;
+
+            bool dirty = false;
+            ReadOnlySpan<ToolLoadoutChangedSignal> signals = SignalBus<ToolLoadoutChangedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
             {
-                _subscribedToolManager.ActiveSlotChanged -= HandleActiveSlotChanged;
-                _subscribedToolManager.ToolAssignmentsChanged -= HandleToolAssignmentsChanged;
-                _subscribedToolManager = null;
+                ref readonly ToolLoadoutChangedSignal signal = ref signals[i];
+                if (signal.SourceId != sourceId)
+                    continue;
+
+                if (signal.Sequence == _lastToolLoadoutSignalSequence && _lastToolLoadoutSignalSequence != 0u)
+                    continue;
+
+                _lastToolLoadoutSignalSequence = signal.Sequence;
+                dirty = true;
             }
+
+            return dirty;
         }
 
-        private void HandleInventoryChanged()
+        private void RefreshToolLoadoutSignalBinding()
         {
-            _inventoryRevision++;
-            if (IsBuilderOverlayVisible())
-                ForceRefresh();
+            uint resolvedSourceId = ResolveToolLoadoutSignalSourceId(toolManager);
+            if (_toolLoadoutSignalSourceId == resolvedSourceId)
+                return;
+
+            _toolLoadoutSignalSourceId = resolvedSourceId;
+            _lastToolLoadoutSignalSequence = 0u;
         }
 
-        private void HandleActiveSlotChanged(int _)
+        private static uint ResolveToolLoadoutSignalSourceId(PlayerToolManager manager)
         {
-            EvaluateTickRegistration();
-            ForceRefresh();
-        }
-
-        private void HandleToolAssignmentsChanged()
-        {
-            EvaluateTickRegistration();
-            ForceRefresh();
+            return manager != null && manager.gameObject != null
+                ? GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(manager.gameObject.GetEntityId()))
+                : 0u;
         }
 
         private void EnsureBuilt()
@@ -437,7 +477,7 @@ namespace Hecton8.UI
         private bool ShouldKeepTicking(float deltaTime = 0f)
         {
             AutoResolve(deltaTime);
-            return RequiresRuntimeResolve() || IsBuilderOverlayVisible();
+            return RequiresRuntimeResolve() || _toolLoadoutSignalSourceId != 0u || IsBuilderOverlayVisible();
         }
 
         private bool RequiresRuntimeResolve()

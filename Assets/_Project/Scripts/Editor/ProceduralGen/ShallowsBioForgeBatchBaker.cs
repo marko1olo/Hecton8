@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -14,7 +15,10 @@ namespace Hecton8.Editor.ProceduralGen
         private const string RuleFolder = "Assets/_Project/Data/ProceduralGen/Shallows";
         private const string MeshRoot = "Assets/_Project/Art/Generated/Flora/BioForge/Shallows";
         private const string PrefabRoot = "Assets/_Project/Prefabs/Nature/Flora/BioForge/Shallows";
-        private const string MaterialPath = "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_ProceduralBio_Shallows.mat";
+        private const string MaterialFolder = "Assets/_Project/Art/Materials/WorldProceduralProxy";
+        private const string MaterialPath = MaterialFolder + "/MAT_ProceduralBio_Shallows.mat";
+        private const string MaterialName = "MAT_ProceduralBio_Shallows";
+        private const string ShaderPath = "Assets/_Project/Art/Shaders/Hecton_ProceduralBio.shader";
         private const string TextureRoot = "Assets/_Project/Art/TEXTURES/WorldProceduralFlora";
         private const string AlbedoAtlasPath = TextureRoot + "/TX_ProceduralBio_Shallows_AlbedoAtlas.png";
         private const string NormalAtlasPath = TextureRoot + "/TX_ProceduralBio_Shallows_NormalAtlas.png";
@@ -24,7 +28,41 @@ namespace Hecton8.Editor.ProceduralGen
         private const int CoralCount = 50;
         private const int KelpCount = 100;
         private const int RockCount = 50;
+        private const int CoralLod0TriangleBudget = 2600;
+        private const int CoralLod1TriangleBudget = 620;
+        private const int CoralLod2TriangleBudget = 120;
+        private const int KelpLod0TriangleBudget = 2200;
+        private const int KelpLod1TriangleBudget = 520;
+        private const int KelpLod2TriangleBudget = 96;
+        private const int RockLod0TriangleBudget = 3200;
+        private const int RockLod1TriangleBudget = 720;
+        private const int RockLod2TriangleBudget = 128;
+        private const float CoralMaxBoundsExtentSq = 4f;
+        private const float KelpMaxBoundsExtentSq = 121f;
+        private const float RockMaxBoundsExtentSq = 9f;
+        private const int MaxValidatedMeshVertices = RockLod0TriangleBudget * 3;
         private const int MaxAllowedLod2Triangles = 149;
+        private const float Lod0ScreenHeight = 0.6f;
+        private const float Lod1ScreenHeight = 0.15f;
+        private const float Lod2ScreenHeight = 0.04f;
+        private const float Lod0FadeWidth = 0.08f;
+        private const float Lod1FadeWidth = 0.08f;
+        private const float Lod2FadeWidth = 0.04f;
+        private const float TransformEpsilonSq = 0.000001f;
+        private const int DefaultLayer = 0;
+        private const string UntaggedTag = "Untagged";
+        // COLD ALLOC: List<Color>[9600] - reusable editor vertex color validation scratch - owner: ShallowsBioForgeBatchBaker
+        private static readonly List<Color> VertexColorScratch = new List<Color>(MaxValidatedMeshVertices);
+        // COLD ALLOC: List<Transform>[8] - reusable editor prefab hierarchy/state validation scratch - owner: ShallowsBioForgeBatchBaker
+        private static readonly List<Transform> TransformScratch = new List<Transform>(8);
+        // COLD ALLOC: List<Component>[8] - reusable editor component envelope validation scratch - owner: ShallowsBioForgeBatchBaker
+        private static readonly List<Component> ComponentScratch = new List<Component>(8);
+        // COLD ALLOC: List<Material>[4] - reusable editor renderer material slot validation scratch - owner: ShallowsBioForgeBatchBaker
+        private static readonly List<Material> RendererMaterialScratch = new List<Material>(4);
+        // COLD ALLOC: bool[100] - reusable editor family index completeness scratch - owner: ShallowsBioForgeBatchBaker
+        private static readonly bool[] FamilyIndexScratch = new bool[KelpCount];
+        // COLD ALLOC: bool[300] - reusable editor mesh LOD triplet completeness scratch - owner: ShallowsBioForgeBatchBaker
+        private static readonly bool[] MeshLodIndexScratch = new bool[KelpCount * 3];
 
         [MenuItem("HECTON-8/Bio-Forge/Bake Safe Shallows Assets", false, 172)]
         public static void BakeSafeShallowsAssets()
@@ -37,6 +75,12 @@ namespace Hecton8.Editor.ProceduralGen
 
             BuildSharedAtlases();
             Material material = CreateOrUpdateMaterial();
+            if (material == null)
+            {
+                Debug.LogError("[ShallowsBioForgeBatchBaker] Bake aborted because the shared Shallows material could not be created.");
+                return;
+            }
+
             BioRuleData coralRule = CreateOrUpdateTubeCoralRule(material);
             BioRuleData kelpRule = CreateOrUpdateKelpRule(material);
             BioRuleData rockRule = CreateOrUpdatePorousRockRule(material);
@@ -67,13 +111,23 @@ namespace Hecton8.Editor.ProceduralGen
             Texture matCap = AssetDatabase.LoadAssetAtPath<Texture2D>(MatCapPath);
 
             int failures = 0;
+            ValidateRequiredFolders(ref failures);
+            ValidateFamilySubfolderContracts(ref failures);
             if (material == null || albedo == null || normal == null || orm == null || matCap == null)
             {
                 failures++;
                 Debug.LogError("[ShallowsBioForgeBatchBaker] Missing shared material or atlas texture dependency.");
             }
 
+            ValidateMaterialFolderContract(ref failures);
+            ValidateAtlasFolderContract(ref failures);
+            ValidateRuleAssets(material, ref failures);
+            ValidateMaterialAssetContract(material, ref failures);
             ValidateSharedMaterial(material, albedo, normal, orm, matCap, ref failures);
+            ValidateAtlasTextureAsset(albedo, AlbedoAtlasPath, ref failures);
+            ValidateAtlasTextureAsset(normal, NormalAtlasPath, ref failures);
+            ValidateAtlasTextureAsset(orm, OrmAtlasPath, ref failures);
+            ValidateAtlasTextureAsset(matCap, MatCapPath, ref failures);
             ValidateAtlasImporter(AlbedoAtlasPath, AtlasKind.Albedo, ref failures);
             ValidateAtlasImporter(NormalAtlasPath, AtlasKind.Normal, ref failures);
             ValidateAtlasImporter(OrmAtlasPath, AtlasKind.Orm, ref failures);
@@ -111,9 +165,9 @@ namespace Hecton8.Editor.ProceduralGen
             SetFloat(serialized, "_boundsPadding", 0.32f);
             SetFloat(serialized, "_smoothMinK", 5.5f);
             SetEnum(serialized, "_sdfProfile", BioForgeSdfProfile.BranchCapsules);
-            SetInt(serialized, "_lod0TriangleBudget", 2600);
-            SetInt(serialized, "_lod1TriangleBudget", 620);
-            SetInt(serialized, "_lod2TriangleBudget", 120);
+            SetInt(serialized, "_lod0TriangleBudget", CoralLod0TriangleBudget);
+            SetInt(serialized, "_lod1TriangleBudget", CoralLod1TriangleBudget);
+            SetInt(serialized, "_lod2TriangleBudget", CoralLod2TriangleBudget);
             SetString(serialized, "_meshOutputFolder", $"{MeshRoot}/TubeCoral");
             SetString(serialized, "_prefabOutputFolder", $"{PrefabRoot}/TubeCoral");
             Apply(serialized, rule);
@@ -142,9 +196,9 @@ namespace Hecton8.Editor.ProceduralGen
             SetEnum(serialized, "_sdfProfile", BioForgeSdfProfile.RibbonFlora);
             SetFloat(serialized, "_ribbonThicknessScale", 0.12f);
             SetFloat(serialized, "_ribbonWidthScale", 3.3f);
-            SetInt(serialized, "_lod0TriangleBudget", 2200);
-            SetInt(serialized, "_lod1TriangleBudget", 520);
-            SetInt(serialized, "_lod2TriangleBudget", 96);
+            SetInt(serialized, "_lod0TriangleBudget", KelpLod0TriangleBudget);
+            SetInt(serialized, "_lod1TriangleBudget", KelpLod1TriangleBudget);
+            SetInt(serialized, "_lod2TriangleBudget", KelpLod2TriangleBudget);
             SetString(serialized, "_meshOutputFolder", $"{MeshRoot}/Kelp");
             SetString(serialized, "_prefabOutputFolder", $"{PrefabRoot}/Kelp");
             Apply(serialized, rule);
@@ -165,9 +219,9 @@ namespace Hecton8.Editor.ProceduralGen
             SetFloat(serialized, "_boundsPadding", 0.18f);
             SetFloat(serialized, "_smoothMinK", 8f);
             SetEnum(serialized, "_sdfProfile", BioForgeSdfProfile.PorousRock);
-            SetInt(serialized, "_lod0TriangleBudget", 3200);
-            SetInt(serialized, "_lod1TriangleBudget", 720);
-            SetInt(serialized, "_lod2TriangleBudget", 128);
+            SetInt(serialized, "_lod0TriangleBudget", RockLod0TriangleBudget);
+            SetInt(serialized, "_lod1TriangleBudget", RockLod1TriangleBudget);
+            SetInt(serialized, "_lod2TriangleBudget", RockLod2TriangleBudget);
             SetFloat(serialized, "_rockRadius", 1.15f);
             SetFloat(serialized, "_rockNoiseAmplitude", 0.24f);
             SetFloat(serialized, "_rockNoiseFrequency", 4.2f);
@@ -182,12 +236,10 @@ namespace Hecton8.Editor.ProceduralGen
 
         private static Material CreateOrUpdateMaterial()
         {
-            Shader shader = AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/Hecton_ProceduralBio.shader");
-            if (shader == null)
-                shader = Shader.Find("Hecton8/Flora/ProceduralBio");
+            Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderPath);
             if (shader == null)
             {
-                Debug.LogError("[ShallowsBioForgeBatchBaker] Missing Hecton8/Flora/ProceduralBio shader.");
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Missing shader asset at {ShaderPath}.");
                 return null;
             }
 
@@ -196,7 +248,7 @@ namespace Hecton8.Editor.ProceduralGen
             {
                 material = new Material(shader)
                 {
-                    name = "MAT_ProceduralBio_Shallows"
+                    name = MaterialName
                 };
                 AssetDatabase.CreateAsset(material, MaterialPath);
             }
@@ -209,6 +261,10 @@ namespace Hecton8.Editor.ProceduralGen
             material.SetTexture("_NormalAtlas", AssetDatabase.LoadAssetAtPath<Texture2D>(NormalAtlasPath));
             material.SetTexture("_ORMAtlas", AssetDatabase.LoadAssetAtPath<Texture2D>(OrmAtlasPath));
             material.SetTexture("_MatCap", AssetDatabase.LoadAssetAtPath<Texture2D>(MatCapPath));
+            SetMaterialTextureTransform(material, "_AlbedoAtlas");
+            SetMaterialTextureTransform(material, "_NormalAtlas");
+            SetMaterialTextureTransform(material, "_ORMAtlas");
+            SetMaterialTextureTransform(material, "_MatCap");
             material.SetColor("_BaseColor", new Color(0.64f, 0.82f, 0.62f, 1f));
             material.SetColor("_RootTint", new Color(0.10f, 0.22f, 0.14f, 1f));
             material.SetColor("_TipTint", new Color(0.28f, 0.92f, 0.84f, 1f));
@@ -336,6 +392,12 @@ namespace Hecton8.Editor.ProceduralGen
                 return;
 
             importer.wrapMode = TextureWrapMode.Repeat;
+            importer.wrapModeU = TextureWrapMode.Repeat;
+            importer.wrapModeV = TextureWrapMode.Repeat;
+            importer.wrapModeW = TextureWrapMode.Repeat;
+            importer.filterMode = FilterMode.Bilinear;
+            importer.anisoLevel = 1;
+            importer.mipMapBias = 0f;
             importer.mipmapEnabled = true;
             importer.isReadable = false;
             importer.textureCompression = TextureImporterCompression.Compressed;
@@ -343,6 +405,12 @@ namespace Hecton8.Editor.ProceduralGen
             importer.sRGBTexture = kind == AtlasKind.Albedo || kind == AtlasKind.MatCap;
             importer.textureType = kind == AtlasKind.Normal ? TextureImporterType.NormalMap : TextureImporterType.Default;
             importer.maxTextureSize = AtlasSize;
+
+            TextureImporterPlatformSettings defaultPlatform = importer.GetPlatformTextureSettings("DefaultTexturePlatform");
+            defaultPlatform.maxTextureSize = AtlasSize;
+            defaultPlatform.textureCompression = TextureImporterCompression.Compressed;
+            defaultPlatform.crunchedCompression = false;
+            importer.SetPlatformTextureSettings(defaultPlatform);
 
             TextureImporterPlatformSettings standalone = importer.GetPlatformTextureSettings("Standalone");
             standalone.overridden = true;
@@ -364,6 +432,10 @@ namespace Hecton8.Editor.ProceduralGen
                 failures++;
                 Debug.LogError("[ShallowsBioForgeBatchBaker] Shared material shader contract failed.");
             }
+            else
+            {
+                ValidateShaderSourceContract(material.shader, ref failures);
+            }
 
             if (!material.enableInstancing || material.doubleSidedGI || material.globalIlluminationFlags != MaterialGlobalIlluminationFlags.None)
             {
@@ -376,6 +448,618 @@ namespace Hecton8.Editor.ProceduralGen
                 failures++;
                 Debug.LogError("[ShallowsBioForgeBatchBaker] Shared atlas binding mismatch.");
             }
+
+            ValidateMaterialTextureTransform(material, "_AlbedoAtlas", ref failures);
+            ValidateMaterialTextureTransform(material, "_NormalAtlas", ref failures);
+            ValidateMaterialTextureTransform(material, "_ORMAtlas", ref failures);
+            ValidateMaterialTextureTransform(material, "_MatCap", ref failures);
+
+            if (material.IsKeywordEnabled("_QUALITY_HIGH"))
+            {
+                failures++;
+                Debug.LogError("[ShallowsBioForgeBatchBaker] Shared material has forbidden high-quality keyword enabled.");
+            }
+
+            ValidateMaterialColor(material, "_BaseColor", new Color(0.64f, 0.82f, 0.62f, 1f), ref failures);
+            ValidateMaterialColor(material, "_RootTint", new Color(0.10f, 0.22f, 0.14f, 1f), ref failures);
+            ValidateMaterialColor(material, "_TipTint", new Color(0.28f, 0.92f, 0.84f, 1f), ref failures);
+            ValidateMaterialColor(material, "_EmissionColor", new Color(0.14f, 0.68f, 0.62f, 1f), ref failures);
+            ValidateMaterialFloat(material, "_TriplanarScale", 0.46f, ref failures);
+            ValidateMaterialFloat(material, "_TriplanarSharpness", 4.3f, ref failures);
+            ValidateMaterialFloat(material, "_SeedOffsetScale", 1.4f, ref failures);
+            ValidateMaterialFloat(material, "_NormalScale", 0.84f, ref failures);
+            ValidateMaterialFloat(material, "_AmbientStrength", 0.48f, ref failures);
+            ValidateMaterialFloat(material, "_SubsurfaceStrength", 0.32f, ref failures);
+            ValidateMaterialFloat(material, "_RimStrength", 0.22f, ref failures);
+            ValidateMaterialFloat(material, "_SmoothnessBoost", 0.88f, ref failures);
+            ValidateMaterialFloat(material, "_MetallicBoost", 0f, ref failures);
+            ValidateMaterialFloat(material, "_BiomeTintStrength", 0.34f, ref failures);
+            ValidateMaterialFloat(material, "_EmissionStrength", 0.72f, ref failures);
+            ValidateMaterialFloat(material, "_BiolumPulseSharpness", 2.4f, ref failures);
+            ValidateMaterialFloat(material, "_MatCapStrength", 0.42f, ref failures);
+            ValidateMaterialFloat(material, "_Cull", 0f, ref failures);
+        }
+
+        private static void ValidateMaterialAssetContract(Material material, ref int failures)
+        {
+            if (material == null)
+                return;
+
+            string actualPath = AssetDatabase.GetAssetPath(material);
+            if (!string.Equals(actualPath, MaterialPath, StringComparison.Ordinal) ||
+                !string.Equals(material.name, MaterialName, StringComparison.Ordinal))
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Shared material asset identity contract failed. ExpectedPath={MaterialPath}, ActualPath={actualPath}, Name={material.name}.");
+            }
+
+            SerializedObject serialized = new SerializedObject(material);
+            SerializedProperty customRenderQueue = serialized.FindProperty("m_CustomRenderQueue");
+            if (customRenderQueue == null || customRenderQueue.intValue != -1)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Shared material custom render queue override is forbidden. Queue={(customRenderQueue != null ? customRenderQueue.intValue : int.MinValue)}.");
+            }
+
+            SerializedProperty validKeywords = serialized.FindProperty("m_ValidKeywords");
+            SerializedProperty invalidKeywords = serialized.FindProperty("m_InvalidKeywords");
+            if (validKeywords == null ||
+                invalidKeywords == null ||
+                validKeywords.arraySize != 0 ||
+                invalidKeywords.arraySize != 0)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Shared material keyword arrays must stay empty. Valid={(validKeywords != null ? validKeywords.arraySize : -1)}, Invalid={(invalidKeywords != null ? invalidKeywords.arraySize : -1)}.");
+            }
+        }
+
+        private static void ValidateMaterialFolderContract(ref int failures)
+        {
+            string[] guids = AssetDatabase.FindAssets("MAT_ProceduralBio_Shallows t:Material", new[] { MaterialFolder });
+            bool found = false;
+            int unexpected = 0;
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                if (string.Equals(path, MaterialPath, StringComparison.Ordinal))
+                    found = true;
+                else
+                    unexpected++;
+            }
+
+            if (guids.Length == 1 && found && unexpected == 0)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] Shared material folder contract failed. Count={guids.Length}, Found={found}, Unexpected={unexpected}.");
+        }
+
+        private static void ValidateAtlasTextureAsset(Texture texture, string expectedPath, ref int failures)
+        {
+            Texture2D texture2D = texture as Texture2D;
+            if (texture2D == null)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Missing atlas texture asset at {expectedPath}.");
+                return;
+            }
+
+            string actualPath = AssetDatabase.GetAssetPath(texture2D);
+            if (!string.Equals(actualPath, expectedPath, StringComparison.Ordinal) || texture2D.width != AtlasSize || texture2D.height != AtlasSize)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Atlas texture contract failed at {expectedPath}. ActualPath={actualPath}, Size={texture2D.width}x{texture2D.height}.");
+            }
+        }
+
+        private static void ValidateAtlasFolderContract(ref int failures)
+        {
+            string[] guids = AssetDatabase.FindAssets("TX_ProceduralBio_Shallows t:Texture2D", new[] { TextureRoot });
+            bool hasAlbedo = false;
+            bool hasNormal = false;
+            bool hasOrm = false;
+            bool hasMatCap = false;
+            int unexpected = 0;
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                if (string.Equals(path, AlbedoAtlasPath, StringComparison.Ordinal))
+                    hasAlbedo = true;
+                else if (string.Equals(path, NormalAtlasPath, StringComparison.Ordinal))
+                    hasNormal = true;
+                else if (string.Equals(path, OrmAtlasPath, StringComparison.Ordinal))
+                    hasOrm = true;
+                else if (string.Equals(path, MatCapPath, StringComparison.Ordinal))
+                    hasMatCap = true;
+                else
+                    unexpected++;
+            }
+
+            if (guids.Length == 4 && unexpected == 0 && hasAlbedo && hasNormal && hasOrm && hasMatCap)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] Atlas folder contract failed. Count={guids.Length}, Unexpected={unexpected}, Albedo={hasAlbedo}, Normal={hasNormal}, ORM={hasOrm}, MatCap={hasMatCap}.");
+        }
+
+        private static void ValidateShaderSourceContract(Shader shader, ref int failures)
+        {
+            string shaderPath = AssetDatabase.GetAssetPath(shader);
+            if (!string.Equals(shaderPath, ShaderPath, StringComparison.Ordinal))
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Shader asset path contract failed. Expected={ShaderPath}, Actual={shaderPath}.");
+                return;
+            }
+
+            string absolutePath = ResolveProjectAssetAbsolutePath(ShaderPath);
+            if (!File.Exists(absolutePath))
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Shader source missing at {ShaderPath}.");
+                return;
+            }
+
+            string source = File.ReadAllText(absolutePath);
+            ValidateShaderRequiredToken(shaderPath, source, "\"RenderType\" = \"Opaque\"", ref failures);
+            ValidateShaderRequiredToken(shaderPath, source, "\"Queue\" = \"Geometry\"", ref failures);
+            ValidateShaderRequiredToken(shaderPath, source, "ZWrite On", ref failures);
+            ValidateShaderRequiredToken(shaderPath, source, "#pragma multi_compile_instancing", ref failures);
+            ValidateShaderRequiredToken(shaderPath, source, "#pragma instancing_options assumeuniformscaling", ref failures);
+            ValidateShaderRequiredToken(shaderPath, source, "#pragma multi_compile _ LOD_FADE_CROSSFADE", ref failures);
+            ValidateShaderRequiredToken(shaderPath, source, "#pragma multi_compile _ _MATH_LOD_LOW", ref failures);
+            ValidateShaderRequiredToken(shaderPath, source, "#pragma shader_feature_local _QUALITY_HIGH", ref failures);
+            ValidateShaderRequiredToken(shaderPath, source, "CBUFFER_START(UnityPerMaterial)", ref failures);
+            ValidateShaderRequiredToken(shaderPath, source, "LODFadeCrossFade(input.positionCS);", ref failures);
+            ValidateShaderPassBudget(shaderPath, source, ref failures);
+            ValidateShaderPragmaBudget(shaderPath, source, ref failures);
+            ValidateShaderForbiddenToken(shaderPath, source, "ZWrite Off", ref failures);
+            ValidateShaderForbiddenToken(shaderPath, source, "Blend SrcAlpha", ref failures);
+            ValidateShaderForbiddenToken(shaderPath, source, "Blend One One", ref failures);
+        }
+
+        private static string ResolveProjectAssetAbsolutePath(string assetPath)
+        {
+            DirectoryInfo dataDirectory = Directory.GetParent(Application.dataPath);
+            string projectRoot = dataDirectory != null ? dataDirectory.FullName : Directory.GetCurrentDirectory();
+            string nativeAssetPath = assetPath.Replace('/', Path.DirectorySeparatorChar);
+            return Path.GetFullPath(Path.Combine(projectRoot, nativeAssetPath));
+        }
+
+        private static void ValidateShaderRequiredToken(string shaderPath, string source, string token, ref int failures)
+        {
+            if (source.IndexOf(token, StringComparison.Ordinal) >= 0)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] Shader source contract missing token at {shaderPath}: {token}.");
+        }
+
+        private static void ValidateShaderForbiddenToken(string shaderPath, string source, string token, ref int failures)
+        {
+            if (source.IndexOf(token, StringComparison.Ordinal) < 0)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] Shader source contract contains forbidden token at {shaderPath}: {token}.");
+        }
+
+        private static void ValidateShaderPassBudget(string shaderPath, string source, ref int failures)
+        {
+            int passCount = CountShaderLineToken(source, "Pass");
+            int usePassCount = CountShaderLineToken(source, "UsePass");
+            int grabPassCount = CountShaderLineToken(source, "GrabPass");
+            int fallbackCount = CountShaderLineToken(source, "Fallback");
+            if (passCount == 2 &&
+                usePassCount == 0 &&
+                grabPassCount == 0 &&
+                fallbackCount == 0 &&
+                source.IndexOf("Name \"ForwardLit\"", StringComparison.Ordinal) >= 0 &&
+                source.IndexOf("Name \"ShadowCaster\"", StringComparison.Ordinal) >= 0 &&
+                source.IndexOf("\"LightMode\" = \"UniversalForward\"", StringComparison.Ordinal) >= 0 &&
+                source.IndexOf("\"LightMode\" = \"ShadowCaster\"", StringComparison.Ordinal) >= 0)
+            {
+                return;
+            }
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] Shader pass budget contract failed at {shaderPath}. Pass={passCount}, UsePass={usePassCount}, GrabPass={grabPassCount}, Fallback={fallbackCount}.");
+        }
+
+        private static void ValidateShaderPragmaBudget(string shaderPath, string source, ref int failures)
+        {
+            bool valid = CountShaderLineToken(source, "#pragma target 4.5") == 1 &&
+                         CountShaderLineToken(source, "#pragma target 3.5") == 1 &&
+                         CountShaderLineToken(source, "#pragma vertex Vert") == 1 &&
+                         CountShaderLineToken(source, "#pragma vertex ShadowVert") == 1 &&
+                         CountShaderLineToken(source, "#pragma fragment Frag") == 1 &&
+                         CountShaderLineToken(source, "#pragma fragment ShadowFrag") == 1 &&
+                         CountShaderLineToken(source, "#pragma multi_compile_instancing") == 2 &&
+                         CountShaderLineToken(source, "#pragma instancing_options assumeuniformscaling") == 2 &&
+                         CountShaderLineToken(source, "#pragma multi_compile_fog") == 1 &&
+                         CountShaderLineToken(source, "#pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE") == 1 &&
+                         CountShaderLineToken(source, "#pragma multi_compile _ LOD_FADE_CROSSFADE") == 2 &&
+                         CountShaderLineToken(source, "#pragma multi_compile _ _MATH_LOD_LOW") == 1 &&
+                         CountShaderLineToken(source, "#pragma shader_feature_local _QUALITY_HIGH") == 1 &&
+                         CountShaderLineToken(source, "#pragma skip_variants") == 1 &&
+                         CountShaderLineToken(source, "#pragma multi_compile _ _ADDITIONAL_LIGHTS") == 0;
+            if (valid)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] Shader pragma budget contract failed at {shaderPath}.");
+        }
+
+        private static int CountShaderLineToken(string source, string token)
+        {
+            int count = 0;
+            int index = 0;
+            while (index < source.Length)
+            {
+                int lineEnd = source.IndexOf('\n', index);
+                if (lineEnd < 0)
+                    lineEnd = source.Length;
+
+                int cursor = index;
+                while (cursor < lineEnd && char.IsWhiteSpace(source[cursor]))
+                    cursor++;
+
+                int tokenEnd = cursor + token.Length;
+                if (tokenEnd <= lineEnd &&
+                    string.CompareOrdinal(source, cursor, token, 0, token.Length) == 0 &&
+                    (tokenEnd == lineEnd || char.IsWhiteSpace(source[tokenEnd]) || source[tokenEnd] == (char)123))
+                {
+                    count++;
+                }
+
+                index = lineEnd + 1;
+            }
+
+            return count;
+        }
+
+        private static void ValidateMaterialColor(Material material, string propertyName, Color expected, ref int failures)
+        {
+            if (!material.HasProperty(propertyName) || !Approximately(material.GetColor(propertyName), expected))
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Shared material color contract failed for {propertyName}.");
+            }
+        }
+
+        private static void ValidateMaterialFloat(Material material, string propertyName, float expected, ref int failures)
+        {
+            if (!material.HasProperty(propertyName) || !Approximately(material.GetFloat(propertyName), expected))
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Shared material float contract failed for {propertyName}.");
+            }
+        }
+
+        private static void SetMaterialTextureTransform(Material material, string propertyName)
+        {
+            material.SetTextureScale(propertyName, Vector2.one);
+            material.SetTextureOffset(propertyName, Vector2.zero);
+        }
+
+        private static void ValidateMaterialTextureTransform(Material material, string propertyName, ref int failures)
+        {
+            if (!material.HasProperty(propertyName) ||
+                !Approximately(material.GetTextureScale(propertyName), Vector2.one) ||
+                !Approximately(material.GetTextureOffset(propertyName), Vector2.zero))
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Shared material texture transform contract failed for {propertyName}.");
+            }
+        }
+
+        private static void ValidateRequiredFolders(ref int failures)
+        {
+            ValidateFolderExists(RuleFolder, ref failures);
+            ValidateFolderExists(MeshRoot, ref failures);
+            ValidateFolderExists(PrefabRoot, ref failures);
+            ValidateFolderExists(MaterialFolder, ref failures);
+            ValidateFolderExists(TextureRoot, ref failures);
+            ValidateFolderExists($"{MeshRoot}/TubeCoral", ref failures);
+            ValidateFolderExists($"{MeshRoot}/Kelp", ref failures);
+            ValidateFolderExists($"{MeshRoot}/PorousRock", ref failures);
+            ValidateFolderExists($"{PrefabRoot}/TubeCoral", ref failures);
+            ValidateFolderExists($"{PrefabRoot}/Kelp", ref failures);
+            ValidateFolderExists($"{PrefabRoot}/PorousRock", ref failures);
+        }
+
+        private static void ValidateFolderExists(string folder, ref int failures)
+        {
+            if (AssetDatabase.IsValidFolder(folder))
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] Missing required folder: {folder}.");
+        }
+
+        private static void ValidateFamilySubfolderContracts(ref int failures)
+        {
+            ValidateFamilySubfolderContract(MeshRoot, "MeshRoot", ref failures);
+            ValidateFamilySubfolderContract(PrefabRoot, "PrefabRoot", ref failures);
+        }
+
+        private static void ValidateFamilySubfolderContract(string root, string label, ref int failures)
+        {
+            string[] folders = AssetDatabase.GetSubFolders(root);
+            bool hasTubeCoral = false;
+            bool hasKelp = false;
+            bool hasPorousRock = false;
+            int unexpected = 0;
+            for (int i = 0; i < folders.Length; i++)
+            {
+                string path = folders[i];
+                if (string.Equals(path, $"{root}/TubeCoral", StringComparison.Ordinal))
+                    hasTubeCoral = true;
+                else if (string.Equals(path, $"{root}/Kelp", StringComparison.Ordinal))
+                    hasKelp = true;
+                else if (string.Equals(path, $"{root}/PorousRock", StringComparison.Ordinal))
+                    hasPorousRock = true;
+                else
+                    unexpected++;
+            }
+
+            if (folders.Length == 3 && unexpected == 0 && hasTubeCoral && hasKelp && hasPorousRock)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] {label} family subfolder contract failed. Count={folders.Length}, Unexpected={unexpected}, TubeCoral={hasTubeCoral}, Kelp={hasKelp}, PorousRock={hasPorousRock}.");
+        }
+
+        private static void ValidateRuleAssets(Material material, ref int failures)
+        {
+            ValidateRuleFolderContract(ref failures);
+
+            ValidateRuleAsset(new RuleExpectation
+            {
+                Path = $"{RuleFolder}/Rule_Shallows_TubeCoral.asset",
+                AssetPrefix = "GEN_Shallows_TubeCoral",
+                Axiom = "F[+F][-F][^F][&F][/F][\\F]",
+                Replacement = "F[+F][-F][^F][&F][/F][\\F]",
+                Profile = BioForgeSdfProfile.BranchCapsules,
+                MeshFolder = $"{MeshRoot}/TubeCoral",
+                PrefabFolder = $"{PrefabRoot}/TubeCoral",
+                Iterations = 2,
+                MaxBranches = 1800,
+                SdfResolution = 40,
+                Lod0 = CoralLod0TriangleBudget,
+                Lod1 = CoralLod1TriangleBudget,
+                Lod2 = CoralLod2TriangleBudget,
+                AngleDegrees = 42f,
+                StepLength = 0.24f,
+                LengthTaper = 0.76f,
+                RootRadius = 0.24f,
+                RadiusTaper = 0.78f,
+                MinimumRadius = 0.055f,
+                BoundsPadding = 0.32f,
+                SmoothMinK = 5.5f,
+                RibbonThicknessScale = 0.18f,
+                RibbonWidthScale = 2.4f,
+                RockRadius = 1.4f,
+                RockNoiseAmplitude = 0.22f,
+                RockNoiseFrequency = 3.5f,
+                RockPoreCount = 0,
+                RockPoreRadius = 0.35f,
+                RockPoreSurfaceBias = 0.72f
+            }, material, ref failures);
+
+            ValidateRuleAsset(new RuleExpectation
+            {
+                Path = $"{RuleFolder}/Rule_Shallows_Kelp.asset",
+                AssetPrefix = "GEN_Shallows_Kelp",
+                Axiom = "F[+F][-F]F",
+                Replacement = "F[+F]F[-F]F",
+                Profile = BioForgeSdfProfile.RibbonFlora,
+                MeshFolder = $"{MeshRoot}/Kelp",
+                PrefabFolder = $"{PrefabRoot}/Kelp",
+                Iterations = 3,
+                MaxBranches = 2400,
+                SdfResolution = 36,
+                Lod0 = KelpLod0TriangleBudget,
+                Lod1 = KelpLod1TriangleBudget,
+                Lod2 = KelpLod2TriangleBudget,
+                AngleDegrees = 7.5f,
+                StepLength = 0.34f,
+                LengthTaper = 0.91f,
+                RootRadius = 0.055f,
+                RadiusTaper = 0.83f,
+                MinimumRadius = 0.018f,
+                BoundsPadding = 0.18f,
+                SmoothMinK = 13f,
+                RibbonThicknessScale = 0.12f,
+                RibbonWidthScale = 3.3f,
+                RockRadius = 1.4f,
+                RockNoiseAmplitude = 0.22f,
+                RockNoiseFrequency = 3.5f,
+                RockPoreCount = 0,
+                RockPoreRadius = 0.35f,
+                RockPoreSurfaceBias = 0.72f
+            }, material, ref failures);
+
+            ValidateRuleAsset(new RuleExpectation
+            {
+                Path = $"{RuleFolder}/Rule_Shallows_PorousRock.asset",
+                AssetPrefix = "GEN_Shallows_PorousRock",
+                Axiom = "F",
+                Replacement = "F",
+                Profile = BioForgeSdfProfile.PorousRock,
+                MeshFolder = $"{MeshRoot}/PorousRock",
+                PrefabFolder = $"{PrefabRoot}/PorousRock",
+                Iterations = 0,
+                MaxBranches = 32,
+                SdfResolution = 38,
+                Lod0 = RockLod0TriangleBudget,
+                Lod1 = RockLod1TriangleBudget,
+                Lod2 = RockLod2TriangleBudget,
+                AngleDegrees = 24f,
+                StepLength = 0.35f,
+                LengthTaper = 0.82f,
+                RootRadius = 0.13f,
+                RadiusTaper = 0.72f,
+                MinimumRadius = 0.025f,
+                BoundsPadding = 0.18f,
+                SmoothMinK = 8f,
+                RibbonThicknessScale = 0.18f,
+                RibbonWidthScale = 2.4f,
+                RockRadius = 1.15f,
+                RockNoiseAmplitude = 0.24f,
+                RockNoiseFrequency = 4.2f,
+                RockPoreCount = 18,
+                RockPoreRadius = 0.34f,
+                RockPoreSurfaceBias = 0.82f
+            }, material, ref failures);
+        }
+
+        private static void ValidateRuleAsset(RuleExpectation expected, Material material, ref int failures)
+        {
+            BioRuleData rule = AssetDatabase.LoadAssetAtPath<BioRuleData>(expected.Path);
+            if (rule == null)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Missing BioRuleData at {expected.Path}.");
+                return;
+            }
+
+            bool failed = false;
+            failed |= rule.AssetPrefix != expected.AssetPrefix;
+            failed |= rule.Material != material;
+            failed |= rule.Axiom != expected.Axiom;
+            failed |= rule.Iterations != expected.Iterations;
+            failed |= rule.MaxBranches != expected.MaxBranches;
+            failed |= !Approximately(rule.AngleDegrees, expected.AngleDegrees);
+            failed |= !Approximately(rule.StepLength, expected.StepLength);
+            failed |= !Approximately(rule.LengthTaper, expected.LengthTaper);
+            failed |= !Approximately(rule.RootRadius, expected.RootRadius);
+            failed |= !Approximately(rule.RadiusTaper, expected.RadiusTaper);
+            failed |= !Approximately(rule.MinimumRadius, expected.MinimumRadius);
+            failed |= rule.SdfResolution != expected.SdfResolution;
+            failed |= !Approximately(rule.BoundsPadding, expected.BoundsPadding);
+            failed |= !Approximately(rule.SmoothMinK, expected.SmoothMinK);
+            failed |= rule.SdfProfile != expected.Profile;
+            failed |= !Approximately(rule.RibbonThicknessScale, expected.RibbonThicknessScale);
+            failed |= !Approximately(rule.RibbonWidthScale, expected.RibbonWidthScale);
+            failed |= rule.Lod0TriangleBudget != expected.Lod0;
+            failed |= rule.Lod1TriangleBudget != expected.Lod1;
+            failed |= rule.Lod2TriangleBudget != expected.Lod2;
+            failed |= !Approximately(rule.RockRadius, expected.RockRadius);
+            failed |= !Approximately(rule.RockNoiseAmplitude, expected.RockNoiseAmplitude);
+            failed |= !Approximately(rule.RockNoiseFrequency, expected.RockNoiseFrequency);
+            failed |= rule.RockPoreCount != expected.RockPoreCount;
+            failed |= !Approximately(rule.RockPoreRadius, expected.RockPoreRadius);
+            failed |= !Approximately(rule.RockPoreSurfaceBias, expected.RockPoreSurfaceBias);
+            failed |= rule.MeshOutputFolder != expected.MeshFolder;
+            failed |= rule.PrefabOutputFolder != expected.PrefabFolder;
+
+            if (!rule.TryGetReplacement('F', out string replacement) || replacement != expected.Replacement)
+                failed = true;
+
+            SerializedObject serialized = new SerializedObject(rule);
+            failed |= !string.Equals(rule.name, Path.GetFileNameWithoutExtension(expected.Path), StringComparison.Ordinal);
+            failed |= !SerializedStringEquals(serialized, "_assetPrefix", expected.AssetPrefix);
+            failed |= !SerializedObjectReferenceEquals(serialized, "_material", material);
+            failed |= !SerializedStringEquals(serialized, "_axiom", expected.Axiom);
+            failed |= !SerializedIntEquals(serialized, "_iterations", expected.Iterations);
+            failed |= !SerializedIntEquals(serialized, "_maxBranches", expected.MaxBranches);
+            failed |= !SerializedFloatEquals(serialized, "_angleDegrees", expected.AngleDegrees);
+            failed |= !SerializedFloatEquals(serialized, "_stepLength", expected.StepLength);
+            failed |= !SerializedFloatEquals(serialized, "_lengthTaper", expected.LengthTaper);
+            failed |= !SerializedFloatEquals(serialized, "_rootRadius", expected.RootRadius);
+            failed |= !SerializedFloatEquals(serialized, "_radiusTaper", expected.RadiusTaper);
+            failed |= !SerializedFloatEquals(serialized, "_minimumRadius", expected.MinimumRadius);
+            failed |= !SerializedIntEquals(serialized, "_sdfResolution", expected.SdfResolution);
+            failed |= !SerializedFloatEquals(serialized, "_boundsPadding", expected.BoundsPadding);
+            failed |= !SerializedFloatEquals(serialized, "_smoothMinK", expected.SmoothMinK);
+            failed |= !SerializedIntEquals(serialized, "_sdfProfile", (int)expected.Profile);
+            failed |= !SerializedFloatEquals(serialized, "_ribbonThicknessScale", expected.RibbonThicknessScale);
+            failed |= !SerializedFloatEquals(serialized, "_ribbonWidthScale", expected.RibbonWidthScale);
+            failed |= !SerializedIntEquals(serialized, "_lod0TriangleBudget", expected.Lod0);
+            failed |= !SerializedIntEquals(serialized, "_lod1TriangleBudget", expected.Lod1);
+            failed |= !SerializedIntEquals(serialized, "_lod2TriangleBudget", expected.Lod2);
+            failed |= !SerializedFloatEquals(serialized, "_rockRadius", expected.RockRadius);
+            failed |= !SerializedFloatEquals(serialized, "_rockNoiseAmplitude", expected.RockNoiseAmplitude);
+            failed |= !SerializedFloatEquals(serialized, "_rockNoiseFrequency", expected.RockNoiseFrequency);
+            failed |= !SerializedIntEquals(serialized, "_rockPoreCount", expected.RockPoreCount);
+            failed |= !SerializedFloatEquals(serialized, "_rockPoreRadius", expected.RockPoreRadius);
+            failed |= !SerializedFloatEquals(serialized, "_rockPoreSurfaceBias", expected.RockPoreSurfaceBias);
+            failed |= !SerializedStringEquals(serialized, "_meshOutputFolder", expected.MeshFolder);
+            failed |= !SerializedStringEquals(serialized, "_prefabOutputFolder", expected.PrefabFolder);
+
+            SerializedProperty rules = serialized.FindProperty("_rules");
+            if (rules == null || !rules.isArray || rules.arraySize != 1)
+            {
+                failed = true;
+            }
+            else
+            {
+                SerializedProperty element = rules.GetArrayElementAtIndex(0);
+                failed |= element.FindPropertyRelative("_symbol").stringValue != "F";
+                failed |= element.FindPropertyRelative("_replacement").stringValue != expected.Replacement;
+            }
+
+            if (failed)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] BioRuleData contract drift at {expected.Path}.");
+            }
+        }
+
+        private static void ValidateRuleFolderContract(ref int failures)
+        {
+            string[] guids = AssetDatabase.FindAssets("t:BioRuleData", new[] { RuleFolder });
+            int unexpected = 0;
+            bool hasTubeCoral = false;
+            bool hasKelp = false;
+            bool hasPorousRock = false;
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                if (string.Equals(path, $"{RuleFolder}/Rule_Shallows_TubeCoral.asset", StringComparison.Ordinal))
+                    hasTubeCoral = true;
+                else if (string.Equals(path, $"{RuleFolder}/Rule_Shallows_Kelp.asset", StringComparison.Ordinal))
+                    hasKelp = true;
+                else if (string.Equals(path, $"{RuleFolder}/Rule_Shallows_PorousRock.asset", StringComparison.Ordinal))
+                    hasPorousRock = true;
+                else
+                    unexpected++;
+            }
+
+            if (guids.Length == 3 && unexpected == 0 && hasTubeCoral && hasKelp && hasPorousRock)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] Rule folder contract failed. Count={guids.Length}, Unexpected={unexpected}, TubeCoral={hasTubeCoral}, Kelp={hasKelp}, PorousRock={hasPorousRock}.");
+        }
+
+        private static bool Approximately(float actual, float expected)
+        {
+            return Mathf.Abs(actual - expected) <= 0.0001f;
+        }
+
+        private static bool Approximately(Color actual, Color expected)
+        {
+            return Approximately(actual.r, expected.r) &&
+                   Approximately(actual.g, expected.g) &&
+                   Approximately(actual.b, expected.b) &&
+                   Approximately(actual.a, expected.a);
+        }
+
+        private static bool Approximately(Vector2 actual, Vector2 expected)
+        {
+            return (actual - expected).sqrMagnitude <= TransformEpsilonSq;
+        }
+
+        private static bool Approximately(Vector3 actual, Vector3 expected)
+        {
+            return (actual - expected).sqrMagnitude <= TransformEpsilonSq;
+        }
+
+        private static bool Approximately(Quaternion actual, Quaternion expected)
+        {
+            return Quaternion.Angle(actual, expected) <= 0.01f;
         }
 
         private static void ValidateAtlasImporter(string path, AtlasKind kind, ref int failures)
@@ -390,14 +1074,36 @@ namespace Hecton8.Editor.ProceduralGen
 
             bool expectedSrgb = kind == AtlasKind.Albedo || kind == AtlasKind.MatCap;
             TextureImporterType expectedType = kind == AtlasKind.Normal ? TextureImporterType.NormalMap : TextureImporterType.Default;
-            if (importer.wrapMode != TextureWrapMode.Repeat || !importer.mipmapEnabled || importer.isReadable || importer.textureCompression != TextureImporterCompression.Compressed || importer.crunchedCompression || importer.sRGBTexture != expectedSrgb || importer.textureType != expectedType || importer.maxTextureSize != AtlasSize)
+            if (importer.wrapMode != TextureWrapMode.Repeat ||
+                importer.wrapModeU != TextureWrapMode.Repeat ||
+                importer.wrapModeV != TextureWrapMode.Repeat ||
+                importer.wrapModeW != TextureWrapMode.Repeat ||
+                importer.filterMode != FilterMode.Bilinear ||
+                importer.anisoLevel != 1 ||
+                !Approximately(importer.mipMapBias, 0f) ||
+                !importer.mipmapEnabled ||
+                importer.isReadable ||
+                importer.textureCompression != TextureImporterCompression.Compressed ||
+                importer.crunchedCompression ||
+                importer.sRGBTexture != expectedSrgb ||
+                importer.textureType != expectedType ||
+                importer.maxTextureSize != AtlasSize)
             {
                 failures++;
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] Atlas importer contract failed at {path}.");
             }
 
-            TextureImporterPlatformSettings standalone = importer.GetPlatformTextureSettings("Standalone");
             TextureImporterFormat expectedFormat = kind == AtlasKind.Normal ? TextureImporterFormat.BC5 : TextureImporterFormat.BC7;
+            TextureImporterPlatformSettings defaultPlatform = importer.GetPlatformTextureSettings("DefaultTexturePlatform");
+            if (defaultPlatform.maxTextureSize != AtlasSize ||
+                defaultPlatform.textureCompression != TextureImporterCompression.Compressed ||
+                defaultPlatform.crunchedCompression)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Atlas DefaultTexturePlatform contract failed at {path}.");
+            }
+
+            TextureImporterPlatformSettings standalone = importer.GetPlatformTextureSettings("Standalone");
             if (!standalone.overridden || standalone.maxTextureSize != AtlasSize || standalone.textureCompression != TextureImporterCompression.Compressed || standalone.crunchedCompression || standalone.format != expectedFormat)
             {
                 failures++;
@@ -416,6 +1122,8 @@ namespace Hecton8.Editor.ProceduralGen
                 failures++;
             }
 
+            ValidateFamilyIndexContract(familyFolder, expectedCount, guids, ref failures);
+
             for (int i = 0; i < guids.Length; i++)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guids[i]);
@@ -425,6 +1133,48 @@ namespace Hecton8.Editor.ProceduralGen
 
             ValidateMeshFamily(familyFolder, expectedCount, ref failures);
             return count;
+        }
+
+        private static void ValidateFamilyIndexContract(string familyFolder, int expectedCount, string[] guids, ref int failures)
+        {
+            if (expectedCount > FamilyIndexScratch.Length)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Family index scratch too small for {familyFolder}. Expected={expectedCount}, Capacity={FamilyIndexScratch.Length}.");
+                return;
+            }
+
+            Array.Clear(FamilyIndexScratch, 0, expectedCount);
+
+            int bad = 0;
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                string assetStem = Path.GetFileNameWithoutExtension(path);
+                if (!TryResolvePrefabNameContract(familyFolder, out string prefix, out _) ||
+                    !assetStem.StartsWith(prefix, StringComparison.Ordinal) ||
+                    !TryParseThreeDigitIndex(assetStem, prefix.Length, out int index) ||
+                    index >= expectedCount ||
+                    FamilyIndexScratch[index])
+                {
+                    bad++;
+                    continue;
+                }
+
+                FamilyIndexScratch[index] = true;
+            }
+
+            for (int i = 0; i < expectedCount; i++)
+            {
+                if (!FamilyIndexScratch[i])
+                    bad++;
+            }
+
+            if (bad == 0)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] {familyFolder} index completeness contract failed. Expected={expectedCount}, BadSlots={bad}.");
         }
 
         private static void ValidateMeshFamily(string familyFolder, int expectedCount, ref int failures)
@@ -456,6 +1206,55 @@ namespace Hecton8.Editor.ProceduralGen
                 failures++;
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] {familyFolder} LOD mesh distribution mismatch. LOD0={lod0}, LOD1={lod1}, LOD2={lod2}, Unexpected={unexpected}.");
             }
+
+            ValidateMeshLodIndexContract(familyFolder, expectedCount, meshGuids, ref failures);
+        }
+
+        private static void ValidateMeshLodIndexContract(string familyFolder, int expectedCount, string[] meshGuids, ref int failures)
+        {
+            int expectedSlots = expectedCount * 3;
+            if (expectedSlots > MeshLodIndexScratch.Length)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Mesh LOD index scratch too small for {familyFolder}. Expected={expectedSlots}, Capacity={MeshLodIndexScratch.Length}.");
+                return;
+            }
+
+            Array.Clear(MeshLodIndexScratch, 0, expectedSlots);
+
+            int bad = 0;
+            for (int i = 0; i < meshGuids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(meshGuids[i]);
+                string assetStem = Path.GetFileNameWithoutExtension(path);
+                if (!TryParseMeshLodStem(familyFolder, assetStem, out int index, out int lodIndex) ||
+                    index >= expectedCount)
+                {
+                    bad++;
+                    continue;
+                }
+
+                int slot = (index * 3) + lodIndex;
+                if (MeshLodIndexScratch[slot])
+                {
+                    bad++;
+                    continue;
+                }
+
+                MeshLodIndexScratch[slot] = true;
+            }
+
+            for (int i = 0; i < expectedSlots; i++)
+            {
+                if (!MeshLodIndexScratch[i])
+                    bad++;
+            }
+
+            if (bad == 0)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] {familyFolder} mesh LOD index completeness contract failed. ExpectedSlots={expectedSlots}, BadSlots={bad}.");
         }
 
         private static void ValidatePrefab(string path, string familyFolder, GameObject prefab, Material material, bool rock, ref int failures)
@@ -467,6 +1266,8 @@ namespace Hecton8.Editor.ProceduralGen
                 return;
             }
 
+            ValidatePrefabNameContract(path, familyFolder, prefab, rock, ref failures);
+
             LODGroup lodGroup = prefab.GetComponent<LODGroup>();
             if (lodGroup == null || lodGroup.GetLODs().Length != 3)
             {
@@ -476,7 +1277,11 @@ namespace Hecton8.Editor.ProceduralGen
             }
 
             LOD[] lods = lodGroup.GetLODs();
-            ValidateLodContract(path, lods, ref failures);
+            ValidatePrefabTransformContract(path, prefab.transform, ref failures);
+            ValidatePrefabHierarchyContract(path, prefab.transform, rock, ref failures);
+            ValidateStaticFlagsContract(path, prefab, ref failures);
+            ValidateLodGroupContract(path, lodGroup, lods, ref failures);
+            ValidateLodContract(path, familyFolder, lods, ref failures);
             ValidatePrefabMeshReferences(path, familyFolder, lods, ref failures);
 
             Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>(true);
@@ -489,10 +1294,12 @@ namespace Hecton8.Editor.ProceduralGen
             for (int i = 0; i < renderers.Length; i++)
             {
                 Renderer renderer = renderers[i];
-                if (renderer.sharedMaterial != material)
+                ValidateRendererMaterialContract(path, renderer, material, ref failures);
+
+                if (!renderer.enabled)
                 {
                     failures++;
-                    Debug.LogError($"[ShallowsBioForgeBatchBaker] Material mismatch at {path}.");
+                    Debug.LogError($"[ShallowsBioForgeBatchBaker] Disabled renderer found at {path}.");
                 }
 
                 if (renderer.shadowCastingMode != ShadowCastingMode.Off)
@@ -506,6 +1313,9 @@ namespace Hecton8.Editor.ProceduralGen
                     failures++;
                     Debug.LogError($"[ShallowsBioForgeBatchBaker] Renderer hot-path flags invalid at {path}.");
                 }
+
+                ValidateRendererSerializedStateContract(path, renderer, ref failures);
+                ValidateRendererTransformContract(path, renderer.transform, ref failures);
             }
 
             Mesh lod2Mesh = ResolveFirstMesh(lods[2].renderers);
@@ -515,9 +1325,6 @@ namespace Hecton8.Editor.ProceduralGen
                 failures++;
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD2 triangle overflow at {path}. Triangles={lod2Triangles}.");
             }
-
-            Mesh lod0Mesh = ResolveFirstMesh(lods[0].renderers);
-            ValidateVertexColorGradient(path, lod0Mesh, ref failures);
 
             MeshCollider[] colliders = prefab.GetComponentsInChildren<MeshCollider>(true);
             if (rock)
@@ -539,6 +1346,298 @@ namespace Hecton8.Editor.ProceduralGen
 
         }
 
+        private static void ValidatePrefabNameContract(string path, string familyFolder, GameObject prefab, bool rock, ref int failures)
+        {
+            string assetStem = Path.GetFileNameWithoutExtension(path);
+            if (!string.Equals(prefab.name, assetStem, StringComparison.Ordinal))
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Prefab root name mismatch at {path}. Root={prefab.name}, Stem={assetStem}.");
+            }
+
+            if (!TryResolvePrefabNameContract(familyFolder, out string prefix, out string kind))
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Missing prefab name contract for family={familyFolder}, Prefab={path}.");
+                return;
+            }
+
+            bool rockKind = string.Equals(kind, "Rock", StringComparison.Ordinal);
+            if (rock != rockKind)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Prefab kind contract mismatch at {path}. Family={familyFolder}, Kind={kind}, RockFlag={rock}.");
+            }
+
+            int indexStart = prefix.Length;
+            int kindSeparator = indexStart + 3;
+            int kindStart = kindSeparator + 1;
+            int hashSeparator = kindStart + kind.Length;
+            int hashStart = hashSeparator + 1;
+            int expectedLength = hashStart + 8;
+
+            bool valid = assetStem.Length == expectedLength &&
+                         assetStem.StartsWith(prefix, StringComparison.Ordinal) &&
+                         IsThreeDigitIndex(assetStem, indexStart) &&
+                         assetStem[kindSeparator] == '_' &&
+                         StringRangeEquals(assetStem, kindStart, kind) &&
+                         assetStem[hashSeparator] == '_' &&
+                         IsUpperHex8(assetStem, hashStart);
+            if (valid)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] Prefab name contract failed at {path}. Expected={prefix}###_{kind}_HHHHHHHH, Actual={assetStem}.");
+        }
+
+        private static void ValidatePrefabTransformContract(string path, Transform root, ref int failures)
+        {
+            if (!Approximately(root.localPosition, Vector3.zero) || !Approximately(root.localRotation, Quaternion.identity) || !Approximately(root.localScale, Vector3.one))
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Root transform contract failed at {path}.");
+            }
+        }
+
+        private static void ValidatePrefabHierarchyContract(string path, Transform root, bool rock, ref int failures)
+        {
+            int lod0 = 0;
+            int lod1 = 0;
+            int lod2 = 0;
+            int collision = 0;
+            int unexpected = 0;
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform child = root.GetChild(i);
+                if (string.Equals(child.name, "LOD0", StringComparison.Ordinal)) lod0++;
+                else if (string.Equals(child.name, "LOD1", StringComparison.Ordinal)) lod1++;
+                else if (string.Equals(child.name, "LOD2", StringComparison.Ordinal)) lod2++;
+                else if (string.Equals(child.name, "Collision_LOD2", StringComparison.Ordinal)) collision++;
+                else unexpected++;
+            }
+
+            int expectedChildren = rock ? 4 : 3;
+            int expectedTransforms = rock ? 5 : 4;
+            if (root.childCount != expectedChildren ||
+                lod0 != 1 ||
+                lod1 != 1 ||
+                lod2 != 1 ||
+                collision != (rock ? 1 : 0) ||
+                unexpected != 0)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Prefab hierarchy contract failed at {path}. Children={root.childCount}, LOD0={lod0}, LOD1={lod1}, LOD2={lod2}, Collision={collision}, Unexpected={unexpected}.");
+            }
+
+            TransformScratch.Clear();
+            root.GetComponentsInChildren<Transform>(true, TransformScratch);
+            if (TransformScratch.Count != expectedTransforms)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Prefab transform count contract failed at {path}. Expected={expectedTransforms}, Actual={TransformScratch.Count}.");
+            }
+
+            for (int i = 0; i < TransformScratch.Count; i++)
+            {
+                ValidateGameObjectStateContract(path, TransformScratch[i], ref failures);
+                ValidateComponentEnvelope(path, TransformScratch[i], root, rock, ref failures);
+            }
+
+            TransformScratch.Clear();
+        }
+
+        private static void ValidateGameObjectStateContract(string path, Transform transform, ref int failures)
+        {
+            GameObject gameObject = transform.gameObject;
+            if (gameObject.activeSelf && gameObject.layer == DefaultLayer && gameObject.CompareTag(UntaggedTag))
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] GameObject state contract failed at {path}. Child={transform.name}, Active={gameObject.activeSelf}, Layer={gameObject.layer}, Tag={gameObject.tag}.");
+        }
+
+        private static void ValidateComponentEnvelope(string path, Transform transform, Transform root, bool rock, ref int failures)
+        {
+            ComponentScratch.Clear();
+            transform.GetComponents<Component>(ComponentScratch);
+
+            bool valid;
+            if (transform == root)
+            {
+                valid = ComponentScratch.Count == 2 &&
+                        ScratchContainsComponent<Transform>() &&
+                        ScratchContainsComponent<LODGroup>();
+            }
+            else if (string.Equals(transform.name, "LOD0", StringComparison.Ordinal) ||
+                     string.Equals(transform.name, "LOD1", StringComparison.Ordinal) ||
+                     string.Equals(transform.name, "LOD2", StringComparison.Ordinal))
+            {
+                valid = ComponentScratch.Count == 3 &&
+                        ScratchContainsComponent<Transform>() &&
+                        ScratchContainsComponent<MeshFilter>() &&
+                        ScratchContainsComponent<MeshRenderer>();
+            }
+            else if (rock && string.Equals(transform.name, "Collision_LOD2", StringComparison.Ordinal))
+            {
+                valid = ComponentScratch.Count == 2 &&
+                        ScratchContainsComponent<Transform>() &&
+                        ScratchContainsComponent<MeshCollider>();
+            }
+            else
+            {
+                valid = false;
+            }
+
+            int componentCount = ComponentScratch.Count;
+            ComponentScratch.Clear();
+            if (valid)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] Component envelope contract failed at {path}. Child={transform.name}, Components={componentCount}.");
+        }
+
+        private static bool ScratchContainsComponent<T>() where T : Component
+        {
+            for (int i = 0; i < ComponentScratch.Count; i++)
+            {
+                if (ComponentScratch[i] is T)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void ValidateStaticFlagsContract(string path, GameObject prefab, ref int failures)
+        {
+            TransformScratch.Clear();
+            prefab.GetComponentsInChildren<Transform>(true, TransformScratch);
+            for (int i = 0; i < TransformScratch.Count; i++)
+            {
+                int flags = (int)GameObjectUtility.GetStaticEditorFlags(TransformScratch[i].gameObject);
+                if (flags == 0)
+                    continue;
+
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Static batching/editor flags are forbidden at {path}. Child={TransformScratch[i].name}, Flags={flags}.");
+            }
+
+            TransformScratch.Clear();
+        }
+
+        private static void ValidateRendererMaterialContract(string path, Renderer renderer, Material material, ref int failures)
+        {
+            RendererMaterialScratch.Clear();
+            renderer.GetSharedMaterials(RendererMaterialScratch);
+            bool failed = RendererMaterialScratch.Count != 1 || RendererMaterialScratch[0] != material;
+            int materialCount = RendererMaterialScratch.Count;
+            RendererMaterialScratch.Clear();
+            if (!failed)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] Renderer material slot contract failed at {path}. Materials={materialCount}.");
+        }
+
+        private static void ValidateRendererSerializedStateContract(string path, Renderer renderer, ref int failures)
+        {
+            SerializedObject serialized = new SerializedObject(renderer);
+            if (!renderer.forceRenderingOff &&
+                SerializedIntEquals(serialized, "m_StaticShadowCaster", 0) &&
+                SerializedIntEquals(serialized, "m_RenderingLayerMask", 1) &&
+                SerializedIntEquals(serialized, "m_RendererPriority", 0) &&
+                SerializedObjectReferenceIsNull(serialized, "m_ProbeAnchor") &&
+                SerializedObjectReferenceIsNull(serialized, "m_LightProbeVolumeOverride") &&
+                SerializedIntEquals(serialized, "m_SortingLayerID", 0) &&
+                SerializedIntEquals(serialized, "m_SortingLayer", 0) &&
+                SerializedIntEquals(serialized, "m_SortingOrder", 0))
+            {
+                return;
+            }
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] Renderer serialized state contract failed at {path}. Renderer={renderer.name}.");
+        }
+
+        private static bool SerializedIntEquals(SerializedObject serialized, string propertyName, int expected)
+        {
+            SerializedProperty property = serialized.FindProperty(propertyName);
+            return property != null && property.intValue == expected;
+        }
+
+        private static bool SerializedFloatEquals(SerializedObject serialized, string propertyName, float expected)
+        {
+            SerializedProperty property = serialized.FindProperty(propertyName);
+            return property != null && Approximately(property.floatValue, expected);
+        }
+
+        private static bool SerializedStringEquals(SerializedObject serialized, string propertyName, string expected)
+        {
+            SerializedProperty property = serialized.FindProperty(propertyName);
+            return property != null && string.Equals(property.stringValue, expected, StringComparison.Ordinal);
+        }
+
+        private static bool SerializedObjectReferenceEquals(SerializedObject serialized, string propertyName, UnityEngine.Object expected)
+        {
+            SerializedProperty property = serialized.FindProperty(propertyName);
+            return property != null && property.objectReferenceValue == expected;
+        }
+
+        private static bool SerializedObjectReferenceIsNull(SerializedObject serialized, string propertyName)
+        {
+            SerializedProperty property = serialized.FindProperty(propertyName);
+            return property != null && property.objectReferenceValue == null;
+        }
+
+        private static void ValidateLodGroupContract(string path, LODGroup lodGroup, LOD[] lods, ref int failures)
+        {
+            if (!lodGroup.enabled)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] LODGroup is disabled at {path}.");
+            }
+
+            if (!IsFinite(lodGroup.localReferencePoint) || !IsFinite(lodGroup.size) || lodGroup.size <= 0f)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] LODGroup bounds contract failed at {path}. Size={lodGroup.size:0.000000}, LocalReferencePoint={lodGroup.localReferencePoint}.");
+            }
+
+            if (lodGroup.fadeMode != LODFadeMode.CrossFade || !lodGroup.animateCrossFading)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD crossfade mode contract failed at {path}.");
+            }
+
+            if (!Approximately(lods[0].screenRelativeTransitionHeight, Lod0ScreenHeight) ||
+                !Approximately(lods[1].screenRelativeTransitionHeight, Lod1ScreenHeight) ||
+                !Approximately(lods[2].screenRelativeTransitionHeight, Lod2ScreenHeight) ||
+                !Approximately(lods[0].fadeTransitionWidth, Lod0FadeWidth) ||
+                !Approximately(lods[1].fadeTransitionWidth, Lod1FadeWidth) ||
+                !Approximately(lods[2].fadeTransitionWidth, Lod2FadeWidth))
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD distance/fade contract failed at {path}.");
+            }
+        }
+
+        private static void ValidateRendererTransformContract(string path, Transform rendererTransform, ref int failures)
+        {
+            if (!string.Equals(rendererTransform.name, "LOD0", StringComparison.Ordinal) &&
+                !string.Equals(rendererTransform.name, "LOD1", StringComparison.Ordinal) &&
+                !string.Equals(rendererTransform.name, "LOD2", StringComparison.Ordinal))
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD child name contract failed at {path}. Child={rendererTransform.name}.");
+            }
+
+            if (!Approximately(rendererTransform.localRotation, Quaternion.identity) || !Approximately(rendererTransform.localScale, Vector3.one))
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD child transform contract failed at {path}.");
+            }
+        }
+
         private static void ValidatePrefabMeshReferences(string path, string familyFolder, LOD[] lods, ref int failures)
         {
             string assetStem = Path.GetFileNameWithoutExtension(path);
@@ -552,10 +1651,17 @@ namespace Hecton8.Editor.ProceduralGen
                     failures++;
                     Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{i} mesh reference mismatch at {path}. Expected={expectedPath}, Actual={actualPath}.");
                 }
+
+                string expectedMeshName = $"{assetStem}_LOD{i}";
+                if (mesh != null && !string.Equals(mesh.name, expectedMeshName, StringComparison.Ordinal))
+                {
+                    failures++;
+                    Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{i} mesh name mismatch at {path}. Expected={expectedMeshName}, Actual={mesh.name}.");
+                }
             }
         }
 
-        private static void ValidateLodContract(string path, LOD[] lods, ref int failures)
+        private static void ValidateLodContract(string path, string familyFolder, LOD[] lods, ref int failures)
         {
             for (int i = 0; i < lods.Length; i++)
             {
@@ -569,17 +1675,305 @@ namespace Hecton8.Editor.ProceduralGen
 
                 Renderer renderer = renderers[0];
                 MeshFilter meshFilter = renderer != null ? renderer.GetComponent<MeshFilter>() : null;
-                if (renderer == null || meshFilter == null || meshFilter.sharedMesh == null)
+                Mesh mesh = meshFilter != null ? meshFilter.sharedMesh : null;
+                if (renderer == null || meshFilter == null || mesh == null)
                 {
                     failures++;
                     Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{i} mesh contract failed at {path}.");
+                    continue;
                 }
+
+                ValidateMeshGeometryContract(path, familyFolder, i, mesh, ref failures);
+                ValidateLodTriangleBudget(path, familyFolder, i, mesh, ref failures);
+                ValidateLodVertexBudget(path, familyFolder, i, mesh, ref failures);
+                ValidateVertexColorGradient(path, i, mesh, ref failures);
             }
+        }
+
+        private static void ValidateMeshGeometryContract(string path, string familyFolder, int lodIndex, Mesh mesh, ref int failures)
+        {
+            if (!TryResolveMaxBoundsExtentSq(familyFolder, out float maxBoundsExtentSq))
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Missing mesh bounds budget for family={familyFolder}, LOD={lodIndex}, Prefab={path}.");
+                return;
+            }
+
+            Bounds bounds = mesh.bounds;
+            bool hasPosition = mesh.HasVertexAttribute(VertexAttribute.Position);
+            bool hasNormal = mesh.HasVertexAttribute(VertexAttribute.Normal);
+            bool hasColor = mesh.HasVertexAttribute(VertexAttribute.Color);
+            bool hasUv0 = mesh.HasVertexAttribute(VertexAttribute.TexCoord0);
+            bool hasSingleSubMesh = mesh.subMeshCount == 1;
+            ulong indexCount = hasSingleSubMesh ? mesh.GetIndexCount(0) : 0ul;
+            MeshTopology topology = hasSingleSubMesh ? mesh.GetTopology(0) : MeshTopology.Triangles;
+            float boundsExtentSq = bounds.extents.sqrMagnitude;
+            bool failed = mesh.vertexCount <= 0 ||
+                          !hasSingleSubMesh ||
+                          indexCount == 0ul ||
+                          indexCount % 3ul != 0ul ||
+                          topology != MeshTopology.Triangles ||
+                          !mesh.isReadable ||
+                          mesh.indexFormat != IndexFormat.UInt16 ||
+                          !hasPosition ||
+                          !hasNormal ||
+                          !hasColor ||
+                          !hasUv0 ||
+                          !IsFinite(bounds.center) ||
+                          !IsFinite(bounds.extents) ||
+                          boundsExtentSq <= TransformEpsilonSq ||
+                          boundsExtentSq > maxBoundsExtentSq;
+
+            if (!failed)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{lodIndex} mesh geometry contract failed at {path}. Vertices={mesh.vertexCount}, SubMeshes={mesh.subMeshCount}, IndexCount={indexCount}, Topology={topology}, Readable={mesh.isReadable}, IndexFormat={mesh.indexFormat}, Position={hasPosition}, Normal={hasNormal}, Color={hasColor}, Uv0={hasUv0}, BoundsExtentSq={boundsExtentSq:0.000000}, MaxBoundsExtentSq={maxBoundsExtentSq:0.000000}.");
+        }
+
+        private static void ValidateLodTriangleBudget(string path, string familyFolder, int lodIndex, Mesh mesh, ref int failures)
+        {
+            if (!TryResolveLodTriangleBudget(familyFolder, lodIndex, out int triangleBudget))
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Missing LOD triangle budget for family={familyFolder}, LOD={lodIndex}, Prefab={path}.");
+                return;
+            }
+
+            int triangles = ResolveTriangleCount(mesh);
+            if (triangles > 0 && triangles <= triangleBudget)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{lodIndex} triangle budget failed at {path}. Triangles={triangles}, Budget={triangleBudget}.");
+        }
+
+        private static void ValidateLodVertexBudget(string path, string familyFolder, int lodIndex, Mesh mesh, ref int failures)
+        {
+            if (!TryResolveLodTriangleBudget(familyFolder, lodIndex, out int triangleBudget))
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Missing LOD vertex budget for family={familyFolder}, LOD={lodIndex}, Prefab={path}.");
+                return;
+            }
+
+            int vertexBudget = triangleBudget * 3;
+            if (mesh.vertexCount > 0 && mesh.vertexCount <= vertexBudget)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{lodIndex} vertex budget failed at {path}. Vertices={mesh.vertexCount}, Budget={vertexBudget}.");
+        }
+
+        private static bool TryResolveLodTriangleBudget(string familyFolder, int lodIndex, out int triangleBudget)
+        {
+            switch (familyFolder)
+            {
+                case "TubeCoral":
+                    return TryResolveLodTriangleBudget(
+                        lodIndex,
+                        CoralLod0TriangleBudget,
+                        CoralLod1TriangleBudget,
+                        CoralLod2TriangleBudget,
+                        out triangleBudget);
+                case "Kelp":
+                    return TryResolveLodTriangleBudget(
+                        lodIndex,
+                        KelpLod0TriangleBudget,
+                        KelpLod1TriangleBudget,
+                        KelpLod2TriangleBudget,
+                        out triangleBudget);
+                case "PorousRock":
+                    return TryResolveLodTriangleBudget(
+                        lodIndex,
+                        RockLod0TriangleBudget,
+                        RockLod1TriangleBudget,
+                        RockLod2TriangleBudget,
+                        out triangleBudget);
+                default:
+                    triangleBudget = 0;
+                    return false;
+            }
+        }
+
+        private static bool TryResolveMaxBoundsExtentSq(string familyFolder, out float maxBoundsExtentSq)
+        {
+            switch (familyFolder)
+            {
+                case "TubeCoral":
+                    maxBoundsExtentSq = CoralMaxBoundsExtentSq;
+                    return true;
+                case "Kelp":
+                    maxBoundsExtentSq = KelpMaxBoundsExtentSq;
+                    return true;
+                case "PorousRock":
+                    maxBoundsExtentSq = RockMaxBoundsExtentSq;
+                    return true;
+                default:
+                    maxBoundsExtentSq = 0f;
+                    return false;
+            }
+        }
+
+        private static bool TryResolvePrefabNameContract(string familyFolder, out string prefix, out string kind)
+        {
+            switch (familyFolder)
+            {
+                case "TubeCoral":
+                    prefix = "GEN_Shallows_TubeCoral_";
+                    kind = "Flora";
+                    return true;
+                case "Kelp":
+                    prefix = "GEN_Shallows_Kelp_";
+                    kind = "Flora";
+                    return true;
+                case "PorousRock":
+                    prefix = "GEN_Shallows_PorousRock_";
+                    kind = "Rock";
+                    return true;
+                default:
+                    prefix = string.Empty;
+                    kind = string.Empty;
+                    return false;
+            }
+        }
+
+        private static bool TryResolveLodTriangleBudget(int lodIndex, int lod0, int lod1, int lod2, out int triangleBudget)
+        {
+            switch (lodIndex)
+            {
+                case 0:
+                    triangleBudget = lod0;
+                    return true;
+                case 1:
+                    triangleBudget = lod1;
+                    return true;
+                case 2:
+                    triangleBudget = lod2;
+                    return true;
+                default:
+                    triangleBudget = 0;
+                    return false;
+            }
+        }
+
+        private static bool IsThreeDigitIndex(string value, int start)
+        {
+            if (start < 0 || start + 3 > value.Length)
+                return false;
+
+            for (int i = 0; i < 3; i++)
+            {
+                char c = value[start + i];
+                if (c < '0' || c > '9')
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryParseMeshLodStem(string familyFolder, string assetStem, out int index, out int lodIndex)
+        {
+            index = 0;
+            lodIndex = 0;
+            if (!TryResolvePrefabNameContract(familyFolder, out string prefix, out string kind))
+                return false;
+
+            int indexStart = prefix.Length;
+            int kindSeparator = indexStart + 3;
+            int kindStart = kindSeparator + 1;
+            int hashSeparator = kindStart + kind.Length;
+            int hashStart = hashSeparator + 1;
+            int lodSeparator = hashStart + 8;
+            int lodStart = lodSeparator + 1;
+            int lodDigit = lodStart + 3;
+            int expectedLength = lodDigit + 1;
+
+            if (assetStem.Length != expectedLength ||
+                !assetStem.StartsWith(prefix, StringComparison.Ordinal) ||
+                !TryParseThreeDigitIndex(assetStem, indexStart, out index) ||
+                assetStem[kindSeparator] != '_' ||
+                !StringRangeEquals(assetStem, kindStart, kind) ||
+                assetStem[hashSeparator] != '_' ||
+                !IsUpperHex8(assetStem, hashStart) ||
+                assetStem[lodSeparator] != '_' ||
+                !StringRangeEquals(assetStem, lodStart, "LOD"))
+            {
+                return false;
+            }
+
+            char lodChar = assetStem[lodDigit];
+            if (lodChar < '0' || lodChar > '2')
+                return false;
+
+            lodIndex = lodChar - '0';
+            return true;
+        }
+
+        private static bool TryParseThreeDigitIndex(string value, int start, out int index)
+        {
+            index = 0;
+            if (!IsThreeDigitIndex(value, start))
+                return false;
+
+            index = ((value[start] - '0') * 100) +
+                    ((value[start + 1] - '0') * 10) +
+                    (value[start + 2] - '0');
+            return true;
+        }
+
+        private static bool IsUpperHex8(string value, int start)
+        {
+            if (start < 0 || start + 8 > value.Length)
+                return false;
+
+            for (int i = 0; i < 8; i++)
+            {
+                if (!IsUpperHexDigit(value[start + i]))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsUpperHexDigit(char value)
+        {
+            return (value >= '0' && value <= '9') || (value >= 'A' && value <= 'F');
+        }
+
+        private static bool StringRangeEquals(string value, int start, string expected)
+        {
+            if (start < 0 || start + expected.Length > value.Length)
+                return false;
+
+            for (int i = 0; i < expected.Length; i++)
+            {
+                if (value[start + i] != expected[i])
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
         }
 
         private static void ValidateRockCollider(string path, MeshCollider[] colliders, LOD[] lods, ref int failures)
         {
-            if (colliders.Length != 1 || !colliders[0].convex || colliders[0].sharedMesh == null)
+            Mesh lod2Mesh = ResolveFirstMesh(lods[2].renderers);
+            if (colliders.Length != 1 ||
+                !colliders[0].enabled ||
+                colliders[0].isTrigger ||
+                !colliders[0].convex ||
+                colliders[0].sharedMesh == null ||
+                colliders[0].sharedMesh != lod2Mesh)
             {
                 failures++;
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] Rock collider contract failed at {path}.");
@@ -600,38 +1994,64 @@ namespace Hecton8.Editor.ProceduralGen
                 failures++;
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] Rock collider offset mismatch at {path}. DeltaSq={delta.sqrMagnitude:0.000000}.");
             }
+
+            if (!string.Equals(colliders[0].transform.name, "Collision_LOD2", StringComparison.Ordinal) ||
+                !Approximately(colliders[0].transform.localRotation, Quaternion.identity) ||
+                !Approximately(colliders[0].transform.localScale, Vector3.one))
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Rock collider transform contract failed at {path}.");
+            }
         }
 
-        private static void ValidateVertexColorGradient(string path, Mesh mesh, ref int failures)
+        private static void ValidateVertexColorGradient(string path, int lodIndex, Mesh mesh, ref int failures)
         {
             if (mesh == null || mesh.vertexCount == 0)
             {
                 failures++;
-                Debug.LogError($"[ShallowsBioForgeBatchBaker] Missing LOD0 mesh for vertex color gradient at {path}.");
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Missing LOD{lodIndex} mesh for vertex color gradient at {path}.");
                 return;
             }
 
-            Color[] colors = mesh.colors;
-            if (colors == null || colors.Length != mesh.vertexCount)
+            if (!mesh.isReadable)
             {
                 failures++;
-                Debug.LogError($"[ShallowsBioForgeBatchBaker] Missing vertex colors at {path}.");
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{lodIndex} mesh is not readable for vertex color gradient validation at {path}.");
+                return;
+            }
+
+            if (mesh.vertexCount > VertexColorScratch.Capacity)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{lodIndex} vertex color scratch capacity exceeded at {path}. Vertices={mesh.vertexCount}, Capacity={VertexColorScratch.Capacity}.");
+                return;
+            }
+
+            VertexColorScratch.Clear();
+            mesh.GetColors(VertexColorScratch);
+            if (VertexColorScratch.Count != mesh.vertexCount)
+            {
+                failures++;
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] Missing LOD{lodIndex} vertex colors at {path}.");
+                VertexColorScratch.Clear();
                 return;
             }
 
             float min = 1f;
             float max = 0f;
-            for (int i = 0; i < colors.Length; i++)
+            for (int i = 0; i < VertexColorScratch.Count; i++)
             {
-                float value = colors[i].r;
-                min = Mathf.Min(min, value);
-                max = Mathf.Max(max, value);
+                float value = VertexColorScratch[i].r;
+                if (value < min) min = value;
+                if (value > max) max = value;
             }
+
+            VertexColorScratch.Clear();
 
             if (min > 0.08f || max < 0.82f)
             {
                 failures++;
-                Debug.LogError($"[ShallowsBioForgeBatchBaker] Vertex color R gradient weak at {path}. Min={min:0.000}, Max={max:0.000}.");
+                Debug.LogError($"[ShallowsBioForgeBatchBaker] LOD{lodIndex} vertex color R gradient weak at {path}. Min={min:0.000}, Max={max:0.000}.");
             }
         }
 
@@ -776,6 +2196,39 @@ namespace Hecton8.Editor.ProceduralGen
 
             public string Symbol { get; }
             public string Replacement { get; }
+        }
+
+        private struct RuleExpectation
+        {
+            public string Path;
+            public string AssetPrefix;
+            public string Axiom;
+            public string Replacement;
+            public string MeshFolder;
+            public string PrefabFolder;
+            public BioForgeSdfProfile Profile;
+            public int Iterations;
+            public int MaxBranches;
+            public int SdfResolution;
+            public int Lod0;
+            public int Lod1;
+            public int Lod2;
+            public int RockPoreCount;
+            public float AngleDegrees;
+            public float StepLength;
+            public float LengthTaper;
+            public float RootRadius;
+            public float RadiusTaper;
+            public float MinimumRadius;
+            public float BoundsPadding;
+            public float SmoothMinK;
+            public float RibbonThicknessScale;
+            public float RibbonWidthScale;
+            public float RockRadius;
+            public float RockNoiseAmplitude;
+            public float RockNoiseFrequency;
+            public float RockPoreRadius;
+            public float RockPoreSurfaceBias;
         }
 
         private enum AtlasKind : byte

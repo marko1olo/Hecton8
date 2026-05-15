@@ -928,7 +928,7 @@ namespace Hecton8.Gameplay
             float damage = math.lerp(0f, maxDamage, damageT);
             _currentIntegrity = math.max(0f, _currentIntegrity - damage);
             float nextIntegrityNormalized = ResolveCurrentIntegrityNormalized();
-            DamageSignal damageSignal = BuildDamageSignal(impactSpeed, hitPoint, (uint)DamageTypeMask.Impact, previousIntegrityNormalized, nextIntegrityNormalized);
+            HabitatDamageSignal damageSignal = BuildDamageSignal(impactSpeed, hitPoint, (uint)DamageTypeMask.Impact, previousIntegrityNormalized, nextIntegrityNormalized);
             DispatchIntegrityChanged(previousIntegrityNormalized, nextIntegrityNormalized, damageSignal);
 
             float previousPowerChannel = ResolvePowerChannel(previousIntegrityNormalized);
@@ -1415,19 +1415,19 @@ namespace Hecton8.Gameplay
                 math.lerp(from.a, to.a, blend));
         }
 
-        private void DispatchIntegrityChanged(float prev, float next, DamageSignal signal)
+        private void DispatchIntegrityChanged(float prev, float next, HabitatDamageSignal signal)
         {
             for (int i = 0; i < _damageReceivers.Count; i++)
                 _damageReceivers[i].OnIntegrityChanged(prev, next, signal);
         }
 
-        private void DispatchPowerChanged(float prev, float next, DamageSignal signal)
+        private void DispatchPowerChanged(float prev, float next, HabitatDamageSignal signal)
         {
             for (int i = 0; i < _damageReceivers.Count; i++)
                 _damageReceivers[i].OnPowerChanged(prev, next, signal);
         }
 
-        private void DispatchClarityChanged(float prev, float next, DamageSignal signal)
+        private void DispatchClarityChanged(float prev, float next, HabitatDamageSignal signal)
         {
             for (int i = 0; i < _damageReceivers.Count; i++)
                 _damageReceivers[i].OnClarityChanged(prev, next, signal);
@@ -1442,14 +1442,14 @@ namespace Hecton8.Gameplay
                 _damageReceivers[i].OnTraumaThresholdCrossed(level);
         }
 
-        private DamageSignal BuildDamageSignal(
+        private HabitatDamageSignal BuildDamageSignal(
             float impactSpeed,
             Vector3 hitPoint,
             uint damageType,
             float previousIntegrityNormalized,
             float nextIntegrityNormalized)
         {
-            DamageSignal signal = default;
+            HabitatDamageSignal signal = default;
             signal.magnitude = math.max(0f, impactSpeed);
             signal.localPoint = _cachedTransform != null
                 ? (float3)_cachedTransform.InverseTransformPoint(hitPoint)

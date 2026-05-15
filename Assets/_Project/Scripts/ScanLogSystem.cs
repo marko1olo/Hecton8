@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using Unity.Mathematics;
@@ -94,6 +95,8 @@ namespace Hecton8.Gameplay
         private bool _saveRegistered;
         private bool _serviceRegistered;
         private uint _scanArchivedNotificationHash;
+        private uint _signalSourceId;
+        private uint _changeRevision;
 
         public static ScanLogSystem Instance => GlobalRegistry.ScanLog;
 
@@ -106,9 +109,7 @@ namespace Hecton8.Gameplay
         public int LoadPriority => 35;
         public int EntryCount => _entries.Count;
         public int RecentCount => _recentEntryHashes.Count;
-
-        public event Action ScanLogChanged;
-        public event Action<ScanEntrySnapshot> EntryUnlocked;
+        public uint ChangeRevision => _changeRevision;
 
         private void Awake()
         {
@@ -120,6 +121,7 @@ namespace Hecton8.Gameplay
             }
 
             _scanArchivedNotificationHash = NotificationEvents.RegisterMessage(ScanArchivedMessage);
+            _signalSourceId = GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
         }
 
         private void OnEnable()
@@ -314,7 +316,8 @@ namespace Hecton8.Gameplay
                     categoryHash: 0u,
                     summaryHash: 0u,
                     markRecent: false,
-                    raiseEvents: false);
+                    raiseEvents: false,
+                    publishChangeSignal: false);
             }
 
             int recentCount = math.clamp(dto.recentCount, 0, dto.recentEntryIds != null ? dto.recentEntryIds.Length : 0);
@@ -328,7 +331,7 @@ namespace Hecton8.Gameplay
                 _recentEntryHashes.Add(entryHash);
             }
 
-            ScanLogChanged?.Invoke();
+            PublishScanLogChanged(0u, ScanLogChangedSignal.ReasonLoaded);
         }
 
         public void OnScanEvent(in ScanEventPayload payload)
@@ -391,7 +394,8 @@ namespace Hecton8.Gameplay
             uint categoryHash,
             uint summaryHash,
             bool markRecent,
-            bool raiseEvents)
+            bool raiseEvents,
+            bool publishChangeSignal = true)
         {
             entryId = TrimOrFallback(entryId, string.Empty);
             if (entryHash == 0u || entryId.Length == 0)
@@ -445,19 +449,38 @@ namespace Hecton8.Gameplay
             if (added && raiseEvents)
             {
                 ShowUnlockFeedback();
-                EntryUnlocked?.Invoke(new ScanEntrySnapshot(
-                    entryId,
-                    title,
-                    category,
-                    summary,
-                    entryHash,
-                    titleHash,
-                    categoryHash,
-                    summaryHash));
             }
 
             if (added || markRecent)
-                ScanLogChanged?.Invoke();
+            {
+                if (publishChangeSignal)
+                    PublishScanLogChanged(entryHash, added ? ScanLogChangedSignal.ReasonEntryAdded : ScanLogChangedSignal.ReasonRecentChanged, categoryHash);
+            }
+        }
+
+        private void PublishScanLogChanged(uint entryHash, byte reason, uint categoryHash = 0u)
+        {
+            if (_signalSourceId == 0u)
+                _signalSourceId = GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
+
+            _changeRevision = unchecked(_changeRevision + 1u);
+            if (_changeRevision == 0u)
+                _changeRevision = 1u;
+
+            ScanLogChangedSignal signal = new ScanLogChangedSignal
+            {
+                SourceId = _signalSourceId,
+                EntryHash = entryHash,
+                Frame = unchecked((uint)Time.frameCount),
+                EntryCount = (ushort)math.clamp(_entries.Count, 0, ushort.MaxValue),
+                RecentCount = (ushort)math.clamp(_recentEntryHashes.Count, 0, ushort.MaxValue),
+                Reason = reason,
+                Flags = 0,
+                Revision = _changeRevision,
+                CategoryHash = categoryHash
+            };
+
+            GlobalSignals.Publish(in signal);
         }
 
         private void PushRecent(uint entryHash)

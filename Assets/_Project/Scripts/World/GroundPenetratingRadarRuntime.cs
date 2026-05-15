@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Hecton8.Caves;
 using Hecton8.Core;
@@ -73,6 +74,7 @@ namespace Hecton8.World
         private float _scanTimer;
         private float _highestSignalStrength;
         private float3 _lastProbeOrigin;
+        private readonly List<MonoBehaviour> _componentProbe = new List<MonoBehaviour>(16); // COLD ALLOC: List<MonoBehaviour>[16] - configured ore read-model probe scratch - owner: TERRAIN_GPR_SYSTEM
 
         public int ActiveGprPings => _activeGprPings;
         public int GprSequence => _gprSequence;
@@ -96,6 +98,7 @@ namespace Hecton8.World
             EnsureRuntimeDrawResources();
             GlobalRegistry.RegisterGroundRadarService(this);
             ResolveConfiguredOreReadModel();
+            ResolveOreReadModelFromRegistry();
             _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment) ? 1 : 0;
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment) ? 1 : 0;
             _registeredRenderable = GlobalRegistry.Renderables.TryRegister(this) ? 1 : 0;
@@ -537,18 +540,23 @@ namespace Hecton8.World
             if (_worldResourceSpawnerReadModel != null)
                 return;
 
-            MonoBehaviour[] components = GetComponents<MonoBehaviour>();
-            for (int i = 0; i < components.Length; i++)
+            _componentProbe.Clear();
+            GetComponents(_componentProbe);
+            for (int i = 0; i < _componentProbe.Count; i++)
             {
-                if (ReferenceEquals(components[i], this))
+                MonoBehaviour component = _componentProbe[i];
+                if (ReferenceEquals(component, this))
                     continue;
-                _worldResourceSpawnerReadModel = components[i] as IWorldResourceSpawnerReadModel;
+                _worldResourceSpawnerReadModel = component as IWorldResourceSpawnerReadModel;
                 if (_worldResourceSpawnerReadModel != null)
                 {
-                    worldResourceSpawner = components[i];
+                    worldResourceSpawner = component;
+                    _componentProbe.Clear();
                     return;
                 }
             }
+
+            _componentProbe.Clear();
         }
 
         private bool TryResolveOreSource(out NativeArray<float3> orePositions, out NativeArray<int> oreTypes, out int oreCount)
@@ -562,19 +570,19 @@ namespace Hecton8.World
                 return orePositions.IsCreated && oreTypes.IsCreated && oreCount > 0;
             }
 
-            IWorldResourceSpawnerReadModel resourceSpawner = GlobalRegistry.WorldResourceSpawner;
-            if (resourceSpawner != null &&
-                resourceSpawner.TryGetOrePositions(out orePositions, out oreCount) &&
-                resourceSpawner.TryGetOreTypes(out oreTypes, out int typeCountFromRegistry))
-            {
-                oreCount = math.min(oreCount, typeCountFromRegistry);
-                return orePositions.IsCreated && oreTypes.IsCreated && oreCount > 0;
-            }
-
             orePositions = default;
             oreTypes = default;
             oreCount = 0;
             return false;
+        }
+
+        private bool ResolveOreReadModelFromRegistry()
+        {
+            if (_worldResourceSpawnerReadModel != null)
+                return true;
+
+            _worldResourceSpawnerReadModel = GlobalRegistry.WorldResourceSpawner;
+            return _worldResourceSpawnerReadModel != null;
         }
 
         private void PublishGprSignals(float highestStrength)

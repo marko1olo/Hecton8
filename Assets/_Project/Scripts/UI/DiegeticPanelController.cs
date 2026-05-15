@@ -1,4 +1,3 @@
-using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.World;
 using System.Runtime.InteropServices;
@@ -124,10 +123,10 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Diegetic Panel Controller")]
     [RequireComponent(typeof(Canvas))]
-    public sealed class DiegeticPanelController : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, ICursorHost, IDepthOcclusionReceiver, IDamageReceiver
+    public sealed class DiegeticPanelController : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, ICursorHost, IDepthOcclusionReceiver, IDamageReceiver, IGlobalRegistryHotSwapListener
     {
         private const string WorldGeometrySortingLayer = "WorldGeometry";
-        private const string PhosphorDecayShaderPath = "Assets/_Project/Art/Shaders/Hidden_Hecton_PDA_PhosphorDecay.shader";
+        private const string DefaultPhosphorDecayMaterialResourcePath = "UI/MAT_DiegeticPanelPhosphorDecay";
         private const float MinCanvasExtent = 0.0001f;
         private const float MaximumInteractionReachMeters = 2f;
         private const float DamageGlitchDecaySharpness = 16f;
@@ -297,6 +296,9 @@ namespace Hecton8.UI
         [SerializeField, Tooltip("Hidden full-screen material shader used to accumulate phosphor decay.")]
         private Shader phosphorDecayShader;
 
+        [SerializeField, Tooltip("Authored full-screen material used to accumulate phosphor decay. Runtime fallback loads Resources/UI/MAT_DiegeticPanelPhosphorDecay.")]
+        private Material phosphorDecayMaterial;
+
         [SerializeField, Range(0.1f, 0.98f), Tooltip("Multiplier applied to the previous PDA frame before adding the current panel frame.")]
         private float phosphorDecay = 0.85f;
 
@@ -345,6 +347,7 @@ namespace Hecton8.UI
         private Renderer _cursorRenderer;
         private Collider _cursorCollider;
         private Camera _resolvedInteractionCamera;
+        private Transform _resolvedInteractionCameraTransform;
         private GraphicRaycaster _cachedGraphicRaycaster;
         private Canvas _cachedGraphicRaycasterCanvas;
         private IPanelInteractable _panelInteractable;
@@ -354,23 +357,40 @@ namespace Hecton8.UI
         private RenderTexture _phosphorFrontTexture;
         private RenderTexture _phosphorBackTexture;
         private Material _phosphorDecayMaterial;
+        private Material _cachedPanelOutputMaterial;
+        private MonoBehaviour _cachedPanelInteractableSource;
+        private MonoBehaviour _cachedPanelPowerSourceSource;
         private int2 _activeRenderResolution;
         private int2 _fixedRenderResolution;
         private bool _retainRenderTextureOnDisable;
         private bool _presentationPausedByOwner;
         private float _refreshTimer;
-        private float _cameraRetryTimer;
         private float _appliedDepthFadeRange = -1f;
         private float _appliedPowerLevel = -1f;
+        private float _appliedPanelMaterialPowerLevel = -1f;
         private float _terminalDamageGlitch;
         private float _terminalDamageGlitchPeak;
         private float _terminalDamageGlitchRemaining;
         private float _terminalDamageGlitchDuration = 0.22f;
+        private float _tickUnscaledTime;
         private float _appliedTerminalDamageGlitch = -1f;
         private float _appliedFlashlightGlare = -1f;
+        private float _appliedPhosphorDecay = -1f;
         private bool _tickRegistered;
         private bool _lateFrameRegistered;
         private bool _renderPipelineHookRegistered;
+        private bool _hotSwapListenerRegistered;
+        private bool _inputAwaitingRegistration;
+        private bool _phosphorMaterialResolveAttempted;
+        private bool _phosphorMaterialResolveFailed;
+        private bool _panelOutputHasBaseMap;
+        private bool _panelOutputHasMainTex;
+        private bool _panelOutputHasDepthFadeRange;
+        private bool _panelOutputHasOcclusionActive;
+        private bool _panelOutputHasPanelPowerLevel;
+        private bool _panelOutputHasTerminalDamageGlitch;
+        private bool _panelOutputHasFlashlightGlare;
+        private bool _resolvedInteractionCameraFromExplicit;
         private bool _wasPressedLastFrame;
         private bool _fingerPressedLastFrame;
         private bool _cursorVisible;
@@ -411,6 +431,7 @@ namespace Hecton8.UI
             ResolveInterfaces();
             DetermineTargetHardwareTier();
             RefreshServices();
+            TryRegisterHotSwapListener();
             RegisterRenderPipelineHook();
             ApplyCanvasWorldSpaceSettings();
             ApplyRendererBindings();
@@ -423,6 +444,7 @@ namespace Hecton8.UI
         {
             ResolveSerializedReferences(resolveGraphicRaycaster: true);
             RefreshServices();
+            TryRegisterHotSwapListener();
             TryRegisterTick();
             RegisterRenderPipelineHook();
             ApplyCanvasWorldSpaceSettings();
@@ -433,9 +455,13 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             UnregisterTick();
+            TryUnregisterHotSwapListener();
             UnregisterRenderPipelineHook();
             UnregisterProxyLight();
             ClearHoverState();
+            CacheInteractionCamera(null, fromExplicit: false);
+            _input = null;
+            _inputAwaitingRegistration = false;
             _cursorStateInitialized = false;
             _canvasSettingsApplied = false;
             if (panelCamera != null && panelCamera.enabled)
@@ -447,6 +473,7 @@ namespace Hecton8.UI
         private void OnDestroy()
         {
             UnregisterRenderPipelineHook();
+            TryUnregisterHotSwapListener();
             UnregisterProxyLight();
             ReleaseRenderTexture();
             ReleasePhosphorResources();
@@ -467,6 +494,7 @@ namespace Hecton8.UI
                 return;
             }
 
+            _tickUnscaledTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             RefreshPanelData(forceRefresh: false);
             RefreshDistanceAndRenderTexture(deltaTime);
             ApplyPowerLevel();
@@ -480,7 +508,7 @@ namespace Hecton8.UI
                     out bool showFingerCursor))
             {
                 _panelData.StateFlags |= PanelStateFlags.CursorOver | PanelStateFlags.PlayerInRange;
-                _panelData.LastInteractTime = Time.unscaledTime;
+                _panelData.LastInteractTime = _tickUnscaledTime;
                 _clampedCanvasPosition = fingerCanvasPos;
 
                 if (showFingerCursor)
@@ -525,7 +553,7 @@ namespace Hecton8.UI
             }
 
             _panelData.StateFlags |= PanelStateFlags.CursorOver | PanelStateFlags.PlayerInRange;
-            _panelData.LastInteractTime = Time.unscaledTime;
+            _panelData.LastInteractTime = _tickUnscaledTime;
             _clampedCanvasPosition = canvasPos;
 
             UpdateCursor(localHit, deltaTime);
@@ -830,6 +858,9 @@ namespace Hecton8.UI
             depthFadeRange = math.max(0.001f, depthFadeRange);
             flashlightGlare = math.saturate(flashlightGlare);
             damageGlitchDurationSeconds = math.clamp(damageGlitchDurationSeconds, 0.02f, 1f);
+            _phosphorMaterialResolveAttempted = false;
+            _phosphorMaterialResolveFailed = false;
+            _appliedPhosphorDecay = -1f;
 
             RefreshFingertipBindingMask();
             ResolveSerializedReferences(resolveGraphicRaycaster: true);
@@ -898,8 +929,17 @@ namespace Hecton8.UI
 
         private void ResolveInterfaces()
         {
-            _panelInteractable = panelInteractable as IPanelInteractable;
-            _panelPowerSource = panelPowerSource as IPanelPowerSource;
+            if (!ReferenceEquals(_cachedPanelInteractableSource, panelInteractable))
+            {
+                _cachedPanelInteractableSource = panelInteractable;
+                _panelInteractable = panelInteractable as IPanelInteractable;
+            }
+
+            if (!ReferenceEquals(_cachedPanelPowerSourceSource, panelPowerSource))
+            {
+                _cachedPanelPowerSourceSource = panelPowerSource;
+                _panelPowerSource = panelPowerSource as IPanelPowerSource;
+            }
         }
 
         private void DetermineTargetHardwareTier()
@@ -913,7 +953,44 @@ namespace Hecton8.UI
 
         private void RefreshServices()
         {
+            IInputService registeredInput = GlobalRegistry.RegisteredInput;
+            if (registeredInput != null)
+            {
+                _input = registeredInput;
+                _inputAwaitingRegistration = false;
+                return;
+            }
+
             _input = GlobalRegistry.Input;
+            _inputAwaitingRegistration = true;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Input)
+            {
+                _input = currentService as IInputService;
+                if (_input == null)
+                {
+                    RefreshServices();
+                    return;
+                }
+
+                _inputAwaitingRegistration = false;
+                return;
+            }
+
+            if (serviceSlot != GlobalRegistryServiceSlot.Player || interactionCamera != null)
+                return;
+
+            Camera playerCamera = currentService is IPlayerRuntimeContext playerContext
+                ? playerContext.PlayerCamera
+                : null;
+            CacheInteractionCamera(playerCamera != null && playerCamera.isActiveAndEnabled ? playerCamera : null, fromExplicit: false);
+            _canvasSettingsApplied = false;
         }
 
         private bool EnsureRuntimeState()
@@ -923,7 +1000,8 @@ namespace Hecton8.UI
 
             ResolveSerializedReferences(resolveGraphicRaycaster: false);
             ResolveInterfaces();
-            RefreshServices();
+            if (_input == null || _inputAwaitingRegistration)
+                RefreshServices();
             ApplyCanvasWorldSpaceSettings();
             return targetCanvas != null && _resolvedPanelRect != null && panelCollider != null;
         }
@@ -1028,9 +1106,12 @@ namespace Hecton8.UI
             Camera resolvedCamera = ResolveInteractionCamera();
             if (resolvedCamera == null)
                 return;
+            Transform cameraTransform = _resolvedInteractionCameraTransform;
+            if (cameraTransform == null)
+                return;
 
             Vector3 panelOrigin = (Vector3)_panelData.LocalToWorld.c3.xyz;
-            Vector3 cameraPosition = resolvedCamera.transform.position;
+            Vector3 cameraPosition = cameraTransform.position;
             _panelData.DistToCameraSq = ResolveAupDistanceSqClamped(panelOrigin, cameraPosition);
             EnsureRenderTexture(forceRefresh: false);
         }
@@ -1179,20 +1260,8 @@ namespace Hecton8.UI
             if (!enablePhosphorDecay || _panelRenderTexture == null)
                 return;
 
-#if UNITY_EDITOR
-            if (phosphorDecayShader == null)
-                phosphorDecayShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>(PhosphorDecayShaderPath);
-#endif
-            if (phosphorDecayShader == null)
-                phosphorDecayShader = Shader.Find("Hidden/Hecton8/PDA Phosphor Decay");
-
-            if (_phosphorDecayMaterial == null && phosphorDecayShader != null)
-            {
-                _phosphorDecayMaterial = new Material(phosphorDecayShader)
-                {
-                    name = "Runtime_PDA_PhosphorDecay"
-                }; // COLD ALLOC: Material[1] - PDA phosphor decay compositor - owner: DiegeticPanelController
-            }
+            if (!EnsurePhosphorMaterial())
+                return;
 
             if (_phosphorFrontTexture != null &&
                 _phosphorFrontTexture.width == _panelRenderTexture.width &&
@@ -1211,6 +1280,41 @@ namespace Hecton8.UI
             _phosphorFrontTexture = CreatePhosphorTexture(descriptor, "DiegeticPanel_PhosphorFront");
             _phosphorBackTexture = CreatePhosphorTexture(descriptor, "DiegeticPanel_PhosphorBack");
             ApplyMaterialState(forceTextureRefresh: true, forceDepthRefresh: false);
+        }
+
+        private bool EnsurePhosphorMaterial()
+        {
+            if (_phosphorDecayMaterial != null)
+                return true;
+
+            if (_phosphorMaterialResolveFailed)
+                return false;
+
+            if (!_phosphorMaterialResolveAttempted)
+            {
+                _phosphorDecayMaterial = phosphorDecayMaterial != null
+                    ? phosphorDecayMaterial
+                    : Resources.Load<Material>(DefaultPhosphorDecayMaterialResourcePath);
+                _phosphorMaterialResolveAttempted = true;
+                _appliedPhosphorDecay = -1f;
+            }
+
+            if (_phosphorDecayMaterial == null)
+            {
+                _phosphorMaterialResolveFailed = true;
+                return false;
+            }
+
+            Shader resolvedShader = phosphorDecayShader != null ? phosphorDecayShader : _phosphorDecayMaterial.shader;
+            if (resolvedShader == null || _phosphorDecayMaterial.shader != resolvedShader)
+            {
+                _phosphorDecayMaterial = null;
+                _phosphorMaterialResolveFailed = true;
+                return false;
+            }
+
+            phosphorDecayShader = resolvedShader;
+            return true;
         }
 
         private static RenderTexture CreatePhosphorTexture(RenderTextureDescriptor descriptor, string textureName)
@@ -1240,7 +1344,11 @@ namespace Hecton8.UI
 
             _phosphorDecayMaterial.SetTexture(_PreviousTexId, _phosphorFrontTexture);
             _phosphorDecayMaterial.SetTexture(_CurrentTexId, _panelRenderTexture);
-            _phosphorDecayMaterial.SetFloat(_DecayId, phosphorDecay);
+            if (math.abs(_appliedPhosphorDecay - phosphorDecay) > 0.0001f)
+            {
+                _appliedPhosphorDecay = phosphorDecay;
+                _phosphorDecayMaterial.SetFloat(_DecayId, phosphorDecay);
+            }
             Graphics.Blit(null, _phosphorBackTexture, _phosphorDecayMaterial, 0);
 
             RenderTexture swap = _phosphorFrontTexture;
@@ -1252,11 +1360,10 @@ namespace Hecton8.UI
         private void ReleasePhosphorResources()
         {
             ReleasePhosphorTextures();
-            if (_phosphorDecayMaterial != null)
-            {
-                Destroy(_phosphorDecayMaterial);
-                _phosphorDecayMaterial = null;
-            }
+            _phosphorDecayMaterial = null;
+            _phosphorMaterialResolveAttempted = false;
+            _phosphorMaterialResolveFailed = false;
+            _appliedPhosphorDecay = -1f;
         }
 
         private void ReleasePhosphorTextures()
@@ -1287,16 +1394,40 @@ namespace Hecton8.UI
             else
                 _panelData.StateFlags &= ~PanelStateFlags.Powered;
 
-            if (math.abs(_appliedPowerLevel - powerLevel) <= 0.0001f)
+            bool materialChanged = !ReferenceEquals(_cachedPanelOutputMaterial, panelOutputMaterial);
+            if (!materialChanged && math.abs(_appliedPowerLevel - powerLevel) <= 0.0001f)
                 return;
 
             _appliedPowerLevel = powerLevel;
-            ApplyMaterialState(forceTextureRefresh: false, forceDepthRefresh: false);
+            ApplyMaterialState(forceTextureRefresh: materialChanged, forceDepthRefresh: materialChanged);
+        }
+
+        private void RefreshPanelOutputMaterialPropertyCache()
+        {
+            Material outputMaterial = panelOutputMaterial;
+            if (ReferenceEquals(_cachedPanelOutputMaterial, outputMaterial))
+                return;
+
+            _cachedPanelOutputMaterial = outputMaterial;
+            _panelOutputHasBaseMap = outputMaterial != null && outputMaterial.HasProperty(_BaseMapId);
+            _panelOutputHasMainTex = outputMaterial != null && outputMaterial.HasProperty(_MainTexId);
+            _panelOutputHasDepthFadeRange = outputMaterial != null && outputMaterial.HasProperty(_DepthFadeRangeId);
+            _panelOutputHasOcclusionActive = outputMaterial != null && outputMaterial.HasProperty(_OcclusionActiveId);
+            _panelOutputHasPanelPowerLevel = outputMaterial != null && outputMaterial.HasProperty(_PanelPowerLevelId);
+            _panelOutputHasTerminalDamageGlitch = outputMaterial != null && outputMaterial.HasProperty(_TerminalDamageGlitchId);
+            _panelOutputHasFlashlightGlare = outputMaterial != null && outputMaterial.HasProperty(_FlashlightGlareId);
+            _appliedDepthFadeRange = -1f;
+            _appliedPanelMaterialPowerLevel = -1f;
+            _appliedTerminalDamageGlitch = -1f;
+            _appliedFlashlightGlare = -1f;
         }
 
         private void ApplyMaterialState(bool forceTextureRefresh, bool forceDepthRefresh)
         {
-            if (panelOutputMaterial == null)
+            RefreshPanelOutputMaterialPropertyCache();
+
+            Material outputMaterial = _cachedPanelOutputMaterial;
+            if (outputMaterial == null)
                 return;
 
             if (forceTextureRefresh && _panelRenderTexture != null)
@@ -1304,10 +1435,10 @@ namespace Hecton8.UI
                 Texture outputTexture = enablePhosphorDecay && _phosphorFrontTexture != null
                     ? _phosphorFrontTexture
                     : _panelRenderTexture;
-                if (panelOutputMaterial.HasProperty(_BaseMapId))
-                    panelOutputMaterial.SetTexture(_BaseMapId, outputTexture);
-                if (panelOutputMaterial.HasProperty(_MainTexId))
-                    panelOutputMaterial.SetTexture(_MainTexId, outputTexture);
+                if (_panelOutputHasBaseMap)
+                    outputMaterial.SetTexture(_BaseMapId, outputTexture);
+                if (_panelOutputHasMainTex)
+                    outputMaterial.SetTexture(_MainTexId, outputTexture);
             }
 
             float resolvedFadeRange = enableDepthOcclusion ? depthFadeRange : 0f;
@@ -1315,27 +1446,31 @@ namespace Hecton8.UI
             if (shouldWriteDepthState)
             {
                 _appliedDepthFadeRange = resolvedFadeRange;
-                if (panelOutputMaterial.HasProperty(_DepthFadeRangeId))
-                    panelOutputMaterial.SetFloat(_DepthFadeRangeId, resolvedFadeRange);
-                if (panelOutputMaterial.HasProperty(_OcclusionActiveId))
-                    panelOutputMaterial.SetFloat(_OcclusionActiveId, enableDepthOcclusion ? 1f : 0f);
+                if (_panelOutputHasDepthFadeRange)
+                    outputMaterial.SetFloat(_DepthFadeRangeId, resolvedFadeRange);
+                if (_panelOutputHasOcclusionActive)
+                    outputMaterial.SetFloat(_OcclusionActiveId, enableDepthOcclusion ? 1f : 0f);
             }
 
-            if (panelOutputMaterial.HasProperty(_PanelPowerLevelId))
-                panelOutputMaterial.SetFloat(_PanelPowerLevelId, math.max(0f, _appliedPowerLevel));
+            if (math.abs(_appliedPanelMaterialPowerLevel - _appliedPowerLevel) > 0.0001f)
+            {
+                _appliedPanelMaterialPowerLevel = _appliedPowerLevel;
+                if (_panelOutputHasPanelPowerLevel)
+                    outputMaterial.SetFloat(_PanelPowerLevelId, math.max(0f, _appliedPowerLevel));
+            }
 
             if (math.abs(_appliedTerminalDamageGlitch - _terminalDamageGlitch) > 0.0001f)
             {
                 _appliedTerminalDamageGlitch = _terminalDamageGlitch;
-                if (panelOutputMaterial.HasProperty(_TerminalDamageGlitchId))
-                    panelOutputMaterial.SetFloat(_TerminalDamageGlitchId, math.saturate(_terminalDamageGlitch));
+                if (_panelOutputHasTerminalDamageGlitch)
+                    outputMaterial.SetFloat(_TerminalDamageGlitchId, math.saturate(_terminalDamageGlitch));
             }
 
             if (math.abs(_appliedFlashlightGlare - flashlightGlare) > 0.0001f)
             {
                 _appliedFlashlightGlare = flashlightGlare;
-                if (panelOutputMaterial.HasProperty(_FlashlightGlareId))
-                    panelOutputMaterial.SetFloat(_FlashlightGlareId, math.saturate(flashlightGlare));
+                if (_panelOutputHasFlashlightGlare)
+                    outputMaterial.SetFloat(_FlashlightGlareId, math.saturate(flashlightGlare));
             }
         }
 
@@ -1380,7 +1515,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            float now = Time.unscaledTime;
+            float now = _tickUnscaledTime;
             float flickerWave = EvaluateCheapFlicker01((now * 23.0f) + (panelId * 0.37f));
             float flicker01 = math.saturate(1f - proxyLightFlicker + (flickerWave * proxyLightFlicker));
             float intensity = math.saturate(proxyLightIntensity * _appliedPowerLevel * flicker01);
@@ -1431,9 +1566,12 @@ namespace Hecton8.UI
             Camera resolvedCamera = ResolveInteractionCamera();
             if (resolvedCamera == null)
                 return false;
+            Transform cameraTransform = _resolvedInteractionCameraTransform;
+            if (cameraTransform == null)
+                return false;
 
-            Transform originTransform = rayOrigin != null ? rayOrigin : resolvedCamera.transform;
-            Transform directionTransform = rayDirectionSource != null ? rayDirectionSource : resolvedCamera.transform;
+            Transform originTransform = rayOrigin != null ? rayOrigin : cameraTransform;
+            Transform directionTransform = rayDirectionSource != null ? rayDirectionSource : cameraTransform;
             rayOriginWs = originTransform.position;
             rayDirectionWs = directionTransform.forward;
             return math.lengthsq(rayDirectionWs) > 0.0001f;
@@ -1722,7 +1860,7 @@ namespace Hecton8.UI
                 CanvasHitPoint = canvasPos,
                 AnalogDelta = analogDelta,
                 EventType = eventType,
-                Timestamp = Time.unscaledTime
+                Timestamp = _tickUnscaledTime
             });
         }
 
@@ -1808,33 +1946,30 @@ namespace Hecton8.UI
         {
             if (interactionCamera != null && interactionCamera.isActiveAndEnabled)
             {
-                _resolvedInteractionCamera = interactionCamera;
+                if (!_resolvedInteractionCameraFromExplicit || !ReferenceEquals(_resolvedInteractionCamera, interactionCamera))
+                    CacheInteractionCamera(interactionCamera, fromExplicit: true);
+
                 return _resolvedInteractionCamera;
             }
+
+            if (_resolvedInteractionCameraFromExplicit)
+                CacheInteractionCamera(null, fromExplicit: false);
 
             if (_resolvedInteractionCamera != null && _resolvedInteractionCamera.isActiveAndEnabled)
                 return _resolvedInteractionCamera;
 
-            float now = Application.isPlaying ? Time.unscaledTime : Time.realtimeSinceStartup;
-            if (now < _cameraRetryTimer)
-                return null;
-
-            _cameraRetryTimer = now + 1f;
-
-            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
-                playerTransform != null)
-            {
-                if (playerTransform.TryGetComponent(out Camera playerCamera))
-                {
-                    _resolvedInteractionCamera = playerCamera;
-                    return _resolvedInteractionCamera;
-                }
-
-                IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
-                _resolvedInteractionCamera = playerContext != null ? playerContext.PlayerCamera : null;
-            }
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
+            CacheInteractionCamera(playerCamera != null && playerCamera.isActiveAndEnabled ? playerCamera : null, fromExplicit: false);
 
             return _resolvedInteractionCamera;
+        }
+
+        private void CacheInteractionCamera(Camera camera, bool fromExplicit)
+        {
+            _resolvedInteractionCamera = camera;
+            _resolvedInteractionCameraTransform = camera != null ? camera.transform : null;
+            _resolvedInteractionCameraFromExplicit = fromExplicit;
         }
 
         private void SetCursorVisible(bool visible)
@@ -1905,6 +2040,23 @@ namespace Hecton8.UI
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
                 _lateFrameRegistered = false;
             }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private void UnregisterTick()

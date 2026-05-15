@@ -316,6 +316,17 @@ StructuredBuffer<SargassumSimulationFrameData> _SargassumSimulationFrame;
 #define SIM_LOD_TIER_SIMPLIFIED 1
 #define SIM_LOD_TIER_SLEEP 2
 
+uint _SimulationBucketIndex;
+uint _SimulationBucketMask;
+
+bool ShouldUpdateSimulationBucket(uint index)
+{
+    uint mask = _SimulationBucketMask;
+    return mask == 0u ||
+           _SimulationLodTier == SIM_LOD_TIER_SLEEP ||
+           ((index & mask) == (_SimulationBucketIndex & mask));
+}
+
 float Hash11(float inputValue);
 
 float GetPhaseTime()
@@ -1200,6 +1211,9 @@ void KernelPBDSolve(uint3 dispatchThreadID : SV_DispatchThreadID)
     if (index >= _BoidCount)
         return;
 
+    if (!ShouldUpdateSimulationBucket(index))
+        return;
+
     BoidData selfBoid = _BoidsBufferRead[index];
     if (IsConsumedState(selfBoid.StateFlags))
         return;
@@ -1284,6 +1298,12 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         return;
 
     BoidData selfBoid = _BoidsBufferRead[index];
+    if (!ShouldUpdateSimulationBucket(index))
+    {
+        _BoidsBufferWrite[index] = selfBoid;
+        return;
+    }
+
     uint visualMutationFlags = PreserveVisualMutationFlags(selfBoid.StateFlags, index);
     if (IsConsumedState(selfBoid.StateFlags))
     {

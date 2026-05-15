@@ -1082,7 +1082,7 @@ namespace Hecton8.Physics
         }
 
         /// <inheritdoc />
-        public void OnIntegrityChanged(float prev, float next, Hecton8.Gameplay.DamageSignal src)
+        public void OnIntegrityChanged(float prev, float next, Hecton8.Gameplay.HabitatDamageSignal src)
         {
             float damageDelta = math.max(0f, prev - next);
             if (damageDelta <= 0f)
@@ -1092,10 +1092,10 @@ namespace Hecton8.Physics
         }
 
         /// <inheritdoc />
-        public void OnPowerChanged(float prev, float next, Hecton8.Gameplay.DamageSignal src) { }
+        public void OnPowerChanged(float prev, float next, Hecton8.Gameplay.HabitatDamageSignal src) { }
 
         /// <inheritdoc />
-        public void OnClarityChanged(float prev, float next, Hecton8.Gameplay.DamageSignal src) { }
+        public void OnClarityChanged(float prev, float next, Hecton8.Gameplay.HabitatDamageSignal src) { }
 
         /// <inheritdoc />
         public void OnTraumaThresholdCrossed(TraumaLevel level) { }
@@ -1354,11 +1354,11 @@ namespace Hecton8.Physics
         {
             Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
             _cachedTransform = cachedTransform;
-            Vector3 absolute = HectonFloatingOrigin.ToAbsoluteUniversePosition(cachedTransform.position);
+            double3 absolute = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(cachedTransform.position);
             Rigidbody hullBody = ResolveHullRigidbody();
             ImpactSignal signal = new ImpactSignal
             {
-                PointAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(absolute.x, absolute.y, absolute.z)),
+                PointAup = AbsoluteUniversePosition.FromAbsolutePosition(absolute),
                 Force = math.max(0f, severitySum * ambientPressureKPa),
                 Intensity = math.saturate(severitySum / math.max(1f, MaxActiveBreaches)),
                 PrimaryBodyId = hullBody != null ? unchecked((uint)EntityId.ToULong(hullBody.GetEntityId())) : 0u,

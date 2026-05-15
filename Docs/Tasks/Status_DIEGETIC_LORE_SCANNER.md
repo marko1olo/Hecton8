@@ -93,9 +93,118 @@ Mandates read:
 - [x] Static no-regression checks after Loop 10 | DOD: `git diff --check` passed; no `Camera.main`, `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, or `.text =` hits in scanner/UI/target files | Rejected: report-only verification | Estimate: 1500 us
 - [x] Compile verification after Loop 10 | DOD: filtered and plain `dotnet build Hecton8.Core.csproj` both passed; final summary build was 0 warnings / 0 errors | Rejected: one-pass compile proof | Estimate: 66000 us
 
+## Loop 11 - Scanner Black Box and Finite Guard
+
+- [x] Prompt re-extract safety check | DOD: raw CLI scan of `Docs/Tasks/CURRENT_BATCH.md` found no `DIEGETIC_LORE_SCANNER` tag because the batch file now contains other agents; neighboring prompts were ignored and scanner work continued from persisted status/rationale | Rejected: reading other agents' prompts or inventing a new scanner directive | Estimate: 1200 us
+- [x] Scanner acquisition black box | DOD: `ScannerTool` owns a fixed `NativeArray<ScannerBlackBoxEntry>[300]` ring with frame, tool/artifact/blueprint hashes, active/pending target hashes, progress, battery, pose, probe positions, flags, and tier | Rejected: debug logs, managed queues, chat-only postmortem | Estimate: 900 us per active scanner frame
+- [x] One-shot invalid-state dump | DOD: non-finite scanner dt/pose/progress/pending distance writes a finite fallback entry, publishes math-guard telemetry, and dumps `Docs/AgentLogs/Dump_DIEGETIC_LORE_SCANNER.bin` once | Rejected: recording NaN into the ring or throwing gameplay exceptions | Estimate: 0 us normal path; fault path disk write only
+- [x] Finite scanner UI signal guards | DOD: scanner active signal and scientific snapshots now sanitize progress, battery, density, toxicity, chemical load, attractant, depth, and direction inputs before publishing/writing display-facing state | Rejected: allowing NaN to reach TMP buffers or signal consumers | Estimate: 0.2 us per affected publish/update
+- [x] Finite decryption reveal math | DOD: scanner summary and diegetic RT scramble reveal counts use sanitized progress before `floor`/percent comparisons | Rejected: raw `math.saturate(NaN)` feeding text reveal math | Estimate: 0.1 us per repaint
+- [x] Static no-regression checks after Loop 11 | DOD: `git diff --check` passed with line-ending warning only; no `Camera.main`, `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, or `.text =` hits in scanner/UI/target files | Rejected: dotnet rebuild, explicitly forbidden by user in this loop | Estimate: 2200 us
+
+## Loop 12 - Scoped H-Phi Tier Cadence Hygiene
+
+- [x] Scanner quality-tier read cache | DOD: `ScannerTool` now resolves quality tier through a 0.5s probe plus 2s hysteresis helper shared by signal publish, low-tier decryption, and focused resample cadence | Rejected: three independent hot/cold `GlobalRegistry.ScalabilityTier` reads and immediate tier flipping | Estimate: saves 2 source-level registry refs; hot reads capped to 2 Hz
+- [x] Diegetic RT quality-tier probe throttle | DOD: `ToolDiegeticDisplayController` keeps existing 2s low-tier hysteresis but probes `GlobalRegistry.ScalabilityTier` every 0.5s instead of every UI tick | Rejected: per-frame registry polling and unbounded tier flicker | Estimate: 60 Hz -> 2 Hz registry reads per active display
+- [x] UI tick delta finite guard | DOD: tool display tick delta now uses `SanitizeSeconds()` before pool retry and tier hysteresis timers | Rejected: allowing NaN delta to poison fallback timers | Estimate: one finite branch per display tick
+- [x] Scoped H-Phi evidence | DOD: baseline/current `GlobalRegistry.ScalabilityTier` source refs: `ScannerTool.cs` 3 -> 1, `ToolDiegeticDisplayController.cs` 2 -> 1 | Rejected: editing global H-Phi report or claiming runtime/global H-Phi without Unity profiler evidence | Estimate: 3 source refs removed
+- [x] Static no-regression checks after Loop 12 | DOD: `git diff --check` passed with line-ending warnings only; no scanner/UI/target `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, or `.text =` matches | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 2400 us
+
+## Loop 13 - Event-Lane H-Phi Hardening
+
+- [x] Re-read authority and mandates | DOD: reread status/rationale, AGENTS.md, Unity MCP skill, and scanner-relevant UI/ZeroGC/Registry/AUP/SpatialHash/CinematicCheat/Telemetry mandates before edits | Rejected: continuing from compressed memory only | Estimate: 11400 us
+- [x] Event-lane scanner tier intake with slow fallback | DOD: `ScannerTool` now implements `IScalabilityChangedEventListener` and `ISlowTickable`; fast/late paths use cached tier plus 2s hysteresis, while SlowTick catches silent platform overrides | Rejected: registry polling from helper paths called by scanner fast/late ticks | Estimate: removes active registry probes
+- [x] Event-lane tool RT tier intake with slow fallback | DOD: `ToolDiegeticDisplayController` now consumes `ScalabilityEvents`, keeps 2s hysteresis, and uses SlowTick as a silent-override fence instead of UI-tick registry polling | Rejected: polling registry from UI tick path | Estimate: active display registry reads 2 Hz -> SlowTick/event lane
+- [x] Cached player acquisition context | DOD: scanner focused acquisition caches `GlobalRegistry.Player` on Awake/OnSpawn/OnEquip and uses the cached `IPlayerRuntimeContext` during candidate pose resolution | Rejected: hot `GlobalRegistry.Player` read inside focused scan acquisition | Estimate: one registry read removed per focused resample
+- [x] Static no-regression checks after Loop 13 | DOD: `git diff HEAD --check`, `git diff --cached --check`, and scanner bans for `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =` passed | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 2600 us
+
+## Loop 14 - Atlas/Localization H-Phi Compile Guard
+
+- [x] Batch prompt re-check | DOD: raw PowerShell regex scan confirmed `DIEGETIC_LORE_SCANNER` is still absent from `CURRENT_BATCH.md`; neighboring prompts ignored | Rejected: adopting another agent's current batch task | Estimate: 1100 us
+- [x] Atlas signal cache/event audit | DOD: scanner operational summary/directive now resolve Atlas through `ResolveCachedAtlasSignalCold()` and equipped scanners register with `AtlasSignalEvents` to invalidate cached text on Atlas state changes | Rejected: repeated service-locator reads from presentation text generation or unregistered inert event callbacks | Estimate: 3 hot refs -> 1 cold ref; event invalidation only while equipped
+- [x] Localization compile-risk fix | DOD: replaced non-existent `ILocalizationService` local with concrete project `LocalizationManager` while preserving single registry lookup per localized string resolve | Rejected: two `GlobalRegistry.Localization` reads per call or introducing a new interface | Estimate: avoids compile wall; one registry read per localization call
+- [x] Static no-regression checks after Loop 14 | DOD: `git diff HEAD --check` passed; scanner banned-pattern scan found no `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, or `.text =` | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 2100 us
+
+## Loop 15 - Registration Retry and Cache Rebind Hygiene
+
+- [x] Re-read authority and mandates | DOD: reread status/rationale, AGENTS.md, domain map, Unity MCP skill, and UI/Registry/ZeroGC/Diegetic/Telemetry mandates before edits | Rejected: coding from compressed memory | Estimate: 12800 us
+- [x] Diegetic RT slow-tick retry throttle | DOD: `ToolDiegeticDisplayController` now retries failed slow-tick registration at 0.5s cadence instead of every UI tick; OnEnable/Start still force an immediate attempt | Rejected: hot per-frame dispatcher/service-locator retry when slow-tick bucket is unavailable | Estimate: worst-case 60Hz -> 2Hz retry
+- [x] Scanner service ingress cleanup | DOD: scanner ping audio now uses one local `GlobalRegistry.Audio` read; threat prediction uses cached `LoreDatabaseManager` with hot-swap rebinding | Rejected: duplicate audio/lore service property reads in active scanner paths or stale permanent lore cache | Estimate: removes duplicate lookups per pulse/threat sample
+- [x] Scanner localization/cache rebind | DOD: equipped scanner registers for localization language and GlobalRegistry hot-swap events; mode strings and operational caches refresh on language, player, Atlas, lore, or localization service replacement | Rejected: stale mode labels after language switch and cached service handles without rebind path | Estimate: event-only cost while equipped
+- [x] Static no-regression checks after Loop 15 | DOD: `git diff --check` passed with line-ending warnings only; scanner banned-pattern scan found no `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, or `.text =` | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 2600 us
+
+## Loop 16 - Service Cache Lifetime Hardening
+
+- [x] Re-read status/rationale and Unity workflow constraints | DOD: loaded `Status_DIEGETIC_LORE_SCANNER.md`, `Rationale_DIEGETIC_LORE_SCANNER.md`, and Unity MCP skill before source edits | Rejected: continuing from chat memory only | Estimate: 7800 us
+- [x] Scanner cached service lifetime reset | DOD: scanner clears cached player/survival/Atlas/lore handles on spawn/equip/unequip/despawn/destroy and clears survival cache when the player service hot-swaps | Rejected: holding stale cached services across unequip or pool reuse | Estimate: event/cold lifecycle only
+- [x] Diegetic RT pool hot-swap rebind | DOD: `ToolDiegeticDisplayController` now implements `IGlobalRegistryHotSwapListener`, rebinds `RenderTexturePoolRuntime`, releases old owned RTs on pool replacement, and clears cached pool on disable | Rejected: stale RT pool handle after service replacement | Estimate: event-only; avoids failed pool calls on stale owner
+- [x] Static no-regression checks after Loop 16 | DOD: staged `git diff --cached --check` passed; scanner banned-pattern scan found no `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, or `.text =` | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 2800 us
+
+## Loop 17 - Black Box Export and Negative Title Cache
+
+- [x] Re-read authority and mandates | DOD: loaded status/rationale, AGENTS/domain context, Unity MCP workflow, and scanner-relevant UI/ZeroGC/Registry/Signal/Telemetry/AUP mandates before edits | Rejected: coding from compressed chat memory | Estimate: 14600 us
+- [x] Ordered scanner black-box dump | DOD: `ScannerTool` now tracks recorded black-box entries and dumps the fixed ring oldest-to-newest from the next-write cursor after wrap | Rejected: raw NativeArray storage order that scrambles the last-300-frame timeline | Estimate: fault path only; normal path one bounded count increment
+- [x] Scanner black-box layout declaration | DOD: `ScannerBlackBoxEntry` now declares sequential layout before being stored in `NativeArray` and serialized field-by-field to the dump | Rejected: undocumented private struct layout for telemetry evidence | Estimate: 0 us runtime behavior change
+- [x] Diegetic RT negative title cache | DOD: missing lore titles are cached as a versioned miss in the fixed scanner title cache, preventing repeated registry scans for unresolved hashes until `LoreTitleLookupVersion` changes | Rejected: managed dictionary and repeated 1024-entry title lookup on every scanner progress repaint | Estimate: saves repeated cold title scans on unresolved artifacts
+- [x] Static no-regression checks after Loop 17 | DOD: `git diff --check` passed with docs line-ending warnings only, `git diff --cached --check` passed, and scanner banned-pattern scan found no `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, or `.text =` | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 3100 us
+
+## Loop 18 - Survival Cache Miss Throttle
+
+- [x] Scanner survival miss retry fence | DOD: missing `HectonSurvivalSystem` resolution now retries at 0.5s cadence and resets on cached-service clear, preventing active scientific samples from probing the player transform/component every time when the optional survival component is unavailable | Rejected: hot retry on every spatial/water metrics sample and permanent stale null cache | Estimate: miss path 60Hz -> 2Hz retry
+- [x] Static no-regression checks after Loop 18 | DOD: `git diff --check` passed with line-ending warnings only, `git diff --cached --check` passed, and scanner banned-pattern scan found no `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, or `.text =` | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 2900 us
+
+## Loop 19 - FastTick Time Snapshot Hygiene
+
+- [x] Scanner fast-tick time snapshot | DOD: `FastTick` now snapshots `Time.time` and `Time.frameCount` once, then passes those values through scientific scan update, resample scheduling, and black-box writes | Rejected: multiple native time/frame reads inside one scanner tick | Estimate: removes 3-5 repeated time/frame property reads per active scanner tick
+- [x] Focused scan resample determinism | DOD: hold-window checks and `_scientificNextResampleAt` updates now use the same tick timestamp | Rejected: mixed `Time.time` reads during one scanner sample | Estimate: sub-us; determinism hygiene
+- [x] Static no-regression checks after Loop 19 | DOD: `git diff --check` passed with docs line-ending warnings only, `git diff --cached --check` passed, scanner banned-pattern scan found no forbidden UI/scanner patterns, and focused-scan time-read regression scan found no old `Time.time` resample/contact patterns | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 3200 us
+
+## Loop 20 - Diegetic RT Format Probe Cache
+
+- [x] Tool RT format cold cache | DOD: `ToolDiegeticDisplayController` resolves RGB565-vs-ARGB32 support once in `Awake()` and uses the cached `RenderTextureFormat` for future pool rents | Rejected: repeating `SystemInfo.SupportsRenderTextureFormat` during RT reacquisition after visibility churn or pool retry | Estimate: removes one platform capability probe per RT rent
+- [x] Static no-regression checks after Loop 20 | DOD: `git diff --check` passed with line-ending warnings only, `git diff --cached --check` passed, scanner banned-pattern scan found no forbidden UI/scanner patterns, and RT-format scan confirmed the support probe is only in the cold resolver | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 2800 us
+
+## Loop 21 - Filtered Scanner Signal Dirty-Churn Guard
+
+- [x] Rejected scanner packet zeroing | DOD: `ToolDiegeticDisplayController` now maps scanner-active packets that fail the tool-hash filter to artifact `0` and progress `0`, so unrelated scanner traffic cannot carry artifact/progress into the display cache | Rejected: letting rejected packets mark filtered displays dirty through irrelevant artifact hashes | Estimate: avoids one dirty-state refresh per unrelated scanner hash transition
+- [x] Static no-regression checks after Loop 21 | DOD: `git diff --check` passed with line-ending warnings only, `git diff --cached --check` passed, scanner banned-pattern scan found no forbidden UI/scanner patterns, and filter regression scan confirmed rejected packets use zero artifact/progress with no direct `signal.ArtifactHash` cache writes | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 2500 us
+
+## Loop 22 - Tool Filter Rebind Sequence Reset
+
+- [x] Display filter rebind consumes latest state | DOD: `SetToolHashFilter()` now clears scanner display state and resets both latest-signal sequence sentinels so the newly selected filter can consume the current latest tool/scanner packets immediately | Rejected: waiting for a future signal after a filter change while the physical screen shows fallback/stale state | Estimate: cold authoring/spawn path only
+- [x] Static no-regression checks after Loop 22 | DOD: `git diff --check` passed with line-ending warnings only, `git diff --cached --check` passed, scanner banned-pattern scan found no forbidden UI/scanner patterns, and filter-rebind scan confirmed sequence resets plus scanner-cache clearing | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 2600 us
+
+## Loop 23 - Per-Screen Shader State Isolation
+
+- [x] Tool screen shader state moved off globals | DOD: `ToolDiegeticDisplayController` no longer calls `Shader.SetGlobalFloat` for heat, battery, distance, ammo, critical flash, visual overkill, fault, or tool hue; changed values are batched into the existing cached `MaterialPropertyBlock` for the physical UI renderer | Rejected: global shader floats that let multiple physical tool screens overwrite each other's visual state | Estimate: replaces up to 9 global shader writes with one per-renderer property-block write on changed display state
+- [x] Static no-regression checks after Loop 23 | DOD: `git diff --check` passed with line-ending warning only, `git diff --cached --check` passed, scanner banned-pattern scan found no forbidden UI/scanner patterns, and shader-state scan found no `Shader.SetGlobalFloat` or `ApplyGlobalFloat` in the tool display controller | Rejected: dotnet rebuild; static source checks only | Estimate: 2700 us
+
+## Loop 24 - Scanner Quality-Tier Time Snapshot Hygiene
+
+- [x] Focused scan tier resolver uses tick timestamp | DOD: `UpdateScientificScanning()` and `ScheduleScientificConeBatch()` now pass the fast-tick `now` snapshot into focused resample interval and quality-tier hysteresis resolution | Rejected: hidden `Time.time` reads inside tier helpers during one scientific scanner sample | Estimate: removes 1-2 repeated engine time reads per active focused scan tick
+- [x] Static no-regression checks after Loop 24 | DOD: `git diff --check` passed with line-ending warning only, `git diff --cached --check` passed, scanner banned-pattern scan found no forbidden UI/scanner patterns, and targeted time scan found no no-arg focused resample/quality resolver calls or old `Time.time - _scannerQualityTierCandidateSince` pattern | Rejected: dotnet rebuild; static source checks only | Estimate: 2900 us
+
+## Loop 25 - Scanner Tier Candidate Timestamp Collapse
+
+- [x] Scanner tier candidate updates snapshot time once | DOD: `QueueScannerQualityTierCandidate()` now uses one local `now` for initialization and candidate-age stamps, and `InitializeScannerQualityTier()` receives caller time instead of reading `Time.time` internally | Rejected: multiple engine time reads inside one tier event/slow-tick candidate update | Estimate: removes up to 2 repeated time reads per tier candidate update
+- [x] Scanner tuning signal frame snapshot | DOD: `PublishScannerTuningSignal()` snapshots `Time.frameCount` once and writes that value into `ScannerToolActiveSignal.Frame` | Rejected: direct frame read inside the signal object initializer | Estimate: removes one direct frame property read per scanner tuning packet
+- [x] Static no-regression checks after Loop 25 | DOD: `git diff --check` passed with line-ending warning only, `git diff --cached --check` passed, scanner banned-pattern scan found no forbidden UI/scanner patterns, and targeted timestamp scan found no direct candidate-stamp `Time.time`, no no-time `InitializeScannerQualityTier(...)`, and no direct `Frame = Time.frameCount` payload write | Rejected: dotnet rebuild; static source checks only | Estimate: 3100 us
+
+## Loop 26 - Operational Text Timestamp Cohesion
+
+- [x] Summary/directive cache timestamp snapshot | DOD: `GetOperationalSummary()` and `GetOperationalDirective()` now snapshot `Time.time` once for cache bucket selection and fixed-buffer writing, and `GetOperationalSummary()` snapshots `Time.frameCount` only after a cache miss for lore-title scramble | Rejected: helper-local time/frame reads that can disagree inside one generated scanner line or frame reads on cache hits | Estimate: removes 2-4 repeated engine time/frame reads per uncached operational text refresh
+- [x] Low-tier decryption gate timestamp threading | DOD: lore decryption summary passes caller `now` into `ResolveScannerQualityTier(now)` and caller `frame` into `ScrambleDecryptionSpan()` | Rejected: hidden `Time.time`/`Time.frameCount` reads inside presentation helpers | Estimate: removes one time read and one frame read from rich lore summary refresh
+
+## Loop 27 - Scientific Contact Timestamp Cohesion
+
+- [x] Focused scanner contact writes use caller timestamp | DOD: voxel, spatial, and occlusion lore contact consumers now receive the scheduler/callback timestamp and write `_scientificLastContactTime` from that value | Rejected: hidden `Time.time` reads inside scientific contact consumers | Estimate: removes up to 3 helper-local engine time reads across active contact acquisition paths
+- [x] Raycast callback timestamp boundary isolated | DOD: dispatcher raycast callback snapshots `Time.time` at the asynchronous boundary and passes it through occlusion/lore consumption | Rejected: using old scheduling timestamp for a later async result or reading time inside the lore consumer | Estimate: one callback-boundary time read only when a queued occlusion result returns
+- [x] Static no-regression checks after Loops 26-27 | DOD: `git diff --check` passed with source/doc line-ending warnings only, `git diff --cached --check` passed, scanner/UI banned-pattern scan found no forbidden patterns, and targeted timestamp scan found no no-arg operational cache helper, no helper-local decryption/tier/frame calls, and no `_scientificLastContactTime = Time.time` | Rejected: dotnet rebuild; static source checks only | Estimate: 3600 us
+
 ## Verification
 
 - [x] Compile/source validation - `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:quiet -clp:Summary` passed with 0 warnings / 0 errors after Loop 10
+- [ ] Compile/source validation after Loops 11-27 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
 - [ ] Console check - BLOCKED BY UNITY SESSION: MCP validate/console calls cannot connect to Unity MCP HTTP endpoint / session
 - [x] Re-read prompt after core tasks
 - [x] Omega polish mandate after all tasks done or blocked

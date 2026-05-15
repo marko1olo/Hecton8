@@ -46,6 +46,8 @@ namespace Hecton8.Graphics.DRS
         private const float NotificationResetThreshold = 0.65f;
         private const float RecoveryStepPerTick = 0.01f;
         private const float ScaleEpsilon = 0.0001f;
+        private const int PressureHysteresisFrames = 3;
+        private const int RecoveryHysteresisFrames = 15;
         private const byte FlagThermalOverride = 1 << 0;
         private const byte FlagFramePressure = 1 << 1;
         private const byte FlagNotification = 1 << 2;
@@ -73,6 +75,8 @@ namespace Hecton8.Graphics.DRS
         private byte _foveatedPressureTier;
         private int _lastObservedScaleMilli = -1;
         private int _lastTelemetryReportFrame = -TelemetryReportCooldownFrames;
+        private int _pressureFrameCount;
+        private int _recoveryFrameCount = RecoveryHysteresisFrames;
         private bool _registered;
         private bool _hotSwapRegistered;
         private bool _systemScalerInstalled;
@@ -147,7 +151,6 @@ namespace Hecton8.Graphics.DRS
             s_systemScalePercentage = _currentScale * 100f;
             _notificationMessageHash = NotificationEvents.RegisterMessage(NotificationMessage);
             EnsureTelemetry();
-            EnsureUpscalingFilter();
             InstallSystemDynamicResolutionScaler();
             RebindDynamicResolutionRuntime(GlobalRegistry.DynamicResolutionRuntime);
         }
@@ -227,20 +230,22 @@ namespace Hecton8.Graphics.DRS
 
             byte flags = 0;
             float frameTimeMs = SanitizePositive(_latestFrameTimeEwmaMs, TargetFrameTimeMs);
-            float targetScale = frameTimeMs > DangerFrameTimeMs
+            bool framePressure = frameTimeMs > DangerFrameTimeMs;
+            float requestedScale = framePressure
                 ? TargetFrameTimeMs * math.rcp(frameTimeMs)
                 : MaxScale;
-            if (frameTimeMs > DangerFrameTimeMs)
+            if (framePressure)
                 flags |= FlagFramePressure;
 
-            targetScale = math.clamp(targetScale, MinScale, MaxScale);
+            requestedScale = math.clamp(requestedScale, MinScale, MaxScale);
             bool thermalOverride = _pressureLevel >= 2 || _thermalSeverity >= (byte)HardwareThermalSeverity.Throttling;
             if (thermalOverride)
             {
-                targetScale = math.min(targetScale, ThermalMaxScale);
+                requestedScale = math.min(requestedScale, ThermalMaxScale);
                 flags |= FlagThermalOverride;
             }
 
+            float targetScale = ResolveHysteresisTarget(requestedScale, framePressure || thermalOverride);
             float nextScale = targetScale < _currentScale
                 ? targetScale
                 : math.min(targetScale, _currentScale + RecoveryStepPerTick);
@@ -393,20 +398,6 @@ namespace Hecton8.Graphics.DRS
                 NativeAllocationLifetime.Session);
         }
 
-        private void EnsureUpscalingFilter()
-        {
-            if (_urpAsset == null)
-                return;
-
-            UpscalingFilterSelection filter = _urpAsset.upscalingFilter;
-            if (filter == UpscalingFilterSelection.STP || filter == UpscalingFilterSelection.FSR)
-                return;
-
-            _urpAsset.upscalingFilter = SystemInfo.supportsComputeShaders
-                ? UpscalingFilterSelection.STP
-                : UpscalingFilterSelection.FSR;
-        }
-
         private void InstallSystemDynamicResolutionScaler()
         {
             if (_systemScalerInstalled)
@@ -509,6 +500,8 @@ namespace Hecton8.Graphics.DRS
             _currentScale = MaxScale;
             _targetScale = MaxScale;
             _latestFrameTimeEwmaMs = TargetFrameTimeMs;
+            _pressureFrameCount = 0;
+            _recoveryFrameCount = RecoveryHysteresisFrames;
             s_systemScalePercentage = 100f;
             CommitRenderScale(FlagInvalidState);
             return true;
@@ -534,10 +527,9 @@ namespace Hecton8.Graphics.DRS
 
         private void ApplyDirectRenderScale(float renderScale, float bufferScale)
         {
-            if (_urpAsset == null)
-                return;
+            if (!math.isfinite(bufferScale) || bufferScale <= 0f)
+                bufferScale = MaxScale;
 
-            _urpAsset.renderScale = renderScale;
             ScalableBufferManager.ResizeBuffers(bufferScale, bufferScale);
         }
 
@@ -581,7 +573,7 @@ namespace Hecton8.Graphics.DRS
                 Flags = flags,
                 PressureLevel = _pressureLevel,
                 ThermalSeverity = _thermalSeverity,
-                Reserved = 0,
+                Reserved = PackHysteresisCounters(),
                 Sequence = _sequence++
             };
 
@@ -594,6 +586,8 @@ namespace Hecton8.Graphics.DRS
                 _currentScale = MaxScale;
                 _targetScale = MaxScale;
                 _latestFrameTimeEwmaMs = TargetFrameTimeMs;
+                _pressureFrameCount = 0;
+                _recoveryFrameCount = RecoveryHysteresisFrames;
                 s_systemScalePercentage = 100f;
             }
         }
@@ -657,6 +651,31 @@ namespace Hecton8.Graphics.DRS
         private static int ScaleToMilli(float scale)
         {
             return (int)math.round(scale * 1000f);
+        }
+
+        private float ResolveHysteresisTarget(float requestedScale, bool pressureActive)
+        {
+            if (pressureActive)
+            {
+                _pressureFrameCount = math.min(PressureHysteresisFrames, _pressureFrameCount + 1);
+                _recoveryFrameCount = 0;
+                return _pressureFrameCount >= PressureHysteresisFrames
+                    ? requestedScale
+                    : _currentScale;
+            }
+
+            _pressureFrameCount = 0;
+            _recoveryFrameCount = math.min(RecoveryHysteresisFrames, _recoveryFrameCount + 1);
+            return _recoveryFrameCount >= RecoveryHysteresisFrames
+                ? requestedScale
+                : _currentScale;
+        }
+
+        private ushort PackHysteresisCounters()
+        {
+            int pressure = math.clamp(_pressureFrameCount, 0, byte.MaxValue);
+            int recovery = math.clamp(_recoveryFrameCount, 0, byte.MaxValue);
+            return (ushort)(pressure | (recovery << 8));
         }
 
         private void CommitQuestXrScale()

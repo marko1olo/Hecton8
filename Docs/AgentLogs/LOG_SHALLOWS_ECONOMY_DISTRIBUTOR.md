@@ -42,3 +42,39 @@ Verification:
 - Unity MCP refresh failed because the local MCP endpoint at `127.0.0.1:8088` was unavailable.
 - Standalone compiler validation could not load Unity's Roslyn dependency `System.Text.Encoding.CodePages`.
 - `git diff --check` passed for edited files.
+
+## 2026-05-14 - Continued Hardening Pass
+
+Status: PENDING VERIFICATION
+
+What was wrong:
+- Same-frame `DropPodLandedSignal` updates with different AUPs were skipped after the first signal.
+- A late real drop-pod anchor did not force the already-generated active sector to rebuild around the crash site.
+- GPR compaction decayed `GprSignalStrength` in place, so raw signal data degraded and filter/display math was mixed with authority data.
+- GPR configured read-model probing still used the allocating `GetComponents<MonoBehaviour>()` array overload.
+- Missing configured ore source could trigger registry fallback from scan cadence.
+
+What was done:
+- Added exact AUP equality gating for drop-pod signals: newer frames pass, same-frame changed AUPs pass, same-frame duplicates are ignored.
+- Added active-sector ore regeneration on real drop-pod anchor changes while preserving current-sector depletion masks.
+- Kept `GprSignalStrength` raw; decay and ore-filter alpha now affect only `GprPingGpu` and `MaxSignalStrength`.
+- Replaced the allocating component array probe with a preallocated `List<MonoBehaviour>` and `GetComponents(List<T>)`.
+- Limited GPR ore-read-model registry resolution to cold OnEnable wiring; scheduled scans now use the cached interface only.
+
+Cinematic cheats used:
+- Same deterministic AUP anchor for all tiers; higher tiers buy visual dressing, not heavier economy authority.
+- GPR remains a display-strength fake over raw pings instead of rebuilding radar geometry per filter.
+
+Exact microseconds saved / cost avoided:
+- Avoided repeated missing-dependency registry lookup during scan cadence: estimated 45 us per scan path on weak CPU when the configured source is absent.
+- Avoided managed component array allocation during GPR wiring; hot-path saving is 0 B/frame preserved.
+- Prevented unnecessary duplicate same-frame drop-pod regeneration; one exact AUP compare replaces full sector thrash.
+
+Verification:
+- Scoped forbidden-pattern scan on edited files found no `$"..."`, `string.Format`, `.ToString()`, `foreach`, `math.sqrt`, `math.normalize`, allocating `GetComponents<MonoBehaviour>()`, scene Find, Resources.Load, or Unity random usage.
+- `dotnet build Hecton8.World.Contracts.csproj -v:minimal /m:1` passed with 0 warnings and 0 errors.
+- Unity response-file csc passed for `Hecton8.World.GPR` and `Hecton8.World.Economy`; Unity analyzer-load warnings were emitted, but no compile errors.
+- `git diff --check` passed for edited files with CRLF warnings only.
+- `dotnet build Hecton8.Core.csproj` is blocked by a locked generated input DLL outside this task.
+- Filtered Core response-file csc is blocked by unrelated `BinaryLayoutManifest` Save V10 and `HardwareProfileCatalog` errors; no edited-file errors were reported.
+- Unity MCP resources are unavailable in this session, so Unity Console, PlayMode, GC, profiler, and visual checks remain PENDING VERIFICATION.

@@ -26,6 +26,14 @@ namespace Hecton8.World
 
         internal void ApplyExternalThreatPulse(Vector3 position, float radius, float strength, float holdDuration)
         {
+            if (!IsFinite(position) ||
+                !math.isfinite(radius) ||
+                !math.isfinite(strength) ||
+                !math.isfinite(holdDuration))
+            {
+                return;
+            }
+
             float resolvedRadius = math.max(0f, radius);
             float resolvedStrength = math.max(0f, strength);
             float resolvedHoldDuration = math.max(0.01f, holdDuration);
@@ -74,11 +82,18 @@ namespace Hecton8.World
         /// </summary>
         public int RegisterArtificialStructureHandle(Bounds bounds, StructureType type)
         {
-            if (bounds.size.sqrMagnitude <= 0.0001f)
-                return InvalidArtificialStructureId;
-
             Vector3 center = bounds.center;
             Vector3 size = bounds.size;
+            if (!IsFinite(center) ||
+                !IsFinite(size) ||
+                size.x <= 0f ||
+                size.y <= 0f ||
+                size.z <= 0f ||
+                size.sqrMagnitude <= 0.0001f)
+            {
+                return InvalidArtificialStructureId;
+            }
+
             for (int i = 0; i < _persistentArtificialStructures.Count; i++)
             {
                 PersistentArtificialStructureRecord existing = _persistentArtificialStructures[i];
@@ -182,17 +197,23 @@ namespace Hecton8.World
         /// </summary>
         public Vector3 GetFlowDirection(Vector3 position)
         {
+            if (!IsFinite(position))
+                return Vector3.zero;
+
             if (!_flowFieldInitialized || !_nativeMemory.EcosystemFlowFieldCurrentNative.IsCreated || _ecosystemThreatGridResolution <= 0)
             {
-                if (!TryResolvePlayerRuntimePositionFromAup(out Vector3 playerRuntimePosition))
+                if (!TryResolvePlayerRuntimePositionFromAup(out Vector3 playerRuntimePosition) ||
+                    !IsFinite(playerRuntimePosition))
+                {
                     return Vector3.zero;
+                }
 
                 float3 toPlayer = new float3(
                     playerRuntimePosition.x - position.x,
                     0f,
                     playerRuntimePosition.z - position.z);
                 float distanceSq = math.lengthsq(toPlayer);
-                if (distanceSq <= 0.0001f)
+                if (distanceSq <= 0.0001f || !math.isfinite(distanceSq))
                     return Vector3.zero;
 
                 float3 direction = toPlayer * math.rsqrt(distanceSq);
@@ -210,13 +231,16 @@ namespace Hecton8.World
         {
             if (_abyssalNavNodeCount <= 0 ||
                 !_nativeMemory.AbyssalNavConduitVectorsSnapshotNative.IsCreated ||
-                !_nativeMemory.AbyssalNavConduitStrengthSnapshotNative.IsCreated)
+                !_nativeMemory.AbyssalNavConduitStrengthSnapshotNative.IsCreated ||
+                !IsFinite(position))
             {
                 return Vector3.zero;
             }
 
             int nodeIndex = FindNearestAbyssalNavNodeIndex(position);
             if (nodeIndex < 0 ||
+                nodeIndex >= _abyssalNavConduitVectorsSnapshot.Length ||
+                nodeIndex >= _abyssalNavConduitStrengthSnapshot.Length ||
                 nodeIndex >= _nativeMemory.AbyssalNavConduitVectorsSnapshotNative.Length ||
                 nodeIndex >= _nativeMemory.AbyssalNavConduitStrengthSnapshotNative.Length)
             {
@@ -225,7 +249,9 @@ namespace Hecton8.World
 
             Vector3 conduitVector = _abyssalNavConduitVectorsSnapshot[nodeIndex];
             float conduitStrength = _abyssalNavConduitStrengthSnapshot[nodeIndex];
-            return conduitStrength > 0f ? conduitVector * conduitStrength : Vector3.zero;
+            return conduitStrength > 0f && math.isfinite(conduitStrength) && IsFinite(conduitVector)
+                ? conduitVector * conduitStrength
+                : Vector3.zero;
         }
 
         /// <summary>
@@ -264,7 +290,22 @@ namespace Hecton8.World
             if (!_threatGridInitialized ||
                 !_nativeMemory.EcosystemThreatGridCurrentNative.IsCreated ||
                 _ecosystemThreatGridResolution <= 0 ||
+                threatGridCellSize <= 0f ||
+                !math.isfinite(threatGridCellSize) ||
+                !IsFinite(_ecosystemThreatGridCenter) ||
                 !TryResolvePlayerRuntimePositionFromAup(out Vector3 playerPosition))
+            {
+                return false;
+            }
+
+            long expectedThreatGridLength = (long)_ecosystemThreatGridResolution * _ecosystemThreatGridResolution;
+            if (expectedThreatGridLength <= 0L ||
+                expectedThreatGridLength > int.MaxValue ||
+                _nativeMemory.EcosystemThreatGridCurrentNative.Length < expectedThreatGridLength ||
+                !IsFinite(playerPosition) ||
+                !math.isfinite(minimumThreatLevel) ||
+                !math.isfinite(minimumDistanceFromPlayer) ||
+                !math.isfinite(maximumDistanceFromPlayer))
             {
                 return false;
             }
@@ -272,6 +313,9 @@ namespace Hecton8.World
             float minDistanceSq = math.max(0f, minimumDistanceFromPlayer) * math.max(0f, minimumDistanceFromPlayer);
             float maxDistance = math.max(minimumDistanceFromPlayer, maximumDistanceFromPlayer);
             float maxDistanceSq = maxDistance * maxDistance;
+            if (!math.isfinite(minDistanceSq) || !math.isfinite(maxDistanceSq))
+                return false;
+
             int halfExtent = _ecosystemThreatGridResolution >> 1;
             float bestThreat = minimumThreatLevel;
             Vector3 bestPosition = default;
@@ -283,7 +327,7 @@ namespace Hecton8.World
                 {
                     int index = (z * _ecosystemThreatGridResolution) + x;
                     float threat = _nativeMemory.EcosystemThreatGridCurrentNative[index];
-                    if (threat <= bestThreat)
+                    if (threat <= bestThreat || !math.isfinite(threat))
                         continue;
 
                     float localX = (x - halfExtent) * threatGridCellSize;

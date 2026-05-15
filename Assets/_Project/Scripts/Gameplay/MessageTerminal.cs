@@ -20,6 +20,8 @@
 
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Signals;
 using Hecton8.Interaction;
 using System.Collections.Generic;
 using UnityEngine;
@@ -69,6 +71,8 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton/Gameplay/Message Terminal")]
     public sealed class MessageTerminal : MonoBehaviour, IInteractable, ITickable, IUpdatable, ILocalizationLanguageChangedListener
     {
+        private const uint WfcOutpostDatapadSourceHash = 0x57464354u; // WFCT
+        private const byte WfcDatapadLootedFlag = (byte)WfcOutpostCellStateFlags.DatapadLooted;
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -130,12 +134,17 @@ namespace Hecton8.Gameplay
 
         // Track read messages (for persistence)
         private HashSet<string> _readMessageIds;
+        private bool[] _initialReadStates;
         private int _pendingMessageIndex = -1;
 
         // Cached references
         private Transform _cachedTransform;
         private MaterialPropertyBlock _mpb;
         private static readonly int _EmissionColorID = Shader.PropertyToID("_EmissionColor");
+        private ulong _wfcOutpostSectorHash;
+        private ushort _wfcOutpostCellIndex;
+        private byte _wfcOutpostFlags;
+        private bool _wfcOutpostPersistenceConfigured;
 
         // Pre-cached interaction text
         private const string DefaultReadText = "Read Messages";
@@ -158,6 +167,36 @@ namespace Hecton8.Gameplay
         /// <summary>True if there are unread messages.</summary>
         public bool HasUnreadMessages => _pendingMessageIndex >= 0;
 
+        public void ConfigureWfcOutpostPersistence(ulong sectorHash, ushort cellIndex, byte initialFlags)
+        {
+            if (sectorHash == 0UL || cellIndex >= WfcOutpostPersistenceConstants.CellCount)
+            {
+                ResetWfcOutpostTransientPlaybackState();
+                ClearWfcOutpostPersistence();
+                RestoreWfcOutpostDatapadBaselineState();
+                return;
+            }
+
+            _wfcOutpostSectorHash = sectorHash;
+            _wfcOutpostCellIndex = cellIndex;
+            _wfcOutpostFlags = (byte)(initialFlags & WfcOutpostPersistenceConstants.MutableFlagMask);
+            _wfcOutpostPersistenceConfigured = true;
+            ResetWfcOutpostTransientPlaybackState();
+
+            if ((_wfcOutpostFlags & WfcDatapadLootedFlag) != 0)
+                ApplyWfcOutpostDatapadLootedState();
+            else
+                RestoreWfcOutpostDatapadBaselineState();
+        }
+
+        public void ClearWfcOutpostPersistence()
+        {
+            _wfcOutpostPersistenceConfigured = false;
+            _wfcOutpostSectorHash = 0UL;
+            _wfcOutpostCellIndex = 0;
+            _wfcOutpostFlags = 0;
+        }
+
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════
@@ -171,21 +210,12 @@ namespace Hecton8.Gameplay
             if (statusLightRenderer == null)
                 statusLightRenderer = GetComponent<Renderer>();
 
+            CaptureInitialReadStates();
+
             // Initialize read messages tracking
             int readMessageCapacity = messages != null ? messages.Length : 0;
             _readMessageIds = new HashSet<string>(readMessageCapacity); // COLD ALLOC: HashSet<string>[messages.Length] - track read messages - owner: MessageTerminal
-
-            // Mark already-read messages
-            if (messages != null)
-            {
-                for (int i = 0; i < messages.Length; i++)
-                {
-                    if (messages[i].isRead && !string.IsNullOrEmpty(messages[i].messageId))
-                    {
-                        _readMessageIds.Add(messages[i].messageId);
-                    }
-                }
-            }
+            RebuildReadMessageSetFromMessageStates();
 
             // Find first unread message
             UpdatePendingMessage();
@@ -204,6 +234,7 @@ namespace Hecton8.Gameplay
         {
             LocalizationEvents.UnregisterLanguageListener(this);
             TryUnregister();
+            ClearWfcOutpostPersistence();
         }
 
         private void OnDestroy()
@@ -339,6 +370,9 @@ namespace Hecton8.Gameplay
         /// <param name="message">The message to add.</param>
         public void AddMessage(MessageEntry message)
         {
+            if (message == null)
+                return;
+
             if (messages == null)
             {
                 messages = new MessageEntry[] { message };
@@ -349,8 +383,17 @@ namespace Hecton8.Gameplay
                 messages[messages.Length - 1] = message;
             }
 
+            EnsureInitialReadStateCapacity(messages.Length);
+            _initialReadStates[messages.Length - 1] = message.isRead;
+
             // Check if this is a new unread message
-            if (!message.isRead && !string.IsNullOrEmpty(message.messageId) && !_readMessageIds.Contains(message.messageId))
+            EnsureWfcOutpostReadMessageSet();
+            if (message.isRead)
+            {
+                if (!string.IsNullOrEmpty(message.messageId))
+                    _readMessageIds.Add(message.messageId);
+            }
+            else if (!string.IsNullOrEmpty(message.messageId) && !_readMessageIds.Contains(message.messageId))
             {
                 _pendingMessageIndex = messages.Length - 1;
                 UpdateState();
@@ -374,6 +417,8 @@ namespace Hecton8.Gameplay
             if (string.IsNullOrEmpty(messageId))
                 return;
 
+            EnsureWfcOutpostReadMessageSet();
+            bool wasRead = _readMessageIds.Contains(messageId);
             _readMessageIds.Add(messageId);
 
             // Update the message entry
@@ -381,9 +426,10 @@ namespace Hecton8.Gameplay
             {
                 for (int i = 0; i < messages.Length; i++)
                 {
-                    if (messages[i].messageId == messageId)
+                    MessageEntry entry = messages[i];
+                    if (entry != null && entry.messageId == messageId)
                     {
-                        messages[i].isRead = true;
+                        entry.isRead = true;
                         break;
                     }
                 }
@@ -391,6 +437,9 @@ namespace Hecton8.Gameplay
 
             UpdatePendingMessage();
             UpdateState();
+
+            if (!wasRead)
+                SetWfcOutpostFlags((byte)(_wfcOutpostFlags | WfcDatapadLootedFlag), (uint)Time.frameCount);
         }
 
         /// <summary>
@@ -400,7 +449,7 @@ namespace Hecton8.Gameplay
         /// <returns>True if the message has been read.</returns>
         public bool IsMessageRead(string messageId)
         {
-            return !string.IsNullOrEmpty(messageId) && _readMessageIds.Contains(messageId);
+            return !string.IsNullOrEmpty(messageId) && _readMessageIds != null && _readMessageIds.Contains(messageId);
         }
 
         /// <summary>
@@ -419,6 +468,160 @@ namespace Hecton8.Gameplay
         //  MESSAGE LOGIC
         // ══════════════════════════════════════════════════════════
 
+        private void ApplyWfcOutpostDatapadLootedState()
+        {
+            EnsureWfcOutpostReadMessageSet();
+
+            if (messages != null)
+            {
+                for (int i = 0; i < messages.Length; i++)
+                {
+                    MessageEntry entry = messages[i];
+                    if (entry == null)
+                        continue;
+
+                    string messageId = entry.messageId;
+                    if (!string.IsNullOrEmpty(messageId))
+                        _readMessageIds.Add(messageId);
+
+                    entry.isRead = true;
+                }
+            }
+
+            _pendingMessageIndex = -1;
+            if (_state != TerminalState.Playing)
+            {
+                _state = TerminalState.Idle;
+                _blinkTimer = 0f;
+                _blinkOn = false;
+                UpdateStatusLight();
+            }
+        }
+
+        private void RestoreWfcOutpostDatapadBaselineState()
+        {
+            if (_initialReadStates == null && messages != null)
+                CaptureInitialReadStates();
+
+            if (messages != null)
+            {
+                EnsureInitialReadStateCapacity(messages.Length);
+                for (int i = 0; i < messages.Length; i++)
+                {
+                    MessageEntry entry = messages[i];
+                    if (entry == null)
+                        continue;
+
+                    bool baselineRead = _initialReadStates != null &&
+                                        i < _initialReadStates.Length &&
+                                        _initialReadStates[i];
+                    entry.isRead = baselineRead;
+                }
+            }
+
+            RebuildReadMessageSetFromMessageStates();
+            UpdatePendingMessage();
+            UpdateState();
+        }
+
+        private void ResetWfcOutpostTransientPlaybackState()
+        {
+            _currentMessageIndex = -1;
+            _playbackTimer = 0f;
+            _blinkTimer = 0f;
+            _blinkOn = false;
+            if (_state == TerminalState.Playing)
+                _state = TerminalState.Idle;
+        }
+
+        private void EnsureWfcOutpostReadMessageSet()
+        {
+            if (_readMessageIds != null)
+                return;
+
+            int readMessageCapacity = messages != null ? messages.Length : 0;
+            _readMessageIds = new HashSet<string>(readMessageCapacity);
+        }
+
+        private void CaptureInitialReadStates()
+        {
+            int count = messages != null ? messages.Length : 0;
+            if (count <= 0)
+            {
+                _initialReadStates = null;
+                return;
+            }
+
+            _initialReadStates = new bool[count]; // COLD ALLOC: bool[messages.Length] - WFC pooled datapad read-state baseline - owner: MessageTerminal
+            for (int i = 0; i < count; i++)
+            {
+                MessageEntry entry = messages[i];
+                _initialReadStates[i] = entry != null && entry.isRead;
+            }
+        }
+
+        private void EnsureInitialReadStateCapacity(int count)
+        {
+            if (count <= 0)
+                return;
+
+            if (_initialReadStates == null)
+            {
+                _initialReadStates = new bool[count];
+                return;
+            }
+
+            if (_initialReadStates.Length < count)
+                System.Array.Resize(ref _initialReadStates, count);
+        }
+
+        private void RebuildReadMessageSetFromMessageStates()
+        {
+            EnsureWfcOutpostReadMessageSet();
+            _readMessageIds.Clear();
+
+            if (messages == null)
+                return;
+
+            for (int i = 0; i < messages.Length; i++)
+            {
+                MessageEntry entry = messages[i];
+                if (entry != null && entry.isRead && !string.IsNullOrEmpty(entry.messageId))
+                    _readMessageIds.Add(entry.messageId);
+            }
+        }
+
+        private void SetWfcOutpostFlags(byte flags, uint frame)
+        {
+            byte previous = _wfcOutpostFlags;
+            byte current = (byte)(flags & WfcOutpostPersistenceConstants.MutableFlagMask);
+            _wfcOutpostFlags = current;
+            PublishWfcOutpostFlags(previous, current, frame);
+        }
+
+        private void PublishWfcOutpostFlags(byte previous, byte current, uint frame)
+        {
+            if (!_wfcOutpostPersistenceConfigured)
+                return;
+
+            previous = (byte)(previous & WfcOutpostPersistenceConstants.MutableFlagMask);
+            current = (byte)(current & WfcOutpostPersistenceConstants.MutableFlagMask);
+            if (previous == current)
+                return;
+
+            WfcOutpostStateChangedSignal signal = new WfcOutpostStateChangedSignal
+            {
+                SectorHash = _wfcOutpostSectorHash,
+                CellIndex = _wfcOutpostCellIndex,
+                PreviousFlags = previous,
+                CurrentFlags = current,
+                Frame = frame,
+                SourceHash = WfcOutpostDatapadSourceHash,
+                Flags = 0
+            };
+            GlobalSignals.Publish(in signal);
+        }
+
         private void UpdatePendingMessage()
         {
             _pendingMessageIndex = -1;
@@ -426,9 +629,13 @@ namespace Hecton8.Gameplay
             if (messages == null)
                 return;
 
+            EnsureWfcOutpostReadMessageSet();
             for (int i = 0; i < messages.Length; i++)
             {
-                if (!messages[i].isRead && !_readMessageIds.Contains(messages[i].messageId))
+                MessageEntry entry = messages[i];
+                if (entry != null &&
+                    !entry.isRead &&
+                    (string.IsNullOrEmpty(entry.messageId) || !_readMessageIds.Contains(entry.messageId)))
                 {
                     _pendingMessageIndex = i;
                     return;
@@ -471,6 +678,8 @@ namespace Hecton8.Gameplay
                 return;
 
             MessageEntry message = messages[messageIndex];
+            if (message == null)
+                return;
 
             _currentMessageIndex = messageIndex;
             _state = TerminalState.Playing;
@@ -505,7 +714,8 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            string messageId = messages[_currentMessageIndex].messageId;
+            MessageEntry message = messages[_currentMessageIndex];
+            string messageId = message != null ? message.messageId : string.Empty;
 
             // Reset state
             _currentMessageIndex = -1;
@@ -572,10 +782,9 @@ namespace Hecton8.Gameplay
             {
                 for (int i = 0; i < messages.Length; i++)
                 {
-                    if (messages[i].audioClip != null)
-                    {
-                        messages[i].duration = messages[i].audioClip.length;
-                    }
+                    MessageEntry entry = messages[i];
+                    if (entry != null && entry.audioClip != null)
+                        entry.duration = entry.audioClip.length;
                 }
             }
 

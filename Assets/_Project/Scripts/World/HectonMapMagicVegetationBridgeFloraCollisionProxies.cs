@@ -34,7 +34,7 @@ namespace Hecton8.World
         private GameObject[] _largeFloraColliderProxies;
         private BoxCollider[] _largeFloraColliderBoxes;
         private int[] _largeFloraColliderSourceIndices;
-        private Vector3[] _largeFloraColliderUniverseCenters;
+        private double3[] _largeFloraColliderUniverseCenters;
         private int[] _largeFloraColliderLookupSourceIndices;
         private int[] _largeFloraColliderLookupSlots;
         private GameObject _largeFloraColliderRuntimeProxyPrefab;
@@ -70,8 +70,8 @@ namespace Hecton8.World
             _largeFloraColliderBoxes = new BoxCollider[capacity];
             // COLD ALLOC: int[largeFloraColliderProxyCapacity] — source-index lookup for large-flora collider proxies — owner: HectonMapMagicVegetationBridge
             _largeFloraColliderSourceIndices = new int[capacity];
-            // COLD ALLOC: Vector3[largeFloraColliderProxyCapacity] — cached universe-space proxy centers for squared-distance deactivation — owner: HectonMapMagicVegetationBridge
-            _largeFloraColliderUniverseCenters = new Vector3[capacity];
+            // COLD ALLOC: double3[largeFloraColliderProxyCapacity] - cached universe-space proxy centers for squared-distance deactivation - owner: HectonMapMagicVegetationBridge
+            _largeFloraColliderUniverseCenters = new double3[capacity];
             // COLD ALLOC: int[lookupCapacity] - open-address source index lookup, no Dictionary in Tick - owner: HectonMapMagicVegetationBridge
             _largeFloraColliderLookupSourceIndices = new int[lookupCapacity];
             // COLD ALLOC: int[lookupCapacity] - source-to-slot lookup payload, no Dictionary in Tick - owner: HectonMapMagicVegetationBridge
@@ -128,7 +128,7 @@ namespace Hecton8.World
             if (GetLargeFloraColliderProxyPrefabNoAlloc() == null)
                 return;
 
-            if (!TryResolveLargeFloraColliderPlayerUniverse(out Vector3 playerUniverse))
+            if (!TryResolveLargeFloraColliderPlayerUniverse(out double3 playerUniverse))
                 return;
 
             int activeRevision = ActiveUnderwaterAggregateRevision;
@@ -143,11 +143,11 @@ namespace Hecton8.World
             ScanLargeFloraCollisionProxyCandidates(playerUniverse);
         }
 
-        private bool TryResolveLargeFloraColliderPlayerUniverse(out Vector3 playerUniverse)
+        private bool TryResolveLargeFloraColliderPlayerUniverse(out double3 playerUniverse)
         {
             if (TryResolvePlayerRuntimePositionFromAup(out Vector3 runtimePosition))
             {
-                playerUniverse = ToUniverseSpace(runtimePosition);
+                playerUniverse = ToUniverseSpaceDouble3(runtimePosition);
                 return true;
             }
 
@@ -155,7 +155,7 @@ namespace Hecton8.World
             return false;
         }
 
-        private void ScanLargeFloraCollisionProxyCandidates(Vector3 playerUniverse)
+        private void ScanLargeFloraCollisionProxyCandidates(double3 playerUniverse)
         {
             NativeArray<Matrix4x4> matrices = ActiveUnderwaterMatricesNative;
             NativeArray<HectonVegetationInstanceData> metadata = ActiveUnderwaterMetadataNative;
@@ -179,8 +179,8 @@ namespace Hecton8.World
             if (safeCount <= 0)
                 return;
 
-            float activateRadius = ResolveLargeFloraColliderActivateRadius();
-            float activateRadiusSq = activateRadius * activateRadius;
+            double activateRadius = ResolveLargeFloraColliderActivateRadius();
+            double activateRadiusSq = activateRadius * activateRadius;
             int scanBudget = math.min(ResolveLargeFloraColliderScanBudget(), safeCount);
             for (int step = 0; step < scanBudget; step++)
             {
@@ -204,9 +204,9 @@ namespace Hecton8.World
                 }
 
                 Vector3 centerRuntime = new Vector3(center.x, center.y, center.z);
-                Vector3 centerUniverse = ToUniverseSpace(centerRuntime);
-                Vector3 delta = centerUniverse - playerUniverse;
-                if (delta.sqrMagnitude > activateRadiusSq)
+                double3 centerUniverse = ToUniverseSpaceDouble3(centerRuntime);
+                double3 delta = centerUniverse - playerUniverse;
+                if (math.lengthsq(delta) > activateRadiusSq)
                     continue;
 
                 ActivateOrUpdateLargeFloraCollisionProxy(sourceIndex, centerRuntime, centerUniverse, extents);
@@ -219,7 +219,7 @@ namespace Hecton8.World
                 (VegetationSemanticType)semanticType);
         }
 
-        private void DeactivateDistantLargeFloraCollisionProxies(Vector3 playerUniverse)
+        private void DeactivateDistantLargeFloraCollisionProxies(double3 playerUniverse)
         {
             if (_largeFloraColliderProxies == null ||
                 _largeFloraColliderUniverseCenters == null)
@@ -227,9 +227,9 @@ namespace Hecton8.World
                 return;
             }
 
-            float activateRadius = ResolveLargeFloraColliderActivateRadius();
-            float deactivateRadius = math.max(ResolveLargeFloraColliderDeactivateRadius(), activateRadius + 0.5f);
-            float deactivateRadiusSq = deactivateRadius * deactivateRadius;
+            double activateRadius = ResolveLargeFloraColliderActivateRadius();
+            double deactivateRadius = math.max(ResolveLargeFloraColliderDeactivateRadius(), activateRadius + 0.5d);
+            double deactivateRadiusSq = deactivateRadius * deactivateRadius;
             bool lookupDirty = false;
             for (int i = 0; i < _largeFloraColliderProxies.Length; i++)
             {
@@ -237,9 +237,9 @@ namespace Hecton8.World
                 if (proxy == null)
                     continue;
 
-                Vector3 proxyUniverse = _largeFloraColliderUniverseCenters[i];
-                Vector3 delta = proxyUniverse - playerUniverse;
-                if (delta.sqrMagnitude > deactivateRadiusSq)
+                double3 proxyUniverse = _largeFloraColliderUniverseCenters[i];
+                double3 delta = proxyUniverse - playerUniverse;
+                if (math.lengthsq(delta) > deactivateRadiusSq)
                 {
                     DeactivateLargeFloraCollisionProxySlot(i, false);
                     lookupDirty = true;
@@ -267,7 +267,7 @@ namespace Hecton8.World
             }
         }
 
-        private void ActivateOrUpdateLargeFloraCollisionProxy(int sourceIndex, Vector3 centerRuntime, Vector3 centerUniverse, float3 extents)
+        private void ActivateOrUpdateLargeFloraCollisionProxy(int sourceIndex, Vector3 centerRuntime, double3 centerUniverse, float3 extents)
         {
             if (!TryFindLargeFloraCollisionProxySlot(sourceIndex, out int slot))
                 slot = FindFreeLargeFloraCollisionProxySlot();

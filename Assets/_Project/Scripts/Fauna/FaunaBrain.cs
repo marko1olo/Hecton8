@@ -4437,6 +4437,9 @@ namespace Hecton8.AI
                 return;
 
             if (_faunaKinematicsRuntime == null)
+                TryGetComponent(out _faunaKinematicsRuntime);
+
+            if (_faunaKinematicsRuntime == null)
                 _faunaKinematicsRuntime = gameObject.AddComponent<FaunaKinematicsRuntime>();
 
             _faunaKinematicsRuntime.BindFromFauna(this, _rb);
@@ -4457,8 +4460,7 @@ namespace Hecton8.AI
             if (strikeActive && !TryResolveAttackTargetLogicPosition(strikeTarget, out strikeTargetPosition))
                 strikeActive = false;
 
-            float strikeRange = _speciesProfile != null ? _speciesProfile.attackRadius : math.max(1f, _stateMachine.attackRadius);
-            _faunaKinematicsRuntime.SetStrikeIntent(strikeTarget, strikeTargetPosition, strikeRange, strikeActive);
+            _faunaKinematicsRuntime.SetStrikeIntent(strikeTarget, strikeTargetPosition, strikeActive);
             float telegraphBlend = _attackTelegraphActive
                 ? 1f - math.saturate((_attackTelegraphBurstTime - _cognitionTimeSeconds) * LeviathanAttackTelegraphInvLeadSeconds)
                 : 0f;
@@ -4470,8 +4472,7 @@ namespace Hecton8.AI
             if (_faunaKinematicsRuntime == null)
                 return;
 
-            float strikeRange = _speciesProfile != null ? _speciesProfile.attackRadius : math.max(1f, _stateMachine.attackRadius);
-            _faunaKinematicsRuntime.SetStrikeIntent(null, default, strikeRange, false);
+            _faunaKinematicsRuntime.SetStrikeIntent(null, default, false);
             _faunaKinematicsRuntime.SetAttackTelegraph(0f);
             _faunaKinematicsRuntime.SetHeadLookTarget(default, false);
         }
@@ -5299,7 +5300,7 @@ namespace Hecton8.AI
             Vector3 localPoint = playerHealth.transform.InverseTransformPoint(impactPoint);
             float impulseMagnitude = ResolvePredatorBiteImpulseMagnitude();
             uint statusBits = IsApexPredator() ? CombatStatusBits.Stunned : 0u;
-            Hecton8.Gameplay.CombatDamageSignal signal = new Hecton8.Gameplay.CombatDamageSignal
+            Hecton8.Gameplay.CombatDamageRequest signal = new Hecton8.Gameplay.CombatDamageRequest
             {
                 TargetId = targetId,
                 SourceId = IsApexPredator() ? DamageSourceIds.FaunaLeviathanBite : DamageSourceIds.FaunaBite,

@@ -39,6 +39,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Signals;
 using Hecton8.Bootstrap;
@@ -184,6 +185,10 @@ namespace Hecton8.Physics
         private const float AbyssalFlowTextureWorldSizeMeters = 100f;
         private const float AbyssalFlowTextureCellSizeMeters = AbyssalFlowTextureWorldSizeMeters / AbyssalFlowTextureResolution;
         private const int AbyssalFlowTextureThreadGroupSize = 4;
+        private const int AbyssalFlowUpdateBucketMask = 7;
+        private const float AbyssalFlowUpdateBucketInvCount = 1f / (AbyssalFlowUpdateBucketMask + 1);
+        private const uint AbyssalFlowKillSwitchMask = GlobalRegistry.SystemKillSwitchLane4VfxMask;
+        private const uint AbyssalFlowBucketedCostHash = 0x41424642u; // ABFB
         private const float AbyssalFlowWakeMinimumSpeedMetersPerSecond = 0.5f;
         private const int MaxAbyssalVortexImpulseCount = 4;
         private const float AbyssalVortexImpulseMinimumRadiusMeters = 0.5f;
@@ -207,6 +212,7 @@ namespace Hecton8.Physics
         private const uint SplashdownImpulseNoAffectedCellsFlag = 1u << 4;
         private const uint SplashdownImpulseJobInvalidFlag = 1u << 8;
         private const uint SplashdownImpulseInvalidInputFlag = 1u << 31;
+        private const uint PrologueSequenceSourceHash = PrologueSignalSourceHashes.SequenceDirector;
         private const int AbyssalFlowTelemetryCapacity = 300;
         private const string AbyssalFlowDumpRelativePath = "Docs/AgentLogs/Dump_SPLASHDOWN_FLUID_DYNAMICS.bin";
         private const int GpuReadbackRingSize = 3;
@@ -444,11 +450,14 @@ namespace Hecton8.Physics
         private static readonly int _AbyssalFlowThermoclineYId = Shader.PropertyToID("_AbyssalFlowThermoclineY");
         private static readonly int _AbyssalFlowHeatSourceCountId = Shader.PropertyToID("_AbyssalFlowHeatSourceCount");
         private static readonly int _AbyssalFlowWeatherStateMaskId = Shader.PropertyToID("_AbyssalFlowWeatherStateMask");
+        private static readonly int _AbyssalFlowUpdateBucketId = Shader.PropertyToID("_AbyssalFlowUpdateBucket");
+        private static readonly int _AbyssalFlowUpdateBucketMaskId = Shader.PropertyToID("_AbyssalFlowUpdateBucketMask");
         private static readonly int _AbyssalFlowFieldTextureId = Shader.PropertyToID("_AbyssalFlowFieldTexture");
         private static readonly int _AbyssalFlowTextureReadId = Shader.PropertyToID("_AbyssalFlowTextureRead");
         private static readonly int _AbyssalFlowTextureWriteId = Shader.PropertyToID("_AbyssalFlowTextureWrite");
         private static readonly int _AbyssalFlowTextureRWId = Shader.PropertyToID("_AbyssalFlowTextureRW");
         private static readonly int _AbyssalFlowTextureParamsId = Shader.PropertyToID("_AbyssalFlowTextureParams");
+        private static readonly int _AbyssalFlowInterpolationAlphaId = Shader.PropertyToID("_AbyssalFlowInterpolationAlpha");
         private static readonly int _AbyssalFlowNoiseOffsetId = Shader.PropertyToID("_AbyssalFlowNoiseOffset");
         private static readonly int _AbyssalFlowWakeSphereId = Shader.PropertyToID("_AbyssalFlowWakeSphere");
         private static readonly int _AbyssalFlowWakeVelocityId = Shader.PropertyToID("_AbyssalFlowWakeVelocity");
@@ -480,6 +489,7 @@ namespace Hecton8.Physics
         private static readonly ProfilerMarker _gpuReadbackProfilerMarker = new ProfilerMarker("H8.Fluid.ConsumeGpuReadback");
         private static readonly int _buoyancyForceNanErrorCode = unchecked((int)Hecton.Localization.LocHash.Compute("NAN_ERROR_HASH_BUOYANCY_FORCE"));
         private static readonly int _buoyancyTorqueNanErrorCode = unchecked((int)Hecton.Localization.LocHash.Compute("NAN_ERROR_HASH_BUOYANCY_TORQUE"));
+        private static HectonFluidEngine s_runtimeInstance;
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
@@ -487,6 +497,8 @@ namespace Hecton8.Physics
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            s_runtimeInstance = null;
+
             for (int i = 0; i < CavitationShockwaveHitCapacity; i++)
             {
                 s_CavitationShockwaveColliders[i] = null;
@@ -502,7 +514,13 @@ namespace Hecton8.Physics
                 if (!Application.isPlaying)
                     return null;
 #endif
-                return GlobalRegistry.Fluid;
+                HectonFluidEngine instance = s_runtimeInstance;
+                if (instance != null)
+                    return instance;
+
+                instance = GlobalRegistry.Fluid;
+                s_runtimeInstance = instance;
+                return instance;
             }
         }
 
@@ -697,6 +715,7 @@ namespace Hecton8.Physics
             public Vector4 AbyssalFlowSpacing;
             public Vector4 AbyssalFlowTextureParams;
             public float AbyssalFlowTextureActive;
+            public float AbyssalFlowInterpolationAlpha;
             public Matrix4x4 VoxelSdfWorldToLocal;
             public Vector4 VoxelSdfInvDoubleHalfExtents;
             public Vector4 SdfParams;
@@ -828,7 +847,7 @@ namespace Hecton8.Physics
             float acceleration,
             int sourceBodyInstanceId)
         {
-            HectonFluidEngine instance = GlobalRegistry.Fluid;
+            HectonFluidEngine instance = Instance;
             return instance != null &&
                    instance.EnqueueCavitationBurst(position, direction, intensity01, radius, acceleration, sourceBodyInstanceId);
         }
@@ -893,7 +912,7 @@ namespace Hecton8.Physics
                 : default;
             int vectorNoiseLength = _prebakedVectorNoiseField.IsCreated ? _prebakedVectorNoiseField.Length : 0;
             double3 aupOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
-            byte highScalabilityTier = DistanceMath.IsHighQualityTier(GlobalRegistry.ScalabilityTier) ? (byte)1 : (byte)0;
+            byte highScalabilityTier = ResolveCachedHighScalabilityTierByte();
             float3 flow = HectonAnalyticalFlowField.SampleBaseFlow(
                 position,
                 depthBelowSurface,
@@ -917,7 +936,7 @@ namespace Hecton8.Physics
                 haloclineShearForcePerKg,
                 vectorNoiseField,
                 vectorNoiseLength,
-                new float3((float)aupOffset.x, (float)aupOffset.y, (float)aupOffset.z),
+                aupOffset,
                 math.rcp(math.max(0.25f, prebakedVectorNoiseCellSizeMeters)),
                 enablePrebakedVectorNoise ? (byte)1 : (byte)0,
                 prebakedVectorNoiseTriangleModulation,
@@ -956,7 +975,7 @@ namespace Hecton8.Physics
             float waveOffset = SampleWeatherGerstnerHeight(
                 absoluteXZ,
                 in weatherSnapshot,
-                ResolveGerstnerWaveBudget(GlobalRegistry.ScalabilityTier));
+                ResolveGerstnerWaveBudget(ResolveCachedScalabilityTier()));
             return ResolveCinematicWaterLevelY() + waveOffset;
         }
 
@@ -1384,6 +1403,9 @@ namespace Hecton8.Physics
         private RenderTexture _gpuAbyssalFlowWriteTexture;
         private RTHandle _gpuAbyssalFlowTextureAHandle;
         private RTHandle _gpuAbyssalFlowTextureBHandle;
+        private IDataVault _dataVault;
+        private ISimulationBucketer _simulationBucketer;
+        private float _gpuAbyssalFlowInterpolationAlpha = 1f;
         private GraphicsBuffer _advectedSiltBufferA;
         private GraphicsBuffer _advectedSiltBufferB;
         private GraphicsBuffer _advectedBubbleBufferA;
@@ -1480,6 +1502,13 @@ namespace Hecton8.Physics
         private bool _fixedTickRegistered;
         private bool _postFixedRegistered;
         private bool _lateFrameRegistered;
+        private IPlayerRuntimeContext _playerRuntime;
+        private ISubmarineRuntimeContext _submarineRuntime;
+        private HectonQualityTier _cachedScalabilityTier = HectonQualityTier.Unknown;
+        private int _cachedScalabilityTierFrame = int.MinValue;
+        private byte _cachedHighScalabilityTier;
+        private byte _cachedLowMaelstromTier = 1;
+        private bool _cachedLowMemoryProfile;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -1495,6 +1524,8 @@ namespace Hecton8.Physics
             }
 
             MathGuard.Initialize();
+            _dataVault = GlobalRegistry.DataVault;
+            RefreshRuntimeActorContextsIfMissing();
 
             // Initial observer resolution. If player/camera appears later,
             // FixedTick retries on a cooldown instead of staying in full-cost mode forever.
@@ -1538,6 +1569,10 @@ namespace Hecton8.Physics
         private void OnEnable()
         {
             EnsurePrebakedVectorNoiseField();
+            _dataVault = GlobalRegistry.DataVault;
+            _simulationBucketer = GlobalRegistry.SimulationBucketer;
+            _cachedScalabilityTierFrame = int.MinValue;
+            RefreshRuntimeActorContextsIfMissing();
 
             if (Application.isPlaying && !_fluidRuntimeRegistered)
             {
@@ -1550,6 +1585,8 @@ namespace Hecton8.Physics
 
                 GlobalRegistry.RegisterFluidRuntime(this);
                 _fluidRuntimeRegistered = ReferenceEquals(GlobalRegistry.Fluid, this);
+                if (_fluidRuntimeRegistered)
+                    s_runtimeInstance = this;
             }
 
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
@@ -1596,6 +1633,9 @@ namespace Hecton8.Physics
                 _fluidRuntimeRegistered = false;
             }
 
+            if (ReferenceEquals(s_runtimeInstance, this))
+                s_runtimeInstance = null;
+
             if (_fixedTickRegistered)
             {
                 GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
@@ -1621,6 +1661,11 @@ namespace Hecton8.Physics
             DisposePrebakedVectorNoiseField();
             DisposeNativeArrays();
             DisposeFluidAdvectionState();
+            _simulationBucketer = null;
+            _dataVault = null;
+            _playerRuntime = null;
+            _submarineRuntime = null;
+            _cachedScalabilityTierFrame = int.MinValue;
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -1745,6 +1790,9 @@ namespace Hecton8.Physics
                 _fluidRuntimeRegistered = false;
             }
 
+            if (ReferenceEquals(s_runtimeInstance, this))
+                s_runtimeInstance = null;
+
             if (_fixedTickRegistered)
             {
                 GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
@@ -1767,6 +1815,11 @@ namespace Hecton8.Physics
             DisposePrebakedVectorNoiseField();
             DisposeNativeArrays();
             DisposeFluidAdvectionState();
+            _simulationBucketer = null;
+            _dataVault = null;
+            _playerRuntime = null;
+            _submarineRuntime = null;
+            _cachedScalabilityTierFrame = int.MinValue;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1851,6 +1904,8 @@ namespace Hecton8.Physics
                    flowSpacing.y > 0f &&
                    flowSpacing.z > 0f;
         }
+
+        public float GpuAbyssalFlowInterpolationAlpha => _gpuAbyssalFlowInterpolationAlpha;
 
         /// <summary>
         /// Resolves the active 3D abyssal flow texture payload for GPU consumers.
@@ -2003,7 +2058,7 @@ namespace Hecton8.Physics
             out int activeWaveCount,
             out float maxWaveEnvelope)
         {
-            activeWaveCount = ResolveGerstnerWaveBudget(GlobalRegistry.ScalabilityTier);
+            activeWaveCount = ResolveGerstnerWaveBudget(ResolveCachedScalabilityTier());
             maxWaveEnvelope = 0f;
             _activeGerstnerWaveCount = 0;
 
@@ -2032,7 +2087,7 @@ namespace Hecton8.Physics
 
         private void EnsureSharedGerstnerDataVaultBuffers()
         {
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null || vault.IsAllocationLocked)
                 return;
 
@@ -2053,7 +2108,7 @@ namespace Hecton8.Physics
             if (!_gerstnerWaves.IsCreated)
                 return;
 
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return;
 
@@ -2120,7 +2175,7 @@ namespace Hecton8.Physics
                 out GerstnerWaveComponent wave1,
                 out GerstnerWaveComponent wave2);
             int activeWaveCount = math.min(
-                math.max(1, ResolveGerstnerWaveBudget(GlobalRegistry.ScalabilityTier)),
+                math.max(1, ResolveGerstnerWaveBudget(ResolveCachedScalabilityTier())),
                 MaxGerstnerWaveCount);
             PublishOceanSurfaceWaveUniforms(
                 activeWaveCount,
@@ -2504,12 +2559,8 @@ namespace Hecton8.Physics
                 : default;
             int vectorNoiseLength = _prebakedVectorNoiseField.IsCreated ? _prebakedVectorNoiseField.Length : 0;
             double3 vectorNoiseAupOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
-            float3 vectorNoiseAupOffsetFloat = new float3(
-                (float)vectorNoiseAupOffset.x,
-                (float)vectorNoiseAupOffset.y,
-                (float)vectorNoiseAupOffset.z);
-            float2 waveAupOffsetXZ = new float2(vectorNoiseAupOffsetFloat.x, vectorNoiseAupOffsetFloat.z);
-            byte highScalabilityTier = DistanceMath.IsHighQualityTier(GlobalRegistry.ScalabilityTier) ? (byte)1 : (byte)0;
+            float2 waveAupOffsetXZ = new float2((float)vectorNoiseAupOffset.x, (float)vectorNoiseAupOffset.z);
+            byte highScalabilityTier = ResolveCachedHighScalabilityTierByte();
 
             JobHandle waveHandle = default;
             bool useGpuBuoyancy = gpuSurfaceParityEnabled &&
@@ -2612,7 +2663,7 @@ namespace Hecton8.Physics
                 currentTimeScale = currentTimeScale,
                 currentVerticalFactor = currentVerticalFactor,
                 phantomCurrentStrength = phantomCurrentStrength,
-                vectorNoiseAupOffset = vectorNoiseAupOffsetFloat,
+                vectorNoiseAupOffset = vectorNoiseAupOffset,
                 brineShiftOffsetY = math.isfinite(vectorNoiseAupOffset.y) ? (float)vectorNoiseAupOffset.y : 0f,
                 vectorNoiseInvCellSize = math.rcp(math.max(0.25f, prebakedVectorNoiseCellSizeMeters)),
                 enablePrebakedVectorNoise = enablePrebakedVectorNoise ? (byte)1 : (byte)0,
@@ -2786,6 +2837,7 @@ namespace Hecton8.Physics
                 AbyssalFlowSpacing = flowSpacing,
                 AbyssalFlowTextureParams = hasFlowTexture ? textureSpacing : Vector4.zero,
                 AbyssalFlowTextureActive = hasFlowTexture ? 1f : 0f,
+                AbyssalFlowInterpolationAlpha = _gpuAbyssalFlowInterpolationAlpha,
                 VoxelSdfWorldToLocal = sdfWorldToLocal,
                 VoxelSdfInvDoubleHalfExtents = sdfInvDoubleHalfExtents,
                 SdfParams = new Vector4(sdfActive, FluidAdvectionSdfSolidThreshold, 0f, 0f)
@@ -2822,6 +2874,7 @@ namespace Hecton8.Physics
             cmd.SetComputeVectorParam(compute, _AbyssalFlowSpacingId, payload.AbyssalFlowSpacing);
             cmd.SetComputeVectorParam(compute, _AbyssalFlowTextureParamsId, payload.AbyssalFlowTextureParams);
             cmd.SetComputeFloatParam(compute, _AbyssalFlowTextureActiveId, payload.AbyssalFlowTextureActive);
+            cmd.SetComputeFloatParam(compute, _AbyssalFlowInterpolationAlphaId, payload.AbyssalFlowInterpolationAlpha);
             cmd.SetComputeMatrixParam(compute, _VoxelSdfWorldToLocalId, payload.VoxelSdfWorldToLocal);
             cmd.SetComputeVectorParam(compute, _VoxelSdfInvDoubleHalfExtentsId, payload.VoxelSdfInvDoubleHalfExtents);
             cmd.SetComputeVectorParam(compute, _FluidAdvectionSdfParamsId, payload.SdfParams);
@@ -2858,11 +2911,8 @@ namespace Hecton8.Physics
             for (int i = 0; i < signals.Length; i++)
             {
                 PrologueCompleteSignal signal = signals[i];
-                if (signal.Phase != PrologueCompleteSignal.PhaseOceanHandoff &&
-                    (signal.Flags & PrologueCompleteSignal.FlagForceWhiteout) == 0)
-                {
+                if (!IsValidPrologueSplashdownSignal(in signal))
                     continue;
-                }
 
                 if (signal.Sequence != 0 &&
                     signal.Sequence == _lastProcessedSplashdownSequence &&
@@ -2879,6 +2929,15 @@ namespace Hecton8.Physics
                 _splashdownImpactConsumed = true;
                 break;
             }
+        }
+
+        private static bool IsValidPrologueSplashdownSignal(in PrologueCompleteSignal signal)
+        {
+            return signal.Phase == PrologueCompleteSignal.PhaseOceanHandoff &&
+                   signal.SourceHash == PrologueSequenceSourceHash &&
+                   (signal.Flags & PrologueCompleteSignal.FlagForceWhiteout) != 0 &&
+                   math.isfinite(signal.WhiteoutHoldSeconds) &&
+                   signal.WhiteoutHoldSeconds >= 0f;
         }
 
         private bool QueueSplashdownFluidImpulse(in PrologueCompleteSignal signal, float cinematicWaterLevel)
@@ -2933,11 +2992,11 @@ namespace Hecton8.Physics
 
         private bool IsLowFluidMathTier()
         {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            HectonQualityTier tier = ResolveCachedScalabilityTier();
             return tier == HectonQualityTier.Unknown ||
                    tier == HectonQualityTier.Low ||
                    tier == HectonQualityTier.Mx350 ||
-                   GlobalRegistry.H8_LOW_MEMORY_PROFILE;
+                   _cachedLowMemoryProfile;
         }
 
         private static bool IsSplashdownInsideFlowVolume(float3 runtimePosition, float3 flowCenter)
@@ -3323,11 +3382,11 @@ namespace Hecton8.Physics
 
         private bool ResolveFluidAdvectionLowTier()
         {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            HectonQualityTier tier = ResolveCachedScalabilityTier();
             bool requestedLowTier = tier == HectonQualityTier.Unknown ||
                                     tier == HectonQualityTier.Low ||
                                     tier == HectonQualityTier.Mx350 ||
-                                    GlobalRegistry.H8_LOW_MEMORY_PROFILE;
+                                    _cachedLowMemoryProfile;
 
             if (!_dynamicWakeTierInitialized)
             {
@@ -4324,11 +4383,14 @@ namespace Hecton8.Physics
             GlobalSignals.Publish(in signal);
 
             Vector3 runtimePosition = new Vector3(impactEvent.PositionWS.x, impactEvent.PositionWS.y, impactEvent.PositionWS.z);
-            float3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimePosition);
+            double3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);
             SplashEvent splashEvent = new SplashEvent
             {
                 RuntimePosition = impactEvent.PositionWS,
-                AbsoluteUniversePosition = absolutePosition,
+                AbsoluteUniversePosition = new float3(
+                    (float)absolutePosition.x,
+                    (float)absolutePosition.y,
+                    (float)absolutePosition.z),
                 SurfaceNormal = new float3(0f, 1f, 0f),
                 ImpactSpeedMetersPerSecond = impactSpeed,
                 KineticEnergyJoules = 0.5f * math.max(0.001f, impactEvent.MassKg) * impactSpeed * impactSpeed,
@@ -5138,12 +5200,10 @@ namespace Hecton8.Physics
             return inside01 * intensity01;
         }
 
-        private static bool IsLowMaelstromTier()
+        private bool IsLowMaelstromTier()
         {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            return tier == HectonQualityTier.Unknown ||
-                   tier == HectonQualityTier.Low ||
-                   tier == HectonQualityTier.Mx350;
+            ResolveCachedScalabilityTier();
+            return _cachedLowMaelstromTier != 0;
         }
 
         private static float ResolveMaelstromIntensity(float tangentialStrength, float centripetalStrength, float verticalPull)
@@ -5236,7 +5296,8 @@ namespace Hecton8.Physics
             float eventHorizonRadiusSq = eventHorizonRadius * eventHorizonRadius;
             Vector3 center = new Vector3(whirlpool.CenterWS.x, whirlpool.CenterWS.y, whirlpool.CenterWS.z);
 
-            IPlayerRuntimeContext player = GlobalRegistry.Player;
+            RefreshRuntimeActorContextsIfMissing();
+            IPlayerRuntimeContext player = _playerRuntime;
             Rigidbody playerBody = player != null ? player.PlayerRigidbody : null;
             Transform playerTransform = player != null ? player.PlayerTransform : null;
             Vector3 playerPosition = playerBody != null
@@ -5245,7 +5306,7 @@ namespace Hecton8.Physics
             if (IsFiniteVector(playerPosition) && (playerPosition - center).sqrMagnitude <= eventHorizonRadiusSq)
                 published |= PublishMaelstromDamageSignal(center, playerPosition, playerBody != null ? unchecked((uint)EntityId.ToULong(playerBody.GetEntityId())) : 0u, intensity01);
 
-            ISubmarineRuntimeContext submarine = GlobalRegistry.Submarine;
+            ISubmarineRuntimeContext submarine = _submarineRuntime;
             Rigidbody hull = submarine != null ? submarine.HullRigidbody : null;
             if (hull != null)
             {
@@ -5856,6 +5917,22 @@ namespace Hecton8.Physics
             _gpuAbyssalFlowWriteTexture = temp;
         }
 
+        private void ResolveAbyssalFlowBucketUniforms(out int updateBucket, out int updateBucketMask)
+        {
+            ISimulationBucketer bucketer = _simulationBucketer;
+            int frameCount = bucketer != null && bucketer.IsInitialized
+                ? bucketer.CurrentFrameCount
+                : Time.frameCount;
+            updateBucketMask = AbyssalFlowUpdateBucketMask;
+            updateBucket = frameCount & updateBucketMask;
+            _gpuAbyssalFlowInterpolationAlpha = (updateBucket + 1) * AbyssalFlowUpdateBucketInvCount;
+        }
+
+        private static bool IsAbyssalFlowKillSwitchActive()
+        {
+            return (GlobalRegistry.SystemKillSwitchMask & AbyssalFlowKillSwitchMask) != 0u;
+        }
+
         private void TryDispatchGpuAbyssalFlowField(
             in WeatherRuntimeSnapshot weatherSnapshot,
             float resolvedWaterLevel,
@@ -5878,6 +5955,13 @@ namespace Hecton8.Physics
             if (math.abs(_lastAbyssalFlowDispatchFixedTime - currentFixedTime) <= 0.000001f)
                 return;
 
+            if (IsAbyssalFlowKillSwitchActive())
+            {
+                _gpuAbyssalFlowInterpolationAlpha = 1f;
+                AgeAbyssalVortexImpulsesOnce(fixedDeltaTime);
+                return;
+            }
+
             EnsureGpuAbyssalFlowBuffers();
             if (_gpuAbyssalFlowResultBuffer == null ||
                 _gpuAbyssalHeatSourceBuffer == null ||
@@ -5890,9 +5974,10 @@ namespace Hecton8.Physics
             }
 
             _lastAbyssalFlowDispatchFixedTime = currentFixedTime;
+            long watchdogStart = System.Diagnostics.Stopwatch.GetTimestamp();
 
             float3 flowCenter = ResolveAbyssalFlowCenter(resolvedWaterLevel);
-            bool highTier = DistanceMath.IsHighQualityTier(GlobalRegistry.ScalabilityTier);
+            bool highTier = ResolveCachedHighScalabilityTier();
             int heatSourceCount = highTier ? CaptureAbyssalHeatSources(flowCenter) : 0;
             _debugAbyssalHeatSourceCount = heatSourceCount;
 
@@ -5904,6 +5989,7 @@ namespace Hecton8.Physics
             int textureGroupCount = math.max(
                 1,
                 (AbyssalFlowTextureResolution + AbyssalFlowTextureThreadGroupSize - 1) / AbyssalFlowTextureThreadGroupSize);
+            ResolveAbyssalFlowBucketUniforms(out int updateBucket, out int updateBucketMask);
             GraphicsBuffer splashdownImpulseBuffer = ResolveSplashdownImpulseBuffer();
             Vector4 splashdownParams = ResolveSplashdownImpulseParams();
 
@@ -5976,6 +6062,8 @@ namespace Hecton8.Physics
             abyssalFlowFieldCompute.SetFloat(_AbyssalFlowThermoclineYId, resolvedWaterLevel - AbyssalFlowThermoclineDepthMeters);
             abyssalFlowFieldCompute.SetInt(_AbyssalFlowHeatSourceCountId, heatSourceCount);
             abyssalFlowFieldCompute.SetInt(_AbyssalFlowWeatherStateMaskId, (int)weatherSnapshot.StateMask);
+            abyssalFlowFieldCompute.SetInt(_AbyssalFlowUpdateBucketId, updateBucket);
+            abyssalFlowFieldCompute.SetInt(_AbyssalFlowUpdateBucketMaskId, updateBucketMask);
 
             abyssalFlowFieldCompute.Dispatch(_gpuAbyssalUpdateKernel, groupCount, 1, 1);
 
@@ -6018,6 +6106,17 @@ namespace Hecton8.Physics
             if (splashdownParams.x > 0.5f)
                 telemetryFlags |= 4u;
             WriteAbyssalFlowTelemetry(flowCenter, wakeSphere, wakeVelocity, heatSourceCount, _lastSplashdownFluidImpulseCount, telemetryFlags);
+            ReportWatchdogCost(AbyssalFlowBucketedCostHash, watchdogStart);
+        }
+
+        private static void ReportWatchdogCost(uint subsystemHash, long startTimestamp)
+        {
+            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp;
+            if (elapsedTicks <= 0L)
+                return;
+
+            float elapsedMilliseconds = (float)(elapsedTicks * 1000.0 / System.Diagnostics.Stopwatch.Frequency);
+            RuntimeWatchdog.ReportSubsystemCost(subsystemHash, elapsedMilliseconds);
         }
 
         private void ClearAbyssalVortexImpulses()
@@ -6119,12 +6218,13 @@ namespace Hecton8.Physics
             return dispatchCount;
         }
 
-        private static bool TryResolveSubmarineWakePayload(out Vector4 wakeSphere, out Vector4 wakeVelocity)
+        private bool TryResolveSubmarineWakePayload(out Vector4 wakeSphere, out Vector4 wakeVelocity)
         {
             wakeSphere = Vector4.zero;
             wakeVelocity = Vector4.zero;
 
-            ISubmarineRuntimeContext submarine = GlobalRegistry.Submarine;
+            RefreshRuntimeActorContextsIfMissing();
+            ISubmarineRuntimeContext submarine = _submarineRuntime;
             Rigidbody hull = submarine != null ? submarine.HullRigidbody : null;
             if (hull == null)
                 return false;
@@ -6547,6 +6647,51 @@ namespace Hecton8.Physics
                 lodObserver = playerTransform;
         }
 
+        private HectonQualityTier ResolveCachedScalabilityTier()
+        {
+            int frame = Time.frameCount;
+            if (_cachedScalabilityTierFrame == frame)
+                return _cachedScalabilityTier;
+
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            _cachedScalabilityTier = tier;
+            _cachedScalabilityTierFrame = frame;
+            _cachedHighScalabilityTier = DistanceMath.IsHighQualityTier(tier) ? (byte)1 : (byte)0;
+            _cachedLowMaelstromTier = tier == HectonQualityTier.Unknown ||
+                                      tier == HectonQualityTier.Low ||
+                                      tier == HectonQualityTier.Mx350
+                ? (byte)1
+                : (byte)0;
+            _cachedLowMemoryProfile = GlobalRegistry.H8_LOW_MEMORY_PROFILE;
+            return tier;
+        }
+
+        private byte ResolveCachedHighScalabilityTierByte()
+        {
+            ResolveCachedScalabilityTier();
+            return _cachedHighScalabilityTier;
+        }
+
+        private bool ResolveCachedHighScalabilityTier()
+        {
+            ResolveCachedScalabilityTier();
+            return _cachedHighScalabilityTier != 0;
+        }
+
+        private void RefreshRuntimeActorContextsIfMissing()
+        {
+            if (_playerRuntime == null || IsUnityObjectInvalid(_playerRuntime))
+                _playerRuntime = GlobalRegistry.Player;
+
+            if (_submarineRuntime == null || IsUnityObjectInvalid(_submarineRuntime))
+                _submarineRuntime = GlobalRegistry.Submarine;
+        }
+
+        private static bool IsUnityObjectInvalid(object context)
+        {
+            return context is UnityEngine.Object unityObject && unityObject == null;
+        }
+
         /// <summary>
         /// Updates cached LOD distance squares (called once at startup,
         /// and whenever LOD parameters change via properties).
@@ -6935,7 +7080,7 @@ namespace Hecton8.Physics
         public float  currentTimeScale;
         public float  currentVerticalFactor;
         public float  phantomCurrentStrength;
-        public float3 vectorNoiseAupOffset;
+        public double3 vectorNoiseAupOffset;
         public float  brineShiftOffsetY;
         public float  vectorNoiseInvCellSize;
         public byte   enablePrebakedVectorNoise;
@@ -7489,7 +7634,7 @@ namespace Hecton8.Physics
             float haloclineShearVelocity,
             NativeArray<float3> vectorNoiseField,
             int vectorNoiseFieldLength,
-            float3 vectorNoiseAupOffset,
+            double3 vectorNoiseAupOffset,
             float vectorNoiseInvCellSize,
             byte enablePrebakedVectorNoise,
             float vectorNoiseTriangleModulation,
@@ -7557,7 +7702,7 @@ namespace Hecton8.Physics
             float time,
             NativeArray<float3> vectorNoiseField,
             int vectorNoiseFieldLength,
-            float3 vectorNoiseAupOffset,
+            double3 vectorNoiseAupOffset,
             float vectorNoiseInvCellSize,
             byte enablePrebakedVectorNoise,
             float timeScale,
@@ -7570,17 +7715,18 @@ namespace Hecton8.Physics
                 strength == 0f ||
                 vectorNoiseInvCellSize <= 0f ||
                 vectorNoiseFieldLength < VectorNoiseVoxelCount ||
-                !math.all(math.isfinite(worldPos)))
+                !math.all(math.isfinite(worldPos)) ||
+                !math.all(math.isfinite(vectorNoiseAupOffset)))
             {
                 return float3.zero;
             }
 
-            float3 aupCell = (worldPos + vectorNoiseAupOffset) * vectorNoiseInvCellSize;
+            double3 aupCell = (new double3(worldPos.x, worldPos.y, worldPos.z) + vectorNoiseAupOffset) * vectorNoiseInvCellSize;
             bool highTier = highScalabilityTier != 0;
             int cellMask = math.select(VectorNoiseLowTierMask, VectorNoiseMask, highTier);
-            int x = FastFloorToInt(aupCell.x) & cellMask;
-            int y = FastFloorToInt(aupCell.y) & cellMask;
-            int z = FastFloorToInt(aupCell.z) & cellMask;
+            int x = (int)(FastFloorToLong(aupCell.x) & cellMask);
+            int y = (int)(FastFloorToLong(aupCell.y) & cellMask);
+            int z = (int)(FastFloorToLong(aupCell.z) & cellMask);
             int index = x | (y << VectorNoiseSliceShift) | (z << VectorNoisePlaneShift);
             float3 highSample = vectorNoiseField[index];
             float3 lowSample = DominantAxisOrDefault(highSample, new float3(1f, 0f, 0f));
@@ -7752,6 +7898,12 @@ namespace Hecton8.Physics
         {
             int truncated = (int)value;
             return math.select(truncated - 1, truncated, value >= truncated);
+        }
+
+        private static long FastFloorToLong(double value)
+        {
+            long truncated = (long)value;
+            return value >= truncated ? truncated : truncated - 1L;
         }
 
         private static float FastMagnitudeApprox(float3 value)

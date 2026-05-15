@@ -286,6 +286,11 @@ namespace Hecton8.World
             RegisterVoxelCaveInDust(HectonFloatingOrigin.ToRuntimePosition(absoluteUniversePosition), impulseDirectionWS, radiusScale);
         }
 
+        public void RegisterVoxelCaveInDustAup(double3 absoluteUniversePosition, Vector3 impulseDirectionWS, float radiusScale)
+        {
+            RegisterVoxelCaveInDust(HectonFloatingOrigin.ToRuntimePosition(absoluteUniversePosition), impulseDirectionWS, radiusScale);
+        }
+
         /// <summary>
         /// Registers a disturbed-silt sheet emitted by fast KCC or vehicle wake motion.
         /// </summary>

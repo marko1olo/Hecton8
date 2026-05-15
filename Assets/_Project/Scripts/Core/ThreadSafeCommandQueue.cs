@@ -28,6 +28,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable structural command payload authored by jobs and drained in the dispatcher late-frame window.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct EntityCommand
     {
         public EntityCommandType CommandType;

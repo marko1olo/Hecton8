@@ -20,6 +20,7 @@
 
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Memory;
 using Hecton8.Core.Signals;
 using Hecton8.Audio;
 using Hecton8.Environment;
@@ -1253,6 +1254,7 @@ namespace Hecton8.Gameplay
         private CameraJuiceInput _juiceInput;
         private CameraJuiceOutput _juiceOutput;
         private Vector3 _cameraBaseLocalPos;
+        private IDataVault _dataVault;
         private NativeArray<CinematicFocusTelemetryEntry> _cinematicFocusBlackBox;
         private AbsoluteUniversePosition _cinematicFocusTargetAup;
         private int _cinematicFocusBlackBoxCursor;
@@ -1271,6 +1273,7 @@ namespace Hecton8.Gameplay
         private bool _cinematicFocusActive;
         private bool _cinematicFocusAudioDucked;
         private bool _cinematicFocusFovAllowedCached;
+        private bool _cinematicFocusBlackBoxVaultOwned;
         private Vector3 _feedbackVelocity;
         private float _underwaterSomaticPhase;
         private float _underwaterSomaticWeight;
@@ -2616,7 +2619,7 @@ namespace Hecton8.Gameplay
 
         private void EnsurePlayerKinematicsNativeState()
         {
-            _playerKinematicsNativeState.EnsureCreated();
+            _playerKinematicsNativeState.EnsureCreated(_dataVault);
         }
 
         private void EnsureCinematicFocusBlackBox()
@@ -2624,10 +2627,31 @@ namespace Hecton8.Gameplay
             if (_cinematicFocusBlackBox.IsCreated)
                 return;
 
-            _cinematicFocusBlackBox = new NativeArray<CinematicFocusTelemetryEntry>(
+            IDataVault vault = _dataVault;
+            if (vault != null)
+            {
+                NativeArray<CinematicFocusTelemetryEntry> vaultArray = vault.GetBuffer<CinematicFocusTelemetryEntry>(
+                    BufferID.PlayerCinematicFocusBlackBox,
+                    CinematicFocusBlackBoxCapacity,
+                    SystemID.GameplayPlayer,
+                    NativeArrayOptions.ClearMemory);
+                if (vaultArray.IsCreated)
+                {
+                    _cinematicFocusBlackBox = vaultArray;
+                    _cinematicFocusBlackBoxVaultOwned = true;
+                    return;
+                }
+            }
+
+            _cinematicFocusBlackBoxVaultOwned = false;
+            _cinematicFocusBlackBox = H8Memory.Allocate<CinematicFocusTelemetryEntry>(
                 CinematicFocusBlackBoxCapacity,
+                SystemID.GameplayPlayer,
                 Allocator.Persistent,
                 NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<CinematicFocusTelemetryEntry>[300] - narrative focus black-box ring - owner: HectonPlayerMovement
+            if (!_cinematicFocusBlackBox.IsCreated)
+                return;
+
             NativeMemorySentinel.RegisterNativeArray(
                 _cinematicFocusBlackBox,
                 nameof(HectonPlayerMovement),
@@ -2640,9 +2664,17 @@ namespace Hecton8.Gameplay
             if (!_cinematicFocusBlackBox.IsCreated)
                 return;
 
+            if (_cinematicFocusBlackBoxVaultOwned)
+            {
+                _cinematicFocusBlackBox = default;
+                _cinematicFocusBlackBoxVaultOwned = false;
+                _cinematicFocusBlackBoxCursor = 0;
+                _cinematicFocusBlackBoxCount = 0;
+                return;
+            }
+
             NativeMemorySentinel.UnregisterNativeArray(_cinematicFocusBlackBox);
-            _cinematicFocusBlackBox.Dispose();
-            _cinematicFocusBlackBox = default;
+            H8Memory.Release(ref _cinematicFocusBlackBox, SystemID.GameplayPlayer);
             _cinematicFocusBlackBoxCursor = 0;
             _cinematicFocusBlackBoxCount = 0;
         }
@@ -2747,18 +2779,18 @@ namespace Hecton8.Gameplay
 
             Vector3 runtimePosition = _rb != null ? _rb.position : ResolvePlayerAupRuntimePosition();
             ResourceDistributionDirector director = _resourceDistributionRuntime;
-            Vector3 shiftOffset = HectonFloatingOrigin.CurrentTotalOffset;
+            double3 shiftOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             if (PlayerMovementBrineRuntimeSystem.TrySampleBrineLayer(
                     director,
                     runtimePosition,
                     IsInDryInterior(),
-                    shiftOffset.y,
+                    (float)shiftOffset.y,
                     out BrineLayerSample sample,
                     out bool submerged))
             {
                 _lastBrineLayerSample = sample;
                 _isInsideBrineLayer = submerged;
-                PublishBrineShaderGlobals(sample, shiftOffset.y);
+                PublishBrineShaderGlobals(sample, (float)shiftOffset.y);
                 if (submerged)
                 {
                     _brineSubmersionSeconds += math.max(0f, fixedDeltaTime);
@@ -3859,6 +3891,7 @@ namespace Hecton8.Gameplay
 
         public void OnDependencyInject()
         {
+            _dataVault = GlobalRegistry.DataVault;
             _audioService = GlobalRegistry.Audio;
             _settingsRuntime = GlobalRegistry.Settings;
             _localizationRuntime = GlobalRegistry.Localization;
@@ -10331,13 +10364,16 @@ namespace Hecton8.Gameplay
         {
             Vector3 splashPosition = ResolvePlayerAupRuntimePosition();
             splashPosition.y = surfaceY;
-            Vector3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(splashPosition);
+            double3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(splashPosition);
             float mass = _rb != null ? math.max(1f, _rb.mass) : 80f;
             float kineticEnergy = 0.5f * mass * upwardSpeed * upwardSpeed * math.max(1f, surfaceBreachSplashEnergyScale);
             SplashEvent splashEvent = new SplashEvent
             {
                 RuntimePosition = new float3(splashPosition.x, splashPosition.y, splashPosition.z),
-                AbsoluteUniversePosition = new float3(absoluteUniversePosition.x, absoluteUniversePosition.y, absoluteUniversePosition.z),
+                AbsoluteUniversePosition = new float3(
+                    (float)absoluteUniversePosition.x,
+                    (float)absoluteUniversePosition.y,
+                    (float)absoluteUniversePosition.z),
                 SurfaceNormal = new float3(0f, 1f, 0f),
                 ImpactSpeedMetersPerSecond = upwardSpeed,
                 KineticEnergyJoules = kineticEnergy,
@@ -12187,12 +12223,12 @@ namespace Hecton8.Gameplay
         {
             sinkMultiplier = 0f;
             ResourceDistributionDirector director = _resourceDistributionRuntime;
-            Vector3 shiftOffset = HectonFloatingOrigin.CurrentTotalOffset;
+            double3 shiftOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             if (!PlayerMovementBrineRuntimeSystem.TrySampleBrineLayer(
                     director,
                     worldPosition,
                     false,
-                    shiftOffset.y,
+                    (float)shiftOffset.y,
                     out BrineLayerSample sample,
                     out bool submerged) ||
                 !submerged)

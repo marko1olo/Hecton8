@@ -32,7 +32,7 @@ namespace Hecton8.World
     /// <summary>
     /// Immutable state sample published by the outpost generation service.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Size = 56)]
     public struct OutpostGenerationSnapshot
     {
         public ulong SectorHash;
@@ -51,7 +51,7 @@ namespace Hecton8.World
     /// <summary>
     /// Deferred pooled proxy spawn emitted by native matrix extraction. Shell pieces never become GameObjects.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Size = 20)]
     public struct OutpostInteractableSpawn
     {
         public float3 PositionMeters;

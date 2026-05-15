@@ -316,19 +316,19 @@ namespace Hecton8.Core
             if (_blackBox.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_blackBox);
-                H8Memory.Release(ref _blackBox);
+                H8Memory.Release(ref _blackBox, SystemID.SystemDispatcher);
             }
 
             if (_frameTimeMs.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_frameTimeMs);
-                H8Memory.Release(ref _frameTimeMs);
+                H8Memory.Release(ref _frameTimeMs, SystemID.SystemDispatcher);
             }
 
             if (_globalHardwareMetrics.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_globalHardwareMetrics);
-                H8Memory.Release(ref _globalHardwareMetrics);
+                H8Memory.Release(ref _globalHardwareMetrics, SystemID.SystemDispatcher);
             }
 
             MemoryBudgetTracker.Unregister(OwnerName);

@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core.Memory;
 using Unity.Collections;
@@ -852,6 +853,7 @@ namespace Hecton8.Core
 #endif
         }
 
+        [StructLayout(LayoutKind.Sequential)]
         internal readonly struct ArenaAllocation
         {
             public readonly void* Ptr;

@@ -88,10 +88,10 @@ Verification: Polish static scans found no `Task.Delay`, coroutine, `StartCorout
 ## Decision 9 - Dev Skip Must Interrupt Dilated Silence
 
 Problem: The first implementation polled dev skip before and after the 3-second Stage 1 `DelayDilatedAsync`, so an input cancel during orbital silence could wait until the delay completed instead of cancelling the Awaitable immediately.
-Solution: Add shared `PrologueCancelReasons`, give the Core bridge a dev-only linked `CancellationTokenSource`, and route dev cancel through `CancelSequence(DevSkip)` plus token cancellation. In development builds only, `DelayDilatedAsync` uses the same H8 time snapshot pattern but polls skip each frame; release builds still call `AwaitableExtension.DelayDilated` directly.
+Solution: Add shared `PrologueCancelReasons`, give the Core bridge an auto-run linked `CancellationTokenSource`, and route dev cancel through `CancelSequence(DevSkip)` plus token cancellation. In development builds only, `DelayDilatedAsync` uses the same H8 time snapshot pattern but polls skip each frame; release builds still call `AwaitableExtension.DelayDilated` directly.
 Rejected Alternatives: Leave skip delayed, replace all release delay timing with a custom loop, or add UI-button coupling. Delayed skip violates the prompt; replacing release timing increases risk; UI coupling breaks domain isolation.
 Scalability potential: Low/MX350 dev testing gets immediate shallow-water resume; production runtime keeps the cheaper established delay path. High/Ultra presentation remains signal-driven and can spend saved cycles on responders.
-Hardware Impact: Release overhead is 0 us versus previous path. Development-only wait polling costs about 5-10 us per frame during the 3-second silence and allocates only one cold linked CTS per auto-run sequence.
+Hardware Impact: Release wait-loop overhead is 0 us versus previous path. Auto-run pays one cold linked CTS allocation; development-only wait polling costs about 5-10 us per frame during the 3-second silence.
 
 ## Decision 10 - Response-File Compile Evidence
 
@@ -100,3 +100,371 @@ Solution: Use Unity Bee response files directly with Unity's bundled Roslyn comp
 Rejected Alternatives: Trust stale `.csproj`, run another active-editor Unity batch, or declare success from static scan only.
 Scalability potential: No runtime impact; this improves evidence quality under active editor contention.
 Hardware Impact: No frame-time impact. Result: Contracts and Narrative.Prologue compile clean; Core compile is blocked by unrelated `GroundPenetratingRadarRuntime.cs(309,17)` missing `GroundRadarRaymarchJob.GprOreTypes`.
+
+## Decision 11 - Non-Reload Lifecycle Reset
+
+Problem: `PrologueSequenceRegistryBridge` cached transient readiness flags, per-frame signal cursors, skip state, and a resolved service reference across enable cycles. In domain-reload-disabled or scene-transition reuse, a second prologue run could inherit "ocean ready" from a previous forced hydration or keep a stale service reference after inspector wiring changed.
+Solution: Add `ResetTransientSequenceState()` at the start of `OnEnable()` and clear `_service` before `ResolveService()`. The reset is scalar-only and runs before registration, input binding, and auto-run start.
+Rejected Alternatives: Trust `OnDisable` to cover every entry path, clear state lazily inside `IsOceanSurfaceReady`, or keep stale service as a fallback. `OnDisable` is not a deterministic reset owner for non-reload transitions; lazy clearing touches the wait path; stale service fallback can register a dead component.
+Scalability potential: Low/MX350 gets deterministic second-run proxy behavior instead of accidental instant hydration; Middle/High/Ultra keep high-res hydration gating and richer responders without contaminated readiness state.
+Hardware Impact: Hot path cost is 0 us. `OnEnable` scalar reset cost is below measurement relevance; estimated 8-20 us avoided in stale-state branch checks/debugging and prevents unbounded correctness drift.
+
+## Decision 12 - Primary vs Secondary Bee Verification
+
+Problem: There are multiple Bee response-file sets. The primary `1300b0aEDbg` set sees the new prologue contracts and compiles touched assemblies; the secondary `1900b0aEDbg` set is stale or configured without several dependencies.
+Solution: Treat `1300b0aEDbg` as the valid narrow post-edit evidence set for this work and record `1900b0aEDbg` as blocked/stale. `1300b0aEDbg` compiles `Hecton8.Core.Contracts`, `Hecton8.Narrative.Prologue`, `Hecton8.Core`, and `Hecton8.Prologue.Space` with exit 0. `1900b0aEDbg` lacks `PrologueSequenceContracts.cs` in Core.Contracts and fails on unrelated audio virtualization, fauna cognition, WFC/outpost, ore ID, and fluid impulse references.
+Rejected Alternatives: Declare full Unity verification from one response-file set, or edit unrelated assemblies to make stale verification green. Full verification still requires Unity import/console/Play Mode/GCMonitor; unrelated fixes violate domain boundaries.
+Scalability potential: No runtime effect; preserves reliable evidence while avoiding cross-lane churn.
+Hardware Impact: No frame-time impact. Status remains PENDING VERIFICATION because MCP/Unity console and runtime profiling are unavailable.
+
+## Decision 13 - Complete Signal Self-Feedback Filter
+
+Problem: The bridge both consumes `PrologueCompleteSignal` for the manual override gate and emits `PrologueCompleteSignal` for ocean handoff. In a same-frame re-enable or repeated run, a bridge-authored `PRLG` handoff packet could be read as if it came from the cockpit/orbital producers.
+Solution: `TryConsumePrologueComplete` now skips packets whose `SourceHash` equals the bridge `SourceHash`. Existing cockpit lever (`MOVR`) and orbital director (`ORBI`) packets remain accepted.
+Rejected Alternatives: Filter by `PhaseWhiteout` or reject all `PhaseOceanHandoff` packets. Existing producers currently mark the manual lever and orbital completion as `PhaseOceanHandoff`, so phase-only filtering would break the handoff gate.
+Scalability potential: Low/MX350 avoids accidental instant progress after dev skip/re-enable; High/Ultra retain the same richer downstream water/audio/VFX response because only self-authored feedback is discarded.
+Hardware Impact: One uint compare per consumed complete signal; capacity is 8, so worst-case cost is below 1 us on i3/MX350. No allocation and no hot-frame polling change outside the existing wait loop.
+
+## Decision 14 - Director Repeated-Run State Reset
+
+Problem: `AwaitableDropSequenceDirector` reset cancellation flags at run entry but left `_lastAtmosphericReentry`, `_lastComplete`, `_lastOrbital`, and `_hasPublishedTelemetry` from the previous run. If a service instance is invoked again after cancel/dev skip, stale atmospheric velocity could pass the Mach gate when no new snapshot exists, and telemetry could suppress the first repeated-run stage packet.
+Solution: Clear cached snapshots and telemetry publication gate at the start of `RunPrologueSequenceAsync` before awaiting atmospheric reentry.
+Rejected Alternatives: Treat prologue as one-shot only, or clear state lazily inside each wait loop. One-shot assumptions do not hold for dev skip/manual testing; lazy clears scatter correctness state across hot wait loops.
+Scalability potential: Low/MX350 repeated test loops keep deterministic proxy/high-res decisions; High/Ultra presentation can rerun without stale sequence hashes contaminating downstream signal timing.
+Hardware Impact: Hot path cost is 0 us. Run-entry reset is scalar assignment only; it removes stale Mach/sequence carryover without adding wait-loop branches.
+
+## Decision 15 - Runtime Run-Start Reset Hook
+
+Problem: The director now clears its cached snapshots on every run, but the bridge still only cleared hydration readiness and signal cursors on `OnEnable`. A same enabled service instance invoked after dev skip could retain forced proxy/high-res readiness and skip the intended chunk hydration gate.
+Solution: Expand `IPrologueSequenceRuntime` with `PrepareSequenceRun()` and call it once at `RunPrologueSequenceAsync` entry. The bridge implementation reuses the same scalar `ResetTransientSequenceState()` used by `OnEnable`.
+Rejected Alternatives: Force consumers to disable/enable the bridge before rerunning, or add checks inside `IsOceanSurfaceReady`. Lifecycle choreography is fragile for dev tooling; hot-path hydration checks should not carry extra stale-state cleanup branches.
+Scalability potential: Low/MX350 repeated runs recalculate proxy readiness from current streaming state; Middle/High/Ultra repeat runs must revalidate high-res ocean residency before splashdown.
+Hardware Impact: One interface dispatch at sequence start; 0 us added to per-frame wait loops. Removes stale forced-hydration carryover without affecting normal one-shot cost.
+
+## Decision 16 - Manual Gate Producer Filtering
+
+Problem: `OrbitalRelativityDirector` emits `PrologueCompleteSignal` from source `ORBI` automatically at cloud whiteout. Stage 3 is the manual cockpit override stage; accepting any complete signal on the shared lane allows autonomous orbital whiteout to bypass the manual release.
+Solution: `TryConsumePrologueComplete` rejects both bridge-authored `PRLG` and orbital `ORBI` packets. Cockpit/manual producers such as `MOVR` remain valid complete-signal sources for the manual gate.
+Rejected Alternatives: Accept all complete signals, or filter only by phase. Accept-all breaks player agency; phase-only filtering is invalid because both cockpit and orbital producers currently use `PhaseOceanHandoff`.
+Scalability potential: Low/MX350 still gets non-VR lever fallback via the cockpit producer; High/Ultra keep manual agency before spending cycles on richer water/audio/VFX handoff.
+Hardware Impact: One additional uint compare per `PrologueCompleteSignal` in a lane capped at 8 entries; below 1 us worst-case on i3/MX350. No allocation.
+
+## Decision 17 - Manual Gate Source Whitelist
+
+Problem: The previous Stage 3 filter rejected known autonomous producers, but any unknown future `PrologueCompleteSignal` source could still satisfy the manual override gate by sharing the global lane.
+Solution: Replace the blacklist with a `MOVR` whitelist after auditing all current producers. `OpenXRManualOverrideLever` is the only accepted release source; bridge `PRLG`, orbital `ORBI`, and unknown producers are ignored by the gate.
+Rejected Alternatives: Keep the PRLG/ORBI blacklist, or introduce a new signal type for manual release. A blacklist fails closed only for known producers; a new lane would force additional consumers during an active parallel batch.
+Scalability potential: Low/MX350 keeps the existing non-VR lever fallback through `MOVR`; Middle/High/Ultra preserve manual agency before expensive water/audio/VFX overkill responders start.
+Hardware Impact: One uint inequality per complete signal in a lane capped at 8 entries; same worst-case sub-1 us cost as the blacklist, with stricter correctness.
+
+## Decision 18 - Run Preparation Fault Guard
+
+Problem: `RunPrologueSequenceAsync` marked the service as running and then called `_runtime.PrepareSequenceRun()` before entering the guarded `try/finally`. The current bridge reset is scalar-only, but the public runtime contract should not be able to strand `_running` or input-lock cleanup if a future implementation faults.
+Solution: Reset director-local run state first, then execute `PrepareSequenceRun()` inside the `try/finally` sequence envelope.
+Rejected Alternatives: Trust the current bridge implementation forever, or wrap only `PrepareSequenceRun()` in a separate catch. Trusting a single adapter is brittle; a second catch duplicates the fault/black-box path.
+Scalability potential: Low/MX350 and Ultra behavior is unchanged in the hot path. The change buys deterministic cleanup for future runtime adapters without adding wait-loop branches.
+Hardware Impact: 0 us hot-path cost. No added allocation. One call moved under existing exception handling; normal sequence cost is unchanged.
+
+## Decision 19 - Hydration Cancellation and Dynamic LOD
+
+Problem: The ocean hydration wait checked `IsOceanSurfaceReady()` in the while condition, so a same-frame cancellation with a ready surface could still proceed into water transition. It also sampled `IsLowTier` only once, forcing high-res hydration if the device downshifted during the wait.
+Solution: Convert hydration wait to an explicit loop: check cancellation/dev skip first, re-sample `IsLowTier` every iteration, then test surface readiness and record the current hydration mode.
+Rejected Alternatives: Keep the while-condition readiness test, or only add a cancellation check after readiness. Both preserve a cancellation race; one-shot LOD sampling ignores thermal/memory changes during a streamed transition.
+Scalability potential: Low/MX350 can downshift into proxy hydration mid-wait; Middle/High/Ultra still require high-res readiness until quality policy says otherwise.
+Hardware Impact: Adds one `IsLowTier` property read on hydration wait frames, estimated 1-3 us. Prevents unbounded high-res wait on constrained devices and keeps water transition cancellable.
+
+## Decision 20 - Auto-Run Disable Cancellation Token
+
+Problem: Release auto-run passed `destroyCancellationToken` directly. `OnDisable()` requested sequence cancellation, but disable does not cancel `destroyCancellationToken`, so a release `DelayDilatedAsync` could keep running until its timer completed.
+Solution: Always create one linked `CancellationTokenSource` for bridge auto-run and cancel it from `RequestRunCancellation()`. Release builds still use `AwaitableExtension.DelayDilated`; the token now terminates it on disable, while dev skip keeps the same immediate interruption path.
+Rejected Alternatives: Keep the dev-only CTS, or replace release dilated delay with a custom polling loop. Dev-only CTS leaves a release lifecycle race; a custom release loop adds per-frame code where the existing Awaitable delay already accepts a cancellation token.
+Scalability potential: Low/MX350 avoids disabled-scene wait leakage; Middle/High/Ultra keep identical visual pacing and spend no extra wait-loop cycles.
+Hardware Impact: One cold managed CTS allocation per auto-run sequence. Hot path stays unchanged; release wait-loop overhead remains inside the existing Awaitable delay implementation.
+
+## Decision 21 - Auto-Run Patch Verification Wall
+
+Problem: Core response-file compile first exposed a real prologue bridge regression (`PrepareSequenceRun()` missing). After reapplying the bridge reset/manual-gate methods, the prologue error disappeared, but the same Core response file now fails in unrelated save/hardware-profile/voxel symbols.
+Solution: Fix the prologue-owned missing interface implementation, confirm Core.Contracts and Narrative.Prologue compile clean, then stop at the unrelated wall: `SaveMasterHashV10.cs`, `VoxelDeltaProcessor.cs`, and earlier `BinaryLayoutManifest.cs`/hardware profile references sit outside this domain.
+Rejected Alternatives: Edit binary save layout, voxel delta, or hardware profile systems to force a green Core compile. Those are outside the assigned presentation/narrative trigger domain and are likely owned by parallel agents.
+Scalability potential: No runtime change beyond Decision 20; the response-file evidence is scoped to removal of prologue errors.
+Hardware Impact: No frame-time impact. Verification remains PENDING for full Core until unrelated save/hardware profile dependencies are restored.
+
+## Decision 22 - Impact Sync Pre-Wait Cancellation
+
+Problem: `RunImpactSyncAsync` recorded the impact-sync stage and always awaited one frame before checking explicit cancellation/dev skip. The stage is intentionally one frame, but a cancellation already requested before entry should not spend that frame.
+Solution: Check cancellation and dev skip immediately after recording the impact-sync stage, then keep the required one-frame await and post-wait check.
+Rejected Alternatives: Remove the post-wait check, or keep only the post-wait check. Removing the post check misses same-frame cancellation during the await; post-only delays known cancellation by a frame.
+Scalability potential: Low/MX350 exits one frame earlier under skip/cancel; High/Ultra preserve the one-frame synchronization when not cancelled.
+Hardware Impact: Two branch checks before a single Awaitable frame wait; estimated below 1 us and no allocation.
+
+## Decision 23 - Cleanup Fault-Path Hardening
+
+Problem: The director released input lock directly in `finally` and only then cleared `_running`. If a runtime adapter threw during unlock, the service could remain marked running and the cleanup exception could mask the real sequence outcome.
+Solution: Clear `_running` before unlock and route final unlock through `ReleaseInputLockNoThrow()`. Runtime dump and telemetry fallback calls now use no-throw wrappers so a fault path cannot recursively hide the black-box evidence.
+Rejected Alternatives: Leave direct `finally` unlock, or call telemetry/runtime dump directly from catch/finally. Direct calls are cheaper in text only; the try boundary is outside wait loops and prevents cleanup from becoming a second crash.
+Scalability potential: Low/MX350 avoids stranded input locks during disable/dev skip faults; Middle/High/Ultra keep the same presentation pacing and richer downstream responders because normal state-machine timing is unchanged.
+Hardware Impact: 0 us per wait frame. Normal sequence cleanup pays one method call and no thrown exception; fault-only paths dump black-box data instead of burning additional recovery time.
+
+## Decision 24 - Dev-Skip Cancellation Guard
+
+Problem: Dev skip can be entered from token cancellation, explicit cancel state, or skip polling. The handoff calls runtime hydration, velocity, impact, and ocean signals; if one throws inside cancellation handling, the sibling catch block will not catch it and the crash can escape without the intended sequence fault record.
+Solution: Route all dev-skip entry points through `TryExecuteDevelopmentSkipHandoff()`, latch the handoff once, dump black-box data on runtime failure, and use guarded runtime black-box dump for non-finite orbital detection.
+Rejected Alternatives: Let cancellation handlers call the handoff directly, or wrap each runtime handoff call independently. Direct calls leave an unlogged secondary failure; per-call wrapping adds noise and still needs one shared latch.
+Scalability potential: Low/MX350 dev testing reaches forced shallow-water handoff or produces a clear dump; High/Ultra production pacing is unchanged because the guarded path is dev-skip/fault only.
+Hardware Impact: 0 us release hot path. Dev-only skip adds one guarded helper call and a try boundary when skip/cancel is already active; no per-frame wait-loop allocation. Verification: Core.Contracts and Narrative.Prologue response files compile with exit 0; Core response-file probe is blocked by unrelated `SaveMasterHashV10.cs(237,26)` missing `xxHash3`.
+
+## Decision 25 - Duplicate Input-Unlock Signal Removal
+
+Problem: Normal water transition published `PublishInputLock(None)` and then the sequence `finally` published the same unlock again through the guarded cleanup path. The duplicate signal spent a lane slot and left one unguarded cleanup call in the success path.
+Solution: Remove the normal-path unlock from `RunWaterTransition()` and rely on the guarded `finally` release. Dev-skip keeps immediate guarded unlock because it exits through cancellation before normal completion.
+Rejected Alternatives: Keep duplicate unlock for symmetry, or remove the final cleanup release. Duplicate unlock is wasteful; removing final cleanup would make fault/cancel paths less deterministic.
+Scalability potential: Low/MX350 saves one unnecessary signal publish on completed prologue; High/Ultra keep identical visible pacing while downstream water/audio/VFX responders receive less duplicate control traffic.
+Hardware Impact: Saves one `SystemPauseSignal` publish per completed run, estimated 3-8 us and one signal-lane entry. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 26 - Hydration Fallback Specificity
+
+Problem: With `oceanSurfaceChunkId == 0` and `allowAnyHydratedChunkFallback == true`, the bridge accepted any `SectorResidencyHydratedSignal` on high tier. A random ecosystem or stress-test sector could release the splashdown gate before the ocean/shallow-water surface was ready.
+Solution: Keep exact configured chunk matching, keep forced shallow-water hash matching, and restrict arbitrary fallback to low-tier proxy mode with `FlagProxyFallback` present.
+Rejected Alternatives: Disable fallback completely, or keep accepting any hydrated sector. Disabling fallback risks black-screen stalls in unconfigured low-tier/dev scenes; accepting any sector breaks high-tier visual integrity.
+Scalability potential: Low/MX350 can still use the cheap proxy fake; Middle/High/Ultra require the configured ocean chunk or deliberate shallow-water signal before spending cycles on water/audio/VFX overkill.
+Hardware Impact: Adds one proxy-flag branch per residency signal in a lane capped at 64. Estimated cost below 1 us on i3/MX350; prevents false readiness and wasted splashdown work. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 27 - Registry Ownership and Cancellation Guard
+
+Problem: `PrologueSequenceRegistryBridge` configured and could auto-run its local service even if `GlobalRegistry` rejected registration because another prologue runtime already owned the slot. Cancellation also called the service before CTS cancellation, so a future throwing service adapter could block token cancellation.
+Solution: After registration, the bridge now verifies `GlobalRegistry.PrologueSequence` still points to its service before auto-run. Cancellation catches service failures, publishes hash telemetry, and always attempts CTS cancellation through `CancelRunSourceNoThrow()`. Disposal nulls the field before cancel/dispose to avoid reuse.
+Rejected Alternatives: Let duplicate local bridges run, or rely on current `CancelSequence` never throwing. Duplicate local runners break deterministic sequence ownership; adapter assumptions do not survive parallel integration.
+Scalability potential: Low/MX350 avoids duplicated signal spam from accidental duplicate bridges; Middle/High/Ultra keep a single authoritative cinematic state machine before expensive water/audio/VFX responders activate.
+Hardware Impact: 0 us hot path. Duplicate/disable paths add only scalar checks and fault-only telemetry; preventing duplicate runners avoids multiple wait-loop and signal costs. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 28 - Pre-Registration Ownership Repair
+
+Problem: Static readback showed `GlobalRegistry.RegisterServiceAllowSameInstance` replaces an existing slot instead of rejecting it. The previous post-register check was too late: a duplicate bridge could overwrite the authoritative prologue runtime, then consider itself registered.
+Solution: Check `GlobalRegistry.PrologueSequence` before `RegisterPrologueSequenceRuntime()` and return if another service already owns the slot. Bind input and hot-swap only after registration ownership is proven.
+Rejected Alternatives: Keep post-register validation only, or bind input before ownership is known. Post-register validation cannot prevent overwrite; pre-ownership input binding lets rejected bridges react to dev-skip input.
+Scalability potential: Low/MX350 avoids duplicate wait loops and duplicate VWS/haptic/splashdown signals from scene misconfiguration; Middle/High/Ultra preserve one authoritative cinematic state machine before expensive responders activate.
+Hardware Impact: 0 us hot path. Enable-time adds one registry pointer read and equality check; avoids duplicate sequence CPU/signal traffic under misconfiguration. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 29 - Hot-Path Registry Cache And Auto-Run CTS Retention
+
+Problem: The bridge still read `GlobalRegistry` service slots from prologue wait paths (`OrbitalDirector`, `StreamingBackpressure`, `TickDispatcher`, and dev input fallback), and the auto-run linked `CancellationTokenSource` stayed retained after normal sequence completion until destroy/re-enable.
+Solution: Cache development flag, input, orbital, streaming, and tick-dispatcher dependencies during enable and refresh them via `IGlobalRegistryHotSwapListener`. The dev-only dilated wait refreshes only from the cached dispatcher field. Auto-run now goes through a guarded Awaitable wrapper that releases the linked CTS when the sequence finishes and reports hash telemetry if the service faults outside the director envelope.
+Rejected Alternatives: Keep per-frame registry slot reads because they are convenient, or dispose the CTS only from `OnDestroy`. Registry polling violates the hot-path cache mandate; destroy-only disposal retains an unnecessary linked-token registration after successful prologue completion.
+Scalability potential: Low/MX350 gets cheaper prologue wait frames and avoids retained lifecycle baggage after splashdown. Middle/High/Ultra keep the same cinematic staging while preserving one authoritative service cache that can be upgraded by hot-swap events for richer downstream orbital/ocean responders.
+Hardware Impact: Estimated 2-8 us saved on wait frames that sample orbital/streaming/dev-skip state, depending on service access contention. One cold CTS is still allocated for auto-run cancellation, but it is released at sequence completion instead of waiting for destroy/re-enable. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run. `Tools/Architecture/HectonPhiAudit.ps1 -Json` timed out at 60 seconds, so no project-wide H-Phi metric is claimed.
+
+## Decision 30 - Dev-Skip Cancellation Priority
+
+Problem: Dev skip can set `_cancelReason = DevSkip`, then a same-frame disable can call `CancelSequence(ExplicitCancel)` before the Awaitable cancellation unwinds. That race downgrades the intended shallow-water handoff into an ordinary cancellation.
+Solution: Normalize the incoming reason once and preserve an already-latched dev-skip reason unless the new reason is also dev skip. Later generic cancellation still marks `_cancelRequested`, but it cannot erase the forced handoff path.
+Rejected Alternatives: Trust cancellation ordering, or move dev skip into the bridge only. Ordering is not deterministic during disable/scene teardown; bridge-only handling would duplicate the director's black-box and stage ownership.
+Scalability potential: Low/MX350 dev iteration keeps deterministic shallow-water resume instead of a dead cancelled cinematic. Middle/High/Ultra production cadence is unchanged because the branch only matters after cancellation is requested.
+Hardware Impact: 0 us steady-state. Cancellation path adds one byte comparison and branch; it prevents one lost dev handoff under interruption races. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 31 - Hydration LOD Hysteresis
+
+Problem: Loop 14 made hydration quality dynamic, but direct per-frame low/high policy sampling can flip proxy hydration on and off during thermal/memory tier churn. That violates the state-hysteresis mandate and can create inconsistent splashdown readiness.
+Solution: Add a 150-frame hysteresis band to `IsLowTier` in the bridge. A new low-memory pressure flag still forces immediate downshift to the cheap proxy path; upgrades or non-emergency tier flips must stay stable before changing the cached hydration mode.
+Rejected Alternatives: One-shot quality sampling, or immediate per-frame switching. One-shot sampling traps constrained devices in high-res waits; immediate switching trades correctness for flicker.
+Scalability potential: Low/toaster path still reaches proxy water quickly under pressure. Middle/High/Ultra keep high-resolution hydration stable and avoid accidental proxy flicker, preserving expensive water/audio/VFX overkill only when the tier is stable.
+Hardware Impact: Adds a few scalar bool/int branches to hydration wait frames, estimated 1-2 us. Prevents repeated readiness churn and wasted transition work during unstable quality policy. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 32 - Low-Tier Policy Probe Cadence
+
+Problem: The first hysteresis pass still read global tier policy every hydration wait frame. That preserved dynamic behavior but kept registry coupling in the hot prologue wait path and weakened local H-Phi evidence.
+Solution: Sample the global low-tier policy at a 30-frame cadence and consume the existing `MemoryPressureSignal` snapshot lane for immediate critical-memory downshift. Hysteresis still owns upgrades and non-emergency low/high changes.
+Rejected Alternatives: Add a new prologue-only tier signal, or keep every-frame registry reads. A new one-off signal violates signal discipline; every-frame registry reads violate hot-path cache discipline.
+Scalability potential: Low/MX350 gets immediate proxy hydration on critical memory pressure. Middle/High/Ultra avoid quality flicker and keep the saved wait-loop budget for richer VWS/haptic/ocean responders.
+Hardware Impact: Estimated 1-3 us saved on most hydration wait frames by replacing every-frame registry reads with scalar cached state plus a small signal-lane scan. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 33 - Dev-Skip Unlock Idempotency
+
+Problem: Dev-skip handoff releases input immediately, then sequence `finally` can release input again. That spends a second `SystemPauseSignal` lane slot for no presentation gain.
+Solution: Add `_inputLockReleased` as a run-local latch. `ReleaseInputLockNoThrow()` now publishes unlock once, sets the latch only after a successful publish, and leaves fault retry behavior intact.
+Rejected Alternatives: Remove immediate dev-skip unlock, or accept duplicate unlocks. Removing immediate unlock delays dev ergonomics; accepting duplicates wastes a signal slot and undermines cleanup determinism.
+Scalability potential: Low/MX350 saves one control signal during dev skip. Middle/High/Ultra keep identical visible pacing and cleaner downstream pause consumers.
+Hardware Impact: Saves one unlock signal publish on dev skip, estimated 3-8 us and one lane slot. Normal completion cost adds one bool branch. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 34 - Re-entry VFX Handoff Lane Correction
+
+Problem: `OrbitalDropReentryVfxController` consumed macro-database `SectorHydratedSignal` to leave whiteout even though the awaitable sequence already owns the residency wait before `PRLG` handoff. It also treated every `PhaseOceanHandoff` completion packet as a fade trigger, which lets the manual lever (`MOVR`) or autonomous orbital path (`ORBI`) fade the prologue before the awaitable sequence finishes impact/hydration.
+Solution: Reset transient VFX state on enable, keep non-authoritative complete packets as whiteout requests only, and enter `HydratedFade` only from the `PRLG` sequence handoff. The redundant VFX-side hydration scan was removed so the sequence remains the single hydration authority.
+Rejected Alternatives: Keep using `SectorHydratedSignal`, add a second VFX residency scan, gate by phase only, or let the manual lever directly trigger the fade. The macro lane is unrelated to residency, a second scan creates dead coupling, phase-only accepts wrong producers, and the lever is only the manual override gate.
+Scalability potential: Low/MX350 keeps the cheap shader whiteout until the proxy/residency handoff is authoritative. Middle/High/Ultra avoid premature fade and can spend the saved deterministic handoff budget on the existing splash debris, visor droplets, audio crossfade, and ocean responders.
+Hardware Impact: Adds one uint source-hash compare per complete signal in an 8-slot lane and removes wrong-lane macro hydration coupling from the prologue fade decision. Estimated low-end cost is below 1 us; avoided false fade prevents wasted splash/audio/debris work before actual handoff. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 35 - Audio And Fluid Handoff Source Gate
+
+Problem: After the VFX audit, the same phase-only interpretation existed in prologue audio and fluid splashdown. `MOVR` manual override and `ORBI` autonomous orbital packets both carry `PhaseOceanHandoff`/`FlagForceWhiteout`, so they could start ocean filter sweep, splashdown gain, and fluid impulse before the awaitable sequence completed impact sync and residency hydration.
+Solution: Add the same `PRLG` source gate to `PrologueAcousticOrchestrator` and `HectonFluidEngine` splashdown drain. Audio keeps non-authoritative complete packets as whiteout-only requests; fluid ignores them entirely and queues splashdown only for `PRLG` sequence completion.
+Rejected Alternatives: Keep phase-only acceptance, remove manual complete emission, or add a new signal type mid-batch. Phase-only is the defect; changing the lever signal would risk the manual gate; a new event violates signal discipline when `SourceHash` already disambiguates ownership.
+Scalability potential: Low/MX350 avoids spending bubble/audio/impulse work on a pre-handoff manual latch. Middle/High/Ultra keep the expensive splash, DSP sweep, and fluid visual overkill aligned with the authoritative sequence moment.
+Hardware Impact: Adds one uint compare per complete signal in an 8-slot lane. Prevents early audio/fluid work and duplicate splashdown paths; estimated low-end saved work depends on scene responders, with the filter itself below 1 us. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 36 - Audio Whiteout Complete Debounce
+
+Problem: Non-authoritative complete packets (`MOVR`/`ORBI`) are intentionally whiteout-only after the `PRLG` source gate, but the audio path still forced a transition publish on every qualifying packet. A repeated or duplicated packet would queue identical helmet DSP state with no presentation gain.
+Solution: Track the last whiteout-only complete packet by `SourceHash` and `Sequence`; only a new source/sequence forces an audio transition publish. The current stage and cutoff still update to whiteout, so manual/orbital whiteout remains responsive.
+Rejected Alternatives: Ignore non-`PRLG` packets entirely, or keep force-publishing every packet. Ignoring them would break the concealment whiteout role; force-publishing duplicates wastes the audio SPSC lane and DSP transition work.
+Scalability potential: Low/MX350 keeps the cheap whiteout concealment without redundant queue traffic. Middle/High/Ultra reserve audio overkill and ocean sweep for the authoritative `PRLG` handoff while still accepting one visible whiteout state from other producers.
+Hardware Impact: Adds two scalar comparisons and one cached-source write on new packets in an 8-slot lane. Saves one queued `AudioTransitionState` per duplicate non-`PRLG` complete packet, roughly 3-10 us depending on audio-service contention. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 37 - Post-Handoff Whiteout Regression Guard
+
+Problem: After the sequence-owned `PRLG` handoff, a late non-`PRLG` complete packet could still pull audio from `StageOceanHandoff` back to whiteout, and VFX could extend `_whiteoutHoldSecondsRemaining` while already in `HydratedFade`. That delays the fade/splash and rolls back portal audio without any authoritative hydration signal.
+Solution: Reject non-`PRLG` complete packets once audio is in `StageOceanHandoff` and once VFX has reached `HydratedFade` or later. Pre-handoff manual/orbital whiteout is still accepted for concealment; post-handoff transition ownership remains with `PRLG`.
+Rejected Alternatives: Let `EnterWhiteout()` rely on enum ordering, or remove non-`PRLG` whiteout entirely. Enum ordering did not protect the hold timer; removing non-`PRLG` whiteout would break manual/orbital concealment before the sequence handoff.
+Scalability potential: Low/MX350 avoids extra whiteout hold and repeated DSP state churn after proxy handoff. Middle/High/Ultra keep hydrated fade, splash debris, visor droplets, ocean waves, and portal audio aligned to the authoritative sequence moment.
+Hardware Impact: Adds one byte compare on qualifying non-sequence packets in an 8-slot lane. Saves delayed splash/fade work and prevents a redundant portal-to-whiteout audio rollback; expected low-end hot-path cost is below 1 us. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 38 - Manual Complete Packet Shape Validation
+
+Problem: The bridge manual gate accepted any `PrologueCompleteSignal` with `SourceHash == MOVR`. If future cockpit code reused the same source for a malformed, whiteout-only, or NaN-bearing complete packet, the director could leave manual override and enter impact sync without a valid latch completion packet.
+Solution: Validate the exact manual completion shape before producing `PrologueCompleteSnapshot`: source `MOVR`, phase `PhaseOceanHandoff`, `FlagForceWhiteout`, and finite `WhiteoutHoldSeconds`.
+Rejected Alternatives: Keep source-only acceptance, or switch the director to a new manual-only signal in this pass. Source-only acceptance is too broad; changing the sequencing contract mid-polish would risk all existing complete consumers while `PrologueCompleteSignal` already carries the required discriminators.
+Scalability potential: Low/MX350 avoids false impact/hydration progression from bad manual packets. Middle/High/Ultra keep richer impact, water, VFX, and audio responders aligned to a valid manual gate.
+Hardware Impact: Adds two byte comparisons and one finite float check in an 8-slot complete lane during the manual wait. Estimated cost is below 1 us on i3/MX350; prevents an invalid packet from spending the much larger impact/hydration transition budget. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 39 - Prologue Source Hash Contract
+
+Problem: The same prologue ownership hashes were duplicated as magic literals in sequence, bridge, VFX, audio, fluid, manual lever, and orbital producer code. That creates a low-H-Phi drift point: one producer or consumer can silently stop matching `PRLG`, `MOVR`, or `ORBI`.
+Solution: Add `PrologueSignalSourceHashes` to `Hecton8.Core.Contracts` and consume those compile-time constants from the prologue sequence director, registry bridge, acoustic orchestrator, re-entry VFX, fluid handoff, manual override lever, and orbital relativity director. UI VR and Prologue Space asmdefs now reference Core.Contracts directly.
+Rejected Alternatives: Leave duplicated constants, compute hashes at runtime, or move hashes into a concrete Core-only class. Duplicates drift; runtime hashing adds unnecessary hot/cold cost and can diverge by string spelling; concrete Core would force contract consumers through the wrong assembly boundary.
+Scalability potential: Low/MX350 gets unchanged hot-path cost because constants are compile-time inlined. Middle/High/Ultra keep handoff ownership stable as more visual/audio overkill responders are added.
+Hardware Impact: 0 us runtime cost. Saves integration/debug time and prevents mismatched source hashes from spending larger VFX/audio/fluid transition budgets on invalid packets. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 40 - Atmospheric Packet Finite Guard
+
+Problem: `AtmosphericReentrySignal` has no source-hash field left in its 64-byte layout, and the bridge accepted the first packet in the frame snapshot without validating altitude, velocity, or heat. A NaN/Inf atmospheric packet could start the prologue or poison the Mach fallback without producing the intended fault evidence.
+Solution: Keep the signal layout unchanged and make the bridge scan until it finds a finite packet. Invalid atmospheric packets are skipped; the director keeps waiting or uses the orbital snapshot path, which already has a non-finite fault guard.
+Rejected Alternatives: Expand `AtmosphericReentrySignal` with `SourceHash`, or let the director validate after snapshot creation. Expanding the signal breaks the fixed 64-byte lane contract; validating later still lets bad packets become sequence state and telemetry input.
+Scalability potential: Low/MX350 avoids false sequence starts from corrupted presentation packets. Middle/High/Ultra keep the same orbital/VFX/audio overkill path while protecting the cheaper fallback lane.
+Hardware Impact: Adds three finite checks per atmospheric packet in a 32-slot lane only while the prologue waits for re-entry or Mach 10. Estimated cost is below 1 us for normal one-packet frames; prevents much larger invalid transition work. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 41 - Orbital Fallback Finite Guard
+
+Problem: The burn stage rejected non-finite orbital velocity and distance, but the earlier awaiting-reentry fallback could accept an orbital snapshot with positive heat before validating velocity, distance, or cloud whiteout. That could move the sequence into silence before the black-box fault path ran.
+Solution: Add shared `IsFiniteOrbital()` validation for velocity, planet distance, re-entry heat, and cloud whiteout. Use it in both awaiting-reentry and burn stages; on failure the director records `Faulted`, dumps its black box, asks the runtime to dump, and returns.
+Rejected Alternatives: Keep validation only in burn, or hide invalid snapshots in the bridge. Burn-only validation delays fault evidence until after silence; hiding snapshots in the bridge would suppress the sequence black-box dump.
+Scalability potential: Low/MX350 avoids entering cinematic wait states from corrupted orbital telemetry. Middle/High/Ultra keep the same richer re-entry visuals while fault evidence remains deterministic.
+Hardware Impact: Adds four finite checks per orbital snapshot while prologue is waiting. Estimated cost is below 1 us on i3/MX350 and prevents invalid cinematic/audio/VFX transition work. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 42 - Active Dispose Cleanup Guard
+
+Problem: External disposal can happen while the awaitable director still considers a run active. If disposal releases the black-box buffer first, later cancellation cleanup has weaker forensic coverage and may leave input unlock dependent on the async `finally` path during teardown.
+Solution: `Dispose()` now detects `_running`, requests `ExplicitCancel`, and calls `ReleaseInputLockNoThrow()` before disposing the fixed black-box buffer. The release helper is already idempotent and fault-tolerant, so normal `finally` cleanup remains safe.
+Rejected Alternatives: Rely only on `OnDisable()` cancellation, rely only on the async `finally`, or dispose the buffer first. Disable ordering is not guaranteed for all external callers; async cleanup can be delayed by cancellation timing; disposing forensic state first weakens post-mortem evidence.
+Scalability potential: Low/MX350 gets deterministic input recovery during cheap-device teardown or scene churn. Middle/High/Ultra keep the same presentation flow while preventing teardown from orphaning the control lock before richer VFX/audio responders unwind.
+Hardware Impact: 0 us steady-state and 0 us wait-loop cost. Disposal-only branch adds one bool check plus a guarded signal publish only when teardown occurs during an active run. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 43 - Fluid Handoff Source-Hash Contract Drift
+
+Problem: `HectonFluidEngine` was already source-gating splashdown to the prologue sequence, but it kept its own raw `PRLG` literal. That creates a low-H-Phi drift point between the sequence owner and a high-cost cross-domain fluid responder.
+Solution: Replace the fluid-local magic literal with `PrologueSignalSourceHashes.SequenceDirector`. The field remains a compile-time constant and the splashdown drain still performs the same uint compare.
+Rejected Alternatives: Leave the raw literal because it works today, or compute a hash at runtime. Local literals drift when source ownership expands; runtime hashing wastes work and can diverge by spelling.
+Scalability potential: Low/MX350 avoids accidental splashdown work from mismatched source ownership. Middle/High/Ultra preserve the expensive bubble/fluid overkill for the authoritative `PRLG` handoff while sharing one contract with audio, VFX, manual, and orbital producers.
+Hardware Impact: 0 us runtime change; the constant is inlined. The practical gain is preventing invalid splashdown impulse, bubble spawn, and fluid-advection work from contract drift. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 44 - Bridge Signal-Shape Gates
+
+Problem: The bridge atmospheric gate rejected NaN/Inf but still promoted any finite atmospheric packet, including future approach-phase or zero-heat packets. The manual complete gate also accepted finite negative whiteout hold and sequence zero. Both cases could advance the prologue state machine from malformed packets.
+Solution: Add `IsValidAtmosphericReentrySignal()` and `IsValidManualCompleteSignal()`. Atmospheric start now requires finite altitude/velocity/heat, exact plasma or whiteout phase, and heat above 0.001. Manual completion now requires `MOVR`, nonzero sequence, ocean-handoff phase, force-whiteout flag, finite hold, and hold >= 0.
+Rejected Alternatives: Keep finite-only filtering, or push every guard into the director. Finite-only filtering is too broad for a shared lane; director-side validation would duplicate bridge-owned signal-shape knowledge after snapshot creation.
+Scalability potential: Low/MX350 avoids wasting cheap-device presentation budget on false silence/burn/manual transitions. Middle/High/Ultra keep expensive VFX/audio/fluid overkill reserved for authoritative plasma and manual-latch packets.
+Hardware Impact: Adds two byte phase compares plus one heat threshold compare per atmospheric candidate, and one sequence/hold compare per manual candidate. Lane capacities are 32 and 8; normal cost is below 1 us and prevents much larger invalid transition work. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 45 - Director Input-Lock Ownership Latch
+
+Problem: The director's final cleanup published an input unlock even if the run cancelled before Stage 1 acquired any lock. Conversely, `OnDisable()` only requested cancellation and depended on later awaitable cleanup to release an already-owned lock.
+Solution: Add `_inputLockAcquired` and route lock acquisition through `PublishSequenceInputLock()`. `ReleaseInputLockNoThrow()` now publishes unlock only when the sequence actually owns a lock, clears ownership on success, and `OnDisable()` performs the same guarded release during active teardown.
+Rejected Alternatives: Keep unconditional final unlock, or release on disable without ownership tracking. Unconditional unlock wastes a signal slot on pre-lock cancellation; disable-only unlock without tracking can publish false unlock packets before the sequence owns input.
+Scalability potential: Low/MX350 avoids unnecessary control-lane traffic during cancellation churn and gets deterministic input recovery during scene disable. Middle/High/Ultra keep the same cinematic lock pacing while richer responders unwind.
+Hardware Impact: Saves one `SystemPauseSignal` publish on pre-lock cancellation, roughly 3-8 us and one lane slot. Adds one bool branch to cleanup and two scalar writes when acquiring/releasing a lock. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 46 - Atmospheric Responder Phase Shape
+
+Problem: Prologue audio and re-entry VFX used numeric `>=` phase checks for atmospheric packets. A malformed future phase value greater than `PhaseWhiteout` could trigger whiteout/plasma audio or visual heating even though the bridge sequence gate now requires exact phases.
+Solution: Audio now validates atmospheric packets against explicit approach/plasma/whiteout phases and uses equality for plasma/whiteout transitions. VFX skips unrecognized phases and starts heating only on explicit plasma or whiteout phase.
+Rejected Alternatives: Leave responder-side numeric promotion because the current orbital producer emits valid phases, or rely only on the bridge gate. Responders consume the shared lane independently, so they need their own shape guard; numeric promotion is too broad for forward compatibility.
+Scalability potential: Low/MX350 avoids wasting shader/audio transition work on malformed phase packets. Middle/High/Ultra keep expensive plasma roar, whiteout, splash, and crossfade work aligned to recognized prologue phases.
+Hardware Impact: Adds one to three byte comparisons per atmospheric packet in 32-slot lanes, below 1 us in normal frames. Prevents larger invalid VFX/audio transition work. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 47 - Complete Responder Packet Shape
+
+Problem: Prologue audio and re-entry VFX still accepted complete packets when `FlagForceWhiteout` was set even if the phase was malformed or future-unknown, and VFX clamped negative hold seconds into a valid zero-second whiteout.
+Solution: Add responder-side complete packet guards. Audio rejects non-finite or negative hold seconds. VFX dumps non-finite hold as before but now skips negative hold. Both consumers accept non-sequence whiteout only for explicit `PhaseWhiteout` or `PhaseOceanHandoff` with `FlagForceWhiteout`.
+Rejected Alternatives: Trust the bridge gate, or accept any force-whiteout flag as a concealment override. Audio/VFX consume the shared complete lane independently of the bridge, and flag-only acceptance is too broad for forward-compatible packet shapes.
+Scalability potential: Low/MX350 avoids spending DSP and shader transition budget on malformed complete packets. Middle/High/Ultra preserve whiteout, hydrated fade, splash debris, visor droplets, and audio overkill for recognized handoff/whiteout shapes only.
+Hardware Impact: Adds one float sign check and one to two byte comparisons per complete packet in an 8-slot lane, below 1 us in normal frames. It prevents larger false whiteout/fade work and keeps malformed finite data off the presentation path. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 48 - Fluid Splashdown Handoff Shape
+
+Problem: `HectonFluidEngine` was correctly restricted to the `PRLG` ocean-handoff lane, but source and phase alone were still enough to queue splashdown bubbles and the abyssal impulse field. A malformed `PRLG` packet with missing force-whiteout or bad hold data could spend fluid budget.
+Solution: Add `IsValidPrologueSplashdownSignal()` before `QueueSplashdownFluidImpulse()`. The fluid drain now requires `PRLG`, `PhaseOceanHandoff`, `FlagForceWhiteout`, and nonnegative finite `WhiteoutHoldSeconds` before queuing any splashdown work.
+Rejected Alternatives: Keep source+phase-only gating because current bridge output is valid, or duplicate the full sequence bridge inside fluid. Current output is not a long-term guarantee on a shared lane; duplicating bridge logic would spread ownership. A local shape guard is the narrowest cross-domain contract check.
+Scalability potential: Low/MX350 avoids accidental bubble-ring and impulse-field work from malformed handoff packets. Middle/High/Ultra keep expensive splashdown overkill reserved for the authoritative sequence handoff shape.
+Hardware Impact: Adds one flag check and two float checks per complete packet in an 8-slot lane before fluid work. Normal cost is below 1 us; avoided work includes up to 500 bubble slots and potential impulse-field scheduling. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 49 - Re-entry VFX AUP Guard
+
+Problem: `OrbitalDropReentryVfxController` validated scalar atmospheric and sequence complete packet data but then copied `CapsuleAup` directly into later acoustic, debris, droplet, and state signals. A corrupted AUP could propagate NaN/Inf runtime positions into multiple presentation consumers.
+Solution: Add `IsFiniteRuntimeAup()` and call it after phase/shape acceptance but before `_lastCapsuleAup` assignment for atmospheric and sequence-handoff complete packets. Invalid spatial-owner packets write the existing NaN telemetry flag and dump the VFX black box.
+Rejected Alternatives: Trust producers to provide valid AUP, or validate only at the later debris/audio publish sites. Producer trust is weak on shared signal lanes; late validation would duplicate checks across every downstream publish and allow contaminated controller state.
+Scalability potential: Low/MX350 avoids wasting shader/audio/debris work on invalid spatial payloads. Middle/High/Ultra keep plasma roar, ocean waves, splash debris, visor droplets, and hydrated fade aligned to valid capsule positions.
+Hardware Impact: Adds one AUP-to-runtime finite check per spatial-owner atmospheric/complete packet, below the cost of downstream acoustic/debris fan-out and fault-only black-box dump. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 50 - VFX Complete Spatial Ownership
+
+Problem: Non-sequence complete packets are allowed to request a concealment whiteout, but they also overwrote `_lastCapsuleAup`. Manual or autonomous orbital whiteout packets could therefore become the spatial owner for later acoustic, debris, droplet, and VFX state fan-out.
+Solution: Keep non-sequence complete packets as whiteout-only and update `_lastCapsuleAup` only inside the `PRLG` sequence ocean-handoff branch. Atmospheric packets remain the live spatial source before handoff.
+Rejected Alternatives: Let every valid complete packet own the spatial anchor, or ignore non-sequence complete packets entirely. The first corrupts ownership; the second removes useful whiteout concealment before the authoritative handoff.
+Scalability potential: Low/MX350 avoids wrong-anchor splash/audio work from manual/orbital packets. Middle/High/Ultra keep expensive splash debris, ocean waves, visor droplets, and hydrated fade aligned to the sequence-owned handoff.
+Hardware Impact: Reuses an existing `sequenceOceanHandoff` branch and removes one assignment on whiteout-only packets. Prevents wrong-anchor downstream fan-out; verification this pass is static only by user request, no dotnet rebuild or response-file compile was run.
+
+## Decision 51 - VFX Whiteout-Only AUP Validation Trim
+
+Problem: After non-sequence complete packets stopped owning `_lastCapsuleAup`, the complete consumer still validated their `CapsuleAup` and dumped the VFX black box on invalid position data that would not be used.
+Solution: Gate complete-packet AUP validation behind `sequenceOceanHandoff`. Whiteout-only packets keep concealment behavior using the current spatial anchor and do not pay an AUP-to-runtime conversion.
+Rejected Alternatives: Keep validating every complete packet for uniformity, or remove all complete AUP validation. Uniform validation creates false fault handling for irrelevant data; removing all validation would let the authoritative `PRLG` handoff poison the spatial anchor.
+Scalability potential: Low/MX350 saves work on repeated manual/orbital whiteout packets. Middle/High/Ultra keep expensive handoff visuals protected by AUP validation where the handoff actually owns the anchor.
+Hardware Impact: Saves one AUP-to-runtime finite check per non-sequence complete packet and avoids irrelevant black-box dumps. Verification this pass is static only by user request; no dotnet rebuild or response-file compile was run.
+
+## Decision 52 - VFX Spatial Anchor State Flag
+
+Problem: `ReentryVfxStateSignal` carried `CapsuleAup` even before a valid anchor was accepted, so diagnostics/downstream readers had no cheap way to know whether the AUP was authoritative.
+Solution: Add `FlagSpatialAnchor` to the existing state flags and set it from `_hasSpatialAnchor` in state and black-box telemetry writes. The 64-byte signal layout is unchanged.
+Rejected Alternatives: Infer validity from default AUP, or suppress state packets until anchored. Default AUP can be finite and ambiguous; suppressing packets hides whiteout/quality diagnostics.
+Scalability potential: Low/MX350 readers can cheaply reject spatial fan-out from unanchored states. Middle/High/Ultra keep richer diagnostics and effects tied to authoritative anchors.
+Hardware Impact: One branch and byte OR per state/telemetry write, below 1 us; avoids downstream ambiguity without adding payload size. Verification static only; no rebuild.
+
+## Decision 53 - Audio Sweep Dispatcher Time and Finite Config
+
+Problem: `PrologueAcousticOrchestrator` advanced the ocean filter sweep from raw `Time.unscaledDeltaTime`, and malformed serialized cutoff/gain/duration scalars could still leak NaN/Inf into audio transition packets despite editor validation.
+Solution: Cache `ITickDispatcher`, update it through hot-swap callbacks, resolve sweep delta through finite/clamped dispatcher time with `Time.unscaledDeltaTime` as fallback, and route filter/gain/duration fields through finite clamps before publishing.
+Rejected Alternatives: Keep raw Unity time, or rely on `OnValidate()`. Raw Unity time drifts from the project tick source; `OnValidate()` does not protect runtime-loaded or tool-mutated serialized data.
+Scalability potential: Low/MX350 gets stable cheap portal sweeps under frame spikes and corrupted config. Middle/High/Ultra keep granular stress and splashdown gain overkill, but only from finite DSP inputs.
+Hardware Impact: One cached service pointer, one delta clamp, and scalar finite checks per audio transition frame, below 1 us; avoids invalid DSP packets and transition churn. Verification static only; no rebuild.
+
+## Decision 54 - VFX Serialized Scalar Finite Config
+
+Problem: `OrbitalDropReentryVfxController` had runtime guards for signal data, but malformed serialized presentation scalars could still push NaN/Inf into shader globals, overlay placement, acoustic radii, crossfade timing, or telemetry before the generic runtime sanitize path caught derived state.
+Solution: Add local finite clamps for heat scale, whiteout altitude, ramp rates, ambient/crossfade timing, overlay distance, and acoustic radius, then reuse them in runtime paths and `OnValidate()`.
+Rejected Alternatives: Trust inspector attributes, or rely on post-NaN sanitize. Inspector attributes do not protect runtime-loaded/tool-mutated data; post-NaN sanitize happens after visible shader/audio damage can already be emitted.
+Scalability potential: Low/MX350 avoids invalid shader/audio work and keeps cheap whiteout stable. Middle/High/Ultra can keep stronger plasma/splash visuals without letting malformed config poison overkill responders.
+Hardware Impact: Scalar finite checks are below 1 us on prologue VFX frames; they prevent invalid material/global writes and downstream audio/debris churn. Verification static only; no rebuild.
+
+## Decision 55 - Audio Non-Reload Lifecycle Reset
+
+Problem: `PrologueAcousticOrchestrator` reset some presentation booleans on enable but kept same-frame tick cursors, signal cursors, complete-sequence latches, cached velocity/heat, and last-published thresholds. In non-reload or same-frame disable/enable, the first tick could be skipped or a stale complete sequence could suppress a valid ocean sweep.
+Solution: Add `ResetTransientState()` and call it from `OnEnable()` after cold service/quality cache refresh. The reset clears only scalar runtime state and preserves the existing registry registration flow.
+Rejected Alternatives: Rely on `OnDisable()`, or reset only the visible stage booleans. Disable does not guarantee same-frame cursor cleanup for re-enable; partial reset keeps stale signal ownership and publication suppression.
+Scalability potential: Low/MX350 avoids missed portal sweep/audio concealment during scene churn. Middle/High/Ultra keep granular/splash overkill synchronized to the current prologue run instead of stale sequence memory.
+Hardware Impact: Enable-only scalar assignments; 0 us per-frame steady-state cost. Prevents one skipped audio tick or redundant stale transition work under non-reload reuse. Verification static only; no rebuild.
+
+## Decision 56 - Audio Low-Memory Policy Refresh
+
+Problem: `PrologueAcousticOrchestrator.OnScalabilityChanged()` updated tier bytes from the event payload but reused the previous `_lowMemoryProfile` value. If the low-memory flag changed around the same transition, prologue DSP could keep the wrong low-tier proxy policy.
+Solution: Sample `GlobalRegistry.H8_LOW_MEMORY_PROFILE` inside the scalability event handler, matching the cold refresh path.
+Rejected Alternatives: Treat scalability events as tier-only, or poll registry every audio frame. Tier-only leaves a stale policy edge; per-frame polling wastes hot-path budget for a cold policy transition.
+Scalability potential: Low/MX350 and emergency low-memory paths keep proxy DSP flags current. Middle/High/Ultra keep granular overkill enabled only when the current policy allows it.
+Hardware Impact: One registry bool read per scalability event, 0 us steady-state per frame. Verification static only; no rebuild.

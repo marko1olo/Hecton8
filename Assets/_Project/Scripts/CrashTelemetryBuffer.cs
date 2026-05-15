@@ -2654,11 +2654,12 @@ namespace Hecton8.Core
 
         private static float3 ToAbsoluteUniversePosition(Vector3 runtimePosition)
         {
-            Vector3 bridgeUniversePosition = HectonMapMagicVegetationBridge.ToUniverseSpace(runtimePosition);
-            Vector3 absolutePosition = bridgeUniversePosition != runtimePosition
+            double3 runtimePositionDouble = new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            double3 bridgeUniversePosition = HectonMapMagicVegetationBridge.ToUniverseSpaceDouble3(runtimePosition);
+            double3 absolutePosition = math.lengthsq(bridgeUniversePosition - runtimePositionDouble) > 0.000000001d
                 ? bridgeUniversePosition
-                : HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimePosition);
-            return new float3(absolutePosition.x, absolutePosition.y, absolutePosition.z);
+                : HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);
+            return new float3((float)absolutePosition.x, (float)absolutePosition.y, (float)absolutePosition.z);
         }
 
         private uint BuildErrorFlags(float dt, float reservedMemoryMb, float3 playerPos, bool hasPlayer)

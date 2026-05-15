@@ -104,7 +104,7 @@ namespace Hecton8.Gameplay
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
-    public struct CombatDamageSignal
+    public struct CombatDamageRequest
     {
         public int TargetId;
         public int SourceId;
@@ -295,7 +295,7 @@ namespace Hecton8.Gameplay
         private static readonly int[] _poisonDiffusionTargetIds =
             new int[PoisonDiffusionBufferLength]; // COLD ALLOC: int[16] - poison spread duplicate-target filter - owner: CombatDamageRuntime
 
-        private static NativeQueue<CombatDamageSignal> _damageSignals;
+        private static NativeQueue<CombatDamageRequest> _damageSignals;
         private static NativeArray<CombatDamageSignalDetail> _signalDetails;
         private static NativeParallelHashMap<int, int> _slotByTargetId;
         private static NativeArray<int> _instanceIds;
@@ -589,13 +589,13 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        public static bool TryQueueDamage(in CombatDamageSignal signal)
+        public static bool TryQueueDamage(in CombatDamageRequest signal)
         {
             CombatDamageSignalDetail detail = default;
             return TryQueueDamage(in signal, in detail);
         }
 
-        public static bool TryQueueDamage(in CombatDamageSignal signal, in CombatDamageSignalDetail detail)
+        public static bool TryQueueDamage(in CombatDamageRequest signal, in CombatDamageSignalDetail detail)
         {
             if (signal.TargetId == 0)
                 return false;
@@ -608,7 +608,7 @@ namespace Hecton8.Gameplay
                 RefreshTargetHitProfile(targetSlot);
 
             int detailIndex = _queuedSignalCount;
-            SanitizeQueuedSignal(in signal, in detail, out CombatDamageSignal queuedSignal, out CombatDamageSignalDetail queuedDetail, out uint ingressAnomalyHash);
+            SanitizeQueuedSignal(in signal, in detail, out CombatDamageRequest queuedSignal, out CombatDamageSignalDetail queuedDetail, out uint ingressAnomalyHash);
             uint packedMeta = PackDamageClassMetaFast(queuedSignal.PackedMeta);
             queuedSignal.PackedMeta = (packedMeta & MetaDetailIndexClearMask) |
                                       ((uint)detailIndex << MetaDetailIndexShift);
@@ -684,7 +684,7 @@ namespace Hecton8.Gameplay
             for (int i = 0; i < signalCount; i++)
             {
                 Hecton8.Core.Signals.CombatDamageSignal globalSignal = globalSignals[i];
-                if (!TryBuildCombatSignal(in globalSignal, out CombatDamageSignal combatSignal, out CombatDamageSignalDetail detail))
+                if (!TryBuildCombatSignal(in globalSignal, out CombatDamageRequest combatSignal, out CombatDamageSignalDetail detail))
                     continue;
 
                 if (!TryQueueDamage(in combatSignal, in detail))
@@ -694,7 +694,7 @@ namespace Hecton8.Gameplay
 
         private static bool TryBuildCombatSignal(
             in Hecton8.Core.Signals.CombatDamageSignal globalSignal,
-            out CombatDamageSignal combatSignal,
+            out CombatDamageRequest combatSignal,
             out CombatDamageSignalDetail detail)
         {
             combatSignal = default;
@@ -718,7 +718,7 @@ namespace Hecton8.Gameplay
                 : CombatDamageTypes.Impact;
 
             float3 safeDirection = NormalizeOrDefault(direction, float3.zero);
-            combatSignal = new CombatDamageSignal
+            combatSignal = new CombatDamageRequest
             {
                 TargetId = unchecked((int)targetId),
                 SourceId = globalSignal.SourceId,
@@ -739,7 +739,7 @@ namespace Hecton8.Gameplay
 
         private static bool TryBuildCombatSignal(
             in Hecton8.Core.Signals.DamageSignal globalSignal,
-            out CombatDamageSignal combatSignal,
+            out CombatDamageRequest combatSignal,
             out CombatDamageSignalDetail detail)
         {
             combatSignal = default;
@@ -758,7 +758,7 @@ namespace Hecton8.Gameplay
                 : CombatDamageTypes.Impact;
 
             float3 damageDirection = ResolveDominantAxisDirection(localPoint);
-            combatSignal = new CombatDamageSignal
+            combatSignal = new CombatDamageRequest
             {
                 TargetId = unchecked((int)targetId),
                 SourceId = globalSignal.SourceId,
@@ -778,9 +778,9 @@ namespace Hecton8.Gameplay
         }
 
         private static void SanitizeQueuedSignal(
-            in CombatDamageSignal input,
+            in CombatDamageRequest input,
             in CombatDamageSignalDetail inputDetail,
-            out CombatDamageSignal signal,
+            out CombatDamageRequest signal,
             out CombatDamageSignalDetail detail,
             out uint anomalyHash)
         {
@@ -966,7 +966,7 @@ namespace Hecton8.Gameplay
             if (_damageSignals.IsCreated)
                 return;
 
-            _damageSignals = new NativeQueue<CombatDamageSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<CombatDamageSignal>[1024] - combat damage ingress lane - owner: CombatDamageRuntime
+            _damageSignals = new NativeQueue<CombatDamageRequest>(Allocator.Persistent); // COLD ALLOC: NativeQueue<CombatDamageRequest>[1024] - combat damage ingress lane - owner: CombatDamageRuntime
             NativeMemorySentinel.RegisterNativeQueue(
                 _damageSignals,
                 MaxQueuedSignals,
@@ -1403,7 +1403,7 @@ namespace Hecton8.Gameplay
                 _poisonDiffusionTargetIds[queuedTargetCount] = targetId;
                 queuedTargetCount++;
                 Vector3 localPoint = receiverTransform.InverseTransformPoint(worldPoint);
-                CombatDamageSignal poisonSignal = new CombatDamageSignal
+                CombatDamageRequest poisonSignal = new CombatDamageRequest
                 {
                     TargetId = targetId,
                     SourceId = result.SourceId,
@@ -1704,7 +1704,7 @@ namespace Hecton8.Gameplay
         [BurstCompile]
         private struct ProcessDamageQueueJob : IJob
         {
-            public NativeQueue<CombatDamageSignal> Signals;
+            public NativeQueue<CombatDamageRequest> Signals;
             [ReadOnly] public NativeArray<CombatDamageSignalDetail> SignalDetails;
             [ReadOnly] public NativeParallelHashMap<int, int> SlotByTargetId;
             [ReadOnly] public NativeArray<int> InstanceIds;
@@ -1731,7 +1731,7 @@ namespace Hecton8.Gameplay
             public void Execute()
             {
                 int processed = 0;
-                while (processed < SignalBudget && Signals.TryDequeue(out CombatDamageSignal signal))
+                while (processed < SignalBudget && Signals.TryDequeue(out CombatDamageRequest signal))
                 {
                     processed++;
                     if (!SlotByTargetId.TryGetValue(signal.TargetId, out int slot))
@@ -1994,7 +1994,7 @@ namespace Hecton8.Gameplay
 
             private void WriteResult(
                 int slot,
-                in CombatDamageSignal signal,
+                in CombatDamageRequest signal,
                 in CombatDamageSignalDetail detail,
                 uint damageType,
                 byte kind,

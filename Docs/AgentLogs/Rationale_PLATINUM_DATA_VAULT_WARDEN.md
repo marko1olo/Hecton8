@@ -106,6 +106,90 @@ Rejected Alternatives: Reporting the previous clean scan while the current file 
 Scalability potential: Low/Middle devices keep deterministic maintenance and avoid memory-copy spikes; High/Ultra devices keep saved frame budget available for visible systems instead of heap movement.
 Hardware Impact: Maintains removal of the 512 KB live move slice and associated fences/timers. Final scan after build found no live relocation symbols in `GlobalDataVault.cs`.
 
+Problem: User-requested continued recheck found a new source snapshot where live DataVault compaction, stale-handle refresh, editor-only type validation, caller-trusted reallocation size, and raw macro payload version increments had drifted back into the locked scope.
+Solution: Removed the live relocation slice and recorder again, kept `FrostTickDefrag` as analyze/validate/record telemetry only, restored stale cached handle PHI/VOD dump plus `FatalMemoryException`, moved `ValidateType` out of editor-only compilation, made `H8Memory.ReallocateRaw` use tracked old byte counts before allocation/copy, and switched macro payload overwrites to `NextGeneration(existing.Version)`.
+Rejected Alternatives: Accepting stress-gated relocation; trusting caller-provided `oldBytes`; relying on Unity collection checks for type mismatch; using unchecked `existing.Version + 1u` that can wrap to zero.
+Scalability potential: Low keeps DataVault deterministic and cheap under weak hardware; Middle keeps ABI/type failures diagnosable; High and Ultra can spend the saved relocation budget on visible systems instead of heap movement. Macro cache versions remain monotonic across long sessions.
+Hardware Impact: Removes the reintroduced 512 KB live move path, Thread fences, and Stopwatch maintenance checks. `ReallocateRaw` adds one existing O(active allocations) ownership scan only on reallocation; valid handle resolves remain branch-only; macro version hardening is one overflow-safe increment on cache overwrite.
+
+Problem: `H8Memory.Allocate<T>` and the old-pointer branch of `ReallocateRaw` could still accept `SystemID.Unknown`, creating or mutating tracked native records with no accountable owner while `AllocateRaw` already rejected unknown owners.
+Solution: Added the same `FatalMemoryException.ThrowUnknownAllocationOwner()` gate to `Allocate<T>` and `ReallocateRaw`, then scanned project call sites for direct `SystemID.Unknown` use against `H8Memory.Allocate` and `H8Memory.AllocateRaw`.
+Rejected Alternatives: Relying on later `Release<T>` cleanup or leak reaping; both happen after accountability is already lost.
+Scalability potential: Low keeps native-array ownership deterministic; Middle/High/Ultra keep pool telemetry and leak attribution stable as larger systems allocate more SOA buffers.
+Hardware Impact: One branch on cold/native-array allocation only; 0 us steady-frame impact for already allocated buffers.
+
+Problem: The save writer appended the v72 first-hour DTO tail while writing `data.version` unchanged. Repair/manual rewrite paths can pass a loaded older `SaveData`, causing reload to skip the v72 tail by version gate and then fail payload byte-length validation.
+Solution: Normalize `data.version` to `SaveData.CurrentVersion` inside `SaveBinaryPayloadCodec.TryWrite` before `WriteSaveData` emits the header and DTO tail.
+Rejected Alternatives: Writing `SaveData.CurrentVersion` only in the header without mutating `data.version`; `SaveBinaryStorage` also writes prefix metadata from `data.version` after codec serialization. Skipping the DTO tail for older in-memory objects would preserve inconsistent repaired artifacts.
+Scalability potential: Low keeps save repair deterministic; Middle/High/Ultra avoid backup promotion loops caused by self-created payload length mismatches.
+Hardware Impact: One cold save-path integer compare/assign; 0 us frame impact and 0 B GC.
+
+Problem: NativeArray disposal through `H8Memory.Release<T>` was still a weak ownership lane: legacy overloads could unregister without an explicit owner, created arrays/raw pointers became silent no-ops if the H8 tracker had already been shut down, and one power boot disposal chain ignored the final scheduled release handle.
+Solution: Added owner-tagged immediate and job-deferred `Release<T>` overloads, marked legacy release/free overloads `Obsolete(error: true)`, converted external call sites to explicit owners, made created arrays/raw pointers throw `FatalMemoryException` when owner or tracker proof is missing, and completed the final power boot release dependency.
+Rejected Alternatives: Keeping legacy release overloads for convenience; relying on NativeMemorySentinel after disposal; dropping created arrays when `_initialized` is false; scheduling final disposal without retaining the returned handle. Those hide ownership defects and can turn leaks into non-reproducible shutdown behavior.
+Scalability potential: Low devices get deterministic native ownership and fewer silent leaks; Middle keeps pool accounting stable across scene churn; High and Ultra can run larger SOA buffers and visual caches without corrupting the memory budget model.
+Hardware Impact: 0 us steady-frame cost. Disposal/free paths add one owner branch and the existing O(active allocations) owner lookup; failures now stop immediately instead of losing native memory silently. Completing the power boot disposal chain is cold teardown-only.
+
+Problem: DataVault still carried false relocation signals after live compaction was locked out: a dead `_lastRelocationRecords` NativeArray was allocated every vault init, descriptors were flagged `Relocatable`, comments described handles as relocatable, and `GetBuffer` mapped `SystemID.Unknown` to `CoreDataVault`.
+Solution: Removed the dead relocation-record allocation/disposal path, kept `TryGetLastRelocationRecord` as an empty compatibility surface, stopped setting the `Relocatable` descriptor flag, renamed comments to generation-checked handles, and made unknown `GetBuffer` requesters fail fast.
+Rejected Alternatives: Leaving unused relocation storage for future work; keeping misleading descriptor flags; silently assigning unknown callers to CoreDataVault. All three weaken H-Phi data sovereignty by hiding true ownership.
+Scalability potential: Low saves persistent native memory and avoids false relocation expectations; Middle gets cleaner telemetry; High and Ultra can reserve memory budget for real visual systems instead of dead bookkeeping.
+Hardware Impact: Removes one 64 * 32 byte persistent relocation-record allocation, approximately 2048 bytes plus allocator overhead, at vault init. Runtime hot path impact is one cold requester-owner branch on `GetBuffer`; no dotnet rebuild was run per user order.
+
+Problem: The H8 allocation flag enum and internal unregister helpers still exposed dead relocation/ownerless concepts after the active paths were removed.
+Solution: Removed `H8AllocationFlags.Relocatable` and deleted the unused private `UnregisterPointer(void*)` shim so all H8 unregister calls require owner proof.
+Rejected Alternatives: Keeping reserved symbols for hypothetical future relocation. In this codebase, dead symbols repeatedly became reconnection points for live compaction drift.
+Scalability potential: Low/Middle devices avoid accidental reintroduction of hidden memory movement; High/Ultra keep the saved frame budget available for visible systems instead of heap churn.
+Hardware Impact: 0 us runtime change. Static API surface is smaller; no allocation, branch, or frame cost added.
+
+Problem: `ProceduralFaunaStateDTO` and `HibernatedFaunaStateDTO` stored managed `bool` fields inside structured save DTOs. The codec already wrote them as one-byte wire fields, but the in-memory DTOs were not safe native mirror candidates.
+Solution: Replaced bool storage with fixed byte flags behind compatibility properties, preserved the existing codec wire format, added `[BinaryBlittableSafe]`, and asserted the sizes/flag offsets in `BinaryLayoutManifest`.
+Rejected Alternatives: Changing the save wire format or renaming public DTO accessors; both would widen migration risk. Leaving managed bool fields would keep the ARM/native-blit hazard documented in `Save_Binary_Header.md`.
+Scalability potential: Low gets deterministic ABI-safe fauna state loads; Middle can use DTO mirrors without managed bool ambiguity; High/Ultra can persist larger fauna state sets without changing binary layout again.
+Hardware Impact: 0 us frame impact. Save/load still writes and reads the same bytes; property flag packing is cold persistence code only.
+
+Problem: Several `[BinaryBlittableSafe]` `SaveData.cs` DTOs lacked explicit `BinaryLayoutManifest` size coverage, leaving the marker weaker than the enforcement.
+Solution: Added manifest size/offset assertions for every currently marked blit-safe SaveData DTO, including external scavenger sites, geology seam/cave records, module blit records, PDA advisory, environmental strain, and module graph edge records.
+Rejected Alternatives: Trusting `[StructLayout]` declarations without a central boot assertion; that lets accidental field drift survive until runtime persistence fails.
+Scalability potential: Low catches binary drift before save/load corrupts data; Middle/High/Ultra can add more native persistence consumers with a single manifest gate.
+Hardware Impact: Cold boot/static validation only. The added assertions are O(number of DTO fields checked) and 0 us steady-frame.
+
+Problem: Procedural-world save arrays are capacity-backed, so the codec could serialize full backing capacity and the generic reader could allocate a corrupt over-limit array before domain max validation.
+Solution: Wrote suppressed placement, fauna, geology seam, geology cave, and hibernated fauna arrays as logical bounded slices; clamped their mirrored count fields to array length and domain maxima; added bounded struct-array reads for generic procedural arrays; rejected custom fauna counts before allocation; and made `ProceduralWorldStateDTO.EnsureCapacity` copy existing entries when expanding shorter loaded arrays.
+Rejected Alternatives: Keeping full-capacity writes for compatibility. The wire shape remains count + array payload, but the payload now reflects logical state instead of unused capacity. Trusting post-load migration was rejected because allocation happens before migration can clamp, and because no-copy expansion would discard compact payload entries.
+Scalability potential: Low saves disk and decompression bandwidth on weak hardware; Middle keeps save corruption fail-fast; High and Ultra can increase procedural state detail without paying for empty capacity slots.
+Hardware Impact: Cold save path adds bounded count clamps and removes up to approximately 240 KiB raw procedural-world payload when all capacity arrays are mostly empty: 8192 long suppressed keys, 4096 fauna records, 512 hibernated fauna records, 512 geology seam records, and 512 cave entrance records. Frame impact is 0 us.
+
+Problem: Capacity repair was still allowed to rewrite compact loaded arrays before clamping logical count mirrors. A corrupt or stale count could survive as a full-capacity count after `EnsureCapacity`, and old no-copy repair paths could discard the only valid payload entries.
+Solution: Centralized exact-capacity, copy-preserving array normalization in `SaveData.EnsureExactArrayCapacity`; made migration compute pre-expansion bounds for inventory, world, construction, exploration, PDA, lore, meta, resource scarcity, ecosystem, procedural world, encrypted audio fragments, and archaeology state before repair; added missing construction graph/flood count clamps and changed root lore count clamps to report mutation.
+Rejected Alternatives: Post-expansion clamping to backing array length and resetting paired root arrays to count zero. Post-expansion clamps accept default entries as real state, and zero-resetting paired arrays destroys salvageable cold-load data.
+Scalability potential: Low keeps save repair deterministic and avoids reload loops on weak hardware; Middle keeps compact payloads valid during migration; High and Ultra can increase save-state density without paying for unused max-capacity records or accepting silent default-entry pollution.
+Hardware Impact: 0 us frame impact. Cold migration adds scalar bound checks and `Array.Copy` only when an array is normalized; avoiding full-capacity false counts prevents downstream restore loops over thousands of default entries, worst case approximately 4096 fauna/world records plus 8192 pickup/suppression records.
+
+Problem: The fixed-capacity save codec needed a final allocation-bomb audit after capacity repair. Most logical-slice writers/readers were already locked, but the legacy `InventoryCellDTO` custom writer still delegated to the unbounded generic custom-array writer.
+Solution: Verified fixed-capacity writer/readers for world, construction, scan, PDA, lore, resource scarcity, ecosystem, root bitmasks, module sorter buffers, and cultivation arrays; then routed `WriteInventoryCellArray` through `WriteCustomArraySlice` with `InventoryDTO.MaxCells`.
+Rejected Alternatives: Leaving the legacy writer untouched because current inventory writing no longer calls it. Legacy persistence code remains a reconnection point during migrations, so it must carry the same max-cell invariant as the reader.
+Scalability potential: Low devices avoid malformed legacy payload expansion; Middle keeps save repair deterministic; High and Ultra can keep larger DTO backings without allowing wire payloads to grow past logical caps.
+Hardware Impact: 0 us frame impact. Cold legacy save path now caps the custom item-cell loop at 128 records and prevents oversized string-bearing inventory-cell payloads from being emitted.
+
+Problem: Root legacy save collections still had unbounded binary read paths for compatibility lists, dictionaries, and hash sets. A malformed payload could force large managed allocations before migration could clamp or rebuild packed state.
+Solution: Added explicit root collection caps in `SaveData` from producer evidence: 32 tool records, 108 legacy biome IDs, 1024 audio-log IDs, 1024 legacy quest IDs, 32 suit upgrade IDs, 16 corporate orders, 32 mission IDs, and 64 custom mod entries. `SaveBinaryPayloadCodec` now writes those collections through capped overloads and rejects over-limit counts before allocating during read. Corporate pending order IDs and timers use a paired-count clamp on write.
+Rejected Alternatives: Trusting migration to trim after allocation; keeping generic unbounded list/dictionary/hashset readers for root compatibility fields; sorting/truncating dictionaries with temporary arrays. Read-time rejection is the only deterministic anti-bomb gate, and producer caps make write-side truncation a cold bug containment path rather than a gameplay feature.
+Scalability potential: Low devices reject corrupt save payloads before heap pressure; Middle keeps legacy compatibility lists bounded while packed bitmasks and DTO arrays carry primary state; High and Ultra can keep richer save DTO capacity without letting compatibility maps scale with mod or corruption noise.
+Hardware Impact: 0 us frame impact. Cold load now caps worst-case root compatibility allocation to 32/108/1024/1024/32/16/32/64 records instead of attacker-controlled counts; cold save adds scalar clamps and one paired-list min chain only.
+
+Problem: The binary codec was bounded, but non-binary restore paths could still hand migration oversized legacy lists/maps from JSON, editor repair, or manual DTO construction.
+Solution: Added cold migration trimming for tool durability maps, custom mod data, legacy biome/audio-log discovery collections, quest lists, suit upgrade lists, corporate order lists/timers, and mission lists. Dictionary/hash-set trimming uses repeated single-entry removal to avoid temporary key arrays; corporate pending order IDs/timers clamp to a shared paired count.
+Rejected Alternatives: Assuming every restore path uses the binary codec; adding hot runtime guards in producer systems; sorting legacy dictionaries before trimming. Migration is the correct cold gate, and deterministic order is not guaranteed for these existing legacy dictionaries anyway.
+Scalability potential: Low devices avoid oversized post-load compatibility containers even from non-binary saves; Middle keeps migration repair bounded and explicit; High and Ultra can keep rich primary DTO state without compatibility baggage growing beyond producer limits.
+Hardware Impact: 0 us frame impact. Cold migration adds O(extra entries) list trims and O(extra entries * remaining dictionary count) dictionary/hash-set removal only when corrupt or oversized data is present.
+
+Problem: Individual binary strings were only bounded by remaining payload bytes. A single corrupt length could still allocate a large managed string, and unused unbounded array helper methods remained as reconnection points beside the bounded helpers.
+Solution: Capped every `SaveBinaryPayloadCodec` UTF-16 string at one protected 16 KiB block (`8192` chars) before writer copy or reader allocation, removed unused unbounded `WriteStringArray`, `ReadStringArray`, `WriteStructArray`, and `ReadStructArray` helper surfaces, and documented the string cap in `Save_Binary_Header.md`.
+Rejected Alternatives: Per-field string limits in all 74 call sites; leaving dead unbounded helpers for convenience; permitting root `CustomModData` to carry large mod payloads. Mod persistent data already has protected indexed sectors, so root compatibility strings should remain bounded metadata.
+Scalability potential: Low devices reject string bombs before heap pressure; Middle keeps root compatibility payloads predictable; High and Ultra can reserve large mod payloads for the protected sector path instead of expanding the root DTO surface.
+Hardware Impact: 0 us frame impact. Cold save/read adds one integer compare per string. Worst single-string managed allocation is now bounded to 16 KiB of UTF-16 payload instead of being constrained only by full save payload length.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Polish audit required removal of fake precision, managed iteration/string debt, and any code outside the DataVault domain without justification.
@@ -117,7 +201,7 @@ Hardware Impact: Direct habitat DTO write is 32 bytes per module and 0 B GC. Rem
 Final Git Diff Summary:
 - Assets/_Project/Scripts/Core/HectonArenaAllocator.cs: owner-tagged H8Memory.FreeRaw release.
 - Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs: GenerationID handle exposure, stale-handle fatal path, VaultGenerationID telemetry, owner-tagged macro/vault frees, macro copy switched to MemCpy, live defrag memmove code deleted.
-- Assets/_Project/Scripts/Core/Memory/H8Memory.cs: FatalMemoryException plus owner-checked FreeRaw.
+- Assets/_Project/Scripts/Core/Memory/H8Memory.cs: FatalMemoryException, owner-gated raw/native allocation, tracked-byte raw reallocation, and owner-checked FreeRaw.
 - Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs: v72 first-hour DTO payload write/read, direct habitat flood struct loop.
 - Assets/_Project/Scripts/SaveData.cs: first-hour DTO mirrors and packed DTO definitions/metadata.
 - Assets/_Project/Scripts/Core/BinaryLayoutManifest.cs: first-hour DTO size/offset assertions.

@@ -1,0 +1,225 @@
+# LOG_SHADER_OVERKILL_ARCHITECT
+
+## 2026-05-15 02:40:07 +04:00 - SHADERS CRYSTALLIZED / VISUAL ORGASM READY
+What was wrong:
+- Material behavior was fragmented across separate caustics/rust/deformation concepts, which risks SetPass multiplication and SRP Batcher damage.
+- The active dependency rationale files requested by the prompt were missing: `Docs/AgentLogs/Rationale_CAUSTICS_PROJECTION.md` and `Docs/AgentLogs/Rationale_MATERIAL_DECAY.md`.
+- `Docs/Tasks/CURRENT_BATCH.md` does not contain this agent XML or a `<POLISH_MANDATE>` tag.
+- Unity batchmode cannot complete because `Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs` references missing World/GPR symbols: `Hecton8.World.GPR`, `GroundRadarTelemetryEntry`, and `GroundRadarConstants`.
+
+What was done:
+- Created `Assets/_Project/Art/Shaders/Hecton8_UberNoir.hlsl` as the single UberNoir URP HLSL core.
+- Enforced one `CBUFFER_START(UnityPerMaterial)` for per-material data.
+- Applied `_TotalUniverseOffset.xyz` before world-position matrix multiplication for AUP precision.
+- Added `StructuredBuffer<H8UberNoirInstanceData>` for GraphicsBuffer/Resident Drawer compatible matrices and seed/fade/flags.
+- Integrated analytical caustics, dynamic pressure bending, 16-tap rust POM, spectral biolum emission, branchless attenuation, and blue-noise cutout.
+- Added `_MATH_LOD_LOW` stripping for albedo/roughness-only low-tier output.
+- Added NaN guards for all owned `pow()` and `rsqrt()` use.
+- Created `Assets/_Project/Scripts/Graphics/Materials/H8ShaderIDs.cs` for zero-GC property ID caching.
+- Ran Unity 6000.4.1f1 batchmode and static audits. Owned shader/C# names do not appear in the compiler error scan; the compile wall is outside this rendering domain.
+
+Cinematic Cheats used:
+- Caustics are analytical wave interference plus optional lookup texture, not physical photon simulation.
+- Hull bending is shader vertex bowing from stress fields, not CPU mesh deformation.
+- Rust depth is high-tier POM only, not geometry displacement or decal stacks.
+- Bioluminescence is phase-driven spectral emission, not script-updated material state.
+- Noir fog uses blue-noise cutout, not full transparent sorting.
+
+Exact Microseconds saved:
+- Measured: 0 us. No clean compile/runtime capture is available because Unity exits on the external World/GPR compile blocker.
+- Estimated CPU SetPass/pass savings from unified shader path: 30-120 us.
+- Estimated CPU savings from GraphicsBuffer/resident instance path: 20-80 us in dense draws.
+- Estimated CPU savings from shader-side hull bending versus CPU mesh mutation: 60-300 us.
+- Estimated CPU savings from static property IDs versus hot string lookup bursts: 5-40 us.
+- Estimated GPU savings from low-tier stripping: 80-500 us in material-heavy low-end views.
+- Estimated GPU texture savings from single packed ORM sample: 10-60 us.
+
+Verification:
+- Static audit: one `UnityPerMaterial` CBUFFER, one `_MaskMap` sample, guarded `pow()`/`rsqrt()`, balanced braces.
+- `git diff --check`: no whitespace errors; PowerShell reports LF-to-CRLF warnings for updated markdown only.
+- Unity batchmode: blocked by `GroundPenetratingRadarRuntime.cs` World/GPR missing references, not owned rendering files.
+- Frame Debugger/RenderDoc/Profiler: not run because the project does not reach a clean compile.
+
+## 2026-05-15 03:19:35 +04:00 - Follow-Up No-Rebuild Rendering/H-Phi Pass
+What was wrong:
+- `_MATH_LOD_LOW` still paid for normal-map sampling and unused specular/shadow setup.
+- Dithered transparency evaluated blue-noise even when the dither feature was disabled.
+- Clean materials sampled `_RustDetailMap` before proving rust was active.
+- Optional caustic texture sampling was compiled into every non-low UberNoir variant.
+- `Hecton8.Graphics.Materials.asmdef` carried an unused `Hecton8.World.Contracts` reference.
+
+What was done:
+- Low-tier UberNoir now returns from base+packed ORM surface sampling and skips normal/rust/POM/biolum sampling.
+- Low-tier lighting uses `GetMainLight()` without `TransformWorldToShadowCoord`, specular half-vector, caustics, or discarded view math.
+- Blue-noise dither is skipped under `_MATH_LOD_LOW` and only sampled when the dither feature flag is enabled.
+- Rust detail sampling now returns early when resolved rust is effectively zero.
+- Caustic map sampling is now behind `H8_UBERNOIR_CAUSTICS_TEXTURED`.
+- Removed the unused World contracts dependency from `Hecton8.Graphics.Materials.asmdef`.
+
+Cinematic Cheats used:
+- Low-tier normals degrade to dominant-axis safe normals instead of exact normalization.
+- Low-tier lighting keeps ambient + main diffuse only; visual belief is preserved by fog/ORM while expensive depth/specular detail is shed.
+- Procedural caustics remain the default; texture caustics are opt-in visual overkill.
+
+Exact Microseconds saved:
+- Measured: 0 us. User forbade rebuilds, and Unity/runtime capture remains blocked by World/GPR compile errors.
+- Estimated low-tier surface-sample savings: 20-120 us GPU in dense material views.
+- Estimated low-tier lighting savings: 10-80 us GPU in forward-lit batches.
+- Estimated clean-material rust gate savings: 10-90 us GPU when rust is zero.
+- Estimated caustic texture variant/sample savings: 5-40 us GPU plus lower variant pressure when procedural caustics are enough.
+- Asmdef cleanup runtime gain: 0 us; static architecture debt reduced.
+
+Verification:
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`: `RuntimeHPhiNarrow=0.010534799`, `RuntimeHPhiRisk=0.000573240`.
+- Scoped HLSL scan: braces `40/40`, one `UnityPerMaterial` CBUFFER, one `_MaskMap` sample, caustic texture sample guarded by `H8_UBERNOIR_CAUSTICS_TEXTURED`.
+- Scoped asmdef scan: no `Hecton8.World` / `World.Contracts` reference remains in `Assets/_Project/Scripts/Graphics/Materials`.
+- `git diff --check` on touched files: no whitespace errors; LF-to-CRLF warnings only.
+- No `dotnet build`, no `dotnet rebuild`, no Unity rebuild.
+
+## 2026-05-15 03:34:52 +04:00 - Follow-Up No-Rebuild Rendering/H-Phi Pass 2
+What was wrong:
+- Low-tier caustic compute shutdown did not fully guarantee global caustic consumers were dark; `_HectonProjectedCausticsParams.x` could remain nonzero.
+- Caustic GPU upload data, caustic black-box telemetry, and AUP culling job payloads relied on implicit layout in code crossing GPU/Burst/native boundaries.
+- Disposed NativeArray scratch fields were released but not default-reset, making long-session state inspection less deterministic.
+
+What was done:
+- `AnalyticalCausticsService` now passes `lowTier` into `PublishShaderGlobals` and forces caustic intensity to zero for low-tier/depth-disabled modes.
+- `CausticsWaveGpuData` and `CausticTelemetryEntry` now declare explicit sequential pack/size layout.
+- `ApplyAupShiftJob` now declares explicit sequential layout.
+- Disposed caustic black-box and wave-upload scratch NativeArrays are reset to default after release.
+
+Cinematic Cheats used:
+- Caustics remain fake-first analytical light contribution, and low-tier now kills the entire global contribution instead of paying for invisible ocean optics.
+- Rust, POM, biolum, caustics, and bending stay tier-gated: toaster path keeps material identity; high-end path keeps overkill.
+
+Exact Microseconds saved:
+- 15-80 us estimated GPU saved on low-tier caustic receiver views by forcing global intensity to zero. Pending real Profiler/GPU capture.
+- 0 us claimed for layout/default-reset changes; these are binary safety and black-box determinism improvements, not runtime speed claims.
+
+Verification:
+- No dotnet rebuild was executed.
+- `git diff --check` reported no whitespace errors for owned files.
+- Static brace scan passed for `Hecton8_UberNoir.hlsl`, `AnalyticalCausticsService.cs`, `InstanceCullingService.cs`, and `Hecton8.Graphics.Materials.asmdef`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` completed with `RuntimeHPhiNarrow=0.010496041`, `RuntimeHPhiRisk=0.000571225`, `ArchitecturalPurity=0.996460177`, `MemoryAlignment=0.503703704`, `UnityUpdateMethods=2`, `AupPrecisionRisk=0`.
+
+## 2026-05-15 03:48:00 +04:00 - Follow-Up No-Rebuild Shader Safety Pass
+What was wrong:
+- `H8UberNoirLoadInstance` could index `_H8UberNoirInstanceData[bufferOffset]` when the instance-buffer keyword was compiled but the runtime count was zero or the use flag was disabled.
+
+What was done:
+- Added `H8UberNoirBuildDefaultInstance`.
+- Changed `H8UberNoirLoadInstance` to use Unity object/world matrices by default and only read the `StructuredBuffer` when `_UberNoirInstanceParams.z >= 0.5` and `_UberNoirInstanceParams.y > 0`.
+
+Cinematic Cheats used:
+- None. This was a deterministic safety fix for Resident Drawer fallback behavior.
+
+Exact Microseconds saved:
+- 0 us measured. Estimated 0-2 us vertex branch cost in fallback cases; undefined GPU buffer reads removed.
+
+Verification:
+- No dotnet rebuild was executed.
+- Static HLSL review confirms the buffer read is now count/use gated before indexing.
+- First H-Phi static audit attempt timed out at 120 seconds; second no-rebuild static audit completed at 300-second timeout.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` completed with `RuntimeHPhiNarrow=0.010497120`, `RuntimeHPhiRisk=0.000573792`, `ArchitecturalPurity=0.996460177`, `MemoryAlignment=0.503966155`, `UnityUpdateMethods=2`, `StructLayoutAttributes=953`, `AupPrecisionRisk=0`.
+
+## 2026-05-15 04:12:00 +04:00 - Follow-Up No-Rebuild DRS/Shader Global Safety Pass
+What was wrong:
+- Dynamic resolution scale could respond to a one-frame pressure spike and then recover immediately, violating the hysteresis mandate and causing presentation instability.
+- The fallback path wrote directly to the active URP asset render scale, and initialization wrote the upscaling filter. That is project asset mutation risk from a runtime rendering service.
+- Procedural flora tint publishing trusted serialized floats and could publish NaN/Inf into global shader state.
+
+What was done:
+- Added 3-frame pressure hysteresis and 15-frame recovery hysteresis to `ThermalDynamicResolutionAdapter`.
+- Packed DRS hysteresis counters into the existing telemetry `Reserved` field without changing the 32-byte black-box entry size.
+- Removed the runtime upscaling-filter mutation method and stopped writing `UniversalRenderPipelineAsset.renderScale` from the direct fallback path.
+- Added finite guards for procedural flora tint and tint strength before `Shader.SetGlobalVector`.
+- Guarded procedural flora tint tick registration so it only registers with `GlobalRegistry` in play mode.
+
+Cinematic Cheats used:
+- Resolution scaling remains a controlled presentation fake: stable scale changes buy frame time without changing simulation truth.
+- Flora biome color remains a deterministic global shader tint, not per-renderer material mutation.
+
+Exact Microseconds saved:
+- 5-40 us estimated jitter/state-churn reduction during unstable frame-time windows. Pending profiler capture.
+- 0 us claimed for finite tint guard; correctness only.
+
+Verification:
+- No dotnet rebuild was executed.
+- Static review only; runtime/Unity import remains blocked by the external World/GPR compile dependency.
+
+## 2026-05-15 04:24:58 +04:00 - Post-Follow-Up Static Verification
+What was wrong:
+- The DRS/flora safety patch changed source state after the prior H-Phi reading.
+- Reusing the older `03:57:16` H-Phi numbers would be stale evidence.
+
+What was done:
+- Ran `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json` with a 300s timeout only.
+- Ran no `dotnet build`, no `dotnet rebuild`, and no Unity rebuild.
+- Recorded latest metrics in status and rationale.
+
+Cinematic Cheats used:
+- None added in this verification pass.
+- Existing low-tier shader/DRS cheats remain: base+ORM-only low path, procedural caustic gate, rust texture stall gate, and hysteretic render-scale control.
+
+Exact Microseconds saved:
+- Audit execution itself saves 0 us at runtime.
+- DRS hysteresis still estimates 5-40 us of avoided state churn/jitter during unstable pressure windows pending profiler capture.
+- Flora finite guard saves 0 us; it prevents shader global poisoning.
+
+Verification:
+- `RuntimeHPhiNarrow=0.010750800`
+- `RuntimeHPhiRisk=0.000587147`
+- `AllSourceHPhiNarrow=0.009572479`
+- `AllSourceHPhiRisk=0.000482295`
+- `ArchitecturalPurity=0.996447602`
+- `MemoryAlignment=0.504761905`
+- `UnityUpdateMethods=2`
+- `StructLayoutAttributes=954`
+- `AupPrecisionRisk=0`
+
+## 2026-05-15 04:46:29 +04:00 - Follow-Up No-Rebuild Underwater Visuals Lookup Hygiene
+What was wrong:
+- `HectonUnderwaterVisuals` still carried runtime `GetComponent<T>` / `GetComponentInParent<T>` lookup debt in camera recovery paths.
+- The file is a fragile presentation hub with Crest ownership, editor preview, gameplay camera composition, and underwater pass control, so broad refactoring would be riskier than the debt being removed.
+
+What was done:
+- Replaced runtime camera/component probes with `TryGetComponent(out T)`.
+- Replaced `GetComponentInParent<Camera>()` with a zero-allocation parent `Transform` walk that preserves first-parent-camera semantics.
+- Left `UNITY_EDITOR` fallback discovery code intact.
+
+Cinematic Cheats used:
+- None added. This was rendering hot-path hygiene and static coupling cleanup.
+
+Exact Microseconds saved:
+- Estimated 0-5 us CPU on rare camera recovery frames.
+- No steady-state frame-time savings claimed; this is primarily H-Phi/zero-GC hygiene.
+
+Verification:
+- No dotnet rebuild was executed.
+- `git diff --check` on `HectonUnderwaterVisuals.cs`: no whitespace errors; LF-to-CRLF warning only.
+- Brace scan: `564/564`.
+- Runtime lookup scan: no runtime `GetComponent<T>` / `GetComponentInParent<T>` left in `HectonUnderwaterVisuals`; remaining lookup patterns are `UNITY_EDITOR` fallback discovery.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`: `RuntimeHPhiNarrow=0.010750370`, `RuntimeHPhiRisk=0.000590952`, `AllSourceHPhiNarrow=0.009572568`, `AllSourceHPhiRisk=0.000485398`, `ArchitecturalPurity=0.996447602`, `MemoryAlignment=0.505023797`, `GetComponentCalls=532`, `StructLayoutAttributes=955`, `AupPrecisionRisk=0`.
+
+## 2026-05-15 05:12:40 +04:00 - Follow-Up No-Rebuild Flashlight Voxel Shadow Provider Hygiene
+What was wrong:
+- `HectonFlashlightVoxelShadowProvider` still used `GetComponent<PlayerFlashlight>()` in cold setup/retry paths.
+- Disposed native SDF staging buffers were unregistered and disposed but not reset to default, which weakens long-session state inspection.
+
+What was done:
+- Replaced both flashlight component lookups with `TryGetComponent(out _flashlight)`.
+- Reset `_occupancyVolume` and `_sdfVolume` to `default` immediately after dispose.
+- Kept voxel resolution clamp, incremental slice refresh, SDF encoding, and shader global publication behavior unchanged.
+
+Cinematic Cheats used:
+- Existing flashlight shadow remains a bounded voxel SDF visual fake instead of allocating shadow-map VRAM or doing physical light transport.
+
+Exact Microseconds saved:
+- Estimated 0-2 us CPU on rare flashlight component recovery frames.
+- No steady-state Tick saving claimed; the main gain is static lookup debt and native handle hygiene.
+
+Verification:
+- No dotnet rebuild was executed.
+- `git diff --check` on `HectonFlashlightVoxelShadowProvider.cs`: no whitespace errors; LF-to-CRLF warning only.
+- Brace scan: `66/66`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`: `RuntimeHPhiNarrow=0.010762392`, `RuntimeHPhiRisk=0.000592295`, `AllSourceHPhiNarrow=0.009582622`, `AllSourceHPhiRisk=0.000486054`, `ArchitecturalPurity=0.996447602`, `DataSovereignty=0.021386637`, `MemoryAlignment=0.505023797`, `GetComponentCalls=530`, `StructLayoutAttributes=955`, `AupPrecisionRisk=0`.

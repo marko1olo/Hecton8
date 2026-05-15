@@ -765,7 +765,7 @@ namespace Hecton8.Atmosphere
         private SurfaceWeatherJobInput BuildWeatherJobInput(float deltaTime)
         {
             Vector3 followPosition = ResolveFollowPosition();
-            Vector3 absoluteOffset = HectonFloatingOrigin.CurrentTotalOffset;
+            double3 absoluteOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             return new SurfaceWeatherJobInput
             {
                 currentState = ToMathState(_currentState),

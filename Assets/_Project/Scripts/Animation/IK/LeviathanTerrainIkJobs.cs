@@ -12,6 +12,9 @@ namespace Hecton8.Animation.IK
         public const int LowTierSegments = 8;
         public const int TerrainHugSegmentCount = 5;
         public const int TelemetryCapacity = 300;
+        public const float DefaultSegmentLength = 2.5f;
+        public const float MinSegmentLength = 0.05f;
+        public const float MinTerrainSize = 0.0001f;
         public const uint TelemetryFlagActive = 1u << 0;
         public const uint TelemetryFlagSdf = 1u << 1;
         public const uint TelemetryFlagMapMagic = 1u << 2;
@@ -64,7 +67,6 @@ namespace Hecton8.Animation.IK
         public float SegmentLength;
         public float BodyRadius;
         public float TerrainClearance;
-        public float PhaseTimeSeconds;
         public float TailWhipSecondsRemaining;
         public float TailWhipDurationSeconds;
         public float TailWhipAmplitudeMeters;
@@ -97,10 +99,13 @@ namespace Hecton8.Animation.IK
             int activeCount = math.clamp(requested, 2, maxUsableSegments);
             int iterations = math.clamp(ConstraintIterations, 1, 4);
             float dt = math.select(0f, math.min(DeltaTime, 0.05f), math.isfinite(DeltaTime) && DeltaTime > 0f);
-            float damping = math.clamp(Damping, 0f, 1f);
-            float segmentLength = math.max(0.05f, SegmentLength);
-            float bodyRadius = math.max(0.01f, BodyRadius);
-            float clearance = math.max(0f, TerrainClearance);
+            float damping = SanitizeFiniteClamp(Damping, 0.87f, 0f, 1f);
+            float segmentLength = SanitizePositiveFinite(SegmentLength, LeviathanTerrainIkConstants.DefaultSegmentLength, LeviathanTerrainIkConstants.MinSegmentLength);
+            float bodyRadius = SanitizePositiveFinite(BodyRadius, 1.15f, 0.01f);
+            float clearance = SanitizePositiveFinite(TerrainClearance, 0f, 0f);
+            float tailWhipSecondsRemaining = SanitizePositiveFinite(TailWhipSecondsRemaining, 0f, 0f);
+            float tailWhipDurationSeconds = SanitizePositiveFinite(TailWhipDurationSeconds, 1f, 0.1f);
+            float tailWhipAmplitudeMeters = SanitizePositiveFinite(TailWhipAmplitudeMeters, 0f, 0f);
             float3 ownerForward = NormalizeSafe(OwnerForward, new float3(0f, 0f, 1f));
             float3 up = NormalizeSafe(WorldUp, new float3(0f, 1f, 0f));
             float3 intended = SanitizeFinite(IntendedVelocity, float3.zero);
@@ -115,40 +120,53 @@ namespace Hecton8.Animation.IK
             for (int iteration = 0; iteration < iterations; iteration++)
                 PullDistanceConstraints(activeCount, segmentLength, ownerForward);
 
-            if (TailWhipSecondsRemaining > 0f)
+            if (tailWhipSecondsRemaining > 0f)
             {
                 telemetryFlags |= LeviathanTerrainIkConstants.TelemetryFlagTailWhip;
-                ApplyTailWhip(activeCount, segmentLength, ownerForward, up);
+                ApplyTailWhip(activeCount, segmentLength, ownerForward, up, tailWhipSecondsRemaining, tailWhipDurationSeconds, tailWhipAmplitudeMeters);
                 PullDistanceConstraints(activeCount, segmentLength, ownerForward);
             }
 
+            float sdfRange = SanitizePositiveFinite(VoxelSdfRange, 0f, 0f);
+            float3 sdfCellSize = SanitizePositiveFinite(VoxelSdfCellSize, new float3(0.0001f), new float3(0.0001f));
+            float3 sdfGradientStep = math.max(sdfCellSize, new float3(0.05f));
             bool canUseSdf = !lowTier &&
                              (RuntimeFlags & LeviathanTerrainIkConstants.RuntimeFlagSdfHugging) != 0u &&
                              VoxelSdfTexture3D.IsCreated &&
+                             math.all(math.isfinite(VoxelSdfOrigin)) &&
                              TryResolveSdfVoxelCount(VoxelSdfDimensions, out int expectedSdfLength) &&
                              VoxelSdfTexture3D.Length >= expectedSdfLength &&
-                             VoxelSdfRange > 0.0001f;
+                             sdfRange > 0.0001f;
+            float3 sdfInvCellSize = canUseSdf
+                ? math.rcp(sdfCellSize)
+                : float3.zero;
             bool canUseHeight = (RuntimeFlags & LeviathanTerrainIkConstants.RuntimeFlagTerrainFallback) != 0u &&
                                 TerrainHeightSamples.IsCreated &&
-                                TerrainResolution > 1 &&
-                                TerrainHeightSamples.Length >= TerrainResolution * TerrainResolution &&
-                                TerrainSize.x > 0.0001f &&
-                                TerrainSize.y > 0.0001f &&
-                                TerrainSize.z > 0.0001f;
+                                TryResolveTerrainHeightSampleCount(TerrainResolution, out int expectedTerrainLength) &&
+                                TerrainHeightSamples.Length >= expectedTerrainLength &&
+                                math.all(math.isfinite(TerrainOrigin)) &&
+                                math.all(math.isfinite(TerrainSize)) &&
+                                TerrainSize.x > LeviathanTerrainIkConstants.MinTerrainSize &&
+                                TerrainSize.y > LeviathanTerrainIkConstants.MinTerrainSize &&
+                                TerrainSize.z > LeviathanTerrainIkConstants.MinTerrainSize;
 
             int terrainStart = math.max(0, activeCount - LeviathanTerrainIkConstants.TerrainHugSegmentCount);
             for (int index = terrainStart; index < activeCount; index++)
             {
-                bool tailBypass = TailWhipSecondsRemaining > 0f && index >= activeCount >> 1;
+                bool tailBypass = tailWhipSecondsRemaining > 0f && index >= activeCount >> 1;
                 if (tailBypass)
                     continue;
 
-                float3 position = SegmentPositions[index];
+                float3 fallbackPosition = index > 0
+                    ? SanitizeFinite(SegmentPositions[index - 1], float3.zero) - ownerForward * segmentLength
+                    : float3.zero;
+                float3 position = SanitizeFinite(SegmentPositions[index], fallbackPosition);
+                SegmentPositions[index] = position;
                 float appliedPush = 0f;
                 if (canUseSdf &&
-                    TrySampleSdfTrilinear(position, out float density) &&
+                    TrySampleSdfTrilinear(position, sdfInvCellSize, sdfRange, out float density) &&
                     density > 0f &&
-                    TryResolveSdfGradient(position, out float3 normal))
+                    TryResolveSdfGradient(position, sdfInvCellSize, sdfRange, sdfGradientStep, out float3 normal))
                 {
                     appliedPush = density + clearance;
                     SegmentPositions[index] = SanitizeFinite(position + normal * appliedPush, position);
@@ -176,7 +194,7 @@ namespace Hecton8.Animation.IK
             if (invalid)
                 telemetryFlags |= LeviathanTerrainIkConstants.TelemetryFlagInvalid;
 
-            WriteTelemetry(activeCount, telemetryFlags, intended, maxTerrainPush);
+            WriteTelemetry(activeCount, telemetryFlags, intended, maxTerrainPush, tailWhipSecondsRemaining);
         }
 
         private void MoveHead(float dt, float segmentLength, float3 intended, float3 ownerForward)
@@ -224,19 +242,24 @@ namespace Hecton8.Animation.IK
             }
         }
 
-        private void ApplyTailWhip(int activeCount, float segmentLength, float3 ownerForward, float3 up)
+        private void ApplyTailWhip(
+            int activeCount,
+            float segmentLength,
+            float3 ownerForward,
+            float3 up,
+            float tailWhipSecondsRemaining,
+            float tailWhipDurationSeconds,
+            float tailWhipAmplitudeMeters)
         {
-            float duration = math.max(0.1f, TailWhipDurationSeconds);
-            float normalizedAge = math.saturate(1f - TailWhipSecondsRemaining * math.rcp(duration));
+            float normalizedAge = math.saturate(1f - tailWhipSecondsRemaining * math.rcp(tailWhipDurationSeconds));
             float3 side = NormalizeSafe(math.cross(up, ownerForward), new float3(1f, 0f, 0f));
-            float amplitude = math.max(0f, TailWhipAmplitudeMeters);
             int firstTail = math.max(1, activeCount >> 1);
             for (int i = firstTail; i < activeCount; i++)
             {
                 float t = (i - firstTail) * math.rcp(math.max(1, activeCount - firstTail));
                 float wave = CheapSinSigned((normalizedAge * 3.2f) + t * 1.7f);
                 float falloff = t * t;
-                float3 impulse = side * (wave * amplitude * falloff);
+                float3 impulse = side * (wave * tailWhipAmplitudeMeters * falloff);
                 SegmentPositions[i] = SanitizeFinite(SegmentPositions[i] + impulse, SegmentPositions[i - 1] - ownerForward * segmentLength);
             }
         }
@@ -269,19 +292,19 @@ namespace Hecton8.Animation.IK
             }
         }
 
-        private bool TrySampleSdfTrilinear(float3 worldPosition, out float density)
+        private bool TrySampleSdfTrilinear(float3 worldPosition, float3 invCellSize, float sdfRange, out float density)
         {
             density = 0f;
-            if (!TryResolveSdfVoxelCount(VoxelSdfDimensions, out int expectedLength) ||
-                !VoxelSdfTexture3D.IsCreated ||
-                VoxelSdfTexture3D.Length < expectedLength ||
-                VoxelSdfRange <= 0.0001f)
+            if (!VoxelSdfTexture3D.IsCreated ||
+                VoxelSdfDimensions.x <= 1 ||
+                VoxelSdfDimensions.y <= 1 ||
+                VoxelSdfDimensions.z <= 1 ||
+                sdfRange <= 0.0001f)
             {
                 return false;
             }
 
-            float3 safeCell = math.max(VoxelSdfCellSize, new float3(0.0001f));
-            float3 sample = (worldPosition - VoxelSdfOrigin) * math.rcp(safeCell);
+            float3 sample = (worldPosition - VoxelSdfOrigin) * invCellSize;
             if (sample.x < 0f || sample.y < 0f || sample.z < 0f ||
                 sample.x > VoxelSdfDimensions.x - 1f ||
                 sample.y > VoxelSdfDimensions.y - 1f ||
@@ -298,14 +321,14 @@ namespace Hecton8.Animation.IK
             int y1 = math.min(y0 + 1, VoxelSdfDimensions.y - 1);
             int z1 = math.min(z0 + 1, VoxelSdfDimensions.z - 1);
             float3 f = sample - new float3(x0, y0, z0);
-            float c000 = DecodeSdf(SdfIndex(x0, y0, z0));
-            float c100 = DecodeSdf(SdfIndex(x1, y0, z0));
-            float c010 = DecodeSdf(SdfIndex(x0, y1, z0));
-            float c110 = DecodeSdf(SdfIndex(x1, y1, z0));
-            float c001 = DecodeSdf(SdfIndex(x0, y0, z1));
-            float c101 = DecodeSdf(SdfIndex(x1, y0, z1));
-            float c011 = DecodeSdf(SdfIndex(x0, y1, z1));
-            float c111 = DecodeSdf(SdfIndex(x1, y1, z1));
+            float c000 = DecodeSdf(SdfIndex(x0, y0, z0), sdfRange);
+            float c100 = DecodeSdf(SdfIndex(x1, y0, z0), sdfRange);
+            float c010 = DecodeSdf(SdfIndex(x0, y1, z0), sdfRange);
+            float c110 = DecodeSdf(SdfIndex(x1, y1, z0), sdfRange);
+            float c001 = DecodeSdf(SdfIndex(x0, y0, z1), sdfRange);
+            float c101 = DecodeSdf(SdfIndex(x1, y0, z1), sdfRange);
+            float c011 = DecodeSdf(SdfIndex(x0, y1, z1), sdfRange);
+            float c111 = DecodeSdf(SdfIndex(x1, y1, z1), sdfRange);
             float c00 = math.lerp(c000, c100, f.x);
             float c10 = math.lerp(c010, c110, f.x);
             float c01 = math.lerp(c001, c101, f.x);
@@ -316,20 +339,20 @@ namespace Hecton8.Animation.IK
             return math.isfinite(density);
         }
 
-        private bool TryResolveSdfGradient(float3 worldPosition, out float3 normal)
+        private bool TryResolveSdfGradient(float3 worldPosition, float3 invCellSize, float sdfRange, float3 step, out float3 normal)
         {
             normal = new float3(0f, 1f, 0f);
-            float3 step = math.max(VoxelSdfCellSize, new float3(0.05f));
-            bool x0 = TrySampleSdfTrilinear(worldPosition - new float3(step.x, 0f, 0f), out float dx0);
-            bool x1 = TrySampleSdfTrilinear(worldPosition + new float3(step.x, 0f, 0f), out float dx1);
-            bool y0 = TrySampleSdfTrilinear(worldPosition - new float3(0f, step.y, 0f), out float dy0);
-            bool y1 = TrySampleSdfTrilinear(worldPosition + new float3(0f, step.y, 0f), out float dy1);
-            bool z0 = TrySampleSdfTrilinear(worldPosition - new float3(0f, 0f, step.z), out float dz0);
-            bool z1 = TrySampleSdfTrilinear(worldPosition + new float3(0f, 0f, step.z), out float dz1);
+            bool x0 = TrySampleSdfTrilinear(worldPosition - new float3(step.x, 0f, 0f), invCellSize, sdfRange, out float dx0);
+            bool x1 = TrySampleSdfTrilinear(worldPosition + new float3(step.x, 0f, 0f), invCellSize, sdfRange, out float dx1);
+            bool y0 = TrySampleSdfTrilinear(worldPosition - new float3(0f, step.y, 0f), invCellSize, sdfRange, out float dy0);
+            bool y1 = TrySampleSdfTrilinear(worldPosition + new float3(0f, step.y, 0f), invCellSize, sdfRange, out float dy1);
+            bool z0 = TrySampleSdfTrilinear(worldPosition - new float3(0f, 0f, step.z), invCellSize, sdfRange, out float dz0);
+            bool z1 = TrySampleSdfTrilinear(worldPosition + new float3(0f, 0f, step.z), invCellSize, sdfRange, out float dz1);
             if (!x0 || !x1 || !y0 || !y1 || !z0 || !z1)
                 return false;
 
-            float3 gradient = new float3(dx1 - dx0, dy1 - dy0, dz1 - dz0);
+            float3 invStep = math.rcp(math.max(step, new float3(0.0001f)));
+            float3 gradient = new float3((dx1 - dx0) * invStep.x, (dy1 - dy0) * invStep.y, (dz1 - dz0) * invStep.z);
             normal = NormalizeSafe(gradient, new float3(0f, 1f, 0f));
             return math.all(math.isfinite(normal));
         }
@@ -339,17 +362,26 @@ namespace Hecton8.Animation.IK
             height = 0f;
             normal = new float3(0f, 1f, 0f);
             if (!TerrainHeightSamples.IsCreated ||
-                TerrainResolution <= 1 ||
-                TerrainHeightSamples.Length < TerrainResolution * TerrainResolution ||
-                TerrainSize.x <= 0.0001f ||
-                TerrainSize.y <= 0.0001f ||
-                TerrainSize.z <= 0.0001f)
+                !TryResolveTerrainHeightSampleCount(TerrainResolution, out int expectedLength) ||
+                TerrainHeightSamples.Length < expectedLength ||
+                !math.isfinite(worldX) ||
+                !math.isfinite(worldZ) ||
+                !math.all(math.isfinite(TerrainOrigin)) ||
+                !math.all(math.isfinite(TerrainSize)) ||
+                TerrainSize.x <= LeviathanTerrainIkConstants.MinTerrainSize ||
+                TerrainSize.y <= LeviathanTerrainIkConstants.MinTerrainSize ||
+                TerrainSize.z <= LeviathanTerrainIkConstants.MinTerrainSize)
             {
                 return false;
             }
 
-            float normalizedX = math.saturate((worldX - TerrainOrigin.x) * math.rcp(TerrainSize.x));
-            float normalizedZ = math.saturate((worldZ - TerrainOrigin.z) * math.rcp(TerrainSize.z));
+            float localX = worldX - TerrainOrigin.x;
+            float localZ = worldZ - TerrainOrigin.z;
+            if (localX < 0f || localZ < 0f || localX > TerrainSize.x || localZ > TerrainSize.z)
+                return false;
+
+            float normalizedX = math.saturate(localX * math.rcp(TerrainSize.x));
+            float normalizedZ = math.saturate(localZ * math.rcp(TerrainSize.z));
             float sampleX = normalizedX * (TerrainResolution - 1);
             float sampleZ = normalizedZ * (TerrainResolution - 1);
             int x0 = math.clamp((int)math.floor(sampleX), 0, TerrainResolution - 1);
@@ -377,12 +409,12 @@ namespace Hecton8.Animation.IK
             return TerrainHeightSamples[index] * (1f / 65535f) * TerrainSize.y;
         }
 
-        private float DecodeSdf(int index)
+        private float DecodeSdf(int index, float sdfRange)
         {
             if ((uint)index >= (uint)VoxelSdfTexture3D.Length)
-                return -VoxelSdfRange;
+                return -sdfRange;
 
-            return ((VoxelSdfTexture3D[index] * InvEncodedByteMax) * 2f - 1f) * VoxelSdfRange;
+            return ((VoxelSdfTexture3D[index] * InvEncodedByteMax) * 2f - 1f) * sdfRange;
         }
 
         private int SdfIndex(int x, int y, int z)
@@ -390,7 +422,7 @@ namespace Hecton8.Animation.IK
             return (z * VoxelSdfDimensions.y + y) * VoxelSdfDimensions.x + x;
         }
 
-        private void WriteTelemetry(int activeCount, uint flags, float3 intended, float maxTerrainPush)
+        private void WriteTelemetry(int activeCount, uint flags, float3 intended, float maxTerrainPush, float tailWhipSecondsRemaining)
         {
             if (!TelemetryRing.IsCreated || !TelemetryCursor.IsCreated || TelemetryRing.Length <= 0 || TelemetryCursor.Length <= 0)
                 return;
@@ -412,10 +444,21 @@ namespace Hecton8.Animation.IK
                 TailPosition = SanitizeFinite(tail, float3.zero),
                 IntendedVelocity = SanitizeFinite(intended, float3.zero),
                 MaxTerrainPushMeters = math.select(0f, maxTerrainPush, math.isfinite(maxTerrainPush)),
-                TailWhipSecondsRemaining = math.max(0f, TailWhipSecondsRemaining)
+                TailWhipSecondsRemaining = tailWhipSecondsRemaining
             };
             TelemetryRing[index] = entry;
-            TelemetryCursor[0] = cursor == int.MaxValue ? 0 : cursor + 1;
+            if (cursor == int.MaxValue)
+            {
+                int nextIndex = index + 1;
+                if (nextIndex >= TelemetryRing.Length)
+                    nextIndex = 0;
+
+                TelemetryCursor[0] = TelemetryRing.Length + nextIndex;
+            }
+            else
+            {
+                TelemetryCursor[0] = cursor + 1;
+            }
         }
 
         private bool HasInvalidSegment(int activeCount)
@@ -467,6 +510,20 @@ namespace Hecton8.Animation.IK
             return true;
         }
 
+        public static bool TryResolveTerrainHeightSampleCount(int resolution, out int sampleCount)
+        {
+            sampleCount = 0;
+            if (resolution <= 1)
+                return false;
+
+            long count = (long)resolution * resolution;
+            if (count <= 0L || count > int.MaxValue)
+                return false;
+
+            sampleCount = (int)count;
+            return true;
+        }
+
         private static float3 NormalizeSafe(float3 value, float3 fallback)
         {
             float lengthSq = math.lengthsq(value);
@@ -474,6 +531,21 @@ namespace Hecton8.Animation.IK
                 return fallback;
 
             return value * math.rsqrt(lengthSq);
+        }
+
+        private static float SanitizePositiveFinite(float value, float fallback, float minValue)
+        {
+            return math.isfinite(value) ? math.max(value, minValue) : fallback;
+        }
+
+        private static float3 SanitizePositiveFinite(float3 value, float3 fallback, float3 minValue)
+        {
+            return math.all(math.isfinite(value)) ? math.max(value, minValue) : fallback;
+        }
+
+        private static float SanitizeFiniteClamp(float value, float fallback, float minValue, float maxValue)
+        {
+            return math.isfinite(value) ? math.clamp(value, minValue, maxValue) : fallback;
         }
 
         private static float3 SanitizeFinite(float3 value, float3 fallback)

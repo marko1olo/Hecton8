@@ -205,6 +205,7 @@ namespace Hecton8.Crafting
         /// </summary>
         private PowerNode _powerNode;
         private ScanLogSystem _scanLogSystem;
+        private uint _observedScanLogRevision;
         private readonly List<RecipeData> _visibleRecipes = new List<RecipeData>(16);
         private bool _recipeCacheDirty = true;
         private bool _tickRegistered;
@@ -478,7 +479,6 @@ namespace Hecton8.Crafting
             RebuildInteractText();
             TryRegister();
             EnsureScanLogSystem();
-            SubscribeToScanLog();
             MarkRecipeCacheDirty();
             ApplyEmergencyPowerLock(s_emergencyPowerLockActive);
             CacheFabricatorAup();
@@ -491,7 +491,6 @@ namespace Hecton8.Crafting
             BaseLogisticsNetwork.UnregisterFabricator(this);
             LocalizationEvents.UnregisterLanguageListener(this);
             ModRegistryEvents.Unregister(this);
-            UnsubscribeFromScanLog();
             TryUnregisterAssemblyOriginShiftListener();
 
             if (_isCrafting)
@@ -2407,24 +2406,23 @@ namespace Hecton8.Crafting
 
         private void EnsureScanLogSystem()
         {
-            if (_scanLogSystem == null)
-                _scanLogSystem = Hecton8.Core.GlobalRegistry.ScanLog;
+            ScanLogSystem current = Hecton8.Core.GlobalRegistry.ScanLog;
+            if (ReferenceEquals(_scanLogSystem, current))
+                return;
+
+            _scanLogSystem = current;
+            _observedScanLogRevision = current != null ? current.ChangeRevision : 0u;
+            MarkRecipeCacheDirty();
         }
 
-        private void SubscribeToScanLog()
+        private void RefreshScanLogRevision()
         {
-            if (_scanLogSystem != null)
-                _scanLogSystem.ScanLogChanged += HandleScanLogChanged;
-        }
+            EnsureScanLogSystem();
+            uint revision = _scanLogSystem != null ? _scanLogSystem.ChangeRevision : 0u;
+            if (revision == _observedScanLogRevision)
+                return;
 
-        private void UnsubscribeFromScanLog()
-        {
-            if (_scanLogSystem != null)
-                _scanLogSystem.ScanLogChanged -= HandleScanLogChanged;
-        }
-
-        private void HandleScanLogChanged()
-        {
+            _observedScanLogRevision = revision;
             MarkRecipeCacheDirty();
         }
 
@@ -2436,10 +2434,9 @@ namespace Hecton8.Crafting
 
         private void EnsureRecipeCache()
         {
+            RefreshScanLogRevision();
             if (!_recipeCacheDirty)
                 return;
-
-            EnsureScanLogSystem();
 
             _visibleRecipes.Clear();
             _lockedRecipeCount = 0;
@@ -2468,10 +2465,10 @@ namespace Hecton8.Crafting
         private void EnsureRecipeUnlockMask()
         {
             EnsureCraftingScratch();
+            RefreshScanLogRevision();
             if (!_unlockMaskDirty || !_unlockedRecipes.IsCreated)
                 return;
 
-            EnsureScanLogSystem();
             for (int wordIndex = 0; wordIndex < _unlockedRecipes.Length; wordIndex++)
                 _unlockedRecipes[wordIndex] = 0UL;
 

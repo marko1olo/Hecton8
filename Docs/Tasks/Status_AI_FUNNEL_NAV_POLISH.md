@@ -72,10 +72,155 @@ Task Count: 15
 - [x] Compaction tail fail-closed | DOD: if `MaxPathCompactionIterations` is exhausted before the final waypoint, the job now copies the remaining original path tail instead of appending only the final point; rejected dropping unverified waypoints; estimate 9 us.
 - [x] Chronological black-box dump | DOD: NaN dump now writes valid telemetry entries oldest-to-newest with capacity/cursor/sequence metadata; rejected raw circular-array order for postmortem review; estimate 6 us.
 
+## Loop 10 - Voxel Transform Contract Hardening
+
+- [x] Re-read status/rationale and source hot path | DOD: inspected `HasVoxelLineOfSight`, `TryWorldToVoxel`, and grid guards before editing; rejected stale chat assumptions; estimate 10 us.
+- [x] Cell-size finite proof | DOD: LOS compaction now trusts passability/threat grids only when their cell sizes are finite and positive; rejected `math.max` masking of corrupt cell sizes; estimate 5 us.
+- [x] World-to-voxel fail-closed transform | DOD: non-finite world positions, origins, or cell sizes now reject LOS instead of producing undefined voxel indices; rejected smoothing through invalid coordinate transforms; estimate 6 us.
+- [x] DDA cap overflow guard | DOD: grid traversal cap now sums dimensions in `long` before clamping to `MaxThreatDdaSteps`; rejected int overflow in hostile payload dimensions; estimate 3 us.
+- [x] Invalid sample solid fallback | DOD: bad flat indices return `SolidThreatVoxel`; rejected treating corrupt payload holes as open water; estimate 4 us.
+
+## Loop 11 - Fallback Direction Sanitation
+
+- [x] Re-read funnel normalization helper | DOD: self-read found `NormalizeRsqrtOrFallback` still returned raw fallbacks in the live file; rejected trusting prior status text; estimate 5 us.
+- [x] Rsqrt fallback normalization | DOD: valid primary vectors use one `math.rsqrt`, valid fallbacks are normalized with `math.rsqrt`, and only double-invalid inputs return +Z; rejected raw fallback propagation; estimate 4 us.
+
+## Loop 12 - Live Drift Reconciliation
+
+- [x] Re-read scheduler and telemetry source | DOD: compared live files against prior rationale claims and found missing ring written-count and conduit math sanitation; rejected trusting stale status; estimate 12 us.
+- [x] Telemetry valid-count hardening | DOD: added `_abyssalPathTelemetryWrittenCount` so dump valid entry count no longer depends on wrapping sequence IDs; rejected sequence-as-count coupling; estimate 3 us.
+- [x] Conduit scoring reciprocal pass | DOD: replaced average/current strength divisions with `math.rcp` multiplies and ignored non-finite flow vectors for conduit strength; rejected corrupt flow vectors influencing path weighting; estimate 6 us.
+- [x] Managed fallback vector sanitation | DOD: `NormalizeVector3Fast` now finite-checks primary/fallback vectors and normalizes fallback with `math.rsqrt`; rejected raw fallback propagation; estimate 4 us.
+- [x] Portal finite sanitation | DOD: `BuildNavPortal` now rejects whole non-finite portal endpoints and clamps non-finite width squared to epsilon; rejected component-spliced portal endpoints; estimate 4 us.
+
+## Loop 13 - H-Phi Feeder Hardening
+
+- [x] Re-read A* feeder path | DOD: inspected `NativeAStarJob` threat, conduit, and predator fear sampling before editing; rejected polishing funnel output while leaving upstream cost corruption; estimate 13 us.
+- [x] Native A* reciprocal purge | DOD: removed raw `/` from `NativeAStarJob` conduit direction, 2D threat-grid sampling, predator falloff, and threat-voxel decode; rejected relying on compiler divide lowering; estimate 9 us.
+- [x] Exact conduit direction rsqrt | DOD: conduit alignment now normalizes edge delta with `math.rsqrt(math.lengthsq(delta))`; rejected approximate cost distance as a direction normalizer; estimate 3 us.
+- [x] Feeder finite guards | DOD: conduit vectors/strengths, node positions, threat grid center/cell size, predator nodes, threat voxel origin/cell size now reject non-finite payloads; rejected NaN propagation into path costs; estimate 8 us.
+- [x] Threat payload completeness guards | DOD: surface threat and voxel threat grids now require complete native lengths with 64-bit expected-size checks before indexed sampling; rejected treating undersized payloads as valid open water; estimate 6 us.
+- [x] Predator fear retention | DOD: predator fear is preserved when a point is outside the 2D surface threat grid; rejected dropping species-specific fear just because the surface heatmap lacks coverage; estimate 4 us.
+
+## Loop 14 - H-Phi Registry Surface Trim
+
+- [x] Scheduler tier cache | DOD: `GlobalRegistry.ScalabilityTier` is read once per abyssal path schedule and passed as a primitive to both Math LOD resolvers; rejected duplicate registry surface in the scheduling path; estimate 2 us.
+
+## Loop 15 - Nav Graph Ingress Sanitation
+
+- [x] Path request finite gate | DOD: immediate voxel routes and scheduled abyssal A* requests reject non-finite start/end positions before sampling route data; rejected letting NaN enter voxel and terrain probes; estimate 3 us.
+- [x] Chunk nav sampling reciprocal pass | DOD: abyssal chunk node sampling now rejects non-finite bounds/step sizes and uses reciprocal step/sample math; rejected raw `/` in warm graph generation; estimate 6 us.
+- [x] Terrain height sampling guard | DOD: cached height sampling now verifies finite world coordinates, terrain transforms, positive terrain size, and complete heightmap length before bilinear sample; rejected sampling corrupt tile payloads; estimate 7 us.
+- [x] Candidate pool bounds proof | DOD: node candidate resolver now clamps underwater slice bounds with `long`, requires complete matrix/biome/semantic arrays, and treats flow vectors as optional; rejected indexing parallel arrays by matrix length alone; estimate 6 us.
+- [x] Deep-biome slice clamp | DOD: `SliceContainsDeepBiome` now clamps offset/count with `long` before scanning biome layers; rejected int overflow in chunk slice bounds; estimate 3 us.
+- [x] Payload count bound | DOD: nav snapshot rebuild now clamps payload iteration/counting to `payload.Nodes.Length`; rejected trusting a stale serialized Count over native buffer length; estimate 3 us.
+- [x] Nav node snapshot ingress guard | DOD: non-finite payload nodes are skipped before they enter `AbyssalNavNodeSnapshotNative` or the spatial hash; rejected hashing corrupt nodes into a fallback bucket; estimate 5 us.
+- [x] Conduit payload sanitation | DOD: non-finite conduit vectors become zero and non-finite conduit strengths become 0 before snapshot write; rejected poisoning A* conduit weighting downstream; estimate 4 us.
+- [x] Spatial hash reciprocal pass | DOD: nav graph cell coordinate and search-radius math now uses precomputed `math.rcp` and finite origin/cell-size guards; rejected repeated `/` and epsilon masking of corrupt cell sizes; estimate 5 us.
+- [x] Flow support reciprocal pass | DOD: flow-field nav support stencil now precomputes inverse cell size and inverse radius squared, skips non-finite nodes, and rejects invalid grid centers; rejected divide-per-node/per-cell support writes; estimate 6 us.
+
+## Loop 16 - Telemetry Reciprocal Cleanup
+
+- [x] Funnel timing reciprocal pass | DOD: `ResolveAbyssalPathElapsedMs` now converts stopwatch ticks with `math.rcp((double)Stopwatch.Frequency)`; rejected raw `/` in path telemetry conversion; estimate 1 us.
+
+## Loop 17 - Burst A* Workspace Guard
+
+- [x] A* workspace completeness | DOD: `NativeAStarJob` now requires parent/score/closed/heap arrays to be created and at least `Nodes.Length` before writing; rejected trusting scheduler capacity blindly; estimate 5 us.
+- [x] A* finite authority guards | DOD: non-finite start/end positions, start/end nodes, current nodes, neighbor nodes, distance squared, and tentative costs fail closed or skip; rejected NaN propagation into heap scores; estimate 8 us.
+- [x] A* non-negative weighting | DOD: threat weight is clamped non-negative and vertical allowance is clamped >= 0 before edge acceptance; rejected negative route costs or inverted vertical gates; estimate 4 us.
+
+## Loop 18 - A* Reconstruction And Raw Path Fail-Closed
+
+- [x] A* path capacity proof | DOD: `NativeAStarJob` now requires `Path.Capacity >= min(Nodes.Length, MaxPathReconstructionIterations) + 2` before `AddNoResize`; rejected relying only on owner allocation; estimate 3 us.
+- [x] A* finite score sanitation | DOD: start/neighbor heuristics, distance estimates, current G scores, and resolved F scores must be finite before heap writes; rejected letting overflowed finite inputs poison priority ordering; estimate 6 us.
+- [x] A* parent-chain proof | DOD: reconstruction now requires a bounded valid parent chain to `StartNode`, capped by `min(Nodes.Length, MaxPathReconstructionIterations)`, and clears partial paths on broken/cyclic chains; rejected appending start position after an unproven path tail; estimate 5 us.
+- [x] Funnel raw waypoint finite gate | DOD: `StringPullPathJob` now requires output capacity and all raw waypoints finite before emitting smoothed waypoints; rejected writing NaN/Infinity into the visible path and relying on post-copy cleanup; estimate 5 us.
+- [x] Raw-path black-box finite scan | DOD: empty-output telemetry now scans the raw path for interior non-finite waypoints, not only endpoints; rejected endpoint-only fault detection; estimate 4 us.
+- [x] Batch prompt rotation recorded | DOD: current `Docs/Tasks/CURRENT_BATCH.md` no longer contains `AI_FUNNEL_NAV_POLISH`; continued from persisted status/rationale instead of borrowing neighboring prompts; estimate 0 us.
+
+## Loop 19 - H-Phi Reciprocal Sweep
+
+- [x] Dominant-axis finite fallback | DOD: shared `DominantAxisOrDefault` helpers now reject non-finite input vectors and non-finite fallbacks instead of fabricating axis signs from NaN; rejected raw NaN comparisons; estimate 4 us.
+- [x] Navigation-support reciprocal cleanup | DOD: speed inverse-lerp, retention, flow-field sampling, structure-grid mapping, threat propagation, flow obstacle gating, thermal/depth bands, wake gates, and HLOD fade now use reciprocal/multiply or literal reciprocal constants; rejected hot scalar `/`; estimate 12 us.
+- [x] Structure-grid finite guards | DOD: artificial-structure cell range/index helpers reject non-finite grid centers, positions, AABBs, or bad cell sizes before hashing; rejected epsilon-masking corrupt transforms into plausible cells; estimate 5 us.
+- [x] Raw division audit | DOD: broad scan of `VegetationFlowFieldIntegrator.cs` and `VegetationNavGridSynchronizer.cs` now reports only integer index decomposition divisions; rejected changing integral grid math to approximate reciprocal; estimate 8 us.
+
+## Loop 20 - Bridge Sampler And Hash Payload Proof
+
+- [x] Threat-sampling chunk hash finite proof | DOD: bridge threat chunk hash estimation/stamping rejects non-finite grid centers, cell sizes, and bounds before reciprocal cell mapping; rejected hashing corrupt chunks into plausible threat buckets; estimate 6 us.
+- [x] Artificial-structure hash finite proof | DOD: structure hash estimation/stamping rejects non-finite grid centers, cell sizes, chunk bounds, and record bounds before reciprocal cell mapping; rejected epsilon-masking bad transforms; estimate 6 us.
+- [x] Abyssal flow-volume sampler proof | DOD: public flow sampling now requires finite water/depth extents, finite sampled output, and a 64-bit complete native-volume length before trilinear reads; rejected trusting initialization flags alone; estimate 5 us.
+- [x] Threat/echo sampler payload proof | DOD: surface threat and echo samplers now require 64-bit complete grid lengths and finite extents before indexed reads; non-finite interpolated threat resolves to zero influence instead of NaN; estimate 5 us.
+- [x] Targeted bridge scan | DOD: target-domain bridge ranges for flow volume, threat metadata, threat hashes, threat sampler, and echo samplers report no raw float division or forbidden hot-math matches; rejected claiming broad bridge purity because canopy/terrain code is outside this prompt; estimate 9 us.
+
+## Loop 21 - Threat Service And Nearest-Node Fail-Closed
+
+- [x] External threat pulse sanitation | DOD: threat pulse ingress rejects non-finite position/radius/strength/hold duration before writing route-pressure state; rejected clamping NaN into a live hotspot; estimate 3 us.
+- [x] Artificial-structure registration sanitation | DOD: structure bounds now require finite center/size and positive volume before insertion or invalidation; rejected storing corrupt damping bounds and relying on later hash guards; estimate 4 us.
+- [x] Flow/conduit API finite proof | DOD: public flow fallback and conduit-vector queries reject non-finite positions, non-finite player fallback, stale managed conduit arrays, non-finite conduit vectors, and non-finite strength; rejected returning NaN steering vectors to fauna consumers; estimate 6 us.
+- [x] Threat-hotspot complete-grid proof | DOD: hotspot scan requires finite grid metadata, finite distance band inputs, finite player position, complete native grid length, and finite threat samples; rejected trusting grid resolution alone before O(N) indexed scan; estimate 6 us.
+- [x] Nearest-node count clamp | DOD: nearest-node linear and hash lookup now clamp `_abyssalNavNodeCount` to both managed snapshot length and native snapshot length before indexing; rejected assuming snapshot count stayed coherent under failed rebuilds; estimate 5 us.
+- [x] Service/hash static scan | DOD: `VegetationThreatAndStructureService.cs` and nearest-node ranges report no raw float division or forbidden hot-math/allocation matches after loop 21; estimate 5 us.
+
+## Loop 22 - Flow Sampler Payload Proof
+
+- [x] Flow-field complete-grid proof | DOD: shared flow-field sampler now requires 64-bit `resolution * resolution` length proof before bilinear native reads; rejected trusting created native array plus resolution metadata; estimate 4 us.
+- [x] Flow-field finite extent proof | DOD: sampler rejects non-finite half-extent before local coordinate mapping; rejected allowing corrupt cell size/resolution to fabricate indices; estimate 3 us.
+- [x] Flow sampler static scan | DOD: targeted flow sampler range reports no raw float division or forbidden hot-math/allocation matches after loop 22; estimate 3 us.
+
+## Loop 23 - Threat/Flow Payload Boundary Proof
+
+- [x] Compute audit context read | DOD: read `COMPUTE_AUDIT_BRIEF.md` and `Docs/Reports/COMPUTE_DOMINANCE_REPORT.md`; rejected editing H-Phi reports without a completed local audit; estimate 0 us.
+- [x] Batch prompt re-extraction | DOD: CLI regex confirmed `AI_FUNNEL_NAV_POLISH` is absent from current `CURRENT_BATCH.md`; continued from persisted state instead of borrowing active prompts; estimate 0 us.
+- [x] Flow payload export proof | DOD: `TryGetEcosystemFlowFieldPayload` now requires finite metadata and complete square-grid state before exposing native flow vectors; rejected trusting `_flowFieldInitialized` alone; estimate 3 us.
+- [x] Wake/pulse ingress finite gate | DOD: swarm wake and external threat pulse state now reject non-finite positions, vectors, radii, strengths, and timers before mutating route pressure; rejected clamping NaN into steering state; estimate 4 us.
+- [x] Hotspot local scan proof | DOD: hotspot scan now requires complete threat-grid state, finite grid center/cell size, finite threat samples, and finite player Y fallback; rejected O(N) scan over stale native length; estimate 5 us.
+- [x] Public threat payload proof | DOD: float, compressed, echo, and voxel threat payload getters now require complete square/voxel grid length, declared cell-count coherence, and finite metadata before returning created arrays; rejected exposing partial native payloads to fauna/path consumers; estimate 6 us.
+- [x] Boundary static scan | DOD: targeted changed ranges report no forbidden hot math/allocation and only one existing integer grid-index division; `git diff --check` passed with LF/CRLF warnings only; estimate 4 us.
+
+## Loop 24 - Direct Native View Clamp
+
+- [x] Direct flow view clamp | DOD: `EcosystemFlowField` now routes through finite metadata and complete square-grid proof; rejected bypassing the safer `TryGetEcosystemFlowFieldPayload`; estimate 2 us.
+- [x] Nav-node view count clamp | DOD: `ActiveAbyssalNavNodesNative` and `ActiveAbyssalNavNodeCount` now clamp to managed and native snapshot lengths before exposure; rejected exporting stale `_abyssalNavNodeCount`; estimate 3 us.
+- [x] Completed path view clamp | DOD: `ActiveAbyssalPathNative` and `ActiveAbyssalPathCount` now fail closed when the native path buffer is missing and clamp count to native length; rejected exposing partial path buffers past valid count; estimate 3 us.
+- [x] Direct view static scan | DOD: changed direct-view ranges report no raw division, forbidden hot math, managed allocation, or `foreach`; `git diff --check` passed with LF/CRLF warnings only; estimate 4 us.
+
+## Loop 25 - Nav Graph Payload Count Proof
+
+- [x] Thermal/flow export recheck | DOD: confirmed abyssal thermal and flow volume exports use complete native length and finite metadata proof; rejected further changes after source already contained the guard state; estimate 2 us.
+- [x] Anchor payload recheck | DOD: confirmed direct anchor and AUP payloads clamp counts to managed/native lengths; rejected touching sonar/UI consumers from this navigation pass; estimate 2 us.
+- [x] Node type count clamp | DOD: `TryGetActiveAbyssalNavNodeTypePayload` now uses `ResolveAbyssalNavNodeTypeViewCount` so type payload count is clamped to node and type array lengths without requiring conduit arrays; rejected raw `_abyssalNavNodeCount`; estimate 3 us.
+- [x] Nav graph payload scan | DOD: thermal/flow export, anchor/nav graph payload, and view-helper ranges report no raw division, forbidden hot math, managed allocation, or `foreach`; `git diff --check` passed with LF/CRLF warnings only; estimate 4 us.
+
+## Loop 26 - Conduit Payload Count Decoupling
+
+- [x] Conduit-only count proof | DOD: added `ResolveAbyssalConduitViewCount` so current-conductor payloads clamp to node, conduit-vector, and conduit-strength buffers without requiring node-type metadata; rejected over-coupling optional classification data to current steering; estimate 3 us.
+- [x] Full graph count composition | DOD: `ResolveAbyssalNavGraphViewCount` now composes conduit proof plus node-type proof, preserving stricter full-graph export while avoiding duplicated conduit clamps; rejected two diverging graph count implementations; estimate 2 us.
+- [x] Conduit payload scan | DOD: changed conduit/view-count ranges report no raw division, forbidden hot math, managed allocation, or `foreach`; `git diff --check` was rerun with dotnet rebuilds prohibited; estimate 3 us.
+
+## Loop 27 - Voxel Macro Obstacle Snapshot Proof
+
+- [x] Cross-domain justification | DOD: limited `VoxelDynamicNavGridRuntime` edit to the vegetation-to-voxel macro-obstacle interface used by macro portal routing before funnel smoothing; rejected broad voxel navgrid math rewrites outside this prompt; estimate 1 us.
+- [x] Count/write parity proof | DOD: macro flora obstacle counting now uses the same `TryResolveMacroFloraObstacleWorldBounds` proof as writing, preventing uninitialized snapshot tails when invalid matrices are skipped; rejected metadata-only pre-counting; estimate 5 us.
+- [x] Finite bounds gate | DOD: obstacle bounds now require finite runtime root, offset, center, and positive finite extents before entering the snapshot; rejected fabricating obstacle centers from corrupt matrices; estimate 4 us.
+- [x] Snapshot capacity clamp | DOD: macro flora writer clamps to remaining snapshot capacity before writes; rejected assuming count/write never drift under concurrent payload churn; estimate 3 us.
+- [x] Macro obstacle static scan | DOD: changed VoxelDynamic nav ranges report no raw division, forbidden hot math, managed allocation, or `foreach`; dotnet rebuilds remain prohibited; estimate 4 us.
+
 ## Verification
 
-- [x] Static scan | PASS: `StringPullPathJob` region has no `math.normalize`, `math.length(`, `math.distance(`, or raw `/` matches after the LOD upgrade.
-- [x] Compile check | PASS: latest parsed `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false` succeeded with 0 warnings and 0 errors after the tail-safety pass.
-- [x] PlayMode test assembly build | PASS: `dotnet build Hecton8.PlayModeTests.csproj --no-restore /m:1 /nr:false` succeeded with 0 warnings and 0 errors.
+- [x] Static scan | PASS: `StringPullPathJob`, `NativeAStarJob`, `TryResolveAbyssalNavNodeCandidate`, abyssal nav support/hash, nav graph ingress, and funnel telemetry conversion regions have no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/` code matches after loop 19.
+- [x] Bridge targeted scan | PASS: flow-volume, threat metadata, threat chunk hash, artificial-structure hash, threat sampler, and echo sampler ranges in `HectonMapMagicVegetationBridge.cs` have no raw float-division or forbidden hot-math matches after loop 20.
+- [x] Threat-service targeted scan | PASS: `VegetationThreatAndStructureService.cs` and nearest-node lookup ranges in `VegetationNavGridSynchronizer.cs` have no raw float-division or forbidden hot-math/allocation matches after loop 21.
+- [x] Flow sampler targeted scan | PASS: `SampleFlowFieldAtPosition` range has no raw float-division or forbidden hot-math/allocation matches after loop 22.
+- [x] Payload boundary targeted scan | PASS: `TryGetEcosystemFlowFieldPayload`, wake/pulse ingress, hotspot update, threat payload getters, and threat grid view helpers report no forbidden hot math/allocation; the only `/` hit is integer index decomposition in hotspot decode.
+- [x] Direct native view targeted scan | PASS: direct flow/nav-node/path view helpers report no raw division, forbidden hot math, managed allocation, or `foreach`.
+- [x] Nav graph payload targeted scan | PASS: thermal/flow exports, anchor/nav-node/conduit payload getters, native nav graph getter, and new node-type view-count helper report no raw division, forbidden hot math, managed allocation, or `foreach`.
+- [x] Conduit payload targeted scan | PASS: `ResolveAbyssalConduitViewCount`, `ResolveAbyssalNavGraphViewCount`, and `TryGetAbyssalCurrentConduitPayload` report no raw division, forbidden hot math, managed allocation, or `foreach`.
+- [x] Voxel macro obstacle targeted scan | PASS: macro flora obstacle count/write and finite-bounds ranges in `VoxelDynamicNavGridRuntime.cs` report no raw division, forbidden hot math, managed allocation, or `foreach`.
+- [x] Diff hygiene | PASS: `git diff --check` passed for touched source/status/rationale/log files; only LF-to-CRLF working-copy warnings were emitted.
+- [x] Static H-Phi audit | ATTEMPTED: `Tools/Architecture/HectonPhiAudit.ps1 -Json` timed out after 120 seconds under current repo load; no score claimed from this pass.
+- [x] Compile check | BLOCKED BY DEPENDENCY: bounded no-reference `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false /p:BuildProjectReferences=false` completed with 63 unrelated errors in `VRAMEnforcer`, `VoxelDeltaProcessor`, `SealedDoor`, `BinaryLayoutManifest`, and `HardwareTierDetector`; none were reported in `VegetationFlowFieldIntegrator.cs`, `VegetationNavGridSynchronizer.cs`, or `HectonMapMagicVegetationBridge.cs`.
+- [x] Dotnet rebuilds | NOT RERUN AFTER LOOP 13: user explicitly prohibited dotnet rebuilds; static scans and diff hygiene only.
+- [x] PlayMode test assembly build | NOT RERUN AFTER LOOP 12: Core source build is currently blocked by unrelated global dependency errors.
 - [x] Unity console | BLOCKED BY TOOLING: Unity MCP `validate_script` transport failed against `http://127.0.0.1:8088/mcp`.
-- [x] Omega polish mandate | COMPLETE WITH PENDING VERIFICATION: Core build is green; Unity/Burst editor validation remains blocked by MCP transport.
+- [x] Omega polish mandate | COMPLETE WITH PENDING VERIFICATION: static funnel checks pass; current Core/Unity validation is blocked by unrelated global compile errors and MCP transport.

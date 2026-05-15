@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Unity.Collections;
 
 namespace Hecton8.Core
@@ -5,6 +6,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Aggregate storage snapshot published by the global power runtime.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct BatteryRuntimeSnapshot
     {
         /// <summary>Total committed stored energy across all runtime banks.</summary>

@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Memory.Layout;
+using Unity.Collections;
 using Unity.Mathematics;
 
 namespace Hecton8.SaveSystem

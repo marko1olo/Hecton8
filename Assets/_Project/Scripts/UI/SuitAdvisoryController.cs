@@ -2,6 +2,7 @@ using System;
 using Hecton8.Audio;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using UnityEngine;
 
@@ -9,7 +10,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Suit Advisory Controller")]
-    public sealed class SuitAdvisoryController : MonoBehaviour, IBaseIntegrityEventListener
+    public sealed class SuitAdvisoryController : MonoBehaviour, IBaseIntegrityEventListener, ILateFrameTickable
     {
         [Header("References")]
         [SerializeField] private HectonSurvivalSystem survival;
@@ -48,6 +49,9 @@ namespace Hecton8.UI
         private bool _bleedingWarned;
         private bool _fractureWarned;
         private bool _deathTriggered;
+        private bool _registeredForSurvivalSignals;
+        private uint _survivalSignalSourceId;
+        private uint _lastSurvivalSignalSequence;
         private FixedCharBuffer _advisoryMessageBuffer = new FixedCharBuffer(192); // COLD ALLOC: char[192] - suit advisory notification staging buffer - owner: SuitAdvisoryController
 
         private const string MsgOxygenWarning = "OXYGEN RESERVES LOW";
@@ -79,18 +83,22 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             ResolveReferences();
+            RefreshSurvivalSignalBinding();
             Subscribe();
             EvaluateAll();
+            RegisterSurvivalSignalPump();
         }
 
         private void OnDisable()
         {
             Unsubscribe();
+            UnregisterSurvivalSignalPump();
         }
 
         private void OnDestroy()
         {
             Unsubscribe();
+            UnregisterSurvivalSignalPump();
             BaseIntegrityEvents.AssertUnregistered(this, nameof(SuitAdvisoryController));
         }
 
@@ -115,34 +123,10 @@ namespace Hecton8.UI
         private void Subscribe()
         {
             BaseIntegrityEvents.Register(this);
-
-            if (survival == null)
-                return;
-
-            survival.OnOxygenChanged += HandleOxygenChanged;
-            survival.OnEnergyChanged += HandleEnergyChanged;
-            survival.OnIntegrityChanged += HandleIntegrityChanged;
-            survival.OnDepthChanged += HandleDepthChanged;
-            survival.OnTemperatureChanged += HandleTemperatureChanged;
-            survival.ThermalStateChanged += HandleThermalStateChanged;
-            survival.OnDeath += HandleDeath;
-            survival.InjuryStateChanged += HandleInjuryStateChanged;
         }
 
         private void Unsubscribe()
         {
-            if (survival != null)
-            {
-                survival.OnOxygenChanged -= HandleOxygenChanged;
-                survival.OnEnergyChanged -= HandleEnergyChanged;
-                survival.OnIntegrityChanged -= HandleIntegrityChanged;
-                survival.OnDepthChanged -= HandleDepthChanged;
-                survival.OnTemperatureChanged -= HandleTemperatureChanged;
-                survival.ThermalStateChanged -= HandleThermalStateChanged;
-                survival.OnDeath -= HandleDeath;
-                survival.InjuryStateChanged -= HandleInjuryStateChanged;
-            }
-
             BaseIntegrityEvents.Unregister(this);
         }
 
@@ -165,25 +149,111 @@ namespace Hecton8.UI
             }
         }
 
-        private void EvaluateAll()
+        public void LateFrameTick()
         {
             if (survival == null)
+                ResolveReferences();
+
+            RefreshSurvivalSignalBinding();
+            if (_survivalSignalSourceId == 0u)
                 return;
 
-            HandleOxygenChanged(survival.Oxygen);
-            HandleEnergyChanged(survival.Energy);
-            HandleIntegrityChanged(survival.Integrity);
+            ReadOnlySpan<SurvivalVitalsChangedSignal> signals = SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ref readonly SurvivalVitalsChangedSignal signal = ref signals[i];
+                if (signal.SourceId != _survivalSignalSourceId)
+                    continue;
+
+                if (signal.Sequence == 0u || signal.Sequence == _lastSurvivalSignalSequence)
+                    continue;
+
+                _lastSurvivalSignalSequence = signal.Sequence;
+                ProcessSurvivalVitalsSignal(in signal);
+            }
+        }
+
+        private void ProcessSurvivalVitalsSignal(in SurvivalVitalsChangedSignal signal)
+        {
+            uint flags = signal.Flags;
+            if ((flags & SurvivalVitalsChangedSignalFlags.Oxygen) != 0u)
+                HandleOxygenChanged(signal.Oxygen01);
+
+            if ((flags & SurvivalVitalsChangedSignalFlags.Energy) != 0u)
+                HandleEnergyChanged(signal.Energy01);
+
+            if ((flags & SurvivalVitalsChangedSignalFlags.Integrity) != 0u)
+                HandleIntegrityChanged(signal.Integrity01);
+
+            if ((flags & SurvivalVitalsChangedSignalFlags.Depth) != 0u)
+                HandleDepthChanged(survival != null ? survival.Depth : 0f);
+
+            if ((flags & (SurvivalVitalsChangedSignalFlags.Temperature | SurvivalVitalsChangedSignalFlags.Thermal)) != 0u)
+                HandleThermalStateChanged();
+
+            if ((flags & SurvivalVitalsChangedSignalFlags.Injury) != 0u)
+                HandleInjuryStateChanged();
+
+            if ((flags & SurvivalVitalsChangedSignalFlags.Death) != 0u)
+                HandleDeath();
+        }
+
+        private void RefreshSurvivalSignalBinding()
+        {
+            uint sourceId = ResolveSurvivalSignalSourceId(survival);
+            if (_survivalSignalSourceId == sourceId)
+                return;
+
+            _survivalSignalSourceId = sourceId;
+            _lastSurvivalSignalSequence = 0u;
+        }
+
+        private static uint ResolveSurvivalSignalSourceId(HectonSurvivalSystem system)
+        {
+            return system != null
+                ? GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(system.GetEntityId()))
+                : 0u;
+        }
+
+        private void RegisterSurvivalSignalPump()
+        {
+            if (_registeredForSurvivalSignals || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredForSurvivalSignals = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
+        private void UnregisterSurvivalSignalPump()
+        {
+            if (!_registeredForSurvivalSignals)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            _registeredForSurvivalSignals = false;
+        }
+
+        private void EvaluateAll()
+        {
+            if (survival == null || survival.Stats == null)
+                return;
+
+            HandleOxygenChanged(survival.OxygenNormalized);
+            HandleEnergyChanged(survival.EnergyNormalized);
+            HandleIntegrityChanged(survival.IntegrityNormalized);
             HandleDepthChanged(survival.Depth);
             HandleTemperatureChanged(survival.EnvironmentTemperature);
             HandleInjuryStateChanged();
         }
 
-        private void HandleOxygenChanged(float _)
+        private void HandleOxygenChanged(float normalized)
         {
-            if (survival == null || survival.Stats == null)
+            if (survival == null)
                 return;
 
-            float normalized = survival.OxygenNormalized;
+            normalized = Mathf.Clamp01(normalized);
 
             if (!_oxygenCritical && normalized <= oxygenCriticalThreshold)
             {
@@ -207,12 +277,12 @@ namespace Hecton8.UI
             }
         }
 
-        private void HandleEnergyChanged(float _)
+        private void HandleEnergyChanged(float normalized)
         {
-            if (survival == null || survival.Stats == null)
+            if (survival == null)
                 return;
 
-            float normalized = survival.EnergyNormalized;
+            normalized = Mathf.Clamp01(normalized);
             if (!_energyWarned && normalized <= energyWarningThreshold)
             {
                 _energyWarned = true;
@@ -223,12 +293,12 @@ namespace Hecton8.UI
                 _energyWarned = false;
         }
 
-        private void HandleIntegrityChanged(float _)
+        private void HandleIntegrityChanged(float normalized)
         {
-            if (survival == null || survival.Stats == null)
+            if (survival == null)
                 return;
 
-            float normalized = survival.IntegrityNormalized;
+            normalized = Mathf.Clamp01(normalized);
 
             if (!_integrityCritical && normalized <= integrityCriticalThreshold)
             {

@@ -10,22 +10,43 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Hecton8.Gameplay.Loot
 {
+    /// <summary>
+    /// Burst-backed loot magnet scheduler that keeps acquisition truth in AUP-space vault buffers.
+    /// </summary>
+    [DisallowMultipleComponent]
     public sealed class LootMagnetSystem : MonoBehaviour, IFastTickable, ISlowTickable, ILateFrameTickable
     {
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_PHYS_MAGNETIC_LOOT_ACQUISITION.bin";
         private const string RuntimeObjectName = "[LootMagnetSystem]";
         private const uint TelemetryFaultFlag = 1u;
+        private const uint TelemetryAcousticBudgetDropFlag = 1u << 1;
+        private const uint TelemetryWakeBudgetDropFlag = 1u << 2;
+        private const uint TelemetryInventoryMissingFlag = 1u << 3;
+        private const uint TelemetryAcquisitionBudgetDeferFlag = 1u << 4;
+        private const uint TelemetryPlayerPoseMissingFlag = 1u << 5;
+        private const uint TelemetryVaultUnavailableFlag = 1u << 6;
+        private const uint TelemetryPickupRegistrySaturatedFlag = 1u << 7;
+        private const uint TelemetryDumpMagic = 0x48384C4Du;
+        private const uint TelemetryDumpVersion = 2u;
+        private const uint TelemetryHashOffset = 2166136261u;
+        private const uint TelemetryHashPrime = 16777619u;
 
         private static LootMagnetSystem _bootstrapRuntime;
+        private static bool _sceneLoadedHooked;
 
         [Header("Pull")]
-        [SerializeField] private int maxLootEntities = LootMagnetConstants.DefaultMaxEntities;
-        [SerializeField] private float pullRadiusMeters = LootMagnetConstants.DefaultPullRadiusMeters;
-        [SerializeField] private float pullStrength = LootMagnetConstants.DefaultPullStrength;
-        [SerializeField] private float maxVelocityMetersPerSecond = LootMagnetConstants.DefaultMaxVelocityMetersPerSecond;
+        [Tooltip("Maximum pickup proxies mirrored into loot vault buffers. Clamped again at runtime.")]
+        [SerializeField, Range(1, LootMagnetConstants.MaxEntitiesHardCap)] private int maxLootEntities = LootMagnetConstants.DefaultMaxEntities;
+        [Tooltip("Magnet acquisition radius in meters. Values below auto-stow distance are clamped at runtime.")]
+        [SerializeField, Min(LootMagnetConstants.AcquireDistanceMeters)] private float pullRadiusMeters = LootMagnetConstants.DefaultPullRadiusMeters;
+        [Tooltip("AUP-space pull acceleration scalar applied by the Burst job.")]
+        [SerializeField, Min(0f)] private float pullStrength = LootMagnetConstants.DefaultPullStrength;
+        [Tooltip("Maximum loot velocity applied by the Burst job in meters per second.")]
+        [SerializeField, Min(0.01f)] private float maxVelocityMetersPerSecond = LootMagnetConstants.DefaultMaxVelocityMetersPerSecond;
 
         private IDataVault _vault;
         private IPlayerRuntimeContext _playerContext;
@@ -42,7 +63,7 @@ namespace Hecton8.Gameplay.Loot
 
         // COLD ALLOC: managed sidecars mirror vault slots only for legacy visual proxy/inventory commit.
         private PickupItem[] _pickupRefs;
-        private int[] _pickupInstanceIds;
+        private ulong[] _pickupEntityIds;
         private JobHandle _pullHandle;
         private bool _pullScheduled;
         private bool _registeredFastTick;
@@ -51,36 +72,59 @@ namespace Hecton8.Gameplay.Loot
         private bool _dumpedFault;
         private int _activeCount;
         private int _scheduledCount;
+        private int _scheduledCapacity;
         private int _telemetryIndex;
+        private uint _telemetryFrameCounter;
+        private uint _lastTelemetryRecordedFrame;
         private uint _frameCounter;
+        private byte _scalabilityTier;
+        private byte _pendingScalabilityTier;
+        private byte _pendingScalabilityTierTicks;
+        private bool _scalabilityTierInitialized;
         private AbsoluteUniversePosition _lastPlayerAup;
+        private float _scheduledPullRadiusMeters;
+        private float _scheduledPullRadiusSq;
+        private uint _dependencyTelemetryFlags;
+        private uint _registryTelemetryFlags;
+        private uint _registryFlagsHash;
 
-        private int Capacity => math.clamp(maxLootEntities, 1, LootMagnetConstants.DefaultMaxEntities);
+        private int Capacity => math.clamp(maxLootEntities, 1, LootMagnetConstants.MaxEntitiesHardCap);
 
-        private bool IsLowTier => GlobalRegistry.ScalabilityTierProfileByte == 0;
+        private bool IsLowTier => _scalabilityTier == 0;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetBootstrapState()
         {
+            if (_sceneLoadedHooked)
+                SceneManager.sceneLoaded -= HandleSceneLoaded;
+
             _bootstrapRuntime = null;
+            _sceneLoadedHooked = false;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureRuntimeInstalled()
         {
+            EnsureSceneLoadedHook();
             if (_bootstrapRuntime != null)
                 return;
 
-            LootMagnetSystem existing = Object.FindAnyObjectByType<LootMagnetSystem>();
-            if (existing != null)
-            {
-                _bootstrapRuntime = existing;
-                return;
-            }
-
-            GameObject runtimeRoot = new GameObject(RuntimeObjectName); // COLD ALLOC: GameObject[1] - bootstrap-owned loot magnet scheduler - owner: LootMagnetSystem
-            Object.DontDestroyOnLoad(runtimeRoot);
+            GameObject runtimeRoot = new GameObject(RuntimeObjectName); // COLD ALLOC: GameObject[1] - scene-owned loot magnet scheduler - owner: LootMagnetSystem
             _bootstrapRuntime = runtimeRoot.AddComponent<LootMagnetSystem>();
+        }
+
+        private static void EnsureSceneLoadedHook()
+        {
+            if (_sceneLoadedHooked)
+                return;
+
+            SceneManager.sceneLoaded += HandleSceneLoaded;
+            _sceneLoadedHooked = true;
+        }
+
+        private static void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            EnsureRuntimeInstalled();
         }
 
         private void Awake()
@@ -102,6 +146,9 @@ namespace Hecton8.Gameplay.Loot
             EnsureManagedSidecars();
             EnsureSignalEvents();
             EnsureTelemetry();
+            if (!_signalEvents.IsCreated || !_telemetry.IsCreated)
+                return;
+
             RefreshDependencies();
             if (EnsureVaultBuffers())
                 RefreshPickupVaultFromRegistry();
@@ -110,7 +157,9 @@ namespace Hecton8.Gameplay.Loot
 
         private void OnDisable()
         {
-            ForceCompletePendingJob();
+            if (ForceCompletePendingJob() && CanCommitCompletedJob())
+                CommitVaultResultsToManagedProxies();
+
             TryUnregisterTicks();
             DisposeSignalEvents();
             DisposeTelemetry();
@@ -122,9 +171,10 @@ namespace Hecton8.Gameplay.Loot
                 _bootstrapRuntime = null;
         }
 
+        /// <inheritdoc />
         public void FastTick(float dt)
         {
-            if (IsLowTier || _pullScheduled || _activeCount <= 0)
+            if (IsLowTier || _pullScheduled || _activeCount <= 0 || _inventory == null)
                 return;
 
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
@@ -133,10 +183,14 @@ namespace Hecton8.Gameplay.Loot
             SchedulePull(math.max(0.0001f, dt), playerAup, lowTierSnap: false);
         }
 
+        /// <inheritdoc />
         public void SlowTick()
         {
             RefreshDependencies();
             if (_pullScheduled)
+                return;
+
+            if (_inventory == null)
                 return;
 
             if (!EnsureVaultBuffers())
@@ -150,17 +204,29 @@ namespace Hecton8.Gameplay.Loot
                 SchedulePull(0.1f, playerAup, lowTierSnap: true);
         }
 
+        /// <inheritdoc />
         public void LateFrameTick()
         {
+            _telemetryFrameCounter++;
             if (!_pullScheduled)
+            {
+                TryResolvePlayerAup(out _);
+                _lastCommittedAcquiredCount = 0u;
+                _lastCommittedFlagsHash = _registryFlagsHash;
+                _lastCommittedFlags = _dependencyTelemetryFlags |
+                                      _registryTelemetryFlags |
+                                      (_inventory == null ? TelemetryInventoryMissingFlag : 0u);
+                RecordTelemetry(_telemetryFrameCounter);
                 return;
+            }
 
             if (!DispatcherJobSwap.TryComplete(ref _pullHandle, forceComplete: false))
                 return;
 
             _pullScheduled = false;
             CommitVaultResultsToManagedProxies();
-            RecordTelemetry();
+            if (_lastTelemetryRecordedFrame != _telemetryFrameCounter)
+                RecordTelemetry(_telemetryFrameCounter);
         }
 
         private void TryRegisterTicks()
@@ -204,13 +270,63 @@ namespace Hecton8.Gameplay.Loot
                 ? _playerContext.Inventory
                 : GlobalRegistry.PlayerInventoryRuntime;
             _playerTransform = _playerContext != null ? _playerContext.PlayerTransform : null;
+            _dependencyTelemetryFlags = 0u;
+            if (_vault == null)
+                _dependencyTelemetryFlags |= TelemetryVaultUnavailableFlag;
+
+            if (_inventory == null)
+                _dependencyTelemetryFlags |= TelemetryInventoryMissingFlag;
+
+            if (_playerContext == null && _playerTransform == null)
+                _dependencyTelemetryFlags |= TelemetryPlayerPoseMissingFlag;
+
+            RefreshScalabilityTier();
+        }
+
+        private void RefreshScalabilityTier()
+        {
+            byte requestedTier = GlobalRegistry.ScalabilityTierProfileByte;
+            if (!_scalabilityTierInitialized)
+            {
+                _scalabilityTier = requestedTier;
+                _pendingScalabilityTier = requestedTier;
+                _pendingScalabilityTierTicks = 0;
+                _scalabilityTierInitialized = true;
+                return;
+            }
+
+            if (requestedTier == _scalabilityTier)
+            {
+                _pendingScalabilityTier = requestedTier;
+                _pendingScalabilityTierTicks = 0;
+                return;
+            }
+
+            if (requestedTier != _pendingScalabilityTier)
+            {
+                _pendingScalabilityTier = requestedTier;
+                _pendingScalabilityTierTicks = 1;
+                return;
+            }
+
+            if (_pendingScalabilityTierTicks < LootMagnetConstants.ScalabilityTierHysteresisSlowTicks)
+            {
+                _pendingScalabilityTierTicks++;
+                return;
+            }
+
+            _scalabilityTier = requestedTier;
+            _pendingScalabilityTierTicks = 0;
         }
 
         private bool EnsureVaultBuffers()
         {
             IDataVault vault = _vault;
             if (vault == null)
+            {
+                _dependencyTelemetryFlags |= TelemetryVaultUnavailableFlag;
                 return false;
+            }
 
             int capacity = Capacity;
             EnsureManagedSidecars();
@@ -240,11 +356,34 @@ namespace Hecton8.Gameplay.Loot
                 capacity,
                 SystemID.GameplayLoot,
                 NativeArrayOptions.ClearMemory);
-            return _entityAups.IsCreated &&
-                   _entityFlags.IsCreated &&
-                   _entityVelocities.IsCreated &&
-                   _entityItemHashes.IsCreated &&
-                   _entityQuantities.IsCreated;
+            return ResolveWritableCapacity() >= capacity;
+        }
+
+        private int ResolveWritableCapacity()
+        {
+            if (!_entityAups.IsCreated ||
+                !_entityFlags.IsCreated ||
+                !_entityVelocities.IsCreated ||
+                !_entityItemHashes.IsCreated ||
+                !_entityQuantities.IsCreated ||
+                !_signalEvents.IsCreated ||
+                !_telemetry.IsCreated ||
+                _pickupRefs == null ||
+                _pickupEntityIds == null)
+            {
+                return 0;
+            }
+
+            int capacity = Capacity;
+            capacity = math.min(capacity, _entityAups.Length);
+            capacity = math.min(capacity, _entityFlags.Length);
+            capacity = math.min(capacity, _entityVelocities.Length);
+            capacity = math.min(capacity, _entityItemHashes.Length);
+            capacity = math.min(capacity, _entityQuantities.Length);
+            capacity = math.min(capacity, _signalEvents.Length);
+            capacity = math.min(capacity, _pickupRefs.Length);
+            capacity = math.min(capacity, _pickupEntityIds.Length);
+            return capacity;
         }
 
         private void EnsureManagedSidecars()
@@ -252,14 +391,14 @@ namespace Hecton8.Gameplay.Loot
             int capacity = Capacity;
             if (_pickupRefs != null &&
                 _pickupRefs.Length == capacity &&
-                _pickupInstanceIds != null &&
-                _pickupInstanceIds.Length == capacity)
+                _pickupEntityIds != null &&
+                _pickupEntityIds.Length == capacity)
             {
                 return;
             }
 
-            _pickupRefs = new PickupItem[capacity];
-            _pickupInstanceIds = new int[capacity];
+            _pickupRefs = new PickupItem[capacity]; // COLD ALLOC: PickupItem[capacity] - managed pickup sidecar for vault commit - owner: LootMagnetSystem
+            _pickupEntityIds = new ulong[capacity]; // COLD ALLOC: ulong[capacity] - pickup entity identity sidecar - owner: LootMagnetSystem
         }
 
         private void EnsureTelemetry()
@@ -267,15 +406,11 @@ namespace Hecton8.Gameplay.Loot
             if (_telemetry.IsCreated)
                 return;
 
-            _telemetry = new NativeArray<LootMagnetTelemetryEntry>(
+            _telemetry = H8Memory.Allocate<LootMagnetTelemetryEntry>(
                 LootMagnetConstants.TelemetryFrameCount,
+                SystemID.GameplayLoot,
                 Allocator.Persistent,
-                NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(
-                _telemetry,
-                nameof(LootMagnetSystem),
-                nameof(_telemetry),
-                NativeAllocationLifetime.Scene);
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<LootMagnetTelemetryEntry>[300] - loot magnet black-box ring - owner: LootMagnetSystem
         }
 
         private void DisposeTelemetry()
@@ -283,9 +418,9 @@ namespace Hecton8.Gameplay.Loot
             if (!_telemetry.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(_telemetry);
-            _telemetry.Dispose();
-            _telemetry = default;
+            H8Memory.Release(ref _telemetry, SystemID.GameplayLoot);
+            _telemetryIndex = 0;
+            _lastTelemetryRecordedFrame = 0u;
         }
 
         private void EnsureSignalEvents()
@@ -296,19 +431,14 @@ namespace Hecton8.Gameplay.Loot
 
             if (_signalEvents.IsCreated)
             {
-                NativeMemorySentinel.UnregisterNativeArray(_signalEvents);
-                _signalEvents.Dispose();
+                H8Memory.Release(ref _signalEvents, SystemID.GameplayLoot);
             }
 
-            _signalEvents = new NativeArray<LootMagnetSignalEvent>(
+            _signalEvents = H8Memory.Allocate<LootMagnetSignalEvent>(
                 capacity,
+                SystemID.GameplayLoot,
                 Allocator.Persistent,
-                NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(
-                _signalEvents,
-                nameof(LootMagnetSystem),
-                nameof(_signalEvents),
-                NativeAllocationLifetime.Scene);
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<LootMagnetSignalEvent>[capacity] - Burst-to-managed loot signal lane - owner: LootMagnetSystem
         }
 
         private void DisposeSignalEvents()
@@ -316,18 +446,31 @@ namespace Hecton8.Gameplay.Loot
             if (!_signalEvents.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(_signalEvents);
-            _signalEvents.Dispose();
-            _signalEvents = default;
+            H8Memory.Release(ref _signalEvents, SystemID.GameplayLoot);
         }
 
         private void RefreshPickupVaultFromRegistry()
         {
-            if (_pullScheduled || !_entityAups.IsCreated || _pickupRefs == null || _pickupInstanceIds == null)
+            if (_pullScheduled)
                 return;
 
-            int capacity = Capacity;
+            _registryTelemetryFlags = 0u;
+            if (!_entityAups.IsCreated || _pickupRefs == null || _pickupEntityIds == null)
+            {
+                ClearRuntimeVaultState();
+                return;
+            }
+
+            int capacity = ResolveWritableCapacity();
+            if (capacity <= 0)
+            {
+                ClearRuntimeVaultState();
+                return;
+            }
+
             int registryCount = PickupItem.WorldStateRegistryCount;
+            _registryTelemetryFlags = registryCount >= capacity ? TelemetryPickupRegistrySaturatedFlag : 0u;
+            uint registryFlagsHash = TelemetryHashOffset;
             int activeCount = 0;
             for (int registryIndex = 0; registryIndex < registryCount && activeCount < capacity; registryIndex++)
             {
@@ -341,23 +484,27 @@ namespace Hecton8.Gameplay.Loot
                 }
 
                 Transform pickupTransform = pickup.transform;
-                int instanceId = unchecked((int)EntityId.ToULong(pickup.GetEntityId()));
-                if (_pickupInstanceIds[activeCount] != instanceId)
+                ulong entityId = EntityId.ToULong(pickup.GetEntityId());
+                uint itemHash = unchecked((uint)pickup.ItemHashId);
+                const uint slotFlags = LootEntityFlags.Active | LootEntityFlags.IsLoot | LootEntityFlags.PullEnabled;
+                if (_pickupEntityIds[activeCount] != entityId)
                     _entityVelocities[activeCount] = float3.zero;
 
                 _pickupRefs[activeCount] = pickup;
-                _pickupInstanceIds[activeCount] = instanceId;
+                _pickupEntityIds[activeCount] = entityId;
                 _entityAups[activeCount] = AbsoluteUniversePosition.FromRuntimePosition(pickupTransform.position);
-                _entityItemHashes[activeCount] = unchecked((uint)pickup.ItemHashId);
+                _entityItemHashes[activeCount] = itemHash;
                 _entityQuantities[activeCount] = (ushort)math.clamp(pickup.Quantity, 1, (int)ushort.MaxValue);
-                _entityFlags[activeCount] = LootEntityFlags.Active | LootEntityFlags.IsLoot | LootEntityFlags.PullEnabled;
+                _entityFlags[activeCount] = slotFlags;
+                registryFlagsHash = FoldTelemetryHash(FoldTelemetryHash(registryFlagsHash, slotFlags), itemHash);
                 activeCount++;
             }
 
             for (int index = activeCount; index < _activeCount && index < capacity; index++)
             {
                 _pickupRefs[index] = null;
-                _pickupInstanceIds[index] = 0;
+                _pickupEntityIds[index] = 0UL;
+                _entityAups[index] = default;
                 _entityFlags[index] = 0u;
                 _entityVelocities[index] = float3.zero;
                 _entityItemHashes[index] = 0u;
@@ -365,6 +512,8 @@ namespace Hecton8.Gameplay.Loot
             }
 
             _activeCount = activeCount;
+            _registryFlagsHash = activeCount > 0 ? registryFlagsHash : 0u;
+            _lastCommittedFlagsHash = _registryFlagsHash;
         }
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
@@ -375,22 +524,37 @@ namespace Hecton8.Gameplay.Loot
             {
                 playerAup = snapshot.Aup;
                 _lastPlayerAup = playerAup;
+                _dependencyTelemetryFlags &= ~TelemetryPlayerPoseMissingFlag;
                 return true;
             }
 
             playerAup = default;
+            Transform playerTransform = _playerTransform;
+            if (playerTransform != null)
+            {
+                playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
+                _lastPlayerAup = playerAup;
+                _dependencyTelemetryFlags &= ~TelemetryPlayerPoseMissingFlag;
+                return true;
+            }
+
+            _dependencyTelemetryFlags |= TelemetryPlayerPoseMissingFlag;
             return false;
         }
 
         private void SchedulePull(float dt, AbsoluteUniversePosition playerAup, bool lowTierSnap)
         {
-            int count = math.min(_activeCount, Capacity);
+            int scheduledCapacity = ResolveWritableCapacity();
+            int count = math.min(_activeCount, scheduledCapacity);
             if (count <= 0)
                 return;
 
             _scheduledCount = count;
+            _scheduledCapacity = scheduledCapacity;
             _frameCounter++;
             float safeRadiusMeters = math.max(LootMagnetConstants.AcquireDistanceMeters, pullRadiusMeters);
+            _scheduledPullRadiusMeters = safeRadiusMeters;
+            _scheduledPullRadiusSq = safeRadiusMeters * safeRadiusMeters;
             float safeMaxVelocity = math.max(0.01f, maxVelocityMetersPerSecond);
             LootMagnetPullJob job = new LootMagnetPullJob
             {
@@ -398,7 +562,7 @@ namespace Hecton8.Gameplay.Loot
                 DeltaTimeSeconds = math.min(
                     math.max(0.0001f, dt),
                     LootMagnetConstants.MaxIntegrationDeltaTimeSeconds),
-                PullRadiusSq = safeRadiusMeters * safeRadiusMeters,
+                PullRadiusSq = _scheduledPullRadiusSq,
                 PullStrength = math.max(0f, pullStrength),
                 MaxVelocityMetersPerSecond = safeMaxVelocity,
                 Frame = _frameCounter,
@@ -417,33 +581,52 @@ namespace Hecton8.Gameplay.Loot
 
         private void CommitVaultResultsToManagedProxies()
         {
-            int count = math.min(_scheduledCount, Capacity);
+            int count = math.min(_scheduledCount, _scheduledCapacity);
             uint acquiredCount = 0u;
-            uint flagsHash = 2166136261u;
+            uint flagsHash = count > 0 ? TelemetryHashOffset : 0u;
             int acquisitionBudget = LootMagnetConstants.MaxAcquisitionsPerFrame;
+            int acousticBudget = ResolveAcousticSignalBudget(_scalabilityTier);
+            int wakeBudget = ResolveWakeSignalBudget(_scalabilityTier);
+            uint telemetryFlags = _dependencyTelemetryFlags | _registryTelemetryFlags;
+            if (_inventory == null)
+                telemetryFlags |= TelemetryInventoryMissingFlag;
+
             bool fault = false;
+            int lastActiveIndex = -1;
             for (int index = 0; index < count; index++)
             {
                 uint flags = _entityFlags[index];
-                flagsHash = (flagsHash ^ flags) * 16777619u;
                 if ((flags & LootEntityFlags.NonFinite) != 0u)
                     fault = true;
 
                 PickupItem pickup = _pickupRefs[index];
                 LootMagnetSignalEvent signalEvent = _signalEvents.IsCreated ? _signalEvents[index] : default;
                 if (pickup == null)
+                {
+                    ClearVaultSlot(index);
                     continue;
+                }
 
                 if ((flags & LootEntityFlags.Acquired) != 0u)
                 {
+                    if (_inventory == null)
+                    {
+                        telemetryFlags |= TelemetryInventoryMissingFlag;
+                        _entityFlags[index] = LootEntityFlags.Active | LootEntityFlags.IsLoot;
+                        FoldActiveSlotHash(ref flagsHash, ref lastActiveIndex, index);
+                        continue;
+                    }
+
                     if (acquisitionBudget <= 0)
                     {
+                        telemetryFlags |= TelemetryAcquisitionBudgetDeferFlag;
                         RestoreDeferredAcquisition(index, flags);
+                        FoldActiveSlotHash(ref flagsHash, ref lastActiveIndex, index);
                         continue;
                     }
 
                     acquisitionBudget--;
-                    int quantityBefore = math.max(0, (int)_entityQuantities[index]);
+                    int quantityBefore = math.max(0, pickup.Quantity);
                     pickup.TryHandleInventoryPickup(_inventory, _playerTransform);
                     int quantityAfter = math.max(0, pickup.Quantity);
                     int addedQuantity = math.max(0, quantityBefore - quantityAfter);
@@ -451,43 +634,51 @@ namespace Hecton8.Gameplay.Loot
                     {
                         acquiredCount++;
                         PublishItemAcquired(in signalEvent, addedQuantity);
-                        PublishPresentationSignals(in signalEvent, addedQuantity);
+                        telemetryFlags |= PublishPresentationSignals(in signalEvent, addedQuantity, ref acousticBudget, ref wakeBudget);
                     }
 
                     if (quantityAfter > 0)
                     {
                         _entityQuantities[index] = (ushort)math.min(quantityAfter, (int)ushort.MaxValue);
-                        _entityFlags[index] = (flags & ~LootEntityFlags.Acquired) |
-                                              LootEntityFlags.Active |
-                                              LootEntityFlags.IsLoot |
-                                              LootEntityFlags.PullEnabled;
+                        _entityFlags[index] = addedQuantity > 0
+                            ? (flags & ~LootEntityFlags.Acquired) |
+                              LootEntityFlags.Active |
+                              LootEntityFlags.IsLoot |
+                              LootEntityFlags.PullEnabled
+                            : LootEntityFlags.Active | LootEntityFlags.IsLoot;
+                        FoldActiveSlotHash(ref flagsHash, ref lastActiveIndex, index);
                     }
                     else
                     {
-                        _pickupRefs[index] = null;
-                        _pickupInstanceIds[index] = 0;
+                        ClearVaultSlot(index);
                     }
 
                     continue;
                 }
 
-                PublishPresentationSignals(in signalEvent, 0);
+                telemetryFlags |= PublishPresentationSignals(in signalEvent, 0, ref acousticBudget, ref wakeBudget);
                 if ((flags & LootEntityFlags.Pulling) == 0u || (flags & LootEntityFlags.Active) == 0u)
+                {
+                    FoldActiveSlotHash(ref flagsHash, ref lastActiveIndex, index);
                     continue;
+                }
 
                 float3 runtime = _entityAups[index].ToRuntimeFloat3();
                 pickup.transform.position = new Vector3(runtime.x, runtime.y, runtime.z);
+                FoldActiveSlotHash(ref flagsHash, ref lastActiveIndex, index);
             }
 
+            _activeCount = lastActiveIndex + 1;
+            _registryFlagsHash = _activeCount > 0 ? flagsHash : 0u;
+            _lastCommittedAcquiredCount = acquiredCount;
+            _lastCommittedFlagsHash = _registryFlagsHash;
+            _lastCommittedFlags = (fault ? TelemetryFaultFlag : 0u) | telemetryFlags;
             if (fault && !_dumpedFault)
             {
+                RecordTelemetry(_telemetryFrameCounter);
                 _dumpedFault = true;
                 DumpTelemetryBuffer();
             }
-
-            _lastCommittedAcquiredCount = acquiredCount;
-            _lastCommittedFlagsHash = flagsHash;
-            _lastCommittedFlags = fault ? TelemetryFaultFlag : 0u;
         }
 
         private void RestoreDeferredAcquisition(int index, uint flags)
@@ -496,6 +687,41 @@ namespace Hecton8.Gameplay.Loot
                                   LootEntityFlags.Active |
                                   LootEntityFlags.IsLoot |
                                   LootEntityFlags.PullEnabled;
+        }
+
+        private void ClearVaultSlot(int index)
+        {
+            _pickupRefs[index] = null;
+            _pickupEntityIds[index] = 0UL;
+            _entityAups[index] = default;
+            _entityFlags[index] = 0u;
+            _entityVelocities[index] = float3.zero;
+            _entityItemHashes[index] = 0u;
+            _entityQuantities[index] = 0;
+            if (_signalEvents.IsCreated && index < _signalEvents.Length)
+                _signalEvents[index] = default;
+        }
+
+        private void ClearRuntimeVaultState()
+        {
+            _activeCount = 0;
+            _registryFlagsHash = 0u;
+            _lastCommittedFlagsHash = 0u;
+        }
+
+        private void FoldActiveSlotHash(ref uint hash, ref int lastActiveIndex, int index)
+        {
+            uint flags = _entityFlags[index];
+            if ((flags & LootEntityFlags.Active) == 0u)
+                return;
+
+            hash = FoldTelemetryHash(FoldTelemetryHash(hash, flags), _entityItemHashes[index]);
+            lastActiveIndex = index;
+        }
+
+        private static uint FoldTelemetryHash(uint hash, uint value)
+        {
+            return (hash ^ value) * TelemetryHashPrime;
         }
 
         private void PublishItemAcquired(in LootMagnetSignalEvent signalEvent, int addedQuantity)
@@ -520,19 +746,37 @@ namespace Hecton8.Gameplay.Loot
             GlobalSignals.Publish(in itemSignal);
         }
 
-        private void PublishPresentationSignals(in LootMagnetSignalEvent signalEvent, int addedQuantity)
+        private uint PublishPresentationSignals(
+            in LootMagnetSignalEvent signalEvent,
+            int addedQuantity,
+            ref int acousticBudget,
+            ref int wakeBudget)
         {
             if (signalEvent.Flags == 0u || signalEvent.ItemHash == 0u)
-                return;
+                return 0u;
 
-            float radiusMeters = math.max(LootMagnetConstants.AcquireDistanceMeters, pullRadiusMeters);
-            float radiusSq = math.max(radiusMeters * radiusMeters, LootMagnetConstants.MinDistanceSq);
-            float intensity = math.saturate(1f - (signalEvent.DistanceSq * math.rcp(radiusSq)));
-            if (addedQuantity > 0)
-                intensity = 1f;
+            bool wantsAcoustic = (signalEvent.Flags & LootMagnetEventFlags.Acoustic) != 0u;
+            bool wantsWake = (signalEvent.Flags & LootMagnetEventFlags.Wake) != 0u;
+            uint droppedFlags = 0u;
+            if (wantsAcoustic && acousticBudget <= 0)
+                droppedFlags |= TelemetryAcousticBudgetDropFlag;
 
-            if ((signalEvent.Flags & LootMagnetEventFlags.Acoustic) != 0u)
+            if (wantsWake && wakeBudget <= 0)
+                droppedFlags |= TelemetryWakeBudgetDropFlag;
+
+            bool publishAcoustic = wantsAcoustic && acousticBudget > 0;
+            bool publishWake = wantsWake && wakeBudget > 0;
+            if (!publishAcoustic && !publishWake)
+                return droppedFlags;
+
+            if (publishAcoustic)
             {
+                acousticBudget--;
+                float radiusMeters = math.max(LootMagnetConstants.AcquireDistanceMeters, _scheduledPullRadiusMeters);
+                float radiusSq = math.max(_scheduledPullRadiusSq, LootMagnetConstants.MinDistanceSq);
+                float intensity = addedQuantity > 0
+                    ? 1f
+                    : math.saturate(1f - (signalEvent.DistanceSq * math.rcp(radiusSq)));
                 AcousticPingSignal acousticSignal = new AcousticPingSignal
                 {
                     PositionAup = signalEvent.PositionAup,
@@ -545,8 +789,9 @@ namespace Hecton8.Gameplay.Loot
                 GlobalSignals.Publish(in acousticSignal);
             }
 
-            if ((signalEvent.Flags & LootMagnetEventFlags.Wake) != 0u)
+            if (publishWake)
             {
+                wakeBudget--;
                 WakeGeneratedSignal wakeSignal = new WakeGeneratedSignal
                 {
                     PositionAup = signalEvent.PositionAup,
@@ -555,13 +800,41 @@ namespace Hecton8.Gameplay.Loot
                 };
                 GlobalSignals.Publish(in wakeSignal);
             }
+
+            return droppedFlags;
+        }
+
+        private static int ResolveAcousticSignalBudget(byte tier)
+        {
+            if (tier == 0)
+                return LootMagnetConstants.LowTierAcousticSignalsPerFrame;
+
+            if (tier >= 3)
+                return LootMagnetConstants.UltraTierAcousticSignalsPerFrame;
+
+            return tier >= 2
+                ? LootMagnetConstants.HighTierAcousticSignalsPerFrame
+                : LootMagnetConstants.DefaultAcousticSignalsPerFrame;
+        }
+
+        private static int ResolveWakeSignalBudget(byte tier)
+        {
+            if (tier == 0)
+                return LootMagnetConstants.LowTierWakeSignalsPerFrame;
+
+            if (tier >= 3)
+                return LootMagnetConstants.UltraTierWakeSignalsPerFrame;
+
+            return tier >= 2
+                ? LootMagnetConstants.HighTierWakeSignalsPerFrame
+                : LootMagnetConstants.DefaultWakeSignalsPerFrame;
         }
 
         private uint _lastCommittedAcquiredCount;
         private uint _lastCommittedFlagsHash;
         private uint _lastCommittedFlags;
 
-        private void RecordTelemetry()
+        private void RecordTelemetry(uint telemetryFrame)
         {
             if (!_telemetry.IsCreated)
                 return;
@@ -570,8 +843,8 @@ namespace Hecton8.Gameplay.Loot
             _telemetry[writeIndex] = new LootMagnetTelemetryEntry
             {
                 PlayerAup = _lastPlayerAup,
-                SampleLootAup = _scheduledCount > 0 && _entityAups.IsCreated ? _entityAups[0] : default,
-                Frame = _frameCounter,
+                SampleLootAup = _activeCount > 0 && _entityAups.IsCreated && _entityAups.Length > 0 ? _entityAups[0] : default,
+                Frame = telemetryFrame,
                 ActiveCount = (uint)math.max(0, _activeCount),
                 AcquiredCount = _lastCommittedAcquiredCount,
                 FlagsHash = _lastCommittedFlagsHash,
@@ -579,15 +852,40 @@ namespace Hecton8.Gameplay.Loot
             };
 
             _telemetryIndex = (writeIndex + 1) % _telemetry.Length;
+            _lastTelemetryRecordedFrame = telemetryFrame;
         }
 
-        private void ForceCompletePendingJob()
+        private bool CanCommitCompletedJob()
+        {
+            int count = math.min(_scheduledCount, _scheduledCapacity);
+            return count >= 0 &&
+                   _entityFlags.IsCreated &&
+                   _entityFlags.Length >= count &&
+                   _entityAups.IsCreated &&
+                   _entityAups.Length >= count &&
+                   _entityVelocities.IsCreated &&
+                   _entityVelocities.Length >= count &&
+                   _entityItemHashes.IsCreated &&
+                   _entityItemHashes.Length >= count &&
+                   _entityQuantities.IsCreated &&
+                   _entityQuantities.Length >= count &&
+                   _signalEvents.IsCreated &&
+                   _signalEvents.Length >= count &&
+                   _telemetry.IsCreated &&
+                   _pickupRefs != null &&
+                   _pickupRefs.Length >= count &&
+                   _pickupEntityIds != null &&
+                   _pickupEntityIds.Length >= count;
+        }
+
+        private bool ForceCompletePendingJob()
         {
             if (!_pullScheduled)
-                return;
+                return false;
 
             DispatcherJobSwap.TryComplete(ref _pullHandle, forceComplete: true);
             _pullScheduled = false;
+            return true;
         }
 
         private void DumpTelemetryBuffer()
@@ -601,6 +899,9 @@ namespace Hecton8.Gameplay.Loot
             using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
             using (BinaryWriter writer = new BinaryWriter(stream))
             {
+                writer.Write(TelemetryDumpMagic);
+                writer.Write(TelemetryDumpVersion);
+                writer.Write(LootMagnetConstants.TelemetryEntrySizeBytes);
                 writer.Write(_telemetry.Length);
                 writer.Write(_telemetryIndex);
                 for (int index = 0; index < _telemetry.Length; index++)

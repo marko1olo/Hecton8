@@ -223,3 +223,275 @@ Solution: Re-ran the constrained Core build after Loop 10. `Hecton8.Core.csproj`
 Rejected Alternatives: Continuing to label compile as blocked after the local evidence changed, or expanding the verification scope into Unity Editor MCP while the endpoint remains unavailable.
 Scalability potential: Runtime unchanged; the integration gate is now factual for Low/Middle/High/Ultra Core code.
 Hardware Impact: 0 us runtime gain from verification; saves low-end developer iteration time by clearing the AUP patch set from compile suspicion.
+
+## Decision 28 - Chemical Influence Double Breadcrumbs
+
+Problem: `ChemicalInfluenceGrid` mixed runtime positions into absolute chemical breadcrumbs and defoliant dead zones, then stored the authoritative centers as `float3`/`Vector4` before distance checks and scent-grid cell resolution.
+Solution: Add `double3 AbsolutePositionDouble` to `ChemicalBreadcrumbWaypoint`, preserve double defoliant centers in a fixed `double3[64]` side lane, and route merge, sample, nearest-waypoint, dead-zone, and grid-cell math through double subtraction before final legacy presentation/storage casts.
+Rejected Alternatives: Replacing every existing AI-facing breadcrumb API with a new AUP struct. That would break consumers during a precision audit and add cross-domain churn. Keeping float breadcrumbs was rejected because chemical proximity is trigger math, not presentation.
+Scalability potential: Low keeps the same 64 breadcrumb cap and byte scent grid; Middle/High/Ultra get stable long-session chemical trails and defoliant gates without heavier simulation.
+Hardware Impact: Expected i3/MX350 cost is below 3 us on chemical query frames and 0 B/frame managed allocation. Expected gain is fewer false scent/defoliant threshold flips after origin shifts.
+
+## Decision 29 - Splash, Acoustic, And Terrain Query AUP Reconstruction
+
+Problem: Splash anchors, acoustic SDF midpoint sampling, and wreck terrain-height queries still used legacy `ToAbsoluteUniversePosition(Vector3)` in selected callsites, reducing the committed offset before seeds, persistent payloads, or absolute queries were built.
+Solution: Convert those callsites to `HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3`, keep seed/position calculations in double, and cast only into existing float payloads for shader, VFX, audio, and MapMagic API boundaries.
+Rejected Alternatives: Converting shader/VFX/MapMagic payload contracts to doubles. Those surfaces are presentation or third-party API boundaries; the correct repair is keeping CPU authority in double until the final required cast.
+Scalability potential: Low keeps cheap splash and acoustic payloads; Middle/High/Ultra gain stable persistent anchors and deterministic splash seeds that can support denser visual effects without AUP wobble.
+Hardware Impact: Expected i3/MX350 benefit is 1-5 us in splash/acoustic bursts by avoiding seed churn and post-shift correction. Managed allocation remains 0 B/frame.
+
+## Decision 30 - Wreck Burial Voxel Cut Double Center
+
+Problem: Procedural wreck burial cuts queued voxel surgeon box centers as `float3 AbsoluteCenter`, so an origin-shifted wreck could feed truncated AUP centers into voxel crater cuts.
+Solution: Replace the record center with `double3 AbsoluteCenter` while preserving the 64-byte record size, populate it from `ToAbsoluteUniversePositionDouble3`, and submit directly to the voxel delta processor's `double3` box-crater overload.
+Rejected Alternatives: Adding a second native side buffer or increasing the record size. The existing record had enough reserved space to preserve double precision without extra buffers, allocations, or cache-thrashing metadata.
+Scalability potential: Low keeps the existing placement cap and voxel cut count; High/Ultra get stable buried-wreck excavation cuts and can spend saved correction budget on richer debris presentation.
+Hardware Impact: Expected i3/MX350 benefit is 2-6 us on buried-wreck voxel cut frames by avoiding misaligned crater retries. Memory footprint remains 64 bytes per record and 0 B/frame managed allocation.
+
+## Decision 31 - Loop 14 Verification Wall
+
+Problem: Loop 14 required compile verification after the AUP repairs, but the current Core build is blocked by active unrelated dependency changes outside the touched files.
+Solution: Run mandatory and targeted scans, `git diff --check`, and a constrained Core build with a binary log file. Then filter the build log for every Loop 14 touched file before classifying the failure.
+Rejected Alternatives: Reporting a fake compile pass, chasing `HardwareProfileCatalog`, save-header, or `SystemID`/`JobHandle` errors outside this agent's AUP boundary, or reverting other agents' dirty files.
+Scalability potential: Runtime unchanged; evidence isolation protects Low/Middle/High/Ultra integration by proving the AUP patch is not the current compile blocker.
+Hardware Impact: 0 us runtime gain from verification. Developer-time gain on low-end machines is avoiding false attribution of 60 unrelated Core errors to this AUP patch.
+
+## Decision 32 - Construction Rupture Double AUP State
+
+Problem: Construction rupture/decal logic reconstructed module and rupture positions through legacy `Vector3` absolute AUP before comparing state and building outward decal vectors.
+Solution: Preserve `RuptureNodeState.AbsoluteUniversePositionDouble`, compare prior/current rupture anchors in double, and calculate rupture-vs-module outward vectors from `ToAbsoluteUniversePositionDouble3` before the final `Vector3` decal matrix boundary.
+Rejected Alternatives: Replacing all construction rupture public payloads with `double3`. Existing consumers and serialized/debug surfaces expect `Vector3`; a wrapper double lane keeps compatibility while removing authority drift.
+Scalability potential: Low keeps the same decal/VFX payload and cheap visual fracture fake. Middle/High/Ultra get stable long-session rupture anchors and can spend the stability budget on denser crack VFX without changing gameplay truth.
+Hardware Impact: Expected i3/MX350 benefit is 1-4 us on rupture/decal update frames by avoiding repeated state churn from float AUP comparison jitter. Managed allocation remains 0 B/frame.
+
+## Decision 33 - Drone Voxel Ingress Double Boundary
+
+Problem: Drone repair and plasma cut dispatch converted ray hits to legacy `Vector3` AUP before feeding voxel DDA and spark events, truncating the committed origin offset before voxel authority work.
+Solution: Add `double3` overloads for `HectonVoxelVolume.ApplyPlasmaCutDda` and `ApplyRepairWeldDda`, route `DroneFleetManager` through those overloads, and convert spark payloads to `AbsoluteUniversePosition` from the double hit point.
+Rejected Alternatives: Removing the `Vector3` overloads or changing all tool callers in one pass. Legacy wrappers are required to avoid broad public API churn across active tool/interaction agents.
+Scalability potential: Low keeps the same DDA cost and VFX payload. High/Ultra can layer denser weld/cut particles because the hit anchor no longer drifts after origin shifts.
+Hardware Impact: Expected i3/MX350 benefit is 2-6 us on drone voxel edit bursts by avoiding misaligned DDA retries and spark correction. No per-frame managed allocation or native buffer growth.
+
+## Decision 34 - Seismic Event Double Line Payload
+
+Problem: Meteor splash and seismic shockwave events produced persistent splash/trench AUP anchors from `Vector3` absolute positions; geology replay then computed trench length, direction, and ids after precision loss.
+Solution: Add `AupStartDouble` and `AupEndDouble` to `SeismicShockwaveEvent`, generate splash/trench anchors with `ToAbsoluteUniversePositionDouble3`, fold rounded double coordinates into deterministic uint seeds, and consume the double line in `WorldGenerativeGeologyVoxelBridgeDirector` before final legacy voxel plan casts.
+Rejected Alternatives: Making all random/geology event payload fields double-only. Existing event consumers still expect legacy `Vector3` fields; dual lanes preserve compatibility and keep the authority path 64-bit.
+Scalability potential: Low keeps the same cheap seismic trench fake and voxel plan fields. Middle/High/Ultra gain deterministic long-session trench placement and can spend saved stability on richer debris/dust presentation.
+Hardware Impact: Expected i3/MX350 benefit is 2-8 us on seismic event execution by avoiding trench-id churn and line-length correction after origin shifts. Event struct grows by two `double3` lanes but remains stack/blittable usage; managed allocation remains 0 B/frame.
+
+## Decision 35 - Loop 15 Verification Wall
+
+Problem: Loop 15 compile verification initially exposed one local import error, then returned to the active unrelated Core dependency wall.
+Solution: Fix the local `DeepDrillModule.cs` missing `Unity.Mathematics` import, re-run the constrained Core build, and filter the build log for every Loop 15 touched file. The after-fix build has 0 warnings and no errors in touched files; remaining 60 errors are save-layout, hardware-profile, and scheduler-handle dependencies.
+Rejected Alternatives: Leaving the local CS0246 error in place, reporting a fake green build, or chasing unrelated save/core-memory ownership from the AUP auditor domain.
+Scalability potential: Runtime unchanged beyond the Loop 15 fixes; verification evidence keeps Low/Middle/High/Ultra integration risk scoped to actual blockers.
+Hardware Impact: 0 us runtime gain from verification. Developer-time gain on low-end machines is preventing a local AUP import error from being buried under unrelated dependency failures.
+
+## Decision 36 - Interaction And Tool Packet Final-Cast Boundary
+
+Problem: Player tools, physical switches, panel buttons, equipment interaction packets, and repair welds converted runtime hit origins to legacy `Vector3` AUP before packet, voxel, or debris-spark publication.
+Solution: Route those producers through `HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3`, validate double finiteness where needed, and cast only into existing `float3` packet/presentation fields or `AbsoluteUniversePosition.FromAbsolutePosition`.
+Rejected Alternatives: Changing `InteractionPacket` and all interaction service contracts to double in this audit pass. That would mutate public interfaces across active interaction/tool agents. The safer DOD pattern is a double authority lane with legacy final-cast wrappers.
+Scalability potential: Low keeps cheap float interaction packets and haptics. Middle/High/Ultra get stable long-session hit anchors and can spend saved stability on denser panel/spark feedback without changing the event contract.
+Hardware Impact: Expected i3/MX350 benefit is 2-7 us on interaction/repair bursts by avoiding hit-anchor correction and voxel weld retry churn. Managed allocation remains 0 B/frame.
+
+## Decision 37 - Geology Plan Double Runtime Keys
+
+Problem: `WorldGenerativeGeologyIntegrationDirector` built retained plan centers, terrain heights, voxel centers, and fallback runtime keys after legacy `Vector3` AUP reconstruction.
+Solution: Reconstruct plan world/terrain/voxel centers as `double3`, create AUP structs from absolute double positions, and build fallback runtime keys from rounded double millimeters with an FNV-style long hash before final legacy `Vector3` plan fields.
+Rejected Alternatives: Converting `WorldGenerativeGeologySeamPlan` storage wholesale to double. The plan struct is consumed by voxel, terrain, gizmo, and compatibility code; widening it is a separate world-geometry contract migration.
+Scalability potential: Low keeps the existing cheap seam-plan payload. High/Ultra get stable deterministic plan retention and can spend saved churn on richer seam/debris presentation.
+Hardware Impact: Expected i3/MX350 benefit is 3-9 us on plan refreshes by avoiding key churn and repeated plan rebuilds after origin shifts. No managed allocation was added.
+
+## Decision 38 - Presentation Helper Double Bridge
+
+Problem: MapMagic shader origins, Crest depth helper points, scatter helper positions, localized sign rebases, player build ghost projection, crash telemetry fallback, submarine leak impact signals, and spatial audio listener fallback still used legacy AUP reconstruction.
+Solution: Keep double AUP until the required shader `Vector4`, Unity `Vector3`, telemetry `float3`, or `AbsoluteUniversePosition` boundary. Localized signs now retain a double AUP side lane for origin-shift projection while preserving the legacy `Vector3` field.
+Rejected Alternatives: Converting shader globals, Unity transforms, and third-party helper surfaces to doubles. Those endpoints are float presentation surfaces; the correct fix is final-cast discipline, not GPU/API contract mutation.
+Scalability potential: Low keeps cheap shader/transform/telemetry payloads. Middle/High/Ultra get stable origins for richer terrain fades, depth effects, signage, scatter, audio, and leak feedback.
+Hardware Impact: Expected i3/MX350 benefit is 1-5 us across shift-heavy frames by avoiding presentation correction churn. Crash telemetry remains fixed-buffer and zero-GC.
+
+## Decision 39 - Loop 16 Verification Wall
+
+Problem: After the global legacy HFO AUP cleanup, the Core build still fails under active unrelated dependency changes.
+Solution: Re-run the global `HectonFloatingOrigin.ToAbsoluteUniversePosition(` scan, mandatory AUP regex, direct committed-offset scan, `git diff --check`, and constrained Core build. Then filter the build log for every Loop 16 touched file before classifying the result.
+Rejected Alternatives: Chasing residency/power/fauna/core save-layout/hardware-profile/scheduler errors outside the AUP auditor domain, or reporting a fake green build.
+Scalability potential: Runtime unchanged beyond Loop 16 fixes; verification evidence proves Low/Middle/High/Ultra AUP edits are not the current compile blocker.
+Hardware Impact: 0 us runtime gain from verification. Developer-time gain on low-end machines is avoiding false attribution of 74 unrelated Core errors to this AUP patch.
+
+## Decision 40 - Organic Vegetation Trigger Double Space
+
+Problem: `DestructibleOrganicManager` construction decomposition and defoliant dead-zone checks converted runtime centers into stable vegetation universe coordinates as `Vector3`, then did radius math against matrix roots and giant-kelp segments in float.
+Solution: Route trigger centers through `HectonMapMagicVegetationBridge.ToUniverseSpaceDouble3`, compare construction/defoliant distance in double, add a double closest-point segment helper using `math.rcp`, and project titan root mound anchors through a new `ToRuntimeSpace(double3)` bridge overload before the final voxel lookup cast.
+Rejected Alternatives: Widening all vegetation matrix storage and public renderer contracts to double. Unity matrices, GPU instance payloads, and renderer contracts are float presentation surfaces; the authority leak was the trigger math and bridge hop, not the storage surface itself.
+Scalability potential: Low keeps existing matrix/renderer payloads and cheap trigger loops. Middle/High/Ultra get stable long-session construction cleanup, chemical dead-zone tombstoning, and titan root mound placement without increasing GPU payload size; saved stability can buy denser decomposition, wilt, and mound VFX.
+Hardware Impact: Expected i3/MX350 benefit is 2-7 us on construction/defoliant bursts by avoiding float-distance threshold churn and reprocessing near boundaries. Managed allocation remains 0 B/frame; changes use stack `double3`, existing NativeArrays, and existing compatibility wrappers.
+
+## Decision 41 - Loop 17 Verification Wall
+
+Problem: Loop 17 needed compile verification, but the current Core build still fails under unrelated dependency work and package warnings outside the touched vegetation/AUP files.
+Solution: Run mandatory AUP scan, targeted vegetation scans, global legacy HFO scan, direct committed-offset scan, `git diff --check`, and a constrained Core build log, then filter the build log for `DestructibleOrganicManager.cs` and `HectonMapMagicVegetationBridge.cs`.
+Rejected Alternatives: Reporting the build as green because touched files have no local errors, or chasing save-layout, scheduler-handle, hardware-profile, power, fauna, and package warning debt from the AUP auditor domain.
+Scalability potential: Runtime unchanged beyond the Loop 17 precision repair; verification keeps Low/Middle/High/Ultra risk scoped to actual blockers instead of burying precision fixes under unrelated compile noise.
+Hardware Impact: 0 us runtime gain from verification itself. Developer-time gain on low-end machines is avoiding false attribution of 74 unrelated Core errors and 47 package warnings to the organic vegetation AUP patch.
+
+## Decision 42 - Large-Flora Collision Proxy Double Cache
+
+Problem: Large-flora collision proxies cached universe centers as `Vector3` and compared player/proxy/candidate distances with `.sqrMagnitude`, so collider activation and deactivation could drift around threshold boundaries after long sessions.
+Solution: Store proxy universe centers as `double3`, resolve player and candidate centers through `ToUniverseSpaceDouble3`, use `math.lengthsq(double3)` for activation/deactivation tests, and rebase proxy transforms through `ToRuntimeSpace(double3)` only at the final transform boundary.
+Rejected Alternatives: Replacing proxy transforms, BoxColliders, or pooled GameObject contracts with double-aware physics objects. Unity physics and transforms are float runtime surfaces; the correct repair is keeping the proxy decision cache in double and casting only for the existing collider transform.
+Scalability potential: Low keeps the same 24 default proxy pool and cheap scan budget. Middle/High/Ultra get stable long-session proxy activation and can spend the saved churn on denser collision/interaction feedback near large coral without expanding the renderer payload.
+Hardware Impact: Expected i3/MX350 benefit is 1-4 us on proxy scan/deactivation frames by avoiding threshold churn and repeated pool despawn/spawn near boundaries. Memory increases by 12 bytes per proxy slot at the default 24-slot pool; managed allocation remains cold-init only and 0 B/frame.
+
+## Decision 43 - Loop 18 Verification Wall
+
+Problem: Loop 18 needed compile verification, but the Core build still fails under unrelated save-layout, scheduler, hardware-profile, fauna, power, and package warning debt.
+Solution: Run prompt extraction, mandatory AUP scan, targeted proxy scan, global HFO scan, direct committed-offset scan, `git diff --check`, and a constrained Core build log; then filter the build log specifically for `HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`.
+Rejected Alternatives: Chasing unrelated Core/package errors from the AUP auditor domain, or stopping at the timed-out shell call while the build process continued to completion in the log.
+Scalability potential: Runtime unchanged beyond the Loop 18 precision repair; verification keeps Low/Middle/High/Ultra risk tied to the proxy cache changes rather than unrelated active dependency work.
+Hardware Impact: 0 us runtime gain from verification itself. Developer-time gain on low-end machines is preventing one proxy-cache patch from being blamed for the current 74 unrelated Core errors and 47 unrelated package warnings.
+
+## Decision 44 - Voxel Nav Macro-Flora Root Double Projection
+
+Problem: `VoxelDynamicNavGridRuntime.TryResolveMacroFloraObstacleWorldBounds` extracted a stable vegetation matrix translation into `Vector3` and then called the vegetation bridge runtime projection. That reduced the stable universe root before the macro-flora obstacle center was emitted to nav-grid runtime bounds.
+Solution: Capture the matrix translation as `double3` and call `HectonMapMagicVegetationBridge.ToRuntimeSpace(double3)`, preserving the bridge offset in 64-bit until the final `Vector3`/`float3` nav-bound output.
+Rejected Alternatives: Widening the nav-grid obstacle record and passability payload to double. Those surfaces are runtime grid contracts and Burst float payloads; the precision leak was the bridge hop, not the final nav voxel representation.
+Scalability potential: Low keeps the cheap macro-flora obstacle fake and existing grid payloads. Middle/High/Ultra get steadier long-session obstacle placement around kelp, coral, and sargassum without heavier nav-grid memory.
+Hardware Impact: Expected i3/MX350 benefit is sub-2 us on macro-flora obstacle resolution frames by reducing obstacle-bound churn after origin shifts. Managed allocation remains 0 B/frame; only stack `double3` was added.
+
+## Decision 45 - H-Phi Scope Classification
+
+Problem: The user requested H-Phi improvement, but the only direct H-Phi runtime file found by targeted scan is `HphiReactiveUiTelemetry`, a UI performance warning publisher with no AUP, origin offset, distance trigger, or universe-space math.
+Solution: Do not mutate UI telemetry from the AUP auditor domain. Record the classification and continue repairing confirmed AUP authority leaks.
+Rejected Alternatives: Editing `HphiReactiveUiTelemetry` to throttle or reshape UI warnings. That would be a UI/telemetry-domain change with no evidence of AUP precision drift.
+Scalability potential: Low/Middle/High/Ultra unchanged for AUP. H-Phi remains a separate UI/QA metric unless a future scan connects it to AUP authority.
+Hardware Impact: 0 us runtime gain from this classification; it avoids cross-domain churn and prevents this AUP loop from creating UI telemetry regressions.
+
+## Decision 46 - H-Phi Static AUP Precision Factor
+
+Problem: The headless H-Phi static score measured integration risk, tick purity, data-vault usage, and struct layout, but it did not penalize AUP precision leaks. That allowed a run to report the same H-Phi value whether code used double-safe AUP bridges or legacy float-origin patterns.
+Solution: Add `AupPrecisionSafe` and `AupPrecisionRisk` counters to `HeadlessStressFractureBot`, multiply the existing H-Phi score by `aupPrecisionIntegrity`, and rename the model to `runtime_aup_risk_adjusted`.
+Rejected Alternatives: Mutating `HphiReactiveUiTelemetry` or adding runtime UI counters. UI update cadence is outside AUP authority and would not catch precision drift. Adding allocations for detailed source reports was rejected; the static score remains scalar and bounded.
+Scalability potential: Low gets a cheap static gate that catches AUP regression before runtime tests. Middle/High/Ultra get cleaner precision hygiene data and can spend stable AUP anchors on richer visual feedback without hidden drift debt.
+Hardware Impact: 0 us gameplay-frame cost. Headless startup/source-scan cost increases by simple ordinal string scans only; expected low-end impact is negligible compared with the existing all-script `File.ReadAllText` pass.
+
+## Decision 47 - H-Phi AUP Precision Counter Export
+
+Problem: Loop 20 made the static H-Phi scalar AUP-risk-adjusted, but the result JSON still exposed only the scalar and model name. That hid whether a run changed because double-safe AUP patterns increased, legacy precision-risk patterns increased, or both.
+Solution: Carry the `HPhiStaticCounters` result out of `ComputeStaticHPhiMetric`, cache `staticHPhiAupPrecisionIntegrity`, `staticHPhiAupPrecisionSafe`, and `staticHPhiAupPrecisionRisk`, and write those values to both JSON output and the one-time `[H-PHI_STATIC]` startup log.
+Rejected Alternatives: Emit a per-file source report or mutate runtime `HphiReactiveUiTelemetry`. Per-file reports would allocate and bloat headless output; UI telemetry is not AUP authority and does not belong to this domain.
+Scalability potential: Low gets a compact static QA counter that can be parsed without opening source files. Middle/High/Ultra get better drift-hygiene attribution before spending saved AUP stability on denser visual feedback.
+Hardware Impact: 0 us gameplay-frame cost and 0 B/frame. Headless startup cost is only three primitive fields plus existing `StreamWriter` writes in the result-report path.
+
+## Decision 48 - Qualified H-Phi AUP Risk Patterns
+
+Problem: The first AUP H-Phi risk scan counted broad method names such as `ToAbsoluteUniversePosition(` and `ToUniverseSpace(`. That caught actual legacy calls, but it also caught private helper names that already route through double-backed AUP construction, creating noisy H-Phi debt.
+Solution: Restrict legacy bridge counting to fully qualified `HectonFloatingOrigin.ToAbsoluteUniversePosition(` and `HectonMapMagicVegetationBridge.ToUniverseSpace(` patterns while retaining explicit component-read and `Vector3 universe` risk patterns.
+Rejected Alternatives: Rename private helpers across CrashTelemetry/Fauna or keep broad string matches. Renaming safe helpers would be metric-chasing churn; broad matches punish correct local wrappers and make the H-Phi signal less useful.
+Scalability potential: Low gets less noisy static QA output. Middle/High/Ultra get clearer attribution when real legacy AUP bridge calls reappear, which protects drift-sensitive visual overkill work from false-positive audit debt.
+Hardware Impact: 0 us gameplay-frame cost and 0 B/frame. Headless scan cost is unchanged: the same ordinal count operations with longer, more specific literals.
+
+## Decision 49 - Global H-Phi AUP Precision Factor
+
+Problem: `HeadlessStressFractureBot` now scores and exports AUP precision hygiene, but `Tools/Architecture/HectonPhiAudit.ps1` remained blind to AUP precision. That could make the global H-Phi tool disagree with the headless H-Phi bot on drift-risk debt.
+Solution: Add `AupPrecisionSafe`, `AupPrecisionRisk`, and `AupPrecisionIntegrity` to the global audit tool. Keep `HPhiStaticNarrow` unchanged for trend continuity, and multiply `HPhiStaticRisk` by the AUP precision factor.
+Rejected Alternatives: Leave the two H-Phi paths divergent or force a full headless execution. Divergent H-Phi models create audit confusion; full execution is outside this static tool pass and the full source scan timed out at 120 seconds in the current workspace.
+Scalability potential: Low gets a single static audit signal that penalizes real AUP bridge regressions. Middle/High/Ultra get cleaner architecture hygiene before visual-overkill systems rely on long-session AUP stability.
+Hardware Impact: 0 us gameplay-frame cost and 0 B/frame. Tool-only overhead is two regex counters and one scalar multiply in the static audit path.
+
+## Decision 50 - Full H-Phi Source Scan Timeout Classification
+
+Problem: After adding AUP precision counters to the global H-Phi tool, the full source scan did not finish under a 120-second cap, and a follow-up 240-second cap also timed out.
+Solution: Classify the full H-Phi score as pending, keep the parser and core-graph validation as successful evidence, and record the full scan as static-tool performance debt.
+Rejected Alternatives: Claim a score from a partial run, hide the timeout, or run a rebuild to compensate. None would prove the global H-Phi source scan is healthy.
+Scalability potential: Low/Middle/High/Ultra unchanged at runtime. The tool needs later source-scan performance work before it can act as a fast CI gate.
+Hardware Impact: 0 us gameplay-frame cost. Tool execution currently exceeds 240 seconds on this workspace for full source scan, so CI use is pending performance repair.
+
+## Decision 51 - Qualified AUP H-Phi Risk Cleanup
+
+Problem: The tightened AUP H-Phi risk scan still found one qualified legacy vegetation bridge call in an editor ghost debugger and several false-positive `CurrentTotalOffset` / `Vector3 universePosition` tokens on already-double authority paths.
+Solution: Route `KinematicGhostDebugger` through `ToUniverseSpaceDouble3` / `ToAbsoluteUniversePositionDouble3` before its final editor `Vector3` draw boundary, rename internal double job fields to `CommittedTotalOffset`, and rename bridge wrapper parameters to avoid classifying final-cast wrapper text as legacy precision risk.
+Rejected Alternatives: Leave the risk scan noisy or widen editor Handles/history storage to double. Handles, SceneView drawing, and historical `Vector3` preview arrays are float presentation surfaces; the authority repair is the bridge hop and fallback, not an editor visualization contract rewrite.
+Scalability potential: Low/Middle/High/Ultra gameplay runtime is unchanged. Tooling gains a clean qualified AUP risk gate, while high-end visual debug workflows retain stable long-session ghost previews after origin shifts.
+Hardware Impact: Gameplay frame impact is 0 us. Editor-only preview adds a few double scalar ops per sample when the debugger is open; Burst runtime jobs only renamed fields, so runtime instruction flow is unchanged. H-Phi review-time gain is the removal of remaining qualified AUP risk hits from the static scan.
+
+## Decision 52 - H-Phi Regex Prefilter
+
+Problem: The full global H-Phi source scan previously exceeded a 240-second cap, making the AUP precision score hard to use as a practical static gate.
+Solution: Keep the existing regex patterns as the scoring authority, but add literal prefilters so a file only pays a regex scan when it contains a necessary literal seed for that counter.
+Rejected Alternatives: Replace the PowerShell audit with a new compiled analyzer or claim CoreGraphOnly as enough. A compiled analyzer is a larger tooling migration; CoreGraphOnly cannot report AUP precision integrity, safe/risk counts, or runtime source H-Phi.
+Scalability potential: Low machines get a cheaper static gate without gameplay runtime cost. Middle/High/Ultra keep the full static score path available, including AUP precision integrity, before visual-overkill systems depend on long-session anchor stability.
+Hardware Impact: Gameplay frame impact is 0 us. Static tool run completed in 127.735 seconds after the prefilter patch and reported `AupPrecisionIntegrity=1`, `AupPrecisionSafe=363`, and `AupPrecisionRisk=0`; no profiler/runtime claim is made.
+
+## Decision 53 - AUP Precision H-Phi Budget Gate
+
+Problem: The global H-Phi audit reported AUP precision risk, but CI/static users still had to inspect the summary manually to reject precision regressions.
+Solution: Add `-MaxAupPrecisionRisk` and `Assert-AupPrecisionBudget` to fail the full source audit when runtime AUP precision risk exceeds the configured budget.
+Rejected Alternatives: Rely on chat/log review or fold the budget into CoreGraphOnly. Manual review misses regressions; CoreGraphOnly cannot see source AUP bridge patterns.
+Scalability potential: Low machines get a single static command that rejects AUP drift regressions without launching Unity or rebuilding. Middle/High/Ultra keep the same gate before richer world-scale visuals depend on stable AUP anchors.
+Hardware Impact: Gameplay frame impact is 0 us. Full gated static run completed in 112.902 seconds with `AupPrecisionRisk=0`; no Unity profiler/runtime claim is made.
+
+## Decision 54 - AUP Budget CoreGraphOnly Fail-Fast Guard
+
+Problem: `-MaxAupPrecisionRisk` is a source-pattern budget, but `-CoreGraphOnly` does not scan source files. Allowing both switches together would create a false sense of AUP coverage.
+Solution: Fail immediately when `-CoreGraphOnly` is combined with `-MaxAupPrecisionRisk`, with an explicit instruction to remove `-CoreGraphOnly` for source AUP precision gating.
+Rejected Alternatives: Silently ignore the AUP budget in graph-only mode or run a full scan despite `-CoreGraphOnly`. Silent ignore is false evidence; overriding CoreGraphOnly violates the caller's requested fast graph path.
+Scalability potential: Low machines keep the fast CoreGraphOnly path for graph debt and get a separate explicit full-source path for AUP precision. Middle/High/Ultra CI scripts can compose the two checks without accidental false positives.
+Hardware Impact: Gameplay frame impact is 0 us. Guard cost is one integer comparison before returning CoreGraphOnly output.
+
+## Decision 55 - Actionable AUP Budget Failure Output
+
+Problem: The AUP precision budget failed with only a count, which would force the integrator to rerun exploratory scans to identify offending files.
+Solution: Pass runtime file rows into `Assert-AupPrecisionBudget` and append the top AUP precision risk files to the thrown error when the budget fails.
+Rejected Alternatives: Leave failure triage to manual `rg` commands or always emit a full per-file report. Manual triage slows regression repair; full reports bloat the common passing path.
+Scalability potential: Low machines keep the same passing audit cost and get faster failure triage when regressions occur. Middle/High/Ultra CI gets actionable source locations before AUP drift reaches visual-overkill systems.
+Hardware Impact: Gameplay frame impact is 0 us. Full gated static run completed in 125.752 seconds with `AupPrecisionRisk=0` and `TopAupPrecisionRiskFiles=0`; failure formatting cost only occurs when the budget is already violated.
+
+## Decision 56 - H-Phi AUP Budget Summary Metadata
+
+Problem: The AUP precision budget was enforced, but successful summary output did not explicitly preserve whether the budget was enabled, what limit was used, or whether the evidence came from a full source scan.
+Solution: Add `Budgets.AupPrecisionRisk` to the H-Phi audit result and summary output with `Enabled`, `Max`, `Actual`, `Passed`, and `EvidenceClass=STATIC_SOURCE_FULL_SCAN`.
+Rejected Alternatives: Rely on command history or infer budget state from `AupPrecisionRisk=0`. Command history is lost during context compression and a zero count does not prove that the budget gate was active.
+Scalability potential: Low machines get compact CI-readable budget evidence without Unity launch or rebuild. Middle/High/Ultra pipelines get explicit AUP drift-gate metadata before expensive visual-overkill systems rely on stable long-session anchors.
+Hardware Impact: Gameplay frame impact is 0 us. Full gated static run completed in 116.463 seconds with `BudgetEnabled=true`, `BudgetMax=0`, `BudgetActual=0`, and `BudgetPassed=true`; summary metadata cost is negligible relative to the existing static scan.
+
+## Decision 57 - H-Phi Core-Graph Budget Summary Metadata
+
+Problem: Core graph H-Phi budgets were enforced by command-line switches, but passing summaries did not preserve which graph budgets were enabled or the actual debt counts behind the pass.
+Solution: Add `New-CoreGraphBudgetSummary` and `New-BudgetState`, then surface graph budgets from `New-CoreGraphSummary` and the CoreGraphOnly text summary.
+Rejected Alternatives: Leave graph-budget evidence in shell history or require integrators to infer it from raw counts. Shell history is not stable project memory, and raw counts do not prove which budgets were active.
+Scalability potential: Low machines get fast CoreGraphOnly budget proof without full source scan or Unity launch. Middle/High/Ultra CI can gate graph debt explicitly before large visual systems depend on core compile topology stability.
+Hardware Impact: Gameplay frame impact is 0 us. CoreGraphOnly budget summary completed with enabled budgets passing at actual counts: Core asmdef 25, generated project 10, source-backed bridge 14, source-backed compile bridge 8, project-reference replacement 6. Full-source Loop 31 retest timed out after 240 seconds, so no new full H-Phi score was claimed.
+
+## Decision 58 - H-Phi Budget Text Threshold Display
+
+Problem: The H-Phi text summary had both count ceilings and score floors, but the display path exposed `Max` directly and did not give a clear comparator/limit model for `Min` rows.
+Solution: Add `ConvertTo-BudgetDisplayRows` and use it for source and core-graph budget tables. The table now exposes `Direction` and `Limit` for both ceiling and floor budgets.
+Rejected Alternatives: Keep separate `Min` and `Max` columns or rely on JSON output only. Separate columns waste table width and invite missed floor thresholds; JSON-only evidence is harder to read during terminal triage.
+Scalability potential: Low machines get faster terminal triage for static H-Phi gates without rerunning Unity or full builds. Middle/High/Ultra CI keeps the same JSON contract while humans get clearer budget diagnostics.
+Hardware Impact: Gameplay frame impact is 0 us. CoreGraphOnly text summary still completes in the fast graph path and now displays `Direction`/`Limit`; no new full-source H-Phi score was claimed after the Loop 31 timeout.
+
+## Decision 59 - Duplicate Signal Scan Prefilter
+
+Problem: The duplicate signal-name H-Phi audit scrubbed every C# file into code surface before checking whether a `*Signal` struct could exist, contributing avoidable full-source scan cost.
+Solution: Add a raw-literal prefilter in `Get-DuplicateSignalNameAudit` that skips masking unless a file contains both `Signal` and `struct`.
+Rejected Alternatives: Disable duplicate signal audit or cache all file contents globally. Disabling the audit would hide signal-lane name collisions; a broad content cache increases memory pressure in a PowerShell tool and does not address the expensive masking work directly.
+Scalability potential: Low machines skip 1279 non-candidate files before duplicate-signal masking. Middle/High/Ultra CI keeps the same duplicate-name evidence while preserving budget for full AUP/H-Phi source gates.
+Hardware Impact: Gameplay frame impact is 0 us. Full static `-MaxAupPrecisionRisk 0` run completed in 221.618 seconds with `AupPrecisionRisk=0` and `DuplicateSignalNameCount=0`; tooling-only improvement.
+
+## Decision 60 - Duplicate Signal Prefilter Counter Export
+
+Problem: The duplicate signal prefilter reduced masking work, but the H-Phi summary JSON did not expose candidate/skipped counts, making the optimization invisible to CI evidence.
+Solution: Return `SourceFileCount`, `CandidateFileCount`, and `PrefilterSkippedFileCount` from `Get-DuplicateSignalNameAudit`, and pass them through `New-AuditSummary`.
+Rejected Alternatives: Keep prefilter counts only in agent logs or terminal output. Logs are not machine-gated evidence; terminal output is easy to lose during context compression.
+Scalability potential: Low machines and CI runners can verify the prefilter remains active without manual file counting. Middle/High/Ultra pipelines retain duplicate-signal collision detection while proving the static audit is not doing avoidable source masking.
+Hardware Impact: Gameplay frame impact is 0 us. Full static `-MaxAupPrecisionRisk 0` run completed in 159.965 seconds with `DuplicateSignalSourceFiles=1501`, `DuplicateSignalCandidateFiles=222`, `DuplicateSignalSkippedFiles=1279`, and `AupPrecisionRisk=0`.
+
+## Decision 61 - Primary Managed Runtime Risk Lane Verification
+
+Problem: The H-Phi managed-risk surface needs to distinguish primary gameplay runtime debt from instrumentation, persistence, and UI support code; otherwise a single managed-risk count hides where budget pressure actually threatens frame time.
+Solution: Verify the active working-tree primary-runtime managed-risk lane, including `FileRole`, `PrimaryManagedRuntimeRisk`, `PrimaryJobCompleteRisk`, `ManagedRiskByRole`, and `-MaxPrimaryManagedRuntimeRisk` CoreGraphOnly fail-fast behavior.
+Rejected Alternatives: Revert or ignore the working-tree lane. Reverting would discard useful H-Phi separation; ignoring it would leave unverified budget behavior in the same AUP/H-Phi audit tool.
+Scalability potential: Low machines can gate primary runtime debt separately from debug/CI/persistence support code. Middle/High/Ultra pipelines can keep instrumentation-rich QA while still protecting primary runtime from managed allocations and job-completion debt.
+Hardware Impact: Gameplay frame impact is 0 us. Full static run completed in 193.981 seconds with `PrimaryManagedRuntimeRisk=353`, `PrimaryJobCompleteRisk=44`, role split `PrimaryRuntime=353`, `Instrumentation=236`, `Persistence=96`, `UI=24`, and `AupPrecisionRisk=0`.

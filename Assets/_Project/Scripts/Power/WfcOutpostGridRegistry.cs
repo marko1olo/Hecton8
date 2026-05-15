@@ -47,7 +47,7 @@ namespace Hecton8.Power
             {
                 NativeArray<byte> slot = _gridSlots[i];
                 if (slot.IsCreated)
-                    H8Memory.Release(ref slot);
+                    H8Memory.Release(ref slot, LogisticsGridSystemId);
 
                 _gridSlots[i] = slot;
                 _descriptors[i] = default;
@@ -61,12 +61,13 @@ namespace Hecton8.Power
         public static bool RegisterGrid(in WfcOutpostGridDescriptor descriptor, NativeArray<byte> cells, out uint handle)
         {
             handle = 0u;
-            if (!cells.IsCreated)
+            if (!cells.IsCreated || !IsValidDescriptor(in descriptor))
                 return false;
 
+            int expectedCount = descriptor.Dimensions.x * descriptor.Dimensions.y * descriptor.Dimensions.z;
             int cellCount = math.min(
                 math.min(cells.Length, descriptor.CellCount),
-                WfcOutpostGridConstants.MaxCellCount);
+                math.min(WfcOutpostGridConstants.MaxCellCount, expectedCount));
             if (cellCount <= 0)
                 return false;
 
@@ -77,6 +78,8 @@ namespace Hecton8.Power
             if (!EnsureSlot(slot))
                 return false;
 
+            _handles[slot] = 0u;
+            _descriptors[slot] = default;
             NativeArray<byte> destination = _gridSlots[slot];
             for (int i = 0; i < cellCount; i++)
                 destination[i] = cells[i];
@@ -92,6 +95,37 @@ namespace Hecton8.Power
             _descriptors[slot] = stored;
             _handles[slot] = handle;
             return true;
+        }
+
+        private static bool IsValidDescriptor(in WfcOutpostGridDescriptor descriptor)
+        {
+            int3 dimensions = descriptor.Dimensions;
+            if (descriptor.SectorHash == 0UL ||
+                descriptor.GenerationSequence == 0u ||
+                descriptor.CellCount == 0 ||
+                dimensions.x <= 0 ||
+                dimensions.y <= 0 ||
+                dimensions.z <= 0 ||
+                dimensions.x > WfcOutpostGridConstants.FullWidth ||
+                dimensions.y > WfcOutpostGridConstants.FullHeight ||
+                dimensions.z > WfcOutpostGridConstants.FullDepth)
+            {
+                return false;
+            }
+
+            int expectedCount = dimensions.x * dimensions.y * dimensions.z;
+            if (expectedCount <= 0 || descriptor.CellCount > expectedCount)
+                return false;
+
+            float3 originLocal = new float3(
+                descriptor.OriginAup.LocalX,
+                descriptor.OriginAup.LocalY,
+                descriptor.OriginAup.LocalZ);
+            return math.all(math.isfinite(originLocal)) &&
+                   math.isfinite(descriptor.CellSizeMeters) &&
+                   math.isfinite(descriptor.FloorHeightMeters) &&
+                   descriptor.CellSizeMeters >= 1f &&
+                   descriptor.FloorHeightMeters >= 1f;
         }
 
         public static bool TryGetGrid(uint handle, out WfcOutpostGridLease lease)

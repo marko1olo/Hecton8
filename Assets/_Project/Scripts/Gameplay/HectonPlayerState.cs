@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -137,6 +138,12 @@ namespace Hecton8.Gameplay
 
         private const string NativeMemoryOwner = nameof(PlayerKinematicsNativeState);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+        private const int VaultPositionsFlag = 1 << 0;
+        private const int VaultVelocitiesFlag = 1 << 1;
+        private const int VaultIntendedMovementsFlag = 1 << 2;
+        private const int VaultDragSolvedVelocitiesFlag = 1 << 3;
+        private const int VaultTelemetryRingFlag = 1 << 4;
+        private int _vaultNativeStateMask;
 
         public bool IsCreated =>
             Positions.IsCreated &&
@@ -145,24 +152,46 @@ namespace Hecton8.Gameplay
             DragSolvedVelocities.IsCreated &&
             TelemetryRing.IsCreated;
 
-        public void EnsureCreated()
+        public void EnsureCreated(IDataVault dataVault)
         {
-            EnsureFloat3Array(ref Positions, KinematicCapacity, nameof(Positions));
-            EnsureFloat3Array(ref Velocities, KinematicCapacity, nameof(Velocities));
-            EnsureFloat3Array(ref IntendedMovements, KinematicCapacity, nameof(IntendedMovements));
-            EnsureFloat3Array(ref DragSolvedVelocities, KinematicCapacity, nameof(DragSolvedVelocities));
+            IDataVault vault = dataVault;
+            EnsureFloat3Array(
+                ref Positions,
+                BufferID.PlayerKinematicPositions,
+                KinematicCapacity,
+                nameof(Positions),
+                VaultPositionsFlag,
+                vault);
+            EnsureFloat3Array(
+                ref Velocities,
+                BufferID.PlayerKinematicVelocities,
+                KinematicCapacity,
+                nameof(Velocities),
+                VaultVelocitiesFlag,
+                vault);
+            EnsureFloat3Array(
+                ref IntendedMovements,
+                BufferID.PlayerKinematicIntendedMovements,
+                KinematicCapacity,
+                nameof(IntendedMovements),
+                VaultIntendedMovementsFlag,
+                vault);
+            EnsureFloat3Array(
+                ref DragSolvedVelocities,
+                BufferID.PlayerKinematicDragSolvedVelocities,
+                KinematicCapacity,
+                nameof(DragSolvedVelocities),
+                VaultDragSolvedVelocitiesFlag,
+                vault);
 
             if (!TelemetryRing.IsCreated)
             {
-                TelemetryRing = new NativeArray<PlayerKinematicsTelemetryEntry>(
+                TelemetryRing = AllocateArray<PlayerKinematicsTelemetryEntry>(
+                    BufferID.PlayerKinematicTelemetryRing,
                     TelemetryFrameCapacity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<PlayerKinematicsTelemetryEntry>[300] - fixed player kinematics black-box ring - owner: PlayerKinematicsNativeState
-                NativeMemorySentinel.RegisterNativeArray(
-                    TelemetryRing,
-                    NativeMemoryOwner,
                     nameof(TelemetryRing),
-                    NativeMemoryLifetime);
+                    VaultTelemetryRingFlag,
+                    vault);
             }
         }
 
@@ -216,47 +245,89 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private static void EnsureFloat3Array(ref NativeArray<float3> array, int count, string label)
+        private void EnsureFloat3Array(
+            ref NativeArray<float3> array,
+            BufferID bufferId,
+            int count,
+            string label,
+            int vaultFlag,
+            IDataVault vault)
         {
             if (array.IsCreated)
                 return;
 
-            array = new NativeArray<float3>(
+            array = AllocateArray<float3>(
+                bufferId,
                 math.max(1, count),
+                label,
+                vaultFlag,
+                vault);
+        }
+
+        private NativeArray<T> AllocateArray<T>(
+            BufferID bufferId,
+            int count,
+            string label,
+            int vaultFlag,
+            IDataVault vault) where T : struct
+        {
+            if (vault != null)
+            {
+                NativeArray<T> vaultArray = vault.GetBuffer<T>(
+                    bufferId,
+                    math.max(1, count),
+                    SystemID.GameplayPlayer,
+                    NativeArrayOptions.ClearMemory);
+                if (vaultArray.IsCreated)
+                {
+                    _vaultNativeStateMask |= vaultFlag;
+                    return vaultArray;
+                }
+            }
+
+            _vaultNativeStateMask &= ~vaultFlag;
+            NativeArray<T> array = H8Memory.Allocate<T>(
+                math.max(1, count),
+                SystemID.GameplayPlayer,
                 Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[count] - player kinematic S.O.A. lane - owner: PlayerKinematicsNativeState
+                NativeArrayOptions.ClearMemory);
+            if (!array.IsCreated)
+                return default;
+
             NativeMemorySentinel.RegisterNativeArray(
                 array,
                 NativeMemoryOwner,
                 label,
                 NativeMemoryLifetime);
+            return array;
         }
 
         public void Dispose()
         {
-            DisposeArray(ref Positions, nameof(Positions));
-            DisposeArray(ref Velocities, nameof(Velocities));
-            DisposeArray(ref IntendedMovements, nameof(IntendedMovements));
-            DisposeArray(ref DragSolvedVelocities, nameof(DragSolvedVelocities));
-            if (TelemetryRing.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(TelemetryRing);
-                TelemetryRing.Dispose();
-                TelemetryRing = default;
-            }
+            DisposeArray(ref Positions, VaultPositionsFlag);
+            DisposeArray(ref Velocities, VaultVelocitiesFlag);
+            DisposeArray(ref IntendedMovements, VaultIntendedMovementsFlag);
+            DisposeArray(ref DragSolvedVelocities, VaultDragSolvedVelocitiesFlag);
+            DisposeArray(ref TelemetryRing, VaultTelemetryRingFlag);
 
             TelemetryWriteIndex = 0;
             TelemetryFrameSequence = 0u;
         }
 
-        private static void DisposeArray(ref NativeArray<float3> array, string label)
+        private void DisposeArray<T>(ref NativeArray<T> array, int vaultFlag) where T : struct
         {
             if (!array.IsCreated)
                 return;
 
+            if ((_vaultNativeStateMask & vaultFlag) != 0)
+            {
+                array = default;
+                _vaultNativeStateMask &= ~vaultFlag;
+                return;
+            }
+
             NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            H8Memory.Release(ref array, SystemID.GameplayPlayer);
         }
     }
 

@@ -23,3 +23,258 @@ What was done: Replaced direct placement with bounded linear lookup, first-free-
 Cinematic cheats used: Kept hash-only signal payloads and bounded char slab storage instead of introducing managed prompt objects or dictionaries.
 
 Exact microseconds saved: No new savings claimed. This trade spends a small signal-time compare budget for prompt correctness while keeping render-time cost unchanged at fixed-array reads.
+
+## 2026-05-15 Continuation Restore And H-Phi Polish
+What was wrong: Recheck found the disk status/rationale had stale loop records, and the runtime renderer had reverted several hot-path fixes: UI `IUpdatable.Tick` signal consumption, shared icon/text indirect buffers, shader `round()` and Bayer division expressions, and per-glyph `Quaternion.LookRotation`/`Matrix4x4.TRS`.
+
+What was done: Restored `ILateFrameTickable` signal resolve before post-simulation snapshot clear, restored separate icon/text instance and args buffers, restored contract-sourced input scheme/glyph constants, restored direct billboard matrix writes, restored shader constant Bayer LUT and branch-gated dither, and added a fail-closed SRP camera gate through `GlobalRenderContext.CurrentCamera`.
+
+Cinematic cheats used: Same physical fake: one atlas quad per glyph, integer atlas lookup, alpha-test dither instead of blended Canvas/UI, Low-tier snap instead of fade, and camera-facing billboard math instead of real 3D text.
+
+Exact microseconds saved: Estimates only. Avoids one duplicate indirect submission per non-target camera pass, removes one quaternion/TRS helper path per glyph, avoids one blank space quad already present from the prior pass, and avoids repeated material/dither writes after warmup. No profiler capture available.
+
+Scalability matrix: Low snaps alpha, disables dither, uses minimal quads, and now avoids auxiliary-camera submission. Middle keeps 0.2s Bayer dither. High/Ultra can spend the preserved CPU/GPU budget on richer glyph materials and atlas quality without changing gameplay authority.
+
+Verification: No dotnet rebuilds were run because the user explicitly forbade them. Static scans on touched tooltip/cache/interaction files returned no `foreach`, `string.Format`, `.ToString(`, interpolated strings, managed collection construction, LINQ markers, exact sqrt, or normalize calls. Static scans on tooltip/shader returned no old shared `_instanceBuffer`/`_argsBuffer`, `_registeredUpdate`, tooltip `public void Tick`, tooltip `TryRegisterUpdatable`, `Quaternion.LookRotation`, `Matrix4x4.TRS`, shader `round(`, or Bayer `/ 16` expressions. `git diff --check` passed with CRLF warnings only.
+
+## 2026-05-15 Scoped H-Phi Micro Pass
+What was wrong: The diegetic tooltip still had two avoidable render-adjacent costs after the restore pass: Low-tier checks still reached through `GlobalRegistry.ScalabilityTierProfileByte`, and black-box telemetry used modulo for a fixed 300-entry ring cursor.
+
+What was done: Cached the Low-tier flag during lifecycle and late-frame update, made `IsLowTier()` a local boolean read, and replaced the black-box modulo cursor with increment plus branch wrap. Re-ran static scans after the change.
+
+Cinematic cheats used: Preserved the same fake-first prompt model: fixed atlas quads, alpha-test dither on non-Low tiers, instant Low-tier snap, and telemetry only as a bounded ring.
+
+Exact microseconds saved: Estimate only, not profiler-measured. Expected gain is below 1 us per visible tooltip frame on i3/MX350, but it removes avoidable registry/modulo work from a path that can run every frame.
+
+Verification: No dotnet rebuilds were run by instruction. Post-pass scans found no forbidden hot-path text/allocation/LINQ patterns, no old update/shared-buffer/matrix/shader symbols, no shader `round(` or Bayer `/ 16`, and no `% BlackBoxCapacity` cursor modulo. `git diff --check` on the tooltip and shader files produced no errors.
+
+## 2026-05-15 Render Basis Consolidation
+What was wrong: The renderer sampled `camera.transform` basis vectors inside each indirect batch and ran the UV dirty upload check from inside `DrawBatch`, duplicating work for the normal icon-plus-text prompt.
+
+What was done: Moved camera position/right/up/forward sampling to `Render`, passed the basis into both batch submissions, changed XR depth offset to use the sampled camera position, and moved `UploadUvTablesIfDirty()` to render scope.
+
+Cinematic cheats used: Same diegetic prompt fake: atlas quads and integer UV lookup, one frame-consistent camera basis, and shader dither rather than Canvas alpha.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us for a single visible prompt, but the duplicated transform/property path is gone and both batches now use the same camera sample.
+
+Verification: No dotnet rebuilds were run. Static scans remained clean for forbidden hot-path allocation/text/LINQ patterns and old renderer/update/shader markers. `git diff --check` produced only repository CRLF warnings.
+
+## 2026-05-15 Resource And Material Hardening
+What was wrong: The tooltip still performed full resource-object readiness checks in the visible render path, used `Marshal.SizeOf` in buffer allocation, and retained runtime `Shader.Find` plus `new Material` fallback code.
+
+What was done: Added explicit buffer strides and `_resourceObjectsReady`; split resource creation from material/property binding; added authored glyph and icon material assets in `Assets/_Project/Resources/UI`; replaced runtime material clone/search fallback with cold material resource loading; moved texture, buffer, SDF tuning, and dither binding into persistent per-draw `MaterialPropertyBlock`s; added a fail-closed shader-contract check.
+
+Cinematic cheats used: Same fake-first implementation: one atlas quad per glyph, integer UV lookup, dithered alpha-test fade, Low-tier snap, and no Canvas overlay.
+
+Exact microseconds saved: Estimate only. Expected steady-frame gain is sub-1 us from readiness and stride cleanup; cold path removes two material allocations and one shader lookup fallback. No runtime profiler proof.
+
+Verification: No dotnet rebuilds were run. Static scans returned no forbidden hot-path text/allocation/LINQ patterns, no old update/shared-buffer/matrix/shader markers, and no `Marshal.SizeOf`, `Shader.Find`, or `new Material(` matches in the tooltip/shader scope. `git diff --check` produced only repository CRLF warnings. `Tools/Architecture/HectonPhiAudit.ps1 -Json` completed at `2026-05-15 01:32:33 +04:00`; the second score-summary extraction timed out, so no exact H-Phi score delta is claimed here.
+
+## 2026-05-15 Material Readiness Latch
+What was wrong: Missing or mismatched authored tooltip materials could still cause repeated material readiness checks in visible frames, even though the renderer would fail closed and submit nothing.
+
+What was done: Added cached material-ready, material-resolve-attempted, and material-resolve-failed states. The tooltip now skips material setup after warmup and skips repeated resolve attempts after a failed authored material contract until resources are released.
+
+Cinematic cheats used: Same indirect atlas-quad prompt with dithered fade and Low-tier snap; this pass only hardens setup gates.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us in normal frames and prevents repeated cold-resource lookup/check work when authoring is invalid. No runtime profiler proof.
+
+Verification: No dotnet rebuilds were run. Static scans stayed clean for forbidden allocation/text/LINQ patterns and old renderer/update/shader markers. `git diff --check` returned only repository CRLF warnings.
+
+## 2026-05-15 MPB Dirty Binding
+What was wrong: The indirect tooltip renderer still cleared and rebound the same `MaterialPropertyBlock` state for each icon/text batch, even when texture, compute buffers, SDF tuning, and dither state had not changed.
+
+What was done: Added per-batch bound-state caches and a dirty binding gate. The renderer now uploads per-instance glyph payloads every visible draw, but only calls `MaterialPropertyBlock.Clear`, `SetTexture`, `SetFloat`, and `SetBuffer` when binding state changes.
+
+Cinematic cheats used: Preserved the same fake-first diegetic prompt model: atlas quads, integer UV lookup, dithered alpha-test fade for non-Low tiers, and Low-tier snap. This pass removes redundant CPU binding traffic without changing the visual contract.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per visible prompt on i3/MX350, with the practical benefit that High/Ultra material polish can be layered without resetting identical MPB bindings every frame.
+
+Verification: No dotnet rebuilds were run. Static scans returned no forbidden hot-path text/allocation/LINQ patterns, no old update/shared-buffer/matrix/shader markers, and no runtime `Marshal.SizeOf`, `Shader.Find`, or `new Material(` markers in the tooltip/shader scope. `git diff --check` returned CRLF normalization warnings only on the tooltip/status/rationale/log scope. `Tools/Architecture/HectonPhiAudit.ps1 -Summary` was retried and timed out after 120 seconds without output, so no H-Phi score claim is made.
+
+## 2026-05-15 Registry Camera Resolution
+What was wrong: The diegetic tooltip renderer still had a fallback path that reached through `GameBootstrapper` and `GetComponentInChildren<Camera>()` if the authored camera and registry camera were missing. That hides broken registry wiring and keeps a component search in a renderer-owned camera resolver.
+
+What was done: Removed the bootstrap/component-search fallback and the `Time.unscaledTime` retry gate. Tooltip camera resolution is now authored `interactionCamera` first, then cached `GlobalRegistry.Player.PlayerCamera`, with cache reset on player service hot-swap.
+
+Cinematic cheats used: No visual change. This preserves the same indirect atlas-quad prompt and fail-closed camera gating; the change removes discovery work rather than adding rendering truth.
+
+Exact microseconds saved: Estimate only. Steady-frame savings are negligible when the camera is already cached. Worst-case cold-path search is eliminated, and missing registry wiring now fails closed instead of scanning hierarchy.
+
+Verification: No dotnet rebuilds were run. Focused scans found no `Hecton8.Bootstrap`, `GameBootstrapper`, `GetComponentInChildren`, `Time.unscaledTime`, `CameraResolveRetryIntervalSeconds`, `_nextCameraResolveTime`, or `interactionCamera = _cachedRenderCamera` markers in `DiegeticTooltipSystem.cs`. Existing forbidden hot-path allocation/text/LINQ and old renderer/update/shader scans stayed clean. `git diff --check` returned CRLF normalization warnings only.
+
+## 2026-05-15 Indirect Args Dirty Count
+What was wrong: The renderer still uploaded indirect argument buffers every visible icon/text draw even when the glyph count had not changed.
+
+What was done: Added cached icon/text args counts. The tooltip now updates indirect args only on count changes, while still uploading per-instance glyph transforms/tints every visible draw.
+
+Cinematic cheats used: Same fake-first prompt path: atlas quads, integer UV lookup, dithered alpha-test fade on non-Low tiers, Low-tier snap, and fail-closed camera ownership.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per steady visible prompt, mostly reduced CPU-to-GPU argument buffer traffic and driver-side work.
+
+Verification: No dotnet rebuilds were run. Static scans stayed clean for forbidden hot-path text/allocation/LINQ and old renderer/update/shader markers. Args scan shows `argsBuffer.SetData(_indirectArgs)` remains in buffer initialization and the new count-dirty branch only. `git diff --check` returned CRLF normalization warnings only.
+
+## 2026-05-15 Input Determinism Cache
+What was wrong: The tooltip scheme resolver still fetched `GlobalRegistry.InputDeterminism` during scheme checks instead of using a cached service reference maintained by lifecycle/hot-swap.
+
+What was done: Added `_inputDeterminism`, refreshed it on enable/start and input service hot-swap, cleared it on disable, and changed `ResolveCurrentSchemeHash()` to read the cached interface.
+
+Cinematic cheats used: No visual contract change. The same atlas-quad input prompt remains, with device glyphs resolved from deterministic scheme state.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per active prompt frame by removing one registry access from scheme checks.
+
+Verification: No dotnet rebuilds were run. Static scans stayed clean for forbidden allocation/text/LINQ and old renderer/update/shared-buffer/matrix/shader markers. Input scan confirmed `GlobalRegistry.InputDeterminism` remains only in lifecycle refresh, while `ResolveCurrentSchemeHash()` reads `_inputDeterminism`. `git diff --check` returned CRLF normalization warnings only.
+
+## 2026-05-15 Render Resource Fail-Closed Gate
+What was wrong: Missing compute buffers or authored materials could still let `Render()` perform camera resolution, anchor math, bounds creation, and telemetry before the batch calls failed closed.
+
+What was done: Added an immediate readiness gate after `EnsureResources()`. If resource objects, materials, or the quad mesh are not ready, the renderer returns before camera/anchor work.
+
+Cinematic cheats used: No visual change. The same atlas-quad diegetic prompt path remains; invalid resource states now fail closed earlier.
+
+Exact microseconds saved: Estimate only. No normal ready-frame gain is claimed; invalid authoring states avoid unnecessary camera/anchor/bounds work.
+
+Verification: No dotnet rebuilds were run. Static scans stayed clean for forbidden hot-path allocation/text/LINQ and old renderer/update/shared-buffer/matrix/shader markers. Render gate scan confirmed readiness checks happen before `ResolveRenderCamera()`. `git diff --check` returned CRLF normalization warnings only.
+
+## 2026-05-15 Render Cache Tightening
+What was wrong: Visible prompt frames still read `camera.transform` and recomputed derived max-distance/bounds values every render.
+
+What was done: Cached the render camera transform with the resolved camera reference, including explicit-camera stale-cache handling and player hot-swap reset. Added derived caches for max visible distance squared and bounds size, refreshed only when `maxVisibleDistance` changes.
+
+Cinematic cheats used: No visual change. The same atlas-quad prompt, dither fade, Low-tier snap, and fail-closed material/camera gates remain.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per visible prompt frame on i3/MX350 from fewer render-side property/math operations.
+
+Verification: No dotnet rebuilds were run. Static scans stayed clean for forbidden allocation/text/LINQ and old renderer/update/shared-buffer/matrix/shader markers. Cache scan confirmed render uses `_cachedRenderCameraTransform`, `_cachedMaxVisibleDistanceSq`, and `_cachedBoundsSize`; the only remaining `camera.transform` access is inside `CacheRenderCamera()`. `git diff --check` returned CRLF normalization warnings only.
+
+## 2026-05-15 Atlas Texture And Layer Cache
+What was wrong: Icon/text indirect submissions still read atlas texture properties at render time and fetched `gameObject.layer` inside each batch.
+
+What was done: Cached active font and sprite atlas textures during layout rebuild, then passed one sampled render layer into both icon/text indirect draw calls.
+
+Cinematic cheats used: No visual contract change. The same integer-index atlas quads, dither fade on non-Low tiers, Low-tier snap, and fail-closed camera/material gates remain.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per visible prompt frame from fewer render-side property reads; no profiler proof is claimed.
+
+Verification: No dotnet rebuilds were run. Static scans stayed clean for forbidden allocation/text/LINQ and old renderer/update/shared-buffer/matrix/shader markers. Atlas/layer scan confirmed `_runtimeSpriteAtlasTexture`, `_runtimeFontAtlasTexture`, and `renderLayer` feed draw submission, with only one render-time `gameObject.layer` sample.
+
+## 2026-05-15 Diegetic Panel Phosphor Material
+What was wrong: `DiegeticPanelController` still used runtime shader lookup and material construction for the PDA/panel phosphor decay compositor.
+
+What was done: Added authored `Resources/UI/MAT_DiegeticPanelPhosphorDecay` and changed the controller to resolve, validate, and cache that material instead of calling `Shader.Find` or `new Material`.
+
+Cinematic cheats used: Preserved the same phosphor-history fake: previous RT decays into current RT, buying CRT persistence without simulating display electronics.
+
+Exact microseconds saved: Estimate only. No steady-frame win is claimed; cold path removes one shader lookup and one material allocation, and invalid authoring now fails closed instead of constructing fallback state.
+
+Verification: No dotnet rebuilds were run. Static scans found no `PhosphorDecayShaderPath`, `AssetDatabase`, `Shader.Find`, or `new Material(` markers in `DiegeticPanelController.cs`; hot-path text/LINQ marker scan for the same file returned no matches. `git diff --check` returned the repository CRLF warning only on the edited panel file.
+
+## 2026-05-15 Diegetic Panel Camera Ownership
+What was wrong: Physical panel camera resolution still reached through `GameBootstrapper.TryGetCurrentPlayerTransform` and carried a one-second retry timer.
+
+What was done: Removed the bootstrap fallback and retry field. `DiegeticPanelController` now resolves an authored interaction camera first, then `GlobalRegistry.Player.PlayerCamera`, and fails closed when no active camera exists.
+
+Cinematic cheats used: No visual change. The same physical panel cursor projection and RT presentation remain; the change removes ownership ambiguity from the camera source.
+
+Exact microseconds saved: Estimate only. Steady-frame gain is small; cold/worst-case path avoids one bootstrap call chain, one component probe, and one retry-timer branch.
+
+Verification: No dotnet rebuilds were run. Static scans found no `Hecton8.Bootstrap`, `GameBootstrapper`, `_cameraRetryTimer`, `TryGetCurrentPlayerTransform`, old phosphor fallback markers, or hot-path text/LINQ markers in `DiegeticPanelController.cs`.
+
+## 2026-05-15 Diegetic Panel Tick Time Cache
+What was wrong: Physical panel tick work read unscaled time separately for interaction freshness, proxy-light flicker, and queued input-event timestamps.
+
+What was done: Sampled dispatcher unscaled time once per active panel tick into `_tickUnscaledTime` and reused it across the tick call stack.
+
+Cinematic cheats used: No visual change. The same proxy-light flicker fake remains; it now uses the same sampled frame timestamp as panel input events.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per active panel tick by removing repeated native time property reads.
+
+Verification: No dotnet rebuilds were run. Static scan found no direct `Time.unscaledTime` or `Time.realtimeSinceStartup` markers in `DiegeticPanelController.cs`.
+
+## 2026-05-15 Diegetic Panel Camera Transform Cache
+What was wrong: Physical panel distance refresh and ray projection still read `resolvedCamera.transform` directly after camera ownership was moved to the registry path.
+
+What was done: Cached the resolved interaction camera transform with the camera reference, tracked explicit-camera ownership, and cleared the cache on disable.
+
+Cinematic cheats used: No visual change. The same physical panel projection math remains; the change removes repeated transform property access and stale explicit-camera ownership risk.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per active physical panel frame, with cleaner camera ownership for future panel effects.
+
+Verification: No dotnet rebuilds were run. Static scan found no `resolvedCamera.transform` markers; the only remaining `camera.transform` marker in `DiegeticPanelController.cs` is inside `CacheInteractionCamera()`.
+
+## 2026-05-15 Diegetic Panel Input Service Cache
+What was wrong: `DiegeticPanelController` still refreshed `GlobalRegistry.Input` during every runtime-state check. A naive cache would also be wrong because `GlobalRegistry.Input` can return the no-op fallback before the real input dispatcher registers, and first registration from null does not broadcast a hot-swap event.
+
+What was done: Added hot-swap listener ownership to the panel controller, cached the real registered `IInputService`, and kept a narrow `_inputAwaitingRegistration` fallback probe only while `GlobalRegistry.RegisteredInput` is empty. Player service hot-swap now refreshes the cached panel camera when no authored interaction camera is assigned.
+
+Cinematic cheats used: No visual contract change. The same physical panel projection, RT presentation, proxy-light fake, and phosphor-history CRT persistence remain.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per active physical panel tick after input registration, with correctness preserved for startup ordering.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed listener registration/unregistration, `GlobalRegistry.Input` isolated to `RefreshServices()`, stale no-op protection through `_inputAwaitingRegistration`, and no forbidden hot-path allocation/text/LINQ, bootstrap fallback, direct `Time`, old phosphor fallback, or `resolvedCamera.transform` markers.
+
+## 2026-05-15 Diegetic Panel Material Property Cache
+What was wrong: Phosphor-enabled physical panels refresh the output texture every late frame, but the material path still repeated `HasProperty` checks and rewrote `_PanelPowerLevel` during texture-only updates.
+
+What was done: Cached panel output material property support when the material reference changes, routed texture/float writes through cached flags, and separated the material-written power value from the logical panel power state.
+
+Cinematic cheats used: Preserved the phosphor-history CRT persistence fake. The change spends less CPU/API traffic on the same authored material effect.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per phosphor-enabled panel late frame on i3/MX350; no profiler proof is claimed.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed `HasProperty` is isolated to `RefreshPanelOutputMaterialPropertyCache()`, material writes use cached flags, and no forbidden allocation/text/LINQ, bootstrap fallback, direct `Time`, old phosphor fallback, or `resolvedCamera.transform` markers returned.
+
+## 2026-05-15 Diegetic Panel Phosphor Decay Dirty Scalar
+What was wrong: The phosphor composite pass correctly rebinds previous/current RT textures every frame, but it also wrote the stable `_Decay` scalar every frame.
+
+What was done: Added `_appliedPhosphorDecay`, reset it on phosphor material cache reset, and dirty-gated `_Decay` writes so only decay changes touch that scalar.
+
+Cinematic cheats used: Preserved the same RT-history phosphor fake; only removed redundant API traffic around the stable decay coefficient.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per phosphor-enabled panel late frame on i3/MX350; no profiler proof is claimed.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed `_Decay` writes pass through `_appliedPhosphorDecay` and no forbidden allocation/text/LINQ, bootstrap fallback, direct `Time`, old phosphor fallback, or `resolvedCamera.transform` markers returned.
+
+## 2026-05-15 Diegetic Panel Interface Source Cache
+What was wrong: Runtime-state validation called `ResolveInterfaces()` every active tick, and that method recast the same serialized panel receiver and power-source components each time.
+
+What was done: Added cached source references for `panelInteractable` and `panelPowerSource`; interface casts now run only when those serialized sources change.
+
+Cinematic cheats used: No visual change. This preserves the same physical panel receiver and power hooks while removing repeated type checks from active panels.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per active physical panel tick; no profiler proof is claimed.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed source-change-driven casts and no forbidden allocation/text/LINQ, bootstrap fallback, direct `Time`, old phosphor fallback, or `resolvedCamera.transform` markers returned.
+
+## 2026-05-15 Tooltip Input Determinism Startup Guard
+What was wrong: The tooltip input scheme cache could hold the no-op input determinism fallback if the renderer enabled before the real input dispatcher registered.
+
+What was done: Changed tooltip input refresh to prefer `GlobalRegistry.RegisteredInput`, keep `_inputDeterminismAwaitingRegistration` only while the slot is empty, and retry through that narrow startup path before scheme reads.
+
+Cinematic cheats used: No visual change. This protects correct diegetic glyph selection for keyboard, gamepad, Steam Deck, and XR prompts.
+
+Exact microseconds saved: Estimate only. Primary gain is correctness; steady-state avoids registry polling after input registration.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed registered-slot input caching, no-op fallback guard, and no forbidden allocation/text/LINQ, bootstrap fallback, direct `Time`, old phosphor fallback, or `resolvedCamera.transform` markers.
+
+## 2026-05-15 Tooltip Scalability Event Cache
+What was wrong: Tooltip late-frame work still read `GlobalRegistry.ScalabilityTierProfileByte` every frame to update Low-tier dither behavior.
+
+What was done: Implemented `IScalabilityChangedEventListener`, registered with `ScalabilityEvents`, and moved `_lowTierActive` updates to enable/start refresh plus scalability-change events.
+
+Cinematic cheats used: Preserved the Low-tier snap and non-Low dither fade. The visual fake is unchanged; the tier decision is just event-driven now.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per active tooltip late frame on i3/MX350; no profiler proof is claimed.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed no late-frame scalability registry poll remains, `ScalabilityEvents` owns runtime tier updates, and existing no-bootstrap/no-direct-Time/no-old-phosphor/no-hot-path scans stayed clean.
+
+## 2026-05-15 Tooltip Active Camera Fail-Closed Gate
+What was wrong: Tooltip camera resolution could retain inactive authored/player camera references and still draw when the render context did not provide a current SRP camera.
+
+What was done: Required `isActiveAndEnabled` for authored and player cameras, cleared inactive cached registry cameras, and kept the `GlobalRenderContext.CurrentCamera` comparison as the final render submission gate.
+
+Cinematic cheats used: No visual change. The same indirect quad prompt remains; invalid camera ownership now fails closed instead of spending draw work on wrong views.
+
+Exact microseconds saved: Estimate only. Steady single-camera frames are neutral; invalid/auxiliary camera paths avoid unnecessary render preparation.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed active-camera checks in tooltip resolution and no forbidden allocation/text/LINQ, bootstrap fallback, direct `Time`, old phosphor fallback, or `resolvedCamera.transform` markers.

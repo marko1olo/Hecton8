@@ -118,6 +118,7 @@ namespace Hecton8.World
         private uint _lastDropPodSignalFrame;
         private bool _hasDropPodAnchor;
         private bool _dropPodAnchorFromSignal;
+        private bool _dropPodAnchorRequiresGenerationRefresh;
         private int _localTitaniumCount;
 
         /// <summary>Number of non-depleted ore slots currently alive in the active sector.</summary>
@@ -296,6 +297,7 @@ namespace Hecton8.World
             _lastDropPodSignalFrame = 0u;
             _hasDropPodAnchor = false;
             _dropPodAnchorFromSignal = false;
+            _dropPodAnchorRequiresGenerationRefresh = false;
             _localTitaniumCount = 0;
             _discardSpawnJobOutput = false;
         }
@@ -388,7 +390,8 @@ namespace Hecton8.World
                 (int)math.floor(playerAbsolute.z / safeSectorSize));
 
             bool sectorChanged = !_depletionLoaded || !sector.Equals(_currentSector);
-            if (sectorChanged)
+            bool anchorRefresh = _dropPodAnchorRequiresGenerationRefresh;
+            if (sectorChanged || anchorRefresh)
             {
                 if (_spawnJobScheduled)
                 {
@@ -398,16 +401,23 @@ namespace Hecton8.World
                     DiscardSpawnJobOutput();
                 }
 
-                _currentSector = sector;
-                _currentSectorHash = ComputeAupSectorHash(sector, worldSeed);
-                LoadDepletionMasksForCurrentSector();
+                if (sectorChanged)
+                {
+                    _currentSector = sector;
+                    _currentSectorHash = ComputeAupSectorHash(sector, worldSeed);
+                    LoadDepletionMasksForCurrentSector();
+                }
+
                 DisableAllProxies();
             }
 
             RefreshMapMagicPayload(playerAbsolute);
 
-            if (sectorChanged && !_spawnJobScheduled)
+            if ((sectorChanged || anchorRefresh) && !_spawnJobScheduled)
+            {
+                _dropPodAnchorRequiresGenerationRefresh = false;
                 ScheduleSpawnJob(playerAbsolute);
+            }
         }
 
         private void RefreshMapMagicPayload(double3 playerAbsolute)
@@ -518,23 +528,47 @@ namespace Hecton8.World
             for (int i = 0; i < dropPodSignals.Length; i++)
             {
                 DropPodLandedSignal signal = dropPodSignals[i];
-                if (_dropPodAnchorFromSignal && !IsNewAupShift(signal.Frame, _lastDropPodSignalFrame))
-                    continue;
-
                 double3 absolute = signal.PositionAup.ToAbsoluteDouble3();
                 if (!math.all(math.isfinite(absolute)))
+                    continue;
+
+                if (!IsNewDropPodSignal(in signal))
                     continue;
 
                 float3 runtime = signal.PositionAup.ToRuntimeFloat3();
                 if (!math.all(math.isfinite(runtime)))
                     continue;
 
+                bool anchorChanged = !_hasDropPodAnchor || !_dropPodAnchorFromSignal || !AreAupEqual(in _dropPodAup, in signal.PositionAup);
                 _dropPodAup = signal.PositionAup;
                 _dropPodRuntimePosition = runtime;
                 _lastDropPodSignalFrame = signal.Frame;
                 _hasDropPodAnchor = true;
                 _dropPodAnchorFromSignal = true;
+                if (anchorChanged)
+                    _dropPodAnchorRequiresGenerationRefresh = true;
             }
+        }
+
+        private bool IsNewDropPodSignal(in DropPodLandedSignal signal)
+        {
+            if (!_dropPodAnchorFromSignal)
+                return true;
+
+            if (IsNewAupShift(signal.Frame, _lastDropPodSignalFrame))
+                return true;
+
+            return signal.Frame == _lastDropPodSignalFrame && !AreAupEqual(in _dropPodAup, in signal.PositionAup);
+        }
+
+        private static bool AreAupEqual(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
+        {
+            return a.GridX == b.GridX &&
+                   a.GridY == b.GridY &&
+                   a.GridZ == b.GridZ &&
+                   a.LocalX == b.LocalX &&
+                   a.LocalY == b.LocalY &&
+                   a.LocalZ == b.LocalZ;
         }
 
         private bool TryCompleteFinishedSpawnJob()

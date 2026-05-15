@@ -227,7 +227,7 @@ namespace Hecton8.Visor
             _traumaPulse01 = math.max(SanitizeUnit(_traumaPulse01), SanitizeUnit(signal.GlitchIntensity));
         }
 
-        void IPlayerSignalEventListener.OnInteractionSignal(in InteractionSignal signal)
+        void IPlayerSignalEventListener.OnInteractionSignal(in PlayerInteractionStressSignal signal)
         {
             HandleInteractionSignal(in signal);
         }
@@ -236,7 +236,7 @@ namespace Hecton8.Visor
         {
         }
 
-        private void HandleInteractionSignal(in InteractionSignal signal)
+        private void HandleInteractionSignal(in PlayerInteractionStressSignal signal)
         {
             _interactionStress01 = SanitizeUnit(signal.Stress01);
             _interactionVolume01 = SanitizeUnit(signal.Volume01);

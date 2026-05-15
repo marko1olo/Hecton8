@@ -2516,7 +2516,7 @@ namespace Hecton8.World
             float3 direction = playerPositionWS - (float3)hazardPositionWS;
             direction *= math.rsqrt(math.max(0.0001f, math.lengthsq(direction)));
 
-            Hecton8.Gameplay.CombatDamageSignal signal = new Hecton8.Gameplay.CombatDamageSignal
+            Hecton8.Gameplay.CombatDamageRequest signal = new Hecton8.Gameplay.CombatDamageRequest
             {
                 TargetId = targetId,
                 SourceId = ToxicSporeHazardSourceId,

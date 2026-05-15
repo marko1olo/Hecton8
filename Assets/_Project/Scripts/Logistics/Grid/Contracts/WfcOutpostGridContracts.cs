@@ -90,7 +90,7 @@ namespace Hecton8.Logistics.Grid.Contracts
     /// <summary>
     /// Cold-path descriptor copied with the native WFC byte grid.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Size = 96)]
     public struct WfcOutpostGridDescriptor
     {
         public MacroDatabaseAup OriginAup;
@@ -108,7 +108,7 @@ namespace Hecton8.Logistics.Grid.Contracts
     /// <summary>
     /// SOA node payload produced by Burst translation and consumed by the logistics graph builder.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Size = 40)]
     public struct WfcOutpostPowerNode
     {
         public uint NodeId;

@@ -436,7 +436,7 @@ namespace Hecton8.Gameplay
             {
                 if (voxelVolume != null)
                 {
-                    Vector3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePosition(_hit.point);
+                    double3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(_hit.point);
                     if (voxelVolume.ApplyRepairWeldDda(
                         absoluteHitPoint,
                         _cachedTransform.forward,
@@ -809,10 +809,10 @@ namespace Hecton8.Gameplay
 
         private void PublishRepairSparkSignal(Vector3 worldPoint, float intensity01)
         {
-            Vector3 absolute = HectonFloatingOrigin.ToAbsoluteUniversePosition(worldPoint);
+            double3 absolute = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPoint);
             DebrisSpawnSignal signal = new DebrisSpawnSignal
             {
-                PositionAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(absolute.x, absolute.y, absolute.z)),
+                PositionAup = AbsoluteUniversePosition.FromAbsolutePosition(absolute),
                 SpeciesHash = RepairSparksSignalHash,
                 SourceEntityId = unchecked((uint)EntityId.ToULong(gameObject.GetEntityId())),
                 Intensity01 = math.saturate(intensity01),

@@ -99,3 +99,223 @@ Prompt re-extracted from `CURRENT_BATCH.md`. Targeted `dotnet build` filter comp
 
 Status:
 PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, and profiler proof remain absent.
+
+## 2026-05-14 Recursive QA Addendum 5
+
+What was wrong:
+The status/rationale and source code were not aligned. Direct reads of `ContextualPhysicalIkRuntime.cs` and `ContextualPhysicalIkRig.cs` showed old `sqrMagnitude` origin-shift checks, the old normal-only `HasHit` predicate, and fade paths that copied previous targets without finite validation. That made the report stronger than the executable code.
+
+What was done:
+Runtime and rig origin-shift handlers now convert shift vectors to `float3`, reject non-finite values, reject non-finite length-squared values, and reject shifts over 10km before rebasing. Runtime writes/dumps `TelemetryReasonInvalidOriginShift` on corrupt shift input. Structural forced-completion now swaps the completed target buffer, publishes it, logs the structural reason, and clears stale handles. `HasHit` requires finite point, normal, normal length, finite distance, and non-negative distance. `FadeOutTarget`, `FadeFootLane`, and `WriteFootSoa` now sanitize stale target data before lower-body SOA writes.
+
+Cinematic cheats used:
+No added simulation. The system remains the same lower-body visual fake: hip-origin batched rays, squared step triggers, triangle-wave lift, planar-velocity swim posture, pelvis yaw bias, and Burst two-bone solve.
+
+Exact microseconds saved:
+No new steady-state systems. Added work is a few finite checks around existing target writes and hit validation, estimated below 1 us on i3/MX350 for the active player rig. Prevented cost is NaN propagation through SOA lanes and animation jobs, plus wasted debugging caused by docs/source drift.
+
+Verification:
+Scoped forbidden-pattern scan over touched IK/KCC/signal files returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`. `git diff --check` is clean. `dotnet build Hecton8.Core.csproj --no-restore -v:quiet /m:1 /p:UseSharedCompilation=false /clp:ErrorsOnly` timed out again; orphaned `Hecton8.Core.csproj` build children were terminated. A separate `Assembly-CSharp.csproj` build process remains outside this agent's ownership.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
+
+## 2026-05-14 Recursive QA Addendum 6
+
+What was wrong:
+Telemetry could detect invalid target state, but some executable boundaries still trusted previous-frame values. Specifically, skipped-frame target reuse could publish stale data, hand SOA writes could preserve a finite weight for an invalid hand position, foot fade/update could smooth from a non-finite packed blend, and cold AUP rebases could subtract shift from corrupt target lanes.
+
+What was done:
+`ContextualPhysicalIkRuntime` now sanitizes complete target frames before SOA publication and before `ContextualPhysicalIkApplyJob` can read them. Hand SOA positions zero and weights drop to zero on invalid position/blend. Foot fade/update uses sanitized packed blend inputs. AUP rebase now clears invalid hand/foot SOA lanes and invalid packed foot state instead of rebasing corrupt values. `ContextualPhysicalIkRig` now rejects non-finite root transform capture and falls back corrupt pelvis/foot/hand probe transforms to the root position.
+
+Cinematic cheats used:
+No new physical simulation. The implementation remains hip-origin batched rays, squared step thresholds, triangle-wave lift, planar swim posture, pelvis yaw bias, and the existing Burst two-bone solver.
+
+Exact microseconds saved:
+No new systems or ray lanes. Added finite checks are estimated below 1 us per active rig on i3/MX350. Avoided cost is NaN target propagation into the animation job and the visual/diagnostic damage from invalid rebases.
+
+Verification:
+Scoped forbidden-pattern scan returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`. `git diff --check` is clean except CRLF warnings. `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /clp:ErrorsOnly` timed out again before diagnostics; this pass's orphaned `Hecton8.Core.csproj` build children were terminated.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
+
+## 2026-05-15 Recursive QA Addendum 7
+
+What was wrong:
+The target-frame quarantine did not fully close H-Phi at the animation execution boundary. `ContextualPhysicalIkApplyJob` still accepted invalid stream-handle reads, chain metadata, cached pose payloads, muscle output, and raw scalar saturation. The PlayerKinematics hand producer could also publish NaN/invalid wall or squeeze blends into the IK rig.
+
+What was done:
+`ContextualPhysicalIkRig` now finite-gates pelvis, two-bone, FABRIK appendage, spine, secondary, cached pose replay, quaternion approximations, muscle bulge accumulation, authoring blends, squeeze pole offsets, cold shiver, predictive latch, and external hand target blends. `ContextualPhysicalIkRuntime` now uses finite-safe `SanitizeBlend` at hand SOA, foot progress, foot fade, slope lean, predictive target, collision response, hand offsets, and target-frame sanitization. `PlayerKinematicsRuntime` now sanitizes brace/squeeze/stress/load/immersion/acoustic/haptic scalar paths and rejects invalid smoothed hand targets before calling IK.
+
+Cinematic cheats used:
+No new simulation, no new rays, no gait planner, no managed owner. The lower body remains hip-origin batched rays, squared-distance step logic, triangle-wave lift, planar swim posture, pelvis yaw bias, Burst two-bone solve, and optional secondary/muscle visual overkill fed only by finite values.
+
+Exact microseconds saved:
+Added cost is branch/finite scalar checks inside existing loops, estimated below 1 us for the standard player rig on i3/MX350. Avoided cost is catastrophic NaN propagation through animation jobs, repeated solver correction, invalid hand latching, and debugging without trustworthy H-Phi boundaries.
+
+Verification:
+No dotnet rebuild was run per user instruction. `git diff --check -- Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs` passed with CRLF warnings only. Scoped forbidden-pattern scan over the touched lower-body/signal files returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
+
+## 2026-05-15 Recursive QA Addendum 8
+
+What was wrong:
+The lower-body IK path was finite-gated downstream, but its KCC velocity producer still had a small upstream H-Phi leak. Bad planar/vertical input, bad SDF sample step, or non-finite roll spring state could contaminate intended movement or roll state before velocity was published for stride/swim prediction.
+
+What was done:
+`PlayerKinematicsRuntime` now zeroes non-finite planar input, clamps vertical input through a signed-unit sanitizer, sanitizes intended movement before storing it, sanitizes SDF gradient sample step, sanitizes roll side-dot/target/position/velocity, uses non-negative roll amplitude, and zeroes non-finite triangle-wave phase.
+
+Cinematic cheats used:
+No new physical model. The fix preserves the existing visual lie: KCC-derived velocity lead, triangle-wave roll/step response, and lower-body IK prediction. Invalid input now collapses to neutral movement instead of trying to simulate through corrupt data.
+
+Exact microseconds saved:
+Added cost is a few scalar/vector finite checks in existing player kinematic paths, estimated below 1 us/frame on i3/MX350. Avoided cost is NaN propagation into KCC velocity, foot-ray lead, swim posture, and IK smoothing.
+
+Verification:
+No dotnet rebuild was run per user instruction. `git diff --check -- Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs` passed with CRLF warnings only. Scoped forbidden-pattern scan over touched lower-body/signal files returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
+
+## 2026-05-15 Recursive QA Addendum 9
+
+What was wrong:
+The downstream target and KCC paths were finite-gated, but two H-Phi edge cases remained in the animation/raycast boundary. A finite zero-length stream quaternion could pass a finite-only check before inverse math, and corrupt camera/probe/origin scalar data could still degrade IK ray commands or proxy blends into unsafe fallbacks.
+
+What was done:
+`ContextualPhysicalIkMath` now normalizes finite Unity quaternions through the no-sqrt `rsqrt` path while preserving zero/invalid quaternions for rejection. `ContextualPhysicalIkRig` now requires quaternions to be finite and non-zero length before treating them as valid, and the apply job owns its spine target count for range validation. `ContextualPhysicalIkRuntime` now sanitizes brace directions, camera/tool/hand/foot ray origins, foot step cache state, tool retraction/recoil origins, contact offsets, max-delta heights, collision distances, smoothing fallbacks, and brace proxy distances before writing commands or targets.
+
+Cinematic cheats used:
+No physical gait, no extra rays, no new solver. The system remains a visual fake: batched hip-origin rays, squared thresholds, triangle-wave foot lift, planar swim posture, small pelvis yaw, and Burst two-bone solve.
+
+Exact microseconds saved:
+Added cost is finite checks, length-squared checks, and existing `rsqrt` quaternion normalization inside existing paths, estimated below 1 us/frame on i3/MX350. Prevented cost is NaN/zero-quaternion inverse fallout, zero-origin ray pollution, bad step cache replay, and expensive visual correction/debugging.
+
+Verification:
+No dotnet rebuild was run per user instruction. `git diff --check -- Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkMath.cs Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs` passed with CRLF warnings only. Scoped forbidden-pattern scan over lower-body/signal files returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`. MCP resource listing returned no Unity resources.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
+
+## 2026-05-15 Recursive QA Addendum 10
+
+What was wrong:
+`PlayerKinematicsRuntime` black-box telemetry trusted `_telemetryWriteIndex` directly. A negative or stale native cursor could become an invalid modulo index, and some main-thread telemetry payloads could copy non-finite position/velocity/intended movement into the dump path.
+
+What was done:
+Added bounded telemetry slot reservation for the Burst body job and the main-thread squeeze, environment IK, and sync-fence telemetry writers. The cursor now clamps negative values to zero, rejects missing or zero-length buffers, advances from the wrapped slot, telemetry payloads finite-sanitize position, velocity, and intended movement before writing, and the binary dump emits oldest-to-newest entries from a sanitized wrapped head.
+
+Cinematic cheats used:
+No simulation change. This protects the 300-frame black box behind the existing KCC-driven lower-body visual fake so post-mortem evidence stays usable when stride/swim/hand IK data faults.
+
+Exact microseconds saved:
+Added cost is integer bounds checks and vector finite selects only on telemetry writes, estimated below 0.5 us/event on i3/MX350. Prevented cost is fault-path collapse from invalid telemetry indexing and unusable dump evidence.
+
+Verification:
+No dotnet rebuild was run per user instruction. `git diff --check -- Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs` passed with CRLF warnings only. Scoped forbidden-pattern scan over lower-body/signal files returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`. MCP resource listing returned no Unity resources.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
+
+## 2026-05-15 Recursive QA Addendum 11
+
+What was wrong:
+Environment IK telemetry sanitized its cursor, position, velocity, and intended movement payloads, but could still write a non-finite `activeBlend` into `SolidDensity` when squeeze, impact, low-tier, or scrape flags triggered the event independently of brace blend.
+
+What was done:
+`WriteEnvironmentIkTelemetry` now clamps `activeBlend` through `SanitizeUnit` before aux flag selection and writes the same finite scalar into `SolidDensity`.
+
+Cinematic cheats used:
+No simulation change. This is fault-path hygiene for the existing KCC-to-IK visual fake and its 300-frame black box.
+
+Exact microseconds saved:
+Added cost is one scalar finite/clamp operation per environment IK telemetry event, estimated below 0.1 us/event on i3/MX350. Prevented cost is corrupted dump evidence from a NaN scalar in an otherwise valid squeeze/impact/scrape event.
+
+Verification:
+No dotnet rebuild was run per user instruction. `git diff --check` over the touched IK/KCC/docs files passed with CRLF warnings only. Scoped forbidden-pattern scan over the lower-body/signal files returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
+
+## 2026-05-15 Recursive QA Addendum 12
+
+What was wrong:
+The KCC-to-IK pipeline still had producer-side H-Phi holes. Raw Rigidbody position/velocity could enter NativeArrays before the Burst body job sanitizer ran. Origin-shift offsets could rebase KCC arrays with invalid data. Sync-fence hashes had raw fallbacks. The contextual IK black-box ring also trusted its private cursor/head and could dump non-finite first-sample vectors.
+
+What was done:
+`PlayerKinematicsRuntime` now sanitizes Rigidbody position/velocity before NativeArray writes, SDF sampling, advection, KCC signal publishing, reset/start state, staged sync-fence writes, and sync-fence hashing. Invalid raw body state flags `FaultNaN`; invalid or >10km origin-shift input flags `FaultInvalidOriginShift` and dumps without rebasing. `ContextualPhysicalIkRuntime` now bounds telemetry cursor/head against the actual ring length and sanitizes telemetry vectors/weights before hashing, ring writes, and binary dump serialization.
+
+Cinematic cheats used:
+No physical gait, no additional probes, no new solver. The lower-body remains the same visual fake: batched hip-origin rays, squared thresholds, triangle-wave lift, planar swim posture, small pelvis yaw, and Burst two-bone solve.
+
+Exact microseconds saved:
+Added cost is branch/finite checks at existing producer/sync-fence boundaries, estimated below 0.5 us/frame on i3/MX350, plus below 0.1 us/contextual telemetry sample. Prevented cost is NaN propagation into NativeArray-backed KCC/IK state and unusable black-box dumps.
+
+Verification:
+No dotnet rebuild was run per user instruction. `git diff --check` over touched IK/KCC files passed with CRLF warnings only. Scoped forbidden-pattern scan over lower-body/signal files returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`. Additional source scans found no remaining raw `SnapMillimeter(ToFloat3(_body.*))`, `_body.position` AUP hashing, direct position subtraction rebases, or direct `_telemetryRing[_telemetryCursor]` writes in the audited files.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
+
+## 2026-05-15 Recursive QA Addendum 13
+
+What was wrong:
+The KCC-to-IK path still had small output-side H-Phi leaks after producer sanitization. GPU-flow metadata could enable full advection boost even if the field metadata was corrupt or degenerate. SDF payload origin/cell/range metadata could reach the body job. Ladder hit points, acoustic AUP output, shader VAT scalar, and movement roll publication trusted cached or caller data at the final boundary. Contextual IK scheduling/reset/rebase/telemetry paths also assumed native storage lengths matched the fixed lane counts.
+
+What was done:
+`PlayerKinematicsRuntime` now rejects non-finite or degenerate GPU-flow metadata, rejects invalid SDF payload metadata, ignores non-finite ladder hit points, clamps scaled advection after multiplication, snaps/sanitizes acoustic AUP output, sanitizes cached VAT scalar comparisons, and publishes roll only through a finite neutral fallback. `ContextualPhysicalIkRuntime` now validates native storage before scheduling the ground pipeline, adds a black-box reason flag for invalid storage, length-guards scheduled state and target-frame rebases, length-guards telemetry sampling, and bounds reset writes for hand/foot SOA lanes.
+
+Cinematic cheats used:
+No new gait physics, no additional rays, no solver change. Invalid metadata falls back to cheaper visual approximations: CPU-scaled advection, neutral roll/VAT, and no contextual IK schedule when native storage is invalid.
+
+Exact microseconds saved:
+Added cost is finite checks, integer length comparisons, and scalar sanitization at existing boundaries, estimated below 0.3 us/frame on i3/MX350 plus cold reset-only guards. Prevented cost is corrupt metadata amplifying stride/swim prediction or faulting the native ground pipeline.
+
+Verification:
+No dotnet rebuild was run per user instruction. `git diff --check` over touched IK/KCC files passed with CRLF warnings only. Scoped forbidden-pattern scan over lower-body/signal files returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
+
+## 2026-05-15 Recursive QA Addendum 14
+
+What was wrong:
+Rig-side capture still had source-boundary H-Phi leaks before the runtime/job sanitizer. Predictive controller AUPs could be built before finite controller-position validation. Spine targets could write bad HMD yaw/breath offsets into NativeArray lanes. Appendage targets could publish non-finite transform or snapped-corner positions with nonzero weight. Upper-arm FOV culling could hide arms when camera or renderer bounds data became corrupt.
+
+What was done:
+`ContextualPhysicalIkRig` now gates predictive controller AUP creation on finite source positions, keeps previous controller AUPs only when the source pose is valid, sanitizes spine target writes, sanitizes appendage surface normals, ignores non-finite voxel snapped corners, zeroes appendage weight when the target position is invalid, sanitizes upper-arm culling hysteresis, and fails open to visible arms on invalid camera/bounds culling data.
+
+Cinematic cheats used:
+No extra raycasts, no physical arm model, no new solver. Invalid capture data collapses to neutral targets or visible arms so the existing visual-fake IK path stays believable instead of trying to simulate through corrupt transforms.
+
+Exact microseconds saved:
+Added cost is branch/finite checks plus one no-sqrt normal fallback inside existing rig capture/culling paths, estimated below 0.3 us/frame on i3/MX350. Prevented cost is IK target spikes, corrupt appendage weights, and disappearing arms caused by invalid source transforms or renderer bounds.
+
+Verification:
+No dotnet rebuild was run per user instruction. `git diff --check` over touched IK/KCC files passed with CRLF warnings only. Scoped forbidden-pattern scan over lower-body/signal files returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
+
+## 2026-05-15 Recursive QA Addendum 15
+
+What was wrong:
+Rig-local transient state still had H-Phi trust windows after the previous capture pass. Recoil offsets decayed raw stored vectors. Terminal/external/predictive blend latches could preserve non-finite smooth output. Breathing and cold-shiver phases only subtracted one wrap. Predictive repair trusted AUP distance/runtime target output after snap resolution. Spine, appendage, and muscle output writes assumed NativeArray and managed companion lengths were always aligned.
+
+What was done:
+`ContextualPhysicalIkRig` now clamps decayed recoil offsets with the existing no-sqrt vector clamp, sanitizes terminal/external/predictive/breathing/shiver/muscle smooth outputs, wraps breathing and shiver phases through a finite positive phase helper, sanitizes shiver offsets, rejects non-finite predictive AUP distance/runtime targets before latch publication, length-guards spine and muscle target output, bounds appendage capture to the shorter native target/runtime length, and null/length guards appendage target/fallback companion arrays.
+
+Cinematic cheats used:
+No new physical leg, arm, or torso simulation. The patch preserves the visual-fake model: finite scalar latches, triangle-wave breathing/shiver, no-sqrt recoil decay, and deterministic target rejection before the Burst IK job consumes data.
+
+Exact microseconds saved:
+Added cost is scalar finite/clamp work, one `math.floor` phase wrap per active breathing/shiver tick, and integer length guards, estimated below 0.4 us/frame on i3/MX350. Prevented cost is native target faults, hand-latch spikes, corrupt muscle shader output, and NaN propagation into lower-body/appendage presentation.
+
+Verification:
+No dotnet rebuild was run per user instruction. `git diff --check` and `git diff --cached --check` over `ContextualPhysicalIkRig.cs` passed with CRLF warnings only. Scoped forbidden-pattern scans over lower-body/signal files returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `.ToString(`, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`. Rig-only scan found no remaining direct `= ContextualPhysicalIkMath.SmoothScalar` assignments.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.

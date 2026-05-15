@@ -7,7 +7,9 @@ namespace Hecton8.Gameplay.Loot.Contracts
     public static class LootMagnetConstants
     {
         public const int DefaultMaxEntities = 4096;
+        public const int MaxEntitiesHardCap = 8192;
         public const int TelemetryFrameCount = 300;
+        public const int TelemetryEntrySizeBytes = 120;
         public const float AcquireDistanceMeters = 0.5f;
         public const float AcquireDistanceSq = AcquireDistanceMeters * AcquireDistanceMeters;
         public const float MinDistanceSq = 0.01f;
@@ -17,7 +19,17 @@ namespace Hecton8.Gameplay.Loot.Contracts
         public const float MaxIntegrationDeltaTimeSeconds = 0.05f;
         public const int PresentationSignalStride = 64;
         public const int MaxAcquisitionsPerFrame = 64;
+        public const byte ScalabilityTierHysteresisSlowTicks = 4;
+        public const int LowTierAcousticSignalsPerFrame = 16;
+        public const int DefaultAcousticSignalsPerFrame = 48;
+        public const int HighTierAcousticSignalsPerFrame = 56;
+        public const int UltraTierAcousticSignalsPerFrame = 64;
+        public const int LowTierWakeSignalsPerFrame = 32;
+        public const int DefaultWakeSignalsPerFrame = 96;
+        public const int HighTierWakeSignalsPerFrame = 112;
+        public const int UltraTierWakeSignalsPerFrame = 128;
         public const double AupCellSizeMeters = 5000d;
+        public const double AupCellSizeSq = AupCellSizeMeters * AupCellSizeMeters;
         public const byte ItemSourceLootMagnet = 8;
         public const byte SignalFlagLootMagnet = 1;
         public const uint WakeSourceLootZip = 0x4C5A4950u;

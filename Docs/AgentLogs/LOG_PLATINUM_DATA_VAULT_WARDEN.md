@@ -68,6 +68,220 @@ Verification:
 Status:
 - VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
 
+## 2026-05-15 - String Payload Bounds And Dead Surface Gate
+
+What was wrong:
+- Binary string reads were bounded by remaining payload bytes but not by a domain maximum, so a single corrupt string length could allocate a large managed string.
+- Unused unbounded string/struct array helper APIs remained beside the bounded helpers.
+
+What was done:
+- Capped every serialized UTF-16 string in `SaveBinaryPayloadCodec` at one protected 16 KiB block (`8192` chars) before writer copy or reader allocation.
+- Removed unused unbounded `WriteStringArray`, `ReadStringArray`, `WriteStructArray`, and `ReadStructArray` helper surfaces.
+- Documented the string cap in `Docs/Design/Save_Binary_Header.md`.
+- Re-extracted the batch prompt with PowerShell raw regex; `CURRENT_BATCH.md` still returns `PROMPT_NOT_FOUND`, so disk status/rationale remain authority.
+
+Cinematic Cheats used:
+- Large mod state stays in protected indexed sectors; root compatibility strings stay bounded metadata.
+
+Exact Microseconds saved:
+- Frame cost: 0 us.
+- Cold corrupt-load protection rejects a single string above 16 KiB before managed allocation.
+
+Verification:
+- `SaveBinaryPayloadCodec.cs` brace/parenthesis balance passed.
+- `rg` found `MaxSerializedStringChars` guarding both `WriteString` and `ReadString`.
+- Unused unbounded array helper scan returned `NO_UNBOUNDED_UNUSED_ARRAY_SURFACES`.
+- Root unbounded codec read/write scans returned clean.
+- DataVault live compaction scan returned no `UnsafeUtility.MemMove`, `RunCompactionSlice`, `TryCompactFreeGapAt`, `VaultMemMoveJob`, `System.Threading`, `Stopwatch`, or `BurstCompile`.
+- `git diff --check` passed with CRLF warnings only.
+- No dotnet rebuild was run per user order.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-15 - Procedural DTO Payload Bounds Pass
+
+What was wrong:
+- Procedural-world DTO arrays are capacity-backed. The save codec wrote backing capacity instead of logical bounded counts for suppressed placement keys, procedural fauna, geology seam states, cave entrances, and hibernated fauna.
+- The generic struct-array reader could allocate a corrupt over-limit procedural array before migration had a chance to clamp it.
+- Existing procedural-world capacity repair replaced shorter arrays without copying, which would discard compact logical-slice payload entries during migration.
+
+What was done:
+- `SaveBinaryPayloadCodec` now clamps procedural-world count mirrors to array length and domain maxima before writing.
+- Capacity-backed procedural arrays now serialize as bounded logical slices.
+- Custom procedural fauna and hibernated fauna readers reject counts above `MaxFaunaStates` / `MaxHibernatedFaunaStates` before allocation.
+- Added `ReadStructArrayBounded` and used it for suppressed placement, geology seam, and cave entrance arrays.
+- `ProceduralWorldStateDTO.EnsureCapacity` now copies existing entries when expanding compact loaded arrays to full runtime capacity.
+
+Cinematic Cheats used:
+- Persistence now stores the actual logical state, not empty backing capacity. Saved bytes are spent on real state rather than unused slots.
+
+Exact Microseconds saved:
+- Hot-frame cost: 0 us.
+- Cold save/load improvement is payload-size driven. Worst empty-capacity raw bytes avoided are approximately 240 KiB: 65,536 B suppressed keys, 65,536 B fauna, 57,344 B hibernated fauna, 32,768 B geology seams, and 24,576 B cave entrances before compression; exact wall time requires a build/profiler path that is currently forbidden.
+
+Verification:
+- Static `rg` found no old procedural full-array write/read call shapes in `SaveBinaryPayloadCodec`.
+- Static `rg` found bounded procedural read calls and over-limit fauna error paths.
+- Brace/parenthesis balance check returned `PAREN=0 BRACE=0`.
+- DataVault live compaction scan remains clean.
+- Manifest coverage, repaired fauna bool scan, project `[BinaryBlittableSafe]` scan, and legacy ownerless H8 call scans passed.
+- `git diff --check` passed with CRLF warnings only.
+- No dotnet rebuild was run per user order.
+
+Status:
+- VERIFIED VAULT LOCK - STATIC NO-REBUILD PASS COMPLETE; EXACT COMPILE TARGET STILL BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-15 - Owner Release and H-Phi DataVault Cleanup
+
+What was wrong:
+- `H8Memory.Release<T>` still had legacy ownerless overloads, and created arrays/raw pointers could become silent no-ops if the H8 tracker was unavailable.
+- DataVault still advertised false relocation intent through a dead relocation-record NativeArray allocation, a `Relocatable` descriptor flag, and handle comments that implied live relocation.
+- `GlobalDataVault.GetBuffer` converted `SystemID.Unknown` into `CoreDataVault`, hiding caller ownership.
+
+What was done:
+- Added owner-tagged immediate and job-deferred `H8Memory.Release<T>` overloads.
+- Marked legacy `Release<T>` and raw `FreeRaw(pointer, allocator)` overloads `Obsolete(error: true)`.
+- Converted external `H8Memory.Release` call sites to explicit owners and made missing owner/tracker proof throw `FatalMemoryException`.
+- Stored and completed the final `WfcOutpostPowerBootRuntime` scheduled release handle instead of abandoning it.
+- Removed the dead `_lastRelocationRecords` allocation/disposal, stopped setting `H8AllocationFlags.Relocatable` on vault descriptors, and kept relocation record reads as an empty compatibility surface.
+- Changed DataVault comments from relocatable to generation-checked handles.
+- Made `GetBuffer` reject `SystemID.Unknown` requesters instead of laundering them through `CoreDataVault`.
+
+Cinematic Cheats used:
+- DataVault remains a cheap fragmentation/gap telemetry system. Live heap relocation stays out of gameplay and out of descriptor metadata.
+- H-Phi improvement is data-sovereignty cleanup, not a fake global score claim.
+
+Exact Microseconds saved:
+- 0 us steady-frame change.
+- Removed one persistent 64 * 32 byte relocation-record NativeArray allocation, approximately 2048 bytes plus allocator overhead, during DataVault initialization.
+- Disposal/free paths add one owner/tracker branch and use the existing owner lookup only on cold disposal/free. The added power boot `Complete()` is cold teardown-only.
+
+Verification:
+- No dotnet build/rebuild was run, per user order.
+- Static `rg` found no live compaction, memmove job, stress gate, thread fence, BurstCompile, or Stopwatch symbols in `GlobalDataVault.cs`.
+- Static `rg` found no `_lastRelocationRecords`, `RelocationRecordCapacity`, DataVault `H8AllocationFlags.Relocatable`, or relocatable-handle wording in the touched memory files.
+- Static `rg` found no external legacy `H8Memory.Release` or two-argument `H8Memory.FreeRaw` call shapes.
+- Static `rg` found no ignored job-deferred `H8Memory.Release` handle in project call sites.
+- Static `rg` found no direct unknown DataVault requester; only internal fail-fast guards and `GlobalRegistry` unknown-return fallback remain.
+- DTO marker scan still finds v72 `PlayerKinematicStateDTO`, `InventoryShadowDTO`, `HabitatFloodStateDTO`, codec tail read/write, and manifest size/offset checks.
+- `git diff --check` passed with CRLF warnings only.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Json` timed out after 120 s, so this pass uses targeted static evidence instead of claiming a global H-Phi score.
+- Prompt re-extraction from current `Docs/Tasks/CURRENT_BATCH.md` returned `PROMPT_NOT_FOUND`; current batch file appears replaced by other agent prompts.
+
+Status:
+- VERIFIED VAULT LOCK - NO DOTNET REBUILD PER USER ORDER - EXACT MEMORY RSP TARGET STILL ABSENT FROM PRIOR CHECK.
+
+## 2026-05-15 - DTO Flag ABI and Manifest Coverage
+
+What was wrong:
+- `H8AllocationFlags.Relocatable` and an unused private ownerless `H8Memory.UnregisterPointer(void*)` shim remained after live relocation and ownerless release paths were locked out.
+- `ProceduralFaunaStateDTO` and `HibernatedFaunaStateDTO` still stored managed bool fields, despite the save codec already writing one-byte bool wire fields plus padding.
+- Multiple `[BinaryBlittableSafe]` SaveData DTOs had no central `BinaryLayoutManifest` size assertion.
+
+What was done:
+- Removed the dead `Relocatable` enum member and ownerless H8 unregister shim.
+- Replaced fauna DTO bool storage with fixed byte flags behind compatibility properties.
+- Updated `SaveBinaryPayloadCodec` reads to consume bools into locals, then set the flag-backed properties; the wire format remains unchanged.
+- Added `[BinaryBlittableSafe]` to the repaired fauna DTOs.
+- Expanded `BinaryLayoutManifest` so every currently marked `[BinaryBlittableSafe]` DTO in `SaveData.cs` has a size assertion and critical offset checks.
+- Updated `Docs/Design/Save_Binary_Header.md` to mark the fauna bool handoff debt as repaired.
+
+Cinematic Cheats used:
+- No new simulation. This is ABI hygiene: fixed flags and boot-time layout proof instead of runtime discovery.
+
+Exact Microseconds saved:
+- 0 us steady-frame change.
+- Removed dead relocation/ownerless symbols: 0 runtime cost, lower reconnection risk.
+- Fauna DTO flag packing is cold save/load only and writes the same bytes as before.
+- Manifest expansion is cold boot validation only.
+
+Verification:
+- No dotnet build/rebuild was run, per user order.
+- Static script found no `[BinaryBlittableSafe]` `SaveData.cs` DTO missing an `AssertSize<T>` entry.
+- Static scan found no public bool/string/array fields inside marked blit-safe DTO blocks.
+- Static scan found no `ReadBool(out values[i].field)` calls against flag-backed properties.
+- Static scan found no `Relocatable`, dead relocation arrays, DataVault live compaction symbols, or ownerless H8 unregister shim.
+- `git diff --check` passed with CRLF warnings only.
+
+Status:
+- VERIFIED VAULT LOCK - DTO ABI HARDENED - NO DOTNET REBUILD PER USER ORDER.
+
+## 2026-05-14 - Save Version Tail Symmetry
+
+What was wrong:
+- `SaveBinaryPayloadCodec` always wrote the v72 first-hour DTO tail, but wrote `data.version` unchanged. A repair/manual rewrite path carrying an older in-memory `SaveData` could produce a payload whose version gate skipped the appended tail on reload, causing a byte-length mismatch.
+
+What was done:
+- Normalized `data.version` to `SaveData.CurrentVersion` at the codec write boundary before `WriteSaveData` emits the version header and v72 DTO tail.
+
+Cinematic Cheats used:
+- None. This is binary ABI hygiene.
+
+Exact Microseconds saved:
+- Prevents backup/repair retry loops caused by self-written mismatched payloads. Runtime cost is one cold save-path integer compare/assign, 0 us frame impact, 0 B GC.
+
+Verification:
+- Static scan found the version normalization before `writer.WriteInt(data.version)` and the v72 DTO read/write gate intact.
+- Live-compaction regression scan stayed clean in `GlobalDataVault.cs`.
+- Exact `dotnet build Hecton8.Core.Memory.rsp` still fails with MSB1009 because the target file is missing.
+- Edited-file filtered `Hecton8.Core.csproj` build reports `NO_EDITED_FILE_ERRORS_IN_BUILD_OUTPUT`; project exit code remains 1 from unrelated failures.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-14 - Native Array Owner Gate Restored
+
+What was wrong:
+- `H8Memory.Allocate<T>` and the old-pointer branch of `ReallocateRaw` had no `SystemID.Unknown` fail-fast gate, while `AllocateRaw` already rejected unknown owners.
+
+What was done:
+- Added `FatalMemoryException.ThrowUnknownAllocationOwner()` to `Allocate<T>` and `ReallocateRaw` before reserve/allocation work.
+- Scanned project call sites for direct `SystemID.Unknown` use against `H8Memory.Allocate` and `H8Memory.AllocateRaw`.
+
+Cinematic Cheats used:
+- None. This is accountability plumbing for the native memory sentinel.
+
+Exact Microseconds saved:
+- 0 us steady-frame. The added branch runs only on cold/native-array allocation and prevents unowned native records.
+
+Verification:
+- Static `rg` found no direct `SystemID.Unknown` calls to `H8Memory.Allocate` or `H8Memory.AllocateRaw`.
+- Live-compaction regression scan stayed clean in `GlobalDataVault.cs`.
+- Exact `dotnet build Hecton8.Core.Memory.rsp` still fails with MSB1009 because the target file is missing.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-14 - Continued Drift Re-Lock
+
+What was wrong:
+- The continued recheck found live compaction drift back in `GlobalDataVault.cs`: `RunCompactionSlice`, `TryCompactFreeGapAt`, `UnsafeUtility.MemMove`, `System.Threading` fences, Stopwatch watchdog code, stress constants, and stale-handle refresh behavior.
+- `H8Memory.ReallocateRaw` again trusted caller `oldBytes` for copy/reserve size after owner validation.
+- `GlobalDataVault.ValidateType` was editor-check-only, and macro payload overwrite versions used raw `existing.Version + 1u`.
+
+What was done:
+- Removed the live relocation slice, free-gap compaction, relocation recorder, watchdog path, thread fences, Stopwatch checks, stress flags, and move flags.
+- Restored `FrostTickDefrag` to telemetry-only gap analysis and massive-move risk recording.
+- Restored stale cached handle fatal behavior with PHI/VOD dump and `FatalMemoryException`.
+- Made `ValidateType` production fail-fast, made `ReallocateRaw` use tracked old byte counts before allocation/copy, and switched macro payload overwrite versions to `NextGeneration(existing.Version)`.
+
+Cinematic Cheats used:
+- Fragmentation remains a reported loading-mask/offline-relocation problem. Runtime memory movement stays out of gameplay.
+
+Exact Microseconds saved:
+- Maintains removal of the reintroduced 512 KB move path, Thread fences, and Stopwatch watchdog work from DataVault maintenance.
+- Valid handle resolution remains branch-only. Reallocation pays one existing O(active allocations) owner scan only on the cold/fault-prone raw reallocation path.
+
+Verification:
+- Static `rg` found no live `UnsafeUtility.MemMove`, `VaultMemMoveJob`, compaction slice, memmove runner, stress gate, thread fence, BurstCompile, or Stopwatch symbols in `GlobalDataVault.cs`.
+- Static `rg` found stale-handle throw sites, production type mismatch throw, tracked reallocation byte use, macro `NextGeneration(existing.Version)`, and DTO lock markers.
+- Exact `dotnet build Hecton8.Core.Memory.rsp` still fails with MSB1009 because the target file is missing.
+- Broader edited-file filtered `Hecton8.Core.csproj` build timed out after 184 s, so no green compile claim is valid.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
 ## 2026-05-14 - Final Drift Removal After Build Probe
 
 What was wrong:
@@ -284,6 +498,130 @@ Verification:
 - Final static `rg` found stale-handle throw sites in `ResolveBuffer`.
 - Exact `dotnet build Hecton8.Core.Memory.rsp` remains blocked by missing file.
 - Edited-file filtered `Hecton8.Core.csproj` build reports `NO_EDITED_FILE_ERRORS_IN_BUILD_OUTPUT`.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-15 - Save Capacity Repair Bounds
+
+What was wrong:
+- Several save DTO repair paths expanded arrays to max capacity before clamping logical count mirrors.
+- No-copy capacity repair could discard compact loaded entries, and post-expansion clamps could turn corrupt counts into full-capacity default-entry loops.
+
+What was done:
+- Centralized exact-capacity, copy-preserving array normalization in `SaveData.EnsureExactArrayCapacity`.
+- Applied the capacity normalizer to inventory, world, construction, exploration, PDA, lore, meta, resource scarcity, ecosystem, procedural world, RTG, and first-hour flood DTO arrays.
+- Changed `SaveDataMigration` to compute count bounds before expanding arrays, then clamp counts against the original payload capacity.
+- Added missing construction graph/flood count clamps and changed root encrypted-audio/archaeology clamps to record `changed` plus summary steps.
+- Kept the helper `internal`, not public, so the save assembly can share it without widening the external API surface.
+
+Cinematic Cheats used:
+- Repair stays cold-load scalar math and array copying only. No gameplay-frame validation loop, no live recompression, no managed reflection pass.
+
+Exact Microseconds saved:
+- Frame cost: 0 us.
+- Cold migration avoids downstream restore loops over default backing capacity. Worst avoided scan class: 8192 pickup/suppression records, 4096 fauna records, 1536 construction graph edges, and paired lore/archaeology arrays when corrupt counts were previously clamped after expansion.
+
+Verification:
+- Static brace/parenthesis balance passed for `SaveData.cs` and `SaveDataMigration.cs`.
+- `rg` found no live compaction or relocation symbols in `GlobalDataVault.cs`.
+- `rg` found no old procedural full-array write/read call shapes or property-out bool reads in `SaveBinaryPayloadCodec.cs`.
+- Binary layout manifest coverage passed for 12 `[BinaryBlittableSafe]` DTOs.
+- Binary-blit field scan found no public bool/string/array fields in marked DTO structs.
+- External legacy ownerless `H8Memory.Release`/`FreeRaw` call scan returned no call sites.
+- `git diff --check` passed for touched source/log files.
+- No dotnet rebuild was run per user order.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-15 - Fixed-Capacity Codec Final Gate
+
+What was wrong:
+- The fixed-capacity codec pass needed one more legacy-path check after capacity repair.
+- `WriteInventoryCellArray` still used the generic custom-array writer, while its reader was capped to `InventoryDTO.MaxCells`.
+
+What was done:
+- Routed `WriteInventoryCellArray` through `WriteCustomArraySlice` with `InventoryDTO.MaxCells`.
+- Verified current logical-slice writers/readers for world, construction, scan log, PDA, procedural lore, achievements, resource scarcity, ecosystem, root bitmasks, external scavenger sites, module sorter buffers, and cultivation arrays.
+- Re-extracted the batch prompt with PowerShell raw regex; `CURRENT_BATCH.md` still returns `PROMPT_NOT_FOUND`, so disk status/rationale remain the authoritative memory.
+
+Cinematic Cheats used:
+- Save payloads stay logical and bounded. Backing capacity is a cold in-memory repair detail, not a serialized gameplay truth.
+
+Exact Microseconds saved:
+- Frame cost: 0 us.
+- Cold legacy inventory-cell writing is capped to 128 records instead of allowing an oversized custom string-bearing loop.
+
+Verification:
+- `SaveBinaryPayloadCodec.cs` brace/parenthesis balance passed.
+- Duplicate custom-array writer scan returned clean.
+- Fixed-capacity full-array writer scan returned clean.
+- Old procedural full-array write/read scan returned clean.
+- DataVault live compaction scan returned no `UnsafeUtility.MemMove`, `RunCompactionSlice`, `TryCompactFreeGapAt`, `VaultMemMoveJob`, `System.Threading`, `Stopwatch`, or `BurstCompile`.
+- `git diff --check` passed with CRLF warnings only.
+- No dotnet rebuild was run per user order.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-15 - Root Legacy Collection Bounds Gate
+
+What was wrong:
+- Root legacy compatibility collections still used unbounded binary readers for lists, dictionaries, and hash sets.
+- Malformed payload counts could allocate oversized managed containers before migration or packed-bitmask restoration had a chance to clamp state.
+
+What was done:
+- Added explicit root collection caps for legacy tool durability, discovered biome IDs, audio-log discovery IDs, quest IDs, suit upgrade IDs, corporate order IDs/timers, mission IDs, and custom mod data.
+- Routed root legacy write calls through capped list/dictionary/hashset overloads.
+- Routed root legacy read calls through capped overloads that reject over-limit counts before allocation.
+- Added a paired-count clamp for corporate pending order IDs and timers so the writer emits synchronized logical pairs.
+- Re-extracted the batch prompt with PowerShell raw regex; `CURRENT_BATCH.md` still returns `PROMPT_NOT_FOUND`, so status/rationale remain disk authority.
+
+Cinematic Cheats used:
+- Legacy compatibility state is bounded metadata, not a scalable gameplay simulation. Packed bitmasks and fixed DTO arrays remain the high-density path.
+
+Exact Microseconds saved:
+- Frame cost: 0 us.
+- Cold corrupt-load protection now rejects compatibility collection counts above fixed caps before managed allocation. Worst bounded classes: 1024 audio-log IDs, 1024 quest IDs per list, 108 biome IDs, 64 custom mod entries, 32 tool/mission/suit entries, and 16 corporate entries.
+
+Verification:
+- `SaveBinaryPayloadCodec.cs` brace/parenthesis balance passed.
+- Root unbounded read scan returned `NO_UNBOUNDED_ROOT_READS`.
+- Root unbounded write scan returned `NO_UNBOUNDED_ROOT_WRITES`.
+- Producer cap scan found matching limits in `ToolDurabilitySystem`, `AudioLogDiscoveryBitMask`, `BiomeDiscoveryBitMask`, `SuitUpgradeManager`, `CorporateOrderSystem`, `MissionManager`, and mod runtime capacity evidence.
+- DataVault live compaction scan returned no `UnsafeUtility.MemMove`, `RunCompactionSlice`, `TryCompactFreeGapAt`, `VaultMemMoveJob`, `System.Threading`, `Stopwatch`, or `BurstCompile`.
+- `git diff --check` passed with CRLF warnings only.
+- No dotnet rebuild was run per user order.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-15 - Root Migration Clamp Gate
+
+What was wrong:
+- Binary reads were bounded, but non-binary restore paths could still feed oversized legacy compatibility containers into migration.
+- Corporate pending order IDs and timers could be mismatched after non-binary repair.
+
+What was done:
+- Added cold migration trims for root legacy tool maps, custom mod data, discovered biome IDs, audio-log discovery IDs, quest IDs, suit upgrade IDs, corporate order IDs/timers, and mission IDs.
+- Added paired trimming for corporate pending order IDs and timers so migration keeps both lists synchronized.
+- Kept trims in migration, not producer hot paths, because this is load/repair hygiene.
+
+Cinematic Cheats used:
+- Compatibility containers are capped repair metadata. Primary packed bitmasks and fixed DTO arrays carry scalable state.
+
+Exact Microseconds saved:
+- Frame cost: 0 us.
+- Cold corrupt/non-binary load avoids downstream iteration over oversized legacy containers. Dictionary/hash-set trimming is cold-only and allocation-free except existing container storage.
+
+Verification:
+- `SaveBinaryPayloadCodec.cs` and `SaveDataMigration.cs` brace/parenthesis balance passed.
+- Migration cap scan found all root cap constants wired.
+- Root unbounded codec read/write scans remained clean.
+- DataVault live compaction scan returned no `UnsafeUtility.MemMove`, `RunCompactionSlice`, `TryCompactFreeGapAt`, `VaultMemMoveJob`, `System.Threading`, `Stopwatch`, or `BurstCompile`.
+- `git diff --check` passed with CRLF warnings only.
+- No dotnet rebuild was run per user order.
 
 Status:
 - VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.

@@ -34,8 +34,13 @@ namespace Hecton8.World
         public bool TryBuildImmediateAbyssalVoxelRoute(Vector3 startPosition, Vector3 endPosition, Vector3[] outputWaypoints, out int waypointCount)
         {
             waypointCount = 0;
-            if (outputWaypoints == null || outputWaypoints.Length < 2)
+            if (outputWaypoints == null ||
+                outputWaypoints.Length < 2 ||
+                !IsFinite(startPosition) ||
+                !IsFinite(endPosition))
+            {
                 return false;
+            }
 
             float3 startProbe = new float3(startPosition.x, startPosition.y, startPosition.z);
             float3 endProbe = new float3(endPosition.x, endPosition.y, endPosition.z);
@@ -66,6 +71,9 @@ namespace Hecton8.World
         {
             handle = default;
             CompleteAbyssalPathJob(forceComplete: false);
+            if (!IsFinite(startPosition) || !IsFinite(endPosition))
+                return false;
+
             if (_abyssalPathScheduled ||
                 _abyssalNavNodeCount <= 0 ||
                 !_nativeMemory.AbyssalNavNodeSnapshotNative.IsCreated)
@@ -214,8 +222,9 @@ namespace Hecton8.World
                     out navPassabilityCellSize);
             }
 
-            int smoothingPortalLookAhead = ResolveAbyssalPathPortalLookAhead(GlobalRegistry.ScalabilityTier);
-            int smoothingDdaSampleCap = ResolveAbyssalPathDdaSampleCap(GlobalRegistry.ScalabilityTier, abyssalPathSmoothingMaxSamples);
+            HectonQualityTier scalabilityTier = GlobalRegistry.ScalabilityTier;
+            int smoothingPortalLookAhead = ResolveAbyssalPathPortalLookAhead(scalabilityTier);
+            int smoothingDdaSampleCap = ResolveAbyssalPathDdaSampleCap(scalabilityTier, abyssalPathSmoothingMaxSamples);
             EnsureAbyssalPathTelemetry();
             _lastAbyssalPathPortalLookAhead = smoothingPortalLookAhead;
             _lastAbyssalPathMaxSamples = smoothingDdaSampleCap;
@@ -333,10 +342,21 @@ namespace Hecton8.World
                 return navPayload;
             }
 
+            if (!math.isfinite(payload.MinX) ||
+                !math.isfinite(payload.MaxX) ||
+                !math.isfinite(payload.MinZ) ||
+                !math.isfinite(payload.MaxZ) ||
+                abyssalNavNodeStepMeters <= 0f ||
+                !math.isfinite(abyssalNavNodeStepMeters))
+            {
+                return navPayload;
+            }
+
             float chunkWidth = math.max(0.01f, payload.MaxX - payload.MinX);
             float chunkDepth = math.max(0.01f, payload.MaxZ - payload.MinZ);
-            int sampleCountX = math.max(1, (int)math.floor(chunkWidth / abyssalNavNodeStepMeters));
-            int sampleCountZ = math.max(1, (int)math.floor(chunkDepth / abyssalNavNodeStepMeters));
+            float inverseNodeStep = math.rcp(math.max(0.01f, abyssalNavNodeStepMeters));
+            int sampleCountX = math.max(1, (int)math.floor(chunkWidth * inverseNodeStep));
+            int sampleCountZ = math.max(1, (int)math.floor(chunkDepth * inverseNodeStep));
             int holeNodeCount = CountTerrainHolesIntersectingChunk(payload.MinX, payload.MaxX, payload.MinZ, payload.MaxZ);
             int maxNodeCount = sampleCountX * sampleCountZ + holeNodeCount;
             if (maxNodeCount <= 0)
@@ -393,8 +413,8 @@ namespace Hecton8.World
 
             EnsureInactiveNativeCapacity(ref nodeTypes, maxNodeCount);
 
-            float stepX = chunkWidth / sampleCountX;
-            float stepZ = chunkDepth / sampleCountZ;
+            float stepX = chunkWidth * math.rcp(math.max(1, sampleCountX));
+            float stepZ = chunkDepth * math.rcp(math.max(1, sampleCountZ));
             int writeIndex = 0;
             for (int sampleZ = 0; sampleZ < sampleCountZ; sampleZ++)
             {
@@ -468,6 +488,9 @@ namespace Hecton8.World
             conduitVector = Vector3.zero;
             conduitStrength = 0f;
             nodeType = NavNodeType.Water;
+            if (!IsFinite(candidate))
+                return false;
+
             if (IsInsideRegisteredTerrainHole(candidate.x, candidate.z))
             {
                 nodeType = NavNodeType.Interior;
@@ -488,10 +511,32 @@ namespace Hecton8.World
             Vector3 flowVectorSum = Vector3.zero;
             int contributingSamples = 0;
             NativeChunkPool underwaterPool = ResolveChunkPool(isSurface: false, payload);
-            int end = math.min(underwaterPool.Matrices.Length, payload.UnderwaterOffset + payload.UnderwaterCount);
-            for (int poolIndex = math.max(0, payload.UnderwaterOffset); poolIndex < end; poolIndex++)
+            if (!underwaterPool.Matrices.IsCreated ||
+                !underwaterPool.BiomeLayers.IsCreated ||
+                !underwaterPool.SemanticTypes.IsCreated)
+            {
+                return false;
+            }
+
+            int availableLength = math.min(
+                underwaterPool.Matrices.Length,
+                math.min(underwaterPool.BiomeLayers.Length, underwaterPool.SemanticTypes.Length));
+            if (availableLength <= 0)
+                return false;
+
+            int startIndex = math.clamp(payload.UnderwaterOffset, 0, availableLength);
+            long requestedEnd = (long)payload.UnderwaterOffset + math.max(0, payload.UnderwaterCount);
+            long clampedEnd = requestedEnd > availableLength ? availableLength : requestedEnd;
+            if (clampedEnd < startIndex)
+                clampedEnd = startIndex;
+
+            int end = (int)clampedEnd;
+            for (int poolIndex = startIndex; poolIndex < end; poolIndex++)
             {
                 Vector3 position = ResolveRuntimePosition(underwaterPool.Matrices[poolIndex]);
+                if (!IsFinite(position))
+                    continue;
+
                 float dx = position.x - candidate.x;
                 float dz = position.z - candidate.z;
                 float horizontalDistanceSq = (dx * dx) + (dz * dz);
@@ -512,10 +557,15 @@ namespace Hecton8.World
                 if (biomeLayer >= (byte)VegetationBiomeLayer.ColonyGraveyard)
                     deepAffinity += semanticWeight;
 
-                Vector3 flowVector = underwaterPool.FlowVectors[poolIndex];
-                flowMagnitudeSum += EstimateLength3D(flowVector);
-                flowVectorSum += flowVector;
-                contributingSamples++;
+                Vector3 flowVector = underwaterPool.FlowVectors.IsCreated && poolIndex < underwaterPool.FlowVectors.Length
+                    ? underwaterPool.FlowVectors[poolIndex]
+                    : Vector3.zero;
+                if (IsFinite(flowVector))
+                {
+                    flowMagnitudeSum += EstimateLength3D(flowVector);
+                    flowVectorSum += flowVector;
+                    contributingSamples++;
+                }
                 if (obstacleWeight > abyssalNavNodeMaxObstacleDensity)
                     return false;
             }
@@ -524,7 +574,7 @@ namespace Hecton8.World
                 return false;
 
             float averageCurrentMagnitude = contributingSamples > 0
-                ? flowMagnitudeSum / contributingSamples
+                ? flowMagnitudeSum * math.rcp(math.max(1, contributingSamples))
                 : 0f;
             if (averageCurrentMagnitude > abyssalNavNodeMaxCurrentMagnitude)
                 return false;
@@ -547,9 +597,11 @@ namespace Hecton8.World
                 return true;
             }
 
+            float conduitStrengthRange = math.max(
+                0.01f,
+                abyssalNavNodeMaxCurrentMagnitude - abyssalConduitMinimumFlowMagnitude);
             conduitStrength = math.saturate(
-                (averageCurrentMagnitude - abyssalConduitMinimumFlowMagnitude) /
-                math.max(0.01f, abyssalNavNodeMaxCurrentMagnitude - abyssalConduitMinimumFlowMagnitude));
+                (averageCurrentMagnitude - abyssalConduitMinimumFlowMagnitude) * math.rcp(conduitStrengthRange));
             return true;
         }
 
@@ -585,13 +637,27 @@ namespace Hecton8.World
             if (state == null || !heightSamples.IsCreated || state.HeightmapResolution <= 1)
                 return false;
 
+            long expectedLength = (long)state.HeightmapResolution * state.HeightmapResolution;
+            if (expectedLength <= 0L ||
+                expectedLength > int.MaxValue ||
+                heightSamples.Length < expectedLength ||
+                !math.isfinite(worldX) ||
+                !math.isfinite(worldZ) ||
+                !IsFinite(state.TerrainPosition) ||
+                !IsFinite(state.TerrainSize) ||
+                state.TerrainSize.x <= 0f ||
+                state.TerrainSize.z <= 0f)
+            {
+                return false;
+            }
+
             float localX = worldX - state.TerrainPosition.x;
             float localZ = worldZ - state.TerrainPosition.z;
             if (localX < 0f || localZ < 0f || localX > state.TerrainSize.x || localZ > state.TerrainSize.z)
                 return false;
 
-            float normalizedX = math.saturate(localX / math.max(0.01f, state.TerrainSize.x));
-            float normalizedZ = math.saturate(localZ / math.max(0.01f, state.TerrainSize.z));
+            float normalizedX = math.saturate(localX * math.rcp(math.max(0.01f, state.TerrainSize.x)));
+            float normalizedZ = math.saturate(localZ * math.rcp(math.max(0.01f, state.TerrainSize.z)));
             terrainHeight = state.TerrainPosition.y + SampleHeight(
                 normalizedX,
                 normalizedZ,
@@ -606,8 +672,14 @@ namespace Hecton8.World
             if (!pool.BiomeLayers.IsCreated || count <= 0)
                 return false;
 
-            int end = math.min(pool.BiomeLayers.Length, offset + count);
-            for (int poolIndex = math.max(0, offset); poolIndex < end; poolIndex++)
+            int startIndex = math.clamp(offset, 0, pool.BiomeLayers.Length);
+            long requestedEnd = (long)offset + count;
+            long clampedEnd = requestedEnd > pool.BiomeLayers.Length ? pool.BiomeLayers.Length : requestedEnd;
+            if (clampedEnd < startIndex)
+                return false;
+
+            int end = (int)clampedEnd;
+            for (int poolIndex = startIndex; poolIndex < end; poolIndex++)
             {
                 if (pool.BiomeLayers[poolIndex] >= (byte)VegetationBiomeLayer.ColonyGraveyard)
                     return true;
@@ -889,7 +961,7 @@ namespace Hecton8.World
             double fadeStartSq = fadeStart * fadeStart;
             double fadeEndSq = fadeEnd * fadeEnd;
             double rangeSq = math.max(1d, fadeEndSq - fadeStartSq);
-            return math.saturate((float)((distanceSq - fadeStartSq) / rangeSq));
+            return math.saturate((float)((distanceSq - fadeStartSq) * math.rcp(rangeSq)));
         }
 
         private static float EstimateLength3D(Vector3 value)
@@ -906,7 +978,14 @@ namespace Hecton8.World
         private static Vector3 NormalizeVector3Fast(Vector3 vector, Vector3 fallback)
         {
             float magnitudeSq = vector.sqrMagnitude;
-            return magnitudeSq > 0.0001f ? vector * math.rsqrt(magnitudeSq) : fallback;
+            if (magnitudeSq > 0.0001f && IsFinite(vector))
+                return vector * math.rsqrt(magnitudeSq);
+
+            float fallbackMagnitudeSq = fallback.sqrMagnitude;
+            if (fallbackMagnitudeSq > 0.0001f && IsFinite(fallback))
+                return fallback * math.rsqrt(fallbackMagnitudeSq);
+
+            return Vector3.forward;
         }
 
         private static double ComputeAupDistanceSq(Vector3 runtimePositionA, Vector3 runtimePositionB)
@@ -1072,6 +1151,7 @@ namespace Hecton8.World
                 NativeArrayOptions.ClearMemory);
             RegisterTrackedNativeArray(_abyssalPathTelemetry, nameof(_abyssalPathTelemetry));
             _abyssalPathTelemetryCursor = 0;
+            _abyssalPathTelemetryWrittenCount = 0;
             _abyssalPathTelemetrySequence = 0;
             _abyssalPathTelemetryDumpedForFault = false;
         }
@@ -1081,7 +1161,7 @@ namespace Hecton8.World
             if (elapsedTicks <= 0)
                 return 0f;
 
-            return (float)(elapsedTicks * 1000.0 / Stopwatch.Frequency);
+            return (float)(elapsedTicks * 1000.0 * math.rcp((double)Stopwatch.Frequency));
         }
 
         private void RecordAbyssalPathTelemetry(
@@ -1094,12 +1174,11 @@ namespace Hecton8.World
         {
             EnsureAbyssalPathTelemetry();
             if (outputCount <= 0 &&
-                _nativeMemory.AbyssalPathRawResultNative.IsCreated &&
-                rawCount > 0)
+                TryResolveAbyssalRawPathTelemetry(rawCount, out Vector3 rawStart, out Vector3 rawEnd, out bool rawFinite))
             {
-                start = _nativeMemory.AbyssalPathRawResultNative[0];
-                end = _nativeMemory.AbyssalPathRawResultNative[rawCount - 1];
-                finite = IsFinite(start) && IsFinite(end);
+                start = rawStart;
+                end = rawEnd;
+                finite = rawFinite;
             }
 
             uint flags = 0u;
@@ -1131,6 +1210,8 @@ namespace Hecton8.World
             _abyssalPathTelemetryCursor++;
             if (_abyssalPathTelemetryCursor >= AbyssalPathTelemetryFrameCount)
                 _abyssalPathTelemetryCursor = 0;
+            if (_abyssalPathTelemetryWrittenCount < AbyssalPathTelemetryFrameCount)
+                _abyssalPathTelemetryWrittenCount++;
             _abyssalPathTelemetrySequence++;
 
             if (funnelMs > 0.1f)
@@ -1153,6 +1234,31 @@ namespace Hecton8.World
                    !float.IsInfinity(value.z);
         }
 
+        private bool TryResolveAbyssalRawPathTelemetry(int rawCount, out Vector3 start, out Vector3 end, out bool finite)
+        {
+            start = default;
+            end = default;
+            finite = true;
+            if (!_nativeMemory.AbyssalPathRawResultNative.IsCreated || rawCount <= 0)
+                return false;
+
+            int count = math.min(rawCount, _nativeMemory.AbyssalPathRawResultNative.Length);
+            if (count <= 0)
+                return false;
+
+            for (int i = 0; i < count; i++)
+            {
+                Vector3 waypoint = _nativeMemory.AbyssalPathRawResultNative[i];
+                if (i == 0)
+                    start = waypoint;
+                end = waypoint;
+                if (!IsFinite(waypoint))
+                    finite = false;
+            }
+
+            return true;
+        }
+
         private void DumpAbyssalPathTelemetry(uint reasonHash)
         {
             if (_abyssalPathTelemetryDumpedForFault || !_abyssalPathTelemetry.IsCreated)
@@ -1171,9 +1277,7 @@ namespace Hecton8.World
                     writer.Write(AbyssalPathTelemetryFrameCount);
                     writer.Write(_abyssalPathTelemetryCursor);
                     writer.Write(_abyssalPathTelemetrySequence);
-                    int validEntryCount = _abyssalPathTelemetrySequence < (uint)AbyssalPathTelemetryFrameCount
-                        ? (int)_abyssalPathTelemetrySequence
-                        : AbyssalPathTelemetryFrameCount;
+                    int validEntryCount = math.clamp(_abyssalPathTelemetryWrittenCount, 0, AbyssalPathTelemetryFrameCount);
                     writer.Write(validEntryCount);
                     int firstEntryIndex = validEntryCount < AbyssalPathTelemetryFrameCount
                         ? 0
@@ -1227,6 +1331,7 @@ namespace Hecton8.World
             _abyssalPathCount = 0;
             _lastAbyssalPathEndNode = -1;
             _abyssalPathTelemetryCursor = 0;
+            _abyssalPathTelemetryWrittenCount = 0;
             _abyssalPathTelemetrySequence = 0;
             _lastAbyssalPathPortalLookAhead = 0;
             _lastAbyssalPathMaxSamples = 0;
@@ -1365,16 +1470,29 @@ namespace Hecton8.World
 
         private void BuildFlowFieldNavSupportGrid(Vector3 gridCenter)
         {
-            if (!_nativeMemory.FlowNavSupportGridNative.IsCreated || _ecosystemThreatGridResolution <= 0 || _abyssalNavNodeCount <= 0)
+            if (!_nativeMemory.FlowNavSupportGridNative.IsCreated ||
+                _ecosystemThreatGridResolution <= 0 ||
+                _abyssalNavNodeCount <= 0 ||
+                threatGridCellSize <= 0f ||
+                !math.isfinite(threatGridCellSize) ||
+                !IsFinite(gridCenter))
+            {
                 return;
+            }
 
             int halfExtent = _ecosystemThreatGridResolution >> 1;
             int stencilRadius = math.max(0, flowFieldNavStencilRadiusCells);
+            float inverseThreatGridCellSize = math.rcp(math.max(0.0001f, threatGridCellSize));
+            float supportRadius = math.max(1f, stencilRadius + 0.25f);
+            float inverseSupportRadiusSq = math.rcp(math.max(1f, supportRadius * supportRadius));
             for (int i = 0; i < _abyssalNavNodeCount; i++)
             {
                 Vector3 node = _abyssalNavNodeSnapshot[i];
-                int centerX = (int)math.round((node.x - gridCenter.x) / threatGridCellSize) + halfExtent;
-                int centerZ = (int)math.round((node.z - gridCenter.z) / threatGridCellSize) + halfExtent;
+                if (!IsFinite(node))
+                    continue;
+
+                int centerX = (int)math.round((node.x - gridCenter.x) * inverseThreatGridCellSize) + halfExtent;
+                int centerZ = (int)math.round((node.z - gridCenter.z) * inverseThreatGridCellSize) + halfExtent;
                 if (centerX < 0 || centerZ < 0 || centerX >= _ecosystemThreatGridResolution || centerZ >= _ecosystemThreatGridResolution)
                     continue;
 
@@ -1391,8 +1509,7 @@ namespace Hecton8.World
                             continue;
 
                         float distanceSq = (offsetX * offsetX) + (offsetZ * offsetZ);
-                        float supportRadius = math.max(1f, stencilRadius + 0.25f);
-                        float support01 = 1f - math.saturate(distanceSq / (supportRadius * supportRadius));
+                        float support01 = 1f - math.saturate(distanceSq * inverseSupportRadiusSq);
                         int index = (cellZ * _ecosystemThreatGridResolution) + cellX;
                         float clampedSupport = math.saturate(support01);
                         if (_nativeMemory.FlowNavSupportGridNative[index] < clampedSupport)
@@ -1404,7 +1521,18 @@ namespace Hecton8.World
 
         private int FindNearestAbyssalNavNodeIndex(Vector3 position)
         {
-            if (_abyssalNavNodeCount <= 0 || !_nativeMemory.AbyssalNavNodeSnapshotNative.IsCreated)
+            if (_abyssalNavNodeCount <= 0 ||
+                !_nativeMemory.AbyssalNavNodeSnapshotNative.IsCreated ||
+                _abyssalNavNodeSnapshot == null ||
+                _abyssalNavNodeSnapshot.Length <= 0 ||
+                !IsFinite(position))
+            {
+                return -1;
+            }
+
+            int safeNodeCount = math.min(_abyssalNavNodeCount, _abyssalNavNodeSnapshot.Length);
+            safeNodeCount = math.min(safeNodeCount, _nativeMemory.AbyssalNavNodeSnapshotNative.Length);
+            if (safeNodeCount <= 0)
                 return -1;
 
             if (TryFindNearestAbyssalNavNodeIndexFromHash(position, out int hashedIndex))
@@ -1412,9 +1540,12 @@ namespace Hecton8.World
 
             int bestIndex = -1;
             float bestDistanceSq = float.PositiveInfinity;
-            for (int i = 0; i < _abyssalNavNodeCount; i++)
+            for (int i = 0; i < safeNodeCount; i++)
             {
                 Vector3 candidate = _abyssalNavNodeSnapshot[i];
+                if (!IsFinite(candidate))
+                    continue;
+
                 float distanceSq = (candidate - position).sqrMagnitude;
                 if (distanceSq >= bestDistanceSq)
                     continue;
@@ -1431,16 +1562,29 @@ namespace Hecton8.World
             bestIndex = -1;
             if (!_nativeMemory.AbyssalNavGraphHashNative.IsCreated ||
                 _abyssalNavNodeCount <= 0 ||
-                abyssalNavGraphCellSize <= 0f)
+                _abyssalNavNodeSnapshot == null ||
+                _abyssalNavNodeSnapshot.Length <= 0 ||
+                abyssalNavGraphCellSize <= 0f ||
+                !math.isfinite(abyssalNavGraphCellSize) ||
+                !IsFinite(position) ||
+                !IsFinite(_abyssalNavGraphOrigin))
             {
                 return false;
             }
 
-            int baseCellX = (int)math.floor((position.x - _abyssalNavGraphOrigin.x) / abyssalNavGraphCellSize);
-            int baseCellY = (int)math.floor((position.y - _abyssalNavGraphOrigin.y) / abyssalNavGraphCellSize);
-            int baseCellZ = (int)math.floor((position.z - _abyssalNavGraphOrigin.z) / abyssalNavGraphCellSize);
+            int safeNodeCount = math.min(_abyssalNavNodeCount, _abyssalNavNodeSnapshot.Length);
+            safeNodeCount = math.min(safeNodeCount, _nativeMemory.AbyssalNavNodeSnapshotNative.IsCreated
+                ? _nativeMemory.AbyssalNavNodeSnapshotNative.Length
+                : 0);
+            if (safeNodeCount <= 0)
+                return false;
+
+            float inverseCellSize = math.rcp(math.max(0.01f, abyssalNavGraphCellSize));
+            int baseCellX = (int)math.floor((position.x - _abyssalNavGraphOrigin.x) * inverseCellSize);
+            int baseCellY = (int)math.floor((position.y - _abyssalNavGraphOrigin.y) * inverseCellSize);
+            int baseCellZ = (int)math.floor((position.z - _abyssalNavGraphOrigin.z) * inverseCellSize);
             float bestDistanceSq = float.PositiveInfinity;
-            int searchRadiusCells = math.clamp((int)math.ceil(abyssalPathNeighborRadius / math.max(1f, abyssalNavGraphCellSize)), 1, 3);
+            int searchRadiusCells = math.clamp((int)math.ceil(abyssalPathNeighborRadius * math.rcp(math.max(1f, abyssalNavGraphCellSize))), 1, 3);
             for (int radius = 0; radius <= searchRadiusCells; radius++)
             {
                 bool foundAny = false;
@@ -1456,11 +1600,14 @@ namespace Hecton8.World
 
                             do
                             {
-                                if ((uint)nodeIndex >= _abyssalNavNodeCount)
+                                if ((uint)nodeIndex >= safeNodeCount)
                                     continue;
 
                                 foundAny = true;
                                 Vector3 candidate = _abyssalNavNodeSnapshot[nodeIndex];
+                                if (!IsFinite(candidate))
+                                    continue;
+
                                 float distanceSq = (candidate - position).sqrMagnitude;
                                 if (distanceSq >= bestDistanceSq)
                                     continue;
@@ -1482,10 +1629,13 @@ namespace Hecton8.World
 
         private static int ComputeAbyssalNavGraphHashKey(Vector3 position, Vector3 origin, float cellSize)
         {
-            float safeCellSize = math.max(0.01f, cellSize);
-            int cellX = (int)math.floor((position.x - origin.x) / safeCellSize);
-            int cellY = (int)math.floor((position.y - origin.y) / safeCellSize);
-            int cellZ = (int)math.floor((position.z - origin.z) / safeCellSize);
+            if (!IsFinite(position) || !IsFinite(origin) || !math.isfinite(cellSize))
+                return HashSpatialCell(0, 0, 0);
+
+            float inverseCellSize = math.rcp(math.max(0.01f, cellSize));
+            int cellX = (int)math.floor((position.x - origin.x) * inverseCellSize);
+            int cellY = (int)math.floor((position.y - origin.y) * inverseCellSize);
+            int cellZ = (int)math.floor((position.z - origin.z) * inverseCellSize);
             return HashSpatialCell(cellX, cellY, cellZ);
         }
 

@@ -137,3 +137,55 @@ Cinematic Cheats used:
 Exact Microseconds saved:
 - Runtime: 0 us/frame.
 - Process: active docs now share the same current compile/runtime-proof boundary, reducing repeated rediscovery work by other agents.
+
+## R45 - 2026-05-14 - Concurrent R43/R44 Wording Rebase
+
+What was wrong:
+- Active documentation drifted under concurrent edits after the R43 root compile recheck.
+- Repeated reference docs still used the R41-only compile boundary and omitted the later R43 caveats around missing referenced `Temp\bin\Debug` DLLs, missing `Temp\obj` restore assets, and shared `Temp\obj` locks.
+- Several authority surfaces still made R38's old full-Core-blocked state sound current instead of historical.
+- DOC_AUDIT memory headers had to be brought back to the R45 continuation marker.
+
+What was done:
+- Re-read active DOC_AUDIT memory, project authority, relevant registry mandates, and Unity MCP workflow limits before editing.
+- Updated `35` active repeated reference docs to the current R43 root compile boundary.
+- Rebased top-level authority/index docs including `Docs/README.md`, `Docs/PROJECT_STATE_STATIC_XRAY.md`, `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`, `Docs/SYSTEMS_CONTRACTS.md`, `Docs/QUALITY_GATES.md`, `Docs/DOC_GOVERNANCE.md`, `Docs/ROOT_DOCS_REFERENCE.md`, `Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`, architecture/report/Archivarius indexes, and related active reference surfaces.
+- Preserved the hard evidence boundary: R43 is external CLI compile proof only, not Unity Console, Play Mode, profiler, GCMonitor, player build, memory, scene-wiring, or visual-quality proof.
+- Targeted active-doc scans now find no remaining current R41/R38 compile-blocked stale strings outside excluded snapshots and DOC_AUDIT history.
+
+Cinematic Cheats used:
+- None. Documentation/evidence integrity pass only.
+- Process cheat: exact stale-pattern scanning plus mechanical line replacement avoided hand-edited partial truth.
+
+Exact Microseconds saved:
+- Runtime: 0 us/frame.
+- Process: prevents repeated false triage around old R38/R41 compile status and keeps future agents from treating CLI evidence as runtime proof.
+
+## R46 - 2026-05-14 - Scatter Runtime Source Reality Recheck
+
+What was wrong:
+- Active scatter docs had stale and contradictory refactor-state claims.
+- `SCATTER_REFACTOR_EXECUTION_PLAN.md` still said `ScatterHeuristicsUtility`, `ScatterRescueContext`, and `GetGridPlacements()` were absent, while current source shows partial implementations.
+- Static x-ray file-size inventory for scatter/world runtime owners was stale.
+- The DOTS boundary needed sharper wording because the DOTS asmdef exists but `com.unity.entities` is absent from `Packages/manifest.json` and the assembly is define-gated/auto-reference disabled.
+
+What was done:
+- Re-read streaming, persistence, flora instancing, and cinematic-fake mandates.
+- Measured current source inventory:
+  - `WorldProceduralScatterDirector.cs`: `539165` bytes / `11907` lines.
+  - `WorldProceduralScatterWorkingMemory.cs`: `42878` bytes / `590` lines.
+  - `WorldChunkResidencyManager.cs`: `187902` bytes / `4368` lines.
+  - `HectonMapMagicVegetationBridge.cs`: `336953` bytes / `7041` lines.
+  - `WorldProceduralFieldSampler.cs`: `263836` bytes / `5133` lines.
+  - `PersistentWorldRegistry.cs`: `273872` bytes / `6159` lines.
+- Updated `Docs/Scatter_Runtime/README.md`, `SCATTER_REFACTOR_EXECUTION_PLAN.md`, `SCATTER_REFACTORING_MANIFESTO_V2.md`, and `Docs/PROJECT_STATE_STATIC_XRAY.md`.
+- Corrected the source boundary: `SamplingSnapshot`, `ScatterHeuristicsUtility`, `ScatterDiagnosticsTracker`, and `ScatterWorkingMemory` exist; `ScatterRescueContext` is private/director-partial and not the manifesto `ref struct`; `GetGridPlacements()` exists but returns bucketed placement lists; `ScatterSpawningService` was not found.
+- Preserved runtime truth: no Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, player build, scene wiring, or visual proof was captured.
+
+Cinematic Cheats used:
+- None in runtime.
+- Process cheat: source-symbol and file-inventory scans replaced stale refactor checklist assertions.
+
+Exact Microseconds saved:
+- Runtime: 0 us/frame.
+- Process: prevents duplicate helper work and narrows the next real scatter refactor target to spawn/reconcile extraction plus runtime proof.

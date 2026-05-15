@@ -396,7 +396,7 @@ namespace Hecton8.Core
             }
 
             Vector3 runtimeOrigin = playerTransform.position;
-            Vector3 aupOrigin = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimeOrigin);
+            double3 aupOrigin = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeOrigin);
             float safeFadeDistance = Mathf.Max(128f, terrainFadeDistanceMeters);
             float safeFadeWidth = Mathf.Max(1f, terrainFadeWidthMeters);
 
@@ -409,7 +409,7 @@ namespace Hecton8.Core
                 new Vector4(runtimeOrigin.x, runtimeOrigin.y, runtimeOrigin.z, 1f));
             Shader.SetGlobalVector(
                 _TerrainFadeAupOriginId,
-                new Vector4(aupOrigin.x, aupOrigin.y, aupOrigin.z, 1f));
+                new Vector4((float)aupOrigin.x, (float)aupOrigin.y, (float)aupOrigin.z, 1f));
 
             UpdateDistantTerrainShadowMask(runtimeOrigin);
         }

@@ -12,8 +12,20 @@ Current-state boundary:
 - DOTS/Entities scatter work is currently a disabled placeholder seam unless package, define, profiler parity, and runtime validation prove otherwise.
 - Current source/package check: `com.unity.entities` is not declared in `Packages/manifest.json`.
 - `Assets/_Project/Scripts/World/Dots/Hecton8.World.Dots.asmdef` exists, but is gated by defines and is not auto-referenced.
-- No current first-party source path under `Assets/_Project/Scripts` uses `Unity.Entities`, `IComponentData`, `SystemBase`, or `ISystem`.
+- No current active `.cs` source path under `Assets/_Project/Scripts` uses `Unity.Entities`, `IComponentData`, or `SystemBase`; bare `ISystem` matches are the first-party `Hecton8.Core.ISystem`, not ECS proof.
 - This bundle is planning and architecture guidance, not proof of live scatter correctness or performance.
+
+## 2026-05-14 DOC_AUDIT R46 Source Reality Recheck
+
+Status: SOURCE-SCANNED, RUNTIME PENDING VERIFICATION.
+
+[SOURCE] Current source sizes are: `WorldProceduralScatterDirector.cs` `539165` bytes / `11907` lines, `WorldProceduralScatterWorkingMemory.cs` `42878` bytes / `590` lines, `World/WorldChunkResidencyManager.cs` `187902` bytes / `4368` lines, `World/HectonMapMagicVegetationBridge.cs` `336953` bytes / `7041` lines, `WorldProceduralFieldSampler.cs` `263836` bytes / `5133` lines, and `World/PersistentWorldRegistry.cs` `273872` bytes / `6159` lines.
+
+[SOURCE] The scatter refactor is partially source-present, not complete: `SamplingSnapshot.cs`, `ScatterHeuristicsUtility.cs`, `ScatterDiagnosticsTracker.cs`, and `WorldProceduralScatterWorkingMemory.cs` exist. `ScatterRescueContext` exists only as a private readonly struct in `WorldProceduralScatterDirectorRescueContexts.cs`, not as the manifesto's standalone `ref struct`. `GetGridPlacements()` exists but exposes bucketed `IReadOnlyDictionary<long, List<ScatterPlacement>>`. `ScatterSpawningService` was not found; spawn/reconcile remains director-owned.
+
+[REQ] Treat checked extraction boxes in `SCATTER_REFACTOR_EXECUTION_PLAN.md` as source-shape evidence only. They are not profiler, GC, scene-wiring, Play Mode, or visual proof.
+
+[REQ] Future scatter work must preserve the current single-`MonoBehaviour` owner rule until a scene/serialization migration plan exists. Helpers may be plain classes/static utilities/structs; they must not become independent runtime owners.
 
 ## Files
 

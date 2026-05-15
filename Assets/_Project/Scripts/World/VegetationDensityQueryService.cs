@@ -115,7 +115,7 @@ namespace Hecton8.World
                 if (!_chunkAbyssalNavPayloads.TryGetValue(key, out ChunkAbyssalNavPayload payload) || payload.Count <= 0 || !payload.Nodes.IsCreated)
                     continue;
 
-                nodeCount += payload.Count;
+                nodeCount += math.min(payload.Count, payload.Nodes.Length);
             }
 
             int fixedNodeCapacity = ResolveMaxAbyssalNavNodeCapacity();
@@ -168,15 +168,24 @@ namespace Hecton8.World
                 if (!_chunkAbyssalNavPayloads.TryGetValue(key, out ChunkAbyssalNavPayload payload) || payload.Count <= 0 || !payload.Nodes.IsCreated)
                     continue;
 
-                for (int nodeIndex = 0; nodeIndex < payload.Count && writeIndex < nodeCount; nodeIndex++)
+                int payloadNodeCount = math.min(payload.Count, payload.Nodes.Length);
+                for (int nodeIndex = 0; nodeIndex < payloadNodeCount && writeIndex < nodeCount; nodeIndex++)
                 {
                     Vector3 node = payload.Nodes[nodeIndex];
+                    if (!IsFinite(node))
+                        continue;
+
                     Vector3 conduitVector = payload.ConduitVectors.IsCreated && nodeIndex < payload.ConduitVectors.Length
                         ? payload.ConduitVectors[nodeIndex]
                         : Vector3.zero;
                     float conduitStrength = payload.ConduitStrengths.IsCreated && nodeIndex < payload.ConduitStrengths.Length
                         ? payload.ConduitStrengths[nodeIndex]
                         : 0f;
+                    if (!IsFinite(conduitVector))
+                        conduitVector = Vector3.zero;
+                    if (!math.isfinite(conduitStrength))
+                        conduitStrength = 0f;
+
                     byte nodeType = payload.NodeTypes.IsCreated && nodeIndex < payload.NodeTypes.Length
                         ? payload.NodeTypes[nodeIndex]
                         : (byte)NavNodeType.Water;

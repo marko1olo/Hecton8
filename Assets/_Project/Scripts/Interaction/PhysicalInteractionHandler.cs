@@ -21,12 +21,14 @@ namespace Hecton8.Interaction
         /// <summary>
         /// Attempts to queue a physical hand press through the interaction signal service.
         /// </summary>
+        /// <param name="sampleFrame">Frame stamp captured by the physical hand probe for all receivers in this sample.</param>
         bool TryQueueHandPress(
             Vector3 handPosition,
             Vector3 handForward,
             IInteractionSignalService interactionSignals,
             Collider handSourceCollider,
-            PhysicalHandSide fallbackHandSide);
+            PhysicalHandSide fallbackHandSide,
+            int sampleFrame);
     }
 
     /// <summary>
@@ -480,13 +482,16 @@ namespace Hecton8.Interaction
             if (_physicalHandController == null && !EnsurePhysicalHandController())
                 return;
 
-            if (!_physicalHandController.TryGetInteractionProbePose(out Vector3 handPosition, out Quaternion handRotation))
-                return;
-            if (!IsFiniteVector(handPosition))
+            if (!PhysicalHandReceiverRegistry.HasReceivers)
                 return;
 
             IInteractionSignalService interactionSignals = GlobalRegistry.InteractionSignals;
             if (interactionSignals == null || !interactionSignals.IsInitialized)
+                return;
+
+            if (!_physicalHandController.TryGetInteractionProbePose(out Vector3 handPosition, out Quaternion handRotation))
+                return;
+            if (!IsFiniteVector(handPosition))
                 return;
 
             Collider handSourceCollider = null;
@@ -544,7 +549,10 @@ namespace Hecton8.Interaction
             }
 
             if (bestButton != null)
-                bestButton.TryQueueHandPress(handPosition, handForward, interactionSignals, handSourceCollider, handSide);
+            {
+                int sampleFrame = Time.frameCount;
+                bestButton.TryQueueHandPress(handPosition, handForward, interactionSignals, handSourceCollider, handSide, sampleFrame);
+            }
         }
 
         private void HandleXRActiveChanged(bool isActive)

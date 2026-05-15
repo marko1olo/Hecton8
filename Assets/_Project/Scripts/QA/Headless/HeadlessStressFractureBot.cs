@@ -21,28 +21,74 @@ namespace Hecton8.QA.Headless
         private const string AgentName = "HEADLESS_STRESS_FRACTURE_BOT";
         private const string RuntimeRootName = "[HeadlessStressFractureBot]";
         private const string CommandLineArg = "-h8fracturetest";
+        private const string CommandLineFramesArg = "-h8fractureFrames";
+        private const string CommandLineScratchMegabytesArg = "-h8fractureScratchMb";
+        private const string CommandLineStartupTimeoutSecondsArg = "-h8fractureStartupTimeoutSeconds";
         private const string EnvironmentFlagName = "H8_FRACTURE_TEST";
         private const string EnvironmentFramesName = "H8_FRACTURE_FRAMES";
+        private const string EnvironmentScratchMegabytesName = "H8_FRACTURE_SCRATCH_MB";
+        private const string EnvironmentStartupTimeoutSecondsName = "H8_FRACTURE_STARTUP_TIMEOUT_SECONDS";
         private const string FlagRelativePath = "Temp/H8_FRACTURE_TEST.flag";
         private const string ResultRelativePath = "Docs/AgentLogs/HeadlessStressFractureResult_HEADLESS_STRESS_FRACTURE_BOT.json";
         private const string BlackboxRelativePath = "Docs/AgentLogs/Dump_HEADLESS_STRESS_FRACTURE_BOT.bin";
+        private const string BlackboxManifestRelativePath = "Docs/AgentLogs/Dump_HEADLESS_STRESS_FRACTURE_BOT.json";
         private const string H8MemoryDumpRelativePath = "Docs/AgentLogs/H8Memory_HEADLESS_STRESS_FRACTURE_BOT.txt";
         private const int BlackboxFrameCapacity = 300;
+        private const int BlackboxHeaderSizeBytes = 16;
+        private const int BlackboxHeaderOffsetMagic = 0;
+        private const int BlackboxHeaderOffsetValidEntryCount = 4;
+        private const int BlackboxHeaderOffsetEntrySizeBytes = 8;
+        private const int BlackboxHeaderOffsetCursor = 12;
         private const int BlackboxEntrySizeBytes = 64;
+        private const int BlackboxEntryOffsetFrame = 0;
+        private const int BlackboxEntryOffsetExtremeFrame = 4;
+        private const int BlackboxEntryOffsetShiftSequence = 8;
+        private const int BlackboxEntryOffsetEventHash = 12;
+        private const int BlackboxEntryOffsetNativeBytes = 16;
+        private const int BlackboxEntryOffsetH8Bytes = 24;
+        private const int BlackboxEntryOffsetNativeAllocations = 32;
+        private const int BlackboxEntryOffsetH8Allocations = 36;
+        private const int BlackboxEntryOffsetDispatcherPhaseMs = 40;
+        private const int BlackboxEntryOffsetDataVaultFragmentation = 44;
+        private const int BlackboxEntryOffsetLastShiftMetersX = 48;
+        private const int BlackboxEntryOffsetLastShiftMetersY = 52;
+        private const int BlackboxEntryOffsetLastShiftMetersZ = 56;
+        private const int BlackboxEntryOffsetFlags = 60;
         private const int DefaultTargetFrames = 50000;
+        private const int BytesPerMegabyte = 1024 * 1024;
+        private const int DefaultScratchMegabytes = 50;
+        private const int MinScratchMegabytes = 8;
+        private const int MaxScratchMegabytes = 256;
+        private const int ResultSchemaVersion = 8;
+        private const int DefaultStartupTimeoutSeconds = 60;
+        private const int MinStartupTimeoutSeconds = 5;
+        private const int MaxStartupTimeoutSeconds = 600;
+        private const int ActivationSourceNone = 0;
+        private const int ActivationSourceCommandLine = 1;
+        private const int ActivationSourceEnvironment = 2;
+        private const int ActivationSourceFlagFile = 3;
         private const int WarmupFrames = 120;
         private const int AupShiftIntervalFrames = 15;
+        private const int AupSnapFenceFrames = 300;
+        private const int BlackboxMemorySnapshotIntervalFrames = 30;
         private const int ChunkUnloadIntervalFrames = 900;
         private const int ChunkLeakGraceFrames = 180;
-        private const int ScratchBlockBytes = 50 * 1024 * 1024;
+        private const int BlackboxFlagScratchActiveBit = 0;
+        private const int BlackboxFlagBaselineCapturedBit = 1;
+        private const int BlackboxFlagChunkUnloadPendingBit = 2;
+        private const int BlackboxFlagEcosystemStressIssuedBit = 3;
+        private const int BlackboxFlagDataVaultMissingBit = 4;
+        private const int BlackboxFlagAupSnapFenceActiveBit = 5;
+        private const int BlackboxFlagMemorySampleFreshBit = 6;
         private const long LeakToleranceBytes = 1024L * 1024L;
         private const double FlagMaxAgeSeconds = 10800.0;
-        private const double StartupTimeoutSeconds = 60.0;
+        private const double FlagFutureSkewToleranceSeconds = 300.0;
         private const float TimeDilationScalar = 100f;
         private const float StallThresholdMilliseconds = 16f;
         private const float NativeBytesToMegabytes = 1f / (1024f * 1024f);
         private const ushort RequestedBoidCount = 10000;
         private const uint RunnerHash = 0x48534642u;
+        private const uint BlackboxMagic = 0x48534642u;
         private const uint SuccessHash = 0x53554343u;
         private const uint StallHash = 0x4a53544cu;
         private const uint NanHash = 0x4e414e50u;
@@ -75,22 +121,30 @@ namespace Hecton8.QA.Headless
         private bool[] _cameraEnabledScratch;
         private string _resultPath;
         private string _blackboxPath;
+        private string _blackboxManifestPath;
         private string _h8MemoryDumpPath;
         private int _targetFrames;
+        private int _scratchBlockBytes;
+        private int _startupTimeoutSeconds;
+        private int _activationSource;
         private int _blackboxCursor;
         private int _extremeFrame;
         private int _phaseFrame;
         private int _originShiftCount;
         private int _rigidbodyScanMissCount;
-        private int _rigidbodyNanIndex;
+        private int _rigidbodyNanIndex = -1;
         private int _dataVaultApiGapLogged;
         private int _ecosystemStressIssued;
         private int _ecosystemDirectorReadyAtIssue;
         private int _chunkUnloadCheckFrame;
         private int _cameraScratchCount;
+        private int _lastAupShiftExtremeFrame;
         private int _nativeAllocationBaselineCount;
         private int _h8AllocationBaselineCount;
         private int _scratchBaselineH8AllocationCount;
+        private int _blackboxBinaryDumpSucceeded;
+        private int _blackboxBinaryExistsAfterDump;
+        private int _blackboxManifestDumpSucceeded;
         private uint _shiftSequence;
         private uint _lastFractureHash;
         private long _phaseStartTimestamp;
@@ -103,8 +157,16 @@ namespace Hecton8.QA.Headless
         private long _chunkUnloadDataVaultBytesBaseline;
         private double _startupTime;
         private float _lastSimulationPhaseMs;
+        private float _previousTimeDilationScalar = 1f;
         private float _staticHPhiMetric;
+        private float _staticHPhiAupPrecisionIntegrity = 1f;
+        private int _staticHPhiAupPrecisionSafe;
+        private int _staticHPhiAupPrecisionRisk;
+        private int _staticHPhiDispatcherContracts;
+        private int _staticHPhiUnityUpdateMethods;
+        private int _lastMemorySnapshotExtremeFrame;
         private float3 _lastShiftMeters;
+        private MemorySnapshot _lastMemorySnapshot;
         private bool _started;
         private bool _finished;
         private bool _registeredFast;
@@ -112,14 +174,18 @@ namespace Hecton8.QA.Headless
         private bool _registeredLate;
         private bool _originListenerRegistered;
         private bool _runtimePolicyApplied;
+        private bool _headlessTimeDilationApplied;
         private bool _baselineCaptured;
         private bool _chunkUnloadPending;
+        private bool _memorySnapshotFreshForEntry;
         private bool _previousRunInBackground;
         private bool _previousAudioPause;
         private int _previousTargetFrameRate;
         private int _previousVSyncCount;
         private float _previousAudioVolume;
         private LogType _previousLogFilter;
+        private int _activationFlagDeletedAtStartup;
+        private int _headlessTimeDilationRestored;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void AutoCreate()
@@ -148,6 +214,7 @@ namespace Hecton8.QA.Headless
 
             _instance = this;
             DontDestroyOnLoad(gameObject);
+            // COLD ALLOC: CancellationTokenSource[1] - startup await cancellation owner - owner: HeadlessStressFractureBot
             _shutdownCts = new CancellationTokenSource();
             _ = RunStartupAsync(_shutdownCts.Token);
         }
@@ -204,8 +271,6 @@ namespace Hecton8.QA.Headless
 
             _extremeFrame++;
 
-            CacheServices();
-
             if (_ecosystemStressIssued == 0)
                 IssueEcosystemStressRequest();
 
@@ -245,7 +310,7 @@ namespace Hecton8.QA.Headless
                 return;
 
             CacheServices();
-            if (!_baselineCaptured && Time.realtimeSinceStartupAsDouble - _startupTime > StartupTimeoutSeconds)
+            if (!_baselineCaptured && Time.realtimeSinceStartupAsDouble - _startupTime > _startupTimeoutSeconds)
                 FailAndQuit(1, TimeoutHash, TimeoutToken);
         }
 
@@ -271,18 +336,20 @@ namespace Hecton8.QA.Headless
         private async Awaitable WaitForDispatcherAndStart(CancellationToken cancellationToken)
         {
             _startupTime = Time.realtimeSinceStartupAsDouble;
-            while (GlobalRegistry.Dispatcher == null && Time.realtimeSinceStartupAsDouble - _startupTime <= StartupTimeoutSeconds)
+            CacheServices();
+            while (_dispatcher == null && Time.realtimeSinceStartupAsDouble - _startupTime <= _startupTimeoutSeconds)
             {
                 if (cancellationToken.IsCancellationRequested || _finished)
                     return;
 
                 await AwaitableDebtMonitor.NextFrameAsync(cancellationToken);
+                CacheServices();
             }
 
             if (cancellationToken.IsCancellationRequested || _finished)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
+            if (_dispatcher == null)
             {
                 FailAndQuit(1, TimeoutHash, TimeoutToken);
                 return;
@@ -295,7 +362,7 @@ namespace Hecton8.QA.Headless
             _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, LateSamplingLayer);
             HectonFloatingOrigin.RegisterListener(this);
             _originListenerRegistered = true;
-            _dispatcher?.RequestHeadlessTimeDilation(TimeDilationScalar, RunnerHash);
+            ApplyHeadlessTimeDilation();
             _started = _registeredFast && _registeredCold && _registeredLate;
             if (!_started)
                 FailAndQuit(1, TimeoutHash, "[RUNNER_REGISTRATION_FAILED]");
@@ -305,24 +372,57 @@ namespace Hecton8.QA.Headless
         {
             string[] args = global::System.Environment.GetCommandLineArgs();
             int frameFallback = TryReadEnvironmentInt(EnvironmentFramesName, DefaultTargetFrames);
-            _targetFrames = math.max(1, TryReadInt(args, "-h8fractureFrames", frameFallback));
+            int scratchFallbackMegabytes = TryReadEnvironmentInt(EnvironmentScratchMegabytesName, DefaultScratchMegabytes);
+            int startupTimeoutFallbackSeconds = TryReadEnvironmentInt(EnvironmentStartupTimeoutSecondsName, DefaultStartupTimeoutSeconds);
+            _activationSource = ResolveActivationSourceStatic();
+            _activationFlagDeletedAtStartup = TryDeleteActivationFlagCold() ? 1 : 0;
+            _targetFrames = math.max(1, TryReadInt(args, CommandLineFramesArg, frameFallback));
+            int scratchMegabytes = math.clamp(
+                TryReadInt(args, CommandLineScratchMegabytesArg, scratchFallbackMegabytes),
+                MinScratchMegabytes,
+                MaxScratchMegabytes);
+            _scratchBlockBytes = scratchMegabytes * BytesPerMegabyte;
+            _startupTimeoutSeconds = math.clamp(
+                TryReadInt(args, CommandLineStartupTimeoutSecondsArg, startupTimeoutFallbackSeconds),
+                MinStartupTimeoutSeconds,
+                MaxStartupTimeoutSeconds);
             _resultPath = ResolveProjectPath(ResultRelativePath);
             _blackboxPath = ResolveProjectPath(BlackboxRelativePath);
+            _blackboxManifestPath = ResolveProjectPath(BlackboxManifestRelativePath);
             _h8MemoryDumpPath = ResolveProjectPath(H8MemoryDumpRelativePath);
+            _lastMemorySnapshotExtremeFrame = int.MinValue;
             EnsureParentDirectory(_resultPath);
             EnsureParentDirectory(_blackboxPath);
+            EnsureParentDirectory(_blackboxManifestPath);
             EnsureParentDirectory(_h8MemoryDumpPath);
             TryDeleteFile(_resultPath);
             TryDeleteFile(_resultPath + ".tmp");
             TryDeleteFile(_blackboxPath);
+            TryDeleteFile(_blackboxManifestPath);
             TryDeleteFile(_h8MemoryDumpPath);
+            // COLD ALLOC: NativeArray<FractureTelemetryEntry>[300] - fixed 19200 byte blackbox ring - owner: HeadlessStressFractureBot
             _blackbox = new NativeArray<FractureTelemetryEntry>(BlackboxFrameCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             RegisterNativeArray(_blackbox, nameof(_blackbox));
             SignalBus<SectorDehydratedSignal>.EnsureInitialized();
             SignalBus<SectorResidencyHydratedSignal>.EnsureInitialized();
             SignalBus<SwarmDispersedSignal>.EnsureInitialized();
-            _staticHPhiMetric = ComputeStaticHPhiMetric();
-            Debug.LogWarning(FormatStaticHPhiLog(_staticHPhiMetric, _targetFrames));
+            HPhiStaticCounters staticHPhiCounters;
+            _staticHPhiMetric = ComputeStaticHPhiMetric(out staticHPhiCounters);
+            _staticHPhiAupPrecisionSafe = staticHPhiCounters.AupPrecisionSafe;
+            _staticHPhiAupPrecisionRisk = staticHPhiCounters.AupPrecisionRisk;
+            _staticHPhiAupPrecisionIntegrity = CalculateAupPrecisionIntegrity(in staticHPhiCounters);
+            _staticHPhiDispatcherContracts = CountDispatcherContracts(in staticHPhiCounters);
+            _staticHPhiUnityUpdateMethods = staticHPhiCounters.UnityUpdateMethods;
+            Debug.LogWarning(FormatStaticHPhiLog(
+                _staticHPhiMetric,
+                _staticHPhiAupPrecisionIntegrity,
+                _staticHPhiAupPrecisionSafe,
+                _staticHPhiAupPrecisionRisk,
+                _staticHPhiDispatcherContracts,
+                _staticHPhiUnityUpdateMethods,
+                _targetFrames,
+                scratchMegabytes,
+                _startupTimeoutSeconds));
         }
 
         private void ForceHeadlessRuntimePolicy()
@@ -369,8 +469,11 @@ namespace Hecton8.QA.Headless
             if (count <= 0)
                 return;
 
+            // COLD ALLOC: Camera[count] - reversible headless camera policy snapshot - owner: HeadlessStressFractureBot
             _cameraScratch = new Camera[count];
+            // COLD ALLOC: int[count] - camera culling-mask restore snapshot - owner: HeadlessStressFractureBot
             _cameraCullingMaskScratch = new int[count];
+            // COLD ALLOC: bool[count] - camera enabled-state restore snapshot - owner: HeadlessStressFractureBot
             _cameraEnabledScratch = new bool[count];
             int written = Camera.GetAllCameras(_cameraScratch);
             _cameraScratchCount = written;
@@ -416,11 +519,12 @@ namespace Hecton8.QA.Headless
 
         private void CaptureNativeBaselines()
         {
-            _nativeBytesBaseline = GlobalRegistry.NativeTrackedBytes;
-            _nativeAllocationBaselineCount = GlobalRegistry.NativeAllocationCount;
-            _h8BytesBaseline = H8Memory.TotalBytes;
-            _h8AllocationBaselineCount = H8Memory.ActiveAllocationCount;
-            _dataVaultBytesBaseline = _dataVault != null ? _dataVault.AllocatedBytes : 0L;
+            MemorySnapshot snapshot = CaptureMemorySnapshot();
+            _nativeBytesBaseline = snapshot.NativeBytes;
+            _nativeAllocationBaselineCount = snapshot.NativeAllocations;
+            _h8BytesBaseline = snapshot.H8Bytes;
+            _h8AllocationBaselineCount = snapshot.H8Allocations;
+            _dataVaultBytesBaseline = snapshot.DataVaultBytes;
             _baselineCaptured = true;
         }
 
@@ -438,7 +542,7 @@ namespace Hecton8.QA.Headless
                 Flags = SectorResidencyHydratedSignal.FlagPinned,
                 ResidencyState = 1
             });
-            GlobalSignals.Publish(new SwarmDispersedSignal
+            SwarmDispersedSignal swarmSignal = new SwarmDispersedSignal
             {
                 PositionAup = centerAup,
                 RadiusMeters = 250f,
@@ -447,7 +551,8 @@ namespace Hecton8.QA.Headless
                 EstimatedBoidCount = RequestedBoidCount,
                 Flags = 1,
                 QualityTier = 0
-            });
+            };
+            SignalBus<SwarmDispersedSignal>.Push(in swarmSignal);
             _ecosystemDirectorReadyAtIssue = _ecosystemDirector != null && _ecosystemDirector.IsInitialized ? 1 : 0;
             _ecosystemStressIssued = 1;
             RecordBlackbox(EcosystemStressHash);
@@ -467,9 +572,10 @@ namespace Hecton8.QA.Headless
                 Flags = SectorDehydratedSignal.FlagPinned,
                 ResidencyState = 0
             });
-            _chunkUnloadNativeBytesBaseline = GlobalRegistry.NativeTrackedBytes;
-            _chunkUnloadH8BytesBaseline = H8Memory.TotalBytes;
-            _chunkUnloadDataVaultBytesBaseline = _dataVault != null ? _dataVault.AllocatedBytes : 0L;
+            MemorySnapshot snapshot = CaptureMemorySnapshot();
+            _chunkUnloadNativeBytesBaseline = snapshot.NativeBytes;
+            _chunkUnloadH8BytesBaseline = snapshot.H8Bytes;
+            _chunkUnloadDataVaultBytesBaseline = snapshot.DataVaultBytes;
             _chunkUnloadCheckFrame = _extremeFrame + ChunkLeakGraceFrames;
             _chunkUnloadPending = true;
         }
@@ -479,12 +585,10 @@ namespace Hecton8.QA.Headless
             if (!_chunkUnloadPending || _extremeFrame < _chunkUnloadCheckFrame)
                 return;
 
-            long nativeBytes = GlobalRegistry.NativeTrackedBytes;
-            long h8Bytes = H8Memory.TotalBytes;
-            long dataVaultBytes = _dataVault != null ? _dataVault.AllocatedBytes : 0L;
-            if (nativeBytes > _chunkUnloadNativeBytesBaseline + LeakToleranceBytes ||
-                h8Bytes > _chunkUnloadH8BytesBaseline + LeakToleranceBytes ||
-                dataVaultBytes > _chunkUnloadDataVaultBytesBaseline + ScratchBlockBytes)
+            MemorySnapshot snapshot = CaptureMemorySnapshot();
+            if (snapshot.NativeBytes > _chunkUnloadNativeBytesBaseline + LeakToleranceBytes ||
+                snapshot.H8Bytes > _chunkUnloadH8BytesBaseline + LeakToleranceBytes ||
+                snapshot.DataVaultBytes > _chunkUnloadDataVaultBytesBaseline + _scratchBlockBytes)
             {
                 FailAndQuit(1, LeakHash, NativeLeakToken);
                 return;
@@ -500,7 +604,7 @@ namespace Hecton8.QA.Headless
                 _scratchBaselineH8Bytes = H8Memory.TotalBytes;
                 _scratchBaselineH8AllocationCount = H8Memory.ActiveAllocationCount;
                 _scratchBlock = H8Memory.Allocate<byte>(
-                    ScratchBlockBytes,
+                    _scratchBlockBytes,
                     SystemID.External,
                     Allocator.Persistent,
                     NativeArrayOptions.UninitializedMemory);
@@ -532,7 +636,7 @@ namespace Hecton8.QA.Headless
             if (!_scratchBlock.IsCreated)
                 return;
 
-            H8Memory.Release(ref _scratchBlock);
+            H8Memory.Release(ref _scratchBlock, SystemID.External);
         }
 
         private void EmitAupShift()
@@ -543,6 +647,7 @@ namespace Hecton8.QA.Headless
             int3 delta = new int3(sign, 0, 0);
             float3 shiftMeters = new float3(sign * 1000f, 0f, 0f);
             _lastShiftMeters = shiftMeters;
+            _lastAupShiftExtremeFrame = _extremeFrame;
             _dispatcher?.RequestAupPreShiftPause(sequence);
             GlobalSignals.Publish(new AupPreShiftSignal
             {
@@ -655,18 +760,48 @@ namespace Hecton8.QA.Headless
                 HectonFloatingOrigin.UnregisterListener(this);
                 _originListenerRegistered = false;
             }
+
+            RestoreHeadlessTimeDilation();
+        }
+
+        private void ApplyHeadlessTimeDilation()
+        {
+            ITickDispatcher dispatcher = _dispatcher;
+            if (dispatcher == null)
+                return;
+
+            _previousTimeDilationScalar = dispatcher.TimeDilationScalar;
+            dispatcher.RequestHeadlessTimeDilation(TimeDilationScalar, RunnerHash);
+            _headlessTimeDilationApplied = true;
+            _headlessTimeDilationRestored = 0;
+        }
+
+        private void RestoreHeadlessTimeDilation()
+        {
+            if (!_headlessTimeDilationApplied)
+                return;
+
+            ITickDispatcher dispatcher = _dispatcher;
+            if (dispatcher != null)
+            {
+                dispatcher.RequestTimeDilation(_previousTimeDilationScalar, RunnerHash);
+                _headlessTimeDilationRestored = 1;
+            }
+
+            _headlessTimeDilationApplied = false;
         }
 
         private void PublishCrashSignal(int exitCode, uint reasonHash, byte severity)
         {
+            MemorySnapshot snapshot = CaptureMemorySnapshot();
             GlobalSignals.Publish(new CrashTelemetrySignal
             {
                 SystemHash = RunnerHash,
                 ReasonHash = reasonHash,
                 Frame = unchecked((uint)Time.frameCount),
                 ExitCode = exitCode,
-                NativeAllocationCount = GlobalRegistry.NativeAllocationCount,
-                NativeTrackedBytesMb = GlobalRegistry.NativeTrackedBytes * NativeBytesToMegabytes,
+                NativeAllocationCount = snapshot.NativeAllocations,
+                NativeTrackedBytesMb = snapshot.NativeBytes * NativeBytesToMegabytes,
                 Severity = severity,
                 Flags = exitCode == 0 ? (byte)0 : (byte)1
             });
@@ -677,6 +812,7 @@ namespace Hecton8.QA.Headless
             if (!_blackbox.IsCreated)
                 return;
 
+            MemorySnapshot snapshot = CaptureBlackboxMemorySnapshot(eventHash);
             int index = _blackboxCursor % _blackbox.Length;
             _blackbox[index] = new FractureTelemetryEntry
             {
@@ -684,42 +820,99 @@ namespace Hecton8.QA.Headless
                 ExtremeFrame = unchecked((uint)_extremeFrame),
                 ShiftSequence = _shiftSequence,
                 EventHash = eventHash,
-                NativeBytes = GlobalRegistry.NativeTrackedBytes,
-                H8Bytes = H8Memory.TotalBytes,
-                NativeAllocations = GlobalRegistry.NativeAllocationCount,
-                H8Allocations = H8Memory.ActiveAllocationCount,
+                NativeBytes = snapshot.NativeBytes,
+                H8Bytes = snapshot.H8Bytes,
+                NativeAllocations = snapshot.NativeAllocations,
+                H8Allocations = snapshot.H8Allocations,
                 DispatcherPhaseMs = _lastSimulationPhaseMs,
-                DataVaultFragmentation = _dataVault != null ? _dataVault.HeapFragmentationRatio : 0f,
+                DataVaultFragmentation = snapshot.DataVaultFragmentation,
                 LastShiftMeters = _lastShiftMeters,
                 Flags = ComposeBlackboxFlags()
             };
             _blackboxCursor++;
         }
 
+        private MemorySnapshot CaptureMemorySnapshot()
+        {
+            IDataVault vault = _dataVault;
+            return new MemorySnapshot
+            {
+                NativeBytes = GlobalRegistry.NativeTrackedBytes,
+                H8Bytes = H8Memory.TotalBytes,
+                DataVaultBytes = vault != null ? vault.AllocatedBytes : 0L,
+                NativeAllocations = GlobalRegistry.NativeAllocationCount,
+                H8Allocations = H8Memory.ActiveAllocationCount,
+                DataVaultFragmentation = vault != null ? vault.HeapFragmentationRatio : 0f
+            };
+        }
+
+        private MemorySnapshot CaptureBlackboxMemorySnapshot(uint eventHash)
+        {
+            bool forceFresh = eventHash != FrameHash || _lastMemorySnapshotExtremeFrame == int.MinValue;
+            if (forceFresh || _extremeFrame - _lastMemorySnapshotExtremeFrame >= BlackboxMemorySnapshotIntervalFrames)
+            {
+                _lastMemorySnapshot = CaptureMemorySnapshot();
+                _lastMemorySnapshotExtremeFrame = _extremeFrame;
+                _memorySnapshotFreshForEntry = true;
+                return _lastMemorySnapshot;
+            }
+
+            _memorySnapshotFreshForEntry = false;
+            return _lastMemorySnapshot;
+        }
+
         private uint ComposeBlackboxFlags()
         {
             uint flags = 0u;
             if (_scratchBlock.IsCreated)
-                flags |= 1u;
+                flags |= 1u << BlackboxFlagScratchActiveBit;
             if (_baselineCaptured)
-                flags |= 1u << 1;
+                flags |= 1u << BlackboxFlagBaselineCapturedBit;
             if (_chunkUnloadPending)
-                flags |= 1u << 2;
+                flags |= 1u << BlackboxFlagChunkUnloadPendingBit;
             if (_ecosystemStressIssued != 0)
-                flags |= 1u << 3;
+                flags |= 1u << BlackboxFlagEcosystemStressIssuedBit;
             if (_dataVault == null)
-                flags |= 1u << 4;
+                flags |= 1u << BlackboxFlagDataVaultMissingBit;
+            if (IsAupSnapFenceActive())
+                flags |= 1u << BlackboxFlagAupSnapFenceActiveBit;
+            if (_memorySnapshotFreshForEntry)
+                flags |= 1u << BlackboxFlagMemorySampleFreshBit;
             return flags;
+        }
+
+        private bool IsAupSnapFenceActive()
+        {
+            return _lastAupShiftExtremeFrame > 0 &&
+                _extremeFrame - _lastAupShiftExtremeFrame < AupSnapFenceFrames;
         }
 
         private void TryDumpBlackbox()
         {
+            _blackboxBinaryDumpSucceeded = 0;
+            _blackboxBinaryExistsAfterDump = 0;
+            _blackboxManifestDumpSucceeded = 0;
+
             try
             {
                 DumpBlackbox();
+                _blackboxBinaryDumpSucceeded = FileExistsCold(_blackboxPath) ? 1 : 0;
             }
             catch (Exception)
             {
+                _blackboxBinaryDumpSucceeded = 0;
+            }
+
+            _blackboxBinaryExistsAfterDump = FileExistsCold(_blackboxPath) ? 1 : 0;
+
+            try
+            {
+                DumpBlackboxManifest();
+                _blackboxManifestDumpSucceeded = FileExistsCold(_blackboxManifestPath) ? 1 : 0;
+            }
+            catch (Exception)
+            {
+                _blackboxManifestDumpSucceeded = 0;
             }
         }
 
@@ -732,7 +925,7 @@ namespace Hecton8.QA.Headless
             using (FileStream stream = new FileStream(_blackboxPath, FileMode.Create, FileAccess.Write, FileShare.Read))
             using (BinaryWriter writer = new BinaryWriter(stream))
             {
-                writer.Write(0x48534642u);
+                writer.Write(BlackboxMagic);
                 int validCount = math.min(_blackboxCursor, _blackbox.Length);
                 int start = _blackboxCursor >= _blackbox.Length ? _blackboxCursor % _blackbox.Length : 0;
                 writer.Write(validCount);
@@ -760,6 +953,99 @@ namespace Hecton8.QA.Headless
             }
         }
 
+        private void DumpBlackboxManifest()
+        {
+            if (string.IsNullOrEmpty(_blackboxManifestPath))
+                return;
+
+            EnsureParentDirectory(_blackboxManifestPath);
+            using (StreamWriter writer = new StreamWriter(_blackboxManifestPath, false))
+            {
+                int validCount = _blackbox.IsCreated ? math.min(_blackboxCursor, _blackbox.Length) : 0;
+                writer.Write('{');
+                writer.Write("\"agent\":\"");
+                writer.Write(AgentName);
+                writer.Write("\",\"resultSchemaVersion\":");
+                WriteInvariant(writer, ResultSchemaVersion);
+                writer.Write(",\"generatedUtc\":\"");
+                WriteJsonEscaped(writer, DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture));
+                writer.Write('"');
+                writer.Write(",\"blackboxBinaryRelativePath\":\"");
+                WriteJsonEscaped(writer, BlackboxRelativePath);
+                writer.Write("\",\"blackboxBinaryPath\":\"");
+                WriteJsonEscaped(writer, _blackboxPath);
+                writer.Write("\",\"blackboxBinaryDumpSucceeded\":");
+                WriteInvariant(writer, _blackboxBinaryDumpSucceeded);
+                writer.Write(",\"blackboxBinaryExistsAfterDump\":");
+                WriteInvariant(writer, _blackboxBinaryExistsAfterDump);
+                writer.Write(",\"blackboxMagic\":");
+                WriteInvariant(writer, BlackboxMagic);
+                writer.Write(",\"blackboxFrameCapacity\":");
+                WriteInvariant(writer, BlackboxFrameCapacity);
+                writer.Write(",\"blackboxEntrySizeBytes\":");
+                WriteInvariant(writer, BlackboxEntrySizeBytes);
+                writer.Write(",\"blackboxHeaderSizeBytes\":");
+                WriteInvariant(writer, BlackboxHeaderSizeBytes);
+                WriteBlackboxHeaderLayout(writer);
+                WriteBlackboxEntryOffsets(writer);
+                writer.Write(",\"blackboxValidEntryCount\":");
+                WriteInvariant(writer, validCount);
+                writer.Write(",\"blackboxCursor\":");
+                WriteInvariant(writer, _blackboxCursor);
+                writer.Write(",\"blackboxMemorySnapshotIntervalFrames\":");
+                WriteInvariant(writer, BlackboxMemorySnapshotIntervalFrames);
+                writer.Write(",\"blackboxFlagScratchActiveBit\":");
+                WriteInvariant(writer, BlackboxFlagScratchActiveBit);
+                writer.Write(",\"blackboxFlagBaselineCapturedBit\":");
+                WriteInvariant(writer, BlackboxFlagBaselineCapturedBit);
+                writer.Write(",\"blackboxFlagChunkUnloadPendingBit\":");
+                WriteInvariant(writer, BlackboxFlagChunkUnloadPendingBit);
+                writer.Write(",\"blackboxFlagEcosystemStressIssuedBit\":");
+                WriteInvariant(writer, BlackboxFlagEcosystemStressIssuedBit);
+                writer.Write(",\"blackboxFlagDataVaultMissingBit\":");
+                WriteInvariant(writer, BlackboxFlagDataVaultMissingBit);
+                writer.Write(",\"blackboxFlagAupSnapFenceBit\":");
+                WriteInvariant(writer, BlackboxFlagAupSnapFenceActiveBit);
+                writer.Write(",\"blackboxFlagMemorySampleFreshBit\":");
+                WriteInvariant(writer, BlackboxFlagMemorySampleFreshBit);
+                writer.Write(",\"blackboxAupSnapFenceFrames\":");
+                WriteInvariant(writer, AupSnapFenceFrames);
+                writer.Write(",\"lastFractureHash\":");
+                WriteInvariant(writer, _lastFractureHash);
+                writer.Write(",\"eventHashFrame\":");
+                WriteInvariant(writer, FrameHash);
+                writer.Write(",\"eventHashSuccess\":");
+                WriteInvariant(writer, SuccessHash);
+                writer.Write(",\"eventHashJobStall\":");
+                WriteInvariant(writer, StallHash);
+                writer.Write(",\"eventHashNanPoisoning\":");
+                WriteInvariant(writer, NanHash);
+                writer.Write(",\"eventHashNativeLeak\":");
+                WriteInvariant(writer, LeakHash);
+                writer.Write(",\"eventHashAllocationDenied\":");
+                WriteInvariant(writer, AllocationDeniedHash);
+                writer.Write(",\"eventHashTimeout\":");
+                WriteInvariant(writer, TimeoutHash);
+                writer.Write(",\"eventHashAupShift\":");
+                WriteInvariant(writer, AupShiftHash);
+                writer.Write(",\"eventHashEcosystemStress\":");
+                WriteInvariant(writer, EcosystemStressHash);
+                writer.Write(",\"eventHashDataVaultApiGap\":");
+                WriteInvariant(writer, DataVaultApiGapHash);
+                writer.Write(",\"extremeFrames\":");
+                WriteInvariant(writer, _extremeFrame);
+                writer.Write(",\"shiftSequence\":");
+                WriteInvariant(writer, _shiftSequence);
+                writer.Write(",\"activationSource\":");
+                WriteInvariant(writer, _activationSource);
+                writer.Write(",\"activationSourceName\":\"");
+                WriteActivationSourceName(writer, _activationSource);
+                writer.Write("\",\"headlessTimeDilationRestored\":");
+                WriteInvariant(writer, _headlessTimeDilationRestored);
+                writer.Write('}');
+            }
+        }
+
         private void TryDumpH8Memory()
         {
             try
@@ -776,13 +1062,16 @@ namespace Hecton8.QA.Headless
             try
             {
                 string tempPath = _resultPath + ".tmp";
+                MemorySnapshot finalSnapshot = CaptureMemorySnapshot();
                 EnsureParentDirectory(_resultPath);
                 using (StreamWriter writer = new StreamWriter(tempPath, false))
                 {
                     writer.Write('{');
                     writer.Write("\"agent\":\"");
                     writer.Write(AgentName);
-                    writer.Write("\",\"status\":\"");
+                    writer.Write("\",\"resultSchemaVersion\":");
+                    WriteInvariant(writer, ResultSchemaVersion);
+                    writer.Write(",\"status\":\"");
                     WriteJsonEscaped(writer, status);
                     writer.Write("\",\"exitCode\":");
                     WriteInvariant(writer, exitCode);
@@ -790,32 +1079,83 @@ namespace Hecton8.QA.Headless
                     WriteInvariant(writer, _extremeFrame);
                     writer.Write(",\"targetFrames\":");
                     WriteInvariant(writer, _targetFrames);
+                    writer.Write(",\"activationSource\":");
+                    WriteInvariant(writer, _activationSource);
+                    writer.Write(",\"activationSourceName\":\"");
+                    WriteActivationSourceName(writer, _activationSource);
+                    writer.Write('"');
+                    writer.Write(",\"activationFlagDeletedAtStartup\":");
+                    WriteInvariant(writer, _activationFlagDeletedAtStartup);
+                    writer.Write(",\"scratchBlockBytes\":");
+                    WriteInvariant(writer, _scratchBlockBytes);
+                    writer.Write(",\"startupTimeoutSeconds\":");
+                    WriteInvariant(writer, _startupTimeoutSeconds);
+                    writer.Write(",\"headlessTimeDilationScalar\":");
+                    WriteInvariant(writer, TimeDilationScalar);
+                    writer.Write(",\"previousTimeDilationScalar\":");
+                    WriteInvariant(writer, _previousTimeDilationScalar);
+                    writer.Write(",\"headlessTimeDilationRestored\":");
+                    WriteInvariant(writer, _headlessTimeDilationRestored);
                     writer.Write(",\"aupShiftCount\":");
                     WriteInvariant(writer, _shiftSequence);
                     writer.Write(",\"originShiftCallbacks\":");
                     WriteInvariant(writer, _originShiftCount);
+                    writer.Write(",\"blackboxAupSnapFenceFrames\":");
+                    WriteInvariant(writer, AupSnapFenceFrames);
+                    writer.Write(",\"blackboxFlagAupSnapFenceBit\":");
+                    WriteInvariant(writer, BlackboxFlagAupSnapFenceActiveBit);
+                    writer.Write(",\"blackboxMagic\":");
+                    WriteInvariant(writer, BlackboxMagic);
+                    writer.Write(",\"blackboxFrameCapacity\":");
+                    WriteInvariant(writer, BlackboxFrameCapacity);
+                    writer.Write(",\"blackboxHeaderSizeBytes\":");
+                    WriteInvariant(writer, BlackboxHeaderSizeBytes);
+                    writer.Write(",\"blackboxEntrySizeBytes\":");
+                    WriteInvariant(writer, BlackboxEntrySizeBytes);
+                    WriteBlackboxHeaderLayout(writer);
+                    writer.Write(",\"blackboxManifestRelativePath\":\"");
+                    WriteJsonEscaped(writer, BlackboxManifestRelativePath);
+                    writer.Write("\",\"blackboxManifestPath\":\"");
+                    WriteJsonEscaped(writer, _blackboxManifestPath);
+                    writer.Write('"');
+                    writer.Write(",\"blackboxBinaryRelativePath\":\"");
+                    WriteJsonEscaped(writer, BlackboxRelativePath);
+                    writer.Write("\",\"blackboxBinaryPath\":\"");
+                    WriteJsonEscaped(writer, _blackboxPath);
+                    writer.Write('"');
+                    writer.Write(",\"blackboxBinaryDumpSucceeded\":");
+                    WriteInvariant(writer, _blackboxBinaryDumpSucceeded);
+                    writer.Write(",\"blackboxBinaryExistsAfterDump\":");
+                    WriteInvariant(writer, _blackboxBinaryExistsAfterDump);
+                    writer.Write(",\"blackboxManifestDumpSucceeded\":");
+                    WriteInvariant(writer, _blackboxManifestDumpSucceeded);
+                    writer.Write(",\"blackboxMemorySnapshotIntervalFrames\":");
+                    WriteInvariant(writer, BlackboxMemorySnapshotIntervalFrames);
+                    writer.Write(",\"blackboxFlagMemorySampleFreshBit\":");
+                    WriteInvariant(writer, BlackboxFlagMemorySampleFreshBit);
+                    WriteBlackboxEntryOffsets(writer);
                     writer.Write(",\"simulationPhaseMs\":");
                     WriteInvariant(writer, _lastSimulationPhaseMs);
                     writer.Write(",\"nativeBytesBaseline\":");
                     WriteInvariant(writer, _nativeBytesBaseline);
                     writer.Write(",\"nativeBytesFinal\":");
-                    WriteInvariant(writer, GlobalRegistry.NativeTrackedBytes);
+                    WriteInvariant(writer, finalSnapshot.NativeBytes);
                     writer.Write(",\"h8BytesBaseline\":");
                     WriteInvariant(writer, _h8BytesBaseline);
                     writer.Write(",\"h8BytesFinal\":");
-                    WriteInvariant(writer, H8Memory.TotalBytes);
+                    WriteInvariant(writer, finalSnapshot.H8Bytes);
                     writer.Write(",\"dataVaultBytesBaseline\":");
                     WriteInvariant(writer, _dataVaultBytesBaseline);
                     writer.Write(",\"dataVaultBytesFinal\":");
-                    WriteInvariant(writer, _dataVault != null ? _dataVault.AllocatedBytes : 0L);
+                    WriteInvariant(writer, finalSnapshot.DataVaultBytes);
                     writer.Write(",\"nativeAllocationBaselineCount\":");
                     WriteInvariant(writer, _nativeAllocationBaselineCount);
                     writer.Write(",\"nativeAllocationFinalCount\":");
-                    WriteInvariant(writer, GlobalRegistry.NativeAllocationCount);
+                    WriteInvariant(writer, finalSnapshot.NativeAllocations);
                     writer.Write(",\"h8AllocationBaselineCount\":");
                     WriteInvariant(writer, _h8AllocationBaselineCount);
                     writer.Write(",\"h8AllocationFinalCount\":");
-                    WriteInvariant(writer, H8Memory.ActiveAllocationCount);
+                    WriteInvariant(writer, finalSnapshot.H8Allocations);
                     writer.Write(",\"rigidbodyScanMissCount\":");
                     WriteInvariant(writer, _rigidbodyScanMissCount);
                     writer.Write(",\"rigidbodyNanIndex\":");
@@ -826,6 +1166,17 @@ namespace Hecton8.QA.Headless
                     WriteInvariant(writer, _ecosystemDirectorReadyAtIssue);
                     writer.Write(",\"staticHPhi\":");
                     WriteInvariant(writer, _staticHPhiMetric);
+                    writer.Write(",\"staticHPhiModel\":\"runtime_aup_risk_adjusted\"");
+                    writer.Write(",\"staticHPhiAupPrecisionIntegrity\":");
+                    WriteInvariant(writer, _staticHPhiAupPrecisionIntegrity);
+                    writer.Write(",\"staticHPhiAupPrecisionSafe\":");
+                    WriteInvariant(writer, _staticHPhiAupPrecisionSafe);
+                    writer.Write(",\"staticHPhiAupPrecisionRisk\":");
+                    WriteInvariant(writer, _staticHPhiAupPrecisionRisk);
+                    writer.Write(",\"staticHPhiDispatcherContracts\":");
+                    WriteInvariant(writer, _staticHPhiDispatcherContracts);
+                    writer.Write(",\"staticHPhiUnityUpdateMethods\":");
+                    WriteInvariant(writer, _staticHPhiUnityUpdateMethods);
                     writer.Write(",\"lastFractureHash\":");
                     WriteInvariant(writer, _lastFractureHash);
                     writer.Write(",\"dataVaultFreeApi\":\"ABSENT_IDataVault_RELEASE\"");
@@ -883,6 +1234,86 @@ namespace Hecton8.QA.Headless
             }
         }
 
+        private static void WriteActivationSourceName(StreamWriter writer, int source)
+        {
+            switch (source)
+            {
+                case ActivationSourceCommandLine:
+                    writer.Write("command_line");
+                    break;
+                case ActivationSourceEnvironment:
+                    writer.Write("environment");
+                    break;
+                case ActivationSourceFlagFile:
+                    writer.Write("flag_file");
+                    break;
+                default:
+                    writer.Write("none");
+                    break;
+            }
+        }
+
+        private static void WriteBlackboxEntryOffsets(StreamWriter writer)
+        {
+            writer.Write(",\"blackboxEntryOffsetFrame\":");
+            WriteInvariant(writer, BlackboxEntryOffsetFrame);
+            writer.Write(",\"blackboxEntryOffsetExtremeFrame\":");
+            WriteInvariant(writer, BlackboxEntryOffsetExtremeFrame);
+            writer.Write(",\"blackboxEntryOffsetShiftSequence\":");
+            WriteInvariant(writer, BlackboxEntryOffsetShiftSequence);
+            writer.Write(",\"blackboxEntryOffsetEventHash\":");
+            WriteInvariant(writer, BlackboxEntryOffsetEventHash);
+            writer.Write(",\"blackboxEntryOffsetNativeBytes\":");
+            WriteInvariant(writer, BlackboxEntryOffsetNativeBytes);
+            writer.Write(",\"blackboxEntryOffsetH8Bytes\":");
+            WriteInvariant(writer, BlackboxEntryOffsetH8Bytes);
+            writer.Write(",\"blackboxEntryOffsetNativeAllocations\":");
+            WriteInvariant(writer, BlackboxEntryOffsetNativeAllocations);
+            writer.Write(",\"blackboxEntryOffsetH8Allocations\":");
+            WriteInvariant(writer, BlackboxEntryOffsetH8Allocations);
+            writer.Write(",\"blackboxEntryOffsetDispatcherPhaseMs\":");
+            WriteInvariant(writer, BlackboxEntryOffsetDispatcherPhaseMs);
+            writer.Write(",\"blackboxEntryOffsetDataVaultFragmentation\":");
+            WriteInvariant(writer, BlackboxEntryOffsetDataVaultFragmentation);
+            writer.Write(",\"blackboxEntryOffsetLastShiftMetersX\":");
+            WriteInvariant(writer, BlackboxEntryOffsetLastShiftMetersX);
+            writer.Write(",\"blackboxEntryOffsetLastShiftMetersY\":");
+            WriteInvariant(writer, BlackboxEntryOffsetLastShiftMetersY);
+            writer.Write(",\"blackboxEntryOffsetLastShiftMetersZ\":");
+            WriteInvariant(writer, BlackboxEntryOffsetLastShiftMetersZ);
+            writer.Write(",\"blackboxEntryOffsetFlags\":");
+            WriteInvariant(writer, BlackboxEntryOffsetFlags);
+        }
+
+        private static void WriteBlackboxHeaderLayout(StreamWriter writer)
+        {
+            writer.Write(",\"blackboxByteOrder\":\"little_endian\"");
+            writer.Write(",\"blackboxFloatFormat\":\"ieee754_binary32\"");
+            writer.Write(",\"blackboxHeaderOffsetMagic\":");
+            WriteInvariant(writer, BlackboxHeaderOffsetMagic);
+            writer.Write(",\"blackboxHeaderOffsetValidEntryCount\":");
+            WriteInvariant(writer, BlackboxHeaderOffsetValidEntryCount);
+            writer.Write(",\"blackboxHeaderOffsetEntrySizeBytes\":");
+            WriteInvariant(writer, BlackboxHeaderOffsetEntrySizeBytes);
+            writer.Write(",\"blackboxHeaderOffsetCursor\":");
+            WriteInvariant(writer, BlackboxHeaderOffsetCursor);
+        }
+
+        private static bool FileExistsCold(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return false;
+
+            try
+            {
+                return File.Exists(path);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
         private static void WriteJsonHexNibble(StreamWriter writer, int value)
         {
             int nibble = value & 0xF;
@@ -891,14 +1322,21 @@ namespace Hecton8.QA.Headless
 
         private static bool ShouldRunStatic()
         {
+            return ResolveActivationSourceStatic() != ActivationSourceNone;
+        }
+
+        private static int ResolveActivationSourceStatic()
+        {
             if (HasCommandLineArg(CommandLineArg))
-                return true;
+                return ActivationSourceCommandLine;
 
             string value = global::System.Environment.GetEnvironmentVariable(EnvironmentFlagName);
             if (string.Equals(value, "1", StringComparison.Ordinal) || string.Equals(value, "true", StringComparison.OrdinalIgnoreCase))
-                return true;
+                return ActivationSourceEnvironment;
 
-            return HasFreshFlagFile(ResolveProjectPathStatic(FlagRelativePath));
+            return HasFreshFlagFile(ResolveProjectPathStatic(FlagRelativePath))
+                ? ActivationSourceFlagFile
+                : ActivationSourceNone;
         }
 
         private static bool HasFreshFlagFile(string path)
@@ -910,10 +1348,38 @@ namespace Hecton8.QA.Headless
 
                 DateTime lastWriteUtc = File.GetLastWriteTimeUtc(path);
                 DateTime nowUtc = DateTime.UtcNow;
-                if (lastWriteUtc > nowUtc)
+                double ageSeconds = (nowUtc - lastWriteUtc).TotalSeconds;
+                if (ageSeconds < -FlagFutureSkewToleranceSeconds)
+                {
+                    TryDeleteFile(path);
+                    return false;
+                }
+
+                if (ageSeconds < 0.0)
                     return true;
 
-                return (nowUtc - lastWriteUtc).TotalSeconds <= FlagMaxAgeSeconds;
+                if (ageSeconds <= FlagMaxAgeSeconds)
+                    return true;
+
+                TryDeleteFile(path);
+                return false;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        private static bool TryDeleteActivationFlagCold()
+        {
+            string path = ResolveProjectPathStatic(FlagRelativePath);
+            try
+            {
+                if (!File.Exists(path))
+                    return false;
+
+                File.Delete(path);
+                return !File.Exists(path);
             }
             catch (Exception)
             {
@@ -976,8 +1442,9 @@ namespace Hecton8.QA.Headless
                 : fallback;
         }
 
-        private static float ComputeStaticHPhiMetric()
+        private static float ComputeStaticHPhiMetric(out HPhiStaticCounters counters)
         {
+            counters = default;
             try
             {
                 string scriptsRoot = Path.Combine(ResolveProjectRootStatic(), "Assets", "_Project", "Scripts");
@@ -985,40 +1452,260 @@ namespace Hecton8.QA.Headless
                     return 0f;
 
                 string[] files = Directory.GetFiles(scriptsRoot, "*.cs", SearchOption.AllDirectories);
-                int nativeRefs = 0;
-                int signalRefs = 0;
-                int vaultRefs = 0;
-                int aupRefs = 0;
-                int burstRefs = 0;
                 for (int i = 0; i < files.Length; i++)
                 {
+                    string file = files[i];
+                    if (IsEditorScriptPath(file))
+                        continue;
+
                     string text;
                     try
                     {
-                        text = File.ReadAllText(files[i]);
+                        text = File.ReadAllText(file);
                     }
                     catch (Exception)
                     {
                         continue;
                     }
 
-                    nativeRefs += CountOrdinal(text, "NativeArray<");
-                    nativeRefs += CountOrdinal(text, "NativeQueue<");
-                    signalRefs += CountOrdinal(text, "SignalBus<");
-                    signalRefs += CountOrdinal(text, "GlobalSignals.Publish");
-                    vaultRefs += CountOrdinal(text, "GlobalDataVault");
-                    vaultRefs += CountOrdinal(text, "IDataVault");
-                    aupRefs += CountOrdinal(text, "AbsoluteUniversePosition");
-                    burstRefs += CountOrdinal(text, "BurstCompile");
+                    AccumulateHPhiCounters(text, ref counters);
                 }
 
-                float numerator = nativeRefs * 3f + signalRefs * 2f + vaultRefs * 5f + aupRefs * 2f + burstRefs;
-                return files.Length > 0 ? numerator / (files.Length * 1000f) : 0f;
+                return CalculateHPhiRisk(in counters);
             }
             catch (Exception)
             {
                 return 0f;
             }
+        }
+
+        private static void AccumulateHPhiCounters(string text, ref HPhiStaticCounters counters)
+        {
+            counters.SignalBusPush += CountSignalBusPush(text);
+            counters.GlobalRegistryGet += CountOrdinal(text, "Global" + "Registry.Get<");
+            counters.GlobalRegistrySurface += CountOrdinal(text, "Global" + "Registry.");
+            counters.EventPublish += CountOrdinal(text, "Pub" + "lish(");
+            counters.UnityUpdateMethods += CountUnityUpdateMethodDeclarations(text);
+            counters.IUpdatable += CountOrdinal(text, "IUp" + "datable");
+            counters.IFastTickable += CountOrdinal(text, "IFast" + "Tickable");
+            counters.IFixedTickable += CountOrdinal(text, "IFixed" + "Tickable");
+            counters.ISlowTickable += CountOrdinal(text, "ISlow" + "Tickable");
+            counters.IColdTickable += CountOrdinal(text, "ICold" + "Tickable");
+            counters.IFrostTickable += CountOrdinal(text, "IFrost" + "Tickable");
+            counters.ILateFrameTickable += CountOrdinal(text, "ILate" + "FrameTickable");
+            counters.IPostFixedTickable += CountOrdinal(text, "IPost" + "FixedTickable");
+            counters.IJob += CountOrdinal(text, "IJ" + "ob");
+            counters.ITickable += CountOrdinal(text, "ITick" + "able");
+            counters.DataVaultRefs += CountDataVaultRefs(text);
+            counters.NativeArrayRefs += CountOrdinal(text, "Native" + "Array<");
+            counters.StructDeclarations += CountOrdinal(text, " str" + "uct ");
+            counters.StructLayoutAttributes += CountOrdinal(text, "[Struct" + "Layout(");
+            counters.StaticInstance += CountOrdinal(text, "Instance {");
+            counters.StaticInstance += CountOrdinal(text, "Instance{");
+            counters.SceneLookupCalls += CountSceneLookupCalls(text);
+            counters.ComponentLookupCalls += CountComponentLookupCalls(text);
+            counters.AupPrecisionSafe += CountAupPrecisionSafe(text);
+            counters.AupPrecisionRisk += CountAupPrecisionRisk(text);
+        }
+
+        private static float CalculateHPhiRisk(in HPhiStaticCounters counters)
+        {
+            int dispatcherContracts = CountDispatcherContracts(in counters);
+            float riskIntegration = DivideOrZero(
+                counters.SignalBusPush,
+                counters.SignalBusPush + counters.GlobalRegistrySurface + counters.EventPublish + counters.StaticInstance + counters.SceneLookupCalls + counters.ComponentLookupCalls);
+            float architecturalPurity = DivideOrZero(
+                dispatcherContracts + counters.IJob,
+                counters.UnityUpdateMethods + dispatcherContracts + counters.IJob);
+            float dataSovereignty = DivideOrZero(
+                counters.DataVaultRefs,
+                counters.DataVaultRefs + counters.NativeArrayRefs);
+            float memoryAlignment = DivideOrZero(counters.StructLayoutAttributes, counters.StructDeclarations);
+            float aupPrecisionIntegrity = CalculateAupPrecisionIntegrity(in counters);
+            return riskIntegration * architecturalPurity * dataSovereignty * memoryAlignment * aupPrecisionIntegrity;
+        }
+
+        private static int CountDispatcherContracts(in HPhiStaticCounters counters)
+        {
+            return counters.IUpdatable +
+                counters.ITickable +
+                counters.IFastTickable +
+                counters.IFixedTickable +
+                counters.ISlowTickable +
+                counters.IColdTickable +
+                counters.IFrostTickable +
+                counters.ILateFrameTickable +
+                counters.IPostFixedTickable;
+        }
+
+        private static float CalculateAupPrecisionIntegrity(in HPhiStaticCounters counters)
+        {
+            return DivideOrOne(
+                counters.AupPrecisionSafe,
+                counters.AupPrecisionSafe + counters.AupPrecisionRisk);
+        }
+
+        private static float DivideOrZero(int numerator, int denominator)
+        {
+            return denominator > 0 ? (float)numerator / denominator : 0f;
+        }
+
+        private static float DivideOrOne(int numerator, int denominator)
+        {
+            return denominator > 0 ? (float)numerator / denominator : 1f;
+        }
+
+        private static bool IsEditorScriptPath(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return false;
+
+            return path.IndexOf("\\Editor\\", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                path.IndexOf("/Editor/", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                path.EndsWith(".Editor.cs", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static int CountSignalBusPush(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return 0;
+
+            int count = 0;
+            int index = 0;
+            while (index < text.Length)
+            {
+                int found = text.IndexOf("Signal" + "Bus<", index, StringComparison.Ordinal);
+                if (found < 0)
+                    break;
+
+                int lineEnd = FindStatementEnd(text, found);
+                if (text.IndexOf(".P" + "ush", found, lineEnd - found, StringComparison.Ordinal) >= 0)
+                    count++;
+
+                index = found + 10;
+            }
+
+            return count;
+        }
+
+        private static int CountUnityUpdateMethodDeclarations(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return 0;
+
+            int count = 0;
+            int lineStart = 0;
+            while (lineStart < text.Length)
+            {
+                int lineEnd = FindLineEnd(text, lineStart);
+                if (ContainsInRange(text, lineStart, lineEnd, "void " + "Up" + "date(") ||
+                    ContainsInRange(text, lineStart, lineEnd, "void " + "Late" + "Up" + "date(") ||
+                    ContainsInRange(text, lineStart, lineEnd, "void " + "Fixed" + "Up" + "date("))
+                {
+                    count++;
+                }
+
+                lineStart = lineEnd + 1;
+            }
+
+            return count;
+        }
+
+        private static int CountDataVaultRefs(string text)
+        {
+            int count = CountOrdinal(text, "Global" + "DataVault");
+            count += CountOrdinal(text, "IData" + "Vault");
+            count += CountOrdinal(text, "Vault" + "BufferHandle<");
+            count += CountOrdinal(text, "Get" + "Buffer<");
+            count += CountOrdinal(text, "Try" + "GetBuffer<");
+            count += CountOrdinal(text, "Try" + "GetBuffer(");
+            count += CountOrdinal(text, "Get" + "BufferHandle<");
+            count += CountOrdinal(text, "Try" + "GetBufferHandle<");
+            count += CountOrdinal(text, "Resolve" + "Buffer<");
+            return count;
+        }
+
+        private static int CountSceneLookupCalls(string text)
+        {
+            int count = CountOrdinal(text, "Find" + "ObjectOfType");
+            count += CountOrdinal(text, "Find" + "Object" + "sOfType");
+            count += CountOrdinal(text, "FindFirst" + "ObjectByType");
+            count += CountOrdinal(text, "FindAny" + "ObjectByType");
+            count += CountOrdinal(text, "Find" + "Object" + "sByType");
+            count += CountOrdinal(text, "Find" + "WithTag");
+            count += CountOrdinal(text, "GameObject." + "Find");
+            count += CountOrdinal(text, "Resources." + "Find" + "Object" + "sOfTypeAll");
+            return count;
+        }
+
+        private static int CountComponentLookupCalls(string text)
+        {
+            int count = CountOrdinal(text, "Get" + "Component<");
+            count += CountOrdinal(text, "Get" + "Components<");
+            count += CountOrdinal(text, "Get" + "ComponentInChildren<");
+            count += CountOrdinal(text, "Get" + "ComponentInParent<");
+            return count;
+        }
+
+        private static int CountAupPrecisionSafe(string text)
+        {
+            int count = CountOrdinal(text, "Current" + "TotalOffsetDouble");
+            count += CountOrdinal(text, "ToAbsolute" + "UniversePositionDouble3");
+            count += CountOrdinal(text, "ToUniverse" + "SpaceDouble3");
+            count += CountOrdinal(text, "ToRuntime" + "SpaceDouble3");
+            count += CountOrdinal(text, "ToRuntime" + "Space(double3");
+            count += CountOrdinal(text, "FromAbsolute" + "Position");
+            count += CountOrdinal(text, "Distance" + "Sq(");
+            return count;
+        }
+
+        private static int CountAupPrecisionRisk(string text)
+        {
+            int count = CountOrdinal(text, "Current" + "TotalOffset;");
+            count += CountOrdinal(text, "Current" + "TotalOffset.");
+            count += CountOrdinal(text, "New" + "TotalOffset.");
+            count += CountOrdinal(text, "Previous" + "TotalOffset.");
+            count += CountOrdinal(text, "Hecton" + "FloatingOrigin.ToAbsolute" + "UniversePosition(");
+            count += CountOrdinal(text, "Hecton" + "MapMagicVegetationBridge.ToUniverse" + "Space(");
+            count += CountOrdinal(text, "(float3)" + "AU" + "P");
+            count += CountOrdinal(text, "Vector3 " + "uni" + "versePosition");
+            count += CountOrdinal(text, "Vector3 stable" + "UniverseRoot");
+            return count;
+        }
+
+        private static int FindStatementEnd(string text, int start)
+        {
+            int index = start;
+            while (index < text.Length)
+            {
+                char c = text[index];
+                if (c == ';' || c == '\n' || c == '\r')
+                    break;
+
+                index++;
+            }
+
+            return index;
+        }
+
+        private static int FindLineEnd(string text, int start)
+        {
+            int index = start;
+            while (index < text.Length)
+            {
+                char c = text[index];
+                if (c == '\n' || c == '\r')
+                    break;
+
+                index++;
+            }
+
+            return index;
+        }
+
+        private static bool ContainsInRange(string text, int start, int end, string pattern)
+        {
+            return end > start && text.IndexOf(pattern, start, end - start, StringComparison.Ordinal) >= 0;
         }
 
         private static int CountOrdinal(string text, string pattern)
@@ -1041,9 +1728,28 @@ namespace Hecton8.QA.Headless
             return count;
         }
 
-        private static string FormatStaticHPhiLog(float metric, int targetFrames)
+        private static string FormatStaticHPhiLog(
+            float metric,
+            float aupPrecisionIntegrity,
+            int aupPrecisionSafe,
+            int aupPrecisionRisk,
+            int dispatcherContracts,
+            int unityUpdateMethods,
+            int targetFrames,
+            int scratchMegabytes,
+            int startupTimeoutSeconds)
         {
-            return "[H-PHI_STATIC] " + AgentName + " value=" + metric.ToString("F6", CultureInfo.InvariantCulture) + " requestedBoids=10000 frames=" + targetFrames.ToString(CultureInfo.InvariantCulture);
+            return "[H-PHI_STATIC] " + AgentName +
+                " value=" + metric.ToString("F6", CultureInfo.InvariantCulture) +
+                " model=runtime_aup_risk_adjusted" +
+                " aupIntegrity=" + aupPrecisionIntegrity.ToString("F6", CultureInfo.InvariantCulture) +
+                " aupSafe=" + aupPrecisionSafe.ToString(CultureInfo.InvariantCulture) +
+                " aupRisk=" + aupPrecisionRisk.ToString(CultureInfo.InvariantCulture) +
+                " dispatcherContracts=" + dispatcherContracts.ToString(CultureInfo.InvariantCulture) +
+                " unityUpdateMethods=" + unityUpdateMethods.ToString(CultureInfo.InvariantCulture) +
+                " requestedBoids=10000 frames=" + targetFrames.ToString(CultureInfo.InvariantCulture) +
+                " scratchMb=" + scratchMegabytes.ToString(CultureInfo.InvariantCulture) +
+                " startupTimeoutSec=" + startupTimeoutSeconds.ToString(CultureInfo.InvariantCulture);
         }
 
         private static float TicksToMilliseconds(long ticks)
@@ -1140,6 +1846,46 @@ namespace Hecton8.QA.Headless
                 writer.Write(scratch.Slice(0, written));
             else
                 writer.Write('0');
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MemorySnapshot
+        {
+            public long NativeBytes;
+            public long H8Bytes;
+            public long DataVaultBytes;
+            public int NativeAllocations;
+            public int H8Allocations;
+            public float DataVaultFragmentation;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct HPhiStaticCounters
+        {
+            public int SignalBusPush;
+            public int GlobalRegistryGet;
+            public int GlobalRegistrySurface;
+            public int EventPublish;
+            public int UnityUpdateMethods;
+            public int IUpdatable;
+            public int IFastTickable;
+            public int IFixedTickable;
+            public int ISlowTickable;
+            public int IColdTickable;
+            public int IFrostTickable;
+            public int ILateFrameTickable;
+            public int IPostFixedTickable;
+            public int IJob;
+            public int ITickable;
+            public int DataVaultRefs;
+            public int NativeArrayRefs;
+            public int StructDeclarations;
+            public int StructLayoutAttributes;
+            public int StaticInstance;
+            public int SceneLookupCalls;
+            public int ComponentLookupCalls;
+            public int AupPrecisionSafe;
+            public int AupPrecisionRisk;
         }
 
         [StructLayout(LayoutKind.Sequential, Size = BlackboxEntrySizeBytes)]

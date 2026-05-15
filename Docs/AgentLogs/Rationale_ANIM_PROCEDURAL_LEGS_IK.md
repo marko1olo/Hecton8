@@ -90,6 +90,110 @@ Rejected Alternatives: Adding a direct `HectonPlayerMovement` or player-rig refe
 Scalability potential: Low keeps only the player rig velocity-driven. Middle/High/Ultra can register more contextual IK rigs without player-motion bleed. Future AI-specific velocity lanes can expand this without changing the lower-body solver.
 Hardware Impact: One finite check and one squared-distance compare per active rig. Estimated <0.1 us/frame on i3/MX350 for the current single-rig case; avoids visible stride/swim corruption when multiple rigs enter the shared runtime.
 
+## Decision 12: Source drift correction and fail-closed fade state
+
+Problem: Direct source readback showed the actual runtime/rig files still contained old `sqrMagnitude` origin-shift guards and the weak normal-only `HasHit` predicate. The fade-out path also copied previous target frames wholesale, allowing a stale non-finite hand or foot target to persist while blend decayed.
+Solution: Re-applied finite AUP shift rejection in runtime and rig code, including the 10km cap and runtime invalid-shift telemetry dump. Restored structural forced-completion swap/publish/log handling. `HasHit` now requires finite point, finite normal, finite distance, and non-negative distance. `FadeOutTarget`, `FadeFootLane`, and `WriteFootSoa` now fail closed to finite zero/up values before lower-body SOA lanes are written.
+Rejected Alternatives: Trusting persisted status was rejected because disk source is the runtime authority. Scattered checks in each caller were rejected in favor of shared boundary predicates. Adding ray lanes, synchronous physics, or physical leg simulation was rejected as unrelated cost.
+Scalability potential: Low/Middle/High/Ultra valid visuals are unchanged. Invalid physics, AUP, or stale target data now dies at the boundary instead of scaling into visible foot/hand spikes or richer high-tier secondary animation.
+Hardware Impact: Hot-path cost is a few finite checks around existing hit and target writes, estimated below 1 us for the active player rig on i3/MX350. No allocations, jobs, new ray lanes, or managed references were added.
+
+## Decision 13: Target-frame quarantine before AnimationJob exposure
+
+Problem: The telemetry path could detect invalid target values, but hand SOA writes, skipped-frame target reuse, and cold AUP rebase paths still trusted previous-frame floats. A NaN hand target or corrupt foot blend could therefore reach `ContextualPhysicalIkApplyJob` before the black-box dump became useful.
+Solution: Added a frame-level sanitizer inside `ContextualPhysicalIkGroundResponseJob` before SOA writes and target-frame publication. Hand SOA weights now drop to zero when position/blend is invalid. Foot fade/update paths sanitize previous blend before smoothing. AUP rebase clears invalid hand/foot lanes instead of subtracting shift from corrupt data. Rig capture now rejects non-finite root transforms and falls back probe positions to root when authored probe transforms are corrupt.
+Rejected Alternatives: Relying on telemetry-only detection was rejected because the animation job must not consume invalid state. Adding exception/log spam was rejected as GC and runtime noise. Extra raycasts or physical validation were rejected because this is a data-boundary defect, not a simulation problem.
+Scalability potential: Low/Middle/High/Ultra valid visuals are unchanged. Low-tier devices avoid catastrophic IK spikes; high-tier secondary-chain and muscle presentation receive only finite targets and can spend visual budget without amplifying invalid data.
+Hardware Impact: Added branch/finite checks are linear in two hands/two feet per active rig, estimated below 1 us on i3/MX350. No allocations, no extra jobs, no extra rays, no new managed owners.
+
+## Decision 14: AnimationJob finite H-Phi guard
+
+Problem: Target-frame quarantine protected runtime SOA lanes, but `ContextualPhysicalIkApplyJob` still trusted stream handle reads, chain metadata, cached pose state, muscle-bulge state, and `math.saturate` on external floats. A non-finite bone pose or NaN blend could still reach two-bone, FABRIK, spine, secondary, and PlayerKinematics wall/squeeze hand production.
+Solution: Added finite and handle-range validation inside the Burst animation job before pelvis, two-bone, appendage, spine, and secondary writes. Sanitized blend inputs, stiffness/damping, cached pose playback, muscle-bulge output, quaternion nlerp/axis/euler approximations, chain lengths, runtime foot/hand publication, and the PlayerKinematics hand target producer. Invalid states now skip the specific solve/write path or reset secondary state to finite pose/zero velocity.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Logs/exceptions inside animation jobs were rejected as GC/noise. Additional rays or physical validation were rejected because this is an H-Phi data-integrity defect, not a simulation defect.
+Scalability potential: Low/Middle/High/Ultra valid visuals are unchanged. Low-tier avoids animation spikes; high-tier muscle/secondary overkill no longer amplifies invalid scalar or stream data. Low keeps the cheap finite gates; Middle keeps two-bone presence; High keeps velocity/predictive polish; Ultra keeps secondary/muscle visuals without trusting corrupt inputs.
+Hardware Impact: Branch/finite checks are per active IK chain and mostly inside existing AnimationJob/producer loops; estimated below 1 us for the standard player rig and no allocations/jobs/rays.
+
+## Decision 15: KCC input-to-IK finite velocity boundary
+
+Problem: Lower-body stride lead and swim posture depend on `KccVelocitySignal`, but `PlayerKinematicsRuntime` still allowed non-finite input move axes, vertical axis, SDF sample step, roll side-dot, roll spring state, and triangle-wave phase to survive upstream of the KCC velocity path.
+Solution: Sanitized planar input to zero on non-finite values, clamped vertical input through a signed-unit helper, sanitized intended movement before storing it, clamped SDF sample step through the non-negative helper, sanitized roll side-dot/target/position/velocity, and zeroed non-finite triangle-wave phase before cheap roll wave evaluation.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Adding input-event logging was rejected as noise and potential allocation. Replacing roll/stride prediction with a physical body solver was rejected because the lower-body system is a visual fake consuming finite KCC data.
+Scalability potential: Low keeps stable cheap KCC output for disabled/non-XR lower-body IK. Middle keeps two-bone stride prediction finite. High/Ultra can use velocity lead, swim posture, haptics, and secondary IK polish without amplifying corrupt input state.
+Hardware Impact: Added scalar finite checks are in existing player kinematic paths and estimated well below 1 us/frame on i3/MX350; no allocations, no new jobs, no new rays.
+
+## Decision 16: Quaternion/raycast command finite boundary
+
+Problem: `ContextualPhysicalIkApplyJob` rejected non-finite quaternions, but a finite zero-length stream rotation could still pass the check and reach `math.inverse`. The ground detection job also had defensive gaps where corrupt camera/probe/origin values could collapse command origins to zero or let NaN scalar inputs affect hand/foot proxy blends.
+Solution: Normalized finite Unity quaternions through the shared no-sqrt path, preserved zero/invalid quaternions for explicit rejection, upgraded quaternion validators to require finite non-zero length, sanitized brace directions and camera/tool/hand/foot ray origins, sanitized foot step cache state, clamped contact offsets, max-delta heights, collision distances, and brace proxy distances before ray-response math, and kept spine target range validation self-contained inside the Burst apply job.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Logging bad quaternions or ray inputs was rejected as GC/noise. Adding extra ray probes, a gait planner, or physical leg authority was rejected because this is an H-Phi boundary defect in the existing visual fake.
+Scalability potential: Low/MX350 keeps the same two foot rays and cheap hand rays without zero-origin command pollution. Middle keeps stable two-bone lower-body presence. High gets cleaner velocity-led foot placement and hand retraction. Ultra can spend saved trust on secondary/muscle visual overkill without amplifying corrupt stream rotations.
+Hardware Impact: Added work is branch/finite/length-squared checks and existing `rsqrt` quaternion normalization, estimated below 1 us/frame on i3/MX350 for the standard player rig. No allocations, no public API changes, no new jobs, no new ray lanes.
+
+## Decision 17: Black-box telemetry cursor hardening
+
+Problem: `PlayerKinematicsRuntime` black-box telemetry is the post-mortem source for KCC-to-IK faults, but its write cursor was read directly from a native int and modulo-indexed. If that cursor became negative or stale, the telemetry write itself could fault or skip chronology before the dump captured the bad lower-body/KCC state.
+Solution: Added bounded telemetry slot reservation in the Burst body job and shared main-thread telemetry writer, clamping negative cursors to zero, rejecting missing/zero-length buffers, advancing from the wrapped index, finite-sanitizing telemetry position/velocity/intended movement payloads before black-box writes, and dumping telemetry oldest-to-newest from a sanitized wrapped head.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Exceptions/logging on cursor corruption were rejected because telemetry is the fault path and must not allocate or cascade. A larger telemetry buffer was rejected because the existing 300-frame black box satisfies the mandate.
+Scalability potential: Low/MX350 keeps the same 300-entry telemetry footprint with safer writes. Middle/High/Ultra preserve chronological KCC/IK evidence under richer hand/leg presentation without increasing hot-path memory or event lanes.
+Hardware Impact: Added cost is integer bounds checks and finite vector selects only when telemetry is written, estimated below 0.5 us per telemetry event on i3/MX350. No allocations, no new native containers, no new public API.
+
+## Decision 18: Environment IK telemetry scalar clamp
+
+Problem: Environment IK black-box telemetry sanitized vector payloads and cursor writes, but `activeBlend` could still be non-finite when squeeze, impact, low-tier, or scrape aux flags triggered a telemetry write.
+Solution: Clamp `activeBlend` through `SanitizeUnit` before aux flag selection and reuse the same safe scalar for `SolidDensity`.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Dropping all aux-flag telemetry on invalid blend was rejected because squeeze/impact/scrape evidence can still be useful with a neutral scalar. Logging was rejected as fault-path noise.
+Scalability potential: Low/MX350 keeps telemetry deterministic and cheap. Middle/High/Ultra preserve black-box quality while richer IK/haptic events are enabled.
+Hardware Impact: One scalar finite/clamp operation per environment IK telemetry event, estimated below 0.1 us/event on i3/MX350. No allocations, no new containers, no new event lanes.
+
+## Decision 19: KCC producer finite boundary and sync fence guard
+
+Problem: `PlayerKinematicsRuntime` sanitized inside the Burst body job, but raw Rigidbody position/velocity and raw origin-shift offsets could still be written into NativeArrays or sync-fence hashes before the sanitizer ran.
+Solution: Sanitize Rigidbody position/velocity at the producer boundary, feed safe positions into SDF/advection paths, flag invalid raw body state as `FaultNaN`, reject non-finite or >10km origin shifts with `FaultInvalidOriginShift`, sanitize AUP rebases, and sanitize staged sync-fence state before hashing or publishing.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Letting the Burst job catch the fault later was rejected because the NativeArray write itself is the boundary. Logging was rejected as hot/fault-path noise.
+Scalability potential: Low/MX350 preserves the same KCC/IK fake with fail-closed neutral velocity and last-valid position. Middle/High/Ultra keep richer stride, hand, haptic, and acoustic polish without accepting corrupt producer data.
+Hardware Impact: Added branch/finite checks are at existing KCC producer and origin-shift points, estimated below 0.5 us/frame on i3/MX350. No allocations, no new jobs, no public API change.
+
+## Decision 20: Contextual IK black-box ring cursor hardening
+
+Problem: The contextual IK black box assumed its private cursor and dump head were valid and could write non-finite first-sample vectors into the telemetry ring/dump when the same invalid state triggered the dump.
+Solution: Bound the telemetry cursor/head against the actual ring length, reject zero-length rings, sanitize vectors/weights before hash, ring write, and dump serialization, while preserving the invalid-state flag in `Flags`.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Writing raw NaNs into the binary dump was rejected because the dump must remain parseable across tools. Allocating a diagnostic object/log was rejected as fault-path noise.
+Scalability potential: Low/MX350 keeps the 300-entry telemetry footprint. Middle/High/Ultra preserve useful chronological evidence while more IK visual layers are enabled.
+Hardware Impact: Added cost is integer bounds checks and vector finite selects only on telemetry samples/dumps, estimated below 0.1 us/sample on i3/MX350. No allocations and no extra telemetry lanes.
+
+## Decision 21: KCC output and IK storage integrity gate
+
+Problem: KCC output paths still trusted finite-looking external metadata at the last boundary before lower-body consumers: GPU-flow field metadata could enable the full advection boost, SDF payload metadata could expose invalid origin/cell/range data to the body job, ladder hit points could enter KCC state, acoustic AUP output used the caller position directly, shader roll/VAT pushes trusted cached scalars, and contextual IK could schedule/reset NativeArrays without length validation.
+Solution: Reject non-finite or degenerate GPU-flow metadata and fall back to the cheaper CPU advection scale, reject invalid SDF metadata before publishing a payload to the body job, ignore non-finite ladder hits, snap/sanitize acoustic AUP output, sanitize roll/VAT shader and movement-roll signals at publish time, add a native-storage gate before scheduling the contextual IK ground pipeline, and length-guard contextual IK telemetry/reset/rebase lanes.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Adding another diagnostic manager or rebuilding the IK scheduler was rejected because the existing owner and black-box ring already provide the domain boundary. Adding extra raycasts or physical gait validation was rejected because the lower-body remains a visual fake.
+Scalability potential: Low/MX350 now fails closed to cheap advection, neutral roll/VAT, and no IK schedule if storage is invalid. Middle keeps deterministic two-bone presence. High/Ultra can keep richer flow-led stride/swim polish and secondary visual layers without trusting corrupt metadata or partial native storage.
+Hardware Impact: Added work is finite checks, integer length comparisons, and scalar sanitization at existing boundaries, estimated below 0.3 us/frame on i3/MX350 plus cold reset-only guards. No allocations, no new jobs, no new ray lanes, no public API change.
+
+## Decision 22: Rig capture finite-source quarantine
+
+Problem: Rig-side capture still had a few source-boundary leaks before the runtime sanitizer: predictive controller AUPs could be built from non-finite controller transforms, spine targets could write non-finite HMD yaw/breath offsets into NativeArray targets, appendage target sources or voxel-corner snaps could publish invalid positions with nonzero weight, and upper-arm FOV culling could hide arms if camera/bounds data became corrupt.
+Solution: Gate predictive controller AUP creation on finite source positions, sanitize spine target lanes before writing them, normalize/fallback appendage surface normals, ignore non-finite snapped corners, zero appendage weight when the target position is invalid, sanitize culling hysteresis, and fail open to visible upper arms when camera or renderer bounds are non-finite.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Logging transform faults was rejected as hot-path noise. Adding additional culling probes or a physical arm visibility model was rejected because this is a data-integrity defect in a visual presentation system.
+Scalability potential: Low/MX350 avoids bad controller/bounds data turning into visible arm disappearance or IK spikes. Middle keeps deterministic appendage/spine presentation. High/Ultra can run richer appendage, breathing, and muscle polish without trusting corrupt source transforms.
+Hardware Impact: Added work is branch/finite checks and one no-sqrt normal fallback inside existing rig capture/culling paths, estimated below 0.3 us/frame for the active rig on i3/MX350. No allocations, no new jobs, no new ray lanes, no public API change.
+
+## Decision 23: Rig transient state fail-closed before publication
+
+Problem: Rig-local transient state still had gaps after source capture. Recoil offsets decayed raw stored vectors. Terminal, external wall, predictive repair, breathing, shiver, and muscle-bulge blends depended on smooth outputs that could preserve non-finite state until a later publisher sanitized it. Phase counters only subtracted one wrap and could remain corrupt. Predictive repair used unchecked AUP distance/runtime target output, and appendage/spine/muscle target writes assumed native and managed companion arrays stayed perfectly aligned.
+Solution: Clamp decayed recoil through the existing no-sqrt vector clamp, sanitize every unit scalar smooth result in the rig latch path, wrap breathing/shiver phases through a finite positive phase helper, sanitize shiver offsets before entity-state publication, reject non-finite predictive AUP distance/runtime target data before hand-latch writes, and length/null guard spine, appendage, muscle, and companion target arrays before NativeArray writes.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Adding logs/exceptions for transient corruption was rejected as hot-path and fault-path noise. Replacing the latch system with a physical hand/torso solver was rejected because this remains a deterministic visual fake, not simulation authority.
+Scalability potential: Low/MX350 keeps the same cheap finite clamps and no-sqrt math. Middle keeps stable two-bone and appendage targets. High keeps breathing, cold shiver, wall-touch, and tool recoil polish without NaN amplification. Ultra can spend the same saved cycles on richer secondary/muscle presentation because transient latches now fail closed before publication.
+Hardware Impact: Added work is scalar finite/clamp operations, one `math.floor` phase wrap per active breathing/shiver tick, integer length guards, and no new allocations/jobs/rays. Estimated below 0.4 us/frame on i3/MX350 for the active rig. Prevented cost is native target faulting, IK latch spikes, disappearing/corrupt hand contacts, and shader bulge NaNs.
+
+## Decision 24: Runtime job publication sanitization
+
+Problem: The rig side was hardened, but the Burst runtime jobs still had two remaining trust windows. Ground detection command origins could fall back to `entity.RootPosition` even when that root was already corrupt, and predictive latch blend alone could suppress fallback wall rays even if the predictive position was invalid. The response job also wrote smooth-scalar output directly into tunnel blend, contact blends, packed foot data, and COM lean before the final target-frame sanitizer.
+Solution: Add a finite `safeRootPosition` fallback for all command origins, validate predictive latch position before using latch state to disable wall probes, make both job-local `SanitizeFloat3` helpers sanitize their fallback, and route all unit-blend smoothing through `SmoothBlend`. COM lean now uses `SmoothFiniteScalar` so non-unit angular scalars also fail closed before target-frame publication.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Adding more ray lanes or physical validation was rejected because the issue is data publication, not sensing fidelity. Logging invalid command origins was rejected as hot-path noise.
+Scalability potential: Low/MX350 keeps the same ray count and same lower-body fake with safer neutral fallback. Middle keeps stable hand/foot targets under bad state. High keeps wall-touch, predictive repair, and COM lean polish without letting invalid latch data disable fallback probes. Ultra can keep secondary/muscle overkill on top of finite published targets.
+Hardware Impact: Added work is finite checks, two unit-blend clamps per active latch decision, and sanitized smooth scalar wrappers inside existing jobs. Estimated below 0.4 us/frame on i3/MX350. No allocations, no new jobs, no new ray lanes, no public API change.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Final anti-bloat pass required checking the lower-body implementation for honest simulation, unbounded math, GC leaks, and out-of-domain edits.
@@ -100,9 +204,13 @@ Hardware Impact: No new managed hot-path allocations. Runtime leg work is two fo
 
 Recursive Verification Addendum: after the user requested additional patience/professional polish, `CURRENT_BATCH.md` was re-extracted. `ContextualPhysicalIkRuntime` now removes the stale Gameplay dependency on `Hecton8.Animation.IK`, preserves foot-probe fore/aft stance in hip rays, adds finite-clamped planar velocity lead, uses planar velocity for swimming posture, stores finite-clamped velocity-scaled squared step thresholds, cancels stale dual-foot step state, rebases active SOA lanes safely under AUP shift, writes ordered black-box dumps, forces a cold pending-job completion before lifecycle slot reset/allocation, binds player KCC velocity only to rigs near the KCC body AUP, and rebases the cached KCC body position on origin shift. `ContextualPhysicalIkRig` now applies a 4m distance hysteresis band to IK cadence tiers. `dotnet build Hecton8.Core.csproj --no-restore -v:quiet /m:1 /p:UseSharedCompilation=false /clp:ErrorsOnly` remains a global dependency-wall check, but the changed-file filter completed with no matching errors. Unity MCP resources are unavailable in this session. Scoped `Select-String` anti-bloat scan over touched lower-body/signal files returned no matches for `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation, `OnAnimatorIK`, `SetIK`, or `ikPass`.
 
-Final Git Diff: active diff now includes the recursive code polish and required evidence files:
+Final Evidence Scope: recursive code polish and required evidence files audited in this pass:
+`Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkMath.cs`
 `Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs`
 `Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs`
+`Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs`
+`Assets/_Project/Scripts/Physics/PhysicsDeterminismSignals.cs`
+`Assets/_Project/Scripts/Animation/IK/LowerBodyPresenceIkJobs.cs`
 `Docs/AgentLogs/Rationale_ANIM_PROCEDURAL_LEGS_IK.md`
 `Docs/Tasks/Status_ANIM_PROCEDURAL_LEGS_IK.md`
-`Docs/AgentLogs/LOG_ANIM_PROCEDURAL_LEGS_IK.md` (new)
+`Docs/AgentLogs/LOG_ANIM_PROCEDURAL_LEGS_IK.md`

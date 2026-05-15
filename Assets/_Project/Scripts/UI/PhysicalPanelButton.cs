@@ -18,9 +18,9 @@ namespace Hecton8.UI
     public sealed class PhysicalPanelButton : MonoBehaviour, ITickable, IUpdatable, IInteractionSignalConsumer, IPhysicalPanelButtonReceiver
     {
         private const uint PhysicalPanelToolId = 0x50414E4Cu;
-        private const float MinimumDeltaTime = 0.0001f;
         private const byte LeftMotorMask = 0b0001;
         private const byte RightMotorMask = 0b0010;
+        private const byte BothMotorMask = LeftMotorMask | RightMotorMask;
         private const byte MicroHapticPriority = 1;
         private const float HoldDispatchIntervalSeconds = 0.033333335f;
         private const int MaxParentResolveDepth = 32;
@@ -39,6 +39,7 @@ namespace Hecton8.UI
         private const float MinimumClickPitch = 0.25f;
         private const float MaximumClickPitch = 2.5f;
         private const float MaximumButtonDeltaSeconds = 0.05f;
+        private const float VisualWriteEpsilon = 0.000001f;
         private const float VisualSettleEpsilon = 0.0005f;
 
         [Header("References")]
@@ -115,8 +116,10 @@ namespace Hecton8.UI
         private float _resolvedClickVolume = 0.42f;
         private float _resolvedClickPitch = 1f;
         private bool _registered;
+        private bool _receiverRegistered;
         private bool _pressDispatched;
         private bool _acousticRuntimeAcquired;
+        private Collider _registeredActivationVolume;
 
         /// <summary>Collider volume used by the physical hand overlap probe.</summary>
         public Collider ActivationCollider => activationVolume;
@@ -187,10 +190,12 @@ namespace Hecton8.UI
             float target = handInside ? 1f : 0f;
             float speed = handInside ? _resolvedDepressSpeed : _resolvedReleaseSpeed;
             float alpha = FastDecayBlend(speed, safeDeltaTime);
-            float currentPressed = math.isfinite(_pressed01) ? _pressed01 : 0f;
+            float previousPressed = _pressed01;
+            bool pressedWasInvalid = !math.isfinite(previousPressed);
+            float currentPressed = pressedWasInvalid ? 0f : previousPressed;
             _pressed01 = math.lerp(currentPressed, target, alpha);
 
-            if (buttonMesh != null)
+            if (buttonMesh != null && (pressedWasInvalid || math.abs(_pressed01 - currentPressed) > VisualWriteEpsilon))
             {
                 Vector3 offset = new Vector3(0f, 0f, -_resolvedPressDepthMeters * _pressed01);
                 buttonMesh.localPosition = _baseLocalPosition + offset;
@@ -201,7 +206,7 @@ namespace Hecton8.UI
                 DispatchPanelEvent(DiegeticPanelInputEventType.Up);
                 _pressDispatched = false;
             }
-            else if (handInside && _pressDispatched)
+            else if (handInside && _pressDispatched && safeDeltaTime > 0f)
             {
                 _holdEventRemaining -= safeDeltaTime;
                 if (_holdEventRemaining <= 0f)
@@ -221,7 +226,7 @@ namespace Hecton8.UI
             if (safeSpeed <= 0f || safeDeltaTime <= 0f)
                 return 0f;
 
-            float x = safeSpeed * math.max(safeDeltaTime, MinimumDeltaTime);
+            float x = safeSpeed * safeDeltaTime;
             if (x >= 3.5f)
                 return 1f;
 
@@ -234,13 +239,17 @@ namespace Hecton8.UI
         /// <param name="handPosition">Runtime-space hand position.</param>
         /// <param name="handForward">Runtime-space hand forward vector.</param>
         /// <param name="interactionSignals">Authoritative interaction signal queue.</param>
+        /// <param name="handSourceCollider">Collider that produced the hand contact sample.</param>
+        /// <param name="fallbackHandSide">Hand side supplied by the physical hand bridge.</param>
+        /// <param name="sampleFrame">Frame stamp captured once by the physical hand probe.</param>
         /// <returns>True when the hand press was accepted by this button.</returns>
         public bool TryQueueHandPress(
             Vector3 handPosition,
             Vector3 handForward,
             IInteractionSignalService interactionSignals,
             Collider handSourceCollider,
-            PhysicalHandSide fallbackHandSide)
+            PhysicalHandSide fallbackHandSide,
+            int sampleFrame = -1)
         {
             if (activationVolume == null || interactionSignals == null || !interactionSignals.IsInitialized)
                 return false;
@@ -248,7 +257,8 @@ namespace Hecton8.UI
             if (!IsFinite(handPosition))
                 return false;
 
-            _lastHandInsideFrame = Time.frameCount;
+            int frame = sampleFrame >= 0 ? sampleFrame : Time.frameCount;
+            _lastHandInsideFrame = frame;
             TryRegister();
             if (_pressDispatched)
                 return true;
@@ -256,24 +266,27 @@ namespace Hecton8.UI
             if (_signalCooldownRemaining > 0f)
                 return true;
 
-            Vector3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePosition(handPosition);
+            double3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(handPosition);
             Vector3 fallbackForward = _cachedTransform != null ? _cachedTransform.forward : Vector3.forward;
             if (!IsFinite(fallbackForward))
                 fallbackForward = Vector3.forward;
+            if (!math.all(math.isfinite(absoluteHitPoint)))
+                return false;
+
             Vector3 safeDirection = ResolveApproxPressDirection(handForward, fallbackForward);
             InteractionPacket packet = new InteractionPacket(
                 PhysicalPanelToolId,
-                (float3)absoluteHitPoint,
+                new float3((float)absoluteHitPoint.x, (float)absoluteHitPoint.y, (float)absoluteHitPoint.z),
                 (float3)safeDirection,
                 1f,
                 _resolvedPressDepthMeters,
                 (byte)ToolActionMode.Primary,
                 (byte)ToolStateBits.Active,
-                unchecked((uint)Time.frameCount));
+                unchecked((uint)frame));
             InteractionSignal signal = new InteractionSignal(
                 packet,
                 0,
-                (float3)absoluteHitPoint,
+                new float3((float)absoluteHitPoint.x, (float)absoluteHitPoint.y, (float)absoluteHitPoint.z),
                 (float3)(-safeDirection),
                 1f,
                 (byte)signalEffectType,
@@ -292,9 +305,10 @@ namespace Hecton8.UI
             Vector3 handForward,
             IInteractionSignalService interactionSignals,
             Collider handSourceCollider,
-            PhysicalHandSide fallbackHandSide)
+            PhysicalHandSide fallbackHandSide,
+            int sampleFrame)
         {
-            return TryQueueHandPress(handPosition, handForward, interactionSignals, handSourceCollider, fallbackHandSide);
+            return TryQueueHandPress(handPosition, handForward, interactionSignals, handSourceCollider, fallbackHandSide, sampleFrame);
         }
 
         private static Vector3 ResolveApproxPressDirection(Vector3 handForward, Vector3 fallbackForward)
@@ -366,7 +380,13 @@ namespace Hecton8.UI
                     return RightMotorMask;
             }
 
-            return fallbackHandSide == PhysicalHandSide.Left ? LeftMotorMask : RightMotorMask;
+            if (fallbackHandSide == PhysicalHandSide.Left)
+                return LeftMotorMask;
+
+            if (fallbackHandSide == PhysicalHandSide.Right)
+                return RightMotorMask;
+
+            return BothMotorMask;
         }
 
         private void ResolveReferences()
@@ -388,18 +408,36 @@ namespace Hecton8.UI
 
         private void RegisterCollider()
         {
-            if (activationVolume == null)
+            Collider registeredVolume = _registeredActivationVolume;
+            if (_receiverRegistered || registeredVolume != null)
+            {
+                if (_receiverRegistered && ReferenceEquals(registeredVolume, activationVolume))
+                    return;
+
+                UnregisterCollider();
+            }
+
+            if (activationVolume == null || !Application.isPlaying)
                 return;
 
-            PhysicalHandReceiverRegistry.Register(activationVolume, this);
+            if (!PhysicalHandReceiverRegistry.TryRegister(activationVolume, this))
+                return;
+
+            _registeredActivationVolume = activationVolume;
+            _receiverRegistered = true;
         }
 
         private void UnregisterCollider()
         {
-            if (activationVolume == null)
+            Collider registeredVolume = _registeredActivationVolume;
+            if (!_receiverRegistered && registeredVolume == null)
                 return;
 
-            PhysicalHandReceiverRegistry.Unregister(activationVolume, this);
+            if (registeredVolume != null)
+                PhysicalHandReceiverRegistry.Unregister(registeredVolume, this);
+
+            _registeredActivationVolume = null;
+            _receiverRegistered = false;
         }
 
         private void DispatchPanelEvent(DiegeticPanelInputEventType eventType)
@@ -619,9 +657,6 @@ namespace Hecton8.UI
 
         private void Unregister()
         {
-            if (!_registered)
-                return;
-
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registered = false;
         }

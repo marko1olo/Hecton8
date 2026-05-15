@@ -1,8 +1,8 @@
 using System;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
-using Hecton8.Items;
 using Hecton8.Modding;
 using Hecton8.SaveSystem;
 using Hecton.Localization;
@@ -139,7 +139,7 @@ namespace Hecton8.PDA
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/PDA/PDA Logbook Manager")]
-    public sealed class PDALogbookManager : MonoBehaviour, ISaveable, IPDALogbookService
+    public sealed class PDALogbookManager : MonoBehaviour, ISaveable, IPDALogbookService, IUpdatable
     {
         private const int FirstDeathOriginHash = unchecked((int)0xED21B4CC);
         private const int FirstLaserCutterOriginHash = unchecked((int)0x0710CD7A);
@@ -174,7 +174,6 @@ namespace Hecton8.PDA
         // COLD ALLOC: int[MaxSeenOrigins] - fixed dedupe source hashes without HashSet enumerators - owner: PDALogbookManager
         private readonly int[] _seenOriginHashes = new int[PDALogbookDTO.MaxSeenOrigins];
 
-        private HectonEventSubscription _itemCraftedSubscription;
         private HectonEventSubscription _gameLoadedSubscription;
         private HectonEventSubscription _playerSpawnedSubscription;
 
@@ -182,6 +181,10 @@ namespace Hecton8.PDA
         private ScanLogSystem _scanLogSystem;
         private HectonDiscoveryManager _discoveryManager;
         private bool _registeredToSave;
+        private bool _registered;
+        private uint _scanLogSourceId;
+        private bool _firstLaserCutterLogged;
+        private bool _firstLeviathanScanLogged;
         private int _entryCount;
         private int _seenOriginCount;
         private int _nextSequence = 1;
@@ -194,6 +197,7 @@ namespace Hecton8.PDA
 
         /// <inheritdoc />
         public int LoadPriority => 205;
+        private bool NeedsLogbookSignalPump => !_firstLaserCutterLogged || !_firstLeviathanScanLogged;
 
         private void Awake()
         {
@@ -202,19 +206,25 @@ namespace Hecton8.PDA
         private void OnEnable()
         {
             TryRegisterLogbookService();
+            if (!enabled)
+                return;
+
             TryRegisterWithSaveManager();
             SubscribeToEventBus();
             RebindOwnerSubscriptions();
+            RefreshLogbookSignalPumpRegistration();
         }
 
         private void Start()
         {
             TryRegisterWithSaveManager();
             RebindOwnerSubscriptions();
+            RefreshLogbookSignalPumpRegistration();
         }
 
         private void OnDisable()
         {
+            TryUnregister();
             UnsubscribeFromOwners();
             UnsubscribeFromEventBus();
             UnregisterFromSaveManager();
@@ -223,6 +233,7 @@ namespace Hecton8.PDA
 
         private void OnDestroy()
         {
+            TryUnregister();
             UnsubscribeFromOwners();
             UnsubscribeFromEventBus();
             UnregisterFromSaveManager();
@@ -292,6 +303,8 @@ namespace Hecton8.PDA
             _entries[_entryCount++] = entry;
             UIStateStore.AppendPDALogEventHash(unchecked((uint)originHash), playTimeSeconds);
             Hecton8.UI.PDAEvents.RaiseLogbookChanged(_entryCount, unchecked((uint)originHash));
+            if (originHash == FirstLaserCutterOriginHash || originHash == FirstLeviathanScanOriginHash)
+                RefreshLogbookSignalPumpRegistration();
             return true;
         }
 
@@ -347,7 +360,11 @@ namespace Hecton8.PDA
             _nextSequence = 1;
 
             if (data == null)
+            {
+                RebindOwnerSubscriptions();
+                RefreshLogbookSignalPumpRegistration();
                 return;
+            }
 
             PDALogbookDTO dto = data.pdaLogbook;
             int entryCount = math.clamp(dto.entryCount, 0, dto.entries != null ? dto.entries.Length : 0);
@@ -389,6 +406,7 @@ namespace Hecton8.PDA
             _nextSequence = math.max(1, dto.nextSequence);
             Hecton8.UI.PDAEvents.RaiseLogbookChanged(_entryCount, _entryCount > 0 ? unchecked((uint)_entries[_entryCount - 1].OriginHash) : 0u);
             RebindOwnerSubscriptions();
+            RefreshLogbookSignalPumpRegistration();
         }
 
         private bool ContainsSeenOriginHash(int originHash)
@@ -404,10 +422,26 @@ namespace Hecton8.PDA
 
         private bool TryAppendSeenOriginHash(int originHash)
         {
-            if (originHash == 0 || ContainsSeenOriginHash(originHash) || _seenOriginCount >= PDALogbookDTO.MaxSeenOrigins)
+            if (originHash == 0)
+                return false;
+
+            if (ContainsSeenOriginHash(originHash))
+            {
+                if (originHash == FirstLaserCutterOriginHash)
+                    _firstLaserCutterLogged = true;
+                if (originHash == FirstLeviathanScanOriginHash)
+                    _firstLeviathanScanLogged = true;
+                return false;
+            }
+
+            if (_seenOriginCount >= PDALogbookDTO.MaxSeenOrigins)
                 return false;
 
             _seenOriginHashes[_seenOriginCount++] = originHash;
+            if (originHash == FirstLaserCutterOriginHash)
+                _firstLaserCutterLogged = true;
+            if (originHash == FirstLeviathanScanOriginHash)
+                _firstLeviathanScanLogged = true;
             return true;
         }
 
@@ -433,6 +467,8 @@ namespace Hecton8.PDA
                 _seenOriginHashes[i] = 0;
 
             _seenOriginCount = 0;
+            _firstLaserCutterLogged = false;
+            _firstLeviathanScanLogged = false;
         }
 
         private void TryRegisterLogbookService()
@@ -457,11 +493,39 @@ namespace Hecton8.PDA
                 GlobalRegistry.UnregisterPDALogbookService(this);
         }
 
+        private void TryRegister()
+        {
+            if (_registered || !Application.isPlaying)
+                return;
+
+            if (!NeedsLogbookSignalPump)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            _registered = false;
+        }
+
+        private void RefreshLogbookSignalPumpRegistration()
+        {
+            if (NeedsLogbookSignalPump)
+                TryRegister();
+            else
+                TryUnregister();
+        }
+
         private void SubscribeToEventBus()
         {
-            if (_itemCraftedSubscription == null)
-                _itemCraftedSubscription = HectonEventBus.Subscribe<ItemCraftedEvent>(HandleItemCrafted, "pda.logbook");
-
             if (_gameLoadedSubscription == null)
                 _gameLoadedSubscription = HectonEventBus.Subscribe<GameLoadedEvent>(HandleGameLoaded, "pda.logbook");
 
@@ -471,9 +535,6 @@ namespace Hecton8.PDA
 
         private void UnsubscribeFromEventBus()
         {
-            _itemCraftedSubscription?.Dispose();
-            _itemCraftedSubscription = null;
-
             _gameLoadedSubscription?.Dispose();
             _gameLoadedSubscription = null;
 
@@ -497,12 +558,10 @@ namespace Hecton8.PDA
             ScanLogSystem resolvedScanLog = Hecton8.Core.GlobalRegistry.ScanLog;
             if (!ReferenceEquals(_scanLogSystem, resolvedScanLog))
             {
-                if (_scanLogSystem != null)
-                    _scanLogSystem.EntryUnlocked -= HandleEntryUnlocked;
-
                 _scanLogSystem = resolvedScanLog;
-                if (_scanLogSystem != null)
-                    _scanLogSystem.EntryUnlocked += HandleEntryUnlocked;
+                _scanLogSourceId = resolvedScanLog != null
+                    ? GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(resolvedScanLog.GetEntityId()))
+                    : 0u;
             }
 
             HectonDiscoveryManager resolvedDiscoveryManager = GlobalRegistry.Discovery;
@@ -521,33 +580,99 @@ namespace Hecton8.PDA
         {
             if (_survivalSystem != null)
                 _survivalSystem.OnDeath -= HandlePlayerDeath;
-            if (_scanLogSystem != null)
-                _scanLogSystem.EntryUnlocked -= HandleEntryUnlocked;
             if (_discoveryManager != null)
                 _discoveryManager.OnBiomeDiscovered -= HandleBiomeDiscovered;
 
             _survivalSystem = null;
             _scanLogSystem = null;
+            _scanLogSourceId = 0u;
             _discoveryManager = null;
         }
 
-        private void HandleItemCrafted(ItemCraftedEvent craftedEvent)
+        public void Tick(float deltaTime)
         {
-            ItemData item = craftedEvent != null ? craftedEvent.Item : null;
-            if (item == null || !item.MatchesPersistentHash(FirstLaserCutterPersistentHash))
+            ProcessLogbookSignals();
+        }
+
+        private void ProcessLogbookSignals()
+        {
+            if (!NeedsLogbookSignalPump)
+            {
+                TryUnregister();
+                return;
+            }
+
+            ProcessCraftingSignals();
+            ProcessScanLogSignals();
+            if (!NeedsLogbookSignalPump)
+                TryUnregister();
+        }
+
+        private void ProcessCraftingSignals()
+        {
+            if (_firstLaserCutterLogged)
                 return;
 
-            TryAppendEntry(FirstLaserCutterOriginHash, FirstLaserCutterTitleHash, FirstLaserCutterMessageHash);
+            ReadOnlySpan<CraftingCompletedSignal> signals = SignalBus<CraftingCompletedSignal>.GetFrameSnapshot();
+            uint requiredItemHash = unchecked((uint)FirstLaserCutterPersistentHash);
+            for (int i = 0; i < signals.Length; i++)
+            {
+                if (signals[i].ResultItemHash != requiredItemHash || signals[i].Quantity == 0)
+                    continue;
+
+                TryAppendEntry(FirstLaserCutterOriginHash, FirstLaserCutterTitleHash, FirstLaserCutterMessageHash);
+                break;
+            }
+        }
+
+        private void ProcessScanLogSignals()
+        {
+            if (_firstLeviathanScanLogged)
+                return;
+
+            RefreshScanLogSignalBinding();
+            uint sourceId = _scanLogSourceId;
+            if (sourceId == 0u)
+                return;
+
+            ReadOnlySpan<ScanLogChangedSignal> signals = SignalBus<ScanLogChangedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ref readonly ScanLogChangedSignal signal = ref signals[i];
+                if (signal.SourceId != sourceId ||
+                    signal.Reason != ScanLogChangedSignal.ReasonEntryAdded ||
+                    !LooksLikeLeviathanEntry(in signal))
+                {
+                    continue;
+                }
+
+                TryAppendEntry(FirstLeviathanScanOriginHash, FirstLeviathanScanTitleHash, FirstLeviathanScanMessageHash);
+                break;
+            }
+        }
+
+        private void RefreshScanLogSignalBinding()
+        {
+            ScanLogSystem resolvedScanLog = Hecton8.Core.GlobalRegistry.ScanLog;
+            if (ReferenceEquals(_scanLogSystem, resolvedScanLog))
+                return;
+
+            _scanLogSystem = resolvedScanLog;
+            _scanLogSourceId = resolvedScanLog != null
+                ? GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(resolvedScanLog.GetEntityId()))
+                : 0u;
         }
 
         private void HandleGameLoaded(GameLoadedEvent gameLoadedEvent)
         {
             RebindOwnerSubscriptions();
+            RefreshLogbookSignalPumpRegistration();
         }
 
         private void HandlePlayerSpawned(PlayerSpawnedEvent playerSpawnedEvent)
         {
             RebindOwnerSubscriptions();
+            RefreshLogbookSignalPumpRegistration();
         }
 
         private void HandlePlayerDeath()
@@ -561,23 +686,15 @@ namespace Hecton8.PDA
             TryAppendEntry(ResolveBiomeOriginHash(biomeId), BiomeDiscoveredTitleHash, BiomeDiscoveredMessageHash);
         }
 
-        private void HandleEntryUnlocked(ScanLogSystem.ScanEntrySnapshot snapshot)
+        private static bool LooksLikeLeviathanEntry(in ScanLogChangedSignal signal)
         {
-            if (!LooksLikeLeviathanEntry(snapshot))
-                return;
-
-            TryAppendEntry(FirstLeviathanScanOriginHash, FirstLeviathanScanTitleHash, FirstLeviathanScanMessageHash);
-        }
-
-        private static bool LooksLikeLeviathanEntry(ScanLogSystem.ScanEntrySnapshot snapshot)
-        {
-            return snapshot.CategoryHash == LeviathanCategoryHash ||
-                   snapshot.IdHash == BlackChoirLeviathanEntryHash ||
-                   snapshot.IdHash == FurnaceMawLeviathanEntryHash ||
-                   snapshot.IdHash == GateWardenLeviathanEntryHash ||
-                   snapshot.IdHash == HaloCrownLeviathanEntryHash ||
-                   snapshot.IdHash == RiftLancerLeviathanEntryHash ||
-                   snapshot.IdHash == VoidRibbonLeviathanEntryHash;
+            return signal.CategoryHash == LeviathanCategoryHash ||
+                   signal.EntryHash == BlackChoirLeviathanEntryHash ||
+                   signal.EntryHash == FurnaceMawLeviathanEntryHash ||
+                   signal.EntryHash == GateWardenLeviathanEntryHash ||
+                   signal.EntryHash == HaloCrownLeviathanEntryHash ||
+                   signal.EntryHash == RiftLancerLeviathanEntryHash ||
+                   signal.EntryHash == VoidRibbonLeviathanEntryHash;
         }
 
         private static int ResolveBiomeOriginHash(int biomeId)

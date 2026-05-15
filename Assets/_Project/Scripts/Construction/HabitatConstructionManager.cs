@@ -113,9 +113,9 @@ namespace Hecton8.Construction
         {
             float snappedGrid = gridSize > 0f ? gridSize : DefaultGridSize;
             int gridMillimeters = ResolveGridMillimeters(snappedGrid);
-            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(
+            double3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(
                 new Vector3(worldPosition.x, worldPosition.y, worldPosition.z));
-            Vector3 snappedAbsolutePosition = new Vector3(
+            double3 snappedAbsolutePosition = new double3(
                 SnapMeterToGridMillimeters(absolutePosition.x, gridMillimeters),
                 SnapMeterToGridMillimeters(absolutePosition.y, gridMillimeters),
                 SnapMeterToGridMillimeters(absolutePosition.z, gridMillimeters));
@@ -135,12 +135,20 @@ namespace Hecton8.Construction
             if (!float.IsFinite(meters))
                 return 0f;
 
+            return (float)SnapMeterToGridMillimeters((double)meters, gridMillimeters);
+        }
+
+        private static double SnapMeterToGridMillimeters(double meters, int gridMillimeters)
+        {
+            if (!math.isfinite(meters))
+                return 0d;
+
             double millimetersDouble = meters * 1000.0;
             long millimeters = millimetersDouble >= 0.0
                 ? (long)(millimetersDouble + 0.5)
                 : (long)(millimetersDouble - 0.5);
             long snappedMillimeters = SnapIntegerToGrid(millimeters, gridMillimeters);
-            return (float)(snappedMillimeters * 0.001);
+            return snappedMillimeters * 0.001;
         }
 
         private static long SnapIntegerToGrid(long value, int grid)

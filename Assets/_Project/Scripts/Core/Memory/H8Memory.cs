@@ -24,6 +24,8 @@ namespace Hecton8.Core.Memory
         VehiclesPhysics = 65,
         Fluid = 66,
         GameplayLoot = 67,
+        HabitatAtmosphere = 68,
+        GameplayPlayer = 69,
         WorldStreaming = 128,
         TerrainSeams = 129,
         SimulationBucketer = 161,
@@ -70,7 +72,39 @@ namespace Hecton8.Core.Memory
         EntityVelocities = 30,
         EntityItemHashes = 31,
         EntityQuantities = 32,
-        EntityLootMagnetTelemetry = 33
+        EntityLootMagnetTelemetry = 33,
+        SubmarineFluidCompartmentFloodVolumes = 35,
+        SubmarineFluidCompartmentViscosity01 = 36,
+        SubmarineFluidCompartmentBaseMaxVolumes = 37,
+        SubmarineFluidCompartmentMaxVolumes = 38,
+        SubmarineFluidCompartmentBreachAreas = 39,
+        SubmarineFluidCompartmentLocalCentroids = 40,
+        SubmarineFluidCompartmentFlags = 41,
+        SubmarineFluidBulkheadPairs = 42,
+        SubmarineFluidBulkheadSealed = 43,
+        SubmarineFluidBulkheadDoorAreas = 44,
+        SubmarineFluidComAccumulatorFront = 45,
+        SubmarineFluidComAccumulatorBack = 46,
+        SubmarineFluidMassPropertiesFront = 47,
+        SubmarineFluidMassPropertiesBack = 48,
+        SubmarineFluidAngularVelocityHistoryLocal = 49,
+        SubmarineFluidPreviousExteriorSampleSubmersionFactors = 50,
+        SubmarineFluidJobFloodVolumes = 51,
+        SubmarineFluidJobCompartmentFlags = 52,
+        SubmarineFluidBulkheadTransferDeltas = 53,
+        SubmarineHydroKinematicInput = 54,
+        SubmarineHydroKinematicOutput = 55,
+        SubmarineHydroBlackBox = 56,
+        PlayerKinematicPositions = 57,
+        PlayerKinematicVelocities = 58,
+        PlayerKinematicIntendedMovements = 59,
+        PlayerKinematicDragSolvedVelocities = 60,
+        PlayerKinematicTelemetryRing = 61,
+        PlayerCinematicFocusBlackBox = 62,
+        HabitatBaseAwakeState = 63,
+        CarveDebrisJobState = 64,
+        CarveDebrisRequests = 65,
+        CarveDebrisBlackBox = 66
     }
 
     [Flags]
@@ -82,7 +116,6 @@ namespace Hecton8.Core.Memory
         Vault = 1 << 2,
         Alias = 1 << 3,
         Freed = 1 << 4,
-        Relocatable = 1 << 5,
         SubAllocatorRoot = 1 << 6
     }
 
@@ -156,6 +189,16 @@ namespace Hecton8.Core.Memory
         public static void ThrowStaleVaultHandle()
         {
             throw new FatalMemoryException("GlobalDataVault handle generation mismatch.");
+        }
+
+        public static void ThrowVaultTypeMismatch()
+        {
+            throw new FatalMemoryException("GlobalDataVault buffer type mismatch.");
+        }
+
+        public static void ThrowAllocationSizeMismatch()
+        {
+            throw new FatalMemoryException("H8Memory reallocation size mismatch.");
         }
     }
 
@@ -256,6 +299,8 @@ namespace Hecton8.Core.Memory
 
             if (length <= 0)
                 return default;
+            if (owner == SystemID.Unknown)
+                FatalMemoryException.ThrowUnknownAllocationOwner();
 
             int stride = UnsafeUtility.SizeOf<T>();
             long bytes = (long)stride * length;
@@ -271,18 +316,26 @@ namespace Hecton8.Core.Memory
         /// <summary>
         /// Releases a native array allocated by <see cref="Allocate{T}"/> and removes it from the leak tracker.
         /// </summary>
+        [Obsolete("Use Release(ref NativeArray<T>, SystemID) so tracked memory is freed by its recorded owner.", true)]
         public static void Release<T>(ref NativeArray<T> array) where T : struct
+        {
+            Release(ref array, SystemID.Unknown);
+        }
+
+        /// <summary>
+        /// Releases a native array only when the caller matches the recorded allocation owner.
+        /// </summary>
+        public static void Release<T>(ref NativeArray<T> array, SystemID owner) where T : struct
         {
             if (!array.IsCreated)
                 return;
+            if (owner == SystemID.Unknown)
+                FatalMemoryException.ThrowUnknownFreeOwner();
             if (!_initialized)
-            {
-                array = default;
-                return;
-            }
+                FatalMemoryException.ThrowUntrackedPointer();
 
             void* pointer = NativeArrayUnsafeUtility.GetUnsafePtr(array);
-            UnregisterPointer(pointer);
+            UnregisterPointer(pointer, owner);
             array.Dispose();
             array = default;
         }
@@ -290,18 +343,26 @@ namespace Hecton8.Core.Memory
         /// <summary>
         /// Defers native-array disposal behind an active job dependency and retires leak ownership immediately.
         /// </summary>
+        [Obsolete("Use Release(ref NativeArray<T>, JobHandle, SystemID) so tracked memory is freed by its recorded owner.", true)]
         public static JobHandle Release<T>(ref NativeArray<T> array, JobHandle dependency) where T : struct
+        {
+            return Release(ref array, dependency, SystemID.Unknown);
+        }
+
+        /// <summary>
+        /// Defers native-array disposal behind an active job dependency when the caller matches the recorded owner.
+        /// </summary>
+        public static JobHandle Release<T>(ref NativeArray<T> array, JobHandle dependency, SystemID owner) where T : struct
         {
             if (!array.IsCreated)
                 return dependency;
+            if (owner == SystemID.Unknown)
+                FatalMemoryException.ThrowUnknownFreeOwner();
             if (!_initialized)
-            {
-                array = default;
-                return dependency;
-            }
+                FatalMemoryException.ThrowUntrackedPointer();
 
             void* pointer = NativeArrayUnsafeUtility.GetUnsafePtr(array);
-            UnregisterPointer(pointer);
+            UnregisterPointer(pointer, owner);
             JobHandle disposeHandle = array.Dispose(dependency);
             array = default;
             return disposeHandle;
@@ -359,21 +420,25 @@ namespace Hecton8.Core.Memory
 
             if (newBytes <= 0L)
                 return null;
+            if (owner == SystemID.Unknown)
+                FatalMemoryException.ThrowUnknownAllocationOwner();
 
-            if (oldPointer == null || oldBytes <= 0L)
+            if (oldPointer == null)
                 return AllocateRaw(newBytes, alignment, owner, allocator, clearExtendedBytes, extraFlags);
 
-            ValidateTrackedPointerOwner(oldPointer, owner);
+            long trackedOldBytes = ValidateTrackedPointerOwner(oldPointer, owner);
+            if (oldBytes > 0L && oldBytes != trackedOldBytes)
+                FatalMemoryException.ThrowAllocationSizeMismatch();
 
             int safeAlignment = alignment > 0 ? alignment : 16;
-            if (!TryReserveReplacementBytes(oldBytes, newBytes) || !EnsureTrackingCapacity())
+            if (!TryReserveReplacementBytes(trackedOldBytes, newBytes) || !EnsureTrackingCapacity())
                 return null;
 
             void* newPointer = UnsafeUtility.Malloc(newBytes, safeAlignment, allocator);
             if (newPointer == null)
                 return null;
 
-            long copyBytes = oldBytes < newBytes ? oldBytes : newBytes;
+            long copyBytes = trackedOldBytes < newBytes ? trackedOldBytes : newBytes;
             UnsafeUtility.MemMove(newPointer, oldPointer, copyBytes);
             if (clearExtendedBytes && newBytes > copyBytes)
                 UnsafeUtility.MemClear((byte*)newPointer + copyBytes, newBytes - copyBytes);
@@ -388,6 +453,7 @@ namespace Hecton8.Core.Memory
         /// <summary>
         /// Legacy raw free entry point. Tracked memory must use the owner-tagged overload.
         /// </summary>
+        [Obsolete("Use FreeRaw(pointer, allocator, SystemID) so tracked memory is freed by its recorded owner.", true)]
         public static void FreeRaw(void* pointer, Allocator allocator)
         {
             FreeRaw(pointer, allocator, SystemID.Unknown);
@@ -398,8 +464,12 @@ namespace Hecton8.Core.Memory
         /// </summary>
         public static void FreeRaw(void* pointer, Allocator allocator, SystemID requester)
         {
-            if (pointer == null || !_initialized)
+            if (pointer == null)
                 return;
+            if (requester == SystemID.Unknown)
+                FatalMemoryException.ThrowUnknownFreeOwner();
+            if (!_initialized)
+                FatalMemoryException.ThrowUntrackedPointer();
 
             UnregisterPointer(pointer, requester);
             UnsafeUtility.Free(pointer, allocator);
@@ -682,11 +752,6 @@ namespace Hecton8.Core.Memory
             });
         }
 
-        private static void UnregisterPointer(void* pointer)
-        {
-            UnregisterPointer(pointer, SystemID.Unknown, requireOwnerMatch: false);
-        }
-
         private static void UnregisterPointer(void* pointer, SystemID requester)
         {
             UnregisterPointer(pointer, requester, requireOwnerMatch: true);
@@ -717,10 +782,10 @@ namespace Hecton8.Core.Memory
                 FatalMemoryException.ThrowUntrackedPointer();
         }
 
-        private static void ValidateTrackedPointerOwner(void* pointer, SystemID requester)
+        private static long ValidateTrackedPointerOwner(void* pointer, SystemID requester)
         {
             if (!_initialized || pointer == null)
-                return;
+                return 0L;
             if (requester == SystemID.Unknown)
                 FatalMemoryException.ThrowUnknownFreeOwner();
 
@@ -733,10 +798,11 @@ namespace Hecton8.Core.Memory
                 if (_records[i].Owner != requester)
                     FatalMemoryException.ThrowWrongFreeOwner();
 
-                return;
+                return _records[i].Bytes;
             }
 
             FatalMemoryException.ThrowUntrackedPointer();
+            return 0L;
         }
 
         private static void RemoveRecordAt(int index)

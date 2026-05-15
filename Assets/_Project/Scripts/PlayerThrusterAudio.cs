@@ -12,7 +12,7 @@ namespace Hecton8.Audio
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(AudioSource))]
-    public sealed class PlayerThrusterAudio : MonoBehaviour, ITickable
+    public sealed class PlayerThrusterAudio : MonoBehaviour, ITickable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         [Header("References")]
         [SerializeField] private HectonPlayerMovement playerMovement;
@@ -95,8 +95,10 @@ namespace Hecton8.Audio
         private float _currentPitch;
         private float _modeBlend;
         private bool _registered;
+        private bool _hotSwapRegistered;
         private bool _transportCoordinatorLookupAttempted;
         private PlayerTransportFeelContract _transportFeelContractCurrent;
+        private SpatialAudioManager _cachedSpatialAudioManager;
 
         private void Awake()
         {
@@ -113,6 +115,7 @@ namespace Hecton8.Audio
             _audioSource.spatialBlend = 1f;
             _audioSource.volume = 0f;
             _audioSource.pitch = idlePitch;
+            RefreshRuntimeAudioServicesCold();
             TryAssignMixerRoute();
 
             if (playerMovement != null)
@@ -136,6 +139,8 @@ namespace Hecton8.Audio
             if (playerTransportCoordinator == null)
                 _transportCoordinatorLookupAttempted = false;
             TryCacheTransportCoordinatorOnce();
+            RefreshRuntimeAudioServicesCold();
+            TryRegisterHotSwapListener();
             TryAssignMixerRoute();
 
             if (PlayerCriticalProceduralAudioRenderer.IsRuntimeInstalled)
@@ -155,6 +160,7 @@ namespace Hecton8.Audio
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             TryUnregister();
 
             if (_audioSource != null && _audioSource.isPlaying)
@@ -163,7 +169,31 @@ namespace Hecton8.Audio
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             TryUnregister();
+        }
+
+        public void OnGlobalRegistryServiceRebound(
+            GlobalRegistryServiceSlot serviceSlot,
+            ref object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Audio)
+                return;
+
+            CacheSpatialAudioManager(currentService as IAudioService);
+            TryAssignMixerRoute(force: true);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Audio)
+                return;
+
+            CacheSpatialAudioManager(currentService as IAudioService);
+            TryAssignMixerRoute(force: true);
         }
 
         public void Tick(float deltaTime)
@@ -376,13 +406,41 @@ namespace Hecton8.Audio
             gameObject.TryGetComponent(out playerTransportCoordinator);
         }
 
-        private void TryAssignMixerRoute()
+        private void RefreshRuntimeAudioServicesCold()
         {
-            if (_audioSource == null || _audioSource.outputAudioMixerGroup != null)
+            CacheSpatialAudioManager(GlobalRegistry.Audio);
+        }
+
+        private void CacheSpatialAudioManager(IAudioService audioService)
+        {
+            _cachedSpatialAudioManager = audioService as SpatialAudioManager;
+        }
+
+        private void TryAssignMixerRoute(bool force = false)
+        {
+            if (_audioSource == null || (!force && _audioSource.outputAudioMixerGroup != null))
                 return;
 
-            if (GlobalRegistry.Audio is SpatialAudioManager spatialAudioManager)
+            SpatialAudioManager spatialAudioManager = _cachedSpatialAudioManager;
+            if (spatialAudioManager != null)
                 _audioSource.outputAudioMixerGroup = spatialAudioManager.SfxGroup;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private void TryRegister()

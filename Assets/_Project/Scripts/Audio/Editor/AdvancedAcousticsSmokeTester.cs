@@ -36,6 +36,11 @@ namespace Hecton8.Audio.Editor
         private const string AudioLogEventsPath = "Assets/_Project/Scripts/AudioLog/AudioLogEvents.cs";
         private const string PlayerPdaPath = "Assets/_Project/Scripts/PlayerPDA.cs";
         private const string PlayerStressVfxPath = "Assets/_Project/Scripts/Visor/PlayerStressVFX.cs";
+        private const string DeepPsychosisPath = "Assets/_Project/Scripts/Audio/DeepPsychosisController.cs";
+        private const string HectonMusicDirectorPath = "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs";
+        private const string PrologueAcousticOrchestratorPath = "Assets/_Project/Scripts/Audio/Prologue/PrologueAcousticOrchestrator.cs";
+        private const string VocalWarningSystemPath = "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs";
+        private const string PlayerThrusterAudioPath = "Assets/_Project/Scripts/PlayerThrusterAudio.cs";
 
         [MenuItem("Hecton8/Audio/Run Advanced Acoustics Smoke Test")]
         public static void RunMenuItem()
@@ -77,9 +82,29 @@ namespace Hecton8.Audio.Editor
             string audioLogEvents = ReadAssetText(AudioLogEventsPath, builder, ref failureCount);
             string playerPda = ReadAssetText(PlayerPdaPath, builder, ref failureCount);
             string playerStressVfx = ReadAssetText(PlayerStressVfxPath, builder, ref failureCount);
+            string deepPsychosis = ReadAssetText(DeepPsychosisPath, builder, ref failureCount);
+            string musicDirector = ReadAssetText(HectonMusicDirectorPath, builder, ref failureCount);
+            string prologueAcoustic = ReadAssetText(PrologueAcousticOrchestratorPath, builder, ref failureCount);
+            string vocalWarning = ReadAssetText(VocalWarningSystemPath, builder, ref failureCount);
+            string playerThrusterAudio = ReadAssetText(PlayerThrusterAudioPath, builder, ref failureCount);
 
             if (spatial.Length > 0)
             {
+                string spatialPortalPath = ExtractMethodBody(spatial, "private bool TryResolveAcousticPortalPath(");
+                string spatialUsePortalPath = ExtractMethodBody(spatial, "private bool ShouldUseAcousticPortalPath()");
+                string spatialVoiceLimit = ExtractMethodBody(spatial, "private void RefreshVirtualPhysicalVoiceLimit(bool immediate)");
+                string spatialListenerAup = ExtractMethodBody(spatial, "private bool TryResolvePlayerListenerAup(");
+                string spatialWindTarget = ExtractMethodBody(spatial, "private float ResolveGlobalWindHowlTarget01()");
+                string spatialWindOcclusion = ExtractMethodBody(spatial, "private bool ResolveGlobalWindHowlOccluded()");
+                string spatialWaterDensity = ExtractMethodBody(spatial, "private void UpdateListenerWaterDensityMul(float deltaTime)");
+                string spatialPolicyEnsure = ExtractMethodBody(spatial, "private void EnsureSpatialAudioPolicyCached()");
+                string spatialPolicyCold = ExtractMethodBody(spatial, "private void RefreshSpatialAudioPolicyCold()");
+                string spatialFoveatedRefresh = ExtractMethodBody(spatial, "private void RefreshFoveatedDirector()");
+                string spatialFoveatedResolve = ExtractMethodBody(spatial, "private IFoveatedSimulationDirector ResolveFoveatedSimulationDirector()");
+                string spatialColdRuntimeServices = ExtractMethodBody(spatial, "private void RefreshCachedAudioRuntimeServicesCold()");
+                string spatialPrologueQueue = ExtractMethodBody(spatial, "public bool QueuePrologueAudioTransition(");
+                string spatialHighSpeedQueue = ExtractMethodBody(spatial, "public bool QueueHighSpeedImpactSignal(");
+                string spatialHabitatPortalGraph = ExtractMethodBody(spatial, "private bool TryBuildHabitatAcousticPortalGraph(");
                 AssertContains(spatial, "TryResolveCinematicZoneMismatch", "Delayed world events apply deterministic zone muffle", builder, ref failureCount);
                 AssertContains(spatial, "CinematicZoneMuffleTransmission = 0.25118864f", "Cinematic zone muffle applies -12 dB transmission", builder, ref failureCount);
                 AssertContains(spatial, "CinematicZoneMuffleCutoffHertz = 800f", "Cinematic zone muffle applies 800 Hz LPF", builder, ref failureCount);
@@ -97,6 +122,46 @@ namespace Hecton8.Audio.Editor
                 AssertContains(spatial, "ResolveAupDelta", "Long-range spatial audio direction uses AUP delta helpers", builder, ref failureCount);
                 AssertContains(spatial, "AbsoluteUniversePosition.DistanceSq(in listenerAup, in sourceAup)", "Spatial audio distance uses int64-sector AUP distance math", builder, ref failureCount);
                 AssertContains(spatial, "AbsoluteUniversePosition.ToCameraRelativeFloat3(in sourceAup, in listenerAup)", "Doppler/radar direction uses AUP camera-relative math", builder, ref failureCount);
+                AssertContains(spatial, "IScalabilityChangedEventListener", "Spatial audio receives scalability changes through the typed event lane", builder, ref failureCount);
+                AssertContains(spatial, "ScalabilityEvents.Register(this)", "Spatial audio registers for scalability events", builder, ref failureCount);
+                AssertContains(spatial, "ScalabilityEvents.Unregister(this)", "Spatial audio unregisters scalability events", builder, ref failureCount);
+                AssertContains(spatial, "public void OnScalabilityChanged(in ScalabilityChangedEvent payload)", "Spatial audio updates quality policy from scalability payloads", builder, ref failureCount);
+                AssertContains(spatial, "EnsureSpatialAudioPolicyCached()", "Spatial audio hot paths consume cached quality policy", builder, ref failureCount);
+                AssertContains(spatialPolicyCold, "GlobalRegistry.ScalabilityTier", "Spatial audio seeds scalability policy only during cold cache refresh", builder, ref failureCount);
+                AssertContains(spatialPolicyCold, "GlobalRegistry.H8_LOW_MEMORY_PROFILE", "Spatial audio seeds low-memory policy only during cold cache refresh", builder, ref failureCount);
+                AssertNotContains(spatialPolicyEnsure, "GlobalRegistry.", "Spatial audio hot quality-cache guard does not hide registry reads", builder, ref failureCount);
+                AssertContains(spatial, "SpatialAudioRegistryRetryFrames = 30", "Spatial audio optional service lookup is cadence-gated", builder, ref failureCount);
+                AssertContains(spatial, "ResolveCachedScalabilityTier()", "Spatial audio portal and virtualization policy use cached scalability tier", builder, ref failureCount);
+                AssertContains(spatial, "ResolvePlayerRuntimeContext()", "Spatial audio listener AUP and water-density state use cached player context", builder, ref failureCount);
+                AssertContains(spatial, "ResolveAcousticZone()", "Spatial audio interior checks use cached acoustic-zone resolution", builder, ref failureCount);
+                AssertContains(spatial, "ResolveWeatherService()", "Spatial audio wind howl uses cached weather service resolution", builder, ref failureCount);
+                AssertContains(spatial, "ResolveSurfaceWeatherDirector()", "Spatial audio surface weather uses cached director resolution", builder, ref failureCount);
+                AssertContains(spatial, "ResolveFoveatedSimulationDirector()", "Spatial audio foveated director uses bounded cached resolution", builder, ref failureCount);
+                AssertContains(spatialFoveatedResolve, "GlobalRegistry.FoveatedSimulationDirector", "Spatial audio foveated director registry read is confined to the bounded resolver", builder, ref failureCount);
+                AssertContains(spatialFoveatedResolve, "_foveatedDirectorResolveFrame = frame + SpatialAudioRegistryRetryFrames", "Spatial audio foveated director resolver is retry-cadenced", builder, ref failureCount);
+                AssertNotContains(spatialFoveatedRefresh, "GlobalRegistry.FoveatedSimulationDirector", "Spatial audio slow-lane foveated refresh does not poll registry directly", builder, ref failureCount);
+                AssertContains(spatial, "IGlobalRegistryHotSwapRefListener", "Spatial audio caches player-critical runtime through hot-swap rebinding", builder, ref failureCount);
+                AssertContains(spatial, "TryRegisterHotSwapListener()", "Spatial audio registers for player-critical runtime hot swaps", builder, ref failureCount);
+                AssertContains(spatial, "GlobalRegistry.TryUnregisterHotSwapListener(this)", "Spatial audio unregisters player-critical runtime hot-swap listener", builder, ref failureCount);
+                AssertContains(spatial, "public void OnGlobalRegistryServiceRebound(", "Spatial audio receives ref-forwarded service rebinds", builder, ref failureCount);
+                AssertContains(spatial, "GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime", "Spatial audio listens for player-critical audio runtime rebinding", builder, ref failureCount);
+                AssertContains(spatial, "_cachedPlayerCriticalAudio = currentService as PlayerCriticalProceduralAudioRenderer", "Spatial audio refreshes cached player-critical renderer from hot-swap payload", builder, ref failureCount);
+                AssertContains(spatialColdRuntimeServices, "_cachedPlayerCriticalAudio = GlobalRegistry.PlayerCriticalAudio", "Spatial audio seeds player-critical runtime only during cold cache refresh", builder, ref failureCount);
+                AssertNotContains(spatialPrologueQueue, "GlobalRegistry.", "Prologue audio transition queue uses cached player-critical runtime", builder, ref failureCount);
+                AssertNotContains(spatialHighSpeedQueue, "GlobalRegistry.", "High-speed impact queue uses cached player-critical runtime", builder, ref failureCount);
+                AssertContains(spatialColdRuntimeServices, "_cachedConstructionManager = GlobalRegistry.ConstructionRuntime", "Spatial audio seeds habitat portal construction runtime only during cold cache refresh", builder, ref failureCount);
+                AssertContains(spatial, "GlobalRegistryServiceSlot.Logistics", "Spatial audio listens for construction/logistics runtime rebinding", builder, ref failureCount);
+                AssertContains(spatial, "_cachedConstructionManager = currentService as ConstructionManager", "Spatial audio refreshes cached construction runtime from hot-swap payload", builder, ref failureCount);
+                AssertNotContains(spatialHabitatPortalGraph, "GlobalRegistry.", "Habitat acoustic portal graph uses cached construction runtime", builder, ref failureCount);
+                AssertNotContains(spatialPortalPath, "GlobalRegistry.ScalabilityTier", "Spatial audio portal path does not poll scalability registry directly", builder, ref failureCount);
+                AssertNotContains(spatialUsePortalPath, "GlobalRegistry.ScalabilityTier", "Spatial audio portal policy does not poll scalability registry directly", builder, ref failureCount);
+                AssertNotContains(spatialVoiceLimit, "GlobalRegistry.ScalabilityTier", "Spatial audio voice-limit policy does not poll scalability registry directly", builder, ref failureCount);
+                AssertNotContains(spatialVoiceLimit, "GlobalRegistry.H8_LOW_MEMORY_PROFILE", "Spatial audio voice-limit policy does not poll low-memory registry directly", builder, ref failureCount);
+                AssertNotContains(spatialListenerAup, "GlobalRegistry.Player", "Spatial audio listener AUP does not poll player registry directly", builder, ref failureCount);
+                AssertNotContains(spatialWaterDensity, "GlobalRegistry.Player", "Spatial audio water-density update does not poll player registry directly", builder, ref failureCount);
+                AssertNotContains(spatialWindTarget, "GlobalRegistry.Weather", "Spatial audio wind target does not poll weather registry directly", builder, ref failureCount);
+                AssertNotContains(spatialWindTarget, "GlobalRegistry.SurfaceWeather", "Spatial audio wind target does not poll surface-weather registry directly", builder, ref failureCount);
+                AssertNotContains(spatialWindOcclusion, "GlobalRegistry.AcousticZone", "Spatial audio wind occlusion does not poll acoustic-zone registry directly", builder, ref failureCount);
             }
 
             if (occlusion.Length > 0)
@@ -114,6 +179,14 @@ namespace Hecton8.Audio.Editor
                 string renderTinnitusSample = ExtractMethodBody(renderer, "private static float RenderTinnitusSample(");
                 string renderHullStressBlock = ExtractMethodBody(renderer, "private void RenderHullStressBlock(");
                 string renderSonarBlock = ExtractMethodBody(renderer, "private void RenderSonarBlock(int frameCount, long blockStartFrame, double invSampleRate)");
+                string rendererTick = ExtractMethodBody(renderer, "public void Tick(float deltaTime)");
+                string rendererReverbTier = ExtractMethodBody(renderer, "private ReverbDspTier ResolveReverbDspTier()");
+                string rendererKineticFallback = ExtractMethodBody(renderer, "private bool IsLowTierKineticImpactFallback()");
+                string rendererSonarProbeCount = ExtractMethodBody(renderer, "private int ResolveSonarSdfProbeCount()");
+                string rendererEnsureQuality = ExtractMethodBody(renderer, "private void EnsureAudioQualityPolicyCached()");
+                string rendererColdQuality = ExtractMethodBody(renderer, "private void RefreshAudioQualityPolicyCold()");
+                string rendererRuntimeRegister = ExtractMethodBody(renderer, "private bool TryRegisterRuntimeService()");
+                string rendererRuntimeUnregister = ExtractMethodBody(renderer, "private void TryUnregisterRuntimeService()");
                 AssertContains(renderer, "RenderLeviathanGranularRoarSample", "Leviathan granular synthesis kernel exists", builder, ref failureCount);
                 AssertContains(renderer, "NativeArray<float> baseRoarClip", "Granular kernel consumes native base roar data", builder, ref failureCount);
                 AssertContains(renderer, "LeviathanRoarAggro", "Aggro is synchronized through audio parameter snapshot", builder, ref failureCount);
@@ -165,6 +238,44 @@ namespace Hecton8.Audio.Editor
                 AssertContains(renderer, "ResolveHighSpeedImpactMaterialIds", "High-speed kinetic audio consumes material IDs instead of only source kind", builder, ref failureCount);
                 AssertContains(renderer, "ResolveHighSpeedImpactMaterialPitchScale", "High-speed kinetic audio pitch responds to impact material", builder, ref failureCount);
                 AssertContains(renderer, "NativeQueue<SonarEchoTap>", "Kinetic impact echo uses the existing native echo-tap bridge", builder, ref failureCount);
+                AssertContains(renderer, "inactiveTapBuffer[0] = tap", "Kinetic impact echo writes its single generated tap without queue churn", builder, ref failureCount);
+                AssertContains(renderer, "KineticImpactDuplicateHistoryCapacity = 8", "Kinetic impact duplicate admission keeps a fixed recent-packet ring", builder, ref failureCount);
+                AssertContains(renderer, "RecordHighSpeedImpactSignal(signal.Frame, signalSignature)", "Kinetic impact duplicate admission records the precomputed signature", builder, ref failureCount);
+                AssertContains(renderer, "entry.Valid != 0", "Kinetic impact duplicate admission ignores cold zeroed ring entries", builder, ref failureCount);
+                AssertContains(renderer, "IScalabilityChangedEventListener", "Critical renderer receives scalability changes through the typed event lane", builder, ref failureCount);
+                AssertContains(renderer, "private static int s_runtimeInstalled", "Critical renderer publishes runtime-installed state without registry polling", builder, ref failureCount);
+                AssertContains(renderer, "public static bool IsRuntimeInstalled => Volatile.Read(ref s_runtimeInstalled) != 0", "Critical renderer runtime-installed property reads the volatile lifecycle flag", builder, ref failureCount);
+                AssertNotContains(renderer, "public static bool IsRuntimeInstalled => GlobalRegistry.PlayerCriticalAudio", "Critical renderer runtime-installed property does not poll the registry", builder, ref failureCount);
+                AssertContains(rendererRuntimeRegister, "Volatile.Write(ref s_runtimeInstalled, 1)", "Critical renderer registration marks runtime installed", builder, ref failureCount);
+                AssertContains(rendererRuntimeUnregister, "Volatile.Write(ref s_runtimeInstalled, GlobalRegistry.PlayerCriticalAudio != null ? 1 : 0)", "Critical renderer unregister refreshes runtime-installed flag from cold registry state", builder, ref failureCount);
+                AssertContains(renderer, "ScalabilityEvents.Register(this)", "Critical renderer registers for scalability events", builder, ref failureCount);
+                AssertContains(renderer, "ScalabilityEvents.Unregister(this)", "Critical renderer unregisters scalability events", builder, ref failureCount);
+                AssertContains(renderer, "public void OnScalabilityChanged(in ScalabilityChangedEvent payload)", "Critical renderer updates quality policy from scalability payloads", builder, ref failureCount);
+                AssertContains(renderer, "CacheAudioQualityPolicy(", "Critical renderer funnels quality policy through one cache writer", builder, ref failureCount);
+                AssertContains(renderer, "payload.CurrentQualityTier", "Critical renderer event path consumes scalability payload quality", builder, ref failureCount);
+                AssertContains(renderer, "EnsureKineticImpactQualityPolicyCached()", "Kinetic impact tier policy uses the renderer quality cache", builder, ref failureCount);
+                AssertContains(renderer, "EnsureAudioQualityPolicyCached()", "Critical audio quality policy is cached across DSP hot paths", builder, ref failureCount);
+                AssertContains(rendererColdQuality, "GlobalRegistry.ScalabilityTier", "Critical renderer seeds scalability policy only during cold cache refresh", builder, ref failureCount);
+                AssertContains(rendererColdQuality, "GlobalRegistry.QualityTier", "Critical renderer seeds hardware quality only during cold cache refresh", builder, ref failureCount);
+                AssertContains(rendererColdQuality, "GlobalRegistry.H8_LOW_MEMORY_PROFILE", "Critical renderer seeds low-memory policy only during cold cache refresh", builder, ref failureCount);
+                AssertNotContains(rendererEnsureQuality, "GlobalRegistry.", "Critical renderer hot quality-cache guard does not hide registry reads", builder, ref failureCount);
+                AssertNotContains(rendererTick, "GlobalRegistry.ScalabilityTier", "Critical renderer Tick does not poll scalability tier directly", builder, ref failureCount);
+                AssertNotContains(rendererTick, "GlobalRegistry.QualityTier", "Critical renderer Tick does not poll hardware quality directly", builder, ref failureCount);
+                AssertNotContains(rendererTick, "GlobalRegistry.H8_LOW_MEMORY_PROFILE", "Critical renderer Tick does not poll low-memory profile directly", builder, ref failureCount);
+                AssertNotContains(rendererReverbTier, "GlobalRegistry.", "Critical renderer reverb tier resolver consumes cached quality only", builder, ref failureCount);
+                AssertNotContains(rendererKineticFallback, "GlobalRegistry.", "Critical renderer kinetic fallback gate consumes cached quality only", builder, ref failureCount);
+                AssertNotContains(rendererSonarProbeCount, "GlobalRegistry.", "Critical renderer sonar probe LOD consumes cached quality only", builder, ref failureCount);
+                AssertContains(renderer, "_cachedScalabilityTier", "Granular voice and sonar probe LOD use cached scalability tier", builder, ref failureCount);
+                AssertContains(renderer, "_cachedQualityTier", "Reverb DSP tier uses cached quality tier", builder, ref failureCount);
+                AssertContains(renderer, "ResolveKineticLowTierAudioService()", "Low-tier kinetic fallback uses cached audio-service resolution", builder, ref failureCount);
+                AssertContains(renderer, "ResolveSpatialAudioManager()", "Critical audio reverb and binaural sampling use cached spatial-audio service resolution", builder, ref failureCount);
+                AssertContains(renderer, "TransportCoordinatorLookupRetryFrames = 30", "Optional transport coordinator lookup is cadence-gated", builder, ref failureCount);
+                AssertContains(renderer, "TryResolvePlayerTransportCoordinator()", "Transport audio helpers share the bounded coordinator resolver", builder, ref failureCount);
+                AssertContains(renderer, "AudioServiceLookupRetryFrames = 30", "Optional cross-domain audio service lookups are cadence-gated", builder, ref failureCount);
+                AssertContains(renderer, "ResolvePlayerRuntimeContext()", "Critical audio reads player runtime context through a bounded cached resolver", builder, ref failureCount);
+                AssertContains(renderer, "ResolveEcosystemDirectorService()", "Apex heartbeat threat audio uses a bounded ecosystem service resolver", builder, ref failureCount);
+                AssertContains(renderer, "ResolveSubmarineHullReadModel()", "Structural audio stress uses a bounded hull read-model resolver", builder, ref failureCount);
+                AssertContains(renderer, "ResolveCachedBiomeId()", "Low-tier biome reverb uses cached biome policy", builder, ref failureCount);
                 AssertNotContains(renderer, "OnAudioFilterRead", "Critical renderer has no managed Unity audio callback fallback", builder, ref failureCount);
             }
 
@@ -174,6 +285,100 @@ namespace Hecton8.Audio.Editor
                 AssertContains(synthesis, "CompileSynchronously = true", "Kinetic impact oscillator has synchronous Burst compile coverage", builder, ref failureCount);
                 AssertContains(synthesis, "DepthStressGranularMath.FiniteOrDefault(StartHertz, 150f)", "Burst oscillator default starts at 150 Hz", builder, ref failureCount);
                 AssertContains(synthesis, "DepthStressGranularMath.FiniteOrDefault(EndHertz, 40f)", "Burst oscillator default ends at 40 Hz", builder, ref failureCount);
+            }
+
+            if (deepPsychosis.Length > 0)
+            {
+                string psychosisSlowTick = ExtractMethodBody(deepPsychosis, "public void SlowTick()");
+                string psychosisDependencyResolve = ExtractMethodBody(deepPsychosis, "private void TryResolveDependencies()");
+                string psychosisCue = ExtractMethodBody(deepPsychosis, "private void PlayPsychosisCue()");
+                AssertContains(deepPsychosis, "ResolvePlayerRuntimeContext()", "Deep psychosis player context uses a bounded cached resolver", builder, ref failureCount);
+                AssertContains(deepPsychosis, "ResolveEnvironmentalStrainManager()", "Deep psychosis pollution stress uses a bounded environmental strain resolver", builder, ref failureCount);
+                AssertContains(deepPsychosis, "ResolveAudioService()", "Deep psychosis cue playback uses cached audio-service resolution", builder, ref failureCount);
+                AssertContains(deepPsychosis, "ResolveAcousticZone()", "Deep psychosis helmet whispers use cached acoustic-zone resolution", builder, ref failureCount);
+                AssertContains(deepPsychosis, "DependencyRetryFrameInterval = 30", "Deep psychosis optional service retry cadence is bounded to 30 frames", builder, ref failureCount);
+                AssertNotContains(psychosisSlowTick, "GlobalRegistry.EnvironmentalStrain", "Deep psychosis SlowTick does not poll environmental strain registry directly", builder, ref failureCount);
+                AssertNotContains(psychosisDependencyResolve, "GlobalRegistry.Player", "Deep psychosis dependency resolver does not poll player registry directly", builder, ref failureCount);
+                AssertNotContains(psychosisCue, "GlobalRegistry.Audio", "Deep psychosis cue playback does not poll audio registry directly", builder, ref failureCount);
+                AssertNotContains(psychosisCue, "GlobalRegistry.AcousticZone", "Deep psychosis cue playback does not poll acoustic-zone registry directly", builder, ref failureCount);
+            }
+
+            if (musicDirector.Length > 0)
+            {
+                string musicResolveDependencies = ExtractMethodBody(musicDirector, "private void ResolveDependencies()");
+                string musicResolveBaseContext = ExtractMethodBody(musicDirector, "private bool ResolveBaseContext()");
+                string musicResolveMixerGroup = ExtractMethodBody(musicDirector, "private AudioMixerGroup ResolveMusicMixerGroup()");
+                string musicResolveStormPressure = ExtractMethodBody(musicDirector, "private float ResolveStormPressure01(float depthMeters)");
+                string musicDepthEntered = ExtractMethodBody(musicDirector, "private void HandleDepthZoneEntered(DepthZoneProfile zone)");
+                string musicRareDiscovery = ExtractMethodBody(musicDirector, "private void HandleRareDiscoveryRequested(Vector3 position)");
+                string musicShouldDepthDiscovery = ExtractMethodBody(musicDirector, "private bool ShouldPlayDepthDiscoveryStinger(DepthZoneProfile zone)");
+                string musicFirstHourBoost = ExtractMethodBody(musicDirector, "private float ResolveFirstHourPressureBoost01(");
+                AssertContains(musicDirector, "ResolvePlayerRuntimeContext()", "Music director player context uses a bounded cached resolver", builder, ref failureCount);
+                AssertContains(musicDirector, "ResolveAudioService()", "Music director mixer routing uses cached audio-service resolution", builder, ref failureCount);
+                AssertContains(musicDirector, "ResolveAcousticZone()", "Music director base context uses cached acoustic-zone resolution", builder, ref failureCount);
+                AssertContains(musicDirector, "ResolveDepthZoneDirector()", "Music director depth-zone dependency uses cached runtime resolution", builder, ref failureCount);
+                AssertContains(musicDirector, "ResolveSurfaceWeatherDirector()", "Music director storm pressure uses cached surface-weather resolution", builder, ref failureCount);
+                AssertContains(musicDirector, "ResolveFirstHourDirector()", "Music director stinger gates use cached first-hour resolution", builder, ref failureCount);
+                AssertContains(musicDirector, "ClearCachedRuntimeServices()", "Music director clears cached runtime services on disable/destroy", builder, ref failureCount);
+                AssertNotContains(musicResolveDependencies, "GlobalRegistry.Player", "Music director dependency resolver does not poll player registry directly", builder, ref failureCount);
+                AssertNotContains(musicResolveDependencies, "GlobalRegistry.DepthZone", "Music director dependency resolver does not poll depth-zone registry directly", builder, ref failureCount);
+                AssertNotContains(musicResolveBaseContext, "GlobalRegistry.AcousticZone", "Music director base-context resolver does not poll acoustic-zone registry directly", builder, ref failureCount);
+                AssertNotContains(musicResolveMixerGroup, "GlobalRegistry.Audio", "Music director mixer routing does not poll audio registry directly", builder, ref failureCount);
+                AssertNotContains(musicResolveStormPressure, "GlobalRegistry.SurfaceWeather", "Music director storm pressure does not poll surface-weather registry directly", builder, ref failureCount);
+                AssertNotContains(musicDepthEntered, "GlobalRegistry.FirstHour", "Music director depth stinger gate does not poll first-hour registry directly", builder, ref failureCount);
+                AssertNotContains(musicRareDiscovery, "GlobalRegistry.FirstHour", "Music director rare-discovery gate does not poll first-hour registry directly", builder, ref failureCount);
+                AssertNotContains(musicShouldDepthDiscovery, "GlobalRegistry.FirstHour", "Music director depth discovery gate does not poll first-hour registry directly", builder, ref failureCount);
+                AssertNotContains(musicFirstHourBoost, "GlobalRegistry.FirstHour", "Music director first-hour pressure boost does not poll first-hour registry directly", builder, ref failureCount);
+            }
+
+            if (prologueAcoustic.Length > 0)
+            {
+                string prologueLateFrame = ExtractMethodBody(prologueAcoustic, "public void LateFrameTick()");
+                string prologueColdRuntime = ExtractMethodBody(prologueAcoustic, "private void RefreshRuntimeServicesCold()");
+                string prologueColdPolicy = ExtractMethodBody(prologueAcoustic, "private void RefreshQualityPolicyCold()");
+                AssertContains(prologueAcoustic, "IScalabilityChangedEventListener", "Prologue acoustic bridge receives scalability changes through the typed event lane", builder, ref failureCount);
+                AssertContains(prologueAcoustic, "ScalabilityEvents.Register(this)", "Prologue acoustic bridge registers for scalability events", builder, ref failureCount);
+                AssertContains(prologueAcoustic, "ScalabilityEvents.Unregister(this)", "Prologue acoustic bridge unregisters scalability events", builder, ref failureCount);
+                AssertContains(prologueAcoustic, "CacheQualityPolicy(payload.CurrentQualityTier, payload.CurrentTier, _lowMemoryProfile)", "Prologue acoustic bridge updates quality policy from scalability payloads", builder, ref failureCount);
+                AssertContains(prologueColdRuntime, "GlobalRegistry.Audio", "Prologue acoustic bridge reads audio service only during cold runtime refresh", builder, ref failureCount);
+                AssertContains(prologueColdRuntime, "GlobalRegistry.TickDispatcher", "Prologue acoustic bridge reads tick dispatcher only during cold runtime refresh", builder, ref failureCount);
+                AssertContains(prologueColdPolicy, "GlobalRegistry.H8_LOW_MEMORY_PROFILE", "Prologue acoustic bridge reads low-memory policy only during cold cache refresh", builder, ref failureCount);
+                AssertNotContains(prologueLateFrame, "GlobalRegistry.", "Prologue acoustic LateFrameTick does not poll registry services directly", builder, ref failureCount);
+                AssertNotContains(prologueLateFrame, "GlobalRegistry.ScalabilityTier", "Prologue acoustic LateFrameTick does not poll scalability tier registry directly", builder, ref failureCount);
+                AssertNotContains(prologueLateFrame, "GlobalRegistry.ScalabilityTierProfileByte", "Prologue acoustic LateFrameTick does not poll scalability profile byte directly", builder, ref failureCount);
+                AssertNotContains(prologueLateFrame, "GlobalRegistry.H8_LOW_MEMORY_PROFILE", "Prologue acoustic LateFrameTick does not poll low-memory registry directly", builder, ref failureCount);
+                AssertNotContains(prologueLateFrame, "RefreshQualityTier", "Prologue acoustic LateFrameTick has no periodic registry quality refresh", builder, ref failureCount);
+            }
+
+            if (vocalWarning.Length > 0)
+            {
+                string vocalTick = ExtractMethodBody(vocalWarning, "public void Tick(float deltaTime)");
+                string vocalSlowTick = ExtractMethodBody(vocalWarning, "public void SlowTick()");
+                string vocalColdServices = ExtractMethodBody(vocalWarning, "private void RefreshCachedServicesCold()");
+                AssertContains(vocalWarning, "ScalabilityEvents.Register(this)", "Vocal warning system registers for scalability events", builder, ref failureCount);
+                AssertContains(vocalWarning, "ScalabilityEvents.Unregister(this)", "Vocal warning system unregisters scalability events", builder, ref failureCount);
+                AssertContains(vocalWarning, "public void OnScalabilityChanged(in ScalabilityChangedEvent payload)", "Vocal warning quality tier updates through scalability payloads", builder, ref failureCount);
+                AssertContains(vocalColdServices, "GlobalRegistry.PlayerCriticalAudio", "Vocal warning renderer service is resolved only during cold cache refresh", builder, ref failureCount);
+                AssertContains(vocalColdServices, "GlobalRegistry.Subtitles", "Vocal warning subtitles service is resolved only during cold cache refresh", builder, ref failureCount);
+                AssertContains(vocalColdServices, "GlobalRegistry.Localization", "Vocal warning localization service is resolved only during cold cache refresh", builder, ref failureCount);
+                AssertContains(vocalColdServices, "GlobalRegistry.ScalabilityTier", "Vocal warning quality tier is seeded only during cold cache refresh", builder, ref failureCount);
+                AssertNotContains(vocalTick, "GlobalRegistry.", "Vocal warning Tick does not poll registry services directly", builder, ref failureCount);
+                AssertNotContains(vocalSlowTick, "GlobalRegistry.", "Vocal warning SlowTick does not poll registry services directly", builder, ref failureCount);
+                AssertNotContains(vocalTick, ".ToString(", "Vocal warning Tick has no string formatting", builder, ref failureCount);
+                AssertNotContains(vocalSlowTick, ".ToString(", "Vocal warning SlowTick has no string formatting", builder, ref failureCount);
+                AssertNotContains(vocalTick, "Debug.Log", "Vocal warning Tick has no debug log allocation path", builder, ref failureCount);
+                AssertNotContains(vocalSlowTick, "Debug.Log", "Vocal warning SlowTick has no debug log allocation path", builder, ref failureCount);
+            }
+
+            if (playerThrusterAudio.Length > 0)
+            {
+                string thrusterColdRuntime = ExtractMethodBody(playerThrusterAudio, "private void RefreshRuntimeAudioServicesCold()");
+                string thrusterMixerRoute = ExtractMethodBody(playerThrusterAudio, "private void TryAssignMixerRoute(");
+                AssertContains(playerThrusterAudio, "IGlobalRegistryHotSwapRefListener", "Player thruster fallback audio listens for audio service rebinding", builder, ref failureCount);
+                AssertContains(thrusterColdRuntime, "GlobalRegistry.Audio", "Player thruster fallback resolves audio service only during cold runtime refresh", builder, ref failureCount);
+                AssertContains(playerThrusterAudio, "GlobalRegistryServiceSlot.Audio", "Player thruster fallback handles audio service hot swaps", builder, ref failureCount);
+                AssertContains(thrusterMixerRoute, "_cachedSpatialAudioManager", "Player thruster mixer route uses cached spatial audio manager", builder, ref failureCount);
+                AssertNotContains(thrusterMixerRoute, "GlobalRegistry.Audio", "Player thruster mixer route does not poll audio registry directly", builder, ref failureCount);
             }
 
             if (physicsApply.Length > 0)
@@ -306,12 +511,20 @@ namespace Hecton8.Audio.Editor
 
             if (acousticZone.Length > 0)
             {
+                string acousticPlayMadness = ExtractMethodBody(acousticZone, "internal void PlayMadnessWhisperCue()");
+                string acousticEmitterOcclusion = ExtractMethodBody(acousticZone, "private void UpdateEmitterOcclusionState(AudioListener listener)");
                 AssertContains(acousticZone, "[StructLayout(LayoutKind.Sequential, Size = 1)]", "Acoustic-zone NativeQueue payload is a one-byte blittable event token", builder, ref failureCount);
                 AssertContains(acousticZone, "private readonly byte _isInterior", "Acoustic-zone payload avoids bool field layout ambiguity in native queues", builder, ref failureCount);
                 AssertContains(acousticZone, "NativeMemorySentinel.RegisterNativeQueue", "Acoustic-zone event lanes are registered with NativeMemorySentinel", builder, ref failureCount);
                 AssertContains(acousticZone, "PrewarmQueue(ref _pendingZoneChanges, PendingZoneChangeCapacity)", "Acoustic-zone front queue is cold-prewarmed before gameplay enqueue", builder, ref failureCount);
                 AssertContains(acousticZone, "PrewarmQueue(ref _nextFrameZoneChanges, PendingZoneChangeCapacity)", "Acoustic-zone reentrant queue is cold-prewarmed before gameplay enqueue", builder, ref failureCount);
                 AssertContains(acousticZone, "GlobalTelemetryBus.PublishPerformanceWarning(_overflowWarningHash, _zoneChangeQueueHash, PendingZoneChangeCapacity)", "Acoustic-zone overflow drop emits hash-only telemetry", builder, ref failureCount);
+                AssertContains(acousticZone, "AudioServiceResolveRetryFrames = 30", "Acoustic-zone audio service lookup is cadence-gated", builder, ref failureCount);
+                AssertContains(acousticZone, "ResolveAudioService()", "Acoustic-zone cue playback uses cached audio-service resolution", builder, ref failureCount);
+                AssertContains(acousticZone, "ResolveSpatialAudioManager()", "Acoustic-zone emitter occlusion uses cached spatial-audio resolution", builder, ref failureCount);
+                AssertContains(acousticZone, "ClearCachedAudioServices()", "Acoustic-zone clears cached audio services on disable/destroy", builder, ref failureCount);
+                AssertNotContains(acousticPlayMadness, "GlobalRegistry.Audio", "Acoustic-zone madness cue does not poll audio registry directly", builder, ref failureCount);
+                AssertNotContains(acousticEmitterOcclusion, "GlobalRegistry.Audio", "Acoustic-zone emitter occlusion does not poll audio registry directly", builder, ref failureCount);
             }
 
             if (audioLogEvents.Length > 0)
