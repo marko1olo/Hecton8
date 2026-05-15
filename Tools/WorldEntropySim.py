@@ -23,6 +23,15 @@ def load_constants(path: Path) -> dict:
 
 
 def validate_constants(constants: dict) -> None:
+    if constants["schema"] != "H8_Regrowth_Constants":
+        raise ValueError("schema must be H8_Regrowth_Constants")
+    if int(constants["version"]) != 1:
+        raise ValueError("version must be 1")
+    if constants["status"] != "ENTROPY BALANCED":
+        raise ValueError("status must be ENTROPY BALANCED")
+    if constants["unityVerificationStatus"] != "PENDING_UNITY_VERIFICATION":
+        raise ValueError("unityVerificationStatus must be PENDING_UNITY_VERIFICATION")
+
     width = int(constants["gridWidth"])
     height = int(constants["gridHeight"])
     if width < 1 or height < 1:
