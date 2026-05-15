@@ -28,6 +28,11 @@ Status: STATIC/PYTHON VALIDATION PASS - RUNTIME VERIFICATION BLOCKED
 - Added Unity environment probe and tests. `python -m unittest Tools.UX.test_unity_environment_probe -v` passed 3/3. `python Tools/UX/run_hardware_adaptive_ui_validation.py` returned PASS again. `UI_UnityEnvironmentProbe_UX_ENGINEER.json` reports `UNITY_NOT_FOUND`, required Unity `6000.4.1f1`, and zero candidates.
 - Aggregate report readback: `UI_HardwareAdaptiveValidation_UX_ENGINEER.json` parsed clean with PASS, 24 unit tests, no missing artifacts, and runtime pending. Cache cleanup report parsed clean; `Tools` scan found `PYTHON_CACHE_COUNT 0`.
 - Patched Unity environment probe to classify candidate version matches and accept explicit `--unity-path`. `python -m unittest Tools.UX.test_unity_environment_probe -v` passed 6/6. Aggregate validation returned PASS. Probe readback still reports `UNITY_NOT_FOUND`, required `6000.4.1f1`, no candidates.
+- Added aggregate report validator and tests. `python -m unittest Tools.UX.test_validate_aggregate_report -v` passed 4/4. `python Tools/UX/run_hardware_adaptive_ui_validation.py` returned PASS. `python Tools/UX/validate_aggregate_report.py` returned PASS.
+- Patched aggregate runner to self-validate generated report before final PASS. `python -m unittest Tools.UX.test_validate_aggregate_report -v` passed 5/5. Aggregate run and standalone aggregate validator returned PASS. Report has `aggregateSelfValidation` PASS with no failures.
+- Added status/log consistency validator and tests. `python -m unittest Tools.UX.test_status_log_consistency -v` passed 3/3. `python Tools/UX/validate_status_log_consistency.py --write-report` returned PASS. Aggregate validation returned PASS.
+- Patched aggregate runner to enforce status/log self-validation inside one-command static validation. Focused aggregate/status tests passed 9/9. Aggregate validation PASS. Standalone aggregate validator PASS. Report has both `aggregateSelfValidation` and `statusLogSelfValidation` PASS with empty failures.
+- Final static hygiene: `git diff --check` on UX-owned touched files returned no whitespace errors, only CRLF warnings. Aggregate validation PASS. Status/log consistency PASS.
 
 ## Completed Static Scope
 

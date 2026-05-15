@@ -27,6 +27,8 @@ python Tools/UX/validate_unity_verification_report.py --write-audit
 python Tools/UX/probe_unity_environment.py --write-report
 python -m unittest Tools.UX.test_hardware_adaptive_ui Tools.UX.test_unity_verification_gates Tools.UX.test_unity_report_update_cli Tools.UX.test_python_cache_cleanup Tools.UX.test_unity_environment_probe -v
 python Tools/UX/clean_python_cache.py --write-report
+python Tools/UX/validate_aggregate_report.py
+python Tools/UX/validate_status_log_consistency.py --write-report
 ```
 
 The Unity evidence-template audit can also be run directly:
@@ -59,6 +61,7 @@ Expected local artifacts:
 - `Docs/AgentLogs/UI_UnityReportAudit_UX_ENGINEER.json`
 - `Docs/AgentLogs/UI_PythonCacheCleanup_UX_ENGINEER.json`
 - `Docs/AgentLogs/UI_UnityEnvironmentProbe_UX_ENGINEER.json`
+- `Docs/AgentLogs/UI_StatusLogConsistency_UX_ENGINEER.json`
 
 ## Unity Gate
 

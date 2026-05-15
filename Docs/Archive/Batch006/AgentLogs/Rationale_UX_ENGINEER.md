@@ -35,6 +35,7 @@ Problem: Several owned UI shaders exceeded the two-sample target: curved HUD chr
 Solution: Replaced multi-sample effects with deterministic math fakes or single source textures. Scene depth counts as a texture sample in the audit.
 Rejected Alternatives: Keeping chromatic aberration as extra widget samples was rejected; GOD_MODE can use a post pass. Keeping neighbor samples for radar smoothing was rejected; angular math widening preserves belief cheaper.
 Scalability potential: Low gets hard, readable UI with one or two samples. Ultra spends saved samples on global HUD RT/post passes instead of every widget.
+Hardware Impact: Static estimate 0.05-0.20 ms GPU avoided across HUD-heavy frames on MX350. Evidence class is STATIC_SOURCE + PYTHON_STATIC_AUDIT; Frame Debugger proof absent.
 
 ## Decision - Runbook Boundary
 Problem: The local Python/static validation is reproducible, but Unity import, GCMonitor, Frame Debugger, and RenderDoc evidence cannot be faked from a shell-only session.
@@ -245,7 +246,69 @@ Solution: Python compile returned clean, probe tests passed 6/6, aggregate valid
 Rejected Alternatives: Skipping report readback was rejected because the changed output schema needed confirmation on disk.
 Scalability potential: The runtime blocker is now precise even if a wrong Unity version is installed later.
 Hardware Impact: Runtime impact is 0 us. No editor runtime data exists.
-Hardware Impact: Static estimate 0.05-0.20 ms GPU avoided across HUD-heavy frames on MX350. Evidence class is STATIC_SOURCE + PYTHON_STATIC_AUDIT; Frame Debugger proof absent.
+
+## Decision - Aggregate Report Validator
+Problem: The aggregate report had been read manually, but no reusable validator enforced the command set, pending runtime boundary, artifact hashes, or Unity probe status.
+Solution: Added `Tools/UX/validate_aggregate_report.py` and `Tools/UX/test_validate_aggregate_report.py`.
+Rejected Alternatives: Relying on human JSON inspection was rejected because a later aggregate change could silently drop commands or promote runtime status.
+Scalability potential: Static evidence now has a machine-checkable guard before Unity verification begins.
+Hardware Impact: Runtime impact is 0 us. Offline validation only.
+
+## Decision - Aggregate Report Validator Verified
+Problem: The new aggregate validator needed compile, focused tests, aggregate regeneration, and execution against the generated report.
+Solution: Python compile returned clean, focused validator tests passed 4/4, aggregate validation returned PASS, and `validate_aggregate_report.py` returned PASS.
+Rejected Alternatives: Trusting current report shape without a validator rerun was rejected.
+Scalability potential: The static report now rejects missing commands and runtime promotion before Unity evidence exists.
+Hardware Impact: Runtime impact is 0 us.
+
+## Decision - Aggregate Self-Validation
+Problem: The aggregate runner wrote a report, but the independent aggregate validator still had to be run as a separate manual command.
+Solution: Integrated `validate_aggregate_report()` into `run_hardware_adaptive_ui_validation.py` so the runner validates the report object before writing a final PASS and records `aggregateSelfValidation`.
+Rejected Alternatives: Keeping validation only as a follow-up command was rejected because the one-command path should fail if its own report is malformed.
+Scalability potential: Static evidence cannot silently drop commands or promote runtime state during future validation runs.
+Hardware Impact: Runtime impact is 0 us. Offline validation only.
+
+## Decision - Aggregate Self-Validation Verified
+Problem: The self-validation integration needed compile, focused tests, aggregate execution, standalone validation, and report readback.
+Solution: Python compile returned clean, aggregate-validator tests passed 5/5, aggregate validation returned PASS, standalone aggregate validation returned PASS, and report readback shows `aggregateSelfValidation` PASS with no failures.
+Rejected Alternatives: Trusting the integrated validator without report readback was rejected.
+Scalability potential: The static validation path now fails itself if required commands, hashes, or pending-runtime boundaries drift.
+Hardware Impact: Runtime impact is 0 us.
+
+## Decision - Status Log Consistency Gate
+Problem: The aggregate report can be correct while `Status_UX_ENGINEER.md`, rationale, logs, or blocker text drift from the batch identity and Unity pending boundary.
+Solution: Added `Tools/UX/validate_status_log_consistency.py` and tests. It checks prompt ID, domain, task count, seven checked tasks, pending Unity boundary, aggregate PASS, and aggregate self-validation.
+Rejected Alternatives: Manual inspection was rejected because status/log drift is easy under repeated continuation passes.
+Scalability potential: Disk-backed status now has a reusable guard before handoff.
+Hardware Impact: Runtime impact is 0 us. Offline validation only.
+
+## Decision - Status Log Consistency Verified
+Problem: The status/log consistency validator needed compile, focused test, command execution, aggregate rerun, and report readback.
+Solution: Python compile returned clean, focused status/log tests passed 3/3, validator command returned PASS, aggregate validation returned PASS, and `UI_StatusLogConsistency_UX_ENGINEER.json` parsed clean.
+Rejected Alternatives: Trusting the new validator without report readback was rejected.
+Scalability potential: Long-term disk memory now has a machine-checkable consistency gate.
+Hardware Impact: Runtime impact is 0 us.
+
+## Decision - Status Log Self-Validation
+Problem: The status/log consistency validator existed, but the aggregate runner did not enforce it inside the one-command static validation path.
+Solution: Integrated `validate_status_log_consistency()` into `run_hardware_adaptive_ui_validation.py`; the aggregate report now records `statusLogSelfValidation` and fails before final PASS if disk status/log memory drifts.
+Rejected Alternatives: Keeping status/log validation as a separate manual command was rejected because the aggregate runner is the canonical static gate.
+Scalability potential: Disk-backed status cannot silently diverge from aggregate proof before Unity runtime verification.
+Hardware Impact: Runtime impact is 0 us.
+
+## Decision - Status Log Self-Validation Verified
+Problem: The aggregate runner status/log self-validation integration needed compile, focused tests, aggregate execution, and report readback.
+Solution: Python compile returned clean, aggregate/status focused tests passed 9/9, aggregate validation returned PASS, standalone aggregate validator returned PASS, and report readback shows both aggregate and status/log self-validation PASS.
+Rejected Alternatives: Trusting the integration without report readback was rejected.
+Scalability potential: The single static validation command now guards implementation proof and disk-memory consistency.
+Hardware Impact: Runtime impact is 0 us. Runtime verification still requires Unity.
+
+## Decision - Final Static Hygiene Pass
+Problem: Repeated continuation edits can introduce whitespace defects or stale report drift even when implementation is complete.
+Solution: Ran `git diff --check` on UX-owned touched files, aggregate validation, and status/log consistency validation. `git diff --check` produced only CRLF normalization warnings, no whitespace errors.
+Rejected Alternatives: Running Unity was not possible because the probe reports no Unity candidates. Touching runtime code after static proof was rejected.
+Scalability potential: The handoff remains clean for low-end and GOD_MODE validation once Unity exists.
+Hardware Impact: Runtime impact is 0 us. Runtime measurement remains absent until Unity is installed/exposed.
 
 ## Decision - Offline Icon Baker
 Problem: Prompt requires 32/128/512 icon outputs and pixel snapping.
@@ -317,6 +380,13 @@ Solution: Added SHA-256 hashes to `UI_Readability_UX_ENGINEER.json` and `UI_Shad
 Rejected Alternatives: Trusting timestamps or human memory was rejected; both fail under multi-agent churn.
 Scalability potential: CI can now reject stale UI proof artifacts before Unity validation.
 Hardware Impact: Offline verification only; runtime impact 0 us.
+
+## Current-Tree Aggregate Proof
+Problem: Earlier log entries documented the aggregate validator in stages, but the latest code state includes aggregate self-validation and needed one consolidated rerun.
+Solution: Reran Python compile, focused aggregate-validator tests, full aggregate validation, standalone aggregate validation, JSON readback, whitespace check, and pycache scan on the current tree.
+Rejected Alternatives: Relying on older aggregate outputs was rejected because the runner and validator changed after those reports.
+Scalability potential: Static proof now covers 32 tests and 30 artifact hashes before Unity import/profiler work.
+Hardware Impact: Runtime impact is 0 us. Unity, Frame Debugger, GCMonitor, and in-engine visual captures remain pending.
 
 ## Aggregate Validation Runner
 Problem: The validation path existed as several commands, which creates operator error and partial-proof risk.

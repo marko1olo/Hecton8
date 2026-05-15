@@ -381,3 +381,123 @@ Cinematic Cheats used: None. Environment validation only.
 Exact Microseconds saved: 0 us runtime.
 
 Verification: Probe status remains `UNITY_NOT_FOUND`; required Unity is `6000.4.1f1`; `candidateDetails` and `matchingCandidates` are empty. Runtime proof remains blocked on editor availability.
+
+## UX_ENGINEER Aggregate Report Validator - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: The aggregate report had manual readback, but no reusable validator for the aggregate schema, command set, command exit codes, artifact hashes, and runtime-pending boundary.
+
+What was done: Added `Tools/UX/validate_aggregate_report.py` and `Tools/UX/test_validate_aggregate_report.py`. The validator rejects runtime promotion, missing commands, command failures, insufficient artifact hashes, and invalid Unity probe metadata.
+
+Cinematic Cheats used: None. Evidence validation only.
+
+Exact Microseconds saved: 0 us runtime.
+
+Verification: Rerun required after patch.
+
+## UX_ENGINEER Aggregate Report Validator Verified - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: The aggregate report validator needed proof after being added.
+
+What was done: Ran `python -m py_compile Tools/UX/validate_aggregate_report.py Tools/UX/test_validate_aggregate_report.py Tools/UX/run_hardware_adaptive_ui_validation.py`; clean exit. Ran `python -m unittest Tools.UX.test_validate_aggregate_report -v`; 4 tests passed. Ran `python Tools/UX/run_hardware_adaptive_ui_validation.py`; PASS. Ran `python Tools/UX/validate_aggregate_report.py`; PASS.
+
+Cinematic Cheats used: None. Evidence validation only.
+
+Exact Microseconds saved: 0 us runtime.
+
+Verification: Static/Python aggregate remains PASS and now has an independent validator. Runtime proof remains blocked on Unity editor availability.
+
+## UX_ENGINEER Aggregate Self-Validation - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: The aggregate report validator existed, but the aggregate runner could still write a malformed PASS unless the validator was run separately.
+
+What was done: Integrated `validate_aggregate_report()` into `Tools/UX/run_hardware_adaptive_ui_validation.py`. The runner now records `aggregateSelfValidation` and fails the run if its generated report object violates the validator. Updated `validate_aggregate_report.py` and tests to reject failed self-validation records.
+
+Cinematic Cheats used: None. Evidence validation only.
+
+Exact Microseconds saved: 0 us runtime.
+
+Verification: Rerun required after patch.
+
+## UX_ENGINEER Aggregate Self-Validation Verified - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: The self-validation integration needed a clean verification pass.
+
+What was done: Ran `python -m py_compile Tools/UX/run_hardware_adaptive_ui_validation.py Tools/UX/validate_aggregate_report.py Tools/UX/test_validate_aggregate_report.py`; clean exit. Ran `python -m unittest Tools.UX.test_validate_aggregate_report -v`; 5 tests passed. Ran `python Tools/UX/run_hardware_adaptive_ui_validation.py`; PASS. Ran `python Tools/UX/validate_aggregate_report.py`; PASS. Read back `aggregateSelfValidation` from `Docs/AgentLogs/UI_HardwareAdaptiveValidation_UX_ENGINEER.json`.
+
+Cinematic Cheats used: None. Evidence validation only.
+
+Exact Microseconds saved: 0 us runtime.
+
+Verification: Aggregate report contains `aggregateSelfValidation: {'status': 'PASS', 'failures': []}`. Runtime proof remains blocked on Unity editor availability.
+
+## UX_ENGINEER Current-Tree Aggregate Proof - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: The aggregate runner and report validator changed in stages, so the last proof needed to reflect the current tree, not an earlier intermediate state.
+
+What was done: Reran `py_compile`, focused aggregate-validator unittest, full aggregate validation, standalone aggregate report validation, JSON readback, whitespace check, and pycache scan.
+
+Cinematic Cheats used: None. Static evidence validation only.
+
+Exact Microseconds saved: 0 us runtime.
+
+Verification: Aggregate status PASS; `unityRuntimeStatus` is `PENDING_UNITY_VERIFICATION`; unit harness ran 32 tests; artifact hash count is 30; `aggregateSelfValidation` is `{'status': 'PASS', 'failures': []}`; `PYTHON_CACHE_COUNT 0`. Unity runtime proof remains pending.
+
+## UX_ENGINEER Status Log Consistency Gate - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: Status/log files are the long-term memory for this agent, but there was no reusable validator for their prompt identity, checked task set, or Unity pending boundary.
+
+What was done: Added `Tools/UX/validate_status_log_consistency.py` and `Tools/UX/test_status_log_consistency.py`. The validator checks prompt/domain/task count, seven checked tasks, rationale/log/blocker prompt identity, pending runtime boundary, aggregate PASS, and aggregate self-validation PASS.
+
+Cinematic Cheats used: None. Evidence validation only.
+
+Exact Microseconds saved: 0 us runtime.
+
+Verification: Rerun required after patch.
+
+## UX_ENGINEER Status Log Consistency Verified - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: The status/log consistency gate needed verification.
+
+What was done: Ran `python -m py_compile Tools/UX/validate_status_log_consistency.py Tools/UX/test_status_log_consistency.py Tools/UX/run_hardware_adaptive_ui_validation.py`; clean exit. Ran `python -m unittest Tools.UX.test_status_log_consistency -v`; 3 tests passed. Ran `python Tools/UX/validate_status_log_consistency.py --write-report`; PASS. Ran `python Tools/UX/run_hardware_adaptive_ui_validation.py`; PASS. Parsed `Docs/AgentLogs/UI_StatusLogConsistency_UX_ENGINEER.json` with `python -m json.tool`.
+
+Cinematic Cheats used: None. Evidence validation only.
+
+Exact Microseconds saved: 0 us runtime.
+
+Verification: Status/log consistency report is PASS with no failures. Runtime proof remains blocked on Unity editor availability.
+
+## UX_ENGINEER Status Log Self-Validation - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: The status/log consistency validator was not enforced inside the one-command aggregate path.
+
+What was done: Integrated `validate_status_log_consistency()` into `Tools/UX/run_hardware_adaptive_ui_validation.py`. The aggregate report now records `statusLogSelfValidation` and fails the aggregate run if disk status/log memory is inconsistent.
+
+Cinematic Cheats used: None. Evidence validation only.
+
+Exact Microseconds saved: 0 us runtime.
+
+Verification: Rerun required after patch.
+
+## UX_ENGINEER Status Log Self-Validation Verified - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: The aggregate runner status/log self-validation integration needed a clean verification pass.
+
+What was done: Ran `python -m py_compile Tools/UX/run_hardware_adaptive_ui_validation.py Tools/UX/validate_aggregate_report.py Tools/UX/test_validate_aggregate_report.py Tools/UX/validate_status_log_consistency.py Tools/UX/test_status_log_consistency.py`; clean exit. Ran `python -m unittest Tools.UX.test_validate_aggregate_report Tools.UX.test_status_log_consistency -v`; 9 tests passed. Ran `python Tools/UX/run_hardware_adaptive_ui_validation.py`; PASS. Ran `python Tools/UX/validate_aggregate_report.py`; PASS. Read back aggregate report self-validation fields.
+
+Cinematic Cheats used: None. Evidence validation only.
+
+Exact Microseconds saved: 0 us runtime.
+
+Verification: `aggregateSelfValidation` PASS, `statusLogSelfValidation` PASS, both with empty failures. Runtime proof remains blocked on Unity editor availability.
+
+## UX_ENGINEER Final Static Hygiene Pass - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: After multiple continuation hardening passes, touched UX files needed a final whitespace/static validation check.
+
+What was done: Ran `git diff --check` on UX-owned touched files, `python Tools/UX/run_hardware_adaptive_ui_validation.py`, and `python Tools/UX/validate_status_log_consistency.py --write-report`.
+
+Cinematic Cheats used: None. Evidence hygiene only.
+
+Exact Microseconds saved: 0 us runtime.
+
+Verification: `git diff --check` returned no whitespace errors, only CRLF normalization warnings. Aggregate validation returned PASS. Status/log consistency returned PASS. Runtime verification remains blocked by missing Unity editor.

@@ -15,8 +15,20 @@ import sys
 import time
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from Tools.UX.validate_aggregate_report import validate_aggregate_report
+from Tools.UX.validate_status_log_consistency import validate_status_log_consistency
+
 
 REPORT_PATH = Path("Docs/AgentLogs/UI_HardwareAdaptiveValidation_UX_ENGINEER.json")
+UNITY_ENVIRONMENT_PROBE_PATH = Path("Docs/AgentLogs/UI_UnityEnvironmentProbe_UX_ENGINEER.json")
+STATUS_PATH = Path("Docs/Tasks/Status_UX_ENGINEER.md")
+RATIONALE_PATH = Path("Docs/AgentLogs/Rationale_UX_ENGINEER.md")
+LOG_PATH = Path("Docs/AgentLogs/LOG_UX_ENGINEER.md")
+BLOCKER_PATH = Path("Docs/AgentLogs/Blocker_UX_ENGINEER.md")
 
 COMMANDS = (
     (
@@ -82,6 +94,8 @@ COMMANDS = (
             "Tools.UX.test_unity_report_update_cli",
             "Tools.UX.test_python_cache_cleanup",
             "Tools.UX.test_unity_environment_probe",
+            "Tools.UX.test_validate_aggregate_report",
+            "Tools.UX.test_status_log_consistency",
             "-v",
         ),
     ),
@@ -115,12 +129,16 @@ HASHED_ARTIFACTS = (
     "Tools/UX/update_unity_verification_report.py",
     "Tools/UX/clean_python_cache.py",
     "Tools/UX/probe_unity_environment.py",
+    "Tools/UX/validate_aggregate_report.py",
+    "Tools/UX/validate_status_log_consistency.py",
     "Tools/UX/run_unity_import_check.ps1",
     "Tools/UX/test_hardware_adaptive_ui.py",
     "Tools/UX/test_unity_verification_gates.py",
     "Tools/UX/test_unity_report_update_cli.py",
     "Tools/UX/test_python_cache_cleanup.py",
     "Tools/UX/test_unity_environment_probe.py",
+    "Tools/UX/test_validate_aggregate_report.py",
+    "Tools/UX/test_status_log_consistency.py",
     "Tools/UX/run_hardware_adaptive_ui_validation.py",
 )
 
@@ -160,7 +178,7 @@ def _run_command(root: Path, name: str, command: tuple[str, ...]) -> dict[str, o
 
 
 def main() -> int:
-    root = Path(__file__).resolve().parents[2]
+    root = ROOT
     results = [_run_command(root, name, command) for name, command in COMMANDS]
     failures = [result for result in results if result["exitCode"] != 0]
 
@@ -185,6 +203,34 @@ def main() -> int:
         "note": "Static/Python validation only. Unity import, GCMonitor, Frame Debugger, and in-engine captures remain separate gates.",
     }
 
+    environment_probe_path = root / UNITY_ENVIRONMENT_PROBE_PATH
+    if environment_probe_path.exists():
+        environment_probe = json.loads(environment_probe_path.read_text(encoding="utf-8"))
+        self_validation_failures = validate_aggregate_report(report, environment_probe)
+    else:
+        self_validation_failures = [f"missing Unity environment probe report: {UNITY_ENVIRONMENT_PROBE_PATH}"]
+
+    report["aggregateSelfValidation"] = {
+        "status": "PASS" if not self_validation_failures else "FAIL",
+        "failures": self_validation_failures,
+    }
+    if self_validation_failures:
+        report["status"] = "FAIL"
+
+    status_log_failures = validate_status_log_consistency(
+        (root / STATUS_PATH).read_text(encoding="utf-8"),
+        (root / RATIONALE_PATH).read_text(encoding="utf-8"),
+        (root / LOG_PATH).read_text(encoding="utf-8"),
+        (root / BLOCKER_PATH).read_text(encoding="utf-8"),
+        report,
+    )
+    report["statusLogSelfValidation"] = {
+        "status": "PASS" if not status_log_failures else "FAIL",
+        "failures": status_log_failures,
+    }
+    if status_log_failures:
+        report["status"] = "FAIL"
+
     report_path = root / REPORT_PATH
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
@@ -197,6 +243,16 @@ def main() -> int:
     if missing_artifacts:
         for artifact in missing_artifacts:
             print(f"missing artifact: {artifact}")
+        return 1
+
+    if self_validation_failures:
+        for failure in self_validation_failures:
+            print(f"aggregate self-validation failed: {failure}")
+        return 1
+
+    if status_log_failures:
+        for failure in status_log_failures:
+            print(f"status/log self-validation failed: {failure}")
         return 1
 
     print(f"Hardware adaptive UI aggregate validation PASS: {REPORT_PATH}")
