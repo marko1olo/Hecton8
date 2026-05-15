@@ -1,6 +1,6 @@
 # VRAM Remediation Plan
 
-Generated: 2026-05-15T17:05:51
+Generated: 2026-05-15T17:11:56
 Evidence class: STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST. No asset/import mutation performed.
 
 ## Gate Status

@@ -1,6 +1,6 @@
 # VRAM Budget Audit Summary
 
-Generated: 2026-05-15T17:05:42
+Generated: 2026-05-15T17:11:50
 Evidence class: STATIC_SOURCE / FILESYSTEM. Runtime residency is PENDING VERIFICATION.
 
 ## Summary

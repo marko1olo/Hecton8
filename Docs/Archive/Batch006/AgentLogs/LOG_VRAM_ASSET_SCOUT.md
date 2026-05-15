@@ -442,9 +442,12 @@ Exact microseconds saved:
 - Integration value: RT depth/MSAA/mip/random-write risks are visible before Unity profiler passes.
 
 Verification:
-- `python -m py_compile Tools\MemoryBudgetCheck.py Tools\test_memory_budget_check.py`: passed.
-- `python -B -m unittest Tools.test_memory_budget_check -v`: 13 tests passed.
-- `python Tools\MemoryBudgetCheck.py --root .`: scanner executed with expected `[CRITICAL_VRAM_OVERFLOW]`; counts 1,668 textures / 302 meshes / 1 render texture; RT static estimate 7.03 MiB; RT redline/risk rows 1.
+- PYTHONDONTWRITEBYTECODE=1 python AST syntax parse for `Tools/MemoryBudgetCheck.py` and `Tools/test_memory_budget_check.py`: PASS.
+- PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py: PASS, 13 tests.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root .: scanner executed with expected `[CRITICAL_VRAM_OVERFLOW]`; counts 1,668 textures / 302 meshes / 1 RenderTexture; RT static estimate 7.03 MiB; RT redline/risk rows 1.
+- PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --ci: expected failure with ci_exit_code=2 due current static texture overflow, mesh risk, and RT depth-stencil risk.
+- CSV structural validation: PASS. Broad CSV 1,972 rows / 43 columns / 0 bad rows; texture redlines 963 rows / 7 columns / 0 bad rows; mesh redlines 294 rows / 14 columns / 0 bad rows; RenderTexture redlines 2 rows / 11 columns / 0 bad rows.
+- Generated `MemoryBudgetCheck` and `test_memory_budget_check` bytecode under `Tools/__pycache__` was removed after verification.
 
 Evidence boundary:
 - STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.

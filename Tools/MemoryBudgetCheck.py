@@ -1249,6 +1249,7 @@ def write_csv(
                     "",
                     "",
                     "",
+                    "",
                     record.color_format,
                     record.depth_stencil_format,
                     record.anti_aliasing,
