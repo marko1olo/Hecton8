@@ -360,6 +360,7 @@ Persistence contract:
 - The Python harness rejects grids above `1,048,576` cells before allocating per-cell lists, matching the C# backend cell-budget cap.
 - The Python harness validates acceptance metadata before simulation: positive acceptance days, `total_overharvest` mode, maturity ratio in `(0, 1]`, and positive Safe/Abyss recovery ratio.
 - The Python harness validates export identity before simulation: schema `H8_Regrowth_Constants`, version `1`, status `ENTROPY BALANCED`, and Unity status `PENDING_UNITY_VERIFICATION`.
+- The Python harness uses strict scalar validation: integer fields reject bools, floats, and strings; acceptance numeric fields reject bools, strings, and non-finite values; `entropyTestWorldSeed` must fit uint32 and macro-sector origins must fit int32.
 - The CLI exposes only `--mode total_overharvest`; non-acceptance modes are rejected before simulation.
 - Exported biome expected half-recovery days must be positive and within `acceptance.simulationDays` before the harness runs.
 

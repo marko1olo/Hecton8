@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 
 
@@ -14,6 +15,8 @@ STAGE_IMMATURE = 2
 STAGE_MATURE = 3
 UINT32_MASK = 0xFFFFFFFF
 BYTE_MAX = 255
+INT32_MIN = -2_147_483_648
+INT32_MAX = 2_147_483_647
 MAX_SAFE_GRID_CELLS = 1_048_576
 EXPECTED_BIOME_NAMES = ("Safe Shallows", "Temperate Reef", "Thermal Vent", "Deep Abyss")
 
@@ -23,25 +26,55 @@ def load_constants(path: Path) -> dict:
         return json.load(handle)
 
 
+def require_int(source: dict, key: str) -> int:
+    value = source[key]
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ValueError(f"{key} must be an integer")
+    return value
+
+
+def require_number(source: dict, key: str) -> float:
+    value = source[key]
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+        raise ValueError(f"{key} must be a finite number")
+    return float(value)
+
+
+def require_day_count(days: int) -> int:
+    if isinstance(days, bool) or not isinstance(days, int):
+        raise ValueError("days must be an integer")
+    if days < 1:
+        raise ValueError("days must be >= 1")
+    return days
+
+
 def validate_constants(constants: dict) -> None:
     if constants["schema"] != "H8_Regrowth_Constants":
         raise ValueError("schema must be H8_Regrowth_Constants")
-    if int(constants["version"]) != 1:
+    if require_int(constants, "version") != 1:
         raise ValueError("version must be 1")
     if constants["status"] != "ENTROPY BALANCED":
         raise ValueError("status must be ENTROPY BALANCED")
     if constants["unityVerificationStatus"] != "PENDING_UNITY_VERIFICATION":
         raise ValueError("unityVerificationStatus must be PENDING_UNITY_VERIFICATION")
 
-    width = int(constants["gridWidth"])
-    height = int(constants["gridHeight"])
+    width = require_int(constants, "gridWidth")
+    height = require_int(constants, "gridHeight")
     if width < 1 or height < 1:
         raise ValueError("grid dimensions must be positive")
     if width * height > MAX_SAFE_GRID_CELLS:
         raise ValueError("grid cell count exceeds safe entropy harness budget")
-    if int(constants["macroSectorMeters"]) < 1:
+    if require_int(constants, "macroSectorMeters") < 1:
         raise ValueError("macroSectorMeters must be positive")
-    if int(constants["baseGrowthProgressPerDayQ"]) < 1 or int(constants["baseGrowthProgressPerDayQ"]) > BYTE_MAX:
+    world_seed = require_int(constants, "entropyTestWorldSeed")
+    if world_seed < 0 or world_seed > UINT32_MASK:
+        raise ValueError("entropyTestWorldSeed must fit uint32")
+    for key in ("macroSectorOriginX", "macroSectorOriginZ"):
+        origin = require_int(constants, key)
+        if origin < INT32_MIN or origin > INT32_MAX:
+            raise ValueError(f"{key} must fit int32")
+    base_growth = require_int(constants, "baseGrowthProgressPerDayQ")
+    if base_growth < 1 or base_growth > BYTE_MAX:
         raise ValueError("baseGrowthProgressPerDayQ must be in 1..255")
     for key in (
         "nutrientDiffusionPermille",
@@ -50,7 +83,7 @@ def validate_constants(constants: dict) -> None:
         "predatorConversionPermille",
         "predatorMortalityPermille",
     ):
-        value = int(constants[key])
+        value = require_int(constants, key)
         if value < 0 or value > 1000:
             raise ValueError(f"{key} must be in 0..1000")
     for key in (
@@ -58,47 +91,55 @@ def validate_constants(constants: dict) -> None:
         "nutrientPenaltyOnMiningQ",
         "minimumNutrientsQ",
     ):
-        value = int(constants[key])
+        value = require_int(constants, key)
         if value < 0 or value > BYTE_MAX:
             raise ValueError(f"{key} must be in 0..255")
-    if int(constants["seedToMatureProgressQ"]) < 1 or int(constants["seedToMatureProgressQ"]) > BYTE_MAX:
+    seed_to_mature = require_int(constants, "seedToMatureProgressQ")
+    if seed_to_mature < 1 or seed_to_mature > BYTE_MAX:
         raise ValueError("seedToMatureProgressQ must be in 1..255")
-    if int(constants["tombstoneBaseDecayDays"]) < 1 or int(constants["tombstoneBaseDecayDays"]) > BYTE_MAX:
+    tombstone_decay = require_int(constants, "tombstoneBaseDecayDays")
+    if tombstone_decay < 1 or tombstone_decay > BYTE_MAX:
         raise ValueError("tombstoneBaseDecayDays must be in 1..255")
-    min_apex_respawn_days = int(constants["minApexRespawnDays"])
-    max_apex_respawn_days = int(constants["maxApexRespawnDays"])
+    min_apex_respawn_days = require_int(constants, "minApexRespawnDays")
+    max_apex_respawn_days = require_int(constants, "maxApexRespawnDays")
     if min_apex_respawn_days < 1 or min_apex_respawn_days > BYTE_MAX:
         raise ValueError("minApexRespawnDays must be in 1..255")
     if max_apex_respawn_days < min_apex_respawn_days or max_apex_respawn_days > BYTE_MAX:
         raise ValueError("maxApexRespawnDays must be in minApexRespawnDays..255")
     acceptance = constants["acceptance"]
-    acceptance_days = int(acceptance["simulationDays"])
+    if not isinstance(acceptance, dict):
+        raise ValueError("acceptance must be an object")
+    acceptance_days = require_int(acceptance, "simulationDays")
     if acceptance_days < 1:
         raise ValueError("acceptance simulationDays must be positive")
     if acceptance["mode"] != "total_overharvest":
         raise ValueError("acceptance mode must be total_overharvest")
-    minimum_mature_ratio = float(acceptance["minFinalMatureRatio"])
+    minimum_mature_ratio = require_number(acceptance, "minFinalMatureRatio")
     if minimum_mature_ratio <= 0.0 or minimum_mature_ratio > 1.0:
         raise ValueError("minFinalMatureRatio must be in (0, 1]")
-    if float(acceptance["safeShallowsVsDeepAbyssMinRecoveryRatio"]) <= 0.0:
+    if require_number(acceptance, "safeShallowsVsDeepAbyssMinRecoveryRatio") <= 0.0:
         raise ValueError("safeShallowsVsDeepAbyssMinRecoveryRatio must be positive")
 
     biomes = constants["biomes"]
+    if not isinstance(biomes, list):
+        raise ValueError("biomes must be an array")
     if len(biomes) != len(EXPECTED_BIOME_NAMES):
         raise ValueError("exactly four biome constants are required")
 
-    minimum_nutrients_q = int(constants["minimumNutrientsQ"])
+    minimum_nutrients_q = require_int(constants, "minimumNutrientsQ")
     for index, expected_name in enumerate(EXPECTED_BIOME_NAMES):
         biome = biomes[index]
-        if int(biome["id"]) != index or biome["name"] != expected_name:
+        if not isinstance(biome, dict):
+            raise ValueError("biome constants must be objects")
+        if require_int(biome, "id") != index or biome["name"] != expected_name:
             raise ValueError("biome ids and names must match runtime indices")
-        temperature_q = int(biome["temperatureQ"])
+        temperature_q = require_int(biome, "temperatureQ")
         if temperature_q < 1 or temperature_q > BYTE_MAX:
             raise ValueError("biome temperatureQ must be in 1..255")
-        nutrient_start_q = int(biome["nutrientStartQ"])
+        nutrient_start_q = require_int(biome, "nutrientStartQ")
         if nutrient_start_q < minimum_nutrients_q or nutrient_start_q > BYTE_MAX:
             raise ValueError("biome nutrientStartQ must be in minimumNutrientsQ..255")
-        expected_day = int(biome["expectedHalfRecoveryDaysUnderTotalOverharvest"])
+        expected_day = require_int(biome, "expectedHalfRecoveryDaysUnderTotalOverharvest")
         if expected_day < 1 or expected_day > acceptance_days:
             raise ValueError("expected half-recovery day must fit acceptance simulationDays")
 
@@ -350,8 +391,7 @@ def summarize(state: dict, day: int, first_half_recovery: list[int | None]) -> d
 
 
 def run_sim(constants: dict, days: int, total_overharvest: bool) -> tuple[dict, list[dict]]:
-    if days < 1:
-        raise ValueError("days must be >= 1")
+    day_count = require_day_count(days)
     if not total_overharvest:
         raise ValueError("run_sim only supports total_overharvest mode")
 
@@ -359,9 +399,9 @@ def run_sim(constants: dict, days: int, total_overharvest: bool) -> tuple[dict, 
     state = build_initial_state(constants, total_overharvest)
     first_half_recovery: list[int | None] = [None, None, None, None]
     checkpoints: list[dict] = []
-    checkpoint_days = {1, 28, 95, 180, 365, days}
+    checkpoint_days = {1, 28, 95, 180, 365, day_count}
     final_summary: dict | None = None
-    for day in range(1, days + 1):
+    for day in range(1, day_count + 1):
         step_day(state, constants)
         needs_recovery_scan = any(value is None for value in first_half_recovery)
         if day in checkpoint_days or needs_recovery_scan:
@@ -369,8 +409,8 @@ def run_sim(constants: dict, days: int, total_overharvest: bool) -> tuple[dict, 
             if day in checkpoint_days:
                 checkpoints.append(final_summary)
 
-    if final_summary is None or final_summary["day"] != days:
-        final_summary = summarize(state, days, first_half_recovery)
+    if final_summary is None or final_summary["day"] != day_count:
+        final_summary = summarize(state, day_count, first_half_recovery)
 
     return final_summary, checkpoints
 

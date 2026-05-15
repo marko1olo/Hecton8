@@ -929,3 +929,55 @@ Verification:
 - `python -m unittest Tools.test_world_entropy_sim -v`: 21 tests passed in 41.890 s.
 - `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
 - `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
+
+## 2026-05-15 - Strict Constants Scalar Guard
+
+What was wrong:
+- `validate_constants()` used permissive Python `int()` / `float()` coercion.
+- Numeric strings, floats in integer fields, and out-of-range seed/origin values could pass too far into the harness.
+
+What was done:
+- Added `require_int()` and `require_number()`.
+- Added strict uint32 validation for `entropyTestWorldSeed`.
+- Added strict int32 validation for `macroSectorOriginX/Z`.
+- Added `test_run_sim_rejects_coerced_numeric_constants`.
+
+Cinematic cheats used:
+- None. This is offline schema hardening.
+
+Exact microseconds saved:
+- Runtime microseconds saved: 0. Unity runtime backend was not changed.
+- Failure avoided: malformed scalar constants abort before simulation state allocation or status publication.
+
+Verification:
+- `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`: exit code 0.
+- Strict helper scan found `require_int`, `require_number`, seed/origin guards, and the new regression test.
+- `python -m unittest Tools.test_world_entropy_sim -v`: 22 tests passed in 51.737 s.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
+
+## 2026-05-15 - Direct Day Count Type Guard
+
+What was wrong:
+- `run_sim()` accepted `True` as a day count because Python booleans subclass integers.
+- Direct callers could publish a malformed one-day entropy run without going through argparse.
+
+What was done:
+- Added `require_day_count()` and routed `run_sim()` through it.
+- Added `test_run_sim_rejects_non_integer_day_count` for `True`, `1.0`, and `"365"`.
+- Re-ran syntax, scan, unit, 365-day, and 1000-day checks.
+
+Cinematic cheats used:
+- None. This is offline evidence-contract hardening.
+
+Exact microseconds saved:
+- Runtime microseconds saved: 0. Unity runtime backend was not changed.
+- Failure avoided: malformed direct day counts abort before Python state allocation.
+
+Verification:
+- `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`: exit code 0.
+- Guard scan found `require_day_count`, `days must be an integer`, and the new regression test.
+- Target forbidden-token scan: no matches.
+- `python -m unittest Tools.test_world_entropy_sim -v`: 23 tests passed in 48.667 s.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.

@@ -129,6 +129,12 @@ class WorldEntropySimTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             entropy.run_sim(self.constants, 0, True)
 
+    def test_run_sim_rejects_non_integer_day_count(self) -> None:
+        for days in (True, 1.0, "365"):
+            with self.subTest(days=days):
+                with self.assertRaises(ValueError):
+                    entropy.run_sim(self.constants, days, True)
+
     def test_run_sim_rejects_non_overharvest_direct_mode(self) -> None:
         with self.assertRaises(ValueError):
             entropy.run_sim(self.constants, 1, False)
@@ -158,6 +164,42 @@ class WorldEntropySimTests(unittest.TestCase):
         constants = deepcopy(self.constants)
         constants["predationPermille"] = 1001
 
+        with self.assertRaises(ValueError):
+            entropy.run_sim(constants, 1, True)
+
+    def test_run_sim_rejects_coerced_numeric_constants(self) -> None:
+        constants = deepcopy(self.constants)
+        constants["gridWidth"] = "64"
+        with self.assertRaises(ValueError):
+            entropy.run_sim(constants, 1, True)
+
+        constants = deepcopy(self.constants)
+        constants["version"] = 1.0
+        with self.assertRaises(ValueError):
+            entropy.run_sim(constants, 1, True)
+
+        constants = deepcopy(self.constants)
+        constants["gridWidth"] = True
+        with self.assertRaises(ValueError):
+            entropy.run_sim(constants, 1, True)
+
+        constants = deepcopy(self.constants)
+        constants["acceptance"]["minFinalMatureRatio"] = "0.98"
+        with self.assertRaises(ValueError):
+            entropy.run_sim(constants, 1, True)
+
+        constants = deepcopy(self.constants)
+        constants["acceptance"]["minFinalMatureRatio"] = float("nan")
+        with self.assertRaises(ValueError):
+            entropy.run_sim(constants, 1, True)
+
+        constants = deepcopy(self.constants)
+        constants["entropyTestWorldSeed"] = -1
+        with self.assertRaises(ValueError):
+            entropy.run_sim(constants, 1, True)
+
+        constants = deepcopy(self.constants)
+        constants["macroSectorOriginX"] = 2_147_483_648
         with self.assertRaises(ValueError):
             entropy.run_sim(constants, 1, True)
 

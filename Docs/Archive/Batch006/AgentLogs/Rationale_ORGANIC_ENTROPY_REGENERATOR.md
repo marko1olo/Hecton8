@@ -510,3 +510,25 @@ Rejected Alternatives: Trusting `run_sim()` validation was rejected because `cal
 Scalability potential: Low/Middle/High/Ultra validation paths now share the same constants validation at simulation and status-publication time.
 
 Hardware Impact: Tooling-only. Unity runtime backend unchanged; invalid balance constants abort before status publication.
+
+## Decision 47 - Strict Constants Scalar Guard
+Problem: `validate_constants()` used Python `int()` and `float()` conversions directly. That allowed strings like `"64"` or floats in integer fields to become accepted constants, even though the C# runtime config stores concrete integer/byte fields.
+
+Solution: Added `require_int()` and `require_number()` helpers. Integer fields now reject bools, floats, and strings. Numeric acceptance fields now reject bools, strings, and non-finite values. Added explicit uint32 range validation for `entropyTestWorldSeed` and int32 range validation for macro-sector origins.
+
+Rejected Alternatives: Keeping permissive coercion was rejected because it creates a third schema between JSON and C# runtime. Silent normalization was rejected because constants are an authority artifact, not user input.
+
+Scalability potential: Low/Middle/High/Ultra validation runs now share strict scalar typing before allocation. Larger high-end validation maps still use the same explicit grid cap and seed/origin envelope.
+
+Hardware Impact: Tooling-only. Unity runtime backend unchanged; malformed scalar constants abort before Python state allocation and status publication.
+
+## Decision 48 - Direct Day Count Type Guard
+Problem: `run_sim()` checked `days < 1`, but Python treats `True` as integer `1`. Direct automation could therefore pass a boolean and publish a one-day entropy run under a malformed day-span input.
+
+Solution: Added `require_day_count()` so direct `run_sim()` callers must pass a real positive integer. The helper rejects bools, floats, and strings before state construction. Added a regression covering `True`, `1.0`, and `"365"`.
+
+Rejected Alternatives: Keeping CLI-only validation was rejected because tests and future automation call `run_sim()` directly. Silently normalizing non-integer values was rejected because evidence commands must report the requested span exactly.
+
+Scalability potential: Low/Middle/High/Ultra validation paths now share one strict day-count contract. Long-horizon high-end validation still works with explicit integer day spans.
+
+Hardware Impact: Tooling-only. Unity runtime backend unchanged; malformed direct day counts abort before Python state allocation.
