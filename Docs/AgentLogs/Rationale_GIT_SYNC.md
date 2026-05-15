@@ -47,3 +47,11 @@ Solution: After `git push origin main`, fetched `origin/main` and verified local
 Rejected Alternatives: Ending with chat-only push proof was rejected because the repository must carry the handoff evidence.
 Scalability potential: Integrators can verify from files that the queue reached remote before this final evidence update.
 Hardware Impact: 0us runtime. Git-only operation.
+
+## Decision 7: No Self-Referential Commit Hash In Evidence File
+
+Problem: Recording the exact pushed commit hash inside the evidence file creates a self-referential loop: committing the file changes the hash it tries to record.
+Solution: Record the deterministic verification command sequence in the committed file and perform the exact hash equality check after the evidence commit is pushed.
+Rejected Alternatives: Amending forever to chase the file's own commit hash was rejected as process churn. Leaving an older exact hash in status was rejected as stale evidence.
+Scalability potential: Future GIT_SYNC runs can verify remote equality without creating a new evidence-only hash mismatch each time.
+Hardware Impact: 0us runtime. Git-only operation.

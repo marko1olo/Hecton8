@@ -63,6 +63,31 @@ Evidence boundary:
 - Git/static/Python evidence only.
 - Unity import, Play Mode, Profiler, GCMonitor, Frame Debugger, and Player Build remain PENDING VERIFICATION.
 
+## 2026-05-16 - Self-Referential Hash Correction
+
+What was wrong:
+- The evidence file recorded the exact hash verified before the final evidence commit.
+- That final evidence commit changed HEAD, so the embedded hash became stale by construction.
+
+What was done:
+- Replaced the exact self-referential hash claim in status with the deterministic post-push verification command sequence.
+- Added rationale explaining why the file must not chase its own commit hash.
+
+Cinematic Cheats used:
+- None. Repository operation only.
+
+Exact Microseconds saved:
+- Runtime code changed by GIT_SYNC itself: none.
+- Immediate runtime CPU saving: 0us.
+
+Verification:
+- Pre-correction fetch showed `HEAD == origin/main` and divergence `0 0`.
+- This correction requires the same post-push equality check after it is pushed.
+
+Evidence boundary:
+- Git/static/Python evidence only.
+- Unity import, Play Mode, Profiler, GCMonitor, Frame Debugger, and Player Build remain PENDING VERIFICATION.
+
 ## 2026-05-15 - Final Rebase And Gate Rerun
 
 What was wrong:

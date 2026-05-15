@@ -29,5 +29,5 @@ Evidence class: GIT_CLI / FILESYSTEM / PY_UNIT_TEST / STATIC_TOOLING
 - Final divergence before push: `origin/main...HEAD` = `0 126`.
 - `git diff --check`: PASS.
 - `git ls-files -u`: PASS, empty.
-- Remote push verification: `git rev-parse HEAD origin/main` matched at `68c2fe0a388ae7371aa8f70930859207c12364f7`; `origin/main...HEAD` = `0 0`.
+- Remote push verification method: after the final evidence commit, run `git fetch origin main`, `git rev-parse HEAD origin/main`, and `git rev-list --left-right --count origin/main...HEAD`; the committed evidence does not embed its own commit hash because that would create a self-referential hash churn loop.
 - Unity Editor, Play Mode, Profiler, GCMonitor, Frame Debugger, and Player Build: NOT RUN; PENDING VERIFICATION.
