@@ -94,6 +94,7 @@ ALBEDO_EXCLUDE_TOKENS = (
 )
 NORMAL_TOKENS = ("normal", "norm", "nrm", "bump")
 NON_SURFACE_PATH_PARTS = ("/sprites/ui/", "/skyboxes/")
+GENERATED_LIGHTING_TEXTURE_PREFIXES = ("reflectionprobe", "lightmap", "lightingdata")
 BASE_MAP_PROPS = {"_BaseMap", "_MainTex", "_BaseColorMap"}
 NORMAL_MAP_PROPS = {"_BumpMap", "_NormalMap"}
 PROMPT_ORM_PROPS = {"_ORMMap", "_OrmMap", "_OcclusionRoughnessMetallicMap"}
@@ -114,7 +115,13 @@ GATE_EXIT_CODES = {
     "unresolved_texture_refs": 4,
     "texture_budget": 5,
     "albedo_read_errors": 6,
+    "energy_warnings": 7,
 }
+CI_SURFACE_GATE_PROFILE = (
+    "energy_warnings",
+    "albedo_read_errors",
+    "texture_budget",
+)
 GOD_MODE_TEXTURE_OVERRIDES = [
     {
         "asset_class": "Hero cockpit albedo",
@@ -328,6 +335,14 @@ def tokenize_name(text: str) -> list[str]:
 def is_surface_excluded_path(path: Path) -> bool:
     lowered = "/" + path.as_posix().lower().replace("\\", "/")
     return any(part in lowered for part in NON_SURFACE_PATH_PARTS)
+
+
+def is_generated_lighting_texture(path: Path) -> bool:
+    lowered = "/" + path.as_posix().lower().replace("\\", "/")
+    if "/scenes/" not in lowered or path.suffix.lower() not in {".exr", ".hdr"}:
+        return False
+    stem = path.stem.lower()
+    return any(stem.startswith(prefix) for prefix in GENERATED_LIGHTING_TEXTURE_PREFIXES)
 
 
 def has_orm_token(terms: list[str]) -> bool:
@@ -920,6 +935,8 @@ def run_audit(
             path = Path(dirpath) / filename
             suffix = path.suffix.lower()
             if suffix in IMAGE_EXTS:
+                if is_generated_lighting_texture(path):
+                    continue
                 textures.append(inspect_image(path, root, sample_size))
             elif suffix in MATERIAL_EXTS:
                 material_paths.append(path)
@@ -946,6 +963,11 @@ def run_audit(
             "albedo_energy_warn": "p95_srgb_luma > 0.92 and bright_pixel_ratio > 0.10",
         },
         "gate_exit_codes": GATE_EXIT_CODES,
+        "gate_profiles": {
+            "surface_safe": list(CI_SURFACE_GATE_PROFILE),
+        },
+        "active_gate_profiles": [],
+        "active_gates": ["energy_failures"],
         "texture_budget": build_texture_budget_model(texture_summary, texture_budget_mib),
         "texture_summary": texture_summary,
         "material_summary": summarize_materials(materials),
@@ -1009,6 +1031,31 @@ def write_markdown_report(report: dict[str, Any], output: Path) -> None:
         for gate, exit_code in gate_exit_codes.items():
             lines.append(markdown_row([gate, exit_code]))
         lines.append("")
+
+    gate_profiles = report.get("gate_profiles", {})
+    if gate_profiles:
+        lines.extend([
+            "## Gate Profiles",
+            "",
+            markdown_row(["Profile", "Enabled gates"]),
+            markdown_row(["---", "---"]),
+        ])
+        for profile, gates in gate_profiles.items():
+            lines.append(markdown_row([profile, ", ".join(gates)]))
+        lines.append("")
+
+    active_gate_profiles = report.get("active_gate_profiles", [])
+    active_gates = report.get("active_gates", [])
+    if active_gate_profiles or active_gates:
+        lines.extend([
+            "## Active Gates",
+            "",
+            markdown_row(["Field", "Value"]),
+            markdown_row(["---", "---"]),
+            markdown_row(["Active profiles", ", ".join(active_gate_profiles) if active_gate_profiles else "none"]),
+            markdown_row(["Active gates", ", ".join(active_gates) if active_gates else "none"]),
+            "",
+        ])
 
     texture_budget = report.get("texture_budget", {})
     if texture_budget:
@@ -1345,6 +1392,11 @@ def main() -> int:
         help="Return non-zero when texture import-setting issues are found.",
     )
     parser.add_argument(
+        "--fail-on-energy-warnings",
+        action="store_true",
+        help="Return non-zero when albedo bright-area energy warnings are found.",
+    )
+    parser.add_argument(
         "--fail-on-material-issues",
         action="store_true",
         help="Return non-zero when material slot issues are found.",
@@ -1364,6 +1416,14 @@ def main() -> int:
         action="store_true",
         help="Return non-zero when albedo candidates cannot be decoded for energy validation.",
     )
+    parser.add_argument(
+        "--ci-surface-gates",
+        action="store_true",
+        help=(
+            "Enable current-corpus safe CI gates: energy warnings, albedo read errors, "
+            "and texture budget."
+        ),
+    )
     args = parser.parse_args()
 
     root = Path(args.root).resolve()
@@ -1381,6 +1441,26 @@ def main() -> int:
         args.texture_budget_mib,
     )
 
+    fail_on_energy_warnings = args.fail_on_energy_warnings or args.ci_surface_gates
+    fail_on_texture_read_errors = args.fail_on_texture_read_errors or args.ci_surface_gates
+    fail_on_texture_budget = args.fail_on_texture_budget or args.ci_surface_gates
+    active_gate_profiles = ["surface_safe"] if args.ci_surface_gates else []
+    active_gates = ["energy_failures"]
+    if fail_on_energy_warnings:
+        active_gates.append("energy_warnings")
+    if fail_on_texture_read_errors:
+        active_gates.append("albedo_read_errors")
+    if args.fail_on_import_issues:
+        active_gates.append("import_issues")
+    if args.fail_on_unresolved_refs:
+        active_gates.append("unresolved_texture_refs")
+    if fail_on_texture_budget:
+        active_gates.append("texture_budget")
+    if args.fail_on_material_issues:
+        active_gates.append("material_issues")
+    report["active_gate_profiles"] = active_gate_profiles
+    report["active_gates"] = active_gates
+
     if args.json:
         output = Path(args.json)
         output.parent.mkdir(parents=True, exist_ok=True)
@@ -1395,6 +1475,9 @@ def main() -> int:
     print("MATERIAL_AUDIT_SUMMARY")
     print(f"root={report['root']}")
     print(f"resolve_root={report['resolve_root']}")
+    print(f"ci_surface_gates={'enabled' if args.ci_surface_gates else 'disabled'}")
+    print(f"active_gate_profiles={','.join(active_gate_profiles) if active_gate_profiles else 'none'}")
+    print(f"active_gates={','.join(active_gates)}")
     print(f"textures={texture_summary['texture_count']}")
     print(f"albedo_candidates={texture_summary['albedo_candidate_count']}")
     print(f"energy_failures={texture_summary['energy_fail_count']}")
@@ -1427,13 +1510,15 @@ def main() -> int:
         print(f"csv_prefix={args.csv_prefix}")
     if texture_summary["energy_fail_count"]:
         return 1
-    if args.fail_on_texture_read_errors and texture_summary["albedo_read_error_count"]:
+    if fail_on_energy_warnings and texture_summary["energy_warn_count"]:
+        return 7
+    if fail_on_texture_read_errors and texture_summary["albedo_read_error_count"]:
         return 6
     if args.fail_on_import_issues and texture_summary["import_issue_count"]:
         return 2
     if args.fail_on_unresolved_refs and material_summary["unresolved_texture_ref_count"]:
         return 4
-    if args.fail_on_texture_budget and report["texture_budget"]["status"] == "FAIL":
+    if fail_on_texture_budget and report["texture_budget"]["status"] == "FAIL":
         return 5
     if args.fail_on_material_issues and material_summary["materials_with_issues"]:
         return 3

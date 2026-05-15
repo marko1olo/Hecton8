@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 import tempfile
@@ -78,16 +79,24 @@ class MaterialAuditTests(unittest.TestCase):
             root = Path(temp_dir)
             bright = root / "Panel_Albedo.png"
             dark = root / "DarkPanel_Albedo.png"
+            warn = root / "WarnPanel_Albedo.png"
             Image.new("RGB", (8, 8), (255, 255, 255)).save(bright)
             Image.new("RGB", (8, 8), (64, 64, 64)).save(dark)
+            warning_pixels = [(64, 64, 64)] * 56 + [(255, 255, 255)] * 8
+            warning_image = Image.new("RGB", (8, 8), (64, 64, 64))
+            warning_image.putdata(warning_pixels)
+            warning_image.save(warn)
             write_meta(bright, srgb=1, mip=1, texture_type=0)
             write_meta(dark, srgb=1, mip=1, texture_type=0)
+            write_meta(warn, srgb=1, mip=1, texture_type=0)
 
             bright_record = audit.inspect_image(bright, root, 8)
             dark_record = audit.inspect_image(dark, root, 8)
+            warn_record = audit.inspect_image(warn, root, 8)
 
             self.assertEqual("FAIL", bright_record["energy_status"])
             self.assertEqual("PASS", dark_record["energy_status"])
+            self.assertEqual("WARN", warn_record["energy_status"])
 
     def test_texture_read_errors_are_reported_for_unreadable_albedo(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -102,6 +111,20 @@ class MaterialAuditTests(unittest.TestCase):
             self.assertEqual(1, report["texture_summary"]["albedo_read_error_count"])
             self.assertEqual("Broken_Albedo.png", report["texture_summary"]["read_error_textures"][0]["path"])
             self.assertEqual("Broken_Albedo.png", report["texture_summary"]["albedo_read_error_textures"][0]["path"])
+
+    def test_generated_scene_reflection_probe_exr_is_not_surface_debt(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            scene_dir = root / "Scenes" / "02_HECTON_WORLD"
+            scene_dir.mkdir(parents=True)
+            probe = scene_dir / "ReflectionProbe-0.exr"
+            probe.write_bytes(b"not decoded by pillow")
+            write_meta(probe, srgb=1, mip=1, texture_type=0)
+
+            report = audit.run_audit(root, 16, False)
+
+            self.assertEqual(0, report["texture_summary"]["texture_count"])
+            self.assertEqual(0, report["texture_summary"]["read_error_count"])
 
     def test_import_issues_detect_data_srgb_and_normal_import_debt(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -308,6 +331,78 @@ class MaterialAuditTests(unittest.TestCase):
             self.assertEqual(6, read_error_gate.returncode, read_error_gate.stdout + read_error_gate.stderr)
             self.assertIn("texture_read_errors=1", read_error_gate.stdout)
 
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            warn = root / "WarnPanel_Albedo.png"
+            warning_pixels = [(64, 64, 64)] * 56 + [(255, 255, 255)] * 8
+            warning_image = Image.new("RGB", (8, 8), (64, 64, 64))
+            warning_image.putdata(warning_pixels)
+            warning_image.save(warn)
+            write_meta(warn, srgb=1, mip=1, texture_type=0)
+
+            warning_gate = subprocess.run(
+                [
+                    sys.executable,
+                    str(TOOLS_ROOT / "MaterialAudit.py"),
+                    "--root",
+                    str(root),
+                    "--sample-size",
+                    "16",
+                    "--fail-on-energy-warnings",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(7, warning_gate.returncode, warning_gate.stdout + warning_gate.stderr)
+            self.assertIn("energy_warnings=1", warning_gate.stdout)
+
+    def test_ci_surface_gate_profile_enables_current_corpus_safe_gates(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            warn = root / "WarnPanel_Albedo.png"
+            warning_pixels = [(64, 64, 64)] * 56 + [(255, 255, 255)] * 8
+            warning_image = Image.new("RGB", (8, 8), (64, 64, 64))
+            warning_image.putdata(warning_pixels)
+            warning_image.save(warn)
+            write_meta(warn, srgb=1, mip=1, texture_type=0)
+            report_json = root / "audit.json"
+            report_markdown = root / "audit.md"
+
+            profile_gate = subprocess.run(
+                [
+                    sys.executable,
+                    str(TOOLS_ROOT / "MaterialAudit.py"),
+                    "--root",
+                    str(root),
+                    "--sample-size",
+                    "16",
+                    "--json",
+                    str(report_json),
+                    "--markdown",
+                    str(report_markdown),
+                    "--ci-surface-gates",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(7, profile_gate.returncode, profile_gate.stdout + profile_gate.stderr)
+            self.assertIn("ci_surface_gates=enabled", profile_gate.stdout)
+            self.assertIn("active_gate_profiles=surface_safe", profile_gate.stdout)
+            self.assertIn("energy_warnings=1", profile_gate.stdout)
+            report = json.loads(report_json.read_text(encoding="utf-8"))
+            markdown = report_markdown.read_text(encoding="utf-8")
+            self.assertEqual(["surface_safe"], report["active_gate_profiles"])
+            self.assertEqual(
+                ["energy_failures", "energy_warnings", "albedo_read_errors", "texture_budget"],
+                report["active_gates"],
+            )
+            self.assertIn("Active Gates", markdown)
+            self.assertIn("surface_safe", markdown)
+
     def test_markdown_and_csv_exports_include_recommendations(self) -> None:
         report = {
             "root": "Temp",
@@ -321,7 +416,22 @@ class MaterialAuditTests(unittest.TestCase):
                 "unresolved_texture_refs": 4,
                 "texture_budget": 5,
                 "albedo_read_errors": 6,
+                "energy_warnings": 7,
             },
+            "gate_profiles": {
+                "surface_safe": [
+                    "energy_warnings",
+                    "albedo_read_errors",
+                    "texture_budget",
+                ],
+            },
+            "active_gate_profiles": ["surface_safe"],
+            "active_gates": [
+                "energy_failures",
+                "energy_warnings",
+                "albedo_read_errors",
+                "texture_budget",
+            ],
             "texture_budget": {
                 "estimated_mib": 1.333,
                 "budget_mib": 900.0,
@@ -447,6 +557,9 @@ class MaterialAuditTests(unittest.TestCase):
             self.assertIn("GOD_MODE Texture Overrides", markdown_text)
             self.assertIn("Global Detail Overlay Plan", markdown_text)
             self.assertIn("Gate Exit Codes", markdown_text)
+            self.assertIn("Gate Profiles", markdown_text)
+            self.assertIn("Active Gates", markdown_text)
+            self.assertIn("surface_safe", markdown_text)
             self.assertIn("unresolved_texture_refs", markdown_text)
             self.assertIn("Texture Budget Model", markdown_text)
             self.assertIn("Texture Read Errors", markdown_text)

@@ -14,8 +14,25 @@
     "material_issues": 3,
     "unresolved_texture_refs": 4,
     "texture_budget": 5,
-    "albedo_read_errors": 6
+    "albedo_read_errors": 6,
+    "energy_warnings": 7
   },
+  "gate_profiles": {
+    "surface_safe": [
+      "energy_warnings",
+      "albedo_read_errors",
+      "texture_budget"
+    ]
+  },
+  "active_gate_profiles": [
+    "surface_safe"
+  ],
+  "active_gates": [
+    "energy_failures",
+    "energy_warnings",
+    "albedo_read_errors",
+    "texture_budget"
+  ],
   "texture_budget": {
     "estimated_mib": 497.565,
     "budget_mib": 900.0,

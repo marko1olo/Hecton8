@@ -39,6 +39,20 @@ Include third-party: `False`
 | unresolved_texture_refs | 4 |
 | texture_budget | 5 |
 | albedo_read_errors | 6 |
+| energy_warnings | 7 |
+
+## Gate Profiles
+
+| Profile | Enabled gates |
+| --- | --- |
+| surface_safe | energy_warnings, albedo_read_errors, texture_budget |
+
+## Active Gates
+
+| Field | Value |
+| --- | --- |
+| Active profiles | surface_safe |
+| Active gates | energy_failures, energy_warnings, albedo_read_errors, texture_budget |
 
 ## Texture Budget Model
 

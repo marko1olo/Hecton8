@@ -156,3 +156,29 @@ Task count: 8 numbered tasks in extracted XML. Header claims 15; rejected as sta
 - [x] Added albedo read-error fail gate | DOD: `--fail-on-texture-read-errors` returns exit 6 only when albedo candidates cannot be decoded for energy validation. Alternatives Rejected: failing the energy gate on non-albedo EXR reflection probe decode support. Estimate: 0 us runtime impact.
 - [x] Added read-error regression tests | DOD: test suite now covers corrupt albedo reporting and subprocess exit 6; `python -m unittest Tools.test_material_audit` passed 10 tests. Alternatives Rejected: manual corrupt-file proof only. Estimate: 0 us runtime impact.
 - [x] Re-ran project audit with read-error gate | DOD: full audit reports 1 total texture read warning (`ReflectionProbe-0.exr`), 0 albedo read errors, 0 energy failures, budget PASS, and expected scoped exits 2/4/3. Alternatives Rejected: marking non-albedo EXR decode support as PBR energy failure. Estimate: 0 us runtime impact.
+
+### Loop 21 - Generated Lighting Texture Exclusion Pass
+
+- [x] Excluded scene-generated lighting textures | DOD: scanner skips scene `ReflectionProbe`, `Lightmap`, and `LightingData` EXR/HDR files because they are not surface albedo/ORM/normal/detail data. Alternatives Rejected: reporting Pillow EXR decode support as PBR surface debt. Estimate: 0 us runtime impact.
+- [x] Added generated-lighting exclusion test | DOD: test suite now proves a bogus `Scenes/.../ReflectionProbe-0.exr` is skipped, while corrupt albedo still fails read validation. Alternatives Rejected: ad hoc path cleanup without regression coverage. Estimate: 0 us runtime impact.
+- [x] Re-ran full audit and scoped gates | DOD: full audit now reports 137 textures, 0 texture read errors, 0 albedo read errors, 0 energy failures, budget PASS; scoped gates returned expected exits 2/4/3. Alternatives Rejected: leaving non-surface scene generated texture noise in the CTO report. Estimate: 0 us runtime impact.
+
+### Loop 22 - Energy Warning Gate Pass
+
+- [x] Added optional energy-warning fail gate | DOD: `--fail-on-energy-warnings` returns exit 7 when albedo bright-area warnings are present and hard failures are absent. Alternatives Rejected: treating near-threshold bright-area risk as non-blocking forever. Estimate: 0 us runtime impact.
+- [x] Added synthetic warning coverage | DOD: test suite now creates a dark albedo with localized white patches and asserts `WARN`, plus subprocess exit 7. Alternatives Rejected: relying on current corpus having zero warnings. Estimate: 0 us runtime impact.
+- [x] Re-ran full audit and scoped gates | DOD: full audit with `--fail-on-energy-warnings` passed with 0 warnings and 0 failures; import/unresolved/material scoped gates returned expected exits 2/4/3. Alternatives Rejected: stale artifacts without the new gate contract. Estimate: 0 us runtime impact.
+
+### Loop 23 - CI Surface Gate Profile Pass
+
+- [x] Added `--ci-surface-gates` profile | DOD: profile enables current-corpus safe gates for energy warnings, albedo read errors, and texture budget. Alternatives Rejected: enabling broad import/material/unresolved gates in the profile while current assets still contain known migration debt. Estimate: 0 us runtime impact.
+- [x] Published gate profile in reports | DOD: JSON and Markdown now include `gate_profiles.surface_safe = energy_warnings, albedo_read_errors, texture_budget`. Alternatives Rejected: leaving CI profile behavior discoverable only from source. Estimate: 0 us runtime impact.
+- [x] Added subprocess profile regression coverage | DOD: `python -m unittest Tools.test_material_audit` now passes 12 tests and proves `--ci-surface-gates` returns exit 7 for warning-grade albedo. Alternatives Rejected: manual CLI proof only. Estimate: 0 us runtime impact.
+- [x] Re-ran full audit and scoped gates after profile pass | DOD: full audit with `--ci-surface-gates` passed at 137 textures, 0 energy warnings, 0 albedo read errors, 497.565/900.0 MiB texture budget PASS; import/unresolved/material scoped gates returned expected exits 2/4/3. Alternatives Rejected: stale artifacts without the profile output. Estimate: 0 us runtime impact.
+
+### Loop 24 - Active Gate Artifact Evidence Pass
+
+- [x] Added active gate metadata | DOD: generated reports now include `active_gate_profiles` and `active_gates` in addition to available profile definitions. Alternatives Rejected: relying on stdout alone to prove which gate mode produced JSON/Markdown artifacts. Estimate: 0 us runtime impact.
+- [x] Added active gate Markdown section | DOD: Markdown now emits `## Active Gates` with active profile and active gate list. Alternatives Rejected: JSON-only metadata that the CTO-facing report would not expose. Estimate: 0 us runtime impact.
+- [x] Extended profile subprocess regression | DOD: regression test now writes JSON/Markdown during a profile-gated warning run and asserts active profile/gate evidence in both artifacts. Alternatives Rejected: trusting report metadata by source inspection. Estimate: 0 us runtime impact.
+- [x] Re-ran full audit and scoped gates after active metadata pass | DOD: full audit with `--ci-surface-gates` records `active_gate_profiles=surface_safe` and `active_gates=energy_failures,energy_warnings,albedo_read_errors,texture_budget`; import/unresolved/material scoped gates returned expected exits 2/4/3. Alternatives Rejected: stale artifacts without active gate readback. Estimate: 0 us runtime impact.

@@ -221,10 +221,10 @@ Load-shed:
 ## Validator Command
 
 ```powershell
-python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --sample-size 256 --json Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.json --markdown Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.md --csv-prefix Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA
+python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --sample-size 256 --json Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.json --markdown Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.md --csv-prefix Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA --ci-surface-gates
 ```
 
-Current result: `textures=137`, `energy_failures=0`, `energy_warnings=0`, `texture_read_errors=0`, `albedo_read_errors=0`, `import_issue_textures=5`, `estimated_texture_mib=497.565`, `texture_budget_mib=900.0`, `texture_budget_status=PASS`, `materials_with_prompt_orm=0`, `materials_with_legacy_mask=9`, `channel_packing_candidates=31`, `channel_candidate_saved_mib=113.46`, `god_mode_override_count=12`, `global_detail_overlay_count=10`, `materials_with_unresolved_texture_refs=9`, `unresolved_texture_refs=27`, `materials_with_issues=37`.
+Current result: `ci_surface_gates=enabled`, `active_gate_profiles=surface_safe`, `active_gates=energy_failures,energy_warnings,albedo_read_errors,texture_budget`, `textures=137`, `energy_failures=0`, `energy_warnings=0`, `texture_read_errors=0`, `albedo_read_errors=0`, `import_issue_textures=5`, `estimated_texture_mib=497.565`, `texture_budget_mib=900.0`, `texture_budget_status=PASS`, `materials_with_prompt_orm=0`, `materials_with_legacy_mask=9`, `channel_packing_candidates=31`, `channel_candidate_saved_mib=113.46`, `god_mode_override_count=12`, `global_detail_overlay_count=10`, `materials_with_unresolved_texture_refs=9`, `unresolved_texture_refs=27`, `materials_with_issues=37`.
 
 Generated CSV artifacts:
 
@@ -241,12 +241,17 @@ Generated CSV artifacts:
 CI gate modes:
 
 ```powershell
+python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --ci-surface-gates
 python Tools\MaterialAudit.py --root Assets\_Project --fail-on-import-issues
+python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --fail-on-energy-warnings
 python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --fail-on-texture-read-errors
 python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --fail-on-unresolved-refs
 python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --fail-on-material-issues
 python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --fail-on-texture-budget
 ```
+
+`--ci-surface-gates` is the current-corpus safe profile. It enables `energy_warnings`, `albedo_read_errors`, and `texture_budget`. It does not enable broad import/material/unresolved-reference gates because current first-party assets still have known migration debt.
+Generated JSON/Markdown artifacts must record both available profiles and active gates so the report proves which gate mode produced it.
 
 Exit code contract:
 
@@ -256,6 +261,7 @@ Exit code contract:
 - `4` = unresolved material texture references when `--fail-on-unresolved-refs` is set.
 - `5` = offline estimated texture residency exceeds `--texture-budget-mib` when `--fail-on-texture-budget` is set.
 - `6` = albedo candidate texture cannot be decoded for energy validation when `--fail-on-texture-read-errors` is set.
+- `7` = albedo bright-area energy warnings when `--fail-on-energy-warnings` is set.
 
 Regression proof:
 
@@ -264,7 +270,7 @@ python -m py_compile Tools\MaterialAudit.py Tools\test_material_audit.py
 python -m unittest Tools.test_material_audit
 ```
 
-Current test result: 11 tests pass, including subprocess coverage for import-debt exit 2, material-debt exit 3, unresolved-reference exit 4, texture-budget exit 5, and albedo-read-error exit 6.
+Current test result: 12 tests pass, including subprocess coverage for import-debt exit 2, material-debt exit 3, unresolved-reference exit 4, texture-budget exit 5, albedo-read-error exit 6, energy-warning exit 7, and the `--ci-surface-gates` profile.
 
 Generated lighting exclusion:
 

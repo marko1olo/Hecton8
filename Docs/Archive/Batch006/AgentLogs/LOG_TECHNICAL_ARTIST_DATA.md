@@ -533,3 +533,129 @@ Verification:
 - Full first-party audit with read-error and budget gates: 1 total texture read warning, 0 albedo read errors, 0 energy failures, texture budget PASS.
 - Read warning is `Scenes/02_HECTON_WORLD/ReflectionProbe-0.exr`; it is not an albedo candidate.
 - Scoped import/unresolved/material gates still returned expected exits 2/4/3.
+
+## 2026-05-15 - Generated Lighting Texture Exclusion Pass
+
+What was wrong:
+
+- Scene-generated reflection-probe EXR data was included in the surface PBR scan and produced non-surface read warning noise.
+
+What was done:
+
+- Added generated lighting texture exclusion for scene `ReflectionProbe`, `Lightmap`, and `LightingData` EXR/HDR files.
+- Added a regression test proving bogus scene reflection-probe EXR data is skipped.
+- Regenerated JSON/Markdown/CSV audit artifacts.
+
+Cinematic Cheats used:
+
+- None. This is audit scope correction.
+
+Exact Microseconds saved:
+
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0 us.
+- Offline audit avoids decoding non-surface generated lighting textures.
+
+Verification:
+
+- `python -m py_compile Tools\MaterialAudit.py Tools\test_material_audit.py`: passed.
+- `python -m unittest Tools.test_material_audit`: passed 11 tests.
+- Full first-party audit: 137 textures, 0 texture read errors, 0 albedo read errors, 0 energy failures, texture budget PASS.
+- Scoped import/unresolved/material gates still returned expected exits 2/4/3.
+
+## 2026-05-15 - Energy Warning Gate Pass
+
+What was wrong:
+
+- Albedo energy warnings were visible in reports but could not fail CI.
+- Localized white albedo patches could remain non-blocking unless the hard mean-luminance failure threshold was crossed.
+
+What was done:
+
+- Added `--fail-on-energy-warnings`.
+- Exit code 7 now means albedo bright-area energy warnings.
+- Added synthetic warning coverage using a dark albedo with localized white patches.
+- Updated doctrine/status/rationale with the new gate contract.
+
+Cinematic Cheats used:
+
+- None. This is PBR validation hardening.
+
+Exact Microseconds saved:
+
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0 us.
+- Prevents baked brightness from stealing lighting/specular budget in future material passes.
+
+Verification:
+
+- `python -m py_compile Tools\MaterialAudit.py Tools\test_material_audit.py`: passed.
+- `python -m unittest Tools.test_material_audit`: passed 11 tests.
+- Full first-party audit with `--fail-on-energy-warnings`: 0 energy warnings, 0 energy failures.
+- Scoped import/unresolved/material gates still returned expected exits 2/4/3.
+
+## 2026-05-15 - CI Surface Gate Profile Pass
+
+What was wrong:
+
+- The passing surface gates existed only as separate CLI flags.
+- CI/local users could easily run energy validation without albedo read-error or texture-budget enforcement.
+
+What was done:
+
+- Added `--ci-surface-gates` to `Tools/MaterialAudit.py`.
+- Profile enables `energy_warnings`, `albedo_read_errors`, and `texture_budget`.
+- Published `gate_profiles.surface_safe` in JSON and Markdown reports.
+- Added subprocess regression coverage for the profile.
+- Updated doctrine/status/rationale/log with the new profile contract.
+
+Cinematic Cheats used:
+
+- None. This is offline validator hardening.
+
+Exact Microseconds saved:
+
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0 us.
+- Prevents surface-budget regressions from entering material/shader work under a partial gate command.
+
+Verification:
+
+- `python -m py_compile Tools\MaterialAudit.py Tools\test_material_audit.py`: passed.
+- `python -m unittest Tools.test_material_audit`: passed 12 tests.
+- Full first-party audit with `--ci-surface-gates`: 137 textures, 0 energy warnings, 0 albedo read errors, 497.565/900.0 MiB texture budget PASS.
+- Generated Markdown/JSON include `surface_safe = energy_warnings, albedo_read_errors, texture_budget`.
+- Scoped import/unresolved/material gates still returned expected exits 2/4/3.
+
+## 2026-05-15 - Active Gate Artifact Evidence Pass
+
+What was wrong:
+
+- JSON/Markdown reported available gate profiles but did not record the actual active profile or gates used for the run.
+- Stdout had the only active-profile proof, which is weak once artifacts are archived separately.
+
+What was done:
+
+- Added `active_gate_profiles` and `active_gates` to the report before writing JSON/Markdown.
+- Added an `Active Gates` section to the Markdown report.
+- Printed active profiles and gates in the CLI summary.
+- Extended the profile subprocess test to write JSON/Markdown and assert the active gate evidence.
+- Regenerated first-party audit artifacts.
+
+Cinematic Cheats used:
+
+- None. This is offline validator evidence hardening.
+
+Exact Microseconds saved:
+
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0 us.
+- Prevents unverifiable CI artifact handoffs where the gate profile cannot be proven from the report itself.
+
+Verification:
+
+- `python -m py_compile Tools\MaterialAudit.py Tools\test_material_audit.py`: passed.
+- `python -m unittest Tools.test_material_audit`: passed 12 tests.
+- Full first-party audit with `--ci-surface-gates`: active profile `surface_safe`, active gates `energy_failures,energy_warnings,albedo_read_errors,texture_budget`.
+- Generated Markdown/JSON include `Active Gates`.
+- Scoped import/unresolved/material gates still returned expected exits 2/4/3.

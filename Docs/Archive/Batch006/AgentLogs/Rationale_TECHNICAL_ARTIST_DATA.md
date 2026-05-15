@@ -167,3 +167,35 @@ Solution: Count all texture read errors for triage, export them to CSV/Markdown,
 Rejected Alternatives: Failing on every decode error was rejected after the project revealed `ReflectionProbe-0.exr`; that file is not an albedo candidate and Pillow EXR support is not the PBR energy contract. Ignoring read errors entirely was rejected because corrupt albedo evidence would be false.
 Scalability potential: Low = albedo corruption blocks cheap-device builds before import. Middle = non-albedo read warnings remain visible for asset owners. High/Ultra = material upgrade passes do not inherit silent broken albedo data.
 Hardware Impact: 0 us runtime impact. Current audit reports 1 total texture read warning, 0 albedo read errors, and the albedo energy gate remains valid for 26 decoded candidates.
+
+## Generated Lighting Texture Exclusion
+
+Problem: The surface audit included scene-generated reflection-probe EXR data, creating a read warning unrelated to channel packing, detail maps, or albedo energy validation.
+Solution: Skip scene `ReflectionProbe`, `Lightmap`, and `LightingData` EXR/HDR files during surface texture scanning, while retaining the albedo read-error gate for actual surface inputs.
+Rejected Alternatives: Keeping the warning was rejected because it pollutes PBR surface debt. Removing EXR support globally was rejected because authored surface EXRs could still be valid if they appear outside generated scene-lighting paths.
+Scalability potential: Low/Middle/High/Ultra unchanged; audit consumers receive cleaner surface-only evidence.
+Hardware Impact: 0 us runtime impact. Full audit now reports 137 textures, 0 texture read errors, 0 albedo read errors, and 0 energy failures.
+
+## Energy Warning Gate
+
+Problem: Albedo bright-area warnings were reported but could not fail CI, allowing localized baked-bright albedo risk to remain non-blocking.
+Solution: Add `--fail-on-energy-warnings` with exit code 7 while preserving hard overbright albedo failures as exit code 1.
+Rejected Alternatives: Converting every warning into an unconditional failure was rejected because warnings are useful for staged adoption. Ignoring warnings was rejected because localized white patches can still cause PBR blowout even when mean luminance is below the hard fail threshold.
+Scalability potential: Low = strict branches can block warning-grade albedo bloat. Middle/High/Ultra = art directors can allow warnings during authoring but enforce clean albedo before branch promotion.
+Hardware Impact: 0 us runtime impact. Current first-party audit has 0 energy warnings and 0 energy failures.
+
+## CI Surface Gate Profile
+
+Problem: The passing surface gates existed only as separate flags, which makes CI/local invocation easy to drift and encourages partial validation.
+Solution: Add `--ci-surface-gates`, publish `gate_profiles.surface_safe` in generated reports, and make the profile enable only the current-corpus safe gates: energy warnings, albedo read errors, and texture budget.
+Rejected Alternatives: Enabling broad import/material/unresolved-reference gates in the profile was rejected because current first-party assets still have known migration debt and that would block every run before it can prove albedo energy/readability/budget safety. Keeping separate flags only was rejected because repeated manual flag strings are brittle.
+Scalability potential: Low = toaster/MX350 builds get one command that blocks bright albedo risk, corrupt albedo data, and texture budget overflow. Middle = nightly CI can layer broad import/material gates separately. High/Ultra = GOD_MODE texture escalation remains budget-gated instead of hiding behind manual command variants.
+Hardware Impact: 0 us runtime impact. Current first-party audit with `--ci-surface-gates` passes at 137 textures, 0 energy warnings, 0 albedo read errors, and 497.565/900.0 MiB texture budget PASS.
+
+## Active Gate Artifact Evidence
+
+Problem: The generated reports listed available gate profiles but did not prove which profile/gates were active during the audit run.
+Solution: Add `active_gate_profiles` and `active_gates` to report metadata before writing JSON/Markdown, print the same fields to stdout, and add an `Active Gates` Markdown section.
+Rejected Alternatives: Relying on stdout was rejected because logs and reports can be separated. Writing only JSON metadata was rejected because the Markdown report is the human-facing artifact.
+Scalability potential: Low = MX350 gate artifacts remain auditable after handoff. Middle = CI can archive JSON/Markdown and prove the exact gate mode. High/Ultra = GOD_MODE escalation audits can distinguish budget-only runs from full migration gates.
+Hardware Impact: 0 us runtime impact. Current artifact records `surface_safe` with active gates `energy_failures`, `energy_warnings`, `albedo_read_errors`, and `texture_budget`.
