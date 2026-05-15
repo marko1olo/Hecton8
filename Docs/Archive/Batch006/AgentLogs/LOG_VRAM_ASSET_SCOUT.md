@@ -765,6 +765,7 @@ Verification:
 - PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools -p test_memory_budget_check.py: PASS, 17 tests, elapsed 5.924 seconds.
 - PYTHONDONTWRITEBYTECODE=1 python Tools/MemoryBudgetCheck.py --root . --ci: EXPECTED FAIL with `ci_exit_code=2`; current redlines/overflow still produce `[CRITICAL_VRAM_OVERFLOW]`, 801 texture crimes, 293 mesh risk rows, and 1 RenderTexture risk row.
 - Python bytecode cleanup for `MemoryBudgetCheck*` and `test_memory_budget_check*`: PASS.
+- LOG_ORDER_OK: 24 chronological report headers, latest `2026-05-15T22:15:00+03:00`.
 
 Evidence boundary:
 - STATIC_SOURCE / FILESYSTEM / PY_UNIT_TEST only.
