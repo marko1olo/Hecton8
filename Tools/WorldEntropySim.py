@@ -13,6 +13,7 @@ STAGE_SEED = 1
 STAGE_IMMATURE = 2
 STAGE_MATURE = 3
 UINT32_MASK = 0xFFFFFFFF
+BYTE_MAX = 255
 MAX_SAFE_GRID_CELLS = 1_048_576
 EXPECTED_BIOME_NAMES = ("Safe Shallows", "Temperate Reef", "Thermal Vent", "Deep Abyss")
 
@@ -40,7 +41,7 @@ def validate_constants(constants: dict) -> None:
         raise ValueError("grid cell count exceeds safe entropy harness budget")
     if int(constants["macroSectorMeters"]) < 1:
         raise ValueError("macroSectorMeters must be positive")
-    if int(constants["baseGrowthProgressPerDayQ"]) < 1 or int(constants["baseGrowthProgressPerDayQ"]) > 255:
+    if int(constants["baseGrowthProgressPerDayQ"]) < 1 or int(constants["baseGrowthProgressPerDayQ"]) > BYTE_MAX:
         raise ValueError("baseGrowthProgressPerDayQ must be in 1..255")
     for key in (
         "nutrientDiffusionPermille",
@@ -52,14 +53,24 @@ def validate_constants(constants: dict) -> None:
         value = int(constants[key])
         if value < 0 or value > 1000:
             raise ValueError(f"{key} must be in 0..1000")
-    if int(constants["seedToMatureProgressQ"]) < 1:
-        raise ValueError("seedToMatureProgressQ must be positive")
-    if int(constants["tombstoneBaseDecayDays"]) < 1:
-        raise ValueError("tombstoneBaseDecayDays must be positive")
-    if int(constants["minApexRespawnDays"]) < 1:
-        raise ValueError("minApexRespawnDays must be positive")
-    if int(constants["maxApexRespawnDays"]) < int(constants["minApexRespawnDays"]):
-        raise ValueError("maxApexRespawnDays must be >= minApexRespawnDays")
+    for key in (
+        "passiveNutrientRecoveryPerDayQ",
+        "nutrientPenaltyOnMiningQ",
+        "minimumNutrientsQ",
+    ):
+        value = int(constants[key])
+        if value < 0 or value > BYTE_MAX:
+            raise ValueError(f"{key} must be in 0..255")
+    if int(constants["seedToMatureProgressQ"]) < 1 or int(constants["seedToMatureProgressQ"]) > BYTE_MAX:
+        raise ValueError("seedToMatureProgressQ must be in 1..255")
+    if int(constants["tombstoneBaseDecayDays"]) < 1 or int(constants["tombstoneBaseDecayDays"]) > BYTE_MAX:
+        raise ValueError("tombstoneBaseDecayDays must be in 1..255")
+    min_apex_respawn_days = int(constants["minApexRespawnDays"])
+    max_apex_respawn_days = int(constants["maxApexRespawnDays"])
+    if min_apex_respawn_days < 1 or min_apex_respawn_days > BYTE_MAX:
+        raise ValueError("minApexRespawnDays must be in 1..255")
+    if max_apex_respawn_days < min_apex_respawn_days or max_apex_respawn_days > BYTE_MAX:
+        raise ValueError("maxApexRespawnDays must be in minApexRespawnDays..255")
     acceptance = constants["acceptance"]
     acceptance_days = int(acceptance["simulationDays"])
     if acceptance_days < 1:
@@ -76,14 +87,17 @@ def validate_constants(constants: dict) -> None:
     if len(biomes) != len(EXPECTED_BIOME_NAMES):
         raise ValueError("exactly four biome constants are required")
 
+    minimum_nutrients_q = int(constants["minimumNutrientsQ"])
     for index, expected_name in enumerate(EXPECTED_BIOME_NAMES):
         biome = biomes[index]
         if int(biome["id"]) != index or biome["name"] != expected_name:
             raise ValueError("biome ids and names must match runtime indices")
-        if int(biome["temperatureQ"]) <= 0:
-            raise ValueError("biome temperatureQ must be positive")
-        if int(biome["nutrientStartQ"]) < int(constants["minimumNutrientsQ"]):
-            raise ValueError("biome nutrientStartQ must not undercut minimumNutrientsQ")
+        temperature_q = int(biome["temperatureQ"])
+        if temperature_q < 1 or temperature_q > BYTE_MAX:
+            raise ValueError("biome temperatureQ must be in 1..255")
+        nutrient_start_q = int(biome["nutrientStartQ"])
+        if nutrient_start_q < minimum_nutrients_q or nutrient_start_q > BYTE_MAX:
+            raise ValueError("biome nutrientStartQ must be in minimumNutrientsQ..255")
         expected_day = int(biome["expectedHalfRecoveryDaysUnderTotalOverharvest"])
         if expected_day < 1 or expected_day > acceptance_days:
             raise ValueError("expected half-recovery day must fit acceptance simulationDays")

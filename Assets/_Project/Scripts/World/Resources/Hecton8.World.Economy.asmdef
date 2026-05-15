@@ -3,6 +3,7 @@
     "rootNamespace": "Hecton8.World",
     "references": [
         "Hecton8.Core",
+        "Hecton8.Core.Memory",
         "Hecton8.World.Contracts",
         "Unity.Burst",
         "Unity.Collections",

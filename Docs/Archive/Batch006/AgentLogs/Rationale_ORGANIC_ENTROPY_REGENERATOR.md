@@ -411,3 +411,47 @@ Rejected Alternatives: Keeping baseline was rejected because it is outside the X
 Scalability potential: Low/Middle/High/Ultra validation runs now expose one acceptance surface for this batch. Future baseline tooling must define its own schema and task instead of piggybacking on this export.
 
 Hardware Impact: Tooling-only. Unity runtime backend unchanged; invalid CLI mode exits before JSON simulation work.
+
+## Decision 38 - Expected Recovery Metadata Guard
+Problem: `Regrowth_Constants.json` carries expected half-recovery days, but `run_sim()` did not validate that metadata before simulation. A malformed file could advertise zero-day or out-of-window recovery while still running the model.
+
+Solution: Added validation that every biome expected recovery day is positive and no greater than `acceptance.simulationDays`. Added a regression that sets Safe Shallows expected recovery day to `0` and expects `ValueError`.
+
+Rejected Alternatives: Relying only on the happy-path equality test was rejected because direct automation can call `run_sim()` with arbitrary constants. Ignoring expected-day metadata was rejected because it is part of the exported acceptance artifact.
+
+Scalability potential: Low/Middle/High/Ultra validation runs now reject impossible recovery metadata before any day loop starts. Future longer acceptance horizons can still raise `acceptance.simulationDays` explicitly.
+
+Hardware Impact: Tooling-only. Unity runtime backend unchanged; invalid expected-day metadata aborts before Python allocates per-cell lanes.
+
+## Decision 39 - Byte-Lane Constants Range Guard
+Problem: `WorldEntropySim.py` accepted Python integers for nutrient recovery, mining nutrient penalty, minimum nutrients, biome temperature, and biome starting nutrients without proving they fit the runtime byte-lane storage. That allowed malformed constants to create an offline simulation state that the C# SOA backend cannot represent.
+
+Solution: Added a shared `BYTE_MAX` guard and validation for top-level byte-lane constants in `0..255`, biome temperature in `1..255`, and biome starting nutrients in `minimumNutrientsQ..255`. Added a regression that mutates each class of byte-lane field and expects `ValueError`.
+
+Rejected Alternatives: Trusting exported happy-path JSON was rejected because direct automation can call `run_sim()` with arbitrary constants. Silently clamping was rejected because it would create an untracked third simulation truth between malformed data and C# runtime storage.
+
+Scalability potential: Low/Middle/High/Ultra validation runs now reject impossible byte-lane data before allocating per-cell lists. High-tier visual overkill can still derive richer presentation from valid byte lanes without changing ecology truth.
+
+Hardware Impact: Tooling-only. Unity runtime backend unchanged; invalid byte-lane data now aborts before Python state allocation and day loops.
+
+## Decision 40 - Direct Memory Assembly Reference
+Problem: `WorldRegrowthSimulation.cs` imports `Hecton8.Core.Memory` for `H8Memory` and `SystemID.WorldStreaming`, but `Hecton8.World.Economy.asmdef` did not list `Hecton8.Core.Memory`. Roslyn stubs could pass while Unity asmdef import failed because the assembly graph lacked the direct dependency.
+
+Solution: Added `Hecton8.Core.Memory` to `Assets/_Project/Scripts/World/Resources/Hecton8.World.Economy.asmdef` and verified the JSON reference list with `ConvertFrom-Json` plus targeted scans.
+
+Rejected Alternatives: Relying on `Hecton8.Core` was rejected because asmdef references are not a safe transitive contract for a separate `Hecton8.Core.Memory` assembly. Moving regrowth memory back to raw `NativeArray` allocation was rejected because it would undo the H8Memory owner-tracked allocation work.
+
+Scalability potential: Low/Middle/High/Ultra tiers now compile against the same owner-tracked memory backend instead of depending on incidental assembly wiring. Larger macro grids still remain under `SystemID.WorldStreaming` accounting.
+
+Hardware Impact: Runtime impact is 0 us. The gain is Unity compile correctness for the memory-owned regrowth backend; full Unity import remains blocked because no Unity executable is available in this environment.
+
+## Decision 41 - Lifecycle Byte Threshold Guard
+Problem: `seedToMatureProgressQ`, `tombstoneBaseDecayDays`, `minApexRespawnDays`, and `maxApexRespawnDays` are byte fields in the C# config, but the Python harness only checked positivity and ordering. A malformed JSON payload could push lifecycle thresholds above `255`, producing offline entropy evidence from values that cannot be represented by the runtime config.
+
+Solution: Extended `validate_constants` to require lifecycle byte fields in `1..255` and max apex respawn in `minApexRespawnDays..255`. Added a regression mutating seed, tombstone, min apex, and max apex values to `256`.
+
+Rejected Alternatives: Letting Python accept larger integers was rejected because it creates a non-runtime simulation truth. Silently clamping was rejected because it would hide invalid constants and change recovery timing without explicit data authority.
+
+Scalability potential: Low/Middle/High/Ultra validation runs now fail malformed lifecycle constants before allocation. High-tier visuals still derive from the same valid lifecycle byte envelope; no tier gets a separate unbounded lifecycle model.
+
+Hardware Impact: Tooling-only. Unity runtime backend unchanged; invalid lifecycle byte data now aborts before Python state allocation and day loops.

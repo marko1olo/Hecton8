@@ -89,13 +89,27 @@ class WorldEntropySimTests(unittest.TestCase):
             self.assertGreaterEqual(self.constants[key], 0)
             self.assertLessEqual(self.constants[key], 1000)
 
+        for key in (
+            "passiveNutrientRecoveryPerDayQ",
+            "nutrientPenaltyOnMiningQ",
+            "minimumNutrientsQ",
+        ):
+            self.assertGreaterEqual(self.constants[key], 0)
+            self.assertLessEqual(self.constants[key], 255)
+
         self.assertGreater(self.constants["seedToMatureProgressQ"], 0)
+        self.assertLessEqual(self.constants["seedToMatureProgressQ"], 255)
         self.assertGreater(self.constants["tombstoneBaseDecayDays"], 0)
+        self.assertLessEqual(self.constants["tombstoneBaseDecayDays"], 255)
         self.assertGreater(self.constants["minApexRespawnDays"], 0)
+        self.assertLessEqual(self.constants["minApexRespawnDays"], 255)
         self.assertGreaterEqual(self.constants["maxApexRespawnDays"], self.constants["minApexRespawnDays"])
+        self.assertLessEqual(self.constants["maxApexRespawnDays"], 255)
         for biome in self.constants["biomes"]:
             self.assertGreater(biome["temperatureQ"], 0)
+            self.assertLessEqual(biome["temperatureQ"], 255)
             self.assertGreaterEqual(biome["nutrientStartQ"], self.constants["minimumNutrientsQ"])
+            self.assertLessEqual(biome["nutrientStartQ"], 255)
 
     def test_cli_rejects_non_positive_day_count(self) -> None:
         with patch.object(sys, "argv", ["WorldEntropySim.py", "--days", "0"]), patch("sys.stderr", StringIO()):
@@ -126,6 +140,48 @@ class WorldEntropySimTests(unittest.TestCase):
         constants = deepcopy(self.constants)
         constants["predationPermille"] = 1001
 
+        with self.assertRaises(ValueError):
+            entropy.run_sim(constants, 1, True)
+
+    def test_run_sim_rejects_invalid_byte_lane_constants(self) -> None:
+        constants = deepcopy(self.constants)
+        constants["minimumNutrientsQ"] = 256
+        with self.assertRaises(ValueError):
+            entropy.run_sim(constants, 1, True)
+
+        constants = deepcopy(self.constants)
+        constants["passiveNutrientRecoveryPerDayQ"] = -1
+        with self.assertRaises(ValueError):
+            entropy.run_sim(constants, 1, True)
+
+        constants = deepcopy(self.constants)
+        constants["biomes"][0]["temperatureQ"] = 256
+        with self.assertRaises(ValueError):
+            entropy.run_sim(constants, 1, True)
+
+        constants = deepcopy(self.constants)
+        constants["biomes"][0]["nutrientStartQ"] = 256
+        with self.assertRaises(ValueError):
+            entropy.run_sim(constants, 1, True)
+
+    def test_run_sim_rejects_invalid_lifecycle_byte_constants(self) -> None:
+        constants = deepcopy(self.constants)
+        constants["seedToMatureProgressQ"] = 256
+        with self.assertRaises(ValueError):
+            entropy.run_sim(constants, 1, True)
+
+        constants = deepcopy(self.constants)
+        constants["tombstoneBaseDecayDays"] = 256
+        with self.assertRaises(ValueError):
+            entropy.run_sim(constants, 1, True)
+
+        constants = deepcopy(self.constants)
+        constants["minApexRespawnDays"] = 256
+        with self.assertRaises(ValueError):
+            entropy.run_sim(constants, 1, True)
+
+        constants = deepcopy(self.constants)
+        constants["maxApexRespawnDays"] = 256
         with self.assertRaises(ValueError):
             entropy.run_sim(constants, 1, True)
 

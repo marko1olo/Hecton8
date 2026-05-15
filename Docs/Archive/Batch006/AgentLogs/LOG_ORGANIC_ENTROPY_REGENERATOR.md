@@ -692,3 +692,112 @@ Verification:
 - Target scans: no forbidden hot-path token matches; no raw `new NativeArray`; no raw native dispose.
 - `git diff --check`: clean.
 - `dotnet --info`: unavailable; full Unity import/build remains PENDING VERIFICATION.
+
+## 2026-05-15 - Expected Recovery Metadata Guard
+
+What was wrong:
+- Exported biome expected recovery days were not validated before simulation.
+- A malformed constants file could advertise impossible recovery metadata while still running the model.
+
+What was done:
+- Required each expected half-recovery day to be positive and within `acceptance.simulationDays`.
+- Added `test_run_sim_rejects_invalid_expected_recovery_day`.
+- Re-ran unit, entropy, syntax, static, and workspace checks.
+
+Cinematic cheats used:
+- None. This is offline export-metadata validation.
+
+Exact microseconds saved:
+- Runtime microseconds saved: 0. Unity runtime backend was not changed.
+- Failure avoided: impossible expected recovery metadata aborts before Python state allocation and day loops.
+
+Verification:
+- `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`: exit code 0.
+- `python -m unittest Tools.test_world_entropy_sim -v`: 15 tests passed in 118.145 s.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
+- Target scans: no forbidden hot-path token matches; no raw `new NativeArray`; no raw native dispose.
+- `git diff --check`: CRLF warnings only for edited text files.
+- `dotnet --info`: timed out/unavailable; full Unity import/build remains PENDING VERIFICATION.
+
+## 2026-05-15 - Byte-Lane Constants Range Guard
+
+What was wrong:
+- The entropy harness accepted Python integer constants that could exceed runtime byte-lane storage.
+- Malformed nutrient/temperature constants could generate offline evidence from values the C# SOA backend cannot store.
+
+What was done:
+- Added `BYTE_MAX` validation for passive nutrient recovery, mining nutrient penalty, minimum nutrients, biome temperature, and biome nutrient starts.
+- Expanded exported-constants bounds checks and added `test_run_sim_rejects_invalid_byte_lane_constants`.
+- Re-ran syntax, static, regression, 365-day, and 1000-day checks.
+
+Cinematic cheats used:
+- None. This is offline data-contract validation.
+
+Exact microseconds saved:
+- Runtime microseconds saved: 0. Unity runtime backend was not changed.
+- Failure avoided: invalid byte-lane data aborts before Python state allocation and day loops.
+
+Verification:
+- `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`: exit code 0.
+- `python -m unittest Tools.test_world_entropy_sim -v`: 16 tests passed in 72.286 s.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
+- Target scans: no forbidden hot-path token matches.
+- `git diff --check`: exit code 0 with CRLF warnings only.
+- `dotnet --info`: unavailable; full Unity import/build remains PENDING VERIFICATION.
+- `.codex_tmp`: absent.
+
+## 2026-05-15 - Lifecycle Byte Threshold Guard
+
+What was wrong:
+- Lifecycle and apex respawn constants are byte fields in C#, but Python only checked positivity and ordering.
+- Malformed JSON could set thresholds above 255 and produce entropy evidence from non-runtime values.
+
+What was done:
+- Required `seedToMatureProgressQ`, `tombstoneBaseDecayDays`, and `minApexRespawnDays` to be in `1..255`.
+- Required `maxApexRespawnDays` to be in `minApexRespawnDays..255`.
+- Added `test_run_sim_rejects_invalid_lifecycle_byte_constants`.
+
+Cinematic cheats used:
+- None. This is offline data-contract validation.
+
+Exact microseconds saved:
+- Runtime microseconds saved: 0. Unity runtime backend was not changed.
+- Failure avoided: invalid lifecycle byte data aborts before Python state allocation and day loops.
+
+Verification:
+- `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`: exit code 0.
+- `python -m unittest Tools.test_world_entropy_sim -v`: 17 tests passed in 64.706 s.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
+- Target scans: no forbidden hot-path token matches.
+- Full Unity import/build remains PENDING VERIFICATION.
+
+## 2026-05-15 - Unity Assembly Reference Guard
+
+What was wrong:
+- `WorldRegrowthSimulation.cs` uses `Hecton8.Core.Memory`.
+- `Hecton8.World.Economy.asmdef` did not reference `Hecton8.Core.Memory`, so Unity asmdef import could fail even though Roslyn stub compilation passed.
+
+What was done:
+- Added `Hecton8.Core.Memory` to `Assets/_Project/Scripts/World/Resources/Hecton8.World.Economy.asmdef`.
+- Re-ran asmdef JSON parsing, memory-reference scans, entropy runs, regression tests, and tooling availability probes.
+
+Cinematic cheats used:
+- None. This is compile-wiring hygiene for the owner-tracked native memory path.
+
+Exact microseconds saved:
+- Runtime microseconds saved: 0. The runtime simulation code did not change.
+- Failure avoided: Unity assembly graph now has the direct memory dependency for `H8Memory` and `SystemID.WorldStreaming`.
+
+Verification:
+- asmdef JSON parse: `Hecton8.Core.Memory` listed in references.
+- `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`: exit code 0.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
+- `python -m unittest Tools.test_world_entropy_sim -v`: 16 tests passed in 67.068 s.
+- Target scans: no forbidden hot-path token matches; no raw `new NativeArray`; no raw native dispose outside owner-tracked `H8Memory` release calls.
+- Unity executable probe: not found on PATH or checked install roots.
+- `dotnet --info`: unavailable.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
+- `git diff --check`: CRLF warnings only.
