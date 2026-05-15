@@ -113,7 +113,9 @@ class MemoryBudgetCheckTests(unittest.TestCase):
         self.assertEqual(budget.normalize_worker_count(9999), budget.MAX_AUDIT_WORKERS)
 
     def test_render_texture_source_hotspots_find_runtime_allocations(self) -> None:
-        hits = budget.find_render_texture_source_hotspots(PROJECT_ROOT)
+        source = PROJECT_ROOT / "Assets" / "_Project" / "Scripts" / "World" / "Biolum" / "HectonBiolumDiffusionVolume.cs"
+
+        hits = budget.find_render_texture_source_hotspots_in_paths(PROJECT_ROOT, [source])
 
         self.assertTrue(any(hit.pattern == "new RenderTexture" and not hit.editor_only for hit in hits))
         self.assertTrue(any("RenderTextureDescriptor" == hit.pattern and not hit.editor_only for hit in hits))

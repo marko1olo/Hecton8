@@ -1124,12 +1124,9 @@ def is_editor_source_path(path: Path, root: Path) -> bool:
     return "/editor/" in value or value.endswith("/editor")
 
 
-def find_render_texture_source_hotspots(root: Path) -> List[RenderTextureSourceHit]:
-    scripts_root = root / "Assets" / "_Project" / "Scripts"
-    if not scripts_root.exists():
-        return []
+def find_render_texture_source_hotspots_in_paths(root: Path, paths: Sequence[Path]) -> List[RenderTextureSourceHit]:
     hits: List[RenderTextureSourceHit] = []
-    for path in scripts_root.rglob("*.cs"):
+    for path in paths:
         if any(part.lower() in SKIP_DIR_NAMES_LOWER for part in path.parts):
             continue
         editor_only = is_editor_source_path(path, root)
@@ -1155,6 +1152,13 @@ def find_render_texture_source_hotspots(root: Path) -> List[RenderTextureSourceH
             continue
     hits.sort(key=lambda item: (item.editor_only, rel(item.path, root).lower(), item.line))
     return hits
+
+
+def find_render_texture_source_hotspots(root: Path) -> List[RenderTextureSourceHit]:
+    scripts_root = root / "Assets" / "_Project" / "Scripts"
+    if not scripts_root.exists():
+        return []
+    return find_render_texture_source_hotspots_in_paths(root, sorted(scripts_root.rglob("*.cs"), key=lambda path: rel(path, root).lower()))
 
 
 def resolve_render_texture_hotspots(
