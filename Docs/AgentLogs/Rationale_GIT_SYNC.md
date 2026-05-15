@@ -107,3 +107,19 @@ Rejected Alternatives: Generating fake `.csproj` files would create project drif
 Scalability potential: None for runtime tiers; this is verification infrastructure debt.
 Hardware Impact: 0 us gameplay runtime gain measured.
 
+## Decision 14
+
+Problem: The shared checkout kept receiving valid-looking concurrent Organic Entropy, Save Hash, and Narrative Lore updates while `origin/main` also advanced. A single blind commit or stale-base push would either mix domains without review or risk remote regression.
+Solution: Review diffs by domain, commit narrow slices, fetch/rebase over remote checkpoints, and rerun CLI gates after the final rebase. The final local stack is on top of `origin/main` commit `4d0d03928`.
+Rejected Alternatives: Force-push was rejected because it could discard remote checkpoint work. `git add -A` was rejected because concurrent agents were writing during verification. Stashing dirty state was rejected once clean commits could preserve exact authored content.
+Scalability potential: Low/Middle/High/Ultra runtime tiers are not changed by repository hygiene. Domain changes remain owned by their agents; GIT_SYNC only preserved and verified repository-level integrity.
+Hardware Impact: 0 us runtime gain measured; repository operation only.
+
+## Decision 15
+
+Problem: A final report would be false if it implied Unity compile, Play Mode, profiler, GCMonitor, or player-build proof from CLI-only tests.
+Solution: Report only evidence actually produced: Python/unit/tooling gates, static Git checks, and repository scans. Keep Unity/runtime status as PENDING VERIFICATION.
+Rejected Alternatives: Claiming compile/runtime health from `python -m unittest` or `git diff --check` violates the evidence mandate. Generating project files manually was rejected because Unity should own generated `.csproj` surfaces.
+Scalability potential: Runtime scalability claims remain with the domain owners and Unity/profiler evidence. GIT_SYNC only confirms the pushed tree is Git-clean and passes available CLI gates.
+Hardware Impact: 0 us runtime gain measured; no profiler sample was produced.
+

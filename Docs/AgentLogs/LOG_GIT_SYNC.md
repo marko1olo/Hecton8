@@ -101,3 +101,28 @@ Exact Microseconds saved: 0 us runtime measured.
 Verification: `git status --porcelain=v1` clean; `git ls-files -u` empty; `git diff --check` clean; local first-party orphan `.meta` count 0; tracked large-file count >=100 MB is 0; `python -m unittest discover -s Tools -p "test*.py"` passed 188 tests in 95.824 seconds.
 Failed/limited checks: `dotnet` is not in PATH; root `.csproj` files are absent; MSBuild 17.14 fails `Hecton8.slnx` with MSB3202 for missing generated Unity `.csproj` files. Unity Editor/import/Play Mode/profiler/GCMonitor/player build remain PENDING VERIFICATION.
 Residual risk: Compile/runtime proof requires Unity project-file generation or a Unity Editor run.
+
+## 2026-05-15 Live Tail Rebase And Verification
+
+What was wrong: After local checkout alignment, new concurrent Organic Entropy, Save Hash, and Narrative Lore changes appeared while `origin/main` advanced three times (`d2956babc`, `e648947ce`, then `4d0d03928`). Pushing from the stale local base would have been incorrect.
+
+What was done: Reviewed the dirty files by domain, committed narrow slices, rebased the local stack over the latest `origin/main`, preserved bottom-appended lore logs where required, and kept GIT_SYNC evidence separate from domain commits.
+
+Cinematic Cheats used: None. Repository synchronization and offline tooling only.
+
+Exact Microseconds saved: 0 us runtime measured. No Unity frame path was profiled or optimized by GIT_SYNC.
+
+Verification:
+- `git rebase origin/main` succeeded over `d2956babc`, `e648947ce`, and `4d0d03928` with no conflicts.
+- `git diff --check` passed after the final rebase.
+- `python -m py_compile Tools\WorldEntropySim.py Tools\test_world_entropy_sim.py Tools\Security\VerifyReplayHasherReference.py Tools\VerifyLore.py Tools\test_verify_lore.py` passed.
+- `python -B Tools\Security\ReplayHasher.py self-test` -> `SELFTEST_OK`.
+- `python -B Tools\Security\ValidateSaveMasterHashCSharp.py` -> `SAVE_MASTER_HASH_CSHARP_GUARD=PASS`.
+- `python Tools\VerifyLore.py --check` passed from repo root and from `Tools\`.
+- `python -B -m unittest Tools.test_verify_lore -v` passed 21 tests.
+- `python Tools\WorldEntropySim.py --constants Data\Economy\Regrowth_Constants.json --days 365 --mode total_overharvest` -> `STATUS=ENTROPY BALANCED`.
+- `python -m unittest discover -s Tools -p "test*.py"` passed 194 tests in 89.469 seconds.
+- First-party orphan `.meta` scan returned 0.
+- HEAD tracked blob scan found 0 files >= 100 MB.
+
+Residual risk: Unity Editor/import/Play Mode/profiler/GCMonitor/player build remain PENDING VERIFICATION. No runtime GC or frame-time claim is made.
