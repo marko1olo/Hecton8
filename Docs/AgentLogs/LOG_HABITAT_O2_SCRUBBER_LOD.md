@@ -200,3 +200,20 @@ Cinematic Cheats used:
 
 Exact microseconds saved:
 - None claimed. This adds cold-path guard arithmetic only and reduces future H-Phi migration crash risk. No dotnet rebuild was run.
+
+## 2026-05-15 - Main Step SOA Guard Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- The main Dalton job used a single room-lane length and a single bulkhead-lane length as authority for multiple SOA buffers.
+
+What was done:
+- `GasDynamicsStepJob` now clamps room work across all required room lanes before indexing.
+- Bulkhead diffusion is clamped across both endpoint lanes and sealed-state lane.
+- Telemetry write now checks the ring exists and the scheduled write index is in range.
+
+Cinematic Cheats used:
+- None new. This preserves the same hibernation LOD and Dalton approximation.
+
+Exact microseconds saved:
+- None claimed. This is one-time per-step guard arithmetic to prevent capacity-skew faults during future H-Phi/native ownership migration. No dotnet rebuild was run.

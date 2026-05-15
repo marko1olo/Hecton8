@@ -606,3 +606,30 @@ Verification:
 - `rg` confirms only `AdvanceFrameIndex()` writes `_frameIndex` and all scheduled-job completion paths call it.
 - `git diff --check` and `git diff --cached --check` on touched code/docs exit 0.
 - Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.
+
+## 2026-05-15T04:04+04:00
+
+Status: PENDING VERIFICATION. Continued GPU consumer contract audit. No `dotnet` rebuild/compile, Unity import, or response-file probe was run.
+
+What was wrong:
+- `TryGetLeviathanBoneGraphicsBuffer()` returned `false` for dirty/invalid data but could leave a stale non-null buffer and nonzero segment count in its out parameters.
+- That made the boolean the only protection against stale GPU deformation for any future or parallel consumer.
+
+What was done:
+- Changed the getter to resolve a local candidate buffer.
+- Published the buffer/count only after `_gpuUploadDirty == false`, `_gpuBufferDataValid == true`, and `HasValidGraphicsBuffer(...)` all pass.
+- Cleared `buffer` and `activeSegmentCount` on every failed query.
+
+Cinematic cheats used:
+- None. Existing low-tier eight-matrix and GPU matrix deformation paths are unchanged.
+
+Exact microseconds saved:
+- No frame-time saving claimed.
+- Added no allocations and no GPU upload work.
+- Prevented stale GPU buffer consumption on failed query states.
+
+Verification:
+- Static grep over IK runtime/job/shader scope found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `rg` confirms `TryGetLeviathanBoneGraphicsBuffer()` only assigns non-null `buffer` inside the fresh-upload success branch.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0.
+- Runtime status remains pending until Unity Editor import, shader compile, play-mode behavior, GC, and profiler evidence exist.

@@ -267,3 +267,9 @@ Solution: Reject non-finite wake positions/vectors/radius/lifetime before alloca
 Rejected Alternatives: Clamping NaN to zero was rejected because it mutates route-pressure state into plausible but false steering. Allocating diagnostic containers was rejected because the hot route-pressure path must stay zero-GC.
 Scalability potential: Low tier drops invalid impulses cheaply. Middle/High/Ultra keep stronger valid wake/threat visuals without carrying corrupt cached pressure.
 Hardware Impact: Avoids invalid flow/threat writes and later steering recovery. Valid wake registration pays only a few finite checks before the existing native write.
+
+Problem: Direct native view properties could bypass the safer payload getters and expose stale flow, nav-node, or completed-path buffers with counts that no longer matched backing native memory.
+Solution: Route `EcosystemFlowField` through complete square-grid and finite-metadata proof, clamp `ActiveAbyssalNavNodeCount` to both managed and native snapshots, and clamp `ActiveAbyssalPathCount` to the native path buffer before returning direct views.
+Rejected Alternatives: Removing direct native properties was rejected because existing consumers may use them as low-overhead read-only views. Returning raw buffers with separate unclamped counts was rejected because it exports stale state across the navigation boundary.
+Scalability potential: Low/MX350 avoids invalid native reads and steering work from stale snapshots. Middle keeps current valid-data behavior. High/Ultra can keep direct native readback without adding managed copies.
+Hardware Impact: Adds only scalar count clamps and created checks at property access. Expected gain is fault avoidance and lower recovery pressure rather than measurable throughput until runtime profiling is available.

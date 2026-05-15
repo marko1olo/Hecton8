@@ -276,3 +276,11 @@ Solution: Add `AdvanceFrameIndex()` and use it from normal late-frame completion
 Rejected Alternatives: Leaving lifecycle completion as a teardown-only exception was rejected because rebind/re-enable can immediately schedule another solver and blackbox frame order must remain coherent. Resetting the index on lifecycle was rejected because chronological continuity is more useful than lifecycle-local numbering.
 Scalability potential: Low/MX350/high/ultra runtime visuals are unchanged. All tiers get cleaner blackbox ordering around lifecycle edges without changing segment count, SDF, or GPU deformation.
 Hardware Impact: Steady hot-path cost is unchanged; the helper replaces duplicated scalar code in normal paths and adds one lifecycle-only scalar increment when a scheduled job is force-consumed.
+
+## Decision 28: GPU Buffer Getter Fail-Closed Contract
+
+Problem: `TryGetLeviathanBoneGraphicsBuffer()` could return `false` while leaving `buffer` set to the last completed graphics buffer and `activeSegmentCount` set to a nonzero value. Correct callers should honor the boolean, but a defensive GPU contract should not leak stale render state through failed out parameters.
+Solution: Resolve a local candidate buffer, publish it only inside the fresh-upload success branch, and clear both out parameters on every failure path.
+Rejected Alternatives: Keeping the previous contract was rejected because parallel consumers can make mistakes and the getter is the boundary that knows whether data is fresh. Forcing an upload from the getter was still rejected because queries must not create hidden GPU bandwidth or main-thread render work.
+Scalability potential: Low/MX350/high/ultra visuals are unchanged when uploads are fresh. All tiers now fail closed on stale data, preserving the cheap low-tier path and high-tier visual overkill only when the buffer freshness contract is proven.
+Hardware Impact: Hot-path frame-time savings are not claimed. The change adds no allocation and only reuses the existing branch; it prevents stale GPU deformation from invalid query states.

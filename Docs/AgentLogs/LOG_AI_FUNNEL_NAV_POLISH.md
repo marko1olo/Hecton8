@@ -414,3 +414,26 @@ Verification:
 - Targeted changed-range scan passed for forbidden hot math/allocation; the only `/` hit is existing integer grid-index decomposition in hotspot decode.
 - `git diff --check` on touched source files passed; only LF-to-CRLF working-copy warnings were emitted.
 - Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.
+
+## 2026-05-15 - Direct Native View Clamp
+
+What was wrong:
+- Direct native properties for flow fields, abyssal nav nodes, and completed paths could bypass the safer payload getter contracts.
+- Public counts could expose stale `_abyssalNavNodeCount` or `_abyssalPathCount` values larger than the available managed/native buffers.
+
+What was done:
+- Routed `EcosystemFlowField` through the same complete square-grid and finite metadata proof used by the safe payload getter.
+- Routed `ActiveAbyssalNavNodesNative` through a native-view helper and clamped `ActiveAbyssalNavNodeCount` to managed snapshot length and native snapshot length.
+- Routed `ActiveAbyssalPathNative` through a native-view helper and clamped `ActiveAbyssalPathCount` to the native path buffer length.
+
+Cinematic Cheats used:
+- Missing or stale native views now vanish instead of being repaired or copied.
+- Low tier keeps zero-copy direct readback only when proof is complete; High/Ultra retain direct native throughput without managed allocations.
+
+Exact Microseconds saved:
+- PENDING RUNTIME PROFILER DATA. Static gain is avoided invalid native reads and steering recovery; no new allocations, no new containers, and no managed copies.
+
+Verification:
+- Targeted direct-view scan reported no raw division, forbidden hot math, managed allocation, or `foreach`.
+- `git diff --check` on touched source/status/rationale/log files passed; only LF-to-CRLF working-copy warnings were emitted.
+- Dotnet rebuilds were not run because the user explicitly prohibited dotnet rebuilds.

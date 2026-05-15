@@ -305,3 +305,14 @@ Batch source: Docs/Tasks/CURRENT_BATCH.md
 - `rg` confirms only `AdvanceFrameIndex()` writes `_frameIndex` and all scheduled-job completion paths call it.
 - `git diff --check` and `git diff --cached --check` on touched code/docs exit 0.
 - No `dotnet` rebuild, compile, Unity import, or response-file probe was run.
+
+### Loop 28: GPU Buffer Getter Fail-Closed Recheck
+
+- Updated `TryGetLeviathanBoneGraphicsBuffer()` so dirty/invalid data returns `false` with `buffer = null` and `activeSegmentCount = 0`.
+- DOD: a failed GPU bone-buffer query no longer leaks a stale allocation handle or nonzero segment count through out parameters.
+- Alternative Rejected: leaving stale out params for callers to ignore because defensive contracts must fail closed under parallel integration.
+- Estimate: 0 us meaningful hot-path cost; one local candidate variable and existing branch path only.
+- Static grep over IK runtime/job/shader scope still found no `math.sqrt`, `math.normalize`, managed array creation, `foreach`, `string.Format`, `.ToString()`, `Debug.Log`, Unity Physics casts, `SkinnedMeshRenderer`, `renderer.material`, `Camera.main`, `GlobalRegistry.Get`, `GameObject.Find`, or `FindObject`.
+- `rg` confirms `TryGetLeviathanBoneGraphicsBuffer()` only assigns non-null `buffer` inside the fresh-upload success branch.
+- `git diff --check` and `git diff --cached --check` on touched code/docs exit 0.
+- No `dotnet` rebuild, compile, Unity import, or response-file probe was run.

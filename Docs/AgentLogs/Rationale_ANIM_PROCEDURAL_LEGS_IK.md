@@ -170,6 +170,14 @@ Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instructio
 Scalability potential: Low/MX350 now fails closed to cheap advection, neutral roll/VAT, and no IK schedule if storage is invalid. Middle keeps deterministic two-bone presence. High/Ultra can keep richer flow-led stride/swim polish and secondary visual layers without trusting corrupt metadata or partial native storage.
 Hardware Impact: Added work is finite checks, integer length comparisons, and scalar sanitization at existing boundaries, estimated below 0.3 us/frame on i3/MX350 plus cold reset-only guards. No allocations, no new jobs, no new ray lanes, no public API change.
 
+## Decision 22: Rig capture finite-source quarantine
+
+Problem: Rig-side capture still had a few source-boundary leaks before the runtime sanitizer: predictive controller AUPs could be built from non-finite controller transforms, spine targets could write non-finite HMD yaw/breath offsets into NativeArray targets, appendage target sources or voxel-corner snaps could publish invalid positions with nonzero weight, and upper-arm FOV culling could hide arms if camera/bounds data became corrupt.
+Solution: Gate predictive controller AUP creation on finite source positions, sanitize spine target lanes before writing them, normalize/fallback appendage surface normals, ignore non-finite snapped corners, zero appendage weight when the target position is invalid, sanitize culling hysteresis, and fail open to visible upper arms when camera or renderer bounds are non-finite.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Logging transform faults was rejected as hot-path noise. Adding additional culling probes or a physical arm visibility model was rejected because this is a data-integrity defect in a visual presentation system.
+Scalability potential: Low/MX350 avoids bad controller/bounds data turning into visible arm disappearance or IK spikes. Middle keeps deterministic appendage/spine presentation. High/Ultra can run richer appendage, breathing, and muscle polish without trusting corrupt source transforms.
+Hardware Impact: Added work is branch/finite checks and one no-sqrt normal fallback inside existing rig capture/culling paths, estimated below 0.3 us/frame for the active rig on i3/MX350. No allocations, no new jobs, no new ray lanes, no public API change.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Final anti-bloat pass required checking the lower-body implementation for honest simulation, unbounded math, GC leaks, and out-of-domain edits.

@@ -178,6 +178,13 @@ Task Count: 15
 - [x] Public threat payload proof | DOD: float, compressed, echo, and voxel threat payload getters now require complete square/voxel grid length, declared cell-count coherence, and finite metadata before returning created arrays; rejected exposing partial native payloads to fauna/path consumers; estimate 6 us.
 - [x] Boundary static scan | DOD: targeted changed ranges report no forbidden hot math/allocation and only one existing integer grid-index division; `git diff --check` passed with LF/CRLF warnings only; estimate 4 us.
 
+## Loop 24 - Direct Native View Clamp
+
+- [x] Direct flow view clamp | DOD: `EcosystemFlowField` now routes through finite metadata and complete square-grid proof; rejected bypassing the safer `TryGetEcosystemFlowFieldPayload`; estimate 2 us.
+- [x] Nav-node view count clamp | DOD: `ActiveAbyssalNavNodesNative` and `ActiveAbyssalNavNodeCount` now clamp to managed and native snapshot lengths before exposure; rejected exporting stale `_abyssalNavNodeCount`; estimate 3 us.
+- [x] Completed path view clamp | DOD: `ActiveAbyssalPathNative` and `ActiveAbyssalPathCount` now fail closed when the native path buffer is missing and clamp count to native length; rejected exposing partial path buffers past valid count; estimate 3 us.
+- [x] Direct view static scan | DOD: changed direct-view ranges report no raw division, forbidden hot math, managed allocation, or `foreach`; `git diff --check` passed with LF/CRLF warnings only; estimate 4 us.
+
 ## Verification
 
 - [x] Static scan | PASS: `StringPullPathJob`, `NativeAStarJob`, `TryResolveAbyssalNavNodeCandidate`, abyssal nav support/hash, nav graph ingress, and funnel telemetry conversion regions have no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/` code matches after loop 19.
@@ -185,6 +192,7 @@ Task Count: 15
 - [x] Threat-service targeted scan | PASS: `VegetationThreatAndStructureService.cs` and nearest-node lookup ranges in `VegetationNavGridSynchronizer.cs` have no raw float-division or forbidden hot-math/allocation matches after loop 21.
 - [x] Flow sampler targeted scan | PASS: `SampleFlowFieldAtPosition` range has no raw float-division or forbidden hot-math/allocation matches after loop 22.
 - [x] Payload boundary targeted scan | PASS: `TryGetEcosystemFlowFieldPayload`, wake/pulse ingress, hotspot update, threat payload getters, and threat grid view helpers report no forbidden hot math/allocation; the only `/` hit is integer index decomposition in hotspot decode.
+- [x] Direct native view targeted scan | PASS: direct flow/nav-node/path view helpers report no raw division, forbidden hot math, managed allocation, or `foreach`.
 - [x] Diff hygiene | PASS: `git diff --check` passed for touched source/status/rationale/log files; only LF-to-CRLF working-copy warnings were emitted.
 - [x] Static H-Phi audit | ATTEMPTED: `Tools/Architecture/HectonPhiAudit.ps1 -Json` timed out after 120 seconds under current repo load; no score claimed from this pass.
 - [x] Compile check | BLOCKED BY DEPENDENCY: bounded no-reference `dotnet build Hecton8.Core.csproj --no-restore /m:1 /nr:false /p:BuildProjectReferences=false` completed with 63 unrelated errors in `VRAMEnforcer`, `VoxelDeltaProcessor`, `SealedDoor`, `BinaryLayoutManifest`, and `HardwareTierDetector`; none were reported in `VegetationFlowFieldIntegrator.cs`, `VegetationNavGridSynchronizer.cs`, or `HectonMapMagicVegetationBridge.cs`.

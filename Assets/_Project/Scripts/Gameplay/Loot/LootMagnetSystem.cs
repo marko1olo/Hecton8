@@ -209,7 +209,9 @@ namespace Hecton8.Gameplay.Loot
             {
                 TryResolvePlayerAup(out _);
                 _lastCommittedAcquiredCount = 0u;
-                _lastCommittedFlags = _dependencyTelemetryFlags | _registryTelemetryFlags;
+                _lastCommittedFlags = _dependencyTelemetryFlags |
+                                      _registryTelemetryFlags |
+                                      (_inventory == null ? TelemetryInventoryMissingFlag : 0u);
                 RecordTelemetry(_telemetryFrameCounter);
                 return;
             }
@@ -570,6 +572,9 @@ namespace Hecton8.Gameplay.Loot
             int acousticBudget = ResolveAcousticSignalBudget(_scalabilityTier);
             int wakeBudget = ResolveWakeSignalBudget(_scalabilityTier);
             uint telemetryFlags = _dependencyTelemetryFlags | _registryTelemetryFlags;
+            if (_inventory == null)
+                telemetryFlags |= TelemetryInventoryMissingFlag;
+
             bool fault = false;
             for (int index = 0; index < count; index++)
             {

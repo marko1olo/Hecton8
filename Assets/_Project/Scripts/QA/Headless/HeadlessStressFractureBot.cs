@@ -133,6 +133,7 @@ namespace Hecton8.QA.Headless
         private long _chunkUnloadDataVaultBytesBaseline;
         private double _startupTime;
         private float _lastSimulationPhaseMs;
+        private float _previousTimeDilationScalar = 1f;
         private float _staticHPhiMetric;
         private float _staticHPhiAupPrecisionIntegrity = 1f;
         private int _staticHPhiAupPrecisionSafe;
@@ -149,6 +150,7 @@ namespace Hecton8.QA.Headless
         private bool _registeredLate;
         private bool _originListenerRegistered;
         private bool _runtimePolicyApplied;
+        private bool _headlessTimeDilationApplied;
         private bool _baselineCaptured;
         private bool _chunkUnloadPending;
         private bool _memorySnapshotFreshForEntry;
@@ -158,6 +160,8 @@ namespace Hecton8.QA.Headless
         private int _previousVSyncCount;
         private float _previousAudioVolume;
         private LogType _previousLogFilter;
+        private int _activationFlagDeletedAtStartup;
+        private int _headlessTimeDilationRestored;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void AutoCreate()
@@ -334,7 +338,7 @@ namespace Hecton8.QA.Headless
             _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, LateSamplingLayer);
             HectonFloatingOrigin.RegisterListener(this);
             _originListenerRegistered = true;
-            _dispatcher?.RequestHeadlessTimeDilation(TimeDilationScalar, RunnerHash);
+            ApplyHeadlessTimeDilation();
             _started = _registeredFast && _registeredCold && _registeredLate;
             if (!_started)
                 FailAndQuit(1, TimeoutHash, "[RUNNER_REGISTRATION_FAILED]");
@@ -347,6 +351,7 @@ namespace Hecton8.QA.Headless
             int scratchFallbackMegabytes = TryReadEnvironmentInt(EnvironmentScratchMegabytesName, DefaultScratchMegabytes);
             int startupTimeoutFallbackSeconds = TryReadEnvironmentInt(EnvironmentStartupTimeoutSecondsName, DefaultStartupTimeoutSeconds);
             _activationSource = ResolveActivationSourceStatic();
+            _activationFlagDeletedAtStartup = TryDeleteActivationFlagCold() ? 1 : 0;
             _targetFrames = math.max(1, TryReadInt(args, CommandLineFramesArg, frameFallback));
             int scratchMegabytes = math.clamp(
                 TryReadInt(args, CommandLineScratchMegabytesArg, scratchFallbackMegabytes),
@@ -728,6 +733,35 @@ namespace Hecton8.QA.Headless
                 HectonFloatingOrigin.UnregisterListener(this);
                 _originListenerRegistered = false;
             }
+
+            RestoreHeadlessTimeDilation();
+        }
+
+        private void ApplyHeadlessTimeDilation()
+        {
+            ITickDispatcher dispatcher = _dispatcher;
+            if (dispatcher == null)
+                return;
+
+            _previousTimeDilationScalar = dispatcher.TimeDilationScalar;
+            dispatcher.RequestHeadlessTimeDilation(TimeDilationScalar, RunnerHash);
+            _headlessTimeDilationApplied = true;
+            _headlessTimeDilationRestored = 0;
+        }
+
+        private void RestoreHeadlessTimeDilation()
+        {
+            if (!_headlessTimeDilationApplied)
+                return;
+
+            ITickDispatcher dispatcher = _dispatcher;
+            if (dispatcher != null)
+            {
+                dispatcher.RequestTimeDilation(_previousTimeDilationScalar, RunnerHash);
+                _headlessTimeDilationRestored = 1;
+            }
+
+            _headlessTimeDilationApplied = false;
         }
 
         private void PublishCrashSignal(int exitCode, uint reasonHash, byte severity)
@@ -912,10 +946,18 @@ namespace Hecton8.QA.Headless
                     writer.Write(",\"activationSourceName\":\"");
                     WriteActivationSourceName(writer, _activationSource);
                     writer.Write('"');
+                    writer.Write(",\"activationFlagDeletedAtStartup\":");
+                    WriteInvariant(writer, _activationFlagDeletedAtStartup);
                     writer.Write(",\"scratchBlockBytes\":");
                     WriteInvariant(writer, _scratchBlockBytes);
                     writer.Write(",\"startupTimeoutSeconds\":");
                     WriteInvariant(writer, _startupTimeoutSeconds);
+                    writer.Write(",\"headlessTimeDilationScalar\":");
+                    WriteInvariant(writer, TimeDilationScalar);
+                    writer.Write(",\"previousTimeDilationScalar\":");
+                    WriteInvariant(writer, _previousTimeDilationScalar);
+                    writer.Write(",\"headlessTimeDilationRestored\":");
+                    WriteInvariant(writer, _headlessTimeDilationRestored);
                     writer.Write(",\"aupShiftCount\":");
                     WriteInvariant(writer, _shiftSequence);
                     writer.Write(",\"originShiftCallbacks\":");
@@ -1102,6 +1144,23 @@ namespace Hecton8.QA.Headless
 
                 TryDeleteFile(path);
                 return false;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        private static bool TryDeleteActivationFlagCold()
+        {
+            string path = ResolveProjectPathStatic(FlagRelativePath);
+            try
+            {
+                if (!File.Exists(path))
+                    return false;
+
+                File.Delete(path);
+                return !File.Exists(path);
             }
             catch (Exception)
             {

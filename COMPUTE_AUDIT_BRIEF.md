@@ -82,13 +82,13 @@ The codebase is not 1.63M meaningful first-party LOC. It is 775,435 meaningful s
 
 The economic anomaly is context recursion: 43.78B total tokens against 775,435 meaningful LOC equals 56,457 tokens per meaningful line. Cache pricing makes the bill survivable; it does not make the workflow clean.
 
-Next audit target: top 100 `.codex` threads. They hold about half of the recorded token mass. Broad scanning below that is low-yield.
+The top-100 `.codex` thread audit has been executed. They hold about half of the recorded token mass. Broad scanning below that is lower yield than joining these threads to final diffs, compile/test results, and quality deltas.
 
 Thread triage has been written to `COMPUTE_THREAD_TRIAGE.md`. The valid label is `HIGH-BURN CANDIDATE`, not `waste`, until a thread is joined to changed files, meaningful LOC delta, compile/test result, and H-Phi or equivalent quality delta.
 
 Thread attribution has been written to `COMPUTE_THREAD_ATTRIBUTION.md`. It identifies visible patch targets from top-30 rollout JSONL. This is work-trace attribution, not final value proof.
 
-Validation forensics has been written to `COMPUTE_VALIDATION_FORENSICS.md`. Top-30 threads show validation effort, but also 2,374 non-zero validation outputs and 1,297 visible `error CS####` outputs in historical rollouts. That is not a clean pass.
+Validation forensics has been written to `COMPUTE_VALIDATION_FORENSICS.md`. Top-30 threads show validation effort, but also 2,374 non-zero validation outputs, 1,297 visible `error CS####` outputs, and no reliable test-success signal in historical rollouts. That is not a clean pass.
 
 Thread value audit has been written to `COMPUTE_THREAD_VALUE_AUDIT.md`. Top-100 threads show real work traces: 32,908 patch calls and 30,172 code patch target hits. They do not show HECTON-8 C++ transfer evidence: 0 C++ patch target hits. The only honest C++ status from this audit is `NOT VERIFIED / NO PATCH EVIDENCE`.
 

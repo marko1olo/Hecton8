@@ -144,8 +144,16 @@ namespace Hecton8.AI
             }
 
             activeSegmentCount = math.min(_activeSegmentCount, MaxSegments);
-            buffer = _gpuUploadBufferIndex == 0 ? _bonesGraphicsBufferB : _bonesGraphicsBufferA;
-            return !_gpuUploadDirty && _gpuBufferDataValid && HasValidGraphicsBuffer(buffer, activeSegmentCount);
+            GraphicsBuffer candidate = _gpuUploadBufferIndex == 0 ? _bonesGraphicsBufferB : _bonesGraphicsBufferA;
+            if (!_gpuUploadDirty && _gpuBufferDataValid && HasValidGraphicsBuffer(candidate, activeSegmentCount))
+            {
+                buffer = candidate;
+                return true;
+            }
+
+            buffer = null;
+            activeSegmentCount = 0;
+            return false;
         }
 
         private void Awake()

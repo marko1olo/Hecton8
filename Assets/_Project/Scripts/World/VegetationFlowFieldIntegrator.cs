@@ -826,6 +826,21 @@ namespace Hecton8.World
             return _nativeMemory.EcosystemThreatGridCurrentNative;
         }
 
+        private NativeArray<float2> GetFlowFieldView()
+        {
+            if (!_flowFieldInitialized ||
+                !_nativeMemory.EcosystemFlowFieldCurrentNative.IsCreated ||
+                !HasCompleteEcosystemSquareGridState(_nativeMemory.EcosystemFlowFieldCurrentNative.Length) ||
+                threatGridCellSize <= 0f ||
+                !math.isfinite(threatGridCellSize) ||
+                !IsFinite(_ecosystemFlowFieldCenter))
+            {
+                return default;
+            }
+
+            return _nativeMemory.EcosystemFlowFieldCurrentNative;
+        }
+
         private NativeArray<byte> GetThreatGridByteView(NativeArray<byte> threatGrid)
         {
             if (!_threatGridInitialized ||
@@ -836,6 +851,46 @@ namespace Hecton8.World
             }
 
             return threatGrid;
+        }
+
+        private NativeArray<Vector3> GetAbyssalNavNodeSnapshotNativeView()
+        {
+            return ResolveAbyssalNavNodeViewCount() > 0
+                ? _nativeMemory.AbyssalNavNodeSnapshotNative
+                : default;
+        }
+
+        private int ResolveAbyssalNavNodeViewCount()
+        {
+            if (_abyssalNavNodeCount <= 0 ||
+                _abyssalNavNodeSnapshot == null ||
+                _abyssalNavNodeSnapshot.Length <= 0 ||
+                !_nativeMemory.AbyssalNavNodeSnapshotNative.IsCreated)
+            {
+                return 0;
+            }
+
+            int safeCount = math.min(_abyssalNavNodeCount, _abyssalNavNodeSnapshot.Length);
+            safeCount = math.min(safeCount, _nativeMemory.AbyssalNavNodeSnapshotNative.Length);
+            return math.max(0, safeCount);
+        }
+
+        private NativeArray<Vector3> GetAbyssalPathNativeView()
+        {
+            return ResolveAbyssalPathViewCount() > 0
+                ? _nativeMemory.AbyssalPathSnapshotNative
+                : default;
+        }
+
+        private int ResolveAbyssalPathViewCount()
+        {
+            if (_abyssalPathCount <= 0 ||
+                !_nativeMemory.AbyssalPathSnapshotNative.IsCreated)
+            {
+                return 0;
+            }
+
+            return math.max(0, math.min(_abyssalPathCount, _nativeMemory.AbyssalPathSnapshotNative.Length));
         }
 
         private bool HasCompleteEcosystemSquareGridState(int payloadLength)

@@ -34,6 +34,30 @@ Verification:
 
 STATUS: AUDIT COMPLETE.
 
+## 2026-05-15 - Root Audit Index
+
+What was wrong:
+- The audit now has several root files and two continuation passes had collided on loop/decision numbering.
+- Future agents need read order and hard boundaries before interpreting the numbers.
+
+What was done:
+- Created `COMPUTE_AUDIT_INDEX.md`.
+- Added the index pointer to `COMPUTE_AUDIT_BRIEF.md` and `COMPUTE_DOMINANCE_REPORT.md`.
+- Corrected file-burn continuation numbering to Loop 14 / Decision 20 while preserving the top-100 value audit as Loop 13 / Decision 19.
+- Recorded forbidden overclaims: no verified value without final diff/compile/quality delta; no C++ transfer claim without C++ patch/build evidence.
+
+Cinematic Cheats used:
+- None.
+
+Exact microseconds saved:
+- Runtime: 0 us.
+- Process: not claimed.
+
+Verification:
+- Markdown-only index. Compile not run.
+
+STATUS: AUDIT COMPLETE.
+
 ## 2026-05-15 - File Burn Attribution
 
 What was wrong:
@@ -274,6 +298,7 @@ Evidence captured:
 - Top-100 code patch target hits: 30,172.
 - Top-100 external path target hits: 2,324.
 - Top-100 C++ patch target hits: 0.
+- Project C++ files found by tree scan: native audio plugin files under `NativeAudio/HectonSensoryKernel` and one third-party Lofelt iOS header; no top-100 migration patch evidence.
 - Current dirty hot targets: `Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs` and `Assets/_Project/Scripts/Construction/HabitatGraphManager.cs`.
 
 Cinematic Cheats used:

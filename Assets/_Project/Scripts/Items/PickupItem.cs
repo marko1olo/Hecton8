@@ -20,8 +20,10 @@ namespace Hecton8.Interaction
     [RequireComponent(typeof(Collider))]
     public class PickupItem : MonoBehaviour, IInteractable, ISlowTickable, IFixedTickable, IInventoryPickupSource, IInteractionVulnerabilitySource, IPhysicsImpactMaterialProvider
     {
-        // COLD ALLOC: RegistryBucket<PickupItem>[4096] — authored/persistent pickup registry for world-state scans — owner: PickupItem
-        private static readonly RegistryBucket<PickupItem> _worldStateRegistry = new RegistryBucket<PickupItem>(4096);
+        private const int WorldStateRegistryCapacity = 8192;
+
+        // COLD ALLOC: RegistryBucket<PickupItem>[8192] - authored/persistent pickup registry for world-state scans and loot magnet hard-cap parity - owner: PickupItem
+        private static readonly RegistryBucket<PickupItem> _worldStateRegistry = new RegistryBucket<PickupItem>(WorldStateRegistryCapacity);
         internal static PickupItem ActiveRuntimeInstance { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]

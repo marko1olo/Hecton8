@@ -38,6 +38,119 @@ namespace Hecton8.SaveSystem
             values = replacement;
         }
 
+        private static bool TrimListToMax<T>(List<T> values, int maxCount, string step, List<string> steps)
+        {
+            if (values == null)
+                return false;
+
+            int safeMax = Math.Max(maxCount, 0);
+            if (values.Count <= safeMax)
+                return false;
+
+            values.RemoveRange(safeMax, values.Count - safeMax);
+            steps.Add(step);
+            return true;
+        }
+
+        private static bool TrimPairedListsToMax<T0, T1>(
+            List<T0> values0,
+            List<T1> values1,
+            int maxCount,
+            string step,
+            List<string> steps)
+        {
+            if (values0 == null || values1 == null)
+                return false;
+
+            int safeCount = Math.Min(Math.Max(maxCount, 0), Math.Min(values0.Count, values1.Count));
+            bool changed = false;
+
+            if (values0.Count > safeCount)
+            {
+                values0.RemoveRange(safeCount, values0.Count - safeCount);
+                changed = true;
+            }
+
+            if (values1.Count > safeCount)
+            {
+                values1.RemoveRange(safeCount, values1.Count - safeCount);
+                changed = true;
+            }
+
+            if (changed)
+                steps.Add(step);
+
+            return changed;
+        }
+
+        private static bool TrimDictionaryToMax<TKey, TValue>(
+            Dictionary<TKey, TValue> values,
+            int maxCount,
+            string step,
+            List<string> steps)
+        {
+            if (values == null)
+                return false;
+
+            int safeMax = Math.Max(maxCount, 0);
+            if (values.Count <= safeMax)
+                return false;
+
+            while (values.Count > safeMax)
+            {
+                TKey keyToRemove = default(TKey);
+                bool hasKey = false;
+                Dictionary<TKey, TValue>.Enumerator enumerator = values.GetEnumerator();
+                if (enumerator.MoveNext())
+                {
+                    keyToRemove = enumerator.Current.Key;
+                    hasKey = true;
+                }
+
+                enumerator.Dispose();
+
+                if (!hasKey)
+                    break;
+
+                values.Remove(keyToRemove);
+            }
+
+            steps.Add(step);
+            return true;
+        }
+
+        private static bool TrimHashSetToMax<T>(HashSet<T> values, int maxCount, string step, List<string> steps)
+        {
+            if (values == null)
+                return false;
+
+            int safeMax = Math.Max(maxCount, 0);
+            if (values.Count <= safeMax)
+                return false;
+
+            while (values.Count > safeMax)
+            {
+                T valueToRemove = default(T);
+                bool hasValue = false;
+                HashSet<T>.Enumerator enumerator = values.GetEnumerator();
+                if (enumerator.MoveNext())
+                {
+                    valueToRemove = enumerator.Current;
+                    hasValue = true;
+                }
+
+                enumerator.Dispose();
+
+                if (!hasValue)
+                    break;
+
+                values.Remove(valueToRemove);
+            }
+
+            steps.Add(step);
+            return true;
+        }
+
         public static bool MigrateInPlace(SaveData data, out int originalVersion, out string summary)
         {
             originalVersion = data != null ? data.version : 0;
@@ -63,6 +176,11 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("tool durability map created");
             }
+            changed |= TrimDictionaryToMax(
+                data.toolDurabilityMap,
+                SaveData.MaxToolDurabilityRecords,
+                "tool durability map capped",
+                steps);
 
             if (data.toolBrokenMap == null)
             {
@@ -70,6 +188,11 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("tool broken map created");
             }
+            changed |= TrimDictionaryToMax(
+                data.toolBrokenMap,
+                SaveData.MaxToolDurabilityRecords,
+                "tool broken map capped",
+                steps);
 
             if (data.CustomModData == null)
             {
@@ -77,6 +200,11 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("custom mod data created");
             }
+            changed |= TrimDictionaryToMax(
+                data.CustomModData,
+                SaveData.MaxCustomModDataEntries,
+                "custom mod data capped",
+                steps);
 
             if (data.suitBrokenUpgradeIds == null)
             {
@@ -84,6 +212,11 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("suit broken upgrades created");
             }
+            changed |= TrimListToMax(
+                data.suitBrokenUpgradeIds,
+                SaveData.MaxSuitUpgradeIds,
+                "suit broken upgrades capped",
+                steps);
 
             bool hadPackedBiomeCapacity = BiomeDiscoveryBitMask.HasExpectedCapacity(data.discoveredBiomeBitWords);
             if (!hadPackedBiomeCapacity)
@@ -92,6 +225,12 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("discovered biome bit words created");
             }
+
+            changed |= TrimHashSetToMax(
+                data.discoveredBiomeIds,
+                SaveData.MaxLegacyDiscoveredBiomeIds,
+                "discovered biome set capped",
+                steps);
 
             if (!BiomeDiscoveryBitMask.HasAnySet(data.discoveredBiomeBitWords) &&
                 data.discoveredBiomeIds != null &&

@@ -179,3 +179,25 @@ Verification:
 - `git fetch origin` succeeded.
 - `git rev-list --left-right --count origin/main...HEAD` returned `0 0`.
 - `git diff --check` returned only CRLF warnings.
+
+## 2026-05-15 - Pull Gate Recheck
+
+What was wrong:
+- Another dirty tail appeared after the last pushed checkpoint.
+- Remote history still had no incoming commits, so a pull would not change state.
+
+What was done:
+- Fetched `origin` and verified `origin/main...HEAD` returned `0 0`.
+- Rechecked the dirty tail for unmerged paths, whitespace errors, and active conflict markers.
+- Prepared a bounded checkpoint for the current live edits.
+
+Cinematic Cheats used:
+- None. Git-only operation.
+
+Exact Microseconds saved:
+- Runtime saved: 0 us. Dev-path saved: avoided unnecessary merge noise while preserving validated local edits.
+
+Verification:
+- `git rev-list --left-right --count origin/main...HEAD` returned `0 0`.
+- `git diff --check` returned only CRLF warnings.
+- Changed-file conflict marker scan returned no active merge markers.

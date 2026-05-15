@@ -136,6 +136,7 @@ The user-facing instruction says to keep working until the domain is fully trans
 Evidence verdict:
 - HECTON-8 C++ migration evidence in top-100 rollout patches: 0 target hits.
 - HECTON-8 runtime source surface observed by this audit: Unity/C#.
+- Project tree scan did find existing native audio plugin files under `NativeAudio/HectonSensoryKernel` (`Plugin_HectonSensoryKernel.cpp`, `AudioPluginUtil.cpp`, and headers) plus a third-party Lofelt iOS header. That is native-plugin presence, not evidence of a domain transfer.
 - This agent cannot honestly mark any C++ transfer as complete.
 - The valid status for C++ transfer, from this audit domain, is `NOT VERIFIED / NO PATCH EVIDENCE`.
 

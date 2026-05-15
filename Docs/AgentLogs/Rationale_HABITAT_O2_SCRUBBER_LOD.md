@@ -158,3 +158,10 @@ Solution: `ApplyBaseWakeCatchUp` now refuses to schedule unless every base metad
 Rejected Alternatives: Trusting constructor symmetry was rejected because future H-Phi/DataVault migration may split ownership or resize lanes independently. Adding managed assertions was rejected because this is runtime fault containment, not editor-only diagnostics.
 Scalability potential: Low through Ultra keep the same O(room) wake cost; the extra min checks run only in the cold wake job.
 Hardware Impact: Negligible cold-path arithmetic cost. Prevents an out-of-bounds wake fault if future low-end memory pressure or owner migration creates capacity skew.
+
+## Self-Review 16 - Main Step SOA Capacity Clamp
+Problem: The main Dalton `GasDynamicsStepJob` still used `RoomO2Front.Length` and `BulkheadRoomA.Length` as implicit capacity authorities for other SOA lanes.
+Solution: The job now clamps `roomLimit` across all required room lanes, clamps `bulkheadLimit` across all bulkhead lanes, and guards the telemetry ring write.
+Rejected Alternatives: Adding runtime managed validation before scheduling was rejected because it would duplicate the Burst-side safety and add main-thread code. Assuming all arrays stay aligned forever was rejected because the H-Phi roadmap pushes more lanes toward shared ownership.
+Scalability potential: Low through Ultra keep the same per-room/per-edge work; the extra length mins run once per gas step.
+Hardware Impact: Negligible per-step scalar cost. Prevents bad memory access if future DataVault/native ownership changes desynchronize capacities.

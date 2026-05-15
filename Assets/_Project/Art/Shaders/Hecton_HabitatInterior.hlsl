@@ -75,6 +75,9 @@ float HectonHabitatInteriorResolveStress01(float3 positionWS)
 
 float2 HectonHabitatInteriorPanelUv(float2 uv)
 {
+    if (!all(isfinite(uv)))
+        return float2(0.0, 0.0);
+
     return saturate(frac(abs(uv)));
 }
 
@@ -82,7 +85,8 @@ float HectonHabitatInteriorPanelMaskFromUv(float2 panelUv)
 {
     float sx = sin(panelUv.x * HECTON_HABITAT_INTERIOR_PI);
     float sy = sin(panelUv.y * HECTON_HABITAT_INTERIOR_PI);
-    return saturate(sx * sy);
+    float panelMask = sx * sy;
+    return isfinite(panelMask) ? saturate(panelMask) : 0.0;
 }
 
 half HectonHabitatInteriorCheapPanelMask(float2 uv)

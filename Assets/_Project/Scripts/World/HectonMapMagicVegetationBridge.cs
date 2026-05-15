@@ -2419,10 +2419,10 @@ namespace Hecton8.World
         public Vector3[] ActiveAbyssalNavNodes => _abyssalNavNodeSnapshot;
 
         /// <summary>Immutable native snapshot of the current abyssal safe-navigation nodes.</summary>
-        public NativeArray<Vector3> ActiveAbyssalNavNodesNative => _nativeMemory.AbyssalNavNodeSnapshotNative;
+        public NativeArray<Vector3> ActiveAbyssalNavNodesNative => GetAbyssalNavNodeSnapshotNativeView();
 
         /// <summary>Number of active abyssal safe-navigation nodes currently exported by the bridge.</summary>
-        public int ActiveAbyssalNavNodeCount => _abyssalNavNodeCount;
+        public int ActiveAbyssalNavNodeCount => ResolveAbyssalNavNodeViewCount();
 
         /// <summary>Current ecosystem threat grid. Treat as read-only and reacquire after each SlowTick.</summary>
         public NativeArray<float> EcosystemThreatGrid => GetThreatGridFloatView();
@@ -2440,7 +2440,7 @@ namespace Hecton8.World
         public Vector3 EcosystemThreatGridCenter => _ecosystemThreatGridCenter;
 
         /// <summary>Current abyssal flow-field. Treat as read-only and reacquire after each SlowTick.</summary>
-        public NativeArray<float2> EcosystemFlowField => _nativeMemory.EcosystemFlowFieldCurrentNative;
+        public NativeArray<float2> EcosystemFlowField => GetFlowFieldView();
 
         /// <summary>Current abyssal flow-field center in world space.</summary>
         public Vector3 EcosystemFlowFieldCenter => _ecosystemFlowFieldCenter;
@@ -2470,10 +2470,10 @@ namespace Hecton8.World
         public Vector3 CurrentThreatHotspotPosition => _currentThreatHotspotPosition;
 
         /// <summary>Latest native abyssal path result. Treat as read-only and reacquire after each completed path solve.</summary>
-        public NativeArray<Vector3> ActiveAbyssalPathNative => _nativeMemory.AbyssalPathSnapshotNative;
+        public NativeArray<Vector3> ActiveAbyssalPathNative => GetAbyssalPathNativeView();
 
         /// <summary>Number of valid waypoints in the latest completed abyssal path result.</summary>
-        public int ActiveAbyssalPathCount => _abyssalPathCount;
+        public int ActiveAbyssalPathCount => ResolveAbyssalPathViewCount();
 
         /// <summary>Explicit surface draw bounds used for the current indirect payload.</summary>
         public Bounds ActiveSurfaceDrawBounds => _surfaceDrawBounds;

@@ -153,10 +153,16 @@ Mandates read:
 - [x] Scanner survival miss retry fence | DOD: missing `HectonSurvivalSystem` resolution now retries at 0.5s cadence and resets on cached-service clear, preventing active scientific samples from probing the player transform/component every time when the optional survival component is unavailable | Rejected: hot retry on every spatial/water metrics sample and permanent stale null cache | Estimate: miss path 60Hz -> 2Hz retry
 - [x] Static no-regression checks after Loop 18 | DOD: `git diff --check` passed with line-ending warnings only, `git diff --cached --check` passed, and scanner banned-pattern scan found no `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, or `.text =` | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 2900 us
 
+## Loop 19 - FastTick Time Snapshot Hygiene
+
+- [x] Scanner fast-tick time snapshot | DOD: `FastTick` now snapshots `Time.time` and `Time.frameCount` once, then passes those values through scientific scan update, resample scheduling, and black-box writes | Rejected: multiple native time/frame reads inside one scanner tick | Estimate: removes 3-5 repeated time/frame property reads per active scanner tick
+- [x] Focused scan resample determinism | DOD: hold-window checks and `_scientificNextResampleAt` updates now use the same tick timestamp | Rejected: mixed `Time.time` reads during one scanner sample | Estimate: sub-us; determinism hygiene
+- [x] Static no-regression checks after Loop 19 | DOD: `git diff --check` passed with docs line-ending warnings only, `git diff --cached --check` passed, scanner banned-pattern scan found no forbidden UI/scanner patterns, and focused-scan time-read regression scan found no old `Time.time` resample/contact patterns | Rejected: dotnet rebuild, explicitly forbidden by user | Estimate: 3200 us
+
 ## Verification
 
 - [x] Compile/source validation - `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:quiet -clp:Summary` passed with 0 warnings / 0 errors after Loop 10
-- [ ] Compile/source validation after Loops 11-18 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
+- [ ] Compile/source validation after Loops 11-19 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
 - [ ] Console check - BLOCKED BY UNITY SESSION: MCP validate/console calls cannot connect to Unity MCP HTTP endpoint / session
 - [x] Re-read prompt after core tasks
 - [x] Omega polish mandate after all tasks done or blocked

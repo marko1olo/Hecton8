@@ -431,3 +431,26 @@ Verification:
 - `git diff --cached --check` on scanner/doc edits: pass.
 - Scanner banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =`: no matches.
 - `dotnet build` / rebuild: NOT RUN by explicit user order.
+
+## Follow-Up Hardening Pass 15
+
+What was wrong:
+- Scanner fast tick read time/frame values repeatedly inside one logical scientific scanner sample.
+
+What was done:
+- `FastTick` now snapshots `Time.time` and `Time.frameCount` once.
+- Scientific scan update, focused resample scheduling, and black-box writes now share that tick timestamp/frame.
+
+Cinematic Cheats used:
+- No new simulation. This is deterministic presentation/acquisition hygiene for the existing scanner fake.
+
+Exact Microseconds saved:
+- Verified exact microseconds: PENDING PROFILER.
+- Removes roughly 3-5 repeated time/frame property reads per active scanner fast tick.
+
+Verification:
+- `git diff --check` on scanner/doc edits: pass, docs line-ending warnings only.
+- `git diff --cached --check` on scanner/doc edits: pass.
+- Scanner banned-pattern scan for `ILocalizationService`, `Camera.main`, direct `Physics.Raycast`, `void Update(`, `foreach`, `.ToString(`, and `.text =`: no matches.
+- Focused scan time-read regression scan: no old `Time.time` contact/resample patterns remain.
+- `dotnet build` / rebuild: NOT RUN by explicit user order.

@@ -431,3 +431,17 @@ Solution: Ran source-only checks: `git diff --check` passed with line-ending war
 Rejected Alternatives: Running prohibited `dotnet build`; marking compile verified without a compiler run.
 Scalability potential: Process hygiene only.
 Hardware Impact: No runtime impact.
+
+## LOOP 19 FASTTICK TIME SNAPSHOT HYGIENE
+
+Problem: Scanner fast tick read `Time.time` and `Time.frameCount` at multiple points inside one scientific scanner sample: held-contact checks, resample scheduling, black-box contact age, and black-box frame stamping. The values are usually close, but they are still repeated native time reads and can make one logical scanner tick internally inconsistent.
+Solution: Snapshot `now` and `frame` once at the start of `FastTick`, pass `now` into `UpdateScientificScanning()` and `ScheduleScientificConeBatch()`, and pass both `now` and `frame` into `WriteScannerBlackBox()`.
+Rejected Alternatives: Leaving repeated `Time.time` reads; adding a new clock service in the scanner UX domain; moving scanner logic into a broader scheduler refactor.
+Scalability potential: Low/MX350 removes small repeated engine-property reads from the active scanner tick. Middle/High/Ultra get cleaner black-box timelines and stable scanner resample windows while spending cycles on existing visual overkill paths instead.
+Hardware Impact: Removes roughly 3-5 repeated time/frame property reads per active scanner fast tick. Exact microseconds PENDING PROFILER; expected gain is small but deterministic.
+
+Problem: Static verification for the time-snapshot pass had to prove old mixed-time patterns did not remain in the focused scan path.
+Solution: Ran source-only checks: `git diff --check` passed with docs line-ending warnings only, `git diff --cached --check` passed, scanner banned-pattern scan found no forbidden scanner/UI patterns, and a targeted scan found no old `Time.time - _scientificLastContactTime`, `_scientificNextResampleAt = Time.time`, or no-argument scientific scheduling calls.
+Rejected Alternatives: Running prohibited `dotnet build`; trusting the patch visually without regression scan.
+Scalability potential: Process hygiene only.
+Hardware Impact: No runtime impact.

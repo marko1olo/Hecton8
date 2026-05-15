@@ -388,9 +388,20 @@ Follow-up upgrade 40:
 - What was wrong: the habitat stress resolver trusted peak stress and selected buffer stress after CPU publication. A non-finite scalar could still leak into low-tier crease or localized bend.
 - What was done: `HectonHabitatInteriorResolveStress01` now rejects non-finite peak stress before low-tier/buffer branches and returns zero if the selected buffer scalar is non-finite.
 - Cinematic cheat used: corrupted stress scalars become silent visual output; valid pressure deformation remains unchanged.
-- Static checks: `rg` confirms peak and buffer finite gates; exact shader `normalize()`/`sqrt()` scan remains clean.
+- Static checks: `rg` confirms peak and buffer finite gates; exact shader `normalize()`/`sqrt()` scan remains clean; managed-offender scan remains clean; mesh mutation scan found no owned `Mesh.vertices` writes; touched shader/doc braces are balanced; `git diff --check` reports only CRLF normalization warnings.
 - Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction.
 
 Exact microseconds saved after follow-up 40:
 - Fault frames avoid NaN crease/deformation propagation.
 - Valid-frame overhead is two scalar finite checks in already-gated stress paths; expected cost is below measurement noise under the 64-slot cap.
+
+Follow-up upgrade 41:
+- What was wrong: non-finite UVs could poison panel UV, sine mask, bend offset, or low-tier crease intensity.
+- What was done: `HectonHabitatInteriorPanelUv` now returns zero panel UV for non-finite input, and `HectonHabitatInteriorPanelMaskFromUv` returns zero for non-finite mask products.
+- Cinematic cheat used: invalid panel input becomes zero panel influence. Valid panel bow/crease visuals remain unchanged.
+- Static checks: `rg` confirms panel UV/mask finite guards; exact shader `normalize()`/`sqrt()` scan remains clean; managed-offender scan remains clean; mesh mutation scan found no owned `Mesh.vertices` writes; touched shader/doc braces are balanced; `git diff --check` reports only CRLF normalization warnings.
+- Rebuild policy: no `dotnet` rebuild and no Unity rebuild were run by explicit user instruction.
+
+Exact microseconds saved after follow-up 41:
+- Faulted vertices/fragments avoid NaN bend and crease propagation.
+- Valid-frame overhead is one UV finite check plus one mask finite check in already-gated panel paths.

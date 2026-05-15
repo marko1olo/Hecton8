@@ -1695,7 +1695,20 @@ namespace Hecton8.Atmosphere
 
             public void Execute()
             {
-                int roomLimit = math.min(RoomCount, RoomO2Front.Length);
+                int roomLimit = math.max(0, RoomCount);
+                roomLimit = math.min(roomLimit, RoomO2Front.Length);
+                roomLimit = math.min(roomLimit, RoomCO2Front.Length);
+                roomLimit = math.min(roomLimit, RoomNitrogenFront.Length);
+                roomLimit = math.min(roomLimit, RoomO2Back.Length);
+                roomLimit = math.min(roomLimit, RoomCO2Back.Length);
+                roomLimit = math.min(roomLimit, RoomNitrogenBack.Length);
+                roomLimit = math.min(roomLimit, RoomPressureBack.Length);
+                roomLimit = math.min(roomLimit, RoomAmbientPressure.Length);
+                roomLimit = math.min(roomLimit, RoomPlayerStress01.Length);
+                roomLimit = math.min(roomLimit, RoomPlayerHeartRateBpm.Length);
+                roomLimit = math.min(roomLimit, RoomPlayerPresent.Length);
+                roomLimit = math.min(roomLimit, RoomScrubberPowered.Length);
+                roomLimit = math.min(roomLimit, RoomFlags.Length);
                 float dt = math.max(0f, DeltaTime);
                 for (int room = 0; room < roomLimit; room++)
                 {
@@ -1753,7 +1766,10 @@ namespace Hecton8.Atmosphere
                 float diffusionFraction = math.min(
                     MaxDiffusionFractionPerStep,
                     math.saturate(DiffusionConductancePerSecond * dt));
-                int bulkheadLimit = math.min(BulkheadCount, BulkheadRoomA.Length);
+                int bulkheadLimit = math.max(0, BulkheadCount);
+                bulkheadLimit = math.min(bulkheadLimit, BulkheadRoomA.Length);
+                bulkheadLimit = math.min(bulkheadLimit, BulkheadRoomB.Length);
+                bulkheadLimit = math.min(bulkheadLimit, BulkheadSealed.Length);
                 if (diffusionFraction > 0f)
                 {
                     for (int edge = 0; edge < bulkheadLimit; edge++)
@@ -1866,6 +1882,9 @@ namespace Hecton8.Atmosphere
                     stateHash = HashFloat(stateHash, nitrogen);
                     stateHash = HashFloat(stateHash, pressure);
                 }
+
+                if (!TelemetryRing.IsCreated || (uint)TelemetryWriteIndex >= (uint)TelemetryRing.Length)
+                    return;
 
                 TelemetryRing[TelemetryWriteIndex] = new GasDynamicsTelemetryEntry
                 {

@@ -2110,7 +2110,7 @@ namespace Hecton8.Gameplay
                 float3 direction = ContextualPhysicalIkMath.ToFloat3(renderer.bounds.center) - cameraPosition;
                 float distanceSq = math.lengthsq(direction);
                 if (!math.isfinite(distanceSq))
-                    continue;
+                    return true;
 
                 if (distanceSq <= UpperArmVisibilityProxyRadiusSq)
                     return true;
@@ -2681,7 +2681,9 @@ namespace Hecton8.Gameplay
                     Transform normalSource = _appendageSurfaceNormalSources != null && chainIndex < _appendageSurfaceNormalSources.Length
                         ? _appendageSurfaceNormalSources[chainIndex]
                         : null;
-                    Vector3 targetNormal = normalSource != null ? normalSource.up : Vector3.up;
+                    Vector3 targetNormal = normalSource != null && IsFiniteVector(normalSource.up)
+                        ? NormalizeVectorNoSqrt(normalSource.up, Vector3.up)
+                        : Vector3.up;
                     if (IsFiniteVector(targetPosition) &&
                         voxelVolume.TryGetNearestCorner(targetPosition, targetNormal, out Vector3 snappedCorner) &&
                         IsFiniteVector(snappedCorner))
@@ -2690,13 +2692,14 @@ namespace Hecton8.Gameplay
                     }
                 }
 
-                float3 safePosition = IsFiniteVector(targetPosition)
+                bool hasFiniteTargetPosition = IsFiniteVector(targetPosition);
+                float3 safePosition = hasFiniteTargetPosition
                     ? ContextualPhysicalIkMath.ToFloat3(targetPosition)
                     : float3.zero;
                 _appendageTargets[chainIndex] = new ContextualPhysicalIkAppendageTarget
                 {
                     Position = safePosition,
-                    Weight = SanitizeUnitScalar(weight),
+                    Weight = hasFiniteTargetPosition ? SanitizeUnitScalar(weight) : 0.0f,
                 };
             }
         }

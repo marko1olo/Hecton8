@@ -625,4 +625,4 @@ Evidence bucket result:
 
 Current dirty hot-target intersections are `Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs` and `Assets/_Project/Scripts/Construction/HabitatGraphManager.cs`.
 
-C++ transfer verdict from compute evidence: `NOT VERIFIED / NO PATCH EVIDENCE`. The top-100 rollout patches contain zero `.cpp`, `.cc`, `.cxx`, `.h`, `.hpp`, `.ixx`, or CMake targets. Do not report HECTON-8 C++ migration completion from this ledger.
+C++ transfer verdict from compute evidence: `NOT VERIFIED / NO PATCH EVIDENCE`. The top-100 rollout patches contain zero `.cpp`, `.cc`, `.cxx`, `.h`, `.hpp`, `.ixx`, or CMake targets. A project tree scan found existing native audio plugin C++ files under `NativeAudio/HectonSensoryKernel`, plus a third-party Lofelt iOS header. That is native-plugin presence, not evidence of a domain transfer. Do not report HECTON-8 C++ migration completion from this ledger.

@@ -240,11 +240,23 @@ Scalability potential: Low/Middle/High/Ultra process gets a concrete hot-file qu
 
 Hardware Impact: 0 runtime microseconds on i3/MX350. No runtime code changed.
 
-## Decision 20 - Top-100 Value And C++ Transfer Evidence
+## Decision 21 - Root Audit Index
+
+Problem: The audit now has multiple root files. Without a read-order index, later agents can read only one layer and overclaim value, waste, or C++ migration status.
+
+Solution: Create `COMPUTE_AUDIT_INDEX.md` with read order, hard boundaries, forbidden overclaims, and the next honest verification gate.
+
+Rejected Alternatives: Extending the brief with another long section was rejected because the brief is already the short summary. Depending on chat history was rejected because context compression is expected.
+
+Scalability potential: Low/Middle/High/Ultra process gains a stable navigation point. Future agents spend less time rediscovering which audit file is authoritative for which claim.
+
+Hardware Impact: 0 runtime microseconds on i3/MX350. Documentation-only.
+
+## Decision 19 - Top-100 Value And C++ Transfer Evidence
 
 Problem: Top-30 attribution and validation forensics showed expensive work traces, but the user requested continued certainty and specifically repeated the C++ transfer requirement. Token concentration alone cannot prove productive value or migration state.
 
-Solution: Parse the top-100 rollout JSONL files read-only with normalized path accounting, then classify threads by visible work evidence, external-path dominance, dirty-workspace collision, and C++ patch target presence. Preserve the result in `COMPUTE_THREAD_VALUE_AUDIT.md` and refresh `COMPUTE_COLLISION_RISK.md`.
+Solution: Parse the top-100 rollout JSONL files read-only with normalized path accounting, then classify threads by visible work evidence, external-path dominance, dirty-workspace collision, and C++ patch target presence. Preserve the result in `COMPUTE_THREAD_VALUE_AUDIT.md`, refresh `COMPUTE_COLLISION_RISK.md`, and cross-check the project tree for existing C++ source files.
 
 Rejected Alternatives: Treating top-100 patch churn as final LOC delta was rejected because rollout patches include retries and superseded edits. Calling code-heavy threads "verified value" was rejected because current compile/H-Phi joins are absent. Claiming C++ migration completion from user pressure was rejected because the parse found zero C++ patch targets in the top-100 rollout patches.
 

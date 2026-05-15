@@ -41,3 +41,7 @@ Task loop 5:
 Task loop 6:
 - [x] Verify post-push state | DOD: after `f9c51f410`, `git fetch origin` and divergence check returned `0 0` | Rejected: assuming push result without fetch verification | Estimate: 0 us runtime.
 - [x] Bound the live tail loop | DOD: classified the new post-push dirty tail and committed one more evidence-backed checkpoint | Rejected: infinite checkpoint loop while agents keep writing | Estimate: 0 us runtime.
+
+Task loop 7:
+- [x] Re-check pull gate | DOD: `git fetch origin`; `rev-list origin/main...HEAD` returned `0 0`, so pull remained unnecessary | Rejected: merging without incoming commits | Estimate: 0 us runtime.
+- [x] Validate current tail | DOD: `git diff --stat`, `git diff --check`, unmerged-path scan, and changed-file marker scan | Rejected: staging unchecked live edits | Estimate: 0 us runtime.

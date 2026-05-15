@@ -393,3 +393,11 @@ Solution: Cached the peak scalar, rejected it when non-finite before any low-tie
 Rejected Alternatives: Relying on HLSL `saturate` NaN behavior or clamping in downstream bend/crease helpers. NaN saturation behavior is not a contract worth depending on; downstream clamping is duplicated and too late for shared resolver correctness.
 Scalability potential: Low/MX350 peak-only crease now has the same finite gate as Mid/High/Ultra localized stress. Ultra keeps visual overkill when data is valid and degrades bad slots to silence.
 Hardware Impact: Adds two scalar finite checks in already-gated stress paths. Fault frames avoid NaN deformation/crease output; valid-frame overhead is negligible under the 64-slot cap.
+
+## Follow-Up Correction - Shader Panel Mask Finite Gates
+
+Problem: A non-finite UV could flow through `frac(abs(uv))`, the sine panel mask, and then into object-space bend offset or low-tier crease intensity.
+Solution: `HectonHabitatInteriorPanelUv` now returns zero panel UV for non-finite input, and `HectonHabitatInteriorPanelMaskFromUv` returns zero when the sine mask product is non-finite.
+Rejected Alternatives: Checking UV separately in every bend/crease callsite or allowing downstream saturate to handle it. Callsite checks duplicate policy; saturate on NaN is not a stable correctness contract.
+Scalability potential: Low/MX350 crease and Mid/High/Ultra sine bow share one invalid-UV behavior: zero panel influence. Valid panels keep the exact existing look.
+Hardware Impact: Adds a finite UV check only where panel masks are calculated. Faulted vertices/fragments avoid NaN offset/crease propagation; valid-frame overhead is bounded to stressed/crease paths.

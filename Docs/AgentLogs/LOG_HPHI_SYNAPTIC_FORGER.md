@@ -340,6 +340,7 @@ What was wrong:
 What was done:
 - HUDQuickBar now consumes `SignalBus<ToolLoadoutChangedSignal>` in its existing UI tick and invalidates slot binding cache only for assignment reasons.
 - PDAInventoryTab consumes the same signal while the inventory tab is active and marks the tool strip/details dirty without tool-manager delegates.
+- PDAInventoryTab coalesces inventory and tool-loadout dirty signals into one `FlushPendingRefresh()` call per tick.
 - PDALoadoutTab now reads inventory and tool-loadout snapshots independently before refresh.
 - PDAConstructionTab and BuilderStatusOverlay removed stale `_subscribedToolManager` state.
 - BuilderStatusOverlay remains registered while a tool-loadout source id is bound, allowing builder-tool equip to wake the overlay without a callback.
