@@ -49,3 +49,11 @@ Solution: Add full JSON `texture_redlines` payload generation and validation. `-
 Rejected Alternatives: Relying on broad CSV parity. The JSON report is consumed by downstream agents and needs the same detail-level proof as split CSVs.
 Scalability potential: Low/MX350 remediation queues now carry exact texture risk payloads in the machine-readable report; Middle/High/Ultra can regenerate larger reports without weakening downstream JSON consumers.
 Hardware Impact: 0us runtime measured. Tooling impact: `--validate-reports` passes current artifacts; unit coverage remains 21 tests and now explicitly rejects stale texture JSON payload drift.
+
+## Decision 40: JSON Authority Drift Regression
+
+Problem: The validator already rejected JSON `schema_version`, `evidence_class`, `scan_root_names`, and `ci_expected_exit_code` drift, but the tests did not include a fixture that falsified JSON authority fields directly.
+Solution: Add a regression test that loads the current generated JSON report, mutates `evidence_class` to a false runtime claim and `ci_expected_exit_code` to an impossible green value, then verifies both errors are reported.
+Rejected Alternatives: Relying on implementation inspection. Authority fields are evidence-boundary claims and require a failing fixture, not code-review memory.
+Scalability potential: Low/MX350 reports cannot silently claim runtime profiler evidence or green CI while redlines remain; Middle/High/Ultra payload consumers inherit the same authority guard.
+Hardware Impact: 0us runtime measured. Tooling impact: unit coverage is now 22 tests and rejects JSON authority drift.

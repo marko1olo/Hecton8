@@ -369,6 +369,10 @@ class MemoryBudgetCheckTests(unittest.TestCase):
                 ],
             )
             payload = {
+                "schema_version": 1,
+                "evidence_class": "STATIC_SOURCE/FILESYSTEM/PY_UNIT_TEST",
+                "scan_root_names": list(budget.DEFAULT_SCAN_ROOT_NAMES),
+                "ci_expected_exit_code": 0,
                 "texture_count": 0,
                 "mesh_count": 1,
                 "render_texture_count": 1,
@@ -470,6 +474,10 @@ class MemoryBudgetCheckTests(unittest.TestCase):
                 ],
             )
             payload = {
+                "schema_version": 1,
+                "evidence_class": "STATIC_SOURCE/FILESYSTEM/PY_UNIT_TEST",
+                "scan_root_names": list(budget.DEFAULT_SCAN_ROOT_NAMES),
+                "ci_expected_exit_code": 0,
                 "texture_count": 1,
                 "mesh_count": 0,
                 "render_texture_count": 0,
@@ -582,6 +590,30 @@ class MemoryBudgetCheckTests(unittest.TestCase):
 
             self.assertFalse(ok)
             self.assertIn("CSV report evidence_class drift", messages)
+
+    def test_validate_reports_rejects_json_authority_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            drifted_json = Path(temp_dir) / "VRAM_Budget_Audit_authority_drift.json"
+            payload = json.loads((PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit.json").read_text(encoding="utf-8"))
+            payload["evidence_class"] = "RUNTIME_MEMORY_PROFILER_CLAIM_WITHOUT_CAPTURE"
+            payload["ci_expected_exit_code"] = 0
+            drifted_json.write_text(json.dumps(payload), encoding="utf-8")
+
+            ok, messages = budget.validate_generated_reports(
+                PROJECT_ROOT,
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit.csv",
+                drifted_json,
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Texture_Redlines.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Mesh_Redlines.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_RenderTexture_Redlines.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_RenderTexture_SourceHotspots.csv",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Budget_Audit_Summary.md",
+                PROJECT_ROOT / "Docs" / "Reports" / "VRAM_Remediation_Plan.md",
+            )
+
+            self.assertFalse(ok)
+            self.assertIn("JSON evidence_class drift", messages)
+            self.assertIn("JSON ci_expected_exit_code drift", messages)
 
     def test_iter_assets_uses_case_insensitive_generated_tree_exclusion(self) -> None:
         self.assertIn(".codex-build", budget.SKIP_DIRS)
