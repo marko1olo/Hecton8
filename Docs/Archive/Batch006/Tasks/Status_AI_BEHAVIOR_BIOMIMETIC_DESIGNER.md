@@ -28,8 +28,8 @@ Rule quote: "All AI decisions are based on data available in the GlobalDataVault
 - [x] Task 2 - STATE TRANSITIONS: define 50 utility scores for Circle, Hide, Breach, False Charge, Real Attack | Justification: 10 contexts x 5 behavior rows gives explicit inspectable utility surface | Alternatives rejected: hidden hardcoded Python-only behavior table | Estimate: 50 scalar row reads, approx 2-5 us if prepacked in NativeArray
 - [x] Task 3 - SENSORY WEIGHTS: define Sound vs Light vs Movement aggression effects | Justification: scalar weighted sum, sound 0.42 / light 0.26 / movement 0.32 | Alternatives rejected: ray/AudioSource/Light component queries | Estimate: <1 us scalar math after vault feed read
 - [x] Task 4 - PACK HUNTING MATH: define synergy rules using dot-product flanking | Justification: dot-product flank gates match mandate and avoid angle/acos | Alternatives rejected: A* group tactics, per-agent physics truth | Estimate: 4-12 us for up to four stalker candidates depending tier
-- [x] Task 5 - AI SIMULATOR: write `Tools/AiBattleSim.py` and run 10,000 encounters | Justification: deterministic CLI simulator consumed the authored JSON and produced `Tools/AiBattleSim_Report.json` | Alternatives rejected: manual outcome claims without evidence | Estimate: offline only; 10k report elapsed 195.149 s inside Python with subgroup validation
-- [x] Task 6 - SELF-AUDIT LOOP 1: lower aggression if all kills are under 30 seconds | Justification: report shows kills 5224/10000, under30Kills 0, allKillsUnder30 false, subgroupGuardPassed true; no aggression reduction required | Alternatives rejected: fake adjustment when guard was not tripped | Estimate: 0 us runtime; offline audit scalar
+- [x] Task 5 - AI SIMULATOR: write `Tools/AiBattleSim.py` and run 10,000 encounters | Justification: deterministic CLI simulator consumed the authored JSON and produced `Tools/AiBattleSim_Report.json` | Alternatives rejected: manual outcome claims without evidence | Estimate: offline only; latest 10k report elapsed 80.7 s inside Python with subgroup validation
+- [x] Task 6 - SELF-AUDIT LOOP 1: lower aggression if all kills are under 30 seconds | Justification: current report shows kills 4220/10000, under30Kills 0, allKillsUnder30 false, subgroupGuardPassed true; no aggression reduction required | Alternatives rejected: fake adjustment when guard was not tripped | Estimate: 0 us runtime; offline audit scalar
 - [x] Task 7 - SELF-AUDIT LOOP 2: verify decisions only use GlobalDataVault-available data | Justification: artifact validator now parses `Assets/_Project/Scripts/Core/Memory/H8Memory.cs` BufferID enum and checks every utility input against `globalDataVaultFeeds` | Alternatives rejected: copied/stale BufferID list, non-vault light/audio scene objects | Estimate: 0 us hot path until importer exists
 
 ## Iteration Loop Ledger
@@ -53,13 +53,14 @@ Rule quote: "All AI decisions are based on data available in the GlobalDataVault
 - [x] Loop 18 - Sensory/cooldown contract hardening: aligned RealAttack cooldown to the declared 18 s minimum and added validator coverage for sensory formula tokens, sensory multipliers, and RealAttack/FalseCharge cooldown minimums
 - [x] Loop 19 - Context/utility metadata hardening: artifact checker now validates exact context order/id set, context band fields, context descriptions, sequential utility score ids, and utility reason text
 - [x] Loop 20 - Pack `math.dot` contract hardening: authored pack flanking formula/rules now use explicit `math.dot`, and validator rejects generic dot, angle/acos math, rule id/order drift, missing range gate, and missing rule descriptions/effects
+- [x] Loop 21 - GlobalDataVault field-lane hardening: artifact checker now enforces exact BufferID and field arrays for all seven decision features and rejects report field-count drift
 
 ## Evidence
 - `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json` -> regenerated schema v2 report with `brainDigest` and `simulationDigest`; status `INSTINCTS DEFINED`, kills 4220, killRate 0.422, under30KillRate 0.0.
 - `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts` -> `ARTIFACT_CHECK_PASSED`; hardened checker confirms live BufferID source, matching report validation, killRate 0.422 inside target, under30KillRate 0.0, subgroup caps intact.
 - `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts --verify-rerun` -> `ARTIFACT_CHECK_PASSED`, `rerunVerified=True`; digest rerun matched `8d2131741fc2d1fc03900eec6a8aba4631c753e143a6b2e068db21bf1db92d7b`.
 - `python -B -c "import ast, pathlib; ..."` -> syntax parse passed for `Tools/AiBattleSim.py` and `Tools/test_ai_battle_sim.py` without writing bytecode.
-- `python -B -m unittest Tools.test_ai_battle_sim` -> 55 tests passed in 7.321 s after pack `math.dot` contract hardening.
+- `python -B -m unittest Tools.test_ai_battle_sim` -> 58 tests passed in 7.006 s after GlobalDataVault field-lane contract hardening.
 - Prompt extraction -> bounded CLI regex extracted the complete `<AGENT_PROMPT id="AI_BEHAVIOR_BIOMIMETIC_DESIGNER">` block with 7 numbered tasks and status `INSTINCTS DEFINED`.
 - `.sln/.csproj` scan -> none found in workspace, so `dotnet build` was not applicable for this data/Python task.
 - Polish mandate extraction -> `<POLISH_MANDATE>` tag not found in `Docs/Tasks/CURRENT_BATCH.md`.
@@ -69,7 +70,7 @@ Rule quote: "All AI decisions are based on data available in the GlobalDataVault
 - Matrix evidence -> report validation records `contextCount=10` and `utilityPairCount=50`.
 - Contract evidence -> report validation records `behaviorParameterCount=5`, `mathLodTierCount=4`, `packRuleCount=4`, `blackBoxCapacityFrames=300`.
 - Fail-closed evidence -> tests cover missing `behaviorOrder`, invalid `selfAudit.targetKillRateMin`, and report `behaviorCounts` drift.
-- DataVault lane evidence -> report validation records `globalDataVaultFeedCount=7`; tests cover missing, extra, and duplicate feature lanes.
+- DataVault lane evidence -> report validation records `globalDataVaultFeedCount=7` and `globalDataVaultFieldCount=22`; tests cover missing, extra, duplicate, BufferID drift, field drift, and report field-count drift.
 - Identity evidence -> report identity is `AI_BEHAVIOR_BIOMIMETIC_DESIGNER`, `CLI_PYTHON_BATTLE_SIMULATION`, `PENDING VERIFICATION`, `Data/AI/Leviathan_Brain.json`; tests reject wrong source prompt id, task count, domain, and report identity.
 - Breakdown evidence -> tests reject tampered `profileBreakdown` totals, `tierBreakdown` rates, and missing `packCountBreakdown`.
 - Breakdown key evidence -> tests reject missing required profile keys, extra tier keys, and wrong pack-count keys.

@@ -144,6 +144,20 @@ class AiBattleSimTests(unittest.TestCase):
         self.assertEqual(validation["status"], "BRAIN_VALIDATION_FAILED")
         self.assertTrue(any("duplicate GlobalDataVault feature" in error for error in validation["errors"]))
 
+    def test_vault_buffer_id_contract_drift_is_rejected(self) -> None:
+        brain = json.loads(BRAIN_PATH.read_text(encoding="utf-8"))
+        brain["globalDataVaultFeeds"][0]["bufferIds"][1] = "H8Time"
+        validation = self.sim.validate_brain(brain)
+        self.assertEqual(validation["status"], "BRAIN_VALIDATION_FAILED")
+        self.assertTrue(any("bufferIds drift" in error for error in validation["errors"]))
+
+    def test_vault_field_contract_drift_is_rejected(self) -> None:
+        brain = json.loads(BRAIN_PATH.read_text(encoding="utf-8"))
+        brain["globalDataVaultFeeds"][0]["fields"][1] = "Camera.main.transform.position"
+        validation = self.sim.validate_brain(brain)
+        self.assertEqual(validation["status"], "BRAIN_VALIDATION_FAILED")
+        self.assertTrue(any("fields drift" in error for error in validation["errors"]))
+
     def test_missing_behavior_order_is_rejected_without_throwing(self) -> None:
         brain = json.loads(BRAIN_PATH.read_text(encoding="utf-8"))
         del brain["behaviorOrder"]
@@ -362,6 +376,15 @@ class AiBattleSimTests(unittest.TestCase):
         check = self.sim.check_artifacts(BRAIN_PATH, report_path, 10_000)
         self.assertEqual(check["status"], "ARTIFACT_CHECK_FAILED")
         self.assertTrue(any("knownBufferCount" in error for error in check["errors"]))
+
+    def test_report_vault_field_count_drift_is_rejected(self) -> None:
+        report = json.loads(REPORT_PATH.read_text(encoding="utf-8"))
+        report["validation"]["globalDataVaultFieldCount"] = 0
+        report["globalDataVaultAudit"]["fieldCount"] = 0
+        report_path = self.write_temp_report("vault_field_count", report)
+        check = self.sim.check_artifacts(BRAIN_PATH, report_path, 10_000)
+        self.assertEqual(check["status"], "ARTIFACT_CHECK_FAILED")
+        self.assertTrue(any("globalDataVaultFieldCount mismatch" in error for error in check["errors"]))
 
     def test_report_behavior_counts_drift_is_rejected(self) -> None:
         report = json.loads(REPORT_PATH.read_text(encoding="utf-8"))

@@ -229,3 +229,9 @@ Solution: Updated `Data/AI/Leviathan_Brain.json` pack formula and all rule condi
 Rejected Alternatives: Accepting generic `dot` was rejected because it weakens the prompt contract and allows angle-based math to sneak back in.
 Scalability potential: Future pack tactics must preserve the explicit dot-product contract and rule order, keeping runtime import simple and deterministic.
 Hardware Impact: Offline validation/data only. Runtime remains 0 us in this task; if imported, explicit dot-product gates avoid acos/angle cost on weak CPUs. Strict 10,000 rerun passed with new `brainDigest=8f96fe1c84c9b136aac2a4a0fcc3550e62ddaae28d0b6d66c782e064eae80edf` and unchanged `simulationDigest=8d2131741fc2d1fc03900eec6a8aba4631c753e143a6b2e068db21bf1db92d7b`.
+
+Problem: Task 7 validation proved feature names and BufferID existence, but it did not prove the authored `fields` lanes stayed bound to those exact vault feeds. A row could keep a valid BufferID while drifting its field list toward scene/component data.
+Solution: Added exact GlobalDataVault feed contracts to `Tools/AiBattleSim.py` for all seven features: expected BufferID arrays and expected field arrays. The report now records `globalDataVaultFieldCount=22`, and artifact validation rejects stale field-count evidence.
+Rejected Alternatives: Trusting the `fields` arrays as documentation was rejected because future importers may use them as the data-packing contract.
+Scalability potential: Low/Middle/High/Ultra imports can now pack stable field lanes without scanning scene objects or guessing which vault buffer owns a signal.
+Hardware Impact: Offline validation only. Runtime remains 0 us in this task; if imported, exact field lanes prevent Camera/AudioSource/Light-style hot-path lookups and preserve zero-GC decision input flow on i3/MX350.

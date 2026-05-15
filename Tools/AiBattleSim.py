@@ -59,6 +59,52 @@ EXPECTED_FEATURES = (
     "packSynergy01",
     "attackCooldown01",
 )
+EXPECTED_GLOBAL_DATA_VAULT_FEEDS = {
+    "distanceSq01": {
+        "bufferIds": ("PlayerKinematicState", "EntityAUPs"),
+        "fields": (
+            "LockstepPlayerKinematicState.LocalPosition",
+            "LockstepPlayerKinematicState.SectorX",
+            "LockstepPlayerKinematicState.SectorY",
+            "LockstepPlayerKinematicState.SectorZ",
+            "EntityAUPs",
+        ),
+    },
+    "sound01": {
+        "bufferIds": ("PlayerKinematicState", "EntityVelocities", "Silt"),
+        "fields": (
+            "LockstepPlayerKinematicState.Velocity",
+            "LockstepPlayerKinematicState.InputActions",
+            "EntityVelocities",
+            "Silt",
+        ),
+    },
+    "light01": {
+        "bufferIds": ("PlayerKinematicState", "EntityFlags", "Silt"),
+        "fields": (
+            "LockstepPlayerKinematicState.Flags",
+            "LockstepPlayerKinematicState.InputActions",
+            "EntityFlags",
+            "Silt",
+        ),
+    },
+    "movement01": {
+        "bufferIds": ("PlayerKinematicState", "EntityVelocities"),
+        "fields": ("LockstepPlayerKinematicState.Velocity", "EntityVelocities"),
+    },
+    "lineOfSight01": {
+        "bufferIds": ("EntityAUPs", "Silt"),
+        "fields": ("EntityAUPs", "Silt"),
+    },
+    "packSynergy01": {
+        "bufferIds": ("EntityAUPs", "EntityVelocities", "EntityFlags"),
+        "fields": ("EntityAUPs", "EntityVelocities", "EntityFlags"),
+    },
+    "attackCooldown01": {
+        "bufferIds": ("H8Time", "EntityFlags"),
+        "fields": ("H8Time", "EntityFlags"),
+    },
+}
 EXPECTED_MATH_LOD_TIERS = ("low", "middle", "high", "ultra")
 EXPECTED_PACK_RULE_COUNT = 4
 EXPECTED_PACK_RULE_IDS = (
@@ -341,6 +387,7 @@ def validate_brain(brain: Mapping[str, object], known_buffers: set[str] | None =
 
     feed_rows = brain.get("globalDataVaultFeeds")
     feature_names = set()
+    global_data_vault_field_count = 0
     if not isinstance(feed_rows, list) or not feed_rows:
         errors.append("globalDataVaultFeeds missing")
     else:
@@ -357,13 +404,26 @@ def validate_brain(brain: Mapping[str, object], known_buffers: set[str] | None =
                 errors.append(f"duplicate GlobalDataVault feature {feature}")
             else:
                 feature_names.add(feature)
+            expected_feed = EXPECTED_GLOBAL_DATA_VAULT_FEEDS.get(feature) if isinstance(feature, str) else None
             buffer_ids = row.get("bufferIds")
             if not isinstance(buffer_ids, list) or not buffer_ids:
                 errors.append(f"globalDataVaultFeeds[{index}].bufferIds missing")
-                continue
-            for buffer_id in buffer_ids:
-                if buffer_id not in known_buffers:
-                    errors.append(f"unknown GlobalDataVault BufferID {buffer_id}")
+            else:
+                if expected_feed is not None and tuple(buffer_ids) != expected_feed["bufferIds"]:
+                    errors.append(f"globalDataVaultFeeds[{index}].bufferIds drift")
+                for buffer_id in buffer_ids:
+                    if not isinstance(buffer_id, str) or buffer_id not in known_buffers:
+                        errors.append(f"unknown GlobalDataVault BufferID {buffer_id}")
+            fields = row.get("fields")
+            if not isinstance(fields, list) or not fields:
+                errors.append(f"globalDataVaultFeeds[{index}].fields missing")
+            else:
+                global_data_vault_field_count += len(fields)
+                if expected_feed is not None and tuple(fields) != expected_feed["fields"]:
+                    errors.append(f"globalDataVaultFeeds[{index}].fields drift")
+                for field in fields:
+                    if not isinstance(field, str) or not field:
+                        errors.append(f"globalDataVaultFeeds[{index}].field invalid")
         if feature_names != set(EXPECTED_FEATURES):
             missing_features = [feature for feature in EXPECTED_FEATURES if feature not in feature_names]
             extra_features = sorted(feature for feature in feature_names if feature not in EXPECTED_FEATURES)
@@ -663,6 +723,7 @@ def validate_brain(brain: Mapping[str, object], known_buffers: set[str] | None =
         "blackBoxCapacityFrames": black_box_capacity,
         "behaviorCounts": behavior_counts,
         "globalDataVaultFeedCount": len(feature_names),
+        "globalDataVaultFieldCount": global_data_vault_field_count,
         "knownBufferCount": len(known_buffers),
         "knownBufferSource": buffer_source,
         "knownBufferSourceStatus": buffer_source_status,
@@ -1124,6 +1185,7 @@ def build_report(brain: Mapping[str, object], validation: Mapping[str, object], 
             "knownBufferSourceStatus": validation.get("knownBufferSourceStatus", "UNKNOWN"),
             "knownBufferCount": validation.get("knownBufferCount", 0),
             "feedCount": validation["globalDataVaultFeedCount"],
+            "fieldCount": validation["globalDataVaultFieldCount"],
             "utilityScoreCount": validation["utilityScoreCount"]
         },
         "samples": [result_sample(result) for result in results[:20]]
@@ -1198,6 +1260,8 @@ def check_artifacts(brain_path: Path, report_path: Path, expected_encounters: in
             errors.append("report.validation behaviorCounts mismatch")
         if report_validation.get("globalDataVaultFeedCount") != validation.get("globalDataVaultFeedCount"):
             errors.append("report.validation globalDataVaultFeedCount mismatch")
+        if report_validation.get("globalDataVaultFieldCount") != validation.get("globalDataVaultFieldCount"):
+            errors.append("report.validation globalDataVaultFieldCount mismatch")
         if report_validation.get("knownBufferCount") != validation.get("knownBufferCount"):
             errors.append("report.validation knownBufferCount mismatch")
         if report_validation.get("knownBufferSourceStatus") != validation.get("knownBufferSourceStatus"):
@@ -1445,6 +1509,8 @@ def check_artifacts(brain_path: Path, report_path: Path, expected_encounters: in
         errors.append("globalDataVaultAudit knownBufferCount mismatch")
     elif audit.get("feedCount") != validation.get("globalDataVaultFeedCount"):
         errors.append("globalDataVaultAudit feedCount mismatch")
+    elif audit.get("fieldCount") != validation.get("globalDataVaultFieldCount"):
+        errors.append("globalDataVaultAudit fieldCount mismatch")
     elif audit.get("utilityScoreCount") != validation.get("utilityScoreCount"):
         errors.append("globalDataVaultAudit utilityScoreCount mismatch")
 
