@@ -13,11 +13,52 @@ STAGE_SEED = 1
 STAGE_IMMATURE = 2
 STAGE_MATURE = 3
 UINT32_MASK = 0xFFFFFFFF
+EXPECTED_BIOME_NAMES = ("Safe Shallows", "Temperate Reef", "Thermal Vent", "Deep Abyss")
 
 
 def load_constants(path: Path) -> dict:
     with path.open("r", encoding="utf-8") as handle:
         return json.load(handle)
+
+
+def validate_constants(constants: dict) -> None:
+    if int(constants["gridWidth"]) < 1 or int(constants["gridHeight"]) < 1:
+        raise ValueError("grid dimensions must be positive")
+    if int(constants["macroSectorMeters"]) < 1:
+        raise ValueError("macroSectorMeters must be positive")
+    if int(constants["baseGrowthProgressPerDayQ"]) < 1 or int(constants["baseGrowthProgressPerDayQ"]) > 255:
+        raise ValueError("baseGrowthProgressPerDayQ must be in 1..255")
+    for key in (
+        "nutrientDiffusionPermille",
+        "preyGrowthPermille",
+        "predationPermille",
+        "predatorConversionPermille",
+        "predatorMortalityPermille",
+    ):
+        value = int(constants[key])
+        if value < 0 or value > 1000:
+            raise ValueError(f"{key} must be in 0..1000")
+    if int(constants["seedToMatureProgressQ"]) < 1:
+        raise ValueError("seedToMatureProgressQ must be positive")
+    if int(constants["tombstoneBaseDecayDays"]) < 1:
+        raise ValueError("tombstoneBaseDecayDays must be positive")
+    if int(constants["minApexRespawnDays"]) < 1:
+        raise ValueError("minApexRespawnDays must be positive")
+    if int(constants["maxApexRespawnDays"]) < int(constants["minApexRespawnDays"]):
+        raise ValueError("maxApexRespawnDays must be >= minApexRespawnDays")
+
+    biomes = constants["biomes"]
+    if len(biomes) != len(EXPECTED_BIOME_NAMES):
+        raise ValueError("exactly four biome constants are required")
+
+    for index, expected_name in enumerate(EXPECTED_BIOME_NAMES):
+        biome = biomes[index]
+        if int(biome["id"]) != index or biome["name"] != expected_name:
+            raise ValueError("biome ids and names must match runtime indices")
+        if int(biome["temperatureQ"]) <= 0:
+            raise ValueError("biome temperatureQ must be positive")
+        if int(biome["nutrientStartQ"]) < int(constants["minimumNutrientsQ"]):
+            raise ValueError("biome nutrientStartQ must not undercut minimumNutrientsQ")
 
 
 def rotate_left_u32(value: int, count: int) -> int:
@@ -269,6 +310,7 @@ def run_sim(constants: dict, days: int, total_overharvest: bool) -> tuple[dict, 
     if days < 1:
         raise ValueError("days must be >= 1")
 
+    validate_constants(constants)
     state = build_initial_state(constants, total_overharvest)
     first_half_recovery: list[int | None] = [None, None, None, None]
     checkpoints: list[dict] = []

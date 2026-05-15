@@ -530,3 +530,57 @@ Verification:
 - Target scans: no forbidden hot-path token matches; no raw `new NativeArray`; no raw native dispose.
 - `git diff --check`: CRLF warnings only for edited text files.
 - `dotnet --info`: unavailable; full Unity import/build remains PENDING VERIFICATION.
+
+## 2026-05-15 - Biome Constants Contract Guard
+
+What was wrong:
+- Entropy acceptance hard-codes Safe Shallows as biome index `0` and Deep Abyss as index `3`.
+- A drifted or reordered `Regrowth_Constants.json` biome table could make the harness validate the wrong biome.
+
+What was done:
+- Added `validate_constants` before simulation.
+- Required exactly four biome records with ids/names matching runtime indices.
+- Added `test_run_sim_rejects_misaligned_biome_contract`.
+
+Cinematic cheats used:
+- None. This is offline acceptance-data validation.
+
+Exact microseconds saved:
+- Runtime microseconds saved: 0. Unity runtime backend was not changed.
+- Failure avoided: no expensive entropy run against malformed biome table data.
+
+Verification:
+- `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`: exit code 0.
+- `python -m unittest Tools.test_world_entropy_sim -v`: 9 tests passed in 64.931 s.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
+- Target scans: no forbidden hot-path token matches; no raw `new NativeArray`; no raw native dispose.
+- `git diff --check`: CRLF warnings only for edited text files.
+- Dotnet probe did not provide usable build evidence; full Unity import/build remains PENDING VERIFICATION.
+
+## 2026-05-15 - Python Fast-Path Config Parity Guard
+
+What was wrong:
+- The shipped constants test matched the C# guard, but direct `run_sim()` calls could still accept malformed fast-path coefficients.
+- That allowed offline entropy evidence from constants the runtime backend would reject.
+
+What was done:
+- Extended `validate_constants` with C# `HasValidConfig`-equivalent bounds.
+- Added `test_run_sim_rejects_invalid_fast_path_constants`.
+- Re-ran unit, 365-day, 1000-day, syntax, and static checks.
+
+Cinematic cheats used:
+- None. This is offline acceptance-data validation.
+
+Exact microseconds saved:
+- Runtime microseconds saved: 0. Unity runtime backend was not changed.
+- Failure avoided: invalid fixed-point constants now abort before any entropy simulation loop runs.
+
+Verification:
+- `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`: exit code 0.
+- `python -m unittest Tools.test_world_entropy_sim -v`: 10 tests passed in 53.910 s.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
+- Target scans: no forbidden hot-path token matches; no raw `new NativeArray`; no raw native dispose.
+- `git diff --check`: CRLF warnings only for edited text files.
+- `dotnet --info`: timed out/unavailable; full Unity import/build remains PENDING VERIFICATION.

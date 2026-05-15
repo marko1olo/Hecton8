@@ -345,3 +345,25 @@ Rejected Alternatives: Leaving the edge case to `calculate_balance` alone was re
 Scalability potential: Low/Middle/High/Ultra validation grids now report absent biome coverage honestly. Larger high-end validation maps keep the same acceptance output when all required biomes are present.
 
 Hardware Impact: Tooling-only. Runtime Unity backend unchanged; added one branch in Python summary generation.
+
+## Decision 32 - Biome Constants Contract Guard
+Problem: The entropy acceptance math treats biome index `0` as Safe Shallows and index `3` as Deep Abyss. `Regrowth_Constants.json` is external data, so order/id drift could make the harness validate the wrong biome without a clear failure.
+
+Solution: Added `validate_constants` to require exactly four biome constants with ids and names matching runtime indices. `run_sim()` calls it before state construction. Added a regression that corrupts the Deep Abyss id and expects `ValueError`.
+
+Rejected Alternatives: Trusting JSON order was rejected because the acceptance ratio uses hard-coded indices. Checking only exported happy-path constants was rejected because it would not prove malformed automation inputs fail closed.
+
+Scalability potential: Low/Middle/High/Ultra validation runs now share the same biome contract before any expensive day loop starts. Larger future validation maps must keep the same index contract or intentionally change both runtime and harness.
+
+Hardware Impact: Tooling-only. Unity runtime backend unchanged; validation cost is four biome table checks before simulation.
+
+## Decision 33 - Python Fast-Path Config Parity Guard
+Problem: `test_exported_constants_match_csharp_fast_path_bounds` verified the shipped JSON, but `run_sim()` itself still accepted malformed constants that the C# backend `HasValidConfig` would reject. That made direct automation weaker than runtime scheduling.
+
+Solution: Extended `validate_constants` with the C# fast-path bounds: positive macro sector, base growth `1..255`, permille coefficients `0..1000`, positive seed/tombstone thresholds, and valid apex min/max days. Added a regression that sets `predationPermille` to `1001` and expects `ValueError`.
+
+Rejected Alternatives: Trusting the unit test alone was rejected because future tools can call `run_sim()` with arbitrary constants. Silently clamping invalid constants was rejected because it would create a new untracked simulation truth.
+
+Scalability potential: Low/Middle/High/Ultra validation runs now reject invalid constants before any expensive entropy loop starts. High-end validation can still use larger grids if the constants stay inside the runtime math envelope.
+
+Hardware Impact: Tooling-only. Unity runtime backend unchanged; validation cost is a small constant number of integer checks before simulation.

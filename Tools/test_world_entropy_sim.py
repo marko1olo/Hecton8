@@ -108,6 +108,20 @@ class WorldEntropySimTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             entropy.run_sim(self.constants, 0, True)
 
+    def test_run_sim_rejects_misaligned_biome_contract(self) -> None:
+        constants = deepcopy(self.constants)
+        constants["biomes"][3]["id"] = 0
+
+        with self.assertRaises(ValueError):
+            entropy.run_sim(constants, 1, True)
+
+    def test_run_sim_rejects_invalid_fast_path_constants(self) -> None:
+        constants = deepcopy(self.constants)
+        constants["predationPermille"] = 1001
+
+        with self.assertRaises(ValueError):
+            entropy.run_sim(constants, 1, True)
+
     def test_absent_biome_cannot_pass_total_overharvest_acceptance(self) -> None:
         constants = deepcopy(self.constants)
         constants["gridWidth"] = 1
