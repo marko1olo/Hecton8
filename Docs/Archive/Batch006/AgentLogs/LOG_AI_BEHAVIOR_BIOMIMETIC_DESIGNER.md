@@ -420,3 +420,86 @@ Failure modes:
 Status:
 - INSTINCTS DEFINED for data and Python evidence.
 - Unity runtime verification remains PENDING VERIFICATION.
+
+## 2026-05-15 - Report Counter Integrity Hardening
+
+What was wrong:
+- The artifact checker did not prove summary arithmetic or nested behavior/context counters. A hand-edited report could corrupt counter maps while preserving headline killRate and digest fields.
+- The first counter validator pass was too strict for subgroup rows because subgroup context maps omit zero-count contexts.
+
+What was done:
+- Hardened `Tools/AiBattleSim.py` to validate summary outcome totals, survivals, kill-rate arithmetic, under-30 rate arithmetic, behavior/context counter keys, behavior/context total parity, and subgroup counter totals.
+- Kept summary counters exhaustive, while allowing subgroup counters to omit zero-count keys and still reject unknown keys or aggregate drift.
+- Added regression tests for summary outcome-total drift, summary behavior-counter drift, missing summary context keys, and profile subgroup behavior-counter drift.
+
+Cinematic cheats used:
+- No new physical simulation truth. This is offline report integrity hardening only.
+
+Exact microseconds saved:
+- Unity runtime saving remains 0 us measured because no Unity runtime path changed.
+- Integration value: common report-counter tampering now fails in the cheap artifact checker before running the expensive 10k strict rerun.
+
+Evidence:
+- `python -B -c "import ast, pathlib; ..."` -> `SYNTAX_OK`.
+- `python -B -m unittest Tools.test_ai_battle_sim` -> 42 tests passed in 6.513 s.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts --verify-rerun` -> `ARTIFACT_CHECK_PASSED`, `rerunVerified=True`.
+- killRate 0.5224, under30KillRate 0.0.
+- `brainDigest=07dad20de885023d068e93c97ae468732cb077efd6fc0b01420279900389e246`.
+- `simulationDigest=97a10330bb86ded1a29b82aa896ac9acbe46d768fe0c403360c80e08bca50867`.
+
+Regression model:
+- CPU: no Unity runtime CPU added. Python counter validation is offline report checking.
+- GC: no Unity hot path changed. Runtime GC proof remains PENDING VERIFICATION until importer/playmode.
+- Memory: no runtime memory allocation added.
+- Cadence: no gameplay cadence changed.
+- Correctness: report summary and subgroup counters now cross-check internally before strict digest rerun.
+
+Failure modes:
+- Future behavior or context changes require deliberate checker/test updates.
+- Unity runtime importer remains separate work; no runtime behavior is claimed beyond data/tooling evidence.
+
+Status:
+- INSTINCTS DEFINED for data and Python evidence.
+- Unity runtime verification remains PENDING VERIFICATION.
+
+## 2026-05-15 - Frustration Audit and Calibration Hardening
+
+What was wrong:
+- `frustrationAudit` and `calibration` were not fully tied back to summary, self-audit, and subgroup evidence in the cheap checker.
+- `build_report` always emitted `initialAggressionScalar=1.0`, even when the CLI used a non-default `--aggression`.
+
+What was done:
+- Hardened `Tools/AiBattleSim.py` to validate target range, target pass flag, under-30 guard, subgroup cap, all-kills-under-30 flag, terror-not-frustration flag, and computed max profile/tier/pack kill rates.
+- Hardened calibration validation for scalar shape, pass count, lowered flag, and final-vs-initial aggression consistency.
+- Wired CLI `args.aggression` into report generation so non-default calibration evidence is no longer false.
+- Added regression tests for frustration target-range drift, frustration max-rate drift, and calibration final-aggression drift.
+
+Cinematic cheats used:
+- No new physical simulation truth. This pass only tightens offline evidence around terror-vs-frustration balancing.
+
+Exact microseconds saved:
+- Unity runtime saving remains 0 us measured because no Unity runtime path changed.
+- Integration value: audit tampering now fails before a strict 10k rerun or Unity import.
+
+Evidence:
+- `python -B -c "import ast, pathlib; ..."` -> `SYNTAX_OK`.
+- `python -B -m unittest Tools.test_ai_battle_sim` -> 45 tests passed in 15.513 s.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts --verify-rerun` -> `ARTIFACT_CHECK_PASSED`, `rerunVerified=True`.
+- killRate 0.5224, under30KillRate 0.0.
+- `brainDigest=07dad20de885023d068e93c97ae468732cb077efd6fc0b01420279900389e246`.
+- `simulationDigest=97a10330bb86ded1a29b82aa896ac9acbe46d768fe0c403360c80e08bca50867`.
+
+Regression model:
+- CPU: no Unity runtime CPU added. Audit validation runs offline in Python.
+- GC: no Unity hot path changed. Runtime GC proof remains PENDING VERIFICATION until importer/playmode.
+- Memory: no runtime memory allocation added.
+- Cadence: no gameplay cadence changed.
+- Correctness: audit and calibration evidence now cross-check against summary/selfAudit/subgroup facts before strict rerun.
+
+Failure modes:
+- Future frustration policy changes must update selfAudit, report generation, checker, and tests together.
+- Unity runtime importer remains separate work; no runtime behavior is claimed beyond data/tooling evidence.
+
+Status:
+- INSTINCTS DEFINED for data and Python evidence.
+- Unity runtime verification remains PENDING VERIFICATION.

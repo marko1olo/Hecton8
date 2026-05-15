@@ -181,3 +181,27 @@ Solution: Added sample validation to `Tools/AiBattleSim.py`: exact count, index 
 Rejected Alternatives: Treating samples as decorative evidence was rejected because the report is read by humans during integration and must be internally trustworthy.
 Scalability potential: Future sample expansion can reuse this shape validator and keep samples aligned with the same profile/tier/pack contracts as the breakdown tables.
 Hardware Impact: Offline validation only. Runtime impact remains 0 us; strict 10,000 rerun passed with unchanged brain and simulation digests.
+
+Problem: Summary and nested counter maps could drift independently. A report could preserve the headline killRate while corrupting `summary.behaviorCounts`, `summary.contextCounts`, or subgroup behavior/context totals.
+Solution: Added summary arithmetic validation for outcomes, survivals, under-30 rates, kill-rate consistency, behavior/context counter keys, behavior/context total parity, and subgroup counter totals across profile/tier/pack breakdowns.
+Rejected Alternatives: Requiring `--verify-rerun` for every counter mismatch was rejected because cheap internal consistency should catch hand-edited report drift before the expensive 10k rerun.
+Scalability potential: Future behavior/context expansion must update the authored brain and checker constants deliberately; subgroup rows may remain sparse by omitting zero counters.
+Hardware Impact: Offline validation only. Runtime impact remains 0 us; strict 10,000 rerun passed with unchanged brain and simulation digests.
+
+Problem: The first counter-map implementation rejected valid sparse subgroup context maps because subgroup rows omit zero-count contexts.
+Solution: Split counter validation policy: summary counters require the complete key universe, subgroup counters allow missing zero-count keys but still reject unknown keys, invalid counts, and aggregate total drift.
+Rejected Alternatives: Expanding every subgroup row with zero counters was rejected because it bloats the report without adding information.
+Scalability potential: Sparse subgroup reporting stays compact while summary-level evidence remains exhaustive.
+Hardware Impact: Offline validation only. No runtime impact.
+
+Problem: The `frustrationAudit` and `calibration` blocks could be hand-edited independently from summary/selfAudit evidence. Normal artifact validation caught only broad booleans and subgroup caps.
+Solution: Added audit consistency checks: target range, target pass flag, under-30 guard, subgroup cap, all-kills-under-30 flag, terror-not-frustration flag, computed max subgroup kill rates, calibration scalar shape, pass count, lowered flag, and final-vs-initial aggression consistency.
+Rejected Alternatives: Depending on strict rerun alone was rejected because these fields are human-facing gate evidence and must fail cheaply before rerun.
+Scalability potential: Future calibration policies can extend the audit block while preserving fail-closed consistency checks.
+Hardware Impact: Offline validation only. Runtime impact remains 0 us; strict 10,000 rerun passed with unchanged brain and simulation digests.
+
+Problem: `build_report` always wrote `initialAggressionScalar` as 1.0 even if the CLI was called with a non-default `--aggression`.
+Solution: Added an `initial_aggression` parameter to `build_report` and wired `args.aggression` through the CLI path. Default report output remains unchanged.
+Rejected Alternatives: Leaving the mismatch was rejected because it would corrupt calibration evidence on non-default verifier runs.
+Scalability potential: Release gates can now exercise alternate aggression seeds without lying in the calibration block.
+Hardware Impact: Offline report metadata only. No Unity runtime impact.

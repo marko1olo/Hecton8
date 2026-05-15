@@ -258,6 +258,30 @@ class AiBattleSimTests(unittest.TestCase):
         self.assertEqual(check["status"], "ARTIFACT_CHECK_FAILED")
         self.assertTrue(any("summary.killRate" in error for error in check["errors"]))
 
+    def test_frustration_audit_target_range_drift_is_rejected(self) -> None:
+        report = json.loads(REPORT_PATH.read_text(encoding="utf-8"))
+        report["frustrationAudit"]["targetKillRateRange"] = [0.0, 1.0]
+        report_path = self.write_temp_report("frustration_target_range", report)
+        check = self.sim.check_artifacts(BRAIN_PATH, report_path, 10_000)
+        self.assertEqual(check["status"], "ARTIFACT_CHECK_FAILED")
+        self.assertTrue(any("frustrationAudit.targetKillRateRange mismatch" in error for error in check["errors"]))
+
+    def test_frustration_audit_max_rate_drift_is_rejected(self) -> None:
+        report = json.loads(REPORT_PATH.read_text(encoding="utf-8"))
+        report["frustrationAudit"]["maxProfileKillRate"] = 0.01
+        report_path = self.write_temp_report("frustration_max_rate", report)
+        check = self.sim.check_artifacts(BRAIN_PATH, report_path, 10_000)
+        self.assertEqual(check["status"], "ARTIFACT_CHECK_FAILED")
+        self.assertTrue(any("frustrationAudit.maxProfileKillRate mismatch" in error for error in check["errors"]))
+
+    def test_calibration_final_drift_is_rejected(self) -> None:
+        report = json.loads(REPORT_PATH.read_text(encoding="utf-8"))
+        report["calibration"]["finalAggressionScalar"] = 0.82
+        report_path = self.write_temp_report("calibration_final", report)
+        check = self.sim.check_artifacts(BRAIN_PATH, report_path, 10_000)
+        self.assertEqual(check["status"], "ARTIFACT_CHECK_FAILED")
+        self.assertTrue(any("calibration final changed without lowered flag" in error for error in check["errors"]))
+
     def test_stale_report_validation_is_rejected(self) -> None:
         report = json.loads(REPORT_PATH.read_text(encoding="utf-8"))
         report["validation"]["knownBufferCount"] = 0
@@ -273,6 +297,30 @@ class AiBattleSimTests(unittest.TestCase):
         check = self.sim.check_artifacts(BRAIN_PATH, report_path, 10_000)
         self.assertEqual(check["status"], "ARTIFACT_CHECK_FAILED")
         self.assertTrue(any("behaviorCounts mismatch" in error for error in check["errors"]))
+
+    def test_summary_outcome_total_drift_is_rejected(self) -> None:
+        report = json.loads(REPORT_PATH.read_text(encoding="utf-8"))
+        report["summary"]["timeouts"] += 1
+        report_path = self.write_temp_report("summary_outcome", report)
+        check = self.sim.check_artifacts(BRAIN_PATH, report_path, 10_000)
+        self.assertEqual(check["status"], "ARTIFACT_CHECK_FAILED")
+        self.assertTrue(any("summary outcome total mismatch" in error for error in check["errors"]))
+
+    def test_summary_behavior_counter_drift_is_rejected(self) -> None:
+        report = json.loads(REPORT_PATH.read_text(encoding="utf-8"))
+        report["summary"]["behaviorCounts"]["Circle"] += 1
+        report_path = self.write_temp_report("summary_behavior_counts", report)
+        check = self.sim.check_artifacts(BRAIN_PATH, report_path, 10_000)
+        self.assertEqual(check["status"], "ARTIFACT_CHECK_FAILED")
+        self.assertTrue(any("summary behavior/context total mismatch" in error for error in check["errors"]))
+
+    def test_summary_context_counter_key_drift_is_rejected(self) -> None:
+        report = json.loads(REPORT_PATH.read_text(encoding="utf-8"))
+        del report["summary"]["contextCounts"]["far_silent_dark"]
+        report_path = self.write_temp_report("summary_context_counts", report)
+        check = self.sim.check_artifacts(BRAIN_PATH, report_path, 10_000)
+        self.assertEqual(check["status"], "ARTIFACT_CHECK_FAILED")
+        self.assertTrue(any("summary.contextCounts missing keys far_silent_dark" in error for error in check["errors"]))
 
     def test_report_identity_drift_is_rejected(self) -> None:
         report = json.loads(REPORT_PATH.read_text(encoding="utf-8"))
@@ -290,6 +338,15 @@ class AiBattleSimTests(unittest.TestCase):
         check = self.sim.check_artifacts(BRAIN_PATH, report_path, 10_000)
         self.assertEqual(check["status"], "ARTIFACT_CHECK_FAILED")
         self.assertTrue(any("profileBreakdown.kills total mismatch" in error for error in check["errors"]))
+
+    def test_profile_breakdown_behavior_counter_drift_is_rejected(self) -> None:
+        report = json.loads(REPORT_PATH.read_text(encoding="utf-8"))
+        first_key = next(iter(report["profileBreakdown"]))
+        report["profileBreakdown"][first_key]["behaviorCounts"]["Circle"] += 1
+        report_path = self.write_temp_report("profile_behavior_counts", report)
+        check = self.sim.check_artifacts(BRAIN_PATH, report_path, 10_000)
+        self.assertEqual(check["status"], "ARTIFACT_CHECK_FAILED")
+        self.assertTrue(any("profileBreakdown.behaviorCounts total mismatch" in error for error in check["errors"]))
 
     def test_tier_breakdown_rate_drift_is_rejected(self) -> None:
         report = json.loads(REPORT_PATH.read_text(encoding="utf-8"))

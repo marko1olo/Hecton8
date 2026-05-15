@@ -971,7 +971,7 @@ def simulation_digest(results: Sequence[EncounterResult]) -> str:
     return digest.hexdigest()
 
 
-def build_report(brain: Mapping[str, object], validation: Mapping[str, object], results: Sequence[EncounterResult], elapsed: float, aggression: float, passes: int, lowered: bool, seed: int) -> Dict[str, object]:
+def build_report(brain: Mapping[str, object], validation: Mapping[str, object], results: Sequence[EncounterResult], elapsed: float, aggression: float, passes: int, lowered: bool, seed: int, initial_aggression: float = 1.0) -> Dict[str, object]:
     summary = summarize_results(results)
     profile_breakdown = breakdown_by(results, "profile")
     tier_breakdown = breakdown_by(results, "tier")
@@ -1005,7 +1005,7 @@ def build_report(brain: Mapping[str, object], validation: Mapping[str, object], 
         "seed": seed,
         "elapsedSeconds": round(elapsed, 3),
         "calibration": {
-            "initialAggressionScalar": 1.0,
+            "initialAggressionScalar": round(initial_aggression, 6),
             "finalAggressionScalar": round(aggression, 6),
             "passes": passes,
             "aggressionLowered": lowered
@@ -1128,6 +1128,74 @@ def check_artifacts(brain_path: Path, report_path: Path, expected_encounters: in
     if not isinstance(under30_rate, (int, float)) or isinstance(under30_rate, bool) or float(under30_rate) > fast_max:
         errors.append("summary.under30KillRate exceeds guard")
 
+    def read_summary_int(field: str) -> Tuple[int, bool]:
+        value = summary.get(field)
+        if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+            errors.append(f"summary.{field} invalid")
+            return 0, False
+        return value, True
+
+    summary_encounters, summary_encounters_valid = read_summary_int("encounters")
+    summary_kills, summary_kills_valid = read_summary_int("kills")
+    summary_escaped, summary_escaped_valid = read_summary_int("escaped")
+    summary_timeouts, summary_timeouts_valid = read_summary_int("timeouts")
+    summary_under30, summary_under30_valid = read_summary_int("under30Kills")
+    summary_survivals, summary_survivals_valid = read_summary_int("survivals")
+    if summary_encounters_valid and summary_kills_valid and summary_escaped_valid and summary_timeouts_valid:
+        if summary_kills + summary_escaped + summary_timeouts != summary_encounters:
+            errors.append("summary outcome total mismatch")
+        expected_kill_rate = round(summary_kills / max(1, summary_encounters), 5)
+        if summary.get("killRate") != expected_kill_rate:
+            errors.append("summary.killRate inconsistent")
+    if summary_escaped_valid and summary_timeouts_valid and summary_survivals_valid and summary_escaped + summary_timeouts != summary_survivals:
+        errors.append("summary.survivals mismatch")
+    if summary_under30_valid and summary_kills_valid and summary_under30 > summary_kills:
+        errors.append("summary.under30Kills exceeds kills")
+    if summary_under30_valid and summary_encounters_valid:
+        expected_under30_rate = round(summary_under30 / max(1, summary_encounters), 5)
+        if summary.get("under30KillRate") != expected_under30_rate:
+            errors.append("summary.under30KillRate inconsistent")
+    if summary_under30_valid and summary_kills_valid:
+        expected_under30_among_kills = round(summary_under30 / max(1, summary_kills), 5)
+        if summary.get("under30AmongKillsRate") != expected_under30_among_kills:
+            errors.append("summary.under30AmongKillsRate inconsistent")
+
+    context_rows = brain.get("contexts")
+    expected_context_names: Tuple[str, ...] = ()
+    if isinstance(context_rows, list):
+        expected_context_names = tuple(str(row.get("id")) for row in context_rows if isinstance(row, dict) and isinstance(row.get("id"), str))
+
+    def validate_counter_map(label: str, counter: object, expected_keys: Tuple[str, ...], require_all_keys: bool = True) -> Tuple[Dict[str, int], bool]:
+        if not isinstance(counter, dict):
+            errors.append(f"{label} missing")
+            return {}, False
+        counter_keys = set(str(key) for key in counter.keys())
+        expected_key_set = set(expected_keys)
+        valid = True
+        missing_keys = [key for key in expected_keys if key not in counter_keys]
+        extra_keys = sorted(key for key in counter_keys if key not in expected_key_set)
+        if missing_keys and require_all_keys:
+            errors.append(f"{label} missing keys {','.join(missing_keys)}")
+            valid = False
+        if extra_keys:
+            errors.append(f"{label} extra keys {','.join(extra_keys)}")
+            valid = False
+        result: Dict[str, int] = {}
+        for key, raw_value in counter.items():
+            normalized_key = str(key)
+            if not isinstance(raw_value, int) or isinstance(raw_value, bool) or raw_value < 0:
+                errors.append(f"{label}.{normalized_key} invalid")
+                valid = False
+            else:
+                result[normalized_key] = raw_value
+        return result, valid
+
+    summary_behavior_counts, summary_behavior_counts_valid = validate_counter_map("summary.behaviorCounts", summary.get("behaviorCounts"), EXPECTED_BEHAVIORS)
+    summary_context_counts, summary_context_counts_valid = validate_counter_map("summary.contextCounts", summary.get("contextCounts"), expected_context_names)
+    if summary_behavior_counts_valid and summary_context_counts_valid:
+        if sum(summary_behavior_counts.values()) != sum(summary_context_counts.values()):
+            errors.append("summary behavior/context total mismatch")
+
     def validate_breakdown(name: str, breakdown: object, expected_keys: Tuple[str, ...]) -> None:
         if not isinstance(breakdown, dict) or not breakdown:
             errors.append(f"{name} missing")
@@ -1148,6 +1216,10 @@ def check_artifacts(brain_path: Path, report_path: Path, expected_encounters: in
             "timeouts": 0,
             "under30Kills": 0,
         }
+        behavior_totals = {key: 0 for key in EXPECTED_BEHAVIORS}
+        context_totals = {key: 0 for key in expected_context_names}
+        behavior_totals_valid = True
+        context_totals_valid = True
         for key, row in breakdown.items():
             if not isinstance(row, dict):
                 errors.append(f"{name}.{key} invalid")
@@ -1174,14 +1246,49 @@ def check_artifacts(brain_path: Path, report_path: Path, expected_encounters: in
                 expected_under30_rate = round(under30_value / max(1, encounters_value), 5)
                 if row.get("under30KillRate") != expected_under30_rate:
                     errors.append(f"{name}.{key}.under30KillRate inconsistent")
+            row_behavior_counts, row_behavior_counts_valid = validate_counter_map(f"{name}.{key}.behaviorCounts", row.get("behaviorCounts"), EXPECTED_BEHAVIORS, require_all_keys=False)
+            behavior_totals_valid = behavior_totals_valid and row_behavior_counts_valid
+            for behavior, count in row_behavior_counts.items():
+                if behavior in behavior_totals:
+                    behavior_totals[behavior] += count
+            row_context_counts, row_context_counts_valid = validate_counter_map(f"{name}.{key}.contextCounts", row.get("contextCounts"), expected_context_names, require_all_keys=False)
+            context_totals_valid = context_totals_valid and row_context_counts_valid
+            for context, count in row_context_counts.items():
+                if context in context_totals:
+                    context_totals[context] += count
 
         for field, value in totals.items():
             if summary.get(field) != value:
                 errors.append(f"{name}.{field} total mismatch")
+        if behavior_totals_valid and summary_behavior_counts_valid and behavior_totals != summary_behavior_counts:
+            errors.append(f"{name}.behaviorCounts total mismatch")
+        if context_totals_valid and summary_context_counts_valid and context_totals != summary_context_counts:
+            errors.append(f"{name}.contextCounts total mismatch")
 
-    validate_breakdown("profileBreakdown", report.get("profileBreakdown"), EXPECTED_PROFILE_NAMES)
-    validate_breakdown("tierBreakdown", report.get("tierBreakdown"), TIERS)
-    validate_breakdown("packCountBreakdown", report.get("packCountBreakdown"), EXPECTED_PACK_COUNT_KEYS)
+    profile_breakdown = report.get("profileBreakdown")
+    tier_breakdown = report.get("tierBreakdown")
+    pack_count_breakdown = report.get("packCountBreakdown")
+    validate_breakdown("profileBreakdown", profile_breakdown, EXPECTED_PROFILE_NAMES)
+    validate_breakdown("tierBreakdown", tier_breakdown, TIERS)
+    validate_breakdown("packCountBreakdown", pack_count_breakdown, EXPECTED_PACK_COUNT_KEYS)
+
+    def max_breakdown_kill_rate(name: str, breakdown: object) -> float:
+        if not isinstance(breakdown, dict):
+            return 0.0
+        max_value = 0.0
+        for key, row in breakdown.items():
+            if not isinstance(row, dict):
+                continue
+            value = row.get("killRate")
+            if not isinstance(value, (int, float)) or isinstance(value, bool) or not math.isfinite(float(value)):
+                errors.append(f"{name}.{key}.killRate invalid")
+                continue
+            max_value = max(max_value, float(value))
+        return round(max_value, 5)
+
+    max_profile_kill_rate = max_breakdown_kill_rate("profileBreakdown", profile_breakdown)
+    max_tier_kill_rate = max_breakdown_kill_rate("tierBreakdown", tier_breakdown)
+    max_pack_kill_rate = max_breakdown_kill_rate("packCountBreakdown", pack_count_breakdown)
 
     samples = report.get("samples")
     expected_sample_count = min(20, expected_encounters)
@@ -1257,10 +1364,75 @@ def check_artifacts(brain_path: Path, report_path: Path, expected_encounters: in
     if isinstance(frustration, dict) and not frustration.get("subgroupGuardPassed", False):
         errors.append("subgroupGuardPassed is false")
     if isinstance(frustration, dict):
+        expected_all_kills_under30 = bool(
+            summary_encounters_valid
+            and summary_kills_valid
+            and summary_under30_valid
+            and summary_kills == summary_encounters
+            and summary_under30 == summary_encounters
+        )
+        if frustration.get("allKillsUnder30") != expected_all_kills_under30:
+            errors.append("frustrationAudit.allKillsUnder30 mismatch")
+        expected_target_range = [target_min, target_max]
+        if frustration.get("targetKillRateRange") != expected_target_range:
+            errors.append("frustrationAudit.targetKillRateRange mismatch")
+        expected_target_passed = isinstance(kill_rate, (int, float)) and not isinstance(kill_rate, bool) and target_min <= float(kill_rate) <= target_max
+        if frustration.get("targetKillRatePassed") != expected_target_passed:
+            errors.append("frustrationAudit.targetKillRatePassed mismatch")
+        if frustration.get("under30KillRateMax") != fast_max:
+            errors.append("frustrationAudit.under30KillRateMax mismatch")
+        expected_under30_guard = isinstance(under30_rate, (int, float)) and not isinstance(under30_rate, bool) and float(under30_rate) <= fast_max
+        if frustration.get("under30GuardPassed") != expected_under30_guard:
+            errors.append("frustrationAudit.under30GuardPassed mismatch")
+        if frustration.get("subgroupKillRateMax") != subgroup_max:
+            errors.append("frustrationAudit.subgroupKillRateMax mismatch")
+        expected_subgroup_guard = max_profile_kill_rate <= subgroup_max and max_tier_kill_rate <= subgroup_max and max_pack_kill_rate <= subgroup_max
+        if frustration.get("subgroupGuardPassed") != expected_subgroup_guard:
+            errors.append("frustrationAudit.subgroupGuardPassed mismatch")
+        expected_terror = (not expected_all_kills_under30) and expected_under30_guard and expected_subgroup_guard
+        if frustration.get("terrorNotFrustrationPassed") != expected_terror:
+            errors.append("frustrationAudit.terrorNotFrustrationPassed mismatch")
+        expected_max_rates = {
+            "maxProfileKillRate": max_profile_kill_rate,
+            "maxTierKillRate": max_tier_kill_rate,
+            "maxPackKillRate": max_pack_kill_rate,
+        }
+        for field, expected_value in expected_max_rates.items():
+            value = frustration.get(field)
+            if not isinstance(value, (int, float)) or isinstance(value, bool) or round(float(value), 5) != expected_value:
+                errors.append(f"frustrationAudit.{field} mismatch")
         for field in ("maxProfileKillRate", "maxTierKillRate", "maxPackKillRate"):
             value = frustration.get(field)
             if not isinstance(value, (int, float)) or isinstance(value, bool) or float(value) > subgroup_max:
                 errors.append(f"{field} exceeds subgroupKillRateMax")
+
+    calibration = report.get("calibration")
+    initial_aggression = 1.0
+    if not isinstance(calibration, dict):
+        errors.append("report.calibration missing")
+    else:
+        raw_initial = calibration.get("initialAggressionScalar")
+        raw_final = calibration.get("finalAggressionScalar")
+        raw_passes = calibration.get("passes")
+        raw_lowered = calibration.get("aggressionLowered")
+        initial_valid = isinstance(raw_initial, (int, float)) and not isinstance(raw_initial, bool) and math.isfinite(float(raw_initial)) and float(raw_initial) > 0.0
+        final_valid = isinstance(raw_final, (int, float)) and not isinstance(raw_final, bool) and math.isfinite(float(raw_final)) and float(raw_final) > 0.0
+        if not initial_valid:
+            errors.append("calibration.initialAggressionScalar invalid")
+        else:
+            initial_aggression = float(raw_initial)
+        if not final_valid:
+            errors.append("calibration.finalAggressionScalar invalid")
+        if not isinstance(raw_passes, int) or isinstance(raw_passes, bool) or not 1 <= raw_passes <= 5:
+            errors.append("calibration.passes invalid")
+        if not isinstance(raw_lowered, bool):
+            errors.append("calibration.aggressionLowered invalid")
+        if initial_valid and final_valid and isinstance(raw_lowered, bool):
+            final_aggression = float(raw_final)
+            if raw_lowered and final_aggression >= initial_aggression:
+                errors.append("calibration lowered without aggression reduction")
+            if not raw_lowered and round(final_aggression, 6) != round(initial_aggression, 6):
+                errors.append("calibration final changed without lowered flag")
 
     rerun_summary: Dict[str, object] | None = None
     if verify_rerun and not validation["errors"]:
@@ -1268,12 +1440,6 @@ def check_artifacts(brain_path: Path, report_path: Path, expected_encounters: in
         if not isinstance(seed, int) or isinstance(seed, bool):
             errors.append("report.seed invalid")
         else:
-            calibration = report.get("calibration")
-            initial_aggression = 1.0
-            if isinstance(calibration, dict):
-                raw_aggression = calibration.get("initialAggressionScalar", initial_aggression)
-                if isinstance(raw_aggression, (int, float)) and not isinstance(raw_aggression, bool):
-                    initial_aggression = float(raw_aggression)
             results, aggression, passes, lowered = execute_simulation(brain, expected_encounters, seed, max(0.05, initial_aggression))
             rerun_summary = summarize_results(results)
             if simulation_digest(results) != simulation_digest_value:
@@ -1344,7 +1510,7 @@ def main() -> int:
             print(f"validation_error={error}")
         return 2
     results, aggression, passes, lowered = execute_simulation(brain, encounters, args.seed, max(0.05, args.aggression))
-    report = build_report(brain, validation, results, time.perf_counter() - start, aggression, passes, lowered, args.seed)
+    report = build_report(brain, validation, results, time.perf_counter() - start, aggression, passes, lowered, args.seed, args.aggression)
     write_json(report_path, report)
     summary = report["summary"]
     print("LEVIATHAN BATTLE SIMULATION FINISHED")
