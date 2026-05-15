@@ -99,3 +99,9 @@ Solution: Replace volatile `pythonMicroBenchmark` with deterministic `sampleCost
 Rejected Alternatives: Keep workstation timing as evidence; ignore hash churn; write timing into logs instead of tuning data.
 Scalability potential: Stable data lets Low/Middle/High/Ultra tuning diffs represent real steering changes, not machine load noise.
 Hardware Impact: No runtime cost. Static operation counts remain estimates; Unity profiler proof remains PENDING VERIFICATION.
+
+Problem: Malformed numeric fields in exported JSON could throw Python conversion exceptions instead of producing controlled validation errors.
+Solution: Add finite-number coercion for source parameters, path trace clearance, and hysteresis bands; invalid values now return `False` with error text from validation.
+Rejected Alternatives: Trust generated JSON only; let `--check` crash on malformed data.
+Scalability potential: Future tooling can corrupt-test Low/Middle/High/Ultra data without losing the validation report.
+Hardware Impact: No runtime cost. Offline checker robustness only; Unity proof remains PENDING VERIFICATION.

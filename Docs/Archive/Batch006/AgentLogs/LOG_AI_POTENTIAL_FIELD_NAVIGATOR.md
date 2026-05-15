@@ -141,3 +141,17 @@ Verification -> Repeated `python Tools/AiPathSim.py` runs produced identical SHA
 Exact Microseconds saved -> 0 Unity runtime microseconds claimed. Removed Python timing from handoff data because it was not Unity evidence.
 
 Regression model -> CPU/GC/memory/cadence unchanged for runtime. Correctness: export churn now indicates real data change, not workstation load noise.
+
+## 2026-05-15 - Validator Fail-Closed Guard
+
+What was wrong -> Malformed numeric fields in the JSON could terminate validation through Python conversion exceptions instead of producing a controlled failure report.
+
+What was done -> Added finite-number coercion for source snapshot values, path trace clearance, and tier hysteresis bands. Added corrupted-field regression coverage for malformed hysteresis and source parameter values.
+
+Cinematic Cheats used -> No runtime behavior changed. This hardens validation for the existing analytical-flow/SDF-proxy tuning artifact.
+
+Verification -> `python Tools/AiPathSim.py` printed `NAVIGATION OPTIMIZED`. `python Tools/AiPathSim.py --check` printed `CHECK PASSED`. `python -m unittest Tools.AI_Sim.test_ai_path_sim` ran 14 tests and passed. `python -m py_compile Tools/AiPathSim.py Tools/AI_Sim/test_ai_path_sim.py` passed. Standalone assertion printed `fail-closed-json-ok`.
+
+Exact Microseconds saved -> 0 Unity runtime microseconds claimed. Validation robustness is offline tooling only.
+
+Regression model -> CPU/GC/memory/cadence unchanged for runtime. Correctness: malformed tuning data now fails closed with evidence instead of crashing the checker.

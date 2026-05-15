@@ -96,3 +96,8 @@ Status: NAVIGATION OPTIMIZED (PY_SIM) / PENDING UNITY VERIFICATION
 
 - [x] Remove volatile Python wall-clock timing from JSON | Justification: `pythonMicroBenchmark` made identical simulator runs produce different `Navigation_Tuning.json` hashes; export now uses deterministic `sampleCostModel`. Alternative rejected: keeping workstation-noisy timing as handoff evidence. Estimate: 25,000,000 us.
 - [x] Add byte-stable regeneration test | Justification: `test_export_regeneration_is_deterministic` reruns the simulator and byte-compares `Data/AI/Navigation_Tuning.json`; regression suite reached 13 tests and manual hash check stayed `BE874CA325A9B3DE0BAABB6784837C4DBA7F5BA66B93EFAD63F3D750D7FFA693` across repeated runs. Alternative rejected: assuming determinism from stable aggregate metrics. Estimate: 50,000,000 us.
+
+## Iterative Loop 14 - Validator Fail-Closed Guard
+
+- [x] Harden numeric validation against malformed JSON | Justification: `finite_float` now prevents malformed source/hysteresis/path numeric fields from crashing `--check`; invalid data returns structured errors. Alternative rejected: letting Python `float()` exceptions terminate artifact validation. Estimate: 24,000,000 us.
+- [x] Add corrupted-field regression coverage | Justification: `test_malformed_numeric_fields_fail_closed` corrupts hysteresis and source snapshot values in memory; regression suite reached 14 tests and standalone invariant printed `fail-closed-json-ok`. Alternative rejected: testing only valid exports. Estimate: 32,000,000 us.

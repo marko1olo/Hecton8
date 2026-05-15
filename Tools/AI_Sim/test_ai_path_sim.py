@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import copy
 import importlib.util
 import json
 import subprocess
@@ -48,6 +49,19 @@ class AiPathSimTests(unittest.TestCase):
     def test_export_self_check_passes(self) -> None:
         valid, errors = self.sim.validate_export(self.tuning)
         self.assertTrue(valid, errors)
+
+    def test_malformed_numeric_fields_fail_closed(self) -> None:
+        bad_tuning = copy.deepcopy(self.tuning)
+        bad_tuning["tierProfiles"]["Low"]["hysteresis"]["distanceMeters"] = "invalid"
+        valid, errors = self.sim.validate_export(bad_tuning)
+        self.assertFalse(valid)
+        self.assertTrue(any("hysteresis distance" in error for error in errors))
+
+        bad_snapshot = copy.deepcopy(self.tuning["sourceParameterSnapshot"])
+        bad_snapshot["flowTextureWorldSizeMeters"] = "invalid"
+        valid, errors = self.sim.validate_source_constants(bad_snapshot, self.sim.SOURCE_ROOT)
+        self.assertFalse(valid)
+        self.assertTrue(any("non-finite exported source parameter" in error for error in errors))
 
     def test_sample_cost_model_is_deterministic(self) -> None:
         self.assertEqual(self.sim.deterministic_sample_cost_model(), self.tuning["sampleCostModel"])

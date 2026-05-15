@@ -472,6 +472,18 @@ def extract_source_constants(source_text: str, constant_name: str) -> list[float
     return [float(match.group("value")) for match in pattern.finditer(source_text)]
 
 
+def finite_float(value: object) -> float | None:
+    if isinstance(value, bool):
+        return None
+    try:
+        result = float(value)
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(result):
+        return None
+    return result
+
+
 def validate_source_constants(snapshot: dict, root: Path | None = None) -> Tuple[bool, list[str]]:
     errors: list[str] = []
     project_root = SOURCE_ROOT if root is None else root
@@ -490,9 +502,13 @@ def validate_source_constants(snapshot: dict, root: Path | None = None) -> Tuple
         if exported is None:
             errors.append(f"missing exported source parameter: {snapshot_key}")
             continue
+        exported_number = finite_float(exported)
+        if exported_number is None:
+            errors.append(f"non-finite exported source parameter: {snapshot_key}")
+            continue
 
         for actual in actual_values:
-            if abs(actual - float(exported)) > 0.00001:
+            if abs(actual - exported_number) > 0.00001:
                 errors.append(f"source/export drift: {constant_name}")
 
             if abs(actual - float(expected_value)) > 0.00001:
@@ -502,8 +518,12 @@ def validate_source_constants(snapshot: dict, root: Path | None = None) -> Tuple
     world_sizes = extract_source_constants(source_text, "AbyssalFlowTextureWorldSizeMeters")
     exported_cell = snapshot.get("flowTextureCellSizeMeters")
     if resolutions and world_sizes and exported_cell is not None:
+        exported_cell_number = finite_float(exported_cell)
+        if exported_cell_number is None:
+            errors.append("non-finite exported source parameter: flowTextureCellSizeMeters")
+            return False, errors
         cell_size = world_sizes[0] / max(resolutions[0], EPSILON)
-        if abs(cell_size - float(exported_cell)) > 0.00001:
+        if abs(cell_size - exported_cell_number) > 0.00001:
             errors.append("source/export drift: AbyssalFlowTextureCellSizeMeters")
 
     return len(errors) == 0, errors
@@ -663,12 +683,15 @@ def deterministic_sample_cost_model() -> dict:
     }
 
 
-def validate_export(data: dict) -> Tuple[bool, list[str]]:
+def validate_export(data: object) -> Tuple[bool, list[str]]:
     errors: list[str] = []
 
     def expect(condition: bool, message: str) -> None:
         if not condition:
             errors.append(message)
+
+    if not isinstance(data, dict):
+        return False, ["export root must be a JSON object"]
 
     expect(data.get("schema") == "H8.NavigationTuning.PotentialField.v1", "schema mismatch")
     expect(data.get("status") == "NAVIGATION OPTIMIZED", "status is not NAVIGATION OPTIMIZED")
@@ -719,7 +742,8 @@ def validate_export(data: dict) -> Tuple[bool, list[str]]:
             expect(samples[0].get("step") == 0, "path trace missing start sample")
             expect(exported_trace.get("reached") is True, "path trace does not reach target")
             expect(exported_trace.get("sdfPushoutEvents") == 0, "path trace requires SDF pushout")
-            expect(float(exported_trace.get("minObstacleClearanceMeters", 0.0)) >= 2.0, "path trace clearance below guard")
+            trace_clearance = finite_float(exported_trace.get("minObstacleClearanceMeters"))
+            expect(trace_clearance is not None and trace_clearance >= 2.0, "path trace clearance below guard")
 
     search = data.get("search")
     if not isinstance(search, dict):
@@ -792,10 +816,10 @@ def validate_export(data: dict) -> Tuple[bool, list[str]]:
             if not isinstance(hysteresis, dict):
                 errors.append(f"missing hysteresis: {tier_name}")
                 continue
-            distance = float(hysteresis.get("distanceMeters", 0.0))
-            seconds = float(hysteresis.get("timeSeconds", 0.0))
-            expect(3.0 <= distance <= 5.0, f"hysteresis distance out of mandate range: {tier_name}")
-            expect(2.0 <= seconds <= 3.0, f"hysteresis time out of mandate range: {tier_name}")
+            distance = finite_float(hysteresis.get("distanceMeters"))
+            seconds = finite_float(hysteresis.get("timeSeconds"))
+            expect(distance is not None and 3.0 <= distance <= 5.0, f"hysteresis distance out of mandate range: {tier_name}")
+            expect(seconds is not None and 2.0 <= seconds <= 3.0, f"hysteresis time out of mandate range: {tier_name}")
 
     return len(errors) == 0, errors
 
@@ -805,7 +829,13 @@ def check_export(output_path: Path) -> int:
         print(f"CHECK FAILED: missing {output_path.as_posix()}", file=sys.stderr)
         return 1
 
-    data = json.loads(output_path.read_text(encoding="utf-8"))
+    try:
+        data = json.loads(output_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        print("CHECK FAILED")
+        print(f"- invalid JSON export: {exc}")
+        return 1
+
     valid, errors = validate_export(data)
     if not valid:
         print("CHECK FAILED")
