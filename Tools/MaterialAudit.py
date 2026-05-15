@@ -104,6 +104,116 @@ SEPARATE_METALLIC_PROPS = {"_MetallicMap", "_MetallicGlossMap"}
 DETAIL_MAP_PROPS = {"_DetailAlbedoMap", "_DetailNormalMap", "_DetailMask"}
 STANDARD_MATERIAL_MIB = 6.65
 OPTIMIZED_MATERIAL_MIB = 2.99
+GOD_MODE_TEXTURE_OVERRIDES = [
+    {
+        "asset_class": "Hero cockpit albedo",
+        "toaster_max": 1024,
+        "deck_max": 2048,
+        "pro_max": 2048,
+        "god_mode_max": 4096,
+        "format": "BC7 sRGB",
+        "fallback": "Demote one mip tier when VRAM used/total > 0.90.",
+    },
+    {
+        "asset_class": "Hero cockpit normal",
+        "toaster_max": 1024,
+        "deck_max": 2048,
+        "pro_max": 2048,
+        "god_mode_max": 4096,
+        "format": "BC5 linear",
+        "fallback": "Prefer shared detail normal before unique 4K normal.",
+    },
+    {
+        "asset_class": "Hero cockpit ORM",
+        "toaster_max": 512,
+        "deck_max": 1024,
+        "pro_max": 1024,
+        "god_mode_max": 2048,
+        "format": "BC7/BC3 linear",
+        "fallback": "Keep ORM below albedo unless mask aliasing is visible.",
+    },
+    {
+        "asset_class": "World module albedo",
+        "toaster_max": 1024,
+        "deck_max": 1024,
+        "pro_max": 2048,
+        "god_mode_max": 2048,
+        "format": "BC7 sRGB",
+        "fallback": "Do not promote all panels; reserve for inspection-radius sets.",
+    },
+    {
+        "asset_class": "World module normal",
+        "toaster_max": 1024,
+        "deck_max": 1024,
+        "pro_max": 2048,
+        "god_mode_max": 2048,
+        "format": "BC5 linear",
+        "fallback": "Shared trimsheet normal before unique resolution increase.",
+    },
+    {
+        "asset_class": "Terrain albedo",
+        "toaster_max": 1024,
+        "deck_max": 2048,
+        "pro_max": 2048,
+        "god_mode_max": 4096,
+        "format": "BC7/BC1 sRGB",
+        "fallback": "Near hero terrain only; macro terrain stays 2048 tiled.",
+    },
+    {
+        "asset_class": "Terrain ORM",
+        "toaster_max": 512,
+        "deck_max": 1024,
+        "pro_max": 1024,
+        "god_mode_max": 2048,
+        "format": "BC7/BC3 linear",
+        "fallback": "Shared packed masks; no separate AO/roughness/metallic.",
+    },
+    {
+        "asset_class": "Flora albedo atlas",
+        "toaster_max": 1024,
+        "deck_max": 1024,
+        "pro_max": 2048,
+        "god_mode_max": 2048,
+        "format": "BC7 sRGB",
+        "fallback": "Wire detail overlays before increasing atlas size.",
+    },
+    {
+        "asset_class": "Flora detail atlas",
+        "toaster_max": 512,
+        "deck_max": 512,
+        "pro_max": 1024,
+        "god_mode_max": 1024,
+        "format": "BC4/BC5 linear",
+        "fallback": "Global tiling; no per-family duplication above 1024.",
+    },
+    {
+        "asset_class": "Decal sheet",
+        "toaster_max": 512,
+        "deck_max": 1024,
+        "pro_max": 1024,
+        "god_mode_max": 1024,
+        "format": "BC7/BC3",
+        "fallback": "Damage and wear decals outrank raw base-map resolution.",
+    },
+    {
+        "asset_class": "Brush/scratch globals",
+        "toaster_max": 512,
+        "deck_max": 1024,
+        "pro_max": 1024,
+        "god_mode_max": 1024,
+        "format": "BC4/BC5 linear",
+        "fallback": "Shared globally across cockpit, habitat, and vehicle materials.",
+    },
+    {
+        "asset_class": "Diegetic UI atlas",
+        "toaster_max": 1024,
+        "deck_max": 1024,
+        "pro_max": 2048,
+        "god_mode_max": 2048,
+        "format": "BC7 sRGB",
+        "fallback": "Close-read UI only; regular UI is outside world PBR budget.",
+    },
+]
 
 TEXTURE_PROPERTY_RE = re.compile(r"^\s*-\s+([A-Za-z0-9_]+):\s*$")
 GUID_RE = re.compile(r"guid:\s*([0-9a-fA-F]{32})")
@@ -684,6 +794,7 @@ def run_audit(root: Path, sample_size: int, include_third_party: bool) -> dict[s
         },
         "texture_summary": summarize_textures(textures),
         "material_summary": summarize_materials(materials),
+        "god_mode_texture_overrides": GOD_MODE_TEXTURE_OVERRIDES,
     }
 
 
@@ -740,6 +851,27 @@ def write_markdown_report(report: dict[str, Any], output: Path) -> None:
             markdown_row(["Candidate reduction percent", vram_model["candidate_reduction_percent"]]),
             "",
         ])
+
+    lines.extend(["## GOD_MODE Texture Overrides", ""])
+    overrides = report.get("god_mode_texture_overrides", [])
+    if overrides:
+        lines.extend([
+            markdown_row(["Asset class", "TOASTER", "DECK", "PRO", "GOD_MODE", "Format", "Fallback"]),
+            markdown_row(["---", "---", "---", "---", "---", "---", "---"]),
+        ])
+        for item in overrides:
+            lines.append(markdown_row([
+                item["asset_class"],
+                item["toaster_max"],
+                item["deck_max"],
+                item["pro_max"],
+                item["god_mode_max"],
+                item["format"],
+                item["fallback"],
+            ]))
+    else:
+        lines.append("No GOD_MODE texture overrides defined.")
+    lines.append("")
 
     if texture_summary["import_issue_counts"]:
         lines.extend([markdown_row(["Issue", "Count"]), markdown_row(["---", "---"])])
@@ -829,6 +961,7 @@ def write_markdown_report(report: dict[str, Any], output: Path) -> None:
 def write_csv_reports(report: dict[str, Any], prefix: Path) -> None:
     texture_summary = report["texture_summary"]
     material_summary = report["material_summary"]
+    overrides = report.get("god_mode_texture_overrides", [])
     prefix.parent.mkdir(parents=True, exist_ok=True)
 
     with Path(f"{prefix}_texture_import_issues.csv").open("w", encoding="utf-8", newline="") as handle:
@@ -901,6 +1034,28 @@ def write_csv_reports(report: dict[str, Any], prefix: Path) -> None:
                 item.get("has_detail", False),
             ])
 
+    with Path(f"{prefix}_god_mode_texture_overrides.csv").open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow([
+            "asset_class",
+            "toaster_max",
+            "deck_max",
+            "pro_max",
+            "god_mode_max",
+            "format",
+            "fallback",
+        ])
+        for item in overrides:
+            writer.writerow([
+                item["asset_class"],
+                item["toaster_max"],
+                item["deck_max"],
+                item["pro_max"],
+                item["god_mode_max"],
+                item["format"],
+                item["fallback"],
+            ])
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Audit HECTON-8 surface textures/materials.")
@@ -961,6 +1116,7 @@ def main() -> int:
     print(f"materials_with_issues={material_summary['materials_with_issues']}")
     print(f"channel_packing_candidates={material_summary['channel_packing_candidate_count']}")
     print(f"channel_candidate_saved_mib={material_summary['vram_model']['candidate_saved_mib']}")
+    print(f"god_mode_override_count={len(report['god_mode_texture_overrides'])}")
     if args.json:
         print(f"json={args.json}")
     if args.markdown:

@@ -37,6 +37,23 @@ Include third-party: `False`
 | Candidate saved MiB | 113.46 |
 | Candidate reduction percent | 55.0 |
 
+## GOD_MODE Texture Overrides
+
+| Asset class | TOASTER | DECK | PRO | GOD_MODE | Format | Fallback |
+| --- | --- | --- | --- | --- | --- | --- |
+| Hero cockpit albedo | 1024 | 2048 | 2048 | 4096 | BC7 sRGB | Demote one mip tier when VRAM used/total > 0.90. |
+| Hero cockpit normal | 1024 | 2048 | 2048 | 4096 | BC5 linear | Prefer shared detail normal before unique 4K normal. |
+| Hero cockpit ORM | 512 | 1024 | 1024 | 2048 | BC7/BC3 linear | Keep ORM below albedo unless mask aliasing is visible. |
+| World module albedo | 1024 | 1024 | 2048 | 2048 | BC7 sRGB | Do not promote all panels; reserve for inspection-radius sets. |
+| World module normal | 1024 | 1024 | 2048 | 2048 | BC5 linear | Shared trimsheet normal before unique resolution increase. |
+| Terrain albedo | 1024 | 2048 | 2048 | 4096 | BC7/BC1 sRGB | Near hero terrain only; macro terrain stays 2048 tiled. |
+| Terrain ORM | 512 | 1024 | 1024 | 2048 | BC7/BC3 linear | Shared packed masks; no separate AO/roughness/metallic. |
+| Flora albedo atlas | 1024 | 1024 | 2048 | 2048 | BC7 sRGB | Wire detail overlays before increasing atlas size. |
+| Flora detail atlas | 512 | 512 | 1024 | 1024 | BC4/BC5 linear | Global tiling; no per-family duplication above 1024. |
+| Decal sheet | 512 | 1024 | 1024 | 1024 | BC7/BC3 | Damage and wear decals outrank raw base-map resolution. |
+| Brush/scratch globals | 512 | 1024 | 1024 | 1024 | BC4/BC5 linear | Shared globally across cockpit, habitat, and vehicle materials. |
+| Diegetic UI atlas | 1024 | 1024 | 2048 | 2048 | BC7 sRGB | Close-read UI only; regular UI is outside world PBR budget. |
+
 | Issue | Count |
 | --- | --- |
 | DATA_TEXTURE_SRGB_ON | 3 |

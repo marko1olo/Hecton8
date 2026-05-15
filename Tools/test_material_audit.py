@@ -187,6 +187,17 @@ class MaterialAuditTests(unittest.TestCase):
                     {"path": "MAT_Test.mat", "issues": ["NO_DETAIL_MAP_SLOT"]},
                 ],
             },
+            "god_mode_texture_overrides": [
+                {
+                    "asset_class": "Hero cockpit albedo",
+                    "toaster_max": 1024,
+                    "deck_max": 2048,
+                    "pro_max": 2048,
+                    "god_mode_max": 4096,
+                    "format": "BC7 sRGB",
+                    "fallback": "Demote one mip tier when VRAM used/total > 0.90.",
+                },
+            ],
         }
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -201,15 +212,18 @@ class MaterialAuditTests(unittest.TestCase):
             material_csv = Path(f"{csv_prefix}_material_issues.csv").read_text(encoding="utf-8")
             channel_csv = Path(f"{csv_prefix}_channel_packing_candidates.csv").read_text(encoding="utf-8")
             memory_csv = Path(f"{csv_prefix}_texture_memory_hotspots.csv").read_text(encoding="utf-8")
+            overrides_csv = Path(f"{csv_prefix}_god_mode_texture_overrides.csv").read_text(encoding="utf-8")
 
             self.assertIn("Disable sRGB", markdown_text)
             self.assertIn("Channel Packing Candidates", markdown_text)
             self.assertIn("Candidate saved MiB", markdown_text)
             self.assertIn("Texture Memory Hotspots", markdown_text)
+            self.assertIn("GOD_MODE Texture Overrides", markdown_text)
             self.assertIn("Hull_ORM.png", texture_csv)
             self.assertIn("NO_DETAIL_MAP_SLOT", material_csv)
             self.assertIn("MAT_Test.mat", channel_csv)
             self.assertIn("BC7_ORM_LINEAR_8BPP", memory_csv)
+            self.assertIn("Hero cockpit albedo", overrides_csv)
 
 
 if __name__ == "__main__":

@@ -4056,5 +4056,115 @@
         ]
       }
     ]
-  }
+  },
+  "god_mode_texture_overrides": [
+    {
+      "asset_class": "Hero cockpit albedo",
+      "toaster_max": 1024,
+      "deck_max": 2048,
+      "pro_max": 2048,
+      "god_mode_max": 4096,
+      "format": "BC7 sRGB",
+      "fallback": "Demote one mip tier when VRAM used/total > 0.90."
+    },
+    {
+      "asset_class": "Hero cockpit normal",
+      "toaster_max": 1024,
+      "deck_max": 2048,
+      "pro_max": 2048,
+      "god_mode_max": 4096,
+      "format": "BC5 linear",
+      "fallback": "Prefer shared detail normal before unique 4K normal."
+    },
+    {
+      "asset_class": "Hero cockpit ORM",
+      "toaster_max": 512,
+      "deck_max": 1024,
+      "pro_max": 1024,
+      "god_mode_max": 2048,
+      "format": "BC7/BC3 linear",
+      "fallback": "Keep ORM below albedo unless mask aliasing is visible."
+    },
+    {
+      "asset_class": "World module albedo",
+      "toaster_max": 1024,
+      "deck_max": 1024,
+      "pro_max": 2048,
+      "god_mode_max": 2048,
+      "format": "BC7 sRGB",
+      "fallback": "Do not promote all panels; reserve for inspection-radius sets."
+    },
+    {
+      "asset_class": "World module normal",
+      "toaster_max": 1024,
+      "deck_max": 1024,
+      "pro_max": 2048,
+      "god_mode_max": 2048,
+      "format": "BC5 linear",
+      "fallback": "Shared trimsheet normal before unique resolution increase."
+    },
+    {
+      "asset_class": "Terrain albedo",
+      "toaster_max": 1024,
+      "deck_max": 2048,
+      "pro_max": 2048,
+      "god_mode_max": 4096,
+      "format": "BC7/BC1 sRGB",
+      "fallback": "Near hero terrain only; macro terrain stays 2048 tiled."
+    },
+    {
+      "asset_class": "Terrain ORM",
+      "toaster_max": 512,
+      "deck_max": 1024,
+      "pro_max": 1024,
+      "god_mode_max": 2048,
+      "format": "BC7/BC3 linear",
+      "fallback": "Shared packed masks; no separate AO/roughness/metallic."
+    },
+    {
+      "asset_class": "Flora albedo atlas",
+      "toaster_max": 1024,
+      "deck_max": 1024,
+      "pro_max": 2048,
+      "god_mode_max": 2048,
+      "format": "BC7 sRGB",
+      "fallback": "Wire detail overlays before increasing atlas size."
+    },
+    {
+      "asset_class": "Flora detail atlas",
+      "toaster_max": 512,
+      "deck_max": 512,
+      "pro_max": 1024,
+      "god_mode_max": 1024,
+      "format": "BC4/BC5 linear",
+      "fallback": "Global tiling; no per-family duplication above 1024."
+    },
+    {
+      "asset_class": "Decal sheet",
+      "toaster_max": 512,
+      "deck_max": 1024,
+      "pro_max": 1024,
+      "god_mode_max": 1024,
+      "format": "BC7/BC3",
+      "fallback": "Damage and wear decals outrank raw base-map resolution."
+    },
+    {
+      "asset_class": "Brush/scratch globals",
+      "toaster_max": 512,
+      "deck_max": 1024,
+      "pro_max": 1024,
+      "god_mode_max": 1024,
+      "format": "BC4/BC5 linear",
+      "fallback": "Shared globally across cockpit, habitat, and vehicle materials."
+    },
+    {
+      "asset_class": "Diegetic UI atlas",
+      "toaster_max": 1024,
+      "deck_max": 1024,
+      "pro_max": 2048,
+      "god_mode_max": 2048,
+      "format": "BC7 sRGB",
+      "fallback": "Close-read UI only; regular UI is outside world PBR budget."
+    }
+  ]
 }
