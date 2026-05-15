@@ -269,3 +269,9 @@ Solution: Fetch first, prove `origin/main...HEAD = 0 0`, inspect both stash stat
 Rejected Alternatives: `git stash pop`, force-push, reset, deleting untracked docs, or dropping local stashes without an explicit deletion request. `stash@{0}` fails apply-check across many runtime/docs hunks; `stash@{1}` fails patch checking with a malformed diff header.
 Scalability potential: Git/documentation hygiene only. Low/Middle/High/Ultra runtime behavior is unchanged; no gameplay tier claim is made.
 Hardware Impact: 0 us runtime impact. Dev-path gain is avoiding stale patch reintroduction while publishing the current valid documentation checkpoint.
+
+Problem: GitHub Desktop still showed local stash state even though current `main` was already correct, pushed, and synchronized. Keeping those stale stash entries made the local UI look dirty and invited a dangerous future stash pop.
+Solution: Preserve both stash commits as pushed annotated backup tags, verify the remote peeled tag targets, then drop the local stash entries so Desktop can show a clean current worktree.
+Rejected Alternatives: Leaving the stale Desktop-visible stash queue, using `git stash clear` without recovery refs, applying stale stash patches, force-pushing, or resetting current `main`.
+Scalability potential: Git-only hygiene. Runtime tier behavior is unchanged. Process scalability improves because stale local recovery state no longer appears as active work.
+Hardware Impact: 0 us runtime impact. Dev-path gain is a clean GitHub Desktop state while preserving exact old stash commits through pushed tags.

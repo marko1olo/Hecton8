@@ -689,3 +689,15 @@ Cinematic Cheats used -> None. Git/static documentation hygiene only.
 Exact Microseconds saved -> 0 runtime us. Process gain is avoiding a stale stash replay over current `main`.
 
 Verification -> `stash@{0}` has 76 changed files with untracked payload and fails apply-check on current runtime/docs hunks. `stash@{1}` has 196 changed files and fails apply-check with a diff-header error. Current branch sync before checkpoint is `origin/main...HEAD = 0 0`. Runtime build, Unity Editor import, Play Mode, profiler, GCMonitor, player build, and visuals are not claimed.
+
+## 2026-05-15 - Loop 47 Desktop Stash Cleanup
+
+What was wrong -> GitHub Desktop still exposed stale local stash entries after `main` was already synchronized and pushed. The stashes were not cleanly applicable, but keeping them in the active stash list made the local checkout look unresolved.
+
+What was done -> Created pushed annotated backup tags for both stash commits, verified the remote peeled tag refs, then dropped the two local stash entries. Current branch remained `main...origin/main` with divergence `0 0` before this log update.
+
+Cinematic Cheats used -> None. Git reference hygiene only.
+
+Exact Microseconds saved -> 0 runtime us. Process gain is removing stale Desktop prompts without losing the original stash commits.
+
+Verification -> Backup tags pushed: `stash-backup/codex-git-conflict-resolution-20260514` -> `27b471ac2c61e84e8810654d3c38cebdeeb1a1ab`; `stash-backup/github-desktop-main-20260514` -> `f36fe5df62a4b60a4d0dd080f316b1ec1dbf57bb`. `git stash list` is empty. Runtime build, Unity Editor import, Play Mode, profiler, GCMonitor, player build, and visuals are not claimed.

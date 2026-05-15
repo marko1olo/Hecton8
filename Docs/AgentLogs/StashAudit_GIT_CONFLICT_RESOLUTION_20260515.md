@@ -63,3 +63,27 @@ Decision:
 ## Operator Decision
 
 The current pushed branch is synchronized with `origin/main`. The old stashes are not cleanly applicable and would risk reintroducing stale runtime/doc changes. They are retained as local backup evidence unless explicitly deleted by the operator/user. They do not block commit/push of the current clean documentation checkpoint.
+
+## Desktop Cleanup Completion
+
+Date: 2026-05-15
+
+User requirement: GitHub Desktop must show a clean, current repository without stale stash prompts and without losing files.
+
+Preservation step:
+- Created annotated tag `stash-backup/codex-git-conflict-resolution-20260514` pointing to stash commit `27b471ac2c61e84e8810654d3c38cebdeeb1a1ab`.
+- Created annotated tag `stash-backup/github-desktop-main-20260514` pointing to stash commit `f36fe5df62a4b60a4d0dd080f316b1ec1dbf57bb`.
+- Pushed both tags to `origin`.
+- Remote tag verification:
+  - `refs/tags/stash-backup/codex-git-conflict-resolution-20260514^{}` -> `27b471ac2c61e84e8810654d3c38cebdeeb1a1ab`
+  - `refs/tags/stash-backup/github-desktop-main-20260514^{}` -> `f36fe5df62a4b60a4d0dd080f316b1ec1dbf57bb`
+
+Cleanup step:
+- Dropped `stash@{1}`: `f36fe5df62a4b60a4d0dd080f316b1ec1dbf57bb`.
+- Dropped `stash@{0}`: `27b471ac2c61e84e8810654d3c38cebdeeb1a1ab`.
+- `git stash list` is now empty.
+
+Final decision:
+- No stash data was discarded before being preserved as pushed git tags.
+- Current `main` remains the authoritative branch.
+- The backup tags are forensic recovery refs only; they are not active branch work.
