@@ -137,6 +137,7 @@ def resolve_biome(sector_x: int, sector_z: int, seed: int, height: int) -> int:
 
 
 def build_initial_state(constants: dict, total_overharvest: bool) -> dict:
+    validate_constants(constants)
     width = int(constants["gridWidth"])
     height = int(constants["gridHeight"])
     count = width * height

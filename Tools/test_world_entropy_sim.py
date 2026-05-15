@@ -199,6 +199,14 @@ class WorldEntropySimTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             entropy.run_sim(constants, 1, True)
 
+    def test_build_initial_state_rejects_invalid_constants_before_allocation(self) -> None:
+        constants = deepcopy(self.constants)
+        constants["gridWidth"] = 1025
+        constants["gridHeight"] = 1025
+
+        with self.assertRaises(ValueError):
+            entropy.build_initial_state(constants, True)
+
     def test_run_sim_rejects_invalid_acceptance_thresholds(self) -> None:
         constants = deepcopy(self.constants)
         constants["acceptance"]["safeShallowsVsDeepAbyssMinRecoveryRatio"] = 0.0
