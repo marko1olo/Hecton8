@@ -338,11 +338,13 @@ Persistence contract:
 - Regrowth memory lanes are scene-lifetime state and are allocated with `Allocator.Persistent`; Temp/TempJob allocation is not allowed for this data block.
 - Allocation failure rolls back any partially allocated SOA lanes through an H8Memory-only pre-registration release path; reallocation first disposes any partial old lane set; max macro-sector allocation is capped at `1,048,576` cells.
 - Scheduler and codec entry points reject regrowth memory unless `Width`, `Height`, and `CellCount` are coherent, within the same max-cell budget, every serialized SOA lane length exactly equals `CellCount`, and the black box ring is exactly 300 entries.
+- Scheduler entry points reject invalid config coefficients before fixed-point products run; base growth is capped to 255 and permille coefficients are capped to 1000 for the fast int path.
 - Mining tombstone writes are serial and deterministic for duplicate cell indices.
 - `WorldRegrowthSimulation.TryDumpBlackBox` writes the fixed 300-entry telemetry ring to `Docs/AgentLogs/Dump_ORGANIC_ENTROPY_REGENERATOR.bin` on cold diagnostic paths.
 - `WorldEntropySim.py` mirrors the C# `Hash32`/rotate-left biome resolver and reads explicit seed/origin fields from `Regrowth_Constants.json`.
 - Negative macro-sector origins use C# remainder semantics before local-z banding; the Python harness carries a parity test for this edge case.
 - The Python harness uses a persistent nutrient scratch lane, a byte-state apex respawn lookup table, and row-based diffusion traversal to keep repeated entropy validation practical without changing acceptance output.
+- `Tools/test_world_entropy_sim.py` locks exported constants against the C# fast-path config bounds.
 
 Entropy-test result:
 
@@ -360,7 +362,7 @@ Post-hardening verification:
 - `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`; mature counts stable through day 1000.
 - `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: latest optimized run `STATUS=ENTROPY BALANCED`; elapsed 68.723 s under current machine load.
 - `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: latest run `STATUS=ENTROPY BALANCED`; mature counts stable through day 1000.
-- `python -m unittest Tools.test_world_entropy_sim -v`: latest run 4 tests passed in 34.654 s.
-- Visual Studio Roslyn C# 9 probe compile against Unity/Hecton8 stubs: exit code `0`; re-run after exact storage guard tightening remained exit code `0`.
+- `python -m unittest Tools.test_world_entropy_sim -v`: latest run 5 tests passed in 25.404 s.
+- Visual Studio Roslyn C# 9 probe compile against Unity/Hecton8 stubs: exit code `0`; re-run after config overflow guard tightening remained exit code `0`.
 - Static scans: no forbidden hot-path token matches and no raw `new NativeArray` or raw native dispose remains in `WorldRegrowthSimulation.cs`.
 - Full Unity import and Burst compile remain `PENDING VERIFICATION` because no Unity CLI/editor route was available in-session.

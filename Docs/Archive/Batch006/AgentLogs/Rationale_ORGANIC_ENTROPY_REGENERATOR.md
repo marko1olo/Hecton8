@@ -279,3 +279,25 @@ Rejected Alternatives: Keeping `Length >= CellCount` was rejected because it sil
 Scalability potential: Low through Ultra tiers now have a strict one-to-one topology contract between dimensions, lanes, and persisted payloads. High-end larger grids still work when allocated coherently.
 
 Hardware Impact: Branch-only entry validation. Daily jobs execute the same math and memory traversal after the guard passes.
+
+## Decision 26 - Fixed-Point Config Overflow Guard
+Problem: `WorldRegrowthConfig` is caller supplied and contains `ushort` coefficient fields. Values far above the exported constants can overflow int products in growth and Lotka-Volterra math before clamps run.
+
+Solution: Added `HasValidConfig` with conservative bounds: positive grid and macro-sector size, base growth <= 255, permille coefficients <= 1000, positive seed/tombstone thresholds, valid apex min/max days, and nonzero biome temperatures. Scheduling entry points reject invalid configs. The public `ResolveApexRespawnDays` helper fails closed to a 90-day delay if config is invalid.
+
+Rejected Alternatives: Casting all hot-path math to 64-bit was rejected because this would tax every cell for invalid caller input. Silently clamping bad config into a new truth was rejected because it hides data defects. Throwing exceptions was rejected for backend/gameplay code.
+
+Scalability potential: Low through Ultra tiers keep the same fast int math for valid data. Bad data fails at entry instead of producing overflow-driven ecology.
+
+Hardware Impact: Branch-only entry validation. Daily jobs are unchanged for valid config; low-end runtime cost is effectively zero outside scheduler calls.
+
+## Decision 27 - Exported Config Schema Regression Test
+Problem: The C# fast-path config guard is only useful if exported constants stay inside the same bounds. The existing Python tests locked acceptance output but did not explicitly assert the coefficient and threshold ranges.
+
+Solution: Added `test_exported_constants_match_csharp_fast_path_bounds` to `Tools/test_world_entropy_sim.py`. It validates positive grid/macro-sector sizes, base growth range, permille coefficient range, positive lifecycle thresholds, valid apex min/max, and biome temperature/nutrient sanity.
+
+Rejected Alternatives: Manual JSON inspection was rejected because constants can drift. Duplicating the full C# validator in production code was rejected for this pass because the Python harness already owns offline acceptance validation.
+
+Scalability potential: Low through Ultra tiers keep exported data within the same safe int-math envelope. Future higher-tier constants must remain explicit and tested.
+
+Hardware Impact: Tooling only. Runtime code is unchanged.

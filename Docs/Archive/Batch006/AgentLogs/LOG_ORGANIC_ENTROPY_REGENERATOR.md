@@ -321,6 +321,58 @@ Verification:
 - Target scans: no forbidden hot-path token matches; no raw `new NativeArray`; no raw native dispose.
 - Temporary probe files were removed.
 
+## 2026-05-15 - Exported Config Schema Guard
+
+What was wrong:
+- The C# config guard had no direct exported-JSON regression test.
+- Future constants could drift outside the safe int-math envelope while still passing coarse balance checks until a specific run exposed it.
+
+What was done:
+- Added `test_exported_constants_match_csharp_fast_path_bounds`.
+- The test locks grid/macro-sector positivity, base growth bounds, permille coefficient bounds, lifecycle thresholds, apex min/max, and biome temperature/nutrient sanity.
+
+Cinematic cheats used:
+- None. This is tooling guard coverage for the deterministic backend.
+
+Exact microseconds saved:
+- Runtime microseconds saved: 0. Tooling-only validation.
+- Failure avoided: bad constants reaching Burst fixed-point math without a schema failure.
+
+Verification:
+- `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`: exit code 0.
+- `python -m unittest Tools.test_world_entropy_sim -v`: 5 tests passed in 25.404 s.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
+- Target scans: no forbidden hot-path token matches; no raw `new NativeArray`; no raw native dispose.
+
+## 2026-05-15 - Config Overflow Guard
+
+What was wrong:
+- `WorldRegrowthConfig` is caller supplied and its `ushort` coefficients can exceed the safe range for int fixed-point products.
+- Invalid config could overflow growth or Lotka-Volterra products before clamps ran.
+
+What was done:
+- Added `HasValidConfig`.
+- Initialize, daily solve, and mining scheduling now reject invalid config.
+- `ResolveApexRespawnDays` now fails closed to a deterministic 90-day delay if config is invalid.
+- Valid exported constants keep the same fast int math path.
+
+Cinematic cheats used:
+- None. This is data validation around the deterministic macro-sector fake.
+
+Exact microseconds saved:
+- Runtime microseconds saved: 0. Branch-only entry validation; job math unchanged for valid config.
+- Failure avoided: overflow-driven ecology from bad caller-supplied coefficients.
+
+Verification:
+- Roslyn C# 9 unsafe probe compile with H8Memory stubs: exit code 0.
+- `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`: exit code 0.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
+- `python -m unittest Tools.test_world_entropy_sim -v`: 4 tests passed in 50.701 s.
+- Target scans: no forbidden hot-path token matches; no raw `new NativeArray`; no raw native dispose.
+- Temporary probe files were removed.
+
 ## 2026-05-15 - Exact SOA Storage Guard
 
 What was wrong:

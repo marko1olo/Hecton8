@@ -71,6 +71,30 @@ class WorldEntropySimTests(unittest.TestCase):
         final, _ = entropy.run_sim(self.constants, 365, True)
         self.assertEqual(expected_days, final["firstHalfRecoveryDays"])
 
+    def test_exported_constants_match_csharp_fast_path_bounds(self) -> None:
+        self.assertGreater(self.constants["gridWidth"], 0)
+        self.assertGreater(self.constants["gridHeight"], 0)
+        self.assertGreater(self.constants["macroSectorMeters"], 0)
+        self.assertGreater(self.constants["baseGrowthProgressPerDayQ"], 0)
+        self.assertLessEqual(self.constants["baseGrowthProgressPerDayQ"], 255)
+        for key in (
+            "nutrientDiffusionPermille",
+            "preyGrowthPermille",
+            "predationPermille",
+            "predatorConversionPermille",
+            "predatorMortalityPermille",
+        ):
+            self.assertGreaterEqual(self.constants[key], 0)
+            self.assertLessEqual(self.constants[key], 1000)
+
+        self.assertGreater(self.constants["seedToMatureProgressQ"], 0)
+        self.assertGreater(self.constants["tombstoneBaseDecayDays"], 0)
+        self.assertGreater(self.constants["minApexRespawnDays"], 0)
+        self.assertGreaterEqual(self.constants["maxApexRespawnDays"], self.constants["minApexRespawnDays"])
+        for biome in self.constants["biomes"]:
+            self.assertGreater(biome["temperatureQ"], 0)
+            self.assertGreaterEqual(biome["nutrientStartQ"], self.constants["minimumNutrientsQ"])
+
 
 if __name__ == "__main__":
     unittest.main()

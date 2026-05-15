@@ -368,6 +368,8 @@ namespace Hecton8.World
     {
         public const int TelemetryCapacity = 300;
         public const string DefaultBlackBoxDumpPath = "Docs/AgentLogs/Dump_ORGANIC_ENTROPY_REGENERATOR.bin";
+        private const int MaxSafePermille = 1000;
+        private const int MaxSafeBaseGrowthQ = 255;
 
         /// <summary>
         /// Schedules macro-sector initialization.
@@ -379,7 +381,7 @@ namespace Hecton8.World
             uint worldSeed,
             JobHandle dependency)
         {
-            if (!memory.HasValidStorage)
+            if (!memory.HasValidStorage || !HasValidConfig(in config))
                 return dependency;
 
             return new InitializeRegrowthGridJob
@@ -413,7 +415,7 @@ namespace Hecton8.World
             int dayIndex,
             JobHandle dependency)
         {
-            if (!memory.HasValidStorage)
+            if (!memory.HasValidStorage || !HasValidConfig(in config))
                 return dependency;
 
             memory.CurrentDay = math.max(0, dayIndex);
@@ -463,7 +465,7 @@ namespace Hecton8.World
             in WorldRegrowthConfig config,
             JobHandle dependency)
         {
-            if (!memory.HasValidStorage || !minedCellIndices.IsCreated || minedCellIndices.Length <= 0)
+            if (!memory.HasValidStorage || !HasValidConfig(in config) || !minedCellIndices.IsCreated || minedCellIndices.Length <= 0)
                 return dependency;
 
             return new MiningTombstoneJob
@@ -486,6 +488,9 @@ namespace Hecton8.World
         /// </summary>
         public static byte ResolveApexRespawnDays(byte preyBiomassQ, byte predatorBiomassQ, in WorldRegrowthConfig config)
         {
+            if (!HasValidConfig(in config))
+                return 90;
+
             int prey = preyBiomassQ;
             int predator = predatorBiomassQ;
             int preyDelta = ((prey * config.PreyGrowthPermille) - ((prey * predator * config.PredationPermille) / 255)) / 1000;
@@ -495,6 +500,28 @@ namespace Hecton8.World
             int range = math.max(0, config.MaxApexRespawnDays - config.MinApexRespawnDays);
             int delay = config.MaxApexRespawnDays - ((range * nextPrey) / 255) + ((nextPredator * 12) / 255);
             return (byte)math.clamp(delay, config.MinApexRespawnDays, config.MaxApexRespawnDays);
+        }
+
+        private static bool HasValidConfig(in WorldRegrowthConfig config)
+        {
+            return config.GridWidth > 0 &&
+                   config.GridHeight > 0 &&
+                   config.MacroSectorMeters > 0 &&
+                   config.BaseGrowthProgressPerDayQ > 0 &&
+                   config.BaseGrowthProgressPerDayQ <= MaxSafeBaseGrowthQ &&
+                   config.NutrientDiffusionPermille <= MaxSafePermille &&
+                   config.PreyGrowthPermille <= MaxSafePermille &&
+                   config.PredationPermille <= MaxSafePermille &&
+                   config.PredatorConversionPermille <= MaxSafePermille &&
+                   config.PredatorMortalityPermille <= MaxSafePermille &&
+                   config.SeedToMatureProgressQ > 0 &&
+                   config.TombstoneBaseDecayDays > 0 &&
+                   config.MinApexRespawnDays > 0 &&
+                   config.MaxApexRespawnDays >= config.MinApexRespawnDays &&
+                   config.SafeShallowsTemperatureQ > 0 &&
+                   config.TemperateReefTemperatureQ > 0 &&
+                   config.ThermalVentTemperatureQ > 0 &&
+                   config.DeepAbyssTemperatureQ > 0;
         }
 
         /// <summary>
