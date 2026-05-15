@@ -23,9 +23,9 @@ MonoBehaviour:
     tableKey: QUEST_QUEST_COPPER_SAMPLE_DESCRIPTION
     fallbackText: "\u041f\u043e\u0434\u043e\u0431\u0440\u0430\u0442\u044c \u043f\u0435\u0440\u0432\u044b\u0439 \u043c\u0435\u0434\u043d\u044b\u0439 \u043e\u0431\u0440\u0430\u0437\u0435\u0446."
     variants: []
-  triggerType: 99
-  triggerId: 
-  triggerValue: 1
+  triggerType: 3
+  triggerId: first_hour_exit_lifepod
+  triggerValue: 0
   completionType: 0
   completionId: Data_Copper
   completionValue: 1

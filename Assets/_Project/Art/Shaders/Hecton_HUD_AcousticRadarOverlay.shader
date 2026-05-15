@@ -189,9 +189,7 @@ Shader "Hecton8/UI/AcousticRadarOverlay"
 
                 float angle01 = ApproximateAngle01(centered);
                 float intensity = SAMPLE_TEXTURE2D(_AcousticRadarTex, sampler_AcousticRadarTex, float2(angle01, 0.5)).r;
-                float neighbourA = SAMPLE_TEXTURE2D(_AcousticRadarTex, sampler_AcousticRadarTex, float2(frac(angle01 + 0.004), 0.5)).r;
-                float neighbourB = SAMPLE_TEXTURE2D(_AcousticRadarTex, sampler_AcousticRadarTex, float2(frac(angle01 - 0.004), 0.5)).r;
-                intensity = saturate(max(intensity, max(neighbourA, neighbourB)));
+                intensity = saturate(intensity);
 
                 float dynamicBandThickness = _BandThickness + (intensity * 0.09) + (_RadarIntensity * 0.04);
                 float outerEdge = saturate(_InnerEdge + dynamicBandThickness);

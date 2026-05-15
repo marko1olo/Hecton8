@@ -170,3 +170,27 @@ Rejected Alternatives: Relying only on byte counts was rejected because same-siz
 Scalability potential: Low/Middle/High/Ultra all consume the same verified baked authority. Higher tiers can add richer consumers without weakening file integrity.
 
 Hardware Impact: Runtime hot-path impact is none if hash checks stay in cold load. Manifest JSON grows by a small fixed amount.
+
+## Decision 15: Verify-Only CLI
+
+Problem: Integrity validation required regeneration, which is not acceptable for a cold-load validation workflow or release audit. Existing artifacts need to be checked without rewriting them.
+
+Solution: Added `python Tools/MathLUTGenerator.py --verify`, backed by `validate_existing_output()`. It checks exact byte counts, manifest scalar contract fields, manifest byte metadata, and SHA-256 for each generated payload. Added a same-size corruption test to prove hash mismatch detection.
+
+Rejected Alternatives: Regenerate-and-trust was rejected because it can hide stale or corrupted deployed files. Byte-count-only verification was rejected because same-size corruption remains possible.
+
+Scalability potential: All quality tiers can rely on verified baked data before runtime allocation. High/Ultra consumers can increase visual usage without weakening the data integrity contract.
+
+Hardware Impact: None in gameplay. Verification is offline/cold-load tooling only.
+
+## Decision 16: JSON Byte Metadata
+
+Problem: `ecosystem_coefficients.json` had SHA-256 integrity metadata but no manifest byte count. Hash verification catches corruption, but release audits also need a cheap structural sanity check that the JSON payload size matches the manifest.
+
+Solution: Added a `bytes` field for `ecosystem_coefficients.json` in `math_lut_manifest.json`, extended `validate_existing_output()` to compare it against the actual file size, and added a test that mutates the manifest byte count while leaving the JSON payload hash valid.
+
+Rejected Alternatives: Relying on SHA-256 alone was rejected because byte metadata is already part of the binary contract and JSON should have the same cold-load audit surface. Parsing JSON during gameplay was rejected; this remains offline/cold-load tooling only.
+
+Scalability potential: Low/Middle/High/Ultra all get the same verified coefficient authority before runtime. Higher tiers can use richer ecosystem presentation without weakening data provenance.
+
+Hardware Impact: None in gameplay. Manifest JSON grows by one integer field; validation remains cold-load/offline.

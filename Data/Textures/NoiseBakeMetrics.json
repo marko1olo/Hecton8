@@ -59,12 +59,57 @@
   "verification": {
     "flow": {
       "bytes": 26919,
+      "channel_stats": [
+        {
+          "dynamic_range": 121,
+          "max": 245,
+          "mean": 176.489501953125,
+          "min": 124,
+          "unique_values": 122
+        },
+        {
+          "dynamic_range": 79,
+          "max": 156,
+          "mean": 115.8448486328125,
+          "min": 77,
+          "unique_values": 80
+        },
+        {
+          "dynamic_range": 250,
+          "max": 255,
+          "mean": 106.93084716796875,
+          "min": 5,
+          "unique_values": 251
+        },
+        {
+          "dynamic_range": 255,
+          "max": 255,
+          "mean": 127.50408935546875,
+          "min": 0,
+          "unique_values": 256
+        }
+      ],
       "passed": true,
+      "sha256": "32CCB138852E75017B9645CD138C1072D7193C8855D4D127FF3C58AB706C76AA",
       "shape": [
         128,
         128,
         4
-      ]
+      ],
+      "thresholds": {
+        "min_dynamic_ranges_rgba": [
+          64,
+          48,
+          128,
+          128
+        ],
+        "min_unique_values_rgba": [
+          48,
+          32,
+          96,
+          96
+        ]
+      }
     },
     "flow_path": "Data/Textures/AbyssalFlowField_LowTier_RGBA.png",
     "noise": {
@@ -77,6 +122,7 @@
         "low_peak_to_mid_mean": 0.3122076988220215,
         "mid_mean": 3444.722412109375
       },
+      "bytes": 262737,
       "channel_seams": [
         {
           "horizontal_wrap_to_neighbor_ratio": 1.0424615144729614,
@@ -102,6 +148,7 @@
       "ign_max_quantized_delta": 0,
       "max_seam_ratio": 1.3395100831985474,
       "passed": true,
+      "sha256": "AD6F279C6D9AF828D3E1E808896C11F9EB159AC6F560A412E2B87D9F6BD1F902",
       "thresholds": {
         "dc_power_max": 0.0001,
         "low_mean_to_mid_mean_max": 0.12,

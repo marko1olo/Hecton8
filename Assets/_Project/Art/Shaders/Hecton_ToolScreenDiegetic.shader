@@ -101,11 +101,8 @@ Shader "Hecton8/UI/ToolScreenDiegetic"
 
                 float2 uv = saturate(input.uv);
                 half4 screenSample = SAMPLE_TEXTURE2D(_ToolScreenTex, sampler_ToolScreenTex, uv);
-                half4 baseSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv);
-                half4 mainSample = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv);
-                half4 emissionSample = SAMPLE_TEXTURE2D(_EmissionMap, sampler_EmissionMap, uv);
 
-                float3 signal = max(max(screenSample.rgb, baseSample.rgb), max(mainSample.rgb, emissionSample.rgb));
+                float3 signal = screenSample.rgb;
                 float fallback = saturate(_ToolLowTierFallback01);
                 float overkill = saturate(_ToolVisualOverkill01) * (1.0 - fallback);
                 float scanline = lerp(0.86, 1.10, step(0.5, frac(uv.y * 192.0 + _Time.y * 0.55)));

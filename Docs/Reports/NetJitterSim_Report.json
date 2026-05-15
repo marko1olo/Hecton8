@@ -1,0 +1,52 @@
+{
+  "config": {
+    "clients": 2,
+    "input_delay_ticks": 16,
+    "jitter_ms": 40,
+    "latency_ms": 200,
+    "loss_bps": 500,
+    "loss_percent_text": "5%",
+    "redundancy": 16,
+    "rollback_ticks": 64,
+    "seed": 1313166385,
+    "tick_ms": 20,
+    "ticks": 600
+  },
+  "network": {
+    "delivered_packets": 1218,
+    "estimated_payload_bytes_per_second": 26903,
+    "lost_packets": 78,
+    "payload_bytes": 348672,
+    "sent_packets": 1296
+  },
+  "rollback": {
+    "corrected_slots": 0,
+    "events": 0,
+    "max_depth_ticks": 0,
+    "predicted_slots": 0,
+    "too_old_corrections": 0
+  },
+  "samples": {
+    "hash_mismatch_first": [],
+    "ring_mismatch_first": []
+  },
+  "status": "NETWORK PROTOCOL READY",
+  "verification": {
+    "float_hash_audit": {
+      "functions": [
+        "hash_input_state",
+        "hash_state_chunk",
+        "master_state_hash",
+        "merkle_pair",
+        "merkle_root",
+        "mix64"
+      ],
+      "status": "PASS",
+      "violations": []
+    },
+    "input_ring_mismatches": 0,
+    "last_master_hash_hex": "0x074212968C22BD20",
+    "master_state_hash_mismatches": 0,
+    "missing_actual_inputs": 0
+  }
+}

@@ -7,7 +7,9 @@ Evidence Class: STATIC_DOC / STATIC_SOURCE
 
 ## Source Boundary
 
-The requested `CURRENT_BATCH_OSHINO.md` file is absent in this workspace. The active prompt was extracted from `Docs/Tasks/CURRENT_BATCH.md`, `<AGENT_PROMPT id="MISSION_FAIL_SAFE_ARCHITECT">`.
+The requested `CURRENT_BATCH_OSHINO.md` file is absent in this workspace. Historical extraction source: the Mission Fail-Safe prompt was originally extracted from `Docs/Tasks/CURRENT_BATCH.md` when that file contained `<AGENT_PROMPT id="MISSION_FAIL_SAFE_ARCHITECT">`.
+
+Current source authority: `ACTIVE_BATCH_DRIFT_DETECTED`. The live `Docs/Tasks/CURRENT_BATCH.md` no longer contains `MISSION_FAIL_SAFE_ARCHITECT` or `SCENARIO_DESIGNER`. Treat this document and `Docs/Design/Missions/Outpost_FailSafe_Handoff.json` as historical static design artifacts until the Mission Fail-Safe prompt is restored to the live batch file or an archived prompt is explicitly accepted as source authority.
 
 `Docs/Tasks/Status_META_CAMPAIGN_DIRECTOR.md` is also absent. Current source evidence shows `MetaCampaignService` has four implemented global variables: `CampaignStageHash`, `ToxicityLevelHash`, `LeviathanAwakenedHash`, and `BaseDeltaDestroyedHash`. The outpost mission therefore needs its own compiled quest/DAG flags and must not assume a richer campaign-state file exists.
 
@@ -25,7 +27,7 @@ Mandates followed:
 
 Machine-readable handoff: `Docs/Design/Missions/Outpost_FailSafe_Handoff.json`. It contains the authored DAG flags, topological order, fallback rules, 10 tooltip entries, 5 Marauder log entries, and `LocHash`-compatible FNV hashes. Runtime localization assets were not mutated in this pass because the active language table, generated `LocKeys`, and translated language tables must be baked together.
 
-Editor validation hook: `Hecton-8/Validate Outpost Fail-Safe Handoff`, implemented by `Assets/_Project/Scripts/Editor/OutpostFailSafeHandoffValidator.cs`. It is editor-only and validates the handoff JSON plus this prose document for schema, hash, flag-reference, stale-alias, tooltip/log-shape, and gas-limit drift before a quest/localization bake. It also rejects legacy room-flag namespace tokens, unsupported `GasDynamicsRoomFlags.*` values, and bare `Submerged` flag claims; submerged-room logic must use the `roomSubmerged01` scalar because the gas enum has no `Submerged` flag.
+Editor validation hook: `Hecton-8/Validate Outpost Fail-Safe Handoff`, implemented by `Assets/_Project/Scripts/Editor/OutpostFailSafeHandoffValidator.cs`. It is editor-only and validates the handoff JSON plus this prose document for schema, source-authority, hash, flag-reference, stale-alias, tooltip/log-shape, and gas-limit drift before a quest/localization bake. It also rejects legacy room-flag namespace tokens, unsupported `GasDynamicsRoomFlags.*` values, and bare `Submerged` flag claims; submerged-room logic must use the `roomSubmerged01` scalar because the gas enum has no `Submerged` flag.
 
 ## Mission Rule
 

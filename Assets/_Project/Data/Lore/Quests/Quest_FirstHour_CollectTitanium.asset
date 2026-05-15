@@ -29,8 +29,7 @@ MonoBehaviour:
   completionType: 0
   completionId: Data_TitaniumScrap
   completionValue: 1
-  prerequisiteQuestIds:
-  - quest_first_hour_exit_lifepod
+  prerequisiteQuestIds: []
   criticalItemId: Data_TitaniumScrap
   respawnEventId: respawn_first_hour_titanium
   phaseGate: 0

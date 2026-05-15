@@ -137,6 +137,7 @@ namespace Hecton8.Optimization
         
         private void Awake()
         {
+            _budgetThresholds = VRAMBudgetThresholds.ResolveRuntimeBudget(_budgetThresholds);
             StartRecorders();
         }
         

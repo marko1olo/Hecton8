@@ -260,6 +260,56 @@ Verification:
 - `rg -n "COLD ALLOC"` now reports 16 canonical allocation comments in `OutpostFailSafeHandoffValidator.cs`.
 - Unity Console/import proof remains PENDING VERIFICATION.
 
+## 2026-05-14 - Hash Collision and Bare Gas Token Gate
+
+Status: SCENARIO STABILIZED - PENDING UNITY VERIFICATION
+Evidence Class: STATIC_SOURCE / STATIC_DOC
+
+What was wrong:
+- The handoff needed more than string-duplicate checks. Different mission flags or localization IDs could collide after `LocHash.Compute`, and future JSON could regress to bare `InternalFire`, `Breached`, `ScrubberInstalled`, or `Occupied` gas tokens.
+
+What was done:
+- Confirmed `OutpostFailSafeHandoffValidator.cs` validates mission flag hash uniqueness.
+- Confirmed localization entry `LocHash` uniqueness checks are present.
+- Confirmed bare gas enum token rejection is present alongside the `GasDynamicsRoomFlags.*` allowlist.
+- Re-ran static handoff validation against the current JSON.
+
+Cinematic Cheats used:
+- None. This is authoring-data validation only.
+
+Exact Microseconds saved:
+- Measured runtime savings: 0 us. The checks run in an editor-only validator.
+
+Verification:
+- Static validation: PASS. `OUTPOST_STATIC_VALIDATION flags=32 topo=32 loc=15 locHashBad=0 flagCollisions=0 locCollisions=0 gasRefs=3 badGas=0 legacyRoomflag=0`.
+- Validator trap scan: PASS. No `foreach`, LINQ, `Update`, `FixedUpdate`, `LateUpdate`, coroutine, runtime scene search, `Resources.Load`, `SendMessage`, or `BroadcastMessage`.
+- Toolchain status remains BLOCKED. `dotnet`, `csc`, `msbuild`, and `Unity` are absent from this shell environment.
+- Unity Console/import proof remains PENDING VERIFICATION.
+
+## 2026-05-14 - Metadata and Hash Contract Gates
+
+Status: SCENARIO STABILIZED - PENDING UNITY VERIFICATION
+Evidence Class: STATIC_SOURCE / STATIC_DOC
+
+What was wrong:
+- The handoff JSON included metadata and hash-contract fields, but the editor validator did not enforce them. Wrong evidence class, source batch, localization table, or FNV constants could drift without a validator error.
+
+What was done:
+- Added metadata validation for evidence class, source batch, requested batch, and requested-batch presence.
+- Added runtime asset decision validation to keep this handoff from pretending runtime localization assets were mutated.
+- Added hash contract validation against `Hecton.Localization.LocHash.Compute`, `LocHash.FnvOffsetBasis`, and `LocHash.FnvPrime`.
+
+Cinematic Cheats used:
+- None. Editor/data validation only.
+
+Exact Microseconds saved:
+- Measured runtime savings: 0 us. The validator is editor-only.
+
+Verification:
+- Static metadata check: PASS. `metadataBad=0`, `runtimeDecisionBad=0`, `hashContractBad=0`.
+- Toolchain status remains BLOCKED. `dotnet`, `csc`, `msbuild`, and `Unity` are absent from this shell environment.
+- Unity Console/import proof remains PENDING VERIFICATION.
+
 ## 2026-05-14 - Review Addendum - Topological Coverage Gate
 
 What was wrong:
@@ -299,3 +349,143 @@ Exact Microseconds saved:
 Verification:
 - Stale-token scan over `Outpost_FailSafe_Handoff.json` and `Outpost_Failure_Modes.md` is clean for the forbidden legacy token.
 - Unity import and C# compile remain PENDING VERIFICATION because Unity/dotnet are absent in this shell.
+
+## 2026-05-14 - Active Batch Drift Boundary
+
+What was wrong:
+- Current `Docs/Tasks/CURRENT_BATCH.md` no longer contains `MISSION_FAIL_SAFE_ARCHITECT`.
+- `git diff -- Docs/Tasks/CURRENT_BATCH.md` shows the Mission Fail-Safe prompt block was removed from the working tree and replaced by a later batch.
+- The status file still had a historical prompt re-extract line that could be misread as current live batch proof.
+
+What was done:
+- Updated `Docs/Tasks/Status_MISSION_FAIL_SAFE_ARCHITECT.md` to mark `ACTIVE BATCH DRIFT DETECTED`.
+- Added Loop 17 and a current verification-block note.
+- Added Rationale Decision 019 to define the boundary: no further Mission Fail-Safe implementation should start from the current live batch file until the prompt is restored or an archived prompt is explicitly accepted.
+
+Cinematic Cheats used:
+- None. This is documentation/source-authority hygiene.
+
+Exact Microseconds saved:
+- 0 us player runtime. The correction prevents stale-source bake/import errors; no runtime path changed.
+
+Verification:
+- `rg -n "MISSION_FAIL_SAFE_ARCHITECT|SCENARIO_DESIGNER" Docs/Tasks -S` found only this agent's status file, not the active batch.
+- `git diff -- Docs/Tasks/CURRENT_BATCH.md` showed the removed Mission Fail-Safe prompt block.
+- `Get-Command dotnet/msbuild/csc/Unity` returned ABSENT for all four tools, so Unity/import/compile proof remains blocked.
+
+## 2026-05-14 - Source Authority Gate
+
+What was wrong:
+- `Outpost_FailSafe_Handoff.json` named `Docs/Tasks/CURRENT_BATCH.md` as source, but the editor validator did not verify whether that file currently contained the Mission Fail-Safe prompt.
+- This allowed metadata to look valid even after the active batch drifted.
+
+What was done:
+- Added `sourceAuthority` to `Outpost_FailSafe_Handoff.json`.
+- Added `ValidateSourceAuthority` to `OutpostFailSafeHandoffValidator.cs`.
+- The validator now reads the source batch and requires `ACTIVE_BATCH_MATCHED` if the expected prompt ID/role exists, or `ACTIVE_BATCH_DRIFT_DETECTED` if it does not.
+
+Cinematic Cheats used:
+- None. This is authoring-data validation only.
+
+Exact Microseconds saved:
+- 0 us player runtime. The check is editor-only and prevents stale-source bake/import work.
+
+Verification:
+- Read-only Python validation returned `OUTPOST_STATIC_VALIDATION flags=32 topo=32 loc=15 metadataBad=0 sourceAuthorityBad=0 activeBatchContainsPrompt=False runtimeDecisionBad=0 hashContractBad=0 locHashBad=0 flagCollisions=0 locCollisions=0 gasRefs=3 badGas=0 legacyRoomflag=0`.
+- Validator trap scan returned no forbidden hot-path/editor integration traps.
+- `git diff --check` returned exit code 0 with LF-to-CRLF warnings only.
+- Unity/import/compile proof remains blocked because `dotnet`, `msbuild`, `csc`, and `Unity` are absent from PATH.
+
+## 2026-05-14 - Prose Source Boundary Gate
+
+What was wrong:
+- `Outpost_Failure_Modes.md` still used live-source wording for the Mission Fail-Safe prompt even after `Docs/Tasks/CURRENT_BATCH.md` drifted.
+- JSON source authority was accurate, but the prose doc could mislead a future quest/localization baker.
+
+What was done:
+- Reworded the prose source boundary to separate historical extraction from current `ACTIVE_BATCH_DRIFT_DETECTED`.
+- Added `ValidateMissionDocSourceAuthority` to `OutpostFailSafeHandoffValidator.cs`.
+- The validator now rejects the stale phrase `The active prompt was extracted from` and requires the drift marker in prose when JSON source authority is drifted.
+
+Cinematic Cheats used:
+- None. Documentation/editor validation only.
+
+Exact Microseconds saved:
+- 0 us player runtime. The check is editor-only and prevents stale-authority data bake risk.
+
+Verification:
+- Read-only Python validation returned `OUTPOST_STATIC_VALIDATION flags=32 topo=32 loc=15 sourceAuthorityBad=0 proseAuthorityBad=0 activeBatchContainsPrompt=False locHashBad=0 flagCollisions=0 locCollisions=0 gasRefs=3 badGas=0 legacyRoomflag=0`.
+- Stale-token scan over JSON/prose returned no matches for stale live-source wording, legacy room-flag namespace token, unsupported submerged enum token, or old submerged critical-room wording.
+- Validator trap scan returned no forbidden hot-path/editor integration traps.
+- `git diff --check` returned exit code 0 with LF-to-CRLF warnings only.
+- Unity/import/compile proof remains blocked because `dotnet`, `msbuild`, `csc`, and `Unity` are absent from PATH.
+- Final post-log Python audit returned `PY_STATIC_AUDIT trapHits=0 staleHits=0 trailingWs=0`.
+- Post-log `rg`, `findstr`, `git diff --check`, and scoped `git status` reruns timed out in the shell wrapper after 60s; those timeouted reruns are not counted as current proof.
+
+## 2026-05-14 - Gas Constant Drift Gate
+
+What was wrong:
+- `Outpost_FailSafe_Handoff.json` stored `fireOxygenDrainKpaPerSecond` as `0.4`.
+- Current `GasDynamicsSolver` source defines the per-room default as `DefaultFireO2KPaPerSecond = 0.080f`.
+- The prose `0.080 kPa/s * 5 = 0.400 kPa/s` is aggregate worst-case math, not the JSON per-room default.
+
+What was done:
+- Corrected the JSON fire oxygen drain default to `0.08`.
+- Added exact gas-constant checks to `OutpostFailSafeHandoffValidator.cs` for O2 standard, player O2 drain, player CO2 production, fire O2 drain, scrubber CO2 removal, and critical read cap.
+
+Cinematic Cheats used:
+- Scalar gas truth only. No continuous gas/fluid simulation added.
+
+Exact Microseconds saved:
+- 0 us player runtime. The correction is data/editor validation only.
+
+Verification:
+- Direct source read found `GasDynamicsSolver` defaults: `21.22`, `0.012`, `0.010`, `0.080`, `0.055`.
+- Direct source read confirmed `GasDynamicsRoomFlags` contains `InternalFire`, `Breached`, `ScrubberInstalled`, and `Occupied`, with no `Submerged` member.
+- Read-only Python validation returned `GAS_CONSTANT_AUDIT gasBad=0 sourceConstantMissing=0 validatorNeedleMissing=0 staleJsonFire04=0`.
+- Read-only Python audit returned `PY_STATIC_AUDIT trapHits=0 staleHits=0 trailingWs=0`.
+- Unity/import/compile proof remains blocked because `dotnet`, `msbuild`, `csc`, and `Unity` are absent from PATH.
+
+## 2026-05-14 - Headless Static Validator
+
+What was wrong:
+- Static verification existed as scattered command snippets.
+- Unity/dotnet/msbuild/csc are absent, and several `rg`/`git` wrapper commands timed out under load.
+- Future reviewers needed one repeatable artifact for the Outpost handoff checks.
+
+What was done:
+- Added `Tools/OutpostFailSafeValidate.py`.
+- The tool validates schema, source authority, 32 flags, full topological coverage, localization hashes, fallback count, gas constants, gas enum source, stale prose/tokens, validator hardening needles, and trailing whitespace.
+
+Cinematic Cheats used:
+- None. Offline validation only.
+
+Exact Microseconds saved:
+- 0 us player runtime. This is an offline validation tool.
+
+Verification:
+- `python Tools\OutpostFailSafeValidate.py` returned `OUTPOST_FAIL_SAFE_STATIC_VALIDATION PASS flags=32 topo=32 loc=15 fallbacks=3 activeBatchContainsPrompt=False`.
+- `python -m py_compile Tools\OutpostFailSafeValidate.py` passed.
+- `PY_FILE_HYGIENE files=7 trailingWs=0`.
+- Unity/import/compile proof remains blocked because `dotnet`, `msbuild`, `csc`, and `Unity` are absent from PATH.
+
+## 2026-05-14 - Headless Semantic Validator Hardening
+
+What was wrong:
+- The first headless validator could pass a handoff that preserved counts and hashes while swapping tooltip/log IDs, pointing entries at undeclared flags, drifting fallback risks, or deleting the scrubber oxygen guard.
+
+What was done:
+- Hardened `Tools/OutpostFailSafeValidate.py` to enforce exact tooltip locId order, exact Marauder log locId order, Narrative layer presence, non-empty text, declared tooltip trigger/suppress flags, declared log commit/required-state refs, fallback risk order, fallback setFlag validity, all `outpost.*` refs in JSON/prose, and the `does not create oxygen` gas rule.
+
+Cinematic Cheats used:
+- None. Offline validation only.
+
+Exact Microseconds saved:
+- 0 us player runtime. The change is an offline authoring guard.
+
+Verification:
+- `python Tools\OutpostFailSafeValidate.py` returned `OUTPOST_FAIL_SAFE_STATIC_VALIDATION PASS flags=32 topo=32 loc=15 fallbacks=3 activeBatchContainsPrompt=False`.
+- `python -m py_compile Tools\OutpostFailSafeValidate.py` passed.
+- `PY_FILE_HYGIENE files=4 trailingWs=0`.
+- Scoped `git diff --check` over the touched Mission Fail-Safe files returned exit code 0 with LF-to-CRLF warnings only.
+- Unity/import/compile proof remains blocked because `dotnet`, `msbuild`, `csc`, and `Unity` are absent from PATH.

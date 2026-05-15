@@ -1,0 +1,311 @@
+# HECTON-8 Mod API Specification
+
+Status: MOD API DEFINED / PENDING RUNTIME VERIFICATION  
+Evidence class: STATIC_SOURCE / STATIC_DOC  
+Owner prompt: MODDING_API_SCHEMA_BUILDER  
+Companion schema: `Docs/Modding/Signal_Schema.json`
+
+## Source Reality
+
+The current public mod event surface is not direct access to first-party simulation lanes.
+
+Source-backed mod surfaces:
+
+- `HectonAPI.Events.SubscribeProjected(Action<ModEventDto>)` for selected `SignalBus<T>` projections.
+- `HectonAPI.Events.SubscribeNative(HectonNativeEventHandler)` for immutable byte copies from approved NativeQueue event lanes.
+- `HectonAPI.Events.Subscribe<TPayload>(HectonUnmanagedEventHandler<TPayload>)` for unmanaged mod-facing payloads.
+- `HectonAPI.Commands.Request`, `RequestAup`, and `RequestRenderInstance` for engine-validated writes.
+- `HectonAPI.SaveState` for mod-owned save payloads.
+
+Forbidden for mods:
+
+- Direct `SignalBus<T>.GetFrameSnapshot()` access.
+- Direct `NativeQueue`, `NativeArray`, `DataVault`, `GlobalDataVault`, or DataVault handle access.
+- Direct `GameObject`, `Transform`, prefab, audio clip, texture, material, mesh, or ScriptableObject references.
+- String event names and JSON event payloads in hot paths.
+
+## Allowed SignalBus Projections
+
+Every currently mod-exposed `SignalBus<T>` lane is listed below. No other first-party `SignalBus<T>` lane is public unless this document and `Signal_Schema.json` are expanded.
+
+| First-party lane | Mod event kind | DTO | Access | Cap |
+|---|---|---|---|---:|
+| `SignalBus<CombatDamageSignal>` | `CombatDamage` | `ModEventDto` | read-only projection | 10 low / 50 high per frame |
+| `SignalBus<WeatherChangedSignal>` | `WeatherChanged` | `ModEventDto` | read-only projection | 10 low / 50 high per frame |
+
+`InteractionEvents` and `CraftingEvents` are also exposed, but they are not `SignalBus<T>` projections. They are copied into `SubscribeNative` as immutable bytes for the callback duration.
+
+Full source audit: [Signal_Audit_Matrix.md](Signal_Audit_Matrix.md) records 129 current `ISignal` structs in `GlobalSignals.cs`. Only 2 are projected for mods. The remaining 127 are denied by default.
+
+## ModEventDto Contract
+
+`ModEventDto` is a 64-byte fixed payload. It contains hashes, frame id, relative position, direction, two scalar values, kind, flags, quality tier, and sequence. It does not contain Unity object references or native container handles.
+
+`CombatDamage` projection:
+
+- `SubjectHash` = target hash.
+- `ContextHash` = damage type.
+- `SourceHash` = source hash.
+- `RelativePosition` = damage point relative to current player runtime position.
+- `Scalar0` = magnitude.
+- `Scalar1` = integrity delta.
+
+`WeatherChanged` projection:
+
+- `SubjectHash` = current weather hash.
+- `ContextHash` = previous weather hash.
+- `Scalar0` = clamped strength.
+- `Scalar1` = non-negative flow-field scale.
+- `QualityTier` = source quality tier.
+
+Low-tier samples set `ModEventDto.LowTierSampleFlag`.
+
+## Native Byte Events
+
+`SubscribeNative` exposes immutable payload bytes for:
+
+- `HectonNativeEventKind.Interaction`
+- `HectonNativeEventKind.Crafting`
+
+The span is valid only during the callback. Mods must copy only small data they own and must not store the span.
+
+## Command Writes
+
+Mods request writes. They do not mutate simulation truth.
+
+Allowed command APIs:
+
+- `Request(in ModCommand command)`
+- `RequestAup(in ModAupCommand command)`
+- `RequestRenderInstance(in ModRenderInstanceCommand command)`
+
+Current accepted opcodes:
+
+- `SpawnDebris`
+- `ApplyHeat`
+- `RaycastQuery`
+- `SpawnEffect`
+- `MoveEntity`
+- `VoxelModify`
+- `FlowQuery`
+- `AcousticPing`
+
+Full command audit: [Command_Audit_Matrix.md](Command_Audit_Matrix.md) records opcode values, valid targets, AUP requirement, rejection reasons, command caps, result payloads, and the non-opcode render instance lane.
+
+Limits from source:
+
+- Command queue capacity: 4096.
+- Late-frame drain: 256.
+- Per-mod per-tick commands: 128.
+- Raycasts: 128.
+- Render instances: 1024.
+- Mod heap quota: 16 MB total, 1 MB per frame.
+- Voxel modify radius: 8 meters.
+
+Rejected commands publish unmanaged result payloads such as `ModInteractionRejectedPayload`, `ModRaycastResultPayload`, `ModCriticalMemoryEvictionPayload`, or `ModAupResponse`.
+
+## Security Audit
+
+Blocked direct signal families:
+
+| Family | Examples | Reason | Wrapper requirement |
+|---|---|---|---|
+| AUP/origin shift | `AupShiftSignal`, `RebaseSignal`, `MemoryAddressShiftSignal` | Can desynchronize coordinate authority or stale native handles. | Read-only rebased DTOs only. |
+| DataVault/streaming/save | `SectorHydratedSignal`, `StorageDebtSignal`, `SaveRequestSignal`, WFC signals | Can expose native handles, file offsets, save lifecycle, or sector identity. | Redacted status DTOs with no handles or offsets. |
+| Player/survival/input | `InputStateSignal`, `PlayerStateSignal`, `PhysiologyStateSignal`, `HypoxiaSignal` | Enables input spoofing, inventory duplication, or survival corruption. | Read-only redacted DTO plus engine-owned command kernels. |
+| High-volume simulation | `WakeGeneratedSignal`, `FluidImpulseSignal`, `RigidbodySleepSignal` | Callback storm risk. | Sampled projection with tier cap. |
+| Presentation internals | `CameraFrustumSignal`, `SubmarineLightsChangedSignal`, `CullingOverloadSignal` | No stable gameplay contract. | Visual-only sampled DTO if approved. |
+
+## Cheat Mod Spec: Infinite O2
+
+Current runtime status: true Infinite O2 is not available through the public mod API. That is correct. Direct survival mutation would bypass player physiology ownership and save truth.
+
+Safe design:
+
+1. Register a boolean setting named `infinite_o2`.
+2. Persist only that setting through `HectonAPI.SaveState`.
+3. Listen to read-only public projections for context.
+4. When an approved survival command kernel exists, submit a bounded TTL command. The player survival owner applies or rejects it.
+5. Handle rejection payloads and disable UI claims when rejected.
+
+Specification sketch:
+
+```csharp
+using Hecton8.Modding;
+
+public sealed class InfiniteO2Mod : IHectonMod
+{
+    private bool _enabled;
+    private HectonEventSubscription _projectionSub;
+    private HectonEventSubscription _rejectSub;
+
+    public void OnLoad()
+    {
+        _enabled = HectonAPI.SaveState.GetModString("com.example.infinite_o2.enabled", "0") == "1";
+        HectonAPI.UI.RegisterSetting("com.example.infinite_o2", "infinite_o2", _enabled, OnToggle);
+        _projectionSub = HectonAPI.Events.SubscribeProjected(OnProjectedEvent, "com.example.infinite_o2");
+        _rejectSub = HectonAPI.Events.Subscribe<ModInteractionRejectedPayload>(OnRejected, "com.example.infinite_o2");
+    }
+
+    public void OnInitialize()
+    {
+    }
+
+    public void OnUnload()
+    {
+        _projectionSub?.Dispose();
+        _rejectSub?.Dispose();
+    }
+
+    private void OnToggle(bool enabled)
+    {
+        _enabled = enabled;
+        HectonAPI.SaveState.SetModString("com.example.infinite_o2.enabled", enabled ? "1" : "0");
+    }
+
+    private void OnProjectedEvent(ModEventDto dto)
+    {
+        if (!_enabled)
+            return;
+
+        // Current API has no SurvivalOverride opcode. This request is a required future kernel,
+        // not a direct write to player physiology or DataVault.
+        // HectonAPI.Commands.Request(in survivalOverrideCommand);
+    }
+
+    private void OnRejected(in ModInteractionRejectedPayload payload)
+    {
+        // Disable visible cheat status if the engine rejects the request.
+    }
+}
+```
+
+Required future kernel before this cheat can affect gameplay:
+
+- `ModCommandOpcode.SurvivalOverride`
+- target system `PlayerSurvival`
+- max TTL 3 seconds
+- clamps oxygen floor in engine code
+- not serialized into first-party save truth
+- telemetry on every accepted/rejected request
+- revocation on mod unload or quarantine
+
+## Why Unmanaged Structs, Not JSON
+
+Unmanaged structs are mandatory because the mod bridge crosses native queues, Burst-facing projections, and save-adjacent command results. Fixed payloads provide:
+
+- predictable byte layout
+- no string event names
+- no JSON parsing
+- no per-event heap allocations
+- direct NativeQueue and Burst compatibility
+- numeric event hashes for telemetry and schema versioning
+- bounded payload sizes for low-tier throttling
+
+JSON remains acceptable only for cold mod configuration or mod-owned save text under `HectonAPI.SaveState`. It is not an event transport.
+
+## Public Facade Matrix
+
+The public facade is the implementation boundary. Anything internal or first-party-only is not a mod right.
+
+Full facade audit: [API_Surface_Audit_Matrix.md](API_Surface_Audit_Matrix.md) records the current `HectonAPI.cs` public nested surfaces, public methods, public properties, and internal forbidden methods.
+
+| Surface | Public methods | Classification | Hard rule |
+|---|---|---|---|
+| `HectonAPI.Events` | `Subscribe<TPayload>`, `SubscribeNative`, `SubscribeProjected`, `OnPlayerSpawned`, `OnBiomeChanged`, `Unsubscribe`, `Publish<TPayload>` | unmanaged event/read-only projection/mod-owned payload | No direct first-party `SignalBus<T>` or managed `HectonEvent` subscription for mods. |
+| `HectonAPI.Input` | `GetButtonMask`, `HasButtonMask` | read-only frame mask | No Input System objects or action references. |
+| `HectonAPI.Commands` | `Request`, `RequestAup`, `RequestRenderInstance` | engine-validated write request | Mods request; first-party kernels execute or reject. |
+| `HectonAPI.Resources` | `Proxy`, `TryResolvePrefab`, `TryResolveAudioClip`, `TryResolveTexture` | hash-only resource resolution | No Unity asset reference leaves the engine. |
+| `HectonAPI.Telemetry` | `Publish` | mod marker write | Active mod execution scope required; hash plus scalar only. |
+| `HectonAPI.Items` | `RegisterCustomItem`, `TryFindItem` | cold catalog overlay | Runtime overlay only; no authored asset mutation. |
+| `HectonAPI.Crafting` | `RegisterRecipe`, `RegisterRecycleYield` | cold recipe overlay | Managed lists are cold registration data, not event payloads. |
+| `HectonAPI.Recycling` | `ProcessRecycle` | owner-arbitrated gameplay request | Official `ScrapManager` owns inventory mutation. |
+| `HectonAPI.Construction` | `RegisterBuildable`, `TryFindBuildable` | cold buildable overlay | Catalog injection is not scene spawning. |
+| `HectonAPI.Ecosystem` | `RegisterBiomeMutation` | deterministic overlay | Mods provide bias data, not fauna handles. |
+| `HectonAPI.Localization` | `InjectTable` | cold localization overlay | Dictionary/string use is cold only. |
+| `HectonAPI.UI` | `ShowInfo`, `ShowWarning`, `ShowCritical`, `RegisterSetting` | presentation/settings | UI must reflect engine acceptance, not assumed command success. |
+| `HectonAPI.World` | `IsGameReady`, `TryGetPlayerEntityHash` | read-only hash state | `GameObject`, `Transform`, spawn, and despawn methods are internal and throw. |
+| `HectonAPI.SaveState` | `SetModString`, `GetModString` | mod-owned cold save text | JSON allowed here only, never as event transport. |
+| `HectonAPI.Mods` | `GetLoadedMods` | diagnostics copy | Caller provides destination list. |
+
+`HectonAPI.Assets.LoadPrefab`, `LoadAudioClip`, and `LoadTexture` are internal and throw `IllegalContractException`. Modders must resolve hashes and submit commands.
+
+## Loader And Save Boundary
+
+Loader/save contracts are part of the public mod API even though they are cold-path managed boundaries.
+
+Full loader/save audit: [Loader_Save_Audit_Matrix.md](Loader_Save_Audit_Matrix.md) records manifest fields, `CurrentAPIVersion`, `IHectonMod` callbacks, runtime info fields, and mod save payload limits.
+
+| Contract | Current source-backed value | Rule |
+|---|---:|---|
+| Manifest file | `mod.json` | Package discovery starts from this file. |
+| Current API version | `2` | Mods requiring a newer version are disabled. |
+| Manifest fields | `9` | `Id`, `Name`, `Version`, `Author`, `Dependencies`, `EntryAssembly`, `EntryType`, `RequiredAPIVersion`, `ModPriority`. |
+| `IHectonMod` callbacks | `3` | `OnLoad`, `OnInitialize`, and `OnUnload`; dispose every subscription from `OnUnload`. |
+| `ModMetadata` fields | `8` | Runtime diagnostics and dependency ordering use this descriptor. |
+| `ModRuntimeInfo` fields | `7` | UI copies this descriptor; loader internals stay private. |
+| SaveState public methods | `2` | `SetModString` and `GetModString`; active `ModExecutionScope` required. |
+| Save storage prefix | `m8v1:` | Mod-owned keys are hashed/namespaced before persistence. |
+| Max MMF mod payload | `16352` bytes | Protected block `16384` minus `32` byte mod payload header. |
+
+`HectonAPI.SaveState` is not a general persistence escape hatch. Mods may store their own text payloads; they may not write first-party save owners, inventory truth, player physiology, world sectors, or DataVault-backed state.
+
+## Payload Layouts
+
+Implementation-facing field contracts:
+
+Full payload audit: [Payload_Layout_Audit_Matrix.md](Payload_Layout_Audit_Matrix.md) records fixed sizes, `ModEventDto` offsets, event hash constants, and sequential command/result payload fields.
+
+| Payload | Layout | Size | Use |
+|---|---|---:|---|
+| `ModEventDto` | explicit | 64 bytes | Projected `CombatDamage` and `WeatherChanged` event metadata. |
+| `ModCommand` | sequential | 64 bytes | Base command packet; `Payload0` packs `ModHash` low 32 bits and `RequestId` high 32 bits. |
+| `ModAupCommand` | sequential | source-defined | Position-changing command wrapper; dispatcher rebases AUP at drain time. |
+| `ModAupResponse` | sequential | 64 bytes | Async response for flow, voxel, and acoustic AUP requests. |
+| `ModRenderInstanceCommand` | sequential | source-defined | One mod instancing matrix request. |
+| `ModRaycastResultPayload` | sequential | source-defined | Next-frame result for proxied mod raycast requests. |
+| `ModInteractionRejectedPayload` | sequential | source-defined | Security gate rejection reason. |
+| `ModCriticalMemoryEvictionPayload` | sequential | source-defined | Heap quota eviction warning before quarantine. |
+
+`ModEventDto` byte offsets are fixed in source: `EventHash` 0, `SubjectHash` 4, `ContextHash` 8, `SourceHash` 12, `Frame` 16, `RelativePosition` 20, `Direction` 32, `Scalar0` 44, `Scalar1` 48, `Kind` 52, `Flags` 54, `QualityTier` 56, `Reserved0` 57, `Sequence` 58, `Reserved1` 60.
+
+## Signal Extension Gate
+
+Adding another mod-visible signal is not a documentation-only change. Required gate:
+
+1. Add one `Signal_Schema.json` entry with source payload, size/capacity, event hash, field projection, and security notes.
+2. Add a projection job or copy bridge that clamps non-finite floats and never exposes Unity objects or native handles.
+3. State low-tier/high-tier caps and overflow telemetry.
+4. Add a 300-frame blackbox path for cull/overflow or explicitly attach to an existing one.
+5. Run Unity callback smoke tests and record GCMonitor/profiler evidence before changing status from `PENDING RUNTIME VERIFICATION`.
+
+Adding another command opcode requires an engine-owned `IModCommandKernel`, target validation, rejection reason, unmanaged response path when applicable, and quota accounting.
+
+## Acceptance Tests
+
+Static checks already required for this package:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1
+Get-Content -Raw Docs/Modding/Signal_Schema.json | ConvertFrom-Json
+rg --pcre2 -n "[^\x00-\x7F]" Docs/Modding Docs/Tasks/Status_MODDING_API_SCHEMA_BUILDER.md Docs/AgentLogs/Rationale_MODDING_API_SCHEMA_BUILDER.md Docs/AgentLogs/LOG_MODDING_API_SCHEMA_BUILDER.md
+git diff --check -- Docs/Modding/Signal_Schema.json Docs/Modding/Mod_API_Specification.md Docs/Modding/Signal_Audit_Matrix.md Docs/Modding/Command_Audit_Matrix.md Docs/Modding/API_Surface_Audit_Matrix.md Docs/Modding/Payload_Layout_Audit_Matrix.md Docs/Modding/Loader_Save_Audit_Matrix.md Docs/Modding/Runtime_Verification_Playbook.md Docs/Modding/Validate_Mod_API_Static.ps1 Docs/Tasks/Status_MODDING_API_SCHEMA_BUILDER.md Docs/AgentLogs/Rationale_MODDING_API_SCHEMA_BUILDER.md Docs/AgentLogs/LOG_MODDING_API_SCHEMA_BUILDER.md
+```
+
+`Validate_Mod_API_Static.ps1` is the static drift gate. It fails when the source `ISignal` count, schema inventory, projection bridge lanes, command opcodes, facade shape, payload byte layout, loader/save contracts, audit matrices, or runtime verification gate drift apart.
+
+Runtime checks required before a future `VERIFIED` status:
+
+1. Load a dummy mod implementing `IHectonVersionedMod` with `RequiredAPIVersion = 2`.
+2. Subscribe to `SubscribeProjected`, `SubscribeNative`, `OnPlayerSpawned`, and `OnBiomeChanged`; dispose all tokens in `OnUnload`.
+3. Force one combat damage event and one weather event; verify only `CDMG` and `WEAT` reach `ModEventDto`.
+4. Submit valid and invalid `RequestAup` raycasts; verify `ModRaycastResultPayload` and `ModInteractionRejectedPayload`.
+5. Spam more than 128 commands from one mod in one tick; verify command flood rejection, no crash, and no unbounded callback fanout.
+6. Allocate past the mod heap quota in a controlled test mod; verify `ModCriticalMemoryEvictionPayload` then quarantine.
+7. Confirm GCMonitor hot-path output is 0 B/frame for projection dispatch under the cap.
+
+## Verification Boundary
+
+This pass did not run Unity, Play Mode, GCMonitor, profiler, player build, or mod callback smoke tests. Current status is source/doc defined, runtime pending.
+
+The required runtime proof path is [Runtime_Verification_Playbook.md](Runtime_Verification_Playbook.md). Do not mark the mod API `VERIFIED` until that playbook passes with Unity Console, GCMonitor, and profiler evidence.

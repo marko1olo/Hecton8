@@ -1,0 +1,23 @@
+{
+  "magic": "H8LR",
+  "version": 1,
+  "hash_algorithm": "FNV-1a 32-bit over repository-relative ASCII path, A-Z folded to lowercase",
+  "compression": "zlib",
+  "alignment_bytes": 16,
+  "record_layout": "uint32 hash, uint64 absolute_offset, uint32 compressed_length",
+  "blob": "Data/Lore/Encyclopedia.h8bin",
+  "blob_length": 9897,
+  "blob_sha256": "69E1631622B2FBCEAEE39A83A6F9CAEAC8715BCCE5F37C336F63F9E9D026B71B",
+  "source_dir": "Docs/Lore",
+  "entry_count": 1,
+  "entries": [
+    {
+      "hash": "0xD1880394",
+      "canonical_id": "Docs/Lore/Lore_Bible.md",
+      "offset": 48,
+      "compressed_length": 9849,
+      "decompressed_length": 23960,
+      "sha256": "A734EF38913EBE80474F71BBD355FFA1CB08EAD3195DA0331D4A336FEA1D1402"
+    }
+  ]
+}

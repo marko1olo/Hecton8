@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import shutil
@@ -21,7 +22,10 @@ FLOW_SIZE = 128
 DEFAULT_SEED = 0x4845384E
 DEFAULT_SWAPS = 2048
 OPTIMIZER_TIMEOUT_SECONDS = 120
+UINT32_MAX = 0xFFFFFFFF
 UINT_MAX_FLOAT = np.float64(0xFFFFFFFF)
+FLOW_MIN_DYNAMIC_RANGES = (64, 48, 128, 128)
+FLOW_MIN_UNIQUE_VALUES = (48, 32, 96, 96)
 
 
 def repository_root() -> Path:
@@ -35,6 +39,17 @@ def artifact_path(path: Path) -> str:
         return resolved.relative_to(root).as_posix()
     except ValueError:
         return str(resolved)
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        while True:
+            chunk = stream.read(1024 * 1024)
+            if not chunk:
+                break
+            digest.update(chunk)
+    return digest.hexdigest().upper()
 
 
 def frac(value: np.ndarray) -> np.ndarray:
@@ -100,7 +115,7 @@ def build_kernel(size: int, radius: int, sigma: float) -> tuple[list[int], np.nd
     return coords, kernel, np.fft.fft2(full)
 
 
-def void_cluster_relax(initial_rank: np.ndarray, seed_score: np.ndarray, swaps: int) -> np.ndarray:
+def void_cluster_relax(initial_rank: np.ndarray, seed_score: np.ndarray, swaps: int, seed: int) -> np.ndarray:
     import heapq
 
     size = initial_rank.shape[0]
@@ -162,7 +177,7 @@ def void_cluster_relax(initial_rank: np.ndarray, seed_score: np.ndarray, swaps: 
         update(void_y, void_x, 1.0)
 
     y, x = np.mgrid[0:size, 0:size]
-    jitter = hash01_grid(x, y, DEFAULT_SEED ^ 0xD17ECAFE).ravel() * 0.000001
+    jitter = hash01_grid(x, y, seed ^ 0xD17ECAFE).ravel() * 0.000001
     score = seed_score.ravel().astype(np.float64) + jitter
     occupied = np.flatnonzero(flat_occ)
     empty = np.flatnonzero(~flat_occ)
@@ -180,7 +195,7 @@ def void_cluster_relax(initial_rank: np.ndarray, seed_score: np.ndarray, swaps: 
 
 def generate_blue_noise(size: int, seed: int, swaps: int) -> np.ndarray:
     initial_rank, seed_score = make_highpass_rank(size, seed)
-    return void_cluster_relax(initial_rank, seed_score, swaps)
+    return void_cluster_relax(initial_rank, seed_score, swaps, seed)
 
 
 def generate_jitter(size: int, seed: int) -> np.ndarray:
@@ -234,13 +249,22 @@ def generate_abyssal_flow_slice(size: int) -> np.ndarray:
 
 
 def optimize_png(path: Path) -> str:
-    for name, command in (
-        ("optipng", ["optipng", "-o7", "-quiet", str(path)]),
-        ("oxipng", ["oxipng", "-o", "max", "--strip", "safe", str(path)]),
-        ("zopflipng", ["zopflipng", "-y", str(path), str(path)]),
+    failure_notes: list[str] = []
+    source_size = path.stat().st_size
+    for name, command_template in (
+        ("optipng", ["optipng", "-o7", "-quiet", "{candidate}"]),
+        ("oxipng", ["oxipng", "-o", "max", "--strip", "safe", "{candidate}"]),
+        ("zopflipng", ["zopflipng", "-y", "{candidate}", "{output}"]),
     ):
         if shutil.which(name) is None:
             continue
+        candidate = path.with_name(f"{path.stem}.{name}.tmp{path.suffix}")
+        output = path.with_name(f"{path.stem}.{name}.out.tmp{path.suffix}")
+        for temp_path in (candidate, output):
+            if temp_path.exists():
+                temp_path.unlink()
+        shutil.copy2(path, candidate)
+        command = [part.format(candidate=str(candidate), output=str(output)) for part in command_template]
         try:
             result = subprocess.run(
                 command,
@@ -251,14 +275,44 @@ def optimize_png(path: Path) -> str:
                 timeout=OPTIMIZER_TIMEOUT_SECONDS,
             )
         except subprocess.TimeoutExpired:
-            return f"{name}_failed_timeout_{OPTIMIZER_TIMEOUT_SECONDS}s"
-        return name if result.returncode == 0 else f"{name}_failed_exit_{result.returncode}"
+            failure_notes.append(f"{name}_timeout_{OPTIMIZER_TIMEOUT_SECONDS}s")
+            for temp_path in (candidate, output):
+                if temp_path.exists():
+                    temp_path.unlink()
+            continue
+        if result.returncode != 0:
+            failure_notes.append(f"{name}_exit_{result.returncode}")
+            for temp_path in (candidate, output):
+                if temp_path.exists():
+                    temp_path.unlink()
+            continue
+        optimized_path = output if name == "zopflipng" else candidate
+        if not optimized_path.exists():
+            failure_notes.append(f"{name}_missing_output")
+            for temp_path in (candidate, output):
+                if temp_path.exists():
+                    temp_path.unlink()
+            continue
+        optimized_size = optimized_path.stat().st_size
+        if optimized_size > source_size:
+            failure_notes.append(f"{name}_larger_output")
+            for temp_path in (candidate, output):
+                if temp_path.exists():
+                    temp_path.unlink()
+            continue
+        optimized_path.replace(path)
+        for temp_path in (candidate, output):
+            if temp_path.exists():
+                temp_path.unlink()
+        return name
+    if failure_notes:
+        return "pillow_optimize_compress_level_9_after_" + "_".join(failure_notes)
     return "pillow_optimize_compress_level_9"
 
 
 def save_png(path: Path, pixels: np.ndarray) -> dict[str, Any]:
     path.parent.mkdir(parents=True, exist_ok=True)
-    Image.fromarray(pixels, mode="RGBA").save(path, format="PNG", optimize=True, compress_level=9)
+    Image.fromarray(pixels).save(path, format="PNG", optimize=True, compress_level=9)
     before = path.stat().st_size
     optimizer = optimize_png(path)
     after = path.stat().st_size
@@ -342,16 +396,54 @@ def verify_packed_noise_array(packed: np.ndarray) -> dict[str, Any]:
     }
 
 
+def channel_stats(image: np.ndarray) -> list[dict[str, float | int]]:
+    stats: list[dict[str, float | int]] = []
+    for channel in range(image.shape[2]):
+        values = image[:, :, channel]
+        minimum = int(np.min(values))
+        maximum = int(np.max(values))
+        stats.append(
+            {
+                "min": minimum,
+                "max": maximum,
+                "dynamic_range": maximum - minimum,
+                "mean": float(np.mean(values)),
+                "unique_values": int(np.unique(values).size),
+            }
+        )
+    return stats
+
+
+def verify_flow_array(flow: np.ndarray) -> dict[str, Any]:
+    if flow.shape != (FLOW_SIZE, FLOW_SIZE, 4):
+        return {"passed": False, "error": f"expected {FLOW_SIZE}x{FLOW_SIZE} RGBA, got {flow.shape}"}
+    stats = channel_stats(flow)
+    passed = True
+    for channel, item in enumerate(stats):
+        if int(item["dynamic_range"]) < FLOW_MIN_DYNAMIC_RANGES[channel]:
+            passed = False
+        if int(item["unique_values"]) < FLOW_MIN_UNIQUE_VALUES[channel]:
+            passed = False
+    return {
+        "passed": bool(passed),
+        "shape": list(flow.shape),
+        "channel_stats": stats,
+        "thresholds": {
+            "min_dynamic_ranges_rgba": list(FLOW_MIN_DYNAMIC_RANGES),
+            "min_unique_values_rgba": list(FLOW_MIN_UNIQUE_VALUES),
+        },
+    }
+
+
 def verify_assets(noise_path: Path, flow_path: Path) -> dict[str, Any]:
     noise = verify_packed_noise_array(read_rgba(noise_path))
-    flow = read_rgba(flow_path)
-    flow_passed = flow.shape == (FLOW_SIZE, FLOW_SIZE, 4)
+    flow = verify_flow_array(read_rgba(flow_path))
     return {
-        "passed": bool(noise["passed"] and flow_passed),
+        "passed": bool(noise["passed"] and flow["passed"]),
         "noise_path": artifact_path(noise_path),
         "flow_path": artifact_path(flow_path),
-        "noise": noise,
-        "flow": {"passed": bool(flow_passed), "shape": list(flow.shape), "bytes": int(flow_path.stat().st_size)},
+        "noise": {**noise, "bytes": int(noise_path.stat().st_size), "sha256": sha256_file(noise_path)},
+        "flow": {**flow, "bytes": int(flow_path.stat().st_size), "sha256": sha256_file(flow_path)},
     }
 
 
@@ -360,14 +452,34 @@ def write_json(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
+def parse_uint32_seed(value: str) -> int:
+    try:
+        seed = int(value, 0)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("seed must be an integer literal, for example 0x4845384E") from exc
+    if seed < 0 or seed > UINT32_MAX:
+        raise argparse.ArgumentTypeError("seed must be in uint32 range 0..0xFFFFFFFF")
+    return seed
+
+
+def parse_nonnegative_int(value: str) -> int:
+    try:
+        parsed = int(value, 10)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("value must be a base-10 integer") from exc
+    if parsed < 0:
+        raise argparse.ArgumentTypeError("value must be non-negative")
+    return parsed
+
+
 def parse_args() -> argparse.Namespace:
     root = repository_root()
     parser = argparse.ArgumentParser(description="Bake HECTON-8 noise and low-tier flow lookup textures.")
     parser.add_argument("--output", type=Path, default=root / "Data" / "Textures" / "BlueNoise_RGBA.png")
     parser.add_argument("--flow-output", type=Path, default=root / "Data" / "Textures" / "AbyssalFlowField_LowTier_RGBA.png")
     parser.add_argument("--metrics", type=Path, default=root / "Data" / "Textures" / "NoiseBakeMetrics.json")
-    parser.add_argument("--seed", default=hex(DEFAULT_SEED))
-    parser.add_argument("--swaps", type=int, default=DEFAULT_SWAPS)
+    parser.add_argument("--seed", type=parse_uint32_seed, default=DEFAULT_SEED)
+    parser.add_argument("--swaps", type=parse_nonnegative_int, default=DEFAULT_SWAPS)
     parser.add_argument("--verify-only", action="store_true")
     parser.add_argument("--include-timing", action="store_true", help="Include volatile local bake_seconds in metrics.")
     return parser.parse_args()
@@ -384,9 +496,9 @@ def main() -> int:
         print(json.dumps(metrics, indent=2, sort_keys=True))
         return 0 if metrics["passed"] else 1
 
-    seed = int(str(args.seed), 0)
+    seed = int(args.seed)
     bake_start = time.perf_counter() if args.include_timing else None
-    packed, bake_metrics = generate_packed_noise(BLUE_SIZE, seed, max(0, int(args.swaps)))
+    packed, bake_metrics = generate_packed_noise(BLUE_SIZE, seed, int(args.swaps))
     if bake_start is not None:
         bake_metrics["bake_seconds"] = time.perf_counter() - bake_start
     flow = generate_abyssal_flow_slice(FLOW_SIZE)

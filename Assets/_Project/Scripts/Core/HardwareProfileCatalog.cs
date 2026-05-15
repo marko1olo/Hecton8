@@ -91,6 +91,12 @@ namespace Hecton8.Core
         /// <summary>Steam Deck LCD sustained project target frame rate.</summary>
         public const int SteamDeckLcdTargetFps = 60;
 
+        /// <summary>Quest 3 baseline dynamic-resolution scale in thousandths.</summary>
+        public const int Quest3BaselineRenderScaleMilli = 850;
+
+        /// <summary>Steam Deck LCD baseline dynamic-resolution scale in thousandths.</summary>
+        public const int SteamDeckLcdBaselineRenderScaleMilli = 780;
+
         /// <summary>Quest 3 conservative job worker budget.</summary>
         public const int Quest3JobWorkerBudget = 4;
 
@@ -185,6 +191,19 @@ namespace Hecton8.Core
             return profile == HardwareProfileKind.SteamDeckLcd
                 ? SteamDeckLcdTargetFps
                 : Quest3TargetFps;
+        }
+
+        /// <summary>
+        /// Resolves the baseline dynamic-resolution scale encoded as thousandths.
+        /// </summary>
+        /// <param name="profile">Generated profile kind.</param>
+        /// <returns>Render scale multiplied by 1000.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int ResolveBaselineRenderScaleMilli(HardwareProfileKind profile)
+        {
+            return profile == HardwareProfileKind.SteamDeckLcd
+                ? SteamDeckLcdBaselineRenderScaleMilli
+                : Quest3BaselineRenderScaleMilli;
         }
 
         /// <summary>

@@ -66,6 +66,10 @@ class MathLUTGeneratorTests(unittest.TestCase):
                 coefficient_digest,
                 manifest["jsonFiles"]["ecosystem_coefficients.json"]["sha256"],
             )
+            self.assertEqual(
+                (output_dir / "ecosystem_coefficients.json").stat().st_size,
+                manifest["jsonFiles"]["ecosystem_coefficients.json"]["bytes"],
+            )
             self.assertEqual(1_000_000, coefficients["IntegrationSteps"])
             self.assertTrue(math.isfinite(coefficients["FinalPreyBiomass"]))
             self.assertTrue(math.isfinite(coefficients["FinalPredatorBiomass"]))
@@ -143,6 +147,45 @@ class MathLUTGeneratorTests(unittest.TestCase):
                     file_name,
                 )
                 self.assertEqual(first_bytes, second_bytes, file_name)
+
+    def test_verify_existing_output_detects_same_size_corruption(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir)
+            MathLUTGenerator.generate_all(output_dir)
+
+            clean_validation = MathLUTGenerator.validate_existing_output(output_dir)
+            self.assertEqual("PASS", clean_validation["status"])
+
+            target_path = output_dir / "sabine_reverb_rt60.bin"
+            payload = bytearray(target_path.read_bytes())
+            payload[0] ^= 0xFF
+            target_path.write_bytes(payload)
+
+            corrupt_validation = MathLUTGenerator.validate_existing_output(output_dir)
+            corrupt_file = corrupt_validation["files"]["sabine_reverb_rt60.bin"]
+            self.assertEqual("FAIL", corrupt_validation["status"])
+            self.assertTrue(corrupt_file["matches"])
+            self.assertFalse(corrupt_file["hashMatches"])
+
+    def test_verify_existing_output_detects_json_manifest_byte_mismatch(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir)
+            MathLUTGenerator.generate_all(output_dir)
+
+            manifest_path = output_dir / "math_lut_manifest.json"
+            manifest = json.loads(manifest_path.read_text())
+            json_info = manifest["jsonFiles"]["ecosystem_coefficients.json"]
+            json_info["bytes"] = json_info["bytes"] + 1
+            manifest_path.write_text(
+                json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+
+            validation = MathLUTGenerator.validate_existing_output(output_dir)
+            ecosystem_result = validation["jsonFiles"]["ecosystem_coefficients.json"]
+            self.assertEqual("FAIL", validation["status"])
+            self.assertFalse(ecosystem_result["manifestBytesMatch"])
+            self.assertTrue(ecosystem_result["hashMatches"])
 
 
 if __name__ == "__main__":

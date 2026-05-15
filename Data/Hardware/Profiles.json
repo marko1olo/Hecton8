@@ -139,6 +139,10 @@
     1,
     1
   ],
+  "profileBaselineRenderScaleMilli": [
+    850,
+    780
+  ],
   "profileSacrificeLevel1MaskHex": [
     "0x0000000000000070",
     "0x0000000000000070"

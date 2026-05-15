@@ -1,6 +1,6 @@
 # Rationale_MISSION_FAIL_SAFE_ARCHITECT
 
-Status: SCENARIO STABILIZED - PENDING UNITY VERIFICATION
+Status: SCENARIO STABILIZED - PENDING UNITY VERIFICATION / ACTIVE BATCH DRIFT DETECTED
 Evidence Class: STATIC_DOC unless explicitly upgraded by command output.
 
 ## Decision 001 - Batch Source Fallback
@@ -130,3 +130,67 @@ Solution: Reworded the prose to describe legacy room-flag namespace tokens witho
 Rejected Alternatives: Weakening `OutpostFailSafeHandoffValidator` was rejected because stale-token detection is the point of the gate. Ignoring the prose document was rejected because prose/JSON drift is a known failure mode.
 Scalability potential: Low/Middle/High/Ultra all keep one stable mission flag vocabulary; invalid legacy tokens fail before bake.
 Hardware Impact: 0 us player runtime. Documentation-only correction prevents editor validation noise.
+
+## Decision 017 - Hash Collision and Bare Gas Token Gate
+
+Problem: Duplicate strings are not the only authored-data failure mode; two different outpost flags or localization IDs could collide after `LocHash.Compute`, and a future handoff could reintroduce bare `InternalFire`, `Breached`, `ScrubberInstalled`, or `Occupied` tokens without the required `GasDynamicsRoomFlags.` prefix.
+Solution: Confirmed `OutpostFailSafeHandoffValidator.cs` validates mission flag hash uniqueness, localization hash uniqueness, and bare gas enum token rejection. Re-ran static JSON validation against the current handoff.
+Rejected Alternatives: Relying on string uniqueness only; accepting bare gas tokens as designer shorthand; deferring collision detection to runtime localization or quest bake.
+Scalability potential: Low tier gets deterministic hash tables without collision ambiguity. High and Ultra can add richer outpost presentation while consuming the same validated keys.
+Hardware Impact: 0 us player runtime. Editor-only validation prevents invalid bake inputs.
+
+## Decision 018 - Metadata and Hash Contract Gates
+
+Problem: The handoff JSON carried source metadata, runtime asset decision notes, and hash-contract constants, but the editor validator did not enforce those fields. A future edit could silently claim the wrong evidence class, source batch, localization table, or hash algorithm.
+Solution: Added metadata validation, runtime asset decision validation, and hash-contract validation to `OutpostFailSafeHandoffValidator.cs`, including checks against `LocHash.FnvOffsetBasis` and `LocHash.FnvPrime`.
+Rejected Alternatives: Treating metadata as human-only prose; relying on later quest/localization bake failures; duplicating hash constants without comparing them to the runtime source.
+Scalability potential: Low tier and High/Ultra consume the same baked hashes. Preventing contract drift keeps runtime lookup O(1) and avoids fallback string paths.
+Hardware Impact: 0 us player runtime. Editor-only validation catches invalid handoff metadata before bake.
+
+## Decision 019 - Active Batch Drift Boundary
+
+Problem: Current `Docs/Tasks/CURRENT_BATCH.md` no longer contains `<AGENT_PROMPT id="MISSION_FAIL_SAFE_ARCHITECT">`. The working-tree diff shows the Mission Fail-Safe prompt block was removed and replaced by later batch prompts, while this agent's status/log files still exist.
+Solution: Marked the drift in this agent's status and log instead of continuing Mission Fail-Safe implementation from stale prompt authority.
+Rejected Alternatives: Reverting another agent's `CURRENT_BATCH.md` changes; switching identities to a different active prompt without user assignment; claiming live prompt re-extraction still passes.
+Scalability potential: No runtime impact. The boundary prevents stale mission data from being treated as a live batch source by later bake/import work.
+Hardware Impact: 0 us player runtime. Documentation-only hygiene correction.
+
+## Decision 020 - Source Authority Gate
+
+Problem: The handoff JSON still named `Docs/Tasks/CURRENT_BATCH.md` as `sourceBatch`, but the editor validator only checked that the field contained the expected path. It did not verify whether that file currently contained the Mission Fail-Safe prompt.
+Solution: Added `sourceAuthority` metadata to the handoff and upgraded `OutpostFailSafeHandoffValidator.cs` to read the source batch, check expected prompt ID/role presence, and require either `ACTIVE_BATCH_MATCHED` or `ACTIVE_BATCH_DRIFT_DETECTED` according to actual file contents.
+Rejected Alternatives: Trusting source-batch metadata as prose; failing every validation when a later batch replaces `CURRENT_BATCH.md`; reverting concurrent batch changes.
+Scalability potential: No player runtime impact. Future quest/localization bake tooling can reject stale prompt authority before generating runtime hashes or tables.
+Hardware Impact: 0 us player runtime. Editor-only static validation; no gameplay path changed.
+
+## Decision 021 - Prose Source Boundary Gate
+
+Problem: `Outpost_Failure_Modes.md` still said the prompt was actively extracted from `Docs/Tasks/CURRENT_BATCH.md`, while the current batch no longer contains the Mission Fail-Safe prompt. JSON had the drift marker, but prose still looked live.
+Solution: Reworded the source boundary to distinguish historical extraction from current `ACTIVE_BATCH_DRIFT_DETECTED` status, and upgraded `OutpostFailSafeHandoffValidator.cs` to reject stale live-source wording in the prose document.
+Rejected Alternatives: Updating JSON only; leaving prose as historical-but-ambiguous; relying on human review to catch the mismatch.
+Scalability potential: No player runtime impact. Authoring/bake consumers now get one consistent source-authority story before generating runtime data.
+Hardware Impact: 0 us player runtime. Editor-only static validation; no gameplay path changed.
+
+## Decision 022 - Gas Constant Drift Gate
+
+Problem: `Outpost_FailSafe_Handoff.json` stored `fireOxygenDrainKpaPerSecond` as `0.4`, but `GasDynamicsSolver` source defines `DefaultFireO2KPaPerSecond = 0.080f`. The prose uses `0.080 kPa/s * 5 = 0.400 kPa/s` as an aggregate multi-room note, but the JSON field is a per-room solver default.
+Solution: Corrected the JSON value to `0.08` and upgraded `OutpostFailSafeHandoffValidator.cs` to exact-check the gas constants against the current solver defaults.
+Rejected Alternatives: Keeping positivity-only validation; treating aggregate prose math as the per-room JSON default; changing `GasDynamicsSolver` constants from a scenario-design task.
+Scalability potential: Low tier keeps cheap scalar gas checks with source-matched defaults. High/Ultra presentation can still add stronger warnings without changing gas truth.
+Hardware Impact: 0 us player runtime. Editor-only static validation; no gameplay path changed.
+
+## Decision 023 - Headless Static Validator
+
+Problem: Unity, dotnet, msbuild, and csc are absent from this environment, and repeated `rg`/`git` shell wrappers time out under load. The handoff had strong static checks, but most were ad hoc command snippets rather than a reusable artifact.
+Solution: Added `Tools/OutpostFailSafeValidate.py`, a deterministic offline validator for the Mission Fail-Safe handoff/prose/source contract.
+Rejected Alternatives: Continuing to rely on fragile shell one-liners; claiming Unity/editor validation without the toolchain; adding runtime validation to gameplay code.
+Scalability potential: No player runtime impact. Future bake/import work can run the tool before producing runtime hashes or localization tables.
+Hardware Impact: 0 us player runtime. Offline Python validation only.
+
+## Decision 024 - Headless Semantic Validator Hardening
+
+Problem: The first headless validator pass proved counts, hashes, gas constants, and stale tokens, but a bad edit could still preserve counts while renaming a tooltip, swapping a Marauder log, pointing a trigger to an undeclared flag, or deleting the oxygen-production warning.
+Solution: Hardened `Tools/OutpostFailSafeValidate.py` to enforce exact tooltip/log locId order, Narrative layer/text presence, declared trigger/suppress/commit refs, declared required-state refs, fallback risk order, fallback setFlag validity, all `outpost.*` tokens in JSON/prose, and the gas rule phrase `does not create oxygen`.
+Rejected Alternatives: Leaving semantic validation to human review; accepting count-only validation; moving the check into runtime quest code.
+Scalability potential: No player runtime impact. Low-tier runtime still receives static baked data only; High/Ultra presentation can build richer panels/log playback on top of the same validated IDs.
+Hardware Impact: 0 us player runtime. Offline Python validation only; no Unity hot path changed.

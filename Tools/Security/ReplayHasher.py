@@ -591,23 +591,30 @@ def _command_self_test(_: argparse.Namespace) -> int:
             )
             return 1
 
-    plain = (0x0123456789ABCDEF, 0x0F1E2D3C4B5A6978)
-    mask = derive_shuffle_mask(123456789, -987654321)
-    if mask != (0x0E72B33300EEB5F5, 0x1623468F605621EE):
-        print("SELFTEST_FAIL shuffle mask vector", file=sys.stderr)
+    signed_lane_vectors = {
+        0: "0000000000000000",
+        1: "0100000000000000",
+        -1: "ffffffffffffffff",
+        -987654321: "4f9721c5ffffffff",
+        -(1 << 63): "0000000000000080",
+        (1 << 63) - 1: "ffffffffffffff7f",
+    }
+    for value, expected_hex in signed_lane_vectors.items():
+        actual_hex = _pack_u64(value).hex()
+        if actual_hex != expected_hex:
+            print(
+                f"SELFTEST_FAIL signed lane value={value} expected={expected_hex} actual={actual_hex}",
+                file=sys.stderr,
+            )
+            return 1
+
+    lane_roundtrip = (0x0123456789ABCDEF, 0xFEDCBA9876543210)
+    lane_hex = lanes_to_le_hex(lane_roundtrip[0], lane_roundtrip[1])
+    if parse_lanes(lane_hex) != lane_roundtrip:
+        print("SELFTEST_FAIL lanes little-endian hex roundtrip", file=sys.stderr)
         return 1
 
-    shuffled = shuffle_hash128(plain[0], plain[1], 123456789, -987654321)
-    if shuffled != (0x3D47D9522515E068, 0x64F5AECCAC312258):
-        print("SELFTEST_FAIL shuffle vector", file=sys.stderr)
-        return 1
-
-    recovered = unshuffle_hash128(shuffled[0], shuffled[1], 123456789, -987654321)
-    if recovered != plain:
-        print("SELFTEST_FAIL shuffle inverse", file=sys.stderr)
-        return 1
-
-    master = compute_master_state_hash(
+    master_preimage = build_master_preimage(
         0x48454354,
         0x000A,
         0x07,
@@ -623,14 +630,140 @@ def _command_self_test(_: argparse.Namespace) -> int:
         123456789,
         -987654321,
     )
-    if master != (
-        0x82C250ACAADCFCEE,
-        0x750FEB3BE2F001A7,
-        0x32C38E7EA8C9246D,
-        0x8CB2B6D20A988126,
-    ):
-        print("SELFTEST_FAIL master hash vector", file=sys.stderr)
+    expected_master_preimage_hex = (
+        "4838534156455f4d41535445525f5631544345480a00070c5634123d8f010000"
+        "efbeadde2500000000040000480000000010000000200000efcdab8967452301"
+        "15cd5b07000000004f9721c5ffffffff"
+    )
+    if len(master_preimage) != 80 or master_preimage.hex() != expected_master_preimage_hex:
+        print("SELFTEST_FAIL master preimage bytes", file=sys.stderr)
         return 1
+
+    plain = (0x0123456789ABCDEF, 0x0F1E2D3C4B5A6978)
+    shuffle_mask_lo_preimage = SHUFFLE_DOMAIN_LO + _pack_u64(123456789) + _pack_u64(-987654321)
+    expected_shuffle_mask_lo_preimage_hex = (
+        "4838534156455f53485546464c455f4c4f5f563115cd5b07000000004f9721c5ffffffff"
+    )
+    if (
+        len(shuffle_mask_lo_preimage) != 36
+        or shuffle_mask_lo_preimage.hex() != expected_shuffle_mask_lo_preimage_hex
+    ):
+        print("SELFTEST_FAIL shuffle mask lo preimage bytes", file=sys.stderr)
+        return 1
+
+    mask = derive_shuffle_mask(123456789, -987654321)
+    shuffle_mask_hi_preimage = (
+        SHUFFLE_DOMAIN_HI
+        + _pack_u64(-987654321)
+        + _pack_u64(123456789)
+        + _pack_u64(mask[0])
+    )
+    expected_shuffle_mask_hi_preimage_hex = (
+        "4838534156455f53485546464c455f48495f56314f9721c5ffffffff15cd5b0700000000"
+        "f5b5ee0033b3720e"
+    )
+    if (
+        len(shuffle_mask_hi_preimage) != 44
+        or shuffle_mask_hi_preimage.hex() != expected_shuffle_mask_hi_preimage_hex
+    ):
+        print("SELFTEST_FAIL shuffle mask hi preimage bytes", file=sys.stderr)
+        return 1
+
+    if mask != (0x0E72B33300EEB5F5, 0x1623468F605621EE):
+        print("SELFTEST_FAIL shuffle mask vector", file=sys.stderr)
+        return 1
+
+    shuffled = shuffle_hash128(plain[0], plain[1], 123456789, -987654321)
+    if shuffled != (0x3D47D9522515E068, 0x64F5AECCAC312258):
+        print("SELFTEST_FAIL shuffle vector", file=sys.stderr)
+        return 1
+
+    recovered = unshuffle_hash128(shuffled[0], shuffled[1], 123456789, -987654321)
+    if recovered != plain:
+        print("SELFTEST_FAIL shuffle inverse", file=sys.stderr)
+        return 1
+
+    rotate_source = 0x0123456789ABCDEF0F1E2D3C4B5A6978
+    rotate_vectors = {
+        0: 0x0123456789ABCDEF0F1E2D3C4B5A6978,
+        1: 0x02468ACF13579BDE1E3C5A7896B4D2F0,
+        63: 0x878F169E25AD34BC0091A2B3C4D5E6F7,
+        64: 0x0F1E2D3C4B5A69780123456789ABCDEF,
+        65: 0x1E3C5A7896B4D2F002468ACF13579BDE,
+        127: 0x0091A2B3C4D5E6F7878F169E25AD34BC,
+    }
+    for shift, expected in rotate_vectors.items():
+        rotated = _rotl128(rotate_source, shift)
+        if rotated != expected:
+            print(
+                f"SELFTEST_FAIL rotl128 shift={shift} expected=0x{expected:032X} actual=0x{rotated:032X}",
+                file=sys.stderr,
+            )
+            return 1
+
+        recovered_rotate = _rotr128(rotated, shift)
+        if recovered_rotate != rotate_source:
+            print(
+                f"SELFTEST_FAIL rotr128 inverse shift={shift} expected=0x{rotate_source:032X} actual=0x{recovered_rotate:032X}",
+                file=sys.stderr,
+            )
+            return 1
+
+    master_vectors = (
+        (
+            "mixed_signed_sector",
+            (
+                0x48454354, 0x000A, 0x07, 0x0C, 0x0000018F3D123456,
+                0xDEADBEEF, 37, 1024, 72, 4096, 8192,
+                0x0123456789ABCDEF, 123456789, -987654321,
+            ),
+            (
+                0x82C250ACAADCFCEE, 0x750FEB3BE2F001A7,
+                0x32C38E7EA8C9246D, 0x8CB2B6D20A988126,
+            ),
+        ),
+        (
+            "zero_metadata",
+            (
+                0x48454354, 0x000A, 0x07, 0x00, 0,
+                0, 0, 0, 72, 72, 72,
+                0, 0, 0,
+            ),
+            (
+                0xDE3030DC92701D20, 0x61F632E4C94036E0,
+                0xD32D8C3FC40D9B2C, 0x32AD2AC782FBC2D2,
+            ),
+        ),
+        (
+            "max_signed_edges",
+            (
+                0x48454354, 0x000A, 0xFF, 0xFF, 0xFFFFFFFFFFFFFFFF,
+                0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
+                0xFFFFFFFFFFFFFFFF, -1, -(1 << 63),
+            ),
+            (
+                0xCB301BFADACAB4C0, 0xCD6F36F58F2C9958,
+                0x2BB872AE52FAE5E0, 0xCD689265F6679EB8,
+            ),
+        ),
+        (
+            "opposite_signed_lanes",
+            (
+                0x48454354, 0x000A, 0x01, 0x80, 0x8000000000000000,
+                0x80000000, 1, 2, 72, 128, 256,
+                0x8000000000000001, -(1 << 63), (1 << 63) - 1,
+            ),
+            (
+                0x9ABC26720E6046D4, 0xC384FAF183EB3129,
+                0xC3ECFA32D54764A9, 0x6657FAE4288EA743,
+            ),
+        ),
+    )
+    for name, args, expected in master_vectors:
+        master = compute_master_state_hash(*args)
+        if master != expected:
+            print(f"SELFTEST_FAIL master hash vector {name}", file=sys.stderr)
+            return 1
 
     print("SELFTEST_OK")
     return 0

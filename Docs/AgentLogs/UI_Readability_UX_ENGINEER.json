@@ -1,0 +1,46 @@
+{
+  "errors": [],
+  "owner": "UX_ENGINEER",
+  "promptId": "HARDWARE_ADAPTIVE_UI_BAKER",
+  "results": [
+    {
+      "contrast_delta": 0.70938,
+      "ink_survival": 1.0,
+      "profile": "TOASTER_800P",
+      "status": "PASS",
+      "template_correlation": 0.94709
+    },
+    {
+      "contrast_delta": 0.69956,
+      "ink_survival": 1.0,
+      "profile": "LOW_900P",
+      "status": "PASS",
+      "template_correlation": 0.94715
+    },
+    {
+      "contrast_delta": 0.68915,
+      "ink_survival": 1.0,
+      "profile": "STANDARD_1080P",
+      "status": "PASS",
+      "template_correlation": 0.9491
+    },
+    {
+      "contrast_delta": 0.67811,
+      "ink_survival": 1.0,
+      "profile": "HIGH_1440P",
+      "status": "PASS",
+      "template_correlation": 0.95331
+    },
+    {
+      "contrast_delta": 0.7163,
+      "ink_survival": 1.0,
+      "profile": "GOD_MODE_4K",
+      "status": "PASS",
+      "template_correlation": 0.96886
+    }
+  ],
+  "sampleText": "O2 LOW",
+  "schema": "hecton8.ui_readability_report.v1",
+  "spec": "Docs/Design/HardwareAdaptiveUIScaler.json",
+  "status": "PASS"
+}

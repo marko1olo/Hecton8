@@ -1,0 +1,129 @@
+{
+  "absorptionAnchorsMInv": {
+    "blue470": 0.0106,
+    "green530": 0.0434,
+    "red700": 0.624
+  },
+  "axes": {
+    "depthMeters": {
+      "count": 256,
+      "max": 1500.0,
+      "min": 0.0,
+      "spacing": "linear"
+    },
+    "turbidityMultiplier": {
+      "count": 256,
+      "max": 2.5,
+      "min": 0.0,
+      "spacing": "linear"
+    },
+    "wavelengthNm": {
+      "count": 256,
+      "max": 700.0,
+      "min": 470.0,
+      "spacing": "linear"
+    }
+  },
+  "binaryHeader": "none",
+  "byteOrder": "little-endian",
+  "fogDensity": {
+    "axis": {
+      "depthMeters": {
+        "count": 1501,
+        "max": 1500,
+        "min": 0,
+        "step": 1
+      }
+    },
+    "baseFogDensityPerMeter": 0.0021,
+    "bytes": 3002,
+    "format": "float16",
+    "representativeSilt": 1.2165106659259257,
+    "shape": [
+      1501
+    ]
+  },
+  "fogDensityFile": "Water_Fog_Density_LUT.bin",
+  "inputSources": {
+    "giRelayLogsReadByCli": [
+      "Docs/Archive/Batch003/AgentLogs/LOG_RENDER_GI_RELAY_SYNC.md",
+      "Docs/Archive/Batch003/AgentLogs/Rationale_RENDER_GI_RELAY_SYNC.md",
+      "Docs/Archive/Batch003/Tasks/Status_RENDER_GI_RELAY_SYNC.md"
+    ],
+    "opticalAnchorNote": "Rounded visible-water absorption anchors for 470nm, 530nm, and 700nm; gameplay silt extinction is a presentation scalar, not particle simulation.",
+    "siltProfileGlob": "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/*.asset",
+    "underwaterFogProfile": "Assets/_Project/Data/Atmosphere/Profile_Underwater.asset"
+  },
+  "matrixFile": "Water_Extinction_Matrix.bin",
+  "matrixShape": [
+    256,
+    256,
+    256
+  ],
+  "packedTexture2D": {
+    "bytes": 33554432,
+    "format": "R16F",
+    "height": 4096,
+    "width": 4096
+  },
+  "previewFile": "Water_Extinction_GradientPreview.png",
+  "scalarFormat": "float16",
+  "schema": "H8.WaterExtinctionMatrix.v1",
+  "selfAudit": {
+    "previewTurbidity": 1.34,
+    "redAt500mRequirement": "exactly 0.0000 after float16 quantization",
+    "redTransmittanceAt10m": 0.0019502639770507812,
+    "redTransmittanceAt500m": 0.0,
+    "referenceChecks": [
+      {
+        "appliedCheck": "Red wavelengths are filtered early underwater; preview and LUT keep red below visible persistence after 10m.",
+        "source": "NOAA Ocean Explorer ocean color guidance",
+        "url": "https://oceanexplorer.noaa.gov/ocean-fact/red-color/"
+      },
+      {
+        "appliedCheck": "Preserve the 1D depth-palette/fog-global visual fake path instead of runtime volumetric GI.",
+        "source": "RENDER_GI_RELAY_SYNC batch logs",
+        "url": "Docs/Archive/Batch003/AgentLogs/LOG_RENDER_GI_RELAY_SYNC.md"
+      }
+    ],
+    "status": "PASS"
+  },
+  "sha256": {
+    "Water_Extinction_GradientPreview.png": "D8B5956C9CAB5C900CE511D9D87A06BDF18ACCDCDCFCF6EB0237C1471B53971A",
+    "Water_Extinction_Hecton_CoreLit_Snippet.hlsl": "2D004C331CE98E21B3FC5CE04C5BE00EBDF2A94C16A618A3E7F4ED398FBCDC9E",
+    "Water_Extinction_Matrix.bin": "2788C8F1591E2F036392231883668E363675D164690005FF5DF3FBF8AD5EDB67",
+    "Water_Fog_Density_LUT.bin": "BA07352B1F26C830681282E87E6BA18FA584D1AB3EFCF2ACF6E1BC9110638D56"
+  },
+  "shaderSnippetFile": "Water_Extinction_Hecton_CoreLit_Snippet.hlsl",
+  "siltExtinctionAnchorsMInv": {
+    "blue470": 0.012,
+    "green530": 0.0105,
+    "red700": 0.009
+  },
+  "siltProfileScan": {
+    "count": 216,
+    "firstFiles": [
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_001_01_Archipelago_Needles.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_001_North_01_Archipelago_Needles.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_002_01_Mesa_Plateaus.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_002_South_01_Mesa_Plateaus.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_003_01_The_Granite_Spine.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_003_East_01_The_Granite_Spine.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_004_01_The_Silt_Tongue.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_004_West_01_The_Silt_Tongue.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_005_02_Sea_Stack_Forest.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_005_North_02_Sea_Stack_Forest.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_006_02_White_Alabaster_Pools.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_006_South_02_White_Alabaster_Pools.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_007_02_The_Tectonic_Chute.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_007_East_02_The_Tectonic_Chute.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_008_02_Sand_Fan_Deltas.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_008_West_02_Sand_Fan_Deltas.asset"
+    ],
+    "max": 1.67621359,
+    "mean": 1.2165106659259257,
+    "min": 0.55,
+    "sourceGlob": "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/*.asset"
+  },
+  "status": "OPTICS CALCULATED"
+}

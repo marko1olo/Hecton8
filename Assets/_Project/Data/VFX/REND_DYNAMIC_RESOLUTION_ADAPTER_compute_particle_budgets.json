@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 1,
+  "status": "VFX BUDGETED",
+  "promptId": "VFX_PARTICLE_LOD_PARAMETERIZER",
+  "agentIdentity": "VFX_TECHNICAL_ARTIST",
+  "targetConsumer": "REND_DYNAMIC_RESOLUTION_ADAPTER",
+  "runtimeCatalog": "Assets/_Project/Scripts/VFX/VfxComputeParticleBudgetCatalog.cs",
+  "runtimeConsumers": [
+    "Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs",
+    "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl"
+  ],
+  "generatedDate": "2026-05-14",
+  "sourceMandates": [
+    ".agents-skills/REND_VFX_Fluid_Aesthetics_Compute_Particles.txt",
+    ".agents-skills/GPU_Compute_Kernels_Kernels_Optimization_MX350.txt",
+    ".agents-skills/GPU_Compute_Warp_Sizing_Mobile.txt",
+    ".agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt",
+    ".agents-skills/OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt",
+    ".agents-skills/REND_Shader_Noir_Aesthetics_Dithering_Fog.txt",
+    ".agents-skills/REND_URP_Graphics_HotPath_Optimization_HLOD.txt",
+    ".agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt"
+  ],
+  "computeSafety": {
+    "mx350MaxThreadsPerDispatch": 1048576,
+    "defaultThreadsPerGroup": 64,
+    "mx350SoftMaxGroupsPerDispatch": 512,
+    "noParticleShadowCasting": true,
+    "shadowTapsMeaning": "screen-space/depth/fog occlusion taps only; particle shadow casters stay disabled",
+    "dispatchRule": "dispatch each pool separately when a tier would exceed 512 total groups on MX350"
+  },
+  "systemBitBindings": [
+    {
+      "bitIndex": 5,
+      "bitHex": "0x0000000000000020",
+      "name": "ParticleAdvection",
+      "effectWhenSet": "skip flow resample and turbulence; keep shader drift/impostor motion"
+    },
+    {
+      "bitIndex": 6,
+      "bitHex": "0x0000000000000040",
+      "name": "VolumetricFogHighRes",
+      "effectWhenSet": "cap particle occlusion taps to one and force wider step distance"
+    },
+    {
+      "bitIndex": 20,
+      "bitHex": "0x0000000000100000",
+      "name": "NonCriticalVfx",
+      "effectWhenSet": "disable bubbles and debris emit requests; retain reduced marine snow impostor field"
+    }
+  ],
+  "pressureGatePolicy": [
+    {
+      "pressureLevel": 0,
+      "name": "CLEAR",
+      "forceBudgetTier": "selected",
+      "disableMaskHex": "0x0000000000000000"
+    },
+    {
+      "pressureLevel": 1,
+      "name": "SACRIFICE_LEVEL_1",
+      "forceBudgetTier": "Mid",
+      "disableMaskHex": "0x0000000000000020"
+    },
+    {
+      "pressureLevel": 2,
+      "name": "SACRIFICE_LEVEL_2",
+      "forceBudgetTier": "Low",
+      "disableMaskHex": "0x0000000000100060"
+    },
+    {
+      "pressureLevel": 3,
+      "name": "EMERGENCY_LEVEL_3",
+      "forceBudgetTier": "Low",
+      "disableMaskHex": "0x0000000000100060",
+      "emergencyMarineSnowMultiplier": 0.5
+    }
+  ],
+  "tierBudgets": [
+    {
+      "tier": "Low",
+      "hardwareTarget": "MX350 / toaster path",
+      "particleCount": 4096,
+      "marineSnowCount": 3584,
+      "bubbleCount": 384,
+      "debrisCount": 128,
+      "stepDistanceMeters": 0.4,
+      "shadowTaps": 0,
+      "flowResampleFrames": 0,
+      "depthCollision": false,
+      "debrisVerlet": false,
+      "turbulence": false,
+      "visualMode": "sprite impostor drift and shader wobble",
+      "dispatchGroupsAt64Threads": 64,
+      "mx350ThreadAudit": "4096 threads, 64 groups, under 1048576 thread limit and 512 group soft cap"
+    },
+    {
+      "tier": "Mid",
+      "hardwareTarget": "GTX 1060 class",
+      "particleCount": 16384,
+      "marineSnowCount": 14336,
+      "bubbleCount": 1536,
+      "debrisCount": 512,
+      "stepDistanceMeters": 0.25,
+      "shadowTaps": 1,
+      "flowResampleFrames": 8,
+      "depthCollision": true,
+      "debrisVerlet": true,
+      "turbulence": false,
+      "visualMode": "depth-fade compute particles with coarse flow",
+      "dispatchGroupsAt64Threads": 256,
+      "mx350ThreadAudit": "16384 threads, 256 groups, under 1048576 thread limit and 512 group soft cap"
+    },
+    {
+      "tier": "High",
+      "hardwareTarget": "RTX 2060 / RTX 3060 class",
+      "particleCount": 32768,
+      "marineSnowCount": 28672,
+      "bubbleCount": 3072,
+      "debrisCount": 1024,
+      "stepDistanceMeters": 0.16,
+      "shadowTaps": 2,
+      "flowResampleFrames": 4,
+      "depthCollision": true,
+      "debrisVerlet": true,
+      "turbulence": true,
+      "visualMode": "full pool density except ultra reserve; accumulation and bubble wobble enabled",
+      "dispatchGroupsAt64Threads": 512,
+      "mx350ThreadAudit": "32768 threads, 512 groups, under 1048576 thread limit and at 512 group soft cap"
+    },
+    {
+      "tier": "Ultra",
+      "hardwareTarget": "RTX 3070+ / overkill path",
+      "particleCount": 37888,
+      "marineSnowCount": 32768,
+      "bubbleCount": 4096,
+      "debrisCount": 1024,
+      "stepDistanceMeters": 0.1,
+      "shadowTaps": 4,
+      "flowResampleFrames": 2,
+      "depthCollision": true,
+      "debrisVerlet": true,
+      "turbulence": true,
+      "visualMode": "canonical VFX pool ceiling with tighter stepping and richer fake occlusion",
+      "dispatchGroupsAt64Threads": 592,
+      "mx350ThreadAudit": "37888 total threads under 1048576; on MX350 split per pool: snow 512 groups, bubbles 64 groups, debris 16 groups"
+    }
+  ],
+  "marineSnowHalfCutVramModel": {
+    "baselineMarineSnowCount": 32768,
+    "cutMarineSnowCount": 16384,
+    "mandateBytesPerMarineSnowParticle": 48,
+    "singleBufferSavedBytes": 786432,
+    "singleBufferSavedMiB": 0.75,
+    "pingPongSavedBytes": 1572864,
+    "pingPongSavedMiB": 1.5,
+    "currentCanonical64ByteStructSingleBufferSavedMiB": 1.0,
+    "currentCanonical64ByteStructPingPongSavedMiB": 2.0
+  },
+  "hlslReadyBlueNoise4x4": {
+    "source": "Tools/NoiseBaker/GenerateBlueNoise.py generate_blue_noise(size=4, seed=0x4845384E, swaps=2048)",
+    "rankMatrix": [
+      [14, 8, 11, 13],
+      [0, 12, 2, 5],
+      [6, 10, 9, 15],
+      [1, 7, 4, 3]
+    ],
+    "byteMatrix": [
+      [236, 128, 182, 218],
+      [0, 200, 36, 90],
+      [108, 164, 146, 255],
+      [18, 127, 72, 54]
+    ],
+    "normalizedThresholdMatrix": [
+      [0.90625, 0.53125, 0.71875, 0.84375],
+      [0.03125, 0.78125, 0.15625, 0.34375],
+      [0.40625, 0.65625, 0.59375, 0.96875],
+      [0.09375, 0.46875, 0.28125, 0.21875]
+    ],
+    "hlslSnippet": "half HectonCoreLitBlueNoise4x4(float2 pixel) { uint2 pixel4 = (uint2)pixel & 3u; uint index = pixel4.x + pixel4.y * 4u; switch (index) { case 0u: return 0.90625h; case 1u: return 0.53125h; case 2u: return 0.71875h; case 3u: return 0.84375h; case 4u: return 0.03125h; case 5u: return 0.78125h; case 6u: return 0.15625h; case 7u: return 0.34375h; case 8u: return 0.40625h; case 9u: return 0.65625h; case 10u: return 0.59375h; case 11u: return 0.96875h; case 12u: return 0.09375h; case 13u: return 0.46875h; case 14u: return 0.28125h; default: return 0.21875h; } }"
+  },
+  "statusNote": "VFX BUDGETED; Unity runtime and GPU profiler verification are still pending."
+}

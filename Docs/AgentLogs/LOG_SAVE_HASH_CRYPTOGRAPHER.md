@@ -107,3 +107,303 @@ Cinematic Cheats used: None. Offline tooling correction only.
 Exact Microseconds saved: 0 runtime microseconds. The change prevents a false tooling failure before Unity import is available.
 
 Verification: `python -B Tools\Security\ValidateSaveMasterHashCSharp.py` returns `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=8`; `python -m py_compile Tools\Security\ReplayHasher.py Tools\Security\ValidateSaveMasterHashCSharp.py` passed; `python -B Tools\Security\ReplayHasher.py self-test` returned `SELFTEST_OK`.
+
+## 2026-05-14 - Expanded Static Guard And Roslyn Probe
+
+What was wrong: The static guard still under-counted the ABI sentinels. It only guarded two `SaveFileHeaderV10` offsets plus result lanes, while the actual header ABI has 15 fields.
+
+What was done: Expanded `ValidateSaveMasterHashCSharp.py` to verify all 21 manifest sentinels and exact `SaveFileHeaderV10` field order. Located Visual Studio Roslyn `csc.exe` and ran a direct parser-level compile probe against `SaveMasterHashV10.cs`.
+
+Cinematic Cheats used: None. Offline verification hardening only.
+
+Exact Microseconds saved: 0 runtime microseconds.
+
+Verification: `python -B Tools\Security\ValidateSaveMasterHashCSharp.py` returns `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21`. Direct Roslyn compile reached missing-reference diagnostics for `Hecton8.Core.Memory.Layout`, `Unity.Mathematics`, and `BinaryBlittableSafe`; no syntax diagnostics were emitted before those expected standalone-reference failures.
+
+## 2026-05-14 - Evidence Trail Self-Review
+
+What was wrong: `Rationale_SAVE_HASH_CRYPTOGRAPHER.md` had Decision 14 recorded after Decisions 15 and 16. The implementation evidence was intact, but the decision trail order was sloppy and unacceptable for batch handoff.
+
+What was done: Moved the parser-correction rationale into the correct numeric position after Decision 13 and before the expanded guard/Roslyn decisions. No runtime source was changed in this pass.
+
+Cinematic Cheats used: None. Documentation hygiene only.
+
+Exact Microseconds saved: 0 runtime microseconds.
+
+Verification: `python -m py_compile .\Tools\Security\ReplayHasher.py .\Tools\Security\ValidateSaveMasterHashCSharp.py` passed. `python -B .\Tools\Security\ReplayHasher.py self-test` returned `SELFTEST_OK`. `python -B .\Tools\Security\ValidateSaveMasterHashCSharp.py` returned `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21`.
+
+## 2026-05-14 - Header Forwarding Guard Upgrade
+
+What was wrong: The parity guard did not prove the `SaveFileHeaderV10` overload forwards only the intended non-circular fields. A future accidental inclusion of `HashHeader64` or `MasterStateHash*` could have passed the previous static check.
+
+What was done: Hardened `Tools/Security/ValidateSaveMasterHashCSharp.py` to validate exact 12-field forwarding order, circular-field exclusion, shuffled stored-lane assignment/comparison, Unity.Mathematics `uint2` lane assembly, and Python master preimage length.
+
+Cinematic Cheats used: None. Offline binary ABI validation only.
+
+Exact Microseconds saved: 0 runtime microseconds. The change prevents integrity drift; no gameplay path changed.
+
+Verification: `python -B .\Tools\Security\ValidateSaveMasterHashCSharp.py` returned `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12`. `python -B .\Tools\Security\ReplayHasher.py self-test` returned `SELFTEST_OK`. `python -m py_compile ...` is blocked by `[WinError 5]` while replacing a `.pyc` file in `Tools\Security\__pycache__`; AST syntax parsing without bytecode writes passed with `PY_AST_OK files=2`.
+
+## 2026-05-14 - Preimage Writer Sequence Guard
+
+What was wrong: The guard proved header overload forwarding, but did not prove the actual C# byte-writer order inside `BuildMasterPreimage`.
+
+What was done: Added extraction of the C# preimage write sequence and locked it to 15 canonical writes: domain, v10 header prefix/body fields, `HashPayload64`, `WorldSeed`, and `SectorHash`.
+
+Cinematic Cheats used: None. Offline binary ABI validation only.
+
+Exact Microseconds saved: 0 runtime microseconds. This prevents byte-order drift; no gameplay path changed.
+
+Verification: `python -B .\Tools\Security\ValidateSaveMasterHashCSharp.py` returned `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15`. `python -B .\Tools\Security\ReplayHasher.py self-test` returned `SELFTEST_OK`. AST syntax parsing returned `PY_AST_OK files=2`.
+
+## 2026-05-14 - Prompt Snapshot Preservation
+
+What was wrong: Latest XML re-extraction from `Docs\Tasks\CURRENT_BATCH.md` returned `PROMPT_NOT_FOUND`; the file has been replaced by a different batch and no longer contains `SAVE_HASH_CRYPTOGRAPHER`. First snapshot preservation used a compressed task summary, not the exact removed XML.
+
+What was done: Preserved the exact removed XML directive inside `Docs/Tasks/Status_SAVE_HASH_CRYPTOGRAPHER.md` using the removed block visible in `git diff -- Docs\Tasks\CURRENT_BATCH.md`. Did not revert `CURRENT_BATCH.md` because that change is outside my owned work and appears to belong to another active batch.
+
+Cinematic Cheats used: None. Evidence hygiene only.
+
+Exact Microseconds saved: 0 runtime microseconds.
+
+Verification: PowerShell regex extraction returned `PROMPT_NOT_FOUND`; `git diff -- Docs\Tasks\CURRENT_BATCH.md` shows a different batch replacing the earlier agent list.
+
+## 2026-05-14 - Preimage Cursor Offset Guard
+
+What was wrong: The guard proved C# preimage field order but not the `cursor += N` schedule. A wrong advance could silently shift bytes while preserving the same field names.
+
+What was done: Added extraction of the C# preimage cursor operation stream. The guard now locks 26 operations and proves the final preimage byte end is `80`.
+
+Cinematic Cheats used: None. Offline binary ABI validation only.
+
+Exact Microseconds saved: 0 runtime microseconds. This prevents save-hash ABI drift; no gameplay path changed.
+
+Verification: `python -B .\Tools\Security\ValidateSaveMasterHashCSharp.py` returned `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80`. `python -B .\Tools\Security\ReplayHasher.py self-test` returned `SELFTEST_OK`. AST syntax parsing returned `PY_AST_OK files=2`.
+
+## 2026-05-14 - Shuffle Mask Byte-Order Guard
+
+What was wrong: The parity guard checked shuffle domain strings but not the C# byte order for `WorldSeed`, `SectorHash`, and `maskLo` inside `DeriveShuffleMask`.
+
+What was done: Added extraction of the `DeriveShuffleMask` byte operation stream. The guard now locks 12 operations and proves the low/high mask preimage byte ends are `36/44`.
+
+Cinematic Cheats used: None. Offline binary ABI validation only.
+
+Exact Microseconds saved: 0 runtime microseconds. This prevents Python/Burst bit-shuffle drift; no gameplay path changed.
+
+Verification: `python -B .\Tools\Security\ValidateSaveMasterHashCSharp.py` returned `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44`. `python -B .\Tools\Security\ReplayHasher.py self-test` returned `SELFTEST_OK`. AST syntax parsing returned `PY_AST_OK files=2`.
+
+## 2026-05-14 - Rotate Edge Vector Hardening
+
+What was wrong: `ReplayHasher.py self-test` validated one shuffle/inverse vector but did not pin 128-bit rotate edge shifts. A future rotate regression at shift `64` or `127` could pass if the shuffle vector did not hit that branch.
+
+What was done: Added fixed `rotl128` vectors for shifts `0/1/63/64/65/127` and inverse `rotr128` validation for each shift.
+
+Cinematic Cheats used: None. Offline math validation only.
+
+Exact Microseconds saved: 0 runtime microseconds. This prevents replay-hash math drift; no gameplay path changed.
+
+Verification: `python -B .\Tools\Security\ReplayHasher.py self-test` returned `SELFTEST_OK`. `python -B .\Tools\Security\ValidateSaveMasterHashCSharp.py` returned `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44`. AST syntax parsing returned `PY_AST_OK files=2`.
+
+## 2026-05-14 - CSharp Rotate Branch Guard
+
+What was wrong: Python rotate edge vectors were pinned, but the C# parity guard did not lock the `Rotl128`/`Rotr128` branch formulas.
+
+What was done: Added static checks for the C# rotate branches covering shift `0`, shift `64`, `<64`, and `>64` lane formulas for both left and right rotation.
+
+Cinematic Cheats used: None. Offline math validation only.
+
+Exact Microseconds saved: 0 runtime microseconds. This prevents Burst-side bit-shuffle drift; no gameplay path changed.
+
+Verification: `python -B .\Tools\Security\ValidateSaveMasterHashCSharp.py` returned `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2`. `python -B .\Tools\Security\ReplayHasher.py self-test` returned `SELFTEST_OK`. AST syntax parsing returned `PY_AST_OK files=2`.
+
+## 2026-05-14 - External Compile Boundary Recheck
+
+What was wrong: Static validation is green, but Unity/C# compile/import proof is still externally blocked.
+
+What was done: Rechecked tool availability with longer timeouts. `dotnet` is not on PATH. Unity is not on PATH and `C:\Program Files\Unity\Hub\Editor` is absent. Visual Studio MSBuild exists, but `Hecton8.slnx` fails before source compilation because Unity-generated `.csproj` files are missing.
+
+Cinematic Cheats used: None. Verification boundary only.
+
+Exact Microseconds saved: 0 runtime microseconds.
+
+Verification: Direct MSBuild emitted `MSB3202` missing project-file errors from `Hecton8.slnx.metaproj`, including `Assembly-CSharp.csproj`, `Hecton8.Core.csproj`, `Unity.RenderPipelines.Universal.Runtime.csproj`, and many third-party project files. No source compile was reached.
+
+## 2026-05-15 - Little-Endian Primitive Writer Guard
+
+What was wrong: The parity guard proved C# preimage order and offsets, but did not prove the primitive `WriteU16`, `WriteU32`, and `WriteU64` helper bodies. A byte-swap inside one helper would corrupt every master-hash preimage while preserving the same field list.
+
+What was done: Hardened `Tools/Security/ValidateSaveMasterHashCSharp.py` with exact body checks for all three primitive little-endian writers. The guard now locks byte indexes and shift counts for 16-bit, 32-bit, and 64-bit serialization.
+
+Cinematic Cheats used: None. Offline binary ABI validation only.
+
+Exact Microseconds saved: 0 runtime microseconds. This prevents cross-platform save-hash drift; no gameplay path changed.
+
+Verification: `python -B .\Tools\Security\ValidateSaveMasterHashCSharp.py` returned `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3`. `python -B .\Tools\Security\ReplayHasher.py self-test` returned `SELFTEST_OK`. AST syntax parsing returned `PY_AST_OK files=2`. `git diff --check` passed with line-ending warnings only.
+
+## 2026-05-15 - Signed Lane Packing Self-Test
+
+What was wrong: Negative `WorldSeed` and `AUP.SectorHash` values depend on exact two's-complement little-endian lane bytes. The code masked those values correctly, but the oracle did not freeze the signed edge cases in self-test.
+
+What was done: Added fixed self-test vectors for `0`, `1`, `-1`, `-987654321`, `long.MinValue`, and `long.MaxValue`, plus a 128-bit little-endian lane hex roundtrip check.
+
+Cinematic Cheats used: None. Offline binary ABI validation only.
+
+Exact Microseconds saved: 0 runtime microseconds. This prevents signed-lane save-hash drift; no gameplay path changed.
+
+Verification: `python -B .\Tools\Security\ReplayHasher.py self-test` returned `SELFTEST_OK`. `python -B .\Tools\Security\ValidateSaveMasterHashCSharp.py` returned `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3`. AST syntax parsing returned `PY_AST_OK files=2`. `git diff --check` passed with line-ending warnings only.
+
+## 2026-05-15 - Hash64 Full-Lane Convention Guard
+
+What was wrong: `SaveMasterHashV10` has a local `Hash64` wrapper and existing `SaveBinaryStorage` also has `Hash64` plus an intentional low-lane `Hash32`. A future edit could accidentally collapse the V10 hash to `.x` while tests still looked like "XXH3 was called."
+
+What was done: Extended `Tools/Security/ValidateSaveMasterHashCSharp.py` to read `SaveBinaryStorage.cs` and validate that both full `Hash64` helpers assemble `((ulong)hash.y << 32) | hash.x`.
+
+Cinematic Cheats used: None. Offline binary ABI validation only.
+
+Exact Microseconds saved: 0 runtime microseconds. This prevents integrity-width drift; no gameplay path changed.
+
+Verification: `python -B .\Tools\Security\ValidateSaveMasterHashCSharp.py` returned `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2`. `python -B .\Tools\Security\ReplayHasher.py self-test` returned `SELFTEST_OK`. AST syntax parsing returned `PY_AST_OK files=2`. `git diff --check` passed with line-ending warnings only.
+
+## 2026-05-15 - Stackalloc Buffer Contract Guard
+
+What was wrong: The static guard only counted `stackalloc byte[` occurrences. That proved stack allocation style, but not the exact buffer capacities used for master preimage and shuffle-mask hashing.
+
+What was done: Hardened `Tools/Security/ValidateSaveMasterHashCSharp.py` to require the exact stack buffer declarations for `MasterHiHashBytes` and `ShuffleMaskHiBytes`.
+
+Cinematic Cheats used: None. Offline binary ABI validation only.
+
+Exact Microseconds saved: 0 runtime microseconds. This prevents buffer-contract drift; no gameplay path changed.
+
+Verification: `python -B .\Tools\Security\ValidateSaveMasterHashCSharp.py` returned `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2`. `python -B .\Tools\Security\ReplayHasher.py self-test` returned `SELFTEST_OK`. AST syntax parsing returned `PY_AST_OK files=2`. `git diff --check` passed with line-ending warnings only.
+
+## 2026-05-15 - Master Hash Edge Fixture Expansion
+
+What was wrong: `ReplayHasher.py self-test` pinned only one full `MasterStateHash` vector. That verified the mixed signed-sector case but did not lock zero metadata, all-max unsigned fields, or signed lane extremes.
+
+What was done: Replaced the single master vector with four frozen fixtures: mixed signed sector, zero metadata, max signed edges, and opposite signed lanes.
+
+Cinematic Cheats used: None. Offline binary ABI validation only.
+
+Exact Microseconds saved: 0 runtime microseconds. This prevents master-hash fixture blind spots; no gameplay path changed.
+
+Verification: `python -B .\Tools\Security\ReplayHasher.py self-test` returned `SELFTEST_OK`. `python -B .\Tools\Security\ValidateSaveMasterHashCSharp.py` returned `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2`. AST syntax parsing returned `PY_AST_OK files=2`. `git diff --check` passed with line-ending warnings only.
+
+## 2026-05-15 - Internal API Boundary Guard
+
+What was wrong: The V10 helper is intentionally isolated until Unity import/load verification exists. The static guard did not prevent a future edit from promoting the V10 header/helper into public API during the active batch.
+
+What was done: Extended `Tools/Security/ValidateSaveMasterHashCSharp.py` to require `SaveMasterHashV10Result`, `SaveFileHeaderV10`, and `SaveMasterHashV10` remain `internal`, and to reject public declarations for the header/helper.
+
+Cinematic Cheats used: None. Offline API boundary validation only.
+
+Exact Microseconds saved: 0 runtime microseconds. This prevents premature save ABI surface expansion; no gameplay path changed.
+
+Verification: `python -B .\Tools\Security\ValidateSaveMasterHashCSharp.py` returned `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3`. `python -B .\Tools\Security\ReplayHasher.py self-test` returned `SELFTEST_OK`. AST syntax parsing returned `PY_AST_OK files=2`. `git diff --check` passed with line-ending warnings only.
+
+## 2026-05-15 - Active Writer Isolation Guard
+
+What was wrong: Keeping V10 helper types internal did not by itself prevent the active save writer from accidentally switching to V10 before Unity import/load verification.
+
+What was done: Extended `Tools/Security/ValidateSaveMasterHashCSharp.py` to require `SaveBinaryStorage.CurrentVersion = 0x0009`, `CurrentHeaderSize = 56`, and no `SaveMasterHashV10`/`SaveFileHeaderV10` references in `SaveBinaryStorage.cs`.
+
+Cinematic Cheats used: None. Offline integration-boundary validation only.
+
+Exact Microseconds saved: 0 runtime microseconds. This prevents premature active save ABI mutation; no gameplay path changed.
+
+Verification: `python -B .\Tools\Security\ValidateSaveMasterHashCSharp.py` returned `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=2`. `python -B .\Tools\Security\ReplayHasher.py self-test` returned `SELFTEST_OK`. AST syntax parsing returned `PY_AST_OK files=2`. `git diff --check` passed with line-ending warnings only.
+
+## 2026-05-15 - Reusable XXH3 Reference Verifier
+
+What was wrong: The external comparison against Python `xxhash.xxh3_64_intdigest` existed only as a historical one-off command. That is weak evidence after context loss.
+
+What was done: Added `Tools/Security/VerifyReplayHasherReference.py`. It is separate from `ReplayHasher.py`, imports `xxhash` only from an explicit temporary path, compares 338 XXH3 vectors, and runs 128 shuffle inverse cases.
+
+Cinematic Cheats used: None. Offline reference validation only.
+
+Exact Microseconds saved: 0 runtime microseconds. This improves reproducibility of save-hash verification; no gameplay path changed.
+
+Verification: first run without `xxhash` correctly returned a missing optional dependency error. After temporary install to `.codex_tmp\xxhash_check`, `python -B .\Tools\Security\VerifyReplayHasherReference.py --xxhash-path .\.codex_tmp\xxhash_check --fuzz-count 128` returned `XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK xxh3=338 shuffle=128`. `python -B .\Tools\Security\ReplayHasher.py self-test` returned `SELFTEST_OK`. `python -B .\Tools\Security\ValidateSaveMasterHashCSharp.py` returned `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=2`. AST syntax parsing returned `PY_AST_OK files=3`. Temporary package directory was removed with workspace path guard (`XXHASH_TMP_REMOVED`).
+
+## 2026-05-15 - Reference Verifier Command Documentation
+
+What was wrong: The new external-reference verifier was discoverable in logs, but not in the stable save header design document where future agents will look first.
+
+What was done: Added the optional `xxhash` temporary install command and `VerifyReplayHasherReference.py` invocation to `Docs/Design/Save_Binary_Header.md`.
+
+Cinematic Cheats used: None. Documentation hardening only.
+
+Exact Microseconds saved: 0 runtime microseconds.
+
+Verification: Stable doc now lists the verifier command. Latest tool verification remains `SELFTEST_OK`, `PY_AST_OK files=3`, and `SAVE_MASTER_HASH_CSHARP_GUARD=PASS ... activeWriterSentinels=2`.
+
+## 2026-05-15 - Result Constructor Lane-Order Guard
+
+What was wrong: `BinaryLayoutManifest` verifies `SaveMasterHashV10Result` offsets, but not that the constructor assigns plain and stored lanes in canonical order.
+
+What was done: Extended `Tools/Security/ValidateSaveMasterHashCSharp.py` to validate the constructor assignments and the raw `Compute` overload's result construction call.
+
+Cinematic Cheats used: None. Offline ABI semantic validation only.
+
+Exact Microseconds saved: 0 runtime microseconds. This prevents lane-order corruption; no gameplay path changed.
+
+Verification: `python -B .\Tools\Security\ValidateSaveMasterHashCSharp.py` returned `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=2 resultCtor=4`. `python -B .\Tools\Security\ReplayHasher.py self-test` returned `SELFTEST_OK`. AST syntax parsing returned `PY_AST_OK files=3`. `git diff --check` passed with line-ending warnings only.
+
+## 2026-05-15 - Blit-Safe Attribute Static Guard
+
+What was wrong: Unity cold-boot validation would catch missing `[BinaryBlittableSafe]`, but the offline parity guard did not. Unity import is unavailable, so attribute drift needed a static guard.
+
+What was done: Extended `Tools/Security/ValidateSaveMasterHashCSharp.py` to require `[BinaryBlittableSafe]` paired with the packed `StructLayout` declarations for `SaveMasterHashV10Result` and `SaveFileHeaderV10`.
+
+Cinematic Cheats used: None. Offline ABI validation only.
+
+Exact Microseconds saved: 0 runtime microseconds. This prevents blit-safety attribute drift; no gameplay path changed.
+
+Verification: `python -B .\Tools\Security\ValidateSaveMasterHashCSharp.py` returned `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=2 resultCtor=4 blitAttrs=2`. `python -B .\Tools\Security\ReplayHasher.py self-test` returned `SELFTEST_OK`. AST syntax parsing returned `PY_AST_OK files=3`. `git diff --check` passed with line-ending warnings only.
+
+## 2026-05-15 - Master Preimage Byte Fixture
+
+What was wrong: Final master hash vectors were frozen, but the raw 80-byte preimage was not. That makes byte-order drift harder to diagnose.
+
+What was done: Added the exact mixed-case master preimage hex and length check to `ReplayHasher.py self-test`.
+
+Cinematic Cheats used: None. Offline byte-order validation only.
+
+Exact Microseconds saved: 0 runtime microseconds. This improves diagnostic precision; no gameplay path changed.
+
+Verification: `python -B .\Tools\Security\ReplayHasher.py self-test` returned `SELFTEST_OK`. `python -B .\Tools\Security\ValidateSaveMasterHashCSharp.py` returned `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=2 resultCtor=4 blitAttrs=2`. AST syntax parsing returned `PY_AST_OK files=3`. `git diff --check` passed with line-ending warnings only.
+
+## 2026-05-15 - Reference Verifier Path Pinning
+
+What was wrong: `VerifyReplayHasherReference.py` claimed the external `xxhash` oracle came from an explicit temp path, but the argument was optional. A globally installed `xxhash` could satisfy the proof and contaminate the result with developer machine state.
+
+What was done: Made `--xxhash-path` mandatory, verified the path exists, and added a containment check that rejects an imported `xxhash` module whose `__file__` is outside the resolved temp directory. Documented the hard requirement in `Docs/Design/Save_Binary_Header.md`.
+
+Cinematic Cheats used: None. Offline verification tooling only.
+
+Exact Microseconds saved: 0 runtime microseconds. This improves reproducibility and contamination resistance; no gameplay path changed.
+
+Verification: owned verification suite returned `PY_AST_OK files=3`, `SELFTEST_OK`, `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=2 resultCtor=4 blitAttrs=2`, `XXHASH_PATH_REQUIRED_GUARD=PASS`, `XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK xxh3=338 shuffle=128`, and `XXHASH_TMP_REMOVED`. `git diff --check` passed with line-ending warnings only.
+
+## 2026-05-15 - Reference Verifier Malformed Module Guard
+
+What was wrong: The new path containment check assumed an imported `xxhash` module has `__file__`. That is true for the official wheel, but a contaminated module object without `__file__` would fail through an uncontrolled exception path.
+
+What was done: Added an explicit missing-`__file__` guard in `verify_module_path()` so unverifiable modules fail cleanly with a controlled error.
+
+Cinematic Cheats used: None. Offline verification tooling only.
+
+Exact Microseconds saved: 0 runtime microseconds. This improves failure determinism; no gameplay path changed.
+
+Verification: full owned suite returned `PY_AST_OK files=3`, `SELFTEST_OK`, `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=2 resultCtor=4 blitAttrs=2`, `XXHASH_PATH_REQUIRED_GUARD=PASS`, `XXH3_REFERENCE_AND_SHUFFLE_FUZZ_OK xxh3=338 shuffle=128`, and `XXHASH_TMP_REMOVED`. Direct malformed-module probe returned `XXHASH_MODULE_FILE_GUARD=PASS`. `git diff --check` passed with line-ending warnings only.
+
+## 2026-05-15 - Shuffle Mask Preimage Byte Fixtures
+
+What was wrong: Shuffle mask output vectors were frozen, but the raw low/high mask preimage bytes were not. That makes lane-order drift harder to diagnose.
+
+What was done: Added exact low/high shuffle-mask preimage hex and length checks to `ReplayHasher.py self-test`.
+
+Cinematic Cheats used: None. Offline byte-order validation only.
+
+Exact Microseconds saved: 0 runtime microseconds. This improves diagnostic precision; no gameplay path changed.
+
+Verification: `python -B .\Tools\Security\ReplayHasher.py self-test` returned `SELFTEST_OK`. `python -B .\Tools\Security\ValidateSaveMasterHashCSharp.py` returned `SAVE_MASTER_HASH_CSHARP_GUARD=PASS domains=5 constants=9 manifestSentinels=21 headerForwarding=12 preimageWrites=15 preimageOps=26 preimageEnd=80 shuffleOps=12 shuffleEnds=36/44 rotGuards=2 endianWriters=3 hash64Helpers=2 stackallocBuffers=2 internalTypes=3 activeWriterSentinels=2 resultCtor=4 blitAttrs=2`. AST syntax parsing returned `PY_AST_OK files=3`. `git diff --check` passed with line-ending warnings only.

@@ -98,3 +98,69 @@ Relevant mandates loaded:
 - [x] Ran `python -m unittest Tools.AI_Sim.test_fauna_balance_sim -v` -> `5` tests, `OK`, final validation elapsed `1.672 s`.
 - [x] Ran `python -m py_compile Tools\AI_Sim\FaunaBalanceSim.py Tools\AI_Sim\test_fauna_balance_sim.py` and JSON parse validation -> pass.
 - [x] Removed generated `Tools\AI_Sim\__pycache__` after test execution.
+
+## Loop 11 - Non-Finite Artifact Guard
+
+- [x] Changed `write_json()` to use `json.dumps(..., allow_nan=False)` so simulator output cannot serialize `NaN`/`Infinity`.
+- [x] Added recursive non-finite number scan to `--check-artifacts` for constants, detailed report, and replicate validation JSON.
+- [x] Added negative regression test that injects `NaN` into a temporary constants file and expects `ARTIFACT_CHECK_FAILED`.
+- [x] Ran `python Tools\AI_Sim\FaunaBalanceSim.py --check-artifacts` -> `ARTIFACT_CHECK_PASSED`.
+- [x] Ran `python -m unittest Tools.AI_Sim.test_fauna_balance_sim -v` -> `6` tests, `OK`, final validation elapsed `0.446 s`.
+- [x] Ran `python -m py_compile Tools\AI_Sim\FaunaBalanceSim.py Tools\AI_Sim\test_fauna_balance_sim.py` and JSON parse validation -> pass.
+- [x] Removed generated `Tools\AI_Sim\__pycache__` after test execution.
+
+## Loop 12 - Selected Constant Range Guard
+
+- [x] Added `SELECTED_CONSTANT_RANGES` to `Tools/AI_Sim/FaunaBalanceSim.py`.
+- [x] `--check-artifacts` now validates selected constants for required keys, numeric type, finite values, and bounded ranges in both compact constants and detailed report.
+- [x] `load_selected_weights()` now raises `ValueError` for missing, non-numeric, non-finite, or out-of-range selected constants.
+- [x] Added regression test that corrupts both constants and report with `AggressionScalar=99.0`; checker must fail with `out of range`.
+- [x] Added regression test that corrupts `FearCurvePower=99.0`; `load_selected_weights()` must raise `ValueError`.
+- [x] Ran `python Tools\AI_Sim\FaunaBalanceSim.py --check-artifacts` -> `ARTIFACT_CHECK_PASSED`.
+- [x] Ran `python -m unittest Tools.AI_Sim.test_fauna_balance_sim -v` -> `8` tests, `OK`, final validation elapsed `0.647 s`.
+- [x] Ran `python -m py_compile Tools\AI_Sim\FaunaBalanceSim.py Tools\AI_Sim\test_fauna_balance_sim.py` and JSON parse validation -> pass.
+- [x] Removed generated `Tools\AI_Sim\__pycache__` after test execution.
+
+## Loop 13 - Artifact Header Contract Guard
+
+- [x] Prompt re-extraction review | Justification: `rg` scan shows current `Docs/Tasks/CURRENT_BATCH.md` no longer contains `FAUNA_BEHAVIOR_SIMULATOR`; continued from existing status/rationale artifacts instead of reading neighbor prompts | Alternatives Rejected: guessing from current neighboring prompts or switching agent identity | Estimate: 0 runtime microseconds.
+- [x] Added canonical artifact contract constants | Justification: moved schema/provenance/runtime-proof/species-target/report-path literals into named constants in `Tools/AI_Sim/FaunaBalanceSim.py` | Alternatives Rejected: repeating magic strings across export/check code | Estimate: 0 runtime microseconds; offline check only.
+- [x] Hardened `--check-artifacts` header validation | Justification: checker now validates `schemaVersion`, `generatedBy`, `evidenceClass`, `runtimeUnityProof`, species targets, root object type, and detailed report paths | Alternatives Rejected: accepting matching numeric constants while provenance or proof status drifts | Estimate: 0 runtime microseconds.
+- [x] Extended regression tests | Justification: added negative tests for schema drift, fake Unity verification, report-path drift, non-finite numbers, out-of-range constants, and bad selected-weight loads | Alternatives Rejected: happy-path-only testing | Estimate: 0 runtime microseconds.
+- [x] Fixed sandbox-safe test workspace | Justification: replaced `tempfile.TemporaryDirectory()` with deterministic workspace-local artifact directories and set `sys.dont_write_bytecode = True`; current sandbox denies writes inside Python temp dirs | Alternatives Rejected: OS temp usage and hidden bytecode-cache writes | Estimate: 0 runtime microseconds.
+- [x] Validation | Justification: ran `python -B -m unittest Tools.AI_Sim.test_fauna_balance_sim -v` -> `11` tests, `OK`, elapsed `2.812 s`; ran source `compile()` check -> `SOURCE_COMPILE_PASS`; ran `python -B Tools\AI_Sim\FaunaBalanceSim.py --check-artifacts` -> `ARTIFACT_CHECK_PASSED` | Alternatives Rejected: `py_compile` final gate because it fails on `.pyc` atomic replacement with `WinError 5` in this sandbox | Estimate: 0 runtime microseconds.
+- [x] Cleanup review | Justification: attempted safe cleanup of generated cache/test artifacts after resolving paths inside `C:\Hecton8`; deletion of `Tools\AI_Sim\__pycache__` and `Tools\__pycache__` is blocked by `WinError 5` filesystem permissions | Alternatives Rejected: broad destructive cleanup outside workspace | Estimate: 0 runtime microseconds; untracked cache folders remain PENDING FILESYSTEM CLEANUP.
+
+## Loop 14 - Replicate Contract Guard
+
+- [x] Added replicate weight comparison | Justification: `--check-artifacts` now compares replicate validation weights against selected constants for the keys actually used by repeat-seed validation | Alternatives Rejected: trusting replicate status alone while allowing validated weights to drift | Estimate: 0 runtime microseconds.
+- [x] Added replicate summary comparison | Justification: checker now compares `framesPerReplicate` and `replicates` between compact summary and detailed replicate report | Alternatives Rejected: comparing only `status`, `failureCount`, and population summary | Estimate: 0 runtime microseconds.
+- [x] Extended tests | Justification: added negative tests for replicate summary drift and replicate weight drift | Alternatives Rejected: manual-only inspection of replicate JSON | Estimate: 0 runtime microseconds.
+- [x] Validation | Justification: ran `python -B -m unittest Tools.AI_Sim.test_fauna_balance_sim -v` -> `13` tests, `OK`, elapsed `2.587 s`; source `compile()` -> `SOURCE_COMPILE_PASS`; `python -B Tools\AI_Sim\FaunaBalanceSim.py --check-artifacts` -> `ARTIFACT_CHECK_PASSED` | Alternatives Rejected: Dotnet/Unity verification because prompt remains Python-only | Estimate: 0 runtime microseconds.
+
+## Loop 15 - Original Task Evidence Guard
+
+- [x] Added task-evidence validation | Justification: `--check-artifacts` now verifies `heatmapTop10`, expected 1-bit radar noise cases, retinal-blind acoustic compensation, and quadratic-vs-linear fear evidence | Alternatives Rejected: relying on human JSON inspection for primary task evidence | Estimate: 0 runtime microseconds.
+- [x] Added million-frame summary validation | Justification: compact `millionFrameSummary` now compares frame count, score, population, and stability against the detailed report | Alternatives Rejected: comparing only frames and population | Estimate: 0 runtime microseconds.
+- [x] Hardened loader header validation | Justification: `load_selected_weights()` now rejects constants with bad status/header before converting weights | Alternatives Rejected: accepting any JSON with a `selectedConstants` object | Estimate: 0 runtime microseconds.
+- [x] Extended tests | Justification: added negative tests for missing heatmap evidence, noise evidence drift, retinal evidence drift, fear-curve evidence drift, million-frame score/stability drift, and bad loader header | Alternatives Rejected: happy-path-only artifact checking | Estimate: 0 runtime microseconds.
+- [x] Python cache hygiene | Justification: added standard Python cache ignore rules to `.gitignore` because `WinError 5` prevents deletion of generated `__pycache__` folders in this sandbox | Alternatives Rejected: repeated destructive cleanup attempts after permission denial | Estimate: 0 runtime microseconds.
+- [x] Validation | Justification: rerun `python -B -m unittest Tools.AI_Sim.test_fauna_balance_sim -v` -> `20` tests, `OK`, elapsed `5.311 s`; source `compile()` -> `SOURCE_COMPILE_PASS`; `python -B Tools\AI_Sim\FaunaBalanceSim.py --check-artifacts` -> `ARTIFACT_CHECK_PASSED`; JSON parse passed for compact, detailed, and replicate artifacts; `git diff --check` returned only LF-to-CRLF warnings | Alternatives Rejected: Dotnet/Unity verification because prompt remains Python-only | Estimate: 0 runtime microseconds.
+
+## Loop 16 - Sweet Spot and Run-Weight Contract
+
+- [x] Added heatmap sweet-spot validation | Justification: `--check-artifacts` now checks that `heatmapTop10[0]` uses the selected `aggressionScalar` and `fearScalar` | Alternatives Rejected: accepting heatmap evidence that no longer proves the exported sweet spot | Estimate: 0 runtime microseconds.
+- [x] Added million-frame run-weight validation | Justification: checker now compares `millionFrameRun.weights` against exported selected constants for all repeatable weight keys | Alternatives Rejected: trusting the compact summary without proving the final million-frame run used those constants | Estimate: 0 runtime microseconds.
+- [x] Extended tests | Justification: added negative tests for heatmap sweet-spot drift and million-frame weight drift | Alternatives Rejected: relying on code review only for these evidence links | Estimate: 0 runtime microseconds.
+- [x] Validation | Justification: ran `python -B -m unittest Tools.AI_Sim.test_fauna_balance_sim -v` -> `22` tests, `OK`, elapsed `2.822 s`; source `compile()` -> `SOURCE_COMPILE_PASS`; `python -B Tools\AI_Sim\FaunaBalanceSim.py --check-artifacts` -> `ARTIFACT_CHECK_PASSED` | Alternatives Rejected: Dotnet/Unity verification because prompt remains Python-only | Estimate: 0 runtime microseconds.
+
+## Loop 17 - Million-Frame Timeline Guard
+
+- [x] Added sample timeline validation | Justification: `--check-artifacts` now verifies `millionFrameRun.samples` is a list with `101` samples, starts at frame `0`, ends at frame `1000000`, and is strictly increasing | Alternatives Rejected: trusting score/population without timeline evidence for prey-vs-predator tracking | Estimate: 0 runtime microseconds.
+- [x] Extended tests | Justification: added negative tests for million-frame sample truncation and sample frame-order drift | Alternatives Rejected: manual inspection of the detailed report timeline | Estimate: 0 runtime microseconds.
+- [x] Validation | Justification: ran `python -B -m unittest Tools.AI_Sim.test_fauna_balance_sim -v` -> `24` tests, `OK`, elapsed `3.253 s`; source `compile()` -> `SOURCE_COMPILE_PASS`; `python -B Tools\AI_Sim\FaunaBalanceSim.py --check-artifacts` -> `ARTIFACT_CHECK_PASSED` | Alternatives Rejected: Dotnet/Unity verification because prompt remains Python-only | Estimate: 0 runtime microseconds.
+
+## Loop 18 - Final Cleanup and Evidence Rerun
+
+- [x] Generated artifact cleanup | Justification: after filesystem permissions changed, removed `Tools\AI_Sim\__pycache__`, `Tools\__pycache__`, and `Temp\FaunaBalanceSimTests` using resolved-path workspace checks | Alternatives Rejected: leaving generated cache clutter after permission wall was gone | Estimate: 0 runtime microseconds.
+- [x] Final validation rerun | Justification: ran `python -B -m unittest Tools.AI_Sim.test_fauna_balance_sim -v` -> `24` tests, `OK`, elapsed `8.199 s`; source `compile()` -> `SOURCE_COMPILE_PASS`; `python -B Tools\AI_Sim\FaunaBalanceSim.py --check-artifacts` -> `ARTIFACT_CHECK_PASSED`; JSON parse passed for compact constants, detailed report, and replicate report | Alternatives Rejected: Dotnet/Unity verification because prompt remains Python-only | Estimate: 0 runtime microseconds.

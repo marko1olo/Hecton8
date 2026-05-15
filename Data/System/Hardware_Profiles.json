@@ -1,0 +1,408 @@
+{
+  "schemaVersion": 1,
+  "status": "PROFILES BAKED",
+  "bakedDate": "2026-05-14",
+  "ownerPromptId": "H8_HARDWARE_TIER_MATRIX_BKR",
+  "domain": "Echelon1.ScalabilityDictator.Hardware",
+  "layout": "cold_boot_profile_rows",
+  "stableHashAlgorithm": "FNV1A32_ASCII",
+  "profileCount": 4,
+  "units": {
+    "VramLimit": "megabytes",
+    "CpuLaneTokenRate": "tokens_per_second",
+    "CpuLaneTokenUnit": "50_microseconds_per_token",
+    "RenderScale": "native_resolution_fraction",
+    "TextureMipBias": "global_streaming_mip_offset",
+    "SystemStress": "normalized_0_to_1"
+  },
+  "guardThresholds": {
+    "VramWarningUsedRatio": 0.9,
+    "VramCriticalUsedRatio": 0.95,
+    "VramCriticalAction": "force_mip_minus_2_all_streaming_textures",
+    "FrameThrottleMs": 25.0,
+    "MainThreadHardCapMs": 12.0,
+    "HotSystemSuspiciousMs": 0.1
+  },
+  "systemHealthIndex": {
+    "signalContract": "SystemHealthIndexSignal",
+    "healthFormula": "Health01 = 1.0 - SystemStress",
+    "pressureFormula": "Pressure01 = SystemStress",
+    "stressInputs": [
+      "FrameTimeTrend",
+      "VramUsedRatio",
+      "SystemRamUsedRatio",
+      "Thermal01",
+      "BatteryPressure01",
+      "CpuLaneDebtRatio"
+    ],
+    "hysteresisRule": "Release requires SystemStress <= activeThreshold - ReleaseHysteresis for RestoreStableFrames.",
+    "restoreStableFrames": 180,
+    "stressModel": {
+      "FrameTimeTrendRatioWeight": 0.35,
+      "VramUsedRatioWeight": 0.25,
+      "SystemRamUsedRatioWeight": 0.15,
+      "Thermal01Weight": 0.15,
+      "BatteryPressure01Weight": 0.05,
+      "CpuLaneDebtRatioWeight": 0.05,
+      "ClampMin": 0.0,
+      "ClampMax": 1.0
+    }
+  },
+  "vasoconstrictLevels": [
+    {
+      "level": 0,
+      "name": "CLEAR",
+      "maskHex": "0x0000000000000000",
+      "systemsSacrificed": []
+    },
+    {
+      "level": 1,
+      "name": "SACRIFICE_LEVEL_1",
+      "maskHex": "0x0000000000000070",
+      "systemsSacrificed": [
+        "SecondaryCaustics",
+        "ParticleAdvection",
+        "VolumetricFogHighRes"
+      ]
+    },
+    {
+      "level": 2,
+      "name": "SACRIFICE_LEVEL_2",
+      "maskHex": "0x00000000002007F0",
+      "systemsSacrificed": [
+        "SecondaryCaustics",
+        "ParticleAdvection",
+        "VolumetricFogHighRes",
+        "DistantFaunaSteering",
+        "ProceduralSway",
+        "IKBracing",
+        "SSR",
+        "BoidBrain",
+        "NonCriticalVfx"
+      ]
+    },
+    {
+      "level": 3,
+      "name": "EMERGENCY_LEVEL_3",
+      "maskHex": "0x0000000000F017F0",
+      "systemsSacrificed": [
+        "SecondaryCaustics",
+        "ParticleAdvection",
+        "VolumetricFogHighRes",
+        "DistantFaunaSteering",
+        "ProceduralSway",
+        "IKBracing",
+        "SSR",
+        "BoidBrain",
+        "NonCriticalVfx",
+        "FoveatedSimulationTier3",
+        "SlowTick2Hz",
+        "TimeDilation08"
+      ]
+    }
+  ],
+  "profileTable": {
+    "profileId": [
+      "PC_High",
+      "SteamDeck_Mid",
+      "Quest2_Low",
+      "Quest3_LowPlus"
+    ],
+    "profileStableHash32": [
+      3185528513,
+      1431334735,
+      1866702492,
+      609515315
+    ],
+    "profilePlatformClass": [
+      "PC_DISCRETE_HIGH",
+      "STEAMOS_HANDHELD_UMA",
+      "ANDROID_XR_UMA",
+      "ANDROID_XR_UMA"
+    ],
+    "profileTargetFps": [
+      120,
+      60,
+      72,
+      72
+    ],
+    "profileFrameBudgetMs": [
+      8.333,
+      16.667,
+      13.889,
+      13.889
+    ],
+    "profileSystemRamLimitMb": [
+      16384,
+      16384,
+      4096,
+      8192
+    ],
+    "profileSystemRamBudgetMb": [
+      12288,
+      8192,
+      3840,
+      5120
+    ],
+    "profileSystemRamSafetyReserveMb": [
+      4096,
+      8192,
+      256,
+      3072
+    ],
+    "profileVramLimitMb": [
+      8192,
+      4096,
+      1024,
+      1536
+    ],
+    "profileCpuLaneTokenRate": [
+      1440,
+      360,
+      216,
+      360
+    ],
+    "profileRenderScaleMilli": [
+      1000,
+      780,
+      720,
+      850
+    ],
+    "profileTextureMipBias": [
+      0,
+      1,
+      2,
+      1
+    ],
+    "profileVasoconstrictBeginSystemStress": [
+      0.78,
+      0.62,
+      0.52,
+      0.58
+    ],
+    "profileCriticalSystemStress": [
+      0.9,
+      0.78,
+      0.68,
+      0.74
+    ],
+    "profileEmergencySystemStress": [
+      0.97,
+      0.9,
+      0.82,
+      0.88
+    ],
+    "profileReleaseHysteresis": [
+      0.08,
+      0.08,
+      0.1,
+      0.09
+    ],
+    "profileVasoconstrictSystemStressRowMajor": [
+      0.0,
+      0.78,
+      0.9,
+      0.97,
+      0.0,
+      0.62,
+      0.78,
+      0.9,
+      0.0,
+      0.52,
+      0.68,
+      0.82,
+      0.0,
+      0.58,
+      0.74,
+      0.88
+    ],
+    "profileStressActionRenderScaleMilliRowMajor": [
+      920,
+      840,
+      720,
+      720,
+      680,
+      620,
+      680,
+      640,
+      580,
+      800,
+      740,
+      660
+    ],
+    "profileStressActionTextureMipBiasRowMajor": [
+      1,
+      1,
+      2,
+      1,
+      2,
+      3,
+      2,
+      3,
+      4,
+      1,
+      2,
+      3
+    ]
+  },
+  "profiles": [
+    {
+      "ProfileId": "PC_High",
+      "StableHash32": 3185528513,
+      "PlatformClass": "PC_DISCRETE_HIGH",
+      "TargetFps": 120,
+      "FrameBudgetMs": 8.333,
+      "SystemRamLimit": 16384,
+      "SystemRamBudget": 12288,
+      "SystemRamSafetyReserve": 4096,
+      "VramLimit": 8192,
+      "CpuLaneTokenRate": 1440,
+      "RenderScale": 1.0,
+      "TextureMipBias": 0,
+      "SHIThresholds": {
+        "VasoconstrictBeginSystemStress": 0.78,
+        "WarningSystemStress": 0.78,
+        "CriticalSystemStress": 0.9,
+        "EmergencySystemStress": 0.97,
+        "ReleaseHysteresis": 0.08
+      },
+      "VasoconstrictSystemStressByLevel": [
+        0.0,
+        0.78,
+        0.9,
+        0.97
+      ],
+      "StressActions": {
+        "Level1RenderScale": 0.92,
+        "Level2RenderScale": 0.84,
+        "Level3RenderScale": 0.72,
+        "Level1TextureMipBias": 1,
+        "Level2TextureMipBias": 1,
+        "Level3TextureMipBias": 2
+      }
+    },
+    {
+      "ProfileId": "SteamDeck_Mid",
+      "StableHash32": 1431334735,
+      "PlatformClass": "STEAMOS_HANDHELD_UMA",
+      "TargetFps": 60,
+      "FrameBudgetMs": 16.667,
+      "SystemRamLimit": 16384,
+      "SystemRamBudget": 8192,
+      "SystemRamSafetyReserve": 8192,
+      "VramLimit": 4096,
+      "CpuLaneTokenRate": 360,
+      "RenderScale": 0.78,
+      "TextureMipBias": 1,
+      "SHIThresholds": {
+        "VasoconstrictBeginSystemStress": 0.62,
+        "WarningSystemStress": 0.62,
+        "CriticalSystemStress": 0.78,
+        "EmergencySystemStress": 0.9,
+        "ReleaseHysteresis": 0.08
+      },
+      "VasoconstrictSystemStressByLevel": [
+        0.0,
+        0.62,
+        0.78,
+        0.9
+      ],
+      "StressActions": {
+        "Level1RenderScale": 0.72,
+        "Level2RenderScale": 0.68,
+        "Level3RenderScale": 0.62,
+        "Level1TextureMipBias": 1,
+        "Level2TextureMipBias": 2,
+        "Level3TextureMipBias": 3
+      }
+    },
+    {
+      "ProfileId": "Quest2_Low",
+      "StableHash32": 1866702492,
+      "PlatformClass": "ANDROID_XR_UMA",
+      "TargetFps": 72,
+      "FrameBudgetMs": 13.889,
+      "SystemRamLimit": 4096,
+      "SystemRamBudget": 3840,
+      "SystemRamSafetyReserve": 256,
+      "VramLimit": 1024,
+      "CpuLaneTokenRate": 216,
+      "RenderScale": 0.72,
+      "TextureMipBias": 2,
+      "SHIThresholds": {
+        "VasoconstrictBeginSystemStress": 0.52,
+        "WarningSystemStress": 0.52,
+        "CriticalSystemStress": 0.68,
+        "EmergencySystemStress": 0.82,
+        "ReleaseHysteresis": 0.1
+      },
+      "VasoconstrictSystemStressByLevel": [
+        0.0,
+        0.52,
+        0.68,
+        0.82
+      ],
+      "StressActions": {
+        "Level1RenderScale": 0.68,
+        "Level2RenderScale": 0.64,
+        "Level3RenderScale": 0.58,
+        "Level1TextureMipBias": 2,
+        "Level2TextureMipBias": 3,
+        "Level3TextureMipBias": 4
+      }
+    },
+    {
+      "ProfileId": "Quest3_LowPlus",
+      "StableHash32": 609515315,
+      "PlatformClass": "ANDROID_XR_UMA",
+      "TargetFps": 72,
+      "FrameBudgetMs": 13.889,
+      "SystemRamLimit": 8192,
+      "SystemRamBudget": 5120,
+      "SystemRamSafetyReserve": 3072,
+      "VramLimit": 1536,
+      "CpuLaneTokenRate": 360,
+      "RenderScale": 0.85,
+      "TextureMipBias": 1,
+      "SHIThresholds": {
+        "VasoconstrictBeginSystemStress": 0.58,
+        "WarningSystemStress": 0.58,
+        "CriticalSystemStress": 0.74,
+        "EmergencySystemStress": 0.88,
+        "ReleaseHysteresis": 0.09
+      },
+      "VasoconstrictSystemStressByLevel": [
+        0.0,
+        0.58,
+        0.74,
+        0.88
+      ],
+      "StressActions": {
+        "Level1RenderScale": 0.8,
+        "Level2RenderScale": 0.74,
+        "Level3RenderScale": 0.66,
+        "Level1TextureMipBias": 1,
+        "Level2TextureMipBias": 2,
+        "Level3TextureMipBias": 3
+      }
+    }
+  ],
+  "selfAudit": {
+    "ColumnarParity": {
+      "ProfileCountMatches": true,
+      "RequiredProfileIdsPresent": true,
+      "RequiredOverrideKeysPresent": true,
+      "RowMajorStressLevelCount": 4,
+      "RowMajorStressActionLevelCount": 3,
+      "status": "PASS"
+    },
+    "Quest2_Low": {
+      "SystemRamLimit": 4096,
+      "SystemRamBudget": 3840,
+      "SystemRamSafetyReserve": 256,
+      "TotalCommittedPlusReserve": 4096,
+      "DoesNotExceed4Gb": true,
+      "status": "PASS"
+    }
+  }
+}

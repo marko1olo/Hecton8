@@ -113,3 +113,69 @@ Solution: Added `Tools/Hardware/ValidateHardwareProfileCatalog.py`. It validates
 Rejected Alternatives: Relying on prose/status evidence was rejected because C# constants can drift silently. Runtime JSON parsing was rejected again because this guard is offline and must not change boot/runtime allocation behavior.
 Scalability potential: Low/Handheld/Ultra profile data stays machine-checkable without adding runtime arrays or parsers. Ultra visual-overkill settings remain data-driven in JSON while the C# path stays constant/switch based.
 Hardware Impact: 0 us/frame. Offline validation only; it protects Steam Deck/Quest budget correctness before Unity import.
+
+Problem: `PlatformAdaptiveBudgetGovernor` treated every shared-memory platform as Deck-like and forced the baseline render scale to 0.78. That is too aggressive for Quest 3 when fixed foveation is available and no severe pressure flag is active.
+Solution: Added `profileBaselineRenderScaleMilli` to the flat JSON, mirrored it into `HardwareProfileCatalog`, and routed `PlatformAdaptiveBudgetGovernor` through those catalog constants. Quest 3-like shared-memory hardware gets 0.85, while Steam Deck-like and unknown UMA remain at 0.78. Existing critical battery, thermal, VRAM, and frame-pressure clamps still override to lower scales.
+Rejected Alternatives: Raising unknown UMA above 0.78 was rejected because unknown shared-memory devices lack sourced profile proof. Setting Quest 3 to 1.0 was rejected because the project target is sustained 72 FPS, not a proven max-refresh mode. Hardcoding the split only in the governor was rejected because it would drift from the profile JSON.
+Scalability potential: Quest 3 spends foveation savings on cleaner baseline resolution; Steam Deck remains profile-driven by texture budget and handheld render-scale clamps; top-tier remains unaffected.
+Hardware Impact: 0 us/frame hot path. Low-cadence branch only. Expected gain is less unnecessary Quest 3 resolution loss outside real pressure; exact GPU delta remains PENDING RUNTIME CAPTURE.
+
+Problem: The persistent validator still reported `constants=19` after render-scale constants were added.
+Solution: Changed `ValidateHardwareProfileCatalog.py` to compute the constant count from parsed C# constants and verified the new output as `constants=21`.
+Rejected Alternatives: Updating the printed number by hand was rejected because it would become stale again after the next catalog field.
+Scalability potential: Offline guard output now reflects real data shape, so future tier/profile expansion is less likely to hide drift.
+Hardware Impact: 0 us/frame. Offline validation only.
+
+Problem: `GameBootstrapper.ResolveTargetFrameRate` still returned the fixed default 60 FPS for every platform, leaving the Quest 3 sustained 72 FPS target unused.
+Solution: Routed target frame rate through `HardwareProfileCatalog` for explicit Quest 3 and Steam Deck signatures. Quest 3-like hardware now returns 72; Steam Deck-like hardware returns 60; unprofiled hardware keeps the existing 60.
+Rejected Alternatives: Using Quest 3 nominal 90 Hz or max 120 Hz was rejected because the profile declares 72 FPS as the sustained project budget. Raising unknown devices was rejected because no sourced hardware profile exists for them.
+Scalability potential: Quest 3 gets a profile-matched cadence while retaining dynamic resolution and foveation clamps. Steam Deck keeps the LCD 60 FPS baseline. Ultra/desktop routing remains unaffected.
+Hardware Impact: 0 us/frame. Bootstrap-only branch. Expected benefit is matching XR frame pacing to the profiled sustained target; exact runtime confirmation remains PENDING UNITY VERIFICATION.
+
+Problem: `GameBootstrapper.ConfigureJobWorkerThreads` still derived worker count from generic `processorCount - 1`, which ignores the catalog's device-specific scheduling budget and treats Quest 3 mobile cores like Steam Deck SMT threads.
+Solution: Routed bootstrap worker selection through profile-aware catalog constants: Quest 3 requests 4 workers, Steam Deck LCD requests 6 workers, and unknown hardware keeps the prior `processorCount - 1` fallback. The final value is still clamped by `JobsUtility.JobWorkerMaximumCount`.
+Rejected Alternatives: A universal `processorCount - 1` rule was rejected because ARM XR thermal cores and x86 SMT threads are not equivalent. Raising Quest 3 to all visible cores was rejected because no Unity profiler capture proves that extra workers help under XR thermal pressure.
+Scalability potential: Low/mobile devices avoid oversubscription stalls; Steam Deck preserves SMT headroom for Jobs; high-end unprofiled machines keep the existing processor-count path until a sourced profile exists.
+Hardware Impact: 0 us/frame. Bootstrap-only integer branch. Expected gain on low-end silicon is fewer worker scheduling stalls and less thermal contention; exact microseconds saved remain PENDING UNITY PROFILER CAPTURE.
+
+Problem: `GameBootstrapper.ResolveStreamingMipBudgetMb` still used broad quality-tier buckets, so profiled UMA hardware did not consume the texture budgets declared in `Data/Hardware/Profiles.json`.
+Solution: Routed Quest 3 and Steam Deck streaming mip budgets through `HardwareProfileCatalog`: Quest 3 returns `768 MB`, Steam Deck LCD returns `2048 MB`, and unknown hardware keeps the existing quality-tier switch.
+Rejected Alternatives: Keeping Quest 3 on the generic low-tier `512 MB` bucket was rejected because the profile already declares a sourced `768 MB` texture budget. Keeping Steam Deck on the MX350-style `768 MB` bucket was rejected because it wastes handheld visual quality while a `2048 MB` profile budget exists.
+Scalability potential: Quest 3 gets a controlled texture budget aligned with foveated/dynamic-resolution rendering; Steam Deck buys sharper texture residency; unknown UMA remains conservative until sourced.
+Hardware Impact: 0 us/frame. Bootstrap-only constant branch. Expected gain is higher visual fidelity on profiled devices without per-frame CPU cost; memory and frame impact remain PENDING UNITY MEMORY/PROFILER CAPTURE.
+
+Problem: VRAM pressure monitors still used MX350 default budgets and absolute MX350 pressure byte constants even after Quest 3 and Steam Deck profile budgets existed.
+Solution: Added `VRAMBudgetThresholds.RuntimeDefault` to derive total, texture, and render-target budgets from `HardwareProfileCatalog`. `VRAMMonitor` replaces only untouched default thresholds, preserving custom serialized budgets. `VRAMPressureMonitor` caches runtime thresholds in `Awake` and derives soft pressure, forced mip drop, restore, red-zone, and LOD aggression thresholds as fractions of the runtime budget.
+Rejected Alternatives: Changing `VRAMBudgetThresholds.Default` itself was rejected because MX350 remains the baseline default and editor/serialized consumers may expect it. Keeping absolute `1600/1800 MB` pressure thresholds was rejected because it falsely redlines Steam Deck before its profile budget is used.
+Scalability potential: Quest 3 gets pressure math tied to a 1536 MB graphics budget, 768 MB texture budget, and 240 MB RT budget; Steam Deck gets 4096/2048/384 MB budgets; unprofiled hardware keeps the MX350 baseline unless a custom serialized budget exists.
+Hardware Impact: Slow-tick scalar math only; 0 us/frame hot path. Expected gain is fewer false pressure downgrades on Steam Deck and more accurate Quest 3 memory pressure. Exact memory slope and frame impact remain PENDING UNITY MEMORY/PROFILER CAPTURE.
+
+Problem: `PlatformAdaptiveBudgetGovernor` still used a fixed 16.67 ms frame-pressure target, so Quest 3's 72 FPS profile could run late against its real 13.89 ms cadence without being treated as over budget.
+Solution: Added a profile-aware `ResolveTargetFrameTimeMs` path that derives Quest 3 and Steam Deck frame-pressure budgets from `HardwareProfileCatalog` target FPS constants. Added first-sample seeding so static reset does not inject the old 16.67 ms trend into Quest 3 pressure state.
+Rejected Alternatives: A universal 60 FPS pressure target was rejected because it contradicts the Quest 3 sustained target. Hardcoding a separate Quest millisecond literal was rejected because it would drift from the catalog FPS constant.
+Scalability potential: Quest 3 sheds pressure earlier to protect VR cadence; Steam Deck retains the LCD 60 FPS budget; unknown hardware keeps the existing 16.67 ms default.
+Hardware Impact: Low-cadence scalar math only; 0 us/frame hot path. Expected gain is fewer missed Quest 3 frame-pressure clamps and less startup false pressure. Exact frame-time impact remains PENDING UNITY PROFILER CAPTURE.
+
+Problem: A scene or prefab with an all-zero serialized `VRAMBudgetThresholds` struct would be preserved as a custom budget, making pressure utilization invalid.
+Solution: `VRAMBudgetThresholds.ResolveRuntimeBudget` now treats all-zero/unset budgets as runtime defaults, while still preserving any deliberate non-default budget values.
+Rejected Alternatives: Preserving zero thresholds was rejected because total budget zero disables meaningful utilization and can destabilize pressure response. Overwriting any partial custom budget was rejected because authoring may intentionally tune a subsystem budget.
+Scalability potential: Profile-aware defaults recover broken or stale instances on Quest 3 and Steam Deck without deleting valid custom budgets.
+Hardware Impact: 0 us/frame. Cold `Awake` branch only. Expected gain is correctness under stale serialized data; runtime impact remains PENDING UNITY VERIFICATION.
+
+Problem: Unity/.NET compile tools are unavailable in this workspace shell, so local verification cannot stop at "compile pending" without any structural check.
+Solution: Ran offline C# structural scanning over the changed runtime files for brace/string/comment balance and duplicate `using` declarations.
+Rejected Alternatives: Reporting compile success without a compiler was rejected. Treating a structural scan as equivalent to Unity compile was rejected; compile remains PENDING VERIFICATION.
+Scalability potential: None. This is verification hygiene.
+Hardware Impact: 0 us/runtime.
+
+Problem: The prompt requested Quest 3 and Steam Deck hardware tier JSONs plural, while the implementation relied on one aggregate `Profiles.json` catalog.
+Solution: Added flat per-device export JSONs for Quest 3 and Steam Deck LCD and extended the persistent validator to compare every split profile field, phase budget, and sacrifice threshold back to `Profiles.json`.
+Rejected Alternatives: Leaving only the aggregate file was rejected because handoff ambiguity remains. Maintaining unvalidated duplicate JSONs was rejected because drift would be worse than no split file.
+Scalability potential: Tooling can consume per-device handoff files while runtime continues to use the compact generated catalog and constants.
+Hardware Impact: 0 us/runtime. Data-only handoff artifacts.
+
+Problem: Split JSON validation initially raised a Python exception if the aggregate profile row or split field was missing, which is poor guard behavior.
+Solution: Changed missing rows and fields into explicit validation errors so CI/agents get actionable guard output.
+Rejected Alternatives: Keeping traceback-style failures was rejected because it slows batch triage.
+Scalability potential: None. Offline validation hygiene.
+Hardware Impact: 0 us/runtime.

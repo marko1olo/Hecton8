@@ -1,0 +1,436 @@
+{
+  "schemaVersion": 1,
+  "status": "ACOUSTIC_PROFILE_DATA_READY",
+  "ownerPromptId": "AUDIO_MATERIAL_SYNTHESIZER",
+  "domain": "Echelon8.DSPAcousticRadar.GranularSynthesis",
+  "units": {
+    "coefficients": "normalized_energy_fraction_sum_1",
+    "grainSizeMs": "milliseconds",
+    "jitterMs": "milliseconds",
+    "pitchRangeHz": "hertz",
+    "delayMs": "milliseconds",
+    "lowPassHz": "hertz",
+    "relativeSpeedMps": "meters_per_second",
+    "gain": "linear_amplitude_0_to_1"
+  },
+  "runtimeContract": {
+    "defaultPath": "deterministic_perceptual_fake",
+    "lowTier": "scalar_absorption_reflection_transmission_plus_lpf",
+    "middleTier": "scalar_material_echo_color_plus_denser_zone_updates",
+    "highTier": "hybrid_early_reflection_taps_native_spatializer",
+    "ultraTier": "7_1_or_binaural_detail_and_convolution_tail_after_profiler_proof",
+    "forbidden": [
+      "managed_audio_callbacks_for_synthesis",
+      "per_material_runtime_impulse_response_generation_on_mx350",
+      "unbounded_voice_sum_without_gain_ceiling",
+      "default_underwater_hrtf_convolution"
+    ],
+    "hotPathNotes": [
+      "Data is offline-authored and intended for cold import into native snapshots.",
+      "Runtime readers must clamp every scalar and publish via SPSC or typed NativeQueue lanes.",
+      "No string event lookup is required by this file."
+    ]
+  },
+  "materialProfiles": [
+    {
+      "id": "water_open",
+      "displayName": "Open Seawater",
+      "coefficients": { "absorption": 0.68, "reflection": 0.02, "transmission": 0.30 },
+      "bandAbsorption": { "low": 0.10, "mid": 0.44, "high": 0.88 },
+      "reflectionLowPassHz": 2200,
+      "echoSemantic": "SoftDiffuse",
+      "sonarColor": "dead_muffled",
+      "rt60Bias": 1.25
+    },
+    {
+      "id": "pressurized_air_pocket",
+      "displayName": "Pressurized Air Pocket",
+      "coefficients": { "absorption": 0.16, "reflection": 0.10, "transmission": 0.74 },
+      "bandAbsorption": { "low": 0.06, "mid": 0.12, "high": 0.22 },
+      "reflectionLowPassHz": 12000,
+      "echoSemantic": "HardSpecular",
+      "sonarColor": "dry_bright",
+      "rt60Bias": 0.72
+    },
+    {
+      "id": "steel_hull",
+      "displayName": "Riveted Steel Hull",
+      "coefficients": { "absorption": 0.10, "reflection": 0.72, "transmission": 0.18 },
+      "bandAbsorption": { "low": 0.05, "mid": 0.10, "high": 0.18 },
+      "reflectionLowPassHz": 8200,
+      "echoSemantic": "Metallic",
+      "sonarColor": "ringing_metal",
+      "rt60Bias": 0.86
+    },
+    {
+      "id": "titanium_bulkhead",
+      "displayName": "Titanium Bulkhead",
+      "coefficients": { "absorption": 0.08, "reflection": 0.78, "transmission": 0.14 },
+      "bandAbsorption": { "low": 0.04, "mid": 0.08, "high": 0.15 },
+      "reflectionLowPassHz": 9600,
+      "echoSemantic": "Metallic",
+      "sonarColor": "tight_bell",
+      "rt60Bias": 0.80
+    },
+    {
+      "id": "aluminum_panel",
+      "displayName": "Thin Aluminum Panel",
+      "coefficients": { "absorption": 0.14, "reflection": 0.62, "transmission": 0.24 },
+      "bandAbsorption": { "low": 0.06, "mid": 0.14, "high": 0.24 },
+      "reflectionLowPassHz": 7400,
+      "echoSemantic": "Metallic",
+      "sonarColor": "thin_sheet",
+      "rt60Bias": 0.74
+    },
+    {
+      "id": "glass_port",
+      "displayName": "Thick Glass Port",
+      "coefficients": { "absorption": 0.06, "reflection": 0.18, "transmission": 0.76 },
+      "bandAbsorption": { "low": 0.04, "mid": 0.08, "high": 0.12 },
+      "reflectionLowPassHz": 14000,
+      "echoSemantic": "HardSpecular",
+      "sonarColor": "clear_ping",
+      "rt60Bias": 0.60
+    },
+    {
+      "id": "reinforced_acrylic",
+      "displayName": "Reinforced Acrylic",
+      "coefficients": { "absorption": 0.10, "reflection": 0.22, "transmission": 0.68 },
+      "bandAbsorption": { "low": 0.07, "mid": 0.12, "high": 0.20 },
+      "reflectionLowPassHz": 11000,
+      "echoSemantic": "HardSpecular",
+      "sonarColor": "plastic_clear",
+      "rt60Bias": 0.66
+    },
+    {
+      "id": "basalt_rock",
+      "displayName": "Basalt Rock Face",
+      "coefficients": { "absorption": 0.22, "reflection": 0.68, "transmission": 0.10 },
+      "bandAbsorption": { "low": 0.10, "mid": 0.22, "high": 0.36 },
+      "reflectionLowPassHz": 6800,
+      "echoSemantic": "HardSpecular",
+      "sonarColor": "hard_stone",
+      "rt60Bias": 1.05
+    },
+    {
+      "id": "shale_sediment",
+      "displayName": "Layered Shale Sediment",
+      "coefficients": { "absorption": 0.56, "reflection": 0.24, "transmission": 0.20 },
+      "bandAbsorption": { "low": 0.24, "mid": 0.48, "high": 0.78 },
+      "reflectionLowPassHz": 2600,
+      "echoSemantic": "Porous",
+      "sonarColor": "crumbled_stone",
+      "rt60Bias": 1.18
+    },
+    {
+      "id": "sand_silt",
+      "displayName": "Suspended Sand and Silt",
+      "coefficients": { "absorption": 0.74, "reflection": 0.08, "transmission": 0.18 },
+      "bandAbsorption": { "low": 0.32, "mid": 0.70, "high": 0.94 },
+      "reflectionLowPassHz": 900,
+      "echoSemantic": "SoftDiffuse",
+      "sonarColor": "dead_muffle",
+      "rt60Bias": 1.45
+    },
+    {
+      "id": "coral_calcified",
+      "displayName": "Calcified Coral",
+      "coefficients": { "absorption": 0.48, "reflection": 0.32, "transmission": 0.20 },
+      "bandAbsorption": { "low": 0.18, "mid": 0.42, "high": 0.68 },
+      "reflectionLowPassHz": 2400,
+      "echoSemantic": "Biological",
+      "sonarColor": "porous_chatter",
+      "rt60Bias": 1.22
+    },
+    {
+      "id": "kelp_mass",
+      "displayName": "Dense Kelp Mass",
+      "coefficients": { "absorption": 0.82, "reflection": 0.05, "transmission": 0.13 },
+      "bandAbsorption": { "low": 0.22, "mid": 0.48, "high": 0.82 },
+      "reflectionLowPassHz": 950,
+      "echoSemantic": "Biological",
+      "sonarColor": "wet_fiber",
+      "rt60Bias": 1.36
+    },
+    {
+      "id": "rubber_gasket",
+      "displayName": "Aged Rubber Gasket",
+      "coefficients": { "absorption": 0.88, "reflection": 0.08, "transmission": 0.04 },
+      "bandAbsorption": { "low": 0.40, "mid": 0.72, "high": 0.96 },
+      "reflectionLowPassHz": 700,
+      "echoSemantic": "SoftDiffuse",
+      "sonarColor": "black_absorber",
+      "rt60Bias": 0.90
+    },
+    {
+      "id": "cable_bundle",
+      "displayName": "Cable Bundle",
+      "coefficients": { "absorption": 0.46, "reflection": 0.32, "transmission": 0.22 },
+      "bandAbsorption": { "low": 0.16, "mid": 0.36, "high": 0.72 },
+      "reflectionLowPassHz": 3100,
+      "echoSemantic": "Porous",
+      "sonarColor": "braided_click",
+      "rt60Bias": 0.96
+    },
+    {
+      "id": "ice_hydrate",
+      "displayName": "Methane Hydrate Ice",
+      "coefficients": { "absorption": 0.18, "reflection": 0.58, "transmission": 0.24 },
+      "bandAbsorption": { "low": 0.07, "mid": 0.18, "high": 0.31 },
+      "reflectionLowPassHz": 7600,
+      "echoSemantic": "HardSpecular",
+      "sonarColor": "brittle_crystal",
+      "rt60Bias": 0.92
+    },
+    {
+      "id": "ceramic_insulator",
+      "displayName": "White Ceramic Insulator",
+      "coefficients": { "absorption": 0.24, "reflection": 0.52, "transmission": 0.24 },
+      "bandAbsorption": { "low": 0.12, "mid": 0.24, "high": 0.34 },
+      "reflectionLowPassHz": 7000,
+      "echoSemantic": "HardSpecular",
+      "sonarColor": "dry_click",
+      "rt60Bias": 0.82
+    },
+    {
+      "id": "reactor_concrete",
+      "displayName": "Reactor Concrete",
+      "coefficients": { "absorption": 0.34, "reflection": 0.56, "transmission": 0.10 },
+      "bandAbsorption": { "low": 0.18, "mid": 0.30, "high": 0.58 },
+      "reflectionLowPassHz": 4300,
+      "echoSemantic": "Porous",
+      "sonarColor": "dense_block",
+      "rt60Bias": 1.08
+    },
+    {
+      "id": "flooded_fabric",
+      "displayName": "Flooded Fabric",
+      "coefficients": { "absorption": 0.91, "reflection": 0.03, "transmission": 0.06 },
+      "bandAbsorption": { "low": 0.52, "mid": 0.84, "high": 0.98 },
+      "reflectionLowPassHz": 520,
+      "echoSemantic": "SoftDiffuse",
+      "sonarColor": "wet_absorber",
+      "rt60Bias": 1.04
+    },
+    {
+      "id": "creature_cartilage",
+      "displayName": "Large Creature Cartilage",
+      "coefficients": { "absorption": 0.62, "reflection": 0.15, "transmission": 0.23 },
+      "bandAbsorption": { "low": 0.20, "mid": 0.52, "high": 0.86 },
+      "reflectionLowPassHz": 1600,
+      "echoSemantic": "Biological",
+      "sonarColor": "living_mass",
+      "rt60Bias": 1.30
+    },
+    {
+      "id": "methane_bubble_foam",
+      "displayName": "Methane Bubble Foam",
+      "coefficients": { "absorption": 0.66, "reflection": 0.18, "transmission": 0.16 },
+      "bandAbsorption": { "low": 0.14, "mid": 0.62, "high": 0.93 },
+      "reflectionLowPassHz": 1300,
+      "echoSemantic": "SoftDiffuse",
+      "sonarColor": "unstable_bubble",
+      "rt60Bias": 1.60
+    }
+  ],
+  "granularTextureRecipes": [
+    {
+      "id": "metal_stress",
+      "sourceMaterialIds": ["steel_hull", "titanium_bulkhead", "aluminum_panel"],
+      "grainSizeMs": { "low": 12.0, "middle": 24.0, "high": 38.0 },
+      "jitterMs": { "low": 2.0, "middle": 6.0, "high": 10.0 },
+      "pitchRangeHz": [55.0, 240.0],
+      "densityEventsPerSecond": { "low": 2.0, "middle": 10.0, "high": 28.0, "ultra": 44.0 },
+      "window": "triangle",
+      "filter": { "highPassHz": 35.0, "lowPassHz": 6200.0 },
+      "distortion01": 0.34,
+      "gainCeiling": 0.058
+    },
+    {
+      "id": "ice_cracking",
+      "sourceMaterialIds": ["ice_hydrate", "glass_port", "reinforced_acrylic"],
+      "grainSizeMs": { "low": 6.0, "middle": 14.0, "high": 28.0 },
+      "jitterMs": { "low": 8.0, "middle": 18.0, "high": 32.0 },
+      "pitchRangeHz": [320.0, 3200.0],
+      "densityEventsPerSecond": { "low": 0.4, "middle": 3.0, "high": 9.0, "ultra": 16.0 },
+      "window": "hann_like_triangle",
+      "filter": { "highPassHz": 120.0, "lowPassHz": 9800.0 },
+      "distortion01": 0.08,
+      "gainCeiling": 0.044
+    },
+    {
+      "id": "water_pressure",
+      "sourceMaterialIds": ["water_open", "methane_bubble_foam", "creature_cartilage"],
+      "grainSizeMs": { "low": 40.0, "middle": 95.0, "high": 180.0 },
+      "jitterMs": { "low": 24.0, "middle": 60.0, "high": 110.0 },
+      "pitchRangeHz": [18.0, 90.0],
+      "densityEventsPerSecond": { "low": 0.25, "middle": 1.6, "high": 5.5, "ultra": 10.0 },
+      "window": "slow_triangle",
+      "filter": { "highPassHz": 12.0, "lowPassHz": 1800.0 },
+      "distortion01": 0.18,
+      "gainCeiling": 0.052
+    }
+  ],
+  "sonarPingSignatures": [
+    {
+      "id": "small_fish",
+      "echoProfile": "high_pitch_short",
+      "carrierHz": 28000,
+      "durationMs": 18,
+      "tapDensity": 1,
+      "lowPassHz": 12000,
+      "amplitudeScalar": 0.16,
+      "materialId": "creature_cartilage"
+    },
+    {
+      "id": "schooling_fish_cloud",
+      "echoProfile": "high_scatter_cluster",
+      "carrierHz": 24000,
+      "durationMs": 42,
+      "tapDensity": 5,
+      "lowPassHz": 7800,
+      "amplitudeScalar": 0.24,
+      "materialId": "creature_cartilage"
+    },
+    {
+      "id": "medium_predator",
+      "echoProfile": "low_mid_flesh",
+      "carrierHz": 11500,
+      "durationMs": 90,
+      "tapDensity": 3,
+      "lowPassHz": 3600,
+      "amplitudeScalar": 0.36,
+      "materialId": "creature_cartilage"
+    },
+    {
+      "id": "alpha_leviathan_mass",
+      "echoProfile": "sub_bass_long_refusal",
+      "carrierHz": 38,
+      "durationMs": 1800,
+      "tapDensity": 12,
+      "lowPassHz": 900,
+      "amplitudeScalar": 0.72,
+      "materialId": "creature_cartilage"
+    },
+    {
+      "id": "base_module",
+      "echoProfile": "low_long_hard_edges",
+      "carrierHz": 4500,
+      "durationMs": 520,
+      "tapDensity": 6,
+      "lowPassHz": 8200,
+      "amplitudeScalar": 0.58,
+      "materialId": "steel_hull"
+    },
+    {
+      "id": "metal_wreck",
+      "echoProfile": "ringing_metal_tail",
+      "carrierHz": 6200,
+      "durationMs": 720,
+      "tapDensity": 8,
+      "lowPassHz": 7600,
+      "amplitudeScalar": 0.62,
+      "materialId": "steel_hull"
+    },
+    {
+      "id": "rock_wall",
+      "echoProfile": "hard_specular_stone",
+      "carrierHz": 9000,
+      "durationMs": 260,
+      "tapDensity": 4,
+      "lowPassHz": 6800,
+      "amplitudeScalar": 0.50,
+      "materialId": "basalt_rock"
+    },
+    {
+      "id": "coral_garden",
+      "echoProfile": "porous_chatter",
+      "carrierHz": 13000,
+      "durationMs": 190,
+      "tapDensity": 9,
+      "lowPassHz": 2400,
+      "amplitudeScalar": 0.32,
+      "materialId": "coral_calcified"
+    },
+    {
+      "id": "sediment_cloud",
+      "echoProfile": "dead_muffled",
+      "carrierHz": 6000,
+      "durationMs": 110,
+      "tapDensity": 2,
+      "lowPassHz": 900,
+      "amplitudeScalar": 0.12,
+      "materialId": "sand_silt"
+    },
+    {
+      "id": "glass_port",
+      "echoProfile": "clear_ping",
+      "carrierHz": 16000,
+      "durationMs": 120,
+      "tapDensity": 2,
+      "lowPassHz": 14000,
+      "amplitudeScalar": 0.42,
+      "materialId": "glass_port"
+    },
+    {
+      "id": "cable_bundle",
+      "echoProfile": "braided_clicks",
+      "carrierHz": 9000,
+      "durationMs": 210,
+      "tapDensity": 7,
+      "lowPassHz": 3100,
+      "amplitudeScalar": 0.28,
+      "materialId": "cable_bundle"
+    },
+    {
+      "id": "thermal_vent",
+      "echoProfile": "unstable_low_noise",
+      "carrierHz": 900,
+      "durationMs": 680,
+      "tapDensity": 4,
+      "lowPassHz": 1300,
+      "amplitudeScalar": 0.34,
+      "materialId": "methane_bubble_foam"
+    },
+    {
+      "id": "ice_hydrate_wall",
+      "echoProfile": "brittle_crystal",
+      "carrierHz": 14500,
+      "durationMs": 240,
+      "tapDensity": 5,
+      "lowPassHz": 7600,
+      "amplitudeScalar": 0.44,
+      "materialId": "ice_hydrate"
+    }
+  ],
+  "alphaLeviathanDopplerCurve": {
+    "mode": "authored_underwater_pitch_fake_for_critical_roar_only",
+    "soundSpeedMps": 1480.0,
+    "smoothingSamples": 128,
+    "hysteresisSeconds": 2.5,
+    "maxSemitoneShift": 2.0,
+    "thresholds": [
+      { "relativeSpeedMps": -80.0, "physicalRatio": 0.8974, "authoredPitchRatio": 0.8909, "semitones": -2.0, "state": "receding_mass" },
+      { "relativeSpeedMps": -40.0, "physicalRatio": 0.9474, "authoredPitchRatio": 0.9439, "semitones": -1.0, "state": "slipping_away" },
+      { "relativeSpeedMps": -10.0, "physicalRatio": 0.9866, "authoredPitchRatio": 0.9886, "semitones": -0.2, "state": "distant_drift" },
+      { "relativeSpeedMps": 0.0, "physicalRatio": 1.0, "authoredPitchRatio": 1.0, "semitones": 0.0, "state": "locked" },
+      { "relativeSpeedMps": 10.0, "physicalRatio": 1.0136, "authoredPitchRatio": 1.0116, "semitones": 0.2, "state": "approach_hint" },
+      { "relativeSpeedMps": 40.0, "physicalRatio": 1.0556, "authoredPitchRatio": 1.0595, "semitones": 1.0, "state": "closing" },
+      { "relativeSpeedMps": 80.0, "physicalRatio": 1.1143, "authoredPitchRatio": 1.1225, "semitones": 2.0, "state": "impossible_arrival" }
+    ],
+    "subBassLayer": {
+      "carrierHz": 28.0,
+      "approachGain01": 0.82,
+      "recedingGain01": 0.46,
+      "panicSidechainDuckDb": -12.0
+    }
+  },
+  "mixSafety": {
+    "maxConcurrentProceduralVoices": 16,
+    "targetPeakCeiling": 0.98,
+    "perVoiceNominalGain": 0.058,
+    "echoTapGainFloor": 0.0005,
+    "echoTapGainCeiling": 0.62,
+    "limiterPolicy": "offline_gain_bound_then_runtime_soft_clip_last_resort"
+  }
+}

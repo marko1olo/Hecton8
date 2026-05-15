@@ -151,11 +151,10 @@ Shader "Hecton8/UI/DiegeticVisorCurvedHUD"
                 float edgeFade = 1.0 - smoothstep(1.0 - _EdgeFade, 1.0, edge);
 
                 float chromaWeight = saturate(dot(centered, centered) * 4.5);
-                float2 chromaOffset = centered * chromaWeight * _ChromaticStrength * 0.006;
                 float4 centerSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
-                float r = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv + chromaOffset).r;
-                float b = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv - chromaOffset).b;
-                float3 hudRgb = float3(r, centerSample.g, b);
+                float fakeChroma = chromaWeight * saturate(_ChromaticStrength) * 0.18;
+                float3 hudRgb = centerSample.rgb * float3(1.0 + fakeChroma, 1.0, 1.0 - fakeChroma * 0.55);
+                hudRgb += float3(fakeChroma * 0.025, 0.0, fakeChroma * 0.012);
 
                 float maxRgb = max(max(hudRgb.r, hudRgb.g), hudRgb.b);
                 float rgbAlpha = saturate((maxRgb - _BlackCutoff) * _AlphaGain);

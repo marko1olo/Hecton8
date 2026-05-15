@@ -1,0 +1,4858 @@
+{
+  "all_large_streaming_mips_off": 148,
+  "atlas_suggestions": [
+    {
+      "combined_bc7_mib": 7.0,
+      "count": 7,
+      "group": "Assets/_Project/Art/TEXTURES/Detali",
+      "members": [
+        "bubble vent atlas - bad - redo.png",
+        "mineral seep mask - looks seamless.png",
+        "Mineral Seep Mask - second try.png",
+        "Soft Plume Noise - second try.png",
+        "soft_plume_noise_-_kakoy_to_seryy_nu_norm.png",
+        "visor droplet mask.png",
+        "visor runoff normal.png"
+      ]
+    },
+    {
+      "combined_bc7_mib": 6.0,
+      "count": 6,
+      "group": "Assets/_Project/Art/Sprites/ui",
+      "members": [
+        "BATTERY.png",
+        "COPPER.png",
+        "CUTTER.png",
+        "MICRO.png",
+        "OXYGEN.png",
+        "TITANIUM.png"
+      ]
+    },
+    {
+      "combined_bc7_mib": 4.0,
+      "count": 4,
+      "group": "Assets/_Project/Art/TEXTURES",
+      "members": [
+        "FLOOR.png",
+        "FLOOR1.png",
+        "ORGANIC.png",
+        "terrain.png"
+      ]
+    },
+    {
+      "combined_bc7_mib": 4.0,
+      "count": 4,
+      "group": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.branching.v2",
+      "members": [
+        "albedo___family.coral.branching.v2.png",
+        "detail___family.coral.branching.v2.png",
+        "mask___family.coral.branching.v2.png",
+        "normal___family.coral.branching.v2.png"
+      ]
+    },
+    {
+      "combined_bc7_mib": 4.0,
+      "count": 4,
+      "group": "Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.brittle",
+      "members": [
+        "albedo___family.coral.brittle.png",
+        "detail___family.coral.brittle.png",
+        "mask___family.coral.brittle.png",
+        "normal___family.coral.brittle.png"
+      ]
+    }
+  ],
+  "bc7_full_mip_first_party_production_mib": 504.619,
+  "bc7_full_mip_runtime_candidate_mib": 1251.242,
+  "bc7_full_mip_total_mib": 1282.47,
+  "bc7_no_mip_mib": 961.853,
+  "ci_expected_exit_code": 2,
+  "critical_texture_pool_mib": 1228.8,
+  "critical_vram_overflow": true,
+  "evidence_class": "STATIC_SOURCE/FILESYSTEM/PY_UNIT_TEST",
+  "first_party_large_streaming_mips_off": 50,
+  "first_party_mesh_blendshapes_enabled_rows": 9,
+  "first_party_mesh_compression_off_rows": 16,
+  "first_party_mesh_import_risk_rows": 16,
+  "first_party_mesh_read_write_enabled_rows": 0,
+  "gate_reasons": [
+    "CRITICAL_VRAM_OVERFLOW",
+    "TEXTURE_VRAM_CRIMES",
+    "MESH_REDLINE_OR_RISK"
+  ],
+  "generated": "2026-05-15T04:48:21",
+  "generated_utc": "2026-05-15T01:48:21+00:00",
+  "link_xml_notes": [
+    "Assets/AstarPathfindingProject/link.xml assemblies=1 types=18 preserve_all=18",
+    "Assets/link.xml assemblies=2 types=10 preserve_all=10",
+    "Assets/Plugins/Sirenix/Assemblies/link.xml assemblies=4 types=0 preserve_all=4"
+  ],
+  "link_xml_status": "LINK_XML_PRESENT_STATIC_ONLY",
+  "mesh_blendshapes_enabled_rows": 269,
+  "mesh_compression_off_rows": 19,
+  "mesh_count": 301,
+  "mesh_import_colliders_enabled_rows": 0,
+  "mesh_import_risk_rows": 293,
+  "mesh_read_write_enabled_rows": 275,
+  "mesh_redline_rows": 293,
+  "mesh_redlines": [
+    {
+      "flags": [
+        "MESH_COMPRESSION_OFF_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "0",
+      "meta_is_readable": "0",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "0",
+      "meta_optimize_mesh": "",
+      "path": "Assets/_Project/_PROLOGUE_CONTENT/Models/ceiling_10.fbx",
+      "triangles": 108
+    },
+    {
+      "flags": [
+        "MESH_COMPRESSION_OFF_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "0",
+      "meta_is_readable": "0",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "0",
+      "meta_optimize_mesh": "",
+      "path": "Assets/_Project/_PROLOGUE_CONTENT/Models/floor_05.fbx",
+      "triangles": 670
+    },
+    {
+      "flags": [
+        "MESH_COMPRESSION_OFF_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "0",
+      "meta_import_blend_shapes": "0",
+      "meta_is_readable": "0",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "0",
+      "meta_optimize_mesh": "",
+      "path": "Assets/_Project/_PROLOGUE_CONTENT/Models/floor_large_8x8.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_COMPRESSION_OFF_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "0",
+      "meta_is_readable": "0",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "0",
+      "meta_optimize_mesh": "",
+      "path": "Assets/_Project/_PROLOGUE_CONTENT/Models/wall_01_2x3_a.fbx",
+      "triangles": 530
+    },
+    {
+      "flags": [
+        "MESH_COMPRESSION_OFF_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "0",
+      "meta_is_readable": "0",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "0",
+      "meta_optimize_mesh": "",
+      "path": "Assets/_Project/_PROLOGUE_CONTENT/Models/wall_01_4x3_c.fbx",
+      "triangles": 742
+    },
+    {
+      "flags": [
+        "MESH_COMPRESSION_OFF_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "0",
+      "meta_is_readable": "0",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "0",
+      "meta_optimize_mesh": "",
+      "path": "Assets/_Project/_PROLOGUE_CONTENT/Models/wall_01_4x3_door_02_wing.fbx",
+      "triangles": 782
+    },
+    {
+      "flags": [
+        "MESH_COMPRESSION_OFF_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "0",
+      "meta_is_readable": "0",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "0",
+      "meta_optimize_mesh": "",
+      "path": "Assets/_Project/_PROLOGUE_CONTENT/Models/wall_04_3x6_d.fbx",
+      "triangles": 586
+    },
+    {
+      "flags": [
+        "MESH_COMPRESSION_OFF_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "0",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "0",
+      "meta_optimize_mesh": "",
+      "path": "Assets/_Project/Art/Materials/Meshy_AI_Alien_barnacles_clust_0301230506_texture.fbx",
+      "triangles": 10000
+    },
+    {
+      "flags": [
+        "MESH_COMPRESSION_OFF_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "0",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "0",
+      "meta_optimize_mesh": "",
+      "path": "Assets/_Project/Art/Models/Rocks/Rock 5/orig/River_Rock_FBX.fbx",
+      "triangles": 3054
+    },
+    {
+      "flags": [
+        "MESH_COMPRESSION_OFF_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "0",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "0",
+      "meta_optimize_mesh": "",
+      "path": "Assets/_Project/Art/Models/Rocks/Rock 6/rock6/Mossy_Forest_Rock_vimrfjsaw_Mid.fbx",
+      "triangles": 3539
+    },
+    {
+      "flags": [
+        "MESH_COMPRESSION_OFF_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "0",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "0",
+      "meta_optimize_mesh": "",
+      "path": "Assets/_Project/Art/Models/Rocks/Rock 7/SAMMPLE.fbx",
+      "triangles": 6519
+    },
+    {
+      "flags": [
+        "MESH_COMPRESSION_OFF_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "0",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "0",
+      "meta_optimize_mesh": "",
+      "path": "Assets/_Project/Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/Forest_Rock_Shelf_wgpqfjl_Mid.fbx",
+      "triangles": 4038
+    },
+    {
+      "flags": [
+        "MESH_COMPRESSION_OFF_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "0",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "0",
+      "meta_optimize_mesh": "",
+      "path": "Assets/_Project/Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/Mossy_Forest_Rock_vimrfjsaw_Mid.fbx",
+      "triangles": 3539
+    },
+    {
+      "flags": [
+        "MESH_COMPRESSION_OFF_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "0",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "0",
+      "meta_optimize_mesh": "",
+      "path": "Assets/_Project/Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/Nordic_Beach_Rock_Formation_vd4iecjva_Low.fbx",
+      "triangles": 2100
+    },
+    {
+      "flags": [
+        "MESH_COMPRESSION_OFF_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "0",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "0",
+      "meta_optimize_mesh": "",
+      "path": "Assets/_Project/Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/Nordic_Beach_Rock_uknoehp_Mid.fbx",
+      "triangles": 1218
+    },
+    {
+      "flags": [
+        "MESH_COMPRESSION_OFF_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "0",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "0",
+      "meta_optimize_mesh": "",
+      "path": "Assets/_Project/Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/Rock_4.fbx",
+      "triangles": 5000
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_COMPRESSION_OFF_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "0",
+      "meta_import_blend_shapes": "0",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "0",
+      "meta_optimize_mesh": "",
+      "path": "Assets/Dynamic Decals/Resources/Decal.obj",
+      "triangles": 12
+    },
+    {
+      "flags": [
+        "MESH_GT_80K_ABSOLUTE_STATIC",
+        "MESH_REDLINE_GT_50K_NO_LOD",
+        "MESH_COMPRESSION_OFF_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "0",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "0",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "0",
+      "meta_optimize_mesh": "",
+      "path": "Assets/Feel/MMTools/Demos/MMGhostCamera/Models/MMGhostCameraCity.fbx",
+      "triangles": 127645
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/decal_01.fbx",
+      "triangles": 63
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/decal_02.fbx",
+      "triangles": 72
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/decal_03.fbx",
+      "triangles": 102
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/decal_04.fbx",
+      "triangles": 44
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/decal_05.fbx",
+      "triangles": 8
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/decal_06.fbx",
+      "triangles": 16
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/decal_07.fbx",
+      "triangles": 14
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/decal_a2.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/decal_a3.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/decal_b2.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/decal_b3.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/decal_x2.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/decal_x3.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/label_01.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/label_02.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/label_03.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/label_04.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/label_05.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/label_06.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/label_07.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/label_08.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/label_09.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/label_10.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/label_11.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/stripes_01.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/stripes_02.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/stripes_03.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/stripes_04.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/stripes_05.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/stripes_06.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/stripes_07.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/stripes_08.fbx",
+      "triangles": 4
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/stripes_icon_01.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/stripes_icon_02.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/stripes_icon_03.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/stripes_icon_04.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/stripes_icon_05.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/decals/stripes_icon_06.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/furniture/bed.fbx",
+      "triangles": 1046
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/furniture/bed_02.fbx",
+      "triangles": 2243
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/furniture/bed_02_base.fbx",
+      "triangles": 970
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/furniture/bed_ladder.fbx",
+      "triangles": 912
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/furniture/chair_01.fbx",
+      "triangles": 2548
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/furniture/chair_02.fbx",
+      "triangles": 2234
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/furniture/chair_03.fbx",
+      "triangles": 440
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/furniture/couch_01.fbx",
+      "triangles": 308
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/furniture/couch_02.fbx",
+      "triangles": 590
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/furniture/couch_03.fbx",
+      "triangles": 590
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/furniture/couch_connector.fbx",
+      "triangles": 188
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/furniture/locker_01.fbx",
+      "triangles": 342
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/furniture/locker_02.fbx",
+      "triangles": 253
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/furniture/locker_03.fbx",
+      "triangles": 497
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/furniture/locker_04.fbx",
+      "triangles": 515
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/furniture/table_01.fbx",
+      "triangles": 698
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/furniture/table_02.fbx",
+      "triangles": 746
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/furniture/table_03.fbx",
+      "triangles": 266
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/furniture/table_03_connector.fbx",
+      "triangles": 78
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/furniture/table_03_corner.fbx",
+      "triangles": 212
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/furniture/table_03_prop_01.fbx",
+      "triangles": 86
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/furniture/table_base.fbx",
+      "triangles": 466
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/box_01.fbx",
+      "triangles": 750
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_01.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_02.fbx",
+      "triangles": 98
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_03.fbx",
+      "triangles": 290
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_04.fbx",
+      "triangles": 226
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_05.fbx",
+      "triangles": 34
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_06.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_07.fbx",
+      "triangles": 106
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_08.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_09.fbx",
+      "triangles": 498
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_10.fbx",
+      "triangles": 80
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_11.fbx",
+      "triangles": 258
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_12.fbx",
+      "triangles": 54
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_13.fbx",
+      "triangles": 1260
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_14.fbx",
+      "triangles": 754
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_15.fbx",
+      "triangles": 1212
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_16.fbx",
+      "triangles": 690
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/controlpanels/controlpanel_17.fbx",
+      "triangles": 1000
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/pipes/detail_05_e01.fbx",
+      "triangles": 588
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/pipes/detail_05_e02.fbx",
+      "triangles": 392
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/pipes/detail_05_e03.fbx",
+      "triangles": 560
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/pipes/detail_05_e04.fbx",
+      "triangles": 224
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/technical/detail_01.fbx",
+      "triangles": 594
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/technical/detail_02.fbx",
+      "triangles": 2688
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/technical/detail_03.fbx",
+      "triangles": 52
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/technical/detail_03_a.fbx",
+      "triangles": 1216
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/technical/detail_03_b.fbx",
+      "triangles": 1964
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/technical/detail_04.fbx",
+      "triangles": 48
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/technical/detail_04_a.fbx",
+      "triangles": 827
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/technical/detail_04_b.fbx",
+      "triangles": 7377
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/technical/detail_04_c.fbx",
+      "triangles": 1788
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/technical/detail_04_d.fbx",
+      "triangles": 1518
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/technical/detail_04_e.fbx",
+      "triangles": 278
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/technical/detail_04_f.fbx",
+      "triangles": 589
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/technical/detail_04_g.fbx",
+      "triangles": 598
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/technical/detail_05_a.fbx",
+      "triangles": 212
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/technical/detail_05_b.fbx",
+      "triangles": 258
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/technical/detail_05_c.fbx",
+      "triangles": 409
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/details/technical/detail_05_d.fbx",
+      "triangles": 250
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/keyboard.fbx",
+      "triangles": 1314
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/keyboard_b.fbx",
+      "triangles": 1314
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/lights/light_01.fbx",
+      "triangles": 276
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/lights/light_02.fbx",
+      "triangles": 48
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/lights/light_03.fbx",
+      "triangles": 34
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/lights/light_04.fbx",
+      "triangles": 26
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/lights/light_05.fbx",
+      "triangles": 138
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/lights/light_06.fbx",
+      "triangles": 176
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/lights/light_07.fbx",
+      "triangles": 252
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/lights/light_08.fbx",
+      "triangles": 280
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/lights/light_09.fbx",
+      "triangles": 200
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/lights/warningLight.fbx",
+      "triangles": 238
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/monitor.fbx",
+      "triangles": 510
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/prop_01.fbx",
+      "triangles": 575
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/prop_02.fbx",
+      "triangles": 510
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/prop_03.fbx",
+      "triangles": 612
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/prop_04.fbx",
+      "triangles": 382
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/prop_04_b.fbx",
+      "triangles": 175
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/prop_04_c.fbx",
+      "triangles": 161
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/prop_05.fbx",
+      "triangles": 1582
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/prop_06.fbx",
+      "triangles": 448
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/prop_07.fbx",
+      "triangles": 270
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/prop_08.fbx",
+      "triangles": 266
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/prop_09.fbx",
+      "triangles": 264
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/prop_10.fbx",
+      "triangles": 1858
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/prop_10_base.fbx",
+      "triangles": 3952
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/prop_11.fbx",
+      "triangles": 3090
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/prop_11_base.fbx",
+      "triangles": 1920
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/prop_12_a.fbx",
+      "triangles": 60
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/prop_12_b.fbx",
+      "triangles": 252
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/prop_13.fbx",
+      "triangles": 1992
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/prop_14.fbx",
+      "triangles": 5189
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/prop_15.fbx",
+      "triangles": 2999
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/server_racks/server_rack_01.fbx",
+      "triangles": 684
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/server_racks/server_rack_02.fbx",
+      "triangles": 668
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/server_racks/server_rack_03.fbx",
+      "triangles": 684
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/tubes/tube_01.fbx",
+      "triangles": 352
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/tubes/tube_02.fbx",
+      "triangles": 352
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/tubes/tube_03.fbx",
+      "triangles": 1337
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/tubes/tube_cap_01.fbx",
+      "triangles": 180
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/props/tubes/tube_cap_02.fbx",
+      "triangles": 180
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/ceiling/ceiling_01.fbx",
+      "triangles": 170
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/ceiling/ceiling_02.fbx",
+      "triangles": 136
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/ceiling/ceiling_03.fbx",
+      "triangles": 136
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/ceiling/ceiling_04.fbx",
+      "triangles": 126
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/ceiling/ceiling_05.fbx",
+      "triangles": 14
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/ceiling/ceiling_06.fbx",
+      "triangles": 98
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/ceiling/ceiling_07.fbx",
+      "triangles": 66
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/ceiling/ceiling_08.fbx",
+      "triangles": 90
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/ceiling/ceiling_09.fbx",
+      "triangles": 312
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/ceiling/ceiling_09_connector.fbx",
+      "triangles": 220
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/ceiling/ceiling_11.fbx",
+      "triangles": 1032
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/ceiling/ceiling_12.fbx",
+      "triangles": 22
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor/floor_01.fbx",
+      "triangles": 78
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor/floor_01_4x4.fbx",
+      "triangles": 6
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor/floor_02.fbx",
+      "triangles": 348
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor/floor_02a.fbx",
+      "triangles": 166
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor/floor_03.fbx",
+      "triangles": 168
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor/floor_04.fbx",
+      "triangles": 166
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor/floor_05.fbx",
+      "triangles": 670
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor/floor_06.fbx",
+      "triangles": 18
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor/floor_border_01.fbx",
+      "triangles": 273
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "0",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor/floor_border_02.fbx",
+      "triangles": 181
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor/floor_border_03.fbx",
+      "triangles": 33
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor/floor_border_04.fbx",
+      "triangles": 256
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor/floor_border_05.fbx",
+      "triangles": 119
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor/floor_border_06.fbx",
+      "triangles": 29
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "0",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor/floor_border_corner_01.fbx",
+      "triangles": 210
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "0",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor/floor_border_corner_02.fbx",
+      "triangles": 94
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor/floor_crosssection_01.fbx",
+      "triangles": 94
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "0",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor/floor_large_8x8.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor/floor_part_01.fbx",
+      "triangles": 154
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor/floor_part_02.fbx",
+      "triangles": 186
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor/floor_part_03.fbx",
+      "triangles": 172
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "0",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor/floor_small_4x4.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor_01.fbx",
+      "triangles": 78
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor_01_4x4.fbx",
+      "triangles": 6
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor_02.fbx",
+      "triangles": 348
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor_02a.fbx",
+      "triangles": 166
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor_03.fbx",
+      "triangles": 168
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor_04.fbx",
+      "triangles": 166
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor_06.fbx",
+      "triangles": 18
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor_border_01.fbx",
+      "triangles": 273
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "0",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor_border_02.fbx",
+      "triangles": 181
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor_border_03.fbx",
+      "triangles": 33
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor_border_04.fbx",
+      "triangles": 256
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor_border_05.fbx",
+      "triangles": 119
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor_border_06.fbx",
+      "triangles": 29
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "0",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor_border_corner_01.fbx",
+      "triangles": 210
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "0",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor_border_corner_02.fbx",
+      "triangles": 94
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor_crosssection_01.fbx",
+      "triangles": 94
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor_part_01.fbx",
+      "triangles": 154
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor_part_02.fbx",
+      "triangles": 186
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor_part_03.fbx",
+      "triangles": 172
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "0",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/floor/floor_small_4x4.fbx",
+      "triangles": 2
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/rail_01.fbx",
+      "triangles": 582
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/rail_02.fbx",
+      "triangles": 594
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/scaffold_01.fbx",
+      "triangles": 80
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/scaffold_02.fbx",
+      "triangles": 80
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/scaffold_03.fbx",
+      "triangles": 32
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/scaffold_04.fbx",
+      "triangles": 8
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/scaffold_connector.fbx",
+      "triangles": 320
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/stairs_01.fbx",
+      "triangles": 2176
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/walk_01.fbx",
+      "triangles": 1880
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/walk_02.fbx",
+      "triangles": 2228
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/walk_03.fbx",
+      "triangles": 1188
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/rails+scaffolds+stairs/walk_04.fbx",
+      "triangles": 382
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/trims/trim_01.fbx",
+      "triangles": 308
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/trims/trim_02.fbx",
+      "triangles": 90
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/trims/trim_03.fbx",
+      "triangles": 28
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/trims/trim_04.fbx",
+      "triangles": 56
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/trims/trim_05.fbx",
+      "triangles": 68
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/trims/trim_05_cap.fbx",
+      "triangles": 28
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/trims/trim_06_a.fbx",
+      "triangles": 178
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/trims/trim_06_b.fbx",
+      "triangles": 182
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/trims/trim_07.fbx",
+      "triangles": 4
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/column_01.fbx",
+      "triangles": 1535
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "0",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/column_01_base.fbx",
+      "triangles": 334
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/column_03.fbx",
+      "triangles": 2000
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/column_04.fbx",
+      "triangles": 1594
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/column_04_connector.fbx",
+      "triangles": 180
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/column_04_connector_b.fbx",
+      "triangles": 92
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/column_05.fbx",
+      "triangles": 882
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/column_05_prop_01.fbx",
+      "triangles": 282
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/hull.fbx",
+      "triangles": 223
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/viewing_deck.fbx",
+      "triangles": 12778
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_2x3_b.fbx",
+      "triangles": 662
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_2x3_top_trim.fbx",
+      "triangles": 89
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_a.fbx",
+      "triangles": 55
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "0",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_b.fbx",
+      "triangles": 282
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_d.fbx",
+      "triangles": 140
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "0",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door.fbx",
+      "triangles": 1407
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door_02.fbx",
+      "triangles": 960
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door_b.fbx",
+      "triangles": 614
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "0",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door_wing_left.fbx",
+      "triangles": 304
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "0",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door_wing_right.fbx",
+      "triangles": 524
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_door_wings.fbx",
+      "triangles": 878
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_e.fbx",
+      "triangles": 481
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_f.fbx",
+      "triangles": 422
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_g.fbx",
+      "triangles": 92
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_h.fbx",
+      "triangles": 5388
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_h_door.fbx",
+      "triangles": 552
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_i.fbx",
+      "triangles": 447
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_top_trim.fbx",
+      "triangles": 112
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_top_trim_corner.fbx",
+      "triangles": 364
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_4x3_window.fbx",
+      "triangles": 706
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_6x3_door.fbx",
+      "triangles": 3540
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_6x3_door_b.fbx",
+      "triangles": 3468
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "0",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_connector_01.fbx",
+      "triangles": 158
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_connector_02.fbx",
+      "triangles": 276
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_connector_03.fbx",
+      "triangles": 20
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_connector_04.fbx",
+      "triangles": 110
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_connector_ceiling_07.fbx",
+      "triangles": 42
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_connector_corner.fbx",
+      "triangles": 19
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "0",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_corner_a.fbx",
+      "triangles": 235
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_corner_a_ceiling.fbx",
+      "triangles": 202
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "0",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_corner_b.fbx",
+      "triangles": 235
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "0",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_01_corner_b_ceiling.fbx",
+      "triangles": 276
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_02_1x1_a.fbx",
+      "triangles": 204
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_02_1x1_b.fbx",
+      "triangles": 235
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_02_1x1_corner.fbx",
+      "triangles": 226
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_02_1x2_d.fbx",
+      "triangles": 98
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_02_1x3_c.fbx",
+      "triangles": 467
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_03_4x3_a.fbx",
+      "triangles": 321
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_03_8x3_b.fbx",
+      "triangles": 451
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_04_10x1_f.fbx",
+      "triangles": 18
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_04_2x4_b.fbx",
+      "triangles": 84
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_04_4x1_f.fbx",
+      "triangles": 16
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_04_6x4_e.fbx",
+      "triangles": 254
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_04_8x10_c.fbx",
+      "triangles": 180
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_04_8x10_c_connector_a.fbx",
+      "triangles": 20
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_04_8x10_c_connector_b.fbx",
+      "triangles": 48
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_04_8x10_c_connector_c.fbx",
+      "triangles": 48
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_04_8x10_c_connector_d.fbx",
+      "triangles": 90
+    },
+    {
+      "flags": [
+        "MESH_READ_WRITE_ENABLED_STATIC_SUSPECT",
+        "MESH_BLENDSHAPES_IMPORT_ENABLED_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "1",
+      "meta_import_blend_shapes": "1",
+      "meta_is_readable": "1",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "2",
+      "meta_optimize_mesh": "",
+      "path": "Assets/ScifiFacility/Models/structural/walls/wall_04_8x10_c_door.fbx",
+      "triangles": 290
+    },
+    {
+      "flags": [
+        "MESH_COMPRESSION_OFF_STATIC_SUSPECT"
+      ],
+      "lod_detected": false,
+      "meta_add_colliders": "0",
+      "meta_generate_secondary_uv": "0",
+      "meta_import_blend_shapes": "0",
+      "meta_is_readable": "0",
+      "meta_keep_quads": "0",
+      "meta_mesh_compression": "0",
+      "meta_optimize_mesh": "",
+      "path": "Assets/Shapes/Models/shapes_primitives.fbx",
+      "triangles": 3222
+    }
+  ],
+  "mx350_texture_budget_mib": 900.0,
+  "root": "C:\\Hecton8",
+  "schema_version": 1,
+  "skipped_directory_names": [
+    ".codex-artifacts",
+    ".codex-build",
+    ".git",
+    ".vs",
+    "Build",
+    "Builds",
+    "Library",
+    "Obj",
+    "Temp"
+  ],
+  "texture_count": 1645,
+  "texture_flagged_rows": 939,
+  "texture_vram_crime_rows": 800,
+  "top_non_first_party_runtime_directories": [
+    {
+      "bc7_full_mip_mib": 483.667,
+      "count": 67,
+      "directory": "Assets/ScifiFacility/Textures",
+      "vram_crime_rows": 11
+    },
+    {
+      "bc7_full_mip_mib": 43.623,
+      "count": 100,
+      "directory": "Assets/Screenshots",
+      "vram_crime_rows": 0
+    },
+    {
+      "bc7_full_mip_mib": 34.277,
+      "count": 4,
+      "directory": "Assets/Feel/MMTools/Tools/MMVFX/MMBloomDirt",
+      "vram_crime_rows": 4
+    },
+    {
+      "bc7_full_mip_mib": 32.0,
+      "count": 24,
+      "directory": "Assets/Feel/MMTools/Tools/MMPrototypeTextures/Textures/MMProtoTextures",
+      "vram_crime_rows": 0
+    },
+    {
+      "bc7_full_mip_mib": 21.333,
+      "count": 1,
+      "directory": "Assets/MapMagic/Map_Graph/New Gen",
+      "vram_crime_rows": 1
+    },
+    {
+      "bc7_full_mip_mib": 21.333,
+      "count": 4,
+      "directory": "Assets/TRANSFER HUB/family kelp tall",
+      "vram_crime_rows": 0
+    },
+    {
+      "bc7_full_mip_mib": 16.0,
+      "count": 3,
+      "directory": "Assets/Feel/MMTools/Tools/MMPrototypeTextures/Textures/MMPlastic",
+      "vram_crime_rows": 0
+    },
+    {
+      "bc7_full_mip_mib": 15.234,
+      "count": 7,
+      "directory": "Packages/com.unity.shadergraph/GraphTemplates/Cross Pipeline",
+      "vram_crime_rows": 2
+    },
+    {
+      "bc7_full_mip_mib": 12.0,
+      "count": 1,
+      "directory": "Assets/Plugins/Sirenix/Odin Inspector/Assets/Editor",
+      "vram_crime_rows": 1
+    },
+    {
+      "bc7_full_mip_mib": 9.333,
+      "count": 13,
+      "directory": "Assets/Feel/MMTools/Tools/MMVFX/MMNoise",
+      "vram_crime_rows": 0
+    },
+    {
+      "bc7_full_mip_mib": 5.333,
+      "count": 1,
+      "directory": "Assets/Feel/MMTools/Demos/MMTween/Textures",
+      "vram_crime_rows": 1
+    },
+    {
+      "bc7_full_mip_mib": 5.333,
+      "count": 16,
+      "directory": "Assets/Feel/MMTools/Tools/MMVFX/MMParticles",
+      "vram_crime_rows": 0
+    }
+  ]
+}

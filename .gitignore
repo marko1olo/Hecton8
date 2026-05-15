@@ -33,6 +33,11 @@
 *.mmf
 *.orig
 
+# ---- Python tooling caches ----
+__pycache__/
+*.py[cod]
+*$py.class
+
 # ---- Auto-generated VS/MD/Rider solution and project files ----
 ExportedObj/
 .consoleapp.meta

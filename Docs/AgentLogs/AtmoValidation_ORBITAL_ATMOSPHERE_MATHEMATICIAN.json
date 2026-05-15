@@ -1,0 +1,79 @@
+{
+  "outputDir": "C:\\Hecton8\\Data\\Precomputed\\Atmosphere",
+  "validation": {
+    "decodedPayloads": {
+      "atmosphere_density_matrix_rgba16f.bin": {
+        "failures": [],
+        "firstAltitudeKm": 0.0,
+        "lastAltitudeKm": 100.0,
+        "maxAbsorption": 0.1080322265625,
+        "minAbsorption": 0.0059814453125,
+        "monotonicFailures": 0,
+        "nonFiniteCount": 0,
+        "rowCount": 128,
+        "status": "PASS"
+      },
+      "atmosphere_sky_gradient_rgba16f.bin": {
+        "failures": [],
+        "goldenHourLuminance": 0.14618115234374998,
+        "maxAdjacentDelta": 0.0517578125,
+        "maxSurfaceSeamDelta": 0.0048828125,
+        "nonFiniteCount": 0,
+        "status": "PASS",
+        "thresholds": {
+          "goldenHourMinLuminance": 0.065,
+          "maxAdjacentDelta": 0.115,
+          "maxSurfaceSeamDelta": 0.03,
+          "voidBlackMaxLuminance": 0.04
+        },
+        "voidBlackLuminance": 0.0005111699104309082
+      }
+    },
+    "files": {
+      "atmosphere_density_matrix_rgba16f.bin": {
+        "actualBytes": 1024,
+        "actualSha256": "8E02179EB54DCF7C152B38223ED1E7FAB2BFCD20B29F135DDDA6BA689D80C153",
+        "expectedBytes": 1024,
+        "expectedSha256": "8E02179EB54DCF7C152B38223ED1E7FAB2BFCD20B29F135DDDA6BA689D80C153",
+        "hashMatches": true,
+        "manifestBytes": 1024,
+        "manifestBytesMatch": true,
+        "matches": true
+      },
+      "atmosphere_sky_gradient_rgba16f.bin": {
+        "actualBytes": 262144,
+        "actualSha256": "7804B45F34A5F798E713B1B2A31E49BA46EC87BD14AF094A4D806E48D452BF84",
+        "expectedBytes": 262144,
+        "expectedSha256": "7804B45F34A5F798E713B1B2A31E49BA46EC87BD14AF094A4D806E48D452BF84",
+        "hashMatches": true,
+        "manifestBytes": 262144,
+        "manifestBytesMatch": true,
+        "matches": true
+      }
+    },
+    "gradientAudit": {
+      "failures": [],
+      "goldenHourLuminance": 0.14613670189179348,
+      "maxAdjacentDelta": 0.05183795292365384,
+      "maxSurfaceSeamDelta": 0.004634528095092683,
+      "nonFiniteCount": 0,
+      "status": "PASS",
+      "thresholds": {
+        "goldenHourMinLuminance": 0.065,
+        "maxAdjacentDelta": 0.115,
+        "maxSurfaceSeamDelta": 0.03,
+        "voidBlackMaxLuminance": 0.04
+      },
+      "voidBlackLuminance": 0.000511056
+    },
+    "manifestErrors": [],
+    "preview": {
+      "actualBytes": 21495,
+      "actualSha256": "8C4E145B612333509977B1561FBA993B08BFDA55441EAA34AC597413A4907253",
+      "exists": true,
+      "expectedSha256": "8C4E145B612333509977B1561FBA993B08BFDA55441EAA34AC597413A4907253",
+      "hashMatches": true
+    },
+    "status": "PASS"
+  }
+}

@@ -1,0 +1,838 @@
+{
+  "schemaVersion": 1,
+  "schemaRevision": 8,
+  "schemaId": "hecton8.modding.signal_schema.v1",
+  "status": "MOD_API_DEFINED_STATIC_SOURCE_RUNTIME_PENDING",
+  "generatedBy": "MODDING_API_SCHEMA_BUILDER",
+  "generatedOn": "2026-05-14",
+  "evidence": {
+    "class": [
+      "STATIC_SOURCE",
+      "STATIC_DOC"
+    ],
+    "runtimeProof": "PENDING_VERIFICATION",
+    "sourceFiles": [
+      "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "Assets/_Project/Scripts/ModdingAPI/HectonAPI.cs",
+      "Assets/_Project/Scripts/ModdingAPI/HectonEventBus.cs",
+      "Assets/_Project/Scripts/ModdingAPI/ModEventContracts.cs",
+      "Assets/_Project/Scripts/ModdingAPI/ModEventProjectionBridge.cs",
+      "Assets/_Project/Scripts/ModdingAPI/ModCommandDispatcher.cs",
+      "Assets/_Project/Scripts/ModdingAPI/ModSpatialContracts.cs",
+      "Assets/_Project/Scripts/ModdingAPI/ModLoader.cs",
+      "Assets/_Project/Scripts/ModdingAPI/IHectonMod.cs",
+      "Assets/_Project/Scripts/ModdingAPI/ModMetadata.cs",
+      "Assets/_Project/Scripts/ModdingAPI/ModRuntimeInfo.cs",
+      "Assets/_Project/Scripts/ModdingAPI/ModRuntimeState.cs",
+      "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+      "Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs",
+      "Docs/ARCHITECTURE/GLOBAL_SIGNAL_CORRIDOR.md",
+      "Docs/ARCHITECTURE/SYSTEM_INTERCONNECT_MATRIX.md"
+    ]
+  },
+  "mandatesFollowed": [
+    "ARCH_Signal_Lane_Segregation",
+    "ARCH_Global_Registry_ServiceLocator_DI_Init",
+    "ARCH_Execution_Phases",
+    "OPT_Zero_GC_Policy_AllocFree_Mandate",
+    "OPT_Native_Memory_Collections_JobSystem_Protocol",
+    "DBG_Telemetry_Crash_Reporting_PostMortem",
+    "QA_Evidence_Text_Filter_Audit"
+  ],
+  "globalRules": {
+    "directSignalBusAccessForMods": false,
+    "directNativeContainerAccessForMods": false,
+    "directDataVaultAccessForMods": false,
+    "directUnityObjectReferencesForMods": false,
+    "stringEventNames": false,
+    "jsonHotPathEvents": false,
+    "allowedEventShape": "unmanaged_or_projected_read_only_dto",
+    "allowedWriteShape": "engine_validated_mod_command",
+    "firstPartyConsumerRule": "First-party systems consume SignalBus<T> snapshots directly; mods consume projected or copied mod-facing payloads only."
+  },
+  "sourceSignalInventory": {
+    "auditPath": "Docs/Modding/Signal_Audit_Matrix.md",
+    "sourceFile": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+    "extractionCommand": "rg -o \"public struct [A-Za-z0-9_]+ : ISignal\" Assets/_Project/Scripts/Core/GlobalSignals.cs",
+    "uniqueISignalStructCount": 129,
+    "modProjectedISignalCount": 2,
+    "deniedByDefaultISignalCount": 127,
+    "projectedISignals": [
+      "CombatDamageSignal",
+      "WeatherChangedSignal"
+    ],
+    "denyDefaultRule": "A public C# ISignal struct is not a public mod subscription. It becomes mod-visible only when listed in allowedSignalBuses and backed by a bounded projection/copy wrapper."
+  },
+  "modLifecycle": {
+    "interface": "IHectonMod",
+    "requiredMethods": [
+      {
+        "name": "OnLoad",
+        "phase": "assembly_loaded",
+        "allowedWork": "subscribe events, register static/cold content, register settings",
+        "forbiddenWork": "resolve live player Transform/GameObject or mutate runtime simulation truth"
+      },
+      {
+        "name": "OnInitialize",
+        "phase": "gameplay_bootstrap_ready",
+        "allowedWork": "resolve supported hash-only world state and submit engine-owned requests",
+        "forbiddenWork": "cache Unity object references or native container handles"
+      },
+      {
+        "name": "OnUnload",
+        "phase": "shutdown_or_domain_reset",
+        "allowedWork": "dispose HectonEventSubscription tokens and release mod-owned transient state",
+        "forbiddenWork": "spawn/despawn runtime objects directly"
+      }
+    ],
+    "versionInterface": "IHectonVersionedMod",
+    "currentApiVersion": 2,
+    "versionRule": "Loader rejects RequiredAPIVersion values newer than ModLoader.CurrentAPIVersion unless an explicit compatibility shim exists."
+  },
+  "publicApiSurface": [
+    {
+      "surface": "HectonAPI.Events",
+      "methods": [
+        "Subscribe<TPayload>",
+        "SubscribeNative",
+        "SubscribeProjected",
+        "OnPlayerSpawned",
+        "OnBiomeChanged",
+        "Unsubscribe",
+        "Publish<TPayload>"
+      ],
+      "access": "read_only_or_mod_owned_unmanaged_payloads",
+      "hotPathRisk": "callbacks are watchdog-limited; handlers must not allocate or block",
+      "notes": "Managed HectonEvent subscriptions are internal. Public subscriptions use unmanaged payloads, native byte copies, or projected DTOs."
+    },
+    {
+      "surface": "HectonAPI.Input",
+      "methods": [
+        "GetButtonMask",
+        "HasButtonMask"
+      ],
+      "access": "read_only_frame_cached_button_mask",
+      "hotPathRisk": "mods must not poll this from unmanaged callbacks as a replacement for engine command authority",
+      "notes": "No InputAction, InputSystem asset, or device object reference is exposed."
+    },
+    {
+      "surface": "HectonAPI.Commands",
+      "methods": [
+        "Request",
+        "RequestAup",
+        "RequestRenderInstance"
+      ],
+      "access": "engine_validated_write_request",
+      "hotPathRisk": "bounded by dispatcher quotas",
+      "notes": "All writes are requests. Owning first-party kernels accept, clamp, reject, or delay execution."
+    },
+    {
+      "surface": "HectonAPI.Resources",
+      "methods": [
+        "Proxy",
+        "TryResolvePrefab",
+        "TryResolveAudioClip",
+        "TryResolveTexture"
+      ],
+      "access": "hash_only_resource_resolution",
+      "hotPathRisk": "cold path only",
+      "notes": "Mods receive numeric resource ids, not Unity asset references."
+    },
+    {
+      "surface": "HectonAPI.Telemetry",
+      "methods": [
+        "Publish"
+      ],
+      "access": "mod_owned_marker_write",
+      "hotPathRisk": "active ModExecutionScope required",
+      "notes": "Marker hash and scalar only. No strings in telemetry payload."
+    },
+    {
+      "surface": "HectonAPI.Items",
+      "methods": [
+        "RegisterCustomItem",
+        "TryFindItem"
+      ],
+      "access": "cold_runtime_catalog_overlay",
+      "hotPathRisk": "not an event path",
+      "notes": "Registrations must not mutate authored ScriptableObject assets at runtime."
+    },
+    {
+      "surface": "HectonAPI.Crafting",
+      "methods": [
+        "RegisterRecipe",
+        "RegisterRecycleYield"
+      ],
+      "access": "cold_runtime_recipe_overlay",
+      "hotPathRisk": "List<ResourceStack> is allowed only for cold registration",
+      "notes": "Recycle overlays are official-owner inputs, not direct inventory mutation."
+    },
+    {
+      "surface": "HectonAPI.Recycling",
+      "methods": [
+        "ProcessRecycle"
+      ],
+      "access": "engine_owner_write_request",
+      "hotPathRisk": "official ScrapManager arbitration required",
+      "notes": "This is gameplay-affecting and must stay behind the owning manager."
+    },
+    {
+      "surface": "HectonAPI.Construction",
+      "methods": [
+        "RegisterBuildable",
+        "TryFindBuildable"
+      ],
+      "access": "cold_runtime_buildable_overlay",
+      "hotPathRisk": "not an event path",
+      "notes": "Buildable catalog injection is not direct scene spawning."
+    },
+    {
+      "surface": "HectonAPI.Ecosystem",
+      "methods": [
+        "RegisterBiomeMutation"
+      ],
+      "access": "cold_deterministic_overlay",
+      "hotPathRisk": "evaluated later by ecosystem owner",
+      "notes": "Mods provide deterministic bias data, not live fauna handles."
+    },
+    {
+      "surface": "HectonAPI.Assets",
+      "methods": [
+        "LoadPrefab",
+        "LoadAudioClip",
+        "LoadTexture"
+      ],
+      "access": "internal_forbidden_public_mod_surface",
+      "hotPathRisk": "throws IllegalContractException",
+      "notes": "Direct Unity asset references are intentionally blocked."
+    },
+    {
+      "surface": "HectonAPI.Localization",
+      "methods": [
+        "InjectTable"
+      ],
+      "access": "cold_runtime_localization_overlay",
+      "hotPathRisk": "Dictionary<string,string> allowed only outside event hot paths",
+      "notes": "Requires active ModExecutionScope."
+    },
+    {
+      "surface": "HectonAPI.UI",
+      "methods": [
+        "ShowInfo",
+        "ShowWarning",
+        "ShowCritical",
+        "RegisterSetting_bool",
+        "RegisterSetting_float"
+      ],
+      "access": "presentation_and_settings_only",
+      "hotPathRisk": "managed strings and delegates are cold/UI only",
+      "notes": "UI claims must reflect engine acceptance, not assumed command success."
+    },
+    {
+      "surface": "HectonAPI.World",
+      "methods": [
+        "IsGameReady",
+        "TryGetPlayerEntityHash"
+      ],
+      "access": "read_only_hash_state",
+      "hotPathRisk": "GameObject/Transform accessors are internal and throw",
+      "notes": "Persistent prefab spawn/despawn is forbidden directly; use resource hashes plus commands."
+    },
+    {
+      "surface": "HectonAPI.SaveState",
+      "methods": [
+        "SetModString",
+        "GetModString"
+      ],
+      "access": "mod_owned_save_text",
+      "hotPathRisk": "cold save/config path only",
+      "notes": "JSON is acceptable here for mod-owned cold data, never as event transport."
+    },
+    {
+      "surface": "HectonAPI.Mods",
+      "methods": [
+        "GetLoadedMods"
+      ],
+      "access": "diagnostic_copy_to_caller_list",
+      "hotPathRisk": "caller provides destination list",
+      "notes": "Tooling/menu surface, not simulation authority."
+    }
+  ],
+  "apiSurfaceAudit": {
+    "auditPath": "Docs/Modding/API_Surface_Audit_Matrix.md",
+    "sourceFile": "Assets/_Project/Scripts/ModdingAPI/HectonAPI.cs",
+    "publicNestedSurfaceCount": 16,
+    "publicStaticMethodCount": 34,
+    "publicStaticPropertyCount": 2,
+    "internalForbiddenMethodCount": 9,
+    "surfaces": [
+      "Events",
+      "Input",
+      "Commands",
+      "Resources",
+      "Telemetry",
+      "Items",
+      "Crafting",
+      "Recycling",
+      "Construction",
+      "Ecosystem",
+      "Assets",
+      "Localization",
+      "UI",
+      "World",
+      "SaveState",
+      "Mods"
+    ],
+    "publicProperties": [
+      "Proxy",
+      "IsGameReady"
+    ],
+    "internalForbiddenMethods": [
+      "DespawnPersistentInstance",
+      "LoadAudioClip",
+      "LoadPrefab",
+      "LoadTexture",
+      "Publish",
+      "SpawnPersistentPrefab",
+      "Subscribe",
+      "TryGetPlayerObject",
+      "TryGetPlayerTransform"
+    ]
+  },
+  "payloadLayouts": [
+    {
+      "payload": "ModEventDto",
+      "layout": "Explicit",
+      "sizeBytes": 64,
+      "fields": [
+        { "name": "EventHash", "offset": 0, "type": "uint" },
+        { "name": "SubjectHash", "offset": 4, "type": "uint" },
+        { "name": "ContextHash", "offset": 8, "type": "uint" },
+        { "name": "SourceHash", "offset": 12, "type": "uint" },
+        { "name": "Frame", "offset": 16, "type": "uint" },
+        { "name": "RelativePosition", "offset": 20, "type": "float3" },
+        { "name": "Direction", "offset": 32, "type": "float3" },
+        { "name": "Scalar0", "offset": 44, "type": "float" },
+        { "name": "Scalar1", "offset": 48, "type": "float" },
+        { "name": "Kind", "offset": 52, "type": "ushort" },
+        { "name": "Flags", "offset": 54, "type": "ushort" },
+        { "name": "QualityTier", "offset": 56, "type": "byte" },
+        { "name": "Reserved0", "offset": 57, "type": "byte" },
+        { "name": "Sequence", "offset": 58, "type": "ushort" },
+        { "name": "Reserved1", "offset": 60, "type": "uint" }
+      ]
+    },
+    {
+      "payload": "ModCommand",
+      "layout": "Sequential",
+      "sizeBytes": 64,
+      "fields": [
+        { "name": "Opcode", "type": "ushort" },
+        { "name": "TargetSystem", "type": "ushort" },
+        { "name": "Flags", "type": "ushort" },
+        { "name": "ApiVersion", "type": "ushort" },
+        { "name": "Payload0", "type": "ulong", "packing": "low32 ModHash, high32 RequestId" },
+        { "name": "Payload1", "type": "ulong" },
+        { "name": "Payload2", "type": "ulong" },
+        { "name": "Payload3", "type": "ulong" },
+        { "name": "Payload4", "type": "ulong" },
+        { "name": "Payload5", "type": "ulong" },
+        { "name": "Payload6", "type": "ulong" }
+      ]
+    },
+    {
+      "payload": "ModAupCommand",
+      "layout": "Sequential",
+      "sizeBytes": null,
+      "fields": [
+        { "name": "Command", "type": "ModCommand" },
+        { "name": "Position", "type": "ModAup" },
+        { "name": "Direction", "type": "float3" },
+        { "name": "Scalar", "type": "float" }
+      ],
+      "notes": "Required for every position-changing opcode. Dispatcher rebases at drain time."
+    },
+    {
+      "payload": "ModAupResponse",
+      "layout": "Sequential",
+      "sizeBytes": 64,
+      "fields": [
+        { "name": "ModHash", "type": "uint" },
+        { "name": "RequestId", "type": "uint" },
+        { "name": "ResponseKind", "type": "uint" },
+        { "name": "Status", "type": "uint" },
+        { "name": "Grid", "type": "long3" },
+        { "name": "Local", "type": "float3" },
+        { "name": "Payload", "type": "uint3" }
+      ]
+    },
+    {
+      "payload": "ModRenderInstanceCommand",
+      "layout": "Sequential",
+      "sizeBytes": null,
+      "fields": [
+        { "name": "ModHash", "type": "uint" },
+        { "name": "RequestId", "type": "uint" },
+        { "name": "ResourceHash", "type": "uint" },
+        { "name": "Flags", "type": "uint" },
+        { "name": "Matrix", "type": "float4x4" }
+      ]
+    },
+    {
+      "payload": "ModRaycastResultPayload",
+      "layout": "Sequential",
+      "sizeBytes": null,
+      "fields": [
+        { "name": "ModHash", "type": "uint" },
+        { "name": "RequestId", "type": "uint" },
+        { "name": "Status", "type": "uint" },
+        { "name": "ColliderInstanceId", "type": "int", "access": "diagnostic_only" },
+        { "name": "Layer", "type": "int" },
+        { "name": "Distance", "type": "float" },
+        { "name": "Point", "type": "float3" },
+        { "name": "Normal", "type": "float3" }
+      ]
+    },
+    {
+      "payload": "ModInteractionRejectedPayload",
+      "layout": "Sequential",
+      "sizeBytes": null,
+      "fields": [
+        { "name": "ModHash", "type": "uint" },
+        { "name": "RequestId", "type": "uint" },
+        { "name": "Opcode", "type": "ushort" },
+        { "name": "TargetSystem", "type": "ushort" },
+        { "name": "Reason", "type": "uint" }
+      ]
+    },
+    {
+      "payload": "ModCriticalMemoryEvictionPayload",
+      "layout": "Sequential",
+      "sizeBytes": null,
+      "fields": [
+        { "name": "ModHash", "type": "uint" },
+        { "name": "TrackedHeapBytes", "type": "ulong" },
+        { "name": "LimitBytes", "type": "uint" },
+        { "name": "Reason", "type": "uint" }
+      ]
+    }
+  ],
+  "payloadLayoutAudit": {
+    "auditPath": "Docs/Modding/Payload_Layout_Audit_Matrix.md",
+    "modEventDtoSizeBytes": 64,
+    "modEventDtoFieldOffsetCount": 15,
+    "modCommandSizeBytes": 64,
+    "modAupResponseSizeBytes": 64,
+    "eventHashes": [
+      { "name": "CombatDamageEventHash", "hex": "0x43444D47" },
+      { "name": "WeatherChangedEventHash", "hex": "0x57454154" }
+    ],
+    "lowTierSampleFlag": "1 << 8"
+  },
+  "loaderSaveAudit": {
+    "auditPath": "Docs/Modding/Loader_Save_Audit_Matrix.md",
+    "manifestFileName": "mod.json",
+    "currentApiVersion": 2,
+    "manifestFieldCount": 9,
+    "modMetadataFieldCount": 8,
+    "modRuntimeInfoFieldCount": 7,
+    "lifecycleMethodCount": 3,
+    "versionedInterfacePropertyCount": 1,
+    "saveStatePublicMethodCount": 2,
+    "saveDictionaryPrefix": "m8v1:",
+    "modPayloadBlockSizeBytes": 16384,
+    "modPayloadHeaderSizeBytes": 32,
+    "modPayloadMaxBytes": 16352,
+    "requiredLifecycleCallbacks": [
+      "OnLoad",
+      "OnInitialize",
+      "OnUnload"
+    ],
+    "runtimeBoundary": "Loader and SaveState are cold-path/managed-boundary contracts. They do not authorize direct SignalBus, NativeArray, DataVault, Unity object, or first-party save-owner mutation."
+  },
+  "acceptanceGates": {
+    "newProjectedSignalBus": [
+      "schema entry added with source payload, capacity, event hash, field projection, and security notes",
+      "projection bridge clamps non-finite floats and uses numeric hashes",
+      "low-tier and high-tier caps documented",
+      "overflow telemetry and 300-frame blackbox route documented",
+      "Unity runtime callback smoke test confirms no callback storm and no managed allocation regression"
+    ],
+    "newCommandOpcode": [
+      "engine-owned IModCommandKernel registered",
+      "opcode appears in IsAcceptedOpcode and target validation",
+      "AUP requirement stated for every position-affecting command",
+      "rejection reason and unmanaged response payload documented",
+      "per-mod quota behavior documented"
+    ],
+    "newPublicFacadeMethod": [
+      "surface classification recorded as read_only, cold_registration, presentation, or engine_validated_write_request",
+      "Unity object/native handle exposure checked",
+      "hot-path allocation risk stated",
+      "allowed phase stated"
+    ],
+    "loaderOrSaveContractChange": [
+      "Loader_Save_Audit_Matrix.md updated with manifest, lifecycle, runtime info, and save boundary changes",
+      "CurrentAPIVersion or compatibility shim changes are reflected in schema and runtime playbook",
+      "SaveState payload limits and namespace prefix are revalidated against SaveBinaryStorage",
+      "Unity runtime smoke test confirms lifecycle callback order and unload disposal"
+    ]
+  },
+  "staticValidation": {
+    "script": "Docs/Modding/Validate_Mod_API_Static.ps1",
+    "runtimePlaybook": "Docs/Modding/Runtime_Verification_Playbook.md",
+    "commandAudit": "Docs/Modding/Command_Audit_Matrix.md",
+    "apiSurfaceAudit": "Docs/Modding/API_Surface_Audit_Matrix.md",
+    "payloadLayoutAudit": "Docs/Modding/Payload_Layout_Audit_Matrix.md",
+    "loaderSaveAudit": "Docs/Modding/Loader_Save_Audit_Matrix.md",
+    "lastKnownPass": {
+      "date": "2026-05-15",
+      "sourceSignals": 129,
+      "allowedProjectedSignals": 2,
+      "deniedByDefaultSignals": 127,
+      "acceptedCommandOpcodes": 8,
+      "commandRejectReasons": 19,
+      "publicApiSurfaces": 16,
+      "publicApiMethods": 34,
+      "publicApiProperties": 2,
+      "internalForbiddenApiMethods": 9,
+      "modEventDtoSizeBytes": 64,
+      "modEventDtoFieldOffsets": 15,
+      "modCommandSizeBytes": 64,
+      "modAupResponseSizeBytes": 64,
+      "currentApiVersion": 2,
+      "manifestFieldCount": 9,
+      "modMetadataFieldCount": 8,
+      "modRuntimeInfoFieldCount": 7,
+      "lifecycleMethodCount": 3,
+      "saveStatePublicMethodCount": 2,
+      "modPayloadMaxBytes": 16352,
+      "projectionBridgeSignals": [
+        "CombatDamageSignal",
+        "WeatherChangedSignal"
+      ]
+    },
+    "checks": [
+      "Signal_Schema.json parses as JSON",
+      "GlobalSignals.cs ISignal inventory count matches sourceSignalInventory",
+      "allowedSignalBuses exists in GlobalSignals.cs",
+      "ModEventProjectionBridge SignalBus<T> usages exactly match allowedSignalBuses",
+      "Signal_Audit_Matrix.md contains every current ISignal name",
+      "Command_Audit_Matrix.md contains every accepted non-none opcode and rejection reason",
+      "API_Surface_Audit_Matrix.md contains every public facade surface, public method, public property, and internal forbidden method",
+      "Payload_Layout_Audit_Matrix.md contains fixed payload size and field offset contracts",
+      "Loader_Save_Audit_Matrix.md contains loader lifecycle, manifest, runtime info, and mod save-state contracts",
+      "Mod_API_Specification.md links the audit and runtime playbook",
+      "Runtime_Verification_Playbook.md defines pass criteria before VERIFIED status"
+    ]
+  },
+  "projectionBridge": {
+    "type": "Hecton8.Modding.ModEventProjectionBridge",
+    "subscribeApi": "HectonAPI.Events.SubscribeProjected(Action<ModEventDto> handler, string subscriberId = null)",
+    "dto": "Hecton8.Modding.ModEventDto",
+    "dtoSizeBytes": 64,
+    "lowTierProjectionCapPerFrame": 10,
+    "highTierProjectionCapPerFrame": 50,
+    "blackboxCapacityFrames": 300,
+    "callbackWatchdogMilliseconds": 2.0,
+    "callbackManagedAllocationLimitBytesPerFrame": 1048576,
+    "phaseModel": {
+      "sourceSnapshot": "POST_SIMULATION stable SignalBus<T> frame snapshots",
+      "projection": "ProjectPostSimulation schedules projection jobs",
+      "dispatch": "LateFrameTick drains projected ModEventDto payloads through HectonEventBus"
+    },
+    "overflowPolicy": "bounded sample cap; low tier marks ModEventDto.LowTierSampleFlag"
+  },
+  "allowedSignalBuses": [
+    {
+      "bus": "SignalBus<CombatDamageSignal>",
+      "sourcePayload": "Hecton8.Core.Signals.CombatDamageSignal",
+      "sourcePayloadSizeBytes": 64,
+      "globalSignalsCapacity": 256,
+      "modSurface": "ModEventDto",
+      "modEventKind": "CombatDamage",
+      "eventHashHex": "0x43444D47",
+      "eventHashAscii": "CDMG",
+      "access": "read_only_projection",
+      "directSubscriptionAllowed": false,
+      "producerMeaning": "combat damage notification projected for diagnostics, UI, and non-authoritative mod reactions",
+      "fieldProjection": {
+        "EventHash": "ModEventDto.CombatDamageEventHash",
+        "SubjectHash": "CombatDamageSignal.TargetHash",
+        "ContextHash": "CombatDamageSignal.DamageType",
+        "SourceHash": "CombatDamageSignal.SourceHash",
+        "Frame": "CombatDamageSignal.Frame",
+        "RelativePosition": "CombatDamageSignal.WorldPoint minus current player runtime position",
+        "Direction": "CombatDamageSignal.Direction with finite fallback to float3.zero",
+        "Scalar0": "CombatDamageSignal.Magnitude with finite fallback to 0",
+        "Scalar1": "CombatDamageSignal.IntegrityDelta",
+        "Flags": "CombatDamageSignal.Flags plus low-tier sample flag when capped"
+      },
+      "securityNotes": [
+        "No target component, Rigidbody, Transform, or damage receiver reference is exposed.",
+        "Mods cannot cancel or amplify damage from this event.",
+        "Finite guards exist in the projection job for position, direction, and magnitude."
+      ]
+    },
+    {
+      "bus": "SignalBus<WeatherChangedSignal>",
+      "sourcePayload": "Hecton8.Core.Signals.WeatherChangedSignal",
+      "sourcePayloadSizeBytes": 32,
+      "globalSignalsCapacity": 32,
+      "modSurface": "ModEventDto",
+      "modEventKind": "WeatherChanged",
+      "eventHashHex": "0x57454154",
+      "eventHashAscii": "WEAT",
+      "access": "read_only_projection",
+      "directSubscriptionAllowed": false,
+      "producerMeaning": "weather transition snapshot projected for ambience, UI, and non-authoritative mod reactions",
+      "fieldProjection": {
+        "EventHash": "ModEventDto.WeatherChangedEventHash",
+        "SubjectHash": "WeatherChangedSignal.WeatherHash",
+        "ContextHash": "WeatherChangedSignal.PreviousWeatherHash",
+        "SourceHash": "0",
+        "Frame": "WeatherChangedSignal.Frame",
+        "RelativePosition": "float3.zero",
+        "Direction": "float3.zero",
+        "Scalar0": "saturated WeatherChangedSignal.Strength01 with finite fallback to 0",
+        "Scalar1": "non-negative WeatherChangedSignal.FlowFieldScale with finite fallback to 0",
+        "Flags": "WeatherChangedSignal.Flags plus low-tier sample flag when capped",
+        "QualityTier": "WeatherChangedSignal.QualityTier"
+      },
+      "securityNotes": [
+        "Mods cannot mutate weather authority from this event.",
+        "Weather hashes are numeric identifiers, not string event names.",
+        "Flow scalar is clamped before projection."
+      ]
+    }
+  ],
+  "nativeBytePayloadEvents": [
+    {
+      "kind": "Interaction",
+      "kindValue": 0,
+      "sourceLane": "InteractionEvents",
+      "modApi": "HectonAPI.Events.SubscribeNative(HectonNativeEventHandler handler, string subscriberId = null)",
+      "payloadAccess": "ReadOnlySpan<byte> valid only for callback duration",
+      "directSignalBus": false,
+      "notes": "Copied from first-party NativeQueue listener bridge; no native handle is exposed."
+    },
+    {
+      "kind": "Crafting",
+      "kindValue": 1,
+      "sourceLane": "CraftingEvents",
+      "modApi": "HectonAPI.Events.SubscribeNative(HectonNativeEventHandler handler, string subscriberId = null)",
+      "payloadAccess": "ReadOnlySpan<byte> valid only for callback duration",
+      "directSignalBus": false,
+      "notes": "Copied from first-party NativeQueue listener bridge; no native handle is exposed."
+    }
+  ],
+  "publicUnmanagedPayloadEvents": [
+    {
+      "payload": "ModPlayerSpawnedEvent",
+      "api": "HectonAPI.Events.OnPlayerSpawned",
+      "access": "read_only_unmanaged_payload",
+      "fields": [
+        "PlayerId",
+        "AbsoluteUniversePosition",
+        "BiomeId"
+      ]
+    },
+    {
+      "payload": "ModBiomeChangedEvent",
+      "api": "HectonAPI.Events.OnBiomeChanged",
+      "access": "read_only_unmanaged_payload",
+      "fields": [
+        "PreviousBiomeId",
+        "CurrentBiomeId",
+        "AbsoluteUniversePosition"
+      ]
+    },
+    {
+      "payload": "ModRaycastResultPayload",
+      "api": "HectonAPI.Events.Subscribe<ModRaycastResultPayload>",
+      "access": "asynchronous_command_result",
+      "source": "ModCommandDispatcher proxied dispatcher raycast lane"
+    },
+    {
+      "payload": "ModInteractionRejectedPayload",
+      "api": "HectonAPI.Events.Subscribe<ModInteractionRejectedPayload>",
+      "access": "asynchronous_command_rejection",
+      "source": "ModCommandDispatcher security gate"
+    },
+    {
+      "payload": "ModCriticalMemoryEvictionPayload",
+      "api": "HectonAPI.Events.Subscribe<ModCriticalMemoryEvictionPayload>",
+      "access": "mod_quarantine_warning",
+      "source": "ModCommandDispatcher heap quota enforcement"
+    },
+    {
+      "payload": "ModAupResponse",
+      "api": "HectonAPI.Events.Subscribe<ModAupResponse>",
+      "access": "asynchronous_aup_response",
+      "source": "ModCommandDispatcher AUP command lane"
+    }
+  ],
+  "commandApi": {
+    "auditPath": "Docs/Modding/Command_Audit_Matrix.md",
+    "requestApis": [
+      "HectonAPI.Commands.Request(in ModCommand command)",
+      "HectonAPI.Commands.RequestAup(in ModAupCommand command)",
+      "HectonAPI.Commands.RequestRenderInstance(in ModRenderInstanceCommand command)"
+    ],
+    "acceptedOpcodes": [
+      "SpawnDebris",
+      "ApplyHeat",
+      "RaycastQuery",
+      "SpawnEffect",
+      "MoveEntity",
+      "VoxelModify",
+      "FlowQuery",
+      "AcousticPing"
+    ],
+    "allPositionChangingOpcodesRequireAup": true,
+    "queueCapacity": 4096,
+    "maxDrainPerLateFrame": 256,
+    "maxCommandsPerModPerTick": 128,
+    "maxModRaycasts": 128,
+    "maxModRenderInstancesPerFrame": 1024,
+    "modHeapQuotaBytes": 16777216,
+    "modHeapFrameQuotaBytes": 1048576,
+    "maxModVoxelModifyRadiusMeters": 8.0,
+    "protectedCoreAupRejected": true
+  },
+  "commandAudit": {
+    "sourceFile": "Assets/_Project/Scripts/ModdingAPI/ModCommandDispatcher.cs",
+    "opcodeEnumCountIncludingNone": 9,
+    "acceptedOpcodeCount": 8,
+    "targetEnumCountIncludingNone": 8,
+    "rejectReasonCountIncludingNone": 19,
+    "allCurrentNonNoneOpcodesRequireAup": true,
+    "validTargets": [
+      { "opcode": "SpawnDebris", "targets": [ "World" ] },
+      { "opcode": "ApplyHeat", "targets": [ "Thermal", "Voxel" ] },
+      { "opcode": "RaycastQuery", "targets": [ "Physics" ] },
+      { "opcode": "SpawnEffect", "targets": [ "Effects" ] },
+      { "opcode": "MoveEntity", "targets": [ "World" ] },
+      { "opcode": "VoxelModify", "targets": [ "Voxel" ] },
+      { "opcode": "FlowQuery", "targets": [ "Environment" ] },
+      { "opcode": "AcousticPing", "targets": [ "Audio" ] }
+    ],
+    "resultPayloads": [
+      { "opcode": "RaycastQuery", "payload": "ModRaycastResultPayload" },
+      { "opcode": "VoxelModify", "payload": "ModAupResponse", "kind": "VoxelModify" },
+      { "opcode": "FlowQuery", "payload": "ModAupResponse", "kind": "FlowVector" },
+      { "opcode": "AcousticPing", "payload": "ModAupResponse", "kind": "AcousticPing" },
+      { "lane": "RequestRenderInstance", "payload": "ModInteractionRejectedPayload", "condition": "RenderCapacityExceeded" }
+    ]
+  },
+  "blockedDirectSignalFamilies": [
+    {
+      "family": "AUP and origin-shift authority",
+      "examples": [
+        "AupPreShiftSignal",
+        "AupShiftSignal",
+        "RebaseSignal",
+        "MemoryAddressShiftSignal"
+      ],
+      "reason": "Can desynchronize coordinate authority and stale native handles.",
+      "requiredWrapper": "read-only rebased DTO or engine-owned command response only"
+    },
+    {
+      "family": "DataVault, streaming, save, and persistence authority",
+      "examples": [
+        "MemoryPressureSignal",
+        "StorageDebtSignal",
+        "SectorHydratedSignal",
+        "SectorResidencyHydratedSignal",
+        "SectorDehydratedSignal",
+        "ChunkDehydratedSignal",
+        "SaveRequestSignal",
+        "SaveCompletedSignal",
+        "SaveStatusSignal",
+        "SaveMetadataReadySignal",
+        "WfcOutpostGeneratedSignal",
+        "WfcOutpostStateChangedSignal",
+        "WfcOutpostDoorPowerSignal"
+      ],
+      "reason": "Can expose native buffer handles, sector identity, or save lifecycle state that must stay engine-owned.",
+      "requiredWrapper": "redacted status DTOs with hashes only; no file offsets, grid handles, or mutable sector ids"
+    },
+    {
+      "family": "Player input, inventory, physiology, and survival authority",
+      "examples": [
+        "InputStateSignal",
+        "PlayerInputSignal",
+        "PlayerLookTargetSignal",
+        "InventoryCommandSignal",
+        "PlayerStateSignal",
+        "PhysiologyStateSignal",
+        "HypoxiaSignal",
+        "OxygenCriticalSignal",
+        "PlayerStressSignal"
+      ],
+      "reason": "Can enable input spoofing, inventory duplication, or survival-state corruption.",
+      "requiredWrapper": "read-only redacted DTOs plus engine-owned command kernels with TTL and save-exclusion policy"
+    },
+    {
+      "family": "High-volume simulation and rendering internals",
+      "examples": [
+        "WakeGeneratedSignal",
+        "FluidImpulseSignal",
+        "RigidbodySleepSignal",
+        "CameraPositionSignal",
+        "CameraFrustumSignal",
+        "CullingOverloadSignal",
+        "SubmarineLightsChangedSignal",
+        "FaunaStateChangedSignal"
+      ],
+      "reason": "Can create callback storms or expose presentation internals with no gameplay contract.",
+      "requiredWrapper": "sampled projection with low-tier cap and no mutable references"
+    }
+  ],
+  "readOnlyWrapperRequirements": {
+    "payloadMustBeUnmanaged": true,
+    "payloadMustBeFiniteBeforePublish": true,
+    "payloadMustUseNumericHashes": true,
+    "payloadMustAvoidUnityObjectReferences": true,
+    "payloadMustAvoidNativeContainerHandles": true,
+    "payloadMustHaveMaxEventsPerFrame": true,
+    "overflowPolicyMustBeDocumented": true,
+    "lowTierHysteresisOrCapRequired": true,
+    "telemetryRequiredForCullOrOverflow": true
+  },
+  "sampleCheatMod": {
+    "name": "InfiniteO2",
+    "currentRuntimeMutability": "not_available_without_new_engine_owned_survival_command_kernel",
+    "safePattern": [
+      "Register a mod setting for enable/disable.",
+      "Listen to projected events or future redacted player physiology DTOs.",
+      "Submit a bounded engine-owned survival override command with TTL; do not write player/DataVault state directly.",
+      "Handle ModInteractionRejectedPayload or ModAupResponse rejection events.",
+      "Persist only the mod preference through HectonAPI.SaveState."
+    ],
+    "requiredFutureKernel": {
+      "opcode": "SurvivalOverride",
+      "targetSystem": "PlayerSurvival",
+      "ttlSecondsMax": 3,
+      "fields": [
+        "ModHash",
+        "RequestId",
+        "PlayerEntityHash",
+        "OverrideMask",
+        "OxygenFloor01",
+        "DurationMilliseconds"
+      ],
+      "rules": [
+        "engine clamps oxygen floor",
+        "override is not serialized into first-party save truth",
+        "owner publishes telemetry and can revoke on mod unload",
+        "no DataVault handle or player component is exposed"
+      ]
+    }
+  },
+  "versioningPolicy": {
+    "breakingChanges": "Require schemaVersion increment and compatibility wrapper through current batch.",
+    "newProjectedSignalBus": "Requires Integrator approval, Signal_Schema.json update, projection cap, finite guard, and runtime profiling before VERIFIED status.",
+    "newModCommandOpcode": "Requires engine-owned kernel, security gate, rejection reason, telemetry, and command quota accounting."
+  }
+}

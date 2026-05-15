@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import json
 import sys
 import tempfile
 from pathlib import Path
@@ -127,6 +128,36 @@ def main() -> int:
             assert required in index_text
         for forbidden in ("innerHTML", "eval(", "new Function", "document.write", "console.log", "debugger"):
             assert forbidden not in index_text
+
+        degraded = server.build_degraded_summary(RuntimeError("forced failure"))
+        assert degraded["status"] == "DASHBOARD DEGRADED"
+        assert degraded["csv"]["sources"] == []
+        assert degraded["dumps"]["files"] == []
+        assert degraded["errors"][0]["type"] == "RuntimeError"
+
+        original_build_summary = server.build_summary
+
+        def raise_summary() -> dict[str, object]:
+            raise RuntimeError("forced route failure")
+
+        server.build_summary = raise_summary
+        try:
+            response = server.api_summary()
+        finally:
+            server.build_summary = original_build_summary
+        routed_payload = json.loads(response.body)
+        assert response.status_code == 200
+        assert routed_payload["status"] == "DASHBOARD DEGRADED"
+        assert routed_payload["errors"][0]["type"] == "RuntimeError"
+        assert response.headers["cache-control"] == "no-store, max-age=0"
+        assert response.headers["pragma"] == "no-cache"
+        assert response.headers["x-content-type-options"] == "nosniff"
+
+        assert server.index().headers["cache-control"] == "no-store, max-age=0"
+        health_response = server.api_health()
+        health_payload = json.loads(health_response.body)
+        assert health_payload["status"] == "ok"
+        assert health_response.headers["x-content-type-options"] == "nosniff"
 
     print("telemetry dashboard smoke ok")
     return 0

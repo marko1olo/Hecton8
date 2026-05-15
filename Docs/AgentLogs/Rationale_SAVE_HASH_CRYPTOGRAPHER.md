@@ -167,3 +167,303 @@ Rejected Alternatives: Suppressing parser failures or slicing empty tails was re
 Scalability potential: Low/Middle/High/Ultra save ABI is unchanged. This only hardens offline parity checks.
 
 Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 15
+
+Problem: The static C# guard still under-verified the header ABI. It checked the master-lane offsets but did not prove the full `SaveFileHeaderV10` field order or all manifest sentinels.
+
+Solution: Expanded `ValidateSaveMasterHashCSharp.py` to validate all 21 manifest sentinel lines and the exact `SaveFileHeaderV10` public field order.
+
+Rejected Alternatives: Trusting the manifest because it was manually written was rejected. A binary ABI guard must fail if any field is reordered, not only if the final two fields move.
+
+Scalability potential: No runtime impact. This reduces future ABI drift across all quality tiers.
+
+Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 16
+
+Problem: Unity compile remains blocked, but plain text/static checks do not prove the C# file parses.
+
+Solution: Located Visual Studio Roslyn `csc.exe` and ran it directly against `SaveMasterHashV10.cs`. The compiler reached expected missing-reference diagnostics for Unity/project assemblies and did not emit syntax diagnostics.
+
+Rejected Alternatives: Generating fake Unity/project stubs for a green standalone compile was rejected as weaker evidence than a real Unity import and as extra temporary code surface. Reporting "no compiler available" was rejected after finding Roslyn.
+
+Scalability potential: No runtime impact. This only tightens verification accuracy.
+
+Hardware Impact: 0 us frame impact.
+
+## Decision 17
+
+Problem: The executable C# parity guard proved domains, constants, layout sentinels, and field order, but it did not prove that the `SaveFileHeaderV10` overload forwards only the intended non-circular fields or that validation compares stored shuffled lanes.
+
+Solution: Added static checks for the exact 12-field header forwarding order, exclusion of `HashHeader64` and `MasterStateHash*` from the master preimage, stored-lane assignment/comparison, Unity.Mathematics `uint2` hash lane assembly, and the Python master preimage length.
+
+Rejected Alternatives: Relying on `BinaryLayoutManifest` alone was rejected because layout correctness does not prove hash preimage correctness. Adding a broad C# parser dependency was rejected because this guard must run on clean machines with standard Python only.
+
+Scalability potential: No runtime impact. All tiers retain the same V10 save ABI while the offline guard catches future circular-hash drift.
+
+Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 18
+
+Problem: The guard proved the header overload forwarding order, but a future edit could still reorder byte writes inside `BuildMasterPreimage` while preserving the public overload signature.
+
+Solution: Added a parser for the C# byte-writer sequence and locked it to the canonical 15-step order: domain, header prefix fields, `HashPayload64`, `WorldSeed`, and `SectorHash`.
+
+Rejected Alternatives: Trusting method parameter order was rejected because byte writers are the actual ABI. Replacing the C# writer with reflection or struct dumps was rejected because this path must stay explicit, little-endian, and stack-only.
+
+Scalability potential: No runtime impact. The same V10 ABI is preserved across Low/Middle/High/Ultra, with stronger offline drift detection.
+
+Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 19
+
+Problem: A mandatory re-extraction check found that `Docs/Tasks/CURRENT_BATCH.md` no longer contains `SAVE_HASH_CRYPTOGRAPHER`; the file has been replaced by a different batch while this task is already in progress.
+
+Solution: Preserved the exact removed XML directive inside `Docs/Tasks/Status_SAVE_HASH_CRYPTOGRAPHER.md` and recorded the latest `PROMPT_NOT_FOUND` result as batch churn.
+
+Rejected Alternatives: Reverting `CURRENT_BATCH.md` was rejected because it is outside my owned changes and appears to belong to another active batch. Continuing without a local prompt snapshot was rejected because context compression would erase the assignment trail.
+
+Scalability potential: No runtime impact. This protects task continuity only.
+
+Hardware Impact: 0 us frame impact.
+
+## Decision 20
+
+Problem: The C# parity guard proved the `BuildMasterPreimage` field write order, but not the cursor advance schedule. A wrong `cursor += N` would still change the hash preimage while using the same field names.
+
+Solution: Added static extraction of the C# cursor/write operation stream, locked the expected 26 operations, and verified the final written byte end is exactly `80`.
+
+Rejected Alternatives: Trusting field order alone was rejected because binary ABI correctness depends on offsets, not names. Adding runtime reflection was rejected because the guard must remain offline and dependency-free.
+
+Scalability potential: No runtime impact. This only hardens cross-platform save ABI evidence.
+
+Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 21
+
+Problem: The bit-shuffle mask path still depended on manual review for the exact C# byte order of `WorldSeed`, `SectorHash`, and `maskLo`.
+
+Solution: Added static extraction of the `DeriveShuffleMask` byte operation stream, locked 12 operations, and verified the low/high mask preimages end at bytes `36` and `44`.
+
+Rejected Alternatives: Trusting the domain string check was rejected because matching domains do not prove lane payload order. Executing C# in a fake standalone harness was rejected because Unity.Mathematics references are unavailable in this shell.
+
+Scalability potential: No runtime impact. This strengthens the same Low/Middle/High/Ultra save ABI and prevents Python/Burst shuffle drift.
+
+Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 22
+
+Problem: The Python oracle self-test validated one shuffle/inverse vector but did not explicitly pin 128-bit rotate edge shifts around `0`, `64`, and `127`.
+
+Solution: Added deterministic rotate vectors for shifts `0/1/63/64/65/127` plus inverse `rotr128(rotl128(x, shift), shift)` checks.
+
+Rejected Alternatives: Trusting the shuffle vector alone was rejected because the derived rotation might not hit edge cases. Adding random-only rotate fuzz was rejected because fixed vectors give stable CI evidence.
+
+Scalability potential: No runtime impact. This hardens offline replay math for all save tiers.
+
+Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 23
+
+Problem: Python now pins rotate edge vectors, but the C# parity guard still did not lock the `Rotl128` and `Rotr128` branch formulas.
+
+Solution: Added static formula checks for C# rotate branches: `shift == 0`, `shift == 64`, `<64`, and `>64` lane-swap formulas for both left and right rotation.
+
+Rejected Alternatives: Trusting the Python rotate vectors alone was rejected because the C# implementation could drift independently. Compiling a standalone Unity.Mathematics harness remains blocked by missing Unity/project references.
+
+Scalability potential: No runtime impact. This hardens the Burst-side bit-shuffle contract for all save tiers.
+
+Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 24
+
+Problem: Full Unity/C# verification is still requested by policy, but the local workspace cannot reach source compilation: `dotnet` and Unity are unavailable, and MSBuild fails before compilation because `.slnx` references missing Unity-generated `.csproj` files.
+
+Solution: Re-ran external tooling probes with longer timeouts and recorded the exact failure boundary. Kept verification status as `PENDING UNITY VERIFICATION` instead of claiming a green compile.
+
+Rejected Alternatives: Generating fake `.csproj` files was rejected because that would mutate Unity-generated project artifacts and create false confidence. Reporting the static guard as equivalent to Unity import was rejected because Unity assembly references, unsafe settings, and IL2CPP behavior remain unverified.
+
+Scalability potential: No runtime impact. This is verification boundary reporting only.
+
+Hardware Impact: 0 us frame impact.
+
+## Decision 25
+
+Problem: The C# parity guard proved preimage order, cursor offsets, shuffle byte operations, and rotate formulas, but it still trusted the primitive little-endian writer helpers by manual review.
+
+Solution: Added exact static body checks for `WriteU16`, `WriteU32`, and `WriteU64`, locking byte indexes and shift counts for little-endian serialization.
+
+Rejected Alternatives: Trusting call-site order was rejected because a single primitive writer drift would corrupt every preimage while preserving field names and cursor offsets. Replacing the helpers with `BitConverter` or native struct copies was rejected because it reintroduces platform-endian and allocation risk.
+
+Scalability potential: Low/Middle/High/Ultra retain the same save ABI. The offline guard prevents cross-platform drift before Unity import or IL2CPP testing.
+
+Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 26
+
+Problem: Negative `WorldSeed` or `AUP.SectorHash` values rely on two's-complement lane packing. The implementation masked them correctly by inspection, but the Python oracle did not freeze signed edge-case bytes in self-test.
+
+Solution: Added fixed self-test vectors for `0`, `1`, `-1`, `-987654321`, `long.MinValue`, and `long.MaxValue`, plus a 128-bit little-endian lane hex roundtrip check.
+
+Rejected Alternatives: Trusting Python `struct.pack` and C# `unchecked((ulong)...)` by inspection was rejected because signed-lane drift would only appear on negative sectors or seeds. Adding a managed C# executable harness was rejected because Unity/project references remain unavailable in this shell.
+
+Scalability potential: No runtime impact. All quality tiers retain the same V10 save ABI while the offline oracle catches signed packing drift.
+
+Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 27
+
+Problem: The V10 helper uses its own `Hash64` wrapper over `Unity.Mathematics.xxHash3.Hash64`. Existing save storage also has a full-lane `Hash64` helper plus a separate low-lane `Hash32` helper. Future accidental reuse of `.x` would downgrade the V10 master hash.
+
+Solution: Extended the static guard to validate both `SaveMasterHashV10.Hash64` and existing `SaveBinaryStorage.Hash64` assemble `((ulong)hash.y << 32) | hash.x`.
+
+Rejected Alternatives: Trusting method names was rejected because `Hash32` intentionally uses `.x`, and a reviewer could confuse the two conventions. Refactoring the helpers into a shared public API was rejected during this batch because changing the save API surface would require Unity import/play/load verification.
+
+Scalability potential: No runtime impact. All quality tiers retain the same full 64-bit hash convention.
+
+Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 28
+
+Problem: The C# parity guard only counted `stackalloc byte[` occurrences. That would not catch an undersized stack buffer or an extra accidental stack buffer that changes the helper's memory contract.
+
+Solution: Replaced the loose count with exact declaration checks for `byte* preimage = stackalloc byte[MasterHiHashBytes];` and `byte* buffer = stackalloc byte[ShuffleMaskHiBytes];`.
+
+Rejected Alternatives: Keeping a count-only guard was rejected because it proves allocation style but not buffer capacity. Heap arrays were already forbidden and remain rejected because this path must stay allocation-free.
+
+Scalability potential: No runtime impact. All tiers retain the same stack-only cold save/load helper.
+
+Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 29
+
+Problem: `ReplayHasher.py self-test` pinned only one full `MasterStateHash` vector. That covered the normal mixed case but not zero metadata, all-max unsigned fields, or signed lane extremes.
+
+Solution: Replaced the single master vector with four frozen fixtures: mixed signed sector, zero metadata, max signed edges, and opposite signed lanes.
+
+Rejected Alternatives: Random-only master fuzz was rejected because deterministic CI evidence must expose the exact failing fixture. Depending on external `xxhash` for every self-test was rejected because the oracle must run on clean machines.
+
+Scalability potential: No runtime impact. All quality tiers retain the same V10 master hash ABI while offline regression coverage improves.
+
+Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 30
+
+Problem: The V10 helper is intentionally isolated until Unity import/load verification exists. A future edit could accidentally expose `SaveFileHeaderV10` or `SaveMasterHashV10` as public API during the batch.
+
+Solution: Extended the static guard to require the V10 result, header, and helper declarations remain `internal`, and to reject public declarations for the header/helper.
+
+Rejected Alternatives: Making the helper public now was rejected because active save ABI promotion needs Unity import, load, migration, and player save verification. Trusting code review alone was rejected because API drift is easy in parallel-agent work.
+
+Scalability potential: No runtime impact. All tiers keep the same isolated implementation surface until integration is verified.
+
+Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 31
+
+Problem: The helper being internal is not enough. `SaveBinaryStorage` could still accidentally start using V10 or bump the active header version without Unity import/load verification.
+
+Solution: Extended the static guard to require `SaveBinaryStorage.CurrentVersion = 0x0009`, `CurrentHeaderSize = 56`, and no `SaveMasterHashV10`/`SaveFileHeaderV10` references in the active writer.
+
+Rejected Alternatives: Integrating V10 into `SaveBinaryStorage` now was rejected because the local environment cannot run Unity import, migration, load, backup recovery, or IL2CPP checks. Trusting the status note was rejected because parallel edits can bypass prose.
+
+Scalability potential: No runtime impact. All tiers keep the current verified v9 writer while V10 remains staged for a future integration batch.
+
+Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 32
+
+Problem: The strongest external `xxhash` reference comparison existed as a one-off historical command, not as a reusable project tool. That weakens future verification after context loss.
+
+Solution: Added `Tools/Security/VerifyReplayHasherReference.py`, a separate optional verifier that imports `xxhash` only from an explicit temporary path and compares 338 XXH3 cases plus 128 shuffle inverse cases.
+
+Rejected Alternatives: Adding `xxhash` as a normal dependency was rejected because `ReplayHasher.py` must remain clean-machine and dependency-free. Leaving the old log-only comparison was rejected because future agents need a rerunnable command.
+
+Scalability potential: No runtime impact. All tiers retain the same save ABI; offline regression proof is easier to reproduce.
+
+Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 33
+
+Problem: The reusable reference verifier existed after Decision 32, but the stable design doc did not show the command to install `xxhash` into a temporary path and run the verifier.
+
+Solution: Added the optional install and `VerifyReplayHasherReference.py` invocation to `Docs/Design/Save_Binary_Header.md` beside the existing replay-hasher commands.
+
+Rejected Alternatives: Leaving usage only in `LOG_SAVE_HASH_CRYPTOGRAPHER.md` was rejected because logs are append-only evidence, not the stable command surface. Adding `xxhash` as a project dependency remains rejected.
+
+Scalability potential: No runtime impact. Future verification can be reproduced without changing save ABI or runtime dependencies.
+
+Hardware Impact: 0 us frame impact. Documentation only.
+
+## Decision 34
+
+Problem: Layout sentinels verified `SaveMasterHashV10Result` field offsets, but not constructor assignment order. A swapped constructor assignment would preserve binary layout while corrupting plain/stored lane semantics.
+
+Solution: Extended the static guard to validate `SaveMasterHashV10Result` constructor assignments and the raw `Compute` overload's `new SaveMasterHashV10Result(plainLo, plainHi, storedLo, storedHi)` call.
+
+Rejected Alternatives: Trusting constructor review was rejected because lane swaps are visually subtle and catastrophic for save validation. Removing the result constructor was rejected because it is simple, explicit, and compile-time friendly.
+
+Scalability potential: No runtime impact. All tiers retain the same V10 result ABI with stronger offline drift detection.
+
+Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 35
+
+Problem: Unity's `BinaryLayoutManifest` would catch a missing `[BinaryBlittableSafe]` attribute at runtime, but the offline parity guard did not. That left attribute drift invisible while Unity import is unavailable.
+
+Solution: Extended the static guard to require `[BinaryBlittableSafe]` directly before the packed `StructLayout` declarations for `SaveMasterHashV10Result` and `SaveFileHeaderV10`.
+
+Rejected Alternatives: Relying only on Unity cold-boot validation was rejected because Unity is unavailable in this shell. Duplicating runtime layout logic was rejected; the guard only verifies the required attributes and layout declarations.
+
+Scalability potential: No runtime impact. All tiers retain the same blit-safe V10 header/result contract.
+
+Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 36
+
+Problem: Master hash vectors prove the final output, but they do not make byte-order failures easy to diagnose. The raw 80-byte master preimage was not frozen inside `ReplayHasher.py self-test`.
+
+Solution: Added the exact mixed-case master preimage hex and length check to the Python self-test before the shuffle and master vector checks.
+
+Rejected Alternatives: Relying only on final hash mismatch was rejected because it forces future agents to reverse-engineer which field byte order drifted. Adding C# execution was still blocked by missing Unity/project references.
+
+Scalability potential: No runtime impact. All tiers retain the same master hash ABI with clearer offline diagnostics.
+
+Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 37
+
+Problem: Shuffle-mask output was frozen, but the low/high mask preimage bytes were not. A byte-order failure would only show as a hash mismatch without identifying which mask input lane drifted.
+
+Solution: Added exact low and high shuffle-mask preimage hex checks to `ReplayHasher.py self-test`, including byte lengths `36` and `44`.
+
+Rejected Alternatives: Relying only on final shuffle-mask lanes was rejected for the same diagnostic reason as the master preimage. Adding C# execution remains blocked by missing Unity/project references.
+
+Scalability potential: No runtime impact. All tiers retain the same bit-shuffle ABI with clearer offline diagnostics.
+
+Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 38
+
+Problem: `Tools/Security/VerifyReplayHasherReference.py` documented an explicit temporary `xxhash` path, but the CLI still allowed fallback to a globally installed module. That makes the proof depend on developer machine state and weakens reproducibility.
+
+Solution: Made `--xxhash-path` mandatory, inserted only that resolved directory into `sys.path`, and added a containment check that rejects an imported `xxhash` module whose `__file__` is outside the requested temp directory.
+
+Rejected Alternatives: Relying on global package discovery was rejected because it hides contamination from the host Python environment. Vendoring `xxhash` into the repo was rejected because `ReplayHasher.py` must remain dependency-free and the external package is only an optional oracle.
+
+Scalability potential: No runtime impact. All tiers retain the same save ABI; the offline reference proof is now machine-state independent.
+
+Hardware Impact: 0 us frame impact. Offline validation only.
+
+## Decision 39
+
+Problem: The path-containment check assumed any imported `xxhash` module exposes `__file__`. The official wheel does, but a contaminated module object without `__file__` would produce an uncontrolled exception path.
+
+Solution: Added an explicit `getattr(..., "__file__", None)` guard and return a controlled verification failure when the module path cannot be proven.
+
+Rejected Alternatives: Ignoring the edge case was rejected because this tool exists to detect environment contamination. Swallowing all exceptions was rejected because it would hide real path-resolution bugs.
+
+Scalability potential: No runtime impact. All tiers retain the same save ABI; external-reference failure modes are now deterministic.
+
+Hardware Impact: 0 us frame impact. Offline validation only.

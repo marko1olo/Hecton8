@@ -283,6 +283,7 @@ namespace Hecton8.Core.Memory
         private const long DefaultArenaBytes = 128L * 1024L * 1024L;
         private const float FragmentationRatioThreshold = 0.15f;
         private const long MassiveMoveThresholdBytes = 50L * 1024L * 1024L;
+        private const byte MacroDatabasePayloadDirtyFlag = 1 << 0;
         internal const byte BlockStateFree = 0;
         internal const byte BlockStateOccupied = 1;
         private const byte BlockFlagExternalView = 1 << 0;
@@ -302,6 +303,7 @@ namespace Hecton8.Core.Memory
         private NativeArray<MemoryDefragTelemetryEntry> _defragBlackBox;
         private NativeArray<VaultGapAuditResult> _gapAuditResult;
         private NativeParallelHashMap<ulong, MacroDatabasePayloadHandle> _macroDatabasePayloadCache;
+        private NativeParallelHashMap<ulong, uint> _macroDatabasePayloadAccessTicks;
         private NativeList<ulong> _macroDatabasePayloadKeys;
         private void* _arenaBase;
         private long _arenaBytes;
@@ -311,6 +313,7 @@ namespace Hecton8.Core.Memory
         private long _allocatedBytes;
         private long _macroDatabasePayloadBytes;
         private int _macroDatabasePayloadEvictions;
+        private uint _macroDatabaseCacheAccessClock;
         private int _defragBlackBoxCursor;
         private int _lastRelocationRecordCount;
         private int _compactionWatchdogBreachCount;
@@ -406,6 +409,7 @@ namespace Hecton8.Core.Memory
                 Allocator.Persistent,
                 NativeArrayOptions.ClearMemory);
             _macroDatabasePayloadCache = new NativeParallelHashMap<ulong, MacroDatabasePayloadHandle>(safeCapacity, Allocator.Persistent);
+            _macroDatabasePayloadAccessTicks = new NativeParallelHashMap<ulong, uint>(safeCapacity, Allocator.Persistent);
             _macroDatabasePayloadKeys = new NativeList<ulong>(safeCapacity, Allocator.Persistent);
             _arenaBytes = AlignUp(DefaultArenaBytes, VaultBlockAlignment);
             _arenaBase = H8Memory.AllocateRaw(
@@ -428,6 +432,7 @@ namespace Hecton8.Core.Memory
             _allocatedBytes = 0L;
             _macroDatabasePayloadBytes = 0L;
             _macroDatabasePayloadEvictions = 0;
+            _macroDatabaseCacheAccessClock = 0u;
             _defragBlackBoxCursor = 0;
             _lastRelocationRecordCount = 0;
             _compactionWatchdogBreachCount = 0;
@@ -864,15 +869,20 @@ namespace Hecton8.Core.Memory
             int safeCapacity = capacity > 0 ? capacity : DefaultBufferCapacity;
             if (!_macroDatabasePayloadCache.IsCreated)
                 _macroDatabasePayloadCache = new NativeParallelHashMap<ulong, MacroDatabasePayloadHandle>(safeCapacity, Allocator.Persistent);
+            if (!_macroDatabasePayloadAccessTicks.IsCreated)
+                _macroDatabasePayloadAccessTicks = new NativeParallelHashMap<ulong, uint>(safeCapacity, Allocator.Persistent);
             if (!_macroDatabasePayloadKeys.IsCreated)
                 _macroDatabasePayloadKeys = new NativeList<ulong>(safeCapacity, Allocator.Persistent);
 
             if (_macroDatabasePayloadCache.Capacity < safeCapacity)
                 _macroDatabasePayloadCache.Capacity = safeCapacity;
+            if (_macroDatabasePayloadAccessTicks.Capacity < safeCapacity)
+                _macroDatabasePayloadAccessTicks.Capacity = safeCapacity;
             if (_macroDatabasePayloadKeys.Capacity < safeCapacity)
                 _macroDatabasePayloadKeys.Capacity = safeCapacity;
 
             return _macroDatabasePayloadCache.Capacity >= safeCapacity &&
+                   _macroDatabasePayloadAccessTicks.Capacity >= safeCapacity &&
                    _macroDatabasePayloadKeys.Capacity >= safeCapacity;
         }
 
@@ -895,7 +905,10 @@ namespace Hecton8.Core.Memory
 
             bool hasExisting = _macroDatabasePayloadCache.TryGetValue(sectorHash, out MacroDatabasePayloadHandle existing);
             if (!hasExisting && _macroDatabasePayloadKeys.Length >= _macroDatabasePayloadKeys.Capacity)
-                return false;
+            {
+                if (!TryEvictLeastRecentlyUsedMacroDatabasePayload())
+                    return false;
+            }
 
             void* payloadPointer = H8Memory.AllocateRaw(
                 byteLength,
@@ -924,6 +937,7 @@ namespace Hecton8.Core.Memory
                     H8Memory.FreeRaw(existing.Pointer.ToPointer(), Allocator.Persistent, SystemID.CoreDataVault);
                 _macroDatabasePayloadBytes -= existing.ByteLength;
                 _macroDatabasePayloadCache[sectorHash] = handle;
+                TouchMacroDatabasePayload(sectorHash);
             }
             else
             {
@@ -935,6 +949,7 @@ namespace Hecton8.Core.Memory
                 }
 
                 _macroDatabasePayloadKeys.AddNoResize(sectorHash);
+                TouchMacroDatabasePayload(sectorHash);
             }
 
             _macroDatabasePayloadBytes += byteLength;
@@ -946,8 +961,14 @@ namespace Hecton8.Core.Memory
         public bool TryGetMacroDatabasePayload(ulong sectorHash, out MacroDatabasePayloadHandle handle)
         {
             handle = default;
-            return _macroDatabasePayloadCache.IsCreated &&
-                   _macroDatabasePayloadCache.TryGetValue(sectorHash, out handle);
+            if (!_macroDatabasePayloadCache.IsCreated ||
+                !_macroDatabasePayloadCache.TryGetValue(sectorHash, out handle))
+            {
+                return false;
+            }
+
+            TouchMacroDatabasePayload(sectorHash);
+            return true;
         }
 
         /// <inheritdoc />
@@ -964,6 +985,8 @@ namespace Hecton8.Core.Memory
                 H8Memory.FreeRaw(removed.Pointer.ToPointer(), Allocator.Persistent, SystemID.CoreDataVault);
 
             _macroDatabasePayloadCache.Remove(sectorHash);
+            if (_macroDatabasePayloadAccessTicks.IsCreated)
+                _macroDatabasePayloadAccessTicks.Remove(sectorHash);
             _macroDatabasePayloadBytes -= removed.ByteLength;
             _macroDatabasePayloadEvictions++;
             RemoveMacroDatabaseKey(sectorHash);
@@ -1089,11 +1112,14 @@ namespace Hecton8.Core.Memory
 
             if (_macroDatabasePayloadKeys.IsCreated)
                 _macroDatabasePayloadKeys.Dispose();
+            if (_macroDatabasePayloadAccessTicks.IsCreated)
+                _macroDatabasePayloadAccessTicks.Dispose();
             if (_macroDatabasePayloadCache.IsCreated)
                 _macroDatabasePayloadCache.Dispose();
 
             _macroDatabasePayloadBytes = 0L;
             _macroDatabasePayloadEvictions = 0;
+            _macroDatabaseCacheAccessClock = 0u;
         }
 
         private void RemoveMacroDatabaseKey(ulong sectorHash)
@@ -1109,6 +1135,59 @@ namespace Hecton8.Core.Memory
                 _macroDatabasePayloadKeys.RemoveAtSwapBack(i);
                 return;
             }
+        }
+
+        private void TouchMacroDatabasePayload(ulong sectorHash)
+        {
+            if (!_macroDatabasePayloadAccessTicks.IsCreated)
+                return;
+
+            _macroDatabaseCacheAccessClock++;
+            if (_macroDatabaseCacheAccessClock == 0u)
+                _macroDatabaseCacheAccessClock = 1u;
+
+            if (_macroDatabasePayloadAccessTicks.ContainsKey(sectorHash))
+                _macroDatabasePayloadAccessTicks[sectorHash] = _macroDatabaseCacheAccessClock;
+            else
+                _macroDatabasePayloadAccessTicks.TryAdd(sectorHash, _macroDatabaseCacheAccessClock);
+        }
+
+        private bool TryEvictLeastRecentlyUsedMacroDatabasePayload()
+        {
+            if (!_macroDatabasePayloadKeys.IsCreated ||
+                !_macroDatabasePayloadCache.IsCreated ||
+                _macroDatabasePayloadKeys.Length == 0)
+            {
+                return false;
+            }
+
+            int evictIndex = -1;
+            uint oldestTick = uint.MaxValue;
+            for (int i = 0; i < _macroDatabasePayloadKeys.Length; i++)
+            {
+                ulong candidateHash = _macroDatabasePayloadKeys[i];
+                if (!_macroDatabasePayloadCache.TryGetValue(candidateHash, out MacroDatabasePayloadHandle candidate))
+                    continue;
+
+                if ((candidate.Flags & MacroDatabasePayloadDirtyFlag) != 0)
+                    continue;
+
+                uint accessTick = 0u;
+                if (_macroDatabasePayloadAccessTicks.IsCreated)
+                    _macroDatabasePayloadAccessTicks.TryGetValue(candidateHash, out accessTick);
+
+                if (evictIndex < 0 || accessTick < oldestTick)
+                {
+                    oldestTick = accessTick;
+                    evictIndex = i;
+                }
+            }
+
+            if (evictIndex < 0)
+                return false;
+
+            ulong sectorHash = _macroDatabasePayloadKeys[evictIndex];
+            return TryRemoveMacroDatabasePayload(sectorHash, out _);
         }
 
         private void EnsureInitialized()

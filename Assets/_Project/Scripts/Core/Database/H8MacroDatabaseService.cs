@@ -40,6 +40,8 @@ namespace Hecton8.Core.Database
         private NativeParallelHashMap<ulong, SectorCoord64> _sectorCoordsByHash;
         private int _blackBoxWriteIndex;
         private int _pageFaults;
+        private int _pageFaultWindowStartTickMs;
+        private int _pageFaultWindowCount;
         private int _hydratedSectors;
         private int _evictedSectors;
         private int _dirtyAppendCount;
@@ -383,7 +385,7 @@ namespace Hecton8.Core.Database
                     continue;
                 }
 
-                _pageFaults++;
+                RecordPageFaultLocked(tier);
                 if (_cacheOwner.TryStoreMacroDatabasePayload(
                         sectorHash,
                         (IntPtr)payloadPointer,
@@ -421,7 +423,7 @@ namespace Hecton8.Core.Database
                     return false;
                 }
 
-                _pageFaults++;
+                RecordPageFaultLocked((MacroDatabaseTier)_config.DefaultTier);
                 if (!_cacheOwner.TryStoreMacroDatabasePayload(
                         sectorHash,
                         (IntPtr)payloadPointer,
@@ -860,6 +862,8 @@ namespace Hecton8.Core.Database
                 _path = null;
                 _blackBoxWriteIndex = 0;
                 _pageFaults = 0;
+                _pageFaultWindowStartTickMs = 0;
+                _pageFaultWindowCount = 0;
                 _hydratedSectors = 0;
                 _evictedSectors = 0;
                 _dirtyAppendCount = 0;
@@ -1360,7 +1364,7 @@ namespace Hecton8.Core.Database
                 return false;
             }
 
-            _pageFaults++;
+            RecordPageFaultLocked(tier);
             if (!_cacheOwner.TryStoreMacroDatabasePayload(
                     candidate.SectorHash,
                     (IntPtr)payloadPointer,
@@ -1384,7 +1388,9 @@ namespace Hecton8.Core.Database
             if (!IsOpen || payloadPointer == null || payloadBytes <= 0 || payloadBytes > _config.MaxPayloadBytes)
                 return false;
 
-            long appendOffset = H8MacroDatabaseFileFormat.AlignUp(ReadAppendOffset(), 16);
+            long appendOffset = H8MacroDatabaseFileFormat.AlignUp(
+                ReadAppendOffset(),
+                H8MacroDatabaseFileFormat.PayloadAlignmentBytes);
             if (appendOffset < 0L ||
                 appendOffset > long.MaxValue - H8MacroDatabaseFileFormat.PayloadHeaderSizeBytes ||
                 appendOffset + H8MacroDatabaseFileFormat.PayloadHeaderSizeBytes > long.MaxValue - payloadBytes)
@@ -1411,7 +1417,9 @@ namespace Hecton8.Core.Database
             UnsafeUtility.MemCpy(destination, header, H8MacroDatabaseFileFormat.PayloadHeaderSizeBytes);
             UnsafeUtility.MemCpy(destination + H8MacroDatabaseFileFormat.PayloadHeaderSizeBytes, payloadPointer, payloadBytes);
             payloadOffset = appendOffset;
-            WriteAppendOffset(H8MacroDatabaseFileFormat.AlignUp(endOffset, 16));
+            WriteAppendOffset(H8MacroDatabaseFileFormat.AlignUp(
+                endOffset,
+                H8MacroDatabaseFileFormat.PayloadAlignmentBytes));
             return true;
         }
 
@@ -1432,9 +1440,7 @@ namespace Hecton8.Core.Database
                 if ((uint)keyCount > H8MacroDatabaseFileFormat.NodeMaxKeys)
                     return false;
 
-                int index = 0;
-                while (index < keyCount && sectorHash > H8MacroDatabaseFileFormat.ReadNodeSectorHash(node, index))
-                    index++;
+                int index = FindFirstGreaterOrEqual(node, keyCount, sectorHash);
 
                 if (index < keyCount && sectorHash == H8MacroDatabaseFileFormat.ReadNodeSectorHash(node, index))
                 {
@@ -1458,6 +1464,7 @@ namespace Hecton8.Core.Database
             flags = 0;
             if (!IsOpen ||
                 payloadOffset < H8MacroDatabaseFileFormat.HeaderSizeBytes ||
+                (payloadOffset & (H8MacroDatabaseFileFormat.PayloadAlignmentBytes - 1L)) != 0L ||
                 payloadOffset > _mappedBytes - H8MacroDatabaseFileFormat.PayloadHeaderSizeBytes)
             {
                 return false;
@@ -1525,9 +1532,7 @@ namespace Hecton8.Core.Database
             if ((uint)keyCount > H8MacroDatabaseFileFormat.NodeMaxKeys)
                 return false;
 
-            int index = 0;
-            while (index < keyCount && sectorHash > H8MacroDatabaseFileFormat.ReadNodeSectorHash(node, index))
-                index++;
+            int index = FindFirstGreaterOrEqual(node, keyCount, sectorHash);
 
             if (index < keyCount && sectorHash == H8MacroDatabaseFileFormat.ReadNodeSectorHash(node, index))
             {
@@ -1551,22 +1556,27 @@ namespace Hecton8.Core.Database
             int index = keyCount - 1;
             if (IsLeaf(node))
             {
-                while (index >= 0 && sectorHash < H8MacroDatabaseFileFormat.ReadNodeSectorHash(node, index))
+                int insertIndex = FindFirstGreaterOrEqual(node, keyCount, sectorHash);
+                if (insertIndex < keyCount && sectorHash == H8MacroDatabaseFileFormat.ReadNodeSectorHash(node, insertIndex))
+                {
+                    H8MacroDatabaseFileFormat.WriteNodeFileOffset(node, insertIndex, payloadOffset);
+                    return true;
+                }
+
+                while (index >= insertIndex)
                 {
                     H8MacroDatabaseFileFormat.WriteNodeSectorHash(node, index + 1, H8MacroDatabaseFileFormat.ReadNodeSectorHash(node, index));
                     H8MacroDatabaseFileFormat.WriteNodeFileOffset(node, index + 1, H8MacroDatabaseFileFormat.ReadNodeFileOffset(node, index));
                     index--;
                 }
 
-                H8MacroDatabaseFileFormat.WriteNodeSectorHash(node, index + 1, sectorHash);
-                H8MacroDatabaseFileFormat.WriteNodeFileOffset(node, index + 1, payloadOffset);
+                H8MacroDatabaseFileFormat.WriteNodeSectorHash(node, insertIndex, sectorHash);
+                H8MacroDatabaseFileFormat.WriteNodeFileOffset(node, insertIndex, payloadOffset);
                 WriteNodeKeyCount(node, keyCount + 1);
                 return true;
             }
 
-            while (index >= 0 && sectorHash < H8MacroDatabaseFileFormat.ReadNodeSectorHash(node, index))
-                index--;
-            index++;
+            index = FindFirstGreaterOrEqual(node, keyCount, sectorHash);
 
             long childOffset = H8MacroDatabaseFileFormat.ReadNodeChildOffset(node, index);
             byte* child = NodeAt(childOffset);
@@ -1589,7 +1599,9 @@ namespace Hecton8.Core.Database
                 }
             }
 
-            return InsertNonFull(H8MacroDatabaseFileFormat.ReadNodeChildOffset(NodeAt(nodeOffset), index), sectorHash, payloadOffset);
+            node = NodeAt(nodeOffset);
+            return node != null &&
+                   InsertNonFull(H8MacroDatabaseFileFormat.ReadNodeChildOffset(node, index), sectorHash, payloadOffset);
         }
 
         private bool SplitChild(long parentOffset, int childIndex, long childOffset)
@@ -1817,6 +1829,23 @@ namespace Hecton8.Core.Database
             return H8MacroDatabaseFileFormat.ReadUShort(node, H8MacroDatabaseFileFormat.NodeKeyCountOffset);
         }
 
+        private static int FindFirstGreaterOrEqual(byte* node, int keyCount, ulong sectorHash)
+        {
+            int low = 0;
+            int high = keyCount;
+            while (low < high)
+            {
+                int middle = (low + high) >> 1;
+                ulong middleHash = H8MacroDatabaseFileFormat.ReadNodeSectorHash(node, middle);
+                if (middleHash < sectorHash)
+                    low = middle + 1;
+                else
+                    high = middle;
+            }
+
+            return low;
+        }
+
         private static void WriteNodeKeyCount(byte* node, int value)
         {
             H8MacroDatabaseFileFormat.WriteUShort(node, H8MacroDatabaseFileFormat.NodeKeyCountOffset, (ushort)value);
@@ -1888,6 +1917,67 @@ namespace Hecton8.Core.Database
                 default:
                     return math.max(1, _config.MiddleTierRadiusMeters);
             }
+        }
+
+        private void RecordPageFaultLocked(MacroDatabaseTier tier)
+        {
+            _pageFaults++;
+            int now = Environment.TickCount;
+            if (_pageFaultWindowStartTickMs == 0)
+            {
+                _pageFaultWindowStartTickMs = now;
+                _pageFaultWindowCount = 1;
+                return;
+            }
+
+            int elapsedMs = unchecked(now - _pageFaultWindowStartTickMs);
+            if (elapsedMs < 1000)
+            {
+                _pageFaultWindowCount++;
+                return;
+            }
+
+            if (_pageFaultWindowCount > 2)
+                IncreaseHydrationRadiusLocked(tier);
+
+            _pageFaultWindowStartTickMs = now;
+            _pageFaultWindowCount = 1;
+        }
+
+        private void IncreaseHydrationRadiusLocked(MacroDatabaseTier tier)
+        {
+            int stepMeters = math.max(1, _config.SectorSizeMeters);
+            switch (tier)
+            {
+                case MacroDatabaseTier.Low:
+                    _config.LowTierRadiusMeters = SafeIncreaseRadius(_config.LowTierRadiusMeters, stepMeters);
+                    _config.MiddleTierRadiusMeters = math.max(_config.MiddleTierRadiusMeters, _config.LowTierRadiusMeters);
+                    _config.HighTierRadiusMeters = math.max(_config.HighTierRadiusMeters, _config.MiddleTierRadiusMeters);
+                    _config.UltraTierRadiusMeters = math.max(_config.UltraTierRadiusMeters, _config.HighTierRadiusMeters);
+                    break;
+                case MacroDatabaseTier.High:
+                    _config.HighTierRadiusMeters = SafeIncreaseRadius(_config.HighTierRadiusMeters, stepMeters);
+                    _config.UltraTierRadiusMeters = math.max(_config.UltraTierRadiusMeters, _config.HighTierRadiusMeters);
+                    break;
+                case MacroDatabaseTier.Ultra:
+                    _config.UltraTierRadiusMeters = SafeIncreaseRadius(_config.UltraTierRadiusMeters, stepMeters);
+                    break;
+                default:
+                    _config.MiddleTierRadiusMeters = SafeIncreaseRadius(_config.MiddleTierRadiusMeters, stepMeters);
+                    _config.HighTierRadiusMeters = math.max(_config.HighTierRadiusMeters, _config.MiddleTierRadiusMeters);
+                    _config.UltraTierRadiusMeters = math.max(_config.UltraTierRadiusMeters, _config.HighTierRadiusMeters);
+                    break;
+            }
+
+            _config.DehydrateRadiusMeters = math.max(_config.DehydrateRadiusMeters, ResolveRadiusMeters(tier) + stepMeters);
+        }
+
+        private static int SafeIncreaseRadius(int radiusMeters, int stepMeters)
+        {
+            if (radiusMeters > int.MaxValue - stepMeters)
+                return int.MaxValue;
+
+            return radiusMeters + stepMeters;
         }
 
         private SectorCoord64 ResolveSectorCoord(in MacroDatabaseAup aup)

@@ -1,0 +1,132 @@
+{
+  "binaryHeader": "none",
+  "byteOrder": "little-endian",
+  "files": {
+    "atmosphere_density_matrix_rgba16f.bin": {
+      "axes": {
+        "altitudeKilometers": {
+          "count": 128,
+          "max": 100.0,
+          "min": 0.0,
+          "spacing": "linear"
+        }
+      },
+      "bytes": 1024,
+      "columns": [
+        "altitudeKilometers",
+        "rayleighDensity",
+        "mieDensity",
+        "absorption01"
+      ],
+      "sha256": "8E02179EB54DCF7C152B38223ED1E7FAB2BFCD20B29F135DDDA6BA689D80C153",
+      "shape": [
+        128,
+        4
+      ]
+    },
+    "atmosphere_sky_gradient_rgba16f.bin": {
+      "axes": {
+        "altitudeVisual": {
+          "count": 128,
+          "max": 100.0,
+          "min": 0.0,
+          "spacing": "smoothstep_visual_remap",
+          "unit": "kilometers"
+        },
+        "sunElevationDegrees": {
+          "count": 256,
+          "max": 82.0,
+          "min": -8.0,
+          "spacing": "linear"
+        }
+      },
+      "bytes": 262144,
+      "columns": [
+        "linearR",
+        "linearG",
+        "linearB",
+        "meanTransmittance"
+      ],
+      "sha256": "7804B45F34A5F798E713B1B2A31E49BA46EC87BD14AF094A4D806E48D452BF84",
+      "shape": [
+        128,
+        256,
+        4
+      ]
+    }
+  },
+  "formulaConstants": {
+    "atmosphereHeightMeters": 100000.0,
+    "mieAnisotropyG": 0.76,
+    "mieBetaRGB": [
+      5.540507163598383e-06,
+      6.5934e-06,
+      7.917273256702124e-06
+    ],
+    "mieScaleHeightMeters": 1200.0,
+    "ozoneAbsorptionRGB": [
+      6.5e-07,
+      1.881e-06,
+      8.5e-08
+    ],
+    "planetRadiusMeters": 6371000.0,
+    "rayleighBetaRGB": [
+      5.804542996261088e-06,
+      1.3562911419845633e-05,
+      3.311257670860751e-05
+    ],
+    "rayleighScaleHeightMeters": 8000.0,
+    "wavelengthsNmRGB": [
+      680.0,
+      550.0,
+      440.0
+    ]
+  },
+  "gradientAudit": {
+    "failures": [],
+    "goldenHourLuminance": 0.14613670189179348,
+    "maxAdjacentDelta": 0.05183795292365384,
+    "maxSurfaceSeamDelta": 0.004634528095092683,
+    "nonFiniteCount": 0,
+    "status": "PASS",
+    "thresholds": {
+      "goldenHourMinLuminance": 0.065,
+      "maxAdjacentDelta": 0.115,
+      "maxSurfaceSeamDelta": 0.03,
+      "voidBlackMaxLuminance": 0.04
+    },
+    "voidBlackLuminance": 0.000511056
+  },
+  "planetCurvatureFake": {
+    "distanceRemap": "log2(1 + distanceMeters * 0.0022) / log2(1 + 5000 * 0.0022)",
+    "horizonDropMeters": "(distanceMeters^2 / (2 * 280000)) * (0.25 + 0.75 * remap)",
+    "sample5000mDropMeters": 44.642857142857146
+  },
+  "preview": {
+    "bytes": 21495,
+    "file": "atmosphere_sky_gradient_preview.png",
+    "format": "PNG RGB8",
+    "height": 128,
+    "sha256": "8C4E145B612333509977B1561FBA993B08BFDA55441EAA34AC597413A4907253",
+    "width": 256
+  },
+  "scalarBytes": 2,
+  "scalarFormat": "float16",
+  "schema": "H8.AtmosphereLUTManifest.v1",
+  "structPackFormat": "<e",
+  "validation": {
+    "files": {
+      "atmosphere_density_matrix_rgba16f.bin": {
+        "actualBytes": 1024,
+        "expectedBytes": 1024,
+        "matches": true
+      },
+      "atmosphere_sky_gradient_rgba16f.bin": {
+        "actualBytes": 262144,
+        "expectedBytes": 262144,
+        "matches": true
+      }
+    },
+    "status": "PASS"
+  }
+}

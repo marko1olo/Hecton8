@@ -62,6 +62,24 @@ Exact Microseconds saved -> 0 us/frame added. Bootstrap-only branch. Visual gain
 
 Verification status -> `PROFILE_TEXTURE_CLAMP_WIRING_OK`; call-site search confirms the updated texture-budget resolver signature is used only by `VRAMEnforcer`. Hot-path scan remains clean. Compile remains PENDING VERIFICATION for missing local toolchain.
 
+Render-scale split -> Added `profileBaselineRenderScaleMilli` to `Data/Hardware/Profiles.json` and catalog constants in `HardwareProfileCatalog`. `PlatformAdaptiveBudgetGovernor` now applies `0.85` baseline render scale for Quest 3-like shared-memory hardware and keeps `0.78` for Steam Deck-like and unknown UMA. Severe pressure clamps still override to lower scales.
+
+Cinematic Cheats used -> Quest 3 spends fixed-foveation headroom on baseline resolution instead of being treated as a Deck. Unknown UMA remains conservative.
+
+Exact Microseconds saved -> 0 us/frame added. Low-cadence branch only. Expected visual gain is less unnecessary Quest 3 resolution loss; measured GPU delta is PENDING RUNTIME CAPTURE.
+
+Verification status -> `HARDWARE_PROFILE_CATALOG_GUARD=PASS profiles=2 phases=4 masks=4 constants=21`; Python syntax pass. Guard now checks `PlatformAdaptiveBudgetGovernor` for catalog-backed Quest 3 / Steam Deck render-scale routing. Compile remains PENDING VERIFICATION for missing local toolchain.
+
+Guard output correction -> Validator constant count is now computed from parsed C# constants instead of hardcoded. Result: `DYNAMIC_GUARD_OUTPUT_OK`.
+
+Target FPS routing -> `GameBootstrapper.ResolveTargetFrameRate` now returns catalog target FPS for profiled hardware. Quest 3-like hardware routes to `72`; Steam Deck-like hardware routes to `60`; unprofiled hardware keeps the existing default `60`.
+
+Cinematic Cheats used -> Quest 3 cadence uses the sustained project target, not max-refresh fantasy. Dynamic resolution/foveation still carry the visual trade.
+
+Exact Microseconds saved -> 0 us/frame added. Bootstrap-only branch. Runtime frame pacing remains PENDING UNITY VERIFICATION.
+
+Verification status -> `BOOT_TARGET_FPS_CATALOG_ROUTE_OK`; `HARDWARE_PROFILE_CATALOG_GUARD=PASS profiles=2 phases=4 masks=4 constants=21`; Python syntax pass. Compile remains PENDING VERIFICATION for missing local toolchain.
+
 Persistent catalog guard -> Added `Tools/Hardware/ValidateHardwareProfileCatalog.py` to replace one-off inline parity checks. The guard verifies flat JSON shape, FNV-1a stable hashes, generated profile constants, pressure masks, phase-budget switch returns, and UMA graphics/texture budget call-sites.
 
 Cinematic Cheats used -> None in runtime. The guard protects existing presentation-sacrifice budgets and visual-overkill data without adding simulation truth.
@@ -69,3 +87,83 @@ Cinematic Cheats used -> None in runtime. The guard protects existing presentati
 Exact Microseconds saved -> 0 us/frame. Offline validation only; no runtime C# changed in this pass.
 
 Verification status -> `python -B Tools\Hardware\ValidateHardwareProfileCatalog.py` returns `HARDWARE_PROFILE_CATALOG_GUARD=PASS profiles=2 phases=4 masks=4 constants=19`; `python -m py_compile Tools\Hardware\ValidateHardwareProfileCatalog.py` passed. Unity/C# compile remains PENDING VERIFICATION for missing local toolchain.
+
+Job worker budget routing -> `GameBootstrapper.ConfigureJobWorkerThreads` now resolves catalog worker budgets for profiled hardware. Quest 3-like hardware requests `4` workers; Steam Deck-like hardware requests `6`; unprofiled hardware keeps the prior `max(1, processorCount - 1)` fallback. Unity's `JobsUtility.JobWorkerMaximumCount` remains the final clamp.
+
+Cinematic Cheats used -> Worker count is a deterministic hardware-profile clamp, not an adaptive runtime scheduler experiment. Saved scheduling headroom remains available for visual systems instead of extra simulation truth.
+
+Exact Microseconds saved -> 0 us/frame added. Bootstrap-only branch. Any reduction in worker oversubscription stalls is PENDING UNITY PROFILER CAPTURE.
+
+Verification status -> `python -B Tools\Hardware\ValidateHardwareProfileCatalog.py` returns `HARDWARE_PROFILE_CATALOG_GUARD=PASS profiles=2 phases=4 masks=4 constants=21`; AST syntax parse passed without writing bytecode; `git diff --check` reports only CRLF normalization warnings. Unity/C# compile remains PENDING VERIFICATION because `dotnet` is not in PATH, although `Hecton8.slnx` exists.
+
+Streaming mip budget routing -> `GameBootstrapper.ResolveStreamingMipBudgetMb` now consumes catalog texture budgets for profiled hardware. Quest 3-like hardware returns `768 MB`; Steam Deck-like hardware returns `2048 MB`; unprofiled hardware keeps the existing quality-tier fallback.
+
+Cinematic Cheats used -> Texture residency is treated as a profile budget, not a simulation feature. Quest 3 still relies on foveation/dynamic resolution; Steam Deck spends available memory on sharper textures instead of CPU-heavy truth.
+
+Exact Microseconds saved -> 0 us/frame added. Bootstrap-only branch. Visual and memory deltas are PENDING UNITY MEMORY/PROFILER CAPTURE.
+
+Verification status -> `python -B Tools\Hardware\ValidateHardwareProfileCatalog.py` returns `HARDWARE_PROFILE_CATALOG_GUARD=PASS profiles=2 phases=4 masks=4 constants=21`; AST syntax parse passed; `git diff --check` reports only CRLF normalization warnings. `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1` failed because `dotnet` is not recognized in this workspace shell, so Unity/C# compile remains PENDING VERIFICATION.
+
+Profile VRAM thresholds -> `VRAMBudgetThresholds.RuntimeDefault` now maps known hardware to catalog budgets. Quest 3 uses `1536 MB` graphics, `768 MB` texture, and `240 MB` RT thresholds. Steam Deck LCD uses `4096 MB`, `2048 MB`, and `384 MB`. `VRAMMonitor` preserves custom serialized thresholds and only replaces untouched MX350 defaults. `VRAMPressureMonitor` now derives pressure byte thresholds from runtime budget fractions instead of fixed MX350 byte constants.
+
+Cinematic Cheats used -> Pressure response still cuts mip residency, LOD distance, and asset release before adding simulation truth. Steam Deck can spend its budget on texture clarity; Quest 3 keeps bounded RT/texture residency for XR.
+
+Exact Microseconds saved -> 0 us/frame hot path. Slow-tick scalar math only. False pressure downgrade reduction is PENDING UNITY PROFILER CAPTURE.
+
+Verification status -> `python -B Tools\Hardware\ValidateHardwareProfileCatalog.py` returns `HARDWARE_PROFILE_CATALOG_GUARD=PASS profiles=2 phases=4 masks=4 constants=21`; AST syntax parse passed; old fixed VRAM pressure byte constants are no longer present in `VRAMPressureMonitor`; `git diff --check` reports only CRLF normalization warnings. Unity/C# compile remains PENDING VERIFICATION because `dotnet` is not recognized.
+
+Self-review -> Re-read the changed optimization and bootstrap paths. Corrected a duplicate `using System;` introduced during the VRAM threshold patch and corrected stale VRAM threshold tooltip text that still described MX350-only absolute byte thresholds. Confirmed status and rationale files contain the latest implementation state.
+
+Cinematic Cheats used -> No new physical simulation. Profile budget routing increases or preserves presentation quality by spending budget on texture/render-scale residency and removing false pressure downgrades.
+
+Exact Microseconds saved -> 0 us/frame hot path. No measured runtime claim is made without Unity profiler capture.
+
+Verification status -> Final local checks: hardware catalog guard PASS, Python AST syntax PASS, `git diff --check` reports CRLF normalization warnings only, fixed VRAM pressure byte constants absent from `VRAMPressureMonitor`. `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1` still fails because `dotnet` is not recognized, so compile is PENDING VERIFICATION.
+
+Profile frame-pressure hardening -> `PlatformAdaptiveBudgetGovernor` no longer uses a universal 16.67 ms pressure target for all profiled hardware. Quest 3 frame pressure is derived from `Quest3TargetFps=72`; Steam Deck remains derived from `SteamDeckLcdTargetFps=60`; unprofiled hardware keeps the existing 16.67 ms default. The first frame-time sample now seeds the trend instead of inheriting stale reset state.
+
+Cinematic Cheats used -> Frame pressure still buys visual stability through render-scale and cadence clamps; no extra simulation truth was added.
+
+Exact Microseconds saved -> 0 us/frame hot path. Low-cadence scalar branch only. Quest 3 clamp timing improvement is PENDING UNITY PROFILER CAPTURE.
+
+Verification status -> `python -B Tools\Hardware\ValidateHardwareProfileCatalog.py` returns `HARDWARE_PROFILE_CATALOG_GUARD=PASS profiles=2 phases=4 masks=4 constants=21`; AST syntax parse passed; guard checks catalog-backed frame-pressure derivation in `PlatformAdaptiveBudgetGovernor`; `git diff --check` reports only CRLF normalization warnings. Compile remains PENDING VERIFICATION because `dotnet` is not recognized.
+
+Unset VRAM budget recovery -> `VRAMBudgetThresholds.ResolveRuntimeBudget` now treats all-zero serialized threshold structs as runtime defaults. Deliberate non-default custom budgets are still preserved.
+
+Cinematic Cheats used -> None. This is stale-data recovery for profile budget correctness.
+
+Exact Microseconds saved -> 0 us/frame. Cold `Awake` branch only.
+
+Verification status -> `python -B Tools\Hardware\ValidateHardwareProfileCatalog.py` returns `HARDWARE_PROFILE_CATALOG_GUARD=PASS profiles=2 phases=4 masks=4 constants=21`; AST syntax parse passed; guard checks `IsUnsetBudget(current) || IsDefaultBudget(current)` recovery; `git diff --check` reports only CRLF normalization warnings. Compile remains PENDING VERIFICATION because `dotnet` is not recognized.
+
+Static structural review -> Ran local structural checks over the changed runtime C# files because Unity/.NET compilation is unavailable in this workspace.
+
+Cinematic Cheats used -> None. Verification only.
+
+Exact Microseconds saved -> 0 us/runtime.
+
+Verification status -> C# brace/string/comment structural scan PASS for 8 files; duplicate-using scan PASS for 8 files. Unity executable, `dotnet`, `csc`, and `MSBuild` are not discoverable in this workspace shell, so compile remains PENDING VERIFICATION.
+
+Per-device JSON exports -> Added `Data/Hardware/HARDWARE_TIER_QUEST_3.json` and `Data/Hardware/HARDWARE_TIER_STEAM_DECK_LCD.json`. Both files are flat handoff mirrors of their aggregate `Profiles.json` rows and include profile identity, CPU/thread semantics, UMA memory budgets, target FPS, phase budgets, render-scale, and sacrifice thresholds.
+
+Cinematic Cheats used -> None in runtime. The split files preserve the same visual-budget data used by the catalog.
+
+Exact Microseconds saved -> 0 us/runtime. Data-only exports.
+
+Verification status -> `python -B Tools\Hardware\ValidateHardwareProfileCatalog.py` returns `HARDWARE_PROFILE_CATALOG_GUARD=PASS profiles=2 phases=4 masks=4 constants=21 split_jsons=2`; split JSON syntax parse passed; validator compares both split files against `Profiles.json`.
+
+Validator failure hygiene -> Split profile validator now reports missing profile rows and missing split fields as guard errors instead of throwing Python tracebacks.
+
+Cinematic Cheats used -> None. Offline guard reliability only.
+
+Exact Microseconds saved -> 0 us/runtime.
+
+Verification status -> `python -B Tools\Hardware\ValidateHardwareProfileCatalog.py` returns `HARDWARE_PROFILE_CATALOG_GUARD=PASS profiles=2 phases=4 masks=4 constants=21 split_jsons=2`; Python AST parse passed.
+
+Final static verification -> Parallel verification commands timed out under tool contention, so the non-compiler checks were rerun sequentially. Catalog guard passed, Python AST/JSON syntax passed, and `git diff --check` reported only CRLF normalization warnings.
+
+Cinematic Cheats used -> None. Verification only.
+
+Exact Microseconds saved -> 0 us/runtime.
+
+Verification status -> `HARDWARE_PROFILE_CATALOG_GUARD=PASS profiles=2 phases=4 masks=4 constants=21 split_jsons=2`; `PY_AST_AND_JSON_SYNTAX_PASS`; whitespace check clean except CRLF normalization warnings. `dotnet build` remains blocked because `dotnet` is not recognized.

@@ -1,0 +1,1014 @@
+{
+  "root": "C:/Hecton8/Assets/_Project",
+  "sample_size": 256,
+  "include_third_party": false,
+  "doctrine": {
+    "orm_layout": "R=AO, G=Roughness, B=Metallic",
+    "albedo_energy_fail": "mean_srgb_luma > 0.75 or mean_linear_luma > 0.60",
+    "albedo_energy_warn": "p95_srgb_luma > 0.92 and bright_pixel_ratio > 0.10"
+  },
+  "texture_summary": {
+    "texture_count": 138,
+    "albedo_candidate_count": 28,
+    "normal_candidate_count": 30,
+    "orm_candidate_count": 17,
+    "detail_candidate_count": 13,
+    "energy_fail_count": 0,
+    "energy_warn_count": 0,
+    "import_issue_count": 6,
+    "import_issue_counts": {
+      "DATA_TEXTURE_SRGB_ON": 4,
+      "NORMAL_SRGB_ON": 3,
+      "NORMAL_NOT_TEXTURETYPE_NORMAL": 3
+    },
+    "detail_suggestions": [
+      {
+        "path": "Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.branching/detail___family.coral.branching.png",
+        "extension": ".png",
+        "meta": {
+          "guid": "2c2609f10fa6452459d82d299e3b0cbc",
+          "enableMipMap": "1",
+          "sRGBTexture": "0",
+          "isReadable": "0",
+          "streamingMipmaps": "0",
+          "textureFormat": "1",
+          "maxTextureSize": "2048",
+          "aniso": "1",
+          "textureType": "0",
+          "DefaultTexturePlatform.maxTextureSize": "512",
+          "DefaultTexturePlatform.textureFormat": "-1",
+          "textureCompression": "1",
+          "DefaultTexturePlatform.textureCompression": "1",
+          "Standalone.maxTextureSize": "512",
+          "Standalone.textureFormat": "25",
+          "Standalone.textureCompression": "1"
+        },
+        "is_albedo_candidate": false,
+        "is_detail_candidate": true,
+        "is_normal": false,
+        "is_orm_candidate": false,
+        "import_issues": []
+      },
+      {
+        "path": "Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.branching.v2/detail___family.coral.branching.v2.png",
+        "extension": ".png",
+        "meta": {
+          "guid": "754528edc73a6134abdd2ca3f0fee87c",
+          "enableMipMap": "1",
+          "sRGBTexture": "0",
+          "isReadable": "0",
+          "streamingMipmaps": "0",
+          "textureFormat": "1",
+          "maxTextureSize": "2048",
+          "aniso": "1",
+          "textureType": "0",
+          "DefaultTexturePlatform.maxTextureSize": "512",
+          "DefaultTexturePlatform.textureFormat": "-1",
+          "textureCompression": "1",
+          "DefaultTexturePlatform.textureCompression": "1",
+          "Standalone.maxTextureSize": "512",
+          "Standalone.textureFormat": "25",
+          "Standalone.textureCompression": "1"
+        },
+        "is_albedo_candidate": false,
+        "is_detail_candidate": true,
+        "is_normal": false,
+        "is_orm_candidate": false,
+        "import_issues": []
+      },
+      {
+        "path": "Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.brittle/detail___family.coral.brittle.png",
+        "extension": ".png",
+        "meta": {
+          "guid": "d8525e821b1e9034bba17d9e34bbf50e",
+          "enableMipMap": "1",
+          "sRGBTexture": "0",
+          "isReadable": "0",
+          "streamingMipmaps": "0",
+          "textureFormat": "1",
+          "maxTextureSize": "2048",
+          "aniso": "1",
+          "textureType": "0",
+          "DefaultTexturePlatform.maxTextureSize": "512",
+          "DefaultTexturePlatform.textureFormat": "-1",
+          "textureCompression": "1",
+          "DefaultTexturePlatform.textureCompression": "1",
+          "Standalone.maxTextureSize": "512",
+          "Standalone.textureFormat": "25",
+          "Standalone.textureCompression": "1"
+        },
+        "is_albedo_candidate": false,
+        "is_detail_candidate": true,
+        "is_normal": false,
+        "is_orm_candidate": false,
+        "import_issues": []
+      },
+      {
+        "path": "Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.low/detail___family.coral.low.png",
+        "extension": ".png",
+        "meta": {
+          "guid": "9c9895661eb96ae4ca45c43084da0bd0",
+          "enableMipMap": "1",
+          "sRGBTexture": "0",
+          "isReadable": "0",
+          "streamingMipmaps": "0",
+          "textureFormat": "1",
+          "maxTextureSize": "2048",
+          "aniso": "1",
+          "textureType": "0",
+          "DefaultTexturePlatform.maxTextureSize": "512",
+          "DefaultTexturePlatform.textureFormat": "-1",
+          "textureCompression": "1",
+          "DefaultTexturePlatform.textureCompression": "1",
+          "Standalone.maxTextureSize": "512",
+          "Standalone.textureFormat": "25",
+          "Standalone.textureCompression": "1"
+        },
+        "is_albedo_candidate": false,
+        "is_detail_candidate": true,
+        "is_normal": false,
+        "is_orm_candidate": false,
+        "import_issues": []
+      },
+      {
+        "path": "Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.massive/detail___family.coral.massive.png",
+        "extension": ".png",
+        "meta": {
+          "guid": "9594fa57b6981c7478a1cdb725b966ba",
+          "enableMipMap": "1",
+          "sRGBTexture": "0",
+          "isReadable": "0",
+          "streamingMipmaps": "0",
+          "textureFormat": "1",
+          "maxTextureSize": "2048",
+          "aniso": "1",
+          "textureType": "0",
+          "DefaultTexturePlatform.maxTextureSize": "512",
+          "DefaultTexturePlatform.textureFormat": "-1",
+          "textureCompression": "1",
+          "DefaultTexturePlatform.textureCompression": "1",
+          "Standalone.maxTextureSize": "512",
+          "Standalone.textureFormat": "25",
+          "Standalone.textureCompression": "1"
+        },
+        "is_albedo_candidate": false,
+        "is_detail_candidate": true,
+        "is_normal": false,
+        "is_orm_candidate": false,
+        "import_issues": []
+      },
+      {
+        "path": "Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.massive.2/detail___family.coral.massive.2.png",
+        "extension": ".png",
+        "meta": {
+          "guid": "d5b436274574fbc499a69d51b1d380b4",
+          "enableMipMap": "1",
+          "sRGBTexture": "0",
+          "isReadable": "0",
+          "streamingMipmaps": "0",
+          "textureFormat": "1",
+          "maxTextureSize": "2048",
+          "aniso": "1",
+          "textureType": "0",
+          "DefaultTexturePlatform.maxTextureSize": "512",
+          "DefaultTexturePlatform.textureFormat": "-1",
+          "textureCompression": "1",
+          "DefaultTexturePlatform.textureCompression": "1",
+          "Standalone.maxTextureSize": "512",
+          "Standalone.textureFormat": "25",
+          "Standalone.textureCompression": "1"
+        },
+        "is_albedo_candidate": false,
+        "is_detail_candidate": true,
+        "is_normal": false,
+        "is_orm_candidate": false,
+        "import_issues": []
+      },
+      {
+        "path": "Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.plate/detail___family.coral.plate.png",
+        "extension": ".png",
+        "meta": {
+          "guid": "71650c196ae92244599d7717284db881",
+          "enableMipMap": "1",
+          "sRGBTexture": "0",
+          "isReadable": "0",
+          "streamingMipmaps": "0",
+          "textureFormat": "1",
+          "maxTextureSize": "2048",
+          "aniso": "1",
+          "textureType": "0",
+          "DefaultTexturePlatform.maxTextureSize": "512",
+          "DefaultTexturePlatform.textureFormat": "-1",
+          "textureCompression": "1",
+          "DefaultTexturePlatform.textureCompression": "1",
+          "Standalone.maxTextureSize": "512",
+          "Standalone.textureFormat": "25",
+          "Standalone.textureCompression": "1"
+        },
+        "is_albedo_candidate": false,
+        "is_detail_candidate": true,
+        "is_normal": false,
+        "is_orm_candidate": false,
+        "import_issues": []
+      },
+      {
+        "path": "Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.abyssal/detail___family.kelp.abyssal.png",
+        "extension": ".png",
+        "meta": {
+          "guid": "76a51f37ae5f8774189a7dd5129739ca",
+          "enableMipMap": "1",
+          "sRGBTexture": "0",
+          "isReadable": "0",
+          "streamingMipmaps": "0",
+          "textureFormat": "1",
+          "maxTextureSize": "2048",
+          "aniso": "1",
+          "textureType": "0",
+          "DefaultTexturePlatform.maxTextureSize": "512",
+          "DefaultTexturePlatform.textureFormat": "-1",
+          "textureCompression": "1",
+          "DefaultTexturePlatform.textureCompression": "1",
+          "Standalone.maxTextureSize": "512",
+          "Standalone.textureFormat": "25",
+          "Standalone.textureCompression": "1"
+        },
+        "is_albedo_candidate": false,
+        "is_detail_candidate": true,
+        "is_normal": false,
+        "is_orm_candidate": false,
+        "import_issues": []
+      },
+      {
+        "path": "Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.canopy/detail___family.kelp.canopy.png",
+        "extension": ".png",
+        "meta": {
+          "guid": "d25d90ca35237ef498052fcf7e1e95e2",
+          "enableMipMap": "1",
+          "sRGBTexture": "0",
+          "isReadable": "0",
+          "streamingMipmaps": "0",
+          "textureFormat": "1",
+          "maxTextureSize": "2048",
+          "aniso": "1",
+          "textureType": "0",
+          "DefaultTexturePlatform.maxTextureSize": "512",
+          "DefaultTexturePlatform.textureFormat": "-1",
+          "textureCompression": "1",
+          "DefaultTexturePlatform.textureCompression": "1",
+          "Standalone.maxTextureSize": "512",
+          "Standalone.textureFormat": "25",
+          "Standalone.textureCompression": "1"
+        },
+        "is_albedo_candidate": false,
+        "is_detail_candidate": true,
+        "is_normal": false,
+        "is_orm_candidate": false,
+        "import_issues": []
+      },
+      {
+        "path": "Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.patch.dense/detail___family.kelp.patch.dense.png",
+        "extension": ".png",
+        "meta": {
+          "guid": "41788cbf989b5694f8ab9ac72715a2d1",
+          "enableMipMap": "1",
+          "sRGBTexture": "0",
+          "isReadable": "0",
+          "streamingMipmaps": "0",
+          "textureFormat": "1",
+          "maxTextureSize": "2048",
+          "aniso": "1",
+          "textureType": "0",
+          "DefaultTexturePlatform.maxTextureSize": "512",
+          "DefaultTexturePlatform.textureFormat": "-1",
+          "textureCompression": "1",
+          "DefaultTexturePlatform.textureCompression": "1",
+          "Standalone.maxTextureSize": "512",
+          "Standalone.textureFormat": "25",
+          "Standalone.textureCompression": "1"
+        },
+        "is_albedo_candidate": false,
+        "is_detail_candidate": true,
+        "is_normal": false,
+        "is_orm_candidate": false,
+        "import_issues": []
+      }
+    ],
+    "energy_failures": [],
+    "energy_warnings": [],
+    "import_issue_textures": [
+      {
+        "path": "Art/TEXTURES/Detali/Soft Plume Noise - second try.png",
+        "extension": ".png",
+        "meta": {
+          "guid": "28a3c496966001842a3a14ddb2b5f1e4",
+          "enableMipMap": "1",
+          "sRGBTexture": "1",
+          "isReadable": "0",
+          "streamingMipmaps": "0",
+          "textureFormat": "1",
+          "maxTextureSize": "1024",
+          "aniso": "1",
+          "textureType": "0",
+          "DefaultTexturePlatform.maxTextureSize": "2048",
+          "DefaultTexturePlatform.textureFormat": "-1",
+          "textureCompression": "1",
+          "DefaultTexturePlatform.textureCompression": "1",
+          "Standalone.maxTextureSize": "2048",
+          "Standalone.textureFormat": "25",
+          "Standalone.textureCompression": "1"
+        },
+        "is_albedo_candidate": false,
+        "is_detail_candidate": true,
+        "is_normal": false,
+        "is_orm_candidate": false,
+        "import_issues": [
+          "DATA_TEXTURE_SRGB_ON"
+        ]
+      },
+      {
+        "path": "Art/TEXTURES/Detali/soft_plume_noise_-_kakoy_to_seryy_nu_norm.png",
+        "extension": ".png",
+        "meta": {
+          "guid": "66fff60ba9b88384f992b071a91c0e5d",
+          "enableMipMap": "1",
+          "sRGBTexture": "1",
+          "isReadable": "0",
+          "streamingMipmaps": "0",
+          "textureFormat": "1",
+          "maxTextureSize": "2048",
+          "aniso": "1",
+          "textureType": "0",
+          "DefaultTexturePlatform.maxTextureSize": "2048",
+          "DefaultTexturePlatform.textureFormat": "-1",
+          "textureCompression": "1",
+          "DefaultTexturePlatform.textureCompression": "1",
+          "Standalone.maxTextureSize": "2048",
+          "Standalone.textureFormat": "25",
+          "Standalone.textureCompression": "1"
+        },
+        "is_albedo_candidate": false,
+        "is_detail_candidate": true,
+        "is_normal": true,
+        "is_orm_candidate": false,
+        "import_issues": [
+          "NORMAL_SRGB_ON",
+          "NORMAL_NOT_TEXTURETYPE_NORMAL",
+          "DATA_TEXTURE_SRGB_ON"
+        ]
+      },
+      {
+        "path": "Art/TEXTURES/WorldProceduralFlora/TX_ProceduralBio_Shallows_ORMAtlas.png",
+        "extension": ".png",
+        "meta": {
+          "guid": "e3911b6d25a15da4c820858e540fbd5f",
+          "enableMipMap": "1",
+          "sRGBTexture": "1",
+          "isReadable": "0",
+          "streamingMipmaps": "0",
+          "textureFormat": "1",
+          "maxTextureSize": "2048",
+          "aniso": "1",
+          "textureType": "0",
+          "DefaultTexturePlatform.maxTextureSize": "512",
+          "DefaultTexturePlatform.textureFormat": "-1",
+          "textureCompression": "1",
+          "DefaultTexturePlatform.textureCompression": "1",
+          "Standalone.maxTextureSize": "512",
+          "Standalone.textureFormat": "25",
+          "Standalone.textureCompression": "1",
+          "Android.maxTextureSize": "2048",
+          "Android.textureFormat": "-1",
+          "Android.textureCompression": "1"
+        },
+        "is_albedo_candidate": false,
+        "is_detail_candidate": false,
+        "is_normal": false,
+        "is_orm_candidate": true,
+        "import_issues": [
+          "DATA_TEXTURE_SRGB_ON"
+        ]
+      },
+      {
+        "path": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_bump.png",
+        "extension": ".png",
+        "meta": {
+          "guid": "50eac08ff8e5f6a4c85c40536c5dae72",
+          "enableMipMap": "1",
+          "sRGBTexture": "1",
+          "isReadable": "0",
+          "streamingMipmaps": "0",
+          "textureFormat": "1",
+          "maxTextureSize": "2048",
+          "aniso": "1",
+          "textureType": "0",
+          "DefaultTexturePlatform.maxTextureSize": "2048",
+          "DefaultTexturePlatform.textureFormat": "-1",
+          "textureCompression": "1",
+          "DefaultTexturePlatform.textureCompression": "1",
+          "Standalone.maxTextureSize": "2048",
+          "Standalone.textureFormat": "-1",
+          "Standalone.textureCompression": "1",
+          "WebGL.maxTextureSize": "2048",
+          "WebGL.textureFormat": "-1",
+          "WebGL.textureCompression": "1"
+        },
+        "is_albedo_candidate": false,
+        "is_detail_candidate": false,
+        "is_normal": true,
+        "is_orm_candidate": false,
+        "import_issues": [
+          "NORMAL_SRGB_ON",
+          "NORMAL_NOT_TEXTURETYPE_NORMAL"
+        ]
+      },
+      {
+        "path": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_norm.png",
+        "extension": ".png",
+        "meta": {
+          "guid": "47f700169455d8342bf37d101712e3ac",
+          "enableMipMap": "1",
+          "sRGBTexture": "1",
+          "isReadable": "0",
+          "streamingMipmaps": "0",
+          "textureFormat": "1",
+          "maxTextureSize": "2048",
+          "aniso": "1",
+          "textureType": "0",
+          "DefaultTexturePlatform.maxTextureSize": "2048",
+          "DefaultTexturePlatform.textureFormat": "-1",
+          "textureCompression": "1",
+          "DefaultTexturePlatform.textureCompression": "1",
+          "Standalone.maxTextureSize": "2048",
+          "Standalone.textureFormat": "-1",
+          "Standalone.textureCompression": "1",
+          "WebGL.maxTextureSize": "2048",
+          "WebGL.textureFormat": "-1",
+          "WebGL.textureCompression": "1"
+        },
+        "is_albedo_candidate": false,
+        "is_detail_candidate": false,
+        "is_normal": true,
+        "is_orm_candidate": false,
+        "import_issues": [
+          "NORMAL_SRGB_ON",
+          "NORMAL_NOT_TEXTURETYPE_NORMAL"
+        ]
+      },
+      {
+        "path": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_spec.png",
+        "extension": ".png",
+        "meta": {
+          "guid": "3c0b44c605b1a034599e9d00fe4d4843",
+          "enableMipMap": "1",
+          "sRGBTexture": "1",
+          "isReadable": "0",
+          "streamingMipmaps": "0",
+          "textureFormat": "1",
+          "maxTextureSize": "2048",
+          "aniso": "1",
+          "textureType": "0",
+          "DefaultTexturePlatform.maxTextureSize": "2048",
+          "DefaultTexturePlatform.textureFormat": "-1",
+          "textureCompression": "1",
+          "DefaultTexturePlatform.textureCompression": "1",
+          "Standalone.maxTextureSize": "2048",
+          "Standalone.textureFormat": "-1",
+          "Standalone.textureCompression": "1",
+          "WebGL.maxTextureSize": "2048",
+          "WebGL.textureFormat": "-1",
+          "WebGL.textureCompression": "1"
+        },
+        "is_albedo_candidate": false,
+        "is_detail_candidate": false,
+        "is_normal": false,
+        "is_orm_candidate": true,
+        "import_issues": [
+          "DATA_TEXTURE_SRGB_ON"
+        ]
+      }
+    ]
+  },
+  "material_summary": {
+    "material_count": 173,
+    "materials_with_packed_mask": 9,
+    "materials_with_detail": 0,
+    "materials_with_issues": 31,
+    "issue_counts": {
+      "NO_PACKED_ORM_OR_MASK_SLOT": 22,
+      "NO_DETAIL_MAP_SLOT": 31
+    },
+    "issue_materials": [
+      {
+        "path": "Art/Materials/MAT_Diegetic_HUD_V4_Projection.mat",
+        "texture_properties": {
+          "_BaseMap": "Art/TEXTURES/RT_HUD_Display.renderTexture",
+          "_MainTex": "Art/TEXTURES/RT_HUD_Display.renderTexture"
+        },
+        "has_base_map": true,
+        "has_normal": false,
+        "has_packed_mask": false,
+        "has_detail": false,
+        "issues": [
+          "NO_PACKED_ORM_OR_MASK_SLOT",
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      },
+      {
+        "path": "Art/Materials/Mat_GasGiant.mat",
+        "texture_properties": {
+          "_CelestialOcclusionTex": "Art/TEXTURES/Sky/oblaka!.png",
+          "_DetailTex": "Art/TEXTURES/Sky/oblakajip.png",
+          "_EmissionMap": "Art/TEXTURES/Sky/clod2.png",
+          "_MainTex": "Art/TEXTURES/clouds0_diff.png"
+        },
+        "has_base_map": true,
+        "has_normal": false,
+        "has_packed_mask": false,
+        "has_detail": false,
+        "issues": [
+          "NO_PACKED_ORM_OR_MASK_SLOT",
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      },
+      {
+        "path": "Art/Materials/Meshy_AI_Alien_barnacles_clust_0301230506_texture.mat",
+        "texture_properties": {
+          "_BaseMap": "Art/TEXTURES/Meshy_AI_Alien_barnacles_clust_0301230506_texture.png",
+          "_MainTex": "Art/TEXTURES/Meshy_AI_Alien_barnacles_clust_0301230506_texture.png",
+          "unity_ShadowMasks": "d0353a89b1f911e48b9e16bdc9f2e058"
+        },
+        "has_base_map": true,
+        "has_normal": false,
+        "has_packed_mask": false,
+        "has_detail": false,
+        "issues": [
+          "NO_PACKED_ORM_OR_MASK_SLOT",
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      },
+      {
+        "path": "Art/Materials/terrain.mat",
+        "texture_properties": {
+          "_BaseMap": "47f0a231c050423488e0ff6f7d66f813",
+          "_MainTex": "47f0a231c050423488e0ff6f7d66f813",
+          "_Rock_Albedo": "47f0a231c050423488e0ff6f7d66f813"
+        },
+        "has_base_map": true,
+        "has_normal": false,
+        "has_packed_mask": false,
+        "has_detail": false,
+        "issues": [
+          "NO_PACKED_ORM_OR_MASK_SLOT",
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      },
+      {
+        "path": "Art/Materials/Celestial/MAT_CelestialMoon_Ione.mat",
+        "texture_properties": {
+          "_BaseMap": "Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg",
+          "_MainTex": "Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg"
+        },
+        "has_base_map": true,
+        "has_normal": false,
+        "has_packed_mask": false,
+        "has_detail": false,
+        "issues": [
+          "NO_PACKED_ORM_OR_MASK_SLOT",
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      },
+      {
+        "path": "Art/Materials/Celestial/MAT_CelestialMoon_Khepri.mat",
+        "texture_properties": {
+          "_BaseMap": "Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg",
+          "_MainTex": "Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg",
+          "unity_ShadowMasks": "d0353a89b1f911e48b9e16bdc9f2e058"
+        },
+        "has_base_map": true,
+        "has_normal": false,
+        "has_packed_mask": false,
+        "has_detail": false,
+        "issues": [
+          "NO_PACKED_ORM_OR_MASK_SLOT",
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      },
+      {
+        "path": "Art/Materials/Celestial/MAT_CelestialMoon_Nammu.mat",
+        "texture_properties": {
+          "_BaseMap": "Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg",
+          "_MainTex": "Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg",
+          "unity_ShadowMasks": "d0353a89b1f911e48b9e16bdc9f2e058"
+        },
+        "has_base_map": true,
+        "has_normal": false,
+        "has_packed_mask": false,
+        "has_detail": false,
+        "issues": [
+          "NO_PACKED_ORM_OR_MASK_SLOT",
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      },
+      {
+        "path": "Art/Materials/Celestial/MAT_CelestialMoon_Pelagia.mat",
+        "texture_properties": {
+          "_BaseMap": "Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg",
+          "_MainTex": "Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg"
+        },
+        "has_base_map": true,
+        "has_normal": false,
+        "has_packed_mask": false,
+        "has_detail": false,
+        "issues": [
+          "NO_PACKED_ORM_OR_MASK_SLOT",
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      },
+      {
+        "path": "Art/Materials/Celestial/MAT_CelestialMoon_Thalos.mat",
+        "texture_properties": {
+          "_BaseMap": "Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg",
+          "_MainTex": "Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg",
+          "unity_ShadowMasks": "d0353a89b1f911e48b9e16bdc9f2e058"
+        },
+        "has_base_map": true,
+        "has_normal": false,
+        "has_packed_mask": false,
+        "has_detail": false,
+        "issues": [
+          "NO_PACKED_ORM_OR_MASK_SLOT",
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      },
+      {
+        "path": "Art/Materials/Celestial/MAT_CelestialMoon_Varda.mat",
+        "texture_properties": {
+          "_BaseMap": "Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg",
+          "_MainTex": "Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg"
+        },
+        "has_base_map": true,
+        "has_normal": false,
+        "has_packed_mask": false,
+        "has_detail": false,
+        "issues": [
+          "NO_PACKED_ORM_OR_MASK_SLOT",
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      },
+      {
+        "path": "Art/Materials/Construction/Mat_RuinSeepSheen.mat",
+        "texture_properties": {
+          "_MainTex": "Art/TEXTURES/Detali/Mineral Seep Mask - second try.png"
+        },
+        "has_base_map": true,
+        "has_normal": false,
+        "has_packed_mask": false,
+        "has_detail": false,
+        "issues": [
+          "NO_PACKED_ORM_OR_MASK_SLOT",
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      },
+      {
+        "path": "Art/Materials/WorldProceduralProxy/MAT_family_coral_branching.mat",
+        "texture_properties": {
+          "_BaseMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.branching/albedo___family.coral.branching.png",
+          "_DetailMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.branching/detail___family.coral.branching.png",
+          "_MaskMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.branching/mask___family.coral.branching.png",
+          "_NormalMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.branching/normal___family.coral.branching.png"
+        },
+        "has_base_map": true,
+        "has_normal": true,
+        "has_packed_mask": true,
+        "has_detail": false,
+        "issues": [
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      },
+      {
+        "path": "Art/Materials/WorldProceduralProxy/MAT_family_coral_brittle.mat",
+        "texture_properties": {
+          "_BaseMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.brittle/albedo___family.coral.brittle.png",
+          "_DetailMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.brittle/detail___family.coral.brittle.png",
+          "_MaskMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.brittle/mask___family.coral.brittle.png",
+          "_NormalMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.brittle/normal___family.coral.brittle.png",
+          "unity_ShadowMasks": "d0353a89b1f911e48b9e16bdc9f2e058"
+        },
+        "has_base_map": true,
+        "has_normal": true,
+        "has_packed_mask": true,
+        "has_detail": false,
+        "issues": [
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      },
+      {
+        "path": "Art/Materials/WorldProceduralProxy/MAT_family_coral_low.mat",
+        "texture_properties": {
+          "_BaseMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.low/albedo___family.coral.low.png",
+          "_DetailMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.low/detail___family.coral.low.png",
+          "_MaskMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.low/mask___family.coral.low.png",
+          "_NormalMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.low/normal___family.coral.low.png",
+          "unity_ShadowMasks": "d0353a89b1f911e48b9e16bdc9f2e058"
+        },
+        "has_base_map": true,
+        "has_normal": true,
+        "has_packed_mask": true,
+        "has_detail": false,
+        "issues": [
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      },
+      {
+        "path": "Art/Materials/WorldProceduralProxy/MAT_family_coral_massive.mat",
+        "texture_properties": {
+          "_BaseMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.massive/albedo___family.coral.massive.png",
+          "_DetailMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.massive/detail___family.coral.massive.png",
+          "_MaskMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.massive/mask___family.coral.massive.png",
+          "_NormalMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.massive/normal___family.coral.massive.png"
+        },
+        "has_base_map": true,
+        "has_normal": true,
+        "has_packed_mask": true,
+        "has_detail": false,
+        "issues": [
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      },
+      {
+        "path": "Art/Materials/WorldProceduralProxy/MAT_family_coral_plate.mat",
+        "texture_properties": {
+          "_BaseMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.plate/albedo___family.coral.plate.png",
+          "_DetailMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.plate/detail___family.coral.plate.png",
+          "_MaskMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.plate/mask___family.coral.plate.png",
+          "_NormalMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.coral.plate/normal___family.coral.plate.png"
+        },
+        "has_base_map": true,
+        "has_normal": true,
+        "has_packed_mask": true,
+        "has_detail": false,
+        "issues": [
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      },
+      {
+        "path": "Art/Materials/WorldProceduralProxy/MAT_family_kelp_abyssal.mat",
+        "texture_properties": {
+          "_BaseMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.abyssal/albedo___family.kelp.abyssal.png",
+          "_DetailMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.abyssal/detail___family.kelp.abyssal.png",
+          "_MaskMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.abyssal/mask___family.kelp.abyssal.png",
+          "_NormalMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.abyssal/normal___family.kelp.abyssal.png"
+        },
+        "has_base_map": true,
+        "has_normal": true,
+        "has_packed_mask": true,
+        "has_detail": false,
+        "issues": [
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      },
+      {
+        "path": "Art/Materials/WorldProceduralProxy/MAT_family_kelp_canopy.mat",
+        "texture_properties": {
+          "_BaseMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.canopy/albedo___family.kelp.canopy.png",
+          "_DetailMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.canopy/detail___family.kelp.canopy.png",
+          "_MaskMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.canopy/mask___family.kelp.canopy.png",
+          "_NormalMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.canopy/normal___family.kelp.canopy.png"
+        },
+        "has_base_map": true,
+        "has_normal": true,
+        "has_packed_mask": true,
+        "has_detail": false,
+        "issues": [
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      },
+      {
+        "path": "Art/Materials/WorldProceduralProxy/MAT_family_kelp_patch_dense.mat",
+        "texture_properties": {
+          "_BaseMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.patch.dense/albedo___family.kelp.patch.dense.png",
+          "_DetailMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.patch.dense/detail___family.kelp.patch.dense.png",
+          "_MaskMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.patch.dense/mask___family.kelp.patch.dense.png",
+          "_NormalMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.patch.dense/normal___family.kelp.patch.dense.png"
+        },
+        "has_base_map": true,
+        "has_normal": true,
+        "has_packed_mask": true,
+        "has_detail": false,
+        "issues": [
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      },
+      {
+        "path": "Art/Materials/WorldProceduralProxy/MAT_family_kelp_tall.mat",
+        "texture_properties": {
+          "_BaseMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.tall/albedo___family.kelp.tall.png",
+          "_DetailMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.tall/detail___family.kelp.tall.png",
+          "_MaskMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.tall/mask___family.kelp.tall.png",
+          "_NormalMap": "Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.tall/normal___family.kelp.tall.png",
+          "unity_ShadowMasks": "d0353a89b1f911e48b9e16bdc9f2e058"
+        },
+        "has_base_map": true,
+        "has_normal": true,
+        "has_packed_mask": true,
+        "has_detail": false,
+        "issues": [
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      },
+      {
+        "path": "Art/Materials/WorldProceduralProxy/MAT_family_rock_arch_large.mat",
+        "texture_properties": {
+          "_BaseMap": "Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_Color.jpg",
+          "_BumpMap": "Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_NormalGL.jpg",
+          "_MainTex": "Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_Color.jpg",
+          "_OcclusionMap": "Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_AmbientOcclusion.jpg",
+          "unity_ShadowMasks": "d0353a89b1f911e48b9e16bdc9f2e058"
+        },
+        "has_base_map": true,
+        "has_normal": true,
+        "has_packed_mask": false,
+        "has_detail": false,
+        "issues": [
+          "NO_PACKED_ORM_OR_MASK_SLOT",
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      },
+      {
+        "path": "Art/Materials/WorldProceduralProxy/MAT_family_rock_cluster_medium.mat",
+        "texture_properties": {
+          "_BaseMap": "Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_Color.jpg",
+          "_BumpMap": "Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_NormalGL.jpg",
+          "_MainTex": "Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_Color.jpg",
+          "_OcclusionMap": "Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_AmbientOcclusion.jpg",
+          "unity_ShadowMasks": "d0353a89b1f911e48b9e16bdc9f2e058"
+        },
+        "has_base_map": true,
+        "has_normal": true,
+        "has_packed_mask": false,
+        "has_detail": false,
+        "issues": [
+          "NO_PACKED_ORM_OR_MASK_SLOT",
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      },
+      {
+        "path": "Art/Materials/WorldProceduralProxy/MAT_family_rock_small_floor.mat",
+        "texture_properties": {
+          "_BaseMap": "Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_Color.jpg",
+          "_BumpMap": "Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_NormalGL.jpg",
+          "_MainTex": "Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_Color.jpg",
+          "_OcclusionMap": "Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_AmbientOcclusion.jpg"
+        },
+        "has_base_map": true,
+        "has_normal": true,
+        "has_packed_mask": false,
+        "has_detail": false,
+        "issues": [
+          "NO_PACKED_ORM_OR_MASK_SLOT",
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      },
+      {
+        "path": "Art/Models/Rocks/Rock 6/rock6/rock_6.mat",
+        "texture_properties": {
+          "_BaseMap": "Art/Models/Rocks/Rock 6/rock6/Mossy_Forest_Rock_vimrfjsaw_Mid_2K_BaseColor.jpg",
+          "_BumpMap": "Art/Models/Rocks/Rock 6/rock6/Mossy_Forest_Rock_vimrfjsaw_Mid_2K_Normal.jpg",
+          "_MainTex": "Art/Models/Rocks/Rock 6/rock6/Mossy_Forest_Rock_vimrfjsaw_Mid_2K_BaseColor.jpg",
+          "_OcclusionMap": "Art/Models/Rocks/Rock 6/rock6/Mossy_Forest_Rock_vimrfjsaw_Mid_2K_AO.jpg",
+          "unity_ShadowMasks": "d0353a89b1f911e48b9e16bdc9f2e058"
+        },
+        "has_base_map": true,
+        "has_normal": true,
+        "has_packed_mask": false,
+        "has_detail": false,
+        "issues": [
+          "NO_PACKED_ORM_OR_MASK_SLOT",
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      },
+      {
+        "path": "Art/Models/Rocks/Rock 7/Materials/2.mat",
+        "texture_properties": {
+          "_BaseMap": "Art/Models/Rocks/Rock 7/Materials/2.jpg",
+          "_BumpMap": "Art/Models/Rocks/Rock 6/rock6/Mossy_Forest_Rock_vimrfjsaw_Mid_2K_Normal.jpg",
+          "_MainTex": "Art/Models/Rocks/Rock 7/Materials/2.jpg"
+        },
+        "has_base_map": true,
+        "has_normal": true,
+        "has_packed_mask": false,
+        "has_detail": false,
+        "issues": [
+          "NO_PACKED_ORM_OR_MASK_SLOT",
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      },
+      {
+        "path": "Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/mat_Rock2.mat",
+        "texture_properties": {
+          "_BaseMap": "920eb4a5d89009b42a522ff2aa1e6ef3",
+          "_Base_Map": "Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/Rock063_2K-JPG_Color.jpg",
+          "_BumpMap": "5189dcc817bc5e24095d445209499d1f",
+          "_MainTex": "920eb4a5d89009b42a522ff2aa1e6ef3",
+          "_Mask_Map": "Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/Rock063_2K-JPG_AmbientOcclusion.jpg",
+          "_Normal_Map": "Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/Rock063_2K-JPG_NormalGL.jpg",
+          "_OcclusionMap": "df147ac10298ce44e9557850251a533a"
+        },
+        "has_base_map": true,
+        "has_normal": true,
+        "has_packed_mask": false,
+        "has_detail": false,
+        "issues": [
+          "NO_PACKED_ORM_OR_MASK_SLOT",
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      },
+      {
+        "path": "Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/mat_Rock_Shared.mat",
+        "texture_properties": {
+          "_BaseMap": "920eb4a5d89009b42a522ff2aa1e6ef3",
+          "_Base_Map": "Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_Color.jpg",
+          "_BumpMap": "5189dcc817bc5e24095d445209499d1f",
+          "_MainTex": "920eb4a5d89009b42a522ff2aa1e6ef3",
+          "_Mask_Map": "Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_AmbientOcclusion.jpg",
+          "_Normal_Map": "Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_NormalGL.jpg",
+          "_OcclusionMap": "df147ac10298ce44e9557850251a533a"
+        },
+        "has_base_map": true,
+        "has_normal": true,
+        "has_packed_mask": false,
+        "has_detail": false,
+        "issues": [
+          "NO_PACKED_ORM_OR_MASK_SLOT",
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      },
+      {
+        "path": "Materials/WorldRuntime/ProceduralPlaceholders/TerrainLod/MAT_family_rock_arch_large_Placeholder.mat",
+        "texture_properties": {
+          "_BaseMap": "Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_Color.jpg",
+          "_BumpMap": "Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_NormalGL.jpg",
+          "_MainTex": "Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_Color.jpg",
+          "_OcclusionMap": "Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/TOP1Rock028_2K-JPG_AmbientOcclusion.jpg",
+          "unity_ShadowMasks": "d0353a89b1f911e48b9e16bdc9f2e058"
+        },
+        "has_base_map": true,
+        "has_normal": true,
+        "has_packed_mask": false,
+        "has_detail": false,
+        "issues": [
+          "NO_PACKED_ORM_OR_MASK_SLOT",
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      },
+      {
+        "path": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonClouds.mat",
+        "texture_properties": {
+          "_BaseMap": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png",
+          "_MainTex": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png"
+        },
+        "has_base_map": true,
+        "has_normal": false,
+        "has_packed_mask": false,
+        "has_detail": false,
+        "issues": [
+          "NO_PACKED_ORM_OR_MASK_SLOT",
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      },
+      {
+        "path": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/Mat_HectonSurface.mat",
+        "texture_properties": {
+          "_BaseMap": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_diff.png",
+          "_BumpMap": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_bump.png",
+          "_MainTex": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_diff.png",
+          "_ParallaxMap": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/surface_bump.png",
+          "unity_ShadowMasks": "d0353a89b1f911e48b9e16bdc9f2e058"
+        },
+        "has_base_map": true,
+        "has_normal": true,
+        "has_packed_mask": false,
+        "has_detail": false,
+        "issues": [
+          "NO_PACKED_ORM_OR_MASK_SLOT",
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      },
+      {
+        "path": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/Materials/clouds0_diff.mat",
+        "texture_properties": {
+          "_BaseMap": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png",
+          "_MainTex": "_PROLOGUE_CONTENT/Textures/Planets/pLANET/clouds0_diff.png"
+        },
+        "has_base_map": true,
+        "has_normal": false,
+        "has_packed_mask": false,
+        "has_detail": false,
+        "issues": [
+          "NO_PACKED_ORM_OR_MASK_SLOT",
+          "NO_DETAIL_MAP_SLOT"
+        ]
+      }
+    ]
+  }
+}

@@ -137,6 +137,18 @@ namespace Hecton8.Gameplay
         private float comfortVignetteAngularSpeedFull = 8f;
         [SerializeField, Range(0f, 1f), Tooltip("Maximum scalar written to the VR comfort vignette globals.")]
         private float comfortVignetteMaximum = 0.46f;
+        [SerializeField, Range(10f, 180f), Tooltip("Angular acceleration where the Quest 3 somatic tunnel starts.")]
+        private float comfortAccelerationSoftTunnelStartRadS2 = 50f;
+        [SerializeField, Range(20f, 240f), Tooltip("Angular acceleration where the Quest 3 somatic tunnel reaches maximum opacity.")]
+        private float comfortAccelerationEmergencyClampRadS2 = 180f;
+        [SerializeField, Range(0f, 120f), Tooltip("Angular acceleration below which the acceleration tunnel can release after hysteresis.")]
+        private float comfortAccelerationReleaseBelowRadS2 = 30f;
+        [SerializeField, Range(0f, 1f), Tooltip("Seconds acceleration must stay below release threshold before tunnel release.")]
+        private float comfortAccelerationReleaseHysteresisSeconds = 0.22f;
+        [SerializeField, Range(0.001f, 0.1f), Tooltip("Maximum acceleration tunnel opacity increase per VR frame.")]
+        private float comfortVignetteAttackSlewPerFrame = 0.05f;
+        [SerializeField, Range(0.001f, 0.1f), Tooltip("Maximum acceleration tunnel opacity decrease per VR frame.")]
+        private float comfortVignetteReleaseSlewPerFrame = 0.022f;
 
         [Header("Chest Sockets")]
         [SerializeField] private Vector3 pdaChestOffset = new Vector3(-0.18f, -0.34f, 0.22f);
@@ -191,10 +203,13 @@ namespace Hecton8.Gameplay
         private Transform _decoupledRootTransform;
         private float _headLinearSpeedMetersPerSecond;
         private float _headAngularSpeedRadiansPerSecond;
+        private float _headAngularAccelerationRadiansPerSecondSq;
         private float3 _previousHeadAngularVelocityRadiansPerSecond;
         private float3 _previousHeadAngularAccelerationRadiansPerSecondSq;
         private float _headAngularJerkRadiansPerSecondCubed;
         private float _headAngularJerk01;
+        private float _accelerationComfortVignette01;
+        private float _accelerationReleaseBelowTimer;
         private float _jerkCullBlend01;
         private uint _jerkEventCount;
         private uint _lastTelemetryJerkEventCount;
@@ -339,10 +354,13 @@ namespace Hecton8.Gameplay
             _lastObservedAupShiftSequence = shiftData.Sequence;
             _headLinearSpeedMetersPerSecond = 0f;
             _headAngularSpeedRadiansPerSecond = 0f;
+            _headAngularAccelerationRadiansPerSecondSq = 0f;
             _previousHeadAngularVelocityRadiansPerSecond = float3.zero;
             _previousHeadAngularAccelerationRadiansPerSecondSq = float3.zero;
             _headAngularJerkRadiansPerSecondCubed = 0f;
             _headAngularJerk01 = 0f;
+            _accelerationComfortVignette01 = 0f;
+            _accelerationReleaseBelowTimer = 0f;
             _jerkCullBlend01 = 0f;
             _jerkEventCooldownRemaining = 0f;
             _nearFieldCollision01 = 0f;
@@ -734,10 +752,13 @@ namespace Hecton8.Gameplay
             _stateFlags |= StateHasPreviousHeadPose;
             _headLinearSpeedMetersPerSecond = 0f;
             _headAngularSpeedRadiansPerSecond = 0f;
+            _headAngularAccelerationRadiansPerSecondSq = 0f;
             _previousHeadAngularVelocityRadiansPerSecond = float3.zero;
             _previousHeadAngularAccelerationRadiansPerSecondSq = float3.zero;
             _headAngularJerkRadiansPerSecondCubed = 0f;
             _headAngularJerk01 = 0f;
+            _accelerationComfortVignette01 = 0f;
+            _accelerationReleaseBelowTimer = 0f;
             _jerkCullBlend01 = 0f;
         }
 
@@ -759,6 +780,11 @@ namespace Hecton8.Gameplay
             float3 angularAcceleration = (angularVelocity - _previousHeadAngularVelocityRadiansPerSecond) * invSafeDeltaTime;
             if (!IsFiniteFloat3(angularAcceleration))
                 angularAcceleration = float3.zero;
+            float angularAccelerationMagnitude = ApproximateMagnitudeNoSqrt(angularAcceleration);
+            if (!math.isfinite(angularAccelerationMagnitude))
+                angularAccelerationMagnitude = 0f;
+            _headAngularAccelerationRadiansPerSecondSq = angularAccelerationMagnitude;
+            UpdateAccelerationComfortState(safeDeltaTime, angularAccelerationMagnitude);
 
             float3 angularJerkVector = (angularAcceleration - _previousHeadAngularAccelerationRadiansPerSecondSq) * invSafeDeltaTime;
             float angularJerk = ApproximateMagnitudeNoSqrt(angularJerkVector);
@@ -778,6 +804,37 @@ namespace Hecton8.Gameplay
 
             _previousHeadAngularVelocityRadiansPerSecond = angularVelocity;
             _previousHeadAngularAccelerationRadiansPerSecondSq = angularAcceleration;
+        }
+
+        private void UpdateAccelerationComfortState(float deltaTime, float angularAccelerationRadS2)
+        {
+            float softStart = SanitizeMinimum(comfortAccelerationSoftTunnelStartRadS2, 0.01f);
+            float emergencyClamp = math.max(softStart + 0.01f, SanitizeMinimum(comfortAccelerationEmergencyClampRadS2, softStart + 0.01f));
+            float releaseBelow = math.min(softStart, SanitizeNonNegative(comfortAccelerationReleaseBelowRadS2));
+            float hysteresisSeconds = SanitizeNonNegative(comfortAccelerationReleaseHysteresisSeconds);
+            float safeAcceleration = SanitizeNonNegative(angularAccelerationRadS2);
+
+            if (safeAcceleration <= releaseBelow)
+                _accelerationReleaseBelowTimer = math.min(hysteresisSeconds, _accelerationReleaseBelowTimer + math.max(deltaTime, 0f));
+            else
+                _accelerationReleaseBelowTimer = 0f;
+
+            bool canRelease = _accelerationReleaseBelowTimer >= hysteresisSeconds;
+            float target = 0f;
+            if (safeAcceleration > softStart || !canRelease)
+            {
+                float clampedAcceleration = math.min(safeAcceleration, emergencyClamp);
+                float acceleration01 = math.saturate((clampedAcceleration - softStart) * math.rcp(math.max(0.001f, emergencyClamp - softStart)));
+                target = Smoothstep01(acceleration01) * Sanitize01(comfortVignetteMaximum, 0f);
+                if (!canRelease && target < _accelerationComfortVignette01)
+                    target = _accelerationComfortVignette01;
+            }
+
+            float maxDelta = target > _accelerationComfortVignette01
+                ? math.min(SanitizeMinimum(comfortVignetteAttackSlewPerFrame, 0.001f), 0.1f)
+                : math.min(SanitizeMinimum(comfortVignetteReleaseSlewPerFrame, 0.001f), 0.1f);
+            float delta = math.clamp(target - _accelerationComfortVignette01, -maxDelta, maxDelta);
+            _accelerationComfortVignette01 = Sanitize01(_accelerationComfortVignette01 + delta, 0f);
         }
 
         private void RefreshPlayerSignalsIfDue()
@@ -1036,7 +1093,8 @@ namespace Hecton8.Gameplay
                 RootRotationSharpness = SanitizeMinimum(rootRotationSmoothingSharpness, 1f),
                 VignetteAngularSpeedStart = SanitizeMinimum(comfortVignetteAngularSpeedStart, 0.01f),
                 VignetteAngularSpeedFull = SanitizeMinimum(comfortVignetteAngularSpeedFull, 0.02f),
-                VignetteMaximum = Sanitize01(comfortVignetteMaximum, 0f)
+                VignetteMaximum = Sanitize01(comfortVignetteMaximum, 0f),
+                AccelerationVignette01 = Sanitize01(_accelerationComfortVignette01, 0f)
             };
 
             VRSomaticRootSyncJob job = new VRSomaticRootSyncJob
@@ -1375,10 +1433,13 @@ namespace Hecton8.Gameplay
             _depthMeters = 0f;
             _headLinearSpeedMetersPerSecond = 0f;
             _headAngularSpeedRadiansPerSecond = 0f;
+            _headAngularAccelerationRadiansPerSecondSq = 0f;
             _previousHeadAngularVelocityRadiansPerSecond = float3.zero;
             _previousHeadAngularAccelerationRadiansPerSecondSq = float3.zero;
             _headAngularJerkRadiansPerSecondCubed = 0f;
             _headAngularJerk01 = 0f;
+            _accelerationComfortVignette01 = 0f;
+            _accelerationReleaseBelowTimer = 0f;
             _jerkCullBlend01 = 0f;
             _jerkEventCooldownRemaining = 0f;
             _playerSignalSampleRemaining = 0f;
@@ -1840,6 +1901,12 @@ namespace Hecton8.Gameplay
             return value * ApproximateInverseLengthNoSqrt(lengthSq);
         }
 
+        private static float Smoothstep01(float value)
+        {
+            float t = math.saturate(value);
+            return t * t * (3f - (2f * t));
+        }
+
         private static Quaternion ToQuaternion(float4 value)
         {
             return new Quaternion(value.x, value.y, value.z, value.w);
@@ -2153,6 +2220,7 @@ namespace Hecton8.Gameplay
                 float speedSpanRcp = math.rcp(speedFull - speedStart);
                 float vignette01 = math.saturate((input.HeadAngularSpeed - speedStart) * speedSpanRcp);
                 vignette01 *= math.saturate(input.VignetteMaximum);
+                vignette01 = math.max(vignette01, math.saturate(input.AccelerationVignette01));
 
                 Output[0] = new VRSomaticRootSyncOutput
                 {
@@ -2243,6 +2311,7 @@ namespace Hecton8.Gameplay
             public float VignetteAngularSpeedStart;
             public float VignetteAngularSpeedFull;
             public float VignetteMaximum;
+            public float AccelerationVignette01;
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 4)]

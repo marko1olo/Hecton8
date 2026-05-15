@@ -26,9 +26,9 @@ MonoBehaviour:
   triggerType: 1
   triggerId: 
   triggerValue: 4800
-  completionType: 99
+  completionType: 1
   completionId: 
-  completionValue: 0
+  completionValue: 4800
   phaseGate: 2
   markerTargetId: atlas6_core
   markerWorldPosition: {x: 0, y: 0, z: 0}

@@ -1,0 +1,599 @@
+{
+  "schemaVersion": 1,
+  "status": "SCALABILITY CRYSTALLIZED",
+  "bakedDate": "2026-05-15",
+  "ownerPromptId": "VISUAL_LOD_GRADE_ARCHITECT",
+  "ownerRole": "RENDER_STRATEGIST",
+  "domain": "Echelon9.MetaPolishIntegration.RenderScalability",
+  "consumer": "REND_DYNAMIC_RESOLUTION_ADAPTER",
+  "evidenceBoundary": "STATIC_CONFIG_PLUS_OFFLINE_STRESS_SIM_ONLY",
+  "runtimeProofStatus": "PENDING_VERIFICATION",
+  "mandates": [
+    "OPT_Performance_Budgets_FrameTime_VRAM_Limits",
+    "OPT_Cinematic_Cheat_Protocol_Visual_Fake_First",
+    "REND_URP_Graphics_HotPath_Optimization_HLOD",
+    "REND_Shader_Noir_Aesthetics_Dithering_Fog",
+    "REND_VRS_MX350_Reality_Check"
+  ],
+  "units": {
+    "vram": "MiB",
+    "ram": "MiB",
+    "distance": "meters",
+    "time": "seconds",
+    "density": "offline_score_units",
+    "gpuCycles": "normalized_offline_cycles"
+  },
+  "globalGuards": {
+    "mx350VramGuardMbIncludingDriverReserve": 1600,
+    "mx350VramHardCeilingMb": 1800,
+    "textureBudgetMb": 900,
+    "renderTargetsDepthBudgetMb": 320,
+    "setPassTarget": 600,
+    "batchesHardCeiling": 1800,
+    "gcHotPathBytes": 0,
+    "singleRuntimeSystemSuspiciousMs": 0.1,
+    "throttleFrameMs": 25.0,
+    "restoreStableFrames": 180,
+    "tierSwitchHysteresisSeconds": 3.0,
+    "lodHysteresisMeters": 5.0,
+    "vrsAssumption": "Unsupported on TOASTER/MX350 until player hardware capture proves SystemInfo.foveatedRenderingCaps support."
+  },
+  "adapterContract": {
+    "qualityLane": "VISUAL_SYNC",
+    "startupSelection": [
+      "Query graphics memory and system memory.",
+      "Run existing hardware profile benchmark.",
+      "Map hardware to the nearest tier.",
+      "Apply this config as data; do not mutate URP project assets in editor.",
+      "Runtime downgrade uses loadShedSequence, one step per hysteresis window."
+    ],
+    "hotPathPolicy": "No string parsing, JSON IO, allocation, or GlobalRegistry lookup in Tick. Adapter must bake rows into fixed data at boot.",
+    "fallbackTier": "TOASTER",
+    "fallbackRule": "Every expensive GOD_MODE feature has a TOASTER-compatible fallback in godModeFallbacks.",
+    "dynamicResolutionSignals": {
+      "pressureInput": "SystemHealthIndexSignal",
+      "degradeWhenFrameMsOver": 25.0,
+      "degradeStableFrames": 3,
+      "restoreWhenFrameMsUnder": 18.0,
+      "restoreStableFrames": 180
+    }
+  },
+  "tierOrder": [
+    "TOASTER",
+    "DECK",
+    "PRO",
+    "GOD_MODE"
+  ],
+  "tierSelection": {
+    "TOASTER": "VRAM <= 2048 or GPU score below GTX1060 class.",
+    "DECK": "Handheld UMA or VRAM <= 4096 with battery/thermal pressure.",
+    "PRO": "VRAM >= 8192 with stable frame budget and desktop thermals.",
+    "GOD_MODE": "VRAM > 8192, 12GB+ recommended, high GPU score, no active pressure."
+  },
+  "textureOverrideRules": {
+    "activateWhenVramGreaterThanMb": 8192,
+    "deactivateWhenVramLessThanMb": 7168,
+    "hysteresisSeconds": 3.0,
+    "materialFamilies": [
+      {
+        "family": "MAT_Hull_Hero",
+        "detailNormal": "TX_DetailNormal_HullMicro_BC5",
+        "microDetailOrm": "TX_MicroORM_HullWear_BC7",
+        "fallback": "Use base BC5 normal and packed base ORM only."
+      },
+      {
+        "family": "MAT_Wreckage_Close",
+        "detailNormal": "TX_DetailNormal_CorrodedMetal_BC5",
+        "microDetailOrm": "TX_MicroORM_RustMoisture_BC7",
+        "fallback": "Use baked noir mask A channel for AO and suppress wetness wobble."
+      },
+      {
+        "family": "MAT_Coral_Hero",
+        "detailNormal": "TX_DetailNormal_CoralPores_BC5",
+        "microDetailOrm": "TX_MicroORM_BiolumPores_BC7",
+        "fallback": "Use emissive mask pulse only, no pore micro-normal."
+      },
+      {
+        "family": "MAT_Rock_Hero",
+        "detailNormal": "TX_DetailNormal_BasaltCracks_BC5",
+        "microDetailOrm": "TX_MicroORM_MineralWetness_BC7",
+        "fallback": "Use triplanar base normal and baked AO."
+      },
+      {
+        "family": "MAT_Suit_Hands_Close",
+        "detailNormal": "TX_DetailNormal_RubberFabric_BC5",
+        "microDetailOrm": "TX_MicroORM_SuitWear_BC7",
+        "fallback": "Use base suit normal; visor grime stays in UI/post stack."
+      }
+    ]
+  },
+  "godModeFallbacks": {
+    "renderScale": "Clamp to TOASTER default 0.85, then floor 0.65 during emergency pressure.",
+    "pom": "Disable POM and use base normal plus baked AO.",
+    "ssr": "Disable SSR and use baked reflection probes or static cubemap approximation.",
+    "screenSpaceRefractions": "Replace with one opaque-texture offset sample capped at 0.01 NDC or disable under pressure.",
+    "volumetricScattering": "Replace raymarch with depth-only exponential fog and 256x16 noir LUT.",
+    "volumetricNoise": "Collapse triple noise to one authored depth fog scalar; no 3D noise sampling.",
+    "particleBudget": "Cap to 5000 billboard particles, no GPU particle simulation.",
+    "textureOverrides": "Disable detail normals and micro-detail ORM; apply mip bias +1.5.",
+    "shadowQuality": "Use baked AO and no dynamic shadow cascades beyond required flashlight path.",
+    "postProcessing": "Keep ACES, vignette, edge CA, and underwater distortion only; Bloom remains disabled."
+  },
+  "tiers": [
+    {
+      "tier": "TOASTER",
+      "displayName": "TOASTER",
+      "hardwareClass": "i3_or_i5_low_end_plus_MX350_2GB",
+      "targetFps": 60,
+      "frameBudgetMs": 16.667,
+      "vramLimitMb": 1800,
+      "vramGuardMb": 1600,
+      "systemRamMinimumMb": 8192,
+      "dynamicResolution": {
+        "defaultRenderScale": 0.85,
+        "minimumRenderScale": 0.65,
+        "maximumRenderScale": 0.85,
+        "pressureStepScale": 0.05,
+        "restoreStepScale": 0.025
+      },
+      "lodPolicy": {
+        "lodBias": 0.6,
+        "lodHysteresisMeters": 5.0,
+        "crossFadeDither": false,
+        "hlod2Distance": 40,
+        "largeCreatureCull": 120,
+        "propCull": 45,
+        "floraCull": 35
+      },
+      "shaderFeatures": {
+        "shaderLod": 100,
+        "mathLod": "LOW",
+        "pom": {
+          "enabled": false,
+          "tapCount": 0
+        },
+        "ssr": {
+          "enabled": false,
+          "resolutionFraction": 0.0,
+          "maxSteps": 0
+        },
+        "screenSpaceRefractions": {
+          "enabled": false,
+          "sampleCount": 0,
+          "maxOffsetNdc": 0.0
+        },
+        "ssdo": {
+          "enabled": false,
+          "tapCount": 0
+        },
+        "bloom": false,
+        "caustics": "STATIC_BAKED_OR_OFF",
+        "waterSurfaceSubdivisions": 16,
+        "shadowPcfTaps": 1,
+        "dynamicShadowCasters": 1
+      },
+      "volumetricScattering": {
+        "mode": "DEPTH_FOG_LUT",
+        "resolutionFraction": 0.5,
+        "raymarchSteps": 0,
+        "rayleighDensity": 0.002,
+        "mieDensity": 0.004,
+        "extinctionRgb": [
+          0.45,
+          0.12,
+          0.03
+        ],
+        "lut": {
+          "name": "NoirFog_256x16_R11G11B10",
+          "width": 256,
+          "height": 16
+        },
+        "noise": {
+          "layers": 0,
+          "octavesPerLayer": 0,
+          "source": "NONE"
+        }
+      },
+      "particles": {
+        "totalBudget": 5000,
+        "gpuParticles": false,
+        "marineSnow": 3000,
+        "bubbles": 1200,
+        "debris": 800,
+        "maxEmitters": 18,
+        "shadowCasting": false
+      },
+      "textures": {
+        "streamingBudgetMb": 620,
+        "mipBias": 1.5,
+        "environmentMaxPx": 512,
+        "heroMaxPx": 1024,
+        "normalFormat": "BC5",
+        "maskFormat": "BC7_OR_BC3_WHEN_PRESSURED",
+        "detailNormalMaps": false,
+        "microDetailOrm": false
+      },
+      "estimatedVramMb": {
+        "textures": 620,
+        "renderTargetsDepth": 220,
+        "shadowMaps": 32,
+        "geometryBuffers": 150,
+        "computeUavBuffers": 48,
+        "postChain": 40,
+        "particles": 18,
+        "shaderConstants": 32,
+        "driverOsReserve": 400
+      },
+      "loadShedSequence": [
+        "Mip bias +1 on all streaming textures.",
+        "Disable noncritical VFX emitters beyond 30m.",
+        "Render scale -0.05 down to 0.65 floor.",
+        "Force LOD bias 0.5 and cull flora past 30m.",
+        "Drop to emergency post chain: ACES, vignette, underwater distortion."
+      ]
+    },
+    {
+      "tier": "DECK",
+      "displayName": "DECK",
+      "hardwareClass": "SteamDeck_or_handheld_UMA_4GB_budget",
+      "targetFps": 60,
+      "frameBudgetMs": 16.667,
+      "vramLimitMb": 4096,
+      "vramGuardMb": 3480,
+      "systemRamMinimumMb": 16384,
+      "dynamicResolution": {
+        "defaultRenderScale": 0.78,
+        "minimumRenderScale": 0.68,
+        "maximumRenderScale": 0.9,
+        "pressureStepScale": 0.05,
+        "restoreStepScale": 0.025
+      },
+      "lodPolicy": {
+        "lodBias": 0.8,
+        "lodHysteresisMeters": 5.0,
+        "crossFadeDither": true,
+        "hlod2Distance": 55,
+        "largeCreatureCull": 145,
+        "propCull": 60,
+        "floraCull": 45
+      },
+      "shaderFeatures": {
+        "shaderLod": 150,
+        "mathLod": "LOW_MED",
+        "pom": {
+          "enabled": false,
+          "tapCount": 0
+        },
+        "ssr": {
+          "enabled": false,
+          "resolutionFraction": 0.0,
+          "maxSteps": 0
+        },
+        "screenSpaceRefractions": {
+          "enabled": true,
+          "sampleCount": 1,
+          "maxOffsetNdc": 0.01
+        },
+        "ssdo": {
+          "enabled": false,
+          "tapCount": 0
+        },
+        "bloom": false,
+        "caustics": "ALU_SINGLE_LAYER",
+        "waterSurfaceSubdivisions": 24,
+        "shadowPcfTaps": 2,
+        "dynamicShadowCasters": 2
+      },
+      "volumetricScattering": {
+        "mode": "HALF_RES_8_STEP_FAKE",
+        "resolutionFraction": 0.5,
+        "raymarchSteps": 8,
+        "rayleighDensity": 0.003,
+        "mieDensity": 0.006,
+        "extinctionRgb": [
+          0.45,
+          0.12,
+          0.03
+        ],
+        "lut": {
+          "name": "NoirFog_256x16_R11G11B10",
+          "width": 256,
+          "height": 16
+        },
+        "noise": {
+          "layers": 1,
+          "octavesPerLayer": 2,
+          "source": "ALU_VALUE_NOISE"
+        }
+      },
+      "particles": {
+        "totalBudget": 18000,
+        "gpuParticles": true,
+        "marineSnow": 11000,
+        "bubbles": 4500,
+        "debris": 2500,
+        "maxEmitters": 32,
+        "shadowCasting": false
+      },
+      "textures": {
+        "streamingBudgetMb": 1200,
+        "mipBias": 1.0,
+        "environmentMaxPx": 1024,
+        "heroMaxPx": 1024,
+        "normalFormat": "BC5",
+        "maskFormat": "BC7",
+        "detailNormalMaps": false,
+        "microDetailOrm": false
+      },
+      "estimatedVramMb": {
+        "textures": 1200,
+        "renderTargetsDepth": 260,
+        "shadowMaps": 64,
+        "geometryBuffers": 260,
+        "computeUavBuffers": 96,
+        "postChain": 90,
+        "particles": 70,
+        "shaderConstants": 40,
+        "driverOsReserve": 520
+      },
+      "loadShedSequence": [
+        "Disable single-layer volumetric pass.",
+        "Particle budget -50 percent.",
+        "Mip bias +1.",
+        "Render scale -0.05 down to 0.68 floor.",
+        "Apply TOASTER post chain."
+      ]
+    },
+    {
+      "tier": "PRO",
+      "displayName": "PRO",
+      "hardwareClass": "RTX2060_to_RTX3070_8GB_desktop",
+      "targetFps": 90,
+      "frameBudgetMs": 11.111,
+      "vramLimitMb": 8192,
+      "vramGuardMb": 7372,
+      "systemRamMinimumMb": 16384,
+      "dynamicResolution": {
+        "defaultRenderScale": 1.0,
+        "minimumRenderScale": 0.85,
+        "maximumRenderScale": 1.0,
+        "pressureStepScale": 0.05,
+        "restoreStepScale": 0.025
+      },
+      "lodPolicy": {
+        "lodBias": 1.2,
+        "lodHysteresisMeters": 5.0,
+        "crossFadeDither": true,
+        "hlod2Distance": 80,
+        "largeCreatureCull": 180,
+        "propCull": 90,
+        "floraCull": 75
+      },
+      "shaderFeatures": {
+        "shaderLod": 250,
+        "mathLod": "HIGH",
+        "pom": {
+          "enabled": true,
+          "tapCount": 8
+        },
+        "ssr": {
+          "enabled": true,
+          "resolutionFraction": 0.5,
+          "maxSteps": 24
+        },
+        "screenSpaceRefractions": {
+          "enabled": true,
+          "sampleCount": 2,
+          "maxOffsetNdc": 0.02
+        },
+        "ssdo": {
+          "enabled": true,
+          "tapCount": 4
+        },
+        "bloom": true,
+        "caustics": "DUAL_LAYER_ALU_WITH_SHADOW_MASK",
+        "waterSurfaceSubdivisions": 64,
+        "shadowPcfTaps": 4,
+        "dynamicShadowCasters": 8
+      },
+      "volumetricScattering": {
+        "mode": "HALF_RES_32_STEP_FAKE",
+        "resolutionFraction": 0.5,
+        "raymarchSteps": 32,
+        "rayleighDensity": 0.004,
+        "mieDensity": 0.01,
+        "extinctionRgb": [
+          0.45,
+          0.12,
+          0.03
+        ],
+        "lut": {
+          "name": "NoirFog_256x16_R11G11B10",
+          "width": 256,
+          "height": 16
+        },
+        "noise": {
+          "layers": 1,
+          "octavesPerLayer": 4,
+          "source": "ALU_FBM_PLUS_BLUE_NOISE_JITTER"
+        }
+      },
+      "particles": {
+        "totalBudget": 40000,
+        "gpuParticles": true,
+        "marineSnow": 23000,
+        "bubbles": 10000,
+        "debris": 7000,
+        "maxEmitters": 64,
+        "shadowCasting": false
+      },
+      "textures": {
+        "streamingBudgetMb": 2600,
+        "mipBias": 0.0,
+        "environmentMaxPx": 2048,
+        "heroMaxPx": 2048,
+        "normalFormat": "BC5",
+        "maskFormat": "BC7",
+        "detailNormalMaps": false,
+        "microDetailOrm": false
+      },
+      "estimatedVramMb": {
+        "textures": 2600,
+        "renderTargetsDepth": 420,
+        "shadowMaps": 160,
+        "geometryBuffers": 620,
+        "computeUavBuffers": 260,
+        "postChain": 360,
+        "particles": 180,
+        "shaderConstants": 72,
+        "driverOsReserve": 760
+      },
+      "loadShedSequence": [
+        "SSR half-res max steps 24 to 12.",
+        "Volumetric steps 32 to 16.",
+        "Particle budget -50 percent.",
+        "Disable Bloom before disabling SSDO.",
+        "Mip bias +1 and render scale 0.9."
+      ]
+    },
+    {
+      "tier": "GOD_MODE",
+      "displayName": "GOD_MODE",
+      "hardwareClass": "RTX4080_or_better_16GB_desktop",
+      "targetFps": 120,
+      "frameBudgetMs": 8.333,
+      "vramLimitMb": 16384,
+      "vramGuardMb": 14745,
+      "systemRamMinimumMb": 32768,
+      "dynamicResolution": {
+        "defaultRenderScale": 1.25,
+        "minimumRenderScale": 1.0,
+        "maximumRenderScale": 1.5,
+        "pressureStepScale": 0.05,
+        "restoreStepScale": 0.025
+      },
+      "lodPolicy": {
+        "lodBias": 1.6,
+        "lodHysteresisMeters": 5.0,
+        "crossFadeDither": true,
+        "hlod2Distance": 120,
+        "largeCreatureCull": 260,
+        "propCull": 140,
+        "floraCull": 120
+      },
+      "shaderFeatures": {
+        "shaderLod": 300,
+        "mathLod": "HIGH_VISUAL_OVERKILL",
+        "pom": {
+          "enabled": true,
+          "tapCount": 16,
+          "fallback": "godModeFallbacks.pom"
+        },
+        "ssr": {
+          "enabled": true,
+          "resolutionFraction": 1.0,
+          "maxSteps": 48,
+          "fallback": "godModeFallbacks.ssr"
+        },
+        "screenSpaceRefractions": {
+          "enabled": true,
+          "sampleCount": 4,
+          "maxOffsetNdc": 0.03,
+          "fallback": "godModeFallbacks.screenSpaceRefractions"
+        },
+        "ssdo": {
+          "enabled": true,
+          "tapCount": 8
+        },
+        "bloom": true,
+        "caustics": "DUAL_LAYER_ALU_WITH_SHADOW_MASK_AND_DETAIL_NOISE",
+        "waterSurfaceSubdivisions": 96,
+        "shadowPcfTaps": 16,
+        "dynamicShadowCasters": 16,
+        "fallback": "godModeFallbacks.shadowQuality"
+      },
+      "volumetricScattering": {
+        "mode": "TRIPLE_LAYER_HALF_RES_64_STEP_FAKE",
+        "resolutionFraction": 0.5,
+        "raymarchSteps": 64,
+        "rayleighDensity": 0.006,
+        "mieDensity": 0.016,
+        "extinctionRgb": [
+          0.45,
+          0.12,
+          0.03
+        ],
+        "lut": {
+          "name": "NoirFog_256x16_R11G11B10",
+          "width": 256,
+          "height": 16
+        },
+        "noise": {
+          "layers": 3,
+          "octavesPerLayer": 12,
+          "source": "TRIPLE_LAYER_ALU_FBM_BLUE_NOISE_JITTER",
+          "fallback": "godModeFallbacks.volumetricNoise"
+        },
+        "fallback": "godModeFallbacks.volumetricScattering"
+      },
+      "particles": {
+        "totalBudget": 200000,
+        "gpuParticles": true,
+        "marineSnow": 125000,
+        "bubbles": 45000,
+        "debris": 30000,
+        "maxEmitters": 160,
+        "shadowCasting": false,
+        "fallback": "godModeFallbacks.particleBudget"
+      },
+      "textures": {
+        "streamingBudgetMb": 5200,
+        "mipBias": -0.25,
+        "environmentMaxPx": 4096,
+        "heroMaxPx": 4096,
+        "normalFormat": "BC5",
+        "maskFormat": "BC7",
+        "detailNormalMaps": true,
+        "microDetailOrm": true,
+        "overrideRule": "textureOverrideRules.activateWhenVramGreaterThanMb",
+        "fallback": "godModeFallbacks.textureOverrides"
+      },
+      "estimatedVramMb": {
+        "textures": 5200,
+        "renderTargetsDepth": 960,
+        "shadowMaps": 420,
+        "geometryBuffers": 1450,
+        "computeUavBuffers": 620,
+        "postChain": 780,
+        "particles": 760,
+        "shaderConstants": 128,
+        "driverOsReserve": 1100
+      },
+      "loadShedSequence": [
+        "Drop GOD_MODE render scale 1.25 to 1.0.",
+        "POM 16 taps to 8 taps, then disable.",
+        "SSR full-res 48 steps to half-res 24 steps.",
+        "Triple volumetric noise to single-layer 32-step pass.",
+        "Particle budget 200000 to 40000.",
+        "Disable detail normal and micro-detail ORM swaps.",
+        "Fall through to PRO, then TOASTER if pressure persists."
+      ]
+    }
+  ],
+  "selfAuditExpectations": {
+    "godModeMinimumDensityRatioVsPro": 5.0,
+    "toasterMaxVramMbIncludingDriverReserve": 1600,
+    "requiredParticleBudgets": {
+      "TOASTER": 5000,
+      "GOD_MODE": 200000
+    },
+    "requiredGodModeFeatureFlags": {
+      "pomTapCount": 16,
+      "ssrEnabled": true,
+      "screenSpaceRefractionsEnabled": true,
+      "volumetricNoiseLayers": 3,
+      "detailNormalMaps": true,
+      "microDetailOrm": true
+    }
+  }
+}

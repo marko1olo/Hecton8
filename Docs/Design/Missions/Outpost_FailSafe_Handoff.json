@@ -5,6 +5,13 @@
   "sourceBatch": "Docs/Tasks/CURRENT_BATCH.md",
   "requestedBatch": "CURRENT_BATCH_OSHINO.md",
   "requestedBatchPresent": false,
+  "sourceAuthority": {
+    "status": "ACTIVE_BATCH_DRIFT_DETECTED",
+    "expectedPromptId": "MISSION_FAIL_SAFE_ARCHITECT",
+    "expectedPromptRole": "SCENARIO_DESIGNER",
+    "activeBatchContainsPrompt": false,
+    "policy": "Treat this handoff as a historical static design artifact until the Mission Fail-Safe prompt is restored to CURRENT_BATCH.md or an archived prompt is explicitly accepted as source authority."
+  },
   "runtimeAssetDecision": {
     "mutatedRuntimeLocalizationAssets": false,
     "activeEnglishTableObserved": "Assets/_Project/Scripts/English.json",
@@ -245,7 +252,7 @@
     "oxygenStandardKpa": 21.22,
     "playerOxygenDrainKpaPerSecond": 0.012,
     "playerCo2ProductionKpaPerSecond": 0.01,
-    "fireOxygenDrainKpaPerSecond": 0.4,
+    "fireOxygenDrainKpaPerSecond": 0.08,
     "scrubberCo2RemovalKpaPerSecond": 0.055,
     "unpoweredSealedCriticalReadCapSeconds": 90,
     "rule": "Scrubber cuts CO2 only. Ghost Power does not create oxygen."

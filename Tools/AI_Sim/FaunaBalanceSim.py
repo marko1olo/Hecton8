@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -19,6 +20,45 @@ DEFAULT_FRAMES = 1_000_000
 DEFAULT_DISCOVERY_FRAMES = 12_000
 SAMPLE_STRIDE = 10_000
 PREY_CAPACITY = 16_000.0
+EXPECTED_SCHEMA_VERSION = 1
+EXPECTED_GENERATED_BY = "FAUNA_BEHAVIOR_SIMULATOR"
+EXPECTED_EVIDENCE_CLASS = "CLI_PYTHON_SIMULATION"
+EXPECTED_RUNTIME_UNITY_PROOF = "PENDING VERIFICATION"
+EXPECTED_DETAIL_REPORT_PATH = "Tools/AI_Sim/FaunaBalanceSim_Report.json"
+EXPECTED_REPLICATE_REPORT_PATH = "Tools/AI_Sim/FaunaBalanceSim_ReplicateValidation.json"
+EXPECTED_SPECIES_TARGETS = {
+    "preyIdealPopulation": 9600.0,
+    "stalkerIdealPopulation": 36.0,
+    "alphaLeviathanIdealPopulation": 2.4,
+}
+EXPECTED_NOISE_CASES = (0.0, 0.03, 0.06, 0.09, 0.12, 0.18, 0.24)
+EXPECTED_MILLION_SAMPLE_COUNT = DEFAULT_FRAMES // SAMPLE_STRIDE + 1
+SELECTED_CONSTANT_RANGES = {
+    "acousticTrackingWeight": (0.0, 1.0),
+    "aggressionScalar": (0.1, 2.5),
+    "fearCurvePower": (1.0, 4.0),
+    "fearScalar": (0.1, 2.5),
+    "fearWeight": (0.0, 3.0),
+    "hungerWeight": (0.0, 3.0),
+    "retinalBlindnessAcousticCompensation": (0.0, 1_000_000.0),
+    "retinalTrackingWeight": (0.0, 1.0),
+    "sensoryNoiseTolerance": (0.0, 1.0),
+}
+REPLICATE_WEIGHT_KEYS = (
+    "acousticTrackingWeight",
+    "aggressionScalar",
+    "fearCurvePower",
+    "fearScalar",
+    "fearWeight",
+    "hungerWeight",
+    "retinalTrackingWeight",
+)
+REQUIRED_RETINAL_TESTS = (
+    "normal_retinal_and_acoustic",
+    "retinal_blind_no_acoustic",
+    "retinal_blind_acoustic_tracking",
+)
+REQUIRED_FEAR_CURVES = ("linear_fear", "quadratic_fear")
 
 
 @dataclass(frozen=True)
@@ -359,11 +399,11 @@ def export_payload(final: SimulationResult, heatmap: List[SimulationResult], noi
     linear = curves["linear_fear"]
     quadratic = curves["quadratic_fear"]
     return {
-        "schemaVersion": 1,
+        "schemaVersion": EXPECTED_SCHEMA_VERSION,
         "status": "AI BALANCED",
-        "generatedBy": "FAUNA_BEHAVIOR_SIMULATOR",
-        "evidenceClass": "CLI_PYTHON_SIMULATION",
-        "runtimeUnityProof": "PENDING VERIFICATION",
+        "generatedBy": EXPECTED_GENERATED_BY,
+        "evidenceClass": EXPECTED_EVIDENCE_CLASS,
+        "runtimeUnityProof": EXPECTED_RUNTIME_UNITY_PROOF,
         "elapsedSeconds": round(elapsed, 3),
         "selectedConstants": {
             "aggressionScalar": final.weights.aggression_scalar,
@@ -376,7 +416,7 @@ def export_payload(final: SimulationResult, heatmap: List[SimulationResult], noi
             "fearCurvePower": 2.0,
             "retinalBlindnessAcousticCompensation": round(acoustic.kills_stalker + acoustic.kills_alpha, 3),
         },
-        "speciesTargets": {"preyIdealPopulation": 9600.0, "stalkerIdealPopulation": 36.0, "alphaLeviathanIdealPopulation": 2.4},
+        "speciesTargets": EXPECTED_SPECIES_TARGETS,
         "millionFrameRun": result_to_dict(final, True),
         "heatmapTop10": [result_to_dict(row, False) for row in heatmap[:10]],
         "noiseRobustness": [result_to_dict(row, False) for row in noise],
@@ -396,7 +436,7 @@ def export_payload(final: SimulationResult, heatmap: List[SimulationResult], noi
 
 def write_json(path: Path, data: Dict[str, object]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(json.dumps(data, allow_nan=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 def constants_payload(payload: Dict[str, object]) -> Dict[str, object]:
@@ -415,13 +455,39 @@ def constants_payload(payload: Dict[str, object]) -> Dict[str, object]:
             "stability": payload["millionFrameRun"]["stability"],
         },
         "conclusions": payload["conclusions"],
-        "detailedReport": "Tools/AI_Sim/FaunaBalanceSim_Report.json",
+        "detailedReport": EXPECTED_DETAIL_REPORT_PATH,
     }
+
+
+def validate_selected_constants(constants: object, path: str, errors: List[str]) -> None:
+    if not isinstance(constants, dict):
+        errors.append(f"{path} is not an object")
+        return
+    for key, bounds in SELECTED_CONSTANT_RANGES.items():
+        if key not in constants:
+            errors.append(f"{path}.{key} missing")
+            continue
+        value = constants[key]
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            errors.append(f"{path}.{key} is not numeric")
+            continue
+        numeric = float(value)
+        if not math.isfinite(numeric):
+            errors.append(f"{path}.{key} nonfinite")
+            continue
+        min_value, max_value = bounds
+        if numeric < min_value or numeric > max_value:
+            errors.append(f"{path}.{key} out of range [{min_value}, {max_value}]")
 
 
 def load_selected_weights(path: Path) -> UtilityWeights:
     data = json.loads(path.read_text(encoding="utf-8"))
     constants = data["selectedConstants"]
+    errors: List[str] = []
+    validate_constants_header(data, "constants", errors)
+    validate_selected_constants(constants, "selectedConstants", errors)
+    if errors:
+        raise ValueError("; ".join(errors))
     return UtilityWeights(
         aggression_scalar=float(constants["aggressionScalar"]),
         fear_scalar=float(constants["fearScalar"]),
@@ -461,11 +527,11 @@ def validate_replicates(weights: UtilityWeights, frames: int, replicates: int, s
         rows.append(result_to_dict(result, include_samples=False))
 
     return {
-        "schemaVersion": 1,
+        "schemaVersion": EXPECTED_SCHEMA_VERSION,
         "status": "REPLICATE_STABLE" if failures == 0 else "REPLICATE_DEGRADED",
-        "generatedBy": "FAUNA_BEHAVIOR_SIMULATOR",
-        "evidenceClass": "CLI_PYTHON_SIMULATION",
-        "runtimeUnityProof": "PENDING VERIFICATION",
+        "generatedBy": EXPECTED_GENERATED_BY,
+        "evidenceClass": EXPECTED_EVIDENCE_CLASS,
+        "runtimeUnityProof": EXPECTED_RUNTIME_UNITY_PROOF,
         "framesPerReplicate": frames,
         "replicates": max(1, replicates),
         "failureCount": failures,
@@ -503,6 +569,186 @@ def update_constants_with_validation(constants_path: Path, validation_path: Path
     write_json(constants_path, data)
 
 
+def find_nonfinite_numbers(value: object, path: str, errors: List[str]) -> None:
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            errors.append(f"nonfinite number at {path}")
+    elif isinstance(value, dict):
+        for key, child in value.items():
+            find_nonfinite_numbers(child, f"{path}.{key}", errors)
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            find_nonfinite_numbers(child, f"{path}[{index}]", errors)
+
+
+def validate_header(artifact: object, path: str, expected_status: str, errors: List[str]) -> None:
+    if not isinstance(artifact, dict):
+        errors.append(f"{path} root is not an object")
+        return
+    if artifact.get("schemaVersion") != EXPECTED_SCHEMA_VERSION:
+        errors.append(f"{path}.schemaVersion != {EXPECTED_SCHEMA_VERSION}")
+    if artifact.get("status") != expected_status:
+        errors.append(f"{path}.status != {expected_status}")
+    if artifact.get("generatedBy") != EXPECTED_GENERATED_BY:
+        errors.append(f"{path}.generatedBy != {EXPECTED_GENERATED_BY}")
+    if artifact.get("evidenceClass") != EXPECTED_EVIDENCE_CLASS:
+        errors.append(f"{path}.evidenceClass != {EXPECTED_EVIDENCE_CLASS}")
+    if artifact.get("runtimeUnityProof") != EXPECTED_RUNTIME_UNITY_PROOF:
+        errors.append(f"{path}.runtimeUnityProof != {EXPECTED_RUNTIME_UNITY_PROOF}")
+
+
+def validate_constants_header(artifact: object, path: str, errors: List[str]) -> None:
+    validate_header(artifact, path, "AI BALANCED", errors)
+    if not isinstance(artifact, dict):
+        return
+    if artifact.get("speciesTargets") != EXPECTED_SPECIES_TARGETS:
+        errors.append(f"{path}.speciesTargets mismatch")
+    if artifact.get("detailedReport") != EXPECTED_DETAIL_REPORT_PATH:
+        errors.append(f"{path}.detailedReport != {EXPECTED_DETAIL_REPORT_PATH}")
+
+
+def validate_weight_subset(selected_constants: object, weights: object, path: str, errors: List[str]) -> None:
+    if not isinstance(selected_constants, dict):
+        errors.append(f"selected constants unavailable for {path} validation")
+        return
+    if not isinstance(weights, dict):
+        errors.append(f"{path} is not an object")
+        return
+    for key in REPLICATE_WEIGHT_KEYS:
+        if selected_constants.get(key) != weights.get(key):
+            errors.append(f"{path}.{key} mismatch")
+
+
+def kills_total(result: object) -> float:
+    if not isinstance(result, dict):
+        return 0.0
+    kills = result.get("kills")
+    if not isinstance(kills, dict):
+        return 0.0
+    stalker = kills.get("stalker", 0.0)
+    alpha = kills.get("alphaLeviathan", 0.0)
+    if not isinstance(stalker, (int, float)) or not isinstance(alpha, (int, float)):
+        return 0.0
+    return float(stalker) + float(alpha)
+
+
+def validate_million_frame_samples(million_run: Dict[str, object], errors: List[str]) -> None:
+    samples = million_run.get("samples")
+    if not isinstance(samples, list):
+        errors.append("report.millionFrameRun.samples is not a list")
+        return
+    if len(samples) != EXPECTED_MILLION_SAMPLE_COUNT:
+        errors.append(f"report.millionFrameRun.samples count != {EXPECTED_MILLION_SAMPLE_COUNT}")
+        return
+    previous_frame = -1
+    for index, sample in enumerate(samples):
+        if not isinstance(sample, dict):
+            errors.append(f"report.millionFrameRun.samples[{index}] is not an object")
+            return
+        frame = sample.get("frame")
+        if not isinstance(frame, int) or isinstance(frame, bool):
+            errors.append(f"report.millionFrameRun.samples[{index}].frame is not an int")
+            return
+        if frame <= previous_frame:
+            errors.append("report.millionFrameRun.samples frame order is not strictly increasing")
+            return
+        previous_frame = frame
+    if samples[0].get("frame") != 0:
+        errors.append("report.millionFrameRun.samples first frame != 0")
+    if samples[-1].get("frame") != DEFAULT_FRAMES:
+        errors.append(f"report.millionFrameRun.samples last frame != {DEFAULT_FRAMES}")
+
+
+def validate_task_evidence(constants: Dict[str, object], report: Dict[str, object], errors: List[str]) -> None:
+    constants_selected = constants.get("selectedConstants")
+    million_summary = constants.get("millionFrameSummary")
+    if not isinstance(million_summary, dict) or million_summary.get("frames") != DEFAULT_FRAMES:
+        errors.append(f"constants.millionFrameSummary.frames != {DEFAULT_FRAMES}")
+
+    heatmap = report.get("heatmapTop10")
+    if not isinstance(heatmap, list) or len(heatmap) < 10:
+        errors.append("report.heatmapTop10 missing or shorter than 10 rows")
+    elif isinstance(constants_selected, dict):
+        first_heatmap = heatmap[0]
+        first_weights = first_heatmap.get("weights") if isinstance(first_heatmap, dict) else None
+        if not isinstance(first_weights, dict):
+            errors.append("report.heatmapTop10[0].weights is not an object")
+        elif (
+            first_weights.get("aggressionScalar") != constants_selected.get("aggressionScalar")
+            or first_weights.get("fearScalar") != constants_selected.get("fearScalar")
+        ):
+            errors.append("report.heatmapTop10[0] sweet spot mismatch")
+
+    million_run = report.get("millionFrameRun")
+    if not isinstance(million_run, dict):
+        errors.append("report.millionFrameRun is not an object")
+    else:
+        validate_weight_subset(constants_selected, million_run.get("weights"), "report.millionFrameRun.weights", errors)
+        validate_million_frame_samples(million_run, errors)
+
+    noise_rows = report.get("noiseRobustness")
+    if not isinstance(noise_rows, list):
+        errors.append("report.noiseRobustness is not a list")
+    else:
+        observed_noise = []
+        for row in noise_rows:
+            if isinstance(row, dict):
+                profile = row.get("profile")
+                if isinstance(profile, dict):
+                    value = profile.get("sensoryNoise")
+                    if isinstance(value, (int, float)) and not isinstance(value, bool):
+                        observed_noise.append(round(float(value), 2))
+        expected_noise = [round(value, 2) for value in EXPECTED_NOISE_CASES]
+        if observed_noise != expected_noise:
+            errors.append("report.noiseRobustness cases mismatch")
+
+    if not isinstance(constants_selected, dict) or constants_selected.get("sensoryNoiseTolerance") != 0.12:
+        errors.append("constants.selectedConstants.sensoryNoiseTolerance != 0.12")
+
+    retinal = report.get("retinalBlindnessTests")
+    conclusions = constants.get("conclusions")
+    if not isinstance(conclusions, dict):
+        errors.append("constants.conclusions is not an object")
+    if not isinstance(retinal, dict):
+        errors.append("report.retinalBlindnessTests is not an object")
+    else:
+        for key in REQUIRED_RETINAL_TESTS:
+            if key not in retinal:
+                errors.append(f"report.retinalBlindnessTests.{key} missing")
+        normal_kills = max(kills_total(retinal.get("normal_retinal_and_acoustic")), 1.0)
+        acoustic_kills = kills_total(retinal.get("retinal_blind_acoustic_tracking"))
+        no_acoustic_kills = kills_total(retinal.get("retinal_blind_no_acoustic"))
+        if acoustic_kills <= no_acoustic_kills:
+            errors.append("retinal acoustic compensation does not beat no-acoustic case")
+        if isinstance(conclusions, dict):
+            acoustic_ratio = conclusions.get("acousticCompensationKillRatio")
+            no_acoustic_ratio = conclusions.get("noAcousticKillRatio")
+            if acoustic_ratio != round(acoustic_kills / normal_kills, 5):
+                errors.append("conclusions.acousticCompensationKillRatio mismatch")
+            if no_acoustic_ratio != round(no_acoustic_kills / normal_kills, 5):
+                errors.append("conclusions.noAcousticKillRatio mismatch")
+
+    curves = report.get("fearCurveComparison")
+    if not isinstance(curves, dict):
+        errors.append("report.fearCurveComparison is not an object")
+    else:
+        for key in REQUIRED_FEAR_CURVES:
+            if key not in curves:
+                errors.append(f"report.fearCurveComparison.{key} missing")
+        linear = curves.get("linear_fear")
+        quadratic = curves.get("quadratic_fear")
+        linear_score = linear.get("score") if isinstance(linear, dict) else None
+        quadratic_score = quadratic.get("score") if isinstance(quadratic, dict) else None
+        if not isinstance(linear_score, (int, float)) or not isinstance(quadratic_score, (int, float)):
+            errors.append("fear curve scores missing")
+        elif linear_score <= quadratic_score:
+            errors.append("quadratic fear curve is not better than linear")
+        elif isinstance(conclusions, dict):
+            expected_delta = round(float(linear_score) - float(quadratic_score), 6)
+            if conclusions.get("linearVsQuadraticScoreDelta") != expected_delta:
+                errors.append("conclusions.linearVsQuadraticScoreDelta mismatch")
+
+
 def check_artifacts(constants_path: Path, report_path: Path, replicate_path: Path) -> Dict[str, object]:
     errors: List[str] = []
     try:
@@ -518,30 +764,60 @@ def check_artifacts(constants_path: Path, report_path: Path, replicate_path: Pat
     except (OSError, json.JSONDecodeError) as exc:
         return {"status": "ARTIFACT_CHECK_FAILED", "errors": [f"replicate:{exc}"]}
 
-    if constants.get("status") != "AI BALANCED":
-        errors.append("constants.status != AI BALANCED")
-    if report.get("status") != "AI BALANCED":
-        errors.append("report.status != AI BALANCED")
+    find_nonfinite_numbers(constants, "constants", errors)
+    find_nonfinite_numbers(report, "report", errors)
+    find_nonfinite_numbers(replicate, "replicate", errors)
+
+    if not isinstance(constants, dict):
+        errors.append("constants root is not an object")
+        constants = {}
+    if not isinstance(report, dict):
+        errors.append("report root is not an object")
+        report = {}
+    if not isinstance(replicate, dict):
+        errors.append("replicate root is not an object")
+        replicate = {}
+
+    validate_constants_header(constants, "constants", errors)
+    validate_header(report, "report", "AI BALANCED", errors)
+    validate_header(replicate, "replicate", "REPLICATE_STABLE", errors)
+    if report.get("speciesTargets") != EXPECTED_SPECIES_TARGETS:
+        errors.append("report.speciesTargets mismatch")
+    validate_selected_constants(constants.get("selectedConstants"), "constants.selectedConstants", errors)
+    validate_selected_constants(report.get("selectedConstants"), "report.selectedConstants", errors)
     if constants.get("selectedConstants") != report.get("selectedConstants"):
         errors.append("selectedConstants mismatch")
     if constants.get("millionFrameSummary", {}).get("frames") != report.get("millionFrameRun", {}).get("frames"):
         errors.append("millionFrame frames mismatch")
+    if constants.get("millionFrameSummary", {}).get("score") != report.get("millionFrameRun", {}).get("score"):
+        errors.append("millionFrame score mismatch")
     if constants.get("millionFrameSummary", {}).get("population") != report.get("millionFrameRun", {}).get("population"):
         errors.append("millionFrame population mismatch")
+    if constants.get("millionFrameSummary", {}).get("stability") != report.get("millionFrameRun", {}).get("stability"):
+        errors.append("millionFrame stability mismatch")
     if "heatmapTop10" in constants or "millionFrameRun" in constants:
         errors.append("constants file contains detailed report payload")
 
     replicate_summary = constants.get("replicateValidation", {})
+    if not isinstance(replicate_summary, dict):
+        errors.append("constants.replicateValidation is not an object")
+        replicate_summary = {}
+    if replicate_summary.get("detailedReport") != EXPECTED_REPLICATE_REPORT_PATH:
+        errors.append(f"constants.replicateValidation.detailedReport != {EXPECTED_REPLICATE_REPORT_PATH}")
     if replicate_summary.get("status") != replicate.get("status"):
         errors.append("replicate status mismatch")
     if replicate_summary.get("failureCount") != replicate.get("failureCount"):
         errors.append("replicate failureCount mismatch")
+    if replicate_summary.get("framesPerReplicate") != replicate.get("framesPerReplicate"):
+        errors.append("replicate framesPerReplicate mismatch")
+    if replicate_summary.get("replicates") != replicate.get("replicates"):
+        errors.append("replicate count mismatch")
     if replicate_summary.get("summary") != replicate.get("summary"):
         errors.append("replicate summary mismatch")
-    if replicate.get("status") != "REPLICATE_STABLE":
-        errors.append("replicate.status != REPLICATE_STABLE")
+    validate_weight_subset(constants.get("selectedConstants"), replicate.get("weights"), "replicate.weights", errors)
     if replicate.get("failureCount") != 0:
         errors.append("replicate failureCount != 0")
+    validate_task_evidence(constants, report, errors)
 
     return {
         "status": "ARTIFACT_CHECK_PASSED" if not errors else "ARTIFACT_CHECK_FAILED",

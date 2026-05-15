@@ -26,9 +26,9 @@ MonoBehaviour:
   triggerType: 3
   triggerId: radiation_critical_advisory
   triggerValue: 0
-  completionType: 99
-  completionId: 
-  completionValue: 0
+  completionType: 0
+  completionId: Item_Equip_RadiationVeil
+  completionValue: 1
   prerequisiteQuestIds: []
   criticalItemId: 
   respawnEventId: 

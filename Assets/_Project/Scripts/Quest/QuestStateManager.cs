@@ -1359,10 +1359,10 @@ namespace Hecton8.Quest
                 return 0u;
 
             if (!string.IsNullOrWhiteSpace(questData.criticalItemId))
-                return QuestFlagHashKernel.ComputeStableHash(questData.criticalItemId);
+                return ComputeSignalIdHash(questData.criticalItemId);
 
             return questData.completionType == QuestCompletionType.OnItemCollected
-                ? QuestFlagHashKernel.ComputeStableHash(questData.completionId)
+                ? ComputeSignalIdHash(questData.completionId)
                 : 0u;
         }
 
@@ -1498,7 +1498,7 @@ namespace Hecton8.Quest
                 case QuestSignalKind.DiscoveryMade:
                 case QuestSignalKind.AudioLogFound:
                 case QuestSignalKind.SignalDecoded:
-                    return QuestFlagHashKernel.ComputeStableHash(signalId);
+                    return ComputeSignalIdHash(signalId);
 
                 case QuestSignalKind.BiomeEntered:
                 case QuestSignalKind.DepthReached:
@@ -1510,6 +1510,13 @@ namespace Hecton8.Quest
                 default:
                     return 0u;
             }
+        }
+
+        private static uint ComputeSignalIdHash(string signalId)
+        {
+            return string.IsNullOrWhiteSpace(signalId)
+                ? 0u
+                : unchecked((uint)Hecton.Localization.LocHash.Compute(signalId));
         }
 
         private static uint ComputeNumericSignalHash(QuestSignalKind signalKind, float numericValue)

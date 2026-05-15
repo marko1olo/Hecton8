@@ -1,0 +1,379 @@
+{
+  "schemaVersion": 1,
+  "status": "INSTINCTS DEFINED",
+  "generatedBy": "AI_BEHAVIOR_BIOMIMETIC_DESIGNER",
+  "role": "AI_PROGRAMMER",
+  "evidenceClass": "AUTHORED_DECISION_TABLE_PLUS_CLI_PYTHON_SIMULATION",
+  "runtimeUnityProof": "PENDING VERIFICATION",
+  "domain": "ECHELON_3_FLORA_FAUNA_BIOTA_PREDATOR_COGNITION",
+  "behaviorOrder": [
+    "Circle",
+    "Hide",
+    "Breach",
+    "FalseCharge",
+    "RealAttack"
+  ],
+  "sourcePrompt": {
+    "path": "Docs/Tasks/CURRENT_BATCH.md",
+    "promptId": "AI_BEHAVIOR_BIOMIMETIC_DESIGNER",
+    "numberedTaskCount": 7,
+    "headerTaskClaim": 15,
+    "mismatchHandling": "Executed concrete numbered tasks only; no undocumented task invention."
+  },
+  "globalDataVaultFeeds": [
+    {
+      "feature": "distanceSq01",
+      "bufferIds": [
+        "PlayerKinematicState",
+        "EntityAUPs"
+      ],
+      "fields": [
+        "LockstepPlayerKinematicState.LocalPosition",
+        "LockstepPlayerKinematicState.SectorX",
+        "LockstepPlayerKinematicState.SectorY",
+        "LockstepPlayerKinematicState.SectorZ",
+        "EntityAUPs"
+      ],
+      "note": "Distance comparisons use squared AUP/local deltas only."
+    },
+    {
+      "feature": "sound01",
+      "bufferIds": [
+        "PlayerKinematicState",
+        "EntityVelocities",
+        "Silt"
+      ],
+      "fields": [
+        "LockstepPlayerKinematicState.Velocity",
+        "LockstepPlayerKinematicState.InputActions",
+        "EntityVelocities",
+        "Silt"
+      ],
+      "note": "Movement and tool action bitmasks produce acoustic pressure; no AudioSource query."
+    },
+    {
+      "feature": "light01",
+      "bufferIds": [
+        "PlayerKinematicState",
+        "EntityFlags",
+        "Silt"
+      ],
+      "fields": [
+        "LockstepPlayerKinematicState.Flags",
+        "LockstepPlayerKinematicState.InputActions",
+        "EntityFlags",
+        "Silt"
+      ],
+      "note": "Light exposure is a pre-resolved bit/float lane, not a scene-light lookup."
+    },
+    {
+      "feature": "movement01",
+      "bufferIds": [
+        "PlayerKinematicState",
+        "EntityVelocities"
+      ],
+      "fields": [
+        "LockstepPlayerKinematicState.Velocity",
+        "EntityVelocities"
+      ],
+      "note": "Player and prey speed are normalized with reciprocal square root guards."
+    },
+    {
+      "feature": "lineOfSight01",
+      "bufferIds": [
+        "EntityAUPs",
+        "Silt"
+      ],
+      "fields": [
+        "EntityAUPs",
+        "Silt"
+      ],
+      "note": "Low tier uses fog/silt occlusion scalar; high tier may add SDF visibility before importing to the vault."
+    },
+    {
+      "feature": "packSynergy01",
+      "bufferIds": [
+        "EntityAUPs",
+        "EntityVelocities",
+        "EntityFlags"
+      ],
+      "fields": [
+        "EntityAUPs",
+        "EntityVelocities",
+        "EntityFlags"
+      ],
+      "note": "Stalker positions/velocities/role bits are reduced into flanking dot scores."
+    },
+    {
+      "feature": "attackCooldown01",
+      "bufferIds": [
+        "H8Time",
+        "EntityFlags"
+      ],
+      "fields": [
+        "H8Time",
+        "EntityFlags"
+      ],
+      "note": "Cooldown is deterministic state keyed by entity flag lane and H8 time."
+    }
+  ],
+  "sensoryWeights": {
+    "sound": 0.42,
+    "light": 0.26,
+    "movement": 0.32,
+    "lineOfSightMultiplier": 0.72,
+    "packSynergyMultiplier": 0.18,
+    "weightedAggressionFormula": "aggression01=saturate(sound01*0.42 + light01*0.26 + movement01*0.32 + packSynergy01*0.18) * lineOfSight01",
+    "designIntent": "Sound dominates first contact. Light provokes showmanship and false charges. Movement converts terror into attack pressure."
+  },
+  "decisionCadence": {
+    "lowHz": 2,
+    "middleHz": 5,
+    "highHz": 10,
+    "ultraHz": 10,
+    "hysteresisSeconds": 2.5,
+    "minimumAttackCooldownSeconds": 18.0,
+    "minimumFalseChargeCooldownSeconds": 8.0
+  },
+  "behaviorParameters": {
+    "Circle": {
+      "damage": 0.0,
+      "terror": 0.62,
+      "distancePullMeters": -4.0,
+      "cooldownSeconds": 3.0,
+      "cinematicCheat": "Use orbiting silhouette, camera occlusion, and hydrophone pass-by; no physical orbit truth required."
+    },
+    "Hide": {
+      "damage": 0.0,
+      "terror": 0.48,
+      "distancePullMeters": 9.0,
+      "cooldownSeconds": 4.0,
+      "cinematicCheat": "Fade into fog/silt and move proxy target; no complex stealth simulation."
+    },
+    "Breach": {
+      "damage": 6.0,
+      "terror": 0.88,
+      "distancePullMeters": -12.0,
+      "cooldownSeconds": 14.0,
+      "cinematicCheat": "AUP-safe positional lunge plus splash/fog/audio fake; no water-column physics."
+    },
+    "FalseCharge": {
+      "damage": 10.0,
+      "terror": 1.0,
+      "distancePullMeters": -18.0,
+      "cooldownSeconds": 10.0,
+      "cinematicCheat": "Near miss, screen pressure, haptic pulse. Damage is capped unless the player keeps moving into the line."
+    },
+    "RealAttack": {
+      "damage": 56.0,
+      "terror": 0.72,
+      "distancePullMeters": -24.0,
+      "cooldownSeconds": 16.0,
+      "cinematicCheat": "Single combat truth packet; presentation uses pooled bite flash and shader scrape."
+    }
+  },
+  "contexts": [
+    {
+      "id": "far_silent_dark",
+      "distanceBand": "far",
+      "signalBand": "low",
+      "packBand": "low",
+      "description": "Player is not broadcasting enough truth for a hard commit."
+    },
+    {
+      "id": "far_lit_scan",
+      "distanceBand": "far",
+      "signalBand": "light",
+      "packBand": "low",
+      "description": "Light is visible but distance still favors theater over damage."
+    },
+    {
+      "id": "mid_soft_noise",
+      "distanceBand": "mid",
+      "signalBand": "low_mid",
+      "packBand": "low",
+      "description": "Slow contact; pressure rises without instant strike."
+    },
+    {
+      "id": "mid_panic_movement",
+      "distanceBand": "mid",
+      "signalBand": "movement",
+      "packBand": "low_mid",
+      "description": "Fast movement and sound justify pursuit escalation."
+    },
+    {
+      "id": "close_light_stare",
+      "distanceBand": "close",
+      "signalBand": "light",
+      "packBand": "low",
+      "description": "Light provokes intimidation and retinal aversion before lethal truth."
+    },
+    {
+      "id": "close_loud_engine",
+      "distanceBand": "close",
+      "signalBand": "sound_movement",
+      "packBand": "low_mid",
+      "description": "Noise and movement make a real hit plausible."
+    },
+    {
+      "id": "close_quiet_drift",
+      "distanceBand": "close",
+      "signalBand": "low",
+      "packBand": "low",
+      "description": "Quiet player gets dread, not guaranteed punishment."
+    },
+    {
+      "id": "pack_flank_ready",
+      "distanceBand": "mid_close",
+      "signalBand": "any",
+      "packBand": "high",
+      "description": "Stalker flanking opens the attack lane."
+    },
+    {
+      "id": "post_strike_cooldown",
+      "distanceBand": "any",
+      "signalBand": "any",
+      "packBand": "any",
+      "description": "Recovery window suppresses frustration loops."
+    },
+    {
+      "id": "visual_overkill_ultra",
+      "distanceBand": "mid_close",
+      "signalBand": "high",
+      "packBand": "mid_high",
+      "description": "Top-tier machines buy richer intimidation before final damage."
+    }
+  ],
+  "utilityScores": [
+    {"id": 1, "context": "far_silent_dark", "behavior": "Circle", "score": 0.42, "inputs": ["distanceSq01", "sound01", "light01", "movement01", "lineOfSight01"], "reason": "Low information contact becomes patrol pressure."},
+    {"id": 2, "context": "far_silent_dark", "behavior": "Hide", "score": 0.72, "inputs": ["distanceSq01", "lineOfSight01", "attackCooldown01"], "reason": "Vanishing preserves dread and avoids fake omniscience."},
+    {"id": 3, "context": "far_silent_dark", "behavior": "Breach", "score": 0.18, "inputs": ["distanceSq01", "movement01", "lineOfSight01"], "reason": "Far breach is rare spectacle, not attack truth."},
+    {"id": 4, "context": "far_silent_dark", "behavior": "FalseCharge", "score": 0.16, "inputs": ["distanceSq01", "sound01", "movement01"], "reason": "No strong stimulus, no forced charge."},
+    {"id": 5, "context": "far_silent_dark", "behavior": "RealAttack", "score": 0.04, "inputs": ["distanceSq01", "sound01", "movement01", "attackCooldown01"], "reason": "Hard attack rejected at low information distance."},
+    {"id": 6, "context": "far_lit_scan", "behavior": "Circle", "score": 0.58, "inputs": ["distanceSq01", "light01", "lineOfSight01"], "reason": "Light makes silhouette theater readable."},
+    {"id": 7, "context": "far_lit_scan", "behavior": "Hide", "score": 0.36, "inputs": ["distanceSq01", "light01", "lineOfSight01"], "reason": "Retinal aversion can still break contact."},
+    {"id": 8, "context": "far_lit_scan", "behavior": "Breach", "score": 0.52, "inputs": ["distanceSq01", "light01", "movement01", "lineOfSight01"], "reason": "Light earns a distant water/fog reveal."},
+    {"id": 9, "context": "far_lit_scan", "behavior": "FalseCharge", "score": 0.31, "inputs": ["distanceSq01", "light01", "movement01"], "reason": "Threat cue exists but range resists damage."},
+    {"id": 10, "context": "far_lit_scan", "behavior": "RealAttack", "score": 0.10, "inputs": ["distanceSq01", "light01", "attackCooldown01"], "reason": "Far light alone is not lethal authority."},
+    {"id": 11, "context": "mid_soft_noise", "behavior": "Circle", "score": 0.68, "inputs": ["distanceSq01", "sound01", "lineOfSight01"], "reason": "Mid-range pressure escalates while preserving readability."},
+    {"id": 12, "context": "mid_soft_noise", "behavior": "Hide", "score": 0.22, "inputs": ["distanceSq01", "sound01", "lineOfSight01"], "reason": "Noise confirms target; hiding becomes secondary."},
+    {"id": 13, "context": "mid_soft_noise", "behavior": "Breach", "score": 0.42, "inputs": ["distanceSq01", "sound01", "movement01"], "reason": "Soft noise allows a warning surge."},
+    {"id": 14, "context": "mid_soft_noise", "behavior": "FalseCharge", "score": 0.56, "inputs": ["distanceSq01", "sound01", "movement01"], "reason": "False charge buys fear without guaranteed damage."},
+    {"id": 15, "context": "mid_soft_noise", "behavior": "RealAttack", "score": 0.22, "inputs": ["distanceSq01", "sound01", "attackCooldown01"], "reason": "Attack remains gated until stronger movement or pack geometry."},
+    {"id": 16, "context": "mid_panic_movement", "behavior": "Circle", "score": 0.50, "inputs": ["distanceSq01", "sound01", "movement01"], "reason": "Circle keeps pressure while reading escape vector."},
+    {"id": 17, "context": "mid_panic_movement", "behavior": "Hide", "score": 0.12, "inputs": ["distanceSq01", "movement01", "lineOfSight01"], "reason": "Panic movement is too loud for passive vanish."},
+    {"id": 18, "context": "mid_panic_movement", "behavior": "Breach", "score": 0.64, "inputs": ["distanceSq01", "sound01", "movement01", "lineOfSight01"], "reason": "Movement justifies a spectacle lunge."},
+    {"id": 19, "context": "mid_panic_movement", "behavior": "FalseCharge", "score": 0.72, "inputs": ["distanceSq01", "sound01", "movement01", "attackCooldown01"], "reason": "Panic should feel hunted before it is lethal."},
+    {"id": 20, "context": "mid_panic_movement", "behavior": "RealAttack", "score": 0.38, "inputs": ["distanceSq01", "sound01", "movement01", "attackCooldown01"], "reason": "Attack is possible but not dominant."},
+    {"id": 21, "context": "close_light_stare", "behavior": "Circle", "score": 0.45, "inputs": ["distanceSq01", "light01", "lineOfSight01"], "reason": "Close light narrows safe orbit but remains readable theater."},
+    {"id": 22, "context": "close_light_stare", "behavior": "Hide", "score": 0.20, "inputs": ["distanceSq01", "light01", "attackCooldown01"], "reason": "Retinal aversion can retreat into fog."},
+    {"id": 23, "context": "close_light_stare", "behavior": "Breach", "score": 0.62, "inputs": ["distanceSq01", "light01", "lineOfSight01"], "reason": "Light provokes a visible intimidation snap instead of immediate lethal truth."},
+    {"id": 24, "context": "close_light_stare", "behavior": "FalseCharge", "score": 0.74, "inputs": ["distanceSq01", "light01", "movement01", "attackCooldown01"], "reason": "Flashlight stare gets a near miss before a bite."},
+    {"id": 25, "context": "close_light_stare", "behavior": "RealAttack", "score": 0.36, "inputs": ["distanceSq01", "light01", "movement01", "attackCooldown01"], "reason": "Close light can be punished only when movement and cooldown align."},
+    {"id": 26, "context": "close_loud_engine", "behavior": "Circle", "score": 0.24, "inputs": ["distanceSq01", "sound01", "movement01"], "reason": "Engine noise removes patience."},
+    {"id": 27, "context": "close_loud_engine", "behavior": "Hide", "score": 0.08, "inputs": ["distanceSq01", "sound01", "lineOfSight01"], "reason": "Strong acoustic lock suppresses hiding."},
+    {"id": 28, "context": "close_loud_engine", "behavior": "Breach", "score": 0.48, "inputs": ["distanceSq01", "sound01", "movement01"], "reason": "Breach can still fake the first hit."},
+    {"id": 29, "context": "close_loud_engine", "behavior": "FalseCharge", "score": 0.70, "inputs": ["distanceSq01", "sound01", "movement01", "attackCooldown01"], "reason": "Noise attracts a warning hit."},
+    {"id": 30, "context": "close_loud_engine", "behavior": "RealAttack", "score": 0.74, "inputs": ["distanceSq01", "sound01", "movement01", "packSynergy01", "attackCooldown01"], "reason": "Close loud engine gives combat truth."},
+    {"id": 31, "context": "close_quiet_drift", "behavior": "Circle", "score": 0.64, "inputs": ["distanceSq01", "movement01", "lineOfSight01"], "reason": "Quiet player gets predatory inspection."},
+    {"id": 32, "context": "close_quiet_drift", "behavior": "Hide", "score": 0.42, "inputs": ["distanceSq01", "sound01", "lineOfSight01"], "reason": "Vanishing punishes certainty, not health."},
+    {"id": 33, "context": "close_quiet_drift", "behavior": "Breach", "score": 0.22, "inputs": ["distanceSq01", "light01", "movement01"], "reason": "Low stimulus makes breach rare."},
+    {"id": 34, "context": "close_quiet_drift", "behavior": "FalseCharge", "score": 0.28, "inputs": ["distanceSq01", "movement01", "attackCooldown01"], "reason": "Close quiet contact can twitch but not spam."},
+    {"id": 35, "context": "close_quiet_drift", "behavior": "RealAttack", "score": 0.18, "inputs": ["distanceSq01", "sound01", "movement01", "attackCooldown01"], "reason": "Stealth behavior earns survival space."},
+    {"id": 36, "context": "pack_flank_ready", "behavior": "Circle", "score": 0.38, "inputs": ["distanceSq01", "packSynergy01", "movement01"], "reason": "Circle keeps player inside flanking wedge."},
+    {"id": 37, "context": "pack_flank_ready", "behavior": "Hide", "score": 0.10, "inputs": ["packSynergy01", "lineOfSight01"], "reason": "Pack has already done occlusion work."},
+    {"id": 38, "context": "pack_flank_ready", "behavior": "Breach", "score": 0.46, "inputs": ["distanceSq01", "packSynergy01", "sound01"], "reason": "Breach can split attention while smaller predators steer."},
+    {"id": 39, "context": "pack_flank_ready", "behavior": "FalseCharge", "score": 0.68, "inputs": ["distanceSq01", "packSynergy01", "movement01"], "reason": "Pack forces the player to commit movement."},
+    {"id": 40, "context": "pack_flank_ready", "behavior": "RealAttack", "score": 0.86, "inputs": ["distanceSq01", "packSynergy01", "sound01", "movement01", "attackCooldown01"], "reason": "Confirmed flanking allows lethal commit."},
+    {"id": 41, "context": "post_strike_cooldown", "behavior": "Circle", "score": 0.52, "inputs": ["distanceSq01", "attackCooldown01", "lineOfSight01"], "reason": "After strike, maintain terror ring."},
+    {"id": 42, "context": "post_strike_cooldown", "behavior": "Hide", "score": 0.80, "inputs": ["attackCooldown01", "lineOfSight01"], "reason": "Cooldown hides the reset and prevents frustration loops."},
+    {"id": 43, "context": "post_strike_cooldown", "behavior": "Breach", "score": 0.10, "inputs": ["distanceSq01", "attackCooldown01"], "reason": "Breach suppressed immediately after damage."},
+    {"id": 44, "context": "post_strike_cooldown", "behavior": "FalseCharge", "score": 0.12, "inputs": ["distanceSq01", "attackCooldown01"], "reason": "Near-miss spam is rejected."},
+    {"id": 45, "context": "post_strike_cooldown", "behavior": "RealAttack", "score": 0.03, "inputs": ["distanceSq01", "attackCooldown01"], "reason": "Hard attack cannot chain during recovery."},
+    {"id": 46, "context": "visual_overkill_ultra", "behavior": "Circle", "score": 0.74, "inputs": ["distanceSq01", "sound01", "light01", "movement01", "packSynergy01"], "reason": "Ultra spends CPU on richer circling before damage."},
+    {"id": 47, "context": "visual_overkill_ultra", "behavior": "Hide", "score": 0.18, "inputs": ["distanceSq01", "lineOfSight01", "attackCooldown01"], "reason": "High signal means hiding is a beat, not a mode."},
+    {"id": 48, "context": "visual_overkill_ultra", "behavior": "Breach", "score": 0.88, "inputs": ["distanceSq01", "sound01", "light01", "movement01"], "reason": "Top-tier presentation buys huge nonlethal spectacle."},
+    {"id": 49, "context": "visual_overkill_ultra", "behavior": "FalseCharge", "score": 0.76, "inputs": ["distanceSq01", "sound01", "light01", "movement01", "attackCooldown01"], "reason": "False charge remains a fear tool."},
+    {"id": 50, "context": "visual_overkill_ultra", "behavior": "RealAttack", "score": 0.62, "inputs": ["distanceSq01", "sound01", "movement01", "packSynergy01", "attackCooldown01"], "reason": "Lethal commit remains gated under the spectacle layer."}
+  ],
+  "packHuntingSynergy": {
+    "formula": "flankScore=saturate(max(0,dot(normalize(stalkerToPlayer),normalize(playerForward*-1))) * max(0,dot(normalize(stalkerVelocity),normalize(playerToLeviathan))) * rangeGate)",
+    "rangeGate": "1.0 when stalker distance is 12m..42m, fades to 0 outside that band",
+    "rules": [
+      {
+        "id": "bait_front_lock",
+        "description": "One stalker holds frontal attention while Leviathan stays outside direct line.",
+        "dotCondition": "dot(playerForward, normalize(stalkerPosition-playerPosition)) > 0.35",
+        "effect": "FalseCharge +0.08, RealAttack +0.04"
+      },
+      {
+        "id": "rear_flank_commit",
+        "description": "Rear/side stalker movement opens the real attack lane.",
+        "dotCondition": "dot(normalize(stalkerPosition-playerPosition), -playerForward) > 0.55",
+        "effect": "RealAttack +0.16, Circle -0.05"
+      },
+      {
+        "id": "cross_current_herd",
+        "description": "Two stalker velocities crossing the player's escape direction create a herd gate.",
+        "dotCondition": "dot(normalize(stalkerVelocityA), normalize(stalkerVelocityB)) < -0.25",
+        "effect": "Breach +0.10, FalseCharge +0.12"
+      },
+      {
+        "id": "bad_pack_geometry",
+        "description": "Aligned stalkers are noise, not a flanking advantage.",
+        "dotCondition": "dot(normalize(stalkerPositionA-playerPosition), normalize(stalkerPositionB-playerPosition)) > 0.80",
+        "effect": "packSynergy01 *= 0.25"
+      }
+    ]
+  },
+  "mathLods": {
+    "low": {
+      "range": "Use squared distance bands and scalar sensory weights.",
+      "pack": "At most one flank dot pair per decision cadence.",
+      "presentation": "Silhouette, hydrophone pulse, and shader fog carry terror."
+    },
+    "middle": {
+      "range": "Use context table plus cooldown hysteresis.",
+      "pack": "Evaluate two stalker flanking candidates.",
+      "presentation": "Breach and false charge get stronger camera/audio cues."
+    },
+    "high": {
+      "range": "Use full sensory weights and pack gates.",
+      "pack": "Evaluate up to four stalker candidates in SoA order.",
+      "presentation": "Longer silhouette residency and richer light response."
+    },
+    "ultra": {
+      "range": "Use visual_overkill_ultra context when signal is high.",
+      "pack": "Use the full 4-rule synergy set before final utility argmax.",
+      "presentation": "Spend saved logic budget on shader detail and staged breach timing, not more lethal spam."
+    }
+  },
+  "blackBox": {
+    "capacityFrames": 300,
+    "entryFields": [
+      "frame",
+      "contextHash",
+      "behaviorId",
+      "distanceSq01",
+      "sound01",
+      "light01",
+      "movement01",
+      "packSynergy01",
+      "scoreHash",
+      "flags"
+    ],
+    "dumpPath": "Docs/AgentLogs/Dump_AI_BEHAVIOR_BIOMIMETIC_DESIGNER.bin",
+    "note": "Runtime importer must map this to the existing AI telemetry ring before declaring Unity-ready."
+  },
+  "selfAudit": {
+    "simulationPath": "Tools/AiBattleSim.py",
+    "reportPath": "Tools/AiBattleSim_Report.json",
+    "encountersRequired": 10000,
+    "targetKillRateMin": 0.28,
+    "targetKillRateMax": 0.72,
+    "frustrationGuardUnder30KillRateMax": 0.35,
+    "subgroupKillRateMax": 0.72,
+    "allUnder30Action": "Multiply aggressionScalar by 0.82 and rerun until not all kills are under 30 seconds.",
+    "runtimeStatus": "PENDING PYTHON RUN"
+  }
+}
