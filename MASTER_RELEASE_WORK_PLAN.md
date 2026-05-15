@@ -5,12 +5,14 @@ Approved For Use: `2026-04-05`
 Primary Target: `NVIDIA MX350 2 GB VRAM / 12 GB RAM / i5-1135G7`
 Direction: `NASA-Punk + Deep Sea Noir`
 
-## 2026-05-13 Current-State Boundary
+## 2026-05-15 Current-State Boundary
 
 - Read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` before using this roadmap as current project truth. May 11 reports remain historical where the May 13 DOC_AUDIT override conflicts.
 - This file is a product roadmap and historical working ledger, not a runtime proof document.
 - Where this roadmap says "source of truth", treat that as roadmap/product authority only; current source code, active docs indexes, and fresh verification logs win for implementation.
 - 2026-05-13 DOC_AUDIT filesystem check did not find `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt` or `.log`. Treat the May 11 compile-success line as stale report text until the artifact is restored or replaced; it is not current build proof.
+- 2026-05-15 current-disk proof: latest observed `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_190406_CurrentDisk25.log` reports `Hecton8.Core.csproj` CLI compile `EXIT=0`, `Build succeeded`, `0 Warning(s)`, `0 Error(s)`; latest observed `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_185213_CurrentDiskBudgetGate10.json` reports H-Phi static budget `EXIT=0` with `MemoryAlignment=0.506309148` and `RuntimeHPhiRisk=0.000634446`.
+- That May 15 proof is CLI/static only. It does not upgrade any roadmap item to runtime-ready, build-playtest-ready, or visually accepted.
 - Current visual-realism doctrine is visual fake first; runtime simulation requires gameplay-correctness need plus profiler/GC/memory proof.
 - Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame time, memory retention, scene wiring, and visual quality remain `PENDING VERIFICATION`.
 

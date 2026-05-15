@@ -1,7 +1,7 @@
 # COMPUTE AUDIT BRIEF
 
 Status: AUDIT COMPLETE
-Snapshot: 2026-05-15T18:16+04:00
+Snapshot: 2026-05-15T18:45+04:00
 Agent: COMPUTE_LOGISTICS_AUDITOR
 Index: `COMPUTE_AUDIT_INDEX.md`
 Full report: `Docs/Reports/COMPUTE_DOMINANCE_REPORT.md`
@@ -17,6 +17,9 @@ Model bucket reconciliation: `COMPUTE_MODEL_BUCKET_RECONCILIATION.md`
 Live burn trend: `COMPUTE_LIVE_BURN_TREND.md`
 Live 5min burn forecast: `COMPUTE_LIVE_BURN_5MIN_FORECAST.md`
 Burn trajectory ledger: `COMPUTE_BURN_TRAJECTORY_LEDGER.md`
+Live cooldown check: `COMPUTE_LIVE_BURN_COOLDOWN_CHECK.md`
+Live persistence check: `COMPUTE_LIVE_BURN_PERSISTENCE_CHECK.md`
+Energy equivalents: `COMPUTE_ENERGY_EQUIVALENTS.md`
 Live burn sources: `COMPUTE_LIVE_BURN_SOURCES.md`
 Rate efficiency audit: `COMPUTE_RATE_EFFICIENCY_AUDIT.md`
 Codex dialogue audit: `COMPUTE_CODEX_DIALOGUE_AUDIT.md`
@@ -61,12 +64,23 @@ Status/Rationale/Log:
 | Model-aware cost per meaningful LOC | USD 0.03893 |
 | All-GPT-5.5 standard cost per meaningful LOC | USD 0.04524 |
 | Energy by prompt constant | 2,288.57 MWh |
+| Energy equivalent explained | 2,297.33 MWh = 2.29733 GWh = 2,297,330 kWh |
+| Energy equivalent, 30 kWh/day household | 76,577.7 home-days; 209.8 home-years |
+| Energy equivalent, 75 kWh EV charges | 30,631.1 full charges |
+| Energy equivalent, 1 MW load | 95.72 continuous days |
+| Electricity tariff scenario at USD 0.10/kWh | USD 229,733.00 |
 | Live SQLite all-thread tokens, 17:29 snapshot | 45,817,071,457 |
 | Live SQLite all-thread tokens, 17:43 snapshot | 45,857,878,991 |
 | Live delta since 17:29 snapshot | +40,807,534 tokens; 48,776.85 tokens/sec |
 | Live SQLite all-thread tokens, 18:16 snapshot | 45,946,566,942 |
 | Live delta since 17:43 snapshot | +88,687,951 tokens; 44,072.67 tokens/sec |
 | Live delta since corrected JSONL final | +175,067,826 tokens; USD 117.43 |
+| Live SQLite all-thread tokens, 18:31 snapshot | 45,997,528,181 |
+| Live delta since 18:16 snapshot | +50,961,239 tokens; 56,581.31 tokens/sec |
+| Live delta since corrected JSONL final, 18:31 | +226,029,065 tokens; USD 151.62 |
+| Live SQLite all-thread tokens, 18:45 snapshot | 46,052,861,781 |
+| Live delta since 18:31 snapshot | +55,333,600 tokens; 66,663.54 tokens/sec |
+| Live delta since corrected JSONL final, 18:45 | +281,362,665 tokens; USD 188.73 |
 | UUID-resolved final-usage sessions | 17 |
 | Tail delta after full scan | +102,151,525 tokens |
 | Tail delta model bucket | `gpt-5.5` |
@@ -85,6 +99,12 @@ Status/Rationale/Log:
 | Latest trajectory combined window | 188,312,372 tokens over 58.32 min |
 | Latest trajectory combined rate | 53,813.47 tokens/sec; USD 2.166/min |
 | Latest post-forecast tail rate | 44,072.67 tokens/sec; USD 1.774/min |
+| Latest cooldown-check sample | 13,464,191 tokens over 180.537904 sec |
+| Latest cooldown-check rate | 74,578.19 tokens/sec; USD 3.002/min |
+| Latest cooldown-check last minute | 550,990 tokens; 9,157.61 tokens/sec |
+| Latest persistence sample | 10,933,623 tokens over 150.845692 sec |
+| Latest persistence rate | 72,482.17 tokens/sec; USD 2.917/min |
+| Latest persistence conclusion | prior low minute did not persist |
 | Top-30 attribution patch calls | 14,015 |
 | Top-30 attribution unique patch targets | 1,647 |
 | Top-30 attribution patch churn | +354,203 / -75,895 lines |
@@ -157,6 +177,12 @@ Live burn trend has been written to `COMPUTE_LIVE_BURN_TREND.md`. It preserves t
 Live 5-minute burn forecast has been written to `COMPUTE_LIVE_BURN_5MIN_FORECAST.md`. It supersedes the three-minute sample for short-window throttle math: 16.694M tokens over 300.46 seconds, USD 2.236/min cache-aware, with top 10 active threads holding 74.54% of the live burn.
 
 Burn trajectory ledger has been written to `COMPUTE_BURN_TRAJECTORY_LEDGER.md`. It binds the 17:18, 17:29, 17:43, and 18:16 snapshots into a segment ledger. The tail cooled from the spike, but still ran at 44,072.67 tokens/sec after 17:43.
+
+Live cooldown check has been written to `COMPUTE_LIVE_BURN_COOLDOWN_CHECK.md`. It shows volatility: two spike minutes, then one cool minute. The correct label is volatile cooldown, not stable low burn.
+
+Live persistence check has been written to `COMPUTE_LIVE_BURN_PERSISTENCE_CHECK.md`. It proves the low final minute from the cooldown check did not hold: the next 150 seconds averaged 72,482.17 tokens/sec.
+
+Energy equivalents have been written to `COMPUTE_ENERGY_EQUIVALENTS.md`. The headline translation is 2.29733 GWh, or about 209.8 household-years at 30 kWh/day. This remains an audit-model equivalent, not measured datacenter telemetry.
 
 Rate efficiency audit remains in `COMPUTE_RATE_EFFICIENCY_AUDIT.md` as the previous detailed rate snapshot.
 

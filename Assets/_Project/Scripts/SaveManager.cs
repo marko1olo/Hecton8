@@ -1392,6 +1392,9 @@ namespace Hecton8.SaveSystem
         {
             ReadOnlySpan<Hecton8.Core.Signals.MacroDatabaseSectorHydrationSignal> signals =
                 SignalBus<Hecton8.Core.Signals.MacroDatabaseSectorHydrationSignal>.GetFrameSnapshot();
+            if (signals.Length == 0)
+                return;
+
             IMacroDatabaseService macroDatabase = _macroDatabaseService;
             NativeArray<byte> wfcGrid = default;
             bool hasGrid = false;
@@ -1641,8 +1644,8 @@ namespace Hecton8.SaveSystem
 
         private static uint ResolveWfcOutpostSnapshotCacheFlags(in MacroDatabasePayloadHandle handle)
         {
-            const byte DirtyFlag = 1 << 0;
-            return (handle.Flags & DirtyFlag) != 0
+            const byte DirtyPayloadFlag = 1 << 0;
+            return (handle.Flags & DirtyPayloadFlag) != 0
                 ? WfcOutpostSnapshotCacheFlagAppendPending
                 : 0u;
         }
@@ -1734,11 +1737,12 @@ namespace Hecton8.SaveSystem
             _wfcOutpostMutableGridSectorHash = sectorHash;
         }
 
-        private static void ClearWfcOutpostMutableStateGrid(NativeArray<byte> wfcGrid)
+        private static unsafe void ClearWfcOutpostMutableStateGrid(NativeArray<byte> wfcGrid)
         {
-            int count = math.min(wfcGrid.Length, WfcOutpostPersistenceConstants.CellCount);
-            for (int i = 0; i < count; i++)
-                wfcGrid[i] = 0;
+            if (!IsValidWfcOutpostGrid(wfcGrid))
+                return;
+
+            UnsafeUtility.MemClear(wfcGrid.GetUnsafePtr(), WfcOutpostPersistenceConstants.CellCount);
         }
 
         private static bool IsValidWfcOutpostGrid(NativeArray<byte> wfcGrid)
@@ -1810,6 +1814,9 @@ namespace Hecton8.SaveSystem
             }
 
             int count = math.min(_wfcOutpostSnapshotCacheCount, _wfcOutpostSnapshotCache.Length);
+            if (count <= 0)
+                return;
+
             int retries = 0;
             uint frame = unchecked((uint)Time.frameCount);
             for (int i = 0; i < count && retries < MaxWfcDirtyAppendRetriesPerSlowTick; i++)

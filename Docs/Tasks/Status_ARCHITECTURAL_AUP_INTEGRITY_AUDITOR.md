@@ -3,7 +3,7 @@
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
 Domain: ECHELON 1 / Origin Shift (AUP Manager), with audit reach into Physics, Voxel, Kinematics, AI trigger math, Biome trigger math, and deterministic seed callsites.
 Assignment Source: User-supplied XML block. `Docs/Tasks/CURRENT_BATCH.md` extraction returned `PROMPT_NOT_FOUND` for this ID on initial pass.
-Status: VERIFIED AUP INTEGRITY - LOOP 48 APPLIED; REAL H-PHI SOURCE REPAIRS REMOVED WORLD SPATIAL HASH ORIGIN-SHIFT NATIVE SCRATCH, FAR-UNLOAD LIST SCRATCH, RESTORED EDITOR GHOST DOUBLE AUP HISTORY, KEPT PDA DIAGNOSTIC UNIVERSE OFFSET IN DOUBLE UNTIL TEXT OUTPUT, MOVED FLUID CPU GERSTNER PHASE INPUT TO DOUBLE AUP, KEPT SCANNER MARKER AUP DISTANCE IN DOUBLE UNTIL PIXEL SIZING, MOVED ACOUSTIC ECHOLOCATION CLASSIFICATION DISTANCE TO GRID-DELTA DOUBLE MATH, MOVED SEISMIC SHOCKWAVE FORCE DIRECTION TO GRID-DELTA DOUBLE MATH, MOVED SURFACE THUNDER PROPAGATION DISTANCE TO GRID-DELTA DOUBLE MATH, AND MOVED TRANSPORT ENTANGLEMENT TETHER LENGTH TO GRID-DELTA DOUBLE MATH; STRICT AUP SCANS RETURN NO_MATCHES; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
+Status: VERIFIED AUP INTEGRITY - LOOP 52 APPLIED; REAL H-PHI SOURCE REPAIRS CENTRALIZED GRID-DELTA AUP HELPERS, KEPT SCANNER/ACOUSTIC/SEISMIC/THUNDER/TRANSPORT DISTANCE MATH IN DOUBLE UNTIL FINAL PRESENTATION, REPAIRED PLAYERFLASHLIGHT SIGNAL-BUS BUILD QUALIFICATION, REPAIRED STALE LOCAL EDITOR CSPROJ MATHEMATICS REFERENCE, AND VERIFIED CORE + ASSEMBLY-CSHARP BUILDS GREEN WITH 0 WARNINGS / 0 ERRORS; STRICT AUP SCANS RETURN NO_MATCHES; H-PHI AUP PRECISION RISK IS 0; ASMDEF BLOCKED BY ARCHITECTURE
 
 ## Selected Mandates
 
@@ -595,3 +595,39 @@ Loop 48 - Real AUP Precision Repair / Transport Entanglement Grid-Delta Tether L
 - `git diff --check -- Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs` reports a line-ending warning only, no whitespace errors.
 - Re-extracted `ARCHITECTURAL_AUP_INTEGRITY_AUDITOR` from `Docs/Tasks/CURRENT_BATCH.md`; result remains `PROMPT_NOT_FOUND`.
 - No `dotnet build` or rebuild was run in Loop 48 because the user explicitly forbade rebuilds.
+
+Loop 49 - Build Recheck / Assembly-CSharp Timeout Classification:
+- Re-read status/rationale and treated the user's latest build-repair request as authority to run `dotnet build` while still avoiding `dotnet rebuild`.
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_build_loop49.log;verbosity=normal"` succeeded with 0 warnings and 0 errors.
+- `dotnet build .\Assembly-CSharp.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_assembly_build_loop49.log;verbosity=normal"` timed out after 304 seconds without compiler errors in the observed output; the timed-out root process started by this agent was stopped, and no unrelated dotnet process was killed.
+- No Assembly-CSharp green status is claimed. Core build status is green.
+
+Loop 50 - AUP Grid-Delta Helper Centralization:
+- Re-read status/rationale and consolidated repeated grid/local AUP delta math into shared helpers.
+- Added `AbsoluteUniversePosition.DeltaMetersClamped` and `AbsoluteUniversePosition.ApproximateDistanceMetersClamped` in `PersistentWorldRegistry.cs`, backed by `AUPMath.AUPDeltaClamped` and `AUPMath.ApproximateAUPDistanceMetersClamped`.
+- Refactored `HectonScanMarkerSystem`, `AcousticEcholocationTranslator`, `RandomEventSystem`, `HectonSurfaceWeatherDirector`, and `MountablePlayerTransport` to use the shared helpers instead of local duplicate clamp/delta functions.
+- Removed duplicate helper symbols: `AupAxisClampCells`, `MarkerAupAxisClampCells`, `ResolveAupAxisDeltaMeters`, and `ResolveAupDeltaMeters` no longer exist under `Assets/_Project/Scripts`.
+- Strict qualified AUP scan and direct committed-offset scan both returned `NO_MATCHES` after the centralization.
+- Core build exposed a real integration error in `PlayerFlashlight.cs`: the flashlight input path had moved from the old `InputManager` event lane to typed player-input signals, but the generated Core compile needed the `Hecton8.Core.Signals` binding.
+
+Loop 51 - Build Repair / PlayerFlashlight Signal Qualification:
+- Re-read status/rationale before patching.
+- Patched `PlayerFlashlight.cs` so flashlight input signal consumption and baseline scanning use the typed `Hecton8.Core.Signals` `SignalBus<PlayerInputSignal>` lane instead of the old `InputManager` event subscription/hot-swap path.
+- Rejected asmdef/project-reference edits because `GlobalSignals.cs` and `PlayerFlashlight.cs` are both present in `Hecton8.Core.csproj`; the failure was a narrow source binding issue, not a reason to rewire assemblies.
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_build_loop51.log;verbosity=normal"` succeeded with 0 warnings and 0 errors.
+- Final strict qualified AUP scan returns `NO_MATCHES`.
+- Final direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` returned `MATCH_COUNT=233`; residuals remain broad `universe` text and known final-cast/presentation payload names.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 184.221 seconds with `RuntimeHPhiRisk=0.000634446`, `RuntimeHPhiNarrow=0.010787439`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=362`, `AupPrecisionRisk=0`, `NativeArrayRefs=7074`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, `NativeOwnershipRisk=8196`, `RuntimeFiles=1278`, and `RuntimeLines=870516`.
+- `git diff --check` on the touched build/AUP files reports line-ending warnings only, no whitespace errors.
+
+Loop 52 - Full Build Repair / Editor Mathematics Reference:
+- Re-read status/rationale before continuing the build repair.
+- `dotnet build .\Assembly-CSharp.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_assembly_build_loop51.log;verbosity=normal"` failed in `Hecton8.Editor.csproj` because generated `Hecton8.Editor.csproj` lacked a `Unity.Mathematics` reference while compiling `KinematicGhostDebugger.cs`.
+- Verified the durable tracked `Assets/_Project/Scripts/Editor/Hecton8.Editor.asmdef` already contains `Unity.Mathematics`; the failure was the local generated/ignored csproj, not source asmdef authority.
+- Patched local generated `Hecton8.Editor.csproj` with a `Unity.Mathematics` reference to match the existing asmdef and unblock the requested CLI build. The file is generated and ignored by git.
+- `dotnet build .\Assembly-CSharp.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_assembly_build_loop52.log;verbosity=normal"` succeeded in 156.79 seconds with 0 warnings and 0 errors.
+- Final strict qualified AUP scan returns `NO_MATCHES`.
+- Final direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` returned `MANDATORY_AUP_SCAN_MATCH_COUNT=233`; residuals remain broad `universe` text and known final-cast/presentation payload names.
+- No full H-Phi re-run was executed in Loop 52 because the only new repair after Loop 51's full H-Phi gate was a generated local project-file reference. Loop 51 remains the latest source H-Phi evidence: `AupPrecisionRisk=0`.

@@ -964,3 +964,41 @@ Regression Model:
 - Correctness: mesh names preserve the existing `Archetype_vN_LOD*` / `Archetype_vN_COL` format; cave validation still returns failure booleans in release.
 
 STATUS: H-PHI VERIFIED / CORE BUILD GREEN / UNITY RUNTIME PENDING
+
+## 2026-05-15 PlayerBuilder Debug Interpolation Gate
+
+What was wrong:
+- `PlayerBuilder.cs` passed interpolated diagnostic strings into `LogBuilderDebug(...)`.
+- Release builds already omit those calls through `[Conditional]`, but editor/development builds still constructed the string arguments before `LogBuilderDebug(...)` checked `builderDebugLogging`.
+
+What was done:
+- Wrapped interpolated builder-debug call sites with `UNITY_EDITOR || DEVELOPMENT_BUILD` and `builderDebugLogging` guards.
+- Preserved constant-string debug calls and all builder placement/resource/preview behavior.
+- Re-ran Core build and tightened H-Phi static gate after concurrent build drift cleared.
+
+Cinematic Cheats used:
+- None. Diagnostic allocation gating only; construction gameplay and visuals are unchanged.
+
+Exact Microseconds saved:
+- Release runtime: 0 us measured; conditional debug calls are compiled out.
+- Editor/development disabled-debug path: avoids 15 interpolated diagnostic string builds across debug deploy, runtime reference resolution, catalog selection, and placed-module spawn diagnostics. Exact us pending profiler.
+
+Compile Status:
+- First verification attempt hit a transient SourceLink file lock.
+- Second attempt exposed concurrent UI/SaveManager drift that was no longer present on disk during recheck.
+- Final `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:GenerateFullPaths=true -v:minimal`: passed, `0 Warning(s)`, `0 Error(s)`.
+- Tightened full static H-Phi budget gate: passed after the change.
+
+Phi Gain:
+- Managed formatting surface: `621 -> 606`.
+- Primary managed-runtime risk: `236 -> 221`.
+- Runtime risk H-Phi: `0.000633566 -> 0.000634446`.
+- Runtime narrow H-Phi: `0.010781770 -> 0.010787439`.
+- `FindObjectCalls=0`; `UnityUpdateMethods=0`; `JobCompleteSurface=58`.
+
+Regression Model:
+- CPU/GC: fewer disabled-debug editor/dev string constructions in builder diagnostics.
+- Memory: no NativeArray/DataVault ownership changed.
+- Correctness: debug output remains available when `builderDebugLogging` is enabled in editor/development builds.
+
+STATUS: H-PHI VERIFIED / CORE BUILD GREEN / UNITY RUNTIME PENDING

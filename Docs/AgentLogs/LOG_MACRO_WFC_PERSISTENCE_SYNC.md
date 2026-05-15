@@ -1118,6 +1118,7 @@ What was done:
 - Added `MacroDatabasePayloadFlags.Dirty` to MacroDB contracts.
 - Updated `H8MacroDatabaseService` to use the public dirty flag for dirty cache handles and to strip it before payload header writes.
 - Updated WFC restore/hydration to preserve append-pending state when the payload handle is dirty and clear retry state only for clean committed handles.
+- Superseding evidence: the direct SaveManager reference was later rejected by `CurrentDisk23`; current SaveManager uses local `DirtyPayloadFlag` until assembly visibility is proven.
 
 Cinematic cheats used:
 - One byte flag carried through the existing payload handle instead of adding new append-status APIs, extra signal lanes, or managed retry objects.
@@ -1129,7 +1130,8 @@ Exact microseconds saved:
 - Restore/hydration success cost: one byte flag test.
 
 Verification:
-- Static scan confirms `MacroDatabasePayloadFlags.Dirty` is used by MacroDB dirty marking, disk clean writes, and WFC cache flag resolution.
+- Static scan confirms `MacroDatabasePayloadFlags.Dirty` is used by MacroDB dirty marking and disk clean writes.
+- Current WFC cache flag resolution uses local `DirtyPayloadFlag`; see the later build evidence reconciliation report.
 - `git diff --check` reports only Git CRLF normalization warnings.
 - `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` exited 0 at 2026-05-15 17:18:51 +04:00; core graph debt counts unchanged.
 - No `dotnet` rebuild was run.
@@ -1189,19 +1191,20 @@ Verification:
 - Latest completed integrator build evidence, `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_182016_CurrentDisk18`, exits 0 with 0 warnings and 0 errors.
 - No `dotnet` rebuild was run by this agent.
 
-## Recheck Report: MacroDB Dirty Flag Contract De-Duplication
+## Recheck Report: MacroDB Dirty Flag Contract Visibility Probe
 Status: PENDING VERIFICATION.
 
 What was wrong:
 - `SaveManager.ResolveWfcOutpostSnapshotCacheFlags()` duplicated the MacroDB dirty payload flag as private `1 << 0`.
-- The duplicated bit could drift from `MacroDatabasePayloadFlags.Dirty`, breaking WFC retry preservation when restore/hydration reads dirty in-memory payload handles.
+- The attempted replacement with `MacroDatabasePayloadFlags.Dirty` was not compile-proven; integrator build `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_185715_CurrentDisk23` reported `SaveManager.cs(1644,36) CS0103` for that symbol.
 
 What was done:
-- Replaced the private dirty-bit duplicate with `MacroDatabasePayloadFlags.Dirty`.
+- Reverted the `SaveManager` call site to a build-safe local bridge named `DirtyPayloadFlag = 1 << 0`.
 - Kept WFC retry/hydration behavior unchanged: dirty handles preserve append-pending state, clean committed handles clear retry state.
+- Deferred direct contract binding until assembly/project visibility is proven by integration.
 
 Cinematic cheats used:
-- Contract-bound byte flag instead of new append status APIs, managed side maps, or payload format expansion.
+- One byte dirty-handle bridge instead of new append status APIs, managed side maps, or payload format expansion.
 
 Exact microseconds saved:
 - Measured savings: 0 us. No profiler or runtime trace.
@@ -1209,9 +1212,92 @@ Exact microseconds saved:
 - Runtime work unchanged: one byte flag test on restore/hydration success.
 
 Verification:
-- Static scan confirms no private `DirtyFlag` remains in `SaveManager`.
-- Static scan confirms MacroDB and SaveManager both use `MacroDatabasePayloadFlags.Dirty`.
+- Static scan confirms `SaveManager` uses `DirtyPayloadFlag`, not `MacroDatabasePayloadFlags.Dirty`.
+- Integrator build `CurrentDisk23` captured the failed contract binding.
+- Newer integrator builds `CurrentDisk25` and `CurrentDisk26` exit 0 with 0 warnings and 0 errors.
+- No `dotnet` rebuild was run by this agent.
+
+## Recheck Report: WFC Mutable Grid Native Clear
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- WFC sector-switch/reset clear used a per-cell `NativeArray<byte>` indexer loop for a fixed 500-byte mutable grid.
+- That kept unnecessary loop/indexer overhead in the WFC persistence path.
+
+What was done:
+- Replaced the indexed clear with `UnsafeUtility.MemClear()` after one grid validity check.
+- Kept DataVault ownership and the fixed 500-cell mutable-grid contract unchanged.
+
+Cinematic cheats used:
+- Fixed-size native bulk clear instead of dirty-cell bookkeeping or managed buffers.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation: 0 B by static inspection.
+- Replaces up to 500 indexed byte stores with one native bulk clear per sector switch/reset.
+
+Verification:
+- Static scan confirms `ClearWfcOutpostMutableStateGrid()` uses `UnsafeUtility.MemClear`.
+- Static scan confirms no `math.min(wfcGrid.Length, ...)` clear loop remains.
+- Static scan confirms `ResolveWfcOutpostSnapshotCacheFlags()` uses local `DirtyPayloadFlag`.
 - `git diff --check` reports only Git CRLF normalization warnings.
-- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` exited 0 at 2026-05-15 18:34:51 +04:00; core graph debt counts unchanged.
-- Latest completed integrator build evidence, `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_182016_CurrentDisk18`, exits 0 with 0 warnings and 0 errors.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` exited 0 at 2026-05-15 18:54:52 +04:00; core graph debt counts unchanged.
+- Newer integrator build evidence supersedes the old `CurrentDisk18` reference.
+- No `dotnet` rebuild was run by this agent.
+
+## Recheck Report: Build Evidence Reconciliation And Dirty Flag Bridge
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- Disk logs claimed `SaveManager` used `MacroDatabasePayloadFlags.Dirty`.
+- The latest failure evidence showed that exact reference broke `Hecton8.Core.csproj` in `CurrentDisk23`.
+- False logs would poison the next context compaction and integrator handoff.
+
+What was done:
+- Kept the build-safe local `DirtyPayloadFlag` in `ResolveWfcOutpostSnapshotCacheFlags()`.
+- Kept the `UnsafeUtility.MemClear()` native WFC mutable-grid clear.
+- Updated status/rationale/log evidence to name the failed build and the later green integrator builds.
+
+Cinematic cheats used:
+- Fixed-size native memory operations and a one-byte dirty bridge instead of managed state, payload expansion, or broader assembly rewiring.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation: 0 B by static inspection.
+- Dirty bridge cost: one byte flag test.
+- Native clear retained: one bulk clear instead of up to 500 indexed stores per sector switch/reset.
+
+Verification:
+- `CurrentDisk23` failed with our prior `MacroDatabasePayloadFlags` reference.
+- `CurrentDisk25` and `CurrentDisk26` exit 0 with 0 warnings and 0 errors.
+- Source scan confirms no `MacroDatabasePayloadFlags.Dirty` reference remains in `SaveManager`, local `DirtyPayloadFlag` exists, native `UnsafeUtility.MemClear()` remains, and the old `math.min(wfcGrid.Length, ...)` clear loop is absent.
+- `git diff --check` reports only CRLF normalization warnings.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` exited 0 at 2026-05-15 19:24:44 +04:00; core graph debt counts unchanged.
+- No `dotnet` rebuild was run by this agent.
+
+## Recheck Report: WFC Empty-Lane Fast Returns
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- Empty WFC hydration frames still set up MacroDB/grid locals and stackalloc hydration-sector scratch.
+- Empty WFC retry-cache SlowTicks still reached frame sampling after computing a zero native cache count.
+
+What was done:
+- Added an immediate empty-snapshot return in `DrainWfcSectorHydratedSignals()`.
+- Added a zero-count return in `RetryPendingWfcOutpostDirtyAppends()` before `Time.frameCount`.
+- Kept WFC payload format, dirty retry flags, and MacroDB contracts unchanged.
+
+Cinematic cheats used:
+- No-work fast exits instead of broader signal-bus changes or extra state.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation: 0 B by static inspection.
+- Removes empty-lane stack setup and one pointless frame read on no-work cadence.
+
+Verification:
+- Static scan confirms the hydration empty-snapshot return, retry zero-count return, local `DirtyPayloadFlag`, and native WFC `MemClear` remain.
+- `git diff --check` reports only CRLF normalization warnings.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` exited 0 at 2026-05-15 19:34:00 +04:00; core graph debt counts unchanged.
+- Latest integrator build evidence `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_192423_CurrentDisk23` exits 0 with 0 warnings and 0 errors.
 - No `dotnet` rebuild was run by this agent.

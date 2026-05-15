@@ -1323,3 +1323,63 @@ Verification:
 
 Integrator notes:
 - Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
+
+## 2026-05-15 - Loop 50/51 AUP Helper Centralization and Build Repair
+
+What was wrong:
+- Five repaired AUP consumers kept duplicate grid/local delta helper functions after the precision fixes.
+- `PlayerFlashlight.cs` failed `Hecton8.Core.csproj` compilation on unqualified typed signal-bus references.
+
+What was done:
+- Added shared clamped AUP delta helpers through `AbsoluteUniversePosition` and `AUPMath`.
+- Refactored scanner marker sizing, acoustic echolocation labels, seismic shockwave falloff, thunder propagation, and transport entanglement tether distance to use the shared helpers.
+- Qualified `PlayerFlashlight` input signal reads with `global::Hecton8.Core.Signals` instead of changing assemblies or adding a fallback input path.
+
+Cinematic Cheats used:
+- Kept existing cheap max/mid/min distance approximations for scanner, acoustic, thunder, and tether presentation.
+- No heavier physics/audio simulation was added; precision was repaired at the AUP input boundary.
+
+Exact Microseconds saved:
+- Gameplay frame time: 0 us claimed; no profiler capture is available.
+- Tech-debt reduction: duplicate helper review surface removed from five callsites.
+- Core build repair cost: no runtime behavior change and 0 B/frame.
+
+Verification:
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_build_loop51.log;verbosity=normal"` passed with 0 warnings and 0 errors.
+- Strict qualified AUP scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory AUP regex scan returned `MATCH_COUNT=233`, all residuals broad/presentation/final-cast names.
+- Full H-Phi gate completed in 184.221 seconds with `AupPrecisionRisk=0`, `AupPrecisionIntegrity=1`, `RuntimeHPhiRisk=0.000634446`, `NativeArrayRefs=7074`, and `NativeOwnershipRisk=8196`.
+
+Integrator notes:
+- `Assembly-CSharp.csproj` is not claimed green; the prior build attempt timed out after 304 seconds without observed compiler errors.
+- Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
+
+## 2026-05-15 - Loop 52 Full Build Repair
+
+What was wrong:
+- `Assembly-CSharp.csproj` reached `Hecton8.Editor.csproj` and failed because local generated project state omitted `Unity.Mathematics` while compiling `KinematicGhostDebugger.cs`.
+- The tracked `Hecton8.Editor.asmdef` already had the `Unity.Mathematics` dependency; the fault was stale generated-project debt.
+
+What was done:
+- Added the missing `Unity.Mathematics` reference to the local generated `Hecton8.Editor.csproj`.
+- Preserved `KinematicGhostDebugger` double AUP history and did not regress diagnostics to `Vector3`.
+
+Cinematic Cheats used:
+- No simulation work added.
+- Editor-only build repair keeps precision diagnostics intact; gameplay runtime is unchanged.
+
+Exact Microseconds saved:
+- Gameplay frame time: 0 us.
+- Build gate saved integration time by clearing a deterministic editor project reference failure; no runtime CPU or allocation change.
+
+Verification:
+- `dotnet build .\Assembly-CSharp.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_assembly_build_loop52.log;verbosity=normal"` passed with 0 warnings and 0 errors.
+- Strict qualified AUP scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory AUP regex scan returned `MANDATORY_AUP_SCAN_MATCH_COUNT=233`, broad/presentation/final-cast names only.
+- Latest source H-Phi gate remains Loop 51 with `AupPrecisionRisk=0`.
+
+Integrator notes:
+- `Hecton8.Editor.csproj` is generated and ignored; the durable tracked asmdef already contains the dependency.
+- Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.

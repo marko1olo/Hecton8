@@ -1,6 +1,6 @@
 # Documentation Governance
 
-Date: 2026-05-14
+Date: 2026-05-15
 Status: PENDING VERIFICATION
 
 Purpose: prevent workspace documentation from collapsing back into root-level noise.
@@ -9,9 +9,10 @@ Current-state boundary:
 
 - 2026-05-14 DOC_AUDIT override: read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` before using May 11 counters or build-artifact links as current proof.
 - The May 11 `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.*` proof files cited by several docs are absent from the current filesystem. Treat those references as stale report text. Current May 14/R43 external root `Hecton8*.csproj` no-restore CLI compile evidence is `0 Warning(s)` / `0 Error(s)` after restore assets and referenced `Temp\bin\Debug` DLLs exist, not Unity runtime proof.
-- Current root text scan sees `6` root `.md`, `3` root `.log`, and `3` root `.json` files. Only `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md` are active root authority.
-- Current non-anchor root markdown files are not authority: `BROKEN_PREFABS.md` is a generated snapshot, `PROJECT_ATLAS.md` is a compatibility mirror for `Docs/PROJECT_ATLAS.md`, and `TERRAIN_AND_BIOME_REALITY_MAP.md` is a compatibility mirror / stale legacy surface for `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md`.
-- `PROJECT_ATLAS.md` and `Docs/PROJECT_ATLAS.md` are static first-party asmdef graph snapshots only. They are not package/config/runtime authority.
+- Current root text scan after the 2026-05-15 cleanup sees `3` root `.md`, `0` root `.log`, `0` root `.json`, and `0` root `.txt` files in the documentation/evidence scope. The only root markdown files are `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`.
+- Former non-anchor root markdown files were moved: `BROKEN_PREFABS.md` to `Docs/Reports/2026-05-13_BROKEN_PREFABS_STATIC_SNAPSHOT.md`, and root `PROJECT_ATLAS.md` / `TERRAIN_AND_BIOME_REALITY_MAP.md` to `Docs/DEPRECATED/Root_Compatibility_Mirrors_2026-05-15/`.
+- `Docs/PROJECT_ATLAS.md` is a static first-party asmdef graph snapshot only. It is not package/config/runtime authority.
+- Former root raw logs, JSON, XML, PNG, zip, and `clean_project.py` were moved to `Docs/DEPRECATED/External_And_Log_Bundles/Root_Evidence_2026-05-15/`.
 - 2026-05-13 DOC_AUDIT R7 patched `AGENTS.md` and `.codexrules/AGENTS.md` to current Low URP reality: `URP_Low` uses `Mobile_Renderer` at render scale `0.85`.
 - 2026-05-13 package/player-settings drift is documented in `Docs/PROJECT_STATE_STATIC_XRAY.md` and `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`; manifest cleanliness does not mean asset-tree or PlayerSettings cleanliness.
 - `Docs/?? ????.md` was a stale batch-prompt dump and was moved to `Docs/DEPRECATED/Root_Stale_Batch_Prompt_Dumps_2026-05-13/`.

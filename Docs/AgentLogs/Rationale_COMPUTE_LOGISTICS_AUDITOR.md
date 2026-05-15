@@ -383,3 +383,39 @@ Rejected Alternatives: Another five-minute wait was rejected because the immedia
 Scalability potential: Low/Middle/High/Ultra process gains a trend view. The current tail is no longer described as either panic spike or cooldown; it is quantified as sustained high burn: 44.07k tokens/sec after 17:43 and 53.81k tokens/sec across the 58.32-minute combined window.
 
 Hardware Impact: 0 runtime microseconds on i3/MX350. No runtime code changed. Process impact: the ledger shows the live cost since corrected JSONL final grew by about USD 117.43 cache-aware.
+
+## Decision 32 - Live Burn Cooldown Check
+
+Problem: The trajectory ledger showed cooling after 17:43, but a later user continuation required verifying whether that was sustained or just a temporary segment artifact.
+
+Solution: Take a new three-interval SQLite live sample, price it with the corrected cache-aware/no-cache blends, and write `COMPUTE_LIVE_BURN_COOLDOWN_CHECK.md` with interval volatility and active-thread concentration.
+
+Rejected Alternatives: Updating only the trajectory ledger was rejected because it would hide interval volatility. Running a full JSONL parse was rejected because this was a live tail question. Calling the third interval a stable cooldown was rejected because the two previous minutes were spike-level.
+
+Scalability potential: Low/Middle/High/Ultra process gains a sharper throttle signal: last observed minute is low, but the three-minute mean is high and top 10 threads hold 77.75% of the sample. This supports targeted inspection rather than global stop or false calm.
+
+Hardware Impact: 0 runtime microseconds on i3/MX350. No runtime code changed. Process impact: current live total moved to 45,997,528,181 tokens and the latest sample measured 74,578.19 tokens/sec average with a 9,157.61 tokens/sec final-minute cooldown.
+
+## Decision 33 - Live Burn Persistence Check
+
+Problem: The cooldown check ended with a very low minute. Without a follow-up persistence check, that one low minute could be misreported as a sustained cooldown.
+
+Solution: Take five 30-second SQLite live samples after the low minute, price them with corrected cache-aware/no-cache blends, and write `COMPUTE_LIVE_BURN_PERSISTENCE_CHECK.md` in the current audit bundle directory.
+
+Rejected Alternatives: Waiting for another full 24h rolling JSONL scan was rejected because the immediate question is live persistence. Updating only the prior cooldown file was rejected because it would erase the time sequence. Calling the low minute sustained was rejected because the next sample rebounded above 72k tokens/sec on average.
+
+Scalability potential: Low/Middle/High/Ultra process gains a sharper burn-state label. Instead of "cooled" or "runaway", the evidence now says renewed volatile high burn with top 10 threads holding 74.95% of the 150-second sample.
+
+Hardware Impact: 0 runtime microseconds on i3/MX350. No runtime code changed. Process impact: current live total moved to 46,052,861,781 tokens and the latest persistence sample measured 72,482.17 tokens/sec, USD 2.917/min cache-aware.
+
+## Decision 34 - Energy Equivalent Translation
+
+Problem: The raw value `2,297.33 MWh` is technically correct but not cognitively useful. It needed plain-scale equivalents without pretending to be measured datacenter telemetry.
+
+Solution: Convert the audit-model MWh to GWh, kWh, joules, household-day/year assumptions, EV charges, continuous device runtimes, 1 MW load duration, and simple tariff scenarios. Write `COMPUTE_ENERGY_EQUIVALENTS.md` in the current audit bundle.
+
+Rejected Alternatives: Using only one household or electricity-price comparator was rejected because it hides assumptions. Calling the value actual OpenAI power draw was rejected because no telemetry exists. Browsing for a current local utility rate was rejected because the user asked for unit translation, not a jurisdiction-specific bill.
+
+Scalability potential: Low/Middle/High/Ultra process gains a concrete scale anchor: 2.29733 GWh is about 209.8 household-years at 30 kWh/day or 95.72 days of a 1 MW continuous load.
+
+Hardware Impact: 0 runtime microseconds on i3/MX350. No runtime code changed. Process impact: makes the energy section understandable without changing the evidence boundary.

@@ -106,6 +106,10 @@ Status: PENDING VERIFICATION
 - Loop 63: Panel power/glare finite-input pass. Sanitized external panel power-source values and flashlight glare before material and proxy-light math, so invalid values fail to deterministic off/no-glare states. No dotnet rebuilds run per user instruction.
 - Loop 64: Panel damage-glitch duration cap pass. Capped public damage-glitch durations to the authored `[0.02, 1]` seconds range, preventing bad callers from pinning CRT glitch state for unbounded time. No dotnet rebuilds run per user instruction.
 - Loop 65: UI runtime Resources.Load purge pass. Removed forbidden first-party runtime `Resources.Load` material fallbacks from tooltip and panel systems; authored materials are now mandatory and missing/mismatched materials fail closed. No dotnet rebuilds run per user instruction.
+- Loop 66: Panel cursor/finger finite scalar pass. Sanitized interaction distance, cursor margin/offset/smoothing, refresh interval, and finger press/release/hover thresholds before cursor transforms and input-state decisions. No dotnet rebuilds run per user instruction.
+- Loop 67: Panel tick delta finite pass. Sanitized panel `Tick` delta once before refresh timers, terminal glitch decay, and cursor smoothing consume it. No dotnet rebuilds run per user instruction.
+- Loop 68: Panel timestamp finite pass. Sanitized dispatcher unscaled timestamp before proxy-light flicker, event timestamps, and last-interact state consume it. No dotnet rebuilds run per user instruction.
+- Loop 69: Panel canvas raycaster ownership pass. Refreshed cached `GraphicRaycaster` only when `targetCanvas` ownership changes, clearing stale caches and forcing canvas settings reapply for runtime canvas swaps. No dotnet rebuilds run per user instruction.
 
 ## Verification Notes
 - `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary | Select-String ...`: no output for touched-file filter after final cache collision fix.
@@ -164,6 +168,10 @@ Status: PENDING VERIFICATION
 - Post Loop 63 static scans confirmed panel power and glare writes route through `ResolvePanelPowerLevel()` and `ResolveFlashlightGlare()` before shader/proxy-light use. No dotnet rebuilds run per user instruction.
 - Post Loop 64 static scans confirmed `ResolveDamageGlitchDuration()` now clamps finite public durations to `MinDamageGlitchDurationSeconds..MaxDamageGlitchDurationSeconds`. No dotnet rebuilds run per user instruction.
 - Post Loop 65 static scans confirmed no `Resources.Load` calls remain in `DiegeticTooltipSystem.cs` or `DiegeticPanelController.cs`; authored material fields now describe required ownership. No dotnet rebuilds run per user instruction.
+- Post Loop 66 static scans confirmed cursor and finger paths use `ResolveCursorMargin()`, `ResolveCursorHoverOffset()`, `ResolveCursorSmoothingSpeed()`, `ResolveFingerPressDistance()`, `ResolveFingerReleaseDistance()`, and `ResolveFingerHoverDistance()`. No dotnet rebuilds run per user instruction.
+- Post Loop 67 static scans confirmed `Tick()` creates `frameDeltaTime = ResolveFrameDeltaTime(deltaTime)` and passes that value into refresh, terminal-effect, and cursor paths. No dotnet rebuilds run per user instruction.
+- Post Loop 68 static scans confirmed `_tickUnscaledTime` is assigned through `ResolveFrameTimestamp(SystemDispatcher.CurrentUnscaledTimeSeconds, _tickUnscaledTime)`. No dotnet rebuilds run per user instruction.
+- Post Loop 69 static scans confirmed `ResolveSerializedReferences()` has no stale parameter and refreshes the graphic-raycaster cache on `targetCanvas` changes. No dotnet rebuilds run per user instruction.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Json` completed at `2026-05-15 01:32:33 +04:00` without invoking a rebuild. Follow-up summary extraction exceeded tool timeout; no score claim is recorded from that partial extraction.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Summary` was retried after Loop 18 and timed out after 120 seconds without output; no H-Phi score claim is recorded.
 - `git diff --check` on `DiegeticTooltipSystem.cs` and `Hecton_DiegeticTooltipIndirect.shader` passed with repository CRLF warnings only.

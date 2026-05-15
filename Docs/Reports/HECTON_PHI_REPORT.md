@@ -1787,3 +1787,45 @@ Residual bottlenecks:
 - Data Sovereignty remains the hard floor: `154 / (154 + 7074) = 0.021306032`.
 - Remaining top primary managed-risk files are owner-heavy: `PlayerBuilder.cs`, `WorldPopulationRule.cs`, `ModdingAPI/ModLoader.cs`, `Quest/QuestStateManager.cs`, and `ModdingAPI/ModAssetManager.cs`.
 - Runtime H-Phi remains pending Unity Console, PlayMode, Profiler, and GCMonitor evidence.
+
+## 2026-05-15 Live Addendum - PlayerBuilder Debug Interpolation Gate
+
+Evidence class: `STATIC_SOURCE_COMPILE`.
+
+What changed:
+- `PlayerBuilder.cs` interpolated builder-debug call sites are now guarded by `UNITY_EDITOR || DEVELOPMENT_BUILD` and `builderDebugLogging`.
+- Constant-string debug calls were left unchanged.
+- No builder placement, preview, resource consumption, catalog, or public UI string behavior was changed.
+
+Current static scores after this pass:
+
+| Coefficient | Score |
+|---|---:|
+| Runtime H-Phi narrow | 0.010787439 |
+| Runtime H-Phi risk-adjusted | 0.000634446 |
+| Data sovereignty | 0.021306032 |
+| Memory alignment | 0.506309148 |
+
+Current runtime counts:
+
+| Counter | Value |
+|---|---:|
+| Typed/queued signal push surface | 341 |
+| Legacy/direct event publish surface | 28 |
+| Runtime `Find*` calls | 0 |
+| Runtime `GetComponent*` calls | 321 |
+| `GlobalRegistry.` surface refs | 5,075 |
+| `NativeArray<T>` refs | 7,074 |
+| Managed formatting surface | 606 |
+| Primary managed-runtime risk | 221 |
+| Job `.Complete()` surface | 58 |
+| Primary owner-blocked NativeArray refs | 5,678 |
+
+Verification:
+- Core build passed with `0 Warning(s)` and `0 Error(s)` after transient SourceLink file lock and concurrent UI/SaveManager drift cleared.
+- Tightened full static H-Phi budget gate passed with `-MaxManagedFormatSurface 606`, `-MaxPrimaryManagedRuntimeRisk 221`, `-MinRuntimeHPhiRisk 0.000634000`, `-MaxFindObjectCalls 0`, and the existing Core graph/DataVault/layout budgets.
+
+Residual bottlenecks:
+- Data Sovereignty remains the hard floor: `154 / (154 + 7074) = 0.021306032`.
+- Remaining top primary managed-risk files after this pass: `WorldPopulationRule.cs`, `ModdingAPI/ModLoader.cs`, `Quest/QuestStateManager.cs`, `ModdingAPI/ModAssetManager.cs`, and `WorldGenerativeGeologyVoxelBridgeDirector.cs`.
+- Runtime H-Phi remains pending Unity Console, PlayMode, Profiler, and GCMonitor evidence.

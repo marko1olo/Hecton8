@@ -127,9 +127,19 @@ namespace Hecton8.UI
     {
         private const string WorldGeometrySortingLayer = "WorldGeometry";
         private const float MinCanvasExtent = 0.0001f;
+        private const float MinInteractionDistanceMeters = 0.1f;
         private const float MaximumInteractionReachMeters = 2f;
+        private const float DefaultMaxInteractionDistance = MaximumInteractionReachMeters;
+        private const float DefaultCursorHoverOffset = 0.002f;
+        private const float MinCursorSmoothingSpeed = 0.1f;
+        private const float DefaultCursorSmoothingSpeed = 20f;
+        private const float MinDistanceRefreshInterval = 0.1f;
         private const float DamageGlitchDecaySharpness = 16f;
         private const float MatrixRefreshInterval = 0.25f;
+        private const float MinFingerDistance = 0.001f;
+        private const float DefaultFingerPressDistance = 0.025f;
+        private const float DefaultFingerReleaseDistance = 0.045f;
+        private const float DefaultFingerHoverDistance = 0.08f;
         private const float MinPhosphorDecay = 0.1f;
         private const float MaxPhosphorDecay = 0.98f;
         private const float DefaultPhosphorDecay = 0.85f;
@@ -253,7 +263,7 @@ namespace Hecton8.UI
 
         [Header("── Interaction ────────────────────────────")]
         [SerializeField, Tooltip("Maximum world-space distance for cursor interaction.")]
-        private float maxInteractionDistance = 2.75f;
+        private float maxInteractionDistance = DefaultMaxInteractionDistance;
 
         [SerializeField, Tooltip("Reference-resolution used for projected canvas coordinates.")]
         private Vector2Int referenceResolution = new Vector2Int(512, 256);
@@ -262,10 +272,10 @@ namespace Hecton8.UI
         private Vector2 cursorMargin = new Vector2(0.01f, 0.01f);
 
         [SerializeField, Tooltip("World-space hover offset applied along the panel normal.")]
-        private float cursorHoverOffset = 0.002f;
+        private float cursorHoverOffset = DefaultCursorHoverOffset;
 
         [SerializeField, Tooltip("Exponential smoothing speed for the physical cursor.")]
-        private float cursorSmoothingSpeed = 20f;
+        private float cursorSmoothingSpeed = DefaultCursorSmoothingSpeed;
 
         [SerializeField, Tooltip("Seconds between panel distance and RT-tier refresh passes.")]
         private float distanceRefreshInterval = MatrixRefreshInterval;
@@ -281,13 +291,13 @@ namespace Hecton8.UI
         private bool allowDesktopRayFallbackWithoutFingers = true;
 
         [SerializeField, Min(0.001f), Tooltip("Maximum absolute panel-local Z distance that counts as a finger press.")]
-        private float fingerPressDistance = 0.025f;
+        private float fingerPressDistance = DefaultFingerPressDistance;
 
         [SerializeField, Min(0.001f), Tooltip("Release hysteresis distance. Must be equal or larger than press distance.")]
-        private float fingerReleaseDistance = 0.045f;
+        private float fingerReleaseDistance = DefaultFingerReleaseDistance;
 
         [SerializeField, Min(0.001f), Tooltip("Maximum panel-local Z distance that keeps the physical cursor hovering over the panel.")]
-        private float fingerHoverDistance = 0.08f;
+        private float fingerHoverDistance = DefaultFingerHoverDistance;
 
         [Header("── Render Texture ────────────────────────")]
         [SerializeField, Tooltip("Enables the RT-backed panel path for physical screen meshes.")]
@@ -445,7 +455,7 @@ namespace Hecton8.UI
         private void Awake()
         {
             _proxyLightKey = unchecked((int)EntityId.ToULong(gameObject.GetEntityId()));
-            ResolveSerializedReferences(resolveGraphicRaycaster: true);
+            ResolveSerializedReferences();
             ResolveInterfaces();
             DetermineTargetHardwareTier();
             RefreshServices();
@@ -460,7 +470,7 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            ResolveSerializedReferences(resolveGraphicRaycaster: true);
+            ResolveSerializedReferences();
             RefreshServices();
             TryRegisterHotSwapListener();
             TryRegisterTick();
@@ -512,12 +522,13 @@ namespace Hecton8.UI
                 return;
             }
 
-            _tickUnscaledTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            float frameDeltaTime = ResolveFrameDeltaTime(deltaTime);
+            _tickUnscaledTime = ResolveFrameTimestamp(SystemDispatcher.CurrentUnscaledTimeSeconds, _tickUnscaledTime);
             RefreshPanelData(forceRefresh: false);
-            RefreshDistanceAndRenderTexture(deltaTime);
+            RefreshDistanceAndRenderTexture(frameDeltaTime);
             ApplyPowerLevel();
             UpdateProxyLightRegistration();
-            UpdateTerminalEffectState(deltaTime);
+            UpdateTerminalEffectState(frameDeltaTime);
 
             if (TryResolveFingerInteraction(
                     out float2 fingerCanvasPos,
@@ -530,7 +541,7 @@ namespace Hecton8.UI
                 _clampedCanvasPosition = fingerCanvasPos;
 
                 if (showFingerCursor)
-                    UpdateCursor(fingerLocalHit, deltaTime);
+                    UpdateCursor(fingerLocalHit, frameDeltaTime);
                 else
                     SetCursorVisible(false);
 
@@ -575,7 +586,7 @@ namespace Hecton8.UI
             _panelData.LastInteractTime = _tickUnscaledTime;
             _clampedCanvasPosition = canvasPos;
 
-            UpdateCursor(localHit, deltaTime);
+            UpdateCursor(localHit, frameDeltaTime);
             QueueInputEventsFromInputState(canvasPos);
             DispatchInputEvents();
         }
@@ -857,17 +868,16 @@ namespace Hecton8.UI
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            maxInteractionDistance = math.min(MaximumInteractionReachMeters, math.max(0.1f, maxInteractionDistance));
+            maxInteractionDistance = ResolveEffectiveInteractionDistance();
             referenceResolution.x = math.max(1, referenceResolution.x);
             referenceResolution.y = math.max(1, referenceResolution.y);
-            cursorMargin.x = math.max(0f, cursorMargin.x);
-            cursorMargin.y = math.max(0f, cursorMargin.y);
-            cursorHoverOffset = math.max(0f, cursorHoverOffset);
-            cursorSmoothingSpeed = math.max(0.1f, cursorSmoothingSpeed);
-            distanceRefreshInterval = math.max(0.1f, distanceRefreshInterval);
-            fingerPressDistance = math.max(0.001f, fingerPressDistance);
-            fingerReleaseDistance = math.max(fingerPressDistance, fingerReleaseDistance);
-            fingerHoverDistance = math.max(fingerReleaseDistance, fingerHoverDistance);
+            cursorMargin = ResolveCursorMargin();
+            cursorHoverOffset = ResolveCursorHoverOffset();
+            cursorSmoothingSpeed = ResolveCursorSmoothingSpeed();
+            distanceRefreshInterval = ResolveDistanceRefreshInterval();
+            fingerPressDistance = ResolveFingerPressDistance();
+            fingerReleaseDistance = ResolveFingerReleaseDistance(fingerPressDistance);
+            fingerHoverDistance = ResolveFingerHoverDistance(fingerReleaseDistance);
             phosphorDecay = ResolvePhosphorDecay(phosphorDecay);
             depthFadeRange = ResolveDepthFadeRange();
             flashlightGlare = ResolveFlashlightGlare(flashlightGlare);
@@ -882,7 +892,7 @@ namespace Hecton8.UI
             _appliedPhosphorDecay = -1f;
 
             RefreshFingertipBindingMask();
-            ResolveSerializedReferences(resolveGraphicRaycaster: true);
+            ResolveSerializedReferences();
             ResolveInterfaces();
             DetermineTargetHardwareTier();
             ApplyCanvasWorldSpaceSettings();
@@ -890,7 +900,7 @@ namespace Hecton8.UI
         }
 #endif
 
-        private void ResolveSerializedReferences(bool resolveGraphicRaycaster)
+        private void ResolveSerializedReferences()
         {
             if (targetCanvas == null)
                 TryGetComponent(out targetCanvas);
@@ -910,12 +920,16 @@ namespace Hecton8.UI
             if (!ReferenceEquals(_cachedFingertipTransforms, fingertipTransforms))
                 RefreshFingertipBindingMask();
 
-            if (resolveGraphicRaycaster &&
-                targetCanvas != null &&
-                !ReferenceEquals(_cachedGraphicRaycasterCanvas, targetCanvas))
+            if (targetCanvas == null)
+            {
+                _cachedGraphicRaycaster = null;
+                _cachedGraphicRaycasterCanvas = null;
+            }
+            else if (!ReferenceEquals(_cachedGraphicRaycasterCanvas, targetCanvas))
             {
                 targetCanvas.TryGetComponent(out _cachedGraphicRaycaster);
                 _cachedGraphicRaycasterCanvas = targetCanvas;
+                _canvasSettingsApplied = false;
             }
         }
 
@@ -1017,7 +1031,7 @@ namespace Hecton8.UI
             if (!isActiveAndEnabled)
                 return false;
 
-            ResolveSerializedReferences(resolveGraphicRaycaster: false);
+            ResolveSerializedReferences();
             ResolveInterfaces();
             if (_input == null || _inputAwaitingRegistration)
                 RefreshServices();
@@ -1122,7 +1136,7 @@ namespace Hecton8.UI
             if (_refreshTimer > 0f)
                 return;
 
-            _refreshTimer = distanceRefreshInterval;
+            _refreshTimer = ResolveDistanceRefreshInterval();
 
             Camera resolvedCamera = ResolveInteractionCamera();
             if (resolvedCamera == null)
@@ -1694,7 +1708,61 @@ namespace Hecton8.UI
 
         private float ResolveEffectiveInteractionDistance()
         {
-            return math.min(MaximumInteractionReachMeters, math.max(0.001f, maxInteractionDistance));
+            return math.isfinite(maxInteractionDistance)
+                ? math.clamp(maxInteractionDistance, MinInteractionDistanceMeters, MaximumInteractionReachMeters)
+                : MaximumInteractionReachMeters;
+        }
+
+        private Vector2 ResolveCursorMargin()
+        {
+            return new Vector2(
+                math.isfinite(cursorMargin.x) ? math.max(0f, cursorMargin.x) : 0f,
+                math.isfinite(cursorMargin.y) ? math.max(0f, cursorMargin.y) : 0f);
+        }
+
+        private float ResolveCursorHoverOffset()
+        {
+            return math.isfinite(cursorHoverOffset) ? math.max(0f, cursorHoverOffset) : DefaultCursorHoverOffset;
+        }
+
+        private float ResolveCursorSmoothingSpeed()
+        {
+            return math.isfinite(cursorSmoothingSpeed) ? math.max(MinCursorSmoothingSpeed, cursorSmoothingSpeed) : DefaultCursorSmoothingSpeed;
+        }
+
+        private float ResolveDistanceRefreshInterval()
+        {
+            return math.isfinite(distanceRefreshInterval) ? math.max(MinDistanceRefreshInterval, distanceRefreshInterval) : MatrixRefreshInterval;
+        }
+
+        private float ResolveFingerPressDistance()
+        {
+            return math.isfinite(fingerPressDistance) ? math.max(MinFingerDistance, fingerPressDistance) : DefaultFingerPressDistance;
+        }
+
+        private float ResolveFingerReleaseDistance(float pressDistance)
+        {
+            float safePressDistance = math.isfinite(pressDistance) ? math.max(MinFingerDistance, pressDistance) : DefaultFingerPressDistance;
+            return math.isfinite(fingerReleaseDistance) ? math.max(safePressDistance, fingerReleaseDistance) : math.max(safePressDistance, DefaultFingerReleaseDistance);
+        }
+
+        private float ResolveFingerHoverDistance(float releaseDistance)
+        {
+            float safeReleaseDistance = math.isfinite(releaseDistance) ? math.max(MinFingerDistance, releaseDistance) : DefaultFingerReleaseDistance;
+            return math.isfinite(fingerHoverDistance) ? math.max(safeReleaseDistance, fingerHoverDistance) : math.max(safeReleaseDistance, DefaultFingerHoverDistance);
+        }
+
+        private static float ResolveFrameDeltaTime(float deltaTime)
+        {
+            return math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
+        }
+
+        private static float ResolveFrameTimestamp(double timestampSeconds, float fallback)
+        {
+            if (double.IsNaN(timestampSeconds) || double.IsInfinity(timestampSeconds) || timestampSeconds < 0d)
+                return fallback;
+
+            return timestampSeconds >= float.MaxValue ? float.MaxValue : (float)timestampSeconds;
         }
 
         private static float ResolveAupDistanceSqClamped(Vector3 runtimePositionA, Vector3 runtimePositionB)
@@ -1798,9 +1866,9 @@ namespace Hecton8.UI
                 return false;
             }
 
-            float pressDistance = math.max(0.001f, fingerPressDistance);
-            float releaseDistance = math.max(pressDistance, fingerReleaseDistance);
-            float hoverDistance = math.max(releaseDistance, fingerHoverDistance);
+            float pressDistance = ResolveFingerPressDistance();
+            float releaseDistance = ResolveFingerReleaseDistance(pressDistance);
+            float hoverDistance = ResolveFingerHoverDistance(releaseDistance);
             int bestIndex = -1;
             float bestDistance = float.MaxValue;
             float3 bestLocalHit = float3.zero;
@@ -1886,13 +1954,14 @@ namespace Hecton8.UI
             if (cursorTransform == null)
                 return;
 
-            float2 cursorMarginLocal = math.min(math.max(new float2(cursorMargin.x, cursorMargin.y), float2.zero), _panelData.HalfSize);
+            Vector2 safeCursorMargin = ResolveCursorMargin();
+            float2 cursorMarginLocal = math.min(new float2(safeCursorMargin.x, safeCursorMargin.y), _panelData.HalfSize);
             float2 clampedLocalXY = math.clamp(
                 localHit.xy,
                 -_panelData.HalfSize + cursorMarginLocal,
                 _panelData.HalfSize - cursorMarginLocal);
 
-            float3 cursorLocal = new float3(clampedLocalXY.x, clampedLocalXY.y, cursorHoverOffset);
+            float3 cursorLocal = new float3(clampedLocalXY.x, clampedLocalXY.y, ResolveCursorHoverOffset());
             float3 cursorTargetWorld = math.transform(_panelData.LocalToWorld, cursorLocal);
 
             if (!_cursorStateInitialized)
@@ -1902,7 +1971,7 @@ namespace Hecton8.UI
             }
             else
             {
-                float alpha = FastDecayBlend(cursorSmoothingSpeed, math.max(0.0001f, deltaTime));
+                float alpha = FastDecayBlend(ResolveCursorSmoothingSpeed(), math.max(0.0001f, deltaTime));
                 _smoothedCursorWorld = math.lerp(_smoothedCursorWorld, cursorTargetWorld, alpha);
             }
 
@@ -1918,10 +1987,11 @@ namespace Hecton8.UI
 
         private static float FastDecayBlend(float sharpness, float deltaTime)
         {
-            if (deltaTime <= 0f)
+            if (!math.isfinite(deltaTime) || deltaTime <= 0f)
                 return 0f;
 
-            float x = math.max(0f, sharpness) * deltaTime;
+            float safeSharpness = math.isfinite(sharpness) ? math.max(0f, sharpness) : 0f;
+            float x = safeSharpness * deltaTime;
             if (x >= 3.5f)
                 return 1f;
 

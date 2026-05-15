@@ -32,9 +32,9 @@
 using Hecton8.Audio;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Gameplay;
 using Hecton8.UI;
-using Hecton8.Input;
 using Hecton8.Tools;
 using Hecton8.Visor;
 using System.Runtime.InteropServices;
@@ -336,8 +336,10 @@ namespace Hecton8.Gameplay
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Player/Player Flashlight")]
-    public sealed class PlayerFlashlight : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
+    public sealed class PlayerFlashlight : MonoBehaviour, ITickable, IUpdatable
     {
+        private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
+
         public enum BeamMode
         {
             Standard = 0,
@@ -490,14 +492,12 @@ namespace Hecton8.Gameplay
         private bool _isOn;
         private float _currentIntensity;
         private bool _registered;
-        private bool _inputSubscribed;
-        private bool _hotSwapListenerRegistered;
-        private InputManager _subscribedInputManager;
         private BeamMode _beamMode;
         private Camera _cachedMainCamera;
         private Transform _cachedMainCameraTransform;
         private HectonPlayerMovement _playerMovement;
         private float _nextCameraResolveTime;
+        private uint _lastPlayerInputSignalSequence;
 
         private const float CameraResolveCooldown = 1f;
 
@@ -573,8 +573,8 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             TryRegister();
-            TryRegisterHotSwapListener();
-            SubscribeFlashlightInputManagerIfAvailable(ResolveNativeFlashlightInputManager());
+            if (Application.isPlaying)
+                BaselineFlashlightInputSignalSequence();
         }
 
         private void Start()
@@ -591,15 +591,12 @@ namespace Hecton8.Gameplay
                     "Flashlight will not function.");
             }
 
-            SubscribeFlashlightInputManagerIfAvailable(ResolveNativeFlashlightInputManager());
-            TryRegisterHotSwapListener();
+            BaselineFlashlightInputSignalSequence();
         }
 
         private void OnDisable()
         {
             TryUnregister();
-            UnsubscribeFromInputManager();
-            TryUnregisterHotSwapListener();
             _externalInterferenceIntensity = 0f;
             _externalInterferenceHoldTimer = 0f;
         }
@@ -607,8 +604,6 @@ namespace Hecton8.Gameplay
         private void OnDestroy()
         {
             TryUnregister();
-            UnsubscribeFromInputManager();
-            TryUnregisterHotSwapListener();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -625,6 +620,8 @@ namespace Hecton8.Gameplay
 
         public void Tick(float deltaTime)
         {
+            ConsumeFlashlightInputSignals();
+
             if (_playerMovement == null || flashlightLight == null)
                 ResolveReferences();
 
@@ -880,73 +877,38 @@ namespace Hecton8.Gameplay
             return string.IsNullOrEmpty(value) || buffer.Append(value);
         }
 
-        private static InputManager ResolveNativeFlashlightInputManager()
+        private void ConsumeFlashlightInputSignals()
         {
-            return GlobalRegistry.NativeInputManager;
+            System.ReadOnlySpan<PlayerInputSignal> signals = SignalBus<PlayerInputSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PlayerInputSignal signal = signals[i];
+                if (signal.SourceHash != PlayerInputSignalSourceHash ||
+                    signal.Command != PlayerInputSignalCommands.Flashlight ||
+                    !IsNewerInputSequence(signal.Sequence, _lastPlayerInputSignalSequence))
+                    continue;
+
+                _lastPlayerInputSignalSequence = signal.Sequence;
+                HandleFlashlightInput();
+                return;
+            }
         }
 
-        private void SubscribeFlashlightInputManagerIfAvailable(InputManager inputManager)
+        private void BaselineFlashlightInputSignalSequence()
         {
-            if (inputManager == null)
-                return;
-
-            if (_inputSubscribed && ReferenceEquals(_subscribedInputManager, inputManager))
-                return;
-
-            UnsubscribeFromInputManager();
-
-            inputManager.OnFlashlight += HandleFlashlightInput;
-            _subscribedInputManager = inputManager;
-            _inputSubscribed = true;
+            System.ReadOnlySpan<PlayerInputSignal> signals = SignalBus<PlayerInputSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PlayerInputSignal signal = signals[i];
+                if (signal.SourceHash == PlayerInputSignalSourceHash &&
+                    IsNewerInputSequence(signal.Sequence, _lastPlayerInputSignalSequence))
+                    _lastPlayerInputSignalSequence = signal.Sequence;
+            }
         }
 
-        private void UnsubscribeFromInputManager()
+        private static bool IsNewerInputSequence(uint candidate, uint current)
         {
-            if (!_inputSubscribed)
-                return;
-
-            if (_subscribedInputManager != null)
-                _subscribedInputManager.OnFlashlight -= HandleFlashlightInput;
-
-            _subscribedInputManager = null;
-            _inputSubscribed = false;
-        }
-
-        /// <inheritdoc />
-        public void OnGlobalRegistryServiceReplaced(
-            GlobalRegistryServiceSlot serviceSlot,
-            object previousService,
-            object currentService)
-        {
-            if (serviceSlot != GlobalRegistryServiceSlot.Input)
-                return;
-
-            UnsubscribeFromInputManager();
-
-            if (!isActiveAndEnabled)
-                return;
-
-            SubscribeFlashlightInputManagerIfAvailable(ResolveNativeFlashlightInputManager());
-        }
-
-        private void TryRegisterHotSwapListener()
-        {
-            if (_hotSwapListenerRegistered || !Application.isPlaying)
-                return;
-
-            GlobalRegistry.RegisterHotSwapListener(this);
-            _hotSwapListenerRegistered = GlobalRegistry.HotSwapListeners.Contains(this);
-        }
-
-        private void TryUnregisterHotSwapListener()
-        {
-            if (!_hotSwapListenerRegistered)
-                return;
-
-            if (GlobalRegistry.HotSwapListeners.Contains(this))
-                GlobalRegistry.UnregisterHotSwapListener(this);
-
-            _hotSwapListenerRegistered = false;
+            return candidate != 0u && candidate != current && unchecked(candidate - current) < 0x80000000u;
         }
 
         private void ResolveReferences()

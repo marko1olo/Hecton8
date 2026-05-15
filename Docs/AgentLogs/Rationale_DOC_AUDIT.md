@@ -2,8 +2,8 @@
 
 Agent: DOC_AUDIT
 Domain: Documentation / Project Reality Audit / Editor Validation Tripwires
-Current continuation: R46
-Date: 2026-05-14
+Current continuation: R47
+Date: 2026-05-15
 
 Previous rationale history is archived under `Docs/Archive/Batch005/AgentLogs/Rationale_DOC_AUDIT.md`.
 
@@ -126,3 +126,15 @@ Rejected Alternatives: deleting or rewriting the manifesto was rejected because 
 Scalability potential: Low = agents stop duplicating helpers and keep MX350/GC claims pending until captures exist. Middle = refactor work can target the real remaining bottleneck, spawn/reconcile extraction, instead of already-existing heuristic/diagnostic files. High/Ultra = future visual-overkill scatter work can build on the same evidence boundary without faking DOTS readiness.
 
 Hardware Impact: Runtime impact 0.000 ms/frame. Documentation-only work. No managed allocation, NativeCollection, GPU buffer, or frame-time path was changed.
+
+## Decision 050 - May 15 Core Build / H-Phi Boundary Must Supersede Archived Task Noise
+
+Problem: `/Docs/Tasks` and `/Docs/AgentLogs` are archive-prone evidence lanes, but active root/stable docs must still state the current project truth. The live Hecton8 worktree also had contradictory same-day evidence: an earlier Core CLI build failed on `SaveManager` referencing `MacroDatabasePayloadFlags` through stale generated-CLI contract visibility, while the current source and later build no longer failed. Earlier H-Phi artifacts also included a MemoryAlignment floor failure that the current full budget run superseded.
+
+Solution: create fresh artifact-backed evidence first, then promote only the narrow truth into stable docs. DOC_AUDIT captured clean Core/H-Phi artifacts, then later same-day integration artifacts superseded them as the latest observed current-disk boundary: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_190406_CurrentDisk25.log` exits `0` with `Build succeeded`, `0 Warning(s)`, and `0 Error(s)`; `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_185213_CurrentDiskBudgetGate10.json` exits `0` with `MemoryAlignment=0.506309148`, `DataSovereignty=0.021306032`, `RuntimeHPhiRisk=0.000634446`, duplicate signal debt `0`, Unity loop debt `0`, and Core graph debt still at `25/10/14/8/6`. Stable/root docs now carry that boundary and still mark Unity runtime proof absent.
+
+Rejected Alternatives: using chat memory was rejected because context is volatile. Treating the failed 18:35 build as the final state was rejected because later current-disk builds passed. Hiding the failed artifact was rejected because it explains the generated-CLI contract visibility hazard. Promoting H-Phi static pass to runtime readiness was rejected because static text counters are not profiler, GCMonitor, Unity Console, Play Mode, player build, or visual proof.
+
+Scalability potential: Low/Middle/High/Ultra runtime tiers are unchanged. Process scalability improves because agents now see the current Core CLI and H-Phi boundary in root/stable docs even if `/Tasks` and `/AgentLogs` are archived. Low-end and high-end hardware claims remain blocked until runtime captures exist.
+
+Hardware Impact: Runtime impact 0.000 ms/frame. Documentation/evidence synchronization only. No code path, allocation path, NativeCollection lifetime, GPU buffer, frame-time path, or visual path was changed by this DOC_AUDIT promotion.

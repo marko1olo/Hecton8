@@ -1,7 +1,7 @@
 # COMPUTE AUDIT INDEX
 
 Status: AUDIT COMPLETE
-Snapshot: 2026-05-15T18:16+04:00
+Snapshot: 2026-05-15T18:45+04:00
 Agent: COMPUTE_LOGISTICS_AUDITOR
 
 ## Read Order
@@ -18,13 +18,16 @@ Agent: COMPUTE_LOGISTICS_AUDITOR
 | 8 | `COMPUTE_CORRECTED_ROLLING_RATES.md` | Corrected rolling token burn, cost/min, cost/hour, cost/day with UUID model matching |
 | 9 | `COMPUTE_TOKEN_BURN_RATE_LEDGER.md` | Previous rolling token burn ledger; superseded for window costs |
 | 10 | `COMPUTE_MODEL_BUCKET_RECONCILIATION.md` | Corrected model attribution using path-or-UUID matching |
-| 11 | `COMPUTE_BURN_TRAJECTORY_LEDGER.md` | Current snapshot trajectory, post-forecast tail, and cumulative heavy threads |
-| 12 | `COMPUTE_LIVE_BURN_5MIN_FORECAST.md` | Five-minute live burn, stop-loss projection, and concentration |
-| 13 | `COMPUTE_LIVE_BURN_TREND.md` | Previous three-minute live burn trend and concentration |
-| 14 | `COMPUTE_LIVE_BURN_SOURCES.md` | Previous short-window active thread token deltas |
-| 15 | `COMPUTE_RATE_EFFICIENCY_AUDIT.md` | Previous detailed token rates, cache economics, and token/code ratios |
-| 16 | `COMPUTE_CODEX_DIALOGUE_AUDIT.md` | `.codex` dialogue/log topology and `logs_2.sqlite` boundaries |
-| 17 | `COMPUTE_COLLISION_RISK.md` | Current dirty-tree collision gate |
+| 11 | `COMPUTE_LIVE_BURN_PERSISTENCE_CHECK.md` | Current persistence check after prior low minute |
+| 12 | `COMPUTE_LIVE_BURN_COOLDOWN_CHECK.md` | Three-minute volatility/cooldown sample |
+| 13 | `COMPUTE_BURN_TRAJECTORY_LEDGER.md` | Snapshot trajectory, post-forecast tail, and cumulative heavy threads |
+| 14 | `COMPUTE_LIVE_BURN_5MIN_FORECAST.md` | Five-minute live burn, stop-loss projection, and concentration |
+| 15 | `COMPUTE_LIVE_BURN_TREND.md` | Previous three-minute live burn trend and concentration |
+| 16 | `COMPUTE_LIVE_BURN_SOURCES.md` | Previous short-window active thread token deltas |
+| 17 | `COMPUTE_RATE_EFFICIENCY_AUDIT.md` | Previous detailed token rates, cache economics, and token/code ratios |
+| 18 | `COMPUTE_CODEX_DIALOGUE_AUDIT.md` | `.codex` dialogue/log topology and `logs_2.sqlite` boundaries |
+| 19 | `COMPUTE_ENERGY_EQUIVALENTS.md` | Human-scale translation of the audit-model MWh number |
+| 20 | `COMPUTE_COLLISION_RISK.md` | Current dirty-tree collision gate |
 
 ## Current Hard Boundaries
 
@@ -32,7 +35,7 @@ Agent: COMPUTE_LOGISTICS_AUDITOR
 |---|---|
 | HECTON-8 first-party meaningful LOC | 788,619 script LOC |
 | Latest JSONL final tokens | 45,771,499,116 |
-| Latest live SQLite token mass observed | 45,946,566,942 |
+| Latest live SQLite token mass observed | 46,052,861,781 |
 | Model-aware cache-aware corrected estimate | USD 30,704.36 |
 | Model-aware no-cache equivalent | USD 201,983.02 |
 | All-GPT-5.5 standard cache-aware scenario | USD 35,674.08 |
@@ -47,6 +50,12 @@ Agent: COMPUTE_LOGISTICS_AUDITOR
 | Latest 5-minute top-10 concentration | 12,444,535 tokens; 74.54% |
 | Latest trajectory combined window | 188,312,372 tokens over 58.32 min; 53,813.47 tokens/sec |
 | Latest post-forecast tail | 88,687,951 tokens; 44,072.67 tokens/sec; USD 1.774/min |
+| Latest cooldown-check sample | 13,464,191 tokens; 74,578.19 tokens/sec; USD 3.002/min |
+| Latest cooldown-check last minute | 550,990 tokens; 9,157.61 tokens/sec; 3 active threads |
+| Latest persistence sample | 10,933,623 tokens; 72,482.17 tokens/sec; USD 2.917/min |
+| Latest persistence conclusion | prior low minute did not persist |
+| Energy equivalent translation | 2,297.33 MWh = 2.29733 GWh = 2,297,330 kWh |
+| Energy equivalent, household scale | 209.8 years at 30 kWh/day |
 | Top-100 thread share | 49.752% at 03:42 snapshot |
 | Top-30 validation non-zero outputs | 2,374 |
 | Reliable test-success evidence in top-30 validation scan | 0 |

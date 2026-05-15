@@ -203,3 +203,9 @@ Solution: Add the missing `System` import, keep the signal conversion, preserve 
 Rejected Alternatives: Reverting the signal conversion, deleting failed evidence, or reporting the branch clean from an older build artifact.
 Scalability potential: Git-only operator pass. The movement/inventory signal path reduces delegate coupling for Low through Ultra; this pass only fixes compile visibility.
 Hardware Impact: 0 us runtime impact. Dev-path gain is a current green compile artifact after moving edits settled.
+
+Problem: The current live tail combined a root documentation cleanup, player input signal migrations, UI finite clamps, WFC grid clearing, compute/evidence bundles, and a moving `WorldPopulationRule` allocation cleanup that broke the generated Core compile.
+Solution: Treat the tree as a bounded integration checkpoint, verify `origin/main...HEAD` is `0 0`, inspect root relocation hashes and runtime diffs, fix `PlayerFlashlight` so one frame snapshot cannot toggle repeatedly, and replace `WorldPopulationRule` enum arguments with explicit label switches that compile without `Enum.ToString()`.
+Rejected Alternatives: Staging root deletions without copied evidence paths, committing a zero-byte HPhi JSON, reverting other agents' world population cleanup, or claiming Unity/runtime readiness from CLI compile and static HPhi artifacts.
+Scalability potential: Git-only operator pass. Producer changes keep Low/Middle/High/Ultra runtime behavior owner-scoped: input lanes reduce delegate coupling, UI clamps protect authored scalar ranges, and root cleanup reduces agent context load without becoming runtime evidence.
+Hardware Impact: 0 us runtime impact. Dev-path gain is a smaller Git conflict surface and an isolated Core compile boundary; Unity import, Play Mode, profiler, GCMonitor, player build, and visual proof remain pending.

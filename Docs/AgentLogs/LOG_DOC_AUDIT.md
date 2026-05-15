@@ -189,3 +189,25 @@ Cinematic Cheats used:
 Exact Microseconds saved:
 - Runtime: 0 us/frame.
 - Process: prevents duplicate helper work and narrows the next real scatter refactor target to spawn/reconcile extraction plus runtime proof.
+
+## R47 - 2026-05-15 - Current-Disk Core Build / H-Phi Boundary
+
+What was wrong:
+- The user corrected the active project context back to Hecton8, while root/stable docs still needed the newest current-disk proof because `/Docs/Tasks` and `/Docs/AgentLogs` can be archived.
+- Same-day evidence conflicted: one new Core CLI artifact failed on stale generated-CLI visibility of `MacroDatabasePayloadFlags`, while current source and a later Core build passed.
+- Earlier same-day H-Phi evidence included a MemoryAlignment floor failure, but the current full budget gate needed a fresh artifact before stable docs could supersede it.
+
+What was done:
+- Captured `Docs/AgentLogs/Build_DOC_AUDIT_CONTINUATION_20260515_183949_Hecton8Core.log`: `Hecton8.Core.csproj`, `EXIT=0`, `Build succeeded`, `0 Warning(s)`, `0 Error(s)`.
+- Captured `Docs/AgentLogs/HPhi_DOC_AUDIT_CONTINUATION_20260515_184218_CurrentDiskBudgetGate.json`: `EXIT=0`, `MemoryAlignment=0.506309148`, `DataSovereignty=0.021306032`, `HPhiStaticRisk=0.000634446`, `DuplicateSignalNames=0`, `UnityUpdateMethods=0`, Core graph debt `25/10/14/8/6`.
+- Promoted the later same-day integration artifacts as the latest observed boundary: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_190406_CurrentDisk25.log` (`EXIT=0`, `0 Warning(s)`, `0 Error(s)`) and `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_185213_CurrentDiskBudgetGate10.json` (`EXIT=0`, `RuntimeHPhiRisk=0.000634446`, `MemoryAlignment=0.506309148`).
+- Updated stable/root docs: `Docs/README.md`, `Docs/QUALITY_GATES.md`, `Docs/ARCHITECTURE/README.md`, `Docs/ARCHITECTURE/HECTON_PHI_STATIC_METRIC.md`, `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`, `Docs/SYSTEMS_CONTRACTS.md`, `Docs/PROJECT_STATE_STATIC_XRAY.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`.
+- Preserved the hard limitation: no Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, save/load, or visual-quality proof was captured.
+
+Cinematic Cheats used:
+- None in runtime. Evidence promotion only.
+- Process cheat: artifact-first promotion into root/stable docs prevents archived task/log drift from becoming project truth.
+
+Exact Microseconds saved:
+- Runtime: 0 us/frame.
+- Process: avoids repeated false triage around stale `MacroDatabasePayloadFlags` and MemoryAlignment artifacts.

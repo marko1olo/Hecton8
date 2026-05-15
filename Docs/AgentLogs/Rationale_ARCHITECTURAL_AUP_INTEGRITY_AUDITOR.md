@@ -607,3 +607,27 @@ Solution: Resolve body-anchor AUP axis deltas from long grid differences plus lo
 Rejected Alternatives: Use transform/runtime distance, leave full absolute subtraction, or add a heavier rope/kelp simulation. Runtime distance is presentation-only; full absolute subtraction loses low bits at large grids; a heavier simulation violates the cinematic-cheat rule for a bounded entanglement cue.
 Scalability potential: Low devices keep the same capped flora collection and cheap tether scalar. Middle gets stable entanglement length after long sessions. High/Ultra can improve kelp visuals/haptics without corrupting the motor input.
 Hardware Impact: 0 B/frame added. Runtime cost is three scalar double axis resolutions when entanglement begins. Measured gameplay microseconds are absent; static H-Phi gate reports `AupPrecisionRisk=0`, and no rebuild was run per user ban.
+
+## Decision 76 - Shared Clamped AUP Delta Kernel
+
+Problem: Scanner marker sizing, acoustic echolocation labels, seismic force falloff, thunder propagation, and transport entanglement had converged on the same grid/local AUP delta math but kept local duplicate helper functions. That duplicates review burden and risks one future copy drifting back to full absolute subtraction or early float reduction.
+Solution: Add shared `AbsoluteUniversePosition.DeltaMetersClamped` and `ApproximateDistanceMetersClamped`, implemented through internal `AUPMath` helpers that clamp impossible grid deltas before long subtraction and keep math in `double` until the caller's final presentation boundary.
+Rejected Alternatives: Leave duplicate helpers because they were already correct, or expose a public helper with raw unclamped axis subtraction. Duplicate helpers become precision-debt magnets; raw subtraction can overflow when malformed AUP pairs cross extreme grids.
+Scalability potential: Low devices keep the cheap max/mid/min distance approximation where the caller already used it. Middle gets one reviewed precision kernel. High/Ultra can spend stability budget on richer scanner/audio/weather feedback without duplicating coordinate math again.
+Hardware Impact: 0 B/frame added. Runtime instruction count is equivalent or lower through deleted duplicate helper bodies; measured gameplay microseconds are absent. Static H-Phi after verification reports `AupPrecisionRisk=0`, `AupPrecisionSafe=362`, and strict AUP scans return `NO_MATCHES`.
+
+## Decision 77 - PlayerFlashlight Signal-Bus Build Repair
+
+Problem: After the shared AUP helper centralization, the generated Core compile exposed `PlayerFlashlight.cs` failing to bind the typed `PlayerInputSignal` / `SignalBus` lane, despite both `PlayerFlashlight.cs` and `Core/GlobalSignals.cs` being compiled into `Hecton8.Core.csproj`.
+Solution: Keep the typed signal lane, bind it through `Hecton8.Core.Signals`, and remove the old `InputManager` event subscription/hot-swap dependency from the flashlight. The fix keeps input authority on the zero-GC frame snapshot path.
+Rejected Alternatives: Add a new input fallback path, edit generated csproj references, or move signal contracts between assemblies. A fallback would fork input authority; generated project edits are overwritten; assembly moves are outside the AUP/build-repair scope and risky with 20+ agents active.
+Scalability potential: Low/Middle/High/Ultra all retain the same zero-GC typed signal-lane input path. This repair keeps the flashlight from regressing to polling or hardware input reads that would violate deterministic input flow.
+Hardware Impact: Gameplay frame impact is 0 us and 0 B/frame claimed because emitted behavior is equivalent. Verification: `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false` passed with 0 warnings and 0 errors; full H-Phi reports `AupPrecisionRisk=0`.
+
+## Decision 78 - Local Editor Project Mathematics Reference Repair
+
+Problem: `Assembly-CSharp.csproj` no longer timed out after the Core repair; it failed in `Hecton8.Editor.csproj` because `KinematicGhostDebugger.cs` uses `Unity.Mathematics.double3`, but the local generated editor project file lacked the `Unity.Mathematics` reference. The tracked `Hecton8.Editor.asmdef` already declared the dependency.
+Solution: Repair only the stale local generated `Hecton8.Editor.csproj` reference list to match the tracked asmdef and unblock CLI build verification. No source asmdef dependency was widened, and no editor diagnostic precision was reduced back to `Vector3`.
+Rejected Alternatives: Rewrite `KinematicGhostDebugger` to use float `Vector3`, remove the double AUP history, or edit runtime assemblies. Float history would reintroduce the precision leak in the diagnostic tool; runtime assembly edits were unrelated; the asmdef was already correct.
+Scalability potential: Low/Middle/High/Ultra all retain the same editor-only diagnostic behavior. The fix makes the local CLI build deterministic without adding gameplay code or new runtime dependencies.
+Hardware Impact: Gameplay frame impact is 0 us and 0 B/frame. Verification: `dotnet build .\Assembly-CSharp.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false` passed with 0 warnings and 0 errors after the local generated-project reference repair.

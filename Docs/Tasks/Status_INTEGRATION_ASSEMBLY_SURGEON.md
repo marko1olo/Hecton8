@@ -4,7 +4,23 @@ Agent: INTEGRATION_ASSEMBLY_SURGEON
 Role: SYSTEMS_ARCHITECT
 Domain: Unity Compilation Graph / Integrator
 Prompt task count: 15 (current in-chat XML; older 17-task static pass retained below)
-Current state: YELLOW / ACTIVE MOVING WALL. Latest verified build `CurrentDisk15` was green, but `HectonPlayerMovement.cs` changed afterward; latest H-Phi gate `CurrentDiskBudgetGate5` is stale by six C# files.
+Current state: YELLOW / ACTIVE MOVING WALL. Latest compile artifact `CurrentDisk24` is green but stale by later `SaveManager.cs`; latest H-Phi gate `CurrentDiskBudgetGate14` is green but stale by later `WorldPopulationRule.cs` and `SaveManager.cs`.
+
+## 2026-05-15 CurrentDisk24/CurrentDiskBudgetGate14 Moving-Wall Stop
+
+Directive: keep working carefully, fix compile walls, improve H-Phi, and reject stale green evidence under active parallel edits.
+Domain: Echelon 9 / The Integrator (Compile Medic).
+Current state: YELLOW / ACTIVE MOVING WALL.
+Latest green compile artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_192807_CurrentDisk24.log`.
+Latest green compile exit artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_192807_CurrentDisk24.exit.txt`.
+Latest passed H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_192507_CurrentDiskBudgetGate14.json`.
+Latest passed H-Phi exit artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_192507_CurrentDiskBudgetGate14.exit.txt`.
+
+- [x] Moving compile walls repaired or rejected as stale | Justification: `SystemDispatcher` Core camera signals are fully qualified, `SaveManager` no longer depends on the source-only `MacroDatabasePayloadFlags` helper in the CLI contract lane, `WorldGenerativeGeologyMeshBuilder` uses tuple state instead of a managed-reference helper struct, and stale `ReadOnlySpan`/geology helper walls were rejected after current source inspection | Alternatives rejected: generated `.csproj` edits, fake `[StructLayout]` on a managed-reference struct, public contract churn, and reverting other agents' files | Estimate: 0 us runtime
+- [x] Latest compile pass succeeded | Justification: `CurrentDisk24` reports `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0` with `ELAPSED_US=79049055` | Alternatives rejected: reporting earlier stale `CurrentDisk12/15/23` artifacts as final current-disk proof | Estimate: 79,049,055 us build verification
+- [x] Latest strict H-Phi pass succeeded | Justification: `CurrentDiskBudgetGate14` exits 0 with `RuntimeHPhiRisk=0.000634555`, `DataSovereignty=0.021306032`, `MemoryAlignment=0.506309148`, `GlobalRegistrySurface=5074`, `GetComponentCalls=321`, `NativeArrayRefs=7074`, `ManagedFormatSurface=590`, `PrimaryManagedRuntimeRisk=205`, `UnityUpdateMethods=0`, `FindObjectCalls=0`, and `AupPrecisionRisk=0` | Alternatives rejected: lowering the gate after the geology memory-alignment failure or accepting stale `CurrentDiskBudgetGate10/11/12/13` as final | Estimate: 139,124,078 us tooling verification
+- [x] Final freshness rejected | Justification: `WorldPopulationRule.cs` changed after `CurrentDiskBudgetGate14`, and `SaveManager.cs` changed after both `CurrentDiskBudgetGate14` and `CurrentDisk24`; therefore there is no honest current-disk H-Phi+compile pair despite both commands passing | Alternatives rejected: claiming `BUILD SUCCESSFUL / PLATINUM GRADE` while timestamp evidence disproves current coverage | Estimate: 400 us scan
+- [x] Scoped diff hygiene checked | Justification: `git diff --check` on touched Integrator/code/doc paths reported no whitespace errors; only known LF-to-CRLF warnings appeared for `SaveManager.cs` and `HECTON_PHI_STATIC_METRIC.md` | Alternatives rejected: broad line-ending normalization during active parallel edits | Estimate: 0 us runtime
 
 ## 2026-05-15 Active Moving Wall After CurrentDisk15
 

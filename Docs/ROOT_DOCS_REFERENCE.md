@@ -1,6 +1,6 @@
 # Root Docs Reference
 
-Date: 2026-05-13
+Date: 2026-05-15
 Status: PENDING VERIFICATION
 
 Purpose: explain what still remains in repository root versus `Docs/` after the current documentation cleanup.
@@ -8,31 +8,27 @@ Purpose: explain what still remains in repository root versus `Docs/` after the 
 This file is navigation only.
 It is not runtime proof.
 
-## 2026-05-13 Check
+## 2026-05-15 Check
 
 Current root text scan:
 
 | Class | Count | Handling |
 |---|---:|---|
-| root `.md` | 6 | only `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md` are active authority |
-| root `.log` | 3 | evidence/noise; not documentation authority |
-| root `.json` | 3 | evidence/noise; not documentation authority |
+| root `.md` | 3 | active anchors only |
+| root `.log` | 0 | root logs moved to deprecated evidence bundles |
+| root `.json` | 0 | root JSON evidence moved to deprecated evidence bundles |
 | root `.txt` | 0 | no active root text authority |
 
 Current root non-anchor files:
 
-- `BROKEN_PREFABS.md` is a generated prefab-audit snapshot. It is not active authority unless promoted into a current report.
-- `PROJECT_ATLAS.md` is a compatibility mirror. Canonical detailed copy is `Docs/PROJECT_ATLAS.md`.
-- `TERRAIN_AND_BIOME_REALITY_MAP.md` is a compatibility mirror / stale legacy surface. Canonical current report is `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md`.
+- None in the root documentation/evidence cleanup scope.
+- `BROKEN_PREFABS.md` moved to `Docs/Reports/2026-05-13_BROKEN_PREFABS_STATIC_SNAPSHOT.md`.
+- Root `COMPUTE_*.md` reports moved to `Docs/Reports/2026-05-15_COMPUTE_AUDIT/`.
+- Root `PROJECT_ATLAS.md` and `TERRAIN_AND_BIOME_REALITY_MAP.md` moved to `Docs/DEPRECATED/Root_Compatibility_Mirrors_2026-05-15/`.
 
-Root noise currently present:
+Root noise moved:
 
-- `build-core.log`
-- `codex_unity_compile.log`
-- `codex_unity_sync.log`
-- `CYRILLIC_PURGE_REPORT_2026-05-10.json`
-- `playmode_metrics.json`
-- `tools_list_mcp.json`
+- raw logs, JSON, XML, PNG, zip, and `clean_project.py` moved to `Docs/DEPRECATED/External_And_Log_Bundles/Root_Evidence_2026-05-15/`.
 
 Docs-root cleanup:
 
@@ -47,11 +43,11 @@ Proof-reference warning:
 | File | Current handling |
 |---|---|
 | `AGENTS.md` | active operating contract; keep in root |
-| `BROKEN_PREFABS.md` | generated prefab-audit snapshot; not active authority unless summarized in `Docs/Reports/` |
-| `PROJECT_ATLAS.md` | root compatibility mirror; canonical detailed copy is `Docs/PROJECT_ATLAS.md` |
 | `MASTER_RELEASE_WORK_PLAN.md` | active production roadmap anchor; keep in root unless a later roadmap migration is approved |
 | `BUILD_PLAYTEST_ISSUES.md` | active validation/build observation ledger; keep in root unless a later QA migration is approved |
-| `TERRAIN_AND_BIOME_REALITY_MAP.md` | root compatibility mirror / stale legacy surface; canonical current report is `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md` |
+| `BROKEN_PREFABS.md` | moved to `Docs/Reports/2026-05-13_BROKEN_PREFABS_STATIC_SNAPSHOT.md` |
+| `PROJECT_ATLAS.md` | moved to `Docs/DEPRECATED/Root_Compatibility_Mirrors_2026-05-15/`; canonical detailed copy is `Docs/PROJECT_ATLAS.md` |
+| `TERRAIN_AND_BIOME_REALITY_MAP.md` | moved to `Docs/DEPRECATED/Root_Compatibility_Mirrors_2026-05-15/`; canonical current report is `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md` |
 | `DOCS_GAMEPLAY_API.md` | moved to `Docs/DEPRECATED/Root_Legacy_And_Scan_Artifacts_2026-05-01/` |
 | `THIRD_PARTY_POISON.md` | moved to `Docs/DEPRECATED/Root_Legacy_And_Scan_Artifacts_2026-05-01/`; current ACL reference is `Docs/ARCHITECTURE/THIRD_PARTY_POISON.md` |
 | `NAMING_VIOLATIONS.md` | moved to `Docs/DEPRECATED/Root_Legacy_And_Scan_Artifacts_2026-05-01/` |
@@ -98,9 +94,16 @@ Current canonical bundle entry points:
 
 ## Future Cleanup Candidate
 
-The repository root text surface is currently six markdown files: three active anchors, one generated snapshot, and two compatibility mirrors.
-Treat `BROKEN_PREFABS.md`, `PROJECT_ATLAS.md`, and `TERRAIN_AND_BIOME_REALITY_MAP.md` as non-authority until a current stable doc or dated report promotes their facts.
+The repository root text surface is currently three markdown files, all active anchors.
 If new root text files appear, classify them before treating them as current authority.
+
+## 2026-05-13 Check
+
+Historical state before the May 15 cleanup:
+
+- root markdown contained active anchors plus `BROKEN_PREFABS.md`, `PROJECT_ATLAS.md`, and `TERRAIN_AND_BIOME_REALITY_MAP.md`.
+- root logs and JSON files existed as raw evidence/noise.
+- May 15 cleanup moved those non-anchor files to the paths listed in the 2026-05-15 check above.
 
 ## 2026-05-07 Check
 

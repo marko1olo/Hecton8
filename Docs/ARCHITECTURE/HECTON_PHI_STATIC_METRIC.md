@@ -228,6 +228,46 @@ Unity's player loop into the project dispatcher. The audit reports them as
 `FixedUpdate` methods must fail `-MaxUnityUpdateMethods 0` unless the integrator
 updates this contract with a bounded dispatcher-shell justification.
 
+## 2026-05-15 Current Verified Static Baseline
+
+Artifact: `../AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_185213_CurrentDiskBudgetGate10.json`
+with exit summary
+`../AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_185213_CurrentDiskBudgetGate10.exit.txt`.
+Result: `EXIT=0` on a full source summary JSON budget run at
+`2026-05-15 18:55:18 +04:00`.
+
+Current score floors passed:
+
+- `DataSovereignty=0.021306032`
+- `MemoryAlignment=0.506309148`
+- `RuntimeHPhiRisk=0.000634446`
+
+Current static counters passed:
+
+- `GlobalRegistrySurface=5075/5075`
+- `GetComponentCalls=321/321`
+- `NativeArrayRefs=7074/7074`
+- `ManagedFormatSurface=606/606`
+- `JobCompleteSurface=58/58`
+- `PrimaryManagedRuntimeRisk=221/221`
+- `DuplicateSignalNames=0`
+- `UnityUpdateMethods=0`
+- `LegacyEventPublish=28/28`
+- `LinqSurface=5/5`
+- `CoroutineSurface=0/0`
+- `AupPrecisionRisk=0`
+
+Current Core graph debt remains at the accepted ceiling:
+`CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`,
+`SourceBackedBridgeDebtReferenceCount=14`,
+`SourceBackedCompileBridgeDebtReferenceCount=8`, and
+`ProjectReferenceReplacementDebtReferenceCount=6`.
+
+This supersedes earlier same-day MemoryAlignment failure artifacts for
+current-disk static H-Phi status only. It is not compile proof, Unity import
+proof, Play Mode proof, profiler proof, GC proof, player-build proof, or visual
+quality proof.
+
 ## Optional Unused Core Reference Scan
 
 The Core graph audit can also run a static candidate scan:

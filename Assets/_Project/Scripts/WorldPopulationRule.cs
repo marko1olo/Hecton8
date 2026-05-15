@@ -146,7 +146,7 @@ namespace Hecton8.World
             }
 
             if (matrixBiome != null && !string.IsNullOrWhiteSpace(matrixBiome.visitPurpose))
-                return $"{gameplayPurpose} {matrixBiome.visitPurpose}";
+                return string.Concat(gameplayPurpose, " ", matrixBiome.visitPurpose);
 
             return gameplayPurpose;
         }
@@ -162,7 +162,7 @@ namespace Hecton8.World
             string contentLabel = socket != null ? socket.SocketLabel : "socket";
 
             if (matrixBiome == null)
-                return $"{contentLabel}: {biomeFitSummary}";
+                return string.Concat(contentLabel, ": ", biomeFitSummary);
 
             string focus = contentKind switch
             {
@@ -178,7 +178,7 @@ namespace Hecton8.World
             if (string.IsNullOrWhiteSpace(focus))
                 focus = biomeFitSummary;
 
-            return $"{biomeLabel}: {focus}";
+            return string.Concat(biomeLabel, ": ", focus);
         }
 
         public string BuildExtractionFocus(WorldZoneAnchor zone)
@@ -293,7 +293,7 @@ namespace Hecton8.World
                 return "No role plan.";
 
             string family = rolePlan.family != null ? rolePlan.family.familyLabel : "None";
-            return $"{rolePlan.relation} / {rolePlan.preferredSlice} / count {rolePlan.targetCount} / {family}";
+            return BuildZoneRoleLayoutText(rolePlan.relation, rolePlan.preferredSlice, rolePlan.targetCount, family);
         }
 
         public string BuildZoneRolePriority(WorldZoneAnchor zone, WorldContentSocket socket)
@@ -345,20 +345,21 @@ namespace Hecton8.World
             if (primaryZone == null || secondaryZone == null || socket == null || blendFactor <= 0.12f)
                 return "Point is still read mostly from one zone.";
 
-            string pair = $"{primaryZone.Kind} <-> {secondaryZone.Kind}";
+            WorldZoneAnchor.ZoneKind primaryKind = primaryZone.Kind;
+            WorldZoneAnchor.ZoneKind secondaryKind = secondaryZone.Kind;
             return socket.Kind switch
             {
-                WorldContentSocket.ContentKind.NavigationMarker => $"{pair}: marshrut dolzhen uderzhivat pamyat na styke dvuh tipov vody.",
-                WorldContentSocket.ContentKind.FabricationStation => $"{pair}: tochka otdyha nuzhna tam, gde spokoynyy kontur nachinaet ustupat davleniyu.",
-                WorldContentSocket.ContentKind.HazardPoint => $"{pair}: opasnost dolzhna chitatsya kak yavnaya granitsa perehoda.",
-                WorldContentSocket.ContentKind.CombatPoint => $"{pair}: ugroza podhvatyvaet igroka imenno na perelome marshruta.",
-                WorldContentSocket.ContentKind.Landmark => $"{pair}: redkaya tsel silnee zapominaetsya na styke dvuh identichnostey mesta.",
-                WorldContentSocket.ContentKind.ResourcePickup => $"{pair}: melkaya nagrada pomogaet ponyat, chto ty uzhe vhodish v sosedniy kontur.",
-                WorldContentSocket.ContentKind.ResourceNode => $"{pair}: plotnaya nagrada opravdyvaet zahod chut glubzhe za privychnyy marshrut.",
-                WorldContentSocket.ContentKind.ServiceTarget => $"{pair}: servisnaya problema luchshe rabotaet kak uzkoe mesto perehoda.",
-                WorldContentSocket.ContentKind.PowerPoint => $"{pair}: silovaya liniya estestvenno svyazyvaet dva sosednih kontura.",
-                WorldContentSocket.ContentKind.ConstructionPoint => $"{pair}: stroyka luchshe chitaetsya kak svyazka mezhdu dvumya rezhimami prostranstva.",
-                _ => $"{pair}: tochka pomogaet pochuvstvovat perehod, a ne rezkiy obryv zony."
+                WorldContentSocket.ContentKind.NavigationMarker => BuildBorderBlendReasonText(primaryKind, secondaryKind, "marshrut dolzhen uderzhivat pamyat na styke dvuh tipov vody."),
+                WorldContentSocket.ContentKind.FabricationStation => BuildBorderBlendReasonText(primaryKind, secondaryKind, "tochka otdyha nuzhna tam, gde spokoynyy kontur nachinaet ustupat davleniyu."),
+                WorldContentSocket.ContentKind.HazardPoint => BuildBorderBlendReasonText(primaryKind, secondaryKind, "opasnost dolzhna chitatsya kak yavnaya granitsa perehoda."),
+                WorldContentSocket.ContentKind.CombatPoint => BuildBorderBlendReasonText(primaryKind, secondaryKind, "ugroza podhvatyvaet igroka imenno na perelome marshruta."),
+                WorldContentSocket.ContentKind.Landmark => BuildBorderBlendReasonText(primaryKind, secondaryKind, "redkaya tsel silnee zapominaetsya na styke dvuh identichnostey mesta."),
+                WorldContentSocket.ContentKind.ResourcePickup => BuildBorderBlendReasonText(primaryKind, secondaryKind, "melkaya nagrada pomogaet ponyat, chto ty uzhe vhodish v sosedniy kontur."),
+                WorldContentSocket.ContentKind.ResourceNode => BuildBorderBlendReasonText(primaryKind, secondaryKind, "plotnaya nagrada opravdyvaet zahod chut glubzhe za privychnyy marshrut."),
+                WorldContentSocket.ContentKind.ServiceTarget => BuildBorderBlendReasonText(primaryKind, secondaryKind, "servisnaya problema luchshe rabotaet kak uzkoe mesto perehoda."),
+                WorldContentSocket.ContentKind.PowerPoint => BuildBorderBlendReasonText(primaryKind, secondaryKind, "silovaya liniya estestvenno svyazyvaet dva sosednih kontura."),
+                WorldContentSocket.ContentKind.ConstructionPoint => BuildBorderBlendReasonText(primaryKind, secondaryKind, "stroyka luchshe chitaetsya kak svyazka mezhdu dvumya rezhimami prostranstva."),
+                _ => BuildBorderBlendReasonText(primaryKind, secondaryKind, "tochka pomogaet pochuvstvovat perehod, a ne rezkiy obryv zony.")
             };
         }
 
@@ -649,6 +650,158 @@ namespace Hecton8.World
         private static bool IsEitherPair(WorldZoneAnchor.ZoneKind a, WorldZoneAnchor.ZoneKind b, WorldZoneAnchor.ZoneKind x, WorldZoneAnchor.ZoneKind y)
         {
             return (a == x && b == y) || (a == y && b == x);
+        }
+
+        private static string BuildZoneRoleLayoutText(
+            WorldZonePlanProfile.SpatialRelation relation,
+            WorldSliceAnchor.SliceState preferredSlice,
+            int targetCount,
+            string family)
+        {
+            string relationLabel = ResolveSpatialRelationLabel(relation);
+            string preferredSliceLabel = ResolveSliceStateLabel(preferredSlice);
+            family ??= string.Empty;
+
+            const string roleSeparator = " / ";
+            const string countPrefix = " / count ";
+            int digitCount = CountIntDigits(targetCount);
+            int length = relationLabel.Length + roleSeparator.Length + preferredSliceLabel.Length + countPrefix.Length + digitCount + roleSeparator.Length + family.Length;
+            return string.Create(length, (relationLabel, preferredSliceLabel, targetCount, family), (buffer, state) =>
+            {
+                int write = 0;
+                write = CopyString(state.relationLabel, buffer, write);
+                write = CopyString(roleSeparator, buffer, write);
+                write = CopyString(state.preferredSliceLabel, buffer, write);
+                write = CopyString(countPrefix, buffer, write);
+                write = WriteInt(state.targetCount, buffer, write);
+                write = CopyString(roleSeparator, buffer, write);
+                CopyString(state.family, buffer, write);
+            });
+        }
+
+        private static string BuildBorderBlendReasonText(
+            WorldZoneAnchor.ZoneKind primaryKind,
+            WorldZoneAnchor.ZoneKind secondaryKind,
+            string reason)
+        {
+            const string pairSeparator = " <-> ";
+            const string reasonSeparator = ": ";
+            string primary = ResolveZoneKindLabel(primaryKind);
+            string secondary = ResolveZoneKindLabel(secondaryKind);
+            reason ??= string.Empty;
+
+            int length = primary.Length + pairSeparator.Length + secondary.Length + reasonSeparator.Length + reason.Length;
+            return string.Create(length, (primary, secondary, reason), (buffer, state) =>
+            {
+                int write = 0;
+                write = CopyString(state.primary, buffer, write);
+                write = CopyString(pairSeparator, buffer, write);
+                write = CopyString(state.secondary, buffer, write);
+                write = CopyString(reasonSeparator, buffer, write);
+                CopyString(state.reason, buffer, write);
+            });
+        }
+
+        private static string ResolveZoneKindLabel(WorldZoneAnchor.ZoneKind kind)
+        {
+            return kind switch
+            {
+                WorldZoneAnchor.ZoneKind.Generic => "Generic",
+                WorldZoneAnchor.ZoneKind.Resources => "Resources",
+                WorldZoneAnchor.ZoneKind.Fabrication => "Fabrication",
+                WorldZoneAnchor.ZoneKind.Trial => "Trial",
+                WorldZoneAnchor.ZoneKind.Construction => "Construction",
+                WorldZoneAnchor.ZoneKind.Power => "Power",
+                WorldZoneAnchor.ZoneKind.Service => "Service",
+                WorldZoneAnchor.ZoneKind.Progression => "Progression",
+                WorldZoneAnchor.ZoneKind.Combat => "Combat",
+                WorldZoneAnchor.ZoneKind.Navigation => "Navigation",
+                _ => "Unknown"
+            };
+        }
+
+        private static string ResolveSpatialRelationLabel(WorldZonePlanProfile.SpatialRelation relation)
+        {
+            return relation switch
+            {
+                WorldZonePlanProfile.SpatialRelation.AlongMainRoute => "AlongMainRoute",
+                WorldZonePlanProfile.SpatialRelation.NearRouteAnchor => "NearRouteAnchor",
+                WorldZonePlanProfile.SpatialRelation.BehindCover => "BehindCover",
+                WorldZonePlanProfile.SpatialRelation.OffMainRoute => "OffMainRoute",
+                WorldZonePlanProfile.SpatialRelation.AtBranchPoint => "AtBranchPoint",
+                WorldZonePlanProfile.SpatialRelation.AroundHeroObject => "AroundHeroObject",
+                WorldZonePlanProfile.SpatialRelation.BehindHazardGate => "BehindHazardGate",
+                WorldZonePlanProfile.SpatialRelation.AtRouteTerminus => "AtRouteTerminus",
+                _ => "OffMainRoute"
+            };
+        }
+
+        private static string ResolveSliceStateLabel(WorldSliceAnchor.SliceState state)
+        {
+            return state switch
+            {
+                WorldSliceAnchor.SliceState.Near => "Near",
+                WorldSliceAnchor.SliceState.Mid => "Mid",
+                _ => "Far"
+            };
+        }
+
+        private static int CountIntDigits(int value)
+        {
+            long remaining = value;
+            int digits = remaining < 0L ? 2 : 1;
+            if (remaining < 0L)
+                remaining = -remaining;
+
+            while (remaining >= 10L)
+            {
+                remaining /= 10L;
+                digits++;
+            }
+
+            return digits;
+        }
+
+        private static int WriteInt(int value, System.Span<char> buffer, int start)
+        {
+            long remaining = value;
+            bool negative = remaining < 0L;
+            if (negative)
+            {
+                buffer[start++] = '-';
+                remaining = -remaining;
+            }
+
+            int digitCount = CountPositiveIntDigits(remaining);
+            int write = start + digitCount - 1;
+            do
+            {
+                buffer[write--] = (char)('0' + remaining % 10L);
+                remaining /= 10L;
+            }
+            while (write >= start);
+
+            return start + digitCount;
+        }
+
+        private static int CountPositiveIntDigits(long value)
+        {
+            int digits = 1;
+            while (value >= 10L)
+            {
+                value /= 10L;
+                digits++;
+            }
+
+            return digits;
+        }
+
+        private static int CopyString(string value, System.Span<char> buffer, int start)
+        {
+            for (int i = 0; i < value.Length; i++)
+                buffer[start + i] = value[i];
+
+            return start + value.Length;
         }
 
         private static WorldZonePlanProfile.RolePlan ResolveRolePlan(WorldZoneAnchor zone, WorldContentSocket socket)

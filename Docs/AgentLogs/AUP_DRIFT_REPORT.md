@@ -1067,3 +1067,78 @@ Status: VERIFIED AUP INTEGRITY - LOOP 39 REAL H-PHI SOURCE REPAIR REMOVED DEAD O
 
 - Unity import/Console verification remains pending because no Unity editor session is available.
 - H-Phi result is static-source evidence, not profiler proof.
+
+## Loop 50 Shared AUP Grid-Delta Kernel
+
+### Findings
+
+- Five AUP consumers carried equivalent clamped grid/local delta helpers after the prior precision repairs.
+- The duplicated helpers were correct, but each duplicate increased the chance of a future copy falling back to full absolute subtraction or final-cast float distance math.
+
+### Source Changes
+
+- `Assets/_Project/Scripts/World/PersistentWorldRegistry.cs`: added `AbsoluteUniversePosition.DeltaMetersClamped` and `AbsoluteUniversePosition.ApproximateDistanceMetersClamped`.
+- `Assets/_Project/Scripts/World/AUPMath.cs`: added internal clamped AUP delta and approximate-distance helpers.
+- `HectonScanMarkerSystem`, `AcousticEcholocationTranslator`, `RandomEventSystem`, `HectonSurfaceWeatherDirector`, and `MountablePlayerTransport` now consume the shared helpers.
+
+### Verification
+
+- Duplicate local helper symbol scan returns `NO_MATCHES`.
+- Strict qualified AUP scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- The follow-up Core build exposed an unrelated `PlayerFlashlight.cs` typed signal-bus binding compile error, repaired in Loop 51.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- Runtime profiler/GCMonitor proof remains pending; static evidence only.
+
+## Loop 51 Build Repair and AUP Re-Verification
+
+### Findings
+
+- `PlayerFlashlight.cs` failed Core compilation on typed player-input signal binding even though the signal contracts are present in `Core/GlobalSignals.cs`.
+
+### Source Changes
+
+- `Assets/_Project/Scripts/PlayerFlashlight.cs`: flashlight input signal reads now use the `Hecton8.Core.Signals` `SignalBus<PlayerInputSignal>` frame snapshot path and baseline the last consumed sequence on enable/start.
+- No new input fallback, polling path, allocation, or project-reference edit was added.
+
+### Verification
+
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_build_loop51.log;verbosity=normal"` succeeded with 0 warnings and 0 errors.
+- Strict qualified AUP scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` returned `MATCH_COUNT=233`; residuals remain broad `universe` text and known final-cast/presentation payload names.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 184.221 seconds with `RuntimeHPhiRisk=0.000634446`, `RuntimeHPhiNarrow=0.010787439`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=362`, `AupPrecisionRisk=0`, `NativeArrayRefs=7074`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, `NativeOwnershipRisk=8196`, `RuntimeFiles=1278`, and `RuntimeLines=870516`.
+- Temporary Loop 51 JSON capture was removed after extracting metrics.
+
+### Evidence Queue
+
+- Unity import/Console, PlayMode, profiler, and GCMonitor proof remain pending because no Unity editor session is available.
+- `Assembly-CSharp.csproj` was not claimed green; the prior Loop 49 attempt timed out after 304 seconds without observed compiler errors.
+
+## Loop 52 Full Build Repair and Editor Project Reference
+
+### Findings
+
+- The follow-up `Assembly-CSharp.csproj` build reached the editor assembly and failed on `KinematicGhostDebugger.cs` because the local generated `Hecton8.Editor.csproj` lacked a `Unity.Mathematics` reference.
+- The tracked `Assets/_Project/Scripts/Editor/Hecton8.Editor.asmdef` already declares `Unity.Mathematics`; the problem was stale generated-project state, not a missing durable asmdef dependency.
+
+### Local Build Repair
+
+- Added `Unity.Mathematics` to the generated local `Hecton8.Editor.csproj` reference list so the CLI build matches the tracked asmdef.
+- Kept the editor ghost debugger on `double3` AUP history; no fallback to float `Vector3` diagnostics was introduced.
+
+### Verification
+
+- `dotnet build .\Assembly-CSharp.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_assembly_build_loop52.log;verbosity=normal"` succeeded with 0 warnings and 0 errors.
+- Strict qualified AUP scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` returned `MANDATORY_AUP_SCAN_MATCH_COUNT=233`; residuals remain broad `universe` text and known final-cast/presentation payload names.
+- Latest source H-Phi evidence remains Loop 51: `AupPrecisionRisk=0`.
+
+### Evidence Queue
+
+- Unity import/Console, PlayMode, profiler, and GCMonitor proof remain pending because no Unity editor session is available.
+- Generated project files can be regenerated by Unity; the durable asmdef already contains the required dependency.

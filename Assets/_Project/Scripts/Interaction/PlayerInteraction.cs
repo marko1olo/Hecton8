@@ -58,6 +58,8 @@ namespace Hecton8.Interaction
     [AddComponentMenu("Hecton8/Player/Player Interaction")]
     public sealed class PlayerInteraction : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener, IDispatcherRaycastReceiver
     {
+        private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
+
         // ====================================================================
         // SERIALIZED CONFIGURATION
         // ====================================================================
@@ -121,7 +123,6 @@ namespace Hecton8.Interaction
         private float         _raycastTimer;
         private Transform     _cameraTransform;
         private Hecton8.Interaction.PhysicalInteractionHandler _physicalInteractionHandler;
-        private IInputService _subscribedInputService;
         private QueryCacheContext _playerLookQueryCache;
         private Ray           _ray;
         private Ray           _pendingRaycastRay;
@@ -141,6 +142,7 @@ namespace Hecton8.Interaction
         /// </summary>
         private bool          _registeredToTickManager;
         private bool          _hotSwapListenerRegistered;
+        private uint          _lastPlayerInputSignalSequence;
 
         // ====================================================================
         // PUBLIC ACCESSORS
@@ -234,7 +236,8 @@ namespace Hecton8.Interaction
             }
 
             TryRegisterHotSwapListener();
-            SubscribeInputServiceIfAvailable();
+            if (Application.isPlaying)
+                BaselineInteractInputSignalSequence();
             RefreshActiveInteractKeyCache();
         }
 
@@ -249,7 +252,8 @@ namespace Hecton8.Interaction
             }
 
             TryRegisterHotSwapListener();
-            SubscribeInputServiceIfAvailable();
+            if (Application.isPlaying)
+                BaselineInteractInputSignalSequence();
             RefreshActiveInteractKeyCache();
         }
 
@@ -262,7 +266,6 @@ namespace Hecton8.Interaction
             }
 
             TryUnregisterHotSwapListener();
-            UnsubscribeInputService();
             _raycastPending = false;
             _pendingRaycastRequestId = 0;
 
@@ -276,15 +279,14 @@ namespace Hecton8.Interaction
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Input)
+            if (serviceSlot != GlobalRegistryServiceSlot.Input &&
+                serviceSlot != GlobalRegistryServiceSlot.NativeInputManagerRuntime)
                 return;
-
-            UnsubscribeInputService();
 
             if (!isActiveAndEnabled)
                 return;
 
-            SubscribeInputServiceIfAvailable(currentService as IInputService);
+            BaselineInteractInputSignalSequence();
             RefreshActiveInteractKeyCache();
         }
 
@@ -307,30 +309,38 @@ namespace Hecton8.Interaction
             ExecuteInteraction();
         }
 
-        private void SubscribeInputServiceIfAvailable()
+        private void ConsumeInteractInputSignals()
         {
-            SubscribeInputServiceIfAvailable(GlobalRegistry.Input);
+            System.ReadOnlySpan<PlayerInputSignal> signals = SignalBus<PlayerInputSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PlayerInputSignal signal = signals[i];
+                if (signal.SourceHash != PlayerInputSignalSourceHash ||
+                    signal.Command != PlayerInputSignalCommands.Interact ||
+                    !IsNewerInputSequence(signal.Sequence, _lastPlayerInputSignalSequence))
+                    continue;
+
+                _lastPlayerInputSignalSequence = signal.Sequence;
+                HandleInteractInput();
+                return;
+            }
         }
 
-        private void SubscribeInputServiceIfAvailable(IInputService inputService)
+        private void BaselineInteractInputSignalSequence()
         {
-            if (_subscribedInputService != null)
-                return;
-
-            if (inputService == null || !inputService.IsInitialized)
-                return;
-
-            _subscribedInputService = inputService;
-            _subscribedInputService.OnInteract += HandleInteractInput;
+            System.ReadOnlySpan<PlayerInputSignal> signals = SignalBus<PlayerInputSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PlayerInputSignal signal = signals[i];
+                if (signal.SourceHash == PlayerInputSignalSourceHash &&
+                    IsNewerInputSequence(signal.Sequence, _lastPlayerInputSignalSequence))
+                    _lastPlayerInputSignalSequence = signal.Sequence;
+            }
         }
 
-        private void UnsubscribeInputService()
+        private static bool IsNewerInputSequence(uint candidate, uint current)
         {
-            if (_subscribedInputService == null)
-                return;
-
-            _subscribedInputService.OnInteract -= HandleInteractInput;
-            _subscribedInputService = null;
+            return candidate != 0u && candidate != current && unchecked(candidate - current) < 0x80000000u;
         }
 
         private void TryRegisterHotSwapListener()
@@ -382,7 +392,7 @@ namespace Hecton8.Interaction
         /// </summary>
         public void Tick(float deltaTime)
         {
-            // Input is now handled via HandleInteractInput event callback.
+            ConsumeInteractInputSignals();
 
             // ════════════════════════════════════════════════════
             // PHASE 1: THROTTLED RAYCAST — Target acquisition.

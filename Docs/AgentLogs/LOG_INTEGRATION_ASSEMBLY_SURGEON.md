@@ -897,3 +897,36 @@ Verification:
 
 Current Status:
 - YELLOW / ACTIVE MOVING WALL.
+
+## 2026-05-15 - CurrentDisk24/CurrentDiskBudgetGate14 Active Writer Boundary
+
+What was wrong:
+- Active parallel writes kept invalidating green artifacts after quiet-window checks.
+- Real walls were repaired first: camera signal ambiguity, source-only macro database flag helper, and a managed-reference helper struct that damaged H-Phi memory alignment.
+
+What was done:
+- `SystemDispatcher` now publishes Core camera signals with explicit `Hecton8.Core.Signals` payload types.
+- `SaveManager` resolves the macro database dirty bit without depending on a not-yet-visible contract helper in the CLI lane.
+- `WorldGenerativeGeologyMeshBuilder` uses tuple state for cold mesh-name generation instead of declaring a managed-reference helper struct.
+- Ran strict H-Phi repeatedly; latest passed gate is `CurrentDiskBudgetGate14`.
+- Ran current Core compile; latest passed build is `CurrentDisk24`.
+- Marked final state as `YELLOW / ACTIVE MOVING WALL` because later C# writes invalidated both artifacts.
+
+Cinematic Cheats used:
+- Compile/static evidence repair only.
+- No gameplay, physics, rendering, package, generated `.csproj`, or leaf-domain rewrite.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Latest passed compile verification time: 79,049,055 us.
+- Latest passed H-Phi verification time: 139,124,078 us.
+
+Verification:
+- Compile artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_192807_CurrentDisk24.log`.
+- Compile result: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_192507_CurrentDiskBudgetGate14.json`.
+- H-Phi result: `EXIT=0`, `RuntimeHPhiRisk=0.000634555`, `DataSovereignty=0.021306032`, `MemoryAlignment=0.506309148`, `GlobalRegistrySurface=5074`, `GetComponentCalls=321`, `NativeArrayRefs=7074`, `ManagedFormatSurface=590`, `PrimaryManagedRuntimeRisk=205`, `UnityUpdateMethods=0`, `FindObjectCalls=0`, `AupPrecisionRisk=0`.
+- Freshness failure: `WorldPopulationRule.cs` is newer than `CurrentDiskBudgetGate14`; `SaveManager.cs` is newer than both `CurrentDiskBudgetGate14` and `CurrentDisk24`.
+
+Current Status:
+- YELLOW / ACTIVE MOVING WALL.

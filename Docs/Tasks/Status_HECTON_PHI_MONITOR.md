@@ -1,6 +1,6 @@
 # Status_HECTON_PHI_MONITOR
 
-Status: CORE BUILD GREEN / GEOLOGY NAME CACHE PATCHED / TIGHTENED H-PHI STATIC GATE PASSED / RUNTIME PENDING UNITY VERIFICATION
+Status: CORE BUILD GREEN / PLAYER BUILDER DEBUG GATED / TIGHTENED H-PHI STATIC GATE PASSED / RUNTIME PENDING UNITY VERIFICATION
 Agent: HECTON_PHI_MONITOR
 Domain: ECHELON 9 / Architecture metrics / static H-Phi audit
 Task Count: 6
@@ -60,17 +60,18 @@ Task Count: 6
 - [x] Task 38: Geology mesh-name cache | DOD: replaced per-build interpolated geology mesh names with deterministic cached names per archetype/variant/LOD slot in `WorldGenerativeGeologyMeshBuilder.cs`; Core build passed | Rejected: changing mesh generation math, LOD shape, collider construction, or asset naming semantics | Estimate: removes 24 managed formatting source surfaces and repeated build-path name formatting; exact runtime us pending profiler
 - [x] Task 39: Cave graph release diagnostic gate | DOD: current tree gates cave validation `Debug.Log*` interpolation behind `UNITY_EDITOR || DEVELOPMENT_BUILD` while preserving validation booleans | Rejected: silencing validation failures in editor/dev builds or changing cave graph topology | Estimate: release runtime skips debug-string construction on validation branches; exact runtime us pending profiler
 - [x] Task 40: Verifier role classifier and tightened gate | DOD: `HectonPhiAudit.ps1` now classifies `*Verifier` files as instrumentation, PowerShell parser passed, Core build passed, and full tightened H-Phi static gate passed | Rejected: classifying real player tools as instrumentation by folder name alone | Estimate: 0 us runtime; metric routing correction only
+- [x] Task 41: PlayerBuilder debug interpolation gate | DOD: wrapped interpolated `LogBuilderDebug(...)` calls with `UNITY_EDITOR || DEVELOPMENT_BUILD` and `builderDebugLogging` guards so disabled builder debug does not build diagnostic strings; Core build passed | Rejected: changing builder gameplay flow, placement math, resource consumption, or public UI string contracts | Estimate: editor/dev disabled-debug allocation avoided; release calls compiled out; exact runtime us pending profiler
 
 ## Latest Static Scores
-- H-Phi runtime static narrow: `0.010781770`
-- H-Phi runtime static risk-adjusted: `0.000633566`
+- H-Phi runtime static narrow: `0.010787439`
+- H-Phi runtime static risk-adjusted: `0.000634446`
 - H-Phi all-source static narrow: `0.009606942`
 - H-Phi all-source static risk-adjusted: `0.000516535`
 - Narrow integration: `1.0`
-- Risk integration: `0.058762706` (derived from latest gated runtime H-Phi components)
+- Risk integration: `0.058813404` (derived from latest gated runtime H-Phi components)
 - Architectural purity: `1.000000000`
 - Data sovereignty: `0.021306032`
-- Memory alignment: `0.506043090`
+- Memory alignment: `0.506309148`
 - Binary-safe ratio: `0.018392013`
 - AUP precision integrity: `1.000000000`
 
@@ -136,4 +137,7 @@ Task Count: 6
 - `CaveGraphGenerator.cs` current tree gates cave validation `Debug.Log*` interpolation behind `UNITY_EDITOR || DEVELOPMENT_BUILD`; validation still returns `false` for bad data in release.
 - `Tools/Architecture/HectonPhiAudit.ps1` now treats `*Verifier` files as `Instrumentation`, preventing diagnostic verification tooling from inflating `PrimaryManagedRuntimeRisk`.
 - Latest tightened static H-Phi gate passed at `2026-05-15 18:18:28 +04:00` / gate replay after parser check: `ManagedFormatSurface=621`, `PrimaryManagedRuntimeRisk=236`, `JobCompleteSurface=58`, `RuntimeHPhiRisk=0.000633566`, `FindObjectCalls=0`, `UnityUpdateMethods=0`, `SignalBusPush=341`, `GlobalRegistrySurface=5080`, `GetComponentCalls=321`, `NativeArrayRefs=7074`, and all Core graph budgets green.
+- `PlayerBuilder.cs` current tree gates interpolated builder-debug calls with `UNITY_EDITOR || DEVELOPMENT_BUILD` and `builderDebugLogging`; release calls are compiled out and disabled editor/dev debug no longer builds those diagnostic strings.
+- Final continuation Core build passed at `2026-05-15 18:51 +04:00` after transient file-lock and concurrent UI/SaveManager drift cleared: `0 Warning(s)`, `0 Error(s)`.
+- Latest tightened static H-Phi gate passed at `2026-05-15 18:51:10 +04:00` / gate replay after PlayerBuilder debug gating: `ManagedFormatSurface=606`, `PrimaryManagedRuntimeRisk=221`, `JobCompleteSurface=58`, `RuntimeHPhiRisk=0.000634446`, `RuntimeHPhiNarrow=0.010787439`, `FindObjectCalls=0`, `UnityUpdateMethods=0`, `SignalBusPush=341`, `GlobalRegistrySurface=5075`, `GetComponentCalls=321`, `NativeArrayRefs=7074`, and all Core graph budgets green.
 - Unity Console / PlayMode / Profiler / GCMonitor: PENDING VERIFICATION.

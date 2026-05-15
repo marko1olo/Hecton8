@@ -555,3 +555,15 @@ Cinematic Cheats used -> None by this operator pass.
 Exact Microseconds saved -> 0 us runtime by this operator pass.
 
 Verification -> `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_181409_CurrentDisk17.exit.txt` reports `EXIT=0`; the referenced log reports build succeeded with `0 Warning(s)` and `0 Error(s)`. Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals are not claimed.
+
+## 2026-05-15 - Loop 35 Root Cleanup And Input Signal Tail
+
+What was wrong -> The live worktree had a mixed tail: root compute/report cleanup, raw evidence relocation, player input consumers moved from callbacks to `PlayerInputSignal`, WFC grid clear optimization, diegetic panel finite clamps, and `WorldPopulationRule` allocation cleanup that did not compile after enum arguments were passed to a string helper.
+
+What was done -> Fetched remote and verified divergence `0 0`, inspected the root relocation copies, fixed `PlayerFlashlight` to consume one flashlight signal per frame snapshot, repaired `WorldPopulationRule` with explicit enum label mapping, and reran isolated Core compile before staging.
+
+Cinematic Cheats used -> None by this operator pass.
+
+Exact Microseconds saved -> 0 us runtime by this operator pass.
+
+Verification -> `dotnet build Hecton8.Core.csproj` using `Temp\obj\CodexGitCheckNext3` and `Temp\bin\CodexGitCheckNext3` passed with `0 Warning(s)` and `0 Error(s)`. `git diff --check` returned only CRLF warnings before staging. HPhi `CurrentDiskBudgetGate14` reports `EXIT=0`; a later zero-byte HPhi JSON without exit was left unstaged. Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals are not claimed.

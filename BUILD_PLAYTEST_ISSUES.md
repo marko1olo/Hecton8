@@ -7,13 +7,14 @@ Ledger Start Date: `2026-04-05`
 
 This file tracks confirmed build and playtest observations.
 
-2026-05-13 current-state boundary:
+2026-05-15 current-state boundary:
 
 - Read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` before using this ledger for current project truth. May 11 reports remain historical where the May 13 DOC_AUDIT override conflicts.
 - This ledger records build/playtest observations and coding follow-ups; it is not a global runtime certification report.
 - Items marked `[c]` are code-closed only until build/user proof confirms them.
 - If this file disagrees with current source, console, profiler, or fresh user evidence, the newer evidence wins.
 - 2026-05-13 DOC_AUDIT filesystem check did not find `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt` or `.log`. Treat the May 11 compile-success line as stale report text until the artifact is restored or replaced. It is not current build proof and not player-build, Play Mode, Unity Console, profiler, GCMonitor, scene-wiring, visual-quality, or user-playtest proof.
+- 2026-05-15 current-disk proof: latest observed `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_190406_CurrentDisk25.log` reports `Hecton8.Core.csproj` CLI compile `EXIT=0`, `Build succeeded`, `0 Warning(s)`, `0 Error(s)`; latest observed `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_185213_CurrentDiskBudgetGate10.json` reports H-Phi static budget `EXIT=0`. These are not player-build, live run, Play Mode, profiler, user-playtest, or visual acceptance evidence.
 - Current visual-realism doctrine is visual fake first; do not log simulation work as accepted without gameplay-correctness need and profiler/GC/memory proof.
 
 Rules:

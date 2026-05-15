@@ -1043,3 +1043,123 @@ Current cumulative model split:
 | Other known models | 292,757,293 | 0.64% |
 
 Verdict: the post-forecast tail cooled to 44.07k tokens/sec, but this is still sustained high burn. The last 58.32 minutes averaged 53.81k tokens/sec and USD 2.166/min cache-aware.
+
+## Continuation Addendum - Live Burn Cooldown Check
+
+Snapshot: 2026-05-15T18:31:43+04:00
+
+The live cooldown check is preserved at `COMPUTE_LIVE_BURN_COOLDOWN_CHECK.md`.
+
+| Metric | Value |
+|---|---:|
+| Current SQLite tokens | 45,997,528,181 |
+| Delta since 18:16 snapshot | 50,961,239 |
+| Rate since 18:16 snapshot | 56,581.31 tokens/sec |
+| Cache-aware cost since 18:16 | USD 34.18 |
+| Delta beyond corrected JSONL final | 226,029,065 |
+| Estimated live cost beyond corrected JSONL final | USD 151.62 |
+| Current live cost estimate | USD 30,855.98 |
+| Prompt-constant energy equivalent | 2,299.88 MWh |
+| Live tokens per meaningful script LOC | 58,326.68 |
+| Live tokens per script source byte | 1,093.413 |
+
+Three-minute sample:
+
+| Metric | Value |
+|---|---:|
+| Sample token delta | 13,464,191 |
+| Tokens/sec | 74,578.19 |
+| Tokens/min | 4,474,691.70 |
+| Tokens/day equivalent | 6,443,556,043.50 |
+| Cache-aware USD/min | USD 3.002 |
+| No-cache USD/min | USD 19.750 |
+| Active threads | 19 |
+| Active model bucket | `gpt-5.5` only |
+
+Interval volatility:
+
+| Interval | Tokens | Tokens/sec | Cache-aware USD/min | Active threads |
+|---:|---:|---:|---:|---:|
+| 1 | 5,934,314 | 98,859.36 | USD 3.979 | 14 |
+| 2 | 6,978,887 | 115,654.38 | USD 4.655 | 16 |
+| 3 | 550,990 | 9,157.61 | USD 0.369 | 3 |
+
+Concentration:
+
+| Slice | Tokens | Share |
+|---|---:|---:|
+| Top 1 thread | 1,445,360 | 10.73% |
+| Top 5 threads | 6,267,156 | 46.55% |
+| Top 10 threads | 10,468,364 | 77.75% |
+| Top 12 threads | 11,622,496 | 86.32% |
+
+Verdict: the tail is volatile. Two minutes spiked above 98k tokens/sec, then the third minute collapsed to 9.16k tokens/sec. Do not call this stable low burn. Do not call it waste without final diff/quality/validation joins.
+
+## Continuation Addendum - Live Burn Persistence Check
+
+Snapshot: 2026-05-15T18:45:33+04:00
+
+The live persistence check is preserved at `Docs/Reports/2026-05-15_COMPUTE_AUDIT/COMPUTE_LIVE_BURN_PERSISTENCE_CHECK.md`.
+
+| Metric | Value |
+|---|---:|
+| Current SQLite tokens | 46,052,861,781 |
+| Delta since 18:31 snapshot | 55,333,600 |
+| Rate since 18:31 snapshot | 66,663.54 tokens/sec |
+| Cache-aware cost since 18:31 | USD 37.12 |
+| Delta beyond corrected JSONL final | 281,362,665 |
+| Estimated live cost beyond corrected JSONL final | USD 188.73 |
+| Current live cost estimate | USD 30,893.09 |
+| Prompt-constant energy equivalent | 2,302.64 MWh |
+| Live tokens per meaningful script LOC | 58,396.85 |
+| Live tokens per script source byte | 1,094.728 |
+
+Persistence sample after the prior low minute:
+
+| Metric | Value |
+|---|---:|
+| Sample token delta | 10,933,623 |
+| Duration | 150.845692 sec |
+| Tokens/sec | 72,482.17 |
+| Tokens/min | 4,348,930.16 |
+| Tokens/day equivalent | 6,262,459,435.70 |
+| Cache-aware USD/min | USD 2.917 |
+| No-cache USD/min | USD 19.195 |
+| Active threads | 22 |
+| Active model bucket | `gpt-5.5` only |
+
+Verdict: the low final minute from the cooldown check did not persist. The next 150 seconds averaged 72.48k tokens/sec and USD 2.917/min cache-aware. Current status remains renewed volatile high burn.
+
+## Continuation Addendum - Energy Equivalents
+
+Snapshot: 2026-05-15T19:10+04:00
+
+The energy equivalent translation is preserved at `Docs/Reports/2026-05-15_COMPUTE_AUDIT/COMPUTE_ENERGY_EQUIVALENTS.md`.
+
+Boundary: this is an audit-model equivalent from the prompt constant `0.05 kWh / 1,000 tokens`, not measured OpenAI datacenter telemetry.
+
+| Metric | Value |
+|---|---:|
+| Input energy value | 2,297.33 MWh |
+| GWh | 2.29733 |
+| kWh | 2,297,330 |
+| Joules | 8,270,388,000,000 |
+| Terajoules | 8.270 |
+| Household days at 30 kWh/day | 76,577.7 |
+| Household years at 30 kWh/day | 209.8 |
+| Household months at 900 kWh/month | 2,552.6 |
+| 75 kWh EV full charges | 30,631.1 |
+| 100 W bulb continuous runtime | 2,622.5 years |
+| 10 W LED continuous runtime | 26,225.2 years |
+| 1 MW continuous load | 95.72 days |
+
+Tariff scenarios:
+
+| Electricity price | Cost |
+|---:|---:|
+| USD 0.05/kWh | USD 114,866.50 |
+| USD 0.10/kWh | USD 229,733.00 |
+| USD 0.15/kWh | USD 344,599.50 |
+| USD 0.30/kWh | USD 689,199.00 |
+
+Verdict: the clean translation is `2.30 GWh`, roughly `210 household-years` at 30 kWh/day. Do not call it measured power consumption.

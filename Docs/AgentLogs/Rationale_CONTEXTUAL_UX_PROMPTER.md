@@ -473,3 +473,31 @@ Solution: Removed those fallbacks. Tooltip glyph/icon materials and panel phosph
 Rejected Alternatives: Keeping a cold fallback, moving the load behind a latch, or introducing Addressables from this UI pass. A latched fallback is still a forbidden hidden runtime load; Addressables would widen ownership and asset-group scope.
 Scalability potential: Low avoids unexpected sync disk work. Middle/High/Ultra keep deterministic authored material ownership for richer glyph and phosphor visuals.
 Hardware Impact: Removes synchronous runtime asset lookup risk; no microsecond saving claimed without profiler capture.
+
+## Decision 67: Panel Cursor/Finger Finite Scalars
+Problem: Physical panel cursor and finger paths still used runtime floats directly for interaction distance, cursor margin/offset/smoothing, refresh interval, and press/release/hover distances. NaNs could poison cursor transforms, smoothing, or input thresholds.
+Solution: Added finite resolver helpers and routed runtime cursor/finger math through them. `FastDecayBlend()` now rejects non-finite delta/sharpness input before approximating exponential smoothing.
+Rejected Alternatives: Relying on editor validation, clearing cursor state after NaN, or widening the input system contract. Runtime mutation bypasses editor validation; clearing after NaN is late; the issue is local scalar hygiene.
+Scalability potential: Low keeps cursor/finger interaction deterministic on weak devices. Middle/High/Ultra keep richer physical cursor behavior without invalid threshold payloads.
+Hardware Impact: Small scalar checks on interaction paths; no measured frame-time saving claimed.
+
+## Decision 68: Panel Tick Delta Finite Gate
+Problem: `Tick(float deltaTime)` passed raw delta into refresh timers, terminal glitch decay, and cursor smoothing. A non-finite dispatcher delta could make timers or visual state non-finite.
+Solution: Resolve `frameDeltaTime` once at the tick boundary and pass the sanitized value through panel refresh, terminal-effect, and cursor paths.
+Rejected Alternatives: Guarding each consumer separately, trusting dispatcher delta forever, or resetting the entire panel on a bad delta. Boundary sanitation is cheaper and keeps local visual state stable without broad resets.
+Scalability potential: Low avoids invalid panel timing on weak devices under scheduler faults. Middle/High/Ultra keep the same visual effects while timing input remains finite.
+Hardware Impact: One finite check per active panel tick; correctness gain only.
+
+## Decision 69: Panel Timestamp Finite Gate
+Problem: `SystemDispatcher.CurrentUnscaledTimeSeconds` was cast directly to float and then used for proxy-light flicker, panel event timestamps, and last-interact state. Non-finite or negative scheduler time could poison those payloads.
+Solution: Added `ResolveFrameTimestamp()` to reject NaN/Infinity/negative timestamps and hold the previous valid timestamp; oversized finite timestamps clamp to `float.MaxValue`.
+Rejected Alternatives: Trusting dispatcher time, zeroing timestamps on fault, or adding per-consumer timestamp guards. Holding previous valid time avoids backward event jumps and keeps the guard at the boundary.
+Scalability potential: Low avoids invalid proxy-light/event payloads. Middle/High/Ultra keep flicker and interaction telemetry deterministic under scheduler faults.
+Hardware Impact: One timestamp validity check per active panel tick; correctness gain only.
+
+## Decision 70: Panel Canvas Raycaster Ownership Refresh
+Problem: If `targetCanvas` changed after startup, `_cachedGraphicRaycaster` could still point at the old canvas or remain null, allowing the new panel canvas to keep UI raycasting enabled.
+Solution: Refresh the cached raycaster only when `targetCanvas` ownership changes, clear the cache when no canvas is resolved, and force canvas settings reapply on canvas swap.
+Rejected Alternatives: Calling `TryGetComponent` every tick, relying on startup-only resolution, or leaving raycaster state to authoring. Ownership-change caching avoids steady cost; startup-only misses runtime swaps; authoring cannot cover injected panels.
+Scalability potential: Low avoids unwanted raycast work on simple panels. Middle/High/Ultra keep deterministic panel input ownership when richer presentation panels are swapped at runtime.
+Hardware Impact: One `TryGetComponent` only on canvas ownership change; no steady-frame cost.

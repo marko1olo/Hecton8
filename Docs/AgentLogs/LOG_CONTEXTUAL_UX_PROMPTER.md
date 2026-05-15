@@ -597,3 +597,47 @@ Cinematic cheats used: No visual cheat change. This makes dependency ownership e
 Exact microseconds saved: No measured claim. Removes synchronous runtime asset lookup risk.
 
 Verification: No dotnet rebuilds were run. Static scan confirmed no `Resources.Load` remains in `DiegeticTooltipSystem.cs` or `DiegeticPanelController.cs`.
+
+## 2026-05-15 Panel Cursor/Finger Finite Scalars
+What was wrong: Cursor and physical finger interaction used several runtime floats directly, allowing NaNs to poison cursor transforms, smoothing, refresh cadence, or press thresholds.
+
+What was done: Added finite resolver helpers for interaction distance, cursor margin/offset/smoothing, refresh interval, and finger press/release/hover distances. Hardened `FastDecayBlend()` against non-finite inputs.
+
+Cinematic cheats used: No visual change for valid tuning. Bad tuning now collapses to deterministic cursor/finger defaults instead of broken physical UI feedback.
+
+Exact microseconds saved: None claimed. This is bounded scalar hygiene on interaction paths.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed cursor/finger math routes through the resolver helpers.
+
+## 2026-05-15 Panel Tick Delta Finite Gate
+What was wrong: Raw `deltaTime` fed panel refresh timers, CRT glitch decay, and cursor smoothing.
+
+What was done: Added `ResolveFrameDeltaTime()` and pass one sanitized `frameDeltaTime` through the panel tick consumers.
+
+Cinematic cheats used: No visual change for valid timing. Bad timing input now fails to a zero-delta visual hold instead of poisoning state.
+
+Exact microseconds saved: None claimed. One finite check per active panel tick.
+
+Verification: No dotnet rebuilds were run. Static scan confirmed refresh, terminal effect, and cursor calls consume `frameDeltaTime`.
+
+## 2026-05-15 Panel Timestamp Finite Gate
+What was wrong: Dispatcher unscaled time was cast directly to float before feeding proxy-light flicker and panel event timestamps.
+
+What was done: Added `ResolveFrameTimestamp()` to reject NaN, Infinity, and negative timestamps, holding the previous valid value instead.
+
+Cinematic cheats used: Valid flicker behavior is unchanged. Bad scheduler time becomes a visual hold rather than invalid light/event data.
+
+Exact microseconds saved: None claimed. One finite timestamp check per active panel tick.
+
+Verification: No dotnet rebuilds were run. Static scan confirmed `_tickUnscaledTime` is assigned through `ResolveFrameTimestamp()`.
+
+## 2026-05-15 Panel Canvas Raycaster Ownership Refresh
+What was wrong: Runtime `targetCanvas` swaps could leave the cached `GraphicRaycaster` stale, so the new canvas might keep raycasting enabled.
+
+What was done: `ResolveSerializedReferences()` now refreshes the raycaster cache only on canvas ownership change, clears it when no canvas exists, and forces canvas settings reapply after swaps.
+
+Cinematic cheats used: No visual change. This keeps physical panel input ownership explicit instead of letting a Canvas raycaster compete with diegetic input.
+
+Exact microseconds saved: No steady-frame claim. The lookup runs only when canvas ownership changes.
+
+Verification: No dotnet rebuilds were run. Static scan confirmed the stale `resolveGraphicRaycaster` parameter is gone and raycaster cache refresh is target-canvas driven.

@@ -34,6 +34,112 @@ Verification:
 
 STATUS: AUDIT COMPLETE.
 
+## 2026-05-15 - Energy Equivalent Translation
+
+What was wrong:
+- `2,297.33 MWh` was too abstract for quick interpretation.
+- The value could be overread as measured datacenter telemetry if not bounded.
+
+What was done:
+- Re-read `Docs/Tasks/Status_COMPUTE_LOGISTICS_AUDITOR.md` and `Docs/AgentLogs/Rationale_COMPUTE_LOGISTICS_AUDITOR.md`.
+- Converted `2,297.33 MWh` into GWh, kWh, joules, household equivalents, EV-charge equivalents, continuous-load equivalents, and tariff scenarios.
+- Created `Docs/Reports/2026-05-15_COMPUTE_AUDIT/COMPUTE_ENERGY_EQUIVALENTS.md`.
+- Updated audit bundle brief/index and full report.
+
+Evidence captured:
+- 2,297.33 MWh = 2.29733 GWh = 2,297,330 kWh.
+- Joules: 8,270,388,000,000 J = 8.270 TJ.
+- Household scale at 30 kWh/day: 76,577.7 home-days, 209.8 home-years.
+- EV scale at 75 kWh/full charge: 30,631.1 full charges.
+- 1 MW load: 95.72 continuous days.
+- Electricity tariff scenarios: USD 114,866.50 at USD 0.05/kWh; USD 229,733.00 at USD 0.10/kWh; USD 344,599.50 at USD 0.15/kWh; USD 689,199.00 at USD 0.30/kWh.
+
+Cinematic Cheats used:
+- None. Audit-only evidence accounting.
+
+Exact microseconds saved:
+- Runtime: 0 us.
+- Process: not claimed as measured saving. The new doc prevents raw MWh from being misunderstood.
+
+Verification:
+- Markdown-only audit continuation.
+- No runtime compile run. This pass changed no C# or Unity assets.
+
+STATUS: AUDIT COMPLETE.
+
+## 2026-05-15 - Live Burn Persistence Check
+
+What was wrong:
+- The previous cooldown check ended with one low minute.
+- That low minute could be misread as a sustained cooldown.
+- The audit root files had been moved into `Docs/Reports/2026-05-15_COMPUTE_AUDIT`, so writing to stale root paths would be wrong.
+
+What was done:
+- Re-read `Docs/Tasks/Status_COMPUTE_LOGISTICS_AUDITOR.md` and `Docs/AgentLogs/Rationale_COMPUTE_LOGISTICS_AUDITOR.md`.
+- Rechecked the official OpenAI pricing page.
+- Sampled `C:\Users\danat\.codex\state_5.sqlite` for five 30-second intervals.
+- Created `Docs/Reports/2026-05-15_COMPUTE_AUDIT/COMPUTE_LIVE_BURN_PERSISTENCE_CHECK.md`.
+- Updated the audit bundle brief/index, full report, status, and rationale.
+
+Evidence captured:
+- Current SQLite token mass: 46,052,861,781.
+- Delta since 18:31: 55,333,600 tokens.
+- Rate since 18:31: 66,663.54 tokens/sec.
+- Persistence sample: 10,933,623 tokens over 150.845692 seconds.
+- Persistence average: 72,482.17 tokens/sec; USD 2.917/min cache-aware.
+- Interval rates: 97,058.97; 85,902.14; 25,239.26; 67,841.81; 86,087.14 tokens/sec.
+- Active threads: 22, all `gpt-5.5`, all under `C:/hades`.
+- Top 10 active threads: 74.95% of the sample.
+
+Cinematic Cheats used:
+- None. Audit-only evidence accounting.
+
+Exact microseconds saved:
+- Runtime: 0 us.
+- Process: not claimed as measured saving. The persistence check prevents a false sustained-cooldown claim.
+
+Verification:
+- Markdown-only audit continuation.
+- No runtime compile run. This pass changed no C# or Unity assets.
+
+STATUS: AUDIT COMPLETE.
+
+## 2026-05-15 - Live Burn Cooldown Check
+
+What was wrong:
+- The previous trajectory ledger showed cooling, but it did not prove the cooldown was stable.
+- The user ordered continued honest counting.
+
+What was done:
+- Re-read `Docs/Tasks/Status_COMPUTE_LOGISTICS_AUDITOR.md` and `Docs/AgentLogs/Rationale_COMPUTE_LOGISTICS_AUDITOR.md`.
+- Checked that no OpenAI docs MCP resource was available, then rechecked the official OpenAI pricing page.
+- Sampled `C:\Users\danat\.codex\state_5.sqlite` for three consecutive 60-second intervals.
+- Created `COMPUTE_LIVE_BURN_COOLDOWN_CHECK.md`.
+- Updated `COMPUTE_AUDIT_BRIEF.md`, `COMPUTE_AUDIT_INDEX.md`, `Docs/Reports/COMPUTE_DOMINANCE_REPORT.md`, status, and rationale.
+
+Evidence captured:
+- Current SQLite token mass: 45,997,528,181.
+- Delta since 18:16: 50,961,239 tokens.
+- Rate since 18:16: 56,581.31 tokens/sec.
+- Three-minute sample: 13,464,191 tokens over 180.537904 seconds.
+- Three-minute average: 74,578.19 tokens/sec; USD 3.002/min cache-aware.
+- Interval rates: 98,859.36, 115,654.38, and 9,157.61 tokens/sec.
+- Active threads: 19, all `gpt-5.5`, all under `C:/hades`.
+- Top 10 active threads: 77.75% of the sample.
+
+Cinematic Cheats used:
+- None. Audit-only evidence accounting.
+
+Exact microseconds saved:
+- Runtime: 0 us.
+- Process: not claimed as measured saving. The cooldown check prevents a false claim that the burn stabilized low.
+
+Verification:
+- Markdown-only audit continuation.
+- No runtime compile run. This pass changed no C# or Unity assets.
+
+STATUS: AUDIT COMPLETE.
+
 ## 2026-05-15 - Burn Trajectory Ledger
 
 What was wrong:

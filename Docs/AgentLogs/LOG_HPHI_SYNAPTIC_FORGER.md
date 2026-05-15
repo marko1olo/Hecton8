@@ -878,3 +878,77 @@ Verification:
 - No dotnet build, restore, test, or rebuild was run.
 - `rg` confirms `HectonPlayerMovement` / `PlayerInventory` have no inventory subscribe/unsubscribe and no `_movementLoadSink`.
 - `git diff --check` on `HectonPlayerMovement.cs` and `PlayerInventory.cs` passed with only standard LF/CRLF notices.
+
+## 2026-05-15 - Flashlight Input Signal Addendum
+
+What was wrong:
+- `PlayerFlashlight` already ticks every player frame but still subscribed directly to `InputManager.OnFlashlight`.
+- That also forced flashlight-specific `IGlobalRegistryHotSwapListener` state only to repair the native input callback binding.
+
+What was done:
+- Added `PlayerInputSignalCommands.Flashlight` to the existing 32-byte command lane.
+- `InputDispatcher` now listens to the native flashlight action and publishes the command packet.
+- `PlayerFlashlight` consumes source-filtered `SignalBus<PlayerInputSignal>` snapshots in its existing tick and baselines command sequence on enable/start.
+- Removed direct flashlight input subscribe/unsubscribe, cached input-manager state, and hot-swap listener state from `PlayerFlashlight`.
+
+Cinematic Cheats used:
+- Flashlight toggle rides the same compact command stream as PDA, inventory, cancel, builder, and tool-slot commands instead of carrying a dedicated gameplay delegate.
+
+Exact microseconds saved:
+- Estimated 0.05-0.2 us on flashlight toggle bursts.
+- Removed one native-input delegate surface and one hot-swap listener reason from `PlayerFlashlight`.
+
+Verification:
+- No dotnet build, restore, test, or rebuild was run.
+- `rg` confirms `PlayerFlashlight` has no `OnFlashlight +=` / `OnFlashlight -=` remnants.
+- `rg` confirms the only project `OnFlashlight` subscription is the central `InputDispatcher` producer.
+- `git diff --check` passed for `GlobalSignals.cs`, `InputDispatcher.cs`, and `PlayerFlashlight.cs` with only the standard LF/CRLF notice on `PlayerFlashlight.cs`.
+
+## 2026-05-15 - Prologue Dev-Skip Cancel Signal Addendum
+
+What was wrong:
+- `PrologueSequenceRegistryBridge` subscribed to `IInputService.OnCancel` only to request development prologue skip.
+- The cancel edge already exists in `PlayerInputSignal`, and the prologue runtime already polls `ShouldSkipPrologue` during interruptible waits.
+
+What was done:
+- Removed cancel subscribe/unsubscribe and `_inputSubscribed` state from the bridge.
+- Added source-filtered `PlayerInputSignalCommands.Cancel` consumption inside `ShouldSkipPrologue`.
+- Preserved the existing `RequestRunCancellation(PrologueCancelReasons.DevSkip)` path.
+- Baselined command sequence on play-mode enable so stale cancel packets cannot skip a newly enabled prologue bridge.
+
+Cinematic Cheats used:
+- Dev-skip cancel is now a compact command packet read from the existing prologue polling hook instead of a dedicated input delegate.
+
+Exact microseconds saved:
+- Estimated 0.02-0.1 us on dev-skip cancel bursts.
+- Removed one input-service delegate binding from prologue bootstrap.
+
+Verification:
+- No dotnet build, restore, test, or rebuild was run.
+- `rg` confirms `PrologueSequenceRegistryBridge` has no `OnCancel +=` / `OnCancel -=` remnants.
+- `git diff --check` passed for `PrologueSequenceRegistryBridge.cs` with only the standard LF/CRLF notice.
+
+## 2026-05-15 - Player Interaction Signal Addendum
+
+What was wrong:
+- `PlayerInteraction` already owns a player tick for hover raycasts but still subscribed to `IInputService.OnInteract`.
+- The same interact edge is published by `InputDispatcher` into `PlayerInputSignal`.
+
+What was done:
+- Removed the input-service subscription field and subscribe/unsubscribe methods from `PlayerInteraction`.
+- Added source-filtered interact command consumption inside the existing `Tick()`.
+- Baselined command sequence on enable/start and service replacement.
+- Kept native input hot-swap only for `ActiveInteractKey` display refresh.
+
+Cinematic Cheats used:
+- Interaction execution now rides the shared command packet stream while hover raycasts remain on the existing throttled 20 Hz path.
+
+Exact microseconds saved:
+- Estimated 0.05-0.25 us on interact bursts.
+- Removed one player-root input-service delegate surface.
+
+Verification:
+- No dotnet build, restore, test, or rebuild was run.
+- `rg` confirms `PlayerInteraction` has no `OnInteract +=` / `OnInteract -=` remnants.
+- Remaining interact callbacks are the central `InputDispatcher` producer and mounted-transport authority path.
+- `git diff --check` passed for `PlayerInteraction.cs` with only the standard LF/CRLF notice.

@@ -16,6 +16,7 @@ namespace Hecton8.Core
     {
         private const uint SourceHash = PrologueSignalSourceHashes.SequenceDirector;
         private const uint ManualOverrideSourceHash = PrologueSignalSourceHashes.ManualOverrideLever;
+        private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
         private const uint MissingServiceHash = 0x50524D49u; // PRMI
         private const uint RegistrationRejectedHash = 0x5052524Au; // PRRJ
         private const uint CancellationFaultHash = 0x50524346u; // PRCF
@@ -43,7 +44,6 @@ namespace Hecton8.Core
         private CancellationTokenSource _runCancellationSource;
         private bool _registeredService;
         private bool _registeredHotSwap;
-        private bool _inputSubscribed;
         private bool _isDevelopmentBuild;
         private bool _cachedLowTier;
         private bool _pendingLowTier;
@@ -63,6 +63,7 @@ namespace Hecton8.Core
         private int _atmosphereSnapshotCursor;
         private int _completeSnapshotCursor;
         private int _residencySnapshotCursor;
+        private uint _lastPlayerInputSignalSequence;
         private ushort _sequence;
 
         public bool IsDevelopmentBuild => _isDevelopmentBuild;
@@ -84,15 +85,15 @@ namespace Hecton8.Core
                 if (!IsDevelopmentBuild)
                     return false;
 
+                if (!_skipRequested)
+                    ConsumeSkipInputSignals();
+
                 if (_skipRequested)
                     return true;
 
                 IInputService input = _inputService;
                 if (input == null)
                     return false;
-
-                if (!_inputSubscribed)
-                    TrySubscribeInput();
 
                 if (!input.IsInitialized)
                     return false;
@@ -133,6 +134,8 @@ namespace Hecton8.Core
 
             CacheRuntimeServices();
             BindInputIfAvailable();
+            if (Application.isPlaying)
+                BaselineSkipInputSignalSequence();
             RegisterHotSwap();
 
             if (autoRunOnEnable && Application.isPlaying)
@@ -510,7 +513,6 @@ namespace Hecton8.Core
         {
             _isDevelopmentBuild = false;
             _inputService = null;
-            _inputSubscribed = false;
             _orbitalDirector = null;
             _streamingBackpressure = null;
             _tickDispatcher = null;
@@ -541,30 +543,11 @@ namespace Hecton8.Core
                 return;
 
             _inputService = input;
-            TrySubscribeInput();
-        }
-
-        private void TrySubscribeInput()
-        {
-            if (_inputSubscribed)
-                return;
-
-            IInputService input = _inputService;
-            if (input == null || !input.IsInitialized)
-                return;
-
-            input.OnCancel += HandleSkipRequested;
-            _inputSubscribed = true;
         }
 
         private void UnbindInput()
         {
-            IInputService input = _inputService;
-            if (_inputSubscribed && input != null)
-                input.OnCancel -= HandleSkipRequested;
-
             _inputService = null;
-            _inputSubscribed = false;
         }
 
         private void HandleSkipRequested()
@@ -574,6 +557,40 @@ namespace Hecton8.Core
 
             _skipRequested = true;
             RequestRunCancellation(PrologueCancelReasons.DevSkip);
+        }
+
+        private void ConsumeSkipInputSignals()
+        {
+            ReadOnlySpan<PlayerInputSignal> signals = SignalBus<PlayerInputSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PlayerInputSignal signal = signals[i];
+                if (signal.SourceHash != PlayerInputSignalSourceHash ||
+                    signal.Command != PlayerInputSignalCommands.Cancel ||
+                    !IsNewerInputSequence(signal.Sequence, _lastPlayerInputSignalSequence))
+                    continue;
+
+                _lastPlayerInputSignalSequence = signal.Sequence;
+                HandleSkipRequested();
+                return;
+            }
+        }
+
+        private void BaselineSkipInputSignalSequence()
+        {
+            ReadOnlySpan<PlayerInputSignal> signals = SignalBus<PlayerInputSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PlayerInputSignal signal = signals[i];
+                if (signal.SourceHash == PlayerInputSignalSourceHash &&
+                    IsNewerInputSequence(signal.Sequence, _lastPlayerInputSignalSequence))
+                    _lastPlayerInputSignalSequence = signal.Sequence;
+            }
+        }
+
+        private static bool IsNewerInputSequence(uint candidate, uint current)
+        {
+            return candidate != 0u && candidate != current && unchecked(candidate - current) < 0x80000000u;
         }
 
         private bool MatchesOceanChunk(long chunkId, bool allowProxy, bool proxy)

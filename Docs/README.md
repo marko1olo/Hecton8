@@ -5,6 +5,16 @@ Status: PENDING VERIFICATION
 
 Purpose: stable documentation entry point. Dated reports are evidence snapshots and counters, not the permanent project brain. If a dated report changes policy, promote the rule into `AGENTS.md`, `.agents-skills`, or one of the stable authority docs below.
 
+## 2026-05-15 Current-Disk Build / H-Phi Boundary
+
+Evidence class: `CLI_COMPILE` plus `STATIC_SOURCE_FULL_SCAN`. Runtime proof remains absent.
+
+- Latest observed Core CLI compile artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_190406_CurrentDisk25.log` with exit summary `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_190406_CurrentDisk25.exit.txt` reports `EXIT=0`, `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, and output `Temp\bin\Debug\Hecton8.Core.dll`.
+- Earlier DOC_AUDIT Core artifact `Docs/AgentLogs/Build_DOC_AUDIT_CONTINUATION_20260515_183949_Hecton8Core.log` also reported `EXIT=0`; the immediately previous `Docs/AgentLogs/Build_DOC_AUDIT_CONTINUATION_20260515_183508_Hecton8Core.log` failed on stale generated-CLI visibility of `MacroDatabasePayloadFlags`. The later clean artifacts supersede that failed attempt for current-disk CLI status only.
+- Latest observed H-Phi static budget artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_185213_CurrentDiskBudgetGate10.json` with exit summary `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_185213_CurrentDiskBudgetGate10.exit.txt` reports `EXIT=0`. Current scores include `DataSovereignty=0.021306032`, `MemoryAlignment=0.506309148`, and `RuntimeHPhiRisk=0.000634446`; static counters include `GlobalRegistrySurface=5075/5075`, `GetComponentCalls=321/321`, `NativeArrayRefs=7074/7074`, `ManagedFormatSurface=606/606`, `JobCompleteSurface=58/58`, `PrimaryManagedRuntimeRisk=221/221`, `DuplicateSignalNames=0`, `UnityUpdateMethods=0`, `LegacyEventPublish=28/28`, `LinqSurface=5/5`, `CoroutineSurface=0/0`, and `AupPrecisionRisk=0`.
+- Core graph debt in that H-Phi artifact remains at the current budget ceiling: `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`, `SourceBackedBridgeDebtReferenceCount=14`, `SourceBackedCompileBridgeDebtReferenceCount=8`, and `ProjectReferenceReplacementDebtReferenceCount=6`.
+- This supersedes earlier same-day MemoryAlignment failure artifacts for current-disk static H-Phi status only. It does not prove Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, save/load route, or visual quality.
+
 ## 2026-05-13 DOC_AUDIT X-Ray Override
 
 Read `Reports/2026-05-13_DOC_AUDIT_XRAY.md` before trusting May 11 counters or proof links.
@@ -13,15 +23,15 @@ Current static audit facts:
 
 - the cited May 11 build artifacts `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt` and `.log` are absent from the current filesystem
 - May 11 compile-success claims remain report text only; the current compile evidence is the separate R43 external root `Hecton8*.csproj` no-restore CLI recheck, not restored May 11 artifacts
-- root text surface is no longer the May 11 shape: current root scan sees `6` `.md`, `3` `.log`, and `3` `.json` files
+- 2026-05-15 root cleanup supersedes the May 13 root counters: current root scan sees only `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md` in the documentation/evidence scope; root `.log`, `.json`, `.xml`, `.png`, `.zip`, and stale cleanup-script artifacts were moved under `Docs/DEPRECATED/`.
+- May 13 root text surface was no longer the May 11 shape: that scan saw `6` `.md`, `3` `.log`, and `3` `.json` files before the May 15 cleanup
 - direct `Docs/` root no longer contains `не откр.md`; the stale batch-prompt dump was moved to `DEPRECATED/Root_Stale_Batch_Prompt_Dumps_2026-05-13/`
 - current first-party asmdef count is `24`; previous `13`, `22`, and `23` asmdef atlas claims are stale
 - source-count values are volatile in the active workspace; the R4 static refresh sees `1411` project C# files, `1365` script C# files, `869871` project source lines, `852315` script source lines, `215` interface declaration hits, `51` direct public interfaces in `GlobalRegistryContracts.cs`, and `24` first-party asmdefs
 - R5/R6 package/config scan: Unity pin `6000.4.1f1`; URP `17.4.0`; Addressables `2.7.6`; Input System `1.19.0`; AI Navigation `2.0.11`; normative BuildSettings scenes remain `00_BOOTSTRAP`, `01_MAIN_MENU`, `02_HECTON_WORLD`; forbidden UPM IDs are absent, but physical legacy Astar/Easy Save/Demigiant/DarkTonic folders and live `DOTWEEN`/vendor scripting defines remain contamination; embedded Crest/MicroSplat/ShaderGraph package drift requires Unity import/build proof
 - R7 authority patch: `AGENTS.md` and `.codexrules/AGENTS.md` now match current Low URP mapping (`URP_Low` -> `Mobile_Renderer`, render scale `0.85`) and no longer instruct agents to extend Easy Save 3 usage
 - R8 world/scatter scan: large world files contain real scatter/residency/sampling/vegetation systems and `Assets/_Project/Data/World` has `285` `.asset` files, but production scene wiring and Addressables payload readiness remain unproven by static evidence
-- R9 root/atlas boundary: root authority is still only `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`; `BROKEN_PREFABS.md`, root `PROJECT_ATLAS.md`, and root `TERRAIN_AND_BIOME_REALITY_MAP.md` are non-authority snapshot/mirror files; `PROJECT_ATLAS.md` / `Docs/PROJECT_ATLAS.md` are asmdef graph snapshots only
-- R10 active root-anchor cleanup: `BUILD_PLAYTEST_ISSUES.md` and `MASTER_RELEASE_WORK_PLAN.md` no longer present the missing May 11 Core build artifact as current evidence, and `BROKEN_PREFABS.md` now carries its own generated-snapshot proof boundary
+- R9/R10 root/atlas boundary: root authority is still only `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`; `BROKEN_PREFABS.md` now lives at `Docs/Reports/2026-05-13_BROKEN_PREFABS_STATIC_SNAPSHOT.md`, former root `PROJECT_ATLAS.md` and `TERRAIN_AND_BIOME_REALITY_MAP.md` now live in `Docs/DEPRECATED/Root_Compatibility_Mirrors_2026-05-15/`, and `Docs/PROJECT_ATLAS.md` remains an asmdef graph snapshot only
 - R11 SpaceEngine research cleanup: `Docs/SPACE_ENGINE_RESEARCH/SPACE_ENGINE_MATH_INTEGRATION_2026-05-05.md` now uses the current MapMagic node path and marks its compile/smoke data as historical until the current Unity smoke harness is rerun
 - R12 Omega smoke artifact drift: current `Library/OmegaAutonomySmokeTester.json` reads `FAIL` on `nativeSentinelBalance` (`allocationDelta=2`, `trackedByteDelta=2560`); older saved PASS / OMEGA smoke artifacts remain scoped historical evidence only
 - R13 active documentation manifest boundary: `Docs/Reports/*ACTIVE_DOCUMENTATION_MANIFEST.json` files are dated generated snapshots only; their counts/build states/authority lists are superseded by `Docs/Reports/README.md` and `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`
@@ -57,6 +67,8 @@ Evidence class is STATIC_SOURCE / STATIC_DOC / FILESYSTEM / PACKAGE_LOCK plus R2
 ## Current Evidence Snapshots
 
 - `Reports/2026-05-13_DOC_AUDIT_XRAY.md` - current documentation reality override; demotes missing May 11 build artifacts, root/doc surface drift, source-count drift, stale `Current compile-only evidence` lines, interface-count drift, Archivarius path drift, asmdef count drift, package/player-settings drift, world/scatter wiring proof gaps, root mirror/atlas scope confusion, stale manifest authority, gameplay resource-loop proof gaps, AI/Fauna data-vs-runtime-wiring proof gaps, and Tools/PDA first-hour proof gaps.
+- `Reports/2026-05-15_COMPUTE_AUDIT/README.md` - grouped compute-cost report bundle moved out of repository root; static/report evidence only.
+- `Reports/2026-05-13_BROKEN_PREFABS_STATIC_SNAPSHOT.md` - generated prefab snapshot moved out of repository root; not Unity import, Console, Play Mode, or player-build proof.
 - `PROJECT_STATE_STATIC_XRAY.md` - current durable static audit anchor for runtime-spine, large-file, scatter, Addressables, audio-memory, third-party contamination, gameplay economy/resource acquisition, AI/Fauna data-vs-runtime-wiring, Tools/PDA first-hour route hygiene, test-depth, and verification-gap findings.
 - `Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` - historical May 11 documentation/data boundary; superseded by the May 13 X-Ray for current counters and missing-artifact evidence.
 - `Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` - latest historical machine-readable active documentation manifest snapshot; its counters, authority list, and build-state fields are not current authority after the May 13 X-Ray.
@@ -91,6 +103,8 @@ Evidence class is STATIC_SOURCE / STATIC_DOC / FILESYSTEM / PACKAGE_LOCK plus R2
 
 ## Current Audit Outputs
 
+- `Reports/2026-05-15_COMPUTE_AUDIT/README.md`
+- `Reports/2026-05-13_BROKEN_PREFABS_STATIC_SNAPSHOT.md`
 - `Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`
 - `Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`
 - `Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`
@@ -276,6 +290,8 @@ Canonical-path rule:
 - `DEPRECATED/README.md`
 - `DEPRECATED/2026-04-29_Audit_Bundles/README.md`
 - `DEPRECATED/External_And_Log_Bundles/README.md`
+- `DEPRECATED/External_And_Log_Bundles/Root_Evidence_2026-05-15/README.md`
+- `DEPRECATED/Root_Compatibility_Mirrors_2026-05-15/README.md`
 - `DEPRECATED/External_And_Log_Bundles/Root_Logs_2026-05-04/README.md`
 - `DEPRECATED/External_And_Log_Bundles/Root_Logs_2026-05-05/README.md`
 - `DEPRECATED/Root_Redirect_Stubs_2026-05-01/README.md`
@@ -286,5 +302,7 @@ Archive note:
 
 - stale root-level dated execution docs older than two days were moved to `_Archive/2026-04-29_Two_Day_Stale_Active_Docs/`
 - External idea/log bundles, including the old Deepseek/Gemini/Sargassum prompt folders, raw Codex logs, and former repository-root Unity/Codex logs, now live under `Docs/DEPRECATED/External_And_Log_Bundles/`
+- May 15 root evidence/log/artifact spill now lives under `Docs/DEPRECATED/External_And_Log_Bundles/Root_Evidence_2026-05-15/`
+- Former root compatibility mirrors now live under `Docs/DEPRECATED/Root_Compatibility_Mirrors_2026-05-15/`
 - flat Flora/Scatter redirect stubs no longer live in root `Docs`
 - encoding-damaged geology production notes no longer live in root `Docs`; use `PROCEDURAL_WORLD_VERTICAL_ARCHITECTURE.md` and `ARCHITECTURE/SEISMIC_GEOLOGY_SYSTEM.md`

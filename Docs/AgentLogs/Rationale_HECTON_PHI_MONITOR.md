@@ -344,3 +344,17 @@ Scalability potential: Low/MX350 avoids repeated mesh-name formatting during pro
 Hardware Impact: Runtime hot path cost remains unmeasured. The source change removes 24 geology mesh-name formatting surfaces and gates 12 cave debug-formatting surfaces out of release runtime. Static cache initialization allocates the finite mesh-name set once; repeated geology builds reuse those strings.
 
 Verification: Core build passed after the changes with `0 Warning(s)` and `0 Error(s)`. PowerShell parser check for `Tools/Architecture/HectonPhiAudit.ps1` passed. Full tightened H-Phi static gate passed after parser check with `ManagedFormatSurface=621`, `PrimaryManagedRuntimeRisk=236`, `RuntimeHPhiRisk=0.000633566`, `FindObjectCalls=0`, `UnityUpdateMethods=0`, and all Core graph budgets green. Unity Console, PlayMode, Profiler, and GCMonitor evidence remain pending.
+
+## 2026-05-15 PlayerBuilder Debug Interpolation Gate
+
+Problem: `PlayerBuilder.cs` still built interpolated debug strings in editor/development builds before `LogBuilderDebug(...)` checked `builderDebugLogging`. `[Conditional]` removes those calls in release, but when debugging is disabled inside editor/dev builds the interpolated argument cost still existed at the call site.
+
+Solution: Wrapped every interpolated `LogBuilderDebug(...)` call with `#if UNITY_EDITOR || DEVELOPMENT_BUILD` plus an outer `if (builderDebugLogging)` guard. This prevents disabled-debug diagnostic strings from being built while preserving the existing debug output when the flag is enabled. Constant-string debug calls were left alone because they do not construct formatted strings.
+
+Rejected Alternatives: Removing builder debug logs was rejected because this tool owner still needs development diagnostics. Changing placement/resource/preview gameplay flow was rejected because the defect was diagnostic allocation. Touching public builder UI string contracts was rejected because those strings are consumed by PDA/HUD workflows and need separate owner review.
+
+Scalability potential: Low/MX350 benefits in editor/development playtesting because disabled builder debug no longer allocates diagnostic text during builder reference resolution and module spawn flows. Middle/High/Ultra preserve the same construction gameplay and can keep richer debug visibility when explicitly enabled.
+
+Hardware Impact: Release runtime impact is 0 us because conditional calls are compiled out. Editor/development disabled-debug paths avoid 15 interpolated diagnostic string builds in builder debug flows. Exact microseconds remain unmeasured without Unity Profiler/GCMonitor.
+
+Verification: Core build passed after a transient SourceLink file lock and concurrent UI/SaveManager source drift cleared: `0 Warning(s)`, `0 Error(s)`. Full tightened H-Phi static gate passed with `ManagedFormatSurface=606`, `PrimaryManagedRuntimeRisk=221`, `RuntimeHPhiRisk=0.000634446`, `FindObjectCalls=0`, and `UnityUpdateMethods=0`. Unity Console, PlayMode, Profiler, and GCMonitor evidence remain pending.

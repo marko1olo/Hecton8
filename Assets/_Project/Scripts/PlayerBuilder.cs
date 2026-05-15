@@ -283,12 +283,18 @@ namespace Hecton8.Building
 
         public bool DebugDeployActiveBuildable(Vector3 position, Quaternion rotation, bool consumeCost = true)
         {
-            LogBuilderDebug($"DebugDeploy enter consumeCost={consumeCost} pos={position}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (builderDebugLogging)
+                LogBuilderDebug($"DebugDeploy enter consumeCost={consumeCost} pos={position}");
+#endif
             LogBuilderDebug("DebugDeploy -> ResolveRuntimeReferences");
             ResolveRuntimeReferences();
             LogBuilderDebug("DebugDeploy -> EnsureCatalogSelection");
             EnsureCatalogSelection();
-            LogBuilderDebug($"DebugDeploy -> active={(activeBuildable != null ? activeBuildable.moduleName : "null")}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (builderDebugLogging)
+                LogBuilderDebug($"DebugDeploy -> active={(activeBuildable != null ? activeBuildable.moduleName : "null")}");
+#endif
             if (activeBuildable == null || activeBuildable.finalPrefab == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -334,11 +340,17 @@ namespace Hecton8.Building
 
             if (consumeCost)
             {
-                LogBuilderDebug($"DebugDeploy consuming cost for {activeBuildable.moduleName}.");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (builderDebugLogging)
+                    LogBuilderDebug($"DebugDeploy consuming cost for {activeBuildable.moduleName}.");
+#endif
                 ConsumeResources(activeBuildable);
             }
 
-            LogBuilderDebug($"DebugDeploy spawnResult={(spawned != null ? spawned.name : "null")}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (builderDebugLogging)
+                LogBuilderDebug($"DebugDeploy spawnResult={(spawned != null ? spawned.name : "null")}");
+#endif
             return spawned != null;
         }
 
@@ -1307,29 +1319,47 @@ namespace Hecton8.Building
             IPlayerRuntimeContext playerContext = ResolvePlayerContext();
             if (inventory == null && playerContext != null)
                 inventory = playerContext.Inventory;
-            LogBuilderDebug($"ResolveRuntimeReferences inventory={(inventory != null ? "Y" : "N")}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (builderDebugLogging)
+                LogBuilderDebug($"ResolveRuntimeReferences inventory={(inventory != null ? "Y" : "N")}");
+#endif
 
             if (playerCamera == null && playerContext != null)
                 playerCamera = playerContext.PlayerCamera;
-            LogBuilderDebug($"ResolveRuntimeReferences camera={(playerCamera != null ? playerCamera.name : "null")}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (builderDebugLogging)
+                LogBuilderDebug($"ResolveRuntimeReferences camera={(playerCamera != null ? playerCamera.name : "null")}");
+#endif
 
             if (buildAnchor == null && playerContext != null)
                 buildAnchor = playerContext.HandAnchor;
-            LogBuilderDebug($"ResolveRuntimeReferences buildAnchor={(buildAnchor != null ? buildAnchor.name : "null")}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (builderDebugLogging)
+                LogBuilderDebug($"ResolveRuntimeReferences buildAnchor={(buildAnchor != null ? buildAnchor.name : "null")}");
+#endif
 
             if (hudNotification == null && playerContext != null)
                 hudNotification = playerContext.HudNotification;
-            LogBuilderDebug($"ResolveRuntimeReferences hud={(hudNotification != null ? "Y" : "N")}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (builderDebugLogging)
+                LogBuilderDebug($"ResolveRuntimeReferences hud={(hudNotification != null ? "Y" : "N")}");
+#endif
 
             if (_buildCatalog == null)
                 _buildCatalog = ResolveModuleCatalog();
-            LogBuilderDebug($"ResolveRuntimeReferences catalogCount={(_buildCatalog != null ? _buildCatalog.Count : -1)}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (builderDebugLogging)
+                LogBuilderDebug($"ResolveRuntimeReferences catalogCount={(_buildCatalog != null ? _buildCatalog.Count : -1)}");
+#endif
 
             if (activeBuildable == null)
                 EnsureCatalogSelection();
 
             SyncActiveBuildableIndex();
-            LogBuilderDebug($"ResolveRuntimeReferences end activeIndex={_activeBuildableIndex}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (builderDebugLogging)
+                LogBuilderDebug($"ResolveRuntimeReferences end activeIndex={_activeBuildableIndex}");
+#endif
         }
 
         private void EnsureCatalogSelection()
@@ -1351,7 +1381,10 @@ namespace Hecton8.Building
                 activeBuildable = candidate;
                 CacheActivePlacementRule();
                 _activeBuildableIndex = _buildCatalog.IndexOf(candidate);
-                LogBuilderDebug($"EnsureCatalogSelection picked={candidate.moduleName} index={i}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (builderDebugLogging)
+                    LogBuilderDebug($"EnsureCatalogSelection picked={candidate.moduleName} index={i}");
+#endif
                 return;
             }
 
@@ -1513,14 +1546,20 @@ namespace Hecton8.Building
                 if (!ConstructionRuntimeProxyFactory.TryCreatePlacedProxy(data, placePos, placeRot, out placedModule))
                     return null;
 
-                LogBuilderDebug($"SpawnPlacedModule begin module={data.moduleName} prefab=RUNTIME_PROXY");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (builderDebugLogging)
+                    LogBuilderDebug($"SpawnPlacedModule begin module={data.moduleName} prefab=RUNTIME_PROXY");
+#endif
             }
             else
             {
                 if (pool == null)
                     return null;
 
-                LogBuilderDebug($"SpawnPlacedModule begin module={data.moduleName} prefab={data.finalPrefab.name}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (builderDebugLogging)
+                    LogBuilderDebug($"SpawnPlacedModule begin module={data.moduleName} prefab={data.finalPrefab.name}");
+#endif
                 LogBuilderDebug("SpawnPlacedModule using pool.");
                 placedModule = pool.Spawn(data.finalPrefab, placePos, placeRot);
             }
@@ -1531,11 +1570,17 @@ namespace Hecton8.Building
                 if (manager != null)
                 {
                     manager.RegisterModule(placedModule, data);
-                    LogBuilderDebug($"SpawnPlacedModule registered moduleCount={manager.ModuleCount}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    if (builderDebugLogging)
+                        LogBuilderDebug($"SpawnPlacedModule registered moduleCount={manager.ModuleCount}");
+#endif
                 }
             }
 
-            LogBuilderDebug($"SpawnPlacedModule end result={(placedModule != null ? placedModule.name : "null")}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (builderDebugLogging)
+                LogBuilderDebug($"SpawnPlacedModule end result={(placedModule != null ? placedModule.name : "null")}");
+#endif
             return placedModule;
         }
 

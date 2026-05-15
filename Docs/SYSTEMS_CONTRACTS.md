@@ -1,11 +1,11 @@
 # SYSTEMS_CONTRACTS.md
 ## ENGINE SYSTEMS CONTRACTS
-Date: 2026-05-14
+Date: 2026-05-15
 Status: PENDING VERIFICATION
 Verification: not runtime-measured in this pass
 Scope: Save, Steam, Audio, Telemetry, CI, Accessibility, Endgame
 
-Current-state boundary, 2026-05-14:
+Current-state boundary, 2026-05-15:
 
 - 2026-05-14 DOC_AUDIT override: `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` found the cited May 11 build artifacts absent from the current filesystem. Treat those compile-success references as dated report claims. Current R43 external root `Hecton8*.csproj` no-restore CLI compile evidence is `0 Warning(s)` / `0 Error(s)` after restore assets and referenced `Temp\bin\Debug` DLLs exist; it is not Unity runtime proof.
 - This stable file is the non-asset systems contract authority. Dated reports are evidence/counter snapshots only.
@@ -14,6 +14,7 @@ Current-state boundary, 2026-05-14:
 - Current save implementation authority is `SaveManager.cs` / `SaveBinaryStorage.cs`; versioning and migration requirements below remain contractual.
 - Current audio service authority is `SpatialAudioManager` plus procedural audio owners; older `UnderwaterAudioProcessor.cs` naming below is a target contract unless source confirms a concrete owner.
 - No line in this document is a zero-GC, Steam, CI, accessibility, or Play Mode verification claim without a fresh runtime/log artifact. May 11 report text claimed a completed Core dependency build at `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`, but DOC_AUDIT did not find that summary or raw log. Unity MCP, Unity Console, Play Mode, profiler, GCMonitor, player build, import, scene wiring, frame-time, memory, and visual quality proof remain absent.
+- 2026-05-15 current-disk systems boundary: latest observed `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_190406_CurrentDisk25.log` reports `Hecton8.Core.csproj` CLI compile `EXIT=0`, `Build succeeded`, `0 Warning(s)`, and `0 Error(s)`. Latest observed `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_185213_CurrentDiskBudgetGate10.json` reports H-Phi static budget `EXIT=0`, including `MemoryAlignment=0.506309148`, `RuntimeHPhiRisk=0.000634446`, `DuplicateSignalNames=0`, and `UnityUpdateMethods=0`. These are source/static/CLI system boundaries only; runtime save/load, Steam/cloud, audio mixer, telemetry dump, accessibility UI, CI, player-build, and endgame routes remain `PENDING VERIFICATION`.
 
 2026-05-13 source x-ray:
 

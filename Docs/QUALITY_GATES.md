@@ -1,13 +1,13 @@
 # QUALITY_GATES.md
 ## SECONDARY LAYER: QUALITY CONTROL
-Date: 2026-05-14
+Date: 2026-05-15
 Status: PENDING VERIFICATION
 Verification: PENDING VERIFICATION
 Apply only after production result exists.
 Source of truth for asset specs: PROCEDURAL_ASSET_PIPELINE.md
 Performance tooling: SYSTEMS_CONTRACTS.md source x-ray. `BenchmarkRunner.cs` is a target-contract label and is absent in current first-party source.
 
-2026-05-14 current-state boundary:
+2026-05-15 current-state boundary:
 
 - 2026-05-14 DOC_AUDIT override: `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` found the cited May 11 build artifacts absent from the current filesystem. Do not use those paths as current proof. Current R43 root `Hecton8*.csproj` no-restore CLI compile evidence is `0 Warning(s)` / `0 Error(s)` after restore assets and referenced `Temp\bin\Debug` DLLs exist; this is not Unity runtime proof.
 - This stable file is the acceptance-gate authority. Dated reports are evidence/counter snapshots only.
@@ -17,6 +17,9 @@ Performance tooling: SYSTEMS_CONTRACTS.md source x-ray. `BenchmarkRunner.cs` is 
 - May 11 report text claimed historical Core dependency build evidence at `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`, but DOC_AUDIT did not find that summary or raw log. This is not current artifact-backed proof in the workspace.
 - Unity MCP, Unity Console, Play Mode, profiler, GCMonitor, scene/prefab gameplay, player build, import, frame-time, memory, and visual quality proof remain absent.
 - 2026-05-14 DOC_AUDIT R43/R45 update: current external root-project CLI compile surface is clean under single-project no-restore checks, but Quality Gates remain `PENDING VERIFICATION` because Unity import/Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene/prefab, and visual proof are still absent.
+- 2026-05-15 DOC_AUDIT continuation: current `Hecton8.Core.csproj` CLI compile artifact `Docs/AgentLogs/Build_DOC_AUDIT_CONTINUATION_20260515_183949_Hecton8Core.log` exits `0` with `Build succeeded`, `0 Warning(s)`, and `0 Error(s)`. Current H-Phi full static budget artifact `Docs/AgentLogs/HPhi_DOC_AUDIT_CONTINUATION_20260515_184218_CurrentDiskBudgetGate.json` exits `0` with `MemoryAlignment=0.506309148`, `DataSovereignty=0.021306032`, `HPhiStaticRisk=0.000634446`, `DuplicateSignalNames=0`, `UnityUpdateMethods=0`, and Core graph debt still at `25/10/14/8/6`.
+- Latest observed same-day current-disk artifacts supersede that DOC_AUDIT slice as the top evidence: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_190406_CurrentDisk25.log` exits `0` with `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, and `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_185213_CurrentDiskBudgetGate10.json` exits `0` with `RuntimeHPhiRisk=0.000634446`, `MemoryAlignment=0.506309148`, `GlobalRegistrySurface=5075/5075`, `ManagedFormatSurface=606/606`, `PrimaryManagedRuntimeRisk=221/221`, `DuplicateSignalNames=0`, `UnityUpdateMethods=0`, and Core graph debt `25/10/14/8/6`.
+- These May 15 artifacts satisfy only the CLI/static quality slice. They do not satisfy Unity import, Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene/prefab, save/load, or visual acceptance gates.
 
 2026-05-12 permanent build gate protocol:
 
