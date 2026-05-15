@@ -71,6 +71,136 @@ Current architecture authority addenda:
 
 The project is not an 80-domain system. `Docs/Actual Domains of Project.txt` defines ids `1..85`.
 
+### ASCII Domain Backbone
+
+This is the visual domain map for the encyclopedia pass. It follows the authoritative `85` domains. The older "80 domains" wording is stale.
+
+```text
+HECTON-8 DOMAIN BACKBONE
+
++-- ECHELON 1: CORE AND MEMORY INFRASTRUCTURE (01-10)
+|   01 BIOS Bootstrapper
+|   02 Global EventBus / Signal Corridor
+|   03 Data Archivist / Save Codec
+|   04 Data Monolith / Static DB
+|   05 Origin Shift / AUP Manager
+|   06 Native Arena Allocator
+|   07 Crash Telemetry / Black Box
+|   08 Scalability Dictator / Hardware
+|   09 Platform Abstraction Layer
+|   10 Tick Dispatcher / Time Dilation
+|
++-- ECHELON 2: WORLD GENERATION AND TERRAIN (11-20)
+|   11 MapMagic Runtime Bridge
+|   12 Voxel SDF Pipeline
+|   13 Marching Cubes Mesher
+|   14 Voxel Carving / Deformation
+|   15 BRG Scatter Director
+|   16 Procedural Wreckage Assembler
+|   17 Geological Node Spawner
+|   18 Biome Transition Manager
+|   19 Abyssal Flow Fields
+|   20 Thermal Vents and Geysers
+|
++-- ECHELON 3: FLORA, FAUNA, AND BIOTA (21-30)
+|   21 Ecosystem Director
+|   22 Fauna Spatial Hash Grid
+|   23 Swarm Compute Director
+|   24 Predator Cognition
+|   25 Predator Steering and Lunge
+|   26 A* Funnel Smoothing
+|   27 Leviathan Procedural IK
+|   28 Flora Procedural Sway
+|   29 Bioluminescence Sync
+|   30 Fauna Genetics and Mutation
+|
++-- ECHELON 4: PLAYER, KINEMATICS, AND TOOLS (31-40)
+|   31 Kinematic Character Controller
+|   32 Hydrodynamic Drag and Buoyancy
+|   33 Contextual Hand IK
+|   34 Tether and Cable Physics
+|   35 Equipment Runtime
+|   36 Scavenging and Harvesting
+|   37 SOA Inventory System
+|   38 Crafting Fast-Fail Validator
+|   39 VR Somatic Comfort
+|   40 VR Interaction Bridge
+|
++-- ECHELON 5: COMBAT AND SURVIVAL PHYSIOLOGY (41-50)
+|   41 Combat Damage Router
+|   42 Armor Penetration LUT
+|   43 Status Effects Engine
+|   44 Player Stress and Fear System
+|   45 Decompression Sickness
+|   46 Hypoxia and Gas Toxicity
+|   47 Crush Depth Integrity
+|   48 Diet and Metabolism
+|   49 Radiation Scrubber
+|   50 Screen-Space Wounds and Decals
+|
++-- ECHELON 6: HABITAT AND VEHICLES (51-60)
+|   51 Grid Snapping and Ghost Preview
+|   52 Structural Integrity Math
+|   53 Fluid Incursion
+|   54 Power Grid
+|   55 Pipe and Sump Pump Logistics
+|   56 Module Deconstruction
+|   57 Submarine OS
+|   58 Submarine Navigation
+|   59 Drone Fleet Commander
+|   60 Scooter Kinematics
+|
++-- ECHELON 7: ATMOSPHERE AND CELESTIAL (61-68)
+|   61 Celestial Orbit Mechanics
+|   62 Tide and Seismic Generator
+|   63 Weather and Wind Director
+|   64 Gas Dynamics
+|   65 Thermodynamics
+|   66 Marine Snow and Silt Compute
+|   67 Volumetric Fog and Light Shafts
+|   68 Day/Night GI Relay
+|
++-- ECHELON 8: PRESENTATION AND UX (69-78)
+|   69 Zero-GC Subtitles
+|   70 Diegetic Terminals
+|   71 Visor AR
+|   72 PDA Encyclopedia Streaming
+|   73 AUP Narrative Triggers
+|   74 Cartography and Fog of War
+|   75 Frequency Tuning
+|   76 DSP Acoustic Radar
+|   77 Granular Synthesis
+|   78 Vocal Warning System
+|
++-- ECHELON 9: META, POLISH, AND INTEGRATION (79-85)
+    79 Haptic Feedback Director
+    80 Camera Juice and Shake
+    81 Physics Culling Overseer
+    82 Integrator
+    83 Chronicler
+    84 QA Watchdog Bot
+    85 Tech Researcher
+
+FLOW OF AUTHORITY
+
+AGENTS.md
+  -> .agents-skills/*
+  -> stable Docs/*
+  -> current source
+  -> fresh verification artifacts
+  -> dated reports
+
+RUNTIME DATA FLOW
+
+Bootstrap
+  -> Registry service slots
+  -> Dependency injection
+  -> Dispatcher phases
+  -> DataVault buffers
+  -> Signal lanes
+  -> Visual/audio/UI sync
+```
+
 | Id | Domain | Current Boundary |
 |---:|---|---|
 | 1 | BIOS Bootstrapper | boot orchestration |
