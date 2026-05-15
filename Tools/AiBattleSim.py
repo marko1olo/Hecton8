@@ -21,12 +21,32 @@ from typing import Dict, Iterable, List, Mapping, MutableMapping, Sequence, Tupl
 DEFAULT_SEED = 0x48384C5649425241
 DEFAULT_ENCOUNTERS = 10_000
 SIMULATOR_SCHEMA_VERSION = 2
+EXPECTED_AGENT_ID = "AI_BEHAVIOR_BIOMIMETIC_DESIGNER"
+EXPECTED_ROLE = "AI_PROGRAMMER"
+EXPECTED_DOMAIN = "ECHELON_3_FLORA_FAUNA_BIOTA_PREDATOR_COGNITION"
+EXPECTED_EVIDENCE_CLASS = "CLI_PYTHON_BATTLE_SIMULATION"
+EXPECTED_BRAIN_EVIDENCE_CLASS = "AUTHORED_DECISION_TABLE_PLUS_CLI_PYTHON_SIMULATION"
+EXPECTED_RUNTIME_UNITY_PROOF = "PENDING VERIFICATION"
+EXPECTED_SOURCE_PROMPT_PATH = "Docs/Tasks/CURRENT_BATCH.md"
+EXPECTED_PROMPT_TASK_COUNT = 7
+EXPECTED_HEADER_TASK_CLAIM = 15
+EXPECTED_BRAIN_PATH = "Data/AI/Leviathan_Brain.json"
+EXPECTED_REPORT_PATH = "Tools/AiBattleSim_Report.json"
 MAX_SECONDS = 180
 TIME_STEP_SECONDS = 2
 EXPECTED_STATUS = "INSTINCTS DEFINED"
 EXPECTED_CONTEXT_COUNT = 10
 EXPECTED_UTILITY_SCORE_COUNT = 50
 EXPECTED_BEHAVIORS = ("Circle", "Hide", "Breach", "FalseCharge", "RealAttack")
+EXPECTED_FEATURES = (
+    "distanceSq01",
+    "sound01",
+    "light01",
+    "movement01",
+    "lineOfSight01",
+    "packSynergy01",
+    "attackCooldown01",
+)
 EXPECTED_MATH_LOD_TIERS = ("low", "middle", "high", "ultra")
 EXPECTED_PACK_RULE_COUNT = 4
 EXPECTED_BLACK_BOX_FRAMES = 300
@@ -271,6 +291,29 @@ def validate_brain(brain: Mapping[str, object], known_buffers: set[str] | None =
         errors.append("schemaVersion != 1")
     if brain.get("status") != EXPECTED_STATUS:
         errors.append(f"status != {EXPECTED_STATUS}")
+    if brain.get("generatedBy") != EXPECTED_AGENT_ID:
+        errors.append(f"generatedBy != {EXPECTED_AGENT_ID}")
+    if brain.get("role") != EXPECTED_ROLE:
+        errors.append(f"role != {EXPECTED_ROLE}")
+    if brain.get("domain") != EXPECTED_DOMAIN:
+        errors.append("domain drift")
+    if brain.get("evidenceClass") != EXPECTED_BRAIN_EVIDENCE_CLASS:
+        errors.append("brain evidenceClass drift")
+    if brain.get("runtimeUnityProof") != EXPECTED_RUNTIME_UNITY_PROOF:
+        errors.append("runtimeUnityProof drift")
+
+    source_prompt = brain.get("sourcePrompt")
+    if isinstance(source_prompt, dict):
+        if source_prompt.get("path") != EXPECTED_SOURCE_PROMPT_PATH:
+            errors.append("sourcePrompt.path drift")
+        if source_prompt.get("promptId") != EXPECTED_AGENT_ID:
+            errors.append("sourcePrompt.promptId drift")
+        if source_prompt.get("numberedTaskCount") != EXPECTED_PROMPT_TASK_COUNT:
+            errors.append(f"sourcePrompt.numberedTaskCount != {EXPECTED_PROMPT_TASK_COUNT}")
+        if source_prompt.get("headerTaskClaim") != EXPECTED_HEADER_TASK_CLAIM:
+            errors.append(f"sourcePrompt.headerTaskClaim != {EXPECTED_HEADER_TASK_CLAIM}")
+    else:
+        errors.append("sourcePrompt missing")
 
     behavior_order = brain.get("behaviorOrder")
     if not isinstance(behavior_order, list) or tuple(behavior_order) != EXPECTED_BEHAVIORS:
@@ -281,6 +324,8 @@ def validate_brain(brain: Mapping[str, object], known_buffers: set[str] | None =
     if not isinstance(feed_rows, list) or not feed_rows:
         errors.append("globalDataVaultFeeds missing")
     else:
+        if len(feed_rows) != len(EXPECTED_FEATURES):
+            errors.append(f"globalDataVaultFeeds count != {len(EXPECTED_FEATURES)}")
         for index, row in enumerate(feed_rows):
             if not isinstance(row, dict):
                 errors.append(f"globalDataVaultFeeds[{index}] is not an object")
@@ -299,6 +344,13 @@ def validate_brain(brain: Mapping[str, object], known_buffers: set[str] | None =
             for buffer_id in buffer_ids:
                 if buffer_id not in known_buffers:
                     errors.append(f"unknown GlobalDataVault BufferID {buffer_id}")
+        if feature_names != set(EXPECTED_FEATURES):
+            missing_features = [feature for feature in EXPECTED_FEATURES if feature not in feature_names]
+            extra_features = sorted(feature for feature in feature_names if feature not in EXPECTED_FEATURES)
+            if missing_features:
+                errors.append(f"missing GlobalDataVault features {','.join(missing_features)}")
+            if extra_features:
+                errors.append(f"extra GlobalDataVault features {','.join(extra_features)}")
 
     contexts = brain.get("contexts")
     context_names = set()
@@ -438,7 +490,7 @@ def validate_brain(brain: Mapping[str, object], known_buffers: set[str] | None =
             errors.append("selfAudit.subgroupKillRateMax invalid")
         if self_audit.get("simulationPath") != "Tools/AiBattleSim.py":
             errors.append("selfAudit.simulationPath invalid")
-        if self_audit.get("reportPath") != "Tools/AiBattleSim_Report.json":
+        if self_audit.get("reportPath") != EXPECTED_REPORT_PATH:
             errors.append("selfAudit.reportPath invalid")
     else:
         errors.append("selfAudit missing")
@@ -942,10 +994,10 @@ def build_report(brain: Mapping[str, object], validation: Mapping[str, object], 
         "schemaVersion": 1,
         "simulatorSchemaVersion": SIMULATOR_SCHEMA_VERSION,
         "status": status,
-        "generatedBy": "AI_BEHAVIOR_BIOMIMETIC_DESIGNER",
-        "evidenceClass": "CLI_PYTHON_BATTLE_SIMULATION",
-        "runtimeUnityProof": "PENDING VERIFICATION",
-        "brainPath": "Data/AI/Leviathan_Brain.json",
+        "generatedBy": EXPECTED_AGENT_ID,
+        "evidenceClass": EXPECTED_EVIDENCE_CLASS,
+        "runtimeUnityProof": EXPECTED_RUNTIME_UNITY_PROOF,
+        "brainPath": EXPECTED_BRAIN_PATH,
         "brainDigest": canonical_digest(brain),
         "simulationDigest": simulation_digest(results),
         "seed": seed,
@@ -1019,6 +1071,14 @@ def check_artifacts(brain_path: Path, report_path: Path, expected_encounters: in
 
     if report.get("status") != EXPECTED_STATUS:
         errors.append(f"report.status != {EXPECTED_STATUS}")
+    if report.get("generatedBy") != EXPECTED_AGENT_ID:
+        errors.append(f"report.generatedBy != {EXPECTED_AGENT_ID}")
+    if report.get("evidenceClass") != EXPECTED_EVIDENCE_CLASS:
+        errors.append("report.evidenceClass drift")
+    if report.get("runtimeUnityProof") != EXPECTED_RUNTIME_UNITY_PROOF:
+        errors.append("report.runtimeUnityProof drift")
+    if report.get("brainPath") != EXPECTED_BRAIN_PATH:
+        errors.append("report.brainPath drift")
     if report.get("simulatorSchemaVersion") != SIMULATOR_SCHEMA_VERSION:
         errors.append(f"simulatorSchemaVersion != {SIMULATOR_SCHEMA_VERSION}")
     if report.get("brainDigest") != expected_brain_digest:

@@ -7,7 +7,7 @@
     "initialAggressionScalar": 1.0,
     "passes": 1
   },
-  "elapsedSeconds": 207.297,
+  "elapsedSeconds": 116.01,
   "evidenceClass": "CLI_PYTHON_BATTLE_SIMULATION",
   "frustrationAudit": {
     "allKillsUnder30": false,

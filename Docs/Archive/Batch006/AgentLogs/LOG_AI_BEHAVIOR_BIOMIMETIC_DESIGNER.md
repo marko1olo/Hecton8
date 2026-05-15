@@ -56,6 +56,73 @@ Status:
 - INSTINCTS DEFINED for data and Python evidence.
 - Unity runtime verification remains PENDING VERIFICATION.
 
+## 2026-05-15 - Identity and Source Binding
+
+What was wrong:
+- The brain/report identity fields existed, but they were not enforced by the checker. A copied artifact from the wrong prompt or wrong domain could pass technical validation.
+
+What was done:
+- Added expected agent id, role, domain, evidence class, runtime proof, source prompt path, prompt id, numbered task count, and header task claim constants.
+- Added report identity checks for `generatedBy`, `evidenceClass`, `runtimeUnityProof`, and `brainPath`.
+- Added regression tests for wrong prompt id, wrong task count, wrong domain, and report identity drift.
+
+Cinematic cheats used:
+- No new simulation truth. This is batch-protocol evidence binding.
+
+Exact microseconds saved:
+- Unity runtime saving remains 0 us measured because no Unity runtime path changed.
+- Integration risk reduced: cross-agent artifact reuse now fails in the CLI validator.
+
+Evidence:
+- `python -B -c "import ast, pathlib; ..."`
+- Result: syntax parse passed.
+- `python -B -m unittest Tools.test_ai_battle_sim`
+- Result: 29 tests passed in 10.740 s.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json`
+- Result: `INSTINCTS DEFINED`, kills 5224, killRate 0.5224, under30KillRate 0.0.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts`
+- Result: `ARTIFACT_CHECK_PASSED`.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts --verify-rerun`
+- Result: `ARTIFACT_CHECK_PASSED`, `rerunVerified=True`.
+
+Status:
+- INSTINCTS DEFINED for data and Python evidence.
+- Unity runtime verification remains PENDING VERIFICATION.
+
+## 2026-05-15 - DataVault Lane Contract Hardening
+
+What was wrong:
+- The checker validated BufferID names, but it did not require the exact decision feature-lane set. A missing, extra, or duplicate feed row could change the importer contract while still passing if utility rows did not reference the bad lane.
+
+What was done:
+- Added `EXPECTED_FEATURES` to `Tools/AiBattleSim.py`.
+- Enforced exact seven lanes: `distanceSq01`, `sound01`, `light01`, `movement01`, `lineOfSight01`, `packSynergy01`, `attackCooldown01`.
+- Added tests for missing, extra, and duplicate feature lanes.
+
+Cinematic cheats used:
+- No simulation truth added. This preserves the GlobalDataVault proxy-data contract and avoids scene-object sensing.
+
+Exact microseconds saved:
+- Unity runtime saving remains 0 us measured because no Unity runtime path changed.
+- Future importer savings are preserved by keeping a stable, prepackable seven-lane input set.
+
+Evidence:
+- `python -B -c "import ast, pathlib; ..."`
+- Result: syntax parse passed.
+- `python -B -m unittest Tools.test_ai_battle_sim`
+- Result: 25 tests passed in 10.738 s.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json`
+- Result: `INSTINCTS DEFINED`, kills 5224, killRate 0.5224, under30KillRate 0.0.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts`
+- Result: `ARTIFACT_CHECK_PASSED`.
+- `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts --verify-rerun`
+- Result: `ARTIFACT_CHECK_PASSED`, `rerunVerified=True`.
+- Contract result: `globalDataVaultFeedCount=7`.
+
+Status:
+- INSTINCTS DEFINED for data and Python evidence.
+- Unity runtime verification remains PENDING VERIFICATION.
+
 ## 2026-05-15 - Fail-Closed Validator Hardening
 
 What was wrong:

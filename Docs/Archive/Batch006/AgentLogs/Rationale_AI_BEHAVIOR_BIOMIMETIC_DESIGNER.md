@@ -127,3 +127,27 @@ Solution: Regenerated `Tools/AiBattleSim_Report.json`, reran artifact validation
 Rejected Alternatives: Reusing the old report was rejected because digest/schema evidence must track the current checker.
 Scalability potential: More malformed-input tests can use the existing temp-brain/temp-report helpers without writing repo-local test debris.
 Hardware Impact: No runtime impact. Strict rerun remains offline and passed with unchanged brain/simulation digests.
+
+Problem: The validator proved referenced GlobalDataVault buffers existed, but it did not enforce the exact feature-lane set required by the authored brain. A missing unused lane, duplicated lane, or extra non-contract lane could drift the importer contract.
+Solution: Added `EXPECTED_FEATURES` to `Tools/AiBattleSim.py` and required the exact seven decision lanes: `distanceSq01`, `sound01`, `light01`, `movement01`, `lineOfSight01`, `packSynergy01`, and `attackCooldown01`. Missing, extra, and duplicate features now fail validation.
+Rejected Alternatives: Allowing open-ended feed rows was rejected because this is a handoff contract, not a loose notes file.
+Scalability potential: Future feature lanes must be added deliberately to the expected set, tests, and report evidence instead of drifting into the JSON silently.
+Hardware Impact: Offline validation only. Runtime impact remains 0 us; future importer gets a stable lane set for prepacked NativeArray ingestion.
+
+Problem: DataVault lane hardening changed validator semantics and needed fresh evidence.
+Solution: Regenerated `Tools/AiBattleSim_Report.json`, reran artifact validation, reran strict 10,000 encounter verification, and expanded the unit suite to 25 tests. Current report records `globalDataVaultFeedCount=7`.
+Rejected Alternatives: Reusing the old evidence was rejected because task 7 is explicitly about DataVault-backed decisions.
+Scalability potential: CI can reject feature-lane drift before runtime import.
+Hardware Impact: No runtime impact. Strict rerun remains offline and passed with unchanged brain/simulation digests.
+
+Problem: The brain and report had identity/source metadata, but the checker did not enforce it. A copied artifact from another agent, wrong domain, wrong task count, or wrong report identity could pass if the technical rows still looked valid.
+Solution: Added identity/source validation to `Tools/AiBattleSim.py`: expected agent id, role, domain, brain evidence class, runtime proof status, prompt path, prompt id, numbered task count 7, header task claim 15, report agent id, report evidence class, runtime proof status, and brain path. Added regression tests for wrong prompt id, wrong task count, wrong domain, and report identity drift.
+Rejected Alternatives: Treating identity metadata as decorative was rejected. Batch protocol requires exact prompt extraction and domain binding.
+Scalability potential: CI can now reject cross-agent artifact reuse before data reaches an importer.
+Hardware Impact: Offline validation only. Runtime impact remains 0 us.
+
+Problem: Identity/source binding changed validator semantics and required fresh evidence.
+Solution: Regenerated `Tools/AiBattleSim_Report.json`, reran artifact validation, reran strict 10,000 encounter verification, and expanded the unit suite to 29 tests.
+Rejected Alternatives: Reusing old evidence was rejected because source identity is part of the batch contract.
+Scalability potential: Future source-prompt changes must be updated deliberately in constants and tests.
+Hardware Impact: No runtime impact. Strict rerun remains offline and passed with unchanged brain/simulation digests.

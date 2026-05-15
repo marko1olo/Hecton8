@@ -119,12 +119,58 @@ class AiBattleSimTests(unittest.TestCase):
         self.assertEqual(validation["status"], "BRAIN_VALIDATION_FAILED")
         self.assertTrue(any("unknown GlobalDataVault BufferID" in error for error in validation["errors"]))
 
+    def test_missing_required_vault_feature_is_rejected(self) -> None:
+        brain = json.loads(BRAIN_PATH.read_text(encoding="utf-8"))
+        brain["globalDataVaultFeeds"] = [
+            row for row in brain["globalDataVaultFeeds"] if row["feature"] != "attackCooldown01"
+        ]
+        validation = self.sim.validate_brain(brain)
+        self.assertEqual(validation["status"], "BRAIN_VALIDATION_FAILED")
+        self.assertTrue(any("missing GlobalDataVault features" in error for error in validation["errors"]))
+
+    def test_extra_vault_feature_is_rejected(self) -> None:
+        brain = json.loads(BRAIN_PATH.read_text(encoding="utf-8"))
+        extra = dict(brain["globalDataVaultFeeds"][0])
+        extra["feature"] = "CameraDistance"
+        brain["globalDataVaultFeeds"].append(extra)
+        validation = self.sim.validate_brain(brain)
+        self.assertEqual(validation["status"], "BRAIN_VALIDATION_FAILED")
+        self.assertTrue(any("extra GlobalDataVault features" in error for error in validation["errors"]))
+
+    def test_duplicate_vault_feature_is_rejected(self) -> None:
+        brain = json.loads(BRAIN_PATH.read_text(encoding="utf-8"))
+        brain["globalDataVaultFeeds"][1]["feature"] = brain["globalDataVaultFeeds"][0]["feature"]
+        validation = self.sim.validate_brain(brain)
+        self.assertEqual(validation["status"], "BRAIN_VALIDATION_FAILED")
+        self.assertTrue(any("duplicate GlobalDataVault feature" in error for error in validation["errors"]))
+
     def test_missing_behavior_order_is_rejected_without_throwing(self) -> None:
         brain = json.loads(BRAIN_PATH.read_text(encoding="utf-8"))
         del brain["behaviorOrder"]
         validation = self.sim.validate_brain(brain)
         self.assertEqual(validation["status"], "BRAIN_VALIDATION_FAILED")
         self.assertTrue(any("behaviorOrder drift" in error for error in validation["errors"]))
+
+    def test_wrong_source_prompt_id_is_rejected(self) -> None:
+        brain = json.loads(BRAIN_PATH.read_text(encoding="utf-8"))
+        brain["sourcePrompt"]["promptId"] = "OTHER_AGENT"
+        validation = self.sim.validate_brain(brain)
+        self.assertEqual(validation["status"], "BRAIN_VALIDATION_FAILED")
+        self.assertTrue(any("sourcePrompt.promptId" in error for error in validation["errors"]))
+
+    def test_wrong_source_task_count_is_rejected(self) -> None:
+        brain = json.loads(BRAIN_PATH.read_text(encoding="utf-8"))
+        brain["sourcePrompt"]["numberedTaskCount"] = 15
+        validation = self.sim.validate_brain(brain)
+        self.assertEqual(validation["status"], "BRAIN_VALIDATION_FAILED")
+        self.assertTrue(any("numberedTaskCount" in error for error in validation["errors"]))
+
+    def test_wrong_brain_domain_is_rejected(self) -> None:
+        brain = json.loads(BRAIN_PATH.read_text(encoding="utf-8"))
+        brain["domain"] = "OUT_OF_DOMAIN"
+        validation = self.sim.validate_brain(brain)
+        self.assertEqual(validation["status"], "BRAIN_VALIDATION_FAILED")
+        self.assertTrue(any("domain drift" in error for error in validation["errors"]))
 
     def test_missing_score_row_is_rejected(self) -> None:
         brain = json.loads(BRAIN_PATH.read_text(encoding="utf-8"))
@@ -227,6 +273,14 @@ class AiBattleSimTests(unittest.TestCase):
         check = self.sim.check_artifacts(BRAIN_PATH, report_path, 10_000)
         self.assertEqual(check["status"], "ARTIFACT_CHECK_FAILED")
         self.assertTrue(any("behaviorCounts mismatch" in error for error in check["errors"]))
+
+    def test_report_identity_drift_is_rejected(self) -> None:
+        report = json.loads(REPORT_PATH.read_text(encoding="utf-8"))
+        report["generatedBy"] = "OTHER_AGENT"
+        report_path = self.write_temp_report("report_identity", report)
+        check = self.sim.check_artifacts(BRAIN_PATH, report_path, 10_000)
+        self.assertEqual(check["status"], "ARTIFACT_CHECK_FAILED")
+        self.assertTrue(any("report.generatedBy" in error for error in check["errors"]))
 
     def test_artifact_checker_invalid_self_audit_fails_closed(self) -> None:
         brain = json.loads(BRAIN_PATH.read_text(encoding="utf-8"))

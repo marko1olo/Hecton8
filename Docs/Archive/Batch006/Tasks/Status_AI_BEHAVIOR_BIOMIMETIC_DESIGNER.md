@@ -43,13 +43,15 @@ Rule quote: "All AI decisions are based on data available in the GlobalDataVault
 - [x] Loop 8 - Matrix completeness hardening: validator now rejects duplicate contexts and missing/duplicated context-behavior utility pairs
 - [x] Loop 9 - Full contract hardening: validator now rejects malformed behavior parameters, cadence hysteresis, self-audit settings, Math LOD tiers, pack dot rules, and black-box telemetry
 - [x] Loop 10 - Fail-closed hardening: malformed `behaviorOrder`, invalid `selfAudit`, and report behavior-count drift now reject cleanly without validator crashes
+- [x] Loop 11 - DataVault lane hardening: validator now enforces the exact seven required decision feature lanes and rejects missing/extra/duplicate feed rows
+- [x] Loop 12 - Identity/source binding: validator now rejects wrong prompt id, task count, domain, report agent id, evidence class, runtime-proof status, and brain path
 
 ## Evidence
 - `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json` -> regenerated schema v2 report with `brainDigest` and `simulationDigest`; status `INSTINCTS DEFINED`, kills 5224, killRate 0.5224, under30KillRate 0.0.
 - `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts` -> `ARTIFACT_CHECK_PASSED`; hardened checker confirms live BufferID source, matching report validation, killRate 0.5224 inside target, under30KillRate 0.0, subgroup caps intact.
 - `python -B Tools\AiBattleSim.py --encounters 10000 --report Tools\AiBattleSim_Report.json --check-artifacts --verify-rerun` -> `ARTIFACT_CHECK_PASSED`, `rerunVerified=True`; digest rerun matched `97a10330bb86ded1a29b82aa896ac9acbe46d768fe0c403360c80e08bca50867`.
 - `python -B -c "import ast, pathlib; ..."` -> syntax parse passed for `Tools/AiBattleSim.py` and `Tools/test_ai_battle_sim.py` without writing bytecode.
-- `python -B -m unittest Tools.test_ai_battle_sim` -> 22 tests passed in 15.108 s after fail-closed hardening.
+- `python -B -m unittest Tools.test_ai_battle_sim` -> 29 tests passed in 10.740 s after identity/source binding.
 - `.sln/.csproj` scan -> none found in workspace, so `dotnet build` was not applicable for this data/Python task.
 - Polish mandate extraction -> `<POLISH_MANDATE>` tag not found in `Docs/Tasks/CURRENT_BATCH.md`.
 - Anti-bloat scan -> only expected hits: `AudioSource` appears in a JSON note rejecting AudioSource queries; `math.sqrt` appears only inside the Python `rsqrt()` helper for offline dot normalization.
@@ -58,4 +60,6 @@ Rule quote: "All AI decisions are based on data available in the GlobalDataVault
 - Matrix evidence -> report validation records `contextCount=10` and `utilityPairCount=50`.
 - Contract evidence -> report validation records `behaviorParameterCount=5`, `mathLodTierCount=4`, `packRuleCount=4`, `blackBoxCapacityFrames=300`.
 - Fail-closed evidence -> tests cover missing `behaviorOrder`, invalid `selfAudit.targetKillRateMin`, and report `behaviorCounts` drift.
+- DataVault lane evidence -> report validation records `globalDataVaultFeedCount=7`; tests cover missing, extra, and duplicate feature lanes.
+- Identity evidence -> report identity is `AI_BEHAVIOR_BIOMIMETIC_DESIGNER`, `CLI_PYTHON_BATTLE_SIMULATION`, `PENDING VERIFICATION`, `Data/AI/Leviathan_Brain.json`; tests reject wrong source prompt id, task count, domain, and report identity.
 - Temp hygiene -> updated tests to use system temp directories; no `Temp/AiBattleSimTests` or `Temp/AiBattleSimVerify.*` artifact remains in the repo.
