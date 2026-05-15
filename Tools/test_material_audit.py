@@ -204,6 +204,41 @@ class MaterialAuditTests(unittest.TestCase):
             self.assertEqual(0, report["material_summary"]["materials_with_unresolved_texture_refs"])
             self.assertEqual(0, report["material_summary"]["unresolved_texture_ref_count"])
 
+    def test_non_surface_materials_do_not_create_surface_migration_debt(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            render_texture = root / "RT_HUD_Display.renderTexture"
+            render_texture.write_text("%YAML 1.1\n", encoding="utf-8")
+            render_texture.with_name(render_texture.name + ".meta").write_text(
+                "\n".join([
+                    "fileFormatVersion: 2",
+                    "guid: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                ]),
+                encoding="utf-8",
+            )
+
+            material = root / "MAT_Diegetic_HUD_Projection.mat"
+            material.write_text(
+                "\n".join(
+                    [
+                        "%YAML 1.1",
+                        "m_SavedProperties:",
+                        "  m_TexEnvs:",
+                        "  - _BaseMap:",
+                        "      m_Texture: {fileID: 8400000, guid: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, type: 2}",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            report = audit.run_audit(root, 16, False)
+            summary = report["material_summary"]
+
+            self.assertEqual(1, summary["material_count"])
+            self.assertEqual(0, summary["channel_packing_candidate_count"])
+            self.assertEqual(0, summary["detail_map_missing_count"])
+            self.assertEqual(0, summary["materials_with_issues"])
+
     def test_cli_fail_flags_return_expected_exit_codes(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

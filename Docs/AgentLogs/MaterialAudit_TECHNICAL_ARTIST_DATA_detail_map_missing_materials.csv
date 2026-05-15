@@ -1,8 +1,5 @@
 path,base_maps,normal_maps
-Art/Materials/MAT_Diegetic_HUD_V4_Projection.mat,_BaseMap:Art/TEXTURES/RT_HUD_Display.renderTexture;_MainTex:Art/TEXTURES/RT_HUD_Display.renderTexture,
-Art/Materials/Mat_GasGiant.mat,_MainTex:Art/TEXTURES/clouds0_diff.png,
 Art/Materials/Meshy_AI_Alien_barnacles_clust_0301230506_texture.mat,_BaseMap:Art/TEXTURES/Meshy_AI_Alien_barnacles_clust_0301230506_texture.png;_MainTex:Art/TEXTURES/Meshy_AI_Alien_barnacles_clust_0301230506_texture.png,
-Art/Materials/terrain.mat,_BaseMap:47f0a231c050423488e0ff6f7d66f813;_MainTex:47f0a231c050423488e0ff6f7d66f813,
 Art/Materials/Celestial/MAT_CelestialMoon_Ione.mat,_BaseMap:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg;_MainTex:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg,
 Art/Materials/Celestial/MAT_CelestialMoon_Khepri.mat,_BaseMap:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg;_MainTex:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg,
 Art/Materials/Celestial/MAT_CelestialMoon_Nammu.mat,_BaseMap:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg;_MainTex:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg,

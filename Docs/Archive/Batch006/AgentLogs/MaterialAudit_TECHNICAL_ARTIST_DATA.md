@@ -24,11 +24,11 @@ Include third-party: `False`
 | Materials with legacy mask | 9 |
 | Materials with packed mask | 9 |
 | Materials with detail | 0 |
-| Materials missing detail maps | 31 |
-| Materials with issues | 37 |
+| Materials missing detail maps | 28 |
+| Materials with issues | 35 |
 | Materials with unresolved texture refs | 9 |
 | Unresolved texture refs | 27 |
-| Channel packing candidates | 31 |
+| Channel packing candidates | 28 |
 
 ## Gate Exit Codes
 
@@ -73,9 +73,9 @@ Include third-party: `False`
 | --- | --- |
 | Standard MiB/material | 6.65 |
 | Optimized MiB/material | 2.99 |
-| Candidate standard MiB | 206.15 |
-| Candidate optimized MiB | 92.69 |
-| Candidate saved MiB | 113.46 |
+| Candidate standard MiB | 186.2 |
+| Candidate optimized MiB | 83.72 |
+| Candidate saved MiB | 102.48 |
 | Candidate reduction percent | 55.0 |
 
 ## GOD_MODE Texture Overrides
@@ -123,9 +123,9 @@ Include third-party: `False`
 | Issue | Count |
 | --- | --- |
 | LEGACY_MASK_SLOT_REQUIRES_CHANNEL_REVIEW | 9 |
-| NO_DETAIL_MAP_SLOT | 31 |
-| NO_PACKED_ORM_OR_MASK_SLOT | 22 |
-| NO_PROMPT_ORM_SLOT | 31 |
+| NO_DETAIL_MAP_SLOT | 28 |
+| NO_PACKED_ORM_OR_MASK_SLOT | 19 |
+| NO_PROMPT_ORM_SLOT | 28 |
 | UNRESOLVED_TEXTURE_GUID | 9 |
 
 ## Detail Candidates
@@ -147,10 +147,7 @@ Include third-party: `False`
 
 | Material | Base maps | Normal maps |
 | --- | --- | --- |
-| Art/Materials/MAT_Diegetic_HUD_V4_Projection.mat | _BaseMap:Art/TEXTURES/RT_HUD_Display.renderTexture; _MainTex:Art/TEXTURES/RT_HUD_Display.renderTexture |  |
-| Art/Materials/Mat_GasGiant.mat | _MainTex:Art/TEXTURES/clouds0_diff.png |  |
 | Art/Materials/Meshy_AI_Alien_barnacles_clust_0301230506_texture.mat | _BaseMap:Art/TEXTURES/Meshy_AI_Alien_barnacles_clust_0301230506_texture.png; _MainTex:Art/TEXTURES/Meshy_AI_Alien_barnacles_clust_0301230506_texture.png |  |
-| Art/Materials/terrain.mat | _BaseMap:47f0a231c050423488e0ff6f7d66f813; _MainTex:47f0a231c050423488e0ff6f7d66f813 |  |
 | Art/Materials/Celestial/MAT_CelestialMoon_Ione.mat | _BaseMap:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg; _MainTex:Art/TEXTURES/Terrain Textures/rocks/Rocks019_1K-JPG_Color.jpg |  |
 | Art/Materials/Celestial/MAT_CelestialMoon_Khepri.mat | _BaseMap:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg; _MainTex:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg |  |
 | Art/Materials/Celestial/MAT_CelestialMoon_Nammu.mat | _BaseMap:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg; _MainTex:Art/TEXTURES/Terrain Textures/basalt/Rock031_1K-JPG_Color.jpg |  |
@@ -197,15 +194,13 @@ No texture read errors detected.
 
 | Material | Issues | Recommendations |
 | --- | --- | --- |
-| Art/Materials/MAT_Diegetic_HUD_V4_Projection.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
-| Art/Materials/Mat_GasGiant.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
 | Art/Materials/Mat_HectonSky.mat | UNRESOLVED_TEXTURE_GUID | Resolve the texture GUID inside first-party assets or quarantine the external dependency. |
 | Art/Materials/Mat_HectonSky_CloudOverlay.mat | UNRESOLVED_TEXTURE_GUID | Resolve the texture GUID inside first-party assets or quarantine the external dependency. |
 | Art/Materials/Mat_TriplanarRock.mat | UNRESOLVED_TEXTURE_GUID | Resolve the texture GUID inside first-party assets or quarantine the external dependency. |
 | Art/Materials/Meshy_AI_Alien_barnacles_clust_0301230506_texture.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
 | Art/Materials/Skybox.mat | UNRESOLVED_TEXTURE_GUID | Resolve the texture GUID inside first-party assets or quarantine the external dependency. |
 | Art/Materials/Snow.mat | UNRESOLVED_TEXTURE_GUID | Resolve the texture GUID inside first-party assets or quarantine the external dependency. |
-| Art/Materials/terrain.mat | UNRESOLVED_TEXTURE_GUID, NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Resolve the texture GUID inside first-party assets or quarantine the external dependency.; Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
+| Art/Materials/terrain.mat | UNRESOLVED_TEXTURE_GUID | Resolve the texture GUID inside first-party assets or quarantine the external dependency. |
 | Art/Materials/Celestial/MAT_CelestialMoon_Ione.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
 | Art/Materials/Celestial/MAT_CelestialMoon_Khepri.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
 | Art/Materials/Celestial/MAT_CelestialMoon_Nammu.mat | NO_PROMPT_ORM_SLOT, NO_PACKED_ORM_OR_MASK_SLOT, NO_DETAIL_MAP_SLOT | Add prompt ORM slot using R=AO, G=Roughness, B=Metallic after shader convention is resolved.; Pack AO/Roughness/Metallic into one ORM map after shader convention is resolved.; Wire shared detail albedo/normal or explicitly mark material as too distant/low-tier. |
@@ -278,10 +273,7 @@ No texture read errors detected.
 
 | Material | Priority | Reason | Mask sources | Has detail |
 | --- | --- | --- | --- | --- |
-| Art/Materials/MAT_Diegetic_HUD_V4_Projection.mat | LOW | Base material has no prompt ORM slot; author or reuse ORM if the material is near-field. |  | False |
-| Art/Materials/Mat_GasGiant.mat | LOW | Base material has no prompt ORM slot; author or reuse ORM if the material is near-field. |  | False |
 | Art/Materials/Meshy_AI_Alien_barnacles_clust_0301230506_texture.mat | LOW | Base material has no prompt ORM slot; author or reuse ORM if the material is near-field. |  | False |
-| Art/Materials/terrain.mat | LOW | Base material has no prompt ORM slot; author or reuse ORM if the material is near-field. |  | False |
 | Art/Materials/Celestial/MAT_CelestialMoon_Ione.mat | LOW | Base material has no prompt ORM slot; author or reuse ORM if the material is near-field. |  | False |
 | Art/Materials/Celestial/MAT_CelestialMoon_Khepri.mat | LOW | Base material has no prompt ORM slot; author or reuse ORM if the material is near-field. |  | False |
 | Art/Materials/Celestial/MAT_CelestialMoon_Nammu.mat | LOW | Base material has no prompt ORM slot; author or reuse ORM if the material is near-field. |  | False |

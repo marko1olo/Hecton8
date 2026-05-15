@@ -94,6 +94,13 @@ ALBEDO_EXCLUDE_TOKENS = (
 )
 NORMAL_TOKENS = ("normal", "norm", "nrm", "bump")
 NON_SURFACE_PATH_PARTS = ("/sprites/ui/", "/skyboxes/")
+NON_SURFACE_MATERIAL_NAME_TOKENS = {
+    "hud",
+    "ui",
+    "gasgiant",
+    "skybox",
+    "terrain",
+}
 GENERATED_LIGHTING_TEXTURE_PREFIXES = ("reflectionprobe", "lightmap", "lightingdata")
 BASE_MAP_PROPS = {"_BaseMap", "_MainTex", "_BaseColorMap"}
 NORMAL_MAP_PROPS = {"_BumpMap", "_NormalMap"}
@@ -345,6 +352,24 @@ def is_generated_lighting_texture(path: Path) -> bool:
         return False
     stem = path.stem.lower()
     return any(stem.startswith(prefix) for prefix in GENERATED_LIGHTING_TEXTURE_PREFIXES)
+
+
+def is_surface_material_candidate(path: str, props: dict[str, str]) -> bool:
+    material_terms = set(tokenize_name(path))
+    if material_terms.intersection(NON_SURFACE_MATERIAL_NAME_TOKENS):
+        return False
+
+    base_paths = property_paths(props, BASE_MAP_PROPS)
+    if not base_paths:
+        return False
+
+    for base_path in base_paths:
+        lowered = base_path.lower().replace("\\", "/")
+        if lowered.endswith(".rendertexture"):
+            return False
+        if "/sprites/ui/" in lowered or "/skyboxes/" in lowered:
+            return False
+    return True
 
 
 def has_orm_token(terms: list[str]) -> bool:
@@ -706,8 +731,9 @@ def build_channel_packing_candidate(
     has_base: bool,
     has_prompt_orm: bool,
     has_detail: bool,
+    is_surface_material: bool,
 ) -> dict[str, Any] | None:
-    if not has_base or has_prompt_orm:
+    if not is_surface_material or not has_base or has_prompt_orm:
         return None
 
     occlusion = property_paths(props, SEPARATE_OCCLUSION_PROPS)
@@ -754,23 +780,24 @@ def resolve_material(raw: dict[str, Any], guid_map: dict[str, str]) -> dict[str,
     has_separate_metallic = bool(prop_names.intersection(SEPARATE_METALLIC_PROPS))
     has_detail = bool(prop_names.intersection(DETAIL_MAP_PROPS))
     has_normal = bool(prop_names.intersection(NORMAL_MAP_PROPS))
+    path = raw["path"]
+    is_surface_material = is_surface_material_candidate(path, props)
 
     issues: list[str] = []
     unresolved_refs = unresolved_texture_refs(props)
     if unresolved_refs:
         issues.append("UNRESOLVED_TEXTURE_GUID")
-    if has_base and not has_prompt_orm:
+    if is_surface_material and has_base and not has_prompt_orm:
         issues.append("NO_PROMPT_ORM_SLOT")
-    if has_base and not has_packed:
+    if is_surface_material and has_base and not has_packed:
         issues.append("NO_PACKED_ORM_OR_MASK_SLOT")
-    if has_legacy_packed_mask and not has_prompt_orm:
+    if is_surface_material and has_legacy_packed_mask and not has_prompt_orm:
         issues.append("LEGACY_MASK_SLOT_REQUIRES_CHANNEL_REVIEW")
-    if has_separate_occlusion and has_separate_metallic:
+    if is_surface_material and has_separate_occlusion and has_separate_metallic:
         issues.append("SEPARATE_OCCLUSION_AND_METALLIC_MAPS")
-    if has_base and not has_detail:
+    if is_surface_material and has_base and not has_detail:
         issues.append("NO_DETAIL_MAP_SLOT")
 
-    path = raw["path"]
     channel_candidate = build_channel_packing_candidate(
         path,
         props,
@@ -778,6 +805,7 @@ def resolve_material(raw: dict[str, Any], guid_map: dict[str, str]) -> dict[str,
         has_base,
         has_prompt_orm,
         has_detail,
+        is_surface_material,
     )
 
     return {
@@ -789,6 +817,7 @@ def resolve_material(raw: dict[str, Any], guid_map: dict[str, str]) -> dict[str,
         "has_legacy_packed_mask": has_legacy_packed_mask,
         "has_packed_mask": has_packed,
         "has_detail": has_detail,
+        "is_surface_material_candidate": is_surface_material,
         "unresolved_texture_refs": unresolved_refs,
         "channel_packing_candidate": channel_candidate,
         "issues": issues,
