@@ -32,6 +32,9 @@
   "snapTurnDegrees": 30.0,
   "snapTurnSeconds": 0.16,
   "sourceContract": {
+    "blackBoxFlagAccelerationTunnel": 2048,
+    "blackBoxFlagFramePressure": 512,
+    "blackBoxFlagQuest2Fallback": 1024,
     "hapticBufferCapacity": 16.0,
     "hapticMaxDurationSeconds": 2.0,
     "hapticMaxFrequencyHz": 60.0,
@@ -64,8 +67,8 @@
     "runtimeRootSharpness": 14.0
   },
   "sourceHashes": {
-    "auditScriptSha256": "795e35387d0f11f2b3fec911bccbd407d5db0dd85b753610cf8eb590bc98a0fb",
-    "auditTestSha256": "2120a9160f99f85a99dd0c6b5b6158ff02b3641313aeeba3fcd6a38cd63d4a49",
+    "auditScriptSha256": "926b27b4fdf93b5b203b479616c662030f9412e4e69bafd785c2c4a94390c70a",
+    "auditTestSha256": "8d09813ddec8bdb27e552e3b07e58f6dddc792c6a6cf971b2b8b0662fd5baf74",
     "comfortMarkdownSha256": "336a13b82a6fd88e9d6722434555819b3c8f2ab8fb16dd19d7a4518738b4733d",
     "comfortProfileSha256": "53061d9c740e62741d3eb8d71d5630c2100356679f7e87092ba6fe971af9e298",
     "hapticWaveformsSha256": "64a4c2af80e65a93172808a0a76edf8a1af5390b68b8ffe29bc43ab1f053a51b",

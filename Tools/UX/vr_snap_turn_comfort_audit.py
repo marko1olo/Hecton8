@@ -964,6 +964,14 @@ def validate_source_contract() -> tuple[dict[str, float], list[str]]:
         "Quest3ComfortFrameSafetyReleaseStableFrames",
         errors,
     )
+    values["blackBoxFlagFramePressure"] = extract_csharp_bit_mask(somatic_source, "BlackBoxFlagFramePressure", errors)
+    values["blackBoxFlagQuest2Fallback"] = extract_csharp_bit_mask(somatic_source, "BlackBoxFlagQuest2Fallback", errors)
+    values["blackBoxFlagAccelerationTunnel"] = extract_csharp_bit_mask(
+        somatic_source,
+        "BlackBoxFlagAccelerationTunnel",
+        errors,
+    )
+    validate_black_box_comfort_flag_bits(values, errors)
     values["hapticBufferCapacity"] = extract_csharp_number(haptics_source, "BufferCapacity", errors)
     values["hapticMaxDurationSeconds"] = extract_csharp_number(haptics_source, "MaxCommandDurationSeconds", errors)
     values["hapticMaxFrequencyHz"] = extract_csharp_number(haptics_source, "MaxCommandFrequencyHz", errors)
@@ -1386,6 +1394,19 @@ def validate_runtime_source_fragments(somatic_source: str, errors: list[str]) ->
     )
     if somatic_source.count("ResetComfortFramePressureState();") < 3:
         errors.append("runtime frame-pressure reset must cover origin shift, head-history, and inactive paths")
+    validate_method_fragments(
+        somatic_source,
+        "private ushort ResolveBlackBoxFlags",
+        (
+            "if (_comfortFramePressureActive)",
+            "flags |= BlackBoxFlagFramePressure",
+            "if (_useQuest2ComfortFallback)",
+            "flags |= BlackBoxFlagQuest2Fallback",
+            "if (_accelerationComfortVignette01 > 0.001f)",
+            "flags |= BlackBoxFlagAccelerationTunnel",
+        ),
+        errors,
+    )
 
 
 def validate_method_fragments(source: str, signature: str, fragments: tuple[str, ...], errors: list[str]) -> None:
@@ -1467,6 +1488,34 @@ def extract_csharp_number(source: str, name: str, errors: list[str]) -> float:
     return float(match.group(1))
 
 
+def extract_csharp_bit_mask(source: str, name: str, errors: list[str]) -> int:
+    pattern = rf"\b{name}\b\s*=\s*(?:(\d+)\s*<<\s*(\d+)|(\d+))(?:u)?"
+    match = re.search(pattern, source)
+    if match is None:
+        errors.append(f"source contract bit flag not found: {name}")
+        return -1
+    if match.group(3) is not None:
+        return int(match.group(3))
+    return int(match.group(1)) << int(match.group(2))
+
+
+def validate_black_box_comfort_flag_bits(values: dict[str, float | int], errors: list[str]) -> None:
+    expected_flags = (
+        ("blackBoxFlagFramePressure", 1 << 9),
+        ("blackBoxFlagQuest2Fallback", 1 << 10),
+        ("blackBoxFlagAccelerationTunnel", 1 << 11),
+    )
+    seen: set[int] = set()
+    for key, expected in expected_flags:
+        actual_value = values.get(key, -1)
+        actual = int(actual_value) if isinstance(actual_value, int) else -1
+        if actual != expected:
+            errors.append(f"black-box comfort flag mismatch {key}: expected {expected}, actual {actual}")
+        if actual in seen:
+            errors.append(f"black-box comfort flag overlap: {key} uses {actual}")
+        seen.add(actual)
+
+
 def compare_close(label: str, expected: float, actual: float, tolerance: float, errors: list[str]) -> None:
     if not math.isfinite(expected) or not math.isfinite(actual) or abs(expected - actual) > tolerance:
         errors.append(f"source contract mismatch {label}: expected {expected}, actual {actual}")
@@ -1540,6 +1589,7 @@ def validate_audit_test_contract() -> list[str]:
         "def test_aup_sequence_reset_requires_immediate_shader_reset",
         "def test_raw_head_history_reset_outside_helper_fails_closed",
         "def test_frame_pressure_reset_paths_fail_closed",
+        "def test_black_box_comfort_flags_must_live_in_resolver",
         "def test_workspace_temp_dir_cleans_entry_and_exit",
         "import shutil",
         "remove_workspace_temp_root()",

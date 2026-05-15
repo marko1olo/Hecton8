@@ -6,9 +6,14 @@ from __future__ import annotations
 import json
 import ast
 import shutil
+import sys
 import unittest
 from contextlib import contextmanager
 from pathlib import Path
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
 
 import vr_snap_turn_comfort_audit as audit
 
@@ -81,6 +86,9 @@ class VRSnapTurnComfortAuditTests(unittest.TestCase):
         self.assertEqual(0.22, payload["sourceContract"]["runtimeAccelerationReleaseHysteresisSeconds"])
         self.assertEqual(0.05, payload["sourceContract"]["runtimeComfortVignetteAttackSlewPerFrame"])
         self.assertEqual(0.022, payload["sourceContract"]["runtimeComfortVignetteReleaseSlewPerFrame"])
+        self.assertEqual(512, payload["sourceContract"]["blackBoxFlagFramePressure"])
+        self.assertEqual(1024, payload["sourceContract"]["blackBoxFlagQuest2Fallback"])
+        self.assertEqual(2048, payload["sourceContract"]["blackBoxFlagAccelerationTunnel"])
         self.assertEqual(16.0, payload["sourceContract"]["hapticBufferCapacity"])
         self.assertEqual(2, len(payload["results"]))
         for result in payload["results"]:
@@ -499,6 +507,121 @@ class VRSnapTurnComfortAuditTests(unittest.TestCase):
                 for error in errors
             )
         )
+
+    def test_black_box_comfort_flags_must_live_in_resolver(self) -> None:
+        errors: list[str] = []
+        partial_source = """
+            private const ushort BlackBoxFlagFramePressure = 1 << 9;
+            private const ushort BlackBoxFlagQuest2Fallback = 1 << 10;
+            private const ushort BlackBoxFlagAccelerationTunnel = 1 << 11;
+            private void WrongBlackBoxWriter()
+            {
+                if (_comfortFramePressureActive)
+                    flags |= BlackBoxFlagFramePressure;
+                if (_useQuest2ComfortFallback)
+                    flags |= BlackBoxFlagQuest2Fallback;
+                if (_accelerationComfortVignette01 > 0.001f)
+                    flags |= BlackBoxFlagAccelerationTunnel;
+            }
+            private ushort ResolveBlackBoxFlags(ushort extraFlags)
+            {
+                uint flags = extraFlags;
+                return (ushort)(flags & 0xFFFFu);
+            }
+            public void OnOriginShift(in OriginShiftEventData shiftData)
+            {
+                _accelerationComfortVignette01 = 0f;
+                _accelerationReleaseBelowTimer = 0f;
+                ResetComfortFramePressureState();
+                PublishComfortVignette(0f);
+                PublishShaderState();
+                if (!IsFiniteVector(shiftOffset))
+                    return;
+            }
+            private void ResetHeadMotionHistory(Vector3 headPosition, Quaternion headRotation)
+            {
+                ResetComfortFramePressureState();
+                _accelerationComfortVignette01 = 0f;
+            }
+            private void ResetHeadMotionHistoryAndPublishedComfort(Vector3 headPosition, Quaternion headRotation)
+            {
+                ResetHeadMotionHistory(headPosition, headRotation);
+                PublishComfortVignette(0f);
+                PublishShaderState();
+            }
+            private void ResetHeadMotionIfAupShifted(Vector3 headPosition, Quaternion headRotation)
+            {
+                ResetHeadMotionHistoryAndPublishedComfort(headPosition, headRotation);
+            }
+            private void AnotherResetPath(Vector3 headPosition, Quaternion headRotation)
+            {
+                ResetHeadMotionHistoryAndPublishedComfort(headPosition, headRotation);
+            }
+            private void UpdateAccelerationComfortState(float deltaTime)
+            {
+                UpdateComfortFramePressureState(deltaTime);
+                _accelerationReleaseBelowTimer = math.min(hysteresisSeconds, _accelerationReleaseBelowTimer + deltaTime);
+                float framePressureTarget = _comfortFramePressureActive ? ResolveComfortFrameSafetyMinOpacity() : 0f;
+                target = math.max(target, framePressureTarget);
+                float maxDelta = target > _accelerationComfortVignette01;
+                float delta = math.clamp(target - _accelerationComfortVignette01, -maxDelta, maxDelta);
+            }
+            private void UpdateComfortFramePressureState(float deltaTime)
+            {
+                if (safeDeltaTime > frameSafetyDeltaSeconds)
+                    _comfortFramePressureConsecutiveFrames = math.min(consecutiveFrames, _comfortFramePressureConsecutiveFrames + 1);
+            }
+            private void ApplyInactiveState()
+            {
+                _accelerationComfortVignette01 = 0f;
+                _accelerationReleaseBelowTimer = 0f;
+                ResetComfortFramePressureState();
+                PublishComfortVignette(0f);
+            }
+            private void RefreshComfortProfileSelection()
+            {
+                _useQuest2ComfortFallback = true;
+            }
+            private void UpdateRotationJerkState()
+            {
+                float angularAccelerationMagnitude = ApproximateMagnitudeNoSqrt(angularAcceleration);
+            }
+            private void ScheduleRootSync()
+            {
+                AccelerationVignette01 = Sanitize01(_accelerationComfortVignette01, 0f);
+                vignette01 = math.max(vignette01, math.saturate(input.AccelerationVignette01));
+            }
+        """
+
+        audit.validate_runtime_source_fragments(partial_source, errors)
+
+        self.assertTrue(
+            any(
+                "runtime method private ushort ResolveBlackBoxFlags missing source fragment: if (_comfortFramePressureActive)"
+                in error
+                for error in errors
+            )
+        )
+        self.assertTrue(
+            any(
+                "runtime method private ushort ResolveBlackBoxFlags missing source fragment: flags |= BlackBoxFlagQuest2Fallback"
+                in error
+                for error in errors
+            )
+        )
+
+    def test_black_box_comfort_flag_bits_fail_on_overlap(self) -> None:
+        errors: list[str] = []
+        values: dict[str, int] = {
+            "blackBoxFlagFramePressure": 1 << 9,
+            "blackBoxFlagQuest2Fallback": 1 << 9,
+            "blackBoxFlagAccelerationTunnel": 1 << 11,
+        }
+
+        audit.validate_black_box_comfort_flag_bits(values, errors)
+
+        self.assertTrue(any("black-box comfort flag mismatch blackBoxFlagQuest2Fallback" in error for error in errors))
+        self.assertTrue(any("black-box comfort flag overlap" in error for error in errors))
 
     def test_source_contract_malformed_profile_number_fails_closed(self) -> None:
         payload = json.loads(audit.COMFORT_JSON.read_text(encoding="utf-8"))
