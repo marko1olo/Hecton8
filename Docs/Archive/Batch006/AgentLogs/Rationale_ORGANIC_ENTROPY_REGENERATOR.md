@@ -477,3 +477,14 @@ Rejected Alternatives: Trusting callers to enter through `run_sim()` was rejecte
 Scalability potential: Low-end validation machines avoid accidental large allocations from direct helper use. High-end validation still uses the same explicit `1,048,576` cell cap.
 
 Hardware Impact: Tooling-only. Unity runtime backend unchanged; invalid helper calls abort before Python state allocation.
+
+## Decision 44 - Direct Run Mode Guard
+Problem: The CLI rejects non-acceptance modes, but direct callers could still call `run_sim(constants, days, False)` and produce baseline output under constants whose acceptance metadata is `total_overharvest`.
+
+Solution: Added a `ValueError` guard for `total_overharvest=False` in `run_sim()` and a regression test that asserts the direct API rejects the mode.
+
+Rejected Alternatives: Keeping the dead baseline path was rejected because this batch has one authoritative acceptance surface. Relying only on argparse choices was rejected because automation can bypass CLI parsing.
+
+Scalability potential: Low/Middle/High/Ultra validation paths now share one acceptance mode. Any future baseline validation must define a separate schema instead of piggybacking on total-overharvest constants.
+
+Hardware Impact: Tooling-only. Unity runtime backend unchanged; invalid direct mode aborts before state allocation.

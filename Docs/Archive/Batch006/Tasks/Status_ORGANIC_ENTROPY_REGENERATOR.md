@@ -216,6 +216,11 @@ Verification after Loop 2: Constants and codec implemented; no Unity import proo
 - [x] Helper bypass regression | Added `test_build_initial_state_rejects_invalid_constants_before_allocation` using a `1025x1025` grid. DOD: oversized helper calls raise `ValueError` before list allocation. Rejected: relying on memory pressure or manual caller discipline.
 - [x] Loop 35 verification | Re-ran `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`, helper guard scan, `python -m unittest Tools.test_world_entropy_sim -v`, exact 365-day entropy command, and 1000-day entropy command. Results: py_compile exit `0`; guard scan found `validate_constants(constants)` in `build_initial_state` and the new test; unittest 18 passed in `37.183 s` (`38.482 s` wrapper); 365-day entropy `STATUS=ENTROPY BALANCED`, Safe day `28`, Deep Abyss day `88`, ratio `3.143`, final mature ratio `1.000`; 1000-day entropy `STATUS=ENTROPY BALANCED`, mature counts stable through day `1000`.
 
+## Loop 36 - Direct Run Mode Guard
+- [x] Direct `run_sim` mode audit | Patched `run_sim()` to reject `total_overharvest=False`. DOD: direct Python callers cannot run baseline/non-acceptance simulation while the export metadata and CLI define only total overharvest. Rejected: relying on argparse mode narrowing because automation can call `run_sim()` directly. Estimate: tooling-only; Unity runtime unchanged.
+- [x] Direct mode regression | Added `test_run_sim_rejects_non_overharvest_direct_mode`. DOD: non-acceptance direct API mode raises `ValueError`. Rejected: manual CLI-only validation.
+- [x] Loop 36 verification | Re-ran `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`, direct mode guard scan, `python -m unittest Tools.test_world_entropy_sim -v`, exact 365-day entropy command, and 1000-day entropy command. Results: py_compile exit `0`; guard scan found `run_sim only supports total_overharvest mode` and the new test; unittest 19 passed in `32.073 s` (`34.026 s` wrapper); 365-day entropy `STATUS=ENTROPY BALANCED`, Safe day `28`, Deep Abyss day `88`, ratio `3.143`, final mature ratio `1.000`; 1000-day entropy `STATUS=ENTROPY BALANCED`, mature counts stable through day `1000`.
+
 ## Final State
 - [x] Core tasks 1-8 complete.
 - [x] Recursive verification target met by Python entropy-test.

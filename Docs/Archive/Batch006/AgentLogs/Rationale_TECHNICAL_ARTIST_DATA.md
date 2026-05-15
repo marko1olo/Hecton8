@@ -207,3 +207,11 @@ Solution: Add `--fail-on-channel-packing-candidates` with exit code 8, include i
 Rejected Alternatives: Adding channel debt to `--ci-surface-gates` was rejected because current first-party assets intentionally have 31 channel candidates and the safe profile must remain usable for albedo/readability/budget enforcement. Leaving only broad material failure was rejected because channel packing is the prompt's primary surface target.
 Scalability potential: Low = channel migration can be tracked separately from safe budget checks. Middle = CI can block material PRs that add new non-ORM surfaces. High = saved ORM texture memory buys shared detail overlays. Ultra = GOD_MODE material escalation can require prompt ORM before higher mips are allowed.
 Hardware Impact: 0 us runtime impact. Current scoped `Art/Materials` channel gate reports 23 candidates and returns exit 8; full first-party audit still reports 31 channel candidates and 113.46 MiB modeled savings potential.
+
+## Detail Map Missing Gate
+
+Problem: Detail-map debt was only visible through broad material issues even though the prompt separately requires detail-map auditing and a 20% perceived-detail target.
+Solution: Add `--fail-on-detail-map-missing` with exit code 9, expose `detail_map_missing_count`, export a dedicated detail-missing material CSV, and add a Markdown section for direct art handoff.
+Rejected Alternatives: Using `--fail-on-material-issues` was rejected because it mixes detail absence with ORM, unresolved reference, and legacy mask debt. Adding the detail gate to `--ci-surface-gates` was rejected because current first-party assets intentionally have detail debt and the safe profile must remain usable.
+Scalability potential: Low = detail slots can be enforced only on material migration branches. Middle = CI can prevent new near-field surfaces without shared detail overlays. High = shared scratches/dust/wear overlays buy the required 20% perceived detail. Ultra = GOD_MODE can raise detail overlay density after base materials have stable slots.
+Hardware Impact: 0 us runtime impact. Current full audit reports 31 materials missing detail maps; scoped `Art/Materials` detail gate reports 23 and returns exit 9.

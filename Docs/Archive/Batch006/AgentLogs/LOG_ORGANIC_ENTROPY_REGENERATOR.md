@@ -856,3 +856,27 @@ Verification:
 - `python -m unittest Tools.test_world_entropy_sim -v`: 18 tests passed in 37.183 s.
 - `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
 - `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
+
+## 2026-05-15 - Direct Run Mode Guard
+
+What was wrong:
+- CLI rejected non-acceptance modes.
+- Direct `run_sim(constants, days, False)` still allowed a baseline run under total-overharvest constants.
+
+What was done:
+- Added a `ValueError` guard for `total_overharvest=False` in `run_sim()`.
+- Added `test_run_sim_rejects_non_overharvest_direct_mode`.
+
+Cinematic cheats used:
+- None. This is offline acceptance-surface hardening.
+
+Exact microseconds saved:
+- Runtime microseconds saved: 0. Unity runtime backend was not changed.
+- Failure avoided: non-acceptance direct mode aborts before Python state allocation.
+
+Verification:
+- `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`: exit code 0.
+- Guard scan found `run_sim only supports total_overharvest mode` and the new regression test.
+- `python -m unittest Tools.test_world_entropy_sim -v`: 19 tests passed in 32.073 s.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
