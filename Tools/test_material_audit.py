@@ -170,6 +170,9 @@ class MaterialAuditTests(unittest.TestCase):
             self.assertIn("SEPARATE_OCCLUSION_AND_METALLIC_MAPS", resolved["issues"])
             self.assertIn("NO_DETAIL_MAP_SLOT", resolved["issues"])
             self.assertEqual(3, len(resolved["unresolved_texture_refs"]))
+            self.assertEqual("BLOCKER", resolved["unresolved_texture_ref_summary"]["severity"])
+            self.assertEqual(1, len(resolved["unresolved_texture_ref_summary"]["base_color_refs"]))
+            self.assertEqual(2, len(resolved["unresolved_texture_ref_summary"]["data_refs"]))
             self.assertEqual("HIGH", resolved["channel_packing_candidate"]["priority"])
 
     def test_scoped_material_audit_resolves_guids_from_wider_root(self) -> None:
@@ -338,6 +341,28 @@ class MaterialAuditTests(unittest.TestCase):
 
             self.assertEqual(4, unresolved_gate.returncode, unresolved_gate.stdout + unresolved_gate.stderr)
             self.assertIn("unresolved_texture_refs=1", unresolved_gate.stdout)
+
+            surface_unresolved_gate = subprocess.run(
+                [
+                    sys.executable,
+                    str(TOOLS_ROOT / "MaterialAudit.py"),
+                    "--root",
+                    str(root),
+                    "--sample-size",
+                    "16",
+                    "--fail-on-surface-unresolved-refs",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(10, surface_unresolved_gate.returncode, surface_unresolved_gate.stdout + surface_unresolved_gate.stderr)
+            self.assertIn("surface_unresolved_texture_refs=1", surface_unresolved_gate.stdout)
+            self.assertIn(
+                "active_gates=energy_failures,surface_unresolved_texture_refs",
+                surface_unresolved_gate.stdout,
+            )
 
             channel_gate = subprocess.run(
                 [
@@ -521,6 +546,7 @@ class MaterialAuditTests(unittest.TestCase):
                 "energy_warnings": 7,
                 "channel_packing_candidates": 8,
                 "detail_map_missing": 9,
+                "surface_unresolved_texture_refs": 10,
             },
             "gate_profiles": {
                 "surface_safe": [
@@ -595,6 +621,22 @@ class MaterialAuditTests(unittest.TestCase):
                     },
                 ],
                 "materials_with_issues": 1,
+                "materials_with_unresolved_texture_refs": 1,
+                "unresolved_texture_ref_count": 1,
+                "unresolved_texture_ref_materials": [
+                    {
+                        "path": "MAT_Test.mat",
+                        "unresolved_texture_refs": ["_BaseMap:22222222222222222222222222222222"],
+                    },
+                ],
+                "surface_materials_with_unresolved_texture_refs": 1,
+                "surface_unresolved_texture_ref_count": 1,
+                "surface_unresolved_texture_ref_materials": [
+                    {
+                        "path": "MAT_Test.mat",
+                        "unresolved_texture_refs": ["_BaseMap:22222222222222222222222222222222"],
+                    },
+                ],
                 "channel_packing_candidate_count": 1,
                 "channel_packing_priority_counts": {"LOW": 1},
                 "channel_packing_candidates": [
@@ -661,6 +703,7 @@ class MaterialAuditTests(unittest.TestCase):
             material_csv = Path(f"{csv_prefix}_material_issues.csv").read_text(encoding="utf-8")
             detail_missing_csv = Path(f"{csv_prefix}_detail_map_missing_materials.csv").read_text(encoding="utf-8")
             channel_csv = Path(f"{csv_prefix}_channel_packing_candidates.csv").read_text(encoding="utf-8")
+            surface_unresolved_csv = Path(f"{csv_prefix}_surface_unresolved_texture_refs.csv").read_text(encoding="utf-8")
             memory_csv = Path(f"{csv_prefix}_texture_memory_hotspots.csv").read_text(encoding="utf-8")
             overrides_csv = Path(f"{csv_prefix}_god_mode_texture_overrides.csv").read_text(encoding="utf-8")
             detail_plan_csv = Path(f"{csv_prefix}_global_detail_overlay_plan.csv").read_text(encoding="utf-8")
@@ -675,8 +718,11 @@ class MaterialAuditTests(unittest.TestCase):
             self.assertIn("Gate Profiles", markdown_text)
             self.assertIn("Active Gates", markdown_text)
             self.assertIn("Detail Map Missing Materials", markdown_text)
+            self.assertIn("Surface Material Texture GUIDs", markdown_text)
+            self.assertIn("BLOCKER", markdown_text)
             self.assertIn("surface_safe", markdown_text)
             self.assertIn("unresolved_texture_refs", markdown_text)
+            self.assertIn("surface_unresolved_texture_refs", markdown_text)
             self.assertIn("Texture Budget Model", markdown_text)
             self.assertIn("Texture Read Errors", markdown_text)
             self.assertIn("## Import Issue Counts\n\n| Issue | Count |", markdown_text)
@@ -685,6 +731,9 @@ class MaterialAuditTests(unittest.TestCase):
             self.assertIn("NO_DETAIL_MAP_SLOT", material_csv)
             self.assertIn("Panel_Albedo.png", detail_missing_csv)
             self.assertIn("MAT_Test.mat", channel_csv)
+            self.assertIn("MAT_Test.mat", surface_unresolved_csv)
+            self.assertIn("base_color_refs", surface_unresolved_csv)
+            self.assertIn("Restore source base/normal textures", surface_unresolved_csv)
             self.assertIn("BC7_ORM_LINEAR_8BPP", memory_csv)
             self.assertIn("Hero cockpit albedo", overrides_csv)
             self.assertIn("fine_cockpit_scratches", detail_plan_csv)

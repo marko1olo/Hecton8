@@ -28,6 +28,8 @@ Include third-party: `False`
 | Materials with issues | 29 |
 | Materials with unresolved texture refs | 9 |
 | Unresolved texture refs | 27 |
+| Surface materials with unresolved texture refs | 2 |
+| Surface unresolved texture refs | 8 |
 | Channel packing candidates | 22 |
 
 ## Gate Exit Codes
@@ -43,6 +45,7 @@ Include third-party: `False`
 | energy_warnings | 7 |
 | channel_packing_candidates | 8 |
 | detail_map_missing | 9 |
+| surface_unresolved_texture_refs | 10 |
 
 ## Gate Profiles
 
@@ -231,6 +234,13 @@ No texture read errors detected.
 | Art/Materials/Construction/Mat_LeakWetSheen.mat | _BumpMap:7d09e7c7fffa5a94eadbfb28633eaa1e; _Normal:a116c6e469d15244ea70d6a8403f52d9; _NormalMap:a116c6e469d15244ea70d6a8403f52d9 |
 | Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/mat_Rock2.mat | _BaseMap:920eb4a5d89009b42a522ff2aa1e6ef3; _BumpMap:5189dcc817bc5e24095d445209499d1f; _MainTex:920eb4a5d89009b42a522ff2aa1e6ef3; _OcclusionMap:df147ac10298ce44e9557850251a533a |
 | Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/mat_Rock_Shared.mat | _BaseMap:920eb4a5d89009b42a522ff2aa1e6ef3; _BumpMap:5189dcc817bc5e24095d445209499d1f; _MainTex:920eb4a5d89009b42a522ff2aa1e6ef3; _OcclusionMap:df147ac10298ce44e9557850251a533a |
+
+## Surface Material Texture GUIDs
+
+| Material | Severity | Base | Normal | Data | Other | Recommendation |
+| --- | --- | --- | --- | --- | --- | --- |
+| Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/mat_Rock2.mat | BLOCKER | _BaseMap:920eb4a5d89009b42a522ff2aa1e6ef3; _MainTex:920eb4a5d89009b42a522ff2aa1e6ef3 | _BumpMap:5189dcc817bc5e24095d445209499d1f | _OcclusionMap:df147ac10298ce44e9557850251a533a |  | Restore source base/normal textures or clear invalid slots before ORM/detail migration. |
+| Art/Models/Rocks/Rock_4_-_UNIVERSALNYY_VYBOR/UNIVERSALNYY_VYBOR_(TEKSTURY)/mat_Rock_Shared.mat | BLOCKER | _BaseMap:920eb4a5d89009b42a522ff2aa1e6ef3; _MainTex:920eb4a5d89009b42a522ff2aa1e6ef3 | _BumpMap:5189dcc817bc5e24095d445209499d1f | _OcclusionMap:df147ac10298ce44e9557850251a533a |  | Restore source base/normal textures or clear invalid slots before ORM/detail migration. |
 
 ## Texture Memory Hotspots
 

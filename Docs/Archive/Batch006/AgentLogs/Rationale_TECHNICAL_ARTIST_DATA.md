@@ -206,7 +206,7 @@ Problem: Channel-packing candidates were counted and exported, but broad materia
 Solution: Add `--fail-on-channel-packing-candidates` with exit code 8, include it in active-gate metadata, and cover it through the subprocess regression suite.
 Rejected Alternatives: Adding channel debt to `--ci-surface-gates` was rejected because current first-party assets intentionally have 31 channel candidates and the safe profile must remain usable for albedo/readability/budget enforcement. Leaving only broad material failure was rejected because channel packing is the prompt's primary surface target.
 Scalability potential: Low = channel migration can be tracked separately from safe budget checks. Middle = CI can block material PRs that add new non-ORM surfaces. High = saved ORM texture memory buys shared detail overlays. Ultra = GOD_MODE material escalation can require prompt ORM before higher mips are allowed.
-Hardware Impact: 0 us runtime impact. Current scoped `Art/Materials` channel gate reports 23 candidates and returns exit 8; full first-party audit still reports 31 channel candidates and 113.46 MiB modeled savings potential.
+Hardware Impact: 0 us runtime impact. Current surface-filtered scoped `Art/Materials` channel gate reports 14 candidates and returns exit 8; full first-party audit reports 22 channel candidates and 80.52 MiB modeled savings potential.
 
 ## Detail Map Missing Gate
 
@@ -214,7 +214,7 @@ Problem: Detail-map debt was only visible through broad material issues even tho
 Solution: Add `--fail-on-detail-map-missing` with exit code 9, expose `detail_map_missing_count`, export a dedicated detail-missing material CSV, and add a Markdown section for direct art handoff.
 Rejected Alternatives: Using `--fail-on-material-issues` was rejected because it mixes detail absence with ORM, unresolved reference, and legacy mask debt. Adding the detail gate to `--ci-surface-gates` was rejected because current first-party assets intentionally have detail debt and the safe profile must remain usable.
 Scalability potential: Low = detail slots can be enforced only on material migration branches. Middle = CI can prevent new near-field surfaces without shared detail overlays. High = shared scratches/dust/wear overlays buy the required 20% perceived detail. Ultra = GOD_MODE can raise detail overlay density after base materials have stable slots.
-Hardware Impact: 0 us runtime impact. Current full audit reports 31 materials missing detail maps; scoped `Art/Materials` detail gate reports 23 and returns exit 9.
+Hardware Impact: 0 us runtime impact. Current full audit reports 22 materials missing detail maps; scoped `Art/Materials` detail gate reports 14 and returns exit 9.
 
 ## Non-Surface Material Exclusion
 
@@ -223,3 +223,11 @@ Solution: Add a conservative surface-material eligibility filter before ORM/deta
 Rejected Alternatives: Keeping false positives was rejected because false debt wastes art migration time. Excluding all unresolved GUID materials was rejected because some unresolved references still represent real surface dependencies that must be fixed.
 Scalability potential: Low = migration gates focus on actual hard-surface materials. Middle = CI reports stop assigning projection/celestial work to the surface-material queue. High/Ultra = saved detail/ORM budgets remain tied to visible inspectable surfaces rather than non-PBR special materials.
 Hardware Impact: 0 us runtime impact. Full audit now reports 22 channel candidates, 22 detail-missing materials, 29 material issue materials, and 80.52 MiB modeled channel-packing savings potential.
+
+## Surface Unresolved Reference Gate
+
+Problem: Broad unresolved texture GUID debt is still useful, but it mixes surface-material dependencies with non-surface domains. The surface prompt needs a precise failure mode for hard-surface material refs only.
+Solution: Add surface-unresolved counts, Markdown/CSV handoff, and `--fail-on-surface-unresolved-refs` with exit code 10. The gate only fails when unresolved GUIDs remain on materials that pass the surface-material eligibility filter.
+Rejected Alternatives: Reusing broad unresolved exit 4 was rejected because it would block this domain on celestial, terrain, projection, or other non-surface material references. Ignoring unresolved surface refs was rejected because channel-packing/detail migration cannot trust a material whose base/normal/AO references cannot resolve.
+Scalability potential: Low = surface migration blocks only real visible material dependency faults. Middle = CI can run broad dependency and surface dependency lanes separately. High = prompt ORM/detail work can proceed without inherited broken references. Ultra = GOD_MODE material overrides stay gated by valid source textures before higher mips are allowed.
+Hardware Impact: 0 us runtime impact. Full first-party audit reports 9 broad unresolved materials / 27 refs, but only 2 surface unresolved materials / 8 refs; full-root surface gate returns expected exit 10 under wrapper. The two affected materials are `mat_Rock2.mat` and `mat_Rock_Shared.mat` under the Rock_4 asset.

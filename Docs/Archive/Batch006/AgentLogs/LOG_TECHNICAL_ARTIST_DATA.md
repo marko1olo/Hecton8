@@ -759,3 +759,43 @@ Verification:
 - Full first-party audit with `--ci-surface-gates`: still passes, 22 channel candidates, 22 detail-missing materials, 29 material issue materials, 80.52 MiB modeled savings.
 - Scoped `Art/Materials` channel/detail gates returned expected exits 8/9 with 14 candidates each.
 - Scoped import/unresolved/material gates still returned expected exits 2/4/3.
+
+## 2026-05-15 - Surface Unresolved Reference Gate Pass
+
+What was wrong:
+
+- Broad unresolved texture GUID debt was useful but too coarse for this prompt.
+- `Art/Materials` still contains unresolved refs, but the surface-material filter proves those scoped refs are non-surface for this domain.
+- Full first-party data still has actual surface unresolved refs on two rock materials, so a surface-specific gate was required.
+
+What was done:
+
+- Added `surface_materials_with_unresolved_texture_refs` and `surface_unresolved_texture_refs` to the material summary.
+- Added `--fail-on-surface-unresolved-refs` with exit code 10.
+- Added active-gate metadata for `surface_unresolved_texture_refs`.
+- Added `Surface Material Texture GUIDs` to Markdown output.
+- Added `MaterialAudit_TECHNICAL_ARTIST_DATA_surface_unresolved_texture_refs.csv`.
+- Extended subprocess/export regression coverage.
+- Regenerated JSON/Markdown/CSV audit artifacts and updated the doctrine.
+
+Cinematic Cheats used:
+
+- None. This is offline material dependency triage.
+
+Exact Microseconds saved:
+
+- Runtime code changed: none.
+- Immediate runtime CPU saving: 0 us.
+- Prevents channel-packing/detail migration work from being assigned to non-surface material refs while still blocking real surface dependency faults.
+
+Verification:
+
+- `python -m py_compile Tools\MaterialAudit.py Tools\test_material_audit.py`: passed.
+- `python -m unittest Tools.test_material_audit`: passed 13 tests.
+- Full first-party audit with `--ci-surface-gates`: passed with 137 textures, 0 energy warnings, 0 albedo read errors, 497.565/900.0 MiB texture budget PASS.
+- Full first-party audit now reports 9 broad unresolved materials / 27 refs and 2 surface unresolved materials / 8 refs.
+- Full-root `--fail-on-surface-unresolved-refs` returned expected exit 10 under wrapper.
+- Scoped `Art/Materials` surface-unresolved gate did not trip because current unresolved refs there are non-surface by this prompt filter; scoped broad/material/channel/detail gates still returned expected exits 4/3/8/9.
+- `git diff --check`: passed with line-ending warnings only.
+- Owned Python hot-path scan found no Unity runtime API matches.
+- Artifact readback confirmed exit code 10 and `Surface Material Texture GUIDs` in generated documentation.

@@ -23,16 +23,18 @@ Audit source: `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA.json`
 - Materials with legacy/unknown packed mask slots: 9
 - Materials with any packed mask slots: 9
 - Materials with detail slots: 0
-- Materials with audit issues: 37
+- Materials with audit issues: 29
 - Materials with unresolved first-party texture references: 9
 - Unresolved first-party texture references: 27
-- Channel-packing migration candidates: 31 (`LOW` = 22, `MEDIUM` = 9)
-- Channel-packing candidate model: 206.15 MiB standard -> 92.69 MiB optimized, saving 113.46 MiB (55.0%)
+- Surface materials with unresolved texture references: 2
+- Surface unresolved texture references: 8
+- Channel-packing migration candidates: 22 (`LOW` = 13, `MEDIUM` = 9)
+- Channel-packing candidate model: 146.3 MiB standard -> 65.78 MiB optimized, saving 80.52 MiB (55.0%)
 - Machine-readable GOD_MODE texture override rows: 12
 - Machine-readable global detail overlay rows: 10, minimum expected detail gain 20%
-- Issue counts: `NO_PROMPT_ORM_SLOT` = 31, `NO_PACKED_ORM_OR_MASK_SLOT` = 22, `NO_DETAIL_MAP_SLOT` = 31, `UNRESOLVED_TEXTURE_GUID` = 9, `LEGACY_MASK_SLOT_REQUIRES_CHANNEL_REVIEW` = 9
+- Issue counts: `NO_PROMPT_ORM_SLOT` = 22, `NO_PACKED_ORM_OR_MASK_SLOT` = 13, `NO_DETAIL_MAP_SLOT` = 22, `UNRESOLVED_TEXTURE_GUID` = 9, `LEGACY_MASK_SLOT_REQUIRES_CHANNEL_REVIEW` = 9
 
-Conclusion: the current albedo set does not break the offline energy test. The material system has zero prompt-authoritative ORM slots, nine legacy/unknown mask slots, and zero wired detail slots. Five texture import settings are suspect and must be reviewed before material migration. The offline residency estimate is not Unity profiler proof; it is a deterministic BC-class triage model for asset prioritization.
+Conclusion: the current albedo set does not break the offline energy test. The material system has zero prompt-authoritative ORM slots, nine legacy/unknown mask slots, and zero wired detail slots. Five texture import settings are suspect. Broad unresolved texture GUID debt remains at 9 materials / 27 refs, but only 2 materials / 8 refs are prompt-surface unresolved debt after non-surface filtering. The offline residency estimate is not Unity profiler proof; it is a deterministic BC-class triage model for asset prioritization.
 
 ## ORM Packing Spec
 
@@ -224,7 +226,7 @@ Load-shed:
 python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --sample-size 256 --json Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.json --markdown Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.md --csv-prefix Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA --ci-surface-gates
 ```
 
-Current result: `ci_surface_gates=enabled`, `active_gate_profiles=surface_safe`, `active_gates=energy_failures,energy_warnings,albedo_read_errors,texture_budget`, `textures=137`, `energy_failures=0`, `energy_warnings=0`, `texture_read_errors=0`, `albedo_read_errors=0`, `import_issue_textures=5`, `estimated_texture_mib=497.565`, `texture_budget_mib=900.0`, `texture_budget_status=PASS`, `materials_with_prompt_orm=0`, `materials_with_legacy_mask=9`, `materials_with_detail=0`, `detail_map_missing_materials=22`, `channel_packing_candidates=22`, `channel_candidate_saved_mib=80.52`, `god_mode_override_count=12`, `global_detail_overlay_count=10`, `materials_with_unresolved_texture_refs=9`, `unresolved_texture_refs=27`, `materials_with_issues=29`.
+Current result: `ci_surface_gates=enabled`, `active_gate_profiles=surface_safe`, `active_gates=energy_failures,energy_warnings,albedo_read_errors,texture_budget`, `textures=137`, `energy_failures=0`, `energy_warnings=0`, `texture_read_errors=0`, `albedo_read_errors=0`, `import_issue_textures=5`, `estimated_texture_mib=497.565`, `texture_budget_mib=900.0`, `texture_budget_status=PASS`, `materials_with_prompt_orm=0`, `materials_with_legacy_mask=9`, `materials_with_detail=0`, `detail_map_missing_materials=22`, `channel_packing_candidates=22`, `channel_candidate_saved_mib=80.52`, `god_mode_override_count=12`, `global_detail_overlay_count=10`, `materials_with_unresolved_texture_refs=9`, `unresolved_texture_refs=27`, `surface_materials_with_unresolved_texture_refs=2`, `surface_unresolved_texture_refs=8`, `materials_with_issues=29`.
 
 Generated CSV artifacts:
 
@@ -232,6 +234,7 @@ Generated CSV artifacts:
 - `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_texture_read_errors.csv`
 - `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_material_issues.csv`
 - `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_unresolved_texture_refs.csv`
+- `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_surface_unresolved_texture_refs.csv`
 - `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_detail_candidates.csv`
 - `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_detail_map_missing_materials.csv`
 - `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_channel_packing_candidates.csv`
@@ -247,6 +250,7 @@ python Tools\MaterialAudit.py --root Assets\_Project --fail-on-import-issues
 python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --fail-on-energy-warnings
 python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --fail-on-texture-read-errors
 python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --fail-on-unresolved-refs
+python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --fail-on-surface-unresolved-refs
 python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --fail-on-channel-packing-candidates
 python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --fail-on-detail-map-missing
 python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --fail-on-material-issues
@@ -268,6 +272,7 @@ Exit code contract:
 - `7` = albedo bright-area energy warnings when `--fail-on-energy-warnings` is set.
 - `8` = channel-packing migration candidates exist when `--fail-on-channel-packing-candidates` is set.
 - `9` = base materials missing detail-map slots when `--fail-on-detail-map-missing` is set.
+- `10` = surface-material texture references cannot be resolved when `--fail-on-surface-unresolved-refs` is set.
 
 Regression proof:
 
@@ -276,7 +281,7 @@ python -m py_compile Tools\MaterialAudit.py Tools\test_material_audit.py
 python -m unittest Tools.test_material_audit
 ```
 
-Current test result: 13 tests pass, including subprocess coverage for import-debt exit 2, material-debt exit 3, unresolved-reference exit 4, texture-budget exit 5, albedo-read-error exit 6, energy-warning exit 7, channel-packing exit 8, detail-map exit 9, non-surface material exclusion, and the `--ci-surface-gates` profile.
+Current test result: 13 tests pass, including subprocess coverage for import-debt exit 2, material-debt exit 3, unresolved-reference exit 4, texture-budget exit 5, albedo-read-error exit 6, energy-warning exit 7, channel-packing exit 8, detail-map exit 9, surface-unresolved-reference exit 10, non-surface material exclusion, and the `--ci-surface-gates` profile.
 
 Generated lighting exclusion:
 
