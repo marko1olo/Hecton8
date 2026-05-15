@@ -863,6 +863,38 @@ Verification:
 Integrator notes:
 - Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
 
+## 2026-05-15 - Loop 44 Real AUP Precision Repair - Scanner Marker Distance
+
+What was wrong:
+- `HectonScanMarkerSystem` reduced AUP grid/local marker distance to `float` before marker size falloff.
+- The scanner cue is presentation, but the distance input is AUP authority and must not lose precision before the final render scalar.
+
+What was done:
+- Moved marker-player axis delta resolution and cheap distance approximation to `double`.
+- Kept the existing max/mid/min approximation instead of adding sqrt cost.
+- Added guarded grid-delta saturation before long subtraction.
+- Cast to `float` only for the final marker pixel size.
+
+Cinematic Cheats used:
+- Kept the cheap approximate distance falloff for UI marker sizing.
+- Low-tier devices keep the same capped marker draw path; High/Ultra can add richer marker visuals without scaling from float AUP aliasing.
+
+Exact Microseconds saved:
+- Gameplay frame time: 0 us measured; profiler proof is absent.
+- No allocation added; expected cost is a few scalar double operations for visible markers only.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/HectonScanMarkerSystem.cs` reports line-ending warning only.
+- Qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory AUP regex scan returned 233 broad residual matches: broad `universe` text and known final-cast/presentation payload names.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 109.053 seconds with `AupPrecisionRisk=0`, `AupPrecisionIntegrity=1`, `RuntimeHPhiRisk=0.000628209`, `NativeArrayRefs=7074`, and `PrimaryOwnerBlockedNativeArrayRefs=5678`.
+- Temporary Loop 44 capture is absent after cleanup.
+- No `dotnet build` or rebuild was run because the user explicitly forbade rebuilds.
+
+Integrator notes:
+- Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
+
 ## 2026-05-15 - Loop 43 Real AUP Precision Repair - Fluid CPU Gerstner Phase
 
 What was wrong:

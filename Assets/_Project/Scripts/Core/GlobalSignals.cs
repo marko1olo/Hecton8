@@ -2232,6 +2232,7 @@ namespace Hecton8.Core
         {
             EnsureInitialized();
             _memoryPressureSignals.Enqueue(signal);
+            SignalBus<MemoryPressureSignal>.Push(in signal);
         }
 
         /// <summary>Queues one vault pointer relocation packet from the main thread.</summary>
@@ -3173,6 +3174,8 @@ namespace Hecton8.Core
             SignalBus<PlayerLookTargetSignal>.EnsureInitialized();
             SignalBus<CombatDamageSignal>.Configure(DamageSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(CombatDamageSignal)));
             SignalBus<CombatDamageSignal>.EnsureInitialized();
+            SignalBus<ImpactSignal>.Configure(ImpactSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(ImpactSignal)));
+            SignalBus<ImpactSignal>.EnsureInitialized();
             SignalBus<HullDeformedSignal>.Configure(HullDeformedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(HullDeformedSignal)));
             SignalBus<HullDeformedSignal>.EnsureInitialized();
             SignalBus<BaseModuleCompromisedSignal>.Configure(BaseModuleCompromisedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(BaseModuleCompromisedSignal)));
@@ -3183,6 +3186,14 @@ namespace Hecton8.Core
             SignalBus<PlayerBaseExitSignal>.EnsureInitialized();
             SignalBus<HighSpeedImpactSignal>.Configure(HighSpeedImpactSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(HighSpeedImpactSignal)));
             SignalBus<HighSpeedImpactSignal>.EnsureInitialized();
+            SignalBus<AupPreShiftSignal>.Configure(AupPreShiftSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(AupPreShiftSignal)));
+            SignalBus<AupPreShiftSignal>.EnsureInitialized();
+            SignalBus<AupShiftSignal>.Configure(AupShiftSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(AupShiftSignal)));
+            SignalBus<AupShiftSignal>.EnsureInitialized();
+            SignalBus<EntityDeathSignal>.Configure(EntityDeathSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(EntityDeathSignal)));
+            SignalBus<EntityDeathSignal>.EnsureInitialized();
+            SignalBus<MemoryPressureSignal>.Configure(MemoryPressureSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(MemoryPressureSignal)));
+            SignalBus<MemoryPressureSignal>.EnsureInitialized();
             SignalBus<HapticRequest>.Configure(HapticRequestCapacity, laneHash: ComputeStableSignalLaneHash(nameof(HapticRequest)));
             SignalBus<HapticRequest>.EnsureInitialized();
             SignalBus<ThermalStateChangedSignal>.Configure(ThermalStateChangedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(ThermalStateChangedSignal)));

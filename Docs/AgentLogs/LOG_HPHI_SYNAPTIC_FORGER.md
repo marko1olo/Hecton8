@@ -642,6 +642,7 @@ What was done:
 - Added numeric command ids for PDA, cancel, tab next/previous, interact, primary, secondary, and tool slots.
 - `InputDispatcher` now publishes one `PlayerInputSignal` packet for every discrete command path while preserving legacy managed events for authority consumers.
 - `PlayerPDA` now consumes `SignalBus<PlayerInputSignal>` snapshots and removed PDA/inventory/cancel/tab input-event subscriptions.
+- `PlayerPDA` baselines the command sequence on enable so same-frame stale toggle/cancel packets cannot replay.
 - `HectonFabricatorUI` now consumes cancel/tab commands from `SignalBus<PlayerInputSignal>` and keeps only native navigate/submit callbacks.
 - `HectonFabricatorUI` baselines the command sequence on open so a pre-open cancel/tab packet cannot immediately close or cycle the menu.
 

@@ -295,9 +295,9 @@ namespace Hecton8.Gameplay
                 float viewportX = finalViewportX + 0.5f;
                 float viewportY = finalViewportY + 0.5f;
                 Vector3 markerWorldPosition = hudCamera.ViewportToWorldPoint(new Vector3(viewportX, viewportY, projectionDistance));
-                float distance = EstimateAupDistance(in marker.aup, in playerAup);
-                float sizePixels = markerBaseSizePixels * math.rcp(math.max(distance * 0.1f, 0.5f));
-                sizePixels = math.clamp(sizePixels, markerMinSizePixels, markerMaxSizePixels);
+                double distanceMeters = EstimateAupDistanceMeters(in marker.aup, in playerAup);
+                double sizePixelsDouble = (double)markerBaseSizePixels * math.rcp(math.max(distanceMeters * 0.1d, 0.5d));
+                float sizePixels = (float)math.clamp(sizePixelsDouble, markerMinSizePixels, markerMaxSizePixels);
                 if (marker.timer < FadeDurationSeconds)
                     sizePixels *= math.saturate(marker.timer * math.rcp(FadeDurationSeconds));
 
@@ -484,29 +484,41 @@ namespace Hecton8.Gameplay
                    math.abs(a.a - b.a) <= 0.0001f;
         }
 
-        private static float EstimateAupDistance(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
+        private static double EstimateAupDistanceMeters(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
         {
-            float dx = ResolveAupAxisDeltaMeters(a.GridX, b.GridX, a.LocalX, b.LocalX);
-            float dy = ResolveAupAxisDeltaMeters(a.GridY, b.GridY, a.LocalY, b.LocalY);
-            float dz = ResolveAupAxisDeltaMeters(a.GridZ, b.GridZ, a.LocalZ, b.LocalZ);
-            float ax = math.abs(dx);
-            float ay = math.abs(dy);
-            float az = math.abs(dz);
-            float max = math.max(ax, math.max(ay, az));
-            float min = math.min(ax, math.min(ay, az));
-            float mid = ax + ay + az - max - min;
-            return max + (mid * 0.375f) + (min * 0.25f);
+            double dx = ResolveAupAxisDeltaMeters(a.GridX, b.GridX, a.LocalX, b.LocalX);
+            double dy = ResolveAupAxisDeltaMeters(a.GridY, b.GridY, a.LocalY, b.LocalY);
+            double dz = ResolveAupAxisDeltaMeters(a.GridZ, b.GridZ, a.LocalZ, b.LocalZ);
+            double ax = math.abs(dx);
+            double ay = math.abs(dy);
+            double az = math.abs(dz);
+            double max = math.max(ax, math.max(ay, az));
+            double min = math.min(ax, math.min(ay, az));
+            double mid = ax + ay + az - max - min;
+            return max + (mid * 0.375d) + (min * 0.25d);
         }
 
-        private static float ResolveAupAxisDeltaMeters(long aGrid, long bGrid, float aLocal, float bLocal)
+        private static double ResolveAupAxisDeltaMeters(long aGrid, long bGrid, float aLocal, float bLocal)
         {
-            long gridDelta = aGrid - bGrid;
-            if (gridDelta > MarkerAupAxisClampCells)
-                return float.MaxValue * 0.25f;
-            if (gridDelta < -MarkerAupAxisClampCells)
-                return float.MinValue * 0.25f;
+            if (aGrid > bGrid)
+            {
+                long positiveLimit = bGrid > long.MaxValue - MarkerAupAxisClampCells
+                    ? long.MaxValue
+                    : bGrid + MarkerAupAxisClampCells;
+                if (aGrid > positiveLimit)
+                    return double.MaxValue * 0.25d;
+            }
+            else if (aGrid < bGrid)
+            {
+                long negativeLimit = bGrid < long.MinValue + MarkerAupAxisClampCells
+                    ? long.MinValue
+                    : bGrid - MarkerAupAxisClampCells;
+                if (aGrid < negativeLimit)
+                    return double.MinValue * 0.25d;
+            }
 
-            return (gridDelta * AbsoluteUniversePosition.CellSizeMeters) + (aLocal - bLocal);
+            long gridDelta = aGrid - bGrid;
+            return (gridDelta * (double)AbsoluteUniversePosition.CellSizeMeters) + ((double)aLocal - bLocal);
         }
     }
 }

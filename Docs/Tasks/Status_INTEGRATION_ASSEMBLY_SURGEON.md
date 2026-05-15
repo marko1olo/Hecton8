@@ -4,7 +4,23 @@ Agent: INTEGRATION_ASSEMBLY_SURGEON
 Role: SYSTEMS_ARCHITECT
 Domain: Unity Compilation Graph / Integrator
 Prompt task count: 15 (current in-chat XML; older 17-task static pass retained below)
-Current state: BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK3 CURRENT-DISK GREEN (Hecton8.Core --no-restore 0 warnings / 0 errors); latest static H-Phi gate: CURRENTDISKBUDGETGATE2 SOURCE PASS
+Current state: BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK5 CURRENT-DISK GREEN (Hecton8.Core --no-restore 0 warnings / 0 errors); latest static H-Phi gate: CURRENTDISKBUDGETGATE3 SOURCE PASS
+
+## 2026-05-15 CurrentDisk5/CurrentDiskBudgetGate3 Final Freshness Correction
+
+Directive: continue careful build repair and reject stale green artifacts under active parallel edits.
+Domain: Echelon 9 / The Integrator (Compile Medic).
+Current state: BUILD SUCCESSFUL / PLATINUM GRADE.
+Compile artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_170216_CurrentDisk5.log`.
+Compile exit artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_170216_CurrentDisk5.exit.txt`.
+H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_165347_CurrentDiskBudgetGate3.json`.
+H-Phi exit artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_165347_CurrentDiskBudgetGate3.exit.txt`.
+
+- [x] CurrentDisk4 stale proof superseded | Justification: `PlayerPDA.cs` and `PlayerToolManager.cs` changed after `CurrentDisk4`; the later `CurrentDisk5` build covered those edits | Alternatives rejected: reporting the older green artifact after source timestamps disproved it | Estimate: 400 us scan
+- [x] Current-disk Core compile reverified | Justification: `CurrentDisk5` reports `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0` and no newer C# source exists under `Assets/_Project/Scripts` | Alternatives rejected: generated `.csproj` edits or stale Fresh88/CurrentDisk4 proof | Estimate: 2,558,166 us build verification
+- [x] Current-disk H-Phi gate reverified | Justification: `CurrentDiskBudgetGate3` exits 0 with `RuntimeHPhiRisk=0.000628209`, `DataSovereignty=0.021306032`, `GlobalRegistrySurface=5081`, `GetComponentCalls=321`, `NativeArrayRefs=7074`, `ManagedFormatSurface=677`, `PrimaryManagedRuntimeRisk=327`, `UnityUpdateMethods=0`, `FindObjectCalls=0`, and `AupPrecisionRisk=0` | Alternatives rejected: descriptive-only H-Phi output or stale CurrentDiskBudgetGate2 proof | Estimate: 174,980,730 us tooling verification
+- [x] H-Phi documentation tightened to current counters | Justification: `HECTON_PHI_STATIC_METRIC.md` now records the CurrentDiskBudgetGate3 ceilings/floors, including stricter `FindObjectCalls=0`, `ManagedFormatSurface=677`, and `PrimaryManagedRuntimeRisk=327` | Alternatives rejected: leaving a command that would fail current `NativeArrayRefs=7074` or allowing loose managed-format budgets | Estimate: 0 us runtime
+- [x] Final freshness checked | Justification: no C# source under `Assets/_Project/Scripts` was newer than either final artifact | Alternatives rejected: trusting artifact names without timestamp scan | Estimate: 400 us scan
 
 ## 2026-05-15 CurrentDisk3/CurrentDiskBudgetGate2 Freshness Correction
 

@@ -1073,3 +1073,34 @@ Verification:
 - Static scan confirms SaveManager records `DirtyQueued` and skips write-failure dump on compaction-deferred append.
 - `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` exited 0; core graph debt counts unchanged.
 - No `dotnet` rebuild was run.
+
+## Recheck Report: WFC Append Retry Cache Saturation
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- The fixed WFC snapshot cache used round-robin replacement even when the victim entry still had append pending or in-flight flags.
+- A full-cache sector burst could delete the only SaveManager-owned retry record for an unresolved dirty payload.
+- SlowTick retry also kept launching append attempts while MacroDB compaction was already write-locked.
+
+What was done:
+- Added `WfcOutpostSnapshotCacheFlagAppendAny`.
+- Full-cache replacement now chooses only clean cache entries and skips replacement if every entry is unresolved.
+- Append callback flag updates reinsert pending state when the callback finds its cache entry missing and a clean slot exists.
+- SlowTick retry returns early while MacroDB compaction is in a write-locked state.
+
+Cinematic cheats used:
+- Fixed-size native cache policy instead of managed overflow queues, contract expansion, or extra bridge services.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation: 0 B by static inspection.
+- Hot Tick cost: unchanged.
+- Full-cache insert cost: <=256 native-entry scan.
+- Compaction window savings: up to two avoided background append submissions per SlowTick.
+
+Verification:
+- Static scan confirms `WfcOutpostSnapshotCacheFlagAppendAny`, clean-slot replacement, callback pending reinsert, and compaction-gated retry.
+- Static scan confirms remaining direct WFC typed `SignalBus<T>.Push` calls are only inside `GlobalSignals`.
+- `git diff --check -- Assets/_Project/Scripts/SaveManager.cs` reports only Git CRLF normalization warnings.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` exited 0 at 2026-05-15 17:04:19 +04:00; core graph debt counts unchanged.
+- No `dotnet` rebuild was run.

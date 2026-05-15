@@ -567,3 +567,11 @@ Solution: Carry wave AUP XZ as `double2`, add runtime XZ in double, and add doub
 Rejected Alternatives: Leave CPU buoyancy waves as float because Crest/GPU rendering remains float, or rewrite GPU wave buffers/shaders in the same pass. CPU buoyancy is physics-facing and must not inherit presentation precision loss; GPU contract rewrites are wider rendering work and need separate shader validation.
 Scalability potential: Low devices keep the same wave count LOD and job layout with a few double operations only for active buoyancy samples. Middle gets more stable CPU water height after long sessions. High/Ultra can spend saved drift/debug budget on richer wave counts while preserving AUP phase stability.
 Hardware Impact: Normal frame impact is bounded to active CPU buoyancy wave samples. Full static H-Phi gate reports `AupPrecisionRisk=0`; `NativeArrayRefs` rises by 2 from added overload signatures, not new native allocations.
+
+## Decision 71 - Scanner Marker Double AUP Distance Kernel
+
+Problem: `HectonScanMarkerSystem` estimated marker distance by resolving AUP grid/local axis deltas into `float` before marker size falloff. At large universe offsets this can make scanner markers flicker or scale from truncated AUP deltas.
+Solution: Keep marker-player AUP axis deltas and the existing max/mid/min distance approximation in `double`, clamp impossible grid deltas before long subtraction, and cast only when producing the final pixel size float for rendering.
+Rejected Alternatives: Use `Vector3` runtime distance, call `AbsoluteUniversePosition.DistanceSq` plus sqrt, or leave it UI-only. Runtime distance is presentation-only and loses AUP authority; sqrt is unnecessary for this cheap UI falloff; UI-only scanner cues still must not inject false drift into long-session diagnostics.
+Scalability potential: Low devices keep the same cheap approximation and marker count cap. Middle gets stable marker size after long origin-shift sessions. High/Ultra can layer richer scanner marker visuals without having the size gate inherit float AUP aliasing.
+Hardware Impact: Gameplay hot path adds a few double scalar operations for visible scanner markers and allocates 0 B/frame. Measured gameplay microseconds are absent; static evidence only. Full H-Phi gate reports `AupPrecisionRisk=0`, and no rebuild was run per user ban.

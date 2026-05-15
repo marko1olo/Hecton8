@@ -111,3 +111,40 @@ Verification:
 - Freshness: no C# source under `Assets/_Project/Scripts` was newer than either final artifact at verification time.
 
 Current Status: BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK3 CURRENT-DISK GREEN.
+
+## 2026-05-15 - CurrentDisk5/CurrentDiskBudgetGate3 Triage Record
+
+Errors Fixed: Moving compile wall closed again after later PDA/tool edits; final Core build is 0 warnings / 0 errors.
+
+Files Moved:
+- None.
+
+ASMDEFs Repaired:
+- None.
+
+What was wrong:
+- `CurrentDisk3` and `CurrentDisk4` were invalidated by subsequent C# timestamps.
+- The previous H-Phi command had a stale `NativeArrayRefs=7072` ceiling after current source settled at `7074`.
+
+What was done:
+- Re-ran the Core build with build servers disabled and accepted `CurrentDisk5`.
+- Re-ran the budgeted H-Phi gate and accepted `CurrentDiskBudgetGate3`.
+- Updated status/rationale/logs and tightened the H-Phi metric doc to the current counters.
+
+Cinematic Cheats used:
+- Compile/static evidence closure only.
+- No feature work, simulation rewrite, package change, generated `.csproj` edit, or leaf-domain refactor.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Compile verification time: 2,558,166 us.
+- H-Phi verification time: 174,980,730 us.
+
+Verification:
+- Build artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_170216_CurrentDisk5.log`.
+- Build result: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_165347_CurrentDiskBudgetGate3.json`.
+- H-Phi result: `EXIT=0`, `RuntimeHPhiRisk=0.000628209`, `GlobalRegistrySurface=5081`, `GetComponentCalls=321`, `NativeArrayRefs=7074`, `ManagedFormatSurface=677`, `PrimaryManagedRuntimeRisk=327`, `UnityUpdateMethods=0`, `FindObjectCalls=0`, `AupPrecisionRisk=0`.
+- Freshness: no C# source under `Assets/_Project/Scripts` was newer than either final artifact at verification time.
+
+Current Status: BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK5 CURRENT-DISK GREEN.

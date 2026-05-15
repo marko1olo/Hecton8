@@ -495,3 +495,15 @@ Cinematic Cheats used -> None. Git integration only.
 Exact Microseconds saved -> 0 us runtime by this operator pass. Producer evidence reports CurrentDisk3 compile verification at 4,808,549 us and CurrentDiskBudgetGate2 HPhi verification at 148,361,184 us.
 
 Verification -> Conflict-marker scan clean. `git diff --check` produced only CRLF warnings. CurrentDisk3 build EXIT=0 and CurrentDiskBudgetGate2 HPhi EXIT=0 are preserved. Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals are not claimed.
+
+## 2026-05-15 - Loop 30 WFC And Marker Tail
+
+What was wrong -> After the last verified push, active agents produced another local tail: AUP marker distance hardening, WFC retry cache preservation, signal-lane prewarm/memory-pressure forwarding, integrator/HPhi logs, and new build/HPhi artifacts.
+
+What was done -> Verified remote divergence stayed `0 0`, scanned for conflict markers and whitespace errors, inspected the runtime diffs, and classified evidence without upgrading mixed HPhi output into a full green claim.
+
+Cinematic Cheats used -> None. Git integration only.
+
+Exact Microseconds saved -> 0 us runtime by this operator pass. Producer evidence reports CurrentDisk5 build at 2,558,166 us, CurrentDisk6 build at 64,381,476 us, and HPhi diagnostic at 116,020,615 us.
+
+Verification -> `git diff --check` returned only CRLF warnings. Strict conflict-marker scan returned clean. Build CurrentDisk5/6 exit 0; HPhi `165347_CurrentDiskBudgetGate3` exit 0; later HPhi `165615_CurrentDiskBudgetGate3` exit 1 on `NativeArrayRefs=7074 > 7072`; diagnostic HPhi exit 0 is not a replacement for the failed budget gate. No Unity Editor import, Play Mode, profiler, GCMonitor, player build, or runtime visual proof is claimed.

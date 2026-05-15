@@ -3,7 +3,7 @@
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
 Domain: ECHELON 1 / Origin Shift (AUP Manager), with audit reach into Physics, Voxel, Kinematics, AI trigger math, Biome trigger math, and deterministic seed callsites.
 Assignment Source: User-supplied XML block. `Docs/Tasks/CURRENT_BATCH.md` extraction returned `PROMPT_NOT_FOUND` for this ID on initial pass.
-Status: VERIFIED AUP INTEGRITY - LOOP 43 APPLIED; REAL H-PHI SOURCE REPAIRS REMOVED WORLD SPATIAL HASH ORIGIN-SHIFT NATIVE SCRATCH, FAR-UNLOAD LIST SCRATCH, RESTORED EDITOR GHOST DOUBLE AUP HISTORY, KEPT PDA DIAGNOSTIC UNIVERSE OFFSET IN DOUBLE UNTIL TEXT OUTPUT, AND MOVED FLUID CPU GERSTNER PHASE INPUT TO DOUBLE AUP; STRICT AUP SCANS RETURN NO_MATCHES; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
+Status: VERIFIED AUP INTEGRITY - LOOP 44 APPLIED; REAL H-PHI SOURCE REPAIRS REMOVED WORLD SPATIAL HASH ORIGIN-SHIFT NATIVE SCRATCH, FAR-UNLOAD LIST SCRATCH, RESTORED EDITOR GHOST DOUBLE AUP HISTORY, KEPT PDA DIAGNOSTIC UNIVERSE OFFSET IN DOUBLE UNTIL TEXT OUTPUT, MOVED FLUID CPU GERSTNER PHASE INPUT TO DOUBLE AUP, AND KEPT SCANNER MARKER AUP DISTANCE IN DOUBLE UNTIL PIXEL SIZING; STRICT AUP SCANS RETURN NO_MATCHES; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
 
 ## Selected Mandates
 
@@ -526,3 +526,17 @@ Loop 43 - Real AUP Precision Repair / Fluid CPU Gerstner Phase Double Input:
 - Temporary capture `TEMP_HECTON_PHI_SUMMARY_LOOP43.json` was removed after extracting metrics.
 - `git diff --check -- Assets/_Project/Scripts/HectonFluidEngine.cs` returns no whitespace errors.
 - No `dotnet build` or rebuild was run in Loop 43 because the user explicitly forbade rebuilds.
+
+Loop 44 - Real AUP Precision Repair / Scanner Marker Distance Double Kernel:
+- Re-read status/rationale and kept the rebuild ban active.
+- Patched `Assets/_Project/Scripts/HectonScanMarkerSystem.cs` so marker-to-player AUP distance uses double axis deltas and double size falloff math until the final pixel-size float cast.
+- Preserved the existing cheap max/mid/min distance approximation for UI sizing instead of adding a sqrt; this keeps scanner marker presentation predictable and cheap while removing the early float AUP reduction.
+- Added guarded grid-delta clamp checks before subtracting long grid coordinates, so out-of-range AUP marker pairs saturate cleanly without relying on float overflow behavior.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 109.053 seconds.
+- Latest full static H-Phi summary: `RuntimeHPhiRisk=0.000628209`, `RuntimeHPhiNarrow=0.01078177`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=362`, `AupPrecisionRisk=0`, `NativeArrayRefs=7074`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, `NativeOwnershipRisk=8196`, `RuntimeFiles=1278`, `RuntimeLines=869888`.
+- Final targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Final direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run and returned 233 broad residual matches. Residuals remain broad `universe` text and known final-cast/presentation payload names.
+- Temporary capture `TEMP_HECTON_PHI_SUMMARY_LOOP44.json` was removed after extracting metrics.
+- `git diff --check -- Assets/_Project/Scripts/HectonScanMarkerSystem.cs` reports a line-ending warning only, no whitespace errors.
+- No `dotnet build` or rebuild was run in Loop 44 because the user explicitly forbade rebuilds.

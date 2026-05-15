@@ -465,6 +465,34 @@ Status: VERIFIED AUP INTEGRITY - LOOP 39 REAL H-PHI SOURCE REPAIR REMOVED DEAD O
 - Unity import/Console verification remains pending because no Unity editor session is available.
 - H-Phi result is static-source evidence, not profiler proof.
 
+## Loop 44 Real AUP Precision Repair - Scanner Marker Distance Double Kernel
+
+### Findings
+
+- `HectonScanMarkerSystem` used `float` AUP axis deltas inside `EstimateAupDistance` before marker size falloff.
+- This path is UI presentation, but it consumes AUP marker/player coordinates and can visibly scale or flicker markers from truncated long-session offsets.
+
+### Source Changes
+
+- `Assets/_Project/Scripts/HectonScanMarkerSystem.cs`: renamed the estimator to `EstimateAupDistanceMeters` and moved axis deltas, max/mid/min approximation, and size falloff to `double`.
+- The final precision reduction is now the pixel-size float cast used by the instanced marker draw.
+- Added guarded grid-delta clamp checks before subtracting long grid coordinates.
+
+### Verification
+
+- `git diff --check -- Assets/_Project/Scripts/HectonScanMarkerSystem.cs` reports a line-ending warning only, no whitespace errors.
+- Final targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Final direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` returned 233 broad residual matches. Residuals remain broad `universe` text plus known final-cast/presentation payload names.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 109.053 seconds with `RuntimeHPhiRisk=0.000628209`, `RuntimeHPhiNarrow=0.01078177`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=362`, `AupPrecisionRisk=0`, `NativeArrayRefs=7074`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, and `NativeOwnershipRisk=8196`.
+- Temporary Loop 44 capture is absent after cleanup.
+- No `dotnet build` or rebuild was run in Loop 44 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- H-Phi result is static-source evidence, not profiler proof.
+
 ## Loop 43 Real AUP Precision Repair - Fluid CPU Gerstner Phase Double Input
 
 ### Findings

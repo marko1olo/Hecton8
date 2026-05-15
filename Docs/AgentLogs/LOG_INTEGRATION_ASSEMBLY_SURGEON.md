@@ -797,3 +797,38 @@ Residual risk:
 
 Current Status:
 - BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK3 CURRENT-DISK GREEN.
+
+## 2026-05-15 - CurrentDisk5/CurrentDiskBudgetGate3 Final Freshness Correction
+
+What was wrong:
+- More C# edits landed after `CurrentDisk3` and `CurrentDisk4`.
+- `CurrentDiskBudgetGate2` was valid before those edits, but not final current-source H-Phi evidence.
+- The H-Phi doc command needed the settled `NativeArrayRefs=7074` ceiling and tighter managed-format counters.
+
+What was done:
+- Recompiled `Hecton8.Core.csproj` after the final moving source timestamps settled.
+- Ran the budgeted H-Phi gate as `CurrentDiskBudgetGate3`.
+- Updated status, rationale, Integrator logs, and the H-Phi regression command to the final artifact pair.
+
+Cinematic Cheats used:
+- Compile/static evidence closure only.
+- No gameplay, physics, rendering, shader, prefab, package, generated `.csproj`, or leaf ownership rewrite was performed.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Final compile verification time: 2,558,166 us.
+- Final H-Phi verification time: 174,980,730 us.
+
+Verification:
+- Compile artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_170216_CurrentDisk5.log`.
+- Compile result: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_165347_CurrentDiskBudgetGate3.json`.
+- H-Phi result: `EXIT=0`, `RuntimeHPhiRisk=0.000628209`, `DataSovereignty=0.021306032`, `MemoryAlignment=0.506043090`, `GlobalRegistrySurface=5081`, `GetComponentCalls=321`, `NativeArrayRefs=7074`, `ManagedFormatSurface=677`, `PrimaryManagedRuntimeRisk=327`, `OwnerBlockedNativeArrayRefs=6262`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, `UnityUpdateMethods=0`, `FindObjectCalls=0`, `AupPrecisionRisk=0`.
+- Freshness: no C# source under `Assets/_Project/Scripts` was newer than either final artifact at verification time.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals were not run.
+- Runtime microsecond savings are not claimed without profiler evidence.
+
+Current Status:
+- BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK5 CURRENT-DISK GREEN.

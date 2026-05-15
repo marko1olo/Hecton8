@@ -173,3 +173,9 @@ Solution: Treat it as a bounded checkpoint after remote sync, repair the one obs
 Rejected Alternatives: Chasing an infinite live stream, reverting other agents' domains, committing stale/empty evidence, or claiming Unity/player/profiler green from Core compile and static HPhi artifacts.
 Scalability potential: Git-only operator pass. Low/Middle/High/Ultra runtime behavior remains producer-owned; this pass preserves evidence and avoids merge churn.
 Hardware Impact: 0 us runtime impact. Dev-path gain is another published checkpoint with explicit proof boundaries.
+
+Problem: A new post-push tail contains real runtime changes plus mixed HPhi evidence, including one later budget failure that conflicts with green wording in integrator logs.
+Solution: Preserve the tail as evidence, include the completed signal-lane prewarm/memory-pressure forwarding edit, but classify proof explicitly: build exits are green, one budgeted HPhi run passes, a later budgeted HPhi run fails on `NativeArrayRefs=7074 > 7072`, and diagnostic HPhi output is not a full budget pass.
+Rejected Alternatives: Dropping failure evidence, editing other agents' reports to look cleaner, or claiming final Unity/profiler/HPhi green from partial artifacts.
+Scalability potential: Git-only integration pass. Runtime effects belong to the producing agents; this pass keeps the audit trail intact.
+Hardware Impact: 0 us runtime impact. Prevents false readiness claims while still reducing Git conflict surface.
