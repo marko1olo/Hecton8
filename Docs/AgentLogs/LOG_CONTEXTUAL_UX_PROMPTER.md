@@ -245,3 +245,25 @@ Cinematic cheats used: No visual change. This preserves the same physical panel 
 Exact microseconds saved: Estimate only. Expected gain is sub-1 us per active physical panel tick; no profiler proof is claimed.
 
 Verification: No dotnet rebuilds were run. Static scans confirmed source-change-driven casts and no forbidden allocation/text/LINQ, bootstrap fallback, direct `Time`, old phosphor fallback, or `resolvedCamera.transform` markers returned.
+
+## 2026-05-15 Tooltip Input Determinism Startup Guard
+What was wrong: The tooltip input scheme cache could hold the no-op input determinism fallback if the renderer enabled before the real input dispatcher registered.
+
+What was done: Changed tooltip input refresh to prefer `GlobalRegistry.RegisteredInput`, keep `_inputDeterminismAwaitingRegistration` only while the slot is empty, and retry through that narrow startup path before scheme reads.
+
+Cinematic cheats used: No visual change. This protects correct diegetic glyph selection for keyboard, gamepad, Steam Deck, and XR prompts.
+
+Exact microseconds saved: Estimate only. Primary gain is correctness; steady-state avoids registry polling after input registration.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed registered-slot input caching, no-op fallback guard, and no forbidden allocation/text/LINQ, bootstrap fallback, direct `Time`, old phosphor fallback, or `resolvedCamera.transform` markers.
+
+## 2026-05-15 Tooltip Scalability Event Cache
+What was wrong: Tooltip late-frame work still read `GlobalRegistry.ScalabilityTierProfileByte` every frame to update Low-tier dither behavior.
+
+What was done: Implemented `IScalabilityChangedEventListener`, registered with `ScalabilityEvents`, and moved `_lowTierActive` updates to enable/start refresh plus scalability-change events.
+
+Cinematic cheats used: Preserved the Low-tier snap and non-Low dither fade. The visual fake is unchanged; the tier decision is just event-driven now.
+
+Exact microseconds saved: Estimate only. Expected gain is sub-1 us per active tooltip late frame on i3/MX350; no profiler proof is claimed.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed no late-frame scalability registry poll remains, `ScalabilityEvents` owns runtime tier updates, and existing no-bootstrap/no-direct-Time/no-old-phosphor/no-hot-path scans stayed clean.

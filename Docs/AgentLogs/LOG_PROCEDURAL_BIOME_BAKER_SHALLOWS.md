@@ -345,3 +345,39 @@ Cinematic Cheats used: Opaque shared material, dithered LOD crossfade, GPU Resid
 Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents future hidden shader pass bloat; exact runtime microseconds were not profiled.
 
 Verification: No dotnet rebuild and no Unity import was run. `ShaderPassBudgetScan Pass=2 UsePass=0 GrabPass=0 Fallback=0 Forward=True Shadow=True`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.
+
+## 2026-05-15 Shader Pragma Budget Contract
+
+What was wrong: Shader pass count was locked, but pragma directives could still silently expand shader variants.
+
+What was done: Added `ValidateShaderPragmaBudget` and direct token counting for exact pragma counts, including instancing, fog, main-light shadows, LOD fade, Math LOD, local high-quality, skip variants, and zero additional-light multi_compile.
+
+Cinematic Cheats used: Bounded opaque shader variants, dithered LOD crossfade, shared material/atlas, and no runtime shader warmup compensation remain unchanged.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents future shader variant fan-out and warmup/build pressure; exact runtime microseconds were not profiled.
+
+Verification: No dotnet rebuild and no Unity import was run. Shader pragma token counts matched the locked budget; `git diff --check` passed for the baker; source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.
+
+## 2026-05-15 BioRule Raw Serialization Contract
+
+What was wrong: Public `BioRuleData` getters could hide raw serialized asset drift through clamps or defaults.
+
+What was done: Extended `ValidateRuleAsset` to validate raw serialized rule fields directly, including identity, material, axiom, generation numbers, SDF profile, LOD budgets, rock settings, and output folders.
+
+Cinematic Cheats used: Static offline L-system/SDF generation remains the contract. No runtime rule normalization, no runtime mesh generation, and no renderer repair were added.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents future heavier/malformed rebakes from hidden raw rule drift; exact runtime microseconds were not profiled.
+
+Verification: No dotnet rebuild and no Unity import was run. `RuleRawSerializedYamlScan Count=3 Bad=0`; `git diff --check` passed for the baker; source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.
+
+## 2026-05-15 BioRule Folder Exactness Contract
+
+What was wrong: Extra Shallows `BioRuleData` assets could exist beside the three canonical bake rules without failing validation.
+
+What was done: Added `ValidateRuleFolderContract`, requiring exactly the TubeCoral, Kelp, and PorousRock rule assets and zero unexpected rule payloads in the Shallows rule folder.
+
+Cinematic Cheats used: Static offline bake-input discipline remains the contract. No runtime rule filtering, runtime bake path, or destructive folder cleanup was added.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents stale rule assets from producing non-canonical generated payloads; exact runtime microseconds were not profiled.
+
+Verification: No dotnet rebuild and no Unity import was run. `RuleFolderExactnessYamlScan Count=3 Bad=0`; `git diff --check` passed for the baker; source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.

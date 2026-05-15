@@ -249,3 +249,17 @@ Solution: Added cached source references and recast only when `panelInteractable
 Rejected Alternatives: Removing runtime resolution entirely, caching only in `Awake`, or using scene searches. Runtime overrides still need to work; `Awake`-only would miss injected sources; scene searches violate ownership and cost rules.
 Scalability potential: Low removes tiny repeated cast work from active panels. Middle/High/Ultra keep the same extension hooks for richer physical panel receivers and power visualization.
 Hardware Impact: Expected gain is sub-microsecond per active physical panel tick; no profiler proof.
+
+## Decision 35: Tooltip Input Determinism No-Op Fallback Guard
+Problem: `DiegeticTooltipSystem` cached `GlobalRegistry.InputDeterminism`, which aliases `GlobalRegistry.Input` and can return the no-op fallback before the real input dispatcher registers. First registration from an empty slot does not necessarily produce the hot-swap notification this cache relied on.
+Solution: Cache `GlobalRegistry.RegisteredInput` when present, mark `_inputDeterminismAwaitingRegistration` only while the slot is empty, and refresh through that narrow startup path before scheme reads.
+Rejected Alternatives: Polling `GlobalRegistry.InputDeterminism` forever, freezing the first no-op fallback, or routing through managed input events. Polling wastes steady-frame budget; frozen no-op breaks glyph selection after startup ordering changes; managed events add coupling.
+Scalability potential: Low keeps correct snap/no-dither input glyphs after delayed input registration. Middle/High/Ultra keep dynamic device glyph resolution for richer authored prompt materials.
+Hardware Impact: Expected gain is correctness plus sub-microsecond steady-frame hygiene after input registration; no profiler proof.
+
+## Decision 36: Tooltip Scalability Event Cache
+Problem: Tooltip late-frame work still refreshed `_lowTierActive` from `GlobalRegistry.ScalabilityTierProfileByte` every frame even though the project has a dispatcher-flushed scalability event lane.
+Solution: Implemented `IScalabilityChangedEventListener`, registered with `ScalabilityEvents`, updated `_lowTierActive` from `ScalabilityChangedEvent`, and kept enable/start refresh for cold correctness.
+Rejected Alternatives: Per-frame registry polling, ignoring runtime tier changes, or adding a bespoke UI tier signal. Polling is avoidable; ignoring runtime tier changes breaks thermal/battery downgrades; a bespoke signal duplicates the existing lane.
+Scalability potential: Low immediately snaps fade and disables dither when the event switches low. Middle/High/Ultra keep fade/dither without polling the registry every late frame.
+Hardware Impact: Expected gain is sub-microsecond per active tooltip late frame on weak hardware; no profiler proof.

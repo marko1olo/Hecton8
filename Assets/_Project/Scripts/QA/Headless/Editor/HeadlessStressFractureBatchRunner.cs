@@ -24,10 +24,24 @@ namespace Hecton8.QA.Headless.Editor
         private const string RunnerStatusRelativePath = "Docs/AgentLogs/HeadlessStressFractureBatchRunner_HEADLESS_STRESS_FRACTURE_BOT.txt";
         private const string ExitCodeJsonKey = "\"exitCode\"";
         private const string AgentName = "HEADLESS_STRESS_FRACTURE_BOT";
-        private const int ResultSchemaVersion = 6;
+        private const int ResultSchemaVersion = 7;
         private const int BlackboxFrameCapacity = 300;
         private const int BlackboxHeaderSizeBytes = 16;
         private const int BlackboxEntrySizeBytes = 64;
+        private const int BlackboxEntryOffsetFrame = 0;
+        private const int BlackboxEntryOffsetExtremeFrame = 4;
+        private const int BlackboxEntryOffsetShiftSequence = 8;
+        private const int BlackboxEntryOffsetEventHash = 12;
+        private const int BlackboxEntryOffsetNativeBytes = 16;
+        private const int BlackboxEntryOffsetH8Bytes = 24;
+        private const int BlackboxEntryOffsetNativeAllocations = 32;
+        private const int BlackboxEntryOffsetH8Allocations = 36;
+        private const int BlackboxEntryOffsetDispatcherPhaseMs = 40;
+        private const int BlackboxEntryOffsetDataVaultFragmentation = 44;
+        private const int BlackboxEntryOffsetLastShiftMetersX = 48;
+        private const int BlackboxEntryOffsetLastShiftMetersY = 52;
+        private const int BlackboxEntryOffsetLastShiftMetersZ = 56;
+        private const int BlackboxEntryOffsetFlags = 60;
         private const uint BlackboxMagic = 0x48534642u;
         private const double TimeoutSeconds = 7200.0;
         // COLD ALLOC: byte[1] - batch flag file payload, editor-only setup path - owner: HeadlessStressFractureBatchRunner
@@ -297,6 +311,13 @@ namespace Hecton8.QA.Headless.Editor
                     writer.Write(",\"blackboxManifestRelativePath\":\"");
                     WriteJsonEscaped(writer, BlackboxManifestRelativePath);
                     writer.Write('"');
+                    writer.Write(",\"blackboxBinaryRelativePath\":\"");
+                    WriteJsonEscaped(writer, BlackboxRelativePath);
+                    writer.Write('"');
+                    writer.Write(",\"blackboxBinaryDumpSucceeded\":0");
+                    writer.Write(",\"blackboxBinaryExistsAfterDump\":0");
+                    writer.Write(",\"blackboxManifestDumpSucceeded\":0");
+                    WriteBlackboxEntryOffsets(writer);
                     writer.Write('}');
                 }
 
@@ -385,6 +406,38 @@ namespace Hecton8.QA.Headless.Editor
                         break;
                 }
             }
+        }
+
+        private static void WriteBlackboxEntryOffsets(StreamWriter writer)
+        {
+            writer.Write(",\"blackboxEntryOffsetFrame\":");
+            WriteInvariant(writer, BlackboxEntryOffsetFrame);
+            writer.Write(",\"blackboxEntryOffsetExtremeFrame\":");
+            WriteInvariant(writer, BlackboxEntryOffsetExtremeFrame);
+            writer.Write(",\"blackboxEntryOffsetShiftSequence\":");
+            WriteInvariant(writer, BlackboxEntryOffsetShiftSequence);
+            writer.Write(",\"blackboxEntryOffsetEventHash\":");
+            WriteInvariant(writer, BlackboxEntryOffsetEventHash);
+            writer.Write(",\"blackboxEntryOffsetNativeBytes\":");
+            WriteInvariant(writer, BlackboxEntryOffsetNativeBytes);
+            writer.Write(",\"blackboxEntryOffsetH8Bytes\":");
+            WriteInvariant(writer, BlackboxEntryOffsetH8Bytes);
+            writer.Write(",\"blackboxEntryOffsetNativeAllocations\":");
+            WriteInvariant(writer, BlackboxEntryOffsetNativeAllocations);
+            writer.Write(",\"blackboxEntryOffsetH8Allocations\":");
+            WriteInvariant(writer, BlackboxEntryOffsetH8Allocations);
+            writer.Write(",\"blackboxEntryOffsetDispatcherPhaseMs\":");
+            WriteInvariant(writer, BlackboxEntryOffsetDispatcherPhaseMs);
+            writer.Write(",\"blackboxEntryOffsetDataVaultFragmentation\":");
+            WriteInvariant(writer, BlackboxEntryOffsetDataVaultFragmentation);
+            writer.Write(",\"blackboxEntryOffsetLastShiftMetersX\":");
+            WriteInvariant(writer, BlackboxEntryOffsetLastShiftMetersX);
+            writer.Write(",\"blackboxEntryOffsetLastShiftMetersY\":");
+            WriteInvariant(writer, BlackboxEntryOffsetLastShiftMetersY);
+            writer.Write(",\"blackboxEntryOffsetLastShiftMetersZ\":");
+            WriteInvariant(writer, BlackboxEntryOffsetLastShiftMetersZ);
+            writer.Write(",\"blackboxEntryOffsetFlags\":");
+            WriteInvariant(writer, BlackboxEntryOffsetFlags);
         }
 
         private static void WriteJsonHexNibble(StreamWriter writer, int value)

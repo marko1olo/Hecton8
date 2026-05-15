@@ -1079,6 +1079,9 @@ function Get-DuplicateSignalNameAudit {
     param([string[]]$Files)
 
     $rows = [System.Collections.Generic.List[object]]::new()
+    $totalFileCount = 0
+    $candidateFileCount = 0
+    $skippedFileCount = 0
     $structRegex = [System.Text.RegularExpressions.Regex]::new(
         '^\s*(?:public|internal|private|protected)?\s*(?:readonly\s+|partial\s+|unsafe\s+|ref\s+)*struct\s+(?<Name>[A-Za-z_][A-Za-z0-9_]*Signal)\b',
         $regexOptions)
@@ -1092,12 +1095,15 @@ function Get-DuplicateSignalNameAudit {
         }
 
         $content = [System.IO.File]::ReadAllText($file)
+        $totalFileCount++
 
         if ($content.IndexOf('Signal', [StringComparison]::Ordinal) -lt 0 -or
             $content.IndexOf('struct', [StringComparison]::Ordinal) -lt 0) {
+            $skippedFileCount++
             continue
         }
 
+        $candidateFileCount++
         $codeSurface = ConvertTo-CodeSurface $content
         $lines = $codeSurface -split "`r?`n", -1
         $namespace = ''
@@ -1137,6 +1143,9 @@ function Get-DuplicateSignalNameAudit {
     [ordered]@{
         EvidenceClass = 'STATIC_SOURCE'
         Model = 'First-party struct names ending in Signal must be globally unique. This is a static name-collision scan, not compile or runtime proof.'
+        SourceFileCount = $totalFileCount
+        CandidateFileCount = $candidateFileCount
+        PrefilterSkippedFileCount = $skippedFileCount
         SignalStructDeclarationCount = @($rows).Count
         DuplicateSignalNameCount = @($groups).Count
         DuplicateSignalDeclarationCount = @($duplicateRows).Count
@@ -1810,6 +1819,9 @@ function New-AuditSummary {
         CoreGraph = New-CoreGraphSummary $Audit.CoreGraphAudit
         DuplicateSignalNameAudit = [ordered]@{
             EvidenceClass = $Audit.DuplicateSignalNameAudit.EvidenceClass
+            SourceFileCount = $Audit.DuplicateSignalNameAudit.SourceFileCount
+            CandidateFileCount = $Audit.DuplicateSignalNameAudit.CandidateFileCount
+            PrefilterSkippedFileCount = $Audit.DuplicateSignalNameAudit.PrefilterSkippedFileCount
             SignalStructDeclarationCount = $Audit.DuplicateSignalNameAudit.SignalStructDeclarationCount
             DuplicateSignalNameCount = $Audit.DuplicateSignalNameAudit.DuplicateSignalNameCount
             DuplicateSignalDeclarationCount = $Audit.DuplicateSignalNameAudit.DuplicateSignalDeclarationCount

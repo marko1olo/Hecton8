@@ -536,12 +536,12 @@ namespace Hecton8.World.Outposts
             if (_jobPhase != JobPhase.None || (_generated && _publishedPowerGridHandle != 0u))
                 return;
 
-            ReadOnlySpan<Hecton8.Core.Signals.SectorHydratedSignal> signals =
-                SignalBus<Hecton8.Core.Signals.SectorHydratedSignal>.GetFrameSnapshot();
+            ReadOnlySpan<Hecton8.Core.Signals.MacroDatabaseSectorHydrationSignal> signals =
+                SignalBus<Hecton8.Core.Signals.MacroDatabaseSectorHydrationSignal>.GetFrameSnapshot();
             ulong targetBaseHash = ResolveFirstBaseHash();
             for (int i = 0; i < signals.Length; i++)
             {
-                Hecton8.Core.Signals.SectorHydratedSignal signal = signals[i];
+                Hecton8.Core.Signals.MacroDatabaseSectorHydrationSignal signal = signals[i];
                 if (!generateOnAnyHydratedSectorForDebug && signal.SectorHash != targetBaseHash)
                     continue;
 
@@ -1301,8 +1301,7 @@ namespace Hecton8.World.Outposts
                 CellCount = (ushort)math.min(ResolveActiveCellCount(), ushort.MaxValue),
                 Flags = ResolveDescriptorFlags()
             };
-            GlobalSignals.InitializeAllQueues();
-            SignalBus<WfcOutpostGeneratedSignal>.Push(in signal);
+            GlobalSignals.Publish(in signal);
         }
 
         private void ReleasePublishedPowerGrid()

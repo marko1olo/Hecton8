@@ -360,3 +360,59 @@ Verification:
 - Broad `rg` shows the only remaining tool loadout delegate subscriber is `Gameplay/PlayerTransportCoordinator`, left because it is gameplay transport authority.
 - Diff-only anti-bloat scan found no added `foreach`, LINQ, `string.Format`, `.ToString(`, interpolation, `new List`, or `new Dictionary`.
 - `git diff --check` on touched UI code reported only LF/CRLF notices.
+
+## 2026-05-15 - Survival Vitals Advisory SignalLane Addendum
+
+What was wrong:
+- The project already had a 32-byte `SurvivalVitalsChangedSignal` producer path, but `SuitAdvisoryController` still lacked the actual late-frame snapshot consumer in the live source lineage.
+- The advisory controller was registered as an `ILateFrameTickable`; without consuming the lane, that registration risked idle work with no signal benefit.
+- PDA chrome vitals had already moved to percent-bucket checks, but the main suit advisory warnings still needed a complete signal-lane consumer path.
+
+What was done:
+- Added `SignalBus<SurvivalVitalsChangedSignal>` snapshot consumption in `SuitAdvisoryController.LateFrameTick()`.
+- Bound the advisory source id with `GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(survival.GetEntityId()))`, matching the survival producer.
+- Dispatched oxygen, energy, integrity, depth, temperature/thermal, injury, and death dirty flags through the existing advisory warning methods.
+- Changed oxygen, energy, and integrity warning checks to consume normalized signal payloads instead of re-reading raw survival values.
+- Left progression death, visor temperature, camera-juice, and SuitHUD depth delegates untouched as separate owner-domain contracts.
+
+Cinematic Cheats used:
+- One dirty-mask packet replaces eight advisory callback surfaces.
+- Advisory thresholds use normalized signal payloads for cheap warning state changes.
+- Higher-tier visual/audio warning systems can attach to the same packet without adding producer references.
+
+Exact microseconds saved:
+- Estimated 0.5-1.5 us on survival warning bursts by removing advisory delegate dispatch and stale registration risk.
+- Steady-state cost is one bounded UI late-frame snapshot scan for the advisory controller.
+
+Verification:
+- No dotnet build, restore, or rebuild was run.
+- `rg` found no `OnOxygenChanged +=`, `OnEnergyChanged +=`, `OnIntegrityChanged +=`, `OnDepthChanged +=`, `OnTemperatureChanged +=`, `ThermalStateChanged +=`, `InjuryStateChanged +=`, or `OnDeath +=` remnants in `SuitAdvisoryController`.
+- `rg` confirmed `SuitAdvisoryController` now implements `ILateFrameTickable`, defines `LateFrameTick`, and consumes `SignalBus<SurvivalVitalsChangedSignal>`.
+- `git diff --check` on touched code reported clean aside from standard LF/CRLF notices where applicable.
+
+## 2026-05-15 - Suit HUD Depth SignalLane Addendum
+
+What was wrong:
+- `SuitHUDV4CanvasOverlay` still subscribed to `HectonSurvivalSystem.OnDepthChanged`.
+- The overlay is already in the UI late-frame dispatcher, so a managed survival callback was unnecessary for depth refresh.
+- Survival already publishes a 32-byte vitals dirty packet with a depth flag.
+
+What was done:
+- Removed `OnDepthChanged +=` and `OnDepthChanged -=` from `SuitHUDV4CanvasOverlay`.
+- Added cached survival-vitals source id and sequence tracking for the depth signal.
+- Consumed `SignalBus<SurvivalVitalsChangedSignal>` before the reactive HUD solve and applied only packets with `SurvivalVitalsChangedSignalFlags.Depth`.
+- Preserved the initial survival depth read and movement fallback when no survival source is bound.
+
+Cinematic Cheats used:
+- Depth display now rides on the shared survival dirty mask instead of a bespoke callback.
+- No extra dispatcher registration was added; the overlay was already a late-frame UI consumer.
+- The HUD reads exact depth only after a depth dirty packet instead of polling the survival system every frame.
+
+Exact microseconds saved:
+- Estimated 0.2-0.6 us on depth update bursts by removing one HUD delegate dispatch path.
+- Steady-state cost is bounded to a source-id packet scan in an already-registered overlay.
+
+Verification:
+- No dotnet build, restore, or rebuild was run.
+- `rg` found no `OnDepthChanged +=` or `OnDepthChanged -=` remnants in `SuitHUDV4CanvasOverlay`.
+- `git diff --check` on touched code reported only standard LF/CRLF notices.

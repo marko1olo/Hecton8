@@ -3604,7 +3604,7 @@ namespace Hecton8.World
             for (int i = 0; i < hydratedSignals.Length; i++)
                 HydrateSectorMacroSwarms(in hydratedSignals[i]);
 
-            ReadOnlySpan<SectorHydratedSignal> macroDatabaseHydratedSignals = SignalBus<SectorHydratedSignal>.GetFrameSnapshot();
+            ReadOnlySpan<MacroDatabaseSectorHydrationSignal> macroDatabaseHydratedSignals = SignalBus<MacroDatabaseSectorHydrationSignal>.GetFrameSnapshot();
             if (macroDatabaseHydratedSignals.Length > 0)
                 PushMacroSwarmBlackBox(2);
         }

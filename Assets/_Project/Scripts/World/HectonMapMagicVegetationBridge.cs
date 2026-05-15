@@ -2829,7 +2829,7 @@ namespace Hecton8.World
         {
             conduitVectors = _nativeMemory.AbyssalNavConduitVectorsSnapshotNative;
             conduitStrengths = _nativeMemory.AbyssalNavConduitStrengthSnapshotNative;
-            count = ResolveAbyssalNavGraphViewCount();
+            count = ResolveAbyssalConduitViewCount();
             return count > 0 &&
                    conduitVectors.IsCreated &&
                    conduitStrengths.IsCreated;

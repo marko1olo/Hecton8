@@ -403,3 +403,15 @@ Rejected Alternatives: Leaving the chronology inverted was rejected because the 
 Scalability potential: No runtime behavior change. It protects H-Phi process integrity under long-running parallel-agent work and context compaction.
 
 Hardware Impact: None.
+
+## Decision 32 - Final Dotnet Respawn Stop
+
+Problem: A forbidden external `dotnet.exe msbuild/build Hecton8.Core.csproj` process respawned again during the post-log-order verification pass.
+
+Solution: Stop the observed child build and wrapper ids, then re-query with `Get-Process -Name dotnet` to avoid a stale clean claim.
+
+Rejected Alternatives: Waiting for the build to finish was rejected because the user explicitly forbids dotnet rebuilds. Killing the root Codex/IDE process was rejected because it is outside the task boundary and would disrupt the workspace.
+
+Scalability potential: No runtime behavior change. This preserves clean verification evidence while multiple agents and IDE watchers are active.
+
+Hardware Impact: Removes local build CPU pressure only; no gameplay frame-time claim.

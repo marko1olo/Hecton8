@@ -461,6 +461,148 @@ Verification:
 
 Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
 
+## 2026-05-15 - WFC Outpost Loop 27 Origin-Relative Heightmap Overflow Guard
+
+What was wrong:
+- Loop 25 proved finite terrain metadata, but finite terrain/origin operands could still overflow when combined in `SampleHeight`.
+- `TerrainPosition.y + TerrainSize.y` and `originMeters - terrainPosition` needed explicit final finite proof before height sampling.
+
+What was done:
+- Passed generation origin into the heightmap payload validator.
+- Required finite origin, finite origin-to-terrain delta, and finite terrain top height before accepting the heightmap.
+- Repeated the same guard in `MarauderOutpostMatrixExtractionJob.hasHeightmap`.
+
+Cinematic Cheats used:
+- Invalid terrain metadata falls back to the deterministic slab instead of simulating repair or clamping another system's terrain authority.
+- Valid payloads keep height-following stilts and shell grounding.
+
+Exact Microseconds saved:
+- New cost: a few cold scalar/vector finite checks, below 0.1 us per extraction setup on i3/MX350.
+- Saved corrupt path cost: avoids bad matrix generation, GPU upload fallout, and proxy correction work.
+- Hot Tick/Render remains 0 B/frame.
+
+Verification:
+- Targeted origin-relative heightmap scan: PASS; service and Burst job both prove origin-relative terrain math.
+- `HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
+- `git diff --check`: PASS with repository CRLF warning only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
+## 2026-05-15 - WFC Outpost Loop 28 Indirect Upload Capacity Fence
+
+What was wrong:
+- Matrix upload readiness did not require `_shellCellTypes` and `_argsBuffer`.
+- Upload helper clamping could write fewer elements while indirect args still advertised the larger instance count.
+
+What was done:
+- Required matrix buffer, cell type buffer, shell matrix array, shell type array, and args buffer before clearing dirty upload state.
+- Clamped uploaded instance count to CPU and GPU capacities before data upload and indirect args update.
+
+Cinematic Cheats used:
+- The shell renderer keeps the single indirect draw fake instead of spawning shell GameObjects or rebuilding materials.
+- Resource-loss cases fail closed for one frame rather than drawing stale or oversized GPU state.
+
+Exact Microseconds saved:
+- New cost: four scalar clamps on cold matrix upload, below 0.1 us per upload on i3/MX350.
+- Saved failure path cost: avoids oversized indirect instance counts and undefined shader buffer reads.
+- Hot Tick/Render remains 0 B/frame.
+
+Verification:
+- Targeted upload scan: PASS; all CPU/GPU capacity clamps are present.
+- `HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
+- `git diff --check`: PASS with repository CRLF warning only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
+## 2026-05-15 - WFC Outpost Loop 29 Logistics Graph Descriptor Gate
+
+What was wrong:
+- `WfcOutpostGraphTranslationJob` accepted descriptor dimensions beyond the authored WFC outpost grid.
+- Descriptor meter scalars were protected by `math.max`, which does not prove NaN-safe layout math.
+
+What was done:
+- Added explicit sequential layout proof to the graph translation job.
+- Rejected dimensions above `FullWidth`, `FullHeight`, and `FullDepth`.
+- Sanitized descriptor cell/floor meters through a finite-safe helper before local node offsets are computed.
+
+Cinematic Cheats used:
+- Invalid topology fails as `InvalidDimensions`; it is not clamped into fake valid topology.
+- Valid topology still emits bounded SOA power nodes without GameObject graph simulation.
+
+Exact Microseconds saved:
+- New cost: three dimension cap checks and two scalar finite checks on cold graph translation, below 0.1 us per graph build on i3/MX350.
+- Saved corrupt path cost: avoids invalid offset math and wasted downstream graph work.
+- No steady Tick/Render allocation or GameObject cost.
+
+Verification:
+- Targeted graph descriptor scan: PASS; dimension caps and finite scalar sanitizers are present.
+- `HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
+- `git diff --check`: PASS with repository CRLF warning only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
+## 2026-05-15 - WFC Outpost Loop 30 WFC Grid Registry Descriptor Gate
+
+What was wrong:
+- `WfcOutpostGridRegistry.RegisterGrid` could copy native bytes into fixed slots before proving descriptor validity.
+- Slot reuse left old handle/descriptor metadata live during the copy window.
+- WFC grid/native contracts lacked explicit byte-size proof for descriptor and power node payloads.
+
+What was done:
+- Added `IsValidDescriptor(in descriptor)` before any registry slot mutation.
+- Rejected zero sector, zero generation, invalid dimensions, invalid cell count, non-finite AUP local offsets, and non-finite/sub-meter cell/floor metrics.
+- Cleared target slot handle/descriptor before new native byte copy and handle publication.
+- Added explicit layout sizes for `WfcOutpostGridDescriptor` and `WfcOutpostPowerNode`.
+
+Cinematic Cheats used:
+- Bad registry payloads fail closed instead of being corrected into plausible-looking topology.
+- Valid grids still use bounded fixed-slot native storage and downstream graph translation.
+
+Exact Microseconds saved:
+- New cost: cold descriptor validation and two scalar assignments on slot reuse, below 0.1 us per registration on i3/MX350.
+- Saved corrupt path cost: avoids copying invalid WFC grids and scheduling graph work.
+- No steady Tick/Render cost.
+
+Verification:
+- Targeted registry scan: PASS; descriptor gate, slot clear, and explicit layout sizes are present.
+- `HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
+- `git diff --check`: PASS with repository CRLF warning only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
+## 2026-05-15 - WFC Outpost Loop 31 WFC Mutable State Signal Direct Lane
+
+What was wrong:
+- Outpost sealed-door, terminal, and datapad proxy producers used the generic `GlobalSignals.Publish` wrapper for `WfcOutpostStateChangedSignal`.
+- The payload is a known typed persistence lane; routing it through the generic wrapper added avoidable dispatch surface.
+
+What was done:
+- Verified `SealedDoor`, `MessageTerminal`, and `AudioLogPickup` as scoped WFC mutable-state producers.
+- Kept queue initialization at the cold publish point.
+- Published through `SignalBus<WfcOutpostStateChangedSignal>.Push(in signal)` directly.
+
+Cinematic Cheats used:
+- No new gameplay event system or polling layer was added.
+- Interaction state remains a cheap typed signal fake for outpost persistence instead of object-level simulation.
+
+Exact Microseconds saved:
+- New cost: one typed queue push on rare interaction-state mutation.
+- Saved cost: removes the generic wrapper path from the three scoped WFC state producers.
+- Estimated below 0.1 us per mutation on i3/MX350; steady Tick/Render remains 0 B/frame.
+
+Verification:
+- Targeted WFC state-lane scan: PASS; three direct WFC state pushes, zero scoped `GlobalSignals.Publish(in signal)`.
+- Scoped WFC/source count: `GlobalRegistrySurface=14`, `SignalBusPush=5`, `WfcStateDirectPush=3`, `GlobalSignalsPublish=0`, `EventPublish=0`, `StructLayoutAttributes=4`, `ExplicitSizeLayouts=5`, `RegistryDescriptorGate=2`.
+- `HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS at `2026-05-15 04:40:44 +04:00`; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
+- `git diff --check`: PASS with repository CRLF warning only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
 ## 2026-05-15 - WFC Outpost Loop 30 Grid Registry Descriptor Gate
 
 What was wrong:

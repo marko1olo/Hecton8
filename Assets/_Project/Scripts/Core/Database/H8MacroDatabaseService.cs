@@ -1832,7 +1832,7 @@ namespace Hecton8.Core.Database
             if (_signalSink == null)
                 return;
 
-            MacroDatabaseSectorHydratedSignal signal = new MacroDatabaseSectorHydratedSignal
+            SectorHydratedSignal signal = new SectorHydratedSignal
             {
                 SectorHash = sectorHash,
                 FileOffset = payloadOffset,

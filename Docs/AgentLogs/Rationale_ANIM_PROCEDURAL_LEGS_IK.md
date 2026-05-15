@@ -178,6 +178,14 @@ Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instructio
 Scalability potential: Low/MX350 avoids bad controller/bounds data turning into visible arm disappearance or IK spikes. Middle keeps deterministic appendage/spine presentation. High/Ultra can run richer appendage, breathing, and muscle polish without trusting corrupt source transforms.
 Hardware Impact: Added work is branch/finite checks and one no-sqrt normal fallback inside existing rig capture/culling paths, estimated below 0.3 us/frame for the active rig on i3/MX350. No allocations, no new jobs, no new ray lanes, no public API change.
 
+## Decision 23: Rig transient state fail-closed before publication
+
+Problem: Rig-local transient state still had gaps after source capture. Recoil offsets decayed raw stored vectors. Terminal, external wall, predictive repair, breathing, shiver, and muscle-bulge blends depended on smooth outputs that could preserve non-finite state until a later publisher sanitized it. Phase counters only subtracted one wrap and could remain corrupt. Predictive repair used unchecked AUP distance/runtime target output, and appendage/spine/muscle target writes assumed native and managed companion arrays stayed perfectly aligned.
+Solution: Clamp decayed recoil through the existing no-sqrt vector clamp, sanitize every unit scalar smooth result in the rig latch path, wrap breathing/shiver phases through a finite positive phase helper, sanitize shiver offsets before entity-state publication, reject non-finite predictive AUP distance/runtime target data before hand-latch writes, and length/null guard spine, appendage, muscle, and companion target arrays before NativeArray writes.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Adding logs/exceptions for transient corruption was rejected as hot-path and fault-path noise. Replacing the latch system with a physical hand/torso solver was rejected because this remains a deterministic visual fake, not simulation authority.
+Scalability potential: Low/MX350 keeps the same cheap finite clamps and no-sqrt math. Middle keeps stable two-bone and appendage targets. High keeps breathing, cold shiver, wall-touch, and tool recoil polish without NaN amplification. Ultra can spend the same saved cycles on richer secondary/muscle presentation because transient latches now fail closed before publication.
+Hardware Impact: Added work is scalar finite/clamp operations, one `math.floor` phase wrap per active breathing/shiver tick, integer length guards, and no new allocations/jobs/rays. Estimated below 0.4 us/frame on i3/MX350 for the active rig. Prevented cost is native target faulting, IK latch spikes, disappearing/corrupt hand contacts, and shader bulge NaNs.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Final anti-bloat pass required checking the lower-body implementation for honest simulation, unbounded math, GC leaks, and out-of-domain edits.

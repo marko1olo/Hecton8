@@ -529,3 +529,17 @@ Solution: Verification stayed source-only: targeted registry descriptor scan, sc
 Rejected Alternatives: Running response-file compiles through `dotnet` was rejected because it violates the active user instruction.
 Scalability potential: Static registry handoff proof improved without changing graph capacity, render path, or signal lane count.
 Hardware Impact: Verification only. Core graph summary still reports `CoreAsmdefDebtReferenceCount=25` and `GeneratedProjectDebtReferenceCount=10`, both project-level debts outside this outpost edit.
+
+## LOOP 31 WFC MUTABLE STATE SIGNAL DIRECT LANE
+
+Problem: The WFC outpost sealed-door, terminal, and datapad proxy producers were publishing `WfcOutpostStateChangedSignal` through the generic `GlobalSignals.Publish` wrapper. That wrapper is functional, but for a known outpost persistence lane it adds avoidable dispatch surface and weakens the evidence that mutable WFC state stays in a typed lane.
+Solution: Keep the existing bounded interaction semantics, call `GlobalSignals.InitializeAllQueues()` at the cold publish point, and push directly through `SignalBus<WfcOutpostStateChangedSignal>.Push(in signal)` in `SealedDoor`, `MessageTerminal`, and `AudioLogPickup`.
+Rejected Alternatives: Broad removal of every generic publish in Gameplay/Core was rejected because most producers are outside the Habitat/Outpost domain. Adding a new local event layer was rejected because it would duplicate the existing typed signal lane and increase lifetime surface.
+Scalability potential: Low devices avoid one generic wrapper path on rare interaction-state persistence changes. Middle/High/Ultra keep deterministic state mutation while leaving saved cycles for richer outpost visuals; no new GameObjects, managed allocations, or polling loops are introduced.
+Hardware Impact: Rare interaction path only: one direct typed queue push after queue initialization. Estimated below 0.1 us per state mutation on i3/MX350; steady Tick/Render remains 0 B/frame.
+
+Problem: The active instruction still forbids dotnet rebuilds, so runtime compile/profiler proof cannot be claimed.
+Solution: Verification stayed source-only: targeted WFC state producer scan, scoped WFC/source count, `git diff --check`, and `HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`.
+Rejected Alternatives: Running response-file compiles or `dotnet` rebuilds was rejected because it violates the active user instruction.
+Scalability potential: Static lane proof improved without adding registries, buffers, proxies, or render-path work.
+Hardware Impact: Verification only. Core graph summary still reports `CoreAsmdefDebtReferenceCount=25` and `GeneratedProjectDebtReferenceCount=10`, both project-level debts outside this outpost edit.

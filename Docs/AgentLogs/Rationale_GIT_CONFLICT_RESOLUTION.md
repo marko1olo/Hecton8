@@ -65,3 +65,9 @@ Solution: Keep the same evidence gate: classify it as local post-push work, conf
 Rejected Alternatives: Stopping with a verified but unpushed small tail, or folding it into the prior already-pushed commit by amend/force-push. Both conflict with the requested careful push workflow.
 Scalability potential: Git-only operation. No Low/Middle/High/Ultra runtime claims made.
 Hardware Impact: 0 us runtime impact. Compile/profiler proof remains pending.
+
+Problem: After `88f698e08` was pushed, another 22-file local tail appeared, showing ongoing parallel writes rather than a finite merge-cleanup queue.
+Solution: Make one final bounded checkpoint for this run after the same conflict-marker and diff-check gates, then stop with explicit state instead of claiming a clean tree.
+Rejected Alternatives: Infinite commit loop, reset, amend/force-push, or pretending active local edits are conflicts. The correct boundary is synchronized remote plus clearly reported residual local state if it appears again.
+Scalability potential: Git-only operation. No runtime tier claims.
+Hardware Impact: 0 us runtime impact. Compile/profiler proof remains pending.

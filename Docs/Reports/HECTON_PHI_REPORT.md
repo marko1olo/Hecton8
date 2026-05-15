@@ -1014,4 +1014,5 @@ Change:
 
 Verification:
 - `git diff --check -- Assets/_Project/Scripts/HectonFluidEngine.cs Assets/_Project/Scripts/SubmarineFluidDynamics.cs`: passed; LF/CRLF warning only.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -CoreGraphOnly`: completed at `2026-05-15 04:44:02 +04:00`; source-backed bridge debt `14`, compile-bridge debt `8`, project-reference replacement debt `6`.
 - Runtime H-Phi remains `PENDING VERIFICATION` until Unity Console, PlayMode, Profiler, and GCMonitor evidence exist.

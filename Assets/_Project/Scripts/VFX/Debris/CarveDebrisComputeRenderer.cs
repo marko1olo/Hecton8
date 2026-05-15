@@ -21,7 +21,11 @@ namespace Hecton8.VFX.Debris
     /// GPU-only rock chip feedback for voxel SDF carve events.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class CarveDebrisComputeRenderer : MonoBehaviour, IUpdatable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
+    public sealed class CarveDebrisComputeRenderer : MonoBehaviour,
+        IUpdatable,
+        IGlobalRegistryHotSwapListener,
+        IGlobalRegistryHotSwapRefListener,
+        IScalabilityChangedEventListener
     {
         private const int MaxCarveDebrisCount = 4096;
         private const int LowTierActiveCarveDebrisCount = 1024;
@@ -39,7 +43,6 @@ namespace Hecton8.VFX.Debris
         private const int MaxCarveSignalScanPerFrame = 64;
         private const int TelemetryPublishStride = 30;
         private const int GlobalSdfRefreshStrideFrames = 4;
-        private const int TierRefreshStrideFrames = 30;
         private const int TierSwitchConfirmFrames = 120;
         private const int MissingRegistryRefreshStrideFrames = 30;
         private const float MinimumCarveSpawnRadiusMeters = 0.05f;
@@ -141,7 +144,6 @@ namespace Hecton8.VFX.Debris
         private int _lowDispatchGroups = LowTierActiveCarveDebrisCount >> 6;
         private int _lastActiveCapacity = MaxCarveDebrisCount;
         private int _nextGlobalSdfRefreshFrame;
-        private int _nextTierRefreshFrame;
         private int _nextMissingRegistryRefreshFrame;
         private int _pendingTierFrames;
         private int _cachedDrawMeshFrame = -1;
@@ -173,8 +175,10 @@ namespace Hecton8.VFX.Debris
         private bool _cachedDrawMeshValid;
         private bool _cachedLowTier = true;
         private bool _pendingLowTier = true;
+        private bool _sampledLowTier = true;
         private bool _tierCacheInitialized;
         private bool _hotSwapRegistered;
+        private bool _scalabilityEventsRegistered;
 
         private void Awake()
         {
@@ -185,6 +189,7 @@ namespace Hecton8.VFX.Debris
         {
             EnsureFallbackRenderResources();
             TryRegisterHotSwapListener();
+            TryRegisterScalabilityEvents();
             TryRegisterTick();
             TryEnsureGpuState();
         }
@@ -192,12 +197,14 @@ namespace Hecton8.VFX.Debris
         private void Start()
         {
             TryRegisterHotSwapListener();
+            TryRegisterScalabilityEvents();
             TryRegisterTick();
             TryEnsureGpuState();
         }
 
         private void OnDisable()
         {
+            TryUnregisterScalabilityEvents();
             TryUnregisterHotSwapListener();
             if (_registered)
             {
@@ -311,6 +318,48 @@ namespace Hecton8.VFX.Debris
             object currentService)
         {
             ApplyRegistryServiceRebind(serviceSlot, currentService);
+        }
+
+        void IScalabilityChangedEventListener.OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            QueueScalabilityTierCandidate(IsLowTierPayload(payload.CurrentTier, payload.CurrentQualityTier));
+        }
+
+        private void TryRegisterScalabilityEvents()
+        {
+            if (!_scalabilityEventsRegistered)
+            {
+                ScalabilityEvents.Register(this);
+                _scalabilityEventsRegistered = true;
+            }
+
+            RefreshScalabilityTierSeed();
+        }
+
+        private void TryUnregisterScalabilityEvents()
+        {
+            if (!_scalabilityEventsRegistered)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _scalabilityEventsRegistered = false;
+        }
+
+        private void RefreshScalabilityTierSeed()
+        {
+            QueueScalabilityTierCandidate(SampleLowTierFlagCold());
+            if (_tierCacheInitialized)
+                return;
+
+            _cachedLowTier = _sampledLowTier;
+            _pendingLowTier = _sampledLowTier;
+            _pendingTierFrames = 0;
+            _tierCacheInitialized = true;
+        }
+
+        private void QueueScalabilityTierCandidate(bool sampledLowTier)
+        {
+            _sampledLowTier = sampledLowTier;
         }
 
         private void ApplyRegistryServiceRebind(GlobalRegistryServiceSlot serviceSlot, object currentService)
@@ -1195,53 +1244,52 @@ namespace Hecton8.VFX.Debris
 
         private bool IsLowTier()
         {
-            int frame = Time.frameCount;
-            if (_tierCacheInitialized && frame < _nextTierRefreshFrame)
-                return _cachedLowTier;
-
-            _nextTierRefreshFrame = frame + TierRefreshStrideFrames;
-            bool sampledLowTier = SampleLowTierFlag();
             if (!_tierCacheInitialized)
             {
-                _cachedLowTier = sampledLowTier;
-                _pendingLowTier = sampledLowTier;
+                _cachedLowTier = _sampledLowTier;
+                _pendingLowTier = _sampledLowTier;
                 _pendingTierFrames = 0;
                 _tierCacheInitialized = true;
                 return _cachedLowTier;
             }
 
-            if (sampledLowTier == _cachedLowTier)
+            if (_sampledLowTier == _cachedLowTier)
             {
-                _pendingLowTier = sampledLowTier;
+                _pendingLowTier = _sampledLowTier;
                 _pendingTierFrames = 0;
                 return _cachedLowTier;
             }
 
-            if (sampledLowTier != _pendingLowTier)
+            if (_sampledLowTier != _pendingLowTier)
             {
-                _pendingLowTier = sampledLowTier;
-                _pendingTierFrames = TierRefreshStrideFrames;
+                _pendingLowTier = _sampledLowTier;
+                _pendingTierFrames = 0;
                 return _cachedLowTier;
             }
 
-            _pendingTierFrames += TierRefreshStrideFrames;
+            _pendingTierFrames++;
             if (_pendingTierFrames >= TierSwitchConfirmFrames)
             {
-                _cachedLowTier = sampledLowTier;
+                _cachedLowTier = _sampledLowTier;
                 _pendingTierFrames = 0;
             }
 
             return _cachedLowTier;
         }
 
-        private static bool SampleLowTierFlag()
+        private static bool SampleLowTierFlagCold()
         {
             HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            return GlobalRegistry.H8_LOW_MEMORY_PROFILE ||
-                   GlobalRegistry.ScalabilityTierProfileByte == 0 ||
-                   tier == HectonQualityTier.Unknown ||
-                   tier == HectonQualityTier.Low ||
-                   tier == HectonQualityTier.Mx350;
+            return IsLowTierPayload(GlobalRegistry.ScalabilityTierProfileByte, tier) ||
+                   GlobalRegistry.H8_LOW_MEMORY_PROFILE;
+        }
+
+        private static bool IsLowTierPayload(byte tierProfile, HectonQualityTier qualityTier)
+        {
+            return tierProfile == ScalabilityTierProfiles.LowMx350 ||
+                   qualityTier == HectonQualityTier.Unknown ||
+                   qualityTier == HectonQualityTier.Low ||
+                   qualityTier == HectonQualityTier.Mx350;
         }
 
         private static bool IsFiniteCarveEvent(in VoxelCarveEvent carveEvent)
@@ -1435,11 +1483,11 @@ namespace Hecton8.VFX.Debris
             _cachedGlobalSdfInvDoubleHalfExtents = Vector4.zero;
             _cachedGlobalSdfActive = 0f;
             _nextGlobalSdfRefreshFrame = 0;
-            _nextTierRefreshFrame = 0;
             _nextMissingRegistryRefreshFrame = 0;
             _pendingTierFrames = 0;
             _cachedLowTier = true;
             _pendingLowTier = true;
+            _sampledLowTier = true;
             _tierCacheInitialized = false;
             _cachedDrawMesh = null;
             _cachedDrawMeshFrame = -1;

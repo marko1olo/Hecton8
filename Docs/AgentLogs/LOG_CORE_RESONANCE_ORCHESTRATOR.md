@@ -95,6 +95,7 @@ Exact Microseconds saved:
 Verification:
 - `git diff --check -- Assets/_Project/Scripts/HectonFluidEngine.cs Assets/_Project/Scripts/SubmarineFluidDynamics.cs` passed; LF/CRLF warning only.
 - Diff scan found no new managed containers, LINQ, `ToArray`, `FindObject`, coroutine, or signal producer path in the edited hunk.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -CoreGraphOnly` completed at `2026-05-15 04:44:02 +04:00`; core graph debt remained source-backed bridge `14`, compile-bridge `8`, project-reference replacement `6`.
 - No `dotnet build` or rebuild was run.
 
 Status:

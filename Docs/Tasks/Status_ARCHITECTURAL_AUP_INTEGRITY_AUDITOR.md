@@ -3,7 +3,7 @@
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
 Domain: ECHELON 1 / Origin Shift (AUP Manager), with audit reach into Physics, Voxel, Kinematics, AI trigger math, Biome trigger math, and deterministic seed callsites.
 Assignment Source: User-supplied XML block. `Docs/Tasks/CURRENT_BATCH.md` extraction returned `PROMPT_NOT_FOUND` for this ID on initial pass.
-Status: VERIFIED AUP INTEGRITY - LOOP 32 APPLIED; H-PHI TEXT BUDGET TABLE NOW DISPLAYS MAX AND MIN THRESHOLDS CORRECTLY; LOOP 30 REMAINS LATEST COMPLETED FULL AUP BUDGET SCAN; LOOP 31 FULL RETEST TIMED OUT; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
+Status: VERIFIED AUP INTEGRITY - LOOP 33 APPLIED; DUPLICATE SIGNAL H-PHI SCAN NOW PREFILTERS NON-CANDIDATE FILES; FULL `-MaxAupPrecisionRisk 0` SCAN PASSES AGAIN; CORE BUILD NOT RERUN PER USER; ASMDEF BLOCKED BY ARCHITECTURE
 
 ## Selected Mandates
 
@@ -360,3 +360,18 @@ Loop 32 - H-Phi Budget Text Threshold Display:
 - Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run; residual hits remain broad `universe` text plus known final-cast fluid/scatter/shader payload names.
 - `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1` reports line-ending warnings only, no whitespace errors.
 - No `dotnet build` or rebuild was run in Loop 32 because the user explicitly forbade rebuilds.
+
+Loop 33 - Duplicate Signal Scan Prefilter:
+- Re-read status/rationale and kept the rebuild ban active.
+- Patched `Tools/Architecture/HectonPhiAudit.ps1` so `Get-DuplicateSignalNameAudit` skips expensive code-surface masking for files that do not contain both raw literals `Signal` and `struct`.
+- The prefilter is mechanically safe because a true `struct FooSignal` declaration must contain both literals in source text before comment/string masking.
+- Candidate measurement: 1501 `.cs` files total, 222 duplicate-signal candidate files, 1279 files skipped before duplicate-signal code-surface masking.
+- PowerShell parser reports `PARSE_OK`.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 221.618 seconds.
+- Latest full static H-Phi summary: `RuntimeHPhiRisk=0.000590952`, `RuntimeHPhiNarrow=0.01075037`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=363`, `AupPrecisionRisk=0`, `DuplicateSignalNameCount=0`, `RuntimeFiles=1275`, `RuntimeLines=861684`.
+- Removed the temporary JSON capture after extracting the metrics.
+- Targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run; residual hits remain broad `universe` text plus known final-cast fluid/scatter/shader payload names.
+- `git diff --check -- Tools/Architecture/HectonPhiAudit.ps1` reports no whitespace errors.
+- No `dotnet build` or rebuild was run in Loop 33 because the user explicitly forbade rebuilds.

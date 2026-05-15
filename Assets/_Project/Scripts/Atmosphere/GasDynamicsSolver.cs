@@ -347,7 +347,7 @@ namespace Hecton8.Atmosphere
             _roomNitrogenBack[roomId] = nitrogenKPa;
             _roomPressureBack[roomId] = pressureKPa;
             _roomAmbientPressure[roomId] = ambientPressureKPa;
-            if (_roomPlayerPresent.IsCreated && _roomPlayerPresent[roomId] != 0)
+            if (_roomPlayerPresent[roomId] != 0)
                 flags = (ushort)(flags | RoomFlagOccupied);
             _roomFlags[roomId] = flags;
             if (roomId >= _roomCount)
@@ -503,7 +503,7 @@ namespace Hecton8.Atmosphere
             _roomCO2Back[roomId] = backCarbonDioxide;
 
             float oxygen = FiniteNonNegativeOrZero(RoomO2[roomId]);
-            float nitrogen = _roomNitrogen.IsCreated ? FiniteNonNegativeOrZero(_roomNitrogen[roomId]) : StandardNitrogenKPa;
+            float nitrogen = FiniteNonNegativeOrZero(_roomNitrogen[roomId]);
             RoomPressure[roomId] = ResolveDaltonPressureKPa(oxygen, frontCarbonDioxide, nitrogen);
             _roomPressureBack[roomId] = ResolveDaltonPressureKPa(oxygen, backCarbonDioxide, nitrogen);
             return true;
@@ -515,7 +515,7 @@ namespace Hecton8.Atmosphere
                 return false;
 
             ushort flags = (ushort)((_roomFlags[roomId] | setMask) & ~clearMask);
-            if (_roomPlayerPresent.IsCreated && _roomPlayerPresent[roomId] != 0)
+            if (_roomPlayerPresent[roomId] != 0)
                 flags = (ushort)(flags | RoomFlagOccupied);
             _roomFlags[roomId] = flags;
             return true;
@@ -986,13 +986,8 @@ namespace Hecton8.Atmosphere
                 if (!TryEnsureBaseSlotFromSignal(signal.BaseId, signal.RoomId, in signal.BaseCenterAup))
                     continue;
 
-                int insideCount = 0;
-                if (_basePlayerInsideCount.IsCreated)
-                {
-                    insideCount = math.max(0, _basePlayerInsideCount[signal.BaseId] - 1);
-                    _basePlayerInsideCount[signal.BaseId] = insideCount;
-                }
-
+                int insideCount = math.max(0, _basePlayerInsideCount[signal.BaseId] - 1);
+                _basePlayerInsideCount[signal.BaseId] = insideCount;
                 _basePlayerInside[signal.BaseId] = (byte)(insideCount > 0 ? 1 : 0);
                 _baseCenterAup[signal.BaseId] = signal.BaseCenterAup;
             }
@@ -1003,12 +998,8 @@ namespace Hecton8.Atmosphere
                 if (!TryEnsureBaseSlotFromSignal(signal.BaseId, signal.RoomId, in signal.BaseCenterAup))
                     continue;
 
-                if (_basePlayerInsideCount.IsCreated)
-                {
-                    int insideCount = _basePlayerInsideCount[signal.BaseId];
-                    _basePlayerInsideCount[signal.BaseId] = insideCount < int.MaxValue ? insideCount + 1 : int.MaxValue;
-                }
-
+                int insideCount = _basePlayerInsideCount[signal.BaseId];
+                _basePlayerInsideCount[signal.BaseId] = insideCount < int.MaxValue ? insideCount + 1 : int.MaxValue;
                 _basePlayerInside[signal.BaseId] = 1;
                 _baseCenterAup[signal.BaseId] = signal.BaseCenterAup;
                 if (allowWake)

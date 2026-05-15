@@ -835,3 +835,30 @@ Verification:
 
 Integrator notes:
 - No new full-source H-Phi score was claimed after the Loop 31 timeout. Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
+
+## 2026-05-15 - Loop 33 Duplicate Signal Scan Prefilter
+
+What was wrong:
+- Duplicate signal-name H-Phi audit masked every C# file before checking whether a `*Signal` struct could exist.
+
+What was done:
+- Added a raw-literal prefilter in `Get-DuplicateSignalNameAudit`: files must contain both `Signal` and `struct` before expensive code-surface masking.
+
+Cinematic Cheats used:
+- Static tooling only. Runtime simulation and rendering are unchanged.
+- Low-tier machines skip non-candidate files before duplicate-signal masking; High/Ultra CI retains the duplicate-signal evidence without weakening AUP source gates.
+
+Exact Microseconds saved:
+- Gameplay frame time: 0 us.
+- Tooling candidate set reduced from 1501 files to 222 files for duplicate-signal masking; full gated static run completed in 221.618 seconds.
+
+Verification:
+- PowerShell parser reports `PARSE_OK`.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed and reported `RuntimeHPhiRisk=0.000590952`, `RuntimeHPhiNarrow=0.01075037`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=363`, `AupPrecisionRisk=0`, `DuplicateSignalNameCount=0`, `RuntimeFiles=1275`, `RuntimeLines=861684`.
+- Qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory AUP regex scan re-run; residual hits remain broad `universe` text and known final-cast fluid/scatter/shader payload names.
+- No `dotnet build` or rebuild was run because the user explicitly forbade rebuilds.
+
+Integrator notes:
+- Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.

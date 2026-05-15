@@ -299,3 +299,23 @@ No dotnet rebuild was run per user instruction. `git diff --check` over touched 
 
 Status:
 PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
+
+## 2026-05-15 Recursive QA Addendum 15
+
+What was wrong:
+Rig-local transient state still had H-Phi trust windows after the previous capture pass. Recoil offsets decayed raw stored vectors. Terminal/external/predictive blend latches could preserve non-finite smooth output. Breathing and cold-shiver phases only subtracted one wrap. Predictive repair trusted AUP distance/runtime target output after snap resolution. Spine, appendage, and muscle output writes assumed NativeArray and managed companion lengths were always aligned.
+
+What was done:
+`ContextualPhysicalIkRig` now clamps decayed recoil offsets with the existing no-sqrt vector clamp, sanitizes terminal/external/predictive/breathing/shiver/muscle smooth outputs, wraps breathing and shiver phases through a finite positive phase helper, sanitizes shiver offsets, rejects non-finite predictive AUP distance/runtime targets before latch publication, length-guards spine and muscle target output, bounds appendage capture to the shorter native target/runtime length, and null/length guards appendage target/fallback companion arrays.
+
+Cinematic cheats used:
+No new physical leg, arm, or torso simulation. The patch preserves the visual-fake model: finite scalar latches, triangle-wave breathing/shiver, no-sqrt recoil decay, and deterministic target rejection before the Burst IK job consumes data.
+
+Exact microseconds saved:
+Added cost is scalar finite/clamp work, one `math.floor` phase wrap per active breathing/shiver tick, and integer length guards, estimated below 0.4 us/frame on i3/MX350. Prevented cost is native target faults, hand-latch spikes, corrupt muscle shader output, and NaN propagation into lower-body/appendage presentation.
+
+Verification:
+No dotnet rebuild was run per user instruction. `git diff --check` and `git diff --cached --check` over `ContextualPhysicalIkRig.cs` passed with CRLF warnings only. Scoped forbidden-pattern scans over lower-body/signal files returned no matches for `sqrMagnitude`, `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `.ToString(`, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`. Rig-only scan found no remaining direct `= ContextualPhysicalIkMath.SmoothScalar` assignments.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.

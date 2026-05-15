@@ -158,7 +158,7 @@ namespace Hecton8.Core.Contracts
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct MacroDatabaseSectorHydratedSignal
+    public struct SectorHydratedSignal
     {
         public ulong SectorHash;
         public long FileOffset;
@@ -191,7 +191,7 @@ namespace Hecton8.Core.Contracts
 
     public interface IMacroDatabaseSignalSink
     {
-        void PublishSectorHydrated(in MacroDatabaseSectorHydratedSignal signal);
+        void PublishSectorHydrated(in SectorHydratedSignal signal);
     }
 
     public interface IMacroDatabaseNativeCacheOwner

@@ -467,3 +467,45 @@ Scalability potential: Low/MX350 keeps the Shallows shader pass footprint bounde
 Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no extra shader pass, inherited pass, grab pass, or fallback can silently inflate draw/SetPass work on i3/MX350. Exact runtime microseconds are not profiled because this is editor validation.
 
 Verification: No dotnet rebuild and no Unity import was run. `ShaderPassBudgetScan Pass=2 UsePass=0 GrabPass=0 Fallback=0 Forward=True Shadow=True`. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs` with only the repo CRLF warning. Source scans found `ValidateShaderPassBudget` and `CountShaderLineToken`; source brace count remained balanced with `Delta=0`, `NonAscii=0`, and no literal brace char remained. Case-sensitive forbidden source scan remained clean.
+
+## Decision 34 - Shader Pragma Budget Contract
+
+Problem: Shader pass count was locked, but pragma expansion was still possible. A future edit could add extra `multi_compile` or `shader_feature` directives, increasing shader variant count and warmup/build pressure while the two-pass contract still passed.
+
+Solution: Add `ValidateShaderPragmaBudget` and `CountSourceToken`. The shader source contract now requires exact counts for target, vertex, fragment, instancing, uniform-scaling instancing options, fog, main-light shadow, LOD fade, Math LOD, local high-quality, and skip-variant pragmas, plus zero `#pragma multi_compile _ _ADDITIONAL_LIGHTS`.
+
+Rejected Alternatives: Keeping required-token-only validation was rejected because it proves presence, not budget. Regex parsing was rejected because ordinal token counting is sufficient for known source tokens and avoids adding a regex dependency. Runtime shader warmup compensation was rejected because variant debt must be prevented at source.
+
+Scalability potential: Low/MX350 keeps shader variant fan-out bounded and auditable. Middle/High/Ultra can intentionally add visual overkill only by changing the pragma budget and rationale together.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no silent variant expansion, additional-light variant fan-out, or unexpected warmup/build pressure can enter the Shallows shared shader on i3/MX350. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: No dotnet rebuild and no Unity import was run. Shader token scan found `target 4.5=1`, `target 3.5=1`, vertex/fragment entries each exactly once, instancing pragmas `2`, fog `1`, main-light shadows `1`, LOD fade `2`, Math LOD `1`, local high-quality `1`, skip variants `1`, and additional-lights multi-compile `0`. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs`; source brace count remained `Delta=0` and `NonAscii=0`; case-sensitive forbidden source scan remained clean.
+
+## Decision 35 - BioRule Raw Serialization Contract
+
+Problem: `ValidateRuleAsset` compared many `BioRuleData` public getters to expected values. Those getters can clamp or default raw serialized data. For boundary/default values, a corrupted `.asset` could still present the expected getter value while the raw authored payload drifted.
+
+Solution: Extend `ValidateRuleAsset` to validate the raw serialized fields through `SerializedObject`: rule asset name, prefix, material reference, axiom, iterations, max branches, angle, step, taper, radii, SDF resolution/profile, bounds padding, smooth-min, ribbon scales, LOD budgets, rock shape/noise/pore settings, and output folders. Added `SerializedFloatEquals`, `SerializedStringEquals`, and `SerializedObjectReferenceEquals`.
+
+Rejected Alternatives: Relying on public getters was rejected because getter clamps/defaults can mask authored payload drift. Rewriting or rebaking rule assets was rejected because the current assets already satisfy the stricter raw contract. Runtime rule normalization was rejected because these rules are editor-only bake inputs and must be correct before generation.
+
+Scalability potential: Low/MX350 gets deterministic offline bake inputs with no hidden clamped values that could later regenerate heavier meshes. Middle/High/Ultra can adjust visual overkill only through explicit rule contract changes, not accidental serialized drift.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no raw rule drift can silently rebake heavier or malformed Shallows payloads and push renderer/mesh cost onto i3/MX350. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: No dotnet rebuild and no Unity import was run. `RuleRawSerializedYamlScan Count=3 Bad=0`. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs`; source scans found `SerializedFloatEquals`, `SerializedStringEquals`, and `SerializedObjectReferenceEquals`; source brace count remained `Delta=0` and `NonAscii=0`; case-sensitive forbidden source scan remained clean.
+
+## Decision 36 - BioRule Folder Exactness Contract
+
+Problem: The baker validated the three expected Shallows `BioRuleData` assets by path, but it did not reject extra `BioRuleData` assets in `Assets/_Project/Data/ProceduralGen/Shallows`. A stale rule in that folder could be selected manually or by future tooling and regenerate non-canonical payloads while the canonical three still passed.
+
+Solution: Add `ValidateRuleFolderContract` before validating individual rules. It uses `AssetDatabase.FindAssets("t:BioRuleData", new[] { RuleFolder })`, requires exactly three results, requires the TubeCoral/Kelp/PorousRock paths, and rejects any unexpected rule asset.
+
+Rejected Alternatives: Ignoring extra rule assets was rejected because stale authoring data is a bake-input risk. Deleting unknown assets automatically was rejected because the validator must fail closed and report, not destructively edit folders. Runtime rule filtering was rejected because Shallows generation is editor-offline.
+
+Scalability potential: Low/MX350 gets canonical bake inputs only, preventing accidental heavier or malformed generated payloads. Middle/High/Ultra can add richer rule tiers only through explicit folder/contract expansion.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no extra Shallows rule asset can silently produce out-of-budget meshes or materials for i3/MX350. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: No dotnet rebuild and no Unity import was run. `RuleFolderExactnessYamlScan Count=3 Bad=0`. `git diff --check` passed for `ShallowsBioForgeBatchBaker.cs`; source scans found `ValidateRuleFolderContract`, `t:BioRuleData`, and `Rule folder contract failed`; source brace count remained `Delta=0` and `NonAscii=0`; case-sensitive forbidden source scan remained clean.

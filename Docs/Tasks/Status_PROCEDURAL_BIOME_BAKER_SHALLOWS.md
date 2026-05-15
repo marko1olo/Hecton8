@@ -296,3 +296,27 @@ Status: PENDING VERIFICATION
 - Verification avoided dotnet rebuilds and Unity import. `ShaderPassBudgetScan Pass=2 UsePass=0 GrabPass=0 Fallback=0 Forward=True Shadow=True`; `git diff --check` passed for the baker with only the repo CRLF warning; source brace balance stayed `Delta=0`, `NonAscii=0`, and no literal brace char remained in the source scan.
 - Rejected alternative: trusting renderer `shadowCastingMode=Off` alone was rejected because an added shader pass can still become render debt if renderer state drifts later. A full shader rewrite was rejected because the current shader source already satisfies the locked budget.
 - H-Phi impact remains domain-local evidence only: shader pass count is now fail-closed without changing runtime rendering, adding material variants, or adding cross-domain shader ownership.
+
+### Loop 33 - Shader Pragma Budget Contract
+
+- Found a remaining shader-variant drift path: pass count was locked, but pragma counts could still expand variant fan-out through extra multi_compile or shader_feature directives.
+- Patched `ValidateShaderSourceContract` with `ValidateShaderPragmaBudget` and `CountSourceToken` so the shared shader must keep exact target, vertex, fragment, instancing, fog, shadow, LOD fade, Math LOD, local high-quality, and skip-variant directives.
+- Verification avoided dotnet rebuilds and Unity import. Shader source token scan found exact expected counts for all locked pragma directives and zero `#pragma multi_compile _ _ADDITIONAL_LIGHTS`; `git diff --check` passed for the baker; source brace balance stayed `Delta=0` with `NonAscii=0`; forbidden source scan stayed clean.
+- Rejected alternative: relying only on existing required-token checks was rejected because required tokens do not cap additional variant directives. Regex parsing was rejected because direct ordinal token counts are sufficient and simpler.
+- H-Phi impact remains domain-local evidence only: shader variant budget is now fail-closed without runtime warmup changes, material variant changes, or cross-domain shader ownership.
+
+### Loop 34 - BioRule Raw Serialization Contract
+
+- Found a rule-data drift path hidden by public `BioRuleData` getters: clamped/defaulted getters can mask raw serialized asset changes, especially boundary fields such as PorousRock iterations or flora rock pore counts.
+- Patched `ValidateRuleAsset` to validate raw serialized field values for asset name, prefix, material reference, axiom, numeric generation parameters, SDF profile, LOD budgets, rock pore settings, and output folders using serialized-property helpers.
+- Verification avoided dotnet rebuilds and Unity import. `RuleRawSerializedYamlScan Count=3 Bad=0`; `git diff --check` passed for the baker; source brace balance stayed `Delta=0` with `NonAscii=0`; forbidden source scan stayed clean.
+- Rejected alternative: relying only on public getters was rejected because getter clamps/defaults can hide authored asset drift. Rewriting rule assets was rejected because the current three Shallows rules already match the stricter raw contract.
+- H-Phi impact remains domain-local evidence only: BioForge rule payloads are now fail-closed before bake/validation, without runtime scripts, registries, allocations on the render path, or cross-domain dependencies.
+
+### Loop 35 - BioRule Folder Exactness Contract
+
+- Found a rule-folder drift path: the validator loaded the three canonical Shallows rule assets but did not reject extra `BioRuleData` assets in the same folder.
+- Patched `ValidateRuleAssets` with `ValidateRuleFolderContract`, requiring exactly the TubeCoral, Kelp, and PorousRock rule assets and zero unexpected Shallows rule payloads.
+- Verification avoided dotnet rebuilds and Unity import. `RuleFolderExactnessYamlScan Count=3 Bad=0`; `git diff --check` passed for the baker; source brace balance stayed `Delta=0` with `NonAscii=0`; forbidden source scan stayed clean.
+- Rejected alternative: ignoring extra rules was rejected because stale authoring inputs can be selected manually and regenerate payloads outside the canonical batch contract.
+- H-Phi impact remains domain-local evidence only: the Shallows rule folder is now fail-closed without runtime registries, runtime bake paths, material mutation, or cross-domain dependencies.

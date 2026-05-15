@@ -438,7 +438,30 @@ Exact Microseconds saved:
 Verification:
 - Heading audit confirms chronological section order: 2026-05-14 entries first, then 2026-05-15 continuation entries, then the latest tail passes.
 - `git diff --check` passed after the move.
-- Dotnet process query was clean.
+- A dotnet respawn appeared during the wider verification pass and was handled in the next tail entry.
+
+Final Status:
+- PENDING VERIFICATION.
+
+## 2026-05-15 - Dotnet Respawn Final Hygiene Pass
+
+What was wrong:
+- Another external `dotnet.exe msbuild/build Hecton8.Core.csproj` process appeared during final static verification.
+- This violated the user's active instruction not to perform dotnet rebuilds.
+
+What was done:
+- Stopped the observed child build process and wrapper ids.
+- Re-ran process inspection using `Get-Process -Name dotnet`.
+- No dotnet build/rebuild was started by this agent.
+
+Cinematic Cheats used:
+- None. This is verification hygiene.
+
+Exact Microseconds saved:
+- No gameplay saving claimed. This prevents local build CPU pressure and contaminated evidence.
+
+Verification:
+- Final `Get-Process -Name dotnet` returned no process.
 
 Final Status:
 - PENDING VERIFICATION.

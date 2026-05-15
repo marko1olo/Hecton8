@@ -294,3 +294,33 @@ Cinematic Cheats used:
 
 Exact microseconds saved:
 - None claimed. This is API-bound crash prevention for H-Phi/native lane migration; no dotnet rebuild was run.
+
+## 2026-05-15 - Depth Stress Guard Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- `ResolveEffectiveDepthStress01` trusted `_roomCount` without checking the live `RoomPressure` length.
+
+What was done:
+- Added a direct `RoomPressure.Length` bounds guard before pressure relief math.
+
+Cinematic Cheats used:
+- None new.
+
+Exact microseconds saved:
+- None claimed. This prevents stale pressure-lane indexing; no dotnet rebuild was run.
+
+## 2026-05-15 - Redundant Guard Trim Addendum
+STATUS: PENDING VERIFICATION
+
+What was wrong:
+- Some `IsCreated` branches remained after the new length-aware readiness helpers had already proven those lanes.
+
+What was done:
+- Removed redundant checks in room config, room flags, CO2 pressure injection, and base transition drains.
+
+Cinematic Cheats used:
+- None new.
+
+Exact microseconds saved:
+- No measurable claim. This removes branch noise on API/transition paths; no dotnet rebuild was run.

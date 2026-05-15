@@ -630,7 +630,21 @@ namespace Hecton8.AI
 
         private void TryRegister()
         {
-            if (_registeredUpdate || GlobalRegistry.Dispatcher == null)
+            if (_registeredUpdate && _registeredLateFrame)
+                return;
+
+            if (_registeredUpdate || _registeredLateFrame)
+            {
+                if (_registeredUpdate)
+                    GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                if (_registeredLateFrame)
+                    GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+
+                _registeredUpdate = false;
+                _registeredLateFrame = false;
+            }
+
+            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);

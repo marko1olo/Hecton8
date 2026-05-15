@@ -594,6 +594,32 @@ Status: VERIFIED AUP INTEGRITY - LOOP 29 AUP PRECISION H-PHI BUDGET GATE PASSES 
 - Unity import/Console verification remains pending because no Unity editor session is available.
 - H-Phi result is static-source evidence, not profiler proof.
 
+## Loop 33 Duplicate Signal Scan Prefilter
+
+### Findings
+
+- The duplicate signal-name audit paid code-surface masking cost for every C# file even when a file could not contain a `*Signal` struct declaration.
+
+### Tool Changes
+
+- `Tools/Architecture/HectonPhiAudit.ps1`: `Get-DuplicateSignalNameAudit` now skips masking unless raw file text contains both `Signal` and `struct`.
+
+### Verification
+
+- Candidate measurement: 1501 `.cs` files total, 222 duplicate-signal candidate files, 1279 files skipped before duplicate-signal code-surface masking.
+- PowerShell parser reports `PARSE_OK`.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 221.618 seconds.
+- Full static summary: `RuntimeHPhiRisk=0.000590952`, `RuntimeHPhiNarrow=0.01075037`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=363`, `AupPrecisionRisk=0`, `DuplicateSignalNameCount=0`, `RuntimeFiles=1275`, `RuntimeLines=861684`.
+- Targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` was re-run. Residual hits remain broad `universe` text and known final-cast fluid/scatter/shader payload names.
+- No `dotnet build` or rebuild was run in Loop 33 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- H-Phi result is static-source evidence, not profiler proof.
+
 ## Loop 27 AUP Precision H-Phi Budget Gate
 
 ### Findings

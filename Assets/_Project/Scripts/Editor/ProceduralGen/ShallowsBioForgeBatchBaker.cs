@@ -740,6 +740,8 @@ namespace Hecton8.Editor.ProceduralGen
 
         private static void ValidateRuleAssets(Material material, ref int failures)
         {
+            ValidateRuleFolderContract(ref failures);
+
             ValidateRuleAsset(new RuleExpectation
             {
                 Path = $"{RuleFolder}/Rule_Shallows_TubeCoral.asset",
@@ -884,6 +886,36 @@ namespace Hecton8.Editor.ProceduralGen
                 failed = true;
 
             SerializedObject serialized = new SerializedObject(rule);
+            failed |= !string.Equals(rule.name, Path.GetFileNameWithoutExtension(expected.Path), StringComparison.Ordinal);
+            failed |= !SerializedStringEquals(serialized, "_assetPrefix", expected.AssetPrefix);
+            failed |= !SerializedObjectReferenceEquals(serialized, "_material", material);
+            failed |= !SerializedStringEquals(serialized, "_axiom", expected.Axiom);
+            failed |= !SerializedIntEquals(serialized, "_iterations", expected.Iterations);
+            failed |= !SerializedIntEquals(serialized, "_maxBranches", expected.MaxBranches);
+            failed |= !SerializedFloatEquals(serialized, "_angleDegrees", expected.AngleDegrees);
+            failed |= !SerializedFloatEquals(serialized, "_stepLength", expected.StepLength);
+            failed |= !SerializedFloatEquals(serialized, "_lengthTaper", expected.LengthTaper);
+            failed |= !SerializedFloatEquals(serialized, "_rootRadius", expected.RootRadius);
+            failed |= !SerializedFloatEquals(serialized, "_radiusTaper", expected.RadiusTaper);
+            failed |= !SerializedFloatEquals(serialized, "_minimumRadius", expected.MinimumRadius);
+            failed |= !SerializedIntEquals(serialized, "_sdfResolution", expected.SdfResolution);
+            failed |= !SerializedFloatEquals(serialized, "_boundsPadding", expected.BoundsPadding);
+            failed |= !SerializedFloatEquals(serialized, "_smoothMinK", expected.SmoothMinK);
+            failed |= !SerializedIntEquals(serialized, "_sdfProfile", (int)expected.Profile);
+            failed |= !SerializedFloatEquals(serialized, "_ribbonThicknessScale", expected.RibbonThicknessScale);
+            failed |= !SerializedFloatEquals(serialized, "_ribbonWidthScale", expected.RibbonWidthScale);
+            failed |= !SerializedIntEquals(serialized, "_lod0TriangleBudget", expected.Lod0);
+            failed |= !SerializedIntEquals(serialized, "_lod1TriangleBudget", expected.Lod1);
+            failed |= !SerializedIntEquals(serialized, "_lod2TriangleBudget", expected.Lod2);
+            failed |= !SerializedFloatEquals(serialized, "_rockRadius", expected.RockRadius);
+            failed |= !SerializedFloatEquals(serialized, "_rockNoiseAmplitude", expected.RockNoiseAmplitude);
+            failed |= !SerializedFloatEquals(serialized, "_rockNoiseFrequency", expected.RockNoiseFrequency);
+            failed |= !SerializedIntEquals(serialized, "_rockPoreCount", expected.RockPoreCount);
+            failed |= !SerializedFloatEquals(serialized, "_rockPoreRadius", expected.RockPoreRadius);
+            failed |= !SerializedFloatEquals(serialized, "_rockPoreSurfaceBias", expected.RockPoreSurfaceBias);
+            failed |= !SerializedStringEquals(serialized, "_meshOutputFolder", expected.MeshFolder);
+            failed |= !SerializedStringEquals(serialized, "_prefabOutputFolder", expected.PrefabFolder);
+
             SerializedProperty rules = serialized.FindProperty("_rules");
             if (rules == null || !rules.isArray || rules.arraySize != 1)
             {
@@ -901,6 +933,33 @@ namespace Hecton8.Editor.ProceduralGen
                 failures++;
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] BioRuleData contract drift at {expected.Path}.");
             }
+        }
+
+        private static void ValidateRuleFolderContract(ref int failures)
+        {
+            string[] guids = AssetDatabase.FindAssets("t:BioRuleData", new[] { RuleFolder });
+            int unexpected = 0;
+            bool hasTubeCoral = false;
+            bool hasKelp = false;
+            bool hasPorousRock = false;
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                if (string.Equals(path, $"{RuleFolder}/Rule_Shallows_TubeCoral.asset", StringComparison.Ordinal))
+                    hasTubeCoral = true;
+                else if (string.Equals(path, $"{RuleFolder}/Rule_Shallows_Kelp.asset", StringComparison.Ordinal))
+                    hasKelp = true;
+                else if (string.Equals(path, $"{RuleFolder}/Rule_Shallows_PorousRock.asset", StringComparison.Ordinal))
+                    hasPorousRock = true;
+                else
+                    unexpected++;
+            }
+
+            if (guids.Length == 3 && unexpected == 0 && hasTubeCoral && hasKelp && hasPorousRock)
+                return;
+
+            failures++;
+            Debug.LogError($"[ShallowsBioForgeBatchBaker] Rule folder contract failed. Count={guids.Length}, Unexpected={unexpected}, TubeCoral={hasTubeCoral}, Kelp={hasKelp}, PorousRock={hasPorousRock}.");
         }
 
         private static bool Approximately(float actual, float expected)
@@ -1432,6 +1491,24 @@ namespace Hecton8.Editor.ProceduralGen
         {
             SerializedProperty property = serialized.FindProperty(propertyName);
             return property != null && property.intValue == expected;
+        }
+
+        private static bool SerializedFloatEquals(SerializedObject serialized, string propertyName, float expected)
+        {
+            SerializedProperty property = serialized.FindProperty(propertyName);
+            return property != null && Approximately(property.floatValue, expected);
+        }
+
+        private static bool SerializedStringEquals(SerializedObject serialized, string propertyName, string expected)
+        {
+            SerializedProperty property = serialized.FindProperty(propertyName);
+            return property != null && string.Equals(property.stringValue, expected, StringComparison.Ordinal);
+        }
+
+        private static bool SerializedObjectReferenceEquals(SerializedObject serialized, string propertyName, UnityEngine.Object expected)
+        {
+            SerializedProperty property = serialized.FindProperty(propertyName);
+            return property != null && property.objectReferenceValue == expected;
         }
 
         private static bool SerializedObjectReferenceIsNull(SerializedObject serialized, string propertyName)

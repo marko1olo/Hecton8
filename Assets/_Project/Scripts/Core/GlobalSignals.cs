@@ -1731,7 +1731,7 @@ namespace Hecton8.Core
             ValidateSignalPayload<AcousticPingSignal>(64);
             ValidateSignalPayload<MovementAcousticSignal>(64);
             ValidateSignalPayload<SwarmDispersedSignal>(64);
-            ValidateSignalSize<SectorHydratedSignal>(32);
+            ValidateSignalSize<MacroDatabaseSectorHydrationSignal>(32);
             ValidateSignalSize<WfcOutpostStateChangedSignal>(32);
             ValidateSignalSize<SectorResidencyHydratedSignal>(64);
             ValidateSignalSize<SectorDehydratedSignal>(64);
@@ -2551,10 +2551,10 @@ namespace Hecton8.Core
         }
 
         /// <summary>Queues one macro database hydration packet on the typed native lane.</summary>
-        public static void Publish(in SectorHydratedSignal signal)
+        public static void Publish(in MacroDatabaseSectorHydrationSignal signal)
         {
             EnsureInitialized();
-            SignalBus<SectorHydratedSignal>.Push(in signal);
+            SignalBus<MacroDatabaseSectorHydrationSignal>.Push(in signal);
         }
 
         /// <summary>Queues one WFC outpost generation completion packet on the typed native lane.</summary>
@@ -3195,8 +3195,8 @@ namespace Hecton8.Core
             SignalBus<SwarmDispersedSignal>.EnsureInitialized();
             SignalBus<FluidImpulseSignal>.Configure(FluidImpulseSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(FluidImpulseSignal)));
             SignalBus<FluidImpulseSignal>.EnsureInitialized();
-            SignalBus<SectorHydratedSignal>.Configure(64, laneHash: ComputeStableSignalLaneHash(nameof(SectorHydratedSignal)));
-            SignalBus<SectorHydratedSignal>.EnsureInitialized();
+            SignalBus<MacroDatabaseSectorHydrationSignal>.Configure(64, laneHash: ComputeStableSignalLaneHash(nameof(MacroDatabaseSectorHydrationSignal)));
+            SignalBus<MacroDatabaseSectorHydrationSignal>.EnsureInitialized();
             SignalBus<WfcOutpostGeneratedSignal>.Configure(WfcOutpostGeneratedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(WfcOutpostGeneratedSignal)));
             SignalBus<WfcOutpostGeneratedSignal>.EnsureInitialized();
             SignalBus<WfcOutpostStateChangedSignal>.Configure(128, laneHash: ComputeStableSignalLaneHash(nameof(WfcOutpostStateChangedSignal)));
@@ -4889,7 +4889,7 @@ namespace Hecton8.Core.Signals
 
     /// <summary>Macro database sector hydration completion lane. Size: 32 bytes.</summary>
     [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public struct SectorHydratedSignal : ISignal
+    public struct MacroDatabaseSectorHydrationSignal : ISignal
     {
         [FieldOffset(0)] public ulong SectorHash;
         [FieldOffset(8)] public long FileOffset;

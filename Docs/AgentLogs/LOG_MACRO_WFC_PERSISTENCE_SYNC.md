@@ -757,3 +757,27 @@ Verification:
 - `Select-String` still finds no rotated batch XML tag for this ID.
 - Targeted `git diff --check` reports only Git CRLF normalization warnings.
 - No `dotnet` rebuild was run.
+
+## Recheck Report: WFC Signal Facade Ownership
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- WFC producers pushed typed packets directly into `SignalBus<T>`.
+- That scattered WFC lane ownership across gameplay, world, and power producers instead of using the global facade.
+
+What was done:
+- Routed WFC state-change, generated-grid, and door-power packets through `GlobalSignals.Publish(in signal)`.
+- Left signal payload structs, lane capacities, and consumers unchanged.
+
+Cinematic cheats used:
+- Facade routing only; no new service, replay layer, or managed event bridge.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation: 0 B by static inspection.
+- Cost: same typed native enqueue plus existing initialized guard.
+
+Verification:
+- Static scan shows remaining direct WFC typed `SignalBus<T>.Push` calls are only inside `GlobalSignals` facade overloads.
+- Targeted `git diff --check` reports only Git CRLF normalization warnings.
+- No `dotnet` rebuild was run.

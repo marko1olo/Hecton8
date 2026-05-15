@@ -471,3 +471,11 @@ Solution: Add `ConvertTo-BudgetDisplayRows` and use it for source and core-graph
 Rejected Alternatives: Keep separate `Min` and `Max` columns or rely on JSON output only. Separate columns waste table width and invite missed floor thresholds; JSON-only evidence is harder to read during terminal triage.
 Scalability potential: Low machines get faster terminal triage for static H-Phi gates without rerunning Unity or full builds. Middle/High/Ultra CI keeps the same JSON contract while humans get clearer budget diagnostics.
 Hardware Impact: Gameplay frame impact is 0 us. CoreGraphOnly text summary still completes in the fast graph path and now displays `Direction`/`Limit`; no new full-source H-Phi score was claimed after the Loop 31 timeout.
+
+## Decision 59 - Duplicate Signal Scan Prefilter
+
+Problem: The duplicate signal-name H-Phi audit scrubbed every C# file into code surface before checking whether a `*Signal` struct could exist, contributing avoidable full-source scan cost.
+Solution: Add a raw-literal prefilter in `Get-DuplicateSignalNameAudit` that skips masking unless a file contains both `Signal` and `struct`.
+Rejected Alternatives: Disable duplicate signal audit or cache all file contents globally. Disabling the audit would hide signal-lane name collisions; a broad content cache increases memory pressure in a PowerShell tool and does not address the expensive masking work directly.
+Scalability potential: Low machines skip 1279 non-candidate files before duplicate-signal masking. Middle/High/Ultra CI keeps the same duplicate-name evidence while preserving budget for full AUP/H-Phi source gates.
+Hardware Impact: Gameplay frame impact is 0 us. Full static `-MaxAupPrecisionRisk 0` run completed in 221.618 seconds with `AupPrecisionRisk=0` and `DuplicateSignalNameCount=0`; tooling-only improvement.

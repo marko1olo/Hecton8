@@ -103,3 +103,4 @@ Prompt Source: in-chat XML. `Docs/Tasks/CURRENT_BATCH.md` contains no matching p
 - Current source already owns a static `s_runtimeInstance` cache for fluid static entrypoints; this loop cleared that cache on disable/destroy when the current owner is torn down.
 - Cleared cached player/submarine runtime contexts with DataVault and bucketer references on fluid teardown to avoid stale cross-domain pointers after domain reload, scene unload, or duplicate-owner rejection.
 - `git diff --check -- Assets/_Project/Scripts/HectonFluidEngine.cs Assets/_Project/Scripts/SubmarineFluidDynamics.cs` passed; LF/CRLF warning only.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -CoreGraphOnly` completed at `2026-05-15 04:44:02 +04:00` with unchanged core graph debt: source-backed bridge `14`, compile-bridge `8`, project-reference replacement `6`.

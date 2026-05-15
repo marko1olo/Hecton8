@@ -1,4 +1,8 @@
 <Project>
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Hecton8.Core' And '$(HectonBuildProjectReferences)' != 'true'">
+    <DefineConstants>$(DefineConstants);HECTON_CORE_CONTRACTS_DLL_LEGACY</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'Hecton8.PlayModeTests' And !$([System.String]::Copy('@(ProjectReference)').Contains('Hecton8.Core.csproj'))">
     <ProjectReference Include="$(MSBuildThisFileDirectory)Hecton8.Core.csproj"
                       ReferenceOutputAssembly="true"

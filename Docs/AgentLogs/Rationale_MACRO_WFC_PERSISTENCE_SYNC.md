@@ -341,3 +341,12 @@ Scalability potential: Low/MX350 gets accurate frame diagnostics without extra a
 Hardware Impact: One cached MacroDB pointer/open check and one cached DataVault null check only on successful cold grid reacquire. No steady-frame allocation and no registry lookup. Measured microseconds absent.
 H-Phi Evidence: Improves PhaseDiscipline by keeping readiness truth synchronized at the owner boundary and improves DataSovereignty by making the black-box dependency bitfield represent actual cached state.
 Verification Update 25: Static scans confirm the readiness update lives in `TryEnsureWfcOutpostGrid()` and uses cached dependencies only. `Select-String` still finds no rotated batch XML tag for this ID. Targeted `git diff --check` reports no whitespace errors beyond Git CRLF warnings. No `dotnet` rebuild, Unity import, Burst Inspector, GCMonitor, profiler, or PlayMode claim is made.
+
+## WFC SIGNAL FACADE OWNERSHIP
+Problem: WFC state, generation, and door-power producers built the correct unmanaged packets but pushed directly into `SignalBus<T>`. That bypasses the `GlobalSignals.Publish` facade, scatters lane ownership across gameplay/world/power domains, and makes queue initialization assumptions less explicit.
+Solution: Route WFC state-change, generated-grid, and door-power packets through `GlobalSignals.Publish(in signal)`. This is a cross-domain interface correction only: payload structs, capacities, and consumers are unchanged.
+Rejected Alternatives: Leave direct producer pushes; add a new persistence event bridge; change WFC signal structs. Direct pushes dilute lane ownership, a new bridge adds bloat, and struct churn would risk concurrent-agent breakage.
+Scalability potential: Low/MX350 keeps one typed native enqueue with centralized initialization guard. Middle/High/Ultra keep the same signal payloads while future signal instrumentation has one facade point.
+Hardware Impact: Same queue enqueue path plus the existing `GlobalSignals` initialized guard. No managed allocation and no new per-frame structures. Measured microseconds absent.
+H-Phi Evidence: Improves PhaseDiscipline/SynapticDensity by making WFC signal ownership explicit at the global signal boundary instead of direct cross-domain lane writes.
+Verification Update 26: Static scan shows remaining direct WFC typed `SignalBus<T>.Push` calls are only inside `GlobalSignals` facade overloads. Targeted `git diff --check` reports no whitespace errors beyond Git CRLF warnings. No `dotnet` rebuild, Unity import, Burst Inspector, GCMonitor, profiler, or PlayMode claim is made.

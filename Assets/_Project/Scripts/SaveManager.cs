@@ -1242,15 +1242,15 @@ namespace Hecton8.SaveSystem
 
         private void DrainWfcSectorHydratedSignals()
         {
-            ReadOnlySpan<Hecton8.Core.Signals.SectorHydratedSignal> signals =
-                SignalBus<Hecton8.Core.Signals.SectorHydratedSignal>.GetFrameSnapshot();
+            ReadOnlySpan<Hecton8.Core.Signals.MacroDatabaseSectorHydrationSignal> signals =
+                SignalBus<Hecton8.Core.Signals.MacroDatabaseSectorHydrationSignal>.GetFrameSnapshot();
             NativeArray<byte> wfcGrid = default;
             bool hasGrid = false;
             int probes = 0;
 
             for (int i = 0; i < signals.Length && probes < MaxWfcSectorHydrationProbesPerTick; i++)
             {
-                Hecton8.Core.Signals.SectorHydratedSignal signal = signals[i];
+                Hecton8.Core.Signals.MacroDatabaseSectorHydrationSignal signal = signals[i];
                 if (signal.SectorHash == 0UL ||
                     signal.PayloadBytes < WfcOutpostPersistenceConstants.PayloadHeaderBytes ||
                     signal.PayloadBytes > WfcOutpostPersistenceConstants.PayloadMaxBytes)

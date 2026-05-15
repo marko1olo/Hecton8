@@ -1045,7 +1045,8 @@ namespace Hecton8.Gameplay
             float safeBattery01 = SafeSaturate01(BatteryCharge);
             int progressBucket = math.clamp((int)math.round(safeProgress01 * 1000f), 0, 1000);
             uint signalToolHash = RuntimeToolId != 0u ? RuntimeToolId : ScannerToolTuningHash;
-            HectonQualityTier signalTier = ResolveScannerQualityTier();
+            float now = Time.time;
+            HectonQualityTier signalTier = ResolveScannerQualityTier(now);
             _scannerBlackBoxQualityTier = (ushort)signalTier;
 
             if (active == _lastPublishedTuningActive &&
@@ -1746,7 +1747,7 @@ namespace Hecton8.Gameplay
 
         private bool IsLowScannerPresentationTier()
         {
-            HectonQualityTier tier = ResolveScannerQualityTier();
+            HectonQualityTier tier = ResolveScannerQualityTier(Time.time);
             return tier == HectonQualityTier.Unknown ||
                    tier == HectonQualityTier.Low ||
                    tier == HectonQualityTier.Mx350;
@@ -2847,7 +2848,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float effectiveResampleInterval = ResolveFocusedScanResampleInterval();
+            float effectiveResampleInterval = ResolveFocusedScanResampleInterval(now);
             float holdTimeout = math.max(effectiveResampleInterval * ScientificScanHoldGraceMultiplier, 0.1f);
             if (_activeScientificFragment != null &&
                 now - _scientificLastContactTime <= holdTimeout &&
@@ -2917,7 +2918,7 @@ namespace Hecton8.Gameplay
                 return;
             float coneTanSq = ResolveFocusedConeTanSq(coneAngle);
 
-            float resampleInterval = ResolveFocusedScanResampleInterval();
+            float resampleInterval = ResolveFocusedScanResampleInterval(now);
             float loreRange = math.min(15f, range);
             if (TryResolveScientificLoreCandidate(
                     origin,
@@ -2972,10 +2973,10 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        private float ResolveFocusedScanResampleInterval()
+        private float ResolveFocusedScanResampleInterval(float now)
         {
             float configured = math.max(0.05f, focusedScanResampleInterval);
-            HectonQualityTier tier = ResolveScannerQualityTier();
+            HectonQualityTier tier = ResolveScannerQualityTier(now);
             _scannerBlackBoxQualityTier = (ushort)tier;
             if (tier == HectonQualityTier.Unknown ||
                 tier == HectonQualityTier.Low ||
@@ -2993,7 +2994,7 @@ namespace Hecton8.Gameplay
             return configured;
         }
 
-        private HectonQualityTier ResolveScannerQualityTier()
+        private HectonQualityTier ResolveScannerQualityTier(float now)
         {
             if (!_scannerQualityTierInitialized)
                 InitializeScannerQualityTier(HectonQualityTier.Unknown);
@@ -3004,7 +3005,7 @@ namespace Hecton8.Gameplay
                 return _scannerQualityTier;
             }
 
-            float candidateAge = Time.time - _scannerQualityTierCandidateSince;
+            float candidateAge = now - _scannerQualityTierCandidateSince;
             if (!math.isfinite(candidateAge) || candidateAge < ScannerQualityTierHysteresisSeconds)
             {
                 _scannerBlackBoxQualityTier = (ushort)_scannerQualityTier;

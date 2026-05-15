@@ -200,3 +200,17 @@ Solution: Added length-aware `AreRoomStateLanesReady` and `AreBulkheadLanesReady
 Rejected Alternatives: Letting the Burst job clamp after unsafe API writes was rejected because the fault would already have happened. Guarding only the modified lane was rejected because room APIs maintain cross-lane Dalton consistency.
 Scalability potential: Low through Ultra keep the same room authority while future H-Phi room-lane migration fails closed on capacity skew.
 Hardware Impact: Cold/API path branch cost only. Prevents out-of-bounds public setter faults before the scheduled gas step.
+
+## Self-Review 22 - Depth Stress Pressure Guard
+Problem: `ResolveEffectiveDepthStress01` used `_roomCount` to trust `RoomPressure` indexing.
+Solution: Added an explicit `roomId < RoomPressure.Length` guard before reading pressure.
+Rejected Alternatives: Routing through full room readiness was rejected because depth-stress relief only needs the pressure lane and may be queried often by hull systems.
+Scalability potential: Low through Ultra keep the same pressure-relief math while future room-pressure ownership can fail closed.
+Hardware Impact: One integer comparison on a public query; no frame-time saving claimed.
+
+## Self-Review 23 - Redundant Guard Trim
+Problem: After length-aware room/base readiness helpers, some callsites still kept obsolete `IsCreated` branches.
+Solution: Removed redundant checks in room configuration, room flag updates, CO2 pressure injection, and base transition packet drains.
+Rejected Alternatives: Leaving the branches was rejected because the readiness helpers already prove those lanes before indexing. Removing readiness helpers was rejected because future H-Phi capacity skew still needs fail-closed protection.
+Scalability potential: Low through Ultra keep identical behavior with fewer branch checks on transition packets and room API calls.
+Hardware Impact: Tiny branch reduction only; no measurable frame-time claim.

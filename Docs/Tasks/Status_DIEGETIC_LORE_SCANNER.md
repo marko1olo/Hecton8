@@ -179,10 +179,15 @@ Mandates read:
 - [x] Tool screen shader state moved off globals | DOD: `ToolDiegeticDisplayController` no longer calls `Shader.SetGlobalFloat` for heat, battery, distance, ammo, critical flash, visual overkill, fault, or tool hue; changed values are batched into the existing cached `MaterialPropertyBlock` for the physical UI renderer | Rejected: global shader floats that let multiple physical tool screens overwrite each other's visual state | Estimate: replaces up to 9 global shader writes with one per-renderer property-block write on changed display state
 - [x] Static no-regression checks after Loop 23 | DOD: `git diff --check` passed with line-ending warning only, `git diff --cached --check` passed, scanner banned-pattern scan found no forbidden UI/scanner patterns, and shader-state scan found no `Shader.SetGlobalFloat` or `ApplyGlobalFloat` in the tool display controller | Rejected: dotnet rebuild; static source checks only | Estimate: 2700 us
 
+## Loop 24 - Scanner Quality-Tier Time Snapshot Hygiene
+
+- [x] Focused scan tier resolver uses tick timestamp | DOD: `UpdateScientificScanning()` and `ScheduleScientificConeBatch()` now pass the fast-tick `now` snapshot into focused resample interval and quality-tier hysteresis resolution | Rejected: hidden `Time.time` reads inside tier helpers during one scientific scanner sample | Estimate: removes 1-2 repeated engine time reads per active focused scan tick
+- [x] Static no-regression checks after Loop 24 | DOD: `git diff --check` passed with line-ending warning only, `git diff --cached --check` passed, scanner banned-pattern scan found no forbidden UI/scanner patterns, and targeted time scan found no no-arg focused resample/quality resolver calls or old `Time.time - _scannerQualityTierCandidateSince` pattern | Rejected: dotnet rebuild; static source checks only | Estimate: 2900 us
+
 ## Verification
 
 - [x] Compile/source validation - `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:quiet -clp:Summary` passed with 0 warnings / 0 errors after Loop 10
-- [ ] Compile/source validation after Loops 11-23 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
+- [ ] Compile/source validation after Loops 11-24 - NOT RERUN: user explicitly ordered no dotnet rebuilds; static source checks only
 - [ ] Console check - BLOCKED BY UNITY SESSION: MCP validate/console calls cannot connect to Unity MCP HTTP endpoint / session
 - [x] Re-read prompt after core tasks
 - [x] Omega polish mandate after all tasks done or blocked
