@@ -952,3 +952,49 @@ Verification:
 - `rg` confirms `PlayerInteraction` has no `OnInteract +=` / `OnInteract -=` remnants.
 - Remaining interact callbacks are the central `InputDispatcher` producer and mounted-transport authority path.
 - `git diff --check` passed for `PlayerInteraction.cs` with only the standard LF/CRLF notice.
+
+## 2026-05-15 - Build Debt Gate Recheck Addendum
+
+What was wrong:
+- The latest request explicitly demanded build repair/debt closure after the signal-lane conversions.
+- Static checks were not enough proof for assembly integration.
+
+What was done:
+- Ran `dotnet build Hecton8.Core.csproj --no-restore -v:minimal`.
+- Ran `dotnet build Assembly-CSharp.csproj --no-restore -v:minimal`.
+- The first Assembly-CSharp attempt timed out before diagnostics; build servers were shut down cleanly and the gate was rerun with a longer timeout.
+
+Cinematic Cheats used:
+- None. This was compile validation, not runtime presentation work.
+
+Exact microseconds saved:
+- 0.0 us direct runtime gain.
+- Integration debt removed: both compile gates now prove the H-Phi changes resolve against generated Unity projects.
+
+Verification:
+- `Hecton8.Core.csproj --no-restore`: build succeeded, 0 warnings, 0 errors.
+- `Assembly-CSharp.csproj --no-restore`: build succeeded, 0 warnings, 0 errors, elapsed 00:03:47.55.
+- No `dotnet restore` and no `dotnet rebuild` was run.
+
+## 2026-05-15 - Serialized Assembly Build Gate Addendum
+
+What was wrong:
+- After concurrent workspace changes, the parallel Assembly-CSharp build failed with MSB4166 child-node exits.
+- The failure did not contain C# diagnostics, so no source file was proven broken.
+
+What was done:
+- Confirmed `Hecton8.Core.csproj --no-restore -v:minimal` still succeeds with 0 warnings / 0 errors.
+- Shut down build servers after the MSB4166 failure.
+- Reran Assembly-CSharp with one MSBuild node and node reuse disabled.
+
+Cinematic Cheats used:
+- None. This was build infrastructure isolation.
+
+Exact microseconds saved:
+- 0.0 us direct runtime gain.
+- Prevented false source churn by classifying the MSBuild node crash separately from C# compilation.
+
+Verification:
+- `dotnet build Assembly-CSharp.csproj --no-restore -v:minimal -m:1 /nr:false` succeeded.
+- Result: 0 warnings, 0 errors, elapsed 00:03:15.37.
+- No `dotnet restore` and no `dotnet rebuild` was run.

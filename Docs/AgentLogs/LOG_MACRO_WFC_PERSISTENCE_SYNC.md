@@ -1301,3 +1301,142 @@ Verification:
 - `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` exited 0 at 2026-05-15 19:34:00 +04:00; core graph debt counts unchanged.
 - Latest integrator build evidence `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_192423_CurrentDisk23` exits 0 with 0 warnings and 0 errors.
 - No `dotnet` rebuild was run by this agent.
+
+## Recheck Report: WFC Dirty Append Retry Fairness
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- WFC dirty append retry always scanned the native snapshot cache from index 0.
+- Two failing low-index sectors could consume the full two-retry SlowTick budget and starve later dirty sectors.
+
+What was done:
+- Added `_wfcOutpostSnapshotCacheRetryIndex`.
+- SlowTick retry now starts from that cursor, wraps over the fixed native cache, and advances the cursor after inspected entries.
+- Disposal and WFC sector-cache reset clear the retry cursor with cache state.
+
+Cinematic cheats used:
+- Deterministic rotating cursor over the existing native cache instead of a managed queue, random selection, or higher retry budget.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation: 0 B by static inspection.
+- Per-SlowTick append budget remains capped at two attempts.
+- Saved risk: later dirty sectors no longer wait forever behind two permanently failing low-index entries.
+
+Verification:
+- Static scan confirms `_wfcOutpostSnapshotCacheRetryIndex` field, reset sites, wraparound retry scan, and unchanged `MaxWfcDirtyAppendRetriesPerSlowTick = 2`.
+- `git diff --check` reports only Git CRLF normalization warnings.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` exited 0 at 2026-05-15 19:59:27 +04:00; core graph debt counts unchanged.
+- Latest integrator build evidence `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_194655_CurrentDisk30` exits 0.
+- No `dotnet` rebuild was run by this agent.
+
+## Recheck Report: WFC Append Black-Box Completion Evidence
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- Append failure/deferred/stale-service events did not include payload hash.
+- Successful dirty append completion cleared retry flags without writing an append completion event.
+
+What was done:
+- All append outcomes now write payload hash into the WFC event black-box ring.
+- Successful append completion now records `WfcOutpostPersistenceStatus.Ready` after cache retry flags are cleared.
+
+Cinematic cheats used:
+- Existing fixed native event ring instead of new text logs, public telemetry IDs, or MacroDB API churn.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation: 0 B by static inspection.
+- Adds one 64-byte native event-ring store per successful async append completion.
+- Saves post-mortem ambiguity: queued payload hashes can now be separated from durably appended payload hashes.
+
+Verification:
+- Static scan confirms append `ServiceUnavailable`, `DirtyQueued`, `Ready`, and `Rejected` events all pass `payloadHash`.
+- `git diff --check` reports only Git CRLF normalization warnings.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` exited 0 at 2026-05-15 20:07:59 +04:00; core graph debt counts unchanged.
+- Latest integrator build evidence `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_200146_CurrentDisk31` exits 0.
+- No `dotnet` rebuild was run by this agent.
+
+## Recheck Report: WFC Write-Failure Telemetry Split
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- WFC write-loss warnings reused the corrupt-payload telemetry hash.
+- The write-failure helper sent the frame number as the warning scalar.
+
+What was done:
+- Added `WfcWriteFailureTelemetryHash` (`WFWF`) for write-loss warnings.
+- Kept corrupt payload warnings on `WFCX`.
+- Changed write-failure warning scalar to `1f`; frame remains in the black-box event.
+
+Cinematic cheats used:
+- Hash-only semantic split inside `SaveManager` instead of new public telemetry plumbing.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation: 0 B by static inspection.
+- Success path unchanged.
+- Saves diagnostic ambiguity, not frame time.
+
+Verification:
+- Static scan confirms corrupt payload and write-failure warning hashes are separate.
+- Static scan confirms write-failure call sites use the parameterless helper and no frame scalar remains.
+- `git diff --check` reports only Git CRLF normalization warnings.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` exited 0 at 2026-05-15 20:16:58 +04:00; core graph debt counts unchanged.
+- Latest integrator build evidence `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_200826_CurrentDisk33` exits 0.
+- No `dotnet` rebuild was run by this agent.
+
+## Recheck Report: WFC Append Exception Black-Box Evidence
+Status: PENDING VERIFICATION.
+
+What was wrong:
+- Append exceptions were swallowed into generic append rejection/service-unavailable events.
+- The WFC black-box dump had no exception marker or HResult for append faults.
+
+What was done:
+- Added `WfcOutpostBlackBoxAppendFlagException`.
+- Captured `exception.HResult` into append event `SignalSourceHash`.
+- Wired exception flag/code into rejected and service-unavailable append events.
+
+Cinematic cheats used:
+- Reused existing fixed binary event fields instead of text logs, public telemetry churn, or dump layout expansion.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation: 0 B steady state by static inspection.
+- Success path unchanged.
+- Failure path adds two uint fields to an already-written 64-byte event.
+
+Verification:
+- Static scan confirms `WfcOutpostBlackBoxAppendFlagException`, `appendFailureFlags`, `appendFailureCode`, and event wiring.
+- `git diff --check` reports no whitespace errors.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` exited 0 at 2026-05-15 20:36:03 +04:00; core graph debt counts unchanged.
+- Latest integrator build `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_203354_CurrentDisk36` fails on unrelated `UI/DiegeticPanelController.cs` `ScalabilityTierBindingBridge`; previous `CurrentDisk35` exits 0 and the red log contains no `SaveManager` errors.
+- No `dotnet` rebuild was run by this agent.
+
+## 2026-05-15 21:14 +04:00 - WFC Public Entry Black-Box Guard
+
+What was wrong:
+- Public WFC persist/restore entrypoints could record reject/service-unavailable events before `InitializeService()` proved the WFC black-box rings existed.
+- First-failure bootstrap evidence could be dropped because the event writer returns if the native event ring is not created.
+
+What was done:
+- Added `EnsureWfcOutpostBlackBoxRing()` at the start of `TryPersistWfcOutpostStateSnapshot`.
+- Added `EnsureWfcOutpostBlackBoxRing()` at the start of `TryApplyWfcOutpostStateOverride`.
+- Kept Tick drains on private/internal helpers, so hot WFC signal processing does not gain allocation or registry refresh work.
+
+Cinematic cheats used:
+- Reused the existing fixed native 300-frame/300-event black-box rings instead of text logging, public API churn, or event-writer allocation.
+
+Exact microseconds saved:
+- Measured savings: 0 us. No profiler or runtime trace.
+- Runtime allocation: 0 B steady state by static inspection.
+- Cold fallback can allocate the existing two WFC native rings once if public API use bypassed service init.
+- Tick path unchanged.
+
+Verification:
+- Static scan confirms both public WFC entrypoints call `EnsureWfcOutpostBlackBoxRing()` before dependency refresh.
+- `git diff --check` and `git diff --cached --check` report no whitespace errors beyond Git CRLF normalization warning.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` exited 0 at 2026-05-15 21:14:53 +04:00; core graph debt counts unchanged.
+- Latest integrator build `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_210454_CurrentDisk40` fails on project-wide generated-project reference loss (`Unity.Mathematics`, TMPro, UnityEngine.UI, InputSystem, local contracts). Source scan finds no remaining `ScalabilityTierBindingBridge` under `Assets/_Project/Scripts`.
+- No `dotnet` rebuild was run by this agent.

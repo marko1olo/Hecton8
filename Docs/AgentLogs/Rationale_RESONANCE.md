@@ -213,13 +213,13 @@ Hardware Impact: Estimated 1-3 microseconds saved in submarine flood/deep-freeze
 
 Problem: `Hecton8.Editor.csproj` failed on `KinematicGhostDebugger` because the generated editor project did not carry `Unity.Mathematics`, while the editor window used `double3` and `math.lengthsq`.
 
-Solution: Keep the diagnostic editor tool on existing Vector3 APIs: `HectonMapMagicVegetationBridge.ToUniverseSpace()` and `HectonFloatingOrigin.ToAbsoluteUniversePosition()`. This removes the stale generated-project dependency without touching generated `.csproj` files.
+Solution: Initial mitigation used existing Vector3 APIs to prove the failure was isolated to the editor math dependency and not to surrounding gameplay code. This decision was superseded by Decision 18 after the source-backed asmdef and generated editor project were aligned around `Unity.Mathematics`.
 
 Rejected Alternatives: Editing generated `.csproj` files would be overwritten by Unity. Adding a new asmdef dependency for one editor visualization helper increases graph coupling. Touching plugin/package code to satisfy a Hecton editor tool would cross ownership.
 
-Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged because the fix is editor-only. It reduces build graph coupling and keeps editor diagnostics available without adding runtime weight.
+Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged because the investigation and final fix are editor/build-graph only.
 
-Hardware Impact: 0 runtime microseconds. Editor compile reliability improved; the tool still allocates only its existing cold history arrays.
+Hardware Impact: 0 runtime microseconds. The useful result was dependency isolation; final compile health is recorded in Decision 18.
 
 ## Decision 17 - Generated Graph vs Source Compile Gate
 
@@ -232,3 +232,15 @@ Rejected Alternatives: Claiming the full graph green would be false. Continuing 
 Scalability potential: Build pipeline determinism protects all tiers by preventing broken editor tooling from masking runtime source status. Runtime H-Phi is unchanged by the build-gate tactic.
 
 Hardware Impact: 0 runtime microseconds. Developer-loop impact is material: direct source gates finish in roughly 28-51 seconds each instead of non-diagnostic full-graph exits after minutes.
+
+## Decision 18 - Current Full Graph Recovery
+
+Problem: After the Vector3-only editor fix, another concurrent edit restored the higher-precision `double3` implementation in `KinematicGhostDebugger`. The previous failure would return if the generated editor project stayed stale without `Unity.Mathematics`.
+
+Solution: Treat the source-backed asmdef as authority. `Hecton8.Editor.asmdef` already references `Unity.Mathematics`, and the current generated `Hecton8.Editor.csproj` now includes `Library\ScriptAssemblies\Unity.Mathematics.dll`. Retain the precision version and verify the full generated graph instead of fighting the concurrent source change.
+
+Rejected Alternatives: Forcing the Vector3-only patch over a now-valid precision implementation would create churn with another active agent. Editing generated `.csproj` by hand would be overwritten. Editing vendor/package warnings would cross ownership for no Hecton runtime gain.
+
+Scalability potential: Low/Middle/High/Ultra runtime remains unchanged because this is an editor diagnostic tool. The build graph is now aligned with the source-backed asmdef, so editor diagnostics can keep absolute-position precision without breaking full compile.
+
+Hardware Impact: 0 runtime microseconds. Build health improved from failed editor graph to `Hecton8.Editor` full graph green and `Assembly-CSharp` full graph green.

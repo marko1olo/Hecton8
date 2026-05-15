@@ -513,14 +513,12 @@ namespace Hecton8.Core
             _currentInputState = resolvedState;
             ApplyResolvedInputStateToPlayerSnapshot(resolvedState);
 
-            InputStateSignal signal = new InputStateSignal
-            {
-                State = resolvedState,
-                CurrentInputSchemeHash = _currentInputSchemeHash,
-                InputDelayFrames = (byte)delayFrames,
-                AppliedDelayFrames = appliedDelayFrames,
-                Flags = resolvedState.Flags
-            };
+            InputStateSignal signal = default;
+            signal.State = resolvedState;
+            signal.CurrentInputSchemeHash = _currentInputSchemeHash;
+            signal.InputDelayFrames = (byte)delayFrames;
+            signal.AppliedDelayFrames = appliedDelayFrames;
+            signal.Flags = resolvedState.Flags;
             SignalBus<InputStateSignal>.Push(in signal);
             WriteDeterministicInputBlackBox(in resolvedState, _currentInputSchemeHash);
             if ((resolvedState.Sequence % StandardInputRingCapacity) == 0u)
@@ -1790,7 +1788,9 @@ namespace Hecton8.Core
                 position = Vector3.zero;
             if (!rotationValid)
                 rotation = Quaternion.identity;
-            state.GripPositionWS = new float3(position.x, position.y, position.z);
+            state.GripPositionWS.x = position.x;
+            state.GripPositionWS.y = position.y;
+            state.GripPositionWS.z = position.z;
             state.GripRotationWS = new quaternion(rotation.x, rotation.y, rotation.z, rotation.w);
             bool tracked = controller.isTracked != null && controller.isTracked.isPressed && positionValid && rotationValid;
             state.IsTracked = tracked ? (byte)1 : (byte)0;
@@ -1878,11 +1878,16 @@ namespace Hecton8.Core
 
             viewTransform.GetPositionAndRotation(out Vector3 origin, out Quaternion viewRotation);
             Vector3 direction = viewRotation * Vector3.forward;
-            float3 direction3 = new float3(direction.x, direction.y, direction.z);
+            float3 direction3 = default;
+            direction3.x = direction.x;
+            direction3.y = direction.y;
+            direction3.z = direction.z;
             if (!math.all(math.isfinite(direction3)))
             {
                 direction = Vector3.forward;
-                direction3 = new float3(0f, 0f, 1f);
+                direction3.x = 0f;
+                direction3.y = 0f;
+                direction3.z = 1f;
             }
 
             AbsoluteUniversePosition originAup = HectonXRRuntimeState.TryResolveCachedHeadAup(origin, out AbsoluteUniversePosition cachedHeadAup)
@@ -1960,7 +1965,10 @@ namespace Hecton8.Core
             if (math.lengthsq(originDelta) > XRLookAtReuseOriginDriftSq)
                 return false;
 
-            float3 previousDirection = new float3(_lastXRLookAtRayDirection.x, _lastXRLookAtRayDirection.y, _lastXRLookAtRayDirection.z);
+            float3 previousDirection = default;
+            previousDirection.x = _lastXRLookAtRayDirection.x;
+            previousDirection.y = _lastXRLookAtRayDirection.y;
+            previousDirection.z = _lastXRLookAtRayDirection.z;
             if (math.dot(previousDirection, direction) < XRLookAtReuseForwardDot)
                 return false;
 
@@ -2208,14 +2216,13 @@ namespace Hecton8.Core
 
         private void PublishPlayerInputCommand(byte command)
         {
-            SignalBus<PlayerInputSignal>.Push(new PlayerInputSignal
-            {
-                SourceHash = PlayerInputSignalSourceHash,
-                Frame = unchecked((uint)Mathf.Max(0, Time.frameCount)),
-                Sequence = unchecked(++_playerInputSignalSequence),
-                Command = command,
-                Flags = 0
-            });
+            PlayerInputSignal signal = default;
+            signal.SourceHash = PlayerInputSignalSourceHash;
+            signal.Frame = unchecked((uint)Mathf.Max(0, Time.frameCount));
+            signal.Sequence = unchecked(++_playerInputSignalSequence);
+            signal.Command = command;
+            signal.Flags = 0;
+            SignalBus<PlayerInputSignal>.Push(in signal);
         }
 
         private void HandleSprintPressed()

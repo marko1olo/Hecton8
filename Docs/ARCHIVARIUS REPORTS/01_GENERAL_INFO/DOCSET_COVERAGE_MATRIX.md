@@ -17,6 +17,12 @@ This file answers four operational questions:
 It is a navigation and completeness tool.
 It is not runtime proof.
 
+## 2026-05-15 Current Override
+
+Current documentation/status override starts at `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`.
+Current root/index cleanup starts at `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md`.
+The May 11 manifest/continuation and May 4 actuality sweep remain historical evidence unless a later static or runtime proof file explicitly revalidates their counters.
+
 ## Coverage Model
 
 Authority levels used below:
@@ -44,7 +50,7 @@ Correction:
 - The current source-backed coverage map includes `PLAYER_GAMEPLAY_CORE_MAP.md`, `CONSTRUCTION_RUNTIME_INTEGRATION_MAP.md`, and `2026-04-29_SAVE_LOAD_RUNTIME_TRUTH.md`.
 - Patch artifacts are evidence files, not independent current-state authority.
 - `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` is still the first conceptual current-state entry point outside this Archivarius folder.
-- `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` is the latest docset/source-count synchronization pass.
+- `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` plus `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md` are the current counter/root-boundary correction starting points. `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` is a historical broad read-pass unless rerun.
 
 ## Domain Coverage
 
@@ -128,16 +134,18 @@ Correction:
 
 For current-source truth, prefer in this order:
 
-1. `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
-2. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
-3. `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`
-4. `Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md`
-5. `Docs/Reports/2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md`
-6. `PROJECT_ATLAS.md`
-7. `2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md`
-8. current-source summaries in `01_GENERAL_INFO`
-9. current-source rewrites in `02_ACTUAL_REPORTS`
-10. dated `2026-04-28_*` bundles only after checking whether they were reframed as historical snapshots
+1. `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`
+2. `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md`
+3. `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` as historical broad context only
+4. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
+5. `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`
+6. `Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md`
+7. `Docs/Reports/2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md`
+8. `PROJECT_ATLAS.md`
+9. `2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md`
+10. current-source summaries in `01_GENERAL_INFO`
+11. current-source rewrites in `02_ACTUAL_REPORTS`
+12. dated `2026-04-28_*` bundles only after checking whether they were reframed as historical snapshots
 
 Do not treat dated bundles as current runtime proof.
 
@@ -189,13 +197,13 @@ New high-authority May 1 report inputs:
 | `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/06_CRITICAL_ACTION_QUEUE.md` | PRIMARY | updated current remediation queue |
 | `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` | PRIMARY | current conceptual system-ownership entry point |
 | `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md` | PRIMARY | current blunt project-level verdict; source/doc-backed, not runtime proof |
-| `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` | PRIMARY DOCSET ACTUALITY | latest full root/`Docs` markdown read-pass, source-count sync, and link-integrity update |
+| `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` | HISTORICAL DOCSET ACTUALITY | historical full root/`Docs` markdown read-pass; counters/root assumptions superseded by May 13/May 15 unless rerun |
 | `Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md` | PRIMARY COMPILE DELTA | current editor compile/MCP console evidence for event-bus listener migration and spatial-hash repair |
 | `Docs/Reports/2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md` | PRIMARY COMPILE DELTA | current editor compile/reload evidence after `VegetationJobRecovery.cs.meta` restoration and Bee/backend recovery |
 
 Coverage corrections:
 
-- The older trust boundary remains valid only as a read-order policy. For current runtime risk, read `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, then `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, then the relevant dated subsystem report.
+- The older trust boundary remains valid only as a read-order policy. For current risk framing, read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`, `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md`, then `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, then the relevant dated subsystem report. This is still not runtime proof.
 - `../02_ACTUAL_REPORTS/EVENT_FLOW_MAP.md` remains current on late-frame dispatch budgeting, but current risk is no proven same-frame generation split for all event cascade paths. `HectonEventBus.MaxDispatchDepth = 4` exists by May 2 source grep.
 - `PROJECT_CONTENT_LEDGER.md` remains the content ledger, but validator execution proof is still not a live runtime proof.
 - `DEAD_CODE_GRAVEYARD.md` remains the deletion ledger. Its conclusions must be cross-checked before deleting additional code because the worktree is currently heavily modified by multiple agents.

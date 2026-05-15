@@ -16,11 +16,11 @@
 //   â€¢ ÐŸÑƒÐ» ÑÐ¾Ð·Ð´Ð°Ñ‘Ñ‚ÑÑ Ð¾Ð´Ð¸Ð½ Ñ€Ð°Ð· Ð² Awake, Ð´Ð°Ð»ÑŒÑˆÐµ â€” Ñ‚Ð¾Ð»ÑŒÐºÐ¾ Ð¿ÐµÑ€ÐµÐ¸ÑÐ¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ð½Ð¸Ðµ.
 //
 // API:
-//   Hecton8.Core.GlobalRegistry.Audio.PlayAtPoint(clip, position, volume, pitch)
-//   Hecton8.Core.GlobalRegistry.Audio.PlayAtPoint(clip, position, volume, pitch, mixerGroup)
-//   Hecton8.Core.GlobalRegistry.Audio.PlayStatic2D(clip, volume)
-//   Hecton8.Core.GlobalRegistry.Audio.PlayStatic2D(clip, volume, mixerGroup)
-//   Hecton8.Core.GlobalRegistry.Audio.StopAll()
+//   Core audio registry PlayAtPoint(clip, position, volume, pitch)
+//   Core audio registry PlayAtPoint(clip, position, volume, pitch, mixerGroup)
+//   Core audio registry PlayStatic2D(clip, volume)
+//   Core audio registry PlayStatic2D(clip, volume, mixerGroup)
+//   Core audio registry StopAll()
 //
 // MIXER GROUPS:
 //   ÐÐ°Ð·Ð½Ð°Ñ‡Ð°ÑŽÑ‚ÑÑ Ð² Ð¸Ð½ÑÐ¿ÐµÐºÑ‚Ð¾Ñ€Ðµ: SfxGroup, InterfaceGroup, AmbientGroup.
@@ -76,7 +76,7 @@ namespace Hecton8.Audio
 {
     /// <summary>
     /// Ð¦ÐµÐ½Ñ‚Ñ€Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ð¼ÐµÐ½ÐµÐ´Ð¶ÐµÑ€ Ð¿Ñ€Ð¾ÑÑ‚Ñ€Ð°Ð½ÑÑ‚Ð²ÐµÐ½Ð½Ð¾Ð³Ð¾ Ð·Ð²ÑƒÐºÐ° Ñ Ð¿ÑƒÐ»Ð¸Ð½Ð³Ð¾Ð¼.
-    /// Runtime audio service accessed through Hecton8.Core.GlobalRegistry.Audio.
+    /// Runtime audio service accessed through the core audio registry.
     /// Zero-GC Ð² hot path. Ð–Ñ‘ÑÑ‚ÐºÐ¸Ð¹ Ð»Ð¸Ð¼Ð¸Ñ‚ Ð¾Ð´Ð½Ð¾Ð²Ñ€ÐµÐ¼ÐµÐ½Ð½Ñ‹Ñ… Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ¾Ð².
     /// </summary>
     public sealed class SpatialAudioManager : MonoBehaviour, IAudioService, IAudioVirtualizationService, IUpdatable, IFastTickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IPhysicsImpactEventListener, IPhysicsAcousticImpulseEventListener, IRepairDroneTorchAcousticListener, IFatalPressureImplosionEventListener, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener, IServiceHeartbeat, IServiceShutdown

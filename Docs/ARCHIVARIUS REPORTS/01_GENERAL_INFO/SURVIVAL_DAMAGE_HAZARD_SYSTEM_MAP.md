@@ -7,7 +7,7 @@ Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Glob
 
 2026-05-01 trust note:
 
-- Read `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this map as current project truth.
+- Read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` and `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md` before any older counter, root-path, or build-artifact claim. Then read `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` as historical/domain context before using this map as current project truth.
 - This file maps survival/hazard ownership; it does not prove integrated hazard traversal, pressure correctness, or live GC/CPU behavior.
 - Current high-risk cross-domain concerns remain presentation-owned gameplay transitions, broad physics masks, and unverified save/load recovery paths.
 

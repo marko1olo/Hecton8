@@ -200,7 +200,7 @@ What was wrong:
 What was done:
 - Captured `Docs/AgentLogs/Build_DOC_AUDIT_CONTINUATION_20260515_183949_Hecton8Core.log`: `Hecton8.Core.csproj`, `EXIT=0`, `Build succeeded`, `0 Warning(s)`, `0 Error(s)`.
 - Captured `Docs/AgentLogs/HPhi_DOC_AUDIT_CONTINUATION_20260515_184218_CurrentDiskBudgetGate.json`: `EXIT=0`, `MemoryAlignment=0.506309148`, `DataSovereignty=0.021306032`, `HPhiStaticRisk=0.000634446`, `DuplicateSignalNames=0`, `UnityUpdateMethods=0`, Core graph debt `25/10/14/8/6`.
-- Detected later file-write races (`WorldPopulationRule.cs`, `SaveManager.cs`, `ModLoader.cs`) and promoted the final DOC_AUDIT artifacts as the latest observed boundary: `Docs/AgentLogs/Build_DOC_AUDIT_R47_20260515_193833_FinalCurrentDiskCore.log` (`EXIT=0`, `0 Warning(s)`, `0 Error(s)`) and `Docs/AgentLogs/HPhi_DOC_AUDIT_R47_20260515_193609_PostRaceCurrentDiskBudgetGate.json` (`EXIT=0`, `RuntimeHPhiRisk=0.000634555`, `MemoryAlignment=0.506309148`).
+- Detected later file-write races (`WorldPopulationRule.cs`, `SaveManager.cs`, `ModLoader.cs`, `Atlas/AUP` files, `QuestStateManager.cs`) and promoted the final DOC_AUDIT artifacts as the latest observed boundary: `Docs/AgentLogs/Build_DOC_AUDIT_R47_20260515_194535_AfterQuestWaveCore.log` (`EXIT=0`, `0 Warning(s)`, `0 Error(s)`) and `Docs/AgentLogs/HPhi_DOC_AUDIT_R47_20260515_194809_AfterQuestWaveBudgetGate.json` (`EXIT=0`, `RuntimeHPhiRisk=0.000634555`, `MemoryAlignment=0.506309148`).
 - Updated stable/root docs: `Docs/README.md`, `Docs/QUALITY_GATES.md`, `Docs/ARCHITECTURE/README.md`, `Docs/ARCHITECTURE/HECTON_PHI_STATIC_METRIC.md`, `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`, `Docs/SYSTEMS_CONTRACTS.md`, `Docs/PROJECT_STATE_STATIC_XRAY.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`.
 - Preserved the hard limitation: no Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, save/load, or visual-quality proof was captured.
 
@@ -211,3 +211,27 @@ Cinematic Cheats used:
 Exact Microseconds saved:
 - Runtime: 0 us/frame.
 - Process: avoids repeated false triage around stale `MacroDatabasePayloadFlags` and MemoryAlignment artifacts.
+
+## R49 - 2026-05-15 - Post-WFC Build / H-Phi Debt Reduction Recheck
+
+What was wrong:
+- Newer source churn superseded the R47 boundary. The latest failed build artifact was `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_203354_CurrentDisk36.log`, failing on a non-existent `ScalabilityTierBindingBridge` reference in `DiegeticPanelController`.
+- The interim DOC_AUDIT H-Phi artifact `Docs/AgentLogs/HPhi_DOC_AUDIT_R47_20260515_201801_AfterWfcWaveBudgetGate.json` failed `GlobalRegistrySurface=5076 > 5075`.
+- Keeping root/stable docs on the older R47 green state would have hidden both the newer build failure and the registry-surface regression.
+
+What was done:
+- Rechecked current Core after the bridge correction: `Docs/AgentLogs/Build_DOC_AUDIT_R48_20260515_204008_AfterScalabilityBridgeFixCore.log`, `EXIT=0`, `Build succeeded`, `0 Warning(s)`, `0 Error(s)`.
+- Reduced `PlayerKinematicsRuntime` registry coupling by caching `GlobalRegistry.ScalabilityTier` once per `Time.frameCount` and routing repeated low/high-tier decisions through `ResolveScalabilityTier()`.
+- Rebuilt current Core after that code change: `Docs/AgentLogs/Build_DOC_AUDIT_R49_20260515_205546_AfterKinematicsTierCacheCore.log`, `EXIT=0`, `Build succeeded`, `0 Warning(s)`, `0 Error(s)`.
+- Re-ran strict H-Phi with `MaxGlobalRegistrySurface=5075`: `Docs/AgentLogs/HPhi_DOC_AUDIT_R49_20260515_210144_AfterKinematicsTierCacheBudgetGate.json`, `EXIT=0`, `GlobalRegistrySurface=5060/5075`, `ManagedFormatSurface=534/564`, `PrimaryManagedRuntimeRisk=147/177`, `HPhiStaticRisk=0.000636091`, `MemoryAlignment=0.506309148`, Core graph debt `25/10/14/8/6`.
+- Updated stable/root docs: `Docs/README.md`, `Docs/QUALITY_GATES.md`, `Docs/ARCHITECTURE/README.md`, `Docs/ARCHITECTURE/HECTON_PHI_STATIC_METRIC.md`, `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`, `Docs/SYSTEMS_CONTRACTS.md`, `Docs/PROJECT_STATE_STATIC_XRAY.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`.
+- Preserved the hard limitation: no Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, save/load, or visual-quality proof was captured.
+
+Cinematic Cheats used:
+- Runtime: tier-cache, not physical simulation. Predictable cached tier selection preserves Mid/High/Ultra branch behavior and avoids extra registry coupling.
+- Process cheat: strict budget rerun at the old `5075` registry ceiling instead of accepting a raised budget.
+
+Exact Microseconds saved:
+- Runtime measured: `PENDING VERIFICATION`.
+- Tooling: R48 Core build `58405108` us; R49 Core build `89193293` us; R49 H-Phi `136694836` us.
+- Static debt delta from the failed R47 H-Phi surface: `GlobalRegistrySurface 5076 -> 5060`, `ManagedFormatSurface 564 -> 534`, `PrimaryManagedRuntimeRisk 177 -> 147`.

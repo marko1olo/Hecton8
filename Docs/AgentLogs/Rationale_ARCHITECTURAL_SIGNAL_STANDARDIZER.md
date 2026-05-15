@@ -1,6 +1,6 @@
 # Rationale - ARCHITECTURAL_SIGNAL_STANDARDIZER
 
-Status: CORE CLI BUILD GREEN / GENERATED-PROJECT WARNINGS RECORDED / GLOBAL LEGACY BLOCKED
+Status: CORE CLI BUILD GREEN / GLOBAL LEGACY BLOCKED
 Evidence class: CLI_COMPILE for Core project; STATIC_SOURCE for global legacy eradication and runtime GC until Unity profiler/console artifacts exist.
 
 ## Intake Decisions
@@ -125,8 +125,28 @@ Rejected Alternatives: Removing the tail-whip duration assignment would discard 
 Scalability potential: Low tier keeps the cheap tail segment count; High/Ultra retains authored tail-whip duration control for richer leviathan presentation.
 Hardware Impact: 0us claimed for project-file repair. Audio probe remains cold prewarm only; no hot-path allocation added.
 
+Problem: The typed bus still vaccinated only a narrow set of float-heavy lanes, leaving player-state, vitals, camera, hull deformation, base compromise, and AUP-shift snapshots vulnerable to non-finite payloads. The touched look-target producer/UI path also still contained strict-scan `new float3(...)` hits.
+Solution: Extend the cached guard-kind switch with explicit sanitizers for `PlayerStateSignal`, `SurvivalVitalsChangedSignal`, `PlayerActionProgressSignal`, `CameraPositionSignal`, `CameraFrustumSignal`, `HullDeformedSignal`, `BaseModuleCompromisedSignal`, `AupPreShiftSignal`, and `AupShiftSignal`. Replace `new float3(...)` fallbacks in the touched look-target path with scalar assignment. DOD pattern: cold generic type routing, hot scalar `math.isfinite`/saturate checks, numeric telemetry on invalid payloads.
+Rejected Alternatives: Reflection or field-walking was rejected because it would put metadata work in signal admission; changing `ISignal` to require validation methods was rejected because that mutates every signal contract during an active batch.
+Scalability potential: Low tier receives clamped UI/camera/damage presentation data and deterministic zero fallbacks; Middle/High/Ultra can spend clean snapshots on richer visor, foveated simulation, hull dent, and base-stress visuals without per-consumer defensive checks.
+Hardware Impact: Normal-path cost is a cached byte switch plus scalar checks only for guarded lanes; expected sub-1us on i3/MX350, profiler proof absent.
+
+Problem: `SignalBus<T>.FlushPreSimulation()` could grow `_frameSnapshot.Capacity` at the frame boundary if low-tier initialized a smaller snapshot and the runtime later requested the high-tier limit.
+Solution: Cap `frameLimit` to the existing snapshot capacity during flush instead of resizing the `NativeList<T>` in the pre-simulation boundary. A higher-capacity lane is obtained by cold reinitialization, not by structural growth during gameplay cadence.
+Rejected Alternatives: Keeping runtime capacity growth was rejected because native reallocation during frame-boundary flush is a hidden stall risk; always allocating max capacity on low tier was rejected because MX350 memory pressure matters.
+Scalability potential: Low tier keeps smaller snapshots without surprise growth; High/Ultra can still get larger snapshots after reset/prewarm, then spend saved stability on denser visual consumers.
+Hardware Impact: Avoids a possible frame-boundary native allocation/copy spike. Measured microseconds absent; expected win is stall prevention, not steady-state speed.
+
+Problem: Core producers still used allocation-free struct `new ...Signal` object-initializer syntax and direct `SignalBus<T>.Push(new ...Signal)` calls, creating static audit noise in hot signal paths.
+Solution: Convert Core camera/input/time/memory signal producers to `default` packets with explicit field assignment and `Push(in packet)`. Replace remaining `new float3(...)` text in XR input staging with scalar assignment.
+Rejected Alternatives: Leaving value-type `new` as "technically no GC" was rejected because the local audit policy intentionally uses strict text filters; changing the static audit rule was rejected because this agent owns code, not policy.
+Scalability potential: Runtime behavior is unchanged; cleaner producers make later Low/Middle/High/Ultra signal-lane audits faster and reduce false positives when reserving performance budget for visual consumers.
+Hardware Impact: Expected runtime neutral. Microseconds saved are audit/integration time, not frame time; profiler proof absent.
+
 ## Mandates Loaded
 
+- ARCH_Signal_Lane_Segregation.txt: typed lanes, unmanaged finite payloads, frame snapshots, documented overflow/backpressure.
+- CORE_Global_State_Reset_NonReload_Transitions.txt: static lanes must reset deterministically under domain-reload-disabled transitions.
 - ARCH_Global_Registry_ServiceLocator_DI_Init.txt: GlobalRegistry only for stable service discovery/direct queries; broadcasts use EventBus/signal packets; no hot-loop registry polling.
 - OPT_Zero_GC_Policy_AllocFree_Mandate.txt: hot paths allocate 0 managed bytes; no LINQ, string ops, unmanaged payload string, or delegate churn.
 - OPT_Native_Memory_Collections_JobSystem_Protocol.txt: NativeQueue/NativeArray ownership, persistent allocation tracking, SPSC/MPSC discipline, no mid-frame Complete.

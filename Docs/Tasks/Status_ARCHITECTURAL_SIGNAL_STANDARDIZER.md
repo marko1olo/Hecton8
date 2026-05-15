@@ -1,16 +1,17 @@
 # ARCHITECTURAL_SIGNAL_STANDARDIZER Status
 
-Status: CORE CLI BUILD GREEN WITH WARNINGS / GLOBAL LEGACY BLOCKED
+Status: CORE CLI BUILD GREEN / GLOBAL LEGACY BLOCKED
 Domain: Echelon 1 Core & Memory Infrastructure / Global EventBus + Signal Lanes
 Task count: 15
 Prompt source: User-provided XML for ARCHITECTURAL_SIGNAL_STANDARDIZER. `Docs/Tasks/CURRENT_BATCH.md` does not contain this ID in the current workspace scan.
 Selected mandates:
+- ARCH_Signal_Lane_Segregation.txt
+- CORE_Global_State_Reset_NonReload_Transitions.txt
 - ARCH_Global_Registry_ServiceLocator_DI_Init.txt
 - OPT_Zero_GC_Policy_AllocFree_Mandate.txt
 - OPT_Native_Memory_Collections_JobSystem_Protocol.txt
 - DBG_Telemetry_Crash_Reporting_PostMortem.txt
 - QA_Evidence_Text_Filter_Audit.txt
-- CORE_Damage_System_Hull_Integrity_VFX_Feedback.txt
 
 ## State Machine
 
@@ -24,7 +25,7 @@ Selected mandates:
 - [x] Task 8 - Consumer purge | Justification: combat damage and soundscape impact consumers now pull `SignalBus<T>.GetFrameSnapshot()` spans. Alternative rejected: destructive `GlobalSignals.TryDequeueDamage/TryDequeueImpact` drains. Microsecond estimate: 1-4us saved in burst frames, PENDING PROFILER.
 - [x] Task 9 - Delegate eradication | Justification: touched hot signal paths contain no `Action<T>`, `delegate`, `UnityEvent`, or `EventBus.Publish`; global eradication remains BLOCKED BY DOMAIN BLAST RADIUS because static scan still finds 59 Action/delegate files and 30 UnityEvent files. Alternative rejected: deleting UI/input/cold async delegate surfaces without owner review. Microsecond estimate: 0us claimed outside touched paths.
 - [x] Task 10 - Contract pinning | Justification: `SoundscapeSystem.DrainSignals()` and `CombatDamageRuntime.ResolveRuntimeMathLod()` no longer poll `GlobalRegistry` in their hot/cadenced logic; values are cached via enable-time/service-event/cold refresh paths. Alternative rejected: per-signal registry property resolution. Microsecond estimate: sub-1us per slow tick/schedule pass, PENDING PROFILER.
-- [x] Task 11 - Batched compile | Justification: latest `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false /p:UseSharedCompilation=false` succeeds with 51 warnings / 0 errors after signal-lane lifecycle cleanup; a warnings-only compile pass records broader package/vendor/generated-project warnings. Alternative rejected: claiming Unity/import verification from CLI-only generated project evidence. Microsecond estimate: 0us; verification-only.
+- [x] Task 11 - Batched compile | Justification: latest `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false /p:UseSharedCompilation=false` succeeds with 0 warnings / 0 errors after expanded finite guards and no-grow snapshot flush cleanup. Alternative rejected: claiming Unity/import verification from CLI-only generated project evidence. Microsecond estimate: 0us; verification-only.
 - [x] Task 12 - Triple-strike fix | Justification: fixed local compile neighbors caused by stale generated project metadata and stale enum surface: existing WFC/blueprint/prompt-cache source files are included in the CLI project, and WFC allocations use the preserved `SystemID` numeric owner value 512. Alternative rejected: inventing missing contracts or reverting unrelated agents' source. Microsecond estimate: 0us.
 - [x] Task 13 - Zero-GC verification | Justification: static scan found no signal DTO `new` construction and no string payload fields inside touched signal logic; `PlayerLookTargetSignal` no longer carries `FixedString64Bytes` and resolves prompt text through a bounded hash sidecar. Remaining `new` hits in `GlobalSignals.cs` are cold static arrays/adapters or native collection allocation. Runtime GC remains PENDING without Unity profiler/GCMonitor. Alternative rejected: fake 0B/frame claim. Microsecond estimate: not measured.
 - [x] Task 14 - Blackbox dump | Justification: Signal NaN vaccination publishes numeric telemetry via `GlobalTelemetryBus.PublishMathGuardInvalidNumber`; synaptic-density gain and failure mode are logged in rationale. Alternative rejected: chat-only blackbox statement. Microsecond estimate: invalid-number crash investigation saved, not runtime-profiler measured.
@@ -103,3 +104,20 @@ Selected mandates:
 - Hardened `SignalBus<T>.Dispose()` so a disposed generic lane can re-register after subsystem reset/no-domain-reload reinitialization.
 - Verification: `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false /p:UseSharedCompilation=false` succeeded with 51 warnings / 0 errors. Warnings are package/vendor/generated-project warnings, not new errors in `GlobalSignals.cs`.
 - Mandatory global scan still reports 2106 legacy communication hits.
+
+### Loop 12 - Wider finite vaccination and no-grow snapshots
+- Re-extracted `Docs/Tasks/CURRENT_BATCH.md`; this agent ID is still absent, so the user XML remains the prompt boundary.
+- Expanded cached `SignalBus<T>.Push()` finite guards to player state, survival vitals, action progress, camera position/frustum, hull deformation, base compromise, and AUP shift lanes.
+- Removed `new float3(...)` strict-scan hits from `SignalPayloadFiniteGuards` and the touched look-target producer/UI path by using scalar fallback assignment.
+- Changed `SignalBus<T>.FlushPreSimulation()` so frame-boundary flushing caps to current snapshot capacity instead of growing `NativeList<T>` during the pre-simulation lane flush.
+- Verification: `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false /p:UseSharedCompilation=false` succeeded with 0 warnings / 0 errors.
+- Static evidence: focused scan found no `new float3`, `FixedString64Bytes Prompt`, `signal.Prompt`, or `new ...Signal` text in `GlobalSignals.cs`, `PlayerLookTargetPromptCache.cs`, `PlayerInteraction.cs`, or `DiegeticTooltipSystem.cs`.
+- Mandatory global scan reports 2230 legacy communication hits; global eradication remains blocked.
+
+### Loop 13 - Core producer audit-shape cleanup
+- Re-read Core producer call sites after the strict scan still found `SignalBus<T>.Push(new ...Signal)` and `new ...Signal` value-initializer text.
+- Replaced direct `Push(new CameraPositionSignal)`, `Push(new CameraFrustumSignal)`, and `Push(new PlayerInputSignal)` with `default` packets plus explicit field assignment.
+- Replaced `new ...Signal` value-initializers for time dilation, bullet-time visual, memory pressure, and input-state Core publishes with explicit `default` packets.
+- Removed `new float3(...)` text from XR input vector staging in `InputDispatcher` with scalar field assignment.
+- Verification: focused Core/touched-path scans found no `new float3`, `FixedString64Bytes Prompt`, `signal.Prompt`, direct `Push(new ...Signal)`, or `new ...Signal` text in `GlobalSignals.cs`, `PlayerLookTargetPromptCache.cs`, `SystemDispatcher.cs`, `InputDispatcher.cs`, `PlayerInteraction.cs`, and `DiegeticTooltipSystem.cs`.
+- Verification: `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false /p:UseSharedCompilation=false` succeeded with 0 warnings / 0 errors.

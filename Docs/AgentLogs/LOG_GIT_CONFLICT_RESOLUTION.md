@@ -591,3 +591,27 @@ Cinematic Cheats used -> None by this operator pass.
 Exact Microseconds saved -> 0 us runtime by this operator pass.
 
 Verification -> `dotnet build Hecton8.Core.csproj` using `Temp\obj\CodexGitCheckTail3` and `Temp\bin\CodexGitCheckTail3` passed with `0 Warning(s)` and `0 Error(s)`. `git diff --check` returned only CRLF warnings. Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals are not claimed.
+
+## 2026-05-15 - Loop 38 Runtime Evidence Tail
+
+What was wrong -> After `a192bbc16` was pushed and fetch-verified, a new live tail appeared: `GlobalSignals` finite guards/frame cap, `GlobalDataVault` external-view hardening, `H8Memory` capacity clamp, player/IK future-frame guards, interaction/tooltip finite conversions, mod asset log formatting, WFC dirty-append retry telemetry, WFC power/outpost signal-lane routing, diegetic panel phosphor tier gating, static H-Phi/docs updates, and build/HPhi evidence. The panel change initially read registry state from repeated render/tick phosphor checks.
+
+What was done -> Fetched remote and verified divergence `0 0`, inspected runtime diffs, fixed the diegetic panel by caching the low-tier phosphor profile in lifecycle code via the platform bridge so `ShouldUsePhosphorDecay()` is a local bool check in hot paths, preserved non-empty evidence files, excluded zero-byte HPhi JSON artifacts from the checkpoint, and reran compile after additional staged C# files appeared.
+
+Cinematic Cheats used -> The panel keeps the cheap low-tier fake: Low/Mx350/low-memory profiles disable phosphor decay, while higher tiers can still spend cycles on the richer decay composite.
+
+Exact Microseconds saved -> 0 us measured. Avoided repeated registry lookup on panel tick/render checks; profiler/GCMonitor proof is pending.
+
+Verification -> `dotnet build Hecton8.Core.csproj` using `Temp\obj\CodexGitCheckTail7b` and `Temp\bin\CodexGitCheckTail7b` passed with `0 Warning(s)` and `0 Error(s)`. `git diff --check` returned only CRLF warnings before staging; staged whitespace and marker gates were clean. Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals are not claimed.
+
+## 2026-05-15 - Loop 39 Moving-Wall Checkpoint
+
+What was wrong -> Parallel agents kept adding source files after the last green generated-project build. The final attempt to revalidate the moving wall no longer produced localized C# merge errors; it failed globally because the generated project/reference environment could not resolve Unity package assemblies (`Unity.Mathematics`, `TMPro`, RenderGraph/URP, Burst, and related package types).
+
+What was done -> Staged the current runtime/docs/evidence snapshot, excluded zero-byte HPhi JSON artifacts, recorded the generated-project reference wall, and kept the checkpoint boundary explicit instead of claiming a stale green build.
+
+Cinematic Cheats used -> None. Git checkpoint and evidence preservation only.
+
+Exact Microseconds saved -> 0 us runtime by this operator pass.
+
+Verification -> Latest successful generated-project compile remains the earlier `CodexGitCheckTail7b`/`Tail8` boundary before the moving wall expanded. Current `CodexGitCheckTail10` is blocked by missing Unity package references across unrelated project files, so Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals are not claimed.

@@ -226,6 +226,46 @@ Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instructio
 Scalability potential: Low/MX350 falls back to zero stride/swim lead on suspicious timestamp data while keeping the same low-cost lower-body fake. Middle keeps stable velocity-led steps without direct KCC coupling. High/Ultra can spend visual budget on richer lower-body/secondary presentation without a future-frame signal pinning stale movement into every rig near the player body.
 Hardware Impact: Added work is two integer frame checks, one named max-age comparison, and cache clearing on invalid state, estimated below 0.05 us/frame on i3/MX350 for active IK capture. No allocations, no new jobs, no ray lanes, no public API change.
 
+## Decision 29: Producer-side IK signal freshness helper
+
+Problem: `PlayerKinematicsRuntime` still used the same future-frame age-zero pattern for squeeze and impact signals. A future `PlayerStateSignal` could request an SDF squeeze gradient or refresh squeeze hold, and a future `HighSpeedImpactSignal` could refresh hand brace state before the frame became valid.
+Solution: Add named SDF/environment IK max-age constants and a shared `IsFreshSignalFrame` helper. SDF gradient probes, hand-brace impact consumption, and squeeze-hold consumption now reject future frames and stale frames through the same bounded check.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Leaving each check inline was rejected because the bug was duplicated and likely to recur. Pulling direct squeeze/impact state from producers was rejected because the kinematics/IK path must stay signal-driven and decoupled.
+Scalability potential: Low/MX350 rejects suspicious future signals and keeps cheap neutral hand/squeeze behavior. Middle preserves deterministic signal-driven brace/squeeze polish. High/Ultra can keep richer haptic, scrape, and IK flavor effects without a bad frame stamp extending hold timers or requesting SDF gradient work early.
+Hardware Impact: Added work is one unsigned comparison and subtraction per already-scanned impact/player-state signal, estimated below 0.05 us/frame on i3/MX350. No allocations, no new jobs, no new signal lanes, no public API change.
+
+## Decision 30: Stress presentation future-frame gate
+
+Problem: Player stress signals feed rig breathing/shiver and kinematics brace cadence. Those consumers accepted any new sequence without checking whether the signal frame was in the future, so a producer timestamp bug could raise stress-driven visual motion before the frame was valid.
+Solution: Reject future-frame stress signals in both `ContextualPhysicalIkRig.RefreshPlayerStress()` and `PlayerKinematicsRuntime.ConsumeEnvironmentIkSignals()`. No stale-age cutoff was added because stress is a persistent state, not a four-frame impact/squeeze event.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Clearing stress on stale frames was rejected because it would erase intentional persistent physiological state. Adding a direct dependency on the stress producer was rejected because presentation must remain signal-driven.
+Scalability potential: Low/MX350 keeps cheap neutral breathing/shiver timing until the signal frame is valid. Middle/High/Ultra preserve richer stress-rate breathing, cold shiver, and brace cadence without accepting future-frame visual state.
+Hardware Impact: Added work is one unsigned comparison only when a new stress signal sequence is observed, estimated below 0.02 us/frame on i3/MX350. No allocations, no new jobs, no public API change.
+
+## Decision 31: Kinematics brace phase finite wrapping
+
+Problem: `PlayerKinematicsRuntime.TickEnvironmentIkState()` advanced `_bracePhase` with raw `deltaTime` and only subtracted `BracePhaseWrap` once. A non-finite frame delta, stale phase value, or large hitch could poison the brace phase that is written into environment IK telemetry/flavor output.
+Solution: Advance brace phase with the existing sanitized delta time and route it through a deterministic `WrapPositivePhase()` helper that clamps invalid phase/wrap data to zero and handles large values with floor-based wrapping.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Removing brace phase from telemetry/flavor output was rejected because it is cheap visual texture. Using `Mathf.Repeat` was rejected because this runtime already uses Burst/math-style deterministic helpers and should avoid UnityEngine scalar helpers in hot presentation code.
+Scalability potential: Low/MX350 keeps stable cheap triangle-wave/phase flavor without NaN drift. Middle/High/Ultra can keep richer stress/brace modulation while phase state remains bounded after hitches or bad deltas.
+Hardware Impact: Added work is one finite check and floor/rcp wrap per kinematics environment IK tick, estimated below 0.02 us/frame on i3/MX350. No allocations, no new jobs, no new signal lanes, no public API change.
+
+## Decision 32: Squeeze telemetry sequence freshness gate
+
+Problem: `PlayerKinematicsRuntime.ConsumeSqueezeTelemetrySignal()` acknowledged every new player-state sequence before checking whether it was a valid, fresh squeeze signal. Future-frame squeeze signals could increment intervention telemetry early or be lost if rejected after the sequence was consumed.
+Solution: Split non-squeeze acknowledgement from squeeze freshness. Non-squeeze sequences are still marked consumed once, while squeeze sequences pass through `IsFreshSignalFrame()` before `_lastPlayerStateSequence`, `_squeezeInterventions`, or telemetry writes are updated.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Ignoring sequence tracking was rejected because it would repeatedly count the same non-squeeze packet. Counting future squeeze events was rejected because the black box must reflect chronology, not producer timestamp debt.
+Scalability potential: Low/MX350 avoids bogus SDF/intervention telemetry while keeping the cheap signal path. Middle/High/Ultra preserve richer squeeze diagnostics without future-frame packets inflating counters or contaminating dump chronology.
+Hardware Impact: Added work is one boolean and one freshness check only when the latest player-state sequence changes, estimated below 0.02 us/frame on i3/MX350. No allocations, no new jobs, no public API change.
+
+## Decision 33: Hand IK native storage and normal quarantine
+
+Problem: `PlayerKinematicsRuntime` trusted NativeArray length once hand probe/target arrays were created, and the smoothed hand target lane accepted finite zero normals. A partial/corrupt native allocation could schedule ray or placement jobs with too-short buffers, while a zero contact normal could survive into external wall-hand IK as a valid hit.
+Solution: Add `HasHandProbeStorage`, `HasHandProbeHitStorage`, `HasHandTargetWriteStorage`, and `HasHandTargetStorage` gates before ray scheduling, placement scheduling, target application, and lane clearing. `SmoothHandTarget()` now fails closed on invalid current lanes, rejects zero normals, and publishes only a normalized contact normal.
+Rejected Alternatives: Dotnet rebuild was explicitly rejected by user instruction. Hot-path reallocation/resizing was rejected because persistent NativeArrays should fail closed instead of mutating ownership during presentation. Extra logging was rejected because this is a branch-cheap data-boundary guard.
+Scalability potential: Low/MX350 gets neutral hand IK if storage or normal data is suspicious. Middle keeps stable wall-brace hand placement. High/Ultra can keep richer brace, scrape, haptic, and external-wall IK flavor without amplifying corrupt native lanes.
+Hardware Impact: Added work is integer length checks plus non-zero normal validation on existing hand target lanes, estimated below 0.03 us/frame on i3/MX350. No allocations, no new jobs, no new rays, no public API change.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Final anti-bloat pass required checking the lower-body implementation for honest simulation, unbounded math, GC leaks, and out-of-domain edits.

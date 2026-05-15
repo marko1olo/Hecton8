@@ -929,3 +929,62 @@ Verification:
 
 Status:
 - VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-15 - DataVault External-View Fail-Closed Gate
+
+What was wrong:
+- Direct buffer aliases and handle construction treated external-view marking as best-effort.
+- If block-map/metadata evidence drifted, a caller could still receive a NativeArray view or handle without PHI/VOD external-pointer accounting.
+
+What was done:
+- `MarkExternalView` now returns success/failure and repairs already-marked metadata drift while bumping vault generation.
+- `GetBuffer`, `TryGetBuffer`, and `TryBuildHandle` now refuse to return views/handles unless external-view proof is recorded.
+- New-buffer creation rolls back keys, maps, allocated bytes, and block state if the proof gate fails.
+- Documented the fail-closed rule in `Docs/ARCHITECTURE/ARENA_ALLOCATOR_2_0.md`.
+
+Cinematic Cheats used:
+- None. This is pointer-accountability integrity.
+
+Exact Microseconds saved:
+- Frame cost: 0 us.
+- Valid alias path adds one branch around existing block lookup/metadata work.
+- Fault rollback is cold only and prevents invisible external-pointer debt.
+
+Verification:
+- MarkExternalView call-site scan found checked result branches.
+- `H8Memory.cs`, `GlobalDataVault.cs`, `SaveBinaryPayloadCodec.cs`, and `SaveDataMigration.cs` brace/parenthesis balance passed.
+- DataVault live compaction scan remained clean.
+- `git diff --check` and `git diff --cached --check` passed with CRLF warnings only on appended log/status docs.
+- No dotnet rebuild was run per user order.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
+## 2026-05-15 - H8Memory Cold-Start Capacity Clamp
+
+What was wrong:
+- `H8Memory.Initialize` accepted arbitrary caller capacity.
+- A bad startup parameter could allocate tracking tables above `MaxTrackingCapacity`, bypassing the cap enforced by later growth.
+
+What was done:
+- Added `ResolveTrackingCapacity`.
+- Initialization now clamps caller capacity to `MaxTrackingCapacity` before allocating owner, record, and descriptor tables.
+- Documented the clamp in `Docs/ARCHITECTURE/ARENA_ALLOCATOR_2_0.md`.
+
+Cinematic Cheats used:
+- None. This is native memory budget containment.
+
+Exact Microseconds saved:
+- Frame cost: 0 us.
+- Cold startup adds one integer clamp.
+- Prevents accidental oversized persistent tracking allocations.
+
+Verification:
+- Clamp helper scan passed.
+- `H8Memory.cs`, `GlobalDataVault.cs`, `SaveBinaryPayloadCodec.cs`, and `SaveDataMigration.cs` brace/parenthesis balance passed.
+- DataVault live compaction scan remained clean.
+- `git diff --check` and `git diff --cached --check` passed with CRLF warnings only on appended log/status docs.
+- No dotnet rebuild was run per user order.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.

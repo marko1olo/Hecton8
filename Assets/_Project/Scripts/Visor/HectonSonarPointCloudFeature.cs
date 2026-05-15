@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
+using UnityEngine.Rendering.RenderGraphModule.Util;
 using UnityEngine.Rendering.Universal;
 
 namespace Hecton8.Visor
@@ -57,29 +58,6 @@ namespace Hecton8.Visor
         private sealed class SonarPointCloudPass : ScriptableRenderPass, IDisposable
         {
             private const int RenderTextureBucketSize = 64;
-
-            private sealed class PassData
-            {
-                internal TextureHandle source;
-                internal TextureHandle destination;
-                internal Material material;
-            }
-
-            private sealed class HistoryWritePassData
-            {
-                internal TextureHandle source;
-                internal TextureHandle historyWrite;
-                internal Texture historyReadTexture;
-                internal Material material;
-            }
-
-            private sealed class WorldHistoryWritePassData
-            {
-                internal TextureHandle source;
-                internal TextureHandle worldHistoryWrite;
-                internal Texture worldHistoryReadTexture;
-                internal Material material;
-            }
 
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Sonar Point Cloud");
             private FeatureSettings _settings;
@@ -190,77 +168,41 @@ namespace Hecton8.Visor
 
                 UpdateMaterialParameters(_material, _settings, screenHistoryAlive, worldHistoryAlive, _worldMemoryRect, _worldScrollUvOffset, floatingOriginOffset);
 
-                using (var builder = renderGraph.AddUnsafePass<HistoryWritePassData>("Hecton Sonar History Write", out HistoryWritePassData passData, _profilingSampler))
-                {
-                    passData.source = sourceTexture;
-                    passData.historyWrite = historyWriteTexture;
-                    passData.historyReadTexture = _historyRead != null ? _historyRead.rt : null;
-                    passData.material = _material;
+                Texture historyReadTextureSource = _historyRead != null ? _historyRead.rt : null;
+                if (historyReadTextureSource != null)
+                    _material.SetTexture(ShaderConstants.HistoryTextureId, historyReadTextureSource);
 
-                    builder.UseTexture(sourceTexture, AccessFlags.Read);
+                using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
+                           new RenderGraphUtils.BlitMaterialParameters(sourceTexture, historyWriteTexture, _material, 0),
+                           passName: "Hecton Sonar History Write",
+                           returnBuilder: true))
+                {
                     builder.UseTexture(historyReadTexture, AccessFlags.Read);
-                    builder.UseTexture(historyWriteTexture, AccessFlags.Write);
                     builder.SetGlobalTextureAfterPass(historyWriteTexture, ShaderConstants.HistoryTextureId);
                     builder.SetGlobalTextureAfterPass(historyWriteTexture, ShaderConstants.PointCloudTextureId);
-
-                    builder.SetRenderFunc((HistoryWritePassData data, UnsafeGraphContext context) =>
-                    {
-                        CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
-                        const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
-                        const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
-
-                        if (data.historyReadTexture != null)
-                            data.material.SetTexture(ShaderConstants.HistoryTextureId, data.historyReadTexture);
-
-                        Blitter.BlitCameraTexture(cmd, data.source, data.historyWrite, LoadAction, StoreAction, data.material, 0);
-                    });
                 }
 
-                using (var builder = renderGraph.AddUnsafePass<WorldHistoryWritePassData>("Hecton Sonar World History Write", out WorldHistoryWritePassData passData, _profilingSampler))
-                {
-                    passData.source = sourceTexture;
-                    passData.worldHistoryWrite = worldHistoryWriteTexture;
-                    passData.worldHistoryReadTexture = _worldHistoryRead != null ? _worldHistoryRead.rt : null;
-                    passData.material = _material;
+                Texture worldHistoryReadTextureSource = _worldHistoryRead != null ? _worldHistoryRead.rt : null;
+                if (worldHistoryReadTextureSource != null)
+                    _material.SetTexture(ShaderConstants.WorldHistoryTextureId, worldHistoryReadTextureSource);
 
-                    builder.UseTexture(sourceTexture, AccessFlags.Read);
+                using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
+                           new RenderGraphUtils.BlitMaterialParameters(sourceTexture, worldHistoryWriteTexture, _material, 1),
+                           passName: "Hecton Sonar World History Write",
+                           returnBuilder: true))
+                {
                     builder.UseTexture(worldHistoryReadTexture, AccessFlags.Read);
-                    builder.UseTexture(worldHistoryWriteTexture, AccessFlags.Write);
                     builder.SetGlobalTextureAfterPass(worldHistoryWriteTexture, ShaderConstants.WorldHistoryTextureId);
                     builder.SetGlobalTextureAfterPass(worldHistoryWriteTexture, ShaderConstants.WorldPointCloudTextureId);
-
-                    builder.SetRenderFunc((WorldHistoryWritePassData data, UnsafeGraphContext context) =>
-                    {
-                        CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
-                        const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
-                        const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
-
-                        if (data.worldHistoryReadTexture != null)
-                            data.material.SetTexture(ShaderConstants.WorldHistoryTextureId, data.worldHistoryReadTexture);
-
-                        Blitter.BlitCameraTexture(cmd, data.source, data.worldHistoryWrite, LoadAction, StoreAction, data.material, 1);
-                    });
                 }
 
-                using (var builder = renderGraph.AddUnsafePass<PassData>("Hecton Sonar Point Cloud Composite", out PassData passData, _profilingSampler))
+                using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
+                           new RenderGraphUtils.BlitMaterialParameters(sourceTexture, compositeTexture, _material, 2),
+                           passName: "Hecton Sonar Point Cloud Composite",
+                           returnBuilder: true))
                 {
-                    passData.source = sourceTexture;
-                    passData.destination = compositeTexture;
-                    passData.material = _material;
-
-                    builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(historyWriteTexture, AccessFlags.Read);
                     builder.UseTexture(worldHistoryWriteTexture, AccessFlags.Read);
-                    builder.UseTexture(compositeTexture, AccessFlags.Write);
-
-                    builder.SetRenderFunc((PassData data, UnsafeGraphContext context) =>
-                    {
-                        CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
-                        const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
-                        const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
-
-                        Blitter.BlitCameraTexture(cmd, data.source, data.destination, LoadAction, StoreAction, data.material, 2);
-                    });
                 }
 
                 resourceData.cameraColor = compositeTexture;

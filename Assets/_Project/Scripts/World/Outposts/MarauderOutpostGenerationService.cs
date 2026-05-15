@@ -394,7 +394,7 @@ namespace Hecton8.World.Outposts
             MarauderOutpostSolveJob job = new MarauderOutpostSolveJob
             {
                 WfcGrid = WfcGrid,
-                Dimensions = _activeDimensions,
+                Dimensions = ResolveActiveDimensions(),
                 Seed = _activeSolveSeed,
                 LowTier = _qualityTier == OutpostGenerationQualityTier.Low ? (byte)1 : (byte)0
             };
@@ -429,7 +429,7 @@ namespace Hecton8.World.Outposts
             }
 
             cells = WfcGrid.AsReadOnly();
-            dimensions = _activeDimensions;
+            dimensions = ResolveActiveDimensions();
             gridHash = _activeGridHash;
             return true;
         }
@@ -573,7 +573,7 @@ namespace Hecton8.World.Outposts
                 CellTypes = _shellCellTypes,
                 InteractableSpawns = _interactableSpawns,
                 Counters = _counters,
-                Dimensions = _activeDimensions,
+                Dimensions = ResolveActiveDimensions(),
                 OriginMeters = _generationOrigin,
                 TerrainPosition = hasHeightmapPayload ? ToFloat3(payload.TerrainPosition) : _generationOrigin - new float3(16f, ResolveStiltClearanceMeters(), 16f),
                 TerrainSize = hasHeightmapPayload ? ToFloat3(payload.TerrainSize) : new float3(32f, 8f, 32f),
@@ -1160,8 +1160,9 @@ namespace Hecton8.World.Outposts
 
         private void UpdateDrawBounds()
         {
-            float width = math.max(_activeDimensions.x, _activeDimensions.z) * ResolveCellSizeMeters() + 12f;
-            float height = math.max(4f, _activeDimensions.y * ResolveFloorHeightMeters() + 12f);
+            int3 dimensions = ResolveActiveDimensions();
+            float width = math.max(dimensions.x, dimensions.z) * ResolveCellSizeMeters() + 12f;
+            float height = math.max(4f, dimensions.y * ResolveFloorHeightMeters() + 12f);
             _drawBounds = new Bounds(
                 new Vector3(_generationOrigin.x, _generationOrigin.y + height * 0.35f, _generationOrigin.z),
                 new Vector3(width, height, width));
@@ -1181,7 +1182,7 @@ namespace Hecton8.World.Outposts
                 WorldSeed = _activeWorldSeed,
                 GenerationSequence = _generationSequence,
                 OriginMeters = _generationOrigin,
-                Dimensions = _activeDimensions,
+                Dimensions = ResolveActiveDimensions(),
                 ShellMatrixCount = _matrixCount,
                 InteractableCount = _interactableCount,
                 OutpostAge01 = ResolveOutpostAge01(),
@@ -1227,7 +1228,7 @@ namespace Hecton8.World.Outposts
                     LocalY = originAup.LocalY,
                     LocalZ = originAup.LocalZ
                 },
-                Dimensions = _activeDimensions,
+                Dimensions = ResolveActiveDimensions(),
                 CellSizeMeters = ResolveCellSizeMeters(),
                 FloorHeightMeters = ResolveFloorHeightMeters(),
                 SectorHash = _activeSectorHash,
@@ -1296,7 +1297,7 @@ namespace Hecton8.World.Outposts
                 SectorHash = _activeSectorHash,
                 GridHandle = _publishedPowerGridHandle,
                 GenerationSequence = _generationSequence,
-                Dimensions = _activeDimensions,
+                Dimensions = ResolveActiveDimensions(),
                 CellSizeMeters = ResolveCellSizeMeters(),
                 FloorHeightMeters = ResolveFloorHeightMeters(),
                 GridHash = _activeGridHash,
@@ -1304,7 +1305,7 @@ namespace Hecton8.World.Outposts
                 CellCount = (ushort)math.min(ResolveActiveCellCount(), ushort.MaxValue),
                 Flags = ResolveDescriptorFlags()
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<WfcOutpostGeneratedSignal>.Push(in signal);
         }
 
         private void ReleasePublishedPowerGrid()
@@ -1324,9 +1325,16 @@ namespace Hecton8.World.Outposts
 
         private int ResolveActiveCellCount()
         {
-            return math.max(0, _activeDimensions.x) *
-                   math.max(0, _activeDimensions.y) *
-                   math.max(0, _activeDimensions.z);
+            int3 dimensions = ResolveActiveDimensions();
+            return dimensions.x * dimensions.y * dimensions.z;
+        }
+
+        private int3 ResolveActiveDimensions()
+        {
+            return new int3(
+                math.clamp(_activeDimensions.x, 0, MarauderOutpostConstants.FullWidth),
+                math.clamp(_activeDimensions.y, 0, MarauderOutpostConstants.FullHeight),
+                math.clamp(_activeDimensions.z, 0, MarauderOutpostConstants.FullDepth));
         }
 
         private static uint CurrentFrameU32()
@@ -1347,9 +1355,10 @@ namespace Hecton8.World.Outposts
                 hash *= 16777619u;
             }
 
-            hash ^= (uint)_activeDimensions.x * 0x9E3779B9u;
-            hash ^= (uint)_activeDimensions.y * 0x85EBCA6Bu;
-            hash ^= (uint)_activeDimensions.z * 0xC2B2AE35u;
+            int3 dimensions = ResolveActiveDimensions();
+            hash ^= (uint)dimensions.x * 0x9E3779B9u;
+            hash ^= (uint)dimensions.y * 0x85EBCA6Bu;
+            hash ^= (uint)dimensions.z * 0xC2B2AE35u;
             return hash == 0u ? 1u : hash;
         }
 
@@ -1376,7 +1385,7 @@ namespace Hecton8.World.Outposts
                 Seed = _activeSolveSeed,
                 GenerationSequence = _generationSequence,
                 OriginMeters = _generationOrigin,
-                Dimensions = _activeDimensions,
+                Dimensions = ResolveActiveDimensions(),
                 MatrixCount = _matrixCount,
                 InteractableCount = _interactableCount,
                 SolidCellCount = _solidCellCount,

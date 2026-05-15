@@ -461,34 +461,6 @@ Verification:
 
 Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
 
-## 2026-05-15 - WFC Outpost Loop 41 Frame Payload Clamp
-
-What was wrong:
-- `MarauderOutpostGenerationService` cast `Time.frameCount` directly to `uint` in generated-grid signal and telemetry payloads.
-- Power boot already used a non-negative clamped form, so outpost frame payloads were inconsistent.
-
-What was done:
-- Added `CurrentFrameU32()`.
-- `WfcOutpostGeneratedSignal.Frame` now uses the helper.
-- `OutpostTelemetryEntry.Frame` now uses the helper.
-- Removed raw `(uint)Time.frameCount` casts from the generation service.
-
-Cinematic Cheats used:
-- No visual or simulation work was added. This is payload hygiene for signal/blackbox evidence.
-
-Exact Microseconds saved:
-- Valid path cost: one scalar max at publish/telemetry write boundaries, below measurement noise.
-- Saved cost: prevents bad frame identifiers from corrupting signal/blackbox chronology if the underlying frame value is ever invalid.
-- Steady Tick/Render remains 0 B/frame.
-
-Verification:
-- Targeted scan: PASS; `CurrentFrameHelper=True`, `HelperUses=2`, `RawFrameCasts=0`, `SafeFrameMath=True`, `DirectSignalPush=True`, `ForeachTokens=0`, `StringInterpolation=0`, `LinqTokens=0`.
-- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS at `2026-05-15 15:12:58 +04:00`; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
-- `git diff --check`: PASS with repository CRLF warnings only.
-- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
-
-Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
-
 ## 2026-05-15 - WFC Outpost Loop 34 Bottom Ledger Addendum
 
 What was wrong:
@@ -1340,6 +1312,171 @@ Verification:
 - Targeted scan: PASS; `ReactorClockFaultFlag=True`, `CommitSanitizedClock=True`, `UpdateSafeNow=True`, `NonFiniteNowBlackbox=True`, `NonFiniteLastBlackbox=True`, `SafeDt=True`, `NodeLimitClamp=True`, `GasLoopBounded=True`, `RawGasLoop=False`, `Sanitizer=True`, `ForeachTokens=0`, `StringInterpolation=0`, `LinqTokens=0`.
 - `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS at `2026-05-15 15:00:42 +04:00`; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
 - `git diff --check`: PASS.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
+## 2026-05-15 - WFC Outpost Loop 41 Frame Payload Clamp
+
+What was wrong:
+- `MarauderOutpostGenerationService` cast `Time.frameCount` directly to `uint` in generated-grid signal and telemetry payloads.
+- Power boot already used a non-negative clamped form, so outpost frame payloads were inconsistent.
+
+What was done:
+- Added `CurrentFrameU32()`.
+- `WfcOutpostGeneratedSignal.Frame` now uses the helper.
+- `OutpostTelemetryEntry.Frame` now uses the helper.
+- Removed raw `(uint)Time.frameCount` casts from the generation service.
+
+Cinematic Cheats used:
+- No visual or simulation work was added. This is payload hygiene for signal/blackbox evidence.
+
+Exact Microseconds saved:
+- Valid path cost: one scalar max at publish/telemetry write boundaries, below measurement noise.
+- Saved cost: prevents bad frame identifiers from corrupting signal/blackbox chronology if the underlying frame value is ever invalid.
+- Steady Tick/Render remains 0 B/frame.
+
+Verification:
+- Targeted scan: PASS; `CurrentFrameHelper=True`, `HelperUses=2`, `RawFrameCasts=0`, `SafeFrameMath=True`, `DirectSignalPush=True`, `ForeachTokens=0`, `StringInterpolation=0`, `LinqTokens=0`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS at `2026-05-15 15:12:58 +04:00`; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
+- `git diff --check`: PASS with repository CRLF warnings only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
+## 2026-05-15 - WFC Outpost Loop 42 Typed Lane And Dimension Boundary Closure
+
+What was wrong:
+- Owned WFC generated-grid and door-power producers had drifted back to `GlobalSignals.Publish(in signal)`.
+- Public outpost payload/hash/telemetry surfaces used `_activeDimensions` directly.
+- That created weaker typed-lane evidence and made descriptors, hashes, draw bounds, snapshots, and blackbox records depend on an unclamped field.
+
+What was done:
+- `WfcOutpostGeneratedSignal` now pushes through `SignalBus<WfcOutpostGeneratedSignal>.Push(in signal)`.
+- `WfcOutpostDoorPowerSignal` now pushes through `SignalBus<WfcOutpostDoorPowerSignal>.Push(in signal)`.
+- Added `ResolveActiveDimensions()` with `0..FullWidth/FullHeight/FullDepth` clamps.
+- Routed cell count, hash salt, draw bounds, snapshot, descriptor, generated signal, telemetry, grid getter, and WFC job dimensions through the clamped value.
+
+Cinematic Cheats used:
+- No topology simulation, physics probing, GameObject power nodes, or renderer changes were added. This is typed-lane and payload-boundary hygiene.
+
+Exact Microseconds saved:
+- Signal path: removes one wrapper hop per owned WFC generated-grid and door-power event.
+- Dimension path: adds three integer clamps at cold/payload boundaries, estimated below 0.1 us on i3/MX350.
+- Steady Tick/Render remains 0 B/frame.
+
+Verification:
+- Targeted scan: PASS; `DirectGeneratedPush=1`, `DirectDoorPowerPush=1`, `OutpostWrapperPublish=0`, `QueueInit=2`, `ResolveActiveDimensions=11`, `RawActiveDimPublicWrites=0`, `ActiveCountRawMax=0`, `ClampX=True`, `ClampY=True`, `ClampZ=True`, `ForeachTokens=0`, `StringInterpolation=0`, `LinqTokens=0`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS at `2026-05-15 20:18:26 +04:00`; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
+- `git diff --check`: PASS with repository CRLF warnings only.
+- `git diff --cached --check`: PASS.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
+## 2026-05-15 - WFC Outpost Loop 43 Power Frame Payload Helper
+
+What was wrong:
+- `WfcOutpostPowerBootRuntime` repeated the same `Time.frameCount` clamp in door-power, brownout, and blackbox telemetry payloads.
+- The duplicated payload math was safe but easier to regress than a single local helper.
+
+What was done:
+- Added `CurrentFrameU32()` to power boot.
+- Routed door-power signal, brownout signal, and power blackbox telemetry frame fields through the helper.
+
+Cinematic Cheats used:
+- No simulation, graph, gas, or rendering behavior changed. This is payload chronology hygiene.
+
+Exact Microseconds saved:
+- Runtime delta is below measurement noise; the same scalar clamp executes at the same payload boundaries.
+- Source audit cost drops because there is one local frame representation instead of three inline copies.
+- Steady Tick/Render remains 0 B/frame.
+
+Verification:
+- Targeted scan: PASS; `PowerFrameAssignmentsViaHelper=3`, `PowerInlineFrameAssignments=0`, `HelperDefinition=True`, `HelperClampBody=True`, `DirectGeneratedPush=1`, `DirectDoorPowerPush=1`, `OutpostWrapperPublish=0`, `RawActiveDimPublicWrites=0`, `ForeachTokens=0`, `StringInterpolation=0`, `LinqTokens=0`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS at `2026-05-15 20:36:27 +04:00`; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
+- `git diff --check`: PASS with repository CRLF warnings only.
+- `git diff --cached --check`: PASS.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
+## 2026-05-15 - WFC Outpost Loop 44 Power Blackbox Dump Latch Reset
+
+What was wrong:
+- Power boot latched `_faultDumped` after the first binary dump.
+- A later independent WFC grid fault could be suppressed even though its descriptor/grid identity was different.
+
+What was done:
+- `TryScheduleTranslation` now resets `_faultDumped` after resolving and accepting a new `WfcOutpostGridLease`.
+- Repeated same-descriptor fatal retries remain blocked by `IsKnownFatalGraphCurrent`, so this does not create dump spam.
+
+Cinematic Cheats used:
+- No simulation, graph, gas, or render behavior changed. This is blackbox post-mortem evidence hygiene.
+
+Exact Microseconds saved:
+- Valid path cost: one bool store per accepted new grid translation.
+- Fault path gain: later independent faults produce fresh binary evidence instead of silently reusing the old latch.
+- Steady Tick/Render remains 0 B/frame.
+
+Verification:
+- Targeted scan: PASS; `FaultDumpedField=1`, `FaultDumpedReset=1`, `FaultDumpedLatch=1`, `FatalCurrentGate=True`, `LeaseBeforeReset=True`, `ResetAfterDescriptor=True`, `PowerFrameAssignmentsViaHelper=3`, `PowerInlineFrameAssignments=0`, `DoorDirectPush=1`, `WrapperPublish=0`, `ForeachTokens=0`, `StringInterpolation=0`, `LinqTokens=0`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS at `2026-05-15 20:45:23 +04:00`; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
+- `git diff --check`: PASS with repository CRLF warnings only.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
+## 2026-05-15 - WFC Outpost Loop 45 Power Active Count Boundary Clamp
+
+What was wrong:
+- Power boot committed graph count slots with only non-negative reads.
+- Later graph/gas/publish loops clamped counts, but telemetry and active state could still carry impossible values if count slots drifted.
+
+What was done:
+- Added `ReadBoundedCount(slot, maxValue)`.
+- Node, door, and room counts now cap to `MaxCells`.
+- Directed edge count now caps to `MaxDirectedEdges`.
+- Fault flags remain on raw `ReadCount` to preserve bitmask semantics.
+
+Cinematic Cheats used:
+- No graph simulation, gas solve, signal cadence, or render path changed. This is native-boundary count hygiene.
+
+Exact Microseconds saved:
+- Valid path cost: four scalar min operations per translation commit.
+- Failure path gain: prevents bogus count telemetry and impossible active graph state from driving later work.
+- Steady Tick/Render remains 0 B/frame.
+
+Verification:
+- Targeted scan: PASS; `NodeBounded=True`, `EdgeBounded=True`, `DoorBounded=True`, `RoomBounded=True`, `FaultUnbounded=True`, `ReadBoundedDefinition=1`, `ReadBoundedUses=5`, `ExistingRuntimeNodeClamp=3`, `ExistingRuntimeEdgeClamp=1`, `WrapperPublish=0`, `ForeachTokens=0`, `StringInterpolation=0`, `LinqTokens=0`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS at `2026-05-15 20:47:36 +04:00`; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
+- `git diff --check`: PASS.
+- `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
+
+Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.
+
+## 2026-05-15 - WFC Outpost Loop 46 Translator Node Capacity Fail-Fast
+
+What was wrong:
+- The translator wrote `CapacityExceeded` when the node buffer filled.
+- It then used `break`, allowing missing-generator fallback and edge-building work over partial node data.
+
+What was done:
+- Node-capacity overflow now writes `CapacityExceeded` and returns immediately.
+- Power boot already treats `CapacityExceeded` as fatal, so no partial graph is consumed.
+
+Cinematic Cheats used:
+- No physical simulation, collider probing, GameObject nodes, or topology feature work was added. This is native-capacity fault isolation.
+
+Exact Microseconds saved:
+- Valid path: unchanged.
+- Overflow path: avoids fallback and edge traversal after first node-capacity breach.
+- Steady Tick/Render remains 0 B/frame.
+
+Verification:
+- Targeted scan: PASS; `NodeCapacityReturn=True`, `NodeCapacityBreak=0`, `CapacityFaultWrites=3`, `FatalMaskHasCapacity=True`, `LegacyTryAddEdge=0`, `ForeachTokens=0`, `ModuloOperators=0`.
+- `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary -Json`: PASS at `2026-05-15 20:50:25 +04:00`; `CoreAsmdefDebtReferenceCount=25`, `GeneratedProjectDebtReferenceCount=10`.
+- `git diff --check`: PASS with repository CRLF warnings only.
 - `dotnet` rebuilds/response-file compiles: NOT RUN by explicit user request.
 
 Status: PENDING VERIFICATION. Static source audits pass; compile/runtime proof remains pending by user instruction and external Core blocker.

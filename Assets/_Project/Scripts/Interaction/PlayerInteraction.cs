@@ -613,7 +613,9 @@ namespace Hecton8.Interaction
             }
 
             Vector3 anchor = ResolveLookTargetAnchor(target, in hit);
-            signal.RuntimeAnchor = new float3(anchor.x, anchor.y, anchor.z);
+            signal.RuntimeAnchor.x = anchor.x;
+            signal.RuntimeAnchor.y = anchor.y;
+            signal.RuntimeAnchor.z = anchor.z;
             signal.TargetAup = AbsoluteUniversePosition.FromRuntimePosition(anchor);
             signal.DistanceMeters = math.isfinite(hit.distance) && hit.distance >= 0f ? hit.distance : 0f;
             signal.SurfaceNormal = ResolveLookTargetNormal(in hit);
@@ -631,8 +633,13 @@ namespace Hecton8.Interaction
 
         private static Vector3 ResolveLookTargetAnchor(IInteractable target, in RaycastHit hit)
         {
-            if (hit.collider != null && math.all(math.isfinite(new float3(hit.point.x, hit.point.y, hit.point.z))))
+            if (hit.collider != null
+                && math.isfinite(hit.point.x)
+                && math.isfinite(hit.point.y)
+                && math.isfinite(hit.point.z))
+            {
                 return hit.point;
+            }
 
             Component component = target as Component;
             return component != null ? component.transform.position : Vector3.zero;
@@ -641,8 +648,17 @@ namespace Hecton8.Interaction
         private static float3 ResolveLookTargetNormal(in RaycastHit hit)
         {
             Vector3 normal = hit.collider != null ? hit.normal : Vector3.up;
-            float3 resolved = new float3(normal.x, normal.y, normal.z);
-            return math.all(math.isfinite(resolved)) ? resolved : new float3(0f, 1f, 0f);
+            float3 resolved = default;
+            resolved.x = normal.x;
+            resolved.y = normal.y;
+            resolved.z = normal.z;
+            if (math.all(math.isfinite(resolved)))
+                return resolved;
+
+            resolved.x = 0f;
+            resolved.y = 1f;
+            resolved.z = 0f;
+            return resolved;
         }
 
         private static uint ResolveTargetHash(IInteractable target)

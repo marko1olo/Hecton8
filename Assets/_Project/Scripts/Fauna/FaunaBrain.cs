@@ -1469,23 +1469,21 @@ namespace Hecton8.AI
                 return 0f;
 
             float dotThreshold = _faunaDataTemplate.LightReactionDotThreshold;
-            double3 toListenerAbsolute = listenerAup.ToAbsoluteDouble3() - lightAup.ToAbsoluteDouble3();
-            float3 toListener = new float3(
-                (float)toListenerAbsolute.x,
-                (float)toListenerAbsolute.y,
-                (float)toListenerAbsolute.z);
-            float rawDot = math.dot(lightForward, toListener);
-            if (rawDot <= 0f)
+            double3 toListener = AbsoluteUniversePosition.DeltaMetersClamped(in listenerAup, in lightAup);
+            double rawDot =
+                ((double)lightForward.x * toListener.x) +
+                ((double)lightForward.y * toListener.y) +
+                ((double)lightForward.z * toListener.z);
+            if (rawDot <= 0d)
                 return 0f;
 
-            float distanceSqFloat = (float)math.min(distanceSq, float.MaxValue);
-            float scaledConeSq = dotThreshold * dotThreshold * forwardLenSq * distanceSqFloat;
-            float rawDotSq = rawDot * rawDot;
+            double scaledConeSq = (double)dotThreshold * dotThreshold * (double)forwardLenSq * distanceSq;
+            double rawDotSq = rawDot * rawDot;
             if (rawDotSq < scaledConeSq)
                 return 0f;
 
-            float maxConeSq = forwardLenSq * distanceSqFloat;
-            float cone01 = math.saturate((rawDotSq - scaledConeSq) * math.rcp(math.max(0.0001f, maxConeSq - scaledConeSq)));
+            double maxConeSq = (double)forwardLenSq * distanceSq;
+            float cone01 = math.saturate((float)((rawDotSq - scaledConeSq) * math.rcp(math.max(0.0001d, maxConeSq - scaledConeSq))));
             float distance01 = 1f - math.saturate((float)(distanceSq * math.rcp(rangeSq)));
             float exposure01 = math.saturate(cone01 * distance01);
             if (_utilityBrain.IsActivePredator)
@@ -3638,15 +3636,13 @@ namespace Hecton8.AI
                 return;
             }
 
-            double3 toPredatorAbsolute = predatorAup.ToAbsoluteDouble3() - lightAup.ToAbsoluteDouble3();
-            float3 toPredator = new float3(
-                (float)toPredatorAbsolute.x,
-                (float)toPredatorAbsolute.y,
-                (float)toPredatorAbsolute.z);
-            float rawDot = math.dot(lightForward, toPredator);
-            float distanceSqrFloat = (float)math.min(distanceSqr, (double)float.MaxValue);
-            _cachedPredatorPhotophobiaDot = rawDot > 0f
-                ? (rawDot * rawDot) * math.rcp(math.max(0.0001f, forwardLenSq * distanceSqrFloat))
+            double3 toPredator = AbsoluteUniversePosition.DeltaMetersClamped(in predatorAup, in lightAup);
+            double rawDot =
+                ((double)lightForward.x * toPredator.x) +
+                ((double)lightForward.y * toPredator.y) +
+                ((double)lightForward.z * toPredator.z);
+            _cachedPredatorPhotophobiaDot = rawDot > 0d
+                ? (float)((rawDot * rawDot) * math.rcp(math.max(0.0001d, (double)forwardLenSq * distanceSqr)))
                 : 0f;
             ApplyPredatorSensoryBits(
                 _cachedPredatorPhotophobiaDot > PredatorPhotophobiaDotThresholdSqr ? PredatorSensoryPhotophobicBit : (byte)0,
@@ -3705,7 +3701,7 @@ namespace Hecton8.AI
                 selfPosition = sourcePosition;
             AbsoluteUniversePosition selfAup = AbsoluteUniversePosition.FromRuntimePosition(selfPosition);
             AbsoluteUniversePosition sourceAup = AbsoluteUniversePosition.FromRuntimePosition(sourcePosition);
-            double3 awayAbsolute = selfAup.ToAbsoluteDouble3() - sourceAup.ToAbsoluteDouble3();
+            double3 awayAbsolute = AbsoluteUniversePosition.DeltaMetersClamped(in selfAup, in sourceAup);
             float3 away = new float3((float)awayAbsolute.x, (float)awayAbsolute.y, (float)awayAbsolute.z);
             float awaySq = math.lengthsq(away);
             if (awaySq <= 0.0001f)
@@ -4659,7 +4655,7 @@ namespace Hecton8.AI
             ForceDirectorHuntTarget(sourcePosition, math.max(1f, durationSeconds));
             AbsoluteUniversePosition sourceAup = AbsoluteUniversePosition.FromRuntimePosition(sourcePosition);
             AbsoluteUniversePosition selfAup = AbsoluteUniversePosition.FromRuntimePosition(selfPosition);
-            double3 directionAbsolute = sourceAup.ToAbsoluteDouble3() - selfAup.ToAbsoluteDouble3();
+            double3 directionAbsolute = AbsoluteUniversePosition.DeltaMetersClamped(in sourceAup, in selfAup);
             Vector3 direction = new Vector3(
                 (float)directionAbsolute.x,
                 (float)directionAbsolute.y,

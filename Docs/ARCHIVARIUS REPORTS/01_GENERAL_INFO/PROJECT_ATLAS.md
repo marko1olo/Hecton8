@@ -1,8 +1,8 @@
 # PROJECT ATLAS
 
-Version: 1.5.29
-Date: 2026-05-13
-Status: PENDING VERIFICATION (DOC_AUDIT R5 STATIC OVERRIDE / UNITY RUNTIME PROOF ABSENT)
+Version: 1.5.30
+Date: 2026-05-15
+Status: PENDING VERIFICATION (DOC_AUDIT R5 STATIC OVERRIDE + DOC_HONEST_ANALYSIS ROOT CLEANUP / UNITY RUNTIME PROOF ABSENT)
 Scope: live orientation map for the current HECTON-8 workspace
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`, `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`, `STRM_Persistent_Object_Registry.txt`, `MATH_Coordinate_Precision_AUP_FloatingOrigin.txt`, `VOX_MapMagic_Voxel_Seam_Alignment_Integration.txt`, `PROJECT_LTS_Compatibility_Layer.txt`
 
@@ -14,12 +14,13 @@ It is not a readiness claim and not a profiler report.
 ## 2026-05-13 DOC_AUDIT X-Ray Override
 
 Read `../../Reports/2026-05-13_DOC_AUDIT_XRAY.md` before trusting older counters below.
+Read `../../ROOT_DOCS_REFERENCE.md` and `../../DOC_GOVERNANCE.md` for the May 15 root cleanup boundary.
 
 Current static corrections:
 
 - first-party asmdefs under `Assets/_Project`: `24`
 - previously unindexed current asmdefs include `Assets/_Project/Scripts/Core/Memory/Hecton8.Core.Memory.asmdef` and `Assets/_Project/Scripts/Physics/Determinism/Hecton8.Physics.Determinism.asmdef`
-- root `PROJECT_ATLAS.md` is a compatibility mirror; `Docs/PROJECT_ATLAS.md` is the current detailed asmdef atlas
+- former root `PROJECT_ATLAS.md` was moved to `Docs/DEPRECATED/Root_Compatibility_Mirrors_2026-05-15/`; `Docs/PROJECT_ATLAS.md` is the current detailed asmdef atlas
 - cited May 11 build artifacts `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt` and `.log` are absent from the current filesystem
 - source counts are volatile in the active multi-agent workspace and must be rerun before use
 - latest R4 static source counters: `1411` project C# files, `1365` script C# files, `1401` non-test C# files, `869871` project physical lines, `852315` script physical lines, `867132` non-test physical lines, `215` interface declaration hits, `51` direct public interfaces in `GlobalRegistryContracts.cs`, and `24` first-party asmdefs
@@ -74,7 +75,7 @@ Current first-party asmdefs:
 - `Assets/_Project/Tests/Editor/Hecton8.EditModeTests.asmdef`
 - `Assets/_Project/Tests/PlayMode/Hecton8.PlayModeTests.asmdef`
 
-Repository root observed on 2026-05-11 contains these top-level entries of interest:
+Repository root observed after the 2026-05-15 cleanup contains these top-level entries of interest:
 
 - `.agents-skills`
 - `Assets`
@@ -90,8 +91,8 @@ Repository root observed on 2026-05-11 contains these top-level entries of inter
 - `Logs`
 - `AGENTS.md`
 - active root text files: `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, `BUILD_PLAYTEST_ISSUES.md`
-- generated/root evidence snapshots: `BROKEN_PREFABS.md`, `CYRILLIC_PURGE_REPORT_2026-05-10.json`, `playmode_metrics.json`, `tools_list_mcp.json`, `codex_unity_compile.log`, `codex_unity_sync.log`
-- non-canonical root compatibility mirror: `TERRAIN_AND_BIOME_REALITY_MAP.md`
+- former generated/root evidence snapshots moved to `Docs/Reports/2026-05-13_BROKEN_PREFABS_STATIC_SNAPSHOT.md` and `Docs/DEPRECATED/External_And_Log_Bundles/Root_Evidence_2026-05-15/`
+- former non-canonical root compatibility mirrors moved to `Docs/DEPRECATED/Root_Compatibility_Mirrors_2026-05-15/`
 
 High-noise surfaces also exist:
 
@@ -258,7 +259,8 @@ Canonical entry files inside this bundle:
 
 ### 6.3 Current Live Console Truth
 
-Latest documentation synchronization is `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`.
+Latest current documentation/status overrides are `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` and `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md`.
+`Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` is historical May 11 evidence unless a later report explicitly revalidates a field.
 Fresh Unity MCP/Console proof was not captured in the May 11 documentation continuation. Older MCP readbacks from May 4-May 8 are historical snapshots only and must not be used as current Unity Console, Play Mode, profiler, GCMonitor, player-build, scene-wiring, or memory-retention proof.
 
 This is not Play Mode proof and not runtime certification.
@@ -643,18 +645,19 @@ These counts are orientation data only. They are not readiness metrics and shoul
 Current active forensic reports to read before older atlas claims:
 
 1. `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`
-2. `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`
-3. `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`
-4. `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`
-5. `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`
-5. `Docs/Reports/2026-05-08_ACTIVE_DOCUMENTATION_MANIFEST.json`
-6. `Docs/Reports/2026-05-07_MAIN_DOCUMENTATION_CURRENT_STATE_REFRESH.md`
-7. `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`
-8. `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
-9. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
-10. `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md`
-11. `Docs/Reports/CI_VALIDATION_HOOKS_SURGERY_LOG.md`
-12. `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/06_CRITICAL_ACTION_QUEUE.md`
+2. `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md`
+3. `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` - historical manifest snapshot only
+4. `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` - historical May 11 evidence only
+5. `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`
+6. `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`
+7. `Docs/Reports/2026-05-08_ACTIVE_DOCUMENTATION_MANIFEST.json`
+8. `Docs/Reports/2026-05-07_MAIN_DOCUMENTATION_CURRENT_STATE_REFRESH.md`
+9. `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`
+10. `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
+11. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
+12. `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md`
+13. `Docs/Reports/CI_VALIDATION_HOOKS_SURGERY_LOG.md`
+14. `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/06_CRITICAL_ACTION_QUEUE.md`
 
 Current risk corrections:
 

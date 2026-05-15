@@ -524,7 +524,12 @@ namespace Hecton8.Core.Memory
                 ValidateType<T>(bufferId, existingMeta, stride, alignment);
                 if (existingMeta.Length >= requiredLength)
                 {
-                    MarkExternalView(key, existingMeta.OffsetBytes);
+                    if (!MarkExternalView(key, existingMeta.OffsetBytes))
+                    {
+                        DumpPhiVodBlackBox();
+                        return default;
+                    }
+
                     return H8Memory.CreateNativeArrayView<T>(existingPointer.ToPointer(), existingMeta.Length);
                 }
 
@@ -537,7 +542,12 @@ namespace Hecton8.Core.Memory
                 _buffers[key] = resizedPointer;
                 _metadata[key] = resizedMeta;
                 BumpVaultGeneration();
-                MarkExternalView(key, resizedMeta.OffsetBytes);
+                if (!MarkExternalView(key, resizedMeta.OffsetBytes))
+                {
+                    DumpPhiVodBlackBox();
+                    return default;
+                }
+
                 return H8Memory.CreateNativeArrayView<T>(resizedPointer.ToPointer(), requiredLength);
             }
 
@@ -582,7 +592,17 @@ namespace Hecton8.Core.Memory
 
             _keys.AddNoResize(key);
             _allocatedBytes += requiredBytes;
-            MarkExternalView(key, meta.OffsetBytes);
+            if (!MarkExternalView(key, meta.OffsetBytes))
+            {
+                RemoveBufferKey(key);
+                _buffers.Remove(key);
+                _metadata.Remove(key);
+                _allocatedBytes = _allocatedBytes > requiredBytes ? _allocatedBytes - requiredBytes : 0L;
+                FreeBlock(blockIndex);
+                DumpPhiVodBlackBox();
+                return default;
+            }
+
             return H8Memory.CreateNativeArrayView<T>(pointer.ToPointer(), requiredLength);
         }
 
@@ -641,7 +661,13 @@ namespace Hecton8.Core.Memory
             buffer = H8Memory.CreateNativeArrayView<T>(pointer.ToPointer(), meta.Length);
             if (buffer.IsCreated)
             {
-                MarkExternalView(key, meta.OffsetBytes);
+                if (!MarkExternalView(key, meta.OffsetBytes))
+                {
+                    buffer = default;
+                    DumpPhiVodBlackBox();
+                    return false;
+                }
+
                 return true;
             }
 
@@ -1162,6 +1188,21 @@ namespace Hecton8.Core.Memory
             }
         }
 
+        private void RemoveBufferKey(int key)
+        {
+            if (!_keys.IsCreated)
+                return;
+
+            for (int i = 0; i < _keys.Length; i++)
+            {
+                if (_keys[i] != key)
+                    continue;
+
+                _keys.RemoveAtSwapBack(i);
+                return;
+            }
+        }
+
         private void TouchMacroDatabasePayload(ulong sectorHash)
         {
             if (!_macroDatabasePayloadAccessTicks.IsCreated)
@@ -1349,28 +1390,42 @@ namespace Hecton8.Core.Memory
             return largest;
         }
 
-        private void MarkExternalView(int key, long offsetBytes)
+        private bool MarkExternalView(int key, long offsetBytes)
         {
             if (!TryFindOccupiedBlockIndex(key, offsetBytes, out int blockIndex))
-                return;
+                return false;
 
             VaultArenaBlock block = _blocks[blockIndex];
+            if (!_metadata.TryGetValue(key, out VaultBufferMeta meta))
+                return false;
+
             if ((block.Reserved0 & BlockFlagExternalView) != 0)
-                return;
+            {
+                if (meta.BlockIndex != blockIndex ||
+                    meta.OffsetBytes != block.OffsetBytes ||
+                    meta.Version != block.Version)
+                {
+                    meta.BlockIndex = blockIndex;
+                    meta.OffsetBytes = block.OffsetBytes;
+                    meta.Version = block.Version;
+                    _metadata[key] = meta;
+                    BumpVaultGeneration();
+                }
+
+                return true;
+            }
 
             block.Reserved0 |= BlockFlagExternalView;
             block.Version = NextGeneration(block.Version);
             _blocks[blockIndex] = block;
             UpdateH8Descriptor(in block);
 
-            if (_metadata.TryGetValue(key, out VaultBufferMeta meta))
-            {
-                meta.BlockIndex = blockIndex;
-                meta.OffsetBytes = block.OffsetBytes;
-                meta.Version = block.Version;
-                _metadata[key] = meta;
-                BumpVaultGeneration();
-            }
+            meta.BlockIndex = blockIndex;
+            meta.OffsetBytes = block.OffsetBytes;
+            meta.Version = block.Version;
+            _metadata[key] = meta;
+            BumpVaultGeneration();
+            return true;
         }
 
         private void RecordDefragBlackBox(uint sequence)
@@ -1472,7 +1527,12 @@ namespace Hecton8.Core.Memory
             int alignment = UnsafeUtility.AlignOf<T>();
             ValidateType<T>(bufferId, meta, stride, alignment);
 
-            MarkExternalView(key, meta.OffsetBytes);
+            if (!MarkExternalView(key, meta.OffsetBytes))
+            {
+                DumpPhiVodBlackBox();
+                return false;
+            }
+
             if (!_buffers.TryGetValue(key, out pointer) ||
                 !_metadata.TryGetValue(key, out meta) ||
                 pointer == IntPtr.Zero ||

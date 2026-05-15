@@ -74,7 +74,7 @@ namespace Hecton8.Logistics.Grid
                 if (nodeCount >= Nodes.Length)
                 {
                     WriteFault(WfcOutpostGraphFaultFlags.CapacityExceeded);
-                    break;
+                    return;
                 }
 
                 int3 cell = Unflatten(cellIndex, dimensions);

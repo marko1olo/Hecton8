@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
+using UnityEngine.Rendering.RenderGraphModule.Util;
 using UnityEngine.Rendering.Universal;
 
 #if UNITY_EDITOR
@@ -67,13 +68,6 @@ namespace Hecton8.Visor
 
         private sealed class SootPass : ScriptableRenderPass
         {
-            private sealed class PassData
-            {
-                internal TextureHandle source;
-                internal TextureHandle destination;
-                internal Material material;
-            }
-
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Atmosphere Soot");
             private FeatureSettings _settings;
             private Material _material;
@@ -133,28 +127,9 @@ namespace Hecton8.Visor
 
                 ApplyMaterialParametersIfChanged(_material, _settings, _runtimeState);
 
-                using (var builder = renderGraph.AddUnsafePass<PassData>("Hecton Atmosphere Soot", out PassData passData, _profilingSampler))
-                {
-                    passData.source = sourceTexture;
-                    passData.destination = destinationTexture;
-                    passData.material = _material;
-
-                    builder.UseTexture(sourceTexture, AccessFlags.Read);
-                    builder.UseTexture(destinationTexture, AccessFlags.Write);
-
-                    builder.SetRenderFunc((PassData data, UnsafeGraphContext context) =>
-                    {
-                        CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
-                        Blitter.BlitCameraTexture(
-                            cmd,
-                            data.source,
-                            data.destination,
-                            RenderBufferLoadAction.DontCare,
-                            RenderBufferStoreAction.Store,
-                            data.material,
-                            0);
-                    });
-                }
+                renderGraph.AddBlitPass(
+                    new RenderGraphUtils.BlitMaterialParameters(sourceTexture, destinationTexture, _material, 0),
+                    passName: "Hecton Atmosphere Soot");
 
                 resourceData.cameraColor = destinationTexture;
             }

@@ -587,6 +587,11 @@ namespace Hecton8.World
         private const string SectorOverrideSnapshotRecordsLabel = "sectorOverrideSnapshotRecords";
         private const string SectorOverrideEntityStatesLabel = "sectorOverrideEntityStates";
         private const string SectorEntityStateAsyncWriteStatesLabel = "sectorEntityStateAsyncWriteStates";
+        private const string ResourceNodeTombstonePrefix = "resource_node_";
+        private const string SectorOverridesDirectorySuffix = "_sector_overrides";
+        private const string SectorOverrideTempFileSuffix = ".sectmp";
+        private const string SectorEntityStateTempFileSuffix = ".estatmp";
+        private const string UpperHexDigits = "0123456789ABCDEF";
         private const int TombstoneDecayThreshold = 1024;
         private const int TombstoneTimeToLiveDays = 3;
         private const double TombstoneInGameDaySeconds = 86400d;
@@ -1865,7 +1870,110 @@ namespace Hecton8.World
         {
             return tombstoneId == 0UL
                 ? string.Empty
-                : $"resource_node_{tombstoneId:X16}";
+                : CreateResourceNodeTombstoneLabel(tombstoneId);
+        }
+
+        private static string CreateResourceNodeTombstoneLabel(ulong tombstoneId)
+        {
+            return string.Create(ResourceNodeTombstonePrefix.Length + 16, tombstoneId, static (buffer, value) =>
+            {
+                ResourceNodeTombstonePrefix.AsSpan().CopyTo(buffer);
+                WriteHex16(buffer.Slice(ResourceNodeTombstonePrefix.Length, 16), value);
+            });
+        }
+
+        private static string CreateSectorOverrideDirectoryName(string absolutePath)
+        {
+            return string.Concat(Path.GetFileNameWithoutExtension(absolutePath), SectorOverridesDirectorySuffix);
+        }
+
+        private static string CreateSectorTempFileName(long sectorHash, string suffix)
+        {
+            return string.Create(16 + suffix.Length, (sectorHash, suffix), static (buffer, state) =>
+            {
+                WriteHex16(buffer.Slice(0, 16), state.sectorHash);
+                state.suffix.AsSpan().CopyTo(buffer.Slice(16));
+            });
+        }
+
+        private static string CreateHexMessage(string prefix, long value, string suffix)
+        {
+            return string.Create(prefix.Length + 16 + suffix.Length, (prefix, value, suffix), static (buffer, state) =>
+            {
+                int cursor = 0;
+                state.prefix.AsSpan().CopyTo(buffer);
+                cursor += state.prefix.Length;
+                WriteHex16(buffer.Slice(cursor, 16), state.value);
+                cursor += 16;
+                state.suffix.AsSpan().CopyTo(buffer.Slice(cursor));
+            });
+        }
+
+        private static string CreateHexMessage(string prefix, ulong value)
+        {
+            return string.Create(prefix.Length + 16, (prefix, value), static (buffer, state) =>
+            {
+                state.prefix.AsSpan().CopyTo(buffer);
+                WriteHex16(buffer.Slice(state.prefix.Length, 16), state.value);
+            });
+        }
+
+        private static string CreateHexErrorMessage(string prefix, long value, string error)
+        {
+            string safeError = error ?? string.Empty;
+            return string.Create(prefix.Length + 18 + safeError.Length, (prefix, value, safeError), static (buffer, state) =>
+            {
+                int cursor = 0;
+                state.prefix.AsSpan().CopyTo(buffer);
+                cursor += state.prefix.Length;
+                WriteHex16(buffer.Slice(cursor, 16), state.value);
+                cursor += 16;
+                buffer[cursor++] = ':';
+                buffer[cursor++] = ' ';
+                state.safeError.AsSpan().CopyTo(buffer.Slice(cursor));
+            });
+        }
+
+        private static string CreateRecordCountWatchdogMessage(int recordCount)
+        {
+            const string prefix = "[PersistentWorldRegistry] ResetPoolSlots dehydrate queue drain exceeded watchdog. recordCount=";
+            int digitCount = CountSignedDecimalDigits(recordCount);
+            return string.Create(prefix.Length + digitCount, recordCount, static (buffer, value) =>
+            {
+                prefix.AsSpan().CopyTo(buffer);
+                value.TryFormat(buffer.Slice(prefix.Length), out int _);
+            });
+        }
+
+        private static int CountSignedDecimalDigits(int value)
+        {
+            long remaining = value;
+            int digits = remaining < 0L ? 1 : 0;
+            if (remaining < 0L)
+                remaining = -remaining;
+
+            do
+            {
+                digits++;
+                remaining /= 10L;
+            }
+            while (remaining != 0L);
+
+            return digits;
+        }
+
+        private static void WriteHex16(Span<char> destination, long value)
+        {
+            WriteHex16(destination, unchecked((ulong)value));
+        }
+
+        private static void WriteHex16(Span<char> destination, ulong value)
+        {
+            for (int i = 15; i >= 0; i--)
+            {
+                destination[i] = UpperHexDigits[(int)(value & 0xFUL)];
+                value >>= 4;
+            }
         }
 
         private static void FoldResourceNodeTombstoneField(ref ulong hash, ulong value)
@@ -2127,7 +2235,7 @@ namespace Hecton8.World
             _indexedSectorSavePath = absolutePath;
             _indexedSectorOverrideDirectory = Path.Combine(
                 Path.GetDirectoryName(absolutePath) ?? string.Empty,
-                $"{Path.GetFileNameWithoutExtension(absolutePath)}_sector_overrides");
+                CreateSectorOverrideDirectoryName(absolutePath));
             _indexedSectorPagingEnabled = _indexedSectorDirectory.Count > 0;
             _indexedSectorPagingInFlight = false;
             _playerSectorValid = false;
@@ -2223,7 +2331,7 @@ namespace Hecton8.World
                 {
                     await Awaitable.MainThreadAsync();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogError($"[PersistentWorldRegistry] Indexed sector paging failed: {error}");
+                    Debug.LogError(string.Concat("[PersistentWorldRegistry] Indexed sector paging failed: ", error));
 #endif
                     return;
                 }
@@ -2232,7 +2340,7 @@ namespace Hecton8.World
                 {
                     await Awaitable.MainThreadAsync();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning($"[PersistentWorldRegistry] Indexed sector paging recovered with quarantine: {error}");
+                    Debug.LogWarning(string.Concat("[PersistentWorldRegistry] Indexed sector paging recovered with quarantine: ", error));
 #endif
                     await Awaitable.BackgroundThreadAsync();
                     quarantinedSectorResetApplied = ResetQuarantinedIndexedSectorsToPristine();
@@ -2242,7 +2350,7 @@ namespace Hecton8.World
                 {
                     await Awaitable.MainThreadAsync();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogError($"[PersistentWorldRegistry] Sector override merge failed: {overrideError}");
+                    Debug.LogError(string.Concat("[PersistentWorldRegistry] Sector override merge failed: ", overrideError));
 #endif
                     return;
                 }
@@ -2251,7 +2359,7 @@ namespace Hecton8.World
                 {
                     await Awaitable.MainThreadAsync();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogError($"[PersistentWorldRegistry] Sector entity-state restore failed: {entityStateError}");
+                    Debug.LogError(string.Concat("[PersistentWorldRegistry] Sector entity-state restore failed: ", entityStateError));
 #endif
                     return;
                 }
@@ -2321,7 +2429,7 @@ namespace Hecton8.World
                         out string resetError))
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning($"[PersistentWorldRegistry] Pristine sector reset failed for 0x{sectorHash:X16}: {resetError}");
+                    Debug.LogWarning(CreateHexErrorMessage("[PersistentWorldRegistry] Pristine sector reset failed for 0x", sectorHash, resetError));
 #endif
                     continue;
                 }
@@ -2980,7 +3088,7 @@ namespace Hecton8.World
                             string tempPath = ResolveSectorOverrideTempPath(pair.Key);
                             if (!SaveBinaryStorage.TryWriteIndexedPersistentWorldSectorOverride(tempPath, pair.Key, sectorRecords, chunkSizeMeters, out string error))
                             {
-                                failureMessage = $"[PersistentWorldRegistry] Sector override snapshot failed for 0x{pair.Key:X16}: {error}";
+                                failureMessage = CreateHexErrorMessage("[PersistentWorldRegistry] Sector override snapshot failed for 0x", pair.Key, error);
                                 break;
                             }
 
@@ -3030,7 +3138,7 @@ namespace Hecton8.World
                                             out SaveBinaryStorage.IndexedSectorEntityStateWriteHandle writeHandle,
                                             out string entityStateError))
                                     {
-                                        failureMessage = $"[PersistentWorldRegistry] Sector entity-state snapshot failed for 0x{pair.Key:X16}: {entityStateError}";
+                                        failureMessage = CreateHexErrorMessage("[PersistentWorldRegistry] Sector entity-state snapshot failed for 0x", pair.Key, entityStateError);
                                         break;
                                     }
 
@@ -3176,7 +3284,7 @@ namespace Hecton8.World
 
                 if (loadedSectorHash != sectorHash)
                 {
-                    error = $"Sector override hash mismatch for temp block 0x{sectorHash:X16}.";
+                    error = CreateHexMessage("Sector override hash mismatch for temp block 0x", sectorHash, ".");
                     return false;
                 }
 
@@ -3246,7 +3354,7 @@ namespace Hecton8.World
 
                 if (loadedSectorHash != sectorHash)
                 {
-                    error = $"Sector entity-state override hash mismatch for temp block 0x{sectorHash:X16}.";
+                    error = CreateHexMessage("Sector entity-state override hash mismatch for temp block 0x", sectorHash, ".");
                     return false;
                 }
 
@@ -3407,7 +3515,7 @@ namespace Hecton8.World
                     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                         await Awaitable.MainThreadAsync();
-                        Debug.LogError($"[PersistentWorldRegistry] Sector override commit failed for 0x{sectorHash:X16}: {error}");
+                        Debug.LogError(CreateHexErrorMessage("[PersistentWorldRegistry] Sector override commit failed for 0x", sectorHash, error));
                         await Awaitable.BackgroundThreadAsync();
 #endif
                     }
@@ -3443,7 +3551,7 @@ namespace Hecton8.World
             if (string.IsNullOrEmpty(_indexedSectorOverrideDirectory))
                 return string.Empty;
 
-            return Path.Combine(_indexedSectorOverrideDirectory, $"{sectorHash:X16}.sectmp");
+            return Path.Combine(_indexedSectorOverrideDirectory, CreateSectorTempFileName(sectorHash, SectorOverrideTempFileSuffix));
         }
 
         private string ResolveSectorEntityStateTempPath(long sectorHash)
@@ -3451,7 +3559,7 @@ namespace Hecton8.World
             if (string.IsNullOrEmpty(_indexedSectorOverrideDirectory))
                 return string.Empty;
 
-            return Path.Combine(_indexedSectorOverrideDirectory, $"{sectorHash:X16}.estatmp");
+            return Path.Combine(_indexedSectorOverrideDirectory, CreateSectorTempFileName(sectorHash, SectorEntityStateTempFileSuffix));
         }
 
         internal bool TryCacheFaunaHibernationState(in EntityDataRecord faunaState)
@@ -4257,7 +4365,7 @@ namespace Hecton8.World
                         out string error))
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogError($"[PersistentWorldRegistry] Async entity-state temp write schedule failed for 0x{sectorHash:X16}: {error}");
+                    Debug.LogError(CreateHexErrorMessage("[PersistentWorldRegistry] Async entity-state temp write schedule failed for 0x", sectorHash, error));
 #endif
                     return false;
                 }
@@ -4304,7 +4412,7 @@ namespace Hecton8.World
                 if (!SaveBinaryStorage.TryCompleteIndexedSectorEntityStateOverrideWrite(ref work.WriteHandle, out string error))
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogError($"[PersistentWorldRegistry] Async entity-state temp write failed for 0x{work.SectorHash:X16}: {error}");
+                    Debug.LogError(CreateHexErrorMessage("[PersistentWorldRegistry] Async entity-state temp write failed for 0x", work.SectorHash, error));
 #endif
                 }
 
@@ -4385,7 +4493,7 @@ namespace Hecton8.World
 
                 if (!SaveBinaryStorage.TryCompleteIndexedSectorEntityStateOverrideWrite(ref work.WriteHandle, out string error))
                 {
-                    failureMessage = $"[PersistentWorldRegistry] Sector entity-state snapshot failed for 0x{work.SectorHash:X16}: {error}";
+                    failureMessage = CreateHexErrorMessage("[PersistentWorldRegistry] Sector entity-state snapshot failed for 0x", work.SectorHash, error);
                     return false;
                 }
 
@@ -5239,7 +5347,7 @@ namespace Hecton8.World
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogError(
-                        $"[PersistentWorldRegistry] ResetPoolSlots dehydrate queue drain exceeded watchdog. recordCount={_records.Length}");
+                        CreateRecordCountWatchdogMessage(_records.Length));
 #endif
 
                     while (_dehydrateQueue.TryDequeue(out _))
@@ -6116,7 +6224,7 @@ namespace Hecton8.World
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError($"[PersistentWorldRegistry] Failed to reserve resource-node tombstone UID. tombstoneId={tombstoneId:X16}");
+            Debug.LogError(CreateHexMessage("[PersistentWorldRegistry] Failed to reserve resource-node tombstone UID. tombstoneId=", tombstoneId));
 #endif
             return false;
         }
@@ -6148,7 +6256,7 @@ namespace Hecton8.World
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError($"[PersistentWorldRegistry] Failed to reserve resource-node metamorphosis UID. tombstoneId={tombstoneId:X16}");
+            Debug.LogError(CreateHexMessage("[PersistentWorldRegistry] Failed to reserve resource-node metamorphosis UID. tombstoneId=", tombstoneId));
 #endif
             return false;
         }

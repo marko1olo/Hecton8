@@ -37,7 +37,7 @@ namespace Hecton8.Interaction
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Interaction/Physical Interaction Handler")]
-    public sealed class PhysicalInteractionHandler : MonoBehaviour, ITickable, IFixedTickable, ILateFrameTickable
+    public sealed class PhysicalInteractionHandler : MonoBehaviour, ITickable, IFixedTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private enum InteractionState : byte
         {
@@ -166,10 +166,12 @@ namespace Hecton8.Interaction
         private Transform _cachedTransform;
         private Camera _playerCamera;
         private PhysicalHandController _physicalHandController;
+        private IInteractionSignalService _interactionSignals;
         private InteractionState _state;
         private bool _registeredTick;
         private bool _registeredFixedTick;
         private bool _registeredLateFrameTick;
+        private bool _registeredHotSwapListener;
         private float _stateTimer;
         private Vector3 _pullSmoothDampVelocity;
         private const int MaxPanelButtonOverlaps = 8;
@@ -257,6 +259,8 @@ namespace Hecton8.Interaction
         {
             HectonXRRuntimeState.XRActiveChanged -= HandleXRActiveChanged;
             HectonXRRuntimeState.XRActiveChanged += HandleXRActiveChanged;
+            _interactionSignals = GlobalRegistry.InteractionSignals;
+            TryRegisterHotSwapListener();
             RefreshPanelButtonLayerMask();
             if (enablePhysicalPanelButtons && HectonXRRuntimeState.IsXRActive)
                 EnsurePhysicalHandController();
@@ -266,8 +270,31 @@ namespace Hecton8.Interaction
         private void OnDisable()
         {
             HectonXRRuntimeState.XRActiveChanged -= HandleXRActiveChanged;
+            TryUnregisterHotSwapListener();
+            _interactionSignals = null;
             CancelActiveInteraction();
             UnregisterFromTickSystems();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregisterHotSwapListener();
+            _interactionSignals = null;
+        }
+
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (!isActiveAndEnabled)
+                return;
+
+            if (serviceSlot != GlobalRegistryServiceSlot.InteractionSignals)
+                return;
+
+            _interactionSignals = currentService as IInteractionSignalService;
         }
 
         /// <summary>
@@ -485,7 +512,7 @@ namespace Hecton8.Interaction
             if (!PhysicalHandReceiverRegistry.HasReceivers)
                 return;
 
-            IInteractionSignalService interactionSignals = GlobalRegistry.InteractionSignals;
+            IInteractionSignalService interactionSignals = _interactionSignals;
             if (interactionSignals == null || !interactionSignals.IsInitialized)
                 return;
 
@@ -1197,6 +1224,20 @@ namespace Hecton8.Interaction
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
                 _registeredLateFrameTick = false;
             }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
 #if UNITY_EDITOR

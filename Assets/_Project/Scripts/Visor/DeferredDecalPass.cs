@@ -5,6 +5,7 @@ using Hecton8.Core;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
+using UnityEngine.Rendering.RenderGraphModule.Util;
 using UnityEngine.Rendering.Universal;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -58,14 +59,6 @@ namespace Hecton8.Visor
         private sealed class DeferredDecalCompositePass : ScriptableRenderPass, IDisposable
         {
             private const int MaxFluidScreenSpaceDecals = 32;
-
-            private sealed class CompositePassData
-            {
-                internal TextureHandle source;
-                internal TextureHandle depth;
-                internal TextureHandle destination;
-                internal Material material;
-            }
 
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Deferred Decals");
             private readonly DecalGpuData[] _decalUpload = new DecalGpuData[256]; // COLD ALLOC: DecalGpuData[256] - deferred decal upload cache for global crack matrices - owner: DeferredDecalPass
@@ -142,23 +135,12 @@ namespace Hecton8.Visor
                         0f));
                 _material.SetColor(ShaderConstants.DecalTintId, _settings.decalTint);
 
-                using (var builder = renderGraph.AddUnsafePass<CompositePassData>("Hecton Deferred Decal Composite", out CompositePassData passData, _profilingSampler))
+                using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
+                           new RenderGraphUtils.BlitMaterialParameters(sourceTexture, compositeTexture, _material, 0),
+                           passName: "Hecton Deferred Decal Composite",
+                           returnBuilder: true))
                 {
-                    passData.source = sourceTexture;
-                    passData.depth = depthTexture;
-                    passData.destination = compositeTexture;
-                    passData.material = _material;
-
-                    builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(depthTexture, AccessFlags.Read);
-                    builder.UseTexture(compositeTexture, AccessFlags.Write);
-
-                    builder.SetRenderFunc((CompositePassData data, UnsafeGraphContext context) =>
-                    {
-                        CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
-                        CoreUtils.SetRenderTarget(cmd, data.destination, ClearFlag.None);
-                        Blitter.BlitTexture(cmd, data.source, Vector2.one, data.material, 0);
-                    });
                 }
 
                 resourceData.cameraColor = compositeTexture;

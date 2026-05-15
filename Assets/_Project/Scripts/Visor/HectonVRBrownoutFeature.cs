@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
+using UnityEngine.Rendering.RenderGraphModule.Util;
 using UnityEngine.Rendering.Universal;
 
 #if UNITY_EDITOR
@@ -68,13 +69,6 @@ namespace Hecton8.Visor
         private sealed class BrownoutPass : ScriptableRenderPass
         {
             private const float MaterialFloatEpsilon = 0.0001f;
-
-            private sealed class PassData
-            {
-                internal TextureHandle source;
-                internal TextureHandle destination;
-                internal Material material;
-            }
 
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton VR Brownout");
             private FeatureSettings _settings;
@@ -149,28 +143,9 @@ namespace Hecton8.Visor
 
                 UpdateMaterialParameters(_material, _settings, _runtimeState);
 
-                using (var builder = renderGraph.AddUnsafePass<PassData>("Hecton VR Brownout", out PassData passData, _profilingSampler))
-                {
-                    passData.source = sourceTexture;
-                    passData.destination = destinationTexture;
-                    passData.material = _material;
-
-                    builder.UseTexture(sourceTexture, AccessFlags.Read);
-                    builder.UseTexture(destinationTexture, AccessFlags.Write);
-
-                    builder.SetRenderFunc((PassData data, UnsafeGraphContext context) =>
-                    {
-                        CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
-                        Blitter.BlitCameraTexture(
-                            cmd,
-                            data.source,
-                            data.destination,
-                            RenderBufferLoadAction.DontCare,
-                            RenderBufferStoreAction.Store,
-                            data.material,
-                            0);
-                    });
-                }
+                renderGraph.AddBlitPass(
+                    new RenderGraphUtils.BlitMaterialParameters(sourceTexture, destinationTexture, _material, 0),
+                    passName: "Hecton VR Brownout");
 
                 resourceData.cameraColor = destinationTexture;
             }

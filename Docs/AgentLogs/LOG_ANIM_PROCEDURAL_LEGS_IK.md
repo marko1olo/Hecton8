@@ -419,3 +419,103 @@ No dotnet rebuild was run per user instruction. `Select-String` forbidden-patter
 
 Status:
 PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
+
+## 2026-05-15 Recursive QA Addendum 21
+
+What was wrong:
+`PlayerKinematicsRuntime` still had producer-side IK flavor paths where future signal frames were treated as fresh. SDF squeeze-gradient gating, high-speed impact brace consumption, and squeeze hold updates all used `frame >= signal.Frame ? frame - signal.Frame : 0u`, so a future `PlayerStateSignal` or `HighSpeedImpactSignal` could refresh presentation state early.
+
+What was done:
+Added named `MaxSdfGradientProbeSignalAgeFrames` and `MaxEnvironmentIkSignalAgeFrames` constants plus a shared `IsFreshSignalFrame()` helper. SDF squeeze probes, hand-brace impact reads, and squeeze hold reads now reject future frames and stale frames through the same branch-cheap check.
+
+Cinematic cheats used:
+No new probes, no physical hand/body simulation, no direct producer coupling. The system remains signal-driven presentation: brace and squeeze states are cheap visual/haptic flavor, and suspicious timestamps now collapse to no refresh instead of extending timers.
+
+Exact microseconds saved:
+Added work is one unsigned comparison and subtraction per already-scanned signal, estimated below 0.05 us/frame on i3/MX350. Prevented cost is early SDF gradient requests, stale brace/squeeze hold extension, and confusing black-box chronology from future-frame signal data.
+
+Verification:
+No dotnet rebuild was run per user instruction. `Select-String` forbidden-pattern scan scoped to `PlayerKinematicsRuntime.cs` returned no matches for `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, or `ikPass`. `git diff --check` over `PlayerKinematicsRuntime.cs` passed with CRLF warning only.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
+
+## 2026-05-15 Recursive QA Addendum 22
+
+What was wrong:
+Player stress signals feed rig breathing/shiver and kinematics brace cadence, but both consumers accepted every new sequence without rejecting future-frame data. A bad future `PlayerStressSignal.Frame` could raise stress-driven presentation before the frame was valid.
+
+What was done:
+`PlayerKinematicsRuntime.ConsumeEnvironmentIkSignals()` now accepts new stress only when `stressSignal.Frame <= currentFrame`. `ContextualPhysicalIkRig.RefreshPlayerStress()` now applies the same future-frame rejection before updating `_playerStress01`. No stale-age cutoff was added because stress is persistent presentation state, not a short impact/squeeze event.
+
+Cinematic cheats used:
+No physiology simulation, no direct producer dependency, no new signal lane. Stress still drives cheap rate modulation for breathing/shiver/brace flavor, but future-frame data cannot arrive early.
+
+Exact microseconds saved:
+Added work is one unsigned comparison only when a new stress sequence is observed, estimated below 0.02 us/frame on i3/MX350. Prevented cost is premature stress-rate animation, shiver/breath timing spikes, and confusing black-box chronology.
+
+Verification:
+No dotnet rebuild was run per user instruction. `Select-String` forbidden-pattern scan scoped to `ContextualPhysicalIkRig.cs` and `PlayerKinematicsRuntime.cs` returned no matches for `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, or `ikPass`. `git diff --check` over those files passed with CRLF warnings only.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
+
+## 2026-05-15 Recursive QA Addendum 23
+
+What was wrong:
+`PlayerKinematicsRuntime.TickEnvironmentIkState()` advanced `_bracePhase` with raw `deltaTime` and only subtracted `BracePhaseWrap` once. A non-finite delta, stale phase value, or large hitch could poison hand brace flavor phase and any telemetry/flavor output using it.
+
+What was done:
+Brace phase now advances with sanitized delta time and passes through a deterministic `WrapPositivePhase()` helper. The helper rejects non-finite phase/wrap data, uses floor/rcp positive wrapping for large values, and returns zero on corrupt output.
+
+Cinematic cheats used:
+No physical hand simulation, no new probes, no new signal lane. This preserves the cheap phase-driven brace flavor while keeping its phase state bounded and deterministic.
+
+Exact microseconds saved:
+Added cost is one finite check and floor/rcp wrap per environment IK tick, estimated below 0.02 us/frame on i3/MX350. Prevented cost is NaN phase propagation, brace telemetry corruption, and phase spikes after hitches.
+
+Verification:
+No dotnet rebuild was run per user instruction. `Select-String` forbidden-pattern scan scoped to `PlayerKinematicsRuntime.cs` returned no matches for `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`. `git diff --check` over `PlayerKinematicsRuntime.cs` passed with CRLF warning only.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
+
+## 2026-05-15 Recursive QA Addendum 24
+
+What was wrong:
+`PlayerKinematicsRuntime.ConsumeSqueezeTelemetrySignal()` acknowledged every new `PlayerStateSignal` sequence before validating squeeze state and frame freshness. A future squeeze packet could be counted early, or if rejected after consumption, never be counted when its frame became valid.
+
+What was done:
+The method now acknowledges non-squeeze sequences once, but squeeze sequences must pass `IsFreshSignalFrame()` before `_lastPlayerStateSequence`, `_squeezeInterventions`, or telemetry writes are updated. This keeps squeeze intervention telemetry chronological.
+
+Cinematic cheats used:
+No new SDF work, no physical squeeze solver, no direct producer dependency. This only protects the existing signal-driven telemetry/fake-intervention path.
+
+Exact microseconds saved:
+Added work is one boolean and one freshness check only when the latest player-state sequence changes, estimated below 0.02 us/frame on i3/MX350. Prevented cost is bad black-box chronology and inflated squeeze intervention counters.
+
+Verification:
+No dotnet rebuild was run per user instruction. `Select-String` forbidden-pattern scan scoped to `PlayerKinematicsRuntime.cs` returned no matches for `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`. `git diff --check` over `PlayerKinematicsRuntime.cs` passed.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.
+
+## 2026-05-15 Recursive QA Addendum 25
+
+What was wrong:
+`PlayerKinematicsRuntime` hand IK paths still had small native-storage and H-Phi trust windows. Probe scheduling only checked pending state before using command/hit arrays, placement and target application assumed array lengths stayed correct, `ClearHandTargets()` indexed lanes after `IsCreated`, and smoothed hand targets treated finite zero normals as valid contact data.
+
+What was done:
+Added hand probe/hit/target storage gates before `RaycastCommand.ScheduleBatch`, hand placement scheduling, target application, and lane clearing. `SmoothHandTarget()` now rejects invalid current lanes, rejects zero normals, fades invalid raw targets closed, and normalizes the published contact normal before external wall-hand IK receives it.
+
+Cinematic cheats used:
+No extra hand probes, no physical hand simulation, no runtime native-array repair loop. Invalid storage or contact normals collapse to neutral targets, preserving the cheap signal/raycast brace fake and keeping high-tier visual polish on verified data only.
+
+Exact microseconds saved:
+Added work is branch-only length checks and two fixed-lane normal validations, estimated below 0.03 us/frame on i3/MX350. Prevented cost is undefined NativeArray indexing, invalid job slice scheduling, zero-normal wall-hand IK spikes, and bad black-box/contact chronology.
+
+Verification:
+No dotnet rebuild was run per user instruction. Unity MCP resources are unavailable in this session. `Select-String` forbidden-pattern scan scoped to `PlayerKinematicsRuntime.cs` returned no matches for `math.sqrt`, `math.normalize`, `foreach`, `string.Format`, interpolation strings, `OnAnimatorIK`, `SetIK`, `ikPass`, `StartCoroutine`, `GameObject.Find`, `FindObjectOfType`, or `Camera.main`. `git diff --check` over `PlayerKinematicsRuntime.cs` passed.
+
+Status:
+PENDING VERIFICATION. Unity import, Burst compiler, Play Mode, GCMonitor, profiler proof, and full compile proof remain absent.

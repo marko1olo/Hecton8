@@ -1245,21 +1245,20 @@ namespace Hecton8.Systems.AI
             in AbsoluteUniversePosition predatorAup,
             Vector3 playerForward)
         {
-            double3 predatorDelta = predatorAup.ToAbsoluteDouble3() - playerAup.ToAbsoluteDouble3();
-            float3 runtimeDelta = new float3(
-                (float)predatorDelta.x,
-                (float)predatorDelta.y,
-                (float)predatorDelta.z);
-            float distanceSqr = math.lengthsq(runtimeDelta);
-            if (distanceSqr <= 0.0001f)
+            double3 predatorDelta = AbsoluteUniversePosition.DeltaMetersClamped(in predatorAup, in playerAup);
+            double distanceSqr = math.dot(predatorDelta, predatorDelta);
+            if (!math.isfinite(distanceSqr) || distanceSqr <= 0.0001d)
                 return false;
 
             float3 safeForward = (float3)ResolveDominantAxisDirection(playerForward);
-            float forwardProjection = math.dot(safeForward, runtimeDelta);
-            if (forwardProjection >= 0f)
+            double forwardProjection =
+                ((double)safeForward.x * predatorDelta.x) +
+                ((double)safeForward.y * predatorDelta.y) +
+                ((double)safeForward.z * predatorDelta.z);
+            if (forwardProjection >= 0d)
                 return false;
 
-            float rearThresholdSq = PredatorSightRearViewDotThreshold * PredatorSightRearViewDotThreshold;
+            double rearThresholdSq = (double)PredatorSightRearViewDotThreshold * PredatorSightRearViewDotThreshold;
             return (forwardProjection * forwardProjection) >= rearThresholdSq * distanceSqr;
         }
 

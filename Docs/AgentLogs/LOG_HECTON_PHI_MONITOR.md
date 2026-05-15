@@ -844,6 +844,46 @@ Regression Model:
 
 STATUS: H-PHI VERIFIED / CORE BUILD GREEN / UNITY RUNTIME PENDING
 
+## 2026-05-15 World Population / Mod Loader / Quest Formatter Debt Batch
+
+What was wrong:
+- `WorldPopulationRule.cs` built population role/border labels with interpolation in runtime source.
+- `ModLoader.cs` built mod failure/disabled diagnostics with interpolation across load, manifest, dependency, factory, unload, and callback failure paths.
+- `QuestStateManager.cs` built quest compile/debug/audit labels with interpolation and used two `List<T>.ToArray()` materializations in the quest compile path.
+
+What was done:
+- Replaced `WorldPopulationRule.cs` interpolation with explicit concat/span helpers for zone role layout and border blend reason labels.
+- Replaced all `ModLoader.cs` direct interpolation hits with explicit concat diagnostics, preserving warning text and mod load behavior.
+- Replaced `QuestStateManager.cs` compile/debug/audit formatting with deterministic label builders, explicit enum label switches, hex writers, numeric span formatting, and `CopyTo` array materialization.
+- Re-ran Core build and tightened static H-Phi gate after the changes.
+
+Cinematic Cheats used:
+- None. This was source debt removal in label/diagnostic paths; population logic, quest state transitions, mod loading order, and visuals are unchanged.
+
+Exact Microseconds saved:
+- Runtime hot path: 0 us measured.
+- Static source debt reduced: `ManagedFormatSurface 606 -> 564`, `PrimaryManagedRuntimeRisk 221 -> 177`, `LinqSurface 5 -> 3`.
+- Exact CPU/GC savings are pending Unity Profiler/GCMonitor; these paths are mostly cold initialization/failure/audit surfaces.
+
+Compile Status:
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:GenerateFullPaths=true -v:minimal`: passed at `2026-05-15 19:58 +04:00`, `0 Warning(s)`, `0 Error(s)`.
+- Tightened full static H-Phi budget gate: passed with the stricter managed-risk floors.
+
+Phi Gain:
+- Runtime risk H-Phi: `0.000634446 -> 0.000634555` from the prior logged gate to the current tree.
+- Runtime narrow H-Phi: `0.010787439` unchanged.
+- Managed formatting surface: `606 -> 564`.
+- Primary managed-runtime risk: `221 -> 177`.
+- LINQ-risk surface: `5 -> 3`.
+- `FindObjectCalls=0`; `UnityUpdateMethods=0`; `JobCompleteSurface=58`.
+
+Regression Model:
+- CPU/GC: fewer managed formatting surfaces in runtime source for world population labels, mod failure diagnostics, and quest compile/audit labels.
+- Memory: no NativeArray/DataVault ownership changed; owner-blocked native backlog remains `PrimaryOwnerBlockedNativeArrayRefs=5678`.
+- Correctness: output text is preserved for known enum/value cases; quest hex labels remain uppercase 8-digit values; mod and quest warnings remain active in release.
+
+STATUS: H-PHI VERIFIED / CORE BUILD GREEN / UNITY RUNTIME PENDING
+
 ## 2026-05-15 Field Target Formatter And Compile Repair
 
 What was wrong:

@@ -8,6 +8,7 @@ using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
+using UnityEngine.Rendering.RenderGraphModule.Util;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.Serialization;
 
@@ -202,23 +203,6 @@ namespace Hecton8.Visor
                 internal float adaptationRate;
                 internal float deltaTime;
                 internal float maxDeltaPerFrame;
-            }
-
-            private sealed class FullscreenPassData
-            {
-                internal TextureHandle source;
-                internal TextureHandle destination;
-                internal BufferHandle exposureState;
-                internal Material material;
-            }
-
-            private sealed class CompositePassData
-            {
-                internal TextureHandle source;
-                internal TextureHandle shafts;
-                internal TextureHandle destination;
-                internal BufferHandle exposureState;
-                internal Material compositeMaterial;
             }
 
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Underwater Noir Stack");
@@ -463,120 +447,54 @@ namespace Hecton8.Visor
                 UpdateMaterialParameters(_blurVerticalMaterial, ref _blurVerticalMaterialCache, in materialParameters, 2f);
                 UpdateMaterialParameters(_compositeMaterial, ref _compositeMaterialCache, in materialParameters, 3f);
 
-                using (var builder = renderGraph.AddUnsafePass<FullscreenPassData>("Hecton Underwater Noir Half-Res Contact Depth", out var passData, _profilingSampler))
+                using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
+                           new RenderGraphUtils.BlitMaterialParameters(sourceTexture, halfResDepthTexture, _raymarchMaterial, HalfResContactDepthPassIndex),
+                           passName: "Hecton Underwater Noir Half-Res Contact Depth",
+                           returnBuilder: true))
                 {
-                    passData.source = sourceTexture;
-                    passData.destination = halfResDepthTexture;
-                    passData.exposureState = exposureStateHandle;
-                    passData.material = _raymarchMaterial;
-
-                    builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(depthTexture, AccessFlags.Read);
-                    builder.UseTexture(halfResDepthTexture, AccessFlags.Write);
                     builder.SetGlobalTextureAfterPass(halfResDepthTexture, ShaderConstants.HalfResDepthTextureId);
-
-                    builder.SetRenderFunc((FullscreenPassData data, UnsafeGraphContext context) =>
-                    {
-                        CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
-                        const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
-                        const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
-
-                        Blitter.BlitCameraTexture(cmd, data.source, data.destination, LoadAction, StoreAction, data.material, HalfResContactDepthPassIndex);
-                    });
                 }
 
-                using (var builder = renderGraph.AddUnsafePass<FullscreenPassData>("Hecton Underwater Noir Radial Shafts", out var passData, _profilingSampler))
+                using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
+                           new RenderGraphUtils.BlitMaterialParameters(sourceTexture, shaftsTexture, _raymarchMaterial, 0),
+                           passName: "Hecton Underwater Noir Radial Shafts",
+                           returnBuilder: true))
                 {
-                    passData.source = sourceTexture;
-                    passData.destination = shaftsTexture;
-                    passData.exposureState = exposureStateHandle;
-                    passData.material = _raymarchMaterial;
-
-                    builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(depthTexture, AccessFlags.Read);
-                    builder.UseTexture(shaftsTexture, AccessFlags.Write);
                     if (exposureAvailable)
                         builder.UseBuffer(exposureStateHandle, AccessFlags.Read);
-
-                    builder.SetRenderFunc((FullscreenPassData data, UnsafeGraphContext context) =>
-                    {
-                        CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
-                        const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
-                        const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
-
-                        Blitter.BlitCameraTexture(cmd, data.source, data.destination, LoadAction, StoreAction, data.material, 0);
-                    });
                 }
 
-                using (var builder = renderGraph.AddUnsafePass<FullscreenPassData>("Hecton Underwater Noir Blur Horizontal", out var passData, _profilingSampler))
+                using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
+                           new RenderGraphUtils.BlitMaterialParameters(shaftsTexture, blurTexture, _blurHorizontalMaterial, 1),
+                           passName: "Hecton Underwater Noir Blur Horizontal",
+                           returnBuilder: true))
                 {
-                    passData.source = shaftsTexture;
-                    passData.destination = blurTexture;
-                    passData.exposureState = exposureStateHandle;
-                    passData.material = _blurHorizontalMaterial;
-
-                    builder.UseTexture(shaftsTexture, AccessFlags.Read);
-                    builder.UseTexture(blurTexture, AccessFlags.Write);
                     if (exposureAvailable)
                         builder.UseBuffer(exposureStateHandle, AccessFlags.Read);
-
-                    builder.SetRenderFunc((FullscreenPassData data, UnsafeGraphContext context) =>
-                    {
-                        CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
-                        const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
-                        const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
-
-                        Blitter.BlitCameraTexture(cmd, data.source, data.destination, LoadAction, StoreAction, data.material, 1);
-                    });
                 }
 
-                using (var builder = renderGraph.AddUnsafePass<FullscreenPassData>("Hecton Underwater Noir Blur Vertical", out var passData, _profilingSampler))
+                using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
+                           new RenderGraphUtils.BlitMaterialParameters(blurTexture, shaftsTexture, _blurVerticalMaterial, 2),
+                           passName: "Hecton Underwater Noir Blur Vertical",
+                           returnBuilder: true))
                 {
-                    passData.source = blurTexture;
-                    passData.destination = shaftsTexture;
-                    passData.exposureState = exposureStateHandle;
-                    passData.material = _blurVerticalMaterial;
-
-                    builder.UseTexture(blurTexture, AccessFlags.Read);
-                    builder.UseTexture(shaftsTexture, AccessFlags.Write);
                     if (exposureAvailable)
                         builder.UseBuffer(exposureStateHandle, AccessFlags.Read);
                     builder.SetGlobalTextureAfterPass(shaftsTexture, ShaderConstants.ShaftTextureId);
                     builder.SetGlobalTextureAfterPass(shaftsTexture, ShaderConstants.HeadlightVolumetricsTextureId);
-
-                    builder.SetRenderFunc((FullscreenPassData data, UnsafeGraphContext context) =>
-                    {
-                        CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
-                        const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
-                        const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
-
-                        Blitter.BlitCameraTexture(cmd, data.source, data.destination, LoadAction, StoreAction, data.material, 2);
-                    });
                 }
 
-                using (var builder = renderGraph.AddUnsafePass<CompositePassData>("Hecton Underwater Noir Composite", out var passData, _profilingSampler))
+                using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
+                           new RenderGraphUtils.BlitMaterialParameters(sourceTexture, compositeTexture, _compositeMaterial, 3),
+                           passName: "Hecton Underwater Noir Composite",
+                           returnBuilder: true))
                 {
-                    passData.source = sourceTexture;
-                    passData.shafts = shaftsTexture;
-                    passData.destination = compositeTexture;
-                    passData.exposureState = exposureStateHandle;
-                    passData.compositeMaterial = _compositeMaterial;
-
-                    builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(shaftsTexture, AccessFlags.Read);
                     builder.UseTexture(halfResDepthTexture, AccessFlags.Read);
-                    builder.UseTexture(compositeTexture, AccessFlags.Write);
                     if (exposureAvailable)
                         builder.UseBuffer(exposureStateHandle, AccessFlags.Read);
-
-                    builder.SetRenderFunc((CompositePassData data, UnsafeGraphContext context) =>
-                    {
-                        CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
-                        const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
-                        const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
-
-                        Blitter.BlitCameraTexture(cmd, data.source, data.destination, LoadAction, StoreAction, data.compositeMaterial, 3);
-                    });
                 }
 
                 resourceData.cameraColor = compositeTexture;

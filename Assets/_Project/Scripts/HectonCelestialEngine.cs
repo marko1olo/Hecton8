@@ -5606,12 +5606,7 @@ namespace Hecton8.Celestial
 
             AbsoluteUniversePosition fromAup = AbsoluteUniversePosition.FromRuntimePosition(fromTransform.position);
             AbsoluteUniversePosition toAup = AbsoluteUniversePosition.FromRuntimePosition(toTransform.position);
-            double3 delta = toAup.ToAbsoluteDouble3() - fromAup.ToAbsoluteDouble3();
-            double3 absDelta = math.abs(delta);
-            double maxAxis = math.cmax(absDelta);
-            double minAxis = math.cmin(absDelta);
-            double midAxis = absDelta.x + absDelta.y + absDelta.z - maxAxis - minAxis;
-            double cinematicDistance = maxAxis + (midAxis * 0.5d) + (minAxis * 0.25d);
+            double cinematicDistance = AbsoluteUniversePosition.ApproximateDistanceMetersClamped(in toAup, in fromAup);
             return (float)math.min(cinematicDistance, (double)float.MaxValue);
         }
 
@@ -5622,7 +5617,7 @@ namespace Hecton8.Celestial
 
             AbsoluteUniversePosition fromAup = AbsoluteUniversePosition.FromRuntimePosition(fromTransform.position);
             AbsoluteUniversePosition toAup = AbsoluteUniversePosition.FromRuntimePosition(toTransform.position);
-            double3 delta = toAup.ToAbsoluteDouble3() - fromAup.ToAbsoluteDouble3();
+            double3 delta = AbsoluteUniversePosition.DeltaMetersClamped(in toAup, in fromAup);
             return NormalizeVisualRsqrt(new float3((float)delta.x, (float)delta.y, (float)delta.z), float3.zero);
         }
 

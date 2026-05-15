@@ -1,5 +1,6 @@
 using Hecton8.Audio;
 using Hecton8.Core;
+using Hecton8.Core.Signals;
 using Hecton8.Input;
 using Hecton8.Interaction;
 using Hecton8.Physics;
@@ -61,6 +62,7 @@ namespace Hecton8.Gameplay
         private const float HalfPi = 1.57079632679f;
         private const float DegreesToRadians = 0.01745329252f;
         private const int MaxDamageReceivers = 4;
+        private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
 
         [Header("-- Preset ---------------------------")]
         [Tooltip("Shared transport preset driving locomotion, prompts, and feel.")]
@@ -214,7 +216,6 @@ namespace Hecton8.Gameplay
         private PlayerInteraction _riderInteraction;
         private bool _riderInteractionWasEnabled;
 
-        private IInputService _subscribedInputManager;
         private bool _mounted;
         private bool _transportActive;
         private bool _isBroken;
@@ -238,6 +239,7 @@ namespace Hecton8.Gameplay
         private Vector3 _presentationVelocityLag;
         private float _presentationTransportBoost01;
         private float _mountedImpactFeedbackCooldownSeconds;
+        private uint _lastPlayerInputSignalSequence;
         private bool _presentationVelocityLagInitialized;
         private float _entanglementStressSignalTimer;
         private float _cavitationEventTimer;
@@ -387,7 +389,8 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            RefreshMountedInputSubscription();
+            if (ConsumeMountedInteractInputSignals())
+                return;
 
             if (preset == null)
             {
@@ -760,7 +763,7 @@ namespace Hecton8.Gameplay
                     _riderInteraction.enabled = false;
             }
 
-            RefreshMountedInputSubscription();
+            BaselineMountedInteractInputSignalSequence();
             BindPresetToFeelContract();
             ResolveVehicleDriveReferences();
             ClearMacroFloraEntanglement();
@@ -795,7 +798,6 @@ namespace Hecton8.Gameplay
             ClearMacroFloraEntanglement();
             if (!_mounted)
             {
-                UnsubscribeMountedInput();
                 RestoreInteractionCollider();
                 ClearRiderReferences();
                 ResetPlatformMotionCache();
@@ -806,7 +808,6 @@ namespace Hecton8.Gameplay
                 _riderTransportCoordinator.ClearExternalTransportSource(this);
 
             RestoreRiderInteraction();
-            UnsubscribeMountedInput();
             RestoreInteractionCollider();
             ClearRiderReferences();
 
@@ -1880,7 +1881,6 @@ namespace Hecton8.Gameplay
                 _riderTransportCoordinator.ClearExternalTransportSource(this);
 
             RestoreRiderInteraction();
-            UnsubscribeMountedInput();
             RestoreInteractionCollider();
             if (hasExitVelocity)
                 ApplyRiderExitVelocity(exitVelocity);
@@ -2141,33 +2141,42 @@ namespace Hecton8.Gameplay
             _registeredOriginShiftListener = false;
         }
 
-        private void RefreshMountedInputSubscription()
+        private bool ConsumeMountedInteractInputSignals()
         {
-            IInputService currentInputManager = GlobalRegistry.Input;
-            if (ReferenceEquals(_subscribedInputManager, currentInputManager))
-                return;
+            System.ReadOnlySpan<PlayerInputSignal> signals = SignalBus<PlayerInputSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PlayerInputSignal signal = signals[i];
+                if (signal.SourceHash != PlayerInputSignalSourceHash ||
+                    signal.Command != PlayerInputSignalCommands.Interact ||
+                    !IsNewerInputSequence(signal.Sequence, _lastPlayerInputSignalSequence))
+                    continue;
 
-            UnsubscribeMountedInput();
-            if (currentInputManager == null)
-                return;
+                _lastPlayerInputSignalSequence = signal.Sequence;
+                if (_mounted)
+                    DismountRider(true);
 
-            currentInputManager.OnInteract += HandleMountedInteract;
-            _subscribedInputManager = currentInputManager;
+                return true;
+            }
+
+            return false;
         }
 
-        private void UnsubscribeMountedInput()
+        private void BaselineMountedInteractInputSignalSequence()
         {
-            if (_subscribedInputManager == null)
-                return;
-
-            _subscribedInputManager.OnInteract -= HandleMountedInteract;
-            _subscribedInputManager = null;
+            System.ReadOnlySpan<PlayerInputSignal> signals = SignalBus<PlayerInputSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PlayerInputSignal signal = signals[i];
+                if (signal.SourceHash == PlayerInputSignalSourceHash &&
+                    IsNewerInputSequence(signal.Sequence, _lastPlayerInputSignalSequence))
+                    _lastPlayerInputSignalSequence = signal.Sequence;
+            }
         }
 
-        private void HandleMountedInteract()
+        private static bool IsNewerInputSequence(uint candidate, uint current)
         {
-            if (_mounted)
-                DismountRider(true);
+            return candidate != 0u && candidate != current && unchecked(candidate - current) < 0x80000000u;
         }
 
         private void RestoreRiderInteraction()

@@ -52,19 +52,21 @@ No named active agent is convicted as a "Compute Thief" from current Status/LOG/
 | Midpoint replacement cost, meaningful LOC | USD 58.75M | CALC | Assumes USD 250k fully loaded senior/year |
 | Midpoint replacement cost, all Assets physical C# | USD 119.81M | CALC | Includes vendor/third-party physical code |
 
-## Near-Root Audit Files
+## Compute Audit Bundle Files
 
-These files preserve the short operational view outside the long report:
+These files preserve the short operational view outside the long report. After the May 15 root cleanup, the canonical location is `Docs/Reports/2026-05-15_COMPUTE_AUDIT/`; older wording that called them root or near-root files is historical.
 
 | File | Purpose |
 |---|---|
-| `COMPUTE_AUDIT_INDEX.md` | Read-order index and hard evidence boundaries |
-| `COMPUTE_AUDIT_BRIEF.md` | Root hard-number snapshot and evidence rules |
-| `COMPUTE_THREAD_TRIAGE.md` | Top-heavy `.codex` thread queue by token concentration |
-| `COMPUTE_THREAD_ATTRIBUTION.md` | Top-30 rollout JSONL work-trace attribution |
-| `COMPUTE_COLLISION_RISK.md` | Current dirty-tree intersection with hot attribution targets |
-| `COMPUTE_VALIDATION_FORENSICS.md` | Top-30 validation command/output forensic scan |
-| `COMPUTE_FILE_BURN_ATTRIBUTION.md` | Weighted token burn attribution by patch target |
+| `Docs/Reports/2026-05-15_COMPUTE_AUDIT/COMPUTE_AUDIT_INDEX.md` | Read-order index and hard evidence boundaries |
+| `Docs/Reports/2026-05-15_COMPUTE_AUDIT/COMPUTE_AUDIT_BRIEF.md` | Hard-number snapshot and evidence rules |
+| `Docs/Reports/2026-05-15_COMPUTE_AUDIT/COMPUTE_THREAD_TRIAGE.md` | Top-heavy `.codex` thread queue by token concentration |
+| `Docs/Reports/2026-05-15_COMPUTE_AUDIT/COMPUTE_THREAD_ATTRIBUTION.md` | Top-30 rollout JSONL work-trace attribution |
+| `Docs/Reports/2026-05-15_COMPUTE_AUDIT/COMPUTE_COLLISION_RISK.md` | Current dirty-tree intersection with hot attribution targets |
+| `Docs/Reports/2026-05-15_COMPUTE_AUDIT/COMPUTE_VALIDATION_FORENSICS.md` | Top-30 validation command/output forensic scan |
+| `Docs/Reports/2026-05-15_COMPUTE_AUDIT/COMPUTE_FILE_BURN_ATTRIBUTION.md` | Weighted token burn attribution by patch target |
+
+Path note: later bare `COMPUTE_*.md` names in this historical report refer to files in `Docs/Reports/2026-05-15_COMPUTE_AUDIT/` unless an explicit path is shown.
 
 Latest attribution pass parsed top-30 rollout JSONL files: 490,220 events, 14,015 `apply_patch` calls, 86,616 `shell_command` calls, 1,647 unique patch targets, and patch churn of +354,203/-75,895 lines. This is work-trace evidence, not final value proof.
 

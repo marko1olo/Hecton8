@@ -263,3 +263,115 @@ Verification:
 - Freshness: no C# source under `Assets/_Project/Scripts` was newer than either final artifact at verification time.
 
 Current Status: BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK28 CURRENT-DISK GREEN.
+
+## 2026-05-15 - CurrentDisk30/CurrentDiskBudgetGate11 Triage Record
+
+Errors Fixed: Stale Quest mid-write wall rejected; final Core build is 0 warnings / 0 errors.
+
+Files Moved:
+- None.
+
+ASMDEFs Repaired:
+- None.
+
+What was wrong:
+- Later source edits invalidated `CurrentDisk28` and `CurrentDiskBudgetGate10`.
+- `CurrentDisk29` reported missing `QuestStateManager` helper methods while the file was still being written.
+
+What was done:
+- Inspected current `QuestStateManager` and verified the helper methods existed on disk.
+- Re-ran Core compile and accepted `CurrentDisk30`.
+- Re-ran strict H-Phi and accepted `CurrentDiskBudgetGate11`.
+- Updated status/rationale/logs and H-Phi metric documentation to the current artifact pair.
+
+Cinematic Cheats used:
+- Compile/static evidence closure only.
+- No feature work, simulation rewrite, package change, generated `.csproj` edit, `.asmdef` edit, prefab/scene edit, or leaf-domain refactor.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Compile verification time: 93,819,591 us.
+- H-Phi verification time: 130,856,190 us.
+
+Verification:
+- Build artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_194452_CurrentDisk30.log`.
+- Build result: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_194722_CurrentDiskBudgetGate11.json`.
+- H-Phi result: `EXIT=0`, `RuntimeHPhiRisk=0.000634555`, `GlobalRegistrySurface=5074`, `GetComponentCalls=321`, `NativeArrayRefs=7074`, `ManagedFormatSurface=564`, `JobCompleteSurface=58`, `PrimaryManagedRuntimeRisk=177`, `UnityUpdateMethods=0`, `FindObjectCalls=0`, `AupPrecisionRisk=0`.
+- Freshness: no C# source under `Assets/_Project/Scripts` was newer than either final artifact at verification time.
+
+Current Status: BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK30 CURRENT-DISK GREEN.
+
+## 2026-05-15 - CurrentDisk36/CurrentDiskBudgetGate15 Triage Record
+
+Errors Fixed: Latest moving source snapshot compiles; final Core build is 0 warnings / 0 errors.
+
+Files Moved:
+- None.
+
+ASMDEFs Repaired:
+- None.
+
+What was wrong:
+- Source continued moving after CurrentDisk30, invalidating compile and H-Phi evidence.
+- Gate13 proved the previous runtime H-Phi floor was stale after later source writes.
+
+What was done:
+- Re-ran Core compile after the latest kinematics/audio/save/UI/power/modding source writes and accepted `CurrentDisk36`.
+- Re-ran strict H-Phi and accepted `CurrentDiskBudgetGate15`.
+- Updated status/rationale/logs and H-Phi metric documentation to the current artifact pair.
+
+Cinematic Cheats used:
+- Compile/static evidence closure only.
+- No feature work, simulation rewrite, package change, generated `.csproj` edit, `.asmdef` edit, prefab/scene edit, or leaf-domain refactor.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Compile verification time: 118,489,571 us.
+- H-Phi verification time: 151,815,116 us.
+
+Verification:
+- Build artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_203547_CurrentDisk36.log`.
+- Build result: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_203908_CurrentDiskBudgetGate15.json`.
+- H-Phi result: `EXIT=0`, `RuntimeHPhiRisk=0.000635322`, `GlobalRegistrySurface=5067`, `GetComponentCalls=321`, `NativeArrayRefs=7074`, `ManagedFormatSurface=553`, `JobCompleteSurface=58`, `PrimaryManagedRuntimeRisk=166`, `UnityUpdateMethods=0`, `FindObjectCalls=0`, `AupPrecisionRisk=0`.
+- Freshness: no C# source under `Assets/_Project/Scripts` was newer than either final artifact at verification time.
+
+Current Status: BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK36 CURRENT-DISK GREEN.
+
+## 2026-05-15 - CurrentDisk39/CurrentDiskBudgetGate16 Triage Record
+
+Errors Fixed: Latest moving source snapshot compiles; final Core build is 0 warnings / 0 errors.
+
+Files Moved:
+- None.
+
+ASMDEFs Repaired:
+- None.
+
+What was wrong:
+- Source edits after CurrentDisk36 invalidated the compile artifact.
+- H-Phi was current after the same edits, so the remaining work was compile freshness.
+
+What was done:
+- Re-ran Core compile and accepted `CurrentDisk39`.
+- Kept `CurrentDiskBudgetGate16` as the current strict H-Phi artifact.
+- Updated status/rationale/logs and H-Phi metric documentation to the current artifact pair.
+
+Cinematic Cheats used:
+- Compile/static evidence closure only.
+- No feature work, simulation rewrite, package change, generated `.csproj` edit, `.asmdef` edit, prefab/scene edit, or leaf-domain refactor.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Compile verification time: 10,470,053 us.
+- H-Phi verification time: 162,473,647 us.
+
+Verification:
+- Build artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_205331_CurrentDisk39.log`.
+- Build result: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_204959_CurrentDiskBudgetGate16.json`.
+- H-Phi result: `EXIT=0`, `RuntimeHPhiRisk=0.000635432`, `GlobalRegistrySurface=5066`, `GetComponentCalls=321`, `NativeArrayRefs=7074`, `ManagedFormatSurface=543`, `JobCompleteSurface=58`, `PrimaryManagedRuntimeRisk=156`, `UnityUpdateMethods=0`, `FindObjectCalls=0`, `AupPrecisionRisk=0`.
+- Freshness: no C# source under `Assets/_Project/Scripts` was newer than either final artifact at verification time.
+
+Current Status: BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK39 CURRENT-DISK GREEN.

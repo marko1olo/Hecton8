@@ -671,3 +671,43 @@ Solution: Add `CurrentFrameU32()` and route both generated-grid signal and outpo
 Rejected Alternatives: Duplicating the clamp inline was rejected because two payload writers should share one small helper. Ignoring it was rejected because typed signal and blackbox payloads should not depend on an implicit Unity invariant when a scalar guard is free.
 Scalability potential: Low/Middle/High/Ultra behavior is unchanged for normal frames. Fault evidence and signal snapshots now share the same non-negative frame representation across tiers.
 Hardware Impact: One scalar max at signal publish/telemetry write boundaries, 0 B/frame managed allocation, no renderer or graph cost.
+
+## LOOP 42 WFC TYPED LANE AND DIMENSION BOUNDARY CLOSURE
+
+Problem: Current source had the owned WFC generated-grid and door-power producers routed through `GlobalSignals.Publish(in signal)` again, and public payload/hash/telemetry surfaces consumed `_activeDimensions` directly. That weakens typed-lane evidence and lets any boundary drift in dimensions leak into descriptors, hashes, draw bounds, and blackbox records.
+Solution: Push generated-grid and door-power signals directly through `SignalBus<WfcOutpostGeneratedSignal>` and `SignalBus<WfcOutpostDoorPowerSignal>`. Add `ResolveActiveDimensions()` to clamp dimensions to `0..FullWidth/FullHeight/FullDepth`, then route cell count, hash salt, draw bounds, snapshots, descriptors, generated signals, telemetry, grid getters, and job descriptors through that safe value.
+Rejected Alternatives: Broad replacement of unrelated `GlobalSignals.Publish` calls was rejected as outside the Habitat/Outposts domain. Changing WFC topology or adding a new dimension contract was rejected because the existing constants already define the valid topology envelope. Trusting private field invariants at public boundaries was rejected because this project is under concurrent agent edits.
+Scalability potential: Low keeps the 5x5x3 path and avoids wrapper dispatch on outpost events. Middle/High/Ultra keep full 10x10x5 topology, with public payloads capped to the same valid envelope and no extra objects, polling, or render work.
+Hardware Impact: Direct typed pushes remove one wrapper hop per owned WFC event. Dimension safety costs three integer clamps at cold/payload boundaries; steady Tick/Render remains 0 B/frame, with estimated cost below 0.1 us on i3/MX350.
+
+## LOOP 43 WFC POWER FRAME PAYLOAD HELPER
+
+Problem: `WfcOutpostPowerBootRuntime` repeated the same `Time.frameCount` non-negative clamp for door-power signals, brownout signals, and power blackbox telemetry. The math was safe, but duplicated frame-boundary code is an easy drift point.
+Solution: Add `CurrentFrameU32()` to power boot and route all three frame payload assignments through it, matching the generation service helper pattern.
+Rejected Alternatives: A global timing service was rejected as cross-domain and unnecessary. Keeping three inline clamps was rejected because it weakens future auditability without saving meaningful CPU.
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged. Fault chronology and gameplay signal frames now have one local representation in power boot.
+Hardware Impact: Same scalar clamp at the same payload boundaries, 0 B/frame allocation. The benefit is reduced drift and simpler source audit; runtime delta is below measurement noise on i3/MX350.
+
+## LOOP 44 WFC POWER BLACKBOX DUMP LATCH RESET
+
+Problem: `WfcOutpostPowerBootRuntime` latched `_faultDumped` after the first dump and never cleared it for a different WFC grid handle. That could leave later independent outpost-grid faults without fresh binary evidence.
+Solution: Reset `_faultDumped` when `TryScheduleTranslation` accepts a valid new `WfcOutpostGridLease`, after descriptor/handle capture and before scheduling the translation job. Same fatal descriptor retries remain suppressed by `IsKnownFatalGraphCurrent`.
+Rejected Alternatives: Clearing `_faultDumped` every SlowTick was rejected because it could reopen repeated fault-path file I/O for an unchanged fatal payload. Clearing it before lease resolution was rejected because missing registry handles should not change dump state.
+Scalability potential: Low devices keep one dump per accepted faulty grid instead of repeated I/O spam. Middle/High/Ultra get fresh post-mortem evidence per topology identity with no graph, gas, render, or signal cost.
+Hardware Impact: One bool store per accepted new grid translation, 0 B/frame. Fault-path benefit is accurate dump evidence for later independent faults without per-frame work.
+
+## LOOP 45 WFC POWER ACTIVE COUNT BOUNDARY CLAMP
+
+Problem: `WfcOutpostGraphTranslationJob` currently writes bounded counts, but `WfcOutpostPowerBootRuntime.CommitTranslation` treated count slots as non-negative truth. A future translator/caller regression could push impossible node, edge, door, or room counts into active state and telemetry.
+Solution: Add `ReadBoundedCount(slot, maxValue)` and use it for active node, directed-edge, door, and room count commits. Fault flags remain on `ReadCount` so bitmask semantics are preserved.
+Rejected Alternatives: Relying on later clamps in `BuildLogisticsGraph`, door publishing, and gas seeding was rejected because telemetry and `_hasActiveGraph` would still carry impossible counts. Clamping fault flags was rejected because fault flags are a bitfield, not a count.
+Scalability potential: Low devices avoid bogus large loop budgets if count slots drift. Middle/High/Ultra keep identical valid topology and get cleaner evidence if a native-boundary regression occurs.
+Hardware Impact: Four scalar min operations per cold translation commit, 0 B/frame. Downstream loops already had clamps; this moves the boundary earlier and makes telemetry honest.
+
+## LOOP 46 WFC TRANSLATOR NODE CAPACITY FAIL-FAST
+
+Problem: `WfcOutpostGraphTranslationJob` wrote `CapacityExceeded` when `Nodes` filled up, but then used `break`. That allowed missing-generator fallback and edge construction to continue over a partial graph even though power boot treats capacity overflow as fatal.
+Solution: Return immediately after writing `CapacityExceeded` on node-buffer overflow. The existing fatal mask then quarantines the translation and prevents graph consumption.
+Rejected Alternatives: Keeping partial counts was rejected because a fatal native-capacity fault should not produce gameplay truth. Resizing the node buffer inside Burst was rejected because allocation ownership belongs to the boot runtime.
+Scalability potential: Low devices avoid wasted cold traversal after malformed/future undersized buffers. Middle/High/Ultra keep identical valid topology and get cleaner fault isolation if capacity ownership drifts.
+Hardware Impact: Valid path unchanged. Overflow path saves fallback and edge-building traversal after first capacity breach, with 0 B/frame steady cost.

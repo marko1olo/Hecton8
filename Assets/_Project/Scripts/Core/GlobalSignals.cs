@@ -455,7 +455,7 @@ namespace Hecton8.Core.Signals
             _queuedBeforeFlush = queued;
             int frameLimit = lowTier ? _lowTierFrameSignals : _maxFrameSignals;
             if (_frameSnapshot.Capacity < frameLimit)
-                _frameSnapshot.Capacity = frameLimit;
+                frameLimit = _frameSnapshot.Capacity;
 
             int overflow = Math.Max(0, queued - frameLimit);
             if (overflow > 0)
@@ -612,6 +612,39 @@ namespace Hecton8.Core.Signals
         private const int PlayerLookTargetSignalGuardCode = unchecked((int)0x51A1000Cu);
         private const int PlayerBaseEnterSignalGuardCode = unchecked((int)0x51A1000Du);
         private const int PlayerBaseExitSignalGuardCode = unchecked((int)0x51A1000Eu);
+        private const int PlayerStateSignalGuardCode = unchecked((int)0x51A1000Fu);
+        private const int SurvivalVitalsChangedSignalGuardCode = unchecked((int)0x51A10010u);
+        private const int PlayerActionProgressSignalGuardCode = unchecked((int)0x51A10011u);
+        private const int CameraPositionSignalGuardCode = unchecked((int)0x51A10012u);
+        private const int CameraFrustumSignalGuardCode = unchecked((int)0x51A10013u);
+        private const int HullDeformedSignalGuardCode = unchecked((int)0x51A10014u);
+        private const int BaseModuleCompromisedSignalGuardCode = unchecked((int)0x51A10015u);
+        private const int AupPreShiftSignalGuardCode = unchecked((int)0x51A10016u);
+        private const int AupShiftSignalGuardCode = unchecked((int)0x51A10017u);
+        private const int RadiationDoseSignalGuardCode = unchecked((int)0x51A10018u);
+        private const int TemperatureChangedSignalGuardCode = unchecked((int)0x51A10019u);
+        private const int RadiationSourceSignalGuardCode = unchecked((int)0x51A1001Au);
+        private const int CullingOverloadSignalGuardCode = unchecked((int)0x51A1001Bu);
+        private const int WakeGeneratedSignalGuardCode = unchecked((int)0x51A1001Cu);
+        private const int BiomeGradientSignalGuardCode = unchecked((int)0x51A1001Du);
+        private const int MemoryPressureSignalGuardCode = unchecked((int)0x51A1001Eu);
+        private const int ResolutionChangedSignalGuardCode = unchecked((int)0x51A1001Fu);
+        private const int SystemHealthIndexSignalGuardCode = unchecked((int)0x51A10020u);
+        private const int CpuStarvationSignalGuardCode = unchecked((int)0x51A10021u);
+        private const int AcousticPingSignalGuardCode = unchecked((int)0x51A10022u);
+        private const int FluidIncursionSignalGuardCode = unchecked((int)0x51A10023u);
+        private const int SubmarineFloodStateSignalGuardCode = unchecked((int)0x51A10024u);
+        private const int FluidDensityChangedSignalGuardCode = unchecked((int)0x51A10025u);
+        private const int StreamingTurbulenceSignalGuardCode = unchecked((int)0x51A10026u);
+        private const int AtmosphericReentrySignalGuardCode = unchecked((int)0x51A10027u);
+        private const int VehicleUpgradesChangedSignalGuardCode = unchecked((int)0x51A10028u);
+        private const int SaveLifecycleSignalGuardCode = unchecked((int)0x51A10029u);
+        private const int SaveStatusSignalGuardCode = unchecked((int)0x51A1002Au);
+        private const int LightLevelSignalGuardCode = unchecked((int)0x51A1002Bu);
+        private const int SubmarineLightsChangedSignalGuardCode = unchecked((int)0x51A1002Cu);
+        private const int PhysiologyStateSignalGuardCode = unchecked((int)0x51A1002Du);
+        private const int PlayerStressSignalGuardCode = unchecked((int)0x51A1002Eu);
+        private const int TraumaSignalGuardCode = unchecked((int)0x51A1002Fu);
         private const byte GuardNone = 0;
         private const byte GuardDamage = 1;
         private const byte GuardImpact = 2;
@@ -627,6 +660,39 @@ namespace Hecton8.Core.Signals
         private const byte GuardPlayerLookTarget = 12;
         private const byte GuardPlayerBaseEnter = 13;
         private const byte GuardPlayerBaseExit = 14;
+        private const byte GuardPlayerState = 15;
+        private const byte GuardSurvivalVitalsChanged = 16;
+        private const byte GuardPlayerActionProgress = 17;
+        private const byte GuardCameraPosition = 18;
+        private const byte GuardCameraFrustum = 19;
+        private const byte GuardHullDeformed = 20;
+        private const byte GuardBaseModuleCompromised = 21;
+        private const byte GuardAupPreShift = 22;
+        private const byte GuardAupShift = 23;
+        private const byte GuardRadiationDose = 24;
+        private const byte GuardTemperatureChanged = 25;
+        private const byte GuardRadiationSource = 26;
+        private const byte GuardCullingOverload = 27;
+        private const byte GuardWakeGenerated = 28;
+        private const byte GuardBiomeGradient = 29;
+        private const byte GuardMemoryPressure = 30;
+        private const byte GuardResolutionChanged = 31;
+        private const byte GuardSystemHealthIndex = 32;
+        private const byte GuardCpuStarvation = 33;
+        private const byte GuardAcousticPing = 34;
+        private const byte GuardFluidIncursion = 35;
+        private const byte GuardSubmarineFloodState = 36;
+        private const byte GuardFluidDensityChanged = 37;
+        private const byte GuardStreamingTurbulence = 38;
+        private const byte GuardAtmosphericReentry = 39;
+        private const byte GuardVehicleUpgradesChanged = 40;
+        private const byte GuardSaveLifecycle = 41;
+        private const byte GuardSaveStatus = 42;
+        private const byte GuardLightLevel = 43;
+        private const byte GuardSubmarineLightsChanged = 44;
+        private const byte GuardPhysiologyState = 45;
+        private const byte GuardPlayerStress = 46;
+        private const byte GuardTrauma = 47;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int Sanitize<T>(ref T signal)
@@ -704,6 +770,171 @@ namespace Hecton8.Core.Signals
                     ref PlayerBaseExitSignal typed = ref UnsafeUtility.As<T, PlayerBaseExitSignal>(ref signal);
                     return SanitizePlayerBaseExitSignal(ref typed);
                 }
+                case GuardPlayerState:
+                {
+                    ref PlayerStateSignal typed = ref UnsafeUtility.As<T, PlayerStateSignal>(ref signal);
+                    return SanitizePlayerStateSignal(ref typed);
+                }
+                case GuardSurvivalVitalsChanged:
+                {
+                    ref SurvivalVitalsChangedSignal typed = ref UnsafeUtility.As<T, SurvivalVitalsChangedSignal>(ref signal);
+                    return SanitizeSurvivalVitalsChangedSignal(ref typed);
+                }
+                case GuardPlayerActionProgress:
+                {
+                    ref PlayerActionProgressSignal typed = ref UnsafeUtility.As<T, PlayerActionProgressSignal>(ref signal);
+                    return SanitizePlayerActionProgressSignal(ref typed);
+                }
+                case GuardCameraPosition:
+                {
+                    ref CameraPositionSignal typed = ref UnsafeUtility.As<T, CameraPositionSignal>(ref signal);
+                    return SanitizeCameraPositionSignal(ref typed);
+                }
+                case GuardCameraFrustum:
+                {
+                    ref CameraFrustumSignal typed = ref UnsafeUtility.As<T, CameraFrustumSignal>(ref signal);
+                    return SanitizeCameraFrustumSignal(ref typed);
+                }
+                case GuardHullDeformed:
+                {
+                    ref HullDeformedSignal typed = ref UnsafeUtility.As<T, HullDeformedSignal>(ref signal);
+                    return SanitizeHullDeformedSignal(ref typed);
+                }
+                case GuardBaseModuleCompromised:
+                {
+                    ref BaseModuleCompromisedSignal typed = ref UnsafeUtility.As<T, BaseModuleCompromisedSignal>(ref signal);
+                    return SanitizeBaseModuleCompromisedSignal(ref typed);
+                }
+                case GuardAupPreShift:
+                {
+                    ref AupPreShiftSignal typed = ref UnsafeUtility.As<T, AupPreShiftSignal>(ref signal);
+                    return SanitizeAupPreShiftSignal(ref typed);
+                }
+                case GuardAupShift:
+                {
+                    ref AupShiftSignal typed = ref UnsafeUtility.As<T, AupShiftSignal>(ref signal);
+                    return SanitizeAupShiftSignal(ref typed);
+                }
+                case GuardRadiationDose:
+                {
+                    ref RadiationDoseSignal typed = ref UnsafeUtility.As<T, RadiationDoseSignal>(ref signal);
+                    return SanitizeRadiationDoseSignal(ref typed);
+                }
+                case GuardTemperatureChanged:
+                {
+                    ref TemperatureChangedSignal typed = ref UnsafeUtility.As<T, TemperatureChangedSignal>(ref signal);
+                    return SanitizeTemperatureChangedSignal(ref typed);
+                }
+                case GuardRadiationSource:
+                {
+                    ref RadiationSourceSignal typed = ref UnsafeUtility.As<T, RadiationSourceSignal>(ref signal);
+                    return SanitizeRadiationSourceSignal(ref typed);
+                }
+                case GuardCullingOverload:
+                {
+                    ref CullingOverloadSignal typed = ref UnsafeUtility.As<T, CullingOverloadSignal>(ref signal);
+                    return SanitizeCullingOverloadSignal(ref typed);
+                }
+                case GuardWakeGenerated:
+                {
+                    ref WakeGeneratedSignal typed = ref UnsafeUtility.As<T, WakeGeneratedSignal>(ref signal);
+                    return SanitizeWakeGeneratedSignal(ref typed);
+                }
+                case GuardBiomeGradient:
+                {
+                    ref BiomeGradientSignal typed = ref UnsafeUtility.As<T, BiomeGradientSignal>(ref signal);
+                    return SanitizeBiomeGradientSignal(ref typed);
+                }
+                case GuardMemoryPressure:
+                {
+                    ref MemoryPressureSignal typed = ref UnsafeUtility.As<T, MemoryPressureSignal>(ref signal);
+                    return SanitizeMemoryPressureSignal(ref typed);
+                }
+                case GuardResolutionChanged:
+                {
+                    ref ResolutionChangedSignal typed = ref UnsafeUtility.As<T, ResolutionChangedSignal>(ref signal);
+                    return SanitizeResolutionChangedSignal(ref typed);
+                }
+                case GuardSystemHealthIndex:
+                {
+                    ref SystemHealthIndexSignal typed = ref UnsafeUtility.As<T, SystemHealthIndexSignal>(ref signal);
+                    return SanitizeSystemHealthIndexSignal(ref typed);
+                }
+                case GuardCpuStarvation:
+                {
+                    ref CpuStarvationSignal typed = ref UnsafeUtility.As<T, CpuStarvationSignal>(ref signal);
+                    return SanitizeCpuStarvationSignal(ref typed);
+                }
+                case GuardAcousticPing:
+                {
+                    ref AcousticPingSignal typed = ref UnsafeUtility.As<T, AcousticPingSignal>(ref signal);
+                    return SanitizeAcousticPingSignal(ref typed);
+                }
+                case GuardFluidIncursion:
+                {
+                    ref FluidIncursionSignal typed = ref UnsafeUtility.As<T, FluidIncursionSignal>(ref signal);
+                    return SanitizeFluidIncursionSignal(ref typed);
+                }
+                case GuardSubmarineFloodState:
+                {
+                    ref SubmarineFloodStateSignal typed = ref UnsafeUtility.As<T, SubmarineFloodStateSignal>(ref signal);
+                    return SanitizeSubmarineFloodStateSignal(ref typed);
+                }
+                case GuardFluidDensityChanged:
+                {
+                    ref FluidDensityChangedSignal typed = ref UnsafeUtility.As<T, FluidDensityChangedSignal>(ref signal);
+                    return SanitizeFluidDensityChangedSignal(ref typed);
+                }
+                case GuardStreamingTurbulence:
+                {
+                    ref StreamingTurbulenceSignal typed = ref UnsafeUtility.As<T, StreamingTurbulenceSignal>(ref signal);
+                    return SanitizeStreamingTurbulenceSignal(ref typed);
+                }
+                case GuardAtmosphericReentry:
+                {
+                    ref AtmosphericReentrySignal typed = ref UnsafeUtility.As<T, AtmosphericReentrySignal>(ref signal);
+                    return SanitizeAtmosphericReentrySignal(ref typed);
+                }
+                case GuardVehicleUpgradesChanged:
+                {
+                    ref VehicleUpgradesChangedSignal typed = ref UnsafeUtility.As<T, VehicleUpgradesChangedSignal>(ref signal);
+                    return SanitizeVehicleUpgradesChangedSignal(ref typed);
+                }
+                case GuardSaveLifecycle:
+                {
+                    ref SaveLifecycleSignal typed = ref UnsafeUtility.As<T, SaveLifecycleSignal>(ref signal);
+                    return SanitizeSaveLifecycleSignal(ref typed);
+                }
+                case GuardSaveStatus:
+                {
+                    ref SaveStatusSignal typed = ref UnsafeUtility.As<T, SaveStatusSignal>(ref signal);
+                    return SanitizeSaveStatusSignal(ref typed);
+                }
+                case GuardLightLevel:
+                {
+                    ref LightLevelSignal typed = ref UnsafeUtility.As<T, LightLevelSignal>(ref signal);
+                    return SanitizeLightLevelSignal(ref typed);
+                }
+                case GuardSubmarineLightsChanged:
+                {
+                    ref SubmarineLightsChangedSignal typed = ref UnsafeUtility.As<T, SubmarineLightsChangedSignal>(ref signal);
+                    return SanitizeSubmarineLightsChangedSignal(ref typed);
+                }
+                case GuardPhysiologyState:
+                {
+                    ref PhysiologyStateSignal typed = ref UnsafeUtility.As<T, PhysiologyStateSignal>(ref signal);
+                    return SanitizePhysiologyStateSignal(ref typed);
+                }
+                case GuardPlayerStress:
+                {
+                    ref PlayerStressSignal typed = ref UnsafeUtility.As<T, PlayerStressSignal>(ref signal);
+                    return SanitizePlayerStressSignal(ref typed);
+                }
+                case GuardTrauma:
+                {
+                    ref TraumaSignal typed = ref UnsafeUtility.As<T, TraumaSignal>(ref signal);
+                    return SanitizeTraumaSignal(ref typed);
+                }
             }
 
             return 0;
@@ -740,6 +971,72 @@ namespace Hecton8.Core.Signals
                 return GuardPlayerBaseEnter;
             if (typeof(T) == typeof(PlayerBaseExitSignal))
                 return GuardPlayerBaseExit;
+            if (typeof(T) == typeof(PlayerStateSignal))
+                return GuardPlayerState;
+            if (typeof(T) == typeof(SurvivalVitalsChangedSignal))
+                return GuardSurvivalVitalsChanged;
+            if (typeof(T) == typeof(PlayerActionProgressSignal))
+                return GuardPlayerActionProgress;
+            if (typeof(T) == typeof(CameraPositionSignal))
+                return GuardCameraPosition;
+            if (typeof(T) == typeof(CameraFrustumSignal))
+                return GuardCameraFrustum;
+            if (typeof(T) == typeof(HullDeformedSignal))
+                return GuardHullDeformed;
+            if (typeof(T) == typeof(BaseModuleCompromisedSignal))
+                return GuardBaseModuleCompromised;
+            if (typeof(T) == typeof(AupPreShiftSignal))
+                return GuardAupPreShift;
+            if (typeof(T) == typeof(AupShiftSignal))
+                return GuardAupShift;
+            if (typeof(T) == typeof(RadiationDoseSignal))
+                return GuardRadiationDose;
+            if (typeof(T) == typeof(TemperatureChangedSignal))
+                return GuardTemperatureChanged;
+            if (typeof(T) == typeof(RadiationSourceSignal))
+                return GuardRadiationSource;
+            if (typeof(T) == typeof(CullingOverloadSignal))
+                return GuardCullingOverload;
+            if (typeof(T) == typeof(WakeGeneratedSignal))
+                return GuardWakeGenerated;
+            if (typeof(T) == typeof(BiomeGradientSignal))
+                return GuardBiomeGradient;
+            if (typeof(T) == typeof(MemoryPressureSignal))
+                return GuardMemoryPressure;
+            if (typeof(T) == typeof(ResolutionChangedSignal))
+                return GuardResolutionChanged;
+            if (typeof(T) == typeof(SystemHealthIndexSignal))
+                return GuardSystemHealthIndex;
+            if (typeof(T) == typeof(CpuStarvationSignal))
+                return GuardCpuStarvation;
+            if (typeof(T) == typeof(AcousticPingSignal))
+                return GuardAcousticPing;
+            if (typeof(T) == typeof(FluidIncursionSignal))
+                return GuardFluidIncursion;
+            if (typeof(T) == typeof(SubmarineFloodStateSignal))
+                return GuardSubmarineFloodState;
+            if (typeof(T) == typeof(FluidDensityChangedSignal))
+                return GuardFluidDensityChanged;
+            if (typeof(T) == typeof(StreamingTurbulenceSignal))
+                return GuardStreamingTurbulence;
+            if (typeof(T) == typeof(AtmosphericReentrySignal))
+                return GuardAtmosphericReentry;
+            if (typeof(T) == typeof(VehicleUpgradesChangedSignal))
+                return GuardVehicleUpgradesChanged;
+            if (typeof(T) == typeof(SaveLifecycleSignal))
+                return GuardSaveLifecycle;
+            if (typeof(T) == typeof(SaveStatusSignal))
+                return GuardSaveStatus;
+            if (typeof(T) == typeof(LightLevelSignal))
+                return GuardLightLevel;
+            if (typeof(T) == typeof(SubmarineLightsChangedSignal))
+                return GuardSubmarineLightsChanged;
+            if (typeof(T) == typeof(PhysiologyStateSignal))
+                return GuardPhysiologyState;
+            if (typeof(T) == typeof(PlayerStressSignal))
+                return GuardPlayerStress;
+            if (typeof(T) == typeof(TraumaSignal))
+                return GuardTrauma;
 
             return GuardNone;
         }
@@ -922,7 +1219,7 @@ namespace Hecton8.Core.Signals
 
             if (!math.all(math.isfinite(signal.SurfaceNormal)))
             {
-                signal.SurfaceNormal = new float3(0f, 1f, 0f);
+                SetUp(ref signal.SurfaceNormal);
                 guardCode = PlayerLookTargetSignalGuardCode;
             }
 
@@ -953,6 +1250,421 @@ namespace Hecton8.Core.Signals
 
             signal.Flags = (ushort)(signal.Flags | PlayerBaseExitSignal.SanitizedBaseCenterFlag);
             return PlayerBaseExitSignalGuardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizePlayerStateSignal(ref PlayerStateSignal signal)
+        {
+            int guardCode = SanitizeAup(ref signal.PositionAup) ? PlayerStateSignalGuardCode : 0;
+            if (SanitizeUnit01(ref signal.Intensity01))
+                guardCode = PlayerStateSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeSurvivalVitalsChangedSignal(ref SurvivalVitalsChangedSignal signal)
+        {
+            int guardCode = 0;
+            if (SanitizeUnit01(ref signal.Oxygen01))
+                guardCode = SurvivalVitalsChangedSignalGuardCode;
+            if (SanitizeUnit01(ref signal.Energy01))
+                guardCode = SurvivalVitalsChangedSignalGuardCode;
+            if (SanitizeUnit01(ref signal.Integrity01))
+                guardCode = SurvivalVitalsChangedSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizePlayerActionProgressSignal(ref PlayerActionProgressSignal signal)
+        {
+            if (!SanitizeUnit01(ref signal.Progress01))
+                return 0;
+
+            return PlayerActionProgressSignalGuardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeCameraPositionSignal(ref CameraPositionSignal signal)
+        {
+            int guardCode = 0;
+            if (SanitizeFloat3Zero(ref signal.Position))
+                guardCode = CameraPositionSignalGuardCode;
+            if (SanitizeFloat3Forward(ref signal.Forward))
+                guardCode = CameraPositionSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeCameraFrustumSignal(ref CameraFrustumSignal signal)
+        {
+            int guardCode = 0;
+            if (SanitizeFloat3Zero(ref signal.Position))
+                guardCode = CameraFrustumSignalGuardCode;
+            if (SanitizeFloat3Forward(ref signal.Forward))
+                guardCode = CameraFrustumSignalGuardCode;
+            if (SanitizeFloat3Up(ref signal.Up))
+                guardCode = CameraFrustumSignalGuardCode;
+            if (SanitizePositiveDefault(ref signal.FieldOfViewDegrees, 60f))
+                guardCode = CameraFrustumSignalGuardCode;
+            if (SanitizeNonNegative(ref signal.NearClipMeters))
+                guardCode = CameraFrustumSignalGuardCode;
+            if (SanitizeNonNegative(ref signal.FarClipMeters))
+                guardCode = CameraFrustumSignalGuardCode;
+            if (signal.FarClipMeters < signal.NearClipMeters)
+            {
+                signal.FarClipMeters = signal.NearClipMeters;
+                guardCode = CameraFrustumSignalGuardCode;
+            }
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeHullDeformedSignal(ref HullDeformedSignal signal)
+        {
+            int guardCode = 0;
+            if (SanitizeFloat3Zero(ref signal.LocalPoint))
+                guardCode = HullDeformedSignalGuardCode;
+            if (SanitizeNonNegative(ref signal.Radius))
+                guardCode = HullDeformedSignalGuardCode;
+            if (SanitizeNonNegative(ref signal.Depth))
+                guardCode = HullDeformedSignalGuardCode;
+            if (SanitizeUnit01(ref signal.Intensity01))
+                guardCode = HullDeformedSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeBaseModuleCompromisedSignal(ref BaseModuleCompromisedSignal signal)
+        {
+            int guardCode = 0;
+            if (SanitizeFloat3Zero(ref signal.ModuleCenter))
+                guardCode = BaseModuleCompromisedSignalGuardCode;
+            if (SanitizeUnit01(ref signal.Stress01))
+                guardCode = BaseModuleCompromisedSignalGuardCode;
+            if (SanitizeUnit01(ref signal.PeakStress01))
+                guardCode = BaseModuleCompromisedSignalGuardCode;
+            if (SanitizeNonNegative(ref signal.DepthMeters))
+                guardCode = BaseModuleCompromisedSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeAupPreShiftSignal(ref AupPreShiftSignal signal)
+        {
+            if (!SanitizeFloat3Zero(ref signal.ShiftMeters))
+                return 0;
+
+            return AupPreShiftSignalGuardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeAupShiftSignal(ref AupShiftSignal signal)
+        {
+            if (!SanitizeFloat3Zero(ref signal.ShiftMeters))
+                return 0;
+
+            return AupShiftSignalGuardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeRadiationDoseSignal(ref RadiationDoseSignal signal)
+        {
+            int guardCode = SanitizeAup(ref signal.PositionAup) ? RadiationDoseSignalGuardCode : 0;
+            if (SanitizeNonNegative(ref signal.Dose))
+                guardCode = RadiationDoseSignalGuardCode;
+            if (SanitizeUnit01(ref signal.Intensity01))
+                guardCode = RadiationDoseSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeTemperatureChangedSignal(ref TemperatureChangedSignal signal)
+        {
+            int guardCode = SanitizeAup(ref signal.PositionAup) ? TemperatureChangedSignalGuardCode : 0;
+            if (SanitizeFiniteZero(ref signal.TemperatureCelsius))
+                guardCode = TemperatureChangedSignalGuardCode;
+            if (SanitizeFiniteZero(ref signal.DeltaCelsius))
+                guardCode = TemperatureChangedSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeRadiationSourceSignal(ref RadiationSourceSignal signal)
+        {
+            int guardCode = SanitizeAup(ref signal.PositionAup) ? RadiationSourceSignalGuardCode : 0;
+            if (SanitizeNonNegative(ref signal.Intensity))
+                guardCode = RadiationSourceSignalGuardCode;
+            if (SanitizeNonNegative(ref signal.RadiusMeters))
+                guardCode = RadiationSourceSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeCullingOverloadSignal(ref CullingOverloadSignal signal)
+        {
+            int guardCode = 0;
+            if (SanitizeNonNegative(ref signal.CullDistanceMeters))
+                guardCode = CullingOverloadSignalGuardCode;
+            if (SanitizeNonNegative(ref signal.VramUsedMb))
+                guardCode = CullingOverloadSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeWakeGeneratedSignal(ref WakeGeneratedSignal signal)
+        {
+            int guardCode = SanitizeAup(ref signal.PositionAup) ? WakeGeneratedSignalGuardCode : 0;
+            if (SanitizeFloat3Zero(ref signal.Velocity))
+                guardCode = WakeGeneratedSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeBiomeGradientSignal(ref BiomeGradientSignal signal)
+        {
+            int guardCode = SanitizeAup(ref signal.PositionAup) ? BiomeGradientSignalGuardCode : 0;
+            if (SanitizeUnit01(ref signal.BlendFactor01))
+                guardCode = BiomeGradientSignalGuardCode;
+            if (SanitizeFiniteZero(ref signal.BoundaryDistanceMeters))
+                guardCode = BiomeGradientSignalGuardCode;
+            if (SanitizePositiveDefault(ref signal.CellSizeMeters, 1f))
+                guardCode = BiomeGradientSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeMemoryPressureSignal(ref MemoryPressureSignal signal)
+        {
+            if (!SanitizeNonNegative(ref signal.UsageRatio))
+                return 0;
+
+            return MemoryPressureSignalGuardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeResolutionChangedSignal(ref ResolutionChangedSignal signal)
+        {
+            if (!SanitizeNonNegative(ref signal.VramUsedMb))
+                return 0;
+
+            return ResolutionChangedSignalGuardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeSystemHealthIndexSignal(ref SystemHealthIndexSignal signal)
+        {
+            int guardCode = 0;
+            if (SanitizeUnit01(ref signal.Health01))
+                guardCode = SystemHealthIndexSignalGuardCode;
+            if (SanitizeUnit01(ref signal.Pressure01))
+                guardCode = SystemHealthIndexSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeCpuStarvationSignal(ref CpuStarvationSignal signal)
+        {
+            int guardCode = 0;
+            if (SanitizeNonNegative(ref signal.EstimatedCostMs))
+                guardCode = CpuStarvationSignalGuardCode;
+            if (SanitizeNonNegative(ref signal.RemainingBudgetMs))
+                guardCode = CpuStarvationSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeAcousticPingSignal(ref AcousticPingSignal signal)
+        {
+            int guardCode = SanitizeAup(ref signal.PositionAup) ? AcousticPingSignalGuardCode : 0;
+            if (SanitizeNonNegative(ref signal.RadiusMeters))
+                guardCode = AcousticPingSignalGuardCode;
+            if (SanitizeUnit01(ref signal.Intensity01))
+                guardCode = AcousticPingSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeFluidIncursionSignal(ref FluidIncursionSignal signal)
+        {
+            int guardCode = SanitizeAup(ref signal.LeakAup) ? FluidIncursionSignalGuardCode : 0;
+            if (SanitizeUnit01(ref signal.FloodLevel01))
+                guardCode = FluidIncursionSignalGuardCode;
+            if (SanitizeUnit01(ref signal.FlowRate01))
+                guardCode = FluidIncursionSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeSubmarineFloodStateSignal(ref SubmarineFloodStateSignal signal)
+        {
+            int guardCode = 0;
+            if (SanitizeFloat3Zero(ref signal.DynamicCenterOfMassLocal))
+                guardCode = SubmarineFloodStateSignalGuardCode;
+            if (SanitizeFloat3Zero(ref signal.DynamicCenterOfMassOffsetLocal))
+                guardCode = SubmarineFloodStateSignalGuardCode;
+            if (SanitizeNonNegative(ref signal.TotalWaterMassKg))
+                guardCode = SubmarineFloodStateSignalGuardCode;
+            if (SanitizeNonNegative(ref signal.BaseMassKg))
+                guardCode = SubmarineFloodStateSignalGuardCode;
+            if (SanitizeUnit01(ref signal.FillRatio01))
+                guardCode = SubmarineFloodStateSignalGuardCode;
+            if (SanitizeNonNegative(ref signal.AngularDragMultiplier))
+                guardCode = SubmarineFloodStateSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeFluidDensityChangedSignal(ref FluidDensityChangedSignal signal)
+        {
+            int guardCode = SanitizeAup(ref signal.PositionAup) ? FluidDensityChangedSignalGuardCode : 0;
+            if (SanitizePositiveDefault(ref signal.DensityMultiplier, 1f))
+                guardCode = FluidDensityChangedSignalGuardCode;
+            if (SanitizeFiniteZero(ref signal.BrineHeightY))
+                guardCode = FluidDensityChangedSignalGuardCode;
+            if (SanitizeNonNegative(ref signal.SubmersionSeconds))
+                guardCode = FluidDensityChangedSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeStreamingTurbulenceSignal(ref StreamingTurbulenceSignal signal)
+        {
+            int guardCode = 0;
+            if (SanitizeUnit01(ref signal.Intensity01))
+                guardCode = StreamingTurbulenceSignalGuardCode;
+            if (SanitizeUnit01(ref signal.Debt01))
+                guardCode = StreamingTurbulenceSignalGuardCode;
+            if (SanitizeNonNegative(ref signal.DurationSeconds))
+                guardCode = StreamingTurbulenceSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeAtmosphericReentrySignal(ref AtmosphericReentrySignal signal)
+        {
+            int guardCode = SanitizeAup(ref signal.CapsuleAup) ? AtmosphericReentrySignalGuardCode : 0;
+            if (SanitizeNonNegative(ref signal.AltitudeMeters))
+                guardCode = AtmosphericReentrySignalGuardCode;
+            if (SanitizeNonNegative(ref signal.UniverseVelocityMetersPerSecond))
+                guardCode = AtmosphericReentrySignalGuardCode;
+            if (SanitizeUnit01(ref signal.Heat01))
+                guardCode = AtmosphericReentrySignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeVehicleUpgradesChangedSignal(ref VehicleUpgradesChangedSignal signal)
+        {
+            int guardCode = 0;
+            if (SanitizeFiniteZero(ref signal.SafeDepthBonusMeters))
+                guardCode = VehicleUpgradesChangedSignalGuardCode;
+            if (SanitizeNonNegative(ref signal.PermanentSafeDepthPenaltyMeters))
+                guardCode = VehicleUpgradesChangedSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeSaveLifecycleSignal(ref SaveLifecycleSignal signal)
+        {
+            if (!SanitizeUnit01(ref signal.Progress01))
+                return 0;
+
+            return SaveLifecycleSignalGuardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeSaveStatusSignal(ref SaveStatusSignal signal)
+        {
+            if (!SanitizeUnit01(ref signal.Progress01))
+                return 0;
+
+            return SaveStatusSignalGuardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeLightLevelSignal(ref LightLevelSignal signal)
+        {
+            int guardCode = 0;
+            if (SanitizeUnit01(ref signal.LightLevel01))
+                guardCode = LightLevelSignalGuardCode;
+            if (SanitizeUnit01(ref signal.Darkness01))
+                guardCode = LightLevelSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeSubmarineLightsChangedSignal(ref SubmarineLightsChangedSignal signal)
+        {
+            int guardCode = SanitizeAup(ref signal.PositionAup) ? SubmarineLightsChangedSignalGuardCode : 0;
+            if (SanitizeFloat3Forward(ref signal.Forward))
+                guardCode = SubmarineLightsChangedSignalGuardCode;
+            if (SanitizeNonNegative(ref signal.RangeMeters))
+                guardCode = SubmarineLightsChangedSignalGuardCode;
+            if (SanitizeNonNegative(ref signal.Intensity))
+                guardCode = SubmarineLightsChangedSignalGuardCode;
+            if (SanitizeFiniteZero(ref signal.SpotOuterCos))
+                guardCode = SubmarineLightsChangedSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizePhysiologyStateSignal(ref PhysiologyStateSignal signal)
+        {
+            int guardCode = 0;
+            if (SanitizeUnit01(ref signal.PlayerStress01))
+                guardCode = PhysiologyStateSignalGuardCode;
+            if (SanitizeNonNegative(ref signal.O2DrainMultiplier))
+                guardCode = PhysiologyStateSignalGuardCode;
+            if (SanitizeUnit01(ref signal.Recovery01))
+                guardCode = PhysiologyStateSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizePlayerStressSignal(ref PlayerStressSignal signal)
+        {
+            int guardCode = 0;
+            if (SanitizeUnit01(ref signal.Stress01))
+                guardCode = PlayerStressSignalGuardCode;
+            if (SanitizeNonNegative(ref signal.OxygenDrainScale))
+                guardCode = PlayerStressSignalGuardCode;
+            if (SanitizeNonNegative(ref signal.AggressionScale))
+                guardCode = PlayerStressSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeTraumaSignal(ref TraumaSignal signal)
+        {
+            if (!SanitizeUnit01(ref signal.Stress01))
+                return 0;
+
+            return TraumaSignalGuardCode;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1025,6 +1737,95 @@ namespace Hecton8.Core.Signals
             position.LocalX = 0f;
             position.LocalY = 0f;
             position.LocalZ = 0f;
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool SanitizeFloat3Zero(ref float3 value)
+        {
+            if (math.all(math.isfinite(value)))
+                return false;
+
+            value = float3.zero;
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool SanitizeFloat3Forward(ref float3 value)
+        {
+            if (math.all(math.isfinite(value)))
+                return false;
+
+            value.x = 0f;
+            value.y = 0f;
+            value.z = 1f;
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool SanitizeFloat3Up(ref float3 value)
+        {
+            if (math.all(math.isfinite(value)))
+                return false;
+
+            SetUp(ref value);
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void SetUp(ref float3 value)
+        {
+            value.x = 0f;
+            value.y = 1f;
+            value.z = 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool SanitizeUnit01(ref float value)
+        {
+            if (!math.isfinite(value))
+            {
+                value = 0f;
+                return true;
+            }
+
+            float clamped = math.saturate(value);
+            if (clamped == value)
+                return false;
+
+            value = clamped;
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool SanitizeNonNegative(ref float value)
+        {
+            if (!math.isfinite(value) || value < 0f)
+            {
+                value = 0f;
+                return true;
+            }
+
+            return false;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool SanitizeFiniteZero(ref float value)
+        {
+            if (math.isfinite(value))
+                return false;
+
+            value = 0f;
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool SanitizePositiveDefault(ref float value, float fallback)
+        {
+            if (math.isfinite(value) && value > 0f)
+                return false;
+
+            value = fallback;
             return true;
         }
     }

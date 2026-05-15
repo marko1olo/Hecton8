@@ -250,6 +250,24 @@ Rejected Alternatives: Accepting generation reset because no current hot handle 
 Scalability potential: Low devices keep descriptor telemetry coherent under churn; Middle keeps leak/postmortem diffing stable; High and Ultra can tolerate more persistent-buffer churn without losing chronological memory-map evidence.
 Hardware Impact: Reuse path adds two scalar compares and one local copy on cold descriptor registration only. 0 us steady-frame impact.
 
+Problem: Direct DataVault aliases and handle construction trusted `MarkExternalView` as a void side effect. If block-map/metadata evidence drifted, callers could still receive a NativeArray view or handle without external-view accounting.
+Solution: `MarkExternalView` now returns success/failure, refreshes mismatched metadata for already-marked blocks, bumps vault generation on repair, and every alias/handle lane checks the result. New-buffer creation rolls back keys, maps, allocated bytes, and block state if external-view proof cannot be recorded.
+Rejected Alternatives: Keeping best-effort marking because live compaction is disabled; PHI/VOD attribution still requires every returned external pointer to be accounted.
+Scalability potential: Low devices fail closed instead of accumulating invisible alias debt; Middle keeps stale-handle postmortems exact; High and Ultra can run more DataVault consumers without weakening pointer accountability.
+Hardware Impact: Valid alias path adds one branch around an existing block lookup. Already-marked paths remain metadata compare only. Fault rollback is cold and 0 us steady-frame impact.
+
+Problem: `H8Memory.Initialize` accepted arbitrary caller capacity and could allocate tracking tables above the documented `MaxTrackingCapacity`, bypassing the cap used by later growth.
+Solution: Added `ResolveTrackingCapacity` and routed initialization through it so cold-start capacity is clamped to `MaxTrackingCapacity`.
+Rejected Alternatives: Trusting all bootstrap callers to pass default capacity; startup parameters are part of the public memory contract.
+Scalability potential: Low devices avoid accidental large persistent tracking tables; Middle keeps memory accounting predictable; High and Ultra can still grow to the documented cap deliberately.
+Hardware Impact: One cold-start integer clamp. 0 us frame impact and bounded persistent allocation size.
+
+Problem: H8 descriptor generation mutation still had raw increment sites, and owner-gated free/reallocation trusted the record scan without first proving the pointer-owner map was coherent.
+Solution: Added `AdvanceDescriptorGeneration` and routed descriptor reuse, free tombstone, and owner-key mutation through one positive-generation helper. Added `ValidateOwnerMap` so owner-gated free and raw reallocation fail closed if the pointer-owner map is missing or disagrees with the requester.
+Rejected Alternatives: Leaving raw `++` because wrap is rare; trusting the record table alone. PHI/VOD evidence must survive long churn sessions and corrupted sidecar maps cannot be allowed to silently retire memory.
+Scalability potential: Low devices get deterministic owner drift faults instead of silent native accounting erosion; Middle keeps memory-map chronology stable; High and Ultra can run larger persistent pools without weakening leak/postmortem evidence.
+Hardware Impact: Free/reallocation cold paths add one NativeParallelHashMap lookup and a normalized scalar generation increment. 0 us steady-frame impact.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Polish audit required removal of fake precision, managed iteration/string debt, and any code outside the DataVault domain without justification.
@@ -260,8 +278,8 @@ Hardware Impact: Direct habitat DTO write is 32 bytes per module and 0 B GC. Rem
 
 Final Git Diff Summary:
 - Assets/_Project/Scripts/Core/HectonArenaAllocator.cs: owner-tagged H8Memory.FreeRaw release.
-- Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs: GenerationID handle exposure, handle external-view marking, stale-handle fatal path, VaultGenerationID telemetry, owner-tagged macro/vault frees, macro copy switched to MemCpy, live defrag memmove code deleted, agent-scoped black-box dump paths, and non-finite defrag input dumping.
-- Assets/_Project/Scripts/Core/Memory/H8Memory.cs: FatalMemoryException, owner-gated raw/native allocation, alias-reader gate, all-or-nothing allocation tracking, tracked-byte raw reallocation, descriptor capacity growth/reuse tombstones with monotonic reuse generation, and owner-checked FreeRaw.
+- Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs: GenerationID handle exposure, fail-closed external-view marking, stale-handle fatal path, VaultGenerationID telemetry, owner-tagged macro/vault frees, macro copy switched to MemCpy, live defrag memmove code deleted, agent-scoped black-box dump paths, and non-finite defrag input dumping.
+- Assets/_Project/Scripts/Core/Memory/H8Memory.cs: FatalMemoryException, owner-gated raw/native allocation, alias-reader gate, all-or-nothing allocation tracking, tracked-byte raw reallocation with pointer-owner map validation, descriptor capacity growth/reuse tombstones with normalized monotonic generation, cold-start capacity clamp, and owner-checked FreeRaw.
 - Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs: v72 first-hour DTO payload write/read, direct habitat flood struct loop, bounded root compatibility collections, 16 KiB string cap, and removed unbounded helper wrappers.
 - Assets/_Project/Scripts/SaveData.cs: first-hour DTO mirrors and packed DTO definitions/metadata.
 - Assets/_Project/Scripts/SaveDataMigration.cs: bounded cold restore clamps and canonical `SaveData.EnsureExactArrayCapacity` repair helper use.

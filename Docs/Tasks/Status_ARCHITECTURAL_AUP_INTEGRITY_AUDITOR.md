@@ -3,7 +3,7 @@
 Agent: ARCHITECTURAL_AUP_INTEGRITY_AUDITOR
 Domain: ECHELON 1 / Origin Shift (AUP Manager), with audit reach into Physics, Voxel, Kinematics, AI trigger math, Biome trigger math, and deterministic seed callsites.
 Assignment Source: User-supplied XML block. `Docs/Tasks/CURRENT_BATCH.md` extraction returned `PROMPT_NOT_FOUND` for this ID on initial pass.
-Status: VERIFIED AUP INTEGRITY - LOOP 52 APPLIED; REAL H-PHI SOURCE REPAIRS CENTRALIZED GRID-DELTA AUP HELPERS, KEPT SCANNER/ACOUSTIC/SEISMIC/THUNDER/TRANSPORT DISTANCE MATH IN DOUBLE UNTIL FINAL PRESENTATION, REPAIRED PLAYERFLASHLIGHT SIGNAL-BUS BUILD QUALIFICATION, REPAIRED STALE LOCAL EDITOR CSPROJ MATHEMATICS REFERENCE, AND VERIFIED CORE + ASSEMBLY-CSHARP BUILDS GREEN WITH 0 WARNINGS / 0 ERRORS; STRICT AUP SCANS RETURN NO_MATCHES; H-PHI AUP PRECISION RISK IS 0; ASMDEF BLOCKED BY ARCHITECTURE
+Status: VERIFIED AUP INTEGRITY - LOOP 54 APPLIED; REAL SOURCE REPAIRS MOVED WORLD GRID, ATLAS SIGNAL, PDA SIGNAL, DOCKING, BASE DEPTH, SHARED AUP DIRECTION/DISTANCE, AND EDITOR KINEMATIC GHOST DIAGNOSTICS OFF LEGACY FLOAT/ABSOLUTE AUP PATHS; CORE BUILD GREEN WITH 0 WARNINGS / 0 ERRORS; EDITOR BUILD GREEN WITH 48 PACKAGE/THIRD-PARTY WARNINGS / 0 ERRORS; ASSEMBLY-CSHARP WRAPPER TIMED OUT BUT LOG REPORTS BUILD SUCCEEDED WITH 200 WARNINGS / 0 ERRORS; STRICT AUP SCANS RETURN NO_MATCHES; H-PHI AUP PRECISION RISK IS 0; ASMDEF BLOCKED BY ARCHITECTURE
 
 ## Selected Mandates
 
@@ -631,3 +631,24 @@ Loop 52 - Full Build Repair / Editor Mathematics Reference:
 - Final direct committed-offset leak scan returns `NO_MATCHES`.
 - Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` returned `MANDATORY_AUP_SCAN_MATCH_COUNT=233`; residuals remain broad `universe` text and known final-cast/presentation payload names.
 - No full H-Phi re-run was executed in Loop 52 because the only new repair after Loop 51's full H-Phi gate was a generated local project-file reference. Loop 51 remains the latest source H-Phi evidence: `AupPrecisionRisk=0`.
+
+Loop 53 - Full Absolute AUP Subtraction Debt Reduction:
+- Re-read status/rationale before work and kept the `dotnet rebuild` ban active.
+- Patched shared `AUPMath.AUPDistanceSq` and `AUPMath.AUPDirection` to use clamped grid/local AUP delta math instead of full absolute double subtraction.
+- Patched `WorldSpatialHashGrid.ApproximateAupDistanceMeters`, Atlas core direction, PDA atlas cinematic distance, vehicle docking relative AUP, and base external-depth AUP math to use `AbsoluteUniversePosition.DeltaMetersClamped` / `ApproximateDistanceMetersClamped`.
+- Reduced the broad full-absolute `ToAbsoluteDouble3()` subtraction scan from 22 matches to 17. Remaining matches are recorded for follow-up ownership review; the fixed callsites were world grid distance, atlas signal direction, PDA signal distance, vehicle docking, and base sea-level depth.
+- `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_build_loop53.log;verbosity=normal"` succeeded with 0 warnings and 0 errors in the log.
+- `dotnet build .\Assembly-CSharp.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_assembly_build_loop53.log;verbosity=normal"` exceeded the command timeout, but `AUP_assembly_build_loop53.log` reports `Build succeeded`, 200 warnings, and 0 errors after 00:11:36.23. This is not claimed as a clean warning-free build.
+- Strict qualified AUP scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` returned `MANDATORY_AUP_SCAN_MATCH_COUNT=233`; residuals remain broad `universe` text and known final-cast/presentation payload names.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 134.413 seconds with `RuntimeHPhiRisk=0.000634336`, `RuntimeHPhiNarrow=0.010787439`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=362`, `AupPrecisionRisk=0`, `NativeArrayRefs=7074`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, `NativeOwnershipRisk=8196`, `RuntimeFiles=1278`, and `RuntimeLines=871054`.
+
+Loop 54 - Editor Kinematic Ghost AUP Regression Repair:
+- Final strict scan after Loop 53 caught `KinematicGhostDebugger` back on legacy `HectonMapMagicVegetationBridge.ToUniverseSpace` and `HectonFloatingOrigin.ToAbsoluteUniversePosition` calls, with absolute-universe history reduced to `Vector3[96]`.
+- Repaired `KinematicGhostDebugger` to store ghost absolute-universe samples as `double3[96]`, call `ToUniverseSpaceDouble3` / `ToAbsoluteUniversePositionDouble3`, compute preview deltas in double, and cast to `Vector3` only at the Unity Handles drawing boundary.
+- Re-ran strict qualified AUP scan; result is `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` remains `MANDATORY_AUP_SCAN_MATCH_COUNT=233`.
+- `git diff --check -- Assets/_Project/Scripts/Editor/KinematicGhostDebugger.cs` reports line-ending warning only, no whitespace errors.
+- `dotnet build .\Hecton8.Editor.csproj --no-restore --disable-build-servers -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false /flp:"logfile=Docs\AgentLogs\AUP_editor_build_loop54.log;verbosity=normal"` succeeded with 48 warnings and 0 errors. Warnings are package/third-party deprecation/unassigned-field warnings, not AUP source errors.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 158.474 seconds with `RuntimeHPhiRisk=0.000634336`, `RuntimeHPhiNarrow=0.010787439`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=362`, `AupPrecisionRisk=0`, `NativeArrayRefs=7074`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, `NativeOwnershipRisk=8196`, `RuntimeFiles=1278`, and `RuntimeLines=871433`.

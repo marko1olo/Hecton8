@@ -1879,6 +1879,7 @@ namespace Hecton8.World
             float restMs,
             float totalMs)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!RuntimeDiagnosticsTrace.IsActive)
                 return;
 
@@ -1887,6 +1888,7 @@ namespace Hecton8.World
                 $"requests={requestCount} kept={keptCount} desired={desiredCount} active={activeCount} " +
                 $"pending={pendingCount} queued={queuedCount} spawnBudget={spawnBudgetUsed} " +
                 $"filter={filterMs:0.00}ms warm={warmMs:0.00}ms sort={sortMs:0.00}ms rest={restMs:0.00}ms total={totalMs:0.00}ms");
+#endif
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -1900,12 +1902,14 @@ namespace Hecton8.World
             int activeCount,
             int pendingCount)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!RuntimeDiagnosticsTrace.IsActive)
                 return;
 
             RuntimeDiagnosticsTrace.WriteEvent(
                 "voxel.request",
                 $"schedule key={runtimeKey} family={familyId} profile={profileId} weight={weight:0.00} dist={playerDistance:0.0} active={activeCount} pending={pendingCount}");
+#endif
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -1917,12 +1921,14 @@ namespace Hecton8.World
             int activeCount,
             int pendingCount)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!RuntimeDiagnosticsTrace.IsActive)
                 return;
 
             RuntimeDiagnosticsTrace.WriteEvent(
                 "voxel.launch",
                 $"start key={runtimeKey} family={familyId} queued={queuedMs:0.00}ms active={activeCount} pending={pendingCount}");
+#endif
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -1937,12 +1943,14 @@ namespace Hecton8.World
             bool buildCollider,
             float buildDataMs)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!RuntimeDiagnosticsTrace.IsActive)
                 return;
 
             RuntimeDiagnosticsTrace.WriteEvent(
                 "voxel.request",
                 $"prepared key={runtimeKey} family={familyId} profile={profileId} grid={gridDimension} voxel={voxelStep:0.00} lod={voxelLodLevel} collider={buildCollider} buildData={buildDataMs:0.00}ms");
+#endif
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -1959,12 +1967,14 @@ namespace Hecton8.World
             int activeCount,
             int pendingCount)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!RuntimeDiagnosticsTrace.IsActive)
                 return;
 
             RuntimeDiagnosticsTrace.WriteEvent(
                 "voxel.request",
                 $"complete key={runtimeKey} family={familyId} profile={profileId} grid={gridDimension} voxel={voxelStep:0.00} lod={voxelLodLevel} collider={buildCollider} took={elapsedMs:0.00}ms active={activeCount} pending={pendingCount}");
+#endif
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -1975,12 +1985,14 @@ namespace Hecton8.World
             string profileId,
             float elapsedMs)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!RuntimeDiagnosticsTrace.IsActive)
                 return;
 
             RuntimeDiagnosticsTrace.WriteEvent(
                 "voxel.request",
                 $"cancel key={runtimeKey} family={familyId} profile={profileId} took={elapsedMs:0.00}ms");
+#endif
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -1992,24 +2004,28 @@ namespace Hecton8.World
             float elapsedMs,
             Exception exception)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!RuntimeDiagnosticsTrace.IsActive)
                 return;
 
             RuntimeDiagnosticsTrace.WriteEvent(
                 "voxel.request",
                 $"fault key={runtimeKey} family={familyId} profile={profileId} took={elapsedMs:0.00}ms error={exception.GetType().Name}:{exception.Message}");
+#endif
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void TraceCancelRequest(long runtimeKey, bool removeRegistration)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!RuntimeDiagnosticsTrace.IsActive)
                 return;
 
             RuntimeDiagnosticsTrace.WriteEvent(
                 "voxel.request",
                 $"cancel-request key={runtimeKey} removeRegistration={removeRegistration}");
+#endif
         }
 
         private CancellationTokenSource EnsureLifetimeCancellation()

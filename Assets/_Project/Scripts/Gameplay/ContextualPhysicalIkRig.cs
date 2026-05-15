@@ -1739,6 +1739,10 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            uint frame = unchecked((uint)Time.frameCount);
+            if (signal.Frame > frame)
+                return;
+
             _lastPlayerStressSignalSequence = sequence;
             _playerStress01 = SanitizeUnitScalar(signal.Stress01);
         }

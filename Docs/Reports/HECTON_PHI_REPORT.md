@@ -1533,6 +1533,59 @@ Residual bottlenecks:
 - Runtime H-Phi remains pending Unity Console, PlayMode, Profiler, and GCMonitor evidence.
 - Generated Unity full graph traversal needs integrator/toolchain attention because it exits without diagnostic text while direct source gates pass.
 
+## 2026-05-15 Live Addendum - CORE_RESONANCE Full Graph Recovery
+
+Evidence class: `STATIC_SOURCE_COMPILE`.
+
+What changed:
+- Stale generated editor project state was resolved: current `Hecton8.Editor.csproj` references `Unity.Mathematics.dll`, matching `Hecton8.Editor.asmdef`.
+- Current `KinematicGhostDebugger` retains its `double3` absolute universe diagnostic path and now compiles in the full generated editor graph.
+- Full `Assembly-CSharp` generated graph now reaches `Assembly-CSharp.dll`.
+
+Compile evidence:
+- `Hecton8.Editor.csproj`: passed, `0 Warning(s)`, `0 Error(s)`.
+- `Assembly-CSharp-firstpass.csproj`: passed, `0 Warning(s)`, `0 Error(s)`.
+- `Assembly-CSharp.csproj`: passed, `22 Warning(s)`, `0 Error(s)`.
+- Remaining warnings are vendor/package-generated and outside Hecton runtime ownership.
+
+Current static scores at `2026-05-15 20:57:48 +04:00`:
+
+| Coefficient | Score |
+|---|---:|
+| Runtime H-Phi narrow | 0.010787439 |
+| Runtime H-Phi risk-adjusted | 0.000636091 |
+| All-source H-Phi narrow | 0.009611624 |
+| All-source H-Phi risk-adjusted | 0.000518488 |
+| Risk integration | 0.058965935 |
+| Architectural purity | 1.000000000 |
+| Data sovereignty | 0.021306032 |
+| Memory alignment | 0.506309148 |
+| Binary-safe ratio | 0.018401682 |
+| AUP precision integrity | 1.000000000 |
+
+Current runtime counts:
+
+| Counter | Value |
+|---|---:|
+| Typed/queued signal push surface | 341 |
+| Legacy/direct event publish surface | 28 |
+| `GlobalRegistry.` surface refs | 5,060 |
+| DataVault access surface refs | 154 |
+| `NativeArray<T>` refs | 7,074 |
+| Runtime `Find*` calls | 0 |
+| Runtime `GetComponent*` calls | 321 |
+| AUP precision risk refs | 0 |
+| LINQ surface | 3 |
+| Coroutine surface | 0 |
+| Managed formatting surface | 543 |
+| Job `.Complete()` surface | 58 |
+| Primary managed-runtime risk | 156 |
+| Primary owner-blocked NativeArray refs | 5,678 |
+
+Residual bottlenecks:
+- Runtime H-Phi remains pending Unity Console, PlayMode, Profiler, and GCMonitor evidence.
+- Core graph debt remains source-backed bridge `14`, source-backed compile bridge `8`, project-reference replacement `6`.
+
 ## 2026-05-15 Live Addendum - HECTON_PHI_MONITOR Build And Lookup Closure
 
 Evidence class: `STATIC_SOURCE_COMPILE`.
@@ -1828,4 +1881,49 @@ Verification:
 Residual bottlenecks:
 - Data Sovereignty remains the hard floor: `154 / (154 + 7074) = 0.021306032`.
 - Remaining top primary managed-risk files after this pass: `WorldPopulationRule.cs`, `ModdingAPI/ModLoader.cs`, `Quest/QuestStateManager.cs`, `ModdingAPI/ModAssetManager.cs`, and `WorldGenerativeGeologyVoxelBridgeDirector.cs`.
+- Runtime H-Phi remains pending Unity Console, PlayMode, Profiler, and GCMonitor evidence.
+
+## 2026-05-15 Live Addendum - Primary Formatter Debt Batch
+
+Evidence class: `STATIC_SOURCE_COMPILE`.
+
+What changed:
+- `WorldPopulationRule.cs` role/layout/border labels no longer use interpolation in the patched paths.
+- `ModLoader.cs` failure/disabled diagnostics no longer use direct interpolation, `string.Format`, or explicit `.ToString()`.
+- `QuestStateManager.cs` compile/debug/audit labels now use deterministic builders, and the two previous `List<T>.ToArray()` materializations use explicit `CopyTo`.
+- No DataVault ownership, NativeArray lifetime, quest bit layout, mod load order, population scoring, or signal dispatch was changed.
+
+Current static scores after this pass:
+
+| Coefficient | Score |
+|---|---:|
+| Runtime H-Phi narrow | 0.010787439 |
+| Runtime H-Phi risk-adjusted | 0.000634555 |
+| Data sovereignty | 0.021306032 |
+| Memory alignment | 0.506309148 |
+
+Current runtime counts:
+
+| Counter | Value |
+|---|---:|
+| Typed/queued signal push surface | 341 |
+| Legacy/direct event publish surface | 28 |
+| Runtime `Find*` calls | 0 |
+| Runtime `GetComponent*` calls | 321 |
+| `GlobalRegistry.` surface refs | 5,074 |
+| `NativeArray<T>` refs | 7,074 |
+| Managed formatting surface | 564 |
+| Primary managed-runtime risk | 177 |
+| LINQ-risk surface | 3 |
+| Job `.Complete()` surface | 58 |
+| Primary owner-blocked NativeArray refs | 5,678 |
+
+Verification:
+- Core build passed with `0 Warning(s)` and `0 Error(s)`.
+- Tightened full static H-Phi budget gate passed with `-MaxManagedFormatSurface 564`, `-MaxPrimaryManagedRuntimeRisk 177`, `-MaxLinqSurface 3`, `-MinRuntimeHPhiRisk 0.000634500`, `-MaxFindObjectCalls 0`, and the existing Core graph/DataVault/layout budgets.
+
+Residual bottlenecks:
+- Scalar H-Phi barely moved because the current formula is dominated by signal integration and DataVault/native-ownership debt, not formatter debt.
+- Data Sovereignty remains the hard floor: `154 / (154 + 7074) = 0.021306032`.
+- Next high-value work is owner-led NativeArray/DataVault migration in files like `PlayerCriticalProceduralAudioRenderer.cs`, `HectonVoxelEngine.cs`, `World/EcosystemDirector.cs`, and `PlayerInventory.cs`; this monitor did not touch those owner domains.
 - Runtime H-Phi remains pending Unity Console, PlayMode, Profiler, and GCMonitor evidence.

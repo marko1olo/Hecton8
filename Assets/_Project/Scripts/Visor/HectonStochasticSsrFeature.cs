@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
+using UnityEngine.Rendering.RenderGraphModule.Util;
 using UnityEngine.Rendering.Universal;
 
 #if UNITY_EDITOR
@@ -57,21 +58,6 @@ namespace Hecton8.Visor
 
         private sealed class ReflectionSheenPass : ScriptableRenderPass
         {
-            private sealed class MaskPassData
-            {
-                internal TextureHandle Source;
-                internal TextureHandle Mask;
-                internal Material Material;
-            }
-
-            private sealed class CompositePassData
-            {
-                internal TextureHandle Source;
-                internal TextureHandle Mask;
-                internal TextureHandle Destination;
-                internal Material Material;
-            }
-
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Reflection Sheen");
             private FeatureSettings _settings;
             private Material _material;
@@ -142,46 +128,21 @@ namespace Hecton8.Visor
                 TextureHandle maskTexture = renderGraph.CreateTexture(maskDesc);
                 TextureHandle destinationTexture = renderGraph.CreateTexture(destinationDesc);
 
-                using (var builder = renderGraph.AddUnsafePass<MaskPassData>("Hecton Reflection Sheen Mask R8 Half", out MaskPassData passData, _profilingSampler))
+                using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
+                           new RenderGraphUtils.BlitMaterialParameters(sourceTexture, maskTexture, _material, 0),
+                           passName: "Hecton Reflection Sheen Mask R8 Half",
+                           returnBuilder: true))
                 {
-                    passData.Source = sourceTexture;
-                    passData.Mask = maskTexture;
-                    passData.Material = _material;
-
-                    builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(depthTexture, AccessFlags.Read);
-                    builder.UseTexture(maskTexture, AccessFlags.Write);
                     builder.SetGlobalTextureAfterPass(maskTexture, ShaderConstants.MaskTextureId);
-
-                    builder.SetRenderFunc((MaskPassData data, UnsafeGraphContext context) =>
-                    {
-                        CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
-                        const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
-                        const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
-
-                        Blitter.BlitCameraTexture(cmd, data.Source, data.Mask, LoadAction, StoreAction, data.Material, 0);
-                    });
                 }
 
-                using (var builder = renderGraph.AddUnsafePass<CompositePassData>("Hecton Reflection Sheen Composite", out CompositePassData passData, _profilingSampler))
+                using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
+                           new RenderGraphUtils.BlitMaterialParameters(sourceTexture, destinationTexture, _material, 1),
+                           passName: "Hecton Reflection Sheen Composite",
+                           returnBuilder: true))
                 {
-                    passData.Source = sourceTexture;
-                    passData.Mask = maskTexture;
-                    passData.Destination = destinationTexture;
-                    passData.Material = _material;
-
-                    builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(maskTexture, AccessFlags.Read);
-                    builder.UseTexture(destinationTexture, AccessFlags.Write);
-
-                    builder.SetRenderFunc((CompositePassData data, UnsafeGraphContext context) =>
-                    {
-                        CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
-                        const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
-                        const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
-
-                        Blitter.BlitCameraTexture(cmd, data.Source, data.Destination, LoadAction, StoreAction, data.Material, 1);
-                    });
                 }
 
                 resourceData.cameraColor = destinationTexture;

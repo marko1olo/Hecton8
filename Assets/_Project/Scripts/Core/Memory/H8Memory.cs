@@ -279,7 +279,7 @@ namespace Hecton8.Core.Memory
             if (_initialized)
                 return;
 
-            int safeCapacity = capacity > 0 ? capacity : DefaultCapacity;
+            int safeCapacity = ResolveTrackingCapacity(capacity);
             _allocationOwners = new NativeParallelHashMap<long, SystemID>(safeCapacity, Allocator.Persistent);
             _records = new NativeArray<H8AllocationRecord>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _ownerBytes = new NativeArray<long>(OwnerByteSlots, Allocator.Persistent, NativeArrayOptions.ClearMemory);
@@ -687,6 +687,14 @@ namespace Hecton8.Core.Memory
             return true;
         }
 
+        private static int ResolveTrackingCapacity(int capacity)
+        {
+            if (capacity <= 0)
+                return DefaultCapacity;
+
+            return capacity > MaxTrackingCapacity ? MaxTrackingCapacity : capacity;
+        }
+
         private static bool TryReserveReplacementBytes(long oldBytes, long newBytes)
         {
             if (newBytes <= 0L)
@@ -816,6 +824,7 @@ namespace Hecton8.Core.Memory
                 FatalMemoryException.ThrowUnknownFreeOwner();
 
             long pointerKey = ((IntPtr)pointer).ToInt64();
+            ValidateOwnerMap(pointerKey, requester, requireOwnerMatch);
             for (int i = _recordCount - 1; i >= 0; i--)
             {
                 if (_records[i].Pointer.ToInt64() != pointerKey)
@@ -840,6 +849,7 @@ namespace Hecton8.Core.Memory
                 FatalMemoryException.ThrowUnknownFreeOwner();
 
             long pointerKey = ((IntPtr)pointer).ToInt64();
+            ValidateOwnerMap(pointerKey, requester, requireOwnerMatch: true);
             for (int i = _recordCount - 1; i >= 0; i--)
             {
                 if (_records[i].Pointer.ToInt64() != pointerKey)
@@ -853,6 +863,26 @@ namespace Hecton8.Core.Memory
 
             FatalMemoryException.ThrowUntrackedPointer();
             return 0L;
+        }
+
+        private static void ValidateOwnerMap(long pointerKey, SystemID requester, bool requireOwnerMatch)
+        {
+            if (!_allocationOwners.IsCreated ||
+                !_allocationOwners.TryGetValue(pointerKey, out SystemID mappedOwner))
+            {
+                if (requireOwnerMatch)
+                    FatalMemoryException.ThrowUntrackedPointer();
+                return;
+            }
+
+            if (requireOwnerMatch && mappedOwner != requester)
+                FatalMemoryException.ThrowWrongFreeOwner();
+        }
+
+        private static int AdvanceDescriptorGeneration(int generation)
+        {
+            int nextGeneration = unchecked(generation + 1);
+            return nextGeneration <= 0 ? 1 : nextGeneration;
         }
 
         private static void RemoveRecordAt(int index)
@@ -889,9 +919,7 @@ namespace Hecton8.Core.Memory
                     continue;
 
                 BlockDescriptor replacement = descriptor;
-                int nextGeneration = unchecked(existing.Generation + 1);
-                if (nextGeneration <= 0)
-                    nextGeneration = 1;
+                int nextGeneration = AdvanceDescriptorGeneration(existing.Generation);
                 if (replacement.Generation < nextGeneration)
                     replacement.Generation = nextGeneration;
                 _blockDescriptors[i] = replacement;
@@ -945,7 +973,7 @@ namespace Hecton8.Core.Memory
                 descriptor.State = (byte)H8BlockState.Free;
                 descriptor.Flags = (ushort)H8AllocationFlags.Freed;
                 descriptor.Reserved = 0;
-                descriptor.Generation++;
+                descriptor.Generation = AdvanceDescriptorGeneration(descriptor.Generation);
                 _blockDescriptors[i] = descriptor;
                 return;
             }
@@ -966,7 +994,7 @@ namespace Hecton8.Core.Memory
                     return;
 
                 descriptor.OwnerKey = ownerKey;
-                descriptor.Generation++;
+                descriptor.Generation = AdvanceDescriptorGeneration(descriptor.Generation);
                 _blockDescriptors[i] = descriptor;
                 return;
             }

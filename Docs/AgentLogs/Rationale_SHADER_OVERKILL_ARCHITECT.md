@@ -219,3 +219,31 @@ Solution: Ran only `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`, scope
 Rejected Alternatives: Running a build was rejected by the direct no-rebuild order. Claiming runtime readiness from static evidence was rejected by AGENTS.
 Scalability potential: Low-tier runtime UI recovery avoids the last large avoidable lookup cluster; high-tier presentation remains unchanged and can spend budget on actual visual richness rather than setup churn.
 Hardware Impact: 0 us runtime from the audit itself. Latest static audit: `RuntimeHPhiNarrow=0.010752435`, `RuntimeHPhiRisk=0.000618924`, `AllSourceHPhiNarrow=0.009581932`, `AllSourceHPhiRisk=0.00050517`, `GetComponentCalls=384`, `UnityUpdateMethods=0`, `StructLayoutAttributes=962`, `AupPrecisionRisk=0`.
+
+## Decision 032 - Root PDA Menu Progression And VFX Lookup Consolidation
+Problem: After the large UI-owner pass, safe remaining Echelon 8 lookup debt lived in root-level PDA/menu/localization/save-thumbnail installers, progression/narrative presentation installers, marker HUD pooling, and VFX/celestial camera binding.
+Solution: Replaced same-object probes with `TryGetComponent(out T)`, replaced parent camera/PDA/player lookups with bounded `Transform` walks, and preserved generated UI, VFX binding, marker pooling, localization, and camera-follow behavior.
+Rejected Alternatives: Editing cross-domain tool/World/physics lookup debt was rejected by domain boundary. Replacing editor-only Crest fallback scans was rejected because those are editor-only and type-name based. A shared parent-walk utility was rejected because adding a new Core API for this local cleanup would increase integration surface.
+Scalability potential: Low/MX350 presentation setup avoids more Unity hierarchy lookup debt. Middle/High/Ultra keep identical PDA inventory, marker HUD, main menu, save thumbnail, camera juice, marine snow, sky follow, and celestial observer behavior.
+Hardware Impact: Estimated runtime gain is 0-10 us on cold presentation setup/recovery frames only. Static `GetComponentCalls` improved from 384 to 321; scoped runtime presentation scan leaves only the editor-only Crest fallback in `HectonUnderwaterVisuals`.
+
+## Decision 033 - No-Rebuild Sixth Presentation H-Phi Reverification
+Problem: The root PDA/menu/VFX lookup pass changed source state after the `14:11:53` H-Phi reading, while the active instruction still forbids dotnet rebuilds.
+Solution: Ran only `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`, scoped `rg`, brace counts, and `git diff --check`. No `dotnet build`, `dotnet rebuild`, Unity compile, or Unity import was executed.
+Rejected Alternatives: Running a build was rejected by the direct no-rebuild order and the known external World/GPR compile blocker. Reusing stale H-Phi numbers was rejected as fake evidence.
+Scalability potential: Low-tier UI/VFX binding is cleaner and cheaper on cold paths; high-tier visual systems retain the same overkill presentation behavior.
+Hardware Impact: 0 us runtime from the audit itself. Latest static audit: `RuntimeHPhiNarrow=0.010755694`, `RuntimeHPhiRisk=0.000626365`, `AllSourceHPhiNarrow=0.009584727`, `AllSourceHPhiRisk=0.000510846`, `FindObjectCalls=0`, `GetComponentCalls=321`, `UnityUpdateMethods=0`, `StructLayoutAttributes=962`, `AupPrecisionRisk=0`.
+
+## Decision 034 - Diegetic Panel Phosphor Low-Tier Gate
+Problem: `DiegeticPanelController` still ran a blit-backed phosphor persistence fake when enabled, even though low/MX350 tiers should spend terminal budget on legibility and direct RT output rather than a history-buffer CRT afterimage.
+Solution: Added a low-tier/unknown/low-memory gate around phosphor resource allocation, late-frame registration, material output selection, and composite execution. Low tiers release the phosphor history buffers and render the direct panel texture; high tiers retain the CRT persistence fake.
+Rejected Alternatives: A full MonoBehaviour-to-RenderGraph migration was rejected inside this pass because the current phosphor composite is tied to a per-panel RT lifecycle, and a correct migration needs a renderer-feature owner plus Frame Debugger/RenderGraph Viewer proof. Leaving the blit path active on MX350 was rejected as unnecessary visual tax.
+Scalability potential: Low/TOASTER uses the cheapest readable terminal surface. Middle/High/Ultra keep the richer CRT persistence where the extra RT bandwidth is a visual purchase, not baseline cost.
+Hardware Impact: Estimated 20-120 us GPU/RT bandwidth avoided in active terminal views on low-tier hardware pending capture. Static H-Phi cannot prove the GPU win; it records the no-rebuild source state only.
+
+## Decision 035 - No-Rebuild Seventh Presentation H-Phi Reverification
+Problem: The phosphor LOD gate changed Presentation & UX source after the `15:17:41` H-Phi pass.
+Solution: Reran static H-Phi and scoped render-debt scans only. No `dotnet build`, `dotnet rebuild`, Unity import, or Unity player build was executed.
+Rejected Alternatives: Claiming RenderGraph completion was rejected because the remaining `Graphics.Blit` is still present for high-tier phosphor persistence and needs a separate renderer-feature migration. Running Unity verification was rejected by the no-rebuild order and external compile blocker.
+Scalability potential: Low/MX350 now avoids the phosphor history buffer and blit-backed persistence; High/Ultra retain the effect. Broader RenderGraph `AddUnsafePass` debt remains visible and should be handled as a feature-level migration, not a local MonoBehaviour patch.
+Hardware Impact: 0 us runtime from the audit itself. Latest static audit: `RuntimeHPhiNarrow=0.010787439`, `RuntimeHPhiRisk=0.000634336`, `AllSourceHPhiNarrow=0.009611624`, `AllSourceHPhiRisk=0.00051719`, `FindObjectCalls=0`, `GetComponentCalls=321`, `LinqSurface=3`, `ManagedFormatSurface=564`, `PrimaryManagedRuntimeRisk=177`, `MemoryAlignment=0.506309148`, `StructLayoutAttributes=963`, `AupPrecisionRisk=0`.

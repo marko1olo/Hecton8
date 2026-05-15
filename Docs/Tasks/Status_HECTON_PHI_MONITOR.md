@@ -1,6 +1,6 @@
 # Status_HECTON_PHI_MONITOR
 
-Status: CORE BUILD GREEN / PLAYER BUILDER DEBUG GATED / TIGHTENED H-PHI STATIC GATE PASSED / RUNTIME PENDING UNITY VERIFICATION
+Status: CORE BUILD GREEN / PRIMARY FORMATTER DEBT REDUCED / TIGHTENED H-PHI STATIC GATE PASSED / RUNTIME PENDING UNITY VERIFICATION
 Agent: HECTON_PHI_MONITOR
 Domain: ECHELON 9 / Architecture metrics / static H-Phi audit
 Task Count: 6
@@ -61,18 +61,22 @@ Task Count: 6
 - [x] Task 39: Cave graph release diagnostic gate | DOD: current tree gates cave validation `Debug.Log*` interpolation behind `UNITY_EDITOR || DEVELOPMENT_BUILD` while preserving validation booleans | Rejected: silencing validation failures in editor/dev builds or changing cave graph topology | Estimate: release runtime skips debug-string construction on validation branches; exact runtime us pending profiler
 - [x] Task 40: Verifier role classifier and tightened gate | DOD: `HectonPhiAudit.ps1` now classifies `*Verifier` files as instrumentation, PowerShell parser passed, Core build passed, and full tightened H-Phi static gate passed | Rejected: classifying real player tools as instrumentation by folder name alone | Estimate: 0 us runtime; metric routing correction only
 - [x] Task 41: PlayerBuilder debug interpolation gate | DOD: wrapped interpolated `LogBuilderDebug(...)` calls with `UNITY_EDITOR || DEVELOPMENT_BUILD` and `builderDebugLogging` guards so disabled builder debug does not build diagnostic strings; Core build passed | Rejected: changing builder gameplay flow, placement math, resource consumption, or public UI string contracts | Estimate: editor/dev disabled-debug allocation avoided; release calls compiled out; exact runtime us pending profiler
+- [x] Task 42: World population formatter purge | DOD: replaced `WorldPopulationRule.cs` role/layout/border interpolation with explicit concat/span helpers; Core build passed | Rejected: changing population rules, biome choice, socket ranking, or authored copy | Estimate: cold/readability string paths only; exact runtime us pending profiler
+- [x] Task 43: Mod loader failure-path formatter purge | DOD: removed all `string.Format`, `$"..."`, and explicit `.ToString()` hits from `ModLoader.cs` failure/disabled diagnostics; Core build passed | Rejected: hiding warnings in release or changing mod load/dependency ordering | Estimate: cold mod load/failure paths only; exact runtime us pending profiler
+- [x] Task 44: Quest state compile-label formatter and `ToArray` purge | DOD: replaced quest compile/debug label interpolation with deterministic builders and replaced two `List<T>.ToArray()` calls with explicit `CopyTo`; Core build passed | Rejected: changing packed quest bit layout, NativeArray lifetime, transition logic, or quest state jobs | Estimate: quest compile/audit cold paths only; exact runtime us pending profiler
+- [x] Task 45: Current build and tightened static gate | DOD: Core build passed with `0` warnings/errors and full H-Phi static budget gate passed at stricter managed-risk floors | Rejected: claiming runtime GC/frame gains without Unity Profiler/GCMonitor | Estimate: 0 us verified runtime; static evidence only
 
 ## Latest Static Scores
 - H-Phi runtime static narrow: `0.010787439`
-- H-Phi runtime static risk-adjusted: `0.000634446`
-- H-Phi all-source static narrow: `0.009606942`
-- H-Phi all-source static risk-adjusted: `0.000516535`
+- H-Phi runtime static risk-adjusted: `0.000634555`
+- H-Phi all-source static narrow: `0.009611624`
+- H-Phi all-source static risk-adjusted: `0.000517352`
 - Narrow integration: `1.0`
-- Risk integration: `0.058813404` (derived from latest gated runtime H-Phi components)
+- Risk integration: `0.058823529` (derived from latest gated runtime H-Phi components)
 - Architectural purity: `1.000000000`
 - Data sovereignty: `0.021306032`
 - Memory alignment: `0.506309148`
-- Binary-safe ratio: `0.018392013`
+- Binary-safe ratio: `0.018401682`
 - AUP precision integrity: `1.000000000`
 
 ## Current Verification Notes
@@ -140,4 +144,8 @@ Task Count: 6
 - `PlayerBuilder.cs` current tree gates interpolated builder-debug calls with `UNITY_EDITOR || DEVELOPMENT_BUILD` and `builderDebugLogging`; release calls are compiled out and disabled editor/dev debug no longer builds those diagnostic strings.
 - Final continuation Core build passed at `2026-05-15 18:51 +04:00` after transient file-lock and concurrent UI/SaveManager drift cleared: `0 Warning(s)`, `0 Error(s)`.
 - Latest tightened static H-Phi gate passed at `2026-05-15 18:51:10 +04:00` / gate replay after PlayerBuilder debug gating: `ManagedFormatSurface=606`, `PrimaryManagedRuntimeRisk=221`, `JobCompleteSurface=58`, `RuntimeHPhiRisk=0.000634446`, `RuntimeHPhiNarrow=0.010787439`, `FindObjectCalls=0`, `UnityUpdateMethods=0`, `SignalBusPush=341`, `GlobalRegistrySurface=5075`, `GetComponentCalls=321`, `NativeArrayRefs=7074`, and all Core graph budgets green.
+- `WorldPopulationRule.cs`, `ModLoader.cs`, and `QuestStateManager.cs` current tree now report no direct `string.Format`, `$"..."`, explicit `.ToString()`, or `.ToArray()` hits in the patched debt sites; quest uses explicit copy for the two previous list materializations.
+- Latest continuation Core build passed at `2026-05-15 19:58 +04:00`: `0 Warning(s)`, `0 Error(s)`.
+- Latest tightened static H-Phi gate passed at `2026-05-15 19:58 +04:00`: `ManagedFormatSurface=564`, `PrimaryManagedRuntimeRisk=177`, `LinqSurface=3`, `JobCompleteSurface=58`, `RuntimeHPhiRisk=0.000634555`, `RuntimeHPhiNarrow=0.010787439`, `FindObjectCalls=0`, `UnityUpdateMethods=0`, `SignalBusPush=341`, `GlobalRegistrySurface=5074`, `GetComponentCalls=321`, `NativeArrayRefs=7074`, `DataSovereignty=0.021306032`, `MemoryAlignment=0.506309148`, and all Core graph budgets green.
+- Scalar runtime H-Phi did not materially move in this final formatter pass because the current formula is dominated by signal/data/native-ownership counters. The verified gain is narrower primary managed-runtime debt: `221 -> 177` and `606 -> 564` managed formatting surface since the previous gate.
 - Unity Console / PlayMode / Profiler / GCMonitor: PENDING VERIFICATION.

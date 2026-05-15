@@ -7,6 +7,7 @@ using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
+using UnityEngine.Rendering.RenderGraphModule.Util;
 using UnityEngine.Rendering.Universal;
 
 #if UNITY_EDITOR
@@ -67,13 +68,6 @@ namespace Hecton8.Visor
 
         private sealed class NoirDepthFogPass : ScriptableRenderPass
         {
-            private sealed class PassData
-            {
-                internal TextureHandle Source;
-                internal TextureHandle Destination;
-                internal Material Material;
-            }
-
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Noir Depth Fog");
             private FeatureSettings _settings;
             private Material _material;
@@ -130,24 +124,12 @@ namespace Hecton8.Visor
                 TextureHandle destinationTexture = renderGraph.CreateTexture(destinationDesc);
                 UpdateMaterialParameters(_material, _settings);
 
-                using (var builder = renderGraph.AddUnsafePass<PassData>("Hecton Noir Depth Fog", out PassData passData, _profilingSampler))
+                using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
+                           new RenderGraphUtils.BlitMaterialParameters(sourceTexture, destinationTexture, _material, 0),
+                           passName: "Hecton Noir Depth Fog",
+                           returnBuilder: true))
                 {
-                    passData.Source = sourceTexture;
-                    passData.Destination = destinationTexture;
-                    passData.Material = _material;
-
-                    builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(depthTexture, AccessFlags.Read);
-                    builder.UseTexture(destinationTexture, AccessFlags.Write);
-
-                    builder.SetRenderFunc((PassData data, UnsafeGraphContext context) =>
-                    {
-                        CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
-                        const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
-                        const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
-
-                        Blitter.BlitCameraTexture(cmd, data.Source, data.Destination, LoadAction, StoreAction, data.Material, 0);
-                    });
                 }
 
                 resourceData.cameraColor = destinationTexture;

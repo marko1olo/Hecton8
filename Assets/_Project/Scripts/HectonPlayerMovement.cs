@@ -5223,7 +5223,7 @@ namespace Hecton8.Gameplay
                 return fallbackTarget;
 
             AbsoluteUniversePosition bodyAup = AbsoluteUniversePosition.FromRuntimePosition(bodyPosition);
-            double3 bodyOffsetAbsolute = bodyAup.ToAbsoluteDouble3() - _lastTransportPlatformAup.ToAbsoluteDouble3();
+            double3 bodyOffsetAbsolute = AbsoluteUniversePosition.DeltaMetersClamped(in bodyAup, in _lastTransportPlatformAup);
             float3 bodyOffset = new float3(
                 (float)bodyOffsetAbsolute.x,
                 (float)bodyOffsetAbsolute.y,

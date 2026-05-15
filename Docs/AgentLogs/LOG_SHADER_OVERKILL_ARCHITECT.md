@@ -352,3 +352,55 @@ Verification:
 - `git diff --check` on changed files: no whitespace errors; LF-to-CRLF warnings only.
 - Brace scan: `PauseMenuController 185/185`, `SettingsManager 194/194`; `PDAShellChrome` regex brace count is unchanged from HEAD baseline offset because strings contain braces.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`: `RuntimeHPhiNarrow=0.010752435`, `RuntimeHPhiRisk=0.000618924`, `AllSourceHPhiNarrow=0.009581932`, `AllSourceHPhiRisk=0.00050517`, `ArchitecturalPurity=1`, `DataSovereignty=0.021258973`, `MemoryAlignment=0.505783386`, `GetComponentCalls=384`, `UnityUpdateMethods=0`, `StructLayoutAttributes=962`, `AupPrecisionRisk=0`.
+
+## 2026-05-15 15:17:41 +04:00 - Follow-Up No-Rebuild Root Presentation Lookup Consolidation
+What was wrong:
+- Root PDA/menu/localization/save-thumbnail files and VFX/celestial presentation binders still had safe direct `GetComponent*` probes after the UI folder cleanup.
+- Some remaining debt lived in runtime installers for PDA/progression/narrative presentation systems that attach player-owned UI services.
+
+What was done:
+- Updated root PDA/menu/save/localization files, PDA marker/runtime installer files, progression/narrative presentation installers, build watermark presenter, camera juice, marine snow, sky follow camera, observer-relative celestial body, and dry-volume stencil source.
+- Replaced direct component probes with `TryGetComponent(out T)`.
+- Replaced parent component searches with bounded `Transform` walks.
+- Preserved generated UI, marker pools, save thumbnail camera fallback, localization runtime, VFX camera binding, and sky/celestial placement behavior.
+
+Cinematic Cheats used:
+- None added. This was lookup debt removal.
+- Existing visual cheats remain deterministic: PDA chrome, marker HUD, marine snow, camera juice, sky dome follow, and observer-relative celestial placement.
+
+Exact Microseconds saved:
+- Estimated 0-10 us CPU on cold presentation setup/recovery frames.
+- No steady-state Tick win claimed; static lookup count reduction is the measured output.
+
+Verification:
+- No dotnet rebuild was executed.
+- Scoped runtime UI/PDA/VFX/Visor/Graphics lookup scan now leaves only the editor-only Crest fallback `GetComponents<MonoBehaviour>()` in `HectonUnderwaterVisuals`.
+- `git diff --check` on edited files: no whitespace errors; LF-to-CRLF warnings only.
+- Brace scan on edited files: balanced.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`: `RuntimeHPhiNarrow=0.010755694`, `RuntimeHPhiRisk=0.000626365`, `AllSourceHPhiNarrow=0.009584727`, `AllSourceHPhiRisk=0.000510846`, `ArchitecturalPurity=1`, `DataSovereignty=0.021276596`, `MemoryAlignment=0.505517604`, `FindObjectCalls=0`, `GetComponentCalls=321`, `UnityUpdateMethods=0`, `StructLayoutAttributes=962`, `AupPrecisionRisk=0`.
+
+## 2026-05-15 20:04:54 +04:00 - Follow-Up No-Rebuild Diegetic Panel Phosphor Tier Gate
+What was wrong:
+- `DiegeticPanelController` had a blit-backed phosphor persistence fake that could stay active on Unknown/Low/Mx350/low-memory profiles.
+- The high-tier CRT persistence effect is visually useful, but on low tier it competes with terminal legibility and RT bandwidth.
+
+What was done:
+- Added `ShouldUsePhosphorDecay()` and `IsLowTierPhosphorProfile()` gates.
+- Low/Unknown/Mx350/low-memory profiles now release phosphor history textures and use the direct panel render texture.
+- Late-frame registration, resource allocation, composite execution, and material texture selection now respect the tier gate.
+- The high-tier phosphor persistence path remains unchanged; the remaining `Graphics.Blit` is explicitly recorded as feature-level RenderGraph migration debt.
+
+Cinematic Cheats used:
+- Kept the CRT phosphor persistence as a high-tier visual fake.
+- Low tier gets the cheaper readable terminal surface instead of simulating phosphor history.
+
+Exact Microseconds saved:
+- Estimated 20-120 us GPU/RT bandwidth avoided in active low-tier terminal views pending capture.
+- Static H-Phi cannot prove GPU time; runtime profiler/Frame Debugger proof remains blocked by the external compile issue.
+
+Verification:
+- No dotnet rebuild was executed.
+- `git diff --check` on `DiegeticPanelController.cs`: no whitespace errors; LF-to-CRLF warning only.
+- Brace scan: `DiegeticPanelController 201/201`.
+- Render-debt scan still shows high-tier `Graphics.Blit` in `DiegeticPanelController` and multiple existing RenderGraph `AddUnsafePass` debts in visor features; not claimed fixed.
+- `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json`: `RuntimeHPhiNarrow=0.010787439`, `RuntimeHPhiRisk=0.000634336`, `AllSourceHPhiNarrow=0.009611624`, `AllSourceHPhiRisk=0.00051719`, `ArchitecturalPurity=1`, `DataSovereignty=0.021306032`, `MemoryAlignment=0.506309148`, `FindObjectCalls=0`, `GetComponentCalls=321`, `LinqSurface=3`, `ManagedFormatSurface=564`, `PrimaryManagedRuntimeRisk=177`, `UnityUpdateMethods=0`, `StructLayoutAttributes=963`, `AupPrecisionRisk=0`.

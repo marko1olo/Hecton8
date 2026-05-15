@@ -157,3 +157,47 @@ Exact microseconds saved:
 - Measured proof absent.
 - Static estimate: prompt cache lookup/store path reduced from O(64) comparisons to O(4), sub-1us expected on i3/MX350 during hover acquisition.
 - Compile repairs claim 0us runtime savings.
+
+## Entry - Wider Finite Vaccination / No-Grow Snapshot Flush
+
+Status: CORE CLI BUILD GREEN. `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false /p:UseSharedCompilation=false` succeeds with 0 warnings / 0 errors. Mandatory communication scan reports 2230 legacy hits, still not zero.
+
+What was wrong:
+- `SignalBus<T>.Push()` finite guards covered damage/impact/weather/time/pause/fluid and look-target/base lanes, but several typed float-heavy lanes still trusted producers.
+- `SignalBus<T>.FlushPreSimulation()` could grow `_frameSnapshot.Capacity` during the pre-simulation flush if tier state changed after low-tier initialization.
+- A strict scan still found `new float3(...)` inside finite guard fallback logic and the touched look-target producer/UI path.
+
+What was done:
+- Added cached guard-kind sanitizers for `PlayerStateSignal`, `SurvivalVitalsChangedSignal`, `PlayerActionProgressSignal`, `CameraPositionSignal`, `CameraFrustumSignal`, `HullDeformedSignal`, `BaseModuleCompromisedSignal`, `AupPreShiftSignal`, and `AupShiftSignal`.
+- Added shared scalar/vector guard helpers for unit intervals, non-negative floats, camera forward/up fallbacks, and finite `float3` checks.
+- Removed the `new float3(...)` fallback and replaced look-target producer/UI vector construction checks with scalar field assignment and scalar finite checks.
+- Changed pre-simulation flushing to cap `frameLimit` to existing snapshot capacity instead of resizing the `NativeList<T>` in the frame boundary.
+
+Cinematic cheats used:
+- Camera/frustum, hull dents, vitals, and action progress remain compact scalar/vector presentation signals. Invalid payloads collapse to safe deterministic fakes instead of forcing expensive recovery logic in each consumer.
+- Low tier keeps capped snapshots; High/Ultra can consume clean snapshots for richer visor, foveated, hull deformation, and base stress visuals after cold prewarm.
+
+Exact microseconds saved:
+- Measured proof absent.
+- Static estimate: guarded normal path remains sub-1us per affected push on i3/MX350 because routing is cached per generic lane.
+- No-grow snapshot flush avoids possible frame-boundary native allocation/copy stalls; no steady-state microsecond claim without profiler.
+
+## Entry - Core Producer Audit-Shape Cleanup
+
+Status: CORE CLI BUILD GREEN. `dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false /p:UseSharedCompilation=false` succeeds with 0 warnings / 0 errors.
+
+What was wrong:
+- Core producer code still used `SignalBus<T>.Push(new ...Signal)` and `new ...Signal` value initializers. These are struct initializers, but they fail the project static audit convention.
+- `InputDispatcher` still had `new float3(...)` text in XR input staging near signal-publication logic.
+
+What was done:
+- Converted camera position/frustum and player input command producers to `default` packet construction plus explicit field assignment and `Push(in packet)`.
+- Converted time dilation, bullet-time visual, memory pressure, and input-state signal value initialization to `default` packet construction.
+- Replaced XR input `new float3(...)` staging with scalar field assignment.
+
+Cinematic cheats used:
+- No visual/runtime behavior changed. This is audit-shape hardening so the signal lane can be reviewed mechanically without false allocation flags.
+
+Exact microseconds saved:
+- Measured proof absent.
+- Runtime expected neutral. Integration/audit time saved by eliminating strict-scan false positives in Core signal producers.

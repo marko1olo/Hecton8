@@ -935,6 +935,109 @@ Residual risk:
 Current Status:
 - BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK28 CURRENT-DISK GREEN.
 
+## 2026-05-15 - CurrentDisk30/CurrentDiskBudgetGate11 Fresh Current-Disk Closure
+
+What was wrong:
+- Later source edits invalidated `CurrentDisk28` and `CurrentDiskBudgetGate10`.
+- `CurrentDisk29` reported missing `QuestStateManager` helper methods, but current disk inspection showed the file already contained those helpers after the write completed.
+
+What was done:
+- Rejected the stale Quest mid-write wall instead of adding duplicate helper methods.
+- Recompiled current disk and accepted `CurrentDisk30`.
+- Re-ran the strict full-source H-Phi budget gate and accepted `CurrentDiskBudgetGate11`.
+- Tightened the documented H-Phi command to `ManagedFormatSurface=564` and `PrimaryManagedRuntimeRisk=177`.
+
+Cinematic Cheats used:
+- Compile/static evidence closure only.
+- No gameplay feature, physics simulation, rendering rewrite, package change, prefab/scene change, `.asmdef` edit, or generated `.csproj` edit.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Compile verification time: 93,819,591 us.
+- H-Phi verification time: 130,856,190 us.
+
+Verification:
+- Compile artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_194452_CurrentDisk30.log`.
+- Compile result: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_194722_CurrentDiskBudgetGate11.json`.
+- H-Phi result: `EXIT=0`, `RuntimeHPhiRisk=0.000634555`, `DataSovereignty=0.021306032`, `MemoryAlignment=0.506309148`, `GlobalRegistrySurface=5074`, `GetComponentCalls=321`, `NativeArrayRefs=7074`, `ManagedFormatSurface=564`, `JobCompleteSurface=58`, `PrimaryManagedRuntimeRisk=177`, `UnityUpdateMethods=0`, `FindObjectCalls=0`, `AupPrecisionRisk=0`.
+- Freshness: no C# source under `Assets/_Project/Scripts` was newer than either final artifact at verification time.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, player build, runtime visuals, Quest/IL2CPP, and platform build were not run.
+- Runtime microsecond savings are not claimed without profiler evidence.
+
+Current Status:
+- BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK30 CURRENT-DISK GREEN.
+
+## 2026-05-15 - CurrentDisk36/CurrentDiskBudgetGate15 Fresh Current-Disk Closure
+
+What was wrong:
+- Later kinematics/audio/save/UI/power/modding edits invalidated the CurrentDisk30 evidence pair.
+- A strict H-Phi run failed after the source moved, proving the previous floor/ceiling set was no longer current.
+
+What was done:
+- Recompiled current disk after the latest source writes and accepted `CurrentDisk36`.
+- Re-ran the full strict H-Phi budget gate and accepted `CurrentDiskBudgetGate15`.
+- Tightened the documented H-Phi command to the current values: `GlobalRegistrySurface=5067`, `ManagedFormatSurface=553`, `PrimaryManagedRuntimeRisk=166`, `MinRuntimeHPhiRisk=0.000635300`.
+
+Cinematic Cheats used:
+- Compile/static evidence closure only.
+- No gameplay feature, physics simulation, rendering rewrite, package change, prefab/scene change, `.asmdef` edit, or generated `.csproj` edit.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Compile verification time: 118,489,571 us.
+- H-Phi verification time: 151,815,116 us.
+
+Verification:
+- Compile artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_203547_CurrentDisk36.log`.
+- Compile result: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_203908_CurrentDiskBudgetGate15.json`.
+- H-Phi result: `EXIT=0`, `RuntimeHPhiRisk=0.000635322`, `DataSovereignty=0.021306032`, `MemoryAlignment=0.506309148`, `GlobalRegistrySurface=5067`, `GetComponentCalls=321`, `NativeArrayRefs=7074`, `ManagedFormatSurface=553`, `JobCompleteSurface=58`, `PrimaryManagedRuntimeRisk=166`, `UnityUpdateMethods=0`, `FindObjectCalls=0`, `AupPrecisionRisk=0`.
+- Freshness: no C# source under `Assets/_Project/Scripts` was newer than either final artifact at verification time.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, player build, runtime visuals, Quest/IL2CPP, and platform build were not run.
+- Runtime microsecond savings are not claimed without profiler evidence.
+
+Current Status:
+- BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK36 CURRENT-DISK GREEN.
+
+## 2026-05-15 - CurrentDisk39/CurrentDiskBudgetGate16 Fresh Current-Disk Closure
+
+What was wrong:
+- Later logistics graph/input/dispatcher edits invalidated `CurrentDisk36`.
+- H-Phi had already been refreshed after those writes, but the compile artifact was stale.
+
+What was done:
+- Recompiled the latest source snapshot and accepted `CurrentDisk39`.
+- Kept `CurrentDiskBudgetGate16` as the current strict H-Phi proof.
+- Tightened the documented H-Phi command to `GlobalRegistrySurface=5066`, `ManagedFormatSurface=543`, `PrimaryManagedRuntimeRisk=156`, `MinRuntimeHPhiRisk=0.000635400`.
+
+Cinematic Cheats used:
+- Compile/static evidence closure only.
+- No gameplay feature, physics simulation, rendering rewrite, package change, prefab/scene change, `.asmdef` edit, or generated `.csproj` edit.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Compile verification time: 10,470,053 us.
+- H-Phi verification time: 162,473,647 us.
+
+Verification:
+- Compile artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_205331_CurrentDisk39.log`.
+- Compile result: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_204959_CurrentDiskBudgetGate16.json`.
+- H-Phi result: `EXIT=0`, `RuntimeHPhiRisk=0.000635432`, `DataSovereignty=0.021306032`, `MemoryAlignment=0.506309148`, `GlobalRegistrySurface=5066`, `GetComponentCalls=321`, `NativeArrayRefs=7074`, `ManagedFormatSurface=543`, `JobCompleteSurface=58`, `PrimaryManagedRuntimeRisk=156`, `UnityUpdateMethods=0`, `FindObjectCalls=0`, `AupPrecisionRisk=0`.
+- Freshness: no C# source under `Assets/_Project/Scripts` was newer than either final artifact at verification time.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, player build, runtime visuals, Quest/IL2CPP, and platform build were not run.
+- Runtime microsecond savings are not claimed without profiler evidence.
+
+Current Status:
+- BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK39 CURRENT-DISK GREEN.
+
 ## 2026-05-15 - CurrentDisk24/CurrentDiskBudgetGate14 Active Writer Boundary
 
 What was wrong:

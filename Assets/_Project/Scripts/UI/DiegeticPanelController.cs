@@ -441,6 +441,7 @@ namespace Hecton8.UI
         private Transform[] _cachedFingertipTransforms;
         private uint _fingertipBindingMask;
         private int _activeFingerIndex = -1;
+        private bool _lowTierPhosphorProfile = true;
 
         /// <summary>
         /// Returns the current RT assigned to the panel camera, if any.
@@ -458,6 +459,7 @@ namespace Hecton8.UI
             ResolveSerializedReferences();
             ResolveInterfaces();
             DetermineTargetHardwareTier();
+            RefreshPhosphorTierProfile();
             RefreshServices();
             TryRegisterHotSwapListener();
             RegisterRenderPipelineHook();
@@ -471,6 +473,7 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             ResolveSerializedReferences();
+            RefreshPhosphorTierProfile();
             RefreshServices();
             TryRegisterHotSwapListener();
             TryRegisterTick();
@@ -597,7 +600,7 @@ namespace Hecton8.UI
             if (_presentationPausedByOwner)
                 return;
 
-            if (enablePhosphorDecay && _panelRenderTexture != null)
+            if (ShouldUsePhosphorDecay() && _panelRenderTexture != null)
                 ApplyMaterialState(forceTextureRefresh: true, forceDepthRefresh: false);
         }
 
@@ -846,7 +849,7 @@ namespace Hecton8.UI
         {
             enablePhosphorDecay = enabled;
             phosphorDecay = ResolvePhosphorDecay(decay);
-            if (enabled)
+            if (ShouldUsePhosphorDecay())
                 EnsurePhosphorResources();
             else
                 ReleasePhosphorTextures();
@@ -1293,8 +1296,16 @@ namespace Hecton8.UI
 
         private void EnsurePhosphorResources()
         {
-            if (!enablePhosphorDecay || _panelRenderTexture == null)
+            if (!ShouldUsePhosphorDecay() || _panelRenderTexture == null)
+            {
+                if (_phosphorFrontTexture != null || _phosphorBackTexture != null)
+                {
+                    ReleasePhosphorTextures();
+                    ApplyMaterialState(forceTextureRefresh: true, forceDepthRefresh: false);
+                }
+
                 return;
+            }
 
             if (!EnsurePhosphorMaterial())
                 return;
@@ -1367,7 +1378,7 @@ namespace Hecton8.UI
 
         private void CompositePhosphorFrame()
         {
-            if (!enablePhosphorDecay ||
+            if (!ShouldUsePhosphorDecay() ||
                 _panelRenderTexture == null ||
                 _phosphorDecayMaterial == null)
             {
@@ -1491,7 +1502,7 @@ namespace Hecton8.UI
 
             if (forceTextureRefresh && _panelRenderTexture != null)
             {
-                Texture outputTexture = enablePhosphorDecay && _phosphorFrontTexture != null
+                Texture outputTexture = ShouldUsePhosphorDecay() && _phosphorFrontTexture != null
                     ? _phosphorFrontTexture
                     : _panelRenderTexture;
                 if (!ReferenceEquals(_appliedPanelOutputTexture, outputTexture))
@@ -2226,7 +2237,7 @@ namespace Hecton8.UI
         private void RefreshLateFrameRegistration()
         {
             bool shouldRegisterLateFrame =
-                enablePhosphorDecay &&
+                ShouldUsePhosphorDecay() &&
                 _panelRenderTexture != null &&
                 _ownsPanelRenderTexture &&
                 panelCamera != null &&
@@ -2308,6 +2319,20 @@ namespace Hecton8.UI
                 return;
 
             CompositePhosphorFrame();
+        }
+
+        private void RefreshPhosphorTierProfile()
+        {
+            byte fallbackTier = _isMx350Tier
+                ? ScalabilityTierProfiles.LowMx350
+                : ScalabilityTierProfiles.HighRtx;
+            byte profileTier = PlatformIntegrationBridge.ResolveCurrentScalabilityTier(fallbackTier);
+            _lowTierPhosphorProfile = _isMx350Tier || profileTier == ScalabilityTierProfiles.LowMx350;
+        }
+
+        private bool ShouldUsePhosphorDecay()
+        {
+            return enablePhosphorDecay && !_lowTierPhosphorProfile;
         }
 
         private static void SetLayerRecursive(Transform root, int layer)

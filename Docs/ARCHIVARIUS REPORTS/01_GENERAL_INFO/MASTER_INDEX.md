@@ -20,7 +20,7 @@ This index is path-accurate, not truth-uniform.
 - current project authority starts at `AGENTS.md`, `.agents-skills/README.md`, task-relevant mandates, `Docs/README.md`, stable architecture docs, current source, and fresh logs
 - for Archivarius-local orientation, read `01_GENERAL_INFO/README.md`, `PROJECT_ATLAS.md`, `DOC_AUTHORITY_CLASSIFICATION.md`, and `CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`
 - for report-vault trust rules, read `02_ACTUAL_REPORTS/README.md`
-- for current counters and compile-only evidence, read `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` and `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`
+- for current documentation/status overrides, read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` and `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md`; the May 11 continuation and manifest are historical snapshots only
 
 ## Coverage Snapshot
 

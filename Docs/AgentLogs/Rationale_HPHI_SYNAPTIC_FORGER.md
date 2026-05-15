@@ -349,3 +349,19 @@ Solution: Removed the input-service subscription and moved interaction execution
 Rejected Alternatives: Polling raw input state was rejected because the command lane already preserves the discrete interact edge. Converting mounted transport interact in the same pass was rejected because mounted transport owns a different authority cadence and direct native input binding while mounted. Removing the active-key cache was rejected because UI prompt text still needs authored binding labels.
 Scalability potential: Low/toaster tier removes one player-interaction delegate and keeps interact execution in the already-paid player tick. Middle tier can share the same command stream for more interaction presentation. High/Ultra can add richer prompt VFX, haptics, and cockpit echoes without touching input producers.
 Hardware Impact: Estimated i3/MX350 gain is 0.05-0.25 us on interact bursts and lower leak risk from one fewer `IInputService` subscriber in the player root. No dotnet build/restore/rebuild was run by user order.
+
+### 2026-05-15 - Build Debt Gate Recheck
+
+Problem: The latest instruction explicitly requested build repair/debt closure after the H-Phi signal conversions. Static checks were clean, but static evidence cannot prove assembly-level namespace/interface compatibility.
+Solution: Ran incremental no-restore compile gates. `dotnet build Hecton8.Core.csproj --no-restore -v:minimal` succeeded with 0 warnings and 0 errors. The first `Assembly-CSharp.csproj --no-restore` attempt timed out before diagnostics, so lingering build servers were shut down cleanly and the gate was rerun with a longer timeout; `dotnet build Assembly-CSharp.csproj --no-restore -v:minimal` succeeded with 0 warnings and 0 errors in 00:03:47.55.
+Rejected Alternatives: Relying only on `git diff --check` was rejected because the user explicitly requested build repair. Running restore or rebuild was rejected because the project assets were already present and the safer evidence target was incremental compile without dependency churn.
+Scalability potential: Low/toaster, Middle, High, and Ultra tiers all benefit from a clean compile gate because the signal-lane changes remain integration-safe across the full Assembly-CSharp surface.
+Hardware Impact: Runtime gain is 0.0 us; this is debt closure and integration risk removal. No dotnet restore or dotnet rebuild was run.
+
+### 2026-05-15 - Serialized Assembly Build Gate
+
+Problem: After concurrent workspace changes, the parallel `Assembly-CSharp.csproj --no-restore` compile failed with MSB4166 child-node exits. The failure carried no C# diagnostics, so editing source would be guesswork and could damage unrelated agent work.
+Solution: Preserved the successful `Hecton8.Core.csproj --no-restore` result, shut down build servers, and reran Assembly-CSharp with a single MSBuild node and node reuse disabled: `dotnet build Assembly-CSharp.csproj --no-restore -v:minimal -m:1 /nr:false`. That gate succeeded with 0 warnings and 0 errors in 00:03:15.37.
+Rejected Alternatives: Editing source without compiler diagnostics was rejected because the failure was infrastructure-level MSBuild node termination. Running restore/rebuild was rejected because project assets were present and the user asked to repair build debt, not churn dependency state. Ignoring the MSB4166 failure was rejected because a deterministic clean gate was still required.
+Scalability potential: All runtime tiers benefit from this only as integration risk removal; the code path remains the same, but the build process now has a stable verification command under local node instability.
+Hardware Impact: Runtime gain is 0.0 us. Engineering gain is deterministic build validation on this machine without restore or rebuild.

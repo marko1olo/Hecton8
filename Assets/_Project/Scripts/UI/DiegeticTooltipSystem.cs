@@ -1334,12 +1334,17 @@ namespace Hecton8.UI
             if (!_blackBox.IsCreated)
                 return;
 
+            float3 anchorPayload = default;
+            anchorPayload.x = anchor.x;
+            anchorPayload.y = anchor.y;
+            anchorPayload.z = anchor.z;
+
             _blackBoxDumped = false;
             _blackBox[_blackBoxCursor] = new TooltipBlackBoxEntry
             {
                 Frame = unchecked((uint)Time.frameCount),
                 TargetHash = _activeTargetHash,
-                Anchor = new float3(anchor.x, anchor.y, anchor.z),
+                Anchor = anchorPayload,
                 Alpha = tint.w,
                 SchemeHash = _activeSchemeHash,
                 GlyphCount = (ushort)math.min(ushort.MaxValue, _textGlyphCount + _iconCount),
@@ -1490,7 +1495,9 @@ namespace Hecton8.UI
 
         private static bool IsFinite(Vector3 value)
         {
-            return math.all(math.isfinite(new float3(value.x, value.y, value.z)));
+            return math.isfinite(value.x)
+                && math.isfinite(value.y)
+                && math.isfinite(value.z);
         }
 
         private static Mesh CreateQuadMesh()

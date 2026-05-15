@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
+using UnityEngine.Rendering.RenderGraphModule.Util;
 using UnityEngine.Rendering.Universal;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -69,14 +70,6 @@ namespace Hecton8.Visor
                 internal float radius;
                 internal float depthSigma;
                 internal int sampleCount;
-            }
-
-            private sealed class CompositePassData
-            {
-                internal TextureHandle source;
-                internal TextureHandle giTexture;
-                internal TextureHandle destination;
-                internal Material compositeMaterial;
             }
 
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Biolum SSGI");
@@ -244,24 +237,12 @@ namespace Hecton8.Visor
                 compositeDesc.msaaSamples = MSAASamples.None;
                 TextureHandle compositeTexture = renderGraph.CreateTexture(compositeDesc);
 
-                using (var builder = renderGraph.AddUnsafePass<CompositePassData>("Hecton Biolum SSGI Composite", out CompositePassData passData, _profilingSampler))
+                using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
+                           new RenderGraphUtils.BlitMaterialParameters(sourceTexture, compositeTexture, _compositeMaterial, 0),
+                           passName: "Hecton Biolum SSGI Composite",
+                           returnBuilder: true))
                 {
-                    passData.source = sourceTexture;
-                    passData.giTexture = giTexture;
-                    passData.destination = compositeTexture;
-                    passData.compositeMaterial = _compositeMaterial;
-
-                    builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(giTexture, AccessFlags.Read);
-                    builder.UseTexture(compositeTexture, AccessFlags.Write);
-
-                    builder.SetRenderFunc((CompositePassData data, UnsafeGraphContext context) =>
-                    {
-                        CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
-                        const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
-                        const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
-                        Blitter.BlitCameraTexture(cmd, data.source, data.destination, LoadAction, StoreAction, data.compositeMaterial, 0);
-                    });
                 }
 
                 resourceData.cameraColor = compositeTexture;

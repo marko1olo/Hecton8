@@ -264,6 +264,7 @@ namespace Hecton8.Power
             _pendingDescriptor = lease.Descriptor;
             _pendingGridHandle = signal.GridHandle;
             _lastGraphFaultFlags = 0;
+            _faultDumped = false;
 
             WfcOutpostGraphTranslationJob job = new WfcOutpostGraphTranslationJob
             {
@@ -304,10 +305,10 @@ namespace Hecton8.Power
         {
             _activeDescriptor = _pendingDescriptor;
             _activeGridHandle = _pendingGridHandle;
-            _activeNodeCount = ReadCount(WfcOutpostGraphCountSlots.NodeCount);
-            _activeDirectedEdgeCount = ReadCount(WfcOutpostGraphCountSlots.DirectedEdgeCount);
-            _activeDoorCount = ReadCount(WfcOutpostGraphCountSlots.DoorCount);
-            _activeRoomCount = ReadCount(WfcOutpostGraphCountSlots.RoomCount);
+            _activeNodeCount = ReadBoundedCount(WfcOutpostGraphCountSlots.NodeCount, MaxCells);
+            _activeDirectedEdgeCount = ReadBoundedCount(WfcOutpostGraphCountSlots.DirectedEdgeCount, MaxDirectedEdges);
+            _activeDoorCount = ReadBoundedCount(WfcOutpostGraphCountSlots.DoorCount, MaxCells);
+            _activeRoomCount = ReadBoundedCount(WfcOutpostGraphCountSlots.RoomCount, MaxCells);
             _activeGeneratorNodeIndex = _generatorNodeIndex.IsCreated && _generatorNodeIndex.Length > 0 ? _generatorNodeIndex[0] : -1;
             _lastGraphFaultFlags = ReadCount(WfcOutpostGraphCountSlots.FaultFlags);
             _reactorOutput01 = InitialReactorOutput01;
@@ -467,11 +468,11 @@ namespace Hecton8.Power
                     CellIndex = node.CellIndex,
                     DoorId = node.DoorId,
                     Voltage = voltage,
-                    Frame = unchecked((uint)math.max(0, Time.frameCount)),
+                    Frame = CurrentFrameU32(),
                     Unlocked = (byte)(voltage > DoorUnlockVoltage ? 1 : 0),
                     Flags = (byte)(voltage > DoorUnlockVoltage ? 1 : 0)
                 };
-                GlobalSignals.Publish(in signal);
+                SignalBus<WfcOutpostDoorPowerSignal>.Push(in signal);
             }
         }
 
@@ -488,7 +489,7 @@ namespace Hecton8.Power
                 NodeId = (uint)math.max(0, _activeGeneratorNodeIndex),
                 SupplyRatio = supplyRatio,
                 Severity01 = severity,
-                Frame = unchecked((uint)math.max(0, Time.frameCount)),
+                Frame = CurrentFrameU32(),
                 Priority = (byte)LogisticsBrownoutTier.EmergencyOnly,
                 Flags = 1 << 2
             };
@@ -635,7 +636,7 @@ namespace Hecton8.Power
 
             _blackBox[index] = new WfcOutpostPowerBootTelemetryEntry
             {
-                Frame = unchecked((uint)math.max(0, Time.frameCount)),
+                Frame = CurrentFrameU32(),
                 GridHandle = _activeGridHandle,
                 SectorHash = _activeDescriptor.SectorHash,
                 NodeCount = _activeNodeCount,
@@ -708,6 +709,16 @@ namespace Hecton8.Power
         private int ReadCount(int slot)
         {
             return _counts.IsCreated && (uint)slot < (uint)_counts.Length ? math.max(0, _counts[slot]) : 0;
+        }
+
+        private int ReadBoundedCount(int slot, int maxValue)
+        {
+            return math.min(ReadCount(slot), maxValue);
+        }
+
+        private static uint CurrentFrameU32()
+        {
+            return unchecked((uint)math.max(0, Time.frameCount));
         }
 
         private static bool HasFatalGraphFault(int faultFlags)

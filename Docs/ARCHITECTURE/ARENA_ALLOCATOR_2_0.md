@@ -90,15 +90,18 @@ OOM path publishes through `GlobalTelemetryBus.PublishPerformanceWarning(...)` w
 
 Persistent H8 allocations are all-or-nothing:
 
+- tracking-table initialization clamps caller capacity to `MaxTrackingCapacity`;
 - native arrays and raw allocations are exposed only after owner tracking succeeds;
 - raw reallocation registers the replacement block before freeing the old block;
 - if allocation tracking or memory-map descriptor registration fails after native memory is acquired, the new allocation is freed and `FatalMemoryException` is thrown;
 - block descriptor storage grows up to `MaxTrackingCapacity` instead of silently dropping new descriptor evidence;
 - freed non-vault allocation descriptors are tombstoned with `Bytes=0` so descriptor slots are reusable across allocation churn;
 - reused tombstone descriptor slots advance generation from the previous slot unless the incoming domain generation is already higher;
+- descriptor generation advances are normalized through one positive-generation helper on reuse, free, and owner-key mutation paths;
 - tracking-table growth rebuilds the pointer-owner map all-or-nothing; duplicate/corrupt pointer evidence aborts growth before old tables are disposed;
+- owner-gated free and raw reallocation cross-check the pointer-owner map before trusting the allocation record scan;
 - read-only aliases require a concrete `SystemID` reader at the DataVault and H8Memory boundaries;
-- generation handles mark the target block as externally viewed before returning the post-mark generation;
+- generation handles and direct buffer aliases fail closed unless the target block is marked as externally viewed before returning;
 - DataVault arena initialization and block splitting fail closed if H8 sub-block descriptors cannot be registered.
 
 ## Legal Uses

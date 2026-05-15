@@ -1543,7 +1543,8 @@ namespace Hecton8.Gameplay
             if (_cachedPlayerMovement != null)
             {
                 AbsoluteUniversePosition anchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchorPoint);
-                double3 delta = _cachedPlayerMovement.CurrentAup.ToAbsoluteDouble3() - anchorAup.ToAbsoluteDouble3();
+                AbsoluteUniversePosition playerAup = _cachedPlayerMovement.CurrentAup;
+                double3 delta = AbsoluteUniversePosition.DeltaMetersClamped(in playerAup, in anchorAup);
                 awayFromAnchor = default;
                 awayFromAnchor.x = (float)delta.x;
                 awayFromAnchor.z = (float)delta.z;

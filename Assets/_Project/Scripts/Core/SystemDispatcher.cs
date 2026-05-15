@@ -1243,26 +1243,22 @@ namespace Hecton8.Core
             _lastPublishedTimeDilationSequence = _timeDilationSequence;
             float scalar = _timeDilationScalar;
             uint frame = unchecked((uint)Time.frameCount);
-            TimeDilationSignal dilationSignal = new TimeDilationSignal
-            {
-                Scalar = scalar,
-                UnscaledDeltaTime = CurrentFrameUnscaledDeltaTime,
-                Sequence = _timeDilationSequence,
-                Frame = frame,
-                ReasonHash = reasonHash,
-                Flags = (byte)(SimulationPaused ? 1 : 0)
-            };
+            TimeDilationSignal dilationSignal = default;
+            dilationSignal.Scalar = scalar;
+            dilationSignal.UnscaledDeltaTime = CurrentFrameUnscaledDeltaTime;
+            dilationSignal.Sequence = _timeDilationSequence;
+            dilationSignal.Frame = frame;
+            dilationSignal.ReasonHash = reasonHash;
+            dilationSignal.Flags = (byte)(SimulationPaused ? 1 : 0);
             GlobalSignals.Publish(in dilationSignal);
 
-            BulletTimeVisualSignal visualSignal = new BulletTimeVisualSignal
-            {
-                Intensity01 = math.saturate((BulletTimePostScalarThreshold - scalar) / BulletTimePostScalarThreshold),
-                Scalar = scalar,
-                Frame = frame,
-                Sequence = _timeDilationSequence,
-                QualityTier = GlobalRegistry.ScalabilityTierProfileByte,
-                Flags = (byte)(SimulationPaused ? 1 : 0)
-            };
+            BulletTimeVisualSignal visualSignal = default;
+            visualSignal.Intensity01 = math.saturate((BulletTimePostScalarThreshold - scalar) / BulletTimePostScalarThreshold);
+            visualSignal.Scalar = scalar;
+            visualSignal.Frame = frame;
+            visualSignal.Sequence = _timeDilationSequence;
+            visualSignal.QualityTier = GlobalRegistry.ScalabilityTierProfileByte;
+            visualSignal.Flags = (byte)(SimulationPaused ? 1 : 0);
             GlobalSignals.Publish(in visualSignal);
         }
 
@@ -2186,15 +2182,13 @@ namespace Hecton8.Core
         public static void DispatchCriticalMemoryPressure(in CriticalMemoryPressureEvent memoryPressureEvent)
         {
             RequestVisualStaticGlitch();
-            MemoryPressureSignal pressureSignal = new MemoryPressureSignal
-            {
-                ReservedMemoryBytes = memoryPressureEvent.ReservedMemoryBytes,
-                PhysicalMemoryBytes = memoryPressureEvent.PhysicalMemoryBytes,
-                UsageRatio = (float)memoryPressureEvent.UsageRatio,
-                Frame = unchecked((uint)memoryPressureEvent.Frame),
-                Severity = 2,
-                Flags = 1
-            };
+            MemoryPressureSignal pressureSignal = default;
+            pressureSignal.ReservedMemoryBytes = memoryPressureEvent.ReservedMemoryBytes;
+            pressureSignal.PhysicalMemoryBytes = memoryPressureEvent.PhysicalMemoryBytes;
+            pressureSignal.UsageRatio = (float)memoryPressureEvent.UsageRatio;
+            pressureSignal.Frame = unchecked((uint)memoryPressureEvent.Frame);
+            pressureSignal.Severity = 2;
+            pressureSignal.Flags = 1;
             GlobalSignals.Publish(in pressureSignal);
             IMacroDatabaseService macroDatabase = GlobalRegistry.MacroDatabase;
             macroDatabase?.NotifyCriticalMemoryPressure(
@@ -3264,25 +3258,23 @@ namespace Hecton8.Core
             Vector3 forward = cameraTransform.forward;
             Vector3 up = cameraTransform.up;
 
-            SignalBus<Hecton8.Core.Signals.CameraPositionSignal>.Push(new Hecton8.Core.Signals.CameraPositionSignal
-            {
-                Position = (float3)position,
-                Frame = frame,
-                Forward = (float3)forward,
-                Flags = 1
-            });
+            Hecton8.Core.Signals.CameraPositionSignal positionSignal = default;
+            positionSignal.Position = (float3)position;
+            positionSignal.Frame = frame;
+            positionSignal.Forward = (float3)forward;
+            positionSignal.Flags = 1;
+            SignalBus<Hecton8.Core.Signals.CameraPositionSignal>.Push(in positionSignal);
 
-            SignalBus<Hecton8.Core.Signals.CameraFrustumSignal>.Push(new Hecton8.Core.Signals.CameraFrustumSignal
-            {
-                Position = (float3)position,
-                Forward = (float3)forward,
-                Up = (float3)up,
-                FieldOfViewDegrees = camera.fieldOfView,
-                NearClipMeters = camera.nearClipPlane,
-                FarClipMeters = camera.farClipPlane,
-                Frame = frame,
-                Flags = 1
-            });
+            Hecton8.Core.Signals.CameraFrustumSignal frustumSignal = default;
+            frustumSignal.Position = (float3)position;
+            frustumSignal.Forward = (float3)forward;
+            frustumSignal.Up = (float3)up;
+            frustumSignal.FieldOfViewDegrees = camera.fieldOfView;
+            frustumSignal.NearClipMeters = camera.nearClipPlane;
+            frustumSignal.FarClipMeters = camera.farClipPlane;
+            frustumSignal.Frame = frame;
+            frustumSignal.Flags = 1;
+            SignalBus<Hecton8.Core.Signals.CameraFrustumSignal>.Push(in frustumSignal);
         }
 
         internal static void Clear()

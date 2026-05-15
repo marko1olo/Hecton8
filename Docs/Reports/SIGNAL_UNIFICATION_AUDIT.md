@@ -77,12 +77,25 @@ rg -l "<pattern>" Assets/_Project/Scripts --glob "*.cs"
   - `FluidImpulseSignal`
   - `SystemPauseSignal`
   - `WeatherChangedSignal`
+  - `PlayerLookTargetSignal`
+  - `PlayerStateSignal`
+  - `SurvivalVitalsChangedSignal`
+  - `PlayerActionProgressSignal`
+  - `CameraPositionSignal`
+  - `CameraFrustumSignal`
+  - `HullDeformedSignal`
+  - `BaseModuleCompromisedSignal`
+  - `PlayerBaseEnterSignal`
+  - `PlayerBaseExitSignal`
+  - `AupPreShiftSignal`
+  - `AupShiftSignal`
 - Added source-publish finite vaccination before legacy queue enqueue for:
   - `TimeDilationSignal`
   - `SimulationPauseSignal`
   - `BulletTimeVisualSignal`
   - `WeatherStrengthSignal`
 - Replaced per-push guard type discovery with a per-generic guard-kind cache (`SignalPayloadFiniteGuardCache<T>.Kind`), so lane type resolution is cold and hot pushes use a byte switch.
+- `SignalBus<T>.FlushPreSimulation()` now caps to current snapshot capacity instead of growing `NativeList<T>` at the pre-simulation boundary.
 - Added main-thread publish sanitization before legacy `DamageSignal` and `ImpactSignal` queues receive packets.
 - Rewired `Gameplay/Combat/CombatDamageRuntime.cs` to consume `SignalBus<Hecton8.Core.Signals.CombatDamageSignal>.GetFrameSnapshot()` instead of destructively draining `GlobalSignals.TryDequeueDamage`.
 - Rewired `World/SoundscapeSystem.cs` to consume `SignalBus<ImpactSignal>.GetFrameSnapshot()` instead of destructively draining `GlobalSignals.TryDequeueImpact`.
@@ -90,6 +103,7 @@ rg -l "<pattern>" Assets/_Project/Scripts --glob "*.cs"
 - Cached combat runtime math/scalability policy outside `ResolveRuntimeMathLod()`.
 - Padded `HighSpeedImpactSignal` from 88 to 96 bytes; static scan found no remaining non-16-byte `StructLayout(Size=...)` values in `GlobalSignals.cs`.
 - Replaced bridge `new ...Signal` object-initializer text with `default` plus explicit field assignment in signal mirror paths.
+- Replaced Core direct `SignalBus<T>.Push(new ...Signal)` producers and selected Core `new ...Signal` value initializers with `default` packets plus explicit field assignment in `SystemDispatcher.cs` and `InputDispatcher.cs`.
 - Removed `FixedString64Bytes Prompt` from `PlayerLookTargetSignal`; the signal now carries `PromptHash` and reserved uint args only. Prompt text lives in bounded `PlayerLookTargetPromptCache` sidecar storage keyed by hash.
 
 ## Remaining Legacy Evidence
@@ -103,7 +117,8 @@ Status: BLOCKED BY DOMAIN BLAST RADIUS for global eradication. This pass only st
 
 ## Static Zero-GC / String Poison Scan
 
-- `SignalPayloadFiniteGuards` contains no `new` and no `string`.
+- `SignalPayloadFiniteGuards` contains no `new` and no `string`; the former `new float3(...)` fallback is now scalar assignment.
+- Focused Core/touched-path scan found no `new float3`, `FixedString64Bytes Prompt`, `signal.Prompt`, direct `SignalBus<T>.Push(new ...Signal)`, or `new ...Signal` text in `GlobalSignals.cs`, `PlayerLookTargetPromptCache.cs`, `SystemDispatcher.cs`, `InputDispatcher.cs`, `PlayerInteraction.cs`, or `DiegeticTooltipSystem.cs`.
 - `GlobalSignals.cs` string hits are SignalBus cold labels or method parameters (`OwnerLabel`, `ResolveQueueLabel`, `ComputeStableSignalLaneHash`, native sentinel labels), not signal DTO payload fields.
 - Focused scan found no `FixedString` in `GlobalSignals.cs`, `PlayerInteraction.cs`, or `DiegeticTooltipSystem.cs` after the look-target prompt rewrite.
 - `new` hits in `GlobalSignals.cs` are cold static arrays/adapters or native collection allocation; hot bridge signal DTO construction was removed from mirror paths. Runtime GC proof remains unavailable without Unity Profiler/GCMonitor.
@@ -116,6 +131,6 @@ Command:
 dotnet build Hecton8.Core.csproj -v:q /clp:ErrorsOnly /m:1 /nr:false /p:UseSharedCompilation=false
 ```
 
-Result: latest errors-only run succeeded with 0 warnings / 0 errors after repairing concurrent compile breaks. A separate warnings-only compile pass recorded 30 CS0436 generated-project duplicate-type warnings from the ignored CLI project after including IK job source beside a stale imported assembly. The repair included existing Unity-imported source paths for the prompt-cache, WFC/blueprint, and IK job source, plus restoration of a referenced private audio Burst probe job; no stub contracts were invented.
+Result: latest errors-only run succeeded with 0 warnings / 0 errors after expanded finite guards and no-grow snapshot flush cleanup. Earlier warnings-only compile passes recorded generated-project/package duplicate-type warnings from the ignored CLI project after including IK job source beside a stale imported assembly. The repair included existing Unity-imported source paths for the prompt-cache, WFC/blueprint, and IK job source, plus restoration of a referenced private audio Burst probe job; no stub contracts were invented.
 
-Evidence class: CLI_COMPILE for `Hecton8.Core.csproj`. Runtime GC, Unity Console, and full global event eradication remain PENDING because Unity MCP refresh was unavailable and the mandatory legacy scan still returns 2106 non-zero hits.
+Evidence class: CLI_COMPILE for `Hecton8.Core.csproj`. Runtime GC, Unity Console, and full global event eradication remain PENDING because Unity MCP refresh was unavailable and the mandatory legacy scan still returns 2230 non-zero hits.

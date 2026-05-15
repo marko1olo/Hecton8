@@ -1383,3 +1383,64 @@ Verification:
 Integrator notes:
 - `Hecton8.Editor.csproj` is generated and ignored; the durable tracked asmdef already contains the dependency.
 - Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
+
+## 2026-05-15 - Loop 53 AUP Full-Absolute Subtraction Debt
+
+What was wrong:
+- Shared `AUPDistanceSq` / `AUPDirection` and several distance/direction consumers still subtracted full absolute `double3` AUP coordinates.
+- Full absolute subtraction is better than float, but it still risks cancellation at extreme grid values before proximity, docking, signal, and depth decisions complete.
+
+What was done:
+- Routed shared AUP distance/direction through the clamped grid/local delta kernel.
+- Converted world-grid approximate distance, Atlas signal direction, PDA Atlas cinematic distance, vehicle docking relative AUP, and base sea-level depth to clamped AUP delta helpers.
+- Added finite protection in Atlas core direction and replaced the reciprocal division with `math.rcp`.
+
+Cinematic Cheats used:
+- Preserved cheap max/mid/min approximate distance where systems already used it.
+- No heavier simulation, new physics query, or managed telemetry path was added.
+
+Exact Microseconds saved:
+- Gameplay frame time: 0 us claimed without profiler evidence.
+- Debt reduction: broad full-absolute `ToAbsoluteDouble3()` subtraction matches dropped from 22 to 17.
+- Stability gain is precision-path quality, not raw CPU: decisions stay in double grid/local space until the final presentation or Unity-facing float boundary.
+
+Verification:
+- Core build log: 0 warnings and 0 errors.
+- Assembly-CSharp log: build succeeded with 200 warnings and 0 errors after 00:11:36.23; the shell wrapper timed out, so this is not reported as a clean wrapper exit.
+- Strict qualified AUP scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory AUP regex scan returned `MANDATORY_AUP_SCAN_MATCH_COUNT=233`, broad/presentation/final-cast names only.
+- Full H-Phi gate completed in 134.413 seconds with `AupPrecisionRisk=0`, `AupPrecisionIntegrity=1`, `RuntimeHPhiRisk=0.000634336`, and `NativeOwnershipRisk=8196`.
+
+Integrator notes:
+- Remaining 17 full-absolute `ToAbsoluteDouble3()` subtraction matches are now explicit follow-up candidates, not ignored debt.
+- Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
+
+## 2026-05-15 - Loop 54 Kinematic Ghost AUP Regression Repair
+
+What was wrong:
+- Final strict AUP scan caught `KinematicGhostDebugger` using legacy float-backed universe bridge calls again.
+- The editor diagnostic history had regressed from `double3[96]` to `Vector3[96]`, making long-session drift evidence lossy.
+
+What was done:
+- Restored `double3[96]` absolute-universe ghost history.
+- Switched diagnostic sampling to `ToUniverseSpaceDouble3` and `ToAbsoluteUniversePositionDouble3`.
+- Kept the final cast at the Unity Handles drawing boundary only.
+
+Cinematic Cheats used:
+- No runtime simulation or visual workload added.
+- This is editor-only diagnostic integrity; gameplay runtime is unchanged.
+
+Exact Microseconds saved:
+- Gameplay frame time: 0 us.
+- Editor-only sample/draw path pays a few double operations at debug cadence and avoids false AUP drift evidence.
+
+Verification:
+- Strict qualified AUP scan returns `NO_MATCHES`.
+- Mandatory AUP regex scan returned `MANDATORY_AUP_SCAN_MATCH_COUNT=233`, broad/presentation/final-cast names only.
+- `Hecton8.Editor.csproj` build succeeded with 48 package/third-party warnings and 0 errors.
+- Full H-Phi gate completed in 158.474 seconds with `AupPrecisionRisk=0`, `AupPrecisionIntegrity=1`, `RuntimeHPhiRisk=0.000634336`, and `NativeOwnershipRisk=8196`.
+
+Integrator notes:
+- Assembly-CSharp Loop 53 remains log-green but wrapper-timeout classified: build log says 200 warnings and 0 errors.
+- Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.

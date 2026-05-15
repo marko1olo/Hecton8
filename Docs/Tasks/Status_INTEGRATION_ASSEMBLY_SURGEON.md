@@ -4,7 +4,37 @@ Agent: INTEGRATION_ASSEMBLY_SURGEON
 Role: SYSTEMS_ARCHITECT
 Domain: Unity Compilation Graph / Integrator
 Prompt task count: 15 (current in-chat XML; older 17-task static pass retained below)
-Current state: BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK30 CURRENT-DISK GREEN. `CurrentDisk30` and `CurrentDiskBudgetGate11` are fresh; zero C# source files under `Assets/_Project/Scripts` are newer than either artifact.
+Current state: BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK39 CURRENT-DISK GREEN. `CurrentDisk39` and `CurrentDiskBudgetGate16` are fresh; zero C# source files under `Assets/_Project/Scripts` are newer than either artifact.
+
+## 2026-05-15 CurrentDisk39/CurrentDiskBudgetGate16 Fresh Current-Disk Closure
+
+Directive: repair current source compile drift and keep static H-Phi evidence current under parallel edits.
+Domain: Echelon 9 / The Integrator (Compile Medic).
+Current state: BUILD SUCCESSFUL / PLATINUM GRADE.
+Compile artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_205331_CurrentDisk39.log`.
+Compile exit artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_205331_CurrentDisk39.exit.txt`.
+H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_204959_CurrentDiskBudgetGate16.json`.
+H-Phi exit artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_204959_CurrentDiskBudgetGate16.exit.txt`.
+
+- [x] Latest moving source compiled | Justification: after `CurrentDisk38` was invalidated by graph/input/dispatcher writes, `CurrentDisk39` compiled the latest snapshot with `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0` | Alternatives rejected: reporting stale `CurrentDisk36/38` artifacts | Estimate: 10,470,053 us build verification
+- [x] Current-disk H-Phi gate reverified and tightened | Justification: `CurrentDiskBudgetGate16` exits 0 with `RuntimeHPhiRisk=0.000635432`, `DataSovereignty=0.021306032`, `MemoryAlignment=0.506309148`, `GlobalRegistrySurface=5066`, `NativeArrayRefs=7074`, `ManagedFormatSurface=543`, `JobCompleteSurface=58`, `PrimaryManagedRuntimeRisk=156`, `UnityUpdateMethods=0`, `FindObjectCalls=0`, and `AupPrecisionRisk=0` | Alternatives rejected: retaining stale Gate15 evidence or leaving looser managed/runtime budgets | Estimate: 162,473,647 us tooling verification
+- [x] Final freshness checked | Justification: no C# source under `Assets/_Project/Scripts` was newer than either `CurrentDisk39` or `CurrentDiskBudgetGate16` at verification time | Alternatives rejected: accepting green artifacts without timestamp proof during active parallel edits | Estimate: 400 us scan
+- [x] Regression scope constrained | Justification: no gameplay feature, public contract signature, `.asmdef`, package, prefab, scene, shader, or generated project edit was made in this closure; Integrator changes remain limited to compile-boundary fixes and evidence/doc updates | Alternatives rejected: broad refactors and cross-domain ownership rewrites | Estimate: 0 us runtime
+
+## 2026-05-15 CurrentDisk36/CurrentDiskBudgetGate15 Fresh Current-Disk Closure
+
+Directive: repair current source compile drift and keep static H-Phi evidence current under parallel edits.
+Domain: Echelon 9 / The Integrator (Compile Medic).
+Current state: BUILD SUCCESSFUL / PLATINUM GRADE.
+Compile artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_203547_CurrentDisk36.log`.
+Compile exit artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_203547_CurrentDisk36.exit.txt`.
+H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_203908_CurrentDiskBudgetGate15.json`.
+H-Phi exit artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_203908_CurrentDiskBudgetGate15.exit.txt`.
+
+- [x] Latest moving source compiled | Justification: after `CurrentDisk35` was invalidated by kinematics/audio/save writes, `CurrentDisk36` compiled the latest snapshot with `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0` | Alternatives rejected: reporting stale `CurrentDisk34/35` artifacts | Estimate: 118,489,571 us build verification
+- [x] Current-disk H-Phi gate reverified and tightened | Justification: `CurrentDiskBudgetGate15` exits 0 with `RuntimeHPhiRisk=0.000635322`, `DataSovereignty=0.021306032`, `MemoryAlignment=0.506309148`, `GlobalRegistrySurface=5067`, `NativeArrayRefs=7074`, `ManagedFormatSurface=553`, `JobCompleteSurface=58`, `PrimaryManagedRuntimeRisk=166`, `UnityUpdateMethods=0`, `FindObjectCalls=0`, and `AupPrecisionRisk=0` | Alternatives rejected: retaining stale Gate14 evidence or leaving looser managed/runtime budgets | Estimate: 151,815,116 us tooling verification
+- [x] Final freshness checked | Justification: no C# source under `Assets/_Project/Scripts` was newer than either `CurrentDisk36` or `CurrentDiskBudgetGate15` at verification time | Alternatives rejected: accepting green artifacts without timestamp proof during active parallel edits | Estimate: 400 us scan
+- [x] Regression scope constrained | Justification: no gameplay feature, public contract signature, `.asmdef`, package, prefab, scene, shader, or generated project edit was made in this closure; Integrator changes remain limited to compile-boundary fixes and evidence/doc updates | Alternatives rejected: broad refactors and cross-domain ownership rewrites | Estimate: 0 us runtime
 
 ## 2026-05-15 CurrentDisk30/CurrentDiskBudgetGate11 Fresh Current-Disk Closure
 

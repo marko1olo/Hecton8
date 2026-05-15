@@ -1,6 +1,6 @@
 ﻿# HECTON-8 Doc Authority Classification
 
-Date: 2026-05-11
+Date: 2026-05-15
 Status: PENDING VERIFICATION
 Scope: active documentation importance and authority sorting across repository root and `Docs/`
 
@@ -14,11 +14,13 @@ This file answers one question: which documents are actually important now, and 
 
 It is not runtime proof.
 If this file disagrees with current source, source wins.
-Latest documentation/data continuation: `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md`.
-Latest active manifest: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`.
+Latest documentation/status override: `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`.
+Latest root/current-index cleanup: `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md`.
+Latest historical machine-readable active manifest: `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json`; counters and build-state are not current authority.
 Latest `.agents-skills` visual-fake doctrine: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`.
 Latest sorting authority: `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`, amended by later synchronization passes.
 Latest header state: May 11 manifest reports active markdown header debt `0` missing `Date:`, `0` missing `Status:`.
+Latest root cleanup: `Docs/ROOT_DOCS_REFERENCE.md` and `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md`.
 
 ## 1. Read First / Current Authority
 
@@ -41,14 +43,16 @@ These files are the current navigation spine. Stable authority comes before date
 | 13 | `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` | PRIMARY CONCEPT MAP | Current load-bearing/transitional/presentation/experimental system classification. |
 | 14 | `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/DOCSET_COVERAGE_MATRIX.md` | PRIMARY COVERAGE MAP | Domain-by-domain map of which docs to trust first. |
 | 15 | `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/README.md` | REPORT VAULT BOUNDARY | Confirms `02_ACTUAL_REPORTS` is evidence, not direct authority. |
-| 16 | `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` | CURRENT EVIDENCE | Latest counters and May 11 compile-only boundary; no Unity/PlayMode/profiler proof. |
-| 17 | `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` | MACHINE-READABLE DOC MANIFEST | Current active markdown inventory with parsed `Date` / `Status`; data artifact, not runtime proof. |
-| 18 | `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md` | MANDATE EVIDENCE | Supporting audit for visual-fake-first promotion; stable mandates carry the rule. |
-| 19 | `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md` | DOC SORTING EVIDENCE | Sorting report evidence; lower authority than stable docs after May 11 promotion. |
-| 20 | `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` | CONCEPTUAL STATE EVIDENCE | Historical/stable conceptual state anchor; still refuses runtime-certification claims. |
-| 21 | `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/NAMING_VIOLATIONS.md` | NAMING LEDGER | Current non-ASCII path/content inventory and English replacement proposals. |
-| 22 | `Docs/SPACE_ENGINE_RESEARCH/SPACE_ENGINE_MATH_INTEGRATION_2026-05-05.md` | DOMAIN REFERENCE | SpaceEngine 0.9.8 terrain math integration evidence; use after stable authority files. |
-| 23 | `Docs/SPACE_ENGINE_RESEARCH/TERRAIN_AND_NOISE_098.md` | DOMAIN REFERENCE | Terrain/noise research extraction; adapt through HECTON mandates only. |
+| 16 | `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` | CURRENT STATIC OVERRIDE | Latest broad documentation/status correction boundary found in this pass; demotes missing May 11 artifacts and stale counters. |
+| 17 | `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md` | CURRENT INDEX/ROOT CLEANUP | Current navigation honesty and root-cleanup evidence; static/filesystem only. |
+| 18 | `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` | HISTORICAL EVIDENCE | May 11 counters and compile-only boundary; historical where May 13/May 15 conflicts. |
+| 19 | `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` | HISTORICAL MACHINE-READABLE DOC MANIFEST | May 11 active markdown inventory snapshot; data artifact, not current runtime proof. |
+| 20 | `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md` | MANDATE EVIDENCE | Supporting audit for visual-fake-first promotion; stable mandates carry the rule. |
+| 21 | `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md` | DOC SORTING EVIDENCE | Sorting report evidence; lower authority than stable docs after later synchronization passes. |
+| 22 | `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` | CONCEPTUAL STATE EVIDENCE | Historical/stable conceptual state anchor; still refuses runtime-certification claims. |
+| 23 | `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/NAMING_VIOLATIONS.md` | NAMING LEDGER | Current non-ASCII path/content inventory and English replacement proposals. |
+| 24 | `Docs/SPACE_ENGINE_RESEARCH/SPACE_ENGINE_MATH_INTEGRATION_2026-05-05.md` | DOMAIN REFERENCE | SpaceEngine 0.9.8 terrain math integration evidence; use after stable authority files. |
+| 25 | `Docs/SPACE_ENGINE_RESEARCH/TERRAIN_AND_NOISE_098.md` | DOMAIN REFERENCE | Terrain/noise research extraction; adapt through HECTON mandates only. |
 
 ## 2. New / High-Value Reports
 
@@ -56,18 +60,20 @@ These are new enough and important enough to stay active.
 
 | File | Authority class | Keep active? | Notes |
 |---|---|---|---|
-| `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` | PRIMARY DOC/DATA CONTINUATION | yes | Latest current counters and compile-only boundary. |
-| `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` | MACHINE-READABLE DOC MANIFEST | yes | Current active markdown inventory with parsed `Date` and `Status`; data artifact only. |
+| `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` | CURRENT STATIC OVERRIDE | yes | Current broad documentation/status correction boundary for stale counters, missing artifacts, and compile-evidence labels. |
+| `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md` | CURRENT INDEX/ROOT CLEANUP | yes | Current navigation honesty and root cleanup evidence; static/filesystem only. |
+| `Docs/Reports/2026-05-11_DOCUMENTATION_CURRENT_DATA_CONTINUATION.md` | HISTORICAL DOC/DATA CONTINUATION | yes | May 11 counters and compile-only boundary; historical where May 13/May 15 conflicts. |
+| `Docs/Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` | HISTORICAL MACHINE-READABLE DOC MANIFEST | yes | May 11 active markdown inventory snapshot with parsed `Date` and `Status`; data artifact only. |
 | `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md` | PRIMARY MANDATE DOCTRINE | yes | Current visual-fake-first mandate correction layer. |
 | `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md` | PREVIOUS DOC SYNCHRONIZATION | yes | Previous R186 sync; historical where May 11 data supersedes it. |
 | `Docs/Reports/2026-05-08_ACTIVE_DOCUMENTATION_MANIFEST.json` | PREVIOUS MACHINE-READABLE DOC MANIFEST | yes | Previous manifest; historical where May 11 manifest supersedes it. |
 | `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md` | PRIMARY DOC SORTING MAP | yes | Latest documentation sorting map; root text handling, active bundle classes, and first-read report order. |
 | `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md` | PRIMARY DOC CLEANUP QUEUE | yes | Structural cleanup queue: relocated root evidence logs and archive candidates; active missing-header debt is now `0`. |
-| `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` | PRIMARY DOCSET ACTUALITY | yes | Latest documentation read-pass, current source/doc counts, Core/Editor/DOTS/PlayModeTests compile evidence, MCP readback, and pre-repair guard-failure history. |
+| `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` | HISTORICAL DOCSET ACTUALITY | yes | Historical broad read-pass; current status/counter/root boundary starts at May 13/May 15. |
 | `Docs/Reports/2026-05-04_WARNING_CLEANUP.md` | PRIMARY WARNING CLEANUP ADDENDUM | yes | Latest first-party warning cleanup and post-refresh Unity console readback boundary. |
 | `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md` | PRIMARY FOUNDATION GUARD ADDENDUM | yes | Latest guard-clean source/build addendum; foundation guard scan exits `0`. |
 | `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` | CONCEPTUAL EVIDENCE | yes | Dated system-shape evidence retained for reference; stable authority now starts at `AGENTS.md`, `.agents-skills/README.md`, and stable `Docs/*.md` files. |
-| `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md` | PRIMARY TERRAIN/BIOME REPORT | yes | Canonical terrain/biome report; root duplicate is not authority. |
+| `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md` | PRIMARY TERRAIN/BIOME REPORT | yes | Canonical terrain/biome report; former root duplicate moved to `Docs/DEPRECATED/Root_Compatibility_Mirrors_2026-05-15/`. |
 | `Docs/Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_METEOR_REPORT.md` | ACTIVE CELESTIAL REPORT | yes | Source/build/controlled-console evidence only; no PlayMode visual/audio/profiler proof. |
 | `Docs/Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_REPORT.md` | ACTIVE CELESTIAL REPORT | yes | Source/build evidence only; no PlayMode smoke/profiler proof. |
 | `Docs/Reports/2026-05-04_CELESTIAL_ENVIRONMENT_ORBITAL_SYNC_REPORT.md` | ACTIVE CELESTIAL REPORT | yes | Historical task evidence; superseded by May 4 sweep for global current-state truth. |
@@ -77,6 +83,8 @@ These are new enough and important enough to stay active.
 | `Docs/Reports/2026-05-05_HECTON_SANDBOX_BIOMES_OMEGA_SURGERY_LOG.md` | PRIMARY PLANETARY SANDBOX | yes | Current macro shelf and AUP sandbox terrain report. |
 | `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/NAMING_VIOLATIONS.md` | PRIMARY NAMING LEDGER | yes | Current non-ASCII path/content inventory and replacement queue. |
 | `Docs/Reports/2026-05-05_ARCHIVARIUS_REALITY_DELTA.md` | PRIMARY REALITY DELTA | yes | Current Archivarius delta and untracked inventory snapshot. |
+| `Docs/Reports/2026-05-15_COMPUTE_AUDIT/README.md` | ACTIVE COMPUTE AUDIT BUNDLE | yes | Same-day compute report slices moved out of repository root; static/report evidence only. |
+| `Docs/Reports/2026-05-13_BROKEN_PREFABS_STATIC_SNAPSHOT.md` | GENERATED STATIC SNAPSHOT | yes | Former root generated prefab snapshot; not Unity import, Console, Play Mode, or player-build proof. |
 | `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` | HISTORICAL DOCSET ACTUALITY | yes | Previous documentation read-pass and May 2 build evidence. Read after May 4 sweep. |
 | `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md` | PRIMARY PROJECT VERDICT | yes | Honest project-level verdict after current docs/source scan; not Play Mode proof. |
 | `Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md` | ACTIVE COMPILE DELTA | yes | Latest editor compile/MCP console evidence for Sargassum/Emergency relay listener migration and spatial-hash fix. |
@@ -128,6 +136,8 @@ These are preserved, not active.
 | `Docs/DEPRECATED/Root_Redirect_Stubs_2026-05-01/` | DEPRECATED COMPATIBILITY STUBS | Old flat redirects; canonical bundle paths are active. |
 | `Docs/DEPRECATED/Encoding_Damaged_2026-05-01/` | DEPRECATED DAMAGED TEXT | Preserved because content is encoding-damaged. |
 | `Docs/DEPRECATED/Root_Legacy_And_Scan_Artifacts_2026-05-01/` | DEPRECATED ROOT ARTIFACTS | Old root docs/scans moved out of active root. |
+| `Docs/DEPRECATED/Root_Compatibility_Mirrors_2026-05-15/` | DEPRECATED ROOT MIRRORS | Former root compatibility mirrors moved after canonical Docs paths existed. |
+| `Docs/DEPRECATED/External_And_Log_Bundles/Root_Evidence_2026-05-15/` | DEPRECATED ROOT EVIDENCE | Former root logs, JSON/XML/PNG/zip, and stale cleanup script. |
 | `Docs/Reports/DEPRECATED/2026-04-29_Static_Audit_Snapshots/` | DEPRECATED REPORT SNAPSHOTS | Early loose static reports with stale counts. |
 | `Docs/_Archive/` | ARCHIVE | Historical work packages; do not treat as current unless explicitly promoted. |
 
@@ -151,11 +161,12 @@ Current root text files after cleanup:
 | `AGENTS.md` | PRIMARY OPERATING CONTRACT |
 | `MASTER_RELEASE_WORK_PLAN.md` | ACTIVE ROADMAP |
 | `BUILD_PLAYTEST_ISSUES.md` | ACTIVE QA LEDGER |
-| `TERRAIN_AND_BIOME_REALITY_MAP.md` | NON-CANONICAL ROOT MIRROR |
 
 Canonical terrain/biome authority is `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md`.
 Legacy root text/scanner artifacts were moved to `Docs/DEPRECATED/Root_Legacy_And_Scan_Artifacts_2026-05-01/`.
 Former repository-root logs were moved to `Docs/DEPRECATED/External_And_Log_Bundles/Root_Logs_2026-05-04/`.
+May 15 root evidence/log/artifact spill moved to `Docs/DEPRECATED/External_And_Log_Bundles/Root_Evidence_2026-05-15/`.
+Former root compatibility mirrors moved to `Docs/DEPRECATED/Root_Compatibility_Mirrors_2026-05-15/`.
 
 ## 7. Practical Rule
 
@@ -164,19 +175,20 @@ When a task asks "what is current":
 1. Read `AGENTS.md`.
 2. Read relevant `.agents-skills/` mandates.
 3. Read `Docs/README.md`.
-4. Read `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`.
-5. Read `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`.
-6. Read `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md`.
-7. Read `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`.
-8. Read `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`.
-9. Read `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`.
-10. Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
-11. Read `Docs/SPACE_ENGINE_RESEARCH/SPACE_ENGINE_MATH_INTEGRATION_2026-05-05.md` for SpaceEngine terrain work.
-12. Read `Docs/Reports/2026-05-05_HECTON_SANDBOX_BIOMES_OMEGA_SURGERY_LOG.md` for Planetary Sandbox terrain work.
-13. Read `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`.
-14. Read `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`.
-15. Read domain-specific current maps.
-16. Open source files.
+4. Read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`.
+5. Read `Docs/Reports/2026-05-15_DOCUMENTATION_HONEST_ANALYSIS.md`.
+6. Read `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`.
+7. Read `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md`.
+8. Read `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`.
+9. Read `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`.
+10. Read `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`.
+11. Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+12. Read `Docs/SPACE_ENGINE_RESEARCH/SPACE_ENGINE_MATH_INTEGRATION_2026-05-05.md` for SpaceEngine terrain work.
+13. Read `Docs/Reports/2026-05-05_HECTON_SANDBOX_BIOMES_OMEGA_SURGERY_LOG.md` for Planetary Sandbox terrain work.
+14. Read `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`.
+15. Read `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`.
+16. Read domain-specific current maps.
+17. Open source files.
 
 Do not start from archive, deprecated folders, copied external prompts, patch files, or old root artifacts.
 
