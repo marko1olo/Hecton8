@@ -78,3 +78,17 @@ Solution: Add `Tools/Hardware/ValidateAllHardwareProfiles.py`, importing both gu
 Rejected Alternatives: Merging H8 checks into `ValidateHardwareProfileCatalog.py` would overload that existing script's ownership. Shell wrapper scripts are less portable and weaker for structured summary output.
 Scalability potential: Integrators now get one cold validation command covering generated hardware data plus H8 profile bake, reducing the chance that low-tier caps or high-tier visual budget assumptions drift unnoticed.
 Hardware Impact: 0 microseconds/frame. Offline Python entry point only.
+
+## Decision 12 - Deterministic Aggregate Report
+Problem: The combined hardware guard produced structured terminal output, but terminal output is not durable enough for the H8 reporting protocol.
+Solution: Add `--write-report` and `--check-report` to `ValidateAllHardwareProfiles.py`, plus `Docs/AgentLogs/Hardware_Profile_All_Guards_H8_HARDWARE_TIER_MATRIX_BKR.json` and aggregate guard unit tests.
+Rejected Alternatives: Relying on the appended markdown log alone would not give machine-checkable drift detection. Reusing the system profile report path would conflate single-artifact and aggregate validation scopes.
+Scalability potential: Low/Mid/High/Ultra assumptions are now guarded by a machine-checkable aggregate evidence file, reducing integration drift across separate hardware data owners.
+Hardware Impact: 0 microseconds/frame. Offline report tooling only.
+
+## Decision 13 - Hardware Guard Runbook
+Problem: The guard suite was valid but discoverability depended on status/log files or chat history, which is weak for an Integrator entering through `Tools/Hardware`.
+Solution: Add `Tools/Hardware/README.md` with the primary `--check-report` command, intentional report refresh commands, test commands, and explicit runtime-verification limits.
+Rejected Alternatives: Duplicating long rationale in the README would create another policy surface. Leaving commands only in status/logs would slow handoff and increase missed-check risk.
+Scalability potential: A single tool-local runbook reduces integration drift and makes low-tier caps/high-tier budget assumptions easier to preserve during future hardware edits.
+Hardware Impact: 0 microseconds/frame. Documentation only.

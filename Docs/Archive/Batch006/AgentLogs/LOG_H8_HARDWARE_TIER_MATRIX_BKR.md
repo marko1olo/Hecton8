@@ -241,3 +241,98 @@ FAILURE MODES:
 WHY KEPT / REJECTED:
 - Kept a separate aggregate script to avoid overloading the existing generated catalog guard.
 - Rejected shell wrapper because Python gives portable structured output and direct access to both validators.
+
+## 2026-05-15 - Aggregate Hardware Guard Report
+
+Status: PROFILES BAKED / STATIC TOOLING VERIFIED / COMPILE TOOLCHAIN BLOCKED
+
+What was wrong:
+- The aggregate hardware guard emitted structured terminal output but did not write a deterministic aggregate report.
+- H8 reporting rules require durable evidence on disk, not chat or terminal-only claims.
+
+What was done:
+- Added `--write-report` and `--check-report` to `Tools/Hardware/ValidateAllHardwareProfiles.py`.
+- Added `Tools/Hardware/test_validate_all_hardware_profiles.py`.
+- Generated `Docs/AgentLogs/Hardware_Profile_All_Guards_H8_HARDWARE_TIER_MATRIX_BKR.json`.
+
+Cinematic cheats used:
+- No simulation was added.
+- This remains static profile tooling; runtime visuals and simulation truth are untouched.
+
+Exact microseconds saved:
+- Measured savings: 0 microseconds. No Unity profiler artifact exists.
+- Claimed savings: 0 microseconds.
+- Added hot-path cost: 0 microseconds/frame. Offline Python only.
+
+Verification:
+- `python -B Tools/Hardware/ValidateAllHardwareProfiles.py --write-report`: PASS.
+- `python -B Tools/Hardware/ValidateAllHardwareProfiles.py --check-report`: PASS.
+- `python -B Tools/Hardware/test_validate_all_hardware_profiles.py -v`: PASS, 3 tests.
+- `python -B Tools/Hardware/test_validate_system_hardware_profiles.py -v`: PASS, 6 tests.
+- `python -B -m py_compile Tools/Hardware/ValidateAllHardwareProfiles.py Tools/Hardware/ValidateSystemHardwareProfiles.py Tools/Hardware/test_validate_all_hardware_profiles.py Tools/Hardware/test_validate_system_hardware_profiles.py`: PASS.
+- `python -B -m json.tool Docs/AgentLogs/Hardware_Profile_All_Guards_H8_HARDWARE_TIER_MATRIX_BKR.json`: PASS.
+- Compile/Unity import/Play Mode/profiler/GCMonitor: NOT VERIFIED. Local toolchain remains unavailable.
+
+REGRESSION MODEL:
+- CPU: no runtime code changed.
+- GC: no runtime allocation path changed.
+- Memory: one cold JSON report and one Python test file added; runtime memory unchanged.
+- Cadence: no dispatcher phase or tick cadence changed.
+- Correctness: improved by deterministic aggregate report drift detection.
+
+HOT PATH IMPACT:
+- None.
+
+FAILURE MODES:
+- Aggregate guard remains static. It cannot prove target-device runtime behavior, Unity import, or profiler budgets.
+- Legitimate hardware schema changes must update both report generation and tests in the same patch.
+
+WHY KEPT / REJECTED:
+- Kept deterministic aggregate JSON because it is machine-checkable and lives in the CTO-readable log area.
+- Rejected terminal-output-only evidence because it is not durable.
+
+## 2026-05-15 - Hardware Guard Runbook
+
+Status: PROFILES BAKED / STATIC TOOLING VERIFIED / COMPILE TOOLCHAIN BLOCKED
+
+What was wrong:
+- Hardware validation commands existed, but a new Integrator entering through `Tools/Hardware` had no local README explaining the primary command, report refresh path, and runtime-verification limits.
+
+What was done:
+- Added `Tools/Hardware/README.md`.
+- Documented `python -B Tools/Hardware/ValidateAllHardwareProfiles.py --check-report` as the primary command.
+- Documented intentional report refresh commands and test commands.
+- Documented that Unity import, Play Mode, profiler, and GCMonitor are separate gates.
+
+Cinematic cheats used:
+- No simulation was added.
+- No runtime presentation path changed.
+
+Exact microseconds saved:
+- Measured savings: 0 microseconds. No Unity profiler artifact exists.
+- Claimed savings: 0 microseconds.
+- Added hot-path cost: 0 microseconds/frame. Documentation only.
+
+Verification:
+- `python -B Tools/Hardware/ValidateAllHardwareProfiles.py --check-report`: PASS.
+- `python -B Tools/Hardware/test_validate_system_hardware_profiles.py -v`: PASS, 6 tests.
+- `python -B Tools/Hardware/test_validate_all_hardware_profiles.py -v`: PASS, 3 tests.
+- `python -B -m py_compile Tools/Hardware/ValidateAllHardwareProfiles.py Tools/Hardware/ValidateSystemHardwareProfiles.py Tools/Hardware/test_validate_all_hardware_profiles.py Tools/Hardware/test_validate_system_hardware_profiles.py`: PASS.
+- Compile/Unity import/Play Mode/profiler/GCMonitor: NOT VERIFIED. Local toolchain remains unavailable.
+
+REGRESSION MODEL:
+- CPU: no runtime code changed.
+- GC: no runtime allocation path changed.
+- Memory: one small markdown file added; runtime memory unchanged.
+- Cadence: no dispatcher phase or tick cadence changed.
+- Correctness: improved by tool-local command discoverability.
+
+HOT PATH IMPACT:
+- None.
+
+FAILURE MODES:
+- README can become stale if commands change; guard tests and report checks remain the authority.
+
+WHY KEPT / REJECTED:
+- Kept a concise README because it is the fastest local handoff path.
+- Rejected expanding it into full policy documentation because the authoritative policies remain in mandates and H8 status/rationale/log files.

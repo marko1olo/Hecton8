@@ -53,6 +53,11 @@ Status: PROFILES BAKED / STATIC TOOLING VERIFIED / COMPILE TOOLCHAIN BLOCKED
   - Result: `Docs/Tasks/CURRENT_BATCH.md` no longer contains `<AGENT_PROMPT id="H8_HARDWARE_TIER_MATRIX_BKR">` or `<POLISH_MANDATE>`; continued from H8 disk status/rationale instead of importing neighboring batch scope.
 - [x] Loop 9 - Combined hardware guard entry point.
   - Result: added `Tools/Hardware/ValidateAllHardwareProfiles.py` so integrators can validate both `Data/Hardware/Profiles.json` and `Data/System/Hardware_Profiles.json` from one command.
+- [x] Loop 10 - Deterministic aggregate guard report.
+  - Result: `Tools/Hardware/ValidateAllHardwareProfiles.py` now supports `--write-report` and `--check-report`; generated `Docs/AgentLogs/Hardware_Profile_All_Guards_H8_HARDWARE_TIER_MATRIX_BKR.json`.
+  - Guard coverage: existing generated hardware catalog, H8 system profile bake, H8 deterministic audit report, aggregate report drift.
+- [x] Loop 11 - Hardware guard runbook.
+  - Result: added `Tools/Hardware/README.md` with the primary validation command, report refresh commands, test commands, and runtime-verification limits.
 
 ## Verification
 - JSON parse: PASS (`ConvertFrom-Json`)
@@ -61,10 +66,14 @@ Status: PROFILES BAKED / STATIC TOOLING VERIFIED / COMPILE TOOLCHAIN BLOCKED
 - Dedicated static guard: PASS (`python -B Tools/Hardware/ValidateSystemHardwareProfiles.py --write-report`)
 - Deterministic audit report: PASS (`python -B Tools/Hardware/ValidateSystemHardwareProfiles.py --check-report`)
 - Combined hardware guards: PASS (`python -B Tools/Hardware/ValidateAllHardwareProfiles.py`)
+- Combined hardware report write: PASS (`python -B Tools/Hardware/ValidateAllHardwareProfiles.py --write-report`)
+- Combined hardware report check: PASS (`python -B Tools/Hardware/ValidateAllHardwareProfiles.py --check-report`)
 - Existing hardware catalog guard: PASS (`python -B Tools/Hardware/ValidateHardwareProfileCatalog.py`)
-- Unit tests: PASS (`python -B Tools/Hardware/test_validate_system_hardware_profiles.py -v`, 6 tests)
-- Python syntax: PASS (`python -B -m py_compile Tools/Hardware/ValidateAllHardwareProfiles.py Tools/Hardware/ValidateSystemHardwareProfiles.py Tools/Hardware/test_validate_system_hardware_profiles.py`)
+- Unit tests: PASS (`python -B Tools/Hardware/test_validate_all_hardware_profiles.py -v`, 3 tests; `python -B Tools/Hardware/test_validate_system_hardware_profiles.py -v`, 6 tests)
+- Python syntax: PASS (`python -B -m py_compile Tools/Hardware/ValidateAllHardwareProfiles.py Tools/Hardware/ValidateSystemHardwareProfiles.py Tools/Hardware/test_validate_all_hardware_profiles.py Tools/Hardware/test_validate_system_hardware_profiles.py`)
+- Hardware guard runbook: PASS (`Tools/Hardware/README.md` commands re-run successfully)
 - Audit report JSON parse: PASS (`python -B -m json.tool Docs/AgentLogs/Hardware_Profile_Audit_H8_HARDWARE_TIER_MATRIX_BKR.json`)
+- Aggregate report JSON parse: PASS (`python -B -m json.tool Docs/AgentLogs/Hardware_Profile_All_Guards_H8_HARDWARE_TIER_MATRIX_BKR.json`)
 - Whitespace audit: PASS (no trailing whitespace in `Data/System/Hardware_Profiles.json`)
 - Active batch tag audit: DRIFT DETECTED - H8 prompt tag and polish tag absent from current `Docs/Tasks/CURRENT_BATCH.md`.
 - Compile/static check: BLOCKED - `dotnet` command unavailable, no `.sln`/`.csproj` found, Unity Hub editor roots missing in `C:\Program Files`, `C:\Program Files (x86)`, and common `D:\` paths.

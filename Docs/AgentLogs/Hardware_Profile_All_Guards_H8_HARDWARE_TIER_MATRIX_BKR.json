@@ -1,0 +1,28 @@
+{
+  "status": "PASS",
+  "ownerPromptId": "H8_HARDWARE_TIER_MATRIX_BKR",
+  "runtimeCatalog": {
+    "profiles": 2,
+    "phases": 4,
+    "masks": 4,
+    "constants": 21,
+    "splitJsons": 2
+  },
+  "systemProfile": {
+    "profileCount": 4,
+    "profileIds": [
+      "PC_High",
+      "SteamDeck_Mid",
+      "Quest2_Low",
+      "Quest3_LowPlus"
+    ],
+    "quest2TotalCommittedPlusReserveMb": 4096,
+    "stressWeightSum": 1.0,
+    "hotPathImpactMicroseconds": 0,
+    "runtimeGcImpactBytesPerFrame": 0
+  },
+  "systemAuditReportPath": "Docs/AgentLogs/Hardware_Profile_Audit_H8_HARDWARE_TIER_MATRIX_BKR.json",
+  "compileStatus": "NOT_COMPILED_STATIC_GUARDS_ONLY",
+  "unityRuntimeStatus": "NOT_VERIFIED_STATIC_TOOL_ONLY",
+  "errors": []
+}
