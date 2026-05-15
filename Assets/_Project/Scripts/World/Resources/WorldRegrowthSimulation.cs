@@ -162,6 +162,33 @@ namespace Hecton8.World
             ApexRespawnDays.IsCreated &&
             BlackBox.IsCreated;
 
+        internal bool HasValidDimensions =>
+            Width > 0 &&
+            Height > 0 &&
+            CellCount > 0 &&
+            Width <= MaxGridDimension &&
+            Height <= MaxGridDimension &&
+            CellCount <= MaxCellCount &&
+            Width <= MaxCellCount / Height &&
+            Width * Height == CellCount;
+
+        internal bool HasValidStorage =>
+            IsCreated &&
+            HasValidDimensions &&
+            SoilNutrients.Length == CellCount &&
+            SoilNutrientsScratch.Length == CellCount &&
+            TemperatureQ.Length == CellCount &&
+            BiomeIds.Length == CellCount &&
+            ResourceStages.Length == CellCount &&
+            TombstoneAgeDays.Length == CellCount &&
+            RegrowthProgressQ.Length == CellCount &&
+            OreStockQ.Length == CellCount &&
+            FloraStockQ.Length == CellCount &&
+            PreyBiomassQ.Length == CellCount &&
+            PredatorBiomassQ.Length == CellCount &&
+            ApexRespawnDays.Length == CellCount &&
+            BlackBox.Length == BlackBoxCapacity;
+
         private bool HasAnyCreatedLane =>
             SoilNutrients.IsCreated ||
             SoilNutrientsScratch.IsCreated ||
@@ -352,7 +379,7 @@ namespace Hecton8.World
             uint worldSeed,
             JobHandle dependency)
         {
-            if (!memory.IsCreated || memory.CellCount <= 0)
+            if (!memory.HasValidStorage)
                 return dependency;
 
             return new InitializeRegrowthGridJob
@@ -386,7 +413,7 @@ namespace Hecton8.World
             int dayIndex,
             JobHandle dependency)
         {
-            if (!memory.IsCreated || memory.CellCount <= 0)
+            if (!memory.HasValidStorage)
                 return dependency;
 
             memory.CurrentDay = math.max(0, dayIndex);
@@ -436,7 +463,7 @@ namespace Hecton8.World
             in WorldRegrowthConfig config,
             JobHandle dependency)
         {
-            if (!memory.IsCreated || !minedCellIndices.IsCreated || minedCellIndices.Length <= 0)
+            if (!memory.HasValidStorage || !minedCellIndices.IsCreated || minedCellIndices.Length <= 0)
                 return dependency;
 
             return new MiningTombstoneJob
@@ -895,11 +922,11 @@ namespace Hecton8.World
         public static bool TryPack(in WorldRegrowthSimulationMemory memory, NativeArray<byte> destination, out int writtenBytes)
         {
             writtenBytes = 0;
-            if (!memory.IsCreated || !destination.IsCreated || memory.CellCount <= 0)
+            if (!memory.HasValidStorage || !destination.IsCreated)
                 return false;
 
             int requiredBytes = CalculatePayloadBytes(memory.CellCount);
-            if (requiredBytes <= UnsafeUtility.SizeOf<WorldRegrowthPayloadHeader>() || destination.Length < requiredBytes || !HasValidLaneLengths(in memory))
+            if (requiredBytes <= UnsafeUtility.SizeOf<WorldRegrowthPayloadHeader>() || destination.Length < requiredBytes)
                 return false;
 
             byte* dst = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(destination);
@@ -933,7 +960,7 @@ namespace Hecton8.World
         public static bool TryUnpack(NativeArray<byte> source, ref WorldRegrowthSimulationMemory memory, out WorldRegrowthPayloadHeader header)
         {
             header = default;
-            if (!source.IsCreated || !memory.IsCreated || source.Length < UnsafeUtility.SizeOf<WorldRegrowthPayloadHeader>())
+            if (!source.IsCreated || !memory.HasValidStorage || source.Length < UnsafeUtility.SizeOf<WorldRegrowthPayloadHeader>())
                 return false;
 
             byte* src = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
@@ -1005,23 +1032,6 @@ namespace Hecton8.World
             offset += memory.CellCount;
             header.ApexOffset = offset;
             return header;
-        }
-
-        private static bool HasValidLaneLengths(in WorldRegrowthSimulationMemory memory)
-        {
-            int count = memory.CellCount;
-            return memory.SoilNutrients.Length >= count &&
-                   memory.SoilNutrientsScratch.Length >= count &&
-                   memory.TemperatureQ.Length >= count &&
-                   memory.BiomeIds.Length >= count &&
-                   memory.ResourceStages.Length >= count &&
-                   memory.TombstoneAgeDays.Length >= count &&
-                   memory.RegrowthProgressQ.Length >= count &&
-                   memory.OreStockQ.Length >= count &&
-                   memory.FloraStockQ.Length >= count &&
-                   memory.PreyBiomassQ.Length >= count &&
-                   memory.PredatorBiomassQ.Length >= count &&
-                   memory.ApexRespawnDays.Length >= count;
         }
 
         private static bool HasValidHeaderLayout(

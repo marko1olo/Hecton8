@@ -257,3 +257,14 @@ Rejected Alternatives: Trusting callers never to retry allocation after partial 
 Scalability potential: Low through Ultra tiers get deterministic allocation ownership even after failed or partial teardown scenarios. Larger high-end grids still allocate as one coherent SOA block.
 
 Hardware Impact: No hot-path cost. This is cold bootstrap/retry hygiene and does not affect daily solve timing.
+
+## Decision 24 - Dimension Coherence Guard
+Problem: `Width`, `Height`, and `CellCount` are public fields on the data-owner struct. If external code corrupts them while lanes remain alive, scheduler entry points can run jobs with invalid dimensions, including divide-by-zero in nutrient diffusion, and the codec can write payload headers that do not match the lane topology.
+
+Solution: Added `HasValidDimensions` and used it before initialization, daily solve, mining tombstone scheduling, H8_MacroDB packing, and H8_MacroDB unpacking. The guard requires positive dimensions, the configured max grid bounds, the max cell budget, and `Width * Height == CellCount`.
+
+Rejected Alternatives: Trusting allocation-time values was rejected because the fields are public. Making fields private was rejected as a larger public API shift during the batch. Adding exception throws was rejected because gameplay/backend code should fail closed and return false/dependency unchanged.
+
+Scalability potential: Low through Ultra tiers all get the same coherent topology guarantee. High-end oversized configs still respect the `1,048,576` cell cap before any job or codec path accepts state.
+
+Hardware Impact: Branch-only entry validation. Daily job bodies and entropy math are unchanged; low-end cost is effectively zero outside scheduler calls.

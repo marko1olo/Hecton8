@@ -120,6 +120,10 @@ Verification after Loop 2: Constants and codec implemented; no Unity import proo
 - [x] Partial lane reuse audit | Added `HasAnyCreatedLane` and made `Allocate()` dispose a partial SOA block before allocating a new one. DOD: a reused memory struct cannot overwrite still-live lanes when `IsCreated` is false. Rejected: relying on callers never to retry allocation after partial field disposal. Estimate: cold-path only; daily solve unchanged.
 - [x] Loop 15 verification | Re-ran Roslyn C# 9 unsafe probe compile, `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`, target forbidden-token scan, raw native allocation/dispose scan, 365-day entropy command, 1000-day entropy command, and `python -m unittest Tools.test_world_entropy_sim -v`. Results: Roslyn exit `0`; py_compile exit `0`; no forbidden hot-path matches; no raw `new NativeArray`/raw dispose matches; 365/1000-day entropy `STATUS=ENTROPY BALANCED`; latest unittest 4 passed in `42.120 s`; temp probe files removed.
 
+## Loop 16 - Dimension Coherence Guard
+- [x] Public dimension corruption audit | Added `HasValidDimensions` and gated initialize, daily solve, mining, H8_MacroDB pack, and H8_MacroDB unpack behind it. DOD: public `Width`/`Height`/`CellCount` corruption cannot trigger divide-by-zero in jobs or incoherent payload writes. Rejected: trusting public fields after allocation. Estimate: branch-only entry cost; job math unchanged.
+- [x] Loop 16 verification | Re-ran Roslyn C# 9 unsafe probe compile, `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`, target forbidden-token scan, raw native allocation/dispose scan, 365-day entropy command, 1000-day entropy command, and `python -m unittest Tools.test_world_entropy_sim -v`. Results: Roslyn exit `0`; py_compile exit `0`; no forbidden hot-path matches; no raw `new NativeArray`/raw dispose matches; 365/1000-day entropy `STATUS=ENTROPY BALANCED`; latest unittest 4 passed in `26.206 s`; temp probe files removed.
+
 ## Final State
 - [x] Core tasks 1-8 complete.
 - [x] Recursive verification target met by Python entropy-test.
