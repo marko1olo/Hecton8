@@ -249,7 +249,8 @@ namespace Hecton8.Narrative.Prologue
                 if (TryHandleDevelopmentSkip())
                     return false;
 
-                if (_runtime.TryConsumeAtmosphericReentry(out _lastAtmosphericReentry))
+                bool hasFreshAtmosphericReentry = _runtime.TryConsumeAtmosphericReentry(out _lastAtmosphericReentry);
+                if (hasFreshAtmosphericReentry)
                     RecordStage(PrologueStage.ReentryBurn, HashAtmospheric(in _lastAtmosphericReentry), _lastAtmosphericReentry.Flags);
 
                 if (_runtime.TryGetOrbitalSnapshot(out _lastOrbital))
@@ -268,7 +269,7 @@ namespace Hecton8.Narrative.Prologue
                     if (speedSq >= Mach10MetersPerSecondSq)
                         return true;
                 }
-                else if (_lastAtmosphericReentry.UniverseVelocityMetersPerSecond >= Mach10MetersPerSecond)
+                else if (hasFreshAtmosphericReentry && _lastAtmosphericReentry.UniverseVelocityMetersPerSecond >= Mach10MetersPerSecond)
                 {
                     return true;
                 }

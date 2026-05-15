@@ -621,3 +621,17 @@ Scalability potential: Low/MX350 keeps deterministic Standalone BC7/BC5 atlas co
 Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no hidden default platform override can create inconsistent compression/import behavior that later leaks into MX350 builds. Exact runtime microseconds are not profiled because this is editor validation.
 
 Verification: No dotnet rebuild and no Unity import was run. `AtlasDefaultPlatformMetaScan Count=4 Bad=0`. Source scan found one setter/check pair for `defaultPlatform.overridden` and `TextureImporterFormat.Automatic`. `git diff --check` passed for the touched Shallows files with only repo CRLF warnings. Source brace count remained `Delta=0` and `NonAscii=0`; case-sensitive forbidden source scan remained clean.
+
+## Decision 45 - Atlas Compression Quality And Alpha Split Contract
+
+Problem: Atlas importer validation locked format, size, compression mode, and crunch state, but not compression quality or platform alpha splitting. The `.meta` files already encode `compressionQuality: 50` and `allowsAlphaSplitting: 0`; without code ownership, those fields can drift silently and alter import behavior.
+
+Solution: Add `AtlasCompressionQuality=50`, set/validate `importer.compressionQuality`, set/validate `defaultPlatform.compressionQuality`, set/validate `standalone.compressionQuality`, and require `allowsAlphaSplitting=false` for both DefaultTexturePlatform and Standalone.
+
+Rejected Alternatives: Trusting meta defaults was rejected because importer settings are manually mutable and future Unity tools can rewrite them. Raising compression quality was rejected because this task is contract hardening, not changing the atlas visual/perf budget. Runtime correction was rejected because importer state must be deterministic before runtime.
+
+Scalability potential: Low/MX350 keeps predictable atlas import behavior and no alpha split surprises. Middle/High/Ultra can raise compression quality or add platform-specific overrides only through explicit atlas contract changes.
+
+Hardware Impact: Runtime remains 0 us/frame and 0 bytes procedural allocation. The gain is prevention: no hidden compression-quality or alpha-splitting drift can change imported atlas behavior for MX350 builds. Exact runtime microseconds are not profiled because this is editor validation.
+
+Verification: Pending static verification. Planned checks: no dotnet rebuild and no Unity import; atlas meta scan for `compressionQuality: 50` and `allowsAlphaSplitting: 0`; source token scan; `git diff --check`; source brace/non-ASCII balance; case-sensitive forbidden source scan.

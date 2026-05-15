@@ -516,3 +516,11 @@ Solution: Implement `IScalabilityChangedEventListener`, register/unregister with
 Rejected Alternatives: Keep cadence-only registry reads, or poll registry every late frame. Cadence-only leaves visible stale quality state; per-frame registry polling spends hot-path budget on a cold policy edge.
 Scalability potential: Low/MX350 and low-memory transitions downshift presentation immediately. Middle/High/Ultra keep richer plasma/splash presentation when the current policy allows it.
 Hardware Impact: One cold listener registration/unregistration and one event-time scalar policy update; steady-state frame cost remains the existing 60-frame fallback probe. Verification static only; no rebuild.
+
+## Decision 63 - Burn-Stage Atmospheric Freshness
+
+Problem: `RunReentryBurnAsync()` consumed atmospheric packets into `_lastAtmosphericReentry`, but when the orbital snapshot was unavailable it accepted the cached atmospheric velocity even if that snapshot came from the previous awaiting-reentry stage.
+Solution: Use a local `hasFreshAtmosphericReentry` flag and allow atmospheric Mach fallback only when the packet was consumed during the current burn-loop iteration.
+Rejected Alternatives: Clear `_lastAtmosphericReentry` before every poll, or trust the cached snapshot because run-entry reset already exists. Per-frame clearing would destroy useful black-box sequence context; run-entry reset does not protect cross-stage stale data inside one run.
+Scalability potential: Low/MX350 avoids a false fast-forward into warning/manual override when the orbital provider briefly drops out. Middle/High/Ultra keep the same richer VWS, rumble, plasma, and whiteout sequence, but only from current motion data.
+Hardware Impact: One stack bool and branch per burn wait iteration, below 1 us on i3/MX350. Prevents stale Mach progression without registry polling, allocation, or extra signal scanning. Verification static only; no rebuild.

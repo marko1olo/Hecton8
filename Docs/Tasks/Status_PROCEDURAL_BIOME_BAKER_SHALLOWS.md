@@ -384,3 +384,11 @@ Status: PENDING VERIFICATION
 - Verification avoided dotnet rebuilds and Unity import. `AtlasDefaultPlatformMetaScan Count=4 Bad=0`; source scan found one setter/check pair for `defaultPlatform.overridden` and `TextureImporterFormat.Automatic`; `git diff --check` passed with only repo CRLF warnings; source brace balance stayed `Delta=0` with `NonAscii=0`; case-sensitive forbidden source scan stayed clean.
 - Rejected alternative: trusting Unity defaults was rejected because platform settings can be manually overridden and still keep max size/compression values. Locking Default to BC7/BC5 was rejected because Standalone already owns the concrete runtime format while Default should remain non-overridden automatic fallback.
 - H-Phi impact remains domain-local evidence only: Shallows atlas platform settings are now fail-closed against hidden default override drift without runtime texture policy or cross-domain asset management.
+
+### Loop 44 - Atlas Compression Quality And Alpha Split Contract
+
+- Found remaining atlas importer fine-print drift: compression quality and platform alpha splitting were present in meta but not owned by the baker/validator.
+- Patched `ConfigureAtlasImporter` and `ValidateAtlasImporter` with `AtlasCompressionQuality=50`, global importer compression-quality checks, and Default/Standalone `allowsAlphaSplitting=false` checks.
+- Verification pending. Planned static checks: atlas meta scan for `compressionQuality: 50` and `allowsAlphaSplitting: 0`, source token scan, `git diff --check`, source brace/non-ASCII balance, case-sensitive forbidden source scan, and scoped diff status. No dotnet rebuild or Unity import will be run.
+- Rejected alternative: trusting importer defaults was rejected because these values are manually mutable and can change import behavior without changing asset names or platform formats. Raising quality blindly was rejected because the current atlas contract prioritizes deterministic 1024 BC payloads over import-time churn.
+- H-Phi impact remains domain-local evidence only: Shallows atlas import quality/alpha split state is now fail-closed without runtime texture repair or cross-domain texture policy.

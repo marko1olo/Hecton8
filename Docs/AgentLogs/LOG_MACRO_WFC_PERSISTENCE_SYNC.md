@@ -824,7 +824,8 @@ Cinematic cheats used:
 Exact microseconds saved:
 - Measured savings: 0 us. No profiler or runtime trace.
 - Runtime allocation: 0 B by static inspection.
-- Worst case: <=16,384 scalar checks for a full 128-signal lane; common case is one sector and two snapshot scans.
+- Normal path: <=256 stack sector entries; common case is one sector and two snapshot scans.
+- Storm snapshots use the later no-allocation first-occurrence fallback.
 
 Verification:
 - Static scan confirms old contiguous flush state is gone and stack-only sector accumulation is present.

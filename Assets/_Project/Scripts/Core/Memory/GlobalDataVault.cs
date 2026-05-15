@@ -742,6 +742,9 @@ namespace Hecton8.Core.Memory
         /// <inheritdoc />
         public NativeArray<T>.ReadOnly CreateAlias<T>(BufferID bufferId, SystemID requester) where T : struct
         {
+            if (requester == SystemID.Unknown)
+                FatalMemoryException.ThrowUnknownAliasReader();
+
             if (!TryGetBuffer<T>(bufferId, out NativeArray<T> buffer))
                 return default;
 

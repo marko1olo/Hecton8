@@ -477,3 +477,15 @@ Cinematic Cheats used: Standalone BC7/BC5 atlas compression, fixed 1024 atlas si
 Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents hidden platform import drift; exact runtime microseconds were not profiled.
 
 Verification: No dotnet rebuild and no Unity import was run. `AtlasDefaultPlatformMetaScan Count=4 Bad=0`; `git diff --check` passed with only repo CRLF warnings; source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.
+
+## 2026-05-15 Atlas Compression Quality And Alpha Split Contract
+
+What was wrong: Compression quality and platform alpha-splitting flags were present in atlas meta files but were not owned by the baker contract.
+
+What was done: Added `AtlasCompressionQuality=50` and validation for global/Default/Standalone compression quality plus Default/Standalone `allowsAlphaSplitting=false`.
+
+Cinematic Cheats used: Fixed 1024 procedural atlas fakes, Standalone BC7/BC5 compression, no alpha split, and no runtime texture correction remain unchanged.
+
+Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents hidden import-quality or alpha-split drift; exact runtime microseconds were not profiled.
+
+Verification: Pending static verification. No dotnet rebuild and no Unity import will be run.

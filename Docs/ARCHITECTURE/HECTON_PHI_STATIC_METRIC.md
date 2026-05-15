@@ -309,7 +309,8 @@ Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json
 The compact summary includes aggregate scores, Core graph debt, duplicate signal
 name debt, top owner-blocked DataVault candidate files,
 `TopAupPrecisionRiskFiles`, `TopCouplingRiskFiles`,
-`TopPrimaryManagedRuntimeRiskFiles`, and `ManagedRiskByRole`.
+`TopPrimaryManagedRuntimeRiskFiles`, `ManagedRiskByRole`,
+`DataVaultBacklogByDomain`, and `DataVaultBacklogByRole`.
 
 Core graph only:
 
@@ -338,7 +339,7 @@ Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0
 Full H-Phi regression budget gate:
 
 ```powershell
-Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0 -MaxFindObjectCalls 5 -MaxLegacyEventPublish 28 -MaxDuplicateSignalNames 0 -MaxUnityUpdateMethods 0 -MaxGlobalRegistrySurface 5094 -MaxGetComponentCalls 503 -MaxNativeArrayRefs 7001 -MaxLinqSurface 5 -MaxCoroutineSurface 0 -MaxManagedFormatSurface 704 -MaxJobCompleteSurface 61 -MaxPrimaryManagedRuntimeRisk 353 -MinDataSovereignty 0.021386000 -MinMemoryAlignment 0.506081000 -MinRuntimeHPhiRisk 0.000606200 -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 14 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 6
+Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0 -MaxFindObjectCalls 5 -MaxLegacyEventPublish 28 -MaxDuplicateSignalNames 0 -MaxGlobalRegistrySurface 5160 -MaxGetComponentCalls 550 -MaxNativeArrayRefs 7035 -MaxLinqSurface 5 -MaxCoroutineSurface 0 -MaxManagedFormatSurface 704 -MaxJobCompleteSurface 61 -MaxPrimaryManagedRuntimeRisk 353 -MaxOwnerBlockedNativeArrayRefs 6195 -MinDataSovereignty 0.021300000 -MinMemoryAlignment 0.505000000 -MinRuntimeHPhiRisk 0.000590000 -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 14 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 6
 ```
 
 Source-count and score-floor gates require a full source scan. `-CoreGraphOnly`
@@ -349,6 +350,9 @@ Managed-runtime counters are static risk surfaces, not profiler/GC proof.
 `PrimaryManagedRuntimeRisk` excludes editor, instrumentation, persistence, and
 UI role buckets so smoke/diagnostic/save/UI debt remains visible without being
 treated as the primary gameplay hot-path budget.
+`OwnerBlockedNativeArrayRefs` counts NativeArray surface in runtime files with
+zero Vault access surface. It is a migration backlog gate, not proof that every
+NativeArray in the file should move to Vault.
 
 Duplicate signal-name budget gate:
 

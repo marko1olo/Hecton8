@@ -428,3 +428,11 @@ What was done -> VFX now implements `IScalabilityChangedEventListener`, register
 Cinematic Cheats used -> Low-tier plasma/splash remains the cheap presentation fake; high/ultra overkill remains enabled only under current policy.
 Exact Microseconds saved -> Avoids up to 60 frames of stale policy after a downshift. Steady-state frame cost stays unchanged except existing cadence probe; event work is cold scalar assignment.
 Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted scan confirms event registration and shared cache path; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only for VFX source.
+
+## 2026-05-15 - Loop 58 Burn-Stage Atmospheric Freshness Review
+
+What was wrong -> Re-entry burn could advance on atmospheric Mach fallback using `_lastAtmosphericReentry` from the earlier awaiting-reentry stage when no current orbital snapshot was available.
+What was done -> Added a current-iteration `hasFreshAtmosphericReentry` gate so atmospheric Mach fallback only uses a packet consumed inside the burn loop iteration.
+Cinematic Cheats used -> None; this preserves deterministic pacing before the VWS/rumble/manual override presentation cheats are allowed to advance.
+Exact Microseconds saved -> Adds one stack bool and branch below 1 us per burn wait frame. Prevents false sequence progression and avoids heavier rollback/debug work.
+Verification -> No dotnet rebuild/response-file compile was run per user constraint. Targeted readback confirms the fresh-atmospheric gate; forbidden-pattern scan returned no hits; `git diff --check` reports line-ending warnings only for existing mixed-line-ending docs.

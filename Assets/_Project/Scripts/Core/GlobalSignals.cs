@@ -1123,6 +1123,7 @@ namespace Hecton8.Core
         private const int NarrativeHudWaypointSignalCapacity = 64;
         private const int SoundscapeProfileSignalCapacity = 64;
         private const int NarrativePoiStateSignalCapacity = 64;
+        private const int BiomeGradientSignalCapacity = 64;
         private const int StorageDebtSignalCapacity = 32;
         private const int StreamingTurbulenceSignalCapacity = 32;
         private const int AtmosphericReentrySignalCapacity = 32;
@@ -2808,6 +2809,7 @@ namespace Hecton8.Core
         {
             EnsureInitialized();
             _biomeChangedSignals.Enqueue(signal);
+            SignalBus<BiomeChangedSignal>.Push(in signal);
         }
 
         /// <summary>Queues one procedural narrative camera focus packet from the main thread.</summary>
@@ -3180,8 +3182,14 @@ namespace Hecton8.Core
             SignalBus<WeatherChangedSignal>.EnsureInitialized();
             SignalBus<SystemPauseSignal>.Configure(SimulationPauseSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(SystemPauseSignal)));
             SignalBus<SystemPauseSignal>.EnsureInitialized();
+            SignalBus<AcousticPingSignal>.Configure(AcousticPingSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(AcousticPingSignal)));
+            SignalBus<AcousticPingSignal>.EnsureInitialized();
             SignalBus<MovementAcousticSignal>.Configure(MovementAcousticSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(MovementAcousticSignal)));
             SignalBus<MovementAcousticSignal>.EnsureInitialized();
+            SignalBus<BiomeChangedSignal>.Configure(BiomeChangedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(BiomeChangedSignal)));
+            SignalBus<BiomeChangedSignal>.EnsureInitialized();
+            SignalBus<BiomeGradientSignal>.Configure(BiomeGradientSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(BiomeGradientSignal)));
+            SignalBus<BiomeGradientSignal>.EnsureInitialized();
             SignalBus<DiegeticHudSignal>.Configure(DiegeticHudSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(DiegeticHudSignal)));
             SignalBus<DiegeticHudSignal>.EnsureInitialized();
             SignalBus<SaveRequestSignal>.Configure(SaveLifecycleSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(SaveRequestSignal)));

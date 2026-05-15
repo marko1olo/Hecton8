@@ -93,7 +93,8 @@ Persistent H8 allocations are all-or-nothing:
 - native arrays and raw allocations are exposed only after owner tracking succeeds;
 - raw reallocation registers the replacement block before freeing the old block;
 - if allocation tracking or memory-map descriptor registration fails after native memory is acquired, the new allocation is freed and `FatalMemoryException` is thrown;
-- block descriptor storage grows up to `MaxTrackingCapacity` instead of silently dropping new descriptor evidence.
+- block descriptor storage grows up to `MaxTrackingCapacity` instead of silently dropping new descriptor evidence;
+- read-only aliases require a concrete `SystemID` reader at the DataVault and H8Memory boundaries.
 
 ## Legal Uses
 

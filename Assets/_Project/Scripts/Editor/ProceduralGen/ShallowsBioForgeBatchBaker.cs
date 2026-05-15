@@ -49,6 +49,7 @@ namespace Hecton8.Editor.ProceduralGen
         private const float Lod1FadeWidth = 0.08f;
         private const float Lod2FadeWidth = 0.04f;
         private const float TransformEpsilonSq = 0.000001f;
+        private const int AtlasCompressionQuality = 50;
         private const int DefaultLayer = 0;
         private const string UntaggedTag = "Untagged";
         // COLD ALLOC: List<Color>[9600] - reusable editor vertex color validation scratch - owner: ShallowsBioForgeBatchBaker
@@ -438,6 +439,7 @@ namespace Hecton8.Editor.ProceduralGen
             importer.streamingMipmapsPriority = 0;
             importer.isReadable = false;
             importer.textureCompression = TextureImporterCompression.Compressed;
+            importer.compressionQuality = AtlasCompressionQuality;
             importer.crunchedCompression = false;
             importer.alphaIsTransparency = false;
             importer.sRGBTexture = kind == AtlasKind.Albedo || kind == AtlasKind.MatCap;
@@ -448,7 +450,9 @@ namespace Hecton8.Editor.ProceduralGen
             defaultPlatform.overridden = false;
             defaultPlatform.maxTextureSize = AtlasSize;
             defaultPlatform.textureCompression = TextureImporterCompression.Compressed;
+            defaultPlatform.compressionQuality = AtlasCompressionQuality;
             defaultPlatform.crunchedCompression = false;
+            defaultPlatform.allowsAlphaSplitting = false;
             defaultPlatform.format = TextureImporterFormat.Automatic;
             importer.SetPlatformTextureSettings(defaultPlatform);
 
@@ -456,7 +460,9 @@ namespace Hecton8.Editor.ProceduralGen
             standalone.overridden = true;
             standalone.maxTextureSize = AtlasSize;
             standalone.textureCompression = TextureImporterCompression.Compressed;
+            standalone.compressionQuality = AtlasCompressionQuality;
             standalone.crunchedCompression = false;
+            standalone.allowsAlphaSplitting = false;
             standalone.format = kind == AtlasKind.Normal ? TextureImporterFormat.BC5 : TextureImporterFormat.BC7;
             importer.SetPlatformTextureSettings(standalone);
             importer.SaveAndReimport();
@@ -1150,6 +1156,7 @@ namespace Hecton8.Editor.ProceduralGen
                 importer.streamingMipmapsPriority != 0 ||
                 importer.isReadable ||
                 importer.textureCompression != TextureImporterCompression.Compressed ||
+                importer.compressionQuality != AtlasCompressionQuality ||
                 importer.crunchedCompression ||
                 importer.alphaIsTransparency ||
                 importer.sRGBTexture != expectedSrgb ||
@@ -1165,7 +1172,9 @@ namespace Hecton8.Editor.ProceduralGen
             if (defaultPlatform.overridden ||
                 defaultPlatform.maxTextureSize != AtlasSize ||
                 defaultPlatform.textureCompression != TextureImporterCompression.Compressed ||
+                defaultPlatform.compressionQuality != AtlasCompressionQuality ||
                 defaultPlatform.crunchedCompression ||
+                defaultPlatform.allowsAlphaSplitting ||
                 defaultPlatform.format != TextureImporterFormat.Automatic)
             {
                 failures++;
@@ -1173,7 +1182,13 @@ namespace Hecton8.Editor.ProceduralGen
             }
 
             TextureImporterPlatformSettings standalone = importer.GetPlatformTextureSettings("Standalone");
-            if (!standalone.overridden || standalone.maxTextureSize != AtlasSize || standalone.textureCompression != TextureImporterCompression.Compressed || standalone.crunchedCompression || standalone.format != expectedFormat)
+            if (!standalone.overridden ||
+                standalone.maxTextureSize != AtlasSize ||
+                standalone.textureCompression != TextureImporterCompression.Compressed ||
+                standalone.compressionQuality != AtlasCompressionQuality ||
+                standalone.crunchedCompression ||
+                standalone.allowsAlphaSplitting ||
+                standalone.format != expectedFormat)
             {
                 failures++;
                 Debug.LogError($"[ShallowsBioForgeBatchBaker] Atlas Standalone platform contract failed at {path}.");

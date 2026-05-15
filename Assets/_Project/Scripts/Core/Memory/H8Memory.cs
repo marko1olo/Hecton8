@@ -176,6 +176,11 @@ namespace Hecton8.Core.Memory
             throw new FatalMemoryException("H8Memory allocation owner is unknown.");
         }
 
+        public static void ThrowUnknownAliasReader()
+        {
+            throw new FatalMemoryException("H8Memory alias reader is unknown.");
+        }
+
         public static void ThrowWrongFreeOwner()
         {
             throw new FatalMemoryException("H8Memory free owner mismatch.");
@@ -503,6 +508,9 @@ namespace Hecton8.Core.Memory
         /// </summary>
         public static NativeArray<T>.ReadOnly CreateAlias<T>(NativeArray<T> source, SystemID reader) where T : struct
         {
+            if (reader == SystemID.Unknown)
+                FatalMemoryException.ThrowUnknownAliasReader();
+
             if (!source.IsCreated)
                 return default;
 
@@ -514,6 +522,9 @@ namespace Hecton8.Core.Memory
         /// </summary>
         internal static NativeArray<T>.ReadOnly CreateAlias<T>(void* pointer, int length, SystemID reader) where T : struct
         {
+            if (reader == SystemID.Unknown)
+                FatalMemoryException.ThrowUnknownAliasReader();
+
             NativeArray<T> array = CreateNativeArrayView<T>(pointer, length);
             return array.AsReadOnly();
         }
