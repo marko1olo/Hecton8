@@ -808,3 +808,30 @@ Verification state:
 - `CURRENT_BATCH.md` exact prompt tag count for `VFX_SDF_CARVE_DEBRIS`: 0.
 - Unity import/compile/profiler evidence remains unavailable.
 - No dotnet build or rebuild was run.
+
+## 2026-05-15 - Low-Tier Flow Binding Bypass
+
+What was wrong:
+- Low/MX350 compute advection already ignores flow, but CPU binding still resolved fluid buffer/texture payloads.
+- That spent frame time on metadata the low-tier kernel will not sample.
+
+What was done:
+- `BindSharedComputeParams()` now initializes empty flow defaults first.
+- `ResolveFlowPayload()` runs only when the cached tier is non-low.
+- Low still binds safe empty buffer/texture resources so compute kernels never see null resources.
+- Did not remove Middle/High/Ultra flow response.
+- Did not run dotnet build or dotnet rebuild.
+
+Cinematic cheats used:
+- Low-tier gravity-only chip drift: good enough visual motion on MX350, no expensive flow resolve.
+- High/Ultra keeps validated SDF/flow debris motion as visual currency.
+
+Exact Microseconds saved:
+- Estimated sub-10 us CPU on active low-tier debris frames by skipping fluid payload probes and global shader metadata reads.
+- GPU saving: 0 us; the low-tier shader path was already skipping flow sampling.
+- GC impact: 0 B/frame maintained.
+
+Verification state:
+- Static verification pending for this pass.
+- Unity import/compile/profiler evidence remains unavailable.
+- No dotnet build or rebuild was run.

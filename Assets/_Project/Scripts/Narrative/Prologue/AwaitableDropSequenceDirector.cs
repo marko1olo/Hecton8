@@ -196,6 +196,14 @@ namespace Hecton8.Narrative.Prologue
 
                 if (_runtime.TryConsumeAtmosphericReentry(out _lastAtmosphericReentry))
                 {
+                    if (!IsFiniteAtmospheric(in _lastAtmosphericReentry))
+                    {
+                        RecordStage(PrologueStage.Faulted, FaultHash, PrologueCancelReasons.NonFinite);
+                        DumpBlackBox();
+                        TryDumpRuntimeBlackBox(_runtime);
+                        return false;
+                    }
+
                     RecordStage(PrologueStage.AwaitingAtmosphericReentry, HashAtmospheric(in _lastAtmosphericReentry), _lastAtmosphericReentry.Flags);
                     return true;
                 }
@@ -251,7 +259,17 @@ namespace Hecton8.Narrative.Prologue
 
                 bool hasFreshAtmosphericReentry = _runtime.TryConsumeAtmosphericReentry(out _lastAtmosphericReentry);
                 if (hasFreshAtmosphericReentry)
+                {
+                    if (!IsFiniteAtmospheric(in _lastAtmosphericReentry))
+                    {
+                        RecordStage(PrologueStage.Faulted, FaultHash, PrologueCancelReasons.NonFinite);
+                        DumpBlackBox();
+                        TryDumpRuntimeBlackBox(_runtime);
+                        return false;
+                    }
+
                     RecordStage(PrologueStage.ReentryBurn, HashAtmospheric(in _lastAtmosphericReentry), _lastAtmosphericReentry.Flags);
+                }
 
                 if (_runtime.TryGetOrbitalSnapshot(out _lastOrbital))
                 {
@@ -543,6 +561,13 @@ namespace Hecton8.Narrative.Prologue
                    math.isfinite(snapshot.PlanetDistanceMeters) &&
                    math.isfinite(snapshot.ReentryHeat01) &&
                    math.isfinite(snapshot.CloudWhiteout01);
+        }
+
+        private static bool IsFiniteAtmospheric(in PrologueAtmosphericReentrySnapshot snapshot)
+        {
+            return math.isfinite(snapshot.AltitudeMeters) &&
+                   math.isfinite(snapshot.UniverseVelocityMetersPerSecond) &&
+                   math.isfinite(snapshot.Heat01);
         }
 
         private void DumpBlackBox()

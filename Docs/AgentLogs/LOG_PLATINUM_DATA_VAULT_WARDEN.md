@@ -68,6 +68,35 @@ Verification:
 Status:
 - VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
 
+## 2026-05-15 - Handle External-View Generation Gate
+
+What was wrong:
+- `TryGetBufferHandle` could build a `VaultBufferHandle<T>` without marking the block as externally viewed.
+- The returned handle could carry the pre-mark generation if external-view metadata was updated later through another access path.
+
+What was done:
+- `TryBuildHandle` now calls `MarkExternalView`.
+- It reloads pointer and metadata after the mark, revalidates type/stride/alignment, and returns the post-mark generation.
+- Documented the handle external-view rule in `Docs/ARCHITECTURE/ARENA_ALLOCATOR_2_0.md`.
+
+Cinematic Cheats used:
+- None. This is DataVault metadata correctness.
+
+Exact Microseconds saved:
+- Frame cost: 0 us.
+- First handle build on an unmarked block may pay one metadata update and block lookup.
+- Subsequent handle builds are branch-only after the external-view flag is set.
+
+Verification:
+- `H8Memory.cs`, `GlobalDataVault.cs`, and `SaveBinaryPayloadCodec.cs` brace/parenthesis balance passed.
+- `TryBuildHandle` scan shows `MarkExternalView` before writing `handle.generation`.
+- DataVault live compaction scan remained clean.
+- `git diff --check` passed with CRLF warnings only.
+- No dotnet rebuild was run per user order.
+
+Status:
+- VERIFIED VAULT LOCK - COMPILE TARGET BLOCKED BY MISSING Hecton8.Core.Memory.rsp.
+
 ## 2026-05-15 - Alias Accountability Gate
 
 What was wrong:

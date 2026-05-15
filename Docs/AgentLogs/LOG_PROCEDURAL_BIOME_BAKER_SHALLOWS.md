@@ -500,4 +500,4 @@ Cinematic Cheats used: Static offline L-system rule validation remains the contr
 
 Exact Microseconds saved: Runtime remains 0 us/frame and 0 bytes procedural allocation. This prevents editor validation exception paths; exact runtime microseconds were not profiled.
 
-Verification: Pending static verification. No dotnet rebuild and no Unity import will be run.
+Verification: No dotnet rebuild and no Unity import was run. `RuleRawReplacementYamlScan Count=3 Bad=0`; source scan found no direct child `FindPropertyRelative(...).stringValue` pattern; `git diff --check` passed; source brace balance stayed `Delta=0`, `NonAscii=0`, and forbidden source scan stayed clean.

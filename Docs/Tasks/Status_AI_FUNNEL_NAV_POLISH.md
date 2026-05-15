@@ -300,6 +300,12 @@ Task Count: 15
 - [x] Pure void exact block-count proof | DOD: pure-void snapshot release now requires `PureVoidBlockCount == ResolvePureVoidBlockCount(requiredCellCount)` and flag coverage before releasing voxel buffers; rejected stale shorter scan counts causing false pure-route records; estimate 2 us.
 - [x] Pure void snapshot static scan | DOD: changed snapshot validation range reports no raw division, forbidden hot math, managed allocation, or `foreach`; dotnet rebuilds remain prohibited; estimate 2 us.
 
+## Loop 42 - Build Metadata Drift Gate
+
+- [x] Existing metadata finite proof | DOD: `TryPrepareBuild` now detects stale non-finite origin/max/cell-size and inverted bounds before change-detection math; rejected letting NaN comparisons suppress rebuilds; estimate 2 us.
+- [x] Pure-void rebuild forcing | DOD: invalid stored record metadata now forces `originChanged` and `cellSizeChanged`, so a stale pure-void record cannot skip rebuild after corrupt metadata; rejected refreshing metadata while preserving unproven pure-void authority; estimate 2 us.
+- [x] Metadata drift static scan | DOD: changed build-scheduling range reports no raw division, forbidden hot math, managed allocation, or `foreach`; dotnet rebuilds remain prohibited; estimate 2 us.
+
 ## Verification
 
 - [x] Static scan | PASS: `StringPullPathJob`, `NativeAStarJob`, `TryResolveAbyssalNavNodeCandidate`, abyssal nav support/hash, nav graph ingress, and funnel telemetry conversion regions have no `math.normalize`, `math.length(`, `math.distance(`, `.normalized`, or raw `/` code matches after loop 19.
@@ -325,6 +331,7 @@ Task Count: 15
 - [x] Pure void job targeted scan | PASS: `PureVoidBlockScanJob.Execute` range reports no raw division, forbidden hot math, managed allocation, or `foreach`.
 - [x] Dynamic update buffer targeted scan | PASS: dynamic scheduling, `HasCompleteDynamicUpdateBuffers`, and `TryResolveVoxelCellCount` ranges report no raw division, forbidden hot math, managed allocation, or `foreach`.
 - [x] Pure void snapshot targeted scan | PASS: `IsPureVoidSnapshot` range reports no raw division, forbidden hot math, managed allocation, or `foreach`.
+- [x] Build metadata drift targeted scan | PASS: `TryPrepareBuild` change-detection range reports no raw division, forbidden hot math, managed allocation, or `foreach`.
 - [x] Batch prompt re-extraction | PASS: CLI regex rechecked `CURRENT_BATCH.md` after loop 34 and confirmed `AI_FUNNEL_NAV_POLISH` remains absent; persisted task files remain authority.
 - [x] Diff hygiene | PASS: `git diff --check` passed for touched source/status/rationale/log files; only LF-to-CRLF working-copy warnings were emitted.
 - [x] Core graph H-Phi summary | PASS STATIC: `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary` completed without build; graph debt counts are Core asmdef 25, generated project 10, source-backed bridge 14, source-backed compile bridge 8, project-reference replacement 6; no source-only route hardening score was claimed.

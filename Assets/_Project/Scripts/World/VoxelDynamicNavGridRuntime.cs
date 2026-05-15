@@ -838,8 +838,13 @@ namespace Hecton8.World
 
             bool consumedDirtyMarker = ConsumeDirtyMarker(volumeInstanceId, runtimeStamp);
             bool dimensionsChanged = !math.all(record.Dimensions == dimensions);
-            bool originChanged = math.lengthsq(record.Origin - origin) > 0.0001f;
-            bool cellSizeChanged = math.abs(record.CellSize - cellSize) > 0.0001f;
+            bool recordMetadataInvalid = !math.all(math.isfinite(record.Origin)) ||
+                                         !math.all(math.isfinite(record.Max)) ||
+                                         !math.all(record.Max >= record.Origin) ||
+                                         !math.isfinite(record.CellSize) ||
+                                         record.CellSize <= 0f;
+            bool originChanged = recordMetadataInvalid || math.lengthsq(record.Origin - origin) > 0.0001f;
+            bool cellSizeChanged = recordMetadataInvalid || math.abs(record.CellSize - cellSize) > 0.0001f;
             bool needsBuild = consumedDirtyMarker ||
                               record.IsDirty ||
                               (!record.IsPureVoid &&

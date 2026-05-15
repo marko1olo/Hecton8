@@ -214,6 +214,12 @@ Rejected Alternatives: Treating read aliases as harmless because they are read-o
 Scalability potential: Low keeps alias access deterministic and attributable; Middle keeps shared-buffer debugging honest; High and Ultra can add more read-heavy consumers without widening anonymous memory access.
 Hardware Impact: One branch on alias creation only, estimated <0.05 us on i3/MX350; 0 us steady-frame cost for already-held aliases.
 
+Problem: `TryGetBufferHandle` built a generation handle without marking the underlying block as externally viewed. That left a handle-based external pointer lane outside the same metadata path used by `GetBuffer`/`TryGetBuffer`.
+Solution: `TryBuildHandle` now marks the block as externally viewed, reloads pointer and metadata after the mark, revalidates the type contract, and writes the returned handle with the post-mark generation.
+Rejected Alternatives: Leaving handle creation as metadata-only because live compaction is currently disabled; external-view metadata is still required for PHI/VOD attribution and future offline relocation planning.
+Scalability potential: Low keeps handle telemetry exact; Middle can diagnose handle lifetimes consistently; High and Ultra can increase handle-based consumers without losing external-view accounting.
+Hardware Impact: First handle extraction for a block may pay one block lookup and metadata update on a cold path; subsequent handles hit the external-view flag and return branch-only. Steady-frame cost for already-resolved handles remains 0 us.
+
 ## OMEGA POLISH CHANGES
 
 Problem: Polish audit required removal of fake precision, managed iteration/string debt, and any code outside the DataVault domain without justification.
@@ -224,7 +230,7 @@ Hardware Impact: Direct habitat DTO write is 32 bytes per module and 0 B GC. Rem
 
 Final Git Diff Summary:
 - Assets/_Project/Scripts/Core/HectonArenaAllocator.cs: owner-tagged H8Memory.FreeRaw release.
-- Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs: GenerationID handle exposure, stale-handle fatal path, VaultGenerationID telemetry, owner-tagged macro/vault frees, macro copy switched to MemCpy, live defrag memmove code deleted, agent-scoped black-box dump paths, and non-finite defrag input dumping.
+- Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs: GenerationID handle exposure, handle external-view marking, stale-handle fatal path, VaultGenerationID telemetry, owner-tagged macro/vault frees, macro copy switched to MemCpy, live defrag memmove code deleted, agent-scoped black-box dump paths, and non-finite defrag input dumping.
 - Assets/_Project/Scripts/Core/Memory/H8Memory.cs: FatalMemoryException, owner-gated raw/native allocation, alias-reader gate, all-or-nothing allocation tracking, tracked-byte raw reallocation, descriptor capacity growth, and owner-checked FreeRaw.
 - Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs: v72 first-hour DTO payload write/read, direct habitat flood struct loop, bounded root compatibility collections, 16 KiB string cap, and removed unbounded helper wrappers.
 - Assets/_Project/Scripts/SaveData.cs: first-hour DTO mirrors and packed DTO definitions/metadata.

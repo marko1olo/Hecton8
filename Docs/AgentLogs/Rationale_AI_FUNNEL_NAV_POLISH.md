@@ -381,3 +381,9 @@ Solution: Reuse `HasValidRecordBounds`, recompute the required voxel cell count 
 Rejected Alternatives: Keeping length equality was rejected because two stale equal buffers do not prove dimensional coverage. Accepting `PureVoidBlockCount <= flags.Length` was rejected because a stale shorter count can mark only part of a record as pure and release route authority buffers.
 Scalability potential: Low/MX350 fails closed on stale pure-void metadata instead of routing through partially scanned volumes. Middle/High/Ultra keep pure-void fast paths only when the full declared voxel record is proven clean.
 Hardware Impact: Adds scalar proof before a cold pure-void release path; expected gain is avoided false-pure route records and downstream funnel/steering recovery. Dotnet rebuilds remain prohibited.
+
+Problem: Build scheduling compared existing record origin/cell size with normal float comparisons, so stored NaN or inverted metadata could under-report a change and preserve a stale pure-void record.
+Solution: Add an existing-record metadata gate in `TryPrepareBuild` for finite origin/max, ordered bounds, finite positive cell size, and force change detection when the stored metadata is invalid.
+Rejected Alternatives: Refreshing the metadata fields without forcing a rebuild was rejected because a stale pure-void flag would still claim route authority without a current scan. Clamping corrupt metadata was rejected because it fabricates a navigable volume.
+Scalability potential: Low/MX350 rebuilds only when existing route-record metadata is corrupt instead of routing through unproven pure void. Middle/High/Ultra preserve pure-void fast paths when metadata is stable and finite.
+Hardware Impact: Adds scalar finite/order checks during build scheduling; expected gain is avoided stale pure-void route records and downstream funnel correction. Dotnet rebuilds remain prohibited.
