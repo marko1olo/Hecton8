@@ -30,6 +30,9 @@ STATUS_PATH = Path("Docs/Tasks/Status_UX_ENGINEER.md")
 RATIONALE_PATH = Path("Docs/AgentLogs/Rationale_UX_ENGINEER.md")
 LOG_PATH = Path("Docs/AgentLogs/LOG_UX_ENGINEER.md")
 BLOCKER_PATH = Path("Docs/AgentLogs/Blocker_UX_ENGINEER.md")
+CURRENT_BATCH_PATH = Path("Docs/Tasks/CURRENT_BATCH.md")
+ARCHIVE_BATCH_PROMPT_PATH = Path("Docs/Archive/Batch006/Tasks/CURRENT_BATCH.md")
+PROMPT_MARKER = '<AGENT_PROMPT id="HARDWARE_ADAPTIVE_UI_BAKER"'
 
 COMMANDS = (
     (
@@ -210,11 +213,45 @@ def _count_pycache_dirs(root: Path) -> int:
     return sum(1 for path in root.rglob("__pycache__") if path.is_dir())
 
 
+def _resolve_prompt_source(root: Path) -> dict[str, object]:
+    active_path = root / CURRENT_BATCH_PATH
+    if active_path.exists():
+        active_text = active_path.read_text(encoding="utf-8", errors="replace")
+        if PROMPT_MARKER in active_text:
+            return {
+                "status": "ACTIVE_CURRENT_BATCH",
+                "path": str(CURRENT_BATCH_PATH),
+                "activeCurrentBatchExists": True,
+            }
+        return {
+            "status": "ACTIVE_CURRENT_BATCH_MISSING_PROMPT",
+            "path": str(CURRENT_BATCH_PATH),
+            "activeCurrentBatchExists": True,
+        }
+
+    archive_path = root / ARCHIVE_BATCH_PROMPT_PATH
+    if archive_path.exists():
+        archive_text = archive_path.read_text(encoding="utf-8", errors="replace")
+        if PROMPT_MARKER in archive_text:
+            return {
+                "status": "ARCHIVE_FALLBACK_ACTIVE_CURRENT_BATCH_MISSING",
+                "path": str(ARCHIVE_BATCH_PROMPT_PATH),
+                "activeCurrentBatchExists": False,
+            }
+
+    return {
+        "status": "PROMPT_SOURCE_MISSING",
+        "path": "",
+        "activeCurrentBatchExists": active_path.exists(),
+    }
+
+
 def main() -> int:
     root = ROOT
     results = [_run_command(root, name, command) for name, command in COMMANDS]
     failures = [result for result in results if result["exitCode"] != 0]
     python_cache_count_after = _count_pycache_dirs(root / "Tools")
+    prompt_source = _resolve_prompt_source(root)
 
     hashes: dict[str, str] = {}
     missing_artifacts: list[str] = []
@@ -233,6 +270,9 @@ def main() -> int:
         "unityRuntimeStatus": "PENDING_UNITY_VERIFICATION",
         "evidenceClasses": list(EVIDENCE_CLASSES),
         "runtimeEvidenceClassesMissing": list(RUNTIME_EVIDENCE_CLASSES_MISSING),
+        "promptSourceStatus": prompt_source["status"],
+        "promptSourcePath": prompt_source["path"],
+        "activeCurrentBatchExists": prompt_source["activeCurrentBatchExists"],
         "commandCount": len(results),
         "commands": results,
         "missingArtifacts": missing_artifacts,

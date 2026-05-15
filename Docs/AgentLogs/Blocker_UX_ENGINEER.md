@@ -15,3 +15,9 @@ Status: STATIC/PYTHON VALIDATION PENDING RERUN - RUNTIME VERIFICATION BLOCKED
 - Active `Docs/Tasks/CURRENT_BATCH.md` is still missing; prompt identity is preserved in active status/rationale/log files and archived Batch006 task data only.
 - Repair verified: aggregate PASS, aggregate validator PASS, status/log consistency PASS, Unity report audit PASS, broad `Tools/UX` discovery PASS 83/83.
 - Runtime blocker unchanged: Unity editor/MCP/Editor.log evidence is unavailable.
+
+## Prompt Source Blocker
+
+- Active `Docs/Tasks/CURRENT_BATCH.md` is missing.
+- Aggregate prompt source fallback is `Docs\Archive\Batch006\Tasks\CURRENT_BATCH.md`.
+- Do not recreate a broad active master batch from archive without integrator approval; active continuation agents may not share the Batch006 prompt set.

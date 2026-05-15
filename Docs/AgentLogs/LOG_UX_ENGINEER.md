@@ -50,6 +50,36 @@ Verification:
 
 Status: UI SCALED - STATIC/PYTHON AGGREGATE PASS; UNITY RUNTIME PENDING.
 
+## 2026-05-15 - Prompt Source Blocker Hardened
+
+What was wrong:
+- Active `Docs/Tasks/CURRENT_BATCH.md` is missing, so the prompt extraction protocol cannot use the active task folder.
+- The exact UX prompt exists in `Docs/Archive/Batch006/Tasks/CURRENT_BATCH.md`, but that fallback was not encoded in the aggregate report.
+
+What was done:
+- Added prompt-source tracking to the aggregate runner/report.
+- Patched the aggregate validator to accept `ARCHIVE_FALLBACK_ACTIVE_CURRENT_BATCH_MISSING` only when `activeCurrentBatchExists=false`.
+- Added regression tests for missing prompt source and invalid archived fallback.
+
+Cinematic Cheats used:
+- None in this hardening pass. Existing UX static gates remain TOASTER readability, GOD_MODE artifact hashing, evidence-class locks, and shader sample caps.
+
+Exact Microseconds saved:
+- 0 us runtime. No Unity runtime path changed.
+
+Verification:
+- `python -m py_compile Tools/UX/run_hardware_adaptive_ui_validation.py Tools/UX/validate_aggregate_report.py Tools/UX/test_validate_aggregate_report.py` PASS.
+- Focused aggregate-validator suite PASS 16 tests with 1 aggregate-mode skip.
+- `python Tools/UX/run_hardware_adaptive_ui_validation.py` PASS.
+- `python -B Tools/UX/validate_aggregate_report.py` PASS.
+- `python -B Tools/UX/validate_status_log_consistency.py --write-report` PASS.
+- `python -B Tools/UX/validate_unity_verification_report.py --write-audit` PASS.
+- `PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools/UX -p test_*.py` PASS 85/85.
+- Aggregate readback: promptSourceStatus `ARCHIVE_FALLBACK_ACTIVE_CURRENT_BATCH_MISSING`, promptSourcePath `Docs\Archive\Batch006\Tasks\CURRENT_BATCH.md`, activeCurrentBatchExists false, commandCount 8/8 exact order, unitHarnessTestCount 46, artifactHashCount 30/30, pythonCacheCountAfter 0.
+- `PYTHON_CACHE_COUNT 0`; `git diff --check` no whitespace errors.
+
+Status: UI SCALED - STATIC/PYTHON AGGREGATE PASS; UNITY RUNTIME PENDING.
+
 ## 2026-05-15 - Active Evidence Repair Verified
 
 What was wrong:
@@ -77,5 +107,32 @@ Verification:
 - Aggregate readback: commandCount 8/8 exact order, unitHarnessTestCount 44, artifactHashCount 30/30, evidenceClasses STATIC_SOURCE/STATIC_DOC/CLI_COMPILE, runtimeEvidenceClassesMissing UNITY_CONSOLE/PLAYMODE/PROFILER/FRAME_DEBUGGER/PLAYER_BUILD, pythonCacheCountAfter 0.
 - Unity report readback: top status PENDING_UNITY_VERIFICATION; all required checks PENDING with empty evidencePath.
 - Unity probe `UNITY_NOT_FOUND`; no `Library/Logs/Unity/Editor.log`; MCP resources/templates empty; `PYTHON_CACHE_COUNT 0`; `git diff --check` no whitespace errors.
+
+Status: UI SCALED - STATIC/PYTHON AGGREGATE PASS; UNITY RUNTIME PENDING.
+
+## 2026-05-15 - Bottom-Most Prompt Source Proof
+
+What was wrong:
+- The active `Docs/Tasks/CURRENT_BATCH.md` remains missing.
+- The prompt-source fallback was hardened in the aggregate, but an older 44-test repair entry remained below that proof in the log.
+
+What was done:
+- Appended this bottom-most current proof.
+- Current aggregate now machine-records `ARCHIVE_FALLBACK_ACTIVE_CURRENT_BATCH_MISSING` with active batch absence, so the protocol blocker is explicit instead of hidden.
+
+Cinematic Cheats used:
+- None in this evidence pass. Existing UX static gates remain TOASTER readability, GOD_MODE artifact hashing, evidence-class locks, and shader sample caps.
+
+Exact Microseconds saved:
+- 0 us runtime. No Unity runtime path changed.
+
+Verification:
+- `python Tools/UX/run_hardware_adaptive_ui_validation.py` PASS.
+- `python -B Tools/UX/validate_aggregate_report.py` PASS.
+- `python -B Tools/UX/validate_status_log_consistency.py --write-report` PASS.
+- `python -B Tools/UX/validate_unity_verification_report.py --write-audit` PASS.
+- `PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s Tools/UX -p test_*.py` PASS 85/85.
+- Aggregate readback: promptSourceStatus `ARCHIVE_FALLBACK_ACTIVE_CURRENT_BATCH_MISSING`, promptSourcePath `Docs\Archive\Batch006\Tasks\CURRENT_BATCH.md`, activeCurrentBatchExists false, commandCount 8/8 exact order, unitHarnessTestCount 46, artifactHashCount 30/30, pythonCacheCountAfter 0.
+- `PYTHON_CACHE_COUNT 0`; `git diff --check` no whitespace errors.
 
 Status: UI SCALED - STATIC/PYTHON AGGREGATE PASS; UNITY RUNTIME PENDING.

@@ -25,7 +25,7 @@ EXPECTED_COMMANDS = (
     "python_cache_cleanup",
 )
 
-EXPECTED_UNIT_HARNESS_TESTS = 44
+EXPECTED_UNIT_HARNESS_TESTS = 46
 EXPECTED_ARTIFACT_HASHES = 30
 EXPECTED_EVIDENCE_CLASSES = (
     "STATIC_SOURCE",
@@ -45,6 +45,10 @@ ALLOWED_UNITY_PROBE_STATUSES = {
     "UNITY_REQUIRED_VERSION_FOUND",
     "UNITY_VERSION_MISMATCH",
     "UNITY_AVAILABLE_VERSION_UNKNOWN",
+}
+ALLOWED_PROMPT_SOURCE_STATUSES = {
+    "ACTIVE_CURRENT_BATCH",
+    "ARCHIVE_FALLBACK_ACTIVE_CURRENT_BATCH_MISSING",
 }
 
 
@@ -73,6 +77,16 @@ def validate_aggregate_report(report: dict[str, Any], environment_probe: dict[st
         failures.append("evidenceClasses must be STATIC_SOURCE, STATIC_DOC, CLI_COMPILE")
     if report.get("runtimeEvidenceClassesMissing") != list(EXPECTED_RUNTIME_EVIDENCE_CLASSES_MISSING):
         failures.append("runtimeEvidenceClassesMissing must list all Unity/runtime evidence gates")
+
+    prompt_source_status = report.get("promptSourceStatus")
+    if prompt_source_status not in ALLOWED_PROMPT_SOURCE_STATUSES:
+        failures.append("promptSourceStatus must be active prompt or archived fallback")
+    if prompt_source_status == "ARCHIVE_FALLBACK_ACTIVE_CURRENT_BATCH_MISSING" and report.get("activeCurrentBatchExists") is not False:
+        failures.append("archived prompt fallback requires activeCurrentBatchExists false")
+    if prompt_source_status == "ACTIVE_CURRENT_BATCH" and report.get("activeCurrentBatchExists") is not True:
+        failures.append("active prompt source requires activeCurrentBatchExists true")
+    if not isinstance(report.get("promptSourcePath"), str) or not report.get("promptSourcePath"):
+        failures.append("promptSourcePath must identify the prompt source")
 
     self_validation = report.get("aggregateSelfValidation")
     if self_validation is not None:

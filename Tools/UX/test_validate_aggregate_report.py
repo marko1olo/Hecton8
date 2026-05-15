@@ -50,6 +50,9 @@ def _valid_report_fixture() -> dict:
         "unityRuntimeStatus": "PENDING_UNITY_VERIFICATION",
         "evidenceClasses": ["STATIC_SOURCE", "STATIC_DOC", "CLI_COMPILE"],
         "runtimeEvidenceClassesMissing": ["UNITY_CONSOLE", "PLAYMODE", "PROFILER", "FRAME_DEBUGGER", "PLAYER_BUILD"],
+        "promptSourceStatus": "ARCHIVE_FALLBACK_ACTIVE_CURRENT_BATCH_MISSING",
+        "promptSourcePath": "Docs/Archive/Batch006/Tasks/CURRENT_BATCH.md",
+        "activeCurrentBatchExists": False,
         "commandCount": len(commands),
         "commands": commands,
         "missingArtifacts": [],
@@ -91,6 +94,24 @@ class AggregateReportValidatorTests(unittest.TestCase):
         failures = validate_aggregate_report(report, _load(PROBE_PATH))
 
         self.assertIn("runtimeEvidenceClassesMissing must list all Unity/runtime evidence gates", failures)
+
+    def test_rejects_missing_prompt_source(self) -> None:
+        report = _valid_report_fixture()
+        report["promptSourceStatus"] = "PROMPT_SOURCE_MISSING"
+        report["promptSourcePath"] = ""
+
+        failures = validate_aggregate_report(report, _load(PROBE_PATH))
+
+        self.assertIn("promptSourceStatus must be active prompt or archived fallback", failures)
+        self.assertIn("promptSourcePath must identify the prompt source", failures)
+
+    def test_rejects_archived_prompt_fallback_if_active_batch_exists(self) -> None:
+        report = _valid_report_fixture()
+        report["activeCurrentBatchExists"] = True
+
+        failures = validate_aggregate_report(report, _load(PROBE_PATH))
+
+        self.assertIn("archived prompt fallback requires activeCurrentBatchExists false", failures)
 
     def test_rejects_missing_command(self) -> None:
         report = _valid_report_fixture()
