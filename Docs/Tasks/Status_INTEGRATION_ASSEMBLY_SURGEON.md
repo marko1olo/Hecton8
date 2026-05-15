@@ -4,7 +4,23 @@ Agent: INTEGRATION_ASSEMBLY_SURGEON
 Role: SYSTEMS_ARCHITECT
 Domain: Unity Compilation Graph / Integrator
 Prompt task count: 15 (current in-chat XML; older 17-task static pass retained below)
-Current state: BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK39 CURRENT-DISK GREEN. `CurrentDisk39` and `CurrentDiskBudgetGate16` are fresh; zero C# source files under `Assets/_Project/Scripts` are newer than either artifact.
+Current state: BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK46 CURRENT-DISK GREEN. `CurrentDisk46` and `CurrentDiskBudgetGate18` are fresh; zero C# source files under `Assets/_Project/Scripts` are newer than the build artifact, and zero H-Phi source/graph inputs are newer than the H-Phi artifact.
+
+## 2026-05-15 CurrentDisk46/CurrentDiskBudgetGate18 Fresh Current-Disk Closure
+
+Directive: repair current source compile drift, reject stale moving walls, and keep static H-Phi evidence current under parallel edits.
+Domain: Echelon 9 / The Integrator (Compile Medic).
+Current state: BUILD SUCCESSFUL / PLATINUM GRADE.
+Compile artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_222020_CurrentDisk46.log`.
+Compile exit artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_222020_CurrentDisk46.exit.txt`.
+H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_222240_CurrentDiskBudgetGate18.json`.
+H-Phi exit artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_222240_CurrentDiskBudgetGate18.exit.txt`.
+
+- [x] Current RenderGraph wall resolved | Justification: `CurrentDisk45` reported an unsupported simple `RenderGraph.AddBlitPass` overload in `HectonDryVolumeFeature.cs`; current disk no longer contains that overload and uses the project LTS-compatible RasterGraph copy helper plus shader `Copy` pass, and `CurrentDisk46` compiled with `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0` | Alternatives rejected: editing generated `.csproj`, widening package references, or replacing the dry-volume resolve with a behavior-changing stub | Estimate: 0 us runtime
+- [x] Latest moving source compiled | Justification: `CurrentDisk46` compiled the latest snapshot with `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0` | Alternatives rejected: reporting stale `CurrentDisk39/44/45` artifacts | Estimate: 102,243,667 us build verification
+- [x] Current-disk H-Phi gate reverified and tightened | Justification: `CurrentDiskBudgetGate18` exits 0 with `RuntimeHPhiRisk=0.000636091`, `DataSovereignty=0.021306032`, `MemoryAlignment=0.506309148`, `GlobalRegistrySurface=5060`, `NativeArrayRefs=7074`, `ManagedFormatSurface=534`, `JobCompleteSurface=58`, `PrimaryManagedRuntimeRisk=147`, `UnityUpdateMethods=0`, `FindObjectCalls=0`, and `AupPrecisionRisk=0` | Alternatives rejected: retaining stale Gate16 evidence or leaving looser managed/runtime budgets | Estimate: 152,525,160 us tooling verification
+- [x] Final freshness checked | Justification: timestamp scan found `CS_NEWER_THAN_BUILD_COUNT=0` and `HPHI_INPUTS_NEWER_THAN_HPHI_COUNT=0` after `CurrentDisk46` and `CurrentDiskBudgetGate18` | Alternatives rejected: accepting green artifacts without source/input freshness proof during active parallel edits | Estimate: 400 us scan
+- [x] Regression scope constrained | Justification: this closure did not edit generated `.csproj` files, packages, scenes, prefabs, or runtime behavior beyond accepting the current LTS-compatible dry-volume RenderGraph source; H-Phi documentation and evidence logs were updated to the verified counters | Alternatives rejected: broad cross-domain refactors during an Integrator compile closure | Estimate: 0 us runtime
 
 ## 2026-05-15 CurrentDisk39/CurrentDiskBudgetGate16 Fresh Current-Disk Closure
 

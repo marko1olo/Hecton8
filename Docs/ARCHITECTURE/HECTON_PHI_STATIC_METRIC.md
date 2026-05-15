@@ -230,11 +230,11 @@ updates this contract with a bounded dispatcher-shell justification.
 
 ## 2026-05-15 Current Static Baseline
 
-Artifact: `../AgentLogs/HPhi_DOC_AUDIT_R49_20260515_210144_AfterKinematicsTierCacheBudgetGate.json`
+Artifact: `../AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_222240_CurrentDiskBudgetGate18.json`
 with exit summary
-`../AgentLogs/HPhi_DOC_AUDIT_R49_20260515_210144_AfterKinematicsTierCacheBudgetGate.exit.txt`.
+`../AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_222240_CurrentDiskBudgetGate18.exit.txt`.
 Result: `EXIT=0` on a full source summary JSON budget run at
-`2026-05-15 21:04:00 +04:00`.
+`2026-05-15 22:25:11 +04:00`.
 
 Current score floors passed:
 
@@ -245,12 +245,12 @@ Current score floors passed:
 
 Current static counters passed:
 
-- `GlobalRegistrySurface=5060/5075`
+- `GlobalRegistrySurface=5060/5060`
 - `GetComponentCalls=321/321`
 - `NativeArrayRefs=7074/7074`
-- `ManagedFormatSurface=534/564`
+- `ManagedFormatSurface=534/534`
 - `JobCompleteSurface=58/58`
-- `PrimaryManagedRuntimeRisk=147/177`
+- `PrimaryManagedRuntimeRisk=147/147`
 - `DuplicateSignalNames=0`
 - `UnityUpdateMethods=0`
 - `LegacyEventPublish=28/28`
@@ -407,7 +407,7 @@ Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0
 Full H-Phi regression budget gate:
 
 ```powershell
-Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0 -MaxFindObjectCalls 0 -MaxLegacyEventPublish 28 -MaxDuplicateSignalNames 0 -MaxUnityUpdateMethods 0 -MaxGlobalRegistrySurface 5066 -MaxGetComponentCalls 321 -MaxNativeArrayRefs 7074 -MaxLinqSurface 5 -MaxCoroutineSurface 0 -MaxManagedFormatSurface 543 -MaxJobCompleteSurface 58 -MaxPrimaryManagedRuntimeRisk 156 -MaxOwnerBlockedNativeArrayRefs 6262 -MaxPrimaryOwnerBlockedNativeArrayRefs 5678 -MinDataSovereignty 0.021306000 -MinMemoryAlignment 0.506309000 -MinRuntimeHPhiRisk 0.000635400 -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 14 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 6
+Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0 -MaxFindObjectCalls 0 -MaxLegacyEventPublish 28 -MaxDuplicateSignalNames 0 -MaxUnityUpdateMethods 0 -MaxGlobalRegistrySurface 5060 -MaxGetComponentCalls 321 -MaxNativeArrayRefs 7074 -MaxLinqSurface 5 -MaxCoroutineSurface 0 -MaxManagedFormatSurface 534 -MaxJobCompleteSurface 58 -MaxPrimaryManagedRuntimeRisk 147 -MaxOwnerBlockedNativeArrayRefs 6262 -MaxPrimaryOwnerBlockedNativeArrayRefs 5678 -MinDataSovereignty 0.021306000 -MinMemoryAlignment 0.506309000 -MinRuntimeHPhiRisk 0.000636000 -MaxCoreAsmdefDebtReferences 25 -MaxGeneratedProjectDebtReferences 10 -MaxSourceBackedBridgeDebtReferences 14 -MaxSourceBackedCompileBridgeDebtReferences 8 -MaxProjectReferenceReplacementDebtReferences 6
 ```
 
 Source-count and score-floor gates require a full source scan. `-CoreGraphOnly`
