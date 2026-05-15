@@ -83,8 +83,8 @@
     "MESH_REDLINE_OR_RISK",
     "RENDER_TEXTURE_REDLINE_OR_RISK"
   ],
-  "generated": "2026-05-15T17:12:00",
-  "generated_utc": "2026-05-15T14:12:00+00:00",
+  "generated": "2026-05-15T17:18:21",
+  "generated_utc": "2026-05-15T14:18:21+00:00",
   "geometry_buffer_budget_mib": 200.0,
   "link_xml_notes": [
     "Assets/AstarPathfindingProject/link.xml assemblies=1 types=18 preserve_all=18",
@@ -5096,6 +5096,443 @@
   "render_texture_count": 1,
   "render_texture_depth_stencil_rows": 1,
   "render_texture_redline_rows": 1,
+  "render_texture_source_hotspot_rows": 62,
+  "render_texture_source_hotspots": [
+    {
+      "editor_only": false,
+      "line": 14,
+      "path": "Assets/_Project/Scripts/Core/HectonXRManager.cs",
+      "pattern": "RenderTextureDescriptor",
+      "snippet": "private static RenderTextureDescriptor _cachedEyeDescriptor;"
+    },
+    {
+      "editor_only": false,
+      "line": 20,
+      "path": "Assets/_Project/Scripts/Core/HectonXRManager.cs",
+      "pattern": "RenderTextureDescriptor",
+      "snippet": "public static RenderTextureDescriptor EyeRenderTextureDescriptor"
+    },
+    {
+      "editor_only": false,
+      "line": 39,
+      "path": "Assets/_Project/Scripts/Core/HectonXRManager.cs",
+      "pattern": "RenderTextureDescriptor",
+      "snippet": "public static RenderTextureDescriptor RefreshEyeDescriptor()"
+    },
+    {
+      "editor_only": false,
+      "line": 41,
+      "path": "Assets/_Project/Scripts/Core/HectonXRManager.cs",
+      "pattern": "RenderTextureDescriptor",
+      "snippet": "RenderTextureDescriptor descriptor = ResolveUnityEyeDescriptor();"
+    },
+    {
+      "editor_only": false,
+      "line": 60,
+      "path": "Assets/_Project/Scripts/Core/HectonXRManager.cs",
+      "pattern": "RenderTextureDescriptor",
+      "snippet": "private static RenderTextureDescriptor ResolveUnityEyeDescriptor()"
+    },
+    {
+      "editor_only": false,
+      "line": 64,
+      "path": "Assets/_Project/Scripts/Core/HectonXRManager.cs",
+      "pattern": "RenderTextureDescriptor",
+      "snippet": "RenderTextureDescriptor descriptor = XRSettings.eyeTextureDesc;"
+    },
+    {
+      "editor_only": false,
+      "line": 69,
+      "path": "Assets/_Project/Scripts/Core/HectonXRManager.cs",
+      "pattern": "new RenderTexture",
+      "snippet": "return new RenderTextureDescriptor("
+    },
+    {
+      "editor_only": false,
+      "line": 290,
+      "path": "Assets/_Project/Scripts/Core/OculusFfrEnforcer.cs",
+      "pattern": "RenderTextureDescriptor",
+      "snippet": "RenderTextureDescriptor eyeDescriptor = HectonXRManager.RefreshEyeDescriptor();"
+    },
+    {
+      "editor_only": false,
+      "line": 334,
+      "path": "Assets/_Project/Scripts/Graphics/Caustics/AnalyticalCausticsService.cs",
+      "pattern": "new RenderTexture",
+      "snippet": "RenderTextureDescriptor descriptor = new RenderTextureDescriptor(CausticsResolution, CausticsResolution, GraphicsFormat.R8G8B8A8_UNorm, 0)"
+    },
+    {
+      "editor_only": false,
+      "line": 342,
+      "path": "Assets/_Project/Scripts/Graphics/Caustics/AnalyticalCausticsService.cs",
+      "pattern": "new RenderTexture",
+      "snippet": "_causticsMap = new RenderTexture(descriptor)"
+    },
+    {
+      "editor_only": false,
+      "line": 3057,
+      "path": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "pattern": "new RenderTexture",
+      "snippet": "_bakedStarCubemap = new RenderTexture("
+    },
+    {
+      "editor_only": false,
+      "line": 3088,
+      "path": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "pattern": "new RenderTexture",
+      "snippet": "_atmosphereScatteringLutTexture = new RenderTexture("
+    },
+    {
+      "editor_only": false,
+      "line": 3783,
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "pattern": "RTHandles.Alloc",
+      "snippet": "_emptyFluidAdvectionTextureHandle = RTHandles.Alloc(_emptyFluidAdvectionTexture);"
+    },
+    {
+      "editor_only": false,
+      "line": 3796,
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "pattern": "RTHandles.Alloc",
+      "snippet": "_emptyFluidAdvectionTextureHandle = RTHandles.Alloc(_emptyFluidAdvectionTexture);"
+    },
+    {
+      "editor_only": false,
+      "line": 3807,
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "pattern": "RTHandles.Alloc",
+      "snippet": "_gpuAbyssalFlowTextureAHandle = RTHandles.Alloc(_gpuAbyssalFlowTextureA);"
+    },
+    {
+      "editor_only": false,
+      "line": 3814,
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "pattern": "RTHandles.Alloc",
+      "snippet": "_gpuAbyssalFlowTextureBHandle = RTHandles.Alloc(_gpuAbyssalFlowTextureB);"
+    },
+    {
+      "editor_only": false,
+      "line": 3822,
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "pattern": "RTHandles.Alloc",
+      "snippet": "_cachedFluidAdvectionFlowHandle = RTHandles.Alloc(texture);"
+    },
+    {
+      "editor_only": false,
+      "line": 3837,
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "pattern": "RTHandles.Alloc",
+      "snippet": "_cachedFluidAdvectionSdfHandle = RTHandles.Alloc(texture);"
+    },
+    {
+      "editor_only": false,
+      "line": 5690,
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "pattern": "RTHandles.Alloc",
+      "snippet": "_gpuAbyssalFlowTextureAHandle = RTHandles.Alloc(_gpuAbyssalFlowTextureA);"
+    },
+    {
+      "editor_only": false,
+      "line": 5693,
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "pattern": "RTHandles.Alloc",
+      "snippet": "_gpuAbyssalFlowTextureBHandle = RTHandles.Alloc(_gpuAbyssalFlowTextureB);"
+    },
+    {
+      "editor_only": false,
+      "line": 5716,
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "pattern": "new RenderTexture",
+      "snippet": "RenderTextureDescriptor descriptor = new RenderTextureDescriptor("
+    },
+    {
+      "editor_only": false,
+      "line": 5731,
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "pattern": "new RenderTexture",
+      "snippet": "RenderTexture texture = new RenderTexture(descriptor)"
+    },
+    {
+      "editor_only": false,
+      "line": 5464,
+      "path": "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs",
+      "pattern": "new RenderTexture",
+      "snippet": "RenderTextureDescriptor descriptor = new RenderTextureDescriptor(1, 1)"
+    },
+    {
+      "editor_only": false,
+      "line": 5476,
+      "path": "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs",
+      "pattern": "new RenderTexture",
+      "snippet": "_hudFogLuminanceTexture = new RenderTexture(descriptor)"
+    },
+    {
+      "editor_only": false,
+      "line": 5670,
+      "path": "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs",
+      "pattern": "new RenderTexture",
+      "snippet": "RenderTextureDescriptor descriptor = new RenderTextureDescriptor("
+    },
+    {
+      "editor_only": false,
+      "line": 5684,
+      "path": "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs",
+      "pattern": "new RenderTexture",
+      "snippet": "RenderTexture texture = new RenderTexture(descriptor)"
+    },
+    {
+      "editor_only": false,
+      "line": 148,
+      "path": "Assets/_Project/Scripts/Optimization/RenderTextureLifecycleTracker.cs",
+      "pattern": "new RenderTexture",
+      "snippet": "var record = new RenderTextureAllocationRecord"
+    },
+    {
+      "editor_only": false,
+      "line": 159,
+      "path": "Assets/_Project/Scripts/Optimization/RenderTexturePool.cs",
+      "pattern": "new RenderTexture",
+      "snippet": "RenderTexture newRT = new RenderTexture(safeWidth, safeHeight, safeDepthBits, format);"
+    },
+    {
+      "editor_only": false,
+      "line": 119,
+      "path": "Assets/_Project/Scripts/SaveThumbnailCaptureFeature.cs",
+      "pattern": "RTHandles.Alloc",
+      "snippet": "_captureTexture = RTHandles.Alloc("
+    },
+    {
+      "editor_only": false,
+      "line": 1180,
+      "path": "Assets/_Project/Scripts/UI/DiegeticPanelController.cs",
+      "pattern": "new RenderTexture",
+      "snippet": "RenderTextureDescriptor descriptor = new RenderTextureDescriptor(requiredResolution.x, requiredResolution.y)"
+    },
+    {
+      "editor_only": false,
+      "line": 1194,
+      "path": "Assets/_Project/Scripts/UI/DiegeticPanelController.cs",
+      "pattern": "new RenderTexture",
+      "snippet": "_panelRenderTexture = new RenderTexture(descriptor)"
+    },
+    {
+      "editor_only": false,
+      "line": 1278,
+      "path": "Assets/_Project/Scripts/UI/DiegeticPanelController.cs",
+      "pattern": "RenderTextureDescriptor",
+      "snippet": "RenderTextureDescriptor descriptor = _panelRenderTexture.descriptor;"
+    },
+    {
+      "editor_only": false,
+      "line": 1326,
+      "path": "Assets/_Project/Scripts/UI/DiegeticPanelController.cs",
+      "pattern": "RenderTextureDescriptor",
+      "snippet": "private static RenderTexture CreatePhosphorTexture(RenderTextureDescriptor descriptor, string textureName)"
+    },
+    {
+      "editor_only": false,
+      "line": 1328,
+      "path": "Assets/_Project/Scripts/UI/DiegeticPanelController.cs",
+      "pattern": "new RenderTexture",
+      "snippet": "RenderTexture texture = new RenderTexture(descriptor)"
+    },
+    {
+      "editor_only": false,
+      "line": 1002,
+      "path": "Assets/_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs",
+      "pattern": "new RenderTexture",
+      "snippet": "RenderTexture rt = new RenderTexture(math.max(16, width), math.max(16, height), 16, format)"
+    },
+    {
+      "editor_only": false,
+      "line": 1696,
+      "path": "Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs",
+      "pattern": "new RenderTexture",
+      "snippet": "_sonarGlowTexture = new RenderTexture(targetWidth, targetHeight, 0, RenderTextureFormat.RInt, RenderTextureReadWrite.Linear)"
+    },
+    {
+      "editor_only": false,
+      "line": 1744,
+      "path": "Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs",
+      "pattern": "new RenderTexture",
+      "snippet": "_fogDensityTexture = new RenderTexture(targetWidth, targetHeight, 0, RenderTextureFormat.RInt, RenderTextureReadWrite.Linear)"
+    },
+    {
+      "editor_only": false,
+      "line": 286,
+      "path": "Assets/_Project/Scripts/Visor/HectonBiolumSSGIFeature.cs",
+      "pattern": "RTHandles.Alloc",
+      "snippet": "_gatherTexture = RTHandles.Alloc("
+    },
+    {
+      "editor_only": false,
+      "line": 297,
+      "path": "Assets/_Project/Scripts/Visor/HectonBiolumSSGIFeature.cs",
+      "pattern": "RTHandles.Alloc",
+      "snippet": "_giTexture = RTHandles.Alloc("
+    },
+    {
+      "editor_only": false,
+      "line": 284,
+      "path": "Assets/_Project/Scripts/Visor/HectonSonarPointCloudFeature.cs",
+      "pattern": "RTHandles.Alloc",
+      "snippet": "_historyRead = RTHandles.Alloc("
+    },
+    {
+      "editor_only": false,
+      "line": 295,
+      "path": "Assets/_Project/Scripts/Visor/HectonSonarPointCloudFeature.cs",
+      "pattern": "RTHandles.Alloc",
+      "snippet": "_historyWrite = RTHandles.Alloc("
+    },
+    {
+      "editor_only": false,
+      "line": 329,
+      "path": "Assets/_Project/Scripts/Visor/HectonSonarPointCloudFeature.cs",
+      "pattern": "RTHandles.Alloc",
+      "snippet": "_worldHistoryRead = RTHandles.Alloc("
+    },
+    {
+      "editor_only": false,
+      "line": 340,
+      "path": "Assets/_Project/Scripts/Visor/HectonSonarPointCloudFeature.cs",
+      "pattern": "RTHandles.Alloc",
+      "snippet": "_worldHistoryWrite = RTHandles.Alloc("
+    },
+    {
+      "editor_only": false,
+      "line": 181,
+      "path": "Assets/_Project/Scripts/Visor/HectonVoxelSsaoFeature.cs",
+      "pattern": "RTHandles.Alloc",
+      "snippet": "_aoTexture = RTHandles.Alloc("
+    },
+    {
+      "editor_only": false,
+      "line": 422,
+      "path": "Assets/_Project/Scripts/Visor/VolumetricLightFeature.cs",
+      "pattern": "RTHandles.Alloc",
+      "snippet": "_halfTexture = RTHandles.Alloc("
+    },
+    {
+      "editor_only": false,
+      "line": 435,
+      "path": "Assets/_Project/Scripts/Visor/VolumetricLightFeature.cs",
+      "pattern": "RTHandles.Alloc",
+      "snippet": "_compositeTexture = RTHandles.Alloc("
+    },
+    {
+      "editor_only": false,
+      "line": 295,
+      "path": "Assets/_Project/Scripts/World/Biolum/HectonBiolumDiffusionVolume.cs",
+      "pattern": "new RenderTexture",
+      "snippet": "RenderTextureDescriptor descriptor = new RenderTextureDescriptor(resolution, resolution)"
+    },
+    {
+      "editor_only": false,
+      "line": 308,
+      "path": "Assets/_Project/Scripts/World/Biolum/HectonBiolumDiffusionVolume.cs",
+      "pattern": "new RenderTexture",
+      "snippet": "RenderTexture texture = new RenderTexture(descriptor)"
+    },
+    {
+      "editor_only": false,
+      "line": 5258,
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "pattern": "new RenderTexture",
+      "snippet": "RenderTexture texture = new RenderTexture(_wakeTrailRuntimeResolution, _wakeTrailRuntimeResolution, 0, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear)"
+    },
+    {
+      "editor_only": false,
+      "line": 1379,
+      "path": "Assets/_Project/Scripts/World/GPUScatterDirector.cs",
+      "pattern": "new RenderTexture",
+      "snippet": "_depthPyramidTexture = new RenderTexture(targetWidth, targetHeight, 0, RenderTextureFormat.RFloat, RenderTextureReadWrite.Linear)"
+    },
+    {
+      "editor_only": false,
+      "line": 1906,
+      "path": "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+      "pattern": "new RenderTexture",
+      "snippet": "_depthPyramidTexture = new RenderTexture(targetWidth, targetHeight, 0, RenderTextureFormat.RFloat, RenderTextureReadWrite.Linear)"
+    },
+    {
+      "editor_only": false,
+      "line": 350,
+      "path": "Assets/_Project/Scripts/World/SargassumCrestDampingController.cs",
+      "pattern": "new RenderTexture",
+      "snippet": "texture = new RenderTexture(width, height, 0, format, RenderTextureReadWrite.Linear)"
+    },
+    {
+      "editor_only": false,
+      "line": 995,
+      "path": "Assets/_Project/Scripts/World/SargassumCutManager.cs",
+      "pattern": "new RenderTexture",
+      "snippet": "RenderTexture texture = new RenderTexture(damageVolumeResolution, damageVolumeResolution, 0, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear)"
+    },
+    {
+      "editor_only": false,
+      "line": 1329,
+      "path": "Assets/_Project/Scripts/World/SargassumCutManager.cs",
+      "pattern": "new RenderTexture",
+      "snippet": "RenderTexture texture = new RenderTexture(_maskRuntimeResolution, _maskRuntimeResolution, 0, format, RenderTextureReadWrite.Linear)"
+    },
+    {
+      "editor_only": true,
+      "line": 283,
+      "path": "Assets/_Project/Scripts/Editor/HectonArtOptimizationTools.cs",
+      "pattern": "RenderTexture.GetTemporary",
+      "snippet": "RenderTexture temp = RenderTexture.GetTemporary(width, height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);"
+    },
+    {
+      "editor_only": true,
+      "line": 664,
+      "path": "Assets/_Project/Scripts/Editor/HectonArtOptimizationTools.cs",
+      "pattern": "RenderTexture.GetTemporary",
+      "snippet": "RenderTexture temp = RenderTexture.GetTemporary(width, height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);"
+    },
+    {
+      "editor_only": true,
+      "line": 130,
+      "path": "Assets/_Project/Scripts/Editor/HectonMaskChannelPacker.cs",
+      "pattern": "RenderTexture.GetTemporary",
+      "snippet": "RenderTexture temp = RenderTexture.GetTemporary(width, height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);"
+    },
+    {
+      "editor_only": true,
+      "line": 345,
+      "path": "Assets/_Project/Scripts/Editor/HectonMaterialChannelPackValidator.cs",
+      "pattern": "RenderTexture.GetTemporary",
+      "snippet": "RenderTexture tempRt = RenderTexture.GetTemporary(width, height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);"
+    },
+    {
+      "editor_only": true,
+      "line": 92,
+      "path": "Assets/_Project/Scripts/Editor/HectonOctahedralImpostorBaker.cs",
+      "pattern": "RenderTexture.GetTemporary",
+      "snippet": "tileRt = RenderTexture.GetTemporary(TileWidth, TileHeight, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Default);"
+    },
+    {
+      "editor_only": true,
+      "line": 140,
+      "path": "Assets/_Project/Scripts/Optimization/Editor/RenderTextureFormatOptimizer.cs",
+      "pattern": "RenderTexture.GetTemporary",
+      "snippet": "var tempRT = RenderTexture.GetTemporary(rt.width, rt.height, 0, newFormat);"
+    },
+    {
+      "editor_only": true,
+      "line": 199,
+      "path": "Assets/_Project/Scripts/Optimization/Editor/RenderTextureFormatOptimizer.cs",
+      "pattern": "RenderTexture.GetTemporary",
+      "snippet": "var tempRT = RenderTexture.GetTemporary(rt.width, rt.height, 0, newFormat);"
+    },
+    {
+      "editor_only": true,
+      "line": 147,
+      "path": "Assets/_Project/Scripts/Optimization/Editor/RenderTextureResolutionAnalyzer.cs",
+      "pattern": "RenderTexture.GetTemporary",
+      "snippet": "var tempRT = RenderTexture.GetTemporary(targetWidth, targetHeight, 0, RenderTextureFormat.ARGB32);"
+    }
+  ],
   "render_texture_static_estimate_mib": 7.031,
   "render_textures": [
     {
@@ -5114,6 +5551,7 @@
     }
   ],
   "root": "C:\\Hecton8",
+  "runtime_render_texture_source_hotspot_rows": 54,
   "schema_version": 1,
   "skipped_directory_names": [
     ".codex-artifacts",

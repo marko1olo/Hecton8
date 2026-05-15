@@ -79,6 +79,12 @@ class MemoryBudgetCheckTests(unittest.TestCase):
         self.assertGreater(records[0].estimated_bytes, 0)
         self.assertIn("RENDER_TEXTURE_DEPTH_STENCIL_PRESENT_STATIC_SUSPECT", records[0].flags)
 
+    def test_render_texture_source_hotspots_find_runtime_allocations(self) -> None:
+        hits = budget.find_render_texture_source_hotspots(PROJECT_ROOT)
+
+        self.assertTrue(any(hit.pattern == "new RenderTexture" and not hit.editor_only for hit in hits))
+        self.assertTrue(any("RenderTextureDescriptor" == hit.pattern and not hit.editor_only for hit in hits))
+
     def test_static_geometry_estimate_is_conservative_and_deterministic(self) -> None:
         self.assertEqual(
             budget.estimate_geometry_bytes(10),
@@ -171,6 +177,8 @@ class MemoryBudgetCheckTests(unittest.TestCase):
         self.assertIn("texture_extension_summary", payload)
         self.assertIn("mesh_extension_summary", payload)
         self.assertIn("render_textures", payload)
+        self.assertIn("render_texture_source_hotspots", payload)
+        self.assertGreater(payload["runtime_render_texture_source_hotspot_rows"], 0)
         self.assertIn(".codex-build", payload["skipped_directory_names"])
         self.assertEqual(payload["mesh_redline_rows"], 1)
         self.assertGreater(payload["mesh_geometry_static_estimate_mib"], 0)

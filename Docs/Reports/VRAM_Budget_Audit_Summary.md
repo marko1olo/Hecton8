@@ -1,6 +1,6 @@
 # VRAM Budget Audit Summary
 
-Generated: 2026-05-15T17:11:50
+Generated: 2026-05-15T17:20:46
 Evidence class: STATIC_SOURCE / FILESYSTEM. Runtime residency is PENDING VERIFICATION.
 
 ## Summary
@@ -27,6 +27,7 @@ Evidence class: STATIC_SOURCE / FILESYSTEM. Runtime residency is PENDING VERIFIC
 - First-party mesh importer risk rows: 16
 - Static RenderTexture estimate: 7.03 MiB / 320 MiB RT+Depth budget
 - RenderTexture redline/risk rows: 1
+- Runtime RenderTexture source hotspots: 53
 - First-party large textures with streaming mips off: 50
 - link.xml status: LINK_XML_PRESENT_STATIC_ONLY
 
@@ -91,6 +92,72 @@ Evidence class: STATIC_SOURCE / FILESYSTEM. Runtime residency is PENDING VERIFIC
 | Path | Size | Estimate MiB | Color | Depth | AA | Flags |
 |---|---:|---:|---:|---:|---:|---|
 | Assets/_Project/Art/TEXTURES/RT_HUD_Display.renderTexture | 1280x720 | 7.03 | 8 | 94 | 1 | RENDER_TEXTURE_DEPTH_STENCIL_PRESENT_STATIC_SUSPECT |
+
+## Runtime RenderTexture Source Hotspots
+
+| Path | Line | Pattern | Editor-only | Static evidence |
+|---|---:|---|---:|---|
+| Assets/_Project/Scripts/Core/HectonXRManager.cs | 14 | RenderTextureDescriptor | false | private static RenderTextureDescriptor _cachedEyeDescriptor; |
+| Assets/_Project/Scripts/Core/HectonXRManager.cs | 20 | RenderTextureDescriptor | false | public static RenderTextureDescriptor EyeRenderTextureDescriptor |
+| Assets/_Project/Scripts/Core/HectonXRManager.cs | 39 | RenderTextureDescriptor | false | public static RenderTextureDescriptor RefreshEyeDescriptor() |
+| Assets/_Project/Scripts/Core/HectonXRManager.cs | 41 | RenderTextureDescriptor | false | RenderTextureDescriptor descriptor = ResolveUnityEyeDescriptor(); |
+| Assets/_Project/Scripts/Core/HectonXRManager.cs | 60 | RenderTextureDescriptor | false | private static RenderTextureDescriptor ResolveUnityEyeDescriptor() |
+| Assets/_Project/Scripts/Core/HectonXRManager.cs | 64 | RenderTextureDescriptor | false | RenderTextureDescriptor descriptor = XRSettings.eyeTextureDesc; |
+| Assets/_Project/Scripts/Core/HectonXRManager.cs | 69 | RenderTextureDescriptor | false | return new RenderTextureDescriptor( |
+| Assets/_Project/Scripts/Core/OculusFfrEnforcer.cs | 290 | RenderTextureDescriptor | false | RenderTextureDescriptor eyeDescriptor = HectonXRManager.RefreshEyeDescriptor(); |
+| Assets/_Project/Scripts/Graphics/Caustics/AnalyticalCausticsService.cs | 334 | RenderTextureDescriptor | false | RenderTextureDescriptor descriptor = new RenderTextureDescriptor(CausticsResolution, CausticsResolution, GraphicsFormat.R8G8B8A8_UNorm, 0) |
+| Assets/_Project/Scripts/Graphics/Caustics/AnalyticalCausticsService.cs | 342 | new RenderTexture | false | _causticsMap = new RenderTexture(descriptor) |
+| Assets/_Project/Scripts/HectonCelestialEngine.cs | 3057 | new RenderTexture | false | _bakedStarCubemap = new RenderTexture( |
+| Assets/_Project/Scripts/HectonCelestialEngine.cs | 3088 | new RenderTexture | false | _atmosphereScatteringLutTexture = new RenderTexture( |
+| Assets/_Project/Scripts/HectonFluidEngine.cs | 3783 | RTHandles.Alloc | false | _emptyFluidAdvectionTextureHandle = RTHandles.Alloc(_emptyFluidAdvectionTexture); |
+| Assets/_Project/Scripts/HectonFluidEngine.cs | 3796 | RTHandles.Alloc | false | _emptyFluidAdvectionTextureHandle = RTHandles.Alloc(_emptyFluidAdvectionTexture); |
+| Assets/_Project/Scripts/HectonFluidEngine.cs | 3807 | RTHandles.Alloc | false | _gpuAbyssalFlowTextureAHandle = RTHandles.Alloc(_gpuAbyssalFlowTextureA); |
+| Assets/_Project/Scripts/HectonFluidEngine.cs | 3814 | RTHandles.Alloc | false | _gpuAbyssalFlowTextureBHandle = RTHandles.Alloc(_gpuAbyssalFlowTextureB); |
+| Assets/_Project/Scripts/HectonFluidEngine.cs | 3822 | RTHandles.Alloc | false | _cachedFluidAdvectionFlowHandle = RTHandles.Alloc(texture); |
+| Assets/_Project/Scripts/HectonFluidEngine.cs | 3837 | RTHandles.Alloc | false | _cachedFluidAdvectionSdfHandle = RTHandles.Alloc(texture); |
+| Assets/_Project/Scripts/HectonFluidEngine.cs | 5690 | RTHandles.Alloc | false | _gpuAbyssalFlowTextureAHandle = RTHandles.Alloc(_gpuAbyssalFlowTextureA); |
+| Assets/_Project/Scripts/HectonFluidEngine.cs | 5693 | RTHandles.Alloc | false | _gpuAbyssalFlowTextureBHandle = RTHandles.Alloc(_gpuAbyssalFlowTextureB); |
+| Assets/_Project/Scripts/HectonFluidEngine.cs | 5716 | RenderTextureDescriptor | false | RenderTextureDescriptor descriptor = new RenderTextureDescriptor( |
+| Assets/_Project/Scripts/HectonFluidEngine.cs | 5731 | new RenderTexture | false | RenderTexture texture = new RenderTexture(descriptor) |
+| Assets/_Project/Scripts/HectonUnderwaterVisuals.cs | 5464 | RenderTextureDescriptor | false | RenderTextureDescriptor descriptor = new RenderTextureDescriptor(1, 1) |
+| Assets/_Project/Scripts/HectonUnderwaterVisuals.cs | 5476 | new RenderTexture | false | _hudFogLuminanceTexture = new RenderTexture(descriptor) |
+| Assets/_Project/Scripts/HectonUnderwaterVisuals.cs | 5670 | RenderTextureDescriptor | false | RenderTextureDescriptor descriptor = new RenderTextureDescriptor( |
+| Assets/_Project/Scripts/HectonUnderwaterVisuals.cs | 5684 | new RenderTexture | false | RenderTexture texture = new RenderTexture(descriptor) |
+| Assets/_Project/Scripts/Optimization/RenderTexturePool.cs | 159 | new RenderTexture | false | RenderTexture newRT = new RenderTexture(safeWidth, safeHeight, safeDepthBits, format); |
+| Assets/_Project/Scripts/SaveThumbnailCaptureFeature.cs | 119 | RTHandles.Alloc | false | _captureTexture = RTHandles.Alloc( |
+| Assets/_Project/Scripts/UI/DiegeticPanelController.cs | 1180 | RenderTextureDescriptor | false | RenderTextureDescriptor descriptor = new RenderTextureDescriptor(requiredResolution.x, requiredResolution.y) |
+| Assets/_Project/Scripts/UI/DiegeticPanelController.cs | 1194 | new RenderTexture | false | _panelRenderTexture = new RenderTexture(descriptor) |
+| Assets/_Project/Scripts/UI/DiegeticPanelController.cs | 1278 | RenderTextureDescriptor | false | RenderTextureDescriptor descriptor = _panelRenderTexture.descriptor; |
+| Assets/_Project/Scripts/UI/DiegeticPanelController.cs | 1326 | RenderTextureDescriptor | false | private static RenderTexture CreatePhosphorTexture(RenderTextureDescriptor descriptor, string textureName) |
+| Assets/_Project/Scripts/UI/DiegeticPanelController.cs | 1328 | new RenderTexture | false | RenderTexture texture = new RenderTexture(descriptor) |
+| Assets/_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs | 1002 | new RenderTexture | false | RenderTexture rt = new RenderTexture(math.max(16, width), math.max(16, height), 16, format) |
+| Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs | 1696 | new RenderTexture | false | _sonarGlowTexture = new RenderTexture(targetWidth, targetHeight, 0, RenderTextureFormat.RInt, RenderTextureReadWrite.Linear) |
+| Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs | 1744 | new RenderTexture | false | _fogDensityTexture = new RenderTexture(targetWidth, targetHeight, 0, RenderTextureFormat.RInt, RenderTextureReadWrite.Linear) |
+| Assets/_Project/Scripts/Visor/HectonBiolumSSGIFeature.cs | 286 | RTHandles.Alloc | false | _gatherTexture = RTHandles.Alloc( |
+| Assets/_Project/Scripts/Visor/HectonBiolumSSGIFeature.cs | 297 | RTHandles.Alloc | false | _giTexture = RTHandles.Alloc( |
+| Assets/_Project/Scripts/Visor/HectonSonarPointCloudFeature.cs | 284 | RTHandles.Alloc | false | _historyRead = RTHandles.Alloc( |
+| Assets/_Project/Scripts/Visor/HectonSonarPointCloudFeature.cs | 295 | RTHandles.Alloc | false | _historyWrite = RTHandles.Alloc( |
+| Assets/_Project/Scripts/Visor/HectonSonarPointCloudFeature.cs | 329 | RTHandles.Alloc | false | _worldHistoryRead = RTHandles.Alloc( |
+| Assets/_Project/Scripts/Visor/HectonSonarPointCloudFeature.cs | 340 | RTHandles.Alloc | false | _worldHistoryWrite = RTHandles.Alloc( |
+| Assets/_Project/Scripts/Visor/HectonVoxelSsaoFeature.cs | 181 | RTHandles.Alloc | false | _aoTexture = RTHandles.Alloc( |
+| Assets/_Project/Scripts/Visor/VolumetricLightFeature.cs | 422 | RTHandles.Alloc | false | _halfTexture = RTHandles.Alloc( |
+| Assets/_Project/Scripts/Visor/VolumetricLightFeature.cs | 435 | RTHandles.Alloc | false | _compositeTexture = RTHandles.Alloc( |
+| Assets/_Project/Scripts/World/Biolum/HectonBiolumDiffusionVolume.cs | 295 | RenderTextureDescriptor | false | RenderTextureDescriptor descriptor = new RenderTextureDescriptor(resolution, resolution) |
+| Assets/_Project/Scripts/World/Biolum/HectonBiolumDiffusionVolume.cs | 308 | new RenderTexture | false | RenderTexture texture = new RenderTexture(descriptor) |
+| Assets/_Project/Scripts/World/FloraInteractionManager.cs | 5258 | new RenderTexture | false | RenderTexture texture = new RenderTexture(_wakeTrailRuntimeResolution, _wakeTrailRuntimeResolution, 0, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear) |
+| Assets/_Project/Scripts/World/GPUScatterDirector.cs | 1379 | new RenderTexture | false | _depthPyramidTexture = new RenderTexture(targetWidth, targetHeight, 0, RenderTextureFormat.RFloat, RenderTextureReadWrite.Linear) |
+| Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs | 1906 | new RenderTexture | false | _depthPyramidTexture = new RenderTexture(targetWidth, targetHeight, 0, RenderTextureFormat.RFloat, RenderTextureReadWrite.Linear) |
+| Assets/_Project/Scripts/World/SargassumCrestDampingController.cs | 350 | new RenderTexture | false | texture = new RenderTexture(width, height, 0, format, RenderTextureReadWrite.Linear) |
+| Assets/_Project/Scripts/World/SargassumCutManager.cs | 995 | new RenderTexture | false | RenderTexture texture = new RenderTexture(damageVolumeResolution, damageVolumeResolution, 0, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear) |
+| Assets/_Project/Scripts/World/SargassumCutManager.cs | 1329 | new RenderTexture | false | RenderTexture texture = new RenderTexture(_maskRuntimeResolution, _maskRuntimeResolution, 0, format, RenderTextureReadWrite.Linear) |
+| Assets/_Project/Scripts/Editor/HectonArtOptimizationTools.cs | 283 | RenderTexture.GetTemporary | true | RenderTexture temp = RenderTexture.GetTemporary(width, height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear); |
+| Assets/_Project/Scripts/Editor/HectonArtOptimizationTools.cs | 664 | RenderTexture.GetTemporary | true | RenderTexture temp = RenderTexture.GetTemporary(width, height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB); |
+| Assets/_Project/Scripts/Editor/HectonMaskChannelPacker.cs | 130 | RenderTexture.GetTemporary | true | RenderTexture temp = RenderTexture.GetTemporary(width, height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear); |
+| Assets/_Project/Scripts/Editor/HectonMaterialChannelPackValidator.cs | 345 | RenderTexture.GetTemporary | true | RenderTexture tempRt = RenderTexture.GetTemporary(width, height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear); |
+| Assets/_Project/Scripts/Editor/HectonOctahedralImpostorBaker.cs | 92 | RenderTexture.GetTemporary | true | tileRt = RenderTexture.GetTemporary(TileWidth, TileHeight, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Default); |
+| Assets/_Project/Scripts/Optimization/Editor/RenderTextureFormatOptimizer.cs | 140 | RenderTexture.GetTemporary | true | var tempRT = RenderTexture.GetTemporary(rt.width, rt.height, 0, newFormat); |
+| Assets/_Project/Scripts/Optimization/Editor/RenderTextureFormatOptimizer.cs | 199 | RenderTexture.GetTemporary | true | var tempRT = RenderTexture.GetTemporary(rt.width, rt.height, 0, newFormat); |
+| Assets/_Project/Scripts/Optimization/Editor/RenderTextureResolutionAnalyzer.cs | 147 | RenderTexture.GetTemporary | true | var tempRT = RenderTexture.GetTemporary(targetWidth, targetHeight, 0, RenderTextureFormat.ARGB32); |
 
 ## Top Runtime Texture Costs
 
@@ -213,5 +280,6 @@ Evidence class: STATIC_SOURCE / FILESYSTEM. Runtime residency is PENDING VERIFIC
 - STATIC_SOURCE: file dimensions, file sizes, source metadata, and parser-readable mesh triangle counts.
 - Static geometry estimate assumes 48 byte vertices plus 4 byte indices and no vertex sharing; Unity imported geometry must be verified in Memory Profiler.
 - Static RenderTexture estimates use YAML dimensions, MSAA, mip flag, color format, and depth-stencil format; transient and code-created RTs still require Unity runtime capture.
+- Runtime RenderTexture source hotspots are static code evidence only; dimensions and residency require Unity profiler capture.
 - Scan excludes generated/scratch directories by name: .codex-artifacts, .codex-build, .git, .vs, Build, Builds, Library, Obj, Temp.
 - PENDING VERIFICATION: Unity importer compression, actual texture residency, mesh import settings, Memory Profiler VRAM, scene wiring, player-build behavior.

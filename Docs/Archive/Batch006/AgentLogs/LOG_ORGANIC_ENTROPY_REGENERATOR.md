@@ -503,3 +503,30 @@ Exact microseconds saved:
 Verification:
 - `python -B -m unittest Tools.test_world_entropy_sim -v`: 8 tests passed in 29.721 s.
 - `python Tools\WorldEntropySim.py --constants Data\Economy\Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, ratio 3.143, final mature ratio 1.000.
+
+## 2026-05-15 - Empty-Biome Recovery Evidence Guard
+
+What was wrong:
+- `summarize()` could mark a biome with zero cells as half-recovered because `0 * 2 >= 0`.
+- That polluted summary evidence even after total-overharvest balance was made fail-closed.
+
+What was done:
+- Required `countByBiome > 0` before writing `firstHalfRecoveryDays`.
+- Kept absent biomes as `None`.
+- Re-ran 365-day, 1000-day, unit, syntax, and static checks.
+
+Cinematic cheats used:
+- None. This is offline validation hygiene for the deterministic macro-sector regrowth fake.
+
+Exact microseconds saved:
+- Runtime microseconds saved: 0. Unity runtime backend was not changed.
+- Failure avoided: no false day-1 half-recovery evidence for absent biomes in reduced or malformed validation grids.
+
+Verification:
+- `python -m py_compile Tools/WorldEntropySim.py Tools/test_world_entropy_sim.py`: exit code 0.
+- `python -m unittest Tools.test_world_entropy_sim -v`: 8 tests passed in 31.000 s.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 365 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, Safe day 28, Deep Abyss day 88, ratio 3.143, final mature ratio 1.000.
+- `python Tools/WorldEntropySim.py --constants Data/Economy/Regrowth_Constants.json --days 1000 --mode total_overharvest`: `STATUS=ENTROPY BALANCED`, mature counts stable through day 1000.
+- Target scans: no forbidden hot-path token matches; no raw `new NativeArray`; no raw native dispose.
+- `git diff --check`: CRLF warnings only for edited text files.
+- `dotnet --info`: unavailable; full Unity import/build remains PENDING VERIFICATION.

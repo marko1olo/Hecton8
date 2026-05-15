@@ -65,6 +65,8 @@ Evidence class: STATIC_SOURCE / STATIC_DOC / FILESYSTEM
 - Docs/Reports/VRAM_Budget_Audit.json: generated with schema_version=1, generated_utc, skipped_directory_names, gate_reasons, texture source-container risk counts, runtime texture extension summary, runtime mesh extension summary, mesh importer risk counts, first-party mesh importer risk counts, and static geometry estimate fields; no .codex-build duplicate payload present
 - Docs/Reports/VRAM_Texture_Redlines.csv and Docs/Reports/VRAM_Mesh_Redlines.csv: generated; mesh redline CSV now includes geometry estimate and ModelImporter metadata columns
 - Docs/Reports/VRAM_RenderTexture_Redlines.csv: generated; one row for Assets/_Project/Art/TEXTURES/RT_HUD_Display.renderTexture with 7.03 MiB static estimate and depth-stencil risk flag
+- CSV structural validation: PASS. VRAM_Budget_Audit.csv rows=1972 columns=43 bad_rows=0; texture redlines rows=963 columns=7 bad_rows=0; mesh redlines rows=294 columns=14 bad_rows=0; RenderTexture redlines rows=2 columns=11 bad_rows=0.
+- RenderTexture source-hotspot validation: `python -B -m unittest Tools.test_memory_budget_check -v` passed 14 tests; scanner report now records 62 RT source hotspots and 62 runtime RT source hotspots for profiler follow-up.
 - Docs/AgentLogs/LOG_VRAM_ASSET_SCOUT.md: chronological block order repaired after self-audit found MACHINE GATE above REMEDIATION
 - Test hygiene: read-only test suite now avoids Python temp-file writes under workspace-write sandbox; MemoryBudgetCheck pyc temp files removed
 - Prompt re-extraction note: Docs/Tasks/CURRENT_BATCH.md no longer contains AGENT_PROMPT id VRAM_ASSET_SCOUT as of this loop; current file belongs to a new batch. Continued from persisted Status/Rationale by user instruction.

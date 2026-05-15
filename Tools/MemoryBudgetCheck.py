@@ -71,6 +71,13 @@ RENDER_TEXTURE_DEPTH_FORMAT_BYTES = {
     94: 4,
     95: 4,
 }
+RENDER_TEXTURE_SOURCE_PATTERNS = (
+    ("new RenderTexture", re.compile(r"\bnew\s+RenderTexture\s*\(")),
+    ("RenderTextureDescriptor", re.compile(r"\bRenderTextureDescriptor\b")),
+    ("RTHandles.Alloc", re.compile(r"\bRTHandles\.Alloc\s*\(")),
+    ("RenderTexture.GetTemporary", re.compile(r"\bRenderTexture\.GetTemporary\s*\(")),
+    ("GetTemporaryRT", re.compile(r"\bGetTemporaryRT\s*\(")),
+)
 
 
 @dataclass
@@ -127,6 +134,15 @@ class RenderTextureRecord:
     estimated_bytes: int = 0
     flags: List[str] = field(default_factory=list)
     recommendation: str = ""
+
+
+@dataclass
+class RenderTextureSourceHit:
+    path: Path
+    line: int
+    pattern: str
+    snippet: str
+    editor_only: bool = False
 
 
 def rel(path: Path, root: Path) -> str:
@@ -1060,6 +1076,44 @@ def audit_render_textures(paths: Sequence[Path]) -> List[RenderTextureRecord]:
     return records
 
 
+def is_editor_source_path(path: Path, root: Path) -> bool:
+    value = rel(path, root).replace("\\", "/").lower()
+    return "/editor/" in value or value.endswith("/editor")
+
+
+def find_render_texture_source_hotspots(root: Path) -> List[RenderTextureSourceHit]:
+    scripts_root = root / "Assets" / "_Project" / "Scripts"
+    if not scripts_root.exists():
+        return []
+    hits: List[RenderTextureSourceHit] = []
+    for path in scripts_root.rglob("*.cs"):
+        if any(part.lower() in SKIP_DIR_NAMES_LOWER for part in path.parts):
+            continue
+        editor_only = is_editor_source_path(path, root)
+        try:
+            with path.open("r", encoding="utf-8", errors="replace") as handle:
+                for line_number, line in enumerate(handle, start=1):
+                    stripped = line.strip()
+                    if not stripped or stripped.startswith("//"):
+                        continue
+                    for pattern_name, pattern in RENDER_TEXTURE_SOURCE_PATTERNS:
+                        if pattern.search(stripped):
+                            hits.append(
+                                RenderTextureSourceHit(
+                                    path=path,
+                                    line=line_number,
+                                    pattern=pattern_name,
+                                    snippet=stripped[:180],
+                                    editor_only=editor_only,
+                                )
+                            )
+                            break
+        except OSError:
+            continue
+    hits.sort(key=lambda item: (item.editor_only, rel(item.path, root).lower(), item.line))
+    return hits
+
+
 def mib(value: float) -> float:
     return value / (1024.0 * 1024.0)
 
@@ -1540,6 +1594,8 @@ def write_remediation_plan(
     mesh_geometry_redlines = [record for record in meshes if "MESH_GEOMETRY_ESTIMATE_GT_16MIB_STATIC" in record.flags]
     render_texture_bytes = sum(record.estimated_bytes for record in render_textures)
     render_texture_redlines = [record for record in render_textures if record.flags]
+    render_texture_source_hits = find_render_texture_source_hotspots(root)
+    runtime_render_texture_source_hits = [hit for hit in render_texture_source_hits if not hit.editor_only]
     runtime_full_mips = sum(record.bc7_bytes for record in textures if is_runtime_candidate(record.path, root)) * FULL_MIP_FACTOR
     first_party_full_mips = sum(record.bc7_bytes for record in textures if is_first_party_production_candidate(record.path, root)) * FULL_MIP_FACTOR
     halving_candidates = low_tier_halving(textures, root, limit=25)
@@ -1566,6 +1622,7 @@ def write_remediation_plan(
     lines.append(f"- First-party mesh importer risk rows: {len(first_party_mesh_import_risks)}")
     lines.append(f"- Static RenderTexture estimate: {mib(render_texture_bytes):.2f} MiB / {RENDER_TARGET_BUDGET_MIB:.0f} MiB RT+Depth budget")
     lines.append(f"- RenderTexture redline/risk rows: {len(render_texture_redlines)}")
+    lines.append(f"- Runtime RenderTexture source hotspots: {len(runtime_render_texture_source_hits)}")
     lines.append("- CI behavior: `python Tools/MemoryBudgetCheck.py --root . --ci` must fail until redlines are resolved or explicitly suppressed by future policy.")
     lines.append("")
     lines.append("## Priority 1 - Quarantine Non-Production Runtime Payloads")
@@ -1593,7 +1650,17 @@ def write_remediation_plan(
             f"| {rel(record.path, root)} | {record.width}x{record.height} | {mib(record.estimated_bytes):.2f} | {record.color_format} | {record.depth_stencil_format} | {record.anti_aliasing} | {';'.join(record.flags)} | {record.recommendation} |"
         )
     lines.append("")
-    lines.append("## Priority 4 - Clamp First-Party Large Textures")
+    lines.append("## Priority 4 - Runtime RenderTexture Source Hotspots")
+    lines.append("")
+    lines.append("| Path | Line | Pattern | Editor-only | Required action |")
+    lines.append("|---|---:|---|---:|---|")
+    for hit in render_texture_source_hits[:80]:
+        action = "Profiler capture and lifecycle proof required; static scan cannot estimate dynamic dimensions safely."
+        if hit.editor_only:
+            action = "Editor-only; keep out of player build and ignore for runtime budget unless referenced by player assembly."
+        lines.append(f"| {rel(hit.path, root)} | {hit.line} | {hit.pattern} | {str(hit.editor_only).lower()} | {action} |")
+    lines.append("")
+    lines.append("## Priority 5 - Clamp First-Party Large Textures")
     lines.append("")
     lines.append("| Path | Source | Est. full-mip MiB saved by halving | Current flags | Required action |")
     lines.append("|---|---:|---:|---|---|")
@@ -1606,21 +1673,21 @@ def write_remediation_plan(
     lines.append("")
     lines.append(f"Static halving relief if every runtime-candidate >1024 texture is halved: {halving_total:.2f} MiB full-mip BC7.")
     lines.append("")
-    lines.append("## Priority 5 - Enable Streaming Mipmaps On Large First-Party Textures")
+    lines.append("## Priority 6 - Enable Streaming Mipmaps On Large First-Party Textures")
     lines.append("")
     lines.append("| Path | Source | Streaming metadata | Required action |")
     lines.append("|---|---:|---|---|")
     for record in large_streaming_mipmap_off(textures, root):
         lines.append(f"| {rel(record.path, root)} | {record.width}x{record.height} | {record.meta_streaming_mipmaps} | Enable streaming mips unless UI/non-mipped proof exists. |")
     lines.append("")
-    lines.append("## Priority 6 - Atlas Small First-Party Texture Families")
+    lines.append("## Priority 7 - Atlas Small First-Party Texture Families")
     lines.append("")
     lines.append("| Group | Count | Combined BC7 MiB | Required action |")
     lines.append("|---|---:|---:|---|")
     for key, items, area in atlas_groups[:5]:
         lines.append(f"| {key} | {len(items)} | {mib(area):.2f} | Build one atlas/material family or justify separate residency. |")
     lines.append("")
-    lines.append("## Priority 7 - Mesh LOD And Importer Redlines")
+    lines.append("## Priority 8 - Mesh LOD And Importer Redlines")
     lines.append("")
     lines.append("| Path | Triangles | Geometry MiB | LOD detected | Readable | Compression | BlendShapes | Flags | Required action |")
     lines.append("|---|---:|---:|---:|---:|---:|---:|---|---|")
@@ -1665,6 +1732,8 @@ def build_summary_payload(
     mesh_geometry_redlines = [record for record in meshes if "MESH_GEOMETRY_ESTIMATE_GT_16MIB_STATIC" in record.flags]
     render_texture_bytes = sum(record.estimated_bytes for record in render_textures)
     render_texture_redlines = [record for record in render_textures if record.flags]
+    render_texture_source_hits = find_render_texture_source_hotspots(root)
+    runtime_render_texture_source_hits = [hit for hit in render_texture_source_hits if not hit.editor_only]
     first_party_streaming_off = large_streaming_mipmap_off(textures, root, limit=100000)
     all_streaming_off = [record for record in textures if "STREAMING_MIPMAPS_OFF_LARGE" in record.flags]
     runtime_full_mips = runtime_bc7 * FULL_MIP_FACTOR
@@ -1696,6 +1765,8 @@ def build_summary_payload(
         "render_texture_static_estimate_mib": round(mib(render_texture_bytes), 3),
         "render_texture_redline_rows": len(render_texture_redlines),
         "render_texture_depth_stencil_rows": sum(1 for record in render_textures if "RENDER_TEXTURE_DEPTH_STENCIL_PRESENT_STATIC_SUSPECT" in record.flags),
+        "render_texture_source_hotspot_rows": len(render_texture_source_hits),
+        "runtime_render_texture_source_hotspot_rows": len(runtime_render_texture_source_hits),
         "mesh_geometry_single_asset_redline_mib": MESH_GEOMETRY_SINGLE_ASSET_REDLINE_MIB,
         "mesh_geometry_single_asset_redline_rows": len(mesh_geometry_redlines),
         "bc7_no_mip_mib": round(mib(total_bc7), 3),
@@ -1770,6 +1841,16 @@ def build_summary_payload(
             }
             for record in render_textures
         ],
+        "render_texture_source_hotspots": [
+            {
+                "path": rel(hit.path, root),
+                "line": hit.line,
+                "pattern": hit.pattern,
+                "editor_only": hit.editor_only,
+                "snippet": hit.snippet,
+            }
+            for hit in render_texture_source_hits[:120]
+        ],
         "atlas_suggestions": [
             {
                 "group": key,
@@ -1841,6 +1922,8 @@ def write_summary(
     mesh_geometry_redlines = [record for record in meshes if "MESH_GEOMETRY_ESTIMATE_GT_16MIB_STATIC" in record.flags]
     render_texture_bytes = sum(record.estimated_bytes for record in render_textures)
     render_texture_redlines = [record for record in render_textures if record.flags]
+    render_texture_source_hits = find_render_texture_source_hotspots(root)
+    runtime_render_texture_source_hits = [hit for hit in render_texture_source_hits if not hit.editor_only]
     first_party_streaming_off = large_streaming_mipmap_off(textures, root, limit=100000)
     overflow = total_bc7_mips > CRITICAL_TEXTURE_POOL_MIB * 1024 * 1024
     runtime_overflow = runtime_bc7_mips > CRITICAL_TEXTURE_POOL_MIB * 1024 * 1024
@@ -1879,6 +1962,7 @@ def write_summary(
     lines.append(f"- First-party mesh importer risk rows: {len(first_party_mesh_import_risks)}")
     lines.append(f"- Static RenderTexture estimate: {mib(render_texture_bytes):.2f} MiB / {RENDER_TARGET_BUDGET_MIB:.0f} MiB RT+Depth budget")
     lines.append(f"- RenderTexture redline/risk rows: {len(render_texture_redlines)}")
+    lines.append(f"- Runtime RenderTexture source hotspots: {len(runtime_render_texture_source_hits)}")
     lines.append(f"- First-party large textures with streaming mips off: {len(first_party_streaming_off)}")
     lines.append(f"- link.xml status: {link_status}")
     lines.append("")
@@ -1918,6 +2002,13 @@ def write_summary(
         lines.append(
             f"| {rel(record.path, root)} | {record.width}x{record.height} | {mib(record.estimated_bytes):.2f} | {record.color_format} | {record.depth_stencil_format} | {record.anti_aliasing} | {';'.join(record.flags)} |"
         )
+    lines.append("")
+    lines.append("## Runtime RenderTexture Source Hotspots")
+    lines.append("")
+    lines.append("| Path | Line | Pattern | Editor-only | Static evidence |")
+    lines.append("|---|---:|---|---:|---|")
+    for hit in render_texture_source_hits[:80]:
+        lines.append(f"| {rel(hit.path, root)} | {hit.line} | {hit.pattern} | {str(hit.editor_only).lower()} | {hit.snippet} |")
     lines.append("")
     lines.append("## Top Runtime Texture Costs")
     lines.append("")
@@ -1965,6 +2056,7 @@ def write_summary(
     lines.append("- STATIC_SOURCE: file dimensions, file sizes, source metadata, and parser-readable mesh triangle counts.")
     lines.append(f"- Static geometry estimate assumes {STATIC_GEOMETRY_VERTEX_STRIDE_BYTES} byte vertices plus {STATIC_GEOMETRY_INDEX_BYTES} byte indices and no vertex sharing; Unity imported geometry must be verified in Memory Profiler.")
     lines.append("- Static RenderTexture estimates use YAML dimensions, MSAA, mip flag, color format, and depth-stencil format; transient and code-created RTs still require Unity runtime capture.")
+    lines.append("- Runtime RenderTexture source hotspots are static code evidence only; dimensions and residency require Unity profiler capture.")
     lines.append(f"- Scan excludes generated/scratch directories by name: {', '.join(sorted(SKIP_DIRS, key=str.lower))}.")
     lines.append("- PENDING VERIFICATION: Unity importer compression, actual texture residency, mesh import settings, Memory Profiler VRAM, scene wiring, player-build behavior.")
     path.parent.mkdir(parents=True, exist_ok=True)
