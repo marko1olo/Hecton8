@@ -29,7 +29,7 @@ python -m unittest Tools.UX.test_hardware_adaptive_ui Tools.UX.test_unity_verifi
 python Tools/UX/clean_python_cache.py --write-report
 ```
 
-The aggregate report also self-validates before final `PASS`: `aggregateSelfValidation` and `statusLogSelfValidation` must both be `PASS` with empty failure lists. Current expected counts are 8 commands, 40 unit tests, and 30 artifact hashes. The final aggregate command must be `python_cache_cleanup`, and the report field `pythonCacheCountAfter` must be `0`.
+The aggregate report also self-validates before final `PASS`: `aggregateSelfValidation` and `statusLogSelfValidation` must both be `PASS` with empty failure lists. Current expected counts are 8 ordered commands, 42 unit tests, and 30 well-formed SHA-256 artifact hashes. The final aggregate command must be `python_cache_cleanup`, and the report field `pythonCacheCountAfter` must be `0`.
 
 Direct post-run validation commands:
 

@@ -25,7 +25,7 @@ EXPECTED_COMMANDS = (
     "python_cache_cleanup",
 )
 
-EXPECTED_UNIT_HARNESS_TESTS = 40
+EXPECTED_UNIT_HARNESS_TESTS = 42
 EXPECTED_ARTIFACT_HASHES = 30
 
 ALLOWED_UNITY_PROBE_STATUSES = {
@@ -85,6 +85,8 @@ def validate_aggregate_report(report: dict[str, Any], environment_probe: dict[st
     for expected_command in EXPECTED_COMMANDS:
         if expected_command not in command_names:
             failures.append(f"missing aggregate command: {expected_command}")
+    if command_names and command_names != list(EXPECTED_COMMANDS):
+        failures.append("commands must match expected order")
     if command_names and command_names[-1] != "python_cache_cleanup":
         failures.append("python_cache_cleanup must be the final aggregate command")
 
@@ -120,6 +122,12 @@ def validate_aggregate_report(report: dict[str, Any], environment_probe: dict[st
             failures.append("artifactHashCount must match artifactSha256 length")
         if report.get("artifactHashCount") != EXPECTED_ARTIFACT_HASHES:
             failures.append(f"artifactHashCount must be {EXPECTED_ARTIFACT_HASHES}")
+        for artifact_path, digest in artifact_hashes.items():
+            if not isinstance(artifact_path, str) or not artifact_path:
+                failures.append("artifactSha256 keys must be non-empty strings")
+                continue
+            if not isinstance(digest, str) or re.fullmatch(r"[0-9a-f]{64}", digest) is None:
+                failures.append(f"artifactSha256 digest invalid: {artifact_path}")
 
     if report.get("pythonCacheCountAfter") != 0:
         failures.append("pythonCacheCountAfter must be 0")

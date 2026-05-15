@@ -91,3 +91,17 @@ Docs/AgentLogs/UI_UnityReportAudit_UX_ENGINEER.json
 ## Non-Negotiable Boundary
 
 Do not change `status` to runtime PASS until `Tools/UX/validate_unity_verification_report.py --write-audit` passes after Unity evidence paths are populated.
+
+## Latest Blocker Recheck - 2026-05-15
+
+- MCP resources/templates: empty.
+- Unity environment probe: `UNITY_NOT_FOUND`.
+- Local compile log: `Library/Logs/Unity/Editor.log` absent.
+- Static gate: still PASS.
+- Runtime closure remains blocked until Unity 6000.4.1f1 is available through MCP, local editor path, or a supplied compile/import log plus required visual captures.
+
+## Latest Static Gate Recheck - 2026-05-15
+
+- Aggregate report: PASS with 8 ordered commands, 42 unit-harness tests, 30 valid artifact hashes, and `pythonCacheCountAfter` 0.
+- Standalone UX test discovery: PASS 81/81.
+- Unity runtime boundary: unchanged, still `PENDING_UNITY_VERIFICATION`.

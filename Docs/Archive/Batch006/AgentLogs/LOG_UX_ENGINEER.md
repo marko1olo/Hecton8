@@ -600,6 +600,48 @@ Verification: `python Tools/UX/run_hardware_adaptive_ui_validation.py` PASS. `py
 
 Status: UI SCALED - STATIC/PYTHON AGGREGATE PASS; UNITY RUNTIME PENDING.
 
+## UX_ENGINEER Aggregate Order and Hash Hardening - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: The aggregate validator enforced command presence and final cache cleanup, but it did not require the exact command order or verify that `artifactSha256` values were well-formed SHA-256 digests.
+
+What was done: Patched `Tools/UX/validate_aggregate_report.py` to require the exact expected command order and lowercase 64-hex SHA-256 values for every owned artifact. Added regression tests in `Tools/UX/test_validate_aggregate_report.py` for command-order drift and malformed artifact hashes. Updated `Docs/Design/HardwareAdaptiveUIScaler_Runbook.md` to document 8 ordered commands, 42 unit tests, and 30 well-formed hashes.
+
+Cinematic Cheats used: None added in this pass. This is evidence hardening for the existing TMP-SDF scaling, contrast-tier, icon-bake, readability, and two-sample shader gates.
+
+Exact Microseconds saved: 0 us runtime. No Unity hot path changed.
+
+Verification: `python -m py_compile Tools/UX/validate_aggregate_report.py Tools/UX/test_validate_aggregate_report.py Tools/UX/run_hardware_adaptive_ui_validation.py` PASS. Aggregate-mode focused validator suite PASS: 12 tests, 1 current-report skip. `python Tools/UX/run_hardware_adaptive_ui_validation.py` PASS. `python Tools/UX/validate_aggregate_report.py` PASS. `python Tools/UX/validate_status_log_consistency.py --write-report` PASS. Standalone UX test discovery with `PYTHONDONTWRITEBYTECODE=1` PASS 81/81. Aggregate readback: status PASS, `unityRuntimeStatus` PENDING_UNITY_VERIFICATION, commandCount 8/8 with exact order, unitHarnessTestCount 42, artifactHashCount 30/30 via `artifactSha256`, `pythonCacheCountAfter` 0, aggregate/status self-validation PASS, missingArtifacts empty. `PYTHON_CACHE_COUNT 0`. `git diff --check` returned no whitespace errors, only CRLF normalization warnings.
+
+Status: UI SCALED - STATIC/PYTHON AGGREGATE PASS; UNITY RUNTIME PENDING.
+
+## UX_ENGINEER Verified 81-Test Tools UX Discovery Rerun - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: The on-disk status contained a broad 79-test discovery claim, but the current tree now has two additional aggregate-validator tests. The Unity runtime blocker also needed another hard readback: no Unity executable and no Editor.log.
+
+What was done: Reran `python -B -m unittest discover -s Tools/UX -p 'test*.py' -v` with `PYTHONDONTWRITEBYTECODE=1`; it passed 81/81. Reran Python cache cleanup, aggregate validation, aggregate report validation, status/log consistency validation, Unity environment probe, aggregate JSON readback, Editor.log probe, and cache scan.
+
+Cinematic Cheats used: None in this rerun. Existing UI decisions still use TMP-SDF weight/dilate buckets, solid TOASTER contrast, GOD_MODE gated post treatment, and the two-sample widget shader cap.
+
+Exact Microseconds saved: 0 us runtime in this rerun. No runtime code changed.
+
+Verification: `Tools/UX` discovery PASS 81/81; aggregate validation PASS; aggregate validator PASS; status/log consistency PASS; Unity probe `UNITY_NOT_FOUND` for required `6000.4.1f1`; `Library/Logs/Unity/Editor.log` missing; aggregate readback status PASS, `unityRuntimeStatus` PENDING_UNITY_VERIFICATION, commandCount 8/8, unitHarnessTestCount 42, artifactHashCount 30/30, `pythonCacheCountAfter` 0, aggregate/status self-validation PASS; `PYTHON_CACHE_COUNT 0`.
+
+Status: UI SCALED - STATIC/PYTHON AGGREGATE PASS; UNITY RUNTIME PENDING.
+
+## UX_ENGINEER Unity-Blocked No-Drift Rerun - HARDWARE_ADAPTIVE_UI_BAKER
+
+What was wrong: The task is static-complete, but runtime Unity proof is still unavailable. No Unity MCP resources/templates are exposed, `probe_unity_environment.py` reports `UNITY_NOT_FOUND`, and no local `Library/Logs/Unity/Editor.log` exists for compile-log audit.
+
+What was done: Re-read the current XML assignment, status, and rationale. Reran the hard static evidence chain and environment probes instead of adding speculative runtime code.
+
+Cinematic Cheats used: TMP-SDF weight/dilate scaling, TOASTER solid contrast backgrounds, GOD_MODE gated post treatment, and two-sample UI shader cap remain the chosen visual fakes/constraints. No new runtime system was added.
+
+Exact Microseconds saved: 0 us runtime in this rerun. Existing UI shader cap still prevents extra per-widget blur/chroma sampling from entering the hot render path.
+
+Verification: MCP resources/templates empty. `python Tools/UX/probe_unity_environment.py --write-report` returned `UNITY_NOT_FOUND`. `python Tools/UX/run_hardware_adaptive_ui_validation.py` PASS. `python Tools/UX/validate_aggregate_report.py` PASS. `python Tools/UX/validate_status_log_consistency.py --write-report` PASS. Standalone `PYTHONDONTWRITEBYTECODE=1` unit suite PASS 79/79. Aggregate readback: status PASS, `unityRuntimeStatus` PENDING_UNITY_VERIFICATION, commandCount 8/8, unitHarnessTestCount 40, artifactHashCount 30/30 via `artifactSha256`, `pythonCacheCountAfter` 0, aggregate/status self-validation PASS, missingArtifacts empty. `PYTHON_CACHE_COUNT 0`. `git diff --check` returned no whitespace errors.
+
+Status: UI SCALED - STATIC/PYTHON AGGREGATE PASS; UNITY RUNTIME PENDING.
+
 ## UX_ENGINEER Bottom-Most 40-Test Proof - HARDWARE_ADAPTIVE_UI_BAKER
 
 What was wrong: The previous bottom-most UX log entry still described the older 38-test count after the exact-count lock was refreshed to 40 tests.
@@ -622,6 +664,6 @@ Cinematic Cheats used: None. Offline evidence hygiene only.
 
 Exact Microseconds saved: 0 us runtime.
 
-Verification: `python Tools/UX/run_hardware_adaptive_ui_validation.py` PASS. `python -B Tools/UX/validate_aggregate_report.py` PASS. `python -B Tools/UX/validate_status_log_consistency.py --write-report` PASS. Readback: commandCount 8/8, unitHarnessTestCount 40, artifactHashCount 30/30, pythonCacheCountAfter 0, aggregate/status self-validation PASS. Unity runtime proof remains pending.
+Verification: `python Tools/UX/run_hardware_adaptive_ui_validation.py` PASS. `python -B Tools/UX/validate_aggregate_report.py` PASS. `python -B Tools/UX/validate_status_log_consistency.py --write-report` PASS. Standalone full suite passed 40/40. Final `python Tools/UX/clean_python_cache.py --write-report` removed `UX\\__pycache__`; follow-up scan found no `__pycache__` under `Tools`. Readback: commandCount 8/8, unitHarnessTestCount 40, artifactHashCount 30/30, pythonCacheCountAfter 0, aggregate/status self-validation PASS. Unity runtime proof remains pending.
 
 Status: UI SCALED - STATIC/PYTHON AGGREGATE PASS; UNITY RUNTIME PENDING.

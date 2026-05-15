@@ -91,6 +91,14 @@ class AggregateReportValidatorTests(unittest.TestCase):
 
         self.assertIn("python_cache_cleanup must be the final aggregate command", failures)
 
+    def test_rejects_command_order_drift(self) -> None:
+        report = _valid_report_fixture()
+        report["commands"][0], report["commands"][1] = report["commands"][1], report["commands"][0]
+
+        failures = validate_aggregate_report(report, _load(PROBE_PATH))
+
+        self.assertIn("commands must match expected order", failures)
+
     def test_rejects_failed_command(self) -> None:
         report = _valid_report_fixture()
         report["commands"][0]["exitCode"] = 1
@@ -132,6 +140,14 @@ class AggregateReportValidatorTests(unittest.TestCase):
 
         self.assertIn("artifactHashCount must match artifactSha256 length", failures)
         self.assertIn(f"artifactHashCount must be {EXPECTED_ARTIFACT_HASHES}", failures)
+
+    def test_rejects_malformed_artifact_hash(self) -> None:
+        report = _valid_report_fixture()
+        report["artifactSha256"]["artifact_00"] = "not-a-sha256"
+
+        failures = validate_aggregate_report(report, _load(PROBE_PATH))
+
+        self.assertIn("artifactSha256 digest invalid: artifact_00", failures)
 
     def test_rejects_generated_python_cache_left_after_aggregate(self) -> None:
         report = _valid_report_fixture()

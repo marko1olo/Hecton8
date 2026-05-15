@@ -464,3 +464,24 @@ Solution: Reran aggregate validation, aggregate report validation, status/log co
 Rejected Alternatives: Adding new runtime code without a failing gate was rejected. Claiming Unity verification was rejected because the probe still reports no usable Unity editor.
 Scalability potential: No drift in the strict static gate; TOASTER/GOD_MODE runtime capture still waits for Unity.
 Hardware Impact: Runtime impact is 0 us.
+
+## Decision - Unity-Blocked No-Drift Rerun 2026-05-15
+Problem: Continued work was requested after the static UX scope was already green, but Unity runtime verification remains impossible without an available Unity 6000.4.1f1 editor, MCP resource, or Editor.log.
+Solution: Re-read the current XML prompt, status, and rationale; checked MCP resources/templates; reran the Unity environment probe, aggregate validation, aggregate report validator, status/log consistency validator, standalone unit suite, cache scan, and whitespace check.
+Rejected Alternatives: Fabricating runtime proof was rejected. Adding speculative UI runtime code was rejected because no gate failed and the runtime blocker is environmental, not implementation drift.
+Scalability potential: The strict static gate still covers TOASTER readability and GOD_MODE artifact contracts; runtime captures remain the only missing evidence for hardware-tier presentation.
+Hardware Impact: Runtime impact is 0 us. Offline verification only.
+
+## Decision - Aggregate Order and Hash Hardening 2026-05-15
+Problem: The aggregate validator proved command membership and final cleanup, but it did not require the full command order or validate SHA-256 digest shape for hashed artifacts.
+Solution: Added exact ordered-command validation and per-artifact lowercase 64-hex digest validation to `validate_aggregate_report.py`. Added regression tests for command-order drift and malformed artifact hash evidence. Updated the runbook and exact unit-harness count to 42.
+Rejected Alternatives: Keeping membership-only command validation was rejected because an earlier command could be moved without being caught. Keeping count-only artifact validation was rejected because malformed hashes are not reliable evidence.
+Scalability potential: The one-command gate now better protects TOASTER readability and GOD_MODE visual-overkill evidence from stale or reordered validation artifacts before Unity runtime capture exists.
+Hardware Impact: Runtime impact is 0 us. Offline validation only; no Unity hot path changed.
+
+## Decision - Verified 81-Test Tools UX Discovery Rerun 2026-05-15
+Problem: The status file already contained a 79-test discovery claim after context continuation, but the current tree has two additional aggregate-validator tests and needed a fresh broad discovery rerun.
+Solution: Reran `python -B -m unittest discover -s Tools/UX -p 'test*.py' -v` with `PYTHONDONTWRITEBYTECODE=1`; it passed 81/81. The pass includes UX scaler tests plus neighboring VR comfort audit tests under `Tools/UX`, so the aggregate harness count correctly remains locked at 42 UX-owned gate tests.
+Rejected Alternatives: Treating the stale 79-test line as verified was rejected. Expanding the aggregate exact-count lock to 81 was rejected because that would couple the UI scaler gate to another agent's comfort audit scope.
+Scalability potential: The strict UX aggregate gate still protects TOASTER readability and GOD_MODE visual-overkill contracts. The broader discovery pass confirms adjacent `Tools/UX` audit code did not regress.
+Hardware Impact: Runtime impact is 0 us. Offline validation only; Unity import, GCMonitor, Frame Debugger, MX350, and GOD_MODE captures remain blocked by missing Unity.
