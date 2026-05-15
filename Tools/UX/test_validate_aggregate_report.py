@@ -48,6 +48,8 @@ def _valid_report_fixture() -> dict:
         "promptId": "HARDWARE_ADAPTIVE_UI_BAKER",
         "status": "PASS",
         "unityRuntimeStatus": "PENDING_UNITY_VERIFICATION",
+        "evidenceClasses": ["STATIC_SOURCE", "STATIC_DOC", "CLI_COMPILE"],
+        "runtimeEvidenceClassesMissing": ["UNITY_CONSOLE", "PLAYMODE", "PROFILER", "FRAME_DEBUGGER", "PLAYER_BUILD"],
         "commandCount": len(commands),
         "commands": commands,
         "missingArtifacts": [],
@@ -73,6 +75,22 @@ class AggregateReportValidatorTests(unittest.TestCase):
         failures = validate_aggregate_report(report, _load(PROBE_PATH))
 
         self.assertTrue(any("unityRuntimeStatus" in failure for failure in failures))
+
+    def test_rejects_missing_evidence_classes(self) -> None:
+        report = _valid_report_fixture()
+        report["evidenceClasses"] = ["STATIC_SOURCE"]
+
+        failures = validate_aggregate_report(report, _load(PROBE_PATH))
+
+        self.assertIn("evidenceClasses must be STATIC_SOURCE, STATIC_DOC, CLI_COMPILE", failures)
+
+    def test_rejects_runtime_evidence_class_promotion(self) -> None:
+        report = _valid_report_fixture()
+        report["runtimeEvidenceClassesMissing"] = ["UNITY_CONSOLE", "PLAYMODE"]
+
+        failures = validate_aggregate_report(report, _load(PROBE_PATH))
+
+        self.assertIn("runtimeEvidenceClassesMissing must list all Unity/runtime evidence gates", failures)
 
     def test_rejects_missing_command(self) -> None:
         report = _valid_report_fixture()

@@ -25,8 +25,20 @@ EXPECTED_COMMANDS = (
     "python_cache_cleanup",
 )
 
-EXPECTED_UNIT_HARNESS_TESTS = 42
+EXPECTED_UNIT_HARNESS_TESTS = 44
 EXPECTED_ARTIFACT_HASHES = 30
+EXPECTED_EVIDENCE_CLASSES = (
+    "STATIC_SOURCE",
+    "STATIC_DOC",
+    "CLI_COMPILE",
+)
+EXPECTED_RUNTIME_EVIDENCE_CLASSES_MISSING = (
+    "UNITY_CONSOLE",
+    "PLAYMODE",
+    "PROFILER",
+    "FRAME_DEBUGGER",
+    "PLAYER_BUILD",
+)
 
 ALLOWED_UNITY_PROBE_STATUSES = {
     "UNITY_NOT_FOUND",
@@ -57,6 +69,10 @@ def validate_aggregate_report(report: dict[str, Any], environment_probe: dict[st
         failures.append("unityRuntimeStatus must stay PENDING_UNITY_VERIFICATION")
     if report.get("missingArtifacts") != []:
         failures.append("missingArtifacts must be empty")
+    if report.get("evidenceClasses") != list(EXPECTED_EVIDENCE_CLASSES):
+        failures.append("evidenceClasses must be STATIC_SOURCE, STATIC_DOC, CLI_COMPILE")
+    if report.get("runtimeEvidenceClassesMissing") != list(EXPECTED_RUNTIME_EVIDENCE_CLASSES_MISSING):
+        failures.append("runtimeEvidenceClassesMissing must list all Unity/runtime evidence gates")
 
     self_validation = report.get("aggregateSelfValidation")
     if self_validation is not None:

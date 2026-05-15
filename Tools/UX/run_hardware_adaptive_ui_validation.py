@@ -143,6 +143,20 @@ HASHED_ARTIFACTS = (
     "Tools/UX/run_hardware_adaptive_ui_validation.py",
 )
 
+EVIDENCE_CLASSES = (
+    "STATIC_SOURCE",
+    "STATIC_DOC",
+    "CLI_COMPILE",
+)
+
+RUNTIME_EVIDENCE_CLASSES_MISSING = (
+    "UNITY_CONSOLE",
+    "PLAYMODE",
+    "PROFILER",
+    "FRAME_DEBUGGER",
+    "PLAYER_BUILD",
+)
+
 
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
@@ -217,6 +231,8 @@ def main() -> int:
         "promptId": "HARDWARE_ADAPTIVE_UI_BAKER",
         "status": "PASS" if not failures and not missing_artifacts and python_cache_count_after == 0 else "FAIL",
         "unityRuntimeStatus": "PENDING_UNITY_VERIFICATION",
+        "evidenceClasses": list(EVIDENCE_CLASSES),
+        "runtimeEvidenceClassesMissing": list(RUNTIME_EVIDENCE_CLASSES_MISSING),
         "commandCount": len(results),
         "commands": results,
         "missingArtifacts": missing_artifacts,
