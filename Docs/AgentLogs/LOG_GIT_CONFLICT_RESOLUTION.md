@@ -531,3 +531,15 @@ Cinematic Cheats used -> None. Git integration and compile-boundary repair only.
 Exact Microseconds saved -> 0 us runtime by this operator pass.
 
 Verification -> Isolated `dotnet build Hecton8.Core.csproj` using `Temp\obj\CodexGitCheck` and `Temp\bin\CodexGitCheck` passed with `0 Warning(s)` and `0 Error(s)`. Default obj build hit a file-lock from another process. Latest preserved generated evidence remains mixed: several CurrentDisk build exits are `1`, later CurrentDisk9 and CurrentDisk12 exits are `0`, and HPhi CurrentDiskBudgetGate4 exits `0`. Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals are not claimed.
+
+## 2026-05-15 - Loop 33 Moving UI Compile Tail
+
+What was wrong -> After the HPhi BudgetGate5 evidence commit, parallel edits added `MountablePlayerTransport` AUP grid-delta distance and `DiegeticPanelController` authored scalar clamps. The first isolated Core build failed because `DiegeticPanelController` called `Resolve*` helpers before the helper definitions were visible in the working file.
+
+What was done -> Re-read the current `DiegeticPanelController` source after the moving edit settled, confirmed the helper block was present, and reran the isolated Core compile on the latest tail.
+
+Cinematic Cheats used -> None by this operator pass. Producer changes kept AUP distance and UI scalar clamping as cheap deterministic math.
+
+Exact Microseconds saved -> 0 us runtime by this operator pass.
+
+Verification -> `dotnet build Hecton8.Core.csproj` using `Temp\obj\CodexGitCheck3` and `Temp\bin\CodexGitCheck3` passed with `0 Warning(s)` and `0 Error(s)`. Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals are not claimed.

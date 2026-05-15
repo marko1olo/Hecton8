@@ -34,6 +34,44 @@ Verification:
 
 STATUS: AUDIT COMPLETE.
 
+## 2026-05-15 - Five-Minute Live Burn Forecast
+
+What was wrong:
+- The live token ledger was still moving after the three-minute sample.
+- A single short sample was too volatile for stop-loss planning.
+- The user explicitly asked to keep counting honestly.
+
+What was done:
+- Re-read `Docs/Tasks/Status_COMPUTE_LOGISTICS_AUDITOR.md` and `Docs/AgentLogs/Rationale_COMPUTE_LOGISTICS_AUDITOR.md`.
+- Checked the OpenAI pricing source boundary; no invoice export was available.
+- Sampled `C:\Users\danat\.codex\state_5.sqlite` for five consecutive 60-second intervals.
+- Created `COMPUTE_LIVE_BURN_5MIN_FORECAST.md`.
+- Updated `COMPUTE_AUDIT_BRIEF.md`, `COMPUTE_AUDIT_INDEX.md`, `Docs/Reports/COMPUTE_DOMINANCE_REPORT.md`, status, and rationale.
+
+Evidence captured:
+- Current SQLite token mass: 45,857,878,991.
+- Delta since 17:29 live trend: 40,807,534 tokens.
+- Rate since 17:29 live trend: 48,776.85 tokens/sec.
+- Five-minute sample: 16,694,405 tokens over 300.463233 seconds.
+- Five-minute average: 55,562.22 tokens/sec; 3,333,733.35 tokens/min.
+- Cache-aware rate: USD 2.236/min; USD 134.17/hour; USD 3,220.17/day equivalent.
+- No-cache rate: USD 14.714/min; USD 882.87/hour; USD 21,188.82/day equivalent.
+- Active threads: 20, all `gpt-5.5`, all under `C:/hades`.
+- Top 10 active threads: 74.54% of the five-minute burn.
+
+Cinematic Cheats used:
+- None. Audit-only evidence accounting.
+
+Exact microseconds saved:
+- Runtime: 0 us.
+- Process: not claimed as measured saving. The file provides a stop-loss dashboard and prevents one-minute spike extrapolation from being treated as stable invoice math.
+
+Verification:
+- Markdown-only audit continuation.
+- No runtime compile run. This pass changed no C# or Unity assets.
+
+STATUS: AUDIT COMPLETE.
+
 ## 2026-05-15 - Live Burn Trend
 
 What was wrong:

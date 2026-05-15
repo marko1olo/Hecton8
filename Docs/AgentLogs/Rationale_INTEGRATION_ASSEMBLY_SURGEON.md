@@ -323,3 +323,19 @@ Solution: Recompiled after `PlayerPDA.cs` and `PlayerToolManager.cs` settled, th
 Rejected Alternatives: Treating moving timestamps as harmless was rejected. Lowering score floors below CurrentDiskBudgetGate3 was rejected. Editing gameplay files to force static metric deltas was rejected because the current compile state was already green and outside Integrator scope.
 Scalability potential: Low tier gets fresh compile evidence and stricter zero-find-object/managed-format gates. Middle tier keeps current source-count budgets honest. High and Ultra tiers keep leaf-system visual capacity while the Integrator guard blocks renewed Core coupling and managed-format drift.
 Hardware Impact: Runtime frame savings are 0 us measured. CurrentDisk5 compile verification cost: 2,558,166 us. CurrentDiskBudgetGate3 H-Phi verification cost: 174,980,730 us. Static H-Phi current values: `RuntimeHPhiRisk=0.000628209`, `GlobalRegistrySurface=5081`, `NativeArrayRefs=7074`, `ManagedFormatSurface=677`, `PrimaryManagedRuntimeRisk=327`, `FindObjectCalls=0`, `AupPrecisionRisk=0`.
+
+## Decision 41 - CurrentDisk12 Contract Collision Closure
+
+Problem: Active parallel edits produced new compile walls after CurrentDisk5: `SaveManager` referenced a contract helper hidden by the CLI Core contracts surface, and `SystemDispatcher` hit ambiguous camera signal names between Core and World assemblies.
+Solution: Kept the fixes at call-site boundaries. `SaveManager` now resolves the macro-database dirty bit with a method-scoped constant, avoiding a wider assembly dependency. `SystemDispatcher` fully qualifies Core camera signal payloads when pushing to `SignalBus`. CurrentDisk12 and CurrentDiskBudgetGate5 are the accepted final artifacts.
+Rejected Alternatives: Editing generated project files, broad contract migration, public signal renames, or reverting other agents' changes were rejected. Re-running H-Phi without updating the documented ceilings was rejected because the managed-format and job-complete counters improved materially.
+Scalability potential: Low tier keeps the compile lane deterministic and blocks hidden managed-format regressions. Middle tier keeps source-count H-Phi budgets current. High and Ultra tiers keep World camera and Core camera lanes separable for richer visual consumers without ambiguous compile contracts.
+Hardware Impact: Runtime frame savings are 0 us measured. CurrentDisk12 compile verification cost: 136,610,575 us. CurrentDiskBudgetGate5 H-Phi verification cost: 148,398,923 us. Static current values: `RuntimeHPhiRisk=0.000633790`, `GlobalRegistrySurface=5081`, `ManagedFormatSurface=657`, `JobCompleteSurface=58`, `PrimaryManagedRuntimeRisk=307`, `FindObjectCalls=0`, `AupPrecisionRisk=0`.
+
+## Decision 42 - Active Moving Wall Honesty Boundary
+
+Problem: After the green `CurrentDisk15` retry, a new edit to `HectonPlayerMovement.cs` landed. The latest H-Phi gate was also invalidated by six newer C# files. Claiming `BUILD SUCCESSFUL / PLATINUM GRADE` as current-disk truth would now be false.
+Solution: Preserve the last verified green build and H-Phi artifacts as evidence, but mark the live state as `YELLOW / ACTIVE MOVING WALL` until a quiet window permits another current compile and H-Phi pair.
+Rejected Alternatives: Continuing to rename stale artifacts as final was rejected. Reverting concurrent edits was rejected. Running H-Phi while the source tree is still changing was rejected after repeated invalidation cycles.
+Scalability potential: Low tier benefits from honest compile authority instead of shipping unverified moving-source claims. Middle/High/Ultra remain unaffected at runtime; this is evidence-state control only.
+Hardware Impact: Runtime frame savings are 0 us measured. Latest verified compile cost: 81,974,637 us. Latest stale-but-passed H-Phi gate cost: 148,398,923 us.

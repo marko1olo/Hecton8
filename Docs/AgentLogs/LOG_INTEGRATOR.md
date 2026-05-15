@@ -148,3 +148,78 @@ Verification:
 - Freshness: no C# source under `Assets/_Project/Scripts` was newer than either final artifact at verification time.
 
 Current Status: BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK5 CURRENT-DISK GREEN.
+
+## 2026-05-15 - CurrentDisk12/CurrentDiskBudgetGate5 Triage Record
+
+Errors Fixed: 6 real compiler errors in the final moving wall: 1 `SaveManager` contract-helper visibility error, 4 `SystemDispatcher` camera signal ambiguity errors, and 1 duplicate dirty-flag constant iteration during repair. Final Core build is 0 warnings / 0 errors.
+
+Files Moved:
+- None.
+
+ASMDEFs Repaired:
+- None.
+
+What was wrong:
+- The Core CLI lane could not see `MacroDatabasePayloadFlags` from the current contracts source.
+- `SystemDispatcher` saw both Core and World camera signal payload names.
+- Parallel source edits kept invalidating earlier green artifacts.
+
+What was done:
+- Repaired `SaveManager.ResolveWfcOutpostSnapshotCacheFlags` with a method-scoped dirty bit.
+- Repaired `SystemDispatcher.PublishCameraSignals` with fully qualified Core signal types.
+- Re-ran current Core compile and current H-Phi budget gate.
+- Updated status/rationale/logs and H-Phi metric documentation to point at `CurrentDisk12` / `CurrentDiskBudgetGate5`.
+
+Cinematic Cheats used:
+- Compile/static contract repair only.
+- No feature work, simulation rewrite, package change, generated `.csproj` edit, or leaf-domain refactor.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Compile verification time: 136,610,575 us.
+- H-Phi verification time: 148,398,923 us.
+
+Verification:
+- Build artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_174714_CurrentDisk12.log`.
+- Build result: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_175322_CurrentDiskBudgetGate5.json`.
+- H-Phi result: `EXIT=0`, `RuntimeHPhiRisk=0.000633790`, `GlobalRegistrySurface=5081`, `GetComponentCalls=321`, `NativeArrayRefs=7074`, `ManagedFormatSurface=657`, `JobCompleteSurface=58`, `PrimaryManagedRuntimeRisk=307`, `UnityUpdateMethods=0`, `FindObjectCalls=0`, `AupPrecisionRisk=0`.
+- Freshness: no C# source under `Assets/_Project/Scripts` was newer than either final artifact at verification time.
+
+Current Status: BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK12 CURRENT-DISK GREEN.
+
+## 2026-05-15 - Active Moving Wall After CurrentDisk15
+
+Errors Fixed: Last verified compile snapshot is green, but current source moved afterward. No final current-disk green claim is valid.
+
+Files Moved:
+- None.
+
+ASMDEFs Repaired:
+- None.
+
+What was wrong:
+- Active parallel edits continued after `CurrentDisk15`.
+- Latest build evidence is stale by `HectonPlayerMovement.cs`.
+- Latest H-Phi evidence is stale by six C# files.
+
+What was done:
+- Recorded the latest green compile snapshot and latest passed H-Phi gate.
+- Downgraded live status to `YELLOW / ACTIVE MOVING WALL`.
+
+Cinematic Cheats used:
+- Evidence correction only.
+- No feature work, simulation rewrite, package change, generated `.csproj` edit, or leaf-domain refactor.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Latest verified compile time: 81,974,637 us.
+- Latest passed H-Phi gate time: 148,398,923 us.
+
+Verification:
+- Latest green build artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_180534_CurrentDisk15.log`.
+- Latest green build result: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- Latest H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_175322_CurrentDiskBudgetGate5.json`.
+- Freshness failure: C# source changed after both final artifacts.
+
+Current Status: YELLOW / ACTIVE MOVING WALL.

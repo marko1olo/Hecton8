@@ -49,6 +49,23 @@ namespace Hecton8.World
         // COLD ALLOC: List<int>[4096] - mesh source index scratch for compound geology assembly - owner: WorldGenerativeGeologyMeshBuilder
         private static readonly List<int> s_sourceTriangles = new List<int>(4096);
 
+        private const int MeshNameStride = 4;
+        private const int MeshNameLod0Slot = 0;
+        private const int MeshNameLod1Slot = 1;
+        private const int MeshNameLod2Slot = 2;
+        private const int MeshNameColliderSlot = 3;
+        private const string MeshNameLod0Suffix = "_LOD0";
+        private const string MeshNameLod1Suffix = "_LOD1";
+        private const string MeshNameLod2Suffix = "_LOD2";
+        private const string MeshNameColliderSuffix = "_COL";
+
+        private static readonly string[] RockFloorMeshNames = BuildMeshNameCache("RockFloor", 10);
+        private static readonly string[] RockClusterMeshNames = BuildMeshNameCache("RockCluster", 10);
+        private static readonly string[] RockShelfMeshNames = BuildMeshNameCache("RockShelf", 8);
+        private static readonly string[] RockArchMeshNames = BuildMeshNameCache("RockArch", 6);
+        private static readonly string[] CaveEntranceMeshNames = BuildMeshNameCache("CaveEntrance", 5);
+        private static readonly string[] LandmarkSpireMeshNames = BuildMeshNameCache("LandmarkSpire", 5);
+
         // ── Public entry point ────────────────────────────────────
 
         /// <summary>
@@ -94,10 +111,7 @@ namespace Hecton8.World
             Mesh lod2 = BuildRockFloorMesh(w, ht, d, h, 1, 0.06f, false);
             Mesh col  = BuildDeformedBox(w * 1.05f, ht * 0.7f, d * 1.05f, h, 1, 0f);
 
-            SetMeshName(lod0, $"RockFloor_v{variant}_LOD0");
-            SetMeshName(lod1, $"RockFloor_v{variant}_LOD1");
-            SetMeshName(lod2, $"RockFloor_v{variant}_LOD2");
-            SetMeshName(col,  $"RockFloor_v{variant}_COL");
+            SetMeshNames(lod0, lod1, lod2, col, RockFloorMeshNames, variant);
 
             return new GeologyMeshBundle
             {
@@ -181,10 +195,7 @@ namespace Hecton8.World
             Mesh lod2 = BuildDeformedEllipsoid(baseSize * 1.15f, baseSize * 0.82f, baseSize * 1.05f, h, 3, 5, 0.08f, 0.45f);
             Mesh col  = BuildDeformedBox(baseSize * 1.0f, baseSize * 0.75f, baseSize * 1.0f, h, 1, 0f);
 
-            SetMeshName(lod0, $"RockCluster_v{variant}_LOD0");
-            SetMeshName(lod1, $"RockCluster_v{variant}_LOD1");
-            SetMeshName(lod2, $"RockCluster_v{variant}_LOD2");
-            SetMeshName(col,  $"RockCluster_v{variant}_COL");
+            SetMeshNames(lod0, lod1, lod2, col, RockClusterMeshNames, variant);
 
             float bh = baseSize * 0.9f;
             return new GeologyMeshBundle
@@ -209,10 +220,7 @@ namespace Hecton8.World
             Mesh lod2 = BuildShelfMesh(width, height, depth, overhang * 0.5f, h, 2, 0.05f);
             Mesh col  = BuildShelfMesh(width * 0.95f, height, depth * 0.9f, overhang * 0.7f, h, 2, 0f);
 
-            SetMeshName(lod0, $"RockShelf_v{variant}_LOD0");
-            SetMeshName(lod1, $"RockShelf_v{variant}_LOD1");
-            SetMeshName(lod2, $"RockShelf_v{variant}_LOD2");
-            SetMeshName(col,  $"RockShelf_v{variant}_COL");
+            SetMeshNames(lod0, lod1, lod2, col, RockShelfMeshNames, variant);
 
             return new GeologyMeshBundle
             {
@@ -236,10 +244,7 @@ namespace Hecton8.World
             Mesh lod2 = BuildArchMesh(span, height, thick * 1.1f, asym * 0.5f, h, 2, 0.06f);
             Mesh col  = BuildArchCollider(span, height, thick * 1.2f);
 
-            SetMeshName(lod0, $"RockArch_v{variant}_LOD0");
-            SetMeshName(lod1, $"RockArch_v{variant}_LOD1");
-            SetMeshName(lod2, $"RockArch_v{variant}_LOD2");
-            SetMeshName(col,  $"RockArch_v{variant}_COL");
+            SetMeshNames(lod0, lod1, lod2, col, RockArchMeshNames, variant);
 
             return new GeologyMeshBundle
             {
@@ -265,10 +270,7 @@ namespace Hecton8.World
             // Collider sohranyaet proem — ne zakryvaet vhod
             Mesh col  = BuildCaveEntranceCollider(w, ht, d, openW, openH);
 
-            SetMeshName(lod0, $"CaveEntrance_v{variant}_LOD0");
-            SetMeshName(lod1, $"CaveEntrance_v{variant}_LOD1");
-            SetMeshName(lod2, $"CaveEntrance_v{variant}_LOD2");
-            SetMeshName(col,  $"CaveEntrance_v{variant}_COL");
+            SetMeshNames(lod0, lod1, lod2, col, CaveEntranceMeshNames, variant);
 
             return new GeologyMeshBundle
             {
@@ -292,10 +294,7 @@ namespace Hecton8.World
             Mesh lod2 = BuildSpireMesh(baseW, totalH * 0.95f, taper * 1.1f, 0, h, 2, 0.06f);
             Mesh col  = BuildDeformedBox(baseW * 0.9f, totalH * 0.85f, baseW * 0.9f, h, 1, 0f);
 
-            SetMeshName(lod0, $"LandmarkSpire_v{variant}_LOD0");
-            SetMeshName(lod1, $"LandmarkSpire_v{variant}_LOD1");
-            SetMeshName(lod2, $"LandmarkSpire_v{variant}_LOD2");
-            SetMeshName(col,  $"LandmarkSpire_v{variant}_COL");
+            SetMeshNames(lod0, lod1, lod2, col, LandmarkSpireMeshNames, variant);
 
             return new GeologyMeshBundle
             {
@@ -1059,6 +1058,91 @@ namespace Hecton8.World
         private static void SetMeshName(Mesh mesh, string name)
         {
             if (mesh != null) mesh.name = name;
+        }
+
+        private static void SetMeshNames(
+            Mesh lod0,
+            Mesh lod1,
+            Mesh lod2,
+            Mesh collider,
+            string[] names,
+            int variant)
+        {
+            int baseIndex = variant * MeshNameStride;
+            SetMeshName(lod0, names[baseIndex + MeshNameLod0Slot]);
+            SetMeshName(lod1, names[baseIndex + MeshNameLod1Slot]);
+            SetMeshName(lod2, names[baseIndex + MeshNameLod2Slot]);
+            SetMeshName(collider, names[baseIndex + MeshNameColliderSlot]);
+        }
+
+        private static string[] BuildMeshNameCache(string archetypeName, int variantCount)
+        {
+            string[] names = new string[variantCount * MeshNameStride];
+            for (int variant = 0; variant < variantCount; variant++)
+            {
+                int baseIndex = variant * MeshNameStride;
+                names[baseIndex + MeshNameLod0Slot] = CreateMeshName(archetypeName, variant, MeshNameLod0Suffix);
+                names[baseIndex + MeshNameLod1Slot] = CreateMeshName(archetypeName, variant, MeshNameLod1Suffix);
+                names[baseIndex + MeshNameLod2Slot] = CreateMeshName(archetypeName, variant, MeshNameLod2Suffix);
+                names[baseIndex + MeshNameColliderSlot] = CreateMeshName(archetypeName, variant, MeshNameColliderSuffix);
+            }
+
+            return names;
+        }
+
+        private readonly struct MeshNameBuildState
+        {
+            public readonly string ArchetypeName;
+            public readonly int Variant;
+            public readonly string Suffix;
+
+            public MeshNameBuildState(string archetypeName, int variant, string suffix)
+            {
+                ArchetypeName = archetypeName;
+                Variant = variant;
+                Suffix = suffix;
+            }
+        }
+
+        private static string CreateMeshName(string archetypeName, int variant, string suffix)
+        {
+            int variantDigits = CountDecimalDigits(variant);
+            int suffixStart = archetypeName.Length + 2 + variantDigits;
+            return string.Create(suffixStart + suffix.Length, new MeshNameBuildState(archetypeName, variant, suffix), (buffer, state) =>
+            {
+                for (int i = 0; i < state.ArchetypeName.Length; i++)
+                    buffer[i] = state.ArchetypeName[i];
+
+                int tokenStart = state.ArchetypeName.Length;
+                buffer[tokenStart] = '_';
+                buffer[tokenStart + 1] = 'v';
+
+                int digitWrite = tokenStart + 1 + CountDecimalDigits(state.Variant);
+                int remaining = state.Variant;
+                do
+                {
+                    buffer[digitWrite--] = (char)('0' + remaining % 10);
+                    remaining /= 10;
+                }
+                while (digitWrite > tokenStart + 1);
+
+                int write = tokenStart + 2 + CountDecimalDigits(state.Variant);
+                for (int i = 0; i < state.Suffix.Length; i++)
+                    buffer[write + i] = state.Suffix[i];
+            });
+        }
+
+        private static int CountDecimalDigits(int value)
+        {
+            int digits = 1;
+            int remaining = value;
+            while (remaining >= 10)
+            {
+                remaining /= 10;
+                digits++;
+            }
+
+            return digits;
         }
 
         // ── Deterministic noise ───────────────────────────────────

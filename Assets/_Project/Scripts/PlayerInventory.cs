@@ -557,7 +557,6 @@ namespace Hecton8.Inventory
         private NativeArray<int> _defragResult;
         private ItemPlacement[] _sortBuffer;
         private JobHandle _massVolumeJobHandle;
-        private HectonPlayerMovement _movementLoadSink;
         private bool _registeredSlowTick;
         private bool _registeredLateFrameTick;
         private bool _massVolumeJobScheduled;
@@ -4551,9 +4550,6 @@ namespace Hecton8.Inventory
             float inverseCarryCapacityKg = math.rcp(carryCapacityKg);
             CachedInventoryLoad01 = math.saturate(_currentWeightKg * inverseCarryCapacityKg);
             CachedMaxSwimSpeedMultiplier = math.lerp(1f, InventoryLoadMinimumMovementMultiplier, CachedInventoryLoad01);
-            HectonPlayerMovement movement = TryResolveMovementLoadSink();
-            if (movement != null)
-                movement.ApplyRuntimeInventoryMassLoad(_currentWeightKg, carryCapacityKg, CachedMaxSwimSpeedMultiplier, CachedInventoryLoad01);
 
             WriteInventoryBlackBoxFrame(invalidTotals ? 1 : 0);
             if (invalidTotals)
@@ -4716,21 +4712,6 @@ namespace Hecton8.Inventory
             }
 
             return true;
-        }
-
-        private HectonPlayerMovement TryResolveMovementLoadSink()
-        {
-            if (_movementLoadSink != null)
-                return _movementLoadSink;
-
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            if (playerContext != null)
-                _movementLoadSink = playerContext.PlayerMovement;
-
-            if (_movementLoadSink == null)
-                TryGetComponent(out _movementLoadSink);
-
-            return _movementLoadSink;
         }
 
         private bool ApplyEnvironmentalDegradation(

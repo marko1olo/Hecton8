@@ -1,7 +1,7 @@
 # COMPUTE AUDIT BRIEF
 
 Status: AUDIT COMPLETE
-Snapshot: 2026-05-15T17:18+04:00
+Snapshot: 2026-05-15T17:43+04:00
 Agent: COMPUTE_LOGISTICS_AUDITOR
 Index: `COMPUTE_AUDIT_INDEX.md`
 Full report: `Docs/Reports/COMPUTE_DOMINANCE_REPORT.md`
@@ -15,6 +15,7 @@ Token burn rate ledger: `COMPUTE_TOKEN_BURN_RATE_LEDGER.md`
 Corrected rolling rates: `COMPUTE_CORRECTED_ROLLING_RATES.md`
 Model bucket reconciliation: `COMPUTE_MODEL_BUCKET_RECONCILIATION.md`
 Live burn trend: `COMPUTE_LIVE_BURN_TREND.md`
+Live 5min burn forecast: `COMPUTE_LIVE_BURN_5MIN_FORECAST.md`
 Live burn sources: `COMPUTE_LIVE_BURN_SOURCES.md`
 Rate efficiency audit: `COMPUTE_RATE_EFFICIENCY_AUDIT.md`
 Codex dialogue audit: `COMPUTE_CODEX_DIALOGUE_AUDIT.md`
@@ -60,6 +61,8 @@ Status/Rationale/Log:
 | All-GPT-5.5 standard cost per meaningful LOC | USD 0.04524 |
 | Energy by prompt constant | 2,288.57 MWh |
 | Live SQLite all-thread tokens, 17:29 snapshot | 45,817,071,457 |
+| Live SQLite all-thread tokens, 17:43 snapshot | 45,857,878,991 |
+| Live delta since 17:29 snapshot | +40,807,534 tokens; 48,776.85 tokens/sec |
 | UUID-resolved final-usage sessions | 17 |
 | Tail delta after full scan | +102,151,525 tokens |
 | Tail delta model bucket | `gpt-5.5` |
@@ -70,6 +73,11 @@ Status/Rationale/Log:
 | Live 3-minute trend | 10,233,903 tokens |
 | Live 3-minute trend rate | 56,671.11 tokens/sec; USD 2.60/min |
 | Live 3-minute day equivalent | 4.896B tokens/day; USD 3,748.23/day |
+| Live 5-minute trend | 16,694,405 tokens |
+| Live 5-minute trend rate | 55,562.22 tokens/sec; USD 2.236/min |
+| Live 5-minute day equivalent | 4.801B tokens/day; USD 3,220.17/day |
+| Live 5-minute no-cache day equivalent | USD 21,188.82/day |
+| Live 5-minute active threads | 20, all `gpt-5.5`, all `C:/hades` |
 | Top-30 attribution patch calls | 14,015 |
 | Top-30 attribution unique patch targets | 1,647 |
 | Top-30 attribution patch churn | +354,203 / -75,895 lines |
@@ -138,6 +146,8 @@ Corrected rolling rates have been written to `COMPUTE_CORRECTED_ROLLING_RATES.md
 Live burn sources have been written to `COMPUTE_LIVE_BURN_SOURCES.md`. It identifies which active thread IDs generated token deltas during a 90-second sample.
 
 Live burn trend has been written to `COMPUTE_LIVE_BURN_TREND.md`. It preserves three consecutive 60-second samples and shows live volatility plus concentration.
+
+Live 5-minute burn forecast has been written to `COMPUTE_LIVE_BURN_5MIN_FORECAST.md`. It supersedes the three-minute sample for short-window throttle math: 16.694M tokens over 300.46 seconds, USD 2.236/min cache-aware, with top 10 active threads holding 74.54% of the live burn.
 
 Rate efficiency audit remains in `COMPUTE_RATE_EFFICIENCY_AUDIT.md` as the previous detailed rate snapshot.
 

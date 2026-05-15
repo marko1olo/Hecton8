@@ -607,6 +607,44 @@ Cinematic Cheats used:
 Exact microseconds saved:
 - None. This is source evidence only; no dotnet rebuild was run.
 
+## 2026-05-15 - Build Fix Verification And Debt Boundary
+STATUS: BUILD VERIFIED
+
+What was wrong:
+- Recent integration logs reported `SaveManager.cs` failing on missing `MacroDatabasePayloadFlags`.
+- This was outside gas ownership, but it blocked the build and therefore required narrow verification.
+
+What was done:
+- Verified current `SaveManager.cs` no longer references the missing symbol.
+- Ran `dotnet build Hecton8.Core.csproj --no-restore --nologo -v:minimal`; result: build succeeded, 0 warnings, 0 errors, 00:01:18.89.
+- Confirmed integration artifacts `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_175309_CurrentDisk10.log` and `Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_180024_CurrentDisk13.log` exit 0.
+- Confirmed `GasDynamicsSolver.cs`, `GlobalSignals.cs`, `WfcOutpostPowerBootRuntime.cs`, and `SaveManager.cs` are older than the 18:00 build. An unrelated later `WorldGenerativeGeologyMeshBuilder.cs` edit exists, so no whole-tree-current compile claim is made.
+- Confirmed latest H-Phi budget gate exits 0: RuntimeHPhiRisk 0.00063379, DataSovereignty 0.021306032, MemoryAlignment 0.506309148, AUP risk 0, FindObject 0, JobCompleteSurface 58.
+- Re-ran targeted fixed-string debt scan on `GasDynamicsSolver.cs`, `GlobalSignals.cs`, and `WfcOutpostPowerBootRuntime.cs`; no forbidden `.Complete`, component lookup, managed collection construction, coroutine, string formatting, interpolation, or `foreach` patterns found.
+
+Cinematic Cheats used:
+- None new. Existing base hibernation remains analytical Dalton catch-up, not replayed simulation.
+
+Exact microseconds saved:
+- No new measured claim. This pass verified build recovery and maintained the previously removed WFC bridge sync-wait debt.
+
+## 2026-05-15 - Adjacent Atmosphere Debt Boundary
+STATUS: SOURCE REVIEWED
+
+What was wrong:
+- Broader atmosphere scans still show component lookup debt outside the base hibernation solver.
+
+What was done:
+- Re-extracted current batch prompt: `PROMPT_NOT_FOUND`, continuing from persisted assignment.
+- Reviewed adjacent `SubmarineAtmosphereSystem` and surface weather lookup hits.
+- Left those files untouched because the hits are cold seeding or visual-weather ownership paths, not the assigned Dalton base hibernation path.
+
+Cinematic Cheats used:
+- None new.
+
+Exact microseconds saved:
+- None. This was a boundary and risk-control pass.
+
 ## 2026-05-15 - Read-Only Alias Initialization Gate Addendum
 STATUS: PENDING VERIFICATION
 

@@ -832,3 +832,68 @@ Residual risk:
 
 Current Status:
 - BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK5 CURRENT-DISK GREEN.
+
+## 2026-05-15 - CurrentDisk12/CurrentDiskBudgetGate5 Final Moving-Wall Closure
+
+What was wrong:
+- Later edits invalidated CurrentDisk5 and exposed two real compile walls: `SaveManager` contract-helper visibility and `SystemDispatcher` camera signal ambiguity.
+- H-Phi counters improved again after moving edits; the doc command needed the final source ceilings.
+
+What was done:
+- Repaired `SaveManager` by using a method-scoped dirty-flag constant for `MacroDatabasePayloadHandle.Flags`.
+- Repaired `SystemDispatcher` by fully qualifying Core camera signal payload types.
+- Recompiled `Hecton8.Core.csproj`; accepted `CurrentDisk12`.
+- Re-ran the budgeted H-Phi gate; accepted `CurrentDiskBudgetGate5`.
+- Updated status, rationale, Integrator logs, and the H-Phi regression command to the final artifact pair.
+
+Cinematic Cheats used:
+- Compile/static contract repair only.
+- No gameplay feature, physics simulation, rendering rewrite, package change, prefab change, generated `.csproj` edit, or leaf-domain refactor.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Final compile verification time: 136,610,575 us.
+- Final H-Phi verification time: 148,398,923 us.
+
+Verification:
+- Compile artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_174714_CurrentDisk12.log`.
+- Compile result: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_175322_CurrentDiskBudgetGate5.json`.
+- H-Phi result: `EXIT=0`, `RuntimeHPhiRisk=0.000633790`, `DataSovereignty=0.021306032`, `MemoryAlignment=0.506309148`, `GlobalRegistrySurface=5081`, `GetComponentCalls=321`, `NativeArrayRefs=7074`, `ManagedFormatSurface=657`, `JobCompleteSurface=58`, `PrimaryManagedRuntimeRisk=307`, `OwnerBlockedNativeArrayRefs=6262`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, `UnityUpdateMethods=0`, `FindObjectCalls=0`, `AupPrecisionRisk=0`.
+- Freshness: no C# source under `Assets/_Project/Scripts` was newer than either final artifact at verification time.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, player build, and runtime visuals were not run.
+- Runtime microsecond savings are not claimed without profiler evidence.
+
+Current Status:
+- BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK12 CURRENT-DISK GREEN.
+
+## 2026-05-15 - Active Moving Wall After CurrentDisk15
+
+What was wrong:
+- `CurrentDisk15` compiled green, but `HectonPlayerMovement.cs` changed afterward.
+- `CurrentDiskBudgetGate5` passed, but six C# files are newer than that H-Phi artifact.
+
+What was done:
+- Preserved `CurrentDisk15` as the latest verified green build snapshot.
+- Preserved `CurrentDiskBudgetGate5` as the latest passed H-Phi gate.
+- Downgraded live status to `YELLOW / ACTIVE MOVING WALL` instead of reporting stale artifacts as final current-disk proof.
+
+Cinematic Cheats used:
+- Evidence-state correction only.
+- No gameplay, physics, rendering, package, generated `.csproj`, or leaf-domain rewrite.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Latest verified compile time: 81,974,637 us.
+- Latest passed H-Phi gate time: 148,398,923 us.
+
+Verification:
+- Latest green build artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_180534_CurrentDisk15.log`.
+- Latest green build result: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- Latest H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_175322_CurrentDiskBudgetGate5.json`.
+- Freshness failure: `HectonPlayerMovement.cs` is newer than `CurrentDisk15`; six C# files are newer than `CurrentDiskBudgetGate5`.
+
+Current Status:
+- YELLOW / ACTIVE MOVING WALL.

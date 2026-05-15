@@ -359,3 +359,15 @@ Rejected Alternatives: Re-running another full JSONL pass was rejected because t
 Scalability potential: Low/Middle/High/Ultra process gains a live throttle trend. The top five active threads produced 63.87% of the sample burn, so intervention can be targeted instead of global.
 
 Hardware Impact: 0 runtime microseconds on i3/MX350. No runtime code changed. Process impact: three-minute live burn measured at 56,671.11 tokens/sec and USD 2.60/min cache-aware.
+
+## Decision 30 - Five-Minute Live Burn Forecast
+
+Problem: The user ordered continued honest token counting. The previous three-minute sample captured volatility but did not give a better short-window stop-loss projection.
+
+Solution: Sample `state_5.sqlite.threads.tokens_used` for five consecutive 60-second intervals, price the deltas with the corrected global cache-aware/no-cache blends, and write `COMPUTE_LIVE_BURN_5MIN_FORECAST.md`.
+
+Rejected Alternatives: Re-running the full JSONL parser was rejected because this pass needed current tail rate, not historical final usage. Using one minute as the forecast was rejected because the five intervals ranged from 19.26k to 92.72k tokens/sec. Calling the top threads waste was rejected because token burn still lacks final diff, validation, and quality-delta joins.
+
+Scalability potential: Low/Middle/High/Ultra process gains a practical stop-loss dashboard. At the measured five-minute rate, 100M tokens arrive in 30 minutes, USD 100 cache-aware burn arrives in 44.72 minutes, and the top 10 threads carry 74.54% of live burn.
+
+Hardware Impact: 0 runtime microseconds on i3/MX350. No runtime code changed. Process impact: five-minute live burn measured at 55,562.22 tokens/sec, USD 2.236/min cache-aware, USD 14.714/min no-cache equivalent.

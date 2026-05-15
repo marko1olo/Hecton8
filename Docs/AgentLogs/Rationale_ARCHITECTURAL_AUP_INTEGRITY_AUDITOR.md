@@ -599,3 +599,11 @@ Solution: Resolve strike-listener AUP deltas from long grid differences plus loc
 Rejected Alternatives: Use runtime `Vector3` distance, keep full absolute subtraction, or simulate richer thunder propagation. Runtime distance is presentation-only after origin shifts; full absolute subtraction can cancel low bits; richer propagation is not justified for this deterministic audio fake.
 Scalability potential: Low devices keep the same cheap thunder model. Middle gets stable lightning audio timing after long sessions. High/Ultra can spend visual/audio budget on layered thunder tails without unstable propagation input.
 Hardware Impact: 0 B/frame added. Runtime cost is a few scalar double operations per planned lightning strike. Measured gameplay microseconds are absent; static H-Phi gate reports `AupPrecisionRisk=0`, and no rebuild was run per user ban.
+
+## Decision 75 - Transport Entanglement Grid-Delta Tether Length
+
+Problem: `MountablePlayerTransport.ApproximateAupDistance` subtracted full absolute `double3` AUP coordinates to compute macro-flora entanglement tether length. This value feeds vehicle motor entanglement behavior, so cancellation can distort the perceived tether and stress response after long origin travel.
+Solution: Resolve body-anchor AUP axis deltas from long grid differences plus local offsets in double, keep the existing cheap approximation, and clamp only at the final float tether-length output consumed by the vehicle motor.
+Rejected Alternatives: Use transform/runtime distance, leave full absolute subtraction, or add a heavier rope/kelp simulation. Runtime distance is presentation-only; full absolute subtraction loses low bits at large grids; a heavier simulation violates the cinematic-cheat rule for a bounded entanglement cue.
+Scalability potential: Low devices keep the same capped flora collection and cheap tether scalar. Middle gets stable entanglement length after long sessions. High/Ultra can improve kelp visuals/haptics without corrupting the motor input.
+Hardware Impact: 0 B/frame added. Runtime cost is three scalar double axis resolutions when entanglement begins. Measured gameplay microseconds are absent; static H-Phi gate reports `AupPrecisionRisk=0`, and no rebuild was run per user ban.

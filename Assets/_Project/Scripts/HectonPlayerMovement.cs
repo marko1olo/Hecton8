@@ -18,6 +18,7 @@
 //   Ã¢â‚¬Â¢ Zero-rotation Rigidbody, zero-jitter camera
 // ============================================================================
 
+using System;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
@@ -1170,6 +1171,9 @@ namespace Hecton8.Gameplay
         private SargassumMovementInfluence _sargassumMovementInfluence;
         private HectonSurvivalSystem _survivalSystem;
         private PlayerInventory _inventoryLoadSource;
+        private PlayerInventory _boundInventoryLoadSignalSource;
+        private uint _inventoryLoadSignalHash;
+        private uint _lastInventoryLoadSignalRevision;
         private PlayerKinematicsNativeState _playerKinematicsNativeState;
         private bool _playerKinematicsTelemetryDumpedThisFault;
         private float3 _lastPlayerKinematicsIntendedMovement;
@@ -3964,6 +3968,7 @@ namespace Hecton8.Gameplay
                     _resolvedPlayerToolManager = false;
                     _playerToolManager = null;
                     UnbindInventoryLoadSource();
+                    BindInventoryLoadSource();
                     break;
                 case GlobalRegistryServiceSlot.VoxelEngineRuntime:
                     _voxelEngineRuntime = currentService as HectonVoxelEngine;
@@ -4606,6 +4611,7 @@ namespace Hecton8.Gameplay
 
             if (_inventoryLoadSource == resolvedInventory)
             {
+                BaselineInventoryLoadSignalRevision();
                 HandleInventoryLoadChanged();
                 return;
             }
@@ -4613,16 +4619,16 @@ namespace Hecton8.Gameplay
             UnbindInventoryLoadSource();
             _inventoryLoadSource = resolvedInventory;
             _playerMotor?.BindEncumbranceSource(_inventoryLoadSource);
-            _inventoryLoadSource.InventoryChanged += HandleInventoryLoadChanged;
+            BaselineInventoryLoadSignalRevision();
             HandleInventoryLoadChanged();
         }
 
         private void UnbindInventoryLoadSource()
         {
-            if (_inventoryLoadSource != null)
-                _inventoryLoadSource.InventoryChanged -= HandleInventoryLoadChanged;
-
             _inventoryLoadSource = null;
+            _boundInventoryLoadSignalSource = null;
+            _inventoryLoadSignalHash = 0u;
+            _lastInventoryLoadSignalRevision = 0u;
             _playerMotor?.BindEncumbranceSource(null);
             _runtimeInventoryTotalMassKg = 0f;
             _runtimeInventoryLoadRatio = 0f;
@@ -4640,6 +4646,55 @@ namespace Hecton8.Gameplay
                 return localInventory;
 
             return _playerInventoryService != null ? _playerInventoryService.Inventory : null;
+        }
+
+        private void RefreshInventoryLoadSignalFilter()
+        {
+            if (ReferenceEquals(_boundInventoryLoadSignalSource, _inventoryLoadSource))
+                return;
+
+            _boundInventoryLoadSignalSource = _inventoryLoadSource;
+            _inventoryLoadSignalHash = ResolveInventoryLoadSignalHash(_inventoryLoadSource);
+            _lastInventoryLoadSignalRevision = _inventoryLoadSource != null ? unchecked((uint)_inventoryLoadSource.InventoryVersion) : 0u;
+        }
+
+        private void BaselineInventoryLoadSignalRevision()
+        {
+            RefreshInventoryLoadSignalFilter();
+            _lastInventoryLoadSignalRevision = _inventoryLoadSource != null ? unchecked((uint)_inventoryLoadSource.InventoryVersion) : 0u;
+        }
+
+        private bool ConsumeInventoryLoadSignals()
+        {
+            RefreshInventoryLoadSignalFilter();
+            uint inventoryHash = _inventoryLoadSignalHash;
+            if (inventoryHash == 0u)
+                return false;
+
+            bool changed = false;
+            System.ReadOnlySpan<InventoryChangedSignal> signals = SignalBus<InventoryChangedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ref readonly InventoryChangedSignal signal = ref signals[i];
+                if (signal.InventoryHash != inventoryHash ||
+                    signal.Revision == 0u ||
+                    (_lastInventoryLoadSignalRevision != 0u && signal.Revision <= _lastInventoryLoadSignalRevision))
+                {
+                    continue;
+                }
+
+                _lastInventoryLoadSignalRevision = signal.Revision;
+                changed = true;
+            }
+
+            return changed;
+        }
+
+        private static uint ResolveInventoryLoadSignalHash(PlayerInventory inventory)
+        {
+            return inventory != null && inventory.gameObject != null
+                ? unchecked((uint)EntityId.ToULong(inventory.gameObject.GetEntityId()))
+                : 0u;
         }
 
         private void HandleInventoryLoadChanged()
@@ -6953,6 +7008,9 @@ namespace Hecton8.Gameplay
                 _currentRenderDeltaTime = math.max(0.0001f, deltaTime);
                 RefreshVrComfortSettingsCache();
                 PrepareRenderTickDependencies();
+                if (ConsumeInventoryLoadSignals())
+                    HandleInventoryLoadChanged();
+
                 DrainNarrativeFocusSignals();
                 AdvanceCinematicFocus(deltaTime);
                 if (_activeSonarPingCooldownTimer > 0f)

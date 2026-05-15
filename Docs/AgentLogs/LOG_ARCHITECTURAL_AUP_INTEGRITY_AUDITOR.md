@@ -863,6 +863,36 @@ Verification:
 Integrator notes:
 - Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
 
+## 2026-05-15 - Loop 48 Real AUP Precision Repair - Transport Entanglement Tether
+
+What was wrong:
+- `MountablePlayerTransport` subtracted full absolute `double3` AUP coordinates for macro-flora entanglement tether length.
+- The tether scalar feeds vehicle motor behavior and can drift after long origin travel.
+
+What was done:
+- Moved tether distance to direct grid/local double AUP delta math.
+- Preserved the cheap approximate magnitude and final float motor input.
+
+Cinematic Cheats used:
+- Kept the bounded entanglement scalar instead of adding heavier rope/kelp simulation.
+- Low-tier keeps capped flora collection; High/Ultra can improve kelp visuals/haptics over stable tether input.
+
+Exact Microseconds saved:
+- Gameplay frame time: 0 us measured; profiler proof is absent.
+- No allocation added; work occurs only when entanglement begins.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs` reports line-ending warning only.
+- Qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory AUP regex scan returned 233 broad residual matches: broad `universe` text and known final-cast/presentation payload names.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 188.078 seconds with `AupPrecisionRisk=0`, `AupPrecisionIntegrity=1`, `RuntimeHPhiRisk=0.00063379`, `NativeArrayRefs=7074`, and `PrimaryOwnerBlockedNativeArrayRefs=5678`.
+- Temporary Loop 48 capture is absent after cleanup.
+- No `dotnet build` or rebuild was run because the user explicitly forbade rebuilds.
+
+Integrator notes:
+- Unity Console/import, PlayMode, profiler, and GCMonitor proof remain pending.
+
 ## 2026-05-15 - Loop 47 Real AUP Precision Repair - Surface Thunder Distance
 
 What was wrong:

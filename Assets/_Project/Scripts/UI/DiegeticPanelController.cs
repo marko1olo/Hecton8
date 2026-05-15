@@ -131,6 +131,18 @@ namespace Hecton8.UI
         private const float MaximumInteractionReachMeters = 2f;
         private const float DamageGlitchDecaySharpness = 16f;
         private const float MatrixRefreshInterval = 0.25f;
+        private const float MinPhosphorDecay = 0.1f;
+        private const float MaxPhosphorDecay = 0.98f;
+        private const float DefaultPhosphorDecay = 0.85f;
+        private const float DefaultDepthFadeRange = 0.05f;
+        private const float MinDamageGlitchDurationSeconds = 0.02f;
+        private const float MaxDamageGlitchDurationSeconds = 1f;
+        private const float DefaultDamageGlitchDurationSeconds = 0.22f;
+        private const float MinProxyLightRangeMeters = 0.01f;
+        private const float DefaultProxyLightRangeMeters = 1.35f;
+        private const float DefaultProxyLightIntensity = 0.22f;
+        private const float MaxProxyLightFlicker = 0.3f;
+        private const float DefaultProxyLightFlicker = 0.06f;
         private const float FarPanelDistanceSq = 25f;
         private const float MediumPanelDistanceSq = 4f;
         private const float NearPanelDistanceSq = 0.64f;
@@ -301,22 +313,22 @@ namespace Hecton8.UI
         [SerializeField, Tooltip("Authored full-screen material used to accumulate phosphor decay. Runtime fallback loads Resources/UI/MAT_DiegeticPanelPhosphorDecay.")]
         private Material phosphorDecayMaterial;
 
-        [SerializeField, Range(0.1f, 0.98f), Tooltip("Multiplier applied to the previous PDA frame before adding the current panel frame.")]
-        private float phosphorDecay = 0.85f;
+        [SerializeField, Range(MinPhosphorDecay, MaxPhosphorDecay), Tooltip("Multiplier applied to the previous PDA frame before adding the current panel frame.")]
+        private float phosphorDecay = DefaultPhosphorDecay;
 
         [Header("── Occlusion ─────────────────────────────")]
         [SerializeField, Tooltip("Enables depth-fade integration on the panel output material.")]
         private bool enableDepthOcclusion = true;
 
         [SerializeField, Tooltip("World-space depth fade band used by the panel surface shader.")]
-        private float depthFadeRange = 0.05f;
+        private float depthFadeRange = DefaultDepthFadeRange;
 
         [Header("Terminal Effects")]
         [SerializeField, Range(0f, 1f), Tooltip("Normalized glare applied when an external flashlight hits terminal glass.")]
         private float flashlightGlare;
 
-        [SerializeField, Range(0.02f, 1f), Tooltip("Seconds a received damage packet keeps the CRT glitch active.")]
-        private float damageGlitchDurationSeconds = 0.22f;
+        [SerializeField, Range(MinDamageGlitchDurationSeconds, MaxDamageGlitchDurationSeconds), Tooltip("Seconds a received damage packet keeps the CRT glitch active.")]
+        private float damageGlitchDurationSeconds = DefaultDamageGlitchDurationSeconds;
 
         [SerializeField, Tooltip("Layer assigned to the world-space canvas hierarchy when RT presentation is active.")]
         private int panelCanvasLayer = 5;
@@ -325,17 +337,17 @@ namespace Hecton8.UI
         [SerializeField, Tooltip("Registers a lightweight diegetic proxy light while the panel is powered.")]
         private bool enableProxyLight = true;
 
-        [SerializeField, Min(0.01f), Tooltip("Meters covered by the panel proxy light.")]
-        private float proxyLightRangeMeters = 1.35f;
+        [SerializeField, Min(MinProxyLightRangeMeters), Tooltip("Meters covered by the panel proxy light.")]
+        private float proxyLightRangeMeters = DefaultProxyLightRangeMeters;
 
         [SerializeField, Range(0f, 1f), Tooltip("Maximum normalized intensity written into the proxy light registry.")]
-        private float proxyLightIntensity = 0.22f;
+        private float proxyLightIntensity = DefaultProxyLightIntensity;
 
         [SerializeField, Tooltip("Linearized panel proxy light color. Use low values; this is a lighting hint, not a real Light component.")]
         private Color proxyLightColor = new Color(0.58f, 0.92f, 1f, 1f);
 
-        [SerializeField, Range(0f, 0.3f), Tooltip("Small unscaled flicker amount synchronized with panel power.")]
-        private float proxyLightFlicker = 0.06f;
+        [SerializeField, Range(0f, MaxProxyLightFlicker), Tooltip("Small unscaled flicker amount synchronized with panel power.")]
+        private float proxyLightFlicker = DefaultProxyLightFlicker;
 
         // COLD ALLOC: DiegeticPanelInputEvent[16] — fixed panel input ring buffer — owner: DiegeticPanelController
         private readonly DiegeticPanelInputEvent[] _inputEvents = new DiegeticPanelInputEvent[InputEventCapacity];
@@ -609,9 +621,10 @@ namespace Hecton8.UI
             if (safeMagnitude <= 0.0001f)
                 return;
 
+            float safeDuration = ResolveDamageGlitchDuration(durationSeconds);
             _terminalDamageGlitchPeak = math.max(_terminalDamageGlitchPeak, safeMagnitude);
-            _terminalDamageGlitchRemaining = math.max(_terminalDamageGlitchRemaining, math.max(0.02f, durationSeconds));
-            _terminalDamageGlitchDuration = math.max(0.02f, _terminalDamageGlitchRemaining);
+            _terminalDamageGlitchRemaining = math.max(_terminalDamageGlitchRemaining, safeDuration);
+            _terminalDamageGlitchDuration = math.max(MinDamageGlitchDurationSeconds, _terminalDamageGlitchRemaining);
             _terminalDamageGlitch = math.max(_terminalDamageGlitch, safeMagnitude);
             ApplyMaterialState(forceTextureRefresh: false, forceDepthRefresh: false);
         }
@@ -820,7 +833,7 @@ namespace Hecton8.UI
         internal void OverridePhosphorDecay(bool enabled, float decay)
         {
             enablePhosphorDecay = enabled;
-            phosphorDecay = math.clamp(decay, 0.1f, 0.98f);
+            phosphorDecay = ResolvePhosphorDecay(decay);
             if (enabled)
                 EnsurePhosphorResources();
             else
@@ -854,9 +867,13 @@ namespace Hecton8.UI
             fingerPressDistance = math.max(0.001f, fingerPressDistance);
             fingerReleaseDistance = math.max(fingerPressDistance, fingerReleaseDistance);
             fingerHoverDistance = math.max(fingerReleaseDistance, fingerHoverDistance);
-            depthFadeRange = math.max(0.001f, depthFadeRange);
+            phosphorDecay = ResolvePhosphorDecay(phosphorDecay);
+            depthFadeRange = ResolveDepthFadeRange();
             flashlightGlare = math.saturate(flashlightGlare);
-            damageGlitchDurationSeconds = math.clamp(damageGlitchDurationSeconds, 0.02f, 1f);
+            damageGlitchDurationSeconds = ResolveAuthoredDamageGlitchDuration();
+            proxyLightRangeMeters = ResolveProxyLightRange();
+            proxyLightIntensity = ResolveProxyLightIntensity();
+            proxyLightFlicker = ResolveProxyLightFlicker();
             _phosphorMaterialResolveAttempted = false;
             _phosphorMaterialResolveFailed = false;
             _appliedPhosphorPreviousTexture = null;
@@ -1360,10 +1377,11 @@ namespace Hecton8.UI
                 _phosphorDecayMaterial.SetTexture(_CurrentTexId, _panelRenderTexture);
             }
 
-            if (math.abs(_appliedPhosphorDecay - phosphorDecay) > 0.0001f)
+            float resolvedPhosphorDecay = ResolvePhosphorDecay(phosphorDecay);
+            if (math.abs(_appliedPhosphorDecay - resolvedPhosphorDecay) > 0.0001f)
             {
-                _appliedPhosphorDecay = phosphorDecay;
-                _phosphorDecayMaterial.SetFloat(_DecayId, phosphorDecay);
+                _appliedPhosphorDecay = resolvedPhosphorDecay;
+                _phosphorDecayMaterial.SetFloat(_DecayId, resolvedPhosphorDecay);
             }
             Graphics.Blit(null, _phosphorBackTexture, _phosphorDecayMaterial, 0);
 
@@ -1473,7 +1491,7 @@ namespace Hecton8.UI
                 }
             }
 
-            float resolvedFadeRange = enableDepthOcclusion ? depthFadeRange : 0f;
+            float resolvedFadeRange = enableDepthOcclusion ? ResolveDepthFadeRange() : 0f;
             bool shouldWriteDepthState = forceDepthRefresh || math.abs(_appliedDepthFadeRange - resolvedFadeRange) > 0.0001f;
             if (shouldWriteDepthState)
             {
@@ -1547,10 +1565,19 @@ namespace Hecton8.UI
                 return;
             }
 
+            float safeRange = ResolveProxyLightRange();
+            if (safeRange <= 0.0001f)
+            {
+                UnregisterProxyLight();
+                return;
+            }
+
+            float safeFlicker = ResolveProxyLightFlicker();
+            float safeIntensity = ResolveProxyLightIntensity();
             float now = _tickUnscaledTime;
             float flickerWave = EvaluateCheapFlicker01((now * 23.0f) + (panelId * 0.37f));
-            float flicker01 = math.saturate(1f - proxyLightFlicker + (flickerWave * proxyLightFlicker));
-            float intensity = math.saturate(proxyLightIntensity * _appliedPowerLevel * flicker01);
+            float flicker01 = math.saturate(1f - safeFlicker + (flickerWave * safeFlicker));
+            float intensity = math.saturate(safeIntensity * _appliedPowerLevel * flicker01);
             if (intensity <= 0.0001f)
             {
                 UnregisterProxyLight();
@@ -1563,7 +1590,7 @@ namespace Hecton8.UI
                 runtimePosition,
                 panelNormal,
                 proxyLightColor.linear,
-                proxyLightRangeMeters,
+                safeRange,
                 intensity,
                 flickerWave,
                 flicker01,
@@ -1572,6 +1599,43 @@ namespace Hecton8.UI
 
             if (ProxyLightRegistry.RegisterOrUpdate(_proxyLightKey, in lightData))
                 _proxyLightRegistered = true;
+        }
+
+        private float ResolvePhosphorDecay(float value)
+        {
+            return math.isfinite(value) ? math.clamp(value, MinPhosphorDecay, MaxPhosphorDecay) : DefaultPhosphorDecay;
+        }
+
+        private float ResolveDepthFadeRange()
+        {
+            return math.isfinite(depthFadeRange) ? math.max(0.001f, depthFadeRange) : DefaultDepthFadeRange;
+        }
+
+        private float ResolveAuthoredDamageGlitchDuration()
+        {
+            return math.isfinite(damageGlitchDurationSeconds)
+                ? math.clamp(damageGlitchDurationSeconds, MinDamageGlitchDurationSeconds, MaxDamageGlitchDurationSeconds)
+                : DefaultDamageGlitchDurationSeconds;
+        }
+
+        private static float ResolveDamageGlitchDuration(float durationSeconds)
+        {
+            return math.isfinite(durationSeconds) ? math.max(MinDamageGlitchDurationSeconds, durationSeconds) : DefaultDamageGlitchDurationSeconds;
+        }
+
+        private float ResolveProxyLightRange()
+        {
+            return math.isfinite(proxyLightRangeMeters) ? math.max(MinProxyLightRangeMeters, proxyLightRangeMeters) : DefaultProxyLightRangeMeters;
+        }
+
+        private float ResolveProxyLightIntensity()
+        {
+            return math.isfinite(proxyLightIntensity) ? math.saturate(proxyLightIntensity) : DefaultProxyLightIntensity;
+        }
+
+        private float ResolveProxyLightFlicker()
+        {
+            return math.isfinite(proxyLightFlicker) ? math.clamp(proxyLightFlicker, 0f, MaxProxyLightFlicker) : DefaultProxyLightFlicker;
         }
 
         private static float EvaluateCheapFlicker01(float phaseRadians)

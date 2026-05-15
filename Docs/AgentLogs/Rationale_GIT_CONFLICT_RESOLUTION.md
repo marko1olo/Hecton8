@@ -191,3 +191,9 @@ Solution: Treat the dirty tail as a bounded integration checkpoint, use the comp
 Rejected Alternatives: Editing generated csproj files, forcing a contract type from source that the legacy DLL does not export, killing unknown build processes, or claiming Unity/runtime green from CLI compile only.
 Scalability potential: Git-only operator pass. Low/Middle/High/Ultra runtime behavior remains producer-owned; this pass preserves compile evidence and reduces shared-history drift.
 Hardware Impact: 0 us runtime impact. Dev-path gain is one green isolated Core compile boundary despite parallel build locks.
+
+Problem: A later moving-wall tail introduced `DiegeticPanelController` calls to finite clamp helpers before the helper block was visible to the compile, producing 13 CS0103 errors in the isolated Core build.
+Solution: Re-read the current file, confirm the helper block was present after the parallel edit completed, and re-run an isolated Core build on the latest working tree before committing the tail.
+Rejected Alternatives: Reverting the panel clamp work, committing stale failed evidence as the final state, or trusting CurrentDisk12/13 after newer C# edits.
+Scalability potential: Git-only operator pass. The panel clamp work protects Low through Ultra authored UI scalar ranges; this pass only verifies the compile boundary.
+Hardware Impact: 0 us runtime impact. Dev-path gain is a green isolated Core compile on the current UI/AUP tail.

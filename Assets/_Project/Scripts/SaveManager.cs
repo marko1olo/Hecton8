@@ -1780,42 +1780,24 @@ namespace Hecton8.SaveSystem
             NativeArray<byte> wfcGrid,
             NativeArray<ulong> packedWords)
         {
-            int wordCount = math.min(packedWords.Length, WfcOutpostPersistenceConstants.PackedWordCount);
             ulong* words = (ulong*)packedWords.GetUnsafePtr();
-            for (int word = 0; word < wordCount; word++)
+            for (int word = 0; word < WfcOutpostPersistenceConstants.PackedWordCount; word++)
                 words[word] = 0UL;
 
-            int cellCount = math.min(wfcGrid.Length, WfcOutpostPersistenceConstants.CellCount);
             byte* cells = (byte*)wfcGrid.GetUnsafeReadOnlyPtr();
-            for (int cell = 0; cell < cellCount; cell++)
+            for (int cell = 0; cell < WfcOutpostPersistenceConstants.CellCount; cell++)
             {
-                ulong flags = cells[cell];
-                OrWfcOutpostPackedBit(words, wordCount, cell, flags & 1UL);
-                OrWfcOutpostPackedBit(
-                    words,
-                    wordCount,
-                    cell + WfcOutpostPersistenceConstants.CellCount,
-                    (flags >> 1) & 1UL);
-                OrWfcOutpostPackedBit(
-                    words,
-                    wordCount,
-                    cell + (WfcOutpostPersistenceConstants.CellCount * 2),
-                    (flags >> 2) & 1UL);
-                OrWfcOutpostPackedBit(
-                    words,
-                    wordCount,
-                    cell + (WfcOutpostPersistenceConstants.CellCount * 3),
-                    (flags >> 3) & 1UL);
+                ulong flags = (ulong)(cells[cell] & 0x0F);
+                int doorOpenBit = cell;
+                int doorUnlockedBit = cell + WfcOutpostPersistenceConstants.CellCount;
+                int powerOnBit = cell + (WfcOutpostPersistenceConstants.CellCount * 2);
+                int datapadLootedBit = cell + (WfcOutpostPersistenceConstants.CellCount * 3);
+
+                words[doorOpenBit >> 6] |= (flags & 1UL) << (doorOpenBit & 63);
+                words[doorUnlockedBit >> 6] |= ((flags >> 1) & 1UL) << (doorUnlockedBit & 63);
+                words[powerOnBit >> 6] |= ((flags >> 2) & 1UL) << (powerOnBit & 63);
+                words[datapadLootedBit >> 6] |= ((flags >> 3) & 1UL) << (datapadLootedBit & 63);
             }
-        }
-
-        private static unsafe void OrWfcOutpostPackedBit(ulong* packedWords, int wordCount, int bitIndex, ulong enabled)
-        {
-            int wordIndex = bitIndex >> 6;
-            if ((uint)wordIndex >= (uint)wordCount)
-                return;
-
-            packedWords[wordIndex] = packedWords[wordIndex] | (enabled << (bitIndex & 63));
         }
 
         private void RetryPendingWfcOutpostDirtyAppends()

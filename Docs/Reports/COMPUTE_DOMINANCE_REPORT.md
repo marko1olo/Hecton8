@@ -948,3 +948,63 @@ Top concentration:
 | Top 10 threads | 8,745,897 | 85.46% |
 
 Verdict: live burn remains concentrated and volatile. The middle minute spiked to 75.4k tokens/sec. Token volume alone still does not prove waste, but it identifies current throttle targets.
+
+## Continuation Addendum - Five-Minute Live Burn Forecast
+
+Snapshot: 2026-05-15T17:43:10+04:00
+
+The five-minute live forecast is preserved at `COMPUTE_LIVE_BURN_5MIN_FORECAST.md`.
+
+| Metric | Value |
+|---|---:|
+| Current SQLite tokens | 45,857,878,991 |
+| Delta since 17:29 live trend | 40,807,534 |
+| Rate since 17:29 live trend | 48,776.85 tokens/sec |
+| Five-minute sample tokens | 16,694,405 |
+| Five-minute sample duration | 300.463233 sec |
+| Five-minute sample rate | 55,562.22 tokens/sec |
+| Five-minute tokens/min | 3,333,733.35 |
+| Five-minute tokens/hour equivalent | 200,024,000.94 |
+| Five-minute tokens/day equivalent | 4,800,576,022.56 |
+| Cache-aware sample cost | USD 11.20 |
+| Cache-aware cost/min | USD 2.236 |
+| Cache-aware cost/hour | USD 134.17 |
+| Cache-aware day-equivalent cost | USD 3,220.17 |
+| No-cache sample cost | USD 73.69 |
+| No-cache cost/min | USD 14.714 |
+| No-cache day-equivalent cost | USD 21,188.82 |
+| Active threads | 20 |
+| Active model bucket | `gpt-5.5` only |
+| Active CWD bucket | `C:/hades` only |
+
+Interval volatility:
+
+| Interval | Tokens | Tokens/sec | Cache-aware USD/min | No-cache USD/min |
+|---:|---:|---:|---:|---:|
+| 1 | 5,583,992 | 92,721.00 | USD 3.73 | USD 24.56 |
+| 2 | 1,156,846 | 19,260.72 | USD 0.78 | USD 5.10 |
+| 3 | 3,960,035 | 65,976.47 | USD 2.66 | USD 17.47 |
+| 4 | 2,629,323 | 43,800.23 | USD 1.76 | USD 11.60 |
+| 5 | 3,364,209 | 55,953.24 | USD 2.25 | USD 14.82 |
+
+Concentration:
+
+| Slice | Tokens | Share |
+|---|---:|---:|
+| Top 1 thread | 1,937,906 | 11.61% |
+| Top 2 threads | 3,819,094 | 22.88% |
+| Top 5 threads | 7,745,612 | 46.40% |
+| Top 10 threads | 12,444,535 | 74.54% |
+| Top 12 threads | 13,940,362 | 83.50% |
+
+Stop-loss projection at the five-minute average:
+
+| Threshold | Cache-aware time | No-cache time |
+|---|---:|---:|
+| USD 100 | 44.72 min | 6.80 min |
+| USD 1,000 | 7.45 h | 1.13 h |
+| USD 10,000 | 3.11 d | 11.33 h |
+| 100M tokens | 30.00 min | same token time |
+| 1B tokens | 5.00 h | same token time |
+
+Verdict: live burn remains material but volatile. The five-minute average is slightly below the earlier three-minute rate, but still projects to 4.80B tokens/day. The top 10 active threads hold 74.54% of the sample, so the honest control point is targeted thread review, not global panic and not waste conviction.

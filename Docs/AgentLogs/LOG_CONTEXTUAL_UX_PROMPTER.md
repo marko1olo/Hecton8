@@ -553,3 +553,14 @@ Cinematic cheats used: No visual change for valid authoring. Bad tuning now coll
 Exact microseconds saved: None claimed. The patch prevents invalid payloads; scalar checks are bounded and only on layout/fade paths.
 
 Verification: No dotnet rebuilds were run. Static scans confirmed layout/fade use `ResolveGlyphWorldHeight()`, `ResolveGlyphAdvanceScale()`, and `ResolveFadeDurationSeconds()`.
+
+## 2026-05-15 Panel Effect Scalar Clamp
+What was wrong: Panel phosphor decay, depth fade, damage-glitch duration, and proxy-light scalar tuning trusted runtime floats. NaNs could skip dirty writes or poison proxy-light/material payloads.
+
+What was done: Added finite resolver helpers and routed phosphor, depth, damage-glitch, and proxy-light scalar writes through sanitized values.
+
+Cinematic cheats used: No visual change for valid authoring. The CRT persistence and proxy-light fakes now fail to stable scalar defaults instead of invalid values.
+
+Exact microseconds saved: None claimed. This is correctness hardening; checks are bounded and run only on effect update paths.
+
+Verification: No dotnet rebuilds were run. Static scans confirmed the panel effect paths use the new resolver helpers before material or registry writes.

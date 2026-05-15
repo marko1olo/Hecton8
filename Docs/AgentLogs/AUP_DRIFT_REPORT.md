@@ -465,6 +465,33 @@ Status: VERIFIED AUP INTEGRITY - LOOP 39 REAL H-PHI SOURCE REPAIR REMOVED DEAD O
 - Unity import/Console verification remains pending because no Unity editor session is available.
 - H-Phi result is static-source evidence, not profiler proof.
 
+## Loop 48 Real AUP Precision Repair - Transport Entanglement Grid-Delta Tether Length
+
+### Findings
+
+- `MountablePlayerTransport.ApproximateAupDistance` used full absolute-double AUP subtraction for macro-flora entanglement tether length.
+- This value feeds transport motor entanglement and should not inherit cancellation at large grid values.
+
+### Source Changes
+
+- `Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs`: entanglement tether length now resolves body-anchor AUP deltas from grid/local double axis math.
+- The existing cheap approximate magnitude and final float motor input were preserved.
+
+### Verification
+
+- `git diff --check -- Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs` reports a line-ending warning only, no whitespace errors.
+- Final targeted qualified AUP H-Phi risk scan returns `NO_MATCHES`.
+- Final direct committed-offset leak scan returns `NO_MATCHES`.
+- Mandatory `rg "\(float3\).*AUP|AupOffset|universe" Assets/_Project/Scripts --glob '*.cs'` returned 233 broad residual matches. Residuals remain broad `universe` text plus known final-cast/presentation payload names.
+- Full `Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0` completed in 188.078 seconds with `RuntimeHPhiRisk=0.00063379`, `RuntimeHPhiNarrow=0.010787439`, `AupPrecisionIntegrity=1`, `AupPrecisionSafe=362`, `AupPrecisionRisk=0`, `NativeArrayRefs=7074`, `PrimaryOwnerBlockedNativeArrayRefs=5678`, and `NativeOwnershipRisk=8196`.
+- Temporary Loop 48 capture is absent after cleanup.
+- No `dotnet build` or rebuild was run in Loop 48 because the latest user instruction explicitly forbids rebuilds.
+
+### Evidence Queue
+
+- Unity import/Console verification remains pending because no Unity editor session is available.
+- H-Phi result is static-source evidence, not profiler proof.
+
 ## Loop 47 Real AUP Precision Repair - Surface Thunder Propagation Grid-Delta Distance
 
 ### Findings

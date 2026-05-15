@@ -102,6 +102,7 @@ Status: PENDING VERIFICATION
 - Loop 59: Tooltip AUP shift wrap-safe frame pass. Replaced raw `ShiftFrameId <= _lastAupShiftFrame` comparison with wrap-safe unsigned shift-frame validation matching project AUP consumers. No dotnet rebuilds run per user instruction.
 - Loop 60: Tooltip SDF scalar clamp pass. Sanitized gradient scale and face dilate before material-property dirty comparison and shader upload, preventing bad authoring values from poisoning glyph SDF constants or forcing perpetual rebinds. No dotnet rebuilds run per user instruction.
 - Loop 61: Tooltip layout/fade scalar clamp pass. Sanitized glyph world height, advance scale, and fade duration before layout and alpha math, preventing runtime-mutated NaNs from poisoning prompt geometry or visibility. No dotnet rebuilds run per user instruction.
+- Loop 62: Panel effect scalar clamp pass. Sanitized phosphor decay, depth fade, damage-glitch duration, and proxy-light scalar lanes before material/property/registry writes, preventing NaNs from bypassing dirty checks or entering UI light payloads. No dotnet rebuilds run per user instruction.
 
 ## Verification Notes
 - `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary | Select-String ...`: no output for touched-file filter after final cache collision fix.
@@ -156,6 +157,7 @@ Status: PENDING VERIFICATION
 - Post Loop 59 static scans confirmed no raw `ShiftFrameId <=` comparison remains in `DiegeticTooltipSystem`; AUP shift consumption now uses `IsNewAupShift()` with unsigned wrap handling. No dotnet rebuilds run per user instruction.
 - Post Loop 60 static scans confirmed SDF material binding compares and uploads sanitized `resolvedGradientScale`/`resolvedFaceDilate` values, while the tooltip hot-path marker scan stayed clean. No dotnet rebuilds run per user instruction.
 - Post Loop 61 static scans confirmed layout/fade now route through `ResolveGlyphWorldHeight()`, `ResolveGlyphAdvanceScale()`, and `ResolveFadeDurationSeconds()` before glyph geometry or alpha math. No dotnet rebuilds run per user instruction.
+- Post Loop 62 static scans confirmed panel effect writes now use `ResolvePhosphorDecay()`, `ResolveDepthFadeRange()`, `ResolveDamageGlitchDuration()`, `ResolveProxyLightRange()`, `ResolveProxyLightIntensity()`, and `ResolveProxyLightFlicker()`. No dotnet rebuilds run per user instruction.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Json` completed at `2026-05-15 01:32:33 +04:00` without invoking a rebuild. Follow-up summary extraction exceeded tool timeout; no score claim is recorded from that partial extraction.
 - `Tools/Architecture/HectonPhiAudit.ps1 -Summary` was retried after Loop 18 and timed out after 120 seconds without output; no H-Phi score claim is recorded.
 - `git diff --check` on `DiegeticTooltipSystem.cs` and `Hecton_DiegeticTooltipIndirect.shader` passed with repository CRLF warnings only.

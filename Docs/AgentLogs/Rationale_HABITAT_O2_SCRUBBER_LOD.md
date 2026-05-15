@@ -347,3 +347,17 @@ Solution: Re-ran `Tools/Architecture/HectonPhiAudit.ps1 -CoreGraphOnly -Summary 
 Rejected Alternatives: Running a dotnet rebuild was rejected by explicit user instruction. Treating the pre-patch artifact as current was rejected because the C# source is now newer than the last green build artifact.
 Scalability potential: Low through Ultra keep the same source graph shape for the gas-power bridge; the job-stall cleanup adds no new Core dependency edge.
 Hardware Impact: Audit-only pass. No runtime microsecond gain claimed.
+
+## Self-Review 43 - Build Evidence And Debt Boundary
+Problem: The newest user request explicitly asked to fix build and work tech debt, while the latest failing integration logs pointed at a `SaveManager` MacroDB symbol outside the gas domain.
+Solution: Verified current source no longer references the missing symbol and ran a targeted `dotnet build Hecton8.Core.csproj --no-restore --nologo -v:minimal`; it succeeded with 0 warnings and 0 errors. Confirmed newer integration build artifacts also exit 0 and cover the gas/WFC/SaveManager sources under review. Re-ran gas-domain fixed-string debt scans on `GasDynamicsSolver`, `GlobalSignals`, and the WFC bridge.
+Rejected Alternatives: Editing unrelated persistence/weather systems beyond the compile-critical symbol path was rejected because domain ownership remains strict. Running `dotnet rebuild` was rejected because prior user instruction forbids rebuilds and a normal build was enough.
+Scalability potential: Low through Ultra keep the same gas hibernation path; current debt work improves confidence that the WFC gas-power bridge does not add sync stalls or managed hot-path risk.
+Hardware Impact: Build verification has no runtime gain. The already-applied WFC bridge cleanup avoids a potential main-thread wait; exact microseconds remain unclaimed without profiler evidence.
+
+## Self-Review 44 - Adjacent Atmosphere Debt Boundary
+Problem: Broader atmosphere scans found component lookup debt in surface weather and submarine atmosphere systems, but the assigned domain is Dalton base hibernation gas dynamics.
+Solution: Kept edits scoped. `GasDynamicsSolver`, `GlobalSignals`, and the WFC gas-power bridge are clean for the checked hot-path debt patterns; adjacent lookup debt was recorded but not rewritten.
+Rejected Alternatives: Replacing cold `SubmarineAtmosphereSystem` component discovery with a new active-module spatial resolver was rejected because it would change ownership and behavior without a failing test or build error. Editing surface weather was rejected as visual/weather ownership.
+Scalability potential: Low through Ultra keep the current green build and deterministic hibernation path. Future owner-specific passes can reduce weather/submarine lookup counts without risking the base hibernation solver.
+Hardware Impact: No runtime change. This decision avoids speculative churn; no microseconds claimed.

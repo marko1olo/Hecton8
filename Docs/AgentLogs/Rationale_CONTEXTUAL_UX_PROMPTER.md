@@ -445,3 +445,10 @@ Solution: Add shared default/min/max constants and resolve all three scalars thr
 Rejected Alternatives: Trusting inspector `[Range]`, clamping only in `OnValidate`, or clearing the prompt after NaN alpha appears. Runtime mutation bypasses inspector range; `OnValidate` is editor-only; preventing invalid geometry is cheaper than trying to recover after shader payloads are poisoned.
 Scalability potential: Low keeps prompt geometry compact and predictable after bad authoring. Middle/High/Ultra retain authored sizing/fade control while invalid values fall back to stable defaults.
 Hardware Impact: Three scalar checks on layout/fade paths; expected gain is correctness and avoiding invalid indirect payloads rather than measurable frame-time savings. No profiler proof.
+
+## Decision 63: Panel Effect Scalar Clamp
+Problem: Physical panel phosphor decay, depth fade, damage-glitch duration, and proxy-light tuning trusted runtime floats. NaNs could bypass material dirty checks or enter proxy-light registry payloads.
+Solution: Add finite resolver helpers for those scalar lanes and route material/property/registry writes through the sanitized values. Public phosphor overrides now use the same resolver as the composite pass.
+Rejected Alternatives: Relying on editor validation, clearing the effect when a NaN appears, or writing every property unconditionally. Runtime mutation bypasses editor validation; clearing effects hides authoring faults; unconditional writes waste the steady panel path.
+Scalability potential: Low keeps CRT/panel feedback stable on weak devices. Middle/High/Ultra keep richer phosphor, glare, glitch, and proxy-light visuals without accepting invalid scalar payloads.
+Hardware Impact: Small finite checks on effect update paths; expected gain is preventing repeated dirty-check failure and invalid registry/material writes, not measurable frame-time savings. No profiler proof.

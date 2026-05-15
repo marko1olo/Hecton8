@@ -4,7 +4,37 @@ Agent: INTEGRATION_ASSEMBLY_SURGEON
 Role: SYSTEMS_ARCHITECT
 Domain: Unity Compilation Graph / Integrator
 Prompt task count: 15 (current in-chat XML; older 17-task static pass retained below)
-Current state: BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK5 CURRENT-DISK GREEN (Hecton8.Core --no-restore 0 warnings / 0 errors); latest static H-Phi gate: CURRENTDISKBUDGETGATE3 SOURCE PASS
+Current state: YELLOW / ACTIVE MOVING WALL. Latest verified build `CurrentDisk15` was green, but `HectonPlayerMovement.cs` changed afterward; latest H-Phi gate `CurrentDiskBudgetGate5` is stale by six C# files.
+
+## 2026-05-15 Active Moving Wall After CurrentDisk15
+
+Directive: keep build evidence honest under active parallel edits.
+Domain: Echelon 9 / The Integrator (Compile Medic).
+Current state: YELLOW / ACTIVE MOVING WALL.
+Latest green compile artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_180534_CurrentDisk15.log`.
+Latest green compile exit artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_180534_CurrentDisk15.exit.txt`.
+Latest H-Phi gate artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_175322_CurrentDiskBudgetGate5.json`.
+Latest H-Phi gate exit artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_175322_CurrentDiskBudgetGate5.exit.txt`.
+
+- [x] CurrentDisk15 compile snapshot verified | Justification: `CurrentDisk15` reports `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0` after the transient geology mesh helper wall cleared on retry | Alternatives rejected: treating stale `CurrentDisk14` errors as current source truth | Estimate: 81,974,637 us build verification
+- [x] Final freshness rejected | Justification: after `CurrentDisk15`, `HectonPlayerMovement.cs` changed at `2026-05-15T14:07:11Z`; after `CurrentDiskBudgetGate5`, six C# files were newer, including `HectonPlayerMovement.cs`, `PlayerInventory.cs`, `SaveManager.cs`, and `WorldGenerativeGeologyMeshBuilder.cs` | Alternatives rejected: leaving the status as `CURRENTDISK12 CURRENT-DISK GREEN` despite timestamp evidence | Estimate: 400 us scan
+- [x] H-Phi gate retained as last valid gate, not current proof | Justification: `CurrentDiskBudgetGate5` passed with `RuntimeHPhiRisk=0.000633790`, `ManagedFormatSurface=657`, `JobCompleteSurface=58`, `PrimaryManagedRuntimeRisk=307`, `FindObjectCalls=0`, and `AupPrecisionRisk=0`, but it is stale relative to later C# edits | Alternatives rejected: rerunning H-Phi while source writes continue without a quiet window | Estimate: 148,398,923 us tooling verification
+
+## 2026-05-15 CurrentDisk12/CurrentDiskBudgetGate5 Final Moving-Wall Closure
+
+Directive: continue build repair until the latest source snapshot compiles and static H-Phi evidence is current.
+Domain: Echelon 9 / The Integrator (Compile Medic).
+Current state: BUILD SUCCESSFUL / PLATINUM GRADE.
+Compile artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_174714_CurrentDisk12.log`.
+Compile exit artifact: `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_174714_CurrentDisk12.exit.txt`.
+H-Phi artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_175322_CurrentDiskBudgetGate5.json`.
+H-Phi exit artifact: `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_175322_CurrentDiskBudgetGate5.exit.txt`.
+
+- [x] SaveManager contract drift repaired | Justification: the Core CLI lane could not see `MacroDatabasePayloadFlags`; `ResolveWfcOutpostSnapshotCacheFlags` now uses a local method-scoped dirty flag constant matching the contract bit without widening assembly references | Alternatives rejected: editing generated `.csproj`, moving contract source during active churn, or leaving a CS0103 wall | Estimate: 0 us runtime
+- [x] Camera signal ambiguity repaired | Justification: `SystemDispatcher` publishes the Core camera signal lane with fully qualified `Hecton8.Core.Signals` payload types, removing the `Hecton8.World` ambiguity | Alternatives rejected: public type renames or removing World reference pressure during moving edits | Estimate: 0 us runtime
+- [x] Current-disk Core compile reverified | Justification: `CurrentDisk12` reports `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0` and no newer C# source exists under `Assets/_Project/Scripts` | Alternatives rejected: stale `CurrentDisk5/6` proof or retrying without inspecting real walls | Estimate: 136,610,575 us build verification
+- [x] Current-disk H-Phi gate reverified | Justification: `CurrentDiskBudgetGate5` exits 0 with `RuntimeHPhiRisk=0.000633790`, `MemoryAlignment=0.506309148`, `GlobalRegistrySurface=5081`, `NativeArrayRefs=7074`, `ManagedFormatSurface=657`, `JobCompleteSurface=58`, `PrimaryManagedRuntimeRisk=307`, `UnityUpdateMethods=0`, `FindObjectCalls=0`, and `AupPrecisionRisk=0` | Alternatives rejected: stale CurrentDiskBudgetGate3/4 proof | Estimate: 148,398,923 us tooling verification
+- [x] Final freshness checked | Justification: no C# source under `Assets/_Project/Scripts` was newer than either final artifact | Alternatives rejected: claiming green while parallel timestamps were still moving | Estimate: 400 us scan
 
 ## 2026-05-15 CurrentDisk5/CurrentDiskBudgetGate3 Final Freshness Correction
 

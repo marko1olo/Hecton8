@@ -138,10 +138,12 @@ public static class CaveGraphGenerator
         float volumeTopY = worldCenter.y + volumeHalfExtent;
         if (terrainHeightAtCenter > volumeTopY)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             UnityEngine.Debug.LogWarning(
                 $"[CaveGraph] Terrain height ({terrainHeightAtCenter:F1}m) is above " +
                 $"volume top ({volumeTopY:F1}m). Entrances may be clipped. " +
                 $"Consider raising worldCenter.y or increasing gridDimension.");
+#endif
         }
 
         // Phase 1
@@ -684,22 +686,28 @@ public static class CaveGraphGenerator
             float3 p = nodes[i].position;
             if (math.any(p < vMin) || math.any(p > vMax))
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 UnityEngine.Debug.LogWarning(
                     $"[CaveGraph] Node {i} at {p} is outside volume bounds [{vMin}, {vMax}]");
+#endif
                 valid = false;
             }
 
             if (math.any(nodes[i].radii <= 0))
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 UnityEngine.Debug.LogWarning(
                     $"[CaveGraph] Node {i} has zero or negative radii: {nodes[i].radii}");
+#endif
                 valid = false;
             }
 
             if (nodes[i].blendRadius <= 0)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 UnityEngine.Debug.LogWarning(
                     $"[CaveGraph] Node {i} has zero or negative blendRadius: {nodes[i].blendRadius}");
+#endif
                 valid = false;
             }
         }
@@ -709,16 +717,20 @@ public static class CaveGraphGenerator
         {
             if (tunnels[i].radiusA <= 0 || tunnels[i].radiusB <= 0)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 UnityEngine.Debug.LogWarning(
                     $"[CaveGraph] Tunnel {i} has zero or negative radius");
+#endif
                 valid = false;
             }
 
             float tunnelLen = math.length(tunnels[i].pointB - tunnels[i].pointA);
             if (tunnelLen < 0.1f)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 UnityEngine.Debug.LogWarning(
                     $"[CaveGraph] Tunnel {i} is degenerate (length = {tunnelLen:F2})");
+#endif
                 valid = false;
             }
         }
@@ -729,25 +741,31 @@ public static class CaveGraphGenerator
             float dirLen = math.length(entrances[i].inwardDirection);
             if (dirLen < 0.99f || dirLen > 1.01f)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 UnityEngine.Debug.LogWarning(
                     $"[CaveGraph] Entrance {i} inwardDirection is not normalized (length = {dirLen:F3})");
+#endif
                 valid = false;
             }
 
             if (entrances[i].radius <= 0 || entrances[i].funnelLength <= 0)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 UnityEngine.Debug.LogWarning(
                     $"[CaveGraph] Entrance {i} has zero or negative radius/funnelLength");
+#endif
                 valid = false;
             }
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         if (valid)
         {
             UnityEngine.Debug.Log(
                 $"[CaveGraph] Validation PASSED: {nodes.Length} rooms, " +
                 $"{tunnels.Length} tunnels, {entrances.Length} entrances");
         }
+#endif
 
         return valid;
     }
