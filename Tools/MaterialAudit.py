@@ -95,7 +95,9 @@ ALBEDO_EXCLUDE_TOKENS = (
 NORMAL_TOKENS = ("normal", "norm", "nrm", "bump")
 NON_SURFACE_PATH_PARTS = ("/sprites/ui/", "/skyboxes/")
 NON_SURFACE_MATERIAL_NAME_TOKENS = {
+    "celestial",
     "hud",
+    "moon",
     "ui",
     "gasgiant",
     "skybox",

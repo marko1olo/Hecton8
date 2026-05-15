@@ -239,6 +239,29 @@ class MaterialAuditTests(unittest.TestCase):
             self.assertEqual(0, summary["detail_map_missing_count"])
             self.assertEqual(0, summary["materials_with_issues"])
 
+            celestial = root / "Art" / "Materials" / "Celestial"
+            celestial.mkdir(parents=True)
+            celestial_material = celestial / "MAT_CelestialMoon_Test.mat"
+            celestial_material.write_text(
+                "\n".join(
+                    [
+                        "%YAML 1.1",
+                        "m_SavedProperties:",
+                        "  m_TexEnvs:",
+                        "  - _BaseMap:",
+                        "      m_Texture: {fileID: 8400000, guid: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, type: 2}",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            report = audit.run_audit(root, 16, False)
+            summary = report["material_summary"]
+            self.assertEqual(2, summary["material_count"])
+            self.assertEqual(0, summary["channel_packing_candidate_count"])
+            self.assertEqual(0, summary["detail_map_missing_count"])
+            self.assertEqual(0, summary["materials_with_issues"])
+
     def test_cli_fail_flags_return_expected_exit_codes(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
