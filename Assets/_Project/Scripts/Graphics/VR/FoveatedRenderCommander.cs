@@ -52,6 +52,8 @@ namespace Hecton8.Graphics.VR
         // COLD ALLOC: List<XRDisplaySubsystem>[8] — XR display enumeration scratch reused on policy commits — owner: FoveatedRenderCommander
         private static readonly List<XRDisplaySubsystem> s_displays = new List<XRDisplaySubsystem>(8);
         private static FoveatedRenderCommander s_activeCommander;
+        private static bool s_questRuntimeClassified;
+        private static bool s_quest2ClassRuntime;
 
         [Header("Policy")]
         [SerializeField, Range(1, 240)]
@@ -149,6 +151,8 @@ namespace Hecton8.Graphics.VR
         {
             s_displays.Clear();
             s_activeCommander = null;
+            s_questRuntimeClassified = false;
+            s_quest2ClassRuntime = false;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -850,31 +854,37 @@ namespace Hecton8.Graphics.VR
             if (!xrActive || Application.platform != RuntimePlatform.Android)
                 return false;
 
-            if (IsQuest3OrProRuntime())
-                return false;
-
-            if (QuestVulkanRuntimePolicy.SystemMemoryMegabytes > 0 &&
-                QuestVulkanRuntimePolicy.SystemMemoryMegabytes < QuestVulkanRuntimePolicy.QuestMemoryGateMegabytes &&
-                IsQuestFamilyDevice())
-            {
-                return true;
-            }
-
-            return ContainsToken(SystemInfo.deviceModel, "Quest 2") ||
-                   ContainsToken(SystemInfo.deviceName, "Quest 2") ||
-                   ContainsToken(XRSettings.loadedDeviceName, "Quest 2") ||
-                   ContainsToken(SystemInfo.deviceModel, "Oculus Quest") ||
-                   ContainsToken(XRSettings.loadedDeviceName, "Oculus Quest");
+            EnsureQuestRuntimeClassification();
+            return s_quest2ClassRuntime;
         }
 
-        private static bool IsQuest3OrProRuntime()
+        private static void EnsureQuestRuntimeClassification()
         {
-            return ContainsToken(SystemInfo.deviceModel, "Quest 3") ||
-                   ContainsToken(SystemInfo.deviceName, "Quest 3") ||
-                   ContainsToken(XRSettings.loadedDeviceName, "Quest 3") ||
-                   ContainsToken(SystemInfo.deviceModel, "Quest Pro") ||
-                   ContainsToken(SystemInfo.deviceName, "Quest Pro") ||
-                   ContainsToken(XRSettings.loadedDeviceName, "Quest Pro");
+            if (s_questRuntimeClassified)
+                return;
+
+            QuestVulkanRuntimePolicy.EnsureInitialized();
+
+            bool quest3OrPro =
+                HardwareTierDetector.IsQuest3Like ||
+                ContainsToken(XRSettings.loadedDeviceName, "Quest 3") ||
+                ContainsToken(XRSettings.loadedDeviceName, "Quest3") ||
+                ContainsToken(SystemInfo.deviceModel, "Quest Pro") ||
+                ContainsToken(SystemInfo.deviceName, "Quest Pro") ||
+                ContainsToken(XRSettings.loadedDeviceName, "Quest Pro");
+            bool quest2Token =
+                ContainsToken(SystemInfo.deviceModel, "Quest 2") ||
+                ContainsToken(SystemInfo.deviceName, "Quest 2") ||
+                ContainsToken(XRSettings.loadedDeviceName, "Quest 2") ||
+                ContainsToken(SystemInfo.deviceModel, "Oculus Quest") ||
+                ContainsToken(XRSettings.loadedDeviceName, "Oculus Quest");
+            bool questMemoryGate =
+                QuestVulkanRuntimePolicy.SystemMemoryMegabytes > 0 &&
+                QuestVulkanRuntimePolicy.SystemMemoryMegabytes < QuestVulkanRuntimePolicy.QuestMemoryGateMegabytes &&
+                IsQuestFamilyDevice();
+
+            s_quest2ClassRuntime = !quest3OrPro && (quest2Token || questMemoryGate);
+            s_questRuntimeClassified = true;
         }
 
         private static bool IsQuestFamilyDevice()
