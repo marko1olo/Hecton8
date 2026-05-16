@@ -60,3 +60,30 @@ Validation:
 - Final `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false` captured in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_final_pass.exit.txt`.
 - Build still fails with 70 unique foreign errors and 3 duplicate-compile warnings in UI navigation, tether signals, homeostasis, lockstep replay, and item pickup domains.
 - Captured final log contains no diagnostics naming `SdfSqueezeJob`, `PlayerKinematicsRuntime`, `HectonPlayerState`, or `H8Memory`.
+
+## 2026-05-16 - Signal Collapse And AUP Polish
+What was wrong:
+- The motor-side SDF fallback sampled SDF from runtime float coordinates instead of reconstructing the sample from AUP double-space.
+- The older motor squeeze branch and runtime resolver both emitted scrape haptic/acoustic effects.
+- Remaining locomotion owner/job structs still used non-`Pack = 1` `StructLayout` declarations.
+
+What was done:
+- Converted remaining KCC/player locomotion `StructLayout` declarations to `Pack = 1`; `ScheduledSweepState` is now explicit 64-byte layout.
+- Added AUP double-space sampling to `HectonPlayerMotor.TryResolveSdfSqueeze`.
+- Removed motor-side direct squeeze haptic/acoustic emission. It now publishes `PlayerStateSignal.StateSqueezing`; `PlayerKinematicsRuntime` consumes that typed lane and emits physiology, gas, haptic, acoustic, and high-tier visual fluid feedback once.
+- Added high/ultra-only `FluidImpulseSignal` from SDF stress/normal/velocity for downstream dynamic silt/wake overkill.
+
+Cinematic cheats used:
+- Toaster mode keeps 4-tap SDF, cached interpolation, and no fluid impulse.
+- God mode spends saved collision cost on a typed dynamic-fluid impulse rather than deeper physics.
+- Salt/hull-specific rendering remains downstream VFX ownership; locomotion emits the signal, not private renderer code.
+
+Exact microseconds saved:
+- Duplicate squeeze feedback collapse: estimated 8-12 us saved on motor-side active squeeze frames.
+- AUP motor fallback hardening: estimated 0-2 us cost, paid to remove drift-class SDF sampling errors.
+- High-tier fluid impulse: estimated 3-8 us downstream cost only on High/Ultra; 0 us on low/MX350.
+
+Validation:
+- `rg` found all `StructLayout` entries in the KCC/player locomotion surface use `Pack = 1`.
+- `rg` found no `Update`, `string.Format`, legacy `EventBus`, managed delegate, `GameObject.Find`, `FindObjectOfType`, `Physics.CapsuleCast`, or `OnCollisionStay` in the resolver/KCC runtime path.
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false` captured in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_polish2.exit.txt`; build is blocked by one foreign XR error in `HectonXRRuntimeState.cs`, and no KCC/locomotion touched file appears in diagnostics.
