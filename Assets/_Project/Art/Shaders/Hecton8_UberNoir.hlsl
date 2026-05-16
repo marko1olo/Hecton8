@@ -970,11 +970,15 @@ half3 H8UberNoirApplyScreenRefraction(H8UberNoirVaryings input, H8UberNoirSurfac
     float2 refractedUV = saturate(screenUV + snellOffset);
     half3 refractedColor = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, refractedUV).rgb;
     float chromatic = saturate(_UberNoirRefractionParams.w) * active;
-    float2 chromaOffset = snellOffset * chromatic * 0.45;
-    half3 chromaColor = refractedColor;
-    chromaColor.r = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, saturate(screenUV + chromaOffset)).r;
-    chromaColor.b = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, saturate(screenUV - chromaOffset)).b;
-    refractedColor = lerp(refractedColor, chromaColor, chromatic);
+    [branch]
+    if (chromatic > H8_UBER_NOIR_EPS)
+    {
+        float2 chromaOffset = snellOffset * chromatic * 0.45;
+        half3 chromaColor = refractedColor;
+        chromaColor.r = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, saturate(screenUV + chromaOffset)).r;
+        chromaColor.b = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, saturate(screenUV - chromaOffset)).b;
+        refractedColor = lerp(refractedColor, chromaColor, chromatic);
+    }
     return lerp(color, max(refractedColor, (half3)_NoirAbyssFloorColor.rgb), saturate(_UberNoirRefractionParams.z) * active);
 #else
     return color;

@@ -135,3 +135,10 @@ Solution: Added `H8UberNoirCheapDither`, an ALU interleaved-gradient fallback th
 Rejected Alternatives: Keeping the branchless `lerp` was rejected because it repeats the same false-disable bug as caustics/refraction. Removing dither entirely under stress was rejected because HLOD/impostor cutouts still need stable coverage without alpha blending.
 Scalability potential: Low/stress uses deterministic ALU noise; Middle can keep cutout transitions without texture bandwidth; High/Ultra spend one blue-noise sample only when quality gates allow it.
 Hardware Impact: Expected static saving under low/stress/disabled dither is one `_BlueNoiseTex` sample per clipped fragment. Exact microseconds are not claimed without profiler capture.
+
+## Decision 020 - Refraction Chromatic Tap Gate
+Problem: `H8UberNoirApplyScreenRefraction` correctly skipped all scene-color work when refraction was disabled, but once base refraction was active it always sampled two additional `_CameraOpaqueTexture` taps for chromatic split even when `_UberNoirRefractionParams.w` was zero.
+Solution: Added a dedicated `[branch]` guard around the chromatic red/blue offset taps. Base refraction now costs one opaque-texture sample; chromatic High/Ultra overkill costs the extra two taps only when the chromatic scalar is non-zero.
+Rejected Alternatives: Keeping unconditional chromatic taps was rejected because it made the documented 1-3 tap budget false. Removing chromatic split entirely was rejected because RTX/Ultra glass needs a visible spend path.
+Scalability potential: Low compiles refraction out; Middle/High can use one-tap Snell distortion; Ultra can enable chromatic split for stronger visor/porthole glass distortion.
+Hardware Impact: Expected static saving when chromatic is zero is two `_CameraOpaqueTexture` samples per refractive fragment. Exact microseconds are not claimed without profiler capture.

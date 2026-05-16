@@ -106,3 +106,24 @@ Verification:
 - Forbidden-pattern scan over UberNoir-owned shader/runtime files found no `GrabPass`, legacy `sampler2D`, `tex2D`, DirectX-only marker, compute `numthreads`, `NativeArray<`, `Update()`, or `string.Format`.
 - No Unity process was left running. Unity validation was not rerun because the previous batch session stalled during AssetDatabase script compilation.
 - `dotnet build Assembly-CSharp.csproj --no-restore` failed before domain validation in `RealtimeCSG.csproj` due 216 missing source files; `Docs/AgentLogs/Dotnet_UBER_NOIR_INTEGRATOR.log` has no UberNoir matches.
+
+## 2026-05-16 Loop 11 - Refraction Tap Audit
+
+What was wrong:
+- Base refraction was gated, but chromatic split still sampled `_CameraOpaqueTexture` twice whenever refraction was active, even with `_UberNoirRefractionParams.w = 0`.
+- The documented "1-3 opaque texture taps" budget was therefore false in the one-tap configuration.
+
+What was done:
+- Added a `[branch]` guard around the chromatic red/blue scene-color samples.
+- Base Snell refraction now pays one opaque-texture tap; chromatic High/Ultra overkill pays the two extra taps only when enabled.
+
+Cinematic cheats used:
+- One-tap screen-space Snell distortion for normal high-tier glass.
+- Optional chromatic split for Ultra glass overkill without paying it on every refractive fragment.
+
+Exact microseconds saved:
+- None measured. Static effect: chromatic-off refractive fragments skip two `_CameraOpaqueTexture` samples. Profiler proof is still blocked.
+
+Verification:
+- HLSL brace count remains balanced (`64/64`).
+- Forbidden-pattern scan over UberNoir-owned shader/runtime files remains clean.
