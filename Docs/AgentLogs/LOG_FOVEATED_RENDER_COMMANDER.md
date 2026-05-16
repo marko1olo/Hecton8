@@ -221,3 +221,23 @@ Exact microseconds saved:
 Validation:
 - Static scan shows no new managed hot-path allocations, no new signal lane, and no VR-domain forbidden patterns.
 - Filtered build diagnostics after the policy change produced no VR/legacy foveation matches. Full build remains red externally.
+
+## 2026-05-16 - Escalation Polish / Blackbox Size Contract
+
+What was wrong:
+- The blackbox dump header used `Marshal.SizeOf<FoveatedRenderTelemetryEntry>()` during fault export. The record size is a fixed binary contract and should not be reflected at dump time.
+
+What was done:
+- Added `TelemetryRecordSizeBytes = 64`.
+- Reused that constant in `[StructLayout(..., Size = TelemetryRecordSizeBytes)]` and in the binary dump header.
+
+Cinematic Cheats used:
+- None. This is postmortem binary stability work.
+
+Exact microseconds saved:
+- Exact measured microseconds saved: 0. Dump path only.
+- Estimated fault-path CPU avoided: negligible; value is removing size drift/metadata dependency from crash evidence.
+
+Validation:
+- Static scan confirms no `Marshal.SizeOf` remains in `FoveatedRenderCommander`.
+- Filtered build diagnostics after the change produced no VR/legacy foveation matches. Full build remains red externally.

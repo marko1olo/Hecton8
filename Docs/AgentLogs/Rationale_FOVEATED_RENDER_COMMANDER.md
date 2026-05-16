@@ -62,8 +62,8 @@ Hardware Impact: Quest 2-class path costs under 3 us per sample and can recover 
 
 ## Blackbox Crash Evidence
 Problem: Hardware foveation failures can be driver/runtime specific; chat reports cannot explain NaN, invalid eye descriptors, or flag transitions after context compression.
-Solution: Store the last 300 frames in `GlobalDataVault` as `BufferID.FoveatedRenderBlackBox`, resolved through `VaultBufferHandle<FoveatedRenderTelemetryEntry>`, and dump `Docs/AgentLogs/Dump_FOVEATED_RENDER_COMMANDER.bin` on non-finite state or explicit request. Dump records are padded to 64 bytes to match the pack-1 telemetry struct size.
-Rejected Alternatives: Private persistent `NativeArray`, managed `List<T>`, text logs every frame, unpadded binary records, or relying on Unity console history.
+Solution: Store the last 300 frames in `GlobalDataVault` as `BufferID.FoveatedRenderBlackBox`, resolved through `VaultBufferHandle<FoveatedRenderTelemetryEntry>`, and dump `Docs/AgentLogs/Dump_FOVEATED_RENDER_COMMANDER.bin` on non-finite state or explicit request. Dump records are padded to the compile-time 64-byte record-size contract used by the pack-1 telemetry struct.
+Rejected Alternatives: Private persistent `NativeArray`, managed `List<T>`, text logs every frame, unpadded binary records, dump-time `Marshal.SizeOf`, or relying on Unity console history.
 Scalability potential: Low = fixed 19.2 KB vault memory with no growth. Middle/High/Ultra = same blackbox supports richer postmortem without runtime allocations.
 Hardware Impact: 1-5 us CPU per tick; fixed vault footprint, no GC.
 
