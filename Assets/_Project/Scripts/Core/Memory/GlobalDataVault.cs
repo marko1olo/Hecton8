@@ -190,7 +190,7 @@ namespace Hecton8.Core.Memory
         public ushort Reserved;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
     internal struct VaultBufferMeta
     {
         public long OffsetBytes;
@@ -205,7 +205,7 @@ namespace Hecton8.Core.Memory
         public SystemID LastAliasRequester;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     internal struct VaultArenaBlock
     {
         public long OffsetBytes;
@@ -218,7 +218,7 @@ namespace Hecton8.Core.Memory
         public ushort Reserved1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 128)]
     internal struct MemoryDefragTelemetryEntry
     {
         public long TotalFreeSpaceBytes;
@@ -238,7 +238,7 @@ namespace Hecton8.Core.Memory
         public byte Reserved;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     internal struct VaultGapAuditResult
     {
         public long TotalFreeBytes;

@@ -328,7 +328,11 @@ namespace Hecton8.VFX.Bioluminescence
         {
             profileFloats = default;
             vault = ResolveDataVault();
-            if (vault == null || !EnsureVaultBuffers() || !vault.TryLockBuffer(BufferID.BiolumProfileFloats))
+            if (vault == null || !EnsureVaultBuffers())
+                return false;
+
+            vault = _dataVault;
+            if (vault == null || !vault.TryLockBuffer(BufferID.BiolumProfileFloats))
                 return false;
 
             profileFloats = _profileFloatsHandle.Resolve(vault);
@@ -344,7 +348,11 @@ namespace Hecton8.VFX.Bioluminescence
         {
             blackBox = default;
             vault = ResolveDataVault();
-            if (vault == null || !EnsureVaultBuffers() || !vault.TryLockBuffer(BufferID.BiolumBlackBox))
+            if (vault == null || !EnsureVaultBuffers())
+                return false;
+
+            vault = _dataVault;
+            if (vault == null || !vault.TryLockBuffer(BufferID.BiolumBlackBox))
                 return false;
 
             blackBox = _blackBoxHandle.Resolve(vault);
@@ -499,6 +507,10 @@ namespace Hecton8.VFX.Bioluminescence
         {
             IDataVault vault = ResolveDataVault();
             if (vault == null || !EnsureVaultBuffers())
+                return;
+
+            vault = _dataVault;
+            if (vault == null)
                 return;
 
             if (!vault.TryLockBuffer(BufferID.BiolumProfileFloats))

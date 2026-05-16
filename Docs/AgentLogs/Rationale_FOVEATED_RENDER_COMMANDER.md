@@ -74,6 +74,13 @@ Rejected Alternatives: Leaving duplicate direct foveation writes in Core, deleti
 Scalability potential: Low Quest policy remains centralized in the commander. High/Ultra PC/Quest 3 gaze VRS cannot be overwritten by a stale Quest-only component.
 Hardware Impact: Removes a potential 60-frame duplicate XR subsystem scan and one 300-entry private native allocation if the legacy component is accidentally enabled. Exact measured savings remain 0 until runtime profiling is possible.
 
+## Duplicate Commander Safety
+Problem: The duplicate guard used `Destroy(gameObject)`, which could delete an entire scene rig if a duplicate commander was added to an existing XR/graphics object.
+Solution: Duplicate detection now destroys only the duplicate component with `Destroy(this)`, preserving the host GameObject and unrelated components.
+Rejected Alternatives: Leaving the whole-object destroy path, allowing multiple commanders to race over XR foveation state, or adding another singleton-style manager.
+Scalability potential: Scene composition stays safe across Quest, PC VR, and editor test rigs; only the authoritative commander writes hardware state.
+Hardware Impact: 0 us steady-state. The fix prevents catastrophic scene-object loss, not a measurable frame-time gain.
+
 ## Compile Wall Boundary
 Problem: Three build attempts failed before final green validation because other agents changed Core/Gameplay files outside the `Graphics/VR` domain.
 Solution: Do not edit or revert those files except the minimal `BufferID` addition required for this domain's DataVault ownership. Record exact blockers: `PlayerKinematicsRuntime.cs` unresolved AUP helpers on attempt 1, `GlobalSignals.cs(580,50)` `ISignalLane.FlushPreSimulation(bool,int)` mismatch on attempts 2-3, then 105 unrelated assembly/contract/signal/gameplay errors on attempt 4.
