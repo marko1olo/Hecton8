@@ -103,3 +103,33 @@ Solution: Kept the change scoped to declared `StructLayout` attributes, verified
 Rejected Alternatives: Reverting the concurrent Pack=1 additions, broad DTO rewrites, or claiming Quest/Android ABI safety from default sequential layout.
 Scalability potential: Low/Quest/Android tiers get deterministic binary contract packing for ARM64; Middle retains the same DTO surface; High/Ultra keep the same visual/gameplay systems without hidden padding drift at contract boundaries.
 Hardware Impact: Runtime gain is 0 us measured. Compile verification cost: 34,760,000 us. Crash-risk reduction is ABI stability, not profiler-proven frame time.
+
+## 2026-05-16 InquisitionPack01 Current-Disk Revalidation
+
+Problem: The post-pack disk needed a full current-disk proof pass after concurrent status/rationale edits. The compile wall was already green, but the new mandate set required proving ARM64 packing, asmdef strictness, Metal threadgroup safety, and no reintroduced AI/find compile-lane shortcuts.
+Solution: Re-ran the exact XML extraction, patched only missing `Pack = 1` attributes in `Assets/_Project/Scripts/Core/Contracts/MacroDatabaseContracts.cs`, `PersistencePagingContracts.cs`, and `PrologueSequenceContracts.cs`, then revalidated current disk with static scans and `dotnet build Hecton8.Core.csproj --no-restore`.
+Rejected Alternatives: Broad runtime NativeArray eviction, rewriting `SystemDispatcher.Update/LateUpdate`, or replacing debug/error interpolated strings under a compile-wall/contract-only prompt was rejected as domain creep. Editing generated `.csproj` files or deleting third-party GUID references was also rejected.
+Scalability potential: Low/Quest/Android get explicit contract packing and MMF guards. Steam Deck keeps standalone MMF paths guarded instead of falling through to mobile paths. High/Ultra PC keeps visual-overkill assemblies unforced by `_MATH_LOD_LOW`, with no Core-to-AI hard dependency.
+Hardware Impact: Runtime gain is 0 us measured. Compile verification cost: 41,690,000 us in `Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_114952_InquisitionPack01.log`. Static evidence: `CORE_CONTRACT_STRUCTLAYOUT_WITHOUT_PACK=0`, `ASMDEF_CYCLES=0`, `MISSING_NAMED_HECTON8_REFERENCES=0`, `AUTO_REFERENCED_TRUE_COUNT=0`, `CORE_GPR_REFERENCE_COUNT=0`, `TOUCHED_COMPILE_LANE_BANNED_FIND_OR_AI_USING=0`, `COMPUTE_MAX_THREADGROUP_THREADS=512`.
+
+Problem: The Phase 2 H-Phi sweep still reports Core-wide static debt outside the contract/asmdef domain: 113 native ownership hits, 2 central Unity bridge update methods, and 15 interpolated debug/error/reporting strings.
+Solution: Recorded the residual explicitly instead of claiming it fixed. Existing central owner exceptions include `H8Memory`, `GlobalDataVault`, `GlobalSignals`, and dispatcher-owned fallback buffers; these need a separate runtime-memory ownership prompt, not a compile-graph surgery patch.
+Rejected Alternatives: Claiming zero H-Phi debt, moving runtime-owned buffers during an assembly graph task, or deleting the `SystemDispatcher` engine bridge without a PlayerLoop replacement.
+Scalability potential: Low tier needs that follow-up to continue migrating leaf/system buffers into vault-backed ownership. High/Ultra retain runtime systems while the compile graph remains strict.
+Hardware Impact: Runtime gain is 0 us measured. This pass only proves no new compile-boundary debt was introduced.
+
+## 2026-05-16 Tether Signal ABI Revalidation
+
+Problem: A later Physics/Core signal tail increased `TetherSnappedSignal` and `TetherFiredSignal` declared sizes and added explicit reserved padding. This changes the binary signal contract surface and needs compile evidence before integration.
+Solution: Verified the touched signal structs keep `Pack = 1`, checked for conflict markers, and reran the Core compile after the size/padding change.
+Rejected Alternatives: Reverting the padding, leaving implicit trailing padding to runtime layout rules, or committing the signal contract change without a build.
+Scalability potential: Low/Quest/Android tiers get deterministic signal packet width for typed lanes; Middle/High/Ultra retain the same signal semantics while preserving room for future data without breaking alignment.
+Hardware Impact: Runtime gain is 0 us measured. Compile verification cost: 34,010,000 us. The value is ABI stability and crash-risk reduction.
+
+## 2026-05-16 Tether GlobalSignals Size Revalidation
+
+Problem: The tether packet layout change also required `GlobalSignals.ValidateSignalSize<T>()` constants to match the new 80-byte snapped and 48-byte fired packets.
+Solution: Verified `GlobalSignals` validates `TetherSnappedSignal` at 80 bytes and `TetherFiredSignal` at 48 bytes, then reran the Core compile on current disk.
+Rejected Alternatives: Leaving stale 72/40 validation constants, disabling the size check, or committing only struct padding without the central signal registry.
+Scalability potential: Low/Quest/Android typed lanes now fail fast on the intended packet width instead of platform-dependent drift; High/Ultra keep identical signal behavior with a stricter registry check.
+Hardware Impact: Runtime gain is 0 us measured. Incremental compile verification cost: 790,000 us.

@@ -154,3 +154,11 @@ Solution: Classified the full graph failure as outside CORE/SIGNALS because the 
 Rejected Alternatives: Editing generated third-party `.csproj` entries or recreating vendor source files from the signal pass would violate asset integrity and domain boundaries.
 Scalability potential: SignalBus remains independently verified; third-party project hygiene can be handled by the integrator without mutating signal contracts.
 Hardware Impact: No runtime gain. Prevents signal work from becoming a third-party asset repair pass.
+
+## Decision - Tether Payload ABI Padding Recovery
+
+Problem: A fresh ARM64/Quest layout audit found `TetherSnappedSignal` at 72 bytes and `TetherFiredSignal` at 40 bytes. Both were sequential Pack=1 but not 16-byte multiples, so the previous layout claim was incomplete.
+Solution: Increased the payload sizes to 80 and 48 bytes, added reserved padding fields, and updated the `GlobalSignals` runtime size validators to the new ABI sizes.
+Rejected Alternatives: Leaving only `StructLayout(Size=...)` without visible reserved fields would hide the ABI intent; changing tether physics logic or moving the feature file would violate the signal-only domain boundary; mechanically converting legacy explicit union layouts remains unsafe.
+Scalability potential: Low/Quest/Android get stable packed payload alignment for mobile native/Burst lanes; Middle keeps the same bounded tether traffic; High/Ultra can consume the same event stream for richer tether snap sparks, cable recoil, visor warnings, and audio without changing gameplay truth.
+Hardware Impact: Runtime gain is 0 us. The value is ABI stability and preventing misaligned payload reads on stricter ARM64/mobile targets.

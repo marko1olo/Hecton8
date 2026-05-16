@@ -34,13 +34,14 @@ Authority file: Assets/_Project/Scripts/Core/GlobalSignals.cs
 | --- | --- | --- |
 | External signal structs moved from feature namespaces | 0 outside contract namespace | Done |
 | Newly evicted external signal structs | Sequential Pack=1 fixed-size | Done |
-| Legacy explicit signal structs | 130 explicit layouts remain | ABI exception recorded in rationale; union aliases require staged migration. |
+| All `ISignal` payload sizes | `ISIGNAL_NO_SIZE_OR_NON16=0` across 163 payloads | Done; tether snap/fire padded to 80/48 bytes. |
+| Legacy explicit signal structs | 105 explicit layouts without `Pack=1` remain | ABI exception recorded in rationale; union aliases require staged migration. |
 
 ## Build Evidence
 
 | Command | Result |
 | --- | --- |
-| `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false` | PASS: 0 warnings, 0 errors. Latest wall was a bridge DTO `[BinaryBlittableSafe]` namespace import; repaired without changing runtime logic. |
+| `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false` | PASS: 0 warnings, 0 errors. Latest pass verified bridge DTO import repair plus tether ABI padding and validator updates. |
 | `dotnet build Assembly-CSharp.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false` | FAIL outside CORE/SIGNALS: `RealtimeCSG.csproj` references 216 missing third-party source files. Signal/core assemblies compile before this wall. |
 
 Audit conclusion: 0 duplicate signal names, 0 signal payloads outside `Hecton8.Core.Contracts.Signals`, and 0 decentralized SignalBus lane Configure calls remain.
@@ -53,7 +54,7 @@ Late drift note: final scans caught stale signal imports and local lane authorit
 | --- | --- |
 | 0.1 ms flush dictatorship | Flush path uses bounded native queue drain, NativeList snapshot writes, stress caps, and `NativeQueue<T>.Clear()` on overflow storms. No managed containers were added to the flush path. |
 | Managed format strings in signal surface | `rg` found 0 interpolated strings and 0 `string.Format` calls in the signal authority files. |
-| Status | VERIFIED MASTER GRADE for CORE/SIGNALS. Task 4 legacy explicit-layout migration remains ABI-blocked; full Unity project graph remains blocked outside domain by third-party RealtimeCSG source inventory. |
+| Status | VERIFIED MASTER GRADE for CORE/SIGNALS. All `ISignal` sizes are 16-byte multiples; task 4 legacy explicit-layout Pack=1 migration remains ABI-blocked; full Unity project graph remains blocked outside domain by third-party RealtimeCSG source inventory. |
 
 ## Finite Guard Coverage
 

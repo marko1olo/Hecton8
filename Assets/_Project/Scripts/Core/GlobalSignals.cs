@@ -3636,8 +3636,8 @@ namespace Hecton8.Core
             ValidateSignalSize<VisorDropletSignal>(64);
             ValidateSignalSize<VisualFlareSignal>(32);
             ValidateSignalSize<TetherTensionSignal>(144);
-            ValidateSignalSize<TetherSnappedSignal>(72);
-            ValidateSignalSize<TetherFiredSignal>(40);
+            ValidateSignalSize<TetherSnappedSignal>(80);
+            ValidateSignalSize<TetherFiredSignal>(48);
             ValidateSignalSize<VoxelCarveEvent>(128);
             ValidateSignalSize<DockingRequestSignal>(80);
             ValidateSignalSize<DockingCompleteSignal>(80);

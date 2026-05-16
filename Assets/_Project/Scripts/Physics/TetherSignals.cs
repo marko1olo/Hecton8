@@ -27,7 +27,7 @@ namespace Hecton8.Core.Contracts.Signals
         public byte Reserved;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 72)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 80)]
     public struct TetherSnappedSignal : ISignal
     {
         public AbsoluteUniversePosition SnapAup;
@@ -39,9 +39,10 @@ namespace Hecton8.Core.Contracts.Signals
         public ushort NodeCount;
         public byte Reason;
         public byte Flags;
+        public ulong ReservedPadding;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 40)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
     public struct TetherFiredSignal : ISignal
     {
         public int ManagerInstanceId;
@@ -54,6 +55,7 @@ namespace Hecton8.Core.Contracts.Signals
         public float InitialDistance;
         public uint Flags;
         public uint Reserved;
+        public ulong ReservedPadding;
     }
 
 }

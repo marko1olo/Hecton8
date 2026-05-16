@@ -78,6 +78,97 @@ Residual risk:
 Current Status:
 - VERIFIED MASTER GRADE - BUILD GREEN.
 
+## 2026-05-16 - Tail11 Tether GlobalSignals Revalidation
+
+What was wrong:
+- `TetherSnappedSignal` and `TetherFiredSignal` packet widths changed, and the central `GlobalSignals` size registry had to match those widths.
+
+What was done:
+- Verified `GlobalSignals` expects 80 bytes for snapped and 48 bytes for fired tether signals.
+- Ran a fresh Core compile after the registry constants were aligned.
+
+Cinematic Cheats used:
+- No gameplay or visual cheat was added by Integrator.
+- This is typed-lane ABI guardrail work.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Tail11 incremental compile verification time: 790,000 us.
+
+Verification:
+- `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_tail11_tether_globals.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- `GlobalSignals` tether validators are 144/80/48 for tension/snapped/fired.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, player builds, Quest/Android build, Metal build, and IL2CPP strip build were not run.
+
+Current Status:
+- VERIFIED MASTER GRADE - BUILD GREEN.
+
+## 2026-05-16 - Tail10 Tether Signal ABI Revalidation
+
+What was wrong:
+- A new dirty tail changed `TetherSnappedSignal` from 72 to 80 bytes and `TetherFiredSignal` from 40 to 48 bytes by adding explicit reserved padding.
+- The change was ABI-oriented and needed current Core compile evidence before integration.
+
+What was done:
+- Verified the touched signal structs keep `StructLayout(..., Pack = 1, Size = ...)`.
+- Checked the touched files for conflict markers.
+- Ran a fresh Core compile after the tether signal layout change.
+
+Cinematic Cheats used:
+- No visual or gameplay cheat was added by Integrator.
+- Signal layout padding is deterministic instead of relying on platform-default trailing padding.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Tail10 compile verification time: 34,010,000 us.
+
+Verification:
+- `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_tail10_tether.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- Touched signal/log files: no real `<<<<<<<`, `=======`, `>>>>>>>` markers.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, player builds, Quest/Android build, Metal build, and IL2CPP strip build were not run.
+
+Current Status:
+- VERIFIED MASTER GRADE - BUILD GREEN.
+
+## 2026-05-16 - InquisitionPack01 ABI and Graph Revalidation
+
+What was wrong:
+- Current-disk Core contracts still had 13 `[StructLayout]` declarations without explicit `Pack = 1`, leaving ARM64/Quest ABI packing to runtime defaults.
+- The graph and platform audits needed current evidence after concurrent agent churn, not stale tail logs.
+- Core-wide static H-Phi debt remains outside the contract/asmdef prompt: native ownership hits, two central dispatcher Unity bridge methods, and debug/error interpolated strings.
+
+What was done:
+- Added `Pack = 1` to MacroDatabase, PersistencePaging, and Prologue sequence contract layouts.
+- Re-ran the XML extraction, asmdef graph scan, Core contract packing scan, touched compile-lane AI/find scan, MMF guard scan, compute `numthreads` scan, and a fresh Core build.
+- Left runtime buffer ownership and `SystemDispatcher` loop surgery untouched because this prompt authorizes assembly definitions and contracts only.
+
+Cinematic Cheats used:
+- No gameplay or visual feature was added.
+- Low/Quest/Android get deterministic contract packing and guarded MMF portability.
+- High/Ultra PC remains outside forced `_MATH_LOD_LOW`; visual-overkill paths stay reachable behind explicit assembly boundaries.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- InquisitionPack01 compile verification time: 41,690,000 us.
+
+Verification:
+- `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_114952_InquisitionPack01.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- `CORE_CONTRACT_STRUCTLAYOUT_WITHOUT_PACK=0`.
+- `ASMDEF_COUNT=144`, `ASMDEF_CYCLES=0`, `MISSING_NAMED_HECTON8_REFERENCES=0`, `AUTO_REFERENCED_TRUE_COUNT=0`, `CORE_GPR_REFERENCE_COUNT=0`.
+- `TOUCHED_COMPILE_LANE_BANNED_FIND_OR_AI_USING=0`.
+- `COMPUTE_MAX_THREADGROUP_THREADS=512`.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, player builds, Quest/Android build, Metal build, and IL2CPP strip build were not run.
+- `CORE_NATIVE_OWNERSHIP_HITS=113`, `CORE_UPDATE_METHOD_HITS=2`, and `CORE_MANAGED_FORMAT_HITS=15` are recorded as existing Core-wide debt, not fixed by this compile-wall pass.
+
+Current Status:
+- VERIFIED MASTER GRADE - BUILD GREEN.
+
 ## 2026-05-16 - Tail09 Pack=1 Contract Revalidation
 
 What was wrong:
