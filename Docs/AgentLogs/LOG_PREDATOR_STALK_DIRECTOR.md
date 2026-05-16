@@ -131,3 +131,15 @@ Cinematic Cheats used -> None. This is integration safety around the existing De
 Exact Microseconds saved -> Measured proof absent. Claimed measured savings: 0 us. Static runtime impact is cold schedule-path integer min checks; the Burst job hot path is unchanged.
 
 Verification -> `dotnet exec csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Cognition.rsp` exits 0 after the schedule guard and raw-view overload patches. Burst job branch scan returns `NO_BRANCH_TOKENS`; scoped AI/Cognition forbidden-token scan returns `NO_FORBIDDEN_TOKENS`; public-struct audit returns `ALL_PUBLIC_STRUCTS_PACK1`; `git diff --check` reports only CRLF normalization warnings. Root `dotnet build` still fails MSB1011 because the Unity folder contains multiple project/solution files.
+
+## 2026-05-16 - Atomic Blackbox Dump Pass
+
+What was wrong -> The black-box writer streamed directly into `Dump_PREDATOR_STALK_DIRECTOR.bin`. A fault during write or a slow MicroSD stall could leave a partial final dump that still looked authoritative.
+
+What was done -> `TryDumpBlackBox(...)` now writes to `Dump_PREDATOR_STALK_DIRECTOR.bin.tmp` with `FileShare.None`, closes the binary writer, and promotes only the completed payload. Existing final dumps are replaced with `File.Replace(...)`; first-time dumps use `File.Move(...)`. Recoverable file/path failures delete the temp file and return false.
+
+Cinematic Cheats used -> None. This is fault-path survival work, not simulation or rendering.
+
+Exact Microseconds saved -> Measured proof absent. Claimed measured savings: 0 us. Hot Burst path is unchanged; the extra work is cold-path dump integrity only.
+
+Verification -> `dotnet exec csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Cognition.rsp` exits 0. Burst job branch scan returns `NO_BRANCH_TOKENS`; scoped AI/Cognition forbidden-token scan returns `NO_FORBIDDEN_TOKENS`; public-struct audit returns `ALL_PUBLIC_STRUCTS_PACK1`; `git diff --check` reports only CRLF normalization warnings.

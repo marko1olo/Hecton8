@@ -311,3 +311,15 @@ Rejected Alternatives: Adding bounds checks inside `LeviathanStalkJob.Execute` w
 Scalability potential: Low/Middle/High/Ultra all schedule the exact safe row count for the resolved vault state. Low tier avoids accidental out-of-bounds fault spam on partially provisioned buffers; High/Ultra keep SDF and VFX intent tied to valid rows only.
 
 Hardware Impact: Measured savings: 0 us. Static cost is a few cold-path integer `min` operations before scheduling; hot Burst job cost is unchanged.
+
+## Decision 27: Black-Box Dumps Must Promote Atomically
+
+Problem: `TryDumpBlackBox(...)` streamed directly into `Dump_PREDATOR_STALK_DIRECTOR.bin`. On a slow or interrupted Steam Deck/MicroSD fault path, that can leave a half-written file that looks like the authoritative crash artifact.
+
+Solution: The dump writer now writes to `Dump_PREDATOR_STALK_DIRECTOR.bin.tmp` with exclusive file sharing, closes the writer, then promotes the completed payload. If an older dump exists, `File.Replace(...)` preserves that final artifact unless the replacement succeeds. If no dump exists, `File.Move(...)` creates the first final artifact. Recoverable file/path failures clean up the temp file and return false.
+
+Rejected Alternatives: Direct final-file streaming was rejected because partial crash artifacts are worse than no new artifact. Deleting the old dump before move was rejected because an interrupted promotion can erase the last useful black box. Hot-path dump writing from the Burst job was rejected because file I/O belongs on the owner cold path.
+
+Scalability potential: Low tier and Steam Deck get bounded cold-path I/O hygiene without touching the stalking kernel. Middle/High/Ultra keep the same full telemetry payload and can still diagnose AUP shift fences, SDF contour decisions, and visual-overkill intent after a fault.
+
+Hardware Impact: Measured savings: 0 us. Hot Burst cost is unchanged. Cold fault path adds temp-file promotion and cleanup logic; the benefit is artifact integrity, not frame-time reduction.
