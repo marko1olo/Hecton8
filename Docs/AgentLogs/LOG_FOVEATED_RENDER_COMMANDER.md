@@ -128,3 +128,5 @@ Validation:
 - Filtered `dotnet build` diagnostic scan again produced no `FoveatedRenderCommander`, `FoveatedRenderBlackBox`, or `Graphics/VR` matches. Full project build is still blocked by external compile errors.
 - Repeated the filtered build diagnostic scan after shader-global invalid-state suppression; still no VR-domain diagnostics.
 - Re-read `AGENTS.md` and `Docs/Actual Domains of Project.txt`; final wording remains `PENDING VERIFICATION` because Unity import, Play Mode, profiler, player build, and full compile are not available from the current red build.
+- Corrected `COLD ALLOC` comments in `FoveatedRenderCommander.cs` to the canonical project format. A final filtered build diagnostic scan timed out after 147 seconds and left no `dotnet` process; it is not evidence of green validation.
+- Re-ran filtered build diagnostics with `-m:1 /nr:false /clp:ErrorsOnly`; no `FoveatedRenderCommander`, `FoveatedRenderBlackBox`, or `Graphics/VR` diagnostics were emitted. Full build remains red externally.

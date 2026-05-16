@@ -417,6 +417,7 @@ namespace Hecton8.Core
             if (!_memoryLifecycleTransitionActive)
                 return;
 
+            ReleaseSceneOwnedVaultBuffers();
             bool verified = H8Memory.CompleteSceneTransitionVerification();
             if (verified)
             {
@@ -441,6 +442,16 @@ namespace Hecton8.Core
             signal.Flags = flags;
             signal.RestoreScalar = 1f;
             GlobalSignals.Publish(in signal);
+        }
+
+        private static void ReleaseSceneOwnedVaultBuffers()
+        {
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
+                return;
+
+            long releasedBytes;
+            vault.ReleaseSceneOwnedBuffers(out releasedBytes);
         }
 
         private static bool ArePersistentWorldPoolsReadyForSceneActivation()

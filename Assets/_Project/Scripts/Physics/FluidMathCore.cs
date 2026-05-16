@@ -27,7 +27,7 @@ namespace Hecton8.Physics
             if (safeValue <= 0f)
                 return 0f;
 
-            float magnitude = safeValue * math.rsqrt(safeValue);
+            float magnitude = safeValue * math.rsqrt(math.max(safeValue, 0.000001f));
             return math.isfinite(magnitude) ? magnitude : 0f;
         }
 

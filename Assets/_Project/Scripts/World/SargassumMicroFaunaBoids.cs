@@ -108,6 +108,18 @@ namespace Hecton8.World
             public float SimulationTime;
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+        private struct BoidSensoryBlackBoxEntry
+        {
+            public uint FrameIndex;
+            public uint StateHash;
+            public uint Flags;
+            public int ActiveThreatCount;
+            public float4 SubmarineThreat;
+            public float4 FlashlightThreat;
+            public float4 AcousticPingRadii;
+        }
+
         [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 8)]
         internal struct PopulationDensityPoint
         {
@@ -612,6 +624,16 @@ namespace Hecton8.World
         private const uint FoodChainTelemetryFlagBoidsScattered = 1u << 5;
         private const uint FoodChainTelemetryFlagNonFinite = 1u << 31;
         private const uint FoodChainTelemetryAnomalyNonFinite = 0xEFC00001u;
+        private const int BoidSensoryBlackBoxCapacity = 300;
+        private const int BoidSensoryBlackBoxEntrySizeBytes = 64;
+        private const uint BoidSensoryBlackBoxMagicLow = 0x424F4944u;
+        private const uint BoidSensoryBlackBoxMagicHigh = 0x53454E53u;
+        private const uint BoidSensoryBlackBoxFlagTick = 1u << 0;
+        private const uint BoidSensoryBlackBoxFlagLightActive = 1u << 1;
+        private const uint BoidSensoryBlackBoxFlagPingActive = 1u << 2;
+        private const uint BoidSensoryBlackBoxFlagCapsule = 1u << 3;
+        private const uint BoidSensoryBlackBoxFlagNonFinite = 1u << 31;
+        private const uint BoidSensoryBlackBoxAnomalyNonFinite = 0xB01D0001u;
         private const int PredatorAupBufferCapacity = 16;
         private const int PredatorAupStride = sizeof(float) * 4;
         private const int PredatorAupLowTierThreatLoopCap = 4;
@@ -1511,6 +1533,7 @@ namespace Hecton8.World
         private NativeArray<FoveatedSimulationDecision> _foveatedSimulationBackNative;
         private NativeArray<SimulationFrameConstants> _simulationFrameNative;
         private NativeArray<float4> _boidSensoryThreatsNative;
+        private NativeArray<BoidSensoryBlackBoxEntry> _boidSensoryBlackBox;
         private NativeArray<uint> _threatGridUploadNative;
         private NativeArray<uint> _threatVoxelUploadNative;
         private readonly GraphicsBuffer.IndirectDrawIndexedArgs[] _boidIndirectArgsUpload =
@@ -1583,8 +1606,10 @@ namespace Hecton8.World
         private JobHandle _predatorConsumptionHandle;
         private bool _predatorConsumptionJobPending;
         private bool _foodChainTelemetryDumped;
+        private bool _boidSensoryBlackBoxDumped;
         private float _pendingPredatorConsumptionTimeSeconds;
         private int _foodChainTelemetryCursor;
+        private int _boidSensoryBlackBoxCursor;
         private Vector3 _hitFlashOriginWS;
         private float _hitFlashStartTime = -1000f;
         private float _hitFlashRuntimeRadius;
@@ -1863,6 +1888,8 @@ namespace Hecton8.World
             _boidFlashlightThreatIntensity01 = 0f;
             _boidFlashlightThreatOriginWS = Vector3.zero;
             _boidFlashlightThreatForwardWS = Vector3.forward;
+            _boidSensoryBlackBoxCursor = 0;
+            _boidSensoryBlackBoxDumped = false;
             _lastSwarmDispersedSignalTime = float.NegativeInfinity;
             _swarmDispersedSequence = 0u;
             ResetThreatVoxelSnapshot();
@@ -2445,6 +2472,7 @@ namespace Hecton8.World
             EnsureNativeArrayCapacity(vault, ref _foveatedSimulationBackNative, BufferID.SargassumFoveatedSimulationBack, 1, nameof(_foveatedSimulationBackNative));
             EnsureNativeArrayCapacity(vault, ref _simulationFrameNative, BufferID.SargassumSimulationFrame, 1, nameof(_simulationFrameNative));
             EnsureNativeArrayCapacity(vault, ref _boidSensoryThreatsNative, BufferID.SargassumBoidSensoryThreats, PredatorAupBufferCapacity, nameof(_boidSensoryThreatsNative));
+            EnsureNativeArrayCapacity(vault, ref _boidSensoryBlackBox, BufferID.SargassumBoidSensoryBlackBox, BoidSensoryBlackBoxCapacity, nameof(_boidSensoryBlackBox));
             EnsureNativeArrayCapacity(vault, ref _foodChainTelemetryRing, BufferID.SargassumFoodChainTelemetryRing, FoodChainTelemetryCapacity, nameof(_foodChainTelemetryRing));
             _inactiveStatisticalSwarmRing.EnsureCapacity(vault, BufferID.SargassumInactiveSwarmRing, InactiveStatisticalSwarmRingCapacity, nameof(_inactiveStatisticalSwarmRing));
             _inactiveStatisticalSwarmCenterRing.EnsureCapacity(vault, BufferID.SargassumInactiveSwarmCenterRing, InactiveStatisticalSwarmRingCapacity, nameof(_inactiveStatisticalSwarmCenterRing));
@@ -4065,6 +4093,10 @@ namespace Hecton8.World
                 _boidSensoryThreatBuffer,
                 _boidSensoryThreatsNative,
                 PredatorAupBufferCapacity);
+            RecordBoidSensoryBlackBox(
+                activeThreatCount,
+                simulationLodTier,
+                ResolveBoidSensoryThreatFlags(simulationLodTier));
             return activeThreatCount;
         }
 
@@ -5411,6 +5443,154 @@ namespace Hecton8.World
             writer.Write(entry.SimulationTime);
         }
 
+        private void RecordBoidSensoryBlackBox(
+            int activeThreatCount,
+            SimulationLodTier simulationLodTier,
+            int sensoryThreatFlags)
+        {
+            if (!_boidSensoryBlackBox.IsCreated || _boidSensoryBlackBox.Length <= 0)
+                return;
+
+            float4 submarineThreat = ReadBoidSensoryThreatSlot(SensoryThreatSlotSubmarine);
+            float4 flashlightThreat = ReadBoidSensoryThreatSlot(SensoryThreatSlotFlashlight);
+            float4 pingThreatA = ReadBoidSensoryThreatSlot(SensoryThreatFirstPingSlot);
+            float4 pingThreatB = ReadBoidSensoryThreatSlot(SensoryThreatFirstPingSlot + 1);
+            float4 pingThreatC = ReadBoidSensoryThreatSlot(SensoryThreatLastPingSlot);
+            float4 acousticPingRadii = new float4(
+                pingThreatA.w,
+                pingThreatB.w,
+                pingThreatC.w,
+                (float)simulationLodTier);
+
+            uint flags = BoidSensoryBlackBoxFlagTick;
+            if (flashlightThreat.w >= SensoryThreatMinRadiusMeters)
+                flags |= BoidSensoryBlackBoxFlagLightActive;
+            if (pingThreatA.w >= SensoryThreatMinRadiusMeters ||
+                pingThreatB.w >= SensoryThreatMinRadiusMeters ||
+                pingThreatC.w >= SensoryThreatMinRadiusMeters)
+            {
+                flags |= BoidSensoryBlackBoxFlagPingActive;
+            }
+
+            if ((sensoryThreatFlags & unchecked((int)SensoryThreatFlagFlashlightCapsule)) != 0)
+                flags |= BoidSensoryBlackBoxFlagCapsule;
+
+            uint anomalyHash = 0u;
+            if (!IsFiniteFloat4(submarineThreat) ||
+                !IsFiniteFloat4(flashlightThreat) ||
+                !IsFiniteFloat4(pingThreatA) ||
+                !IsFiniteFloat4(pingThreatB) ||
+                !IsFiniteFloat4(pingThreatC) ||
+                activeThreatCount < 0 ||
+                activeThreatCount > PredatorAupBufferCapacity)
+            {
+                anomalyHash = BoidSensoryBlackBoxAnomalyNonFinite;
+                flags |= BoidSensoryBlackBoxFlagNonFinite;
+            }
+
+            int ringLength = math.min(_boidSensoryBlackBox.Length, BoidSensoryBlackBoxCapacity);
+            int writeIndex = _boidSensoryBlackBoxCursor;
+            if ((uint)writeIndex >= (uint)ringLength)
+                writeIndex = 0;
+
+            int nextCursor = writeIndex + 1;
+            if (nextCursor >= ringLength)
+                nextCursor = 0;
+
+            uint pingHash = math.hash(new uint4(
+                HashThreatFloat4(pingThreatA),
+                HashThreatFloat4(pingThreatB),
+                HashThreatFloat4(pingThreatC),
+                unchecked((uint)(int)simulationLodTier)));
+
+            _boidSensoryBlackBox[writeIndex] = new BoidSensoryBlackBoxEntry
+            {
+                FrameIndex = unchecked((uint)Time.frameCount),
+                StateHash = math.hash(new uint4(
+                    HashThreatFloat4(submarineThreat),
+                    HashThreatFloat4(flashlightThreat),
+                    pingHash,
+                    flags ^ unchecked((uint)math.max(0, activeThreatCount)))),
+                Flags = flags,
+                ActiveThreatCount = activeThreatCount,
+                SubmarineThreat = submarineThreat,
+                FlashlightThreat = flashlightThreat,
+                AcousticPingRadii = acousticPingRadii
+            };
+            _boidSensoryBlackBoxCursor = nextCursor;
+
+            if (anomalyHash != 0u)
+                TryDumpBoidSensoryBlackBox(anomalyHash);
+        }
+
+        private float4 ReadBoidSensoryThreatSlot(int slot)
+        {
+            return _boidSensoryThreatsNative.IsCreated && (uint)slot < (uint)_boidSensoryThreatsNative.Length
+                ? _boidSensoryThreatsNative[slot]
+                : float4.zero;
+        }
+
+        private static bool IsFiniteFloat4(float4 value)
+        {
+            return math.all(math.isfinite(value));
+        }
+
+        private static uint HashThreatFloat4(float4 value)
+        {
+            return math.hash(math.asuint(value));
+        }
+
+        private void TryDumpBoidSensoryBlackBox(uint anomalyHash)
+        {
+            if (_boidSensoryBlackBoxDumped || !_boidSensoryBlackBox.IsCreated)
+                return;
+
+            _boidSensoryBlackBoxDumped = true;
+            string dumpPath = Path.Combine(
+                Application.dataPath,
+                "..",
+                "Docs",
+                "AgentLogs",
+                "Dump_BOID_SENSORY_INPUT_PUMP.bin");
+            string directory = Path.GetDirectoryName(dumpPath);
+            if (!string.IsNullOrEmpty(directory))
+                Directory.CreateDirectory(directory);
+
+            int ringLength = math.min(_boidSensoryBlackBox.Length, BoidSensoryBlackBoxCapacity);
+            using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+            using (BinaryWriter writer = new BinaryWriter(stream))
+            {
+                writer.Write(BoidSensoryBlackBoxMagicLow);
+                writer.Write(BoidSensoryBlackBoxMagicHigh);
+                writer.Write((uint)BoidSensoryBlackBoxCapacity);
+                writer.Write((uint)BoidSensoryBlackBoxEntrySizeBytes);
+                writer.Write((uint)_boidSensoryBlackBoxCursor);
+                writer.Write(anomalyHash);
+
+                for (int i = 0; i < ringLength; i++)
+                    WriteBoidSensoryBlackBoxEntry(writer, _boidSensoryBlackBox[i]);
+            }
+        }
+
+        private static void WriteBoidSensoryBlackBoxEntry(BinaryWriter writer, in BoidSensoryBlackBoxEntry entry)
+        {
+            writer.Write(entry.FrameIndex);
+            writer.Write(entry.StateHash);
+            writer.Write(entry.Flags);
+            writer.Write(entry.ActiveThreatCount);
+            WriteFloat4(writer, entry.SubmarineThreat);
+            WriteFloat4(writer, entry.FlashlightThreat);
+            WriteFloat4(writer, entry.AcousticPingRadii);
+        }
+
+        private static void WriteFloat4(BinaryWriter writer, float4 value)
+        {
+            writer.Write(value.x);
+            writer.Write(value.y);
+            writer.Write(value.z);
+            writer.Write(value.w);
+        }
+
         /// <summary>
         /// Registers a GPU-only VAT hit reaction. Rendering owns the timestamp; no boid buffer mutation or CPU animation path is used.
         /// </summary>
@@ -6564,6 +6744,7 @@ namespace Hecton8.World
             ResetThreatVoxelSnapshot();
             DisposeNativeArrayDeferred(ref _simulationFrameNative, disposeDependency);
             DisposeNativeArrayDeferred(ref _boidSensoryThreatsNative, disposeDependency);
+            DisposeNativeArrayDeferred(ref _boidSensoryBlackBox, disposeDependency);
             DisposeNativeArrayDeferred(ref _foodChainTelemetryRing, disposeDependency);
             _inactiveStatisticalSwarmRing.Dispose(disposeDependency);
             _inactiveStatisticalSwarmCenterRing.Dispose(disposeDependency);
@@ -6579,6 +6760,8 @@ namespace Hecton8.World
             _feedingFrenzyKillCount = 0;
             _foodChainTelemetryCursor = 0;
             _foodChainTelemetryDumped = false;
+            _boidSensoryBlackBoxCursor = 0;
+            _boidSensoryBlackBoxDumped = false;
             _pendingPredatorConsumptionTimeSeconds = 0f;
             _debugConsumedBoidCount = 0;
             JobHandle.ScheduleBatchedJobs();
@@ -6935,6 +7118,12 @@ namespace Hecton8.World
             if (UnsafeUtility.SizeOf<SimulationFrameConstants>() != SimulationFrameConstantsStride)
             {
                 DisableComputeDispatch(ComputeDisableReasonFrameLayoutMismatch);
+                return false;
+            }
+
+            if (UnsafeUtility.SizeOf<BoidSensoryBlackBoxEntry>() != BoidSensoryBlackBoxEntrySizeBytes)
+            {
+                DisableComputeDispatch(ComputeDisableReasonAncillaryLayoutMismatch);
                 return false;
             }
 

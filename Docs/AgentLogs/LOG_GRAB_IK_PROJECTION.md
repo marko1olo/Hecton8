@@ -35,3 +35,53 @@ Verification:
 - `rg` scan found no `VRHandManager` or owned `Physics.SphereCast`.
 - Omega scan found no `Vector3.Lerp`, `Quaternion.Slerp`, or `math.acos` in `Assets/_Project/Scripts/Animation/IK/VRPhysicalHandPresenceIkJobs.cs`.
 - `dotnet build Hecton8.Core.csproj --no-restore` attempted three times. Full compile remains `[BLOCKED BY DEPENDENCY]`; filtered post-polish build scan showed no `VRPhysicalHandPresence` or `Hecton8.Animation.IK` errors.
+
+## 2026-05-16 | GRAB_IK_PROJECTION | MULTIPLATFORM INQUISITION PASS
+
+What was wrong:
+- Hand payload structs were still packed at 4-byte boundaries. That is not acceptable for the Quest/Android ABI requirement in the follow-up directive.
+- Input/output hand lanes were job references but did not have dedicated GlobalDataVault buffer IDs yet.
+- The NaN fallback path could still pass a previously invalid projected target into persistent state if the output failed validation after projection.
+
+What was done:
+- Converted all hand payload structs in `VRPhysicalHandPresenceIkJobs.cs` to `Pack = 1`.
+- Verified the owned IK folder has no remaining `Pack = 4`, `Vector3.Lerp`, `Quaternion.Slerp`, `math.acos`, `Physics.SphereCast`, `VRHandManager`, `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, `EventBus`, managed delegate, `new NativeArray`, or allocator ownership hits.
+- Added `HandPresenceInput=190` and `HandPresenceOutput=191` to `BufferID`, then extended the cold DataVault resolver to allocate/resolve them.
+- Added a duplicate BufferID scan; no numeric collision was found.
+- Tightened NaN fallback so invalid projection state is replaced by the sanitized fallback output before persistent state and telemetry writes.
+- Added the IK lock-state marker to the binary dump header.
+
+Cinematic cheats used:
+- No new graphics-domain overreach. Animation/IK exports high-tier SDF contact, surface normal, haptic intensity, and ghost separation for visual systems to spend on overkill without coupling shaders or particles into this assembly.
+
+Exact microseconds saved:
+- No additional measured runtime savings claimed. The pass is correctness/ABI polish.
+- Hot-path I/O remains 0 us because dump serialization stays cold-path only.
+- DataVault input/output lanes add no per-frame allocation; expected hot-path cost remains two NativeArray reads/writes for two hands.
+
+Verification:
+- `rg` hot-path debt scan returned no forbidden owned IK patterns.
+- `git diff --check` reported only line-ending warnings for touched files.
+- `dotnet build` did not complete within the timeout after the external contract churn expanded; compile remains blocked outside this domain.
+
+## 2026-05-16 | GRAB_IK_PROJECTION | DOMAIN-WIDE H-PHI PASS
+
+What was wrong:
+- `LeviathanTerrainIkJob` had `NativeArray` lanes with existing DataVault IDs but no resolver in the owned IK assembly, making ownership implicit.
+
+What was done:
+- Added `LeviathanTerrainIkVault.TryResolveBuffers` for segment positions, previous positions, bone matrices, 300-frame telemetry ring/cursor, optional encoded SDF, and optional terrain height samples.
+- Re-ran owned-folder debt scans for forbidden layout, update-loop, allocation, physics, legacy event, delegate, and Unity interpolation patterns.
+- Re-ran `dotnet build Hecton8.Core.csproj --no-restore`; current failure is external to Animation/IK: `GameBootstrapper.cs` cannot resolve `Hecton8.Core.Bucketing.ModuloSimulationBucketer`.
+
+Cinematic cheats used:
+- No new simulation truth added. The resolver only makes data ownership explicit for the existing mathematical terrain-hugging fake.
+
+Exact microseconds saved:
+- No new measured runtime savings claimed. Hot-path leviathan job code is unchanged.
+- Cold resolver cost is outside frame-critical IK execution.
+
+Verification:
+- Forbidden-pattern scans over `Assets/_Project/Scripts/Animation/IK` returned no hits.
+- `git diff --check` reported only line-ending warnings for touched code files.
+- Compile retry reports no owned IK errors; it fails on missing Core.Bucketing type resolution.

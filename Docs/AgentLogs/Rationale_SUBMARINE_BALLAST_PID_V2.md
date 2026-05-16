@@ -34,7 +34,7 @@ Hardware Impact: Correctness gate with trivial ALU cost; finite fallback prevent
 
 ## Decision 4 - Visual Overkill Without New Simulation
 Problem: High-end hardware needs heavier flood feel, but a full fluid simulation in every room violates the 0.1 ms suspicion threshold.
-Solution: Added flood-derived 6DOF drag tensor multipliers and a bounded `BubbleSpawnSignal` at engine vents when tail-heavy pitch exceeds 20 degrees.
+Solution: Added flood-derived 6DOF drag tensor multipliers, a bounded `BubbleSpawnSignal` at engine vents when tail-heavy pitch exceeds 20 degrees, and a high-tier-only `FluidImpulseSignal` to drive volumetric silt/wake consumers without creating another physics owner.
 Rejected Alternatives: Continuous particle simulation and per-cell slosh drag were rejected as uncontrolled VFX and CPU expansion.
 Scalability potential: Low disables the extra drag tensor and emits only bounded events; Middle/High/Ultra increase perceived mass and struggle through tensor response and VFX consumers.
 Hardware Impact: i3/MX350 avoids high-tier tensor shaping in low math LOD; RTX-class machines spend saved cycles on heavier vehicle feel and engine vent struggle.
@@ -62,8 +62,8 @@ Hardware Impact: No claimed frame-time gain; reduces layout ambiguity and crash 
 
 ## Decision 8 - DataVault-Only State Allocation
 Problem: The ballast PID and submarine fluid owner still had direct persistent `H8Memory.Allocate` fallbacks after requesting DataVault buffers.
-Solution: Removed direct allocation fallback from both state allocation helpers. The systems now use `GlobalDataVault` buffers for vehicle physics state or fail closed with telemetry flags/default arrays.
-Rejected Alternatives: Keeping private fallback NativeArrays was rejected because it creates split-brain state and violates data sovereignty under integration load.
+Solution: Removed direct allocation fallback from both state allocation helpers. The ballast PID now stores only `VaultBufferHandle<T>` identities and resolves transient DataVault NativeArray views at job/write boundaries.
+Rejected Alternatives: Keeping private fallback NativeArrays or persistent NativeArray fields in the PID controller was rejected because it creates split-brain state and violates data sovereignty under integration load.
 Scalability potential: Steam Deck and MicroSD scenarios avoid private buffer churn; Low/Middle/High/Ultra all read the same authoritative SOA buffers.
 Hardware Impact: No fabricated microsecond claim; the real gain is reduced ownership ambiguity and fewer persistent allocation paths.
 
@@ -76,7 +76,14 @@ Hardware Impact: No fake timing; expected benefit is bounded queue pressure and 
 
 ## Decision 10 - Current Compile Wall
 Problem: After the polish pass, `dotnet build Hecton8.Core.csproj` still fails outside this domain.
-Solution: Recorded the current blocker: `ProceduralLadderClimbRuntime.cs` depends on missing `Hecton8.Input.Universal` / `UniversalInputStateSignal`. No submarine edited file appears in the error set.
-Rejected Alternatives: Editing locomotion/input assembly references was rejected because it is outside PHYSICS/VEHICLES and would cross another agent's ownership.
+Solution: Recorded the current blocker set after the DataVault-handle pass: `DiegeticGyroCompassRuntime` missing `_stateBuffer`/`_outputBuffer`/`_blackBox`, `LockstepReplayBlockHeader.HashCadenceFrames`, `HectonPlayerState` missing motor array helpers, `HomeostasisBrain` missing hardware metric fields/helpers, `ItemAcquiredSignal`, and `TetherFiredSignal` not implementing the current signal interface. No submarine edited file appears in the error set.
+Rejected Alternatives: Editing UI/Core/Homeostasis/Inventory/Tether ownership was rejected because it is outside PHYSICS/VEHICLES and would cross other agents' work.
 Scalability potential: None in runtime terms; preserving ownership prevents integration churn.
 Hardware Impact: None.
+
+## Decision 11 - Steam Deck Fault I/O And Handle-Based H-Phi
+Problem: The fault path wrote three duplicate dump files, and persistent PID NativeArray fields still made the controller look like a private data owner even after DataVault allocation fallback removal.
+Solution: Collapsed crash/NaN dump output to the required `Dump_SUBMARINE_BALLAST_PID_V2.bin` file and converted persistent PID buffers to `VaultBufferHandle<T>` fields resolved through `GlobalDataVault` on demand. DataVault service replacement now clears handles before reacquiring them.
+Rejected Alternatives: Keeping legacy autopilot/flood dump aliases was rejected as unnecessary MicroSD write pressure; keeping persistent NativeArray aliases was rejected as H-Phi debt.
+Scalability potential: Low/Steam Deck avoids extra fault-time I/O and stale buffer views; Middle/High/Ultra still get the same telemetry and high-tier VFX impulse lane without extra ownership.
+Hardware Impact: Two fault-time file writes removed. Runtime microsecond savings are not claimed because the handle resolution trades ownership correctness for negligible pointer-refresh work.

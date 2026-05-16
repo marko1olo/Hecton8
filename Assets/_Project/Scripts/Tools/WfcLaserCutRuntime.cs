@@ -54,7 +54,6 @@ namespace Hecton8.Tools
             double3 cutOriginAup,
             double3 hitAup,
             Vector3 runtimeHitPoint,
-            Vector3 hitNormal,
             float progressDelta01,
             float cutterPower01,
             float heat01,

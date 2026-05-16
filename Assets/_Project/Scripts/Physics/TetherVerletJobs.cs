@@ -221,7 +221,7 @@ namespace Hecton8.Physics
 
                     float weight = CorrectionWeights[nodeIndex];
                     if (weight > 0f)
-                        Positions[nodeIndex] += Corrections[nodeIndex] * math.rcp(weight);
+                        Positions[nodeIndex] += Corrections[nodeIndex] * math.rcp(math.max(weight, 0.000001f));
 
                     float3 constrained = Positions[nodeIndex];
                     float floor = FloorY + math.max(0f, NodeRadius);

@@ -93,8 +93,8 @@ float3 ClampCarveDebrisVelocity(float3 velocity, float dt)
     float maxSpeed = min(HECTON_CARVE_DEBRIS_MAX_SPEED, maxStepSpeed);
     float maxSpeedSq = maxSpeed * maxSpeed;
     float speedSq = dot(velocity, velocity);
-    if (speedSq > maxSpeedSq && speedSq > 0.000001)
-        velocity *= maxSpeed * rsqrt(speedSq);
+    float clampMask = step(maxSpeedSq, speedSq) * step(0.000001, speedSq);
+    velocity *= lerp(1.0, maxSpeed * rsqrt(max(speedSq, 0.000001)), clampMask);
 
     return Sanitize(velocity);
 }
@@ -303,14 +303,9 @@ void AdvectCarveDebris(uint3 id : SV_DispatchThreadID)
 
     float4 particle = _CarveDebrisRead[index];
     float4 velocityPacked = _CarveDebrisVelocityRead[index];
-    if (particle.w <= 0.0)
-    {
-        _CarveDebrisWrite[index] = particle;
-        _CarveDebrisVelocityWrite[index] = velocityPacked;
-        return;
-    }
 
     float dt = min(max(_CarveDebrisParams.x, 0.0), 0.0666667);
+    float liveMask = step(0.000001, particle.w);
     float3 previousPosition = particle.xyz + _CarveDebrisAupShiftDelta.xyz;
     float3 velocity = Sanitize(velocityPacked.xyz);
     float3 flow = _CarveDebrisParams.y > 0.5 ? float3(0.0, 0.0, 0.0) : SampleAbyssalFlow(previousPosition);
@@ -321,17 +316,13 @@ void AdvectCarveDebris(uint3 id : SV_DispatchThreadID)
     float3 nextPosition = previousPosition + velocity * dt;
     float lifeDecay = max(0.0, _CarveDebrisForces.w) * dt;
 
-    if (_CarveDebrisParams.y <= 0.5 && _CarveDebrisParams.z > 0.5 && IsSolidVoxel(nextPosition))
-    {
-        particle.xyz = previousPosition;
-        particle.w = max(0.0, particle.w - lifeDecay * 6.0);
-        velocity = float3(0.0, 0.0, 0.0);
-    }
-    else
-    {
-        particle.xyz = Sanitize(nextPosition);
-        particle.w = max(0.0, particle.w - lifeDecay);
-    }
+    float solidMask = (_CarveDebrisParams.y <= 0.5 && _CarveDebrisParams.z > 0.5 && IsSolidVoxel(nextPosition)) ? 1.0 : 0.0;
+    float3 resolvedPosition = lerp(Sanitize(nextPosition), previousPosition, solidMask);
+    float resolvedLife = max(0.0, particle.w - lifeDecay * lerp(1.0, 6.0, solidMask));
+    velocity *= 1.0 - solidMask;
+    particle.xyz = lerp(particle.xyz, resolvedPosition, liveMask);
+    particle.w = lerp(particle.w, resolvedLife, liveMask);
+    velocity = lerp(velocityPacked.xyz, velocity, liveMask);
 
     if (!all(isfinite(particle)) || !all(isfinite(velocity)))
     {

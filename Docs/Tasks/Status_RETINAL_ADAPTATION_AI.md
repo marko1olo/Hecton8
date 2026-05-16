@@ -3,7 +3,7 @@
 Prompt: `RETINAL_ADAPTATION_AI`
 Domain: AI/COGNITION
 Source prompt task count: 18
-Current status: BLOCKED BY DEPENDENCY - retinal scope static-verified after DataVault/ABI inquisition; project build fails in external systems.
+Current status: BLOCKED BY DEPENDENCY - retinal/adjacent alpha telemetry scope static-verified after DataVault/ABI inquisition; project build fails in external systems.
 
 Relevant mandates read before coding:
 - AI_Creature_Cognition_States.txt
@@ -62,7 +62,16 @@ Verification after Loop 3:
 ## Loop 6 - Multiplatform / H-Phi Inquisition
 - [x] Phase 0 memory recovery: re-ran `cat Docs/Tasks/Status_RETINAL_ADAPTATION_AI.md, Docs/AgentLogs/Rationale_RETINAL_ADAPTATION_AI.md` and re-extracted the original XML prompt from `CURRENT_BATCH.md`.
 - [x] ARM64/Quest ABI: `LightSourceData` is now `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 96)]`; `RetinalTelemetryEntry` is now `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]` with explicit tail fields. Alternative rejected: implicit padding. Estimate: 0 us/frame.
-- [x] Data sovereignty: added `RetinalAdaptationVault` and `BufferID.PredatorRetinalExposure/BlindnessState/LastPublishedBlindnessState/LightSources/TelemetryRing`; `rg` returned `NO_LOCAL_RETINAL_NATIVEARRAY_ALLOCATIONS` except unrelated Alpha telemetry. Alternative rejected: local persistent retinal arrays. Estimate: cold DataVault resolve only.
+- [x] Data sovereignty: added `RetinalAdaptationVault` and `BufferID.PredatorRetinalExposure/BlindnessState/LastPublishedBlindnessState/LightSources/TelemetryRing`; `rg` returned `NO_LOCAL_RETINAL_NATIVEARRAY_ALLOCATIONS`. Alternative rejected: local persistent retinal arrays. Estimate: cold DataVault resolve only.
 - [x] Neural connectivity: high-tier biolum strobe consumes `ReadOnlySpan<FaunaStateChangedSignal>` from `SignalBus<FaunaStateChangedSignal>`; no new signal was invented. Alternative rejected: direct Biolum manager dependency. Estimate: high-tier-only span scan while the fauna brain is ticking.
 - [x] Stability survival: retinal rsqrt/divisions remain guarded by finite checks, epsilon clamps, `math.max`, and `math.saturate`; no retinal raycasts/overlaps/coroutines/LINQ/string.Format were found.
 - [x] Steam Deck I/O pressure: black-box dump remains fault-only cold I/O to `Docs/AgentLogs/Dump_FAUNA_RETINAL_ADAPTATION.bin`; no per-frame disk read/write added.
+
+## Loop 7 - Data Sovereignty Follow-up
+- [x] Re-read status/rationale and original XML prompt before continuing. DOD practice: file-backed memory, not chat recall. Estimate: 0 us/frame.
+- [x] Removed the adjacent private Alpha Leviathan black-box allocation from `PredatorCognitionDomain`; `_alphaLeviathanTelemetryRing` now aliases existing `BufferID.AlphaLeviathanTelemetryRing` through `GlobalDataVault`. Alternative rejected: keeping the local persistent `NativeArray<AlphaLeviathanTelemetryEntry>`. Estimate: cold DataVault resolve only; runtime ownership cost 0 us/frame.
+- [x] Matched the existing Alpha telemetry lane shape without depending on a non-compiled constants class: 300 frames * 64 slots = 19,200 entries. Alternative rejected: requesting only 300 entries, which could force later DataVault resize and stale views. Estimate: 0 us/frame beyond existing telemetry writes.
+- [x] Fixed DataVault bootstrap ordering: `Register()` and `Unregister()` now reset retinal slot data through `ClearRetinalSlot`, which checks each vault alias before indexing. Alternative rejected: assuming DataVault exists before fauna registration. Estimate: three `IsCreated` cold-path checks per register/unregister, 0 steady-frame us.
+- [x] Re-ran static audit: `rg` found no `new NativeArray<.*Retinal`, no `new NativeArray<AlphaLeviathanTelemetryEntry>`, no `AlphaLeviathanStalkConstants` compile dependency, and no retinal raycasts/casts/overlaps/string.Format/standard `Update()` in `AI/Perception` + `PredatorCognitionDomain`.
+- [x] Re-ran `git diff --check`; only existing CRLF normalization warning was reported for `PredatorCognitionDomain.cs`.
+- [x] Re-ran `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:BuildInParallel=false -v:minimal -clp:Summary`: no remaining errors cite `PredatorCognitionDomain`, `RetinalAdaptationVault`, or `RetinalExposureMath`. Remaining failures are external: `DiegeticGyroCompassRuntime` missing runtime buffers/helpers, `TetherFiredSignal` not implementing `ISignal`, missing `ItemAcquiredSignal`, missing HomeostasisBrain hardware/black-box fields/helpers, and missing `LockstepReplayBlockHeader.HashCadenceFrames`.

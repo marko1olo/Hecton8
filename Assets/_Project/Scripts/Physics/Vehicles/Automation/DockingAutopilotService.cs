@@ -19,7 +19,7 @@ namespace Hecton8.Vehicles.Automation
         Aborted = 4
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 144)]
     public struct ActiveSplineData
     {
         public double3 P0;
@@ -36,6 +36,7 @@ namespace Hecton8.Vehicles.Automation
         public byte State;
         public byte Flags;
         public byte Reserved;
+        public uint ReservedTail;
 
         public readonly bool IsFinite()
         {
@@ -52,7 +53,7 @@ namespace Hecton8.Vehicles.Automation
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 56)]
     public struct DockingSplineSample
     {
         public double3 AbsolutePosition;

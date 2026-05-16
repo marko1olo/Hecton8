@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Tools;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -47,8 +48,18 @@ namespace Hecton8.Core.Hardware
 
         private static bool s_sceneHooked;
 
-        private NativeArray<byte> _thermalSeverity;
-        private NativeArray<ThermalTelemetryEntry> _blackBox;
+#if UNITY_ANDROID && !UNITY_EDITOR
+        private static AndroidJavaClass s_unityPlayerClass;
+        private static AndroidJavaObject s_unityActivity;
+        private static AndroidJavaObject s_powerManager;
+        private static AndroidJavaObject s_batteryChangedFilter;
+        private static bool s_androidColdBridgeReady;
+        private static bool s_androidColdBridgeFaulted;
+#endif
+
+        private IDataVault _dataVault;
+        private VaultBufferHandle<byte> _thermalSeverityHandle;
+        private VaultBufferHandle<ThermalTelemetryEntry> _blackBoxHandle;
         private HardwareThermalSnapshot _snapshot;
         private uint _sequence;
         private int _blackBoxCursor;
@@ -72,9 +83,11 @@ namespace Hecton8.Core.Hardware
         public byte CurrentSeverity => _severity;
         public byte BatteryPercent => _batteryPercent;
         public uint Sequence => _sequence;
-        public NativeArray<byte>.ReadOnly ThermalSeverity => _thermalSeverity.IsCreated ? _thermalSeverity.AsReadOnly() : default;
+        public NativeArray<byte>.ReadOnly ThermalSeverity => TryResolveThermalSeverity(out NativeArray<byte> severity)
+            ? severity.AsReadOnly()
+            : default;
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 24)]
         private struct ThermalTelemetryEntry
         {
             public uint Frame;
@@ -96,6 +109,9 @@ namespace Hecton8.Core.Hardware
         {
             s_sceneHooked = false;
             SceneManager.sceneLoaded -= HandleSceneLoaded;
+#if UNITY_ANDROID && !UNITY_EDITOR
+            DisposeAndroidColdBridge();
+#endif
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -225,8 +241,8 @@ namespace Hecton8.Core.Hardware
             _temperatureTenthsCelsius = rawTemperature;
             _sequence++;
 
-            if (_thermalSeverity.IsCreated)
-                _thermalSeverity[0] = _severity;
+            if (TryResolveThermalSeverity(out NativeArray<byte> thermalSeverity))
+                thermalSeverity[0] = _severity;
 
             uint frame = unchecked((uint)Time.frameCount);
             ApplyThermalPoliciesCold(frame);
@@ -256,10 +272,11 @@ namespace Hecton8.Core.Hardware
 
             try
             {
-                using (AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
-                using (AndroidJavaObject activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
-                using (AndroidJavaObject filter = new AndroidJavaObject("android.content.IntentFilter", "android.intent.action.BATTERY_CHANGED"))
-                using (AndroidJavaObject intent = activity.Call<AndroidJavaObject>("registerReceiver", null, filter))
+                EnsureAndroidColdBridge();
+                if (!s_androidColdBridgeReady || s_androidColdBridgeFaulted || s_unityActivity == null)
+                    return false;
+
+                using (AndroidJavaObject intent = s_unityActivity.Call<AndroidJavaObject>("registerReceiver", null, s_batteryChangedFilter))
                 {
                     if (intent != null)
                     {
@@ -279,27 +296,60 @@ namespace Hecton8.Core.Hardware
                     }
                 }
 
-                using (AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
-                using (AndroidJavaObject activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
-                using (AndroidJavaObject powerManager = activity.Call<AndroidJavaObject>("getSystemService", "power"))
+                AndroidJavaObject powerManager = s_powerManager;
+                if (powerManager != null)
                 {
-                    if (powerManager != null)
-                    {
-                        int status = powerManager.Call<int>("getCurrentThermalStatus");
-                        thermalStatus = (byte)math.clamp(status, 0, byte.MaxValue);
-                    }
+                    int status = powerManager.Call<int>("getCurrentThermalStatus");
+                    thermalStatus = (byte)math.clamp(status, 0, byte.MaxValue);
                 }
 
                 return true;
             }
             catch (Exception)
             {
+                s_androidColdBridgeFaulted = true;
                 batteryPercent = BatteryPercentUnknown;
                 batteryStatus = UnknownBatteryStatus;
                 thermalStatus = 0;
                 temperatureTenthsCelsius = UnknownTemperatureTenthsCelsius;
                 return false;
             }
+        }
+
+        private static void EnsureAndroidColdBridge()
+        {
+            if (s_androidColdBridgeReady || s_androidColdBridgeFaulted)
+                return;
+
+            try
+            {
+                s_unityPlayerClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+                s_unityActivity = s_unityPlayerClass.GetStatic<AndroidJavaObject>("currentActivity");
+                s_batteryChangedFilter = new AndroidJavaObject("android.content.IntentFilter", "android.intent.action.BATTERY_CHANGED");
+                s_powerManager = s_unityActivity != null
+                    ? s_unityActivity.Call<AndroidJavaObject>("getSystemService", "power")
+                    : null;
+                s_androidColdBridgeReady = s_unityActivity != null && s_batteryChangedFilter != null;
+            }
+            catch (Exception)
+            {
+                s_androidColdBridgeFaulted = true;
+                DisposeAndroidColdBridge();
+            }
+        }
+
+        private static void DisposeAndroidColdBridge()
+        {
+            s_powerManager?.Dispose();
+            s_batteryChangedFilter?.Dispose();
+            s_unityActivity?.Dispose();
+            s_unityPlayerClass?.Dispose();
+            s_powerManager = null;
+            s_batteryChangedFilter = null;
+            s_unityActivity = null;
+            s_unityPlayerClass = null;
+            s_androidColdBridgeReady = false;
+            s_androidColdBridgeFaulted = false;
         }
 #endif
 
@@ -518,11 +568,11 @@ namespace Hecton8.Core.Hardware
 
         private void WriteBlackBox(uint frame)
         {
-            if (!_blackBox.IsCreated)
+            if (!TryResolveThermalBlackBox(out NativeArray<ThermalTelemetryEntry> blackBox))
                 return;
 
             int index = _blackBoxCursor;
-            _blackBox[index] = new ThermalTelemetryEntry
+            blackBox[index] = new ThermalTelemetryEntry
             {
                 Frame = frame,
                 Sequence = _sequence,
@@ -543,7 +593,7 @@ namespace Hecton8.Core.Hardware
 
         private void DumpBlackBoxCold()
         {
-            if (!_blackBox.IsCreated)
+            if (!TryResolveThermalBlackBox(out NativeArray<ThermalTelemetryEntry> blackBox))
                 return;
 
             try
@@ -567,7 +617,7 @@ namespace Hecton8.Core.Hardware
                         if (index >= BlackBoxFrameCount)
                             index -= BlackBoxFrameCount;
 
-                        ThermalTelemetryEntry entry = _blackBox[index];
+                        ThermalTelemetryEntry entry = blackBox[index];
                         writer.Write(entry.Frame);
                         writer.Write(entry.Sequence);
                         writer.Write(entry.ActionMask);
@@ -587,44 +637,58 @@ namespace Hecton8.Core.Hardware
 
         private void EnsureNativeState()
         {
-            if (!_thermalSeverity.IsCreated)
-            {
-                _thermalSeverity = new NativeArray<byte>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _thermalSeverity,
-                    nameof(HardwareThermalService),
-                    nameof(_thermalSeverity),
-                    NativeAllocationLifetime.Scene);
-            }
-
-            if (!_blackBox.IsCreated)
-            {
-                _blackBox = new NativeArray<ThermalTelemetryEntry>(BlackBoxFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _blackBox,
-                    nameof(HardwareThermalService),
-                    nameof(_blackBox),
-                    NativeAllocationLifetime.Scene);
-            }
+            TryResolveThermalSeverity(out _);
+            TryResolveThermalBlackBox(out _);
         }
 
         private void DisposeNativeState()
         {
-            if (_thermalSeverity.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_thermalSeverity);
-                _thermalSeverity.Dispose();
-            }
-
-            if (_blackBox.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_blackBox);
-                _blackBox.Dispose();
-            }
-
-            _thermalSeverity = default;
-            _blackBox = default;
+            _dataVault = null;
+            _thermalSeverityHandle = default;
+            _blackBoxHandle = default;
             _blackBoxCursor = 0;
+        }
+
+        private bool TryResolveThermalSeverity(out NativeArray<byte> severity)
+        {
+            severity = default;
+            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            if (vault == null)
+                return false;
+
+            _dataVault = vault;
+            if (!_thermalSeverityHandle.IsCreated || !vault.ResolveBuffer(ref _thermalSeverityHandle))
+            {
+                _thermalSeverityHandle = vault.GetBufferHandle<byte>(
+                    BufferID.HardwareThermalSeverity,
+                    1,
+                    SystemID.HardwareHomeostasis,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            severity = _thermalSeverityHandle.Resolve(vault);
+            return severity.IsCreated && severity.Length >= 1;
+        }
+
+        private bool TryResolveThermalBlackBox(out NativeArray<ThermalTelemetryEntry> blackBox)
+        {
+            blackBox = default;
+            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            if (vault == null)
+                return false;
+
+            _dataVault = vault;
+            if (!_blackBoxHandle.IsCreated || !vault.ResolveBuffer(ref _blackBoxHandle))
+            {
+                _blackBoxHandle = vault.GetBufferHandle<ThermalTelemetryEntry>(
+                    BufferID.HardwareThermalBlackBox,
+                    BlackBoxFrameCount,
+                    SystemID.HardwareHomeostasis,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            blackBox = _blackBoxHandle.Resolve(vault);
+            return blackBox.IsCreated && blackBox.Length >= BlackBoxFrameCount;
         }
 
         private void TryRegisterService()

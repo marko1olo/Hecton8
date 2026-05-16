@@ -1,7 +1,7 @@
 namespace Hecton8.UI.Navigation
 {
     /// <summary>
-    /// Assembly marker for navigation UI presentation code. This assembly intentionally depends only on contracts.
+    /// Assembly marker for navigation UI presentation code.
     /// </summary>
     public static class NavigationUiAssemblyMarker
     {

@@ -52,6 +52,21 @@ namespace Hecton8.Core.Contracts.Signals
 
 namespace Hecton8.Core.Determinism
 {
+    public sealed class FatalDesyncException : Exception
+    {
+        public readonly uint Frame;
+        public readonly ulong MasterHash;
+        public readonly uint Flags;
+
+        public FatalDesyncException(uint frame, ulong masterHash, uint flags)
+            : base("Fatal deterministic state divergence.")
+        {
+            Frame = frame;
+            MasterHash = masterHash;
+            Flags = flags;
+        }
+    }
+
     /// <summary>
     /// Blittable player truth snapshot hashed by the lockstep validator.
     /// </summary>
@@ -118,7 +133,7 @@ namespace Hecton8.Core.Determinism
         public uint MissingMask;
         public uint NonFiniteMask;
         public uint BlockSequence;
-        public uint Reserved0;
+        public uint HashCadenceFrames;
         public ulong Reserved1;
         public ulong Reserved2;
         public ulong Reserved3;
@@ -160,6 +175,19 @@ namespace Hecton8.Core.Determinism
         public uint Reserved0;
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    internal struct LockstepMasterHashHistoryEntry
+    {
+        public uint Frame;
+        public uint HashLo;
+        public uint HashHi;
+        public uint Flags;
+        public uint MissingMask;
+        public uint NonFiniteMask;
+        public uint ReplayBlock;
+        public uint Reserved0;
+    }
+
     internal enum LockstepHashCategory : int
     {
         RigidbodyAups = 0,
@@ -184,6 +212,7 @@ namespace Hecton8.Core.Determinism
         private const int HighStressHashCadenceFrames = 1200;
         private const int ReplayInputFrameCapacity = 300;
         private const int TelemetryFrameCapacity = 300;
+        private const int MasterHashHistoryCapacity = 10;
         private const int MaxHashElements = 8192;
         private const int MaxGhostReplayBlocks = 128;
         private const int ReplayBlockBytes = 128 + (ReplayInputFrameCapacity * 48);
@@ -205,10 +234,6 @@ namespace Hecton8.Core.Determinism
         private const uint ArrayFlagNonFinite = 1u << 2;
         private const uint ReplayInputFlagNonFinite = 1u << 31;
         private const uint PlayerStateFlagNonFinite = 1u << 31;
-        private const int LockstepSnapshotSignalCapacity = 16;
-        private const uint LockstepSnapshotLaneHash = 0x4C535348u;
-        private const int SystemGlitchSignalCapacity = 8;
-        private const uint SystemGlitchLaneHash = 0x5359474Cu;
         private const float DesyncGlitchIntensity01 = 1f;
         private const float DesyncGlitchDurationSeconds = 1f;
         private const float HashStressDeferralThreshold = 0.9f;
@@ -333,7 +358,10 @@ namespace Hecton8.Core.Determinism
             WriteTelemetry(frame, flags);
 
             if ((flags & TelemetryFlagNonFinite) != 0u)
+            {
                 DumpBlackBox();
+                ThrowFatalDesync(frame, flags);
+            }
         }
 
         /// <summary>
@@ -386,6 +414,7 @@ namespace Hecton8.Core.Determinism
         {
             GlobalSignals.InitializeAllQueues();
             SignalBus<LockstepSnapshotSignal>.EnsureInitialized();
+            SignalBus<SystemGlitchSignal>.EnsureInitialized();
         }
 
         private bool IsLowTierDisabledForNormalPlay()
@@ -687,6 +716,7 @@ namespace Hecton8.Core.Determinism
             ulong master = masterHash[0];
             _lastMasterHashLo = (uint)master;
             _lastMasterHashHi = (uint)(master >> 32);
+            RecordMasterHashHistory(frame, master, flags | telemetryFlags, arrayHashes);
             GlobalTelemetryBus.PublishModTelemetry(ReasonDesyncHash, _lastMasterHashLo, _lastMasterHashHi);
             PublishLockstepSnapshot(frame, master, hashCadenceFrames, flags | telemetryFlags, arrayHashes);
         }
@@ -884,6 +914,41 @@ namespace Hecton8.Core.Determinism
             SignalBus<LockstepSnapshotSignal>.Push(in signal);
         }
 
+        private void RecordMasterHashHistory(
+            uint frame,
+            ulong masterHash,
+            uint flags,
+            NativeArray<LockstepArrayHash> arrayHashes)
+        {
+            NativeArray<LockstepMasterHashHistoryEntry> history = GetVaultBuffer<LockstepMasterHashHistoryEntry>(
+                BufferID.LockstepMasterHashHistory,
+                MasterHashHistoryCapacity,
+                NativeArrayOptions.ClearMemory);
+            NativeArray<int> cursor = GetVaultBuffer<int>(
+                BufferID.LockstepMasterHashHistoryCursor,
+                1,
+                NativeArrayOptions.ClearMemory);
+            if (!history.IsCreated || !cursor.IsCreated)
+                return;
+
+            int index = cursor[0];
+            if ((uint)index >= MasterHashHistoryCapacity)
+                index = 0;
+
+            history[index] = new LockstepMasterHashHistoryEntry
+            {
+                Frame = frame,
+                HashLo = (uint)masterHash,
+                HashHi = (uint)(masterHash >> 32),
+                Flags = flags,
+                MissingMask = BuildCategoryMask(arrayHashes, ArrayFlagMissing),
+                NonFiniteMask = BuildCategoryMask(arrayHashes, ArrayFlagNonFinite),
+                ReplayBlock = _lastReplayBlockSequence
+            };
+
+            cursor[0] = (index + 1) % MasterHashHistoryCapacity;
+        }
+
         private void ValidateReplayHash(uint frame, ref uint telemetryFlags)
         {
             if (Volatile.Read(ref _ghostReplayActive) == 0 ||
@@ -928,9 +993,24 @@ namespace Hecton8.Core.Determinism
             signal.LastFenceFrame = expected.HashFrame;
             signal.Flags = (byte)flags;
             PhysicsDeterminismSignals.Publish(in signal);
+            PublishSystemGlitchSignal(frame, in expected, (byte)flags);
             _dispatcher?.RequestSimulationPause(true, ReasonDesyncHash);
             StopGhostReplayAfterFault();
             DumpBlackBox();
+        }
+
+        private void PublishSystemGlitchSignal(uint frame, in LockstepReplayBlockHeader expected, byte reason)
+        {
+            SystemGlitchSignal signal = default;
+            signal.Frame = frame;
+            signal.SourceId = ReasonDesyncHash;
+            signal.LocalHash = _lastMasterHashLo;
+            signal.ExpectedHash = (uint)expected.MasterHash;
+            signal.Intensity01 = DesyncGlitchIntensity01;
+            signal.DurationSeconds = DesyncGlitchDurationSeconds;
+            signal.Reason = reason;
+            SignalBus<SystemGlitchSignal>.Push(in signal);
+            SystemDispatcher.RequestVisualStaticGlitch(DesyncGlitchDurationSeconds);
         }
 
         private void ReportGhostInputFrameMismatch(uint frame)
@@ -1151,6 +1231,13 @@ namespace Hecton8.Core.Determinism
             }
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void ThrowFatalDesync(uint frame, uint flags)
+        {
+            ulong masterHash = ((ulong)_lastMasterHashHi << 32) | _lastMasterHashLo;
+            throw new FatalDesyncException(frame, masterHash, flags);
+        }
+
         private static void WriteStruct<T>(Stream stream, ref T value)
             where T : unmanaged
         {
@@ -1332,6 +1419,8 @@ namespace Hecton8.Core.Determinism
             GetVaultBuffer<ulong>(BufferID.LockstepMasterStateHash, 1, NativeArrayOptions.ClearMemory);
             GetVaultBuffer<uint>(BufferID.LockstepMasterFlags, 1, NativeArrayOptions.ClearMemory);
             GetVaultBuffer<LockstepTelemetryEntry>(BufferID.LockstepTelemetryRing, TelemetryFrameCapacity, NativeArrayOptions.ClearMemory);
+            GetVaultBuffer<LockstepMasterHashHistoryEntry>(BufferID.LockstepMasterHashHistory, MasterHashHistoryCapacity, NativeArrayOptions.ClearMemory);
+            GetVaultBuffer<int>(BufferID.LockstepMasterHashHistoryCursor, 1, NativeArrayOptions.ClearMemory);
             GetVaultBuffer<LockstepReplayInputFrame>(BufferID.LockstepReplayInputRing, ReplayInputFrameCapacity, NativeArrayOptions.ClearMemory);
         }
 

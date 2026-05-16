@@ -55,7 +55,7 @@ namespace Hecton8.Gameplay
     [RequireComponent(typeof(Rigidbody))]
     public sealed class HectonPlayerMovement : MonoBehaviour, IUpdatable, IFixedTickable, IOriginShiftListener, ISargassumGlobalDragEventListener, ISonarPingEventListener, IInitializable, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener, IPlayerMovementContracts
     {
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct CinematicFocusTelemetryEntry
         {
             public uint Frame;
@@ -1601,7 +1601,7 @@ namespace Hecton8.Gameplay
         private const float ParasiteLatchMaxLeverArm = 0.85f;
         private const float ParasiteLatchMaxAngularAcceleration = 12f;
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct RenderInterpolationState
         {
             public Vector3 BodyPosition;
@@ -1921,7 +1921,7 @@ namespace Hecton8.Gameplay
                    _heavyTowWinch.TryTransferTowToTransport(transportBody, transportAnchor);
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct QueuedCollisionEvent
         {
             public float RelativeSpeed;
@@ -1933,7 +1933,7 @@ namespace Hecton8.Gameplay
             public bool IsTrigger;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct ColliderCallbackMetadata
         {
             public int Layer;

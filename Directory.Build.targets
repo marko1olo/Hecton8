@@ -83,6 +83,7 @@
     <Compile Include="Assets\_Project\Scripts\VFX\VfxComputeParticleBudgetCatalog.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\VFX\VfxComputeParticleBudgetCatalog.cs'))" />
     <Compile Include="Assets\_Project\Scripts\World\HectonOctahedralImpostorTypes.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\World\HectonOctahedralImpostorTypes.cs'))" />
     <Compile Include="Assets\_Project\Scripts\AI\Cognition\AlphaLeviathanCognitionContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\AI\Cognition\AlphaLeviathanCognitionContracts.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\AI\Cognition\AlphaLeviathanStalkContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\AI\Cognition\AlphaLeviathanStalkContracts.cs'))" />
     <Reference Include="Hecton8.AI.Ecology.Migration" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.AI.Ecology.Migration.dll') And !$([System.String]::Copy('@(Reference)').Contains('Hecton8.AI.Ecology.Migration'))">
       <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.AI.Ecology.Migration.dll</HintPath>
       <Private>False</Private>

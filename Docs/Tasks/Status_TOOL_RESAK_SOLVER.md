@@ -4,6 +4,7 @@ Prompt: GAMEPLAY_PROGRAMMER / TOOL_RESAK_SOLVER
 Domain: GAMEPLAY/TOOLS
 Task count: 18
 Current state: CORE IMPLEMENTED - FINAL BUILD BLOCKED BY CROSS-DOMAIN DEPENDENCIES
+Omega polish: VERIFIED MASTER GRADE for TOOL_RESAK_SOLVER code surface; global build remains dependency-blocked.
 
 Mandates read before coding:
 - CORE_Tools_Equipment_Interaction_Raycast_Heat.txt
@@ -44,3 +45,4 @@ Mandates read before coding:
 - Loop 3: Tasks 11-17 implemented. `Mesh.vertices` and `LaserCutterManager` scans returned no matches.
 - Loop 4: Re-read code and found power-state regression; added laser-unlocked latch so power loss cannot clear a completed cut.
 - Loop 5: Final build verification blocked by unrelated cross-domain dependency wall; no remaining compiler errors referenced TOOL_RESAK_SOLVER files before the timeout retry.
+- Omega polish: Removed dead WFC call parameters and re-ran local no-`Mesh.vertices`, no-`LaserCutterManager`, no-CSG-folder checks.

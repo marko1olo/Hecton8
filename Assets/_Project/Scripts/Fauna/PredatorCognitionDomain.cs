@@ -350,6 +350,9 @@ namespace Hecton8.AI
         private const float PredatorUtilityEvaluationStaggerStepSeconds = PredatorUtilityEvaluationIntervalSeconds * 0.03125f;
         private const int RetinalLightCapacity = 4;
         private const int RetinalTelemetryCapacity = 300;
+        private const int AlphaLeviathanTelemetrySlotCapacity = 64;
+        private const int AlphaLeviathanTelemetryVaultCapacity =
+            RetinalTelemetryCapacity * AlphaLeviathanTelemetrySlotCapacity;
         private const int RetinalLightStaleFrameWindow = 8;
         private const float RetinalLowTierEvaluationIntervalSeconds = 1f;
         private const float RetinalFrameBudgetStressThresholdSeconds = 1f / 60f;
@@ -547,9 +550,7 @@ namespace Hecton8.AI
                 _stalkingPhaseStartTimes[i] = 0f;
                 _nextEvaluationTimes[i] = 0f;
                 _evaluationIntervals[i] = CenterEvaluationIntervalSeconds;
-                _retinalExposure[i] = 0f;
-                _blindnessState[i] = 0;
-                _lastPublishedBlindnessState[i] = 0;
+                ClearRetinalSlot(i);
                 _predatorPackTargets[i] = float3.zero;
                 _predatorPackWeights[i] = 0f;
                 _predatorPackBaitPositions[i] = float3.zero;
@@ -590,9 +591,7 @@ namespace Hecton8.AI
             _stalkingPhaseStartTimes[slot] = 0f;
             _nextEvaluationTimes[slot] = 0f;
             _evaluationIntervals[slot] = CenterEvaluationIntervalSeconds;
-            _retinalExposure[slot] = 0f;
-            _blindnessState[slot] = 0;
-            _lastPublishedBlindnessState[slot] = 0;
+            ClearRetinalSlot(slot);
             _predatorPackTargets[slot] = float3.zero;
             _predatorPackWeights[slot] = 0f;
             _predatorPackBaitPositions[slot] = float3.zero;
@@ -601,6 +600,16 @@ namespace Hecton8.AI
             _predatorPackRoles[slot] = (byte)PredatorPackRole.None;
             ClearMemoryEntries(slot);
             ClearAcousticMemoryEntries(slot);
+        }
+
+        private static void ClearRetinalSlot(int slot)
+        {
+            if (_retinalExposure.IsCreated)
+                _retinalExposure[slot] = 0f;
+            if (_blindnessState.IsCreated)
+                _blindnessState[slot] = 0;
+            if (_lastPublishedBlindnessState.IsCreated)
+                _lastPublishedBlindnessState[slot] = 0;
         }
 
         internal static void SetSlotActive(int slot, bool active)
@@ -1263,7 +1272,7 @@ namespace Hecton8.AI
 
             _alphaLeviathanTelemetryRing = vault.GetBuffer<AlphaLeviathanTelemetryEntry>(
                 BufferID.AlphaLeviathanTelemetryRing,
-                AlphaLeviathanStalkConstants.TelemetryCapacity,
+                AlphaLeviathanTelemetryVaultCapacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
             if (_alphaLeviathanTelemetryRing.IsCreated)
@@ -1814,9 +1823,9 @@ namespace Hecton8.AI
                 entry.PlayerPosition = playerPosition;
                 entry.DesiredDirection = invalid ? float3.zero : output.DesiredDirection;
                 entry.StateHash = stateHash;
-                int telemetryFrame = (frameId < 0 ? 0 : frameId) % AlphaLeviathanStalkConstants.TelemetryFrames;
-                int telemetrySlot = math.min(activeAlphaCount - 1, AlphaLeviathanStalkConstants.MaxLeviathanSlots - 1);
-                int telemetryIndex = (telemetryFrame * AlphaLeviathanStalkConstants.MaxLeviathanSlots) + telemetrySlot;
+                int telemetryFrame = (frameId < 0 ? 0 : frameId) % RetinalTelemetryCapacity;
+                int telemetrySlot = math.min(activeAlphaCount - 1, AlphaLeviathanTelemetrySlotCapacity - 1);
+                int telemetryIndex = (telemetryFrame * AlphaLeviathanTelemetrySlotCapacity) + telemetrySlot;
                 if ((uint)telemetryIndex < (uint)_alphaLeviathanTelemetryRing.Length)
                     _alphaLeviathanTelemetryRing[telemetryIndex] = entry;
 
@@ -1876,9 +1885,9 @@ namespace Hecton8.AI
                     writer.Write(frameId);
                     writer.Write(_alphaLeviathanTelemetryCursor);
                     writer.Write(_activeAlphaLeviathanTelemetryCount);
-                    writer.Write(AlphaLeviathanStalkConstants.TelemetryFrames);
-                    writer.Write(AlphaLeviathanStalkConstants.MaxLeviathanSlots);
-                    int dumpCount = math.min(_alphaLeviathanTelemetryRing.Length, AlphaLeviathanStalkConstants.TelemetryCapacity);
+                    writer.Write(RetinalTelemetryCapacity);
+                    writer.Write(AlphaLeviathanTelemetrySlotCapacity);
+                    int dumpCount = math.min(_alphaLeviathanTelemetryRing.Length, AlphaLeviathanTelemetryVaultCapacity);
                     writer.Write(dumpCount);
                     for (int i = 0; i < dumpCount; i++)
                     {

@@ -38,7 +38,7 @@ Omega Polish: COMPLETE - `<POLISH_MANDATE>` tag absent; local anti-bloat scan ex
 - [x] 15. HOMEOSTASIS_ADAPTATION | N/A; no stress/homeostasis behavior requested or invented | DOD: no stress-specific task | Alternative rejected: invented stress behavior | Estimate: 0 us runtime
 - [x] 16. OXYGEN_PENALTY | Runtime drains local stamina by climbed meters and reports climb progress/state | DOD: stamina drain output | Alternative rejected: free climbing | Estimate: 2 us/player
 - [x] 17. SLIP_MECHANIC | If stamina reaches zero, runtime publishes slip and applies downward velocity impulse | DOD: stamina-zero drop | Alternative rejected: impossible failure state | Estimate: 2 us/player
-- [x] 18. FINAL_VALIDATION | `dotnet restore Hecton8.Core.csproj` succeeded; `dotnet build Hecton8.Core.csproj --no-restore -nodeReuse:false -v:q` fails on unrelated Physics/Fauna missing contract includes [BLOCKED BY DEPENDENCY] | DOD: compile attempt evidence | Alternative rejected: claiming green build | Estimate: 0 us runtime
+- [x] 18. FINAL_VALIDATION | `dotnet restore` succeeded for Core and Assembly; Core build fails on unrelated Physics/Fauna missing contract includes, Assembly build fails on missing RealtimeCSG source files plus `TetherFiredSignal` [BLOCKED BY DEPENDENCY] | DOD: compile attempt evidence | Alternative rejected: claiming green build | Estimate: 0 us runtime
 
 ## Iteration Log
 - Loop 0: Prompt extracted, domain confirmed, status/rationale files created. No code written.
@@ -48,4 +48,4 @@ Omega Polish: COMPLETE - `<POLISH_MANDATE>` tag absent; local anti-bloat scan ex
 - Loop 4: Tasks 14-17 implemented. Repaired runtime project include and removed direct `Hecton8.Input.Universal` dependency. Prompt re-extracted after task 15 checkpoint.
 - Loop 5: Final validation attempted with `dotnet build`. Build remains blocked by unrelated project asset/temp metadata failures; no remaining ladder-symbol errors found in targeted scans.
 - Omega: Batch-level `<POLISH_MANDATE>` tag was absent. Anti-bloat scan found no teleport, no Animator, no coroutine, no Debug.Log, no `player.position =`, and no remaining `position +=` in touched ladder runtime files.
-- Loop 6: Multiplatform/H-Phi hardening pass evicted runtime-owned NativeArrays into DataVault handles, added pack-1 ladder packet layouts, added low-tier midpoint IK fake, replaced blind divisions, and re-ran static debt scans. Core build now advances past restore but is blocked by unrelated Physics/Fauna missing contract includes.
+- Loop 6: Multiplatform/H-Phi hardening pass evicted runtime-owned NativeArrays into DataVault handles, added pack-1 ladder packet layouts, added low-tier midpoint IK fake, replaced blind divisions, and re-ran static debt scans. Core build now advances past restore but is blocked by unrelated Physics/Fauna missing contract includes; Assembly build is blocked earlier by missing RealtimeCSG files and the same `TetherFiredSignal` contract gap.

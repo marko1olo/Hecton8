@@ -594,7 +594,7 @@ float3 ResolveSensoryThreatScatter(float3 positionCR, out float panic01, out flo
     lightStimulus01 = 0.0;
     float3 scatterCR = float3(0.0, 0.0, 0.0);
     uint threatCount = min(_SensoryThreatCount, SENSORY_THREAT_MAX_THREATS);
-    bool highEndBeam = (_SensoryThreatFlags & SENSORY_THREAT_FLAG_FLASHLIGHT_CAPSULE) != 0u;
+    uint highEndBeam = ((_SensoryThreatFlags & SENSORY_THREAT_FLAG_FLASHLIGHT_CAPSULE) != 0u) ? 1u : 0u;
     float3 playerCR = ToCameraRelative(_PlayerPositionWS);
 
     [loop]
@@ -610,7 +610,7 @@ float3 ResolveSensoryThreatScatter(float3 positionCR, out float panic01, out flo
             continue;
 
         float3 closestThreatPointCR = threatCR;
-        if (threatIndex == SENSORY_THREAT_SLOT_FLASHLIGHT && highEndBeam)
+        if (threatIndex == SENSORY_THREAT_SLOT_FLASHLIGHT && highEndBeam != 0u)
             closestThreatPointCR = ClosestPointOnSegment(positionCR, playerCR, threatCR);
 
         float3 awayFromThreat = positionCR - closestThreatPointCR;

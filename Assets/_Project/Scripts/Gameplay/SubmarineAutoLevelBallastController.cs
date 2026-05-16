@@ -650,6 +650,7 @@ namespace Hecton8.Gameplay
 
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
+                DisposeNativeState();
                 _dataVault = currentService as IDataVault;
                 EnsureNativeState();
                 RefreshTankPositions();
@@ -897,7 +898,12 @@ namespace Hecton8.Gameplay
 
         private void RefreshDynamicFloodServicesFromRegistry()
         {
-            _dataVault = GlobalRegistry.DataVault;
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (!ReferenceEquals(_dataVault, vault))
+            {
+                DisposeNativeState();
+                _dataVault = vault;
+            }
         }
 
         private bool RefreshRoomBufferAliases()

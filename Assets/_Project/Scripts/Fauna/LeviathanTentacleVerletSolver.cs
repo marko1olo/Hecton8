@@ -61,7 +61,7 @@ namespace Hecton8.AI
         private static readonly int _TipRadiusReferenceId = Shader.PropertyToID("_TipRadiusReference");
         private static readonly int _FxTierId = Shader.PropertyToID("_H8LeviathanTentacleFxTier");
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
         private struct LeviathanTentacleTelemetryEntry
         {
             public int FrameIndex;

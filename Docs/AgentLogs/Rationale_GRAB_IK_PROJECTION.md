@@ -11,10 +11,10 @@ Hardware Impact: On i3/MX350/Quest-class silicon, expected hot-path cost stays u
 ## Decisions
 
 Problem: Task requires `HandTargetAUP`, `HandActualAUP`, and `GrabState` in `GlobalDataVault`, but the owned Animation/IK assembly cannot own the global vault enum.
-Solution: Add narrow BufferID entries in `Hecton8.Core.Memory.H8Memory.cs` and expose Animation/IK structs that can be used as typed vault buffers.
+Solution: Add narrow BufferID entries in `Hecton8.Core.Memory.H8Memory.cs` for `HandPresenceInput`, `HandPresenceOutput`, `HandTargetAUP`, `HandActualAUP`, `HandGrabState`, and telemetry ring/cursor, then expose Animation/IK structs that can be used as typed vault buffers.
 Rejected Alternatives: Local persistent `NativeArray` fields would violate DataVault sovereignty; adding a new service singleton would violate registry discipline and batch concurrency.
 Scalability potential: Low/Middle/High/Ultra all share two fixed hand lanes, so low devices do not pay more memory for high-tier projection logic.
-Hardware Impact: Three two-element vault buffers are cache-resident; expected memory footprint under 1 KB plus 300 telemetry entries if allocated by caller.
+Hardware Impact: Six two-element vault buffers are cache-resident; expected memory footprint remains a few KB plus 300 telemetry entries if allocated by caller.
 
 Problem: Haptic scrape emission is requested, but Animation/IK cannot reference `GlobalSignals` without an assembly cycle.
 Solution: The job writes a deterministic scrape request bit and intensity to the output/telemetry lane; the existing Core-side haptic bridge can translate that to `HapticRequest.ChannelGearScrape`.
@@ -57,3 +57,21 @@ Solution: Clamp cosine values, use epsilon denominators, normalize through `math
 Rejected Alternatives: Throwing exceptions or letting Unity animation sanitize the pose would hide the actual fault and break the black-box chain.
 Scalability potential: Same guard path on every tier; low devices get deterministic fallback rather than animation spikes.
 Hardware Impact: A few scalar clamps and finite checks per hand, cheaper than a single failed animation graph recovery.
+
+Problem: Quest/ARM64 builds are sensitive to implicit struct padding across Burst, NativeArray, and file-dump boundaries.
+Solution: Convert every owned hand payload struct to `[StructLayout(LayoutKind.Sequential, Pack = 1)]` and verify the rest of the owned IK folder has no remaining `Pack = 4`.
+Rejected Alternatives: Trusting CLR default layout or platform-dependent padding was rejected; it can make native buffer interpretation diverge between Windows editor and Android ARM64.
+Scalability potential: Identical binary payloads on Quest, Steam Deck, Mac, and PC allow one DataVault schema for all tiers.
+Hardware Impact: Slightly denser payloads improve cache residency; any unaligned-access cost is bounded by two hand lanes and is cheaper than layout mismatch recovery.
+
+Problem: Steam Deck and MicroSD installs cannot tolerate surprise hot-path file I/O.
+Solution: Keep telemetry dumping as an explicit cold crash/NaN path; the job hot path only writes the fixed DataVault ring and never touches `FileStream`, `Directory`, or managed strings.
+Rejected Alternatives: Continuous frame dumps or verbose logs were rejected as I/O pressure and GC hazards.
+Scalability potential: Low tier has the same bounded telemetry footprint; high tier can still dump richer data after a fault without affecting normal frames.
+Hardware Impact: 0 hot-path disk reads/writes; crash dump cost occurs only after a fault.
+
+Problem: The owned IK folder also contains leviathan terrain IK NativeArray fields; leaving their DataVault ownership implicit weakens the H-Phi contract even if the hand task is isolated.
+Solution: Add `LeviathanTerrainIkVault.TryResolveBuffers` against existing `BufferID.LeviathanSegmentPositions`, `LeviathanPreviousSegmentPositions`, `LeviathanBoneMatrices`, `LeviathanTerrainIkTelemetryRing`, and `LeviathanTerrainIkTelemetryCursor`, with optional existing SDF/terrain vault lanes and `SystemID.AICognition` ownership.
+Rejected Alternatives: Adding local persistent arrays or assuming caller-owned arrays was rejected; widening into unrelated AI/world ownership was also rejected.
+Scalability potential: Leviathan low tier can request eight segments; high tier can request twenty segments and SDF/height data without changing job state ownership.
+Hardware Impact: Cold resolver only. Hot-path job cost is unchanged; data residency becomes explicit and cache-bounded.

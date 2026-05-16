@@ -61,7 +61,7 @@ namespace Hecton8.Animation.IK
     /// <summary>
     /// Compact AUP hand pose used by DataVault hand target and actual lanes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct VRHandAupPose
     {
         public long GridX;
@@ -78,7 +78,7 @@ namespace Hecton8.Animation.IK
     /// <summary>
     /// Persistent per-hand grab state stored in the global vault.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct VRHandGrabState
     {
         public float3 TargetPosition;
@@ -98,7 +98,7 @@ namespace Hecton8.Animation.IK
     /// <summary>
     /// Blittable bridge payload for UniversalInputStateSignal grip and interactable AUP data.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct VRHandPresenceInput
     {
         public float3 ShoulderPosition;
@@ -132,7 +132,7 @@ namespace Hecton8.Animation.IK
     /// <summary>
     /// Solved hand presence output consumed by animation rig binding code.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct VRHandPresenceOutput
     {
         public float3 ActualHandPosition;
@@ -152,7 +152,7 @@ namespace Hecton8.Animation.IK
     /// <summary>
     /// Fixed-size black-box record for hand IK lock state, hashes, and guard flags.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct VRHandIkTelemetryEntry
     {
         public uint FrameIndex;
@@ -182,12 +182,16 @@ namespace Hecton8.Animation.IK
         /// </summary>
         public static bool TryResolveBuffers(
             IDataVault vault,
+            out NativeArray<VRHandPresenceInput> inputs,
+            out NativeArray<VRHandPresenceOutput> outputs,
             out NativeArray<VRHandAupPose> handTargetAup,
             out NativeArray<VRHandAupPose> handActualAup,
             out NativeArray<VRHandGrabState> grabStates,
             out NativeArray<VRHandIkTelemetryEntry> telemetryRing,
             out NativeArray<int> telemetryCursor)
         {
+            inputs = default;
+            outputs = default;
             handTargetAup = default;
             handActualAup = default;
             grabStates = default;
@@ -197,6 +201,14 @@ namespace Hecton8.Animation.IK
             if (vault == null)
                 return false;
 
+            inputs = vault.GetBuffer<VRHandPresenceInput>(
+                BufferID.HandPresenceInput,
+                VRPhysicalHandPresenceConstants.HandCount,
+                SystemID.GameplayPlayer);
+            outputs = vault.GetBuffer<VRHandPresenceOutput>(
+                BufferID.HandPresenceOutput,
+                VRPhysicalHandPresenceConstants.HandCount,
+                SystemID.GameplayPlayer);
             handTargetAup = vault.GetBuffer<VRHandAupPose>(
                 BufferID.HandTargetAUP,
                 VRPhysicalHandPresenceConstants.HandCount,
@@ -218,11 +230,15 @@ namespace Hecton8.Animation.IK
                 1,
                 SystemID.GameplayPlayer);
 
-            return handTargetAup.IsCreated &&
+            return inputs.IsCreated &&
+                   outputs.IsCreated &&
+                   handTargetAup.IsCreated &&
                    handActualAup.IsCreated &&
                    grabStates.IsCreated &&
                    telemetryRing.IsCreated &&
                    telemetryCursor.IsCreated &&
+                   inputs.Length >= VRPhysicalHandPresenceConstants.HandCount &&
+                   outputs.Length >= VRPhysicalHandPresenceConstants.HandCount &&
                    handTargetAup.Length >= VRPhysicalHandPresenceConstants.HandCount &&
                    handActualAup.Length >= VRPhysicalHandPresenceConstants.HandCount &&
                    grabStates.Length >= VRPhysicalHandPresenceConstants.HandCount &&
@@ -260,6 +276,7 @@ namespace Hecton8.Animation.IK
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     writer.Write(0x4752494Bu);
+                    writer.Write(VRPhysicalHandPresenceConstants.TelemetryMarkerIKLockState);
                     writer.Write(telemetryRing.Length);
                     writer.Write(telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? telemetryCursor[0] : 0);
                     for (int i = 0; i < telemetryRing.Length; i++)
@@ -549,6 +566,10 @@ namespace Hecton8.Animation.IK
             {
                 flags |= VRPhysicalHandPresenceConstants.OutputFlagNanFallback;
                 output = BuildNanFallback(in input, previousState, hand, flags);
+                projectedTarget = output.ActualHandPosition;
+                controller = output.GhostHandPosition;
+                surfaceNormal = output.SurfaceNormal;
+                slidingSpeed = 0f;
                 grabState = VRPhysicalHandPresenceConstants.GrabStateFree;
             }
 

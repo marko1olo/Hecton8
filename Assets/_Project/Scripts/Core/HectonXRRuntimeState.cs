@@ -177,6 +177,39 @@ namespace Hecton8.Core
             return false;
         }
 
+        internal static bool TryRequestDisplayRefreshRateHz(float targetRefreshRateHz)
+        {
+            if (!_isXRActive ||
+                !math.isfinite(targetRefreshRateHz) ||
+                targetRefreshRateHz < MinimumXRRefreshRateHz ||
+                targetRefreshRateHz > MaximumXRRefreshRateHz)
+            {
+                return false;
+            }
+
+            _displaySubsystems.Clear();
+            SubsystemManager.GetSubsystems(_displaySubsystems);
+            bool requested = false;
+            for (int i = 0; i < _displaySubsystems.Count; i++)
+            {
+                XRDisplaySubsystem display = _displaySubsystems[i];
+                if (display == null || !display.running)
+                    continue;
+
+                if (display.TryRequestDisplayRefreshRate(targetRefreshRateHz))
+                    requested = true;
+            }
+
+            if (requested)
+            {
+                _refreshRateHz = targetRefreshRateHz;
+                _nextRefreshSampleFrame = Time.frameCount + RefreshSampleIntervalFrames;
+                InvalidateShaderStateCache();
+            }
+
+            return requested;
+        }
+
         internal static void PublishOriginShiftState(uint shiftSequence, float fixedInterpolationAlpha)
         {
             if (!_isXRActive)

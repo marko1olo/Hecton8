@@ -62,3 +62,30 @@ Verification:
 - `rg` returned `NO_RETINAL_QUERY_OR_ALLOC_MATCHES` for raycasts, overlaps, LINQ/list allocation markers, coroutines, `string.Format`, and standard Update methods in the AI/Perception + retinal cognition path.
 - `rg -n "LightTrigger" Assets Packages ProjectSettings` returned `NO_ACTIVE_LIGHTTRIGGER_MATCHES`.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:BuildInParallel=false -v:minimal -clp:Summary` still fails outside retinal scope: missing `Hecton8.VFX.Wakes`, missing docking autopilot contracts, missing wake structs, and `EcosystemDirector` missing new macro swarm interface members.
+
+## 2026-05-16 - Data Sovereignty Follow-up
+What was wrong:
+- `PredatorCognitionDomain` still owned a private Alpha Leviathan telemetry ring beside the now-vaulted retinal buffers.
+- The first attempt to align with the Alpha stalk director referenced `AlphaLeviathanStalkConstants`, which exists in source but is not visible to this project target.
+
+What was done:
+- Converted `_alphaLeviathanTelemetryRing` to a `GlobalDataVault` alias using existing `BufferID.AlphaLeviathanTelemetryRing`.
+- Requested the full shared lane shape locally: 300 frames * 64 Alpha slots = 19,200 `AlphaLeviathanTelemetryEntry` records.
+- Replaced the private 300-entry cursor write with frame/slot-indexed writes compatible with the existing Alpha telemetry lane.
+- Removed the non-compiled `AlphaLeviathanStalkConstants` dependency and kept the lane dimensions as local constants in `PredatorCognitionDomain`.
+- Added `ClearRetinalSlot` so fauna register/unregister reset retinal data only when the vault aliases are already resolved.
+
+Cinematic Cheats used:
+- No physical simulation added.
+- No new signal invented.
+- Fault dumps remain cold-path only; no per-frame disk I/O.
+
+Exact Microseconds saved:
+- Measured exact savings: unavailable; profiler was not run.
+- Runtime ownership cost after cold DataVault resolve: 0 us/frame.
+- Removed one private persistent telemetry allocation owner from the cognition domain; exact fragmentation/frame-time impact cannot be measured from static analysis.
+
+Verification:
+- `rg` found no `new NativeArray<.*Retinal`, no `new NativeArray<AlphaLeviathanTelemetryEntry>`, no `AlphaLeviathanStalkConstants`, and no retinal raycasts/casts/overlaps/string.Format/standard `Update()` in `AI/Perception` + `PredatorCognitionDomain`.
+- `git diff --check` reported only a CRLF normalization warning for `PredatorCognitionDomain.cs`.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:BuildInParallel=false -v:minimal -clp:Summary` no longer reports errors in `PredatorCognitionDomain`, `RetinalAdaptationVault`, or `RetinalExposureMath`. Remaining failures are external: `DiegeticGyroCompassRuntime` missing runtime buffers/helpers, `TetherFiredSignal` missing `ISignal`, `ItemAcquiredSignal`, HomeostasisBrain hardware/black-box fields/helpers, and `LockstepReplayBlockHeader.HashCadenceFrames`.

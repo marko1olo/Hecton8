@@ -19,4 +19,10 @@ namespace Hecton8.Interaction
         /// </summary>
         bool TryHandleInventoryPickup(PlayerInventory inventory, Transform interactor);
     }
+
+    public static class InventoryPickupSignalConstants
+    {
+        public const byte ItemSourceManualPickup = 9;
+        public const byte SignalFlagManualPickup = 1 << 1;
+    }
 }

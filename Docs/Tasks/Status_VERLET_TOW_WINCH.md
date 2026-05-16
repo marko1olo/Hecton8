@@ -23,15 +23,16 @@ Status policy: `PENDING VERIFICATION` until Unity/Profiler evidence exists.
 - Loop 4: Completed. Reviewed Tasks 16-18, force routing, snap cleanup, and compile dependency wall. Full validation is marked dependency-blocked, not passed.
 - Loop 5: Completed. Read Omega Polish after all tasks were checked/blocked, verified `math.rsqrt` in `VerletCableSolverJob`, scanned for banned tether joints/singletons/distance calls, and ran final diff/static checks.
 - Loop 6: Completed. Multiplatform inquisition pass: converted tether signal/telemetry structs to `Pack=1`, moved snap notifications to typed `SignalBus<TetherSnappedSignal>` with `ReadOnlySpan<T>` reads, removed the private fallback allocation for public cable DataVault lanes, moved remaining tether-owned NativeArray allocations to `H8Memory.Allocate/Release(SystemID.Physics)`, and re-ran static scans.
+- Loop 7: Completed. Purged the private `NativeQueue<TetherFiredSignal>`, moved fire notifications to typed `SignalBus<TetherFiredSignal>`, repaired the compiled contract placement, and re-ran the directed compile probe until tether errors were gone.
 
 ## Titanium Task Checklist
 
 - [x] 1. PURGE_SINGLETONS | DOD: first-party `rg` scan found no `TetherManager.Instance` dependency in tether code. Rejected: adding singleton access. Estimate: 0 us runtime.
 - [x] 2. DEBT_CLEANUP | DOD: first-party tether/physics scan found no `ConfigurableJoint`, `SpringJoint`, or `HingeJoint` in the implemented path. Rejected: Unity Joint towing. Estimate: prevents unbounded PhysX solver cost; 0 us direct runtime.
-- [x] 3. DATA_EVICTION | DOD: added fixed BufferID lanes and persistent DataVault/fallback `NativeArray<float3>` cable point storage for canonical 11 points / 10 segments. Rejected: managed per-frame arrays. Estimate: +3-6 us publish cost, 0 B GC.
+- [x] 3. DATA_EVICTION | DOD: added fixed BufferID lanes and persistent DataVault cable point storage for canonical 11 points / 10 segments; public fallback allocation is removed and fails closed if the vault is absent. Rejected: managed per-frame arrays. Estimate: +3-6 us publish cost, 0 B GC.
 - [x] 4. BURST_ALGORITHM | DOD: implemented `VerletCableSolverJob` with segment stretch constraints and `math.rsqrt`. Rejected: scalar spring/joint. Estimate: 8-20 us per active tether by tier.
 - [x] 5. AUP_INTEGRITY | DOD: solver nodes are local offsets relative to tow anchor, with origin rebase separated from visual upload. Rejected: raw world-space node authority. Estimate: <1 us rebase for 11 nodes.
-- [x] 6. DOD_SOA_LAYOUT | DOD: DataVault/fallback lanes store position, previous position, velocity, mass, and segment tension separately. Rejected: AoS cable node objects. Estimate: +3-6 us publish, cache-stable.
+- [x] 6. DOD_SOA_LAYOUT | DOD: DataVault lanes store position, previous position, velocity, mass, and segment tension separately. Rejected: AoS cable node objects. Estimate: +3-6 us publish, cache-stable.
 - [x] 7. SIGNAL_FLOW | DOD: added `TetherTensionSignal` with tension force, AUP endpoints, snap threshold, and reactive scalar. Rejected: direct VFX/audio references. Estimate: <2 us active publish.
 - [x] 8. LOW_TIER_FAKE | DOD: Low/MX350 resolves 3 authority segments and renders a straight-line visual fake when tension is high. Rejected: full 10-segment solve on weak devices. Estimate: saves roughly 6-12 us versus 10-segment high path.
 - [x] 9. HIGH_END_OVERKILL | DOD: High/Ultra path uses persistent segment mesh plus `Graphics.RenderMeshIndirect`, mapping `SV_InstanceID` to cable segments. Rejected: per-frame tube mesh generation. Estimate: CPU neutral to -5 us on high tier, buys richer shader pulse.
@@ -52,8 +53,8 @@ Status policy: `PENDING VERIFICATION` until Unity/Profiler evidence exists.
 - Steam Deck/I/O: tether binary dumps remain fault-path/dev-build only; no per-frame file reads or writes were added.
 - Data sovereignty: public 10-segment cable SOA export no longer creates a private fallback buffer when `GlobalDataVault` is unavailable. It fails closed until the vault exists.
 - Memory sentinel: tether visual/solver/telemetry `NativeArray` allocations now use `H8Memory.Allocate(..., SystemID.Physics)` and release through `H8Memory.Release`.
-- SignalBus: snap notification moved off private `NativeQueue<TetherSnappedSignal>` to typed `SignalBus<TetherSnappedSignal>` with `ReadOnlySpan<TetherSnappedSignal>` readback. Tension remains typed `SignalBus<TetherTensionSignal>`.
-- Remaining bounded exception: fire attach still uses a managed request sidecar plus native queue because it carries Unity object references for immediate same-frame attach. It is not a delegate/EventBus path, but it is not a pure unmanaged typed lane.
+- SignalBus: snap notification moved off private `NativeQueue<TetherSnappedSignal>` to typed `SignalBus<TetherSnappedSignal>` with `ReadOnlySpan<TetherSnappedSignal>` readback. Fire notification moved off private `NativeQueue<TetherFiredSignal>` to typed `SignalBus<TetherFiredSignal>` with `ReadOnlySpan<TetherFiredSignal>` snapshot reads. Tension remains typed `SignalBus<TetherTensionSignal>`.
+- Remaining bounded exception: fire attach still uses a managed fixed-size request sidecar because it carries Unity object references for immediate same-frame attach. It is not a delegate/EventBus/native queue path, but it is not a pure unmanaged typed lane.
 - Hot-path debt scan: no `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, LINQ, banned Unity Joint type, `TetherManager.Instance`, `math.distance`, or `distance(` hits in the touched tether path.
 
 ## Compile Attempts
@@ -62,6 +63,12 @@ Status policy: `PENDING VERIFICATION` until Unity/Profiler evidence exists.
 - Attempt 2: `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /clp:ErrorsOnly /p:UseSharedCompilation=false` failed before tether validation on missing `Hecton8.AI.Perception`, `Hecton8.Animation.Fauna`, `IResolutionScalerService`, `JawIkTarget`, `CurrentJawPos`, and `BiteIkSolveEvent`. Status: `[BLOCKED BY DEPENDENCY]`.
 - Attempt 3: `dotnet build Assembly-CSharp.csproj --no-restore -v:minimal /clp:ErrorsOnly /p:UseSharedCompilation=false` timed out after 306 seconds with no final compiler result. Status remains `[BLOCKED BY DEPENDENCY]`; no successful Unity/profiler validation exists.
 - Attempt 4: `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /clp:ErrorsOnly /p:UseSharedCompilation=false` failed on unrelated docking, wake/flora, and ecosystem interface errors. No tether compile errors appeared in the reported set.
+- Attempt 5: `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /clp:ErrorsOnly /p:UseSharedCompilation=false` failed before C# analysis because `Temp/obj/Hecton8.Core/project.assets.json` was missing.
+- Attempt 6: `dotnet build Hecton8.Core.csproj -v:minimal /clp:ErrorsOnly /p:UseSharedCompilation=false` exposed a tether contract placement error for `TetherFiredSignal` plus unrelated fauna errors. Tether error was fixed by moving the compiled fire payload contract into `TetherSignals.cs`.
+- Attempt 7: same command failed because the generated project still referenced `Physics/Tethers/Contracts/TetherSignalContracts.cs` after the dead contract stub was deleted. The source path and Unity metadata were restored as an empty compile anchor.
+- Attempt 8: same command exposed unqualified fire payload resolution as `Hecton8.Physics.TetherFiredSignal`; fixed by explicitly routing runtime fire payload usage through the `Hecton8.Core.Contracts.Signals.TetherFiredSignal` contract alias.
+- Attempt 9: same command failed only on unrelated `GameBootstrapper` / `ModuloSimulationBucketer` namespace errors. No tether compiler errors appeared in the reported set.
+- Attempt 10: same command failed on unrelated XR refresh-rate API, item signal import, submarine structural breach buffers, biolum buffers, and vault probe generic inference errors. No tether compiler errors appeared in the reported set.
 
 ## Omega Polish
 

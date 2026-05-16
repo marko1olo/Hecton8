@@ -4,7 +4,7 @@ Agent: STP_QUALITY_ADAPTER
 Role: GRAPHICS_PROGRAMMER
 Domain: RENDER/SCALABILITY
 Task Count: 18
-Status: PENDING VERIFICATION
+Status: CORE COMPLETE - FINAL VALIDATION BLOCKED BY DEPENDENCY
 
 ## Mandates Read
 
@@ -27,14 +27,14 @@ Status: PENDING VERIFICATION
 - [x] 8. LOW_TIER_FAKE | Done | DOD: `Low`/`Mx350`/`Unknown` base scale 0.5; stress EWMA >0.8 drops policy target to 0.35 | Rejected: native-resolution low-tier rendering | Estimate: 0 us/frame
 - [x] 9. HIGH_END_OVERKILL | Done | DOD: high/ultra policy base remains 1.0 and publishes STP active intent for anti-aliasing | Rejected: static medium compromise | Estimate: 0 us/frame
 - [x] 10. REACTIVE_VFX | Done | DOD: `_SharpenIntensity` global scalar increases as render scale drops | Rejected: separate post blur compensation pass | Estimate: 1 us/frame
-- [ ] 11. STP_STABILIZATION | Pending | DOD: UI/HUD contract remains separate from 3D scale | Rejected: scaling Canvas through scene camera | Estimate: 0 us/frame
-- [ ] 12. NAN_VACCINATION | Pending | DOD: clamp 0.25f..1.5f and finite fallback | Rejected: blind renderScale write | Estimate: 1 us/frame
-- [ ] 13. BLACKBOX_LOGGING | Pending | DOD: 300-frame fixed telemetry ring includes scale/STP state | Rejected: Debug.Log telemetry | Estimate: 1 us/frame
-- [ ] 14. TRIPLE_STRIKE_REPAIR | Pending | DOD: Unity 6000 RenderGraph/API-compatible code path | Rejected: legacy Execute/Blit path | Estimate: 0 us/frame
-- [ ] 15. HOMEOSTASIS_ADAPTATION | Pending | DOD: lock adjustment during AupShiftSignal to protect temporal history | Rejected: immediate scale shift during rebase | Estimate: 1 us/frame
-- [ ] 16. MOTION_VECTOR_CHECK | Pending | DOD: document/static-check transparent MV exclusion risk | Rejected: material mutation sweep | Estimate: 0 us/frame
-- [ ] 17. HUD_NOTIFICATION | Pending | DOD: OPTICS COMPENSATING signal below 0.4 | Rejected: visible UI string assignment in hot path | Estimate: 1 us/frame
-- [ ] 18. FINAL_VALIDATION | Pending | DOD: dotnet build exits 0 or dependency wall logged | Rejected: chat-only verification | Estimate: 0 us/frame
+- [x] 11. STP_STABILIZATION | Done | DOD: HUD runtime render scale no longer multiplies by 3D dynamic resolution; UI/offscreen RTs remain explicit | Rejected: scaling Canvas through scene camera | Estimate: 0 us/frame
+- [x] 12. NAN_VACCINATION | Done | DOD: render scale clamped 0.25f..1.5f and non-finite state recovers to 1.0 with blackbox dump | Rejected: blind renderScale write | Estimate: 1 us/frame
+- [x] 13. BLACKBOX_LOGGING | Done | DOD: 300-frame NativeArray telemetry ring records `CurrentRenderScale` plus `StpActive` byte and dumps on NaN | Rejected: Debug.Log telemetry | Estimate: 1 us/frame
+- [x] 14. TRIPLE_STRIKE_REPAIR | Done | DOD: adapter uses Unity 6000 `DynamicResolutionHandler`/`ScalableBufferManager`; no legacy RenderGraph blit path introduced | Rejected: obsolete Execute/Blit pass | Estimate: 0 us/frame
+- [x] 15. HOMEOSTASIS_ADAPTATION | Done | DOD: `AupShiftSignal` locks scale changes for three frames to preserve temporal history | Rejected: immediate scale shift during rebase | Estimate: 1 us/frame
+- [x] 16. MOTION_VECTOR_CHECK | Done | DOD: static scan found no silt/bubble motion-vector writers; only debris compute renderer explicitly uses `ForceNoMotion` | Rejected: broad material mutation sweep | Estimate: 0 us/frame
+- [x] 17. HUD_NOTIFICATION | Done | DOD: registered `OPTICS COMPENSATING` HUD notification and emits it only once below 0.4 scale until recovery | Rejected: visible UI string assignment in hot path | Estimate: 1 us/frame
+- [x] 18. FINAL_VALIDATION | BLOCKED BY DEPENDENCY | DOD: three compile gates logged; final `dotnet build` cannot reach STP adapter validation because core project references missing/duplicate tether-owned files | Rejected: editing physics/AI/visor domains from graphics task | Estimate: 0 us/frame
 
 ## Loop Log
 
@@ -42,3 +42,8 @@ Status: PENDING VERIFICATION
 - Loop 1: Tasks 1-5 implemented. Adapter moved to `Graphics/Scalability`, registry service/DataVault state/Burst EWMA added, valid UI render-target paths preserved.
 - Compile Gate 1: `dotnet build Hecton8.Core.csproj --no-restore` failed on unrelated compile wall: missing `Hecton8.AI.Sensory`, missing `TetherFiredSignal`, duplicate `HectonVisorFluidDistortionFeature` methods.
 - Loop 2: Tasks 6-10 implemented. Native scale state, signal flow, low/high tier policy, and sharpen global are in source.
+- Compile Gate 2: `dotnet build Hecton8.Core.csproj --no-restore` failed on external duplicate tether signal definitions in `Physics/TetherSignals.cs` and `Physics/Tethers/Contracts/TetherSignalContracts.cs`.
+- Loop 3: Tasks 11-15 implemented. UI scale decoupled, NaN clamp/recovery, blackbox scale/STP telemetry, Unity 6000 non-RenderGraph DRS path, and AUP lock are in source.
+- Compile Gate 3: `dotnet build Hecton8.Core.csproj` failed on missing external file `Assets/_Project/Scripts/Physics/Tethers/Contracts/TetherSignalContracts.cs`; final validation blocked.
+- Loop 4: Tasks 16-18 closed. Motion-vector static check complete, optics notification implemented, compile wall documented.
+- Loop 5: Omega polish mandate read. Anti-bloat scan found no `Update`, no `ResolutionManager.Instance`, and no stale `Hecton8.Graphics.DRS` references in the adapter path. Stale DataVault handle reacquire path patched. `git diff --check` reported no whitespace errors.

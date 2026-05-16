@@ -4,6 +4,7 @@
 // ============================================================================
 
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Physics;
@@ -42,8 +43,6 @@ namespace Hecton8.Interaction
         private const float LooseItemUnderwaterAngularDamping = 6.5f;
         private const float LooseItemBuoyancyAngularDragMultiplier = 2.75f;
         private const ushort DefaultQualityMilli = 1000;
-        private const byte ItemSourceManualPickup = 9;
-        private const byte SignalFlagManualPickup = 1 << 1;
 
         [Header("Item Configuration")]
         [SerializeField] private ItemData itemData;
@@ -62,6 +61,8 @@ namespace Hecton8.Interaction
         private PhysicsMaterial _defaultColliderMaterial;
         private float _defaultLinearDamping;
         private float _defaultAngularDamping;
+        private bool _lootMagnetRestoreRigidbodyKinematic;
+        private bool _lootMagnetRestoreRigidbodyDetectCollisions;
         private HectonPlayerMovement _playerMovement;
         private string _cachedInteractText;
         private int _cachedItemHashId;
@@ -81,6 +82,7 @@ namespace Hecton8.Interaction
         private ulong _geneticsMask;
         private ushort _qualityMilli = DefaultQualityMilli;
         private bool _lootMagnetMotionVectorForced;
+        private bool _lootMagnetPhysicsSuppressed;
 
         public ItemData ItemData => itemData;
         public int Quantity => quantity;
@@ -102,6 +104,7 @@ namespace Hecton8.Interaction
         /// <summary>Applies deterministic loot magnet presentation without Unity trigger callbacks.</summary>
         public void ApplyLootMagnetPose(Vector3 runtimePosition, float3 velocity, float motionVectorThresholdSq)
         {
+            SuppressLootMagnetPhysics();
             transform.position = runtimePosition;
 
             Renderer renderer = _lootMagnetRenderer;
@@ -120,6 +123,20 @@ namespace Hecton8.Interaction
 
             renderer.motionVectorGenerationMode = MotionVectorGenerationMode.Object;
             _lootMagnetMotionVectorForced = true;
+        }
+
+        /// <summary>Restores authored physics/render state after math-driven magnet presentation stops owning the pickup pose.</summary>
+        public void RestoreLootMagnetRuntimeState()
+        {
+            RestoreLootMagnetMotionVectorMode();
+            if (!_lootMagnetPhysicsSuppressed || _rigidbody == null)
+                return;
+
+            _rigidbody.linearVelocity = Vector3.zero;
+            _rigidbody.angularVelocity = Vector3.zero;
+            _rigidbody.isKinematic = _lootMagnetRestoreRigidbodyKinematic;
+            _rigidbody.detectCollisions = _lootMagnetRestoreRigidbodyDetectCollisions;
+            _lootMagnetPhysicsSuppressed = false;
         }
 
         public void Configure(ItemData data, int itemQuantity)
@@ -165,6 +182,20 @@ namespace Hecton8.Interaction
 
             _lootMagnetRenderer.motionVectorGenerationMode = _defaultMotionVectorMode;
             _lootMagnetMotionVectorForced = false;
+        }
+
+        private void SuppressLootMagnetPhysics()
+        {
+            if (_lootMagnetPhysicsSuppressed || _rigidbody == null)
+                return;
+
+            _lootMagnetRestoreRigidbodyKinematic = _rigidbody.isKinematic;
+            _lootMagnetRestoreRigidbodyDetectCollisions = _rigidbody.detectCollisions;
+            _rigidbody.linearVelocity = Vector3.zero;
+            _rigidbody.angularVelocity = Vector3.zero;
+            _rigidbody.detectCollisions = false;
+            _rigidbody.isKinematic = true;
+            _lootMagnetPhysicsSuppressed = true;
         }
 
         private void Awake()
@@ -251,7 +282,7 @@ namespace Hecton8.Interaction
             UnregisterWorldStateRegistry();
             ClearPersistentWorldRecord();
             RestoreDamping();
-            RestoreLootMagnetMotionVectorMode();
+            RestoreLootMagnetRuntimeState();
             if (_rigidbody != null)
                 GlobalPhysicsStateManager.UnregisterTrackedBody(_rigidbody);
 
@@ -266,7 +297,7 @@ namespace Hecton8.Interaction
             TryUnregisterFixedTick();
             UnregisterSpatialHandle();
             UnregisterWorldStateRegistry();
-            RestoreLootMagnetMotionVectorMode();
+            RestoreLootMagnetRuntimeState();
             if (_rigidbody != null)
                 GlobalPhysicsStateManager.UnregisterTrackedBody(_rigidbody);
 
@@ -483,8 +514,8 @@ namespace Hecton8.Interaction
                 ItemHash = unchecked((uint)_cachedItemHashId),
                 OreHash = unchecked((uint)_cachedItemHashId),
                 Quantity = (ushort)math.min(addedQuantity, (int)ushort.MaxValue),
-                SourceKind = ItemSourceManualPickup,
-                Flags = SignalFlagManualPickup,
+                SourceKind = InventoryPickupSignalConstants.ItemSourceManualPickup,
+                Flags = InventoryPickupSignalConstants.SignalFlagManualPickup,
                 Frame = unchecked((uint)Time.frameCount)
             };
             GlobalSignals.Publish(in signal);

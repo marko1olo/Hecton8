@@ -163,3 +163,35 @@ Rejected Alternatives: Leaving the underscore keyword was rejected because the e
 Scalability potential: Low still bounds around 100m. High/Ultra now get bounds wide enough for 500m visible residency when no explicit producer bounds are supplied.
 
 Hardware Impact: Keyword fix is correctness-only. Dynamic fallback bounds can increase renderer-level culling volume on high tier; explicit producer bounds remain preferred for tight culling. Runtime impact is PENDING VERIFICATION.
+
+## 2026-05-16 Loop 6: Multiplatform + H-Phi Inquisition
+
+Problem: The renderer still held private native telemetry/audit arrays after the first pass, which violates the Data Sovereignty rule and weakens H-Phi connectivity.
+
+Solution: Moved scatter blackbox, CPU frustum audit planes, and CPU visibility audit mask behind `VaultBufferHandle<T>` allocations in GlobalDataVault using `BufferID.FloraScatterBlackBox`, `FloraScatterCpuFrustumPlanes`, and `FloraScatterCpuVisibilityMask`. Matrix and metadata source data are also held only as Vault handles. The remaining `NativeArray<T>` variables are transient views resolved from Vault or Unity GPU APIs for a single operation, not renderer-owned storage.
+
+Rejected Alternatives: Keeping private `NativeArray<T>` fields was rejected as feudal renderer ownership. Using managed arrays for the audit path was rejected because it creates GC and breaks Burst job inputs. Disposing Vault memory from the renderer was rejected because DataVault is the owner.
+
+Scalability potential: Low uses the same global memory ownership with 100m culling and cheap material constants. Middle keeps 250m residency. High/Ultra keep 500m residency and enable `_QUALITY_HIGH` plus stronger existing vegetation SSS, edge bloom, and local caustic lanes. Visor salt, hull dents, and marine snow wake are outside this renderer's domain and already belong to post/VFX/hull systems, so this pass only drives flora-owned overkill.
+
+Hardware Impact: Native memory leak surface is reduced by removing renderer-owned audit/blackbox allocations. Runtime microseconds saved remain PENDING VERIFICATION because the build cannot produce a profiling player; expected win is fault/lifetime stability, not hot-path math.
+
+Problem: Quest/Android ARM64 and Metal require deterministic struct layout and guarded GPU math; implicit padding or one bad `rsqrt` denominator can kill mobile rendering.
+
+Solution: Added `Pack = 1` and fixed sizes to GPU metadata and 64B blackbox telemetry structs. The compute shader now returns explicit `float3(0.0, 0.0, 0.0)` for non-finite transforms and clamps/repairs the sway-axis length before `rsqrt`. Thread group size remains 64, below the Metal 1024 thread-group limit.
+
+Rejected Alternatives: Relying on default CLR packing was rejected for Quest. Trusting `max(dot(axis, axis), eps)` alone was rejected because a NaN dot survives `max` on some shader backends. Increasing the compute group size was rejected because MX350/Metal compatibility matters more than theoretical occupancy.
+
+Scalability potential: Toaster mode drops invalid instances and keeps the dear-lie sway vector. God-mode keeps the same safe kernel but spends budget through longer flora residency and richer shader lighting lanes instead of bigger CPU systems.
+
+Hardware Impact: NaN-vaccination cost is one finite branch in the compute kernel. Expected cost is below measurable CPU time and protects the GPU pipeline from catastrophic invalid output; exact GPU microseconds remain PENDING VERIFICATION.
+
+Problem: The build gate still cannot prove final compilation after the additional pass.
+
+Solution: Ran isolated `dotnet build Assembly-CSharp.csproj --no-restore --no-dependencies -m:1` and full `dotnet build Assembly-CSharp.csproj --no-restore -m:1`. Isolated build stops on missing generated/plugin DLLs in `Temp/bin/Debug`; full build stops earlier on missing RealtimeCSG source files. A filtered build scan for `GpuScatter`, `Rendering/Scatter`, and `FloraScatter` produced no scatter-specific compiler errors.
+
+Rejected Alternatives: Creating fake RealtimeCSG/plugin files or cross-domain stubs was rejected as architectural sabotage. Reverting the scatter changes was rejected because the observed errors are project dependency/source-file failures outside the assigned domain.
+
+Scalability potential: Not runtime-relevant. Integration must restore the missing external/generated artifacts before player profiling and final dotnet validation can be authoritative.
+
+Hardware Impact: 0us runtime. Validation remains blocked by dependency state, not scatter code.

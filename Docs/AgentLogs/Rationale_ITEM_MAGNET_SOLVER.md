@@ -125,3 +125,27 @@ Solution: Ran `git diff --check` and `dotnet build .\Hecton8.Core.csproj --no-re
 Rejected Alternatives: Claiming 0 errors; editing VFX/world/construction/core integration contracts from the loot magnet task.
 Scalability potential: No runtime impact for loot magnet; this preserves a clean integration boundary for the owning agents.
 Hardware Impact: None at runtime.
+
+Problem: Manual pickup sources still published managed item-collected events while magnet pickup used typed lanes, splitting collection truth across two buses.
+Solution: Removed `InteractionEvents.RaiseItemCollected` and `HectonEventBus.Publish(new ItemCollectedEvent(...))` from `PickupItem` and duplicate `HectonItem`. Both manual paths now publish the existing `ItemAcquiredSignal` lane with shared `InventoryPickupSignalConstants`; the magnet path passes `publishAcquiredSignal:false` and publishes its own richer AUP/spark/wake packet once.
+Rejected Alternatives: Keeping duplicate typed and legacy events; inventing a new pickup signal; migrating world/meta subscribers from outside this task boundary.
+Scalability potential: Low consumes bounded typed snapshots only; Middle/High/Ultra can add richer consumers from the same lane without adding managed callbacks.
+Hardware Impact: Avoids managed `ItemCollectedEvent` object allocation on manual pickups. Exact GC/microseconds not measured.
+
+Problem: `PickupItem.ApplyLootMagnetPose` wrote `transform.position` while pickups can have active non-kinematic Rigidbodies.
+Solution: Added magnet runtime suppression that captures the current Rigidbody kinematic/collision state, zeros velocities, disables collisions, makes the body kinematic before math-owned transform writes, and restores the captured state when pulling ends, acquisition is deferred, the slot is cleared, or the object disables/destroys.
+Rejected Alternatives: `Rigidbody.MovePosition` without a sweep; leaving active Rigidbody transform mutation; permanently making authored pickups kinematic.
+Scalability potential: Low/Middle/High/Ultra share the same physics-safe pose path; visual overkill remains in typed VFX lanes, not in PhysX.
+Hardware Impact: Adds only cold state flips when a pickup enters/leaves magnet pose ownership; removes broadphase corruption risk on mobile/Steam Deck.
+
+Problem: Public magnet-emitted signal structs were explicit-size but not all explicit `Pack=1`, leaving ARM/Quest layout doubts.
+Solution: Added `Pack=1` to `ItemAcquiredSignal`, `WakeGeneratedSignal`, and `FluidImpulseSignal`. `DebrisSpawnSignal` and `AcousticPingSignal` were already packed.
+Rejected Alternatives: Trusting desktop explicit layout defaults; packing unrelated signal structs outside the magnet emission boundary.
+Scalability potential: Stable lane packet layout across Android/Quest, Mac/Metal, Steam Deck, and PC.
+Hardware Impact: No runtime cost.
+
+Problem: Final validation still cannot reach 0 errors after local item-domain fixes.
+Solution: Re-ran `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -v:minimal`. A local missing using in `HectonItem` was fixed; remaining errors are external: `HectonXRRuntimeState.TryRequestDisplayRefreshRate`, missing submarine structural buffers/helpers, `VaultProbeUtility` generic inference, missing biolum blackbox fields, and missing spatial audio helpers.
+Rejected Alternatives: Claiming green; editing XR/submarine/VFX/audio domains from this item magnet task.
+Scalability potential: No runtime impact for loot magnet.
+Hardware Impact: None at runtime.

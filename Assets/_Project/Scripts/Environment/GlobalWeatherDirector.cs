@@ -90,7 +90,6 @@ namespace Hecton8.Environment
         private static readonly int _GlobalWindId = Shader.PropertyToID("_GlobalWind");
         private static readonly int _WeatherIntensityId = Shader.PropertyToID("_HectonWeatherIntensity");
         private static readonly int _WeatherStateMaskId = Shader.PropertyToID("_HectonWeatherStateMask");
-        private static readonly int _ExtinctionLutWeatherParamsId = Shader.PropertyToID("_ExtinctionLUTWeatherParams");
         private static readonly int _NoirFogLutId = Shader.PropertyToID("_NoirFogLUT");
         private static readonly int _NoirFogLutParamsId = Shader.PropertyToID("_HectonNoirFogLutParams");
         private static readonly int _NoirFogLutBlendId = Shader.PropertyToID("_HectonNoirFogLutBlend");
@@ -345,7 +344,7 @@ namespace Hecton8.Environment
             Shader.SetGlobalVector(_GlobalWindId, Vector4.zero);
             Shader.SetGlobalFloat(_WeatherIntensityId, 0f);
             Shader.SetGlobalInt(_WeatherStateMaskId, 0);
-            Shader.SetGlobalVector(_ExtinctionLutWeatherParamsId, Vector4.zero);
+            HectonShaderGlobalDataVaultBridge.PublishWaterExtinctionWeather(Vector4.zero);
             Shader.SetGlobalTexture(_NoirFogLutId, Texture2D.blackTexture);
             Shader.SetGlobalVector(_NoirFogLutParamsId, Vector4.zero);
             Shader.SetGlobalFloat(_NoirFogLutBlendId, 0f);
@@ -901,7 +900,7 @@ namespace Hecton8.Environment
             float biolumEmissionMultiplier = ResolveBiolumEmissionMultiplier(in celestialSnapshot);
 
             Shader.SetGlobalFloat(_AbyssalFogDensityId, abyssalFogDensity);
-            Shader.SetGlobalVector(_ExtinctionLutWeatherParamsId, new Vector4(extinctionTurbidityShift, weatherIntensity01, 0f, 0f));
+            HectonShaderGlobalDataVaultBridge.PublishWaterExtinctionWeather(new Vector4(extinctionTurbidityShift, weatherIntensity01, 0f, 0f));
             Shader.SetGlobalFloat(_MarineSnowOpacityId, marineSnowOpacity);
             Shader.SetGlobalFloat(_GlobalFlowMagnitudeMultiplierId, globalFlowMultiplier);
             Shader.SetGlobalFloat(_GodRayIntensityId, godRayIntensity);
@@ -923,7 +922,7 @@ namespace Hecton8.Environment
         private static void ClearAtmosphericBridgeShaderState()
         {
             Shader.SetGlobalFloat(_AbyssalFogDensityId, 0f);
-            Shader.SetGlobalVector(_ExtinctionLutWeatherParamsId, Vector4.zero);
+            HectonShaderGlobalDataVaultBridge.PublishWaterExtinctionWeather(Vector4.zero);
             Shader.SetGlobalFloat(_MarineSnowOpacityId, 0f);
             Shader.SetGlobalFloat(_GlobalFlowMagnitudeMultiplierId, 1f);
             Shader.SetGlobalFloat(_GodRayIntensityId, 0f);

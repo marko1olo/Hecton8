@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Hecton8.Core.Memory;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -42,7 +43,90 @@ namespace Hecton8.Animation.IK
         [FieldOffset(64)] public float Padding1;
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, OptimizeFor = OptimizeFor.Performance)]
+    public static class LeviathanTerrainIkVault
+    {
+        public static bool TryResolveBuffers(
+            IDataVault vault,
+            int requestedSegmentCapacity,
+            int requestedSdfVoxelCount,
+            int requestedTerrainSampleCount,
+            out NativeArray<float3> segmentPositions,
+            out NativeArray<float3> previousSegmentPositions,
+            out NativeArray<float4x4> leviathanBones,
+            out NativeArray<LeviathanTerrainIkTelemetryEntry> telemetryRing,
+            out NativeArray<int> telemetryCursor,
+            out NativeArray<byte> voxelSdfTexture3D,
+            out NativeArray<ushort> terrainHeightSamples)
+        {
+            segmentPositions = default;
+            previousSegmentPositions = default;
+            leviathanBones = default;
+            telemetryRing = default;
+            telemetryCursor = default;
+            voxelSdfTexture3D = default;
+            terrainHeightSamples = default;
+
+            if (vault == null)
+                return false;
+
+            int segmentCapacity = math.clamp(requestedSegmentCapacity, 2, LeviathanTerrainIkConstants.MaxSegments);
+            int sdfVoxelCount = math.max(0, requestedSdfVoxelCount);
+            int terrainSampleCount = math.max(0, requestedTerrainSampleCount);
+            segmentPositions = vault.GetBuffer<float3>(
+                BufferID.LeviathanSegmentPositions,
+                segmentCapacity,
+                SystemID.AnimationFauna);
+            previousSegmentPositions = vault.GetBuffer<float3>(
+                BufferID.LeviathanPreviousSegmentPositions,
+                segmentCapacity,
+                SystemID.AnimationFauna);
+            leviathanBones = vault.GetBuffer<float4x4>(
+                BufferID.LeviathanBoneMatrices,
+                segmentCapacity,
+                SystemID.AnimationFauna);
+            telemetryRing = vault.GetBuffer<LeviathanTerrainIkTelemetryEntry>(
+                BufferID.LeviathanTerrainIkTelemetryRing,
+                LeviathanTerrainIkConstants.TelemetryCapacity,
+                SystemID.AnimationFauna);
+            telemetryCursor = vault.GetBuffer<int>(
+                BufferID.LeviathanTerrainIkTelemetryCursor,
+                1,
+                SystemID.AnimationFauna);
+
+            if (sdfVoxelCount > 0)
+            {
+                voxelSdfTexture3D = vault.GetBuffer<byte>(
+                    BufferID.VoxelSdfTexture3D,
+                    sdfVoxelCount,
+                    SystemID.AnimationFauna,
+                    NativeArrayOptions.UninitializedMemory);
+            }
+
+            if (terrainSampleCount > 0)
+            {
+                terrainHeightSamples = vault.GetBuffer<ushort>(
+                    BufferID.TerrainSeamHeightmap,
+                    terrainSampleCount,
+                    SystemID.AnimationFauna,
+                    NativeArrayOptions.UninitializedMemory);
+            }
+
+            return segmentPositions.IsCreated &&
+                   previousSegmentPositions.IsCreated &&
+                   leviathanBones.IsCreated &&
+                   telemetryRing.IsCreated &&
+                   telemetryCursor.IsCreated &&
+                   segmentPositions.Length >= segmentCapacity &&
+                   previousSegmentPositions.Length >= segmentCapacity &&
+                   leviathanBones.Length >= segmentCapacity &&
+                   telemetryRing.Length >= LeviathanTerrainIkConstants.TelemetryCapacity &&
+                   telemetryCursor.Length >= 1 &&
+                   (sdfVoxelCount == 0 || (voxelSdfTexture3D.IsCreated && voxelSdfTexture3D.Length >= sdfVoxelCount)) &&
+                   (terrainSampleCount == 0 || (terrainHeightSamples.IsCreated && terrainHeightSamples.Length >= terrainSampleCount));
+        }
+    }
+
+    [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard, OptimizeFor = OptimizeFor.Performance)]
     public struct LeviathanTerrainIkJob : IJob
     {
         private const float MinLengthSq = 0.000001f;

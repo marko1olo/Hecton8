@@ -197,6 +197,7 @@ namespace Hecton8.Core.Content
         private const uint VramInterceptFlag = 1u << 0;
         private const uint AupCleanupFlag = 1u << 1;
         private const uint HologramFlag = 1u << 2;
+        private const uint VramLedgerOwnerHash = 0xC0A77A57u;
         private const int TelemetryCapacity = 300;
 
         [SerializeField] private ContentAssetHashMap assetHashMap;
@@ -302,7 +303,7 @@ namespace Hecton8.Core.Content
                 Time.frameCount);
 
             if (accepted)
-                VRAMBudgetTracker.RegisterOrUpdate(hash, _bundleRefs.EstimateResidentBytes());
+                VRAMBudgetTracker.RegisterOrUpdate(VramLedgerOwnerHash, _bundleRefs.EstimateResidentBytes());
 
             return accepted;
         }
@@ -311,7 +312,7 @@ namespace Hecton8.Core.Content
         {
             bool released = _bundleRefs.Release(hash, Time.frameCount, out bool becameUnused);
             if (released && becameUnused)
-                VRAMBudgetTracker.Unregister(hash);
+                VRAMBudgetTracker.RegisterOrUpdate(VramLedgerOwnerHash, _bundleRefs.EstimateResidentBytes());
 
             return released;
         }
@@ -528,7 +529,7 @@ namespace Hecton8.Core.Content
             if (_bundleRefs.TrySelectOldestUnusedBiomeCache(out uint hash))
             {
                 _bundleRefs.Remove(hash);
-                VRAMBudgetTracker.Unregister(hash);
+                VRAMBudgetTracker.RegisterOrUpdate(VramLedgerOwnerHash, _bundleRefs.EstimateResidentBytes());
             }
 
             if (governor != null)

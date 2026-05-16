@@ -52,13 +52,13 @@ Hardware Impact: MX350 pays one contiguous NativeArray read per slot, no managed
 
 Problem: The prompt requires last-300-frame AI state; AGENTS forbids "I don't know why it crashed" and forbids hot-path string logs.
 
-Solution: `LeviathanStalkJob` writes `AlphaLeviathanTelemetryEntry` with frame, slot, stalk phase, flags, distance, ring distance, AUP-derived positions, direction, state hash, and `LeviathanAgressivity01`. DOD pattern used: fixed-size NativeArray circular buffer.
+Solution: `LeviathanStalkJob` writes `AlphaLeviathanTelemetryEntry` with frame, slot, stalk phase, flags, distance, ring distance, AUP-derived positions, direction, state hash, and `LeviathanAgressivity01`. The telemetry ring is sized as 300 frames times 64 slots. `AlphaLeviathanCognitionVault.TryDumpBlackBox(...)` writes a cold-path binary dump to `Docs/AgentLogs/Dump_PREDATOR_STALK_DIRECTOR.bin`, and `TryDumpBlackBoxOnFault(...)` scans for `AlphaLeviathanTelemetryFlags.Fault` so an owner can dump immediately after NaN/fault detection without file I/O inside Burst. DOD pattern used: fixed-size NativeArray circular buffer plus cold crash/fault-path dump.
 
-Rejected Alternatives: `Debug.Log` was rejected because it allocates strings and is unusable in Burst. Managed queues were rejected because the black box must be fixed-size native telemetry. Full binary dump code was not added yet because there is no AI/Cognition runtime owner in domain to perform file IO safely.
+Rejected Alternatives: `Debug.Log` was rejected because it allocates strings and is unusable in Burst. Managed queues were rejected because the black box must be fixed-size native telemetry. Per-frame file writes were rejected because Steam Deck/MicroSD I/O stalls are worse than a cold dump.
 
 Scalability potential: Low records compact hash and flags. Middle/High record same row. Ultra can add external dump handling via owner system without touching the job.
 
-Hardware Impact: One 64-byte telemetry write per slot per scheduled tick. On MX350 this is predictable memory bandwidth, not GC; exact measurement absent.
+Hardware Impact: One 64-byte telemetry write per slot per scheduled tick plus a byte fault flag already inside the row. On MX350 this is predictable memory bandwidth, not GC; exact measurement absent. Cold fault scans are not hot-path work.
 
 ## Decision 6: Compile Gate Still Open
 
@@ -74,24 +74,60 @@ Hardware Impact: 0 us runtime impact; this is validation infrastructure state.
 
 ## Decision 7: Omega Branch Removal
 
-Problem: The Omega mandate forbids `if` branches inside the Burst job and requires AUP shift handling so the beast does not interpolate across an origin snap.
+Problem: The Omega mandate forbids `if` branches inside the Burst job and requires AUP shift handling so the beast does not interpolate across an origin snap. The follow-up audit also found short-circuit bool operators that were not `if` tokens but still create conditional gating risk.
 
-Solution: Reworked the AUP target selection and distance fallback inside `LeviathanStalkJob` to use `math.select` and bit-mask selection instead of ternary branching. Added telemetry position sanitization and retained `ObservedShiftFrameId` versus `LastShiftFrameId` steering reset with `ShiftFenceReset` telemetry. DOD pattern used: branchless Burst selection and AUP snap-fence reset.
+Solution: Reworked the AUP target selection and distance fallback inside `LeviathanStalkJob` to use `math.select` and bit-mask selection instead of ternary branching. Removed `&&` and `||` from the Burst file and used non-short-circuit bool operators where both sides are scalar-safe. Added telemetry position sanitization and retained `ObservedShiftFrameId` versus `LastShiftFrameId` steering reset with `ShiftFenceReset` telemetry. DOD pattern used: branchless Burst selection and AUP snap-fence reset.
 
-Rejected Alternatives: Keeping the ternary `usePing ? ping : player` was rejected because it is still a conditional target selection in the job. Interpolating through an AUP shift was rejected by the floating-origin mandate. Adding a managed `AupShiftSignal` subscription inside AI/Cognition was rejected because there is no runtime owner in this domain and the job must consume DataVault rows only.
+Rejected Alternatives: Keeping the ternary `usePing ? ping : player` was rejected because it is still a conditional target selection in the job. Keeping short-circuit bool chains was rejected because the branchless audit must be stricter than token-only `if` removal. Interpolating through an AUP shift was rejected by the floating-origin mandate. Adding a managed `AupShiftSignal` subscription inside AI/Cognition was rejected because there is no runtime owner in this domain and the job must consume DataVault rows only.
 
 Scalability potential: Low keeps branchless cheap steering. Middle/High keep deterministic shift reset. Ultra can attach richer shift telemetry externally while the kernel remains stable.
 
-Hardware Impact: MX350 avoids one conditional AUP-target branch per slot and prevents post-shift steering spikes; exact microseconds saved are unmeasured.
+Hardware Impact: MX350 avoids one conditional AUP-target branch per slot and removes short-circuit gating in the Burst source. Exact microseconds saved are unmeasured.
 
 ## Decision 8: Final Validation Blocked Outside Domain
 
-Problem: The prompt requires `dotnet build` exit 0, but the project root contains many generated `.csproj` files so bare `dotnet build` exits MSB1011. Unity batch compilation does rebuild `Hecton8.AI.Cognition.dll`, but the whole project fails in unrelated assemblies.
+Problem: The prompt requires `dotnet build` exit 0, but the project root contains many generated `.csproj` files so bare `dotnet build` exits MSB1011. `dotnet build Hecton8.AI.Cognition.csproj --no-restore` fails because Unity has not generated a dedicated AI/Cognition project file. The latest Unity batch startup crashes before C# compile because `Assets/_Project/Scripts/Physics/Tethers/Contracts/Hecton8.Physics.Tethers.Contracts.asmdef` is missing.
 
-Solution: Verified the owned code through two gates: a targeted Roslyn compile probe over `H8Memory.cs`, `GlobalDataVault.cs`, and AI/Cognition files exits 0; Unity batch log shows `Hecton8.AI.Cognition.dll` Csc, ILPostProcess, and CopyFiles complete with `ExitCode: 0`. Marked task 18 as `[BLOCKED BY DEPENDENCY]` with exact unrelated failure owners. DOD pattern used: fail-fast three-strike compile-wall protocol.
+Solution: Verified the owned code through the Unity Bee/Csc response file `Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Cognition.rsp`; it exits 0 over the AI/Cognition source set. Marked task 18 as `[BLOCKED BY DEPENDENCY]` with exact unrelated failure owners. DOD pattern used: fail-fast three-strike compile-wall protocol.
 
-Rejected Alternatives: Editing `Physics.Tethers.Contracts`, `Audio.Virtualization`, or editor tooling was rejected as outside AI/COGNITION domain and would be architectural sabotage without assignment. Declaring whole-project build green was rejected because Unity still reports `Scripts have compiler errors`.
+Rejected Alternatives: Editing `Physics.Tethers.Contracts`, `Audio.Virtualization`, editor tooling, or a missing Tethers asmdef was rejected as outside AI/COGNITION domain and would be architectural sabotage without assignment. Declaring whole-project build green was rejected because Unity crashes before the compile graph reaches owned AI code.
 
 Scalability potential: No runtime impact.
 
 Hardware Impact: 0 us runtime impact; validation blocker is assembly graph/editor tooling, not AI steering cost.
+
+## Decision 9: Multiplatform Layout Lockdown
+
+Problem: ARM64/Quest/Android builds are sensitive to implicit struct packing. The previous AI payloads needed an explicit pass proving no default CLR packing survived in the domain.
+
+Solution: Locked every AI/Cognition payload to `StructLayout(..., Pack = 1)`: `AlphaLeviathanTelemetryEntry` 64 bytes, `AlphaLeviathanAup` explicit 48 bytes, `AlphaLeviathanCognitionState` 144 bytes, `AlphaLeviathanSensoryStimulus` 176 bytes, and `AlphaLeviathanSteeringOutput` 80 bytes. DOD pattern used: fixed blittable stride and explicit AUP offsets.
+
+Rejected Alternatives: Default sequential packing was rejected because it can shift stride across runtimes. Platform-specific `#if` layouts were rejected because they multiply failure modes and break deterministic telemetry parsing.
+
+Scalability potential: Low/Middle/High/Ultra tiers share the same binary layout, so Math LOD changes do not require platform-specific marshaling.
+
+Hardware Impact: 0 us runtime gain. The value is stability: deterministic stride across ARM64 and x64.
+
+## Decision 10: VFX Intent Without Rendering Coupling
+
+Problem: High-end mode cannot be a mobile steering output with one generic intensity. It needs enough AI-authored intent for salt crystal, silt, hull dent, SSS, and particle escalation while AI/Cognition remains renderer-free.
+
+Solution: Extended `AlphaLeviathanSteeringOutput` from 64 to 80 bytes with `VisorSaltCrystalGrowth01`, `HullDentImpulse01`, `SubsurfaceScatterPulse01`, and `ParticleOverkillBudget01`. Existing `WakeSiltIntensity01`, `SdfContourWeight01`, and `VisualOverkill01` remain. DOD pattern used: scalar intent channel, no material/shader dependency in AI.
+
+Rejected Alternatives: Adding renderer calls, material property writes, or shader keywords inside AI was rejected as cross-domain coupling and hot-path allocation risk. Leaving only the mobile-safe biolum value was rejected because Ultra tier needs explicit overkill budget for downstream systems.
+
+Scalability potential: Low uses cheap cadence and reduced particle budget. Middle keeps wake/biolum without SDF contour. High uses SDF contour plus stronger silt/SSS. Ultra can spend `ParticleOverkillBudget01` and salt/dent channels in VFX without changing AI.
+
+Hardware Impact: Adds four float stores per active slot. On 64 slots this is 1024 bytes of extra contiguous output per scheduled tick; exact microseconds are unmeasured.
+
+## Decision 11: I/O And Shader Boundary
+
+Problem: Steam Deck/MicroSD stutter and Metal shader compliance were called out, but AI/Cognition must not cross into renderer or asset streaming ownership.
+
+Solution: Static scan found no shader, compute, HLSL, or CG include files in AI/Cognition. Static scan found file I/O only in `TryDumpBlackBox`/`TryDumpBlackBoxOnFault`, which are cold crash/fault-path binary dumps; `LeviathanStalkJob` has no file access, `Debug.Log`, string formatting, or managed lookup calls.
+
+Rejected Alternatives: Writing per-frame text diagnostics was rejected because it creates unbounded I/O pressure. Editing rendering shaders was rejected because there are no AI/Cognition shader assets and rendering/VFX is a separate domain.
+
+Scalability potential: Low/Steam Deck keeps the hot path memory-only. High/Ultra receive richer scalar intent through DataVault without pulling the render path into AI.
+
+Hardware Impact: 0 us hot-path I/O; cold dump cost is paid only on crash/NaN handling.

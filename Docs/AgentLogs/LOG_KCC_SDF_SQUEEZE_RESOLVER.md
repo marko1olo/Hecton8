@@ -35,12 +35,13 @@ Validation:
 
 ## 2026-05-16 - Multiplatform Data Sovereignty Pass
 What was wrong:
-- Prior DataVault eviction only covered position, velocity, and intended movement. Flow velocity, last-valid position, sync states, hand targets, telemetry ring/cursor, fault flags, probe batches, and SDF squeeze results still used local-primary NativeArrays.
+- Prior DataVault eviction only covered position, velocity, and intended movement. Flow velocity, last-valid position, sync states, hand targets, telemetry ring/cursor, fault flags, probe batches, SDF squeeze results, and player motor sweep/repair caches still used local-primary NativeArrays.
 - NativeArray payload structs in the resolver path used sequential Pack=4 layout instead of explicit byte offsets.
 
 What was done:
 - Added `BufferID.PlayerKinematicFlowVelocity` through `BufferID.PlayerKinematicSdfSqueezeResults`.
-- Routed every `PlayerKinematicsRuntime` persistent NativeArray through `AllocateRuntimeArray`, with H8Memory left only as cold fallback when the vault is unavailable.
+- Added `BufferID.PlayerMotorScheduledSweepCommands` through `BufferID.PlayerMotorKinematicRepairTargetResults`.
+- Routed every `PlayerKinematicsRuntime` persistent NativeArray and the player motor sweep/repair command-result caches through vault-first allocation, with H8Memory left only as cold fallback when the vault is unavailable.
 - Converted resolver payloads to explicit `Pack = 1` layouts: `SdfSqueezeResult`, runtime telemetry, sync state, accumulator state, hand target, and player telemetry.
 - Re-scanned the resolver path for `Update`, `string.Format`, legacy `EventBus`, managed delegates, `GameObject.Find`, `FindObjectOfType`, `Physics.CapsuleCast`, and `OnCollisionStay`; none were found.
 - Confirmed KCC has no compute/shader files, so this pass adds no Metal thread-group or DirectX-only shader risk.
@@ -51,11 +52,11 @@ Cinematic cheats used:
 - Salt/silt/hull-dent overkill remains downstream VFX territory; locomotion emits typed signals and does not add collision probes to fake art.
 
 Exact microseconds saved:
-- DataVault eviction expansion: estimated 2-8 us saved from reduced duplicate cache churn.
+- DataVault eviction expansion: estimated 4-12 us saved from reduced duplicate cache churn.
 - Explicit payload layout: 0 us direct frame saving; removes ARM64 padding ambiguity and crash class.
 - No new per-frame disk I/O; Steam Deck MicroSD impact remains 0 us outside fault dumps.
 
 Validation:
-- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false` captured in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_data_vault_pass.exit.txt`.
-- Build still fails with 3 foreign errors only: missing `Hecton8.AI.Sensory`, missing `TetherFiredSignal`, and missing `AcousticEchoHuntResult`.
-- Captured log contains no diagnostics naming `SdfSqueezeJob`, `PlayerKinematicsRuntime`, `HectonPlayerState`, or `H8Memory`.
+- Final `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false` captured in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_final_pass.exit.txt`.
+- Build still fails with 70 unique foreign errors and 3 duplicate-compile warnings in UI navigation, tether signals, homeostasis, lockstep replay, and item pickup domains.
+- Captured final log contains no diagnostics naming `SdfSqueezeJob`, `PlayerKinematicsRuntime`, `HectonPlayerState`, or `H8Memory`.

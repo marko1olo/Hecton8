@@ -28,3 +28,36 @@ Exact microseconds saved:
 Validation:
 - `dotnet build Assembly-CSharp.csproj --no-restore -nodeReuse:false -v:q` attempted.
 - Build remains blocked by unrelated missing project assets/temp metadata and pre-existing non-ladder compile errors. Targeted scans after repair found no remaining `LadderClimb`, `ProceduralLadder`, `ClimbableLadder`, `LadderAUPs`, or climb-signal errors.
+
+## 2026-05-16 - Multiplatform/H-Phi Hardening Pass
+What was wrong:
+- Runtime still owned persistent `NativeArray` fields and a private H8Memory fallback. That failed DataVault sovereignty.
+- Ladder packet structs used `Pack=4`, not the pack-1 binary layout demanded for IL2CPP/Quest-style payload safety.
+- Low-tier still paid the full `acos` elbow solve even though the prompt explicitly allowed a PC/camera-slide fake.
+- Math had remaining guarded-but-direct divisions that were weaker than the mobile NaN/Inf policy.
+
+What was done:
+- Replaced runtime-owned NativeArray fields with `VaultBufferHandle<T>` fields for ladder input, output, AUP, telemetry ring, and telemetry cursor.
+- Added `BufferID.LadderClimbIkInput`, `LadderClimbIkOutput`, `LadderClimbIkTelemetryRing`, and `LadderClimbIkTelemetryCursor`.
+- Removed the private H8Memory fallback; no DataVault now means climb start fails closed.
+- Converted ladder input/output/telemetry structs to `[StructLayout(LayoutKind.Sequential, Pack = 1)]`; converted touched `HapticRequest` and `PlayerStateSignal` explicit lanes to `Pack = 1` without changing fixed sizes.
+- Added low-tier midpoint-plus-pole elbow fake while preserving exact rung hand targets; high tier still uses clamped `math.acos`.
+- Replaced remaining ladder-domain blind divisions with `math.rcp(math.max(...))`, clamped grip accumulation, guarded `rsqrt`, and sanitized presentation deltas.
+
+Cinematic cheats used:
+- Toaster mode: camera slide plus midpoint elbow fake, no `acos` elbow solve.
+- High/VR mode: exact two-bone hand lock remains, driven by grip hand deltas.
+- No shader/compute/VFX ownership was invented from the animation domain; ladder publishes typed state/haptics for existing visual owners to consume.
+
+Exact microseconds saved:
+- Low-tier elbow fake versus full two-arm `acos` solve: estimated 7 us saved per player solve.
+- Removal of private fallback allocation/mirror: 0 us hot path, lower persistent memory ownership risk.
+- No per-frame disk IO: 0 us Steam Deck/MicroSD hot-path cost; blackbox dump remains cold path only.
+
+Validation:
+- Static ladder-domain scan found no private NativeArray fields, `H8Memory.Allocate`, `new NativeArray`, `Allocator.Persistent`, `StartCoroutine`, runtime `Update`, `FixedUpdate`, naked `Debug.Log`, `Animator`, `TeleportPlayer`, `PerformTeleport`, or `player.position =`.
+- Static shader/compute scan found no ladder-domain `ComputeShader`, shader dispatch, material mutation, or thread-group code.
+- `dotnet restore Hecton8.Core.csproj` and `dotnet restore Assembly-CSharp.csproj` succeeded.
+- `dotnet build Hecton8.Core.csproj --no-restore -nodeReuse:false -v:q` fails on unrelated missing `TetherFiredSignal` and `Hecton8.AI.Sensory.AcousticEchoHuntResult` contract includes.
+- `dotnet build Assembly-CSharp.csproj --no-restore -nodeReuse:false -v:q` fails on missing RealtimeCSG source files plus `TetherFiredSignal`.
+- Targeted Core build error scan produced no `LadderClimb`, `ProceduralLadder`, or `ClimbableLadder` matches. Status remains PENDING VERIFICATION.

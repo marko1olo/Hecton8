@@ -351,6 +351,11 @@ namespace Hecton8.Gameplay
         private const int NativeCacheLineMask = NativeCacheLineBytes - 1;
         private const string NativeMemoryOwner = nameof(HectonPlayerMotorNativeState);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+        private const int VaultScheduledSweepCommandsFlag = 1 << 0;
+        private const int VaultScheduledSweepResultsFlag = 1 << 1;
+        private const int VaultKinematicRepairTargetCommandsFlag = 1 << 2;
+        private const int VaultKinematicRepairTargetResultsFlag = 1 << 3;
+        private int _vaultNativeStateMask;
 
         public void EnsureScheduledSweepState(int commandCount, int resultCount)
         {
@@ -359,42 +364,32 @@ namespace Hecton8.Gameplay
 
             if (ScheduledSweepCommands.IsCreated && ScheduledSweepCommands.Length < requiredCommandCount)
             {
-                NativeMemorySentinel.UnregisterNativeArray(ScheduledSweepCommands);
-                ScheduledSweepCommands.Dispose();
-                ScheduledSweepCommands = default;
+                ReleaseMotorArray(ref ScheduledSweepCommands, VaultScheduledSweepCommandsFlag);
             }
 
             if (ScheduledSweepResults.IsCreated && ScheduledSweepResults.Length < requiredResultCount)
             {
-                NativeMemorySentinel.UnregisterNativeArray(ScheduledSweepResults);
-                ScheduledSweepResults.Dispose();
-                ScheduledSweepResults = default;
+                ReleaseMotorArray(ref ScheduledSweepResults, VaultScheduledSweepResultsFlag);
             }
 
             if (!ScheduledSweepCommands.IsCreated)
             {
-                ScheduledSweepCommands = new NativeArray<CapsulecastCommand>(
+                ScheduledSweepCommands = AllocateMotorArray<CapsulecastCommand>(
+                    BufferID.PlayerMotorScheduledSweepCommands,
                     requiredCommandCount,
-                    Allocator.Persistent,
-                    NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<CapsulecastCommand>[cache-line padded commandCount] - deferred KCC sweep commands; Allocator.Persistent native storage with 64-byte count padding - owner: HectonPlayerMotorNativeState
-                NativeMemorySentinel.RegisterNativeArray(
-                    ScheduledSweepCommands,
-                    NativeMemoryOwner,
                     nameof(ScheduledSweepCommands),
-                    NativeMemoryLifetime);
+                    VaultScheduledSweepCommandsFlag,
+                    NativeArrayOptions.UninitializedMemory); // COLD FALLBACK: vault-first deferred KCC sweep commands; 64-byte count padding - owner: HectonPlayerMotorNativeState
             }
 
             if (!ScheduledSweepResults.IsCreated)
             {
-                ScheduledSweepResults = new NativeArray<RaycastHit>(
+                ScheduledSweepResults = AllocateMotorArray<RaycastHit>(
+                    BufferID.PlayerMotorScheduledSweepResults,
                     requiredResultCount,
-                    Allocator.Persistent,
-                    NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<RaycastHit>[cache-line padded resultCount] - deferred KCC sweep results; Allocator.Persistent native storage with 64-byte count padding - owner: HectonPlayerMotorNativeState
-                NativeMemorySentinel.RegisterNativeArray(
-                    ScheduledSweepResults,
-                    NativeMemoryOwner,
                     nameof(ScheduledSweepResults),
-                    NativeMemoryLifetime);
+                    VaultScheduledSweepResultsFlag,
+                    NativeArrayOptions.UninitializedMemory); // COLD FALLBACK: vault-first deferred KCC sweep results; 64-byte count padding - owner: HectonPlayerMotorNativeState
             }
         }
 
@@ -411,29 +406,99 @@ namespace Hecton8.Gameplay
         {
             if (!KinematicRepairTargetCommands.IsCreated)
             {
-                KinematicRepairTargetCommands = new NativeArray<RaycastCommand>(
+                KinematicRepairTargetCommands = AllocateMotorArray<RaycastCommand>(
+                    BufferID.PlayerMotorKinematicRepairTargetCommands,
                     math.max(1, commandCount),
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[commandCount] - KCC hand IK repair target ray commands - owner: HectonPlayerMotorNativeState
-                NativeMemorySentinel.RegisterNativeArray(
-                    KinematicRepairTargetCommands,
-                    NativeMemoryOwner,
                     nameof(KinematicRepairTargetCommands),
-                    NativeMemoryLifetime);
+                    VaultKinematicRepairTargetCommandsFlag,
+                    NativeArrayOptions.ClearMemory); // COLD FALLBACK: vault-first KCC hand IK repair target ray commands - owner: HectonPlayerMotorNativeState
             }
 
             if (!KinematicRepairTargetResults.IsCreated)
             {
-                KinematicRepairTargetResults = new NativeArray<RaycastHit>(
+                KinematicRepairTargetResults = AllocateMotorArray<RaycastHit>(
+                    BufferID.PlayerMotorKinematicRepairTargetResults,
                     math.max(1, resultCount),
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[resultCount] - KCC hand IK repair target ray results - owner: HectonPlayerMotorNativeState
-                NativeMemorySentinel.RegisterNativeArray(
-                    KinematicRepairTargetResults,
-                    NativeMemoryOwner,
                     nameof(KinematicRepairTargetResults),
+                    VaultKinematicRepairTargetResultsFlag,
+                    NativeArrayOptions.ClearMemory); // COLD FALLBACK: vault-first KCC hand IK repair target ray results - owner: HectonPlayerMotorNativeState
+            }
+        }
+
+        private NativeArray<T> AllocateMotorArray<T>(
+            BufferID bufferId,
+            int count,
+            string label,
+            int vaultFlag,
+            NativeArrayOptions options) where T : struct
+        {
+            int safeCount = math.max(1, count);
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault != null)
+            {
+                NativeArray<T> vaultArray = vault.GetBuffer<T>(
+                    bufferId,
+                    safeCount,
+                    SystemID.GameplayPlayer,
+                    options);
+                if (vaultArray.IsCreated)
+                {
+                    _vaultNativeStateMask |= vaultFlag;
+                    return vaultArray;
+                }
+            }
+
+            _vaultNativeStateMask &= ~vaultFlag;
+            NativeArray<T> array = H8Memory.Allocate<T>(
+                safeCount,
+                SystemID.GameplayPlayer,
+                Allocator.Persistent,
+                options);
+            if (array.IsCreated)
+            {
+                NativeMemorySentinel.RegisterNativeArray(
+                    array,
+                    NativeMemoryOwner,
+                    label,
                     NativeMemoryLifetime);
             }
+
+            return array;
+        }
+
+        private void ReleaseMotorArray<T>(ref NativeArray<T> array, int vaultFlag) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            if ((_vaultNativeStateMask & vaultFlag) != 0)
+            {
+                array = default;
+                _vaultNativeStateMask &= ~vaultFlag;
+                return;
+            }
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            H8Memory.Release(ref array, SystemID.GameplayPlayer);
+        }
+
+        private JobHandle ReleaseMotorArray<T>(
+            ref NativeArray<T> array,
+            int vaultFlag,
+            JobHandle dependency) where T : struct
+        {
+            if (!array.IsCreated)
+                return dependency;
+
+            if ((_vaultNativeStateMask & vaultFlag) != 0)
+            {
+                array = default;
+                _vaultNativeStateMask &= ~vaultFlag;
+                return dependency;
+            }
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            return H8Memory.Release(ref array, dependency, SystemID.GameplayPlayer);
         }
 
         public void DisposeScheduledSweepState(bool hasDependency, JobHandle dependency)
@@ -447,35 +512,19 @@ namespace Hecton8.Gameplay
             if (!hasDependency)
             {
                 if (ScheduledSweepCommands.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(ScheduledSweepCommands);
-                    ScheduledSweepCommands.Dispose();
-                }
+                    ReleaseMotorArray(ref ScheduledSweepCommands, VaultScheduledSweepCommandsFlag);
                 if (ScheduledSweepResults.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(ScheduledSweepResults);
-                    ScheduledSweepResults.Dispose();
-                }
-                ScheduledSweepCommands = default;
-                ScheduledSweepResults = default;
+                    ReleaseMotorArray(ref ScheduledSweepResults, VaultScheduledSweepResultsFlag);
                 ScheduledSweepHandle = default;
                 return;
             }
 
             JobHandle disposeHandle = dependency;
             if (ScheduledSweepCommands.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(ScheduledSweepCommands);
-                disposeHandle = ScheduledSweepCommands.Dispose(disposeHandle);
-            }
+                disposeHandle = ReleaseMotorArray(ref ScheduledSweepCommands, VaultScheduledSweepCommandsFlag, disposeHandle);
             if (ScheduledSweepResults.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(ScheduledSweepResults);
-                disposeHandle = ScheduledSweepResults.Dispose(disposeHandle);
-            }
+                disposeHandle = ReleaseMotorArray(ref ScheduledSweepResults, VaultScheduledSweepResultsFlag, disposeHandle);
 
-            ScheduledSweepCommands = default;
-            ScheduledSweepResults = default;
             ScheduledSweepHandle = disposeHandle;
         }
 
@@ -490,35 +539,19 @@ namespace Hecton8.Gameplay
             if (!hasDependency)
             {
                 if (KinematicRepairTargetCommands.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(KinematicRepairTargetCommands);
-                    KinematicRepairTargetCommands.Dispose();
-                }
+                    ReleaseMotorArray(ref KinematicRepairTargetCommands, VaultKinematicRepairTargetCommandsFlag);
                 if (KinematicRepairTargetResults.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(KinematicRepairTargetResults);
-                    KinematicRepairTargetResults.Dispose();
-                }
-                KinematicRepairTargetCommands = default;
-                KinematicRepairTargetResults = default;
+                    ReleaseMotorArray(ref KinematicRepairTargetResults, VaultKinematicRepairTargetResultsFlag);
                 KinematicRepairTargetHandle = default;
                 return;
             }
 
             JobHandle disposeHandle = dependency;
             if (KinematicRepairTargetCommands.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(KinematicRepairTargetCommands);
-                disposeHandle = KinematicRepairTargetCommands.Dispose(disposeHandle);
-            }
+                disposeHandle = ReleaseMotorArray(ref KinematicRepairTargetCommands, VaultKinematicRepairTargetCommandsFlag, disposeHandle);
             if (KinematicRepairTargetResults.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(KinematicRepairTargetResults);
-                disposeHandle = KinematicRepairTargetResults.Dispose(disposeHandle);
-            }
+                disposeHandle = ReleaseMotorArray(ref KinematicRepairTargetResults, VaultKinematicRepairTargetResultsFlag, disposeHandle);
 
-            KinematicRepairTargetCommands = default;
-            KinematicRepairTargetResults = default;
             KinematicRepairTargetHandle = disposeHandle;
         }
 

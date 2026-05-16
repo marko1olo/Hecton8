@@ -836,6 +836,7 @@ namespace Hecton8.Gameplay.Loot
                     {
                         telemetryFlags |= TelemetryInventoryMissingFlag;
                         views.EntityFlags[index] = LootEntityFlags.Active | LootEntityFlags.IsLoot;
+                        pickup.RestoreLootMagnetRuntimeState();
                         FoldActiveSlotHash(in views, ref flagsHash, ref lastActiveIndex, index);
                         continue;
                     }
@@ -844,13 +845,14 @@ namespace Hecton8.Gameplay.Loot
                     {
                         telemetryFlags |= TelemetryAcquisitionBudgetDeferFlag;
                         RestoreDeferredAcquisition(in views, index, flags);
+                        pickup.RestoreLootMagnetRuntimeState();
                         FoldActiveSlotHash(in views, ref flagsHash, ref lastActiveIndex, index);
                         continue;
                     }
 
                     acquisitionBudget--;
                     int quantityBefore = math.max(0, pickup.Quantity);
-                    pickup.TryHandleInventoryPickup(_inventory, _playerTransform, publishLegacyEvents: false);
+                    pickup.TryHandleInventoryPickup(_inventory, _playerTransform, publishAcquiredSignal: false);
                     int quantityAfter = math.max(0, pickup.Quantity);
                     int addedQuantity = math.max(0, quantityBefore - quantityAfter);
                     if (addedQuantity > 0)
@@ -870,6 +872,7 @@ namespace Hecton8.Gameplay.Loot
                               LootEntityFlags.IsLoot |
                               LootEntityFlags.Bit_IsMagnetic
                             : LootEntityFlags.Active | LootEntityFlags.IsLoot;
+                        pickup.RestoreLootMagnetRuntimeState();
                         FoldActiveSlotHash(in views, ref flagsHash, ref lastActiveIndex, index);
                     }
                     else
@@ -883,6 +886,7 @@ namespace Hecton8.Gameplay.Loot
                 telemetryFlags |= PublishPresentationSignals(in signalEvent, 0, ref acousticBudget, ref wakeBudget);
                 if ((flags & LootEntityFlags.Pulling) == 0u || (flags & LootEntityFlags.Active) == 0u)
                 {
+                    pickup.RestoreLootMagnetRuntimeState();
                     FoldActiveSlotHash(in views, ref flagsHash, ref lastActiveIndex, index);
                     continue;
                 }
@@ -920,6 +924,10 @@ namespace Hecton8.Gameplay.Loot
 
         private void ClearVaultSlot(in LootMagnetVaultViews views, int index)
         {
+            PickupItem pickup = _pickupRefs[index];
+            if (pickup != null)
+                pickup.RestoreLootMagnetRuntimeState();
+
             _pickupRefs[index] = null;
             _pickupEntityIds[index] = 0UL;
             views.EntityAups[index] = default;

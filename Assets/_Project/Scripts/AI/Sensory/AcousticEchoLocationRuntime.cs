@@ -48,7 +48,7 @@ namespace Hecton8.AI.Sensory
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    internal struct AcousticEchoTrailState
+    public struct AcousticEchoTrailState
     {
         public AbsoluteUniversePosition InvestigateAup;
         public AbsoluteUniversePosition SourceAup;
@@ -81,7 +81,7 @@ namespace Hecton8.AI.Sensory
     }
 
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
-    internal struct EchoTrackingJob : IJob
+    public struct EchoTrackingJob : IJob
     {
         [ReadOnly] public NativeArray<EchoTap> Taps;
         public NativeArray<AcousticEchoTrailState> Result;
@@ -459,10 +459,8 @@ namespace Hecton8.AI.Sensory
                 _frameTaps[count++] = tap;
             }
 
-            while (_echoTapQueue.Count > MaxEchoTapsPerFrame)
+            while (_echoTapQueue.TryDequeue(out _))
             {
-                if (!_echoTapQueue.TryDequeue(out _))
-                    break;
             }
 
             return count;

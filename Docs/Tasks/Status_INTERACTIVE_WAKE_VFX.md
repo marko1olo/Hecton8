@@ -4,7 +4,7 @@ Agent Identity: VFX_TECHNICAL_ARTIST
 Prompt ID: INTERACTIVE_WAKE_VFX
 Domain: VFX/ENVIRONMENT
 Task Count: 18
-Status: PHASE 1 COMPLETE - COMPILE BLOCKED BY DEPENDENCY
+Status: PHASE 2/4 WAKE KERNEL COMPLETE - COMPILE BLOCKED BY DEPENDENCY
 
 ## Mandates Read
 
@@ -28,24 +28,27 @@ Status: PHASE 1 COMPLETE - COMPILE BLOCKED BY DEPENDENCY
 - [x] Singleton/local allocation scan | Command: `rg -n "WakeManager\\.Instance|WakeManager|RegisterProceduralSwayDirector\\(this\\)|UnregisterProceduralSwayDirector\\(this\\)|new NativeArray<ProceduralWakePoint>|DisposeNativeArray\\(ref _proceduralWakePoints\\)" Assets/_Project/Scripts` | Result: no hits | Estimate: prevents duplicate wake authority
 - [x] XML re-read after three tasks | DOD: re-extracted `<AGENT_PROMPT id="INTERACTIVE_WAKE_VFX">` using PowerShell regex over `Docs/Tasks/CURRENT_BATCH.md` | Alternatives Rejected: relying on stale chat memory | Estimate: 0 us/frame
 - [x] Compile attempted | Command: `dotnet build .\Hecton8.Core.csproj -v:minimal` | Result: 159 errors from missing cross-domain contracts such as `IJobAdmissionService`, `ISimulationBucketer`, `MacroDatabase*`, `IPlayerMovementContracts`, `FoveatedSimulationTier`; no visible errors named the new wake interface/buffer changes | Status: `[BLOCKED BY DEPENDENCY]`
+- [x] Compile reattempted after wake kernel | Command: `dotnet build .\Hecton8.Core.csproj -v:minimal` | Result: dependency wall moved through multiple unrelated owners; sampled final blockers are UI navigation, Homeostasis, Lockstep, item signal, and tether signal integration; no sampled error names `WakeSource`, `WakeDecayJob`, `_GlobalWakeBuffer`, or `FloraInteractionManager` wake changes | Status: `[BLOCKED BY DEPENDENCY]`
+- [x] Domain inquisition scan | Command: `rg -n "Update\(|string\.Format|new NativeArray|StructLayout\(LayoutKind\.Sequential|Pack = 4|WindZone|ForceField|forceOverLifetime" Assets/_Project/Scripts/VFX/Wakes` | Result: no hits | Estimate: prevents domain-local managed tick/allocation rot
+- [x] Wake transport scan | Command: `rg -n "_wakeGeneratedSignals|WakeGeneratedSignalWriter|TryDequeueWakeGenerated" Assets/_Project/Scripts/Core/GlobalSignals.cs Assets/_Project/Scripts/World/FloraInteractionManager.cs Assets/_Project/Scripts/VFX/Wakes` | Result: no hits after typed lane purge | Estimate: one wake transport authority
 
 ## Remaining Tasks
 
-- [ ] 4. WAKE_REGISTRY | Pending Phase 2 loop | Estimate: pending
-- [ ] 5. WAKE_INJECTION | Pending Phase 2 loop | Estimate: pending
-- [ ] 6. DECAY_JOB | Pending Phase 2 loop | Estimate: pending
-- [ ] 7. AUP_INTEGRITY | Pending Phase 2 loop | Estimate: pending
+- [x] 4. WAKE_REGISTRY | DOD: added DataVault-backed `WakeGlobalBuffer` and `WakeVectorBuffer` fixed at 16 `float4` slots; shader globals `_GlobalWakeBuffer`, `_GlobalWakeVectors`, `_GlobalWakeParams` are published through raw `Shader.SetGlobalVectorArray` | Alternatives Rejected: managed component wind, local persistent wake arrays, compute-only hidden buffer | Estimate: 4-12 us/frame saved versus object/component wake fanout
+- [x] 5. WAKE_INJECTION | DOD: `WakeGeneratedSignal` now uses typed `SignalBus<WakeGeneratedSignal>` snapshots; legacy public wake queue writer/reader removed; insertion merges matching source kinds and overwrites inactive/weakest slots | Alternatives Rejected: `WakeManager.Instance`, legacy `TryDequeueWakeGenerated`, managed delegates | Estimate: 3-8 us/frame avoided on busy signal frames
+- [x] 6. DECAY_JOB | DOD: added Burst `WakeDecayJob` using exponential decay `Intensity *= math.exp(-dt * DecayRate)` over the DataVault wake source view | Alternatives Rejected: per-object MonoBehaviour decay, linear-only CPU truth | Estimate: 2-6 us/frame on low-end when multiple wakes are active
+- [x] 7. AUP_INTEGRITY | DOD: origin-shift path rebases active DataVault wake source positions/targets and republishes global arrays; AUP remains stored inside each `WakeSource` | Alternatives Rejected: world-space-only wake trails | Estimate: prevents teleporting trails; runtime cost only on origin shift
 - [ ] 8. LOW_TIER_FAKE | Pending Phase 3 loop | Estimate: pending
 - [ ] 9. HIGH_END_OVERKILL | Pending Phase 3 loop | Estimate: pending
 - [ ] 10. REACTIVE_VFX | Pending Phase 3 loop | Estimate: pending
 - [ ] 11. STP_STABILIZATION | Pending Phase 3 loop | Estimate: pending
-- [ ] 12. NAN_VACCINATION | Pending Phase 4 loop | Estimate: pending
-- [ ] 13. BLACKBOX_LOGGING | Pending Phase 4 loop | Estimate: pending
+- [x] 12. NAN_VACCINATION | DOD: signal velocity, AUP runtime position, radius, intensity, source position/target/velocity, and shader direction normalization are finite-guarded; zero velocity resolves to `(0,0,0)` not NaN | Alternatives Rejected: raw `normalize(velocity)` | Estimate: avoids mobile GPU poison, no steady-state cost beyond scalar guards
+- [x] 13. BLACKBOX_LOGGING | DOD: added 300-frame DataVault `WakeBlackBox` ring with `ActiveWakeSourcesCount`, slot cap, strongest wake, generation, AUP shift sequence, stress, and low-tier flag; NaN/invalid input dumps to `Docs/AgentLogs/Dump_INTERACTIVE_WAKE_VFX.bin` | Alternatives Rejected: debug logs or unknown-crash posture | Estimate: 1-3 us/frame for 64-byte ring write
 - [ ] 14. TRIPLE_STRIKE_REPAIR | Pending Phase 4 loop | Estimate: pending
-- [ ] 15. HOMEOSTASIS_ADAPTATION | Pending Phase 4 loop | Estimate: pending
+- [x] 15. HOMEOSTASIS_ADAPTATION | DOD: `SystemStress01 > 0.8` or low tier caps active wake publishing/decay to 4 slots; high tier keeps 16 | Alternatives Rejected: one-size-fits-all middle tier | Estimate: up to 6-18 us/frame GPU-side downstream savings on stress frames
 - [ ] 16. NORMAL_PERTURBATION | Pending Phase 4 loop | Estimate: pending
 - [ ] 17. BOID_INTEGRATION | Pending Phase 4 loop | Estimate: pending
-- [ ] 18. FINAL_VALIDATION | `[BLOCKED BY DEPENDENCY]` `dotnet build .\Hecton8.Core.csproj -v:minimal` exits 1 on pre-existing cross-domain missing contracts before wake validation can finish | Estimate: pending
+- [ ] 18. FINAL_VALIDATION | `[BLOCKED BY DEPENDENCY]` repeated `dotnet build .\Hecton8.Core.csproj -v:minimal` exits 1 on cross-domain breakage outside wake scope; latest sampled blockers include `DiegeticGyroCompassRuntime`, `HomeostasisBrain`, `LockstepStateValidator`, `PickupItem`, and `TetherSignals`; no sampled wake runtime error | Estimate: pending
 
 ## Prior Blocker History
 

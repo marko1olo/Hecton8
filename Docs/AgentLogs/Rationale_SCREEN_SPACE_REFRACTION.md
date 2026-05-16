@@ -83,3 +83,35 @@ Solution: Keep status as core complete/build blocked, record the exact blocker l
 Rejected Alternatives: Claiming master-grade verification without a clean build, or editing unrelated agent files to force the build forward, would be a false report.
 Scalability potential: Low/Middle/High/Ultra design is present; certification waits on integration compile and GPU profiling.
 Hardware Impact: Exact microseconds saved are not measured. The only proven value is static removal of legacy blit/grab-style paths and bounded shader branches.
+
+## Decision 10 - DataVault Blackbox Correction
+
+Problem: The prior N/A blackbox judgment was too weak for the continuation mandate; the visor post now has CPU-side runtime state worth preserving when NaN input hits the GPU boundary.
+Solution: Store a 300-entry `VisorRefractionTelemetryEntry` ring in `GlobalRegistry.DataVault` with `BufferID.VisorRefractionBlackBox`, `SystemID.Vfx`, explicit 48-byte packed layout, generation checks, and one-shot binary dump only on non-finite input.
+Rejected Alternatives: A private persistent `NativeArray` would violate data sovereignty; per-frame text logging would violate Steam Deck/MicroSD I/O pressure; a managed list would violate zero-GC.
+Scalability potential: Low records the same compact heartbeat while rendering chromatic-only; Middle records Snell state; High records visual-overkill state; Ultra can widen telemetry fields later only through a versioned packed struct.
+Hardware Impact: i3/MX350 cost is one 48-byte DataVault write when the player camera is evaluated, exact microseconds unmeasured. Quest/ARM64 uses `[StructLayout(LayoutKind.Explicit, Pack = 1, Size = 48)]`, so no implicit padding assumption is required.
+
+## Decision 11 - Multiplatform Shader Target
+
+Problem: The fullscreen visor fragment shader declared target 4.5 without compute, UAV, or SM4.5-only behavior, increasing mobile/Metal risk for no visual return.
+Solution: Lower the shader target to 3.5 and keep all refraction/salt work in fragment ALU with URP texture macros.
+Rejected Alternatives: Keeping SM4.5 was unnecessary; compute/raymarch/POM additions were rejected inside this low-cost post pass because they would violate the original MX350 objective.
+Scalability potential: Low/MX350 gets chromatic-only refraction and no salt growth; Mid gets normal Snell; High gets salt crystal ALU; Ultra gets stronger salt growth through `_HectonVisorFluidVisualOverkill`.
+Hardware Impact: Metal/Mac and Quest avoid needless shader-model pressure. Exact GPU microseconds are unmeasured; CPU impact is 0.0 us/frame.
+
+## Decision 12 - Visual Overkill Without Domain Creep
+
+Problem: The continuation asked for god-mode spectacle, but volumetric silt wakes and dented hulls belong to fluid/vehicle domains, not this VFX/POST visor refraction task.
+Solution: Add domain-valid procedural salt-crystal growth on wet clean visor glass, gated by quality tier and inverse dirt/depth masks, using no extra textures, no particles, and no I/O.
+Rejected Alternatives: Raymarching, 16-tap POM, SSS, hull dent simulation, or silt particle systems were rejected here because they create out-of-domain dependencies and exceed the low-cost Snell contract.
+Scalability potential: Toaster mode remains a Dear Lie: chromatic aberration plus dirt/depth gates. Middle uses one bounded Snell perturbation. High adds sparse salt glints. Ultra increases salt density/growth via the same uniform without changing render topology.
+Hardware Impact: Low-end i3/MX350 sees 0.0 CPU cost and the salt branch forced off. Top-tier devices spend only gated fragment ALU on clean wet visor pixels; exact GPU microseconds need Unity profiler after the shared build compiles.
+
+## Decision 13 - Continuation Compile Wall
+
+Problem: The shared project still does not compile after visor static verification.
+Solution: Re-run `dotnet build` and record the current first blockers: UI compass blackbox/visual overkill drift, lockstep replay header drift, homeostasis missing buffers/helpers, item pickup missing `ItemAcquiredSignal`, and tether signal type constraints.
+Rejected Alternatives: Editing UI, determinism, core homeostasis, item, or physics signal code would exceed the VFX/POST assignment and collide with other agents.
+Scalability potential: Refraction Low/Mid/High/Ultra paths remain implemented; certification is blocked by unrelated integration debt.
+Hardware Impact: No runtime impact from this blocker. Exact visor microseconds remain unmeasured until the compile wall is cleared.

@@ -1148,7 +1148,7 @@ namespace Hecton8.Gameplay
             }
 
             ClearFlag(LowPowerState);
-            if (TryApplyWfcDoorCut(deltaTime, normalizedPower, absoluteOriginAup, absoluteHitAup, direction, out _, out _))
+            if (TryApplyWfcDoorCut(deltaTime, normalizedPower, absoluteOriginAup, absoluteHitAup, out _, out _))
             {
                 ApplyRecoilImpulse(direction, normalizedPower);
                 return;
@@ -1199,7 +1199,6 @@ namespace Hecton8.Gameplay
             float normalizedPower,
             double3 absoluteOriginAup,
             double3 absoluteHitAup,
-            Vector3 direction,
             out float progress01,
             out bool completed)
         {
@@ -1224,7 +1223,6 @@ namespace Hecton8.Gameplay
                 absoluteOriginAup,
                 absoluteHitAup,
                 _hitInfo.point,
-                _hitInfo.normal,
                 progressDelta01,
                 normalizedPower,
                 _heatLevel,

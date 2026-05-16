@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.VFX;
 using Hecton8.World;
@@ -542,6 +543,9 @@ namespace Hecton8.Physics
         private ParticleSystemRenderer _hullImpactSparkRenderer;
         private ParticleSystem.EmitParams _hullImpactSparkEmitParams;
         private MaterialPropertyBlock _leakPlumeDrawProperties;
+        private IDataVault _dataVault;
+        private VaultBufferHandle<float4> _breachesHandle;
+        private VaultBufferHandle<DamageControlTelemetryEntry> _damageControlTelemetryHandle;
         private bool _hullImpactDentDecalPoolWarmed;
         private bool _hullImpactScratchDecalPoolWarmed;
         private bool _breachRepairJobRunning;
@@ -563,9 +567,7 @@ namespace Hecton8.Physics
         private NativeArray<byte> _fatigueCompartmentFlags;
         private NativeArray<float> _fatigueIntegrityLossPerCycle;
         private NativeArray<float> _fatiguePeakResult;
-        private NativeArray<float4> _breaches;
         private NativeArray<float> _breachSeveritySumResult;
-        private NativeArray<DamageControlTelemetryEntry> _damageControlTelemetry;
         private readonly float4[] _deferredBreachAdds = new float4[DeferredBreachAddCapacity]; // COLD ALLOC: float4[16] - breach adds deferred while Burst repair owns the NativeArray - owner: SubmarineStructuralGrid
         private GraphicsBuffer _breachGpuBufferA;
         private GraphicsBuffer _breachGpuBufferB;
@@ -582,8 +584,8 @@ namespace Hecton8.Physics
         public int BreachMaskWordCount => _hullBreachMaskFront.IsCreated ? _hullBreachMaskFront.Length : 0;
 
         /// <inheritdoc />
-        public int ActiveBreachCount => _nativeStateReady && _breaches.IsCreated
-            ? math.min(_activeBreachCount, _breaches.Length)
+        public int ActiveBreachCount => _nativeStateReady && TryResolveBreachBuffer(out var breaches)
+            ? math.min(_activeBreachCount, breaches.Length)
             : 0;
 
         internal float FatiguePeakNormalized => _fatiguePeakNormalized;
@@ -1038,10 +1040,14 @@ namespace Hecton8.Physics
         public bool TryGetActiveBreach(int index, out Vector4 localPointSeverity)
         {
             localPointSeverity = default;
-            if (!_nativeStateReady || !_breaches.IsCreated || (uint)index >= (uint)ActiveBreachCount)
+            if (!_nativeStateReady ||
+                !TryResolveBreachBuffer(out var breaches) ||
+                (uint)index >= (uint)math.min(_activeBreachCount, breaches.Length))
+            {
                 return false;
+            }
 
-            float4 breach = _breaches[index];
+            float4 breach = breaches[index];
             if (breach.w <= 0f || !math.all(math.isfinite(breach)))
                 return false;
 
@@ -1084,7 +1090,7 @@ namespace Hecton8.Physics
         public bool TryQueueRepairHit(Vector3 worldHitPoint, float deltaTime, float repairUnitsPerSecond, float intensity01)
         {
             if (!_nativeStateReady ||
-                !_breaches.IsCreated ||
+                !TryResolveBreachBuffer(out var breaches) ||
                 _breachRepairJobRunning ||
                 _activeBreachCount <= 0 ||
                 !IsFiniteVector(worldHitPoint))
@@ -1096,10 +1102,10 @@ namespace Hecton8.Physics
                 return false;
 
             float repairRadiusSq = BreachRepairRadiusMeters * BreachRepairRadiusMeters;
-            int count = math.min(_activeBreachCount, _breaches.Length);
+            int count = math.min(_activeBreachCount, breaches.Length);
             for (int i = 0; i < count; i++)
             {
-                float4 breach = _breaches[i];
+                float4 breach = breaches[i];
                 if (breach.w <= 0f)
                     continue;
 
@@ -1146,7 +1152,7 @@ namespace Hecton8.Physics
 
         private void AddOrRefreshBreachLocal(float3 localPoint, float severity01)
         {
-            if (!_nativeStateReady || !_breaches.IsCreated || !math.all(math.isfinite(localPoint)))
+            if (!_nativeStateReady || !TryResolveBreachBuffer(out var breaches) || !math.all(math.isfinite(localPoint)))
                 return;
 
             float severity = math.saturate(severity01);
@@ -1159,27 +1165,27 @@ namespace Hecton8.Physics
                 return;
             }
 
-            int count = math.min(_activeBreachCount, _breaches.Length);
+            int count = math.min(_activeBreachCount, breaches.Length);
             float mergeRadiusSq = BreachMergeRadiusMeters * BreachMergeRadiusMeters;
             for (int i = 0; i < count; i++)
             {
-                float4 breach = _breaches[i];
+                float4 breach = breaches[i];
                 if (math.distancesq(new float3(breach.x, breach.y, breach.z), localPoint) > mergeRadiusSq)
                     continue;
 
                 _activeBreachSeveritySum -= math.max(0f, breach.w);
                 breach.w = math.saturate(math.max(breach.w, severity));
                 _activeBreachSeveritySum += breach.w;
-                _breaches[i] = breach;
+                breaches[i] = breach;
                 _breachGpuDirty = true;
                 RegisterBreachScreenSpaceFeedback(localPoint, breach.w);
                 return;
             }
 
-            if (count >= _breaches.Length)
+            if (count >= breaches.Length)
                 return;
 
-            _breaches[count] = new float4(localPoint, severity);
+            breaches[count] = new float4(localPoint, severity);
             _activeBreachCount = count + 1;
             _activeBreachSeveritySum += severity;
             _breachGpuDirty = true;
@@ -1264,7 +1270,7 @@ namespace Hecton8.Physics
 
         private void ScheduleBreachRepairJob()
         {
-            if (!_pendingRepairQueued || !_breaches.IsCreated || _activeBreachCount <= 0)
+            if (!_pendingRepairQueued || !TryResolveBreachBuffer(out var breaches) || _activeBreachCount <= 0)
             {
                 _pendingRepairQueued = false;
                 return;
@@ -1277,7 +1283,7 @@ namespace Hecton8.Physics
 
                 _breachRepairJobHandle = new BreachRepairJob
                 {
-                    Breaches = _breaches,
+                    Breaches = breaches,
                     SeveritySum = _breachSeveritySumResult,
                     ActiveCount = _activeBreachCount,
                     LocalHitPoint = _pendingRepairLocalPoint,
@@ -1308,16 +1314,16 @@ namespace Hecton8.Physics
 
         private void CompactInactiveBreaches()
         {
-            if (!_breaches.IsCreated || _breachRepairJobRunning)
+            if (!TryResolveBreachBuffer(out var breaches) || _breachRepairJobRunning)
                 return;
 
-            int count = math.min(_activeBreachCount, _breaches.Length);
+            int count = math.min(_activeBreachCount, breaches.Length);
             float sum = 0f;
             bool compacted = false;
             int i = 0;
             while (i < count)
             {
-                float4 breach = _breaches[i];
+                float4 breach = breaches[i];
                 if (breach.w > 0f && math.all(math.isfinite(breach)))
                 {
                     sum += breach.w;
@@ -1326,8 +1332,8 @@ namespace Hecton8.Physics
                 }
 
                 int lastIndex = count - 1;
-                _breaches[i] = _breaches[lastIndex];
-                _breaches[lastIndex] = float4.zero;
+                breaches[i] = breaches[lastIndex];
+                breaches[lastIndex] = float4.zero;
                 count--;
                 compacted = true;
             }
@@ -1340,13 +1346,13 @@ namespace Hecton8.Physics
 
         private float RecalculateBreachSeveritySum()
         {
-            if (!_breaches.IsCreated)
+            if (!TryResolveBreachBuffer(out var breaches))
                 return 0f;
 
             float sum = 0f;
-            int count = math.min(_activeBreachCount, _breaches.Length);
+            int count = math.min(_activeBreachCount, breaches.Length);
             for (int i = 0; i < count; i++)
-                sum += math.max(0f, _breaches[i].w);
+                sum += math.max(0f, breaches[i].w);
 
             return math.isfinite(sum) ? sum : 0f;
         }
@@ -1409,13 +1415,13 @@ namespace Hecton8.Physics
 
         private float ResolvePeakBreachSeverity()
         {
-            if (!_breaches.IsCreated)
+            if (!TryResolveBreachBuffer(out var breaches))
                 return 0f;
 
             float peak = 0f;
-            int count = math.min(_activeBreachCount, _breaches.Length);
+            int count = math.min(_activeBreachCount, breaches.Length);
             for (int i = 0; i < count; i++)
-                peak = math.max(peak, math.max(0f, _breaches[i].w));
+                peak = math.max(peak, math.max(0f, breaches[i].w));
 
             return peak;
         }
@@ -1437,7 +1443,7 @@ namespace Hecton8.Physics
 
         private void DispatchLeakPlumeCompute(float fixedDeltaTime)
         {
-            if (!_breaches.IsCreated || leakPlumeCompute == null)
+            if (!TryResolveBreachBuffer(out var breaches) || leakPlumeCompute == null)
                 return;
 
             if (!EnsureLeakPlumeGpuResources())
@@ -1452,7 +1458,7 @@ namespace Hecton8.Physics
                 if (uploadBuffer == null)
                     return;
 
-                GraphicsBufferUploadUtility.UploadNativeArray(uploadBuffer, _breaches, math.max(1, _activeBreachCount));
+                GraphicsBufferUploadUtility.UploadNativeArray(uploadBuffer, breaches, math.max(1, _activeBreachCount));
                 _breachGpuDirty = false;
                 uploadedThisFrame = true;
             }
@@ -1600,11 +1606,15 @@ namespace Hecton8.Physics
 
         private void WriteDamageControlTelemetry(uint reasonFlags, bool allowNativeBreachRead)
         {
-            if (!_damageControlTelemetry.IsCreated || _damageControlTelemetry.Length <= 0)
+            if (!TryResolveDamageControlTelemetry(out var telemetry) || telemetry.Length <= 0)
                 return;
 
-            int index = _damageControlTelemetryHead % _damageControlTelemetry.Length;
-            float4 first = allowNativeBreachRead && _breaches.IsCreated && _activeBreachCount > 0 ? _breaches[0] : float4.zero;
+            int index = _damageControlTelemetryHead % telemetry.Length;
+            float4 first = allowNativeBreachRead &&
+                           TryResolveBreachBuffer(out var breaches) &&
+                           _activeBreachCount > 0
+                ? breaches[0]
+                : float4.zero;
             bool invalid = allowNativeBreachRead &&
                            _activeBreachCount > 0 &&
                            (!math.all(math.isfinite(first)) || !math.isfinite(_activeBreachSeveritySum));
@@ -1619,8 +1629,8 @@ namespace Hecton8.Physics
                 Flags = flags,
                 StateHash = BuildDamageControlTelemetryHash(first, _activeBreachSeveritySum, _activeBreachCount, flags)
             };
-            _damageControlTelemetry[index] = entry;
-            _damageControlTelemetryHead = (_damageControlTelemetryHead + 1) % _damageControlTelemetry.Length;
+            telemetry[index] = entry;
+            _damageControlTelemetryHead = (_damageControlTelemetryHead + 1) % telemetry.Length;
 
             if (invalid)
             {
@@ -1648,7 +1658,7 @@ namespace Hecton8.Physics
 
         private void DumpDamageControlTelemetry()
         {
-            if (!_damageControlTelemetry.IsCreated)
+            if (!TryResolveDamageControlTelemetry(out var telemetry))
                 return;
 
             string path = Path.Combine(Application.dataPath, "..", DamageControlDumpPath);
@@ -1659,11 +1669,11 @@ namespace Hecton8.Physics
             using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
             using (BinaryWriter writer = new BinaryWriter(stream))
             {
-                writer.Write(_damageControlTelemetry.Length);
+                writer.Write(telemetry.Length);
                 writer.Write(_damageControlTelemetryHead);
-                for (int i = 0; i < _damageControlTelemetry.Length; i++)
+                for (int i = 0; i < telemetry.Length; i++)
                 {
-                    DamageControlTelemetryEntry entry = _damageControlTelemetry[i];
+                    DamageControlTelemetryEntry entry = telemetry[i];
                     writer.Write(entry.FirstBreachLocal.x);
                     writer.Write(entry.FirstBreachLocal.y);
                     writer.Write(entry.FirstBreachLocal.z);

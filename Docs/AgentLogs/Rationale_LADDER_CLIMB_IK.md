@@ -1,6 +1,6 @@
 # Rationale_LADDER_CLIMB_IK
 
-Runtime Status: CORE TASKS COMPLETE - FINAL BUILD BLOCKED BY DEPENDENCY
+Runtime Status: PENDING VERIFICATION - HARDENED; FINAL BUILD BLOCKED BY DEPENDENCY
 
 ## Initial Technical Direction
 Problem: Ladder traversal currently requested as embodiment-critical locomotion; teleport-style vertical movement would break VR body continuity and gives no hand contact truth.
@@ -70,3 +70,34 @@ Solution: Performed the anti-bloat scan against touched ladder/runtime files any
 Rejected Alternatives: Skipping polish because the tag was absent. The agent-local mandate still requires final self-inquisition.
 Scalability potential: Low path remains a movement/camera slide, high path remains grip-gated, and no additional per-frame services were added.
 Hardware Impact: Polish patch removed the last `position +=` presentation write from the runtime fallback and uses `Transform.Translate` only when no movement force sink exists; no hot-path allocation introduced.
+
+### Loop 6 - Multiplatform/H-Phi Inquisition
+Problem: The previous runtime still held private persistent `NativeArray` fields for input/output/telemetry and a fallback ladder AUP array. That violated DataVault sovereignty and made the Animation runtime an owner of memory truth instead of a stateless solver over vault views.
+Solution: Added `BufferID.LadderClimbIkInput`, `LadderClimbIkOutput`, `LadderClimbIkTelemetryRing`, and `LadderClimbIkTelemetryCursor`; converted the runtime to cache `VaultBufferHandle<T>` fields and resolve `NativeArray` views only at schedule/consume/dump boundaries. The H8Memory fallback path was removed; missing DataVault now fails the climb start instead of allocating private memory.
+Rejected Alternatives: Keeping H8Memory fallback arrays or registering private arrays with `NativeMemorySentinel`. Both preserve the feudal ownership problem and duplicate DataVault responsibility.
+Scalability potential: Low = no extra buffer owner and no private reallocation; Middle = same vault-backed hand lock; High = VR grip pull consumes the same buffers; Ultra = richer contact consumers can read the same typed state without increasing ladder runtime ownership.
+Hardware Impact: i3/MX350 saves private persistent allocation pressure and avoids duplicate AUP/telemetry mirrors; estimated runtime CPU change is neutral to -1 us/player after handle resolution, memory ownership risk reduced to vault-managed blocks.
+
+Problem: Quest/ARM64 and binary-vault payloads needed explicit layout proof; `Pack=4` leaves platform-specific padding risk in the ladder packet structs.
+Solution: Converted `LadderClimbIkInput`, `LadderClimbIkOutput`, and `LadderClimbTelemetryEntry` to `[StructLayout(LayoutKind.Sequential, Pack = 1)]`; also made the touched `HapticRequest` and `PlayerStateSignal` explicit-layout lanes pack-1 while preserving their fixed sizes.
+Rejected Alternatives: Relying on CLR/default packing. That is not acceptable for IL2CPP/AOT/binary lane assumptions.
+Scalability potential: Low/Middle/High/Ultra share identical byte layout, so platform tiering changes behavior, not memory interpretation.
+Hardware Impact: No measured frame gain claimed. The win is crash-risk reduction on ARM64/Quest and deterministic DataVault payload stride.
+
+Problem: Low-tier still paid for the full law-of-cosines elbow solve even though PC/toaster mode only needs believable hand contact and smooth vertical slide.
+Solution: Added a Dear Lie branch: hand targets still snap exactly to rung positions, but low tier uses midpoint-plus-pole elbow placement and skips `math.acos`; high tier keeps the exact two-bone `math.acos` solve. Replaced remaining blind divisions with `math.rcp(math.max(...))`, clamped accumulated grip deltas, and kept `rsqrt` behind finite/epsilon guards.
+Rejected Alternatives: Full IK on all tiers or disabling hand targets entirely on low tier. Full IK wastes CPU on weak devices; disabling targets breaks the ladder embodiment requirement.
+Scalability potential: Low = midpoint elbow/camera slide; Middle = exact hand locks; High = VR grip-pull exact two-bone; Ultra = elbow/pole polish can be layered without touching memory ownership.
+Hardware Impact: Low-tier estimate drops from 12 us to roughly 5 us for two elbows; full player ladder update remains below the 0.05 ms static budget pending profiler proof.
+
+Problem: The user asked for Metal/Mac, Steam Deck, and PC visual-overkill checks. The ladder domain contains no shader/compute dispatch and only cold blackbox disk IO, but this had not been explicitly audited.
+Solution: Static scan found no `ComputeShader`, shader dispatch, material mutation, coroutine, standard Update, private native allocation, or per-frame IO in the ladder domain. The only file write remains `Dump_LADDER_CLIMB_IK.bin` on NaN/crash, a 300-frame cold-path dump. Visual overkill requests such as salt crystals, volumetric silt, and hull dents are out of the `Animation/Locomotion` domain and already have VFX/vehicle owners.
+Rejected Alternatives: Injecting visor/hull/silt rendering from the ladder IK prompt. That would violate domain boundaries and duplicate existing VFX/vehicle contracts.
+Scalability potential: Low = no shader/IO tax from ladder runtime; High/Ultra = ladder publishes typed state/haptics that VFX owners can consume for richer visuals.
+Hardware Impact: Steam Deck/MicroSD hot path impact is 0 us because no per-frame disk read/write exists; crash dump remains cold path and intentionally small.
+
+Problem: `dotnet build Hecton8.Core.csproj --no-restore` initially failed on missing assets. After restore, the Core compile wall moved to unrelated contract includes: `TetherFiredSignal` and `Hecton8.AI.Sensory.AcousticEchoHuntResult`. `dotnet build Assembly-CSharp.csproj --no-restore -nodeReuse:false -v:q` then failed on missing `RealtimeCSG` source files plus the same `TetherFiredSignal` gap.
+Solution: Recorded this as dependency rot after self-owned ladder edits produced no `LadderClimb`, `ProceduralLadder`, or `ClimbableLadder` compiler symbols in targeted error scans. No Physics/Fauna/RealtimeCSG contract edits were made from the Animation prompt.
+Rejected Alternatives: Editing `Physics/TetherSignals.cs` or `FaunaBrain.Compatibility.cs` from the ladder task. That would cross domain without a critical ladder interface justification.
+Scalability potential: None; this is compile integration debt outside runtime ladder behavior.
+Hardware Impact: 0 us runtime. Build remains PENDING VERIFICATION until the external contract includes are fixed.

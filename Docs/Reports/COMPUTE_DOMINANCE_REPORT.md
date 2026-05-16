@@ -598,6 +598,105 @@ Process microseconds saved: not claimed. There is no profiler for management con
 
 STATUS: AUDIT COMPLETE.
 
+---
+
+## 2026-05-16 Continuation Addendum
+
+Status: AUDIT COMPLETE
+Snapshot: 2026-05-16T03:56+04:00
+Scope: HECTON-8 only. Timaert excluded.
+
+The `.codex` ledger kept moving after the 2026-05-15 report. This addendum is a new snapshot, not a correction of the previous capture.
+
+### Current Hard Delta
+
+| Metric | 2026-05-15 brief | 2026-05-16 snapshot | Delta |
+|---|---:|---:|---:|
+| JSONL final total tokens | 45,771,499,116 | 47,456,271,437 | +1,684,772,321 |
+| Script meaningful LOC | 788,619 | 809,871 | +21,252 |
+| Script physical LOC | 961,111 | 985,864 | +24,753 |
+| Cache-aware estimate | USD 30,704.36 | USD 32,007.67 | +USD 1,303.31 |
+| No-cache equivalent | USD 201,983.02 | USD 210,561.57 | +USD 8,578.55 |
+| Energy estimate | 2,288.57 MWh | 2,372.81 MWh | +84.24 MWh |
+
+### Current Token Ledger
+
+| Metric | Value |
+|---|---:|
+| JSONL session files | 809 |
+| JSONL bytes | 8,493,635,444 |
+| JSONL files with final usage | 791 |
+| JSONL token rows parsed | 386,446 |
+| Token regex misses | 194 |
+| Negative cumulative deltas skipped | 8 |
+| JSONL final total tokens | 47,456,271,437 |
+| Input tokens | 47,294,226,243 |
+| Cached input tokens | 45,410,520,576 |
+| Output tokens | 161,786,794 |
+| Reasoning output tokens | 55,602,954 |
+| Cached-input ratio | 96.017% |
+| SQLite thread tokens at 03:56 local | 47,465,726,066 |
+
+### Current Rolling Burn
+
+| Window | Tokens | Tokens/sec | Cache-aware cost | No-cache equivalent |
+|---|---:|---:|---:|---:|
+| Last 1h | 193,709,191 | 53,808.11 | USD 144.30 | USD 985.46 |
+| Last 6h | 844,680,537 | 39,105.58 | USD 667.69 | USD 4,302.47 |
+| Last 24h | 3,240,421,310 | 37,504.88 | USD 2,525.79 | USD 16,500.45 |
+| Last 7d | 18,963,121,006 | 31,354.37 | USD 14,642.67 | USD 96,425.35 |
+| Last 14d | 30,671,970,415 | 25,357.12 | USD 23,627.72 | USD 155,845.79 |
+| Last 30d | 44,013,354,604 | 16,980.46 | USD 30,658.23 | USD 202,213.24 |
+
+### Current Code And Docs
+
+| Metric | Value |
+|---|---:|
+| `Assets/_Project/Scripts/**/*.cs` files | 1,538 |
+| Physical script LOC | 985,864 |
+| Meaningful script LOC | 809,871 |
+| Logic density | 82.15% |
+| All `Assets/**/*.cs` physical LOC | 1,543,550 |
+| `Packages/**/*.cs` physical LOC | 140,868 |
+| Tokens per meaningful LOC | 58,597.32 |
+| Historical burn per script byte | 1,100.57 tokens/byte |
+| Source text proxy tokens per byte | ~0.25 tokens/byte |
+
+Heaviest named domain remains `World` at 112,723 meaningful LOC. The `(root)` bucket is larger at 251,259 meaningful LOC, but that is a filing/architecture smell rather than a domain.
+
+Contracts are not the mass: 57 contract files, 6,937 meaningful LOC, 0.86% of meaningful script LOC. Implementation is 802,934 meaningful LOC, about 115.75x the contract surface.
+
+### Energy Conversion
+
+Formula: `tokens / 1000 * 0.05 kWh`.
+
+| Unit | Value |
+|---|---:|
+| kWh | 2,372,813.57 |
+| MWh | 2,372.81 |
+| GWh | 2.3728 |
+| 30 kWh/day household | 79,094 home-days |
+| Household years at 30 kWh/day | 216.7 |
+| 75 kWh EV full charges | 31,637.5 |
+| 1 MW continuous load | 98.87 days |
+| Electricity at USD 0.10/kWh | USD 237,281.36 |
+
+The earlier 2,297.33 MWh question mapped to an older token total. Current token total maps to 2,372.81 MWh.
+
+### Current Verdict
+
+The workflow is still economically dominated by cache-heavy long-context recursion. Cache avoids about USD 178.55K against the no-cache equivalent, but the last rolling 24h still priced at about USD 2.53K cache-aware and USD 16.50K no-cache equivalent.
+
+H-Phi/token correlation remains NOT PROVEN. "Compute Thief" convictions remain NOT PROVEN. The evidence supports `HIGH-BURN CANDIDATE` only until thread-level diff, LOC delta, compile/test result, and value delta are joined.
+
+Canonical current files:
+
+- `COMPUTE_AUDIT_BRIEF.md`
+- `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_AUDIT_INDEX.md`
+- `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_TOKEN_BURN_RATE_LEDGER.md`
+
+STATUS: AUDIT COMPLETE.
+
 ## Continuation Addendum - Top-100 Value Audit
 
 Snapshot: 2026-05-15T03:42:25+04:00

@@ -24,7 +24,7 @@ STATUS: CORE IMPLEMENTED / KCC ROSLYN-CLEAN / FINAL VALIDATION BLOCKED BY FOREIG
 ## Primary Objectives
 - [x] 1. PURGE_SINGLETONS | DOD: `rg` found no `KCCManager.Instance` or `class KCCManager` in Gameplay/Physics KCC scope; alternative rejected: inventing a new manager to remove; microseconds estimate: 20000 us.
 - [x] 2. DEBT_CLEANUP | DOD: `rg` found no player `OnCollisionStay`; existing solid-overlap teleport path is bypassed only after valid SDF squeeze; alternative rejected: Unity collision callback repair; microseconds estimate: 40000 us.
-- [x] 3. DATA_EVICTION | DOD: resolver runtime state now vault-first for positions, velocities, intended movement, flow velocity, last-valid position, sync read/write state, hand targets, telemetry ring/cursor, fault flags, ray batches, and SDF squeeze result buffers through `BufferID.PlayerKinematic*` lanes; H8Memory remains only a cold bootstrap fallback when `GlobalDataVault` is unavailable; alternative rejected: private persistent NativeArray ownership as the normal path; microseconds estimate: 90000 us plus 2000-8000 us saved from reduced duplicate cache churn.
+- [x] 3. DATA_EVICTION | DOD: resolver runtime state now vault-first for positions, velocities, intended movement, flow velocity, last-valid position, sync read/write state, hand targets, telemetry ring/cursor, fault flags, ray batches, SDF squeeze results, and player motor sweep/repair command-result caches through `BufferID.PlayerKinematic*` and `BufferID.PlayerMotor*` lanes; H8Memory remains only a cold bootstrap fallback when `GlobalDataVault` is unavailable; alternative rejected: private persistent NativeArray ownership as the normal path; microseconds estimate: 90000 us plus 4000-12000 us saved from reduced duplicate cache churn.
 - [x] 4. BURST_ALGORITHM | DOD: `SdfSqueezeJob` added under Physics/KCC with 6-axis gradient when density > 0; alternative rejected: main-thread sampling; microseconds estimate: 65000 us.
 - [x] 5. AUP_INTEGRITY | DOD: job receives AUP absolute `double3` and floating-origin offset before texture query; alternative rejected: float-only world coordinate sampling; microseconds estimate: 25000 us.
 - [x] 6. DOD_SOA_LAYOUT | DOD: runtime reads/writes `BufferID.PlayerKinematicState` as `LockstepPlayerKinematicState`; alternative rejected: MonoBehaviour field coupling; microseconds estimate: 45000 us.
@@ -39,7 +39,7 @@ STATUS: CORE IMPLEMENTED / KCC ROSLYN-CLEAN / FINAL VALIDATION BLOCKED BY FOREIG
 - [x] 15. HOMEOSTASIS_ADAPTATION | DOD: `SignalBusRegistry.SystemStress01 > 0.8` routes to 5-frame/10Hz-equivalent sampling with cached interpolation; alternative rejected: disable squeeze under stress; microseconds estimate: 25000-60000 us saved during sustained squeeze.
 - [x] 16. OXYGEN_PENALTY | DOD: stress publishes physiology O2 multiplier and pushes CO2-equivalent load to `IGasDynamicsSolver`; alternative rejected: direct survival stat mutation; microseconds estimate: 8000 us.
 - [x] 17. SPEED_PENALTY | DOD: forward velocity component is reduced by 60% while squeezing; alternative rejected: global speed scalar outside KCC; microseconds estimate: 3000 us.
-- [x] 18. FINAL_VALIDATION | BLOCKED BY DEPENDENCY: `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false` still exits non-zero due 3 foreign errors: `Hecton8.AI.Sensory` namespace missing, `TetherFiredSignal` missing, and `AcousticEchoHuntResult` missing. No diagnostics name `SdfSqueezeJob`, `PlayerKinematicsRuntime`, `HectonPlayerState`, or `H8Memory` in `Build_KCC_SDF_SQUEEZE_RESOLVER_data_vault_pass.exit.txt`; alternative rejected: editing fauna/tether signal domains from a locomotion prompt; microseconds estimate: 600000000 us blocked.
+- [x] 18. FINAL_VALIDATION | BLOCKED BY DEPENDENCY: latest `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false` exits non-zero with 70 foreign errors and 3 duplicate-compile warnings in UI navigation, tether signals, homeostasis, lockstep replay, and item pickup domains. No diagnostics name `SdfSqueezeJob`, `PlayerKinematicsRuntime`, `HectonPlayerState`, or `H8Memory` in `Build_KCC_SDF_SQUEEZE_RESOLVER_final_pass.exit.txt`; alternative rejected: editing UI/Homeostasis/Tether/Items from a locomotion prompt; microseconds estimate: 600000000 us blocked.
 
 ## Iteration Loop 1 - Scope And Kernel
 - [x] Verified no KCC singleton/collision callback debt in assigned scope.
@@ -67,12 +67,12 @@ STATUS: CORE IMPLEMENTED / KCC ROSLYN-CLEAN / FINAL VALIDATION BLOCKED BY FOREIG
 
 ## Iteration Loop 6 - Multiplatform Data Sovereignty Pass
 - [x] Re-read prompt block after the phase-0 memory recovery demand.
-- [x] Added DataVault BufferIDs `PlayerKinematicFlowVelocity` through `PlayerKinematicSdfSqueezeResults` and routed every `PlayerKinematicsRuntime` persistent array through `AllocateRuntimeArray`.
+- [x] Added DataVault BufferIDs `PlayerKinematicFlowVelocity` through `PlayerKinematicSdfSqueezeResults` and `PlayerMotorScheduledSweepCommands` through `PlayerMotorKinematicRepairTargetResults`; routed every `PlayerKinematicsRuntime` persistent array and player motor sweep/repair cache through vault-first allocation.
 - [x] Converted SDF/runtime NativeArray payload structs to explicit `Pack = 1` layouts: `SdfSqueezeResult` 64 bytes, `PlayerKinematicsRuntimeTelemetryEntry` 80 bytes, `PlayerKinematicsSyncState` 64 bytes, `PlayerKinematicsAccumulatorState` 32 bytes, `PlayerKinematicsHandTarget` 32 bytes, and `PlayerKinematicsTelemetryEntry` 64 bytes.
 - [x] Platform scan: no KCC `.compute`, `.shader`, `.hlsl`, or `.metal` files exist, so Metal/1024-thread-group risk is not introduced by this resolver.
 - [x] Stability scan: no `Update(`, `string.Format`, `EventBus`, managed delegate, `GameObject.Find`, `FindObjectOfType`, `Physics.CapsuleCast`, or `OnCollisionStay` found in the resolver runtime/KCC path.
 - [x] I/O scan: runtime disk writes remain restricted to fault dump methods; no per-frame Steam Deck MicroSD reads/writes were introduced.
-- [x] Roslyn rerun captured in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_data_vault_pass.exit.txt`; only 3 foreign errors remain.
+- [x] Roslyn rerun captured in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_final_pass.exit.txt`; 70 unique foreign errors remain and none name KCC/locomotion files touched in this pass.
 
 ## Omega Polish
 - [x] Anti-bloat inquisition read after core checklist completion.

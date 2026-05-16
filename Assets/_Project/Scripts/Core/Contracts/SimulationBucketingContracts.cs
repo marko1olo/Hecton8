@@ -79,12 +79,15 @@ namespace Hecton8.Core
 
         /// <summary>The dispatcher requested homeostasis load shedding for this frame.</summary>
         public const uint HomeostasisKillRequested = 1u << 5;
+
+        /// <summary>High-tier frame budget has room for downstream visual overkill systems.</summary>
+        public const uint VisualOverkillBudgetAvailable = 1u << 6;
     }
 
     /// <summary>
     /// Lightweight frame snapshot emitted by the simulation bucketer and black-box telemetry.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
     public struct SimulationBucketFrameState
     {
         /// <summary>Monotonic frame count owned by the bucketer, independent of Unity frame wrapping.</summary>
@@ -105,14 +108,14 @@ namespace Hecton8.Core
         /// <summary>Slow bucket mask selected by scalability tier.</summary>
         public int SlowBucketMask;
 
-        /// <summary>Number of slow buckets permitted this frame.</summary>
-        public byte ActiveSlowBucketCount;
-
         /// <summary>Current job admission critical debt frame count.</summary>
         public int CriticalDebtFrames;
 
-        /// <summary>Non-zero when an AUP shift barrier is active.</summary>
-        public byte AupBarrierActive;
+        /// <summary>Frame-pacing flags from <see cref="SimulationBucketPacingFlags"/>.</summary>
+        public uint FramePacingFlags;
+
+        /// <summary>Accepted dynamic rebalance sequence number.</summary>
+        public uint RebalanceSequence;
 
         /// <summary>Last measured active bucket workload in milliseconds.</summary>
         public float ActiveBucketLoadMs;
@@ -132,11 +135,14 @@ namespace Hecton8.Core
         /// <summary>Globally broadcast interpolation alpha for bucketed presentation.</summary>
         public float SimulationBucketInterpolationAlpha;
 
-        /// <summary>Frame-pacing flags from <see cref="SimulationBucketPacingFlags"/>.</summary>
-        public uint FramePacingFlags;
+        /// <summary>Number of slow buckets permitted this frame.</summary>
+        public byte ActiveSlowBucketCount;
 
-        /// <summary>Accepted dynamic rebalance sequence number.</summary>
-        public uint RebalanceSequence;
+        /// <summary>Non-zero when an AUP shift barrier is active.</summary>
+        public byte AupBarrierActive;
+
+        /// <summary>Explicit tail pad. Keeps Pack=1 contract at 64 bytes with no implicit platform padding.</summary>
+        public ushort ReservedPadding;
     }
 
     /// <summary>

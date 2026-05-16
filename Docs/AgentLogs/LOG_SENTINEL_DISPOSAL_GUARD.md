@@ -67,6 +67,62 @@ Verification:
 - `git diff --check` reported only line-ending warnings.
 - Static scans found no CORE/MEMORY `StructLayout` without `Pack = 1`, and no `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, legacy `EventBus`, custom `event`, `Action<>`, or `Func<>` in CORE/MEMORY.
 
+## 2026-05-16 - Continuation Inquisition / Frame Heartbeat
+
+What was wrong:
+- The H8Memory blackbox ring existed, but it was allocation/free/transition event-driven. That is not the same as the last 300 frames of system heartbeat.
+- A crash between memory events would leave no frame-by-frame sentinel pulse.
+
+What was done:
+- Added `Heartbeat` telemetry flag and `H8Memory.RecordHeartbeat()`.
+- Added a frame index to `H8MemoryTelemetryEntry` by replacing two reserved ushort fields with one `uint Frame`; manual packed entry size remains 64 bytes.
+- Routed `SceneRuntimeService.Tick` to write one H8Memory heartbeat per frame.
+- Forced H8Memory initialization from `SceneRuntimeService.InitializeService` so the Tick path does not allocate.
+
+Cinematic Cheats used:
+- No visual code belongs in this domain. The cheat is diagnostic certainty at tiny cost: a 300-frame native ring gives crash context without disk writes or managed logging.
+- Toaster mode: one NativeArray struct write per frame, no GC, no per-frame I/O.
+- God-mode: same telemetry footprint; no memory growth hidden behind high-tier hardware.
+
+Exact Microseconds saved:
+- No exact microseconds claimed. The new hot-path work is one fixed NativeArray struct store per frame; runtime profiling is blocked by external compile errors.
+- Persistent memory remains 19,200 bytes for the 300-entry ring.
+- GC impact is 0 B/frame by static inspection.
+
+Verification:
+- `rg --pcre2` found no `StructLayout` in CORE/MEMORY without `Pack = 1`.
+- Static domain scan found no `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, legacy `EventBus`, custom `event`, `Action<>`, or `Func<>` in CORE/MEMORY.
+- `git diff --check` reported only line-ending warnings.
+- `dotnet build Hecton8.Core.csproj --no-restore --nologo /v:minimal` completed in 01:42.88 and failed on 85 external errors across Items, World, Physics, Homeostasis, Determinism, and Fauna. No CORE/MEMORY errors were reported.
+
+## 2026-05-16 - Continuation Inquisition / Vault Owner Eviction
+
+What was wrong:
+- GlobalDataVault had per-buffer owner metadata, but scene transition only released top-level H8Memory records.
+- Scene-owned vault buffers could survive as stale suballocations inside the CoreDataVault arena.
+
+What was done:
+- Added `IDataVault.ReleaseOwnerBuffers(SystemID, out long)` and `IDataVault.ReleaseSceneOwnedBuffers(out long)`.
+- Implemented cold owner eviction in `GlobalDataVault`, freeing scene-owned blocks while retaining the reusable arena.
+- Wired `SceneRuntimeService.CompleteMemoryLifecycleTransition()` to evict scene-owned vault buffers before H8Memory baseline verification.
+- Locked vault blocks are skipped and routed to the existing Phi/VOD blackbox path instead of being force-freed.
+
+Cinematic Cheats used:
+- Retained the arena as a reusable memory budget rather than shrinking/reallocating it during transitions. That avoids transition churn while evicting stale scene data.
+- Toaster mode: cold O(vault buffer count) transition scan, no per-frame GC, no per-frame disk I/O.
+- God-mode: old scene buffers stop occupying vault slots, but high-tier Ocean/VFX can immediately reuse the warm arena.
+
+Exact Microseconds saved:
+- No exact microseconds claimed. Runtime profiling is blocked by external compile errors.
+- Gameplay hot path: 0 B GC/frame and no new per-frame scan.
+- Transition path: one cold scan over vault keys; exact cost depends on buffer count and was not measured.
+
+Verification:
+- Static scan found no CORE/MEMORY `StructLayout` without `Pack = 1`.
+- Static domain scan found no `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, legacy `EventBus`, custom `event`, `Action<>`, or `Func<>` in CORE/MEMORY.
+- `git diff --check` reported only line-ending warnings.
+- `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 01:47.73 and failed on 39 external errors outside CORE/MEMORY. No CORE/MEMORY errors were reported.
+
 ## 2026-05-16 - Continuation Inquisition
 
 What was wrong:

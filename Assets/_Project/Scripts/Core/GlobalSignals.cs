@@ -753,6 +753,7 @@ namespace Hecton8.Core.Contracts.Signals
         private const int AnomalyProximitySignalGuardCode = unchecked((int)0x51A1004Cu);
         private const int CompassCalibratedSignalGuardCode = unchecked((int)0x51A1004Du);
         private const int TetherFiredSignalGuardCode = unchecked((int)0x51A1004Eu);
+        private const int SystemGlitchSignalGuardCode = unchecked((int)0x51A1004Fu);
         private const byte GuardNone = 0;
         private const byte GuardImpact = 2;
         private const byte GuardHighSpeedImpact = 3;
@@ -831,6 +832,7 @@ namespace Hecton8.Core.Contracts.Signals
         private const byte GuardAnomalyProximity = 76;
         private const byte GuardCompassCalibrated = 77;
         private const byte GuardTetherFired = 78;
+        private const byte GuardSystemGlitch = 79;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int Sanitize<T>(ref T signal)
@@ -1223,6 +1225,11 @@ namespace Hecton8.Core.Contracts.Signals
                     ref TetherFiredSignal typed = ref UnsafeUtility.As<T, TetherFiredSignal>(ref signal);
                     return SanitizeTetherFiredSignal(ref typed);
                 }
+                case GuardSystemGlitch:
+                {
+                    ref SystemGlitchSignal typed = ref UnsafeUtility.As<T, SystemGlitchSignal>(ref signal);
+                    return SanitizeSystemGlitchSignal(ref typed);
+                }
             }
 
             return 0;
@@ -1385,6 +1392,8 @@ namespace Hecton8.Core.Contracts.Signals
                 return GuardCompassCalibrated;
             if (typeof(T) == typeof(TetherFiredSignal))
                 return GuardTetherFired;
+            if (typeof(T) == typeof(SystemGlitchSignal))
+                return GuardSystemGlitch;
 
             return GuardNone;
         }
@@ -2402,6 +2411,18 @@ namespace Hecton8.Core.Contracts.Signals
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeSystemGlitchSignal(ref SystemGlitchSignal signal)
+        {
+            int guardCode = 0;
+            if (SanitizeUnit01(ref signal.Intensity01))
+                guardCode = SystemGlitchSignalGuardCode;
+            if (SanitizeNonNegative(ref signal.DurationSeconds))
+                guardCode = SystemGlitchSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int SanitizeCombatDamageSignal(ref CombatDamageSignal signal)
         {
             int guardCode = 0;
@@ -3316,6 +3337,7 @@ namespace Hecton8.Core
             ValidateSignalSize<ComplianceViolationSignal>(32);
             ValidateSignalSize<GlobalTimeSyncSignal>(32);
             ValidateSignalSize<LockstepSnapshotSignal>(32);
+            ValidateSignalSize<SystemGlitchSignal>(32);
             ValidateSignalSize<SeismicSignal>(32);
             ValidateSignalSize<TimeDilationSignal>(32);
             ValidateSignalSize<SimulationPauseSignal>(32);
@@ -4767,6 +4789,8 @@ namespace Hecton8.Core
             SignalBus<SimulationBucketSyncSignal>.EnsureInitialized();
             SignalBus<LockstepSnapshotSignal>.Configure(16, maxFrameSignals: 16, lowTierFrameSignals: 16, laneHash: 0x4C535348u);
             SignalBus<LockstepSnapshotSignal>.EnsureInitialized();
+            SignalBus<SystemGlitchSignal>.Configure(8, maxFrameSignals: 8, lowTierFrameSignals: 8, laneHash: 0x5359474Cu);
+            SignalBus<SystemGlitchSignal>.EnsureInitialized();
             SignalBus<FramePacingWarningSignal>.Configure(FramePacingWarningSignalCapacity, maxFrameSignals: 16, lowTierFrameSignals: 4, laneHash: ComputeStableSignalLaneHash(nameof(FramePacingWarningSignal)));
             SignalBus<FramePacingWarningSignal>.EnsureInitialized();
             SignalBus<AcousticPingSignal>.Configure(AcousticPingSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(AcousticPingSignal)));
@@ -5330,7 +5354,7 @@ namespace Hecton8.Core.Contracts.Signals
     }
 
     /// <summary>Resource-to-inventory yield signal. Size: 64 bytes.</summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
     public struct ItemAcquiredSignal : ISignal
     {
         [FieldOffset(0)] public AbsoluteUniversePosition PositionAup;
@@ -5443,7 +5467,7 @@ namespace Hecton8.Core.Contracts.Signals
     }
 
     /// <summary>Producer-agnostic procedural flora wake signal. Size: 64 bytes.</summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
     public struct WakeGeneratedSignal : ISignal
     {
         [FieldOffset(0)] public AbsoluteUniversePosition PositionAup;
@@ -5452,7 +5476,7 @@ namespace Hecton8.Core.Contracts.Signals
     }
 
     /// <summary>Producer-agnostic visual-fluid impulse. Size: 80 bytes.</summary>
-    [StructLayout(LayoutKind.Explicit, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 80)]
     public struct FluidImpulseSignal : ISignal
     {
         [FieldOffset(0)] public AbsoluteUniversePosition PositionAup;
@@ -7113,7 +7137,7 @@ namespace Hecton8.Core.Contracts.Signals
     }
 
     /// <summary>Global simulation-bucket presentation sync lane. Size: 32 bytes.</summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
     public struct SimulationBucketSyncSignal : ISignal
     {
         [FieldOffset(0)] public float InterpolationAlpha;
@@ -7126,7 +7150,7 @@ namespace Hecton8.Core.Contracts.Signals
     }
 
     /// <summary>Frame-pacing warning lane emitted by the master modulo orchestrator. Size: 64 bytes.</summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
     public struct FramePacingWarningSignal : ISignal
     {
         [FieldOffset(0)] public uint Frame;

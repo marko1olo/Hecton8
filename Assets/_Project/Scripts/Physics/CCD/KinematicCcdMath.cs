@@ -45,7 +45,7 @@ namespace Hecton8.Physics.CCD
             if (lengthSq <= MinVectorMagnitudeSq)
                 return fallback;
 
-            return value * math.rsqrt(lengthSq);
+            return value * math.rsqrt(math.max(lengthSq, MinVectorMagnitudeSq));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

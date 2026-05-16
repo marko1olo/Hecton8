@@ -196,7 +196,7 @@ namespace Hecton8.World
         private const ulong MacroSwarmTelemetryDumpMagic = 0x004D57534F434548UL;
         private const ulong FaunaMutationTelemetryDumpMagic = 0x004D55474F434548UL;
         private const string BiomassTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_ECOLOGICAL_BIOMASS_ENGINE.bin";
-        private const string MacroSwarmTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_SWARM_MACRO_MIGRATION_DIRECTOR.bin";
+        private const string MacroSwarmTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_ECOSYSTEM_MIGRATION_LINK.bin";
         private const string FaunaMutationTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_ECOLOGY_MUTATION_DIRECTOR.bin";
         private static readonly string[] ThermalSpawnTokens = { "lava", "thermal", "brine", "heat", "volcanic", "smoker" };
         private static readonly string[] SharkSpawnTokens = { "shark", "hunter", "stalker" };
@@ -3820,6 +3820,7 @@ namespace Hecton8.World
                 _macroDehydrationScratch.Length >= _macroDehydrationScratch.Capacity ||
                 _activeMacroSwarmCount >= ResolveMacroSwarmActiveCap())
             {
+                PushMacroSwarmBlackBox(MacroSwarmBlackBoxFlagCapacityOverflow);
                 return;
             }
 
@@ -3900,6 +3901,7 @@ namespace Hecton8.World
                 _macroHydrationScratch.Clear();
 
             int i = 0;
+            bool scratchOverflow = false;
             while (i < _activeMacroSwarmCount)
             {
                 MacroSwarm swarm = _macroSwarms[i];
@@ -3912,6 +3914,8 @@ namespace Hecton8.World
 
                 if (_macroHydrationScratch.IsCreated && _macroHydrationScratch.Length < _macroHydrationScratch.Capacity)
                     _macroHydrationScratch.AddNoResize(swarm);
+                else
+                    scratchOverflow = true;
                 RemoveMacroSwarmSwapBack(i);
             }
 
@@ -3929,7 +3933,7 @@ namespace Hecton8.World
 
             _lastMacroSwarmsHydrated = _macroHydrationScratch.Length;
             _lastMacroHydratedBoidEstimate = spawnedBoids;
-            PushMacroSwarmBlackBox(MacroSwarmBlackBoxFlagActiveHydrated);
+            PushMacroSwarmBlackBox(MacroSwarmBlackBoxFlagActiveHydrated | (scratchOverflow ? MacroSwarmBlackBoxFlagCapacityOverflow : 0));
             PublishHydratedMacroSwarmBurst(centerCell, signal.RadiusMetersQ, spawnedBoids);
         }
 
@@ -3950,7 +3954,7 @@ namespace Hecton8.World
                 swarms,
                 _macroHydrationScratch.Length,
                 _macroSwarmQualityTierProfileByte,
-                GlobalSignals.SystemStress01,
+                SignalBusRegistry.SystemStress01,
                 out spawnedBoids);
         }
 
@@ -4277,9 +4281,14 @@ namespace Hecton8.World
         {
             if (!_macroSwarms.IsCreated ||
                 _macroSwarmTravelScheduled ||
-                math.all(sourceCell == targetCell) ||
-                _activeMacroSwarmCount >= ResolveMacroSwarmActiveCap())
+                math.all(sourceCell == targetCell))
             {
+                return false;
+            }
+
+            if (_activeMacroSwarmCount >= ResolveMacroSwarmActiveCap())
+            {
+                PushMacroSwarmBlackBox(MacroSwarmBlackBoxFlagCapacityOverflow);
                 return false;
             }
 

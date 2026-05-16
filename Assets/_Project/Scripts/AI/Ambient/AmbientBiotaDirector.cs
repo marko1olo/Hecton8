@@ -2,6 +2,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Caves;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -219,6 +220,7 @@ namespace Hecton8.AI.Ambient
             ClearMacroCounters();
             int safeSwarmCount = math.min(swarmCount, swarms.Length);
             float radiusMeters = math.max(8f, radiusMetersQ);
+            byte spawnQualityTier = ResolveSdfGuardedQualityTier(in centerAup, qualityTier);
             var hydrationJob = new AmbientBiotaMacroHydrationJob
             {
                 Aups = _biotaAups,
@@ -234,7 +236,7 @@ namespace Hecton8.AI.Ambient
                 BaseSpeciesId = baseSpeciesId,
                 Seed = MacroHydrationSeedSalt,
                 FrameIndex = _frameIndex,
-                QualityTier = qualityTier,
+                QualityTier = spawnQualityTier,
                 SystemStress01 = math.saturate(systemStress01)
             };
 
@@ -252,10 +254,10 @@ namespace Hecton8.AI.Ambient
                 SpawnedCount = (ushort)math.clamp(spawnedBoidCount, 0, ushort.MaxValue),
                 RequestedCount = (ushort)math.clamp(_macroHydrationCounters[1], 0, ushort.MaxValue),
                 EntityKind = EntitySpawnSignal.KindEcology,
-                QualityTier = qualityTier,
+                QualityTier = spawnQualityTier,
                 Flags = (byte)(EntitySpawnSignal.FlagEcology |
-                               (qualityTier == 0 ? EntitySpawnSignal.FlagLowTierVisual : 0) |
-                               (qualityTier >= 2 ? EntitySpawnSignal.FlagSdfEmergence : 0)),
+                               (spawnQualityTier == 0 ? EntitySpawnSignal.FlagLowTierVisual : 0) |
+                               (spawnQualityTier >= 2 ? EntitySpawnSignal.FlagSdfEmergence : 0)),
                 Frame = unchecked((uint)Time.frameCount)
             });
             return true;
@@ -890,6 +892,29 @@ namespace Hecton8.AI.Ambient
                 LocalY = origin.LocalY,
                 LocalZ = origin.LocalZ
             }.WithOffset(deltaMeters);
+        }
+
+        private static byte ResolveSdfGuardedQualityTier(in AbsoluteUniversePosition centerAup, byte qualityTier)
+        {
+            if (qualityTier < 2)
+                return qualityTier;
+
+            return PassesSdfCavityGuard(in centerAup) ? qualityTier : (byte)0;
+        }
+
+        private static bool PassesSdfCavityGuard(in AbsoluteUniversePosition centerAup)
+        {
+            float3 absolutePosition = new float3(
+                (float)(centerAup.GridX * (double)AupCellSizeMeters + centerAup.LocalX),
+                (float)(centerAup.GridY * (double)AupCellSizeMeters + centerAup.LocalY),
+                (float)(centerAup.GridZ * (double)AupCellSizeMeters + centerAup.LocalZ));
+            if (!math.all(math.isfinite(absolutePosition)))
+                return false;
+
+            if (!HectonVoxelVolume.GetSDFDensity(absolutePosition, out float sdfDensity) || !math.isfinite(sdfDensity))
+                return false;
+
+            return sdfDensity < 0f;
         }
 
         private static double3 DeltaMeters(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)

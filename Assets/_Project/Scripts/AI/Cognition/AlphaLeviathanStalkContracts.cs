@@ -127,7 +127,7 @@ namespace Hecton8.AI.Cognition
     /// <summary>
     /// DataVault-owned steering output row produced by <see cref="LeviathanStalkJob"/>.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 80)]
     public struct AlphaLeviathanSteeringOutput
     {
         public float3 DesiredDirection;
@@ -141,6 +141,10 @@ namespace Hecton8.AI.Cognition
         public float WakeSiltIntensity01;
         public float VisualOverkill01;
         public float RecommendedCadenceSeconds;
+        public float VisorSaltCrystalGrowth01;
+        public float HullDentImpulse01;
+        public float SubsurfaceScatterPulse01;
+        public float ParticleOverkillBudget01;
         public ushort Slot;
         public byte CurrentPhase;
         public byte Flags;

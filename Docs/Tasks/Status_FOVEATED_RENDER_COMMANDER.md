@@ -45,6 +45,8 @@ Hygiene: Status file was missing at session start. Initialized for current batch
 - Attempt 5: `dotnet build Hecton8.Core.csproj --no-restore 2>&1 | Select-String -Pattern 'FoveatedRenderCommander|FoveatedRenderBlackBox|Graphics\\VR|Graphics/VR'` produced no matching diagnostics; full build still exits red from external errors.
 - Attempt 6: repeated filtered build diagnostic scan after thermal/blackbox/NaN hardening produced no matching VR-domain diagnostics; global build still exits red externally.
 - Attempt 7: repeated filtered build diagnostic scan after invalid-state shader-global suppression produced no matching VR-domain diagnostics; global build still exits red externally.
+- Attempt 8: repeated filtered build diagnostic scan after canonical cold-allocation comment cleanup timed out after 147 seconds; no `dotnet` process remained afterward. This is not counted as a green validation.
+- Attempt 9: `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /clp:ErrorsOnly` filtered for VR-domain symbols produced no matching diagnostics; full build still exits red externally.
 
 ## Loop Log
 - Loop 0: Prompt extracted from `CURRENT_BATCH.md`. Status/Rationale were missing. No code touched.
@@ -59,6 +61,7 @@ Hygiene: Status file was missing at session start. Initialized for current batch
 - Loop 9: Fixed permanent thermal severity latch, padded blackbox binary records to the actual 64-byte struct size, and made invalid XR display/eye state write telemetry before dumping and clearing hardware foveation.
 - Loop 10: Prevented invalid eye/display state from being reported as active hardware foveation to XR shader globals before the fail-safe clear runs.
 - Loop 11: Re-read `AGENTS.md` and `Docs/Actual Domains of Project.txt`; corrected state wording to `PENDING VERIFICATION` because runtime readiness cannot be claimed from static scans or blocked builds.
+- Loop 12: Corrected cold-allocation comments in the VR file to the project canonical `COLD ALLOC` format and re-ran the static debt scan.
 
 ## Omega Polish Inquisition
 - Polish mandate read only after tasks were complete/blocked: `[VI. OMEGA POLISH MANDATE] STATUS: MUST BE "VERIFIED MASTER GRADE".`

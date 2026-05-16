@@ -57,8 +57,8 @@ Scalability potential: Low/Quest/Android gets safer raw pointer alignment. PC Go
 Hardware Impact: 0.0 us hot-path impact; raw allocation is cold-path.
 
 Problem: Latest build validation still cannot reach green because the repository's external contract state changed again outside CORE/MEMORY.
-Solution: Reran `dotnet build Hecton8.Core.csproj --no-restore --nologo /clp:ErrorsOnly`; current errors are missing `Hecton8.VFX.Wakes`, `LightShaftContribution`, `ScreenSpaceLightShaftSource`, `WakeSource`, `WakeTelemetryEntry`, and `EcosystemDirector` interface drift. No CORE/MEMORY errors were reported.
-Rejected Alternatives: Rejected repairing wake, lighting, and ecosystem contracts from the memory lifecycle domain. Rejected claiming compile success when the solution is still red.
+Solution: Reran `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly`; current errors are unsupported `XRDisplaySubsystem.TryRequestDisplayRefreshRate`, `VaultProbeUtility` generic inference failure, missing `ItemAcquiredSignal`, missing submarine breach/damage-control fields/helpers, missing Biolum profile/blackbox fields, and related non-memory contract drift. No CORE/MEMORY errors were reported.
+Rejected Alternatives: Rejected repairing XR, diagnostics, item, submarine, and VFX contracts from the memory lifecycle domain. Rejected claiming compile success when the solution is still red.
 Scalability potential: None in CORE/MEMORY; integrator must restore cross-domain contract coherence before runtime profiling can prove exact transition timing.
 Hardware Impact: None from this dependency block.
 
@@ -79,3 +79,27 @@ Solution: Converted that path to `FatalMemoryException.ThrowAllocationTrackingFa
 Rejected Alternatives: Rejected silent fence loss and rejected managed fallback storage.
 Scalability potential: Low/Middle/High/Ultra all keep deterministic failure semantics under registry pressure.
 Hardware Impact: 0.0 us gameplay hot-path impact in normal operation; cold failure path throws instead of corrupting memory ownership.
+
+Problem: H8Memory blackbox was event-driven, not a true last-300-frame heartbeat. Allocation/free/transition records do not prove the final 300 frames before a crash.
+Solution: Added `H8Memory.RecordHeartbeat()` and call it from the existing `SceneRuntimeService.Tick` bridge. The method writes one fixed `H8MemoryTelemetryEntry` with a `Heartbeat` flag and `Time.frameCount` into the persistent 300-entry ring.
+Rejected Alternatives: Rejected Debug.Log, managed queues, per-frame disk writes, and initializing H8Memory from Tick. Initialization is done in `SceneRuntimeService.InitializeService`; heartbeat returns if memory is not initialized.
+Scalability potential: Low tier gets crash context without disk pressure. High/Ultra keeps deterministic frame evidence without growing the ring.
+Hardware Impact: Persistent memory remains 19,200 bytes; per frame cost is one NativeArray struct store and exact microseconds are unmeasured. GC impact is 0 B/frame by static inspection.
+
+Problem: Adding frame evidence risked inflating the telemetry record beyond the established 64-byte blackbox entry footprint.
+Solution: Replaced two reserved ushort fields with one `uint Frame`, preserving the manual 64-byte packed layout while adding frame index data to binary dumps.
+Rejected Alternatives: Rejected adding a new field that grows every ring entry. Rejected stealing semantic fields such as `Sequence` or `Owner`.
+Scalability potential: Same memory footprint across MX350, Quest, Steam Deck, and high-end PC.
+Hardware Impact: 0 additional persistent bytes versus the previous 300-entry ring.
+
+Problem: GlobalDataVault tracked per-buffer `VaultBufferMeta.Owner`, but scene-transition purge only released top-level H8Memory records. Scene-owned vault suballocations could survive inside the reusable CoreDataVault arena.
+Solution: Added `ReleaseOwnerBuffers(SystemID, out long)` and `ReleaseSceneOwnedBuffers(out long)` to `IDataVault`/`GlobalDataVault`, scanning vault keys on the cold transition path and freeing blocks whose metadata owner is scene-scoped.
+Rejected Alternatives: Rejected destroying the entire CoreDataVault arena because that would create transition memory churn and MicroSD-adjacent reload pressure. Rejected ignoring vault metadata ownership because it makes H-Phi ownership cosmetic.
+Scalability potential: Low tier reuses the arena without carrying stale scene buffers. High/Ultra preserve arena capacity for fast Ocean allocation while evicting old-scene data.
+Hardware Impact: 0 B GC/frame; transition performs a cold O(vault buffer count) scan. Exact microseconds are unmeasured.
+
+Problem: Vault owner eviction can collide with active jobs if a buffer is locked.
+Solution: `ReleaseBuffersByOwner` skips blocks with `BlockFlagLocked` or nonzero lock count and emits the existing Phi/VOD blackbox path instead of freeing active memory.
+Rejected Alternatives: Rejected force-freeing locked vault blocks. Rejected adding per-frame polling for lock expiry.
+Scalability potential: Low/Quest avoids use-after-free during scene transitions. High/Ultra keep job parallelism outside the transition gate.
+Hardware Impact: Cold transition branch only; no gameplay hot-path cost.

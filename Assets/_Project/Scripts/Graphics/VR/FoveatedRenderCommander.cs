@@ -47,7 +47,7 @@ namespace Hecton8.Graphics.VR
         private const string RuntimeObjectName = "[FoveatedRenderCommander]";
         private const string DumpFileName = "Dump_FOVEATED_RENDER_COMMANDER.bin";
 
-        // COLD ALLOC: List<XRDisplaySubsystem>[4] - XR display enumeration scratch reused on policy commits - owner: FoveatedRenderCommander
+        // COLD ALLOC: List<XRDisplaySubsystem>[4] — XR display enumeration scratch reused on policy commits — owner: FoveatedRenderCommander
         private static readonly List<XRDisplaySubsystem> s_displays = new List<XRDisplaySubsystem>(4);
         private static FoveatedRenderCommander s_activeCommander;
 
@@ -155,9 +155,9 @@ namespace Hecton8.Graphics.VR
             if (!Application.isPlaying || s_activeCommander != null)
                 return;
 
-            GameObject host = new GameObject(RuntimeObjectName); // COLD ALLOC: GameObject[1] - runtime foveated rendering commander host - owner: FoveatedRenderCommander
+            GameObject host = new GameObject(RuntimeObjectName); // COLD ALLOC: GameObject[1] — runtime foveated rendering commander host — owner: FoveatedRenderCommander
             DontDestroyOnLoad(host);
-            host.AddComponent<FoveatedRenderCommander>(); // COLD ALLOC: FoveatedRenderCommander[1] - runtime foveated rendering policy owner - owner: FoveatedRenderCommander
+            host.AddComponent<FoveatedRenderCommander>(); // COLD ALLOC: FoveatedRenderCommander[1] — runtime foveated rendering policy owner — owner: FoveatedRenderCommander
         }
 
         private void Awake()

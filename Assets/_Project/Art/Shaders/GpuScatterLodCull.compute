@@ -41,7 +41,7 @@ bool IsFiniteFloat4(float4 value)
 float3 TransformPoint(float4x4 matrixValue, float3 localPosition)
 {
     float4 transformed = mul(matrixValue, float4(localPosition, 1.0));
-    return IsFiniteFloat4(transformed) ? transformed.xyz : 0.0.xxx;
+    return IsFiniteFloat4(transformed) ? transformed.xyz : float3(0.0, 0.0, 0.0);
 }
 
 bool HasUsableScale(float4x4 matrixValue)
@@ -121,7 +121,8 @@ void ScatterCullJob(uint3 dispatchThreadId : SV_DispatchThreadID)
     uint motionHash = instanceIndex * 747796405u + _HectonScatterFrameIndex * 2891336453u;
     float swaySigned = HashSigned01(motionHash);
     float3 axisX = float3(matrixValue._m00, 0.0, matrixValue._m20);
-    float axisLenSq = max(dot(axisX, axisX), 0.000001);
+    float axisLenSq = dot(axisX, axisX);
+    axisLenSq = isfinite(axisLenSq) ? max(axisLenSq, 0.000001) : 1.0;
     float3 swayDir = axisX * rsqrt(axisLenSq);
     float motionScale = _HectonScatterMotionStrength * lerp(0.65, 1.35, saturate(_HectonScatterCrossfadeEnabled));
     _HectonScatterMotionVectors[instanceIndex] = float4(swayDir * (swaySigned * motionScale), distanceSq);

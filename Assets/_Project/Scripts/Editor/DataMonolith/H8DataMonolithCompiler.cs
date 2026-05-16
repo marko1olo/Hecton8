@@ -22,6 +22,7 @@ namespace Hecton8.EditorValidation
     internal static unsafe class H8DataMonolithCompiler
     {
         private const string SourceFolder = "Assets/_SourceData";
+        private const string BalanceSourceFolder = "Data/Balance";
         private const string OutputAssetPath = "Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin";
         private const string MenuPath = "Hecton8/Data Monolith/Bake Static Data";
         private const int InitialBlobCapacity = 128 * 1024;
@@ -70,18 +71,18 @@ namespace Hecton8.EditorValidation
             }
 
             Directory.CreateDirectory(SourceFolder);
+            Directory.CreateDirectory(BalanceSourceFolder);
             Directory.CreateDirectory(Path.GetDirectoryName(OutputAssetPath));
 
             DataSet dataSet = new DataSet();
             LocalizationPool localizationPool = new LocalizationPool();
-            string absoluteSourceFolder = Path.GetFullPath(SourceFolder);
 
-            string[] csvFiles = Directory.GetFiles(absoluteSourceFolder, "*.csv", SearchOption.AllDirectories);
+            string[] csvFiles = CollectSourceFiles("*.csv");
             Array.Sort(csvFiles, StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < csvFiles.Length; i++)
                 ParseCsv(csvFiles[i], dataSet, localizationPool);
 
-            string[] jsonFiles = Directory.GetFiles(absoluteSourceFolder, "*.json", SearchOption.AllDirectories);
+            string[] jsonFiles = CollectSourceFiles("*.json");
             Array.Sort(jsonFiles, StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < jsonFiles.Length; i++)
                 ParseJson(jsonFiles[i], dataSet, localizationPool);
@@ -123,7 +124,38 @@ namespace Hecton8.EditorValidation
         internal static bool IsSourcePath(string assetPath)
         {
             return !string.IsNullOrEmpty(assetPath) &&
-                   assetPath.StartsWith(SourceFolder + "/", StringComparison.OrdinalIgnoreCase);
+                   (IsUnderSourceRoot(assetPath, SourceFolder) ||
+                    IsUnderSourceRoot(assetPath, BalanceSourceFolder));
+        }
+
+        private static string[] CollectSourceFiles(string searchPattern)
+        {
+            List<string> files = new List<string>(128); // COLD ALLOC: List<string>[source file count] - editor-only source enumeration - owner: H8DataMonolithCompiler
+            AppendSourceFiles(files, SourceFolder, searchPattern);
+            AppendSourceFiles(files, BalanceSourceFolder, searchPattern);
+            return files.ToArray();
+        }
+
+        private static void AppendSourceFiles(List<string> files, string relativeFolder, string searchPattern)
+        {
+            string absoluteFolder = Path.GetFullPath(relativeFolder);
+            if (!Directory.Exists(absoluteFolder))
+                return;
+
+            string[] discovered = Directory.GetFiles(absoluteFolder, searchPattern, SearchOption.AllDirectories);
+            for (int i = 0; i < discovered.Length; i++)
+                files.Add(discovered[i]);
+        }
+
+        private static bool IsUnderSourceRoot(string path, string relativeRoot)
+        {
+            if (string.IsNullOrEmpty(path))
+                return false;
+
+            string normalizedPath = path.Replace('\\', '/');
+            string normalizedRoot = relativeRoot.Replace('\\', '/');
+            return normalizedPath.StartsWith(normalizedRoot + "/", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(normalizedPath, normalizedRoot, StringComparison.OrdinalIgnoreCase);
         }
 
         private static byte[] BuildBlob(DataSet dataSet, LocalizationPool localizationPool)
@@ -309,8 +341,12 @@ namespace Hecton8.EditorValidation
         {
             string tableName = Path.GetFileNameWithoutExtension(absolutePath).ToLowerInvariant();
             List<CsvRow> rows = ReadCsvRows(absolutePath);
+            bool requireHashPairs = IsBalanceSourceFile(absolutePath);
             for (int i = 0; i < rows.Count; i++)
+            {
+                ValidateCsvRowHashes(absolutePath, i + 2, rows[i], requireHashPairs);
                 ParseRow(tableName, rows[i], dataSet, localizationPool);
+            }
         }
 
         private static void ParseJson(string absolutePath, DataSet dataSet, LocalizationPool localizationPool)
@@ -963,6 +999,122 @@ namespace Hecton8.EditorValidation
             return values.ToArray();
         }
 
+        private static void ValidateCsvRowHashes(string absolutePath, int lineNumber, CsvRow row, bool requireHashPairs)
+        {
+            int validatedPairs = 0;
+            int idFieldCount = 0;
+            foreach (KeyValuePair<string, string> field in row.Fields)
+            {
+                if (!IsAuthoredIdField(field.Key, field.Value, out string hashField))
+                    continue;
+
+                idFieldCount++;
+                if (!row.Fields.TryGetValue(hashField, out string expectedHashText) ||
+                    string.IsNullOrWhiteSpace(expectedHashText))
+                {
+                    if (requireHashPairs)
+                        ThrowMissingCsvHash(absolutePath, lineNumber, field.Key, hashField);
+                    continue;
+                }
+
+                uint expectedHash = H8DataHash.ComputeFnv1A32(field.Value.AsSpan());
+                if (!TryParseUIntFlexible(expectedHashText, out uint authoredHash) || authoredHash != expectedHash)
+                    ThrowCsvHashMismatch(absolutePath, lineNumber, field.Key, field.Value, hashField, expectedHashText, expectedHash);
+
+                validatedPairs++;
+            }
+
+            if (requireHashPairs && idFieldCount > 0 && validatedPairs == 0)
+                ThrowMissingCsvHash(absolutePath, lineNumber, "id", "hash32");
+        }
+
+        private static bool IsAuthoredIdField(string fieldName, string value, out string hashField)
+        {
+            hashField = string.Empty;
+            if (string.IsNullOrWhiteSpace(fieldName) || string.IsNullOrWhiteSpace(value))
+                return false;
+
+            if (fieldName.EndsWith("_id", StringComparison.OrdinalIgnoreCase))
+            {
+                hashField = fieldName.Substring(0, fieldName.Length - 3) + "_hash32";
+                return true;
+            }
+
+            if (string.Equals(fieldName, "id", StringComparison.OrdinalIgnoreCase))
+            {
+                hashField = "hash32";
+                return true;
+            }
+
+            if (string.Equals(fieldName, "output", StringComparison.OrdinalIgnoreCase))
+            {
+                hashField = "output_hash32";
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool TryParseUIntFlexible(string value, out uint parsed)
+        {
+            parsed = 0u;
+            if (string.IsNullOrWhiteSpace(value))
+                return false;
+
+            string trimmed = value.Trim();
+            if (trimmed.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+                return uint.TryParse(trimmed.Substring(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out parsed);
+
+            return uint.TryParse(trimmed, NumberStyles.Integer, CultureInfo.InvariantCulture, out parsed);
+        }
+
+        private static bool IsBalanceSourceFile(string absolutePath)
+        {
+            string balanceRoot = Path.GetFullPath(BalanceSourceFolder).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            string normalizedPath = Path.GetFullPath(absolutePath);
+            return normalizedPath.StartsWith(balanceRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) ||
+                   normalizedPath.StartsWith(balanceRoot + Path.AltDirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static void ThrowMissingCsvHash(string absolutePath, int lineNumber, string idField, string hashField)
+        {
+            throw new InvalidOperationException(
+                "[SIGNAL_AUTHORITY_VALIDATOR] CSV row missing FNV-1a hash pair. file=" +
+                absolutePath +
+                ", line=" +
+                lineNumber +
+                ", id_field=" +
+                idField +
+                ", expected_hash_field=" +
+                hashField);
+        }
+
+        private static void ThrowCsvHashMismatch(
+            string absolutePath,
+            int lineNumber,
+            string idField,
+            string idValue,
+            string hashField,
+            string authoredHash,
+            uint expectedHash)
+        {
+            throw new InvalidOperationException(
+                "[SIGNAL_AUTHORITY_VALIDATOR] CSV FNV-1a hash mismatch. file=" +
+                absolutePath +
+                ", line=" +
+                lineNumber +
+                ", id_field=" +
+                idField +
+                ", id=" +
+                idValue +
+                ", hash_field=" +
+                hashField +
+                ", authored=" +
+                authoredHash +
+                ", expected=" +
+                expectedHash);
+        }
+
         private static int AddRecipeMask(string packedIds, ref uint mask0, ref uint mask1, ref uint mask2, ref uint mask3)
         {
             uint h0 = 0u;
@@ -1352,7 +1504,8 @@ namespace Hecton8.EditorValidation
     [InitializeOnLoad]
     internal static class H8DataMonolithFileSystemWatcher
     {
-        private static FileSystemWatcher _watcher;
+        private static FileSystemWatcher _sourceWatcher;
+        private static FileSystemWatcher _balanceWatcher;
         private static int _pendingBake;
 
         static H8DataMonolithFileSystemWatcher()
@@ -1364,34 +1517,45 @@ namespace Hecton8.EditorValidation
 
         private static void StartWatcher()
         {
-            string absoluteSourceFolder = Path.GetFullPath("Assets/_SourceData");
-            Directory.CreateDirectory(absoluteSourceFolder);
             StopWatcher();
+            _sourceWatcher = StartWatcherFor(Path.GetFullPath("Assets/_SourceData"));
+            _balanceWatcher = StartWatcherFor(Path.GetFullPath("Data/Balance"));
+        }
 
-            _watcher = new FileSystemWatcher(absoluteSourceFolder)
+        private static FileSystemWatcher StartWatcherFor(string absoluteSourceFolder)
+        {
+            Directory.CreateDirectory(absoluteSourceFolder);
+            FileSystemWatcher watcher = new FileSystemWatcher(absoluteSourceFolder)
             {
                 IncludeSubdirectories = true,
                 NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.Size
             };
-            _watcher.Changed += HandleSourceChanged;
-            _watcher.Created += HandleSourceChanged;
-            _watcher.Deleted += HandleSourceChanged;
-            _watcher.Renamed += HandleSourceRenamed;
-            _watcher.EnableRaisingEvents = true;
+            watcher.Changed += HandleSourceChanged;
+            watcher.Created += HandleSourceChanged;
+            watcher.Deleted += HandleSourceChanged;
+            watcher.Renamed += HandleSourceRenamed;
+            watcher.EnableRaisingEvents = true;
+            return watcher;
         }
 
         private static void StopWatcher()
         {
-            if (_watcher == null)
+            StopWatcher(ref _sourceWatcher);
+            StopWatcher(ref _balanceWatcher);
+        }
+
+        private static void StopWatcher(ref FileSystemWatcher watcher)
+        {
+            if (watcher == null)
                 return;
 
-            _watcher.EnableRaisingEvents = false;
-            _watcher.Changed -= HandleSourceChanged;
-            _watcher.Created -= HandleSourceChanged;
-            _watcher.Deleted -= HandleSourceChanged;
-            _watcher.Renamed -= HandleSourceRenamed;
-            _watcher.Dispose();
-            _watcher = null;
+            watcher.EnableRaisingEvents = false;
+            watcher.Changed -= HandleSourceChanged;
+            watcher.Created -= HandleSourceChanged;
+            watcher.Deleted -= HandleSourceChanged;
+            watcher.Renamed -= HandleSourceRenamed;
+            watcher.Dispose();
+            watcher = null;
         }
 
         private static void HandleSourceChanged(object sender, FileSystemEventArgs args)

@@ -4,7 +4,6 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
-using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -432,7 +431,7 @@ namespace Hecton8.Visor
         private VisorFluidPass _pass;
         private Material _material;
         private IDataVault _dataVault;
-        private NativeArray<VisorRefractionTelemetryEntry> _blackBox;
+        private VaultBufferHandle<VisorRefractionTelemetryEntry> _blackBoxHandle;
         private uint _blackBoxVaultGeneration;
         private int _blackBoxCursor;
         private int _lastBlackBoxFrame = -1;
@@ -728,14 +727,14 @@ namespace Hecton8.Visor
                 flags |= BlackBoxFlagNonFiniteInput;
         }
 
-        private void WriteBlackBoxFrame(Camera renderCamera, in RuntimeState runtimeState)
+        private unsafe void WriteBlackBoxFrame(Camera renderCamera, in RuntimeState runtimeState)
         {
             int frame = Time.frameCount;
             if (_lastBlackBoxFrame == frame)
                 return;
 
             _lastBlackBoxFrame = frame;
-            if (!TryEnsureBlackBoxLease())
+            if (!TryResolveBlackBoxPointer(out VisorRefractionTelemetryEntry* blackBox, out int blackBoxLength))
                 return;
 
             Vector3 localVelocity = SanitizeVector(runtimeState.LocalVelocity);
@@ -755,7 +754,7 @@ namespace Hecton8.Visor
             if (runtimeState.VisualOverkill01 > 0.001f)
                 flags |= BlackBoxFlagVisualOverkill;
 
-            _blackBox[_blackBoxCursor] = new VisorRefractionTelemetryEntry
+            blackBox[_blackBoxCursor] = new VisorRefractionTelemetryEntry
             {
                 FrameIndex = frame >= 0 ? (uint)frame : 0u,
                 Flags = flags,
@@ -773,11 +772,11 @@ namespace Hecton8.Visor
             };
 
             _blackBoxCursor++;
-            if (_blackBoxCursor >= _blackBox.Length)
+            if (_blackBoxCursor >= blackBoxLength)
                 _blackBoxCursor = 0;
 
             if ((flags & BlackBoxFlagNonFiniteInput) != 0u)
-                DumpBlackBoxOnce(flags);
+                DumpBlackBoxOnce(flags, blackBox, blackBoxLength);
         }
 
         private bool TryEnsureBlackBoxLease()
@@ -792,33 +791,52 @@ namespace Hecton8.Visor
                 return false;
             }
 
-            NativeArray<VisorRefractionTelemetryEntry> blackBox = vault.GetBuffer<VisorRefractionTelemetryEntry>(
+            VaultBufferHandle<VisorRefractionTelemetryEntry> blackBoxHandle = vault.GetBufferHandle<VisorRefractionTelemetryEntry>(
                 BufferID.VisorRefractionBlackBox,
                 BlackBoxFrameCount,
-                SystemID.Vfx,
-                NativeArrayOptions.ClearMemory);
-            if (!blackBox.IsCreated ||
-                blackBox.Length < BlackBoxFrameCount ||
-                !vault.TryGetBufferGeneration(BufferID.VisorRefractionBlackBox, out uint generation))
+                SystemID.Vfx);
+            if (!blackBoxHandle.IsCreated ||
+                blackBoxHandle.Length < BlackBoxFrameCount ||
+                !vault.TryGetBufferGeneration(BufferID.VisorRefractionBlackBox, out uint generation) ||
+                generation != blackBoxHandle.GenerationID)
             {
                 InvalidateBlackBoxLease();
                 return false;
             }
 
             _dataVault = vault;
-            _blackBox = blackBox;
+            _blackBoxHandle = blackBoxHandle;
             _blackBoxVaultGeneration = generation;
-            if (_blackBoxCursor >= _blackBox.Length)
+            if (_blackBoxCursor >= _blackBoxHandle.Length)
                 _blackBoxCursor = 0;
 
+            return true;
+        }
+
+        private unsafe bool TryResolveBlackBoxPointer(out VisorRefractionTelemetryEntry* blackBox, out int blackBoxLength)
+        {
+            blackBox = null;
+            blackBoxLength = 0;
+            if (!TryEnsureBlackBoxLease())
+                return false;
+
+            void* ptr = _blackBoxHandle.ResolvePointer(_dataVault);
+            if (ptr == null || !_blackBoxHandle.IsCreated || _blackBoxHandle.Length < BlackBoxFrameCount)
+            {
+                InvalidateBlackBoxLease();
+                return false;
+            }
+
+            blackBox = (VisorRefractionTelemetryEntry*)ptr;
+            blackBoxLength = _blackBoxHandle.Length;
             return true;
         }
 
         private bool IsBlackBoxLeaseValid()
         {
             if (_dataVault == null ||
-                !_blackBox.IsCreated ||
-                _blackBox.Length < BlackBoxFrameCount ||
+                !_blackBoxHandle.IsCreated ||
+                _blackBoxHandle.Length < BlackBoxFrameCount ||
                 _dataVault.IsCompactionFenceActive)
             {
                 return false;
@@ -832,7 +850,7 @@ namespace Hecton8.Visor
         private void InvalidateBlackBoxLease()
         {
             _dataVault = null;
-            _blackBox = default;
+            _blackBoxHandle = default;
             _blackBoxVaultGeneration = 0u;
             _blackBoxCursor = 0;
         }
@@ -868,9 +886,9 @@ namespace Hecton8.Visor
             return (ushort)value;
         }
 
-        private void DumpBlackBoxOnce(uint reasonFlags)
+        private unsafe void DumpBlackBoxOnce(uint reasonFlags, VisorRefractionTelemetryEntry* blackBox, int blackBoxLength)
         {
-            if (_blackBoxDumped || !_blackBox.IsCreated)
+            if (_blackBoxDumped || blackBox == null || blackBoxLength <= 0)
                 return;
 
             _blackBoxDumped = true;
@@ -888,14 +906,14 @@ namespace Hecton8.Visor
                     writer.Write(BlackBoxVersion);
                     writer.Write(reasonFlags);
                     writer.Write(BlackBoxEntrySizeBytes);
-                    writer.Write(_blackBox.Length);
+                    writer.Write(blackBoxLength);
                     int index = _blackBoxCursor;
-                    for (int i = 0; i < _blackBox.Length; i++)
+                    for (int i = 0; i < blackBoxLength; i++)
                     {
-                        if (index >= _blackBox.Length)
+                        if (index >= blackBoxLength)
                             index = 0;
 
-                        WriteTelemetryEntry(writer, _blackBox[index]);
+                        WriteTelemetryEntry(writer, blackBox[index]);
                         index++;
                     }
                 }

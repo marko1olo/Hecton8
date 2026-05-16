@@ -80,6 +80,24 @@ namespace Hecton8.AI.Cognition
         }
 
         /// <summary>
+        /// Creates the canonical stalk job from DataVault-owned buffer views.
+        /// </summary>
+        /// <param name="buffers">Resolved DataVault buffer views.</param>
+        /// <param name="frame">Global simulation frame written into telemetry.</param>
+        /// <returns>Configured job. The returned job is invalid when <paramref name="buffers"/> is not created.</returns>
+        public static LeviathanStalkJob CreateStalkJob(in AlphaLeviathanVaultBuffers buffers, uint frame)
+        {
+            return new LeviathanStalkJob
+            {
+                States = buffers.States,
+                SensoryStimuli = buffers.SensoryStimuli,
+                SteeringOutputs = buffers.SteeringOutputs,
+                TelemetryRing = buffers.TelemetryRing,
+                Frame = frame
+            };
+        }
+
+        /// <summary>
         /// Cold crash-path dump of the Alpha Leviathan telemetry ring.
         /// </summary>
         /// <param name="buffers">Resolved DataVault buffer views.</param>
@@ -107,9 +125,7 @@ namespace Hecton8.AI.Cognition
                     writer.Write(AlphaLeviathanStalkConstants.TelemetryFrames);
                     writer.Write(AlphaLeviathanStalkConstants.MaxLeviathanSlots);
                     writer.Write(buffers.TelemetryRing.Length);
-                    int cursor = buffers.TelemetryCursor.IsCreated && buffers.TelemetryCursor.Length > 0
-                        ? buffers.TelemetryCursor[0]
-                        : 0;
+                    int cursor = ResolveTelemetryCursor(in buffers);
                     writer.Write(cursor);
 
                     for (int i = 0; i < buffers.TelemetryRing.Length; i++)
@@ -146,6 +162,47 @@ namespace Hecton8.AI.Cognition
             {
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Cold fault path used by the owner after the Burst job has written telemetry flags.
+        /// </summary>
+        /// <param name="buffers">Resolved DataVault buffer views.</param>
+        /// <param name="projectRoot">Project root path. Pass `C:\hades\Hecton8` from the owner.</param>
+        /// <returns>True when a fault was detected and a binary dump was written.</returns>
+        public static bool TryDumpBlackBoxOnFault(in AlphaLeviathanVaultBuffers buffers, string projectRoot)
+        {
+            if (!buffers.TelemetryRing.IsCreated || buffers.TelemetryRing.Length <= 0)
+                return false;
+
+            for (int i = 0; i < buffers.TelemetryRing.Length; i++)
+            {
+                AlphaLeviathanTelemetryEntry entry = buffers.TelemetryRing[i];
+                if ((entry.Flags & AlphaLeviathanTelemetryFlags.Fault) != 0)
+                    return TryDumpBlackBox(in buffers, projectRoot);
+            }
+
+            return false;
+        }
+
+        private static int ResolveTelemetryCursor(in AlphaLeviathanVaultBuffers buffers)
+        {
+            int cursor = 0;
+            if (buffers.TelemetryCursor.IsCreated && buffers.TelemetryCursor.Length > 0)
+                cursor = math.clamp(buffers.TelemetryCursor[0], 0, AlphaLeviathanStalkConstants.TelemetryFrames - 1);
+
+            uint latestFrame = 0u;
+            for (int i = 0; i < buffers.TelemetryRing.Length; i++)
+            {
+                AlphaLeviathanTelemetryEntry entry = buffers.TelemetryRing[i];
+                if (entry.Frame >= latestFrame)
+                {
+                    latestFrame = entry.Frame;
+                    cursor = (int)(latestFrame % AlphaLeviathanStalkConstants.TelemetryFrames);
+                }
+            }
+
+            return cursor;
         }
     }
 }

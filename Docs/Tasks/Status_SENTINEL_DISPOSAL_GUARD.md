@@ -46,8 +46,8 @@ Relevant mandates read before coding:
 
 ## Compile Wall Note
 - Build command: `dotnet build Hecton8.Core.csproj --no-restore`.
-- Remaining blocker: external compile state now reports missing `Hecton8.VFX.Wakes`, missing `LightShaftContribution`, missing `ScreenSpaceLightShaftSource`, missing `WakeSource`, missing `WakeTelemetryEntry`, and `EcosystemDirector` not implementing the current `IEcosystemDirectorService` contract.
-- Affected files include `World/FloraInteractionManager.cs`, `Lighting/Shafts/ScreenSpaceLightShaftRuntime.cs`, and `World/EcosystemDirector.cs`.
+- Remaining blocker: external compile state now reports unsupported `XRDisplaySubsystem.TryRequestDisplayRefreshRate`, `VaultProbeUtility` generic inference failure, missing `ItemAcquiredSignal`, missing submarine breach/damage-control fields/helpers, missing Biolum profile/blackbox fields, and related non-memory contract drift.
+- Affected files include `Core/HectonXRRuntimeState.cs`, `Core/Diagnostics/Visuals/VaultProbeUtility.cs`, `HectonItem.cs`, `SubmarineStructuralGrid.cs`, and `VFX/Bioluminescence/BiolumPulseSyncRuntime.cs`.
 - No compiler errors are reported in `Assets/_Project/Scripts/Core/Memory/H8Memory.cs`, `Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs`, or `Assets/_Project/Scripts/Core/SceneRuntimeService.cs` after the local enum-key and inquisition fixes.
 - Ownership: those blockers are outside CORE/MEMORY. Marked dependency block, not reverted.
 
@@ -58,7 +58,7 @@ Relevant mandates read before coding:
 
 ## Continuation Inquisition - Multiplatform/Data Sovereignty
 - [x] ARM64/Quest layout audit: all `StructLayout` records in CORE/MEMORY now declare `Pack = 1`; large fields were reordered where needed to avoid unaligned int/long offsets. `VaultGapAuditJob` no longer carries a binary-layout attribute because it contains Unity `NativeArray<T>` wrappers and is not dumped or persisted. Estimate: 0.0 us hot path.
-- [x] H8Memory blackbox: added a 300-entry `NativeArray<H8MemoryTelemetryEntry>` heartbeat ring and dump serialization before fatal leak details. Rejected: Debug.Log-only or string-only dumps. Estimate: 0.0 us gameplay hot path; cold allocation/free event writes only.
+- [x] H8Memory blackbox: added a 300-entry `NativeArray<H8MemoryTelemetryEntry>` heartbeat ring and dump serialization before fatal leak details. Continued pass now records one frame-indexed heartbeat from `SceneRuntimeService.Tick` when H8Memory is initialized. Rejected: Debug.Log-only or string-only dumps. Estimate: one NativeArray struct store per frame; exact microseconds unmeasured.
 - [x] Raw alignment: `AllocateRaw`/`ReallocateRaw` now normalize caller alignment to a power-of-two floor of 16 bytes. Rejected: trusting arbitrary alignment input on ARM64. Estimate: 0.0 us hot path.
 - [x] Steam Deck I/O pressure: no per-frame disk writes; H8Memory fatal dump remains cold-path only. Estimate: 0.0 us normal gameplay.
 - [x] Signal audit: no new duplicate signal invented; bridge uses existing typed `SystemPauseSignal`. No legacy EventBus in CORE/MEMORY. Unity scene delegate remains because the XML rule explicitly requires intercepting Unity scene load/unload events.
@@ -70,3 +70,15 @@ Relevant mandates read before coding:
 - [x] Shutdown thread sync: added `_ownerJobKeys` and `CompleteAllOwnerJobs()` so `Shutdown()` drains every registered owner `JobHandle` before force-freeing records, including owners that registered work outside a pointer lane. Rejected: freeing on shutdown without a fence. Estimate: 0.0 us gameplay hot path; shutdown blocking only.
 - [x] Job fence fail-fast: `RegisterActiveJob` now throws `FatalMemoryException.ThrowAllocationTrackingFailed()` if the native owner-job registry cannot record a fence. Rejected: silent job-fence loss. Estimate: 0.0 us gameplay hot path unless caller registers jobs; cold failure path only.
 - [x] Latest validation: `dotnet build Hecton8.Core.csproj --no-restore --nologo /clp:ErrorsOnly` completed in 14.40s and failed on 15 external errors. No errors reported in CORE/MEMORY touched files.
+
+## Continuation Inquisition - Frame Heartbeat Blackbox
+- [x] True 300-frame heartbeat: `H8Memory.RecordHeartbeat()` writes a frame-indexed `Heartbeat` telemetry entry into the fixed ring from `SceneRuntimeService.Tick`. Rejected: allocation-event-only blackbox because it cannot prove the last 300 frames. Estimate: one native struct store per frame; exact microseconds unmeasured.
+- [x] Hot-path allocation guard: H8Memory initialization is performed in `SceneRuntimeService.InitializeService`, not inside `Tick`; `RecordHeartbeat()` returns if the sentinel is not initialized. Rejected: hidden cold allocation from Tick. Estimate: 0 B GC/frame; exact CPU microseconds unmeasured.
+- [x] Binary entry size preservation: replaced two reserved ushorts with one `uint Frame`, keeping `H8MemoryTelemetryEntry` at the same 64-byte manual layout while adding frame evidence. Rejected: growing the ring entry size without MX350 need. Estimate: persistent memory stays 19,200 bytes for 300 entries.
+- [x] Latest validation before vault eviction: `dotnet build Hecton8.Core.csproj --no-restore --nologo /v:minimal` completed in 01:42.88 and failed on 85 external errors. No errors reported in CORE/MEMORY touched files.
+
+## Continuation Inquisition - Vault Scene Owner Eviction
+- [x] DataVault owner eviction: added `IDataVault.ReleaseOwnerBuffers(SystemID, out long)` and `ReleaseSceneOwnedBuffers(out long)` so vault suballocations tagged to scene-owned systems can be released without destroying the reusable CoreDataVault arena. Rejected: treating CoreDataVault arena retention as leaked scene data. Estimate: cold transition path only; exact microseconds unmeasured.
+- [x] Scene transition wiring: `SceneRuntimeService.CompleteMemoryLifecycleTransition()` now releases scene-owned vault buffers before `H8Memory.CompleteSceneTransitionVerification()`. Rejected: relying only on top-level H8Memory owner records, which cannot see per-buffer vault ownership inside the arena. Estimate: 0 B GC/frame; cold transition scan over vault keys.
+- [x] Locked block safety: vault owner eviction skips locked blocks and emits the existing Phi/VOD blackbox instead of freeing active-job memory. Rejected: force-freeing vault buffers with `BlockFlagLocked` or nonzero lock count. Estimate: no gameplay hot-path cost.
+- [x] Latest validation: `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 01:47.73 and failed on 39 external errors. No errors reported in CORE/MEMORY touched files.

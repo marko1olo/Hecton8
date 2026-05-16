@@ -596,6 +596,16 @@ namespace Hecton8.Graphics.Scalability
                 }
 
                 NativeArray<ResolutionScaleState> resolved = _scaleStateHandle.Resolve(_dataVault);
+                if (!resolved.IsCreated || resolved.Length <= 0)
+                {
+                    _scaleStateHandle = _dataVault.GetBufferHandle<ResolutionScaleState>(
+                        BufferID.ResolutionScaleState,
+                        1,
+                        SystemID.GraphicsScalability,
+                        NativeArrayOptions.ClearMemory);
+                    resolved = _scaleStateHandle.Resolve(_dataVault);
+                }
+
                 if (resolved.IsCreated && resolved.Length > 0)
                 {
                     ReleaseFallbackScaleState();

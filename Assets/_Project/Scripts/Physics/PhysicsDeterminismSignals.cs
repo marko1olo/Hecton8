@@ -300,7 +300,7 @@ namespace Hecton8.Physics
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 48)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
     public struct InputSignal
     {
         public float2 MoveDelta;
@@ -313,7 +313,7 @@ namespace Hecton8.Physics
         public byte Flags;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 128)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 128)]
     public struct StateCorrectionSignal
     {
         public AbsoluteUniversePosition PositionAup;
@@ -328,7 +328,7 @@ namespace Hecton8.Physics
         public byte Flags;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     public struct DesyncDetectedSignal
     {
         public uint LocalHash;
@@ -339,7 +339,7 @@ namespace Hecton8.Physics
         public byte Flags;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 128)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 128)]
     public struct SyncFenceSignal
     {
         public AbsoluteUniversePosition PositionAup;
@@ -356,7 +356,7 @@ namespace Hecton8.Physics
     /// <summary>
     /// Decoupled player KCC velocity lane consumed by presentation systems such as lower-body IK.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 80)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 80)]
     public struct KccVelocitySignal
     {
         public const byte FlagLowTier = 1 << 0;

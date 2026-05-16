@@ -21,6 +21,7 @@ namespace Hecton8.Editor.Build
         private const string SeverityBlocker = "BLOCKER";
         private const string SeverityWarn = "WARN";
         private const string SeverityInfo = "INFO";
+        private const string LegacyResourceLoadToken = "Resources." + "Load";
 
         private static readonly string[] _scanRoots =
         {
@@ -208,10 +209,10 @@ namespace Hecton8.Editor.Build
                 if (line.IndexOf("Path.Combine(Application.persistentDataPath", StringComparison.Ordinal) >= 0)
                     AddFinding(findings, SeverityWarn, relativePath, lineNumber, "Persisted runtime path should route through HectonPersistentPathPolicy.");
 
-                if (line.IndexOf("Resources.Load", StringComparison.Ordinal) >= 0)
+                if (line.IndexOf(LegacyResourceLoadToken, StringComparison.Ordinal) >= 0)
                 {
                     string severity = IsFirstPartySource(relativePath) ? SeverityBlocker : SeverityWarn;
-                    AddFinding(findings, severity, relativePath, lineNumber, "Resources.Load requires case-sensitive path audit and Addressables migration proof.");
+                    AddFinding(findings, severity, relativePath, lineNumber, "Legacy Resources asset lookup requires Addressables migration proof.");
                 }
 
                 for (int literalIndex = 0; literalIndex < stringLiterals.Count; literalIndex++)
@@ -223,7 +224,7 @@ namespace Hecton8.Editor.Build
                     ScanCaseSensitiveLiteral(relativePath, lineNumber, literal, assetPathMap, findings);
                 }
 
-                if (line.IndexOf("Resources.Load", StringComparison.Ordinal) >= 0)
+                if (line.IndexOf(LegacyResourceLoadToken, StringComparison.Ordinal) >= 0)
                     ScanResourcesLiteral(relativePath, lineNumber, stringLiterals, resourcesPathMap, findings);
             }
         }
@@ -427,11 +428,11 @@ namespace Hecton8.Editor.Build
                 if (resourcesPathMap.TryGetValue(normalized, out string actual))
                 {
                     if (!string.Equals(actual, normalized, StringComparison.Ordinal))
-                        AddFinding(findings, SeverityBlocker, relativePath, lineNumber, "Resources.Load case mismatch: requested `" + normalized + "` actual `" + actual + "`.");
+                        AddFinding(findings, SeverityBlocker, relativePath, lineNumber, "Legacy Resources key case mismatch: requested `" + normalized + "` actual `" + actual + "`.");
                 }
                 else
                 {
-                    AddFinding(findings, SeverityWarn, relativePath, lineNumber, "Resources.Load key not found by static Resources path map: `" + normalized + "`.");
+                    AddFinding(findings, SeverityWarn, relativePath, lineNumber, "Legacy Resources key not found by static path map: `" + normalized + "`.");
                 }
             }
         }

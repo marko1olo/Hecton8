@@ -46,3 +46,33 @@ Verification:
 Integrator note:
 - Restore the baseline missing contracts/types first: examples include `ISimulationBucketer`, `IMacroDatabaseService`, `IPlayerMovementContracts`, `IPlayerMovementPoseReadModel`, `H8WorldPageReadTicket`, and related core contract symbols.
 - Do not invent stubs in the rendering scatter domain. That would hide a cross-domain dependency failure.
+## 2026-05-16 Continued Pass: Multiplatform / H-Phi Inquisition
+
+What was wrong:
+- Scatter manager still owned blackbox and CPU audit `NativeArray` fields locally after the first implementation pass.
+- Blackbox telemetry did not have a fixed Pack=1 64B layout for Quest/ARM64 confidence.
+- The compute kernel used a compact zero-vector syntax and only partially guarded the sway `rsqrt` denominator.
+- High-tier flora residency existed, but the material was not explicitly switched into the existing `_QUALITY_HIGH` shader lane.
+
+What was done:
+- Moved scatter blackbox, CPU frustum audit planes, and CPU visibility audit mask into GlobalDataVault via `VaultBufferHandle<T>` and new BufferIDs 161-163.
+- Converted blackbox telemetry to `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]` with reserved padding lanes.
+- Kept source matrices and metadata as Vault handles only; remaining `NativeArray<T>` values are transient Vault/GPU views, not renderer-owned storage.
+- Hardened `GpuScatterLodCull.compute` for Metal/mobile with explicit zero vectors and finite-checked `rsqrt` input.
+- Added high-tier material switching for `_QUALITY_HIGH` plus stronger existing vegetation SSS, edge bloom, and local caustic lanes; low tier switches `_QUALITY_MX350` with cheap constants.
+
+Cinematic Cheats used:
+- Low/MX350 still uses a hard 100m residency lie and cheap material response.
+- High/Ultra spends the saved CPU/GPU visibility budget on 500m residency, crossfade, stronger translucent flora lighting, and caustic shimmer instead of physical vegetation simulation.
+
+Exact Microseconds saved:
+- Private-native ownership eviction: 0us hot-path target, but removes leak/stale-handle risk and improves DataVault compaction compatibility.
+- `rsqrt` guard: 0us CPU; GPU cost is one finite check and protects against catastrophic mobile pipeline poisoning.
+- Existing 100k GameObject purge estimate remains 900-1800us CPU saved on i3/MX350 pending profiler capture.
+- Existing indirect args path remains estimated 200-2000us stall avoided by not CPU-reading visible counts.
+
+Validation:
+- `rg` found no renderer-owned private `NativeArray` fields, `H8Memory.Allocate`, `H8Memory.Release`, `Allocator.Persistent`, legacy `EventBus`, scene search, or Unity Update methods in `GpuScatterLodManager.cs`.
+- `dotnet build Assembly-CSharp.csproj --no-restore --no-dependencies -m:1` is blocked by missing generated/plugin DLLs under `Temp/bin/Debug`.
+- `dotnet build Assembly-CSharp.csproj --no-restore -m:1` is blocked first by missing RealtimeCSG source files.
+- Filtered build scans show no `GpuScatter`/`FloraScatter` compiler errors before the external dependency wall.

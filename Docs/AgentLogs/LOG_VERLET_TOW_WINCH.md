@@ -43,3 +43,36 @@ Validation:
 - Compile attempt 2: `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /clp:ErrorsOnly /p:UseSharedCompilation=false` failed before tether validation on missing AI/animation/registry contract types.
 - Compile attempt 3: full `Assembly-CSharp.csproj` errors-only build timed out after 306 seconds with no final compiler result.
 - Unity runtime and profiler validation were not executed.
+
+## 2026-05-16 - Multiplatform / H-Phi Inquisition Pass
+
+What was wrong:
+- Snap and fire paths still had private tether signal ownership. Fire used a private `NativeQueue<TetherFiredSignal>`.
+- Public cable DataVault lanes still had a private fallback allocation path.
+- `TetherFiredSignal` was in an unstable contract location for the generated project; directed compile caught it.
+- Full statelessness is not achieved: per-instance solver/visual working arrays still exist, now memory-sentinel tracked through `H8Memory`.
+
+What was done:
+- Converted fire notification to `SignalBus<TetherFiredSignal>` and `ReadOnlySpan<TetherFiredSignal>` snapshot reads.
+- Kept only a bounded 16-entry managed Unity-object resolver sidecar for immediate same-frame attach. No delegate/EventBus/native queue remains in the tether fire path.
+- Kept snap and tension on typed signal lanes.
+- Locked tether signal/telemetry payloads to `Pack=1` explicit sizes.
+- Removed the private fallback allocation for public DataVault cable SOA lanes.
+- Routed remaining tether-owned runtime `NativeArray` allocation/release through `H8Memory` with `SystemID.Physics`.
+- Moved the real compiled `TetherFiredSignal` payload into `TetherSignals.cs` and restored `TetherSignalContracts.cs` as an empty generated-project anchor.
+
+Cinematic Cheats used:
+- Low tier remains 3 authority segments plus taut-line fake.
+- High/Ultra still spend CPU savings on indirect cable impostor stress rendering, not extra physics realism.
+
+Exact Microseconds saved:
+- Fire private queue purge: no measured frame-time claim; removed one persistent native queue and one private queue drain.
+- Public DataVault fallback removal: no frame-time claim; prevents hidden fallback allocation and split-state cost.
+- Pack=1/contract placement: 0 us runtime; build and binary-layout stability fix.
+- Remaining estimates are unchanged: Low tier saves roughly 6-12 us versus the 10-segment high path; DataVault publish remains estimated +3-6 us.
+
+Validation:
+- Static scan found no `NativeQueue<TetherFiredSignal>`, `NativeQueue<TetherSnappedSignal>`, EventBus/delegate path, Unity Joint, `Update` family, `string.Format`, `TetherManager.Instance`, or distance helper hit in touched tether files.
+- `git diff --check` returned only repository-normal CRLF conversion warnings.
+- Compile attempt 10: `dotnet build Hecton8.Core.csproj -v:minimal /clp:ErrorsOnly /p:UseSharedCompilation=false` failed on unrelated XR refresh-rate API, item signal import, submarine structural breach buffers, biolum buffers, and vault probe generic inference errors. No tether compiler errors appeared in the reported set.
+- Unity runtime and profiler validation were not executed.

@@ -78,3 +78,40 @@ Validation:
   - `Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs(122,47)`: missing `UniversalInputStateSignal`.
 - No visible compiler error references the edited submarine ballast PID, submarine fluid dynamics, global signal, or dynamic flood contract files.
 - Final validation status remains: BLOCKED BY DEPENDENCY.
+
+## 2026-05-16 - HYDRO_MECHANIC - DataVault Handle / Fault I-O Polish Pass
+
+What was wrong:
+- Ballast PID no longer allocated fallback buffers, but it still kept persistent `NativeArray` fields as DataVault aliases.
+- Fault telemetry wrote legacy autopilot, vehicle flood, and task dump files for the same crash/NaN event.
+- Tail-heavy flood VFX emitted a semantic bubble marker but did not reuse the existing fluid impulse lane for high-tier silt/wake consumers.
+
+What was done:
+- Replaced persistent ballast PID `NativeArray` fields with `VaultBufferHandle<T>` fields for ballast fill, tank positions, PID output, flood mass output, telemetry, and room flood inputs.
+- Added DataVault handle resolution helpers. Burst jobs receive transient NativeArray views only at schedule/write boundaries.
+- Reset all vault handles when the DataVault service changes, preventing stale pointer identity after relocation or registry replacement.
+- Collapsed black-box fault output to the required `Docs/AgentLogs/Dump_SUBMARINE_BALLAST_PID_V2.bin` file.
+- Added high-tier-only `FluidImpulseSignal` publication from the tail-heavy engine vent event. Low math LOD skips the extra impulse.
+
+Cinematic cheats used:
+- Vent struggle remains event-driven: one bubble marker plus one fluid impulse, not continuous particle simulation.
+- High-tier silt/wake is delegated to VFX consumers through a typed lane; physics only publishes bounded intent.
+- Low tier keeps the same 1 Hz flood solve and skips extra VFX impulse work.
+
+Microseconds saved, estimated not profiled:
+- Two duplicate fault-time file writes removed for Steam Deck/MicroSD pressure.
+- No runtime microsecond claim for handle resolution; it trades private ownership for DataVault correctness.
+- Existing low-tier savings remain: 20-40 us/frame avoided by 1 Hz flood solve during active flooding.
+
+Validation:
+- `rg "private NativeArray" Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs` now returns no persistent NativeArray fields.
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false` was rerun.
+- Current blocker is outside PHYSICS/VEHICLES:
+  - `Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs`: missing `_stateBuffer`, `_outputBuffer`, and `_blackBox`.
+  - `Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs`: `LockstepReplayBlockHeader` lacks `HashCadenceFrames`.
+  - `Assets/_Project/Scripts/Gameplay/HectonPlayerState.cs`: missing `ReleaseMotorArray` / `AllocateMotorArray`.
+  - `Assets/_Project/Scripts/Core/HomeostasisBrain.cs`: missing hardware metric fields/helpers and blackbox state.
+  - `Assets/_Project/Scripts/Items/PickupItem.cs`: missing `ItemAcquiredSignal`.
+  - `Assets/_Project/Scripts/Physics/TetherSignals.cs`: `TetherFiredSignal` is still on the old signal interface namespace.
+- No visible compiler error references the edited submarine ballast PID, submarine fluid dynamics, or dynamic flood contract files.
+- Final validation status remains: BLOCKED BY DEPENDENCY.

@@ -622,7 +622,9 @@ Shader "Hecton8/BoidFishInstanced"
                 // ── Final ──
                 half3 color = finalColor * texColor.rgb * lighting;
                 half lightStimulus = saturate((half)input.lightStimulus);
-                color = lerp(color, color * 1.65h + _BiolumColor.rgb * 0.35h, lightStimulus);
+                half beamPulse = 0.78h + ((half)FastTrianglePulse(_Time.y * 5.0 + input.instanceRand * 6.28318 + input.uv.x * 7.0) * 0.44h);
+                half beamStimulus = saturate(lightStimulus * beamPulse);
+                color = lerp(color, color * 1.8h + _BiolumColor.rgb * (0.35h + beamStimulus * 0.25h), beamStimulus);
                 color = lerp(color, _HitFlashColor.rgb, saturate((half)input.hitFlash));
 
                 // ── Depth-based fade (underwater atmosphere) ──

@@ -12,12 +12,12 @@ using UnityEngine;
 namespace Hecton8.Editor.Build
 {
     /// <summary>
-    /// Guards static Resources.Load literals against Linux/macOS case-sensitive lookup failures.
+    /// Guards static legacy Resources asset lookups against Linux/macOS case-sensitive lookup failures.
     /// </summary>
     internal sealed class CaseSensitiveResourceLoadValidator : IPreprocessBuildWithReport
     {
         private const int MaxReportEntries = 32;
-        private static readonly Regex s_resourcesLoadLiteral = new Regex(
+        private static readonly Regex s_legacyResourcesCallLiteral = new Regex(
             @"Resources\s*\.\s*Load(?:<[^>]+>)?\s*\(\s*""([^""]+)""",
             RegexOptions.Compiled);
 
@@ -28,11 +28,11 @@ namespace Hecton8.Editor.Build
             ValidateOrThrow();
         }
 
-        [MenuItem("HECTON-8/Platform/Validate Resources.Load Case")]
+        [MenuItem("HECTON-8/Platform/Validate Legacy Resources Case")]
         private static void ValidateFromMenu()
         {
             ValidateOrThrow();
-            Debug.Log("[PLATFORM] Resources.Load case validation passed.");
+            Debug.Log("[PLATFORM] Legacy Resources case validation passed.");
         }
 
         private static void ValidateOrThrow()
@@ -65,7 +65,7 @@ namespace Hecton8.Editor.Build
 
             if (unresolvedCount > 0 && unresolvedReport != null)
             {
-                Debug.LogWarning("[PLATFORM] Static Resources.Load literals without exact Resources asset proof: " +
+                Debug.LogWarning("[PLATFORM] Static legacy Resources literals without exact asset proof: " +
                                  unresolvedCount +
                                  "\n" +
                                  unresolvedReport);
@@ -74,7 +74,7 @@ namespace Hecton8.Editor.Build
             if (caseViolationCount <= 0)
                 return;
 
-            string message = "Case-sensitive Resources.Load blocker: " +
+            string message = "Case-sensitive legacy Resources blocker: " +
                              caseViolationCount +
                              " literal path case mismatch(es) detected.\n" +
                              (caseReport != null ? caseReport.ToString() : string.Empty);
@@ -136,7 +136,7 @@ namespace Hecton8.Editor.Build
 
             for (int lineIndex = 0; lineIndex < lines.Length; lineIndex++)
             {
-                MatchCollection matches = s_resourcesLoadLiteral.Matches(lines[lineIndex]);
+                MatchCollection matches = s_legacyResourcesCallLiteral.Matches(lines[lineIndex]);
                 for (int matchIndex = 0; matchIndex < matches.Count; matchIndex++)
                 {
                     string requestedKey = matches[matchIndex].Groups[1].Value.Replace('\\', '/');

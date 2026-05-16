@@ -136,6 +136,8 @@ namespace Hecton8.Rendering.Scatter
         private const uint BlackBoxFlagNonFiniteVaultMatrix = 1u << 4;
         private const uint BlackBoxDumpReasonNonFiniteMatrix = 0x4E414E31u;
         private const string GpuIndirectKeyword = "HECTON_GPU_INDIRECT";
+        private const string QualityMx350Keyword = "_QUALITY_MX350";
+        private const string QualityHighKeyword = "_QUALITY_HIGH";
 
         private static readonly int _SourceMatricesId = Shader.PropertyToID("_HectonScatterSourceMatrices");
         private static readonly int _VisibleIndicesId = Shader.PropertyToID("_HectonScatterVisibleIndices");
@@ -160,6 +162,10 @@ namespace Hecton8.Rendering.Scatter
         private static readonly int _LodNearDistanceId = Shader.PropertyToID("_HectonLodNearDistance");
         private static readonly int _LodFarDistanceId = Shader.PropertyToID("_HectonLodFarDistance");
         private static readonly int _LodTransitionRangeId = Shader.PropertyToID("_HectonLodTransitionRange");
+        private static readonly int _AnisotropicSssStrengthId = Shader.PropertyToID("_AnisotropicSssStrength");
+        private static readonly int _OrganicSssScaleId = Shader.PropertyToID("_OrganicSssScale");
+        private static readonly int _EdgeBloomStrengthId = Shader.PropertyToID("_EdgeBloomStrength");
+        private static readonly int _LocalCausticStrengthId = Shader.PropertyToID("_LocalCausticStrength");
 
         [Header("Runtime Assets")]
         [Tooltip("Compute shader with a ScatterCullJob kernel.")]
@@ -215,6 +221,31 @@ namespace Hecton8.Rendering.Scatter
 
         [Tooltip("Fallback draw bounds used until a producer publishes explicit bounds.")]
         [SerializeField] private Bounds fallbackDrawBounds = new Bounds(Vector3.zero, new Vector3(200f, 80f, 200f));
+
+        [Header("Visual Overkill")]
+        [Tooltip("Low-tier fake anisotropic subsurface strength.")]
+        [SerializeField, Range(0f, 2f)] private float lowTierAnisotropicSssStrength = 0.5f;
+
+        [Tooltip("High-tier anisotropic subsurface strength.")]
+        [SerializeField, Range(0f, 2f)] private float highTierAnisotropicSssStrength = 1.15f;
+
+        [Tooltip("Low-tier organic subsurface scale.")]
+        [SerializeField, Range(0f, 4f)] private float lowTierOrganicSssScale = 0.72f;
+
+        [Tooltip("High-tier organic subsurface scale.")]
+        [SerializeField, Range(0f, 4f)] private float highTierOrganicSssScale = 1.65f;
+
+        [Tooltip("Low-tier edge bloom kept cheap for MX350.")]
+        [SerializeField, Range(0f, 2f)] private float lowTierEdgeBloomStrength = 0.28f;
+
+        [Tooltip("High-tier edge bloom for dense translucent kelp silhouettes.")]
+        [SerializeField, Range(0f, 2f)] private float highTierEdgeBloomStrength = 0.9f;
+
+        [Tooltip("Low-tier local caustic strength.")]
+        [SerializeField, Range(0f, 1f)] private float lowTierLocalCausticStrength = 0.08f;
+
+        [Tooltip("High-tier local caustic strength.")]
+        [SerializeField, Range(0f, 1f)] private float highTierLocalCausticStrength = 0.32f;
 
         [Header("Diagnostics")]
         [Tooltip("Optional CPU Burst audit. Off by default; RenderMeshIndirect path is GPU authoritative.")]
@@ -332,11 +363,12 @@ namespace Hecton8.Rendering.Scatter
             if (_activeInstanceCount <= 0 || !EnsureCpuAuditBuffers(_activeInstanceCount))
                 return false;
 
-            NativeArray<Matrix4x4> matrices = ResolveMatrixView();
-            NativeArray<float4> frustumPlanes = ResolveCpuFrustumPlaneView();
-            NativeArray<byte> visibilityMask = ResolveCpuVisibilityMaskView();
-            if (!matrices.IsCreated || !frustumPlanes.IsCreated || !visibilityMask.IsCreated)
+            if (!TryResolveMatrixView(out NativeArray<Matrix4x4> matrices) ||
+                !TryResolveCpuFrustumPlaneView(out NativeArray<float4> frustumPlanes) ||
+                !TryResolveCpuVisibilityMaskView(out NativeArray<byte> visibilityMask))
+            {
                 return false;
+            }
 
             UploadCpuFrustumPlanes();
             JobHandle handle = new ScatterCullJob
@@ -593,7 +625,10 @@ namespace Hecton8.Rendering.Scatter
             if (!ReferenceEquals(_dataVault, vault))
                 BindDataVault(vault);
 
-            if (!_vaultMatrices.IsCreated || !_vaultMetadata.IsCreated)
+            if (!_vaultMatricesHandle.IsCreated || !_vaultMetadataHandle.IsCreated)
+                return false;
+
+            if (!vault.ResolveBuffer(ref _vaultMatricesHandle) || !vault.ResolveBuffer(ref _vaultMetadataHandle))
                 return false;
 
             _scatterCullKernel = ResolveKernel(scatterCullCompute, "ScatterCullJob");
@@ -624,16 +659,17 @@ namespace Hecton8.Rendering.Scatter
         private void BindDataVault(IDataVault vault)
         {
             _dataVault = vault;
-            _vaultMatrices = vault.GetBuffer<Matrix4x4>(
+            _vaultMatricesHandle = vault.GetBufferHandle<Matrix4x4>(
                 BufferID.FloraScatterMatrices,
                 instanceCapacity,
                 SystemID.Vfx,
                 NativeArrayOptions.UninitializedMemory);
-            _vaultMetadata = vault.GetBuffer<GpuScatterFloraInstanceData>(
+            _vaultMetadataHandle = vault.GetBufferHandle<GpuScatterFloraInstanceData>(
                 BufferID.FloraScatterMetadata,
                 instanceCapacity,
                 SystemID.Vfx,
                 NativeArrayOptions.ClearMemory);
+            EnsureBlackBox(vault);
             CaptureVaultGenerations(vault);
             EnsureMetadataDefaults();
             _forceUpload = true;
@@ -642,8 +678,11 @@ namespace Hecton8.Rendering.Scatter
         private void InvalidateDataVaultLease()
         {
             _dataVault = null;
-            _vaultMatrices = default;
-            _vaultMetadata = default;
+            _vaultMatricesHandle = default;
+            _vaultMetadataHandle = default;
+            _blackBoxHandle = default;
+            _cpuFrustumPlanesHandle = default;
+            _cpuVisibilityMaskHandle = default;
             _hasMatrixGeneration = false;
             _hasMetadataGeneration = false;
             _lastMatrixGeneration = 0u;
@@ -772,30 +811,36 @@ namespace Hecton8.Rendering.Scatter
 
         private int ResolveSafeActiveCount()
         {
-            if (!_vaultMatrices.IsCreated)
+            if (!_vaultMatricesHandle.IsCreated)
                 return 0;
 
-            int safeCount = math.min(_activeInstanceCount, _vaultMatrices.Length);
-            safeCount = _vaultMetadata.IsCreated ? math.min(safeCount, _vaultMetadata.Length) : safeCount;
+            int safeCount = math.min(_activeInstanceCount, _vaultMatricesHandle.Length);
+            safeCount = _vaultMetadataHandle.IsCreated ? math.min(safeCount, _vaultMetadataHandle.Length) : safeCount;
             return math.clamp(safeCount, 0, instanceCapacity);
         }
 
         private bool TryUploadVaultBuffers(int activeCount)
         {
             IDataVault vault = _dataVault;
-            if (vault == null || !_vaultMatrices.IsCreated || !_vaultMetadata.IsCreated)
+            if (vault == null || !_vaultMatricesHandle.IsCreated || !_vaultMetadataHandle.IsCreated)
                 return false;
 
             bool generationChanged = HasVaultGenerationChanged(vault);
             if (!_forceUpload && !generationChanged)
                 return true;
 
-            if (!ValidateFiniteMatrices(activeCount))
+            if (!TryResolveMatrixView(out NativeArray<Matrix4x4> matrices) ||
+                !TryResolveMetadataView(out NativeArray<GpuScatterFloraInstanceData> metadata))
+            {
+                return false;
+            }
+
+            if (!ValidateFiniteMatrices(matrices, activeCount))
                 return false;
 
             int writeIndex = 1 - _gpuBufferIndex;
-            GraphicsBufferUploadUtility.UploadNativeArray(_matrixBuffers[writeIndex], _vaultMatrices, activeCount);
-            GraphicsBufferUploadUtility.UploadNativeArray(_metadataBuffers[writeIndex], _vaultMetadata, activeCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(_matrixBuffers[writeIndex], matrices, activeCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(_metadataBuffers[writeIndex], metadata, activeCount);
             _gpuBufferIndex = writeIndex;
             CaptureVaultGenerations(vault);
             _forceUpload = false;
@@ -819,11 +864,11 @@ namespace Hecton8.Rendering.Scatter
             _hasMetadataGeneration = vault.TryGetBufferGeneration(BufferID.FloraScatterMetadata, out _lastMetadataGeneration);
         }
 
-        private bool ValidateFiniteMatrices(int activeCount)
+        private bool ValidateFiniteMatrices(NativeArray<Matrix4x4> matrices, int activeCount)
         {
             for (int i = 0; i < activeCount; i++)
             {
-                Matrix4x4 matrix = _vaultMatrices[i];
+                Matrix4x4 matrix = matrices[i];
                 if (IsFiniteMatrix(matrix))
                     continue;
 
@@ -879,6 +924,7 @@ namespace Hecton8.Rendering.Scatter
             material.SetFloat(_LodFarDistanceId, math.max(1f, _effectiveCullDistanceMeters));
             material.SetFloat(_LodTransitionRangeId, _cachedHighTier ? math.max(0f, lodCrossfadeRangeMeters) : 0f);
             material.EnableKeyword(GpuIndirectKeyword);
+            ApplyMaterialScalability(material);
 
             Bounds bounds = _hasExplicitDrawBounds ? _drawBounds : ResolveFallbackDrawBounds();
             RenderParams renderParams = new RenderParams(material)
@@ -892,6 +938,27 @@ namespace Hecton8.Rendering.Scatter
             };
 
             Graphics.RenderMeshIndirect(renderParams, mesh, _argsBuffer, 1, 0);
+        }
+
+        private void ApplyMaterialScalability(Material material)
+        {
+            if (_cachedHighTier)
+            {
+                material.EnableKeyword(QualityHighKeyword);
+                material.DisableKeyword(QualityMx350Keyword);
+                material.SetFloat(_AnisotropicSssStrengthId, math.max(0f, highTierAnisotropicSssStrength));
+                material.SetFloat(_OrganicSssScaleId, math.max(0f, highTierOrganicSssScale));
+                material.SetFloat(_EdgeBloomStrengthId, math.max(0f, highTierEdgeBloomStrength));
+                material.SetFloat(_LocalCausticStrengthId, math.max(0f, highTierLocalCausticStrength));
+                return;
+            }
+
+            material.EnableKeyword(QualityMx350Keyword);
+            material.DisableKeyword(QualityHighKeyword);
+            material.SetFloat(_AnisotropicSssStrengthId, math.max(0f, lowTierAnisotropicSssStrength));
+            material.SetFloat(_OrganicSssScaleId, math.max(0f, lowTierOrganicSssScale));
+            material.SetFloat(_EdgeBloomStrengthId, math.max(0f, lowTierEdgeBloomStrength));
+            material.SetFloat(_LocalCausticStrengthId, math.max(0f, lowTierLocalCausticStrength));
         }
 
         private void UpdateVisibleCountReadback(int frameIndex)
@@ -1108,41 +1175,77 @@ namespace Hecton8.Rendering.Scatter
                 math.max(0.01f, math.abs(localBoundsExtents.z)));
         }
 
+        private bool TryResolveMatrixView(out NativeArray<Matrix4x4> matrices)
+        {
+            IDataVault vault = _dataVault;
+            matrices = vault != null ? _vaultMatricesHandle.Resolve(vault) : default;
+            return matrices.IsCreated;
+        }
+
+        private bool TryResolveMetadataView(out NativeArray<GpuScatterFloraInstanceData> metadata)
+        {
+            IDataVault vault = _dataVault;
+            metadata = vault != null ? _vaultMetadataHandle.Resolve(vault) : default;
+            return metadata.IsCreated;
+        }
+
+        private bool TryResolveCpuFrustumPlaneView(out NativeArray<float4> frustumPlanes)
+        {
+            IDataVault vault = _dataVault;
+            frustumPlanes = vault != null ? _cpuFrustumPlanesHandle.Resolve(vault) : default;
+            return frustumPlanes.IsCreated;
+        }
+
+        private bool TryResolveCpuVisibilityMaskView(out NativeArray<byte> visibilityMask)
+        {
+            IDataVault vault = _dataVault;
+            visibilityMask = vault != null ? _cpuVisibilityMaskHandle.Resolve(vault) : default;
+            return visibilityMask.IsCreated;
+        }
+
         private void EnsureMetadataDefaults()
         {
-            if (_metadataDefaultsInitialized || !_vaultMetadata.IsCreated || _vaultMetadata.Length <= 0)
+            if (!TryResolveMetadataView(out NativeArray<GpuScatterFloraInstanceData> metadata) ||
+                _metadataDefaultsInitialized ||
+                metadata.Length <= 0)
+            {
                 return;
+            }
 
-            GpuScatterFloraInstanceData first = _vaultMetadata[0];
+            GpuScatterFloraInstanceData first = metadata[0];
             if (math.isfinite(first.HeightScale) && first.HeightScale > 0f && first.WidthScale > 0f)
             {
                 _metadataDefaultsInitialized = true;
                 return;
             }
 
-            int count = math.min(instanceCapacity, _vaultMetadata.Length);
+            int count = math.min(instanceCapacity, metadata.Length);
             for (int i = 0; i < count; i++)
-                _vaultMetadata[i] = GpuScatterFloraInstanceData.CreateDefault(i);
+                metadata[i] = GpuScatterFloraInstanceData.CreateDefault(i);
 
             _metadataDefaultsInitialized = true;
         }
 
-        private void EnsureBlackBox()
+        private bool EnsureBlackBox(IDataVault vault)
         {
-            if (_blackBox.IsCreated)
-                return;
+            if (vault == null)
+                return false;
 
-            _blackBox = H8Memory.Allocate<ScatterBlackBoxEntry>(
+            if (_blackBoxHandle.IsCreated && vault.ResolveBuffer(ref _blackBoxHandle))
+                return _blackBoxHandle.Length >= TelemetryCapacity;
+
+            _blackBoxHandle = vault.GetBufferHandle<ScatterBlackBoxEntry>(
+                BufferID.FloraScatterBlackBox,
                 TelemetryCapacity,
                 SystemID.Vfx,
-                Allocator.Persistent,
                 NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ScatterBlackBoxEntry>[300] — fixed flora blackbox ring — owner: GpuScatterLodManager
             _blackBoxCursor = 0;
+            return _blackBoxHandle.IsCreated && _blackBoxHandle.Length >= TelemetryCapacity;
         }
 
         private void RecordBlackBox(uint flags, int activeCount)
         {
-            if (!_blackBox.IsCreated || _blackBox.Length <= 0)
+            if (!TryResolveBlackBoxPointer(out ScatterBlackBoxEntry* blackBox, out int blackBoxLength))
                 return;
 
             flags |= _gpuReady ? BlackBoxFlagGpuReady : 0u;
@@ -1150,8 +1253,8 @@ namespace Hecton8.Rendering.Scatter
             flags |= _systemStress01 > 0.8f ? BlackBoxFlagStressShed : 0u;
             flags |= _cachedHighTier ? BlackBoxFlagHighTier : 0u;
 
-            int index = _blackBoxCursor % _blackBox.Length;
-            _blackBox[index] = new ScatterBlackBoxEntry
+            int index = _blackBoxCursor % blackBoxLength;
+            blackBox[index] = new ScatterBlackBoxEntry
             {
                 Frame = Time.frameCount,
                 ActiveInstanceCount = activeCount,
@@ -1162,9 +1265,11 @@ namespace Hecton8.Rendering.Scatter
                 AupShiftOffset = new float3(_aupShiftOffset.x, _aupShiftOffset.y, _aupShiftOffset.z),
                 MatrixGeneration = _lastMatrixGeneration,
                 MetadataGeneration = _lastMetadataGeneration,
-                Flags = flags
+                Flags = flags,
+                Reserved0 = 0u,
+                Reserved1 = 0u
             };
-            _blackBoxCursor = (_blackBoxCursor + 1) % _blackBox.Length;
+            _blackBoxCursor = (_blackBoxCursor + 1) % blackBoxLength;
         }
 
         private uint BuildRuntimeFlags()
@@ -1179,13 +1284,13 @@ namespace Hecton8.Rendering.Scatter
 
         private void DumpBlackBox(uint reason)
         {
-            if (_blackBoxDumped || !_blackBox.IsCreated)
+            if (_blackBoxDumped || !TryResolveBlackBoxPointer(out ScatterBlackBoxEntry* blackBox, out int blackBoxLength))
                 return;
 
             _blackBoxDumped = true;
             try
             {
-                string path = Path.GetFullPath("Docs/AgentLogs/Dump_GPU_SCATTER_LOD_MANAGER.bin");
+                string path = ResolveAgentLogPath("Dump_GPU_SCATTER_LOD_MANAGER.bin");
                 string directory = Path.GetDirectoryName(path);
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
@@ -1195,11 +1300,11 @@ namespace Hecton8.Rendering.Scatter
                 writer.Write(BlackBoxMagic);
                 writer.Write(BlackBoxVersion);
                 writer.Write(reason);
-                writer.Write(_blackBox.Length);
+                writer.Write(blackBoxLength);
                 writer.Write(_blackBoxCursor);
-                for (int i = 0; i < _blackBox.Length; i++)
+                for (int i = 0; i < blackBoxLength; i++)
                 {
-                    ScatterBlackBoxEntry entry = _blackBox[i];
+                    ScatterBlackBoxEntry entry = blackBox[i];
                     writer.Write(entry.Frame);
                     writer.Write(entry.ActiveInstanceCount);
                     writer.Write(entry.VisibleFloraCount);
@@ -1214,6 +1319,8 @@ namespace Hecton8.Rendering.Scatter
                     writer.Write(entry.MatrixGeneration);
                     writer.Write(entry.MetadataGeneration);
                     writer.Write(entry.Flags);
+                    writer.Write(entry.Reserved0);
+                    writer.Write(entry.Reserved1);
                 }
             }
             catch (Exception exception)
@@ -1224,49 +1331,74 @@ namespace Hecton8.Rendering.Scatter
             }
         }
 
+        private bool TryResolveBlackBoxPointer(out ScatterBlackBoxEntry* blackBox, out int length)
+        {
+            blackBox = null;
+            length = 0;
+            IDataVault vault = _dataVault;
+            if (!EnsureBlackBox(vault))
+                return false;
+
+            void* pointer = _blackBoxHandle.ResolvePointer(vault);
+            if (pointer == null || _blackBoxHandle.Length <= 0)
+                return false;
+
+            blackBox = (ScatterBlackBoxEntry*)pointer;
+            length = _blackBoxHandle.Length;
+            return true;
+        }
+
         private bool EnsureCpuAuditBuffers(int activeCount)
         {
             if (!enableBurstCullAudit)
                 return false;
 
-            if (!_cpuFrustumPlanes.IsCreated)
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            if (!_cpuFrustumPlanesHandle.IsCreated || !vault.ResolveBuffer(ref _cpuFrustumPlanesHandle))
             {
-                _cpuFrustumPlanes = H8Memory.Allocate<float4>(
+                _cpuFrustumPlanesHandle = vault.GetBufferHandle<float4>(
+                    BufferID.FloraScatterCpuFrustumPlanes,
                     FrustumPlaneCount,
                     SystemID.Vfx,
-                    Allocator.Persistent,
                     NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float4>[6] — CPU Burst frustum audit planes — owner: GpuScatterLodManager
             }
 
-            if (!_cpuVisibilityMask.IsCreated || _cpuVisibilityMask.Length < activeCount)
+            int visibilityCapacity = math.max(activeCount, instanceCapacity);
+            bool needsVisibilityBuffer =
+                !_cpuVisibilityMaskHandle.IsCreated ||
+                _cpuVisibilityMaskHandle.Length < visibilityCapacity ||
+                !vault.ResolveBuffer(ref _cpuVisibilityMaskHandle);
+            if (needsVisibilityBuffer)
             {
-                H8Memory.Release(ref _cpuVisibilityMask, SystemID.Vfx);
-                _cpuVisibilityMask = H8Memory.Allocate<byte>(
-                    activeCount,
+                _cpuVisibilityMaskHandle = vault.GetBufferHandle<byte>(
+                    BufferID.FloraScatterCpuVisibilityMask,
+                    visibilityCapacity,
                     SystemID.Vfx,
-                    Allocator.Persistent,
                     NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[activeCount] — CPU Burst cull audit mask — owner: GpuScatterLodManager
             }
 
-            return _cpuFrustumPlanes.IsCreated && _cpuVisibilityMask.IsCreated;
+            return _cpuFrustumPlanesHandle.IsCreated && _cpuVisibilityMaskHandle.IsCreated;
         }
 
         private void UploadCpuFrustumPlanes()
         {
-            if (!_cpuFrustumPlanes.IsCreated)
+            if (!TryResolveCpuFrustumPlaneView(out NativeArray<float4> frustumPlanes))
                 return;
 
             for (int i = 0; i < FrustumPlaneCount; i++)
             {
                 Vector4 plane = _frustumPlaneUpload[i];
-                _cpuFrustumPlanes[i] = new float4(plane.x, plane.y, plane.z, plane.w);
+                frustumPlanes[i] = new float4(plane.x, plane.y, plane.z, plane.w);
             }
         }
 
         private void ReleaseCpuAuditBuffers()
         {
-            H8Memory.Release(ref _cpuFrustumPlanes, SystemID.Vfx);
-            H8Memory.Release(ref _cpuVisibilityMask, SystemID.Vfx);
+            _cpuFrustumPlanesHandle = default;
+            _cpuVisibilityMaskHandle = default;
         }
 
         private static int ResolveKernel(ComputeShader compute, string kernelName)
@@ -1307,6 +1439,12 @@ namespace Hecton8.Rendering.Scatter
             return math.isfinite(value) ? math.saturate(value) : 0f;
         }
 
+        private static string ResolveAgentLogPath(string fileName)
+        {
+            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Directory.GetCurrentDirectory();
+            return Path.Combine(projectRoot, "Docs", "AgentLogs", fileName);
+        }
+
         private void RefreshAupOffsetCold()
         {
             _aupShiftOffset = ToVector3(HectonFloatingOrigin.CurrentTotalOffsetDouble);
@@ -1325,7 +1463,7 @@ namespace Hecton8.Rendering.Scatter
 
         private static int Matrix4x4StrideBytes => 64;
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
         private struct ScatterBlackBoxEntry
         {
             public int Frame;
@@ -1338,6 +1476,8 @@ namespace Hecton8.Rendering.Scatter
             public uint MatrixGeneration;
             public uint MetadataGeneration;
             public uint Flags;
+            public uint Reserved0;
+            public uint Reserved1;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]

@@ -223,7 +223,7 @@ namespace Hecton8.Gameplay
             float maxThrusterForce = _submarineCore != null
                 ? math.max(1f, _submarineCore.MaxThrust)
                 : hullMass * authoredSpeed;
-            float thrusterAcceleration = maxThrusterForce / hullMass;
+            float thrusterAcceleration = maxThrusterForce * math.rcp(math.max(hullMass, 1f));
             _stationKeepingSpeedMetersPerSecond = math.min(
                 authoredSpeed,
                 _stationKeepingSpeedMetersPerSecond + thrusterAcceleration * safeDeltaTime);
@@ -270,7 +270,7 @@ namespace Hecton8.Gameplay
             float maxSq = safeMax * safeMax;
             return sqrMagnitude <= maxSq
                 ? value
-                : value * (safeMax * math.rsqrt(sqrMagnitude));
+                : value * (safeMax * math.rsqrt(math.max(sqrMagnitude, 0.000001f)));
         }
 
         private static bool IsRotationClose(Quaternion currentRotation, Quaternion targetRotation)
@@ -316,7 +316,7 @@ namespace Hecton8.Gameplay
             if (!IsFinite(planarForward) || planarForwardSq <= AutoLevelPlanarForwardEpsilonSq)
                 planarForward = Vector3.forward;
             else
-                planarForward *= math.rsqrt(planarForwardSq);
+                planarForward *= math.rsqrt(math.max(planarForwardSq, AutoLevelPlanarForwardEpsilonSq));
 
             return Quaternion.LookRotation(planarForward, Vector3.up);
         }
@@ -324,7 +324,7 @@ namespace Hecton8.Gameplay
         private static float4 NormalizeQuaternionNoSqrt(float4 value)
         {
             float lengthSq = math.max(math.dot(value, value), 0.000001f);
-            return value * math.rsqrt(lengthSq);
+            return value * math.rsqrt(math.max(lengthSq, 0.000001f));
         }
     }
 }

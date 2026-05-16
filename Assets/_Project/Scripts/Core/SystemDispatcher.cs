@@ -557,7 +557,7 @@ namespace Hecton8.Core
             byte pressureLevel,
             byte foveatedTier,
             bool slowTick2Hz,
-            bool forceTimeDilation08,
+            bool forceTimeDilation09,
             uint reasonHash)
         {
             Volatile.Write(ref _homeostasisKillSwitchMaskBits, unchecked((long)mask));
@@ -566,8 +566,8 @@ namespace Hecton8.Core
             Volatile.Write(ref _homeostasisFoveatedTier, foveatedTier);
             _foveatedSimulationManager.ApplyHomeostasisPressureTier(foveatedTier);
 
-            if (forceTimeDilation08 && ActiveRuntimeInstance != null)
-                ActiveRuntimeInstance.RequestCoreTickDilation(0.8f, 2, reasonHash);
+            if (forceTimeDilation09 && ActiveRuntimeInstance != null)
+                ActiveRuntimeInstance.RequestCoreTickDilation(0.9f, 2, reasonHash);
         }
 
         /// <summary>
@@ -1904,7 +1904,7 @@ namespace Hecton8.Core
                 pressureLevel,
                 foveatedTier,
                 slowTick2Hz: true,
-                forceTimeDilation08: true,
+                forceTimeDilation09: true,
                 _FramePacingWarningHash);
             GlobalRegistry.SetSystemKillSwitchBits(GlobalRegistry.SystemKillSwitchLane4VfxMask, true);
         }

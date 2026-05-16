@@ -90,6 +90,12 @@ namespace Hecton8.Core.Memory
         /// <summary>Returns a read-only alias over an existing buffer.</summary>
         NativeArray<T>.ReadOnly CreateAlias<T>(BufferID bufferId, SystemID requester) where T : struct;
 
+        /// <summary>Releases vault buffers owned by one system without shrinking the reusable arena.</summary>
+        int ReleaseOwnerBuffers(SystemID owner, out long releasedBytes);
+
+        /// <summary>Releases scene-owned vault buffers before scene-transition baseline verification.</summary>
+        int ReleaseSceneOwnedBuffers(out long releasedBytes);
+
         /// <summary>Locks a buffer while an external job owns its pointer.</summary>
         bool TryLockBuffer(BufferID bufferId);
 
@@ -888,6 +894,26 @@ namespace Hecton8.Core.Memory
         }
 
         /// <inheritdoc />
+        public int ReleaseOwnerBuffers(SystemID owner, out long releasedBytes)
+        {
+            releasedBytes = 0L;
+            if (owner == SystemID.Unknown || !_initialized || !_keys.IsCreated)
+                return 0;
+
+            return ReleaseBuffersByOwner(owner, sceneOwnedOnly: false, out releasedBytes);
+        }
+
+        /// <inheritdoc />
+        public int ReleaseSceneOwnedBuffers(out long releasedBytes)
+        {
+            releasedBytes = 0L;
+            if (!_initialized || !_keys.IsCreated)
+                return 0;
+
+            return ReleaseBuffersByOwner(SystemID.Unknown, sceneOwnedOnly: true, out releasedBytes);
+        }
+
+        /// <inheritdoc />
         public bool TryLockBuffer(BufferID bufferId)
         {
             if (!_initialized || bufferId == BufferID.Unknown)
@@ -1318,6 +1344,75 @@ namespace Hecton8.Core.Memory
 
                 _keys.RemoveAtSwapBack(i);
                 return;
+            }
+        }
+
+        private int ReleaseBuffersByOwner(SystemID owner, bool sceneOwnedOnly, out long releasedBytes)
+        {
+            releasedBytes = 0L;
+            if (!_keys.IsCreated || !_metadata.IsCreated || !_buffers.IsCreated)
+                return 0;
+
+            int releasedCount = 0;
+            for (int i = _keys.Length - 1; i >= 0; i--)
+            {
+                int key = _keys[i];
+                if (!_metadata.TryGetValue(key, out VaultBufferMeta meta))
+                {
+                    RemoveBufferKey(key);
+                    DumpPhiVodBlackBox();
+                    continue;
+                }
+
+                bool shouldRelease = sceneOwnedOnly
+                    ? IsSceneOwnedVaultOwner(meta.Owner)
+                    : meta.Owner == owner;
+                if (!shouldRelease)
+                    continue;
+
+                if (!TryFindOccupiedBlockIndex(key, meta.OffsetBytes, out int blockIndex))
+                {
+                    DumpPhiVodBlackBox();
+                    continue;
+                }
+
+                VaultArenaBlock block = _blocks[blockIndex];
+                if ((block.Reserved0 & BlockFlagLocked) != 0 || block.Reserved1 != 0)
+                {
+                    DumpPhiVodBlackBox();
+                    continue;
+                }
+
+                releasedBytes += meta.Bytes;
+                _buffers.Remove(key);
+                _metadata.Remove(key);
+                RemoveBufferKey(key);
+                FreeBlock(blockIndex);
+                releasedCount++;
+            }
+
+            if (releasedCount > 0)
+                _allocatedBytes = _allocatedBytes > releasedBytes ? _allocatedBytes - releasedBytes : 0L;
+
+            return releasedCount;
+        }
+
+        private static bool IsSceneOwnedVaultOwner(SystemID owner)
+        {
+            switch (owner)
+            {
+                case SystemID.Unknown:
+                case SystemID.CoreDataVault:
+                case SystemID.H8Memory:
+                case SystemID.Bootstrap:
+                case SystemID.CoreDeterminism:
+                case SystemID.SystemDispatcher:
+                case SystemID.HardwareHomeostasis:
+                case SystemID.GlobalPhysicsStateManager:
+                case SystemID.Physics:
+                    return false;
+                default:
+                    return true;
             }
         }
 

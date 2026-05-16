@@ -63,3 +63,51 @@ Rejected Alternatives: Patching broad core/save/player/streaming contracts from 
 Scalability potential: No runtime scaling change. This protects the wake implementation from cross-domain repair churn until the Integrator restores missing contracts.
 
 Hardware Impact: 0 us/frame. Risk avoided: destabilizing unrelated systems while attempting to fix a non-VFX compile wall.
+
+## Decision 6 - Multiplatform Wake Data Layout
+
+Problem: The previous wake source payload was a private sequential struct inside `FloraInteractionManager`, with implicit padding risk and no authoritative file under the XML domain.
+
+Solution: Created `Assets/_Project/Scripts/VFX/Wakes/WakeDisplacementData.cs` with explicit `Pack = 1` layouts for `WakeSource` (128 bytes) and `WakeTelemetryEntry` (64 bytes). All wake source, global wake vector, and blackbox storage resolves through DataVault handles. `FloraInteractionManager` no longer owns a persistent `NativeArray<WakeSource>` field.
+
+Rejected Alternatives: Keeping a private sequential wake struct would be fragile for ARM64/Quest. Using managed classes or lists would violate zero-GC. Moving all flora manager arrays to DataVault in this wake pass would cross into non-wake flora ownership and risk unrelated breakage.
+
+Scalability potential: Low/MX350 caps active wake math to 4 slots. Middle/High/Ultra publish up to 16 slots through the same layout. High/Ultra shader work can use `_GlobalWakeVectors` for curvature without changing CPU storage.
+
+Hardware Impact: Estimated i3/MX350 gain is 4-12 us/frame versus component/object fanout and duplicated local wake arrays. Quest/Android gain is crash avoidance: explicit offsets remove implicit-layout surprises.
+
+## Decision 7 - Typed Wake Signal Lane
+
+Problem: Wake generation still had a public legacy `NativeQueue` reader/writer surface in `GlobalSignals`, which created two possible transport lanes for the same packet.
+
+Solution: `GlobalSignals.Publish(in WakeGeneratedSignal)` now pushes only into `SignalBus<WakeGeneratedSignal>`. `FloraInteractionManager` consumes `ReadOnlySpan<WakeGeneratedSignal>` snapshots. The public `WakeGeneratedSignalWriter` and `TryDequeueWakeGenerated` APIs were removed.
+
+Rejected Alternatives: Keeping both typed and legacy queues would allow duplicate wake injection. Managed delegates were not considered because the project signal policy is native typed lanes.
+
+Scalability potential: Low tier drops old signal pressure through typed lane budgets. High/Ultra can emit more wake producers without inventing new signal types.
+
+Hardware Impact: Estimated low-end gain is 3-8 us/frame during noisy wake frames by removing duplicate drain surfaces and avoiding managed dispatch.
+
+## Decision 8 - Blackbox and Homeostasis Cap
+
+Problem: The wake system had no 300-frame high-level heartbeat and no stress response; a bad velocity or origin-shift state could poison shader globals without postmortem evidence.
+
+Solution: Added `WakeBlackBox` DataVault storage with 300 entries. Each publication writes active count, slot cap, strongest wake, generation, AUP shift sequence, stress, low-tier flag, and hash. Invalid/NaN input writes `Docs/AgentLogs/Dump_INTERACTIVE_WAKE_VFX.bin`. Slot limit resolves to 4 when low tier or `SystemStress01 > 0.8`, otherwise 16.
+
+Rejected Alternatives: Debug logs are allocation/noise and do not satisfy crash forensics. Always publishing 16 slots on mobile would spend GPU/CPU budget where the visual return is weakest.
+
+Scalability potential: Toaster mode uses 4 wake slots and radial fake data. PC God-Mode keeps 16 slots and exposes direction/radius for vortex curvature, silt, and normal perturbation.
+
+Hardware Impact: Blackbox ring write is estimated 1-3 us/frame. Stress cap can save 6-18 us/frame downstream on weak hardware or thermal spikes by limiting shader/compute wake loops.
+
+## Decision 9 - Compile Wall After Kernel Pass
+
+Problem: Repeated `dotnet build .\Hecton8.Core.csproj -v:minimal` attempts still fail after wake kernel work.
+
+Solution: Stopped compile-chasing after dependency wall evidence. Sampled blockers are outside wake ownership: `DiegeticGyroCompassRuntime`, `HomeostasisBrain`, `LockstepStateValidator`, `PickupItem`, and `TetherSignals`. A project-file include experiment widened unrelated failures and was reverted.
+
+Rejected Alternatives: Renaming unrelated visor methods, filling missing homeostasis fields, or patching UI/navigation from the VFX wake prompt would violate domain ownership. Keeping the bad `.csproj` include change would widen the wall.
+
+Scalability potential: No direct runtime change. Preserves the wake kernel while Integrator repairs unrelated compile state.
+
+Hardware Impact: 0 us/frame. Avoided destabilizing non-wake systems in pursuit of a false green build.

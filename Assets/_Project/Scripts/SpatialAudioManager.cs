@@ -54,6 +54,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.AI;
+using Hecton8.AI.Sensory;
 using Hecton8.Atmosphere;
 using Hecton8.Audio.Propagation;
 using Hecton8.Audio.Virtualization;
@@ -75,6 +76,283 @@ using AcousticAup = Hecton8.Core.Contracts.AcousticAup;
 
 namespace Hecton8.Audio
 {
+    public enum AudioResidencyDomain : byte
+    {
+        Music = 0,
+        Player = 1,
+        Creatures = 2,
+        Environment = 3,
+        Interface = 4
+    }
+
+    public static class AudioResidencyDomainUtility
+    {
+        public const int DomainCount = 5;
+
+        public static bool IsValid(AudioResidencyDomain domain)
+        {
+            return domain >= AudioResidencyDomain.Music && domain <= AudioResidencyDomain.Interface;
+        }
+
+        public static ReadOnlySpan<char> GetLabel(AudioResidencyDomain domain)
+        {
+            switch (domain)
+            {
+                case AudioResidencyDomain.Music:
+                    return "Music".AsSpan();
+                case AudioResidencyDomain.Player:
+                    return "Player".AsSpan();
+                case AudioResidencyDomain.Creatures:
+                    return "Creatures".AsSpan();
+                case AudioResidencyDomain.Environment:
+                    return "Environment".AsSpan();
+                case AudioResidencyDomain.Interface:
+                    return "Interface".AsSpan();
+                default:
+                    return "Unknown".AsSpan();
+            }
+        }
+    }
+
+    public static class AudioResidencyCache
+    {
+        private const int MaxEntries = 64;
+        private const long RuntimeDecodedBudgetBytes = 16L * 1024L * 1024L;
+
+        private struct Entry
+        {
+            public AudioClip Clip;
+            public int ClipId;
+            public AudioResidencyDomain Domain;
+            public int LastUseFrame;
+            public long EstimatedBytes;
+            public bool Resident;
+        }
+
+        private static Entry[] s_entries;
+        private static long s_residentBytes;
+        private static int s_residentCount;
+
+        public static long CurrentResidentBytes => s_residentBytes;
+        public static int ResidentClipCount => s_residentCount;
+
+        public static void TouchClip(AudioClip clip, AudioResidencyDomain domain, bool decodeNow)
+        {
+            if (clip == null || !AudioResidencyDomainUtility.IsValid(domain))
+                return;
+
+            EnsureInitialized();
+            int slot = FindOrAllocateSlot(clip, domain);
+            if (slot < 0)
+                return;
+
+            Entry entry = s_entries[slot];
+            entry.LastUseFrame = Time.frameCount;
+            entry.Domain = domain;
+
+            if (decodeNow && ShouldLoadClip(clip))
+            {
+                long bytes = EstimateDecodedBytes(clip);
+                EnsureBudgetFor(bytes, slot);
+                AudioDataLoadState previousState = clip.loadState;
+                if (previousState == AudioDataLoadState.Loaded || clip.LoadAudioData())
+                {
+                    if (!entry.Resident)
+                    {
+                        entry.Resident = true;
+                        s_residentCount++;
+                    }
+
+                    if (entry.EstimatedBytes <= 0L)
+                    {
+                        entry.EstimatedBytes = bytes;
+                        s_residentBytes += bytes;
+                    }
+                }
+            }
+
+            s_entries[slot] = entry;
+        }
+
+        public static void PrewarmAudioSource(AudioSource source, AudioResidencyDomain domain)
+        {
+            if (source == null)
+                return;
+
+            TouchClip(source.clip, domain, true);
+        }
+
+        public static void ReleaseAudioSource(AudioSource source)
+        {
+            if (source == null)
+                return;
+
+            ReleaseClip(source.clip);
+        }
+
+        public static void ReleaseClip(AudioClip clip)
+        {
+            if (clip == null || s_entries == null)
+                return;
+
+            int slot = FindSlot(clip);
+            if (slot < 0)
+                return;
+
+            ReleaseSlot(slot);
+        }
+
+        public static void EvictDomain(AudioResidencyDomain domain)
+        {
+            if (s_entries == null || !AudioResidencyDomainUtility.IsValid(domain))
+                return;
+
+            for (int i = 0; i < s_entries.Length; i++)
+            {
+                if (s_entries[i].Clip != null && s_entries[i].Domain == domain)
+                    ReleaseSlot(i);
+            }
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (s_entries != null)
+                return;
+
+            s_entries = new Entry[MaxEntries]; // COLD ALLOC: fixed audio residency LRU cache - owner: AudioResidencyCache
+        }
+
+        private static bool ShouldLoadClip(AudioClip clip)
+        {
+            if (clip == null || clip.loadType == AudioClipLoadType.Streaming)
+                return false;
+
+            return clip.loadState != AudioDataLoadState.Failed;
+        }
+
+        private static int FindOrAllocateSlot(AudioClip clip, AudioResidencyDomain domain)
+        {
+            int existing = FindSlot(clip);
+            if (existing >= 0)
+                return existing;
+
+            int free = -1;
+            int oldest = -1;
+            int oldestFrame = int.MaxValue;
+            for (int i = 0; i < s_entries.Length; i++)
+            {
+                if (s_entries[i].Clip == null)
+                {
+                    free = i;
+                    break;
+                }
+
+                if (s_entries[i].LastUseFrame < oldestFrame)
+                {
+                    oldestFrame = s_entries[i].LastUseFrame;
+                    oldest = i;
+                }
+            }
+
+            int slot = free >= 0 ? free : oldest;
+            if (slot < 0)
+                return -1;
+
+            if (s_entries[slot].Clip != null)
+                ReleaseSlot(slot);
+
+            s_entries[slot] = new Entry
+            {
+                Clip = clip,
+                ClipId = clip.GetInstanceID(),
+                Domain = domain,
+                LastUseFrame = Time.frameCount,
+                EstimatedBytes = 0L,
+                Resident = false
+            };
+            return slot;
+        }
+
+        private static int FindSlot(AudioClip clip)
+        {
+            if (clip == null || s_entries == null)
+                return -1;
+
+            int clipId = clip.GetInstanceID();
+            for (int i = 0; i < s_entries.Length; i++)
+            {
+                if (s_entries[i].ClipId == clipId && s_entries[i].Clip == clip)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static void EnsureBudgetFor(long requestedBytes, int protectedSlot)
+        {
+            if (requestedBytes <= 0L)
+                return;
+
+            while (s_residentBytes + requestedBytes > RuntimeDecodedBudgetBytes)
+            {
+                int victim = FindOldestResidentSlot(protectedSlot);
+                if (victim < 0)
+                    return;
+
+                ReleaseSlot(victim);
+            }
+        }
+
+        private static int FindOldestResidentSlot(int protectedSlot)
+        {
+            int victim = -1;
+            int oldestFrame = int.MaxValue;
+            for (int i = 0; i < s_entries.Length; i++)
+            {
+                Entry entry = s_entries[i];
+                if (i == protectedSlot || entry.Clip == null || !entry.Resident)
+                    continue;
+
+                if (entry.LastUseFrame < oldestFrame)
+                {
+                    oldestFrame = entry.LastUseFrame;
+                    victim = i;
+                }
+            }
+
+            return victim;
+        }
+
+        private static void ReleaseSlot(int slot)
+        {
+            if (s_entries == null || slot < 0 || slot >= s_entries.Length)
+                return;
+
+            Entry entry = s_entries[slot];
+            if (entry.Clip != null && entry.Resident)
+            {
+                if (entry.Clip.loadState == AudioDataLoadState.Loaded)
+                    entry.Clip.UnloadAudioData();
+
+                s_residentBytes -= entry.EstimatedBytes;
+                if (s_residentBytes < 0L)
+                    s_residentBytes = 0L;
+
+                s_residentCount = math.max(0, s_residentCount - 1);
+            }
+
+            s_entries[slot] = default;
+        }
+
+        private static long EstimateDecodedBytes(AudioClip clip)
+        {
+            if (clip == null)
+                return 0L;
+
+            return Math.Max(0L, (long)clip.samples * Math.Max(1, clip.channels) * 2L);
+        }
+    }
+
     /// <summary>
     /// Ð¦ÐµÐ½Ñ‚Ñ€Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ð¼ÐµÐ½ÐµÐ´Ð¶ÐµÑ€ Ð¿Ñ€Ð¾ÑÑ‚Ñ€Ð°Ð½ÑÑ‚Ð²ÐµÐ½Ð½Ð¾Ð³Ð¾ Ð·Ð²ÑƒÐºÐ° Ñ Ð¿ÑƒÐ»Ð¸Ð½Ð³Ð¾Ð¼.
     /// Runtime audio service accessed through the core audio registry.
@@ -1501,7 +1779,16 @@ namespace Hecton8.Audio
                 audibleAup = ToAbsoluteUniversePosition(in acousticPortalResult.LastPortalAup);
                 audiblePosition = ToRuntimeVector3(in audibleAup);
                 audibleAbsolutePosition = ToAbsoluteVector3(in audibleAup);
+                PublishAcousticEchoPortalTap(
+                    in sourceAup,
+                    in acousticPortalResult,
+                    volume,
+                    stationaryCacheKey,
+                    0u);
             }
+
+            if (hasListener && IsBeyondMaxHearingRange(in audibleAup, in listenerAup))
+                return -1;
 
             AudioLodTier lodTier = hasListener
                 ? ResolveAudioLodTier(in audibleAup, in listenerAup)
@@ -1519,6 +1806,7 @@ namespace Hecton8.Audio
 
             // â”€â”€ ÐŸÐ¾Ð·Ð¸Ñ†Ð¸Ð¾Ð½Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð¸Ðµ â”€â”€
             source.transform.position = audiblePosition;
+            AudioResidencyCache.TouchClip(clip, ResolveWorldResidencyDomain(clip, mixerGroup), true);
 
             // â”€â”€ ÐÐ°ÑÑ‚Ñ€Ð¾Ð¹ÐºÐ° â”€â”€
             source.clip = clip;
@@ -1674,6 +1962,12 @@ namespace Hecton8.Audio
                         routedTransmission,
                         routedLowPassCutoffHz,
                         routedDelaySeconds);
+                    PublishAcousticEchoPortalTap(
+                        in sourceAup,
+                        in acousticPathResult,
+                        math.max(signal.Stress01, math.abs(signal.PressureDelta)),
+                        0,
+                        0u);
                 }
             }
 
@@ -1984,6 +2278,12 @@ namespace Hecton8.Audio
                 audibleAup = ToAbsoluteUniversePosition(in acousticPortalResult.LastPortalAup);
                 audiblePosition = ToRuntimeVector3(in audibleAup);
                 audibleAbsolutePosition = ToAbsoluteVector3(in audibleAup);
+                PublishAcousticEchoPortalTap(
+                    in sourceAup,
+                    in acousticPortalResult,
+                    selection.Volume,
+                    selection.StationaryCacheKey,
+                    selection.EventID);
             }
 
             AudioLodTier lodTier = hasListener
@@ -2842,6 +3142,12 @@ namespace Hecton8.Audio
                 audibleAup = ToAbsoluteUniversePosition(in acousticPortalResult.LastPortalAup);
                 audiblePosition = ToRuntimeVector3(in audibleAup);
                 audibleAbsolutePosition = ToAbsoluteVector3(in audibleAup);
+                PublishAcousticEchoPortalTap(
+                    in sourceAup,
+                    in acousticPortalResult,
+                    volume,
+                    0,
+                    0u);
             }
 
             AudioLodTier lodTier = hasListener
@@ -4802,6 +5108,46 @@ namespace Hecton8.Audio
 
             if (result.RoomVolumeCubicMeters > SabineMinimumRoomVolumeCubicMeters)
                 source.reverbZoneMix = ResolveAcousticPortalReverbMix(result.RoomVolumeCubicMeters);
+        }
+
+        private static void PublishAcousticEchoPortalTap(
+            in AbsoluteUniversePosition sourceAup,
+            in AcousticPathResult result,
+            float volume01,
+            int stationaryCacheKey,
+            uint sourceId)
+        {
+            if (!math.isfinite(volume01) || volume01 <= 0.001f)
+                return;
+
+            byte flags = stationaryCacheKey != 0
+                ? AcousticEchoLocationRuntime.FlagNoisemakerCandidate
+                : (byte)0;
+            uint resolvedSourceId = sourceId != 0u
+                ? sourceId
+                : ResolveAcousticEchoSourceId(stationaryCacheKey, in sourceAup);
+            AcousticEchoLocationRuntime.TryEnqueuePortalEcho(
+                in sourceAup,
+                in result,
+                volume01,
+                resolvedSourceId,
+                Time.frameCount,
+                Time.unscaledTime,
+                ScalabilityTierProfiles.Normalize(GlobalRegistry.ScalabilityTierProfileByte),
+                flags);
+        }
+
+        private static uint ResolveAcousticEchoSourceId(int stationaryCacheKey, in AbsoluteUniversePosition sourceAup)
+        {
+            uint hash = 2166136261u;
+            hash = (hash ^ (uint)stationaryCacheKey) * 16777619u;
+            hash = (hash ^ (uint)sourceAup.GridX) * 16777619u;
+            hash = (hash ^ (uint)(sourceAup.GridX >> 32)) * 16777619u;
+            hash = (hash ^ (uint)sourceAup.GridY) * 16777619u;
+            hash = (hash ^ (uint)(sourceAup.GridY >> 32)) * 16777619u;
+            hash = (hash ^ (uint)sourceAup.GridZ) * 16777619u;
+            hash = (hash ^ (uint)(sourceAup.GridZ >> 32)) * 16777619u;
+            return hash == 0u ? 1u : hash;
         }
 
         private static float ResolveAcousticPortalReverbMix(float roomVolumeCubicMeters)

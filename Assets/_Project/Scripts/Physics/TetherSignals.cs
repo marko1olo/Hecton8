@@ -6,6 +6,7 @@ using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
+using CoreTetherFiredSignal = Hecton8.Core.Contracts.Signals.TetherFiredSignal;
 
 namespace Hecton8.Core.Contracts.Signals
 {
@@ -39,6 +40,22 @@ namespace Hecton8.Core.Contracts.Signals
         public byte Reason;
         public byte Flags;
     }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 40)]
+    public struct TetherFiredSignal : ISignal
+    {
+        public int ManagerInstanceId;
+        public int OwnerInstanceId;
+        public int PayloadBodyInstanceId;
+        public int PayloadColliderInstanceId;
+        public int RequestSlot;
+        public uint RequestVersion;
+        public uint FrameIndex;
+        public float InitialDistance;
+        public uint Flags;
+        public uint Reserved;
+    }
+
 }
 
 namespace Hecton8.Physics
@@ -90,7 +107,7 @@ namespace Hecton8.Physics
                 return;
 
             GlobalSignals.InitializeAllQueues();
-            SignalBus<TetherFiredSignal>.EnsureInitialized();
+            SignalBus<CoreTetherFiredSignal>.EnsureInitialized();
             _initialized = true;
         }
 
@@ -134,7 +151,7 @@ namespace Hecton8.Physics
                 Active = true
             };
 
-            TetherFiredSignal signal = new TetherFiredSignal
+            CoreTetherFiredSignal signal = new CoreTetherFiredSignal
             {
                 ManagerInstanceId = ResolveStableObjectId(manager),
                 OwnerInstanceId = ResolveStableObjectId(owner),
@@ -147,7 +164,7 @@ namespace Hecton8.Physics
                 Flags = 0
             };
 
-            SignalBus<TetherFiredSignal>.Push(in signal);
+            SignalBus<CoreTetherFiredSignal>.Push(in signal);
             _fireRequestCount++;
             return true;
         }
@@ -244,7 +261,7 @@ namespace Hecton8.Physics
                    currentFrame - request.FrameIndex <= FireSignalMaxAgeFrames;
         }
 
-        private static bool IsFireSignalLive(in TetherFiredSignal signal, uint currentFrame)
+        private static bool IsFireSignalLive(in CoreTetherFiredSignal signal, uint currentFrame)
         {
             int slot = signal.RequestSlot;
             if ((uint)slot >= (uint)_fireRequests.Length)
@@ -273,11 +290,11 @@ namespace Hecton8.Physics
             out TetherFireRequest request)
         {
             request = default;
-            ReadOnlySpan<TetherFiredSignal> snapshot = SignalBus<TetherFiredSignal>.GetFrameSnapshot();
+            ReadOnlySpan<CoreTetherFiredSignal> snapshot = SignalBus<CoreTetherFiredSignal>.GetFrameSnapshot();
             uint currentFrame = (uint)Time.frameCount;
             for (int i = 0; i < snapshot.Length; i++)
             {
-                TetherFiredSignal signal = snapshot[i];
+                CoreTetherFiredSignal signal = snapshot[i];
                 if (signal.ManagerInstanceId != managerId || !IsFireSignalLive(in signal, currentFrame))
                     continue;
 
@@ -305,7 +322,7 @@ namespace Hecton8.Physics
                     continue;
                 }
 
-                TetherFiredSignal signal = new TetherFiredSignal
+                CoreTetherFiredSignal signal = new CoreTetherFiredSignal
                 {
                     ManagerInstanceId = managerId,
                     OwnerInstanceId = ResolveStableObjectId(candidate.Owner),
@@ -326,7 +343,7 @@ namespace Hecton8.Physics
         }
 
         private static bool TryConsumeFireRequest(
-            in TetherFiredSignal signal,
+            in CoreTetherFiredSignal signal,
             TetherManager manager,
             out TetherFireRequest request)
         {

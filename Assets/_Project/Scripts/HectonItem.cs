@@ -16,9 +16,9 @@
 // ============================================================================
 
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Inventory;
 using Hecton8.Interaction;
-using Hecton8.Modding;
 using Hecton8.Physics;
 using Hecton8.SaveSystem;
 using Hecton8.World;
@@ -384,17 +384,7 @@ namespace Hecton8.Items
                 return true;
             }
 
-            InteractionEvents.RaiseItemCollected(itemData, attempt.AddedQuantity, interactor);
-            bool hasInteractorPosition = interactor != null;
-            ulong interactorEntityId = hasInteractorPosition ? EntityId.ToULong(interactor.GetEntityId()) : 0ul;
-            Vector3 interactorPosition = hasInteractorPosition ? interactor.position : Vector3.zero;
-            HectonEventBus.Publish(new ItemCollectedEvent(
-                itemData,
-                _cachedItemHashId,
-                attempt.AddedQuantity,
-                interactorEntityId,
-                interactorPosition,
-                hasInteractorPosition));
+            PublishItemAcquiredSignal(attempt.AddedQuantity, interactor);
 
             quantity = attempt.RejectedQuantity;
             if (quantity > 0)
@@ -407,6 +397,30 @@ namespace Hecton8.Items
             _persistentWorldRegistry?.MarkRecordCollected(_persistentWorldRecordIndex);
             ConsumeWorldProxy();
             return true;
+        }
+
+        private void PublishItemAcquiredSignal(int addedQuantity, Transform interactor)
+        {
+            if (addedQuantity <= 0 || _cachedItemHashId == 0)
+                return;
+
+            Vector3 signalPosition = transform.position;
+            if (interactor != null && IsFiniteVector(interactor.position))
+                signalPosition = interactor.position;
+
+            ItemAcquiredSignal signal = new ItemAcquiredSignal
+            {
+                PositionAup = IsFiniteVector(signalPosition)
+                    ? AbsoluteUniversePosition.FromRuntimePosition(signalPosition)
+                    : default,
+                ItemHash = unchecked((uint)_cachedItemHashId),
+                OreHash = unchecked((uint)_cachedItemHashId),
+                Quantity = (ushort)Mathf.Clamp(addedQuantity, 0, ushort.MaxValue),
+                SourceKind = InventoryPickupSignalConstants.ItemSourceManualPickup,
+                Flags = InventoryPickupSignalConstants.SignalFlagManualPickup,
+                Frame = unchecked((uint)Time.frameCount)
+            };
+            GlobalSignals.Publish(in signal);
         }
 
         private static ushort NormalizeQualityMilli(ushort qualityMilli)

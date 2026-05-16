@@ -1,6 +1,6 @@
 # RETINAL_ADAPTATION_AI Rationale
 
-Status: BLOCKED BY DEPENDENCY - retinal scope static-verified after DataVault/ABI inquisition; project build fails in external systems.
+Status: BLOCKED BY DEPENDENCY - retinal/adjacent alpha telemetry scope static-verified after DataVault/ABI inquisition; project build fails in external systems.
 
 ## Decision 1 - Existing Owner Boundary
 Problem: Prompt domain names `Assets/_Project/Scripts/AI/Perception/`, but the active source owner for predator utility cognition is `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs`; no `AI/Perception` folder exists.
@@ -71,3 +71,10 @@ Solution: Fauna presentation now consumes the existing `FaunaStateChangedSignal`
 Rejected Alternatives: A new retinal VFX signal was rejected as duplicate. Direct Biolum manager calls were rejected as cross-domain coupling. Random flicker was rejected for determinism.
 Scalability potential: Low/Medium skip the strobe and keep the cheap flee/frenzy response. High/Ultra spend saved cycles on visible chaotic biolum pulses from the same blind truth.
 Hardware Impact: Low-end impact is 0 us/frame because the strobe is tier-gated. High-tier cost is a small span scan and two triangle waves while the fauna brain ticks.
+
+## Decision 11 - Alpha Black-Box Vault Alias
+Problem: The same cognition owner still had one private Alpha Leviathan telemetry `NativeArray`, leaving a data-sovereignty exception next to the retinal buffers.
+Solution: Resolve `_alphaLeviathanTelemetryRing` from `GlobalDataVault` using the existing `BufferID.AlphaLeviathanTelemetryRing` lane, request the full 300-frame * 64-slot capacity, and write frame/slot-indexed entries. Retinal slot reset now goes through `ClearRetinalSlot` so registration does not index unavailable vault aliases during bootstrap.
+Rejected Alternatives: Keeping the local ring was rejected because it preserved private persistent telemetry ownership. Adding a new buffer ID was rejected because an Alpha telemetry lane already exists. Requesting only 300 entries was rejected because a later 19,200-entry owner could resize the DataVault block and invalidate stale views. Returning registration failure when DataVault is late was rejected because it would break fauna spawn order for a non-authoritative retinal cache.
+Scalability potential: Low/Middle/High/Ultra share one central black-box lane. Low-end devices keep fault-only disk I/O. High/Ultra can retain per-slot Alpha telemetry without another allocation owner.
+Hardware Impact: Runtime ownership cost remains 0 us/frame after cold resolve. Memory footprint for this shared lane is 19,200 entries by design, matching the existing 300-frame/64-slot Alpha telemetry contract. Register/unregister adds three cold-path `IsCreated` checks; no profiler microseconds were measured.
