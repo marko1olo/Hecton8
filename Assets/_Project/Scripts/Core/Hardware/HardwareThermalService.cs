@@ -333,8 +333,8 @@ namespace Hecton8.Core.Hardware
             }
             catch (Exception)
             {
-                s_androidColdBridgeFaulted = true;
                 DisposeAndroidColdBridge();
+                s_androidColdBridgeFaulted = true;
             }
         }
 

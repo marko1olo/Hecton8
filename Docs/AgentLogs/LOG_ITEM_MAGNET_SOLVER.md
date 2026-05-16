@@ -98,3 +98,35 @@ Validation:
 - `rg` confirms no trigger/OverlapSphere/GameObject.Find/foreach/Vector3.Distance/string.Format/Update debt in the loot magnet scope.
 - `git diff --check` passed except Git CRLF normalization warnings.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -v:minimal` failed outside this domain: missing `Hecton8.VFX.Wakes` contracts, missing docking/autopilot contracts, duplicate `LockstepStateValidator.SanitizeFinite`, missing light shaft contracts, and `EcosystemDirector` interface drift. No local loot magnet error was emitted.
+
+## 2026-05-16 Signal / Physics Integrity Pass
+
+What was wrong:
+- Manual pickup paths still emitted managed collection events through `InteractionEvents` and `HectonEventBus`, while magnet acquisition used typed lanes.
+- `HectonItem.cs` duplicated the same legacy pickup publisher outside the nominal item folder.
+- `PickupItem.ApplyLootMagnetPose` mutated `transform.position` even when the pickup had an active Rigidbody.
+- `ItemAcquiredSignal`, `WakeGeneratedSignal`, and `FluidImpulseSignal` lacked explicit `Pack=1`.
+
+What was done:
+- Removed item-domain `ItemCollectedEvent` publication from `PickupItem` and `HectonItem`.
+- Added shared `InventoryPickupSignalConstants` and routed manual pickup acquisition through `ItemAcquiredSignal`.
+- Kept magnet acquisition from double-publishing by calling `TryHandleInventoryPickup(..., publishAcquiredSignal:false)`.
+- Added Rigidbody suppression/restoration around math-owned magnet pose writes.
+- Added `Pack=1` to magnet-emitted public signal structs in `GlobalSignals`.
+
+Cinematic cheats used:
+- Gameplay truth remains one typed item-acquired lane.
+- Visual overkill remains bounded to `DebrisSpawnSignal`, `WakeGeneratedSignal`, and High/Ultra `FluidImpulseSignal`; Low/MX350 still pays no fluid impulse cost.
+- Physics remains a deterministic fake: no trigger, no Rigidbody force, no active-body transform mutation.
+
+Exact microseconds saved:
+- Legacy managed event removal avoids managed `ItemCollectedEvent` allocation per manual pickup; exact microseconds not measured.
+- Rigidbody suppression adds cold state flips when a pickup enters/leaves magnet ownership; no honest hot-loop saving claimed.
+- `Pack=1` signal layout hardening has no runtime cost.
+
+Validation:
+- `rg` found no `HectonEventBus`, `InteractionEvents.RaiseItemCollected`, `ItemCollectedEvent`, or `using Hecton8.Modding` in `Gameplay/Loot`, `Items/PickupItem.cs`, or `HectonItem.cs`.
+- `rg` found no `Update`, `FixedUpdate`, `LateUpdate`, `StartCoroutine`, `yield return`, `Vector3.Distance`, `OverlapSphere`, trigger callbacks, local `new NativeArray`, `Allocator.Persistent`, `H8Memory.Allocate`, or `H8Memory.Release` in the item magnet scope.
+- `git diff --check` passed except Git CRLF normalization warnings.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -v:minimal` first exposed and then cleared one local missing using in `HectonItem`.
+- Current build wall is external: `HectonXRRuntimeState`, `SubmarineStructuralGrid`, `VaultProbeUtility`, `BiolumPulseSyncRuntime`, and `SpatialAudioManager`.

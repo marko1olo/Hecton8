@@ -578,8 +578,8 @@ namespace Hecton8.Core
             }
             catch (Exception)
             {
-                _androidBridgeFaulted = true;
                 DisposeAndroidThermalBridge();
+                _androidBridgeFaulted = true;
             }
         }
 
@@ -642,8 +642,8 @@ namespace Hecton8.Core
             }
             catch (Exception)
             {
-                _macBridgeFaulted = true;
                 DisposeMacThermalBridge();
+                _macBridgeFaulted = true;
             }
         }
 
