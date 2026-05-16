@@ -2,7 +2,7 @@
 
 Prompt: SCREEN_SPACE_REFRACTION
 Domain: VFX/POST
-Status: CORE COMPLETE / BUILD BLOCKED BY DEPENDENCY
+Status: CORE COMPLETE / LATEST BUILD BLOCKED OUTSIDE VFX/POST / UNITY RUNTIME PENDING
 
 ## Decision 0 - Mandate Selection
 
@@ -147,3 +147,27 @@ Solution: Record the workspace lock and avoid terminating unknown concurrent age
 Rejected Alternatives: Killing all `dotnet` processes would violate multi-agent safety and could corrupt other agents' validation runs.
 Scalability potential: No impact to visor Low/Mid/High/Ultra paths.
 Hardware Impact: No runtime impact. Exact visor microseconds remain unmeasured.
+
+## Decision 18 - Shader Uniform NaN Hardening
+
+Problem: Several visor refraction shader branches still relied on raw `saturate()` for externally-fed uniforms, and the shared Snell helper accepted raw `nDotV`/`strength`. On mobile/Metal-class GPUs, a non-finite wetness, stress, rain, visual-overkill, or Snell-strength input can poison downstream UV math before the final clamp.
+Solution: Route refraction-critical uniforms through `HectonFinite01`, guard `_HectonVisorSnellStrength` with explicit `isfinite`, and finite-guard `nDotV` plus `strength` inside `Hecton_SnellRefractionCore.hlsl`.
+Rejected Alternatives: A C#-only sanitation claim was rejected because shader-side guards are the last boundary before GPU texture coordinates; a per-call-site-only fix was rejected because the shared helper should fail closed for every present and future caller; a broad whole-visor rewrite was rejected as out of scope and higher regression risk.
+Scalability potential: Low remains chromatic-only and finite-gated. Middle keeps bounded Snell. High keeps finite-gated salt crystals and silt shimmer. Ultra keeps visual overkill without allowing non-finite uniforms to escape into opaque texture sampling.
+Hardware Impact: CPU impact is 0.0 us/frame. GPU impact is a small finite-check ALU cost on affected fragments, exact microseconds pending profiler. The change buys stability on i3/MX350, Quest/ARM64, and Metal without adding textures, buffers, I/O, or render passes.
+
+## Decision 19 - Build Recovery Boundary
+
+Problem: Earlier validation attempts were blocked by unrelated compile drift and a shared SourceLink lock, so the refraction work could not be honestly certified beyond static analysis.
+Solution: Retry the same non-shared-compiler build after the NaN hardening pass and record the checkpoint-green code compile result without expanding scope into unrelated domains.
+Rejected Alternatives: Killing unknown concurrent build processes was rejected; editing unrelated blockers was rejected; claiming Unity runtime/profiler verification from a `dotnet build` was rejected.
+Scalability potential: Low/Middle/High/Ultra shader paths are now code-build verified. Runtime visual quality, Frame Debugger ordering, GCMonitor, and GPU microseconds still require Unity execution.
+Hardware Impact: Code compile succeeded at that checkpoint with 0 warnings and 0 errors. The current latest build is superseded by the unrelated `SubmarineFluidDynamics.cs` blocker, and no profiler data exists yet, so exact MX350/Quest/Metal/4090 microseconds remain pending.
+
+## Decision 20 - Common Snell Boundary Hardening
+
+Problem: The shared Snell helper still allowed non-finite IOR LUT, depth, softness, and clamp-bound inputs to enter `max`, `smoothstep`, and `min` before the final UV clamp. The water-density fallback also sanitized invalid density without tagging the blackbox.
+Solution: Fail closed in `Hecton_SnellRefractionCore.hlsl` by substituting stable IOR defaults, finite depth/softness values, and zero clamp bounds when inputs are non-finite. Pass telemetry flags into `ResolveWaterDensitySignal01` so invalid shader-global or fluid-simulation density is recorded before the safe zero fallback.
+Rejected Alternatives: Trusting material settings and upstream systems was rejected because shared shader helpers must be the final GPU boundary; editing `SubmarineFluidDynamics` was rejected because it is outside VFX/POST and currently belongs to another integration wall.
+Scalability potential: Low/MX350 stays chromatic-only with finite masks. Middle keeps bounded Snell. High/Ultra keep salt and silt fakes with stronger common-helper immunity. No new texture, buffer, render pass, or signal was added.
+Hardware Impact: CPU cost is two finite checks when the player camera is evaluated; exact microseconds pending profiler. GPU cost is small ALU in the common Snell helper; exact microseconds pending profiler. Latest build is blocked outside this domain by `SubmarineFluidDynamics.cs` missing `VaultNativeBuffer<>`.

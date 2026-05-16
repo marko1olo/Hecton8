@@ -78,13 +78,13 @@ Hardware Impact: Avoids 200 us+ CPU/GPU spikes from spawned light/particle paths
 
 Problem: A global VFX heartbeat can hide NaN propagation across shaders unless the last states are retained.
 
-Solution: Store 300 dispatcher ticks of high-level state in `NativeArray<BiolumPulseTelemetryEntry>` allocated through `H8Memory` with `SystemID.Vfx`; dump to `Docs/AgentLogs/Dump_BIOLUM_PULSE_SYNC.bin` on non-finite job output.
+Solution: Store 300 dispatcher ticks of high-level state in DataVault buffer `BiolumBlackBox` with `SystemID.Vfx`; dump to `Docs/AgentLogs/Dump_BIOLUM_PULSE_SYNC.bin` on non-finite job output.
 
 Rejected Alternatives: Debug.Log spam, managed queues, or ignoring visual-only crashes. Logs allocate and are not recoverable after a crash.
 
 Scalability potential: Low/Mid/High/Ultra all use the same fixed telemetry footprint; higher tiers only change active lane count.
 
-Hardware Impact: Fixed persistent native ring, 0 B/frame managed allocation. Estimated low-end impact: below 1 us/frame for telemetry write.
+Hardware Impact: Fixed DataVault native ring, 0 B/frame managed allocation. Estimated low-end impact: below 1 us/frame for telemetry write.
 
 ## Decision 7 - Build Wall
 
@@ -133,3 +133,63 @@ Rejected Alternatives: Compute particles, raymarch volumes, or adding unrelated 
 Scalability potential: Toaster path is one global color/intensity. God-mode path is a dual-lane per-pixel neon interference pattern over 16 global lanes, still Metal-safe and without compute thread groups.
 
 Hardware Impact: Low-tier effect cost is effectively unchanged. High-tier spends a few ALU ops and one extra uniform-array fetch per affected pixel; exact GPU microseconds require Unity/RenderDoc capture after external compile walls are cleared.
+
+## Decision 11 - Non-Blocking Visual Sync Publish
+
+Problem: The prior publish path scheduled `BiolumVisualSyncJob` in one tick and completed it at the start of the next tick without checking `IsCompleted`. Even with only 16 lanes, that is still a hidden main-thread stall if the worker thread is delayed.
+
+Solution: Gate publish on `_stateJobHandle.IsCompleted`. If the job is late, keep last frame's shader states, record `TelemetryFlagJobOverrun` in the 300-frame blackbox, and skip scheduling another job until the DataVault profile/state locks are released.
+
+Rejected Alternatives: Completing every tick for convenience, scheduling a second job over locked DataVault views, or falling back to main-thread sine math during overrun. Those paths either serialize VISUAL_SYNC or break data ownership.
+
+Scalability potential: Low/MX350 degrades by reusing the previous global pulse for a frame; High/Ultra preserve secondary-lane overdrive once the job publishes, without adding CPU stalls.
+
+Hardware Impact: Removes a potential blocking sync point from the hot path. Expected stall avoidance is burst-dependent: normally 0 us, but avoids worst-case worker-fence spikes when the job system is saturated. Exact profiler proof is still blocked by external compile failures.
+
+## Decision 12 - Sargassum Radius Division Vaccine
+
+Problem: `Hecton_SargassumMaster` still had direct radius-squared divisions in cut-mask and propwash falloff code. The input radius was clamped, but mobile shader paths should not rely on division lowering when `rcp(max())` gives an explicit finite floor.
+
+Solution: Convert both forward and duplicate shadow/depth helper paths to precompute inverse radius squared through `rcp(max(radius * radius, 0.0001))` and multiply the distance squared by that inverse.
+
+Rejected Alternatives: Leaving the direct division because radius was already clamped, or adding a branch to skip the effect when radius is tiny. Direct division is weaker NaN hygiene; branchy skip changes visuals around tiny radii.
+
+Scalability potential: Low/MX350 gets the same visual result with safer ALU. High/Ultra keeps propwash/cut interaction fidelity without adding samples or variant cost.
+
+Hardware Impact: Expected frame cost is effectively neutral; the value is GPU stability on ARM64/Quest/Android and older desktop shader compilers. Exact microseconds saved: 0 us claimed.
+
+## Decision 13 - Fixed-Size Blackbox Dump ABI
+
+Problem: The blackbox ring entry was explicit Pack=1/Size=40, but the dump path serialized individual fields through `BinaryWriter` and skipped reserved bytes. That makes post-mortem parsing disagree with the runtime ABI.
+
+Solution: Replace `BinaryWriter` field emission with raw unmanaged writes: a 16-byte Pack=1 dump header followed by 300 raw 40-byte `BiolumPulseTelemetryEntry` records in ring order.
+
+Rejected Alternatives: Keeping ad hoc field writes, adding JSON sidecars, or allocating a managed byte array for the full dump. Those options either break ABI sovereignty or add unnecessary crash-path heap pressure.
+
+Scalability potential: Same dump layout on Quest/Android ARM64, Metal/Mac, Steam Deck, and PC. Higher tiers do not change telemetry size.
+
+Hardware Impact: Crash-path only. Runtime hot-path savings: 0 us. Post-mortem correctness improves because every entry is exactly 40 bytes.
+
+## Decision 14 - Cold Lifecycle And Profile I/O Latch
+
+Problem: `Awake()` performed external DataVault/GlobalRegistry work, and the profile loader could re-read `Biolum_Profiles.bin` on every enable. Tick also had a possible DataVault resolve fallback path through `EnsureVaultBuffers()`.
+
+Solution: Remove `Awake()` external wiring, keep GlobalRegistry/DataVault resolution in lifecycle/editor-cold paths, make Tick use only cached `_dataVault`, and latch profile loading after the first successful binary or deterministic fallback seed.
+
+Rejected Alternatives: Retaining self-healing registry lookup in Tick or reloading the profile file every enable. Self-healing in hot path violates the two-stage dependency rule; repeated disk reads risk Steam Deck MicroSD stalls.
+
+Scalability potential: Low/MX350 and Steam Deck reuse the already-vaulted profile buffer. High/Ultra keep the same profile data without sacrificing visual overdrive.
+
+Hardware Impact: Avoids repeated cold I/O on enable toggles. Estimated MicroSD stall avoided after first load: 50-200 us per avoided profile read; hot path remains 0 B/frame.
+
+## Decision 15 - VISUAL_SYNC Overrun Dump Tripwire
+
+Problem: A late `BiolumVisualSyncJob` was recorded in telemetry, but if a worker job stayed late indefinitely the system would retain stale shader states without forcing a post-mortem dump.
+
+Solution: Count consecutive frames where `_stateJobHandle.IsCompleted` is false. At 300 consecutive late frames, dump `Docs/AgentLogs/Dump_BIOLUM_PULSE_SYNC.bin` with reason `TelemetryFlagJobOverrun`.
+
+Rejected Alternatives: Blocking the main thread to force completion, scheduling a duplicate job, or logging strings. Blocking violates phase discipline; duplicate jobs race the same DataVault views; string logs do not satisfy blackbox survival.
+
+Scalability potential: Low/MX350 keeps the last valid pulse for continuity. High/Ultra keep visual state stable until the job recovers, and the dump preserves enough heartbeat history for integration.
+
+Hardware Impact: Normal hot-path cost is one saturated integer increment only while a job is late; 0 us claimed. The benefit is survival evidence after 300 bad frames.

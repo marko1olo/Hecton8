@@ -4,7 +4,7 @@ Prompt: SIMULATION_BUCKET_DISTRIBUTOR
 Role: CORE_ENGINEER
 Domain: CORE/SCHEDULING
 Task Count: 18
-Current State: H-PHI POLISHED / VALIDATION BLOCKED BY EXTERNAL CONSTRUCTION COMPILE WALL
+Current State: SCHEDULER PATCH CLEAN / DOTNET BLOCKED BY EXTERNAL AI ECOSYSTEM COMPILE WALL
 
 Mandates Identified Before Coding:
 - ARCH_Execution_Phases.txt
@@ -39,7 +39,7 @@ Mandates Identified Before Coding:
 ## Loop 4: Tasks 16-18
 - [x] 16. SMOOTHING_SYNC | DONE | DOD: SystemDispatcher broadcasts _SimulationBucketInterpolationAlpha and emits SimulationBucketSyncSignal. Alternative rejected: per-system alpha drift. Estimate: smoother skipped-frame presentation.
 - [x] 17. PHASE_LOCK | DONE | DOD: pre-simulation cost is measured before bucketer AdvanceFrame; >1.5ms sets PreSimulationOverBudget and emits warning. Alternative rejected: silent overrun. Estimate: deterministic load-shed trigger.
-- [x] 18. FINAL_VALIDATION | BLOCKED BY EXTERNAL DEPENDENCY | DOD: dotnet build attempted six times; attempt6 has zero errors in scheduler-touched files and is blocked by VehicleDockingModule method debt outside domain. Alternative rejected: editing construction docking behavior from the scheduler agent. Estimate: build evidence in Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt*.log.
+- [x] 18. FINAL_VALIDATION | [BLOCKED BY DEPENDENCY] | DOD: attempt8 was green before concurrent external edits; current attempt11 fails only in AI/EcosystemPopulationBalancer SignalBus/entity-death/ref-return debt. Alternative rejected: editing AI ecosystem ownership from scheduler domain. Estimate: scheduler-touched paths have zero current build hits in Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt11_after_external_edits.log.
 
 ## Iterative Review Loops
 - [x] Review 1 | DONE | Read SystemDispatcher, ModuloSimulationBucketer, contracts, bootstrap, and consumers after implementation pass.
@@ -58,4 +58,7 @@ Mandates Identified Before Coding:
 - [x] BLACKBOX_RING_300 | DONE | DOD: BufferID.SimulationBucketBlackBox owns a 300-frame DataVault ring and Dump_SIMULATION_BUCKET_DISTRIBUTOR.bin is written only on non-finite cost fault. Alternative rejected: per-frame Steam Deck MicroSD writes. Estimate: 0 us normal I/O; <5 us/frame ring write.
 - [x] HIGH_TIER_VISUAL_BUDGET_FLAG | DONE | DOD: VisualOverkillBudgetAvailable is raised only when non-low-tier bucket math is under half the 16.667 ms target and no rebalance/fault is pending. Alternative rejected: direct VFX ownership edits outside scheduling domain. Estimate: saved budget exposed, not spent by scheduler.
 - [x] METAL_THREADGROUP_AUDIT | DONE | DOD: domain-touched compute paths use 64-thread 1D groups or 4x4x4/8x8x8 groups, below Metal's 1024-thread limit. Alternative rejected: shader mutation without evidence. Estimate: portability risk reduced.
-- [x] FINAL_HPHI_BUILD | BLOCKED BY EXTERNAL DEPENDENCY | DOD: attempt6 (`Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt6_hphi.log`) has no errors in ModuloSimulationBucketer, contracts, signals, dispatcher, bootstrap, H8Memory, Sargassum, or HectonFluidEngine; remaining errors are VehicleDockingModule missing methods. Alternative rejected: construction-domain patch from scheduler ownership. Estimate: 0 us runtime impact.
+- [x] JOB_ADMISSION_DATA_EVICTION | DONE | DOD: BurstTokenBucketJobAdmissionService now stores lane budgets, base refill budgets, job hashes, EWMA costs, and its 300-entry black-box in GlobalDataVault handles. Alternative rejected: persistent private NativeArray fields in scheduling logic. Estimate: 0 B private scheduler native ownership.
+- [x] JOB_ADMISSION_BLACKBOX_300 | DONE | DOD: JobAdmissionBlackboxEntry is Pack=1 Size=32, writes the fault entry before cold dump, and dumps to Dump_SIMULATION_BUCKET_DISTRIBUTOR_JobAdmission.bin on non-finite admission faults even without a telemetry sink. Alternative rejected: per-frame disk logging or telemetry-sink-gated crash evidence. Estimate: 0 us normal I/O; ring write remains fixed-size memory write.
+- [x] JOB_ADMISSION_DEFAULT_TABLE_EVICTION | DONE | DOD: replaced the managed static refill-budget array with a switch resolver so admission startup has no private managed table. Alternative rejected: leaving a scheduler-owned data island because it was "only cold". Estimate: one cold managed array removed; no measured frame delta.
+- [x] FINAL_HPHI_BUILD | [BLOCKED BY DEPENDENCY] | DOD: attempt11 (`Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt11_after_external_edits.log`) has zero scheduler/bucketer/bootstrap/H8Memory/job-admission hits and fails in `Assets/_Project/Scripts/AI/Ecosystem/EcosystemPopulationBalancer.cs`. Alternative rejected: patching AI ecosystem from scheduling authority. Estimate: current scheduler validation is code-clean but global compile is blocked externally.

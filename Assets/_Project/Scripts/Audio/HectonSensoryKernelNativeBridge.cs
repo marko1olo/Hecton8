@@ -19,7 +19,7 @@ namespace Hecton8.Audio
         PluginUnavailable = 1 << 30
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     internal struct NativeAudioKernelRingBufferDescriptor
     {
         public const uint DescriptorMagicValue = 0x484B3031u;

@@ -65,6 +65,7 @@ float4 _CarveDebrisParams;           // x=dt, y=low tier, z=sdf active, w=flow d
 float4 _CarveDebrisForces;           // xyz=gravity, w=life decay per second
 float4 _CarveDebrisAupShiftDelta;    // xyz=runtime rebase delta applied before integration
 float4 _CarveDebrisCameraParams;     // xyz=camera, w=max render distance squared
+float4 _CarveDebrisCullParams;       // xyz=camera forward, w=min forward dot
 float4 _CarveDebrisDrawArgsParams;   // x=index count, y=start index, z=base vertex, w=max instances
 float4 _DynamicWakeParams;           // x=slot limit, y=low tier, z=active count, w=unused
 float4 _AbyssalGridResolution;       // xyz=grid resolution, w=flattened count
@@ -313,8 +314,9 @@ void AdvectCarveDebris(uint3 id : SV_DispatchThreadID)
     float liveMask = step(0.000001, particle.w);
     float3 previousPosition = particle.xyz + _CarveDebrisAupShiftDelta.xyz;
     float3 velocity = Sanitize(velocityPacked.xyz);
-    float3 flow = _CarveDebrisParams.y > 0.5 ? float3(0.0, 0.0, 0.0) : SampleAbyssalFlow(previousPosition);
-    flow = ApplyDynamicWakes(previousPosition, flow);
+    float3 flow = float3(0.0, 0.0, 0.0);
+    if (_CarveDebrisParams.y <= 0.5)
+        flow = ApplyDynamicWakes(previousPosition, SampleAbyssalFlow(previousPosition));
     float flowBlend = saturate(max(0.0, _CarveDebrisParams.w) * dt);
     velocity = Sanitize(lerp(velocity, flow, flowBlend) + _CarveDebrisForces.xyz * dt);
     velocity = ClampCarveDebrisVelocity(velocity, dt);
@@ -349,11 +351,18 @@ void CullCarveDebrisForRender(uint3 id : SV_DispatchThreadID)
     float finiteMask = all(isfinite(particle)) ? 1.0 : 0.0;
     float liveMask = step(0.000001, particle.w);
     float3 delta = particle.xyz - _CarveDebrisCameraParams.xyz;
+    float distanceSq = dot(delta, delta);
     float maxDistanceSq = _CarveDebrisCameraParams.w;
     float distanceLimitMask = step(0.000001, maxDistanceSq);
-    float distanceMask = lerp(1.0, step(dot(delta, delta), maxDistanceSq), distanceLimitMask);
+    float distanceMask = lerp(1.0, step(distanceSq, maxDistanceSq), distanceLimitMask);
+    float3 cameraForward = _CarveDebrisCullParams.xyz;
+    float forwardLengthSq = dot(cameraForward, cameraForward);
+    float coneEnabledMask = step(0.000001, forwardLengthSq);
+    float forwardDot = dot(delta, cameraForward) * rsqrt(max(distanceSq * forwardLengthSq, 0.000001));
+    float nearCameraMask = 1.0 - step(0.25, distanceSq);
+    float coneMask = max(nearCameraMask, lerp(1.0, step(_CarveDebrisCullParams.w, forwardDot), coneEnabledMask));
     uint maxVisible = (uint)max(0.0, _CarveDebrisCounts.z);
-    uint visibleIncrement = (uint)(finiteMask * liveMask * distanceMask * step(0.5, (float)maxVisible));
+    uint visibleIncrement = (uint)(finiteMask * liveMask * distanceMask * coneMask * step(0.5, (float)maxVisible));
     if (visibleIncrement == 0u)
         return;
 

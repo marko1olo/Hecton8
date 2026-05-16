@@ -560,6 +560,9 @@ float3 ResolvePredatorAupScatter(float3 positionWS, out float panic01)
     for (uint threatIndex = 0u; threatIndex < threatCount; threatIndex++)
     {
         float4 threat = _EncounterPredatorAUPBuffer[threatIndex];
+        if (!IsFiniteFloat3(threat.xyz) || !IsFiniteFloat(threat.w))
+            continue;
+
         float radius = max(threat.w, 0.0);
         if (radius <= EPSILON)
             continue;
@@ -584,12 +587,23 @@ float3 ResolvePredatorAupScatter(float3 positionWS, out float panic01)
 
 float3 ClosestPointOnSegment(float3 samplePosition, float3 start, float3 end)
 {
-    float3 segment = end - start;
-    float segmentLengthSq = dot(segment, segment);
-    if (segmentLengthSq <= EPSILON)
+    if (!IsFiniteFloat3(samplePosition))
+        return float3(0.0, 0.0, 0.0);
+    if (!IsFiniteFloat3(start))
+        return IsFiniteFloat3(end) ? end : samplePosition;
+    if (!IsFiniteFloat3(end))
         return start;
 
-    float t = saturate(dot(samplePosition - start, segment) / segmentLengthSq);
+    float3 segment = end - start;
+    float segmentLengthSq = dot(segment, segment);
+    if (!IsFiniteFloat(segmentLengthSq) || segmentLengthSq <= EPSILON)
+        return start;
+
+    float projection = dot(samplePosition - start, segment);
+    if (!IsFiniteFloat(projection))
+        return start;
+
+    float t = saturate(projection * rcp(max(segmentLengthSq, EPSILON)));
     return start + (segment * t);
 }
 
@@ -606,6 +620,9 @@ float3 ResolveSensoryThreatScatter(float3 positionCR, out float panic01, out flo
     for (uint threatIndex = 0u; threatIndex < threatCount; threatIndex++)
     {
         float4 threat = _PredatorAUPBuffer[threatIndex];
+        if (!IsFiniteFloat3(threat.xyz) || !IsFiniteFloat(threat.w))
+            continue;
+
         float radius = max(threat.w, 0.1);
         if (radius <= EPSILON)
             continue;

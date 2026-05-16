@@ -171,3 +171,27 @@ Rejected Alternatives: Patching content, ecosystem, submarine fluid, or lockstep
 Scalability potential: No runtime change. This preserves the wake slice while the Integrator resolves current cross-domain compile state.
 
 Hardware Impact: 0 us/frame. Risk avoided: cross-domain repair churn from an unauthorized owner.
+
+## Decision 15 - Final Validation Reconciliation
+
+Problem: The status file still carried the earlier concurrent dependency-wall state, but the current disk state no longer fails compilation.
+
+Solution: Re-read the live XML block with an attribute-tolerant regex, reran `dotnet build .\Hecton8.Core.csproj -v:minimal -clp:ErrorsOnly`, and verified `Build succeeded. 0 Warning(s). 0 Error(s).` No code repair was made because the blocker had already been resolved by the shared workspace. Updated the wake status to `VERIFIED MASTER GRADE - WAKES ACTIVE` only after fresh build and static scans.
+
+Rejected Alternatives: Patching `SubmarineFluidDynamics` or `SpatialAudioManager` from the wake prompt was rejected because the current build does not require it. Treating a stale exact-tag XML regex failure as a missing prompt was rejected after `Select-String` showed the tag exists with additional attributes.
+
+Scalability potential: Low/MX350 remains capped to 4 published wake slots under stress and 2 nearest shader wake pushes. Middle/High retain 16 global wake slots. Ultra spends shader and compute budget on vortex curvature, normal shimmer, marine-snow turbulence, and boid wake scattering without increasing CPU source ownership.
+
+Hardware Impact: 0 us/frame direct validation cost. The verified wake implementation still saves estimated 8-22 us/frame on low-tier GPU work versus full 16-slot vortex math and avoids 3-8 us/frame signal duplication during wake-heavy frames.
+
+## Decision 16 - Wake Hot-Path Fence and Compile-Wall Closure
+
+Problem: The wake decay path needed another strict hot-path audit after concurrent code churn. A stale validation pass also hid transient non-wake compile walls, including a `SubmarineFluidDynamics` DataVault wrapper visibility failure and a `LaserCutter` NativeQueue import drift.
+
+Solution: Kept wake decay stateless and DataVault-backed, with the Burst decay job scheduled from `SlowTick` and only finalized from non-forced tick checks, late-frame swap windows, teardown, or origin-shift fences. Moved `SubmarineFluidDynamics.VaultNativeBuffer<T>` before its first field use as a mechanical compile-wall repair; no hydrodynamic behavior changed. Re-ran wake scans and the full Core build after the live workspace restored the laser cutter import drift.
+
+Rejected Alternatives: Reintroducing `Schedule().Complete()` in `Tick` would violate the job mandate and risk main-thread stalls. Broad audio, cutter, ecosystem, or submarine-fluid refactors were rejected because they are outside the wake XML and not needed for the final green build. Claiming an old green build or old dependency wall was rejected as stale evidence.
+
+Scalability potential: Low/MX350 still caps wake publication to 4 slots under stress and shader work to two nearest radial wakes. Middle/High/Ultra keep 16 wake slots and spend GPU budget on vortex curvature, normal shimmer, silt turbulence, and fauna scatter. The compile-wall repair has no runtime visual tier effect.
+
+Hardware Impact: Avoids an estimated 10-80 us main-thread stall risk from same-frame job fences on weak CPUs; steady-state wake decay remains an estimated 0-3 us for 16 slots. The external compile repair is 0 us/frame and only restores validation.

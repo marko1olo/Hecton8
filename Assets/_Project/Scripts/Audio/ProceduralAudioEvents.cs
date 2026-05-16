@@ -264,7 +264,7 @@ namespace Hecton8.Audio
     /// <summary>
     /// Canonical zero-GC procedural audio bridge payload.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct AudioEvent
     {
         public AudioEventKind Kind;

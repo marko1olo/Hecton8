@@ -4,7 +4,7 @@ Prompt: ECOSYSTEM_MIGRATION_LINK
 Role: APEX_DIRECTOR / The Macro Spawner
 Domain: AI/ECOLOGY
 Task count: 18
-State: CORE COMPLETE / BUILD BLOCKED BY DEPENDENCY
+State: PENDING VERIFICATION / BUILD BLOCKED BY DEPENDENCY
 
 ## Mandates Read Before Coding
 
@@ -36,7 +36,7 @@ State: CORE COMPLETE / BUILD BLOCKED BY DEPENDENCY
 - [x] 15. HOMEOSTASIS_ADAPTATION - Stress > 0.7 hydrates 50 percent visually. | DOD: AmbientBiotaMacroHydrationJob halves visual swarm budget when SignalBusRegistry.SystemStress01 exceeds 0.7 while abstract macro biomass remains authoritative. | Alternatives rejected: all-or-nothing hydration. | Estimate: saves about 21 us and 32 visual slots for a 64-fish swarm on stress frames.
 - [x] 16. DEHYDRATION_SEAM - Chunk unload packs boids to MacroSwarm. | DOD: SectorDehydratedSignal drains macro-hydrated AmbientBiota SOA slots through registry service and stages one MacroSwarm payload before biomass fallback. | Alternatives rejected: dropping active visual biomass on unload. | Estimate: 18 us for 64 scanned/released slots.
 - [x] 17. CAPACITY_CLAMP - Never exceed MaxBoidCapacity. | DOD: job searches inactive slots only within min(capacity, lane lengths), appends never exceed ResolveMacroSwarmActiveCap, excess biomass is discarded/logged. | Alternatives rejected: overflow, resize, or live-slot overwrite. | Estimate: 31 us capped scan at 2048 slots.
-- [x] 18. FINAL_VALIDATION - [BLOCKED BY DEPENDENCY] dotnet build. | DOD: `dotnet build Hecton8.Core.csproj -v:minimal /p:UseSharedCompilation=false` executed after fixes; current failure is unrelated 54-error wall in XR/item/submarine/VFX/diagnostics/visor files, with no errors reported in edited ecology/global-signal files. | Alternatives rejected: patch unrelated domains or claim clean build. | Estimate: 109 s validation wall time.
+- [x] 18. FINAL_VALIDATION - [BLOCKED BY DEPENDENCY] dotnet build. | DOD: `dotnet build Hecton8.Core.csproj -v:minimal --no-restore /p:UseSharedCompilation=false` was green once after H-Phi/ABI polish, then latest validation failed in unrelated `Assets/_Project/Scripts/LaserCutter.cs` with 45 CS0103 missing-field errors for `_pendingEvents`, `_nextFrameEvents`, `_nextFrameEventCount`, and `_isDispatching`. No compiler errors were reported in the edited ecology bridge files. | Alternatives rejected: patch gameplay-tool event ownership outside AI/ecology after repeated dependency-wall strikes. | Estimate: 65.24 s latest failed validation wall time; previous clean build was 67.48 s.
 
 ## Loop Log
 
@@ -46,3 +46,7 @@ State: CORE COMPLETE / BUILD BLOCKED BY DEPENDENCY
 - Loop 3: Tasks 11-15 completed. Added SDF cavity gate, prompt-ID dump path, capacity overflow blackbox evidence, and stress-based 50 percent visual hydration.
 - Loop 4: Tasks 16-18 completed/blocked. Dehydration seam packs macro-hydrated active biota to MacroSwarm; final build remains blocked by external compile wall.
 - Loop 5: Omega polish pass complete. Batch had no `<POLISH_MANDATE>` tag; anti-bloat grep found no Instantiate/new GameObject/SpawnPoint path in edited files, no runtime resize path, and only fixed-cap AddNoResize sites with preceding capacity gates.
+- Loop 6: H-Phi/multiplatform pass. Macro bridge buffers moved to GlobalDataVault BufferID lanes, MacroSwarm/arrival and macro blackbox structs changed to explicit Pack=1 layouts, macro scratch NativeLists replaced with vault NativeArray lanes plus counts, `Schedule().Complete()` removed from hydration/dehydration service calls, EntitySpawnSignal received finite guard and high-tier overkill flag. Latest build blocked by unrelated SubmarineFluidDynamics duplicate handle fields.
+- Loop 7: Full ecology storage/ABI pass. Legacy `EcosystemDirector` persistent NativeArray allocations were moved to GlobalDataVault lanes, local ABI structs were converted to explicit Pack=1 layouts, whale-fall acoustic output was moved off `PhysicsEventBus` onto typed `AcousticPingSignal`, and static scans found no `Schedule().Complete`, `Update`, `string.Format`, `Instantiate`, or local NativeArray allocation in the edited ecology bridge files. That pass exposed a transient external compile wall.
+- Loop 8: Save-staging and population-balancer polish. Save snapshot NativeList staging was replaced with vault NativeArray lanes plus explicit counts, `EcosystemPopulationBalancer` signal/ref compile issues were repaired, and its local ecology DTOs were converted from sequential Pack=1 to explicit Pack=1 layouts. `dotnet build Hecton8.Core.csproj -v:minimal --no-restore /p:UseSharedCompilation=false` produced an intermediate green build with 0 warnings / 0 errors.
+- Loop 9: Final revalidation after concurrent edits. The core bridge `BitConverter.SingleToUInt32Bits` wall disappeared, `SpatialAudioManager` helper resolution wall disappeared, and latest validation now fails in unrelated `LaserCutterEvents` removed queue fields while old queue code still references them. Marked dependency-blocked per 3-strike protocol; ecology bridge static scans remain clean.

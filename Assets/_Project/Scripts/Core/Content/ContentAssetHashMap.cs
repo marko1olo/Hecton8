@@ -45,6 +45,7 @@ namespace Hecton8.Core.Content
     }
 
     [Serializable]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct ContentAssetEntry
     {
         [Tooltip("FNV1a-32 authority hash. Zero is invalid and fails validators.")]
@@ -116,22 +117,28 @@ namespace Hecton8.Core.Content
     {
         private const uint FnvOffset = 2166136261u;
         private const uint FnvPrime = 16777619u;
+        private const byte SortStateUnknown = 0;
+        private const byte SortStateSorted = 1;
+        private const byte SortStateUnsorted = 2;
 
         [SerializeField] private ContentAssetEntry[] entries = Array.Empty<ContentAssetEntry>();
 
-        [NonSerialized] private bool _sorted;
+        [NonSerialized] private byte _sortState;
 
         public int Count => entries != null ? entries.Length : 0;
 
         public ContentAssetEntry GetEntryAt(int index)
         {
-            EnsureSorted();
+            EnsureSortState();
             return entries[index];
         }
 
         public bool TryGetEntry(uint hash, out ContentAssetEntry entry)
         {
-            EnsureSorted();
+            EnsureSortState();
+
+            if (_sortState == SortStateUnsorted)
+                return TryGetEntryLinear(hash, out entry);
 
             int lo = 0;
             int hi = entries != null ? entries.Length - 1 : -1;
@@ -162,7 +169,7 @@ namespace Hecton8.Core.Content
 
         public int CopyRequiredHashes(uint[] destination)
         {
-            EnsureSorted();
+            EnsureSortState();
             if (destination == null || entries == null)
                 return 0;
 
@@ -197,22 +204,28 @@ namespace Hecton8.Core.Content
 
         public void ForceSort()
         {
-            SortEntries();
-        }
-
-        private void EnsureSorted()
-        {
-            if (_sorted)
+#if UNITY_EDITOR
+            if (Application.isPlaying)
                 return;
 
             SortEntries();
+#endif
         }
 
+        private void EnsureSortState()
+        {
+            if (_sortState != SortStateUnknown)
+                return;
+
+            _sortState = IsSortedAscending() ? SortStateSorted : SortStateUnsorted;
+        }
+
+#if UNITY_EDITOR
         private void SortEntries()
         {
             if (entries == null)
             {
-                _sorted = true;
+                _sortState = SortStateSorted;
                 return;
             }
 
@@ -229,7 +242,42 @@ namespace Hecton8.Core.Content
                 entries[j + 1] = current;
             }
 
-            _sorted = true;
+            _sortState = SortStateSorted;
+        }
+#endif
+
+        private bool IsSortedAscending()
+        {
+            if (entries == null || entries.Length < 2)
+                return true;
+
+            uint previous = entries[0].Hash;
+            for (int i = 1; i < entries.Length; i++)
+            {
+                uint current = entries[i].Hash;
+                if (current < previous)
+                    return false;
+
+                previous = current;
+            }
+
+            return true;
+        }
+
+        private bool TryGetEntryLinear(uint hash, out ContentAssetEntry entry)
+        {
+            int count = entries != null ? entries.Length : 0;
+            for (int i = 0; i < count; i++)
+            {
+                if (entries[i].Hash != hash)
+                    continue;
+
+                entry = entries[i];
+                return true;
+            }
+
+            entry = default;
+            return false;
         }
 
 #if UNITY_EDITOR
@@ -246,7 +294,7 @@ namespace Hecton8.Core.Content
                 entries[i].Hash = ComputeFnv1a32(entries[i].StableKey);
             }
 
-            _sorted = false;
+            _sortState = SortStateUnknown;
             SortEntries();
         }
 #endif

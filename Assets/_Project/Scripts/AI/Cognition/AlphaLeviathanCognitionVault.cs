@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -9,6 +10,7 @@ namespace Hecton8.AI.Cognition
     /// <summary>
     /// Resolved DataVault views for Alpha Leviathan cognition.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct AlphaLeviathanVaultBuffers
     {
         public NativeArray<AlphaLeviathanCognitionState> States;
@@ -19,6 +21,29 @@ namespace Hecton8.AI.Cognition
 
         /// <summary>
         /// True when every required DataVault buffer view was resolved.
+        /// </summary>
+        public readonly bool IsCreated =>
+            States.IsCreated &&
+            SensoryStimuli.IsCreated &&
+            SteeringOutputs.IsCreated &&
+            TelemetryRing.IsCreated &&
+            TelemetryCursor.IsCreated;
+    }
+
+    /// <summary>
+    /// Generation-checked DataVault handles for Alpha Leviathan cognition.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 120)]
+    public struct AlphaLeviathanVaultHandles
+    {
+        public VaultBufferHandle<AlphaLeviathanCognitionState> States;
+        public VaultBufferHandle<AlphaLeviathanSensoryStimulus> SensoryStimuli;
+        public VaultBufferHandle<AlphaLeviathanSteeringOutput> SteeringOutputs;
+        public VaultBufferHandle<AlphaLeviathanTelemetryEntry> TelemetryRing;
+        public VaultBufferHandle<int> TelemetryCursor;
+
+        /// <summary>
+        /// True when every required DataVault handle was resolved from the vault.
         /// </summary>
         public readonly bool IsCreated =>
             States.IsCreated &&
@@ -76,6 +101,69 @@ namespace Hecton8.AI.Cognition
                 1,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
+            return buffers.IsCreated;
+        }
+
+        /// <summary>
+        /// Resolves generation-checked handles for every persistent stalking buffer.
+        /// </summary>
+        /// <param name="vault">GlobalDataVault service cached by the caller outside hot paths.</param>
+        /// <param name="requiredSlots">Requested predator slot capacity.</param>
+        /// <param name="handles">Resolved DataVault handles.</param>
+        /// <returns>True when every handle is available.</returns>
+        public static bool TryResolveHandles(IDataVault vault, int requiredSlots, out AlphaLeviathanVaultHandles handles)
+        {
+            handles = default;
+            if (vault == null || vault.IsAllocationLocked)
+                return false;
+
+            int capacity = math.clamp(requiredSlots, 1, AlphaLeviathanStalkConstants.MaxLeviathanSlots);
+            handles.States = vault.GetBufferHandle<AlphaLeviathanCognitionState>(
+                BufferID.AlphaLeviathanCognitionState,
+                capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            handles.SensoryStimuli = vault.GetBufferHandle<AlphaLeviathanSensoryStimulus>(
+                BufferID.AlphaLeviathanSensoryStimulus,
+                capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            handles.SteeringOutputs = vault.GetBufferHandle<AlphaLeviathanSteeringOutput>(
+                BufferID.AlphaLeviathanSteeringOutput,
+                capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            handles.TelemetryRing = vault.GetBufferHandle<AlphaLeviathanTelemetryEntry>(
+                BufferID.AlphaLeviathanTelemetryRing,
+                AlphaLeviathanStalkConstants.TelemetryCapacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            handles.TelemetryCursor = vault.GetBufferHandle<int>(
+                BufferID.AlphaLeviathanTelemetryCursor,
+                1,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            return handles.IsCreated;
+        }
+
+        /// <summary>
+        /// Resolves transient NativeArray views from cached generation-checked handles.
+        /// </summary>
+        /// <param name="vault">GlobalDataVault service cached by the caller outside hot paths.</param>
+        /// <param name="handles">Cached handles. Generations are refreshed on success.</param>
+        /// <param name="buffers">Resolved transient DataVault buffer views.</param>
+        /// <returns>True when every handle resolved to a current view.</returns>
+        public static bool TryResolveViews(IDataVault vault, ref AlphaLeviathanVaultHandles handles, out AlphaLeviathanVaultBuffers buffers)
+        {
+            buffers = default;
+            if (vault == null || !handles.IsCreated)
+                return false;
+
+            buffers.States = handles.States.Resolve(vault);
+            buffers.SensoryStimuli = handles.SensoryStimuli.Resolve(vault);
+            buffers.SteeringOutputs = handles.SteeringOutputs.Resolve(vault);
+            buffers.TelemetryRing = handles.TelemetryRing.Resolve(vault);
+            buffers.TelemetryCursor = handles.TelemetryCursor.Resolve(vault);
             return buffers.IsCreated;
         }
 

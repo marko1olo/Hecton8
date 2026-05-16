@@ -1,6 +1,6 @@
 # Rationale - TOOL_RESAK_SOLVER
 
-Current state: CORE IMPLEMENTED - FINAL BUILD BLOCKED BY CROSS-DOMAIN DEPENDENCIES
+Current state: CORE BUILD VERIFIED - MULTIPLATFORM INQUISITION + DATA SOVEREIGNTY + SIGNAL LANE PASS COMPLETE
 
 ## Decision Log
 
@@ -56,3 +56,60 @@ Solution: Remove dead parameters and keep the cutter-to-runtime call surface to 
 Rejected Alternatives: Leaving unused data for hypothetical future effects. That hides real dependencies and bloats call sites.
 Scalability potential: Low/Middle/High/Ultra behavior unchanged; less argument churn in the hot path.
 Hardware Impact: Tiny CPU/register-pressure reduction, estimated below 1 us, but removes ambiguity from the cutting kernel.
+
+### 2026-05-16 - Multiplatform Inquisition
+Problem: WFC runtime still cached DataVault views as private `NativeArray` fields, so the code looked like system-owned native state even though the allocation came from the vault.
+Solution: Replace persistent `NativeArray` fields with `VaultBufferHandle<float>` and `VaultBufferHandle<WfcLaserCutTelemetryEntry>`. The hot path resolves generation-checked vault pointers, writes one cell float, and writes one telemetry entry into the DataVault blackbox buffer.
+Rejected Alternatives: Keeping local `NativeArray` fields, allocating a tool-owned native arena, or hiding ownership in a singleton manager. Those paths violate Data Vault Sovereignty and make H-Phi worse.
+Scalability potential: Low/MX350 keeps the same one-float truth and decal fake. Middle keeps sparks/audio/haptics. High adds shader clip. Ultra adds tier-gated molten crystal-band energy without increasing gameplay truth.
+Hardware Impact: WFC CPU work remains one pointer resolve and one float write; expected hot-path cost stays in the 1-5 us class, not measured in Unity profiler. The 200000+ us CSG stall remains removed.
+
+Problem: ARM64/Quest builds cannot rely on implicit padding in blackbox/tool payloads.
+Solution: Pin WFC telemetry as `[StructLayout(LayoutKind.Explicit, Pack = 1, Size = 96)]`, pin laser events and haptic command payloads with `Pack=1`, and pin remaining tool-side sequential structs found by scan.
+Rejected Alternatives: Assuming Mono/Windows layout equals IL2CPP ARM64 layout. That is not acceptable for Quest/Android.
+Scalability potential: Low/Middle/High/Ultra share identical binary payload layout; debug dumps stay readable across devices.
+Hardware Impact: Fixed layout avoids alignment-dependent faults. No runtime cost beyond unchanged stores.
+
+Problem: Metal/mobile shader path had avoidable risk from raw normalization and half literal suffixes; high-end visual path was too flat.
+Solution: Replace raw `normalize` with guarded `rsqrt`, remove half suffix literals, keep the shader fragment-only with no compute thread groups, and add `_WfcLaserCutOverkill01` crystal-band molten energy gated by `GlobalRegistry.ScalabilityTier` and system stress.
+Rejected Alternatives: Compute raymarching or real geometry cuts. Compute adds platform/thread-group risk; geometry cuts reintroduce the CSG class of stall.
+Scalability potential: Low/Unknown/MX350 gets 0 overkill and decal/cheap shader. Middle gets 0.2 overkill. High gets 0.7 overkill. Ultra gets 1.0 overkill unless stress exceeds 0.7.
+Hardware Impact: Low tier pays only simple fragment math. High/Ultra spend saved CSG time on richer edge energy; added GPU cost is presentation-only and not CPU frame-time.
+
+Problem: The cutter/haptics feedback path still depended on `ToolHapticsRuntime` owning two native command buffers.
+Solution: Add `ToolHapticFrontCommands` and `ToolHapticBackCommands` DataVault buffer IDs and resolve haptic command buffers through `VaultBufferHandle<HapticCommand>`, preserving the existing read-only snapshot consumed by `InputDispatcher`.
+Rejected Alternatives: Rewriting the input dispatcher contract or keeping local native buffers. Rewriting input is outside the laser task; keeping buffers violates the inquisition requirement.
+Scalability potential: Low and Steam Deck avoid extra I/O or heap churn; High/Ultra can receive richer haptic envelopes without changing buffer ownership.
+Hardware Impact: Removes scene-owned native allocations from the haptic command lane. Runtime cost is a vault-handle resolve and bounded 16-command buffer scan.
+
+Problem: Final validation was previously dependency-blocked.
+Solution: Re-run `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false`.
+Rejected Alternatives: Reporting old blocked state or stubbing other agents' contracts.
+Scalability potential: No direct runtime effect.
+Hardware Impact: Build evidence only. Result: 0 errors, 0 warnings. Latest rerun: 2.26 s.
+
+### 2026-05-16 - Data Sovereignty Recheck
+Problem: `ToolDurabilitySystem`, a cutter-adjacent tool runtime, still owned five persistent native containers and a native breakdown queue. That violated the current H-Phi/DataVault inquisition even though the laser/WFC runtime itself had already been evicted.
+Solution: Add DataVault buffer IDs `ToolDurabilityItemStates`, `ToolDurabilityPendingDecay`, `ToolDurabilityWearMultipliers`, `ToolDurabilitySlotActive`, and `ToolDurabilityBreakdownFlags`. Replace persistent `NativeArray`/`NativeQueue` fields with `VaultBufferHandle<T>` fields, resolve bounded stack aliases only at use sites, and make the Burst decay job write byte breakdown flags instead of enqueueing native events.
+Rejected Alternatives: Keeping scene-owned persistent arrays under `NativeMemorySentinel`, retaining a private `NativeQueue<BreakdownEvent>`, or moving breakdowns to managed delegates. Those options keep state ownership in the system and add contract ambiguity for Quest/Android memory layout.
+Scalability potential: Low/MX350 keeps one 32-slot SOA job and one byte flag scan. Middle/High/Ultra can scale authored wear rules without changing ownership or adding allocation churn. No hot-path disk I/O was added.
+Hardware Impact: Removed five scene-owned persistent native allocations plus queue prewarm from the tool durability surface. Microsecond gain is unmeasured; expected frame delta is neutral-to-positive, with the concrete benefit being no local native lifetime to leak and no private queue pressure.
+
+Problem: Rebuild after the durability eviction initially reported four missing sanitizer methods in `GlobalSignals.cs`; a file re-read showed the methods present and a second no-shared-compiler build succeeded.
+Solution: Treat the first build as a transient concurrent-edit/incremental observation and verify with a fresh `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false`.
+Rejected Alternatives: Editing the signal guard block without a live compiler error, or marking the tool work blocked after the methods were objectively present.
+Scalability potential: No runtime effect.
+Hardware Impact: Build evidence only. Latest result: 0 errors, 0 warnings in 2.82 s.
+
+### 2026-05-16 - Signal Lane Purge
+Problem: `LaserCutterEvents` still owned two private `NativeQueue<LaserCutterEventPayload>` lanes and a next-frame queue. That violated the typed-lane mandate and left cutter heat/beam events outside the project-wide `SignalBus` telemetry surface.
+Solution: Make `LaserCutterEventPayload` a packed `ISignal` (`Pack=1, Size=16`) and configure `SignalBus<LaserCutterEventPayload>` with a fixed 16-payload lane hash. `LaserCutterEvents.FlushPending` now reads a `ReadOnlySpan<LaserCutterEventPayload>` snapshot and only keeps the existing listener bridge for audio/world compatibility.
+Rejected Alternatives: Keeping the native queues under `NativeMemorySentinel`, replacing them with managed arrays, or forcing audio/world consumers to migrate in the laser task. The first keeps private state; the second is not a typed lane; the third crosses domain ownership and risks breaking consumers outside GAMEPLAY/TOOLS.
+Scalability potential: Low/MX350 gets a 16-payload hard cap. Middle/High/Ultra can receive the same cutter event truth through the global typed lane without adding local queues.
+Hardware Impact: Removed two cutter-owned persistent native queues and their prewarm work. Runtime delivery now depends on the global SignalBus flush; microsecond gain is unmeasured, but local native queue lifetime and reentrant queue pressure are gone.
+
+Problem: Signal-lane purge needed compile proof and static evidence.
+Solution: Re-run `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false`, then scan the TOOL_RESAK surface for `NativeQueue`, `new NativeArray`, standard Unity `Update`, `string.Format`, `Mesh.vertices`, CSG, and shader portability hazards.
+Rejected Alternatives: Reporting the refactor without a build, or ignoring the remaining `LaserCutterEvents` queue because the WFC runtime was already clean.
+Scalability potential: No additional runtime behavior beyond typed-lane delivery.
+Hardware Impact: Build evidence only. Latest result: 0 errors, 0 warnings in 58.69 s.

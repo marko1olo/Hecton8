@@ -41,3 +41,29 @@ Solution: Restrict edits to assembly definitions, contracts, source guards, dupl
 Rejected Alternatives: Adding gameplay code, widening concrete cross-domain references, or changing public APIs without a legacy wrapper.
 Scalability potential: Low tier benefits from strict compile-layer isolation and no accidental managed hot-path debt; High/Ultra preserve visual-system freedom behind explicit assembly boundaries.
 Hardware Impact: Runtime gain is 0 us measured. Expected benefit is lower build/iteration debt, not profiler-proven frame savings.
+
+## 2026-05-16 Compile Wall Closure - Loop37 Green
+
+Problem: The active compile wall was polluted by stale dumps and parallel `dotnet/csc` processes. `Dump_COMPILE_ERROR.txt` showed 81 `SargassumMicroFaunaBoids`/`RepairTool` errors that no longer matched the source on disk, while concurrent agents kept spawning normal builds against shared `Temp/obj`.
+Solution: Ran an isolated Core build with separate `Temp/obj_integrator` and `Temp/bin_integrator` paths, then verified the standard Core build evidence on disk. Current evidence: `Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_110605_Loop37.log` reports `Build succeeded. 0 Warning(s). 0 Error(s).`; `Dump_INTEGRATION_ASSEMBLY_SURGEON_isolated_build.binlog` also captured a green isolated compile.
+Rejected Alternatives: Killing other agents' compiler processes, editing against stale CS0103 lines, or claiming green from generated output without a fresh build.
+Scalability potential: Low tier gets stable compile gates for Android/Quest source guards; Middle/High/Ultra retain feature code behind explicit contracts instead of emergency stubs.
+Hardware Impact: Runtime gain is 0 us measured. Compile verification cost: standard build 89,860,000 us; isolated confirmation 72,330,000 us.
+
+Problem: Quest/Android portability still had unguarded Windows-only memory mapping and ABI-risky contract structs.
+Solution: Guarded runtime `System.IO.MemoryMappedFiles` code in `InputDispatcher` and `H8MacroDatabaseService` behind `UNITY_EDITOR || UNITY_STANDALONE`; set `Pack = 1` on `BrineLayerSample` and `AcousticAup`.
+Rejected Alternatives: Leaving MMF namespaces visible to mobile compilation, adding platform-specific assembly forks, or relying on default struct packing for ARM64.
+Scalability potential: Low/Quest tiers avoid compile/runtime platform traps; High/Ultra keep memory-mapped fast paths on editor/standalone.
+Hardware Impact: Runtime gain is 0 us measured. Low-tier value is crash-risk reduction, not profiler-proven frame savings.
+
+Problem: IL2CPP stripping risk remained in `link.xml` because the preserved signal namespace was stale.
+Solution: Updated linker preservation to real `Hecton8.Core.Contracts.Signals` types: `SignalBus<T>`, registry, `ISignal`, `IInitializable`, and snapshot transformer.
+Rejected Alternatives: Preserving obsolete `Hecton8.Core.Signals` entries only, or broad assembly preserve.
+Scalability potential: ARM64/IL2CPP keeps typed signal lanes alive without preserving whole assemblies; High/Ultra avoid managed fallback paths caused by stripped generic buses.
+Hardware Impact: Runtime gain is 0 us measured. Build/player survival risk reduced.
+
+Problem: A concurrent DataVault migration left `ToolDurabilitySystem` with missing local NativeArray symbols and a queue-to-vault transition half-applied.
+Solution: Resolved vault handles through `GlobalRegistry.DataVault`, cached `NativeArray` aliases without owning disposal, and changed breakdown event flushing to a vault-backed flag buffer.
+Rejected Alternatives: Reverting the migration to private persistent NativeArrays, keeping a local `NativeQueue` for breakdown events, or adding gameplay behavior.
+Scalability potential: Low tier centralizes memory ownership for deterministic budget tracking; High/Ultra can scale tool telemetry without per-system allocation sprawl.
+Hardware Impact: Runtime gain is 0 us measured. Expected benefit is reduced leak risk and better vault observability.

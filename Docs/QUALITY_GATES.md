@@ -38,6 +38,21 @@ Known historical blocker:
 
 - `Hecton8.Editor.csproj` previously failed before C# with `NETSDK1004` because `Temp/obj/Hecton8.Editor/project.assets.json` was missing. That is not a C# diagnostic.
 
+2026-05-16 DataVault sovereignty gate:
+
+| Gate | Command | Blocks Merge |
+|---|---|---|
+| no new direct NativeArray constructor debt | `python Tools\DataVaultSovereigntyAudit.py --fail-on-regression` | Yes |
+| final zero-debt authority | `python Tools\DataVaultSovereigntyAudit.py --fail-on-any` | Yes when migration is declared complete |
+| baseline refresh | `python Tools\DataVaultSovereigntyAudit.py --write-baseline` | Manual CTO/integrator action only |
+
+Rules:
+
+- `H8Memory.cs` is the only allowed first-party file with direct `new NativeArray<T>` constructors.
+- Every other first-party direct constructor is legacy debt until migrated to `GlobalDataVault` or `H8Memory.Allocate`.
+- The no-regression gate allows debt to decrease but blocks any file whose forbidden constructor count increases against `Docs/AgentLogs/DataVaultSovereigntyBaseline_VAULT_SOVEREIGNTY_ENFORCER.json`.
+- The zero-debt gate is expected to fail until the remaining cross-domain migrations are complete.
+
 ---
 
 ## WHEN TO USE THIS DOCUMENT

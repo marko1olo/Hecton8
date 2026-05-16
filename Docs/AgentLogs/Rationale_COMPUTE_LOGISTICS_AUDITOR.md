@@ -35,3 +35,9 @@ Rejected Alternatives: Pretending the full 03:56 JSONL snapshot remained current
 Scalability potential: Cheap devices use SQLite tail checks; expensive offline audits can later rerun JSONL.
 Hardware Impact: 30-second wait plus two SQLite reads; no Unity runtime impact.
 
+Problem: `logs_2.sqlite` is 3.57GB plus WAL and full grouping timed out.
+Solution: Record DB metadata and a latest-5,000-row sample instead of pretending to have complete grouped evidence.
+Rejected Alternatives: Running unindexed global grouping until it blocks the agent; treating log rows as token/billing rows.
+Scalability potential: Future offline job can export/index logs by thread and target.
+Hardware Impact: Metadata query was acceptable; full grouping is too expensive for interactive loop.
+

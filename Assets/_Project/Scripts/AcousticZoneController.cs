@@ -64,7 +64,7 @@ namespace Hecton8.Audio
     /// <summary>
     /// Deferred acoustic-zone transition payload.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 1)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 1)]
     public readonly struct AcousticZoneChangedEvent
     {
         /// <summary>Builds a new acoustic-zone transition payload.</summary>
@@ -584,7 +584,7 @@ namespace Hecton8.Audio
             Interior = 2
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct AcousticGraphState
         {
             public float LowPassCutoffHz;

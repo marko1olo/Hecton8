@@ -575,7 +575,7 @@ namespace Hecton8.Tools
     /// <summary>
     /// Internal budget tracking for a system.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct SystemBudget
     {
         public string SystemName;
@@ -593,7 +593,7 @@ namespace Hecton8.Tools
     /// Public budget status information.
     /// </summary>
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct SystemBudgetInfo
     {
         public float BudgetMs;

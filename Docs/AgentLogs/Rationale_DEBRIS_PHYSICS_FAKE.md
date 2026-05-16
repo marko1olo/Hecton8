@@ -119,3 +119,51 @@ Rejected Alternatives: Dropping all producer signals during stress was rejected 
 Scalability potential: Low = pressure recycles shards aggressively. Middle = stable buffer uploads. High/Ultra = high density remains bounded by capacity and lifetime pressure.
 
 Hardware Impact: Static estimate: stress mode reduces active particle residence by 4x. SetData avoidance prevents intermittent sync spikes; exact microseconds require GPU/main-thread profiling after external compile blockers are cleared.
+
+## Decision 11 - Omega Compute Branch Audit
+
+Problem: After the core checklist was complete/blocked, the Omega mandate required a second debris-kernel audit. The carve debris path still needed proof that branch removal would not create a worse MX350 path, and mid-tier dispatch had to avoid spending high-tier work only to discard threads by capacity guard.
+
+Solution: Kept correctness branches only where they prevent out-of-range writes, avoid unnecessary atomics, or preserve the low-tier SDF skip. Confirmed `ClampCarveDebrisVelocity` uses `rcp(max(dt, 0.0001))`, `rsqrt(max(speedSq, 0.000001))`, and `step`/`lerp` instead of a speed branch. Confirmed carve invalid-state handling collapses non-finite particles with masks before GPU writes. Confirmed cull distance gating uses `step`/`lerp` and visible increment masking. Confirmed dispatch groups are resolved from the active tier capacity, so middle tier no longer burns high-tier thread count.
+
+Rejected Alternatives: Fully branchless SDF collision was rejected because it would call the SDF helper on the low-tier path and violate the XML low-tier skip. InterlockedAdd with zero for invisible particles was rejected because it replaces a cheap visibility branch with atomic pressure. Rewriting shared silt/bubble/fluid helper branches was rejected because those kernels are outside the debris prompt and would risk cross-domain regressions.
+
+Scalability potential: Low = SDF skip and 1024-thread dispatch remain intact. Middle = 4096-capacity dispatch avoids the old high-tier 16,384-thread sweep. High = 16,384 particles keep full SDF/flow and motion-vector render path. Ultra = same SoA buffers can feed heavier material shading without producer churn.
+
+Hardware Impact: Measured proof absent because Unity/runtime profiling is blocked by external compile errors. Static estimate: middle tier avoids dispatching 12,288 extra threads per debris advection/cull pass compared with a 16,384-thread sweep. Low-tier preserves the SDF skip instead of paying helper-branch cost.
+
+## Decision 12 - Low-Tier Wake Bypass And Vault Handle Boundary
+
+Problem: The carve debris compute path set low-tier flow to zero, but still called `ApplyDynamicWakes(previousPosition, flow)`. On MX350/Quest this could execute the dynamic wake loop even when the debris tier was supposed to skip flow-heavy work. The H-Phi audit also found private `NativeArray<T>` storage fields in the renderer, which made the system look stateful even though the buffers were DataVault-owned.
+
+Solution: Changed `AdvectCarveDebris` so low tier bypasses both `SampleAbyssalFlow` and `ApplyDynamicWakes`; non-low tiers still get flow and wake response. Replaced persistent debris `NativeArray<T>` fields with `VaultBufferHandle<T>` fields, then resolved method-local `NativeArray<T>` views only inside the active tick. This satisfies data-sovereignty visibility without introducing local native allocations.
+
+Rejected Alternatives: A branchless wake mask was rejected because HLSL would still evaluate `ApplyDynamicWakes` and pay the loop. Keeping private `NativeArray<T>` fields was rejected after the renewed H-Phi audit because it fails the grep-level ownership rule. Editing `GlobalDataVault` to add a no-sanitize hot resolve was rejected as cross-domain core memory work outside this prompt.
+
+Scalability potential: Low = no flow texture sample and no dynamic wake loop in carve debris advection. Middle = wakes remain available for 4096 shards. High/Ultra = wakes, SDF collision, shader tumble, and motion vectors remain active for 16,384 shards.
+
+Hardware Impact: Measured proof absent for runtime frame cost. Static low-tier work avoided: one dynamic-wake helper call per live carve debris thread, up to the 1024 low-tier capacity, including up to `HECTON_DYNAMIC_WAKE_CAPACITY` wake-slot checks inside that helper when wakes are active. Handle resolution has potential full-payload sanitize cost; compile is clean, profiler capture is still required before claiming microsecond savings for that refactor.
+
+## Decision 13 - Final Validation Gate
+
+Problem: The status file still carried stale external compile-block state after the debris handle migration and low-tier compute pass.
+
+Solution: Ran `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary`. The build succeeded with 0 warnings and 0 errors at that moment. This was later superseded by a fresh external compile wall recorded in Decision 14.
+
+Rejected Alternatives: Leaving `[BLOCKED BY DEPENDENCY]` in status was rejected because the latest compiler evidence supersedes the earlier drift. Reporting runtime microseconds was rejected because only compilation and static source validation were performed, not Unity profiler capture.
+
+Scalability potential: Low remains 1024 shards with wake/SDF bypass. Middle remains 4096 shards with active-capacity dispatch. High/Ultra remain 16,384 shards with wake, SDF, shader tumble, motion vectors, and indirect rendering.
+
+Hardware Impact: 0 us directly saved by the compile gate. It proved the debris source was buildable before later external domain drift re-broke the project.
+
+## Decision 14 - External Tools Compile Wall
+
+Problem: A later `dotnet build` no longer fails in debris. It now fails in external Bootstrap/Tools ownership: `GameBootstrapper.Initialize` call arity mismatch and `ToolDurabilitySystem` references to missing private data-vault fields plus missing `DurabilityDecayJob.BreakdownWriter`.
+
+Solution: Stop at the dependency boundary and mark task 18 `[BLOCKED BY DEPENDENCY]` with the latest compiler evidence. The only small syntax blocker seen before this pass, `InputDispatcher.cs` preprocessor placement, is no longer the reported compiler failure.
+
+Rejected Alternatives: Repairing the full durability system from the debris prompt was rejected because it would be cross-domain implementation, not a debris interface fix. Reporting the previous clean build as current truth was rejected because the latest compiler run is authoritative.
+
+Scalability potential: Debris scalability is unchanged: low stays 1024 no-wake/no-SDF, middle stays 4096 active dispatch, high/ultra stay 16,384 with wake/SDF/tumble/motion vectors.
+
+Hardware Impact: 0 us direct debris runtime impact. External compile drift blocks runtime profiling, so no new measured microsecond claims are made.

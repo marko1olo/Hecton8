@@ -575,7 +575,7 @@ namespace Hecton8.Audio.Editor
             {
                 string acousticPlayMadness = ExtractMethodBody(acousticZone, "internal void PlayMadnessWhisperCue()");
                 string acousticEmitterOcclusion = ExtractMethodBody(acousticZone, "private void UpdateEmitterOcclusionState(AudioListener listener)");
-                AssertContains(acousticZone, "[StructLayout(LayoutKind.Sequential, Size = 1)]", "Acoustic-zone NativeQueue payload is a one-byte blittable event token", builder, ref failureCount);
+                AssertContains(acousticZone, "[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 1)]", "Acoustic-zone NativeQueue payload is a one-byte blittable event token with explicit ARM64 layout", builder, ref failureCount);
                 AssertContains(acousticZone, "private readonly byte _isInterior", "Acoustic-zone payload avoids bool field layout ambiguity in native queues", builder, ref failureCount);
                 AssertContains(acousticZone, "NativeMemorySentinel.RegisterNativeQueue", "Acoustic-zone event lanes are registered with NativeMemorySentinel", builder, ref failureCount);
                 AssertContains(acousticZone, "PrewarmQueue(ref _pendingZoneChanges, PendingZoneChangeCapacity)", "Acoustic-zone front queue is cold-prewarmed before gameplay enqueue", builder, ref failureCount);

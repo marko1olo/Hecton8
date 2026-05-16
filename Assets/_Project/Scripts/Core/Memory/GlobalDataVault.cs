@@ -66,6 +66,9 @@ namespace Hecton8.Core.Memory
         /// <summary>Global vault generation for black-box telemetry and stale-handle audits.</summary>
         uint VaultGenerationID { get; }
 
+        /// <summary>Records one no-allocation heartbeat into the fixed 300-frame vault telemetry ring.</summary>
+        void RecordHeartbeat();
+
         /// <summary>Relocation records emitted by future offline relocation; telemetry-only defrag emits none.</summary>
         int LastRelocationRecordCount { get; }
 
@@ -122,7 +125,7 @@ namespace Hecton8.Core.Memory
     /// Generation-checked vault buffer handle. Resolve before dereferencing across frames.
     /// </summary>
     /// <typeparam name="T">Blittable element type.</typeparam>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 24)]
     public unsafe struct VaultBufferHandle<T> where T : struct
     {
         /// <summary>Cached raw pointer. Invalid after a generation mismatch; resolver fails fast.</summary>
@@ -227,6 +230,7 @@ namespace Hecton8.Core.Memory
         public long TotalMovedBytes;
         public long PendingMassiveMoveBytes;
         public uint Sequence;
+        public uint Frame;
         public uint VaultGenerationID;
         public int BlockCount;
         public int ActiveBufferCount;
@@ -311,19 +315,22 @@ namespace Hecton8.Core.Memory
         private const byte BlockFlagExternalView = 1 << 0;
         private const byte BlockFlagLocked = 1 << 1;
         private const byte DefragFlagFragmented = 1 << 0;
+        private const byte DefragFlagHeartbeat = 1 << 1;
         private const byte DefragFlagStressHalt = 1 << 2;
         private const byte DefragFlagMassiveMovePending = 1 << 3;
         private const byte DefragFlagFault = 1 << 4;
         private const byte DefragFlagRelocated = 1 << 5;
         private const byte DefragFlagUnaligned = 1 << 6;
         private const int DefragBlackBoxFrameCount = 300;
+        private const int VaultBufferHandleSizeBytes = 24;
         private const int VaultRelocationRecordSizeBytes = 32;
         private const int VaultBufferMetaSizeBytes = 48;
         private const int VaultArenaBlockSizeBytes = 32;
         private const int MemoryDefragTelemetryEntrySizeBytes = 128;
         private const int VaultGapAuditResultSizeBytes = 32;
-        private const string DefragDumpPath = "Docs/AgentLogs/Dump_PLATINUM_DATA_VAULT_WARDEN.bin";
-        private const string PhiVodDumpPath = "Docs/AgentLogs/Dump_PLATINUM_DATA_VAULT_WARDEN_PHIVOD.bin";
+        private const ulong DefragDumpMagic = 0x3147445648384848UL; // HH8HVDG1
+        private const string DefragDumpPath = "Docs/AgentLogs/Dump_VAULT_SOVEREIGNTY_ENFORCER.bin";
+        private const string PhiVodDumpPath = "Docs/AgentLogs/Dump_VAULT_SOVEREIGNTY_ENFORCER_PHIVOD.bin";
 
         private UnsafeHashMap<int, IntPtr> _buffers;
         private UnsafeHashMap<int, VaultBufferMeta> _metadata;
@@ -347,6 +354,7 @@ namespace Hecton8.Core.Memory
         private int _macroDatabasePayloadEvictions;
         private uint _macroDatabaseCacheAccessClock;
         private int _defragBlackBoxCursor;
+        private int _defragBlackBoxRecordedCount;
         private int _lastRelocationRecordCount;
         private int _compactionWatchdogBreachCount;
         private long _totalDefragMovedBytes;
@@ -481,6 +489,7 @@ namespace Hecton8.Core.Memory
             _macroDatabasePayloadEvictions = 0;
             _macroDatabaseCacheAccessClock = 0u;
             _defragBlackBoxCursor = 0;
+            _defragBlackBoxRecordedCount = 0;
             _lastRelocationRecordCount = 0;
             _compactionWatchdogBreachCount = 0;
             _totalDefragMovedBytes = 0L;
@@ -518,7 +527,8 @@ namespace Hecton8.Core.Memory
 
         private static void ValidateAbiLayout()
         {
-            if (UnsafeUtility.SizeOf<VaultRelocationRecord>() != VaultRelocationRecordSizeBytes ||
+            if (UnsafeUtility.SizeOf<VaultBufferHandle<byte>>() != VaultBufferHandleSizeBytes ||
+                UnsafeUtility.SizeOf<VaultRelocationRecord>() != VaultRelocationRecordSizeBytes ||
                 UnsafeUtility.SizeOf<VaultBufferMeta>() != VaultBufferMetaSizeBytes ||
                 UnsafeUtility.SizeOf<VaultArenaBlock>() != VaultArenaBlockSizeBytes ||
                 UnsafeUtility.SizeOf<MemoryDefragTelemetryEntry>() != MemoryDefragTelemetryEntrySizeBytes ||
@@ -1017,6 +1027,15 @@ namespace Hecton8.Core.Memory
         }
 
         /// <inheritdoc />
+        public void RecordHeartbeat()
+        {
+            if (!_initialized || !_defragBlackBox.IsCreated)
+                return;
+
+            RecordDefragBlackBox(++_defragTickSequence, DefragFlagHeartbeat);
+        }
+
+        /// <inheritdoc />
         public void FrostTickDefrag(float elapsedSeconds)
         {
             FrostTickDefrag(elapsedSeconds, 0f);
@@ -1264,6 +1283,7 @@ namespace Hecton8.Core.Memory
                     VaultArenaBlock block = _blocks[i];
                     block.State = BlockStateFree;
                     block.Reserved0 = 0;
+                    block.Reserved1 = 0;
                     UpdateH8Descriptor(in block);
                 }
             }
@@ -1300,6 +1320,7 @@ namespace Hecton8.Core.Memory
             _allocationLock = 0;
             _compactionFence = 0;
             _defragBlackBoxCursor = 0;
+            _defragBlackBoxRecordedCount = 0;
             _lastRelocationRecordCount = 0;
             _compactionWatchdogBreachCount = 0;
             _totalDefragMovedBytes = 0L;
@@ -1408,7 +1429,7 @@ namespace Hecton8.Core.Memory
                 _buffers.Remove(key);
                 _metadata.Remove(key);
                 RemoveBufferKey(key);
-                FreeBlock(blockIndex);
+                FreeBlock(blockIndex, clearPayload: true);
                 releasedCount++;
             }
 
@@ -1678,7 +1699,7 @@ namespace Hecton8.Core.Memory
             return true;
         }
 
-        private void RecordDefragBlackBox(uint sequence)
+        private void RecordDefragBlackBox(uint sequence, byte extraFlags = 0)
         {
             if (!_defragBlackBox.IsCreated || _defragBlackBox.Length == 0)
                 return;
@@ -1689,6 +1710,7 @@ namespace Hecton8.Core.Memory
 
             MemoryDefragTelemetryEntry entry = default;
             entry.Sequence = sequence;
+            entry.Frame = unchecked((uint)UnityEngine.Time.frameCount);
             entry.VaultGenerationID = _vaultGenerationId;
             entry.BlockCount = _blocks.IsCreated ? _blocks.Length : 0;
             entry.ActiveBufferCount = _keys.IsCreated ? _keys.Length : 0;
@@ -1699,7 +1721,7 @@ namespace Hecton8.Core.Memory
             entry.PendingMassiveMoveBytes = PendingMassiveMoveBytes;
             entry.HeapFragmentationRatio = HeapFragmentationRatio;
             entry.WatchdogBreaches = _compactionWatchdogBreachCount;
-            entry.Flags = LastDefragFlags;
+            entry.Flags = (byte)(LastDefragFlags | extraFlags);
             entry.IsFragmented = IsFragmented ? (byte)1 : (byte)0;
             entry.WatchdogExceeded = LastDefragWatchdogExceeded ? (byte)1 : (byte)0;
             _defragBlackBox[cursor] = entry;
@@ -1708,6 +1730,8 @@ namespace Hecton8.Core.Memory
             if (cursor >= _defragBlackBox.Length)
                 cursor = 0;
             _defragBlackBoxCursor = cursor;
+            if (_defragBlackBoxRecordedCount < _defragBlackBox.Length)
+                _defragBlackBoxRecordedCount++;
         }
 
         private void DumpDefragBlackBox()
@@ -1721,12 +1745,7 @@ namespace Hecton8.Core.Memory
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
 
-                using (FileStream stream = new FileStream(DefragDumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                {
-                    int bytes = _defragBlackBox.Length * UnsafeUtility.SizeOf<MemoryDefragTelemetryEntry>();
-                    void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_defragBlackBox);
-                    stream.Write(new ReadOnlySpan<byte>(source, bytes));
-                }
+                WriteDefragBlackBoxFile(DefragDumpPath);
 
                 _defragDumpWritten = true;
             }
@@ -1746,17 +1765,45 @@ namespace Hecton8.Core.Memory
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
 
-                using (FileStream stream = new FileStream(PhiVodDumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                {
-                    int bytes = _defragBlackBox.Length * UnsafeUtility.SizeOf<MemoryDefragTelemetryEntry>();
-                    void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_defragBlackBox);
-                    stream.Write(new ReadOnlySpan<byte>(source, bytes));
-                }
+                WriteDefragBlackBoxFile(PhiVodDumpPath);
 
                 _phiVodDumpWritten = true;
             }
             catch
             {
+            }
+        }
+
+        private void WriteDefragBlackBoxFile(string path)
+        {
+            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+            using (BinaryWriter writer = new BinaryWriter(stream))
+            {
+                int entrySize = UnsafeUtility.SizeOf<MemoryDefragTelemetryEntry>();
+                int recordedCount = _defragBlackBoxRecordedCount;
+                if (recordedCount < 0)
+                    recordedCount = 0;
+                if (recordedCount > _defragBlackBox.Length)
+                    recordedCount = _defragBlackBox.Length;
+
+                writer.Write(DefragDumpMagic);
+                writer.Write(recordedCount);
+                writer.Write(entrySize);
+                writer.Flush();
+
+                if (recordedCount == 0)
+                    return;
+
+                int start = recordedCount < _defragBlackBox.Length ? 0 : _defragBlackBoxCursor;
+                void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_defragBlackBox);
+                for (int i = 0; i < recordedCount; i++)
+                {
+                    int index = start + i;
+                    if (index >= _defragBlackBox.Length)
+                        index -= _defragBlackBox.Length;
+
+                    stream.Write(new ReadOnlySpan<byte>((byte*)source + (index * entrySize), entrySize));
+                }
             }
         }
 
@@ -1939,6 +1986,8 @@ namespace Hecton8.Core.Memory
             if (last.State == BlockStateFree)
             {
                 last.Bytes += growBytes;
+                last.Reserved0 = 0;
+                last.Reserved1 = 0;
                 last.Version = NextGeneration(last.Version);
                 _blocks[lastIndex] = last;
                 UpdateH8Descriptor(in last);
@@ -1954,7 +2003,9 @@ namespace Hecton8.Core.Memory
                 Bytes = growBytes,
                 BufferKey = 0,
                 Version = 1u,
-                State = BlockStateFree
+                State = BlockStateFree,
+                Reserved0 = 0,
+                Reserved1 = 0
             };
             int descriptorIndex = H8Memory.RegisterBlockDescriptor(BuildDescriptor(in freeTail));
             if (descriptorIndex < 0)
@@ -2078,6 +2129,8 @@ namespace Hecton8.Core.Memory
 
                 rightBlock.OffsetBytes += extraBytes;
                 rightBlock.Bytes -= extraBytes;
+                rightBlock.Reserved0 = 0;
+                rightBlock.Reserved1 = 0;
                 rightBlock.Version = NextGeneration(rightBlock.Version);
                 if (rightBlock.Bytes == 0L)
                 {
@@ -2158,6 +2211,7 @@ namespace Hecton8.Core.Memory
                     block.BufferKey = key;
                     block.State = BlockStateOccupied;
                     block.Reserved0 = 0;
+                    block.Reserved1 = 0;
                     block.Version = NextGeneration(block.Version);
                     _blocks[i] = block;
                     UpdateH8Descriptor(in block);
@@ -2176,6 +2230,7 @@ namespace Hecton8.Core.Memory
                 occupiedBlock.BufferKey = key;
                 occupiedBlock.State = BlockStateOccupied;
                 occupiedBlock.Reserved0 = 0;
+                occupiedBlock.Reserved1 = 0;
                 occupiedBlock.Version = NextGeneration(occupiedBlock.Version);
 
                 VaultArenaBlock freeRemainder = block;
@@ -2184,6 +2239,7 @@ namespace Hecton8.Core.Memory
                 freeRemainder.BufferKey = 0;
                 freeRemainder.State = BlockStateFree;
                 freeRemainder.Reserved0 = 0;
+                freeRemainder.Reserved1 = 0;
                 freeRemainder.Version = NextGeneration(freeRemainder.Version);
                 int remainderH8BlockIndex = H8Memory.RegisterBlockDescriptor(BuildDescriptor(in freeRemainder));
                 if (remainderH8BlockIndex < 0)
@@ -2205,7 +2261,7 @@ namespace Hecton8.Core.Memory
             return false;
         }
 
-        private void FreeBlock(int blockIndex)
+        private void FreeBlock(int blockIndex, bool clearPayload = false)
         {
             if ((uint)blockIndex >= (uint)_blocks.Length)
                 return;
@@ -2214,9 +2270,13 @@ namespace Hecton8.Core.Memory
             if (block.State != BlockStateOccupied)
                 return;
 
+            if (clearPayload && _arenaBase != null && block.Bytes > 0L && block.OffsetBytes <= _arenaBytes - block.Bytes)
+                UnsafeUtility.MemClear((byte*)_arenaBase + block.OffsetBytes, block.Bytes);
+
             block.BufferKey = 0;
             block.State = BlockStateFree;
             block.Reserved0 = 0;
+            block.Reserved1 = 0;
             block.Version = NextGeneration(block.Version);
             _blocks[blockIndex] = block;
             UpdateH8Descriptor(in block);
@@ -2251,6 +2311,7 @@ namespace Hecton8.Core.Memory
             VaultArenaBlock right = _blocks[rightIndex];
             left.Bytes += right.Bytes;
             left.Reserved0 = 0;
+            left.Reserved1 = 0;
             left.Version = NextGeneration(left.Version);
             _blocks[leftIndex] = left;
             UpdateH8Descriptor(in left);
@@ -2259,6 +2320,7 @@ namespace Hecton8.Core.Memory
             right.Bytes = 0L;
             right.State = BlockStateFree;
             right.Reserved0 = 0;
+            right.Reserved1 = 0;
             UpdateH8Descriptor(in right);
             RemoveBlockAt(rightIndex);
             RebuildMetadataBlockIndices();

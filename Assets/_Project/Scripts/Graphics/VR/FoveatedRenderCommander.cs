@@ -9,7 +9,6 @@ using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Rendering;
 using UnityEngine.XR;
 
 namespace Hecton8.Graphics.VR
@@ -17,7 +16,7 @@ namespace Hecton8.Graphics.VR
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9946)]
     [AddComponentMenu("Hecton8/Graphics/VR/Foveated Render Commander")]
-    internal sealed unsafe class FoveatedRenderCommander : MonoBehaviour, IUpdatable, IGlobalRegistryHotSwapListener, IDisposable
+    internal sealed unsafe class FoveatedRenderCommander : MonoBehaviour, IUpdatable, IRenderable, IGlobalRegistryHotSwapListener, IDisposable
     {
         private const int TelemetryCapacity = 300;
         private const int TelemetryRecordSizeBytes = 64;
@@ -49,7 +48,7 @@ namespace Hecton8.Graphics.VR
         private const string RuntimeObjectName = "[FoveatedRenderCommander]";
         private const string DumpFileName = "Dump_FOVEATED_RENDER_COMMANDER.bin";
 
-        // COLD ALLOC: List<XRDisplaySubsystem>[8] — XR display enumeration scratch reused on policy commits — owner: FoveatedRenderCommander
+        // COLD ALLOC: List<XRDisplaySubsystem>[8] - XR display enumeration scratch reused on policy commits - owner: FoveatedRenderCommander
         private static readonly List<XRDisplaySubsystem> s_displays = new List<XRDisplaySubsystem>(8);
         private static FoveatedRenderCommander s_activeCommander;
         private static bool s_questRuntimeClassified;
@@ -108,9 +107,9 @@ namespace Hecton8.Graphics.VR
         private ushort _lastFlags;
         private bool _registeredTick;
         private bool _registeredHotSwap;
-        private bool _registeredRenderCallbacks;
+        private bool _registeredRenderable;
         private bool _blackBoxDumped;
-        private int _uiSuppressionDepth;
+        private bool _uiSuppressionActive;
         private bool _displayLevelNonFinite;
         private bool _disposed;
 
@@ -161,9 +160,9 @@ namespace Hecton8.Graphics.VR
             if (!Application.isPlaying || s_activeCommander != null)
                 return;
 
-            GameObject host = new GameObject(RuntimeObjectName); // COLD ALLOC: GameObject[1] — runtime foveated rendering commander host — owner: FoveatedRenderCommander
+            GameObject host = new GameObject(RuntimeObjectName); // COLD ALLOC: GameObject[1] - runtime foveated rendering commander host - owner: FoveatedRenderCommander
             DontDestroyOnLoad(host);
-            host.AddComponent<FoveatedRenderCommander>(); // COLD ALLOC: FoveatedRenderCommander[1] — runtime foveated rendering policy owner — owner: FoveatedRenderCommander
+            host.AddComponent<FoveatedRenderCommander>(); // COLD ALLOC: FoveatedRenderCommander[1] - runtime foveated rendering policy owner - owner: FoveatedRenderCommander
         }
 
         private void Awake()
@@ -190,7 +189,7 @@ namespace Hecton8.Graphics.VR
             _hardwareThermal = GlobalRegistry.HardwareThermal;
             TryRegisterTick();
             TryRegisterHotSwap();
-            TryRegisterRenderCallbacks();
+            TryRegisterRenderable();
             ApplyPolicy(force: true);
         }
 
@@ -201,13 +200,13 @@ namespace Hecton8.Graphics.VR
 
             TryRegisterTick();
             TryRegisterHotSwap();
-            TryRegisterRenderCallbacks();
+            TryRegisterRenderable();
             ApplyPolicy(force: true);
         }
 
         private void OnDisable()
         {
-            TryUnregisterRenderCallbacks();
+            TryUnregisterRenderable();
             TryUnregisterHotSwap();
             TryUnregisterTick();
             ClearHardwareFoveation();
@@ -227,7 +226,7 @@ namespace Hecton8.Graphics.VR
                 return;
 
             _disposed = true;
-            TryUnregisterRenderCallbacks();
+            TryUnregisterRenderable();
             TryUnregisterHotSwap();
             TryUnregisterTick();
             ClearHardwareFoveation();
@@ -251,6 +250,44 @@ namespace Hecton8.Graphics.VR
             WriteTelemetry(_lastFlags);
         }
 
+        public void Render(float deltaTime)
+        {
+            if (!ReferenceEquals(s_activeCommander, this) || !failClosedForUiCameras)
+                return;
+
+            Camera renderCamera = GlobalRenderContext.CurrentCamera;
+            if (renderCamera == null)
+                return;
+
+            bool uiCamera = _targetLevel01 > ApplyEpsilon && (renderCamera.cullingMask & uiLayerMask.value) != 0;
+            if (uiCamera)
+            {
+                _uiSuppressionActive = true;
+                _lastFlags |= FlagUiSuppressed;
+                if (_appliedMode != FoveatedRenderMode.UiExempted ||
+                    _appliedLevel01 > ApplyEpsilon ||
+                    _appliedFlags != XRDisplaySubsystem.FoveatedRenderingFlags.None)
+                {
+                    ApplyDisplayState(
+                        0f,
+                        XRDisplaySubsystem.FoveatedRenderingFlags.None,
+                        FoveatedRenderMode.UiExempted,
+                        true,
+                        out _,
+                        out _);
+                }
+
+                return;
+            }
+
+            if (!_uiSuppressionActive)
+                return;
+
+            _uiSuppressionActive = false;
+            _lastFlags = (ushort)(_lastFlags & ~FlagUiSuppressed);
+            ApplyDisplayState(_targetLevel01, _targetFlags, _targetMode, true, out _, out _);
+        }
+
         public void OnGlobalRegistryServiceReplaced(
             GlobalRegistryServiceSlot serviceSlot,
             object previousService,
@@ -265,9 +302,24 @@ namespace Hecton8.Graphics.VR
                 return;
             }
 
+            if (serviceSlot == GlobalRegistryServiceSlot.Scene)
+            {
+                if (currentService != null)
+                {
+                    TryRegisterTick();
+                    TryRegisterRenderable();
+                    EnsureTelemetry();
+                    ApplyPolicy(force: true);
+                }
+
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.HardwareThermalService)
             {
                 _hardwareThermal = currentService as IHardwareThermalService;
+                if (_hardwareThermal == null)
+                    _thermalSeverity = 0;
                 return;
             }
 
@@ -277,6 +329,13 @@ namespace Hecton8.Graphics.VR
                 _telemetryHandle = default;
                 _telemetryVaultGeneration = 0u;
                 EnsureTelemetry();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.RenderDispatcher)
+            {
+                if (currentService != null)
+                    TryRegisterRenderable();
             }
         }
 
@@ -296,7 +355,7 @@ namespace Hecton8.Graphics.VR
             ReadOnlySpan<SystemHealthSignal> healthSignals = SignalBus<SystemHealthSignal>.GetFrameSnapshot();
             for (int i = 0; i < healthSignals.Length; i++)
             {
-                SystemHealthSignal signal = healthSignals[i];
+                ref readonly SystemHealthSignal signal = ref healthSignals[i];
                 stress01 = math.max(stress01, Sanitize01(signal.SystemHealthIndex01));
                 gpuUtil01 = math.max(gpuUtil01, Sanitize01(signal.GpuUtil01));
                 pressureLevel = MaxByte(pressureLevel, signal.PressureLevel);
@@ -318,7 +377,8 @@ namespace Hecton8.Graphics.VR
             ReadOnlySpan<ThermalStateChangedSignal> thermalSignals = SignalBus<ThermalStateChangedSignal>.GetFrameSnapshot();
             for (int i = 0; i < thermalSignals.Length; i++)
             {
-                thermalSeverity = MaxByte(thermalSeverity, thermalSignals[i].Severity);
+                ref readonly ThermalStateChangedSignal signal = ref thermalSignals[i];
+                thermalSeverity = MaxByte(thermalSeverity, signal.Severity);
                 hasThermal = true;
             }
 
@@ -331,6 +391,8 @@ namespace Hecton8.Graphics.VR
 
             if (hasThermal)
                 _thermalSeverity = thermalSeverity;
+            else if (thermal == null)
+                _thermalSeverity = 0;
         }
 
         private void ApplyPolicy(bool force)
@@ -386,7 +448,12 @@ namespace Hecton8.Graphics.VR
                 return;
             }
 
-            byte levelCode = ResolveTargetLevelCode(_systemStress01, quest2Runtime, thermalPressure);
+            byte levelCode = ResolveTargetLevelCode(
+                _systemStress01,
+                _pressureLevel,
+                _foveatedPressureTier,
+                quest2Runtime,
+                thermalPressure);
             float targetLevel = ResolveLevel01(levelCode);
             bool gazeTracked = ShouldUseGazeTrackedVrs(xrActive, caps, quest2Runtime);
             XRDisplaySubsystem.FoveatedRenderingFlags targetFlags = gazeTracked
@@ -507,6 +574,8 @@ namespace Hecton8.Graphics.VR
 
         private void ClearHardwareFoveation()
         {
+            _uiSuppressionActive = false;
+            _lastFlags = (ushort)(_lastFlags & ~FlagUiSuppressed);
             ResolveDisabledTarget();
             ApplyDisplayState(0f, XRDisplaySubsystem.FoveatedRenderingFlags.None, FoveatedRenderMode.Disabled, true, out _, out _);
             HectonXRRuntimeState.ReportHardwareFoveationState(false, 0f, 0, 0);
@@ -529,66 +598,26 @@ namespace Hecton8.Graphics.VR
                 eyeDescriptor.height);
         }
 
-        private void TryRegisterRenderCallbacks()
-        {
-            if (_registeredRenderCallbacks)
-                return;
-
-            RenderPipelineManager.beginCameraRendering += HandleBeginCameraRendering;
-            RenderPipelineManager.endCameraRendering += HandleEndCameraRendering;
-            _registeredRenderCallbacks = true;
-        }
-
-        private void TryUnregisterRenderCallbacks()
-        {
-            if (!_registeredRenderCallbacks)
-                return;
-
-            RenderPipelineManager.beginCameraRendering -= HandleBeginCameraRendering;
-            RenderPipelineManager.endCameraRendering -= HandleEndCameraRendering;
-            _registeredRenderCallbacks = false;
-            _uiSuppressionDepth = 0;
-        }
-
-        private void HandleBeginCameraRendering(ScriptableRenderContext context, Camera renderCamera)
-        {
-            if (!failClosedForUiCameras || renderCamera == null || _targetLevel01 <= ApplyEpsilon)
-                return;
-
-            if ((renderCamera.cullingMask & uiLayerMask.value) == 0)
-                return;
-
-            _uiSuppressionDepth++;
-            if (_uiSuppressionDepth > 1)
-                return;
-
-            ushort flags = (ushort)(_lastFlags | FlagUiSuppressed);
-            _lastFlags = flags;
-            ApplyDisplayState(0f, XRDisplaySubsystem.FoveatedRenderingFlags.None, FoveatedRenderMode.UiExempted, true, out _, out _);
-        }
-
-        private void HandleEndCameraRendering(ScriptableRenderContext context, Camera renderCamera)
-        {
-            if (!failClosedForUiCameras || renderCamera == null || (renderCamera.cullingMask & uiLayerMask.value) == 0)
-                return;
-
-            if (_uiSuppressionDepth <= 0)
-                return;
-
-            _uiSuppressionDepth--;
-            if (_uiSuppressionDepth > 0)
-                return;
-
-            if (_targetLevel01 <= ApplyEpsilon)
-                return;
-
-            ApplyDisplayState(_targetLevel01, _targetFlags, _targetMode, true, out _, out _);
-        }
-
         private void TryRegisterTick()
         {
-            if (_registeredTick || !Application.isPlaying)
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            {
+                _registeredTick = false;
                 return;
+            }
+
+            RegistryBucket<IUpdatable> updatables = GlobalRegistry.Updatables;
+            RegistryBucket<IUpdatable> dispatcherLane = SystemDispatcher.GetLane(PriorityLayer.Core);
+            bool inGlobalBucket = updatables.Contains(this);
+            bool inDispatcherLane = dispatcherLane.Contains(this);
+            if (inGlobalBucket && inDispatcherLane)
+            {
+                _registeredTick = true;
+                return;
+            }
+
+            if (inGlobalBucket || inDispatcherLane)
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
 
             _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
         }
@@ -617,6 +646,32 @@ namespace Hecton8.Graphics.VR
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredHotSwap = false;
+        }
+
+        private void TryRegisterRenderable()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            RegistryBucket<IRenderable> renderables = GlobalRegistry.Renderables;
+            if (renderables.Contains(this))
+            {
+                _registeredRenderable = true;
+                return;
+            }
+
+            _registeredRenderable = renderables.TryRegister(this);
+        }
+
+        private void TryUnregisterRenderable()
+        {
+            if (!_registeredRenderable)
+                return;
+
+            GlobalRegistry.Renderables.TryUnregister(this);
+            _registeredRenderable = false;
+            _uiSuppressionActive = false;
+            _lastFlags = (ushort)(_lastFlags & ~FlagUiSuppressed);
         }
 
         private bool EnsureTelemetry()
@@ -665,8 +720,10 @@ namespace Hecton8.Graphics.VR
                 _displayLevelNonFinite;
 
             ushort writeFlags = nonFinite ? (ushort)(flags | FlagNonFinite) : flags;
-            if (_uiSuppressionDepth > 0)
+            if (_uiSuppressionActive)
                 writeFlags |= FlagUiSuppressed;
+            else
+                writeFlags = (ushort)(writeFlags & ~FlagUiSuppressed);
 
             telemetry[_telemetryCursor] = new FoveatedRenderTelemetryEntry
             {
@@ -713,51 +770,111 @@ namespace Hecton8.Graphics.VR
             _blackBoxDumped = true;
             try
             {
-                string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
-                string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
-                Directory.CreateDirectory(logDirectory);
-                string path = Path.Combine(logDirectory, DumpFileName);
-
-                using FileStream stream = File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-                using BinaryWriter writer = new BinaryWriter(stream);
-                writer.Write(BlackBoxMagic);
-                writer.Write(BlackBoxVersion);
-                writer.Write(TelemetryCapacity);
-                writer.Write(TelemetryRecordSizeBytes);
-                writer.Write(_telemetryCursor);
-                writer.Write(_sequence);
-                for (int i = 0; i < TelemetryCapacity; i++)
+                if (!TryOpenDumpStream(out FileStream stream))
                 {
-                    int index = _telemetryCursor + i;
-                    if (index >= TelemetryCapacity)
-                        index -= TelemetryCapacity;
+                    GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)SourceHash));
+                    return;
+                }
 
-                    FoveatedRenderTelemetryEntry entry = telemetry[index];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.Sequence);
-                    writer.Write(entry.TargetLevel01);
-                    writer.Write(entry.AppliedLevel01);
-                    writer.Write(entry.SystemStress01);
-                    writer.Write(entry.GpuUtil01);
-                    writer.Write(entry.GpuTimeMs);
-                    writer.Write(entry.EyeWidth);
-                    writer.Write(entry.EyeHeight);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.Caps);
-                    writer.Write(entry.TargetLevelCode);
-                    writer.Write(entry.AppliedLevelCode);
-                    writer.Write(entry.Mode);
-                    writer.Write(entry.PressureLevel);
-                    writer.Write(entry.FoveatedPressureTier);
-                    writer.Write(entry.ThermalSeverity);
-                    writer.Write(entry.DisplayCount);
-                    writer.Write(entry.VaultGeneration);
-                    writer.Write(TelemetrySerializedPadding);
+                using (stream)
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(BlackBoxMagic);
+                    writer.Write(BlackBoxVersion);
+                    writer.Write(TelemetryCapacity);
+                    writer.Write(TelemetryRecordSizeBytes);
+                    writer.Write(_telemetryCursor);
+                    writer.Write(_sequence);
+                    for (int i = 0; i < TelemetryCapacity; i++)
+                    {
+                        int index = _telemetryCursor + i;
+                        if (index >= TelemetryCapacity)
+                            index -= TelemetryCapacity;
+
+                        FoveatedRenderTelemetryEntry entry = telemetry[index];
+                        writer.Write(entry.Frame);
+                        writer.Write(entry.Sequence);
+                        writer.Write(entry.TargetLevel01);
+                        writer.Write(entry.AppliedLevel01);
+                        writer.Write(entry.SystemStress01);
+                        writer.Write(entry.GpuUtil01);
+                        writer.Write(entry.GpuTimeMs);
+                        writer.Write(entry.EyeWidth);
+                        writer.Write(entry.EyeHeight);
+                        writer.Write(entry.Flags);
+                        writer.Write(entry.Caps);
+                        writer.Write(entry.TargetLevelCode);
+                        writer.Write(entry.AppliedLevelCode);
+                        writer.Write(entry.Mode);
+                        writer.Write(entry.PressureLevel);
+                        writer.Write(entry.FoveatedPressureTier);
+                        writer.Write(entry.ThermalSeverity);
+                        writer.Write(entry.DisplayCount);
+                        writer.Write(entry.VaultGeneration);
+                        writer.Write(TelemetrySerializedPadding);
+                    }
                 }
             }
             catch (Exception)
             {
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)SourceHash));
+            }
+        }
+
+        private static bool TryOpenDumpStream(out FileStream stream)
+        {
+            stream = null;
+            if (TryGetProjectDumpPath(out string projectPath) &&
+                TryOpenDumpPath(projectPath, out stream))
+            {
+                return true;
+            }
+
+            string persistentRoot = Application.persistentDataPath;
+            if (string.IsNullOrEmpty(persistentRoot))
+                return false;
+
+            string persistentPath = Path.Combine(persistentRoot, "AgentLogs", DumpFileName);
+            return TryOpenDumpPath(persistentPath, out stream);
+        }
+
+        private static bool TryGetProjectDumpPath(out string path)
+        {
+            path = null;
+            try
+            {
+                string dataPath = Application.dataPath;
+                if (string.IsNullOrEmpty(dataPath))
+                    return false;
+
+                string projectRoot = Directory.GetParent(dataPath)?.FullName ?? dataPath;
+                path = Path.Combine(projectRoot, "Docs", "AgentLogs", DumpFileName);
+                return true;
+            }
+            catch (Exception)
+            {
+                path = null;
+                return false;
+            }
+        }
+
+        private static bool TryOpenDumpPath(string path, out FileStream stream)
+        {
+            stream = null;
+            try
+            {
+                string directory = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                stream = File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read);
+                return true;
+            }
+            catch (Exception)
+            {
+                stream?.Dispose();
+                stream = null;
+                return false;
             }
         }
 
@@ -780,21 +897,32 @@ namespace Hecton8.Graphics.VR
             return true;
         }
 
-        private static byte ResolveTargetLevelCode(float systemStress01, bool quest2Runtime, bool thermalPressure)
+        private static byte ResolveTargetLevelCode(
+            float systemStress01,
+            byte pressureLevel,
+            byte foveatedPressureTier,
+            bool quest2Runtime,
+            bool thermalPressure)
         {
-            if (quest2Runtime)
+            if (quest2Runtime ||
+                thermalPressure ||
+                pressureLevel >= 3 ||
+                foveatedPressureTier >= 3)
+            {
                 return 3;
-
-            if (thermalPressure)
-                return 3;
+            }
 
             float stress = Sanitize01(systemStress01);
 
             if (stress >= StressHighThreshold)
                 return 3;
 
-            if (stress >= StressMediumThreshold)
+            if (stress >= StressMediumThreshold ||
+                pressureLevel >= 2 ||
+                foveatedPressureTier >= 2)
+            {
                 return 2;
+            }
 
             return 1;
         }

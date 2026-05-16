@@ -23,9 +23,10 @@ namespace Hecton8.Audio.Editor
         private const float StreamingClipSeconds = 5.0f;
         private const int MusicSampleRate = 44100;
         private const int RuntimeSampleRate = 22050;
+        private const int DialogueSampleRate = 16000;
         private const float MusicVorbisQuality = 0.70f;
         private const float AmbientVorbisQuality = 0.45f;
-        private const float DialogueVorbisQuality = 0.28f;
+        private const float DialogueVorbisQuality = 0.22f;
         private const string ReimportGuardPrefix = "AudioImportDictator.ReimportGuard.";
         private const string LogUnstable = "[AudioImportDictator:0xA1D10001] Import policy remained unstable after reimport.";
 
@@ -164,6 +165,49 @@ namespace Hecton8.Audio.Editor
             return paths;
         }
 
+        [MenuItem("Hecton/Audio/Apply Import Policy To All Audio Assets", priority = 409)]
+        internal static void ApplyPolicyToAllAudioAssetsMenu()
+        {
+            int changedCount = ApplyPolicyToAllAudioAssets();
+            Debug.Log("[AudioImportDictator:0xA1D10005] Applied import policy to " +
+                      changedCount +
+                      " changed audio assets under " +
+                      ProjectAudioRoot +
+                      ".");
+        }
+
+        internal static int ApplyPolicyToAllAudioAssets()
+        {
+            List<string> paths = CollectProjectAudioClipPaths();
+            int changedCount = 0;
+
+            AssetDatabase.StartAssetEditing();
+            try
+            {
+                for (int i = 0; i < paths.Count; i++)
+                {
+                    string path = paths[i];
+                    AudioImporter importer = AssetImporter.GetAtPath(path) as AudioImporter;
+                    AudioClip clip = AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+                    if (importer == null || clip == null)
+                        continue;
+
+                    if (!ApplyPolicy(importer, path, clip.length))
+                        continue;
+
+                    importer.SaveAndReimport();
+                    changedCount++;
+                }
+            }
+            finally
+            {
+                AssetDatabase.StopAssetEditing();
+                AssetDatabase.SaveAssets();
+            }
+
+            return changedCount;
+        }
+
         internal static AudioResidencyDomain ResolveDomain(string normalizedPath)
         {
             if (ContainsToken(normalizedPath, "/music") ||
@@ -274,7 +318,7 @@ namespace Hecton8.Audio.Editor
                 return MusicSampleRate;
 
             if (dialogue)
-                return RuntimeSampleRate;
+                return DialogueSampleRate;
 
             return RuntimeSampleRate;
         }

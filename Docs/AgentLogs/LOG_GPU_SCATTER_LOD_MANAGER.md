@@ -77,3 +77,179 @@ Validation:
 - `dotnet build Assembly-CSharp.csproj --no-restore -m:1` is blocked first by missing RealtimeCSG source files.
 - `dotnet build Hecton8.Core.csproj --no-restore -m:1` is blocked by unrelated XR/submarine/fauna/VFX/audio errors; filtered output shows no `H8Memory`, `BufferID`, or flora scatter error.
 - Filtered build scans show no `GpuScatter`/`FloraScatter` compiler errors before the external dependency wall.
+
+## 2026-05-16 Continued Pass: Constant Buffer / Draw-State Polish
+
+What was wrong:
+- Compute cull frame constants were still fragmented across individual scalar/vector uploads instead of one packed constant buffer.
+- The frustum planes were not grouped with the rest of the dispatch constants.
+- Shared material buffer/scalar state could bleed between reused flora materials or multiple scatter managers.
+- The blackbox dump path still had a managed debug-log fallback and wrote entries in physical ring order.
+
+What was done:
+- Added `HectonScatterFrameConstants`, a 176B `Pack = 1` C# payload mirrored in `GpuScatterLodCull.compute`.
+- Created and released a `GraphicsBuffer.Target.Constant` frame constants buffer through the existing renderer lifetime.
+- Switched compute dispatch setup to one constant-buffer upload when supported, with explicit per-vector fallback for unsupported platforms.
+- Removed the old per-frame compute uniform IDs and `SetVectorArray` path.
+- Routed indirect draw buffer/scalar bindings through one cached draw-local state object passed in `RenderParams`.
+- Kept shader keyword mutation on the material asset because Unity keyword variants are material state, while per-draw buffers/scalars are isolated.
+- Removed `Debug.LogError` from `DumpBlackBox` catch handling and published typed telemetry instead.
+- Changed blackbox binary output to chronological ring order.
+
+Cinematic Cheats used:
+- No new physical flora simulation was added.
+- Low/MX350 remains the 100m dear-lie cull with deterministic fake sway.
+- High/Ultra keeps 500m residency, crossfade, SSS, caustic, edge bloom, and motion-vector lanes as flora-domain overkill.
+
+Exact Microseconds saved:
+- Fragmented compute uniform uploads replaced by one constant-buffer upload: estimated 5-20us dispatch setup reduction on weak CPU/driver paths, PENDING PROFILER.
+- Shared material state isolation: 0us claimed hot-path saving; prevents state contamination and clone churn, PENDING PROFILER.
+- Blackbox debug-log removal: 0us hot-path saving; fault-path allocation risk removed.
+- Existing 100k GameObject/Transform submission avoidance remains estimated 900-1800us CPU on i3/MX350, PENDING PROFILER.
+- Existing CPU/GPU sync readback avoidance remains estimated 200-2000us stall avoided under queue pressure, PENDING PROFILER.
+
+Validation:
+- Static scan found no `SetVectorArray`, legacy scatter per-frame uniform names, `Debug.Log`, `H8Memory.Allocate`, `H8Memory.Release`, `Allocator.Persistent`, scene search, legacy `EventBus`, Unity `Update` methods, `string.Format`, or `material.SetBuffer/SetFloat/SetVector` in the scatter manager.
+- `GpuScatterLodCull.compute` remains `#pragma target 4.5` with 64 threads per group, below Metal's 1024 thread-group cap.
+- `dotnet build Assembly-CSharp.csproj --no-restore --no-dependencies -m:1` remains blocked by missing generated/plugin metadata DLLs under `Temp/bin/Debug`; filtered output still shows no scatter-specific compiler error.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1` currently stops in unrelated `SubmarineFluidDynamics` CS1612/CS0200 read-only native handle errors; filtered output shows no `GpuScatter`, `FloraScatter`, `BufferID`, or `H8Memory` error.
+
+## 2026-05-16 Continued Pass: Shader Aux Lane / Stale Args Hardening
+
+What was wrong:
+- The active vegetation shader unconditionally reads flora age and phase-seed buffers that the scatter renderer did not bind.
+- Optional shader buffer reads could be enabled by stale shared material counts from other systems.
+- Early exits could leave the previous indirect args instance count live, causing stale draws and stale blackbox visible counts.
+- A recreated args buffer could reuse the same mesh cache key and skip initialization.
+- The renderer bound the visible-matrix append buffer to material state even though the current shader does not consume it.
+
+What was done:
+- Added DataVault `BufferID.FloraScatterAge01` and `BufferID.FloraScatterPhaseSeeds`.
+- Added Vault handles, GPU buffers, generation tracking, upload, draw-local binding, and scene-unload release for the age/phase lanes.
+- Filled missing/expanded age data with `1.0` and phase data with deterministic hash seeds.
+- Added draw-local zero fallbacks for optional shader gates: snap flags, flow field resolution, interaction/wake/impact/predator counts, abyssal grid resolution, and abyssal flow activity.
+- Added `ClearVisibleState()` so invalid frustum, no active instances, or upload failure clears append counters and copies a zero count into the indirect args instance slot.
+- Added blackbox flags for invalid-frustum and no-active-instance early exits.
+- Invalidated the indirect-args cache on args-buffer creation/release.
+- Removed the unused `_HectonScatterVisibleMatrices` material binding while preserving the append buffer for task compliance and `CopyCount`.
+
+Cinematic cheats used:
+- Low/MX350 keeps deterministic cheap age/phase shader variation without CPU animation.
+- High/Ultra can use producer-authored age/phase lanes for richer growth, crossfade, and flora material overkill later without changing the renderer.
+- No physical vegetation simulation was added.
+
+Exact Microseconds saved:
+- Removed unused visible-matrix material binding: estimated 1-3us driver-state reduction on weak CPU paths, PENDING PROFILER.
+- Optional fallback scalar writes: no microsecond saving claimed; resource-safety only.
+- Early-exit args quarantine: normal-frame cost 0us target; fault-frame cost PENDING PROFILER.
+- Existing 100k GameObject/Transform submission avoidance remains estimated 900-1800us CPU on i3/MX350, PENDING PROFILER.
+
+Validation:
+- Focused static scan found no `SetVectorArray`, legacy scatter uniform paths, `Debug.Log`, local private `NativeArray`, `H8Memory.Allocate/Release`, `Allocator.Persistent`, legacy `EventBus`, scene search, Unity `Update` methods, `string.Format`, or shared `material.Set*` calls in the scatter manager / compute path.
+- Symbol scan confirmed `FloraScatterAge01`, `FloraScatterPhaseSeeds`, `ApplyOptionalShaderFallbacks`, `ClearVisibleState`, indirect-args invalidation, early-exit blackbox flags, and age/phase generation telemetry are present.
+- `git diff --check` reported only LF-to-CRLF warnings for touched files.
+- `dotnet build Assembly-CSharp.csproj --no-restore --no-dependencies -m:1` remains blocked by missing `Temp/bin/Debug` metadata DLLs including `Assembly-CSharp-firstpass.dll`, `Hecton8.Editor.dll`, `RealtimeCSG.dll`, and plugin/runtime DLLs.
+- Filtered `dotnet build Hecton8.Core.csproj --no-restore -m:1` now stops at unrelated `Assets/_Project/Scripts/Core/InputDispatcher.cs(7,2)` CS1032; no `GpuScatter`, `FloraScatter`, `BufferID`, or `H8Memory` scatter error surfaced.
+
+## 2026-05-16 Continued Pass: Mobile Thread-Group Contract
+
+What was wrong:
+- Compute dispatch group count used a hardcoded C# `64` even though the mandate requires `ComputeShader.GetKernelThreadGroupSizes`.
+- Metal/mobile safety depended on the shader staying at 64 threads, with no blackbox flag if a future kernel exceeded the 1024-thread group limit.
+
+What was done:
+- Replaced the compute dispatch sizing constant with `_dispatchThreadGroupSizeX` queried from the actual `ScatterCullJob` kernel.
+- Added a separate `BurstAuditBatchSize` for CPU job scheduling so GPU ABI and CPU batch size no longer share a misleading constant.
+- Added a 1024-total-thread guard for Metal/mobile compliance.
+- Added `BlackBoxFlagInvalidThreadGroup` so invalid kernel dimensions show up in the 300-frame scatter blackbox.
+
+Cinematic Cheats used:
+- None added. This was a platform correctness pass.
+
+Exact Microseconds saved:
+- Query is cold GPU-state setup only: 0us normal-frame target.
+- No measured microsecond claim. Correctness and platform survival only.
+
+Validation:
+- Static scan found no forbidden scatter hot-path patterns after the patch.
+- `git diff --check` reported only LF-to-CRLF warnings for touched scatter files.
+- Filtered `Assembly-CSharp` build remains blocked by missing `Temp/bin/Debug` metadata DLLs before scatter evidence.
+- Filtered `Hecton8.Core.csproj` now stops at unrelated `SubmarineFluidDynamics.cs(614-635)` missing `VaultNativeBuffer<>`; no `GpuScatter`/`FloraScatter` compiler error surfaced.
+
+## 2026-05-16 Continued Pass: ABI Layout / Memory Sentinel
+
+What was wrong:
+- The owned GPU payload structs had explicit `Pack = 1`, but the renderer did not actively prove their runtime size against the buffer stride contract.
+- Scene unload relied on `OnDisable` to invalidate DataVault leases even though the task explicitly demands teardown proof.
+- GPU dispatch group size cache could persist across buffer release until the next kernel query.
+
+What was done:
+- Added a cold `UnsafeUtility.SizeOf<T>` layout guard for `Matrix4x4`, `Vector4`, `GpuScatterFloraInstanceData`, `ScatterFrameConstants`, and `ScatterBlackBoxEntry`.
+- Disabled the component before tick registration if ABI stride drift is detected.
+- Published typed telemetry with `BlackBoxDumpReasonAbiLayout` on ABI failure.
+- Converted `ScatterBlackBoxEntry` size to the named `ScatterBlackBoxEntryStrideBytes` constant.
+- Made `OnDestroy` explicitly invalidate DataVault leases and clear GPU readiness.
+- Reset `_dispatchThreadGroupSizeX` to the fallback during GPU buffer release.
+
+Cinematic Cheats used:
+- None added. This pass was platform survival and memory-sentinel hardening.
+
+Exact Microseconds saved:
+- ABI guard: 0us normal-frame target; cold initialization only, PENDING PROFILER.
+- OnDestroy lease invalidation: 0us normal-frame target; unload-only.
+- Dispatch group cache reset: 0us normal-frame target; correctness only.
+
+Validation:
+- Static scan found no `SetVectorArray`, `Debug.Log`, local private `NativeArray`, `H8Memory.Allocate/Release`, `Allocator.Persistent`, legacy `EventBus`, scene search, Unity `Update` methods, `string.Format`, or shared `material.Set*` calls in the scatter manager / compute path.
+- ABI symbol scan confirmed `UnsafeUtility`, `ValidateAbiLayoutCold`, `BlackBoxDumpReasonAbiLayout`, `ScatterBlackBoxEntryStrideBytes`, `_abiLayoutValid`, `GetKernelThreadGroupSizes`, and unload/reset hooks are present.
+- `git diff --check` reported only LF-to-CRLF warnings for touched files.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1` succeeded with 0 warnings and 0 errors.
+- `dotnet build Assembly-CSharp.csproj --no-dependencies -m:1` restores project assets, then remains blocked by 48 missing generated/plugin metadata DLLs under `Temp/bin/Debug`; this is outside scatter and prevents final validation.
+
+## 2026-05-16 Continued Pass: Shader NaN Fail-Closed
+
+What was wrong:
+- `TransformPoint` returned zero on non-finite transformed positions, which could hide a poisoned source matrix and let bad flora append at origin.
+- Shader-side matrix validation checked scale axes but not every matrix row.
+- Local bounds constants were trusted after upload.
+
+What was done:
+- Added `HasFiniteMatrix` to validate all four rows of the source `float4x4`.
+- Rejected non-finite local bounds center/extents before transform.
+- Changed `TransformPoint` to return raw transformed coordinates so the existing finite center guard fails closed.
+
+Cinematic Cheats used:
+- None added. This is NaN vaccination and mobile GPU survival.
+
+Exact Microseconds saved:
+- No saving claimed. This adds defensive GPU branches; exact cost is PENDING PROFILER.
+- Avoided failure mode: one invalid matrix can no longer append a visible instance through a fake origin.
+
+Validation:
+- Shader scan confirmed `HasFiniteMatrix`, raw `TransformPoint`, finite local-bounds checks, guarded `rsqrt`, and append-only-after-validation order.
+- Domain scan still found no `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, local private `NativeArray`, legacy `EventBus`, scene search, or debug logging.
+- `git diff --check` reported only LF-to-CRLF warnings.
+
+## 2026-05-16 Continued Pass: CPU Audit NaN Parity
+
+What was wrong:
+- The optional Burst audit used raw serialized local bounds while the GPU path was being hardened.
+- CPU audit matrix validation checked usable scale but not all four rows.
+- Fallback draw bounds could inherit a non-finite serialized local-bounds extent.
+
+What was done:
+- Added `ResolveSafeLocalBoundsCenter`, `ResolveSafeLocalBoundsExtents`, and `ResolveSafePositiveExtent`.
+- Fed sanitized bounds into `RunBurstCullAuditOnce`, compute constants, fallback draw bounds, and editor validation.
+- Added full-matrix finite rejection to the Burst `ScatterCullJob`.
+
+Cinematic Cheats used:
+- None added. This was diagnostic parity and NaN containment.
+
+Exact Microseconds saved:
+- Shipping frame: 0us target because Burst audit remains opt-in.
+- No measured saving claimed; defensive checks are correctness work.
+
+Validation:
+- Symbol scan confirmed safe-bounds methods, CPU audit wiring, compute constant wiring, fallback bounds usage, and Burst `HasFiniteMatrix`.
+- Forbidden-pattern scan over the scatter domain returned no `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, `EventBus`, `Debug.Log`, scene search, local private `NativeArray`, or direct `H8Memory.Allocate/Release`.
+- `git diff --check` reported only LF-to-CRLF warnings.

@@ -3,7 +3,9 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -18,6 +20,7 @@ namespace Hecton8.VFX.Materials
     public sealed class MaterialDecayRuntime : MonoBehaviour, IUpdatable
     {
         private const int TelemetryCapacity = 300;
+        private const int MaterialDecayStateSizeBytes = 28;
         private const int RustAtlasSize = 512;
         private const float RustPomGate = 0.3f;
         private const float WetnessFadeSeconds = 5f;
@@ -48,7 +51,8 @@ namespace Hecton8.VFX.Materials
         [SerializeField, Range(0f, 1f)]
         private float rustAcousticIntensity = 0.38f;
 
-        private NativeArray<MaterialDecayState> _blackBox;
+        private IDataVault _dataVault;
+        private VaultBufferHandle<MaterialDecayState> _blackBoxHandle;
         private Texture2D _runtimeFallbackAtlas;
         private Vector4 _lastRuntimeVector = new Vector4(float.NaN, float.NaN, float.NaN, float.NaN);
         private Vector4 _lastBloodVector = new Vector4(float.NaN, float.NaN, float.NaN, float.NaN);
@@ -65,6 +69,7 @@ namespace Hecton8.VFX.Materials
         private byte _lastReason;
         private bool _registered;
         private bool _hasDurabilitySignal;
+        private bool _blackBoxReady;
         private bool _dumpedFault;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -134,11 +139,7 @@ namespace Hecton8.VFX.Materials
             if (ReferenceEquals(s_runtimeInstance, this))
                 s_runtimeInstance = null;
 
-            if (_blackBox.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_blackBox);
-                _blackBox.Dispose();
-            }
+            ClearBlackBoxLease();
 
             if (_runtimeFallbackAtlas != null)
             {
@@ -312,7 +313,7 @@ namespace Hecton8.VFX.Materials
                 hideFlags = HideFlags.DontSave
             };
 
-            NativeArray<Color32> pixels = new NativeArray<Color32>(RustAtlasSize * RustAtlasSize, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            var pixels = texture.GetRawTextureData<Color32>();
             for (int y = 0; y < RustAtlasSize; y++)
             {
                 for (int x = 0; x < RustAtlasSize; x++)
@@ -328,24 +329,78 @@ namespace Hecton8.VFX.Materials
                 }
             }
 
-            texture.SetPixelData(pixels, 0);
-            pixels.Dispose();
             texture.Apply(updateMipmaps: true, makeNoLongerReadable: true);
             return texture;
         }
 
-        private void EnsureBlackBox()
+        private bool EnsureBlackBox()
         {
-            if (_blackBox.IsCreated)
-                return;
+            if (!ValidateNativeLayout())
+            {
+                ClearBlackBoxLease();
+                return false;
+            }
 
-            _blackBox = new NativeArray<MaterialDecayState>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(_blackBox, nameof(MaterialDecayRuntime), nameof(_blackBox), NativeAllocationLifetime.Session);
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null || vault.IsCompactionFenceActive)
+            {
+                ClearBlackBoxLease();
+                return false;
+            }
+
+            if (!ReferenceEquals(_dataVault, vault))
+            {
+                _dataVault = vault;
+                _blackBoxHandle = default;
+                _blackBoxReady = false;
+            }
+
+            if (!vault.TryGetBufferHandle(BufferID.MaterialDecayBlackBox, out _blackBoxHandle) ||
+                !_blackBoxHandle.IsCreated)
+            {
+                _blackBoxHandle = vault.GetBufferHandle<MaterialDecayState>(
+                    BufferID.MaterialDecayBlackBox,
+                    TelemetryCapacity,
+                    SystemID.Vfx,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            _blackBoxReady = _blackBoxHandle.IsCreated && _blackBoxHandle.Length >= TelemetryCapacity;
+            return _blackBoxReady;
+        }
+
+        private bool TryResolveBlackBox(out NativeArray<MaterialDecayState> blackBox)
+        {
+            blackBox = default;
+            if (!EnsureBlackBox())
+                return false;
+
+            if (!_dataVault.TryGetBufferHandle(BufferID.MaterialDecayBlackBox, out _blackBoxHandle) ||
+                !_blackBoxHandle.IsCreated)
+            {
+                ClearBlackBoxLease();
+                return false;
+            }
+
+            blackBox = _blackBoxHandle.Resolve(_dataVault);
+            return blackBox.IsCreated && blackBox.Length >= TelemetryCapacity;
+        }
+
+        private void ClearBlackBoxLease()
+        {
+            _dataVault = null;
+            _blackBoxHandle = default;
+            _blackBoxReady = false;
+        }
+
+        private static bool ValidateNativeLayout()
+        {
+            return UnsafeUtility.SizeOf<MaterialDecayState>() == MaterialDecayStateSizeBytes;
         }
 
         private void PushBlackBox()
         {
-            if (!_blackBox.IsCreated)
+            if (!TryResolveBlackBox(out var blackBox))
                 return;
 
             float rust01 = _hasDurabilitySignal ? SanitizeUnit(_rust01) : SanitizeUnit(defaultRust01);
@@ -356,7 +411,7 @@ namespace Hecton8.VFX.Materials
             if (wetness01 > 0.001f) flags |= TelemetryFlagWet;
             if (math.max(_stress01, _healthDamage01) > 0.001f) flags |= TelemetryFlagBlood;
 
-            _blackBox[_blackBoxCursor] = new MaterialDecayState
+            blackBox[_blackBoxCursor] = new MaterialDecayState
             {
                 Frame = (uint)math.max(0, Time.frameCount),
                 ItemHash = _lastItemHash,
@@ -376,7 +431,7 @@ namespace Hecton8.VFX.Materials
 
         private void DumpBlackBox(byte reason)
         {
-            if (_dumpedFault || !_blackBox.IsCreated)
+            if (_dumpedFault || !TryResolveBlackBox(out var blackBox))
                 return;
 
             _dumpedFault = true;
@@ -391,10 +446,10 @@ namespace Hecton8.VFX.Materials
                 writer.Write((uint)0x4D445350u); // MDSP
                 writer.Write(reason);
                 writer.Write(_blackBoxCursor);
-                writer.Write(_blackBox.Length);
-                for (int i = 0; i < _blackBox.Length; i++)
+                writer.Write(blackBox.Length);
+                for (int i = 0; i < blackBox.Length; i++)
                 {
-                    MaterialDecayState state = _blackBox[(_blackBoxCursor + i) % _blackBox.Length];
+                    MaterialDecayState state = blackBox[(_blackBoxCursor + i) % blackBox.Length];
                     writer.Write(state.Frame);
                     writer.Write(state.ItemHash);
                     writer.Write(state.Rust01);
@@ -442,7 +497,7 @@ namespace Hecton8.VFX.Materials
             return value;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = MaterialDecayStateSizeBytes)]
         private struct MaterialDecayState
         {
             public uint Frame;

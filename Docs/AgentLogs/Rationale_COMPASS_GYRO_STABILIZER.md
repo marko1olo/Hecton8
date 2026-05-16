@@ -1,6 +1,6 @@
 # Rationale_COMPASS_GYRO_STABILIZER
 
-Status: IMPLEMENTED; FINAL BUILD BLOCKED BY EXTERNAL DEPENDENCIES
+Status: IMPLEMENTED CODE; PREFAB/SCENE BINDING NOT SERIALIZED; FINAL BUILD BLOCKED BY EXTERNAL DEPENDENCIES
 
 ## Decision 001 - Scope And Authority
 Problem: Existing compass behavior is a screen-space ribbon installed at runtime and driven from camera orientation, while the task requires a diegetic drifting 64-bit compass.
@@ -99,3 +99,24 @@ Solution: Re-ran hazard scans and build. The compass scan is clean. Core build n
 Rejected Alternatives: Editing scheduler/bucketing ownership from UX Navigation would violate domain boundaries. Reporting perfection would be false.
 Scalability potential: None; this is integration state, not compass runtime behavior.
 Hardware Impact: None from compass. Build-wall risk remains external.
+
+## Decision 015 - Hot-Path Dependency And Physical Binding Repair
+Problem: The runtime still attempted cold dependency recovery from `SlowTick()`, and a GUID scan found no serialized prefab/scene reference to `DiegeticGyroCompassRuntime`. That meant the code path was cleaner than the installation path.
+Solution: Removed the `SlowTick()` registry fallback; gameplay ticks now use cached `_playerContext`/`_vault` or return. Added `InjectDependencies(...)` for bootstrap-owned dependency injection and `ConfigurePhysicalBinding(...)` for cold physical tool binding. Added explicit struct sizes for ARM64 audit: blackbox 40 bytes, `CompassStateDTO` 136 bytes, and `InertialNavigationSnapshot` 120 bytes.
+Rejected Alternatives: Polling `GlobalRegistry` until dependencies appear would hide initialization debt in a hot path. Raw-editing `Player.prefab` YAML without Unity API readback would risk prefab corruption. Creating a screen fallback would violate the prompt.
+Scalability potential: Low/MX350 still takes the cheapest text/SlowTick path. Middle rotates a bound physical dial. High/Ultra can bind the indirect mesh and optional local anomaly particles without increasing gameplay authority cost. Prefab/scene binding still needs Unity-side serialization proof before `VERIFIED MASTER GRADE`.
+Hardware Impact: Removing SlowTick registry lookup saves a small but recurring cold-spine read on stressed/low hardware, estimated 1-4 us per SlowTick. Explicit sizes reduce ARM64/Quest layout ambiguity. Physical binding API has no hot-path cost.
+
+## Decision 016 - High-Tier Failure VFX Spend
+Problem: `_CompassOverkill01` exposed a shader scalar but did not buy any concrete local visual effect when a physical tool binds no custom shader.
+Solution: Added an optional High/Ultra-only `ParticleSystem` emitter for local salt/static compass-glass bursts, emitted only when anomaly interference is above 0.8, power is alive, tier is High/Ultra, and system stress is below 0.8. The authored burst value is hard-clamped to 128 particles per late-frame pass.
+Rejected Alternatives: Standard always-on particles would punish MX350 and mobile. Compute silt/visor/hull effects belong to VFX/Visor/Hull domains, not UX Navigation. Full magnetometer physics would spend CPU on fake truth.
+Scalability potential: Low = no particles and triangle noise. Middle = no particles, physical dial if bound. High = indirect dial plus local burst. Ultra = same gameplay truth with higher authored particle budgets on the bound emitter.
+Hardware Impact: MX350/Quest path is zero because the emitter gate returns before emission. High/Ultra can spend roughly 0-20 us/frame when the optional emitter is assigned and anomaly is saturated; this is deliberate visual currency, not authority cost.
+
+## Decision 017 - Validation After Loop 8
+Problem: New layout/binding/VFX repairs needed fresh proof, but the project build wall moved again.
+Solution: Re-ran domain forbidden-pattern scan, duplicate compass-signal scan, serialized GUID scan, struct-layout scan, `Hecton8.Core.csproj`, and `Assembly-CSharp.csproj`.
+Rejected Alternatives: Claiming Unity scene binding from code review would be false. Editing `InputDispatcher.cs` or restoring Assembly-CSharp packages from this UX task would cross the domain boundary.
+Scalability potential: No new runtime branch beyond the High/Ultra optional particle emission; low-tier remains cheaper than the previous coherent-noise path.
+Hardware Impact: Static scans show no new GC hot-path pattern. Build is blocked externally: latest Core build stops at `EcosystemRuntimeInstaller.cs` / `SubmarineFluidDynamics.cs` for missing `Hecton8.AI.Ecosystem` and `VaultNativeBuffer<>`; Assembly-CSharp still lacks `Temp/obj/Assembly-CSharp/project.assets.json`.

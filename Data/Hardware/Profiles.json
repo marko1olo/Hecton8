@@ -144,12 +144,12 @@
     780
   ],
   "profileSacrificeLevel1MaskHex": [
-    "0x0000000000000070",
-    "0x0000000000000070"
+    "0x0000000000000030",
+    "0x0000000000000030"
   ],
   "profileSacrificeLevel2MaskHex": [
-    "0x00000000002007F0",
-    "0x00000000002007F0"
+    "0x0000000000000330",
+    "0x0000000000000330"
   ],
   "profileSacrificeLevel3MaskHex": [
     "0x0000000000F017F0",
@@ -323,8 +323,8 @@
   ],
   "pressureMaskHex": [
     "0x0000000000000000",
-    "0x0000000000000070",
-    "0x00000000002007F0",
+    "0x0000000000000030",
+    "0x0000000000000330",
     "0x0000000000F017F0"
   ],
   "pressureOverBudgetFrames": [
@@ -370,17 +370,17 @@
   ],
   "killSwitchBitName": [
     "SecondaryCaustics",
-    "ParticleAdvection",
+    "MicroDebrisAdvection",
     "VolumetricFogHighRes",
     "DistantFaunaSteering",
     "ProceduralSway",
-    "IKBracing",
+    "HighQualityIK",
     "SSR",
     "BoidBrain",
     "NonCriticalVfx",
     "FoveatedSimulationTier3",
-    "SlowTick2Hz",
-    "TimeDilation08"
+    "AiOneHz",
+    "TimeDilation09"
   ],
   "referenceDeviceCount": 4,
   "referenceDeviceId": [

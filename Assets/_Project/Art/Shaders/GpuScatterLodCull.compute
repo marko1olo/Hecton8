@@ -20,14 +20,18 @@ struct HectonScatterVisibleMatrix
 AppendStructuredBuffer<HectonScatterVisibleMatrix> _HectonScatterVisibleMatrices;
 RWStructuredBuffer<float4> _HectonScatterMotionVectors;
 
-float4 _HectonScatterFrustumPlanes[HECTON_SCATTER_FRUSTUM_PLANES];
-
 CBUFFER_START(HectonScatterFrameConstants)
     float4 _HectonScatterParams0; // x=instance count, y=max distance sq, z=motion strength, w=frame index
     float4 _HectonScatterParams1; // xyz=AUP shift, w=crossfade enabled
     float4 _HectonScatterParams2; // xyz=camera position
     float4 _HectonScatterParams3; // xyz=local bounds center
     float4 _HectonScatterParams4; // xyz=local bounds extents
+    float4 _HectonScatterFrustumPlane0;
+    float4 _HectonScatterFrustumPlane1;
+    float4 _HectonScatterFrustumPlane2;
+    float4 _HectonScatterFrustumPlane3;
+    float4 _HectonScatterFrustumPlane4;
+    float4 _HectonScatterFrustumPlane5;
 CBUFFER_END
 
 uint ResolveInstanceCount()
@@ -60,6 +64,22 @@ float3 ResolveLocalBoundsExtents()
     return max(_HectonScatterParams4.xyz, float3(0.01, 0.01, 0.01));
 }
 
+float4 ResolveFrustumPlane(int planeIndex)
+{
+    if (planeIndex == 0)
+        return _HectonScatterFrustumPlane0;
+    if (planeIndex == 1)
+        return _HectonScatterFrustumPlane1;
+    if (planeIndex == 2)
+        return _HectonScatterFrustumPlane2;
+    if (planeIndex == 3)
+        return _HectonScatterFrustumPlane3;
+    if (planeIndex == 4)
+        return _HectonScatterFrustumPlane4;
+
+    return _HectonScatterFrustumPlane5;
+}
+
 bool IsFiniteFloat3(float3 value)
 {
     return all(isfinite(value));
@@ -70,10 +90,18 @@ bool IsFiniteFloat4(float4 value)
     return all(isfinite(value));
 }
 
+bool HasFiniteMatrix(float4x4 matrixValue)
+{
+    return IsFiniteFloat4(float4(matrixValue._m00, matrixValue._m01, matrixValue._m02, matrixValue._m03)) &&
+           IsFiniteFloat4(float4(matrixValue._m10, matrixValue._m11, matrixValue._m12, matrixValue._m13)) &&
+           IsFiniteFloat4(float4(matrixValue._m20, matrixValue._m21, matrixValue._m22, matrixValue._m23)) &&
+           IsFiniteFloat4(float4(matrixValue._m30, matrixValue._m31, matrixValue._m32, matrixValue._m33));
+}
+
 float3 TransformPoint(float4x4 matrixValue, float3 localPosition)
 {
     float4 transformed = mul(matrixValue, float4(localPosition, 1.0));
-    return IsFiniteFloat4(transformed) ? transformed.xyz : float3(0.0, 0.0, 0.0);
+    return transformed.xyz;
 }
 
 bool HasUsableScale(float4x4 matrixValue)
@@ -97,7 +125,7 @@ bool BoundsVisible(float4x4 matrixValue, float3 centerWS, float3 localBoundsExte
     [unroll]
     for (int planeIndex = 0; planeIndex < HECTON_SCATTER_FRUSTUM_PLANES; planeIndex++)
     {
-        float4 plane = _HectonScatterFrustumPlanes[planeIndex];
+        float4 plane = ResolveFrustumPlane(planeIndex);
         float signedDistance = dot(plane.xyz, centerWS) + plane.w;
         float radius = abs(dot(plane.xyz, axisX)) + abs(dot(plane.xyz, axisY)) + abs(dot(plane.xyz, axisZ));
         if (signedDistance + radius < 0.0)
@@ -136,11 +164,14 @@ void ScatterCullJob(uint3 dispatchThreadId : SV_DispatchThreadID)
         return;
 
     float4x4 matrixValue = _HectonScatterSourceMatrices[instanceIndex];
-    if (!HasUsableScale(matrixValue))
+    if (!HasFiniteMatrix(matrixValue) || !HasUsableScale(matrixValue))
         return;
 
     float3 localBoundsCenter = ResolveLocalBoundsCenter();
     float3 localBoundsExtents = ResolveLocalBoundsExtents();
+    if (!IsFiniteFloat3(localBoundsCenter) || !IsFiniteFloat3(localBoundsExtents))
+        return;
+
     float3 centerWS = TransformPoint(matrixValue, localBoundsCenter) + ResolveAupShiftOffset();
     if (!IsFiniteFloat3(centerWS))
         return;

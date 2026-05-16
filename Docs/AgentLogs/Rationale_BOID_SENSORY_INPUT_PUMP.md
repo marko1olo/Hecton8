@@ -91,3 +91,39 @@ Solution: Logged `Docs/AgentLogs/Build_BOID_SENSORY_INPUT_PUMP_Polish3.txt` and 
 Rejected Alternatives: Editing `LockstepStateValidator`, `EcosystemDirector`, or `SubmarineFluidDynamics` was rejected as cross-domain compile-wall work.
 Scalability potential: No runtime impact; this is integration debt outside the sensory pump.
 Hardware Impact: 0 us/frame; build-only blocker.
+
+Problem: The stricter data-sovereignty pass showed that the wider boid runtime still cached vault-backed buffers as persistent local `NativeArray` fields, and predator bite staging still used a local persistent `NativeQueue`.
+Solution: Converted static obstacles, boid state, food-chain telemetry, leviathan path/node state, foveated LOD state, simulation frame constants, and threat-grid staging to `VaultBufferHandle<T>` fields. `NativeRingBuffer<T>` now stores only a vault handle and cursor metadata. Predator bite job output now uses vault-backed fixed `BoidKillSignal` plus count buffers under `BufferID.SargassumKillSignals` and `BufferID.SargassumKillSignalCount`.
+Rejected Alternatives: Keeping local views was rejected because the file still looked like a private data owner. Keeping `NativeQueue<BoidKillSignal>` was rejected because the job is single-threaded and a fixed vault array plus count is cheaper and easier to audit. Moving predator bite results into global `SignalBus<T>` was rejected because it would delay same-frame boid state mutation until the global signal flush.
+Scalability potential: Low keeps fixed kill staging and resolves only the buffers touched by the active path. Middle/High keep the same vault contract while allowing richer predator/beam visuals. Ultra can add visual consumers without changing memory ownership or staging layout.
+Hardware Impact: Vault handle resolution adds an estimated 3-6 us CPU on active boid frames versus cached local views, pending profiler proof. Replacing queue enqueue/dequeue with fixed array/count staging is estimated to save 2-4 us during predator bite bursts and 0 steady-state; it also removes one persistent local native allocation from the boid system.
+
+Problem: The full native-state eviction still needed ARM64 layout proof and a clean compile pass.
+Solution: Changed non-GPU vault/job structs touched by this pass to `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = ...)]`, added `UnsafeUtility.SizeOf` validation for kill signals, foveated LOD packets, static obstacle cache entries, food-chain telemetry, and sensory blackbox entries, then logged a successful `dotnet build` at `Docs/AgentLogs/Build_BOID_SENSORY_INPUT_PUMP_Polish7.txt`.
+Rejected Alternatives: Changing GPU interop structs like `BoidData`, `GrazingAnchorData`, `MassiveThreatData`, and `SimulationFrameConstants` to Pack=1 was rejected because their HLSL stride/offset contracts already require 4-byte interop alignment and are separately validated.
+Scalability potential: Low/Middle/High/Ultra all share fixed binary layouts, so platform tier changes do not fork native memory contracts.
+Hardware Impact: Layout validation is cold-path. Build succeeded with one unrelated duplicate-source warning, so runtime impact remains 0 us/frame.
+
+Problem: The typed light and acoustic lanes can contain more signals than this boid pump is allowed to scan, but the local cap was reading the oldest entries. A remove/clear light signal could also leave a stale signal-light endpoint alive whenever the player flashlight remained on.
+Solution: Read the newest capped snapshot window for both `SubmarineLightsChangedSignal` and `AcousticPingSignal`. On remove/clear/brownout, clear the cached signal-light intensity unconditionally; if the player flashlight is on, the threat is rebuilt from the player-origin path on the same frame. Changed the ping slot cursor to `uint` so long sessions cannot wrap a signed cursor into a negative modulo result.
+Rejected Alternatives: Increasing the cap was rejected because it spends CPU on old events instead of fixing ordering. Adding a private active-light table was rejected as new local state in the sensory pump. Destructive queue reads were rejected again because they would race other signal consumers.
+Scalability potential: Low/Middle keep the same three ping slots and endpoint-sphere lie, but now those slots always represent the freshest acoustic stimuli under burst pressure. High/Ultra keep the capsule SDF beam path while removal events stop false beam avoidance immediately.
+Hardware Impact: Newest-window indexing is arithmetic-only and keeps the same bounded loop counts; estimated 0 us/frame added on i3/MX350. Clearing stale light intensity is a scalar assignment. The unsigned cursor removes a long-session crash class with no measurable frame cost.
+
+Problem: The post-signal-order pass required a fresh compile proof, not inherited evidence.
+Solution: Logged `Docs/AgentLogs/Build_BOID_SENSORY_INPUT_PUMP_Polish8.txt` from `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /maxcpucount:1`; it succeeded with 0 warnings and 0 errors.
+Rejected Alternatives: Reusing the Polish7 compile was rejected because the source changed after that pass.
+Scalability potential: No runtime scaling impact; this is validation evidence.
+Hardware Impact: 0 us/frame; build-only proof.
+
+Problem: The shader sensory loop clamped radii, but malformed threat payloads could still feed `max`, `dot`, direct segment division, or closest-point projection before all NaN guards fired.
+Solution: Added finite checks for `_EncounterPredatorAUPBuffer` and `_PredatorAUPBuffer` slots before radius math. Hardened `ClosestPointOnSegment` against non-finite sample/start/end, non-finite segment length, and non-finite projection, and changed projection division to `projection * rcp(max(segmentLengthSq, EPSILON))`.
+Rejected Alternatives: Relying on CPU clamps was rejected because GPU buffers can be rebound by other systems or corrupted by platform-specific translation. Replacing the capsule SDF with low-tier sphere math on all platforms was rejected because it would remove the high-end beam-parting behavior required by the prompt.
+Scalability potential: Low/Middle still use sphere math with finite payload rejection. High/Ultra keep capsule SDF while the closest-point path is now NaN-safe across D3D, Metal, and mobile translators.
+Hardware Impact: Adds two finite checks per active sensory/encounter slot and a finite projection guard in capsule mode. Estimated cost is under 1 us/frame on i3/MX350 for the capped 16-slot loop, with 0 disk or allocation impact.
+
+Problem: The shader NaN pass needed a fresh validation record.
+Solution: Logged `Docs/AgentLogs/Build_BOID_SENSORY_INPUT_PUMP_Polish9.txt` from `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /maxcpucount:1`; it succeeded with 0 warnings and 0 errors.
+Rejected Alternatives: Claiming shader syntax safety without rerunning the project compile gate was rejected.
+Scalability potential: No runtime scaling impact; this is validation evidence.
+Hardware Impact: 0 us/frame; build-only proof.

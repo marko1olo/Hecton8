@@ -33,6 +33,31 @@ Key numbers:
 
 STATUS: AUDIT COMPLETE.
 
+## 2026-05-16 Log DB Audit
+
+What was wrong: `logs_2.sqlite` was being referenced as forensic evidence, but full grouping over the DB is too heavy for an interactive pass and it is not a token ledger.
+
+What was done:
+
+- Checked `PRAGMA quick_check`: ok.
+- Recorded DB size, WAL size, row count, timestamp range, and estimated byte sum.
+- Ran a latest-5,000-row sample and grouped it by level, target, module, and thread.
+- Wrote `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_LOG_DB_AUDIT.md`.
+
+Cinematic cheats used: None. This is accounting.
+
+Exact microseconds saved: Avoided another timed-out global grouping pass; used bounded sample instead.
+
+Key numbers:
+
+- `logs_2.sqlite`: 3,569,434,624 bytes.
+- WAL: 406,367,992 bytes.
+- Rows: 486,917.
+- `sum(estimated_bytes)`: 2,970,778,869.
+- Latest 5,000-row sample: 8 ERROR rows, 1,972 TRACE rows, 2,277 INFO rows.
+
+STATUS: AUDIT COMPLETE.
+
 ## 2026-05-16 Live Tail Continuation
 
 What was wrong: The full JSONL snapshot was already stale because `.codex` continued writing after 03:56 local.

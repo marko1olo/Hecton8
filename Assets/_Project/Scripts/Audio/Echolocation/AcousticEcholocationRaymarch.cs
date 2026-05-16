@@ -9,7 +9,7 @@ namespace Hecton8.Audio.Echolocation
     /// <summary>
     /// Blittable return payload for one virtual active-sonar reflection tap.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct AcousticEcholocationRayHit
     {
         public float3 Point;

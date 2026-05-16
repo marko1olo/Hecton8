@@ -120,3 +120,31 @@ Validation:
 - `rg` found no remaining `H8Memory.Allocate<TetherManagerTelemetryEntry>`, `H8Memory.Release(ref _telemetryRing)`, or manager telemetry sentinel registration.
 - `dotnet build Hecton8.Core.csproj -v:minimal /clp:ErrorsOnly /p:UseSharedCompilation=false` still fails on unrelated Lockstep, Ecosystem, and SubmarineFluid dependency errors. No tether compiler errors appeared in the reported set.
 - Unity runtime and profiler validation were not executed.
+
+## 2026-05-16 - Vault-Owned Solver/Visual Scratch
+
+What was wrong:
+- `TetherInstance` still owned visual staging and Verlet solver scratch as local persistent `NativeArray` state. That violated the DataVault sovereignty rule even after public cable lanes and blackbox lanes moved to `GlobalDataVault`.
+- Slot release could not safely keep a local slice alias; a later activation could acquire a different slot while retaining an old slice view if aliases were not dropped.
+
+What was done:
+- Added tether scratch BufferIDs after the current `H8Memory.BufferID` enum tail: visual point positions, visual anchors, visual segment lengths, Verlet positions/previous/velocities/pins/masks, rest lengths, tensions, corrections, correction weights, solver stats, solver flags, and node fault flags.
+- Reworked `TetherInstance` to request full vault buffers once and store per-slot `NativeArray.GetSubArray` views for the active tether slot.
+- Removed all `H8Memory.Allocate`, `H8Memory.Release`, and `NativeMemorySentinel` native-array ownership calls from `TetherInstance`.
+- Deactivation now disposes vault aliases before releasing the fixed slot, preventing stale slice reuse.
+
+Cinematic Cheats used:
+- Low tier remains the 3-segment authority solve with taut-line fake at high tension.
+- High/Ultra retain the indirect cylindrical impostor cable path and stress pulse; no extra physics truth was added.
+
+Exact Microseconds saved:
+- No measured microsecond win is claimed. This is ownership cleanup, not a profiler-proven speedup.
+- Per-frame allocation remains 0 B by design; slice acquisition is activation/reconfiguration work.
+- Low tier estimate remains 6-12 us saved versus full 10-segment solve; DataVault public publish remains estimated +3-6 us per active tether.
+
+Validation:
+- Duplicate BufferID scan returned `NO_DUPLICATE_BUFFER_IDS`.
+- Static scan found no `H8Memory.Allocate`, `H8Memory.Release`, native-array sentinel registration/unregistration, or old native-array helper methods in `TetherInstance.cs`.
+- Hot-path scan found no tether `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, legacy EventBus/delegate path, Unity Joint type, `TetherManager.Instance`, `math.distance`, or `distance(` hit in the touched tether path.
+- `dotnet build Hecton8.Core.csproj -v:minimal /p:UseSharedCompilation=false` still fails on unrelated `GameBootstrapper.Initialize` arity and `ToolDurabilitySystem` missing-field/member errors. No tether compiler errors appeared in the reported set.
+- Unity runtime and profiler validation were not executed.

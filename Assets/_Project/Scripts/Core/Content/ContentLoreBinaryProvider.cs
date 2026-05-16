@@ -23,11 +23,14 @@ namespace Hecton8.Core.Content
     public sealed class ContentLoreBinaryProvider : MonoBehaviour, IDisposable
     {
         public const int MaxSynchronousLoreReadBytes = 64 * 1024;
+        private const byte SortStateUnknown = 0;
+        private const byte SortStateSorted = 1;
+        private const byte SortStateUnsorted = 2;
 
         [SerializeField] private string dictionaryRelativePath = "Babel_Dictionary.h8bin";
         [SerializeField] private ContentLoreBlockIndex[] blocks = Array.Empty<ContentLoreBlockIndex>();
 
-        private bool _sorted;
+        private byte _sortState;
 #if UNITY_EDITOR || UNITY_STANDALONE
         private MemoryMappedFile _mappedFile;
         private MemoryMappedViewAccessor _accessor;
@@ -39,7 +42,7 @@ namespace Hecton8.Core.Content
 
         public ContentLoreBlockIndex GetBlockAt(int index)
         {
-            EnsureSorted();
+            EnsureSortState();
             return blocks[index];
         }
 
@@ -83,7 +86,7 @@ namespace Hecton8.Core.Content
         public bool Open()
         {
             Dispose();
-            EnsureSorted();
+            EnsureSortState();
 
             string path = Path.Combine(Application.streamingAssetsPath, dictionaryRelativePath);
             if (!File.Exists(path))
@@ -133,7 +136,10 @@ namespace Hecton8.Core.Content
 
         private bool TryGetBlock(uint hash, out ContentLoreBlockIndex block)
         {
-            EnsureSorted();
+            EnsureSortState();
+
+            if (_sortState == SortStateUnsorted)
+                return TryGetBlockLinear(hash, out block);
 
             int lo = 0;
             int hi = blocks != null ? blocks.Length - 1 : -1;
@@ -157,10 +163,22 @@ namespace Hecton8.Core.Content
             return false;
         }
 
-        private void EnsureSorted()
+        private void EnsureSortState()
         {
-            if (_sorted || blocks == null)
+            if (_sortState != SortStateUnknown)
                 return;
+
+            _sortState = IsSortedAscending() ? SortStateSorted : SortStateUnsorted;
+        }
+
+#if UNITY_EDITOR
+        private void SortBlocks()
+        {
+            if (blocks == null)
+            {
+                _sortState = SortStateSorted;
+                return;
+            }
 
             for (int i = 1; i < blocks.Length; i++)
             {
@@ -175,7 +193,42 @@ namespace Hecton8.Core.Content
                 blocks[j + 1] = current;
             }
 
-            _sorted = true;
+            _sortState = SortStateSorted;
+        }
+#endif
+
+        private bool IsSortedAscending()
+        {
+            if (blocks == null || blocks.Length < 2)
+                return true;
+
+            uint previous = blocks[0].Hash;
+            for (int i = 1; i < blocks.Length; i++)
+            {
+                uint current = blocks[i].Hash;
+                if (current < previous)
+                    return false;
+
+                previous = current;
+            }
+
+            return true;
+        }
+
+        private bool TryGetBlockLinear(uint hash, out ContentLoreBlockIndex block)
+        {
+            int count = blocks != null ? blocks.Length : 0;
+            for (int i = 0; i < count; i++)
+            {
+                if (blocks[i].Hash != hash)
+                    continue;
+
+                block = blocks[i];
+                return true;
+            }
+
+            block = default;
+            return false;
         }
 
         private bool IsBlockReadable(ContentLoreBlockIndex block)
@@ -189,5 +242,13 @@ namespace Hecton8.Core.Content
 
             return _fileLength <= 0L || end <= _fileLength;
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            _sortState = SortStateUnknown;
+            SortBlocks();
+        }
+#endif
     }
 }

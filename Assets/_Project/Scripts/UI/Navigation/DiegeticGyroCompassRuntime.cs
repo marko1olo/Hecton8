@@ -16,7 +16,7 @@ using UnityEngine.Rendering;
 
 namespace Hecton8.UI.Navigation
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 40)]
     public struct CompassBlackBoxEntry
     {
         public uint Frame;
@@ -77,6 +77,7 @@ namespace Hecton8.UI.Navigation
         private const float HeadingEpsilon = 0.001f;
         private const float ChromaticEpsilon = 0.001f;
         private const float VelocityClampMetersPerSecond = 100000f;
+        private const int MaxAnomalyParticleBurst = 128;
         private const uint DumpMagic = 0x4759434Fu;
         private const string DumpFileName = "Dump_COMPASS_GYRO_STABILIZER.bin";
         private const uint FlagInitialized = 1u << 0;
@@ -94,22 +95,50 @@ namespace Hecton8.UI.Navigation
         private static readonly int _CompassOverkillId = Shader.PropertyToID("_CompassOverkill01");
 
         [Header("Physical Tool Binding")]
-        [SerializeField] private Transform toolRoot;
-        [SerializeField] private Transform dialPivot;
-        [SerializeField] private TMP_Text cardinalText;
-        [SerializeField] private float dialDegreesOffset;
+        [SerializeField, Tooltip("Physical hand tool or cockpit instrument root. Presentation is skipped when unbound.")]
+        private Transform toolRoot;
+
+        [SerializeField, Tooltip("Physical compass dial pivot rotated by the drifted bearing.")]
+        private Transform dialPivot;
+
+        [SerializeField, Tooltip("Diegetic TMP label. TextMeshProUGUI is accepted only when its Canvas is World Space.")]
+        private TMP_Text cardinalText;
+
+        [SerializeField, Tooltip("Authored local dial offset in degrees.")]
+        private float dialDegreesOffset;
 
         [Header("Indirect Dial")]
-        [SerializeField] private bool enableIndirectHighTier = true;
-        [SerializeField] private Mesh dialMesh;
-        [SerializeField] private Material dialIndirectMaterial;
-        [SerializeField] private Bounds indirectDrawBounds = new Bounds(Vector3.zero, new Vector3(0.35f, 0.35f, 0.35f));
+        [SerializeField, Tooltip("Allows High/Ultra tiers to draw the physical dial mesh through indirect instancing.")]
+        private bool enableIndirectHighTier = true;
+
+        [SerializeField, Tooltip("Dial mesh used by the High/Ultra indirect draw path.")]
+        private Mesh dialMesh;
+
+        [SerializeField, Tooltip("Instanced dial material that consumes _CompassDialMatrices.")]
+        private Material dialIndirectMaterial;
+
+        [SerializeField, Tooltip("Local indirect draw bounds centered on the physical dial source transform.")]
+        private Bounds indirectDrawBounds = new Bounds(Vector3.zero, new Vector3(0.35f, 0.35f, 0.35f));
 
         [Header("Drift")]
-        [SerializeField, Min(0f)] private float headingCatchupRate = 3f;
-        [SerializeField, Min(0f)] private float driftNoiseFrequency = 0.17f;
-        [SerializeField, Min(0f)] private float anomalyNoiseDegrees = 24f;
-        [SerializeField, Min(0f)] private float wildSpinDegreesPerSecond = 720f;
+        [SerializeField, Min(0f), Tooltip("Exponential catch-up rate from false bearing toward AUP north.")]
+        private float headingCatchupRate = 3f;
+
+        [SerializeField, Min(0f), Tooltip("Noise frequency for drift and anomaly wobble.")]
+        private float driftNoiseFrequency = 0.17f;
+
+        [SerializeField, Min(0f), Tooltip("Maximum anomaly-driven gyro noise in degrees.")]
+        private float anomalyNoiseDegrees = 24f;
+
+        [SerializeField, Min(0f), Tooltip("Anomaly failure spin rate when interference crosses the unstable threshold.")]
+        private float wildSpinDegreesPerSecond = 720f;
+
+        [Header("High Tier Failure VFX")]
+        [SerializeField, Tooltip("Optional local particle emitter for salt/static bursts around the physical compass glass. High/Ultra only.")]
+        private ParticleSystem anomalyFailureParticles;
+
+        [SerializeField, Min(0), Tooltip("Maximum particles emitted per LateFrameTick while anomaly interference is saturated on High/Ultra tiers. Code clamps to 128.")]
+        private int anomalyParticleBurst = 64;
 
         private IDataVault _vault;
         private IPlayerRuntimeContext _playerContext;
@@ -126,6 +155,7 @@ namespace Hecton8.UI.Navigation
         private float _lastChromatic = -1f;
         private float _lastPower = -1f;
         private float _lastOverkill = -1f;
+        private float _particleDebt;
         private int _lastCardinalIndex = int.MinValue;
         private int _lastPowerState = int.MinValue;
         private int _blackBoxCursor;
@@ -221,6 +251,71 @@ namespace Hecton8.UI.Navigation
             _calibrationHold01 = 0f;
         }
 
+        /// <summary>
+        /// Caches bootstrap-owned dependencies for the compass hot path.
+        /// </summary>
+        /// <param name="playerContext">Authoritative player pose/AUP provider.</param>
+        /// <param name="vault">Global vault owner for compass state, output, and blackbox buffers.</param>
+        /// <param name="qualityTier">Boot-time hardware quality tier.</param>
+        /// <remarks>Call from bootstrap or tool installation only; tick paths do not poll the registry.</remarks>
+        public void InjectDependencies(IPlayerRuntimeContext playerContext, IDataVault vault, HectonQualityTier qualityTier)
+        {
+            _playerContext = playerContext;
+            _vault = vault;
+            _cachedQualityTier = qualityTier;
+            _lowTier = IsLowTier(qualityTier);
+            TryResolveVaultBuffers();
+            EnsureIndirectBuffers();
+        }
+
+        /// <summary>
+        /// Binds the runtime to a physical compass tool without relying on screen-space UI.
+        /// </summary>
+        /// <param name="nextToolRoot">Physical tool or cockpit instrument root.</param>
+        /// <param name="nextDialPivot">Optional authored dial pivot.</param>
+        /// <param name="nextCardinalText">Optional diegetic cardinal label.</param>
+        /// <param name="nextDialMesh">Optional High/Ultra indirect dial mesh.</param>
+        /// <param name="nextDialMaterial">Optional High/Ultra indirect dial material.</param>
+        /// <remarks>Call from an authoring/bootstrap cold path. It releases and rebuilds GPU buffers when the mesh or material changes.</remarks>
+        public void ConfigurePhysicalBinding(
+            Transform nextToolRoot,
+            Transform nextDialPivot,
+            TMP_Text nextCardinalText,
+            Mesh nextDialMesh,
+            Material nextDialMaterial)
+        {
+            bool indirectBindingChanged = !ReferenceEquals(dialMesh, nextDialMesh) ||
+                                          !ReferenceEquals(dialIndirectMaterial, nextDialMaterial);
+
+            toolRoot = nextToolRoot;
+            dialPivot = nextDialPivot;
+            cardinalText = nextCardinalText;
+            dialMesh = nextDialMesh;
+            dialIndirectMaterial = nextDialMaterial;
+            _lastPresentedHeading = float.NaN;
+            _lastCardinalIndex = int.MinValue;
+            _lastPowerState = int.MinValue;
+            ValidateDiegeticTextBinding();
+
+            if (indirectBindingChanged)
+                ReleaseIndirectBuffers();
+
+            EnsureIndirectBuffers();
+        }
+
+        /// <summary>
+        /// Binds optional High/Ultra local failure VFX for the physical compass glass.
+        /// </summary>
+        /// <param name="nextAnomalyFailureParticles">Optional local anomaly particle emitter.</param>
+        /// <param name="nextAnomalyParticleBurst">Authored burst budget. Runtime clamps to the internal safety cap.</param>
+        /// <remarks>Call from a physical tool binding cold path; no gameplay authority depends on this emitter.</remarks>
+        public void ConfigureFailureVfx(ParticleSystem nextAnomalyFailureParticles, int nextAnomalyParticleBurst)
+        {
+            anomalyFailureParticles = nextAnomalyFailureParticles;
+            anomalyParticleBurst = math.clamp(nextAnomalyParticleBurst, 0, MaxAnomalyParticleBurst);
+            _particleDebt = 0f;
+        }
+
         public void FastTick(float deltaTime)
         {
             RefreshFastSignalInputs();
@@ -233,10 +328,7 @@ namespace Hecton8.UI.Navigation
         public void SlowTick()
         {
             if (_playerContext == null || _vault == null)
-            {
-                ResolveColdDependencies();
-                TryResolveVaultBuffers();
-            }
+                return;
 
             RefreshFastSignalInputs();
             if (ShouldUseFastCadence())
@@ -571,6 +663,7 @@ namespace Hecton8.UI.Navigation
             float chromatic = powered && anomaly > 0.8f ? math.saturate((anomaly - 0.8f) * 5f) : 0f;
             float overkill = powered && ShouldUseVisualOverkill() ? math.saturate(anomaly * 1.35f) : 0f;
             ApplyChromatic(chromatic, power, overkill);
+            EmitHighTierFailureParticles(powered, anomaly);
         }
 
         private void ApplyDialHeading(float heading)
@@ -675,6 +768,28 @@ namespace Hecton8.UI.Navigation
             _lastOverkill = safeOverkill;
         }
 
+        private void EmitHighTierFailureParticles(bool powered, float anomaly)
+        {
+            if (!powered ||
+                anomaly <= 0.8f ||
+                anomalyFailureParticles == null ||
+                anomalyParticleBurst <= 0 ||
+                !ShouldUseVisualOverkill())
+            {
+                _particleDebt = 0f;
+                return;
+            }
+
+            int burst = math.min(anomalyParticleBurst, MaxAnomalyParticleBurst);
+            _particleDebt += math.saturate((anomaly - 0.8f) * 5f) * burst;
+            int emitCount = (int)math.floor(_particleDebt);
+            if (emitCount <= 0)
+                return;
+
+            _particleDebt -= emitCount;
+            anomalyFailureParticles.Emit(emitCount);
+        }
+
         private void EnsureIndirectBuffers()
         {
             if (!enableIndirectHighTier ||
@@ -715,6 +830,7 @@ namespace Hecton8.UI.Navigation
 
         private void ValidateDiegeticTextBinding()
         {
+            _diegeticTextValid = true;
             TextMeshProUGUI uiText = cardinalText as TextMeshProUGUI;
             if (uiText == null)
                 return;

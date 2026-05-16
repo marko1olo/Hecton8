@@ -5,6 +5,15 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 #include "Hecton_WaterExtinction.hlsl"
 
+#if defined(H8_UBERNOIR_SCREEN_REFRACTION)
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareOpaqueTexture.hlsl"
+#include "Post/Hecton_SnellRefractionCore.hlsl"
+#endif
+
+#if defined(H8_UBERNOIR_MOTION_VECTOR_PASS)
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/MotionVectorsCommon.hlsl"
+#endif
+
 #define H8_UBER_NOIR_PI 3.14159265359
 #define H8_UBER_NOIR_EPS 0.0001
 #define H8_UBER_NOIR_POM_STEPS 16
@@ -54,6 +63,8 @@ CBUFFER_START(UnityPerMaterial)
     float4 _UberNoirBiolumParams;    // x=intensity, y=spectral shift, z=pulse sharpness, w=seed scale
     float4 _UberNoirDitherParams;    // x=cutoff, y=fog alpha, z=temporal strength, w=alpha scale
     float4 _UberNoirLightingParams;  // x=specular, y=roughness floor, z=ambient, w=emission scale
+    float4 _UberNoirRefractionParams;// x=strength, y=water density, z=blend, w=chromatic
+    float4 _UberNoirIorLut;          // x=air, y=water, z=dense water, w=glass
     float _Metallic;
     float _Smoothness;
     float _OcclusionStrength;
@@ -79,10 +90,12 @@ float4 _HectonSubmarineCrushCenterRadius;
 float4 _HectonSubmarineCrushDepthParams;
 float4 _HectonHabitatStressCenterRadius;
 float4 _HectonHabitatStressParams;
+float4 _HectonUberNoirRuntimeParams;
 float4 _HectonHullDentParams;
 float4 _HectonHullDents[H8_UBER_NOIR_MAX_HULL_DENTS];
 float4 _HectonMaterialDecayRuntime;
 float4 _HectonPlayerBloodSplatter;
+float _HectonActiveShaderFeatureMask;
 float _HectonEquipmentRust01;
 #endif
 float4 _GlobalWakeBuffer[H8_UBER_NOIR_MAX_GLOBAL_WAKES];
@@ -132,12 +145,14 @@ struct H8UberNoirSurface
 
 float H8UberNoirSafeRcp(float value)
 {
-    return rcp(max(abs(value), H8_UBER_NOIR_EPS));
+    float safeMagnitude = max(abs(value), H8_UBER_NOIR_EPS);
+    float signValue = lerp(-1.0, 1.0, step(0.0, value));
+    return signValue * rcp(safeMagnitude);
 }
 
 float H8UberNoirSafeRsqrt(float value)
 {
-    return rsqrt(max(abs(value), H8_UBER_NOIR_EPS));
+    return rsqrt(max(value, H8_UBER_NOIR_EPS));
 }
 
 float H8UberNoirSafePow(float value, float exponent)
@@ -159,45 +174,63 @@ float3 H8UberNoirFinite3(float3 value, float3 fallbackValue)
 
 float3 H8UberNoirSafeNormalize(float3 value, float3 fallbackValue)
 {
-    float lenSq = dot(value, value);
-    if (!isfinite(lenSq) || lenSq <= H8_UBER_NOIR_EPS)
-        return fallbackValue;
+    float finiteMask = all(isfinite(value)) ? 1.0 : 0.0;
+    float3 safeValue = finiteMask > 0.5 ? value : fallbackValue;
+    float lenSqRaw = dot(safeValue, safeValue);
+    float validMask = finiteMask * step(H8_UBER_NOIR_EPS, lenSqRaw);
+    float lenSq = max(lenSqRaw, H8_UBER_NOIR_EPS);
 
 #if defined(_MATH_LOD_LOW)
-    float3 absValue = abs(value);
-    float3 axisX = float3(value.x < 0.0 ? -1.0 : 1.0, 0.0, 0.0);
-    float3 axisY = float3(0.0, value.y < 0.0 ? -1.0 : 1.0, 0.0);
-    float3 axisZ = float3(0.0, 0.0, value.z < 0.0 ? -1.0 : 1.0);
-    return absValue.x >= absValue.y && absValue.x >= absValue.z
+    float3 absValue = abs(safeValue);
+    float3 axisX = float3(safeValue.x < 0.0 ? -1.0 : 1.0, 0.0, 0.0);
+    float3 axisY = float3(0.0, safeValue.y < 0.0 ? -1.0 : 1.0, 0.0);
+    float3 axisZ = float3(0.0, 0.0, safeValue.z < 0.0 ? -1.0 : 1.0);
+    float3 normalizedValue = absValue.x >= absValue.y && absValue.x >= absValue.z
         ? axisX
         : (absValue.y >= absValue.z ? axisY : axisZ);
+    return lerp(fallbackValue, normalizedValue, validMask);
 #else
-    return value * H8UberNoirSafeRsqrt(lenSq);
+    return lerp(fallbackValue, safeValue * H8UberNoirSafeRsqrt(lenSq), validMask);
 #endif
 }
 
 half3 H8UberNoirSafeNormalizeHalf(half3 value, half3 fallbackValue)
 {
-    half lenSq = dot(value, value);
-    if (!isfinite(lenSq) || lenSq <= (half)H8_UBER_NOIR_EPS)
-        return fallbackValue;
+    half finiteMask = all(isfinite(value)) ? 1.0h : 0.0h;
+    half3 safeValue = finiteMask > 0.5h ? value : fallbackValue;
+    half lenSqRaw = dot(safeValue, safeValue);
+    half validMask = finiteMask * (half)step((half)H8_UBER_NOIR_EPS, lenSqRaw);
+    half lenSq = max(lenSqRaw, (half)H8_UBER_NOIR_EPS);
 
 #if defined(_MATH_LOD_LOW)
-    half3 absValue = abs(value);
-    half3 axisX = half3(value.x < 0.0h ? -1.0h : 1.0h, 0.0h, 0.0h);
-    half3 axisY = half3(0.0h, value.y < 0.0h ? -1.0h : 1.0h, 0.0h);
-    half3 axisZ = half3(0.0h, 0.0h, value.z < 0.0h ? -1.0h : 1.0h);
-    return absValue.x >= absValue.y && absValue.x >= absValue.z
+    half3 absValue = abs(safeValue);
+    half3 axisX = half3(safeValue.x < 0.0h ? -1.0h : 1.0h, 0.0h, 0.0h);
+    half3 axisY = half3(0.0h, safeValue.y < 0.0h ? -1.0h : 1.0h, 0.0h);
+    half3 axisZ = half3(0.0h, 0.0h, safeValue.z < 0.0h ? -1.0h : 1.0h);
+    half3 normalizedValue = absValue.x >= absValue.y && absValue.x >= absValue.z
         ? axisX
         : (absValue.y >= absValue.z ? axisY : axisZ);
+    return lerp(fallbackValue, normalizedValue, validMask);
 #else
-    return value * (half)H8UberNoirSafeRsqrt((float)lenSq);
+    return lerp(fallbackValue, safeValue * (half)H8UberNoirSafeRsqrt((float)lenSq), validMask);
 #endif
 }
 
 float H8UberNoirTriangle01(float value)
 {
     return 1.0 - abs(frac(value) * 2.0 - 1.0);
+}
+
+float H8UberNoirHighCostAllowed()
+{
+    float globalAllow = isfinite(_HectonUberNoirRuntimeParams.y) ? saturate(_HectonUberNoirRuntimeParams.y) : 1.0;
+    float stressGate = 1.0 - step(0.8, saturate(_HectonUberNoirRuntimeParams.x));
+    return globalAllow * stressGate;
+}
+
+float H8UberNoirVisualOverkill01()
+{
+    return saturate(_HectonUberNoirRuntimeParams.w) * H8UberNoirHighCostAllowed();
 }
 
 float H8UberNoirHash12(float2 value)
@@ -249,9 +282,7 @@ void H8UberNoirClipDitheredTransparency(half alpha, float4 positionCS)
 {
     half threshold = (half)_Cutoff;
 #if !defined(_MATH_LOD_LOW)
-    [branch]
-    if (_UberNoirFeatureFlags.w >= 0.5)
-        threshold = H8UberNoirBlueNoise(positionCS);
+    threshold = lerp(threshold, H8UberNoirBlueNoise(positionCS), (half)step(0.5, _UberNoirFeatureFlags.w));
 #endif
     half coverage = saturate(alpha * (half)max(_UberNoirDitherParams.w, 0.0));
     clip(coverage - threshold);
@@ -289,12 +320,14 @@ H8UberNoirInstanceData H8UberNoirLoadInstance(uint instanceID)
     return instanceData;
 }
 
-float4x4 H8UberNoirObjectToAupWorld(float4x4 objectToWorld)
+float4x4 H8UberNoirObjectToRuntimeWorld(float4x4 objectToWorld)
 {
-    float3 universeOffset = H8UberNoirFinite3(_TotalUniverseOffset.xyz, float3(0.0, 0.0, 0.0));
-    objectToWorld._m03 -= universeOffset.x;
-    objectToWorld._m13 -= universeOffset.y;
-    objectToWorld._m23 -= universeOffset.z;
+    float3 runtimeTranslation = H8UberNoirFinite3(
+        float3(objectToWorld._m03, objectToWorld._m13, objectToWorld._m23),
+        float3(0.0, 0.0, 0.0));
+    objectToWorld._m03 = runtimeTranslation.x;
+    objectToWorld._m13 = runtimeTranslation.y;
+    objectToWorld._m23 = runtimeTranslation.z;
     return objectToWorld;
 }
 
@@ -434,6 +467,26 @@ float3 H8UberNoirApplyDynamicHullBendingWS(float3 positionWS, float3 normalWS, h
 #endif
 }
 
+half3 H8UberNoirApplyBentHullNormalBiasWS(half3 normalWS, half3 viewDirWS)
+{
+#if defined(_MATH_LOD_LOW)
+    return normalWS;
+#else
+    float featureMask = step(0.5, _UberNoirFeatureFlags.z);
+    float crushDepth = max(_HectonSubmarineCrushDepthParams.y, H8_UBER_NOIR_EPS);
+    float crush01 = saturate(max(_HectonSubmarineCrushDepthParams.x, 0.0) * H8UberNoirSafeRcp(crushDepth));
+    float habitat01 = saturate(_HectonHabitatStressParams.x);
+    float dentScar01 = saturate(_HectonHullDentParams.z);
+    float bendBias = saturate(max(crush01, habitat01) * max(_UberNoirBendParams.z, 0.0) + dentScar01 * 0.35);
+    bendBias *= featureMask;
+
+    float3 safeNormal = H8UberNoirSafeNormalize((float3)normalWS, float3(0.0, 1.0, 0.0));
+    float3 safeView = H8UberNoirSafeNormalize((float3)viewDirWS, float3(0.0, 0.0, 1.0));
+    float3 biasedNormal = H8UberNoirSafeNormalize(safeNormal + safeView * (bendBias * 0.58), safeNormal);
+    return (half3)H8UberNoirSafeNormalize(lerp(safeNormal, biasedNormal, bendBias), safeNormal);
+#endif
+}
+
 void H8UberNoirApplyGlobalWakeWS(inout float3 positionWS, inout float3 normalWS, half instanceSeed)
 {
     float3 safePositionWS = H8UberNoirFinite3(positionWS, float3(0.0, 0.0, 0.0));
@@ -542,10 +595,11 @@ void H8UberNoirApplyGlobalWakeWS(inout float3 positionWS, inout float3 normalWS,
         float3 vortexWS = H8UberNoirSafeNormalize(cross(pushAxisWS, radialWS) + upCurlWS * 0.35, upCurlWS);
         float spatialPhase = H8UberNoirTriangle01(dot(safePositionWS.xz + seed, float2(0.173, 0.219)) + (float)i * 0.131);
         float directionalGate = saturate(dot(radialWS, pushAxisWS) * 0.5 + 0.5);
-        float curvatureStrength = intensity * falloffSq * (0.055 + spatialPhase * 0.025);
+        float overkill = H8UberNoirVisualOverkill01();
+        float curvatureStrength = intensity * falloffSq * (0.055 + spatialPhase * 0.025) * lerp(1.0, 1.45, overkill);
         float pushStrength = intensity * falloffSq * (0.022 + directionalGate * 0.018);
         wakeOffsetWS += radialWS * pushStrength + vortexWS * curvatureStrength;
-        normalImpulseWS += radialWS * (falloff * intensity * 0.22) + vortexWS * (curvatureStrength * 3.5);
+        normalImpulseWS += radialWS * (falloff * intensity * 0.22) + vortexWS * (curvatureStrength * lerp(3.5, 4.8, overkill));
     }
 #endif
 
@@ -585,7 +639,7 @@ float2 H8UberNoirResolveRustPomUv(
     float2 rustUv = rawUv * rustScale + rustOffset;
     rustPacked = SAMPLE_TEXTURE2D(_RustDetailMap, sampler_RustDetailMap, rustUv);
 
-    float pomEnabled = step(H8_UBER_NOIR_EPS, rust01) * step(_UberNoirRustParams.y, rust01) * step(0.5, _UberNoirFeatureFlags.x) * step(_HectonMaterialDecayRuntime.z, 0.5);
+    float pomEnabled = step(H8_UBER_NOIR_EPS, rust01) * step(_UberNoirRustParams.y, rust01) * step(0.5, _UberNoirFeatureFlags.x) * step(_HectonMaterialDecayRuntime.z, 0.5) * H8UberNoirHighCostAllowed();
     if (pomEnabled <= 0.0)
         return baseUv;
 
@@ -638,40 +692,42 @@ void H8UberNoirApplyRustCorrosion(
     return;
 #else
     half finalRustMask = saturate(rustMask);
-    if (finalRustMask > 0.0001h)
-    {
-        float3 safeNormalWS;
-        float3 safeTangentWS;
-        float3 safeBitangentWS;
-        H8UberNoirBuildTangentFrame(surface.normalWS, tangentWS, safeNormalWS, safeTangentWS, safeBitangentWS);
-        half3 rustNormalTS = H8UberNoirDecodeRustNormalTS(rustPacked, finalRustMask * (half)_UberNoirRustParams.z);
-        float3 rustNormalWS = H8UberNoirSafeNormalize(
-            safeTangentWS * rustNormalTS.x + safeBitangentWS * rustNormalTS.y + safeNormalWS * rustNormalTS.z,
-            safeNormalWS);
-        surface.normalWS = (half3)H8UberNoirSafeNormalize(lerp(safeNormalWS, rustNormalWS, finalRustMask), safeNormalWS);
+    float3 safeNormalWS;
+    float3 safeTangentWS;
+    float3 safeBitangentWS;
+    H8UberNoirBuildTangentFrame(surface.normalWS, tangentWS, safeNormalWS, safeTangentWS, safeBitangentWS);
+    half3 rustNormalTS = H8UberNoirDecodeRustNormalTS(rustPacked, finalRustMask * (half)_UberNoirRustParams.z);
+    float3 rustNormalWS = H8UberNoirSafeNormalize(
+        safeTangentWS * rustNormalTS.x + safeBitangentWS * rustNormalTS.y + safeNormalWS * rustNormalTS.z,
+        safeNormalWS);
+    surface.normalWS = (half3)H8UberNoirSafeNormalize(lerp(safeNormalWS, rustNormalWS, finalRustMask), safeNormalWS);
 
-        half cavity = saturate((rustPacked.r - 0.42h) * 1.72h);
-        surface.albedo = lerp(surface.albedo, (half3)_RustTint.rgb, finalRustMask * 0.62h);
-        surface.albedo = lerp(surface.albedo, (half3)_RustPitTint.rgb, cavity * finalRustMask * 0.42h);
-        surface.metallic = lerp(surface.metallic, 0.0h, finalRustMask);
-        surface.smoothness = lerp(surface.smoothness, saturate(1.0h - rustPacked.a), finalRustMask);
-        surface.roughness = saturate(1.0h - surface.smoothness);
-    }
+    half cavity = saturate((rustPacked.r - 0.42h) * 1.72h);
+    surface.albedo = lerp(surface.albedo, (half3)_RustTint.rgb, finalRustMask * 0.62h);
+    surface.albedo = lerp(surface.albedo, (half3)_RustPitTint.rgb, cavity * finalRustMask * 0.42h);
+    surface.metallic = lerp(surface.metallic, 0.0h, finalRustMask);
+    surface.smoothness = lerp(surface.smoothness, saturate(1.0h - rustPacked.a), finalRustMask);
+    surface.roughness = saturate(1.0h - surface.smoothness);
+
+    half overkill = (half)H8UberNoirVisualOverkill01();
+    half crystalNoise = (half)H8UberNoirHash12(floor(wearUv * 97.0 + (positionWS.xz + _TotalUniverseOffset.xz) * 0.031));
+    half crystal = saturate((crystalNoise - 0.82h) * 5.6h) * finalRustMask * overkill;
+    surface.albedo = lerp(surface.albedo, max((half3)_NoirAbyssFloorColor.rgb, half3(0.62h, 0.70h, 0.76h)), crystal * 0.26h);
+    surface.smoothness = lerp(surface.smoothness, 0.93h, crystal * 0.58h);
+    surface.emission += (half3)_BiolumLowColor.rgb * crystal * 0.018h;
+    surface.roughness = saturate(1.0h - surface.smoothness);
 
     half recentWet = saturate((half)_HectonMaterialDecayRuntime.y);
     surface.smoothness = lerp(surface.smoothness, saturate((half)_UberNoirRustParams.w), recentWet);
     surface.roughness = saturate(1.0h - surface.smoothness);
 
     half bloodActive = saturate((half)_HectonPlayerBloodSplatter.w);
-    if (bloodActive > 0.0001h)
-    {
-        half bloodSource = saturate((half)max(_HectonPlayerBloodSplatter.x, _HectonPlayerBloodSplatter.y));
-        half noiseA = (half)H8UberNoirHash12(floor(wearUv * 39.0 + _HectonMaterialDecayRuntime.w * 0.11));
-        half patch = saturate((noiseA - 0.56h) * 2.65h) * bloodSource * bloodActive;
-        surface.albedo = lerp(surface.albedo, (half3)_RustPitTint.rgb * 0.35h, patch * 0.72h);
-        surface.smoothness = lerp(surface.smoothness, 1.0h, patch * saturate((half)_HectonPlayerBloodSplatter.z));
-        surface.roughness = saturate(1.0h - surface.smoothness);
-    }
+    half bloodSource = saturate((half)max(_HectonPlayerBloodSplatter.x, _HectonPlayerBloodSplatter.y));
+    half noiseA = (half)H8UberNoirHash12(floor(wearUv * 39.0 + _HectonMaterialDecayRuntime.w * 0.11));
+    half patch = saturate((noiseA - 0.56h) * 2.65h) * bloodSource * bloodActive;
+    surface.albedo = lerp(surface.albedo, (half3)_RustPitTint.rgb * 0.35h, patch * 0.72h);
+    surface.smoothness = lerp(surface.smoothness, 1.0h, patch * saturate((half)_HectonPlayerBloodSplatter.z));
+    surface.roughness = saturate(1.0h - surface.smoothness);
 #endif
 }
 
@@ -725,9 +781,10 @@ half3 H8UberNoirEvaluateAnalyticalCaustics(float3 positionWS, half3 normalWS, Li
 #if defined(H8_UBERNOIR_CAUSTICS_TEXTURED)
     float3 sampled = SAMPLE_TEXTURE2D(_HectonCausticsMap, sampler_HectonCausticsMap, uv).rgb;
     float sampledCaustic = dot(sampled, float3(0.27, 0.54, 0.19));
-    caustic = lerp(caustic, sampledCaustic, step(0.5, _HectonCausticsRuntimeParams.x));
+    caustic = lerp(caustic, sampledCaustic, step(0.5, _HectonCausticsRuntimeParams.x) * H8UberNoirHighCostAllowed());
 #endif
 
+    caustic *= lerp(1.0, 1.22, H8UberNoirVisualOverkill01() * normalMask);
     half intensity = (half)(featureMask * inside * depthFade * normalMask * attenuation * _UberNoirCausticParams.x * max(_HectonProjectedCausticsParams.x, 0.0));
     half3 tint = (half3)max(_HectonProjectedCausticsColor.rgb + _UberNoirCausticColor.rgb, _NoirAbyssFloorColor.rgb);
     return tint * (half)caustic * intensity;
@@ -870,6 +927,36 @@ half3 H8UberNoirApplyNoirFog(half3 color, half fogFactor, half3 extinctionColor,
     return lerp(color, floorColor, fogCurve);
 }
 
+half3 H8UberNoirApplyScreenRefraction(H8UberNoirVaryings input, H8UberNoirSurface surface, half3 color)
+{
+#if !defined(_MATH_LOD_LOW) && defined(H8_UBERNOIR_SCREEN_REFRACTION)
+    float active = step(H8_UBER_NOIR_EPS, _UberNoirRefractionParams.x) * step(H8_UBER_NOIR_EPS, _UberNoirRefractionParams.z) * H8UberNoirHighCostAllowed();
+    float2 screenUV = H8UberNoirScreenUV(input.positionCS);
+    float3 safeNormal = H8UberNoirSafeNormalize((float3)surface.normalWS, float3(0.0, 1.0, 0.0));
+    float3 safeView = H8UberNoirSafeNormalize((float3)input.viewDirWS, float3(0.0, 0.0, 1.0));
+    float nDotV = saturate(dot(safeNormal, safeView));
+    float2 snellOffset = HectonSnellUvOffset(
+        safeNormal.xy,
+        nDotV,
+        saturate(_UberNoirRefractionParams.y),
+        _UberNoirIorLut,
+        _UberNoirRefractionParams.x,
+        active,
+        1.0);
+    float2 refractedUV = saturate(screenUV + snellOffset);
+    half3 refractedColor = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, refractedUV).rgb;
+    float chromatic = saturate(_UberNoirRefractionParams.w) * active;
+    float2 chromaOffset = snellOffset * chromatic * 0.45;
+    half3 chromaColor = refractedColor;
+    chromaColor.r = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, saturate(screenUV + chromaOffset)).r;
+    chromaColor.b = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, saturate(screenUV - chromaOffset)).b;
+    refractedColor = lerp(refractedColor, chromaColor, chromatic);
+    return lerp(color, max(refractedColor, (half3)_NoirAbyssFloorColor.rgb), saturate(_UberNoirRefractionParams.z) * active);
+#else
+    return color;
+#endif
+}
+
 half4 H8UberNoirFragment(H8UberNoirVaryings input) : SV_Target
 {
     UNITY_SETUP_INSTANCE_ID(input);
@@ -883,10 +970,71 @@ half4 H8UberNoirFragment(H8UberNoirVaryings input) : SV_Target
 
     half3 color = H8UberNoirEvaluateMainLighting(input, surface);
     color = H8UberNoirApplyNoirFog(color, input.fogFactor, extinctionColor, input.positionCS);
+    color = H8UberNoirApplyScreenRefraction(input, surface, color);
     half3 abyssFloor = (half3)_NoirAbyssFloorColor.rgb;
     color = all(isfinite(color)) ? max(color, abyssFloor) : abyssFloor;
     return half4(color, 1.0h);
 }
+
+#if defined(H8_UBERNOIR_MOTION_VECTOR_PASS)
+struct H8UberNoirMotionVaryings
+{
+    float4 positionCS : SV_POSITION;
+    float4 positionCSNoJitter : POSITION_CS_NO_JITTER;
+    float4 previousPositionCSNoJitter : PREV_POSITION_CS_NO_JITTER;
+    float2 baseUv : TEXCOORD0;
+    half instanceFade : TEXCOORD1;
+    UNITY_VERTEX_OUTPUT_STEREO
+};
+
+H8UberNoirMotionVaryings H8UberNoirMotionVertex(H8UberNoirAttributes input)
+{
+    H8UberNoirMotionVaryings output;
+    UNITY_SETUP_INSTANCE_ID(input);
+    UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+
+    uint resolvedInstanceID = input.instanceID;
+#if UNITY_ANY_INSTANCING_ENABLED
+    resolvedInstanceID = unity_InstanceID;
+#endif
+
+    H8UberNoirInstanceData instanceData = H8UberNoirLoadInstance(resolvedInstanceID);
+    float3 positionOS = H8UberNoirFinite3(input.positionOS.xyz, float3(0.0, 0.0, 0.0));
+    float3 normalOS = H8UberNoirSafeNormalize(input.normalOS, float3(0.0, 1.0, 0.0));
+    float instanceSeedSource = instanceData.SeedFadeFlags.x + _UberNoirInstanceParams.w;
+    float safeInstanceSeed = isfinite(instanceSeedSource) ? instanceSeedSource : 0.0;
+    float instanceFadeSource = instanceData.SeedFadeFlags.y;
+    float safeInstanceFade = isfinite(instanceFadeSource) ? saturate(instanceFadeSource) : 1.0;
+    float3 dentedPositionOS = H8UberNoirApplyHullDentsOS(positionOS, normalOS);
+
+    float4x4 currentObjectToRuntimeWorld = H8UberNoirObjectToRuntimeWorld(instanceData.ObjectToWorld);
+    float4x4 previousObjectToRuntimeWorld = H8UberNoirObjectToRuntimeWorld(UNITY_PREV_MATRIX_M);
+    float3 normalWS = H8UberNoirTransformNormal(normalOS, instanceData.WorldToObject);
+    float3 currentPositionWS = mul(currentObjectToRuntimeWorld, float4(dentedPositionOS, 1.0)).xyz;
+    currentPositionWS = H8UberNoirApplyDynamicHullBendingWS(currentPositionWS, normalWS, (half)safeInstanceSeed);
+    H8UberNoirApplyGlobalWakeWS(currentPositionWS, normalWS, (half)safeInstanceSeed);
+    float3 previousPositionWS = mul(previousObjectToRuntimeWorld, float4(dentedPositionOS, 1.0)).xyz;
+    float3 previousNormalWS = normalWS;
+    previousPositionWS = H8UberNoirApplyDynamicHullBendingWS(previousPositionWS, previousNormalWS, (half)safeInstanceSeed);
+    H8UberNoirApplyGlobalWakeWS(previousPositionWS, previousNormalWS, (half)safeInstanceSeed);
+
+    output.positionCS = TransformWorldToHClip(currentPositionWS);
+    output.positionCSNoJitter = mul(_NonJitteredViewProjMatrix, float4(currentPositionWS, 1.0));
+    output.previousPositionCSNoJitter = mul(_PrevViewProjMatrix, float4(previousPositionWS, 1.0));
+    output.baseUv = input.uv * _BaseMap_ST.xy + _BaseMap_ST.zw;
+    output.instanceFade = (half)safeInstanceFade;
+    ApplyMotionVectorZBias(output.positionCS);
+    return output;
+}
+
+half4 H8UberNoirMotionFragment(H8UberNoirMotionVaryings input) : SV_Target
+{
+    UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+    half alpha = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.baseUv).a * (half)_BaseColor.a * saturate(input.instanceFade);
+    H8UberNoirClipDitheredTransparency(alpha, input.positionCS);
+    return half4(CalcNdcMotionVectorFromCsPositions(input.positionCSNoJitter, input.previousPositionCSNoJitter), 0.0h, 0.0h);
+}
+#endif
 
 H8UberNoirVaryings H8UberNoirVertex(H8UberNoirAttributes input)
 {
@@ -901,7 +1049,7 @@ H8UberNoirVaryings H8UberNoirVertex(H8UberNoirAttributes input)
 #endif
 
     H8UberNoirInstanceData instanceData = H8UberNoirLoadInstance(resolvedInstanceID);
-    float4x4 objectToAupWorld = H8UberNoirObjectToAupWorld(instanceData.ObjectToWorld);
+    float4x4 objectToRuntimeWorld = H8UberNoirObjectToRuntimeWorld(instanceData.ObjectToWorld);
     float3 positionOS = H8UberNoirFinite3(input.positionOS.xyz, float3(0.0, 0.0, 0.0));
     float3 normalOS = H8UberNoirSafeNormalize(input.normalOS, float3(0.0, 1.0, 0.0));
     float instanceSeedSource = instanceData.SeedFadeFlags.x + _UberNoirInstanceParams.w;
@@ -909,17 +1057,19 @@ H8UberNoirVaryings H8UberNoirVertex(H8UberNoirAttributes input)
     float instanceFadeSource = instanceData.SeedFadeFlags.y;
     float safeInstanceFade = isfinite(instanceFadeSource) ? saturate(instanceFadeSource) : 1.0;
     positionOS = H8UberNoirApplyHullDentsOS(positionOS, normalOS);
-    float3 positionWS = mul(objectToAupWorld, float4(positionOS, 1.0)).xyz;
+    float3 positionWS = mul(objectToRuntimeWorld, float4(positionOS, 1.0)).xyz;
     float3 normalWS = H8UberNoirTransformNormal(normalOS, instanceData.WorldToObject);
     positionWS = H8UberNoirApplyDynamicHullBendingWS(positionWS, normalWS, (half)safeInstanceSeed);
     H8UberNoirApplyGlobalWakeWS(positionWS, normalWS, (half)safeInstanceSeed);
 
-    float3 tangentWS = H8UberNoirSafeNormalize(mul((float3x3)objectToAupWorld, input.tangentOS.xyz), float3(1.0, 0.0, 0.0));
+    float3 tangentWS = H8UberNoirSafeNormalize(mul((float3x3)objectToRuntimeWorld, input.tangentOS.xyz), float3(1.0, 0.0, 0.0));
+    float3 viewDirWS = H8UberNoirSafeNormalize(GetWorldSpaceViewDir(positionWS), float3(0.0, 0.0, 1.0));
+    normalWS = (float3)H8UberNoirApplyBentHullNormalBiasWS((half3)normalWS, (half3)viewDirWS);
     output.positionWS = positionWS;
     output.positionCS = TransformWorldToHClip(positionWS);
     output.normalWS = (half3)normalWS;
     output.tangentWS = half4((half3)tangentWS, input.tangentOS.w);
-    output.viewDirWS = (half3)H8UberNoirSafeNormalize(GetWorldSpaceViewDir(positionWS), float3(0.0, 0.0, 1.0));
+    output.viewDirWS = (half3)viewDirWS;
     float2 rawUv = input.uv;
     output.uvPack = float4(rawUv * _BaseMap_ST.xy + _BaseMap_ST.zw, rawUv);
     output.baseUvScale = _BaseMap_ST.xy;

@@ -45,8 +45,8 @@
     0.45,
     1.6
   ],
-  "sacrificeLevel1MaskHex": "0x0000000000000070",
-  "sacrificeLevel2MaskHex": "0x00000000002007F0",
+  "sacrificeLevel1MaskHex": "0x0000000000000030",
+  "sacrificeLevel2MaskHex": "0x0000000000000330",
   "sacrificeLevel3MaskHex": "0x0000000000F017F0",
   "sacrificeLevel1FrameMs": 13.889,
   "sacrificeLevel2FrameMs": 16.667,

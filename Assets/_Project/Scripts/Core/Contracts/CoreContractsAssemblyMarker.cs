@@ -119,11 +119,11 @@ namespace Hecton8.Core.Contracts
         [FieldOffset(36)]
         public int Reserved0;
         [FieldOffset(40)]
-        public int Reserved1;
+        public float VisualOverkill01;
         [FieldOffset(44)]
-        public int Reserved2;
+        public float DearLie01;
         [FieldOffset(48)]
-        public int Reserved3;
+        public uint VisualFeatureFlags;
         [FieldOffset(52)]
         public int Reserved4;
         [FieldOffset(56)]

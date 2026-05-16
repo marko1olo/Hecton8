@@ -107,3 +107,96 @@ Validation:
 - Filtered build rerun for `RepairTool|HullDentShaderController|SubmarineStructuralGrid|GlobalSignals|GasDynamicsSolver` returned `NO_REPAIR_FILE_DIAGNOSTICS` with build exit code 1.
 - Build blocker classes: RealtimeCSG.csproj missing source files; unrelated Hecton8.Core `GlobalDataVault.ValidateAbiLayout` missing symbol; unrelated `SargassumMicroFaunaBoids` missing sensory resolver/buffer symbols; unrelated `SubmarineFluidDynamics` vault-property mutation errors.
 - No emitted diagnostic referenced `RepairTool.cs`, `HullDentShaderController.cs`, `SubmarineStructuralGrid.cs`, `GlobalSignals.cs`, or `GasDynamicsSolver.cs`.
+
+## 2026-05-16 - Fourth Pass Repair Blackbox
+What was wrong:
+- RepairTool wrote aggregate dent counts to CrashTelemetryBuffer but had no dedicated 300-frame repair heartbeat ring.
+- Invalid repair hit math could return before a repair-domain dump was written.
+- A private telemetry container would have violated the vault sovereignty requirement.
+
+What was done:
+- Added `BufferID.RepairToolBlackBox = 340`.
+- Added `RepairToolBlackBoxEntry` as `StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)`.
+- Added `VaultBufferHandle<RepairToolBlackBoxEntry>` to RepairTool and allocate/resolve it through GlobalDataVault with `SystemID.GameplayTools`.
+- Added equipped-frame heartbeat writes keyed by `Time.frameCount % 300`, so same-frame detail writes update the same ring slot.
+- Added repair-detail writes for active dent count, touched dent count, repaired count, battery byte, flags, AUP, and state hash.
+- Added invalid-math fault handling that dumps `Docs/AgentLogs/Dump_WELDING_REPAIR_LOGIC.bin` once per fault streak.
+
+Cinematic Cheats used:
+- Blackbox is one 64-byte frame record instead of managed logs or verbose strings.
+- Frame-indexed ring overwrites same-frame heartbeat/detail entries instead of creating extra history churn.
+- Normal path has no disk I/O; disk write is reserved for fault evidence.
+
+Exact Microseconds saved:
+- Rejected managed List/string telemetry: estimated 15-40 us saved during active diagnostic frames and zero GC pressure.
+- Rejected private NativeArray blackbox: estimated 1-3 us saved in ownership/sentinel churn and no untracked persistent allocation.
+- Vault heartbeat write cost: estimated 3-6 us per equipped ToolTick on i3/MX350.
+- Fault dump cost: intentionally unbounded disk I/O, only on invalid repair math.
+
+Validation:
+- `rg` audit: RepairTool has no `new NativeArray`, `EventBus`, `string.Format`, `void Update()`, or Pack=4/Pack=8 struct layout.
+- `git diff --check -- Assets/_Project/Scripts/RepairTool.cs Assets/_Project/Scripts/Core/Memory/H8Memory.cs` reports only CRLF conversion warnings.
+- Filtered build scan for `RepairTool|RepairToolBlackBox|H8Memory|CS0227|CS0214|CS0266|CS0103|CS1525|CS1002|CS1513` returned `NO_REPAIR_BLACKBOX_DIAGNOSTICS` with build exit code 1.
+- Repository build remains blocked by unrelated dependency failures outside WELDING_REPAIR_LOGIC.
+
+## 2026-05-16 - Fifth Pass Spark Signal Lane
+What was wrong:
+- Repair spark feedback used `GlobalSignals.Publish(in DebrisSpawnSignal)`, which also enqueues the legacy debris `NativeQueue`.
+- Low-tier spark feedback depended on downstream signal consumers instead of explicitly emitting the generic particle fake requested by the XML.
+- `RepairSparkDebrisKind` carried a local magic value already defined by `DebrisSpawnSignal.DebrisKindSparks`.
+
+What was done:
+- Changed repair spark publishing to `SignalBus<DebrisSpawnSignal>.Push(in signal)`.
+- Kept high-end overkill on the existing typed compute-shard path consumed by `CarveDebrisComputeRenderer` through `ReadOnlySpan<DebrisSpawnSignal>`.
+- Added `sparksVFX.Emit(...)` with a low-tier cap of 6 and high-tier local cap of 16.
+- Changed `RepairSparkDebrisKind` to alias `DebrisSpawnSignal.DebrisKindSparks`.
+
+Cinematic Cheats used:
+- Toaster mode gets small local particle bursts, not fluid-debris queue simulation.
+- God-mode still receives typed compute-shard sparks for SDF/current advection.
+- The same DebrisSpawnSignal contract drives both visual tiers; no new repair-specific signal was invented.
+
+Exact Microseconds saved:
+- Direct typed lane avoids duplicate legacy debris enqueue/drain: estimated 3-8 us saved per repair spark pulse.
+- Low-tier local spark cap saves estimated 20-60 us per active weld burst compared with high-tier spark counts.
+- Debris-kind alias has 0 us runtime gain; it prevents interface drift.
+
+Validation:
+- `rg` audit: RepairTool spark path now contains `SignalBus<DebrisSpawnSignal>.Push` and no repair-spark `GlobalSignals.Publish`.
+- `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly` filtered for repair spark/signal diagnostics returned `NO_REPAIR_SPARK_SIGNAL_DIAGNOSTICS` with build exit code 1.
+- Repository build remains blocked by unrelated dependency failures outside WELDING_REPAIR_LOGIC.
+
+## 2026-05-16 - Sixth Pass Toaster/God Spark Split
+What was wrong:
+- The fifth-pass spark lane still set `DebrisSpawnSignal.FlagComputeShard` on Low/MX350, so toaster mode could pay compute-advection cost instead of using the requested generic fake.
+- The code did not explicitly prove that high-tier overkill remained intact after the low-tier eviction.
+
+What was done:
+- Changed `PublishRepairSparkSignal` so Low, Unknown, and Mx350 publish only `DebrisSpawnSignal.FlagToolSparks`.
+- Kept `DebrisSpawnSignal.FlagComputeShard` for non-low tiers, preserving the existing `CarveDebrisComputeRenderer` StructuredBuffer injection path.
+- Changed `PublishHullRepairedSignal` to push `SignalBus<HullRepairedSignal>` directly; the typed bus still applies payload finite guards.
+- Confirmed `CarveDebrisComputeRenderer` consumes `ReadOnlySpan<DebrisSpawnSignal>` and only injects compute particles when `FlagComputeShard` is set.
+- Confirmed local `sparksVFX.Emit` remains capped at 6 on low tiers and 16 on higher tiers.
+- Reran anti-bloat grep for local NativeArray, EventBus, string.Format, Update, Pack=4/Pack=8, and repair-spark GlobalSignals usage.
+- Audited the strict XML domain path. `Assets/_Project/Scripts/Gameplay/Tools/` is absent in this checkout; the actual repair lane is `Assets/_Project/Scripts/RepairTool.cs`.
+- Swept adjacent `Assets/_Project/Scripts/Tools` and `Assets/_Project/Scripts/Gameplay` for the banned patterns. Findings are unrelated systems outside WELDING_REPAIR_LOGIC ownership and were not edited.
+
+Cinematic Cheats used:
+- Toaster mode uses 2-6 local spark fakes and no compute-shard signal.
+- High tiers keep 8-32 typed compute-shard sparks that can drift through SDF/current advection.
+- One DebrisSpawnSignal contract handles both tiers; no new welding signal was invented.
+
+Exact Microseconds saved:
+- Low/MX350 compute eviction: estimated 20-80 us saved per active weld burst by skipping 8-32 compute-shard particle injections.
+- Direct typed SignalBus path from the fifth pass remains: estimated 3-8 us saved per repair spark pulse by avoiding legacy debris queue duplication.
+- Direct HullRepairedSignal SignalBus push: estimated 0-1 us saved; the main gain is eliminating wrapper drift from RepairTool.
+- Local cap remains: estimated 20-60 us saved per low-tier weld pulse versus high-tier local/computed spark volume.
+- High-tier compute retention saves 0 us intentionally; the budget is spent on visible spark drift.
+
+Validation:
+- `rg` audit: `RepairTool` contains direct `SignalBus<DebrisSpawnSignal>.Push`, direct `SignalBus<HullRepairedSignal>.Push`, conditional `FlagComputeShard`, no `GlobalSignals.Publish`, no `new NativeArray`, no `EventBus`, no `string.Format`, no `void Update()`, and no Pack=4/Pack=8 struct layout.
+- `rg` audit: `CarveDebrisComputeRenderer` consumes `ReadOnlySpan<DebrisSpawnSignal>` and gates compute injection on `DebrisSpawnSignal.FlagComputeShard`.
+- Domain audit: strict XML path `Assets/_Project/Scripts/Gameplay/Tools/` is missing; adjacent Tools/Gameplay sweep finds unrelated `GlobalSignals`, `PhysicsEventBus`, `HectonEventBus`, and private `NativeArray` usage outside this prompt.
+- `git diff --check -- ...` reports only CRLF conversion warnings.
+- `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly /p:BuildProjectReferences=false` filtered for repair typed-lane diagnostics returned `NO_REPAIR_TYPED_LANE_DIAGNOSTICS` with build exit code 1.
+- Repository build remains blocked by unrelated dependency failures outside WELDING_REPAIR_LOGIC.

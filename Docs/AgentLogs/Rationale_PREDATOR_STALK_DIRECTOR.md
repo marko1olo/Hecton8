@@ -167,3 +167,39 @@ Rejected Alternatives: Ray/visibility simulation was rejected because the prompt
 Scalability potential: Low uses the triangle fake to sell a silhouette without SDF or particle density. High/Ultra use it as a subtle modulation under heavier SSS/silt/particle work.
 
 Hardware Impact: Cheap ALU only: one normalize, one dot, one frac/abs triangle wave per row. Profiler proof is absent.
+
+## Decision 15: Action Gate Before Predator Intent
+
+Problem: A default or inactive row could still carry stale aggression and valid previous state. Without a single authority gate, that row could select Charge after Idle selection, request high-tier SDF/VFX intent, or emit acoustic/gaze/light flags even when no active tracking anchor existed.
+
+Solution: Added an `eligibleToAct = active & hasTrackingAnchor` gate inside `LeviathanStalkJob` and applied it to Charge, Retreat, SDF contouring, aggression gain, acoustic lure, gaze break, light retreat, and fault telemetry. Sensory comparison scalars are clamped with `math.select` before use. Idle rows preserve `TargetAnchorAup` unless eligible; `PreviousSteeringDirection` and `Forward` refresh only when eligible or a shift fence reset is required. Steering output and telemetry use the same gate to zero desired direction, target offset, exported ring/distance, output aggression, bioluminescence, wake, salt, SSS, particle, and silhouette intent for dormant rows. DOD pattern used: branchless authority gating with DataVault-owned state preservation.
+
+Rejected Alternatives: Letting phase priority rely on later `math.select` order was rejected because Charge could override Idle. Clearing inactive rows every frame was rejected because the job does not own lifecycle seeding and would destroy useful post-shift state. Adding managed owner-side fixes was rejected because the bug is in the Burst decision kernel.
+
+Scalability potential: Low tier avoids fake predator intent on dormant rows and keeps the cheap radial lie only for active anchors. Middle keeps stable stalking state. High/Ultra only spend SDF/VFX overkill on rows that are actually tracking a player or sonar ping; dormant slots emit zero presentation budget.
+
+Hardware Impact: Adds a few scalar boolean gates and three finite/saturate guards per row. Measured savings: 0 us. Profiler proof absent; this is a correctness and stability fix that can avoid false downstream renderer/VFX work but is not a measured performance claim.
+
+## Decision 16: Handle-First Vault Integration
+
+Problem: `AlphaLeviathanCognitionVault.TryResolve(...)` returned raw `NativeArray` views. Those views are DataVault-owned, but long-lived caller caching can become stale after vault generation changes.
+
+Solution: Added `AlphaLeviathanVaultHandles`, `TryResolveHandles(...)`, and `TryResolveViews(...)`. Owners can cache `VaultBufferHandle<T>` values, then resolve transient views immediately before scheduling `LeviathanStalkJob` or dumping the black box. DOD pattern used: generation-checked DataVault handles with stale-alias fail-fast.
+
+Rejected Alternatives: Removing the existing `TryResolve(...)` compatibility path was rejected because public API removal would break integrators during the batch. Allocating private persistent arrays was rejected by DataVault sovereignty. Resolving GlobalRegistry inside the job was rejected by Burst and DI rules.
+
+Scalability potential: Low/Middle/High/Ultra tiers share the same handles; high-tier SDF and visual-overkill channels do not require new native owners or cross-domain arrays.
+
+Hardware Impact: 0 us hot path. Handle resolution is cold/schedule-path metadata validation. Profiler proof absent.
+
+## Decision 17: Layout Sweep Includes Job And Vault Carriers
+
+Problem: The ARM64/Quest audit previously focused on payload structs, but the domain also exposes vault carrier structs and the Burst job struct.
+
+Solution: Added explicit `StructLayout(LayoutKind.Sequential, Pack = 1)` to `AlphaLeviathanVaultBuffers` and `LeviathanStalkJob`, and `StructLayout(LayoutKind.Sequential, Pack = 1, Size = 120)` to `AlphaLeviathanVaultHandles`. The existing payload sizes remain fixed: telemetry 64, AUP 48, cognition state 144, sensory row 176, steering output 88. DOD pattern used: no unannotated public struct in AI/Cognition.
+
+Rejected Alternatives: Treating scheduler/view structs as exempt was rejected because the user explicitly requested a full struct pass. Platform-specific layout branches were rejected because they invite x64/ARM64 divergence.
+
+Scalability potential: All hardware tiers use one deterministic contract surface. Quest/Android layout stays explicit while PC/RTX keeps the same VFX intent payload.
+
+Hardware Impact: 0 us runtime. This is ABI stability work, not a performance claim.

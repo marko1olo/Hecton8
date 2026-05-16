@@ -53,6 +53,7 @@ Cache is carrying the bill. At current model-aware public-price assumptions, cac
 
 - Detailed 2026-05-16 ledger: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_TOKEN_BURN_RATE_LEDGER.md`
 - Live delta: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_LIVE_DELTA_20260516.md`
+- Log DB audit: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_LOG_DB_AUDIT.md`
 - Index: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_AUDIT_INDEX.md`
 - Historical long report with addendum: `Docs/Reports/COMPUTE_DOMINANCE_REPORT.md`
 
@@ -67,4 +68,17 @@ SQLite live sample at 2026-05-16T05:18-05:19+04:00:
 | Live cache-aware rate | USD 3.34/min; USD 200.24/hour; USD 4,805.68/day |
 | Active threads | 10, all `gpt-5.5` |
 | Delta since 03:56 full snapshot | +339,069,286 tokens; USD 259.69 cache-aware |
+
+## Log DB Tail
+
+`C:\Users\danat\.codex\logs_2.sqlite` is operational telemetry, not billing. Current metadata:
+
+| Metric | Value |
+|---|---:|
+| `logs_2.sqlite` file size | 3,569,434,624 bytes |
+| WAL size | 406,367,992 bytes |
+| Rows in `logs` | 486,917 |
+| `sum(estimated_bytes)` | 2,970,778,869 |
+| Latest 5,000-row sample window | 2026-05-16T06:01:18+04:00 to 06:04:21+04:00 |
+| Latest sample ERROR rows | 8 |
 

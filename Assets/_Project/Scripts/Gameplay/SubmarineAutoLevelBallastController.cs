@@ -34,7 +34,7 @@ namespace Hecton8.Gameplay
         IScalabilityChangedEventListener,
         ISubmarineState
     {
-        [StructLayout(LayoutKind.Explicit, Size = 80)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 80)]
         private struct PidJobOutput
         {
             [FieldOffset(0)] public float3 TorqueWorld;
@@ -46,7 +46,7 @@ namespace Hecton8.Gameplay
             [FieldOffset(64)] public uint Flags;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 128)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 128)]
         private struct SubmarinePidTelemetryEntry
         {
             [FieldOffset(0)] public int Frame;
@@ -67,7 +67,7 @@ namespace Hecton8.Gameplay
             [FieldOffset(116)] public byte CriticalFloodActive;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 80)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 80)]
         private struct DynamicFloodMassOutput
         {
             [FieldOffset(0)] public float3 DynamicCenterOfMassLocal;
@@ -112,7 +112,7 @@ namespace Hecton8.Gameplay
                 float3 currentUp = math.mul(CurrentRotation, targetUp);
                 float currentUpLengthSq = math.lengthsq(currentUp);
                 currentUp = currentUpLengthSq > Epsilon
-                    ? currentUp * math.rsqrt(currentUpLengthSq)
+                    ? currentUp * math.rsqrt(math.max(currentUpLengthSq, Epsilon))
                     : targetUp;
                 float dot = math.clamp(math.dot(currentUp, targetUp), -1f, 1f);
                 float3 errorAxis = math.cross(currentUp, targetUp);
@@ -121,7 +121,7 @@ namespace Hecton8.Gameplay
                     float3 fallbackAxis = math.mul(CurrentRotation, new float3(1f, 0f, 0f));
                     float fallbackAxisLengthSq = math.lengthsq(fallbackAxis);
                     errorAxis = fallbackAxisLengthSq > Epsilon
-                        ? fallbackAxis * math.rsqrt(fallbackAxisLengthSq)
+                        ? fallbackAxis * math.rsqrt(math.max(fallbackAxisLengthSq, Epsilon))
                         : new float3(1f, 0f, 0f);
                 }
 
@@ -150,7 +150,7 @@ namespace Hecton8.Gameplay
                     float3 pitchAxisWorld = math.mul(CurrentRotation, new float3(1f, 0f, 0f));
                     float pitchAxisLengthSq = math.lengthsq(pitchAxisWorld);
                     pitchAxisWorld = pitchAxisLengthSq > Epsilon
-                        ? pitchAxisWorld * math.rsqrt(pitchAxisLengthSq)
+                        ? pitchAxisWorld * math.rsqrt(math.max(pitchAxisLengthSq, Epsilon))
                         : new float3(1f, 0f, 0f);
                     error += pitchAxisWorld * floodPitchBias;
                 }
@@ -174,7 +174,7 @@ namespace Hecton8.Gameplay
                 float maxTorque = math.max(0f, MaxTorque);
                 float torqueLengthSq = math.lengthsq(torque);
                 if (torqueLengthSq > maxTorque * maxTorque && torqueLengthSq > Epsilon)
-                    torque *= maxTorque * math.rsqrt(torqueLengthSq);
+                    torque *= maxTorque * math.rsqrt(math.max(torqueLengthSq, Epsilon));
 
                 float3 maelstromAcceleration = HectonAnalyticalFlowField.SampleWhirlpoolVelocity(
                     PositionWS,
@@ -203,7 +203,7 @@ namespace Hecton8.Gameplay
 
                 float integralLengthSq = math.lengthsq(integral);
                 float integralWindup = integralLengthSq > Epsilon
-                    ? integralLengthSq * math.rsqrt(integralLengthSq)
+                    ? integralLengthSq * math.rsqrt(math.max(integralLengthSq, Epsilon))
                     : 0f;
                 Output[0] = new PidJobOutput
                 {
@@ -1503,7 +1503,7 @@ namespace Hecton8.Gameplay
             if (directionLengthSq <= 1e-6f)
                 return;
 
-            ventDirection *= math.rsqrt(directionLengthSq);
+            ventDirection *= math.rsqrt(math.max(directionLengthSq, 1e-6f));
             float intensity01 = math.saturate(_dynamicFloodWaterMassKg * math.rcp(math.max(MinimumMassForReciprocal, _baseMassKg)));
             _tailHeavyBubbleCooldown = math.max(0.05f, tailHeavyBubbleCooldownSeconds);
             BubbleSpawnSignal signal = default;
@@ -1529,7 +1529,7 @@ namespace Hecton8.Gameplay
                 return;
 
             float strength01 = math.saturate(intensity01);
-            float3 normalizedDirection = direction * math.rsqrt(directionLengthSq);
+            float3 normalizedDirection = direction * math.rsqrt(math.max(directionLengthSq, 1e-6f));
             FluidImpulseSignal impulse = default;
             impulse.PositionAup = positionAup;
             impulse.Vector = normalizedDirection * math.lerp(0.75f, 3.5f, strength01);
@@ -1680,7 +1680,8 @@ namespace Hecton8.Gameplay
             if (_pidHullStressAudioCooldown > 0f || !math.all(math.isfinite(pidError)) || !IsFinite(worldPosition))
                 return;
 
-            float stress01 = math.saturate(math.length(pidError) * 0.35f);
+            float pidErrorMagnitude = ApproximateMagnitudeNoSqrt(pidError);
+            float stress01 = math.saturate(pidErrorMagnitude * 0.35f);
             if (stress01 <= 0.001f)
                 return;
 
@@ -1692,7 +1693,7 @@ namespace Hecton8.Gameplay
                 AbsoluteUniversePosition.FromRuntimePosition(worldPosition),
                 worldPosition,
                 stress01,
-                math.length(pidError),
+                pidErrorMagnitude,
                 depthMeters,
                 pitchScale);
 
@@ -2239,7 +2240,7 @@ namespace Hecton8.Gameplay
 
             float t = math.saturate(blend01);
             float3 value = from + ((to - from) * t);
-            float maxMagnitude = math.max(math.length(from), math.length(to));
+            float maxMagnitude = math.max(ApproximateMagnitudeNoSqrt(from), ApproximateMagnitudeNoSqrt(to));
             if (maxMagnitude <= 0.000001f)
                 return value;
 
@@ -2247,7 +2248,7 @@ namespace Hecton8.Gameplay
             if (valueLengthSq <= 0.000001f)
                 return float3.zero;
 
-            return value * (maxMagnitude * math.rsqrt(valueLengthSq));
+            return value * (maxMagnitude * math.rsqrt(math.max(valueLengthSq, 0.000001f)));
         }
 
         private static bool IsFinite(Vector3 value)

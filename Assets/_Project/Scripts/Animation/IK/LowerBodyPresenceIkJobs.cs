@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 
 namespace Hecton8.Animation.IK
@@ -28,6 +29,19 @@ namespace Hecton8.Animation.IK
 
         /// <summary>Foot data was sanitized from a non-finite input.</summary>
         public const byte FlagInvalid = 1 << 7;
+    }
+
+    /// <summary>
+    /// ABI sentinel for lower-body IK payloads shared through native lanes.
+    /// </summary>
+    public static class LowerBodyPresenceIkLayout
+    {
+        public const int FootIkDataBytes = 68;
+
+        public static bool Validate()
+        {
+            return UnsafeUtility.SizeOf<FootIKData>() == FootIkDataBytes;
+        }
     }
 
     /// <summary>

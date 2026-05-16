@@ -149,3 +149,114 @@ Validation:
 - Forbidden item-magnet scope scan remains clean: no trigger callbacks, overlap sphere calls, `LootManager.Instance`, `Vector3.Distance`, `foreach`, `string.Format`, standard `Update` loops, or legacy item-collected publishers.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -v:minimal` fails outside this domain in `SargassumMicroFaunaBoids`, `HectonMarineSnowRenderer`, and `VehicleDockingModule`.
 - No loot/item magnet compile errors were emitted.
+
+## 2026-05-16 Sidecar Resize Integrity Pass
+
+What was wrong:
+- Live `maxLootEntities` capacity changes could replace the managed pickup sidecar arrays while those arrays still held magnet-owned pickup proxies.
+
+What was done:
+- `EnsureManagedSidecars` now clears runtime ownership before allocating replacement sidecars, restoring pickup physics/render state while the old references still exist.
+
+Cinematic Cheats used:
+- None. This is ownership hygiene for the visual fake pipeline.
+
+Exact Microseconds saved:
+- 0 us hot-frame savings claimed. The added work is cold-path only on sidecar capacity changes.
+
+## 2026-05-16 Authoring Sanitizer Pass
+
+What was wrong:
+- Runtime sanitizers still allowed a 5000m magnet radius and 100000m/s max velocity, which contradicted the anti-tunneling clamp.
+
+What was done:
+- Reduced hard ceilings to 64m radius, 256 pull strength, and 48m/s max velocity. Defaults are unchanged.
+
+Cinematic Cheats used:
+- Low tier still uses 10Hz lerp. High/Ultra keep visual overkill in typed wake/fluid/debris lanes instead of buying it with unsafe item speeds.
+
+Exact Microseconds saved:
+- 0 us hot-frame savings claimed. This is a stability clamp and worst-case work limiter, not a measured arithmetic reduction.
+
+## 2026-05-16 Duplicate Item Hygiene Pass
+
+What was wrong:
+- `HectonItem` still used `GetComponent<T>()` cache fills and a development-build interpolated error string after the magnet acquisition path had moved to typed lanes.
+
+What was done:
+- Replaced cold component cache fills in `Awake`, buoyancy setup, and editor validation with `TryGetComponent`.
+- Replaced the interpolated missing-ItemData error with a static message and Unity context object.
+
+Cinematic Cheats used:
+- None. This pass keeps item pickup behavior unchanged and removes cold-path residue from the duplicate pickup path.
+
+Exact Microseconds saved:
+- 0 us hot-frame savings claimed. Cold initialization/editor validation only; exact microseconds not measured.
+
+## 2026-05-16 Live Registry Churn Pass
+
+What was wrong:
+- `RefreshPickupVaultFromRegistry` could overwrite a sidecar slot with a different pickup or clear trailing slots without restoring the previous pickup's magnet-suppressed Rigidbody state.
+
+What was done:
+- Restored previous pickup runtime state before slot entity-id replacement.
+- Restored stale pickup runtime state before clearing trailing sidecar slots.
+
+Cinematic Cheats used:
+- None. This preserves the math-driven magnet fake without leaking physics ownership after registry churn.
+
+Exact Microseconds saved:
+- 0 us Burst hot-loop savings claimed. SlowTick pays only for changed or stale slots; exact cold-path microseconds not measured.
+
+## 2026-05-16 AUP ABI Packing Pass
+
+What was wrong:
+- Loot magnet packets embed `AbsoluteUniversePosition`, but that core AUP payload was explicit-size without `Pack=1`.
+
+What was done:
+- Added `Pack=1` to `AbsoluteUniversePosition`.
+- Added `Pack=1` to `AbsoluteUniversePositionBlit128`.
+
+Cinematic Cheats used:
+- None. This is ARM64/Quest binary-layout hygiene required by the magnet packet ABI.
+
+Exact Microseconds saved:
+- 0 us runtime savings claimed. Field offsets and size remain explicit; the gain is layout certainty, not speed.
+
+## 2026-05-16 Final Build-Green Gate
+
+What was wrong:
+- Earlier compile gates were blocked by unrelated domains and concurrent build workers, so the status file still carried an external dependency wall.
+
+What was done:
+- Ran `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -v:minimal`.
+- Build completed with 0 warnings and 0 errors.
+
+Cinematic Cheats used:
+- None. Compile validation only.
+
+Exact Microseconds saved:
+- 0 us runtime savings claimed. Build elapsed time: 40.43 seconds.
+
+## 2026-05-16 Scheduled Vault Lock Fail-Safe Pass
+
+What was wrong:
+- Scheduled DataVault buffers were unlocked on the normal completed-job path, but exceptional commit paths or schedule failures before `_pullScheduled` was set could leave lock state stale.
+
+What was done:
+- Added a shared force-complete/commit helper that always unlocks scheduled vault buffers.
+- Wrapped late-frame commit in `finally`.
+- Added schedule-failure cleanup that clears scheduled counters and unlocks buffers if `job.Schedule` fails before the job is owned.
+- Moved origin-shift job draining before the non-finite shift-payload guard.
+
+Cinematic Cheats used:
+- None. This is survival plumbing for the Burst math pipeline.
+
+Exact Microseconds saved:
+- 0 us hot-loop savings claimed. Control-path only; prevents locked-buffer stalls rather than reducing arithmetic.
+
+Validation:
+- `rg` forbidden-pattern scan remains clean for item magnet scope.
+- `git diff --check` reports only CRLF normalization warnings for the touched files.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -v:minimal` currently fails outside item magnet in `SpatialAudioManager.cs`: missing `ClearVaultBackedTelemetryAliases` and `EnsureVaultBackedArray`.
+- No loot/item magnet compile errors were emitted before the external wall.

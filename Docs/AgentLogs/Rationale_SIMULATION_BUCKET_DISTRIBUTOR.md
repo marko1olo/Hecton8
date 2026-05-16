@@ -104,3 +104,45 @@ Solution: Stopped at the domain boundary and recorded the wall after filtering t
 Rejected Alternatives: Patching construction docking behavior from the scheduling agent was rejected as architectural sabotage.
 Scalability potential: Scheduler remains ready to validate once construction dependencies are restored.
 Hardware Impact: No runtime impact from the external compile wall.
+
+## Decision: Job Admission Data Eviction
+Problem: A second H-Phi scan found BurstTokenBucketJobAdmissionService still owned persistent NativeArray fields for lane budgets, refill tables, EWMA job costs, job hashes, and black-box telemetry.
+Solution: Moved all persistent admission storage to GlobalDataVault buffers using SystemID.JobAdmission and BufferID.JobAdmission* entries. The service now stores vault handles and scalar counters only.
+Rejected Alternatives: Keeping the old private NativeArray fields was rejected because it created a second scheduler-owned data island beside the master bucketer.
+Scalability potential: Low tier keeps the same fixed token-bucket Dear Lie; High/Ultra can admit heavier visual jobs from the same vault-owned EWMA cost table without adding managed lookup containers.
+Hardware Impact: i3/MX350 receives the same fixed-size budget math with 0 B private scheduler native ownership. Runtime microsecond delta is not measured; expected frame effect is neutral because buffer lengths and loops are unchanged.
+
+## Decision: Job Admission Black Box and Steam Deck I/O
+Problem: Job admission is part of frame pacing and can deny or shed work, but its black-box ring previously lived in private native state and had no fault dump file.
+Solution: Added a 300-entry Pack=1 Size=32 admission black-box in GlobalDataVault and a fault-only dump path at Docs/AgentLogs/Dump_SIMULATION_BUCKET_DISTRIBUTOR_JobAdmission.bin.
+Rejected Alternatives: Per-frame binary writes or Debug.Log telemetry were rejected for MicroSD stutter and string allocation risk.
+Scalability potential: Low/Middle can diagnose denied work without disk traffic; High/Ultra can correlate visual-overkill admission with scheduler debt state after a fault.
+Hardware Impact: Steam Deck normal-path disk writes remain 0. Ring write is fixed-size memory only; exact microseconds not measured.
+
+## Decision: Scheduler Build Revalidation
+Problem: Previous validation stopped at attempt6 with an external construction wall after some scheduler-domain debt still existed.
+Solution: Completed the job-admission DataVault pass, added the scheduling asmdef dependency on Hecton8.Core.Memory, injected GlobalRegistry.DataVault from GameBootstrapper, and reran dotnet build.
+Rejected Alternatives: Reporting the external wall as final while BurstTokenBucketJobAdmissionService still owned private NativeArrays was rejected as incomplete H-Phi compliance.
+Scalability potential: Scheduler and job admission now share vault ownership patterns and remain decoupled from construction-domain compile churn.
+Hardware Impact: No runtime claim beyond unchanged fixed loop counts. Build evidence: Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt8_jobadmission_hphi.log reports Build succeeded with 0 Error(s).
+
+## Decision: Job Admission Fault Dump Ordering
+Problem: The admission fault path dumped the black-box ring before writing the current non-finite fault entry and skipped binary dump entirely when the optional telemetry sink was absent.
+Solution: Write the fault entry first, then dump the 300-entry ring once per frame regardless of telemetry-sink availability. Telemetry lane/cost reporting remains conditional.
+Rejected Alternatives: Keeping telemetry-sink-gated dumps was rejected because crash evidence must exist even when no listener is wired.
+Scalability potential: Low/Middle keep zero normal-path disk I/O; High/Ultra get the same deterministic fault artifact when admission permits visual-overkill jobs.
+Hardware Impact: Steam Deck/i3/MX350 normal path remains 0 disk writes. Fault path adds one cold binary dump only on non-finite admission state; exact microseconds not measured.
+
+## Decision: Admission Default Table Eviction
+Problem: A strict data-sovereignty audit found a private managed refill-budget array in the admission service after native arrays had been evicted.
+Solution: Replaced the static array with a switch resolver and kept the actual mutable refill/budget state in GlobalDataVault buffers.
+Rejected Alternatives: Leaving the array because it was cold-only was rejected; the user explicitly requested no private scheduler-owned data islands.
+Scalability potential: Low tier keeps the same fixed token refill profile; High/Ultra can spend admission budget on downstream visual detail without adding scheduler tables.
+Hardware Impact: Removes one cold managed array allocation. No runtime loop-count change and no measured frame-time claim.
+
+## Decision: Current External Compile Wall
+Problem: After the fault-dump polish, dotnet attempt9/10/11 encountered concurrent external compile walls outside CORE/SCHEDULING: transient Sargassum vault helper debt, then Ecosystem/SubmarineFluidDynamics, then AI/EcosystemPopulationBalancer.
+Solution: Re-ran validation until the wall settled and filtered attempt11 for scheduler-owned paths. The current log has no errors in Core/Scheduling, Core/Bucketing, Bootstrap/GameBootstrapper, H8Memory, SimulationBucket, or JobAdmission paths.
+Rejected Alternatives: Patching AI ecosystem SignalBus/entity-death/ref-return logic from the scheduler prompt was rejected as out-of-domain ownership drift.
+Scalability potential: Scheduler remains isolated; global build can return to green after AI ecosystem dependency repair without changing bucket/admission code.
+Hardware Impact: No runtime impact from the external compile wall. Current evidence: Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt11_after_external_edits.log.

@@ -42,7 +42,19 @@ namespace Hecton8.Gameplay.Loot.Contracts
                 return;
             }
 
-            if (PullRadiusSq <= LootMagnetConstants.AupCellSizeSq &&
+            if (!TryResolveKernelParameters(
+                    out float safeDeltaTime,
+                    out float pullRadiusSq,
+                    out float pullStrength,
+                    out float maxVelocityMetersPerSecond))
+            {
+                EntityVelocities[index] = float3.zero;
+                EntityFlags[index] = (flags & ~(LootEntityFlags.Pulling | LootEntityFlags.LowTierLerp)) |
+                                     LootEntityFlags.NonFinite;
+                return;
+            }
+
+            if (pullRadiusSq <= LootMagnetConstants.AupCellSizeSq &&
                 IsOutsideAdjacentAupCells(in lootAup, in PlayerAup))
             {
                 EntityFlags[index] = flags & ~(LootEntityFlags.Pulling | LootEntityFlags.LowTierLerp);
@@ -57,7 +69,7 @@ namespace Hecton8.Gameplay.Loot.Contracts
                 return;
             }
 
-            if (distSq > PullRadiusSq)
+            if (distSq > pullRadiusSq)
             {
                 EntityFlags[index] = flags & ~(LootEntityFlags.Pulling | LootEntityFlags.LowTierLerp);
                 return;
@@ -78,13 +90,12 @@ namespace Hecton8.Gameplay.Loot.Contracts
                 return;
             }
 
-            float safeDeltaTime = math.max(DeltaTimeSeconds, 0.0001f);
             float3 velocity = EntityVelocities[index];
             if (LowTierMode != 0)
             {
                 float alpha = math.saturate(LootMagnetConstants.LowTierLerpRate * safeDeltaTime);
                 float3 step = toPlayer * alpha;
-                float maxStep = MaxVelocityMetersPerSecond * safeDeltaTime;
+                float maxStep = maxVelocityMetersPerSecond * safeDeltaTime;
                 float stepSq = math.lengthsq(step);
                 if (stepSq > maxStep * maxStep)
                 {
@@ -126,11 +137,11 @@ namespace Hecton8.Gameplay.Loot.Contracts
             float safeRsqrtDistSq = math.max(distSq, LootMagnetConstants.MinRsqrtDistanceSq);
             float safeForceDistSq = math.max(distSq, LootMagnetConstants.MinForceDistanceSq);
             float3 dir = toPlayer * math.rsqrt(safeRsqrtDistSq);
-            velocity += dir * (PullStrength * math.rcp(safeForceDistSq)) * safeDeltaTime;
+            velocity += dir * (pullStrength * math.rcp(safeForceDistSq)) * safeDeltaTime;
             float speedSq = math.lengthsq(velocity);
-            float maxSpeedSq = MaxVelocityMetersPerSecond * MaxVelocityMetersPerSecond;
+            float maxSpeedSq = maxVelocityMetersPerSecond * maxVelocityMetersPerSecond;
             if (speedSq > maxSpeedSq)
-                velocity *= math.rsqrt(math.max(speedSq, LootMagnetConstants.MinRsqrtDistanceSq)) * MaxVelocityMetersPerSecond;
+                velocity *= math.rsqrt(math.max(speedSq, LootMagnetConstants.MinRsqrtDistanceSq)) * maxVelocityMetersPerSecond;
 
             if (!math.all(math.isfinite(velocity)))
             {
@@ -159,6 +170,42 @@ namespace Hecton8.Gameplay.Loot.Contracts
                     distSq,
                     LootMagnetEventFlags.Acoustic | LootMagnetEventFlags.Wake);
             }
+        }
+
+        private bool TryResolveKernelParameters(
+            out float safeDeltaTime,
+            out float pullRadiusSq,
+            out float pullStrength,
+            out float maxVelocityMetersPerSecond)
+        {
+            safeDeltaTime = DeltaTimeSeconds;
+            pullRadiusSq = PullRadiusSq;
+            pullStrength = PullStrength;
+            maxVelocityMetersPerSecond = MaxVelocityMetersPerSecond;
+
+            if (!math.isfinite(DeltaTimeSeconds) ||
+                !math.isfinite(PullRadiusSq) ||
+                !math.isfinite(PullStrength) ||
+                !math.isfinite(MaxVelocityMetersPerSecond) ||
+                DeltaTimeSeconds <= 0f ||
+                PullRadiusSq < LootMagnetConstants.AcquireDistanceSq ||
+                PullStrength < 0f ||
+                MaxVelocityMetersPerSecond <= 0f)
+            {
+                return false;
+            }
+
+            safeDeltaTime = math.min(DeltaTimeSeconds, LootMagnetConstants.MaxIntegrationDeltaTimeSeconds);
+            pullRadiusSq = math.clamp(
+                PullRadiusSq,
+                LootMagnetConstants.AcquireDistanceSq,
+                LootMagnetConstants.MaxStablePullRadiusMeters * LootMagnetConstants.MaxStablePullRadiusMeters);
+            pullStrength = math.clamp(PullStrength, 0f, LootMagnetConstants.MaxStablePullStrength);
+            maxVelocityMetersPerSecond = math.clamp(
+                MaxVelocityMetersPerSecond,
+                0.01f,
+                LootMagnetConstants.MaxStableVelocityMetersPerSecond);
+            return true;
         }
 
         private void WriteSignalEvent(

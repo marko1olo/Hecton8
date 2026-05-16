@@ -206,3 +206,31 @@ Solution: Clamped station-keeping, CCD normalization, fluid ingress sqrt approxi
 Rejected Alternatives: Keeping branch-only guards was rejected because mobile NaN propagation can survive edge-case data. Simulating richer audio/physics response was rejected because these are scalar authority/perception curves.
 Scalability potential: Low gets deterministic safe fallbacks; High/Ultra spend saved stability budget on existing tier-gated contact precision and particle density rather than extra physics.
 Hardware Impact: Estimated 0.01-0.05 us saved across cold/warm scalar calls; primary value is avoiding NaN fault cascades.
+
+### Phase 7: Compile Gate Burn-Down
+
+Problem: Final validation still had fixable compile walls after the AUP scope was clean.
+Solution: Restored a single `GlobalDataVault.ValidateAbiLayout`, localized missing lockstep typed-lane constants, completed `SubmarineFluidDynamics` DataVault handle fields/allocation glue, and reran the full build until `Hecton8.Core.csproj` passed with 0 warnings and 0 errors.
+Rejected Alternatives: Leaving compile as `[BLOCKED BY DEPENDENCY]` after fixable glue errors was rejected. Rewriting hydrodynamic behavior, fauna cognition, or docking gameplay was rejected because the required repair was contract glue, not domain logic.
+Scalability potential: Low/Quest/Steam Deck keep vault-owned state and typed lanes; High/Ultra retain the same deterministic buffers and can spend visual budget elsewhere without changing physics authority.
+Hardware Impact: 0.0 us steady-state runtime gain from compile glue. The practical low-end gain is avoiding duplicate persistent native ownership and making memory sentinels see the correct `SystemID`.
+
+### Phase 8: Post-Reopen Multiplatform Burnish
+
+Problem: A broader post-reopen scan found AUP/vehicle-fluid structs still relying on explicit size without explicit `Pack = 1`, plus several ballast/hydro `rsqrt` and magnitude paths that were only branch-guarded.
+Solution: Added `Pack = 1` to `AbsoluteUniversePositionBlit`, `SplashEvent`, ballast PID packets, hydro job packets, and hydro transfer jobs. Replaced branch-only `rsqrt` with `math.rsqrt(math.max(...))` and moved ballast stress/cavitation rumble magnitude to the existing max/mid/min approximation.
+Rejected Alternatives: Reordering packet fields, changing packet sizes, or converting stress/rumble back to exact magnitude was rejected because these are serialization/job ABI and perception paths, not authority improvements.
+Scalability potential: Low/Quest gets deterministic packet layout and cheaper stress math; Middle/High/Ultra keep identical authority and can spend saved scalar budget on the existing high-tier contact/VFX lanes.
+Hardware Impact: Pack changes are 0.0 us runtime. Magnitude/guard cleanup is estimated at 0.02-0.08 us saved on stress/rumble events; primary gain is NaN fault avoidance on mobile GPUs.
+
+Problem: Post-reopen global compile no longer matches the earlier green state.
+Solution: Ran the compile gate three times and wrote attempt dumps. Current failures are external to this AUP domain: missing native/vault fields in `World/SargassumMicroFaunaBoids.cs` and unassigned `localPoint` in `RepairTool.cs`.
+Rejected Alternatives: Claiming green compile or patching broad world/repair ownership after the three-strike dependency wall was rejected.
+Scalability potential: No AUP runtime effect; the AUP patch set remains isolated and scan-clean for integrator replay after external owners restore compile.
+Hardware Impact: 0.0 us.
+
+Problem: `PhysicsDeterminismSignals` still owned private `NativeQueue` lanes instead of the project typed signal lane path.
+Solution: Converted the shim to configure and publish `InputSignal`, `StateCorrectionSignal`, `DesyncDetectedSignal`, `SyncFenceSignal`, and `KccVelocitySignal` through `SignalBus<T>`. All five packet structs now implement `ISignal`; existing latest-value sidecars remain unmanaged value caches for compatibility.
+Rejected Alternatives: Keeping local `NativeQueue` ownership was rejected because it bypasses typed-lane telemetry and central sentinel ownership. Adding managed delegates or a new event bridge was rejected as worse signal fragmentation.
+Scalability potential: Low/Quest gets central lane caps and memory accounting; Middle/High/Ultra keep the same KCC/lockstep API while using the common signal telemetry path.
+Hardware Impact: 0.0 us direct frame gain; practical gain is one fewer private native queue family and unified SignalBus memory sentinel reporting.

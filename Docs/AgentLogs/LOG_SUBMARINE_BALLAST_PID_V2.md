@@ -115,3 +115,36 @@ Validation:
   - `Assets/_Project/Scripts/Physics/TetherSignals.cs`: `TetherFiredSignal` is still on the old signal interface namespace.
 - No visible compiler error references the edited submarine ballast PID, submarine fluid dynamics, or dynamic flood contract files.
 - Final validation status remains: BLOCKED BY DEPENDENCY.
+
+## 2026-05-16 - HYDRO_MECHANIC - Final H-Phi / Omega Build Pass
+
+What was wrong:
+- `SubmarineFluidDynamics` still held persistent `NativeArray<T>` fields as cached DataVault views.
+- The local splash feedback path still carried legacy queue debt before this pass.
+- A first pass that exposed vault buffers as properties was not acceptable because C# property indexer assignment on value types does not compile.
+- Task-owned native payloads needed a final ARM64/Quest layout audit.
+
+What was done:
+- Replaced persistent submarine fluid `NativeArray<T>` fields with `VaultNativeBuffer<T>` wrappers around `VaultBufferHandle<T>` and the cached `IDataVault`.
+- Kept hot compartment reads/writes on the cached vault pointer and resolved transient `NativeArray<T>` views only when scheduling Burst jobs.
+- Removed the local submarine splash `NativeQueue`/legacy `FluidFeedbackEvents.PublishSplashQueued` path; splash water-entry feedback now publishes typed `FluidImpulseSignal`.
+- Converted remaining task-owned fluid/PID payloads and dynamic flood contracts to explicit `Pack = 1` layouts where they cross native/binary or signal boundaries.
+- Rechecked NaN guards around `math.rsqrt` and kept mass/division paths on `math.rcp(math.max(...))`.
+
+Cinematic cheats used:
+- Still no per-cell CFD and no per-particle bubble truth.
+- Low tier keeps bounded lumped compartment mass and 1 Hz flood mass cadence.
+- High tier gets heavier 6DOF drag/inertia feel plus typed VFX intent for silt/wake consumers.
+
+Microseconds saved, estimated not profiled:
+- No new runtime microsecond claim. This pass buys ownership correctness and compile stability.
+- Two duplicate fault-time file writes remain removed from the earlier Steam Deck pass.
+- Existing low-tier savings remain: 20-40 us/frame avoided by not running flood mass truth at 60 Hz during active flooding.
+
+Validation:
+- `rg` scans returned no hits for persistent `private NativeArray`, `NativeQueue`, local splash queue, `H8Memory.Allocate`, `H8Memory.Release`, `Update()`, `FixedUpdate()`, or `string.Format` in the submarine PID/fluid domain files.
+- `rg` scan confirms task-owned submarine PID/fluid/contract explicit layouts use `Pack = 1`.
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false` passed once after the domain fix with `0 Warning(s)` and `0 Error(s)`.
+- Latest rerun now fails outside PHYSICS/VEHICLES in `Assets/_Project/Scripts/Fauna/FaunaBrain.cs`: missing `NormalizeVectorOrFallback`, `IsFiniteBounds`, and `IsFiniteVector`.
+- No visible compiler error references the edited submarine PID, submarine fluid dynamics, or dynamic flood contract files.
+- Final validation status: BLOCKED BY EXTERNAL DEPENDENCY.

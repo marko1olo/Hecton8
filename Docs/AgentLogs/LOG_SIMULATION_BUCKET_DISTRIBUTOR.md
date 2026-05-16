@@ -71,3 +71,58 @@ Validation:
 - `Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt5_hphi.log`: failed first on Sargassum missing `EnsureVaultBufferHandle`, then unrelated VFX/construction errors.
 - `Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt6_hphi.log`: failed only in `Assets/_Project/Scripts/Construction/VehicleDockingModule.cs`.
 - Filtered attempt6 against touched files: zero errors in `ModuloSimulationBucketer`, contracts, signals, dispatcher, bootstrap, H8Memory, CrashTelemetryBuffer, Sargassum, and HectonFluidEngine.
+
+## 2026-05-16 - Job Admission Data Eviction Pass
+What was wrong:
+- `BurstTokenBucketJobAdmissionService` still owned private persistent `NativeArray<T>` fields.
+- Job admission is scheduler-domain frame pacing infrastructure, so the previous H-Phi pass was incomplete.
+- Admission black-box state was private native state rather than vault-owned state with a fault dump.
+
+What was done:
+- Replaced admission private native fields with `VaultBufferHandle<T>` handles for lane budgets, base refill budgets, job hashes, EWMA costs, and the 300-entry black-box.
+- Added `SystemID.JobAdmission` and `BufferID.JobAdmissionLaneBudgets/BaseRefill/JobHashes/EwmaCosts/BlackBox`.
+- Added `Hecton8.Core.Memory` as an asmdef reference for `Hecton8.Core.Scheduling`.
+- Changed `GameBootstrapper` to initialize the admission service with `GlobalRegistry.DataVault`.
+- Packed `JobAdmissionBlackboxEntry` as Pack=1 Size=32 and added fault-only binary dump to `Docs/AgentLogs/Dump_SIMULATION_BUCKET_DISTRIBUTOR_JobAdmission.bin`.
+
+Cinematic cheats used:
+- Low tier keeps fixed token-bucket budgets; no dynamic managed scheduler map.
+- High tier keeps EWMA cost admission for heavier downstream visual work without private scheduler storage.
+- Fault telemetry writes to disk only on non-finite admission faults, not during healthy frames.
+
+Exact microseconds saved / budget estimates:
+- Private scheduler native ownership removed: 0 B persistent private admission arrays.
+- Runtime loop counts unchanged: no measured CPU gain claimed.
+- Normal-path disk I/O: 0 us, dump is fault-only.
+- Admission black-box ring: fixed memory write; exact microseconds not measured.
+
+Validation:
+- `Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt8_jobadmission_hphi.log`: Build succeeded, 0 Error(s).
+- `git diff --check` on touched scheduler/bootstrap/memory/docs paths: whitespace-only line-ending warnings, no patch errors.
+- Unity runtime, Play Mode, GCMonitor, and platform player builds remain pending because no Unity/MCP runtime proof was available in this session.
+
+## 2026-05-16 - Fault Dump Polish and Current Compile Wall
+What was wrong:
+- Admission fault dumps were written before the current non-finite entry entered the 300-frame ring.
+- Admission binary dump was gated by the optional telemetry sink, which could leave a fault with no disk artifact.
+- A private managed refill-budget table remained in the scheduler admission service after native storage eviction.
+
+What was done:
+- Moved `WriteBlackbox` before admission fault dump.
+- Allowed `Dump_SIMULATION_BUCKET_DISTRIBUTOR_JobAdmission.bin` to write once per frame even if no telemetry sink is wired.
+- Replaced the private static refill-budget array with a switch resolver; mutable budgets remain in GlobalDataVault.
+- Re-ran dotnet validation after concurrent external edits: attempt9 hit `World/SargassumMicroFaunaBoids`, attempt10 hit `EcosystemRuntimeInstaller`/`SubmarineFluidDynamics`, attempt11 now fails only in `AI/Ecosystem/EcosystemPopulationBalancer.cs`.
+
+Cinematic cheats used:
+- Low tier still uses fixed token refill and static bucket distribution.
+- High tier still exposes budget through typed flags/admission instead of scheduler-owned VFX edits.
+- Fault evidence is cold-path binary I/O only; normal frames do not touch disk.
+
+Exact microseconds saved / budget estimates:
+- Normal-path disk I/O remains 0 us.
+- One cold managed refill table removed; no measured frame delta claimed.
+- Admission black-box ring write remains a fixed memory write; exact microseconds not measured.
+
+Validation:
+- `Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt11_after_external_edits.log`: Build FAILED with 3 external AI ecosystem errors and zero scheduler/bucketer/bootstrap/H8Memory/job-admission hits.
+- Current status is blocked by external dependency, not build-green.

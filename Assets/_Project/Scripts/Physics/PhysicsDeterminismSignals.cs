@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
-using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -12,23 +12,6 @@ namespace Hecton8.Physics
     /// </summary>
     public static class PhysicsDeterminismSignals
     {
-        private const int InputSignalCapacity = 128;
-        private const int StateCorrectionSignalCapacity = 16;
-        private const int DesyncDetectedSignalCapacity = 16;
-        private const int SyncFenceSignalCapacity = 32;
-        private const int KccVelocitySignalCapacity = 32;
-        private const string NativeMemoryOwner = nameof(PhysicsDeterminismSignals);
-
-        private static NativeQueue<InputSignal> _inputSignals;
-        private static NativeQueue<StateCorrectionSignal> _stateCorrectionSignals;
-        private static NativeQueue<DesyncDetectedSignal> _desyncDetectedSignals;
-        private static NativeQueue<SyncFenceSignal> _syncFenceSignals;
-        private static NativeQueue<KccVelocitySignal> _kccVelocitySignals;
-        private static int _inputSignalCount;
-        private static int _stateCorrectionSignalCount;
-        private static int _desyncDetectedSignalCount;
-        private static int _syncFenceSignalCount;
-        private static int _kccVelocitySignalCount;
         private static bool _initialized;
         private static uint _inputSequence;
         private static uint _inputOverrideSequence;
@@ -80,19 +63,19 @@ namespace Hecton8.Physics
         {
             EnsureInitialized();
             _latestInputSignal = signal;
-            EnqueueBounded(ref _inputSignals, ref _inputSignalCount, InputSignalCapacity, in signal);
+            SignalBus<InputSignal>.Push(in signal);
         }
 
         public static void Publish(in StateCorrectionSignal signal)
         {
             EnsureInitialized();
-            EnqueueBounded(ref _stateCorrectionSignals, ref _stateCorrectionSignalCount, StateCorrectionSignalCapacity, in signal);
+            SignalBus<StateCorrectionSignal>.Push(in signal);
         }
 
         public static void Publish(in DesyncDetectedSignal signal)
         {
             EnsureInitialized();
-            EnqueueBounded(ref _desyncDetectedSignals, ref _desyncDetectedSignalCount, DesyncDetectedSignalCapacity, in signal);
+            SignalBus<DesyncDetectedSignal>.Push(in signal);
         }
 
         public static void Publish(in SyncFenceSignal signal)
@@ -101,7 +84,7 @@ namespace Hecton8.Physics
             SyncFenceSignal sequenced = signal;
             sequenced.Sequence = NextSequence(ref _syncFenceSequence);
             _latestSyncFenceSignal = sequenced;
-            EnqueueBounded(ref _syncFenceSignals, ref _syncFenceSignalCount, SyncFenceSignalCapacity, in sequenced);
+            SignalBus<SyncFenceSignal>.Push(in sequenced);
         }
 
         public static void PublishKccVelocity(in AbsoluteUniversePosition bodyAup, float3 velocity, uint frame, uint sourceId, byte flags = 0)
@@ -127,18 +110,18 @@ namespace Hecton8.Physics
                 0.0f,
                 !math.all(math.isfinite(sequenced.Velocity)));
             _latestKccVelocitySignal = sequenced;
-            EnqueueBounded(ref _kccVelocitySignals, ref _kccVelocitySignalCount, KccVelocitySignalCapacity, in sequenced);
+            SignalBus<KccVelocitySignal>.Push(in sequenced);
         }
 
-        public static bool TryDequeueInput(out InputSignal signal) => TryDequeue(ref _inputSignals, ref _inputSignalCount, out signal);
+        public static bool TryDequeueInput(out InputSignal signal) => TryReadLane(out signal);
 
-        public static bool TryDequeueStateCorrection(out StateCorrectionSignal signal) => TryDequeue(ref _stateCorrectionSignals, ref _stateCorrectionSignalCount, out signal);
+        public static bool TryDequeueStateCorrection(out StateCorrectionSignal signal) => TryReadLane(out signal);
 
-        public static bool TryDequeueDesyncDetected(out DesyncDetectedSignal signal) => TryDequeue(ref _desyncDetectedSignals, ref _desyncDetectedSignalCount, out signal);
+        public static bool TryDequeueDesyncDetected(out DesyncDetectedSignal signal) => TryReadLane(out signal);
 
-        public static bool TryDequeueSyncFence(out SyncFenceSignal signal) => TryDequeue(ref _syncFenceSignals, ref _syncFenceSignalCount, out signal);
+        public static bool TryDequeueSyncFence(out SyncFenceSignal signal) => TryReadLane(out signal);
 
-        public static bool TryDequeueKccVelocity(out KccVelocitySignal signal) => TryDequeue(ref _kccVelocitySignals, ref _kccVelocitySignalCount, out signal);
+        public static bool TryDequeueKccVelocity(out KccVelocitySignal signal) => TryReadLane(out signal);
 
         public static bool TryGetLatestInput(out InputSignal signal)
         {
@@ -181,14 +164,8 @@ namespace Hecton8.Physics
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            DisposeAllQueues();
-        }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
-        private static void RegisterQuitHook()
-        {
-            Application.quitting -= DisposeAllQueues;
-            Application.quitting += DisposeAllQueues;
+            ClearSidecars();
+            _initialized = false;
         }
 
         private static void EnsureInitialized()
@@ -196,21 +173,24 @@ namespace Hecton8.Physics
             if (_initialized)
                 return;
 
-            CreateQueue(ref _inputSignals, InputSignalCapacity, nameof(_inputSignals));
-            CreateQueue(ref _stateCorrectionSignals, StateCorrectionSignalCapacity, nameof(_stateCorrectionSignals));
-            CreateQueue(ref _desyncDetectedSignals, DesyncDetectedSignalCapacity, nameof(_desyncDetectedSignals));
-            CreateQueue(ref _syncFenceSignals, SyncFenceSignalCapacity, nameof(_syncFenceSignals));
-            CreateQueue(ref _kccVelocitySignals, KccVelocitySignalCapacity, nameof(_kccVelocitySignals));
+            GlobalSignals.InitializeAllQueues();
+            SignalBus<InputSignal>.EnsureInitialized();
+            SignalBus<StateCorrectionSignal>.EnsureInitialized();
+            SignalBus<DesyncDetectedSignal>.EnsureInitialized();
+            SignalBus<SyncFenceSignal>.EnsureInitialized();
+            SignalBus<KccVelocitySignal>.EnsureInitialized();
             _initialized = true;
         }
 
-        private static void DisposeAllQueues()
+        private static bool TryReadLane<T>(out T signal)
+            where T : unmanaged, ISignal
         {
-            DisposeQueue(ref _inputSignals, nameof(_inputSignals));
-            DisposeQueue(ref _stateCorrectionSignals, nameof(_stateCorrectionSignals));
-            DisposeQueue(ref _desyncDetectedSignals, nameof(_desyncDetectedSignals));
-            DisposeQueue(ref _syncFenceSignals, nameof(_syncFenceSignals));
-            DisposeQueue(ref _kccVelocitySignals, nameof(_kccVelocitySignals));
+            EnsureInitialized();
+            return SignalBus<T>.TryReadFrame(out signal);
+        }
+
+        private static void ClearSidecars()
+        {
             _latestInputSignal = default;
             _latestInputOverrideSignal = default;
             _latestSyncFenceSignal = default;
@@ -219,74 +199,6 @@ namespace Hecton8.Physics
             _inputOverrideSequence = 0u;
             _syncFenceSequence = 0u;
             _kccVelocitySequence = 0u;
-            _inputSignalCount = 0;
-            _stateCorrectionSignalCount = 0;
-            _desyncDetectedSignalCount = 0;
-            _syncFenceSignalCount = 0;
-            _kccVelocitySignalCount = 0;
-            _initialized = false;
-        }
-
-        private static void CreateQueue<T>(ref NativeQueue<T> queue, int expectedCapacity, string label)
-            where T : unmanaged
-        {
-            if (queue.IsCreated)
-                return;
-
-            queue = new NativeQueue<T>(Allocator.Persistent); // COLD ALLOC: NativeQueue<T>[expectedCapacity] - determinism signal lane - owner: PhysicsDeterminismSignals
-            NativeMemorySentinel.RegisterNativeQueue(
-                queue,
-                expectedCapacity,
-                NativeMemoryOwner,
-                label,
-                NativeAllocationLifetime.Session);
-            for (int i = 0; i < expectedCapacity; i++)
-                queue.Enqueue(default);
-            for (int i = 0; i < expectedCapacity; i++)
-                queue.TryDequeue(out _);
-        }
-
-        private static void EnqueueBounded<T>(ref NativeQueue<T> queue, ref int queuedCount, int capacity, in T signal)
-            where T : unmanaged
-        {
-            if (queuedCount >= capacity)
-            {
-                if (queue.TryDequeue(out _))
-                    queuedCount--;
-                else
-                    queuedCount = 0;
-            }
-
-            queue.Enqueue(signal);
-            queuedCount++;
-        }
-
-        private static bool TryDequeue<T>(ref NativeQueue<T> queue, ref int queuedCount, out T signal)
-            where T : unmanaged
-        {
-            if (!queue.IsCreated)
-            {
-                signal = default;
-                return false;
-            }
-
-            if (!queue.TryDequeue(out signal))
-                return false;
-
-            if (queuedCount > 0)
-                queuedCount--;
-            return true;
-        }
-
-        private static void DisposeQueue<T>(ref NativeQueue<T> queue, string label)
-            where T : unmanaged
-        {
-            if (!queue.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, label);
-            queue.Dispose();
-            queue = default;
         }
 
         private static uint NextSequence(ref uint sequence)
@@ -300,8 +212,12 @@ namespace Hecton8.Physics
         }
     }
 
+}
+
+namespace Hecton8.Core.Contracts.Signals
+{
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
-    public struct InputSignal
+    public struct InputSignal : ISignal
     {
         public float2 MoveDelta;
         public float2 LookDelta;
@@ -314,7 +230,7 @@ namespace Hecton8.Physics
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 128)]
-    public struct StateCorrectionSignal
+    public struct StateCorrectionSignal : ISignal
     {
         public AbsoluteUniversePosition PositionAup;
         public float3 RuntimePosition;
@@ -329,7 +245,7 @@ namespace Hecton8.Physics
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
-    public struct DesyncDetectedSignal
+    public struct DesyncDetectedSignal : ISignal
     {
         public uint LocalHash;
         public uint AuthoritativeHash;
@@ -340,7 +256,7 @@ namespace Hecton8.Physics
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 128)]
-    public struct SyncFenceSignal
+    public struct SyncFenceSignal : ISignal
     {
         public AbsoluteUniversePosition PositionAup;
         public float3 RuntimePosition;
@@ -357,7 +273,7 @@ namespace Hecton8.Physics
     /// Decoupled player KCC velocity lane consumed by presentation systems such as lower-body IK.
     /// </summary>
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 80)]
-    public struct KccVelocitySignal
+    public struct KccVelocitySignal : ISignal
     {
         public const byte FlagLowTier = 1 << 0;
         public const byte FlagMovementAuthorityExternal = 1 << 1;

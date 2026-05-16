@@ -63,6 +63,7 @@ using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton8.World;
@@ -420,6 +421,13 @@ namespace Hecton8.Audio
         private const int AudioClipRouteCacheCapacity = 128;
         private const byte AudioClipRouteFlagThreat = 1 << 0;
         private const byte AudioClipRouteFlagBed = 1 << 1;
+        private const byte AudioClipRouteFlagLeviathanRoar = 1 << 2;
+        private const byte AudioClipRouteFlagBubble = 1 << 3;
+        private const byte AudioVoiceCategoryNone = 0;
+        private const byte AudioVoiceCategoryLeviathanRoar = 1;
+        private const byte AudioVoiceCategoryBubble = 2;
+        private const int MaxLeviathanRoarVoices = 3;
+        private const int MaxBubbleVoices = 10;
         private const int MaxListenerContainingCaveVolumes = 8;
         private const int MaxCachedBaseInteriorMuffleZones = 32;
         private const float CaveExternalLowPassBoundaryCutoffHertz = 2600f;
@@ -521,7 +529,7 @@ namespace Hecton8.Audio
             InventoryRunawayExplosion = 2
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 64)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
         internal struct ActiveEmitterSample
         {
             public AbsoluteUniversePosition PositionAup;
@@ -529,14 +537,14 @@ namespace Hecton8.Audio
             public float Amplitude;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 64)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
         internal struct ActiveImpactEmitterSample
         {
             public AbsoluteUniversePosition PositionAup;
             public float Amplitude;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 64)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
         internal struct BinauralEmitterTelemetry
         {
             public Vector3 Position;
@@ -551,7 +559,7 @@ namespace Hecton8.Audio
             public int Valid;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 96)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 96)]
         private struct DelayedAudioEvent
         {
             public DelayedAudioEventKind Kind;
@@ -578,7 +586,7 @@ namespace Hecton8.Audio
             public AcousticPathResult Result;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 80)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 80)]
         private struct ImpactEmitterSample
         {
             public Vector3 Position;
@@ -751,6 +759,7 @@ namespace Hecton8.Audio
         private AudioLowPassFilter[] _lowPassFilters;
         private Transform[] _worldSourceRoots;
         private byte[] _worldSourceBusFlags;
+        private byte[] _worldSourceVoiceCategories;
         private int[] _clipRouteCacheIds;
         private byte[] _clipRouteCacheFlags;
         private Vector3[] _previousAbsolutePositions;
@@ -769,12 +778,15 @@ namespace Hecton8.Audio
         private bool _registeredOriginShiftListener;
         private bool _acousticOcclusionRuntimeAcquired;
         private IFoveatedSimulationDirector _foveatedSimulationDirector;
+        private IDataVault _dataVault;
         private Transform _listenerTransform;
         private Vector3 _previousListenerAbsolutePosition;
         private bool _hasPreviousListenerAbsolutePosition;
         private BinauralEmitterTelemetry _dominantBinauralEmitter;
-        private NativeArray<float> _acousticRadarIntensityBins;
-        private NativeArray<float> _acousticRadarGrid;
+        private VaultBufferHandle<float> _acousticRadarIntensityBinsHandle;
+        private VaultBufferHandle<float> _acousticRadarGridHandle;
+        private NativeArray<float> _acousticRadarIntensityBins; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<float> _acousticRadarGrid; // Vault alias; GlobalDataVault owns backing memory.
         private WorldCaveDirector _worldCaveDirector;
         private ComputeBuffer _acousticRadarGridBuffer;
         private bool _acousticRadarGridDirty;
@@ -820,6 +832,7 @@ namespace Hecton8.Audio
         private bool _hasParasiteRoomLowPassCutoffParameter;
         private bool _hasParasiteOrganicLayerGainParameter;
         private bool _hasNarrativeRadioLowPassCutoffParameter;
+        private bool _hasBrownoutPitchMultiplierParameter;
         private float _nextWorldPoolFullEditorLogTime;
         private float _nextHelmetPoolFullEditorLogTime;
         private float _nextPlayAtPointNullClipLogTime;
@@ -833,6 +846,11 @@ namespace Hecton8.Audio
         private float _eclipseAcousticPitchShiftCents;
         private float _eclipseAcousticPitchRatio = 1f;
         private float _timeDilationWorldPitchRatio = 1f;
+        private float _brownoutAudioPitchRatio = 1f;
+        private float _brownoutTarget01;
+        private float _lastAppliedBrownoutPitchRatio = 1f;
+        private int _lastCreatureFrozenBankEvictFrame = -4096;
+        private int _lastAudioOutputSampleRate = -1;
         private float _listenerWaterDensityMul;
         private float _radarDecayAccumulator;
         private HectonPlayerMovement _listenerPlayerMovement;
@@ -844,9 +862,12 @@ namespace Hecton8.Audio
         private NativeQueue<CoreAudioEvent> _audioEventQueue;
         private NativeList<VirtualVoice> _virtualVoiceWriteQueue;
         private NativeList<VirtualVoice> _virtualVoiceSortQueue;
-        private NativeArray<VirtualVoiceSelection> _virtualVoiceSelections;
-        private NativeArray<VirtualVoiceStatistics> _virtualVoiceStatistics;
-        private NativeArray<VirtualVoiceTelemetryEntry> _virtualVoiceBlackBox;
+        private VaultBufferHandle<VirtualVoiceSelection> _virtualVoiceSelectionsHandle;
+        private VaultBufferHandle<VirtualVoiceStatistics> _virtualVoiceStatisticsHandle;
+        private VaultBufferHandle<VirtualVoiceTelemetryEntry> _virtualVoiceBlackBoxHandle;
+        private NativeArray<VirtualVoiceSelection> _virtualVoiceSelections; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<VirtualVoiceStatistics> _virtualVoiceStatistics; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<VirtualVoiceTelemetryEntry> _virtualVoiceBlackBox; // Vault alias; GlobalDataVault owns backing memory.
         private JobHandle _virtualVoiceSortHandle;
         private VirtualVoiceStatistics _lastVirtualVoiceStatistics;
         private AcousticAup _virtualListenerAup;
@@ -865,15 +886,22 @@ namespace Hecton8.Audio
         private float[] _virtualChannelFadeRemaining;
         private float[] _virtualChannelFadeStartVolumes;
         private byte[] _virtualChannelPendingFlags;
-        private NativeArray<AcousticPortalNode> _acousticPortalNodes;
-        private NativeArray<AcousticPortalEdge> _acousticPortalEdges;
-        private NativeArray<AcousticPathResult> _acousticPortalResult;
-        private NativeArray<float> _acousticPortalCosts;
-        private NativeArray<int> _acousticPortalCameFrom;
-        private NativeArray<byte> _acousticPortalStates;
+        private VaultBufferHandle<AcousticPortalNode> _acousticPortalNodesHandle;
+        private VaultBufferHandle<AcousticPortalEdge> _acousticPortalEdgesHandle;
+        private VaultBufferHandle<AcousticPathResult> _acousticPortalResultHandle;
+        private VaultBufferHandle<float> _acousticPortalCostsHandle;
+        private VaultBufferHandle<int> _acousticPortalCameFromHandle;
+        private VaultBufferHandle<byte> _acousticPortalStatesHandle;
+        private NativeArray<AcousticPortalNode> _acousticPortalNodes; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<AcousticPortalEdge> _acousticPortalEdges; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<AcousticPathResult> _acousticPortalResult; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<float> _acousticPortalCosts; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<int> _acousticPortalCameFrom; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<byte> _acousticPortalStates; // Vault alias; GlobalDataVault owns backing memory.
         private NativeList<int> _acousticPortalOpenSet;
         private NativeList<int> _acousticPortalClosedSet;
-        private NativeArray<AcousticTelemetryEntry> _acousticPortalBlackBox;
+        private VaultBufferHandle<AcousticTelemetryEntry> _acousticPortalBlackBoxHandle;
+        private NativeArray<AcousticTelemetryEntry> _acousticPortalBlackBox; // Vault alias; GlobalDataVault owns backing memory.
         private int _acousticPortalBlackBoxCursor;
         private Vector3[] _acousticPortalWaypointScratch;
         private int[] _acousticHabitatNodeMap;
@@ -1018,6 +1046,9 @@ namespace Hecton8.Audio
             _listenerWaterDensityMul = 0f;
             SetParasiteRoomAcousticLoad(0);
             SetEclipseAcousticPitchShiftCents(0f);
+            _brownoutTarget01 = 0f;
+            _brownoutAudioPitchRatio = 1f;
+            ApplyBrownoutPitchToMixerAndSources();
             ResetGlobalWindHowlState();
             _worldDroneCrossfadeActive = false;
             ApplyThreatBusDucking(0f, 0f);
@@ -1138,6 +1169,7 @@ namespace Hecton8.Audio
             RefreshCachedAudioRuntimeServicesCold();
             TryRegisterHotSwapListener();
             RefreshSpatialAudioPolicyCold();
+            ApplyAmbientOutputSampleRatePolicy();
             TryRegisterScalabilityEvents();
             TryRegisterOriginShiftListener();
             RefreshVirtualPhysicalVoiceLimit(true);
@@ -1234,6 +1266,7 @@ namespace Hecton8.Audio
             UpdateStormRoarShedder(safeDeltaTime);
             UpdateGlobalWindHowl(safeDeltaTime);
             UpdateTimeDilationPitchScalar();
+            UpdateBrownoutAudioPitch(safeDeltaTime);
             float threatActivity = 0f;
             DecayImpactEmitters(now);
             AdvanceAcousticRadarDecayCadence(safeDeltaTime);
@@ -1320,6 +1353,7 @@ namespace Hecton8.Audio
         public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
         {
             CacheSpatialAudioPolicy(payload.CurrentQualityTier, _cachedLowMemoryProfile, Time.frameCount);
+            ApplyAmbientOutputSampleRatePolicy();
         }
 
         public void OnGlobalRegistryServiceRebound(
@@ -1334,6 +1368,9 @@ namespace Hecton8.Audio
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault && previousService is IDataVault previousVault)
+                previousVault.ReleaseOwnerBuffers(SystemID.Audio, out _);
+
             CacheReboundAudioRuntimeService(serviceSlot, currentService);
         }
 
@@ -1441,6 +1478,16 @@ namespace Hecton8.Audio
             DrainAudioEventQueue();
         }
 
+#if DEVELOPMENT_BUILD
+        private void OnGUI()
+        {
+            float audioRamMb = AudioResidencyCache.CurrentResidentBytes / (1024f * 1024f);
+            GUI.Label(
+                new Rect(12f, 12f, 320f, 24f),
+                $"Audio RAM: {audioRamMb:0.0} MB | Clips: {AudioResidencyCache.ResidentClipCount}");
+        }
+#endif
+
         /// <summary>True when the listener runtime position is inside a published cave/voxel volume bounding box.</summary>
         public bool IsListenerInsideCaveVolume => _listenerContainingCaveCount > 0;
 
@@ -1507,6 +1554,7 @@ namespace Hecton8.Audio
             _lowPassFilters = new AudioLowPassFilter[_poolSize]; // COLD ALLOC: AudioLowPassFilter[_poolSize] - authored world-source LPF references - owner: SpatialAudioManager
             _worldSourceRoots = new Transform[_poolSize]; // COLD ALLOC: Transform[_poolSize] - authored world-source root cache for occlusion owner filtering - owner: SpatialAudioManager
             _worldSourceBusFlags = new byte[_poolSize]; // COLD ALLOC: byte[_poolSize] - per-source mixer role flags for hot-loop threat/bed decisions - owner: SpatialAudioManager
+            _worldSourceVoiceCategories = new byte[_poolSize]; // COLD ALLOC: byte[_poolSize] - hard-capped SFX category occupancy - owner: SpatialAudioManager
             _clipRouteCacheIds = new int[AudioClipRouteCacheCapacity]; // COLD ALLOC: int[128] - AudioClip instance-id route cache keys - owner: SpatialAudioManager
             _clipRouteCacheFlags = new byte[AudioClipRouteCacheCapacity]; // COLD ALLOC: byte[128] - AudioClip route flags avoiding repeated clip.name scans - owner: SpatialAudioManager
             _previousAbsolutePositions = new Vector3[_poolSize]; // COLD ALLOC: Vector3[_poolSize] - per-source absolute position history - owner: SpatialAudioManager
@@ -1814,12 +1862,17 @@ namespace Hecton8.Audio
             if (lodTier == AudioLodTier.Tier2Culled)
                 return -1;
 
+            byte voiceCategory = ResolveAudioVoiceCategory(clip);
+            if (!TryReserveAudioVoiceCategory(voiceCategory, -1))
+                return -1;
+
             int index = AcquireSourceIndex();
             if (index < 0)
                 return -1;
 
             AudioSource source = _pool[index];
             ResetWorldSourceState(index, true);
+            AssignAudioVoiceCategory(index, voiceCategory);
             source.enabled = true;
 
             // â”€â”€ ÐŸÐ¾Ð·Ð¸Ñ†Ð¸Ð¾Ð½Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð¸Ðµ â”€â”€
@@ -2069,6 +2122,9 @@ namespace Hecton8.Audio
 
         private void AppendVirtualVoice(in VirtualVoiceRequest request)
         {
+            if (request.FoveatedTier >= VirtualVoiceUtility.FoveatedTierFrozen)
+                EvictCreatureAudioBanksForFrozenTier();
+
             float priority = request.FoveatedTier >= VirtualVoiceUtility.FoveatedTierFrozen
                 ? 0f
                 : math.max(0f, SanitizeFinite(request.Priority, 0f));
@@ -2313,8 +2369,13 @@ namespace Hecton8.Audio
             if (lodTier == AudioLodTier.Tier2Culled)
                 return false;
 
+            byte voiceCategory = ResolveAudioVoiceCategory(clip);
+            if (!TryReserveAudioVoiceCategory(voiceCategory, sourceIndex))
+                return false;
+
             AudioSource source = _pool[sourceIndex];
             ResetWorldSourceState(sourceIndex, true);
+            AssignAudioVoiceCategory(sourceIndex, voiceCategory);
             source.enabled = true;
             source.transform.position = audiblePosition;
             AudioResidencyCache.TouchClip(clip, ResolveWorldResidencyDomain(clip, ResolvedDefaultWorldMixerGroup), true);
@@ -2732,9 +2793,13 @@ namespace Hecton8.Audio
         private byte ResolveVirtualVoiceFoveatedTier(Vector3 runtimePosition)
         {
             IFoveatedSimulationDirector director = _foveatedSimulationDirector;
-            return director != null
+            byte tier = director != null
                 ? (byte)director.ResolveTierForPosition(runtimePosition)
                 : (byte)FoveatedSimulationTier.Active;
+            if (tier >= VirtualVoiceUtility.FoveatedTierFrozen)
+                EvictCreatureAudioBanksForFrozenTier();
+
+            return tier;
         }
 
         private float ResolveVirtualVoicePriority(float volume, AcousticPortalFlags flags, byte foveatedTier)
@@ -2802,6 +2867,7 @@ namespace Hecton8.Audio
             _cachedPlayerCriticalAudio = GlobalRegistry.PlayerCriticalAudio;
             _cachedConstructionManager = GlobalRegistry.ConstructionRuntime;
             _foveatedSimulationDirector = GlobalRegistry.FoveatedSimulationDirector;
+            _dataVault = GlobalRegistry.DataVault;
             _playerRuntimeContextResolveFrame = nextResolveFrame;
             _weatherServiceResolveFrame = nextResolveFrame;
             _acousticZoneResolveFrame = nextResolveFrame;
@@ -2842,6 +2908,16 @@ namespace Hecton8.Audio
                     _foveatedSimulationDirector = currentService as IFoveatedSimulationDirector;
                     _foveatedDirectorResolveFrame = nextResolveFrame;
                     break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    IDataVault dataVault = currentService as IDataVault;
+                    if (!ReferenceEquals(_dataVault, dataVault))
+                    {
+                        _dataVault = dataVault;
+                        ClearVaultBackedTelemetryAliases();
+                        if (_runtimeResourcesInitialized)
+                            InitializeTelemetryCaches();
+                    }
+                    break;
             }
         }
 
@@ -2850,6 +2926,33 @@ namespace Hecton8.Audio
             _cachedScalabilityTier = scalabilityTier;
             _cachedLowMemoryProfile = lowMemoryProfile;
             _spatialAudioPolicyRefreshFrame = frame;
+        }
+
+        private void ApplyAmbientOutputSampleRatePolicy()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            HectonQualityTier tier = _cachedScalabilityTier;
+            bool lowTierAudio =
+                _cachedLowMemoryProfile ||
+                tier == HectonQualityTier.Low ||
+                tier == HectonQualityTier.Mx350 ||
+                HardwareTierDetector.IsQuest3Like ||
+                QuestVulkanRuntimePolicy.IsQuestRuntimeActive;
+            if (!lowTierAudio)
+                return;
+
+            AudioConfiguration configuration = AudioSettings.GetConfiguration();
+            if (configuration.sampleRate > 0 && configuration.sampleRate <= LowTierAmbientOutputSampleRate)
+            {
+                _lastAudioOutputSampleRate = configuration.sampleRate;
+                return;
+            }
+
+            configuration.sampleRate = LowTierAmbientOutputSampleRate;
+            if (AudioSettings.Reset(configuration))
+                _lastAudioOutputSampleRate = LowTierAmbientOutputSampleRate;
         }
 
         private void TryRegisterScalabilityEvents()
@@ -3181,12 +3284,17 @@ namespace Hecton8.Audio
             if (lodTier == AudioLodTier.Tier2Culled)
                 return;
 
+            byte voiceCategory = ResolveAudioVoiceCategory(clip);
+            if (!TryReserveAudioVoiceCategory(voiceCategory, -1))
+                return;
+
             int index = AcquireSourceIndex();
             if (index < 0)
                 return;
 
             AudioSource source = _pool[index];
             ResetWorldSourceState(index, true);
+            AssignAudioVoiceCategory(index, voiceCategory);
             source.enabled = true;
             source.transform.position = audiblePosition;
             AudioResidencyCache.TouchClip(clip, ResolveWorldResidencyDomain(clip, mixerGroup), true);
@@ -3314,7 +3422,7 @@ namespace Hecton8.Audio
             AudioResidencyCache.TouchClip(clip, AudioResidencyDomain.Interface, true);
             source.clip = clip;
             source.volume = math.saturate(volume);
-            source.pitch = 1f;
+            source.pitch = _brownoutAudioPitchRatio;
             source.spatialBlend = 0f;
             source.outputAudioMixerGroup = ResolveUiMixerGroup(clip, mixerGroup);
 
@@ -3787,12 +3895,17 @@ namespace Hecton8.Audio
             if (lodTier == AudioLodTier.Tier2Culled)
                 return false;
 
+            byte voiceCategory = ResolveAudioVoiceCategory(clip);
+            if (!TryReserveAudioVoiceCategory(voiceCategory, -1))
+                return false;
+
             int index = AcquireSourceIndexNoEvict();
             if (index < 0)
                 return false;
 
             AudioSource source = _pool[index];
             ResetWorldSourceState(index, true);
+            AssignAudioVoiceCategory(index, voiceCategory);
             source.enabled = true;
             source.transform.position = position;
             AudioResidencyCache.TouchClip(clip, ResolveWorldResidencyDomain(clip, mixerGroup), true);
@@ -4779,6 +4892,9 @@ namespace Hecton8.Audio
             if (_worldSourceBusFlags != null && sourceIndex < _worldSourceBusFlags.Length)
                 _worldSourceBusFlags[sourceIndex] = 0;
 
+            if (_worldSourceVoiceCategories != null && sourceIndex < _worldSourceVoiceCategories.Length)
+                _worldSourceVoiceCategories[sourceIndex] = AudioVoiceCategoryNone;
+
             if (_activeWorldRuntimePositions != null && sourceIndex < _activeWorldRuntimePositions.Length)
                 _activeWorldRuntimePositions[sourceIndex] = default;
 
@@ -4993,6 +5109,9 @@ namespace Hecton8.Audio
                 : AudioLodTier.Tier0Full;
             if (resolvedTier == AudioLodTier.Tier2Culled)
             {
+                if (IsThreatWorldSource(sourceIndex))
+                    EvictCreatureAudioBanksForFrozenTier();
+
                 if (_audioLodTiers != null && sourceIndex >= 0 && sourceIndex < _audioLodTiers.Length)
                     _audioLodTiers[sourceIndex] = resolvedTier;
                 source.Stop();
@@ -5806,33 +5925,96 @@ namespace Hecton8.Audio
             return true;
         }
 
-        private void InitializeTelemetryCaches()
+        private bool EnsureVaultBackedArray<T>(
+            ref VaultBufferHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            ref NativeArray<T> alias)
+            where T : struct
         {
-            if (!_acousticRadarIntensityBins.IsCreated)
+            if (requiredLength <= 0)
             {
-                _acousticRadarIntensityBins = new NativeArray<float>(
-                    AcousticRadarBinCount,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[360] - HUD acoustic radar ring - owner: SpatialAudioManager
-                NativeMemorySentinel.RegisterNativeArray(
-                    _acousticRadarIntensityBins,
-                    nameof(SpatialAudioManager),
-                    nameof(_acousticRadarIntensityBins),
-                    NativeAllocationLifetime.Session);
+                alias = default;
+                handle = default;
+                return false;
             }
 
-            if (!_acousticRadarGrid.IsCreated)
+            IDataVault vault = _dataVault;
+            if (vault == null)
             {
-                _acousticRadarGrid = new NativeArray<float>(
-                    AcousticRadarGridCellCount,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[32] - 8x4 acoustic radar energy grid - owner: SpatialAudioManager
-                NativeMemorySentinel.RegisterNativeArray(
-                    _acousticRadarGrid,
-                    nameof(SpatialAudioManager),
-                    nameof(_acousticRadarGrid),
-                    NativeAllocationLifetime.Session);
+                vault = GlobalRegistry.DataVault;
+                if (vault == null)
+                {
+                    alias = default;
+                    handle = default;
+                    return false;
+                }
+
+                _dataVault = vault;
             }
+
+            if (!handle.IsCreated || handle.Length < requiredLength || !vault.ResolveBuffer(ref handle))
+            {
+                handle = vault.GetBufferHandle<T>(
+                    bufferId,
+                    requiredLength,
+                    SystemID.Audio,
+                    options);
+            }
+
+            if (!handle.IsCreated)
+            {
+                alias = default;
+                return false;
+            }
+
+            alias = handle.Resolve(vault);
+            return alias.IsCreated && alias.Length >= requiredLength;
+        }
+
+        private void ClearVaultBackedTelemetryAliases()
+        {
+            _acousticRadarIntensityBinsHandle = default;
+            _acousticRadarGridHandle = default;
+            _virtualVoiceSelectionsHandle = default;
+            _virtualVoiceStatisticsHandle = default;
+            _virtualVoiceBlackBoxHandle = default;
+            _acousticPortalNodesHandle = default;
+            _acousticPortalEdgesHandle = default;
+            _acousticPortalResultHandle = default;
+            _acousticPortalCostsHandle = default;
+            _acousticPortalCameFromHandle = default;
+            _acousticPortalStatesHandle = default;
+            _acousticPortalBlackBoxHandle = default;
+            _acousticRadarIntensityBins = default;
+            _acousticRadarGrid = default;
+            _virtualVoiceSelections = default;
+            _virtualVoiceStatistics = default;
+            _virtualVoiceBlackBox = default;
+            _acousticPortalNodes = default;
+            _acousticPortalEdges = default;
+            _acousticPortalResult = default;
+            _acousticPortalCosts = default;
+            _acousticPortalCameFrom = default;
+            _acousticPortalStates = default;
+            _acousticPortalBlackBox = default;
+        }
+
+        private void InitializeTelemetryCaches()
+        {
+            EnsureVaultBackedArray(
+                ref _acousticRadarIntensityBinsHandle,
+                BufferID.SpatialAudioRadarIntensityBins,
+                AcousticRadarBinCount,
+                NativeArrayOptions.ClearMemory,
+                ref _acousticRadarIntensityBins);
+            EnsureVaultBackedArray(
+                ref _acousticRadarGridHandle,
+                BufferID.SpatialAudioRadarGrid,
+                AcousticRadarGridCellCount,
+                NativeArrayOptions.ClearMemory,
+                ref _acousticRadarGrid);
 
             if (_acousticRadarGridUploadScratch == null || _acousticRadarGridUploadScratch.Length != AcousticRadarGridCellCount)
                 _acousticRadarGridUploadScratch = new float[AcousticRadarGridCellCount]; // COLD ALLOC: float[32] - CPU mirror for acoustic radar grid ComputeBuffer uploads - owner: SpatialAudioManager
@@ -5909,73 +6091,63 @@ namespace Hecton8.Audio
                     NativeAllocationLifetime.Session);
             }
 
-            if (!_virtualVoiceSelections.IsCreated)
-            {
-                _virtualVoiceSelections = new NativeArray<VirtualVoiceSelection>(MaxVirtualPhysicalVoices, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<VirtualVoiceSelection>[16] - selected virtual voices mapped to physical DSP channels - owner: SpatialAudioManager
-                NativeMemorySentinel.RegisterNativeArray(
-                    _virtualVoiceSelections,
-                    nameof(SpatialAudioManager),
-                    nameof(_virtualVoiceSelections),
-                    NativeAllocationLifetime.Session);
-            }
-
-            if (!_virtualVoiceStatistics.IsCreated)
-            {
-                _virtualVoiceStatistics = new NativeArray<VirtualVoiceStatistics>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<VirtualVoiceStatistics>[1] - last virtual voice sort counters - owner: SpatialAudioManager
-                NativeMemorySentinel.RegisterNativeArray(
-                    _virtualVoiceStatistics,
-                    nameof(SpatialAudioManager),
-                    nameof(_virtualVoiceStatistics),
-                    NativeAllocationLifetime.Session);
-            }
-
-            if (!_virtualVoiceBlackBox.IsCreated)
-            {
-                _virtualVoiceBlackBox = new NativeArray<VirtualVoiceTelemetryEntry>(VirtualVoiceBlackBoxFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<VirtualVoiceTelemetryEntry>[300] - virtual voice black-box dump ring - owner: SpatialAudioManager
-                NativeMemorySentinel.RegisterNativeArray(
-                    _virtualVoiceBlackBox,
-                    nameof(SpatialAudioManager),
-                    nameof(_virtualVoiceBlackBox),
-                    NativeAllocationLifetime.Session);
-            }
+            EnsureVaultBackedArray(
+                ref _virtualVoiceSelectionsHandle,
+                BufferID.SpatialAudioVirtualVoiceSelections,
+                MaxVirtualPhysicalVoices,
+                NativeArrayOptions.ClearMemory,
+                ref _virtualVoiceSelections);
+            EnsureVaultBackedArray(
+                ref _virtualVoiceStatisticsHandle,
+                BufferID.SpatialAudioVirtualVoiceStatistics,
+                1,
+                NativeArrayOptions.ClearMemory,
+                ref _virtualVoiceStatistics);
+            EnsureVaultBackedArray(
+                ref _virtualVoiceBlackBoxHandle,
+                BufferID.SpatialAudioVirtualVoiceBlackBox,
+                VirtualVoiceBlackBoxFrameCount,
+                NativeArrayOptions.ClearMemory,
+                ref _virtualVoiceBlackBox);
 
             EnsureVirtualChannelArrays();
 
-            if (!_acousticPortalNodes.IsCreated)
-            {
-                _acousticPortalNodes = new NativeArray<AcousticPortalNode>(AcousticPortalMaxNodes, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<AcousticPortalNode>[30] - acoustic portal route nodes - owner: SpatialAudioManager
-                NativeMemorySentinel.RegisterNativeArray(_acousticPortalNodes, nameof(SpatialAudioManager), nameof(_acousticPortalNodes), NativeAllocationLifetime.Session);
-            }
-
-            if (!_acousticPortalEdges.IsCreated)
-            {
-                _acousticPortalEdges = new NativeArray<AcousticPortalEdge>(AcousticPortalMaxEdges, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<AcousticPortalEdge>[60] - acoustic portal route edges - owner: SpatialAudioManager
-                NativeMemorySentinel.RegisterNativeArray(_acousticPortalEdges, nameof(SpatialAudioManager), nameof(_acousticPortalEdges), NativeAllocationLifetime.Session);
-            }
-
-            if (!_acousticPortalResult.IsCreated)
-            {
-                _acousticPortalResult = new NativeArray<AcousticPathResult>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<AcousticPathResult>[1] - acoustic portal Burst result slot - owner: SpatialAudioManager
-                NativeMemorySentinel.RegisterNativeArray(_acousticPortalResult, nameof(SpatialAudioManager), nameof(_acousticPortalResult), NativeAllocationLifetime.Session);
-            }
-
-            if (!_acousticPortalCosts.IsCreated)
-            {
-                _acousticPortalCosts = new NativeArray<float>(AcousticPortalMaxNodes, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[30] - acoustic path Dijkstra cost scratch - owner: SpatialAudioManager
-                NativeMemorySentinel.RegisterNativeArray(_acousticPortalCosts, nameof(SpatialAudioManager), nameof(_acousticPortalCosts), NativeAllocationLifetime.Session);
-            }
-
-            if (!_acousticPortalCameFrom.IsCreated)
-            {
-                _acousticPortalCameFrom = new NativeArray<int>(AcousticPortalMaxNodes, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[30] - acoustic path predecessor scratch - owner: SpatialAudioManager
-                NativeMemorySentinel.RegisterNativeArray(_acousticPortalCameFrom, nameof(SpatialAudioManager), nameof(_acousticPortalCameFrom), NativeAllocationLifetime.Session);
-            }
-
-            if (!_acousticPortalStates.IsCreated)
-            {
-                _acousticPortalStates = new NativeArray<byte>(AcousticPortalMaxNodes, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[30] - acoustic path open/closed state scratch - owner: SpatialAudioManager
-                NativeMemorySentinel.RegisterNativeArray(_acousticPortalStates, nameof(SpatialAudioManager), nameof(_acousticPortalStates), NativeAllocationLifetime.Session);
-            }
+            EnsureVaultBackedArray(
+                ref _acousticPortalNodesHandle,
+                BufferID.SpatialAudioPortalNodes,
+                AcousticPortalMaxNodes,
+                NativeArrayOptions.ClearMemory,
+                ref _acousticPortalNodes);
+            EnsureVaultBackedArray(
+                ref _acousticPortalEdgesHandle,
+                BufferID.SpatialAudioPortalEdges,
+                AcousticPortalMaxEdges,
+                NativeArrayOptions.ClearMemory,
+                ref _acousticPortalEdges);
+            EnsureVaultBackedArray(
+                ref _acousticPortalResultHandle,
+                BufferID.SpatialAudioPortalResult,
+                1,
+                NativeArrayOptions.ClearMemory,
+                ref _acousticPortalResult);
+            EnsureVaultBackedArray(
+                ref _acousticPortalCostsHandle,
+                BufferID.SpatialAudioPortalCosts,
+                AcousticPortalMaxNodes,
+                NativeArrayOptions.ClearMemory,
+                ref _acousticPortalCosts);
+            EnsureVaultBackedArray(
+                ref _acousticPortalCameFromHandle,
+                BufferID.SpatialAudioPortalCameFrom,
+                AcousticPortalMaxNodes,
+                NativeArrayOptions.ClearMemory,
+                ref _acousticPortalCameFrom);
+            EnsureVaultBackedArray(
+                ref _acousticPortalStatesHandle,
+                BufferID.SpatialAudioPortalStates,
+                AcousticPortalMaxNodes,
+                NativeArrayOptions.ClearMemory,
+                ref _acousticPortalStates);
 
             if (!_acousticPortalOpenSet.IsCreated)
             {
@@ -5989,11 +6161,12 @@ namespace Hecton8.Audio
                 NativeMemorySentinel.RegisterNativeList(_acousticPortalClosedSet, nameof(SpatialAudioManager), nameof(_acousticPortalClosedSet), NativeAllocationLifetime.Session);
             }
 
-            if (!_acousticPortalBlackBox.IsCreated)
-            {
-                _acousticPortalBlackBox = new NativeArray<AcousticTelemetryEntry>(AcousticPortalConstants.TelemetryFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<AcousticTelemetryEntry>[300] - acoustic portal blackbox - owner: SpatialAudioManager
-                NativeMemorySentinel.RegisterNativeArray(_acousticPortalBlackBox, nameof(SpatialAudioManager), nameof(_acousticPortalBlackBox), NativeAllocationLifetime.Session);
-            }
+            EnsureVaultBackedArray(
+                ref _acousticPortalBlackBoxHandle,
+                BufferID.SpatialAudioPortalBlackBox,
+                AcousticPortalConstants.TelemetryFrameCount,
+                NativeArrayOptions.ClearMemory,
+                ref _acousticPortalBlackBox);
 
             if (_acousticPortalWaypointScratch == null || _acousticPortalWaypointScratch.Length != AcousticPortalMaxNodes)
                 _acousticPortalWaypointScratch = new Vector3[AcousticPortalMaxNodes]; // COLD ALLOC: Vector3[30] - voxel macro portal waypoint scratch - owner: SpatialAudioManager
@@ -6043,19 +6216,11 @@ namespace Hecton8.Audio
         {
             CompleteVirtualVoiceSort();
 
-            if (_acousticRadarIntensityBins.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_acousticRadarIntensityBins);
-                _acousticRadarIntensityBins.Dispose();
-                _acousticRadarIntensityBins = default;
-            }
+            IDataVault vault = _dataVault;
+            if (vault != null)
+                vault.ReleaseOwnerBuffers(SystemID.Audio, out _);
 
-            if (_acousticRadarGrid.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_acousticRadarGrid);
-                _acousticRadarGrid.Dispose();
-                _acousticRadarGrid = default;
-            }
+            ClearVaultBackedTelemetryAliases();
 
             if (_acousticRadarGridBuffer != null)
             {
@@ -6098,69 +6263,6 @@ namespace Hecton8.Audio
                 _virtualVoiceSortQueue = default;
             }
 
-            if (_virtualVoiceSelections.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_virtualVoiceSelections);
-                _virtualVoiceSelections.Dispose();
-                _virtualVoiceSelections = default;
-            }
-
-            if (_virtualVoiceStatistics.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_virtualVoiceStatistics);
-                _virtualVoiceStatistics.Dispose();
-                _virtualVoiceStatistics = default;
-            }
-
-            if (_virtualVoiceBlackBox.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_virtualVoiceBlackBox);
-                _virtualVoiceBlackBox.Dispose();
-                _virtualVoiceBlackBox = default;
-            }
-
-            if (_acousticPortalNodes.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_acousticPortalNodes);
-                _acousticPortalNodes.Dispose();
-                _acousticPortalNodes = default;
-            }
-
-            if (_acousticPortalEdges.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_acousticPortalEdges);
-                _acousticPortalEdges.Dispose();
-                _acousticPortalEdges = default;
-            }
-
-            if (_acousticPortalResult.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_acousticPortalResult);
-                _acousticPortalResult.Dispose();
-                _acousticPortalResult = default;
-            }
-
-            if (_acousticPortalCosts.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_acousticPortalCosts);
-                _acousticPortalCosts.Dispose();
-                _acousticPortalCosts = default;
-            }
-
-            if (_acousticPortalCameFrom.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_acousticPortalCameFrom);
-                _acousticPortalCameFrom.Dispose();
-                _acousticPortalCameFrom = default;
-            }
-
-            if (_acousticPortalStates.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_acousticPortalStates);
-                _acousticPortalStates.Dispose();
-                _acousticPortalStates = default;
-            }
-
             if (_acousticPortalOpenSet.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeList(nameof(SpatialAudioManager), nameof(_acousticPortalOpenSet));
@@ -6173,13 +6275,6 @@ namespace Hecton8.Audio
                 NativeMemorySentinel.UnregisterNativeList(nameof(SpatialAudioManager), nameof(_acousticPortalClosedSet));
                 _acousticPortalClosedSet.Dispose();
                 _acousticPortalClosedSet = default;
-            }
-
-            if (_acousticPortalBlackBox.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_acousticPortalBlackBox);
-                _acousticPortalBlackBox.Dispose();
-                _acousticPortalBlackBox = default;
             }
 
             _delayedAudioIngressCount = 0;
@@ -6275,13 +6370,26 @@ namespace Hecton8.Audio
                    (_worldSourceBusFlags[sourceIndex] & WorldSourceBusFlagThreat) != 0;
         }
 
+        private void EvictCreatureAudioBanksForFrozenTier()
+        {
+            int frame = Time.frameCount;
+            if (_lastCreatureFrozenBankEvictFrame == frame)
+                return;
+
+            _lastCreatureFrozenBankEvictFrame = frame;
+            AudioResidencyCache.EvictDomain(AudioResidencyDomain.Creatures);
+        }
+
         private float ResolveSourcePitch(int sourceIndex, float dopplerRatio)
         {
             if (_basePitches == null || sourceIndex < 0 || sourceIndex >= _basePitches.Length)
                 return 1f;
 
             float eclipseRatio = ResolveEclipseAcousticPitchRatio(sourceIndex);
-            return math.clamp(_basePitches[sourceIndex] * dopplerRatio * eclipseRatio * _timeDilationWorldPitchRatio, 0.1f, 3f);
+            return math.clamp(
+                _basePitches[sourceIndex] * dopplerRatio * eclipseRatio * _timeDilationWorldPitchRatio * _brownoutAudioPitchRatio,
+                0.1f,
+                3f);
         }
 
         private void UpdateTimeDilationPitchScalar()
@@ -6295,6 +6403,69 @@ namespace Hecton8.Audio
 
             _timeDilationWorldPitchRatio = targetRatio;
             ApplyEclipsePitchShiftToActiveWorldSources();
+        }
+
+        private void UpdateBrownoutAudioPitch(float deltaTime)
+        {
+            float frameBrownout01 = 0f;
+            ReadOnlySpan<BrownoutSignal> signals = SignalBus<BrownoutSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                BrownoutSignal signal = signals[i];
+                float severity01 = math.saturate(signal.Severity01);
+                float supplyDrop01 = 1f - math.saturate(signal.SupplyRatio);
+                frameBrownout01 = math.max(frameBrownout01, math.max(severity01, supplyDrop01));
+            }
+
+            if (signals.Length > 0)
+            {
+                _brownoutTarget01 = frameBrownout01;
+            }
+            else if (deltaTime > 0f)
+            {
+                _brownoutTarget01 = math.max(0f, _brownoutTarget01 - deltaTime * BrownoutAudioReleasePerSecond);
+            }
+
+            float targetRatio = math.lerp(1f, BrownoutAudioPitchMinimumRatio, math.saturate(_brownoutTarget01));
+            float blend = deltaTime > 0f ? FastDecayBlend(BrownoutAudioPitchSharpness, deltaTime) : 1f;
+            float nextRatio = math.lerp(_brownoutAudioPitchRatio, targetRatio, blend);
+            if (math.abs(nextRatio - _brownoutAudioPitchRatio) <= 0.001f)
+                return;
+
+            _brownoutAudioPitchRatio = math.clamp(nextRatio, BrownoutAudioPitchMinimumRatio, 1f);
+            ApplyBrownoutPitchToMixerAndSources();
+        }
+
+        private void ApplyBrownoutPitchToMixerAndSources()
+        {
+            float ratio = _brownoutAudioPitchRatio;
+            if (math.abs(ratio - _lastAppliedBrownoutPitchRatio) <= 0.001f)
+                return;
+
+            _lastAppliedBrownoutPitchRatio = ratio;
+            AudioMixer mixer = ResolveThreatDuckingMixer();
+            if (mixer != null && _hasBrownoutPitchMultiplierParameter)
+                mixer.SetFloat(_brownoutPitchMultiplierParameter, ratio);
+
+            ApplyEclipsePitchShiftToActiveWorldSources();
+            ApplyBrownoutPitchToActive2DSources();
+        }
+
+        private void ApplyBrownoutPitchToActive2DSources()
+        {
+            if (_pool2D == null)
+                return;
+
+            float ratio = _brownoutAudioPitchRatio;
+            int count = math.min(_pool2DSize, _pool2D.Length);
+            for (int i = 0; i < count; i++)
+            {
+                AudioSource source = _pool2D[i];
+                if (source == null || !source.isActiveAndEnabled || source.clip == null || !source.isPlaying)
+                    continue;
+
+                source.pitch = ratio;
+            }
         }
 
         private float ResolveEclipseAcousticPitchRatio(int sourceIndex)
@@ -6635,6 +6806,7 @@ namespace Hecton8.Audio
             _hasParasiteRoomLowPassCutoffParameter = !string.IsNullOrWhiteSpace(_parasiteRoomLowPassCutoffParameter);
             _hasParasiteOrganicLayerGainParameter = !string.IsNullOrWhiteSpace(_parasiteOrganicLayerGainParameter);
             _hasNarrativeRadioLowPassCutoffParameter = !string.IsNullOrWhiteSpace(_narrativeRadioLowPassCutoffParameter);
+            _hasBrownoutPitchMultiplierParameter = !string.IsNullOrWhiteSpace(_brownoutPitchMultiplierParameter);
         }
 
         private byte ResolveClipRouteFlags(AudioClip clip)
@@ -6698,8 +6870,11 @@ namespace Hecton8.Audio
 
             string clipName = clip.name;
             byte routeFlags = 0;
-            if (ContainsTokenInsensitive(clipName, "leviathan") ||
-                ContainsTokenInsensitive(clipName, "roar") ||
+            bool leviathan = ContainsTokenInsensitive(clipName, "leviathan");
+            bool roar = ContainsTokenInsensitive(clipName, "roar");
+            bool bubble = ContainsTokenInsensitive(clipName, "bubble");
+            if (leviathan ||
+                roar ||
                 ContainsTokenInsensitive(clipName, "threat") ||
                 ContainsTokenInsensitive(clipName, "predator") ||
                 ContainsTokenInsensitive(clipName, "shriek"))
@@ -6717,7 +6892,71 @@ namespace Hecton8.Audio
                 routeFlags |= AudioClipRouteFlagBed;
             }
 
+            if (leviathan || roar)
+                routeFlags |= AudioClipRouteFlagLeviathanRoar;
+
+            if (bubble)
+                routeFlags |= AudioClipRouteFlagBubble;
+
             return routeFlags;
+        }
+
+        private byte ResolveAudioVoiceCategory(AudioClip clip)
+        {
+            byte routeFlags = ResolveClipRouteFlags(clip);
+            if ((routeFlags & AudioClipRouteFlagLeviathanRoar) != 0)
+                return AudioVoiceCategoryLeviathanRoar;
+
+            if ((routeFlags & AudioClipRouteFlagBubble) != 0)
+                return AudioVoiceCategoryBubble;
+
+            return AudioVoiceCategoryNone;
+        }
+
+        private bool TryReserveAudioVoiceCategory(byte voiceCategory, int replacingSourceIndex)
+        {
+            int limit = ResolveAudioVoiceCategoryLimit(voiceCategory);
+            if (limit <= 0 || _worldSourceVoiceCategories == null || _pool == null)
+                return true;
+
+            int count = 0;
+            int scanCount = math.min(_poolSize, math.min(_pool.Length, _worldSourceVoiceCategories.Length));
+            for (int i = 0; i < scanCount; i++)
+            {
+                if (i == replacingSourceIndex || _worldSourceVoiceCategories[i] != voiceCategory)
+                    continue;
+
+                AudioSource source = _pool[i];
+                if (source == null || !source.isActiveAndEnabled || source.clip == null || !source.isPlaying)
+                    continue;
+
+                count++;
+                if (count >= limit)
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static int ResolveAudioVoiceCategoryLimit(byte voiceCategory)
+        {
+            switch (voiceCategory)
+            {
+                case AudioVoiceCategoryLeviathanRoar:
+                    return MaxLeviathanRoarVoices;
+                case AudioVoiceCategoryBubble:
+                    return MaxBubbleVoices;
+                default:
+                    return 0;
+            }
+        }
+
+        private void AssignAudioVoiceCategory(int sourceIndex, byte voiceCategory)
+        {
+            if (_worldSourceVoiceCategories == null || sourceIndex < 0 || sourceIndex >= _worldSourceVoiceCategories.Length)
+                return;
+
+            _worldSourceVoiceCategories[sourceIndex] = voiceCategory;
         }
 
         private static bool ContainsTokenInsensitive(string value, string token)
@@ -7912,7 +8151,7 @@ namespace Hecton8.Audio
     /// <summary>
     /// Unmanaged caption payload carried by the deferred audio-caption lane.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct AudioCaptionPayload
     {
         public Vector3 WorldPosition;

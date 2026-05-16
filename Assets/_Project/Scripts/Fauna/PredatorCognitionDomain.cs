@@ -19,7 +19,7 @@ using UnityEngine;
 
 namespace Hecton8.AI
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
     internal struct CognitionCore
     {
         // 64-byte cognition core layout:
@@ -47,7 +47,7 @@ namespace Hecton8.AI
         public int Reserved3;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 24)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 24)]
     internal struct CognitionMemoryEntry
     {
         public float3 WorldPosition;
@@ -56,7 +56,7 @@ namespace Hecton8.AI
         public int StimulusType;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 36)]
     internal struct AcousticMemoryEntry
     {
         public float3 WorldPosition;
@@ -97,7 +97,7 @@ namespace Hecton8.AI
         public uint Reserved;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 92)]
     internal struct CognitionControl
     {
         public float3 SpawnAnchor;
@@ -117,7 +117,7 @@ namespace Hecton8.AI
         public int Reserved;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 480)]
     internal struct CognitionInput
     {
         public float3 Position;
@@ -181,7 +181,7 @@ namespace Hecton8.AI
         public int Flags;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 60)]
     internal struct CognitionOutput
     {
         public float3 DesiredDirection;
@@ -199,7 +199,7 @@ namespace Hecton8.AI
         public int FlankingManeuverDetected;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 48)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
     internal struct PackedCognitionOutput
     {
         public float3 DesiredDirection;
@@ -308,6 +308,12 @@ namespace Hecton8.AI
         internal const int MemorySlotsPerCreature = 8;
         internal const int AcousticMemorySlotsPerCreature = 5;
         internal const int CognitionCoreSizeBytes = 64;
+        private const int CognitionMemoryEntrySizeBytes = 24;
+        private const int AcousticMemoryEntrySizeBytes = 36;
+        private const int CognitionControlSizeBytes = 92;
+        private const int CognitionInputSizeBytes = 480;
+        private const int CognitionOutputSizeBytes = 60;
+        private const int PackedCognitionOutputSizeBytes = 48;
         internal static readonly int CognitionCoreAlignmentBytes = UnsafeUtility.AlignOf<CognitionCore>();
 
         private const float HungerRate = 0.045f;
@@ -465,7 +471,7 @@ namespace Hecton8.AI
         private static NativeArray<CognitionMemoryEntry> _memoryBank;
         private static NativeArray<AcousticMemoryEntry> _acousticMemoryBank;
         private static NativeArray<byte> _slotUsed;
-        private static NativeList<int> _activeSlots;
+        private static NativeArray<int> _activeSlots;
         private static NativeArray<float> _ambientThreats;
         private static NativeArray<float3> _swarmCenters;
         private static NativeArray<float3> _swarmDirections;
@@ -514,6 +520,7 @@ namespace Hecton8.AI
         private static long _evaluationScheduleTimestamp;
         private static bool _evaluationScheduled;
         private static bool _predatorEvaluationJobScheduled;
+        private static int _activeSlotCount;
         private static int _lastEvaluatedFrame = -1;
         private static int _lastScheduledFrame = -1;
         private static int _lastThreatVoxelBindFrame = -1;
@@ -522,6 +529,7 @@ namespace Hecton8.AI
         private static int _retinalLightCount;
         private static int _retinalTelemetryCursor;
         private static int _vaultAliasMask;
+        private static bool _coreCognitionVaultAliases;
         private static int _alphaLeviathanTelemetryCursor;
         private static int _activeAlphaLeviathanTelemetryCount;
         private static int _totalBlindPredators;
@@ -538,6 +546,14 @@ namespace Hecton8.AI
         internal static int Register()
         {
             EnsureInitialized();
+            if (!_cores.IsCreated ||
+                !_slotUsed.IsCreated ||
+                !_activeSlots.IsCreated ||
+                !_evaluationDueFlags.IsCreated ||
+                !_nextEvaluationTimes.IsCreated ||
+                !_evaluationIntervals.IsCreated)
+                return -1;
+
             for (int i = 0; i < Capacity; i++)
             {
                 if (_slotUsed[i] != 0)
@@ -575,12 +591,15 @@ namespace Hecton8.AI
                 return;
 
             EnsureInitialized();
+            if (!_speciesTuningById.IsCreated)
+                return;
+
             _speciesTuningById[speciesId] = tuning;
         }
 
         internal static void Unregister(int slot)
         {
-            if (!IsValidSlot(slot))
+            if (!IsValidSlot(slot) || !_slotUsed.IsCreated)
                 return;
 
             SetSlotActive(slot, false);
@@ -621,6 +640,14 @@ namespace Hecton8.AI
             if (!IsValidSlot(slot))
                 return;
 
+            if (!_activeSlots.IsCreated ||
+                !_evaluationDueFlags.IsCreated ||
+                !_nextEvaluationTimes.IsCreated ||
+                !_evaluationIntervals.IsCreated)
+            {
+                return;
+            }
+
             bool currentlyActive = ContainsActiveSlot(slot);
             if (active == currentlyActive)
                 return;
@@ -630,7 +657,8 @@ namespace Hecton8.AI
                 _evaluationDueFlags[slot] = 1;
                 _nextEvaluationTimes[slot] = 0f;
                 _evaluationIntervals[slot] = CenterEvaluationIntervalSeconds;
-                _activeSlots.AddNoResize(slot);
+                if (_activeSlotCount < _activeSlots.Length)
+                    _activeSlots[_activeSlotCount++] = slot;
                 return;
             }
 
@@ -638,12 +666,14 @@ namespace Hecton8.AI
             _nextEvaluationTimes[slot] = 0f;
             _evaluationIntervals[slot] = CenterEvaluationIntervalSeconds;
 
-            for (int i = 0; i < _activeSlots.Length; i++)
+            for (int i = 0; i < _activeSlotCount; i++)
             {
                 if (_activeSlots[i] != slot)
                     continue;
 
-                _activeSlots.RemoveAtSwapBack(i);
+                _activeSlotCount--;
+                _activeSlots[i] = _activeSlots[_activeSlotCount];
+                _activeSlots[_activeSlotCount] = 0;
                 break;
             }
         }
@@ -906,7 +936,7 @@ namespace Hecton8.AI
         internal static unsafe void ScheduleFrameEvaluation(int frameId)
         {
             if (!_activeSlots.IsCreated ||
-                _activeSlots.Length <= 0 ||
+                _activeSlotCount <= 0 ||
                 _evaluationScheduled ||
                 _lastScheduledFrame == frameId)
             {
@@ -931,7 +961,8 @@ namespace Hecton8.AI
             float3 swarmBoundsMin = ComputeSwarmBoundsMin();
             var swarmJob = new SwarmAnalysisJob
             {
-                ActiveSlots = _activeSlots.AsArray(),
+                ActiveSlots = _activeSlots,
+                ActiveSlotCount = _activeSlotCount,
                 Inputs = _inputs,
                 PriorCores = _cores,
                 DueFlags = _evaluationDueFlags,
@@ -955,7 +986,7 @@ namespace Hecton8.AI
             };
 
             if (!swarmJob.TryScheduleParallelAdmitted(
-                    _activeSlots.Length,
+                    _activeSlotCount,
                     EvaluationJobBatchSize,
                     JobAdmissionLane.Lane3_AI,
                     default,
@@ -967,7 +998,7 @@ namespace Hecton8.AI
 
             var job = new PredatorCognitionJob
             {
-                ActiveSlots = _activeSlots.AsArray(),
+                ActiveSlots = _activeSlots,
                 Inputs = _inputs,
                 Cores = _cores,
                 Controls = _controls,
@@ -1015,7 +1046,7 @@ namespace Hecton8.AI
             };
 
             if (job.TryScheduleParallelAdmitted(
-                    _activeSlots.Length,
+                    _activeSlotCount,
                     EvaluationJobBatchSize,
                     JobAdmissionLane.Lane3_AI,
                     _scheduledSwarmHandle,
@@ -1038,40 +1069,40 @@ namespace Hecton8.AI
             JobHandle disposeDependency = _evaluationScheduled
                 ? JobHandle.CombineDependencies(_scheduledSwarmHandle, _scheduledEvaluationHandle)
                 : _scheduledSwarmHandle;
-            DisposeNativeArray(ref _cores, disposeDependency);
-            DisposeNativeArray(ref _controls, disposeDependency);
-            DisposeNativeArray(ref _inputs, disposeDependency);
-            DisposeNativeArray(ref _outputs, disposeDependency);
-            DisposeNativeArray(ref _memoryBank, disposeDependency);
-            DisposeNativeArray(ref _acousticMemoryBank, disposeDependency);
-            DisposeNativeArray(ref _slotUsed, disposeDependency);
-            DisposeNativeList(ref _activeSlots, disposeDependency, nameof(_activeSlots));
-            DisposeNativeArray(ref _ambientThreats, disposeDependency);
-            DisposeNativeArray(ref _swarmCenters, disposeDependency);
-            DisposeNativeArray(ref _swarmDirections, disposeDependency);
-            DisposeNativeArray(ref _swarmAvoidances, disposeDependency);
-            DisposeNativeArray(ref _swarmCounts, disposeDependency);
-            DisposeNativeArray(ref _claimedBoidIndices, disposeDependency);
-            DisposeNativeArray(ref _claimedBoidPositions, disposeDependency);
-            DisposeNativeArray(ref _chosenStates, disposeDependency);
-            DisposeNativeArray(ref _stalkingPhases, disposeDependency);
-            DisposeNativeArray(ref _stalkingPhaseStartTimes, disposeDependency);
-            DisposeNativeArray(ref _predatorPackTargets, disposeDependency);
-            DisposeNativeArray(ref _predatorPackWeights, disposeDependency);
-            DisposeNativeArray(ref _predatorPackBaitPositions, disposeDependency);
-            DisposeNativeArray(ref _predatorPackSharedPlayerPositions, disposeDependency);
-            DisposeNativeArray(ref _predatorPackTargetAups, disposeDependency);
-            DisposeNativeArray(ref _predatorPackRoles, disposeDependency);
-            DisposeNativeArray(ref _boidClaimTable, disposeDependency);
-            DisposeNativeArray(ref _packBaitClaimTable, disposeDependency);
-            DisposeNativeArray(ref _packFlankerClaimTable, disposeDependency);
-            DisposeNativeArray(ref _habitatSiegeTargets, disposeDependency);
-            DisposeNativeArray(ref _baseSiegeRammerClaimTable, disposeDependency);
-            DisposeNativeArray(ref _baseSiegeDistractorClaimTable, disposeDependency);
-            DisposeNativeArray(ref _baseSiegeLoitererClaimTable, disposeDependency);
-            DisposeNativeArray(ref _evaluationDueFlags, disposeDependency);
-            DisposeNativeArray(ref _nextEvaluationTimes, disposeDependency);
-            DisposeNativeArray(ref _evaluationIntervals, disposeDependency);
+            ReleaseVaultAliasArray(ref _cores);
+            ReleaseVaultAliasArray(ref _controls);
+            ReleaseVaultAliasArray(ref _inputs);
+            ReleaseVaultAliasArray(ref _outputs);
+            ReleaseVaultAliasArray(ref _memoryBank);
+            ReleaseVaultAliasArray(ref _acousticMemoryBank);
+            ReleaseVaultAliasArray(ref _slotUsed);
+            ReleaseVaultAliasArray(ref _activeSlots);
+            ReleaseVaultAliasArray(ref _ambientThreats);
+            ReleaseVaultAliasArray(ref _swarmCenters);
+            ReleaseVaultAliasArray(ref _swarmDirections);
+            ReleaseVaultAliasArray(ref _swarmAvoidances);
+            ReleaseVaultAliasArray(ref _swarmCounts);
+            ReleaseVaultAliasArray(ref _claimedBoidIndices);
+            ReleaseVaultAliasArray(ref _claimedBoidPositions);
+            ReleaseVaultAliasArray(ref _chosenStates);
+            ReleaseVaultAliasArray(ref _stalkingPhases);
+            ReleaseVaultAliasArray(ref _stalkingPhaseStartTimes);
+            ReleaseVaultAliasArray(ref _predatorPackTargets);
+            ReleaseVaultAliasArray(ref _predatorPackWeights);
+            ReleaseVaultAliasArray(ref _predatorPackBaitPositions);
+            ReleaseVaultAliasArray(ref _predatorPackSharedPlayerPositions);
+            ReleaseVaultAliasArray(ref _predatorPackTargetAups);
+            ReleaseVaultAliasArray(ref _predatorPackRoles);
+            ReleaseVaultAliasArray(ref _boidClaimTable);
+            ReleaseVaultAliasArray(ref _packBaitClaimTable);
+            ReleaseVaultAliasArray(ref _packFlankerClaimTable);
+            ReleaseVaultAliasArray(ref _habitatSiegeTargets);
+            ReleaseVaultAliasArray(ref _baseSiegeRammerClaimTable);
+            ReleaseVaultAliasArray(ref _baseSiegeDistractorClaimTable);
+            ReleaseVaultAliasArray(ref _baseSiegeLoitererClaimTable);
+            ReleaseVaultAliasArray(ref _evaluationDueFlags);
+            ReleaseVaultAliasArray(ref _nextEvaluationTimes);
+            ReleaseVaultAliasArray(ref _evaluationIntervals);
             ReleaseVaultAliasArray(ref _retinalExposure, disposeDependency, VaultRetinalExposureFlag);
             ReleaseVaultAliasArray(ref _blindnessState, disposeDependency, VaultRetinalBlindnessFlag);
             ReleaseVaultAliasArray(ref _lastPublishedBlindnessState, disposeDependency, VaultRetinalLastPublishedBlindnessFlag);
@@ -1136,6 +1167,7 @@ namespace Hecton8.AI
             _scheduledEvaluationHandle = default;
             _evaluationScheduled = false;
             _predatorEvaluationJobScheduled = false;
+            _activeSlotCount = 0;
             _lastEvaluatedFrame = -1;
             _lastScheduledFrame = -1;
             _lastThreatVoxelBindFrame = -1;
@@ -1144,6 +1176,7 @@ namespace Hecton8.AI
             _retinalLightCount = 0;
             _retinalTelemetryCursor = 0;
             _vaultAliasMask = 0;
+            _coreCognitionVaultAliases = false;
             _alphaLeviathanTelemetryCursor = 0;
             _activeAlphaLeviathanTelemetryCount = 0;
             _totalBlindPredators = 0;
@@ -1157,76 +1190,11 @@ namespace Hecton8.AI
             if (_cores.IsCreated)
                 return;
 
-            // COLD ALLOC: NativeArray<CognitionCore>[Capacity] - contiguous fauna cognition cores for all registered fauna brains - owner: PredatorCognitionDomain
-            _cores = new NativeArray<CognitionCore>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<CognitionControl>[Capacity] - shared fauna behavior control bank paired with cognition cores - owner: PredatorCognitionDomain
-            _controls = new NativeArray<CognitionControl>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<CognitionInput>[Capacity] - per-frame sensory snapshots for Burst cognition evaluation - owner: PredatorCognitionDomain
-            _inputs = new NativeArray<CognitionInput>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<PackedCognitionOutput>[Capacity] - packed Burst cognition outputs decoded at the compatibility boundary - owner: PredatorCognitionDomain
-            _outputs = new NativeArray<PackedCognitionOutput>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<CognitionMemoryEntry>[Capacity * MemorySlotsPerCreature] - shared fauna spatial memory bank for all registered fauna brains - owner: PredatorCognitionDomain
-            _memoryBank = new NativeArray<CognitionMemoryEntry>(Capacity * MemorySlotsPerCreature, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<AcousticMemoryEntry>[Capacity * 5] - acoustic memory ring buffer per fauna slot - owner: PredatorCognitionDomain
-            _acousticMemoryBank = new NativeArray<AcousticMemoryEntry>(Capacity * AcousticMemorySlotsPerCreature, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<byte>[Capacity] - slot usage bitmap for PredatorCognitionDomain registration - owner: PredatorCognitionDomain
-            _slotUsed = new NativeArray<byte>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeList<int>[Capacity] - active fauna cognition slot list for Burst batch evaluation - owner: PredatorCognitionDomain
-            _activeSlots = new NativeList<int>(Capacity, Allocator.Persistent);
-            // COLD ALLOC: NativeArray<float>[Capacity] - same-bucket ambient threat cache for fear contagion - owner: PredatorCognitionDomain
-            _ambientThreats = new NativeArray<float>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float3>[Capacity] - burst-computed swarm cohesion centers - owner: PredatorCognitionDomain
-            _swarmCenters = new NativeArray<float3>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float3>[Capacity] - burst-computed swarm alignment directions - owner: PredatorCognitionDomain
-            _swarmDirections = new NativeArray<float3>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float3>[Capacity] - burst-computed separation/PBD avoidance vectors - owner: PredatorCognitionDomain
-            _swarmAvoidances = new NativeArray<float3>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<int>[Capacity] - burst-computed neighbor counts for flock-state weighting - owner: PredatorCognitionDomain
-            _swarmCounts = new NativeArray<int>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<int>[Capacity] - claimed prey slot indices per predator slot - owner: PredatorCognitionDomain
-            _claimedBoidIndices = new NativeArray<int>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float3>[Capacity] - claimed prey positions paired with predator slots - owner: PredatorCognitionDomain
-            _claimedBoidPositions = new NativeArray<float3>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<byte>[Capacity] - chosen utility state code per fauna slot for post-job consumers and diagnostics - owner: PredatorCognitionDomain
-            _chosenStates = new NativeArray<byte>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<byte>[Capacity] - Alpha Leviathan stalking phase lane, SoA predator data - owner: PredatorCognitionDomain
-            _stalkingPhases = new NativeArray<byte>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[Capacity] - Alpha Leviathan phase start timestamps - owner: PredatorCognitionDomain
-            _stalkingPhaseStartTimes = new NativeArray<float>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float3>[Capacity] - burst-computed predator flank targets for coordinated pack strikes - owner: PredatorCognitionDomain
-            _predatorPackTargets = new NativeArray<float3>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[Capacity] - burst-computed predator flank weights for coordinated pack strikes - owner: PredatorCognitionDomain
-            _predatorPackWeights = new NativeArray<float>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float3>[Capacity] - resolved bait-predator positions shared with flankers - owner: PredatorCognitionDomain
-            _predatorPackBaitPositions = new NativeArray<float3>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float3>[Capacity] - shared player positions reconstructed from AUP for coordinated pack strikes - owner: PredatorCognitionDomain
-            _predatorPackSharedPlayerPositions = new NativeArray<float3>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<AbsoluteUniversePositionBlit128>[Capacity] - shared prey/player AUP target for pack hunters - owner: PredatorCognitionDomain
-            _predatorPackTargetAups = new NativeArray<AbsoluteUniversePositionBlit128>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<byte>[Capacity] - resolved pack roles per predator slot - owner: PredatorCognitionDomain
-            _predatorPackRoles = new NativeArray<byte>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            if (!EnsureCoreCognitionVaultBuffers())
+                return;
+
             // COLD ALLOC: NativeParallelHashMap<int,float3>[Capacity] - species-wide last known pack target positions for predator sync - owner: PredatorCognitionDomain
             _predatorSpeciesTargetPositions = new NativeParallelHashMap<int, float3>(Capacity, Allocator.Persistent);
-            // COLD ALLOC: NativeArray<int>[Capacity] - atomic prey claim table keyed by creature slot - owner: PredatorCognitionDomain
-            _boidClaimTable = new NativeArray<int>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<int>[Capacity] - atomic bait-role reservation table keyed by stable species hash - owner: PredatorCognitionDomain
-            _packBaitClaimTable = new NativeArray<int>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<int>[Capacity] - atomic flanker-role reservation table keyed by stable species hash - owner: PredatorCognitionDomain
-            _packFlankerClaimTable = new NativeArray<int>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<HabitatSiegeTargetSnapshot>[64] - copied base weak-point snapshot for Burst predator siege cognition - owner: PredatorCognitionDomain
-            _habitatSiegeTargets = new NativeArray<HabitatSiegeTargetSnapshot>(HabitatGraphManager.MaxSiegeTargetCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<int>[64] - atomic base-siege rammer reservation table keyed by habitat target index - owner: PredatorCognitionDomain
-            _baseSiegeRammerClaimTable = new NativeArray<int>(HabitatGraphManager.MaxSiegeTargetCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<int>[64] - atomic base-siege distractor reservation table keyed by habitat target index - owner: PredatorCognitionDomain
-            _baseSiegeDistractorClaimTable = new NativeArray<int>(HabitatGraphManager.MaxSiegeTargetCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<int>[64] - atomic base-siege loiterer reservation table keyed by habitat target index - owner: PredatorCognitionDomain
-            _baseSiegeLoitererClaimTable = new NativeArray<int>(HabitatGraphManager.MaxSiegeTargetCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<byte>[Capacity] - per-slot due flags for foveated cognition cadence - owner: PredatorCognitionDomain
-            _evaluationDueFlags = new NativeArray<byte>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[Capacity] - next allowed cognition evaluation timestamps per slot - owner: PredatorCognitionDomain
-            _nextEvaluationTimes = new NativeArray<float>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[Capacity] - resolved cognition cadence intervals per slot - owner: PredatorCognitionDomain
-            _evaluationIntervals = new NativeArray<float>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // VAULT ALIAS: Retinal and Alpha black-box data live in GlobalDataVault.
             EnsureRetinalVaultBuffers();
             EnsureAlphaLeviathanTelemetryVaultBuffer();
@@ -1234,6 +1202,373 @@ namespace Hecton8.AI
             _speciesTuningById = new NativeParallelHashMap<int, SpeciesCognitionTuning>(Capacity, Allocator.Persistent);
             RegisterNativeMemorySentinel();
             ClearBoidClaims();
+        }
+
+        private static bool EnsureCoreCognitionVaultBuffers()
+        {
+            ValidateAbiLayout();
+
+            if (_cores.IsCreated &&
+                _controls.IsCreated &&
+                _inputs.IsCreated &&
+                _outputs.IsCreated &&
+                _memoryBank.IsCreated &&
+                _acousticMemoryBank.IsCreated &&
+                _slotUsed.IsCreated &&
+                _activeSlots.IsCreated &&
+                _ambientThreats.IsCreated &&
+                _swarmCenters.IsCreated &&
+                _swarmDirections.IsCreated &&
+                _swarmAvoidances.IsCreated &&
+                _swarmCounts.IsCreated &&
+                _claimedBoidIndices.IsCreated &&
+                _claimedBoidPositions.IsCreated &&
+                _chosenStates.IsCreated &&
+                _stalkingPhases.IsCreated &&
+                _stalkingPhaseStartTimes.IsCreated &&
+                _predatorPackTargets.IsCreated &&
+                _predatorPackWeights.IsCreated &&
+                _predatorPackBaitPositions.IsCreated &&
+                _predatorPackSharedPlayerPositions.IsCreated &&
+                _predatorPackTargetAups.IsCreated &&
+                _predatorPackRoles.IsCreated &&
+                _boidClaimTable.IsCreated &&
+                _packBaitClaimTable.IsCreated &&
+                _packFlankerClaimTable.IsCreated &&
+                _habitatSiegeTargets.IsCreated &&
+                _baseSiegeRammerClaimTable.IsCreated &&
+                _baseSiegeDistractorClaimTable.IsCreated &&
+                _baseSiegeLoitererClaimTable.IsCreated &&
+                _evaluationDueFlags.IsCreated &&
+                _nextEvaluationTimes.IsCreated &&
+                _evaluationIntervals.IsCreated)
+            {
+                _coreCognitionVaultAliases = true;
+                return true;
+            }
+
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null || vault.IsAllocationLocked)
+                return false;
+
+            _cores = vault.GetBuffer<CognitionCore>(
+                BufferID.PredatorCognitionCores,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _controls = vault.GetBuffer<CognitionControl>(
+                BufferID.PredatorCognitionControls,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _inputs = vault.GetBuffer<CognitionInput>(
+                BufferID.PredatorCognitionInputs,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _outputs = vault.GetBuffer<PackedCognitionOutput>(
+                BufferID.PredatorCognitionOutputs,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _memoryBank = vault.GetBuffer<CognitionMemoryEntry>(
+                BufferID.PredatorCognitionMemoryBank,
+                Capacity * MemorySlotsPerCreature,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _acousticMemoryBank = vault.GetBuffer<AcousticMemoryEntry>(
+                BufferID.PredatorCognitionAcousticMemoryBank,
+                Capacity * AcousticMemorySlotsPerCreature,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _slotUsed = vault.GetBuffer<byte>(
+                BufferID.PredatorCognitionSlotUsed,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _activeSlots = vault.GetBuffer<int>(
+                BufferID.PredatorCognitionActiveSlots,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _ambientThreats = vault.GetBuffer<float>(
+                BufferID.PredatorCognitionAmbientThreats,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _swarmCenters = vault.GetBuffer<float3>(
+                BufferID.PredatorCognitionSwarmCenters,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _swarmDirections = vault.GetBuffer<float3>(
+                BufferID.PredatorCognitionSwarmDirections,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _swarmAvoidances = vault.GetBuffer<float3>(
+                BufferID.PredatorCognitionSwarmAvoidances,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _swarmCounts = vault.GetBuffer<int>(
+                BufferID.PredatorCognitionSwarmCounts,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _claimedBoidIndices = vault.GetBuffer<int>(
+                BufferID.PredatorCognitionClaimedBoidIndices,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _claimedBoidPositions = vault.GetBuffer<float3>(
+                BufferID.PredatorCognitionClaimedBoidPositions,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _chosenStates = vault.GetBuffer<byte>(
+                BufferID.PredatorCognitionChosenStates,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _stalkingPhases = vault.GetBuffer<byte>(
+                BufferID.PredatorCognitionStalkingPhases,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _stalkingPhaseStartTimes = vault.GetBuffer<float>(
+                BufferID.PredatorCognitionStalkingPhaseStartTimes,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _predatorPackTargets = vault.GetBuffer<float3>(
+                BufferID.PredatorCognitionPackTargets,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _predatorPackWeights = vault.GetBuffer<float>(
+                BufferID.PredatorCognitionPackWeights,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _predatorPackBaitPositions = vault.GetBuffer<float3>(
+                BufferID.PredatorCognitionPackBaitPositions,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _predatorPackSharedPlayerPositions = vault.GetBuffer<float3>(
+                BufferID.PredatorCognitionPackSharedPlayerPositions,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _predatorPackTargetAups = vault.GetBuffer<AbsoluteUniversePositionBlit128>(
+                BufferID.PredatorCognitionPackTargetAups,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _predatorPackRoles = vault.GetBuffer<byte>(
+                BufferID.PredatorCognitionPackRoles,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _boidClaimTable = vault.GetBuffer<int>(
+                BufferID.PredatorCognitionBoidClaimTable,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _packBaitClaimTable = vault.GetBuffer<int>(
+                BufferID.PredatorCognitionPackBaitClaimTable,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _packFlankerClaimTable = vault.GetBuffer<int>(
+                BufferID.PredatorCognitionPackFlankerClaimTable,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _habitatSiegeTargets = vault.GetBuffer<HabitatSiegeTargetSnapshot>(
+                BufferID.PredatorCognitionHabitatSiegeTargets,
+                HabitatGraphManager.MaxSiegeTargetCount,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _baseSiegeRammerClaimTable = vault.GetBuffer<int>(
+                BufferID.PredatorCognitionBaseSiegeRammerClaimTable,
+                HabitatGraphManager.MaxSiegeTargetCount,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _baseSiegeDistractorClaimTable = vault.GetBuffer<int>(
+                BufferID.PredatorCognitionBaseSiegeDistractorClaimTable,
+                HabitatGraphManager.MaxSiegeTargetCount,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _baseSiegeLoitererClaimTable = vault.GetBuffer<int>(
+                BufferID.PredatorCognitionBaseSiegeLoitererClaimTable,
+                HabitatGraphManager.MaxSiegeTargetCount,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _evaluationDueFlags = vault.GetBuffer<byte>(
+                BufferID.PredatorCognitionEvaluationDueFlags,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _nextEvaluationTimes = vault.GetBuffer<float>(
+                BufferID.PredatorCognitionNextEvaluationTimes,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _evaluationIntervals = vault.GetBuffer<float>(
+                BufferID.PredatorCognitionEvaluationIntervals,
+                Capacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+
+            bool resolvedAll =
+                _cores.IsCreated &&
+                _controls.IsCreated &&
+                _inputs.IsCreated &&
+                _outputs.IsCreated &&
+                _memoryBank.IsCreated &&
+                _acousticMemoryBank.IsCreated &&
+                _slotUsed.IsCreated &&
+                _activeSlots.IsCreated &&
+                _ambientThreats.IsCreated &&
+                _swarmCenters.IsCreated &&
+                _swarmDirections.IsCreated &&
+                _swarmAvoidances.IsCreated &&
+                _swarmCounts.IsCreated &&
+                _claimedBoidIndices.IsCreated &&
+                _claimedBoidPositions.IsCreated &&
+                _chosenStates.IsCreated &&
+                _stalkingPhases.IsCreated &&
+                _stalkingPhaseStartTimes.IsCreated &&
+                _predatorPackTargets.IsCreated &&
+                _predatorPackWeights.IsCreated &&
+                _predatorPackBaitPositions.IsCreated &&
+                _predatorPackSharedPlayerPositions.IsCreated &&
+                _predatorPackTargetAups.IsCreated &&
+                _predatorPackRoles.IsCreated &&
+                _boidClaimTable.IsCreated &&
+                _packBaitClaimTable.IsCreated &&
+                _packFlankerClaimTable.IsCreated &&
+                _habitatSiegeTargets.IsCreated &&
+                _baseSiegeRammerClaimTable.IsCreated &&
+                _baseSiegeDistractorClaimTable.IsCreated &&
+                _baseSiegeLoitererClaimTable.IsCreated &&
+                _evaluationDueFlags.IsCreated &&
+                _nextEvaluationTimes.IsCreated &&
+                _evaluationIntervals.IsCreated;
+            if (!resolvedAll)
+            {
+                ReleaseCoreCognitionVaultAliases();
+                _activeSlotCount = 0;
+                _coreCognitionVaultAliases = false;
+                return false;
+            }
+
+            _coreCognitionVaultAliases = true;
+            ClearCoreCognitionVaultBuffers();
+            _activeSlotCount = 0;
+            return true;
+        }
+
+        private static void ReleaseCoreCognitionVaultAliases()
+        {
+            _activeSlotCount = 0;
+            ReleaseVaultAliasArray(ref _cores);
+            ReleaseVaultAliasArray(ref _controls);
+            ReleaseVaultAliasArray(ref _inputs);
+            ReleaseVaultAliasArray(ref _outputs);
+            ReleaseVaultAliasArray(ref _memoryBank);
+            ReleaseVaultAliasArray(ref _acousticMemoryBank);
+            ReleaseVaultAliasArray(ref _slotUsed);
+            ReleaseVaultAliasArray(ref _activeSlots);
+            ReleaseVaultAliasArray(ref _ambientThreats);
+            ReleaseVaultAliasArray(ref _swarmCenters);
+            ReleaseVaultAliasArray(ref _swarmDirections);
+            ReleaseVaultAliasArray(ref _swarmAvoidances);
+            ReleaseVaultAliasArray(ref _swarmCounts);
+            ReleaseVaultAliasArray(ref _claimedBoidIndices);
+            ReleaseVaultAliasArray(ref _claimedBoidPositions);
+            ReleaseVaultAliasArray(ref _chosenStates);
+            ReleaseVaultAliasArray(ref _stalkingPhases);
+            ReleaseVaultAliasArray(ref _stalkingPhaseStartTimes);
+            ReleaseVaultAliasArray(ref _predatorPackTargets);
+            ReleaseVaultAliasArray(ref _predatorPackWeights);
+            ReleaseVaultAliasArray(ref _predatorPackBaitPositions);
+            ReleaseVaultAliasArray(ref _predatorPackSharedPlayerPositions);
+            ReleaseVaultAliasArray(ref _predatorPackTargetAups);
+            ReleaseVaultAliasArray(ref _predatorPackRoles);
+            ReleaseVaultAliasArray(ref _boidClaimTable);
+            ReleaseVaultAliasArray(ref _packBaitClaimTable);
+            ReleaseVaultAliasArray(ref _packFlankerClaimTable);
+            ReleaseVaultAliasArray(ref _habitatSiegeTargets);
+            ReleaseVaultAliasArray(ref _baseSiegeRammerClaimTable);
+            ReleaseVaultAliasArray(ref _baseSiegeDistractorClaimTable);
+            ReleaseVaultAliasArray(ref _baseSiegeLoitererClaimTable);
+            ReleaseVaultAliasArray(ref _evaluationDueFlags);
+            ReleaseVaultAliasArray(ref _nextEvaluationTimes);
+            ReleaseVaultAliasArray(ref _evaluationIntervals);
+        }
+
+        private static void ClearCoreCognitionVaultBuffers()
+        {
+            ClearArray(_cores);
+            ClearArray(_controls);
+            ClearArray(_inputs);
+            ClearArray(_outputs);
+            ClearArray(_memoryBank);
+            ClearArray(_acousticMemoryBank);
+            ClearArray(_slotUsed);
+            ClearArray(_activeSlots);
+            ClearArray(_ambientThreats);
+            ClearArray(_swarmCenters);
+            ClearArray(_swarmDirections);
+            ClearArray(_swarmAvoidances);
+            ClearArray(_swarmCounts);
+            ClearArray(_claimedBoidIndices);
+            ClearArray(_claimedBoidPositions);
+            ClearArray(_chosenStates);
+            ClearArray(_stalkingPhases);
+            ClearArray(_stalkingPhaseStartTimes);
+            ClearArray(_predatorPackTargets);
+            ClearArray(_predatorPackWeights);
+            ClearArray(_predatorPackBaitPositions);
+            ClearArray(_predatorPackSharedPlayerPositions);
+            ClearArray(_predatorPackTargetAups);
+            ClearArray(_predatorPackRoles);
+            ClearArray(_boidClaimTable);
+            ClearArray(_packBaitClaimTable);
+            ClearArray(_packFlankerClaimTable);
+            ClearArray(_habitatSiegeTargets);
+            ClearArray(_baseSiegeRammerClaimTable);
+            ClearArray(_baseSiegeDistractorClaimTable);
+            ClearArray(_baseSiegeLoitererClaimTable);
+            ClearArray(_evaluationDueFlags);
+            ClearArray(_nextEvaluationTimes);
+            ClearArray(_evaluationIntervals);
+        }
+
+        private static void ClearArray<T>(NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            for (int i = 0; i < array.Length; i++)
+                array[i] = default;
+        }
+
+        private static void ValidateAbiLayout()
+        {
+            if (UnsafeUtility.SizeOf<CognitionCore>() != CognitionCoreSizeBytes ||
+                UnsafeUtility.SizeOf<CognitionMemoryEntry>() != CognitionMemoryEntrySizeBytes ||
+                UnsafeUtility.SizeOf<AcousticMemoryEntry>() != AcousticMemoryEntrySizeBytes ||
+                UnsafeUtility.SizeOf<CognitionControl>() != CognitionControlSizeBytes ||
+                UnsafeUtility.SizeOf<CognitionInput>() != CognitionInputSizeBytes ||
+                UnsafeUtility.SizeOf<CognitionOutput>() != CognitionOutputSizeBytes ||
+                UnsafeUtility.SizeOf<PackedCognitionOutput>() != PackedCognitionOutputSizeBytes)
+            {
+                FatalMemoryException.ThrowAbiLayoutMismatch();
+            }
         }
 
         private static void EnsureRetinalVaultBuffers()
@@ -1285,41 +1620,44 @@ namespace Hecton8.AI
 
         private static void RegisterNativeMemorySentinel()
         {
-            NativeMemorySentinel.RegisterNativeArray(_cores, NativeMemoryOwner, nameof(_cores), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_controls, NativeMemoryOwner, nameof(_controls), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_inputs, NativeMemoryOwner, nameof(_inputs), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_outputs, NativeMemoryOwner, nameof(_outputs), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_memoryBank, NativeMemoryOwner, nameof(_memoryBank), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_acousticMemoryBank, NativeMemoryOwner, nameof(_acousticMemoryBank), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_slotUsed, NativeMemoryOwner, nameof(_slotUsed), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeList(_activeSlots, NativeMemoryOwner, nameof(_activeSlots), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_ambientThreats, NativeMemoryOwner, nameof(_ambientThreats), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_swarmCenters, NativeMemoryOwner, nameof(_swarmCenters), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_swarmDirections, NativeMemoryOwner, nameof(_swarmDirections), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_swarmAvoidances, NativeMemoryOwner, nameof(_swarmAvoidances), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_swarmCounts, NativeMemoryOwner, nameof(_swarmCounts), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_claimedBoidIndices, NativeMemoryOwner, nameof(_claimedBoidIndices), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_claimedBoidPositions, NativeMemoryOwner, nameof(_claimedBoidPositions), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_chosenStates, NativeMemoryOwner, nameof(_chosenStates), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_stalkingPhases, NativeMemoryOwner, nameof(_stalkingPhases), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_stalkingPhaseStartTimes, NativeMemoryOwner, nameof(_stalkingPhaseStartTimes), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_predatorPackTargets, NativeMemoryOwner, nameof(_predatorPackTargets), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_predatorPackWeights, NativeMemoryOwner, nameof(_predatorPackWeights), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_predatorPackBaitPositions, NativeMemoryOwner, nameof(_predatorPackBaitPositions), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_predatorPackSharedPlayerPositions, NativeMemoryOwner, nameof(_predatorPackSharedPlayerPositions), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_predatorPackTargetAups, NativeMemoryOwner, nameof(_predatorPackTargetAups), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_predatorPackRoles, NativeMemoryOwner, nameof(_predatorPackRoles), NativeMemoryLifetime);
+            if (!_coreCognitionVaultAliases)
+            {
+                NativeMemorySentinel.RegisterNativeArray(_cores, NativeMemoryOwner, nameof(_cores), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_controls, NativeMemoryOwner, nameof(_controls), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_inputs, NativeMemoryOwner, nameof(_inputs), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_outputs, NativeMemoryOwner, nameof(_outputs), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_memoryBank, NativeMemoryOwner, nameof(_memoryBank), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_acousticMemoryBank, NativeMemoryOwner, nameof(_acousticMemoryBank), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_slotUsed, NativeMemoryOwner, nameof(_slotUsed), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_ambientThreats, NativeMemoryOwner, nameof(_ambientThreats), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_swarmCenters, NativeMemoryOwner, nameof(_swarmCenters), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_swarmDirections, NativeMemoryOwner, nameof(_swarmDirections), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_swarmAvoidances, NativeMemoryOwner, nameof(_swarmAvoidances), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_swarmCounts, NativeMemoryOwner, nameof(_swarmCounts), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_claimedBoidIndices, NativeMemoryOwner, nameof(_claimedBoidIndices), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_claimedBoidPositions, NativeMemoryOwner, nameof(_claimedBoidPositions), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_chosenStates, NativeMemoryOwner, nameof(_chosenStates), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_stalkingPhases, NativeMemoryOwner, nameof(_stalkingPhases), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_stalkingPhaseStartTimes, NativeMemoryOwner, nameof(_stalkingPhaseStartTimes), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_predatorPackTargets, NativeMemoryOwner, nameof(_predatorPackTargets), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_predatorPackWeights, NativeMemoryOwner, nameof(_predatorPackWeights), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_predatorPackBaitPositions, NativeMemoryOwner, nameof(_predatorPackBaitPositions), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_predatorPackSharedPlayerPositions, NativeMemoryOwner, nameof(_predatorPackSharedPlayerPositions), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_predatorPackTargetAups, NativeMemoryOwner, nameof(_predatorPackTargetAups), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_predatorPackRoles, NativeMemoryOwner, nameof(_predatorPackRoles), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_boidClaimTable, NativeMemoryOwner, nameof(_boidClaimTable), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_packBaitClaimTable, NativeMemoryOwner, nameof(_packBaitClaimTable), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_packFlankerClaimTable, NativeMemoryOwner, nameof(_packFlankerClaimTable), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_habitatSiegeTargets, NativeMemoryOwner, nameof(_habitatSiegeTargets), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_baseSiegeRammerClaimTable, NativeMemoryOwner, nameof(_baseSiegeRammerClaimTable), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_baseSiegeDistractorClaimTable, NativeMemoryOwner, nameof(_baseSiegeDistractorClaimTable), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_baseSiegeLoitererClaimTable, NativeMemoryOwner, nameof(_baseSiegeLoitererClaimTable), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_evaluationDueFlags, NativeMemoryOwner, nameof(_evaluationDueFlags), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_nextEvaluationTimes, NativeMemoryOwner, nameof(_nextEvaluationTimes), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(_evaluationIntervals, NativeMemoryOwner, nameof(_evaluationIntervals), NativeMemoryLifetime);
+            }
+
             NativeMemorySentinel.RegisterNativeParallelHashMap(_predatorSpeciesTargetPositions, NativeMemoryOwner, nameof(_predatorSpeciesTargetPositions), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_boidClaimTable, NativeMemoryOwner, nameof(_boidClaimTable), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_packBaitClaimTable, NativeMemoryOwner, nameof(_packBaitClaimTable), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_packFlankerClaimTable, NativeMemoryOwner, nameof(_packFlankerClaimTable), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_habitatSiegeTargets, NativeMemoryOwner, nameof(_habitatSiegeTargets), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_baseSiegeRammerClaimTable, NativeMemoryOwner, nameof(_baseSiegeRammerClaimTable), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_baseSiegeDistractorClaimTable, NativeMemoryOwner, nameof(_baseSiegeDistractorClaimTable), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_baseSiegeLoitererClaimTable, NativeMemoryOwner, nameof(_baseSiegeLoitererClaimTable), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_evaluationDueFlags, NativeMemoryOwner, nameof(_evaluationDueFlags), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_nextEvaluationTimes, NativeMemoryOwner, nameof(_nextEvaluationTimes), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_evaluationIntervals, NativeMemoryOwner, nameof(_evaluationIntervals), NativeMemoryLifetime);
             RegisterNativeArrayIfDomainOwned(_retinalExposure, nameof(_retinalExposure), VaultRetinalExposureFlag);
             RegisterNativeArrayIfDomainOwned(_blindnessState, nameof(_blindnessState), VaultRetinalBlindnessFlag);
             RegisterNativeArrayIfDomainOwned(_lastPublishedBlindnessState, nameof(_lastPublishedBlindnessState), VaultRetinalLastPublishedBlindnessFlag);
@@ -1347,6 +1685,11 @@ namespace Hecton8.AI
             array = default;
         }
 
+        private static void ReleaseVaultAliasArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            array = default;
+        }
+
         private static void ReleaseVaultAliasArray<T>(ref NativeArray<T> array, JobHandle disposeDependency, int vaultFlag) where T : struct
         {
             if (!array.IsCreated)
@@ -1360,16 +1703,6 @@ namespace Hecton8.AI
             }
 
             DisposeNativeArray(ref array, disposeDependency);
-        }
-
-        private static void DisposeNativeList<T>(ref NativeList<T> list, JobHandle disposeDependency, string label) where T : unmanaged
-        {
-            if (!list.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, label);
-            list.Dispose(disposeDependency);
-            list = default;
         }
 
         private static void DisposeNativeParallelHashMap<TKey, TValue>(
@@ -1391,7 +1724,7 @@ namespace Hecton8.AI
         {
             bool hasDueEvaluations = false;
             bool lowTierRetina = ResolveRetinalLowCadenceMode();
-            for (int i = 0; i < _activeSlots.Length; i++)
+            for (int i = 0; i < _activeSlotCount; i++)
             {
                 int slot = _activeSlots[i];
                 CognitionInput input = _inputs[slot];
@@ -1623,10 +1956,10 @@ namespace Hecton8.AI
             int totalBlind = 0;
             float maxExposure = 0f;
             float3 hottestPosition = float3.zero;
-            double3 telemetryOriginOffset = _activeSlots.Length > 0 ? _inputs[_activeSlots[0]].FloatingOriginOffset : double3.zero;
+            double3 telemetryOriginOffset = _activeSlotCount > 0 ? _inputs[_activeSlots[0]].FloatingOriginOffset : double3.zero;
             uint hottestSource = 0u;
             bool foundFault = false;
-            for (int i = 0; i < _activeSlots.Length; i++)
+            for (int i = 0; i < _activeSlotCount; i++)
             {
                 int slot = _activeSlots[i];
                 float exposure = _retinalExposure[slot];
@@ -1771,7 +2104,7 @@ namespace Hecton8.AI
             byte lastPhase = AlphaLeviathanPhase.Hidden;
             uint lastStateHash = 0u;
             bool foundFault = false;
-            for (int i = 0; i < _activeSlots.Length; i++)
+            for (int i = 0; i < _activeSlotCount; i++)
             {
                 int slot = _activeSlots[i];
                 CognitionInput input = _inputs[slot];
@@ -2005,7 +2338,7 @@ namespace Hecton8.AI
             if (!_activeSlots.IsCreated || !_cores.IsCreated || !_inputs.IsCreated || !_outputs.IsCreated)
                 return;
 
-            for (int i = 0; i < _activeSlots.Length; i++)
+            for (int i = 0; i < _activeSlotCount; i++)
             {
                 int slot = _activeSlots[i];
                 if (slot < 0 || slot >= Capacity)
@@ -2040,7 +2373,7 @@ namespace Hecton8.AI
             if (!_activeSlots.IsCreated)
                 return false;
 
-            for (int i = 0; i < _activeSlots.Length; i++)
+            for (int i = 0; i < _activeSlotCount; i++)
             {
                 if (_activeSlots[i] == slot)
                     return true;
@@ -2163,11 +2496,11 @@ namespace Hecton8.AI
 
         private static float3 ComputeSwarmBoundsMin()
         {
-            if (!_activeSlots.IsCreated || _activeSlots.Length <= 0)
+            if (!_activeSlots.IsCreated || _activeSlotCount <= 0)
                 return float3.zero;
 
             float3 boundsMin = new float3(float.MaxValue, float.MaxValue, float.MaxValue);
-            for (int i = 0; i < _activeSlots.Length; i++)
+            for (int i = 0; i < _activeSlotCount; i++)
             {
                 int slot = _activeSlots[i];
                 boundsMin = math.min(boundsMin, _inputs[slot].Position);
@@ -2308,6 +2641,7 @@ namespace Hecton8.AI
         private unsafe struct SwarmAnalysisJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<int> ActiveSlots;
+            public int ActiveSlotCount;
             [ReadOnly] public NativeArray<CognitionInput> Inputs;
             [ReadOnly] public NativeArray<CognitionCore> PriorCores;
             [ReadOnly] public NativeArray<byte> DueFlags;
@@ -2406,7 +2740,7 @@ namespace Hecton8.AI
                 float perceptionRadiusSq = SwarmPerceptionRadius * SwarmPerceptionRadius;
                 float separationRadiusSq = SwarmSeparationRadius * SwarmSeparationRadius;
                 float swarmPbdMinDistanceSq = SwarmPbdMinDistance * SwarmPbdMinDistance;
-                int maxNeighborIterations = math.min(ActiveSlots.Length, MaxSwarmNeighborIterations);
+                int maxNeighborIterations = math.min(math.max(ActiveSlotCount, 0), MaxSwarmNeighborIterations);
                 for (int i = 0; i < maxNeighborIterations; i++)
                 {
                     int otherSlot = ActiveSlots[i];

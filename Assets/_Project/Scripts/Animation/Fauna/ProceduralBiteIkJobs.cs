@@ -173,6 +173,10 @@ namespace Hecton8.Animation.Fauna
             float3 rootWorld = ResolveBonePosition(HeadBoneIndex, PredatorPosition);
             float3 targetDelta = ResolveAupDelta(in target.CenterAup, in PredatorAup, target.RuntimeCenter - PredatorPosition);
             float3 targetLocalCenter = WorldDeltaToLocal(targetDelta, right, up, forward);
+            float3 targetRightLocal = NormalizeSafe(WorldDeltaToLocal(SanitizeFinite(target.Right, right), right, up, forward), new float3(1f, 0f, 0f));
+            float3 targetUpLocal = NormalizeSafe(WorldDeltaToLocal(SanitizeFinite(target.Up, up), right, up, forward), new float3(0f, 1f, 0f));
+            float3 targetForwardLocal = NormalizeSafe(WorldDeltaToLocal(SanitizeFinite(target.Forward, forward), right, up, forward), new float3(0f, 0f, 1f));
+            OrthonormalizeTargetBasis(ref targetRightLocal, ref targetUpLocal, ref targetForwardLocal);
             float3 extents = math.max(SanitizeFinite(target.Extents, new float3(0.5f)), new float3(0.05f));
             float contactPadding = SanitizePositive(target.ContactPaddingMeters, 0.05f, 0f);
             uint resultFlags = 0u;
@@ -191,7 +195,7 @@ namespace Hecton8.Animation.Fauna
             }
             else
             {
-                closestLocal = ResolveClosestHullPointGradient(targetLocalCenter, extents, contactPadding);
+                closestLocal = ResolveClosestHullPointGradient(targetLocalCenter, extents, contactPadding, targetRightLocal, targetUpLocal, targetForwardLocal);
                 float closestSq = math.lengthsq(closestLocal);
                 distanceMeters = closestSq > ProceduralBiteIkConstants.MinLengthSq ? closestSq * math.rsqrt(closestSq) : 0f;
                 reach01 = math.saturate(distanceMeters * math.rcp(jawReach));
@@ -235,7 +239,7 @@ namespace Hecton8.Animation.Fauna
             {
                 resultFlags |= ProceduralBiteIkConstants.ResultFlagHighTierWrap;
                 resultFlags |= ProceduralBiteIkConstants.ResultFlagVisualOverkill;
-                ResolveWrapAnchors(targetLocalCenter, extents, target.CylinderRadiusMeters, right, up, forward, out wrap0, out wrap1);
+                ResolveWrapAnchors(targetLocalCenter, extents, target.CylinderRadiusMeters, targetRightLocal, targetUpLocal, targetForwardLocal, right, up, forward, out wrap0, out wrap1);
                 WriteTentacleBones(rootWorld, wrap0, wrap1, aimWorld, up, bodyRadius, segmentLength);
             }
 
@@ -277,26 +281,39 @@ namespace Hecton8.Animation.Fauna
             WriteTelemetry(in pose, targetLocalCenter, closestLocal);
         }
 
-        private float3 ResolveClosestHullPointGradient(float3 center, float3 extents, float padding)
+        private float3 ResolveClosestHullPointGradient(float3 center, float3 extents, float padding, float3 axisX, float3 axisY, float3 axisZ)
         {
-            float3 min = center - extents;
-            float3 max = center + extents;
-            float3 candidate = math.clamp(float3.zero, min, max);
-            bool rootInside = math.lengthsq(candidate) <= ProceduralBiteIkConstants.MinLengthSq;
+            float3 vectorToRoot = -center;
+            float3 localToRoot = new float3(
+                math.dot(vectorToRoot, axisX),
+                math.dot(vectorToRoot, axisY),
+                math.dot(vectorToRoot, axisZ));
+            float3 candidateLocal = math.clamp(localToRoot, -extents, extents);
+            bool rootInside = math.all(localToRoot >= -extents) && math.all(localToRoot <= extents);
             if (rootInside)
             {
-                float3 outward = NormalizeSafe(-center, new float3(0f, 0f, -1f));
-                candidate = center + outward * extents;
-                candidate = math.clamp(candidate, min, max);
+                float3 distanceToFace = extents - math.abs(localToRoot);
+                if (distanceToFace.x <= distanceToFace.y && distanceToFace.x <= distanceToFace.z)
+                    candidateLocal.x = math.select(extents.x, -extents.x, localToRoot.x < 0f);
+                else if (distanceToFace.y <= distanceToFace.z)
+                    candidateLocal.y = math.select(extents.y, -extents.y, localToRoot.y < 0f);
+                else
+                    candidateLocal.z = math.select(extents.z, -extents.z, localToRoot.z < 0f);
             }
 
             for (int i = 0; i < 3; i++)
             {
-                float3 gradient = NormalizeSafe(candidate, NormalizeSafe(center, new float3(0f, 0f, 1f)));
-                candidate = math.clamp(candidate - gradient * (0.35f + padding * 0.25f), min, max);
+                float3 candidateWorld = center + axisX * candidateLocal.x + axisY * candidateLocal.y + axisZ * candidateLocal.z;
+                float3 gradient = NormalizeSafe(candidateWorld, NormalizeSafe(center, new float3(0f, 0f, 1f)));
+                float3 localGradient = new float3(
+                    math.dot(gradient, axisX),
+                    math.dot(gradient, axisY),
+                    math.dot(gradient, axisZ));
+                candidateLocal = math.clamp(candidateLocal - localGradient * (0.35f + padding * 0.25f), -extents, extents);
             }
 
-            return SanitizeFinite(candidate, center);
+            float3 resolvedCandidate = center + axisX * candidateLocal.x + axisY * candidateLocal.y + axisZ * candidateLocal.z;
+            return SanitizeFinite(resolvedCandidate, center);
         }
 
         private float3 ApplySnapMissRecoveryLocal(float3 desiredTipLocal, float jawOpen, float segmentLength)
@@ -359,6 +376,9 @@ namespace Hecton8.Animation.Fauna
             float3 targetLocalCenter,
             float3 extents,
             float cylinderRadius,
+            float3 targetRightLocal,
+            float3 targetUpLocal,
+            float3 targetForwardLocal,
             float3 right,
             float3 up,
             float3 forward,
@@ -366,8 +386,11 @@ namespace Hecton8.Animation.Fauna
             out float3 wrap1)
         {
             float radius = SanitizePositive(cylinderRadius, math.max(extents.x, extents.z), 0.05f);
-            float3 radial = NormalizeSafe(new float3(targetLocalCenter.x, 0f, targetLocalCenter.z), new float3(1f, 0f, 0f));
-            float3 tangent = NormalizeSafe(new float3(-radial.z, 0f, radial.x), new float3(0f, 0f, 1f));
+            float3 cylinderAxis = NormalizeSafe(targetForwardLocal, new float3(0f, 0f, 1f));
+            float3 toPredator = -targetLocalCenter;
+            float3 radialVector = toPredator - cylinderAxis * math.dot(toPredator, cylinderAxis);
+            float3 radial = NormalizeSafe(radialVector, targetRightLocal);
+            float3 tangent = NormalizeSafe(math.cross(cylinderAxis, radial), targetUpLocal);
             float3 local0 = targetLocalCenter + radial * radius + tangent * (radius * 0.75f);
             float3 local1 = targetLocalCenter + radial * radius - tangent * (radius * 0.75f);
             wrap0 = LocalToWorldDelta(local0, right, up, forward) + PredatorPosition;
@@ -488,6 +511,31 @@ namespace Hecton8.Animation.Fauna
                 return SanitizeFinite(fallback, new float3(0f, 0f, 1f));
 
             return value * math.rsqrt(lengthSq);
+        }
+
+        private static void OrthonormalizeTargetBasis(ref float3 axisX, ref float3 axisY, ref float3 axisZ)
+        {
+            axisX = NormalizeSafe(axisX, new float3(1f, 0f, 0f));
+            axisZ = NormalizeSafe(axisZ, new float3(0f, 0f, 1f));
+
+            float3 yCandidate = axisY - axisX * math.dot(axisY, axisX);
+            if (!math.all(math.isfinite(yCandidate)) ||
+                math.lengthsq(yCandidate) <= ProceduralBiteIkConstants.MinLengthSq)
+            {
+                float3 zCandidate = axisZ - axisX * math.dot(axisZ, axisX);
+                float3 zSafe = NormalizeSafe(zCandidate, ResolvePerpendicularFallback(axisX));
+                yCandidate = math.cross(zSafe, axisX);
+            }
+
+            axisY = NormalizeSafe(yCandidate, ResolvePerpendicularFallback(axisX));
+            axisZ = NormalizeSafe(math.cross(axisX, axisY), axisZ);
+            axisY = NormalizeSafe(math.cross(axisZ, axisX), axisY);
+        }
+
+        private static float3 ResolvePerpendicularFallback(float3 axis)
+        {
+            float3 candidate = math.select(new float3(0f, 1f, 0f), new float3(1f, 0f, 0f), math.abs(axis.y) > 0.75f);
+            return NormalizeSafe(candidate - axis * math.dot(candidate, axis), new float3(0f, 0f, 1f));
         }
 
         private static float SanitizePositive(float value, float fallback, float minValue)

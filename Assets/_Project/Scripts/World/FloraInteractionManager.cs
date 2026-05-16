@@ -961,8 +961,11 @@ namespace Hecton8.World
         private readonly List<BaseModule> _staleParasiticModules = new List<BaseModule>(16);
         private NativeArray<ParasiteNode> _parasiteNodes;
         private JobHandle _parasiteGrowthHandle;
+        private JobHandle _wakeDecayHandle;
         private int _parasiteNodeCount;
         private bool _parasiteGrowthScheduled;
+        private bool _wakeDecayScheduled;
+        private double _lastWakeDecayTimestampSeconds;
         private int[] _cascadeReactiveStableHashIds = Array.Empty<int>();
         private int[] _defensiveSporeBurstStableHashIds = Array.Empty<int>();
         private int _cachedCascadeReactiveTemplateCount = -1;
@@ -1182,6 +1185,7 @@ namespace Hecton8.World
             HectonFloatingOrigin.UnregisterListener(this);
             GlobalRegistry.UnregisterWakeDisplacementService(this);
             TryUnregisterCullingHotSwapListener();
+            CompleteWakeDecayJob(forceComplete: true, dispatcherSwapWindow: false);
             _instanceCullingService = null;
             _submarineRuntimeContext = null;
             _submarineHullRigidbody = null;
@@ -1202,6 +1206,7 @@ namespace Hecton8.World
             HectonFloatingOrigin.UnregisterListener(this);
             GlobalRegistry.UnregisterWakeDisplacementService(this);
             TryUnregisterCullingHotSwapListener();
+            CompleteWakeDecayJob(forceComplete: true, dispatcherSwapWindow: false);
             _instanceCullingService = null;
             _submarineRuntimeContext = null;
             _submarineHullRigidbody = null;
@@ -1257,6 +1262,7 @@ namespace Hecton8.World
             if (!isActiveAndEnabled || !IsFiniteVector3(shiftOffset) || shiftOffset.sqrMagnitude <= 0.0001f)
                 return;
 
+            CompleteWakeDecayJob(forceComplete: true, dispatcherSwapWindow: false);
             ApplyRuntimeOffsetToCachedState(-shiftOffset);
         }
 
@@ -1277,9 +1283,7 @@ namespace Hecton8.World
             RefreshFlowFieldGlobals(deltaTime);
             if (runtimePlayerTransform == null)
             {
-                DrainWakeGeneratedSignals();
-                UpdateProceduralWakeBuffer(deltaTime);
-                PublishProceduralWakeBuffer();
+                ProcessProceduralWakeTick(deltaTime);
                 ClearToxicSporeHazard();
                 ClearDefensiveSporeHazard();
                 ResetInteractionGlobals();
@@ -1323,9 +1327,7 @@ namespace Hecton8.World
             UpdateWakeTrail(targetPosition, playerVelocity, deltaTime);
             PublishPlayerWakeSignal(targetPosition, playerVelocity, velocityMagnitude);
             PublishSubmarineWakeSignal();
-            DrainWakeGeneratedSignals();
-            UpdateProceduralWakeBuffer(deltaTime);
-            PublishProceduralWakeBuffer();
+            ProcessProceduralWakeTick(deltaTime);
             TryEmitSedimentBursts(targetPosition, playerVelocity);
 
             Shader.SetGlobalVector(
@@ -1353,6 +1355,7 @@ namespace Hecton8.World
         /// </summary>
         public void LateFrameTick()
         {
+            CompleteWakeDecayJob(forceComplete: false, dispatcherSwapWindow: true);
             CompleteCascadePhaseSeedJob(underwater: false, forceComplete: false, uploadAfterComplete: true);
             CompleteCascadePhaseSeedJob(underwater: true, forceComplete: false, uploadAfterComplete: true);
             CompleteHeadlessParasiteSimulation(force: false);
@@ -1364,6 +1367,7 @@ namespace Hecton8.World
         public void SlowTick()
         {
             RefreshCachedSubmarineContext();
+            ScheduleWakeDecayJob();
 
             if (_vegetationBridge == null)
                 _vegetationBridge = ResolveVegetationBridge();
@@ -2119,12 +2123,18 @@ namespace Hecton8.World
         /// <inheritdoc />
         public void EmitWake(in WakeGeneratedSignal signal)
         {
+            if (!CompleteWakeDecayJob(forceComplete: false, dispatcherSwapWindow: false))
+                return;
+
             QueueProceduralWake(in signal);
         }
 
         /// <inheritdoc />
         public void ClearWakeBuffer()
         {
+            if (!CompleteWakeDecayJob(forceComplete: false, dispatcherSwapWindow: false))
+                return;
+
             if (TryResolveProceduralWakeBuffer(out NativeArray<WakeSource> wakeSources))
             {
                 for (int i = 0; i < wakeSources.Length; i++)
@@ -2160,6 +2170,16 @@ namespace Hecton8.World
             _publishedProceduralWakeCount = 0;
             _publishedShearFoamAmount = 0f;
             PublishProceduralWakeBuffer(forceUpload: true);
+        }
+
+        private void ProcessProceduralWakeTick(float deltaTime)
+        {
+            if (!CompleteWakeDecayJob(forceComplete: false, dispatcherSwapWindow: false))
+                return;
+
+            DrainWakeGeneratedSignals();
+            UpdateProceduralWakeBuffer(deltaTime);
+            PublishProceduralWakeBuffer();
         }
 
         private void PublishPlayerWakeSignal(Vector3 playerPosition, Vector3 playerVelocity, float velocityMagnitude)
@@ -2350,17 +2370,14 @@ namespace Hecton8.World
             float follow = math.saturate(safeDeltaTime * WakeFollowSharpness);
             int slotLimit = ResolveWakeSlotLimit();
 
-            WakeDecayJob decayJob = new WakeDecayJob
-            {
-                WakeSources = wakeSources,
-                DeltaTime = safeDeltaTime,
-                DecayRate = WakeDecayPerSecond,
-                SlotLimit = slotLimit
-            };
-            decayJob.Schedule(wakeSources.Length, 8).Complete();
-
             for (int i = 0; i < wakeSources.Length; i++)
             {
+                if (i >= slotLimit)
+                {
+                    wakeSources[i] = default;
+                    continue;
+                }
+
                 WakeSource point = wakeSources[i];
                 if (point.Active == 0)
                     continue;
@@ -2380,6 +2397,44 @@ namespace Hecton8.World
 
                 wakeSources[i] = point;
             }
+        }
+
+        private void ScheduleWakeDecayJob()
+        {
+            if (_wakeDecayScheduled || !TryResolveProceduralWakeBuffer(out NativeArray<WakeSource> wakeSources))
+                return;
+
+            double now = Time.unscaledTimeAsDouble;
+            double previous = _lastWakeDecayTimestampSeconds;
+            _lastWakeDecayTimestampSeconds = now;
+            float elapsedSeconds = previous > 0.0
+                ? (float)math.clamp(now - previous, 0.0, 0.5)
+                : 0.1f;
+
+            _wakeDecayHandle = new WakeDecayJob
+            {
+                WakeSources = wakeSources,
+                DeltaTime = elapsedSeconds,
+                DecayRate = WakeDecayPerSecond,
+                SlotLimit = ResolveWakeSlotLimit()
+            }.Schedule(wakeSources.Length, 8);
+            _wakeDecayScheduled = true;
+            JobHandle.ScheduleBatchedJobs();
+        }
+
+        private bool CompleteWakeDecayJob(bool forceComplete, bool dispatcherSwapWindow)
+        {
+            if (!_wakeDecayScheduled)
+                return true;
+
+            bool completed = forceComplete || dispatcherSwapWindow
+                ? DispatcherJobSwap.TryComplete(ref _wakeDecayHandle, forceComplete)
+                : DispatcherJobSwap.TryFinalizeCompleted(ref _wakeDecayHandle);
+            if (!completed)
+                return false;
+
+            _wakeDecayScheduled = false;
+            return true;
         }
 
         private void PublishProceduralWakeBuffer(bool forceUpload = false)

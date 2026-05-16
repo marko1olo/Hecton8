@@ -9,7 +9,7 @@ namespace Hecton8.Vehicles.Physics.Contracts
         public const float CriticalFloodMassBaseRatio = 0.4f;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
     public struct DynamicFloodRoomMassSample
     {
         [FieldOffset(0)] public float WaterLevel01;
@@ -17,7 +17,7 @@ namespace Hecton8.Vehicles.Physics.Contracts
         [FieldOffset(8)] public float3 LocalAup;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 80)]
     public struct DynamicFloodMassSolveResult
     {
         [FieldOffset(0)] public float3 DynamicCenterOfMassLocal;

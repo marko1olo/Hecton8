@@ -108,6 +108,10 @@ namespace Hecton8.AI
         private VaultBufferHandle<float4x4> _leviathanBonesHandle;
         private VaultBufferHandle<LeviathanTerrainIkTelemetryEntry> _telemetryRingHandle;
         private VaultBufferHandle<int> _telemetryCursorHandle;
+        private VaultBufferHandle<JawIkTarget> _jawIkTargetsHandle;
+        private VaultBufferHandle<CurrentJawPos> _currentJawPosHandle;
+        private VaultBufferHandle<BiteIkSolveEvent> _biteIkSolveEventsHandle;
+        private VaultBufferHandle<int> _biteIkTelemetryCursorHandle;
 
         private GraphicsBuffer _bonesGraphicsBufferA;
         private GraphicsBuffer _bonesGraphicsBufferB;
@@ -530,7 +534,7 @@ namespace Hecton8.AI
             _leviathanBonesHandle = vault.GetBufferHandle<float4x4>(BufferID.LeviathanBoneMatrices, MaxSegments, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
             _telemetryRingHandle = vault.GetBufferHandle<LeviathanTerrainIkTelemetryEntry>(BufferID.LeviathanTerrainIkTelemetryRing, LeviathanTerrainIkConstants.TelemetryCapacity, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
             _telemetryCursorHandle = vault.GetBufferHandle<int>(BufferID.LeviathanTerrainIkTelemetryCursor, 1, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
-            TryResolveBiteIkVaultBuffers(out _, out _, out _, out _);
+            EnsureBiteIkVaultHandles(vault);
         }
 
         private bool TryResolveSpineVaultBuffers(
@@ -585,31 +589,110 @@ namespace Hecton8.AI
                 return false;
             }
 
-            jawIkTargets = vault.GetBuffer<JawIkTarget>(
-                BufferID.JawIkTargets,
-                ProceduralBiteIkConstants.TargetCapacity,
-                SystemID.AnimationFauna,
-                NativeArrayOptions.ClearMemory);
-            currentJawPos = vault.GetBuffer<CurrentJawPos>(
-                BufferID.CurrentJawPos,
-                ProceduralBiteIkConstants.CurrentJawPoseCapacity,
-                SystemID.AnimationFauna,
-                NativeArrayOptions.ClearMemory);
-            biteIkSolveEvents = vault.GetBuffer<BiteIkSolveEvent>(
-                BufferID.BiteIkSolveEvents,
-                ProceduralBiteIkConstants.TelemetryCapacity,
-                SystemID.AnimationFauna,
-                NativeArrayOptions.ClearMemory);
-            biteIkTelemetryCursor = vault.GetBuffer<int>(
-                BufferID.BiteIkTelemetryCursor,
-                1,
-                SystemID.AnimationFauna,
-                NativeArrayOptions.ClearMemory);
+            if (!EnsureBiteIkVaultHandles(vault))
+            {
+                _biteVaultReady = false;
+                jawIkTargets = default;
+                currentJawPos = default;
+                biteIkSolveEvents = default;
+                biteIkTelemetryCursor = default;
+                return false;
+            }
+
+            jawIkTargets = _jawIkTargetsHandle.Resolve(vault);
+            currentJawPos = _currentJawPosHandle.Resolve(vault);
+            biteIkSolveEvents = _biteIkSolveEventsHandle.Resolve(vault);
+            biteIkTelemetryCursor = _biteIkTelemetryCursorHandle.Resolve(vault);
             _biteVaultReady = jawIkTargets.IsCreated &&
                               currentJawPos.IsCreated &&
                               biteIkSolveEvents.IsCreated &&
-                              biteIkTelemetryCursor.IsCreated;
+                              biteIkTelemetryCursor.IsCreated &&
+                              jawIkTargets.Length >= ProceduralBiteIkConstants.TargetCapacity &&
+                              currentJawPos.Length >= ProceduralBiteIkConstants.CurrentJawPoseCapacity &&
+                              biteIkSolveEvents.Length >= ProceduralBiteIkConstants.TelemetryCapacity &&
+                              biteIkTelemetryCursor.Length >= 1;
             return _biteVaultReady;
+        }
+
+        private bool TryResolveCurrentJawPosVaultBuffer(out NativeArray<CurrentJawPos> currentJawPos)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || !EnsureBiteIkVaultHandles(vault))
+            {
+                currentJawPos = default;
+                return false;
+            }
+
+            currentJawPos = _currentJawPosHandle.Resolve(vault);
+            return currentJawPos.IsCreated &&
+                   currentJawPos.Length >= ProceduralBiteIkConstants.CurrentJawPoseCapacity;
+        }
+
+        private bool TryResolveBiteTelemetryVaultBuffers(
+            out NativeArray<BiteIkSolveEvent> biteIkSolveEvents,
+            out NativeArray<int> biteIkTelemetryCursor)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || !EnsureBiteIkVaultHandles(vault))
+            {
+                biteIkSolveEvents = default;
+                biteIkTelemetryCursor = default;
+                return false;
+            }
+
+            biteIkSolveEvents = _biteIkSolveEventsHandle.Resolve(vault);
+            biteIkTelemetryCursor = _biteIkTelemetryCursorHandle.Resolve(vault);
+            return biteIkSolveEvents.IsCreated &&
+                   biteIkTelemetryCursor.IsCreated &&
+                   biteIkSolveEvents.Length >= ProceduralBiteIkConstants.TelemetryCapacity &&
+                   biteIkTelemetryCursor.Length >= 1;
+        }
+
+        private bool EnsureBiteIkVaultHandles(IDataVault vault)
+        {
+            if (vault == null)
+                return false;
+
+            if (!_jawIkTargetsHandle.IsCreated)
+            {
+                _jawIkTargetsHandle = vault.GetBufferHandle<JawIkTarget>(
+                    BufferID.JawIkTargets,
+                    ProceduralBiteIkConstants.TargetCapacity,
+                    SystemID.AnimationFauna,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_currentJawPosHandle.IsCreated)
+            {
+                _currentJawPosHandle = vault.GetBufferHandle<CurrentJawPos>(
+                    BufferID.CurrentJawPos,
+                    ProceduralBiteIkConstants.CurrentJawPoseCapacity,
+                    SystemID.AnimationFauna,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_biteIkSolveEventsHandle.IsCreated)
+            {
+                _biteIkSolveEventsHandle = vault.GetBufferHandle<BiteIkSolveEvent>(
+                    BufferID.BiteIkSolveEvents,
+                    ProceduralBiteIkConstants.TelemetryCapacity,
+                    SystemID.AnimationFauna,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_biteIkTelemetryCursorHandle.IsCreated)
+            {
+                _biteIkTelemetryCursorHandle = vault.GetBufferHandle<int>(
+                    BufferID.BiteIkTelemetryCursor,
+                    1,
+                    SystemID.AnimationFauna,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            return _jawIkTargetsHandle.IsCreated &&
+                   _currentJawPosHandle.IsCreated &&
+                   _biteIkSolveEventsHandle.IsCreated &&
+                   _biteIkTelemetryCursorHandle.IsCreated;
         }
 
         private void DisposePersistentBuffers()
@@ -633,6 +716,10 @@ namespace Hecton8.AI
             _leviathanBonesHandle = default;
             _telemetryRingHandle = default;
             _telemetryCursorHandle = default;
+            _jawIkTargetsHandle = default;
+            _currentJawPosHandle = default;
+            _biteIkSolveEventsHandle = default;
+            _biteIkTelemetryCursorHandle = default;
             _biteVaultReady = false;
         }
 
@@ -846,13 +933,11 @@ namespace Hecton8.AI
 
         private void PublishBiteFeedbackIfNeeded()
         {
-            if (!TryResolveBiteIkVaultBuffers(
-                    out _,
-                    out NativeArray<CurrentJawPos> currentJawPos,
-                    out _,
-                    out _) ||
+            if (!TryResolveCurrentJawPosVaultBuffer(out NativeArray<CurrentJawPos> currentJawPos) ||
                 currentJawPos.Length <= 0)
+            {
                 return;
+            }
 
             CurrentJawPos pose = currentJawPos[0];
             if (pose.TargetHash == 0u)
@@ -1494,13 +1579,13 @@ namespace Hecton8.AI
         private void DumpBiteTelemetryBlackBoxOnce()
         {
             if (_biteTelemetryDumped ||
-                !TryResolveBiteIkVaultBuffers(
-                    out _,
-                    out _,
+                !TryResolveBiteTelemetryVaultBuffers(
                     out NativeArray<BiteIkSolveEvent> biteIkSolveEvents,
                     out _) ||
                 !biteIkSolveEvents.IsCreated)
+            {
                 return;
+            }
 
             DumpBiteTelemetryBlackBox();
             _biteTelemetryDumped = true;
@@ -1508,9 +1593,7 @@ namespace Hecton8.AI
 
         private void DumpBiteTelemetryBlackBox()
         {
-            TryResolveBiteIkVaultBuffers(
-                out _,
-                out _,
+            TryResolveBiteTelemetryVaultBuffers(
                 out NativeArray<BiteIkSolveEvent> biteIkSolveEvents,
                 out NativeArray<int> biteIkTelemetryCursor);
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));

@@ -303,10 +303,16 @@ namespace Hecton8.Animation.IK
                 {
                     writer.Write(0x4752494Bu);
                     writer.Write(VRPhysicalHandPresenceConstants.TelemetryMarkerIKLockState);
+                    int cursor = telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? telemetryCursor[0] : 0;
+                    int startIndex = PositiveModulo(cursor, telemetryRing.Length);
+
                     writer.Write(telemetryRing.Length);
-                    writer.Write(telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? telemetryCursor[0] : 0);
+                    writer.Write(cursor);
                     for (int i = 0; i < telemetryRing.Length; i++)
-                        WriteEntry(writer, telemetryRing[i]);
+                    {
+                        int sourceIndex = PositiveModulo(startIndex + i, telemetryRing.Length);
+                        WriteEntry(writer, telemetryRing[sourceIndex]);
+                    }
                 }
 
                 return true;
@@ -319,6 +325,25 @@ namespace Hecton8.Animation.IK
             {
                 return false;
             }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (ObjectDisposedException)
+            {
+                return false;
+            }
+        }
+
+        private static int PositiveModulo(int value, int length)
+        {
+            int safeLength = Math.Max(1, length);
+            int result = value % safeLength;
+            return result < 0 ? result + safeLength : result;
         }
 
         private static void WriteEntry(BinaryWriter writer, VRHandIkTelemetryEntry entry)
@@ -459,26 +484,26 @@ namespace Hecton8.Animation.IK
             if (!vrActive || lowTier)
             {
                 flags |= VRPhysicalHandPresenceConstants.OutputFlagScreenSpaceFallback;
-                float3 ghostPosition = controller;
+                float3 fallbackGhostPosition = controller;
                 float3 shoulder = SanitizeFinite(input.ShoulderPosition, controller + new float3(0f, -0.25f, -0.2f));
                 float3 pole = SanitizeFinite(input.PolePosition, shoulder + ResolvePerpendicular(controller - shoulder));
                 float3 elbow = math.lerp(shoulder, controller, 0.5f) + NormalizeSafe(pole - shoulder, new float3(0f, 0f, 1f)) * 0.08f;
-                quaternion handRotation = SanitizeQuaternion(input.ControllerRotation, SanitizeQuaternion(input.CurrentHandRotation, quaternion.identity));
+                quaternion fallbackHandRotation = SanitizeQuaternion(input.ControllerRotation, SanitizeQuaternion(input.CurrentHandRotation, quaternion.identity));
 
                 VRHandPresenceOutput fallbackOutput = new VRHandPresenceOutput
                 {
                     ActualHandPosition = controller,
-                    GhostHandPosition = ghostPosition,
+                    GhostHandPosition = fallbackGhostPosition,
                     ElbowPosition = SanitizeFinite(elbow, controller),
                     SurfaceNormal = new float3(0f, 1f, 0f),
                     UpperArmRotation = SanitizeQuaternion(input.CurrentUpperRotation, quaternion.identity),
                     LowerArmRotation = SanitizeQuaternion(input.CurrentLowerRotation, quaternion.identity),
-                    HandRotation = handRotation,
+                    HandRotation = fallbackHandRotation,
                     LockBlend01 = 0f,
                     HapticIntensity = 0f,
                     SlidingSpeed = 0f,
                     Flags = flags,
-                    StateHash = ComposeStateHash(controller, controller, ghostPosition, flags, hand)
+                    StateHash = ComposeStateHash(controller, controller, fallbackGhostPosition, flags, hand)
                 };
                 Outputs[hand] = fallbackOutput;
                 UpdatePersistentState(hand, in input, in fallbackOutput, controller, controller, new float3(0f, 1f, 0f), 0f, VRPhysicalHandPresenceConstants.GrabStateFree);
@@ -499,11 +524,11 @@ namespace Hecton8.Animation.IK
             if (gripInput && canUseSdf &&
                 allowSdfProjection &&
                 TrySampleSdfTrilinear(controller, invCellSize, SdfRange, out float density) &&
-                density < localClearance &&
+                density > -localClearance &&
                 TryResolveSdfGradient(controller, invCellSize, SdfRange, gradientStep, out float3 sdfNormal))
             {
                 surfaceNormal = sdfNormal;
-                projectedTarget = SanitizeFinite(controller + surfaceNormal * (localClearance - density), controller);
+                projectedTarget = SanitizeFinite(controller + surfaceNormal * (density + localClearance), controller);
                 locked = true;
                 usedSdf = true;
                 flags |= VRPhysicalHandPresenceConstants.OutputFlagLocked | VRPhysicalHandPresenceConstants.OutputFlagSdfSlide;
@@ -885,7 +910,7 @@ namespace Hecton8.Animation.IK
                 return false;
             }
 
-            normal = NormalizeSafe(new float3(px - nx, py - ny, pz - nz), normal);
+            normal = NormalizeSafe(new float3(nx - px, ny - py, nz - pz), normal);
             return math.all(math.isfinite(normal));
         }
 

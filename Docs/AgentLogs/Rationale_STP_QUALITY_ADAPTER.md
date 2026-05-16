@@ -1,6 +1,6 @@
 # STP_QUALITY_ADAPTER Rationale
 
-Status: CORE COMPLETE - FINAL VALIDATION BLOCKED BY DEPENDENCY
+Status: CORE COMPLETE - DOTNET COMPILE PASS - UNITY RUNTIME VALIDATION PENDING
 
 ## Session Start
 
@@ -191,3 +191,59 @@ Solution: Ran `dotnet build Hecton8.Core.csproj --no-restore` and stored output 
 Rejected Alternatives: Editing `World/SargassumMicroFaunaBoids.cs` or `Construction/VehicleDockingModule.cs` from the STP graphics domain.
 Scalability potential: None until owning agents repair the external symbols.
 Hardware Impact: No runtime impact. Current errors are missing `EnsureVaultBufferHandle`, `CacheFluidRuntime`, and `ResetDockingRuntimeCaches`; no STP adapter errors appeared before the wall.
+
+## Loop 7 Visual Budget Pass
+
+Problem: The adapter saved pixels but did not publish a high-tier visual budget, so downstream visuals had no STP-owned signal that cheap-device savings could be spent on richer rendering.
+Solution: Added `VisualOverkill01`, `DearLie01`, and `VisualFeatureFlags` into the existing 64B `ResolutionScaleState` reserved space. The adapter now publishes epsilon-gated shader globals: `_H8StpRenderScale01`, `_H8StpScaleDeficit01`, `_H8DearLie01`, `_H8VisualOverkill01`, `_H8VisualFeatureFlags`, and the existing visor-fluid `_HectonVisorFluidVisualOverkill`.
+Rejected Alternatives: Creating a new `VisualOverkillSignal`; existing quality tier, shader globals, and the STP state lane already cover the broadcast path without increasing signal duplication.
+Scalability potential: Low/MX350/Quest advertises `DearLie01=1` and no expensive flags. Mid allows a small volumetric-silt budget. High/Ultra advertise budget flags for visor salt crystals, volumetric silt, procedural hull dents, 16-tap POM, SSS, and raymarched fog consumers.
+Hardware Impact: No new render pass, no compute dispatch, no local native allocation. Added shader-global writes are epsilon-gated; no measured microseconds. Source expectation remains inside the existing 1 us/frame reactive-VFX estimate except on threshold changes.
+
+Problem: High/Ultra thermal scaling could fall to 0.75, which is too close to a mobile-grade compromise for a 4090-class path.
+Solution: Raised high-tier thermal max to 0.90 and ultra-tier thermal max to 1.0; frame-pressure emergency policy can still reduce scale only under severe measured frame stress.
+Rejected Alternatives: Never scaling high-end at all; that would ignore real frame-pressure survival. Keeping 0.75 was rejected as violating the high-end overkill requirement.
+Scalability potential: Toaster path still uses 0.5/0.35. High and Ultra now keep presentation quality unless actual frame stress demands survival.
+Hardware Impact: High/Ultra spend more GPU pixels under thermal pressure. This is intentional visual currency, not a performance gain.
+
+Problem: Runtime quality overrides were not guaranteed to drive the STP adapter because hardware tier resolution preferred `GlobalRegistry.QualityTier`.
+Solution: `ResolveHardwareTierByte()` now reads `GlobalRegistry.ScalabilityTier`, preserving override-aware tier selection before falling back to the hardware profile.
+Rejected Alternatives: Hard-binding to hardware detection only; it blocks runtime user override and makes testing tier paths slower.
+Scalability potential: QA can force Low/Mid/High/Ultra policy without scene reload; downstream visual-budget globals follow the same tier.
+Hardware Impact: No per-frame allocation; one registry property read already in the policy path.
+
+## Compile Gate 5
+
+Problem: Fifth compile gate still cannot validate final STP integration because the shared core project has unrelated compile errors.
+Solution: Ran `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -maxcpucount:1 -p:UseSharedCompilation=false` and stored output in `Docs/AgentLogs/Dump_STP_QUALITY_ADAPTER_compile_attempt5_no_restore.txt`.
+Rejected Alternatives: Editing Fauna, Bootstrap, Tools, or legacy underwater-visuals systems from the graphics scalability prompt.
+Scalability potential: None until owning agents repair those compile walls.
+Hardware Impact: No runtime impact. Current blockers include `ProceduralBiteIkJobs.cs` candidate shadowing, `GameBootstrapper.Initialize` arity mismatch, missing `ToolDurabilitySystem` native-state fields/helpers, and missing biome-fog arrays in `HectonUnderwaterVisuals.cs`; no STP adapter or `ResolutionScaleState` errors appeared in the log.
+
+## Loop 8 Data-Sovereignty Pointer Polish
+
+Problem: The adapter no longer owned persistent native arrays, but the source still declared borrowed `NativeArray<T>` views and passed one into the Burst EWMA job. That satisfied ownership in practice but failed the stricter "no local NativeArray surface" audit.
+Solution: Replaced adapter-local `NativeArray<T>` views with DataVault-resolved raw pointers from `VaultBufferHandle<T>.ResolvePointer()`. The one-frame EWMA job now carries a `ResolutionScaleState*` plus length, and the adapter locks `BufferID.ResolutionScaleState` with `TryLockBuffer` before scheduling, then unlocks after completion.
+Rejected Alternatives: Reintroducing a fallback `NativeArray`, keeping borrowed `NativeArray<T>` views and arguing semantics, or removing Burst smoothing to avoid unsafe code. All three either weaken DataVault sovereignty or degrade temporal stability.
+Scalability potential: Low/MX350/Quest still read the same 64B scale lane; High/Ultra still get the same visual-overkill state without another signal or allocation path. The pointer path reduces adapter state to vault handles plus scalar policy fields.
+Hardware Impact: No measured microseconds. Source impact is ownership/compaction safety, not arithmetic savings: no adapter-owned native allocation, no copied state view, and a vault lock only while the one-element EWMA job owns the pointer.
+
+Problem: Enabling raw pointer access in the graphics scalability assembly needed an explicit compilation contract.
+Solution: Set `Hecton8.Graphics.Scalability.asmdef` `allowUnsafeCode` to true, matching existing native-memory assemblies such as Core, Core.Memory, VFX.Debris, and persistence/database domains.
+Rejected Alternatives: Moving pointer code into a wrapper assembly or into Core.Memory. That would hide graphics policy logic outside the assigned domain and create a new dependency surface.
+Scalability potential: The scaler remains isolated in `Assets/_Project/Scripts/Graphics/Scalability/` while using the existing DataVault ABI.
+Hardware Impact: No runtime cost from the asmdef flag.
+
+Problem: Metal/Mac and compute-thread limits were re-raised during the escalation.
+Solution: Re-ran a shader/compute scan. The STP adapter still owns no compute shader and no DirectX-only rendering path. Relevant project compute kernels found in visor/rendering paths use bounded groups such as 8x8x1, 16x16x1, 64x1x1, 8x8x8, or guarded runtime thread-group validation; no STP-owned dispatch exceeds the 1024-thread Metal limit.
+Rejected Alternatives: Adding a new STP compute upscale/blit pass. That would create a platform validation burden without improving the current policy adapter.
+Scalability potential: Toaster path remains render-scale/STP/sharpen fake; God-mode gets published budget flags for downstream high-tier effects.
+Hardware Impact: No GPU dispatch added. Static scan only; Metal player build remains pending verification.
+
+## Compile Gate 6
+
+Problem: Source compile validation was previously blocked by unrelated shared project errors.
+Solution: Ran `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -maxcpucount:1 -p:UseSharedCompilation=false` after Loop 8 and stored output in `Docs/AgentLogs/Dump_STP_QUALITY_ADAPTER_compile_attempt6_no_restore.txt`.
+Rejected Alternatives: Declaring runtime readiness from a local C# build. Unity import, Play Mode, player build, profiler, GCMonitor, and visual captures still require fresh Unity evidence.
+Scalability potential: The adapter source now passes the local C# project compile gate with all STP contracts present.
+Hardware Impact: Compile gate only. Result: Build succeeded in 4.30s with 0 warnings and 0 errors; no measured frame-time or microsecond data was produced.

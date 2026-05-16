@@ -376,3 +376,90 @@ Proof limits:
 - Local Subnautica install was inspected as file taxonomy and metadata only. No decompilation, binary reverse engineering, asset copying, text/audio/mesh extraction, or proprietary payload reuse.
 - Public repositories/docs were used as current source taxonomy only. GPL/AGPL/LGPL code remains non-reusable in H8 without a deliberate licensing decision.
 - No compile/playmode/profiler run was performed because no runtime code was changed.
+# SUBNAUTICA_RESEARCHER SIXTH PASS - MULTIPLATFORM / H-PHI / FOUNDATION INQUISITION
+Date: 2026-05-16
+Mode: RESEARCH ONLY. NO RUNTIME CODE CHANGED. NO PROPRIETARY ASSET OR CODE EXTRACTION.
+
+What was wrong:
+- Some native/binary payload structs are not strict enough for the multiplatform mandate. Several queues use `[StructLayout(LayoutKind.Sequential)]` without explicit `Pack`/`Size`.
+- One authoring struct is actively misleading: `ContentAssetEntry` has `[StructLayout(Pack = 1)]` while containing `string`, Addressables `AssetReference`, `GameObject`, `Mesh`, `Material`, `bool`, and `uint[]`.
+- H-Phi is partial. Systems use `NativeMemorySentinel` and some DataVault buffers, but multiple systems still own local NativeArrays/NativeQueues/NativeHashMaps.
+- Scanner has a Burst job that is scheduled and immediately completed in the same method.
+- Shader thread groups are currently within the 1024 ceiling, but three compute shaders require `#pragma target 5.0`, so they are not a universal Quest/Android/low-tier path.
+- DataMonolith and content authority have validators/scaffolding, but disk payloads are empty.
+
+What was done:
+- Re-read `Status_SUBNAUTICA_RESEARCHER.md` and `Rationale_SUBNAUTICA_RESEARCHER.md`.
+- Checked `Docs/Tasks/CURRENT_BATCH.md`; no active `<AGENT_PROMPT id="SUBNAUTICA_RESEARCHER">` block was found.
+- Re-read relevant mandates: `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`, `ARCH_Signal_Lane_Segregation.txt`, `STRM_Async_Asset_Upload_Texture_Settings.txt`, `REND_GPU_Occlusion_Culling_6000.txt`.
+- Audited content/runtime structs: `ContentAssetBinaryRecord` is valid at 32 bytes; `ContentAssetEntry` is managed authoring data, not a native binary record; `ContentBundleRefState`, `ContentAuthorityTelemetryEntry`, `ObjectBatchInstance`, `ObjectBatchChunk`, and `ContentLoreBlockIndex` have explicit sizes; `ScanEventPayload`, pager command/result/telemetry structs, multiple mod AUP/render/raycast/reject/memory payloads, and `ModRegistryEventPayload` need explicit Pack/Size or a documented managed-only exemption.
+- Audited native ownership: `ScannableTarget` uses `GlobalRegistry.DataVault` for lore AUP/hash buffers, but `H8BinaryWorldPager`, `ScanEvents`, `ScannerTool`, `ModCommandDispatcher`, `ModRegistryEvents`, `ModResourceRegistry`, `ModEventProjectionBridge`, and `H8StaticDataArena` still own local native containers. Most are sentinel-registered, but sentinel registration is not stateless data sovereignty.
+- Audited scanner stability: `LoreCandidateDotProductJob` guards rsqrt paths; scanner writes a 300-entry blackbox ring; `TryResolveScientificLoreCandidate` still schedules and immediately completes a job; production summaries use `FixedCharBuffer`, while development-only legacy summary uses `string.Format`.
+- Audited shader portability: found compute thread groups at 64, 256, or 512 total threads; no text-scan hit above 1024. `ParticleUpdate.compute`, `Hecton_VolumetricLight.compute`, and `HectonHudFogLuminance.compute` use `#pragma target 5.0` and need tier/platform gates.
+- Audited I/O: `H8BinaryWorldPager` uses persistent random-access FileStream, fixed arenas, CRC, RLE, and corrupt-read blackbox dumps; `H8StaticDataArena` uses `File.Exists`/`File.ReadAllBytes` on `Application.streamingAssetsPath`; `ContentLoreBinaryProvider` memory-maps editor/standalone and synchronously reads fallback streams elsewhere.
+- Rechecked payload state: `Assets/AddressableAssetsData` has 0 files; `Assets/_SourceData` has 0 files; `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` is absent; no `ContentAssetHashMap`, `ContentVfxPrewarmManifest`, or concrete content authority asset was found under current data paths.
+- Rechecked first-hour scan route: recipes require `scan.expedition_contact`, `scan.resource_cache`, `scan.structure_relay`, and `scan.resource_node`; current real prefab/data/scene search found `Item_Titanium.prefab` with `entryId: resource.titanium_fragment`; no real prefab/scene/data instance was found for `scan.expedition_contact`, `scan.resource_cache`, or `scan.structure_relay`.
+
+Cinematic Cheats / tactical borrowables:
+- From Subnautica sidecars: keep the split between baked base world, generated cell cache, signal anchors, and durable player save state.
+- For H8 low tier: use sidecar-driven hashed route anchors, cheap dot-product scanner vision, LUT/triangle-noise presentation, and procedural fallback pages.
+- For H8 high/ultra tier: attach salt crystals, volumetric silt wake, procedural dents, raymarch detail, and 16-tap POM to `ContentTier.Overkill`, not to core gameplay contracts.
+- For scanner: use previous-frame native result or a cheap capped scalar loop; spend saved cycles on hologram/readability, not immediate job completion overhead.
+- For world debris: turn `ObjectBatchBase` into a real baked BRG/indirect payload lane before adding more static scene GameObjects.
+
+Exact Microseconds saved:
+- Current pass: 0us, research-only.
+- No compile/playmode/profiler run, because no runtime code was changed.
+- Future savings are unmeasured. Do not claim exact microseconds until a Unity player profile compares before/after.
+
+P0 findings:
+1. `ContentAssetEntry` must stop pretending to be a packed binary/native struct. Keep `ContentAssetBinaryRecord` as the packed record; make authoring entry explicitly managed/Serializable only.
+2. Native queue payloads need explicit layout audit: `ScanEventPayload`, pager command/result/telemetry payloads, mod AUP/render/raycast/reject/memory payloads, and registry payloads.
+3. `H8StaticDataArena` cannot ship universal Android/Quest loading through `File.ReadAllBytes(Application.streamingAssetsPath)` without a platform loader or pre-copied persistent path.
+4. ContentAuthority build gate is real, but content payload is still empty: Addressables settings files, hash maps, VFX manifests, and DataMonolith blob are absent.
+5. Scanner craft route is still not proven in production content for `scan.expedition_contact`.
+
+P1 findings:
+- `ScannerTool.TryResolveScientificLoreCandidate` immediate `handle.Complete()` violates the spirit of the job-system mandate. Replace with previous-frame completion or no-job direct loop when candidate count is small.
+- Local native owners are sentinel-registered, not stateless. Decide which singleton I/O owners are explicitly exempt and move shared/event buffers to GlobalDataVault typed lanes.
+- `ScanEvents` and `ModRegistryEvents` are bounded NativeQueue buses, but they are still legacy static buses, not typed `SignalBus` lanes.
+- Mod public payloads need stronger Pack/Size contracts before external mods are treated as stable ABI.
+- Shader Model 5 compute files must be behind feature/tier gates with Dear Lie fallback for Quest/Android/MX350.
+
+Proof limits:
+- This pass did not edit runtime code.
+- This pass did not parse proprietary Subnautica binaries or copy proprietary files.
+- Text search is not the same as compiled kernel validation; Unity build/preprocess can catch final compute kernel sizes, but current disk state likely fails content authority before that proof is meaningful.
+## SUBNAUTICA_RESEARCHER - Seventh Pass / Foundation Arbitration
+
+Scope: Research-only. No runtime code changed. All Subnautica inspection remained clean-room file taxonomy; no assets/code/binaries were copied or parsed for implementation.
+
+What was wrong / corrected:
+- Previous ContentAuthority wording was partly stale. Current source now has DataVault-backed bundle refs, telemetry, and pending load state, plus a real `ContentAuthorityBuildPreprocessor`.
+- ContentAuthority is still not a populated content authority. Disk proof: `Assets/AddressableAssetsData` files=0, `Assets/_SourceData` files=0, `Assets/StreamingAssets` missing, and no `ContentAssetHashMap`/`ContentVfxPrewarmManifest` assets found.
+- DataMonolith compiler exists. The real gap is source/output/build freshness: `_SourceData` is empty and `static_data.h8bin` is absent. Runtime loader still uses `Application.streamingAssetsPath` + `File.Exists`/`File.ReadAllBytes`, which is not Android/Quest-proof and doubles peak boot memory.
+- Audio has improved. `AudioImportDictator` is now a final-order audio policy and adds a 50 MB preloaded-audio build gate. Current metas still have large root Atmos WAVs as DecompressOnLoad/preload, so the gate must catch stale imports until reimported.
+- Modding contract is still broken. `ModLoader` rejects `RequiredAPIVersion <= 0`, while `ModBuilderWindow` still does not emit `RequiredAPIVersion` in generated `mod.json`.
+- H8 world pager payload vocabulary is still too save-delta oriented. Subnautica clean-room taxonomy shows distinct base-world terrain cells, batch objects, compiled proxy/PVS-like data, biome/signal sidecars, and save deltas.
+- Shader portability gates exist, but some are not strict by default. `HectonHudFogLuminance.compute`, `Hecton_VolumetricLight.compute`, and `ParticleUpdate.compute` use `#pragma target 5.0`; these need explicit tier/platform fences.
+
+Subnautica evidence re-counted:
+- `C:\Games\Subnautica\Subnautica_Data\StreamingAssets\SNUnmanagedData\Build18`: BatchObjectsCache 2,975 files / 3,218,027 bytes; CellsCache 1,606 files / 167,561,255 bytes; CompiledOctreesCache 5,416 files / 1,203,085,204 bytes; biomeMap/index/meta/biomes/signals sidecars present.
+- `C:\Games\Subnautica\SNAppData\SavedGames\slot0000`: CellsCache 25 files / 21,836,090 bytes; global-objects.bin 88,743 bytes; scene-objects.bin 57,921 bytes; gameinfo.json 345 bytes.
+
+Batch 007 tactical queue:
+1. Fix `ModBuilderWindow` manifest output: emit `RequiredAPIVersion = 2` and `ModPriority`, and stop implying arbitrary external DLL loading unless a registered factory exists.
+2. Add DataMonolith build freshness gate: fail if `_SourceData`/`Data/Balance` changed and `static_data.h8bin` is absent/stale/empty; decide whether zero-record blob is allowed only in dev.
+3. Add Android/Quest-safe monolith loader path: UnityWebRequest or platform file abstraction, chunked native copy, no full managed `byte[]` staging for large blobs.
+4. Populate minimal ContentAuthority proof assets: Core/High_Res/Overkill Addressables settings, at least one `ContentAssetHashMap`, and one VFX prewarm manifest or explicit waiver.
+5. Split `ContentAssetEntry` authoring from binary layout: remove misleading `[StructLayout(Pack=1)]` from managed-reference authoring record; keep `ContentAssetBinaryRecord` as the packed 32-byte blob record.
+6. Add base-world payload family constants: `TerrainCellBase`, `ObjectBatchBase`, `VisibilityPhysicsProxyBase`, `AudioBiomeBank`, `DiscoveryRouteBase`.
+7. Reimport/fail stale audio metas: root Atmos WAVs must stream/no-preload; build gate should apply policy or compare importer state before budget estimation.
+8. Promote first-hour scan route validation to build/CI after generated scene/bootstrap proof exists: `scan.expedition_contact`, `scan.resource_cache`, `scan.structure_relay` must be reachable or intentionally waived.
+9. Make shader portability strict for mobile/XR/Metal builds and leave High/Ultra PC overkill behind explicit tier groups.
+
+Cinematic cheats retained:
+- Toaster route: authored sidecars, fixed-size records, LUT/audio-bank/proxy payloads, low-frequency validation gates, no runtime physics/PVS fantasy.
+- God-mode route: overkill visual/audio payloads are allowed only after Core contracts are deterministic and tier isolated.
+
+Exact microseconds saved: 0us measured. This pass changed documentation/logs only. Any future runtime savings require populated content, player build profiling, and platform captures.

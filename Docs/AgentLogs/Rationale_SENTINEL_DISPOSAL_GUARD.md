@@ -1,6 +1,6 @@
 # Rationale_SENTINEL_DISPOSAL_GUARD
 
-Status: CORE COMPLETE / BUILD BLOCKED BY DEPENDENCY
+Status: DOTNET BUILD GREEN / UNITY RUNTIME PENDING VERIFICATION
 
 Problem: H8Memory tracks pointer ownership but cannot purge all allocations owned by a SystemID during scene transition.
 Solution: Add owner-indexed pointer lanes, owner job fences, ReleaseAll(SystemID), and cold scene transition hooks.
@@ -111,7 +111,61 @@ Scalability potential: Low/Quest/Steam Deck retain deterministic crash evidence 
 Hardware Impact: 38,400 bytes persistent native storage for two 300-entry 64-byte rings. Gameplay hot path is one heartbeat struct store; lifecycle ring writes only on allocation/release/transition. Exact microseconds are unmeasured.
 
 Problem: Latest build validation is still red, but the current blocker is outside CORE/MEMORY.
-Solution: Reran `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly`; current errors are duplicate `VehicleDockingModule` methods in Construction: `IsLowDockingMathTier`, `ResolveSystemStress01`, and `ResetDockingRuntimeCaches`. CORE/MEMORY touched files report no compiler errors.
-Rejected Alternatives: Rejected editing Construction from the sentinel memory domain and rejected claiming green build while external duplicates remain.
-Scalability potential: None in CORE/MEMORY; integrator or Construction owner must collapse duplicate docking methods before Unity/runtime profiling can prove transition timing.
+Solution: Reran `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly`; current result is 70 external errors across World, Animation, Submarine, and Determinism. Lead failures are `NativeArray<MacroSwarm>` being used as a list in `EcosystemDirector`, missing helper methods in `ProceduralLadderClimbRuntime`, missing vault handle fields in `SubmarineFluidDynamics`, and missing signal constants in `LockstepStateValidator`. CORE/MEMORY touched files report no compiler errors.
+Rejected Alternatives: Rejected editing World, Animation, Submarine, or Determinism from the sentinel memory domain and rejected claiming green build while external domains remain broken.
+Scalability potential: None in CORE/MEMORY; integrator and domain owners must restore those contracts before Unity/runtime profiling can prove transition timing.
 Hardware Impact: None from this dependency block.
+
+Problem: GlobalDataVault owner eviction removed metadata and free-list ownership but left old scene payload bytes in the reusable arena until a later allocation overwrote them.
+Solution: `ReleaseBuffersByOwner` now calls `FreeBlock(..., clearPayload: true)`, which clears the released payload with `UnsafeUtility.MemClear` before returning the block to the free list. Free-list creation, split, merge, grow, dispose, and release paths also reset `Reserved1` lock counters together with lock flags.
+Rejected Alternatives: Rejected metadata-only eviction because H-Phi data sovereignty requires erased old-scene bytes, not just inaccessible keys. Rejected shrinking/reallocating the arena on every transition because that would create transition churn and I/O-adjacent reload pressure on Steam Deck/MicroSD.
+Scalability potential: Low/MX350 gets a warm reusable arena without carrying stale scene data. High/Ultra can reuse the same arena for Ocean/VFX allocation while old-scene payloads are actually erased.
+Hardware Impact: 0 B GC/frame. Payload clearing is cold owner/scene-transition path only; exact microseconds are unmeasured and scale with released bytes.
+
+Problem: GlobalDataVault exposed a 300-entry defrag blackbox but had no guaranteed per-frame heartbeat bridge; the method existed but was not called from the scene tick owner.
+Solution: `SceneRuntimeService` caches `IDataVault` during service initialization and refreshes it only on the cold scene-transition path, then calls `RecordHeartbeat()` from Tick beside `H8Memory.RecordHeartbeat()`.
+Rejected Alternatives: Rejected polling `GlobalRegistry.DataVault` in Tick because registry lookup in Tick violates the architecture rules. Rejected leaving vault heartbeat defrag-event-only because the blackbox rule requires frame evidence.
+Scalability potential: Low devices get vault crash context without disk writes or managed queues. High/Ultra keep the same bounded 300-frame ring and use recovered memory budget for visual systems outside CORE/MEMORY.
+Hardware Impact: One native struct store per frame when the vault is cached; exact microseconds are unmeasured. Static inspection shows 0 B GC/frame.
+
+Problem: Final validation was previously blocked by external compile errors.
+Solution: A prior `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` checkpoint succeeded with 0 warnings and 0 errors in 02:04.91. The current compile gate is documented below as red again due external domain drift.
+Rejected Alternatives: Rejected claiming Unity runtime verification from a dotnet build; Unity Editor import, console, scene transition, and profiler verification remain pending without MCP/editor access.
+Scalability potential: Compile green unblocks runtime profiling on MX350, Quest/Android, Steam Deck, and high-end PC, but does not replace those platform captures.
+Hardware Impact: None measured; build success is a compile gate, not runtime performance proof.
+
+Problem: GlobalDataVault defrag/PhiVOD dumps had a 300-entry native ring but did not stamp frame count or serialize entries in chronological order after wraparound.
+Solution: Added `Frame` to `MemoryDefragTelemetryEntry` while preserving the 128-byte packed size guard. Dumps now write a fixed magic, recorded count, entry size, then entries oldest-to-newest.
+Rejected Alternatives: Rejected raw NativeArray-order dump because the cursor position is required to decode wrapped rings. Rejected growing the telemetry record because MX350 does not need a larger blackbox entry.
+Scalability potential: Low/Quest/Steam Deck get deterministic crash decoding without per-frame disk writes. High/Ultra keep the same bounded ring and get cleaner postmortem correlation between H8Memory and vault heartbeat frames.
+Hardware Impact: No additional persistent bytes versus the prior 128-byte defrag entry. Runtime adds one `uint` assignment per vault heartbeat; exact CPU microseconds are unmeasured. Dump serialization is cold-path disk I/O only.
+
+Problem: The repository compile gate drifted back to red outside CORE/MEMORY after the prior green build.
+Solution: Reran `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly`; current result fails in 01:00.45 with 141 external errors. Lead groups: `GameBootstrapper.Initialize` signature mismatch, `RepairTool` unassigned `localPoint`, missing biome fog fields in `HectonUnderwaterVisuals`, and missing native-state fields/helpers in `ToolDurabilitySystem`. CORE/MEMORY touched files report no compiler errors.
+Rejected Alternatives: Rejected editing Bootstrap, Repair, VFX, or Tools domains from the Sentinel memory assignment. Rejected preserving stale green-build status after objective failure.
+Scalability potential: None in CORE/MEMORY; external domain owners must restore contracts before Unity scene-transition profiling can be authoritative.
+Hardware Impact: None from this dependency block.
+
+Problem: The H-Phi data sovereignty audit needed to distinguish illegal system-private native collections from the central memory authority's own registry and vault lanes.
+Solution: Re-read every CORE/MEMORY source and assembly file. Native collections remaining in this domain are H8Memory tracking tables, GlobalDataVault arena/metadata tables, job audit scratch owned by the vault, or API handles returning vault/sentinel-owned memory.
+Rejected Alternatives: Rejected moving the memory authority's own registries into another layer, because H8Memory and GlobalDataVault are the ownership layer. Rejected deleting API-level `NativeArray<T>` returns because callers need zero-copy vault/sentinel handles.
+Scalability potential: Low devices get one central release/blackbox authority instead of scattered per-system disposal. High/Ultra preserve the same ownership contract while spending freed memory budget in visual domains.
+Hardware Impact: 0.0 us gameplay hot-path change from this audit; it was source verification only.
+
+Problem: H8Memory and GlobalDataVault blackbox dump length was inferred from wrapping `uint` sequence counters. After extreme uptime, count inference can under-report a full 300-entry ring.
+Solution: Added explicit recorded-count state for H8Memory heartbeat, H8Memory lifecycle-event, and GlobalDataVault defrag/PhiVOD rings. Dump traversal still writes oldest-to-newest, but count is now bounded state instead of sequence-derived.
+Rejected Alternatives: Rejected widening sequence fields or assuming sessions never wrap. Rejected dumping all 300 entries before the ring is full because that pollutes postmortem data with zero records.
+Scalability potential: Low/Quest/Steam Deck get deterministic 300-frame dump length without larger records or disk writes. High/Ultra keep identical bounded telemetry with better long-session correctness.
+Hardware Impact: One bounded int increment per ring write; exact microseconds are unmeasured. Persistent memory increase is 12 bytes of static/instance int state across the three rings, before runtime alignment.
+
+Problem: The last compile error was a typed SignalBus namespace drift outside CORE/MEMORY: `ContextualPhysicalIkRuntime` consumed `KccVelocitySignal`, while the signal struct lives in `Hecton8.Core.Contracts.Signals`.
+Solution: Added the missing namespace import only. No gameplay logic, data layout, or signal duplication was changed.
+Rejected Alternatives: Rejected duplicating `KccVelocitySignal`, moving the signal struct, or editing the physics lane. The correct fix is the existing typed-lane namespace.
+Scalability potential: Low/Middle/High/Ultra all keep the same typed-lane flow; compile success enables runtime validation.
+Hardware Impact: 0.0 us runtime; compile-only namespace resolution.
+
+Problem: Final validation had drifted red due external errors.
+Solution: Reran `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly`; current result succeeds with 0 warnings and 0 errors in 00:03.24.
+Rejected Alternatives: Rejected claiming Unity runtime verification from dotnet. Unity Editor import, scene transition run, and profiler capture remain pending without MCP/editor access.
+Scalability potential: Compile green reopens real platform profiling for MX350, Quest/Android, Steam Deck, and high-end PC.
+Hardware Impact: None measured; this is compile validation, not runtime profiling.

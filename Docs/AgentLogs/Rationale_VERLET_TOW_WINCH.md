@@ -78,11 +78,11 @@ Hardware Impact: Low-end i3/MX350 target is protected by fixed buffer sizes, no 
   Scalability potential: Low devices get predictable memory ownership; High/Ultra consumers can trust one canonical 10-segment cable lane.
   Hardware Impact: Avoids hidden fallback allocation spikes; publish cost remains estimated +3-6 us per active tether.
 
-- Problem: Remaining per-instance solver/visual staging arrays cannot be fully evicted without a broader DataVault handle refactor.
-  Solution: Moved all remaining tether-owned runtime `NativeArray` allocations through `H8Memory.Allocate/Release(SystemID.Physics)` and documented the remaining private working-memory exception instead of claiming full statelessness.
-  Rejected Alternatives: Inventing new BufferIDs for every solver scratch lane during a dependency-blocked batch was rejected because it would expand the blast radius across generated project files and DataVault capacity policy.
-  Scalability potential: Low/Mid/High/Ultra still use fixed capacities and deterministic segment LOD; a future owner can promote scratch lanes to vault handles without changing the public cable contract.
-  Hardware Impact: 0 B/frame GC; leak visibility improves through the memory sentinel. Full private working-memory eviction remains not completed.
+- Problem: Remaining per-instance solver/visual staging arrays could not be fully evicted during the first H-Phi pass without adding new DataVault lanes.
+  Solution: Temporarily moved all remaining tether-owned runtime `NativeArray` allocations through `H8Memory.Allocate/Release(SystemID.Physics)` and documented the private working-memory exception instead of claiming full statelessness.
+  Rejected Alternatives: Claiming DataVault compliance while keeping private native arrays was rejected; the later loop added explicit BufferIDs and superseded this temporary stopgap.
+  Scalability potential: Low/Mid/High/Ultra stayed fixed-capacity and deterministic while the vault lane map was stabilized.
+  Hardware Impact: 0 B/frame GC; this was a leak-visibility stopgap, not the final data-sovereignty state.
 
 - Problem: The blackbox telemetry ring was still a per-instance persistent `NativeArray`, making crash history another private store.
   Solution: Moved the 300-frame `TetherVerletTelemetryEntry` ring to `GlobalDataVault` using `BufferID.TetherCableBlackBox`, added `BufferID.TetherCableBlackBoxHead` for per-slot cursors, and changed the telemetry job/dump reader to write a fixed slot offset.
@@ -101,3 +101,9 @@ Hardware Impact: Low-end i3/MX350 target is protected by fixed buffer sizes, no 
   Rejected Alternatives: Editing the generated `.csproj` was rejected because Unity overwrites it; leaving the real payload only in the contract stub was rejected after the compiler failed to resolve it.
   Scalability potential: No tier-specific behavior; this is a build-integrity fix.
   Hardware Impact: 0 us runtime; removed a compile blocker created by the SignalBus migration.
+
+- Problem: `TetherInstance` still owned solver and visual scratch arrays after the blackbox lanes were moved, leaving private persistent NativeArray state in the physics system.
+  Solution: Added BufferIDs for visual point, anchor, segment-length, Verlet node, tension, correction, stat, flag, and fault scratch lanes; `TetherInstance` now receives per-slot `NativeArray.GetSubArray` views from `GlobalDataVault` and drops aliases on deactivation before releasing its slot.
+  Rejected Alternatives: Keeping H8Memory-backed local scratch was rejected because DataVault sovereignty is explicit; rewriting every solver job to carry absolute offsets was rejected because slot slices preserve the current job ABI with lower blast radius.
+  Scalability potential: Low/MX350 still gets 3-segment authority and taut-line visual fakes; Mid/High/Ultra get the same vault-backed 10-segment authority while High/Ultra continue spending saved CPU on indirect cable impostor stress rendering.
+  Hardware Impact: Removes hidden persistent local native allocation ownership from the tether instance. Runtime microsecond delta is not measured; expected cost is only slice acquisition on activation/reconfiguration, not per-frame allocation.

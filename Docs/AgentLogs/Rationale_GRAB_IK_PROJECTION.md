@@ -40,11 +40,11 @@ Rejected Alternatives: `Physics.SphereCast`, rigidbody hands, and Unity joints w
 Scalability potential: Low disables IK. Middle uses only the supplied plane. High uses SDF gradient projection. Ultra can feed denser SDFs or richer ghost/haptic presentation while the same two-lane job remains fixed.
 Hardware Impact: On i3/MX350, plane mode is only dot products and lerps; High SDF mode costs seven trilinear samples only while actively grabbing near geometry.
 
-Problem: The SDF branch did not match the plane signed-distance contract. Deep negative SDF penetration could skip projection, while shallow positive contact could push by `distance + clearance`.
-Solution: Use `density < clearance` as the contact test and project by `clearance - density`, matching the plane path and keeping the hand on the surface instead of overshooting.
-Rejected Alternatives: Keeping the original sign mix was rejected because it made SDF lock behavior weaker than the mathematical plane fallback.
-Scalability potential: Middle plane and High SDF now share the same contact semantics; Ultra can feed denser SDFs without changing hand authority.
-Hardware Impact: No extra samples or allocations; the fix changes one comparison and one subtraction in the existing high-tier branch.
+Problem: A follow-up self-audit found the project SDF convention is `density >= 0` for solid. Treating hand SDF like a plane signed distance would skip true solid penetration.
+Solution: Restore contact to `density > -clearance`, push by `density + clearance`, and flip finite-difference gradients to open-space normals, matching the KCC SDF squeeze convention.
+Rejected Alternatives: Keeping the temporary `clearance - density` formula was rejected because it conflicts with `HectonVoxelVolume`, KCC squeeze, and raymarch hit logic.
+Scalability potential: Middle plane and High SDF remain separate mathematical fakes but now agree on visible outcome: no clipping, deterministic slide, no rigidbody truth.
+Hardware Impact: No extra samples or allocations; the fix changes signs in the existing branch and preserves the same high-tier fetch count.
 
 Problem: Haptic scraping needs to track sliding contact, not normal penetration correction.
 Solution: Measure tangent velocity on the obstruction plane, gate it by threshold, and emit only an output flag/intensity packet for the existing haptic system to translate.
@@ -82,6 +82,12 @@ Rejected Alternatives: Relying on default CLR padding was rejected; leaving a 79
 Scalability potential: Low/Middle/High/Ultra share one binary lane schema; Ultra can add richer presentation without changing the hand IK ABI.
 Hardware Impact: Cold validation only. Hot-path telemetry remains one fixed 80-byte write per frame instead of an odd-stride record that can penalize Quest-class memory access.
 
+Problem: The owned IK folder still had payloads without explicit cold layout sentinels, and leviathan telemetry used an explicit 96-byte size with unnamed tail padding.
+Solution: Add `LowerBodyPresenceIkLayout.Validate()`, `LeviathanTerrainIkLayout.Validate()`, name the remaining leviathan telemetry padding fields through byte 96, and gate the leviathan DataVault resolver on the layout check.
+Rejected Alternatives: Trusting `Size=96` without named fields was rejected; it hides ABI drift from dump readers and ARM64 layout audits.
+Scalability potential: Foot, hand, and leviathan IK payloads now expose stable byte contracts for every tier.
+Hardware Impact: Cold validation only; no hot-path samples, allocations, or branches added to the IK solve.
+
 Problem: Steam Deck and MicroSD installs cannot tolerate surprise hot-path file I/O.
 Solution: Keep telemetry dumping as an explicit cold crash/NaN path; the job hot path only writes the fixed DataVault ring and never touches `FileStream`, `Directory`, or managed strings.
 Rejected Alternatives: Continuous frame dumps or verbose logs were rejected as I/O pressure and GC hazards.
@@ -99,3 +105,21 @@ Solution: Restore exactly one validator in `GlobalDataVault` because hand DataVa
 Rejected Alternatives: Removing the call would weaken the ABI sentinel; editing unrelated World/VFX/Construction blockers was rejected as outside this agent's domain after the vault gate moved forward.
 Scalability potential: All device tiers keep the same DataVault ABI checks before persistent buffers are exposed.
 Hardware Impact: Cold boot only; no hot-frame cost.
+
+Problem: Generated project coverage did not include the new hand/lower-body IK sources, so `Hecton8.Core.csproj` could report no owned errors while missing actual C# scope errors.
+Solution: Build an in-memory targeted Roslyn probe against the three owned IK files with Unity references and a minimal `Hecton8.Core.Memory` stub; fix the fallback-path local name collisions it found.
+Rejected Alternatives: Trusting the stale generated project was rejected; editing generated csproj files was rejected because Unity should regenerate asmdef projects.
+Scalability potential: Compile proof now covers Low/Middle/High/Ultra hand code paths instead of only the pre-existing leviathan file.
+Hardware Impact: Verification-only; no runtime cost.
+
+Problem: The blackbox dump wrote the circular telemetry array in physical buffer order, which is not the same as oldest-to-newest frame order after wrap.
+Solution: Keep the hot-path ring write unchanged, but make the cold serializer start at `TelemetryCursor % ringLength` and emit 300 entries in chronological order. Broaden cold exception handling for invalid paths and disposed streams.
+Rejected Alternatives: Sorting telemetry entries was rejected because it adds unnecessary work and assumes frame monotonicity after wrap; changing the Burst telemetry write path was rejected because the hot path was already bounded.
+Scalability potential: Low/Middle/High/Ultra all keep the same fixed 300-entry ring; Ultra gets better postmortem readability without runtime cost.
+Hardware Impact: 0 us hot-path impact. Crash/NaN dump cost remains cold I/O only.
+
+Problem: Full compile advanced to `ContextualPhysicalIkRuntime` failing to resolve `KccVelocitySignal`, even though the signal struct already exists in `Hecton8.Core.Contracts.Signals`.
+Solution: Add the missing contract namespace import to the IK runtime bridge so the existing typed lane remains the authority.
+Rejected Alternatives: Creating a duplicate `KccVelocitySignal`, moving the signal struct, or editing the physics publisher were rejected because they would fork a working cross-domain signal contract.
+Scalability potential: Shared contextual IK can consume the latest KCC velocity lane on low-tier stride fakes and high-tier body presence without direct player motor coupling.
+Hardware Impact: Compile-only fix; 0 runtime cost.

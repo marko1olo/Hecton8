@@ -139,7 +139,9 @@ namespace Hecton8.AI.Sensory
                 state.LastHeardTime = bestTap.LastHeardTime;
                 state.SourceId = bestTap.SourceId;
                 state.Sequence = bestTap.Sequence;
-                state.AcousticHuntsTriggered = Previous.AcousticHuntsTriggered + 1u;
+                state.AcousticHuntsTriggered = Previous.AcousticHuntsTriggered == uint.MaxValue
+                    ? uint.MaxValue
+                    : Previous.AcousticHuntsTriggered + 1u;
                 state.Flags = (byte)(bestTap.Flags | AcousticEchoLocationRuntime.FlagActiveTrail);
                 state.QualityTier = bestTap.QualityTier;
             }
@@ -188,6 +190,7 @@ namespace Hecton8.AI.Sensory
         private const string NativeOwner = "ACOUSTIC_ECHO_LOCATION_AI";
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_ACOUSTIC_ECHO_LOCATION_AI.bin";
         private const float MovementVelocityToVolume = 0.025f;
+        private const int MaxQueuedEchoTaps = 64;
 
         private static NativeQueue<EchoTap> _echoTapQueue;
         private static IDataVault _dataVault;
@@ -199,8 +202,10 @@ namespace Hecton8.AI.Sensory
         private static int _trackingScheduled;
         private static int _initialized;
         private static int _lastRefreshFrame = int.MinValue;
+        private static int _lastBlackBoxFrame = int.MinValue;
         private static int _blackBoxCursor;
         private static int _blackBoxDumped;
+        private static int _queuedEchoTapCount;
         private static uint _sequence;
         private static byte _cachedQualityTier;
 
@@ -225,6 +230,7 @@ namespace Hecton8.AI.Sensory
 
             _echoTapQueue = new NativeQueue<EchoTap>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EchoTap>[64] - acoustic echo tap producer bridge - owner: ACOUSTIC_ECHO_LOCATION_AI
             NativeMemorySentinel.RegisterNativeQueue(_echoTapQueue, 64, NativeOwner, nameof(_echoTapQueue), NativeAllocationLifetime.Session);
+            PrewarmEchoTapQueue();
             _cachedQualityTier = ResolveQualityTier();
             EnsureVaultBuffers();
             _initialized = 1;
@@ -255,8 +261,10 @@ namespace Hecton8.AI.Sensory
             _dataVault = null;
             _trailState = default;
             _lastRefreshFrame = int.MinValue;
+            _lastBlackBoxFrame = int.MinValue;
             _blackBoxCursor = 0;
             _blackBoxDumped = 0;
+            _queuedEchoTapCount = 0;
             _sequence = 0u;
             _initialized = 0;
         }
@@ -264,6 +272,9 @@ namespace Hecton8.AI.Sensory
         public static bool TryEnqueueEchoTap(in EchoTap tap)
         {
             EnsureInitialized();
+            if (!EnsureVaultBuffers() || _queuedEchoTapCount >= MaxQueuedEchoTaps)
+                return false;
+
             if (!IsFiniteAup(in tap.PortalAup) ||
                 !IsFiniteAup(in tap.SourceAup) ||
                 !math.isfinite(tap.Volume01) ||
@@ -275,12 +286,21 @@ namespace Hecton8.AI.Sensory
             }
 
             _echoTapQueue.Enqueue(tap);
+            _queuedEchoTapCount++;
             return true;
         }
 
         private static bool EnsureVaultBuffers()
         {
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !_frameTapsHandle.IsCreated ||
+                !_jobResultHandle.IsCreated ||
+                !_blackBoxHandle.IsCreated)
+            {
+                vault = GlobalRegistry.DataVault;
+            }
+
             if (vault == null)
                 return false;
 
@@ -342,6 +362,25 @@ namespace Hecton8.AI.Sensory
             IDataVault vault = _dataVault;
             frameTaps = _frameTapsHandle.Resolve(vault);
             jobResult = _jobResultHandle.Resolve(vault);
+            if (frameTaps.IsCreated &&
+                jobResult.IsCreated &&
+                frameTaps.Length >= MaxEchoTapsPerFrame &&
+                jobResult.Length > 0)
+            {
+                return true;
+            }
+
+            IDataVault refreshed = GlobalRegistry.DataVault;
+            if (refreshed == null || ReferenceEquals(refreshed, vault))
+                return false;
+
+            _dataVault = refreshed;
+            ClearVaultHandles();
+            if (!EnsureVaultBuffers())
+                return false;
+
+            frameTaps = _frameTapsHandle.Resolve(_dataVault);
+            jobResult = _jobResultHandle.Resolve(_dataVault);
             return frameTaps.IsCreated &&
                    jobResult.IsCreated &&
                    frameTaps.Length >= MaxEchoTapsPerFrame &&
@@ -351,6 +390,19 @@ namespace Hecton8.AI.Sensory
         private static bool TryResolveBlackBox(out NativeArray<AcousticEchoBlackBoxEntry> blackBox)
         {
             blackBox = default;
+            if (!EnsureVaultBuffers())
+                return false;
+
+            blackBox = _blackBoxHandle.Resolve(_dataVault);
+            if (blackBox.IsCreated && blackBox.Length > 0)
+                return true;
+
+            IDataVault refreshed = GlobalRegistry.DataVault;
+            if (refreshed == null || ReferenceEquals(refreshed, _dataVault))
+                return false;
+
+            _dataVault = refreshed;
+            ClearVaultHandles();
             if (!EnsureVaultBuffers())
                 return false;
 
@@ -451,7 +503,7 @@ namespace Hecton8.AI.Sensory
             result.Sequence = state.Sequence;
             result.Flags = state.Flags;
             result.QualityTier = state.QualityTier;
-            WriteBlackBox(frame, in state, result.SilenceSeconds);
+            WriteBlackBoxOnce(frame, in state, result.SilenceSeconds);
             return result.Intensity01 > 0.0001f;
         }
 
@@ -499,6 +551,15 @@ namespace Hecton8.AI.Sensory
             if (_lastRefreshFrame == frame)
                 return;
 
+            if (!math.isfinite(currentTime))
+            {
+                WriteFaultBlackBox(frame, in _trailState.InvestigateAup);
+                DropEchoTapQueue();
+                return;
+            }
+
+            currentTime = math.max(0f, currentTime);
+
             if (!TryResolveFrameViews(out NativeArray<EchoTap> frameTaps, out NativeArray<AcousticEchoTrailState> jobResult))
             {
                 DropEchoTapQueue();
@@ -515,6 +576,7 @@ namespace Hecton8.AI.Sensory
                 }
                 else
                 {
+                    WriteHeartbeatBlackBox(frame, currentTime);
                     return;
                 }
             }
@@ -536,6 +598,7 @@ namespace Hecton8.AI.Sensory
             }.Schedule();
             _trackingScheduled = 1;
             _lastRefreshFrame = frame;
+            WriteHeartbeatBlackBox(frame, currentTime);
         }
 
         private static int DrainEchoTapQueue(NativeArray<EchoTap> frameTaps, float currentTime)
@@ -554,6 +617,7 @@ namespace Hecton8.AI.Sensory
             {
             }
 
+            _queuedEchoTapCount = 0;
             return count;
         }
 
@@ -667,6 +731,19 @@ namespace Hecton8.AI.Sensory
             while (_echoTapQueue.TryDequeue(out _))
             {
             }
+
+            _queuedEchoTapCount = 0;
+        }
+
+        private static void PrewarmEchoTapQueue()
+        {
+            if (!_echoTapQueue.IsCreated)
+                return;
+
+            for (int i = 0; i < MaxQueuedEchoTaps; i++)
+                _echoTapQueue.Enqueue(default);
+
+            DropEchoTapQueue();
         }
 
         private static uint NextSequence(int frame)
@@ -717,6 +794,25 @@ namespace Hecton8.AI.Sensory
             return hash;
         }
 
+        private static void WriteHeartbeatBlackBox(int frame, float currentTime)
+        {
+            AcousticEchoTrailState state = _trailState;
+            float silenceSeconds = currentTime - state.LastHeardTime;
+            if (!math.isfinite(silenceSeconds))
+                silenceSeconds = SilenceTimeoutSeconds;
+
+            WriteBlackBoxOnce(frame, in state, math.max(0f, silenceSeconds));
+        }
+
+        private static void WriteBlackBoxOnce(int frame, in AcousticEchoTrailState state, float silenceSeconds)
+        {
+            if (_lastBlackBoxFrame == frame)
+                return;
+
+            WriteBlackBox(frame, in state, silenceSeconds);
+            _lastBlackBoxFrame = frame;
+        }
+
         private static void WriteBlackBox(int frame, in AcousticEchoTrailState state, float silenceSeconds)
         {
             if (!TryResolveBlackBox(out NativeArray<AcousticEchoBlackBoxEntry> blackBox))
@@ -748,6 +844,7 @@ namespace Hecton8.AI.Sensory
             state.InvestigateAup = faultAup;
             state.Flags = FlagSilenceLost;
             WriteBlackBox(frame, in state, 0f);
+            _lastBlackBoxFrame = frame;
             if (_blackBoxDumped == 0)
             {
                 _blackBoxDumped = 1;

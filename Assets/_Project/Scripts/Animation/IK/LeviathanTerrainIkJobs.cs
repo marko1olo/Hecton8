@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Core.Memory;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 
@@ -27,6 +28,16 @@ namespace Hecton8.Animation.IK
         public const uint RuntimeFlagLowTier = 1u << 2;
     }
 
+    public static class LeviathanTerrainIkLayout
+    {
+        public const int TelemetryEntryBytes = 96;
+
+        public static bool Validate()
+        {
+            return UnsafeUtility.SizeOf<LeviathanTerrainIkTelemetryEntry>() == TelemetryEntryBytes;
+        }
+    }
+
     [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 96)]
     public struct LeviathanTerrainIkTelemetryEntry
     {
@@ -41,6 +52,13 @@ namespace Hecton8.Animation.IK
         [FieldOffset(56)] public float TailWhipSecondsRemaining;
         [FieldOffset(60)] public float Padding0;
         [FieldOffset(64)] public float Padding1;
+        [FieldOffset(68)] public float Padding2;
+        [FieldOffset(72)] public float Padding3;
+        [FieldOffset(76)] public float Padding4;
+        [FieldOffset(80)] public float Padding5;
+        [FieldOffset(84)] public float Padding6;
+        [FieldOffset(88)] public float Padding7;
+        [FieldOffset(92)] public float Padding8;
     }
 
     public static class LeviathanTerrainIkVault
@@ -67,6 +85,8 @@ namespace Hecton8.Animation.IK
             terrainHeightSamples = default;
 
             if (vault == null)
+                return false;
+            if (!LeviathanTerrainIkLayout.Validate())
                 return false;
 
             int segmentCapacity = math.clamp(requestedSegmentCapacity, 2, LeviathanTerrainIkConstants.MaxSegments);
@@ -436,7 +456,7 @@ namespace Hecton8.Animation.IK
                 return false;
 
             float3 invStep = math.rcp(math.max(step, new float3(0.0001f)));
-            float3 gradient = new float3((dx1 - dx0) * invStep.x, (dy1 - dy0) * invStep.y, (dz1 - dz0) * invStep.z);
+            float3 gradient = new float3((dx0 - dx1) * invStep.x, (dy0 - dy1) * invStep.y, (dz0 - dz1) * invStep.z);
             normal = NormalizeSafe(gradient, new float3(0f, 1f, 0f));
             return math.all(math.isfinite(normal));
         }

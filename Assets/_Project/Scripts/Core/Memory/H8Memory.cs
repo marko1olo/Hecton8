@@ -20,6 +20,7 @@ namespace Hecton8.Core.Memory
         H8Memory = 2,
         Bootstrap = 3,
         CoreDeterminism = 4,
+        CoreBridge = 5,
         SystemDispatcher = 30,
         HardwareHomeostasis = 31,
         GlobalPhysicsStateManager = 32,
@@ -38,12 +39,15 @@ namespace Hecton8.Core.Memory
         AIPathfinding = 146,
         AIEcology = 147,
         AISensory = 148,
+        JobAdmission = 149,
         SimulationBucketer = 161,
         AmbientBiota = 162,
         Vfx = 192,
         GraphicsScalability = 193,
         ContentAuthority = 194,
+        CoreDiagnostics = 195,
         UI = 224,
+        Audio = 258,
         External = 65534
     }
 
@@ -285,7 +289,149 @@ namespace Hecton8.Core.Memory
         AcousticEchoTrailState = 230,
         AcousticEchoBlackBox = 231,
         TetherManagerBlackBox = 232,
-        TetherManagerBlackBoxHead = 233
+        TetherManagerBlackBoxHead = 233,
+        ToolHapticFrontCommands = 234,
+        ToolHapticBackCommands = 235,
+        PredatorCognitionCores = 236,
+        PredatorCognitionControls = 237,
+        PredatorCognitionInputs = 238,
+        PredatorCognitionOutputs = 239,
+        PredatorCognitionMemoryBank = 240,
+        PredatorCognitionAcousticMemoryBank = 241,
+        PredatorCognitionSlotUsed = 242,
+        PredatorCognitionAmbientThreats = 243,
+        PredatorCognitionSwarmCenters = 244,
+        PredatorCognitionSwarmDirections = 245,
+        PredatorCognitionSwarmAvoidances = 246,
+        PredatorCognitionSwarmCounts = 247,
+        PredatorCognitionClaimedBoidIndices = 248,
+        PredatorCognitionClaimedBoidPositions = 249,
+        PredatorCognitionChosenStates = 250,
+        PredatorCognitionStalkingPhases = 251,
+        PredatorCognitionStalkingPhaseStartTimes = 252,
+        PredatorCognitionPackTargets = 253,
+        PredatorCognitionPackWeights = 254,
+        PredatorCognitionPackBaitPositions = 255,
+        PredatorCognitionPackSharedPlayerPositions = 256,
+        PredatorCognitionPackTargetAups = 257,
+        PredatorCognitionPackRoles = 258,
+        PredatorCognitionBoidClaimTable = 259,
+        PredatorCognitionPackBaitClaimTable = 260,
+        PredatorCognitionPackFlankerClaimTable = 261,
+        PredatorCognitionHabitatSiegeTargets = 262,
+        PredatorCognitionBaseSiegeRammerClaimTable = 263,
+        PredatorCognitionBaseSiegeDistractorClaimTable = 264,
+        PredatorCognitionBaseSiegeLoitererClaimTable = 265,
+        PredatorCognitionEvaluationDueFlags = 266,
+        PredatorCognitionNextEvaluationTimes = 267,
+        PredatorCognitionEvaluationIntervals = 268,
+        ContentAuthorityBundleRefs = 269,
+        ContentAuthorityBundleRefCount = 270,
+        VehicleDockingTelemetryRing = 271,
+        CameraJuiceTelemetryRing = 272,
+        MaterialDecayBlackBox = 273,
+        FloraScatterAge01 = 274,
+        FloraScatterPhaseSeeds = 275,
+        ShaderFeatureTelemetryRing = 276,
+        ArchitectEyeQuadInstances = 277,
+        ArchitectEyeSignalTelemetry = 278,
+        ArchitectEyeBlackBox = 279,
+        ArchitectEyeSectorHashes = 280,
+        ArchitectEyeRuntimeState = 281,
+        ArchitectEyeSdfSamples = 282,
+        JobAdmissionLaneBudgets = 283,
+        JobAdmissionBaseRefill = 284,
+        JobAdmissionJobHashes = 285,
+        JobAdmissionEwmaCosts = 286,
+        JobAdmissionBlackBox = 287,
+        EcosystemSectorFrontStates = 288,
+        EcosystemSectorBackStates = 289,
+        EcosystemPreyFrontCounts = 290,
+        EcosystemPreyBackCounts = 291,
+        EcosystemPredatorFrontCounts = 292,
+        EcosystemPredatorBackCounts = 293,
+        EcosystemPreyBiomassFront = 294,
+        EcosystemPreyBiomassBack = 295,
+        EcosystemPredatorBiomassFront = 296,
+        EcosystemPredatorBiomassBack = 297,
+        EcosystemBiomassCarryingCapacity = 298,
+        EcosystemBiomassSumScratch = 299,
+        EcosystemBiomassMacroCellCoords = 300,
+        EcosystemBiomassCellFlags = 301,
+        EcosystemPendingBiomassImpacts = 302,
+        EcosystemBiomassBlackBox = 303,
+        EcosystemFaunaMutationBlackBox = 304,
+        EcosystemHeadlessPositions = 305,
+        EcosystemHeadlessSpeciesId = 306,
+        EcosystemHeadlessHunger = 307,
+        EcosystemHeadlessSectorCoord = 308,
+        EcosystemHeadlessSectorId = 309,
+        EcosystemHeadlessFaunaGenomes = 310,
+        EcosystemHeadlessMutationRadiation = 311,
+        EcosystemHeadlessMutationToxicity = 312,
+        EcosystemHeadlessMutationBrine = 313,
+        EcosystemHeadlessMutationStableHashes = 314,
+        EcosystemHeadlessMutationResults = 315,
+        EcosystemApexTerritorySamples = 316,
+        EcosystemApexTerritoryOverlapResults = 317,
+        EcosystemApexSpawnGateCommands = 318,
+        EcosystemApexSpawnGateHits = 319,
+        EcosystemFloraPredatorAupUpload = 320,
+        ContentAuthorityPendingLoads = 321,
+        ContentAuthorityPendingLoadCount = 322,
+        TetherVisualSegmentPositions = 323,
+        TetherVisualAnchorPositions = 324,
+        TetherVisualSegmentLengths = 325,
+        TetherVerletPositions = 326,
+        TetherVerletPreviousPositions = 327,
+        TetherVerletVelocities = 328,
+        TetherVerletPinnedPositions = 329,
+        TetherVerletPinnedMask = 330,
+        TetherVerletSegmentRestLengths = 331,
+        TetherVerletSegmentTensions = 332,
+        TetherVerletCorrections = 333,
+        TetherVerletCorrectionWeights = 334,
+        TetherVerletSolverStats = 335,
+        TetherVerletSolverFlags = 336,
+        TetherVerletNodeFaultFlags = 337,
+        FaunaCorpseSinkKinematicInput = 338,
+        FaunaCorpseSinkKinematicOutput = 339,
+        RepairToolBlackBox = 340,
+        ToolDurabilityItemStates = 341,
+        ToolDurabilityPendingDecay = 342,
+        ToolDurabilityWearMultipliers = 343,
+        ToolDurabilitySlotActive = 344,
+        ToolDurabilityBreakdownFlags = 345,
+        VehicleDockingTelemetryCursor = 346,
+        UnderwaterBiomeFogSamples = 347,
+        UnderwaterBiomeFogSources = 348,
+        UnderwaterBiomeFogFromAup = 349,
+        UnderwaterBiomeFogToAup = 350,
+        UnderwaterBiomeFogPlayerAup = 351,
+        UnderwaterBiomeFogResults = 352,
+        BridgePrefabMapping = 353,
+        BridgeDesignFacadeValues = 354,
+        BridgeDesignFacadeTelemetryRing = 355,
+        BridgeInputFacadeBindings = 356,
+        BridgePrefabLoreLinks = 357,
+        BridgeFacadeMacroHeader = 358,
+        EcosystemSaveSnapshotSectors = 359,
+        EcosystemSaveSnapshotBiomassRuns = 360,
+        SargassumKillSignals = 361,
+        SargassumKillSignalCount = 362,
+        PredatorCognitionActiveSlots = 363,
+        SpatialAudioRadarIntensityBins = 364,
+        SpatialAudioRadarGrid = 365,
+        SpatialAudioVirtualVoiceSelections = 366,
+        SpatialAudioVirtualVoiceStatistics = 367,
+        SpatialAudioVirtualVoiceBlackBox = 368,
+        SpatialAudioPortalNodes = 369,
+        SpatialAudioPortalEdges = 370,
+        SpatialAudioPortalResult = 371,
+        SpatialAudioPortalCosts = 372,
+        SpatialAudioPortalCameFrom = 373,
+        SpatialAudioPortalStates = 374,
+        SpatialAudioPortalBlackBox = 375
     }
 
     [Flags]
@@ -475,6 +621,8 @@ namespace Hecton8.Core.Memory
         private static int _fatalLeakPreventedCount;
         private static int _blackBoxCursor;
         private static int _eventBlackBoxCursor;
+        private static int _blackBoxRecordedCount;
+        private static int _eventBlackBoxRecordedCount;
         private static uint _blackBoxSequence;
         private static uint _eventBlackBoxSequence;
         private static int _allocationGeneration = 1;
@@ -602,6 +750,8 @@ namespace Hecton8.Core.Memory
             _fatalLeakPreventedCount = 0;
             _blackBoxCursor = 0;
             _eventBlackBoxCursor = 0;
+            _blackBoxRecordedCount = 0;
+            _eventBlackBoxRecordedCount = 0;
             _blackBoxSequence = 0u;
             _eventBlackBoxSequence = 0u;
             _allocationGeneration = 1;
@@ -1122,6 +1272,8 @@ namespace Hecton8.Core.Memory
             _lastTransitionBaselineVerified = true;
             _blackBoxCursor = 0;
             _eventBlackBoxCursor = 0;
+            _blackBoxRecordedCount = 0;
+            _eventBlackBoxRecordedCount = 0;
             _blackBoxSequence = 0u;
             _eventBlackBoxSequence = 0u;
             _initialized = false;
@@ -1546,6 +1698,8 @@ namespace Hecton8.Core.Memory
             if (cursor >= _blackBox.Length)
                 cursor = 0;
             _blackBoxCursor = cursor;
+            if (_blackBoxRecordedCount < _blackBox.Length)
+                _blackBoxRecordedCount++;
         }
 
         private static void RecordLifecycleEvent(SystemID owner, H8MemoryTelemetryFlags flags)
@@ -1564,6 +1718,8 @@ namespace Hecton8.Core.Memory
             if (cursor >= _eventBlackBox.Length)
                 cursor = 0;
             _eventBlackBoxCursor = cursor;
+            if (_eventBlackBoxRecordedCount < _eventBlackBox.Length)
+                _eventBlackBoxRecordedCount++;
         }
 
         private static H8MemoryTelemetryEntry BuildTelemetryEntry(SystemID owner, H8MemoryTelemetryFlags flags, uint sequence)
@@ -1588,14 +1744,14 @@ namespace Hecton8.Core.Memory
 
         private static void WriteBlackBoxEntries(BinaryWriter writer)
         {
-            WriteBlackBoxRing(writer, _blackBox, _blackBoxSequence, _blackBoxCursor);
-            WriteBlackBoxRing(writer, _eventBlackBox, _eventBlackBoxSequence, _eventBlackBoxCursor);
+            WriteBlackBoxRing(writer, _blackBox, _blackBoxRecordedCount, _blackBoxCursor);
+            WriteBlackBoxRing(writer, _eventBlackBox, _eventBlackBoxRecordedCount, _eventBlackBoxCursor);
         }
 
         private static void WriteBlackBoxRing(
             BinaryWriter writer,
             NativeArray<H8MemoryTelemetryEntry> ring,
-            uint sequence,
+            int recordedCount,
             int cursor)
         {
             if (!ring.IsCreated || ring.Length == 0)
@@ -1604,10 +1760,13 @@ namespace Hecton8.Core.Memory
                 return;
             }
 
-            int recordedCount = sequence < (uint)ring.Length ? (int)sequence : ring.Length;
+            if (recordedCount < 0)
+                recordedCount = 0;
+            if (recordedCount > ring.Length)
+                recordedCount = ring.Length;
             writer.Write(recordedCount);
 
-            int start = sequence < (uint)ring.Length ? 0 : cursor;
+            int start = recordedCount < ring.Length ? 0 : cursor;
             for (int i = 0; i < recordedCount; i++)
             {
                 int index = start + i;

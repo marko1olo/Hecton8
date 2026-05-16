@@ -35,8 +35,6 @@ namespace Hecton8.Physics
         private const int MinVisualSegmentCount = 8;
         private const int MaxVisualSegmentCount = 24;
         private const float VisualSagScale = 0.05f;
-        private const string NativeMemoryOwner = nameof(TetherInstance);
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private const int VerletLowIterationCount = 2;
         private const int VerletMidIterationCount = 3;
         private const int VerletHighIterationCount = 5;
@@ -53,6 +51,11 @@ namespace Hecton8.Physics
         private const int DataVaultCableSegmentCapacity = DataVaultMaxTetherSlots * DataVaultCableSegmentCount;
         private const int DataVaultTelemetryCapacity = DataVaultMaxTetherSlots * VerletTelemetryCapacity;
         private const int DataVaultTelemetryHeadCapacity = DataVaultMaxTetherSlots;
+        private const int DataVaultScratchNodeCapacity = DataVaultMaxTetherSlots * DataVaultCablePointCount;
+        private const int DataVaultScratchSegmentCapacity = DataVaultMaxTetherSlots * DataVaultCableSegmentCount;
+        private const int DataVaultVisualAnchorCapacity = DataVaultMaxTetherSlots * MaxAnchors;
+        private const int DataVaultVisualSegmentLengthCapacity = DataVaultMaxTetherSlots * MaxSegments;
+        private const int DataVaultScratchScalarCapacity = DataVaultMaxTetherSlots;
         private const float VerletFloorY = -5000f;
         private const float VerletNodeRadius = 0.035f;
         private const float MaxCableVelocity = 24f;
@@ -70,6 +73,21 @@ namespace Hecton8.Physics
         private const int DataVaultFlagSegmentTensions = 1 << 4;
         private const int DataVaultFlagTelemetryRing = 1 << 5;
         private const int DataVaultFlagTelemetryHead = 1 << 6;
+        private const int DataVaultFlagVisualSegmentPositions = 1 << 7;
+        private const int DataVaultFlagVisualAnchorPositions = 1 << 8;
+        private const int DataVaultFlagVisualSegmentLengths = 1 << 9;
+        private const int DataVaultFlagVerletPositions = 1 << 10;
+        private const int DataVaultFlagVerletPreviousPositions = 1 << 11;
+        private const int DataVaultFlagVerletVelocities = 1 << 12;
+        private const int DataVaultFlagVerletPinnedPositions = 1 << 13;
+        private const int DataVaultFlagVerletPinnedMask = 1 << 14;
+        private const int DataVaultFlagVerletSegmentRestLengths = 1 << 15;
+        private const int DataVaultFlagVerletSegmentTensions = 1 << 16;
+        private const int DataVaultFlagVerletCorrections = 1 << 17;
+        private const int DataVaultFlagVerletCorrectionWeights = 1 << 18;
+        private const int DataVaultFlagVerletSolverStats = 1 << 19;
+        private const int DataVaultFlagVerletSolverFlags = 1 << 20;
+        private const int DataVaultFlagVerletNodeFaultFlags = 1 << 21;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private const string TetherTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_VERLET_TOW_WINCH.bin";
         private const ulong TetherTelemetryDumpMagic = 0x00384E4F54434548ul;
@@ -596,8 +614,7 @@ namespace Hecton8.Physics
         {
             GlobalPhysicsStateManager.UnregisterTetherConnection(this);
             ReleasePrimaryConstraint();
-            ClearDataVaultCableEntry();
-            ReleaseDataVaultSlot();
+            DisposeDataVaultCableState();
             _isActive = false;
             _owner = null;
             _playerMotor = null;
@@ -693,39 +710,10 @@ namespace Hecton8.Physics
                 VisualSegmentTensionBuffer = null;
             }
 
-            DisposeNativeArray(ref _visualSegmentPositions);
-            DisposeNativeArray(ref _visualAnchorPositions);
-            DisposeNativeArray(ref _visualSegmentLengths);
-            DisposeNativeArray(ref _verletPositions);
-            DisposeNativeArray(ref _verletPreviousPositions);
-            DisposeNativeArray(ref _verletVelocities);
-            DisposeNativeArray(ref _verletPinnedPositions);
-            DisposeNativeArray(ref _verletPinnedMask);
-            DisposeNativeArray(ref _verletSegmentRestLengths);
-            DisposeNativeArray(ref _verletSegmentTensions);
-            DisposeNativeArray(ref _verletCorrections);
-            DisposeNativeArray(ref _verletCorrectionWeights);
-            DisposeNativeArray(ref _verletSolverStats);
-            DisposeNativeArray(ref _verletSolverFlags);
-            DisposeNativeArray(ref _verletNodeFaultFlags);
             DisposeDataVaultCableState();
             _verletRuntimeInitialized = false;
             _verletNodeCount = 0;
             _verletSolverOrigin = float3.zero;
-        }
-
-        private static void RegisterNativeArray<T>(NativeArray<T> array, string label) where T : struct
-        {
-            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
-        }
-
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            H8Memory.Release(ref array, SystemID.Physics);
         }
 
         private void OnDestroy()
@@ -738,35 +726,14 @@ namespace Hecton8.Physics
         {
             if (pointCount < 2)
                 pointCount = 2;
+            pointCount = math.min(pointCount, DataVaultCablePointCount);
 
-            if (_visualSegmentPositions.IsCreated && _visualSegmentPositions.Length != pointCount)
-            {
-                DisposeNativeArray(ref _visualSegmentPositions);
-            }
-
-            if (!_visualSegmentPositions.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<float3>[pointCount] — persistent visual staging path for tether line rendering — owner: TetherInstance
-                _visualSegmentPositions = H8Memory.Allocate<float3>(pointCount, SystemID.Physics, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                if (_visualSegmentPositions.IsCreated)
-                    RegisterNativeArray(_visualSegmentPositions, nameof(_visualSegmentPositions));
-            }
-
-            if (!_visualAnchorPositions.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<float3>[6] — burst visual-anchor staging path for tether catenary generation — owner: TetherInstance
-                _visualAnchorPositions = H8Memory.Allocate<float3>(MaxAnchors, SystemID.Physics, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                if (_visualAnchorPositions.IsCreated)
-                    RegisterNativeArray(_visualAnchorPositions, nameof(_visualAnchorPositions));
-            }
-
-            if (!_visualSegmentLengths.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<float>[5] — burst visual segment-length staging path for tether catenary generation — owner: TetherInstance
-                _visualSegmentLengths = H8Memory.Allocate<float>(MaxSegments, SystemID.Physics, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                if (_visualSegmentLengths.IsCreated)
-                    RegisterNativeArray(_visualSegmentLengths, nameof(_visualSegmentLengths));
-            }
+            EnsureVerletBuffers(pointCount);
+            if (!_visualSegmentPositions.IsCreated ||
+                !_visualAnchorPositions.IsCreated ||
+                !_visualSegmentLengths.IsCreated ||
+                !_verletSegmentTensions.IsCreated)
+                return;
 
             if (VisualSegmentBuffer != null && VisualSegmentBuffer.count != pointCount)
             {
@@ -779,8 +746,6 @@ namespace Hecton8.Physics
                 // COLD ALLOC: GraphicsBuffer[pointCount] — persistent GPU line-strip source for tether visuals — owner: TetherInstance
                 VisualSegmentBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, pointCount, sizeof(float) * 3);
             }
-
-            EnsureVerletBuffers(pointCount);
 
             int visualSegmentCount = math.max(1, pointCount - 1);
             if (VisualSegmentTensionBuffer != null && VisualSegmentTensionBuffer.count != visualSegmentCount)
@@ -800,36 +765,9 @@ namespace Hecton8.Physics
         {
             if (nodeCount < 2)
                 nodeCount = 2;
-
-            int segmentCount = nodeCount - 1;
-            EnsureNativeArray(ref _verletPositions, nodeCount, nameof(_verletPositions));
-            EnsureNativeArray(ref _verletPreviousPositions, nodeCount, nameof(_verletPreviousPositions));
-            EnsureNativeArray(ref _verletVelocities, nodeCount, nameof(_verletVelocities));
-            EnsureNativeArray(ref _verletPinnedPositions, nodeCount, nameof(_verletPinnedPositions));
-            EnsureNativeArray(ref _verletPinnedMask, nodeCount, nameof(_verletPinnedMask));
-            EnsureNativeArray(ref _verletCorrections, nodeCount, nameof(_verletCorrections));
-            EnsureNativeArray(ref _verletCorrectionWeights, nodeCount, nameof(_verletCorrectionWeights));
-            EnsureNativeArray(ref _verletSegmentRestLengths, segmentCount, nameof(_verletSegmentRestLengths));
-            EnsureNativeArray(ref _verletSegmentTensions, segmentCount, nameof(_verletSegmentTensions));
-            EnsureNativeArray(ref _verletSolverStats, 1, nameof(_verletSolverStats));
-            EnsureNativeArray(ref _verletSolverFlags, 1, nameof(_verletSolverFlags));
-            EnsureNativeArray(ref _verletNodeFaultFlags, nodeCount, nameof(_verletNodeFaultFlags));
-            EnsureDataVaultCableState();
-            _verletNodeCount = nodeCount;
-        }
-
-        private static void EnsureNativeArray<T>(ref NativeArray<T> array, int length, string label) where T : struct
-        {
-            if (length <= 0)
-                length = 1;
-
-            if (array.IsCreated && array.Length == length)
-                return;
-
-            DisposeNativeArray(ref array);
-            array = H8Memory.Allocate<T>(length, SystemID.Physics, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            if (array.IsCreated)
-                RegisterNativeArray(array, label);
+            nodeCount = math.min(nodeCount, DataVaultCablePointCount);
+            EnsureDataVaultCableState(nodeCount);
+            _verletNodeCount = _verletPositions.IsCreated ? _verletPositions.Length : 0;
         }
 
         private void InitializeVerletRuntime(Vector3 anchorPosition, Vector3 payloadPosition)
@@ -898,15 +836,22 @@ namespace Hecton8.Physics
             }
         }
 
-        private void EnsureDataVaultCableState()
+        private void EnsureDataVaultCableState(int requestedNodeCount = 0)
         {
-            if (_dataVaultCableStateReady && _dataVaultSlot >= 0)
+            int nodeCount = ResolveDataVaultNodeCount(requestedNodeCount);
+            if (_dataVaultCableStateReady && _dataVaultSlot >= 0 && AreDataVaultScratchSlicesReady(nodeCount))
                 return;
 
             if (_dataVaultSlot < 0 && !TryAcquireDataVaultSlot())
                 return;
 
             _dataVault = GlobalRegistry.DataVault;
+            int segmentCount = math.max(1, nodeCount - 1);
+            int nodeOffset = _dataVaultSlot * DataVaultCablePointCount;
+            int segmentOffset = _dataVaultSlot * DataVaultCableSegmentCount;
+            int anchorOffset = _dataVaultSlot * MaxAnchors;
+            int visualSegmentOffset = _dataVaultSlot * MaxSegments;
+            int scalarOffset = _dataVaultSlot;
             bool positionsReady = EnsureDataVaultCableArray(
                 ref _dataVaultCablePositions,
                 BufferID.TetherCablePositions,
@@ -949,6 +894,111 @@ namespace Hecton8.Physics
                 DataVaultTelemetryHeadCapacity,
                 nameof(_verletTelemetryHead),
                 DataVaultFlagTelemetryHead);
+            bool visualPositionsReady = EnsureDataVaultSliceArray(
+                ref _visualSegmentPositions,
+                BufferID.TetherVisualSegmentPositions,
+                DataVaultScratchNodeCapacity,
+                nodeOffset,
+                nodeCount,
+                DataVaultFlagVisualSegmentPositions);
+            bool visualAnchorsReady = EnsureDataVaultSliceArray(
+                ref _visualAnchorPositions,
+                BufferID.TetherVisualAnchorPositions,
+                DataVaultVisualAnchorCapacity,
+                anchorOffset,
+                MaxAnchors,
+                DataVaultFlagVisualAnchorPositions);
+            bool visualLengthsReady = EnsureDataVaultSliceArray(
+                ref _visualSegmentLengths,
+                BufferID.TetherVisualSegmentLengths,
+                DataVaultVisualSegmentLengthCapacity,
+                visualSegmentOffset,
+                MaxSegments,
+                DataVaultFlagVisualSegmentLengths);
+            bool verletPositionsReady = EnsureDataVaultSliceArray(
+                ref _verletPositions,
+                BufferID.TetherVerletPositions,
+                DataVaultScratchNodeCapacity,
+                nodeOffset,
+                nodeCount,
+                DataVaultFlagVerletPositions);
+            bool verletPreviousReady = EnsureDataVaultSliceArray(
+                ref _verletPreviousPositions,
+                BufferID.TetherVerletPreviousPositions,
+                DataVaultScratchNodeCapacity,
+                nodeOffset,
+                nodeCount,
+                DataVaultFlagVerletPreviousPositions);
+            bool verletVelocitiesReady = EnsureDataVaultSliceArray(
+                ref _verletVelocities,
+                BufferID.TetherVerletVelocities,
+                DataVaultScratchNodeCapacity,
+                nodeOffset,
+                nodeCount,
+                DataVaultFlagVerletVelocities);
+            bool verletPinnedPositionsReady = EnsureDataVaultSliceArray(
+                ref _verletPinnedPositions,
+                BufferID.TetherVerletPinnedPositions,
+                DataVaultScratchNodeCapacity,
+                nodeOffset,
+                nodeCount,
+                DataVaultFlagVerletPinnedPositions);
+            bool verletPinnedMaskReady = EnsureDataVaultSliceArray(
+                ref _verletPinnedMask,
+                BufferID.TetherVerletPinnedMask,
+                DataVaultScratchNodeCapacity,
+                nodeOffset,
+                nodeCount,
+                DataVaultFlagVerletPinnedMask);
+            bool verletRestLengthsReady = EnsureDataVaultSliceArray(
+                ref _verletSegmentRestLengths,
+                BufferID.TetherVerletSegmentRestLengths,
+                DataVaultScratchSegmentCapacity,
+                segmentOffset,
+                segmentCount,
+                DataVaultFlagVerletSegmentRestLengths);
+            bool verletTensionsReady = EnsureDataVaultSliceArray(
+                ref _verletSegmentTensions,
+                BufferID.TetherVerletSegmentTensions,
+                DataVaultScratchSegmentCapacity,
+                segmentOffset,
+                segmentCount,
+                DataVaultFlagVerletSegmentTensions);
+            bool verletCorrectionsReady = EnsureDataVaultSliceArray(
+                ref _verletCorrections,
+                BufferID.TetherVerletCorrections,
+                DataVaultScratchNodeCapacity,
+                nodeOffset,
+                nodeCount,
+                DataVaultFlagVerletCorrections);
+            bool verletCorrectionWeightsReady = EnsureDataVaultSliceArray(
+                ref _verletCorrectionWeights,
+                BufferID.TetherVerletCorrectionWeights,
+                DataVaultScratchNodeCapacity,
+                nodeOffset,
+                nodeCount,
+                DataVaultFlagVerletCorrectionWeights);
+            bool solverStatsReady = EnsureDataVaultSliceArray(
+                ref _verletSolverStats,
+                BufferID.TetherVerletSolverStats,
+                DataVaultScratchScalarCapacity,
+                scalarOffset,
+                1,
+                DataVaultFlagVerletSolverStats);
+            bool solverFlagsReady = EnsureDataVaultSliceArray(
+                ref _verletSolverFlags,
+                BufferID.TetherVerletSolverFlags,
+                DataVaultScratchScalarCapacity,
+                scalarOffset,
+                1,
+                DataVaultFlagVerletSolverFlags);
+            bool nodeFaultFlagsReady = EnsureDataVaultSliceArray(
+                ref _verletNodeFaultFlags,
+                BufferID.TetherVerletNodeFaultFlags,
+                DataVaultScratchNodeCapacity,
+                nodeOffset,
+                nodeCount,
+                DataVaultFlagVerletNodeFaultFlags);
 
             _dataVaultCableStateReady = positionsReady &&
                                         previousReady &&
@@ -956,7 +1006,50 @@ namespace Hecton8.Physics
                                         massesReady &&
                                         tensionReady &&
                                         telemetryReady &&
-                                        telemetryHeadReady;
+                                        telemetryHeadReady &&
+                                        visualPositionsReady &&
+                                        visualAnchorsReady &&
+                                        visualLengthsReady &&
+                                        verletPositionsReady &&
+                                        verletPreviousReady &&
+                                        verletVelocitiesReady &&
+                                        verletPinnedPositionsReady &&
+                                        verletPinnedMaskReady &&
+                                        verletRestLengthsReady &&
+                                        verletTensionsReady &&
+                                        verletCorrectionsReady &&
+                                        verletCorrectionWeightsReady &&
+                                        solverStatsReady &&
+                                        solverFlagsReady &&
+                                        nodeFaultFlagsReady;
+        }
+
+        private int ResolveDataVaultNodeCount(int requestedNodeCount)
+        {
+            int nodeCount = requestedNodeCount > 0
+                ? requestedNodeCount
+                : (_verletNodeCount > 1 ? _verletNodeCount : ResolveVerletPointCount());
+            return math.clamp(nodeCount, 2, DataVaultCablePointCount);
+        }
+
+        private bool AreDataVaultScratchSlicesReady(int nodeCount)
+        {
+            int segmentCount = math.max(1, nodeCount - 1);
+            return _visualSegmentPositions.IsCreated && _visualSegmentPositions.Length == nodeCount &&
+                   _visualAnchorPositions.IsCreated && _visualAnchorPositions.Length == MaxAnchors &&
+                   _visualSegmentLengths.IsCreated && _visualSegmentLengths.Length == MaxSegments &&
+                   _verletPositions.IsCreated && _verletPositions.Length == nodeCount &&
+                   _verletPreviousPositions.IsCreated && _verletPreviousPositions.Length == nodeCount &&
+                   _verletVelocities.IsCreated && _verletVelocities.Length == nodeCount &&
+                   _verletPinnedPositions.IsCreated && _verletPinnedPositions.Length == nodeCount &&
+                   _verletPinnedMask.IsCreated && _verletPinnedMask.Length == nodeCount &&
+                   _verletSegmentRestLengths.IsCreated && _verletSegmentRestLengths.Length == segmentCount &&
+                   _verletSegmentTensions.IsCreated && _verletSegmentTensions.Length == segmentCount &&
+                   _verletCorrections.IsCreated && _verletCorrections.Length == nodeCount &&
+                   _verletCorrectionWeights.IsCreated && _verletCorrectionWeights.Length == nodeCount &&
+                   _verletSolverStats.IsCreated && _verletSolverStats.Length == 1 &&
+                   _verletSolverFlags.IsCreated && _verletSolverFlags.Length == 1 &&
+                   _verletNodeFaultFlags.IsCreated && _verletNodeFaultFlags.Length == nodeCount;
         }
 
         private bool EnsureDataVaultCableArray<T>(
@@ -995,10 +1088,47 @@ namespace Hecton8.Physics
             return false;
         }
 
+        private bool EnsureDataVaultSliceArray<T>(
+            ref NativeArray<T> array,
+            BufferID bufferId,
+            int totalLength,
+            int offset,
+            int length,
+            int vaultFlag)
+            where T : struct
+        {
+            if (totalLength <= 0 || offset < 0 || length <= 0 || offset + length > totalLength)
+                return false;
+
+            if (array.IsCreated && array.Length == length)
+                return true;
+
+            DisposeDataVaultCableArray(ref array, vaultFlag);
+
+            IDataVault vault = _dataVault;
+            if (vault != null)
+            {
+                NativeArray<T> vaultArray = vault.GetBuffer<T>(
+                    bufferId,
+                    totalLength,
+                    SystemID.Physics,
+                    NativeArrayOptions.ClearMemory);
+                if (vaultArray.IsCreated && offset + length <= vaultArray.Length)
+                {
+                    _dataVaultNativeStateMask |= vaultFlag;
+                    array = vaultArray.GetSubArray(offset, length);
+                    return true;
+                }
+            }
+
+            _dataVaultNativeStateMask &= ~vaultFlag;
+            return false;
+        }
+
         private void DisposeDataVaultCableState()
         {
             ClearDataVaultCableEntry();
-            ReleaseDataVaultSlot();
+            ClearDataVaultTelemetrySlot();
             DisposeDataVaultCableArray(ref _dataVaultCablePositions, DataVaultFlagPositions);
             DisposeDataVaultCableArray(ref _dataVaultCablePreviousPositions, DataVaultFlagPreviousPositions);
             DisposeDataVaultCableArray(ref _dataVaultCableVelocities, DataVaultFlagVelocities);
@@ -1006,6 +1136,22 @@ namespace Hecton8.Physics
             DisposeDataVaultCableArray(ref _dataVaultCableSegmentTensions, DataVaultFlagSegmentTensions);
             DisposeDataVaultCableArray(ref _verletTelemetryRing, DataVaultFlagTelemetryRing);
             DisposeDataVaultCableArray(ref _verletTelemetryHead, DataVaultFlagTelemetryHead);
+            DisposeDataVaultCableArray(ref _visualSegmentPositions, DataVaultFlagVisualSegmentPositions);
+            DisposeDataVaultCableArray(ref _visualAnchorPositions, DataVaultFlagVisualAnchorPositions);
+            DisposeDataVaultCableArray(ref _visualSegmentLengths, DataVaultFlagVisualSegmentLengths);
+            DisposeDataVaultCableArray(ref _verletPositions, DataVaultFlagVerletPositions);
+            DisposeDataVaultCableArray(ref _verletPreviousPositions, DataVaultFlagVerletPreviousPositions);
+            DisposeDataVaultCableArray(ref _verletVelocities, DataVaultFlagVerletVelocities);
+            DisposeDataVaultCableArray(ref _verletPinnedPositions, DataVaultFlagVerletPinnedPositions);
+            DisposeDataVaultCableArray(ref _verletPinnedMask, DataVaultFlagVerletPinnedMask);
+            DisposeDataVaultCableArray(ref _verletSegmentRestLengths, DataVaultFlagVerletSegmentRestLengths);
+            DisposeDataVaultCableArray(ref _verletSegmentTensions, DataVaultFlagVerletSegmentTensions);
+            DisposeDataVaultCableArray(ref _verletCorrections, DataVaultFlagVerletCorrections);
+            DisposeDataVaultCableArray(ref _verletCorrectionWeights, DataVaultFlagVerletCorrectionWeights);
+            DisposeDataVaultCableArray(ref _verletSolverStats, DataVaultFlagVerletSolverStats);
+            DisposeDataVaultCableArray(ref _verletSolverFlags, DataVaultFlagVerletSolverFlags);
+            DisposeDataVaultCableArray(ref _verletNodeFaultFlags, DataVaultFlagVerletNodeFaultFlags);
+            ReleaseDataVaultSlot();
             _dataVault = null;
             _dataVaultCableStateReady = false;
         }
@@ -1019,15 +1165,7 @@ namespace Hecton8.Physics
                 return;
             }
 
-            if ((_dataVaultNativeStateMask & vaultFlag) != 0)
-            {
-                array = default;
-                _dataVaultNativeStateMask &= ~vaultFlag;
-                return;
-            }
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            H8Memory.Release(ref array, SystemID.Physics);
+            array = default;
             _dataVaultNativeStateMask &= ~vaultFlag;
         }
 

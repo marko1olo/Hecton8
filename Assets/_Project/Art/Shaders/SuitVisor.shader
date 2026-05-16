@@ -757,9 +757,9 @@ Shader "NASAPunk/SuitVisor"
 #if defined(UNITY_SINGLE_PASS_STEREO) || defined(UNITY_STEREO_INSTANCING_ENABLED) || defined(UNITY_STEREO_MULTIVIEW_ENABLED)
                 screenUV = UnityStereoTransformScreenSpaceTex(screenUV);
 #endif
-                float scalableRefractionScale = saturate(_HectonVisorRefractionScale);
-                float scalableChromaticScale = saturate(_HectonVisorChromaticScale);
-                float lowTierDitherScale = saturate(_HectonVisorLowTierDither);
+                float scalableRefractionScale = HectonFinite01(_HectonVisorRefractionScale);
+                float scalableChromaticScale = HectonFinite01(_HectonVisorChromaticScale);
+                float lowTierDitherScale = HectonFinite01(_HectonVisorLowTierDither);
                 float edgeDist = EdgeMask(IN.uv, _DistortionFalloff);
                 float blueNoiseDustMask = 0.0;
                 float blueNoiseMoistureMask = 0.0;
@@ -900,7 +900,7 @@ Shader "NASAPunk/SuitVisor"
                     distortionOffset.x += (radiationSceneNoise - 0.5) * hazardRadiation * 0.018 * radiationSceneGate;
                     distortionOffset.y += (Hash21(float2(radiationSceneBand * 1.23, floor(_Time.y * 29.0))) - 0.5) * hazardRadiation * 0.004 * radiationSceneGate;
                 }
-                float hullStressFlicker = saturate(_HullStressFlicker);
+                float hullStressFlicker = HectonFinite01(_HullStressFlicker);
                 float fragRawDepth = saturate(IN.positionCS.z * rcp(max(IN.positionCS.w, 0.0001)));
                 float sceneRawDepth = SampleSceneDepth(screenUV);
 #if UNITY_REVERSED_Z
@@ -925,12 +925,12 @@ Shader "NASAPunk/SuitVisor"
                     frostMask * 0.62 +
                     pressureCrackMask * 0.34);
                 float inverseDirtRefraction = HectonInverseDirtMask(refractionDirt);
-                float stressFallback = saturate(max(_HectonVisorStressFallback, hullStressFlicker));
+                float stressFallback = max(HectonFinite01(_HectonVisorStressFallback), hullStressFlicker);
                 float homeostasisScale = 1.0 - saturate(stressFallback * 0.75);
                 float nDotVSnell = saturate(dot(normalWS, viewDir));
                 float2 normalScreenXY = normalWS.xy + scratchNormalTS.xy * 0.45;
                 normalScreenXY = all(isfinite(normalScreenXY)) ? clamp(normalScreenXY, float2(-1.0, -1.0), float2(1.0, 1.0)) : float2(0.0, 0.0);
-                float snellStrength = max(0.0, _HectonVisorSnellStrength) *
+                float snellStrength = (isfinite(_HectonVisorSnellStrength) ? max(0.0, _HectonVisorSnellStrength) : 0.0) *
                     homeostasisScale *
                     (0.55 + runoffMask * 0.45 + condensationMask * 0.25 + blueNoiseMoistureMask * 0.20);
                 distortionOffset += HectonSnellUvOffset(

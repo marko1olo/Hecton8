@@ -33,6 +33,10 @@ namespace Hecton8.VFX.Bioluminescence
         private const float NormalUpdateIntervalSeconds = 0f;
         private const float MaxHdrIntensity = 10f;
         private const float DefaultPingRadiusMeters = 80f;
+        private const int JobOverrunDumpFrameThreshold = BlackBoxFrameCount;
+        private const byte TelemetryFlagNonFinite = 1;
+        private const byte TelemetryFlagJobOverrun = 2;
+        private const ushort BlackBoxEntrySizeBytes = 40;
         private const uint BlackBoxMagic = 0x42505359u; // BPSY
         private const uint ProfileFallbackHash = 0x424C4642u; // BLFB
         private const uint ProfileBinaryHash = 0x424C554Du; // BLUM
@@ -67,6 +71,7 @@ namespace Hecton8.VFX.Bioluminescence
         private int _activeStateCount = 1;
         private int _activeBiolumProfileId;
         private int _blackBoxCursor;
+        private int _jobOverrunFrames;
         private byte _pendingTelemetryFlags;
         private bool _registeredUpdate;
         private bool _registeredScalability;
@@ -75,15 +80,7 @@ namespace Hecton8.VFX.Bioluminescence
         private bool _disposed;
         private bool _dumpedFault;
         private bool _forceSchedule = true;
-
-        private void Awake()
-        {
-            ResolveDataVault();
-            EnsureVaultBuffers();
-            LoadProfilesFromDiskOrDefaults();
-            EvaluateColdStartStates();
-            UploadShaderGlobals(forceStateArray: true);
-        }
+        private bool _profilesLoaded;
 
         private void OnEnable()
         {
@@ -92,7 +89,8 @@ namespace Hecton8.VFX.Bioluminescence
             ResolveDataVault();
             RefreshQualityTier(GlobalRegistry.ScalabilityTier);
             EnsureVaultBuffers();
-            LoadProfilesFromDiskOrDefaults();
+            if (!_profilesLoaded)
+                LoadProfilesFromDiskOrDefaults();
             TryRegisterScalabilityEvents();
             TryRegisterUpdate();
             EvaluateColdStartStates();
@@ -130,9 +128,6 @@ namespace Hecton8.VFX.Bioluminescence
         {
             using (_tickMarker.Auto())
             {
-                if (!_registeredUpdate)
-                    TryRegisterUpdate();
-
                 EnsureVaultBuffers();
 
                 CompleteScheduledJobAndPublish();
@@ -147,7 +142,7 @@ namespace Hecton8.VFX.Bioluminescence
 
                 float cadence = _overloadHoldSeconds > 0f ? OverloadUpdateIntervalSeconds : NormalUpdateIntervalSeconds;
                 _updateAccumulatorSeconds += dt;
-                bool scheduleDue = _forceSchedule || cadence <= 0f || _updateAccumulatorSeconds >= cadence;
+                bool scheduleDue = !_stateJobScheduled && (_forceSchedule || cadence <= 0f || _updateAccumulatorSeconds >= cadence);
                 if (scheduleDue)
                 {
                     _forceSchedule = false;
@@ -177,7 +172,9 @@ namespace Hecton8.VFX.Bioluminescence
         private void ReloadProfilesFromDiskEditor()
         {
             CompleteScheduledJob();
+            ResolveDataVault();
             EnsureVaultBuffers();
+            _profilesLoaded = false;
             LoadProfilesFromDiskOrDefaults();
             EvaluateColdStartStates();
             UploadShaderGlobals(forceStateArray: true);
@@ -224,7 +221,7 @@ namespace Hecton8.VFX.Bioluminescence
 
         private bool EnsureVaultBuffers()
         {
-            IDataVault vault = ResolveDataVault();
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
@@ -276,7 +273,10 @@ namespace Hecton8.VFX.Bioluminescence
 
                 string path = ResolveProfilePath();
                 if (string.IsNullOrEmpty(path))
+                {
+                    _profilesLoaded = true;
                     return;
+                }
 
                 try
                 {
@@ -305,6 +305,8 @@ namespace Hecton8.VFX.Bioluminescence
                     SeedDefaultProfiles(profileFloats);
                     _profileSourceHash = ProfileFallbackHash;
                 }
+
+                _profilesLoaded = true;
             }
             finally
             {
@@ -330,12 +332,11 @@ namespace Hecton8.VFX.Bioluminescence
         private bool TryLockProfileBuffer(out IDataVault vault, out NativeArray<float> profileFloats)
         {
             profileFloats = default;
-            vault = ResolveDataVault();
+            vault = _dataVault;
             if (vault == null || !EnsureVaultBuffers())
                 return false;
 
-            vault = _dataVault;
-            if (vault == null || !vault.TryLockBuffer(BufferID.BiolumProfileFloats))
+            if (!vault.TryLockBuffer(BufferID.BiolumProfileFloats))
                 return false;
 
             profileFloats = _profileFloatsHandle.Resolve(vault);
@@ -350,12 +351,11 @@ namespace Hecton8.VFX.Bioluminescence
         private bool TryLockBlackBoxBuffer(out IDataVault vault, out NativeArray<BiolumPulseTelemetryEntry> blackBox)
         {
             blackBox = default;
-            vault = ResolveDataVault();
+            vault = _dataVault;
             if (vault == null || !EnsureVaultBuffers())
                 return false;
 
-            vault = _dataVault;
-            if (vault == null || !vault.TryLockBuffer(BufferID.BiolumBlackBox))
+            if (!vault.TryLockBuffer(BufferID.BiolumBlackBox))
                 return false;
 
             blackBox = _blackBoxHandle.Resolve(vault);
@@ -508,12 +508,8 @@ namespace Hecton8.VFX.Bioluminescence
 
         private void ScheduleStateJob(float cadenceSeconds)
         {
-            IDataVault vault = ResolveDataVault();
+            IDataVault vault = _dataVault;
             if (vault == null || !EnsureVaultBuffers())
-                return;
-
-            vault = _dataVault;
-            if (vault == null)
                 return;
 
             if (!vault.TryLockBuffer(BufferID.BiolumProfileFloats))
@@ -558,21 +554,32 @@ namespace Hecton8.VFX.Bioluminescence
             if (!_stateJobScheduled)
                 return;
 
+            if (!_stateJobHandle.IsCompleted)
+            {
+                _jobOverrunFrames = math.min(_jobOverrunFrames + 1, JobOverrunDumpFrameThreshold);
+                _pendingTelemetryFlags |= TelemetryFlagJobOverrun;
+                if (_jobOverrunFrames >= JobOverrunDumpFrameThreshold)
+                    DumpBlackBox(TelemetryFlagJobOverrun);
+
+                return;
+            }
+
             _stateJobHandle.Complete();
             _stateJobScheduled = false;
+            _jobOverrunFrames = 0;
             bool finite = CopyJobStatesToManagedBuffer();
             UnlockJobBuffers();
             if (!finite)
             {
-                _pendingTelemetryFlags |= 1;
+                _pendingTelemetryFlags |= TelemetryFlagNonFinite;
                 RecordTelemetry(_pendingTelemetryFlags);
                 _pendingTelemetryFlags = 0;
-                DumpBlackBox(1);
+                DumpBlackBox(TelemetryFlagNonFinite);
                 EvaluateColdStartStates();
             }
 
             UploadShaderGlobals(forceStateArray: true);
-            _pendingTelemetryFlags |= finite ? (byte)0 : (byte)1;
+            _pendingTelemetryFlags |= finite ? (byte)0 : TelemetryFlagNonFinite;
         }
 
         private void CompleteScheduledJob()
@@ -591,7 +598,7 @@ namespace Hecton8.VFX.Bioluminescence
             if (!_jobLocksHeld)
                 return;
 
-            IDataVault vault = ResolveDataVault();
+            IDataVault vault = _dataVault;
             if (vault != null)
             {
                 vault.TryUnlockBuffer(BufferID.BiolumGlobalStates);
@@ -607,7 +614,7 @@ namespace Hecton8.VFX.Bioluminescence
             int activeCount = math.clamp(_activeStateCount, 1, MaxGlobalBiolumStates);
             float strongest = 0f;
             int strongestProfile = 0;
-            IDataVault vault = ResolveDataVault();
+            IDataVault vault = _dataVault;
             NativeArray<float4> jobStates = vault != null ? _jobStatesHandle.Resolve(vault) : default;
             if (!jobStates.IsCreated)
                 return false;
@@ -754,27 +761,21 @@ namespace Hecton8.VFX.Bioluminescence
                     Directory.CreateDirectory(directory);
 
                 using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    writer.Write(BlackBoxMagic);
-                    writer.Write(reason);
-                    writer.Write(_blackBoxCursor);
-                    writer.Write(blackBox.Length);
+                    BiolumPulseDumpHeader header = new BiolumPulseDumpHeader
+                    {
+                        Magic = BlackBoxMagic,
+                        Reason = reason,
+                        EntrySizeBytes = BlackBoxEntrySizeBytes,
+                        WriteCursor = _blackBoxCursor,
+                        EntryCount = blackBox.Length
+                    };
+
+                    WriteUnmanaged(stream, ref header);
                     for (int i = 0; i < blackBox.Length; i++)
                     {
                         BiolumPulseTelemetryEntry entry = blackBox[(_blackBoxCursor + i) % blackBox.Length];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.ActiveBiolumProfileId);
-                        writer.Write(entry.ActiveStateCount);
-                        writer.Write(entry.QualityTier);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.Strobe01);
-                        writer.Write(entry.PrimaryIntensityHdr);
-                        writer.Write(entry.TimeSeconds);
-                        writer.Write(entry.AupOffsetX);
-                        writer.Write(entry.AupOffsetY);
-                        writer.Write(entry.AupOffsetZ);
-                        writer.Write(entry.ProfileSourceHash);
+                        WriteUnmanaged(stream, ref entry);
                     }
                 }
             }
@@ -814,6 +815,12 @@ namespace Hecton8.VFX.Bioluminescence
         private static float ResolveTrianglePulse01(float phase01)
         {
             return 1f - math.abs(math.frac(phase01) * 2f - 1f);
+        }
+
+        private static void WriteUnmanaged<T>(FileStream stream, ref T value) where T : unmanaged
+        {
+            ReadOnlySpan<T> valueSpan = MemoryMarshal.CreateReadOnlySpan(ref value, 1);
+            stream.Write(MemoryMarshal.AsBytes(valueSpan));
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
@@ -896,6 +903,23 @@ namespace Hecton8.VFX.Bioluminescence
             public float AupOffsetZ;
             [FieldOffset(36)]
             public uint ProfileSourceHash;
+        }
+
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 16)]
+        private struct BiolumPulseDumpHeader
+        {
+            [FieldOffset(0)]
+            public uint Magic;
+            [FieldOffset(4)]
+            public byte Reason;
+            [FieldOffset(5)]
+            public byte Reserved;
+            [FieldOffset(6)]
+            public ushort EntrySizeBytes;
+            [FieldOffset(8)]
+            public int WriteCursor;
+            [FieldOffset(12)]
+            public int EntryCount;
         }
     }
 }

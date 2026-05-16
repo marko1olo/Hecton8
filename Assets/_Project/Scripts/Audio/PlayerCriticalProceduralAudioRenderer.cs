@@ -27,7 +27,7 @@ namespace Hecton8.Audio
     /// Public blittable sonar echo tap bridge shared by acoustic DSP and cockpit radar presentation.
     /// Layout must stay 64 bytes; DSP and compute upload paths consume it directly.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
     public struct SonarEchoTap
     {
         public float DelaySeconds;
@@ -1255,7 +1255,7 @@ namespace Hecton8.Audio
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 64)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
         private struct ImpactAudioEvent
         {
             public float Stress;

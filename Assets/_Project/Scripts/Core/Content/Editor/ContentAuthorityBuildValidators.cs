@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Hecton8.Core.Content;
 using UnityEditor;
@@ -8,6 +9,7 @@ using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
+using UnityEngine.AddressableAssets;
 using UnityEngine;
 
 namespace Hecton8.Core.Content.Editor
@@ -17,6 +19,7 @@ namespace Hecton8.Core.Content.Editor
         private const string CoreGroupName = "Core";
         private const string HighResGroupName = "High_Res";
         private const string OverkillGroupName = "Overkill";
+        private const long MaxSingleContentAssetBytes = 256L * 1024L * 1024L;
         private static readonly Regex _hashRegex = new Regex(
             "\"(?:itemHash|meshHash|prefabHash|assetHash|hash)\"\\s*:\\s*\"?(?<hash>0x[0-9A-Fa-f]{1,8}|[0-9]{1,10})\"?",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
@@ -32,9 +35,14 @@ namespace Hecton8.Core.Content.Editor
         {
             ValidateAddressableGroups();
             ContentAssetHashMap[] maps = FindHashMaps();
+            ValidateHashMapIntegrity(maps);
             ValidateEconomyJsonMeshes(maps);
             ValidateNoCyclicRegistryDependencies(maps);
             ValidateTierGroups(maps);
+            ValidateBinaryLayouts();
+            ValidateLoreBlockIoBudgets();
+            ValidateComputeShaderThreadGroups();
+            ValidateVfxPrewarmManifests();
         }
 
         private static ContentAssetHashMap[] FindHashMaps()
@@ -61,6 +69,85 @@ namespace Hecton8.Core.Content.Editor
             for (int i = 0; i < count; i++)
                 compact[i] = maps[i];
             return compact;
+        }
+
+        private static void ValidateHashMapIntegrity(ContentAssetHashMap[] maps)
+        {
+            Dictionary<uint, string> ownersByHash = new Dictionary<uint, string>(512);
+            for (int i = 0; i < maps.Length; i++)
+            {
+                ContentAssetHashMap map = maps[i];
+                if (map == null)
+                    continue;
+
+                string mapName = map.name;
+                for (int j = 0; j < map.Count; j++)
+                {
+                    ContentAssetEntry entry = map.GetEntryAt(j);
+                    if (entry.Hash == 0u)
+                        Fail("ContentAssetHashMap contains zero hash: " + mapName + " index=" + j);
+
+                    if (ownersByHash.TryGetValue(entry.Hash, out string existingOwner))
+                    {
+                        Fail("Duplicate content hash detected: 0x" + entry.Hash.ToString("X8") +
+                             " first=" + existingOwner + " second=" + mapName);
+                    }
+
+                    ownersByHash.Add(entry.Hash, mapName);
+
+                    if (entry.EstimatedVramBytes > MaxSingleContentAssetBytes)
+                    {
+                        Fail("Content entry exceeds single-asset VRAM budget: " +
+                             mapName + " hash=0x" + entry.Hash.ToString("X8") +
+                             " bytes=" + entry.EstimatedVramBytes);
+                    }
+
+                    if (entry.Kind != ContentAssetKind.LoreText && !HasAddressableBinding(in entry))
+                    {
+                        Fail("Content entry has no Addressables binding: " +
+                             mapName + " hash=0x" + entry.Hash.ToString("X8"));
+                    }
+                }
+            }
+
+            for (int i = 0; i < maps.Length; i++)
+            {
+                ContentAssetHashMap map = maps[i];
+                if (map == null)
+                    continue;
+
+                string mapName = map.name;
+                for (int j = 0; j < map.Count; j++)
+                {
+                    ContentAssetEntry entry = map.GetEntryAt(j);
+                    uint[] dependencies = entry.DependencyHashes;
+                    if (dependencies == null)
+                        continue;
+
+                    for (int dependencyIndex = 0; dependencyIndex < dependencies.Length; dependencyIndex++)
+                    {
+                        uint dependency = dependencies[dependencyIndex];
+                        if (dependency == 0u || ownersByHash.ContainsKey(dependency))
+                            continue;
+
+                        Fail("Content entry references missing dependency hash: " +
+                             mapName + " hash=0x" + entry.Hash.ToString("X8") +
+                             " dependency=0x" + dependency.ToString("X8"));
+                    }
+                }
+            }
+        }
+
+        private static bool HasAddressableBinding(in ContentAssetEntry entry)
+        {
+            if (!string.IsNullOrEmpty(entry.Address))
+                return true;
+
+#if UNITY_ADDRESSABLES_EXIST
+            return entry.Asset != null && entry.Asset.RuntimeKeyIsValid();
+#else
+            return false;
+#endif
         }
 
         private static void ValidateAddressableGroups()
@@ -200,6 +287,116 @@ namespace Hecton8.Core.Content.Editor
                     }
                 }
             }
+        }
+
+        private static void ValidateBinaryLayouts()
+        {
+            AssertSize<ContentAssetBinaryRecord>(32, nameof(ContentAssetBinaryRecord));
+            AssertSize<ContentBundleRefState>(24, nameof(ContentBundleRefState));
+            AssertSize<ContentAuthorityTelemetryEntry>(64, nameof(ContentAuthorityTelemetryEntry));
+            AssertSize<ContentPendingLoadState>(16, nameof(ContentPendingLoadState));
+            AssertSize<ContentVisualFeatureBudget>(16, nameof(ContentVisualFeatureBudget));
+            AssertSize<ObjectBatchInstance>(80, nameof(ObjectBatchInstance));
+            AssertSize<ObjectBatchChunk>(40, nameof(ObjectBatchChunk));
+            AssertSize<ContentLoreBlockIndex>(16, nameof(ContentLoreBlockIndex));
+        }
+
+        private static void ValidateLoreBlockIoBudgets()
+        {
+            string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/_Project" });
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                if (prefab == null)
+                    continue;
+
+                ContentLoreBinaryProvider[] providers = prefab.GetComponentsInChildren<ContentLoreBinaryProvider>(true);
+                for (int providerIndex = 0; providerIndex < providers.Length; providerIndex++)
+                {
+                    ContentLoreBinaryProvider provider = providers[providerIndex];
+                    for (int blockIndex = 0; blockIndex < provider.BlockCount; blockIndex++)
+                    {
+                        ContentLoreBlockIndex block = provider.GetBlockAt(blockIndex);
+                        if (block.Length > ContentLoreBinaryProvider.MaxSynchronousLoreReadBytes)
+                        {
+                            Fail("Lore block exceeds synchronous I/O budget: " +
+                                 path + " hash=0x" + block.Hash.ToString("X8"));
+                        }
+                    }
+                }
+            }
+        }
+
+        private static void ValidateComputeShaderThreadGroups()
+        {
+            string[] guids = AssetDatabase.FindAssets("t:ComputeShader", new[] { "Assets/_Project" });
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                ComputeShader shader = AssetDatabase.LoadAssetAtPath<ComputeShader>(path);
+                if (shader == null)
+                    continue;
+
+                for (int kernel = 0; kernel < shader.kernelCount; kernel++)
+                {
+                    shader.GetKernelThreadGroupSizes(kernel, out uint x, out uint y, out uint z);
+                    ulong total = (ulong)x * y * z;
+                    if (total > 1024UL)
+                    {
+                        Fail("Compute shader kernel exceeds Metal/Quest thread-group limit: " +
+                             path + " kernel=" + kernel + " threads=" + total);
+                    }
+                }
+            }
+        }
+
+        private static void ValidateVfxPrewarmManifests()
+        {
+            string[] guids = AssetDatabase.FindAssets("t:ContentVfxPrewarmManifest", new[] { "Assets/_Project" });
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                ContentVfxPrewarmManifest manifest = AssetDatabase.LoadAssetAtPath<ContentVfxPrewarmManifest>(path);
+                if (manifest == null)
+                    continue;
+
+                if (manifest.TotalCount > ContentVfxPrewarmManifest.MaxEntries)
+                {
+                    Fail("VFX prewarm manifest exceeds fixed handle ledger capacity: " +
+                         path + " count=" + manifest.TotalCount +
+                         " max=" + ContentVfxPrewarmManifest.MaxEntries);
+                }
+
+#if UNITY_ADDRESSABLES_EXIST
+                for (int particleIndex = 0; particleIndex < manifest.ParticleSystemCount; particleIndex++)
+                {
+                    AssetReference particleReference = manifest.GetParticleSystem(particleIndex);
+                    if (particleReference == null || !particleReference.RuntimeKeyIsValid())
+                    {
+                        Fail("VFX prewarm manifest has invalid particle Addressable reference: " +
+                             path + " index=" + particleIndex);
+                    }
+                }
+
+                for (int computeIndex = 0; computeIndex < manifest.ComputeShaderCount; computeIndex++)
+                {
+                    AssetReference computeReference = manifest.GetComputeShader(computeIndex);
+                    if (computeReference == null || !computeReference.RuntimeKeyIsValid())
+                    {
+                        Fail("VFX prewarm manifest has invalid compute Addressable reference: " +
+                             path + " index=" + computeIndex);
+                    }
+                }
+#endif
+            }
+        }
+
+        private static void AssertSize<T>(int expectedBytes, string typeName) where T : struct
+        {
+            int actualBytes = Marshal.SizeOf<T>();
+            if (actualBytes != expectedBytes)
+                Fail(typeName + " binary layout drift. Expected " + expectedBytes + " bytes, got " + actualBytes + ".");
         }
 
         private static bool DetectCycle(

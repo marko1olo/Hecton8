@@ -663,10 +663,10 @@ namespace Hecton8.Gameplay
 
             float3 displacement3 = new float3(displacement.x, displacement.y, displacement.z);
             float displacementSqr = math.lengthsq(displacement3);
-            if (displacementSqr <= MinVectorMagnitudeSq)
+            if (!math.isfinite(displacementSqr) || displacementSqr <= MinVectorMagnitudeSq)
                 return true;
 
-            float inverseDistance = math.rsqrt(displacementSqr);
+            float inverseDistance = math.rsqrt(math.max(displacementSqr, MinVectorMagnitudeSq));
             float distance = displacementSqr * inverseDistance;
             Vector3 direction = displacement * inverseDistance;
             ScheduleCapsuleSweepBatch(
@@ -1379,10 +1379,10 @@ namespace Hecton8.Gameplay
                 return fallback;
 
             float sqrMagnitude = math.lengthsq(value3);
-            if (sqrMagnitude <= MinVectorMagnitudeSq)
+            if (!math.isfinite(sqrMagnitude) || sqrMagnitude <= MinVectorMagnitudeSq)
                 return fallback;
 
-            float inverseMagnitude = math.rsqrt(sqrMagnitude);
+            float inverseMagnitude = math.rsqrt(math.max(sqrMagnitude, MinVectorMagnitudeSq));
             Vector3 normalized = value * inverseMagnitude;
             return SafeVelocity(normalized, fallback);
         }
@@ -1426,8 +1426,9 @@ namespace Hecton8.Gameplay
             else
                 q = new float4(m02 + m20, m12 + m21, 1f + m22 - m00 - m11, m10 - m01);
 
-            float lengthSq = math.max(math.dot(q, q), 0.000001f);
-            q *= math.rsqrt(lengthSq);
+            float lengthSq = math.dot(q, q);
+            lengthSq = math.max(math.select(lengthSq, 1.0f, !math.isfinite(lengthSq)), 0.000001f);
+            q *= math.rsqrt(math.max(lengthSq, 0.000001f));
             return new Quaternion(q.x, q.y, q.z, q.w);
         }
 
@@ -1454,14 +1455,17 @@ namespace Hecton8.Gameplay
             Vector3 tangentSlideDisplacement)
         {
             Vector3 projectedVelocity = ProjectVelocityOnUnitCollisionPlane(velocity, unitNormal) * VoxelProxySlideVelocityRetain;
-            if (projectedVelocity.sqrMagnitude > MinVectorMagnitudeSq)
+            float projectedVelocitySqr = projectedVelocity.sqrMagnitude;
+            if (math.isfinite(projectedVelocitySqr) && projectedVelocitySqr > MinVectorMagnitudeSq)
                 return SafeVelocity(projectedVelocity, velocity);
 
             float tangentSlideSqr = tangentSlideDisplacement.sqrMagnitude;
-            if (tangentSlideSqr <= MinVectorMagnitudeSq)
+            if (!math.isfinite(tangentSlideSqr) || tangentSlideSqr <= MinVectorMagnitudeSq)
                 return Vector3.zero;
 
-            return SafeVelocity(tangentSlideDisplacement * (VoxelProxyGlideFallbackMetersPerSecond * math.rsqrt(tangentSlideSqr)));
+            return SafeVelocity(
+                tangentSlideDisplacement *
+                (VoxelProxyGlideFallbackMetersPerSecond * math.rsqrt(math.max(tangentSlideSqr, MinVectorMagnitudeSq))));
         }
 
         private bool TryResolveSdfSqueeze(
@@ -1886,7 +1890,7 @@ namespace Hecton8.Gameplay
                 {
                     float slideRetain = nearestHitIsVoxelProxy ? VoxelProxySlideDistanceRetain : 1f;
                     tangentSlideDisplacement = projectedDisplacement *
-                        (remainingDistance * slideRetain * math.rsqrt(projectedDisplacementSqr));
+                        (remainingDistance * slideRetain * math.rsqrt(math.max(projectedDisplacementSqr, MinVectorMagnitudeSq)));
                     resolvedDisplacement += tangentSlideDisplacement;
                 }
             }

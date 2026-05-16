@@ -6,6 +6,8 @@
   "domain": "Echelon1.ScalabilityDictator.Hardware",
   "layout": "cold_boot_profile_rows",
   "stableHashAlgorithm": "FNV1A32_ASCII",
+  "DesignerOverride": false,
+  "DesignerOverrideRule": "When true, Bridge Design Facades ignore Homeostasis auto-throttle gates for explicit designer live-tuning only.",
   "profileCount": 4,
   "units": {
     "VramLimit": "megabytes",
@@ -58,27 +60,21 @@
     {
       "level": 1,
       "name": "SACRIFICE_LEVEL_1",
-      "maskHex": "0x0000000000000070",
+      "maskHex": "0x0000000000000030",
       "systemsSacrificed": [
         "SecondaryCaustics",
-        "ParticleAdvection",
-        "VolumetricFogHighRes"
+        "MicroDebrisAdvection"
       ]
     },
     {
       "level": 2,
       "name": "SACRIFICE_LEVEL_2",
-      "maskHex": "0x00000000002007F0",
+      "maskHex": "0x0000000000000330",
       "systemsSacrificed": [
         "SecondaryCaustics",
-        "ParticleAdvection",
-        "VolumetricFogHighRes",
-        "DistantFaunaSteering",
+        "MicroDebrisAdvection",
         "ProceduralSway",
-        "IKBracing",
-        "SSR",
-        "BoidBrain",
-        "NonCriticalVfx"
+        "HighQualityIK"
       ]
     },
     {
@@ -87,17 +83,17 @@
       "maskHex": "0x0000000000F017F0",
       "systemsSacrificed": [
         "SecondaryCaustics",
-        "ParticleAdvection",
+        "MicroDebrisAdvection",
         "VolumetricFogHighRes",
         "DistantFaunaSteering",
         "ProceduralSway",
-        "IKBracing",
+        "HighQualityIK",
         "SSR",
         "BoidBrain",
         "NonCriticalVfx",
         "FoveatedSimulationTier3",
-        "SlowTick2Hz",
-        "TimeDilation08"
+        "AiOneHz",
+        "TimeDilation09"
       ]
     }
   ],
@@ -173,6 +169,12 @@
       1,
       2,
       1
+    ],
+    "profileDesignerOverride": [
+      false,
+      false,
+      false,
+      false
     ],
     "profileVasoconstrictBeginSystemStress": [
       0.78,
@@ -259,6 +261,7 @@
       "CpuLaneTokenRate": 1440,
       "RenderScale": 1.0,
       "TextureMipBias": 0,
+      "DesignerOverride": false,
       "SHIThresholds": {
         "VasoconstrictBeginSystemStress": 0.78,
         "WarningSystemStress": 0.78,
@@ -294,6 +297,7 @@
       "CpuLaneTokenRate": 360,
       "RenderScale": 0.78,
       "TextureMipBias": 1,
+      "DesignerOverride": false,
       "SHIThresholds": {
         "VasoconstrictBeginSystemStress": 0.62,
         "WarningSystemStress": 0.62,
@@ -329,6 +333,7 @@
       "CpuLaneTokenRate": 216,
       "RenderScale": 0.72,
       "TextureMipBias": 2,
+      "DesignerOverride": false,
       "SHIThresholds": {
         "VasoconstrictBeginSystemStress": 0.52,
         "WarningSystemStress": 0.52,
@@ -364,6 +369,7 @@
       "CpuLaneTokenRate": 360,
       "RenderScale": 0.85,
       "TextureMipBias": 1,
+      "DesignerOverride": false,
       "SHIThresholds": {
         "VasoconstrictBeginSystemStress": 0.58,
         "WarningSystemStress": 0.58,

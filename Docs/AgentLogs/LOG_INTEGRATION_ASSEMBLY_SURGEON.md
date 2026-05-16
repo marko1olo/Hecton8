@@ -34,3 +34,46 @@ Residual risk:
 
 Current Status:
 - BUILD SUCCESSFUL / PLATINUM GRADE / CURRENTDISK53 CURRENT-DISK GREEN.
+
+## 2026-05-16 - Loop37 Compile Wall Closure
+
+What was wrong:
+- Active compile evidence was stale and racy. `Dump_COMPILE_ERROR.txt` still showed 81 errors from an older `SargassumMicroFaunaBoids`/`RepairTool` source state.
+- Runtime MMF usage in `InputDispatcher` and `H8MacroDatabaseService` was visible to non-standalone platforms.
+- `BrineLayerSample` and `AcousticAup` were contract structs without explicit `Pack = 1`.
+- `link.xml` preserved stale signal namespaces instead of current `Hecton8.Core.Contracts.Signals`.
+- `ToolDurabilitySystem` had a half-applied vault migration that broke compile until aliases were resolved from `GlobalDataVault`.
+
+What was done:
+- Verified current disk with isolated Core build and standard Core build.
+- Normal evidence: `Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_110605_Loop37.log` -> `Build succeeded. 0 Warning(s). 0 Error(s).`
+- Isolated evidence: `Dump_INTEGRATION_ASSEMBLY_SURGEON_isolated_build.binlog` -> green compile in `Temp/bin_integrator/Debug/Hecton8.Core.dll`.
+- Guarded MMF code with `UNITY_EDITOR || UNITY_STANDALONE`.
+- Added `Pack = 1` to `BrineLayerSample` and `AcousticAup`.
+- Updated linker preservation for typed signal buses.
+- Fixed `RepairTool` local hit definite assignment.
+- Repaired vault-backed tool durability aliases without reintroducing private persistent arrays.
+
+Cinematic Cheats used:
+- No new simulation or visual feature was added by Integrator.
+- Low-tier compile path keeps platform guards and Math LOD hooks intact.
+- High/Ultra visual systems remain behind existing shader and signal contracts.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Normal compile verification time: 89,860,000 us.
+- Isolated compile verification time: 72,330,000 us.
+- Risk removed: stale compile wall, IL2CPP signal strip risk, mobile MMF compile exposure, ARM64 implicit packing risk.
+
+Verification:
+- `Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_110605_Loop37.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- `Dump_INTEGRATION_ASSEMBLY_SURGEON_isolated_build.binlog`: isolated build succeeded.
+- Shader thread-group audit: max observed compute group was 512 threads, below Metal 1024 limit.
+- Conflict marker audit: active source/docs scan had no real `<<<<<<<`, `=======`, `>>>>>>>` merge markers.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, player build, Quest/Android player build, Metal player build, and IL2CPP strip build were not run.
+- Git tree contains many concurrent agent edits; full-tree commit must be a deliberate integration action.
+
+Current Status:
+- VERIFIED MASTER GRADE - BUILD GREEN.

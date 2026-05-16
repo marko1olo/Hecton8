@@ -3,7 +3,7 @@
 Prompt: SENTINEL_DISPOSAL_GUARD
 Domain: CORE/MEMORY
 Task Count: 18
-Status: CORE COMPLETE / BUILD BLOCKED BY DEPENDENCY
+Status: DOTNET BUILD GREEN / UNITY RUNTIME PENDING VERIFICATION
 
 Relevant mandates read before coding:
 - OPT_Native_Memory_Collections_JobSystem_Protocol.txt
@@ -39,16 +39,15 @@ Relevant mandates read before coding:
 - [x] 15. HOMEOSTASIS_ADAPTATION | DOD: N/A. Rejected: homeostasis coupling to memory ownership. Estimate: 0.0 us.
 - [x] 16. VERIFY_FREED | DOD: transition captures expected baseline before scene load and verifies `H8Memory.TotalAllocatedBytes` after leak purge. Rejected: snapshot-only leak reporting without assert. Estimate: 0.0 us hot path.
 - [x] 17. THREAD_SYNC | DOD: added `RegisterActiveJob(SystemID, JobHandle)` and owner fence completion before forced release. Rejected: freeing records before owner job completion. Estimate: 0.0 us hot path when not called; transition blocking only.
-- [x] 18. FINAL_VALIDATION [BLOCKED BY DEPENDENCY] | DOD: ran `dotnet build Hecton8.Core.csproj --no-restore` three times. Local H8Memory map compile error fixed; remaining errors are unrelated contract namespace collisions and `VirtualVoice` native-container violations in player/audio/ecosystem domains. Rejected: editing non-memory domains from CORE/MEMORY task. Estimate: no runtime impact.
+- [x] 18. FINAL_VALIDATION | DOD: latest `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` succeeded with 0 warnings and 0 errors after the typed-lane namespace compile bridge was restored. Rejected: claiming Unity runtime verification from dotnet. Estimate: no runtime impact.
 
 ## Loop 5 - Self-Review
 - [x] Re-read H8Memory and bridge code for missed owner removal, zero pointer guards, baseline math, compile references, and non-hot path signal use. DOD: static scan found only cold-path allocations and the intentional transition blocking sync point. Rejected: adding hot-path registry lookups. Estimate: 0.0 us gameplay hot path.
 
 ## Compile Wall Note
 - Latest build command: `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly`.
-- Remaining blocker: external compile state now reports three duplicate member definitions in `Assets/_Project/Scripts/Construction/VehicleDockingModule.cs`: `IsLowDockingMathTier`, `ResolveSystemStress01`, and `ResetDockingRuntimeCaches`.
-- No compiler errors are reported in `Assets/_Project/Scripts/Core/Memory/H8Memory.cs`, `Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs`, or `Assets/_Project/Scripts/Core/SceneRuntimeService.cs` after the ABI guard and blackbox separation pass.
-- Ownership: the blocker is outside CORE/MEMORY. Marked dependency block, not reverted.
+- Current result: build succeeded in 00:03.24 with 0 warnings and 0 errors.
+- Unity Editor/runtime verification is still pending because no Unity MCP/editor console is exposed in this session.
 
 ## Omega Polish
 - [x] Extracted `<POLISH_MANDATE>` from `Docs/Tasks/CURRENT_BATCH.md` after all tasks were checked or blocked. Result: `NO_POLISH_MANDATE_TAG_FOUND`.
@@ -86,4 +85,23 @@ Relevant mandates read before coding:
 - [x] ABI guard restore: `H8Memory.ValidateAbiLayout()` and `GlobalDataVault.ValidateAbiLayout()` fail closed through `FatalMemoryException.ThrowAbiLayoutMismatch()` when packed binary record sizes drift. Rejected: trusting attributes without runtime size checks. Estimate: cold initialization only; 0.0 us gameplay hot path.
 - [x] Heartbeat/event isolation: H8Memory now keeps the last 300 frame heartbeats in `_blackBox` and lifecycle allocation/release/transition snapshots in `_eventBlackBox`, preventing event bursts from evicting frame heartbeat evidence. Rejected: a mixed ring that can lose the required last-300-frame heartbeat. Estimate: one heartbeat struct store per frame; exact microseconds unmeasured; persistent storage is 38,400 bytes total.
 - [x] Static validation: CORE/MEMORY scans found no `StructLayout` without `Pack = 1`, no `Update`/`FixedUpdate`/`LateUpdate`, no `string.Format`, no legacy `EventBus`, no custom `event`, no `Action<>`, and no `Func<>`.
-- [x] Latest validation: `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 13.22s and failed on 3 external `VehicleDockingModule` duplicate-method errors. No errors reported in CORE/MEMORY touched files.
+- [x] Latest validation: `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 01:45.24 and failed on 70 external errors across World, Animation, Submarine, and Determinism domains. No errors reported in CORE/MEMORY touched files.
+
+## Continuation Inquisition - Data Sovereignty Erasure / Vault Heartbeat
+- [x] Vault payload erasure: `GlobalDataVault.ReleaseOwnerBuffers` and `ReleaseSceneOwnedBuffers` now clear released arena payload bytes before returning blocks to the reusable free list. Rejected: metadata-only eviction that leaves old-scene bytes readable until overwritten. Estimate: cold owner/transition path only; exact microseconds unmeasured.
+- [x] Free-list lock hygiene: free, split, merge, grow, and dispose paths reset `VaultArenaBlock.Reserved1` lock counts with `Reserved0` flags so stale lock metadata cannot survive block reuse. Rejected: assuming every caller unlocks perfectly before every cold failure path. Estimate: 0.0 us gameplay hot path.
+- [x] Vault heartbeat bridge: `SceneRuntimeService` caches `IDataVault` outside Tick and calls `RecordHeartbeat()` beside `H8Memory.RecordHeartbeat()` so the vault defrag blackbox receives a fixed 300-frame pulse without per-frame registry lookup. Rejected: polling `GlobalRegistry.DataVault` in Tick. Estimate: one native struct store per frame when vault is cached; exact microseconds unmeasured.
+- [x] Prior validation before external drift: `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 02:04.91 and succeeded with 0 warnings and 0 errors.
+
+## Continuation Inquisition - Vault Dump Ordering / External Compile Drift
+- [x] Vault frame evidence: `MemoryDefragTelemetryEntry` now carries `Frame` while preserving the 128-byte packed ABI size guard. Rejected: growing the binary record. Estimate: no additional persistent bytes; one `uint` write per vault heartbeat; exact microseconds unmeasured.
+- [x] Vault dump ordering: defrag/PhiVOD dumps now write a fixed magic, recorded count, entry size, then the circular buffer oldest-to-newest. Rejected: raw NativeArray-order dumps that require guessing the cursor position after wraparound. Estimate: cold crash-dump path only.
+- [x] Final domain source read: listed every file under `Assets/_Project/Scripts/Core/Memory`, read the defrag contracts, binary layout attribute, asmdefs, H8Memory heartbeat/dump paths, and GlobalDataVault heartbeat/dump paths. Remaining native collections are H8Memory/GlobalDataVault authority lanes or API return handles, not ad hoc system-private data. Estimate: 0.0 us gameplay hot path.
+- [x] Static validation: CORE/MEMORY scans found no `StructLayout` without `Pack = 1`, no `Update`/`FixedUpdate`/`LateUpdate`, no `string.Format`, no legacy `EventBus`, no custom `event`, no `Action<>`, and no `Func<>`.
+- [x] Latest validation [BLOCKED BY DEPENDENCY]: `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 01:00.45 and failed on 141 external errors in `GameBootstrapper`, `RepairTool`, `HectonUnderwaterVisuals`, and `ToolDurabilitySystem`. No errors were reported in touched CORE/MEMORY files.
+
+## Continuation Inquisition - Explicit Ring Counts / Compile Green
+- [x] H8Memory ring counts: added explicit recorded-count fields for the heartbeat and lifecycle-event 300-entry rings so dump length no longer depends on wrapping `uint` sequence inference. Rejected: deriving count from `Sequence` after long uptime. Estimate: one bounded int increment per H8Memory heartbeat/event; exact microseconds unmeasured.
+- [x] Vault ring count: added explicit recorded-count state for the GlobalDataVault defrag/PhiVOD 300-entry ring so ordered dumps remain correct after sequence wrap. Rejected: deriving count from `_defragTickSequence`. Estimate: one bounded int increment per vault heartbeat/defrag event; exact microseconds unmeasured.
+- [x] Typed signal compile bridge: added the missing `Hecton8.Core.Contracts.Signals` import to `ContextualPhysicalIkRuntime` after the remaining compile gate exposed `KccVelocitySignal` as a typed-lane namespace error. Rejected: moving or duplicating the signal struct. Estimate: 0.0 us runtime; compile-only namespace fix.
+- [x] Latest validation: `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 00:03.24 and succeeded with 0 warnings and 0 errors.

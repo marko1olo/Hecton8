@@ -19,10 +19,6 @@ namespace Hecton8.Audio
         [SerializeField] private PlayerToolManager playerToolManager;
         [SerializeField] private PlayerTransportCoordinator playerTransportCoordinator;
 
-        [Header("Audio Clips")]
-        [Tooltip("Looping thruster / servo sound. Should be a seamless loop.")]
-        [SerializeField] private AudioClip thrusterLoopClip;
-
         [Header("Volume")]
         [Tooltip("Volume when completely idle.")]
         [SerializeField, Range(0f, 0.5f)] private float idleVolume = 0.05f;
@@ -89,11 +85,23 @@ namespace Hecton8.Audio
         [Tooltip("Downward velocity treated as full dive-attack intensity.")]
         [SerializeField, Range(0.1f, 6f)] private float diveVelocityReference = 2.4f;
 
+        private const int ProceduralThrusterSampleRate = 22050;
+        private const int ProceduralThrusterFrameCount = 1024;
+        private const float ProceduralBaseFrequencyHertz = 42f;
+        private const float ProceduralWhineFrequencyHertz = 137f;
+        private const float ProceduralThrusterSampleRateInv = 0.000045351474f;
+        private const float ProceduralTwoPi = 6.28318530718f;
+
         private AudioSource _audioSource;
         private Rigidbody _playerRb;
+        private AudioClip _proceduralThrusterClip;
         private float _currentVolume;
         private float _currentPitch;
         private float _modeBlend;
+        private float _proceduralPhase;
+        private float _proceduralWhinePhase;
+        private float _proceduralNoiseLowPass;
+        private uint _proceduralNoiseState = 0xA341316Cu;
         private bool _registered;
         private bool _hotSwapRegistered;
         private bool _transportCoordinatorLookupAttempted;
@@ -109,7 +117,8 @@ namespace Hecton8.Audio
                 return;
             }
 
-            _audioSource.clip = thrusterLoopClip;
+            EnsureProceduralThrusterClip();
+            _audioSource.clip = _proceduralThrusterClip;
             _audioSource.loop = true;
             _audioSource.playOnAwake = false;
             _audioSource.spatialBlend = 1f;
@@ -154,8 +163,14 @@ namespace Hecton8.Audio
 
             TryRegister();
 
-            if (thrusterLoopClip != null && _audioSource != null)
+            EnsureProceduralThrusterClip();
+            if (_proceduralThrusterClip != null && _audioSource != null)
+            {
+                if (_audioSource.clip != _proceduralThrusterClip)
+                    _audioSource.clip = _proceduralThrusterClip;
+
                 _audioSource.Play();
+            }
         }
 
         private void OnDisable()
@@ -171,6 +186,11 @@ namespace Hecton8.Audio
         {
             TryUnregisterHotSwapListener();
             TryUnregister();
+            if (_proceduralThrusterClip != null)
+            {
+                Destroy(_proceduralThrusterClip);
+                _proceduralThrusterClip = null;
+            }
         }
 
         public void OnGlobalRegistryServiceRebound(
@@ -201,7 +221,10 @@ namespace Hecton8.Audio
             if (playerMovement == null || _playerRb == null || _audioSource == null)
                 return;
 
-            if (thrusterLoopClip == null)
+            if (_proceduralThrusterClip == null)
+                EnsureProceduralThrusterClip();
+
+            if (_proceduralThrusterClip == null)
                 return;
 
             float dt = deltaTime;
@@ -287,6 +310,69 @@ namespace Hecton8.Audio
 
             _audioSource.volume = _currentVolume;
             _audioSource.pitch = _currentPitch;
+        }
+
+        private void EnsureProceduralThrusterClip()
+        {
+            if (_proceduralThrusterClip != null)
+                return;
+
+            _proceduralThrusterClip = AudioClip.Create(
+                "H8_Procedural_SubmarineEngine",
+                ProceduralThrusterFrameCount,
+                1,
+                ProceduralThrusterSampleRate,
+                true,
+                OnProceduralAudioRead,
+                OnProceduralAudioSetPosition);
+        }
+
+        private void OnProceduralAudioRead(float[] data)
+        {
+            if (data == null)
+                return;
+
+            float rawGain = _currentVolume;
+            float rawPitch = _currentPitch;
+            float gain = math.isfinite(rawGain) ? math.saturate(rawGain) : 0f;
+            float pitch = math.isfinite(rawPitch) ? math.clamp(rawPitch, 0.1f, 3f) : 1f;
+            float baseStep = ProceduralBaseFrequencyHertz * pitch * ProceduralThrusterSampleRateInv;
+            float whineStep = ProceduralWhineFrequencyHertz * pitch * ProceduralThrusterSampleRateInv;
+            float phase = _proceduralPhase;
+            float whinePhase = _proceduralWhinePhase;
+            float noiseLowPass = _proceduralNoiseLowPass;
+            uint noiseState = _proceduralNoiseState;
+
+            for (int i = 0; i < data.Length; i++)
+            {
+                noiseState = noiseState * 1664525u + 1013904223u;
+                float white = ((noiseState >> 8) & 0xFFFF) * 0.000030518044f - 1f;
+                noiseLowPass = math.lerp(noiseLowPass, white, 0.08f);
+
+                float motor = math.sin(phase * ProceduralTwoPi) * 0.52f;
+                float whine = math.sin(whinePhase * ProceduralTwoPi) * 0.18f;
+                data[i] = (motor + whine + noiseLowPass * 0.24f) * gain;
+
+                phase += baseStep;
+                whinePhase += whineStep;
+                phase -= math.floor(phase);
+                whinePhase -= math.floor(whinePhase);
+            }
+
+            _proceduralPhase = phase;
+            _proceduralWhinePhase = whinePhase;
+            _proceduralNoiseLowPass = noiseLowPass;
+            _proceduralNoiseState = noiseState;
+        }
+
+        private void OnProceduralAudioSetPosition(int position)
+        {
+            if (position == 0)
+            {
+                _proceduralPhase = 0f;
+                _proceduralWhinePhase = 0f;
+                _proceduralNoiseLowPass = 0f;
+            }
         }
 
         private float ResolveTransportBoost01()

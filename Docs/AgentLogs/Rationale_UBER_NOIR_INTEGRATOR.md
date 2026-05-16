@@ -1,6 +1,6 @@
 # Rationale_UBER_NOIR_INTEGRATOR
 
-Status: PHASE 1 COMPILE-GATED BY UNRELATED DEPENDENCY
+Status: SOURCE TASKS 02-17 STATIC-VERIFIED; TASKS 01/18 COMPILE-GATED BY UNRELATED DEPENDENCIES; OMEGA NOT CLAIMED
 Agent: UBER_NOIR_INTEGRATOR
 
 ## Decision 001 - Prompt Authority Restored
@@ -58,3 +58,66 @@ Solution: Captured `Docs/AgentLogs/Unity_UBER_NOIR_INTEGRATOR.log` and verified 
 Rejected Alternatives: Editing Physics, Audio, Save, MapMagic, or legacy editor assemblies was rejected as cross-domain sabotage. Raw material YAML edits were rejected despite the compile gate.
 Scalability potential: The consolidator remains ready for the next clean compile and is limited to DryZone hard-surface materials to avoid breaking terrain/flora/celestial specialization.
 Hardware Impact: Runtime savings are blocked until the compile dependency is cleared; no material assets were mutated by this failed batch run.
+
+## Decision 009 - Noir Extinction And Dither Suture
+Problem: Separate fog and HLOD fades create gray underwater washout and alpha-overdraw debt.
+Solution: Kept fog in the Uber shader with Beer-Lambert fallback sigma `(0.2303, 0.061, 0.018)` so red dies near 10m while blue persists, then remapped fog toward `_NoirAbyssFloorColor`. Cutout transitions use blue noise or Bayer instead of alpha blend.
+Rejected Alternatives: URP gray fog was rejected because it destroys noir contrast. Full volumetric raymarch on MX350 was rejected by the visual-fake mandate.
+Scalability potential: Low uses depth/noise fakes and no volumetric truth; Middle keeps same fog curve with richer lighting; High/Ultra can spend budget on caustic/refraction overkill while fog remains stable.
+Hardware Impact: Low tier avoids blended overdraw and raymarching. GPU microsecond proof is absent until the compile gate clears.
+
+## Decision 010 - High-Tier Refraction And Visual Overkill
+Problem: RTX-tier materials need visible payoff without adding a separate glass/refraction shader family.
+Solution: Added `_UberNoirRefractionParams` and `_UberNoirIorLut` to the Uber material CBUFFER, reused `Hecton_SnellRefractionCore.hlsl`, sampled `_CameraOpaqueTexture`, and gated the path by keyword/high-cost runtime state. Added a high-tier overkill scalar for stronger wake curl, caustics, and salt-crystal glints.
+Rejected Alternatives: `GrabPass` was forbidden. A new porthole-only shader was rejected because it fragments the material family. Raw material YAML mutation was rejected.
+Scalability potential: Low compiles/sheds refraction. Middle can use analytical caustics only. High/Ultra can enable Snell refraction, chromatic offset, stronger caustics, wake/silt curl, and salt crystal sparkle.
+Hardware Impact: Low saves 1-3 scene-color taps and 16 POM taps under shed. High spends those taps for visible glass distortion.
+
+## Decision 011 - Displaced Motion Vectors
+Problem: STP ghosting occurs if hull dents, crush bends, and wake offsets move vertices in ForwardLit but the MotionVectors pass sees only undeformed mesh positions.
+Solution: Added a `MotionVectors` pass that runs the same hull dent, dynamic bend, and wake displacement chain for current and previous transforms, then outputs non-jittered motion vectors.
+Rejected Alternatives: Relying on Unity default object motion was rejected because vertex displacement would be invisible to STP. Recomputing mesh data on CPU was rejected as memory/CPU debt.
+Scalability potential: Low keeps cheaper displacement math; High/Ultra get richer displacement without temporal smearing.
+Hardware Impact: Motion pass adds draw cost only for active materials, but avoids visible STP trails. Exact GPU cost is pending Unity/RenderDoc validation.
+
+## Decision 012 - Data Sovereignty And Telemetry Ring
+Problem: Shader feature state had no blackbox and the initial shader-global bridge cached a direct `NativeArray<float4>`, violating the DataVault sovereignty requirement.
+Solution: Added `HectonUberNoirRuntimeBridge` with a Pack=1 48-byte `UberNoirShaderTelemetryEntry` and a fixed 300-entry `BufferID.ShaderFeatureTelemetryRing`. Replaced direct global-bridge `NativeArray` ownership with a `VaultBufferHandle<float4>` and lock/resolve writes.
+Rejected Alternatives: Private persistent `NativeArray` ownership was rejected. Managed delegates/EventBus strings were rejected; this bridge writes typed shader globals and a DataVault ring.
+Scalability potential: Low has a single 48-byte late-frame telemetry write and immediate feature shed; High/Ultra records active overkill state for crash triage.
+Hardware Impact: 0 GC by static review; one bounded ring write per late frame. Fault dump writes `Docs/AgentLogs/Dump_UBER_NOIR_INTEGRATOR.bin`.
+
+## Decision 013 - Multiplatform Inquisition
+Problem: Quest/Android, Metal/Mac, Steam Deck, and RTX paths have different failure modes: struct padding, shader portability, I/O stalls, and visual under-spend.
+Solution: Verified new telemetry struct uses `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]`; no `GrabPass`, sampler2D, DirectX-only syntax, or compute kernel was added to UberNoir. Thread-group scan shows relevant shader compute constants at 64 or 8x8, below Metal's 1024 limit. Runtime dump I/O is fault-only; hot path performs no file reads.
+Rejected Alternatives: Platform-specific shader shortcuts and hot-path FileStream reads were rejected. Broad cross-domain compute rewrites were rejected because this prompt owns UberNoir, not every compute shader.
+Scalability potential: Toaster mode uses salt crust, triangle caustics, no POM/refraction, and feature shedding. High/Ultra uses 16-tap POM, Snell refraction, stronger caustics, wake/silt curl, bent hulls, and salt-crystal highlights.
+Hardware Impact: MX350 avoids texture-heavy paths; RTX pays additional texture taps and ALU only when high-cost runtime gate allows it.
+
+## Decision 014 - Final Validation Block
+Problem: Required 0-error Vulkan/DX12 validation cannot run while Unity script compilation fails in unrelated assemblies.
+Solution: Reran Unity 6000.4.1f1 batch compile. The current log fails in `Animation/IK/VRPhysicalHandPresenceIkJobs.cs`, `Core/Bucketing/ModuloSimulationBucketer.cs`, and `Audio/Virtualization/AudioVirtualizationJobs.cs`; no errors reference UberNoir shader/runtime files.
+Rejected Alternatives: Editing IK, Core Bucketing, or Audio from a Rendering/URP prompt was rejected as domain violation. Claiming Master Grade without compile/build proof was rejected.
+Scalability potential: Source-side scalability work is present, but build/runtime proof remains blocked by other domains.
+Hardware Impact: No measured runtime numbers can be claimed until the compile dependency clears.
+
+## Decision 015 - Omega Branch Scrub Boundary
+Problem: The polish mandate asks for fragment `if` removal, but fully branchless POM would force 16 rust taps even when homeostasis disables POM, contradicting low-tier and stress-shed goals.
+Solution: Removed fragment helper branches where it does not add texture work: safe normalize, dither selection, rust corrosion blend, and blood overlay now use masks/lerps. Retained POM early-outs and vertex/wake culling branches because they are the actual work-shedding gates.
+Rejected Alternatives: Running 16 POM taps with `pomEnabled=0` was rejected because it lies about disabling POM under stress. Removing wake/instance cull branches was rejected because it expands vertex ALU on low tier.
+Scalability potential: Low and stress-shed paths still avoid POM and texture caustic costs; High/Ultra keeps branch-pruned cosmetic blends and overkill math.
+Hardware Impact: Removes several dynamic branch sites in fragment helpers without sacrificing the large low-tier tap savings. Exact microsecond proof remains compile-blocked.
+
+## Decision 016 - AUP Runtime Transform Correction
+Problem: The UberNoir helper named `H8UberNoirObjectToAupWorld` subtracted `_TotalUniverseOffset` from object-to-world translation before clip-space projection. `HectonFloatingOrigin` already shifts scene transforms to runtime space (`absolute - TotalOffset`), and `Hecton_CoreLit.hlsl` uses `_TotalUniverseOffset` as runtime-to-absolute phase data (`positionWS + _TotalUniverseOffset`), not as a second geometry offset.
+Solution: Renamed the helper to `H8UberNoirObjectToRuntimeWorld`, kept it as finite translation sanitation only, and left `_TotalUniverseOffset` on the procedural AUP phase math for buckling, caustics, salt crust, and crystal glints. Current and previous motion-vector transforms now stay in the same runtime-space convention as the rest of URP.
+Rejected Alternatives: Keeping the subtraction was rejected because it can double-apply origin shifts once the material-facing Uber shader is active. Moving all procedural math to runtime-only coordinates was rejected because it reintroduces phase swimming after floating-origin rebases.
+Scalability potential: Low/Middle/High/Ultra all get stable geometry placement; High/Ultra retain AUP-stable visual overkill without camera-relative jitter.
+Hardware Impact: No claimed microsecond gain. This is correctness and temporal-stability debt removal; profiler proof remains blocked by unrelated compile errors.
+
+## Decision 017 - Sign-Preserving Reciprocal
+Problem: `H8UberNoirSafeRcp` used `rcp(max(abs(value), eps))`, which prevents division-by-zero but loses denominator sign. That is harmless for radii, but wrong for view-dependent UV math if a negative scale or view component reaches the POM remap.
+Solution: Changed the reciprocal to `sign(value) / max(abs(value), eps)` using `step` and `lerp`, preserving NaN resistance while keeping POM offset direction correct.
+Rejected Alternatives: Maintaining the sign-losing reciprocal was rejected as a subtle UV inversion risk. Using raw `rcp(value)` was rejected because zero/denormal inputs can produce INF/NaN on mobile GPUs.
+Scalability potential: Low tier still strips POM; Middle/High/Ultra get safer parallax and texture-scale math.
+Hardware Impact: Adds two scalar ALU ops where the helper is used; exact cost is unmeasured and expected to be below measurement noise, pending profiler validation.

@@ -13,18 +13,18 @@ Actual implementation surface: Assets/_Project/Scripts/World/SargassumMicroFauna
 - [x] 4. In `PRE_SIMULATION`, fill threat buffer slots: 0 submarine, 1 flashlight ray, 2-4 acoustic pings. DOD: `UpdateBoidSensoryThreats` executes inside `BindSimulationUniforms` before compute dispatch. Rejected alternative: late render-side stimulus patch. Estimate: 256 byte upload, ~8 us CPU.
 - [x] 5. Shift threat AUPs relative to compute shader local origin. DOD: CPU writes AUP-normalized runtime float3 and shader evaluates sensory threats camera-relative via `ToCameraRelative`. Rejected alternative: raw absolute doubles in shader. Estimate: saves precision failures, cost under 0.01 ms GPU.
 - [x] 6. Write threats to vault-resident `NativeArray<float4>` view xyz position, w radius/intensity. DOD: `_boidSensoryThreatsHandle` resolves a `GlobalDataVault` buffer view and uploads it into a 16-slot GraphicsBuffer. Rejected alternative: local persistent NativeArray field or managed `Vector4[]` staging. Estimate: 0 GC, ~5 us/frame versus managed staging; handle resolve adds ~1 us/frame.
-- [x] 7. Consume `SubmarineLightsChangedSignal` to expand/shrink flashlight threat radius. DOD: typed snapshot scan chooses strongest powered light and drives grow/shrink radius. Rejected alternative: destructive `TryDequeueSubmarineLightsChanged`. Estimate: bounded 8-signal scan, ~2 us/frame.
+- [x] 7. Consume `SubmarineLightsChangedSignal` to expand/shrink flashlight threat radius. DOD: typed snapshot scan now reads the newest capped light signals, chooses the strongest powered light, and clears stale signal light intensity on remove/clear/brownout even when the player flashlight remains on. Rejected alternative: destructive `TryDequeueSubmarineLightsChanged` or a private light-source collection. Estimate: bounded 8-signal scan, ~2 us/frame, 0 us/frame added by newest-window indexing.
 - [x] 8. Low tier fake: flashlight spherical threat at light cone endpoint. DOD: non-full simulation tiers write endpoint sphere with shortened cone scale. Rejected alternative: full cone math on low tier. Estimate: saves ~0.01 ms GPU versus capsule branch on weak devices.
 - [x] 9. High-end overkill: flashlight capsule SDF in shader. DOD: full simulation tier sets capsule flag and shader uses closest point on player-to-endpoint segment. Rejected alternative: CPU-expanded multi-sphere beam. Estimate: same upload bandwidth, adds one segment projection per boid only on full tier.
 - [x] 10. Reactive VFX: boids entering beam multiply Albedo. DOD: compute sets `BOID_FLAG_LIGHT_STIMULUS`; instanced fish shader brightens albedo/biolum when flag is present. Rejected alternative: render-side threat buffer sampling. Estimate: saves a render buffer bind and per-fragment SDF.
 - [x] 11. STP N/A. DOD: no STP-specific allocation or scheduling path added. Rejected alternative: inventing an STP hook. Estimate: 0 us/frame.
-- [x] 12. NaN vaccination: `w=max(w,0.1f)`. DOD: CPU slot writer clamps active w to `SensoryThreatMinRadiusMeters`; shader also clamps sensory radius to 0.1. Rejected alternative: trusting signal payloads. Estimate: avoids NaN/zero-radius branch stalls.
+- [x] 12. NaN vaccination: `w=max(w,0.1f)`. DOD: CPU slot writer clamps active w to `SensoryThreatMinRadiusMeters`; shader rejects non-finite threat payloads before radius math, guards capsule segment projection, and clamps sensory radius to 0.1. Rejected alternative: trusting signal payloads or letting `max(NaN, 0.1)` decide backend behavior. Estimate: avoids NaN/zero-radius branch stalls; adds only finite checks inside the existing capped loop.
 - [x] 13. Blackbox originally N/A, superseded by inquisition addendum. DOD: added vault-backed 300-frame `BoidSensoryBlackBoxEntry` ring with `[StructLayout(Pack=1, Size=64)]`, state hashes, flags, active threat count, submarine/flashlight slots, ping radii, and anomaly dump to `Docs/AgentLogs/Dump_BOID_SENSORY_INPUT_PUMP.bin`; storage is resolved from `_boidSensoryBlackBoxHandle`, not a local persistent NativeArray field. Rejected alternative: per-frame text log or local managed list. Estimate: adds ~2 us/frame CPU, 19.2 KB vault memory, 0 steady-state I/O.
 - [x] 14. Fix Compute Buffer binding. DOD: sensory array binds to `_PredatorAUPBuffer`; encounter predator data binds to `_EncounterPredatorAUPBuffer` with fallback rebinding when no encounter buffer exists. Rejected alternative: overwriting sensory buffer with encounter buffer per frame. Estimate: fixed 256 byte sensory upload.
 - [x] 15. Homeostasis N/A. DOD: no homeostasis loop is part of the sensory buffer directive. Rejected alternative: adding unrelated behavior state. Estimate: 0 us/frame.
-- [x] 16. Ping decay threats reduce w by `dt*decay`. DOD: slots 2-4 decay by `simulationDt * SensoryAcousticPingDecayMetersPerSecond` and clear below 0.1. Rejected alternative: timestamped managed ping list. Estimate: 0 GC, ~1 us/frame.
+- [x] 16. Ping decay threats reduce w by `dt*decay`. DOD: slots 2-4 decay by `simulationDt * SensoryAcousticPingDecayMetersPerSecond`, read newest capped acoustic pings, clear below 0.1, and use an unsigned ring cursor so long sessions cannot wrap into a negative slot. Rejected alternative: timestamped managed ping list. Estimate: 0 GC, ~1 us/frame.
 - [x] 17. Thread sync upload completes before `VISUAL_SYNC` compute dispatch. DOD: `GraphicsBufferUploadUtility.UploadNativeArray` is called inside `BindSimulationUniforms` before `CSMain` dispatch buffers are rebound and dispatched. Rejected alternative: render-late upload. Estimate: avoids one-frame sensory latency.
-- [x] 18. [BLOCKED BY DEPENDENCY] `dotnet build`. DOD: three build attempts executed; failures are project-wide dependency errors outside this agent's domain and no diagnostics reference this task's files. Rejected alternative: editing unrelated GlobalRegistry/Lockstep/bootstrap dependency walls. Estimate: no frame impact; integration blocker only.
+- [x] 18. `dotnet build`. DOD: `Build_BOID_SENSORY_INPUT_PUMP_Polish9.txt` succeeded for `Hecton8.Core.csproj` with 0 warnings and 0 errors. Rejected alternative: declaring success before the shader NaN hardening compile pass. Estimate: no frame impact; validation only.
 
 ## Loop Log
 
@@ -93,3 +93,42 @@ Hardening evidence:
 - Debt scan: no `GlobalSignals.Publish`, no `EventBus`, no managed delegates, no `void Update()`, no `string.Format`, no `Transform.position`, no sensory local persistent NativeArray field.
 - Compile check: `dotnet build Hecton8.Core.csproj --no-restore` logged at `Docs/AgentLogs/Build_BOID_SENSORY_INPUT_PUMP_Polish3.txt`; blocked by unrelated `LockstepStateValidator`, `EcosystemDirector`, and `SubmarineFluidDynamics` dependency errors. No diagnostics reference `SargassumMicroFaunaBoids.cs`, `H8Memory.cs`, `SargassumMicroFaunaBoids.compute`, or `BoidFishInstanced.shader`.
 - `git diff --check` on touched code files produced no whitespace errors; only line-ending warnings.
+
+### Loop 8: Full Boid Native-State Eviction
+
+STATUS: VERIFIED MASTER GRADE.
+
+Hardening evidence:
+
+- Re-read `Status_BOID_SENSORY_INPUT_PUMP.md`, `Rationale_BOID_SENSORY_INPUT_PUMP.md`, the original XML assignment, `AGENTS.md`, `Docs/Actual Domains of Project.txt`, and the relevant mandate files before editing.
+- Replaced the remaining persistent boid runtime `NativeArray` fields with `VaultBufferHandle<T>` fields for static obstacles, boid state, food-chain telemetry, leviathan path/node state, foveated LOD state, simulation frame constants, and threat-grid upload staging.
+- Refactored `NativeRingBuffer<T>` to store only a vault handle plus cursor metadata; inactive statistical swarm rings no longer hold a local persistent `NativeArray<T>` view.
+- Replaced the local persistent predator kill `NativeQueue<BoidKillSignal>` with vault-backed `BoidKillSignal` and count buffers. The single-threaded kill job writes contiguous fixed slots and the main thread drains by count.
+- Added `BufferID.SargassumKillSignals` and `BufferID.SargassumKillSignalCount` for the kill-job staging lane.
+- Debt scan: no local `NativeQueue`, no `Allocator.Persistent`, no `private NativeArray<`, no `new NativeArray`, no old native field names, no `GlobalSignals.Publish`, no `EventBus`, no managed delegates, no `void Update()`, no `string.Format`, no `Transform.position`, no `Allocator.Temp` in the boid/shader surface.
+- ARM64/Quest check: non-GPU vault/job structs added or touched by this pass use `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = ...)]` with `UnsafeUtility.SizeOf` validation gates.
+- Compile check: `dotnet build Hecton8.Core.csproj --no-restore` logged at `Docs/AgentLogs/Build_BOID_SENSORY_INPUT_PUMP_Polish7.txt` and succeeded. Only warning is unrelated duplicate source inclusion for `EcosystemPopulationBalancer.cs`; no diagnostics reference `SargassumMicroFaunaBoids.cs`, `H8Memory.cs`, `SargassumMicroFaunaBoids.compute`, or `BoidFishInstanced.shader`.
+- `git diff --check` on touched code files produced no whitespace errors; only line-ending warnings.
+
+### Loop 9: Signal Recency and Stale-Light Correction
+
+STATUS: VERIFIED MASTER GRADE.
+
+Hardening evidence:
+
+- Re-read `Status_BOID_SENSORY_INPUT_PUMP.md`, `Rationale_BOID_SENSORY_INPUT_PUMP.md`, and the original XML assignment before editing.
+- Fixed `SubmarineLightsChangedSignal` consumption to scan the newest capped snapshot window instead of the oldest window when the typed lane exceeds the local cap.
+- Fixed remove/clear/brownout behavior so stale signal-light intensity is cleared even when the player flashlight is currently on; player flashlight response now falls back to the player-origin path instead of reusing a stale submarine light endpoint.
+- Fixed acoustic ping ingestion to scan the newest capped snapshot window and changed the ping slot cursor to `uint` to prevent a long-session signed overflow from producing a negative ring slot.
+- Compile check: `dotnet build Hecton8.Core.csproj --no-restore` logged at `Docs/AgentLogs/Build_BOID_SENSORY_INPUT_PUMP_Polish8.txt` and succeeded with 0 warnings and 0 errors.
+
+### Loop 10: Shader NaN Vaccination
+
+STATUS: VERIFIED MASTER GRADE.
+
+Hardening evidence:
+
+- Rejected non-finite `_EncounterPredatorAUPBuffer` and `_PredatorAUPBuffer` payloads before `max`, `dot`, `rcp`, or `rsqrt` can see malformed slot data.
+- Hardened `ClosestPointOnSegment` with finite checks for sample/start/end, finite segment-length validation, finite projection validation, and `projection * rcp(max(segmentLengthSq, EPSILON))` instead of direct division.
+- Kept Metal/Mac thread-group compliance unchanged: `THREAD_GROUP_SIZE` remains 64 and all compute kernels remain under the 1024 thread-group limit.
+- Compile check: `dotnet build Hecton8.Core.csproj --no-restore` logged at `Docs/AgentLogs/Build_BOID_SENSORY_INPUT_PUMP_Polish9.txt` and succeeded with 0 warnings and 0 errors.

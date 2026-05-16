@@ -37,3 +37,39 @@ Cinematic Cheats used: No fluid solver, no Unity wind, no particle force fields.
 Exact Microseconds saved: Low-tier flora path saves an estimated 8-22 us/frame versus 16-slot vortex math. MarineSnow triangle turbulence saves 3-10 us/frame versus 3D noise in wake bursts. Boid global wake steering saves 4-14 us/frame versus CPU overlap/fanout queries. Blackbox write remains 1-3 us/frame. High/Ultra deliberately spend roughly 6-18 us/frame of saved GPU budget on visible curvature, shimmer, silt churn, and fauna scatter.
 
 Verification: XML prompt re-read from `Docs/Tasks/CURRENT_BATCH.md`, task count 18. Static scan for `distance(`, raw `normalize(`, Unity wind/force fields, and managed format strings over the wake shader/code slice returned no hits. Compute thread-group scan found only 64x1x1 or 1x1x1 groups, below Metal/Quest 1024 limits. `git diff --check` reported only existing line-ending warnings. `dotnet build .\Hecton8.Core.csproj -v:minimal -clp:ErrorsOnly` succeeded with 0 warnings and 0 errors.
+
+## 2026-05-16 - Wake Trail Data Eviction and Latest Compile Wall
+
+What was wrong: The wake trail stamp queue still used a private persistent `NativeArray<WakeTrailStampCommand>` in `FloraInteractionManager`. After removing that debt, the shared project compile state changed again because unrelated agents landed non-wake dependency breaks.
+
+What was done: Converted `WakeTrailStampCommand` to explicit `Pack = 1` layout, added `BufferID.WakeTrailStampCommands`, and replaced the local persistent queue with a `VaultBufferHandle<WakeTrailStampCommand>` resolved through GlobalDataVault under `SystemID.Vfx`. Queue writes and GPU upload now use DataVault views, not local owned native storage.
+
+Cinematic Cheats used: Four fixed wake-trail stamp commands remain the cap. The trail texture stays a cheap visual fake; no physical fluid path and no Unity wind/force components were introduced.
+
+Exact Microseconds saved: 0-2 us/frame direct from removing private queue ownership. The meaningful win is memory accounting, ARM64/Quest explicit packing, and no hidden local wake data owner. Prior visual path estimates remain: 8-22 us/frame saved on low-tier flora, 3-10 us/frame saved on silt turbulence, 4-14 us/frame saved on boid wake steering versus CPU fanout.
+
+Verification: `rg -n "_queuedWakeTrailStampCommands|new NativeArray<WakeTrailStampCommand>|StructLayout\(LayoutKind\.Sequential, Pack = 4, Size = 32\).*WakeTrail" Assets/_Project/Scripts/World/FloraInteractionManager.cs` returned no hits. `git diff --check` on wake trail/core memory files reported only line-ending warnings. Latest `dotnet build .\Hecton8.Core.csproj -v:minimal -clp:ErrorsOnly` exits 1 on non-wake owners: `ContentRuntimeServices`, `SargassumMicroFaunaBoids.cs` sensory fields, `LockstepStateValidator`, `EcosystemDirector`, and `SubmarineFluidDynamics`; sampled output has no wake file error.
+
+## 2026-05-16 - Final Validation Reconciliation
+
+What was wrong: The status and log still reported the earlier dependency wall, but the live project state now compiles. A first XML extraction command also used an exact opening-tag match and false-negatived because the active tag includes role/chat attributes.
+
+What was done: Re-read the live `<AGENT_PROMPT id="INTERACTIVE_WAKE_VFX" ...>` block with an attribute-tolerant regex, reran `dotnet build .\Hecton8.Core.csproj -v:minimal -clp:ErrorsOnly`, and updated the wake status/rationale to the current verified state. No code patch was applied because the current compile wall no longer exists.
+
+Cinematic Cheats used: Existing wake solution remains mathematical displacement, not fluid truth: 4-slot stress cap on toaster mode, 2 nearest radial shader pushes on low tier, 16-slot global wake buffer on high tier, vortex curvature/normal shimmer/marine-snow triangle turbulence/boid scatter for high and ultra.
+
+Exact Microseconds saved: 0 us/frame from this reconciliation pass. Verified retained estimates: 8-22 us/frame saved on low-tier flora by avoiding 16-slot vortex math, 3-10 us/frame saved by triangle turbulence versus 3D noise for wake silt, and 4-14 us/frame saved by GPU/global-buffer boid steering versus CPU overlap fanout.
+
+Verification: `dotnet build .\Hecton8.Core.csproj -v:minimal -clp:ErrorsOnly` succeeded with `0 Warning(s)` and `0 Error(s)` in 00:00:02.16. Wake-domain scan over `Assets/_Project/Scripts/VFX/Wakes` found no `Update`, `LateUpdate`, `FixedUpdate`, managed format strings, local `new NativeArray`, sequential `Pack = 4` wake structs, WindZone, ForceField, or particle force-over-lifetime use. Shader/compute scan found no `distance(` or raw `normalize(` in the wake slice. Compute group macros are 64 threads or `1x1x1`, under the Metal/Quest 1024 limit. `git diff --check` reports only LF/CRLF conversion warnings in existing modified core files.
+
+## 2026-05-16 - Wake Hot-Path Fence and Compile-Wall Closure
+
+What was wrong: The wake decay path required another job-fence audit after user-requested inquisition. The shared project also drifted through transient non-wake compile walls: `SubmarineFluidDynamics` DataVault wrapper binding and `LaserCutter` NativeQueue import state.
+
+What was done: Kept wake decay out of `Tick` blocking: `SlowTick` schedules the Burst decay job, `Tick` only consumes already-complete results or skips one frame, `LateFrameTick` handles the swap-window completion path, and teardown/origin shift force only when lifecycle safety requires it. Moved `SubmarineFluidDynamics.VaultNativeBuffer<T>` before first use as a mechanical cross-domain compile repair. No persistent Core project include change was kept.
+
+Cinematic Cheats used: No fluid solver, no Unity wind, no object force fields. Low tier remains 4 published wake slots and two nearest radial shader pushes. High/Ultra keep vortex curvature, normal shimmer, triangle silt turbulence, and wake-driven boid scatter.
+
+Exact Microseconds saved: Estimated 10-80 us main-thread stall risk avoided by removing same-frame `Schedule().Complete()` from the wake tick path. Steady-state 16-slot wake decay remains estimated 0-3 us. Cross-domain compile repair saves 0 us/frame; it only restores build validation.
+
+Verification: `rg -n "Schedule\([^\n]*\)\.Complete\(|\.Complete\(\)" Assets/_Project/Scripts/VFX/Wakes Assets/_Project/Scripts/World/FloraInteractionManager.cs` returned no hits. Wake-domain, transport, shader, and Metal/Quest thread-group scans passed. `dotnet build .\Hecton8.Core.csproj -v:minimal -clp:ErrorsOnly` succeeded with `0 Warning(s)` and `0 Error(s)` in 00:00:01.63. `git diff --check` on the wake/compile-wall touched files reported only LF/CRLF conversion warnings.

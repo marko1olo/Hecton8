@@ -12,6 +12,7 @@ using UnityEngine;
 namespace Hecton8.Animation.Locomotion
 {
     [DisallowMultipleComponent]
+    // Registers before ladder interaction adapters can request climb setup during player interaction bootstrap.
     [DefaultExecutionOrder(-9921)]
     internal sealed class ProceduralLadderClimbRuntime : MonoBehaviour, IFastTickable, ILateFrameTickable
     {
@@ -91,8 +92,7 @@ namespace Hecton8.Animation.Locomotion
             if (!Application.isPlaying)
                 return null;
 
-            GameObject runtimeRoot = new GameObject("[ProceduralLadderClimbRuntime]"); // COLD ALLOC: one registry-owned animation locomotion runtime root.
-            DontDestroyOnLoad(runtimeRoot);
+            GameObject runtimeRoot = new GameObject("[ProceduralLadderClimbRuntime]"); // COLD ALLOC: GameObject[1] - scene-local animation locomotion runtime root - owner: ProceduralLadderClimbRuntime
             return runtimeRoot.AddComponent<ProceduralLadderClimbRuntime>();
         }
 
@@ -163,7 +163,7 @@ namespace Hecton8.Animation.Locomotion
             _pendingGripMask |= gripMask;
         }
 
-        private void Awake()
+        private void OnEnable()
         {
             ProceduralLadderClimbRuntime registered = GlobalRegistry.ProceduralLadderClimbRuntime;
             if (registered != null && !ReferenceEquals(registered, this))
@@ -172,14 +172,7 @@ namespace Hecton8.Animation.Locomotion
                 return;
             }
 
-            GlobalRegistry.RegisterProceduralLadderClimbRuntime(this);
-            CacheVaultDependency();
-            EnsureVaultBuffers();
-        }
-
-        private void OnEnable()
-        {
-            if (GlobalRegistry.ProceduralLadderClimbRuntime == null)
+            if (registered == null)
                 GlobalRegistry.RegisterProceduralLadderClimbRuntime(this);
 
             CacheVaultDependency();
@@ -191,6 +184,8 @@ namespace Hecton8.Animation.Locomotion
             StopClimb(false, false);
             CompleteOutstandingJob();
             UnregisterTickables();
+            ClearVaultHandles();
+            GlobalRegistry.ClearProceduralLadderClimbRuntime(this);
         }
 
         private void OnDestroy()
@@ -216,7 +211,6 @@ namespace Hecton8.Animation.Locomotion
             _climbProgressMeters = math.clamp(_climbProgressMeters + progressDelta, 0f, _climbHeightMeters);
             float appliedProgressDelta = _climbProgressMeters - previousProgress;
             DrainStamina(appliedProgressDelta);
-            PublishClimbPhysiology(math.abs(appliedProgressDelta), safeDeltaTime);
 
             if ((_stamina01 <= 0.0001f && math.abs(appliedProgressDelta) > 0.0001f) ||
                 ShouldDropFromLookDownGripRelease())
@@ -224,6 +218,8 @@ namespace Hecton8.Animation.Locomotion
                 _pendingSlip = true;
                 _pendingFinish = true;
             }
+
+            PublishClimbPhysiology(math.abs(appliedProgressDelta), safeDeltaTime);
 
             if ((_climbDirection > 0f && _climbProgressMeters >= _climbHeightMeters - 0.0001f) ||
                 (_climbDirection < 0f && _climbProgressMeters <= 0.0001f))
@@ -247,7 +243,7 @@ namespace Hecton8.Animation.Locomotion
 
             _solveHandle.Complete();
             _solveScheduled = false;
-            if (!TryResolveOutput(out NativeArray<LadderClimbIkOutput> outputs))
+            if (!TryResolveOutput(out var outputs))
             {
                 StopClimb(false, true);
                 return;
@@ -285,7 +281,7 @@ namespace Hecton8.Animation.Locomotion
 
             if (!CacheVaultDependency() ||
                 !EnsureVaultBuffers() ||
-                !TryResolveLadderAups(out NativeArray<AbsoluteUniversePosition> ladderAups))
+                !TryResolveLadderAups(out var ladderAups))
             {
                 return false;
             }
@@ -487,11 +483,11 @@ namespace Hecton8.Animation.Locomotion
         {
             if (!_active ||
                 !TryResolveVaultViews(
-                    out NativeArray<LadderClimbIkInput> inputs,
-                    out NativeArray<LadderClimbIkOutput> outputs,
-                    out NativeArray<AbsoluteUniversePosition> ladderAups,
-                    out NativeArray<LadderClimbTelemetryEntry> telemetryRing,
-                    out NativeArray<int> telemetryCursor))
+                    out var inputs,
+                    out var ladderOutputs,
+                    out var ladderAups,
+                    out var telemetryRing,
+                    out var telemetryCursor))
             {
                 return;
             }
@@ -530,7 +526,7 @@ namespace Hecton8.Animation.Locomotion
             {
                 Inputs = inputs,
                 LadderAups = ladderAups,
-                Outputs = outputs,
+                Outputs = ladderOutputs,
                 TelemetryRing = telemetryRing,
                 TelemetryCursor = telemetryCursor,
                 CommittedOriginOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble
@@ -545,13 +541,16 @@ namespace Hecton8.Animation.Locomotion
         {
             if (_vrGripRequired)
             {
-                bool hasGrip = _pendingGripMask != 0;
+                byte gripMask = _pendingGripMask;
+                bool hasGrip = gripMask != 0;
                 float pull = hasGrip ? _pendingGripPullMeters : 0f;
+                _lastResolvedGripMask = gripMask;
                 _pendingGripPullMeters = 0f;
                 _pendingGripMask = 0;
                 return math.clamp(pull, -0.35f, 0.35f);
             }
 
+            _lastResolvedGripMask = (byte)(GripMaskLeft | GripMaskRight);
             float speed = SanitizePositive(pcSlideSpeedMetersPerSecond, DefaultPcSlideSpeedMetersPerSecond);
             return _climbDirection * speed * deltaTime;
         }
@@ -573,11 +572,126 @@ namespace Hecton8.Animation.Locomotion
             if (_movementForceSink != null)
             {
                 _movementForceSink.QueueExternalVelocityChange(velocityDelta);
+                if (_lowTierCameraSlide)
+                    ApplyHeadStabilization(deltaTime);
+                return;
+            }
+
+            if (_lowTierCameraSlide)
+            {
+                ApplyLowTierCameraSlide(deltaTime);
                 return;
             }
 
             if (cameraSlideTarget != null)
                 cameraSlideTarget.Translate(ToVector3(delta), Space.World);
+        }
+
+        private void ApplyLowTierCameraSlide(float deltaTime)
+        {
+            if (cameraSlideTarget == null)
+                return;
+
+            float progress01 = _climbHeightMeters > 0.0001f
+                ? math.saturate(_climbProgressMeters * math.rcp(_climbHeightMeters))
+                : 0f;
+            cameraSlideTarget.position = Vector3.Lerp(_cameraSlideEntryPosition, _cameraSlideExitPosition, progress01);
+            ApplyHeadStabilization(deltaTime);
+        }
+
+        private void ApplyHeadStabilization(float deltaTime)
+        {
+            if (_vrGripRequired || cameraSlideTarget == null)
+                return;
+
+            if (!_headStabilizationInitialized)
+            {
+                _headStabilizedRotation = cameraSlideTarget.rotation;
+                _headStabilizationInitialized = true;
+            }
+
+            float blend = math.saturate(deltaTime * HeadStabilizationSharpness);
+            _headStabilizedRotation = CinematicMath.FastNlerp(
+                _headStabilizedRotation,
+                ToVector3(_ladderForward),
+                blend,
+                ToVector3(_ladderUp));
+            cameraSlideTarget.rotation = _headStabilizedRotation;
+        }
+
+        private void PublishClimbPhysiology(float climbedMeters, float deltaTime)
+        {
+            float speed = climbedMeters * math.rcp(math.max(deltaTime, 0.0001f));
+            float safeSpeed = math.isfinite(speed) ? speed : 0f;
+            float stress01 = math.saturate(safeSpeed * math.rcp(FastClimbStressSpeedMetersPerSecond));
+            byte flags = PlayerStateSignal.FlagClimbing;
+            if (_vrGripRequired)
+                flags |= PlayerStateSignal.FlagVrGrip;
+            if (_pendingSlip)
+                flags |= PlayerStateSignal.FlagLadderSlip;
+
+            uint frame = unchecked((uint)Time.frameCount);
+            float oxygenDrainScale = 1f + stress01 * ClimbStressOxygenDrainBonus;
+            PhysiologyStateSignal physiology = new PhysiologyStateSignal
+            {
+                PlayerStress01 = stress01,
+                O2DrainMultiplier = oxygenDrainScale,
+                Recovery01 = 0f,
+                Frame = frame,
+                Cause = PlayerStateSignal.StateClimbing,
+                Flags = flags
+            };
+            GlobalSignals.Publish(in physiology);
+
+            PlayerStressSignal stress = new PlayerStressSignal
+            {
+                Stress01 = stress01,
+                OxygenDrainScale = oxygenDrainScale,
+                AggressionScale = 1f,
+                Frame = frame,
+                Cause = PlayerStateSignal.StateClimbing,
+                Flags = flags
+            };
+            GlobalSignals.Publish(in stress);
+        }
+
+        private bool ShouldDropFromLookDownGripRelease()
+        {
+            if (!_vrGripRequired || _lastResolvedGripMask != 0)
+                return false;
+
+            if (!TryResolveLookForward(out float3 lookForward))
+                return false;
+
+            float3 forward = NormalizeSafe(lookForward, _ladderForward);
+            return math.dot(forward, -_ladderUp) >= LookDownGripReleaseDotThreshold;
+        }
+
+        private bool TryResolveLookForward(out float3 lookForward)
+        {
+            IPlayerRuntimeContext playerContext = _playerContext;
+            if (playerContext != null &&
+                playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                IsFinite(snapshot.Forward))
+            {
+                lookForward = snapshot.Forward;
+                return true;
+            }
+
+            if (cameraSlideTarget != null)
+            {
+                lookForward = ToFloat3(cameraSlideTarget.forward);
+                return IsFinite(lookForward);
+            }
+
+            if (_playerRoot != null)
+            {
+                lookForward = ToFloat3(_playerRoot.forward);
+                return IsFinite(lookForward);
+            }
+
+            lookForward = default;
+            return false;
         }
 
         private void ApplyIkTargets(in LadderClimbIkOutput output)
@@ -620,7 +734,7 @@ namespace Hecton8.Animation.Locomotion
 
         private void PublishClimbState(bool slip)
         {
-            if (!TryResolveLadderAups(out NativeArray<AbsoluteUniversePosition> ladderAups))
+            if (!TryResolveLadderAups(out var ladderAups))
                 return;
 
             byte flags = PlayerStateSignal.FlagAupShiftSafe;
@@ -669,8 +783,11 @@ namespace Hecton8.Animation.Locomotion
             _entryPoint = null;
             _exitPoint = null;
             _movementForceSink = null;
+            _playerContext = null;
             _pendingGripPullMeters = 0f;
             _pendingGripMask = 0;
+            _lastResolvedGripMask = 0;
+            _headStabilizationInitialized = false;
             UnregisterTickables();
         }
 
@@ -705,6 +822,22 @@ namespace Hecton8.Animation.Locomotion
             _ladderForward = NormalizeSafe(forward, ResolvePerpendicular(_ladderUp));
         }
 
+        private void InitializePresentationAnchors(Vector3 entryPosition, Vector3 exitPosition)
+        {
+            _cameraSlideEntryPosition = entryPosition;
+            _cameraSlideExitPosition = exitPosition;
+            if (cameraSlideTarget != null)
+            {
+                _headStabilizedRotation = cameraSlideTarget.rotation;
+                _headStabilizationInitialized = true;
+            }
+            else
+            {
+                _headStabilizedRotation = Quaternion.identity;
+                _headStabilizationInitialized = false;
+            }
+        }
+
         private void BuildShoulders(
             float3 playerRoot,
             out float3 leftShoulder,
@@ -722,7 +855,7 @@ namespace Hecton8.Animation.Locomotion
 
         private void DumpBlackBox()
         {
-            if (!TryResolveTelemetryRing(out NativeArray<LadderClimbTelemetryEntry> telemetryRing))
+            if (!TryResolveTelemetryRing(out var telemetryRing))
                 return;
 
             string directory = Path.Combine(ResolveProjectRoot(), "Docs", "AgentLogs");
@@ -779,6 +912,11 @@ namespace Hecton8.Animation.Locomotion
         private static float SanitizePositive(float value, float fallback)
         {
             return value > 0.0001f && math.isfinite(value) ? value : fallback;
+        }
+
+        private static float SanitizeFinite(float value, float fallback)
+        {
+            return IsFinite(value) ? value : fallback;
         }
 
         private static bool IsFinite(float value)

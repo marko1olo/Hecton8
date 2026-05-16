@@ -233,7 +233,8 @@ namespace Hecton8.AI.Pathfinding
             if ((portal.Flags & PathFunnelConstants.PortalFlagNoRadiusShrink) != 0)
                 return;
 
-            float radius = math.max(0f, AgentRadiusMeters);
+            float radius = math.select(0f, AgentRadiusMeters, math.isfinite(AgentRadiusMeters));
+            radius = math.max(0f, radius);
             if (radius <= PathFunnelConstants.Epsilon)
                 return;
 
@@ -381,9 +382,10 @@ namespace Hecton8.AI.Pathfinding
             }
 
             const double cellSize = 5000.0d;
-            long gridX = (long)math.floor(absolute.x / cellSize);
-            long gridY = (long)math.floor(absolute.y / cellSize);
-            long gridZ = (long)math.floor(absolute.z / cellSize);
+            const double inverseCellSize = 0.0002d;
+            long gridX = (long)math.floor(absolute.x * inverseCellSize);
+            long gridY = (long)math.floor(absolute.y * inverseCellSize);
+            long gridZ = (long)math.floor(absolute.z * inverseCellSize);
             return new AbsoluteUniversePositionBlit
             {
                 GridX = gridX,

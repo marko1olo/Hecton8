@@ -56,3 +56,39 @@ Exact Microseconds saved: 0 us measured. CPU cost is 0.0 us/frame. GPU cost is a
 Build/validation: Shader diff passes `git diff --check` except LF/CRLF warnings. Forbidden-pattern scan still finds no `Update`, `string.Format`, `EventBus`, managed delegate lane, Unity object search, singleton `.Instance`, `GrabPass`, `RenderGraphUtils`, `AddBlitPass`, compute thread groups, group barriers, or DX-only `tex2D` in touched visor/refraction files.
 
 Post-silt build retry: `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:ContinuousIntegrationBuild=false -p:EnableSourceControlManagerQueries=false -v:minimal -clp:Summary` failed before C# compilation because `Temp/obj/Hecton8.Core/Hecton8.Core.sourcelink.json` was locked by another process. Unknown concurrent build processes were not killed.
+
+## 2026-05-16 - Shader Uniform NaN Hardening
+
+What was wrong: The visor Snell/refraction shaders already clamped final UV perturbation, but several upstream uniform gates still trusted raw `saturate()`, and the shared Snell helper accepted raw `nDotV`/`strength`. A non-finite wetness, stress, rain, lightning, visual-overkill, dust, thermal, or Snell-strength value could contaminate shader math before the clamp.
+
+What was done: Replaced the refraction-critical uniform gates in `Hecton_VisorFluidDistortion.shader` with `HectonFinite01`, including salt growth, suspended silt, wetness/stress/intensity, rain, lightning, dust reveal, ambient dust tint, and thermal culling. Replaced the mesh visor refraction controls in `SuitVisor.shader` with `HectonFinite01` and explicit `isfinite` for `_HectonVisorSnellStrength`. Hardened `Hecton_SnellRefractionCore.hlsl` so `HectonSnellBend01` finite-guards `nDotV` and `HectonSnellUvOffset` zeros non-finite `strength`.
+
+Cinematic Cheats used: No new simulation. The low path remains chromatic-only; High/Ultra keep screen-space salt and silt fakes, now finite-gated before they affect `_CameraOpaqueTexture` sampling.
+
+Exact Microseconds saved: 0 us certified. CPU cost remains 0.0 us/frame. GPU cost is added finite-check ALU, exact us pending profiler; the value is stability, not measured speed.
+
+Build/validation: Targeted scan no longer finds raw high-risk refraction uniform gates. Shared Snell core scan confirms `HectonFinite01(nDotV)` and non-finite `strength` fallback. Forbidden-pattern scan still finds no `NativeArray`, `EventBus`, managed delegate lane, `Update`, `string.Format`, Unity object search, singleton `.Instance`, `GrabPass`, `RenderGraphUtils`, `AddBlitPass`, compute thread groups, group barriers, or DX-only `tex2D` in touched visor/refraction files. `git diff --check` reports no whitespace errors, only LF/CRLF warnings.
+
+## 2026-05-16 - Dotnet Build Recovered
+
+What was wrong: Previous verification was blocked first by unrelated compile debt and then by a shared SourceLink file lock. That left the refraction work at static-audit-only status.
+
+What was done: Re-ran `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:ContinuousIntegrationBuild=false -p:EnableSourceControlManagerQueries=false -v:minimal -clp:Summary` after the shader hardening pass.
+
+Cinematic Cheats used: No new runtime cheat in this step; this was validation only. The implemented visual cheats remain `_CameraOpaqueTexture` Snell approximation, low-tier chromatic fallback, depth/dirt gates, salt-crystal ALU growth, and suspended silt shimmer.
+
+Exact Microseconds saved: 0 us measured. Build verification does not provide frame timing. Unity profiler/Frame Debugger/GCMonitor remain required for exact CPU/GPU microseconds.
+
+Build/validation: Build succeeded: `Hecton8.Core -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Core.dll`, 0 warnings, 0 errors, elapsed 00:01:20.37. Runtime visual verification, RenderGraph execution ordering in Unity, platform shader compilation, and profiler numbers remain pending.
+
+## 2026-05-16 - Common Snell Boundary Hardening
+
+What was wrong: The shared Snell helper still let non-finite LUT, depth, softness, and clamp-bound values reach `max`, `smoothstep`, or `min` before final UV clamp. Water density sanitization also discarded invalid shader/global fluid density without marking the blackbox reason flag.
+
+What was done: Hardened `Hecton_SnellRefractionCore.hlsl` so raw IOR values fall back to stable air/water/glass defaults, depth and softness values are finite before depth gating, and clamp bounds collapse to zero when invalid. Updated `HectonVisorFluidDistortionFeature.cs` so invalid `_HectonWaterDensitySignal` or `GlobalRegistry.FluidSimulation.WaterDensityKilogramsPerCubicMeter` sets `BlackBoxFlagNonFiniteInput` before the safe fallback.
+
+Cinematic Cheats used: No new physical simulation. This protects the existing cheap screen-space Snell, chromatic fallback, salt crystal fake, and suspended silt fake.
+
+Exact Microseconds saved: 0 us certified. CPU adds two finite checks when the player camera is evaluated; GPU adds small helper ALU. Exact CPU/GPU us pending Unity profiler.
+
+Build/validation: Stale-pattern scan found no old raw Snell LUT/depth/clamp path. Forbidden-pattern scan still finds no `NativeArray`, `EventBus`, managed delegate lane, `Update`, `string.Format`, Unity object search, singleton `.Instance`, `GrabPass`, `RenderGraphUtils`, `AddBlitPass`, compute thread groups, group barriers, or DX-only `tex2D` in touched visor/refraction files. `git diff --check` reports no whitespace errors, only LF/CRLF warnings. Latest `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:ContinuousIntegrationBuild=false -p:EnableSourceControlManagerQueries=false -v:minimal -clp:Summary` is blocked outside this domain with 22 errors in `SubmarineFluidDynamics.cs(614-635)`: `VaultNativeBuffer<>` type not found.

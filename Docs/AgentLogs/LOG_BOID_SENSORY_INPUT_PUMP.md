@@ -107,3 +107,90 @@ Validation:
 - Build remains blocked by unrelated `LockstepStateValidator`, `EcosystemDirector`, and `SubmarineFluidDynamics` errors.
 - No diagnostics reference `SargassumMicroFaunaBoids.cs`, `H8Memory.cs`, `SargassumMicroFaunaBoids.compute`, or `BoidFishInstanced.shader`.
 - Static scans: no `_boidSensoryThreatsNative`, no `_boidSensoryBlackBox` local data field, no `GlobalSignals.Publish`, no `EventBus`, no managed delegates, no `void Update()`, no `string.Format`, no `Transform.position` in the sensory surface.
+
+## 2026-05-16 BOID_SENSORY_INPUT_PUMP Full Native-State Eviction
+
+What was wrong:
+
+- The sensory pump had been cleaned, but the surrounding active boid runtime still cached vault-backed state as persistent local `NativeArray` fields.
+- Inactive statistical swarm rings used a nested local `NativeArray<T>` view.
+- Predator bite staging still used a local persistent `NativeQueue<BoidKillSignal>`, even though the bite job is single-threaded and bounded.
+
+What was done:
+
+- Replaced persistent boid runtime `NativeArray` fields with `VaultBufferHandle<T>` handles for static obstacles, boid state, food-chain telemetry, leviathan path/node state, foveated LOD state, simulation frame constants, and threat-grid upload staging.
+- Refactored `NativeRingBuffer<T>` to hold only a vault handle and cursor/count metadata.
+- Replaced predator bite queue staging with vault-backed fixed `BoidKillSignal` slots plus a vault-backed count buffer.
+- Added `BufferID.SargassumKillSignals` and `BufferID.SargassumKillSignalCount`.
+- Set non-GPU vault/job structs touched by this pass to `[StructLayout(LayoutKind.Sequential, Pack = 1, Size = ...)]` and added `UnsafeUtility.SizeOf` layout gates.
+
+Cinematic Cheats used:
+
+- No new simulation truth was added. The visual stack remains low-tier endpoint sphere, high-tier capsule SDF, and triangle-wave beam pulse.
+- Predator bite staging is now fixed-slot data, not a dynamic queue.
+
+Exact Microseconds saved:
+
+- Removed one local persistent native queue from the boid runtime: 0 steady-state GC; estimated 2-4 us saved during predator bite bursts from array/count drain versus queue enqueue/dequeue.
+- Removed persistent local `NativeArray` ownership across the boid runtime: fixed vault memory unchanged, local owner state removed.
+- Added vault handle resolution across active paths: estimated 3-6 us CPU on active boid frames, pending Unity Profiler proof.
+
+Validation:
+
+- `dotnet build Hecton8.Core.csproj --no-restore` logged to `Build_BOID_SENSORY_INPUT_PUMP_Polish7.txt` and succeeded.
+- Remaining compiler warning: duplicate source inclusion for `EcosystemPopulationBalancer.cs`, unrelated to this task surface.
+- No diagnostics reference `SargassumMicroFaunaBoids.cs`, `H8Memory.cs`, `SargassumMicroFaunaBoids.compute`, or `BoidFishInstanced.shader`.
+- Static scans: no local `NativeQueue`, no `Allocator.Persistent`, no `private NativeArray<`, no `new NativeArray`, no old native field names, no `GlobalSignals.Publish`, no `EventBus`, no managed delegates, no `void Update()`, no `string.Format`, no `Transform.position`, no `Allocator.Temp` in the boid/shader surface.
+
+## 2026-05-16 BOID_SENSORY_INPUT_PUMP Signal Recency and Stale-Light Correction
+
+What was wrong:
+
+- The boid sensory pump capped typed light and acoustic snapshot reads correctly, but it read the oldest entries when the lane held more events than the local cap.
+- A submarine light remove/clear/brownout signal could leave a stale signal-light endpoint alive if the player flashlight was still on.
+- The acoustic ping slot cursor used signed integer modulo, leaving a long-session overflow path to a negative slot.
+
+What was done:
+
+- Changed `SubmarineLightsChangedSignal` and `AcousticPingSignal` loops to scan the newest capped snapshot window.
+- Cleared cached signal-light intensity on remove/clear/brownout unconditionally; player flashlight stimulus now uses the player-origin fallback instead of stale signal-light origin.
+- Changed the acoustic ping write cursor to `uint` and kept the fixed three-slot ring.
+
+Cinematic Cheats used:
+
+- No real acoustic propagation or light cone physics were added. The low-tier endpoint sphere, full-tier capsule SDF, and triangle-wave fish flash remain the sensory fake stack.
+
+Exact Microseconds saved:
+
+- Newest-window indexing adds 0 us/frame versus the old bounded loop; it changes start index only.
+- Removing stale signal-light intensity avoids false beam avoidance and visual flash; no measurable microsecond saving claimed.
+- Unsigned cursor guard removes a long-session overflow fault path with 0 us/frame cost.
+
+Validation:
+
+- `dotnet build Hecton8.Core.csproj --no-restore` logged to `Build_BOID_SENSORY_INPUT_PUMP_Polish8.txt` and succeeded with 0 warnings and 0 errors.
+
+## 2026-05-16 BOID_SENSORY_INPUT_PUMP Shader NaN Vaccination
+
+What was wrong:
+
+- The CPU threat writer clamped radii, but malformed GPU threat slots could still reach shader `max`, `dot`, direct segment division, and capsule closest-point math.
+
+What was done:
+
+- Added finite payload rejection before encounter and sensory threat radius math.
+- Hardened `ClosestPointOnSegment` for non-finite sample/start/end, segment length, and projection.
+- Replaced direct segment projection division with `projection * rcp(max(segmentLengthSq, EPSILON))`.
+
+Cinematic Cheats used:
+
+- Preserved the same scalability split: low-tier endpoint sphere, high-tier capsule SDF. No real raymarching or physical acoustic propagation added.
+
+Exact Microseconds saved:
+
+- No speedup claimed. This pass buys stability.
+- Added finite checks are estimated under 1 us/frame on i3/MX350 because the loop remains capped at 16 threats and capsule math only runs for the flashlight slot on full tier.
+
+Validation:
+
+- `dotnet build Hecton8.Core.csproj --no-restore` logged to `Build_BOID_SENSORY_INPUT_PUMP_Polish9.txt` and succeeded with 0 warnings and 0 errors.

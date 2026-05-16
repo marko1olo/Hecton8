@@ -152,7 +152,7 @@ namespace Hecton8.Core
         private const float SequentialRecoveryShi = 0.30f;
         private const long PersistentNativeBudgetBytes = 8192L;
         private const string OwnerName = nameof(HomeostasisBrain);
-        private const string BlackBoxDumpFileName = "Dump_AGENT_HOMEOSTASIS_BRAIN.bin";
+        private const string BlackBoxDumpFileName = "Dump_HARDWARE_THROTTLING_DIRECTOR.bin";
         private const uint ReasonHash = 0x484F4D45u; // HOME
 
         private const ulong Level1Mask =
@@ -161,16 +161,16 @@ namespace Hecton8.Core
 
         private const ulong Level2Mask =
             Level1Mask |
-            (ulong)(SystemBit.DistantFaunaSteering |
-                    SystemBit.ProceduralSway |
-                    SystemBit.HighQualityIK |
-                    SystemBit.SSR |
-                    SystemBit.VolumetricFogHighRes |
-                    SystemBit.FoveatedSimulationTier3);
+            (ulong)(SystemBit.ProceduralSway |
+                    SystemBit.HighQualityIK);
 
         private const ulong Level3Mask =
             Level2Mask |
-            (ulong)(SystemBit.BoidBrain |
+            (ulong)(SystemBit.DistantFaunaSteering |
+                    SystemBit.SSR |
+                    SystemBit.VolumetricFogHighRes |
+                    SystemBit.FoveatedSimulationTier3 |
+                    SystemBit.BoidBrain |
                     SystemBit.NonCriticalVfx |
                     SystemBit.AiOneHz |
                     SystemBit.TimeDilation09);
@@ -866,13 +866,18 @@ namespace Hecton8.Core
                 return _currentKillSwitchMask;
 
             _recoveryStepFrameCounter = 0;
-            ulong bit = ResolveRestorationBit(_restorationIndex);
-            _restorationIndex++;
-            if (bit == 0UL)
-                return 0UL;
+            while (true)
+            {
+                ulong bit = ResolveRestorationBit(_restorationIndex);
+                _restorationIndex++;
+                if (bit == 0UL)
+                    return 0UL;
+                if ((_currentKillSwitchMask & bit) == 0UL)
+                    continue;
 
-            targetMask = _currentKillSwitchMask & ~bit;
-            return targetMask;
+                targetMask = _currentKillSwitchMask & ~bit;
+                return targetMask;
+            }
         }
 
         private static ulong ResolveRestorationBit(int index)
@@ -975,7 +980,7 @@ namespace Hecton8.Core
                     : (_currentPressureLevel > 0 ? SystemHealthIndexSignal.StateWarning : SystemHealthIndexSignal.StateStable),
                 Flags = _currentPressureLevel >= 3 ? SystemHealthIndexSignal.FlagAdrenaline : (byte)0
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<SystemHealthIndexSignal>.Push(in signal);
         }
 
         private static void WriteBlackBox(

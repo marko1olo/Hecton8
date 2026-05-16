@@ -1,9 +1,11 @@
 using System;
 using System.IO;
+using System.Threading;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
+using UnityEngine.Networking;
 
 namespace Hecton8.Core
 {
@@ -19,13 +21,13 @@ namespace Hecton8.Core
         private const float DefaultMaxTurbidity = 2.5f;
         private const float DefaultStrength = 1f;
         private const int StreamingReadChunkBytes = 128 * 1024;
+        private const int StreamingUriTimeoutSeconds = 30;
         private const string MatrixProjectRelativePath = "Data/Visuals/Water_Extinction_Matrix.bin";
         private const string MatrixStreamingRelativePath = "Data/Visuals/Water_Extinction_Matrix.bin";
+        private const string MatrixCacheDirectoryName = "Hecton8/WaterExtinction";
+        private const string MatrixFileName = "Water_Extinction_Matrix.bin";
 
         private static readonly int _ExtinctionLutId = Shader.PropertyToID("_ExtinctionLUT");
-        private static readonly int _ExtinctionLutParamsId = Shader.PropertyToID("_ExtinctionLUTParams");
-        private static readonly int _ExtinctionLutRuntimeId = Shader.PropertyToID("_ExtinctionLUTRuntime");
-        private static readonly int _ExtinctionLutWeatherParamsId = Shader.PropertyToID("_ExtinctionLUTWeatherParams");
 
         private static Texture2D _extinctionTexture;
         private static byte[] _streamScratch;
@@ -74,11 +76,10 @@ namespace Hecton8.Core
                 return;
 
             Shader.SetGlobalTexture(_ExtinctionLutId, _extinctionTexture);
-            Shader.SetGlobalVector(
-                _ExtinctionLutParamsId,
+            HectonShaderGlobalDataVaultBridge.PublishWaterExtinctionParams(
                 new Vector4(DefaultMaxDepthMeters, DefaultMaxTurbidity, DefaultStrength, 1f));
-            Shader.SetGlobalVector(_ExtinctionLutRuntimeId, new Vector4(0f, 1f, 1f, 1f));
-            Shader.SetGlobalVector(_ExtinctionLutWeatherParamsId, Vector4.zero);
+            HectonShaderGlobalDataVaultBridge.PublishWaterExtinctionRuntime(new Vector4(0f, 1f, 1f, 1f));
+            HectonShaderGlobalDataVaultBridge.PublishWaterExtinctionWeather(Vector4.zero);
 
             if (!supportsRgba16)
                 LogRgbaHalfUnsupported();
@@ -161,9 +162,16 @@ namespace Hecton8.Core
 
         private static string ResolveMatrixPath()
         {
-            string streamingPath = Path.Combine(Application.streamingAssetsPath, MatrixStreamingRelativePath);
-            if (IsFilesystemPath(streamingPath) && File.Exists(streamingPath))
-                return streamingPath;
+            string streamingLocation = BuildStreamingAssetLocation();
+            if (IsFilesystemPath(streamingLocation))
+            {
+                if (File.Exists(streamingLocation))
+                    return streamingLocation;
+            }
+            else if (TryStageStreamingUriToCache(streamingLocation, out string cachedStreamingPath))
+            {
+                return cachedStreamingPath;
+            }
 
             string persistentPath = Path.Combine(Application.persistentDataPath, MatrixStreamingRelativePath);
             if (File.Exists(persistentPath))
@@ -171,6 +179,83 @@ namespace Hecton8.Core
 
             string projectPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", MatrixProjectRelativePath));
             return File.Exists(projectPath) ? projectPath : null;
+        }
+
+        private static string BuildStreamingAssetLocation()
+        {
+            string root = Application.streamingAssetsPath;
+            if (string.IsNullOrEmpty(root))
+                return null;
+
+            if (IsFilesystemPath(root))
+                return Path.Combine(root, MatrixStreamingRelativePath);
+
+            string normalizedRoot = root.EndsWith("/", StringComparison.Ordinal) ? root : root + "/";
+            return normalizedRoot + MatrixStreamingRelativePath.Replace('\\', '/');
+        }
+
+        private static bool TryStageStreamingUriToCache(string streamingUri, out string cachedPath)
+        {
+            cachedPath = null;
+            if (string.IsNullOrEmpty(streamingUri) || IsFilesystemPath(streamingUri))
+                return false;
+
+            string cachePath = null;
+            string tempPath = null;
+            try
+            {
+                string cacheDirectory = Path.Combine(Application.temporaryCachePath, MatrixCacheDirectoryName);
+                Directory.CreateDirectory(cacheDirectory);
+                cachePath = Path.Combine(cacheDirectory, MatrixFileName);
+                tempPath = cachePath + ".tmp";
+
+                if (File.Exists(cachePath) &&
+                    TryGetMatrixFileByteCount(cachePath, out long cachedByteCount) &&
+                    cachedByteCount == MatrixByteCount)
+                {
+                    cachedPath = cachePath;
+                    return true;
+                }
+
+                TryDeleteFile(tempPath);
+                using UnityWebRequest request = new UnityWebRequest(streamingUri, UnityWebRequest.kHttpVerbGET);
+                request.downloadHandler = new DownloadHandlerFile(tempPath)
+                {
+                    removeFileOnAbort = true
+                };
+                request.disposeDownloadHandlerOnDispose = true;
+                request.timeout = StreamingUriTimeoutSeconds;
+
+                UnityWebRequestAsyncOperation operation = request.SendWebRequest();
+                while (!operation.isDone)
+                    Thread.Sleep(1);
+
+                if (request.result != UnityWebRequest.Result.Success)
+                {
+                    LogStreamingUriFailure(request.error);
+                    TryDeleteFile(tempPath);
+                    return false;
+                }
+
+                if (!TryGetMatrixFileByteCount(tempPath, out long stagedByteCount) ||
+                    stagedByteCount != MatrixByteCount)
+                {
+                    LogInvalidByteCount(stagedByteCount);
+                    TryDeleteFile(tempPath);
+                    return false;
+                }
+
+                TryDeleteFile(cachePath);
+                File.Move(tempPath, cachePath);
+                cachedPath = cachePath;
+                return true;
+            }
+            catch (Exception exception)
+            {
+                LogLoadException(exception);
+                TryDeleteFile(tempPath);
+                return false;
+            }
         }
 
         private static bool TryGetMatrixFileByteCount(string matrixPath, out long byteCount)
@@ -318,6 +403,22 @@ namespace Hecton8.Core
             return !string.IsNullOrEmpty(path) && path.IndexOf("://", StringComparison.Ordinal) < 0;
         }
 
+        private static void TryDeleteFile(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return;
+
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch (Exception exception)
+            {
+                LogLoadException(exception);
+            }
+        }
+
         private static byte HalfToByte01(ushort halfBits)
         {
             float value = HalfToFloat(halfBits);
@@ -365,9 +466,7 @@ namespace Hecton8.Core
         private static void PublishFallbackGlobals()
         {
             Shader.SetGlobalTexture(_ExtinctionLutId, Texture2D.blackTexture);
-            Shader.SetGlobalVector(_ExtinctionLutParamsId, new Vector4(DefaultMaxDepthMeters, DefaultMaxTurbidity, 0f, 0f));
-            Shader.SetGlobalVector(_ExtinctionLutRuntimeId, new Vector4(0f, 1f, 1f, 0f));
-            Shader.SetGlobalVector(_ExtinctionLutWeatherParamsId, Vector4.zero);
+            HectonShaderGlobalDataVaultBridge.ResetWaterExtinctionGlobals();
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -403,6 +502,13 @@ namespace Hecton8.Core
         private static void LogRgbaHalfUnsupported()
         {
             Debug.LogWarning("[LutArrayResolver] R16G16B16A16_SFloat sampling is unsupported; packed R16 path remains active when available.");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogStreamingUriFailure(string error)
+        {
+            Debug.LogWarning("[LutArrayResolver] StreamingAssets URI staging failed: " + error);
         }
 
         /// <summary>

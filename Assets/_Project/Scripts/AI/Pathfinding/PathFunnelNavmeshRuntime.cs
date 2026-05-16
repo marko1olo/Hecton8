@@ -125,13 +125,22 @@ namespace Hecton8.AI.Pathfinding
             }
 
             PathFunnelRuntimeState runtimeState = runtimeStateBuffer[0];
-            WriteTelemetry(telemetry, ref runtimeState);
             bool dumpRequested = runtimeState.DumpRequested != 0;
+            if (dumpRequested)
+            {
+                runtimeState.TelemetryFlags = (ushort)(runtimeState.TelemetryFlags & ~PathFunnelTelemetryFlags.BlackBoxDumpFailed);
+            }
+
+            int telemetryCursor = WriteTelemetry(telemetry, ref runtimeState);
             runtimeState.DumpRequested = 0;
             runtimeStateBuffer[0] = runtimeState;
 
-            if (dumpRequested)
-                DumpBlackBox(telemetry);
+            if (dumpRequested && !TryDumpBlackBox(telemetry))
+            {
+                runtimeState.TelemetryFlags = (ushort)(runtimeState.TelemetryFlags | PathFunnelTelemetryFlags.BlackBoxDumpFailed);
+                PatchTelemetryFlags(telemetry, telemetryCursor, runtimeState.TelemetryFlags);
+                runtimeStateBuffer[0] = runtimeState;
+            }
         }
 
         /// <inheritdoc />
@@ -190,6 +199,10 @@ namespace Hecton8.AI.Pathfinding
                 pathIndex = activePathCount;
                 activePathCount++;
             }
+            else
+            {
+                DecrementInvalidatedCountIfNeeded(activePaths[pathIndex], ref runtimeState);
+            }
 
             ClearPathCellMask(activePathCellMasks, pathIndex);
             int safeCellCount = math.min(corridorCellCount, PathFunnelConstants.WfcOutpostCellCount);
@@ -233,6 +246,7 @@ namespace Hecton8.AI.Pathfinding
                 return;
 
             int lastIndex = activePathCount - 1;
+            DecrementInvalidatedCountIfNeeded(activePaths[pathIndex], ref runtimeState);
             if (pathIndex != lastIndex)
             {
                 activePaths[pathIndex] = activePaths[lastIndex];
@@ -287,7 +301,7 @@ namespace Hecton8.AI.Pathfinding
                 return false;
 
             invalidation = invalidations[readCursor];
-            runtimeState.InvalidationReadCursor = (readCursor + 1) % invalidations.Length;
+            runtimeState.InvalidationReadCursor = AdvanceRingCursor(readCursor, invalidations.Length);
             runtimeStateBuffer[0] = runtimeState;
             return true;
         }
@@ -575,11 +589,11 @@ namespace Hecton8.AI.Pathfinding
                     continue;
                 }
 
-                if ((path.Flags & PathFunnelActivePathFlags.Invalidated) == 0 &&
-                    runtimeState.InvalidatedPathCount < ushort.MaxValue)
-                {
+                if ((path.Flags & PathFunnelActivePathFlags.Invalidated) != 0)
+                    continue;
+
+                if (runtimeState.InvalidatedPathCount < ushort.MaxValue)
                     runtimeState.InvalidatedPathCount++;
-                }
 
                 path.Flags = (ushort)(path.Flags | PathFunnelActivePathFlags.Invalidated);
                 path.InvalidatedFrame = frame;
@@ -607,9 +621,9 @@ namespace Hecton8.AI.Pathfinding
 
             int readCursor = ClampRingCursor(runtimeState.InvalidationReadCursor, invalidations.Length);
             int writeCursor = ClampRingCursor(runtimeState.InvalidationWriteCursor, invalidations.Length);
-            int next = (writeCursor + 1) % invalidations.Length;
+            int next = AdvanceRingCursor(writeCursor, invalidations.Length);
             if (next == readCursor)
-                readCursor = (readCursor + 1) % invalidations.Length;
+                readCursor = AdvanceRingCursor(readCursor, invalidations.Length);
 
             invalidations[writeCursor] = new PathFunnelInvalidation
             {
@@ -693,13 +707,35 @@ namespace Hecton8.AI.Pathfinding
             if (cursor < 0)
                 return 0;
 
-            return cursor < length ? cursor : cursor % length;
+            return cursor < length ? cursor : 0;
         }
 
-        private static void WriteTelemetry(NativeArray<PathFunnelTelemetryEntry> telemetry, ref PathFunnelRuntimeState runtimeState)
+        private static int AdvanceRingCursor(int cursor, int length)
+        {
+            if (length <= 1)
+                return 0;
+
+            int next = cursor + 1;
+            return next < length ? next : 0;
+        }
+
+        private static void DecrementInvalidatedCountIfNeeded(
+            in PathFunnelActivePath path,
+            ref PathFunnelRuntimeState runtimeState)
+        {
+            if ((path.Flags & PathFunnelActivePathFlags.Invalidated) == 0 ||
+                runtimeState.InvalidatedPathCount == 0)
+            {
+                return;
+            }
+
+            runtimeState.InvalidatedPathCount--;
+        }
+
+        private static int WriteTelemetry(NativeArray<PathFunnelTelemetryEntry> telemetry, ref PathFunnelRuntimeState runtimeState)
         {
             if (!telemetry.IsCreated || telemetry.Length <= 0)
-                return;
+                return -1;
 
             int telemetryCursor = ClampRingCursor(runtimeState.TelemetryCursor, telemetry.Length);
             telemetry[telemetryCursor] = new PathFunnelTelemetryEntry
@@ -715,27 +751,49 @@ namespace Hecton8.AI.Pathfinding
                 Flags = runtimeState.TelemetryFlags,
                 Stress01 = 0f
             };
-            runtimeState.TelemetryCursor = (telemetryCursor + 1) % telemetry.Length;
+            runtimeState.TelemetryCursor = AdvanceRingCursor(telemetryCursor, telemetry.Length);
+            return telemetryCursor;
         }
 
-        private static unsafe void DumpBlackBox(NativeArray<PathFunnelTelemetryEntry> telemetry)
+        private static void PatchTelemetryFlags(NativeArray<PathFunnelTelemetryEntry> telemetry, int telemetryCursor, ushort flags)
         {
-            if (!telemetry.IsCreated)
+            if (!telemetry.IsCreated || telemetryCursor < 0 || telemetryCursor >= telemetry.Length)
                 return;
 
-            string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            string path = Path.Combine(root, DumpRelativePath);
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
+            PathFunnelTelemetryEntry entry = telemetry[telemetryCursor];
+            entry.Flags = flags;
+            telemetry[telemetryCursor] = entry;
+        }
+
+        private static unsafe bool TryDumpBlackBox(NativeArray<PathFunnelTelemetryEntry> telemetry)
+        {
+            if (!telemetry.IsCreated || telemetry.Length <= 0)
+                return false;
+
+            try
+            {
+                string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+                string path = Path.Combine(root, DumpRelativePath);
+                string directory = Path.GetDirectoryName(path);
+                if (string.IsNullOrEmpty(directory))
+                    return false;
+
                 Directory.CreateDirectory(directory);
 
-            int byteCount = UnsafeUtility.SizeOf<PathFunnelTelemetryEntry>() * telemetry.Length;
-            void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-            ReadOnlySpan<byte> telemetryBytes = new ReadOnlySpan<byte>(source, byteCount);
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
+                int byteCount = UnsafeUtility.SizeOf<PathFunnelTelemetryEntry>() * telemetry.Length;
+                void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+                ReadOnlySpan<byte> telemetryBytes = new ReadOnlySpan<byte>(source, byteCount);
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
+                {
+                    stream.Write(telemetryBytes);
+                    stream.Flush(true);
+                }
+
+                return true;
+            }
+            catch (Exception)
             {
-                stream.Write(telemetryBytes);
-                stream.Flush(true);
+                return false;
             }
         }
     }

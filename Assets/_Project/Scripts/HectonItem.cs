@@ -88,10 +88,10 @@ namespace Hecton8.Items
         // Lifecycle
         private void Awake()
         {
-            _highlighter = GetComponent<InteractionHighlighter>();
-            _rb = GetComponent<Rigidbody>();
-            _collider = GetComponent<Collider>();
-            _buoyancy = GetComponent<BuoyancyObject>();
+            TryGetComponent(out _highlighter);
+            TryGetComponent(out _rb);
+            TryGetComponent(out _collider);
+            TryGetComponent(out _buoyancy);
             _defaultColliderMaterial = _collider != null ? _collider.sharedMaterial : null;
             ApplyPhysicalMetadata();
             ConfigureWaterDynamicsFromData();
@@ -99,7 +99,7 @@ namespace Hecton8.Items
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (itemData == null)
-                Debug.LogError($"[HectonItem] ItemData is not assigned on {gameObject.name}.", this);
+                Debug.LogError("[HectonItem] ItemData is not assigned.", this);
 #endif
         }
 
@@ -304,7 +304,10 @@ namespace Hecton8.Items
                 return;
 
             if (_buoyancy == null)
-                _buoyancy = GetComponent<BuoyancyObject>() ?? gameObject.AddComponent<BuoyancyObject>();
+            {
+                if (!TryGetComponent(out _buoyancy))
+                    _buoyancy = gameObject.AddComponent<BuoyancyObject>();
+            }
 
             if (itemData.worldBuoyancyProfile != null)
                 _buoyancy.SetProfile(itemData.worldBuoyancyProfile);
@@ -558,8 +561,8 @@ namespace Hecton8.Items
 
             if (!Application.isPlaying)
             {
-                _rb = GetComponent<Rigidbody>();
-                _buoyancy = GetComponent<BuoyancyObject>();
+                TryGetComponent(out _rb);
+                TryGetComponent(out _buoyancy);
                 ConfigureWaterDynamicsFromData();
                 RebuildInteractTextCache();
             }

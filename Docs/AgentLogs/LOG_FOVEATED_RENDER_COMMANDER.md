@@ -182,6 +182,7 @@ What was wrong:
 
 What was done:
 - Changed Quest 2/Oculus Quest detection to require Android + active XR + memory/device Quest-family evidence, independent of Vulkan.
+- Cached the Quest class decision after XR activation so policy samples no longer repeat platform string classification.
 - Added explicit Quest 3/Quest Pro exclusion before the low-tier memory fallback.
 - Kept Unity `SystemInfo.foveatedRenderingCaps` as the actual hardware write gate.
 
@@ -194,6 +195,7 @@ Exact microseconds saved:
 
 Validation:
 - Static scan shows no remaining `QuestVulkanRuntimePolicy.IsQuestRuntimeActive` dependency in `FoveatedRenderCommander`.
+- Static scan shows cached Quest classification state instead of repeated policy-sample classification.
 - Filtered build diagnostics after the change produced no VR/legacy foveation matches. Full build remains red externally.
 - Unfiltered `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /clp:ErrorsOnly` now fails with 16 external errors in `World/SargassumMicroFaunaBoids.cs`, `Construction/VehicleDockingModule.cs`, and `VFX/HectonMarineSnowRenderer.cs`; no `Graphics/VR` files are named.
 - Filtered build diagnostics after Quest 3/Pro exclusion again produced no VR/legacy foveation matches.
@@ -241,3 +243,222 @@ Exact microseconds saved:
 Validation:
 - Static scan confirms no `Marshal.SizeOf` remains in `FoveatedRenderCommander`.
 - Filtered build diagnostics after the change produced no VR/legacy foveation matches. Full build remains red externally.
+
+## 2026-05-16 - Escalation Polish / Thermal Service Loss
+
+What was wrong:
+- Thermal severity could still remain stale if the hardware thermal service disappeared after previously reporting pressure and no new thermal signal arrived.
+
+What was done:
+- Clear `_thermalSeverity` when `HardwareThermalService` is unregistered.
+- Clear `_thermalSeverity` during signal consumption when there is no thermal service and no current thermal lane data.
+
+Cinematic Cheats used:
+- None. This protects dynamic policy recovery.
+
+Exact microseconds saved:
+- Exact measured microseconds saved: 0.
+- Estimated CPU change: under 1 us per dispatcher tick.
+
+Validation:
+- Filtered build diagnostics after the stale-latch fix produced no VR/legacy foveation matches. Full build remains red externally.
+
+## 2026-05-16 - Escalation Polish / Pressure Tier Wiring
+
+What was wrong:
+- `PressureLevel` and `FoveatedPressureTier` were consumed and logged, but the actual Low/Med/High resolver ignored them. That made homeostasis foveation pressure partially cosmetic.
+- Health and thermal signal loops copied structs from `ReadOnlySpan<T>` instead of reading by reference.
+- Cold allocation comments still contained non-ASCII dash separators.
+
+What was done:
+- Wired `PressureLevel` and `FoveatedPressureTier` directly into `ResolveTargetLevelCode`.
+- `PressureLevel >= 3` or `FoveatedPressureTier >= 3` now resolves High; `PressureLevel >= 2` or `FoveatedPressureTier >= 2` now resolves at least Medium.
+- Changed health and thermal signal reads to `ref readonly`.
+- Converted the cold-allocation comments to ASCII-only separators.
+
+Cinematic Cheats used:
+- Pressure lanes now buy the intended visual fake: more aggressive hardware foveation under system pressure instead of expensive full-edge rendering.
+
+Exact microseconds saved:
+- Exact measured microseconds saved: 0. Runtime profiling is still blocked by external compile failure.
+- Estimated CPU change: under 1 us per policy sample.
+- Estimated GPU recovery remains hardware and scene dependent; Quest 2-class fill-rate estimate stays 200-1000 us on pressure frames.
+
+Validation:
+- Static forbidden-pattern scan found no VR/legacy foveation debt patterns.
+- Non-ASCII scan found no non-ASCII text in `FoveatedRenderCommander.cs` or the legacy shim.
+- Filtered build diagnostics after the pressure-tier patch produced no `FoveatedRenderCommander`, `FoveatedRenderBlackBox`, `OculusFfrEnforcer`, or `Graphics/VR` matches.
+- Unfiltered `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /clp:ErrorsOnly` fails externally at `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs(1166,18)` because `EnsureCoreCognitionVaultBuffers` is missing.
+
+## 2026-05-16 - Escalation Polish / Player Dump Fallback
+
+What was wrong:
+- The blackbox dump path assumed the project `Docs/AgentLogs` directory could be derived from `Application.dataPath`. That is correct in editor-style layouts, but brittle in packaged Android/VR players.
+- A failure while building the project dump path could prevent the persistent-data fallback from being attempted.
+
+What was done:
+- Added guarded project dump path construction.
+- Added fallback to `Application.persistentDataPath/AgentLogs/Dump_FOVEATED_RENDER_COMMANDER.bin` when the project log path cannot be opened.
+- Kept dump export one-shot so Steam Deck and MicroSD installs are not hammered every frame after a fault.
+
+Cinematic Cheats used:
+- None. This is postmortem survival work.
+
+Exact microseconds saved:
+- Exact measured microseconds saved: 0. Runtime profiling is still blocked by external compile failure.
+- Steady-state runtime cost remains 0 us because the file path is touched only on the fault dump path.
+
+Validation:
+- Static forbidden-pattern scan found no VR/legacy foveation debt patterns.
+- Non-ASCII scan found no non-ASCII text in `FoveatedRenderCommander.cs` or the legacy shim.
+- Filtered build diagnostics after the dump fallback produced no `FoveatedRenderCommander`, `FoveatedRenderBlackBox`, `OculusFfrEnforcer`, or `Graphics/VR` matches.
+- Unfiltered `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /clp:ErrorsOnly` fails externally at `Assets/_Project/Scripts/Core/InputDispatcher.cs(7,2)` because a preprocessor symbol is defined/undefined after the first token.
+
+## 2026-05-16 - Escalation Polish / RenderDispatcher UI Exemption
+
+What was wrong:
+- The VR commander owned direct `RenderPipelineManager` begin/end subscriptions for UI suppression. That duplicated the existing project render fan-out and violated the demand to prefer registry interfaces over private managed delegate ownership.
+- UI suppression flags could persist in `_lastFlags` after the restore path.
+
+What was done:
+- Made `FoveatedRenderCommander` implement `IRenderable`.
+- Registered it in `GlobalRegistry.Renderables`.
+- Moved UI camera detection to `GlobalRenderContext.CurrentCamera`, which is already populated by the project `RenderDispatcher`.
+- Removed direct `RenderPipelineManager` subscriptions from the VR commander.
+- Cleared `FlagUiSuppressed` when a non-UI camera restores the target state and when telemetry is written outside an active UI suppression.
+
+Cinematic Cheats used:
+- UI text remains an absolute exemption from the fill-rate cheat. World cameras keep the cheap foveation fake; UI cameras buy clarity.
+
+Exact microseconds saved:
+- Exact measured microseconds saved: 0. Runtime profiling is still blocked by external compile failure.
+- Estimated CPU change: neutral to under 1 us per render camera because one project-owned SRP fan-out replaces a private VR subscription.
+
+Validation:
+- Static forbidden-pattern scan found no VR/legacy foveation debt patterns and no direct `RenderPipelineManager` usage in the VR domain.
+- Non-ASCII scan found no non-ASCII text in `FoveatedRenderCommander.cs` or the legacy shim.
+- Filtered build diagnostics after the render-dispatcher migration produced no `FoveatedRenderCommander`, `FoveatedRenderBlackBox`, `OculusFfrEnforcer`, or `Graphics/VR` matches.
+- Full error capture reports 130 external errors in `Assets/_Project/Scripts/HectonUnderwaterVisuals.cs`, `Assets/_Project/Scripts/RepairTool.cs`, and `Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs`; copied to `Docs/AgentLogs/BuildErrors_FOVEATED_RENDER_COMMANDER.latest.txt`.
+
+## 2026-05-16 - Escalation Polish / UI Suppression Latch Clear
+
+What was wrong:
+- Hardware foveation clear could leave `_uiSuppressionActive` true after a fault or shutdown clear. The hardware state was safe, but telemetry could keep reporting stale UI suppression.
+
+What was done:
+- `ClearHardwareFoveation()` now resets `_uiSuppressionActive`.
+- `ClearHardwareFoveation()` now clears `FlagUiSuppressed` from `_lastFlags`.
+
+Cinematic Cheats used:
+- None. This is blackbox truthfulness and state hygiene.
+
+Exact microseconds saved:
+- Exact measured microseconds saved: 0.
+- Estimated CPU change: below measurable noise; two scalar writes on clear paths only.
+
+Validation:
+- Static forbidden-pattern scan found no VR/legacy foveation debt patterns and no direct `RenderPipelineManager` usage in the VR domain.
+- Non-ASCII scan found no non-ASCII text in `FoveatedRenderCommander.cs` or the legacy shim.
+- Filtered build diagnostics after latch clear produced no `FoveatedRenderCommander`, `FoveatedRenderBlackBox`, `OculusFfrEnforcer`, or `Graphics/VR` matches.
+- Full error capture reports 22 external errors in `Assets/_Project/Scripts/SubmarineFluidDynamics.cs`, all missing `VaultNativeBuffer<>`; copied to `Docs/AgentLogs/BuildErrors_FOVEATED_RENDER_COMMANDER.latest.txt`.
+
+## 2026-05-16 - Escalation Polish / Render Bucket Rebind
+
+What was wrong:
+- `GlobalRegistry.ClearRuntimeBuckets()` can clear the render bucket while a persistent commander object still has a stale local `_registeredRenderable` flag.
+- A stale flag could block re-registration and silently remove UI foveation exemption from the render fan-out.
+
+What was done:
+- `TryRegisterRenderable()` now checks `GlobalRegistry.Renderables.Contains(this)` before trusting local state.
+- If the local flag is stale and the bucket no longer contains this commander, it attempts registration again.
+- `RenderDispatcher` service replacement now calls `TryRegisterRenderable()` when a dispatcher appears.
+
+Cinematic Cheats used:
+- None. This keeps the UI-exemption safety path attached to the render loop after registry resets.
+
+Exact microseconds saved:
+- Exact measured microseconds saved: 0.
+- Estimated CPU change: below 1 us on registration paths only; no steady-state render cost added.
+
+Validation:
+- Static forbidden-pattern scan found no VR/legacy foveation debt patterns and no direct `RenderPipelineManager` usage in the VR domain.
+- Non-ASCII scan found no non-ASCII text in `FoveatedRenderCommander.cs` or the legacy shim.
+- Filtered build diagnostics after render-bucket rebind hardening produced no `FoveatedRenderCommander`, `FoveatedRenderBlackBox`, `OculusFfrEnforcer`, or `Graphics/VR` matches.
+- Full error capture reports 23 external errors: `Assets/_Project/Scripts/Ecosystem/EcosystemRuntimeInstaller.cs` missing namespace `Hecton8.AI.Ecosystem`, and `Assets/_Project/Scripts/SubmarineFluidDynamics.cs` missing `VaultNativeBuffer<>`; copied to `Docs/AgentLogs/BuildErrors_FOVEATED_RENDER_COMMANDER.latest.txt`.
+
+## 2026-05-16 - Escalation Polish / Interface Dedup Audit
+
+What was wrong:
+- The project is running many parallel agents, so a foveation-specific signal or duplicate DataVault buffer ID would create integration debt.
+
+What was done:
+- Re-ran the `BufferID` duplicate audit after adding `FoveatedRenderBlackBox = 129`; result: `NO_BUFFERID_DUPLICATES`.
+- Verified foveation pressure uses existing `SystemHealthSignal.FoveatedPressureTier`.
+- Verified thermal escalation uses existing `ThermalStateChangedSignal`.
+- Verified the VR domain has no legacy `EventBus`, no direct `RenderPipelineManager` subscription, and no private `NativeArray`.
+
+Cinematic Cheats used:
+- None. This is interface hygiene.
+
+Exact microseconds saved:
+- Exact measured microseconds saved: 0.
+- Runtime cost: 0 us; audit-only.
+
+Validation:
+- Duplicate `BufferID` audit returned `NO_BUFFERID_DUPLICATES`.
+- Static forbidden-pattern scan remains clean for the VR domain and legacy foveation shim.
+
+## 2026-05-16 - Escalation Polish / Update Bucket Rebind And Green Build
+
+What was wrong:
+- `TryRegisterTick()` trusted the local `_registeredTick` bit after lifecycle registration.
+- `GlobalRegistry.ClearRuntimeBuckets()` can clear the global updatable bucket and dispatcher lane without disabling the persistent commander object, leaving policy ticks vulnerable to silent detachment.
+
+What was done:
+- `TryRegisterTick()` now verifies both `GlobalRegistry.Updatables.Contains(this)` and `SystemDispatcher.GetLane(PriorityLayer.Core).Contains(this)`.
+- If only one side contains the commander, it unregisters this owner through `GlobalRegistry.UnregisterUpdatable()` and performs a clean `GlobalRegistry.TryRegisterUpdatable()` pass.
+- Re-ran filtered diagnostics, static debt scans, ASCII scan, `git diff --check`, and full `dotnet build`.
+- Updated `Docs/AgentLogs/BuildErrors_FOVEATED_RENDER_COMMANDER.latest.txt` with the green build output.
+
+Cinematic Cheats used:
+- None. This is runtime registry survival. The visual cheat remains hardware foveation: fixed high on Quest 2-class hardware, stress-tiered fixed FFR on pressured devices, and gaze-allowed VRS on capable PC VR.
+
+Exact microseconds saved:
+- Exact measured GPU microseconds saved: 0. No headset capture was run.
+- Estimated registration-path CPU change: under 1 us on lifecycle/service rebind paths only.
+- Static steady-state GC: 0 B/frame by source audit.
+
+Validation:
+- `rg` forbidden-pattern scan found no `NativeArray<`, `new NativeArray`, `EventBus`, managed delegate fields, standard `Update()`, `foreach`, LINQ, `string.Format`, object find calls, direct `RenderPipelineManager`, temp render textures, `Marshal.SizeOf`, or `VRSManager.Instance` in the VR commander or legacy foveation shim.
+- ASCII scan reports `ASCII_OK` for `FoveatedRenderCommander.cs`.
+- Filtered build scan after update-bucket rebind produced no matching `FoveatedRenderCommander`, `FoveatedRenderBlackBox`, `OculusFfrEnforcer`, `Graphics/VR`, or `SystemDispatcher.GetLane` diagnostics.
+- `dotnet build Hecton8.Core.csproj -m:1 /nr:false /clp:ErrorsOnly` succeeded with 0 warnings and 0 errors.
+
+Latest regression after green build:
+- A later full build in the same shared workspace failed outside this domain.
+- Current captured wall is `Assets/_Project/Scripts/SpatialAudioManager.cs`: missing `ClearVaultBackedTelemetryAliases` and multiple missing `EnsureVaultBackedArray` calls.
+- I did not edit the audio domain. Latest evidence is stored in `Docs/AgentLogs/BuildErrors_FOVEATED_RENDER_COMMANDER.latest.txt`.
+
+## 2026-05-16 - Escalation Polish / Scene Rebind And Final Validation
+
+What was wrong:
+- The update-bucket repair was correct when registration was attempted, but scene-runtime service replacement needed a legal trigger that did not add `SceneManager.sceneLoaded` managed delegate debt.
+- A transient external audio compile wall appeared after one green build and then cleared again in the shared workspace.
+
+What was done:
+- `OnGlobalRegistryServiceReplaced()` now handles `GlobalRegistryServiceSlot.Scene`.
+- On non-null scene-service replacement, the commander re-registers tick and render buckets, resolves DataVault telemetry, and reapplies hardware foveation policy once.
+- Re-ran static forbidden-pattern scans, duplicate `BufferID` audit, filtered VR build diagnostics, and full build.
+
+Cinematic Cheats used:
+- None in this patch. The domain cheat remains hardware VRS/FFR instead of edge render-target blits.
+
+Exact microseconds saved:
+- Exact measured GPU microseconds saved: 0. No Quest/PC VR headset profile capture was run.
+- Estimated scene-rebind cost: one policy reapply on scene-service rebound; 0 us steady-state.
+
+Validation:
+- Static forbidden-pattern scan remains clean for the VR commander and legacy foveation shim.
+- Duplicate `BufferID` audit returned `NO_BUFFERID_DUPLICATES`.
+- Filtered build diagnostics after scene-service rebind hardening produced no `FoveatedRenderCommander`, `FoveatedRenderBlackBox`, `OculusFfrEnforcer`, `Graphics/VR`, or `GlobalRegistryServiceSlot.Scene` diagnostics.
+- Latest `dotnet build Hecton8.Core.csproj -m:1 /nr:false /clp:ErrorsOnly` succeeded with 0 warnings and 0 errors.

@@ -10,6 +10,7 @@ using UnityEngine.Serialization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Physics;
@@ -56,13 +57,13 @@ namespace Hecton8.AI
             Starving
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 68)]
         internal struct PackCoordinator
         {
-            public AbsoluteUniversePosition TargetAup;
-            public float3 TargetVelocity;
-            public float InterceptTimeSeconds;
-            public float FlankDistanceMeters;
+            [FieldOffset(0)] public AbsoluteUniversePosition TargetAup;
+            [FieldOffset(48)] public float3 TargetVelocity;
+            [FieldOffset(60)] public float InterceptTimeSeconds;
+            [FieldOffset(64)] public float FlankDistanceMeters;
 
             public float3 ResolveFlankRuntimePosition(float3 predatorPosition, int packOrdinal, double3 floatingOriginOffset)
             {
@@ -101,23 +102,23 @@ namespace Hecton8.AI
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 88)]
         private struct CorpseSinkKinematicInput
         {
-            public AbsoluteUniversePositionBlit128 PositionAup;
-            public double3 FloatingOriginOffset;
-            public float FloorY;
-            public float DeltaTime;
-            public float SinkSpeedMetersPerSecond;
-            public float FloorSettleOffsetMeters;
+            [FieldOffset(0)] public AbsoluteUniversePositionBlit128 PositionAup;
+            [FieldOffset(48)] public double3 FloatingOriginOffset;
+            [FieldOffset(72)] public float FloorY;
+            [FieldOffset(76)] public float DeltaTime;
+            [FieldOffset(80)] public float SinkSpeedMetersPerSecond;
+            [FieldOffset(84)] public float FloorSettleOffsetMeters;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
         private struct CorpseSinkKinematicOutput
         {
-            public AbsoluteUniversePositionBlit128 PositionAup;
-            public float3 RuntimePosition;
-            public int FreezeMotion;
+            [FieldOffset(0)] public AbsoluteUniversePositionBlit128 PositionAup;
+            [FieldOffset(48)] public float3 RuntimePosition;
+            [FieldOffset(60)] public int FreezeMotion;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -298,7 +299,7 @@ namespace Hecton8.AI
         private const float PredatorLungeCheatDistanceMultiplier = 1.35f;
         private const float PredatorLungeCcdSkinWidth = 0.08f;
         private const float PredatorLungeCcdFallbackRadius = 1.25f;
-        private const int PredatorLungeCcdMaxHits = 8;
+        private const float PredatorLungeTargetFallbackExtent = 0.75f;
         private const double PredatorLungeVerticalSlopeAbortRatioSq = 1.8225d;
         private const double PredatorLungeVerticalStepAbortMetersSq = 12.25d;
         private const float PredatorPhotophobiaDotThreshold = 0.95f;
@@ -441,8 +442,6 @@ namespace Hecton8.AI
         // COLD ALLOC: List<Collider>[8] - logical LOD collider cache build scratch - owner: FaunaBrain
         private readonly List<Collider> _logicalLodColliderScratch = new List<Collider>(8);
         private Collider[] _logicalLodColliders = Array.Empty<Collider>();
-        // COLD ALLOC: RaycastHit[8] - leviathan lunge CCD scratch buffer - owner: FaunaBrain
-        private readonly RaycastHit[] _predatorLungeCcdHits = new RaycastHit[PredatorLungeCcdMaxHits];
         private CapsuleCollider _predatorLungeCcdCapsule;
         private SphereCollider _predatorLungeCcdSphere;
         private int _tickStaggerShift;
@@ -539,8 +538,16 @@ namespace Hecton8.AI
         private Vector3 _lungeCheatStartPosition;
         private Vector3 _lungeCheatTargetPosition;
         private Vector3 _lungeCheatDirection;
+        private Vector3 _lungeContactTargetCenter;
+        private Vector3 _lungeContactTargetExtents;
+        private Vector3 _lungeContactTargetRight;
+        private Vector3 _lungeContactTargetUp;
+        private Vector3 _lungeContactTargetForward;
         private AbsoluteUniversePosition _lungeCheatStartAup;
         private AbsoluteUniversePosition _lungeCheatTargetAup;
+        private uint _lungeContactTargetHash;
+        private byte _lungeContactTargetMaterialId;
+        private bool _lungeContactTargetActive;
         private bool _lungeTeleportIsolationActive;
         private bool _lungeTeleportRestoreKinematic;
         private bool _lungeTeleportRestoreCollisions;
@@ -602,8 +609,8 @@ namespace Hecton8.AI
         private AbsoluteUniversePosition _corpseSinkAup;
         private float _corpseFloorY;
         private bool _corpseFloorLatched;
-        private NativeArray<CorpseSinkKinematicInput> _corpseSinkInputNative;
-        private NativeArray<CorpseSinkKinematicOutput> _corpseSinkOutputNative;
+        private VaultBufferHandle<CorpseSinkKinematicInput> _corpseSinkInputHandle;
+        private VaultBufferHandle<CorpseSinkKinematicOutput> _corpseSinkOutputHandle;
         private JobHandle _corpseSinkJobHandle;
         private bool _corpseSinkJobScheduled;
         private bool _corpseSinkLateFrameRegistered;
@@ -1750,13 +1757,18 @@ namespace Hecton8.AI
             if (!TryResolveSelfLogicPosition(out Vector3 selfPosition))
                 return;
 
-            PhysicsEventBus.NotifyElectromagneticPulse(new ElectromagneticPulseEvent(
-                selfPosition,
-                radiusMeters,
-                _faunaDataTemplate.EmpBlindDurationSeconds,
-                _faunaDataTemplate.EmpClaritySuppression01,
-                (uint)DamageTypeMask.Emp,
-                DamageSourceIds.FaunaEmp));
+            Hecton8.Core.Contracts.Signals.CombatDamageSignal empSignal = default;
+            empSignal.WorldPoint = new float3(selfPosition.x, selfPosition.y, selfPosition.z);
+            empSignal.Direction = (float3)ResolveSelfLogicForward();
+            empSignal.Magnitude = math.max(0f, radiusMeters) * math.max(0.1f, _faunaDataTemplate.EmpClaritySuppression01);
+            empSignal.DamageType = (uint)DamageTypeMask.Emp;
+            empSignal.SourceHash = ResolveStableFaunaHash(FaunaLeviathanBiteHashSalt, DamageSourceIds.FaunaEmp);
+            empSignal.Frame = unchecked((uint)Time.frameCount);
+            empSignal.SourceId = DamageSourceIds.FaunaEmp;
+            empSignal.Channel = 0;
+            empSignal.Flags = Hecton8.Core.Contracts.Signals.CombatDamageSignal.DirectRuntimeFlag;
+            empSignal.IntegrityDelta = 1;
+            GlobalSignals.Publish(in empSignal);
         }
 
         private void UpdateEcholocationMimicry()
@@ -1878,14 +1890,14 @@ namespace Hecton8.AI
             _mimicPingExpireTime = _cognitionTimeSeconds + _faunaDataTemplate.MimicPingLifetimeSeconds;
             _nextMimicPingTime = _cognitionTimeSeconds + _faunaDataTemplate.MimicPingCooldownSeconds;
 
-            PhysicsEventBus.NotifyAcousticPing(new AcousticPingEvent(
-                selfPosition,
-                _faunaDataTemplate.MimicPingRadiusMeters * maskedTransmission01,
-                _faunaDataTemplate.MimicPingIntensity01 * maskedTransmission01,
-                _faunaDataTemplate.MimicPingLifetimeSeconds,
-                FieldTargetRole.DistressBeacon,
-                ComputeStableSpeciesId(),
-                _faunaDataTemplate.MimicPingIntensity01 * maskedTransmission01 * 250f));
+            AcousticPingSignal signal = default;
+            signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(selfPosition);
+            signal.RadiusMeters = math.max(0f, _faunaDataTemplate.MimicPingRadiusMeters * maskedTransmission01);
+            signal.Intensity01 = math.saturate(_faunaDataTemplate.MimicPingIntensity01 * maskedTransmission01);
+            signal.SourceId = unchecked((uint)ComputeStableSpeciesId());
+            signal.Channel = 0;
+            signal.Flags = 0;
+            GlobalSignals.Publish(in signal);
         }
 
         private bool TryResolveMimicPingTransmission(Vector3 selfPosition, Vector3 playerPosition, out float acousticTransmission01)
@@ -3036,7 +3048,7 @@ namespace Hecton8.AI
                 return false;
 
             _attackBurstUntilTime = math.max(_attackBurstUntilTime, _cognitionTimeSeconds + LeviathanAttackBurstDurationSeconds);
-            BeginPredatorLungeCheat(attackTargetPosition);
+            BeginPredatorLungeCheat(attackTarget, attackTargetPosition);
             return true;
         }
 
@@ -3050,7 +3062,7 @@ namespace Hecton8.AI
                 _faunaKinematicsRuntime.SetAttackTelegraph(0f);
         }
 
-        private void BeginPredatorLungeCheat(Vector3 targetPosition)
+        private void BeginPredatorLungeCheat(Transform target, Vector3 targetPosition)
         {
             if (_rb == null)
                 return;
@@ -3089,6 +3101,7 @@ namespace Hecton8.AI
             _lungeCheatStartTime = 0f;
             _lungeCheatDuration = LeviathanAttackBurstDurationSeconds;
             _lungeCheatActive = false;
+            CapturePredatorLungeContactTarget(target, targetPosition);
             if (ShouldAbortPredatorLungeDistanceGate(lungeDistance) || ShouldAbortPredatorLungeGeometryGate())
                 AbortPredatorLungeForGlancingBlow();
             else
@@ -3134,6 +3147,14 @@ namespace Hecton8.AI
             _lungeCheatDirection = Vector3.zero;
             _lungeCheatStartAup = default;
             _lungeCheatTargetAup = default;
+            _lungeContactTargetCenter = Vector3.zero;
+            _lungeContactTargetExtents = Vector3.zero;
+            _lungeContactTargetRight = Vector3.right;
+            _lungeContactTargetUp = Vector3.up;
+            _lungeContactTargetForward = Vector3.forward;
+            _lungeContactTargetHash = 0u;
+            _lungeContactTargetMaterialId = HighSpeedImpactSignal.MaterialMetal;
+            _lungeContactTargetActive = false;
         }
 
         private bool ShouldAbortPredatorLungeDistanceGate(float requestedDistance)
@@ -3214,56 +3235,29 @@ namespace Hecton8.AI
             float inverseDistance = math.rsqrt(displacementSq);
             float distance = displacementSq * inverseDistance;
             Vector3 direction = displacement * inverseDistance;
-            ResolvePredatorLungeCcdCapsule(out Vector3 point1, out Vector3 point2, out float radius);
-
-            for (int i = 0; i < _predatorLungeCcdHits.Length; i++)
-                _predatorLungeCcdHits[i] = default;
-
-            int hitCount = UnityEngine.Physics.CapsuleCastNonAlloc(
-                point1,
-                point2,
-                radius,
-                direction,
-                _predatorLungeCcdHits,
-                distance + PredatorLungeCcdSkinWidth,
-                HectonLayerMasks.DefaultRaycastLayerMask,
-                QueryTriggerInteraction.Ignore);
-            if (hitCount <= 0)
+            if (!_lungeContactTargetActive)
                 return false;
 
-            int nearestIndex = -1;
-            float nearestDistance = float.MaxValue;
-            int clampedHitCount = math.min(hitCount, _predatorLungeCcdHits.Length);
-            for (int i = 0; i < clampedHitCount; i++)
+            float radius = ResolvePredatorLungeContactRadius();
+            if (!TryResolvePredatorLungeObbSweep(
+                    startPosition,
+                    displacement,
+                    radius + PredatorLungeCcdSkinWidth,
+                    out float hitFraction,
+                    out Vector3 hitPoint,
+                    out Vector3 hitNormal))
             {
-                RaycastHit hit = _predatorLungeCcdHits[i];
-                if (hit.collider == null ||
-                    hit.collider.transform.IsChildOf(transform) ||
-                    !math.isfinite(hit.distance) ||
-                    hit.distance < 0f)
-                {
-                    continue;
-                }
-
-                if (hit.distance < nearestDistance)
-                {
-                    nearestDistance = hit.distance;
-                    nearestIndex = i;
-                }
+                return false;
             }
 
-            if (nearestIndex < 0)
-                return false;
-
-            RaycastHit nearestHit = _predatorLungeCcdHits[nearestIndex];
             float3 normal3 = KinematicCcdMath.NormalizeOrFallback(
-                new float3(nearestHit.normal.x, nearestHit.normal.y, nearestHit.normal.z),
+                new float3(hitNormal.x, hitNormal.y, hitNormal.z),
                 new float3(-direction.x, -direction.y, -direction.z));
             Vector3 safeNormal = new Vector3(normal3.x, normal3.y, normal3.z);
             bool lowTierStop = KinematicCcdMath.IsLowTier(GlobalRegistry.ScalabilityTierProfileByte);
-            bool cornerHalt = !lowTierStop && HasPredatorLungeCornerHit(nearestIndex, clampedHitCount, safeNormal, nearestDistance);
+            bool cornerHalt = false;
             float safeDistance = KinematicCcdMath.ResolveRollbackDistance(
-                nearestHit.distance,
+                distance * hitFraction,
                 distance,
                 PredatorLungeCcdSkinWidth);
             Vector3 resolvedDisplacement = direction * safeDistance;
@@ -3278,73 +3272,180 @@ namespace Hecton8.AI
 
             resolvedPosition = startPosition + resolvedDisplacement;
             _lungeCheatTargetAup = AbsoluteUniversePosition.FromRuntimePosition(resolvedPosition);
-            EmitPredatorLungeCcdImpact(in nearestHit, safeNormal, impliedVelocity, lowTierStop, cornerHalt);
+            EmitPredatorLungeCcdImpact(
+                hitPoint,
+                _lungeContactTargetHash,
+                _lungeContactTargetMaterialId,
+                safeNormal,
+                impliedVelocity,
+                lowTierStop,
+                cornerHalt);
             return true;
         }
 
-        private void ResolvePredatorLungeCcdCapsule(out Vector3 point1, out Vector3 point2, out float radius)
+        private float ResolvePredatorLungeContactRadius()
         {
             if (_predatorLungeCcdCapsule != null)
             {
-                Transform capsuleTransform = _predatorLungeCcdCapsule.transform;
-                Vector3 center = capsuleTransform.TransformPoint(_predatorLungeCcdCapsule.center);
-                Vector3 axis = _predatorLungeCcdCapsule.direction == 0
-                    ? capsuleTransform.right
-                    : _predatorLungeCcdCapsule.direction == 2 ? capsuleTransform.forward : capsuleTransform.up;
-                Vector3 scale = capsuleTransform.lossyScale;
+                Vector3 scale = _predatorLungeCcdCapsule.transform.lossyScale;
                 float maxScale = math.max(math.abs(scale.x), math.max(math.abs(scale.y), math.abs(scale.z)));
-                radius = math.max(0.01f, _predatorLungeCcdCapsule.radius * maxScale);
-                float scaledHeight = math.max(_predatorLungeCcdCapsule.height * maxScale, radius * 2f);
-                float offset = math.max(0f, scaledHeight * 0.5f - radius);
-                point1 = center + axis * offset;
-                point2 = center - axis * offset;
-                return;
+                return math.max(0.01f, _predatorLungeCcdCapsule.radius * maxScale);
             }
 
             if (_predatorLungeCcdSphere != null)
             {
-                Transform sphereTransform = _predatorLungeCcdSphere.transform;
-                Vector3 center = sphereTransform.TransformPoint(_predatorLungeCcdSphere.center);
-                Vector3 scale = sphereTransform.lossyScale;
+                Vector3 scale = _predatorLungeCcdSphere.transform.lossyScale;
                 float maxScale = math.max(math.abs(scale.x), math.max(math.abs(scale.y), math.abs(scale.z)));
-                radius = math.max(0.01f, _predatorLungeCcdSphere.radius * maxScale);
-                point1 = center + transform.up * 0.01f;
-                point2 = center - transform.up * 0.01f;
+                return math.max(0.01f, _predatorLungeCcdSphere.radius * maxScale);
+            }
+
+            return PredatorLungeCcdFallbackRadius;
+        }
+
+        private void CapturePredatorLungeContactTarget(Transform target, Vector3 fallbackPosition)
+        {
+            _lungeContactTargetActive = false;
+            _lungeContactTargetCenter = fallbackPosition;
+            _lungeContactTargetExtents = Vector3.one * PredatorLungeTargetFallbackExtent;
+            _lungeContactTargetRight = target != null ? NormalizeVectorOrFallback(target.right, Vector3.right) : Vector3.right;
+            _lungeContactTargetUp = target != null ? NormalizeVectorOrFallback(target.up, Vector3.up) : Vector3.up;
+            _lungeContactTargetForward = target != null ? NormalizeVectorOrFallback(target.forward, Vector3.forward) : Vector3.forward;
+            _lungeContactTargetHash = 0u;
+            _lungeContactTargetMaterialId = HighSpeedImpactSignal.MaterialMetal;
+            if (target == null)
                 return;
-            }
 
-            radius = PredatorLungeCcdFallbackRadius;
-            point1 = _rb.position + transform.up * radius;
-            point2 = _rb.position - transform.up * radius;
+            Collider targetCollider = null;
+            target.TryGetComponent(out targetCollider);
+            if (targetCollider == null)
+                targetCollider = target.GetComponentInChildren<Collider>(true);
+
+            Bounds bounds = targetCollider != null
+                ? targetCollider.bounds
+                : new Bounds(fallbackPosition, Vector3.one * (PredatorLungeTargetFallbackExtent * 2f));
+            if (!IsFiniteBounds(bounds) || bounds.extents.sqrMagnitude <= 0.000001f)
+                bounds = new Bounds(fallbackPosition, Vector3.one * (PredatorLungeTargetFallbackExtent * 2f));
+
+            _lungeContactTargetCenter = bounds.center;
+            _lungeContactTargetExtents = new Vector3(
+                math.max(0.05f, math.abs(bounds.extents.x)),
+                math.max(0.05f, math.abs(bounds.extents.y)),
+                math.max(0.05f, math.abs(bounds.extents.z)));
+            _lungeContactTargetHash = targetCollider != null
+                ? unchecked((uint)targetCollider.GetInstanceID())
+                : unchecked((uint)target.GetInstanceID());
+            if (_lungeContactTargetHash == 0u)
+                _lungeContactTargetHash = 1u;
+            _lungeContactTargetMaterialId = ResolveHighSpeedImpactTargetMaterialId(targetCollider, HighSpeedImpactSignal.MaterialMetal);
+            _lungeContactTargetActive = true;
         }
 
-        private bool HasPredatorLungeCornerHit(int nearestIndex, int hitCount, Vector3 primaryNormal, float nearestDistance)
+        private bool TryResolvePredatorLungeObbSweep(
+            Vector3 startPosition,
+            Vector3 displacement,
+            float padding,
+            out float hitFraction,
+            out Vector3 hitPoint,
+            out Vector3 hitNormal)
         {
-            for (int i = 0; i < hitCount; i++)
+            hitFraction = 0f;
+            hitPoint = startPosition;
+            hitNormal = -NormalizeVectorOrFallback(displacement, ResolveSelfLogicForward());
+            float3 center = (float3)_lungeContactTargetCenter;
+            float3 axisX = (float3)NormalizeVectorOrFallback(_lungeContactTargetRight, Vector3.right);
+            float3 axisY = (float3)NormalizeVectorOrFallback(_lungeContactTargetUp, Vector3.up);
+            float3 axisZ = (float3)NormalizeVectorOrFallback(_lungeContactTargetForward, Vector3.forward);
+            float3 startDelta = (float3)startPosition - center;
+            float3 localStart = new float3(
+                math.dot(startDelta, axisX),
+                math.dot(startDelta, axisY),
+                math.dot(startDelta, axisZ));
+            float3 worldDelta = (float3)displacement;
+            float3 localDelta = new float3(
+                math.dot(worldDelta, axisX),
+                math.dot(worldDelta, axisY),
+                math.dot(worldDelta, axisZ));
+            float3 extents = new float3(
+                math.max(0.05f, math.abs(_lungeContactTargetExtents.x) + padding),
+                math.max(0.05f, math.abs(_lungeContactTargetExtents.y) + padding),
+                math.max(0.05f, math.abs(_lungeContactTargetExtents.z) + padding));
+
+            bool startsInside = math.all(localStart >= -extents) && math.all(localStart <= extents);
+            float tMin = 0f;
+            float tMax = 1f;
+            float3 localNormal = ResolveObbExitNormal(localStart, extents);
+            if (!startsInside)
             {
-                if (i == nearestIndex)
-                    continue;
-
-                RaycastHit hit = _predatorLungeCcdHits[i];
-                if (hit.collider == null ||
-                    hit.collider.transform.IsChildOf(transform) ||
-                    !math.isfinite(hit.distance) ||
-                    hit.distance < 0f ||
-                    math.abs(hit.distance - nearestDistance) > PredatorLungeCcdSkinWidth + 0.15f)
+                if (!AccumulateSweptAabbAxis(localStart.x, localDelta.x, extents.x, new float3(1f, 0f, 0f), ref tMin, ref tMax, ref localNormal) ||
+                    !AccumulateSweptAabbAxis(localStart.y, localDelta.y, extents.y, new float3(0f, 1f, 0f), ref tMin, ref tMax, ref localNormal) ||
+                    !AccumulateSweptAabbAxis(localStart.z, localDelta.z, extents.z, new float3(0f, 0f, 1f), ref tMin, ref tMax, ref localNormal))
                 {
-                    continue;
+                    return false;
                 }
-
-                if (KinematicCcdMath.IsCornerNormal((float3)primaryNormal, (float3)hit.normal))
-                    return true;
             }
 
-            return false;
+            hitFraction = math.saturate(startsInside ? 0f : tMin);
+            float3 normalWorld = axisX * localNormal.x + axisY * localNormal.y + axisZ * localNormal.z;
+            hitNormal = NormalizeVectorOrFallback(new Vector3(normalWorld.x, normalWorld.y, normalWorld.z), -NormalizeVectorOrFallback(displacement, Vector3.forward));
+            Vector3 centerAtHit = startPosition + displacement * hitFraction;
+            hitPoint = centerAtHit - hitNormal * padding;
+            return IsFiniteVector(hitPoint) && IsFiniteVector(hitNormal);
         }
 
-        private static byte ResolveHighSpeedImpactTargetMaterialId(in RaycastHit hit, byte fallbackMaterialId)
+        private static bool AccumulateSweptAabbAxis(
+            float localStart,
+            float localDelta,
+            float extent,
+            float3 axisNormal,
+            ref float tMin,
+            ref float tMax,
+            ref float3 localNormal)
         {
-            Collider hitCollider = hit.collider;
+            if (!math.isfinite(localStart) || !math.isfinite(localDelta) || !math.isfinite(extent))
+                return false;
+
+            if (math.abs(localDelta) <= 0.000001f)
+                return localStart >= -extent && localStart <= extent;
+
+            float invDelta = math.rcp(localDelta);
+            float nearT;
+            float farT;
+            float nearSign;
+            if (localDelta > 0f)
+            {
+                nearT = (-extent - localStart) * invDelta;
+                farT = (extent - localStart) * invDelta;
+                nearSign = -1f;
+            }
+            else
+            {
+                nearT = (extent - localStart) * invDelta;
+                farT = (-extent - localStart) * invDelta;
+                nearSign = 1f;
+            }
+
+            if (nearT > tMin)
+            {
+                tMin = nearT;
+                localNormal = axisNormal * nearSign;
+            }
+
+            tMax = math.min(tMax, farT);
+            return tMin <= tMax && tMax >= 0f && tMin <= 1f;
+        }
+
+        private static float3 ResolveObbExitNormal(float3 localPoint, float3 extents)
+        {
+            float3 distanceToFace = extents - math.abs(localPoint);
+            if (distanceToFace.x <= distanceToFace.y && distanceToFace.x <= distanceToFace.z)
+                return new float3(math.select(1f, -1f, localPoint.x < 0f), 0f, 0f);
+            if (distanceToFace.y <= distanceToFace.z)
+                return new float3(0f, math.select(1f, -1f, localPoint.y < 0f), 0f);
+            return new float3(0f, 0f, math.select(1f, -1f, localPoint.z < 0f));
+        }
+
+        private static byte ResolveHighSpeedImpactTargetMaterialId(Collider hitCollider, byte fallbackMaterialId)
+        {
             if (hitCollider == null)
                 return fallbackMaterialId;
 
@@ -3356,13 +3457,14 @@ namespace Hecton8.AI
         }
 
         private void EmitPredatorLungeCcdImpact(
-            in RaycastHit hit,
+            Vector3 point,
+            uint targetHash,
+            byte targetMaterialId,
             Vector3 safeNormal,
             Vector3 impliedVelocity,
             bool lowTierStop,
             bool cornerHalt)
         {
-            Vector3 point = hit.point;
             if (!math.isfinite(point.x) || !math.isfinite(point.y) || !math.isfinite(point.z))
                 point = _rb != null ? _rb.position : transform.position;
 
@@ -3379,7 +3481,6 @@ namespace Hecton8.AI
                 flags |= HighSpeedImpactSignal.FlagLowTierStop;
 
             AbsoluteUniversePosition pointAup = AbsoluteUniversePosition.FromRuntimePosition(point);
-            byte targetMaterialId = ResolveHighSpeedImpactTargetMaterialId(in hit, HighSpeedImpactSignal.MaterialMetal);
             byte sourceMaterialId = HighSpeedImpactSignal.MaterialOrganic;
             HighSpeedImpactSignal signal = default;
             signal.PointAup = pointAup;
@@ -3387,7 +3488,7 @@ namespace Hecton8.AI
             signal.LostKineticEnergy = lostKineticEnergy;
             signal.ImpactSpeed = impactSpeed;
             signal.SourceHash = ResolveStableFaunaHash(FaunaLeviathanBiteHashSalt, 0u);
-            signal.TargetHash = unchecked((uint)EntityId.ToULong(hit.colliderEntityId));
+            signal.TargetHash = targetHash;
             signal.Frame = unchecked((uint)Time.frameCount);
             signal.SourceKind = HighSpeedImpactSignal.SourceLeviathan;
             signal.Flags = flags;
@@ -5140,6 +5241,34 @@ namespace Hecton8.AI
             return new Vector3(value.x, value.y, value.z);
         }
 
+        private static Vector3 NormalizeVectorOrFallback(Vector3 value, Vector3 fallback)
+        {
+            float lengthSq = value.sqrMagnitude;
+            if (!math.isfinite(lengthSq) || lengthSq <= 0.000001f)
+            {
+                float fallbackSq = fallback.sqrMagnitude;
+                return math.isfinite(fallbackSq) && fallbackSq > 0.000001f
+                    ? fallback * math.rsqrt(fallbackSq)
+                    : Vector3.forward;
+            }
+
+            return value * math.rsqrt(lengthSq);
+        }
+
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
+        }
+
+        private static bool IsFiniteBounds(Bounds bounds)
+        {
+            return IsFiniteVector(bounds.center) &&
+                   IsFiniteVector(bounds.extents) &&
+                   bounds.extents.x >= 0f &&
+                   bounds.extents.y >= 0f &&
+                   bounds.extents.z >= 0f;
+        }
+
         private static string ResolveScanRoleCategory(CreatureRoleType roleType)
         {
             switch (roleType)
@@ -5743,7 +5872,7 @@ namespace Hecton8.AI
             ArmCorpseBloatShaderTimer();
             _deathSpiralTorque = ResolveDeathSpiralTorque();
             ResolveDeathCorkscrewPhases(out _deathCorkscrewPhaseX, out _deathCorkscrewPhaseZ);
-            EnsureCorpseSinkingKinematicsBuffers();
+            TryResolveCorpseSinkingKinematicsBuffers(out _, out _);
             TryRegisterCorpseSinkLateFrame();
             Vector3 corpseRuntimePosition = _rb != null
                 ? _rb.position
@@ -5835,9 +5964,12 @@ namespace Hecton8.AI
             if (_corpseSinkJobScheduled)
                 return;
 
-            EnsureCorpseSinkingKinematicsBuffers();
-            if (!_corpseSinkInputNative.IsCreated || !_corpseSinkOutputNative.IsCreated)
+            if (!TryResolveCorpseSinkingKinematicsBuffers(
+                    out NativeArray<CorpseSinkKinematicInput> corpseSinkInput,
+                    out NativeArray<CorpseSinkKinematicOutput> corpseSinkOutput))
+            {
                 return;
+            }
 
             double3 committedOriginOffset = ToCommittedOriginOffset();
             float3 position = AUPMath.ToRuntimeFloat3(in _corpseSinkAup, committedOriginOffset);
@@ -5847,7 +5979,7 @@ namespace Hecton8.AI
                 _corpseFloorLatched = true;
             }
 
-            _corpseSinkInputNative[0] = new CorpseSinkKinematicInput
+            corpseSinkInput[0] = new CorpseSinkKinematicInput
             {
                 PositionAup = _corpseSinkAup.ToAlignedBlit(),
                 FloatingOriginOffset = committedOriginOffset,
@@ -5860,8 +5992,8 @@ namespace Hecton8.AI
             _corpseSinkPoseDeltaTime = fdt;
             _corpseSinkJobHandle = new CorpseSinkKinematicJob
             {
-                Input = _corpseSinkInputNative,
-                Output = _corpseSinkOutputNative
+                Input = corpseSinkInput,
+                Output = corpseSinkOutput
             }.Schedule();
             _corpseSinkJobScheduled = true;
             TryRegisterCorpseSinkLateFrame();
@@ -5907,10 +6039,10 @@ namespace Hecton8.AI
                 return;
 
             _corpseSinkJobScheduled = false;
-            if (!_corpseSinkOutputNative.IsCreated || _corpseSinkOutputNative.Length <= 0)
+            if (!TryResolveCorpseSinkingOutputBuffer(out NativeArray<CorpseSinkKinematicOutput> corpseSinkOutput))
                 return;
 
-            CorpseSinkKinematicOutput output = _corpseSinkOutputNative[0];
+            CorpseSinkKinematicOutput output = corpseSinkOutput[0];
             _corpseSinkAup = AbsoluteUniversePosition.FromAlignedBlit(in output.PositionAup);
             Vector3 runtimePosition = new Vector3(output.RuntimePosition.x, output.RuntimePosition.y, output.RuntimePosition.z);
             bool freezeMotion = output.FreezeMotion != 0;
@@ -5919,26 +6051,67 @@ namespace Hecton8.AI
                 TryUnregisterCorpseSinkLateFrame();
         }
 
-        private void EnsureCorpseSinkingKinematicsBuffers()
+        private bool TryResolveCorpseSinkingKinematicsBuffers(
+            out NativeArray<CorpseSinkKinematicInput> corpseSinkInput,
+            out NativeArray<CorpseSinkKinematicOutput> corpseSinkOutput)
         {
-            if (!_corpseSinkInputNative.IsCreated)
+            corpseSinkInput = default;
+            corpseSinkOutput = default;
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
+                return false;
+
+            if (!_corpseSinkInputHandle.IsCreated)
             {
-                _corpseSinkInputNative = new NativeArray<CorpseSinkKinematicInput>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<CorpseSinkKinematicInput>[1] - corpse sinking Burst input - owner: FaunaBrain
-                NativeMemorySentinel.RegisterNativeArray(_corpseSinkInputNative, nameof(FaunaBrain), nameof(_corpseSinkInputNative), NativeAllocationLifetime.Session);
+                _corpseSinkInputHandle = vault.GetBufferHandle<CorpseSinkKinematicInput>(
+                    BufferID.FaunaCorpseSinkKinematicInput,
+                    1,
+                    SystemID.AnimationFauna,
+                    NativeArrayOptions.ClearMemory);
             }
 
-            if (!_corpseSinkOutputNative.IsCreated)
+            if (!_corpseSinkOutputHandle.IsCreated)
             {
-                _corpseSinkOutputNative = new NativeArray<CorpseSinkKinematicOutput>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<CorpseSinkKinematicOutput>[1] - corpse sinking Burst output - owner: FaunaBrain
-                NativeMemorySentinel.RegisterNativeArray(_corpseSinkOutputNative, nameof(FaunaBrain), nameof(_corpseSinkOutputNative), NativeAllocationLifetime.Session);
+                _corpseSinkOutputHandle = vault.GetBufferHandle<CorpseSinkKinematicOutput>(
+                    BufferID.FaunaCorpseSinkKinematicOutput,
+                    1,
+                    SystemID.AnimationFauna,
+                    NativeArrayOptions.ClearMemory);
             }
+
+            corpseSinkInput = _corpseSinkInputHandle.Resolve(vault);
+            corpseSinkOutput = _corpseSinkOutputHandle.Resolve(vault);
+            return corpseSinkInput.IsCreated &&
+                   corpseSinkOutput.IsCreated &&
+                   corpseSinkInput.Length >= 1 &&
+                   corpseSinkOutput.Length >= 1;
+        }
+
+        private bool TryResolveCorpseSinkingOutputBuffer(out NativeArray<CorpseSinkKinematicOutput> corpseSinkOutput)
+        {
+            corpseSinkOutput = default;
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
+                return false;
+
+            if (!_corpseSinkOutputHandle.IsCreated)
+            {
+                _corpseSinkOutputHandle = vault.GetBufferHandle<CorpseSinkKinematicOutput>(
+                    BufferID.FaunaCorpseSinkKinematicOutput,
+                    1,
+                    SystemID.AnimationFauna,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            corpseSinkOutput = _corpseSinkOutputHandle.Resolve(vault);
+            return corpseSinkOutput.IsCreated && corpseSinkOutput.Length >= 1;
         }
 
         private void ReleaseCorpseSinkingKinematicsBuffers()
         {
             bool hasNativeState =
-                _corpseSinkInputNative.IsCreated ||
-                _corpseSinkOutputNative.IsCreated ||
+                _corpseSinkInputHandle.IsCreated ||
+                _corpseSinkOutputHandle.IsCreated ||
                 _corpseSinkJobScheduled;
             TryUnregisterCorpseSinkLateFrame();
             if (!hasNativeState)
@@ -5948,29 +6121,14 @@ namespace Hecton8.AI
                 return;
             }
 
-            JobHandle dependency = _corpseSinkJobScheduled ? _corpseSinkJobHandle : default;
-            bool scheduledNativeDispose = false;
-            if (_corpseSinkInputNative.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_corpseSinkInputNative);
-                _corpseSinkInputNative.Dispose(dependency);
-                _corpseSinkInputNative = default;
-                scheduledNativeDispose = true;
-            }
+            if (_corpseSinkJobScheduled)
+                DispatcherJobSwap.TryComplete(ref _corpseSinkJobHandle, forceComplete: true);
 
-            if (_corpseSinkOutputNative.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_corpseSinkOutputNative);
-                _corpseSinkOutputNative.Dispose(dependency);
-                _corpseSinkOutputNative = default;
-                scheduledNativeDispose = true;
-            }
-
+            _corpseSinkInputHandle = default;
+            _corpseSinkOutputHandle = default;
             _corpseSinkJobHandle = default;
             _corpseSinkJobScheduled = false;
             _corpseSinkPoseDeltaTime = 0f;
-            if (scheduledNativeDispose)
-                JobHandle.ScheduleBatchedJobs();
         }
 
         private void TryRegisterCorpseSinkLateFrame()

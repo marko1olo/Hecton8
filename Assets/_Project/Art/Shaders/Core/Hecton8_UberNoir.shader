@@ -28,6 +28,8 @@ Shader "Hecton8/Rendering/UberNoir"
         _UberNoirBiolumParams("Biolum Params", Vector) = (1, 0.35, 4, 1)
         _UberNoirDitherParams("Dither Params", Vector) = (0.5, 0, 1, 1)
         _UberNoirLightingParams("Lighting Params", Vector) = (0.35, 0.08, 0.35, 1)
+        _UberNoirRefractionParams("Refraction Params", Vector) = (0, 0.5, 0, 0)
+        _UberNoirIorLut("IOR LUT Air Water Dense Glass", Vector) = (1.0003, 1.333, 1.38, 1.46)
 
         _Metallic("Metallic", Range(0, 1)) = 0
         _Smoothness("Smoothness", Range(0, 1)) = 0.72
@@ -68,10 +70,12 @@ Shader "Hecton8/Rendering/UberNoir"
 
             #pragma multi_compile_instancing
             #pragma instancing_options assumeuniformscaling renderinglayer
+            #pragma multi_compile _ DOTS_INSTANCING_ON
             #pragma multi_compile_fog
             #pragma multi_compile _ _MATH_LOD_LOW
             #pragma multi_compile _ H8_UBERNOIR_USE_INSTANCE_BUFFER
             #pragma shader_feature_local _ H8_UBERNOIR_CAUSTICS_TEXTURED
+            #pragma shader_feature_local _ H8_UBERNOIR_SCREEN_REFRACTION
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile _ _ADDITIONAL_LIGHTS
             #pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
@@ -80,6 +84,32 @@ Shader "Hecton8/Rendering/UberNoir"
             #pragma multi_compile _ _LIGHT_COOKIES
 
             #pragma skip_variants SHADOWS_SHADOWMASK DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON
+
+            #include "Assets/_Project/Art/Shaders/Hecton8_UberNoir.hlsl"
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "MotionVectors"
+            Tags { "LightMode" = "MotionVectors" }
+
+            Cull Back
+            ZWrite Off
+            ZTest LEqual
+            ColorMask RG
+
+            HLSLPROGRAM
+            #pragma target 4.5
+            #pragma vertex H8UberNoirMotionVertex
+            #pragma fragment H8UberNoirMotionFragment
+
+            #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling renderinglayer
+            #pragma multi_compile _ DOTS_INSTANCING_ON
+            #pragma multi_compile _ _MATH_LOD_LOW
+            #pragma multi_compile _ H8_UBERNOIR_USE_INSTANCE_BUFFER
+            #define H8_UBERNOIR_MOTION_VECTOR_PASS 1
 
             #include "Assets/_Project/Art/Shaders/Hecton8_UberNoir.hlsl"
             ENDHLSL

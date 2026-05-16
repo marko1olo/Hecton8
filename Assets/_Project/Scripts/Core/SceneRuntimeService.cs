@@ -107,6 +107,7 @@ namespace Hecton8.Core
         private bool _sceneActivationReleased;
         private bool _cinematicTransitionActive;
         private bool _memoryLifecycleTransitionActive;
+        private IDataVault _dataVault;
         private uint _memoryLifecyclePauseSequence;
         private float _cinematicTransitionElapsed;
         private Camera _cinematicCamera;
@@ -197,6 +198,7 @@ namespace Hecton8.Core
         {
             GlobalRegistry.RegisterSceneRuntime(this);
             H8Memory.Initialize();
+            _dataVault = GlobalRegistry.DataVault;
 
             if (_isInitialized)
             {
@@ -322,6 +324,8 @@ namespace Hecton8.Core
         public void Tick(float deltaTime)
         {
             H8Memory.RecordHeartbeat();
+            if (_dataVault != null)
+                _dataVault.RecordHeartbeat();
         }
 
         private void Awake()
@@ -373,6 +377,7 @@ namespace Hecton8.Core
             _pendingSceneLoadOperation = null;
             _gpuResidencyReadyFrame = -1;
             _sceneActivationReleased = false;
+            _dataVault = null;
             _isInitialized = false;
 
             GlobalRegistry.ClearSceneRuntime(this);
@@ -407,6 +412,7 @@ namespace Hecton8.Core
 
         private void BeginMemoryLifecycleTransition()
         {
+            CacheDataVaultCold();
             H8Memory.BeginSceneTransitionPurge();
             _memoryLifecycleTransitionActive = true;
             PublishMemoryLifecyclePause(paused: true, MemoryTransitionLockFlag);
@@ -444,14 +450,22 @@ namespace Hecton8.Core
             GlobalSignals.Publish(in signal);
         }
 
-        private static void ReleaseSceneOwnedVaultBuffers()
+        private void ReleaseSceneOwnedVaultBuffers()
         {
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                vault = CacheDataVaultCold();
             if (vault == null)
                 return;
 
             long releasedBytes;
             vault.ReleaseSceneOwnedBuffers(out releasedBytes);
+        }
+
+        private IDataVault CacheDataVaultCold()
+        {
+            _dataVault = GlobalRegistry.DataVault;
+            return _dataVault;
         }
 
         private static bool ArePersistentWorldPoolsReadyForSceneActivation()

@@ -11,6 +11,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Optimization;
@@ -19,6 +20,7 @@ using Hecton8.SaveSystem;
 using Hecton8.UI;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -34,7 +36,7 @@ namespace Hecton8.VFX
     public sealed class CameraJuiceSystem : MonoBehaviour, ICameraJuiceSystem, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, ISaveable, IInteractionEventListener, IPhysicsImpactEventListener, ICombatDamageEventListener
     {
         // ═══ CACHED REFERENCES ═══
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = CameraJuiceTelemetryEntrySizeBytes)]
         private struct CameraJuiceTelemetryEntry
         {
             public int Frame;
@@ -122,6 +124,7 @@ namespace Hecton8.VFX
         private const float PROCEDURAL_HIT_STOP_THRESHOLD = 0.8f;
         private const int PROCEDURAL_MAX_IMPACTS_PER_FRAME = 32;
         private const int CAMERA_JUICE_TELEMETRY_CAPACITY = 300;
+        private const int CameraJuiceTelemetryEntrySizeBytes = 64;
         private const uint CAMERA_JUICE_HIT_STOP_REASON_HASH = 0xC45A1CEu;
         private const float PROCEDURAL_NOISE_SEED_X = 11.137f;
         private const float PROCEDURAL_NOISE_SEED_Y = 23.719f;
@@ -151,9 +154,11 @@ namespace Hecton8.VFX
         private bool _shakeRotationApplied;
         private Quaternion _lastShakeLocalRotation = Quaternion.identity;
         private Quaternion _lastShakeCompositeLocalRotation = Quaternion.identity;
-        private NativeArray<CameraJuiceTelemetryEntry> _cameraJuiceTelemetry;
+        private IDataVault _dataVault;
+        private VaultBufferHandle<CameraJuiceTelemetryEntry> _cameraJuiceTelemetryHandle;
         private int _cameraJuiceTelemetryCursor;
         private bool _cameraJuiceTelemetryDumped;
+        private bool _cameraJuiceTelemetryReady;
         private float _submarineImpactShakeSign = 1f;
         private int _lastSeismicSignalSequence;
         private float _seismicJitterIntensity;
@@ -1412,40 +1417,81 @@ namespace Hecton8.VFX
                 -direction.x * pulseC * SEISMIC_ROTATION_AMPLITUDE_DEGREES * 0.25f) * _seismicJitterIntensity;
         }
 
-        private void EnsureCameraJuiceTelemetry()
+        private bool EnsureCameraJuiceTelemetry()
         {
-            if (_cameraJuiceTelemetry.IsCreated)
-                return;
+            if (!ValidateCameraJuiceTelemetryLayout())
+            {
+                ReleaseCameraJuiceTelemetry();
+                return false;
+            }
 
-            _cameraJuiceTelemetry = new NativeArray<CameraJuiceTelemetryEntry>(
-                CAMERA_JUICE_TELEMETRY_CAPACITY,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<CameraJuiceTelemetryEntry>[300] - camera juice black-box circular buffer - owner: CameraJuiceSystem
-            NativeMemorySentinel.RegisterNativeArray(
-                _cameraJuiceTelemetry,
-                nameof(CameraJuiceSystem),
-                nameof(_cameraJuiceTelemetry),
-                NativeAllocationLifetime.Scene);
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null || vault.IsCompactionFenceActive)
+            {
+                ReleaseCameraJuiceTelemetry();
+                return false;
+            }
+
+            if (!ReferenceEquals(_dataVault, vault))
+            {
+                _dataVault = vault;
+                _cameraJuiceTelemetryHandle = default;
+                _cameraJuiceTelemetryReady = false;
+            }
+
+            if (!vault.TryGetBufferHandle(BufferID.CameraJuiceTelemetryRing, out _cameraJuiceTelemetryHandle) ||
+                !_cameraJuiceTelemetryHandle.IsCreated)
+            {
+                _cameraJuiceTelemetryHandle = vault.GetBufferHandle<CameraJuiceTelemetryEntry>(
+                    BufferID.CameraJuiceTelemetryRing,
+                    CAMERA_JUICE_TELEMETRY_CAPACITY,
+                    SystemID.Vfx,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            _cameraJuiceTelemetryReady =
+                _cameraJuiceTelemetryHandle.IsCreated &&
+                _cameraJuiceTelemetryHandle.Length >= CAMERA_JUICE_TELEMETRY_CAPACITY;
+            return _cameraJuiceTelemetryReady;
+        }
+
+        private bool TryResolveCameraJuiceTelemetry(out NativeArray<CameraJuiceTelemetryEntry> telemetry)
+        {
+            telemetry = default;
+            if (!EnsureCameraJuiceTelemetry())
+                return false;
+
+            if (!_dataVault.TryGetBufferHandle(BufferID.CameraJuiceTelemetryRing, out _cameraJuiceTelemetryHandle) ||
+                !_cameraJuiceTelemetryHandle.IsCreated)
+            {
+                ReleaseCameraJuiceTelemetry();
+                return false;
+            }
+
+            telemetry = _cameraJuiceTelemetryHandle.Resolve(_dataVault);
+            return telemetry.IsCreated && telemetry.Length >= CAMERA_JUICE_TELEMETRY_CAPACITY;
         }
 
         private void ReleaseCameraJuiceTelemetry()
         {
-            if (!_cameraJuiceTelemetry.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(_cameraJuiceTelemetry);
-            _cameraJuiceTelemetry.Dispose();
-            _cameraJuiceTelemetry = default;
+            _dataVault = null;
+            _cameraJuiceTelemetryHandle = default;
+            _cameraJuiceTelemetryReady = false;
             _cameraJuiceTelemetryCursor = 0;
+        }
+
+        private static bool ValidateCameraJuiceTelemetryLayout()
+        {
+            return UnsafeUtility.SizeOf<CameraJuiceTelemetryEntry>() == CameraJuiceTelemetryEntrySizeBytes;
         }
 
         private void RecordCameraJuiceTelemetry()
         {
-            if (!_cameraJuiceTelemetry.IsCreated)
+            if (!TryResolveCameraJuiceTelemetry(out var telemetry))
                 return;
 
             int index = _cameraJuiceTelemetryCursor % CAMERA_JUICE_TELEMETRY_CAPACITY;
-            _cameraJuiceTelemetry[index] = new CameraJuiceTelemetryEntry
+            telemetry[index] = new CameraJuiceTelemetryEntry
             {
                 Frame = Time.frameCount,
                 Flags = HectonXRRuntimeState.IsXRActive ? 1u : 0u,
@@ -1462,7 +1508,7 @@ namespace Hecton8.VFX
 
         private void DumpCameraJuiceTelemetry()
         {
-            if (_cameraJuiceTelemetryDumped || !_cameraJuiceTelemetry.IsCreated)
+            if (_cameraJuiceTelemetryDumped || !TryResolveCameraJuiceTelemetry(out var telemetry))
                 return;
 
             _cameraJuiceTelemetryDumped = true;
@@ -1484,7 +1530,7 @@ namespace Hecton8.VFX
                     writer.Write(count);
                     for (int i = 0; i < count; i++)
                     {
-                        CameraJuiceTelemetryEntry entry = _cameraJuiceTelemetry[(start + i) % CAMERA_JUICE_TELEMETRY_CAPACITY];
+                        CameraJuiceTelemetryEntry entry = telemetry[(start + i) % CAMERA_JUICE_TELEMETRY_CAPACITY];
                         writer.Write(entry.Frame);
                         writer.Write(entry.Flags);
                         writer.Write(entry.Trauma);

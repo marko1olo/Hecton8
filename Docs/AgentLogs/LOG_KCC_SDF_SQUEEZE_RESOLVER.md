@@ -87,3 +87,52 @@ Validation:
 - `rg` found all `StructLayout` entries in the KCC/player locomotion surface use `Pack = 1`.
 - `rg` found no `Update`, `string.Format`, legacy `EventBus`, managed delegate, `GameObject.Find`, `FindObjectOfType`, `Physics.CapsuleCast`, or `OnCollisionStay` in the resolver/KCC runtime path.
 - `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false` captured in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_polish2.exit.txt`; build is blocked by one foreign XR error in `HectonXRRuntimeState.cs`, and no KCC/locomotion touched file appears in diagnostics.
+
+## 2026-05-16 - Final Green Validation
+What was wrong:
+- The prior validation wall was one foreign Core XR compile error: `XRDisplaySubsystem.TryRequestDisplayRefreshRate` did not exist in the targeted API surface.
+- Current `Assets/_Project/Scripts/Core/HectonXRRuntimeState.cs` no longer contains that API call, so the old wall was stale in the current tree.
+
+What was done:
+- Re-extracted the `KCC_SDF_SQUEEZE_RESOLVER` XML block from `Docs/Tasks/CURRENT_BATCH.md` and recounted 18 tasks.
+- Reran `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false`.
+- Captured the successful output in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_xr_validation.exit.txt`.
+- Updated status and rationale to `VERIFIED MASTER GRADE / BUILD GREEN`.
+
+Cinematic cheats used:
+- No new cinematic code was added in this validation pass.
+- Existing locomotion cheats remain: 4-tap low-tier SDF, 5-frame stress cadence interpolation, signal-driven scrape feedback, high-tier camera roll, and high/ultra `FluidImpulseSignal` for downstream silt/wake overkill.
+
+Exact microseconds saved:
+- Measured compile validation time: 90420000 us elapsed.
+- Runtime savings were not profiler-measured in this pass.
+- Existing engineering estimates remain: 73-167 us saved per active i3/MX350 squeeze frame before profiler validation.
+
+Validation:
+- Build result: succeeded.
+- Warnings: 0.
+- Errors: 0.
+- Exit code: 0.
+
+## 2026-05-16 - NaN Denominator Polish
+What was wrong:
+- Motor-side SDF/sweep helpers used `math.rsqrt` after comparison guards but did not pass explicit `math.max(...)` denominators at every site.
+- This does not save frame time; it removes a NaN propagation class on ARM64/Quest/Android and other strict mobile GPU/CPU paths.
+
+What was done:
+- Hardened `HectonPlayerMotor` displacement direction, `SafeNormal`, voxel-proxy slide fallback, tangent-slide projection, and no-trig quaternion normalization.
+- Re-scanned `SdfSqueezeJob`, `HectonPlayerMotor`, and `PlayerKinematicsRuntime`; `rg --pcre2 "math\\.rsqrt\\((?!math\\.max)"` now returns no matches in those files.
+- Reconfirmed no `Update`, `string.Format`, legacy `EventBus`, managed delegate, `GameObject.Find`, `FindObjectOfType`, `Physics.CapsuleCast`, `OnCollisionStay`, or `KCCManager.Instance` in the scanned KCC/player locomotion surface.
+
+Cinematic cheats used:
+- No new visual cheat code was added in this pass.
+- Existing low-tier 4-tap SDF, stress cadence interpolation, and high/ultra fluid impulse lanes remain unchanged.
+
+Exact microseconds saved:
+- 0 us runtime saving claimed for this pass.
+- Measured failed build validation time: 105250000 us.
+
+Validation:
+- `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_nan_polish.exit.txt` exits 1 with 130 foreign errors.
+- No diagnostics name `SdfSqueezeJob`, `HectonPlayerMotor`, `PlayerKinematicsRuntime`, or `HectonPlayerState`.
+- First foreign blockers: `RepairTool.cs(1036,52)`, `HectonUnderwaterVisuals.cs(3534+)`, and `World/SargassumMicroFaunaBoids.cs(2564+)`.

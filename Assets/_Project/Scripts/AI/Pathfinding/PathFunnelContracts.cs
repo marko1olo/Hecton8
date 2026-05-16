@@ -155,6 +155,14 @@ namespace Hecton8.AI.Pathfinding
     }
 
     /// <summary>
+    /// Runtime telemetry status bits for the path funnel blackbox.
+    /// </summary>
+    public static class PathFunnelTelemetryFlags
+    {
+        public const ushort BlackBoxDumpFailed = 1 << 0;
+    }
+
+    /// <summary>
     /// Vault-resident mutable runtime counters for WFC path invalidation.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 64, Pack = 1)]

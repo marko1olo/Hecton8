@@ -8,6 +8,7 @@ using Hecton8.Core.Contracts.Signals;
 using Hecton8.UI;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -25,7 +26,7 @@ namespace Hecton8.Graphics.Scalability
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9947)]
-    public sealed class ThermalDynamicResolutionAdapter :
+    public sealed unsafe class ThermalDynamicResolutionAdapter :
         MonoBehaviour,
         IUpdatable,
         IGlobalRegistryHotSwapListener,
@@ -55,10 +56,19 @@ namespace Hecton8.Graphics.Scalability
         private const float EwmaAlpha = 0.18f;
         private const float ScaleEpsilon = 0.0001f;
         private const float SharpenEpsilon = 0.001f;
+        private const float VisualBudgetEpsilon = 0.01f;
+        private const float HighTierThermalMaxScale = 0.9f;
+        private const float UltraTierThermalMaxScale = 1.0f;
         private const int AupShiftLockFrames = 3;
         private const int PressureHysteresisFrames = 3;
         private const int RecoveryHysteresisFrames = 15;
         private const int TelemetryReportCooldownFrames = 30;
+        private const uint VisualFeatureVisorSalt = 1u << 0;
+        private const uint VisualFeatureVolumetricSilt = 1u << 1;
+        private const uint VisualFeatureProceduralHullDents = 1u << 2;
+        private const uint VisualFeaturePom16Tap = 1u << 3;
+        private const uint VisualFeatureSubsurfaceScatter = 1u << 4;
+        private const uint VisualFeatureRaymarchedFog = 1u << 5;
         private const byte FlagThermalOverride = 1 << 0;
         private const byte FlagFramePressure = 1 << 1;
         private const byte FlagNotification = 1 << 2;
@@ -70,6 +80,12 @@ namespace Hecton8.Graphics.Scalability
         private static readonly PerformDynamicRes s_systemScaler = ResolveSystemScalePercentage;
         private static readonly PerformDynamicRes s_nativeScale = ResolveNativeScalePercentage;
         private static readonly int s_sharpenIntensityId = Shader.PropertyToID("_SharpenIntensity");
+        private static readonly int s_stpRenderScaleId = Shader.PropertyToID("_H8StpRenderScale01");
+        private static readonly int s_stpScaleDeficitId = Shader.PropertyToID("_H8StpScaleDeficit01");
+        private static readonly int s_dearLieId = Shader.PropertyToID("_H8DearLie01");
+        private static readonly int s_visualOverkillId = Shader.PropertyToID("_H8VisualOverkill01");
+        private static readonly int s_visualFeatureFlagsId = Shader.PropertyToID("_H8VisualFeatureFlags");
+        private static readonly int s_visorFluidOverkillId = Shader.PropertyToID("_HectonVisorFluidVisualOverkill");
         private static ThermalDynamicResolutionAdapter s_activeAdapter;
         private static float s_systemScalePercentage = 100f;
 
@@ -91,8 +107,16 @@ namespace Hecton8.Graphics.Scalability
         private float _latestSystemStress01;
         private float _latestSystemStressEwma01;
         private float _sharpenIntensity01;
+        private float _dearLie01;
+        private float _visualOverkill01;
         private float _lastCommittedSharpenIntensity01 = -1f;
+        private float _lastCommittedRenderScale01 = -1f;
+        private float _lastCommittedScaleDeficit01 = -1f;
+        private float _lastCommittedDearLie01 = -1f;
+        private float _lastCommittedVisualOverkill01 = -1f;
         private float _lastPublishedScale = PolicyMaxScale;
+        private uint _visualFeatureFlags;
+        private uint _lastCommittedVisualFeatureFlags = uint.MaxValue;
         private byte _pressureLevel;
         private byte _thermalSeverity;
         private byte _foveatedPressureTier;
@@ -109,6 +133,7 @@ namespace Hecton8.Graphics.Scalability
         private bool _notificationArmed = true;
         private bool _blackBoxDumped;
         private bool _stressEwmaScheduled;
+        private bool _stressEwmaBufferLocked;
         private bool _stpActive = true;
 
 #if UNITY_ANDROID && !UNITY_EDITOR
@@ -163,15 +188,17 @@ namespace Hecton8.Graphics.Scalability
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
-        private struct SystemStressEwmaJob : IJob
+        private unsafe struct SystemStressEwmaJob : IJob
         {
-            public NativeArray<ResolutionScaleState> State;
+            [NativeDisableUnsafePtrRestriction]
+            public ResolutionScaleState* State;
+            public int StateLength;
             public float InputStress01;
             public float Alpha;
 
             public void Execute()
             {
-                if (State.Length <= 0)
+                if (State == null || StateLength <= 0)
                     return;
 
                 float input = math.isfinite(InputStress01) ? math.saturate(InputStress01) : 1f;
@@ -233,10 +260,12 @@ namespace Hecton8.Graphics.Scalability
             _lastObservedScaleMilli = ScaleToMilli(_currentScale);
             s_systemScalePercentage = _currentScale * 100f;
             _notificationMessageHash = NotificationEvents.RegisterMessage(NotificationMessage);
-            TryResolveTelemetryBuffer(out _);
-            TryResolveScaleStateBuffer(out NativeArray<ResolutionScaleState> scaleState);
-            UpdateScaleState(0, scaleState);
+            TryResolveTelemetryPointer(out _, out _);
+            TryResolveScaleStatePointer(out ResolutionScaleState* scaleState, out int scaleStateLength);
+            UpdateVisualBudget((HectonQualityTier)_hardwareTier, _latestSystemStressEwma01);
+            UpdateScaleState(0, scaleState, scaleStateLength);
             ApplySharpenGlobal();
+            ApplyVisualBudgetGlobals();
             InstallSystemDynamicResolutionScaler();
             RebindDynamicResolutionRuntime(GlobalRegistry.DynamicResolutionRuntime);
         }
@@ -312,7 +341,7 @@ namespace Hecton8.Graphics.Scalability
             if (!ReferenceEquals(s_activeAdapter, this))
                 return;
 
-            TryResolveScaleStateBuffer(out NativeArray<ResolutionScaleState> scaleState);
+            TryResolveScaleStatePointer(out ResolutionScaleState* scaleState, out int scaleStateLength);
             ConsumeSignals();
             _latestFrameTimeEwmaMs = SanitizePositive(_latestFrameTimeEwmaMs, TargetFrameTimeMs);
             _latestSystemHealth01 = Sanitize01(_latestSystemHealth01);
@@ -323,9 +352,9 @@ namespace Hecton8.Graphics.Scalability
             if (_latestSystemStressEwma01 <= 0f)
                 _latestSystemStressEwma01 = _latestSystemStress01;
 
-            if (RecoverInvalidScaleState(scaleState))
+            if (RecoverInvalidScaleState(scaleState, scaleStateLength))
             {
-                ScheduleStressEwmaJob(_latestSystemStress01, scaleState);
+                ScheduleStressEwmaJob(_latestSystemStress01, scaleState, scaleStateLength);
                 return;
             }
 
@@ -334,16 +363,18 @@ namespace Hecton8.Graphics.Scalability
             float stress01 = Sanitize01(_latestSystemStressEwma01);
             float requestedScale = ResolvePolicyScale(tier, stress01, ref flags);
             bool pressureActive = (flags & (FlagFramePressure | FlagThermalOverride | FlagLowTierEmergency)) != 0;
+            UpdateVisualBudget(tier, stress01);
 
             if (_aupShiftLockFrames > 0)
             {
                 flags |= FlagAupLocked;
                 _targetScale = _currentScale;
                 CommitRuntimeSnapshot(flags);
+                ApplyVisualBudgetGlobals();
                 _aupShiftLockFrames--;
-                UpdateScaleState(flags, scaleState);
+                UpdateScaleState(flags, scaleState, scaleStateLength);
                 WriteTelemetry(flags);
-                ScheduleStressEwmaJob(_latestSystemStress01, scaleState);
+                ScheduleStressEwmaJob(_latestSystemStress01, scaleState, scaleStateLength);
                 return;
             }
 
@@ -367,6 +398,7 @@ namespace Hecton8.Graphics.Scalability
             {
                 CommitRuntimeSnapshot(flags);
                 ApplySharpenGlobal();
+                ApplyVisualBudgetGlobals();
             }
 
             if (notifyScale)
@@ -378,15 +410,15 @@ namespace Hecton8.Graphics.Scalability
                 _notificationArmed = true;
             }
 
-            UpdateScaleState(flags, scaleState);
+            UpdateScaleState(flags, scaleState, scaleStateLength);
             WriteTelemetry(flags);
-            ScheduleStressEwmaJob(_latestSystemStress01, scaleState);
+            ScheduleStressEwmaJob(_latestSystemStress01, scaleState, scaleStateLength);
         }
 
         public bool TryGetScaleState(out ResolutionScaleState state)
         {
             CompletePendingStressJob();
-            if (TryResolveScaleStateBuffer(out NativeArray<ResolutionScaleState> scaleState))
+            if (TryResolveScaleStatePointer(out ResolutionScaleState* scaleState, out _))
             {
                 state = scaleState[0];
                 return true;
@@ -549,6 +581,7 @@ namespace Hecton8.Graphics.Scalability
 
             CommitQuestXrScale();
             ApplySharpenGlobal();
+            ApplyVisualBudgetGlobals();
             PublishResolutionChangedSignalIfNeeded(flags);
             PublishScaleTelemetryIfChanged();
         }
@@ -567,9 +600,10 @@ namespace Hecton8.Graphics.Scalability
             }
         }
 
-        private bool TryResolveScaleStateBuffer(out NativeArray<ResolutionScaleState> scaleState)
+        private bool TryResolveScaleStatePointer(out ResolutionScaleState* scaleState, out int scaleStateLength)
         {
-            scaleState = default;
+            scaleState = null;
+            scaleStateLength = 0;
             IDataVault vault = GlobalRegistry.DataVault;
             if (!ReferenceEquals(_dataVault, vault))
                 RebindDataVault(vault);
@@ -587,13 +621,19 @@ namespace Hecton8.Graphics.Scalability
                     NativeArrayOptions.ClearMemory);
             }
 
-            scaleState = _scaleStateHandle.Resolve(_dataVault);
-            return scaleState.IsCreated && scaleState.Length >= 1;
+            void* pointer = _scaleStateHandle.ResolvePointer(_dataVault);
+            if (pointer == null || _scaleStateHandle.Length < 1)
+                return false;
+
+            scaleState = (ResolutionScaleState*)pointer;
+            scaleStateLength = _scaleStateHandle.Length;
+            return true;
         }
 
-        private bool TryResolveTelemetryBuffer(out NativeArray<DrsTelemetryEntry> telemetryRing)
+        private bool TryResolveTelemetryPointer(out DrsTelemetryEntry* telemetryRing, out int telemetryLength)
         {
-            telemetryRing = default;
+            telemetryRing = null;
+            telemetryLength = 0;
             IDataVault vault = GlobalRegistry.DataVault;
             if (!ReferenceEquals(_dataVault, vault))
                 RebindDataVault(vault);
@@ -611,8 +651,13 @@ namespace Hecton8.Graphics.Scalability
                     NativeArrayOptions.ClearMemory);
             }
 
-            telemetryRing = _telemetryHandle.Resolve(_dataVault);
-            return telemetryRing.IsCreated && telemetryRing.Length >= TelemetryCapacity;
+            void* pointer = _telemetryHandle.ResolvePointer(_dataVault);
+            if (pointer == null || _telemetryHandle.Length < TelemetryCapacity)
+                return false;
+
+            telemetryRing = (DrsTelemetryEntry*)pointer;
+            telemetryLength = _telemetryHandle.Length;
+            return true;
         }
 
         private void RebindDataVault(IDataVault vault)
@@ -627,9 +672,9 @@ namespace Hecton8.Graphics.Scalability
             _telemetryHandle = default;
         }
 
-        private void UpdateScaleState(byte flags, NativeArray<ResolutionScaleState> scaleState)
+        private void UpdateScaleState(byte flags, ResolutionScaleState* scaleState, int scaleStateLength)
         {
-            if (!scaleState.IsCreated || scaleState.Length <= 0)
+            if (scaleState == null || scaleStateLength <= 0)
                 return;
 
             byte stateFlags = 0;
@@ -657,38 +702,82 @@ namespace Hecton8.Graphics.Scalability
                 HardwareTier = _hardwareTier,
                 StpActive = _stpActive ? (byte)1 : (byte)0,
                 Flags = stateFlags,
-                AupLockFrames = (byte)math.clamp(_aupShiftLockFrames, 0, byte.MaxValue)
+                AupLockFrames = (byte)math.clamp(_aupShiftLockFrames, 0, byte.MaxValue),
+                VisualOverkill01 = _visualOverkill01,
+                DearLie01 = _dearLie01,
+                VisualFeatureFlags = _visualFeatureFlags
             };
         }
 
-        private void ScheduleStressEwmaJob(float inputStress01, NativeArray<ResolutionScaleState> scaleState)
+        private void ScheduleStressEwmaJob(float inputStress01, ResolutionScaleState* scaleState, int scaleStateLength)
         {
-            if (_stressEwmaScheduled || !scaleState.IsCreated || scaleState.Length <= 0)
+            if (_stressEwmaScheduled || scaleState == null || scaleStateLength <= 0)
                 return;
 
+            if (_dataVault == null || !_dataVault.TryLockBuffer(BufferID.ResolutionScaleState))
+                return;
+
+            void* pointer = _scaleStateHandle.ResolvePointer(_dataVault);
+            if (pointer == null || _scaleStateHandle.Length <= 0)
+            {
+                _dataVault.TryUnlockBuffer(BufferID.ResolutionScaleState);
+                return;
+            }
+
+            scaleState = (ResolutionScaleState*)pointer;
+            scaleStateLength = _scaleStateHandle.Length;
             SystemStressEwmaJob job = new SystemStressEwmaJob
             {
                 State = scaleState,
+                StateLength = scaleStateLength,
                 InputStress01 = inputStress01,
                 Alpha = EwmaAlpha
             };
             _stressEwmaHandle = job.Schedule();
             _stressEwmaScheduled = true;
+            _stressEwmaBufferLocked = true;
         }
 
         private void CompletePendingStressJob(bool force = false)
         {
             if (!_stressEwmaScheduled)
+            {
+                if (_stressEwmaBufferLocked)
+                {
+                    if (_dataVault != null)
+                        _dataVault.TryUnlockBuffer(BufferID.ResolutionScaleState);
+                    _stressEwmaBufferLocked = false;
+                }
+
                 return;
+            }
 
             if (!force && !_stressEwmaHandle.IsCompleted)
                 return;
 
             _stressEwmaHandle.Complete();
             _stressEwmaScheduled = false;
-            if (TryResolveScaleStateBuffer(out NativeArray<ResolutionScaleState> scaleState))
+            bool hasState = false;
+            ResolutionScaleState state = default;
+            if (_dataVault != null && _scaleStateHandle.IsCreated)
             {
-                ResolutionScaleState state = scaleState[0];
+                void* pointer = _scaleStateHandle.ResolvePointer(_dataVault);
+                if (pointer != null && _scaleStateHandle.Length > 0)
+                {
+                    state = ((ResolutionScaleState*)pointer)[0];
+                    hasState = true;
+                }
+            }
+
+            if (_stressEwmaBufferLocked)
+            {
+                if (_dataVault != null)
+                    _dataVault.TryUnlockBuffer(BufferID.ResolutionScaleState);
+                _stressEwmaBufferLocked = false;
+            }
+
+            if (hasState)
+            {
                 _latestSystemStress01 = Sanitize01(state.SystemStress01);
                 _latestSystemStressEwma01 = Sanitize01(state.SystemStressEwma01);
             }
@@ -732,6 +821,10 @@ namespace Hecton8.Graphics.Scalability
             _lastPublishedScale = _currentScale;
             _sharpenIntensity01 = 0f;
             ApplySharpenGlobal();
+            _dearLie01 = 0f;
+            _visualOverkill01 = 0f;
+            _visualFeatureFlags = 0u;
+            ApplyVisualBudgetGlobals();
             s_systemScalePercentage = _currentScale * 100f;
         }
 
@@ -808,7 +901,7 @@ namespace Hecton8.Graphics.Scalability
             }
         }
 
-        private bool RecoverInvalidScaleState(NativeArray<ResolutionScaleState> scaleState)
+        private bool RecoverInvalidScaleState(ResolutionScaleState* scaleState, int scaleStateLength)
         {
             if (math.isfinite(_currentScale) &&
                 math.isfinite(_targetScale) &&
@@ -830,7 +923,7 @@ namespace Hecton8.Graphics.Scalability
             _recoveryFrameCount = RecoveryHysteresisFrames;
             s_systemScalePercentage = 100f;
             CommitRenderScale(FlagInvalidState);
-            UpdateScaleState(FlagInvalidState, scaleState);
+            UpdateScaleState(FlagInvalidState, scaleState, scaleStateLength);
             return true;
         }
 
@@ -849,7 +942,7 @@ namespace Hecton8.Graphics.Scalability
                 Severity = (byte)NotificationEventSeverity.Info,
                 Flags = _foveatedPressureTier
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<HUDNotificationSignal>.Push(in signal);
         }
 
         private void PublishResolutionChangedSignalIfNeeded(byte flags)
@@ -872,7 +965,7 @@ namespace Hecton8.Graphics.Scalability
                 Flags = (byte)(ResolutionChangedSignal.FlagRenderScale |
                     (_stpActive ? ResolutionChangedSignal.FlagStpActive : 0))
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<ResolutionChangedSignal>.Push(in signal);
         }
 
         private void ApplyDirectRenderScale(float renderScale, float bufferScale)
@@ -891,6 +984,43 @@ namespace Hecton8.Graphics.Scalability
 
             _lastCommittedSharpenIntensity01 = _sharpenIntensity01;
             Shader.SetGlobalFloat(s_sharpenIntensityId, _sharpenIntensity01);
+        }
+
+        private void ApplyVisualBudgetGlobals()
+        {
+            float renderScale01 = SanitizePositive(_currentScale, PolicyMaxScale);
+            float scaleDeficit01 = math.saturate(PolicyMaxScale - math.min(renderScale01, PolicyMaxScale));
+
+            if (math.abs(renderScale01 - _lastCommittedRenderScale01) > VisualBudgetEpsilon)
+            {
+                _lastCommittedRenderScale01 = renderScale01;
+                Shader.SetGlobalFloat(s_stpRenderScaleId, renderScale01);
+            }
+
+            if (math.abs(scaleDeficit01 - _lastCommittedScaleDeficit01) > VisualBudgetEpsilon)
+            {
+                _lastCommittedScaleDeficit01 = scaleDeficit01;
+                Shader.SetGlobalFloat(s_stpScaleDeficitId, scaleDeficit01);
+            }
+
+            if (math.abs(_dearLie01 - _lastCommittedDearLie01) > VisualBudgetEpsilon)
+            {
+                _lastCommittedDearLie01 = _dearLie01;
+                Shader.SetGlobalFloat(s_dearLieId, _dearLie01);
+            }
+
+            if (math.abs(_visualOverkill01 - _lastCommittedVisualOverkill01) > VisualBudgetEpsilon)
+            {
+                _lastCommittedVisualOverkill01 = _visualOverkill01;
+                Shader.SetGlobalFloat(s_visualOverkillId, _visualOverkill01);
+                Shader.SetGlobalFloat(s_visorFluidOverkillId, _visualOverkill01);
+            }
+
+            if (_visualFeatureFlags != _lastCommittedVisualFeatureFlags)
+            {
+                _lastCommittedVisualFeatureFlags = _visualFeatureFlags;
+                Shader.SetGlobalInt(s_visualFeatureFlagsId, unchecked((int)_visualFeatureFlags));
+            }
         }
 
         private void PublishScaleTelemetryIfChanged()
@@ -914,7 +1044,7 @@ namespace Hecton8.Graphics.Scalability
 
         private void WriteTelemetry(byte flags)
         {
-            if (!TryResolveTelemetryBuffer(out NativeArray<DrsTelemetryEntry> telemetryRing))
+            if (!TryResolveTelemetryPointer(out DrsTelemetryEntry* telemetryRing, out int telemetryLength))
                 return;
 
             bool nonFinite =
@@ -926,6 +1056,9 @@ namespace Hecton8.Graphics.Scalability
                 !math.isfinite(_sharpenIntensity01);
 
             int index = _telemetryCursor;
+            if ((uint)index >= (uint)TelemetryCapacity || index >= telemetryLength)
+                index = 0;
+
             telemetryRing[index] = new DrsTelemetryEntry
             {
                 Frame = unchecked((uint)Time.frameCount),
@@ -941,7 +1074,9 @@ namespace Hecton8.Graphics.Scalability
                 ThermalSeverity = _thermalSeverity,
                 StpActive = _stpActive ? (byte)1 : (byte)0,
                 AupLockFrames = (byte)math.clamp(_aupShiftLockFrames, 0, byte.MaxValue),
-                HysteresisCounters = PackHysteresisCounters()
+                HysteresisCounters = PackHysteresisCounters(),
+                Reserved = (ushort)math.clamp(ScaleToMilli(_visualOverkill01), 0, ushort.MaxValue),
+                Reserved0 = _visualFeatureFlags
             };
 
             index++;
@@ -964,7 +1099,7 @@ namespace Hecton8.Graphics.Scalability
 
         private void DumpBlackBoxOnce()
         {
-            if (_blackBoxDumped || !TryResolveTelemetryBuffer(out NativeArray<DrsTelemetryEntry> telemetryRing))
+            if (_blackBoxDumped || !TryResolveTelemetryPointer(out DrsTelemetryEntry* telemetryRing, out int telemetryLength))
                 return;
 
             _blackBoxDumped = true;
@@ -982,7 +1117,8 @@ namespace Hecton8.Graphics.Scalability
                 writer.Write(TelemetryCapacity);
                 writer.Write(_telemetryCursor);
                 writer.Write(_sequence);
-                for (int i = 0; i < TelemetryCapacity; i++)
+                int count = math.min(TelemetryCapacity, telemetryLength);
+                for (int i = 0; i < count; i++)
                 {
                     DrsTelemetryEntry entry = telemetryRing[i];
                     writer.Write(entry.Frame);
@@ -1052,7 +1188,9 @@ namespace Hecton8.Graphics.Scalability
         {
             if (IsLowTier(tier))
                 return LowTierEmergencyScale;
-            return tier == HectonQualityTier.Mid ? 0.65f : 0.85f;
+            if (tier == HectonQualityTier.Mid)
+                return 0.65f;
+            return tier == HectonQualityTier.Ultra ? UltraTierThermalMaxScale : HighTierThermalMaxScale;
         }
 
         private static bool ResolveStpIntent(HectonQualityTier tier)
@@ -1065,7 +1203,7 @@ namespace Hecton8.Graphics.Scalability
 
         private byte ResolveHardwareTierByte()
         {
-            HectonQualityTier tier = GlobalRegistry.QualityTier;
+            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
             if (tier != HectonQualityTier.Unknown)
                 return (byte)tier;
 
@@ -1098,6 +1236,50 @@ namespace Hecton8.Graphics.Scalability
 
             float deficit = math.saturate((PolicyMaxScale - nextScale) * math.rcp(PolicyMaxScale - LowTierEmergencyScale));
             return math.clamp(0.08f + deficit * 0.62f, 0f, 0.75f);
+        }
+
+        private void UpdateVisualBudget(HectonQualityTier tier, float stress01)
+        {
+            stress01 = Sanitize01(stress01);
+            if (IsLowTier(tier))
+            {
+                _dearLie01 = 1f;
+                _visualOverkill01 = 0f;
+                _visualFeatureFlags = 0u;
+                return;
+            }
+
+            if (tier == HectonQualityTier.Mid)
+            {
+                _dearLie01 = 0.35f;
+                _visualOverkill01 = math.saturate(0.25f * (1f - stress01));
+                _visualFeatureFlags = _visualOverkill01 > 0.1f ? VisualFeatureVolumetricSilt : 0u;
+                return;
+            }
+
+            float headroom01 = math.saturate(1f - stress01);
+            if (tier == HectonQualityTier.Ultra)
+            {
+                _dearLie01 = 0f;
+                _visualOverkill01 = math.saturate(0.78f + headroom01 * 0.22f);
+                _visualFeatureFlags =
+                    VisualFeatureVisorSalt |
+                    VisualFeatureVolumetricSilt |
+                    VisualFeatureProceduralHullDents |
+                    VisualFeaturePom16Tap |
+                    VisualFeatureSubsurfaceScatter |
+                    VisualFeatureRaymarchedFog;
+                return;
+            }
+
+            _dearLie01 = 0f;
+            _visualOverkill01 = math.saturate(0.55f + headroom01 * 0.25f);
+            _visualFeatureFlags =
+                VisualFeatureVisorSalt |
+                VisualFeatureVolumetricSilt |
+                VisualFeatureProceduralHullDents |
+                VisualFeaturePom16Tap |
+                VisualFeatureSubsurfaceScatter;
         }
 
         private ushort PackHysteresisCounters()

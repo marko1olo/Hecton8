@@ -195,3 +195,185 @@ Rejected Alternatives: Creating fake RealtimeCSG/plugin files or cross-domain st
 Scalability potential: Not runtime-relevant. Integration must restore the missing external/generated artifacts before player profiling and final dotnet validation can be authoritative.
 
 Hardware Impact: 0us runtime. Validation remains blocked by dependency state, not scatter code.
+
+## 2026-05-16 Loop 7: Constant Buffer + Draw State Isolation
+
+Problem: The scatter compute kernel was still fed through fragmented per-frame scalar/vector uploads, including six separate frustum plane values. That violates the GPU compute mandate's constant-buffer packing rule and increases driver work before the dispatch.
+
+Solution: Added `HectonScatterFrameConstants`, a fixed 176B `[StructLayout(LayoutKind.Sequential, Pack = 1)]` C# payload mirrored by `CBUFFER_START(HectonScatterFrameConstants)` in `GpuScatterLodCull.compute`. The hot path uploads one `GraphicsBuffer.Target.Constant` when `SystemInfo.supportsSetConstantBuffer` is available, with an explicit individual-vector fallback for unsupported platforms.
+
+Rejected Alternatives: Keeping `SetVectorArray` or separate `SetInt`/`SetFloat` calls was rejected because it scatters hot-path driver state and violates the compute mandate. A `StructuredBuffer` for frame constants was rejected because these are uniform values, not indexed per-instance data.
+
+Scalability potential: Low/MX350 keeps the same 64-thread kernel and cheap 100m cull while paying fewer dispatch setup calls. Middle/High/Ultra use the same packed lane and spend saved CPU/driver overhead on 250m/500m flora residency, crossfade, and stronger existing vegetation lighting lanes.
+
+Hardware Impact: Expected gain is driver-call reduction, not shader ALU removal. Exact microseconds are PENDING VERIFICATION until Unity profiler/RenderDoc capture; estimated setup saving is 5-20us on weak CPU paths, with no claimed measured value.
+
+Problem: Shared material mutation for buffer and scalar bindings can contaminate other renderers using the same material asset, while runtime material clones are cold memory debt and explicitly bad for asset ownership.
+
+Solution: Routed the indirect draw's buffer and scalar bindings through one cached draw-local state object passed by `RenderParams.matProps`. The material asset still owns shader variants/keywords; buffers, offsets, LOD distances, and high/low scalar lanes are isolated per submission.
+
+Rejected Alternatives: Per-frame material clones were rejected as heap/asset-state debt. Mutating shared material buffers every render was rejected because multiple scatter managers or reused materials could observe stale state. Creating a custom wrapper around the flora material was rejected because this is first-party indirect draw plumbing, not third-party asset ownership.
+
+Scalability potential: Low keeps one cheap draw lane. High/Ultra can push the same material asset with stronger draw-local values without cross-manager contamination. The visual overkill remains flora-domain only: longer residency, crossfade, SSS/caustic/bloom lanes, and deterministic motion vectors.
+
+Hardware Impact: 0B/frame managed GC target remains intact because the state object is allocated once in `Awake`. Exact microseconds are PENDING VERIFICATION; the expected win is correctness and reduced material-state churn, not a guaranteed measurable CPU delta.
+
+Problem: The blackbox dump path still had a managed debug log on exception and wrote the ring in physical buffer order, making post-crash analysis harder.
+
+Solution: Removed `Debug.LogError` from the dump catch path and publish a typed telemetry fault instead. The binary dump now starts at the oldest available ring entry and wraps chronologically through the last recorded frame.
+
+Rejected Alternatives: `Debug.Log` was rejected because fault paths must not allocate strings or depend on Unity console state. Raw physical ring order was rejected because it forces manual cursor reconstruction during crash triage.
+
+Scalability potential: All tiers keep identical 300-frame evidence. Low devices avoid console string debt; High/Ultra can raise visual density without losing deterministic crash context.
+
+Hardware Impact: Fault-path only. Hot-path microseconds saved are 0us; crash-analysis quality improves. Runtime validation remains PENDING VERIFICATION because the project baseline still cannot compile.
+
+Problem: The latest compile probe still cannot deliver final validation, and the blocker has moved as other agents change the baseline.
+
+Solution: Re-ran isolated `Assembly-CSharp` and filtered `Hecton8.Core` probes after the constant-buffer pass. `Assembly-CSharp` still stops on missing `Temp/bin/Debug` metadata DLLs. `Hecton8.Core.csproj` currently stops in unrelated `SubmarineFluidDynamics` CS1612/CS0200 read-only native handle writes. No filtered `GpuScatter`, `FloraScatter`, `BufferID`, or `H8Memory` error appeared.
+
+Rejected Alternatives: Editing `SubmarineFluidDynamics` from the rendering scatter task was rejected as outside the assigned domain. Inventing metadata DLLs or cross-domain stubs was rejected because it would hide the real integration state.
+
+Scalability potential: Not runtime-relevant. Scatter profiling still requires the baseline compile wall to be cleared first.
+
+Hardware Impact: 0us runtime. Validation remains PENDING VERIFICATION.
+
+## 2026-05-16 Loop 8: Shader Aux Lanes + Stale Args Quarantine
+
+Problem: `Hecton_IndirectVegetation.shader` unconditionally reads `_HectonFloraAges01` and `_HectonFloraPhaseSeeds`, but the scatter renderer only bound matrices, metadata, motion vectors, and visible indices. On strict mobile/Metal backends that is a real unbound-buffer risk, not a cosmetic warning.
+
+Solution: Added DataVault-owned `BufferID.FloraScatterAge01` and `BufferID.FloraScatterPhaseSeeds` lanes, resolves them through `VaultBufferHandle<float>`, creates matching structured GPU buffers, uploads them with the same generation/dirty rules as the other scatter data, and binds them draw-locally. If a producer has not supplied data, the renderer initializes ages to `1.0` and phase seeds through a deterministic hash.
+
+Rejected Alternatives: Editing the vegetation shader to stop reading those lanes was rejected because that shader is already the flora visual authority and other producers may depend on those channels. Binding tiny dummy private arrays was rejected because it violates DataVault sovereignty and can break at 100k source-index reads. CPU-calculating per-frame ages was rejected because it adds managed/system ownership the renderer does not need.
+
+Scalability potential: Low/MX350 gets deterministic cheap phase variation without CPU animation. Middle/High/Ultra can consume richer producer-filled ages/seeds later for crossfade, growth state, and shader overkill without changing the indirect draw contract.
+
+Hardware Impact: Correctness and crash prevention are the main gain. Exact microseconds are PENDING VERIFICATION; default-lane initialization happens only when the Vault buffer is created or expanded, not per frame.
+
+Problem: The vegetation shader has multiple optional `StructuredBuffer` reads gated by counts or resolutions. If shared material state from another renderer leaves those gates non-zero while this indirect draw does not bind the optional buffers, the GPU can read undefined resources.
+
+Solution: Added draw-local optional fallback state that sets snap flags, flow resolution, interaction count, wake count, impact sphere count, predator AUP count, abyssal grid resolution, and abyssal flow texture activity to zero through the cached `RenderParams.matProps` state.
+
+Rejected Alternatives: Mutating the shared material to zero these fields was rejected because it contaminates other renderers. Binding all optional buffers from this manager was rejected because those systems are outside the scatter domain. Ignoring the issue was rejected because Quest/Android and Metal drivers are less forgiving about invalid resource reads.
+
+Scalability potential: Low avoids optional buffer pressure entirely. High/Ultra can still receive those optional effects from their owning systems once real buffers and non-zero counts are supplied through the correct domain path.
+
+Hardware Impact: A handful of draw-local scalar writes are expected to be below profiling noise; exact microseconds are PENDING VERIFICATION. The value is deterministic resource safety.
+
+Problem: Invalid frustum, zero active count, or failed upload returned early while the previous indirect args count could remain live. That can draw stale flora for one or more frames and poison the blackbox visible count.
+
+Solution: Added `ClearVisibleState()` to reset append counters, copy a zero append count into the indirect args instance slot when needed, clear pending visible readback state, and record blackbox flags for invalid frustum and no-active-instance early exits. Args-buffer recreation now invalidates the indirect-args cache so a reused mesh cannot skip initialization on a fresh buffer.
+
+Rejected Alternatives: Letting the next successful dispatch overwrite args was rejected because failure frames still render. CPU-writing args every early exit was rejected where `CopyCount` can keep ownership on the GPU path. Suppressing blackbox entries was rejected because no-active and invalid-frustum frames are diagnostic state.
+
+Scalability potential: Low devices get stricter fault containment with no extra normal-frame work. High/Ultra can run aggressive 500m residency without stale indirect draws after a producer or frustum fault.
+
+Hardware Impact: Normal-frame cost is 0us beyond a dirty flag. Fault/early-exit cost is one append-counter reset and one `GraphicsBuffer.CopyCount`. Exact microseconds are PENDING VERIFICATION.
+
+Problem: The renderer still bound `_HectonScatterVisibleMatrices` to the material even though the current indirect vegetation shader uses source matrices plus visible source indices, not the appended visible-matrix buffer.
+
+Solution: Removed the unused material buffer binding while preserving the compute append stream and `CopyCount` source required by the prompt.
+
+Rejected Alternatives: Removing the visible-matrix append buffer entirely was rejected because task 6 explicitly requires it and task 16 uses it as the indirect count source. Keeping the unused shader binding was rejected because it is dead material state.
+
+Scalability potential: All tiers keep the same prompt-compliant append stream. Future high-tier passes can still consume the visible-matrix buffer from compute without adding CPU compaction.
+
+Hardware Impact: Estimated 1-3us driver-state reduction on weak CPU paths, PENDING PROFILER. No measured microsecond claim is made.
+
+Problem: The latest validation pass still cannot produce a clean `dotnet build` verdict, and the external blocker changed again while scatter code stayed filtered-clean.
+
+Solution: Re-ran the focused static scan, `git diff --check`, isolated `Assembly-CSharp`, and filtered `Hecton8.Core` build probes. Static scan returned no forbidden scatter hot-path patterns. `git diff --check` reported only LF-to-CRLF warnings. `Assembly-CSharp` still fails on missing `Temp/bin/Debug` metadata DLLs. `Hecton8.Core.csproj` now fails at `Assets/_Project/Scripts/Core/InputDispatcher.cs(7,2)` with CS1032, before scatter compilation evidence can be authoritative.
+
+Rejected Alternatives: Editing `InputDispatcher.cs` from the rendering scatter mandate was rejected as outside the assigned domain. Inventing generated/plugin metadata DLLs was rejected because it would falsify the build state. Claiming verified microseconds was rejected because there is still no compiled profiling player.
+
+Scalability potential: Not runtime-relevant. Profiling Low/Middle/High/Ultra tiers still depends on restoring the baseline compile pipeline.
+
+Hardware Impact: 0us runtime. Validation remains dependency-blocked, not scatter-blocked by the filtered evidence available.
+
+## 2026-05-16 Loop 9: Mobile Thread-Group Contract
+
+Problem: The compute shader declares `[numthreads(64, 1, 1)]`, but the C# dispatch path still used a hardcoded `64`. The mobile compute mandate requires runtime query through `ComputeShader.GetKernelThreadGroupSizes`, because shader/C# drift can silently over-dispatch or under-dispatch after a kernel edit.
+
+Solution: Added `_dispatchThreadGroupSizeX` populated from `GetKernelThreadGroupSizes` after kernel resolution. Dispatch group count now uses the queried X dimension. The CPU Burst audit keeps a separate `BurstAuditBatchSize` constant because it is job scheduling granularity, not GPU shader ABI.
+
+Rejected Alternatives: Keeping one shared `ThreadGroupSize` constant was rejected because it hides shader/C# drift. Parsing shader text from C# was rejected as brittle and I/O-hostile. Assuming the current 64 is forever valid was rejected by the mobile warp-sizing mandate.
+
+Scalability potential: Low/MX350 and Quest get the actual kernel size and avoid divergent dispatch math. High/Ultra can change kernel variants later without touching draw submission code, as long as the shader reports a valid group shape.
+
+Hardware Impact: Expected hot-path microsecond delta is 0us after initialization because the query runs during GPU state resolution, not every frame. It removes a correctness failure mode; exact profiler data remains PENDING VERIFICATION.
+
+Problem: Metal/Mac and mobile reject oversized thread groups; the previous code only relied on the current shader value being safe.
+
+Solution: Added a 1024-total-thread guard for the queried kernel dimensions. Invalid or zero group dimensions fail GPU readiness, reset to the 64-thread fallback, and record `BlackBoxFlagInvalidThreadGroup` into the 300-frame scatter blackbox.
+
+Rejected Alternatives: Letting Unity or the driver fail later was rejected because the blackbox would not identify the scatter dispatch contract as the cause. Clamping an oversized group and continuing was rejected because C# cannot change the shader's actual `numthreads`.
+
+Scalability potential: Low/Mobile gets fail-fast protection. High/Ultra still uses the queried dispatch size and can add future desktop-only kernel variants only after platform capture.
+
+Hardware Impact: Fault-path only. Normal-frame cost remains 0us target; no measured microsecond claim.
+
+Problem: The validation wall shifted again after the patch.
+
+Solution: Re-ran filtered build probes. `Assembly-CSharp` still fails before scatter on missing generated/plugin metadata DLLs. `Hecton8.Core.csproj` currently stops in unrelated `SubmarineFluidDynamics.cs(614-635)` with missing `VaultNativeBuffer<>`. Filtered output still shows no `GpuScatter`/`FloraScatter` compiler error.
+
+Rejected Alternatives: Editing submarine fluid code from the rendering scatter prompt was rejected as outside domain. Claiming final validation was rejected because the project still cannot build.
+
+Scalability potential: Not runtime-relevant.
+
+Hardware Impact: 0us runtime. Validation remains dependency-blocked.
+
+## 2026-05-16 Loop 10: ABI Layout + Unload Sentinels
+
+Problem: ARM64/Quest and Metal builds are less tolerant of CPU/GPU struct drift. The renderer had `[StructLayout(Pack = 1)]` on the two owned payload structs, but it did not actively prove that the runtime ABI still matched the declared GPU strides after platform/backend changes.
+
+Solution: Added a cold `UnsafeUtility.SizeOf<T>` guard in `Awake` for `Matrix4x4`, `Vector4`, `GpuScatterFloraInstanceData`, `ScatterFrameConstants`, and `ScatterBlackBoxEntry`. If any stride differs from the GPU contract, the component disables itself before registering the tick path and publishes typed telemetry with `BlackBoxDumpReasonAbiLayout`.
+
+Rejected Alternatives: Trusting C# attributes alone was rejected because backend or type edits can break stride silently. Running the guard every frame was rejected because this is a cold ABI contract, not a hot-path condition. Continuing with clamped strides was rejected because the shader layout cannot be repaired from C# once buffers are created with the wrong ABI.
+
+Scalability potential: Low/Quest fails closed instead of issuing malformed GPU buffer reads. Middle/High/Ultra keep the same render path and can add future struct lanes only after updating the explicit stride constants and guard.
+
+Hardware Impact: 0us normal-frame target because the check runs only during component initialization. No measured microsecond claim; this is crash prevention and platform survival.
+
+Problem: Scene unload already released GPU buffers on disable, but `OnDestroy` did not explicitly invalidate DataVault leases. In Unity teardown ordering that is usually covered by `OnDisable`, but the memory-sentinel contract should not depend on event ordering.
+
+Solution: `OnDestroy` now calls `InvalidateDataVaultLease()` and clears `_gpuReady` after releasing GPU and CPU audit resources. `ReleaseGpuBuffers()` also resets the queried dispatch group size to the 64-thread fallback so a recreated GPU state cannot inherit a stale kernel ABI cache.
+
+Rejected Alternatives: Relying only on `OnDisable` was rejected because teardown order and disabled-component destruction can vary. Disposing DataVault memory from the renderer was rejected because the vault owns native buffers.
+
+Scalability potential: All tiers get identical unload safety. Low-memory devices avoid retained VRAM/handle assumptions; high-tier scenes can stream dense flora without renderer-owned stale handles.
+
+Hardware Impact: Unload/fault path only. Normal-frame cost remains 0us target.
+
+Problem: The validation gate changed after the ABI pass.
+
+Solution: Re-ran static scans, `git diff --check`, `Hecton8.Core.csproj`, and `Assembly-CSharp.csproj` with a real restore attempt. Static scan found no forbidden scatter patterns. `git diff --check` reported only LF-to-CRLF warnings. `Hecton8.Core.csproj --no-restore -m:1` now succeeds with 0 warnings and 0 errors. `Assembly-CSharp.csproj --no-dependencies -m:1` restores project assets, then fails before scatter compilation on 48 missing generated/plugin metadata DLLs under `Temp/bin/Debug`.
+
+Rejected Alternatives: Generating fake `Temp/bin/Debug` DLLs or editing package/plugin ownership from the rendering scatter task was rejected as falsifying integration state. Claiming final validation was rejected because `Assembly-CSharp` still cannot build.
+
+Scalability potential: Not runtime-relevant. Full player profiling still requires the Unity-generated/plugin metadata wall to be restored first.
+
+Hardware Impact: 0us runtime. Final validation remains dependency-blocked outside scatter.
+
+## 2026-05-16 Loop 11: Shader NaN Fail-Closed
+
+Problem: The compute shader checked scale and distance, but `TransformPoint` converted a non-finite transformed position to `(0,0,0)`. If a malformed finite-but-overflowing matrix produced an invalid transform, the next center check could see a fake finite origin and append an instance that should have been rejected.
+
+Solution: Added `HasFiniteMatrix` to validate all four `float4x4` rows before scale, added explicit finite checks for local bounds center/extents, and changed `TransformPoint` to return the raw transformed value so the existing center finite check rejects overflow instead of hiding it.
+
+Rejected Alternatives: Sanitizing invalid transforms to origin was rejected because it can turn poison into visible geometry. Relying only on the C# upload validator was rejected because GPU-side fault containment must survive stale buffers and platform-specific faults. Adding CPU repair of malformed matrices was rejected because producer data ownership belongs to the DataVault producer.
+
+Scalability potential: Low/Quest avoids one invalid instance poisoning append/draw state. High/Ultra keep the same visible append stream and can spend cycles on visual density without accepting malformed source transforms.
+
+Hardware Impact: Adds finite checks in the compute kernel before append. Expected cost is below meaningful CPU time and GPU cost is PENDING PROFILER; correctness is prioritized because one NaN can poison the mobile GPU pipeline.
+
+## 2026-05-16 Loop 12: CPU Audit NaN Parity
+
+Problem: The GPU kernel now fails closed on malformed matrices, but the optional Burst audit still used raw serialized local bounds and only validated scale axes before frustum math. That could make audit output diverge from the shipping GPU path when bounds or matrix rows are poisoned.
+
+Solution: Added shared safe local-bounds resolution for CPU audit, compute constant upload, fallback draw bounds, and editor validation. The Burst `ScatterCullJob` now rejects full non-finite matrices and non-finite local bounds before transform/frustum work, matching the GPU fail-closed contract.
+
+Rejected Alternatives: Leaving audit divergence was rejected because diagnostic code must not report a visibility mask that the GPU would reject. Per-frame CPU repair of producer matrices was rejected because the DataVault producer owns matrix validity. Letting NaN bounds travel to fallback draw bounds was rejected because it can corrupt culling bounds outside the compute kernel.
+
+Scalability potential: Low devices keep the audit disabled by default and pay no runtime cost. High/Ultra validation captures can enable audit without getting false positives from a weaker CPU path.
+
+Hardware Impact: Normal shipping frame cost remains 0us because the Burst audit is opt-in. Compute constant upload now receives sanitized bounds with no extra allocation; exact microseconds remain PENDING PROFILER.

@@ -2,7 +2,6 @@
 #define HECTON_WATER_EXTINCTION_INCLUDED
 
 TEXTURE2D(_ExtinctionLUT);
-SAMPLER(sampler_ExtinctionLUT);
 
 float4 _ExtinctionLUTParams;        // x=max depth m, y=max turbidity, z=strength, w=active
 float4 _ExtinctionLUTRuntime;       // x=sea surface y, y=turbidity multiplier, z=post fog blend, w=underwater active

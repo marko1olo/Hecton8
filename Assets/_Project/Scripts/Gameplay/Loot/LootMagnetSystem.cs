@@ -157,17 +157,7 @@ namespace Hecton8.Gameplay.Loot
 
         private void OnDisable()
         {
-            if (ForceCompletePendingJob())
-            {
-                if (TryResolveVaultViews(out LootMagnetVaultViews views, _scheduledCapacity, allowAllocate: false) &&
-                    CanCommitCompletedJob(in views))
-                {
-                    CommitVaultResultsToManagedProxies(in views);
-                }
-
-                UnlockScheduledVaultBuffers();
-            }
-
+            ForceCompleteAndCommitScheduledJob();
             TryUnregisterTicks();
             TryUnregisterOriginShiftListener();
             ClearDataVaultRuntimeState();
@@ -236,13 +226,19 @@ namespace Hecton8.Gameplay.Loot
                 return;
 
             _pullScheduled = false;
-            if (TryResolveVaultViews(out LootMagnetVaultViews views, _scheduledCapacity, allowAllocate: false) &&
-                CanCommitCompletedJob(in views))
+            try
             {
-                CommitVaultResultsToManagedProxies(in views);
+                if (TryResolveVaultViews(out LootMagnetVaultViews views, _scheduledCapacity, allowAllocate: false) &&
+                    CanCommitCompletedJob(in views))
+                {
+                    CommitVaultResultsToManagedProxies(in views);
+                }
+            }
+            finally
+            {
+                UnlockScheduledVaultBuffers();
             }
 
-            UnlockScheduledVaultBuffers();
             if (_lastTelemetryRecordedFrame != _telemetryFrameCounter)
                 RecordTelemetry(_telemetryFrameCounter);
         }
@@ -250,21 +246,11 @@ namespace Hecton8.Gameplay.Loot
         /// <inheritdoc />
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            ForceCompleteAndCommitScheduledJob();
             if (!math.all(math.isfinite(shiftData.NewTotalOffsetDouble)))
             {
                 _dependencyTelemetryFlags |= TelemetryPlayerPoseNonFiniteFlag;
                 return;
-            }
-
-            if (ForceCompletePendingJob())
-            {
-                if (TryResolveVaultViews(out LootMagnetVaultViews views, _scheduledCapacity, allowAllocate: false) &&
-                    CanCommitCompletedJob(in views))
-                {
-                    CommitVaultResultsToManagedProxies(in views);
-                }
-
-                UnlockScheduledVaultBuffers();
             }
 
             if (TryResolveVaultViews(out LootMagnetVaultViews rebaseViews, _activeCount, allowAllocate: false))
@@ -518,6 +504,9 @@ namespace Hecton8.Gameplay.Loot
                 return;
             }
 
+            if (_pickupRefs != null || _pickupEntityIds != null)
+                ClearRuntimeVaultState();
+
             _pickupRefs = new PickupItem[capacity]; // COLD ALLOC: PickupItem[capacity] - managed pickup sidecar for vault commit - owner: LootMagnetSystem
             _pickupEntityIds = new ulong[capacity]; // COLD ALLOC: ulong[capacity] - pickup entity identity sidecar - owner: LootMagnetSystem
         }
@@ -568,7 +557,13 @@ namespace Hecton8.Gameplay.Loot
                 uint itemHash = unchecked((uint)pickup.ItemHashId);
                 const uint slotFlags = LootEntityFlags.Active | LootEntityFlags.IsLoot | LootEntityFlags.Bit_IsMagnetic;
                 if (_pickupEntityIds[activeCount] != entityId)
+                {
+                    PickupItem previousPickup = _pickupRefs[activeCount];
+                    if (previousPickup != null)
+                        previousPickup.RestoreLootMagnetRuntimeState();
+
                     views.EntityVelocities[activeCount] = float3.zero;
+                }
 
                 _pickupRefs[activeCount] = pickup;
                 _pickupEntityIds[activeCount] = entityId;
@@ -584,6 +579,10 @@ namespace Hecton8.Gameplay.Loot
 
             for (int index = activeCount; index < _activeCount && index < capacity; index++)
             {
+                PickupItem stalePickup = _pickupRefs[index];
+                if (stalePickup != null)
+                    stalePickup.RestoreLootMagnetRuntimeState();
+
                 _pickupRefs[index] = null;
                 _pickupEntityIds[index] = 0UL;
                 views.EntityAups[index] = default;
@@ -703,9 +702,23 @@ namespace Hecton8.Gameplay.Loot
                 EntityQuantities = views.EntityQuantities,
                 SignalEvents = views.SignalEvents
             };
-            _pullHandle = job.Schedule(count, 64);
-            _pullScheduled = true;
-            JobHandle.ScheduleBatchedJobs();
+            bool scheduled = false;
+            try
+            {
+                _pullHandle = job.Schedule(count, 64);
+                _pullScheduled = true;
+                scheduled = true;
+                JobHandle.ScheduleBatchedJobs();
+            }
+            finally
+            {
+                if (!scheduled)
+                {
+                    _scheduledCount = 0;
+                    _scheduledCapacity = 0;
+                    UnlockScheduledVaultBuffers();
+                }
+            }
         }
 
         private bool TryLockScheduledVaultBuffers()
@@ -942,6 +955,7 @@ namespace Hecton8.Gameplay.Loot
         private void ClearRuntimeVaultState()
         {
             RestoreAllManagedProxyRuntimeStates();
+            ClearKnownRuntimeVaultSlots();
             _activeCount = 0;
             _registryFlagsHash = 0u;
             _lastCommittedFlagsHash = 0u;
@@ -952,10 +966,46 @@ namespace Hecton8.Gameplay.Loot
         private void ClearDataVaultRuntimeState()
         {
             RestoreAllManagedProxyRuntimeStates();
+            ClearKnownRuntimeVaultSlots();
+            _activeCount = 0;
+            _registryFlagsHash = 0u;
+            _lastCommittedFlagsHash = 0u;
+            _lastActiveLootPullsCount = 0u;
+            _lastPeakMagnetVelocity = 0f;
             _scheduledCount = 0;
             _scheduledCapacity = 0;
             _telemetryIndex = 0;
             _lastTelemetryRecordedFrame = 0u;
+        }
+
+        private void ClearKnownRuntimeVaultSlots()
+        {
+            if (_pickupRefs == null || _pickupEntityIds == null)
+                return;
+
+            IDataVault vault = _vault ?? GlobalRegistry.DataVault;
+            if (vault == null ||
+                !TryReadExistingVaultViews(vault, out LootMagnetVaultViews views) ||
+                !views.IsCreated)
+            {
+                return;
+            }
+
+            int count = _pickupRefs.Length;
+            count = math.min(count, _pickupEntityIds.Length);
+            count = math.min(count, views.EntityAups.Length);
+            count = math.min(count, views.EntityFlags.Length);
+            count = math.min(count, views.EntityVelocities.Length);
+            count = math.min(count, views.EntityItemHashes.Length);
+            count = math.min(count, views.EntityQuantities.Length);
+            count = math.min(count, views.SignalEvents.Length);
+            for (int index = 0; index < count; index++)
+            {
+                if (_pickupRefs[index] == null && _pickupEntityIds[index] == 0UL)
+                    continue;
+
+                ClearVaultSlot(in views, index);
+            }
         }
 
         private void RestoreAllManagedProxyRuntimeStates()
@@ -1288,6 +1338,30 @@ namespace Hecton8.Gameplay.Loot
             DispatcherJobSwap.TryComplete(ref _pullHandle, forceComplete: true);
             _pullScheduled = false;
             return true;
+        }
+
+        private bool ForceCompleteAndCommitScheduledJob()
+        {
+            if (!ForceCompletePendingJob())
+            {
+                UnlockScheduledVaultBuffers();
+                return false;
+            }
+
+            try
+            {
+                if (TryResolveVaultViews(out LootMagnetVaultViews views, _scheduledCapacity, allowAllocate: false) &&
+                    CanCommitCompletedJob(in views))
+                {
+                    CommitVaultResultsToManagedProxies(in views);
+                }
+
+                return true;
+            }
+            finally
+            {
+                UnlockScheduledVaultBuffers();
+            }
         }
 
         private void DumpTelemetryBuffer()

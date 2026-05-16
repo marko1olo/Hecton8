@@ -1,6 +1,6 @@
 # Rationale_KCC_SDF_SQUEEZE_RESOLVER
 
-STATUS: CORE VERIFIED / KCC ROSLYN-CLEAN / BUILD BLOCKED BY FOREIGN XR ERROR
+STATUS: KCC SDF SQUEEZE IMPLEMENTED / NAN POLISH APPLIED / CURRENT BUILD BLOCKED BY FOREIGN COMPILE ERRORS
 
 ## Decision 0 - Scope Lock
 Problem: KCC tight-gap traversal touches physics, voxel SDF, player signals, telemetry, haptics/audio, and gas dynamics. Direct concrete references across those domains would create compile and ownership risk.
@@ -50,3 +50,17 @@ Solution: Converted all remaining locomotion `StructLayout` attributes to `Pack 
 Rejected Alternatives: Keeping duplicate motor haptic/acoustic broadcasts was rejected because it violates signal-lane ownership. Adding rendering-specific salt crystal or hull dent code from locomotion was rejected because that belongs to downstream VFX/rendering systems; locomotion now emits a typed fluid impulse they can consume without extra collision truth.
 Scalability potential: Low/MX350 gets the cheap signal-only path and no fluid impulse. Middle keeps normal scrape feedback. High/Ultra spend saved CPU on dynamic fluid impulse for volumetric silt/wake overkill while retaining deterministic KCC truth.
 Hardware Impact: Duplicate feedback collapse avoids an estimated 8-12 us on active motor-side squeeze frames. AUP hardening costs 0-2 us and removes drift-class sampling errors. High/Ultra fluid impulse spends roughly 3-8 us downstream only when the tier can afford it.
+
+## Decision 7 - Final Validation Without False Ownership
+Problem: The previous final build was blocked by a foreign Core XR API call (`XRDisplaySubsystem.TryRequestDisplayRefreshRate`) outside PHYSICS/LOCOMOTION ownership. The current tree no longer contains that call, so the only defensible action was to revalidate rather than claim a cross-domain repair.
+Solution: Re-extracted the KCC XML assignment, confirmed the current XR runtime path, and reran `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false`. The build now exits 0 with 0 warnings and 0 errors, captured in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_xr_validation.exit.txt`.
+Rejected Alternatives: Editing Core XR from the locomotion prompt was rejected unless the current source still proved the blocker. Claiming profiler-measured microsecond savings was rejected because this pass measured compile success, not frame timings.
+Scalability potential: Low remains 4-tap SDF plus stress cadence interpolation; Middle keeps 6-axis gradient when pressure allows; High/Ultra retain camera-roll and fluid-impulse overkill through typed lanes without adding collision truth cost.
+Hardware Impact: Measured validation elapsed time was 90.42 seconds (90420000 us). Runtime savings remain engineering estimates until profiler capture: low-tier active squeeze saving is estimated at 73-167 us per frame from SDF-vs-capsule repair, DataVault sharing, stress cadence, and duplicate feedback collapse.
+
+## Decision 8 - Motor-Side Rsqrt Hardening
+Problem: The SDF squeeze job already used `math.rsqrt(math.max(...))`, but motor-side squeeze/sweep helpers still relied on prior magnitude comparisons before calling `math.rsqrt`. That is not explicit enough for mobile NaN containment, especially when a squared magnitude can become non-finite.
+Solution: Added finite checks and `math.max(..., MinVectorMagnitudeSq)` denominators to displacement direction resolution, `SafeNormal`, voxel-proxy slide fallback, tangent-slide projection, and no-trig quaternion normalization in `HectonPlayerMotor`.
+Rejected Alternatives: Leaving comparison-only guards was rejected because NaN comparisons are false in a way that can silently reach rsqrt. Replacing the motor sweep solver was rejected because the existing deferred sweep lane is outside the SDF kernel and already uses DataVault-backed command/result buffers.
+Scalability potential: Low/MX350 keeps the cheap branch and avoids NaN recovery spikes. Middle/High/Ultra retain the same visual-overkill signal path without extra samples or renderer ownership changes.
+Hardware Impact: Runtime saving is 0 us; this is stability armor. The latest validation build elapsed 105.25 seconds (105250000 us) and failed on 130 foreign errors in RepairTool, HectonUnderwaterVisuals, and SargassumMicroFaunaBoids; no diagnostics name KCC/player files touched by this pass.

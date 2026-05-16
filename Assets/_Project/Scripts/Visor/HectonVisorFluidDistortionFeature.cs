@@ -554,7 +554,7 @@ namespace Hecton8.Visor
             float thermalMotionCull01 = localVelocitySq > ThermalDistortionCullSpeedMetersPerSecondSq ? 1f : 0f;
             HectonQualityTier qualityTier = GlobalRegistry.ScalabilityTier;
             bool lowTier = ResolveLowTier(settings, qualityTier);
-            float waterDensitySignal01 = ResolveWaterDensitySignal01();
+            float waterDensitySignal01 = ResolveWaterDensitySignal01(ref telemetryFlags);
             float homeostasisFallback01 = lowTier || hullStress >= Sanitize01(settings.stressFallbackThreshold) ? 1f : 0f;
             float visualOverkill01 = ResolveVisualOverkill01(settings, qualityTier, lowTier);
             runtimeState = new RuntimeState(
@@ -690,9 +690,10 @@ namespace Hecton8.Visor
             return configuredStrength * tierScale;
         }
 
-        private static float ResolveWaterDensitySignal01()
+        private static float ResolveWaterDensitySignal01(ref uint telemetryFlags)
         {
             float globalSignal = Shader.GetGlobalFloat(ShaderConstants.WaterDensitySignalId);
+            FlagIfNonFinite(globalSignal, ref telemetryFlags);
             if (math.isfinite(globalSignal) && globalSignal > 0.0001f)
                 return math.saturate(globalSignal);
 
@@ -701,6 +702,7 @@ namespace Hecton8.Visor
                 return 0f;
 
             float density = fluidSimulation.WaterDensityKilogramsPerCubicMeter;
+            FlagIfNonFinite(density, ref telemetryFlags);
             return math.isfinite(density)
                 ? math.saturate((density - 1025f) * (1f / 256f))
                 : 0f;

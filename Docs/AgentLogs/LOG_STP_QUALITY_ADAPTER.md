@@ -64,3 +64,57 @@ Validation:
 - `git diff --check` returned no whitespace errors for the STP-touched files; repository-wide check only reported existing CRLF warnings.
 - `dotnet build Hecton8.Core.csproj --no-restore` attempt 4 failed outside this domain: `SargassumMicroFaunaBoids.cs` missing `EnsureVaultBufferHandle`, and `VehicleDockingModule.cs` missing `CacheFluidRuntime`/`ResetDockingRuntimeCaches`.
 - No STP adapter or STP contract compiler errors appeared before the external wall.
+
+## 2026-05-16 - Visual Budget Pass
+
+What was wrong:
+- The STP adapter preserved frame time on weak hardware but did not expose a direct high-tier visual budget.
+- High/Ultra thermal max could collapse too far toward a mobile-grade render scale.
+- Runtime scalability override was not the first source for STP tier selection.
+
+What was done:
+- Added `VisualOverkill01`, `DearLie01`, and `VisualFeatureFlags` to the existing 64B DataVault `ResolutionScaleState`.
+- Published epsilon-gated shader globals for STP scale, scale deficit, dear-lie mode, visual overkill, and feature flags.
+- Routed `_HectonVisorFluidVisualOverkill` from the adapter so visor-fluid salt/silt shader paths can consume the same budget when not overridden by their render feature.
+- Raised High thermal max to 0.90 and Ultra thermal max to 1.0.
+- Switched tier resolution to `GlobalRegistry.ScalabilityTier` before hardware-profile fallback.
+
+Cinematic cheats used:
+- Toaster mode: explicit `DearLie01=1`, low-tier render scale 0.5, emergency 0.35, no overkill flags.
+- God-mode: visual feature flags advertise visor salt crystals, volumetric silt, procedural hull dents, 16-tap POM, SSS, and raymarched fog consumers.
+
+Exact microseconds saved:
+- Not measured. No new render pass, compute dispatch, file I/O, or native allocation was added. Shader-global writes are threshold-gated; source estimate remains inside the previous 1 us/frame reactive-VFX budget except on value changes.
+
+Validation:
+- Static scans found no private persistent `NativeArray`, no direct `new NativeArray`, no managed event/delegate path, and no `Update/LateUpdate/FixedUpdate` in `Assets/_Project/Scripts/Graphics/Scalability/`.
+- `git diff --check` for STP-touched code returned no whitespace errors.
+- Compile attempt 5 failed outside STP with 141 errors in Fauna/Bootstrap/Tools/HectonUnderwaterVisuals. No STP adapter or `ResolutionScaleState` errors appeared in the log.
+
+## 2026-05-16 - Loop 8 / Native View Eviction + Compile Pass
+
+What was wrong:
+- The adapter had no persistent `NativeArray` ownership, but it still declared borrowed `NativeArray<T>` views in the source and the EWMA job payload.
+- The one-frame job pointer lifetime was not explicitly fenced against DataVault compaction.
+- Compile status was stale: previous gates were blocked by other domains.
+
+What was done:
+- Removed all `NativeArray<T>` declarations from `ThermalDynamicResolutionAdapter.cs`.
+- Converted scale-state and telemetry access to DataVault `VaultBufferHandle<T>.ResolvePointer()` views.
+- Added a DataVault `TryLockBuffer(BufferID.ResolutionScaleState)` / `TryUnlockBuffer` fence around the cross-frame Burst EWMA job.
+- Enabled unsafe code in `Hecton8.Graphics.Scalability.asmdef` for the native pointer path.
+- Re-ran static scans for `NativeArray<T>`, local persistent allocation, `Update/LateUpdate/FixedUpdate`, managed events/delegates, `string.Format`, and legacy blit/execute paths.
+- Re-ran shader/compute scan for platform hazards; the STP adapter owns no compute dispatch or DirectX-only render path.
+
+Cinematic cheats used:
+- Toaster mode remains `DearLie01=1`, 0.5 base render scale, 0.35 emergency scale, and threshold-gated sharpen.
+- God-mode remains 1.0 scale on High/Ultra with published flags for visor salt, volumetric silt, hull dents, 16-tap POM, SSS, and raymarched fog consumers.
+
+Exact microseconds saved:
+- Not measured. No profiler was run. Loop 8 is a data-sovereignty and compaction-safety fix, not a claimed frame-time win.
+- Source estimate remains unchanged: adapter hot-path work is expected inside the previous 0-2 us/frame task estimates, with real savings coming from pixel-count reduction at low scale.
+
+Validation:
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -maxcpucount:1 -p:UseSharedCompilation=false` passed in 4.30s with 0 warnings and 0 errors.
+- Build log: `Docs/AgentLogs/Dump_STP_QUALITY_ADAPTER_compile_attempt6_no_restore.txt`.
+- Unity import, Play Mode, player build, profiler frame-time, GC, memory, and visual captures remain PENDING VERIFICATION.

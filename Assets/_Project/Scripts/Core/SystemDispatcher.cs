@@ -1500,6 +1500,19 @@ namespace Hecton8.Core
             EmitVramPressureDefragSignalIfNeeded();
         }
 
+        private void RecordMemoryBlackBoxHeartbeat()
+        {
+            H8Memory.RecordHeartbeat();
+            IDataVault dataVault = _dataVault;
+            if (dataVault == null)
+            {
+                RefreshDataVaultDependency();
+                dataVault = _dataVault;
+            }
+
+            dataVault?.RecordHeartbeat();
+        }
+
         private static float ResolveMemoryCompactionStress01(float unscaledDeltaTime)
         {
             if (!math.isfinite(unscaledDeltaTime) || unscaledDeltaTime < 0f)
@@ -1709,6 +1722,7 @@ namespace Hecton8.Core
                 HomeostasisBrain.PreSimulationTick(unscaledDeltaTime);
                 GlobalRegistry.InputDeterminism?.PreSimulationInputTick(unscaledDeltaTime);
                 GlobalSignals.FlushPreSimulation();
+                RecordMemoryBlackBoxHeartbeat();
                 RunPreSimulationMemoryDefrag(unscaledDeltaTime);
                 IJobAdmissionService jobAdmission = GlobalRegistry.JobAdmission;
                 jobAdmission?.Refill(

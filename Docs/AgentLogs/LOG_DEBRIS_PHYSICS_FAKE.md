@@ -112,3 +112,136 @@ Verification:
 Status:
 - Tasks 1-17 complete by source/static verification.
 - Final validation remains `[BLOCKED BY DEPENDENCY]`.
+
+## 2026-05-16 - Omega Compute Audit And Final Source Pass
+
+What was wrong:
+- The checklist was complete/blocked, so the Omega mandate became active.
+- The debris compute path still needed a stricter branch audit, active-tier dispatch proof, and blackbox path alignment with the agent ID.
+- `dotnet build` status was stale after the final source/static audit.
+
+What was done:
+- Re-read `Status_DEBRIS_PHYSICS_FAKE.md`, `Rationale_DEBRIS_PHYSICS_FAKE.md`, `AGENTS.md`, `Docs/Actual Domains of Project.txt`, the original XML block, and the relevant VFX/compute/zero-GC/signal/AUP mandates.
+- Rechecked debris domain for `Instantiate`, `Update()`, `string.Format`, `GraphicsBuffer.SetData`, `ForceNoMotion`, `EventBus`, managed delegates, and local `new NativeArray`.
+- Confirmed ABI-critical debris structs: `DebrisSpawnSignal` is explicit `Pack=1, Size=64`; `CarveDebrisRequest` and `CarveDebrisTelemetryEntry` are sequential `Pack=1, Size=64`.
+- Confirmed compute thread groups are 64/1/64/64, below the Metal/Quest 1024 thread-group limit.
+- Confirmed active dispatch groups are resolved from active tier capacity instead of sweeping high-tier groups on middle tier.
+- Confirmed `ClampCarveDebrisVelocity` uses `rcp(max(dt, 0.0001))`, `rsqrt(max(speedSq, 0.000001))`, `step`, and `lerp`.
+- Confirmed cull distance gating and visible increment use arithmetic masks.
+- Preserved resource bounds, low-tier SDF skip, and atomic overflow branches because replacing them with forced branchless atomics or SDF helper calls would be a low-tier regression.
+- Confirmed blackbox dump path is `Docs/AgentLogs/Dump_DEBRIS_PHYSICS_FAKE.bin`.
+
+Cinematic Cheats used:
+- Toaster: typed debris signals, 1024 active shards, 16 particles per carve, SDF skip, shader expiry fade, no GameObjects.
+- Middle: 4096 active shards with active-capacity dispatch instead of high-tier sweep.
+- High/Ultra: 16,384 shards, 128 particles per carve, SDF/flow, shader tumble, motion-vector history.
+- Physics truth remains a visual fake: no Rigidbody shards, no CPU transforms, no CPU rotations.
+
+Exact Microseconds saved:
+- Measured: absent. Unity runtime/profiler evidence is blocked by external compile errors.
+- Static CPU estimate from earlier purge remains 40-250 us saved on burst-heavy mining frames by removing CPU debris object work.
+- Static tumble estimate remains 20-90 us CPU avoided by moving rotation to shader hash/time.
+- Static middle-tier GPU estimate: avoids 12,288 extra threads per debris advection/cull pass compared with sweeping 16,384 threads for a 4096 active tier.
+- Static stall estimate: `GraphicsBuffer.SetData` hot-path absence avoids sync spikes; exact spike size requires runtime capture.
+
+Verification:
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` failed with 69 external errors in ecosystem, ladder animation, submarine fluid, and lockstep determinism domains.
+- No debris/VFX compile error appeared in the reported build output.
+- `git diff --check` on targeted debris shader/compute/docs returned no whitespace errors.
+- Static debris forbidden-pattern scan returned no matches for the audited hot-path debt patterns.
+
+Status:
+- Source/static status: tasks 1-17 plus Omega audit complete.
+- Build status: `[BLOCKED BY DEPENDENCY]` outside DEBRIS/VFX ownership.
+
+## 2026-05-16 - Low-Tier Wake Bypass Pass
+
+What was wrong:
+- Low-tier carve debris zeroed its flow vector but still called `ApplyDynamicWakes`, so toaster/Quest debris could still pay the dynamic wake helper loop.
+- A blind conversion from DataVault-owned `NativeArray<T>` aliases to `VaultBufferHandle<T>.Resolve(...)` would look cleaner in a grep but would add full-buffer sanitize work on every resolve in the current `GlobalDataVault` implementation.
+
+What was done:
+- Changed `AdvectCarveDebris` so `_CarveDebrisParams.y > 0.5` bypasses both `SampleAbyssalFlow` and `ApplyDynamicWakes`.
+- Kept the non-low tier path intact: middle/high/ultra still sample flow and dynamic wakes.
+- Re-audited the DataVault path: all carve debris native buffers are acquired through `IDataVault.GetBuffer(..., SystemID.Vfx)`. No `new NativeArray` exists in the debris domain.
+- Recorded the handle-refactor rejection in rationale because the current handle resolver sanitizes full payloads when resolving.
+
+Cinematic Cheats used:
+- Toaster mode now uses gravity plus lifetime fade for rock chips, not wake-reactive flow.
+- High/Ultra preserve wake-driven motion and SDF collision for dense shard fields.
+
+Exact Microseconds saved:
+- Measured: absent.
+- Static work avoided on low tier: one `ApplyDynamicWakes` helper call per live carve debris thread, up to 1024 low-tier shards, including the wake-slot loop when wakes are active.
+
+Verification:
+- Static source read confirms the low-tier branch bypasses both flow sample and dynamic wake helper.
+- `git diff --check` reports no whitespace errors; only existing line-ending warnings.
+- Forbidden-pattern scan still reports no debris-domain `GraphicsBuffer.SetData`, `Instantiate`, `ForceNoMotion`, `Update()`, `string.Format`, `EventBus`, managed delegates, `UnityEvent`, or `new NativeArray`.
+
+Status:
+- Source/static status: low-tier carve debris wake bypass complete.
+- Runtime/profiler status: PENDING VERIFICATION until external compile blockers are cleared.
+
+## 2026-05-16 - Final Validation And Data Sovereignty Closure
+
+What was wrong:
+- The debris renderer had stale status text claiming final validation was blocked.
+- The H-Phi pass required persistent debris state to be represented as GlobalDataVault handles, not private `NativeArray<T>` storage fields.
+- Low-tier culling still lacked a camera-cone reject, so weak devices could spend visible-index work behind the camera.
+
+What was done:
+- Kept debris buffer ownership in `GlobalDataVault` and stored persistent references as `VaultBufferHandle<T>`.
+- Resolved method-local `NativeArray<T>` views only during the active tick for positions, velocities, requests, job state, and blackbox telemetry.
+- Added `_CarveDebrisCullParams` to the compute path and camera-forward cone masking in `CullCarveDebrisForRender`.
+- Confirmed low-tier carve debris bypasses both flow sampling and dynamic wake evaluation.
+- Re-ran the project compile gate.
+
+Cinematic Cheats used:
+- Toaster: 1024 active shards, 16 particles per signal, no wake flow, no SDF bounce, cone/distance culling before indirect visibility.
+- Middle: 4096 active shards with active-capacity dispatch and same indirect draw path.
+- High/Ultra: 16,384 shards, 128 particles per signal, wake/SDF response, shader tumble, motion-vector history.
+
+Exact Microseconds saved:
+- Measured: none claimed. No Unity profiler capture was run.
+- Static low-tier work avoided: dynamic wake helper skipped for up to 1024 live carve debris threads.
+- Static middle-tier work avoided: active dispatch prevents sweeping 12,288 excess threads versus a 16,384 high-tier pass.
+- Static CPU work avoided remains the earlier 40-250 us estimate from removing CPU debris object aftermath and 20-90 us estimate from shader-only tumble.
+
+Verification:
+- XML prompt re-read from `Docs/Tasks/CURRENT_BATCH.md`.
+- Forbidden-pattern scan found no debris-domain `GraphicsBuffer.SetData`, `Instantiate`, `ForceNoMotion`, `Update()`, `string.Format`, legacy `EventBus`, managed delegate lane, `UnityEvent`, or `new NativeArray`.
+- Handle scan found persistent `VaultBufferHandle<T>` fields only; no private debris `NativeArray<T>` storage fields remain.
+- Compute thread groups remain below the 1024 Metal/Quest limit.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` passed: 0 warnings, 0 errors, elapsed 00:00:02.67.
+
+Status:
+- VERIFIED MASTER GRADE - SHARDS ACTIVE.
+
+## 2026-05-16 - External Compile Drift After Validation
+
+What was wrong:
+- After the clean compile, a later build exposed new external domain drift.
+- The current reported blockers are not in `Assets/_Project/Scripts/VFX/Debris/` or the debris compute shader path.
+
+What was done:
+- Re-ran `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary`.
+- Confirmed the previous `InputDispatcher.cs` preprocessor syntax failure is no longer the active reported blocker.
+- Recorded the current compile wall in status and rationale instead of claiming stale success.
+
+Cinematic Cheats used:
+- No new debris runtime cheat was added in this pass. Debris remains GPU-only indirect shards with low-tier wake/SDF bypass and high-tier dense SDF/wake response.
+
+Exact Microseconds saved:
+- Measured: none. This pass is compile-gate bookkeeping only.
+- Static debris estimates from prior entries remain unchanged and unmeasured.
+
+Verification:
+- Latest build fails externally with 100 errors and 1 warning.
+- Current blocker classes:
+  - `Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs`: `Initialize` call arity mismatch.
+  - `Assets/_Project/Scripts/Tools/ToolDurabilitySystem.cs`: missing `_itemStates`, `_pendingDecayDt`, `_wearMultipliers`, `_slotActive`, `_breakdownEvents`, `_disposeHandle`, and missing `DurabilityDecayJob.BreakdownWriter`.
+
+Status:
+- Debris source/static status remains complete.
+- Final compile status is `[BLOCKED BY DEPENDENCY]` outside DEBRIS/VFX ownership.

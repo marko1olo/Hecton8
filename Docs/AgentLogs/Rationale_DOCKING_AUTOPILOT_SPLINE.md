@@ -62,11 +62,11 @@ Hardware Impact: 0 us/frame. This is integration evidence only.
 
 ## Decision 6 - Burst Kernel Without Scheduling Policy
 
-Problem: Phase 2 requires a Burst cubic solver and tangent math, but the physics mandate forbids adding a same-frame `Schedule().Complete()` trap or inventing a dispatcher policy inside the docking service.
+Problem: Phase 2 requires a Burst cubic solver and tangent math, but the physics mandate forbids adding a same-frame `Schedule().Complete()` trap or inventing a dispatcher policy inside the docking service. The later H-Phi audit also rejected local `NativeArray<T>` declarations inside the docking automation job.
 
-Solution: Add `CubicBezierJob : IJobParallelFor` as a pure kernel over `NativeArray<ActiveSplineData>`, `NativeArray<float>` progress lanes, and `NativeArray<DockingSplineSample>` output. The job calls the same Bernstein evaluator used by the scalar path and emits derivative tangent for LookRotation consumers. Scheduling remains the responsibility of a future dispatcher/autopilot system.
+Solution: Add `CubicBezierJob : IJobParallelFor` as a pure unsafe kernel over vault-compatible pointer lanes with explicit lengths. The job calls the same Bernstein evaluator used by the scalar path and emits derivative tangent for LookRotation consumers. Scheduling remains the responsibility of a future dispatcher/autopilot system.
 
-Rejected Alternatives: Running all spline batches on the main thread only, adding a hidden immediate-complete job path, or using Unity `AnimationCurve` were rejected. Float3 control points were rejected because AUP-scale docking would warp far from origin.
+Rejected Alternatives: Running all spline batches on the main thread only, adding a hidden immediate-complete job path, local `NativeArray<T>` job lanes, or using Unity `AnimationCurve` were rejected. Float3 control points were rejected because AUP-scale docking would warp far from origin.
 
 Scalability potential: Low/MX350: scalar or small batched solve at low active counts. Middle: jobified 64-slot vault lane. High: downstream current compensation can add a second vector lane. Ultra: later Hermite smoothing can write a different progress lane while the solver remains unchanged.
 
@@ -131,3 +131,51 @@ Rejected Alternatives: Editing ecosystem, submarine hydrodynamics native-state h
 Scalability potential: No runtime impact. This is integration state only.
 
 Hardware Impact: 0 us/frame. Compile blocker classification only.
+
+## Decision 12 - Vault-Owned Telemetry Cursor
+
+Problem: The blackbox telemetry ring was moved into `GlobalDataVault`, but the write cursor still lived inside `VehicleDockingModule`. Multiple docking modules could therefore overwrite a shared ring with private cursor state and break the last-300-frame evidence trail.
+
+Solution: Add `BufferID.VehicleDockingTelemetryCursor` and store the cursor in a one-element `GlobalDataVault` int buffer owned by `SystemID.VehiclesPhysics`. `VehicleDockingModule` now resolves both the ring and cursor through `VaultBufferHandle<T>`, sanitizes the cursor without modulo on the hot write path, and only dumps to disk on abort/NaN.
+
+Rejected Alternatives: Keeping `_dockTelemetryCursor` was rejected because it violates data sovereignty for a global ring. Per-module rings were rejected because they multiply persistent memory and fragment crash evidence. Managed collections were rejected by the zero-GC mandate.
+
+Scalability potential: Low/MX350 and Quest keep one fixed 300-entry ring plus one int cursor. Middle/High/Ultra can consume the same stable blackbox trail without changing docking code. The VFX overkill path remains signal-driven through existing wake/fluid lanes, not physics-owned particles.
+
+Hardware Impact: 0 B/frame. The added vault buffer is one int. Hot telemetry writes replace a private field read/write with a resolved pointer read/write; no measured profiler microseconds are available, and no runtime saving is claimed.
+
+## Decision 13 - Multiplatform Audit Boundary
+
+Problem: The inquisition requested ARM64 layout, Metal shader compliance, Steam Deck I/O pressure, and high-end overkill. The docking prompt owns physics/vehicles automation, not graphics shader authoring.
+
+Solution: Validate all docking structs touched by this prompt use `Pack = 1` with fixed `Size`, confirm no docking-domain shader/compute assets exist, keep blackbox I/O abort-only, and use existing typed wake/fluid/completion/failure `SignalBus<T>` lanes for downstream visual systems.
+
+Rejected Alternatives: Adding a duplicate `VehicleWakeSignal` was rejected because `WakeGeneratedSignal` and `FluidImpulseSignal` already exist. Adding raymarching/POM/SSS from the docking physics domain was rejected as cross-domain sabotage.
+
+Scalability potential: Low: 10 Hz spline solve and fixed blackbox ring. Middle: regular Bezier solve with current compensation. High: zero-jerk Hermite progress when `SystemStress01 <= 0.8`. Ultra: saved physics cycles feed wake/fluid consumers through typed lanes.
+
+Hardware Impact: 0 us/frame measured. Static evidence shows no docking-owned shader dispatch, no per-frame file I/O, no private persistent native buffers, and no managed Lerp/Slerp path in audited docking files.
+
+## Decision 14 - Remove NativeArray Text From Docking Automation
+
+Problem: The service had evicted persistent data to the vault, but the Burst job still declared `NativeArray<T>` fields. That was technically a scheduler lane, not storage, but the H-Phi mandate is textual and strict enough that the declaration itself was debt.
+
+Solution: Convert `CubicBezierJob` to an unsafe pointer-lane job using `ActiveSplineData*`, `float*`, and `DockingSplineSample*` plus explicit lane lengths. The hot kernel still evaluates pure Bernstein math and writes a sample only after bounds and null guards pass.
+
+Rejected Alternatives: Keeping `NativeArray<T>` fields was rejected because it weakens the data-sovereignty proof. Managed `ReadOnlySpan<T>` was rejected for Burst job execution. Scheduling/completing the job inside the service was rejected because the dispatcher owns job policy.
+
+Scalability potential: Low can keep scalar service evaluation. Middle/High/Ultra can schedule the pointer-lane job from vault-resolved buffers without reintroducing local native storage.
+
+Hardware Impact: 0 B/frame. No measured microseconds are claimed. Bounds/null checks add scalar guard work only inside scheduled batch execution.
+
+## Decision 15 - Fail-Closed Ownership And Teardown
+
+Problem: `TryWriteActiveSpline` trusted the caller's slot ownership after bounds checking, and shutdown used the normal resolve path that could allocate the spline vault buffer just to clear it. Idle telemetry also resolved the vault before checking whether docking was active.
+
+Solution: Reject writes when the existing active/reserved slot owner does not match the incoming spline owner. Add an existing-buffer resolve path for shutdown so teardown never creates a new active-spline buffer. Move the idle telemetry guard before vault pointer resolution.
+
+Rejected Alternatives: Trusting slot callers was rejected because ownership bugs become cross-vehicle path corruption. Allocating during shutdown was rejected because it pollutes memory evidence. Resolving telemetry every idle tick was rejected because the system can prove no blackbox sample is required before touching the vault.
+
+Scalability potential: Low/Quest/Steam Deck avoid unnecessary idle pointer resolution and teardown allocation. Middle/High/Ultra keep the same behavior but get stricter slot isolation when multiple docking modules run.
+
+Hardware Impact: No measured profiler data. Static effect: idle non-docking ticks skip telemetry vault resolution entirely, and teardown avoids a possible one-time vault buffer allocation.

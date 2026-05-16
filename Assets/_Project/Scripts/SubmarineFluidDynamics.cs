@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -17,6 +18,7 @@ using Hecton8.Tools;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -27,7 +29,7 @@ namespace Hecton8.Physics
     /// <summary>
     /// Deferred exterior water-entry payload emitted by sampled hull buoyancy points.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
     public struct SplashEvent
     {
         /// <summary>Camera-relative world position of the splash contact point.</summary>
@@ -54,7 +56,12 @@ namespace Hecton8.Physics
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
     [AddComponentMenu("Hecton/Physics/Submarine Fluid Dynamics")]
-    public sealed class SubmarineFluidDynamics : MonoBehaviour, IFixedTickable, IPostFixedTickable, IOriginShiftListener, IInventoryEventListener
+    public sealed class SubmarineFluidDynamics : MonoBehaviour,
+        IFixedTickable,
+        IPostFixedTickable,
+        IOriginShiftListener,
+        IInventoryEventListener,
+        IGlobalRegistryHotSwapListener
     {
         private const int CompartmentCapacity = 8;
         private const int BulkheadCapacity = 7;
@@ -236,16 +243,16 @@ namespace Hecton8.Physics
         }
 
         // 64-byte stride keeps the gas mix and flood scalar on a 32-byte multiple without dropping partial pressures.
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
         private struct CompartmentState
         {
-            public float currentVolume;
-            public float maxVolume;
-            public float3 localCentroid;
-            public uint stateFlags;
-            public float o2PartialPressureKPa;
-            public float co2PartialPressureKPa;
-            public float n2PartialPressureKPa;
+            [FieldOffset(0)] public float currentVolume;
+            [FieldOffset(4)] public float maxVolume;
+            [FieldOffset(8)] public float3 localCentroid;
+            [FieldOffset(20)] public uint stateFlags;
+            [FieldOffset(24)] public float o2PartialPressureKPa;
+            [FieldOffset(28)] public float co2PartialPressureKPa;
+            [FieldOffset(32)] public float n2PartialPressureKPa;
         }
 #pragma warning restore CS0649
 
@@ -511,6 +518,104 @@ namespace Hecton8.Physics
         private Transform _cachedPlayerTransform;
         private HectonPlayerMovement _cachedPlayerMovement;
         private IDataVault _dataVault;
+
+        private unsafe struct VaultNativeBuffer<T> where T : struct
+        {
+            private IDataVault _vault;
+            private VaultBufferHandle<T> _handle;
+
+            public bool IsCreated => _handle.IsCreated && _vault != null;
+
+            public int Length => _handle.Length;
+
+            public T this[int index]
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get
+                {
+                    return IsIndexValid(index) ? UnsafeUtility.ReadArrayElement<T>(_handle.ptr, index) : default;
+                }
+
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                set
+                {
+                    if (IsIndexValid(index))
+                        UnsafeUtility.WriteArrayElement(_handle.ptr, index, value);
+                }
+            }
+
+            public bool Ensure(IDataVault vault, BufferID bufferId, int requiredLength)
+            {
+                if (vault == null)
+                {
+                    Clear();
+                    return false;
+                }
+
+                bool mustRebind =
+                    !ReferenceEquals(_vault, vault) ||
+                    !_handle.IsCreated ||
+                    _handle.BufferId != bufferId ||
+                    _handle.Length < requiredLength ||
+                    !IsGenerationCurrent(vault, bufferId);
+
+                _vault = vault;
+                if (mustRebind)
+                {
+                    _handle = vault.GetBufferHandle<T>(
+                        bufferId,
+                        requiredLength,
+                        SystemID.VehiclesPhysics,
+                        NativeArrayOptions.ClearMemory);
+                }
+
+                NativeArray<T> view = Resolve();
+                if (view.IsCreated && view.Length >= requiredLength)
+                    return true;
+
+                Clear();
+                return false;
+            }
+
+            public void Clear()
+            {
+                _vault = null;
+                _handle = default;
+            }
+
+            public bool MatchesBufferId(int bufferId)
+            {
+                return _handle.BufferId != BufferID.Unknown && (int)_handle.BufferId == bufferId;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public NativeArray<T> Resolve()
+            {
+                return _vault != null && _handle.IsCreated ? _handle.Resolve(_vault) : default;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static implicit operator NativeArray<T>(VaultNativeBuffer<T> buffer)
+            {
+                return buffer.Resolve();
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private bool IsIndexValid(int index)
+            {
+                return _handle.ptr != null && (uint)index < (uint)_handle.Length;
+            }
+
+            private bool IsGenerationCurrent(IDataVault vault, BufferID bufferId)
+            {
+                if (!_handle.IsCreated)
+                    return false;
+
+                return vault.TryGetBufferGeneration(bufferId, out uint generation) &&
+                    generation == _handle.generation;
+            }
+        }
+
         private Rigidbody _cachedPlayerRigidbody;
         private IPlayerRuntimeContext _playerRuntime;
         private ISubmarineRuntimeContext _submarineRuntime;
@@ -520,6 +625,8 @@ namespace Hecton8.Physics
         private byte _cachedFloodStateMathLod;
         private bool _registered;
         private bool _registeredOriginShiftListener;
+        private bool _registeredHotSwapListener;
+        private bool _vaultNativeRefreshRequested;
         private bool _fluidJobRunning;
         private bool _skipHydrodynamicsForCurrentFixedTick;
         private bool _externalCenterOfMassAuthority;
@@ -610,35 +717,35 @@ namespace Hecton8.Physics
         // COLD ALLOC: Collider[16] â€” bounded boiling-water rigidbody query scratch â€” owner: SubmarineFluidDynamics
         private readonly Collider[] _exteriorThermalContacts = new Collider[ExteriorThermalContactCapacity];
 
-        private NativeArray<float> _compartmentFloodVolumes;
-        private NativeArray<float> _compartmentViscosity01;
-        private NativeArray<float> _compartmentBaseMaxVolumes;
-        private NativeArray<float> _compartmentMaxVolumes;
-        private NativeArray<float> _compartmentBreachAreas;
-        private NativeArray<float3> _compartmentLocalCentroids;
-        private NativeArray<uint> _compartmentFlags;
-        private NativeArray<int2> _bulkheadPairs;
-        private NativeArray<byte> _bulkheadSealed;
-        private NativeArray<float> _bulkheadDoorAreas;
-        private NativeArray<float3> _comAccumulatorFront;
-        private NativeArray<float3> _comAccumulatorBack;
-        private NativeArray<FloodMassPropertiesResult> _massPropertiesFront;
-        private NativeArray<FloodMassPropertiesResult> _massPropertiesBack;
-        private NativeArray<float3> _angularVelocityHistoryLocal;
-        private NativeArray<float> _previousExteriorSampleSubmersionFactors;
-        private NativeArray<float> _jobFloodVolumes;
-        private NativeArray<uint> _jobCompartmentFlags;
-        private NativeArray<float> _bulkheadTransferDeltas;
-        private NativeArray<HydroKinematicJobInput> _hydroKinematicInput;
-        private NativeArray<HydroKinematicJobOutput> _hydroKinematicOutput;
-        private NativeArray<HydroBlackBoxEntry> _hydroBlackBox;
+        private VaultNativeBuffer<float> _compartmentFloodVolumes;
+        private VaultNativeBuffer<float> _compartmentViscosity01;
+        private VaultNativeBuffer<float> _compartmentBaseMaxVolumes;
+        private VaultNativeBuffer<float> _compartmentMaxVolumes;
+        private VaultNativeBuffer<float> _compartmentBreachAreas;
+        private VaultNativeBuffer<float3> _compartmentLocalCentroids;
+        private VaultNativeBuffer<uint> _compartmentFlags;
+        private VaultNativeBuffer<int2> _bulkheadPairs;
+        private VaultNativeBuffer<byte> _bulkheadSealed;
+        private VaultNativeBuffer<float> _bulkheadDoorAreas;
+        private VaultNativeBuffer<float3> _comAccumulatorFront;
+        private VaultNativeBuffer<float3> _comAccumulatorBack;
+        private VaultNativeBuffer<FloodMassPropertiesResult> _massPropertiesFront;
+        private VaultNativeBuffer<FloodMassPropertiesResult> _massPropertiesBack;
+        private VaultNativeBuffer<float3> _angularVelocityHistoryLocal;
+        private VaultNativeBuffer<float> _previousExteriorSampleSubmersionFactors;
+        private VaultNativeBuffer<float> _jobFloodVolumes;
+        private VaultNativeBuffer<uint> _jobCompartmentFlags;
+        private VaultNativeBuffer<float> _bulkheadTransferDeltas;
+        private VaultNativeBuffer<HydroKinematicJobInput> _hydroKinematicInput;
+        private VaultNativeBuffer<HydroKinematicJobOutput> _hydroKinematicOutput;
+        private VaultNativeBuffer<HydroBlackBoxEntry> _hydroBlackBox;
         private FluidMathCore _fluidMathCore;
         private bool _fluidSimulationRegistered;
         private bool _isBrineSubmerged;
         private bool _wasBrineSubmerged;
         private float _brineSubmersionTime;
 
-        [StructLayout(LayoutKind.Explicit, Size = 160)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 160)]
         private struct HydroKinematicJobInput
         {
             [FieldOffset(0)] public float3 Velocity;
@@ -664,7 +771,7 @@ namespace Hecton8.Physics
             [FieldOffset(152)] public float MaxTorque;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 48)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 48)]
         private struct HydroKinematicJobOutput
         {
             [FieldOffset(0)] public float3 DragAcceleration;
@@ -674,7 +781,7 @@ namespace Hecton8.Physics
             [FieldOffset(32)] public float VerticalSpeed;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 128)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 128)]
         private struct HydroBlackBoxEntry
         {
             [FieldOffset(0)] public int Frame;
@@ -781,12 +888,12 @@ namespace Hecton8.Physics
                 if (!math.isfinite(lengthSq) || math.isnan(lengthSq))
                     return float3.zero;
 
-                return lengthSq > maxSq ? value * (maxMagnitude * math.rsqrt(lengthSq)) : value;
+                return lengthSq > maxSq ? value * (maxMagnitude * math.rsqrt(math.max(lengthSq, 0.000001f))) : value;
             }
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct FluidTransferJob : IJob
         {
             [ReadOnly] public NativeArray<float> InputFloodVolumes;
@@ -856,7 +963,7 @@ namespace Hecton8.Physics
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct BulkheadTransferDeltaJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<float> FloodVolumes;
@@ -909,7 +1016,7 @@ namespace Hecton8.Physics
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct ApplyBulkheadTransferJob : IJob
         {
             [ReadOnly] public NativeArray<int2> BulkheadPairs;
@@ -961,18 +1068,18 @@ namespace Hecton8.Physics
         }
 
         [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 44)]
         private struct FloodMassPropertiesResult
         {
-            public float FloodMassKilograms;
-            public float FloodMassRatio;
-            public float3 FloodCenterLocal;
-            public float3 TargetCenterLocal;
-            public float3 InertiaTensor;
+            [FieldOffset(0)] public float FloodMassKilograms;
+            [FieldOffset(4)] public float FloodMassRatio;
+            [FieldOffset(8)] public float3 FloodCenterLocal;
+            [FieldOffset(20)] public float3 TargetCenterLocal;
+            [FieldOffset(32)] public float3 InertiaTensor;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct FloodMassPropertiesJob : IJob
         {
             [ReadOnly] public NativeArray<float> FloodVolumes;
@@ -1084,6 +1191,7 @@ namespace Hecton8.Physics
         {
             TryRegisterFluidSimulationService();
             CacheReferences();
+            TryRegisterHotSwapListener();
             RebuildExteriorBuoyancySampleLocalPoints();
             EnsureNativeState();
             RefreshResolvedInertiaTensors();
@@ -1108,6 +1216,7 @@ namespace Hecton8.Physics
         private void OnDisable()
         {
             TryUnregisterFluidSimulationService();
+            TryUnregisterHotSwapListener();
             TryUnregisterInventoryEventListener();
             TryUnregisterOriginShiftListener();
             TryUnregister();
@@ -1121,6 +1230,7 @@ namespace Hecton8.Physics
         private void OnDestroy()
         {
             TryUnregisterFluidSimulationService();
+            TryUnregisterHotSwapListener();
             TryUnregisterInventoryEventListener();
             TryUnregisterOriginShiftListener();
             TryUnregister();
@@ -1137,6 +1247,7 @@ namespace Hecton8.Physics
         /// <param name="fixedDeltaTime">Discrete physics step accumulated through the dispatcher cadence.</param>
         public void FixedTick(float fixedDeltaTime)
         {
+            RefreshVaultNativeStateAfterRelocation();
             if (!_compartmentFloodVolumes.IsCreated || _rigidbody == null || fixedDeltaTime <= 0f)
                 return;
 
@@ -1218,6 +1329,36 @@ namespace Hecton8.Physics
             CompleteHydroKinematicJobInPostFixedSwapWindow();
             CompleteFluidTransferInPostFixedSwapWindow();
             CompleteFloodMassPropertiesInPostFixedSwapWindow();
+        }
+
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.PowerGrid)
+            {
+                _powerGridService = currentService as IPowerGridService;
+                return;
+            }
+
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            if (ReferenceEquals(_dataVault, currentService))
+                return;
+
+            DisposeNativeStateDeferred();
+            _dataVault = currentService as IDataVault;
+            _vaultNativeRefreshRequested = false;
+            if (_dataVault == null || !isActiveAndEnabled)
+                return;
+
+            EnsureNativeState();
+            SeedNativeStateFromAuthoring();
+            RefreshDerivedConstants(DefaultFixedStepSeconds);
+            RefreshDebugState();
         }
 
         /// <summary>
@@ -1833,49 +1974,49 @@ namespace Hecton8.Physics
             }
 
             // COLD ALLOC: NativeArray<float>[8] â€” compartment flood volume storage â€” owner: SubmarineFluidDynamics
-            EnsureNativeStateHandle(ref _compartmentFloodVolumesHandle, BufferID.SubmarineFluidCompartmentFloodVolumes, CompartmentCapacity, VaultCompartmentFloodVolumesFlag);
+            EnsureNativeStateBuffer(ref _compartmentFloodVolumes, BufferID.SubmarineFluidCompartmentFloodVolumes, CompartmentCapacity, nameof(_compartmentFloodVolumes), VaultCompartmentFloodVolumesFlag);
             // COLD ALLOC: NativeArray<float>[8] — per-compartment normalized sludge viscosity state — owner: SubmarineFluidDynamics
-            EnsureNativeStateHandle(ref _compartmentViscosity01Handle, BufferID.SubmarineFluidCompartmentViscosity01, CompartmentCapacity, VaultCompartmentViscosityFlag);
+            EnsureNativeStateBuffer(ref _compartmentViscosity01, BufferID.SubmarineFluidCompartmentViscosity01, CompartmentCapacity, nameof(_compartmentViscosity01), VaultCompartmentViscosityFlag);
             // COLD ALLOC: NativeArray<float>[8] — authored compartment capacities preserved for dynamic crush compression — owner: SubmarineFluidDynamics
-            EnsureNativeStateHandle(ref _compartmentBaseMaxVolumesHandle, BufferID.SubmarineFluidCompartmentBaseMaxVolumes, CompartmentCapacity, VaultCompartmentBaseMaxVolumesFlag);
+            EnsureNativeStateBuffer(ref _compartmentBaseMaxVolumes, BufferID.SubmarineFluidCompartmentBaseMaxVolumes, CompartmentCapacity, nameof(_compartmentBaseMaxVolumes), VaultCompartmentBaseMaxVolumesFlag);
             // COLD ALLOC: NativeArray<float>[8] â€” compartment capacity storage â€” owner: SubmarineFluidDynamics
-            EnsureNativeStateHandle(ref _compartmentMaxVolumesHandle, BufferID.SubmarineFluidCompartmentMaxVolumes, CompartmentCapacity, VaultCompartmentMaxVolumesFlag);
+            EnsureNativeStateBuffer(ref _compartmentMaxVolumes, BufferID.SubmarineFluidCompartmentMaxVolumes, CompartmentCapacity, nameof(_compartmentMaxVolumes), VaultCompartmentMaxVolumesFlag);
             // COLD ALLOC: NativeArray<float>[8] â€” active breach area storage â€” owner: SubmarineFluidDynamics
-            EnsureNativeStateHandle(ref _compartmentBreachAreasHandle, BufferID.SubmarineFluidCompartmentBreachAreas, CompartmentCapacity, VaultCompartmentBreachAreasFlag);
+            EnsureNativeStateBuffer(ref _compartmentBreachAreas, BufferID.SubmarineFluidCompartmentBreachAreas, CompartmentCapacity, nameof(_compartmentBreachAreas), VaultCompartmentBreachAreasFlag);
             // COLD ALLOC: NativeArray<float3>[8] â€” local compartment centroids â€” owner: SubmarineFluidDynamics
-            EnsureNativeStateHandle(ref _compartmentLocalCentroidsHandle, BufferID.SubmarineFluidCompartmentLocalCentroids, CompartmentCapacity, VaultCompartmentLocalCentroidsFlag);
+            EnsureNativeStateBuffer(ref _compartmentLocalCentroids, BufferID.SubmarineFluidCompartmentLocalCentroids, CompartmentCapacity, nameof(_compartmentLocalCentroids), VaultCompartmentLocalCentroidsFlag);
             // COLD ALLOC: NativeArray<uint>[8] â€” compartment state flags â€” owner: SubmarineFluidDynamics
-            EnsureNativeStateHandle(ref _compartmentFlagsHandle, BufferID.SubmarineFluidCompartmentFlags, CompartmentCapacity, VaultCompartmentFlagsFlag);
+            EnsureNativeStateBuffer(ref _compartmentFlags, BufferID.SubmarineFluidCompartmentFlags, CompartmentCapacity, nameof(_compartmentFlags), VaultCompartmentFlagsFlag);
             // COLD ALLOC: NativeArray<int2>[7] â€” bulkhead adjacency pairs â€” owner: SubmarineFluidDynamics
-            EnsureNativeStateHandle(ref _bulkheadPairsHandle, BufferID.SubmarineFluidBulkheadPairs, BulkheadCapacity, VaultBulkheadPairsFlag);
+            EnsureNativeStateBuffer(ref _bulkheadPairs, BufferID.SubmarineFluidBulkheadPairs, BulkheadCapacity, nameof(_bulkheadPairs), VaultBulkheadPairsFlag);
             // COLD ALLOC: NativeArray<byte>[7] â€” bulkhead seal state â€” owner: SubmarineFluidDynamics
-            EnsureNativeStateHandle(ref _bulkheadSealedHandle, BufferID.SubmarineFluidBulkheadSealed, BulkheadCapacity, VaultBulkheadSealedFlag);
+            EnsureNativeStateBuffer(ref _bulkheadSealed, BufferID.SubmarineFluidBulkheadSealed, BulkheadCapacity, nameof(_bulkheadSealed), VaultBulkheadSealedFlag);
             // COLD ALLOC: NativeArray<float>[7] â€” authored bulkhead doorway areas for pressure blowout math â€” owner: SubmarineFluidDynamics
-            EnsureNativeStateHandle(ref _bulkheadDoorAreasHandle, BufferID.SubmarineFluidBulkheadDoorAreas, BulkheadCapacity, VaultBulkheadDoorAreasFlag);
+            EnsureNativeStateBuffer(ref _bulkheadDoorAreas, BufferID.SubmarineFluidBulkheadDoorAreas, BulkheadCapacity, nameof(_bulkheadDoorAreas), VaultBulkheadDoorAreasFlag);
             // COLD ALLOC: NativeArray<float3>[8] â€” ping-pong flood centroid accumulator front buffer â€” owner: SubmarineFluidDynamics
-            EnsureNativeStateHandle(ref _comAccumulatorFrontHandle, BufferID.SubmarineFluidComAccumulatorFront, CompartmentCapacity, VaultComAccumulatorFrontFlag);
+            EnsureNativeStateBuffer(ref _comAccumulatorFront, BufferID.SubmarineFluidComAccumulatorFront, CompartmentCapacity, nameof(_comAccumulatorFront), VaultComAccumulatorFrontFlag);
             // COLD ALLOC: NativeArray<float3>[8] â€” ping-pong flood centroid accumulator back buffer â€” owner: SubmarineFluidDynamics
-            EnsureNativeStateHandle(ref _comAccumulatorBackHandle, BufferID.SubmarineFluidComAccumulatorBack, CompartmentCapacity, VaultComAccumulatorBackFlag);
+            EnsureNativeStateBuffer(ref _comAccumulatorBack, BufferID.SubmarineFluidComAccumulatorBack, CompartmentCapacity, nameof(_comAccumulatorBack), VaultComAccumulatorBackFlag);
             // COLD ALLOC: NativeArray<FloodMassPropertiesResult>[1] â€” front flood mass-properties result buffer â€” owner: SubmarineFluidDynamics
-            EnsureNativeStateHandle(ref _massPropertiesFrontHandle, BufferID.SubmarineFluidMassPropertiesFront, 1, VaultMassPropertiesFrontFlag);
+            EnsureNativeStateBuffer(ref _massPropertiesFront, BufferID.SubmarineFluidMassPropertiesFront, 1, nameof(_massPropertiesFront), VaultMassPropertiesFrontFlag);
             // COLD ALLOC: NativeArray<FloodMassPropertiesResult>[1] â€” back flood mass-properties result buffer â€” owner: SubmarineFluidDynamics
-            EnsureNativeStateHandle(ref _massPropertiesBackHandle, BufferID.SubmarineFluidMassPropertiesBack, 1, VaultMassPropertiesBackFlag);
+            EnsureNativeStateBuffer(ref _massPropertiesBack, BufferID.SubmarineFluidMassPropertiesBack, 1, nameof(_massPropertiesBack), VaultMassPropertiesBackFlag);
             // COLD ALLOC: NativeArray<float3>[16] â€” local angular-velocity slosh history supporting 50â€“150 ms delayed counter-torque taps â€” owner: SubmarineFluidDynamics
-            EnsureNativeStateHandle(ref _angularVelocityHistoryLocalHandle, BufferID.SubmarineFluidAngularVelocityHistoryLocal, RingBufferLength, VaultAngularVelocityHistoryFlag);
+            EnsureNativeStateBuffer(ref _angularVelocityHistoryLocal, BufferID.SubmarineFluidAngularVelocityHistoryLocal, RingBufferLength, nameof(_angularVelocityHistoryLocal), VaultAngularVelocityHistoryFlag);
             // COLD ALLOC: NativeArray<float>[8] â€” previous sampled exterior submersion factors for splash transition detection â€” owner: SubmarineFluidDynamics
-            EnsureNativeStateHandle(ref _previousExteriorSampleSubmersionFactorsHandle, BufferID.SubmarineFluidPreviousExteriorSampleSubmersionFactors, ExteriorBuoyancySampleCount, VaultExteriorSubmersionHistoryFlag);
+            EnsureNativeStateBuffer(ref _previousExteriorSampleSubmersionFactors, BufferID.SubmarineFluidPreviousExteriorSampleSubmersionFactors, ExteriorBuoyancySampleCount, nameof(_previousExteriorSampleSubmersionFactors), VaultExteriorSubmersionHistoryFlag);
             // COLD ALLOC: NativeArray<float>[8] Ã¢â‚¬â€ Burst fluid-transfer output volumes Ã¢â‚¬â€ owner: SubmarineFluidDynamics
-            EnsureNativeStateHandle(ref _jobFloodVolumesHandle, BufferID.SubmarineFluidJobFloodVolumes, CompartmentCapacity, VaultJobFloodVolumesFlag);
+            EnsureNativeStateBuffer(ref _jobFloodVolumes, BufferID.SubmarineFluidJobFloodVolumes, CompartmentCapacity, nameof(_jobFloodVolumes), VaultJobFloodVolumesFlag);
             // COLD ALLOC: NativeArray<uint>[8] Ã¢â‚¬â€ Burst fluid-transfer output flags Ã¢â‚¬â€ owner: SubmarineFluidDynamics
-            EnsureNativeStateHandle(ref _jobCompartmentFlagsHandle, BufferID.SubmarineFluidJobCompartmentFlags, CompartmentCapacity, VaultJobCompartmentFlagsFlag);
+            EnsureNativeStateBuffer(ref _jobCompartmentFlags, BufferID.SubmarineFluidJobCompartmentFlags, CompartmentCapacity, nameof(_jobCompartmentFlags), VaultJobCompartmentFlagsFlag);
             // COLD ALLOC: NativeArray<float>[7] Ã¢â‚¬â€ per-bulkhead transfer delta scratch Ã¢â‚¬â€ owner: SubmarineFluidDynamics
-            EnsureNativeStateHandle(ref _bulkheadTransferDeltasHandle, BufferID.SubmarineFluidBulkheadTransferDeltas, BulkheadCapacity, VaultBulkheadTransferDeltasFlag);
+            EnsureNativeStateBuffer(ref _bulkheadTransferDeltas, BufferID.SubmarineFluidBulkheadTransferDeltas, BulkheadCapacity, nameof(_bulkheadTransferDeltas), VaultBulkheadTransferDeltasFlag);
             // COLD ALLOC: NativeArray<HydroKinematicJobInput>[1] - submarine true-buoyancy and custom drag input packet - owner: SubmarineFluidDynamics
-            EnsureNativeStateHandle(ref _hydroKinematicInputHandle, BufferID.SubmarineHydroKinematicInput, 1, VaultHydroInputFlag);
+            EnsureNativeStateBuffer(ref _hydroKinematicInput, BufferID.SubmarineHydroKinematicInput, 1, nameof(_hydroKinematicInput), VaultHydroInputFlag);
             // COLD ALLOC: NativeArray<HydroKinematicJobOutput>[1] - one-frame-late custom drag force/torque packet - owner: SubmarineFluidDynamics
-            EnsureNativeStateHandle(ref _hydroKinematicOutputHandle, BufferID.SubmarineHydroKinematicOutput, 1, VaultHydroOutputFlag);
+            EnsureNativeStateBuffer(ref _hydroKinematicOutput, BufferID.SubmarineHydroKinematicOutput, 1, nameof(_hydroKinematicOutput), VaultHydroOutputFlag);
             // COLD ALLOC: NativeArray<HydroBlackBoxEntry>[300] - fixed hydro crash telemetry ring - owner: SubmarineFluidDynamics
-            EnsureNativeStateHandle(ref _hydroBlackBoxHandle, BufferID.SubmarineHydroBlackBox, HydroBlackBoxCapacity, VaultHydroBlackBoxFlag);
+            EnsureNativeStateBuffer(ref _hydroBlackBox, BufferID.SubmarineHydroBlackBox, HydroBlackBoxCapacity, nameof(_hydroBlackBox), VaultHydroBlackBoxFlag);
         }
 
         private void SeedNativeStateFromAuthoring()
@@ -2046,28 +2187,29 @@ namespace Hecton8.Physics
                 _hydroKinematicOutputReady = false;
             }
 
-            DisposeNativeStateHandle(ref _compartmentFloodVolumesHandle, VaultCompartmentFloodVolumesFlag);
-            DisposeNativeStateHandle(ref _compartmentViscosity01Handle, VaultCompartmentViscosityFlag);
-            DisposeNativeStateHandle(ref _compartmentBaseMaxVolumesHandle, VaultCompartmentBaseMaxVolumesFlag);
-            DisposeNativeStateHandle(ref _compartmentMaxVolumesHandle, VaultCompartmentMaxVolumesFlag);
-            DisposeNativeStateHandle(ref _compartmentBreachAreasHandle, VaultCompartmentBreachAreasFlag);
-            DisposeNativeStateHandle(ref _compartmentLocalCentroidsHandle, VaultCompartmentLocalCentroidsFlag);
-            DisposeNativeStateHandle(ref _compartmentFlagsHandle, VaultCompartmentFlagsFlag);
-            DisposeNativeStateHandle(ref _bulkheadPairsHandle, VaultBulkheadPairsFlag);
-            DisposeNativeStateHandle(ref _bulkheadSealedHandle, VaultBulkheadSealedFlag);
-            DisposeNativeStateHandle(ref _bulkheadDoorAreasHandle, VaultBulkheadDoorAreasFlag);
-            DisposeNativeStateHandle(ref _comAccumulatorFrontHandle, VaultComAccumulatorFrontFlag);
-            DisposeNativeStateHandle(ref _comAccumulatorBackHandle, VaultComAccumulatorBackFlag);
-            DisposeNativeStateHandle(ref _massPropertiesFrontHandle, VaultMassPropertiesFrontFlag);
-            DisposeNativeStateHandle(ref _massPropertiesBackHandle, VaultMassPropertiesBackFlag);
-            DisposeNativeStateHandle(ref _angularVelocityHistoryLocalHandle, VaultAngularVelocityHistoryFlag);
-            DisposeNativeStateHandle(ref _previousExteriorSampleSubmersionFactorsHandle, VaultExteriorSubmersionHistoryFlag);
-            DisposeNativeStateHandle(ref _jobFloodVolumesHandle, VaultJobFloodVolumesFlag);
-            DisposeNativeStateHandle(ref _jobCompartmentFlagsHandle, VaultJobCompartmentFlagsFlag);
-            DisposeNativeStateHandle(ref _bulkheadTransferDeltasHandle, VaultBulkheadTransferDeltasFlag);
-            DisposeNativeStateHandle(ref _hydroKinematicInputHandle, VaultHydroInputFlag);
-            DisposeNativeStateHandle(ref _hydroKinematicOutputHandle, VaultHydroOutputFlag);
-            DisposeNativeStateHandle(ref _hydroBlackBoxHandle, VaultHydroBlackBoxFlag);
+            DisposeNativeStateBuffer(ref _compartmentFloodVolumes, VaultCompartmentFloodVolumesFlag);
+            DisposeNativeStateBuffer(ref _compartmentViscosity01, VaultCompartmentViscosityFlag);
+            DisposeNativeStateBuffer(ref _compartmentBaseMaxVolumes, VaultCompartmentBaseMaxVolumesFlag);
+            DisposeNativeStateBuffer(ref _compartmentMaxVolumes, VaultCompartmentMaxVolumesFlag);
+            DisposeNativeStateBuffer(ref _compartmentBreachAreas, VaultCompartmentBreachAreasFlag);
+            DisposeNativeStateBuffer(ref _compartmentLocalCentroids, VaultCompartmentLocalCentroidsFlag);
+            DisposeNativeStateBuffer(ref _compartmentFlags, VaultCompartmentFlagsFlag);
+            DisposeNativeStateBuffer(ref _bulkheadPairs, VaultBulkheadPairsFlag);
+            DisposeNativeStateBuffer(ref _bulkheadSealed, VaultBulkheadSealedFlag);
+            DisposeNativeStateBuffer(ref _bulkheadDoorAreas, VaultBulkheadDoorAreasFlag);
+            DisposeNativeStateBuffer(ref _comAccumulatorFront, VaultComAccumulatorFrontFlag);
+            DisposeNativeStateBuffer(ref _comAccumulatorBack, VaultComAccumulatorBackFlag);
+            DisposeNativeStateBuffer(ref _massPropertiesFront, VaultMassPropertiesFrontFlag);
+            DisposeNativeStateBuffer(ref _massPropertiesBack, VaultMassPropertiesBackFlag);
+            DisposeNativeStateBuffer(ref _angularVelocityHistoryLocal, VaultAngularVelocityHistoryFlag);
+            DisposeNativeStateBuffer(ref _previousExteriorSampleSubmersionFactors, VaultExteriorSubmersionHistoryFlag);
+            DisposeNativeStateBuffer(ref _jobFloodVolumes, VaultJobFloodVolumesFlag);
+            DisposeNativeStateBuffer(ref _jobCompartmentFlags, VaultJobCompartmentFlagsFlag);
+            DisposeNativeStateBuffer(ref _bulkheadTransferDeltas, VaultBulkheadTransferDeltasFlag);
+            DisposeNativeStateBuffer(ref _hydroKinematicInput, VaultHydroInputFlag);
+            DisposeNativeStateBuffer(ref _hydroKinematicOutput, VaultHydroOutputFlag);
+            DisposeNativeStateBuffer(ref _hydroBlackBox, VaultHydroBlackBoxFlag);
+            ClearNativeStateViews();
             DispatcherJobSwap.TryComplete(ref _disposeHandle, true);
 
         }
@@ -2239,8 +2381,8 @@ namespace Hecton8.Physics
             _fluidJobHandle = default;
             _fluidJobRunning = false;
 
-            SwapNativeStateHandles(ref _compartmentFloodVolumesHandle, ref _jobFloodVolumesHandle);
-            SwapNativeStateHandles(ref _compartmentFlagsHandle, ref _jobCompartmentFlagsHandle);
+            SwapNativeStateBuffers(ref _compartmentFloodVolumes, ref _jobFloodVolumes);
+            SwapNativeStateBuffers(ref _compartmentFlags, ref _jobCompartmentFlags);
         }
 
         private void CompleteFloodMassPropertiesInPostFixedSwapWindow()
@@ -2262,8 +2404,8 @@ namespace Hecton8.Physics
             _massPropertiesJobHandle = default;
             _massPropertiesJobRunning = false;
 
-            SwapNativeStateHandles(ref _massPropertiesFrontHandle, ref _massPropertiesBackHandle);
-            SwapNativeStateHandles(ref _comAccumulatorFrontHandle, ref _comAccumulatorBackHandle);
+            SwapNativeStateBuffers(ref _massPropertiesFront, ref _massPropertiesBack);
+            SwapNativeStateBuffers(ref _comAccumulatorFront, ref _comAccumulatorBack);
 
             PublishSubmarineRoomMassDataVault();
             PublishSubmarineFloodStateSignal();
@@ -2507,7 +2649,7 @@ namespace Hecton8.Physics
                 MaxTorque = hydroSolverMaxTorque
             };
 
-            PublishCavitationRumbleIfNeeded(math.length(velocityFloat), fixedDeltaTime);
+            PublishCavitationRumbleIfNeeded(ApproximateMagnitude(velocityFloat), fixedDeltaTime);
             _hydroKinematicJobHandle = new HydroKinematicDragJob
             {
                 Input = _hydroKinematicInput,
@@ -5279,8 +5421,19 @@ namespace Hecton8.Physics
             if (safeValue <= 0f)
                 return 0f;
 
-            float magnitude = safeValue * math.rsqrt(safeValue);
+            float magnitude = safeValue * math.rsqrt(math.max(safeValue, 0.000001f));
             return math.isfinite(magnitude) ? magnitude : 0f;
+        }
+
+        private static float ApproximateMagnitude(float3 value)
+        {
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float az = math.abs(value.z);
+            float maxAxis = math.max(ax, math.max(ay, az));
+            float minAxis = math.min(ax, math.min(ay, az));
+            float midAxis = ax + ay + az - maxAxis - minAxis;
+            return maxAxis + (midAxis * 0.375f) + (minAxis * 0.125f);
         }
 
         private static float ApproximateMagnitude(Vector3 value)
@@ -5602,60 +5755,60 @@ namespace Hecton8.Physics
             return unchecked((hash ^ value) * 16777619u);
         }
 
-        private bool EnsureNativeStateHandle<T>(
-            ref VaultBufferHandle<T> handle,
+        private void EnsureNativeStateBuffer<T>(
+            ref VaultNativeBuffer<T> buffer,
             BufferID bufferId,
             int requiredLength,
+            string label,
             int vaultFlag) where T : struct
         {
-            IDataVault vault = _dataVault;
-            if (vault == null)
-            {
-                handle = default;
-                _vaultNativeStateMask &= ~vaultFlag;
-                return false;
-            }
-
-            if (!handle.IsCreated || handle.BufferId != bufferId || handle.Length < requiredLength)
-            {
-                handle = vault.GetBufferHandle<T>(
-                    bufferId,
-                    requiredLength,
-                    SystemID.VehiclesPhysics,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            NativeArray<T> view = handle.Resolve(vault);
-            if (view.IsCreated && view.Length >= requiredLength)
-            {
+            _ = label;
+            if (buffer.Ensure(_dataVault, bufferId, requiredLength))
                 _vaultNativeStateMask |= vaultFlag;
-                return true;
-            }
+            else
+                _vaultNativeStateMask &= ~vaultFlag;
+        }
 
-            handle = default;
+        private void ClearNativeStateViews()
+        {
+            _compartmentFloodVolumes = default;
+            _compartmentViscosity01 = default;
+            _compartmentBaseMaxVolumes = default;
+            _compartmentMaxVolumes = default;
+            _compartmentBreachAreas = default;
+            _compartmentLocalCentroids = default;
+            _compartmentFlags = default;
+            _bulkheadPairs = default;
+            _bulkheadSealed = default;
+            _bulkheadDoorAreas = default;
+            _comAccumulatorFront = default;
+            _comAccumulatorBack = default;
+            _massPropertiesFront = default;
+            _massPropertiesBack = default;
+            _angularVelocityHistoryLocal = default;
+            _previousExteriorSampleSubmersionFactors = default;
+            _jobFloodVolumes = default;
+            _jobCompartmentFlags = default;
+            _bulkheadTransferDeltas = default;
+            _hydroKinematicInput = default;
+            _hydroKinematicOutput = default;
+            _hydroBlackBox = default;
+        }
+
+        private void DisposeNativeStateBuffer<T>(ref VaultNativeBuffer<T> buffer, int vaultFlag) where T : struct
+        {
+            buffer.Clear();
             _vaultNativeStateMask &= ~vaultFlag;
-            return false;
         }
 
-        private NativeArray<T> ResolveNativeState<T>(ref VaultBufferHandle<T> handle) where T : struct
+        private static void SwapNativeStateBuffers<T>(
+            ref VaultNativeBuffer<T> first,
+            ref VaultNativeBuffer<T> second) where T : struct
         {
-            IDataVault vault = _dataVault;
-            return vault != null && handle.IsCreated ? handle.Resolve(vault) : default;
-        }
-
-        private void DisposeNativeStateHandle<T>(ref VaultBufferHandle<T> handle, int vaultFlag) where T : struct
-        {
-            handle = default;
-            _vaultNativeStateMask &= ~vaultFlag;
-        }
-
-        private static void SwapNativeStateHandles<T>(
-            ref VaultBufferHandle<T> first,
-            ref VaultBufferHandle<T> second) where T : struct
-        {
-            VaultBufferHandle<T> temp = first;
+            VaultNativeBuffer<T> temp = first;
             first = second;
             second = temp;
         }
+
     }
 }

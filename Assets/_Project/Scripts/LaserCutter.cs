@@ -33,43 +33,8 @@ namespace Hecton8.Gameplay
     using Hecton8.World;
     using EquipmentInteractionPacket = Hecton8.Interaction.InteractionPacket;
     using EquipmentInteractionSignal = Hecton8.Interaction.InteractionSignal;
-    using Unity.Collections;
     using Unity.Mathematics;
     using UnityEngine;
-
-    /// <summary>
-    /// Laser cutter event kind carried by <see cref="LaserCutterEventPayload"/>.
-    /// </summary>
-    public enum LaserCutterEventType : byte
-    {
-        /// <summary>Normalized heat value changed beyond the publish threshold.</summary>
-        HeatChanged = 0,
-
-        /// <summary>Beam activation state changed.</summary>
-        BeamStateChanged = 1
-    }
-
-    /// <summary>
-    /// Blittable laser cutter event payload queued by <see cref="LaserCutterEvents"/>.
-    /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct LaserCutterEventPayload
-    {
-        /// <summary>Normalized heat value [0, 1].</summary>
-        public float Heat01;
-
-        /// <summary>Runtime entity id hash of the cutter source.</summary>
-        public int CutterInstanceId;
-
-        /// <summary>Runtime entity id hash of the cutter root transform.</summary>
-        public int CutterRootInstanceId;
-
-        /// <summary>Serialized <see cref="LaserCutterEventType"/> value.</summary>
-        public ushort EventType;
-
-        /// <summary>Bit flags for event-specific state.</summary>
-        public ushort StateFlags;
-    }
 
     /// <summary>
     /// Listener contract for deferred laser cutter events.
@@ -84,7 +49,7 @@ namespace Hecton8.Gameplay
     }
 
     /// <summary>
-    /// Queue-backed laser cutter event lane with a sidecar source registry for live transform resolution.
+    /// Typed-lane laser cutter event bridge with a sidecar source registry for live transform resolution.
     /// </summary>
     public static class LaserCutterEvents
     {
@@ -104,17 +69,14 @@ namespace Hecton8.Gameplay
         private static readonly RegistryBucket<ILaserCutterEventListener> _listeners = new RegistryBucket<ILaserCutterEventListener>(ListenerCapacity);
         // COLD ALLOC: SourceRecord[8] - cutter source sidecar for live Transform resolution - owner: LaserCutterEvents
         private static readonly SourceRecord[] _sources = new SourceRecord[SourceCapacity];
-        private static NativeQueue<LaserCutterEventPayload> _pendingEvents;
-        private static NativeQueue<LaserCutterEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
-        private static int _nextFrameEventCount;
-        private static bool _isDispatching;
         private static int _sourceCount;
+        private static bool _laneConfigured;
 
         /// <summary>
         /// Pending payload count in the cutter event lane.
         /// </summary>
-        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+        public static int PendingCount => _pendingEventCount;
 
         /// <summary>
         /// Registers a cutter event listener.
@@ -146,48 +108,44 @@ namespace Hecton8.Gameplay
         /// </summary>
         public static void FlushPending()
         {
-            if (!_pendingEvents.IsCreated || _listeners.Count <= 0)
+            if (!_laneConfigured && _pendingEventCount <= 0)
+                return;
+
+            EnsureInitialized();
+            ReadOnlySpan<LaserCutterEventPayload> payloads = SignalBus<LaserCutterEventPayload>.GetFrameSnapshot();
+            if (payloads.Length <= 0)
+                return;
+
+            if (_listeners.Count <= 0)
             {
-                DrainWithoutDispatch();
+                _pendingEventCount = math.max(0, _pendingEventCount - payloads.Length);
                 return;
             }
 
-            PromoteNextFrameEventsIfFrontEmpty();
-            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
-            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            int dispatchedCount = 0;
+            for (int eventIndex = 0; eventIndex < payloads.Length; eventIndex++)
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                {
+                    RequeueRemaining(payloads, eventIndex);
+                    _pendingEventCount = math.max(0, _pendingEventCount - dispatchedCount);
                     return;
+                }
 
-                if (!_pendingEvents.TryDequeue(out LaserCutterEventPayload payload))
-                    break;
-
-                if (_pendingEventCount > 0)
-                    _pendingEventCount--;
-
+                LaserCutterEventPayload payload = payloads[eventIndex];
                 ILaserCutterEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
-                _isDispatching = true;
-                try
+                for (int i = count - 1; i >= 0; i--)
                 {
-                    for (int i = count - 1; i >= 0; i--)
-                    {
-                        ILaserCutterEventListener listener = rawArray[i];
-                        if (listener != null)
-                            listener.OnLaserCutterEvent(in payload);
-                    }
+                    ILaserCutterEventListener listener = rawArray[i];
+                    if (listener != null)
+                        listener.OnLaserCutterEvent(in payload);
                 }
-                finally
-                {
-                    _isDispatching = false;
-                }
+
+                dispatchedCount++;
             }
 
-            if (_pendingEvents.IsEmpty())
-            {
-                _pendingEventCount = 0;
-                PromoteNextFrameEventsIfFrontEmpty();
-            }
+            _pendingEventCount = math.max(0, _pendingEventCount - dispatchedCount);
         }
 
         /// <summary>
@@ -214,43 +172,12 @@ namespace Hecton8.Gameplay
 
         internal static void EnsureInitialized()
         {
-            if (!_pendingEvents.IsCreated)
-            {
-                _pendingEvents = new NativeQueue<LaserCutterEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<LaserCutterEventPayload>[16] - deferred cutter event lane flushed by SystemDispatcher LateUpdate - owner: LaserCutterEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingEvents,
-                    PendingEventCapacity,
-                    nameof(LaserCutterEvents),
-                    nameof(_pendingEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
-            }
-
-            if (!_nextFrameEvents.IsCreated)
-            {
-                _nextFrameEvents = new NativeQueue<LaserCutterEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<LaserCutterEventPayload>[16] - next-frame cutter event lane prevents same-frame reentrant dispatch - owner: LaserCutterEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameEvents,
-                    PendingEventCapacity,
-                    nameof(LaserCutterEvents),
-                    nameof(_nextFrameEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
-            }
-        }
-
-        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
-            where T : unmanaged
-        {
-            if (!queue.IsCreated || capacity <= 0)
+            if (_laneConfigured)
                 return;
 
-            for (int i = 0; i < capacity; i++)
-                queue.Enqueue(default);
-
-            while (queue.TryDequeue(out _))
-            {
-            }
+            GlobalSignals.InitializeAllQueues();
+            SignalBus<LaserCutterEventPayload>.EnsureInitialized();
+            _laneConfigured = true;
         }
 
         internal static void RegisterSource(LaserCutter source, int cutterInstanceId, Transform cachedTransform)
@@ -340,28 +267,13 @@ namespace Hecton8.Gameplay
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(LaserCutterEvents), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
-            }
-
-            if (_nextFrameEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(LaserCutterEvents), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
-            }
-
             _listeners.Clear();
             for (int i = 0; i < _sourceCount; i++)
                 _sources[i] = default;
 
             _sourceCount = 0;
             _pendingEventCount = 0;
-            _nextFrameEventCount = 0;
-            _isDispatching = false;
+            _laneConfigured = false;
         }
 
         private static void Enqueue(in LaserCutterEventPayload payload)
@@ -370,77 +282,23 @@ namespace Hecton8.Gameplay
                 return;
 
             EnsureInitialized();
-            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+            if (_pendingEventCount >= PendingEventCapacity)
                 return;
 
-            if (_isDispatching)
-            {
-                _nextFrameEvents.Enqueue(payload);
-                _nextFrameEventCount++;
-                return;
-            }
-
-            _pendingEvents.Enqueue(payload);
+            SignalBus<LaserCutterEventPayload>.Push(in payload);
             _pendingEventCount++;
         }
 
-        private static void DrainWithoutDispatch()
+        private static void RequeueRemaining(ReadOnlySpan<LaserCutterEventPayload> payloads, int startIndex)
         {
-            if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
+            if (startIndex < 0 || startIndex >= payloads.Length)
                 return;
 
-            if (_pendingEventCount <= 0)
+            for (int i = startIndex; i < payloads.Length; i++)
             {
-                PromoteNextFrameEventsIfFrontEmpty();
-                if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
-                    return;
+                LaserCutterEventPayload payload = payloads[i];
+                SignalBus<LaserCutterEventPayload>.Push(in payload);
             }
-
-            if (_nextFrameEvents.IsCreated)
-                DrainQueueWithoutDispatch(ref _nextFrameEvents, ref _nextFrameEventCount);
-        }
-
-        private static bool DrainQueueWithoutDispatch(
-            ref NativeQueue<LaserCutterEventPayload> queue,
-            ref int pendingCount)
-        {
-            if (!queue.IsCreated)
-                return true;
-
-            int scanBudget = pendingCount > 0 ? pendingCount : PendingEventCapacity;
-            while (scanBudget-- > 0 && !queue.IsEmpty())
-            {
-                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
-                    return false;
-
-                if (!queue.TryDequeue(out _))
-                    break;
-
-                if (pendingCount > 0)
-                    pendingCount--;
-            }
-
-            if (queue.IsEmpty())
-                pendingCount = 0;
-
-            return true;
-        }
-
-        private static void PromoteNextFrameEventsIfFrontEmpty()
-        {
-            if (!_pendingEvents.IsCreated ||
-                !_nextFrameEvents.IsCreated ||
-                _pendingEventCount > 0 ||
-                _nextFrameEventCount <= 0)
-            {
-                return;
-            }
-
-            NativeQueue<LaserCutterEventPayload> swap = _pendingEvents;
-            _pendingEvents = _nextFrameEvents;
-            _nextFrameEvents = swap;
-            _pendingEventCount = _nextFrameEventCount;
-            _nextFrameEventCount = 0;
         }
     }
 

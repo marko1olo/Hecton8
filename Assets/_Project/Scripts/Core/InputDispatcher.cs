@@ -1,9 +1,14 @@
+#if UNITY_EDITOR || UNITY_STANDALONE
+#define HECTON8_MMF_AVAILABLE
+#endif
 using Hecton8.Input;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Physics;
 using System;
 using System.IO;
+#if HECTON8_MMF_AVAILABLE
 using System.IO.MemoryMappedFiles;
+#endif
 using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Tools;
@@ -136,9 +141,11 @@ namespace Hecton8.Core
         private JobHandle _xrNativeDisposeHandle;
         private JobHandle _deterministicInputDisposeHandle;
         private FileStream _inputReplayStream;
+#if HECTON8_MMF_AVAILABLE
         private MemoryMappedFile _inputReplayMappedFile;
         private MemoryMappedViewAccessor _inputReplayAccessor;
         private byte* _inputReplayPointer;
+#endif
         private Thread _inputReplayThread;
         private AutoResetEvent _inputReplaySignal;
         private RaycastHit _lastXRLookAtHit;
@@ -706,6 +713,10 @@ namespace Hecton8.Core
             if (_nextInputReplayRetryFrame > currentFrame)
                 return;
 
+#if !HECTON8_MMF_AVAILABLE
+            _nextInputReplayRetryFrame = int.MaxValue;
+            return;
+#else
             try
             {
                 string replayPath = Path.Combine(Application.persistentDataPath, InputReplayFileName);
@@ -752,6 +763,7 @@ namespace Hecton8.Core
                 _inputReplaySignal = null;
                 ReleaseInputReplayMap();
             }
+#endif
         }
 
         private void MarkInputReplaySetupFailure(int currentFrame)
@@ -786,6 +798,7 @@ namespace Hecton8.Core
 
         private void ReleaseInputReplayMap()
         {
+#if HECTON8_MMF_AVAILABLE
             if (_inputReplayPointer != null && _inputReplayAccessor != null)
             {
                 _inputReplayAccessor.SafeMemoryMappedViewHandle.ReleasePointer();
@@ -796,22 +809,26 @@ namespace Hecton8.Core
             _inputReplayAccessor = null;
             _inputReplayMappedFile?.Dispose();
             _inputReplayMappedFile = null;
+#endif
             _inputReplayStream?.Dispose();
             _inputReplayStream = null;
         }
 
         private void WriteInputReplayHeader()
         {
+#if HECTON8_MMF_AVAILABLE
             if (_inputReplayPointer == null)
                 return;
 
             UnsafeUtility.WriteArrayElement(_inputReplayPointer, 0, InputReplayMagic);
             UnsafeUtility.WriteArrayElement(_inputReplayPointer + 8, 0, InputReplayVersion);
             UnsafeUtility.WriteArrayElement(_inputReplayPointer + 12, 0, (uint)DeterministicInputRingCapacity);
+#endif
         }
 
         private void InputReplayWriterLoop()
         {
+#if HECTON8_MMF_AVAILABLE
             try
             {
                 while (Volatile.Read(ref _inputReplayStopRequested) == 0)
@@ -842,6 +859,7 @@ namespace Hecton8.Core
                 CrashTelemetryBuffer.ReportBlackBoxExportFailure();
                 Interlocked.Exchange(ref _inputReplayStopRequested, 1);
             }
+#endif
         }
 
         private void DumpDeterministicInputBlackBox()

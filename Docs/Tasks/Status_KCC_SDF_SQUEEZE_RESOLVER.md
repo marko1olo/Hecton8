@@ -4,7 +4,7 @@ PROMPT IDENTIFIED: KCC_SDF_SQUEEZE_RESOLVER
 ROLE: LOCOMOTION_ENGINEER
 DOMAIN: PHYSICS/LOCOMOTION
 TASK COUNT: 18
-STATUS: CORE IMPLEMENTED / KCC ROSLYN-CLEAN / FINAL VALIDATION BLOCKED BY FOREIGN XR COMPILE ERROR
+STATUS: KCC SDF SQUEEZE IMPLEMENTED / NAN POLISH APPLIED / CURRENT BUILD BLOCKED BY FOREIGN COMPILE ERRORS
 
 ## Mandates Read
 - PHYS_Physics_Integrity_Determinism_ForceMode.txt
@@ -33,13 +33,13 @@ STATUS: CORE IMPLEMENTED / KCC ROSLYN-CLEAN / FINAL VALIDATION BLOCKED BY FOREIG
 - [x] 9. HIGH_END_OVERKILL | DOD: high/ultra tiers reuse SDF normal for micro camera roll and publish `FluidImpulseSignal` for downstream volumetric silt/wake overkill; alternative rejected: extra physical body twist solver or rendering-domain edits; microseconds estimate: 12000 us saved on collision truth and re-spent in VFX lanes on high hardware only.
 - [x] 10. REACTIVE_VFX | DOD: squeeze speed threshold emits `HapticRequest.ChannelGearScrape`, `AcousticPingSignal.ChannelFabricScrape`, and high-tier `FluidImpulseSignal` from the runtime feedback bridge; alternative rejected: direct feedback devices/audio sources or duplicate motor scrape broadcasts; microseconds estimate: 10000 us.
 - [x] 11. STP_STABILIZATION | DOD: push-out speed is clamped to 1 m/s in job and cached interpolation; alternative rejected: teleport to last valid position; microseconds estimate: 0 us saved, TAA snap risk reduced.
-- [x] 12. NAN_VACCINATION | DOD: gradient normalization uses `math.rsqrt(math.max(lengthSq, 0.0001f))` and emits NaN fallback flags; alternative rejected: `math.normalize`; microseconds estimate: 2000 us.
+- [x] 12. NAN_VACCINATION | DOD: gradient normalization uses `math.rsqrt(math.max(lengthSq, 0.0001f))`, motor-side squeeze/sweep rsqrt sites now finite-check and max-clamp denominators, and NaN fallback flags are emitted; alternative rejected: relying on pre-checks without denominator clamps; microseconds estimate: 2000 us saved in the SDF job, 0 us saved in motor guard polish.
 - [x] 13. BLACKBOX_LOGGING | DOD: SDF interventions write telemetry ring and `Dump_KCC_SDF_SQUEEZE_RESOLVER.bin` on fault dump; alternative rejected: chat-only failure report; microseconds estimate: 5000 us.
 - [x] 14. TRIPLE_STRIKE_REPAIR | DOD: Roslyn found two KCC integration errors (`GlobalSignals.SystemStress01`, misplaced helper), both fixed; alternative rejected: blaming first compile wall; microseconds estimate: 180000000 us spent.
 - [x] 15. HOMEOSTASIS_ADAPTATION | DOD: `SignalBusRegistry.SystemStress01 > 0.8` routes to 5-frame/10Hz-equivalent sampling with cached interpolation; alternative rejected: disable squeeze under stress; microseconds estimate: 25000-60000 us saved during sustained squeeze.
 - [x] 16. OXYGEN_PENALTY | DOD: stress publishes physiology O2 multiplier and pushes CO2-equivalent load to `IGasDynamicsSolver`; alternative rejected: direct survival stat mutation; microseconds estimate: 8000 us.
 - [x] 17. SPEED_PENALTY | DOD: forward velocity component is reduced by 60% while squeezing; alternative rejected: global speed scalar outside KCC; microseconds estimate: 3000 us.
-- [x] 18. FINAL_VALIDATION | BLOCKED BY DEPENDENCY: latest `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false` exits non-zero on one foreign XR API error: `HectonXRRuntimeState.cs(199,29)` missing `XRDisplaySubsystem.TryRequestDisplayRefreshRate`. No diagnostics name `SdfSqueezeJob`, `PlayerKinematicsRuntime`, `HectonPlayerState`, `HectonPlayerMotor`, or `H8Memory` in `Build_KCC_SDF_SQUEEZE_RESOLVER_polish2.exit.txt`; alternative rejected: editing Core XR runtime from a locomotion prompt; microseconds estimate: 600000000 us blocked.
+- [x] 18. FINAL_VALIDATION | BLOCKED BY DEPENDENCY: latest `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false` exits 1 with 130 foreign errors in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_nan_polish.exit.txt`; no diagnostic names `SdfSqueezeJob`, `HectonPlayerMotor`, `PlayerKinematicsRuntime`, or `HectonPlayerState`; alternative rejected: editing RepairTool/UnderwaterVisuals/Sargassum from a locomotion prompt; measured failed validation time: 105250000 us.
 
 ## Iteration Loop 1 - Scope And Kernel
 - [x] Verified no KCC singleton/collision callback debt in assigned scope.
@@ -82,12 +82,25 @@ STATUS: CORE IMPLEMENTED / KCC ROSLYN-CLEAN / FINAL VALIDATION BLOCKED BY FOREIG
 - [x] Added high/ultra-only `FluidImpulseSignal` from SDF stress/normal/velocity so saved collision cost feeds downstream volumetric silt/wake VFX.
 - [x] Roslyn rerun captured in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_polish2.exit.txt`; one foreign XR compile error remains and none name KCC/locomotion files touched in this pass.
 
+## Iteration Loop 8 - Final Green Validation
+- [x] Re-extracted `<AGENT_PROMPT id="KCC_SDF_SQUEEZE_RESOLVER" ...>` from `Docs/Tasks/CURRENT_BATCH.md` with a flexible CLI regex and recounted 18 tasks.
+- [x] Confirmed the current Core XR file no longer contains the missing `TryRequestDisplayRefreshRate` API call that blocked the prior build.
+- [x] Reran `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false`; result is `Build succeeded`, 0 warnings, 0 errors, `EXIT_CODE=0`, elapsed 90.42 seconds.
+- [x] Appended final CTO-facing record to `Docs/AgentLogs/LOG_KCC_SDF_SQUEEZE_RESOLVER.md` with measured validation and non-profiler performance estimates separated.
+
+## Iteration Loop 9 - NaN Inquisition
+- [x] Re-read status/rationale and re-extracted the KCC XML prompt before patching.
+- [x] Audited rsqrt sites in `SdfSqueezeJob`, `HectonPlayerMotor`, and `PlayerKinematicsRuntime`; current SDF axis path has one +Z and one -Z sample, not a duplicate.
+- [x] Patched motor-side displacement, safe-normal, voxel-proxy slide, and tangent-slide rsqrt paths to finite-check squared magnitudes and pass `math.max(...)` denominators.
+- [x] `rg --pcre2 "math\.rsqrt\((?!math\.max)"` now finds no remaining unguarded rsqrt in the KCC/player locomotion files scanned.
+- [x] Latest build captured in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_nan_polish.exit.txt`; current wall is 130 foreign errors in RepairTool, HectonUnderwaterVisuals, and SargassumMicroFaunaBoids, with no KCC/player diagnostics.
+
 ## Omega Polish
 - [x] Anti-bloat inquisition read after core checklist completion.
 - [x] `rg` found no `GameObject.Find`, `FindObjectOfType`, `KCCManager`, `Physics.CapsuleCast`, `OnCollisionStay`, `Update(`, `string.Format`, legacy `EventBus`, or managed delegate in the resolver runtime/KCC path.
 - [x] `rg` found all `StructLayout` attributes in the KCC/player locomotion surface use `Pack = 1`.
 - [x] Circular dependency check: KCC job is standalone under `Hecton8.Physics.KCC`; gameplay runtime depends on KCC job, not vice versa.
-- [x] Build green requirement could not be claimed: final build wall is outside PHYSICS/LOCOMOTION domain.
+- [x] Build green was achieved earlier in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_xr_validation.exit.txt`; current tree is no longer green due to foreign compile errors recorded in `Docs/AgentLogs/Build_KCC_SDF_SQUEEZE_RESOLVER_nan_polish.exit.txt`.
 
 ## Loop Plan
 - Loop 1: inspect KCC/Vault/SDF/signal contracts, then implement tasks 1-5 if APIs exist.
@@ -97,3 +110,5 @@ STATUS: CORE IMPLEMENTED / KCC ROSLYN-CLEAN / FINAL VALIDATION BLOCKED BY FOREIG
 - Loop 5: self-review hot paths, polish mandate, final compile/report.
 - Loop 6: data-vault eviction hardening, ARM64 layout hardening, platform scans, final compile/report refresh.
 - Loop 7: duplicate signal collapse, motor AUP hardening, high-tier fluid impulse, compile/report refresh.
+- Loop 8: final prompt re-extraction, XR wall revalidation, build green report refresh.
+- Loop 9: NaN denominator clamp pass, foreign compile-wall revalidation, report refresh.

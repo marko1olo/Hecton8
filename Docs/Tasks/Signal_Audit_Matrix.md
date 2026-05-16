@@ -21,8 +21,11 @@ Authority file: Assets/_Project/Scripts/Core/GlobalSignals.cs
 | Combat damage | Canonical | Legacy `DamageSignal` payload and generated hash removed; producers write `CombatDamageSignal`. |
 | High speed impact | Canonical | `KineticEnergy` added as alias for shader-readable energy while preserving `LostKineticEnergy` callers. |
 | Non-critical VFX | Bounded | Stress >= 0.8 drops optional VFX; stress < 0.2 allows full propagation. |
+| Visual flare / turbulence | Bounded | Late presentation lanes were added to non-critical stress shedding so MX350/Quest can cut visual flood first. |
 | Audio transition | SPSC compatible | Existing native queues/ring buffers remain; signal path uses typed unmanaged payloads. |
 | AUP shift | PRE_SIMULATION | `GlobalSignals.FlushPreSimulation()` drains lanes before render and applies AUP shift safety. |
+| Lockstep / glitch / tether fire | Centralized | Late local Configure drift removed; capacity/hash authority now lives in `GlobalSignals.InitializeAllQueues()`. |
+| Physics determinism | Centralized | Input, state correction, desync, sync fence, and KCC velocity lanes are configured only by `GlobalSignals`. |
 
 ## Layout Audit
 
@@ -36,17 +39,21 @@ Authority file: Assets/_Project/Scripts/Core/GlobalSignals.cs
 
 | Command | Result |
 | --- | --- |
-| `dotnet build Hecton8.Core.csproj` | Initial pass failed on unrelated AI/animation/VFX dependencies. Final pass after late-drift repair failed on unrelated `ProceduralLadderClimbRuntime` references in `GlobalRegistry.cs`. No signal namespace or damage lane errors were reported. |
-| `dotnet build Assembly-CSharp.csproj --no-restore -v:minimal` | Timed out after 300 seconds; leftover dotnet workers were stopped. |
+| `dotnet build Hecton8.Core.csproj --no-restore -v:minimal` | Succeeded: 0 warnings, 0 errors, `Hecton8.Core.dll` emitted. |
+| `dotnet build Assembly-CSharp.csproj --no-restore -v:minimal` | Failed outside CORE/SIGNALS with `MSB4166` child-node shutdown and `MSB4242` SDK resolver failures in third-party project graph entries including GPUInstancer, RealtimeCSG, MoreMountains, and VolumetricLightBeam; leftover dotnet worker stopped. |
 
 Audit conclusion: 0 duplicate signal names, 0 signal payloads outside `Hecton8.Core.Contracts.Signals`, and 0 decentralized SignalBus lane Configure calls remain.
 
-Late drift note: a final scan caught new compass/biolum/path/scatter/ambient files with stale imports. They were folded into the contract namespace and compass lane registration was moved to `GlobalSignals.InitializeAllQueues()` before this audit was finalized.
+Late drift note: final scans caught stale signal imports and local lane authority in compass/anomaly, lockstep/glitch, tether fire, physics determinism, and a thermal scalability adapter import. They were folded back to `Hecton8.Core.Contracts.Signals` and `GlobalSignals.InitializeAllQueues()` before this audit was finalized.
 
 ## Omega Polish
 
 | Question | Result |
 | --- | --- |
-| 0.1 ms flush dictatorship | Flush path uses native queue drain, NativeList snapshot writes, stress caps, and overflow clear. No managed containers were added to the flush path. |
+| 0.1 ms flush dictatorship | Flush path uses bounded native queue drain, NativeList snapshot writes, stress caps, and `NativeQueue<T>.Clear()` on overflow storms. No managed containers were added to the flush path. |
 | Managed format strings in signal surface | `rg` found 0 interpolated strings and 0 `string.Format` calls in the signal authority files. |
 | Status | VERIFIED MASTER GRADE, except task 4 ABI layout migration and task 18 integration build are explicitly blocked as recorded. |
+
+## Finite Guard Coverage
+
+Late Push-time guard expansion covers tether tension/snap/fire, visual flare, voxel carve, docking request/complete/fail, anomaly proximity, compass calibration, system glitch, deterministic input, state correction, sync fence, and KCC velocity payloads. Invalid numeric fields are sanitized to zero or safe defaults and emit math-guard telemetry instead of trusting producers.

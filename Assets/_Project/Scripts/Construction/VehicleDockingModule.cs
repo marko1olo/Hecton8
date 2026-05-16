@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton8.Power;
@@ -39,7 +40,7 @@ namespace Hecton8.Construction
         private const uint DockingWakeSourceVehicleFlag = 2u;
         private const int DockTelemetryCapacity = 300;
 
-        [StructLayout(LayoutKind.Sequential, Pack = 16)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 128)]
         private struct DockTelemetryEntry
         {
             public int Frame;
@@ -62,6 +63,7 @@ namespace Hecton8.Construction
             public uint OwnerHash;
             public uint RequestId;
             public uint RuntimeFlags;
+            public uint ReservedTail;
         }
 
         [Header("Docking")]
@@ -176,8 +178,9 @@ namespace Hecton8.Construction
         private int _transportLookupCount;
         private int _transportLookupWriteCursor;
         private bool _hasDockedRelativeAup;
-        private NativeArray<DockTelemetryEntry> _dockTelemetry;
-        private int _dockTelemetryCursor;
+        private IDataVault _dataVault;
+        private VaultBufferHandle<DockTelemetryEntry> _dockTelemetryHandle;
+        private VaultBufferHandle<int> _dockTelemetryCursorHandle;
 
         /// <summary>Continuous draw while charge is actually transferred to a docked transport.</summary>
         public float PowerRating => _activelyCharging ? -chargingPowerDraw : 0f;
@@ -267,7 +270,6 @@ namespace Hecton8.Construction
             _dockingElapsedSeconds = 0f;
             _attachedDroneMassKg = 0f;
             _hasDockedRelativeAup = false;
-            _dockTelemetryCursor = 0;
             ResetDockingRuntimeCaches();
             _lastRejectedDockColliderId = 0UL;
             ClearTransportLookupCache();
@@ -289,7 +291,6 @@ namespace Hecton8.Construction
             _dockingElapsedSeconds = 0f;
             _attachedDroneMassKg = 0f;
             _hasDockedRelativeAup = false;
-            _dockTelemetryCursor = 0;
             ResetDockingRuntimeCaches();
             _lastRejectedDockColliderId = 0UL;
             ClearTransportLookupCache();
@@ -946,30 +947,51 @@ namespace Hecton8.Construction
 
         private void EnsureDockTelemetry()
         {
-            if (_dockTelemetry.IsCreated)
+            bool hasRing = _dockTelemetryHandle.IsCreated &&
+                           _dataVault != null &&
+                           _dataVault.ResolveBuffer(ref _dockTelemetryHandle);
+            bool hasCursor = _dockTelemetryCursorHandle.IsCreated &&
+                             _dataVault != null &&
+                             _dataVault.ResolveBuffer(ref _dockTelemetryCursorHandle);
+            if (hasRing && hasCursor)
                 return;
 
-            _dockTelemetry = new NativeArray<DockTelemetryEntry>(
-                DockTelemetryCapacity,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory);
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+            if (_dataVault == null)
+                return;
+
+            if (!hasRing)
+            {
+                _dockTelemetryHandle = _dataVault.GetBufferHandle<DockTelemetryEntry>(
+                    BufferID.VehicleDockingTelemetryRing,
+                    DockTelemetryCapacity,
+                    SystemID.VehiclesPhysics,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (!hasCursor)
+            {
+                _dockTelemetryCursorHandle = _dataVault.GetBufferHandle<int>(
+                    BufferID.VehicleDockingTelemetryCursor,
+                    1,
+                    SystemID.VehiclesPhysics,
+                    NativeArrayOptions.ClearMemory);
+            }
         }
 
         private void DisposeDockTelemetry()
         {
-            if (!_dockTelemetry.IsCreated)
-                return;
-
-            _dockTelemetry.Dispose();
-            _dockTelemetryCursor = 0;
+            _dockTelemetryHandle = default;
+            _dockTelemetryCursorHandle = default;
         }
 
-        private void RecordDockTelemetry()
+        private unsafe void RecordDockTelemetry()
         {
-            if (!_dockTelemetry.IsCreated)
+            if (!_dockingInProgress && !_isDocked)
                 return;
 
-            if (!_dockingInProgress && !_isDocked)
+            if (!TryResolveDockTelemetry(out DockTelemetryEntry* telemetry, out int telemetryLength, out int* cursorPtr))
                 return;
 
             Vector3 position = ResolveTelemetryPosition();
@@ -995,7 +1017,8 @@ namespace Hecton8.Construction
                     : 0f;
             }
 
-            _dockTelemetry[_dockTelemetryCursor] = new DockTelemetryEntry
+            int cursor = SanitizeDockTelemetryCursor(*cursorPtr, telemetryLength);
+            telemetry[cursor] = new DockTelemetryEntry
             {
                 Frame = Time.frameCount,
                 State = _dockingInProgress ? (byte)1 : (_isDocked ? (byte)2 : (byte)0),
@@ -1016,11 +1039,13 @@ namespace Hecton8.Construction
                 GridZ = aup.GridZ,
                 OwnerHash = _dockingSplineOwnerHash,
                 RequestId = _dockingSplineRequestId,
-                RuntimeFlags = _activeDockingSpline.Flags
+                RuntimeFlags = _activeDockingSpline.Flags,
+                ReservedTail = 0u
             };
-            _dockTelemetryCursor++;
-            if (_dockTelemetryCursor >= _dockTelemetry.Length)
-                _dockTelemetryCursor = 0;
+            cursor++;
+            if (cursor >= telemetryLength)
+                cursor = 0;
+            *cursorPtr = cursor;
         }
 
         private Vector3 ResolveTelemetryPosition()
@@ -1041,9 +1066,9 @@ namespace Hecton8.Construction
             return _cachedTransform != null ? _cachedTransform.rotation : Quaternion.identity;
         }
 
-        private void DumpDockTelemetry()
+        private unsafe void DumpDockTelemetry()
         {
-            if (!_dockTelemetry.IsCreated)
+            if (!TryResolveDockTelemetry(out DockTelemetryEntry* telemetry, out int telemetryLength, out int* cursorPtr))
                 return;
 
             string projectRoot = Application.dataPath;
@@ -1055,16 +1080,18 @@ namespace Hecton8.Construction
             string directory = Path.Combine(projectRoot, "Docs", "AgentLogs");
             Directory.CreateDirectory(directory);
             string path = Path.Combine(directory, "Dump_DOCKING_AUTOPILOT_SPLINE.bin");
+            int cursor = SanitizeDockTelemetryCursor(*cursorPtr, telemetryLength);
+            *cursorPtr = cursor;
             using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
             using (BinaryWriter writer = new BinaryWriter(stream))
             {
                 writer.Write(0x4453504Cu);
-                writer.Write(DockTelemetryCapacity);
-                writer.Write(_dockTelemetryCursor);
-                for (int i = 0; i < _dockTelemetry.Length; i++)
+                writer.Write(telemetryLength);
+                writer.Write(cursor);
+                int index = cursor;
+                for (int i = 0; i < telemetryLength; i++)
                 {
-                    int index = (_dockTelemetryCursor + i) % _dockTelemetry.Length;
-                    DockTelemetryEntry entry = _dockTelemetry[index];
+                    DockTelemetryEntry entry = telemetry[index];
                     writer.Write(entry.Frame);
                     writer.Write(entry.State);
                     writer.Write(entry.HasPower);
@@ -1096,8 +1123,43 @@ namespace Hecton8.Construction
                     writer.Write(entry.OwnerHash);
                     writer.Write(entry.RequestId);
                     writer.Write(entry.RuntimeFlags);
+                    writer.Write(entry.ReservedTail);
+                    index++;
+                    if (index >= telemetryLength)
+                        index = 0;
                 }
             }
+        }
+
+        private unsafe bool TryResolveDockTelemetry(out DockTelemetryEntry* telemetry, out int telemetryLength, out int* cursor)
+        {
+            telemetry = null;
+            telemetryLength = 0;
+            cursor = null;
+            EnsureDockTelemetry();
+            if (!_dockTelemetryHandle.IsCreated || !_dockTelemetryCursorHandle.IsCreated || _dataVault == null)
+                return false;
+
+            void* ptr = _dockTelemetryHandle.ResolvePointer(_dataVault);
+            if (ptr == null || _dockTelemetryHandle.Length <= 0)
+                return false;
+
+            void* cursorPtr = _dockTelemetryCursorHandle.ResolvePointer(_dataVault);
+            if (cursorPtr == null || _dockTelemetryCursorHandle.Length <= 0)
+                return false;
+
+            telemetry = (DockTelemetryEntry*)ptr;
+            telemetryLength = _dockTelemetryHandle.Length;
+            cursor = (int*)cursorPtr;
+            int sanitizedCursor = SanitizeDockTelemetryCursor(*cursor, telemetryLength);
+            if (*cursor != sanitizedCursor)
+                *cursor = sanitizedCursor;
+            return true;
+        }
+
+        private static int SanitizeDockTelemetryCursor(int cursor, int telemetryLength)
+        {
+            return telemetryLength > 0 && (uint)cursor < (uint)telemetryLength ? cursor : 0;
         }
 
         private float ResolveSafeUndockEjectSpeed()

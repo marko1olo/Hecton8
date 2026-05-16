@@ -100,7 +100,7 @@ Hardware Impact: Per mirrored scalar guard is sub-microsecond and only runs on i
 
 Problem: The XML requires a typed lockstep snapshot signal and a visor glitch on replay desync, but no current `LockstepSnapshotSignal` or `SystemGlitchSignal` contract existed in the active source.
 
-Solution: Add Pack=1 signal structs in the determinism file, prewarm their `SignalBus` lanes during `OnEnable`, publish `LockstepSnapshotSignal` after the completed master hash fence, and publish `SystemGlitchSignal` plus request existing dispatcher visual static on desync.
+Solution: Define the Pack=1 signal structs in `GlobalSignals.cs`, prewarm their `SignalBus` lanes during `OnEnable`, publish `LockstepSnapshotSignal` after the completed master hash fence, and publish `SystemGlitchSignal` plus request existing dispatcher visual static on desync.
 
 Rejected Alternatives: Editing the dirty global signal registry during parallel signal-authority work, using a managed delegate/event, or logging the hash without a typed lane.
 
@@ -143,3 +143,51 @@ Rejected Alternatives: Writing directly into the macro database header memory, i
 Scalability potential: Vault/replay persistence works on all tiers; save-header persistence needs a backend-owned API to avoid cross-domain corruption.
 
 Hardware Impact: 0us runtime.
+
+## Signal Contract Ownership Repair
+
+Problem: `GlobalSignals.cs` already references `LockstepSnapshotSignal` and `SystemGlitchSignal`, but the payload structs were placed inside `LockstepStateValidator.cs` under the Determinism asmdef. That creates an assembly ownership fault because `Hecton8.Core` cannot depend on `Hecton8.Core.Determinism`.
+
+Solution: Move the two Pack=1, 32-byte payload contracts into `Assets/_Project/Scripts/Core/GlobalSignals.cs`, the existing signal-lane authority file, and remove the duplicate determinism-local definitions. The validator now only consumes the typed lanes.
+
+Rejected Alternatives: Keeping duplicate namespace-local structs in Determinism, adding an asmdef cycle, or moving the full `SignalBus<T>` stack into Contracts during a lockstep pass.
+
+Scalability potential: Low tier keeps bounded 16/8 signal capacities. High/Ultra still get 60-frame lockstep snapshots and fault-only visor glitch pulses without increasing normal gameplay broadcast volume.
+
+Hardware Impact: 0us hot-path runtime change. This is a compile/link correctness repair and a cache-lane ownership cleanup.
+
+## Non-Finite Evidence Repair
+
+Problem: The mirror path sanitized room water and player pose values before hashing, but the previous implementation could erase the evidence by writing safe fallback values with no array-level non-finite flag. That would block the required FatalDesync path.
+
+Solution: Room water mirroring now returns a non-finite evidence bit that marks the room hash category before the master job. Player state keeps the high-bit non-finite flag and the player hash job treats that flag as a non-finite element even after safe fallback values are written. Snapshot/history flags now use the telemetry flag domain after array flags are mapped, avoiding overlap between `ArrayFlag*` and `TelemetryFlag*` bit positions.
+
+Rejected Alternatives: Writing raw NaN into the Vault, relying on GPU/physics consumers to survive it, silently zeroing the value and calling the hash clean, or OR-ing array flags and telemetry flags into one ambiguous field.
+
+Scalability potential: Toaster mode gets safe fallback values without NaN propagation. High/Ultra retain deterministic fault evidence and blackbox dump behavior.
+
+Hardware Impact: Unmeasured sub-microsecond branch/select cost at mirror/hash cadence. No profiler proof is available because Unity compile is still blocked.
+
+## Hot-Path Registry Cache Repair
+
+Problem: `ResolveDataVault()` refreshed dependencies through `GlobalRegistry` if `_dataVault` was null, and that helper is called by `PostFixedTick` through `GetVaultBuffer`. That is a hidden hot-path registry poll on dependency failure.
+
+Solution: `ResolveDataVault()` now returns the cached field only. Dependency refresh remains in `OnEnable` and explicit ghost replay start, which are cold/control paths.
+
+Rejected Alternatives: Lazy service lookup inside every vault helper, or polling registry until DataVault appears.
+
+Scalability potential: Low tier avoids pointless registry traffic if initialization is broken. High/Ultra keep the same hash cadence without hidden dependency lookups.
+
+Hardware Impact: Normal initialized path is unchanged. Failure path avoids repeated service refresh; measured microseconds are unavailable.
+
+## Post-Patch Validation Wall Refresh
+
+Problem: The signal placement and NaN evidence repairs required fresh validation, but the project compiler wall remains outside the lockstep domain.
+
+Solution: Run static purge scans, `git diff --check`, Unity batchmode, and direct Bee csc invocations for `Hecton8.Core` and `Hecton8.Core.Determinism`.
+
+Rejected Alternatives: Reporting the old compile attempt as current proof, or patching animation/audio/bucketing assemblies from the determinism role.
+
+Scalability potential: No runtime scalability change. The pass reduces integration risk and preserves the lockstep cadence rules already implemented.
+
+Hardware Impact: 0us runtime. Unity batchmode timed out after 900s in AssetDatabase/script compilation request with no compiler diagnostics; direct csc is blocked by missing external ref assemblies.

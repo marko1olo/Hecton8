@@ -145,3 +145,63 @@ Solution: Re-scanned marine-snow shaders: thread groups are 64, 64, and 1, under
 Rejected Alternatives: Adding high-fidelity physical silt collision or per-frame disk traces was rejected because the assignment needs controllable visual cheats and Steam Deck-safe I/O pressure.
 Scalability potential: Toaster mode keeps 8,000 particles and radial wake fake; Middle keeps bounded flow; High/Ultra spend budget on 100,000 particles, 3D flow texture, curl fake, and headlight emission.
 Hardware Impact: Maintains the existing GPU budget gates; no measured microseconds claimed because the current project compile wall prevents profiler capture.
+
+## Loop 7 VFX-Domain Data Eviction
+
+Problem: The VFX folder still contained owned persistent native telemetry in `CameraJuiceSystem` and `MaterialDecayRuntime`, plus a temporary `NativeArray` allocation during fallback rust atlas generation.
+Solution: Added `BufferID.CameraJuiceTelemetryRing` and `BufferID.MaterialDecayBlackBox`; both systems now lease GlobalDataVault buffers through handles. The material fallback atlas now writes directly into `Texture2D.GetRawTextureData<Color32>()`.
+Rejected Alternatives: Keeping local telemetry arrays was rejected because DataVault must own durable data. Replacing the texture write with a managed `Color32[]` was rejected because it creates a large managed allocation and worsens GC pressure.
+Scalability potential: Low/Toaster pays only fixed 300-entry telemetry rings and a one-time texture raw-data fill; High/Ultra can keep richer camera/material presentation without adding hot-path storage ownership.
+Hardware Impact: Removes two persistent VFX native allocations and one cold temporary native allocation. Expected steady-frame gain is 0 us; risk reduction is leak ownership, ABI stability, and less cold allocation pressure on i3/MX350 and Quest-class devices.
+
+Problem: `CarveDebrisComputeRenderer` already used GlobalDataVault but cached five resolved buffers as persistent `NativeArray` fields, which still made the renderer look like the storage owner.
+Solution: Converted persistent fields to `VaultBufferHandle<T>` for debris positions, velocities, requests, job state, and blackbox. Runtime methods resolve scoped views at the operation boundary and pass those views into jobs/upload helpers.
+Rejected Alternatives: Releasing/reallocating buffers from the renderer was rejected because DataVault owns those buffers. Changing the public debris service interface was rejected because batch interface immutability forbids unnecessary API churn.
+Scalability potential: Low keeps 1,024 active chips and cheap fake debris; Mid keeps 4,096; High/Ultra keep 16,384 and use the existing flow/SDF overkill path without local storage ownership.
+Hardware Impact: Expected frame-time change is 0 us to negligible; the value is H-Phi/data sovereignty and compaction-safe ownership. Scoped handle resolution is cheaper than debugging stale persistent aliases after vault compaction.
+
+Problem: Full VFX-domain verification needed a concrete compile and static evidence pass after the edits.
+Solution: Ran static scans for persistent native ownership, unpacked structs, standard Unity update loops, `string.Format`, scene discovery, legacy EventBus names, shader `distance()`, wave intrinsics, and Metal thread-group limits. Ran `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies /p:UseSharedCompilation=false /nr:false /m:1 -v:q /clp:ErrorsOnly`.
+Rejected Alternatives: Claiming Unity platform validation was rejected because DX12/Vulkan player validation still requires the whole project compile wall to be cleared.
+Scalability potential: The VFX systems now keep the same Low/Mid/High/Ultra math split while moving durable state to DataVault.
+Hardware Impact: Scoped C# compile returned EXIT=0. No profiler microseconds claimed.
+
+## Loop 8 GPU Dispatch Inquisition
+
+Problem: High/Ultra marine-snow budgets are 100,000 particles, which means a 64-thread particle kernel needs 1,563 groups. The previous direct dispatch was legal by thread-group size but violated the MX350 compute mandate's 512-group single-dispatch policy. The sonar/fog clear kernels also could exceed 512 total groups at high render scales.
+Solution: Added `_MarineSnowDispatchOffset` and `_MarineSnowDispatchTileOffset`. Particle kernels (`CSMain`, `InitializeParticles`, `AccumulateSonarGlow`) now process a global offset so C# can dispatch <=512 groups per call. Sonar/fog clear kernels now tile 2D clears with an 8x8 texel offset and the same <=512 group cap.
+Rejected Alternatives: Lowering High/Ultra to 32,768 particles was rejected because the XML explicitly requires 100,000 particles on RTX. Leaving one oversized dispatch was rejected because it would be a hidden MX350/Steam Deck scheduling risk. Indirect dispatch was rejected for this pass because it would add another counter buffer and more synchronization surface for no visual gain.
+Scalability potential: Low remains a single 8,000-particle dispatch with the radial fake; Middle remains bounded; High/Ultra keep 100,000 particles and expensive-looking swirl/glow while executing in bounded dispatch slices.
+Hardware Impact: No measured microseconds. Estimated performance delta is scheduler-risk reduction, not guaranteed frame-time savings; 100,000-particle paths now split from one 1,563-group call into four <=512-group calls. 2D clear dispatches similarly cap each call to <=512 groups.
+
+Problem: The cold allocation comments still documented 32,768 particles and 2.0 MiB even though the current budget catalog resolves 100,000 marine-snow particles on High/Ultra.
+Solution: Corrected the comments to 100,000 * 64B = 6.4 MiB per particle buffer and corrected the quad mesh comment to `RenderMeshIndirect`.
+Rejected Alternatives: Leaving stale comments was rejected because memory documentation must match the actual allocation path.
+Scalability potential: Low/Middle/High/Ultra memory accounting now matches the real budget catalog instead of the old 32,768-particle mandate snapshot.
+Hardware Impact: Runtime impact is 0 us; documentation risk was removed. No profiler claim.
+
+Problem: Current project compilation re-opened a dependency wall after the dispatch patch.
+Solution: Ran the scoped `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies /p:UseSharedCompilation=false /nr:false /m:1 -v:q /clp:ErrorsOnly` and captured `Docs/AgentLogs/Dotnet_VOLUMETRIC_SILT_ADVECTION_Loop8.log`.
+Rejected Alternatives: Claiming compile success was rejected. The log reports unrelated `Assets/_Project/Scripts/Ecosystem/EcosystemRuntimeInstaller.cs(1,18) CS0234`; it does not name `HectonMarineSnowRenderer.cs` or the marine-snow shader.
+Scalability potential: Validation state does not change the Low/Middle/High/Ultra math paths. Unity DX12/Vulkan validation remains dependency-blocked.
+Hardware Impact: Runtime impact unknown until the project compile wall is cleared and profiler/player captures can run. No measured microseconds.
+
+## Loop 9 NaN/Atomic Saturation Pass
+
+Problem: Sonar glow and fog density injection used signed integer atomics after converting particle contribution to an encoded scalar. A dense High/Ultra wake clump could push the accumulated integer target toward overflow, and a non-finite particle could poison downstream render passes even after velocity clamping.
+Solution: Added `MARINE_SNOW_MAX_ENCODED_SPLAT = 4096.0` and rejected non-finite or zero encoded splats before `InterlockedAdd`. Added `IsFiniteSiltParticle` as the final `CSMain` state gate; invalid particles attempt normal deterministic respawn and then fall back to `BuildHardFallbackParticle` if respawn math is also non-finite.
+Rejected Alternatives: Leaving the atomics uncapped was rejected because visual density should saturate, not wrap. CPU readback validation was rejected because particle state must stay GPU-resident. Killing the whole buffer on one bad particle was rejected because it trades one fault for a visible cloud pop.
+Scalability potential: Low/Toaster still uses 8,000 particles and cheap radial wake math, so the guards are mostly fault insurance. Middle keeps bounded contribution. High/Ultra can keep 100,000 particles, sonar glow, fog injection, abyssal flow, and curl fake without allowing one hot wake cluster to corrupt the accumulation target.
+Hardware Impact: 0 us measured. Expected steady-frame cost is a few scalar clamps/finite predicates on the GPU path; the value is fault containment on Quest/Android/Metal/Steam Deck and avoiding an expensive post-fault recovery path. No profiler microseconds are claimed.
+
+Problem: Two VFX profile assets still used interpolated editor warning strings. They are editor-time only, but the VFX-domain scan was being used as a debt gate.
+Solution: Replaced the interpolated warning bodies in `ShakeProfile` and `BiomeProfile` with constant strings.
+Rejected Alternatives: Removing the warnings was rejected because authoring feedback is still useful. Leaving interpolation was rejected because the domain debt scan specifically targets string formatting patterns.
+Scalability potential: No runtime tier effect; Low/Middle/High/Ultra rendering behavior is unchanged.
+Hardware Impact: Runtime impact is 0 us. Editor allocation risk is reduced only when profiles validate in the editor; no runtime performance claim.
+
+Problem: Loop 9 needed fresh evidence after shader fault-containment edits.
+Solution: Re-ran static shader scans for forbidden portability patterns with case-sensitive `distance()` call detection, thread-group parse, file-specific profile string scan, `git diff --check`, and scoped `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies /p:UseSharedCompilation=false /nr:false /m:1 -v:q /clp:ErrorsOnly`.
+Rejected Alternatives: Claiming Unity DX12/Vulkan/player validation was rejected because that validation was not run in this loop.
+Scalability potential: The evidence covers the same MX350-to-RTX path: 8,000 low-tier particles through 100,000 high/ultra particles with bounded dispatch and saturated atomic contribution.
+Hardware Impact: Scoped C# compile returned EXIT=0 in the Loop 9 and post-doc logs. Unity platform validation remains pending. No measured microseconds.

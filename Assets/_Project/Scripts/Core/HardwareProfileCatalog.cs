@@ -110,10 +110,10 @@ namespace Hecton8.Core
         public const ulong ClearPressureMask = 0x0000000000000000UL;
 
         /// <summary>Level 1 sacrifice mask.</summary>
-        public const ulong SacrificeLevel1Mask = 0x0000000000000070UL;
+        public const ulong SacrificeLevel1Mask = 0x0000000000000030UL;
 
         /// <summary>Level 2 sacrifice mask.</summary>
-        public const ulong SacrificeLevel2Mask = 0x00000000002007F0UL;
+        public const ulong SacrificeLevel2Mask = 0x0000000000000330UL;
 
         /// <summary>Emergency level 3 sacrifice mask.</summary>
         public const ulong EmergencyLevel3Mask = 0x0000000000F017F0UL;

@@ -20,9 +20,9 @@ namespace Hecton8.Gameplay.Loot.Contracts
         public const float DefaultPullRadiusMeters = 8f;
         public const float DefaultPullStrength = 18f;
         public const float DefaultMaxVelocityMetersPerSecond = 12f;
-        public const float MaxStablePullRadiusMeters = 5000f;
-        public const float MaxStablePullStrength = 10000f;
-        public const float MaxStableVelocityMetersPerSecond = 100000f;
+        public const float MaxStablePullRadiusMeters = 64f;
+        public const float MaxStablePullStrength = 256f;
+        public const float MaxStableVelocityMetersPerSecond = 48f;
         public const float MaxIntegrationDeltaTimeSeconds = 0.05f;
         public const int PresentationSignalStride = 64;
         public const int MaxAcquisitionsPerFrame = 64;

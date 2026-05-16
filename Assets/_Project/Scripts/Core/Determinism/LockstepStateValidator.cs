@@ -14,42 +14,6 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace Hecton8.Core.Contracts.Signals
-{
-    /// <summary>
-    /// Master state hash fence published by the lockstep validator after a completed deterministic sample.
-    /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
-    public struct LockstepSnapshotSignal : ISignal
-    {
-        public ulong MasterHash;
-        public uint Frame;
-        public uint HashCadenceFrames;
-        public uint Flags;
-        public uint MissingMask;
-        public uint NonFiniteMask;
-        public uint ReplayBlock;
-    }
-
-    /// <summary>
-    /// Developer-facing glitch pulse emitted when deterministic replay validation fails.
-    /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
-    public struct SystemGlitchSignal : ISignal
-    {
-        public uint Frame;
-        public uint SourceId;
-        public uint LocalHash;
-        public uint ExpectedHash;
-        public float Intensity01;
-        public float DurationSeconds;
-        public byte Reason;
-        public byte Flags;
-        public ushort Reserved0;
-        public uint Reserved1;
-    }
-}
-
 namespace Hecton8.Core.Determinism
 {
     public sealed class FatalDesyncException : Exception
@@ -351,8 +315,8 @@ namespace Hecton8.Core.Determinism
 
             flags |= TelemetryFlagHashExecuted;
             MirrorPlayerStateToVault(frame, hasInputSignal, in inputSignal);
-            MirrorRoomWaterLevelsToVault();
-            ExecuteHashJobs(frame, hashCadenceFrames, ref flags);
+            bool roomWaterHadNonFinite = MirrorRoomWaterLevelsToVault();
+            ExecuteHashJobs(frame, hashCadenceFrames, roomWaterHadNonFinite, ref flags);
             ValidateReplayHash(frame, ref flags);
             StageReplayWrite(frame, hashCadenceFrames, ref flags);
             WriteTelemetry(frame, flags);
@@ -412,17 +376,8 @@ namespace Hecton8.Core.Determinism
 
         private static void ConfigureSignalLanes()
         {
-            SignalBus<LockstepSnapshotSignal>.Configure(
-                LockstepSnapshotSignalCapacity,
-                LockstepSnapshotSignalCapacity,
-                LockstepSnapshotSignalCapacity,
-                LockstepSnapshotLaneHash);
+            GlobalSignals.InitializeAllQueues();
             SignalBus<LockstepSnapshotSignal>.EnsureInitialized();
-            SignalBus<SystemGlitchSignal>.Configure(
-                SystemGlitchSignalCapacity,
-                SystemGlitchSignalCapacity,
-                SystemGlitchSignalCapacity,
-                SystemGlitchLaneHash);
             SignalBus<SystemGlitchSignal>.EnsureInitialized();
         }
 
@@ -593,32 +548,37 @@ namespace Hecton8.Core.Determinism
             return finite ? value : fallback;
         }
 
-        private void MirrorRoomWaterLevelsToVault()
+        private bool MirrorRoomWaterLevelsToVault()
         {
             IHabitatGraphService habitat = _habitat;
             if (habitat == null || !habitat.IsInitialized)
-                return;
+                return false;
 
             NativeArray<float>.ReadOnly source = habitat.RoomWaterLevels;
             int count = math.min(habitat.RoomCount, source.Length);
             if (count <= 0)
-                return;
+                return false;
 
             NativeArray<float> destination = GetVaultBuffer<float>(
                 BufferID.RoomWaterLevels,
                 count,
                 NativeArrayOptions.ClearMemory);
             if (!destination.IsCreated)
-                return;
+                return false;
 
+            bool nonFinite = false;
             for (int i = 0; i < count; i++)
             {
                 float value = source[i];
-                destination[i] = math.isfinite(value) ? value : 0f;
+                bool finite = math.isfinite(value);
+                nonFinite |= !finite;
+                destination[i] = finite ? value : 0f;
             }
+
+            return nonFinite;
         }
 
-        private void ExecuteHashJobs(uint frame, int hashCadenceFrames, ref uint telemetryFlags)
+        private void ExecuteHashJobs(uint frame, int hashCadenceFrames, bool roomWaterHadNonFinite, ref uint telemetryFlags)
         {
             EnsureNativeState();
             EnsureHashNativeState();
@@ -682,6 +642,12 @@ namespace Hecton8.Core.Determinism
             SetDefaultArrayHash(arrayHashes, LockstepHashCategory.PlayerKinematicState, playerCount, playerStates.IsCreated, playerTruncated);
             SetDefaultArrayHash(arrayHashes, LockstepHashCategory.RoomWaterLevels, roomCount, roomWaterLevels.IsCreated, roomTruncated);
             SetDefaultArrayHash(arrayHashes, LockstepHashCategory.EntityAups, entityCount, entityAups.IsCreated, entityTruncated);
+            if (roomWaterHadNonFinite)
+            {
+                LockstepArrayHash roomHash = arrayHashes[(int)LockstepHashCategory.RoomWaterLevels];
+                roomHash.Flags |= ArrayFlagNonFinite;
+                arrayHashes[(int)LockstepHashCategory.RoomWaterLevels] = roomHash;
+            }
 
             JobHandle combineHandle = default;
             combineHandle = ScheduleDouble3Hash(
@@ -725,9 +691,11 @@ namespace Hecton8.Core.Determinism
             ulong master = masterHash[0];
             _lastMasterHashLo = (uint)master;
             _lastMasterHashHi = (uint)(master >> 32);
-            RecordMasterHashHistory(frame, master, flags | telemetryFlags, arrayHashes);
+            uint combinedFlags = telemetryFlags;
+            if ((combinedFlags & (TelemetryFlagMissingData | TelemetryFlagTruncated | TelemetryFlagNonFinite)) == 0u)
+                RecordMasterHashHistory(frame, master, combinedFlags, arrayHashes);
             GlobalTelemetryBus.PublishModTelemetry(ReasonDesyncHash, _lastMasterHashLo, _lastMasterHashHi);
-            PublishLockstepSnapshot(frame, master, hashCadenceFrames, flags | telemetryFlags, arrayHashes);
+            PublishLockstepSnapshot(frame, master, hashCadenceFrames, combinedFlags, arrayHashes);
         }
 
         private int ResolveHashCount<T>(NativeArray<T> source, ref uint telemetryFlags, out bool truncated)
@@ -740,13 +708,14 @@ namespace Hecton8.Core.Determinism
                 return 0;
             }
 
-            if (source.Length > MaxHashElements)
+            int sourceLength = source.Length;
+            if (sourceLength > MaxHashElements)
             {
                 truncated = true;
                 telemetryFlags |= TelemetryFlagTruncated;
             }
 
-            return math.min(source.Length, MaxHashElements);
+            return math.select(sourceLength, MaxHashElements, sourceLength > MaxHashElements);
         }
 
         private int ResolveRoomHashCount(NativeArray<float> source, ref uint telemetryFlags, out bool truncated)
@@ -769,7 +738,16 @@ namespace Hecton8.Core.Determinism
                 telemetryFlags |= TelemetryFlagTruncated;
             }
 
-            return math.min(count, MaxHashElements);
+            return math.select(count, MaxHashElements, count > MaxHashElements);
+        }
+
+        private static int ResolveScheduleCount<T>(NativeArray<T> source, int count)
+            where T : struct
+        {
+            int sourceLength = source.IsCreated ? source.Length : 0;
+            int positiveCount = math.select(0, count, count > 0);
+            int boundedCount = math.min(positiveCount, sourceLength);
+            return math.select(0, boundedCount, source.IsCreated && boundedCount > 0);
         }
 
         private JobHandle ScheduleFloat3Hash(
@@ -781,7 +759,8 @@ namespace Hecton8.Core.Determinism
             int count,
             JobHandle combineDependency)
         {
-            if (count <= 0 || !source.IsCreated)
+            int scheduleCount = ResolveScheduleCount(source, count);
+            if (scheduleCount == 0)
                 return combineDependency;
 
             JobHandle hashHandle = new HashFloat3ArrayJob
@@ -790,7 +769,7 @@ namespace Hecton8.Core.Determinism
                 ElementHashes = elementHashes,
                 ElementFlags = elementFlags,
                 CategorySalt = (uint)category
-            }.Schedule(count, 64);
+            }.Schedule(scheduleCount, 64);
 
             return new CombineElementHashesJob
             {
@@ -798,7 +777,7 @@ namespace Hecton8.Core.Determinism
                 ElementFlags = elementFlags,
                 ArrayHashes = arrayHashes,
                 CategoryIndex = (int)category,
-                Count = count
+                Count = scheduleCount
             }.Schedule(JobHandle.CombineDependencies(hashHandle, combineDependency));
         }
 
@@ -811,7 +790,8 @@ namespace Hecton8.Core.Determinism
             int count,
             JobHandle combineDependency)
         {
-            if (count <= 0 || !source.IsCreated)
+            int scheduleCount = ResolveScheduleCount(source, count);
+            if (scheduleCount == 0)
                 return combineDependency;
 
             JobHandle hashHandle = new HashDouble3ArrayJob
@@ -820,7 +800,7 @@ namespace Hecton8.Core.Determinism
                 ElementHashes = elementHashes,
                 ElementFlags = elementFlags,
                 CategorySalt = (uint)category
-            }.Schedule(count, 64);
+            }.Schedule(scheduleCount, 64);
 
             return new CombineElementHashesJob
             {
@@ -828,7 +808,7 @@ namespace Hecton8.Core.Determinism
                 ElementFlags = elementFlags,
                 ArrayHashes = arrayHashes,
                 CategoryIndex = (int)category,
-                Count = count
+                Count = scheduleCount
             }.Schedule(JobHandle.CombineDependencies(hashHandle, combineDependency));
         }
 
@@ -840,7 +820,8 @@ namespace Hecton8.Core.Determinism
             int count,
             JobHandle combineDependency)
         {
-            if (count <= 0 || !source.IsCreated)
+            int scheduleCount = ResolveScheduleCount(source, count);
+            if (scheduleCount == 0)
                 return combineDependency;
 
             JobHandle hashHandle = new HashFloatArrayJob
@@ -849,7 +830,7 @@ namespace Hecton8.Core.Determinism
                 ElementHashes = elementHashes,
                 ElementFlags = elementFlags,
                 CategorySalt = (uint)LockstepHashCategory.RoomWaterLevels
-            }.Schedule(count, 64);
+            }.Schedule(scheduleCount, 64);
 
             return new CombineElementHashesJob
             {
@@ -857,7 +838,7 @@ namespace Hecton8.Core.Determinism
                 ElementFlags = elementFlags,
                 ArrayHashes = arrayHashes,
                 CategoryIndex = (int)LockstepHashCategory.RoomWaterLevels,
-                Count = count
+                Count = scheduleCount
             }.Schedule(JobHandle.CombineDependencies(hashHandle, combineDependency));
         }
 
@@ -869,7 +850,8 @@ namespace Hecton8.Core.Determinism
             int count,
             JobHandle combineDependency)
         {
-            if (count <= 0 || !source.IsCreated)
+            int scheduleCount = ResolveScheduleCount(source, count);
+            if (scheduleCount == 0)
                 return combineDependency;
 
             JobHandle hashHandle = new HashPlayerKinematicArrayJob
@@ -878,7 +860,7 @@ namespace Hecton8.Core.Determinism
                 ElementHashes = elementHashes,
                 ElementFlags = elementFlags,
                 CategorySalt = (uint)LockstepHashCategory.PlayerKinematicState
-            }.Schedule(count, 32);
+            }.Schedule(scheduleCount, 32);
 
             return new CombineElementHashesJob
             {
@@ -886,7 +868,7 @@ namespace Hecton8.Core.Determinism
                 ElementFlags = elementFlags,
                 ArrayHashes = arrayHashes,
                 CategoryIndex = (int)LockstepHashCategory.PlayerKinematicState,
-                Count = count
+                Count = scheduleCount
             }.Schedule(JobHandle.CombineDependencies(hashHandle, combineDependency));
         }
 
@@ -896,11 +878,12 @@ namespace Hecton8.Core.Determinism
             if (present && truncated)
                 flags |= ArrayFlagTruncated;
 
+            int safeCount = math.select(0, count, count > 0);
             arrayHashes[(int)category] = new LockstepArrayHash
             {
                 CategoryId = (uint)category,
                 Hash = LockstepHashMath.Fnv1A(LockstepHashMath.FnvOffset32, (uint)category),
-                Count = (uint)math.max(0, count),
+                Count = (uint)safeCount,
                 Flags = flags
             };
         }
@@ -1277,7 +1260,7 @@ namespace Hecton8.Core.Determinism
 
             try
             {
-                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, ReplayBlockBytes * 4, FileOptions.SequentialScan))
                 {
                     int blockIndex = 0;
                     while (blockIndex < MaxGhostReplayBlocks)
@@ -1391,11 +1374,6 @@ namespace Hecton8.Core.Determinism
 
         private IDataVault ResolveDataVault()
         {
-            IDataVault vault = _dataVault;
-            if (vault != null)
-                return vault;
-
-            RefreshDependenciesFromRegistry();
             return _dataVault;
         }
 
@@ -1572,6 +1550,7 @@ namespace Hecton8.Core.Determinism
 
     internal static class LockstepHashMath
     {
+        public const uint NonFiniteSourceFlag = 1u << 31;
         public const uint FnvOffset32 = 2166136261u;
         private const uint FnvPrime32 = 16777619u;
         private const ulong FnvOffset64 = 14695981039346656037UL;
@@ -1740,7 +1719,8 @@ namespace Hecton8.Core.Determinism
             bool finite =
                 math.all(math.isfinite(state.LocalPosition)) &&
                 math.all(math.isfinite(state.Velocity)) &&
-                math.all(math.isfinite(state.Forward));
+                math.all(math.isfinite(state.Forward)) &&
+                (state.Flags & LockstepHashMath.NonFiniteSourceFlag) == 0u;
 
             uint hash = LockstepHashMath.Fnv1A(LockstepHashMath.FnvOffset32, CategorySalt);
             hash = LockstepHashMath.Fnv1A(hash, index);

@@ -26,7 +26,7 @@ Remaining checklist:
 - [x] 15. [HOMEOSTASIS_ADAPTATION] Stress-based lifetime reduction. Justification: `SignalBusRegistry.SystemStress01` and `SystemHealthIndexSignal` now drive a 4x lifetime decay when stress > 0.9, equivalent to 75% shorter lifetime. DOD practice: homeostasis load shedding. Alternative rejected: dropping producer signals globally. Static estimate: recycles slots 4x faster during pressure.
 - [x] 16. [INDIRECT_DRAW_CALL] Single rock-chip indirect draw validation. Justification: render path uses `Graphics.RenderMeshIndirect` with the fallback octahedron rock chip mesh and compute-written indirect args. DOD practice: one indirect draw, no shard GameObjects. Alternative rejected: DrawMesh per shard. Static estimate: saves thousands of CPU draw submissions.
 - [x] 17. [AUP_REBASE] Atomic `_AupShiftOffset` handling. Justification: `AupShiftSignal` is consumed from typed lanes, accumulated as `_CarveDebrisAupShiftDelta`, and applied inside the compute advection pass before integration. DOD practice: GPU-side rebasing. Alternative rejected: CPU rewriting all live shard positions on origin shift. Static estimate: 50-250 us avoided on origin shift frames.
-- [BLOCKED BY DEPENDENCY] 18. [FINAL_VALIDATION] `dotnet build` exits 0. Blocker: external domain compile drift. First build failed in fauna bite IK; second build failed in docking autopilot, VFX wakes, and ecosystem macro swarm contracts. This is outside DEBRIS/VFX ownership.
+- [BLOCKED BY DEPENDENCY] 18. [FINAL_VALIDATION] `dotnet build` exits 0. Evidence: one clean compile was captured after the debris handle pass, but a later compile now fails in external Bootstrap/Tools domains after concurrent worktree movement. DOD practice: preserve latest compiler truth and do not report stale success. Alternative rejected: patching the full tool durability domain from the debris prompt. Static estimate: 0 us runtime gain; current blocker is outside VFX/debris ownership.
 
 Compile:
 - `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary`
@@ -42,8 +42,27 @@ Compile:
   - `Assets/_Project/Scripts/HectonItem.cs`: missing `ItemAcquiredSignal`.
   - `Assets/_Project/Scripts/SubmarineStructuralGrid.cs`: missing breach/damage-control members.
   - `Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs`: missing `_profileFloats`/`_blackBox`.
+- Result 4: FAILED, 69 errors in external domains:
+  - `Assets/_Project/Scripts/World/EcosystemDirector.cs`: `NativeArray<MacroSwarm>` used as if it were `NativeList` (`AddNoResize`, `Clear`, `Capacity`, `AsArray`).
+  - `Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs`: missing `InitializePresentationAnchors` and `float3` assigned to `float`.
+  - `Assets/_Project/Scripts/SubmarineFluidDynamics.cs`: many missing DataVault handle fields.
+  - `Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs`: missing lockstep/system glitch signal capacity/hash constants.
+- Result 5: PASSED, 0 warnings, 0 errors, elapsed 00:00:02.67.
+- Result 6: FAILED, 100 errors and 1 warning in external domains:
+  - `Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs`: `Initialize` call arity mismatch.
+  - `Assets/_Project/Scripts/Tools/ToolDurabilitySystem.cs`: missing `_itemStates`, `_pendingDecayDt`, `_wearMultipliers`, `_slotActive`, `_breakdownEvents`, `_disposeHandle`, and missing `DurabilityDecayJob.BreakdownWriter`.
+  - Earlier `InputDispatcher.cs` preprocessor syntax error is no longer the reported blocker.
 - Targeted debris `git diff --check` result: no whitespace errors; only line-ending warnings from existing worktree settings.
-- Targeted debris static scan result: no `ForceNoMotion`, no `Update()`, no `string.Format`, no `Instantiate`; only DataVault NativeArray leases and job parameters remain.
+- Targeted debris static scan result: no `ForceNoMotion`, no `Update()`, no `string.Format`, no `Instantiate`, no `GraphicsBuffer.SetData`, no legacy `EventBus`, no managed delegate lane, and no `new NativeArray`.
+
+Omega polish:
+- Original XML `POLISH_MANDATE` re-read after all core tasks were checked/blocked.
+- Carve debris velocity clamp uses `rcp(max(dt, 0.0001))`, `rsqrt(max(speedSq, 0.000001))`, `step`, and `lerp`; no speed-clamp branch remains.
+- Carve debris cull distance and visible increment use masks; resource bounds, SDF skip, and overflow rollback branches remain intentionally for correctness and MX350/Quest cost control.
+- Low-tier carve debris now bypasses both `SampleAbyssalFlow` and `ApplyDynamicWakes`; previous source zeroed flow but still called the wake helper.
+- Active dispatch groups are resolved from active tier capacity, avoiding a high-tier 16,384-thread sweep on the 4096 middle tier.
+- Blackbox dump path is `Docs/AgentLogs/Dump_DEBRIS_PHYSICS_FAKE.bin`.
+- H-Phi note: renderer persistent buffer state is now stored as `VaultBufferHandle<T>` fields and resolved into method-local `NativeArray<T>` views only for the active tick. No debris-domain private `NativeArray<T>` storage fields or local `new NativeArray` allocations remain.
 
 State:
-- ACTIVE. Tasks 1-17 source work complete by static validation; final compile blocked by external domain dependency drift.
+- VERIFIED MASTER GRADE - SHARDS ACTIVE for debris source/static validation. Task 18 is currently `[BLOCKED BY DEPENDENCY]` by external Bootstrap/Tools compile drift after one prior clean compile.

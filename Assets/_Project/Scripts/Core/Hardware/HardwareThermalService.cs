@@ -472,7 +472,7 @@ namespace Hecton8.Core.Hardware
                     Severity = _severity,
                     Flags = (byte)(critical ? 1 : 0)
                 };
-                GlobalSignals.Publish(in warning);
+                SignalBus<HUDNotificationSignal>.Push(in warning);
             }
 
             if (throttling || hapticMute)
@@ -522,7 +522,7 @@ namespace Hecton8.Core.Hardware
                     BatteryPercent = _batteryPercent,
                     ActionMask = _lastActionMask
                 };
-                GlobalSignals.Publish(in thermalSignal);
+                SignalBus<ThermalStateChangedSignal>.Push(in thermalSignal);
             }
 
             BatteryLevelSignal batterySignal = new BatteryLevelSignal
@@ -535,7 +535,7 @@ namespace Hecton8.Core.Hardware
                 Flags = (byte)(_hapticMuteApplied ? 1 : 0),
                 ActionMask = _lastActionMask
             };
-            GlobalSignals.Publish(in batterySignal);
+            SignalBus<BatteryLevelSignal>.Push(in batterySignal);
         }
 
         private void PublishTelemetryCold()

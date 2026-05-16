@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -8,6 +9,7 @@ namespace Hecton8.World
     /// <summary>
     /// Biome transition lane sample packed for Burst fog blending.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct BiomeTransitionSample
     {
         /// <summary>Biome id used as the transition source.</summary>
@@ -26,6 +28,7 @@ namespace Hecton8.World
     /// <summary>
     /// Source fog parameters indexed by biome id.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct BiomeTransitionFogSource
     {
         /// <summary>Linear fog color RGBA.</summary>
@@ -47,6 +50,7 @@ namespace Hecton8.World
     /// <summary>
     /// Burst-computed fog blend result for one biome transition lane.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct BiomeTransitionFogResult
     {
         /// <summary>Result sample with smoothed Blend255.</summary>

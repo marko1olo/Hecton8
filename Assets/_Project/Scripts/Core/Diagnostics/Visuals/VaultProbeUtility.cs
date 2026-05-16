@@ -147,5 +147,13 @@ namespace Hecton8.Core.Diagnostics.Visuals
         {
             return new float3(aup.LocalX, aup.LocalY, aup.LocalZ);
         }
+
+        /// <summary>
+        /// Fast scalar finite guard for AUP local fields. Grid longs cannot carry NaN.
+        /// </summary>
+        public static bool IsFinite(in AbsoluteUniversePosition aup)
+        {
+            return math.all(math.isfinite(new float3(aup.LocalX, aup.LocalY, aup.LocalZ)));
+        }
     }
 }

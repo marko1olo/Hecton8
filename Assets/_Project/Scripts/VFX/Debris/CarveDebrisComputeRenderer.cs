@@ -76,6 +76,7 @@ namespace Hecton8.VFX.Debris
         private static readonly int CarveDebrisForcesId = Shader.PropertyToID("_CarveDebrisForces");
         private static readonly int CarveDebrisAupShiftDeltaId = Shader.PropertyToID("_CarveDebrisAupShiftDelta");
         private static readonly int CarveDebrisCameraParamsId = Shader.PropertyToID("_CarveDebrisCameraParams");
+        private static readonly int CarveDebrisCullParamsId = Shader.PropertyToID("_CarveDebrisCullParams");
         private static readonly int CarveDebrisDrawArgsParamsId = Shader.PropertyToID("_CarveDebrisDrawArgsParams");
         private static readonly int CarveDebrisMaterialParamsId = Shader.PropertyToID("_CarveDebrisMaterialParams");
         private static readonly int CarveDebrisMotionParamsId = Shader.PropertyToID("_CarveDebrisMotionParams");
@@ -127,11 +128,11 @@ namespace Hecton8.VFX.Debris
         [SerializeField] private int renderLayer;
         [SerializeField] private ShadowCastingMode shadowCastingMode = ShadowCastingMode.Off;
 
-        private NativeArray<float4> _debrisPositions;
-        private NativeArray<float4> _debrisVelocities;
-        private NativeArray<CarveDebrisRequest> _carveRequests;
-        private NativeArray<int> _jobState;
-        private NativeArray<CarveDebrisTelemetryEntry> _blackBox;
+        private VaultBufferHandle<float4> _debrisPositionsHandle;
+        private VaultBufferHandle<float4> _debrisVelocitiesHandle;
+        private VaultBufferHandle<CarveDebrisRequest> _carveRequestsHandle;
+        private VaultBufferHandle<int> _jobStateHandle;
+        private VaultBufferHandle<CarveDebrisTelemetryEntry> _blackBoxHandle;
         private IDataVault _registryDataVault;
         private IDataVault _dataVault;
         private GraphicsBuffer _positionBufferA;
@@ -281,8 +282,16 @@ namespace Hecton8.VFX.Debris
             _lastAppliedAupShift = default;
             _lastFlowActive = false;
             _lastSdfActive = false;
-            if (IsGpuStateValid())
-                ClearMirrorsAndUpload();
+            if (IsGpuStateValid() &&
+                TryResolveVaultBuffers(
+                    out var debrisPositions,
+                    out var debrisVelocities,
+                    out var carveRequests,
+                    out var jobState,
+                    out var blackBox))
+            {
+                ClearMirrorsAndUpload(debrisPositions, debrisVelocities, carveRequests, jobState, blackBox);
+            }
         }
 
         public void Tick(float deltaTime)
@@ -298,16 +307,27 @@ namespace Hecton8.VFX.Debris
             _cachedSystemStress01 = ResolveSystemStress01();
             bool lowTier = IsLowTier();
             int activeCapacity = ResolveActiveCapacity(lowTier);
-            ApplyCapacityShed(activeCapacity);
-            DrainAupShiftSignals();
-            if (_activeMirrorCount > 0)
-                AgeMirror(dt, activeCapacity, ResolveLifetimeRcp());
-            else
-                ResetFrameJobState(activeCapacity);
+            if (!TryResolveVaultBuffers(
+                    out var debrisPositions,
+                    out var debrisVelocities,
+                    out var carveRequests,
+                    out var jobState,
+                    out var blackBox))
+            {
+                _gpuReady = false;
+                return;
+            }
 
-            int queuedCarves = DrainCarveSignals(lowTier, activeCapacity);
+            ApplyCapacityShed(activeCapacity, debrisPositions, debrisVelocities);
+            DrainAupShiftSignals(jobState);
+            if (_activeMirrorCount > 0)
+                AgeMirror(dt, activeCapacity, ResolveLifetimeRcp(), debrisPositions, jobState);
+            else
+                ResetFrameJobState(activeCapacity, jobState);
+
+            int queuedCarves = DrainCarveSignals(lowTier, activeCapacity, debrisPositions, debrisVelocities, carveRequests, jobState);
             DispatchGpu(dt, lowTier, activeCapacity);
-            WriteBlackBox(queuedCarves, _jobState.IsCreated ? _jobState[JobStateInjectedIndex] : 0, lowTier);
+            WriteBlackBox(queuedCarves, jobState.IsCreated ? jobState[JobStateInjectedIndex] : 0, lowTier, jobState, blackBox);
             RenderDebris();
             _frameSequence++;
         }
@@ -479,42 +499,39 @@ namespace Hecton8.VFX.Debris
             _maxDispatchGroups = ResolveDispatchGroups(MaxCarveDebrisCount, _threadGroupSize);
             _lowDispatchGroups = ResolveDispatchGroups(LowTierActiveCarveDebrisCount, _threadGroupSize);
 
-            _debrisPositions = vault.GetBuffer<float4>(
+            _debrisPositionsHandle = vault.GetBufferHandle<float4>(
                 BufferID.CarveDebris,
                 MaxCarveDebrisCount,
                 SystemID.Vfx,
                 NativeArrayOptions.ClearMemory);
-            _debrisVelocities = vault.GetBuffer<float4>(
+            _debrisVelocitiesHandle = vault.GetBufferHandle<float4>(
                 BufferID.CarveDebrisVelocity,
                 MaxCarveDebrisCount,
                 SystemID.Vfx,
                 NativeArrayOptions.ClearMemory);
-            _jobState = vault.GetBuffer<int>(
+            _jobStateHandle = vault.GetBufferHandle<int>(
                 BufferID.CarveDebrisJobState,
                 JobStateLength,
                 SystemID.Vfx,
                 NativeArrayOptions.ClearMemory);
-            _blackBox = vault.GetBuffer<CarveDebrisTelemetryEntry>(
+            _blackBoxHandle = vault.GetBufferHandle<CarveDebrisTelemetryEntry>(
                 BufferID.CarveDebrisBlackBox,
                 BlackBoxCapacity,
                 SystemID.Vfx,
                 NativeArrayOptions.ClearMemory);
-            _carveRequests = vault.GetBuffer<CarveDebrisRequest>(
+            _carveRequestsHandle = vault.GetBufferHandle<CarveDebrisRequest>(
                 BufferID.CarveDebrisRequests,
                 MaxCarveSignalsPerFrame,
                 SystemID.Vfx,
                 NativeArrayOptions.ClearMemory);
 
-            if (!_debrisPositions.IsCreated ||
-                !_debrisVelocities.IsCreated ||
-                !_jobState.IsCreated ||
-                !_blackBox.IsCreated ||
-                !_carveRequests.IsCreated ||
-                _debrisPositions.Length < MaxCarveDebrisCount ||
-                _debrisVelocities.Length < MaxCarveDebrisCount ||
-                _jobState.Length < JobStateLength ||
-                _blackBox.Length < BlackBoxCapacity ||
-                _carveRequests.Length < MaxCarveSignalsPerFrame)
+            _dataVault = vault;
+            if (!TryResolveVaultBuffers(
+                    out var debrisPositions,
+                    out var debrisVelocities,
+                    out var carveRequests,
+                    out var jobState,
+                    out var blackBox))
             {
                 InvalidateDataVaultLease();
                 return false;
@@ -523,11 +540,9 @@ namespace Hecton8.VFX.Debris
             if (!TryCaptureVaultGenerations(vault))
                 return false;
 
-            _dataVault = vault;
-
             AllocateGraphicsBuffers();
             CreateEmptyResources();
-            ClearMirrorsAndUpload();
+            ClearMirrorsAndUpload(debrisPositions, debrisVelocities, carveRequests, jobState, blackBox);
             _gpuReady = IsGpuStateValid();
             return _gpuReady;
         }
@@ -569,6 +584,11 @@ namespace Hecton8.VFX.Debris
         private void InvalidateDataVaultLease()
         {
             _dataVault = null;
+            _debrisPositionsHandle = default;
+            _debrisVelocitiesHandle = default;
+            _carveRequestsHandle = default;
+            _jobStateHandle = default;
+            _blackBoxHandle = default;
             _positionVaultGeneration = 0u;
             _velocityVaultGeneration = 0u;
             _jobStateVaultGeneration = 0u;
@@ -576,19 +596,62 @@ namespace Hecton8.VFX.Debris
             _blackBoxVaultGeneration = 0u;
         }
 
+        private bool TryResolveVaultBuffers(
+            out NativeArray<float4> debrisPositions,
+            out NativeArray<float4> debrisVelocities,
+            out NativeArray<CarveDebrisRequest> carveRequests,
+            out NativeArray<int> jobState,
+            out NativeArray<CarveDebrisTelemetryEntry> blackBox)
+        {
+            debrisPositions = default;
+            debrisVelocities = default;
+            carveRequests = default;
+            jobState = default;
+            blackBox = default;
+
+            IDataVault vault = _dataVault;
+            if (vault == null || !ReferenceEquals(vault, _registryDataVault) || vault.IsCompactionFenceActive)
+                return false;
+
+            if (!vault.TryGetBufferHandle(BufferID.CarveDebris, out _debrisPositionsHandle) ||
+                !vault.TryGetBufferHandle(BufferID.CarveDebrisVelocity, out _debrisVelocitiesHandle) ||
+                !vault.TryGetBufferHandle(BufferID.CarveDebrisRequests, out _carveRequestsHandle) ||
+                !vault.TryGetBufferHandle(BufferID.CarveDebrisJobState, out _jobStateHandle) ||
+                !vault.TryGetBufferHandle(BufferID.CarveDebrisBlackBox, out _blackBoxHandle))
+            {
+                return false;
+            }
+
+            debrisPositions = _debrisPositionsHandle.Resolve(vault);
+            debrisVelocities = _debrisVelocitiesHandle.Resolve(vault);
+            carveRequests = _carveRequestsHandle.Resolve(vault);
+            jobState = _jobStateHandle.Resolve(vault);
+            blackBox = _blackBoxHandle.Resolve(vault);
+            return debrisPositions.IsCreated &&
+                   debrisVelocities.IsCreated &&
+                   carveRequests.IsCreated &&
+                   jobState.IsCreated &&
+                   blackBox.IsCreated &&
+                   debrisPositions.Length >= MaxCarveDebrisCount &&
+                   debrisVelocities.Length >= MaxCarveDebrisCount &&
+                   carveRequests.Length >= MaxCarveSignalsPerFrame &&
+                   jobState.Length >= JobStateLength &&
+                   blackBox.Length >= BlackBoxCapacity;
+        }
+
         private bool IsDataVaultLeaseValid()
         {
             if (_dataVault == null ||
-                !_debrisPositions.IsCreated ||
-                !_debrisVelocities.IsCreated ||
-                !_jobState.IsCreated ||
-                !_blackBox.IsCreated ||
-                !_carveRequests.IsCreated ||
-                _debrisPositions.Length < MaxCarveDebrisCount ||
-                _debrisVelocities.Length < MaxCarveDebrisCount ||
-                _jobState.Length < JobStateLength ||
-                _blackBox.Length < BlackBoxCapacity ||
-                _carveRequests.Length < MaxCarveSignalsPerFrame ||
+                !_debrisPositionsHandle.IsCreated ||
+                !_debrisVelocitiesHandle.IsCreated ||
+                !_jobStateHandle.IsCreated ||
+                !_blackBoxHandle.IsCreated ||
+                !_carveRequestsHandle.IsCreated ||
+                _debrisPositionsHandle.Length < MaxCarveDebrisCount ||
+                _debrisVelocitiesHandle.Length < MaxCarveDebrisCount ||
+                _jobStateHandle.Length < JobStateLength ||
+                _blackBoxHandle.Length < BlackBoxCapacity ||
+                _carveRequestsHandle.Length < MaxCarveSignalsPerFrame ||
                 _dataVault.IsCompactionFenceActive)
             {
                 return false;
@@ -662,64 +725,75 @@ namespace Hecton8.VFX.Debris
             _emptyTexture3D.Apply(false, true);
         }
 
-        private void ClearMirrorsAndUpload()
+        private void ClearMirrorsAndUpload(
+            NativeArray<float4> debrisPositions,
+            NativeArray<float4> debrisVelocities,
+            NativeArray<CarveDebrisRequest> carveRequests,
+            NativeArray<int> jobState,
+            NativeArray<CarveDebrisTelemetryEntry> blackBox)
         {
             for (int i = 0; i < MaxCarveDebrisCount; i++)
             {
-                _debrisPositions[i] = default;
-                _debrisVelocities[i] = default;
+                debrisPositions[i] = default;
+                debrisVelocities[i] = default;
             }
 
-            _jobState[JobStateActiveIndex] = 0;
-            _jobState[JobStateInjectedIndex] = 0;
-            _jobState[JobStateDirtyMinIndex] = MaxCarveDebrisCount;
-            _jobState[JobStateDirtyMaxIndex] = -1;
-            _jobState[JobStateFlagsIndex] = 0;
+            jobState[JobStateActiveIndex] = 0;
+            jobState[JobStateInjectedIndex] = 0;
+            jobState[JobStateDirtyMinIndex] = MaxCarveDebrisCount;
+            jobState[JobStateDirtyMaxIndex] = -1;
+            jobState[JobStateFlagsIndex] = 0;
             for (int i = 0; i < MaxCarveSignalsPerFrame; i++)
-                _carveRequests[i] = default;
+                carveRequests[i] = default;
             for (int i = 0; i < BlackBoxCapacity; i++)
-                _blackBox[i] = default;
+                blackBox[i] = default;
 
             _blackBoxCursor = 0;
             _lastTelemetryFrame = -1;
             _activeMirrorCount = 0;
-            UploadRange(_positionBufferA, _debrisPositions, 0, MaxCarveDebrisCount);
-            UploadRange(_positionBufferB, _debrisPositions, 0, MaxCarveDebrisCount);
-            UploadRange(_velocityBufferA, _debrisVelocities, 0, MaxCarveDebrisCount);
-            UploadRange(_velocityBufferB, _debrisVelocities, 0, MaxCarveDebrisCount);
-            NativeArray<float4> empty = _emptyFlowBuffer.LockBufferForWrite<float4>(0, 1);
+            UploadRange(_positionBufferA, debrisPositions, 0, MaxCarveDebrisCount);
+            UploadRange(_positionBufferB, debrisPositions, 0, MaxCarveDebrisCount);
+            UploadRange(_velocityBufferA, debrisVelocities, 0, MaxCarveDebrisCount);
+            UploadRange(_velocityBufferB, debrisVelocities, 0, MaxCarveDebrisCount);
+            var empty = _emptyFlowBuffer.LockBufferForWrite<float4>(0, 1);
             empty[0] = default;
             _emptyFlowBuffer.UnlockBufferAfterWrite<float4>(1);
         }
 
-        private void AgeMirror(float dt, int activeCapacity, float lifetimeRcp)
+        private void AgeMirror(float dt, int activeCapacity, float lifetimeRcp, NativeArray<float4> debrisPositions, NativeArray<int> jobState)
         {
-            if (!_debrisPositions.IsCreated || !_jobState.IsCreated)
+            if (!debrisPositions.IsCreated || !jobState.IsCreated)
                 return;
 
             float lifeDelta = dt * lifetimeRcp;
             new AgeCarveDebrisMirrorJob
             {
-                Positions = _debrisPositions,
+                Positions = debrisPositions,
                 Capacity = activeCapacity,
                 LifeDelta = lifeDelta,
-                JobState = _jobState
+                JobState = jobState
             }.Run();
-            _activeMirrorCount = math.clamp(_jobState[JobStateActiveIndex], 0, activeCapacity);
+            _activeMirrorCount = math.clamp(jobState[JobStateActiveIndex], 0, activeCapacity);
         }
 
-        private void ResetFrameJobState(int activeCapacity)
+        private static void ResetFrameJobState(int activeCapacity, NativeArray<int> jobState)
         {
-            if (!_jobState.IsCreated)
+            if (!jobState.IsCreated)
                 return;
 
-            _jobState[JobStateActiveIndex] = 0;
-            _jobState[JobStateInjectedIndex] = 0;
-            _jobState[JobStateDirtyMinIndex] = activeCapacity;
-            _jobState[JobStateDirtyMaxIndex] = -1;
+            jobState[JobStateActiveIndex] = 0;
+            jobState[JobStateInjectedIndex] = 0;
+            jobState[JobStateDirtyMinIndex] = activeCapacity;
+            jobState[JobStateDirtyMaxIndex] = -1;
         }
 
-        private int DrainCarveSignals(bool lowTier, int activeCapacity)
+        private int DrainCarveSignals(
+            bool lowTier,
+            int activeCapacity,
+            NativeArray<float4> debrisPositions,
+            NativeArray<float4> debrisVelocities,
+            NativeArray<CarveDebrisRequest> carveRequests,
+            NativeArray<int> jobState)
         {
             ReadOnlySpan<VoxelCarveEvent> carveSignals = SignalBus<VoxelCarveEvent>.GetFrameSnapshot();
             int signalCount = math.min(carveSignals.Length, MaxCarveSignalScanPerFrame);
@@ -735,7 +809,7 @@ namespace Hecton8.VFX.Debris
                         !IsSupportedCarveOperation(carveEvent.Operation) ||
                         !IsSupportedCarveShape(carveEvent.Shape))
                     {
-                        _jobState[JobStateFlagsIndex] |= (int)InvalidStateFlag;
+                        jobState[JobStateFlagsIndex] |= (int)InvalidStateFlag;
                     }
 
                     continue;
@@ -746,7 +820,7 @@ namespace Hecton8.VFX.Debris
                     ResolveCarveHitPointDouble(in carveEvent)).ToRuntimeFloat3();
                 uint seed = BuildStableSeed(_frameSequence, in carveEvent, i);
 
-                _carveRequests[requestCount] = new CarveDebrisRequest
+                carveRequests[requestCount] = new CarveDebrisRequest
                 {
                     Center = runtimeCenter,
                     EjectionAxis = ResolveCarveEjectionAxis(in carveEvent),
@@ -765,10 +839,10 @@ namespace Hecton8.VFX.Debris
             for (int i = 0; i < debrisSignalCount && requestCount < MaxCarveSignalsPerFrame; i++)
             {
                 DebrisSpawnSignal debrisSignal = debrisSignals[i];
-                if (!TryBuildComputeShardRequest(in debrisSignal, particlesPerCarve, out CarveDebrisRequest request))
+                if (!TryBuildComputeShardRequest(in debrisSignal, particlesPerCarve, jobState, out CarveDebrisRequest request))
                     continue;
 
-                _carveRequests[requestCount] = request;
+                carveRequests[requestCount] = request;
                 requestCount++;
                 queuedCarves++;
             }
@@ -778,34 +852,34 @@ namespace Hecton8.VFX.Debris
 
             new CarveDebrisInjectBatchJob
             {
-                Positions = _debrisPositions,
-                Velocities = _debrisVelocities,
-                Requests = _carveRequests,
+                Positions = debrisPositions,
+                Velocities = debrisVelocities,
+                Requests = carveRequests,
                 RequestCount = requestCount,
                 Capacity = activeCapacity,
-                JobState = _jobState
+                JobState = jobState
             }.Run();
 
-            int dirtyMin = _jobState[JobStateDirtyMinIndex];
-            int dirtyMax = _jobState[JobStateDirtyMaxIndex];
+            int dirtyMin = jobState[JobStateDirtyMinIndex];
+            int dirtyMax = jobState[JobStateDirtyMaxIndex];
             if (dirtyMax >= dirtyMin)
-                UploadInjectedRange(dirtyMin, dirtyMax - dirtyMin + 1);
+                UploadInjectedRange(dirtyMin, dirtyMax - dirtyMin + 1, debrisPositions, debrisVelocities);
 
-            _activeMirrorCount = math.clamp(_jobState[JobStateActiveIndex], 0, activeCapacity);
+            _activeMirrorCount = math.clamp(jobState[JobStateActiveIndex], 0, activeCapacity);
             return queuedCarves;
         }
 
-        private void UploadInjectedRange(int start, int count)
+        private void UploadInjectedRange(int start, int count, NativeArray<float4> debrisPositions, NativeArray<float4> debrisVelocities)
         {
             int safeStart = math.clamp(start, 0, MaxCarveDebrisCount - 1);
             int safeCount = math.clamp(count, 0, MaxCarveDebrisCount - safeStart);
             if (safeCount <= 0)
                 return;
 
-            UploadRange(_positionBufferA, _debrisPositions, safeStart, safeCount);
-            UploadRange(_positionBufferB, _debrisPositions, safeStart, safeCount);
-            UploadRange(_velocityBufferA, _debrisVelocities, safeStart, safeCount);
-            UploadRange(_velocityBufferB, _debrisVelocities, safeStart, safeCount);
+            UploadRange(_positionBufferA, debrisPositions, safeStart, safeCount);
+            UploadRange(_positionBufferB, debrisPositions, safeStart, safeCount);
+            UploadRange(_velocityBufferA, debrisVelocities, safeStart, safeCount);
+            UploadRange(_velocityBufferB, debrisVelocities, safeStart, safeCount);
         }
 
         private void DispatchGpu(float dt, bool lowTier, int activeCapacity)
@@ -859,6 +933,8 @@ namespace Hecton8.VFX.Debris
         {
             Camera camera = renderCamera;
             Vector3 cameraPosition = camera != null ? camera.transform.position : Vector3.zero;
+            Vector3 cameraForward = camera != null ? camera.transform.forward : Vector3.zero;
+            float cullForwardDot = lowTier ? 0f : -0.25f;
             float renderDistanceSq = camera != null && renderDistanceMeters > 0f ? renderDistanceMeters * renderDistanceMeters : 0f;
             GraphicsBuffer flowBuffer = _emptyFlowBuffer;
             Texture flowTexture = _emptyTexture3D;
@@ -891,6 +967,7 @@ namespace Hecton8.VFX.Debris
             fluidAdvectionCompute.SetVector(CarveDebrisForcesId, new Vector4(gravityMetersPerSecondSq.x, gravityMetersPerSecondSq.y, gravityMetersPerSecondSq.z, lifetimeRcp));
             fluidAdvectionCompute.SetVector(CarveDebrisAupShiftDeltaId, new Vector4(_pendingAupShift.x, _pendingAupShift.y, _pendingAupShift.z, 0f));
             fluidAdvectionCompute.SetVector(CarveDebrisCameraParamsId, new Vector4(cameraPosition.x, cameraPosition.y, cameraPosition.z, renderDistanceSq));
+            fluidAdvectionCompute.SetVector(CarveDebrisCullParamsId, new Vector4(cameraForward.x, cameraForward.y, cameraForward.z, cullForwardDot));
             fluidAdvectionCompute.SetVector(CarveDebrisDrawArgsParamsId, drawArgs);
             fluidAdvectionCompute.SetBuffer(_advectKernel, AbyssalFlowFieldResultId, flowBuffer != null && flowBuffer.IsValid() ? flowBuffer : _emptyFlowBuffer);
             fluidAdvectionCompute.SetBuffer(_advectKernel, DynamicWakesId, _emptyFlowBuffer);
@@ -1229,7 +1306,7 @@ namespace Hecton8.VFX.Debris
             return tier == HectonQualityTier.High || tier == HectonQualityTier.Ultra;
         }
 
-        private void ApplyCapacityShed(int activeCapacity)
+        private void ApplyCapacityShed(int activeCapacity, NativeArray<float4> debrisPositions, NativeArray<float4> debrisVelocities)
         {
             int safeCapacity = math.clamp(activeCapacity, LowTierActiveCarveDebrisCount, MaxCarveDebrisCount);
             if (safeCapacity >= _lastActiveCapacity)
@@ -1238,17 +1315,17 @@ namespace Hecton8.VFX.Debris
                 return;
             }
 
-            if (_debrisPositions.IsCreated && _debrisVelocities.IsCreated)
+            if (debrisPositions.IsCreated && debrisVelocities.IsCreated)
             {
                 for (int i = safeCapacity; i < _lastActiveCapacity && i < MaxCarveDebrisCount; i++)
                 {
-                    _debrisPositions[i] = default;
-                    _debrisVelocities[i] = default;
+                    debrisPositions[i] = default;
+                    debrisVelocities[i] = default;
                 }
 
                 int clearCount = math.clamp(_lastActiveCapacity - safeCapacity, 0, MaxCarveDebrisCount - safeCapacity);
                 if (clearCount > 0)
-                    UploadInjectedRange(safeCapacity, clearCount);
+                    UploadInjectedRange(safeCapacity, clearCount, debrisPositions, debrisVelocities);
             }
 
             _activeMirrorCount = math.min(_activeMirrorCount, safeCapacity);
@@ -1452,7 +1529,7 @@ namespace Hecton8.VFX.Debris
                    lhs.w == rhs.w;
         }
 
-        private void DrainAupShiftSignals()
+        private void DrainAupShiftSignals(NativeArray<int> jobState)
         {
             ReadOnlySpan<AupShiftSignal> shifts = SignalBus<AupShiftSignal>.GetFrameSnapshot();
             for (int i = 0; i < shifts.Length; i++)
@@ -1464,14 +1541,14 @@ namespace Hecton8.VFX.Debris
                 _lastProcessedAupShiftFrameId = signal.ShiftFrameId;
                 if (!math.all(math.isfinite(signal.ShiftMeters)))
                 {
-                    _jobState[JobStateFlagsIndex] |= (int)InvalidStateFlag;
+                    jobState[JobStateFlagsIndex] |= (int)InvalidStateFlag;
                     continue;
                 }
 
                 _pendingAupShift += -signal.ShiftMeters;
                 if (!math.all(math.isfinite(_pendingAupShift)))
                 {
-                    _jobState[JobStateFlagsIndex] |= (int)InvalidStateFlag;
+                    jobState[JobStateFlagsIndex] |= (int)InvalidStateFlag;
                     _pendingAupShift = default;
                     continue;
                 }
@@ -1536,6 +1613,7 @@ namespace Hecton8.VFX.Debris
         private bool TryBuildComputeShardRequest(
             in DebrisSpawnSignal signal,
             int particlesPerSignal,
+            NativeArray<int> jobState,
             out CarveDebrisRequest request)
         {
             request = default;
@@ -1546,7 +1624,7 @@ namespace Hecton8.VFX.Debris
             float3 center = signal.PositionAup.ToRuntimeFloat3();
             if (!math.isfinite(intensity01) || !math.all(math.isfinite(center)))
             {
-                _jobState[JobStateFlagsIndex] |= (int)InvalidStateFlag;
+                jobState[JobStateFlagsIndex] |= (int)InvalidStateFlag;
                 return false;
             }
 
@@ -1725,9 +1803,14 @@ namespace Hecton8.VFX.Debris
             return (hash ^ unchecked((uint)(bits >> 32))) * 16777619u;
         }
 
-        private void WriteBlackBox(int queuedCarves, int injectedParticles, bool lowTier)
+        private void WriteBlackBox(
+            int queuedCarves,
+            int injectedParticles,
+            bool lowTier,
+            NativeArray<int> jobState,
+            NativeArray<CarveDebrisTelemetryEntry> blackBox)
         {
-            if (!_blackBox.IsCreated || _blackBox.Length == 0)
+            if (!blackBox.IsCreated || blackBox.Length == 0 || !jobState.IsCreated)
                 return;
 
             int frame = Time.frameCount;
@@ -1735,14 +1818,14 @@ namespace Hecton8.VFX.Debris
                 return;
 
             _lastTelemetryFrame = frame;
-            uint flags = (uint)math.max(0, _jobState[JobStateFlagsIndex]);
+            uint flags = (uint)math.max(0, jobState[JobStateFlagsIndex]);
             flags |= lowTier ? LowTierFlag : 0u;
             flags |= _lastSdfActive ? SdfActiveFlag : 0u;
             flags |= _lastFlowActive ? FlowActiveFlag : 0u;
             flags |= _cachedSystemStress01 > StressRecycleThreshold01 ? StressRecycleFlag : 0u;
             float3 appliedAupShift = _lastAppliedAupShift;
             uint hash = BuildTelemetryHash(_activeMirrorCount, queuedCarves, injectedParticles, flags, appliedAupShift);
-            _blackBox[_blackBoxCursor] = new CarveDebrisTelemetryEntry
+            blackBox[_blackBoxCursor] = new CarveDebrisTelemetryEntry
             {
                 FrameIndex = (uint)frame,
                 ActiveCarveDebrisCount = _activeMirrorCount,
@@ -1752,15 +1835,15 @@ namespace Hecton8.VFX.Debris
                 StateHash = hash,
                 AppliedAupShift = appliedAupShift
             };
-            _blackBoxCursor = (_blackBoxCursor + 1) % _blackBox.Length;
+            _blackBoxCursor = (_blackBoxCursor + 1) % blackBox.Length;
 
             if (_activeMirrorCount > 0 && (frame % TelemetryPublishStride) == 0)
                 GlobalTelemetryBus.PublishPerformanceWarning(ActiveCountTelemetryHash, TelemetryContextHash, _activeMirrorCount);
 
             if ((flags & InvalidStateFlag) != 0u)
-                DumpBlackBoxOnce(flags);
+                DumpBlackBoxOnce(flags, blackBox);
 
-            _jobState[JobStateFlagsIndex] = 0;
+            jobState[JobStateFlagsIndex] = 0;
             _lastAppliedAupShift = default;
         }
 
@@ -1778,9 +1861,9 @@ namespace Hecton8.VFX.Debris
             return hash;
         }
 
-        private unsafe void DumpBlackBoxOnce(uint reasonFlags)
+        private unsafe void DumpBlackBoxOnce(uint reasonFlags, NativeArray<CarveDebrisTelemetryEntry> blackBox)
         {
-            if (_blackBoxDumped || !_blackBox.IsCreated)
+            if (_blackBoxDumped || !blackBox.IsCreated)
                 return;
 
             _blackBoxDumped = true;
@@ -1790,12 +1873,12 @@ namespace Hecton8.VFX.Debris
                 Directory.CreateDirectory(directory);
 
             int entrySize = UnsafeUtility.SizeOf<CarveDebrisTelemetryEntry>();
-            byte[] bytes = new byte[entrySize * _blackBox.Length + sizeof(uint)];
+            byte[] bytes = new byte[entrySize * blackBox.Length + sizeof(uint)];
             fixed (byte* bytesPtr = bytes)
             {
                 UnsafeUtility.CopyStructureToPtr(ref reasonFlags, bytesPtr);
-                void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_blackBox);
-                UnsafeUtility.MemCpy(bytesPtr + sizeof(uint), source, entrySize * _blackBox.Length);
+                void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(blackBox);
+                UnsafeUtility.MemCpy(bytesPtr + sizeof(uint), source, entrySize * blackBox.Length);
             }
 
             File.WriteAllBytes(path, bytes);
@@ -1834,11 +1917,6 @@ namespace Hecton8.VFX.Debris
             _hotSwapRegistered = false;
             InvalidateDataVaultLease();
             _emptyTexture3D = null;
-            _debrisPositions = default;
-            _debrisVelocities = default;
-            _carveRequests = default;
-            _jobState = default;
-            _blackBox = default;
             _gpuReady = false;
             _activeMirrorCount = 0;
             _lastFlowActive = false;

@@ -23,7 +23,7 @@ using UnityEngine;
 namespace Hecton8.World
 {
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 48)]
     public struct AbsoluteUniversePosition
     {
         internal const int CellSizeMeters = 5000;
@@ -200,7 +200,7 @@ namespace Hecton8.World
     /// 16-byte-aligned AUP transfer payload for network or memcpy lanes that require float4-friendly packing.
     /// </summary>
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 48)]
     public struct AbsoluteUniversePositionBlit128
     {
         [FieldOffset(0)]

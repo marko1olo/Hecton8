@@ -144,3 +144,63 @@ Verification:
 - `rg` found no retinal local `NativeArray`, no local Alpha telemetry allocation, no retinal raycasts/casts/overlaps, no `string.Format`, and no standard `Update()` in `AI/Perception` + `PredatorCognitionDomain`.
 - `git diff --check` reported no whitespace errors for the typed-lane files and retinal docs.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:BuildInParallel=false -v:minimal -clp:Summary` no longer reports errors in `PredatorCognitionDomain`, `GlobalSignals`, `FaunaBrain`, `GlobalDataVault`, `RetinalAdaptationVault`, or `RetinalExposureMath`. Remaining failures are external: `ProceduralLadderClimbRuntime`, `EcosystemDirector`, `SubmarineFluidDynamics`, `AcousticEchoLocationRuntime`, and `LockstepStateValidator`.
+
+## 2026-05-16 - Core Cognition NativeArray Vault Eviction
+What was wrong:
+- Retinal buffers were vaulted, but `PredatorCognitionDomain` still owned broad persistent `NativeArray` lanes locally.
+- Several cognition structs still relied on implicit sequential packing or Pack=4, which is not acceptable for ARM64/Quest ABI discipline.
+- Partial DataVault resolution could create one alias while leaving required sibling lanes missing.
+
+What was done:
+- Added `BufferID.PredatorCognition*` lanes for all domain-owned `NativeArray` cognition state.
+- Replaced local persistent `new NativeArray` allocations with `GlobalDataVault.GetBuffer<T>(..., SystemID.AICognition)` aliases.
+- Added alias-only teardown for these vault arrays.
+- Added partial-resolution cleanup and cold clearing of reused vault buffers on domain initialization.
+- Set all cognition structs in `PredatorCognitionDomain` to `Pack = 1` with explicit sizes and added ABI validation.
+
+Cinematic Cheats used:
+- No simulation complexity was added.
+- The low-tier path still uses bounded dot-product vision, 1Hz stress cadence, and a four-light cache.
+- High/Ultra still buy visual overkill through deterministic thrash and biolum strobe from the same vault-owned blind truth.
+
+Exact Microseconds saved:
+- Measured exact savings: unavailable; profiler was not run.
+- Runtime ownership cost after cold DataVault resolve: 0 us/frame.
+- Cold initialization clearing is bounded to 256-slot lanes and fixed memory banks only.
+
+Verification:
+- `rg` found no `new NativeArray<` in `PredatorCognitionDomain` or `AI/Perception`.
+- `rg` confirmed all `StructLayout` entries in the retinal/cognition domain are `Pack = 1` with explicit sizes.
+- PowerShell enum parsing reported `NO_BUFFERID_DUPLICATE_VALUES` and `NO_SYSTEMID_DUPLICATE_VALUES`.
+- `git diff --check` reported no whitespace errors for the touched code/docs, only CRLF normalization warnings.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:BuildInParallel=false -v:minimal -clp:Summary` no longer reports errors in `PredatorCognitionDomain`, `H8Memory`, `GlobalSignals`, `FaunaBrain`, `GlobalDataVault`, `RetinalAdaptationVault`, or `RetinalExposureMath`. Remaining failures are external: `SargassumMicroFaunaBoids`, `HectonUnderwaterVisuals`, and `RepairTool`.
+
+## 2026-05-16 - Active Slot Vault Alias / Code Build Green
+What was wrong:
+- The retinal/cognition owner still had one local persistent `NativeList<int>` for active slots after the broad `NativeArray` migration.
+- Job scheduling and swarm neighbor iteration previously depended on list length; a raw vault array needs an explicit dense active count or it risks scanning cleared capacity.
+
+What was done:
+- Added `BufferID.PredatorCognitionActiveSlots`.
+- Converted `_activeSlots` in `PredatorCognitionDomain` from `NativeList<int>` to a `GlobalDataVault` `NativeArray<int>` alias.
+- Added `_activeSlotCount` and rewired activation, deactivation, telemetry scans, swarm bounds, and job schedules to use the dense count.
+- Reset `_activeSlotCount` on partial vault resolution failure, alias release, successful cold clear, and full dispose.
+- Hardened `Register`, `Unregister`, and `SetSlotActive` against unavailable vault aliases instead of indexing default arrays.
+
+Cinematic Cheats used:
+- No new physical simulation was added.
+- The low-tier path remains bounded dot-product glare plus simple turn-away/flee.
+- High/Ultra still buy visual overkill through deterministic retinal thrash and biolum strobe from the same blind truth.
+
+Exact Microseconds saved:
+- Measured exact savings: unavailable; profiler was not run.
+- Runtime ownership cost after cold DataVault resolve: 0 us/frame.
+- Avoids stale 256-slot capacity scans in active-slot consumers; exact CPU delta not measured.
+
+Verification:
+- `rg` found no `NativeList`, no `new NativeArray<`, no `new NativeList`, no retinal raycasts/casts/overlaps, no `string.Format`, no standard `Update()`, no legacy `GlobalSignals.TryDequeueSubmarineLightsChanged`, and no managed delegate usage in `PredatorCognitionDomain` or `AI/Perception`.
+- `H8Memory` still contains allocator-internal `NativeList` registries; this is the memory subsystem owner, not the retinal/cognition domain.
+- PowerShell enum parsing reported `NO_BUFFERID_DUPLICATE_VALUES` and `NO_SYSTEMID_DUPLICATE_VALUES`.
+- `git diff --check` reported no whitespace errors, only CRLF normalization warnings.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:BuildInParallel=false -v:minimal -clp:Summary` succeeded with `0 Warning(s)` and `0 Error(s)`.
+- Unity Editor import, Play Mode, GCMonitor, profiler, and player build verification were not executed in this shell-only pass.

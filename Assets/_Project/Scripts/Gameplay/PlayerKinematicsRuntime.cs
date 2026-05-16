@@ -451,7 +451,9 @@ namespace Hecton8.Gameplay
             float3 right = SafeNormalize(SourceRight, new float3(1.0f, 0.0f, 0.0f));
             float3 up = SafeNormalize(SourceUp, new float3(0.0f, 1.0f, 0.0f));
             float speedSq = math.lengthsq(Velocity);
-            float speed = speedSq > 0.000001f && math.isfinite(speedSq) ? speedSq * math.rsqrt(speedSq) : 0.0f;
+            float speed = speedSq > 0.000001f && math.isfinite(speedSq)
+                ? speedSq * math.rsqrt(math.max(speedSq, 0.000001f))
+                : 0.0f;
             float speedBlend = SanitizeUnit((speed - SanitizeNonNegative(BraceSpeedThreshold)) * 0.25f);
             float braceBaseBlend = math.max(SanitizeUnit(BraceBlend), speedBlend);
 

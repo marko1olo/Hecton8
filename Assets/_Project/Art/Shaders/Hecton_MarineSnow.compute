@@ -109,10 +109,13 @@ float4 _HectonMarineSnowSonarGlowTexelSize;
 float4 _HectonMarineSnowSonarGlowParams;
 float4 _HectonMarineSnowFogDensityTexelSize;
 float4 _HectonMarineSnowFogDensityParams;
+int _MarineSnowDispatchOffset;
+float4 _MarineSnowDispatchTileOffset;
 
 #define THREAD_GROUP_SIZE 64
 #define TAU 6.2831853
 #define EPSILON 0.0001
+#define MARINE_SNOW_MAX_ENCODED_SPLAT 4096.0
 
 static const float3 MARINE_SNOW_CEILING_SLAP_NORMAL = float3(0.0, -1.0, 0.0);
 
@@ -509,8 +512,10 @@ void AccumulateSonarGlowAtUv(float2 uv, float intensity, float size)
     float splatScale = max(_HectonMarineSnowSonarGlowParams.x, 0.0);
     float encodedScale = max(_HectonMarineSnowSonarGlowParams.z, 1.0);
     float sizeInfluence = saturate(size * max(_HectonMarineSnowSonarGlowParams.w, 1.0) * 96.0);
-    float encoded = saturate(intensity * splatScale * lerp(0.65, 1.0, sizeInfluence)) * encodedScale * 4.0;
-    if (encoded <= 0.0)
+    float encoded = min(
+        saturate(intensity * splatScale * lerp(0.65, 1.0, sizeInfluence)) * encodedScale * 4.0,
+        MARINE_SNOW_MAX_ENCODED_SPLAT);
+    if (!isfinite(encoded) || encoded <= 0.0)
         return;
 
     InterlockedAdd(_HectonMarineSnowSonarGlowResult[pixel], (int)(encoded + 0.5));
@@ -529,8 +534,10 @@ void AccumulateFogDensityAtUv(float2 uv, float size, uint particleIndex)
     int2 pixel = int2(saturate(uv) * float2(width - 1, height - 1) + 0.5);
     float encodedScale = max(_HectonMarineSnowFogDensityParams.y, 1.0);
     float sizeInfluence = saturate(size * max(_HectonMarineSnowFogDensityParams.z, 1.0));
-    float encoded = lerp(0.18, 1.0, sizeInfluence) * encodedScale * 4.0;
-    if (encoded <= 0.0)
+    float encoded = min(
+        lerp(0.18, 1.0, sizeInfluence) * encodedScale * 4.0,
+        MARINE_SNOW_MAX_ENCODED_SPLAT);
+    if (!isfinite(encoded) || encoded <= 0.0)
         return;
 
     InterlockedAdd(_HectonMarineSnowFogDensityResult[pixel], (int)(encoded + 0.5));
@@ -859,26 +866,54 @@ SiltParticle BuildBubbleTrailParticle(uint particleIndex, float bubbleDrive, flo
     return particle;
 }
 
+bool IsFiniteSiltParticle(SiltParticle particle)
+{
+    return all(isfinite(particle.Pos)) &&
+        all(isfinite(particle.PrevPos)) &&
+        all(isfinite(particle.Vel)) &&
+        all(isfinite(particle.UV)) &&
+        all(isfinite(particle.Pad)) &&
+        isfinite(particle.Life) &&
+        isfinite(particle.Size);
+}
+
+SiltParticle BuildHardFallbackParticle(uint particleIndex, float3 cameraPosition)
+{
+    float3 safeCameraPosition = all(isfinite(cameraPosition)) ? cameraPosition : float3(0.0, 0.0, 0.0);
+    SiltParticle particle;
+    particle.Pos = safeCameraPosition;
+    particle.Life = 1.0;
+    particle.Vel = float3(0.0, -0.02, 0.0);
+    particle.Size = 0.006;
+    particle.PrevPos = safeCameraPosition;
+    particle.Flags = 1u << 3;
+    particle.UV = float2(Hash11(particleIndex * 0.37), Hash11(particleIndex * 0.53));
+    particle.Pad = float2(Hash11(particleIndex * 0.71), 0.0);
+    return particle;
+}
+
 [numthreads(8, 8, 1)]
 void ClearSonarGlow(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
+    uint2 texel = (uint2)max(_MarineSnowDispatchTileOffset.xy, 0.0.xx) + dispatchThreadID.xy;
     int width = (int)max(_HectonMarineSnowSonarGlowTexelSize.z, 0.0);
     int height = (int)max(_HectonMarineSnowSonarGlowTexelSize.w, 0.0);
-    if (dispatchThreadID.x >= (uint)width || dispatchThreadID.y >= (uint)height)
+    if (texel.x >= (uint)width || texel.y >= (uint)height)
         return;
 
-    _HectonMarineSnowSonarGlowResult[int2(dispatchThreadID.xy)] = 0;
+    _HectonMarineSnowSonarGlowResult[int2(texel)] = 0;
 }
 
 [numthreads(8, 8, 1)]
 void ClearFogDensity(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
+    uint2 texel = (uint2)max(_MarineSnowDispatchTileOffset.xy, 0.0.xx) + dispatchThreadID.xy;
     int width = (int)max(_HectonMarineSnowFogDensityTexelSize.z, 0.0);
     int height = (int)max(_HectonMarineSnowFogDensityTexelSize.w, 0.0);
-    if (dispatchThreadID.x >= (uint)width || dispatchThreadID.y >= (uint)height)
+    if (texel.x >= (uint)width || texel.y >= (uint)height)
         return;
 
-    _HectonMarineSnowFogDensityResult[int2(dispatchThreadID.xy)] = 0;
+    _HectonMarineSnowFogDensityResult[int2(texel)] = 0;
 }
 
 [numthreads(1, 1, 1)]
@@ -894,7 +929,7 @@ void ClearVisibleParticles(uint3 dispatchThreadID : SV_DispatchThreadID)
 [numthreads(THREAD_GROUP_SIZE, 1, 1)]
 void AccumulateSonarGlow(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    uint index = dispatchThreadID.x;
+    uint index = (uint)max(_MarineSnowDispatchOffset, 0) + dispatchThreadID.x;
     uint particleCount = (uint)max(_MarineSnowMetaParams.x, 0.0);
     if (index >= particleCount)
         return;
@@ -919,7 +954,7 @@ void AccumulateSonarGlow(uint3 dispatchThreadID : SV_DispatchThreadID)
 [numthreads(THREAD_GROUP_SIZE, 1, 1)]
 void InitializeParticles(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    uint index = dispatchThreadID.x;
+    uint index = (uint)max(_MarineSnowDispatchOffset, 0) + dispatchThreadID.x;
     uint particleCount = (uint)max(_MarineSnowInitializationParams.x, 0.0);
     if (index >= particleCount)
         return;
@@ -930,7 +965,7 @@ void InitializeParticles(uint3 dispatchThreadID : SV_DispatchThreadID)
 [numthreads(THREAD_GROUP_SIZE, 1, 1)]
 void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    uint index = dispatchThreadID.x;
+    uint index = (uint)max(_MarineSnowDispatchOffset, 0) + dispatchThreadID.x;
     uint particleCount = (uint)max(_MarineSnowMetaParams.x, 0.0);
     if (index >= particleCount)
         return;
@@ -1100,6 +1135,13 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     if (outOfShell)
     {
         WrapParticleAroundCameraShell(particle, index, cameraPosition);
+    }
+
+    if (!IsFiniteSiltParticle(particle))
+    {
+        particle = BuildRespawnParticle(index);
+        if (!IsFiniteSiltParticle(particle))
+            particle = BuildHardFallbackParticle(index, cameraPosition);
     }
 
     particle.Life = 1.0;

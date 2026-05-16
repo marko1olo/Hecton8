@@ -1,23 +1,22 @@
 // ============================================================================
 // HECTON-8 — ClimbableLadder.cs
-// Ladder for moving between vertical base modules.
+// Ladder adapter for procedural climbing between vertical base modules.
 //
 // ARCHITECTURE:
 //   • Standalone prop — implements IInteractable.
-//   • Simple teleport with optional screen fade.
+//   • Routes interaction into the procedural ladder IK runtime.
 //   • Configurable entry and exit points.
-//   • UnityEvents for custom behavior.
 //
 // ZERO GC:
-//   • No Update() — event-driven via IInteractable.
+//   • No per-frame method — event-driven via IInteractable.
 //   • Cached Transform.
 //   • Pre-cached interaction text.
 //
 // USAGE:
 //   1. Place on ladder GameObject with collider.
 //   2. Assign entry and exit transforms.
-//   3. Configure screen fade (optional).
-//   4. Player interacts to teleport to exit point.
+//   3. Configure optional presentation hooks.
+//   4. Player interacts to start procedural climb.
 // ============================================================================
 
 using Hecton8.Animation.Locomotion;
@@ -25,7 +24,6 @@ using Hecton8.Audio;
 using Hecton8.Interaction;
 using Hecton.Localization;
 using UnityEngine;
-using UnityEngine.Events;
 
 namespace Hecton8.Gameplay
 {
@@ -54,12 +52,8 @@ namespace Hecton8.Gameplay
         [SerializeField] private bool matchRotation = true;
 
         // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — TRANSITION
         // ══════════════════════════════════════════════════════════
 
-        [Header("── Transition ───────────────────────────────────")]
-        [Tooltip("Use screen fade during transition.")]
-        [SerializeField] private bool useScreenFade = true;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — AUDIO
@@ -81,18 +75,8 @@ namespace Hecton8.Gameplay
         [SerializeField] private string interactText = DefaultInteractText;
 
         // ══════════════════════════════════════════════════════════
-        //  EVENTS
         // ══════════════════════════════════════════════════════════
 
-        [Header("── Events ──────────────────────────────────────")]
-        [Tooltip("Invoked when player starts climbing.")]
-        [SerializeField] private UnityEvent OnClimbStart;
-
-        [Tooltip("Invoked when player finishes climbing.")]
-        [SerializeField] private UnityEvent OnClimbEnd;
-
-        [Tooltip("Invoked with the player transform for custom positioning.")]
-        [SerializeField] private UnityEvent<Transform> OnPlayerTeleported;
 
         // ══════════════════════════════════════════════════════════
         //  RUNTIME STATE
@@ -104,9 +88,6 @@ namespace Hecton8.Gameplay
 
         // Pre-cached interaction text
         private string _cachedInteractText;
-
-        // Pre-cached player tag
-        private const string PlayerTag = "Player";
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC ACCESSORS
@@ -229,7 +210,7 @@ namespace Hecton8.Gameplay
         }
 
         // ══════════════════════════════════════════════════════════
-        //  TELEPORTATION
+        //  PROCEDURAL CLIMB REQUEST
         // ══════════════════════════════════════════════════════════
 
         private bool RequestProceduralClimb(Transform player, bool goingUp)
@@ -252,9 +233,6 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            // Fire start event
-            OnClimbStart?.Invoke();
-
             // Play climb sound
             if (climbSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
             {
@@ -270,19 +248,19 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Teleports the player to the exit point.
+        /// Requests a procedural climb toward the exit point.
         /// </summary>
         /// <param name="player">Player transform.</param>
-        public void TeleportToExit(Transform player)
+        public void RequestClimbToExit(Transform player)
         {
             RequestProceduralClimb(player, true);
         }
 
         /// <summary>
-        /// Teleports the player to the entry point.
+        /// Requests a procedural climb toward the entry point.
         /// </summary>
         /// <param name="player">Player transform.</param>
-        public void TeleportToEntry(Transform player)
+        public void RequestClimbToEntry(Transform player)
         {
             RequestProceduralClimb(player, false);
         }

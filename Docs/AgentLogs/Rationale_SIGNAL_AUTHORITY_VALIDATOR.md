@@ -69,11 +69,11 @@ Hardware Impact: No immediate frame gain; avoids an estimated multi-millisecond 
 
 ## Decision - Compile Wall Classification
 
-Problem: dotnet build Hecton8.Core.csproj failed on missing AI/animation dependencies and later on missing `ProceduralLadderClimbRuntime` references in `GlobalRegistry.cs`, not on SignalBus changes.
-Solution: Recorded the compile wall and stopped timed-out Assembly-CSharp/dotnet worker processes after integration attempts.
-Rejected Alternatives: Editing AI/animation/VFX dependencies would violate the CORE/SIGNALS boundary and risk overwriting other agents.
-Scalability potential: Signal lanes remain decoupled; unrelated compile dependency repair can proceed independently.
-Hardware Impact: No runtime gain; prevents background compiler workers from burning CPU after timeout.
+Problem: Earlier `dotnet build Hecton8.Core.csproj` attempts failed on unrelated dependencies, while full `Assembly-CSharp.csproj` attempts were unstable in the wider third-party project graph.
+Solution: Kept repairing CORE/SIGNALS drift until `dotnet build Hecton8.Core.csproj --no-restore -v:minimal` succeeded with 0 warnings and 0 errors. Recorded the remaining `Assembly-CSharp.csproj` wall as MSBuild child-node/SDK resolver failure across third-party projects and stopped the leftover dotnet worker.
+Rejected Alternatives: Editing XR, Submarine, GPUInstancer, RealtimeCSG, MoreMountains, or VolumetricLightBeam project dependencies would violate the CORE/SIGNALS boundary and risk overwriting other agents.
+Scalability potential: Signal lanes now compile as a clean core assembly; unrelated full-project dependency repair can proceed independently.
+Hardware Impact: No runtime gain; prevents background compiler workers from burning CPU after failed full-graph attempts.
 
 ## Decision - Late Agent Signal Drift
 
@@ -82,3 +82,43 @@ Solution: Moved `AnomalyProximitySignal` and `CompassCalibratedSignal` into `Hec
 Rejected Alternatives: Treating late files as out-of-scope would leave the final audit false.
 Scalability potential: Low keeps compass anomaly traffic bounded at 4 low-tier packets; High/Ultra allow 16 anomaly packets and 8 calibration packets per frame.
 Hardware Impact: Estimated 1-3 us saved at compass startup by avoiding local lane reconfiguration and stale namespace resolution.
+
+## Decision - Multiplatform Sanitizer Hardening
+
+Problem: Late signal lanes carried finite-sensitive payloads that could feed rendering, physics, docking, or telemetry without a central Push-time guard.
+Solution: Added sanitizer cases for tether tension/snap/fire, visual flare, voxel carve, docking request/complete/fail, anomaly proximity, compass calibration, and system glitch payloads. Invalid `float2`, `float3`, `double3`, and AUP blit fields are clamped to safe fallbacks and publish numeric math-guard telemetry.
+Rejected Alternatives: Producer-only validation would leave every new writer as a single-point failure; shader/GPU trust would let one NaN poison mobile rendering.
+Scalability potential: Low/Quest/Android get safe fallback packets instead of GPU pipeline collapse; Middle keeps bounded clean lanes; High and Ultra retain full signal richness for visor salt, silt wake, hull deformation, and reactive lighting consumers.
+Hardware Impact: This is not a speed win. Estimated overhead is <=1-5 us per normal burst on i3/MX350, buying crash containment and deterministic bad-packet attribution.
+
+## Decision - Storm Clear Hot Path
+
+Problem: Overflow cleanup drained stormed `NativeQueue<T>` lanes one packet at a time after the >1024 fault threshold.
+Solution: Replaced the per-packet drain loop with `NativeQueue<T>.Clear()` while keeping LOVF degradation, kill-switch feedback, and development-only fault reporting.
+Rejected Alternatives: `TryDequeue` in a loop burns time exactly when the frame is already overloaded; silent drop hides producer faults.
+Scalability potential: Low survives burst storms by cutting non-critical producers; High and Ultra still run full cinematic propagation until a real overflow fault occurs.
+Hardware Impact: Estimated 50-300 us saved on storm frames with >1024 queued packets. Normal frames are unchanged.
+
+## Decision - Late Decentralized Lane Drift
+
+Problem: Lockstep, compass, anomaly, and tether code owned or referenced lane configuration outside the central registry after the first pass.
+Solution: Moved `LockstepSnapshotSignal`, `SystemGlitchSignal`, `TetherFiredSignal`, compass, and anomaly lane policies into `GlobalSignals.InitializeAllQueues()` and reduced producers/readers to `GlobalSignals.InitializeAllQueues()` plus `EnsureInitialized()`.
+Rejected Alternatives: Local `SignalBus<T>.Configure` calls would keep capacity/hash authority mutable and order-dependent.
+Scalability potential: Low gets deterministic caps and stable hashes; Middle/High/Ultra can expand visual/audio consumers without feature-owned lane drift.
+Hardware Impact: Estimated 2-6 us saved during bootstrap or scene-load reconfiguration. Runtime value is correctness, not throughput.
+
+## Decision - Data Sovereignty Exception
+
+Problem: The DataVault mandate bans system-owned persistent native containers, but `SignalBus<T>` is the central transport primitive and currently owns typed `NativeQueue<T>` and `NativeList<T>` lane storage directly.
+Solution: Added no new local NativeArrays. Kept the existing central `SignalBus<T>` containers as cold Session allocations registered with `NativeMemorySentinel`, owner labels, and explicit disposal. Recorded this as architecture debt until `GlobalDataVault` exposes a typed lane queue API with owner id, capacity, generation, lifetime, and disposal semantics.
+Rejected Alternatives: Inventing an ad hoc DataVault queue wrapper in CORE/SIGNALS without an established vault contract would hide ownership risk and create new integration debt; managed delegates or managed queues violate the batch assignment.
+Scalability potential: Low retains bounded native transport with stress shedding; High/Ultra retain typed snapshots and visual overkill consumers without managed fan-out.
+Hardware Impact: No direct runtime gain. It prevents a false sovereignty claim and avoids replacing one central transport with unsafe scattered ownership.
+
+## Decision - Physics Determinism Lane Centralization
+
+Problem: `PhysicsDeterminismSignals` still configured five deterministic lanes locally and declared their signal structs in `Hecton8.Physics`, contradicting the central lane and contract namespace rules.
+Solution: Moved `InputSignal`, `StateCorrectionSignal`, `DesyncDetectedSignal`, `SyncFenceSignal`, and `KccVelocitySignal` to `Hecton8.Core.Contracts.Signals`; added central lane configuration and size validation in `GlobalSignals`; reduced `PhysicsDeterminismSignals` to sidecar/latest-state logic plus typed publish/read calls.
+Rejected Alternatives: Leaving the generic local `ConfigureLane<T>` helper would keep a hidden capacity/hash authority; disposing typed lanes from `PhysicsDeterminismSignals` would race the central `GlobalSignals` ownership flag.
+Scalability potential: Low/MX350 gets bounded deterministic input/fence lanes and central finite fallback; High/Ultra can consume richer KCC and replay telemetry without mutating lane authority.
+Hardware Impact: Estimated 2-5 us saved during deterministic bootstrap by removing local reconfiguration and disposal churn. Runtime gain is small; correctness gain is centralized ownership and clean Push-time NaN vaccination.

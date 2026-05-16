@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Physics;
 using Hecton8.World;
 using System.IO;
@@ -2201,7 +2202,7 @@ namespace Hecton8.Gameplay
         private float3 ConsumeKccVelocitySignal(uint fallbackFrame)
         {
             uint currentFrame = unchecked((uint)Time.frameCount);
-            if (PhysicsDeterminismSignals.TryGetLatestKccVelocity(out KccVelocitySignal signal))
+            if (PhysicsDeterminismSignals.TryGetLatestKccVelocity(out Hecton8.Core.Contracts.Signals.KccVelocitySignal signal))
             {
                 uint fallbackSignalFrame = currentFrame != 0u ? currentFrame : fallbackFrame;
                 uint signalFrame = signal.Frame != 0u ? signal.Frame : fallbackSignalFrame;

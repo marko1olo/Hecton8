@@ -229,7 +229,8 @@ Shader "Hecton8/Flora/SargassumMaster"
             {
                 float3 delta = positionWS - _InteractionPosition;
                 float radius = max((float)_InteractionRadius, 0.0001);
-                half normalized = saturate(1.0h - (half)(dot(delta, delta) / (radius * radius)));
+                float invRadiusSq = rcp(max(radius * radius, 0.0001));
+                half normalized = saturate(1.0h - (half)(dot(delta, delta) * invRadiusSq));
                 return normalized * normalized * saturate(_InteractionCutStrength);
             }
 
@@ -322,7 +323,8 @@ Shader "Hecton8/Flora/SargassumMaster"
                 float3 washDir = positionWS_Interact - _HectonPropWashPosition.xyz;
                 float washRadius = max(_HectonPropWashPosition.w, 0.001);
                 float washDistSq = dot(washDir, washDir);
-                float washStrength = saturate(1.0 - washDistSq / (washRadius * washRadius));
+                float washInvRadiusSq = rcp(max(washRadius * washRadius, 0.0001));
+                float washStrength = saturate(1.0 - washDistSq * washInvRadiusSq);
                 if (washDistSq > 0.0001)
                     positionOS.xyz += SargassumSafeNormalize3(washDir) * (washStrength * _HectonPropWashForce * 0.45h * heightMask);
 
@@ -558,7 +560,8 @@ Shader "Hecton8/Flora/SargassumMaster"
             {
                 float3 delta = positionWS - _InteractionPosition;
                 float radius = max((float)_InteractionRadius, 0.0001);
-                half normalized = saturate(1.0h - (half)(dot(delta, delta) / (radius * radius)));
+                float invRadiusSq = rcp(max(radius * radius, 0.0001));
+                half normalized = saturate(1.0h - (half)(dot(delta, delta) * invRadiusSq));
                 return normalized * normalized * saturate(_InteractionCutStrength);
             }
 
@@ -627,7 +630,8 @@ Shader "Hecton8/Flora/SargassumMaster"
                 float3 washDir = positionWS_Interact - _HectonPropWashPosition.xyz;
                 float washRadius = max(_HectonPropWashPosition.w, 0.001);
                 float washDistSq = dot(washDir, washDir);
-                float washStrength = saturate(1.0 - washDistSq / (washRadius * washRadius));
+                float washInvRadiusSq = rcp(max(washRadius * washRadius, 0.0001));
+                float washStrength = saturate(1.0 - washDistSq * washInvRadiusSq);
                 if (washDistSq > 0.0001)
                     positionOS.xyz += washDir * rcp(SargassumApproxMagnitude3(washDir) + 0.0001) * (washStrength * _HectonPropWashForce * 0.45h * heightMask);
 

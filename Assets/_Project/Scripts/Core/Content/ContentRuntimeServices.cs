@@ -45,48 +45,94 @@ namespace Hecton8.Core.Content
         public uint Reserved0;
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+    public struct ContentPendingLoadState
+    {
+        public uint Hash;
+        public float StartTime;
+        public int HologramIndex;
+        public uint Reserved0;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+    public struct ContentVisualFeatureBudget
+    {
+        public uint FeatureMask;
+        public ushort MaxParticles;
+        public byte RaymarchSteps;
+        public byte PomTaps;
+        public byte SiltWakeLayers;
+        public byte SaltCrystalLayers;
+        public byte HullDentOctaves;
+        public byte Reserved0;
+        public int Reserved1;
+    }
+
     /// <summary>
     /// Fixed-capacity bundle reference counter. Duplicate loads resolve to ref increments, not second handles.
     /// </summary>
     public sealed class ContentBundleReferenceCounter
     {
-        private readonly ContentBundleRefState[] _states;
-        private int _count;
+        private readonly int _capacity;
+        private IDataVault _vault;
+        private VaultBufferHandle<ContentBundleRefState> _statesHandle;
+        private VaultBufferHandle<int> _countHandle;
 
         public ContentBundleReferenceCounter(int capacity)
         {
-            int safeCapacity = Mathf.Max(1, capacity);
-            // COLD ALLOC: ContentBundleRefState[safeCapacity] - strict bundle ref table - owner: ContentBundleReferenceCounter
-            _states = new ContentBundleRefState[safeCapacity];
+            _capacity = Mathf.Max(1, capacity);
         }
 
-        public int Count => _count;
+        public unsafe int Count
+        {
+            get
+            {
+                return TryResolve(out ContentBundleRefState* _, out int* count) ? *count : 0;
+            }
+        }
 
-        public bool Acquire(uint hash, long bytes, byte biomeId, ContentTier tier, bool isBiomeCache, int frame)
+        public void BindVault(IDataVault vault)
+        {
+            if (ReferenceEquals(_vault, vault))
+                return;
+
+            _vault = vault;
+            _statesHandle = default;
+            _countHandle = default;
+        }
+
+        public unsafe bool Acquire(uint hash, long bytes, byte biomeId, ContentTier tier, bool isBiomeCache, int frame)
         {
             if (hash == 0u)
                 return false;
 
-            for (int i = 0; i < _count; i++)
+            if (!TryResolve(out ContentBundleRefState* states, out int* countPtr))
+                return false;
+
+            int count = *countPtr;
+            if ((uint)count > (uint)_capacity)
+                count = 0;
+
+            for (int i = 0; i < count; i++)
             {
-                if (_states[i].Hash != hash)
+                if (states[i].Hash != hash)
                     continue;
 
-                ContentBundleRefState state = _states[i];
+                ContentBundleRefState state = states[i];
                 state.RefCount++;
                 state.LastAccessFrame = frame;
                 if (bytes > state.Bytes)
                     state.Bytes = bytes;
                 if (isBiomeCache)
                     state.IsBiomeCache = 1;
-                _states[i] = state;
+                states[i] = state;
                 return true;
             }
 
-            if (_count >= _states.Length)
+            if (count >= _capacity)
                 return false;
 
-            _states[_count] = new ContentBundleRefState
+            states[count] = new ContentBundleRefState
             {
                 Hash = hash,
                 RefCount = 1,
@@ -96,40 +142,54 @@ namespace Hecton8.Core.Content
                 Tier = tier,
                 IsBiomeCache = isBiomeCache ? (byte)1 : (byte)0
             };
-            _count++;
+            *countPtr = count + 1;
             return true;
         }
 
-        public bool Release(uint hash, int frame, out bool becameUnused)
+        public unsafe bool Release(uint hash, int frame, out bool becameUnused)
         {
             becameUnused = false;
-            for (int i = 0; i < _count; i++)
+            if (!TryResolve(out ContentBundleRefState* states, out int* countPtr))
+                return false;
+
+            int count = *countPtr;
+            if ((uint)count > (uint)_capacity)
+                return false;
+
+            for (int i = 0; i < count; i++)
             {
-                if (_states[i].Hash != hash)
+                if (states[i].Hash != hash)
                     continue;
 
-                ContentBundleRefState state = _states[i];
+                ContentBundleRefState state = states[i];
                 state.RefCount--;
                 if (state.RefCount < 0)
                     state.RefCount = 0;
 
                 state.LastAccessFrame = frame;
                 becameUnused = state.RefCount == 0;
-                _states[i] = state;
+                states[i] = state;
                 return true;
             }
 
             return false;
         }
 
-        public bool TrySelectOldestUnusedBiomeCache(out uint hash)
+        public unsafe bool TrySelectOldestUnusedBiomeCache(out uint hash)
         {
             hash = 0u;
+            if (!TryResolve(out ContentBundleRefState* states, out int* countPtr))
+                return false;
+
+            int count = *countPtr;
+            if ((uint)count > (uint)_capacity)
+                return false;
+
             int bestIndex = -1;
             int bestFrame = int.MaxValue;
-            for (int i = 0; i < _count; i++)
+            for (int i = 0; i < count; i++)
             {
-                ContentBundleRefState state = _states[i];
+                ContentBundleRefState state = states[i];
                 if (state.IsBiomeCache == 0 || state.RefCount != 0)
                     continue;
 
@@ -143,33 +203,47 @@ namespace Hecton8.Core.Content
             if (bestIndex < 0)
                 return false;
 
-            hash = _states[bestIndex].Hash;
+            hash = states[bestIndex].Hash;
             return true;
         }
 
-        public bool Remove(uint hash)
+        public unsafe bool Remove(uint hash)
         {
-            for (int i = 0; i < _count; i++)
+            if (!TryResolve(out ContentBundleRefState* states, out int* countPtr))
+                return false;
+
+            int count = *countPtr;
+            if ((uint)count > (uint)_capacity)
+                return false;
+
+            for (int i = 0; i < count; i++)
             {
-                if (_states[i].Hash != hash)
+                if (states[i].Hash != hash)
                     continue;
 
-                int last = _count - 1;
-                _states[i] = _states[last];
-                _states[last] = default;
-                _count--;
+                int last = count - 1;
+                states[i] = states[last];
+                states[last] = default;
+                *countPtr = last;
                 return true;
             }
 
             return false;
         }
 
-        public long EstimateResidentBytes()
+        public unsafe long EstimateResidentBytes()
         {
+            if (!TryResolve(out ContentBundleRefState* states, out int* countPtr))
+                return 0L;
+
+            int count = *countPtr;
+            if ((uint)count > (uint)_capacity)
+                return 0L;
+
             long total = 0L;
-            for (int i = 0; i < _count; i++)
+            for (int i = 0; i < count; i++)
             {
-                long bytes = _states[i].Bytes;
+                long bytes = states[i].Bytes;
                 if (bytes <= 0L)
                     continue;
 
@@ -180,22 +254,62 @@ namespace Hecton8.Core.Content
             }
             return total;
         }
+
+        private unsafe bool TryResolve(out ContentBundleRefState* states, out int* count)
+        {
+            states = null;
+            count = null;
+
+            IDataVault vault = _vault;
+            if (vault == null)
+                return false;
+
+            if (!_statesHandle.IsCreated || !vault.ResolveBuffer(ref _statesHandle))
+            {
+                _statesHandle = vault.GetBufferHandle<ContentBundleRefState>(
+                    BufferID.ContentAuthorityBundleRefs,
+                    _capacity,
+                    SystemID.ContentAuthority,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_countHandle.IsCreated || !vault.ResolveBuffer(ref _countHandle))
+            {
+                _countHandle = vault.GetBufferHandle<int>(
+                    BufferID.ContentAuthorityBundleRefCount,
+                    1,
+                    SystemID.ContentAuthority,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            states = (ContentBundleRefState*)_statesHandle.ResolvePointer(vault);
+            count = (int*)_countHandle.ResolvePointer(vault);
+            return states != null && count != null && _statesHandle.Length >= _capacity && _countHandle.Length >= 1;
+        }
     }
 
     [CreateAssetMenu(menuName = "HECTON-8/Content/VFX Prewarm Manifest", fileName = "ContentVfxPrewarmManifest")]
     public sealed class ContentVfxPrewarmManifest : ScriptableObject
     {
+        public const int MaxEntries = 64;
+
 #if UNITY_ADDRESSABLES_EXIST
+        [Header("Addressable VFX")]
+        [Tooltip("Particle systems warmed during loading. Build validation caps total VFX handles at 64.")]
         [SerializeField] private AssetReference[] particleSystems = Array.Empty<AssetReference>();
+
+        [Tooltip("Compute shaders loaded during loading. Build validation caps total VFX handles at 64.")]
         [SerializeField] private AssetReference[] computeShaders = Array.Empty<AssetReference>();
 
         public int ParticleSystemCount => particleSystems != null ? particleSystems.Length : 0;
         public int ComputeShaderCount => computeShaders != null ? computeShaders.Length : 0;
+        public int TotalCount => ParticleSystemCount + ComputeShaderCount;
         public AssetReference GetParticleSystem(int index) => particleSystems[index];
         public AssetReference GetComputeShader(int index) => computeShaders[index];
 #else
         public int ParticleSystemCount => 0;
         public int ComputeShaderCount => 0;
+        public int TotalCount => 0;
 #endif
     }
 
@@ -214,6 +328,7 @@ namespace Hecton8.Core.Content
         private const uint NonFiniteFlag = 1u << 3;
         private const uint VramLedgerOwnerHash = 0xC0A77A57u;
         private const int TelemetryCapacity = 300;
+        private const int PendingLoadCapacity = 64;
 
         [SerializeField] private ContentAssetHashMap assetHashMap;
         [SerializeField] private Mesh hologramProxyMesh;
@@ -222,17 +337,23 @@ namespace Hecton8.Core.Content
         [SerializeField] private ContentVfxPrewarmManifest vfxPrewarmManifest;
         [SerializeField] private bool startVfxPrewarmOnEnable = true;
 
-        // COLD ALLOC: List<PendingLoad>[64] - async load timeout ledger - owner: ContentAuthorityRuntime
-        private readonly List<PendingLoad> _pendingLoads = new List<PendingLoad>(64);
         // COLD ALLOC: ContentBundleReferenceCounter[256] - duplicate bundle load guard - owner: ContentAuthorityRuntime
         private readonly ContentBundleReferenceCounter _bundleRefs = new ContentBundleReferenceCounter(256);
 #if UNITY_ADDRESSABLES_EXIST
         // COLD ALLOC: List<AsyncOperationHandle>[64] - VFX prewarm handle ledger - owner: ContentAuthorityRuntime
         private readonly List<AsyncOperationHandle> _vfxPrewarmHandles = new List<AsyncOperationHandle>(64);
+        // COLD ALLOC: List<AsyncOperationHandle>[64] - resident prewarmed VFX handles for release - owner: ContentAuthorityRuntime
+        private readonly List<AsyncOperationHandle> _vfxResidentHandles = new List<AsyncOperationHandle>(64);
 #endif
         private IDataVault _dataVault;
+        private VRAMMonitor _vramMonitor;
+        private VRAMPressureMonitor _vramPressure;
+        private AssetLifecycleGovernor _assetLifecycle;
         private VaultBufferHandle<ContentAuthorityTelemetryEntry> _telemetryHandle;
         private VaultBufferHandle<int> _telemetryCursorHandle;
+        private VaultBufferHandle<ContentPendingLoadState> _pendingLoadsHandle;
+        private VaultBufferHandle<int> _pendingLoadCountHandle;
+        private Renderer[] _pendingLoadTargets;
         private GameObject[] _hologramPool;
         private Renderer[] _hologramRenderers;
         private bool _registeredTick;
@@ -246,6 +367,8 @@ namespace Hecton8.Core.Content
         private void Awake()
         {
             int capacity = Mathf.Max(1, hologramPoolCapacity);
+            // COLD ALLOC: Renderer[64] - Unity object bridge for vault pending-load records - owner: ContentAuthorityRuntime
+            _pendingLoadTargets = new Renderer[PendingLoadCapacity];
             // COLD ALLOC: GameObject[capacity] - hidden hologram proxy pool - owner: ContentAuthorityRuntime
             _hologramPool = new GameObject[capacity];
             // COLD ALLOC: Renderer[capacity] - hidden hologram proxy renderers - owner: ContentAuthorityRuntime
@@ -267,6 +390,7 @@ namespace Hecton8.Core.Content
 
         private void OnDisable()
         {
+            ClearPendingLoads();
             TryUnregister();
         }
 
@@ -281,6 +405,12 @@ namespace Hecton8.Core.Content
                     Addressables.Release(_vfxPrewarmHandles[i]);
             }
             _vfxPrewarmHandles.Clear();
+            for (int i = 0; i < _vfxResidentHandles.Count; i++)
+            {
+                if (_vfxResidentHandles[i].IsValid())
+                    Addressables.Release(_vfxResidentHandles[i]);
+            }
+            _vfxResidentHandles.Clear();
 #endif
             for (int i = 0; i < _hologramPool.Length; i++)
             {
@@ -303,6 +433,9 @@ namespace Hecton8.Core.Content
 
         public bool RegisterBundleAcquire(uint hash)
         {
+            if (_dataVault == null)
+                CacheDependencies();
+
             if (assetHashMap == null || !assetHashMap.TryGetEntry(hash, out ContentAssetEntry entry))
                 return false;
 
@@ -322,6 +455,9 @@ namespace Hecton8.Core.Content
 
         public bool RegisterBundleRelease(uint hash)
         {
+            if (_dataVault == null)
+                CacheDependencies();
+
             bool released = _bundleRefs.Release(hash, Time.frameCount, out bool becameUnused);
             if (released && becameUnused)
                 VRAMBudgetTracker.RegisterOrUpdate(VramLedgerOwnerHash, _bundleRefs.EstimateResidentBytes());
@@ -329,40 +465,60 @@ namespace Hecton8.Core.Content
             return released;
         }
 
-        public bool TrackAsyncLoad(uint hash, Renderer targetRenderer)
+        public unsafe bool TrackAsyncLoad(uint hash, Renderer targetRenderer)
         {
             if (hash == 0u || targetRenderer == null)
                 return false;
 
-            for (int i = 0; i < _pendingLoads.Count; i++)
+            if (_dataVault == null)
+                CacheDependencies();
+
+            if (!TryResolvePendingLoads(out ContentPendingLoadState* pendingLoads, out int* countPtr))
+                return false;
+
+            int count = *countPtr;
+            if ((uint)count > PendingLoadCapacity)
+                return false;
+
+            for (int i = 0; i < count; i++)
             {
-                PendingLoad pending = _pendingLoads[i];
-                if (pending.Hash != hash || pending.Target != targetRenderer)
+                if (pendingLoads[i].Hash != hash || _pendingLoadTargets[i] != targetRenderer)
                     continue;
 
                 return true;
             }
 
-            _pendingLoads.Add(new PendingLoad
+            if (count >= PendingLoadCapacity)
+                return false;
+
+            pendingLoads[count] = new ContentPendingLoadState
             {
                 Hash = hash,
                 StartTime = Time.unscaledTime,
-                Target = targetRenderer,
                 HologramIndex = -1
-            });
+            };
+            _pendingLoadTargets[count] = targetRenderer;
+            *countPtr = count + 1;
             return true;
         }
 
-        public bool CompleteAsyncLoad(uint hash, Renderer targetRenderer)
+        public unsafe bool CompleteAsyncLoad(uint hash, Renderer targetRenderer)
         {
-            for (int i = _pendingLoads.Count - 1; i >= 0; i--)
+            if (!TryResolvePendingLoads(out ContentPendingLoadState* pendingLoads, out int* countPtr))
+                return false;
+
+            int count = *countPtr;
+            if ((uint)count > PendingLoadCapacity)
+                return false;
+
+            for (int i = count - 1; i >= 0; i--)
             {
-                PendingLoad pending = _pendingLoads[i];
-                if (pending.Hash != hash || pending.Target != targetRenderer)
+                ContentPendingLoadState pending = pendingLoads[i];
+                if (pending.Hash != hash || _pendingLoadTargets[i] != targetRenderer)
                     continue;
 
                 HideHologram(pending.HologramIndex);
-                RemovePendingLoadAt(i);
+                RemovePendingLoadAt(i, pendingLoads, countPtr);
                 return true;
             }
 
@@ -387,7 +543,8 @@ namespace Hecton8.Core.Content
 
             _vfxPrewarmStarted = true;
 #if UNITY_ADDRESSABLES_EXIST
-            for (int i = 0; i < vfxPrewarmManifest.ParticleSystemCount; i++)
+            int dispatched = 0;
+            for (int i = 0; i < vfxPrewarmManifest.ParticleSystemCount && dispatched < ContentVfxPrewarmManifest.MaxEntries; i++)
             {
                 AssetReference reference = vfxPrewarmManifest.GetParticleSystem(i);
                 if (reference == null || !reference.RuntimeKeyIsValid())
@@ -395,9 +552,10 @@ namespace Hecton8.Core.Content
 
                 AsyncOperationHandle handle = reference.LoadAssetAsync<ParticleSystem>();
                 _vfxPrewarmHandles.Add(handle);
+                dispatched++;
             }
 
-            for (int i = 0; i < vfxPrewarmManifest.ComputeShaderCount; i++)
+            for (int i = 0; i < vfxPrewarmManifest.ComputeShaderCount && dispatched < ContentVfxPrewarmManifest.MaxEntries; i++)
             {
                 AssetReference reference = vfxPrewarmManifest.GetComputeShader(i);
                 if (reference == null || !reference.RuntimeKeyIsValid())
@@ -405,6 +563,7 @@ namespace Hecton8.Core.Content
 
                 AsyncOperationHandle handle = reference.LoadAssetAsync<ComputeShader>();
                 _vfxPrewarmHandles.Add(handle);
+                dispatched++;
             }
 #endif
         }
@@ -434,20 +593,24 @@ namespace Hecton8.Core.Content
             }
         }
 
-        private void TickPendingLoads(ref uint flags)
+        private unsafe void TickPendingLoads(ref uint flags)
         {
-            if (_pendingLoads.Count == 0)
+            if (!TryResolvePendingLoads(out ContentPendingLoadState* pendingLoads, out int* countPtr))
+                return;
+
+            int count = *countPtr;
+            if (count == 0 || (uint)count > PendingLoadCapacity)
                 return;
 
             float now = Time.unscaledTime;
-            for (int i = 0; i < _pendingLoads.Count; i++)
+            for (int i = 0; i < count; i++)
             {
-                PendingLoad pending = _pendingLoads[i];
+                ContentPendingLoadState pending = pendingLoads[i];
                 if (pending.HologramIndex >= 0 || now - pending.StartTime < GhostProxyDelaySeconds)
                     continue;
 
-                pending.HologramIndex = ShowHologram(pending.Target);
-                _pendingLoads[i] = pending;
+                pending.HologramIndex = ShowHologram(_pendingLoadTargets[i]);
+                pendingLoads[i] = pending;
                 flags |= HologramFlag;
             }
         }
@@ -490,11 +653,46 @@ namespace Hecton8.Core.Content
                 _hologramsActive--;
         }
 
-        private void RemovePendingLoadAt(int index)
+        private unsafe void RemovePendingLoadAt(
+            int index,
+            ContentPendingLoadState* pendingLoads,
+            int* countPtr)
         {
-            int last = _pendingLoads.Count - 1;
-            _pendingLoads[index] = _pendingLoads[last];
-            _pendingLoads.RemoveAt(last);
+            int count = *countPtr;
+            if ((uint)index >= (uint)count || count <= 0)
+                return;
+
+            int last = count - 1;
+            pendingLoads[index] = pendingLoads[last];
+            pendingLoads[last] = default;
+            _pendingLoadTargets[index] = _pendingLoadTargets[last];
+            _pendingLoadTargets[last] = null;
+            *countPtr = last;
+        }
+
+        private unsafe void ClearPendingLoads()
+        {
+            if (TryResolvePendingLoads(out ContentPendingLoadState* pendingLoads, out int* countPtr))
+            {
+                int count = *countPtr;
+                if ((uint)count > PendingLoadCapacity)
+                    count = PendingLoadCapacity;
+
+                for (int i = 0; i < count; i++)
+                {
+                    HideHologram(pendingLoads[i].HologramIndex);
+                    pendingLoads[i] = default;
+                    _pendingLoadTargets[i] = null;
+                }
+
+                *countPtr = 0;
+            }
+
+            if (_pendingLoadTargets == null)
+                return;
+
+            for (int i = 0; i < _pendingLoadTargets.Length; i++)
+                _pendingLoadTargets[i] = null;
         }
 
         private void TickAupShiftCleanup(ref uint flags)
@@ -506,7 +704,7 @@ namespace Hecton8.Core.Content
             if (shifts.Length == 0)
                 return;
 
-            AssetLifecycleGovernor governor = GlobalRegistry.AssetLifecycle;
+            AssetLifecycleGovernor governor = _assetLifecycle;
             if (governor != null)
             {
                 governor.ForceDrainPendingReleaseQueue();
@@ -518,7 +716,7 @@ namespace Hecton8.Core.Content
 
         private void TickVramIntercept(ref uint flags)
         {
-            VRAMMonitor monitor = GlobalRegistry.VRAMMonitor;
+            VRAMMonitor monitor = _vramMonitor;
             if (monitor == null)
                 return;
 
@@ -526,7 +724,7 @@ namespace Hecton8.Core.Content
             if (projectedBytes <= HardVramCeilingBytes)
                 return;
 
-            AssetLifecycleGovernor governor = GlobalRegistry.AssetLifecycle;
+            AssetLifecycleGovernor governor = _assetLifecycle;
             if (_bundleRefs.TrySelectOldestUnusedBiomeCache(out uint hash))
             {
                 _bundleRefs.Remove(hash);
@@ -551,15 +749,35 @@ namespace Hecton8.Core.Content
                 if (!handle.IsDone)
                     continue;
 
-                if (handle.Status == AsyncOperationStatus.Succeeded && handle.Result is ParticleSystem particleSystem)
-                    particleSystem.Simulate(0f, true, true, true);
+                if (handle.Status == AsyncOperationStatus.Succeeded)
+                {
+                    if (handle.Result is ParticleSystem particleSystem)
+                        particleSystem.Simulate(0f, true, true, true);
+
+                    _vfxResidentHandles.Add(handle);
+                }
+                else if (handle.IsValid())
+                {
+                    Addressables.Release(handle);
+                }
+
+                RemoveVfxPrewarmHandleAt(i);
             }
 #endif
         }
 
+#if UNITY_ADDRESSABLES_EXIST
+        private void RemoveVfxPrewarmHandleAt(int index)
+        {
+            int last = _vfxPrewarmHandles.Count - 1;
+            _vfxPrewarmHandles[index] = _vfxPrewarmHandles[last];
+            _vfxPrewarmHandles.RemoveAt(last);
+        }
+#endif
+
         private unsafe void WriteTelemetry(uint flags)
         {
-            VRAMPressureMonitor pressure = GlobalRegistry.VRAMPressure;
+            VRAMPressureMonitor pressure = _vramPressure;
             long estimate = _bundleRefs.EstimateResidentBytes();
             float rawVramPressure = pressure != null ? pressure.VramPressureFactor : 0f;
             float rawRamPressure = pressure != null ? pressure.RamPressureFactor : 0f;
@@ -569,7 +787,8 @@ namespace Hecton8.Core.Content
             if (nonFinite)
                 flags |= NonFiniteFlag;
 
-            uint stateHash = unchecked((uint)_pendingLoads.Count * 73856093u) ^
+            int pendingLoadCount = GetPendingLoadCount();
+            uint stateHash = unchecked((uint)pendingLoadCount * 73856093u) ^
                              unchecked((uint)_bundleRefs.Count * 19349663u) ^
                              unchecked((uint)_hologramsActive * 83492791u);
 
@@ -584,7 +803,7 @@ namespace Hecton8.Core.Content
             {
                 Frame = unchecked((uint)Time.frameCount),
                 Flags = flags,
-                PendingLoads = _pendingLoads.Count,
+                PendingLoads = pendingLoadCount,
                 HologramsActive = _hologramsActive,
                 BundleRefCount = _bundleRefs.Count,
                 EstimatedVramBytes = estimate,
@@ -618,7 +837,7 @@ namespace Hecton8.Core.Content
 
         private bool EnsureTelemetry()
         {
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
@@ -647,11 +866,58 @@ namespace Hecton8.Core.Content
                    _telemetryCursorHandle.Length >= 1;
         }
 
+        private unsafe int GetPendingLoadCount()
+        {
+            return TryResolvePendingLoads(out ContentPendingLoadState* _, out int* countPtr) ? *countPtr : 0;
+        }
+
+        private unsafe bool TryResolvePendingLoads(
+            out ContentPendingLoadState* pendingLoads,
+            out int* count)
+        {
+            pendingLoads = null;
+            count = null;
+
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            if (!_pendingLoadsHandle.IsCreated || !vault.ResolveBuffer(ref _pendingLoadsHandle))
+            {
+                _pendingLoadsHandle = vault.GetBufferHandle<ContentPendingLoadState>(
+                    BufferID.ContentAuthorityPendingLoads,
+                    PendingLoadCapacity,
+                    SystemID.ContentAuthority,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_pendingLoadCountHandle.IsCreated || !vault.ResolveBuffer(ref _pendingLoadCountHandle))
+            {
+                _pendingLoadCountHandle = vault.GetBufferHandle<int>(
+                    BufferID.ContentAuthorityPendingLoadCount,
+                    1,
+                    SystemID.ContentAuthority,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            pendingLoads = (ContentPendingLoadState*)_pendingLoadsHandle.ResolvePointer(vault);
+            count = (int*)_pendingLoadCountHandle.ResolvePointer(vault);
+            return pendingLoads != null &&
+                   count != null &&
+                   _pendingLoadsHandle.Length >= PendingLoadCapacity &&
+                   _pendingLoadCountHandle.Length >= 1;
+        }
+
         private void ClearVaultHandles()
         {
             _telemetryHandle = default;
             _telemetryCursorHandle = default;
+            _pendingLoadsHandle = default;
+            _pendingLoadCountHandle = default;
             _dataVault = null;
+            _vramMonitor = null;
+            _vramPressure = null;
+            _assetLifecycle = null;
         }
 
         private unsafe void DumpBlackBox()
@@ -707,6 +973,7 @@ namespace Hecton8.Core.Content
             if (_registeredTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
+            CacheDependencies();
             _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
         }
 
@@ -719,13 +986,19 @@ namespace Hecton8.Core.Content
             _registeredTick = false;
         }
 
-        private struct PendingLoad
+        private void CacheDependencies()
         {
-            public uint Hash;
-            public float StartTime;
-            public Renderer Target;
-            public int HologramIndex;
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+            _bundleRefs.BindVault(_dataVault);
+            if (_vramMonitor == null)
+                _vramMonitor = GlobalRegistry.VRAMMonitor;
+            if (_vramPressure == null)
+                _vramPressure = GlobalRegistry.VRAMPressure;
+            if (_assetLifecycle == null)
+                _assetLifecycle = GlobalRegistry.AssetLifecycle;
         }
+
     }
 
     public static class ContentTieredGroupPolicy
@@ -761,25 +1034,57 @@ namespace Hecton8.Core.Content
 
         public static uint ResolveVisualFeatureMask(ContentTier tier)
         {
+            return ResolveVisualBudget(tier).FeatureMask;
+        }
+
+        public static ContentVisualFeatureBudget ResolveVisualBudget(ContentTier tier)
+        {
             if (HectonXRRuntimeState.IsXRActive || SystemInfo.graphicsMemorySize <= 2048)
             {
-                return DearLieOneDimensionalLut |
-                       DearLieTriangleNoise |
-                       DearLieDotProductVision;
+                return new ContentVisualFeatureBudget
+                {
+                    FeatureMask = DearLieOneDimensionalLut |
+                                  DearLieTriangleNoise |
+                                  DearLieDotProductVision,
+                    MaxParticles = 512,
+                    RaymarchSteps = 8,
+                    PomTaps = 0,
+                    SiltWakeLayers = 1,
+                    SaltCrystalLayers = 1,
+                    HullDentOctaves = 1
+                };
             }
 
             if (tier == ContentTier.Overkill && SystemInfo.graphicsMemorySize > 4096)
             {
-                return VisualFeatureSaltCrystals |
-                       VisualFeatureVolumetricSiltWake |
-                       VisualFeatureProceduralHullDents |
-                       VisualFeatureRaymarchDetail |
-                       VisualFeatureParallaxOcclusion16Tap;
+                return new ContentVisualFeatureBudget
+                {
+                    FeatureMask = VisualFeatureSaltCrystals |
+                                  VisualFeatureVolumetricSiltWake |
+                                  VisualFeatureProceduralHullDents |
+                                  VisualFeatureRaymarchDetail |
+                                  VisualFeatureParallaxOcclusion16Tap,
+                    MaxParticles = 16384,
+                    RaymarchSteps = 64,
+                    PomTaps = 16,
+                    SiltWakeLayers = 4,
+                    SaltCrystalLayers = 3,
+                    HullDentOctaves = 4
+                };
             }
 
-            return VisualFeatureSaltCrystals |
-                   VisualFeatureVolumetricSiltWake |
-                   DearLieTriangleNoise;
+            return new ContentVisualFeatureBudget
+            {
+                FeatureMask = VisualFeatureSaltCrystals |
+                              VisualFeatureVolumetricSiltWake |
+                              DearLieTriangleNoise,
+                MaxParticles = 2048,
+                RaymarchSteps = 24,
+                PomTaps = 4,
+                SiltWakeLayers = 2,
+                SaltCrystalLayers = 2,
+                HullDentOctaves = 2
+            };
         }
     }
 }

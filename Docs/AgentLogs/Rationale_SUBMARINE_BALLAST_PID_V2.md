@@ -87,3 +87,17 @@ Solution: Collapsed crash/NaN dump output to the required `Dump_SUBMARINE_BALLAS
 Rejected Alternatives: Keeping legacy autopilot/flood dump aliases was rejected as unnecessary MicroSD write pressure; keeping persistent NativeArray aliases was rejected as H-Phi debt.
 Scalability potential: Low/Steam Deck avoids extra fault-time I/O and stale buffer views; Middle/High/Ultra still get the same telemetry and high-tier VFX impulse lane without extra ownership.
 Hardware Impact: Two fault-time file writes removed. Runtime microsecond savings are not claimed because the handle resolution trades ownership correctness for negligible pointer-refresh work.
+
+## Decision 12 - Fluid State Vault Buffer Wrapper
+Problem: `SubmarineFluidDynamics` still had persistent `NativeArray<T>` fields, and the first pure-property replacement was not viable because C# cannot assign through a value-type property indexer returned by value.
+Solution: Replaced the persistent fluid `NativeArray<T>` fields with `VaultNativeBuffer<T>` wrappers that store `VaultBufferHandle<T>` identity and the cached `IDataVault` reference. Hot scalar reads/writes use the vault pointer directly; Burst jobs receive transient `NativeArray<T>` views only at schedule boundaries.
+Rejected Alternatives: Keeping private `NativeArray<T>` aliases was rejected as data-sovereignty debt. Resolving through `GlobalDataVault` on every compartment indexer read was rejected because it would add dictionary/generation validation inside the fixed-step fluid loop. Expanding the public `GlobalDataVault` API was rejected because the domain fix did not require a Core public contract change.
+Scalability potential: Low and Steam Deck keep the same bounded compartment counts without private buffer ownership; Middle/High/Ultra keep hydrodynamic drag, flood mass, and black-box telemetry on the same authoritative vault buffers.
+Hardware Impact: No fabricated microsecond claim. The measurable result is ownership hardening with no compile regression; domain static scans show no persistent `NativeArray` fields in the submarine fluid/PID owners.
+
+## Decision 13 - Omega Validation And Current Compile Wall
+Problem: The final inquisition required ARM64/Quest-safe layout, NaN vaccination, and a current compile result rather than stale reporting.
+Solution: Converted remaining submarine PID/fluid native payload structs in this domain boundary to explicit `Pack = 1` layouts, kept `math.rsqrt` guarded by `math.max(epsilon, value)`, and reran `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false` from current disk state.
+Rejected Alternatives: Leaving sequential private payloads in place was rejected because binary/native stride must be auditable. Editing `FaunaBrain.cs` helper drift was rejected because AI/Fauna is outside PHYSICS/VEHICLES and is active concurrent-agent territory.
+Scalability potential: Low/Quest/Android get deterministic struct strides and finite fallbacks; High/Ultra still spend the saved physics work on typed VFX intent through `BubbleSpawnSignal` and `FluidImpulseSignal` instead of heavier gameplay simulation.
+Hardware Impact: A build passed once after the domain fix, but the latest rerun now fails in `Assets/_Project/Scripts/Fauna/FaunaBrain.cs` for missing `NormalizeVectorOrFallback`, `IsFiniteBounds`, and `IsFiniteVector`. Runtime GC/frame and profiler numbers remain unmeasured in this CLI session, so no measured frame-time victory is claimed.

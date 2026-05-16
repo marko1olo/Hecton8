@@ -205,8 +205,8 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
 
             float ComputeSaltCrystalMask(float2 uv, float wetness, float inverseDirtRefraction, float depthRefractionMask, float lowTierMode)
             {
-                float overkill = saturate(_HectonVisorFluidVisualOverkill);
-                float crystalDrive = saturate(overkill * wetness * inverseDirtRefraction * depthRefractionMask * (1.0 - lowTierMode));
+                float overkill = HectonFinite01(_HectonVisorFluidVisualOverkill);
+                float crystalDrive = HectonFinite01(overkill * HectonFinite01(wetness) * HectonFinite01(inverseDirtRefraction) * HectonFinite01(depthRefractionMask) * (1.0 - HectonFinite01(lowTierMode)));
                 if (crystalDrive <= 0.0001)
                     return 0.0;
 
@@ -225,9 +225,9 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
 
             float ComputeSuspendedSiltMask(float2 uv, float wetness, float rainIntensity, float inverseDirtRefraction, float depthRefractionMask, float lowTierMode)
             {
-                float overkill = saturate(_HectonVisorFluidVisualOverkill);
-                float activity = max(wetness, rainIntensity * 0.45);
-                float siltDrive = saturate(overkill * activity * inverseDirtRefraction * depthRefractionMask * (1.0 - lowTierMode));
+                float overkill = HectonFinite01(_HectonVisorFluidVisualOverkill);
+                float activity = max(HectonFinite01(wetness), HectonFinite01(rainIntensity) * 0.45);
+                float siltDrive = HectonFinite01(overkill * activity * HectonFinite01(inverseDirtRefraction) * HectonFinite01(depthRefractionMask) * (1.0 - HectonFinite01(lowTierMode)));
                 if (siltDrive <= 0.0001)
                     return 0.0;
 
@@ -323,20 +323,20 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 float2 screenUV = ResolveXRStereoScreenUV(input.screenUV);
-                float wetness = saturate(_HectonVisorFluidWetness);
-                float hullStress = saturate(_HectonVisorFluidHullStress);
-                float intensity = saturate(_HectonVisorFluidIntensity);
+                float wetness = HectonFinite01(_HectonVisorFluidWetness);
+                float hullStress = HectonFinite01(_HectonVisorFluidHullStress);
+                float intensity = HectonFinite01(_HectonVisorFluidIntensity);
                 float glitchAmount = saturate((hullStress - 0.52) * 2.08);
                 float edgeMask = 0.0;
                 float edgeMaskResolved = 0.0;
                 float dustMask = 0.0;
-                float dustReveal = saturate(_HectonVisorFluidAmbientLight * _HectonVisorFluidDustStrength * _HectonVisorFluidAmbientDustResponse);
-                float thermalMotionCull = saturate(_HectonThermalDistortionMotionCull);
+                float dustReveal = HectonFinite01(_HectonVisorFluidAmbientLight * _HectonVisorFluidDustStrength * _HectonVisorFluidAmbientDustResponse);
+                float thermalMotionCull = HectonFinite01(_HectonThermalDistortionMotionCull);
                 float combinedMask = 0.0;
                 float2 refractedUV = screenUV;
-                float fluidActivity = saturate(max(wetness, hullStress) * intensity * (1.0 - thermalMotionCull));
-                float rainIntensity = saturate(_RainIntensity);
-                float lightningFlash = saturate(_HectonLightningFlash);
+                float fluidActivity = HectonFinite01(max(wetness, hullStress) * intensity * (1.0 - thermalMotionCull));
+                float rainIntensity = HectonFinite01(_RainIntensity);
+                float lightningFlash = HectonFinite01(_HectonLightningFlash);
                 float rawSceneDepth = SampleSceneDepth(screenUV);
 #if UNITY_REVERSED_Z
                 float sceneDepthValid = step(0.0001, rawSceneDepth);
@@ -453,7 +453,7 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 [branch]
                 if (dustMask > 0.0001)
                 {
-                    half3 dustTint = lerp(half3(0.018, 0.022, 0.018), half3(0.11, 0.13, 0.10), saturate(_HectonVisorFluidAmbientLight));
+                    half3 dustTint = lerp(half3(0.018, 0.022, 0.018), half3(0.11, 0.13, 0.10), HectonFinite01(_HectonVisorFluidAmbientLight));
                     color.rgb = lerp(color.rgb, max(color.rgb - dustTint * 0.55h, half3(0.0h, 0.0h, 0.0h)), (half)(dustMask * 0.55));
                     color.rgb += dustTint * (half)(dustMask * 0.18);
                 }

@@ -15,7 +15,8 @@ namespace Hecton8.Core
         private const int AupShiftOffsetSlot = 1;
         private const int WaterExtinctionRuntimeSlot = 2;
         private const int WaterExtinctionWeatherSlot = 3;
-        private const int SlotCount = 4;
+        private const int WaterExtinctionParamsSlot = 4;
+        private const int SlotCount = 5;
 
         private static readonly int _BiolumMasterPhaseId = Shader.PropertyToID("_BiolumMasterPhase");
         private static readonly int _GlobalBiolumPhaseId = Shader.PropertyToID("_GlobalBiolumPhase");
@@ -23,27 +24,30 @@ namespace Hecton8.Core
         private static readonly int _TotalUniverseOffsetId = Shader.PropertyToID("_TotalUniverseOffset");
         private static readonly int _AupShiftOffsetId = Shader.PropertyToID("_AupShiftOffset");
         private static readonly int _AupJitterMaskId = Shader.PropertyToID("_AupJitterMask");
+        private static readonly int _ExtinctionLutParamsId = Shader.PropertyToID("_ExtinctionLUTParams");
         private static readonly int _ExtinctionLutRuntimeId = Shader.PropertyToID("_ExtinctionLUTRuntime");
         private static readonly int _ExtinctionLutWeatherParamsId = Shader.PropertyToID("_ExtinctionLUTWeatherParams");
 
         private static IDataVault _cachedVault;
         private static uint _cachedVaultGeneration;
-        private static NativeArray<float4> _slots;
+        private static VaultBufferHandle<float4> _slotsHandle;
         private static float4 _fallbackBiolumMasterPhase;
         private static float4 _fallbackAupShiftOffset;
         private static float4 _fallbackWaterExtinctionRuntime;
         private static float4 _fallbackWaterExtinctionWeather;
+        private static float4 _fallbackWaterExtinctionParams;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             _cachedVault = null;
             _cachedVaultGeneration = 0u;
-            _slots = default;
+            _slotsHandle = default;
             _fallbackBiolumMasterPhase = default;
             _fallbackAupShiftOffset = default;
             _fallbackWaterExtinctionRuntime = new float4(0f, 1f, 1f, 0f);
             _fallbackWaterExtinctionWeather = default;
+            _fallbackWaterExtinctionParams = new float4(1500f, 2.5f, 0f, 0f);
         }
 
         public static void PublishBiolumMasterPhase(Vector4 phaseVector)
@@ -74,6 +78,24 @@ namespace Hecton8.Core
         public static void ResetAupShaderGlobals()
         {
             PublishAupShaderGlobals(Vector4.zero, Vector4.zero, 0f);
+        }
+
+        /// <summary>
+        /// Publishes water-extinction immutable LUT dimensions and active state through the DataVault-backed shader-global lane.
+        /// </summary>
+        /// <param name="paramsVector">x=max depth meters, y=max turbidity, z=strength, w=active.</param>
+        public static void PublishWaterExtinctionParams(Vector4 paramsVector)
+        {
+            float4 value = ToFiniteFloat4(paramsVector);
+            value.x = math.max(0.001f, value.x);
+            value.y = math.max(0.001f, value.y);
+            value.z = math.saturate(value.z);
+            value.w = math.saturate(value.w);
+            float4 stored = WriteReadSlot(
+                WaterExtinctionParamsSlot,
+                value,
+                ref _fallbackWaterExtinctionParams);
+            Shader.SetGlobalVector(_ExtinctionLutParamsId, ToVector4(stored));
         }
 
         /// <summary>
@@ -114,74 +136,75 @@ namespace Hecton8.Core
         /// </summary>
         public static void ResetWaterExtinctionGlobals()
         {
+            PublishWaterExtinctionParams(new Vector4(1500f, 2.5f, 0f, 0f));
             PublishWaterExtinctionRuntime(new Vector4(0f, 1f, 1f, 0f));
             PublishWaterExtinctionWeather(Vector4.zero);
         }
 
         private static float4 WriteReadSlot(int slot, float4 value, ref float4 fallback)
         {
-            if (TryResolveSlots(out NativeArray<float4> slots))
+            IDataVault vault = ResolveSlotsVault();
+            if (vault != null && vault.TryLockBuffer(BufferID.ShaderGlobalState))
             {
-                slots[slot] = value;
-                return slots[slot];
+                try
+                {
+                    var slots = _slotsHandle.Resolve(vault);
+                    if (slots.IsCreated && slot >= 0 && slot < slots.Length)
+                    {
+                        slots[slot] = value;
+                        return slots[slot];
+                    }
+                }
+                finally
+                {
+                    vault.TryUnlockBuffer(BufferID.ShaderGlobalState);
+                }
             }
 
             fallback = value;
             return fallback;
         }
 
-        private static bool TryResolveSlots(out NativeArray<float4> slots)
+        private static IDataVault ResolveSlotsVault()
         {
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null)
-            {
-                slots = default;
-                return false;
-            }
+                return null;
 
             uint generation = vault.VaultGenerationID;
             if (ReferenceEquals(vault, _cachedVault) &&
                 _cachedVaultGeneration == generation &&
-                _slots.IsCreated &&
-                _slots.Length >= SlotCount)
+                _slotsHandle.IsCreated &&
+                _slotsHandle.Length >= SlotCount)
             {
-                slots = _slots;
-                return true;
+                return vault;
             }
 
-            if (vault.TryGetBuffer(BufferID.ShaderGlobalState, out NativeArray<float4> existing) &&
+            if (vault.TryGetBufferHandle(BufferID.ShaderGlobalState, out VaultBufferHandle<float4> existing) &&
                 existing.IsCreated &&
                 existing.Length >= SlotCount)
             {
                 _cachedVault = vault;
                 _cachedVaultGeneration = generation;
-                _slots = existing;
-                slots = existing;
-                return true;
+                _slotsHandle = existing;
+                return vault;
             }
 
             if (vault.IsAllocationLocked)
-            {
-                slots = default;
-                return false;
-            }
+                return null;
 
-            NativeArray<float4> allocated = vault.GetBuffer<float4>(
+            VaultBufferHandle<float4> allocated = vault.GetBufferHandle<float4>(
                 BufferID.ShaderGlobalState,
                 SlotCount,
                 SystemID.GraphicsScalability,
                 NativeArrayOptions.ClearMemory);
             if (!allocated.IsCreated || allocated.Length < SlotCount)
-            {
-                slots = default;
-                return false;
-            }
+                return null;
 
             _cachedVault = vault;
             _cachedVaultGeneration = generation;
-            _slots = allocated;
-            slots = allocated;
-            return true;
+            _slotsHandle = allocated;
+            return vault;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

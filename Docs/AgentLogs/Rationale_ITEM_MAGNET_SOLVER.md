@@ -161,3 +161,51 @@ Solution: Re-ran `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -v:minima
 Rejected Alternatives: Claiming green; editing world boids, marine snow renderer, or vehicle docking from the loot magnet task.
 Scalability potential: No runtime impact for loot magnet; this keeps cross-domain ownership intact.
 Hardware Impact: None at runtime.
+
+Problem: Sidecar arrays could be replaced during a live capacity change while still holding pickup references whose Rigidbody state had been suppressed for magnet presentation.
+Solution: `EnsureManagedSidecars` now clears runtime ownership before allocating replacement sidecar arrays. That restore pass runs while the old array still exists, so every cached pickup releases magnet-owned physics/render state before references are discarded.
+Rejected Alternatives: Relying on managed GC to discard the old array; adding per-pickup heap tokens; leaving capacity changes unsupported.
+Scalability potential: Low/Middle/High/Ultra keep the same runtime math path. Capacity changes remain cold-path and do not reduce High/Ultra visual signal budgets.
+Hardware Impact: 0 hot-frame cost. Resize cost is one bounded loop over currently active sidecar slots only when `maxLootEntities` changes.
+
+Problem: The authoring sanitizer still accepted a 5000m magnet radius and 100000m/s max velocity, which made the anti-tunneling clamp meaningless if an inspector value drifted.
+Solution: Reduced hard ceilings to bounded gameplay values: 64m radius, 256 strength, and 48m/s max velocity. Defaults remain unchanged, so normal feel stays at 8m radius and 12m/s.
+Rejected Alternatives: Trusting prefab authoring; keeping cell-scale radius for a player suit magnet; raising only telemetry warnings while still allowing unstable values.
+Scalability potential: Low avoids mass-pulling a whole AUP cell; Middle keeps normal kinetic snap; High/Ultra still spend saved cycles on wake/fluid/debris signal consumers rather than unsafe physics speed.
+Hardware Impact: 0 hot-frame arithmetic cost. Prevents worst-case authoring from turning every active pickup into a fast-moving proxy on i3/MX350.
+
+Problem: The duplicate `HectonItem` pickup path still used cold `GetComponent<T>()` cache fills and a development-build interpolated error string after the magnet path had been hardened.
+Solution: Replaced cache fills with `TryGetComponent` in `Awake`, buoyancy setup, and editor validation, and changed the development-build missing-data report to a static message with the Unity context object.
+Rejected Alternatives: Leaving duplicate pickup initialization inconsistent; adding a new abstraction; touching unrelated subscribers outside the item domain.
+Scalability potential: Low/Middle/High/Ultra keep identical acquisition behavior through the typed `ItemAcquiredSignal`; this is cold-path hygiene, not a visual-budget trade.
+Hardware Impact: 0 hot-frame impact. Cold initialization avoids avoidable lookup/allocation residue; exact microseconds are not measured.
+
+Problem: Registry refresh could overwrite a sidecar slot or clear a trailing slot while the previous pickup still had magnet-owned Rigidbody suppression active.
+Solution: Restored the previous pickup's magnet runtime state before replacing a slot with a different entity id, and restored stale pickups before clearing trailing slots in `RefreshPickupVaultFromRegistry`.
+Rejected Alternatives: Assuming registry order never changes; relying on `PickupItem.OnDisable`; permanently making pickups kinematic.
+Scalability potential: Low/Middle/High/Ultra keep the same Burst math path. The fix is SlowTick/cold registry maintenance and does not reduce High/Ultra wake/fluid budgets.
+Hardware Impact: 0 Burst hot-loop impact. SlowTick pays only for changed/stale sidecar slots and prevents suppressed-collision leaks on low-end devices.
+
+Problem: Loot magnet vault/signals embed `AbsoluteUniversePosition`, but the embedded AUP struct used explicit offsets without declaring `Pack=1`.
+Solution: Added `Pack=1` to `AbsoluteUniversePosition` and `AbsoluteUniversePositionBlit128` explicit layouts. This is a cross-domain ABI edit because magnet packets cannot guarantee ARM64/Quest layout while the embedded payload omits the packing contract.
+Rejected Alternatives: Packing only `LootMagnetSignalEvent`/telemetry wrappers; copying AUP into a private duplicate struct; ignoring embedded payload layout.
+Scalability potential: Low/Middle/High/Ultra share identical AUP binary layout across Android/Quest, Metal/Mac, Steam Deck, and PC.
+Hardware Impact: 0 runtime cost. Removes a layout ambiguity risk on ARM64; field offsets and size remain explicit.
+
+Problem: Final compile status had to be re-verified after the duplicate item, registry churn, and AUP ABI passes.
+Solution: Ran `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -v:minimal`; build succeeded with 0 warnings and 0 errors in 40.43 seconds.
+Rejected Alternatives: Leaving stale external-blocked status; running another full solution build while other agents were spawning workers; claiming microsecond wins from compile validation.
+Scalability potential: No runtime scalability change. Confirms the Low/Middle/High/Ultra magnet paths compile through the shared core assembly.
+Hardware Impact: 0 runtime impact. Build gate only.
+
+Problem: Scheduled DataVault locks were released on the normal completed-job path, but an exceptional commit path or a schedule failure before `_pullScheduled` was set could leave lock state stale.
+Solution: Added `ForceCompleteAndCommitScheduledJob`, wrapped late-frame commit in `finally`, added schedule-failure cleanup that clears scheduled counters and unlocks vault buffers when `job.Schedule` fails before ownership is recorded, and moved origin-shift job draining before the non-finite payload guard.
+Rejected Alternatives: Relying on the happy-path unlock; adding per-buffer managed lock tokens; ignoring exception/safety-check builds.
+Scalability potential: Low/Middle/High/Ultra keep identical math and signal behavior. The fix protects the shared GlobalDataVault under shutdown, origin shift, and safety-check failure paths.
+Hardware Impact: 0 hot math cost. Control-path only; prevents locked-buffer stalls that would otherwise break low-end devices harder than desktop.
+
+Problem: Re-validation after the scheduled-lock hardening cannot currently reach 0 errors.
+Solution: Ran `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false -p:UseSharedCompilation=false -v:minimal`; current hard errors are external to item magnet in `SpatialAudioManager.cs` missing `ClearVaultBackedTelemetryAliases` and `EnsureVaultBackedArray`.
+Rejected Alternatives: Claiming the previous green gate still represents current disk; editing spatial audio from the loot magnet task; hiding the dependency wall.
+Scalability potential: No runtime impact for loot magnet. The Low/Middle/High/Ultra magnet paths remain source-validated while the audio owner resolves the helper drift.
+Hardware Impact: None at runtime for loot magnet.

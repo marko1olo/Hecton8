@@ -1,6 +1,6 @@
 # Rationale_ECOSYSTEM_MIGRATION_LINK
 
-State: CORE COMPLETE / BUILD BLOCKED BY DEPENDENCY
+State: PENDING VERIFICATION / BUILD BLOCKED BY DEPENDENCY
 
 ## Decision 0 - Startup Boundary
 
@@ -73,3 +73,75 @@ Solution: Treat the inline OMEGA mandate as the authority and run targeted grep/
 Rejected Alternatives: Skip polish because the XML tag is absent, or edit unrelated files to satisfy aesthetic cleanup.
 Scalability potential: No new runtime path. Confirms low/middle/high/ultra behavior remains driven by fixed quality tier and stress gates.
 Hardware Impact: No runtime cost; prevents late bloat from entering the hydration path.
+
+## Decision 9 - H-Phi Data Eviction Pass
+
+Problem: The macro bridge still had private native ownership in the hot path: ambient macro counters were allocated by `H8Memory`, and macro hydration/dehydration scratch used local `NativeList<MacroSwarm>` buffers.
+Solution: Move bridge-owned macro buffers to `GlobalDataVault` BufferID lanes. `AmbientBiotaDirector` now resolves `BiotaMacroHydrationCounters`; `EcosystemDirector` resolves macro swarms, arrivals, counters, blackbox, mutation scalars, and hydration/dehydration scratch through vault buffers. Scratch lists became fixed NativeArray lanes plus explicit counts.
+Rejected Alternatives: Keep local NativeLists for convenience, resize scratch under pressure, or store transient macro claims in managed lists.
+Scalability potential: Low = fixed 32 active macro cap and 64 scratch slots. Middle = 64 active macro cap. High = 128. Ultra = 256 active macro swarms with the same vault lanes and no ownership change.
+Hardware Impact: i3/MX350 avoids local native allocation ownership churn and NativeList metadata mutation; expected steady-state savings are small (<5 us) but eliminates a failure class.
+
+## Decision 10 - Multiplatform ABI And Signal Guard
+
+Problem: Quest/ARM64 builds are less tolerant of implicit struct layout and unguarded signal payloads. EntitySpawnSignal also lacked a finite-payload guard lane.
+Solution: Use explicit Pack=1 layouts for `MacroSwarm`, `MacroSwarmArrival`, `MacroSwarmTelemetryEntry`, and `EntitySpawnSignal`; add `EntitySpawnSignal` finite sanitization; keep raw macro DB import fixed-stride so Steam Deck/MicroSD never reads disk during sector hydration.
+Rejected Alternatives: Sequential Pack=4 DTOs, trusting producer payloads blindly, or adding a second duplicate ecology spawn signal.
+Scalability potential: Low/Middle read the same compact records. High/Ultra add `FlagHighTierOverkill` so downstream visual owners can spend saved cycles on heavier emergence particles/material response without AI coupling to VFX.
+Hardware Impact: ARM64 alignment is explicit; I/O path remains vault-cache only; high-tier overkill is a signal bit, so low-tier CPU cost is zero.
+
+## Decision 11 - Job Stall Removal
+
+Problem: `Schedule().Complete()` inside `TryHydrateMacroSwarms` and `TryPackMacroHydratedBiota` created a synchronous job scheduling stall in the service call.
+Solution: Use direct `IJob.Run()` for the bounded 64-boid macro bridge pass. It keeps the Burst job code path and removes the schedule/complete fence while preserving synchronous service return semantics.
+Rejected Alternatives: Change public service signatures to async/deferred mid-batch, or leave a forced JobHandle completion in the signal-drain path.
+Scalability potential: Low = lower scheduling overhead. Middle = same bounded direct pass. High/Ultra = visual richness comes from flags/downstream rendering, not larger scheduling fences.
+Hardware Impact: Avoids job scheduler overhead for tiny jobs; expected savings are micro-scale but removes a main-thread stall class.
+
+## Decision 12 - Ecology Vault Eviction Beyond Macro Bridge
+
+Problem: `EcosystemDirector` still owned legacy persistent `NativeArray` allocations for sector populations, biomass cells, headless fauna, apex overlap scratch, spawn-gate scratch, blackboxes, flora predator AUP upload staging, and later save snapshot staging.
+Solution: Added dedicated `GlobalDataVault` BufferID lanes and resolved those fixed-capacity arrays through `vault.GetBuffer<T>(..., SystemID.AIEcology, ...)`. Disposal and memory-sentinel registration were removed for vault-owned array aliases; save snapshot staging now uses vault arrays with explicit counts. Local ownership remains only for NativeHashMap lookup indices because the current DataVault surface is array-based and no hash-map vault contract exists.
+Rejected Alternatives: Dispose vault aliases as if locally owned, keep save snapshots as private NativeLists, or keep the old native array allocations because they were cold-path.
+Scalability potential: Low = same 32-swarm visual cap and fixed population lanes. Middle = larger active macro cap without ownership change. High = 128 active macro swarms and higher visual residency from the same vault-backed lanes. Ultra = 256 active macro swarms, SDF emergence flags, and high-tier overkill signaling without private array ownership.
+Hardware Impact: i3/MX350 avoids persistent allocator churn and sentinel double-accounting; expected steady gain is small (<5 us at init/teardown), but failure-class reduction is material for Quest/Android and Steam Deck memory pressure.
+
+## Decision 13 - Typed Acoustic Lane Purge
+
+Problem: Ecology still emitted whale-fall acoustics through `PhysicsEventBus.NotifyAcousticImpulse`, creating a legacy bus dependency in the ecology director.
+Solution: Replaced that call with a fixed `AcousticPingSignal` publish through `GlobalSignals`, using `ChannelLeviathanRoar` and `FlagLeviathanRoar`. The ecology director now uses typed signal lanes for macro spawn, biome gradient consumption, swarm dispersion, and whale-fall acoustic broadcast.
+Rejected Alternatives: Keep the physics event bus because listeners already exist, or invent a new whale-fall-only signal.
+Scalability potential: Low = one compact ping signal at slow cadence. Middle = same signal for perception/audio. High/Ultra = downstream audio/VFX can add richer leviathan/whale-fall response from the typed lane without ecology taking a direct dependency.
+Hardware Impact: Removes listener-bucket dispatch from the ecology slow path; estimated saving is 1-4 us per whale-fall acoustic tick when active, measured proof absent.
+
+## Decision 14 - Save Snapshot Vault Staging
+
+Problem: Save snapshot staging kept `NativeList<EcosystemSectorSaveRecord>` and `NativeList<EcosystemBiomassSaveRun>` as private storage after the broader vault eviction pass.
+Solution: Replace those lists with `GlobalDataVault` arrays (`EcosystemSaveSnapshotSectors`, `EcosystemSaveSnapshotBiomassRuns`) and explicit count fields. Save readers receive `GetSubArray(0, count)` slices so downstream serialization only sees valid records.
+Rejected Alternatives: Return full-capacity arrays, keep private NativeLists because the path is cold, or redesign the save contract across other domains in this batch.
+Scalability potential: Low = bounded snapshot record counts with no resize. Middle = same path with larger configured vault lanes. High/Ultra = dense save staging remains fixed-capacity while visual overkill stays outside the save loop.
+Hardware Impact: Steam Deck/MicroSD avoids runtime resize and metadata churn during snapshot capture; expected steady gain is micro-scale, but it removes an I/O-adjacent hitch risk.
+
+## Decision 15 - Population Balancer ABI Repair
+
+Problem: `EcosystemPopulationBalancer` still carried sequential Pack=1 DTOs. Pack=1 helps, but sequential layout still relies on field-order assumptions instead of explicit ABI offsets on ARM64/Quest.
+Solution: Convert `EcosystemPopulationCoefficient`, `EcosystemPopulationSectorState`, `EcosystemPopulationCullEvent`, `EcosystemPopulationFreeSlot`, and `EcosystemPopulationTelemetryEntry` to explicit Pack=1 layouts with fixed offsets.
+Rejected Alternatives: Leave sequential Pack=1 because the current desktop compiler accepts it, or widen alignment for PC only.
+Scalability potential: Low/Middle/High/Ultra all use identical binary lanes; quality tiers change math/visual spend, not record ABI.
+Hardware Impact: 0 us runtime. The value is preventing platform-specific padding drift and native-lane corruption.
+
+## Decision 16 - Intermediate Build Evidence
+
+Problem: Earlier validation was blocked by unrelated compile walls. Claiming completion without rerunning build after concurrent fixes would be a false report.
+Solution: Re-run `dotnet build Hecton8.Core.csproj -v:minimal --no-restore /p:UseSharedCompilation=false` after the ABI pass and record the intermediate result: 0 warnings, 0 errors in 67.48 s.
+Rejected Alternatives: Trust previous source scans, patch unrelated domains, or claim Quest/Metal/PlayMode runtime verification without executing those targets.
+Scalability potential: No runtime change. The intermediate build-green status proved C# compile integrity for that filesystem snapshot only.
+Hardware Impact: No runtime impact. Platform runtime verification remains unexecuted in this shell.
+
+## Decision 17 - Final Dependency Wall
+
+Problem: After the intermediate green build, concurrent edits reopened compile failures outside AI/ecology. The final wall is `Assets/_Project/Scripts/LaserCutter.cs`, where `LaserCutterEvents` references `_pendingEvents`, `_nextFrameEvents`, `_nextFrameEventCount`, and `_isDispatching` after those fields were removed.
+Solution: Do not patch gameplay-tool event ownership from the ecology agent after repeated dependency-wall strikes. Record the exact wall and leave ecology-owned code in a statically clean state.
+Rejected Alternatives: Recreate LaserCutter queue state from this agent, revert another agent's gameplay-tool refactor, or claim the latest build is green from the earlier snapshot.
+Scalability potential: No ecology runtime change. Macro-swarm low/middle/high/ultra paths remain implemented; final assembly validation is blocked by unrelated gameplay-tool source.
+Hardware Impact: No ecology runtime impact. Latest failed validation wall time was 65.24 s.

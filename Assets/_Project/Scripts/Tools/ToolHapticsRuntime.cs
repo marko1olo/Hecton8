@@ -1,17 +1,17 @@
 using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Collections;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Tools
 {
     /// <summary>
-    /// Tool-local haptic command queue. Device dispatch remains external; this owner only builds the bounded double-buffered payload.
+    /// DataVault-backed haptic command lane. Device dispatch remains external; this owner only builds bounded payload views.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9916)]
@@ -36,18 +36,17 @@ namespace Hecton8.Tools
         internal const byte BlendModeMax = 2;
         private static int s_powerSaveMute;
 
-        private NativeArray<HapticCommand> _frontBuffer;
-        private NativeArray<HapticCommand> _backBuffer;
+        private VaultBufferHandle<HapticCommand> _frontBufferHandle;
+        private VaultBufferHandle<HapticCommand> _backBufferHandle;
         private int _frontCount;
         private int _backCount;
         private float _leftHapticCooldownTimer;
         private float _rightHapticCooldownTimer;
-        private JobHandle _disposeHandle;
         private bool _registeredUpdate;
         private bool _registeredLateFrame;
         private bool _serviceRegistered;
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct HapticCommand
         {
             public float LowFreqIntensity;
@@ -166,7 +165,7 @@ namespace Hecton8.Tools
             _leftHapticCooldownTimer = math.max(0f, _leftHapticCooldownTimer - safeDeltaTime);
             _rightHapticCooldownTimer = math.max(0f, _rightHapticCooldownTimer - safeDeltaTime);
 
-            if (!_frontBuffer.IsCreated || _frontCount <= 0)
+            if (!TryResolveFrontBuffer(out NativeArray<HapticCommand> frontBuffer) || _frontCount <= 0)
             {
                 if (_backCount <= 0 && !HasActiveHapticCooldown())
                     TryUnregisterUpdate();
@@ -177,7 +176,7 @@ namespace Hecton8.Tools
             int frontCount = math.min(math.max(0, _frontCount), BufferCapacity);
             for (int i = 0; i < frontCount; i++)
             {
-                HapticCommand command = _frontBuffer[i];
+                HapticCommand command = frontBuffer[i];
                 if (command.DurationRemaining <= 0f)
                     continue;
 
@@ -202,12 +201,12 @@ namespace Hecton8.Tools
                 if (command.LowFreqIntensity <= 0f && command.HighFreqIntensity <= 0f)
                     continue;
 
-                _frontBuffer[compactedCount++] = command;
+                frontBuffer[compactedCount++] = command;
             }
 
             for (int i = compactedCount; i < frontCount; i++)
             {
-                _frontBuffer[i] = default;
+                frontBuffer[i] = default;
             }
 
             _frontCount = compactedCount;
@@ -237,7 +236,7 @@ namespace Hecton8.Tools
                 return;
             }
 
-            if (!_frontBuffer.IsCreated || !_backBuffer.IsCreated)
+            if (!TryResolveBuffers(out NativeArray<HapticCommand> frontBuffer, out NativeArray<HapticCommand> backBuffer))
             {
                 TryUnregisterLateFrame();
                 return;
@@ -253,8 +252,8 @@ namespace Hecton8.Tools
 
             for (int i = 0; i < commandCount; i++)
             {
-                HapticCommand command = _backBuffer[i];
-                MergeCommandIntoFrontBuffer(in command);
+                HapticCommand command = backBuffer[i];
+                MergeCommandIntoFrontBuffer(frontBuffer, in command);
             }
 
             ClearBackBuffer(commandCount);
@@ -266,7 +265,7 @@ namespace Hecton8.Tools
 
         public NativeArray<HapticCommand>.ReadOnly GetFrontBuffer()
         {
-            return _frontBuffer.IsCreated ? _frontBuffer.AsReadOnly() : default;
+            return TryResolveFrontBuffer(out NativeArray<HapticCommand> frontBuffer) ? frontBuffer.AsReadOnly() : default;
         }
 
         internal bool TryGetFrontBufferSnapshot(out NativeArray<HapticCommand>.ReadOnly frontBuffer, out int count)
@@ -282,12 +281,18 @@ namespace Hecton8.Tools
             if (count <= 0)
                 return false;
 
-            frontBuffer = _frontBuffer.AsReadOnly();
+            if (!TryResolveFrontBuffer(out NativeArray<HapticCommand> buffer))
+            {
+                count = 0;
+                return false;
+            }
+
+            frontBuffer = buffer.AsReadOnly();
             return true;
         }
 
-        public int FrontCount => _frontBuffer.IsCreated
-            ? math.min(math.max(0, _frontCount), _frontBuffer.Length)
+        public int FrontCount => TryResolveFrontBuffer(out NativeArray<HapticCommand> frontBuffer)
+            ? math.min(math.max(0, _frontCount), frontBuffer.Length)
             : 0;
 
         private void Awake()
@@ -394,64 +399,67 @@ namespace Hecton8.Tools
                 0f);
         }
 
+        private bool TryResolveBuffers(
+            out NativeArray<HapticCommand> frontBuffer,
+            out NativeArray<HapticCommand> backBuffer)
+        {
+            bool frontResolved = TryResolveFrontBuffer(out frontBuffer);
+            bool backResolved = TryResolveBackBuffer(out backBuffer);
+            return frontResolved && backResolved;
+        }
+
+        private bool TryResolveFrontBuffer(out NativeArray<HapticCommand> frontBuffer)
+        {
+            return TryResolveBuffer(
+                ref _frontBufferHandle,
+                BufferID.ToolHapticFrontCommands,
+                out frontBuffer);
+        }
+
+        private bool TryResolveBackBuffer(out NativeArray<HapticCommand> backBuffer)
+        {
+            return TryResolveBuffer(
+                ref _backBufferHandle,
+                BufferID.ToolHapticBackCommands,
+                out backBuffer);
+        }
+
+        private static bool TryResolveBuffer(
+            ref VaultBufferHandle<HapticCommand> handle,
+            BufferID bufferId,
+            out NativeArray<HapticCommand> buffer)
+        {
+            buffer = default;
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
+                return false;
+
+            if (!handle.IsCreated ||
+                !vault.ResolveBuffer(ref handle) ||
+                handle.Length < BufferCapacity)
+            {
+                handle = vault.GetBufferHandle<HapticCommand>(
+                    bufferId,
+                    BufferCapacity,
+                    SystemID.GameplayTools,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            buffer = handle.Resolve(vault);
+            return buffer.IsCreated && buffer.Length >= BufferCapacity;
+        }
+
         private void EnsureBuffers()
         {
-            DispatcherJobSwap.TryFinalizeCompleted(ref _disposeHandle);
-            if (!_disposeHandle.IsCompleted)
-                return;
-
-            if (!_frontBuffer.IsCreated)
-            {
-                _frontBuffer = new NativeArray<HapticCommand>(BufferCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<HapticCommand>[16] - active haptic buffer consumed by input dispatch - owner: ToolHapticsRuntime
-
-                NativeMemorySentinel.RegisterNativeArray(
-                    _frontBuffer,
-                    nameof(ToolHapticsRuntime),
-                    nameof(_frontBuffer),
-                    NativeAllocationLifetime.Scene);
-            }
-
-            if (!_backBuffer.IsCreated)
-            {
-                _backBuffer = new NativeArray<HapticCommand>(BufferCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<HapticCommand>[16] - frame-local haptic write buffer merged in LateFrameTick - owner: ToolHapticsRuntime
-                NativeMemorySentinel.RegisterNativeArray(
-                    _backBuffer,
-                    nameof(ToolHapticsRuntime),
-                    nameof(_backBuffer),
-                    NativeAllocationLifetime.Scene);
-            }
+            TryResolveBuffers(out _, out _);
         }
 
         private void DisposeBuffers()
         {
-            DispatcherJobSwap.TryFinalizeCompleted(ref _disposeHandle);
-            bool hasPendingDispose = !_disposeHandle.IsCompleted;
-            JobHandle disposeHandle = hasPendingDispose ? _disposeHandle : default;
-            bool scheduledDispose = false;
-
-            if (_frontBuffer.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_frontBuffer);
-                disposeHandle = _frontBuffer.Dispose(disposeHandle);
-                scheduledDispose = true;
-            }
-
-            if (_backBuffer.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_backBuffer);
-                disposeHandle = _backBuffer.Dispose(disposeHandle);
-                scheduledDispose = true;
-            }
-
-            _frontBuffer = default;
-            _backBuffer = default;
+            _frontBufferHandle = default;
+            _backBufferHandle = default;
             _frontCount = 0;
             _backCount = 0;
-            if (!scheduledDispose)
-                return;
-
-            _disposeHandle = disposeHandle;
-            JobHandle.ScheduleBatchedJobs();
         }
 
         private void ClearBuffers()
@@ -464,10 +472,10 @@ namespace Hecton8.Tools
 
         private void ClearFrontBuffer()
         {
-            if (_frontBuffer.IsCreated)
+            if (TryResolveFrontBuffer(out NativeArray<HapticCommand> frontBuffer))
             {
                 for (int i = 0; i < BufferCapacity; i++)
-                    _frontBuffer[i] = default;
+                    frontBuffer[i] = default;
             }
 
             _frontCount = 0;
@@ -480,11 +488,11 @@ namespace Hecton8.Tools
 
         private void ClearBackBuffer(int clearCount)
         {
-            if (_backBuffer.IsCreated)
+            if (TryResolveBackBuffer(out NativeArray<HapticCommand> backBuffer))
             {
                 int boundedClearCount = math.min(math.max(0, clearCount), BufferCapacity);
                 for (int i = 0; i < boundedClearCount; i++)
-                    _backBuffer[i] = default;
+                    backBuffer[i] = default;
             }
 
             _backCount = 0;
@@ -583,12 +591,14 @@ namespace Hecton8.Tools
 
         private bool TrySelectBackBufferSlot(byte priority, out int slotIndex)
         {
-            return TrySelectBufferSlot(_backBuffer, _backCount, priority, out slotIndex);
+            slotIndex = -1;
+            return TryResolveBackBuffer(out NativeArray<HapticCommand> backBuffer) &&
+                   TrySelectBufferSlot(backBuffer, _backCount, priority, out slotIndex);
         }
 
-        private bool TrySelectFrontBufferSlot(byte priority, out int slotIndex)
+        private bool TrySelectFrontBufferSlot(NativeArray<HapticCommand> frontBuffer, byte priority, out int slotIndex)
         {
-            return TrySelectBufferSlot(_frontBuffer, _frontCount, priority, out slotIndex);
+            return TrySelectBufferSlot(frontBuffer, _frontCount, priority, out slotIndex);
         }
 
         private static bool TrySelectBufferSlot(
@@ -635,22 +645,26 @@ namespace Hecton8.Tools
 
         private void StoreBackBufferCommand(int slotIndex, in HapticCommand command)
         {
-            if (!_backBuffer.IsCreated || slotIndex < 0 || slotIndex >= BufferCapacity)
+            if (!TryResolveBackBuffer(out NativeArray<HapticCommand> backBuffer) ||
+                slotIndex < 0 ||
+                slotIndex >= BufferCapacity)
+            {
                 return;
+            }
 
-            _backBuffer[slotIndex] = command;
+            backBuffer[slotIndex] = command;
             _backCount = math.min(BufferCapacity, math.max(_backCount, slotIndex + 1));
         }
 
-        private void MergeCommandIntoFrontBuffer(in HapticCommand command)
+        private void MergeCommandIntoFrontBuffer(NativeArray<HapticCommand> frontBuffer, in HapticCommand command)
         {
-            if (!_frontBuffer.IsCreated || command.DurationRemaining <= 0f)
+            if (!frontBuffer.IsCreated || command.DurationRemaining <= 0f)
                 return;
 
-            if (!TrySelectFrontBufferSlot(command.Priority, out int slotIndex))
+            if (!TrySelectFrontBufferSlot(frontBuffer, command.Priority, out int slotIndex))
                 return;
 
-            _frontBuffer[slotIndex] = command;
+            frontBuffer[slotIndex] = command;
             _frontCount = math.min(BufferCapacity, math.max(_frontCount, slotIndex + 1));
         }
 

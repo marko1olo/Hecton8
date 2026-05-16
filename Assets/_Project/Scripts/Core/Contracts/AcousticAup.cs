@@ -6,7 +6,7 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// Acoustic-space absolute universe position used by audio propagation and voice virtualization.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct AcousticAup
     {
         public const int CellSizeMeters = 5000;

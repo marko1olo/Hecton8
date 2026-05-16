@@ -48,6 +48,7 @@
 
 using System;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Atmosphere;
 using Hecton8.Audio;
 using Hecton8.Bootstrap;
@@ -818,12 +819,13 @@ namespace Hecton8.Environment
         private bool _biomeFogTransitionActive;
         private bool _biomeFogBlendScheduled;
         private JobHandle _biomeFogBlendHandle;
-        private NativeArray<BiomeTransitionSample> _biomeFogSamples;
-        private NativeArray<BiomeTransitionFogSource> _biomeFogSources;
-        private NativeArray<AbsoluteUniversePositionBlit128> _biomeFogFromAup;
-        private NativeArray<AbsoluteUniversePositionBlit128> _biomeFogToAup;
-        private NativeArray<AbsoluteUniversePositionBlit128> _biomeFogPlayerAup;
-        private NativeArray<BiomeTransitionFogResult> _biomeFogResults;
+        private IDataVault _biomeFogVault;
+        private VaultBufferHandle<BiomeTransitionSample> _biomeFogSamplesHandle;
+        private VaultBufferHandle<BiomeTransitionFogSource> _biomeFogSourcesHandle;
+        private VaultBufferHandle<AbsoluteUniversePositionBlit128> _biomeFogFromAupHandle;
+        private VaultBufferHandle<AbsoluteUniversePositionBlit128> _biomeFogToAupHandle;
+        private VaultBufferHandle<AbsoluteUniversePositionBlit128> _biomeFogPlayerAupHandle;
+        private VaultBufferHandle<BiomeTransitionFogResult> _biomeFogResultsHandle;
         private WorldProceduralFaunaMood _currentFaunaMood;
         private string _currentFaunaAmbienceSummary;
         private float _ecologySuspendedMotesMultiplier = 1f;
@@ -2098,6 +2100,7 @@ namespace Hecton8.Environment
             _soundscapeRuntime = GlobalRegistry.Soundscape;
             _mapMagicRuntime = GlobalRegistry.MapMagic;
             _playerRuntimeContext = GlobalRegistry.Player;
+            _biomeFogVault = GlobalRegistry.DataVault;
 
             if (depthZoneDirector == null)
                 depthZoneDirector = GlobalRegistry.DepthZone;
@@ -2174,6 +2177,12 @@ namespace Hecton8.Environment
                     _playerTransportCoordinator = null;
                     _nextRuntimePlayerCameraResolveTime = float.NegativeInfinity;
                     ResolvePlayerCamera();
+                    break;
+
+                case GlobalRegistryServiceSlot.DataVault:
+                    if (!_biomeFogBlendScheduled)
+                        ReleaseBiomeFogBlendBuffers();
+                    _biomeFogVault = currentService as IDataVault;
                     break;
 
                 case GlobalRegistryServiceSlot.FluidRuntime:
@@ -3526,30 +3535,41 @@ namespace Hecton8.Environment
                 return;
             }
 
+            if (!TryResolveBiomeFogBlendBuffers(
+                    out NativeArray<BiomeTransitionSample> samples,
+                    out NativeArray<BiomeTransitionFogSource> sources,
+                    out NativeArray<AbsoluteUniversePositionBlit128> fromAup,
+                    out NativeArray<AbsoluteUniversePositionBlit128> toAup,
+                    out NativeArray<AbsoluteUniversePositionBlit128> playerAup,
+                    out NativeArray<BiomeTransitionFogResult> results))
+            {
+                return;
+            }
+
             Transform cameraTransform = playerCamera;
             Vector3 playerPosition = cameraTransform != null ? cameraTransform.position : Vector3.zero;
             _biomeFogFallbackBlend01 = math.saturate(_biomeFogFallbackBlend01 + math.max(0.001f, lerpT));
-            _biomeFogSamples[0] = new BiomeTransitionSample
+            samples[0] = new BiomeTransitionSample
             {
                 FromBiomeId = _biomeFogFromId,
                 ToBiomeId = _biomeFogToId,
                 Blend255 = (byte)math.clamp((int)(_biomeFogFallbackBlend01 * 255f + 0.5f), 0, 255),
                 Flags = 0
             };
-            _biomeFogSources[_biomeFogFromId] = BuildBiomeFogSource(_biomeFogFromId, _biomeFogFromProfile);
-            _biomeFogSources[_biomeFogToId] = BuildBiomeFogSource(_biomeFogToId, _biomeFogToProfile);
-            _biomeFogFromAup[0] = _biomeFogTransitionFromAup;
-            _biomeFogToAup[0] = _biomeFogTransitionToAup;
-            _biomeFogPlayerAup[0] = BuildAupFromRuntimePosition(playerPosition);
+            sources[_biomeFogFromId] = BuildBiomeFogSource(_biomeFogFromId, _biomeFogFromProfile);
+            sources[_biomeFogToId] = BuildBiomeFogSource(_biomeFogToId, _biomeFogToProfile);
+            fromAup[0] = _biomeFogTransitionFromAup;
+            toAup[0] = _biomeFogTransitionToAup;
+            playerAup[0] = BuildAupFromRuntimePosition(playerPosition);
 
             BiomeTransitionFogBlendJob job = new BiomeTransitionFogBlendJob
             {
-                Samples = _biomeFogSamples,
-                FogSourcesByBiomeId = _biomeFogSources,
-                FromAup = _biomeFogFromAup,
-                ToAup = _biomeFogToAup,
-                PlayerAup = _biomeFogPlayerAup,
-                Results = _biomeFogResults,
+                Samples = samples,
+                FogSourcesByBiomeId = sources,
+                FromAup = fromAup,
+                ToAup = toAup,
+                PlayerAup = playerAup,
+                Results = results,
                 TransitionLengthMeters = Mathf.Max(4f, biomeFogTransitionLengthMeters)
             };
 
@@ -3566,7 +3586,9 @@ namespace Hecton8.Environment
                 return;
 
             _biomeFogBlendScheduled = false;
-            CommitBiomeFogBlendResult(_biomeFogResults[0]);
+            NativeArray<BiomeTransitionFogResult> results = ResolveBiomeFogResults();
+            if (results.IsCreated && results.Length > 0)
+                CommitBiomeFogBlendResult(results[0]);
         }
 
         private void CommitBiomeFogBlendResult(in BiomeTransitionFogResult result)
@@ -3592,64 +3614,126 @@ namespace Hecton8.Environment
             if (HasPartialBiomeFogBlendBuffers())
                 ReleaseBiomeFogBlendBuffers();
 
-            _biomeFogSamples = new NativeArray<BiomeTransitionSample>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<BiomeTransitionSample>[1] - biome fog transition sample lane - owner: HectonUnderwaterVisuals
-            _biomeFogSources = new NativeArray<BiomeTransitionFogSource>(BiomeFogSourceCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<BiomeTransitionFogSource>[8] - visual-family fog source LUT - owner: HectonUnderwaterVisuals
-            _biomeFogFromAup = new NativeArray<AbsoluteUniversePositionBlit128>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<AbsoluteUniversePositionBlit128>[1] - biome fog source AUP anchor - owner: HectonUnderwaterVisuals
-            _biomeFogToAup = new NativeArray<AbsoluteUniversePositionBlit128>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<AbsoluteUniversePositionBlit128>[1] - biome fog target AUP anchor - owner: HectonUnderwaterVisuals
-            _biomeFogPlayerAup = new NativeArray<AbsoluteUniversePositionBlit128>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<AbsoluteUniversePositionBlit128>[1] - player AUP sample for biome fog transition - owner: HectonUnderwaterVisuals
-            _biomeFogResults = new NativeArray<BiomeTransitionFogResult>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<BiomeTransitionFogResult>[1] - biome fog transition result lane - owner: HectonUnderwaterVisuals
+            IDataVault vault = _biomeFogVault ?? GlobalRegistry.DataVault;
+            if (vault == null)
+                return false;
 
-            NativeMemorySentinel.RegisterNativeArray(_biomeFogSamples, nameof(HectonUnderwaterVisuals), nameof(_biomeFogSamples), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_biomeFogSources, nameof(HectonUnderwaterVisuals), nameof(_biomeFogSources), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_biomeFogFromAup, nameof(HectonUnderwaterVisuals), nameof(_biomeFogFromAup), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_biomeFogToAup, nameof(HectonUnderwaterVisuals), nameof(_biomeFogToAup), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_biomeFogPlayerAup, nameof(HectonUnderwaterVisuals), nameof(_biomeFogPlayerAup), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_biomeFogResults, nameof(HectonUnderwaterVisuals), nameof(_biomeFogResults), NativeAllocationLifetime.Scene);
-            return true;
+            _biomeFogVault = vault;
+            _biomeFogSamplesHandle = vault.GetBufferHandle<BiomeTransitionSample>(
+                BufferID.UnderwaterBiomeFogSamples,
+                1,
+                SystemID.GraphicsScalability,
+                NativeArrayOptions.ClearMemory);
+            _biomeFogSourcesHandle = vault.GetBufferHandle<BiomeTransitionFogSource>(
+                BufferID.UnderwaterBiomeFogSources,
+                BiomeFogSourceCapacity,
+                SystemID.GraphicsScalability,
+                NativeArrayOptions.ClearMemory);
+            _biomeFogFromAupHandle = vault.GetBufferHandle<AbsoluteUniversePositionBlit128>(
+                BufferID.UnderwaterBiomeFogFromAup,
+                1,
+                SystemID.GraphicsScalability,
+                NativeArrayOptions.ClearMemory);
+            _biomeFogToAupHandle = vault.GetBufferHandle<AbsoluteUniversePositionBlit128>(
+                BufferID.UnderwaterBiomeFogToAup,
+                1,
+                SystemID.GraphicsScalability,
+                NativeArrayOptions.ClearMemory);
+            _biomeFogPlayerAupHandle = vault.GetBufferHandle<AbsoluteUniversePositionBlit128>(
+                BufferID.UnderwaterBiomeFogPlayerAup,
+                1,
+                SystemID.GraphicsScalability,
+                NativeArrayOptions.ClearMemory);
+            _biomeFogResultsHandle = vault.GetBufferHandle<BiomeTransitionFogResult>(
+                BufferID.UnderwaterBiomeFogResults,
+                1,
+                SystemID.GraphicsScalability,
+                NativeArrayOptions.ClearMemory);
+            return AreBiomeFogBlendBuffersCreated();
         }
 
         private bool AreBiomeFogBlendBuffersCreated()
         {
-            return _biomeFogSamples.IsCreated &&
-                   _biomeFogSources.IsCreated &&
-                   _biomeFogFromAup.IsCreated &&
-                   _biomeFogToAup.IsCreated &&
-                   _biomeFogPlayerAup.IsCreated &&
-                   _biomeFogResults.IsCreated;
+            return _biomeFogSamplesHandle.IsCreated &&
+                   _biomeFogSourcesHandle.IsCreated &&
+                   _biomeFogFromAupHandle.IsCreated &&
+                   _biomeFogToAupHandle.IsCreated &&
+                   _biomeFogPlayerAupHandle.IsCreated &&
+                   _biomeFogResultsHandle.IsCreated;
         }
 
         private bool HasPartialBiomeFogBlendBuffers()
         {
-            return _biomeFogSamples.IsCreated ||
-                   _biomeFogSources.IsCreated ||
-                   _biomeFogFromAup.IsCreated ||
-                   _biomeFogToAup.IsCreated ||
-                   _biomeFogPlayerAup.IsCreated ||
-                   _biomeFogResults.IsCreated;
+            return _biomeFogSamplesHandle.IsCreated ||
+                   _biomeFogSourcesHandle.IsCreated ||
+                   _biomeFogFromAupHandle.IsCreated ||
+                   _biomeFogToAupHandle.IsCreated ||
+                   _biomeFogPlayerAupHandle.IsCreated ||
+                   _biomeFogResultsHandle.IsCreated;
         }
 
         private void ReleaseBiomeFogBlendBuffers()
         {
-            JobHandle disposeHandle = _biomeFogBlendScheduled ? _biomeFogBlendHandle : default;
-            DisposeBiomeFogArray(ref _biomeFogSamples, ref disposeHandle);
-            DisposeBiomeFogArray(ref _biomeFogSources, ref disposeHandle);
-            DisposeBiomeFogArray(ref _biomeFogFromAup, ref disposeHandle);
-            DisposeBiomeFogArray(ref _biomeFogToAup, ref disposeHandle);
-            DisposeBiomeFogArray(ref _biomeFogPlayerAup, ref disposeHandle);
-            DisposeBiomeFogArray(ref _biomeFogResults, ref disposeHandle);
-            _biomeFogBlendHandle = disposeHandle;
-            _biomeFogBlendScheduled = false;
-        }
-
-        private static void DisposeBiomeFogArray<T>(ref NativeArray<T> array, ref JobHandle disposeHandle)
-            where T : struct
-        {
-            if (!array.IsCreated)
+            if (_biomeFogBlendScheduled)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            disposeHandle = array.Dispose(disposeHandle);
-            array = default;
+            _biomeFogSamplesHandle = default;
+            _biomeFogSourcesHandle = default;
+            _biomeFogFromAupHandle = default;
+            _biomeFogToAupHandle = default;
+            _biomeFogPlayerAupHandle = default;
+            _biomeFogResultsHandle = default;
+            _biomeFogVault = null;
+        }
+
+        private bool TryResolveBiomeFogBlendBuffers(
+            out NativeArray<BiomeTransitionSample> samples,
+            out NativeArray<BiomeTransitionFogSource> sources,
+            out NativeArray<AbsoluteUniversePositionBlit128> fromAup,
+            out NativeArray<AbsoluteUniversePositionBlit128> toAup,
+            out NativeArray<AbsoluteUniversePositionBlit128> playerAup,
+            out NativeArray<BiomeTransitionFogResult> results)
+        {
+            samples = default;
+            sources = default;
+            fromAup = default;
+            toAup = default;
+            playerAup = default;
+            results = default;
+            IDataVault vault = _biomeFogVault ?? GlobalRegistry.DataVault;
+            if (vault == null)
+                return false;
+
+            _biomeFogVault = vault;
+            samples = _biomeFogSamplesHandle.Resolve(vault);
+            sources = _biomeFogSourcesHandle.Resolve(vault);
+            fromAup = _biomeFogFromAupHandle.Resolve(vault);
+            toAup = _biomeFogToAupHandle.Resolve(vault);
+            playerAup = _biomeFogPlayerAupHandle.Resolve(vault);
+            results = _biomeFogResultsHandle.Resolve(vault);
+            return samples.IsCreated &&
+                   sources.IsCreated &&
+                   fromAup.IsCreated &&
+                   toAup.IsCreated &&
+                   playerAup.IsCreated &&
+                   results.IsCreated &&
+                   samples.Length > 0 &&
+                   sources.Length > _biomeFogFromId &&
+                   sources.Length > _biomeFogToId &&
+                   fromAup.Length > 0 &&
+                   toAup.Length > 0 &&
+                   playerAup.Length > 0 &&
+                   results.Length > 0;
+        }
+
+        private NativeArray<BiomeTransitionFogResult> ResolveBiomeFogResults()
+        {
+            IDataVault vault = _biomeFogVault ?? GlobalRegistry.DataVault;
+            if (vault == null || !_biomeFogResultsHandle.IsCreated)
+                return default;
+
+            _biomeFogVault = vault;
+            return _biomeFogResultsHandle.Resolve(vault);
         }
 
         private BiomeTransitionFogSource BuildBiomeFogSource(byte visualFamilyId, HectonBiomeProfile profile)

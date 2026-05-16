@@ -68,3 +68,36 @@ Validation:
 - Compass packing verified: `CompassBlackBoxEntry`, `CompassStateDTO`, `InertialNavigationSnapshot`, `AnomalyProximitySignal`, and `CompassCalibratedSignal` are `Pack = 1`.
 - `dotnet build Hecton8.Core.csproj --no-restore -m:1 /v:minimal` still fails outside compass: missing `Hecton8.Core.Bucketing` / `ModuloSimulationBucketer` in `GameBootstrapper`.
 - `dotnet build Assembly-CSharp.csproj -m:1 /v:minimal` timed out after 124 seconds. No green build claim.
+
+## 2026-05-16 - Titanium binding and platform audit pass
+
+What was still wrong:
+- `SlowTick()` still contained a dependency recovery path that read `GlobalRegistry` after gameplay started.
+- The compass runtime had no cold public binding API for a physical tool or bootstrap-owned dependency injection.
+- ARM64 layout was `Pack = 1` but not size-explicit for compass state/snapshot/blackbox.
+- GUID scan found no serialized prefab/scene reference to `DiegeticGyroCompassRuntime`; scene wiring is not proven.
+
+What was done:
+- Removed the SlowTick registry fallback. Ticks now use cached `_playerContext`/`_vault` or return.
+- Added `InjectDependencies(...)` for cold bootstrap injection.
+- Added `ConfigurePhysicalBinding(...)` for physical tool binding of root, dial pivot, TMP label, indirect mesh, and material.
+- Made struct sizes explicit: `CompassBlackBoxEntry` = 40 bytes, `CompassStateDTO` = 136 bytes, `InertialNavigationSnapshot` = 120 bytes. Compass signals remain explicit 80/32 bytes in core.
+- Added High/Ultra-only optional anomaly failure particles, gated by power, anomaly > 0.8, quality tier, system stress, and a 128-particle hard cap per late-frame pass.
+
+Cinematic cheats used:
+- MX350 keeps the triangle-noise Dear Lie and no particle emission.
+- High/Ultra spends saved CPU on local compass-glass salt/static burst emission when a physical emitter is assigned.
+- The physical binding API preserves diegetic mapping without adding a screen-space fallback.
+
+Exact microseconds saved:
+- Removed SlowTick dependency polling: estimated 1-4 us per SlowTick on stressed/low-tier runs.
+- Explicit struct sizes: no frame saving; reduces ARM64/Quest layout ambiguity.
+- Optional particle burst: zero cost on MX350/mobile/stress paths; High/Ultra may deliberately spend 0-20 us/frame during saturated anomalies.
+
+Validation:
+- Forbidden-pattern scan passed for navigation domain: no private `NativeArray`, `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, `.ToString`, TMP `.text`, `SetText`, `Camera.main`, euler polling, EventBus, managed delegates, `new List`, `foreach`, `GameObject.Find`, coroutine, or direct `H8Memory.Allocate`.
+- Duplicate scan found only one `AnomalyProximitySignal` and one `CompassCalibratedSignal`, both in `GlobalSignals.cs`.
+- Serialized GUID scan found only the script `.meta`; no prefab/scene binding exists yet. Runtime code is ready, Unity scene wiring remains unverified.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 /v:minimal` fails outside compass at `EcosystemRuntimeInstaller.cs` missing `Hecton8.AI.Ecosystem` and `SubmarineFluidDynamics.cs` missing `VaultNativeBuffer<>`.
+- `dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal` fails outside compass because `Temp/obj/Assembly-CSharp/project.assets.json` is missing.
+- Final status remains not `VERIFIED MASTER GRADE`; build and scene binding are not proven.

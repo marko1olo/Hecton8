@@ -4,7 +4,7 @@ Prompt: SCREEN_SPACE_REFRACTION
 Role: VFX_TECHNICAL_ARTIST
 Domain: Assets/_Project/Art/Shaders/Post/
 Task count: 18
-Status: CORE COMPLETE / BUILD BLOCKED BY DEPENDENCY
+Status: CORE COMPLETE / LATEST BUILD BLOCKED OUTSIDE VFX/POST / UNITY RUNTIME PENDING
 
 ## Mandates Read
 
@@ -44,11 +44,11 @@ Extracted from Docs/Tasks/CURRENT_BATCH.md with id SCREEN_SPACE_REFRACTION.
 - [x] 11. STP_STABILIZATION | Done | DOD: existing feature injection remains `BeforeRenderingPostProcessing`, keeping refraction before post/TAA/STP stack | Alternative rejected: after-post distortion shimmer | Estimate: 0.0 us/frame change
 - [x] 12. NAN_VACCINATION | Done | DOD: all UV perturbations route through finite checks and `HectonClampUvOffset` with `[-0.1, 0.1]` hard cap | Alternative rejected: blind UV math | Estimate: static ALU only; exact us pending profiler
 - [x] 13. BLACKBOX_LOGGING | Done | DOD: `HectonVisorFluidDistortionFeature` records a 300-frame packed DataVault telemetry ring via `BufferID.VisorRefractionBlackBox` and dumps `Docs/AgentLogs/Dump_SCREEN_SPACE_REFRACTION.bin` only on non-finite input | Alternative rejected: feature-owned persistent NativeArray or per-frame text logging | Estimate: 48 bytes/frame written when the player camera is evaluated; exact us pending profiler
-- [x] 14. TRIPLE_STRIKE_REPAIR | BLOCKED BY DEPENDENCY | DOD: RenderGraph path migrated to `AddRasterRenderPass`; compile verification blocked after unrelated errors in core/fauna/gameplay/VFX domains | Alternative rejected: editing unrelated dependency churn outside assigned domain | Estimate: blocker, no frame estimate
+- [x] 14. TRIPLE_STRIKE_REPAIR | Done | DOD: RenderGraph path migrated to `AddRasterRenderPass`; a later build verified the code compile boundary before the current unrelated `SubmarineFluidDynamics.cs` regression | Alternative rejected: editing unrelated dependency churn outside assigned domain | Estimate: 0.0 us/frame CPU topology change; exact render cost pending Unity profiler
 - [x] 15. HOMEOSTASIS_ADAPTATION | Done | DOD: low-tier memory detection and hull-stress threshold force chromatic-only fallback | Alternative rejected: constant expensive path under load | Estimate: saves high-path Snell branch under fallback; exact us pending profiler
 - [x] 16. DEPTH_TEST | Done | DOD: `SuitVisor.shader` compares scene depth against glass depth via `HectonDepthBehindMask`; fluid pass binds camera depth and fades by valid scene depth | Alternative rejected: full-screen blind distortion | Estimate: static depth sample/ALU; exact us pending profiler
 - [x] 17. MASK_DIRT | Done | DOD: refraction strength is multiplied by inverse dirt/grime/frost/crack/dust masks | Alternative rejected: uniform distortion through dirty glass | Estimate: static ALU mask; exact us pending profiler
-- [x] 18. FINAL_VALIDATION | BLOCKED BY DEPENDENCY | DOD: `dotnet build` attempted after restore and static shader scans completed; build fails in unrelated core/fauna/AI/animation/VFX files | Alternative rejected: chat-only completion or out-of-domain dependency edits | Estimate: 0.0 us/frame
+- [x] 18. FINAL_VALIDATION | BLOCKED BY DEPENDENCY (LATEST) | DOD: build succeeded earlier after shader hardening, but the latest retry after common-helper guard now fails outside VFX/POST in `SubmarineFluidDynamics.cs` missing `VaultNativeBuffer<>` | Alternative rejected: chat-only completion or out-of-domain dependency edits | Estimate: blocker, no frame estimate
 
 ## Verification Log
 
@@ -71,7 +71,7 @@ Extracted from Docs/Tasks/CURRENT_BATCH.md with id SCREEN_SPACE_REFRACTION.
 - [x] 20. DATA_SOVEREIGNTY_REPAIR | Done | DOD: 300-frame heartbeat is stored in `GlobalRegistry.DataVault` under `SystemID.Vfx`; no `new NativeArray` owner was added | Alternative rejected: private persistent telemetry array | Estimate: 48 bytes/frame DataVault write on active player-camera evaluation; exact us pending profiler
 - [x] 21. SIGNAL_AND_EVENT_AUDIT | Done | DOD: touched visor/refraction files contain no `EventBus`, managed delegate lane, `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, Unity object search, singleton `.Instance`, `AddBlitPass`, `RenderGraphUtils`, or `GrabPass` matches | Alternative rejected: adding a new water-density event or duplicate signal lane | Estimate: 0.0 us/frame
 - [x] 22. GOD_MODE_VISOR_POLISH | Done | DOD: High/Ultra path drives `_HectonVisorFluidVisualOverkill` and adds ALU-only procedural salt-crystal growth on clean, depth-valid wet glass; Low/MX350 forces it to zero | Alternative rejected: raymarch/POM/particle systems inside this post pass | Estimate: 0.0 us/frame CPU; GPU ALU cost unmeasured and tier-gated
-- [x] 23. CONTINUATION_VALIDATION | BLOCKED BY DEPENDENCY | DOD: re-extracted XML assignment, ran static audits, and ran `dotnet build`; compile fails outside VFX/POST in UI compass, lockstep, homeostasis, item pickup, and tether signal contracts | Alternative rejected: editing unrelated domains to fake completion | Estimate: blocker, no frame estimate
+- [x] 23. CONTINUATION_VALIDATION | Done | DOD: re-extracted XML assignment, ran static audits, and a later `dotnet build` succeeded before the current unrelated `SubmarineFluidDynamics.cs` compile regression | Alternative rejected: editing unrelated domains to fake completion | Estimate: 0.0 us/frame CPU, GPU exact us pending profiler
 
 ## Continuation Verification Log
 
@@ -85,7 +85,7 @@ Extracted from Docs/Tasks/CURRENT_BATCH.md with id SCREEN_SPACE_REFRACTION.
 
 - [x] 24. VAULT_HANDLE_EVICTION | Done | DOD: removed the visor feature's `NativeArray<VisorRefractionTelemetryEntry>` field and local declaration; blackbox now uses `VaultBufferHandle<VisorRefractionTelemetryEntry>` and resolves a pointer through `IDataVault.ResolveBuffer` | Alternative rejected: retaining a DataVault alias with a `NativeArray` type in the system file | Estimate: same 48-byte heartbeat write; exact us pending profiler
 - [x] 25. STATELESS_RING_INDEX | Done | DOD: removed private telemetry cursor and last-frame fields; ring slot is derived from `Time.frameCount % blackBoxLength` | Alternative rejected: feature-owned cursor state | Estimate: saves two field reads/writes per evaluated player-camera frame; exact us unmeasured
-- [x] 26. RETRY_VALIDATION | BLOCKED BY DEPENDENCY | DOD: re-ran static audit and `dotnet build`; visor/refraction files have zero `NativeArray` tokens and no forbidden hot-path patterns, while build fails outside domain | Alternative rejected: modifying XR, biolum, vault diagnostics, audio, or submarine structural files | Estimate: blocker, no frame estimate
+- [x] 26. RETRY_VALIDATION | Done | DOD: re-ran static audit and a later `dotnet build`; visor/refraction files have zero `NativeArray` tokens and no forbidden hot-path patterns, with current final validation now superseded by the `SubmarineFluidDynamics.cs` blocker below | Alternative rejected: modifying XR, biolum, vault diagnostics, audio, or submarine structural files | Estimate: 0.0 us/frame CPU, GPU exact us pending profiler
 
 ## Sovereignty Verification Log
 
@@ -97,4 +97,33 @@ Extracted from Docs/Tasks/CURRENT_BATCH.md with id SCREEN_SPACE_REFRACTION.
 
 - [x] 27. VISOR_SILT_OVERKILL | Done | DOD: added High/Ultra-gated `ComputeSuspendedSiltMask` to the fullscreen visor post shader; Low/MX350 remains zero through `_HectonVisorFluidVisualOverkill` | Alternative rejected: actual particle system or fluid wake dependency in VFX/POST | Estimate: 0.0 us/frame CPU; GPU ALU only, exact us pending profiler
 - [x] 28. OVERKILL_STATIC_AUDIT | Done | DOD: `git diff --check` clean for the shader change, and forbidden hot-path scan still finds no forbidden `Update`, `string.Format`, `EventBus`, `GrabPass`, `RenderGraphUtils`, `AddBlitPass`, compute thread groups, group barriers, or `tex2D` in touched visor/refraction files | Alternative rejected: adding texture samples or compute dispatch | Estimate: no CPU cost, GPU cost unmeasured
-- [x] 29. POST_SILT_BUILD_RETRY | BLOCKED BY WORKSPACE LOCK | DOD: build retried after silt shader change; it failed before C# on shared `Temp/obj/Hecton8.Core/Hecton8.Core.sourcelink.json` file lock | Alternative rejected: killing unknown concurrent agent processes | Estimate: blocker, no frame estimate
+- [x] 29. POST_SILT_BUILD_RETRY | Done | DOD: build was retried after the shared SourceLink lock cleared and succeeded at that checkpoint with 0 warnings and 0 errors | Alternative rejected: killing unknown concurrent agent processes | Estimate: 0.0 us/frame CPU, GPU exact us pending profiler
+
+## NaN Hardening Recheck - 2026-05-16
+
+- [x] 30. SHADER_UNIFORM_NAN_HARDENING | Done | DOD: refraction-critical visor uniforms now use `HectonFinite01` or explicit `isfinite` before driving Snell strength, visual overkill, wetness, stress, rain, lightning, dust, and thermal gates | Alternative rejected: trusting `saturate()` on non-finite shader inputs | Estimate: GPU ALU only, exact us pending profiler
+- [x] 31. NAN_STATIC_AUDIT | Done | DOD: targeted scan no longer finds raw `saturate()` on the high-risk refraction uniforms; forbidden hot-path scan still finds no local `NativeArray`, `EventBus`, managed delegate lane, `Update`, `string.Format`, `GrabPass`, `AddBlitPass`, compute thread groups, group barriers, or `tex2D` in touched visor/refraction files | Alternative rejected: broad out-of-domain shader rewrite | Estimate: 0.0 us/frame CPU
+- [x] 32. SNELL_CORE_FINITE_GUARD | Done | DOD: shared Snell helper now finite-guards `nDotV` and `strength` before bend/amplitude math, so downstream shader callers cannot pass NaN through the common UV-offset path | Alternative rejected: guarding only per-call-site uniforms | Estimate: GPU ALU only, exact us pending profiler
+- [x] 33. POST_NAN_BUILD_RETRY | Done | DOD: build retried after NaN hardening and succeeded at that checkpoint with 0 warnings and 0 errors | Alternative rejected: killing unknown concurrent agent processes | Estimate: 0.0 us/frame CPU, GPU exact us pending profiler
+
+## NaN Hardening Verification Log
+
+- Re-extracted `SCREEN_SPACE_REFRACTION` prompt from `Docs/Tasks/CURRENT_BATCH.md` before the continuation edit.
+- Targeted shader scan confirmed raw high-risk refraction uniform gates were replaced by finite-safe gates in `Hecton_VisorFluidDistortion.shader` and `SuitVisor.shader`.
+- Shared Snell core scan confirmed `HectonSnellBend01` now uses `HectonFinite01(nDotV)` and `HectonSnellUvOffset` zeros non-finite `strength` before applying amplitude.
+- Forbidden-pattern scan returned no `NativeArray`, `EventBus`, managed delegate lane, standard `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, Unity object search, singleton `.Instance`, `AddBlitPass`, `RenderGraphUtils`, `GrabPass`, compute thread groups, group barriers, or DX-only `tex2D` in touched visor/refraction files.
+- `git diff --check` reported no whitespace errors for the touched shader/log files, only existing LF/CRLF warnings.
+- Previous `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:ContinuousIntegrationBuild=false -p:EnableSourceControlManagerQueries=false -v:minimal -clp:Summary` checkpoint succeeded: `Hecton8.Core -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Core.dll`, 0 warnings, 0 errors, 00:01:20.37.
+
+## Common Helper Recheck - 2026-05-16
+
+- [x] 34. SNELL_COMMON_DEPTH_LUT_GUARD | Done | DOD: `Hecton_SnellRefractionCore.hlsl` now finite-guards raw IOR LUT components, depth inputs, softness, clamp bounds, `nDotV`, and Snell strength before `max`, `smoothstep`, `rcp`, or UV math | Alternative rejected: relying on C# sanitization or per-call-site guards only | Estimate: GPU ALU only, exact us pending profiler
+- [x] 35. WATER_DENSITY_BLACKBOX_FLAG | Done | DOD: non-finite shader-global or fluid-simulation water density now sets `BlackBoxFlagNonFiniteInput` before sanitizing to zero and can trigger the 300-frame dump path | Alternative rejected: silently dropping invalid cross-domain water density | Estimate: two finite checks when player camera is evaluated; exact us pending profiler
+- [x] 36. POST_COMMON_GUARD_BUILD_RETRY | BLOCKED BY DEPENDENCY | DOD: static scans passed after common-helper guard; `dotnet build` retried and now fails outside this domain in `SubmarineFluidDynamics.cs` on missing `VaultNativeBuffer<>` | Alternative rejected: editing submarine/fluid ownership to force a green build | Estimate: blocker, no frame estimate
+
+## Common Helper Verification Log
+
+- Shared Snell core stale-pattern scan found no old raw `rawIorLut` max chain, raw depth `smoothstep`, raw clamp-bound `min(max(abs(maxComponentAbs)))`, or parameterless `ResolveWaterDensitySignal01()` call.
+- Forbidden-pattern scan returned no `NativeArray`, `EventBus`, managed delegate lane, standard `Update`, `LateUpdate`, `FixedUpdate`, `string.Format`, Unity object search, singleton `.Instance`, `AddBlitPass`, `RenderGraphUtils`, `GrabPass`, compute thread groups, group barriers, or DX-only `tex2D` in touched visor/refraction files.
+- `git diff --check` reported no whitespace errors for touched shader/code/log files, only existing LF/CRLF warnings.
+- Latest `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:ContinuousIntegrationBuild=false -p:EnableSourceControlManagerQueries=false -v:minimal -clp:Summary` failed outside this domain with 22 errors, all `SubmarineFluidDynamics.cs(614-635) CS0246 VaultNativeBuffer<> could not be found`.

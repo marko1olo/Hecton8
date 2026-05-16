@@ -1,0 +1,261 @@
+using System;
+using System.Collections.Generic;
+using Hecton8.Core.Memory;
+using Unity.Mathematics;
+using UnityEngine;
+
+namespace Hecton8.Core.Bridge
+{
+    [CreateAssetMenu(fileName = "H8DesignData", menuName = "Hecton-8/Bridge/Design Data Facade")]
+    public sealed class H8DesignDataFacade : ScriptableObject
+    {
+        [Serializable]
+        public sealed class FloatBinding
+        {
+            [SerializeField] private bool enabled = true;
+            [SerializeField] private string displayName = "SubSpeed";
+            [SerializeField] private uint fieldHash;
+            [SerializeField] private int offsetBytes;
+            [SerializeField] private float value = 1f;
+            [SerializeField] private float safeDefault = 1f;
+            [SerializeField] private float minValue = 0f;
+            [SerializeField] private float maxValue = 100f;
+            [SerializeField] private bool critical;
+            [SerializeField] private bool liveTuning = true;
+            [SerializeField] private bool affectsVram;
+            [SerializeField] private int textureWidth = 1024;
+            [SerializeField] private int textureHeight = 1024;
+            [SerializeField] private int textureMipCount = 8;
+            [SerializeField] private int textureBytesPerPixel = 4;
+            [SerializeField] private uint oneDimensionalLutHash;
+            [SerializeField] private uint highTierVisualHash;
+            [SerializeField] private float lastAppliedValue;
+
+            public bool Enabled => enabled;
+            public string DisplayName => displayName;
+            public uint FieldHash => fieldHash;
+            public int OffsetBytes => offsetBytes;
+            public float Value => value;
+            public float SafeDefault => safeDefault;
+            public float MinValue => minValue;
+            public float MaxValue => maxValue;
+            public bool Critical => critical;
+            public bool LiveTuning => liveTuning;
+            public bool AffectsVram => affectsVram;
+            public int TextureWidth => textureWidth;
+            public int TextureHeight => textureHeight;
+            public int TextureMipCount => textureMipCount;
+            public int TextureBytesPerPixel => textureBytesPerPixel;
+            public uint OneDimensionalLutHash => oneDimensionalLutHash;
+            public uint HighTierVisualHash => highTierVisualHash;
+            public float LastAppliedValue => lastAppliedValue;
+
+            public void ConfigureDefaults(string name, int offset, float defaultValue, float min, float max, bool isCritical)
+            {
+                displayName = name;
+                offsetBytes = math.max(0, offset);
+                value = defaultValue;
+                safeDefault = defaultValue == 0f ? 1f : defaultValue;
+                minValue = min;
+                maxValue = max;
+                critical = isCritical;
+                liveTuning = true;
+                RebuildHash();
+                lastAppliedValue = value;
+            }
+
+            public bool SanitizeAndDetectChange(out float oldSerializedValue)
+            {
+                oldSerializedValue = lastAppliedValue;
+                if (string.IsNullOrWhiteSpace(displayName))
+                    displayName = "DesignValue";
+
+                RebuildHash();
+                offsetBytes = math.max(0, offsetBytes);
+                textureWidth = math.max(1, textureWidth);
+                textureHeight = math.max(1, textureHeight);
+                textureMipCount = math.max(1, textureMipCount);
+                textureBytesPerPixel = math.max(1, textureBytesPerPixel);
+
+                if (!math.isfinite(safeDefault) || (critical && math.abs(safeDefault) <= float.Epsilon))
+                    safeDefault = 1f;
+
+                if (!math.isfinite(minValue))
+                    minValue = value;
+                if (!math.isfinite(maxValue))
+                    maxValue = math.max(minValue + 1f, value);
+                if (maxValue <= minValue)
+                    maxValue = minValue + 1f;
+
+                bool invalid = !math.isfinite(value) || (critical && math.abs(value) <= float.Epsilon);
+                if (invalid)
+                    value = safeDefault;
+
+                value = math.clamp(value, minValue, maxValue);
+                bool changed = !Mathf.Approximately(value, lastAppliedValue);
+                lastAppliedValue = value;
+                return changed;
+            }
+
+            public H8DesignValueEntry ToValueEntry(bool designerOverride)
+            {
+                ushort flags = H8DesignValueFlags.None.ToMask();
+                if (critical)
+                    flags |= (ushort)H8DesignValueFlags.Critical;
+                if (liveTuning)
+                    flags |= (ushort)H8DesignValueFlags.LiveTuning;
+                if (designerOverride)
+                    flags |= (ushort)H8DesignValueFlags.DesignerOverride;
+                if (affectsVram)
+                    flags |= (ushort)H8DesignValueFlags.VramAffecting;
+                if (oneDimensionalLutHash != 0u)
+                    flags |= (ushort)H8DesignValueFlags.UsesOneDimensionalLut;
+                if (highTierVisualHash != 0u)
+                    flags |= (ushort)H8DesignValueFlags.HighTierVisualOverkill;
+
+                return new H8DesignValueEntry
+                {
+                    FieldHash = fieldHash,
+                    OffsetBytes = offsetBytes,
+                    Value = value,
+                    SafeDefault = safeDefault,
+                    MinValue = minValue,
+                    MaxValue = maxValue,
+                    LutSwapHash = oneDimensionalLutHash,
+                    Flags = flags
+                };
+            }
+
+            public long EstimateVramBytes()
+            {
+                return affectsVram
+                    ? H8BridgeFacadeRuntime.EstimateTextureBytes(textureWidth, textureHeight, textureMipCount, textureBytesPerPixel)
+                    : 0L;
+            }
+
+            private void RebuildHash()
+            {
+                fieldHash = H8BridgeHashes.ComputeFnv1A(displayName);
+                if (oneDimensionalLutHash == 0u)
+                    oneDimensionalLutHash = H8BridgeHashes.ComputeFnv1A(displayName, H8BridgeHashes.LutSeed);
+            }
+        }
+
+        [SerializeField] private uint facadeHash = H8BridgeHashes.DesignFacade;
+        [SerializeField] private bool liveTuningEnabled = true;
+        [SerializeField] private bool designerOverride;
+        [SerializeField] private uint oneDimensionalLutHash;
+        [SerializeField] private uint highTierVisualHash;
+        [SerializeField] private List<FloatBinding> floatBindings = new List<FloatBinding>(32);
+        [SerializeField] private uint lastChangedFieldHash;
+
+        public uint FacadeHash => facadeHash == 0u ? H8BridgeHashes.DesignFacade : facadeHash;
+        public bool LiveTuningEnabled => liveTuningEnabled;
+        public bool DesignerOverride => designerOverride;
+        public uint OneDimensionalLutHash => oneDimensionalLutHash;
+        public uint HighTierVisualHash => highTierVisualHash;
+        public uint LastChangedFieldHash => lastChangedFieldHash;
+        public int BindingCount => floatBindings != null ? floatBindings.Count : 0;
+
+        public FloatBinding GetBinding(int index)
+        {
+            return floatBindings != null && index >= 0 && index < floatBindings.Count ? floatBindings[index] : null;
+        }
+
+        public long EstimateVramBytes()
+        {
+            long total = 0L;
+            if (floatBindings == null)
+                return total;
+
+            for (int i = 0; i < floatBindings.Count; i++)
+            {
+                FloatBinding binding = floatBindings[i];
+                if (binding != null)
+                    total += binding.EstimateVramBytes();
+            }
+
+            return total;
+        }
+
+        public bool SyncToVault(IDataVault vault)
+        {
+            ushort flags = designerOverride ? (ushort)H8DesignValueFlags.DesignerOverride : (ushort)0;
+            return H8BridgeFacadeRuntime.SyncDesignData(this, vault, flags);
+        }
+
+        private void Reset()
+        {
+            EnsureDefaultBindings();
+            ValidateBindings(pushLive: false);
+        }
+
+        private void OnValidate()
+        {
+            ValidateBindings(pushLive: true);
+        }
+
+        private void EnsureDefaultBindings()
+        {
+            if (floatBindings == null)
+                floatBindings = new List<FloatBinding>(32);
+
+            if (floatBindings.Count > 0)
+                return;
+
+            FloatBinding subSpeed = new FloatBinding();
+            subSpeed.ConfigureDefaults("SubSpeed", 0, 12f, 0.1f, 80f, true);
+            floatBindings.Add(subSpeed);
+
+            FloatBinding addedMass = new FloatBinding();
+            addedMass.ConfigureDefaults("AddedMass", 4, 1f, 0.01f, 25f, true);
+            floatBindings.Add(addedMass);
+
+            FloatBinding visorLut = new FloatBinding();
+            visorLut.ConfigureDefaults("VisorSaltCrystalLut", 8, 1f, 0f, 1f, false);
+            floatBindings.Add(visorLut);
+        }
+
+        private void ValidateBindings(bool pushLive)
+        {
+            EnsureDefaultBindings();
+            if (facadeHash == 0u)
+                facadeHash = H8BridgeHashes.DesignFacade;
+            if (oneDimensionalLutHash == 0u)
+                oneDimensionalLutHash = H8BridgeHashes.ComputeFnv1A(name, H8BridgeHashes.LutSeed);
+            if (highTierVisualHash == 0u)
+                highTierVisualHash = H8BridgeHashes.ComputeFnv1A(name, H8BridgeHashes.AcousticSeed);
+
+            bool changed = false;
+            for (int i = 0; i < floatBindings.Count; i++)
+            {
+                FloatBinding binding = floatBindings[i];
+                if (binding == null)
+                    continue;
+
+                if (binding.SanitizeAndDetectChange(out _))
+                {
+                    changed = true;
+                    lastChangedFieldHash = binding.FieldHash;
+                }
+            }
+
+            if (!pushLive || !changed || !liveTuningEnabled || !Application.isPlaying)
+                return;
+
+            if (!designerOverride && H8BridgeFacadeRuntime.LiveTuningBlockedByStress())
+                return;
+
+            SyncToVault(GlobalRegistry.DataVault);
+        }
+    }
+
+    internal static class H8DesignValueFlagExtensions
+    {
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        public static ushort ToMask(this H8DesignValueFlags flags)
+        {
+            return (ushort)flags;
+        }
+    }
+}

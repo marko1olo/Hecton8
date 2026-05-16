@@ -52,7 +52,7 @@ namespace Hecton8.Audio.Virtualization
     /// <summary>
     /// Blittable request queued by gameplay audio emitters before physical channel selection.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct VirtualVoiceRequest
     {
         public uint EventID;
@@ -98,7 +98,7 @@ namespace Hecton8.Audio.Virtualization
     /// <summary>
     /// Mutable virtual voice state consumed by the Burst ranking job.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct VirtualVoice
     {
         public uint EventID;
@@ -122,7 +122,7 @@ namespace Hecton8.Audio.Virtualization
     /// <summary>
     /// Selected physical channel candidate after virtual voice ranking.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct VirtualVoiceSelection
     {
         public uint EventID;
@@ -145,7 +145,7 @@ namespace Hecton8.Audio.Virtualization
     /// <summary>
     /// Last virtual voice sort pass counters.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct VirtualVoiceStatistics
     {
         public int Frame;
@@ -161,7 +161,7 @@ namespace Hecton8.Audio.Virtualization
     /// <summary>
     /// Fixed-size black-box entry for the last 300 virtual voice frames.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     public struct VirtualVoiceTelemetryEntry
     {
         public int Frame;

@@ -34,3 +34,17 @@ Solution: Record as an existing dependency wall and continue diagnostics impleme
 Rejected Alternatives: Editing `GameBootstrapper` immediately or inventing broad Bucketing behavior before diagnostics depends on it. That risks architectural drift in another domain.
 Scalability potential: Diagnostics renderer will still self-bucket to 5 Hz using existing tick cadence and fixed counters, independent of the missing bucketer.
 Hardware Impact: Avoids unnecessary domain churn now; estimated 0 us player impact from this recording decision.
+
+## Decision 5 - Vault-Owned Visualizer State
+Problem: A diagnostics system with private `NativeArray` state violates the H-Phi data sovereignty demand and hides memory from the Architect.
+Solution: Added dedicated `BufferID` slots for Architect Eye quads, signal telemetry, sector hashes, runtime state, and black-box history. The runtime asks `GlobalDataVault` for buffers every slow tick and owns no persistent `NativeArray` fields.
+Rejected Alternatives: Component-owned NativeArrays, managed lists, TMP canvases, or per-system event buffers. Those create private memory islands and garbage hazards.
+Scalability potential: Low/MX350 clamps quads and sampled entities; Middle opens more room/sector cells; High increases vector and label density; Ultra uses the same path with larger draw counts for overkill overlays.
+Hardware Impact: One vault-backed buffer upload and one indirect draw replaces hundreds of debug objects. Current estimate is 35-120 us CPU at 5 Hz by tier; render submission is one indirect draw under normal load.
+
+## Decision 6 - Multiplatform Shader Path
+Problem: The visualizer must survive Metal/Quest/Android without DX-only debug shortcuts or compute thread-group assumptions.
+Solution: Used `Graphics.DrawMeshInstancedIndirect` with a structured instance buffer and simple vertex/fragment shaders. No compute dispatch, no group-size dependency, no geometry shader, no UGUI canvas.
+Rejected Alternatives: Compute-generated quads, geometry-shader billboards, `Debug.DrawLine`, or IMGUI runtime overlays. These are brittle on mobile/Metal or allocate.
+Scalability potential: Toaster mode emits coarse hash cells and triangle-line fakes; God-mode increases the same indirect instance count instead of changing architecture.
+Hardware Impact: Steam Deck/MX350 avoids canvas rebuilds and line renderer churn; RTX tier pays only more instance count, not new draw-call classes.

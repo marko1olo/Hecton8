@@ -113,17 +113,18 @@ Verification:
 ## 2026-05-16 | GRAB_IK_PROJECTION | CONTACT AND NAN VACCINE PASS
 
 What was wrong:
-- The SDF contact branch used a different signed-distance formula than the plane branch. That could skip deep penetration and over-push shallow contact.
+- The SDF contact branch needed an explicit convention audit against the rest of the project. Project SDF density is solid at `>= 0`, not a plane-style signed distance where penetration is negative.
 - Controller sanitization still trusted previous controller state as a fallback even when that state was also invalid.
 
 What was done:
-- Changed SDF lock test to `density < localClearance`.
-- Changed SDF pushout to `surfaceNormal * (localClearance - density)`, matching the plane projection contract.
+- Kept SDF lock as `density > -localClearance`.
+- Kept SDF pushout as `surfaceNormal * (density + localClearance)`.
+- Flipped hand and leviathan SDF finite-difference normals to open-space direction, matching KCC squeeze behavior.
 - Added hard finite controller fallback to `float3.zero` after checking input and previous state.
 
 Cinematic cheats used:
 - Kept the SDF as a cheap contact projection, not rigidbody truth.
-- Plane and SDF branches now share one predictable mathematical lie.
+- Plane and SDF branches remain cheap projection lies with project-correct SDF sign handling.
 
 Exact microseconds saved:
 - No measured savings claimed. The fix is correctness and NaN survival.
@@ -133,3 +134,73 @@ Verification:
 - Static owned IK scan still reports no forbidden patterns.
 - Filtered build scan reports `NO_OWNED_IK_OR_VAULT_ERRORS`.
 - Full compile remains blocked by external Core.Content, World, Determinism, Ecosystem, and Fluid domain errors.
+
+## 2026-05-16 | GRAB_IK_PROJECTION | FULL DOMAIN ABI SENTINEL PASS
+
+What was wrong:
+- `LeviathanTerrainIkTelemetryEntry` declared a 96-byte explicit layout but left tail bytes unnamed.
+- `FootIKData` had `Pack = 1` but no cold layout sentinel.
+
+What was done:
+- Added `LowerBodyPresenceIkLayout.Validate()` with `FootIKData` fixed at 68 bytes.
+- Added `LeviathanTerrainIkLayout.Validate()` with telemetry fixed at 96 bytes.
+- Added explicit leviathan telemetry padding fields through offset 92.
+- Gated the leviathan DataVault resolver on the layout sentinel.
+
+Cinematic cheats used:
+- No new simulation truth. This is ABI hardening for existing IK mathematical fakes.
+
+Exact microseconds saved:
+- No measured runtime savings claimed. Validation is cold-path only.
+- Hot-path sample counts, loop counts, and allocations are unchanged.
+
+Verification:
+- Owned IK forbidden-pattern scan returned no hits.
+- `git diff --check` reported CRLF warnings only for touched files.
+- Full compile remains blocked outside Animation/IK; latest visible gate is `ToolDurabilitySystem` missing private lanes and job members.
+
+## 2026-05-16 | GRAB_IK_PROJECTION | TARGETED IK COMPILE PROBE
+
+What was wrong:
+- Generated project coverage is stale: `Hecton8.Core.csproj` includes `LeviathanTerrainIkJobs.cs` but not `VRPhysicalHandPresenceIkJobs.cs` or `LowerBodyPresenceIkJobs.cs`.
+- A full-build filter could therefore miss owned hand compile errors.
+
+What was done:
+- Ran a targeted Roslyn probe over all three owned IK files using Unity references and a minimal DataVault stub.
+- Fixed `VRPhysicalHandPresenceIkJobs.cs` fallback-scope redeclarations for `ghostPosition` and `handRotation`.
+- Re-ran the probe; it reports `TARGETED_IK_COMPILE_PROBE_CLEAN`, exit 0.
+
+Cinematic cheats used:
+- None. This was compiler coverage repair.
+
+Exact microseconds saved:
+- No runtime savings claimed. This is build verification.
+
+Verification:
+- Targeted IK compile probe exits 0.
+- Owned IK forbidden-pattern scan remains clean.
+- Master `dotnet build Hecton8.Core.csproj` remains blocked outside Animation/IK at `ToolDurabilitySystem` missing private lanes/job members.
+
+## 2026-05-16 | GRAB_IK_PROJECTION | BLACKBOX AND BUILD GREEN PASS
+
+What was wrong:
+- Hand IK crash dumps serialized the 300-frame circular telemetry buffer by raw index, so a wrapped ring was not oldest-to-newest.
+- Full build then exposed a cross-domain IK bridge compile fault: `ContextualPhysicalIkRuntime` consumed `KccVelocitySignal` but did not import `Hecton8.Core.Contracts.Signals`.
+
+What was done:
+- Changed the cold dump serializer to start at `TelemetryCursor % ringLength` and write the ring chronologically.
+- Added cold exception handling for invalid dump paths and disposed streams.
+- Added the missing typed-signal namespace import in `ContextualPhysicalIkRuntime`.
+
+Cinematic cheats used:
+- No extra physics truth. The hand remains an SDF/plane projection fake with haptic scrape and ghost-hand presentation.
+
+Exact microseconds saved:
+- 0 us hot-path change for dump ordering; serializer runs only on crash/NaN dump.
+- 0 us runtime change for the namespace import.
+
+Verification:
+- Targeted Roslyn probe over `VRPhysicalHandPresenceIkJobs.cs`, `LeviathanTerrainIkJobs.cs`, and `LowerBodyPresenceIkJobs.cs` exits 0.
+- Owned IK forbidden-pattern scan returns no hits.
+- `git diff --check` reports CRLF warnings only for touched files.
+- `dotnet build Hecton8.Core.csproj --no-restore /p:UseSharedCompilation=false /v:minimal` succeeds with 0 warnings and 0 errors.

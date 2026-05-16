@@ -1,7 +1,13 @@
+#if UNITY_EDITOR || UNITY_STANDALONE
+#define HECTON8_MMF_AVAILABLE
+#endif
+
 using System;
 using System.Diagnostics;
 using System.IO;
+#if HECTON8_MMF_AVAILABLE
 using System.IO.MemoryMappedFiles;
+#endif
 using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core.Contracts;
@@ -21,8 +27,10 @@ namespace Hecton8.Core.Database
         private const long MinimumFileBytes = H8MacroDatabaseFileFormat.HeaderSizeBytes + H8MacroDatabaseFileFormat.NodeSizeBytes;
 
         private readonly object _fileGate = new object(); // COLD ALLOC: Object[1] — guards MMF pointer remaps against background hydration — owner: H8MacroDatabaseService
+#if HECTON8_MMF_AVAILABLE
         private MemoryMappedFile _mappedFile;
         private MemoryMappedViewAccessor _viewAccessor;
+#endif
         private FileStream _fileStream;
         private byte* _basePointer;
         private long _mappedBytes;
@@ -1766,6 +1774,11 @@ namespace Hecton8.Core.Database
             if (_fileStream == null || length < MinimumFileBytes)
                 return false;
 
+#if !HECTON8_MMF_AVAILABLE
+            _basePointer = null;
+            _mappedBytes = 0L;
+            return false;
+#else
             ReleaseMapOnly();
             _mappedFile = MemoryMappedFile.CreateFromFile(
                 _fileStream,
@@ -1778,6 +1791,7 @@ namespace Hecton8.Core.Database
             _viewAccessor.SafeMemoryMappedViewHandle.AcquirePointer(ref _basePointer);
             _mappedBytes = length;
             return _basePointer != null;
+#endif
         }
 
         private bool EnsureMappedLength(long requiredBytes)
@@ -2200,7 +2214,9 @@ namespace Hecton8.Core.Database
 
         private void Flush()
         {
+#if HECTON8_MMF_AVAILABLE
             _viewAccessor?.Flush();
+#endif
             _fileStream?.Flush(false);
         }
 
@@ -2219,6 +2235,7 @@ namespace Hecton8.Core.Database
 
         private void ReleaseMapOnly()
         {
+#if HECTON8_MMF_AVAILABLE
             if (_viewAccessor != null)
             {
                 if (_basePointer != null)
@@ -2236,6 +2253,9 @@ namespace Hecton8.Core.Database
                 _mappedFile.Dispose();
                 _mappedFile = null;
             }
+#else
+            _basePointer = null;
+#endif
         }
 
     }

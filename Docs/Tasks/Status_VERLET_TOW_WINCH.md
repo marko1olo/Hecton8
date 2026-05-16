@@ -26,12 +26,13 @@ Status policy: `PENDING VERIFICATION` until Unity/Profiler evidence exists.
 - Loop 7: Completed. Purged the private `NativeQueue<TetherFiredSignal>`, moved fire notifications to typed `SignalBus<TetherFiredSignal>`, repaired the compiled contract placement, and re-ran the directed compile probe until tether errors were gone.
 - Loop 8: Completed. Re-read XML, moved the 300-frame Verlet blackbox ring and per-slot cursor into `GlobalDataVault`, updated the telemetry job/dump to use fixed vault slot offsets, and re-ran compile/static probes. Build remains dependency-blocked outside tether code.
 - Loop 9: Completed. Moved the `TetherManager` 300-frame heartbeat ring and cursor out of local H8Memory ownership into `GlobalDataVault`, fixed BufferID collisions by moving manager lanes to IDs 232/233 after the current enum tail, and re-ran compile/static probes.
+- Loop 10: Completed. Re-read status/rationale and XML, moved `TetherInstance` solver/visual scratch arrays to `GlobalDataVault` slot slices, removed local H8Memory ownership from the instance, fixed slice alias reuse on deactivation, and re-ran duplicate BufferID/static/build probes.
 
 ## Titanium Task Checklist
 
 - [x] 1. PURGE_SINGLETONS | DOD: first-party `rg` scan found no `TetherManager.Instance` dependency in tether code. Rejected: adding singleton access. Estimate: 0 us runtime.
 - [x] 2. DEBT_CLEANUP | DOD: first-party tether/physics scan found no `ConfigurableJoint`, `SpringJoint`, or `HingeJoint` in the implemented path. Rejected: Unity Joint towing. Estimate: prevents unbounded PhysX solver cost; 0 us direct runtime.
-- [x] 3. DATA_EVICTION | DOD: added fixed BufferID lanes and persistent DataVault cable point storage for canonical 11 points / 10 segments; public fallback allocation is removed and fails closed if the vault is absent. Rejected: managed per-frame arrays. Estimate: +3-6 us publish cost, 0 B GC.
+- [x] 3. DATA_EVICTION | DOD: added fixed BufferID lanes for public cable SOA plus vault-owned per-slot solver/visual scratch slices; public fallback allocation is removed and fails closed if the vault is absent. Rejected: managed per-frame arrays and local persistent NativeArray ownership. Estimate: +3-6 us publish cost, 0 B GC; scratch ownership move has no measured microsecond claim.
 - [x] 4. BURST_ALGORITHM | DOD: implemented `VerletCableSolverJob` with segment stretch constraints and `math.rsqrt`. Rejected: scalar spring/joint. Estimate: 8-20 us per active tether by tier.
 - [x] 5. AUP_INTEGRITY | DOD: solver nodes are local offsets relative to tow anchor, with origin rebase separated from visual upload. Rejected: raw world-space node authority. Estimate: <1 us rebase for 11 nodes.
 - [x] 6. DOD_SOA_LAYOUT | DOD: DataVault lanes store position, previous position, velocity, mass, and segment tension separately. Rejected: AoS cable node objects. Estimate: +3-6 us publish, cache-stable.
@@ -53,11 +54,11 @@ Status policy: `PENDING VERIFICATION` until Unity/Profiler evidence exists.
 - ARM64/Quest: `TetherTensionSignal`, `TetherSnappedSignal`, `TetherFiredSignal`, `TetherVerletTelemetryEntry`, and `TetherManagerTelemetryEntry` now declare `Pack=1` with explicit sizes. Remaining `Pack=4` hits in `GlobalSignals.cs` are unrelated pre-existing global contracts outside this tether patch.
 - Metal/Mac: `Hecton_TetherLineStrip.shader` has no `numthreads`, `RWTexture`, `ByteAddressBuffer`, or DirectX-only token hits in the tether shader scan. It uses Unity cross-compiled vertex semantics `SV_VertexID` / `SV_InstanceID`.
 - Steam Deck/I/O: tether binary dumps remain fault-path/dev-build only; no per-frame file reads or writes were added.
-- Data sovereignty: public 10-segment cable SOA export, the 300-frame Verlet blackbox ring, and the `TetherManager` heartbeat ring now resolve through `GlobalDataVault`; no private fallback is created when the vault is unavailable. The Verlet ring is partitioned by fixed tether slot.
-- Memory sentinel: remaining tether visual/solver scratch `NativeArray` allocations use `H8Memory.Allocate(..., SystemID.Physics)` and release through `H8Memory.Release`. The Verlet and manager blackbox rings/heads are vault-owned views, not local persistent allocations.
+- Data sovereignty: public 10-segment cable SOA export, the 300-frame Verlet blackbox ring, the `TetherManager` heartbeat ring, and `TetherInstance` solver/visual scratch lanes now resolve through `GlobalDataVault`; no private fallback is created when the vault is unavailable. The Verlet ring and scratch lanes are partitioned by fixed tether slot.
+- Memory sentinel: `TetherInstance` no longer calls `H8Memory.Allocate`/`H8Memory.Release` for visual or solver `NativeArray` state; its NativeArray fields are vault views. `TetherManager` blackbox fields are also vault-owned views.
 - SignalBus: snap notification moved off private `NativeQueue<TetherSnappedSignal>` to typed `SignalBus<TetherSnappedSignal>` with `ReadOnlySpan<TetherSnappedSignal>` readback. Fire notification moved off private `NativeQueue<TetherFiredSignal>` to typed `SignalBus<TetherFiredSignal>` with `ReadOnlySpan<TetherFiredSignal>` snapshot reads. Tension remains typed `SignalBus<TetherTensionSignal>`.
 - Remaining bounded exception: fire attach still uses a managed fixed-size request sidecar because it carries Unity object references for immediate same-frame attach. It is not a delegate/EventBus/native queue path, but it is not a pure unmanaged typed lane.
-- Remaining bounded exception: solver and visual staging arrays remain local H8Memory-tracked scratch, not fully DataVault-evicted. The blackbox telemetry exceptions were removed; full solver scratch eviction still requires offset-aware solver/visual upload refactor.
+- Remaining bounded exception: no local persistent NativeArray owner remains in `TetherInstance`; job structs still receive `NativeArray` views over vault memory instead of direct vault handles. Fire attach still has the managed Unity-object sidecar above.
 - Hot-path debt scan: no `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, LINQ, banned Unity Joint type, `TetherManager.Instance`, `math.distance`, or `distance(` hits in the touched tether path.
 
 ## Compile Attempts
@@ -75,6 +76,7 @@ Status policy: `PENDING VERIFICATION` until Unity/Profiler evidence exists.
 - Attempt 11: `dotnet build Hecton8.Core.csproj -v:minimal /clp:ErrorsOnly /p:UseSharedCompilation=false` failed before tether validation on an unrelated `GlobalDataVault.ValidateAbiLayout` duplicate report. No tether compiler errors appeared.
 - Attempt 12: `dotnet build Hecton8.Core.csproj -v:minimal /p:UseSharedCompilation=false` failed on unrelated Sargassum, MarineSnow, and VehicleDocking missing-member errors. No tether compiler errors appeared in the reported set.
 - Attempt 13: `dotnet build Hecton8.Core.csproj -v:minimal /clp:ErrorsOnly /p:UseSharedCompilation=false` failed on unrelated Lockstep, Ecosystem, and SubmarineFluid dependency errors. No tether compiler errors appeared in the reported set.
+- Attempt 14: `dotnet build Hecton8.Core.csproj -v:minimal /clp:ErrorsOnly /p:UseSharedCompilation=false` exited non-zero with no errors emitted under `ErrorsOnly`; rerun without `ErrorsOnly` failed on unrelated `GameBootstrapper.Initialize` arity and `ToolDurabilitySystem` missing-field/member errors. No tether compiler errors appeared in the reported set.
 
 ## Omega Polish
 

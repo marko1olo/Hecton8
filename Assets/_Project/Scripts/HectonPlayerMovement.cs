@@ -2163,7 +2163,7 @@ namespace Hecton8.Gameplay
             if (sqrMagnitude <= 0.0001f || acceleration <= 0.0001f)
                 return;
 
-            float invMagnitude = math.rsqrt(sqrMagnitude);
+            float invMagnitude = math.rsqrt(math.max(sqrMagnitude, 0.000001f));
             QueueEnvironmentalForce(toSource * (invMagnitude * math.max(_rb.mass, 0.0001f) * acceleration));
 
             float clampedLockDuration = math.max(0f, lockDuration);
@@ -2302,7 +2302,7 @@ namespace Hecton8.Gameplay
                 value.x * value.x +
                 value.y * value.y +
                 value.z * value.z;
-            return sqrMagnitude > 0.000001f ? sqrMagnitude * math.rsqrt(sqrMagnitude) : 0f;
+            return sqrMagnitude > 0.000001f ? sqrMagnitude * math.rsqrt(math.max(sqrMagnitude, 0.000001f)) : 0f;
         }
 
         private static Vector3 NormalizeVectorRsqrt(Vector3 value, Vector3 fallback)
@@ -2314,7 +2314,7 @@ namespace Hecton8.Gameplay
             if (sqrMagnitude <= 0.000001f)
                 return fallback;
 
-            float invMagnitude = math.rsqrt(sqrMagnitude);
+            float invMagnitude = math.rsqrt(math.max(sqrMagnitude, 0.000001f));
             return new Vector3(
                 value.x * invMagnitude,
                 value.y * invMagnitude,
@@ -2378,7 +2378,7 @@ namespace Hecton8.Gameplay
             if (lengthSq <= 0.000001f)
                 return Quaternion.identity;
 
-            float invLength = math.rsqrt(lengthSq);
+            float invLength = math.rsqrt(math.max(lengthSq, 0.000001f));
             return new Quaternion(x * invLength, y * invLength, z * invLength, w * invLength);
         }
 
@@ -3422,7 +3422,7 @@ namespace Hecton8.Gameplay
             if (directionSqr <= 0.0001f)
                 return false;
 
-            float invMagnitude = math.rsqrt(directionSqr);
+            float invMagnitude = math.rsqrt(math.max(directionSqr, 0.000001f));
             stepDirection.x *= invMagnitude;
             stepDirection.z *= invMagnitude;
             return true;
@@ -5955,7 +5955,7 @@ namespace Hecton8.Gameplay
 
             float maxAccelerationSq = maxAcceleration * maxAcceleration;
             if (sqrMagnitude > maxAccelerationSq)
-                acceleration3 *= maxAcceleration * math.rsqrt(sqrMagnitude);
+                acceleration3 *= maxAcceleration * math.rsqrt(math.max(sqrMagnitude, 0.000001f));
 
             ApplyMotorAcceleration(new Vector3(acceleration3.x, acceleration3.y, acceleration3.z));
         }
@@ -5977,7 +5977,7 @@ namespace Hecton8.Gameplay
             if (displacementSqr <= 0.00000001f)
                 return;
 
-            float inverseDisplacementMagnitude = math.rsqrt(displacementSqr);
+            float inverseDisplacementMagnitude = math.rsqrt(math.max(displacementSqr, 0.000001f));
             float displacementMagnitude = displacementSqr * inverseDisplacementMagnitude;
             Vector3 springDirection = displacement * inverseDisplacementMagnitude;
             float velocityAlongSpring = DotVector(_rb.linearVelocity, springDirection);
@@ -6030,7 +6030,7 @@ namespace Hecton8.Gameplay
             if (displacementSqr <= 0.00000001f)
                 return;
 
-            float inverseDisplacementMagnitude = math.rsqrt(displacementSqr);
+            float inverseDisplacementMagnitude = math.rsqrt(math.max(displacementSqr, 0.000001f));
             float displacementMagnitude = displacementSqr * inverseDisplacementMagnitude;
             Vector3 springDirection = displacement * inverseDisplacementMagnitude;
             float velocityAlongSpring = DotVector(_rb.linearVelocity, springDirection);
@@ -6225,7 +6225,7 @@ namespace Hecton8.Gameplay
             if (anchorDistanceSqr <= 0.00000001f)
                 return;
 
-            float inverseAnchorDistance = math.rsqrt(anchorDistanceSqr);
+            float inverseAnchorDistance = math.rsqrt(math.max(anchorDistanceSqr, 0.000001f));
             float anchorDistance = anchorDistanceSqr * inverseAnchorDistance;
             float extension = anchorDistance - math.max(0.01f, cuttingTensionRestLength);
             if (extension <= 0f)
@@ -6282,7 +6282,7 @@ namespace Hecton8.Gameplay
             if (anchorDistanceSqr <= 0.00000001f)
                 return;
 
-            float inverseAnchorDistance = math.rsqrt(anchorDistanceSqr);
+            float inverseAnchorDistance = math.rsqrt(math.max(anchorDistanceSqr, 0.000001f));
             float anchorDistance = anchorDistanceSqr * inverseAnchorDistance;
             float extension = anchorDistance - math.max(0.01f, exosuitGrappleRestLength);
             if (extension <= 0f)
@@ -6355,7 +6355,7 @@ namespace Hecton8.Gameplay
             Vector3 centerOfMassForce = Vector3.zero;
             if (localLateralSqr > 0.00000001f)
             {
-                float inverseLocalLateralMagnitude = math.rsqrt(localLateralSqr);
+                float inverseLocalLateralMagnitude = math.rsqrt(math.max(localLateralSqr, 0.00000001f));
                 float localLateralMagnitude = localLateralSqr * inverseLocalLateralMagnitude;
                 Vector3 localBiasDirection = localLateral * inverseLocalLateralMagnitude;
                 float sideBias01 = math.saturate(localLateralMagnitude / math.max(0.25f, parasiteLatchCountForFullForce * 0.05f));
@@ -7835,7 +7835,7 @@ namespace Hecton8.Gameplay
                 Vector3 localVelocity = _cachedTransform != null
                     ? _cachedTransform.InverseTransformDirection(safeComfortVelocity)
                     : safeComfortVelocity;
-                float invSpeed = math.rsqrt(velocitySq);
+                float invSpeed = math.rsqrt(math.max(velocitySq, 0.000001f));
                 targetSwayX = -math.clamp(localVelocity.x * invSpeed, -1f, 1f) * 0.35f;
                 targetSwayY = -math.clamp(localVelocity.y * invSpeed, -1f, 1f) * 0.22f;
                 targetMotionX = math.clamp(localVelocity.x * invSpeed, -1f, 1f);
@@ -8087,7 +8087,7 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            double invDistance = math.rsqrt(distanceSqDouble);
+            double invDistance = math.rsqrt(math.max(distanceSqDouble, 0.0001d));
             double3 normalized = delta * invDistance;
             if (!math.all(math.isfinite(normalized)))
             {
@@ -9417,8 +9417,8 @@ namespace Hecton8.Gameplay
             if (velocitySqr <= 0.0001f || flowSqr <= 0.0001f)
                 return;
 
-            float invVelocity = math.rsqrt(velocitySqr);
-            float invFlow = math.rsqrt(flowSqr);
+            float invVelocity = math.rsqrt(math.max(velocitySqr, 0.000001f));
+            float invFlow = math.rsqrt(math.max(flowSqr, 0.000001f));
             float flowAlignment = DotVector(velocity * invVelocity, _abyssalFlowWeatherCurrent * invFlow);
             if (flowAlignment >= 0f)
                 return;
@@ -9475,7 +9475,7 @@ namespace Hecton8.Gameplay
             if (!TryResolveAbyssalCounterDriveDirection(transportPreset, out Vector3 counterDirection))
                 return;
 
-            float inverseSuctionMagnitude = math.rsqrt(suctionSqr);
+            float inverseSuctionMagnitude = math.rsqrt(math.max(suctionSqr, 0.000001f));
             float oppositionDot = DotVector(counterDirection, -suctionVector * inverseSuctionMagnitude);
             float oppositionThreshold = ResolveDegreesCosFast(180f - abyssalCounterDriveOppositionAngleDegrees);
             if (oppositionDot < oppositionThreshold)
@@ -9688,7 +9688,7 @@ namespace Hecton8.Gameplay
             if (downSlopeSqrMagnitude <= 0.0001f)
                 return;
 
-            downSlopeDirection *= math.rsqrt(downSlopeSqrMagnitude);
+            downSlopeDirection *= math.rsqrt(math.max(downSlopeSqrMagnitude, 0.000001f));
 
             Vector3 retreatVelocity = _dynamicAverageWaterVelocity + EffectiveWaterFlowVelocity * 0.8f + _dynamicAverageWaterDisplacement * underwaterTurbulenceFrequency;
             float retreatSpeed = DotVector(retreatVelocity, downSlopeDirection);
@@ -9910,7 +9910,7 @@ namespace Hecton8.Gameplay
             if (deltaSqr <= boundaryThreshold * boundaryThreshold)
                 return;
 
-            float inverseDeltaMagnitude = math.rsqrt(deltaSqr);
+            float inverseDeltaMagnitude = math.rsqrt(math.max(deltaSqr, 0.000001f));
             float deltaMagnitude = deltaSqr * inverseDeltaMagnitude;
             float transportInfluence = ResolveTransportAmbientCurrentInfluenceScale(transportPreset);
             float boundaryT = math.saturate(
@@ -10202,7 +10202,7 @@ namespace Hecton8.Gameplay
             if (dampingForceMagnitude > maxDampingForce)
                 dampingForceMagnitude = maxDampingForce;
 
-            float invSpeed = math.rsqrt(speedSq);
+            float invSpeed = math.rsqrt(math.max(speedSq, 0.000001f));
             _forceVector.x = -_velocity.x * invSpeed * dampingForceMagnitude;
             _forceVector.y = -_velocity.y * invSpeed * dampingForceMagnitude;
             _forceVector.z = -_velocity.z * invSpeed * dampingForceMagnitude;
@@ -10249,7 +10249,7 @@ namespace Hecton8.Gameplay
             if (!KinematicCcdMath.ShouldSchedule(new float3(velocity.x, velocity.y, velocity.z)))
                 return;
 
-            float invSpeed = math.rsqrt(speedSq);
+            float invSpeed = math.rsqrt(math.max(speedSq, 0.000001f));
             float speed = speedSq * invSpeed;
 
             if (!_useFixedFrameSpatialCache)
@@ -12181,7 +12181,7 @@ namespace Hecton8.Gameplay
             float sqrMag = dirX * dirX + dirY * dirY + dirZ * dirZ;
             if (sqrMag > 1.0001f)
             {
-                float invMag = math.rsqrt(sqrMag);
+                float invMag = math.rsqrt(math.max(sqrMag, 0.000001f));
                 dirX *= invMag; dirY *= invMag; dirZ *= invMag;
             }
 
@@ -12388,7 +12388,7 @@ namespace Hecton8.Gameplay
             float sqrMag = _moveDirection.sqrMagnitude;
             if (sqrMag > 1.0001f)
             {
-                float invMag = math.rsqrt(sqrMag);
+                float invMag = math.rsqrt(math.max(sqrMag, 0.000001f));
                 _moveDirection.x *= invMag;
                 _moveDirection.y *= invMag;
                 _moveDirection.z *= invMag;
@@ -12416,7 +12416,7 @@ namespace Hecton8.Gameplay
                 float projSqr = _moveDirection.sqrMagnitude;
                 if (projSqr > 0.0001f)
                 {
-                    float invMag = math.rsqrt(projSqr);
+                    float invMag = math.rsqrt(math.max(projSqr, 0.0001f));
                     _moveDirection.x *= invMag;
                     _moveDirection.y *= invMag;
                     _moveDirection.z *= invMag;
@@ -12641,11 +12641,11 @@ namespace Hecton8.Gameplay
 
                     if (desiredSqrMagnitude > 0.0001f)
                     {
-                        float desiredInvMagnitude = math.rsqrt(desiredSqrMagnitude);
+                        float desiredInvMagnitude = math.rsqrt(math.max(desiredSqrMagnitude, 0.0001f));
                         desiredX *= desiredInvMagnitude;
                         desiredZ *= desiredInvMagnitude;
 
-                        float flowInvMagnitude = math.rsqrt(flowSqrMagnitude);
+                        float flowInvMagnitude = math.rsqrt(math.max(flowSqrMagnitude, 0.0001f));
                         float flowDirX = flowVelocity.x * flowInvMagnitude;
                         float flowDirZ = flowVelocity.z * flowInvMagnitude;
                         float alignment = math.clamp(desiredX * flowDirX + desiredZ * flowDirZ, -1f, 1f);
@@ -12709,7 +12709,7 @@ namespace Hecton8.Gameplay
                         float maxSqr = maxSpd * maxSpd;
                         if (planarSqr > maxSqr)
                         {
-                            float scale = maxSpd * math.rsqrt(planarSqr);
+                            float scale = maxSpd * math.rsqrt(math.max(planarSqr, 0.000001f));
                             Vector3 normalVelocity = _velocity - planarVelocity;
                             planarVelocity.x *= scale;
                             planarVelocity.y *= scale;
@@ -12723,7 +12723,7 @@ namespace Hecton8.Gameplay
                         float maxSqr = maxSpd * maxSpd;
                         if (xzSqr > maxSqr)
                         {
-                            float scale = maxSpd * math.rsqrt(xzSqr);
+                            float scale = maxSpd * math.rsqrt(math.max(xzSqr, 0.000001f));
                             _velocity.x *= scale; _velocity.z *= scale;
                             ApplyMotorLinearVelocity(_velocity);
                         }
@@ -12752,7 +12752,7 @@ namespace Hecton8.Gameplay
                     float maxSqr = maxSpd * maxSpd;
                     if (fullSqr > maxSqr)
                     {
-                        float scale = maxSpd * math.rsqrt(fullSqr);
+                        float scale = maxSpd * math.rsqrt(math.max(fullSqr, 0.000001f));
                         _velocity.x *= scale; _velocity.y *= scale; _velocity.z *= scale;
                         ApplyMotorLinearVelocity(_velocity);
                     }

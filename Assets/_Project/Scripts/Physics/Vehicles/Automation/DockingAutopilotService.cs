@@ -4,6 +4,7 @@ using Hecton8.Core.Memory;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -67,17 +68,23 @@ namespace Hecton8.Vehicles.Automation
     }
 
     [BurstCompile]
-    public struct CubicBezierJob : IJobParallelFor
+    public unsafe struct CubicBezierJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<ActiveSplineData> Splines;
-        [ReadOnly] public NativeArray<float> Progress01;
-        public NativeArray<DockingSplineSample> Samples;
+        [NativeDisableUnsafePtrRestriction] public ActiveSplineData* Splines;
+        [NativeDisableUnsafePtrRestriction] public float* Progress01;
+        [NativeDisableUnsafePtrRestriction] public DockingSplineSample* Samples;
+        public int SplineLength;
+        public int ProgressLength;
+        public int SampleLength;
 
         public void Execute(int index)
         {
-            if ((uint)index >= (uint)Splines.Length ||
-                (uint)index >= (uint)Progress01.Length ||
-                (uint)index >= (uint)Samples.Length)
+            if ((uint)index >= (uint)SplineLength ||
+                (uint)index >= (uint)ProgressLength ||
+                (uint)index >= (uint)SampleLength ||
+                Splines == null ||
+                Progress01 == null ||
+                Samples == null)
             {
                 return;
             }
@@ -302,12 +309,12 @@ namespace Hecton8.Vehicles.Automation
         [SerializeField, Min(1)] private int activeSplineCapacity = DefaultActiveSplineCapacity;
 
         private IDataVault _dataVault;
-        private NativeArray<ActiveSplineData> _activeSplines;
+        private VaultBufferHandle<ActiveSplineData> _activeSplineHandle;
         private bool _serviceRegistered;
         private ServiceHeartbeatState _heartbeatState = ServiceHeartbeatState.NotStarted;
 
-        public bool IsReady => _activeSplines.IsCreated && _heartbeatState == ServiceHeartbeatState.Ready;
-        public int ActiveSplineCapacity => _activeSplines.IsCreated ? _activeSplines.Length : 0;
+        public bool IsReady => _activeSplineHandle.IsCreated && _heartbeatState == ServiceHeartbeatState.Ready;
+        public int ActiveSplineCapacity => _activeSplineHandle.IsCreated ? _activeSplineHandle.Length : 0;
         public ServiceHeartbeatState HeartbeatState => _heartbeatState;
         public bool IsServiceReady => IsReady;
 
@@ -340,15 +347,15 @@ namespace Hecton8.Vehicles.Automation
                 : ServiceHeartbeatState.Degraded;
         }
 
-        public bool TryAcquireSplineSlot(uint ownerHash, out int slot)
+        public unsafe bool TryAcquireSplineSlot(uint ownerHash, out int slot)
         {
             slot = -1;
-            if (ownerHash == 0u || !EnsureSplineBufferAvailable())
+            if (ownerHash == 0u || !TryResolveActiveSplines(out ActiveSplineData* activeSplines, out int length))
                 return false;
 
-            for (int i = 0; i < _activeSplines.Length; i++)
+            for (int i = 0; i < length; i++)
             {
-                ActiveSplineData existing = _activeSplines[i];
+                ActiveSplineData existing = activeSplines[i];
                 if (existing.OwnerHash == ownerHash && existing.State != (byte)DockingSplineRuntimeState.Inactive)
                 {
                     slot = i;
@@ -356,16 +363,16 @@ namespace Hecton8.Vehicles.Automation
                 }
             }
 
-            for (int i = 0; i < _activeSplines.Length; i++)
+            for (int i = 0; i < length; i++)
             {
-                ActiveSplineData existing = _activeSplines[i];
+                ActiveSplineData existing = activeSplines[i];
                 if (existing.State != (byte)DockingSplineRuntimeState.Inactive)
                     continue;
 
                 existing = default;
                 existing.OwnerHash = ownerHash;
                 existing.State = (byte)DockingSplineRuntimeState.Reserved;
-                _activeSplines[i] = existing;
+                activeSplines[i] = existing;
                 slot = i;
                 return true;
             }
@@ -374,26 +381,33 @@ namespace Hecton8.Vehicles.Automation
             return false;
         }
 
-        public bool TryWriteActiveSpline(int slot, in ActiveSplineData spline)
+        public unsafe bool TryWriteActiveSpline(int slot, in ActiveSplineData spline)
         {
-            if (!IsValidSlot(slot) || !spline.IsFinite())
+            if (!spline.IsFinite() || !TryResolveActiveSplines(out ActiveSplineData* activeSplines, out int length) || (uint)slot >= (uint)length)
                 return false;
+
+            ActiveSplineData existing = activeSplines[slot];
+            if (existing.State != (byte)DockingSplineRuntimeState.Inactive &&
+                existing.OwnerHash != spline.OwnerHash)
+            {
+                return false;
+            }
 
             ActiveSplineData writable = spline;
             if (writable.State == (byte)DockingSplineRuntimeState.Inactive)
                 writable.State = (byte)DockingSplineRuntimeState.Active;
 
-            _activeSplines[slot] = writable;
+            activeSplines[slot] = writable;
             return true;
         }
 
-        public bool TryReadActiveSpline(int slot, out ActiveSplineData spline)
+        public unsafe bool TryReadActiveSpline(int slot, out ActiveSplineData spline)
         {
             spline = default;
-            if (!IsValidSlot(slot))
+            if (!TryResolveActiveSplines(out ActiveSplineData* activeSplines, out int length) || (uint)slot >= (uint)length)
                 return false;
 
-            spline = _activeSplines[slot];
+            spline = activeSplines[slot];
             return spline.State != (byte)DockingSplineRuntimeState.Inactive && spline.IsFinite();
         }
 
@@ -404,36 +418,36 @@ namespace Hecton8.Vehicles.Automation
                    DockingAutopilotMath.TryEvaluate(in spline, progress01, out sample);
         }
 
-        public bool TryReleaseSplineSlot(int slot, uint ownerHash)
+        public unsafe bool TryReleaseSplineSlot(int slot, uint ownerHash)
         {
-            if (!IsValidSlot(slot) || ownerHash == 0u)
+            if (ownerHash == 0u || !TryResolveActiveSplines(out ActiveSplineData* activeSplines, out int length) || (uint)slot >= (uint)length)
                 return false;
 
-            ActiveSplineData existing = _activeSplines[slot];
+            ActiveSplineData existing = activeSplines[slot];
             if (existing.OwnerHash != ownerHash)
                 return false;
 
-            _activeSplines[slot] = default;
+            activeSplines[slot] = default;
             return true;
         }
 
-        public void OnServiceShutdown()
+        public unsafe void OnServiceShutdown()
         {
-            if (_activeSplines.IsCreated)
+            if (TryResolveExistingActiveSplines(out ActiveSplineData* activeSplines, out int length))
             {
-                for (int i = 0; i < _activeSplines.Length; i++)
-                    _activeSplines[i] = default;
+                for (int i = 0; i < length; i++)
+                    activeSplines[i] = default;
             }
 
             UnregisterService();
-            _activeSplines = default;
+            _activeSplineHandle = default;
             _dataVault = null;
             _heartbeatState = ServiceHeartbeatState.Shutdown;
         }
 
         private bool EnsureSplineBufferAvailable()
         {
-            if (_activeSplines.IsCreated)
+            if (_activeSplineHandle.IsCreated && _dataVault != null && _dataVault.ResolveBuffer(ref _activeSplineHandle))
                 return true;
 
             if (_dataVault == null)
@@ -441,17 +455,44 @@ namespace Hecton8.Vehicles.Automation
             if (_dataVault == null)
                 return false;
 
-            _activeSplines = _dataVault.GetBuffer<ActiveSplineData>(
+            _activeSplineHandle = _dataVault.GetBufferHandle<ActiveSplineData>(
                 BufferID.VehicleDockingActiveSplines,
                 activeSplineCapacity,
                 SystemID.VehiclesPhysics,
                 NativeArrayOptions.ClearMemory);
-            return _activeSplines.IsCreated && _activeSplines.Length >= activeSplineCapacity;
+            return _activeSplineHandle.IsCreated && _activeSplineHandle.Length >= activeSplineCapacity;
         }
 
-        private bool IsValidSlot(int slot)
+        private unsafe bool TryResolveActiveSplines(out ActiveSplineData* activeSplines, out int length)
         {
-            return _activeSplines.IsCreated && (uint)slot < (uint)_activeSplines.Length;
+            activeSplines = null;
+            length = 0;
+            if (!EnsureSplineBufferAvailable())
+                return false;
+
+            void* ptr = _activeSplineHandle.ResolvePointer(_dataVault);
+            if (ptr == null || _activeSplineHandle.Length <= 0)
+                return false;
+
+            activeSplines = (ActiveSplineData*)ptr;
+            length = _activeSplineHandle.Length;
+            return true;
+        }
+
+        private unsafe bool TryResolveExistingActiveSplines(out ActiveSplineData* activeSplines, out int length)
+        {
+            activeSplines = null;
+            length = 0;
+            if (!_activeSplineHandle.IsCreated || _dataVault == null)
+                return false;
+
+            void* ptr = _activeSplineHandle.ResolvePointer(_dataVault);
+            if (ptr == null || _activeSplineHandle.Length <= 0)
+                return false;
+
+            activeSplines = (ActiveSplineData*)ptr;
+            length = _activeSplineHandle.Length;
+            return true;
         }
 
         private void UnregisterService()

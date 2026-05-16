@@ -182,5 +182,104 @@ Verification:
 - Static scan found no CORE/MEMORY `StructLayout` without `Pack = 1`.
 - Static scan found no `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, legacy `EventBus`, custom `event`, `Action<>`, or `Func<>` in CORE/MEMORY.
 - `git diff --check` reported no whitespace errors for the touched runtime files.
-- `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 13.22s and failed on 3 external Construction errors in `VehicleDockingModule`: duplicate `IsLowDockingMathTier`, `ResolveSystemStress01`, and `ResetDockingRuntimeCaches`.
+- `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 01:45.24 and failed on 70 external errors across World, Animation, Submarine, and Determinism. Lead failures: `NativeArray<MacroSwarm>` list-method misuse in `EcosystemDirector`, missing `ProceduralLadderClimbRuntime` helpers, missing `SubmarineFluidDynamics` vault handle fields, and missing `LockstepStateValidator` signal constants.
 - No compiler errors were reported in `Assets/_Project/Scripts/Core/Memory/H8Memory.cs`, `Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs`, or `Assets/_Project/Scripts/Core/SceneRuntimeService.cs`.
+
+## 2026-05-16 - Continuation Inquisition / Data Sovereignty Erasure and Build Green
+
+What was wrong:
+- GlobalDataVault scene-owner eviction removed metadata and returned blocks to the arena free list, but old-scene bytes could remain physically present until overwritten by a later allocation.
+- Free-list block reuse reset `Reserved0` flags but did not consistently zero `Reserved1` lock counts across free, split, merge, grow, and dispose paths.
+- GlobalDataVault had a heartbeat method, but SceneRuntimeService Tick only recorded H8Memory heartbeat.
+
+What was done:
+- `ReleaseBuffersByOwner` now calls `FreeBlock(blockIndex, clearPayload: true)`.
+- `FreeBlock` clears released arena payload bytes with `UnsafeUtility.MemClear` before marking a block free.
+- Free-list state transitions now reset `Reserved1` lock counters wherever `Reserved0` flags are reset.
+- SceneRuntimeService caches `IDataVault` outside Tick and calls `RecordHeartbeat()` beside `H8Memory.RecordHeartbeat()`.
+- Cold transition code refreshes the cached vault reference without adding a per-frame registry lookup.
+
+Cinematic Cheats used:
+- No shader or VFX code belongs in CORE/MEMORY. The contribution is freeing and erasing old-scene payload budget so Ocean/VFX can spend memory on real scene visuals.
+- Toaster mode: no per-frame disk writes, no per-frame registry polling, no managed queue.
+- God-mode: warm arena remains available for high-tier Ocean/VFX allocation, but old scene bytes are erased before reuse.
+
+Exact Microseconds saved:
+- No exact microseconds claimed.
+- Gameplay hot path: one H8Memory heartbeat struct store plus one vault heartbeat struct store when the vault is cached; exact CPU cost unmeasured.
+- Owner/scene release path: payload clear cost scales with released bytes and is cold-path only.
+- GC impact: 0 B/frame by static inspection.
+
+Verification:
+- Re-read `Docs/Tasks/Status_SENTINEL_DISPOSAL_GUARD.md`, `Docs/AgentLogs/Rationale_SENTINEL_DISPOSAL_GUARD.md`, and the exact XML assignment from `Docs/Tasks/CURRENT_BATCH.md`.
+- Static scan found no CORE/MEMORY `StructLayout` without `Pack = 1`.
+- Static scan found no `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, legacy `EventBus`, custom `event`, `Action<>`, or `Func<>` in CORE/MEMORY.
+- `git diff --check` reported line-ending warnings only.
+- Prior checkpoint: `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 02:04.91 and succeeded with 0 warnings and 0 errors.
+- Unity Editor/runtime verification remains pending because Unity MCP/editor console is not exposed in this session.
+
+## 2026-05-16 - Continuation Inquisition / Vault Dump Ordering and External Compile Drift
+
+What was wrong:
+- GlobalDataVault defrag/PhiVOD blackbox dumps wrote the ring without explicit chronological framing.
+- A wrapped 300-entry ring needed the cursor state to decode the real last-frame order.
+- The status/rationale still contained a stale green-build claim after external domains moved the compile gate back to red.
+
+What was done:
+- Added `Frame` to `MemoryDefragTelemetryEntry` while preserving the 128-byte packed ABI guard.
+- Defrag/PhiVOD dumps now write a fixed magic, recorded count, entry size, then circular entries oldest-to-newest.
+- Re-read every CORE/MEMORY source and assembly file to separate central memory-authority native lanes from illegal system-private collections.
+- Re-ran static CORE/MEMORY scans and the dotnet compile gate.
+- Updated status and rationale to show the current external compile block instead of stale green state.
+
+Cinematic Cheats used:
+- No visual-domain edit belongs in CORE/MEMORY.
+- Toaster mode: blackbox stays bounded, no per-frame disk writes, no managed queue, no registry polling in Tick.
+- God-mode: recovered transition memory remains available for Ocean/VFX domains; this pass improves forensic certainty instead of consuming visual budget.
+
+Exact Microseconds saved:
+- No exact microseconds claimed.
+- Gameplay hot path: one extra `uint` assignment inside the vault heartbeat record path; exact CPU cost unmeasured.
+- Persistent memory: no increase; `MemoryDefragTelemetryEntry` remains 128 bytes.
+- Dump I/O: cold crash/failure path only.
+
+Verification:
+- Re-read `Docs/Tasks/Status_SENTINEL_DISPOSAL_GUARD.md`, `Docs/AgentLogs/Rationale_SENTINEL_DISPOSAL_GUARD.md`, and the exact XML assignment from `Docs/Tasks/CURRENT_BATCH.md`.
+- Static scan found no CORE/MEMORY `StructLayout` without `Pack = 1`.
+- Static scan found no `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, legacy `EventBus`, custom `event`, `Action<>`, or `Func<>` in CORE/MEMORY.
+- Domain source read covered `H8Memory.cs`, `GlobalDataVault.cs`, `BinaryBlittableSafeAttribute.cs`, `Defrag/MemoryDefragContracts.cs`, and both memory asmdefs.
+- `git diff --check` reported line-ending warnings only.
+- `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 01:00.45 and failed on 141 external errors: `GameBootstrapper.Initialize` signature mismatch, `RepairTool` unassigned `localPoint`, missing biome fog fields in `HectonUnderwaterVisuals`, and missing native-state fields/helpers in `ToolDurabilitySystem`.
+- No compiler errors were reported in touched CORE/MEMORY files.
+
+## 2026-05-16 - Continuation Inquisition / Explicit Ring Counts and Compile Green
+
+What was wrong:
+- H8Memory and GlobalDataVault dump writers inferred recorded ring count from wrapping `uint` sequence counters.
+- After extreme uptime, a full ring could be misreported as partially empty after sequence wrap.
+- The final compile gate exposed one typed-lane namespace error: `ContextualPhysicalIkRuntime` referenced `KccVelocitySignal` without importing its `Hecton8.Core.Contracts.Signals` namespace.
+
+What was done:
+- Added explicit recorded-count fields for the H8Memory heartbeat ring and lifecycle-event ring.
+- Added explicit recorded-count state for the GlobalDataVault defrag/PhiVOD ring.
+- Dump writers now clamp and use recorded-count state while preserving oldest-to-newest circular traversal.
+- Added the missing `Hecton8.Core.Contracts.Signals` import in `ContextualPhysicalIkRuntime`; no signal duplication or gameplay logic changed.
+
+Cinematic Cheats used:
+- No visual-domain edit belongs in CORE/MEMORY.
+- Toaster mode: ring counts add only bounded integer increments; no per-frame disk writes and no larger telemetry records.
+- God-mode: stronger long-session forensic evidence preserves memory budget for Ocean/VFX domains.
+
+Exact Microseconds saved:
+- No exact microseconds claimed.
+- Hot path delta: one bounded int increment per H8Memory heartbeat and one per vault heartbeat when active; exact CPU cost unmeasured.
+- Persistent memory delta: 12 bytes of int state before runtime alignment for three explicit recorded-count fields.
+- Compile-only namespace import has 0.0 us runtime impact.
+
+Verification:
+- Re-read `Docs/Tasks/Status_SENTINEL_DISPOSAL_GUARD.md`, `Docs/AgentLogs/Rationale_SENTINEL_DISPOSAL_GUARD.md`, and the exact XML assignment from `Docs/Tasks/CURRENT_BATCH.md`.
+- Static scan found no CORE/MEMORY `StructLayout` without `Pack = 1`.
+- Static scan found no `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, legacy `EventBus`, custom `event`, `Action<>`, or `Func<>` in CORE/MEMORY.
+- `git diff --check` reported line-ending warnings only.
+- `dotnet build Hecton8.Core.csproj --nologo /clp:ErrorsOnly` completed in 00:03.24 and succeeded with 0 warnings and 0 errors.
+- Unity Editor/runtime scene-transition verification remains pending because Unity MCP/editor console is not exposed in this session.
