@@ -1,10 +1,11 @@
 ﻿NO CURRENT COMPILE ERROR.
-Current verification: Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_tail08.log
-Command: dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false /p:RunAnalyzers=false -v:minimal
+Current verification: Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_tail09_pack1.log
+Command: dotnet build Hecton8.Core.csproj --no-restore
 Result: Build succeeded. 0 Warning(s). 0 Error(s). EXIT=0.
-Time Elapsed: 00:01:14.32
+Time Elapsed: 00:00:34.76
 
-Previous tail05/tail06 errors were repaired before the current snapshot:
+Previous tail05/tail06 errors were repaired before the tail08 snapshot:
 - H8BridgeContracts imports Hecton8.Core.Memory.Layout for BinaryBlittableSafeAttribute.
 - BinaryLayoutManifest includes Type-based AssertSize/AssertOffset/AssertResolved and ResolveOptionalType helpers.
 - Later bridge/content edits were included in tail08 and compiled green.
+- Tail09 Pack=1 Core contract additions compiled green.

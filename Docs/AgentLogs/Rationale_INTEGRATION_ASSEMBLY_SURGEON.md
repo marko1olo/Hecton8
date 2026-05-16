@@ -95,3 +95,11 @@ Solution: Re-read current source, re-extracted the XML prompt with an attribute-
 Rejected Alternatives: Editing files to fix line numbers that no longer existed, deleting another agent's ecosystem work, or committing against stale failure evidence from tail05/tail06/tail07.
 Scalability potential: Low/Quest tiers avoid direct Core-to-AI assembly pressure; High/Ultra retain ecosystem population validation through optional layout probes without forcing a compile-time dependency.
 Hardware Impact: Runtime gain is 0 us measured. Latest tail compile verification cost: 74,320,000 us.
+
+## 2026-05-16 ABI Pack Tail Revalidation
+
+Problem: A post-push Core contracts tail added ARM64 ABI hardening to MacroDatabase, PersistencePaging, and Prologue sequence DTOs. Without fresh compile evidence, committing it would satisfy the Pack=1 mandate on paper but leave the generated Core project unverified.
+Solution: Kept the change scoped to declared `StructLayout` attributes, verified all touched contract layouts now include `Pack = 1`, checked for conflict markers, and reran `dotnet build Hecton8.Core.csproj --no-restore`.
+Rejected Alternatives: Reverting the concurrent Pack=1 additions, broad DTO rewrites, or claiming Quest/Android ABI safety from default sequential layout.
+Scalability potential: Low/Quest/Android tiers get deterministic binary contract packing for ARM64; Middle retains the same DTO surface; High/Ultra keep the same visual/gameplay systems without hidden padding drift at contract boundaries.
+Hardware Impact: Runtime gain is 0 us measured. Compile verification cost: 34,760,000 us. Crash-risk reduction is ABI stability, not profiler-proven frame time.

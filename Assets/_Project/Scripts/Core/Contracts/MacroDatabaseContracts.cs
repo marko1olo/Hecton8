@@ -10,7 +10,7 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// Blittable AUP transfer payload used by H8_MacroDB without taking a World assembly dependency.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 48)]
     public struct MacroDatabaseAup
     {
         public const int CellSizeMeters = 5000;
@@ -93,7 +93,7 @@ namespace Hecton8.Core.Contracts
         public const byte Dirty = 1 << 0;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct MacroDatabaseConfig
     {
         public int NodeSizeBytes;
@@ -131,7 +131,7 @@ namespace Hecton8.Core.Contracts
         };
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct MacroDatabasePayloadHandle
     {
         public ulong SectorHash;
@@ -144,7 +144,7 @@ namespace Hecton8.Core.Contracts
         public ushort Reserved1;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct MacroDatabaseNativeCacheStats
     {
         public long Bytes;
@@ -153,7 +153,7 @@ namespace Hecton8.Core.Contracts
         public int Evictions;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct MacroDatabaseStats
     {
         public long FileBytes;
@@ -175,7 +175,7 @@ namespace Hecton8.Core.Contracts
         public byte CompactionFlags;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct MacroDatabaseCompactionSnapshot
     {
         public long FileBytes;
@@ -191,7 +191,7 @@ namespace Hecton8.Core.Contracts
         public byte Reserved;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct SectorHydratedSignal
     {
         public ulong SectorHash;
@@ -203,7 +203,7 @@ namespace Hecton8.Core.Contracts
         public ushort Reserved;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct MacroDatabaseTelemetryEntry
     {
         public ulong PlayerSectorHash;

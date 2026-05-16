@@ -78,6 +78,35 @@ Residual risk:
 Current Status:
 - VERIFIED MASTER GRADE - BUILD GREEN.
 
+## 2026-05-16 - Tail09 Pack=1 Contract Revalidation
+
+What was wrong:
+- After remote sync, a new local Core contracts tail appeared in MacroDatabase, PersistencePaging, and Prologue sequence DTOs.
+- The tail was correct in direction but had no Integrator compile evidence yet.
+
+What was done:
+- Verified the touched `StructLayout` declarations now carry `Pack = 1`.
+- Checked the touched contract files for conflict markers.
+- Ran a fresh Core compile after the ABI attribute changes.
+
+Cinematic Cheats used:
+- No visual or gameplay cheat was added by Integrator.
+- Low/Quest/Android receive deterministic DTO packing; High/Ultra behavior is unchanged.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Tail09 compile verification time: 34,760,000 us.
+
+Verification:
+- `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_tail09_pack1.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+- Touched contract files: no real `<<<<<<<`, `=======`, `>>>>>>>` markers.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, player builds, Quest/Android build, Metal build, and IL2CPP strip build were not run.
+
+Current Status:
+- VERIFIED MASTER GRADE - BUILD GREEN.
+
 ## 2026-05-16 - Loop42 Helper Repair Revalidation
 
 What was wrong:
