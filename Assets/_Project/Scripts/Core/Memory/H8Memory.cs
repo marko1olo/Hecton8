@@ -407,6 +407,11 @@ namespace Hecton8.Core.Memory
         {
             throw new FatalMemoryException("H8Memory allocation tracking failed.");
         }
+
+        public static void ThrowAbiLayoutMismatch()
+        {
+            throw new FatalMemoryException("H8Memory ABI layout mismatch.");
+        }
     }
 
     /// <summary>
@@ -424,6 +429,9 @@ namespace Hecton8.Core.Memory
         private const int MaximumRawAlignment = 4096;
         private const long LowTierPoolCapBytes = 512L * 1024L * 1024L;
         private const int NoTransitionCutoffGeneration = -1;
+        private const int BlockDescriptorSizeBytes = 40;
+        private const int H8AllocationRecordSizeBytes = 48;
+        private const int H8MemoryTelemetryEntrySizeBytes = 64;
         private const string AgentDumpFileName = "Dump_SENTINEL_DISPOSAL_GUARD.bin";
 
         private static NativeParallelHashMap<long, SystemID> _allocationOwners;
