@@ -117,6 +117,7 @@ namespace Hecton8.VFX.Bioluminescence
             CompleteScheduledJob();
             ClearShaderGlobals();
             _tickDispatcher = null;
+            _dataVault = null;
         }
 
         private void OnDestroy()
@@ -215,7 +216,9 @@ namespace Hecton8.VFX.Bioluminescence
 
         private IDataVault ResolveDataVault()
         {
-            _dataVault = GlobalRegistry.DataVault;
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+
             return _dataVault;
         }
 

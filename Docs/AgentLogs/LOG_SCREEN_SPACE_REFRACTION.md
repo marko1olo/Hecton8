@@ -42,3 +42,17 @@ Cinematic Cheats used: No new simulation, no per-frame I/O, no managed buffer. T
 Exact Microseconds saved: Not measured. Runtime work remains one 48-byte heartbeat write when evaluated. Removing the cursor/last-frame fields saves two trivial field writes/reads per evaluated player-camera frame; exact us pending profiler.
 
 Build/validation: `rg NativeArray Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs` returns no matches. Domain scan found no forbidden hot-path patterns. `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:ContinuousIntegrationBuild=false -p:EnableSourceControlManagerQueries=false -v:minimal -clp:Summary` fails outside this domain with 39 errors, first in `HectonXRRuntimeState.cs`, `BiolumPulseSyncRuntime.cs`, `VaultProbeUtility.cs`, `SpatialAudioManager.cs`, and `SubmarineStructuralGrid.cs`.
+
+## 2026-05-16 - High Tier Suspended Silt Fake
+
+What was wrong: The visor overkill path had salt crystals but no suspended silt impression. Adding real volumetric silt or wake particles would exceed the VFX/POST refraction boundary and create cross-domain runtime ownership.
+
+What was done: Added `ComputeSuspendedSiltMask` to `Hecton_VisorFluidDistortion.shader`. It uses procedural noise, hashed specks, wetness/rain activity, depth validity, inverse dirt, local velocity drift, and `_HectonVisorFluidVisualOverkill`. Low/MX350 stays off because the overkill uniform resolves to zero.
+
+Cinematic Cheats used: Screen-space silt shimmer, not particles, raymarching, wake fluid simulation, or texture-driven volume.
+
+Exact Microseconds saved: 0 us measured. CPU cost is 0.0 us/frame. GPU cost is added fragment ALU only on High/Ultra where the overkill uniform is non-zero; exact us pending profiler after shared build clears.
+
+Build/validation: Shader diff passes `git diff --check` except LF/CRLF warnings. Forbidden-pattern scan still finds no `Update`, `string.Format`, `EventBus`, managed delegate lane, Unity object search, singleton `.Instance`, `GrabPass`, `RenderGraphUtils`, `AddBlitPass`, compute thread groups, group barriers, or DX-only `tex2D` in touched visor/refraction files.
+
+Post-silt build retry: `dotnet build Hecton8.Core.csproj --no-restore -m:2 /nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -p:ContinuousIntegrationBuild=false -p:EnableSourceControlManagerQueries=false -v:minimal -clp:Summary` failed before C# compilation because `Temp/obj/Hecton8.Core/Hecton8.Core.sourcelink.json` was locked by another process. Unknown concurrent build processes were not killed.

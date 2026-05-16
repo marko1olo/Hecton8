@@ -364,6 +364,7 @@ namespace Hecton8.Audio.Editor
         public void OnPreprocessBuild(BuildReport report)
         {
             ValidatePreloadedAudioBudget(true);
+            EnvironmentAudioSourcePurgeGate.ValidateEnvironmentPrefabsNoAudioSources(true);
         }
 
         [MenuItem("Hecton/Validation/Audio/Validate Preloaded Audio Budget", priority = 410)]
@@ -432,6 +433,157 @@ namespace Hecton8.Audio.Editor
             }
 
             return builder.ToString();
+        }
+    }
+
+    /// <summary>
+    /// Strips ambient prefab AudioSources so environment audio enters through SignalBus-backed systems only.
+    /// </summary>
+    internal sealed class EnvironmentAudioSourcePurgeGate
+    {
+        private const string ProjectPrefabRoot = "Assets/_Project/Prefabs";
+
+        private struct PrefabAudioIssue
+        {
+            public string Path;
+            public int Count;
+        }
+
+        [MenuItem("Hecton/Audio/Purge Environment Prefab AudioSources", priority = 411)]
+        internal static void PurgeEnvironmentAudioSourcesMenu()
+        {
+            PurgeEnvironmentAudioSources();
+        }
+
+        [MenuItem("Hecton/Validation/Audio/Validate Environment Prefabs No AudioSources", priority = 412)]
+        internal static void ValidateEnvironmentPrefabsNoAudioSourcesMenu()
+        {
+            ValidateEnvironmentPrefabsNoAudioSources(false);
+        }
+
+        internal static void PurgeEnvironmentAudioSources()
+        {
+            string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { ProjectPrefabRoot });
+            int changedPrefabCount = 0;
+            int removedSourceCount = 0;
+
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                if (!IsEnvironmentPrefabPath(path))
+                    continue;
+
+                GameObject root = PrefabUtility.LoadPrefabContents(path);
+                try
+                {
+                    AudioSource[] sources = root.GetComponentsInChildren<AudioSource>(true);
+                    if (sources == null || sources.Length <= 0)
+                        continue;
+
+                    for (int sourceIndex = 0; sourceIndex < sources.Length; sourceIndex++)
+                    {
+                        UnityEngine.Object.DestroyImmediate(sources[sourceIndex], true);
+                        removedSourceCount++;
+                    }
+
+                    PrefabUtility.SaveAsPrefabAsset(root, path);
+                    changedPrefabCount++;
+                }
+                finally
+                {
+                    PrefabUtility.UnloadPrefabContents(root);
+                }
+            }
+
+            AssetDatabase.SaveAssets();
+            Debug.Log("[EnvironmentAudioSourcePurgeGate:0xA1D10003] Removed " +
+                      removedSourceCount +
+                      " AudioSource components from " +
+                      changedPrefabCount +
+                      " environment prefabs.");
+        }
+
+        internal static void ValidateEnvironmentPrefabsNoAudioSources(bool failBuild)
+        {
+            string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { ProjectPrefabRoot });
+            List<PrefabAudioIssue> issues = new List<PrefabAudioIssue>(16);
+
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                if (!IsEnvironmentPrefabPath(path))
+                    continue;
+
+                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                if (prefab == null)
+                    continue;
+
+                AudioSource[] sources = prefab.GetComponentsInChildren<AudioSource>(true);
+                if (sources == null || sources.Length <= 0)
+                    continue;
+
+                issues.Add(new PrefabAudioIssue
+                {
+                    Path = path,
+                    Count = sources.Length
+                });
+            }
+
+            if (issues.Count <= 0)
+                return;
+
+            string report = BuildFailureReport(issues);
+            Debug.LogError(report);
+            if (failBuild)
+                throw new BuildFailedException(report);
+        }
+
+        private static string BuildFailureReport(List<PrefabAudioIssue> issues)
+        {
+            StringBuilder builder = new StringBuilder(2048);
+            builder.AppendLine("[EnvironmentAudioSourcePurgeGate:0xA1D10004] Environment prefab AudioSource components are banned. Build aborted.");
+            for (int i = 0; i < issues.Count; i++)
+            {
+                builder.Append(" - ");
+                builder.Append(issues[i].Count);
+                builder.Append(" AudioSource | ");
+                builder.AppendLine(issues[i].Path);
+            }
+
+            return builder.ToString();
+        }
+
+        private static bool IsEnvironmentPrefabPath(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return false;
+
+            string normalizedPath = AudioImportDictator.NormalizePath(path);
+            if (!normalizedPath.StartsWith(ProjectPrefabRoot, StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            if (ContainsToken(normalizedPath, "/Audio/") ||
+                ContainsToken(normalizedPath, "/Player") ||
+                ContainsToken(normalizedPath, "/Tools/") ||
+                ContainsToken(normalizedPath, "/UI/") ||
+                ContainsToken(normalizedPath, "/Interface/"))
+            {
+                return false;
+            }
+
+            return ContainsToken(normalizedPath, "/Environment/") ||
+                   ContainsToken(normalizedPath, "/World/") ||
+                   ContainsToken(normalizedPath, "/Biome") ||
+                   ContainsToken(normalizedPath, "/Cave") ||
+                   ContainsToken(normalizedPath, "/Flora") ||
+                   ContainsToken(normalizedPath, "/Terrain") ||
+                   ContainsToken(normalizedPath, "/Ambient") ||
+                   ContainsToken(normalizedPath, "/Outpost");
+        }
+
+        private static bool ContainsToken(string path, string token)
+        {
+            return path.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0;
         }
     }
 }

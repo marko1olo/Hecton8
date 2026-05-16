@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Core.Memory;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 
@@ -56,6 +57,28 @@ namespace Hecton8.Animation.IK
         public const uint OutputFlagGripInput = 1u << 8;
 
         public const uint TelemetryMarkerIKLockState = 0x494B4C53u;
+    }
+
+    /// <summary>
+    /// Cold ABI sentinel for hand presence payloads crossing DataVault and dump boundaries.
+    /// </summary>
+    public static class VRPhysicalHandPresenceLayout
+    {
+        public const int AupPoseBytes = 48;
+        public const int GrabStateBytes = 72;
+        public const int InputBytes = 260;
+        public const int OutputBytes = 116;
+        public const int TelemetryEntryBytes = 80;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool Validate()
+        {
+            return UnsafeUtility.SizeOf<VRHandAupPose>() == AupPoseBytes &&
+                   UnsafeUtility.SizeOf<VRHandGrabState>() == GrabStateBytes &&
+                   UnsafeUtility.SizeOf<VRHandPresenceInput>() == InputBytes &&
+                   UnsafeUtility.SizeOf<VRHandPresenceOutput>() == OutputBytes &&
+                   UnsafeUtility.SizeOf<VRHandIkTelemetryEntry>() == TelemetryEntryBytes;
+        }
     }
 
     /// <summary>
@@ -163,6 +186,7 @@ namespace Hecton8.Animation.IK
         public byte GrabState;
         public byte IKLockState;
         public ushort Reserved;
+        public byte LayoutPadding;
         public float3 TargetPosition;
         public float3 ActualPosition;
         public float3 ControllerPosition;
@@ -199,6 +223,8 @@ namespace Hecton8.Animation.IK
             telemetryCursor = default;
 
             if (vault == null)
+                return false;
+            if (!VRPhysicalHandPresenceLayout.Validate())
                 return false;
 
             inputs = vault.GetBuffer<VRHandPresenceInput>(
@@ -305,6 +331,7 @@ namespace Hecton8.Animation.IK
             writer.Write(entry.GrabState);
             writer.Write(entry.IKLockState);
             writer.Write(entry.Reserved);
+            writer.Write(entry.LayoutPadding);
             WriteFloat3(writer, entry.TargetPosition);
             WriteFloat3(writer, entry.ActualPosition);
             WriteFloat3(writer, entry.ControllerPosition);
@@ -673,6 +700,7 @@ namespace Hecton8.Animation.IK
                 GrabState = grabState,
                 IKLockState = grabState,
                 Reserved = 0,
+                LayoutPadding = 0,
                 TargetPosition = GrabStates[hand].TargetPosition,
                 ActualPosition = output.ActualHandPosition,
                 ControllerPosition = output.GhostHandPosition,

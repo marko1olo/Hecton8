@@ -1238,7 +1238,7 @@ namespace Hecton8.Rendering.Scatter
                 BufferID.FloraScatterBlackBox,
                 TelemetryCapacity,
                 SystemID.Vfx,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ScatterBlackBoxEntry>[300] — fixed flora blackbox ring — owner: GpuScatterLodManager
+                NativeArrayOptions.ClearMemory);
             _blackBoxCursor = 0;
             return _blackBoxHandle.IsCreated && _blackBoxHandle.Length >= TelemetryCapacity;
         }
@@ -1363,7 +1363,7 @@ namespace Hecton8.Rendering.Scatter
                     BufferID.FloraScatterCpuFrustumPlanes,
                     FrustumPlaneCount,
                     SystemID.Vfx,
-                    NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float4>[6] — CPU Burst frustum audit planes — owner: GpuScatterLodManager
+                    NativeArrayOptions.UninitializedMemory);
             }
 
             int visibilityCapacity = math.max(activeCount, instanceCapacity);
@@ -1377,7 +1377,7 @@ namespace Hecton8.Rendering.Scatter
                     BufferID.FloraScatterCpuVisibilityMask,
                     visibilityCapacity,
                     SystemID.Vfx,
-                    NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[activeCount] — CPU Burst cull audit mask — owner: GpuScatterLodManager
+                    NativeArrayOptions.UninitializedMemory);
             }
 
             return _cpuFrustumPlanesHandle.IsCreated && _cpuVisibilityMaskHandle.IsCreated;

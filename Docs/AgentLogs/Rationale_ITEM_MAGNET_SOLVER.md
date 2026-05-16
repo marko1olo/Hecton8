@@ -149,3 +149,9 @@ Solution: Re-ran `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -v:minima
 Rejected Alternatives: Claiming green; editing XR/submarine/VFX/audio domains from this item magnet task.
 Scalability potential: No runtime impact for loot magnet.
 Hardware Impact: None at runtime.
+
+Problem: Magnet pose ownership restoration depended on each pickup's own disable/destroy path, so scheduler shutdown after a completed pull could leave active pickups kinematic and collision-disabled.
+Solution: Added a scheduler-level `RestoreAllManagedProxyRuntimeStates` pass and call it from both runtime-state clear paths. Any dependency loss, scene disable, or scheduler shutdown now releases magnet-owned pickup physics state before counters are reset.
+Rejected Alternatives: Relying on `PickupItem.OnDisable`; permanently forcing pickups kinematic; leaving vault state intact after shutdown.
+Scalability potential: Low/Middle/High/Ultra share the same cold cleanup. Visual overkill stays in typed lanes; physics state returns to authored behavior without a per-frame tax.
+Hardware Impact: 0 hot-frame cost. Shutdown/clear cost is one bounded loop over active pickup sidecars and only touches pickups that were cached by the magnet scheduler.

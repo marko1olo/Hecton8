@@ -45,6 +45,7 @@ Shader "Hecton8/WFC/LaserDoorClip"
             float _WfcLaserCutProgress01;
             float _WfcLaserCutHeat01;
             float _WfcLaserCutMolten01;
+            float _WfcLaserCutOverkill01;
 
             struct Attributes
             {
@@ -68,6 +69,19 @@ Shader "Hecton8/WFC/LaserDoorClip"
                 return output;
             }
 
+            half3 SafeNormalizeHalf(half3 value)
+            {
+                float3 safeValue = (float3)value;
+                float lengthSq = max(dot(safeValue, safeValue), 0.000001);
+                return (half3)(safeValue * rsqrt(lengthSq));
+            }
+
+            float TriangleGrain(float3 positionWS)
+            {
+                float grain = frac(dot(positionWS, float3(17.131, 59.371, 101.113)));
+                return abs(grain * 2.0 - 1.0);
+            }
+
             half4 Frag(Varyings input) : SV_Target
             {
                 float progress = saturate(_WfcLaserCutProgress01);
@@ -75,16 +89,22 @@ Shader "Hecton8/WFC/LaserDoorClip"
                 float dist = distance(input.positionWS, _WfcLaserCutSphereWS.xyz);
                 clip(dist - radius);
 
-                half3 normalWS = normalize(input.normalWS);
+                half3 normalWS = SafeNormalizeHalf(input.normalWS);
                 Light mainLight = GetMainLight();
                 half ndotl = saturate(dot(normalWS, mainLight.direction));
-                half3 lit = _BaseColor.rgb * (0.18h + ndotl * mainLight.color);
+                half3 lit = _BaseColor.rgb * ((half)0.18 + ndotl * mainLight.color);
 
                 float edgeWidth = max((float)_EdgeWidth, 0.001);
-                half edge01 = (half)(1.0 - saturate(abs(dist - radius) / edgeWidth));
+                float shellDistance = abs(dist - radius);
+                half edge01 = (half)(1.0 - saturate(shellDistance / edgeWidth));
                 half heat01 = (half)saturate(_WfcLaserCutHeat01);
                 half molten01 = (half)saturate(_WfcLaserCutMolten01);
-                half3 molten = _MoltenColor.rgb * edge01 * (0.5h + heat01 * 0.5h) * (half)_EmissionGain * molten01;
+                half overkill01 = (half)saturate(_WfcLaserCutOverkill01);
+                half grain01 = (half)TriangleGrain(input.positionWS);
+                half crystalBand = (half)(1.0 - saturate(shellDistance / max(edgeWidth * 3.0, 0.001))) * overkill01;
+                half edgeEnergy = edge01 * ((half)0.5 + heat01 * (half)0.5);
+                half overkillEnergy = crystalBand * ((half)0.35 + grain01 * (half)0.65) * ((half)0.75 + heat01);
+                half3 molten = _MoltenColor.rgb * (edgeEnergy + overkillEnergy) * (half)_EmissionGain * molten01;
 
                 return half4(lit + molten, _BaseColor.a);
             }

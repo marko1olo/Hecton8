@@ -51,6 +51,9 @@ namespace Hecton8.AI.Cognition
 
             float3 toAnchor = NormalizeDouble3(toAnchorDouble, new float3(0f, 1f, 0f), validDelta);
             float3 awayFromAnchor = -toAnchor;
+            float3 playerForward = NormalizeSafe(stimulus.PlayerForward, awayFromAnchor);
+            float playerGazeDot = math.saturate(math.dot(playerForward, awayFromAnchor));
+            bool playerGazeBreak = playerGazeDot > AlphaLeviathanStalkConstants.PlayerGazeBreakDot;
             float3 tangentFallback = NormalizeSafe(math.cross(new float3(0f, 0f, 1f), toAnchor), new float3(1f, 0f, 0f));
             float3 tangent = NormalizeSafe(math.cross(new float3(0f, 1f, 0f), toAnchor), tangentFallback);
 
@@ -107,6 +110,7 @@ namespace Hecton8.AI.Cognition
             byte flags = 0;
             flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.LowTierRadialFallback, lowTier);
             flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.SdfDiveRequested, highTierSdf);
+            flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.PlayerGazeBreak, playerGazeBreak);
             flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.AcousticLure, sonarActive);
             flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.LightRetreat, lightRetreat);
             flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.ShiftFenceReset, shiftChanged);
@@ -143,6 +147,8 @@ namespace Hecton8.AI.Cognition
             float dentImpulse = math.saturate(charge01 * (aggression * 0.75f + math.abs(radialCorrection) * 0.25f));
             float sssPulse = math.saturate(0.05f + charge01 * 0.8f + math.select(0f, 0.15f, highTierSdf));
             float particleBudget = math.select(0.18f, 1f, highTierSdf);
+            float triangleNoise = Triangle01(((float)((Frame + (uint)(index * 17)) & 1023u)) * AlphaLeviathanStalkConstants.TriangleNoiseInvPeriod + aggression);
+            float silhouetteNoise = math.select(triangleNoise * 0.2f, triangleNoise, lowTier);
             SteeringOutputs[index] = new AlphaLeviathanSteeringOutput
             {
                 DesiredDirection = desiredDirection,
@@ -160,6 +166,7 @@ namespace Hecton8.AI.Cognition
                 HullDentImpulse01 = dentImpulse,
                 SubsurfaceScatterPulse01 = sssPulse,
                 ParticleOverkillBudget01 = particleBudget,
+                PredatorSilhouetteNoise01 = silhouetteNoise,
                 Slot = slotId,
                 CurrentPhase = (byte)phase,
                 Flags = flags,
@@ -203,6 +210,12 @@ namespace Hecton8.AI.Cognition
         private static float SanitizePositive(float value, float fallback)
         {
             return math.select(fallback, value, math.isfinite(value) & value > 0f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float Triangle01(float value)
+        {
+            return math.saturate(math.abs(math.frac(value) - 0.5f) * 2f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

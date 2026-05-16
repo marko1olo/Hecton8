@@ -6,6 +6,8 @@
 #pragma kernel KernelPBDSolve
 #pragma kernel ApplyOriginShift
 
+#define HECTON_GLOBAL_WAKE_CAPACITY 16
+
 struct BoidData
 {
     // Byte layout proof vs C# BoidData:
@@ -94,6 +96,9 @@ float4 _AbyssalFlowCenter;
 float4 _AbyssalFlowSpacing;
 float _AbyssalFlowActive;
 float _AbyssalFlowWeight;
+float4 _GlobalWakeBuffer[HECTON_GLOBAL_WAKE_CAPACITY];
+float4 _GlobalWakeVectors[HECTON_GLOBAL_WAKE_CAPACITY];
+float4 _GlobalWakeParams; // x=slot limit, y=low tier, z=active count, w=stress
 
 struct SargassumSimulationFrameData
 {
@@ -837,6 +842,67 @@ bool TryResolveSubmarineWakeRepulsion(float3 positionWS, out float3 repulsionWS,
 
     repulsionWS = radialNormalWS;
     vortexWS = CheapNormalizeL1((tangentWS * (0.85 + propellerGate * 1.65)) + (radialNormalWS * 0.35) - (wakeAxisWS * trailingGate * 0.22), tangentWS);
+    return dot(repulsionWS, repulsionWS) > EPSILON && dot(vortexWS, vortexWS) > EPSILON;
+}
+
+bool TryResolveGlobalWakeRepulsion(float3 positionWS, out float3 repulsionWS, out float3 vortexWS, out float wakeGate)
+{
+    repulsionWS = float3(0.0, 0.0, 0.0);
+    vortexWS = float3(0.0, 0.0, 0.0);
+    wakeGate = 0.0;
+
+    int rawSlotLimit = min((int)max(_GlobalWakeParams.x, 0.0), HECTON_GLOBAL_WAKE_CAPACITY);
+    int slotLimit = (_GlobalWakeParams.y > 0.5 || _SimulationLodTier != SIM_LOD_TIER_FULL)
+        ? min(rawSlotLimit, 2)
+        : rawSlotLimit;
+    if (slotLimit <= 0)
+        return false;
+
+    float3 accumulatedRepulsionWS = float3(0.0, 0.0, 0.0);
+    float3 accumulatedVortexWS = float3(0.0, 0.0, 0.0);
+    float accumulatedGate = 0.0;
+
+    [unroll]
+    for (int i = 0; i < HECTON_GLOBAL_WAKE_CAPACITY; i++)
+    {
+        if (i >= slotLimit)
+            continue;
+
+        float4 wake = _GlobalWakeBuffer[i];
+        float4 vectorRadius = _GlobalWakeVectors[i];
+        float intensity = max(wake.w, 0.0);
+        float radius = max(vectorRadius.w, 0.0);
+        if (intensity <= EPSILON || radius <= EPSILON)
+            continue;
+
+        float3 deltaToWakeWS = positionWS - wake.xyz;
+        float distanceSq = dot(deltaToWakeWS, deltaToWakeWS);
+        float radiusSq = radius * radius;
+        if (distanceSq >= radiusSq)
+            continue;
+
+        float3 wakeAxisWS = CheapNormalizeL1(vectorRadius.xyz, float3(0.0, 0.0, 1.0));
+        float3 radialWS = distanceSq > EPSILON ? CheapNormalizeL1(deltaToWakeWS, -wakeAxisWS) : -wakeAxisWS;
+        float radialGate = 1.0 - saturate(distanceSq / max(radiusSq, EPSILON));
+        float gate = radialGate * radialGate * saturate(intensity);
+        if (gate <= EPSILON)
+            continue;
+
+        float3 tangentWS = CheapNormalizeL1(cross(wakeAxisWS, radialWS), float3(0.0, 0.0, 0.0));
+        if (dot(tangentWS, tangentWS) <= EPSILON)
+            tangentWS = CheapNormalizeL1(cross(float3(0.0, 1.0, 0.0), radialWS), float3(1.0, 0.0, 0.0));
+
+        accumulatedRepulsionWS += radialWS * gate;
+        accumulatedVortexWS += CheapNormalizeL1(tangentWS + radialWS * 0.35 - wakeAxisWS * 0.18, tangentWS) * gate;
+        accumulatedGate += gate;
+    }
+
+    if (accumulatedGate <= EPSILON)
+        return false;
+
+    repulsionWS = CheapNormalizeL1(accumulatedRepulsionWS, float3(0.0, 0.0, 1.0));
+    vortexWS = CheapNormalizeL1(accumulatedVortexWS, repulsionWS);
+    wakeGate = saturate(accumulatedGate);
     return dot(repulsionWS, repulsionWS) > EPSILON && dot(vortexWS, vortexWS) > EPSILON;
 }
 
@@ -1761,6 +1827,26 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
             acceleration += vortexSteerForce * vortexWeight;
             velocity += (submarineRepulsionWS * repulsionWeight + submarineVortexWS * vortexWeight) * (_DeltaTime * 0.12);
             panic = max(panic, submarineWakeGate);
+            stateFlags = BuildFleeStateFlags();
+        }
+    }
+
+    if (!leaderFollowerSchool)
+    {
+        float3 globalWakeRepulsionWS;
+        float3 globalWakeVortexWS;
+        float globalWakeGate;
+        if (TryResolveGlobalWakeRepulsion(positionWS, globalWakeRepulsionWS, globalWakeVortexWS, globalWakeGate))
+        {
+            float wakeSpeedScale = 1.0 + globalWakeGate;
+            float3 repulsionSteerForce = (globalWakeRepulsionWS * _MaxSpeed * wakeSpeedScale) - velocity;
+            float3 vortexSteerForce = (globalWakeVortexWS * _MaxSpeed * wakeSpeedScale) - velocity;
+            float repulsionWeight = globalWakeGate * max(_PanicWeight, 1.0) * 1.65;
+            float vortexWeight = globalWakeGate * globalWakeGate * max(_AlignmentWeight, 0.5) * 1.15;
+            acceleration += repulsionSteerForce * repulsionWeight;
+            acceleration += vortexSteerForce * vortexWeight;
+            velocity += (globalWakeRepulsionWS * repulsionWeight + globalWakeVortexWS * vortexWeight) * (_DeltaTime * 0.085);
+            panic = max(panic, globalWakeGate * 0.82);
             stateFlags = BuildFleeStateFlags();
         }
     }

@@ -284,6 +284,7 @@ namespace Hecton8.Gameplay
             _secondaryLatched = false;
             SetRepairVisuals(false);
             ClearDiagnosticLaserTelemetry();
+            ReleaseEquippedAudio();
             base.OnDespawn();
         }
 
@@ -301,6 +302,7 @@ namespace Hecton8.Gameplay
             SetRepairVisuals(false);
             ClearDiagnosticLaserTelemetry();
             UpdatePowerIndicator();
+            PrewarmEquippedAudio();
         }
 
         public override void OnUnequip()
@@ -314,6 +316,7 @@ namespace Hecton8.Gameplay
             _secondaryLatched = false;
             SetRepairVisuals(false);
             ClearDiagnosticLaserTelemetry();
+            ReleaseEquippedAudio();
             base.OnUnequip();
         }
 
@@ -334,6 +337,16 @@ namespace Hecton8.Gameplay
 
             if (GlobalRegistry.Audio is SpatialAudioManager spatialAudioManager)
                 repairLoopAudio.outputAudioMixerGroup = spatialAudioManager.SfxGroup;
+        }
+
+        private void PrewarmEquippedAudio()
+        {
+            AudioResidencyCache.PrewarmAudioSource(repairLoopAudio, AudioResidencyDomain.Player);
+        }
+
+        private void ReleaseEquippedAudio()
+        {
+            AudioResidencyCache.ReleaseAudioSource(repairLoopAudio);
         }
 
         private float ResolveRuntimeRepairPowerPerSecond()

@@ -486,8 +486,6 @@ namespace Hecton8.AI
         private readonly List<ushort> _faunaPresentationRuntimeMaterialMasks = new List<ushort>(4);
 
         // --- Event Hooks ---
-        public Action<AIState> OnStateChanged;
-        
         [Header("── Audio Hooks ─────────────────────────────────")]
         [Tooltip("Triggered when a Panic Pulse occurs. Hook audio agents here for zero-GC sound dispatch.")]
         public UnityEngine.Events.UnityEvent OnPanicTriggered;
@@ -1180,11 +1178,6 @@ namespace Hecton8.AI
             else
             {
                 ClearAttackTelegraphState();
-            }
-
-            if (_currentStateCache != oldState)
-            {
-                OnStateChanged?.Invoke(_currentStateCache);
             }
 
             if (_sensorSuite.isAvoidingObstacle)

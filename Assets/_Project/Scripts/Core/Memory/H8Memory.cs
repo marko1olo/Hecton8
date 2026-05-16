@@ -261,7 +261,8 @@ namespace Hecton8.Core.Memory
         EcosystemPopulationTelemetryRing = 208,
         EcosystemPopulationFreeRing = 209,
         EcosystemPopulationCounters = 210,
-        ResolutionScaleTelemetry = 211
+        ResolutionScaleTelemetry = 211,
+        TetherCableBlackBoxHead = 212
     }
 
     [Flags]
@@ -444,12 +445,15 @@ namespace Hecton8.Core.Memory
         private static NativeArray<long> _ownerBytes;
         private static NativeList<BlockDescriptor> _blockDescriptors;
         private static NativeArray<H8MemoryTelemetryEntry> _blackBox;
+        private static NativeArray<H8MemoryTelemetryEntry> _eventBlackBox;
         private static int _recordCount;
         private static long _totalBytes;
         private static long _poolCapBytes = LowTierPoolCapBytes;
         private static int _fatalLeakPreventedCount;
         private static int _blackBoxCursor;
+        private static int _eventBlackBoxCursor;
         private static uint _blackBoxSequence;
+        private static uint _eventBlackBoxSequence;
         private static int _allocationGeneration = 1;
         private static int _transitionCutoffGeneration = NoTransitionCutoffGeneration;
         private static int _transitionSequence;
@@ -567,12 +571,16 @@ namespace Hecton8.Core.Memory
             _blockDescriptors = new NativeList<BlockDescriptor>(safeCapacity, Allocator.Persistent);
             // COLD ALLOC: NativeArray<H8MemoryTelemetryEntry>[300] - sentinel heartbeat ring - owner: H8Memory
             _blackBox = new NativeArray<H8MemoryTelemetryEntry>(BlackBoxFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<H8MemoryTelemetryEntry>[300] - lifecycle event snapshots for leak dumps - owner: H8Memory
+            _eventBlackBox = new NativeArray<H8MemoryTelemetryEntry>(BlackBoxFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _recordCount = 0;
             _totalBytes = 0L;
             _poolCapBytes = poolCapBytes > 0L ? poolCapBytes : LowTierPoolCapBytes;
             _fatalLeakPreventedCount = 0;
             _blackBoxCursor = 0;
+            _eventBlackBoxCursor = 0;
             _blackBoxSequence = 0u;
+            _eventBlackBoxSequence = 0u;
             _allocationGeneration = 1;
             _transitionCutoffGeneration = NoTransitionCutoffGeneration;
             _transitionSequence = 0;
@@ -1073,6 +1081,8 @@ namespace Hecton8.Core.Memory
                 _blockDescriptors.Dispose();
             if (_blackBox.IsCreated)
                 _blackBox.Dispose();
+            if (_eventBlackBox.IsCreated)
+                _eventBlackBox.Dispose();
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             if (_aliasSafetyHandleCreated)
             {
@@ -1088,7 +1098,9 @@ namespace Hecton8.Core.Memory
             _transitionBaselineBytes = 0L;
             _lastTransitionBaselineVerified = true;
             _blackBoxCursor = 0;
+            _eventBlackBoxCursor = 0;
             _blackBoxSequence = 0u;
+            _eventBlackBoxSequence = 0u;
             _initialized = false;
         }
 
@@ -1489,6 +1501,14 @@ namespace Hecton8.Core.Memory
 
         private static void RecordBlackBox(SystemID owner, H8MemoryTelemetryFlags flags)
         {
+            if ((flags & H8MemoryTelemetryFlags.Heartbeat) != 0)
+                RecordFrameHeartbeat(owner, flags);
+            else
+                RecordLifecycleEvent(owner, flags);
+        }
+
+        private static void RecordFrameHeartbeat(SystemID owner, H8MemoryTelemetryFlags flags)
+        {
             if (!_blackBox.IsCreated || _blackBox.Length == 0)
                 return;
 
@@ -1496,11 +1516,40 @@ namespace Hecton8.Core.Memory
             if ((uint)cursor >= (uint)_blackBox.Length)
                 cursor = 0;
 
+            H8MemoryTelemetryEntry entry = BuildTelemetryEntry(owner, flags, ++_blackBoxSequence);
+            _blackBox[cursor] = entry;
+
+            cursor++;
+            if (cursor >= _blackBox.Length)
+                cursor = 0;
+            _blackBoxCursor = cursor;
+        }
+
+        private static void RecordLifecycleEvent(SystemID owner, H8MemoryTelemetryFlags flags)
+        {
+            if (!_eventBlackBox.IsCreated || _eventBlackBox.Length == 0)
+                return;
+
+            int cursor = _eventBlackBoxCursor;
+            if ((uint)cursor >= (uint)_eventBlackBox.Length)
+                cursor = 0;
+
+            H8MemoryTelemetryEntry entry = BuildTelemetryEntry(owner, flags, ++_eventBlackBoxSequence);
+            _eventBlackBox[cursor] = entry;
+
+            cursor++;
+            if (cursor >= _eventBlackBox.Length)
+                cursor = 0;
+            _eventBlackBoxCursor = cursor;
+        }
+
+        private static H8MemoryTelemetryEntry BuildTelemetryEntry(SystemID owner, H8MemoryTelemetryFlags flags, uint sequence)
+        {
             H8MemoryTelemetryEntry entry = default;
             entry.TotalBytes = _totalBytes;
             entry.TransitionBaselineBytes = _transitionBaselineBytes;
             entry.LastTransitionReleasedBytes = _lastTransitionReleasedBytes;
-            entry.Sequence = ++_blackBoxSequence;
+            entry.Sequence = sequence;
             entry.ActiveAllocationCount = _recordCount;
             entry.BlockDescriptorCount = _blockDescriptors.IsCreated ? _blockDescriptors.Length : 0;
             entry.AllocationGeneration = _allocationGeneration;
@@ -1511,35 +1560,38 @@ namespace Hecton8.Core.Memory
             entry.Owner = (ushort)owner;
             entry.Flags = (ushort)flags;
             entry.Frame = unchecked((uint)Time.frameCount);
-            _blackBox[cursor] = entry;
-
-            cursor++;
-            if (cursor >= _blackBox.Length)
-                cursor = 0;
-            _blackBoxCursor = cursor;
+            return entry;
         }
 
         private static void WriteBlackBoxEntries(BinaryWriter writer)
         {
-            if (!_blackBox.IsCreated || _blackBox.Length == 0)
+            WriteBlackBoxRing(writer, _blackBox, _blackBoxSequence, _blackBoxCursor);
+            WriteBlackBoxRing(writer, _eventBlackBox, _eventBlackBoxSequence, _eventBlackBoxCursor);
+        }
+
+        private static void WriteBlackBoxRing(
+            BinaryWriter writer,
+            NativeArray<H8MemoryTelemetryEntry> ring,
+            uint sequence,
+            int cursor)
+        {
+            if (!ring.IsCreated || ring.Length == 0)
             {
                 writer.Write(0);
                 return;
             }
 
-            int recordedCount = _blackBoxSequence < (uint)_blackBox.Length
-                ? (int)_blackBoxSequence
-                : _blackBox.Length;
+            int recordedCount = sequence < (uint)ring.Length ? (int)sequence : ring.Length;
             writer.Write(recordedCount);
 
-            int start = _blackBoxSequence < (uint)_blackBox.Length ? 0 : _blackBoxCursor;
+            int start = sequence < (uint)ring.Length ? 0 : cursor;
             for (int i = 0; i < recordedCount; i++)
             {
                 int index = start + i;
-                if (index >= _blackBox.Length)
-                    index -= _blackBox.Length;
+                if (index >= ring.Length)
+                    index -= ring.Length;
 
-                H8MemoryTelemetryEntry entry = _blackBox[index];
+                H8MemoryTelemetryEntry entry = ring[index];
                 writer.Write(entry.TotalBytes);
                 writer.Write(entry.TransitionBaselineBytes);
                 writer.Write(entry.LastTransitionReleasedBytes);

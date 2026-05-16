@@ -131,3 +131,19 @@ Solution: Record the current blockers without touching unrelated domains: `Hecto
 Rejected Alternatives: Fixing XR refresh-rate APIs, biolum telemetry structs, vault diagnostics, audio residency helpers, or submarine breach buffers would exceed the VFX/POST assignment.
 Scalability potential: No change to visor scalability; the compile wall is integration debt.
 Hardware Impact: No runtime impact from the blocker. Exact visor microseconds remain unmeasured until the shared project compiles.
+
+## Decision 16 - Silt Overkill As A Dear Lie
+
+Problem: The god-mode request wants suspended silt, but real volumetric silt or wake particles are out of scope for screen-space visor refraction and would add cross-domain dependencies.
+Solution: Add a High/Ultra-only visor-space suspended-silt shimmer using procedural `ValueNoise`, hashed specks, inverse dirt, depth validity, wetness/rain activity, and the existing `_HectonVisorFluidVisualOverkill` uniform.
+Rejected Alternatives: A particle system, fluid wake bridge, raymarching volume, or extra silt textures were rejected because they violate the low-cost Snell contract and Steam Deck I/O pressure.
+Scalability potential: Low/MX350 gets 0 contribution because visual overkill is forced to zero; Mid gets reduced/zero depending quality tier; High gets sparse filaments; Ultra gets denser shimmer through the same uniform.
+Hardware Impact: CPU impact is 0.0 us/frame. GPU impact is gated fragment ALU only and unmeasured; no new samples, buffers, or disk reads were added.
+
+## Decision 17 - Shared Build Lock Boundary
+
+Problem: The post-silt build retry failed before C# compilation because another process locked `Temp/obj/Hecton8.Core/Hecton8.Core.sourcelink.json`.
+Solution: Record the workspace lock and avoid terminating unknown concurrent agent build processes.
+Rejected Alternatives: Killing all `dotnet` processes would violate multi-agent safety and could corrupt other agents' validation runs.
+Scalability potential: No impact to visor Low/Mid/High/Ultra paths.
+Hardware Impact: No runtime impact. Exact visor microseconds remain unmeasured.

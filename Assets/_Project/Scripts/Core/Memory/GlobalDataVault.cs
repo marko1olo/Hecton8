@@ -528,6 +528,18 @@ namespace Hecton8.Core.Memory
             }
         }
 
+        private static void ValidateAbiLayout()
+        {
+            if (UnsafeUtility.SizeOf<VaultRelocationRecord>() != VaultRelocationRecordSizeBytes ||
+                UnsafeUtility.SizeOf<VaultBufferMeta>() != VaultBufferMetaSizeBytes ||
+                UnsafeUtility.SizeOf<VaultArenaBlock>() != VaultArenaBlockSizeBytes ||
+                UnsafeUtility.SizeOf<MemoryDefragTelemetryEntry>() != MemoryDefragTelemetryEntrySizeBytes ||
+                UnsafeUtility.SizeOf<VaultGapAuditResult>() != VaultGapAuditResultSizeBytes)
+            {
+                FatalMemoryException.ThrowAbiLayoutMismatch();
+            }
+        }
+
         /// <inheritdoc />
         public NativeArray<T> GetBuffer<T>(
             BufferID bufferId,
@@ -1019,7 +1031,7 @@ namespace Hecton8.Core.Memory
         /// <inheritdoc />
         public void FrostTickDefrag(float elapsedSeconds)
         {
-            FrostTickDefrag(elapsedSeconds, 1f);
+            FrostTickDefrag(elapsedSeconds, 0f);
         }
 
         /// <inheritdoc />
@@ -1042,7 +1054,9 @@ namespace Hecton8.Core.Memory
                 return;
             }
 
-            if (systemStress01 > StressDefragHaltThreshold)
+            bool stressHalted = systemStress01 > StressDefragHaltThreshold;
+            _memMoveBlockedByStress = stressHalted;
+            if (stressHalted)
                 LastDefragFlags = (byte)(LastDefragFlags | DefragFlagStressHalt);
 
             AnalyzeGaps();

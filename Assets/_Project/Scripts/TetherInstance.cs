@@ -51,6 +51,8 @@ namespace Hecton8.Physics
         private const int DataVaultCablePointCount = DataVaultCableSegmentCount + 1;
         private const int DataVaultCablePointCapacity = DataVaultMaxTetherSlots * DataVaultCablePointCount;
         private const int DataVaultCableSegmentCapacity = DataVaultMaxTetherSlots * DataVaultCableSegmentCount;
+        private const int DataVaultTelemetryCapacity = DataVaultMaxTetherSlots * VerletTelemetryCapacity;
+        private const int DataVaultTelemetryHeadCapacity = DataVaultMaxTetherSlots;
         private const float VerletFloorY = -5000f;
         private const float VerletNodeRadius = 0.035f;
         private const float MaxCableVelocity = 24f;
@@ -66,6 +68,8 @@ namespace Hecton8.Physics
         private const int DataVaultFlagVelocities = 1 << 2;
         private const int DataVaultFlagMasses = 1 << 3;
         private const int DataVaultFlagSegmentTensions = 1 << 4;
+        private const int DataVaultFlagTelemetryRing = 1 << 5;
+        private const int DataVaultFlagTelemetryHead = 1 << 6;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private const string TetherTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_VERLET_TOW_WINCH.bin";
         private const ulong TetherTelemetryDumpMagic = 0x00384E4F54434548ul;
@@ -704,8 +708,6 @@ namespace Hecton8.Physics
             DisposeNativeArray(ref _verletSolverStats);
             DisposeNativeArray(ref _verletSolverFlags);
             DisposeNativeArray(ref _verletNodeFaultFlags);
-            DisposeNativeArray(ref _verletTelemetryRing);
-            DisposeNativeArray(ref _verletTelemetryHead);
             DisposeDataVaultCableState();
             _verletRuntimeInitialized = false;
             _verletNodeCount = 0;
@@ -812,8 +814,7 @@ namespace Hecton8.Physics
             EnsureNativeArray(ref _verletSolverStats, 1, nameof(_verletSolverStats));
             EnsureNativeArray(ref _verletSolverFlags, 1, nameof(_verletSolverFlags));
             EnsureNativeArray(ref _verletNodeFaultFlags, nodeCount, nameof(_verletNodeFaultFlags));
-            EnsureNativeArray(ref _verletTelemetryRing, VerletTelemetryCapacity, nameof(_verletTelemetryRing));
-            EnsureNativeArray(ref _verletTelemetryHead, 1, nameof(_verletTelemetryHead));
+            EnsureDataVaultCableState();
             _verletNodeCount = nodeCount;
         }
 
@@ -864,7 +865,10 @@ namespace Hecton8.Physics
 
             _verletSolverStats[0] = 0f;
             _verletSolverFlags[0] = TetherVerletFaultFlags.None;
-            _verletTelemetryHead[0] = 0;
+            ClearDataVaultTelemetrySlot();
+            int telemetryHeadIndex = ResolveTelemetryHeadIndex();
+            if (_verletTelemetryHead.IsCreated && (uint)telemetryHeadIndex < (uint)_verletTelemetryHead.Length)
+                _verletTelemetryHead[telemetryHeadIndex] = 0;
             _verletRuntimeInitialized = true;
         }
 
@@ -933,12 +937,26 @@ namespace Hecton8.Physics
                 DataVaultCableSegmentCapacity,
                 nameof(_dataVaultCableSegmentTensions),
                 DataVaultFlagSegmentTensions);
+            bool telemetryReady = EnsureDataVaultCableArray(
+                ref _verletTelemetryRing,
+                BufferID.TetherCableBlackBox,
+                DataVaultTelemetryCapacity,
+                nameof(_verletTelemetryRing),
+                DataVaultFlagTelemetryRing);
+            bool telemetryHeadReady = EnsureDataVaultCableArray(
+                ref _verletTelemetryHead,
+                BufferID.TetherCableBlackBoxHead,
+                DataVaultTelemetryHeadCapacity,
+                nameof(_verletTelemetryHead),
+                DataVaultFlagTelemetryHead);
 
             _dataVaultCableStateReady = positionsReady &&
                                         previousReady &&
                                         velocitiesReady &&
                                         massesReady &&
-                                        tensionReady;
+                                        tensionReady &&
+                                        telemetryReady &&
+                                        telemetryHeadReady;
         }
 
         private bool EnsureDataVaultCableArray<T>(
@@ -986,6 +1004,8 @@ namespace Hecton8.Physics
             DisposeDataVaultCableArray(ref _dataVaultCableVelocities, DataVaultFlagVelocities);
             DisposeDataVaultCableArray(ref _dataVaultCableMasses, DataVaultFlagMasses);
             DisposeDataVaultCableArray(ref _dataVaultCableSegmentTensions, DataVaultFlagSegmentTensions);
+            DisposeDataVaultCableArray(ref _verletTelemetryRing, DataVaultFlagTelemetryRing);
+            DisposeDataVaultCableArray(ref _verletTelemetryHead, DataVaultFlagTelemetryHead);
             _dataVault = null;
             _dataVaultCableStateReady = false;
         }
@@ -1080,6 +1100,39 @@ namespace Hecton8.Physics
 
             if (!math.isfinite(peakTension))
                 ClearDataVaultCableEntry();
+        }
+
+        private int ResolveTelemetryRingOffset()
+        {
+            return _dataVaultSlot >= 0 ? _dataVaultSlot * VerletTelemetryCapacity : 0;
+        }
+
+        private int ResolveTelemetryHeadIndex()
+        {
+            return _dataVaultSlot >= 0 ? _dataVaultSlot : 0;
+        }
+
+        private int ResolveTelemetryCapacity()
+        {
+            if (!_verletTelemetryRing.IsCreated)
+                return 0;
+
+            int offset = ResolveTelemetryRingOffset();
+            if ((uint)offset >= (uint)_verletTelemetryRing.Length)
+                return 0;
+
+            return math.min(VerletTelemetryCapacity, _verletTelemetryRing.Length - offset);
+        }
+
+        private void ClearDataVaultTelemetrySlot()
+        {
+            if (!_verletTelemetryRing.IsCreated)
+                return;
+
+            int offset = ResolveTelemetryRingOffset();
+            int capacity = ResolveTelemetryCapacity();
+            for (int i = 0; i < capacity; i++)
+                _verletTelemetryRing[offset + i] = default;
         }
 
         private void ClearDataVaultCableEntry()
@@ -1231,7 +1284,10 @@ namespace Hecton8.Physics
                 PeakCableTension = peakTension,
                 AnchorPosition = anchor,
                 PayloadPosition = payload,
-                Flags = 0u
+                Flags = 0u,
+                TelemetryOffset = ResolveTelemetryRingOffset(),
+                TelemetryCapacity = ResolveTelemetryCapacity(),
+                TelemetryHeadOffset = ResolveTelemetryHeadIndex()
             };
             telemetryJob.Run();
 
@@ -1254,6 +1310,16 @@ namespace Hecton8.Physics
             if (_verletFaultDumpedThisActivation || !_verletTelemetryRing.IsCreated || !_verletTelemetryHead.IsCreated)
                 return;
 
+            int capacity = ResolveTelemetryCapacity();
+            int telemetryOffset = ResolveTelemetryRingOffset();
+            int telemetryHeadIndex = ResolveTelemetryHeadIndex();
+            if (capacity <= 0 ||
+                (uint)telemetryOffset >= (uint)_verletTelemetryRing.Length ||
+                (uint)telemetryHeadIndex >= (uint)_verletTelemetryHead.Length)
+            {
+                return;
+            }
+
             _verletFaultDumpedThisActivation = true;
             try
             {
@@ -1271,8 +1337,10 @@ namespace Hecton8.Physics
                 using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    int capacity = _verletTelemetryRing.Length;
-                    int head = _verletTelemetryHead[0];
+                    int head = _verletTelemetryHead[telemetryHeadIndex];
+                    if (head < 0 || head >= capacity)
+                        head = 0;
+
                     writer.Write(TetherTelemetryDumpMagic);
                     writer.Write((uint)capacity);
                     writer.Write((uint)TetherTelemetryDumpEntrySize);
@@ -1281,7 +1349,7 @@ namespace Hecton8.Physics
 
                     for (int i = 0; i < capacity; i++)
                     {
-                        int index = (head + i) % capacity;
+                        int index = telemetryOffset + ((head + i) % capacity);
                         TetherVerletTelemetryEntry entry = _verletTelemetryRing[index];
                         WriteTelemetryDumpEntry(writer, entry);
                     }

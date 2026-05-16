@@ -1453,6 +1453,11 @@ namespace Hecton8.AI
                 bool powered = (signal.Flags & SubmarineLightsChangedSignalFlags.Powered) != 0;
                 if (signal.Operation == SubmarineLightsChangedSignalOperations.Remove ||
                     !powered ||
+                    (signal.Flags & SubmarineLightsChangedSignalFlags.BrownoutSuppressed) != 0 ||
+                    !MathGuard.IsFinite(in signal.PositionAup) ||
+                    !MathGuard.IsFinite(signal.RangeMeters) ||
+                    !MathGuard.IsFinite(signal.Intensity) ||
+                    !MathGuard.IsFinite(signal.SpotOuterCos) ||
                     signal.RangeMeters <= 0.1f ||
                     signal.Intensity <= DdaEpsilon)
                 {

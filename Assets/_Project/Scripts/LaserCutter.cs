@@ -52,7 +52,7 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Blittable laser cutter event payload queued by <see cref="LaserCutterEvents"/>.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct LaserCutterEventPayload
     {
         /// <summary>Normalized heat value [0, 1].</summary>

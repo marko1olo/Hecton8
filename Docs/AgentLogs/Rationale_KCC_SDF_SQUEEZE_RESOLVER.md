@@ -1,6 +1,6 @@
 # Rationale_KCC_SDF_SQUEEZE_RESOLVER
 
-STATUS: CORE VERIFIED / KCC ROSLYN-CLEAN / BUILD BLOCKED BY FOREIGN ERRORS
+STATUS: CORE VERIFIED / KCC ROSLYN-CLEAN / BUILD BLOCKED BY FOREIGN XR ERROR
 
 ## Decision 0 - Scope Lock
 Problem: KCC tight-gap traversal touches physics, voxel SDF, player signals, telemetry, haptics/audio, and gas dynamics. Direct concrete references across those domains would create compile and ownership risk.
@@ -43,3 +43,10 @@ Solution: Added BufferIDs `PlayerKinematicFlowVelocity` through `PlayerKinematic
 Rejected Alternatives: Keeping H8Memory local arrays as the primary path was rejected because systems would still own data privately. Relying on compiler sequential layout was rejected because it leaves platform padding to the ABI. Replacing the remaining broad motor sweep with SDF-only movement was rejected in this pass because that sweep is a general non-alloc probe batch and its voxel-proxy branch already defers tight-gap correction to SDF sampling.
 Scalability potential: Low/MX350 keeps one vault-owned compact SOA path and 4-tap SDF math. Middle uses standard axis gradients. High uses camera roll and feedback from the same SDF normal. Ultra can feed downstream salt/silt/hull-dent VFX through existing typed signals without increasing collision truth cost inside KCC.
 Hardware Impact: Low-end i3/MX350 expected saving is another 4-12 us from reduced duplicate cache churn and cleaner vault aliasing, including the motor sweep cache. Quest/Android risk is reduced by explicit payload offsets. Steam Deck I/O pressure remains unchanged because the resolver only writes disk dumps on faults. PC 4090 keeps the visual-overkill budget in downstream VFX lanes instead of burning CPU on extra collision probes.
+
+## Decision 6 - Single Squeeze Lane And High-Tier Fluid Impulse
+Problem: The older player motor SDF branch and the new runtime resolver both emitted scrape haptic/acoustic feedback. That creates duplicate effects, hides ownership, and makes signal tuning nondeterministic. The motor fallback also sampled SDF from runtime float coordinates instead of reconstructing the sample from AUP double-space.
+Solution: Converted all remaining locomotion `StructLayout` attributes to `Pack = 1`, routed motor-side SDF sample coordinates through `AbsoluteUniversePosition.ToAbsoluteDouble3()` minus the current floating-origin offset, and made `PlayerStateSignal.StateSqueezing` the single squeeze lane. The runtime bridge now emits physiology, gas load, haptic, acoustic, and high/ultra-only `FluidImpulseSignal` feedback from that lane.
+Rejected Alternatives: Keeping duplicate motor haptic/acoustic broadcasts was rejected because it violates signal-lane ownership. Adding rendering-specific salt crystal or hull dent code from locomotion was rejected because that belongs to downstream VFX/rendering systems; locomotion now emits a typed fluid impulse they can consume without extra collision truth.
+Scalability potential: Low/MX350 gets the cheap signal-only path and no fluid impulse. Middle keeps normal scrape feedback. High/Ultra spend saved CPU on dynamic fluid impulse for volumetric silt/wake overkill while retaining deterministic KCC truth.
+Hardware Impact: Duplicate feedback collapse avoids an estimated 8-12 us on active motor-side squeeze frames. AUP hardening costs 0-2 us and removes drift-class sampling errors. High/Ultra fluid impulse spends roughly 3-8 us downstream only when the tier can afford it.

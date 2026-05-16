@@ -295,13 +295,27 @@ namespace Hecton8.Physics
         public float3 AnchorPosition;
         public float3 PayloadPosition;
         public uint Flags;
+        public int TelemetryOffset;
+        public int TelemetryCapacity;
+        public int TelemetryHeadOffset;
 
         public void Execute()
         {
             if (!TelemetryRing.IsCreated || !TelemetryHead.IsCreated || TelemetryRing.Length == 0 || TelemetryHead.Length == 0)
                 return;
 
-            int index = TelemetryHead[0] % TelemetryRing.Length;
+            if ((uint)TelemetryOffset >= (uint)TelemetryRing.Length || (uint)TelemetryHeadOffset >= (uint)TelemetryHead.Length)
+                return;
+
+            int capacity = TelemetryCapacity > 0
+                ? math.min(TelemetryCapacity, TelemetryRing.Length - TelemetryOffset)
+                : TelemetryRing.Length - TelemetryOffset;
+            if (capacity <= 0)
+                return;
+
+            int head = TelemetryHead[TelemetryHeadOffset];
+            int localIndex = head >= 0 && head < capacity ? head : 0;
+            int index = TelemetryOffset + localIndex;
             uint solverFlags = SolverFlags.IsCreated && SolverFlags.Length > 0 ? (uint)SolverFlags[0] : 0u;
             TelemetryRing[index] = new TetherVerletTelemetryEntry
             {
@@ -319,7 +333,7 @@ namespace Hecton8.Physics
                 Pad3 = 0u
             };
 
-            TelemetryHead[0] = (index + 1) % TelemetryRing.Length;
+            TelemetryHead[TelemetryHeadOffset] = (localIndex + 1) % capacity;
         }
     }
 }

@@ -1876,7 +1876,6 @@ namespace Hecton8.Physics
             _hydroKinematicOutput = AllocateNativeStateArray<HydroKinematicJobOutput>(BufferID.SubmarineHydroKinematicOutput, 1, nameof(_hydroKinematicOutput), VaultHydroOutputFlag);
             // COLD ALLOC: NativeArray<HydroBlackBoxEntry>[300] - fixed hydro crash telemetry ring - owner: SubmarineFluidDynamics
             _hydroBlackBox = AllocateNativeStateArray<HydroBlackBoxEntry>(BufferID.SubmarineHydroBlackBox, HydroBlackBoxCapacity, nameof(_hydroBlackBox), VaultHydroBlackBoxFlag);
-            // COLD ALLOC: NativeQueue<SplashEvent>(Persistent) â€” deferred exterior splash payload queue for VFX consumers â€” owner: SubmarineFluidDynamics
         }
 
         private void SeedNativeStateFromAuthoring()
@@ -2199,11 +2198,6 @@ namespace Hecton8.Physics
                     _previousExteriorSampleSubmersionFactors[i] = 0f;
             }
 
-            if (clearQueuedEvents && _splashEventQueue.IsCreated)
-                _splashEventQueue.Clear();
-
-            if (clearQueuedEvents)
-                _queuedSplashEventCount = 0;
         }
 
         private void CompletePendingFluidTransferForAuthoritativeWrite()
@@ -4621,7 +4615,7 @@ namespace Hecton8.Physics
             if (previousSubmersionFactor > Epsilon || currentSubmersionFactor <= SplashSubmersionThreshold)
                 return;
 
-            if (!_splashEventQueue.IsCreated || _queuedSplashEventCount >= MaxQueuedSplashEvents || _rigidbody == null)
+            if (_rigidbody == null)
                 return;
 
             Vector3 pointVelocity = _rigidbody.GetPointVelocity(worldPoint);
@@ -4659,9 +4653,7 @@ namespace Hecton8.Physics
                 SampleIndex = sampleIndex
             };
 
-            _splashEventQueue.Enqueue(splashEvent);
-            _queuedSplashEventCount++;
-            FluidFeedbackEvents.PublishSplashQueued(in splashEvent);
+            PublishSplashFluidImpulse(in splashEvent, absoluteUniversePosition, pointVelocity);
 
             ImpactSignal impactSignal = new ImpactSignal
             {
@@ -4675,6 +4667,40 @@ namespace Hecton8.Physics
                 Flags = 1
             };
             GlobalSignals.Publish(in impactSignal);
+        }
+
+        private static void PublishSplashFluidImpulse(
+            in SplashEvent splashEvent,
+            double3 absoluteUniversePosition,
+            Vector3 pointVelocity)
+        {
+            float3 velocity = new float3(pointVelocity.x, pointVelocity.y, pointVelocity.z);
+            if (!math.all(math.isfinite(velocity)) ||
+                !math.all(math.isfinite(absoluteUniversePosition)) ||
+                !math.isfinite(splashEvent.KineticEnergyJoules) ||
+                !math.isfinite(splashEvent.ImpactSpeedMetersPerSecond))
+            {
+                return;
+            }
+
+            float impact01 = math.saturate(splashEvent.KineticEnergyJoules * 0.0002f);
+            float3 impulseVector = new float3(
+                velocity.x,
+                math.max(splashEvent.ImpactSpeedMetersPerSecond, math.abs(velocity.y)),
+                velocity.z);
+            float vectorLengthSq = math.lengthsq(impulseVector);
+            if (vectorLengthSq <= 0.000001f)
+                impulseVector = new float3(0f, math.max(0.1f, splashEvent.ImpactSpeedMetersPerSecond), 0f);
+
+            FluidImpulseSignal impulse = default;
+            impulse.PositionAup = AbsoluteUniversePosition.FromAbsolutePosition(absoluteUniversePosition);
+            impulse.Vector = impulseVector * math.lerp(0.15f, 0.65f, impact01);
+            impulse.Radius = math.lerp(0.75f, 4.5f, impact01);
+            impulse.Lifetime = math.lerp(0.2f, 0.9f, impact01);
+            impulse.Frame = unchecked((uint)Time.frameCount);
+            impulse.SourceHash = 0x53504C48u; // SPLH
+            impulse.Flags = 1u;
+            GlobalSignals.Publish(in impulse);
         }
 
         private void QueueSurfacingBreachSignalIfNeeded(Vector3 worldPoint, float sampleHullMass)
@@ -4745,18 +4771,6 @@ namespace Hecton8.Physics
             if (kineticEnergyJoules >= 450f)
                 return 1;
             return 0;
-        }
-
-        private void PrewarmSplashEventQueue()
-        {
-            if (!_splashEventQueue.IsCreated)
-                return;
-
-            for (int i = 0; i < MaxQueuedSplashEvents; i++)
-                _splashEventQueue.Enqueue(default);
-
-            _splashEventQueue.Clear();
-            _queuedSplashEventCount = 0;
         }
 
         private void RebuildExteriorBuoyancySampleLocalPoints()

@@ -329,11 +329,9 @@ void AdvectCarveDebris(uint3 id : SV_DispatchThreadID)
     particle.w = lerp(particle.w, resolvedLife, liveMask);
     velocity = lerp(velocityPacked.xyz, velocity, liveMask);
 
-    if (!all(isfinite(particle)) || !all(isfinite(velocity)))
-    {
-        particle = float4(0.0, 0.0, 0.0, 0.0);
-        velocity = float3(0.0, 0.0, 0.0);
-    }
+    float finiteMask = (all(isfinite(particle)) && all(isfinite(velocity))) ? 1.0 : 0.0;
+    particle = lerp(float4(0.0, 0.0, 0.0, 0.0), particle, finiteMask);
+    velocity = lerp(float3(0.0, 0.0, 0.0), velocity, finiteMask);
 
     _CarveDebrisWrite[index] = particle;
     _CarveDebrisVelocityWrite[index] = float4(velocity, 0.0);
@@ -348,23 +346,18 @@ void CullCarveDebrisForRender(uint3 id : SV_DispatchThreadID)
         return;
 
     float4 particle = _CarveDebrisRead[index];
-    if (particle.w <= 0.0 || !all(isfinite(particle)))
-        return;
-
+    float finiteMask = all(isfinite(particle)) ? 1.0 : 0.0;
+    float liveMask = step(0.000001, particle.w);
+    float3 delta = particle.xyz - _CarveDebrisCameraParams.xyz;
     float maxDistanceSq = _CarveDebrisCameraParams.w;
-    if (maxDistanceSq > 0.0)
-    {
-        float3 delta = particle.xyz - _CarveDebrisCameraParams.xyz;
-        if (dot(delta, delta) > maxDistanceSq)
-            return;
-    }
-
+    float distanceMask = maxDistanceSq > 0.0 ? step(dot(delta, delta), maxDistanceSq) : 1.0;
     uint maxVisible = (uint)max(0.0, _CarveDebrisCounts.z);
-    if (maxVisible == 0u)
+    uint visibleIncrement = (finiteMask * liveMask * distanceMask > 0.5 && maxVisible > 0u) ? 1u : 0u;
+    if (visibleIncrement == 0u)
         return;
 
     uint visibleSlot;
-    _CarveDebrisIndirectArgs.InterlockedAdd(4, 1u, visibleSlot);
+    _CarveDebrisIndirectArgs.InterlockedAdd(4, visibleIncrement, visibleSlot);
     if (visibleSlot >= maxVisible)
     {
         uint ignoredRollbackSlot;

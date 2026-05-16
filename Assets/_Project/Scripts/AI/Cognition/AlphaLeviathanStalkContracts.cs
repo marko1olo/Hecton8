@@ -44,6 +44,7 @@ namespace Hecton8.AI.Cognition
         public const float NoiseAggressionGainPerSecond = 0.1f;
         public const float ChargeAggressionThreshold = 0.82f;
         public const float LightRetreatDot = 0.9f;
+        public const float PlayerGazeBreakDot = 0.75f;
         public const float SonarLureHoldSeconds = 10f;
         public const float LowTierSteeringBlend = 0.2f;
         public const float HighTierSteeringBlend = 0.55f;
@@ -51,6 +52,7 @@ namespace Hecton8.AI.Cognition
         public const float HighTierCadenceSeconds = 0.016666668f;
         public const float HighTierSdfContourWeight = 0.45f;
         public const float HighTierVisualOverkill01 = 1f;
+        public const float TriangleNoiseInvPeriod = 0.0009765625f;
     }
 
     /// <summary>
@@ -127,7 +129,7 @@ namespace Hecton8.AI.Cognition
     /// <summary>
     /// DataVault-owned steering output row produced by <see cref="LeviathanStalkJob"/>.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 80)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 88)]
     public struct AlphaLeviathanSteeringOutput
     {
         public float3 DesiredDirection;
@@ -145,6 +147,7 @@ namespace Hecton8.AI.Cognition
         public float HullDentImpulse01;
         public float SubsurfaceScatterPulse01;
         public float ParticleOverkillBudget01;
+        public float PredatorSilhouetteNoise01;
         public ushort Slot;
         public byte CurrentPhase;
         public byte Flags;

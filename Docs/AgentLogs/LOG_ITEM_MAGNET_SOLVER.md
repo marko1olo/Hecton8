@@ -130,3 +130,17 @@ Validation:
 - `git diff --check` passed except Git CRLF normalization warnings.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -v:minimal` first exposed and then cleared one local missing using in `HectonItem`.
 - Current build wall is external: `HectonXRRuntimeState`, `SubmarineStructuralGrid`, `VaultProbeUtility`, `BiolumPulseSyncRuntime`, and `SpatialAudioManager`.
+## 2026-05-16 Shutdown Integrity Pass
+
+What was wrong:
+- Magnet pose ownership disabled pickup Rigidbody collisions/kinematics correctly during pull, but scheduler shutdown could clear counters without restoring active proxies if no job was pending.
+
+What was done:
+- Added scheduler-level restoration for all managed pickup sidecars before `LootMagnetSystem` clears runtime state.
+- Kept the fix cold-path only: disable/dependency-loss cleanup, no added hot Burst work.
+
+Cinematic Cheats used:
+- None. This is survival plumbing: release physics ownership cleanly so visual magnet fakes do not poison authored pickup collisions.
+
+Exact Microseconds saved:
+- 0 us hot-frame savings claimed. Cost is cold O(active pickups) on disable/clear; benefit is preventing collision-suppression leaks after scheduler shutdown.

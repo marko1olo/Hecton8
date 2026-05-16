@@ -3,7 +3,7 @@
 Prompt: ITEM_MAGNET_SOLVER
 Domain: GAMEPLAY/ITEMS
 Task Count: 18
-Current Phase: Multiplatform / H-PHI Inquisition Pass 3
+Current Phase: Multiplatform / H-PHI Inquisition Pass 4
 Status: VERIFIED MASTER GRADE - BUILD BLOCKED BY EXTERNAL DEPENDENCY
 
 ## Batch Hygiene
@@ -59,6 +59,7 @@ Status: VERIFIED MASTER GRADE - BUILD BLOCKED BY EXTERNAL DEPENDENCY
 - Loop 9: Neural connectivity pass purged item-domain legacy collection publishers from `PickupItem` and duplicate `HectonItem`; manual pickups now emit existing typed `ItemAcquiredSignal`, with shared source constants in `InventoryPickupContracts`.
 - Loop 10: Physics/platform pass hardened magnet pose ownership: attached pickup Rigidbodies are made kinematic and collision-disabled before transform mutation, previous state is restored when magnet math stops owning pose, and magnet-emitted public signal structs (`ItemAcquiredSignal`, `WakeGeneratedSignal`, `FluidImpulseSignal`) now use `Pack=1`.
 - Loop 10 Compile Gate: First retry exposed local `HectonItem` missing `Hecton8.Core.Contracts.Signals`; fixed. Second retry failed only outside item magnet scope in `HectonXRRuntimeState`, `SubmarineStructuralGrid`, `VaultProbeUtility`, `BiolumPulseSyncRuntime`, and `SpatialAudioManager`.
+- Loop 11: Shutdown integrity pass restored all magnet-owned pickup proxy runtime physics state when the scheduler clears runtime state or disables, closing the post-pull collision suppression leak.
 
 ## Omega Polish Mandate
 
@@ -66,5 +67,6 @@ Status: VERIFIED MASTER GRADE - BUILD BLOCKED BY EXTERNAL DEPENDENCY
 - [x] H-PHI NativeArray scan completed. | Justification: `LootMagnetSystem.cs` contains no `NativeArray<T>` declarations, `new NativeArray`, `Allocator.Persistent`, `H8Memory.Allocate`, or `H8Memory.Release`; remaining `NativeArray` references are the Burst job contract and DataVault view DTO | Alternatives Rejected: private system-local vault aliases | Estimate: 0 hot cost, reduced allocator ownership risk
 - [x] Legacy collection-event publisher scan completed. | Justification: no `HectonEventBus`, `InteractionEvents.RaiseItemCollected`, or `ItemCollectedEvent` remains in `Gameplay/Loot`, `Items/PickupItem.cs`, or `HectonItem.cs`; existing cross-domain subscribers require their own migration | Alternatives Rejected: duplicate typed+legacy publication | Estimate: avoids managed event object allocation per manual pickup, exact gain not measured
 - [x] Rigidbody transform mutation audit completed. | Justification: magnet transform writes now occur only after `SuppressLootMagnetPhysics` makes the Rigidbody kinematic and disables collisions, satisfying the physics transform mutation rule | Alternatives Rejected: `MovePosition` without sweep; active Rigidbody transform mutation | Estimate: cold state flip per magnet-owned pickup
+- [x] Disable/clear restoration audit completed. | Justification: `LootMagnetSystem` now restores all managed pickup proxy Rigidbody state before runtime state is cleared on dependency loss, disable, or shutdown | Alternatives Rejected: relying on pickup `OnDisable` only; leaving collision-disabled pickups after scheduler shutdown | Estimate: cold O(active pickups), 0 hot-frame cost
 - [x] Circular dependency check completed. | Justification: `Hecton8.Gameplay.Loot` references `Hecton8.Core`; `PickupItem` stays in Core and does not reference Loot, so STP hook does not create an asmdef cycle | Alternatives Rejected: moving PickupItem into Loot assembly | Estimate: 0 hot cost
 - [x] Build status reported truthfully. | Justification: mandate requested build green, but objective compiler state is blocked by unrelated `PlayerKinematicsRuntime` and dotnet hangs; false green is rejected | Alternatives Rejected: fake report | Estimate: BLOCKED BY DEPENDENCY

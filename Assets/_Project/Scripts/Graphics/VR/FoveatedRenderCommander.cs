@@ -831,11 +831,13 @@ namespace Hecton8.Graphics.VR
 
         private static bool IsQuest2Runtime()
         {
-            if (!QuestVulkanRuntimePolicy.IsQuestRuntimeActive)
+            bool xrActive = HectonXRRuntimeState.IsXRActive || XRSettings.enabled || XRSettings.isDeviceActive;
+            if (!xrActive || Application.platform != RuntimePlatform.Android)
                 return false;
 
             if (QuestVulkanRuntimePolicy.SystemMemoryMegabytes > 0 &&
-                QuestVulkanRuntimePolicy.SystemMemoryMegabytes < QuestVulkanRuntimePolicy.QuestMemoryGateMegabytes)
+                QuestVulkanRuntimePolicy.SystemMemoryMegabytes < QuestVulkanRuntimePolicy.QuestMemoryGateMegabytes &&
+                IsQuestFamilyDevice())
             {
                 return true;
             }
@@ -845,6 +847,17 @@ namespace Hecton8.Graphics.VR
                    ContainsToken(XRSettings.loadedDeviceName, "Quest 2") ||
                    ContainsToken(SystemInfo.deviceModel, "Oculus Quest") ||
                    ContainsToken(XRSettings.loadedDeviceName, "Oculus Quest");
+        }
+
+        private static bool IsQuestFamilyDevice()
+        {
+            return ContainsToken(SystemInfo.deviceModel, "Quest") ||
+                   ContainsToken(SystemInfo.deviceName, "Quest") ||
+                   ContainsToken(XRSettings.loadedDeviceName, "Quest") ||
+                   ContainsToken(SystemInfo.deviceModel, "Oculus") ||
+                   ContainsToken(XRSettings.loadedDeviceName, "Oculus") ||
+                   ContainsToken(SystemInfo.deviceModel, "Meta") ||
+                   ContainsToken(XRSettings.loadedDeviceName, "Meta");
         }
 
         private static bool IsStandaloneLikeRuntime()
