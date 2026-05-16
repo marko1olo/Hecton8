@@ -75,4 +75,5 @@ Validation:
 - `rg` found no renderer-owned private `NativeArray` fields, `H8Memory.Allocate`, `H8Memory.Release`, `Allocator.Persistent`, legacy `EventBus`, scene search, or Unity Update methods in `GpuScatterLodManager.cs`.
 - `dotnet build Assembly-CSharp.csproj --no-restore --no-dependencies -m:1` is blocked by missing generated/plugin DLLs under `Temp/bin/Debug`.
 - `dotnet build Assembly-CSharp.csproj --no-restore -m:1` is blocked first by missing RealtimeCSG source files.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1` is blocked by unrelated XR/submarine/fauna/VFX/audio errors; filtered output shows no `H8Memory`, `BufferID`, or flora scatter error.
 - Filtered build scans show no `GpuScatter`/`FloraScatter` compiler errors before the external dependency wall.
