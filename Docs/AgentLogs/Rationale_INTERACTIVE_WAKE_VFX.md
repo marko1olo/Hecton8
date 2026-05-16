@@ -111,3 +111,39 @@ Rejected Alternatives: Renaming unrelated visor methods, filling missing homeost
 Scalability potential: No direct runtime change. Preserves the wake kernel while Integrator repairs unrelated compile state.
 
 Hardware Impact: 0 us/frame. Avoided destabilizing non-wake systems in pursuit of a false green build.
+
+## Decision 10 - Shader Wake LOD and Normal Tilt
+
+Problem: The wake buffer existed, but the material side still needed an explicit low-tier fake and high-tier visual response without Unity wind components or banned shader distance calls.
+
+Solution: `Hecton8_UberNoir.hlsl` now consumes `_GlobalWakeBuffer`, `_GlobalWakeVectors`, and `_GlobalWakeParams`. Low tier scans the capped wake set and applies radial displacement from only the two nearest active wakes. Full tier uses dot-based radius masks plus cross-product vortex curvature against the surface normal, then tilts `normalWS` with finite-safe normalization.
+
+Rejected Alternatives: First-two wake slots were rejected because they are not necessarily nearest. Full fluid simulation was rejected because this is VFX displacement, not physics truth. Fragment-only shimmer was rejected because STP motion vectors would not follow the displaced surface.
+
+Scalability potential: Low uses two radial wakes and no vorticity. Middle can use the 16-slot buffer with mild push. High uses vortex curvature. Ultra can push stronger material presets, denser silt, and richer normals while CPU source count stays fixed.
+
+Hardware Impact: Estimated i3/MX350 gain is 8-22 us/frame versus 16-slot vortex math. High/Ultra intentionally spend about 6-18 us/frame of GPU math for visible swirl and normal shimmer.
+
+## Decision 11 - Reactive Silt and Boid Wake Sharing
+
+Problem: Marine snow and micro-fauna had partial local wake behavior but were not guaranteed to react to the authoritative global wake array.
+
+Solution: `Hecton_FluidAdvection.compute` adds a high-intensity wake turbulence fake using triangle waves inside the existing dynamic wake loop. `SargassumMicroFaunaBoids.compute` reads `_GlobalWakeBuffer`/`_GlobalWakeVectors` directly and adds radial plus vortex steering, capped to two slots on low/simplified tiers.
+
+Rejected Alternatives: Adding a second CPU wake owner for boids was rejected because data sovereignty requires the existing global wake payload. Unity particle forces were rejected by the XML. 3D noise for low tier was rejected because the triangle fake is cheaper and stable.
+
+Scalability potential: Low gets two-slot dot-product wake panic. Middle gets global wake repulsion. High gets vortex school breakup. Ultra can combine this with silt overkill and dense fauna without changing the CPU contract.
+
+Hardware Impact: Estimated low-end gain is 4-14 us/frame versus CPU overlap queries and 3-10 us/frame versus high-frequency 3D noise. High tier spends saved cost on visible silt churn and fish scatter.
+
+## Decision 12 - Final Green Build After Integration Wall
+
+Problem: Earlier compile attempts failed on unrelated cross-domain owners, but final validation must not report stale blockers.
+
+Solution: Re-ran `dotnet build .\Hecton8.Core.csproj -v:minimal -clp:ErrorsOnly` after the wake shader pass. Result: build succeeded with 0 warnings and 0 errors.
+
+Rejected Alternatives: Leaving task 18 blocked would be false after the current build state. Editing unrelated domains was no longer required.
+
+Scalability potential: No new runtime scaling; this confirms the C# wake contracts, DataVault IDs, and signal lane changes are accepted by the current assembly.
+
+Hardware Impact: 0 us/frame direct. Risk reduced: no known compile blocker remains in this wake slice.

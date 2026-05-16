@@ -262,7 +262,9 @@ namespace Hecton8.Core.Memory
         EcosystemPopulationFreeRing = 209,
         EcosystemPopulationCounters = 210,
         ResolutionScaleTelemetry = 211,
-        TetherCableBlackBoxHead = 212
+        TetherCableBlackBoxHead = 212,
+        MarineSnowWakeJobResult = 213,
+        MarineSnowTelemetryRing = 214
     }
 
     [Flags]
@@ -571,7 +573,7 @@ namespace Hecton8.Core.Memory
             _blockDescriptors = new NativeList<BlockDescriptor>(safeCapacity, Allocator.Persistent);
             // COLD ALLOC: NativeArray<H8MemoryTelemetryEntry>[300] - sentinel heartbeat ring - owner: H8Memory
             _blackBox = new NativeArray<H8MemoryTelemetryEntry>(BlackBoxFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<H8MemoryTelemetryEntry>[300] - lifecycle event snapshots for leak dumps - owner: H8Memory
+            // COLD ALLOC: NativeArray<H8MemoryTelemetryEntry>[300] - lifecycle snapshots for leak dumps - owner: H8Memory
             _eventBlackBox = new NativeArray<H8MemoryTelemetryEntry>(BlackBoxFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _recordCount = 0;
             _totalBytes = 0L;

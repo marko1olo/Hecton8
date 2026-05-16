@@ -100,7 +100,7 @@ Hardware Impact: 0 us runtime impact; validation blocker is assembly graph/edito
 
 Problem: ARM64/Quest/Android builds are sensitive to implicit struct packing. The previous AI payloads needed an explicit pass proving no default CLR packing survived in the domain.
 
-Solution: Locked every AI/Cognition payload to `StructLayout(..., Pack = 1)`: `AlphaLeviathanTelemetryEntry` 64 bytes, `AlphaLeviathanAup` explicit 48 bytes, `AlphaLeviathanCognitionState` 144 bytes, `AlphaLeviathanSensoryStimulus` 176 bytes, and `AlphaLeviathanSteeringOutput` 80 bytes. DOD pattern used: fixed blittable stride and explicit AUP offsets.
+Solution: Locked every AI/Cognition payload to `StructLayout(..., Pack = 1)`: `AlphaLeviathanTelemetryEntry` 64 bytes, `AlphaLeviathanAup` explicit 48 bytes, `AlphaLeviathanCognitionState` 144 bytes, `AlphaLeviathanSensoryStimulus` 176 bytes, and `AlphaLeviathanSteeringOutput` 88 bytes. DOD pattern used: fixed blittable stride and explicit AUP offsets.
 
 Rejected Alternatives: Default sequential packing was rejected because it can shift stride across runtimes. Platform-specific `#if` layouts were rejected because they multiply failure modes and break deterministic telemetry parsing.
 
@@ -112,13 +112,13 @@ Hardware Impact: 0 us runtime gain. The value is stability: deterministic stride
 
 Problem: High-end mode cannot be a mobile steering output with one generic intensity. It needs enough AI-authored intent for salt crystal, silt, hull dent, SSS, and particle escalation while AI/Cognition remains renderer-free.
 
-Solution: Extended `AlphaLeviathanSteeringOutput` from 64 to 80 bytes with `VisorSaltCrystalGrowth01`, `HullDentImpulse01`, `SubsurfaceScatterPulse01`, and `ParticleOverkillBudget01`. Existing `WakeSiltIntensity01`, `SdfContourWeight01`, and `VisualOverkill01` remain. DOD pattern used: scalar intent channel, no material/shader dependency in AI.
+Solution: Extended `AlphaLeviathanSteeringOutput` from 64 to 88 bytes with `VisorSaltCrystalGrowth01`, `HullDentImpulse01`, `SubsurfaceScatterPulse01`, `ParticleOverkillBudget01`, and `PredatorSilhouetteNoise01`. Existing `WakeSiltIntensity01`, `SdfContourWeight01`, and `VisualOverkill01` remain. DOD pattern used: scalar intent channel, no material/shader dependency in AI.
 
 Rejected Alternatives: Adding renderer calls, material property writes, or shader keywords inside AI was rejected as cross-domain coupling and hot-path allocation risk. Leaving only the mobile-safe biolum value was rejected because Ultra tier needs explicit overkill budget for downstream systems.
 
-Scalability potential: Low uses cheap cadence and reduced particle budget. Middle keeps wake/biolum without SDF contour. High uses SDF contour plus stronger silt/SSS. Ultra can spend `ParticleOverkillBudget01` and salt/dent channels in VFX without changing AI.
+Scalability potential: Low uses cheap cadence, reduced particle budget, and triangle-wave silhouette noise. Middle keeps wake/biolum without SDF contour. High uses SDF contour plus stronger silt/SSS. Ultra can spend `ParticleOverkillBudget01`, salt/dent, and silhouette-noise channels in VFX without changing AI.
 
-Hardware Impact: Adds four float stores per active slot. On 64 slots this is 1024 bytes of extra contiguous output per scheduled tick; exact microseconds are unmeasured.
+Hardware Impact: Adds five float stores per active slot. On 64 slots this is 1280 bytes of extra contiguous output per scheduled tick; exact microseconds are unmeasured.
 
 ## Decision 11: I/O And Shader Boundary
 
@@ -131,3 +131,39 @@ Rejected Alternatives: Writing per-frame text diagnostics was rejected because i
 Scalability potential: Low/Steam Deck keeps the hot path memory-only. High/Ultra receive richer scalar intent through DataVault without pulling the render path into AI.
 
 Hardware Impact: 0 us hot-path I/O; cold dump cost is paid only on crash/NaN handling.
+
+## Decision 12: In-Place Vault State Instead Of Fake Double Buffer
+
+Problem: `AlphaLeviathanCognitionVault` resolves one DataVault-owned state buffer, but `LeviathanStalkJob` exposed separate `InputStates` and `OutputStates`. A caller would either pass the same buffer twice, risking Unity job safety alias rejection, or invent a second state buffer outside the prompt contract.
+
+Solution: Collapsed the job contract to one `States` NativeArray view. Each parallel index reads its row, computes steering, then writes the same row back. Added `AlphaLeviathanCognitionVault.CreateStalkJob(...)` so the cold owner path gets canonical wiring from DataVault views. DOD pattern used: stateless job over DataVault rows, no false private double buffer.
+
+Rejected Alternatives: Adding a second Alpha Leviathan state buffer was rejected because the task only requires one DataVault truth state and extra state creates synchronization drift. Leaving manual input/output wiring was rejected because it lets integration code reintroduce alias bugs.
+
+Scalability potential: Low/Middle/High/Ultra tiers all update a single state row per slot. Future double-buffering must be an explicit DataVault contract, not caller folklore.
+
+Hardware Impact: Removes one job NativeArray field and one duplicate state-buffer binding. Exact microseconds are unmeasured.
+
+## Decision 13: Faults And Lures Must Be Actionable
+
+Problem: Default inactive rows can have zeroed AUPs. The previous fault flag would mark invalid same-position distance even for inactive slots, causing false black-box dumps. Also, a sonar-only lure idled if the player anchor flag was absent.
+
+Solution: Introduced `hasTrackingAnchor = HasPlayerAnchor | sonarActive`. Idle phase now requires no active tracking anchor, so sonar-only pings can drive circling. Fault telemetry now requires invalid distance plus active plus tracking anchor. The job also writes dense slot IDs from the job index so black-box rows are identifiable even before caller-side state seeding.
+
+Rejected Alternatives: Dumping on every invalid idle slot was rejected because it hides real NaNs behind default-state noise. Requiring player anchor for a sonar lure was rejected because the task explicitly says a `SonarPing` should move the Leviathan to `PingAUP`.
+
+Scalability potential: Low tier gets deterministic ping lures without extra sensing. High/Ultra can layer SDF contouring around ping anchors without changing the state contract.
+
+Hardware Impact: Adds one boolean OR, one gated flag select, and one ushort slot write per active row. Exact microseconds are unmeasured.
+
+## Decision 14: Dot-Product Vision And Triangle Noise Dear Lie
+
+Problem: `PlayerForward` existed in the sensory row but was unused. That left a cheap dot-product perception cue on the table and failed the "Dear Lie" requirement for low-end mathematical fakes.
+
+Solution: The job normalizes `PlayerForward`, computes a branchless gaze dot against the predator direction, emits `PlayerGazeBreak`, and generates `PredatorSilhouetteNoise01` with a triangle wave derived from frame/index/aggression. Low tier receives the full fake flicker; high tier receives a quieter value for render/VFX layering.
+
+Rejected Alternatives: Ray/visibility simulation was rejected because the prompt already provides pre-digested sensory data and dot products are enough for stalking presentation. Random noise was rejected because deterministic triangle noise is cheaper, replayable, and does not allocate state.
+
+Scalability potential: Low uses the triangle fake to sell a silhouette without SDF or particle density. High/Ultra use it as a subtle modulation under heavier SSS/silt/particle work.
+
+Hardware Impact: Cheap ALU only: one normalize, one dot, one frac/abs triangle wave per row. Profiler proof is absent.

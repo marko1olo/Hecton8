@@ -26,12 +26,12 @@ PROMPT IDENTIFIED: AUDIO_IMPORT_RESIDENCY_GUARD | DOMAIN: CORE/AUDIO | TASK COUN
 - [BLOCKED BY DEPENDENCY] Loop 1 compile gate | `dotnet build Hecton8.slnx` failed before an audio-specific verdict: RealtimeCSG project references deleted source files, and Hecton8.Core has unrelated missing symbols/type-split errors. No audio errors were present in the visible build tail.
 
 ## Loop 2: Tasks 6-10
-- [ ] Task 6 AMBIENT_COMPONENT_PURGE | Pending.
-- [ ] Task 7 BIOME_TRACK_STREAMING | Pending.
-- [ ] Task 8 LRU_AUDIO_CACHE | Pending.
-- [ ] Task 9 DISTANCE_MUTE_CULLING | Pending.
-- [ ] Task 10 TOOL_PREWARM | Pending.
-- [ ] Loop 2 compile gate | Pending.
+- [x] Task 6 AMBIENT_COMPONENT_PURGE | Added Unity-API prefab purge and build validation for environment prefab AudioSources; DOD: editor prefab load/save path, no raw YAML mutation; rejected destructive text rewrite; estimated save: 20-120 us per stripped ambient source activation plus SignalBus residency control.
+- [x] Task 7 BIOME_TRACK_STREAMING | Music voices now register clips as Music residency and unload released voice clips via `UnloadAudioData`; DOD: existing SlowTick fade math preserved; rejected coroutine/crossfade rewrite; estimated save: 1-40 MB resident track memory per biome transition.
+- [x] Task 8 LRU_AUDIO_CACHE | Added fixed 64-slot LRU decoded audio cache with 16 MB budget and domain eviction API; DOD: array scan, no dictionary/LINQ hot path; rejected unbounded `LoadAudioData`; estimated save: 50-300 us per repeated roar/load burst and prevents disk thrash.
+- [x] Task 9 DISTANCE_MUTE_CULLING | SpatialAudioManager now checks AUP distance against `_maxDistance` before source acquisition or residency touch in direct, queued, weather, and no-evict paths; DOD: AUP squared distance, no Vector3 drift; rejected post-load muting; estimated save: 8-90 us per culled far clip plus zero RAM load.
+- [x] Task 10 TOOL_PREWARM | Laser Cutter and Repair/Welder loop clips prewarm only on equip and release on unequip/despawn/disable; DOD: direct serialized AudioSource hooks; rejected boot preload and slow polling; estimated save: avoids boot residency for tool loops, shifts 150-900 us load cost to explicit equip.
+- [BLOCKED BY DEPENDENCY] Loop 2 compile gate | `dotnet build Hecton8.Core.csproj --no-restore -v:minimal` failed on unrelated `GlobalDataVault.ValidateAbiLayout` missing. Changed runtime audio files reached compilation with no audio-specific diagnostics before that dependency wall.
 
 ## Loop 3: Tasks 11-15
 - [ ] Task 11 SAMPLE_RATE_DOWNGRADE | Pending.

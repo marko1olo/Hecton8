@@ -120,6 +120,7 @@ namespace Hecton8.Vehicles.Automation
     public static class DockingAutopilotMath
     {
         private const float TangentEpsilonSq = 0.000001f;
+        private const float HomeostasisHermiteStressCutoff01 = 0.8f;
         private const double ControlDistanceScale = 0.35;
         private const double MinControlDistanceMeters = 1.5;
         private const double MaxControlDistanceMeters = 48.0;
@@ -187,6 +188,27 @@ namespace Hecton8.Vehicles.Automation
         {
             float t = math.saturate(normalizedTime);
             return t * t * (3f - (2f * t));
+        }
+
+        public static float ResolveDockingProgress01(float normalizedTime, byte mathLod, float systemStress01)
+        {
+            float t = math.saturate(normalizedTime);
+            float stress = math.saturate(math.select(0f, systemStress01, math.isfinite(systemStress01)));
+            if (mathLod >= 2 && stress <= HomeostasisHermiteStressCutoff01)
+                return ResolveZeroJerkHermiteProgress01(t);
+
+            return ResolveInertialProgress01(t);
+        }
+
+        public static float ResolveZeroJerkHermiteProgress01(float normalizedTime)
+        {
+            float t = math.saturate(normalizedTime);
+            float t2 = t * t;
+            float t4 = t2 * t2;
+            float t5 = t4 * t;
+            float t6 = t5 * t;
+            float t7 = t6 * t;
+            return math.saturate((35f * t4) - (84f * t5) + (70f * t6) - (20f * t7));
         }
 
         public static bool TryEvaluate(in ActiveSplineData spline, float progress01, out DockingSplineSample sample)

@@ -390,10 +390,10 @@ namespace Hecton8.Rendering.Scatter
 
         private void Awake()
         {
-            _matrixBuffers = new GraphicsBuffer[DoubleBufferCount]; // COLD ALLOC: GraphicsBuffer[2] — double-buffered matrix upload handles — owner: GpuScatterLodManager
-            _metadataBuffers = new GraphicsBuffer[DoubleBufferCount]; // COLD ALLOC: GraphicsBuffer[2] — double-buffered flora metadata upload handles — owner: GpuScatterLodManager
-            _cameraPlanes = new Plane[FrustumPlaneCount]; // COLD ALLOC: Plane[6] — camera frustum cache — owner: GpuScatterLodManager
-            _frustumPlaneUpload = new Vector4[FrustumPlaneCount]; // COLD ALLOC: Vector4[6] — compute frustum upload cache — owner: GpuScatterLodManager
+            _matrixBuffers = new GraphicsBuffer[DoubleBufferCount]; // COLD ALLOC: GraphicsBuffer[2] - double-buffered matrix upload handles - owner: GpuScatterLodManager
+            _metadataBuffers = new GraphicsBuffer[DoubleBufferCount]; // COLD ALLOC: GraphicsBuffer[2] - double-buffered flora metadata upload handles - owner: GpuScatterLodManager
+            _cameraPlanes = new Plane[FrustumPlaneCount]; // COLD ALLOC: Plane[6] - camera frustum cache - owner: GpuScatterLodManager
+            _frustumPlaneUpload = new Vector4[FrustumPlaneCount]; // COLD ALLOC: Vector4[6] - compute frustum upload cache - owner: GpuScatterLodManager
             instanceCapacity = math.max(1, instanceCapacity);
             _activeInstanceCount = math.clamp(initialActiveInstanceCount, 0, instanceCapacity);
             _drawBounds = fallbackDrawBounds;
@@ -712,7 +712,7 @@ namespace Hecton8.Rendering.Scatter
                 _argsBuffer = new GraphicsBuffer(
                     GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
                     1,
-                    GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] — indirect flora draw args — owner: GpuScatterLodManager
+                    GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - indirect flora draw args - owner: GpuScatterLodManager
             }
         }
 
@@ -723,7 +723,7 @@ namespace Hecton8.Rendering.Scatter
                 GraphicsBuffer.Target.Structured,
                 GraphicsBuffer.UsageFlags.LockBufferForWrite,
                 count,
-                stride); // COLD ALLOC: GraphicsBuffer[count] — double-buffered scatter upload — owner: GpuScatterLodManager
+                stride); // COLD ALLOC: GraphicsBuffer[count] - double-buffered scatter upload - owner: GpuScatterLodManager
         }
 
         private void RecreateStructuredBuffer(ref GraphicsBuffer buffer, int count, int stride)
@@ -732,7 +732,7 @@ namespace Hecton8.Rendering.Scatter
             buffer = new GraphicsBuffer(
                 GraphicsBuffer.Target.Structured,
                 count,
-                stride); // COLD ALLOC: GraphicsBuffer[count] — compute-written scatter data — owner: GpuScatterLodManager
+                stride); // COLD ALLOC: GraphicsBuffer[count] - compute-written scatter data - owner: GpuScatterLodManager
         }
 
         private void RecreateAppendBuffer(ref GraphicsBuffer buffer, int count, int stride)
@@ -741,7 +741,7 @@ namespace Hecton8.Rendering.Scatter
             buffer = new GraphicsBuffer(
                 GraphicsBuffer.Target.Append,
                 count,
-                stride); // COLD ALLOC: GraphicsBuffer[count] — append-visible scatter stream — owner: GpuScatterLodManager
+                stride); // COLD ALLOC: GraphicsBuffer[count] - append-visible scatter stream - owner: GpuScatterLodManager
         }
 
         private void ReleaseGpuBuffers()
@@ -1304,7 +1304,11 @@ namespace Hecton8.Rendering.Scatter
                 writer.Write(_blackBoxCursor);
                 for (int i = 0; i < blackBoxLength; i++)
                 {
-                    ScatterBlackBoxEntry entry = blackBox[i];
+                    int ringIndex = _blackBoxCursor + i;
+                    if (ringIndex >= blackBoxLength)
+                        ringIndex -= blackBoxLength;
+
+                    ScatterBlackBoxEntry entry = blackBox[ringIndex];
                     writer.Write(entry.Frame);
                     writer.Write(entry.ActiveInstanceCount);
                     writer.Write(entry.VisibleFloraCount);
@@ -1323,11 +1327,9 @@ namespace Hecton8.Rendering.Scatter
                     writer.Write(entry.Reserved1);
                 }
             }
-            catch (Exception exception)
+            catch (Exception)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError(exception.Message);
-#endif
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)reason));
             }
         }
 

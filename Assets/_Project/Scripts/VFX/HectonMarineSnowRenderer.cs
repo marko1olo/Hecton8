@@ -10,6 +10,7 @@ using Hecton8.VFX;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -34,6 +35,7 @@ namespace Hecton8.Environment
         private const HectonQualityTier InvalidQualityTier = (HectonQualityTier)255;
         private const int ParticleStride = 64;
         private const int FrameConstantsStride = 112;
+        private const int VehicleWakeJobResultStride = 40;
         private const int DynamicWakeCapacity = 8;
         private const int TelemetryCapacity = 300;
         private const int TelemetryEntrySizeBytes = 64;
@@ -74,7 +76,7 @@ namespace Hecton8.Environment
             0, 1, 2, 3, 4, 5
         }; // COLD ALLOC: int[6] - immutable marine-snow indirect quad indices - owner: HectonMarineSnowRenderer
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = ParticleStride)]
         private struct ParticleGpuData
         {
             public Vector3 PositionWS;
@@ -87,7 +89,7 @@ namespace Hecton8.Environment
             public Vector2 Pad;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = FrameConstantsStride)]
         private struct FrameConstantsData
         {
             public Vector4 CameraPositionTime;
@@ -99,7 +101,7 @@ namespace Hecton8.Environment
             public Vector4 CameraVelocityStretch;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = VehicleWakeJobResultStride)]
         private struct VehicleWakeJobResult
         {
             public float3 PositionWS;
@@ -110,7 +112,7 @@ namespace Hecton8.Environment
             public uint Flags;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = TelemetryEntrySizeBytes)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = TelemetryEntrySizeBytes)]
         private struct MarineSnowTelemetryEntry
         {
             public int Frame;
@@ -341,8 +343,9 @@ namespace Hecton8.Environment
 
         private readonly FrameConstantsData[] _frameConstantsUpload = new FrameConstantsData[1]; // COLD ALLOC: FrameConstantsData[1] - reusable per-frame constant-buffer upload cache - owner: HectonMarineSnowRenderer
 
-        private NativeArray<VehicleWakeJobResult> _vehicleWakeJobResult;
-        private NativeArray<MarineSnowTelemetryEntry> _telemetryRing;
+        private IDataVault _dataVault;
+        private VaultBufferHandle<VehicleWakeJobResult> _vehicleWakeJobResultHandle;
+        private VaultBufferHandle<MarineSnowTelemetryEntry> _telemetryRingHandle;
         private GraphicsBuffer _particleBufferA;
         private GraphicsBuffer _particleBufferB;
         private GraphicsBuffer _flowFieldBuffer;
@@ -407,6 +410,7 @@ namespace Hecton8.Environment
         private int _fogDensityClearGroupsY;
         private HectonFluidEngine _fluidEngine;
         private int _nextFluidRebindFrame;
+        private int _nextDataVaultRebindFrame;
         private Vector4 _fogDensityTexelSize;
         private Vector4 _lastPublishedSonarGlowTexelSize;
         private Vector4 _lastPublishedSonarGlowParams;
@@ -486,6 +490,7 @@ namespace Hecton8.Environment
         private int _debugDynamicWakeCount;
         private Vector3 _pendingAupShiftOffset;
         private bool _vehicleCommandListenerRegistered;
+        private bool _nativeStateReady;
         private bool _blackBoxDumped;
         private bool _particleBuffersNeedGpuBootstrap;
         private bool _externalGpuBindingsDirty = true;
@@ -516,6 +521,7 @@ namespace Hecton8.Environment
             RefreshSpeedLineCache();
             ResolveTargetCamera();
             RefreshFluidBinding(force: true);
+            RefreshDataVaultBinding(force: true);
             EnsureNativeState();
             RegisterVehicleCommandListener();
             HectonFloatingOrigin.RegisterListener(this);
@@ -541,16 +547,17 @@ namespace Hecton8.Environment
             }
 
             ReleaseBuffers();
-            DisposeNativeState();
+            ClearNativeStateLease();
             _fluidEngine = null;
             _nextFluidRebindFrame = 0;
+            _nextDataVaultRebindFrame = 0;
         }
 
         private void OnDestroy()
         {
             HectonFloatingOrigin.UnregisterListener(this);
             UnregisterVehicleCommandListener();
-            DisposeNativeState();
+            ClearNativeStateLease();
         }
 
         /// <summary>
@@ -679,7 +686,8 @@ namespace Hecton8.Environment
             EnsureBuffers();
             if (!_buffersReady)
                 return;
-            EnsureNativeState();
+            if (!EnsureNativeState())
+                return;
 
             UpdateBiolumeSurgeState(dt);
             EnsureParticleBudget();

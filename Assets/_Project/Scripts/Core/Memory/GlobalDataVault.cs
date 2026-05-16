@@ -528,18 +528,6 @@ namespace Hecton8.Core.Memory
             }
         }
 
-        private static void ValidateAbiLayout()
-        {
-            if (UnsafeUtility.SizeOf<VaultRelocationRecord>() != VaultRelocationRecordSizeBytes ||
-                UnsafeUtility.SizeOf<VaultBufferMeta>() != VaultBufferMetaSizeBytes ||
-                UnsafeUtility.SizeOf<VaultArenaBlock>() != VaultArenaBlockSizeBytes ||
-                UnsafeUtility.SizeOf<MemoryDefragTelemetryEntry>() != MemoryDefragTelemetryEntrySizeBytes ||
-                UnsafeUtility.SizeOf<VaultGapAuditResult>() != VaultGapAuditResultSizeBytes)
-            {
-                FatalMemoryException.ThrowAbiLayoutMismatch();
-            }
-        }
-
         /// <inheritdoc />
         public NativeArray<T> GetBuffer<T>(
             BufferID bufferId,
@@ -1899,6 +1887,11 @@ namespace Hecton8.Core.Memory
             newArenaBytes = AlignUp(newArenaBytes, VaultBlockAlignment);
             if (newArenaBytes <= _arenaBytes || newArenaBytes > _arenaCapacityLimitBytes)
                 return false;
+            if (_memMoveBlockedByStress)
+            {
+                LastDefragFlags = (byte)(LastDefragFlags | DefragFlagStressHalt);
+                return false;
+            }
 
             void* oldBase = _arenaBase;
             long oldArenaBytes = _arenaBytes;

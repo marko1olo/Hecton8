@@ -340,7 +340,7 @@ namespace Hecton8.Physics
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 24)]
         private struct ImpactCommand
         {
             public float3 LocalPoint;
@@ -385,7 +385,7 @@ namespace Hecton8.Physics
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
         private struct DamageControlTelemetryEntry
         {
             public float3 FirstBreachLocal;

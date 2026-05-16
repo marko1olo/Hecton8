@@ -173,3 +173,23 @@ Exact microseconds saved:
 Validation:
 - Static scan found no `Destroy(gameObject)` in the VR commander.
 - Filtered build diagnostics after the fix produced no VR/legacy foveation matches. Full build remains red externally.
+
+## 2026-05-16 - Escalation Polish / Quest Android Detection
+
+What was wrong:
+- Quest 2 fixed-high FFR detection depended on `QuestVulkanRuntimePolicy.IsQuestRuntimeActive`, so an Android XR Quest runtime outside Vulkan would miss the low-tier fixed-FFR fake.
+
+What was done:
+- Changed Quest 2/Oculus Quest detection to require Android + active XR + memory/device Quest-family evidence, independent of Vulkan.
+- Kept Unity `SystemInfo.foveatedRenderingCaps` as the actual hardware write gate.
+
+Cinematic Cheats used:
+- Low-tier Quest stays on the cheapest fixed-high FFR approximation. No adaptive search, no eye-tracking assumption.
+
+Exact microseconds saved:
+- Exact measured microseconds saved: 0. Runtime profiling is still blocked.
+- Estimated GPU recovery remains 200-1000 us on Quest 2-class fill-rate-bound frames when Unity caps honor fixed foveation.
+
+Validation:
+- Static scan shows no remaining `QuestVulkanRuntimePolicy.IsQuestRuntimeActive` dependency in `FoveatedRenderCommander`.
+- Filtered build diagnostics after the change produced no VR/legacy foveation matches. Full build remains red externally.

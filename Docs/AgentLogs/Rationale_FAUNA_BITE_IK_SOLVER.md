@@ -85,3 +85,10 @@ Solution: Move the shared terrain IK job to deterministic Burst mode and tag its
 Rejected Alternatives: Keeping fast math was cheaper but weaker for cross-platform reproducibility; leaving `AICognition` ownership on animation buffers hid the true memory owner.
 Scalability potential: Low keeps one-iteration terrain/head fake; High/Ultra keep full segment and appendage placement without adding allocations.
 Hardware Impact: Expected MX350 cost is bounded by existing low-tier segment count; determinism buys fewer cross-platform animation faults, which is worth the tiny scalar overhead.
+
+## Decision 12 - Managed State Hook Removal
+Problem: `FaunaBrain` exposed `Action<AIState> OnStateChanged` and invoked it on state changes, creating a managed delegate escape hatch in the same integration surface as the bite strike publisher.
+Solution: Remove the field and invocation after confirming no in-repo subscribers. Strike state now remains on the typed `FaunaStateChangedSignal` lane.
+Rejected Alternatives: Keeping an unused delegate violates the no-private-callback rule; replacing all unrelated legacy `PhysicsEventBus` fauna audio/EMP behavior would cross physics/audio ownership and is marked as external debt instead of faked as fixed.
+Scalability potential: Low/Middle/High/Ultra avoid an unused managed callback branch. Bite signal flow stays typed-lane only.
+Hardware Impact: Estimated i3/MX350 gain is a few scalar branch/call checks avoided on state transitions; main value is removing a managed extension point from this slice.

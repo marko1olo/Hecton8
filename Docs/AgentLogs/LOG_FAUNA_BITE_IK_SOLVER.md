@@ -55,6 +55,7 @@ What was done:
 - Moved Leviathan IK vault helper requests to `SystemID.AnimationFauna`.
 - Added inactive-strike target/pose clearing and target-hash/frame gates before sparks, haptics, hull dent, or acoustic jaw snap publish.
 - Switched `LeviathanTerrainIkJob` to deterministic Burst mode.
+- Removed unused `Action<AIState> OnStateChanged` from `FaunaBrain`; in-repo search found no subscribers.
 - Reran forbidden-pattern, struct-pack, line-diff, and `dotnet build` checks.
 
 Cinematic Cheats used:
@@ -70,4 +71,5 @@ Exact Microseconds saved:
 Verification:
 - `rg` found no `BiteManager.Instance`, `Animator.SetIKPosition`, Unity physics overlap/raycast bite query, `Update()`, `string.Format`, `EventBus`, `H8Memory.Allocate`, or `SystemID.External` in the owned bite/IK slice.
 - `rg --pcre2` found no private `NativeArray<T>` fields and no non-Pack struct layouts in the owned bite/IK slice.
-- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /clp:ErrorsOnly` remains blocked by external SubmarineStructuralGrid, Bioluminescence, SpatialAudio, XR, and VaultProbe errors. No emitted error targets `ProceduralBiteIkJobs.cs`, `FaunaKinematicsRuntime.cs`, or `LeviathanTerrainIkJobs.cs`.
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /clp:ErrorsOnly` remains blocked by external core memory debt: duplicate `GlobalDataVault.ValidateAbiLayout`. No emitted error targets `ProceduralBiteIkJobs.cs`, `FaunaKinematicsRuntime.cs`, or `LeviathanTerrainIkJobs.cs`.
+- Two unrelated `PhysicsEventBus` calls remain in `FaunaBrain` EMP/mimicry behavior. They were not replaced because the listener contract belongs to physics/audio ownership, not bite IK; this is recorded debt, not claimed clean.

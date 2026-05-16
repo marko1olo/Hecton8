@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Memory;
@@ -15,6 +17,8 @@ namespace Hecton8.Core.Bucketing
     {
         private const int RebalanceResultLength = 1;
         private const int FrameStateLength = 1;
+        private const int BlackBoxFrameCount = 300;
+        private const string BlackBoxDumpPath = "Docs/AgentLogs/Dump_SIMULATION_BUCKET_DISTRIBUTOR.bin";
         private const float DefaultEntityCostMs = 0.025f;
         private const float EwmaWeight = 0.10f;
 
@@ -25,6 +29,7 @@ namespace Hecton8.Core.Bucketing
         private VaultBufferHandle<float> _rebalanceBucketLoadsHandle;
         private VaultBufferHandle<SimulationBucketRebalanceResult> _rebalanceResultHandle;
         private VaultBufferHandle<SimulationBucketFrameState> _frameStateHandle;
+        private VaultBufferHandle<SimulationBucketBlackBoxEntry> _blackBoxHandle;
         private IDataVault _dataVault;
         private JobHandle _rebalanceHandle;
         private int _entityCapacity;
@@ -44,6 +49,8 @@ namespace Hecton8.Core.Bucketing
         private int _rebalanceMutationVersion;
         private uint _rebalanceSequence;
         private uint _framePacingFlags;
+        private int _blackBoxCursor;
+        private int _lastBlackBoxFrame = -1;
         private byte _activeSlowBucketCount = SimulationBucketConstants.MinimumActiveSlowBucketCount;
         private float _lastActiveBucketLoadMs;
         private float _activeBucketLoadEwmaMs;
@@ -55,6 +62,7 @@ namespace Hecton8.Core.Bucketing
         private bool _aupBarrierActive;
         private bool _rebalancePending;
         private bool _nonFiniteCostObserved;
+        private bool _pendingBlackBoxDump;
 
         public bool IsInitialized => ResolveEntityBuckets().IsCreated;
 
@@ -168,6 +176,11 @@ namespace Hecton8.Core.Bucketing
                 FrameStateLength,
                 SystemID.SimulationBucketer,
                 NativeArrayOptions.ClearMemory);
+            _blackBoxHandle = dataVault.GetBufferHandle<SimulationBucketBlackBoxEntry>(
+                BufferID.SimulationBucketBlackBox,
+                BlackBoxFrameCount,
+                SystemID.SimulationBucketer,
+                NativeArrayOptions.ClearMemory);
 
             if (!HasRequiredVaultBuffers())
             {
@@ -212,6 +225,7 @@ namespace Hecton8.Core.Bucketing
 
             UpdatePacingFlags(lowTier);
             UpdateFrameStateBuffer();
+            WriteBlackBoxEntry();
         }
 
         public void ReportActiveBucketLoadMs(float milliseconds)
@@ -232,6 +246,7 @@ namespace Hecton8.Core.Bucketing
 
             UpdatePacingFlags(_slowBucketCount == SimulationBucketConstants.LowSlowBucketCount);
             UpdateFrameStateBuffer();
+            WriteBlackBoxEntry();
         }
 
         public void ReportPreSimulationCostMs(float milliseconds)
@@ -358,7 +373,8 @@ namespace Hecton8.Core.Bucketing
                 PreSimulationCostMs = _preSimulationCostMs,
                 SimulationBucketInterpolationAlpha = _simulationBucketInterpolationAlpha,
                 FramePacingFlags = _framePacingFlags,
-                RebalanceSequence = _rebalanceSequence
+                RebalanceSequence = _rebalanceSequence,
+                ReservedPadding = 0
             };
         }
 
@@ -376,7 +392,8 @@ namespace Hecton8.Core.Bucketing
                    ResolveBucketLoadEwma().IsCreated &&
                    ResolveRebalanceBucketLoads().IsCreated &&
                    ResolveRebalanceResult().IsCreated &&
-                   ResolveFrameStateBuffer().IsCreated;
+                   ResolveFrameStateBuffer().IsCreated &&
+                   ResolveBlackBoxBuffer().IsCreated;
         }
 
         private NativeArray<int> ResolveEntityBuckets()
@@ -414,6 +431,11 @@ namespace Hecton8.Core.Bucketing
             return _frameStateHandle.IsCreated && _dataVault != null ? _frameStateHandle.Resolve(_dataVault) : default;
         }
 
+        private NativeArray<SimulationBucketBlackBoxEntry> ResolveBlackBoxBuffer()
+        {
+            return _blackBoxHandle.IsCreated && _dataVault != null ? _blackBoxHandle.Resolve(_dataVault) : default;
+        }
+
         private void ReleaseHandlesOnly()
         {
             if (_rebalancePending)
@@ -430,9 +452,12 @@ namespace Hecton8.Core.Bucketing
             _rebalanceBucketLoadsHandle = default;
             _rebalanceResultHandle = default;
             _frameStateHandle = default;
+            _blackBoxHandle = default;
             _dataVault = null;
             _entityCapacity = 0;
             _entityMask = 0;
+            _blackBoxCursor = 0;
+            _lastBlackBoxFrame = -1;
         }
 
         private void ClearEntityState()
@@ -460,6 +485,13 @@ namespace Hecton8.Core.Bucketing
             NativeArray<SimulationBucketRebalanceResult> result = ResolveRebalanceResult();
             if (result.IsCreated && result.Length > 0)
                 result[0] = default;
+
+            NativeArray<SimulationBucketBlackBoxEntry> blackBox = ResolveBlackBoxBuffer();
+            if (blackBox.IsCreated)
+            {
+                for (int i = 0; i < blackBox.Length; i++)
+                    blackBox[i] = default;
+            }
         }
 
         private void ScheduleRebalanceIfDue()
@@ -522,8 +554,13 @@ namespace Hecton8.Core.Bucketing
                 SimulationBucketRebalanceResult result = resultBuffer[0];
                 _expectedMaxBucketLoadMs = math.isfinite(result.MaxBucketLoadMs) ? math.max(0f, result.MaxBucketLoadMs) : 0f;
                 _expectedMeanBucketLoadMs = math.isfinite(result.MeanBucketLoadMs) ? math.max(0f, result.MeanBucketLoadMs) : 0f;
-                if (!math.isfinite(result.MaxBucketLoadMs) || !math.isfinite(result.MeanBucketLoadMs))
+                if (!math.isfinite(result.MaxBucketLoadMs) ||
+                    !math.isfinite(result.MeanBucketLoadMs) ||
+                    (result.FramePacingFlags & SimulationBucketPacingFlags.NonFiniteCost) != 0u)
+                {
                     _nonFiniteCostObserved = true;
+                    _pendingBlackBoxDump = true;
+                }
 
                 _rebalanceSequence = _rebalanceSequence == uint.MaxValue ? 1u : _rebalanceSequence + 1u;
             }
@@ -547,8 +584,129 @@ namespace Hecton8.Core.Bucketing
                 flags |= SimulationBucketPacingFlags.Impossible60Fps;
                 flags |= SimulationBucketPacingFlags.HomeostasisKillRequested;
             }
+            else if (!lowTier && !_rebalancePending && !_nonFiniteCostObserved &&
+                     expectedFrameMs > 0f &&
+                     expectedFrameMs <= SimulationBucketConstants.TargetFrameMilliseconds * 0.5f)
+            {
+                flags |= SimulationBucketPacingFlags.VisualOverkillBudgetAvailable;
+            }
 
             _framePacingFlags = flags;
+        }
+
+        private void WriteBlackBoxEntry()
+        {
+            NativeArray<SimulationBucketBlackBoxEntry> blackBox = ResolveBlackBoxBuffer();
+            if (!blackBox.IsCreated || blackBox.Length < BlackBoxFrameCount)
+                return;
+
+            int writeIndex = _blackBoxCursor;
+            bool overwriteCurrentFrame = _lastBlackBoxFrame == _currentFrameCount;
+            if (overwriteCurrentFrame)
+            {
+                writeIndex = _blackBoxCursor == 0 ? BlackBoxFrameCount - 1 : _blackBoxCursor - 1;
+            }
+
+            blackBox[writeIndex] = new SimulationBucketBlackBoxEntry
+            {
+                CurrentFrameCount = _currentFrameCount,
+                ActiveFastBucket = _activeFastBucket,
+                ActiveSlowBucket = _activeSlowBucket,
+                ActiveColdBucket = _activeColdBucket,
+                SlowBucketCount = _slowBucketCount,
+                CriticalDebtFrames = _criticalDebtFrames,
+                FramePacingFlags = _framePacingFlags,
+                RebalanceSequence = _rebalanceSequence,
+                ActiveBucketLoadMs = _lastActiveBucketLoadMs,
+                JitterVarianceMs = _jitterVarianceMs,
+                ExpectedMaxBucketLoadMs = _expectedMaxBucketLoadMs,
+                ExpectedMeanBucketLoadMs = _expectedMeanBucketLoadMs,
+                PreSimulationCostMs = _preSimulationCostMs,
+                SimulationBucketInterpolationAlpha = _simulationBucketInterpolationAlpha,
+                ActiveSlowBucketCount = _activeSlowBucketCount,
+                AupBarrierActive = _aupBarrierActive ? (byte)1 : (byte)0,
+                ReservedPadding = 0,
+                StateHash = ComputeBlackBoxStateHash()
+            };
+
+            if (!overwriteCurrentFrame)
+            {
+                writeIndex++;
+                if (writeIndex >= BlackBoxFrameCount)
+                    writeIndex = 0;
+
+                _blackBoxCursor = writeIndex;
+                _lastBlackBoxFrame = _currentFrameCount;
+            }
+
+            TryDumpBlackBoxIfRequested(blackBox);
+        }
+
+        private uint ComputeBlackBoxStateHash()
+        {
+            unchecked
+            {
+                uint hash = 2166136261u;
+                hash = (hash ^ (uint)_currentFrameCount) * 16777619u;
+                hash = (hash ^ (uint)_activeFastBucket) * 16777619u;
+                hash = (hash ^ (uint)_activeSlowBucket) * 16777619u;
+                hash = (hash ^ (uint)_activeColdBucket) * 16777619u;
+                hash = (hash ^ _framePacingFlags) * 16777619u;
+                hash = (hash ^ math.asuint(_lastActiveBucketLoadMs)) * 16777619u;
+                hash = (hash ^ math.asuint(_jitterVarianceMs)) * 16777619u;
+                return hash;
+            }
+        }
+
+        private void TryDumpBlackBoxIfRequested(NativeArray<SimulationBucketBlackBoxEntry> blackBox)
+        {
+            if (!_pendingBlackBoxDump)
+                return;
+
+            _pendingBlackBoxDump = false;
+            try
+            {
+                string folder = Path.GetDirectoryName(BlackBoxDumpPath);
+                if (!string.IsNullOrEmpty(folder))
+                    Directory.CreateDirectory(folder);
+
+                using (FileStream stream = new FileStream(BlackBoxDumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(_rebalanceSequence);
+                    writer.Write(_blackBoxCursor);
+                    writer.Write(_currentFrameCount);
+                    for (int i = 0; i < BlackBoxFrameCount; i++)
+                    {
+                        int index = _blackBoxCursor + i;
+                        if (index >= BlackBoxFrameCount)
+                            index -= BlackBoxFrameCount;
+
+                        SimulationBucketBlackBoxEntry entry = blackBox[index];
+                        writer.Write(entry.CurrentFrameCount);
+                        writer.Write(entry.ActiveFastBucket);
+                        writer.Write(entry.ActiveSlowBucket);
+                        writer.Write(entry.ActiveColdBucket);
+                        writer.Write(entry.SlowBucketCount);
+                        writer.Write(entry.CriticalDebtFrames);
+                        writer.Write(entry.FramePacingFlags);
+                        writer.Write(entry.RebalanceSequence);
+                        writer.Write(entry.ActiveBucketLoadMs);
+                        writer.Write(entry.JitterVarianceMs);
+                        writer.Write(entry.ExpectedMaxBucketLoadMs);
+                        writer.Write(entry.ExpectedMeanBucketLoadMs);
+                        writer.Write(entry.PreSimulationCostMs);
+                        writer.Write(entry.SimulationBucketInterpolationAlpha);
+                        writer.Write(entry.ActiveSlowBucketCount);
+                        writer.Write(entry.AupBarrierActive);
+                        writer.Write(entry.ReservedPadding);
+                        writer.Write(entry.StateHash);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+            }
         }
 
         private void UpdateFrameStateBuffer()
@@ -570,6 +728,7 @@ namespace Hecton8.Core.Bucketing
                 return milliseconds;
 
             _nonFiniteCostObserved = true;
+            _pendingBlackBoxDump = true;
             return 0f;
         }
 
@@ -589,6 +748,8 @@ namespace Hecton8.Core.Bucketing
             _rebalanceSequence = 0u;
             _mutationVersion = 0;
             _rebalanceMutationVersion = 0;
+            _blackBoxCursor = 0;
+            _lastBlackBoxFrame = -1;
             _activeSlowBucketCount = SimulationBucketConstants.MinimumActiveSlowBucketCount;
             _slowBucketCount = SimulationBucketConstants.StandardSlowBucketCount;
             _slowBucketMask = SimulationBucketConstants.StandardSlowBucketMask;
@@ -600,6 +761,7 @@ namespace Hecton8.Core.Bucketing
             _activeColdBucket = 0;
             _rebalanceCountdown = SimulationBucketConstants.RebalanceCadenceFrames;
             _nonFiniteCostObserved = false;
+            _pendingBlackBoxDump = false;
         }
 
         private static byte ResolveActiveSlowBucketCount(bool lowTier, float unscaledDeltaTime, int criticalDebtFrames, bool aupBarrierActive)
@@ -623,6 +785,29 @@ namespace Hecton8.Core.Bucketing
             public float TotalLoadMs;
             public uint FramePacingFlags;
             public int ActiveEntityCount;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+        internal struct SimulationBucketBlackBoxEntry
+        {
+            public int CurrentFrameCount;
+            public int ActiveFastBucket;
+            public int ActiveSlowBucket;
+            public int ActiveColdBucket;
+            public int SlowBucketCount;
+            public int CriticalDebtFrames;
+            public uint FramePacingFlags;
+            public uint RebalanceSequence;
+            public float ActiveBucketLoadMs;
+            public float JitterVarianceMs;
+            public float ExpectedMaxBucketLoadMs;
+            public float ExpectedMeanBucketLoadMs;
+            public float PreSimulationCostMs;
+            public float SimulationBucketInterpolationAlpha;
+            public byte ActiveSlowBucketCount;
+            public byte AupBarrierActive;
+            public ushort ReservedPadding;
+            public uint StateHash;
         }
 
         [BurstCompile]
@@ -660,7 +845,7 @@ namespace Hecton8.Core.Bucketing
                     if (!math.isfinite(cost))
                     {
                         flags |= SimulationBucketPacingFlags.NonFiniteCost;
-                        cost = DefaultEntityCostMs;
+                        cost = DefaultCostMs;
                     }
 
                     int targetBucket = 0;
@@ -700,7 +885,7 @@ namespace Hecton8.Core.Bucketing
                 if (maxLoadMs > TargetFrameMs)
                     flags |= SimulationBucketPacingFlags.Impossible60Fps;
 
-                if (Result.IsCreated && Result.Length > 0)
+                if (Result.Length > 0)
                 {
                     Result[0] = new SimulationBucketRebalanceResult
                     {

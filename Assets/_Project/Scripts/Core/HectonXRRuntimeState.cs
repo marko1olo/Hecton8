@@ -196,12 +196,15 @@ namespace Hecton8.Core
                 if (display == null || !display.running)
                     continue;
 
-                if (display.TryRequestDisplayRefreshRate(targetRefreshRateHz))
-                    requested = true;
+                requested = true;
             }
 
             if (requested)
             {
+                int frameRate = (int)math.round(targetRefreshRateHz);
+                if (Application.targetFrameRate <= 0 || Application.targetFrameRate > frameRate)
+                    Application.targetFrameRate = frameRate;
+
                 _refreshRateHz = targetRefreshRateHz;
                 _nextRefreshSampleFrame = Time.frameCount + RefreshSampleIntervalFrames;
                 InvalidateShaderStateCache();

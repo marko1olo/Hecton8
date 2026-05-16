@@ -35,3 +35,15 @@ Cinematic Cheats used -> Low tier remains a Dear Lie: 5Hz cadence, cheap radial 
 Exact Microseconds saved -> Profiler proof still absent. Claimed measured savings: 0 us. Static savings: no NavMesh/AStar solve, no singleton/component polling in the job, no hot-path file I/O, no hot-path string formatting, no short-circuit bool gates in the Burst source. Added cost: four extra float stores per active slot, 1024 bytes per full 64-slot tick.
 
 Verification -> `dotnet exec csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.AI.Cognition.rsp` exits 0. `rg '\bif\b|\?|&&|\|\|' LeviathanStalkJob.cs` returns no matches. `rg` forbidden scans in AI/Cognition return no NavMesh/AStar/AIManager, no local native allocation constructors, no EventBus/delegates, and no managed hot-path debt. `rg 'TryDumpBlackBoxOnFault|AlphaLeviathanTelemetryFlags\.Fault'` confirms fault flag emission plus cold dump helper. Latest Unity batch startup crashes before compilation on missing `Assets/_Project/Scripts/Physics/Tethers/Contracts/Hecton8.Physics.Tethers.Contracts.asmdef`, outside AI/COGNITION domain.
+
+## 2026-05-16 - Alias And Dear-Lie Hardening Pass
+
+What was wrong -> The job exposed separate `InputStates` and `OutputStates` even though the vault owns a single cognition-state buffer. That created a schedule-time alias trap and implied a fake private double buffer. Inactive zeroed rows could also raise fault telemetry, sonar-only pings could be idled by a missing player anchor flag, dense slot IDs could remain zero if caller seeding was incomplete, and `PlayerForward` was unused.
+
+What was done -> Collapsed the job to a single in-place `States` vault view and added `AlphaLeviathanCognitionVault.CreateStalkJob(...)` as the canonical cold-path wiring helper. Added `hasTrackingAnchor = HasPlayerAnchor | sonarActive`, gated fault flags behind active tracking anchors, wrote dense slot IDs from the job index, sanitized system stress before LOD selection, used `PlayerForward` for branchless gaze exposure, and added deterministic triangle-wave `PredatorSilhouetteNoise01`.
+
+Cinematic Cheats used -> Low tier now gets a cheap dot-product vision break plus triangle-wave silhouette flicker instead of extra perception simulation. High/Ultra keep the heavy scalar intent channels for SDF contouring, wake silt, salt crystal growth, SSS pulse, dent impulse, and particle budget.
+
+Exact Microseconds saved -> Measured proof absent. Claimed measured savings: 0 us. Static savings: one fewer NativeArray field in the job contract, no duplicate state-buffer binding, no ray/visibility simulation for player gaze, no random-state storage. Added static cost: one normalize/dot and one frac/abs triangle wave per active row.
+
+Verification -> Unity Bee/Csc response file exits 0. Burst job scan still returns no `if`, ternary, `&&`, or `||`. Static forbidden scan in AI/Cognition returns no NavMesh/AStar/AIManager, no local native allocation constructors, no EventBus/delegates, no Update/string/log debt. `dotnet build` root remains blocked by MSB1011; Unity batch remains blocked before C# compile by the missing Physics/Tethers asmdef.

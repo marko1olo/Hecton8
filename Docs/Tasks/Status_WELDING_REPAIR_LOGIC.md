@@ -4,7 +4,7 @@ Prompt: WELDING_REPAIR_LOGIC
 Role: GAMEPLAY_PROGRAMMER
 Domain: GAMEPLAY/TOOLS
 Task Count: 18
-State: SECOND PASS COMPLETE / FINAL BUILD BLOCKED BY DEPENDENCY
+State: THIRD PASS COMPLETE / FINAL BUILD BLOCKED BY DEPENDENCY
 
 Mandates read before coding:
 - CORE_Tools_Equipment_Interaction_Raycast_Heat.txt
@@ -56,6 +56,7 @@ Mandates read before coding:
 - Loop 5: Validation pass ran dotnet build with restore and targeted no-reference pass; build is blocked by pre-existing Hecton8.Core dependency errors, not by emitted diagnostics in touched files.
 - Loop 6: Multiplatform/H-Phi pass added Pack=1 to HullRepairedSignal, signal finite guard, cached vault handles, AUP local conversion for repair visuals and hull dent presenter, finite quaternion/scale guards, and tiered spark quantities. `git diff --check` reports only existing CRLF conversion warnings.
 - Loop 7: Omega anti-bloat pass found no `<POLISH_MANDATE>` tag in CURRENT_BATCH.md, then executed equivalent grep audit: no RepairToolManager, EventBus, string.Format, Update(), direct HullDents GetBuffer<float4>, or float-only InverseTransformPoint remain in the repair lane. Build remains dependency-blocked by RealtimeCSG missing files and unrelated Core contracts.
+- Loop 8: Multiplatform/H-Phi re-audit verified structural breach SOA and damage-control blackbox are GlobalDataVault handle-backed, removed the remaining Pack=4 storage layout on repair-side records, reran anti-bloat grep, and reran dotnet build. Build remains blocked by RealtimeCSG missing files plus unrelated Hecton8.Core failures in GlobalDataVault/SargassumMicroFaunaBoids.
 
 ## Phase 5 - Multiplatform / H-Phi Inquisition
 - [x] ARM64/Quest packing | Justification: HullRepairedSignal now uses explicit layout with Pack=1 and Size=64 | Alternatives Rejected: relying on default explicit-layout packing | Microseconds: 50
@@ -65,3 +66,10 @@ Mandates read before coding:
 - [x] Typed lane audit | Justification: hull repair completion uses SignalBus<HullRepairedSignal>; HullDentShaderController consumes ReadOnlySpan<CombatDamageSignal> snapshots; gas solver drains typed lane | Alternatives Rejected: legacy EventBus or managed delegates for the hull repair path | Microseconds: 250
 - [x] NaN vaccination expansion | Justification: repair power, intensity, normals, transforms, quaternion, scale, AUP relative vectors, and HullRepairedSignal AUP are finite-guarded | Alternatives Rejected: trusting Transform and signal producers | Microseconds: 250
 - [x] Toaster/God-mode split | Justification: Low/MX350 spark quantity is 2-6 and high tiers allow 8-32 compute-shard sparks routed into existing SDF/flow advection | Alternatives Rejected: one fixed particle count for all hardware | Microseconds: low-tier saves estimated 20-60 us per active weld burst
+
+## Phase 6 - Third Pass Structural Sidecar Audit
+- [x] Structural breach data sovereignty | Justification: SubmarineStructuralGrid breach SOA resolves through VaultBufferHandle<float4> for BufferID.SubmarineStructuralBreaches; no private _breaches allocation remains | Alternatives Rejected: scene-owned persistent NativeArray<float4> authority | Microseconds: estimated 2-5 us saved on repeated lookup churn, zero new heap churn
+- [x] Damage-control blackbox data sovereignty | Justification: 300-frame DamageControlTelemetryEntry ring resolves through BufferID.SubmarineDamageControlBlackBox in GlobalDataVault | Alternatives Rejected: scene-owned private telemetry NativeArray | Microseconds: estimated neutral runtime cost; saves leak risk by central vault ownership
+- [x] ARM64 storage ABI pass | Justification: ImpactCommand is now Pack=1 Size=24 and DamageControlTelemetryEntry is now Pack=1 Size=32; remaining Pack=16 hits are Burst job payload structs, not vault/signal storage ABI | Alternatives Rejected: changing Burst job payload packing and risking scheduler alignment/perf with no cross-platform storage benefit | Microseconds: estimated 0 us runtime gain, removes padding ambiguity
+- [x] Anti-bloat grep pass | Justification: grep found no RepairToolManager, EventBus, string.Format, Update(), direct HullDents GetBuffer<float4>, float-only InverseTransformPoint, or private breach telemetry NativeArray allocation in the repair lane | Alternatives Rejected: manual visual scan only | Microseconds: 450
+- [BLOCKED BY DEPENDENCY] Build revalidation | Justification: dotnet build Assembly-CSharp.csproj --no-restore /m:1 /clp:ErrorsOnly fails with 245 errors before repair-domain isolation; errors are RealtimeCSG missing source files plus unrelated Hecton8.Core GlobalDataVault/SargassumMicroFaunaBoids symbols | Alternatives Rejected: editing RealtimeCSG package inventory or unrelated fauna/memory defects outside WELDING_REPAIR_LOGIC | Microseconds: blocked

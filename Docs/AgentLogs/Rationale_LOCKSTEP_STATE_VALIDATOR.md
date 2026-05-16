@@ -95,3 +95,51 @@ Rejected Alternatives: Letting Burst hash jobs be the first NaN barrier, or trus
 Scalability potential: Toaster mode receives safe zero/fallback values rather than GPU-killing NaNs. High/Ultra retain diagnostic non-finite flags for deeper replay investigations.
 
 Hardware Impact: Per mirrored scalar guard is sub-microsecond and only runs on input capture/water mirror/player mirror paths; hash jobs already had finite checks.
+
+## Signal Flow And Reactive Fault Path
+
+Problem: The XML requires a typed lockstep snapshot signal and a visor glitch on replay desync, but no current `LockstepSnapshotSignal` or `SystemGlitchSignal` contract existed in the active source.
+
+Solution: Add Pack=1 signal structs in the determinism file, prewarm their `SignalBus` lanes during `OnEnable`, publish `LockstepSnapshotSignal` after the completed master hash fence, and publish `SystemGlitchSignal` plus request existing dispatcher visual static on desync.
+
+Rejected Alternatives: Editing the dirty global signal registry during parallel signal-authority work, using a managed delegate/event, or logging the hash without a typed lane.
+
+Scalability potential: Low/MX350 normal play still skips hash work. High/Ultra get 60-frame hash signals for tighter replay/debug observability. Fault-only visor glitch buys developer feedback without any normal-path visual cost.
+
+Hardware Impact: Normal hash-fence signal cost is one 32-byte native enqueue. Glitch signal is fault-path only.
+
+## Adaptive Hash Cadence
+
+Problem: Fixed 300-frame cadence under-serves High/Ultra debugging and over-spends during critical hardware stress.
+
+Solution: Resolve cadence per frame: Low/MX350 normal play still skips, High/Ultra hash every 60 frames, and any finite `HomeostasisBrain.SystemHealthIndex01 > 0.9` backs off to 1200 frames.
+
+Rejected Alternatives: One balanced cadence for all hardware, or polling hardware APIs directly from determinism.
+
+Scalability potential: Toaster mode preserves frame time; High/Ultra buys stricter desync detection; stress mode defers work before hardware collapse.
+
+Hardware Impact: High/Ultra add four extra fences per 300 frames. Critical-stress mode removes three of four normal 300-frame hash fences.
+
+## Compile Validation Wall
+
+Problem: Unity batchmode cannot currently produce a clean project compile, and isolated determinism csc cannot run because `Hecton8.Core.ref.dll` is not emitted while upstream assemblies fail.
+
+Solution: Run Unity batchmode twice. First run stopped on AssetDatabase churn from unrelated UI/bucketing edits. Second run reached compiler diagnostics; no `LockstepStateValidator` or `Hecton8.Core.Determinism` errors were present. Record the external blockers and do not edit those domains.
+
+Rejected Alternatives: Fixing audio virtualization asmdefs, bucketing namespace imports, or animation IK variable shadowing inside the lockstep validator pass.
+
+Scalability potential: None. This is integration hygiene.
+
+Hardware Impact: 0us runtime. Validation remains blocked by external compile state, not by observed determinism diagnostics.
+
+## MMF Save Header Blocker
+
+Problem: The XML asks for save-header hash integration through `BACKEND_MACRO_DB_COMPACTOR`, but the active code exposes no public lockstep-hash save-header API. Macro database header writes are internal to `H8MacroDatabaseService`.
+
+Solution: Search the MacroDatabase/MMF contracts and mark task 16 blocked by missing public integration contract. The lockstep hash is still persisted in `GlobalDataVault` and replay block headers.
+
+Rejected Alternatives: Writing directly into the macro database header memory, inventing a parallel save file, or coupling determinism to backend internals.
+
+Scalability potential: Vault/replay persistence works on all tiers; save-header persistence needs a backend-owned API to avoid cross-domain corruption.
+
+Hardware Impact: 0us runtime.

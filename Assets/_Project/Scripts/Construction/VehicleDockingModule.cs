@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton8.Power;
@@ -30,6 +31,13 @@ namespace Hecton8.Construction
         private const float DefaultDockingDurationSeconds = 1.5f;
         private const float DefaultUndockEjectSpeedMetersPerSecond = 4.5f;
         private const float DefaultDockingImpactSpeedMetersPerSecond = 6.5f;
+        private const float LowTierSplineSampleIntervalSeconds = 0.1f;
+        private const float DockingDeviationAbortMeters = 5f;
+        private const float DockingDeviationAbortMetersSq = DockingDeviationAbortMeters * DockingDeviationAbortMeters;
+        private const float DockingWakeSignalIntervalSeconds = 0.1f;
+        private const float DockingCompleteSignalProgress01 = 0.95f;
+        private const uint DockingWakeSourceHash = 0x44534C4Eu;
+        private const uint DockingWakeSourceVehicleFlag = 2u;
         private const int DockTelemetryCapacity = 300;
 
         [StructLayout(LayoutKind.Sequential, Pack = 16)]
@@ -42,11 +50,19 @@ namespace Hecton8.Construction
             public byte Reserved;
             public float DistanceSq;
             public float AlignmentDot;
+            public float SplineDeviationError;
+            public float FlowSpeed;
             public float3 Position;
+            public float3 SplineTargetPosition;
+            public float3 CommandVelocity;
+            public float3 FlowVelocity;
             public float4 Rotation;
             public long GridX;
             public long GridY;
             public long GridZ;
+            public uint OwnerHash;
+            public uint RequestId;
+            public uint RuntimeFlags;
         }
 
         [Header("Docking")]
@@ -127,9 +143,11 @@ namespace Hecton8.Construction
         private Rigidbody _dockedBody;
         private VehicleMotor _dockedVehicleMotor;
         private SubmarineFluidDynamics _dockedFluidDynamics;
+        private HectonFluidEngine _fluidRuntime;
         private bool _cachedBodyWasKinematic;
         private bool _cachedBodyUseGravity;
         private RigidbodyConstraints _cachedBodyConstraints;
+        private RigidbodyInterpolation _cachedBodyInterpolation;
         private Vector3 _dockingStartPosition;
         private Quaternion _dockingStartRotation = Quaternion.identity;
         private AbsoluteUniversePosition _dockingStartAup;
@@ -144,6 +162,17 @@ namespace Hecton8.Construction
         private uint _dockingSplineOwnerHash;
         private uint _dockingSplineRequestId;
         private MountablePlayerTransport _mountedTransportLockOwner;
+        private Vector3 _lowTierSplineFromPosition;
+        private Vector3 _lowTierSplineTargetPosition;
+        private Quaternion _lowTierSplineTargetRotation = Quaternion.identity;
+        private Vector3 _lastDockingSplineTargetPosition;
+        private Vector3 _lastDockingCommandVelocity;
+        private float3 _lastDockingFlowVelocity;
+        private float _lowTierSplineBlendSeconds;
+        private float _dockingWakeElapsedSeconds;
+        private float _lastSplineDeviationError;
+        private bool _hasLowTierSplineSample;
+        private bool _dockingCompletionSignalPublished;
         private ulong _lastRejectedDockColliderId;
         private int _transportLookupCount;
         private int _transportLookupWriteCursor;
@@ -206,6 +235,7 @@ namespace Hecton8.Construction
             EnsureDockTelemetry();
             ClearTransportLookupCache();
             CacheDockingAutopilotService();
+            CacheFluidRuntime();
             HectonFloatingOrigin.RegisterListener(this);
             TryRegister();
         }
@@ -239,9 +269,11 @@ namespace Hecton8.Construction
             _attachedDroneMassKg = 0f;
             _hasDockedRelativeAup = false;
             _dockTelemetryCursor = 0;
+            ResetDockingRuntimeCaches();
             _lastRejectedDockColliderId = 0UL;
             ClearTransportLookupCache();
             CacheDockingAutopilotService();
+            CacheFluidRuntime();
             _debugDockOccupied = false;
             _debugDockedTransportName = string.Empty;
             TryRegister();
@@ -259,6 +291,7 @@ namespace Hecton8.Construction
             _attachedDroneMassKg = 0f;
             _hasDockedRelativeAup = false;
             _dockTelemetryCursor = 0;
+            ResetDockingRuntimeCaches();
             _lastRejectedDockColliderId = 0UL;
             ClearTransportLookupCache();
             _debugDockOccupied = false;
@@ -460,6 +493,7 @@ namespace Hecton8.Construction
             ResolveDockedFluidDynamics(transportBehaviour);
             BeginDockingControlLock(transportBehaviour);
             _dockingElapsedSeconds = 0f;
+            ResetDockingRuntimeCaches();
             CacheDockingTrajectory();
             ResetDockedVehiclePresentationState();
             _dockingInProgress = true;
@@ -485,6 +519,7 @@ namespace Hecton8.Construction
                 _dockedBody.isKinematic = _cachedBodyWasKinematic;
                 _dockedBody.useGravity = _cachedBodyUseGravity;
                 _dockedBody.constraints = _cachedBodyConstraints;
+                _dockedBody.interpolation = _cachedBodyInterpolation;
 
                 if (applyEjectVelocity)
                     ApplyUndockEjectVelocity(_dockedBody, ejectVelocity);
@@ -506,6 +541,7 @@ namespace Hecton8.Construction
             _isDocked = false;
             _dockingElapsedSeconds = 0f;
             _hasDockedRelativeAup = false;
+            ResetDockingRuntimeCaches();
             _lastRejectedDockColliderId = 0UL;
             _debugDockOccupied = false;
             _debugDockedTransportName = string.Empty;
@@ -526,12 +562,14 @@ namespace Hecton8.Construction
             _cachedBodyWasKinematic = _dockedBody.isKinematic;
             _cachedBodyUseGravity = _dockedBody.useGravity;
             _cachedBodyConstraints = _dockedBody.constraints;
+            _cachedBodyInterpolation = _dockedBody.interpolation;
             _dockingStartPosition = _dockedBody.position;
             _dockingStartRotation = _dockedBody.rotation;
             _dockedBody.linearVelocity = Vector3.zero;
             _dockedBody.angularVelocity = Vector3.zero;
             _dockedBody.isKinematic = true;
             _dockedBody.useGravity = false;
+            _dockedBody.interpolation = RigidbodyInterpolation.Interpolate;
         }
 
         private void ResolveDockedVehicleMotor(MonoBehaviour transportBehaviour)

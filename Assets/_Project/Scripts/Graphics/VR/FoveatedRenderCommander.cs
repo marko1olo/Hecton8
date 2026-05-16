@@ -835,6 +835,9 @@ namespace Hecton8.Graphics.VR
             if (!xrActive || Application.platform != RuntimePlatform.Android)
                 return false;
 
+            if (IsQuest3OrProRuntime())
+                return false;
+
             if (QuestVulkanRuntimePolicy.SystemMemoryMegabytes > 0 &&
                 QuestVulkanRuntimePolicy.SystemMemoryMegabytes < QuestVulkanRuntimePolicy.QuestMemoryGateMegabytes &&
                 IsQuestFamilyDevice())
@@ -847,6 +850,16 @@ namespace Hecton8.Graphics.VR
                    ContainsToken(XRSettings.loadedDeviceName, "Quest 2") ||
                    ContainsToken(SystemInfo.deviceModel, "Oculus Quest") ||
                    ContainsToken(XRSettings.loadedDeviceName, "Oculus Quest");
+        }
+
+        private static bool IsQuest3OrProRuntime()
+        {
+            return ContainsToken(SystemInfo.deviceModel, "Quest 3") ||
+                   ContainsToken(SystemInfo.deviceName, "Quest 3") ||
+                   ContainsToken(XRSettings.loadedDeviceName, "Quest 3") ||
+                   ContainsToken(SystemInfo.deviceModel, "Quest Pro") ||
+                   ContainsToken(SystemInfo.deviceName, "Quest Pro") ||
+                   ContainsToken(XRSettings.loadedDeviceName, "Quest Pro");
         }
 
         private static bool IsQuestFamilyDevice()

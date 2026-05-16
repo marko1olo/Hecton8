@@ -48,8 +48,8 @@ Hardware Impact: Expected added CPU is under 1 us per policy sample. Exact measu
 
 ## Quest 2 Fixed-Foveation Lock
 Problem: Weak mobile VR silicon burns fill-rate at lens edges and should not spend CPU/GPU time searching for perfect per-frame foveation.
-Solution: Detect Quest/Oculus runtime through existing `QuestVulkanRuntimePolicy`, memory gate, and device tokens; lock target level to High while preserving PC/Quest 3 dynamic behavior.
-Rejected Alternatives: Thermal-only escalation, per-frame adaptive edge mask, or assuming eye tracking exists on low-tier devices.
+Solution: Detect Android XR Quest/Oculus runtime through XR active state, memory gate, and device tokens without requiring Vulkan classification; lock target level to High while preserving PC/Quest 3 dynamic behavior. Actual hardware writes remain gated by Unity foveation caps.
+Rejected Alternatives: Thermal-only escalation, per-frame adaptive edge mask, assuming eye tracking exists on low-tier devices, or Vulkan-only Quest 2 detection.
 Scalability potential: Low = toaster path is the cheapest constant approximation. Middle = dynamic stress mapping. High = gaze allowed. Ultra = saved cycles buy higher visual density.
 Hardware Impact: Quest 2-class path costs under 3 us per sample and can recover hundreds of GPU microseconds to more than 1 ms depending scene fill-rate.
 
