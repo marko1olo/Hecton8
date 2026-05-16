@@ -254,7 +254,7 @@ float H8UberNoirValueNoise2(float2 value)
 
 float2 H8UberNoirScreenUV(float4 positionCS)
 {
-    float2 screenUV = positionCS.xy * rcp(max(abs(positionCS.w), H8_UBER_NOIR_EPS)) * 0.5 + 0.5;
+    float2 screenUV = positionCS.xy * H8UberNoirSafeRcp(positionCS.w) * 0.5 + 0.5;
 #if defined(UNITY_SINGLE_PASS_STEREO) || defined(UNITY_STEREO_INSTANCING_ENABLED) || defined(UNITY_STEREO_MULTIVIEW_ENABLED)
     screenUV = UnityStereoTransformScreenSpaceTex(screenUV);
 #endif
@@ -428,7 +428,7 @@ float H8UberNoirRadiusMask(float3 positionWS, float4 centerRadius)
     float radius = max(centerRadius.w, 0.0);
     float3 delta = positionWS - centerRadius.xyz;
     float radiusSq = max(radius * radius, H8_UBER_NOIR_EPS);
-    return lerp(1.0, 1.0 - saturate(dot(delta, delta) * rcp(radiusSq)), step(H8_UBER_NOIR_EPS, radius));
+    return lerp(1.0, 1.0 - saturate(dot(delta, delta) * H8UberNoirSafeRcp(radiusSq)), step(H8_UBER_NOIR_EPS, radius));
 }
 
 float3 H8UberNoirApplyDynamicHullBendingWS(float3 positionWS, float3 normalWS, half instanceSeed)
@@ -450,7 +450,7 @@ float3 H8UberNoirApplyDynamicHullBendingWS(float3 positionWS, float3 normalWS, h
     float crushDisplacementSource = _HectonSubmarineCrushDepthParams.z;
     float crushDepth = isfinite(crushDepthSource) ? max(crushDepthSource, H8_UBER_NOIR_EPS) : H8_UBER_NOIR_EPS;
     float crushCurrent = isfinite(crushCurrentSource) ? max(crushCurrentSource, 0.0) : 0.0;
-    float crush01 = saturate(crushCurrent * rcp(crushDepth));
+    float crush01 = saturate(crushCurrent * H8UberNoirSafeRcp(crushDepth));
     float crushDisplacement = isfinite(crushDisplacementSource) ? max(crushDisplacementSource, 0.0) * crush01 : 0.0;
     crushDisplacement = isfinite(crushDisplacement) ? crushDisplacement : 0.0;
     float crushMask = 0.0;
@@ -573,7 +573,7 @@ void H8UberNoirApplyGlobalWakeWS(inout float3 positionWS, inout float3 normalWS,
         float radiusSq = max(radius * radius, H8_UBER_NOIR_EPS);
         float3 pushAxisWS = H8UberNoirSafeNormalize(wakeVector.xyz, float3(0.0, 0.0, 1.0));
         float3 radialWS = H8UberNoirSafeNormalize(delta, pushAxisWS);
-        float falloff = saturate(1.0 - distSq * rcp(radiusSq));
+        float falloff = saturate(1.0 - distSq * H8UberNoirSafeRcp(radiusSq));
         float falloffSq = falloff * falloff;
         float lowStrength = intensity * falloffSq * 0.035;
         wakeOffsetWS += radialWS * lowStrength;
@@ -601,7 +601,7 @@ void H8UberNoirApplyGlobalWakeWS(inout float3 positionWS, inout float3 normalWS,
 
         float3 pushAxisWS = H8UberNoirSafeNormalize(wakeVector.xyz, float3(0.0, 0.0, 1.0));
         float3 radialWS = H8UberNoirSafeNormalize(delta, pushAxisWS);
-        float falloff = saturate(1.0 - distSq * rcp(radiusSq));
+        float falloff = saturate(1.0 - distSq * H8UberNoirSafeRcp(radiusSq));
         float falloffSq = falloff * falloff;
         float3 upCurlWS = H8UberNoirSafeNormalize(cross(pushAxisWS, safeNormalWS), float3(0.0, 0.0, 0.0));
         if (dot(upCurlWS, upCurlWS) <= H8_UBER_NOIR_EPS)
