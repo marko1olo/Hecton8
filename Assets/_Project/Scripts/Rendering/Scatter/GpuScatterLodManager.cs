@@ -714,6 +714,16 @@ namespace Hecton8.Rendering.Scatter
                     1,
                     GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - indirect flora draw args - owner: GpuScatterLodManager
             }
+
+            if (SystemInfo.supportsSetConstantBuffer &&
+                (_frameConstantsBuffer == null || !_frameConstantsBuffer.IsValid()))
+            {
+                _frameConstantsBuffer = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Constant,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    1,
+                    ScatterFrameConstantsStrideBytes); // COLD ALLOC: GraphicsBuffer[80B] - packed scatter compute constants - owner: GpuScatterLodManager
+            }
         }
 
         private void RecreateStructuredLockBuffer(ref GraphicsBuffer buffer, int count, int stride)
@@ -762,6 +772,7 @@ namespace Hecton8.Rendering.Scatter
             ReleaseBuffer(ref _visibleMatrixBuffer);
             ReleaseBuffer(ref _motionVectorBuffer);
             ReleaseBuffer(ref _argsBuffer);
+            ReleaseBuffer(ref _frameConstantsBuffer);
             _visibleCountReadbackPending = false;
             _gpuReady = false;
         }
@@ -889,19 +900,43 @@ namespace Hecton8.Rendering.Scatter
             scatterCullCompute.SetBuffer(_scatterCullKernel, _VisibleIndicesId, _visibleIndexBuffer);
             scatterCullCompute.SetBuffer(_scatterCullKernel, _VisibleMatricesId, _visibleMatrixBuffer);
             scatterCullCompute.SetBuffer(_scatterCullKernel, _MotionVectorsId, _motionVectorBuffer);
-            scatterCullCompute.SetInt(_InstanceCountId, activeCount);
             scatterCullCompute.SetVectorArray(_FrustumPlanesId, _frustumPlaneUpload);
-            scatterCullCompute.SetVector(_AupShiftOffsetId, _aupShiftOffset);
-            scatterCullCompute.SetVector(_CameraPositionId, _lastCameraSignalPosition);
-            scatterCullCompute.SetVector(_LocalBoundsCenterId, localBoundsCenter);
-            scatterCullCompute.SetVector(_LocalBoundsExtentsId, ResolveSafeLocalBoundsExtents());
             float cullDistance = math.max(1f, _effectiveCullDistanceMeters);
-            scatterCullCompute.SetFloat(_MaxDistanceSqId, cullDistance * cullDistance);
-            scatterCullCompute.SetFloat(_MotionStrengthId, math.max(0f, swayMotionStrength));
-            scatterCullCompute.SetInt(_FrameIndexId, _frameIndex);
-            scatterCullCompute.SetInt(_CrossfadeEnabledId, _cachedHighTier ? 1 : 0);
+            UploadScatterFrameConstants(activeCount, cullDistance * cullDistance, ResolveSafeLocalBoundsExtents());
             scatterCullCompute.Dispatch(_scatterCullKernel, math.max(1, (activeCount + ThreadGroupSize - 1) / ThreadGroupSize), 1, 1);
             GraphicsBuffer.CopyCount(_visibleMatrixBuffer, _argsBuffer, sizeof(uint));
+        }
+
+        private void UploadScatterFrameConstants(int activeCount, float maxDistanceSq, Vector3 safeLocalBoundsExtents)
+        {
+            ScatterFrameConstants constants = new ScatterFrameConstants
+            {
+                Params0 = new Vector4(
+                    math.max(0, activeCount),
+                    math.max(1f, maxDistanceSq),
+                    math.max(0f, swayMotionStrength),
+                    _frameIndex & 0x00FFFFFF),
+                Params1 = new Vector4(_aupShiftOffset.x, _aupShiftOffset.y, _aupShiftOffset.z, _cachedHighTier ? 1f : 0f),
+                Params2 = new Vector4(_lastCameraSignalPosition.x, _lastCameraSignalPosition.y, _lastCameraSignalPosition.z, 0f),
+                Params3 = new Vector4(localBoundsCenter.x, localBoundsCenter.y, localBoundsCenter.z, 0f),
+                Params4 = new Vector4(safeLocalBoundsExtents.x, safeLocalBoundsExtents.y, safeLocalBoundsExtents.z, 0f)
+            };
+
+            if (SystemInfo.supportsSetConstantBuffer &&
+                _frameConstantsBuffer != null &&
+                _frameConstantsBuffer.IsValid())
+            {
+                _frameConstantsUpload[0] = constants;
+                GraphicsBufferUploadUtility.UploadArray(_frameConstantsBuffer, _frameConstantsUpload, 1);
+                scatterCullCompute.SetConstantBuffer(ScatterFrameConstantsBufferName, _frameConstantsBuffer, 0, ScatterFrameConstantsStrideBytes);
+                return;
+            }
+
+            scatterCullCompute.SetVector(_ScatterParams0Id, constants.Params0);
+            scatterCullCompute.SetVector(_ScatterParams1Id, constants.Params1);
+            scatterCullCompute.SetVector(_ScatterParams2Id, constants.Params2);
+            scatterCullCompute.SetVector(_ScatterParams3Id, constants.Params3);
+            scatterCullCompute.SetVector(_ScatterParams4Id, constants.Params4);
         }
 
         private void Render(int activeCount)
