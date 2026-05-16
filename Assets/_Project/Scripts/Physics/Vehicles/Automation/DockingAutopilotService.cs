@@ -154,7 +154,7 @@ namespace Hecton8.Vehicles.Automation
             if (!math.isfinite(distanceSq) || distanceSq < 0.0)
                 return false;
 
-            double distance = math.sqrt(distanceSq);
+            double distance = distanceSq * math.rsqrt(math.max(distanceSq, 0.0001d));
             double controlDistance = math.clamp(
                 distance * ControlDistanceScale,
                 MinControlDistanceMeters,

@@ -1790,6 +1790,9 @@ namespace Hecton8.Audio
             if (hasListener && IsBeyondMaxHearingRange(in audibleAup, in listenerAup))
                 return -1;
 
+            if (hasListener && IsBeyondMaxHearingRange(in audibleAup, in listenerAup))
+                return false;
+
             AudioLodTier lodTier = hasListener
                 ? ResolveAudioLodTier(in audibleAup, in listenerAup)
                 : AudioLodTier.Tier0Full;
@@ -2296,6 +2299,7 @@ namespace Hecton8.Audio
             ResetWorldSourceState(sourceIndex, true);
             source.enabled = true;
             source.transform.position = audiblePosition;
+            AudioResidencyCache.TouchClip(clip, ResolveWorldResidencyDomain(clip, ResolvedDefaultWorldMixerGroup), true);
             source.clip = clip;
             float clampedVolume = math.saturate(selection.Volume);
             if (hasAcousticPortalPath)

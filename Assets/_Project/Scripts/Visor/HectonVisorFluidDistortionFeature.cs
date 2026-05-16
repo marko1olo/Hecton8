@@ -433,8 +433,6 @@ namespace Hecton8.Visor
         private IDataVault _dataVault;
         private VaultBufferHandle<VisorRefractionTelemetryEntry> _blackBoxHandle;
         private uint _blackBoxVaultGeneration;
-        private int _blackBoxCursor;
-        private int _lastBlackBoxFrame = -1;
         private bool _blackBoxDumped;
 
         /// <inheritdoc />
@@ -730,10 +728,6 @@ namespace Hecton8.Visor
         private unsafe void WriteBlackBoxFrame(Camera renderCamera, in RuntimeState runtimeState)
         {
             int frame = Time.frameCount;
-            if (_lastBlackBoxFrame == frame)
-                return;
-
-            _lastBlackBoxFrame = frame;
             if (!TryResolveBlackBoxPointer(out VisorRefractionTelemetryEntry* blackBox, out int blackBoxLength))
                 return;
 
@@ -754,7 +748,8 @@ namespace Hecton8.Visor
             if (runtimeState.VisualOverkill01 > 0.001f)
                 flags |= BlackBoxFlagVisualOverkill;
 
-            blackBox[_blackBoxCursor] = new VisorRefractionTelemetryEntry
+            int blackBoxIndex = ResolveBlackBoxIndex(frame, blackBoxLength);
+            blackBox[blackBoxIndex] = new VisorRefractionTelemetryEntry
             {
                 FrameIndex = frame >= 0 ? (uint)frame : 0u,
                 Flags = flags,
@@ -771,12 +766,8 @@ namespace Hecton8.Visor
                 QualityTier = (uint)runtimeState.QualityTier
             };
 
-            _blackBoxCursor++;
-            if (_blackBoxCursor >= blackBoxLength)
-                _blackBoxCursor = 0;
-
             if ((flags & BlackBoxFlagNonFiniteInput) != 0u)
-                DumpBlackBoxOnce(flags, blackBox, blackBoxLength);
+                DumpBlackBoxOnce(flags, blackBox, blackBoxLength, ResolveBlackBoxIndex(frame + 1, blackBoxLength));
         }
 
         private bool TryEnsureBlackBoxLease()
@@ -807,9 +798,6 @@ namespace Hecton8.Visor
             _dataVault = vault;
             _blackBoxHandle = blackBoxHandle;
             _blackBoxVaultGeneration = generation;
-            if (_blackBoxCursor >= _blackBoxHandle.Length)
-                _blackBoxCursor = 0;
-
             return true;
         }
 
@@ -852,7 +840,6 @@ namespace Hecton8.Visor
             _dataVault = null;
             _blackBoxHandle = default;
             _blackBoxVaultGeneration = 0u;
-            _blackBoxCursor = 0;
         }
 
         private static uint BuildBlackBoxHash(in RuntimeState runtimeState, uint flags)
@@ -886,7 +873,16 @@ namespace Hecton8.Visor
             return (ushort)value;
         }
 
-        private unsafe void DumpBlackBoxOnce(uint reasonFlags, VisorRefractionTelemetryEntry* blackBox, int blackBoxLength)
+        private static int ResolveBlackBoxIndex(int frame, int blackBoxLength)
+        {
+            if (blackBoxLength <= 1)
+                return 0;
+
+            int index = frame % blackBoxLength;
+            return index >= 0 ? index : index + blackBoxLength;
+        }
+
+        private unsafe void DumpBlackBoxOnce(uint reasonFlags, VisorRefractionTelemetryEntry* blackBox, int blackBoxLength, int startIndex)
         {
             if (_blackBoxDumped || blackBox == null || blackBoxLength <= 0)
                 return;
@@ -907,7 +903,7 @@ namespace Hecton8.Visor
                     writer.Write(reasonFlags);
                     writer.Write(BlackBoxEntrySizeBytes);
                     writer.Write(blackBoxLength);
-                    int index = _blackBoxCursor;
+                    int index = ResolveBlackBoxIndex(startIndex, blackBoxLength);
                     for (int i = 0; i < blackBoxLength; i++)
                     {
                         if (index >= blackBoxLength)
