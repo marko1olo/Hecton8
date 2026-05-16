@@ -82,8 +82,8 @@ Scalability potential: Scene composition stays safe across Quest, PC VR, and edi
 Hardware Impact: 0 us steady-state. The fix prevents catastrophic scene-object loss, not a measurable frame-time gain.
 
 ## Compile Wall Boundary
-Problem: Three build attempts failed before final green validation because other agents changed Core/Gameplay files outside the `Graphics/VR` domain.
-Solution: Do not edit or revert those files except the minimal `BufferID` addition required for this domain's DataVault ownership. Record exact blockers: `PlayerKinematicsRuntime.cs` unresolved AUP helpers on attempt 1, `GlobalSignals.cs(580,50)` `ISignalLane.FlushPreSimulation(bool,int)` mismatch on attempts 2-3, then 105 unrelated assembly/contract/signal/gameplay errors on attempt 4.
+Problem: Build attempts failed before final green validation because other agents changed files outside the `Graphics/VR` domain.
+Solution: Do not edit or revert those files except narrow foveation-interface cleanup required by this domain. Current blocker set is 16 external errors: `SargassumMicroFaunaBoids.cs` missing `EnsureVaultBufferHandle`, `VehicleDockingModule.cs` missing `CacheFluidRuntime`/`ResetDockingRuntimeCaches`, and `HectonMarineSnowRenderer.cs` missing `_vehicleWakeJobResult`/`_telemetryRing`.
 Rejected Alternatives: Scope creep into Gameplay/Core, reverting other agents' dirty work, or claiming green build from partial evidence.
 Scalability potential: Keeps the VR commander isolated and ready for integration once compile owners repair their domains.
 Hardware Impact: 0 us runtime; integration dependency only.

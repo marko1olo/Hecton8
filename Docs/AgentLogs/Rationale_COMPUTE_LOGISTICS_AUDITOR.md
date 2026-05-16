@@ -29,3 +29,9 @@ Rejected Alternatives: Carrying forward a raw MWh label without unit check.
 Scalability potential: Prevents future report drift.
 Hardware Impact: None.
 
+Problem: User asked to continue after the full JSONL scan, but re-running 8.49GB JSONL immediately would waste time for only tail drift.
+Solution: Use a 30-second SQLite live-tail sample to measure current active burn, then document it as SQLite-only evidence.
+Rejected Alternatives: Pretending the full 03:56 JSONL snapshot remained current; re-running full JSONL for every short prompt.
+Scalability potential: Cheap devices use SQLite tail checks; expensive offline audits can later rerun JSONL.
+Hardware Impact: 30-second wait plus two SQLite reads; no Unity runtime impact.
+

@@ -37,3 +37,30 @@ Validation:
 - Attempt 2 failed on duplicate tether signal definitions.
 - Attempt 3 with restore failed because `Hecton8.Core.csproj` references missing `Assets/_Project/Scripts/Physics/Tethers/Contracts/TetherSignalContracts.cs`.
 - Final validation: BLOCKED BY DEPENDENCY. No STP adapter compiler errors were reached in the logged gates.
+
+## 2026-05-16 - Escalation Polish / Data Sovereignty Pass
+
+What was wrong:
+- The first pass still had adapter-owned persistent `NativeArray` fields for scale fallback and blackbox telemetry.
+- Sequential native layouts left room for platform padding ambiguity on ARM64/Quest.
+- The EWMA completion path could force a main-thread sync at the start of Tick.
+
+What was done:
+- Evicted STP telemetry into `GlobalDataVault` as `BufferID.ResolutionScaleTelemetry`.
+- Removed adapter-owned persistent native arrays and the fallback scale buffer; the adapter now borrows DataVault views only.
+- Converted STP/thermal render-state structs to explicit `Pack=1` layouts: 64B `ResolutionScaleState`, 48B `DrsTelemetryEntry`, 24B `DynamicResolutionRuntimeSnapshot`, and 20B `HardwareThermalSnapshot`.
+- Changed hot-path EWMA completion to non-blocking unless teardown or DataVault hotswap forces structural sync.
+- Re-ran static scans: no private `NativeArray`, no direct `new NativeArray`, no `Update`/`LateUpdate`/`FixedUpdate`, no managed event/delegate path in `Graphics/Scalability`.
+
+Cinematic cheats used:
+- Same pixel-count fake remains: low-tier 0.5 scale, emergency 0.35, STP reconstruction.
+- Same reactive sharpen scalar remains; no extra post pass was added.
+- High/Ultra remains 1.0 scale with STP/DLAA intent so visual overkill is left to downstream volumetric/silt/hull/particle systems instead of this policy layer stealing bandwidth.
+
+Exact microseconds saved:
+- Not measured. Source estimate changed only in failure/stall risk: local native allocation ownership removed, and Tick no longer forces EWMA completion unless already finished. The per-frame adapter estimate remains source-only at roughly 0-2 us by task.
+
+Validation:
+- `git diff --check` returned no whitespace errors for the STP-touched files; repository-wide check only reported existing CRLF warnings.
+- `dotnet build Hecton8.Core.csproj --no-restore` attempt 4 failed outside this domain: `SargassumMicroFaunaBoids.cs` missing `EnsureVaultBufferHandle`, and `VehicleDockingModule.cs` missing `CacheFluidRuntime`/`ResetDockingRuntimeCaches`.
+- No STP adapter or STP contract compiler errors appeared before the external wall.

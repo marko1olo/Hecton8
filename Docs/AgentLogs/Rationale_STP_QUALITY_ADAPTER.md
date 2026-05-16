@@ -157,3 +157,37 @@ Solution: Ran static scans for `Update`, `ResolutionManager.Instance`, stale `He
 Rejected Alternatives: Marking "VERIFIED MASTER GRADE" despite a known external compile wall.
 Scalability potential: DataVault handle reacquisition prevents future native state loss after relocation/compaction.
 Hardware Impact: Reacquire path is cold/error-path only; no new normal-frame cost.
+
+## Loop 6 Escalation Polish - Multiplatform/Data Sovereignty
+
+Problem: The adapter still owned private persistent `NativeArray` fields for scale state fallback and blackbox telemetry, violating the escalated GlobalDataVault sovereignty rule.
+Solution: Removed adapter-owned persistent native arrays. `ResolutionScaleState` and `DrsTelemetryEntry[300]` are now resolved from `GlobalDataVault` via `BufferID.ResolutionScaleState` and `BufferID.ResolutionScaleTelemetry`; the adapter keeps only vault handles and borrowed per-call `NativeArray` views.
+Rejected Alternatives: Keeping the fallback NativeArray for boot convenience; that would hide a second memory owner and break save-state/defrag visibility.
+Scalability potential: Low/MX350 reads the same single 64B state lane as Ultra; High/Ultra can use the stable state to keep STP active at 1.0 for temporal AA without adding another policy path.
+Hardware Impact: Removes 1 local 64B fallback allocation and 1 local 14.4KB telemetry allocation from the adapter owner. Runtime cost becomes DataVault handle resolution plus one fixed telemetry write; still source-estimated at about 1 us/frame until Unity profiler proof exists.
+
+Problem: ARM64/Quest builds cannot tolerate ambiguous native layouts in cross-system telemetry/state records.
+Solution: Converted `HardwareThermalSnapshot`, `DynamicResolutionRuntimeSnapshot`, `ResolutionScaleState`, and `DrsTelemetryEntry` to explicit `Pack=1` layouts. `ResolutionScaleState` is fixed at 64B; `DrsTelemetryEntry` is fixed at 48B and the binary dump now writes the full reserved tail.
+Rejected Alternatives: Sequential `Pack=4`; it depends on compiler/runtime padding rules and makes Quest/Android crash forensics weaker.
+Scalability potential: Low/Quest and Steam Deck get deterministic state sizes; PC High/Ultra can consume the same buffers for richer render diagnostics without format forks.
+Hardware Impact: No extra per-frame CPU. Data size is fixed: 64B scale state plus 14.4KB telemetry ring.
+
+Problem: The EWMA Burst job used a next-frame completion pattern that could become a main-thread stall if the job scheduler slipped.
+Solution: Hot-path `CompletePendingStressJob()` now completes only when `JobHandle.IsCompleted`; teardown/DataVault hotswap can still force a structural sync.
+Rejected Alternatives: Completing unconditionally at the top of Tick; it is usually cheap for one element but violates the no-stall job discipline.
+Scalability potential: Low-end CPUs avoid a possible worker sync during frame pressure; High/Ultra keep the same EWMA quality.
+Hardware Impact: Source-estimated win is stall avoidance rather than steady-state arithmetic savings. No measured microseconds; expected normal path remains below the previous 1 us/frame estimate.
+
+Problem: Metal/Mac and Steam Deck checks needed to confirm the adapter did not introduce platform-specific GPU hazards or I/O pressure.
+Solution: Rechecked the authoritative scalability domain. The adapter owns no compute shader dispatch, no HLSL thread groups, and no DirectX-only shader path. Blackbox disk writes occur only on NaN/fault, not per frame, so Steam Deck MicroSD pressure is limited to crash capture.
+Rejected Alternatives: Adding a new STP blit/compute pass for the adapter; it would create Metal thread-group risk and extra bandwidth without solving the policy problem.
+Scalability potential: Low/Steam Deck/Quest use Unity dynamic-resolution APIs; PC God-mode keeps 1.0 scale and STP/DLAA intent so saved cycles can be spent by downstream volumetric, silt, hull-dent, and particle systems instead of this policy layer.
+Hardware Impact: No new GPU dispatch, no new render pass, no per-frame file I/O.
+
+## Compile Gate 4
+
+Problem: Fourth compile gate still cannot validate final integration.
+Solution: Ran `dotnet build Hecton8.Core.csproj --no-restore` and stored output in `Docs/AgentLogs/Dump_STP_QUALITY_ADAPTER_compile_attempt4_no_restore.txt`.
+Rejected Alternatives: Editing `World/SargassumMicroFaunaBoids.cs` or `Construction/VehicleDockingModule.cs` from the STP graphics domain.
+Scalability potential: None until owning agents repair the external symbols.
+Hardware Impact: No runtime impact. Current errors are missing `EnsureVaultBufferHandle`, `CacheFluidRuntime`, and `ResetDockingRuntimeCaches`; no STP adapter errors appeared before the wall.

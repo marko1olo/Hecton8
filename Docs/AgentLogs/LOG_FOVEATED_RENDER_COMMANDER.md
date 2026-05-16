@@ -193,3 +193,4 @@ Exact microseconds saved:
 Validation:
 - Static scan shows no remaining `QuestVulkanRuntimePolicy.IsQuestRuntimeActive` dependency in `FoveatedRenderCommander`.
 - Filtered build diagnostics after the change produced no VR/legacy foveation matches. Full build remains red externally.
+- Unfiltered `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /clp:ErrorsOnly` now fails with 16 external errors in `World/SargassumMicroFaunaBoids.cs`, `Construction/VehicleDockingModule.cs`, and `VFX/HectonMarineSnowRenderer.cs`; no `Graphics/VR` files are named.

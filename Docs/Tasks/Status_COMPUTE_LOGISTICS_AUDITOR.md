@@ -14,6 +14,7 @@ Scope: HECTON-8 compute/token accounting. Timaert excluded.
 - [x] Scan `C:\Users\danat\.codex\sessions/**/*.jsonl` for final input/cache/output tokens and rolling burn windows.
 - [x] Calculate cache-aware cost, no-cache equivalent, rolling cost/min-hour-day, token/code ratios, and energy equivalents.
 - [x] Write current root brief and 2026-05-16 report bundle.
+- [x] Run post-audit SQLite live-tail sample and write `COMPUTE_LIVE_DELTA_20260516.md`.
 
 ## Current Evidence
 
@@ -22,6 +23,7 @@ Primary output:
 - `COMPUTE_AUDIT_BRIEF.md`
 - `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_AUDIT_INDEX.md`
 - `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_TOKEN_BURN_RATE_LEDGER.md`
+- `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_LIVE_DELTA_20260516.md`
 - `Docs/Reports/COMPUTE_DOMINANCE_REPORT.md`
 
 No Unity compile/run was required. This task is accounting, not runtime validation.

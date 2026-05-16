@@ -33,3 +33,28 @@ Key numbers:
 
 STATUS: AUDIT COMPLETE.
 
+## 2026-05-16 Live Tail Continuation
+
+What was wrong: The full JSONL snapshot was already stale because `.codex` continued writing after 03:56 local.
+
+What was done:
+
+- Ran a 30-second SQLite tail sample from 05:18:34 to 05:19:04 local.
+- Measured +2,189,017 tokens over 30.14228 seconds.
+- Identified 10 active threads, all `gpt-5.5`.
+- Wrote `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_LIVE_DELTA_20260516.md`.
+- Updated root `COMPUTE_AUDIT_BRIEF.md`, index, status, and rationale.
+
+Cinematic cheats used: None. This is accounting.
+
+Exact microseconds saved: Full JSONL rescan avoided for a live-tail check; SQLite tail gave the current burn signal without another multi-minute 8.49GB pass.
+
+Key numbers:
+
+- Live 30-second delta: 2,189,017 tokens.
+- Live rate: 72,622.81 tokens/sec.
+- Cache-aware rate: USD 3.34/min; USD 200.24/hour; USD 4,805.68/day.
+- Delta since full 03:56 snapshot: +339,069,286 tokens, about USD 259.69 cache-aware.
+
+STATUS: AUDIT COMPLETE.
+

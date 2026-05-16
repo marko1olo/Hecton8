@@ -100,8 +100,8 @@ Hardware Impact: i3/MX350 avoids repeated allocation/ownership ambiguity and sav
 
 ## ARM64 Storage ABI Pass
 Problem: Damage-control storage records still used Pack=4, leaving implicit padding risk for ARM64/Quest when these records are viewed through vault/native buffers.
-Solution: Changed ImpactCommand to StructLayout Sequential Pack=1 Size=24 and DamageControlTelemetryEntry to Pack=1 Size=32. Remaining Pack=16 hits in SubmarineStructuralGrid are Burst job payload structs, not cross-system storage ABI.
-Rejected Alternatives: Repacking Burst job payload structs would risk worse NativeArray/job scheduler alignment with no vault/signal ABI benefit. Leaving Pack=4 on stored records would fail the Quest packing audit.
+Solution: Changed ImpactCommand to StructLayout Sequential Pack=1 Size=24 and DamageControlTelemetryEntry to Pack=1 Size=32. Also changed AupPreShiftSignal, AupShiftSignal, and DeflectSignal to Pack=1 Size=32 because they are compact typed-lane payloads. Remaining Pack=16 hits in SubmarineStructuralGrid are Burst job payload structs, not cross-system storage ABI.
+Rejected Alternatives: Repacking Burst job payload structs would risk worse NativeArray/job scheduler alignment with no vault/signal ABI benefit. Leaving Pack=4 on stored records or typed signal payloads would fail the Quest packing audit.
 Scalability potential: Low/Middle/High/Ultra share deterministic storage stride; high-tier VFX can read sidecar records without platform-specific padding assumptions.
 Hardware Impact: Runtime microsecond gain is 0; the gain is platform survival: deterministic native stride and no hidden padding on ARM64 storage records.
 

@@ -278,7 +278,8 @@ namespace Hecton8.Core.Memory
         EcosystemMacroDehydrationScratch = 224,
         BiotaMacroHydrationCounters = 225,
         ContentAuthorityBlackBox = 226,
-        ContentAuthorityTelemetryCursor = 227
+        ContentAuthorityTelemetryCursor = 227,
+        WakeTrailStampCommands = 228
     }
 
     [Flags]

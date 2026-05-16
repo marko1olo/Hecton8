@@ -52,6 +52,19 @@ Cache is carrying the bill. At current model-aware public-price assumptions, cac
 ## Canonical Files
 
 - Detailed 2026-05-16 ledger: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_TOKEN_BURN_RATE_LEDGER.md`
+- Live delta: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_LIVE_DELTA_20260516.md`
 - Index: `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_AUDIT_INDEX.md`
 - Historical long report with addendum: `Docs/Reports/COMPUTE_DOMINANCE_REPORT.md`
+
+## Live Tail After Snapshot
+
+SQLite live sample at 2026-05-16T05:18-05:19+04:00:
+
+| Metric | Value |
+|---|---:|
+| 30-second delta | 2,189,017 tokens |
+| Live rate | 72,622.81 tokens/sec |
+| Live cache-aware rate | USD 3.34/min; USD 200.24/hour; USD 4,805.68/day |
+| Active threads | 10, all `gpt-5.5` |
+| Delta since 03:56 full snapshot | +339,069,286 tokens; USD 259.69 cache-aware |
 

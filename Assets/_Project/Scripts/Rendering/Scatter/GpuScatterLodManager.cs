@@ -1499,6 +1499,16 @@ namespace Hecton8.Rendering.Scatter
 
         private static int Matrix4x4StrideBytes => 64;
 
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = ScatterFrameConstantsStrideBytes)]
+        private struct ScatterFrameConstants
+        {
+            public Vector4 Params0;
+            public Vector4 Params1;
+            public Vector4 Params2;
+            public Vector4 Params3;
+            public Vector4 Params4;
+        }
+
         [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
         private struct ScatterBlackBoxEntry
         {

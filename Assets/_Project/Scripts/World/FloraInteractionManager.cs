@@ -45,10 +45,12 @@ namespace Hecton8.World
             public Vector4 VelocitySpeed;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
         private struct WakeTrailStampCommand
         {
+            [FieldOffset(0)]
             public Vector4 UvEllipse;
+            [FieldOffset(16)]
             public Vector4 DirectionStrengthVertical;
         }
 
@@ -900,7 +902,7 @@ namespace Hecton8.World
         private Vector4 _wakeTrailWorldRect;
         private Vector2 _wakeTrailCenterXZ;
         private Vector2 _pendingWakeTrailScrollUv;
-        private NativeArray<WakeTrailStampCommand> _queuedWakeTrailStampCommands;
+        private VaultBufferHandle<WakeTrailStampCommand> _wakeTrailStampCommandsHandle;
         private VaultBufferHandle<WakeSource> _proceduralWakePointsHandle;
         private VaultBufferHandle<float4> _globalWakeBufferHandle;
         private VaultBufferHandle<float4> _globalWakeVectorBufferHandle;
@@ -5181,11 +5183,7 @@ namespace Hecton8.World
             if (_wakeTrailWrite == null)
                 _wakeTrailWrite = CreateWakeTrailTexture("__VegetationWakeTrail_B");
 
-            if (!_queuedWakeTrailStampCommands.IsCreated)
-            {
-                _queuedWakeTrailStampCommands = new NativeArray<WakeTrailStampCommand>(WakeTrailStampCommandCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<WakeTrailStampCommand>[4] - queued vegetation wake-trail stamps for single compute dispatch - owner: FloraInteractionManager
-                NativeMemorySentinel.RegisterNativeArray(_queuedWakeTrailStampCommands, NativeMemoryOwner, nameof(_queuedWakeTrailStampCommands), NativeMemoryLifetime);
-            }
+            EnsureWakeTrailStampCommandBuffer(clearExisting: false);
 
             if (_wakeTrailStampCommandBuffer == null)
                 _wakeTrailStampCommandBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<WakeTrailStampCommand>(WakeTrailStampCommandCapacity); // COLD ALLOC: GraphicsBuffer[4] - queued vegetation wake-trail stamp buffer for single compute dispatch - owner: FloraInteractionManager
@@ -5219,7 +5217,7 @@ namespace Hecton8.World
                 _wakeTrailStampCommandBuffer = null;
             }
 
-            DisposeNativeArray(ref _queuedWakeTrailStampCommands);
+            _wakeTrailStampCommandsHandle = default;
 
             _pendingWakeTrailScrollUv = Vector2.zero;
             _queuedWakeTrailStampCount = 0;
@@ -5393,7 +5391,7 @@ namespace Hecton8.World
             float lengthWS,
             float strength)
         {
-            if (!_queuedWakeTrailStampCommands.IsCreated ||
+            if (!TryResolveWakeTrailStampCommands(out NativeArray<WakeTrailStampCommand> stampCommands) ||
                 _queuedWakeTrailStampCount >= WakeTrailStampCommandCapacity ||
                 !IsFiniteVector3(positionWS) ||
                 !IsFiniteVector3(directionWS) ||
@@ -5421,7 +5419,7 @@ namespace Hecton8.World
             float uvRadius = safeRadiusWS * _wakeTrailWorldRect.z;
             float uvLength = safeLengthWS * _wakeTrailWorldRect.z;
 
-            _queuedWakeTrailStampCommands[_queuedWakeTrailStampCount] = new WakeTrailStampCommand
+            stampCommands[_queuedWakeTrailStampCount] = new WakeTrailStampCommand
             {
                 UvEllipse = new Vector4(uvCenter.x, uvCenter.y, uvRadius, uvLength),
                 DirectionStrengthVertical = new Vector4(directionXZ.x, directionXZ.y, safeStrength, verticalImpulse)
@@ -5441,8 +5439,8 @@ namespace Hecton8.World
                 return;
             }
 
-            if (_queuedWakeTrailStampCount > 0 && _queuedWakeTrailStampCommands.IsCreated)
-                GraphicsBufferUploadUtility.UploadNativeArray(_wakeTrailStampCommandBuffer, _queuedWakeTrailStampCommands, _queuedWakeTrailStampCount);
+            if (_queuedWakeTrailStampCount > 0 && TryResolveWakeTrailStampCommands(out NativeArray<WakeTrailStampCommand> stampCommands))
+                GraphicsBufferUploadUtility.UploadNativeArray(_wakeTrailStampCommandBuffer, stampCommands, _queuedWakeTrailStampCount);
 
             _wakeTrailSimulationCompute.SetTexture(_wakeTrailSimulationKernel, _WakeTrailSourceId, _wakeTrailRead);
             _wakeTrailSimulationCompute.SetTexture(_wakeTrailSimulationKernel, _WakeTrailResultId, _wakeTrailWrite);
@@ -5769,6 +5767,7 @@ namespace Hecton8.World
                 _globalWakeBufferHandle = default;
                 _globalWakeVectorBufferHandle = default;
                 _wakeBlackBoxHandle = default;
+                _wakeTrailStampCommandsHandle = default;
                 return false;
             }
 
@@ -5795,10 +5794,16 @@ namespace Hecton8.World
                 WakeBlackBoxCapacity,
                 SystemID.Vfx,
                 options);
+            _wakeTrailStampCommandsHandle = dataVault.GetBufferHandle<WakeTrailStampCommand>(
+                BufferID.WakeTrailStampCommands,
+                WakeTrailStampCommandCapacity,
+                SystemID.Vfx,
+                options);
 
             if (!TryResolveProceduralWakeBuffer(out NativeArray<WakeSource> wakeSources) ||
                 !TryResolveGlobalWakeBuffers(out NativeArray<float4> globalWakes, out NativeArray<float4> globalWakeVectors) ||
-                !TryResolveWakeBlackBox(out NativeArray<WakeTelemetryEntry> wakeBlackBox))
+                !TryResolveWakeBlackBox(out NativeArray<WakeTelemetryEntry> wakeBlackBox) ||
+                !TryResolveWakeTrailStampCommands(out NativeArray<WakeTrailStampCommand> wakeTrailStampCommands))
                 return false;
 
             if (clearExisting)
@@ -5811,6 +5816,8 @@ namespace Hecton8.World
                     globalWakeVectors[i] = default;
                 for (int i = 0; i < wakeBlackBox.Length; i++)
                     wakeBlackBox[i] = default;
+                for (int i = 0; i < wakeTrailStampCommands.Length; i++)
+                    wakeTrailStampCommands[i] = default;
                 _wakeBlackBoxCursor = 0;
                 _wakeBlackBoxDumped = false;
             }
@@ -5853,6 +5860,48 @@ namespace Hecton8.World
 
             wakeBlackBox = _wakeBlackBoxHandle.Resolve(dataVault);
             return wakeBlackBox.IsCreated;
+        }
+
+        private bool EnsureWakeTrailStampCommandBuffer(bool clearExisting)
+        {
+            IDataVault dataVault = _wakeDataVault ?? GlobalRegistry.DataVault;
+            _wakeDataVault = dataVault;
+            if (dataVault == null)
+            {
+                _wakeTrailStampCommandsHandle = default;
+                return false;
+            }
+
+            NativeArrayOptions options = !_wakeTrailStampCommandsHandle.IsCreated || clearExisting
+                ? NativeArrayOptions.ClearMemory
+                : NativeArrayOptions.UninitializedMemory;
+            _wakeTrailStampCommandsHandle = dataVault.GetBufferHandle<WakeTrailStampCommand>(
+                BufferID.WakeTrailStampCommands,
+                WakeTrailStampCommandCapacity,
+                SystemID.Vfx,
+                options);
+
+            if (!TryResolveWakeTrailStampCommands(out NativeArray<WakeTrailStampCommand> stampCommands))
+                return false;
+
+            if (clearExisting)
+            {
+                for (int i = 0; i < stampCommands.Length; i++)
+                    stampCommands[i] = default;
+            }
+
+            return true;
+        }
+
+        private bool TryResolveWakeTrailStampCommands(out NativeArray<WakeTrailStampCommand> stampCommands)
+        {
+            stampCommands = default;
+            IDataVault dataVault = _wakeDataVault;
+            if (dataVault == null || !_wakeTrailStampCommandsHandle.IsCreated)
+                return false;
+
+            stampCommands = _wakeTrailStampCommandsHandle.Resolve(dataVault);
+            return stampCommands.IsCreated;
         }
 
         private void TryRegisterCullingHotSwapListener()

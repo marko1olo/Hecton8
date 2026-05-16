@@ -84,6 +84,12 @@ Hardware Impact: Low-end i3/MX350 target is protected by fixed buffer sizes, no 
   Scalability potential: Low/Mid/High/Ultra still use fixed capacities and deterministic segment LOD; a future owner can promote scratch lanes to vault handles without changing the public cable contract.
   Hardware Impact: 0 B/frame GC; leak visibility improves through the memory sentinel. Full private working-memory eviction remains not completed.
 
+- Problem: The blackbox telemetry ring was still a per-instance persistent `NativeArray`, making crash history another private store.
+  Solution: Moved the 300-frame `TetherVerletTelemetryEntry` ring to `GlobalDataVault` using `BufferID.TetherCableBlackBox`, added `BufferID.TetherCableBlackBoxHead` for per-slot cursors, and changed the telemetry job/dump reader to write a fixed slot offset.
+  Rejected Alternatives: Keeping the H8Memory-backed local telemetry ring was rejected because it violates data sovereignty; adding a managed list or per-frame file write was rejected because it creates GC/I/O stutter.
+  Scalability potential: Low/Mid still write one 64-byte heartbeat per active frame; High/Ultra can add visual consumers by reading the same vault ring without touching the solver.
+  Hardware Impact: Estimated runtime delta is one extra int lane write and offset clamp per telemetry tick; no measured microsecond claim. Memory stays fixed at `8 * 300 * 64` bytes for ring data plus `8 * 4` bytes for heads.
+
 - Problem: Directed compile caught that `TetherFiredSignal` lived on a contract path whose generated project treatment was unstable.
   Solution: Placed the actual `TetherFiredSignal` payload in compiled `TetherSignals.cs`, restored the generated-project contract path as an empty compile anchor, and explicitly aliased runtime fire usage to the core contract type.
   Rejected Alternatives: Editing the generated `.csproj` was rejected because Unity overwrites it; leaving the real payload only in the contract stub was rejected after the compiler failed to resolve it.

@@ -85,3 +85,27 @@ Verification:
 - Forbidden-pattern scans over `Assets/_Project/Scripts/Animation/IK` returned no hits.
 - `git diff --check` reported only line-ending warnings for touched code files.
 - Compile retry reports no owned IK errors; it fails on missing Core.Bucketing type resolution.
+
+## 2026-05-16 | GRAB_IK_PROJECTION | ABI ALIGNMENT AND BUILD GATE PASS
+
+What was wrong:
+- `Pack = 1` removed implicit padding, but `VRHandIkTelemetryEntry` placed vector payloads after a 19-byte header. That is deliberate unaligned vector data on ARM64.
+- Concurrent GlobalDataVault edits alternated between duplicate and missing `ValidateAbiLayout()`, preventing the build from reaching later diagnostics.
+- Full compile still does not pass; the current blockers are outside Animation/IK.
+
+What was done:
+- Added `VRPhysicalHandPresenceLayout.Validate()` with explicit byte counts: AUP pose 48, grab state 72, input 260, output 116, telemetry entry 80.
+- Added explicit telemetry `LayoutPadding` so `TargetPosition` starts on a 4-byte boundary while keeping `Pack = 1`.
+- Gated `VRPhysicalHandPresenceVault.TryResolveBuffers()` on the layout sentinel before exposing hand lanes.
+- Restored exactly one `GlobalDataVault.ValidateAbiLayout()` so the DataVault compile gate is coherent again.
+
+Cinematic cheats used:
+- No extra simulation truth. This pass protects the data lane used by the existing SDF/plane physical hand fake.
+
+Exact microseconds saved:
+- No measured runtime savings claimed. The layout validation is cold-path only.
+- Hot-path telemetry remains one fixed 80-byte write per frame; the change removes odd-stride memory pressure rather than pretending to benchmark it.
+
+Verification:
+- Owned IK forbidden-pattern scan returned no hits for `Pack = 4`, `Vector3.Lerp`, `Quaternion.Slerp`, `math.acos`, `Physics.SphereCast`, `VRHandManager`, `Update`, `string.Format`, legacy `EventBus`, managed delegates, or local `NativeArray` allocation.
+- `dotnet build Hecton8.Core.csproj --no-restore -v:q -clp:ErrorsOnly` now fails outside Animation/IK on `SargassumMicroFaunaBoids.EnsureVaultBufferHandle`, `HectonMarineSnowRenderer` missing `_vehicleWakeJobResult`/`_telemetryRing`, and `VehicleDockingModule` missing cache helpers.

@@ -9,7 +9,8 @@ Scope: HECTON-8 local telemetry and source/docs size.
 
 1. `COMPUTE_AUDIT_BRIEF.md` at repo root - shortest current snapshot.
 2. `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_TOKEN_BURN_RATE_LEDGER.md` - current token, cost, cadence, LOC, and energy ledger.
-3. `Docs/Reports/COMPUTE_DOMINANCE_REPORT.md` - historical report plus appended 2026-05-16 addendum.
+3. `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_LIVE_DELTA_20260516.md` - post-audit SQLite live burn sample.
+4. `Docs/Reports/COMPUTE_DOMINANCE_REPORT.md` - historical report plus appended 2026-05-16 addendum.
 
 ## Evidence Boundaries
 

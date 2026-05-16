@@ -240,7 +240,7 @@ namespace Hecton8.AI.Ambient
                 SystemStress01 = math.saturate(systemStress01)
             };
 
-            hydrationJob.Schedule().Complete();
+            hydrationJob.Run();
             _frameIndex++;
             spawnedBoidCount = _macroHydrationCounters[0];
             if (spawnedBoidCount <= 0)
@@ -292,7 +292,7 @@ namespace Hecton8.AI.Ambient
                 Capacity = _capacity
             };
 
-            dehydrationJob.Schedule().Complete();
+            dehydrationJob.Run();
             releasedBoidCount = _macroHydrationCounters[0];
             if (releasedBoidCount <= 0)
                 return false;
@@ -387,11 +387,16 @@ namespace Hecton8.AI.Ambient
             if (_macroHydrationCounters.IsCreated)
                 return;
 
-            _macroHydrationCounters = H8Memory.Allocate<int>(
+            if (_vault == null)
+                _vault = GlobalRegistry.DataVault;
+            if (_vault == null)
+                return;
+
+            _macroHydrationCounters = _vault.GetBuffer<int>(
+                BufferID.BiotaMacroHydrationCounters,
                 MacroHydrationCounterCount,
                 SystemID.AmbientBiota,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[4] - macro hydration/dehydration counters - owner: AmbientBiotaDirector
+                NativeArrayOptions.ClearMemory);
         }
 
         private void DisposeMacroHydrationCounters()
@@ -399,7 +404,7 @@ namespace Hecton8.AI.Ambient
             if (!_macroHydrationCounters.IsCreated)
                 return;
 
-            H8Memory.Release(ref _macroHydrationCounters, SystemID.AmbientBiota);
+            _macroHydrationCounters = default;
         }
 
         private void ClearMacroCounters()

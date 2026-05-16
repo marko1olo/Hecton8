@@ -33,7 +33,6 @@ namespace Hecton8.Construction
         private const float DefaultDockingImpactSpeedMetersPerSecond = 6.5f;
         private const float LowTierSplineSampleIntervalSeconds = 0.1f;
         private const float DockingDeviationAbortMeters = 5f;
-        private const float DockingDeviationAbortMetersSq = DockingDeviationAbortMeters * DockingDeviationAbortMeters;
         private const float DockingWakeSignalIntervalSeconds = 0.1f;
         private const float DockingCompleteSignalProgress01 = 0.95f;
         private const uint DockingWakeSourceHash = 0x44534C4Eu;
@@ -798,7 +797,10 @@ namespace Hecton8.Construction
 
             Transform anchor = ResolveDockAnchor();
             if (anchor != null && IsFiniteVector(anchor.position))
+            {
                 RefreshDockedRelativeAup(anchor.position);
+                TryPublishDockingCompleteSignal(1f, anchor.position, anchor.forward);
+            }
 
             ConnectDockedCargoCrates();
             _dockingInProgress = false;
@@ -916,6 +918,14 @@ namespace Hecton8.Construction
         private void AbortDockingForInvalidPose()
         {
             DumpDockTelemetry();
+            PublishDockingFailedSignal(DockingFailureReason.InvalidRequest, ResolveTelemetryPosition(), _lastDockingSplineTargetPosition);
+            ReleaseDockedTransport(false);
+        }
+
+        private void AbortDockingForDeviation(Vector3 actualPosition, Vector3 splineTargetPosition)
+        {
+            DumpDockTelemetry();
+            PublishDockingFailedSignal(DockingFailureReason.ObstacleBlocked, actualPosition, splineTargetPosition);
             ReleaseDockedTransport(false);
         }
 
@@ -994,11 +1004,19 @@ namespace Hecton8.Construction
                 Reserved = 0,
                 DistanceSq = distanceSq,
                 AlignmentDot = alignmentDot,
+                SplineDeviationError = _lastSplineDeviationError,
+                FlowSpeed = FastMagnitudeFromSq(math.lengthsq(_lastDockingFlowVelocity)),
                 Position = new float3(position.x, position.y, position.z),
+                SplineTargetPosition = ToFloat3(_lastDockingSplineTargetPosition),
+                CommandVelocity = ToFloat3(_lastDockingCommandVelocity),
+                FlowVelocity = _lastDockingFlowVelocity,
                 Rotation = new float4(rotation.x, rotation.y, rotation.z, rotation.w),
                 GridX = aup.GridX,
                 GridY = aup.GridY,
-                GridZ = aup.GridZ
+                GridZ = aup.GridZ,
+                OwnerHash = _dockingSplineOwnerHash,
+                RequestId = _dockingSplineRequestId,
+                RuntimeFlags = _activeDockingSpline.Flags
             };
             _dockTelemetryCursor++;
             if (_dockTelemetryCursor >= _dockTelemetry.Length)
@@ -1036,10 +1054,11 @@ namespace Hecton8.Construction
 
             string directory = Path.Combine(projectRoot, "Docs", "AgentLogs");
             Directory.CreateDirectory(directory);
-            string path = Path.Combine(directory, "Dump_VEHICLE_MECH_DOCKING.bin");
+            string path = Path.Combine(directory, "Dump_DOCKING_AUTOPILOT_SPLINE.bin");
             using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
             using (BinaryWriter writer = new BinaryWriter(stream))
             {
+                writer.Write(0x4453504Cu);
                 writer.Write(DockTelemetryCapacity);
                 writer.Write(_dockTelemetryCursor);
                 for (int i = 0; i < _dockTelemetry.Length; i++)
@@ -1053,9 +1072,20 @@ namespace Hecton8.Construction
                     writer.Write(entry.Reserved);
                     writer.Write(entry.DistanceSq);
                     writer.Write(entry.AlignmentDot);
+                    writer.Write(entry.SplineDeviationError);
+                    writer.Write(entry.FlowSpeed);
                     writer.Write(entry.Position.x);
                     writer.Write(entry.Position.y);
                     writer.Write(entry.Position.z);
+                    writer.Write(entry.SplineTargetPosition.x);
+                    writer.Write(entry.SplineTargetPosition.y);
+                    writer.Write(entry.SplineTargetPosition.z);
+                    writer.Write(entry.CommandVelocity.x);
+                    writer.Write(entry.CommandVelocity.y);
+                    writer.Write(entry.CommandVelocity.z);
+                    writer.Write(entry.FlowVelocity.x);
+                    writer.Write(entry.FlowVelocity.y);
+                    writer.Write(entry.FlowVelocity.z);
                     writer.Write(entry.Rotation.x);
                     writer.Write(entry.Rotation.y);
                     writer.Write(entry.Rotation.z);
@@ -1063,6 +1093,9 @@ namespace Hecton8.Construction
                     writer.Write(entry.GridX);
                     writer.Write(entry.GridY);
                     writer.Write(entry.GridZ);
+                    writer.Write(entry.OwnerHash);
+                    writer.Write(entry.RequestId);
+                    writer.Write(entry.RuntimeFlags);
                 }
             }
         }
@@ -1083,8 +1116,7 @@ namespace Hecton8.Construction
 
         private static bool ShouldUseInstantDockSnap()
         {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            return tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350;
+            return false;
         }
 
         private void SanitizeDockingSettings()
@@ -1136,6 +1168,34 @@ namespace Hecton8.Construction
             _fluidRuntime = GlobalRegistry.Fluid;
         }
 
+        private void ResetDockingRuntimeCaches()
+        {
+            _activeDockingSpline = default;
+            _activeDockingSplineSlot = -1;
+            _lowTierSplineFromPosition = Vector3.zero;
+            _lowTierSplineTargetPosition = Vector3.zero;
+            _lowTierSplineTargetRotation = Quaternion.identity;
+            _lastDockingSplineTargetPosition = Vector3.zero;
+            _lastDockingCommandVelocity = Vector3.zero;
+            _lastDockingFlowVelocity = float3.zero;
+            _lowTierSplineBlendSeconds = 0f;
+            _dockingWakeElapsedSeconds = 0f;
+            _lastSplineDeviationError = 0f;
+            _hasLowTierSplineSample = false;
+            _dockingCompletionSignalPublished = false;
+        }
+
+        private static float ResolveSystemStress01()
+        {
+            float stress01 = HomeostasisBrain.SystemHealthIndex01;
+            return math.isfinite(stress01) ? math.saturate(stress01) : 0f;
+        }
+
+        private static bool IsLowDockingMathTier(byte mathLod)
+        {
+            return mathLod == 0;
+        }
+
         private bool TryEvaluateDockingSplinePose(
             float progress01,
             float fixedDeltaTime,
@@ -1159,9 +1219,7 @@ namespace Hecton8.Construction
 
             if (!_hasLowTierSplineSample || _lowTierSplineBlendSeconds >= LowTierSplineSampleIntervalSeconds)
             {
-                Vector3 sourcePosition = _hasLowTierSplineSample
-                    ? _lowTierSplineTargetPosition
-                    : ResolveTelemetryPosition();
+                Vector3 sourcePosition = ResolveTelemetryPosition();
                 if (!IsFiniteVector(sourcePosition))
                     sourcePosition = fallbackPosition;
 
@@ -1223,6 +1281,140 @@ namespace Hecton8.Construction
             return IsFiniteVector(evaluatedPosition) && IsFiniteQuaternion(evaluatedRotation);
         }
 
+        private bool TryUpdateSplineDeviation(Vector3 actualPosition, Vector3 splineTargetPosition)
+        {
+            if (!IsFiniteVector(actualPosition) || !IsFiniteVector(splineTargetPosition))
+                return false;
+
+            Vector3 delta = actualPosition - splineTargetPosition;
+            float deviationSq = delta.sqrMagnitude;
+            if (!math.isfinite(deviationSq) || deviationSq < 0f)
+                return false;
+
+            _lastSplineDeviationError = FastMagnitudeFromSq(deviationSq);
+            return math.isfinite(_lastSplineDeviationError);
+        }
+
+        private Vector3 ResolveDockingFlowVelocity(Vector3 samplePosition)
+        {
+            HectonFluidEngine fluid = _fluidRuntime;
+            if (fluid == null ||
+                !IsFiniteVector(samplePosition) ||
+                !fluid.TrySampleModAbyssalFlow(samplePosition, out float3 flowVelocity) ||
+                !math.all(math.isfinite(flowVelocity)))
+            {
+                return Vector3.zero;
+            }
+
+            return ToVector3(flowVelocity);
+        }
+
+        private Vector3 ResolveDockingCommandVelocity(
+            Vector3 actualPosition,
+            Vector3 evaluatedPosition,
+            Vector3 flowVelocity,
+            float fixedDeltaTime)
+        {
+            float safeDelta = math.max(0.0001f, fixedDeltaTime);
+            Vector3 pathVelocity = (evaluatedPosition - actualPosition) * math.rcp(safeDelta);
+            Vector3 compensatedVelocity = pathVelocity - flowVelocity;
+            return IsFiniteVector(compensatedVelocity) ? compensatedVelocity : Vector3.zero;
+        }
+
+        private void QueueDockingWakeSignals(Vector3 position, Vector3 commandVelocity, float fixedDeltaTime)
+        {
+            _dockingWakeElapsedSeconds += math.max(0f, fixedDeltaTime);
+            if (_dockingWakeElapsedSeconds < DockingWakeSignalIntervalSeconds)
+                return;
+
+            _dockingWakeElapsedSeconds = 0f;
+            if (!IsFiniteVector(position) || !IsFiniteVector(commandVelocity))
+                return;
+
+            float speedSq = commandVelocity.sqrMagnitude;
+            if (!math.isfinite(speedSq) || speedSq < 0.25f)
+                return;
+
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(position);
+            float3 velocity = ToFloat3(commandVelocity);
+            WakeGeneratedSignal wakeSignal = new WakeGeneratedSignal
+            {
+                PositionAup = positionAup,
+                Velocity = velocity,
+                SourceFlags = DockingWakeSourceVehicleFlag
+            };
+            GlobalSignals.Publish(in wakeSignal);
+
+            float speed = FastMagnitudeFromSq(speedSq);
+            FluidImpulseSignal impulseSignal = new FluidImpulseSignal
+            {
+                PositionAup = positionAup,
+                Vector = velocity,
+                Radius = math.clamp(1.5f + (speed * 0.15f), 1.5f, 8f),
+                Lifetime = speedSq > 4f ? 1.25f : 0.75f,
+                Frame = unchecked((uint)math.max(0, Time.frameCount)),
+                SourceHash = DockingWakeSourceHash,
+                Flags = DockingWakeSourceVehicleFlag
+            };
+            GlobalSignals.Publish(in impulseSignal);
+        }
+
+        private void TryPublishDockingCompleteSignal(float progress01, Vector3 dockPosition, Vector3 dockForward)
+        {
+            if (_dockingCompletionSignalPublished ||
+                progress01 < DockingCompleteSignalProgress01 ||
+                !IsFiniteVector(dockPosition) ||
+                !IsFiniteVector(dockForward))
+            {
+                return;
+            }
+
+            AbsoluteUniversePosition dockAup = AbsoluteUniversePosition.FromRuntimePosition(dockPosition);
+            DockingCompleteSignal signal = new DockingCompleteSignal
+            {
+                DroneId = unchecked((int)_dockingSplineOwnerHash),
+                HubGridId = ResolveDockingHubGridId(),
+                DockAup = AbsoluteUniversePositionBlit.FromAup(in dockAup),
+                DockForward = DockingAutopilotMath.NormalizeOrFallback(ToFloat3(dockForward), new float3(0f, 0f, 1f)),
+                RequestId = _dockingSplineRequestId,
+                Flags = _activeDockingSpline.Flags,
+                Reserved0 = 0,
+                Reserved1 = 0,
+                Reserved2 = 0
+            };
+            SignalBus<DockingCompleteSignal>.Push(in signal);
+            _dockingCompletionSignalPublished = true;
+        }
+
+        private void PublishDockingFailedSignal(DockingFailureReason reason, Vector3 actualPosition, Vector3 targetPosition)
+        {
+            if (!IsFiniteVector(actualPosition))
+                actualPosition = ResolveTelemetryPosition();
+            if (!IsFiniteVector(actualPosition))
+                return;
+
+            Vector3 failureVector = IsFiniteVector(targetPosition)
+                ? targetPosition - actualPosition
+                : Vector3.zero;
+            if (!IsFiniteVector(failureVector))
+                failureVector = Vector3.zero;
+
+            AbsoluteUniversePosition lastAup = AbsoluteUniversePosition.FromRuntimePosition(actualPosition);
+            DockingFailedSignal signal = new DockingFailedSignal
+            {
+                DroneId = unchecked((int)_dockingSplineOwnerHash),
+                HubGridId = ResolveDockingHubGridId(),
+                LastAup = AbsoluteUniversePositionBlit.FromAup(in lastAup),
+                FailureVector = ToFloat3(failureVector),
+                RequestId = _dockingSplineRequestId,
+                Reason = (byte)reason,
+                Flags = _activeDockingSpline.Flags,
+                Reserved0 = 0,
+                Reserved1 = 0
+            };
+            SignalBus<DockingFailedSignal>.Push(in signal);
+        }
+
         private void ReleaseActiveDockingSpline(DockingSplineRuntimeState finalState)
         {
             if (_activeDockingSplineSlot >= 0 && _dockingAutopilotService != null)
@@ -1249,7 +1441,60 @@ namespace Hecton8.Construction
         private static byte ResolveDockingMathLodByte()
         {
             HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            return (byte)((tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350) ? 0 : 1);
+            switch (tier)
+            {
+                case HectonQualityTier.High:
+                case HectonQualityTier.Ultra:
+                    return 2;
+                case HectonQualityTier.Mid:
+                    return 1;
+                default:
+                    return 0;
+            }
+        }
+
+        private int ResolveDockingHubGridId()
+        {
+            return _owningModule != null ? _owningModule.GetInstanceID() : GetInstanceID();
+        }
+
+        private static bool IsLowDockingMathTier(byte mathLod)
+        {
+            return mathLod == 0;
+        }
+
+        private static float ResolveSystemStress01()
+        {
+            return math.saturate(SignalBusRegistry.SystemStress01);
+        }
+
+        private void ResetDockingRuntimeCaches()
+        {
+            _hasLowTierSplineSample = false;
+            _dockingCompletionSignalPublished = false;
+            _lowTierSplineBlendSeconds = 0f;
+            _dockingWakeElapsedSeconds = 0f;
+            _lastSplineDeviationError = 0f;
+            _lastDockingFlowVelocity = float3.zero;
+            _lastDockingCommandVelocity = Vector3.zero;
+            _lastDockingSplineTargetPosition = Vector3.zero;
+            _lowTierSplineFromPosition = Vector3.zero;
+            _lowTierSplineTargetPosition = Vector3.zero;
+            _lowTierSplineTargetRotation = Quaternion.identity;
+        }
+
+        private static Vector3 LinearInterpolate(Vector3 from, Vector3 to, float alpha)
+        {
+            float t = math.saturate(alpha);
+            return from + ((to - from) * t);
+        }
+
+        private static float FastMagnitudeFromSq(float magnitudeSq)
+        {
+            if (!math.isfinite(magnitudeSq) || magnitudeSq <= 0f)
+                return 0f;
+
+            return magnitudeSq * math.rsqrt(math.max(magnitudeSq, 0.000001f));
         }
 
         private static Quaternion ResolveDockingSplineRotation(float3 tangent, float3 up, Quaternion fallbackRotation)

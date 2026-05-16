@@ -4072,42 +4072,45 @@ namespace Hecton8.World
             float submarineThreatRadius,
             SimulationLodTier simulationLodTier)
         {
-            if (!_boidSensoryThreatsNative.IsCreated || _boidSensoryThreatBuffer == null)
+            NativeArray<float4> boidSensoryThreats = ResolveBoidSensoryThreats();
+            if (!boidSensoryThreats.IsCreated || _boidSensoryThreatBuffer == null)
             {
                 _activeBoidSensoryThreatCount = 0;
                 return 0;
             }
 
-            ClearBoidSensoryStaticThreatSlots();
-            DecayBoidSensoryAcousticPingThreats(simulationDt);
+            ClearBoidSensoryStaticThreatSlots(boidSensoryThreats);
+            DecayBoidSensoryAcousticPingThreats(boidSensoryThreats, simulationDt);
             Vector3 playerAupPosition = ResolvePlayerAupRuntimePosition(playerPosition);
             WriteBoidSensoryThreatSlot(
+                boidSensoryThreats,
                 SensoryThreatSlotSubmarine,
                 submarineThreatPosition,
                 math.max(submarineThreatRadius, SensorySubmarineThreatRadiusMeters));
             ConsumeSubmarineLightSignals(playerAupPosition, playerForward);
-            UpdateFlashlightSensoryThreat(simulationDt, playerAupPosition, playerForward, simulationLodTier);
-            ConsumeBoidSensoryAcousticPingSignals();
+            UpdateFlashlightSensoryThreat(boidSensoryThreats, simulationDt, playerAupPosition, playerForward, simulationLodTier);
+            ConsumeBoidSensoryAcousticPingSignals(boidSensoryThreats);
 
-            int activeThreatCount = ResolveActiveBoidSensoryThreatCount();
+            int activeThreatCount = ResolveActiveBoidSensoryThreatCount(boidSensoryThreats);
             _activeBoidSensoryThreatCount = activeThreatCount;
             GraphicsBufferUploadUtility.UploadNativeArray(
                 _boidSensoryThreatBuffer,
-                _boidSensoryThreatsNative,
+                boidSensoryThreats,
                 PredatorAupBufferCapacity);
             RecordBoidSensoryBlackBox(
+                boidSensoryThreats,
                 activeThreatCount,
                 simulationLodTier,
                 ResolveBoidSensoryThreatFlags(simulationLodTier));
             return activeThreatCount;
         }
 
-        private void ClearBoidSensoryStaticThreatSlots()
+        private void ClearBoidSensoryStaticThreatSlots(NativeArray<float4> boidSensoryThreats)
         {
-            _boidSensoryThreatsNative[SensoryThreatSlotSubmarine] = float4.zero;
-            _boidSensoryThreatsNative[SensoryThreatSlotFlashlight] = float4.zero;
+            boidSensoryThreats[SensoryThreatSlotSubmarine] = float4.zero;
+            boidSensoryThreats[SensoryThreatSlotFlashlight] = float4.zero;
             for (int i = SensoryThreatReservedSlots; i < PredatorAupBufferCapacity; i++)
-                _boidSensoryThreatsNative[i] = float4.zero;
+                boidSensoryThreats[i] = float4.zero;
         }
 
         private Vector3 ResolvePlayerAupRuntimePosition(Vector3 fallbackPosition)
@@ -4193,6 +4196,7 @@ namespace Hecton8.World
         }
 
         private void UpdateFlashlightSensoryThreat(
+            NativeArray<float4> boidSensoryThreats,
             float simulationDt,
             Vector3 playerPosition,
             Vector3 playerForward,
@@ -4226,7 +4230,7 @@ namespace Hecton8.World
             if (_boidFlashlightThreatRadiusWS <= SensoryThreatMinRadiusMeters &&
                 _boidFlashlightThreatTargetRadiusWS <= SensoryThreatMinRadiusMeters)
             {
-                ClearBoidSensoryThreatSlot(SensoryThreatSlotFlashlight);
+                ClearBoidSensoryThreatSlot(boidSensoryThreats, SensoryThreatSlotFlashlight);
                 return;
             }
 
@@ -4238,24 +4242,24 @@ namespace Hecton8.World
             float range = hasSignalLight ? _boidFlashlightThreatRangeWS : SensoryFlashlightDefaultRangeMeters;
             float endpointScale = simulationLodTier == SimulationLodTier.Full ? 1f : SensoryFlashlightEndpointScale;
             Vector3 endpointWS = originWS + forwardWS * math.max(2f, range * endpointScale);
-            WriteBoidSensoryThreatSlot(SensoryThreatSlotFlashlight, endpointWS, _boidFlashlightThreatRadiusWS);
+            WriteBoidSensoryThreatSlot(boidSensoryThreats, SensoryThreatSlotFlashlight, endpointWS, _boidFlashlightThreatRadiusWS);
         }
 
-        private void DecayBoidSensoryAcousticPingThreats(float simulationDt)
+        private void DecayBoidSensoryAcousticPingThreats(NativeArray<float4> boidSensoryThreats, float simulationDt)
         {
             float decay = math.max(0f, simulationDt) * SensoryAcousticPingDecayMetersPerSecond;
             for (int slot = SensoryThreatFirstPingSlot; slot <= SensoryThreatLastPingSlot; slot++)
             {
-                float4 threat = _boidSensoryThreatsNative[slot];
+                float4 threat = boidSensoryThreats[slot];
                 if (threat.w <= 0f)
                     continue;
 
                 threat.w = math.max(0f, threat.w - decay);
-                _boidSensoryThreatsNative[slot] = threat.w >= SensoryThreatMinRadiusMeters ? threat : float4.zero;
+                boidSensoryThreats[slot] = threat.w >= SensoryThreatMinRadiusMeters ? threat : float4.zero;
             }
         }
 
-        private void ConsumeBoidSensoryAcousticPingSignals()
+        private void ConsumeBoidSensoryAcousticPingSignals(NativeArray<float4> boidSensoryThreats)
         {
             ReadOnlySpan<AcousticPingSignal> pingSignals = SignalBus<AcousticPingSignal>.GetFrameSnapshot();
             int signalCount = math.min(pingSignals.Length, SwarmAcousticSignalConsumeLimit);
@@ -4278,16 +4282,16 @@ namespace Hecton8.World
                 int slot = SensoryThreatFirstPingSlot +
                            (_boidSensoryPingWriteCursor % (SensoryThreatLastPingSlot - SensoryThreatFirstPingSlot + 1));
                 _boidSensoryPingWriteCursor++;
-                WriteBoidSensoryThreatSlot(slot, ToVector3(runtimePosition), radius);
+                WriteBoidSensoryThreatSlot(boidSensoryThreats, slot, ToVector3(runtimePosition), radius);
             }
         }
 
-        private int ResolveActiveBoidSensoryThreatCount()
+        private int ResolveActiveBoidSensoryThreatCount(NativeArray<float4> boidSensoryThreats)
         {
             int lastActiveSlot = -1;
             for (int i = 0; i < PredatorAupBufferCapacity; i++)
             {
-                float4 threat = _boidSensoryThreatsNative[i];
+                float4 threat = boidSensoryThreats[i];
                 if (threat.w >= SensoryThreatMinRadiusMeters && math.all(math.isfinite(threat)))
                     lastActiveSlot = i;
             }
@@ -4295,14 +4299,14 @@ namespace Hecton8.World
             return math.max(0, lastActiveSlot + 1);
         }
 
-        private bool WriteBoidSensoryThreatSlot(int slot, Vector3 runtimePosition, float radius)
+        private bool WriteBoidSensoryThreatSlot(NativeArray<float4> boidSensoryThreats, int slot, Vector3 runtimePosition, float radius)
         {
             if ((uint)slot >= (uint)PredatorAupBufferCapacity)
                 return false;
 
             if (!IsFiniteVector3(runtimePosition) || !float.IsFinite(radius))
             {
-                _boidSensoryThreatsNative[slot] = float4.zero;
+                boidSensoryThreats[slot] = float4.zero;
                 return false;
             }
 
@@ -4310,12 +4314,12 @@ namespace Hecton8.World
             float3 shiftedRuntime = threatAup.ToRuntimeFloat3();
             if (!math.all(math.isfinite(shiftedRuntime)))
             {
-                _boidSensoryThreatsNative[slot] = float4.zero;
+                boidSensoryThreats[slot] = float4.zero;
                 return false;
             }
 
             float safeRadius = math.max(radius, SensoryThreatMinRadiusMeters);
-            _boidSensoryThreatsNative[slot] = new float4(
+            boidSensoryThreats[slot] = new float4(
                 shiftedRuntime.x,
                 shiftedRuntime.y,
                 shiftedRuntime.z,
@@ -4323,10 +4327,10 @@ namespace Hecton8.World
             return true;
         }
 
-        private void ClearBoidSensoryThreatSlot(int slot)
+        private void ClearBoidSensoryThreatSlot(NativeArray<float4> boidSensoryThreats, int slot)
         {
             if ((uint)slot < (uint)PredatorAupBufferCapacity)
-                _boidSensoryThreatsNative[slot] = float4.zero;
+                boidSensoryThreats[slot] = float4.zero;
         }
 
         private static float MoveTowardsFinite(float current, float target, float maxDelta)
@@ -5446,18 +5450,20 @@ namespace Hecton8.World
         }
 
         private void RecordBoidSensoryBlackBox(
+            NativeArray<float4> boidSensoryThreats,
             int activeThreatCount,
             SimulationLodTier simulationLodTier,
             int sensoryThreatFlags)
         {
-            if (!_boidSensoryBlackBox.IsCreated || _boidSensoryBlackBox.Length <= 0)
+            NativeArray<BoidSensoryBlackBoxEntry> boidSensoryBlackBox = ResolveBoidSensoryBlackBox();
+            if (!boidSensoryBlackBox.IsCreated || boidSensoryBlackBox.Length <= 0)
                 return;
 
-            float4 submarineThreat = ReadBoidSensoryThreatSlot(SensoryThreatSlotSubmarine);
-            float4 flashlightThreat = ReadBoidSensoryThreatSlot(SensoryThreatSlotFlashlight);
-            float4 pingThreatA = ReadBoidSensoryThreatSlot(SensoryThreatFirstPingSlot);
-            float4 pingThreatB = ReadBoidSensoryThreatSlot(SensoryThreatFirstPingSlot + 1);
-            float4 pingThreatC = ReadBoidSensoryThreatSlot(SensoryThreatLastPingSlot);
+            float4 submarineThreat = ReadBoidSensoryThreatSlot(boidSensoryThreats, SensoryThreatSlotSubmarine);
+            float4 flashlightThreat = ReadBoidSensoryThreatSlot(boidSensoryThreats, SensoryThreatSlotFlashlight);
+            float4 pingThreatA = ReadBoidSensoryThreatSlot(boidSensoryThreats, SensoryThreatFirstPingSlot);
+            float4 pingThreatB = ReadBoidSensoryThreatSlot(boidSensoryThreats, SensoryThreatFirstPingSlot + 1);
+            float4 pingThreatC = ReadBoidSensoryThreatSlot(boidSensoryThreats, SensoryThreatLastPingSlot);
             float4 acousticPingRadii = new float4(
                 pingThreatA.w,
                 pingThreatB.w,
@@ -5490,7 +5496,7 @@ namespace Hecton8.World
                 flags |= BoidSensoryBlackBoxFlagNonFinite;
             }
 
-            int ringLength = math.min(_boidSensoryBlackBox.Length, BoidSensoryBlackBoxCapacity);
+            int ringLength = math.min(boidSensoryBlackBox.Length, BoidSensoryBlackBoxCapacity);
             int writeIndex = _boidSensoryBlackBoxCursor;
             if ((uint)writeIndex >= (uint)ringLength)
                 writeIndex = 0;
@@ -5505,7 +5511,7 @@ namespace Hecton8.World
                 HashThreatFloat4(pingThreatC),
                 unchecked((uint)(int)simulationLodTier)));
 
-            _boidSensoryBlackBox[writeIndex] = new BoidSensoryBlackBoxEntry
+            boidSensoryBlackBox[writeIndex] = new BoidSensoryBlackBoxEntry
             {
                 FrameIndex = unchecked((uint)Time.frameCount),
                 StateHash = math.hash(new uint4(
@@ -5522,13 +5528,13 @@ namespace Hecton8.World
             _boidSensoryBlackBoxCursor = nextCursor;
 
             if (anomalyHash != 0u)
-                TryDumpBoidSensoryBlackBox(anomalyHash);
+                TryDumpBoidSensoryBlackBox(boidSensoryBlackBox, anomalyHash);
         }
 
-        private float4 ReadBoidSensoryThreatSlot(int slot)
+        private float4 ReadBoidSensoryThreatSlot(NativeArray<float4> boidSensoryThreats, int slot)
         {
-            return _boidSensoryThreatsNative.IsCreated && (uint)slot < (uint)_boidSensoryThreatsNative.Length
-                ? _boidSensoryThreatsNative[slot]
+            return boidSensoryThreats.IsCreated && (uint)slot < (uint)boidSensoryThreats.Length
+                ? boidSensoryThreats[slot]
                 : float4.zero;
         }
 
@@ -5542,9 +5548,11 @@ namespace Hecton8.World
             return math.hash(math.asuint(value));
         }
 
-        private void TryDumpBoidSensoryBlackBox(uint anomalyHash)
+        private void TryDumpBoidSensoryBlackBox(
+            NativeArray<BoidSensoryBlackBoxEntry> boidSensoryBlackBox,
+            uint anomalyHash)
         {
-            if (_boidSensoryBlackBoxDumped || !_boidSensoryBlackBox.IsCreated)
+            if (_boidSensoryBlackBoxDumped || !boidSensoryBlackBox.IsCreated)
                 return;
 
             _boidSensoryBlackBoxDumped = true;
@@ -5558,7 +5566,7 @@ namespace Hecton8.World
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
 
-            int ringLength = math.min(_boidSensoryBlackBox.Length, BoidSensoryBlackBoxCapacity);
+            int ringLength = math.min(boidSensoryBlackBox.Length, BoidSensoryBlackBoxCapacity);
             using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
             using (BinaryWriter writer = new BinaryWriter(stream))
             {
@@ -5570,7 +5578,7 @@ namespace Hecton8.World
                 writer.Write(anomalyHash);
 
                 for (int i = 0; i < ringLength; i++)
-                    WriteBoidSensoryBlackBoxEntry(writer, _boidSensoryBlackBox[i]);
+                    WriteBoidSensoryBlackBoxEntry(writer, boidSensoryBlackBox[i]);
             }
         }
 

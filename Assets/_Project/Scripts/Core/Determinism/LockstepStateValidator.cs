@@ -412,8 +412,17 @@ namespace Hecton8.Core.Determinism
 
         private static void ConfigureSignalLanes()
         {
-            GlobalSignals.InitializeAllQueues();
+            SignalBus<LockstepSnapshotSignal>.Configure(
+                LockstepSnapshotSignalCapacity,
+                LockstepSnapshotSignalCapacity,
+                LockstepSnapshotSignalCapacity,
+                LockstepSnapshotLaneHash);
             SignalBus<LockstepSnapshotSignal>.EnsureInitialized();
+            SignalBus<SystemGlitchSignal>.Configure(
+                SystemGlitchSignalCapacity,
+                SystemGlitchSignalCapacity,
+                SystemGlitchSignalCapacity,
+                SystemGlitchLaneHash);
             SignalBus<SystemGlitchSignal>.EnsureInitialized();
         }
 

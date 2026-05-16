@@ -740,6 +740,15 @@ namespace Hecton8.Environment
         private bool RefreshDataVaultBinding(bool force)
         {
             int frame = Time.frameCount;
+            if (_dataVault != null && _dataVault.IsCompactionFenceActive)
+            {
+                _vehicleWakeJobResultHandle = default;
+                _telemetryRingHandle = default;
+                _nativeStateReady = false;
+                if (!force && frame < _nextDataVaultRebindFrame)
+                    return false;
+            }
+
             if (!force && _dataVault != null && !_dataVault.IsCompactionFenceActive)
                 return true;
             if (!force && frame < _nextDataVaultRebindFrame)
@@ -804,6 +813,12 @@ namespace Hecton8.Environment
         private bool TryResolveVehicleWakeJobResultBuffer(out NativeArray<VehicleWakeJobResult> result)
         {
             result = default;
+            if (!RefreshDataVaultBinding(force: false))
+            {
+                _nativeStateReady = false;
+                return false;
+            }
+
             if (!_nativeStateReady && !EnsureNativeState())
                 return false;
 
@@ -814,6 +829,12 @@ namespace Hecton8.Environment
         private bool TryResolveTelemetryRing(out NativeArray<MarineSnowTelemetryEntry> telemetryRing)
         {
             telemetryRing = default;
+            if (!RefreshDataVaultBinding(force: false))
+            {
+                _nativeStateReady = false;
+                return false;
+            }
+
             if (!_nativeStateReady && !EnsureNativeState())
                 return false;
 

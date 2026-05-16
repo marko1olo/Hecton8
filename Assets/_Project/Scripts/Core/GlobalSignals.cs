@@ -754,6 +754,7 @@ namespace Hecton8.Core.Contracts.Signals
         private const int CompassCalibratedSignalGuardCode = unchecked((int)0x51A1004Du);
         private const int TetherFiredSignalGuardCode = unchecked((int)0x51A1004Eu);
         private const int SystemGlitchSignalGuardCode = unchecked((int)0x51A1004Fu);
+        private const int EntitySpawnSignalGuardCode = unchecked((int)0x51A10050u);
         private const byte GuardNone = 0;
         private const byte GuardImpact = 2;
         private const byte GuardHighSpeedImpact = 3;
@@ -833,6 +834,7 @@ namespace Hecton8.Core.Contracts.Signals
         private const byte GuardCompassCalibrated = 77;
         private const byte GuardTetherFired = 78;
         private const byte GuardSystemGlitch = 79;
+        private const byte GuardEntitySpawn = 80;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int Sanitize<T>(ref T signal)
@@ -1090,6 +1092,11 @@ namespace Hecton8.Core.Contracts.Signals
                     ref EntityDeathSignal typed = ref UnsafeUtility.As<T, EntityDeathSignal>(ref signal);
                     return SanitizeEntityDeathSignal(ref typed);
                 }
+                case GuardEntitySpawn:
+                {
+                    ref EntitySpawnSignal typed = ref UnsafeUtility.As<T, EntitySpawnSignal>(ref signal);
+                    return SanitizeEntitySpawnSignal(ref typed);
+                }
                 case GuardMovementAcoustic:
                 {
                     ref MovementAcousticSignal typed = ref UnsafeUtility.As<T, MovementAcousticSignal>(ref signal);
@@ -1338,6 +1345,8 @@ namespace Hecton8.Core.Contracts.Signals
                 return GuardBrownout;
             if (typeof(T) == typeof(EntityDeathSignal))
                 return GuardEntityDeath;
+            if (typeof(T) == typeof(EntitySpawnSignal))
+                return GuardEntitySpawn;
             if (typeof(T) == typeof(MovementAcousticSignal))
                 return GuardMovementAcoustic;
             if (typeof(T) == typeof(SwarmDispersedSignal))
@@ -2066,6 +2075,25 @@ namespace Hecton8.Core.Contracts.Signals
             int guardCode = SanitizeAup(ref signal.PositionAup) ? EntityDeathSignalGuardCode : 0;
             if (SanitizeUnit01(ref signal.Intensity01))
                 guardCode = EntityDeathSignalGuardCode;
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeEntitySpawnSignal(ref EntitySpawnSignal signal)
+        {
+            int guardCode = SanitizeAup(ref signal.PositionAup) ? EntitySpawnSignalGuardCode : 0;
+            if (signal.RequestedCount < signal.SpawnedCount)
+            {
+                signal.RequestedCount = signal.SpawnedCount;
+                guardCode = EntitySpawnSignalGuardCode;
+            }
+
+            if (signal.EntityKind == 0)
+            {
+                signal.EntityKind = EntitySpawnSignal.KindEcology;
+                guardCode = EntitySpawnSignalGuardCode;
+            }
 
             return guardCode;
         }
@@ -4316,11 +4344,11 @@ namespace Hecton8.Core
             _lightLevelSignals.Enqueue(signal);
         }
 
-        /// <summary>Queues one player/submersible headlight state packet from the main thread.</summary>
+        /// <summary>Queues one player/submersible headlight state packet into the typed lane.</summary>
         public static void Publish(in SubmarineLightsChangedSignal signal)
         {
             EnsureInitialized();
-            _submarineLightsChangedSignals.Enqueue(signal);
+            SignalBus<SubmarineLightsChangedSignal>.Push(in signal);
         }
 
         /// <summary>Queues one fauna state transition packet from the main thread.</summary>
@@ -4510,7 +4538,8 @@ namespace Hecton8.Core
         public static bool TryDequeueRadiationDose(out RadiationDoseSignal signal) => TryDequeue(ref _radiationDoseSignals, out signal);
         public static bool TryDequeueResourceDepletionDelta(out ResourceDepletionDeltaSignal signal) => TryDequeue(ref _resourceDepletionDeltaSignals, out signal);
         public static bool TryDequeueLightLevel(out LightLevelSignal signal) => TryDequeue(ref _lightLevelSignals, out signal);
-        public static bool TryDequeueSubmarineLightsChanged(out SubmarineLightsChangedSignal signal) => TryDequeue(ref _submarineLightsChangedSignals, out signal);
+        public static bool TryDequeueSubmarineLightsChanged(out SubmarineLightsChangedSignal signal) =>
+            SignalBus<SubmarineLightsChangedSignal>.TryReadFrame(out signal);
         public static bool TryDequeueFaunaStateChanged(out FaunaStateChangedSignal signal) => TryDequeue(ref _faunaStateChangedSignals, out signal);
         public static bool TryDequeuePhysiologyState(out PhysiologyStateSignal signal) => TryDequeue(ref _physiologyStateSignals, out signal);
         public static bool TryDequeuePlayerStress(out PlayerStressSignal signal) => TryDequeue(ref _playerStressSignals, out signal);
@@ -5423,7 +5452,7 @@ namespace Hecton8.Core.Contracts.Signals
     }
 
     /// <summary>AUP sector pre-shift warning signal. Size: 32 bytes.</summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     public struct AupPreShiftSignal : ISignal
     {
         public float3 ShiftMeters;
@@ -5433,7 +5462,7 @@ namespace Hecton8.Core.Contracts.Signals
     }
 
     /// <summary>AUP sector shift broadcast signal. Size: 32 bytes.</summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     public struct AupShiftSignal : ISignal
     {
         public float3 ShiftMeters;
@@ -5686,7 +5715,7 @@ namespace Hecton8.Core.Contracts.Signals
     }
 
     /// <summary>Combat-to-feedback armor deflection signal. Size: 32 bytes.</summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
     public struct DeflectSignal : ISignal
     {
         public float3 LocalPoint;

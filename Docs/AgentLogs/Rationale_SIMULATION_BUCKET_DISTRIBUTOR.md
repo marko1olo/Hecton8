@@ -16,8 +16,8 @@ Hardware Impact: MX350/i3 avoids N independent modulo decisions accumulating on 
 
 ## Decision: Native SoA Bucket State
 Problem: Bucket assignment must be globally visible without per-frame allocation or object graphs.
-Solution: Store front/work entity bucket tables plus cost/load EWMA arrays in NativeArray-backed buffers, resolving through GlobalDataVault when available and H8Memory only as fallback.
-Rejected Alternatives: Managed dictionaries, class records, or per-system local masks were rejected for GC pressure and authority drift.
+Solution: Store front/work entity bucket tables plus cost/load EWMA arrays in NativeArray-backed buffers, resolving through GlobalDataVault only; the bucketer now keeps handles and scalar state, not persistent private arrays.
+Rejected Alternatives: Managed dictionaries, class records, per-system local masks, or H8Memory fallback ownership were rejected for GC pressure and authority drift.
 Scalability potential: Low uses static tables and 128 slow buckets; Middle/High/Ultra can reuse the same buffers for denser entity costs and more aggressive presentation sync.
 Hardware Impact: i3/MX350 gains predictable linear cache access and avoids managed allocation stalls; expected gain is <0.1 ms stability, not raw FPS claims.
 
@@ -55,3 +55,52 @@ Solution: Only register/unregister changes invalidate pending rebalance output; 
 Rejected Alternatives: Treating every cost sample as a structural mutation was rejected because it can starve the 60-frame rebalance path under real telemetry.
 Scalability potential: Low remains static; Middle/High/Ultra keep accepting periodic rebalance results even while costs stream.
 Hardware Impact: i3/MX350 unaffected; high-end avoids wasted rebalance jobs and preserves frame-pacing corrections.
+
+## Decision: H-Phi Data Eviction Rewrite
+Problem: The first implementation still allowed scheduler fallback ownership outside the vault, which violated the Data Sovereignty pass.
+Solution: Reworked ModuloSimulationBucketer to store only VaultBufferHandle<T> handles plus scalar state. Entity buckets, work buckets, EWMA costs, bucket loads, rebalance scratch, rebalance result, frame state, and black-box ring are all GlobalDataVault buffers.
+Rejected Alternatives: Keeping H8Memory.Allocate fallback was rejected because fallback ownership becomes a private scheduler island during bootstrap and Quest failure analysis.
+Scalability potential: Low tier resolves the same static 128-bucket table from the vault; Middle/High/Ultra can rebalance and publish visual-budget flags without moving storage ownership back into the system.
+Hardware Impact: i3/MX350 keeps predictable linear memory access; Quest/Android avoids a second allocator authority for scheduler state.
+
+## Decision: ARM64 Packing and Signal Layout
+Problem: ARM64/Quest builds punish implicit padding and signal structs that depend on runtime layout luck.
+Solution: Fixed scheduler contracts at Pack=1 explicit sizes: SimulationBucketFrameState 64 bytes, SimulationBucketRebalanceResult 20 bytes, SimulationBucketBlackBoxEntry 64 bytes, SimulationBucketSyncSignal 32 bytes, and FramePacingWarningSignal 64 bytes.
+Rejected Alternatives: Standard Sequential layout without explicit size was rejected because platform packing drift is invisible until native/job/shader boundary faults.
+Scalability potential: Same binary telemetry contract feeds toaster diagnostics and high-end pacing overlays.
+Hardware Impact: Quest/Android risk reduction; no claimed frame-time gain.
+
+## Decision: Fault-Only Black Box Dump
+Problem: The scheduler needed last-300-frame postmortem state without Steam Deck MicroSD stutter or managed per-frame allocation.
+Solution: Added BufferID.SimulationBucketBlackBox and a 300-entry DataVault ring. The normal path writes one packed entry and overwrites same-frame pre/post samples; binary dump to Docs/AgentLogs/Dump_SIMULATION_BUCKET_DISTRIBUTOR.bin occurs only after non-finite cost detection.
+Rejected Alternatives: Per-frame file logging, Debug.Log, or managed queues were rejected for I/O pressure, GC pressure, and poor crash recovery.
+Scalability potential: Low/Middle use the same ring for crash proof; High/Ultra can correlate visual overkill admission with frame-pacing state through the hash/flags.
+Hardware Impact: i3/MX350 and Steam Deck receive zero normal-path disk writes; expected runtime cost stays under 5 us/frame.
+
+## Decision: Visual Overkill Budget Signal
+Problem: High-tier systems need a clean way to spend saved scheduling budget without reading private bucketer internals.
+Solution: Added SimulationBucketPacingFlags.VisualOverkillBudgetAvailable when non-low-tier expected frame cost is under half the 16.667 ms target, no rebalance is pending, and no non-finite fault is latched.
+Rejected Alternatives: Direct VFX/render edits from the scheduler domain were rejected as cross-domain ownership drift.
+Scalability potential: Low stays a Dear Lie with static buckets; Middle/High/Ultra can gate salt crystals, silt, particles, POM, or other overkill from a typed frame-state flag.
+Hardware Impact: i3/MX350 avoids the flag; high-end gets an allocation-free budget signal.
+
+## Decision: Multiplatform Compute Audit
+Problem: User requested ARM64/Quest/Metal/Steam Deck review even though scheduler code is CPU-side.
+Solution: Scanned touched compute consumers and shader thread-group defines. Sargassum, AbyssalFlow, and FluidAdvection paths use 64-thread 1D groups or 4x4x4/8x8x8 groups, below Metal's 1024-thread-group limit. No scheduler shader mutation was required.
+Rejected Alternatives: Editing shaders without a failing thread-group or DirectX-only scheduler dependency was rejected.
+Scalability potential: Toaster and high-end share valid compute dispatch bounds; visual overkill remains downstream and optional.
+Hardware Impact: Metal/Mac portability risk reduced by evidence; no runtime delta.
+
+## Decision: Compile Wall After H-Phi Pass
+Problem: attempt5 exposed a missing helper in SargassumMicroFaunaBoids before the build reached the known construction-domain errors.
+Solution: Replaced the incomplete handle helper calls with existing DataVault-backed EnsureNativeArrayCapacity calls for boid sensory threat and black-box buffers, then reran build.
+Rejected Alternatives: Adding a dead helper that only updates handles was rejected because the live native arrays would still remain unresolved.
+Scalability potential: Sargassum sensory data remains vault-backed and can still participate in bucketed scheduling cleanup.
+Hardware Impact: No new allocation path; DataVault buffer resolution stays cold-path.
+
+## Decision: External Construction Compile Wall
+Problem: attempt6 now fails only in VehicleDockingModule with missing construction-domain methods such as ResetDockingRuntimeCaches, ResolveSystemStress01, and docking wake helpers.
+Solution: Stopped at the domain boundary and recorded the wall after filtering touched scheduler files to zero build errors.
+Rejected Alternatives: Patching construction docking behavior from the scheduling agent was rejected as architectural sabotage.
+Scalability potential: Scheduler remains ready to validate once construction dependencies are restored.
+Hardware Impact: No runtime impact from the external compile wall.

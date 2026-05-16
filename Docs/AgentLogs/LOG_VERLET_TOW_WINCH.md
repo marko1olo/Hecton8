@@ -78,3 +78,24 @@ Validation:
 - `git diff --check` returned only repository-normal CRLF conversion warnings.
 - Compile attempt 10: `dotnet build Hecton8.Core.csproj -v:minimal /clp:ErrorsOnly /p:UseSharedCompilation=false` failed on unrelated XR refresh-rate API, item signal import, submarine structural breach buffers, biolum buffers, and vault probe generic inference errors. No tether compiler errors appeared in the reported set.
 - Unity runtime and profiler validation were not executed.
+
+## 2026-05-16 - Vault-Owned Verlet Blackbox
+
+What was wrong:
+- The 300-frame Verlet telemetry blackbox was still a per-instance persistent `NativeArray`, so the crash recorder had private storage after the public cable lanes were evicted.
+
+What was done:
+- Moved the telemetry ring to `GlobalDataVault` under `BufferID.TetherCableBlackBox`.
+- Added `BufferID.TetherCableBlackBoxHead` for one cursor per fixed tether slot.
+- Changed `TetherVerletTelemetryJob` and dump export to write/read by fixed slot offsets instead of treating the telemetry ring as instance-owned.
+
+Cinematic Cheats used:
+- None in this pass; this is data sovereignty and crash forensics. The low-tier physics cheat remains the 3-segment authority solve with taut-line visual fallback.
+
+Exact Microseconds saved:
+- Not measured. Expected runtime delta is one int cursor lane write and offset clamp per active tether frame; no runtime win is claimed.
+
+Validation:
+- Corrected hot-path scan found no `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, banned Unity joints, `TetherManager.Instance`, or legacy tether queues in the touched path.
+- `dotnet build Hecton8.Core.csproj -v:minimal /p:UseSharedCompilation=false` still fails on unrelated Sargassum, MarineSnow, and VehicleDocking errors. No tether compiler errors appeared in the reported set.
+- Unity runtime and profiler validation were not executed.

@@ -3,6 +3,8 @@
 #define HECTON_SCATTER_THREADS_PER_GROUP 64
 #define HECTON_SCATTER_FRUSTUM_PLANES 6
 
+#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
+
 StructuredBuffer<float4x4> _HectonScatterSourceMatrices;
 AppendStructuredBuffer<uint> _HectonScatterVisibleIndices;
 
@@ -17,16 +19,45 @@ struct HectonScatterVisibleMatrix
 AppendStructuredBuffer<HectonScatterVisibleMatrix> _HectonScatterVisibleMatrices;
 RWStructuredBuffer<float4> _HectonScatterMotionVectors;
 
-uint _HectonScatterInstanceCount;
 float4 _HectonScatterFrustumPlanes[HECTON_SCATTER_FRUSTUM_PLANES];
-float3 _HectonScatterAupShiftOffset;
-float3 _HectonScatterCameraPosition;
-float3 _HectonScatterLocalBoundsCenter;
-float3 _HectonScatterLocalBoundsExtents;
-float _HectonScatterMaxDistanceSq;
-float _HectonScatterMotionStrength;
-uint _HectonScatterFrameIndex;
-uint _HectonScatterCrossfadeEnabled;
+
+CBUFFER_START(HectonScatterFrameConstants)
+    float4 _HectonScatterParams0; // x=instance count, y=max distance sq, z=motion strength, w=frame index
+    float4 _HectonScatterParams1; // xyz=AUP shift, w=crossfade enabled
+    float4 _HectonScatterParams2; // xyz=camera position
+    float4 _HectonScatterParams3; // xyz=local bounds center
+    float4 _HectonScatterParams4; // xyz=local bounds extents
+CBUFFER_END
+
+uint ResolveInstanceCount()
+{
+    return (uint)max(_HectonScatterParams0.x, 0.0);
+}
+
+uint ResolveFrameIndex()
+{
+    return (uint)max(_HectonScatterParams0.w, 0.0);
+}
+
+float3 ResolveAupShiftOffset()
+{
+    return _HectonScatterParams1.xyz;
+}
+
+float3 ResolveCameraPosition()
+{
+    return _HectonScatterParams2.xyz;
+}
+
+float3 ResolveLocalBoundsCenter()
+{
+    return _HectonScatterParams3.xyz;
+}
+
+float3 ResolveLocalBoundsExtents()
+{
+    return max(_HectonScatterParams4.xyz, float3(0.01, 0.01, 0.01));
+}
 
 bool IsFiniteFloat3(float3 value)
 {
@@ -56,11 +87,11 @@ bool HasUsableScale(float4x4 matrixValue)
            scaleXSq > 0.000001 && scaleYSq > 0.000001 && scaleZSq > 0.000001;
 }
 
-bool BoundsVisible(float4x4 matrixValue, float3 centerWS)
+bool BoundsVisible(float4x4 matrixValue, float3 centerWS, float3 localBoundsExtents)
 {
-    float3 axisX = float3(matrixValue._m00, matrixValue._m10, matrixValue._m20) * _HectonScatterLocalBoundsExtents.x;
-    float3 axisY = float3(matrixValue._m01, matrixValue._m11, matrixValue._m21) * _HectonScatterLocalBoundsExtents.y;
-    float3 axisZ = float3(matrixValue._m02, matrixValue._m12, matrixValue._m22) * _HectonScatterLocalBoundsExtents.z;
+    float3 axisX = float3(matrixValue._m00, matrixValue._m10, matrixValue._m20) * localBoundsExtents.x;
+    float3 axisY = float3(matrixValue._m01, matrixValue._m11, matrixValue._m21) * localBoundsExtents.y;
+    float3 axisZ = float3(matrixValue._m02, matrixValue._m12, matrixValue._m22) * localBoundsExtents.z;
 
     [unroll]
     for (int planeIndex = 0; planeIndex < HECTON_SCATTER_FRUSTUM_PLANES; planeIndex++)
@@ -99,32 +130,35 @@ float HashSigned01(uint value)
 void ScatterCullJob(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
     uint instanceIndex = dispatchThreadId.x;
-    if (instanceIndex >= _HectonScatterInstanceCount)
+    uint instanceCount = ResolveInstanceCount();
+    if (instanceIndex >= instanceCount)
         return;
 
     float4x4 matrixValue = _HectonScatterSourceMatrices[instanceIndex];
     if (!HasUsableScale(matrixValue))
         return;
 
-    float3 centerWS = TransformPoint(matrixValue, _HectonScatterLocalBoundsCenter) + _HectonScatterAupShiftOffset;
+    float3 localBoundsCenter = ResolveLocalBoundsCenter();
+    float3 localBoundsExtents = ResolveLocalBoundsExtents();
+    float3 centerWS = TransformPoint(matrixValue, localBoundsCenter) + ResolveAupShiftOffset();
     if (!IsFiniteFloat3(centerWS))
         return;
 
-    float3 toCamera = centerWS - _HectonScatterCameraPosition;
+    float3 toCamera = centerWS - ResolveCameraPosition();
     float distanceSq = dot(toCamera, toCamera);
-    if (!isfinite(distanceSq) || distanceSq > _HectonScatterMaxDistanceSq)
+    if (!isfinite(distanceSq) || distanceSq > max(_HectonScatterParams0.y, 1.0))
         return;
 
-    if (!BoundsVisible(matrixValue, centerWS))
+    if (!BoundsVisible(matrixValue, centerWS, localBoundsExtents))
         return;
 
-    uint motionHash = instanceIndex * 747796405u + _HectonScatterFrameIndex * 2891336453u;
+    uint motionHash = instanceIndex * 747796405u + ResolveFrameIndex() * 2891336453u;
     float swaySigned = HashSigned01(motionHash);
     float3 axisX = float3(matrixValue._m00, 0.0, matrixValue._m20);
     float axisLenSq = dot(axisX, axisX);
     axisLenSq = isfinite(axisLenSq) ? max(axisLenSq, 0.000001) : 1.0;
     float3 swayDir = axisX * rsqrt(axisLenSq);
-    float motionScale = _HectonScatterMotionStrength * lerp(0.65, 1.35, saturate(_HectonScatterCrossfadeEnabled));
+    float motionScale = max(_HectonScatterParams0.z, 0.0) * lerp(0.65, 1.35, saturate(_HectonScatterParams1.w));
     _HectonScatterMotionVectors[instanceIndex] = float4(swayDir * (swaySigned * motionScale), distanceSq);
 
     _HectonScatterVisibleIndices.Append(instanceIndex);
