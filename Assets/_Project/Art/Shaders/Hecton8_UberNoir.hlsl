@@ -428,7 +428,9 @@ float H8UberNoirRadiusMask(float3 positionWS, float4 centerRadius)
     float radius = max(centerRadius.w, 0.0);
     float3 delta = positionWS - centerRadius.xyz;
     float radiusSq = max(radius * radius, H8_UBER_NOIR_EPS);
-    return lerp(1.0, 1.0 - saturate(dot(delta, delta) * H8UberNoirSafeRcp(radiusSq)), step(H8_UBER_NOIR_EPS, radius));
+    float active = step(H8_UBER_NOIR_EPS, radius);
+    float falloff = 1.0 - saturate(dot(delta, delta) * H8UberNoirSafeRcp(radiusSq));
+    return falloff * active;
 }
 
 float3 H8UberNoirApplyDynamicHullBendingWS(float3 positionWS, float3 normalWS, half instanceSeed)

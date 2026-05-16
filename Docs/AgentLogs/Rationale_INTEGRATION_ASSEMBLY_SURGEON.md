@@ -133,3 +133,11 @@ Solution: Verified `GlobalSignals` validates `TetherSnappedSignal` at 80 bytes a
 Rejected Alternatives: Leaving stale 72/40 validation constants, disabling the size check, or committing only struct padding without the central signal registry.
 Scalability potential: Low/Quest/Android typed lanes now fail fast on the intended packet width instead of platform-dependent drift; High/Ultra keep identical signal behavior with a stricter registry check.
 Hardware Impact: Runtime gain is 0 us measured. Incremental compile verification cost: 790,000 us.
+
+## 2026-05-16 UberNoir Bridge Compile Revalidation
+
+Problem: A Rendering-domain bridge tail changed `HectonUberNoirRuntimeBridge` fault-dump behavior. Because this file compiles in the Core generated project, the integration commit needed current compile evidence.
+Solution: Rebuilt `Hecton8.Core.csproj` on current disk after the bridge fallback path landed.
+Rejected Alternatives: Treating shader/runtime bridge changes as static-only, or pushing the fallback dump code without compiler evidence.
+Scalability potential: Low/Quest/Android and High/Ultra tiers share the same fault-only blackbox path; the normal hot path remains unchanged.
+Hardware Impact: Runtime gain is 0 us measured. Compile verification cost: 73,480,000 us.

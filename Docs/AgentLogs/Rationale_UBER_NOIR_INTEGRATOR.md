@@ -142,3 +142,24 @@ Solution: Added a dedicated `[branch]` guard around the chromatic red/blue offse
 Rejected Alternatives: Keeping unconditional chromatic taps was rejected because it made the documented 1-3 tap budget false. Removing chromatic split entirely was rejected because RTX/Ultra glass needs a visible spend path.
 Scalability potential: Low compiles refraction out; Middle/High can use one-tap Snell distortion; Ultra can enable chromatic split for stronger visor/porthole glass distortion.
 Hardware Impact: Expected static saving when chromatic is zero is two `_CameraOpaqueTexture` samples per refractive fragment. Exact microseconds are not claimed without profiler capture.
+
+## Decision 021 - Reciprocal Guard Consistency
+Problem: Several shader sites used raw `rcp` with locally clamped denominators. They were mostly guarded, but the screen-space divide used `abs(positionCS.w)`, which loses the perspective sign, and the audit surface still showed raw reciprocal use outside the NaN-vaccinated helper.
+Solution: Routed screen UV, radius mask, crush-depth ratio, and wake falloff through `H8UberNoirSafeRcp`. Raw `rcp`, `rsqrt`, and `pow` now appear only inside `H8UberNoirSafeRcp`, `H8UberNoirSafeRsqrt`, and `H8UberNoirSafePow`.
+Rejected Alternatives: Leaving local ad hoc clamps was rejected because it makes future NaN audits fragile. Replacing sign-preserving reciprocal with absolute reciprocal was rejected because it can invert screen/POM behavior around negative denominators.
+Scalability potential: All tiers share the same reciprocal guard; low-tier cheap math remains intact while High/Ultra avoids rare NaN/INF propagation through refraction, wake, and deformation.
+Hardware Impact: Expected runtime delta is measurement noise; this is correctness and mobile-GPU survival work, not a claimed microsecond win.
+
+## Decision 022 - Pressure Radius Zero Influence
+Problem: `H8UberNoirRadiusMask` returned `1.0` when the radius was zero because the disabled-radius path selected the full-influence side of a `lerp`. A default or malformed crush/habitat radius could therefore bend an entire mesh if displacement was non-zero.
+Solution: Changed the mask to compute falloff normally but multiply by `step(eps, radius)`, making zero/invalid radii produce zero influence.
+Rejected Alternatives: Keeping radius-zero as full influence was rejected as a catastrophic deformation default. Branching out early was rejected because a step mask gives the same safety without adding another vertex branch.
+Scalability potential: All tiers get predictable localized pressure deformation; High/Ultra overkill bends remain bounded by explicit radius data.
+Hardware Impact: No claimed microsecond win. This is correctness and visual-stability debt removal.
+
+## Decision 023 - Blackbox Empty Dump Fallback
+Problem: `DumpBlackBox` returned without writing any dump if the DataVault telemetry ring was unavailable, lock acquisition failed, or the resolved ring was invalid. That leaves a fault with no durable reason code.
+Solution: Added `WriteEmptyBlackBox`, which writes `Dump_UBER_NOIR_INTEGRATOR.bin` with magic, reason flags, telemetry cursor, and zero entry count when the full 300-entry ring cannot be read.
+Rejected Alternatives: Keeping a silent return was rejected because it recreates "unknown crash" failure. Allocating a private fallback native ring was rejected because this domain already evicted telemetry ownership to DataVault.
+Scalability potential: Low devices still avoid hot-path I/O; fault-only dumps retain postmortem signal even under DataVault failure. High/Ultra keep the full ring when vault access is valid.
+Hardware Impact: Hot path unchanged. Fault path may write a tiny header instead of no file; no frame-time claim.

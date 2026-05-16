@@ -78,6 +78,32 @@ Residual risk:
 Current Status:
 - VERIFIED MASTER GRADE - BUILD GREEN.
 
+## 2026-05-16 - Tail12 UberNoir Bridge Compile Revalidation
+
+What was wrong:
+- A rendering bridge tail changed blackbox dump fallback behavior in `HectonUberNoirRuntimeBridge`.
+- The change is runtime C# and required Core compile proof before integration.
+
+What was done:
+- Ran a fresh Core compile after the bridge fallback change.
+
+Cinematic Cheats used:
+- No gameplay or visual cheat was added by Integrator.
+- This is fault-only diagnostic survival work.
+
+Exact Microseconds saved:
+- Runtime frame time saved: 0 us measured.
+- Tail12 compile verification time: 73,480,000 us.
+
+Verification:
+- `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260516_tail12_ubernoir_bridge.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, `EXIT=0`.
+
+Residual risk:
+- Unity Editor import, Play Mode, profiler, GCMonitor, player builds, Quest/Android build, Metal build, and IL2CPP strip build were not run.
+
+Current Status:
+- VERIFIED MASTER GRADE - BUILD GREEN.
+
 ## 2026-05-16 - Tail11 Tether GlobalSignals Revalidation
 
 What was wrong:

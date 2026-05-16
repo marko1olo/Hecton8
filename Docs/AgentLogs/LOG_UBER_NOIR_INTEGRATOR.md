@@ -127,3 +127,62 @@ Exact microseconds saved:
 Verification:
 - HLSL brace count remains balanced (`64/64`).
 - Forbidden-pattern scan over UberNoir-owned shader/runtime files remains clean.
+
+## 2026-05-16 Loop 12 - Reciprocal Guard Audit
+
+What was wrong:
+- Shader reciprocal sites were individually clamped but still used raw `rcp` outside the safe helper.
+- Screen UV used `abs(positionCS.w)`, which prevents divide-by-zero but loses the perspective sign.
+
+What was done:
+- Routed screen UV, radius mask, crush ratio, and wake falloff through `H8UberNoirSafeRcp`.
+- Verified raw `rcp`, `rsqrt`, and `pow` now appear only inside the safe helper implementations.
+
+Cinematic cheats used:
+- No new visual simulation. This is NaN survival and temporal correctness work for existing fakes.
+
+Exact microseconds saved:
+- None claimed. This adds minimal ALU consistency and reduces mobile GPU fault risk.
+
+Verification:
+- HLSL brace count remains balanced (`64/64`).
+- Reciprocal scan now shows raw `rcp` only inside `H8UberNoirSafeRcp`.
+
+## 2026-05-16 Loop 13 - Pressure Radius Mask Fix
+
+What was wrong:
+- `H8UberNoirRadiusMask` returned full influence when radius was zero.
+- A default `_HectonSubmarineCrushCenterRadius.w` or `_HectonHabitatStressCenterRadius.w` of zero could therefore bend the whole mesh if displacement was non-zero.
+
+What was done:
+- Changed zero/invalid radius behavior to zero influence using a step mask.
+- Kept the mask branchless after finite validation.
+
+Cinematic cheats used:
+- Localized pressure deformation remains a vertex fake, but now has deterministic bounds.
+
+Exact microseconds saved:
+- None claimed. This prevents catastrophic visual deformation, not a measured optimization.
+
+Verification:
+- HLSL brace count remains balanced (`64/64`).
+- Raw reciprocal scan remains confined to safe helper implementations.
+
+## 2026-05-16 Loop 14 - Blackbox Empty Dump Fallback
+
+What was wrong:
+- `DumpBlackBox` silently returned when the DataVault telemetry ring was unavailable, could not lock, or resolved invalid.
+- That produced no durable reason code for vault failure faults.
+
+What was done:
+- Added `WriteEmptyBlackBox` to emit `Dump_UBER_NOIR_INTEGRATOR.bin` with magic, reason flags, cursor, and zero entries when the full ring cannot be read.
+- Kept the full 300-entry dump path unchanged when the DataVault ring is valid.
+
+Cinematic cheats used:
+- None. This is crash forensics plumbing.
+
+Exact microseconds saved:
+- None claimed. Hot path is unchanged; the new write is fault-only.
+
+Verification:
+- Forbidden-pattern scan over UberNoir-owned runtime files still finds no `NativeArray<`, `Update()`, `string.Format`, managed delegates, or EventBus usage.

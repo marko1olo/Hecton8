@@ -255,20 +255,32 @@ namespace Hecton8.Core
 
         private void DumpBlackBox(uint reasonFlags)
         {
-            if (_dumpedFault || !EnsureTelemetryBuffer())
+            if (_dumpedFault)
                 return;
+
+            if (!EnsureTelemetryBuffer())
+            {
+                WriteEmptyBlackBox(reasonFlags | TelemetryFlagVaultUnavailable);
+                return;
+            }
 
             IDataVault vault = _dataVault;
             if (vault == null || !vault.TryLockBuffer(BufferID.ShaderFeatureTelemetryRing))
+            {
+                WriteEmptyBlackBox(reasonFlags | TelemetryFlagVaultUnavailable);
                 return;
+            }
 
-            _dumpedFault = true;
             try
             {
                 var ring = _telemetryHandle.Resolve(vault);
                 if (!ring.IsCreated)
+                {
+                    WriteEmptyBlackBox(reasonFlags | TelemetryFlagVaultUnavailable);
                     return;
+                }
 
+                _dumpedFault = true;
                 string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
                 string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
                 Directory.CreateDirectory(logDirectory);
@@ -303,6 +315,31 @@ namespace Hecton8.Core
             finally
             {
                 vault.TryUnlockBuffer(BufferID.ShaderFeatureTelemetryRing);
+            }
+        }
+
+        private void WriteEmptyBlackBox(uint reasonFlags)
+        {
+            if (_dumpedFault)
+                return;
+
+            _dumpedFault = true;
+            try
+            {
+                string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
+                string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
+                Directory.CreateDirectory(logDirectory);
+                string dumpPath = Path.Combine(logDirectory, "Dump_UBER_NOIR_INTEGRATOR.bin");
+                using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
+                using BinaryWriter writer = new BinaryWriter(stream);
+                writer.Write(DumpMagic);
+                writer.Write(reasonFlags);
+                writer.Write(_telemetryCursor);
+                writer.Write(0);
+            }
+            catch (Exception)
+            {
+                _dumpedFault = false;
             }
         }
 
