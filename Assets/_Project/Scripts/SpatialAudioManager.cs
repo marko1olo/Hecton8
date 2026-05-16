@@ -376,6 +376,10 @@ namespace Hecton8.Audio
         private const float MassiveDistanceFixedAudioDelaySeconds = 0.5f;
         private const float ThermalShimmerMaximumPitchRatio = 0.018f;
         private const float TimeDilationAudioMinimumPitchRatio = 0.72f;
+        private const int LowTierAmbientOutputSampleRate = 22050;
+        private const float BrownoutAudioPitchMinimumRatio = 0.58f;
+        private const float BrownoutAudioPitchSharpness = 7f;
+        private const float BrownoutAudioReleasePerSecond = 0.45f;
         private const float InverseTwoPi = 0.15915494309f;
         private const float HaasArrivalWindowSeconds = 0.035f;
         private const float HaasReleaseThresholdSeconds = 0.04f;
@@ -673,6 +677,9 @@ namespace Hecton8.Audio
 
         [Tooltip("Exposed mixer parameter for narrative radio low-pass cutoff while deep or irradiated.")]
         [SerializeField] private string _narrativeRadioLowPassCutoffParameter = "NarrativeRadioLowPassCutoffHz";
+
+        [Tooltip("Exposed mixer parameter for brownout-driven global pitch multiplier.")]
+        [SerializeField] private string _brownoutPitchMultiplierParameter = "BrownoutPitchMultiplier";
 
         [SerializeField, Range(400f, 22000f)] private float _narrativeRadioOpenCutoffHz = 22000f;
         [SerializeField, Range(120f, 6000f)] private float _narrativeRadioMuffledCutoffHz = 900f;

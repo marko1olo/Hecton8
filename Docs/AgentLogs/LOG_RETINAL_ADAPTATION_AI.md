@@ -117,3 +117,30 @@ Verification:
 - `rg` found no retinal local `NativeArray`, no Alpha telemetry local allocation, no retinal raycasts/casts/overlaps, no `string.Format`, and no standard `Update()` in `AI/Perception` + `PredatorCognitionDomain`.
 - `git diff --check` reported only CRLF normalization warnings.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:BuildInParallel=false -v:minimal -clp:Summary` no longer reports errors in `PredatorCognitionDomain`, `FaunaBrain`, `GlobalDataVault`, `RetinalAdaptationVault`, or `RetinalExposureMath`. Remaining failures are external: `SargassumMicroFaunaBoids.EnsureVaultBufferHandle`, `HectonMarineSnowRenderer` wake/telemetry fields, and `VehicleDockingModule` runtime-cache helpers.
+
+## 2026-05-16 - Typed Headlight Signal Lane Pass
+What was wrong:
+- Retinal cognition still consumed `SubmarineLightsChangedSignal` through the legacy compatibility queue method.
+- That API shape is destructive and single-consumer by design, while the project mandate requires typed lanes and `ReadOnlySpan<T>` snapshots.
+
+What was done:
+- Changed `PredatorCognitionDomain.ProcessSubmarineLightSignals` to consume `SignalBus<SubmarineLightsChangedSignal>.GetFrameSnapshot()` as `ReadOnlySpan<SubmarineLightsChangedSignal>`.
+- Bounded retinal signal processing to the newest 64 headlight records before upserting the existing four-slot retinal light cache.
+- Verified the current `GlobalSignals.Publish(in SubmarineLightsChangedSignal)` path already writes the typed lane and the compatibility reader maps back to that lane.
+
+Cinematic Cheats used:
+- No physical light query was added.
+- No new signal type was created.
+- The cheap truth remains a typed headlight packet, four cached light records, dot-product exposure, and tier-gated presentation overkill.
+
+Exact Microseconds saved:
+- Measured exact savings: unavailable; profiler was not run.
+- Static runtime delta: legacy destructive queue drain replaced with a bounded `ReadOnlySpan<T>` snapshot scan of at most 64 records.
+- Per-predator hot-loop cost unchanged; the four-light dot-product cache remains the only retinal exposure input.
+
+Verification:
+- `rg` confirmed `PredatorCognitionDomain` and `SargassumMicroFaunaBoids` consume `ReadOnlySpan<SubmarineLightsChangedSignal>` from `SignalBus<SubmarineLightsChangedSignal>`.
+- `rg` found no `_submarineLightsChangedSignals.Enqueue` in the checked path.
+- `rg` found no retinal local `NativeArray`, no local Alpha telemetry allocation, no retinal raycasts/casts/overlaps, no `string.Format`, and no standard `Update()` in `AI/Perception` + `PredatorCognitionDomain`.
+- `git diff --check` reported no whitespace errors for the typed-lane files and retinal docs.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:BuildInParallel=false -v:minimal -clp:Summary` no longer reports errors in `PredatorCognitionDomain`, `GlobalSignals`, `FaunaBrain`, `GlobalDataVault`, `RetinalAdaptationVault`, or `RetinalExposureMath`. Remaining failures are external: `ProceduralLadderClimbRuntime`, `EcosystemDirector`, `SubmarineFluidDynamics`, `AcousticEchoLocationRuntime`, and `LockstepStateValidator`.

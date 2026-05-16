@@ -32,8 +32,8 @@ Exact microseconds saved:
 Verification:
 - Static anti-bloat scans passed for owned pathfinding files: no `Vector3`, managed lists, `NativeList`, Unity message loops, `GameObject.Find`, A*, or Unity NavMesh.
 - `dotnet restore .\Assembly-CSharp.csproj` succeeded.
-- `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false /v:minimal /clp:ErrorsOnly` failed with 110 upstream Core errors and 0 `PathFunnel`/`AI\Pathfinding` matches. Evidence: `Docs/AgentLogs/Build_PATH_FUNNEL_NAVMESH_FIXER_CoreDependency.log`.
-- Latest `dotnet build .\Assembly-CSharp.csproj --no-restore -m:2 /nr:false` ended `EXIT=-1` before C# diagnostics. Evidence: `Docs/AgentLogs/Build_PATH_FUNNEL_NAVMESH_FIXER_AssemblyCSharp.log`.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 /nr:false /v:minimal /clp:ErrorsOnly` failed with 33 upstream non-pathfinding errors and 0 `PathFunnel`/`AI\Pathfinding` matches. Evidence: `Docs/AgentLogs/Build_PATH_FUNNEL_NAVMESH_FIXER_CoreDependency.log`.
+- Latest `dotnet build .\Assembly-CSharp.csproj --no-restore -m:2 /nr:false /v:minimal /clp:ErrorsOnly` failed with 217 non-pathfinding errors and 0 pathfinding matches. Evidence: `Docs/AgentLogs/Build_PATH_FUNNEL_NAVMESH_FIXER_AssemblyCSharp.log`.
 
 Integrator note:
 - Do not treat the build as green. The pathfinding module is statically clean, but project validation is blocked by unrelated Core dependency errors in files such as `HectonVoxelEngine.cs`, `PredatorCognitionDomain.cs`, `GameBootstrapper.cs`, `VoxelDeltaProcessor.cs`, `GlobalSignals.cs`, and `SystemDispatcher.cs`.

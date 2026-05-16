@@ -648,9 +648,25 @@ namespace Hecton8.AI.Sensory
             }
 
             double3 delta = AbsoluteUniversePosition.DeltaMetersClamped(in state.InvestigateAup, in predatorAup);
+            if (!math.all(math.isfinite(delta)))
+                return 0f;
+
             double distanceSq = math.csum(delta * delta);
+            if (!math.isfinite(distanceSq))
+                return 0f;
+
             float distance01 = math.saturate(1f - (float)(distanceSq * math.rcp(1600.0)));
             return math.sin(currentTime * 4.65f) * math.saturate(state.Intensity01 * (0.45f + distance01));
+        }
+
+        private static void DropEchoTapQueue()
+        {
+            if (!_echoTapQueue.IsCreated)
+                return;
+
+            while (_echoTapQueue.TryDequeue(out _))
+            {
+            }
         }
 
         private static uint NextSequence(int frame)
@@ -703,11 +719,11 @@ namespace Hecton8.AI.Sensory
 
         private static void WriteBlackBox(int frame, in AcousticEchoTrailState state, float silenceSeconds)
         {
-            if (!_blackBox.IsCreated || _blackBox.Length == 0)
+            if (!TryResolveBlackBox(out NativeArray<AcousticEchoBlackBoxEntry> blackBox))
                 return;
 
-            int index = _blackBoxCursor % _blackBox.Length;
-            _blackBox[index] = new AcousticEchoBlackBoxEntry
+            int index = _blackBoxCursor % blackBox.Length;
+            blackBox[index] = new AcousticEchoBlackBoxEntry
             {
                 Frame = frame,
                 AcousticHuntsTriggered = state.AcousticHuntsTriggered,
@@ -723,7 +739,7 @@ namespace Hecton8.AI.Sensory
                 PortalLocal = new float3(state.InvestigateAup.LocalX, state.InvestigateAup.LocalY, state.InvestigateAup.LocalZ),
                 StateHash = HashState(in state)
             };
-            _blackBoxCursor = (index + 1) % _blackBox.Length;
+            _blackBoxCursor = (index + 1) % blackBox.Length;
         }
 
         private static void WriteFaultBlackBox(int frame, in AbsoluteUniversePosition faultAup)
@@ -732,12 +748,16 @@ namespace Hecton8.AI.Sensory
             state.InvestigateAup = faultAup;
             state.Flags = FlagSilenceLost;
             WriteBlackBox(frame, in state, 0f);
-            DumpBlackBox();
+            if (_blackBoxDumped == 0)
+            {
+                _blackBoxDumped = 1;
+                DumpBlackBox();
+            }
         }
 
         private static void DumpBlackBox()
         {
-            if (!_blackBox.IsCreated)
+            if (!TryResolveBlackBox(out NativeArray<AcousticEchoBlackBoxEntry> blackBox))
                 return;
 
             try
@@ -750,11 +770,11 @@ namespace Hecton8.AI.Sensory
                 using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    writer.Write(_blackBox.Length);
+                    writer.Write(blackBox.Length);
                     writer.Write(_blackBoxCursor);
-                    for (int i = 0; i < _blackBox.Length; i++)
+                    for (int i = 0; i < blackBox.Length; i++)
                     {
-                        AcousticEchoBlackBoxEntry entry = _blackBox[i];
+                        AcousticEchoBlackBoxEntry entry = blackBox[i];
                         writer.Write(entry.Frame);
                         writer.Write(entry.AcousticHuntsTriggered);
                         writer.Write(entry.SourceId);
@@ -776,16 +796,6 @@ namespace Hecton8.AI.Sensory
             catch (Exception)
             {
             }
-        }
-
-        private static void DisposeArray<T>(ref NativeArray<T> array) where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
         }
     }
 }

@@ -78,6 +78,34 @@ namespace Hecton8.Core.Content
         {
             return MeshPrefab != null || Mesh != null;
         }
+
+        public ContentAssetBinaryRecord ToBinaryRecord(uint dependencyOffset)
+        {
+            uint flags = 0u;
+            if (RequiredInBuild)
+                flags |= 1u;
+            if (IsBiomeCache)
+                flags |= 2u;
+            if (HasVisual3D())
+                flags |= 4u;
+
+            int dependencyCount = DependencyHashes != null ? DependencyHashes.Length : 0;
+            if (dependencyCount > ushort.MaxValue)
+                dependencyCount = ushort.MaxValue;
+
+            return new ContentAssetBinaryRecord
+            {
+                Hash = Hash,
+                EstimatedVramBytes = EstimatedVramBytes > 0L ? EstimatedVramBytes : 0L,
+                DependencyOffset = dependencyOffset,
+                DependencyCount = (ushort)dependencyCount,
+                Kind = Kind,
+                Tier = Tier,
+                BiomeId = BiomeId,
+                LodLevel = LodLevel,
+                Flags = (byte)flags
+            };
+        }
     }
 
     /// <summary>

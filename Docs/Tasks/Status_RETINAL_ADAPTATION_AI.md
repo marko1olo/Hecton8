@@ -3,7 +3,7 @@
 Prompt: `RETINAL_ADAPTATION_AI`
 Domain: AI/COGNITION
 Source prompt task count: 18
-Current status: BLOCKED BY DEPENDENCY - retinal/adjacent alpha telemetry scope static-verified after DataVault/ABI inquisition; project build fails in external systems.
+Current status: BLOCKED BY DEPENDENCY - retinal/adjacent alpha telemetry scope static-verified after DataVault/ABI/typed-lane inquisition; project build fails in external systems.
 
 Relevant mandates read before coding:
 - AI_Creature_Cognition_States.txt
@@ -83,3 +83,12 @@ Verification after Loop 3:
 - [x] Hardened light cache scalars: range clamps to `[0.1, 10000]`, intensity clamps to `[0, 100000]`, and spot cosine clamps to `[-1, 1]` after finite checks. Alternative rejected: trusting global signal sanitation alone. Estimate: cold signal-upsert cost only.
 - [x] Removed duplicate `ValidateAbiLayout()` in `GlobalDataVault`. Critical justification: retinal buffers now depend on `GlobalDataVault`, and the duplicate identical method was a compile blocker inside the DataVault interface. Alternative rejected: leaving build blocked by a one-line duplicate outside gameplay behavior. Estimate: 0 us/frame.
 - [x] Re-ran `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:BuildInParallel=false -v:minimal -clp:Summary`: no errors cite `PredatorCognitionDomain`, `FaunaBrain`, `GlobalDataVault`, `RetinalAdaptationVault`, or `RetinalExposureMath`. Remaining failures are external: `SargassumMicroFaunaBoids.EnsureVaultBufferHandle`, `HectonMarineSnowRenderer` missing wake/telemetry fields, and `VehicleDockingModule` missing runtime-cache helpers.
+
+## Loop 9 - Typed Headlight Lane Polish
+- [x] Re-read status/rationale and original XML prompt before continuing. DOD practice: disk-backed assignment recovery. Estimate: 0 us/frame.
+- [x] Migrated retinal headlight consumption from destructive `GlobalSignals.TryDequeueSubmarineLightsChanged` use to `SignalBus<SubmarineLightsChangedSignal>.GetFrameSnapshot()` as `ReadOnlySpan<SubmarineLightsChangedSignal>`. Alternative rejected: single-consumer queue drain, which can starve other typed consumers. Estimate: bounded scan of the newest 64 headlight signals per cognition tick; no profiler microseconds measured.
+- [x] Verified `GlobalSignals.Publish(in SubmarineLightsChangedSignal)` currently pushes the existing typed lane and compatibility `TryDequeueSubmarineLightsChanged` reads from that lane. Alternative rejected: inventing a duplicate retinal-only signal. Estimate: 0 extra runtime cost beyond the existing typed lane.
+- [x] Re-ran static neural audit: `rg` confirmed `PredatorCognitionDomain` and `SargassumMicroFaunaBoids` both consume `ReadOnlySpan<SubmarineLightsChangedSignal>`, and no `_submarineLightsChangedSignals.Enqueue` remains in the checked path.
+- [x] Re-ran retinal debt audit: no `new NativeArray<.*Retinal`, no local `AlphaLeviathanTelemetryEntry` allocation, no retinal raycasts/casts/overlaps, no `string.Format`, and no standard `Update()` in `AI/Perception` + `PredatorCognitionDomain`. `FaunaBrain` still contains existing non-retinal lunge CCD `RaycastHit` usage and was not edited as retinal debt.
+- [x] Re-ran `git diff --check` on the typed-lane files and retinal docs: no whitespace errors were reported.
+- [x] Re-ran `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:BuildInParallel=false -v:minimal -clp:Summary`: no errors cite `PredatorCognitionDomain`, `GlobalSignals`, `FaunaBrain`, `GlobalDataVault`, `RetinalAdaptationVault`, or `RetinalExposureMath`. Remaining failures are external: `ProceduralLadderClimbRuntime` missing helper methods, `EcosystemDirector` using list APIs on `NativeArray<MacroSwarm>`, `SubmarineFluidDynamics` missing many DataVault handle fields, `AcousticEchoLocationRuntime` missing queue/black-box members, and `LockstepStateValidator` missing lane constants.

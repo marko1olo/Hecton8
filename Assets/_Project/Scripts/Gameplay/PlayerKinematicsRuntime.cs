@@ -412,7 +412,7 @@ namespace Hecton8.Gameplay
         {
             float lengthSq = math.lengthsq(value);
             return math.isfinite(lengthSq) && lengthSq > 0.000001f
-                ? value * math.rsqrt(lengthSq)
+                ? value * math.rsqrt(math.max(lengthSq, 0.000001f))
                 : fallback;
         }
     }
@@ -655,7 +655,7 @@ namespace Hecton8.Gameplay
         {
             float lengthSq = math.lengthsq(value);
             return lengthSq > 0.000001f && math.all(math.isfinite(value))
-                ? value * math.rsqrt(lengthSq)
+                ? value * math.rsqrt(math.max(lengthSq, 0.000001f))
                 : fallback;
         }
 
@@ -1575,7 +1575,7 @@ namespace Hecton8.Gameplay
             if (!math.isfinite(planarSq))
                 planar = float2.zero;
             else if (planarSq > 1.0f)
-                planar *= math.rsqrt(planarSq);
+                planar *= math.rsqrt(math.max(planarSq, 0.000001f));
 
             float3 forward = _cameraTransform != null ? ToFloat3(_cameraTransform.forward) : ToFloat3(_cachedTransform.forward);
             float3 right = _cameraTransform != null ? ToFloat3(_cameraTransform.right) : ToFloat3(_cachedTransform.right);
@@ -3441,7 +3441,7 @@ namespace Hecton8.Gameplay
         {
             float lengthSq = math.lengthsq(value);
             return lengthSq > 0.000001f && math.all(math.isfinite(value))
-                ? value * math.rsqrt(lengthSq)
+                ? value * math.rsqrt(math.max(lengthSq, 0.000001f))
                 : fallback;
         }
 
@@ -3601,7 +3601,7 @@ namespace Hecton8.Gameplay
             if (!math.isfinite(lengthSq) || lengthSq <= 0.000001f)
                 return quaternion.identity;
 
-            v *= math.rsqrt(lengthSq);
+            v *= math.rsqrt(math.max(lengthSq, 0.000001f));
             if (v.w < 0.0f)
                 v = -v;
             return new quaternion(v);

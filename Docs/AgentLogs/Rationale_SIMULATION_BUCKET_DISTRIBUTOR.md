@@ -93,8 +93,8 @@ Hardware Impact: Metal/Mac portability risk reduced by evidence; no runtime delt
 
 ## Decision: Compile Wall After H-Phi Pass
 Problem: attempt5 exposed a missing helper in SargassumMicroFaunaBoids before the build reached the known construction-domain errors.
-Solution: Replaced the incomplete handle helper calls with existing DataVault-backed EnsureNativeArrayCapacity calls for boid sensory threat and black-box buffers, then reran build.
-Rejected Alternatives: Adding a dead helper that only updates handles was rejected because the live native arrays would still remain unresolved.
+Solution: Carried forward the vault-handle helper path so boid sensory threat and black-box buffers resolve through VaultBufferHandle<T> instead of local persistent NativeArray fields, then reran build.
+Rejected Alternatives: Reintroducing local NativeArray fields was rejected because it would violate the H-Phi data-eviction pass.
 Scalability potential: Sargassum sensory data remains vault-backed and can still participate in bucketed scheduling cleanup.
 Hardware Impact: No new allocation path; DataVault buffer resolution stays cold-path.
 

@@ -52,7 +52,7 @@ What was done:
 - Added fault-only dump to `Docs/AgentLogs/Dump_SIMULATION_BUCKET_DISTRIBUTOR.bin` on non-finite scheduler cost.
 - Fixed scheduler contract packing: `SimulationBucketFrameState` Pack=1 Size=64, `SimulationBucketRebalanceResult` Pack=1 Size=20, scheduler signals Explicit Pack=1.
 - Added `VisualOverkillBudgetAvailable` as a downstream high-tier budget flag.
-- Replaced the broken Sargassum `EnsureVaultBufferHandle` calls with existing DataVault-backed `EnsureNativeArrayCapacity` calls for boid sensory threat and black-box buffers.
+- Carried forward the Sargassum `EnsureVaultBufferHandle` implementation so boid sensory threat and black-box buffers resolve through vault handles instead of local persistent arrays.
 - Ran build attempts 5 and 6; attempt6 has zero errors in scheduler-touched files and is blocked by `VehicleDockingModule` construction-domain missing methods.
 
 Cinematic cheats used:
@@ -65,7 +65,7 @@ Exact microseconds saved / budget estimates:
 - Black-box ring write: <5 us/frame, 0 us normal disk I/O.
 - Fault dump: cold path only; no Steam Deck MicroSD traffic during healthy frames.
 - Visual overkill flag: scalar bit test downstream, effectively 0 us scheduler overhead.
-- Sargassum compile repair: no runtime gain claimed; removed dead helper dependency.
+- Sargassum compile repair: no runtime gain claimed; restored the missing vault-handle helper path.
 
 Validation:
 - `Docs/AgentLogs/Build_SIMULATION_BUCKET_DISTRIBUTOR_attempt5_hphi.log`: failed first on Sargassum missing `EnsureVaultBufferHandle`, then unrelated VFX/construction errors.

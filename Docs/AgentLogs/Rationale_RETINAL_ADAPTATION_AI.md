@@ -1,6 +1,6 @@
 # RETINAL_ADAPTATION_AI Rationale
 
-Status: BLOCKED BY DEPENDENCY - retinal/adjacent alpha telemetry scope static-verified after DataVault/ABI inquisition; project build fails in external systems.
+Status: BLOCKED BY DEPENDENCY - retinal/adjacent alpha telemetry scope static-verified after DataVault/ABI/typed-lane inquisition; project build fails in external systems.
 
 ## Decision 1 - Existing Owner Boundary
 Problem: Prompt domain names `Assets/_Project/Scripts/AI/Perception/`, but the active source owner for predator utility cognition is `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs`; no `AI/Perception` folder exists.
@@ -92,3 +92,10 @@ Solution: Removed the second identical method body only. The remaining validator
 Rejected Alternatives: Leaving the compile wall was rejected because this retinal pass depends on DataVault for all retinal state. Reworking DataVault ABI validation was rejected as cross-domain overreach.
 Scalability potential: All tiers retain the same DataVault ABI validation path; no runtime behavior changes.
 Hardware Impact: Runtime impact is 0 us/frame; this was compile-only duplicate removal. No profiler microseconds were measured.
+
+## Decision 14 - Typed Headlight Signal Lane
+Problem: Retinal cognition still used the compatibility `GlobalSignals.TryDequeueSubmarineLightsChanged` shape, which models a destructive single-consumer queue and conflicts with the typed-lane/read-only-span mandate now used by other consumers.
+Solution: `PredatorCognitionDomain` now reads `SignalBus<SubmarineLightsChangedSignal>.GetFrameSnapshot()` as `ReadOnlySpan<SubmarineLightsChangedSignal>` and processes only the newest 64 entries before the four-slot retinal cache. Current `GlobalSignals.Publish(in SubmarineLightsChangedSignal)` already routes to the typed lane, so no duplicate signal was created.
+Rejected Alternatives: Keeping destructive queue consumption was rejected because it can starve other consumers and hides ordering behind legacy API shape. Dual-publishing queue plus lane was rejected because divergent truth would be worse than the original problem. A new retinal-specific headlight signal was rejected as interface duplication.
+Scalability potential: Low/toaster path scans at most 64 signal records and still evaluates at the existing stress cadence with a four-light retinal cache. Middle keeps the same deterministic cache truth. High/Ultra can let multiple systems, including silt/boid/predator presentation, observe the same typed headlight lane without cross-domain polling.
+Hardware Impact: Work is bounded to `min(snapshot length, 64)` records per cognition tick and zero managed allocation. No profiler microseconds were measured; the static cost is signal-scan only, not per-predator hot-loop work.

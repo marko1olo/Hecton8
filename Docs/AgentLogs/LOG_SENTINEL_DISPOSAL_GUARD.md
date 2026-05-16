@@ -82,11 +82,11 @@ What was done:
 Cinematic Cheats used:
 - No visual code belongs in this domain. The cheat is diagnostic certainty at tiny cost: a 300-frame native ring gives crash context without disk writes or managed logging.
 - Toaster mode: one NativeArray struct write per frame, no GC, no per-frame I/O.
-- God-mode: same telemetry footprint; no memory growth hidden behind high-tier hardware.
+- God-mode: this pass kept the heartbeat entry footprint flat; later lifecycle-event separation is logged below with explicit memory cost.
 
 Exact Microseconds saved:
 - No exact microseconds claimed. The new hot-path work is one fixed NativeArray struct store per frame; runtime profiling is blocked by external compile errors.
-- Persistent memory remains 19,200 bytes for the 300-entry ring.
+- At this pass the heartbeat ring cost was 19,200 bytes; later blackbox separation raises current total H8Memory blackbox storage to 38,400 bytes.
 - GC impact is 0 B/frame by static inspection.
 
 Verification:
@@ -143,7 +143,7 @@ Cinematic Cheats used:
 
 Exact Microseconds saved:
 - Gameplay hot path: 0.0 us claimed. New telemetry writes are allocation/free/transition events, not Tick/Update.
-- Persistent memory cost: 19,200 bytes for the H8Memory heartbeat ring.
+- At this pass the heartbeat ring cost was 19,200 bytes; later blackbox separation raises current total H8Memory blackbox storage to 38,400 bytes.
 - Runtime microseconds for the 200MB leak prevention remain unmeasured because the Unity/runtime build is still blocked outside CORE/MEMORY.
 
 Verification:

@@ -20,6 +20,7 @@ namespace Hecton8.Graphics.VR
     internal sealed unsafe class FoveatedRenderCommander : MonoBehaviour, IUpdatable, IGlobalRegistryHotSwapListener, IDisposable
     {
         private const int TelemetryCapacity = 300;
+        private const int TelemetryRecordSizeBytes = 64;
         private const int DefaultSampleIntervalFrames = 30;
         private const int DefaultUiLayerIndex = 5;
         private const float LevelLow = 0.35f;
@@ -44,11 +45,12 @@ namespace Hecton8.Graphics.VR
         private const ushort FlagSystemPressure = 1 << 7;
         private const ushort FlagApplied = 1 << 8;
         private const ushort FlagNonFinite = 1 << 9;
+        private const ushort FlagHighEndFixedDisabled = 1 << 10;
         private const string RuntimeObjectName = "[FoveatedRenderCommander]";
         private const string DumpFileName = "Dump_FOVEATED_RENDER_COMMANDER.bin";
 
-        // COLD ALLOC: List<XRDisplaySubsystem>[4] — XR display enumeration scratch reused on policy commits — owner: FoveatedRenderCommander
-        private static readonly List<XRDisplaySubsystem> s_displays = new List<XRDisplaySubsystem>(4);
+        // COLD ALLOC: List<XRDisplaySubsystem>[8] — XR display enumeration scratch reused on policy commits — owner: FoveatedRenderCommander
+        private static readonly List<XRDisplaySubsystem> s_displays = new List<XRDisplaySubsystem>(8);
         private static FoveatedRenderCommander s_activeCommander;
 
         [Header("Policy")]
@@ -118,7 +120,7 @@ namespace Hecton8.Graphics.VR
             UiExempted = 3
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = TelemetryRecordSizeBytes)]
         private struct FoveatedRenderTelemetryEntry
         {
             public uint Frame;
@@ -334,6 +336,7 @@ namespace Hecton8.Graphics.VR
             FoveatedRenderingCaps caps = SystemInfo.foveatedRenderingCaps;
             bool capsSupported = caps != FoveatedRenderingCaps.None;
             bool quest2Runtime = IsQuest2Runtime();
+            HectonQualityTier qualityTier = GlobalRegistry.ScalabilityTier;
             bool thermalPressure =
                 _thermalSeverity >= (byte)HardwareThermalSeverity.Throttling ||
                 _gpuUtil01 >= GpuPressureHighThreshold ||
@@ -388,6 +391,18 @@ namespace Hecton8.Graphics.VR
             FoveatedRenderMode mode = gazeTracked ? FoveatedRenderMode.GazeTracked : FoveatedRenderMode.Fixed;
             if (gazeTracked)
                 flags |= FlagGazeTracked;
+
+            if (!quest2Runtime &&
+                !gazeTracked &&
+                IsHighEndTier(qualityTier) &&
+                !thermalPressure &&
+                !systemPressure)
+            {
+                levelCode = 0;
+                targetLevel = 0f;
+                mode = FoveatedRenderMode.Disabled;
+                flags |= FlagHighEndFixedDisabled;
+            }
 
             _targetLevelCode = levelCode;
             _targetLevel01 = targetLevel;
@@ -704,7 +719,7 @@ namespace Hecton8.Graphics.VR
                 writer.Write(BlackBoxMagic);
                 writer.Write(BlackBoxVersion);
                 writer.Write(TelemetryCapacity);
-                writer.Write(Marshal.SizeOf<FoveatedRenderTelemetryEntry>());
+                writer.Write(TelemetryRecordSizeBytes);
                 writer.Write(_telemetryCursor);
                 writer.Write(_sequence);
                 for (int i = 0; i < TelemetryCapacity; i++)
@@ -898,6 +913,11 @@ namespace Hecton8.Graphics.VR
         private static bool HasCap(FoveatedRenderingCaps caps, FoveatedRenderingCaps flag)
         {
             return (caps & flag) != 0;
+        }
+
+        private static bool IsHighEndTier(HectonQualityTier tier)
+        {
+            return tier == HectonQualityTier.High || tier == HectonQualityTier.Ultra;
         }
 
         private static float Sanitize01(float value)

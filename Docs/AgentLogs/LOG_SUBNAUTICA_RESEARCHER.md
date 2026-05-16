@@ -294,3 +294,85 @@ Proof limits:
 - Local Subnautica files were inspected only as taxonomy/metadata. No proprietary asset/code extraction, decompilation, mesh/audio/text copying, or binary reverse engineering was performed.
 - Public mod repositories/docs were used as clean-room handler/source taxonomy. GPL/AGPL/LGPL code is not reusable in H8 without an explicit licensing decision.
 - No Unity compile or playmode test was run because no runtime code was changed.
+---
+
+# SUBNAUTICA_RESEARCHER FIFTH PASS - SIDECARE CACHE / CONTENT AUTHORITY / SCANNER ROUTE
+Date: 2026-05-16
+Mode: RESEARCH ONLY. NO RUNTIME CODE CHANGED. NO PROPRIETARY ASSET OR CODE EXTRACTION.
+
+What was wrong:
+- Prior high-level verdict was still too coarse. The real foundation split is not simply "Addressables yes/no". It is: baked world sidecars, asset hash maps, route unlock proof, prefab preservation, and mod overlay contracts.
+- H8 has new ContentAuthority source files, but the actual data assets are absent: `Assets/AddressableAssetsData` has 0 files, `ContentAssetHashMap` asset count is 0, `ContentVfxPrewarmManifest` asset count is 0, and no scene/prefab/data wiring was found for `ContentAuthorityRuntime`.
+- H8 DataMonolith compiler exists, but source truth is empty: `Assets/_SourceData` file count is 0, `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` is absent.
+- Scanner first-hour route is not proven. `Recipe_Scanner.asset` requires `scan.expedition_contact`. Current Prefabs/Scenes/Data search found no authored production instance of that entry, only editor bootstrap scripts capable of generating it. A current real prefab hit exists for `Item_Titanium.prefab` with `resource.titanium_fragment`, but that does not unlock scanner.
+- Subnautica sidecars show important authored discovery/cache metadata that H8 sector pages do not yet model.
+
+What was done:
+- Inspected Subnautica `SNUnmanagedData/Build18` sidecars:
+  - `biomeMap.bin` 1,048,578 bytes.
+  - `index.txt` 46,008 bytes. First fields identify world/grid/index parameters, then numeric cell records.
+  - `meta.txt` says `BlockPrefabs`.
+  - `biomes.csv` has 20 lines including header.
+  - `signals.csv` has 15 lines including header: 14 authored signal anchors with biome, batch, position, description.
+  - Signal taxonomy: `HeatSignature`, `CaveEntrance`, `BalancingRock`, `HugePillar`, `HugeKoosh`, `CoralArch`, `FloatingIsland`, `SecretCave`, `GiantMushroomTree`.
+- Inspected Subnautica saved-slot cache topology:
+  - `slot0000/CellsCache`: 25 zip files / 20.82 MB.
+  - Example zip entries are named `baked-batch-cells-<batch>-<x>-<z>.bin`; first sampled zips had 21, 30, 55, 62, 63, 63, 77, and 72 entries.
+  - Slot root contains `gameinfo.json`, `global-objects.bin` 88,743 bytes, `scene-objects.bin` 57,921 bytes, `screenshot.jpg`.
+  - Pattern: generated/repairable cell cache is separated from global/scene durable state.
+- Rechecked H8 DataMonolith accepted CSV tables:
+  - `items`, `item`, `creatures`, `creature_traits`, `genome`, `biomes`, `recipes`, `biome_heatmap`, `quest_nodes`, `quest_edges`, `loot`, `loot_cdf`, `voxel_materials`, `audio`, `audio_registry`, `vfx`, `vfx_scalars`, `tool_heat`, `hull`, `submarine_hull`, `narrative_triggers`, `physics_materials`, `ghost_modules`, `radiation`, `radiation_map`, `spawn_credits`, `sop_errors`, `hud_layout`, `sector_pages`.
+  - `sector_pages` currently parses only `sector_id/id`, `biome_id`, `file_offset`, `byte_count`, `aup_x`, `aup_z`.
+- Rechecked ContentAuthority scaffold:
+  - `ContentAuthorityBuildPreprocessor` exists and fails builds for missing Addressables groups `Core`, `High_Res`, `Overkill`.
+  - `ContentAssetHashMap` provides hash->address/asset/mesh/tier/biome/LOD/dependency metadata and binary lookup.
+  - `ObjectBatchBase` defines static mesh/material/instance/chunk payloads and BRG binding contract.
+  - `VisibilityProxyBase` is only a MonoBehaviour AABB/frustum gate, not a baked sector PVS payload.
+  - Gap: no concrete `ObjectBatchBase` asset, baker, BRG binding implementation, `ContentAssetHashMap` asset, VFX manifest, or runtime scene binding found.
+- Rechecked scanner/progression code and data:
+  - `ScanLogSystem` archives discovered entries by hash and persists scan log DTOs.
+  - `ScanEvents` queues `ScanEventPayload` through bounded NativeQueues and metadata cache.
+  - `ScannableTarget` registers into world spatial hash and DataVault-backed lore entity AUP/hash buffers.
+  - `ScannableFragment` can emit `EntryDiscovered` on completed research scans.
+  - `ResearchDirector` listens for scan entries and unlocks lore/quests from `XenoBiologyTree` nodes.
+  - `Fabricator` hides locked recipes via scan log revision and unlock masks; scanner recipe remains blocked until `scan.expedition_contact` is archived.
+  - `ScanIntelValidator` and `ContentSanityValidator` are menu validators, not build gates.
+- Rechecked public mod/source references as clean-room taxonomy only:
+  - Unknown Worlds terrain format article: useful public format concepts.
+  - Nautilus handler docs: useful handler taxonomy.
+  - BepInEx.Subnautica: loader pack reference, not H8 architecture target.
+  - Nitrox: GPL-3.0, taxonomy only.
+  - TerrainPatcher: AGPL-3.0 and warns non-AGPL mods away from direct interaction, taxonomy only.
+
+Cinematic Cheats / tactical borrowables:
+- Borrow sidecar pattern, not files: `WorldSidecarManifest`, `SectorSignalAnchor`, `DiscoveryRouteBase`, `ObjectBatchDirectory`, `VisibilityPhysicsProxyDirectory`.
+- Borrow cache separation: base/generated world cell cache separate from durable save deltas/global/scene state.
+- Borrow handler categories from mature modding: PDA entry overlay, scan entry overlay, known-tech/quest flag overlay, loot CDF overlay, audio registry overlay.
+- Borrow prefab preservation idea from Addressables/link preservation: generated `H8PrefabTypeManifest` or link/preserve contract for first-party and mod-safe bundled prefab components.
+- Borrow signal anchor idea for first-hour route validation: every recipe scan gate must resolve to at least one reachable authored source in the production world or an explicit startup grant.
+
+Exact Microseconds saved:
+- Current pass: 0us, research-only.
+- Future estimates remain unmeasured until Unity player profiling:
+  - ObjectBatchBase/BRG should remove static debris GameObject activation spikes.
+  - World sidecar manifests should reduce scene scans and runtime string/path lookup.
+  - Audio import/build gates should reduce memory pressure and load hitches.
+  - FirstHourRouteDensityGate saves QA/support loops, not frame time.
+
+P0 findings:
+1. `Recipe_Scanner` route lock: `scan.expedition_contact` is required but not currently proven in production scene/prefab/data content. Add a build/preplay route validator or author the probe into the real world. Do not rely on editor bootstrap scripts.
+2. DataMonolith is code-only until `_SourceData` is populated and `static_data.h8bin` is produced/staleness-checked. Add build gate for required non-empty sections.
+3. ContentAuthority is scaffold-only until `ContentAssetHashMap` assets, VFX manifests, Addressables settings/groups/entries, and scene runtime binding exist.
+4. H8 sector page schema is too thin. Add sidecar/payload families for discovery signals, object batches, visibility/physics proxies, audio biome banks, and payload version/repairability.
+5. Menu validators must become build/preplay gates for content authority, first-hour scanner route, audio import policy, and DataMonolith staleness.
+
+P1 findings:
+- `VisibilityProxyBase` is useful as a component gate but is not equivalent to Subnautica baked PVS/CompiledOctrees. Build a baked proxy payload lane instead of piling more MonoBehaviours into sectors.
+- `ObjectBatchBase` has the right shape but no concrete asset/baker/BRG implementation found. It should own static wreck/debris/resource dressing before those become scene GameObjects.
+- Scanner/research code still carries string/SO surfaces. Acceptable in cold authoring/event paths for now, but MacroDB/DataMonolith should own hashed scan entries and quest gates before scale-up.
+- `ScannableFragment` uses MaterialPropertyBlock for scan glow on standard geometry. This conflicts with the SRP Batcher mandate unless the shader/material lane explicitly opts into this effect or moves to an instanced/GraphicsBuffer path.
+
+Proof limits:
+- Local Subnautica install was inspected as file taxonomy and metadata only. No decompilation, binary reverse engineering, asset copying, text/audio/mesh extraction, or proprietary payload reuse.
+- Public repositories/docs were used as current source taxonomy only. GPL/AGPL/LGPL code remains non-reusable in H8 without a deliberate licensing decision.
+- No compile/playmode/profiler run was performed because no runtime code was changed.

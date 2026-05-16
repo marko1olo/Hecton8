@@ -283,7 +283,8 @@ namespace Hecton8.Animation.Locomotion
             if (ladderTransform == null || entryPoint == null || exitPoint == null || player == null)
                 return false;
 
-            if (!EnsureVaultBuffers() ||
+            if (!CacheVaultDependency() ||
+                !EnsureVaultBuffers() ||
                 !TryResolveLadderAups(out NativeArray<AbsoluteUniversePosition> ladderAups))
             {
                 return false;
@@ -296,6 +297,7 @@ namespace Hecton8.Animation.Locomotion
             _exitPoint = exitPoint;
             _matchRotation = matchRotation;
             _movementForceSink = GlobalRegistry.PlayerMovementContracts;
+            _playerContext = GlobalRegistry.Player;
             _qualityTier = GlobalRegistry.ScalabilityTierProfileByte;
             _vrGripRequired = forceVrGripPullMode || UnityEngine.XR.XRSettings.enabled;
             _lowTierCameraSlide = !_vrGripRequired || _qualityTier == 0;
@@ -303,12 +305,14 @@ namespace Hecton8.Animation.Locomotion
             _stamina01 = 1f;
             _pendingGripPullMeters = 0f;
             _pendingGripMask = 0;
+            _lastResolvedGripMask = 0;
             _pendingFinish = false;
             _pendingSlip = false;
             _lastLeftRung = -1;
             _lastRightRung = -1;
 
             ResolveLadderFrame(entryPoint.position, exitPoint.position, ladderTransform);
+            InitializePresentationAnchors(entryPoint.position, exitPoint.position);
             _climbProgressMeters = goingUp ? 0f : _climbHeightMeters;
             ladderAups[0] = AbsoluteUniversePosition.FromRuntimePosition(entryPoint.position);
 
@@ -320,6 +324,7 @@ namespace Hecton8.Animation.Locomotion
                 _entryPoint = null;
                 _exitPoint = null;
                 _movementForceSink = null;
+                _playerContext = null;
                 return false;
             }
 
@@ -329,17 +334,20 @@ namespace Hecton8.Animation.Locomotion
             return true;
         }
 
+        private bool CacheVaultDependency()
+        {
+            if (_dataVault != null)
+                return true;
+
+            _dataVault = GlobalRegistry.DataVault;
+            return _dataVault != null;
+        }
+
         private bool EnsureVaultBuffers()
         {
             IDataVault vault = _dataVault;
             if (vault == null)
-            {
-                vault = GlobalRegistry.DataVault;
-                if (vault == null)
-                    return false;
-
-                _dataVault = vault;
-            }
+                return false;
 
             if (!_inputHandle.IsCreated)
                 _inputHandle = vault.GetBufferHandle<LadderClimbIkInput>(BufferID.LadderClimbIkInput, 1, SystemID.GameplayPlayer, NativeArrayOptions.ClearMemory);

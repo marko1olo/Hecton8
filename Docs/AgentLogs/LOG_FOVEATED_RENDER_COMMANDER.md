@@ -197,3 +197,27 @@ Validation:
 - Filtered build diagnostics after the change produced no VR/legacy foveation matches. Full build remains red externally.
 - Unfiltered `dotnet build Hecton8.Core.csproj --no-restore -m:1 /nr:false /clp:ErrorsOnly` now fails with 16 external errors in `World/SargassumMicroFaunaBoids.cs`, `Construction/VehicleDockingModule.cs`, and `VFX/HectonMarineSnowRenderer.cs`; no `Graphics/VR` files are named.
 - Filtered build diagnostics after Quest 3/Pro exclusion again produced no VR/legacy foveation matches.
+
+## 2026-05-16 - Escalation Polish / PC God-Mode Policy
+
+What was wrong:
+- PC VR on High/Ultra tiers without gaze data could still receive Low fixed foveation at zero pressure. That is a mobile compromise applied to expensive hardware without justification.
+- The XR display scratch list was sized to 4; if Unity ever reports more display subsystems, the policy path could grow the list.
+
+What was done:
+- Added High/Ultra no-pressure fixed-foveation suppression. If there is no gaze, no thermal pressure, and no system pressure, the commander clears fixed foveation instead of applying Low FFR.
+- Preserved pressure-driven fixed foveation and gaze-allowed VRS.
+- Increased the reused XR display scratch list capacity from 4 to 8.
+
+Cinematic Cheats used:
+- Toaster mode remains Quest 2/Oculus Quest fixed High FFR.
+- God-mode keeps full peripheral resolution unless gaze VRS or pressure earns the quality trade.
+
+Exact microseconds saved:
+- Exact measured microseconds saved: 0. Runtime profiling is still blocked.
+- Estimated CPU change: under 1 us per policy sample.
+- Estimated quality impact: avoids unjustified fixed-FFR edge loss on High/Ultra PC VR no-pressure frames.
+
+Validation:
+- Static scan shows no new managed hot-path allocations, no new signal lane, and no VR-domain forbidden patterns.
+- Filtered build diagnostics after the policy change produced no VR/legacy foveation matches. Full build remains red externally.

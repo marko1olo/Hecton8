@@ -18,6 +18,13 @@ Rejected Alternatives: `UnityEngine.XR.OpenXR` feature calls; custom render-targ
 Scalability potential: Low = fixed FFR high on Quest 2-class hardware. Middle = stress-mapped Low/Med/High FFR. High = PC VR gaze-allowed VRS when fixation exists. Ultra = hardware gaze VRS plus saved fill-rate spent on denser noir lighting and post passes.
 Hardware Impact: i3/MX350 flat-screen path is disabled, so 0 us cost. Quest 2 expected GPU fill-rate gain is 0.2-1.0 ms when caps are honored. RTX/eye-tracked PC VR benefit depends on runtime driver; CPU policy sample remains under 15 us.
 
+## PC God-Mode Fixed-Foveation Suppression
+Problem: The commander mapped no-pressure PC VR to Low fixed foveation when hardware caps existed but eye tracking was absent. That is acceptable as a pressure fallback, but it is mobile-style quality loss on High/Ultra rigs when there is no stress.
+Solution: Read `GlobalRegistry.ScalabilityTier`; on High/Ultra, if there is no gaze, no thermal pressure, and no system pressure, target level is forced to 0 and the hardware state is cleared. Gaze-tracked PC VR and pressure-driven fallbacks still work.
+Rejected Alternatives: Applying fixed FFR at all times on 4090-class VR, disabling all PC VR foveation including gaze, or adding a new signal for a policy that can be derived from existing tier/stress data.
+Scalability potential: Low remains the fixed foveation fake. Middle keeps stress-tiered FFR. High/Ultra spend pixels when affordable and only use VRS when gaze or pressure justifies it.
+Hardware Impact: Exact measured savings remain 0. Estimated CPU change is under 1 us per policy sample; image-quality gain is qualitative until VR captures are available.
+
 ## Signal-Decoupled Stress Policy
 Problem: Foveation must react to project-wide pressure without directly depending on Homeostasis internals or a singleton manager.
 Solution: Consume `SignalBus<SystemHealthSignal>` and `SignalBus<ThermalStateChangedSignal>` through `ReadOnlySpan<T>`, cache `IHardwareThermalService` from `GlobalRegistry`, and only commit XR display state when the desired level or flags change.

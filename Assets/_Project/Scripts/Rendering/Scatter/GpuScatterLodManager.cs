@@ -139,18 +139,23 @@ namespace Hecton8.Rendering.Scatter
         private const string QualityMx350Keyword = "_QUALITY_MX350";
         private const string QualityHighKeyword = "_QUALITY_HIGH";
         private const string ScatterFrameConstantsBufferName = "HectonScatterFrameConstants";
-        private const int ScatterFrameConstantsStrideBytes = 80;
+        private const int ScatterFrameConstantsStrideBytes = 176;
 
         private static readonly int _SourceMatricesId = Shader.PropertyToID("_HectonScatterSourceMatrices");
         private static readonly int _VisibleIndicesId = Shader.PropertyToID("_HectonScatterVisibleIndices");
         private static readonly int _VisibleMatricesId = Shader.PropertyToID("_HectonScatterVisibleMatrices");
         private static readonly int _MotionVectorsId = Shader.PropertyToID("_HectonScatterMotionVectors");
-        private static readonly int _FrustumPlanesId = Shader.PropertyToID("_HectonScatterFrustumPlanes");
         private static readonly int _ScatterParams0Id = Shader.PropertyToID("_HectonScatterParams0");
         private static readonly int _ScatterParams1Id = Shader.PropertyToID("_HectonScatterParams1");
         private static readonly int _ScatterParams2Id = Shader.PropertyToID("_HectonScatterParams2");
         private static readonly int _ScatterParams3Id = Shader.PropertyToID("_HectonScatterParams3");
         private static readonly int _ScatterParams4Id = Shader.PropertyToID("_HectonScatterParams4");
+        private static readonly int _ScatterFrustumPlane0Id = Shader.PropertyToID("_HectonScatterFrustumPlane0");
+        private static readonly int _ScatterFrustumPlane1Id = Shader.PropertyToID("_HectonScatterFrustumPlane1");
+        private static readonly int _ScatterFrustumPlane2Id = Shader.PropertyToID("_HectonScatterFrustumPlane2");
+        private static readonly int _ScatterFrustumPlane3Id = Shader.PropertyToID("_HectonScatterFrustumPlane3");
+        private static readonly int _ScatterFrustumPlane4Id = Shader.PropertyToID("_HectonScatterFrustumPlane4");
+        private static readonly int _ScatterFrustumPlane5Id = Shader.PropertyToID("_HectonScatterFrustumPlane5");
         private static readonly int _ShaderInstanceMatricesId = Shader.PropertyToID("_HectonInstanceMatrices");
         private static readonly int _ShaderInstanceDataId = Shader.PropertyToID("_HectonVegetationInstanceData");
         private static readonly int _ShaderVisibleIndicesId = Shader.PropertyToID("_HectonVisibleInstanceIndices");

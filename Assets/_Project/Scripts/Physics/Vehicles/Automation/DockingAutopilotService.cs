@@ -261,7 +261,7 @@ namespace Hecton8.Vehicles.Automation
             if (!math.all(math.isfinite(value)) || !math.isfinite(lengthSq) || lengthSq <= TangentEpsilonSq)
                 return new float3(0f, 0f, 1f);
 
-            return value * math.rsqrt(lengthSq);
+            return value * math.rsqrt(math.max(lengthSq, TangentEpsilonSq));
         }
 
         public static Vector3 ResolveRuntimePosition(double3 absolutePosition, Vector3 fallbackPosition)

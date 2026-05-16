@@ -176,7 +176,7 @@ namespace Hecton8.Physics
                     float3 p2 = Positions[b];
                     float3 dir = p1 - p2;
                     float lenSq = math.max(math.lengthsq(dir), MinLengthSq);
-                    float invLength = math.rsqrt(lenSq);
+                    float invLength = math.rsqrt(math.max(lenSq, MinLengthSq));
                     float distance = lenSq * invLength;
                     float restLength = math.max(0.0001f, SegmentRestLengths[segmentIndex]);
                     float delta = distance - restLength;

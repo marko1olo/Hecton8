@@ -35,6 +35,14 @@ namespace Hecton8.Core.Content
         private FileStream _fallbackStream;
         private long _fileLength;
 
+        public int BlockCount => blocks != null ? blocks.Length : 0;
+
+        public ContentLoreBlockIndex GetBlockAt(int index)
+        {
+            EnsureSorted();
+            return blocks[index];
+        }
+
         private void Awake()
         {
             Open();

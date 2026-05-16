@@ -147,3 +147,27 @@ Rejected Alternatives: Leaving task 18 blocked would be false after the current 
 Scalability potential: No new runtime scaling; this confirms the C# wake contracts, DataVault IDs, and signal lane changes are accepted by the current assembly.
 
 Hardware Impact: 0 us/frame direct. Risk reduced: no known compile blocker remains in this wake slice.
+
+## Decision 13 - Wake Trail Stamp Data Eviction
+
+Problem: The vegetation wake-trail stamp queue still had a private persistent `NativeArray<WakeTrailStampCommand>` field in `FloraInteractionManager`, which violated the data sovereignty pass for wake-owned state.
+
+Solution: Replaced the field with `VaultBufferHandle<WakeTrailStampCommand>` and added `BufferID.WakeTrailStampCommands`. The stamp payload is now `[StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]`, and upload uses a resolved DataVault view only at the point of queue/write/dispatch.
+
+Rejected Alternatives: Keeping the 4-command private native queue would leave wake state outside GlobalDataVault. A managed array/list was rejected for GC and ownership reasons. Moving unrelated flora/ocean native arrays was rejected because those are outside the authorized wake slice.
+
+Scalability potential: Low keeps a four-command wake-trail stamp budget and a cheap texture pass. Middle/High can use the same queue for denser wake-trail dispatches. Ultra should increase visual texture resolution or shader curl, not CPU queue ownership.
+
+Hardware Impact: Estimated low-end gain is 0-2 us/frame direct. The real benefit is memory accounting and Quest/ARM layout safety from explicit packing and DataVault ownership.
+
+## Decision 14 - Latest Compile Wall Is External
+
+Problem: A later `dotnet build .\Hecton8.Core.csproj -v:minimal -clp:ErrorsOnly` no longer remains green after concurrent non-wake edits landed.
+
+Solution: Mark final validation `[BLOCKED BY DEPENDENCY]` instead of claiming stale success. Sampled current blockers are `ContentRuntimeServices`, boid sensory fields in `SargassumMicroFaunaBoids.cs`, `LockstepStateValidator`, `EcosystemDirector`, and `SubmarineFluidDynamics`. The sampled build output does not name the wake files changed in this pass.
+
+Rejected Alternatives: Patching content, ecosystem, submarine fluid, or lockstep contracts from a VFX wake prompt would violate domain ownership. Reverting other agents' concurrent changes is forbidden.
+
+Scalability potential: No runtime change. This preserves the wake slice while the Integrator resolves current cross-domain compile state.
+
+Hardware Impact: 0 us/frame. Risk avoided: cross-domain repair churn from an unauthorized owner.
