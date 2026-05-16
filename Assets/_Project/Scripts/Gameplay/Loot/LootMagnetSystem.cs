@@ -941,6 +941,7 @@ namespace Hecton8.Gameplay.Loot
 
         private void ClearRuntimeVaultState()
         {
+            RestoreAllManagedProxyRuntimeStates();
             _activeCount = 0;
             _registryFlagsHash = 0u;
             _lastCommittedFlagsHash = 0u;
@@ -950,10 +951,25 @@ namespace Hecton8.Gameplay.Loot
 
         private void ClearDataVaultRuntimeState()
         {
+            RestoreAllManagedProxyRuntimeStates();
             _scheduledCount = 0;
             _scheduledCapacity = 0;
             _telemetryIndex = 0;
             _lastTelemetryRecordedFrame = 0u;
+        }
+
+        private void RestoreAllManagedProxyRuntimeStates()
+        {
+            if (_pickupRefs == null)
+                return;
+
+            int count = math.clamp(_activeCount, 0, _pickupRefs.Length);
+            for (int index = 0; index < count; index++)
+            {
+                PickupItem pickup = _pickupRefs[index];
+                if (pickup != null)
+                    pickup.RestoreLootMagnetRuntimeState();
+            }
         }
 
         private void ReapplyPulledProxyRuntimePoses(in LootMagnetVaultViews views)

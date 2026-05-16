@@ -2291,7 +2291,7 @@ namespace Hecton8.Gameplay
                                intensity * SdfSqueezeVisualImpulseExtraLifetimeSeconds;
             impulse.Frame = frame;
             impulse.SourceHash = _sourceId;
-            impulse.Flags = PlayerStateSignal.FlagSqueezing | PlayerStateSignal.FlagSdfGradientValid;
+            impulse.Flags = (uint)(PlayerStateSignal.FlagSqueezing | PlayerStateSignal.FlagSdfGradientValid);
             GlobalSignals.Publish(in impulse);
         }
 

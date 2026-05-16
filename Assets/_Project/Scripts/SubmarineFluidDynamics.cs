@@ -1877,18 +1877,6 @@ namespace Hecton8.Physics
             // COLD ALLOC: NativeArray<HydroBlackBoxEntry>[300] - fixed hydro crash telemetry ring - owner: SubmarineFluidDynamics
             _hydroBlackBox = AllocateNativeStateArray<HydroBlackBoxEntry>(BufferID.SubmarineHydroBlackBox, HydroBlackBoxCapacity, nameof(_hydroBlackBox), VaultHydroBlackBoxFlag);
             // COLD ALLOC: NativeQueue<SplashEvent>(Persistent) â€” deferred exterior splash payload queue for VFX consumers â€” owner: SubmarineFluidDynamics
-            _splashEventQueue = new NativeQueue<SplashEvent>(Allocator.Persistent);
-            _splashEventQueueSentinelLabel = string.Concat(
-                nameof(_splashEventQueue),
-                "_",
-                EntityId.ToULong(GetEntityId()));
-            NativeMemorySentinel.RegisterNativeQueue(
-                _splashEventQueue,
-                MaxQueuedSplashEvents,
-                NativeMemoryOwner,
-                _splashEventQueueSentinelLabel,
-                NativeMemoryLifetime);
-            PrewarmSplashEventQueue();
         }
 
         private void SeedNativeStateFromAuthoring()
@@ -2083,15 +2071,6 @@ namespace Hecton8.Physics
             DisposeDeferred(ref _hydroBlackBox, VaultHydroBlackBoxFlag);
             DispatcherJobSwap.TryComplete(ref _disposeHandle, true);
 
-            if (_splashEventQueue.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, _splashEventQueueSentinelLabel);
-                _splashEventQueue.Dispose();
-                _splashEventQueue = default;
-                _splashEventQueueSentinelLabel = null;
-            }
-
-            _queuedSplashEventCount = 0;
         }
 
         private void RestoreRigidbodyDynamics()

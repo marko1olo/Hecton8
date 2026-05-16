@@ -223,6 +223,26 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 return saturate((ridge * 0.78 + ridge * branch * 0.42) * active * growth * crystalDrive);
             }
 
+            float ComputeSuspendedSiltMask(float2 uv, float wetness, float rainIntensity, float inverseDirtRefraction, float depthRefractionMask, float lowTierMode)
+            {
+                float overkill = saturate(_HectonVisorFluidVisualOverkill);
+                float activity = max(wetness, rainIntensity * 0.45);
+                float siltDrive = saturate(overkill * activity * inverseDirtRefraction * depthRefractionMask * (1.0 - lowTierMode));
+                if (siltDrive <= 0.0001)
+                    return 0.0;
+
+                float2 flow = float2(
+                    _HectonVisorFluidLocalVelocity.x * 0.038 + 0.017,
+                    -0.023 - abs(_HectonVisorFluidLocalVelocity.z) * 0.016);
+                float slowSwirl = ValueNoise(uv * float2(8.0, 13.0) + flow * (_Time.y * 0.37));
+                float2 siltUV = uv * lerp(float2(46.0, 88.0), float2(84.0, 148.0), overkill);
+                siltUV += float2(slowSwirl * 0.21, -slowSwirl * 0.13) + flow * _Time.y;
+                float filament = 1.0 - smoothstep(0.11, 0.41, abs(frac(siltUV.y + slowSwirl * 0.31) - 0.5));
+                float speckSeed = Hash21(floor(uv * _ScreenParams.xy * lerp(0.07, 0.145, overkill)) + floor(_Time.y * 3.0));
+                float speck = step(0.965 - overkill * 0.035, speckSeed);
+                return saturate((filament * 0.32 + speck * 0.86) * siltDrive);
+            }
+
             float2 ComputeRefractionOffset(float2 uv, float mask, float wetness, float hullStress)
             {
                 float2 flowDirection = float2(
@@ -422,6 +442,13 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 {
                     half3 crystalTint = half3(0.13h, 0.17h, 0.18h);
                     color.rgb += crystalTint * (half)crystalMask;
+                }
+                float siltMask = ComputeSuspendedSiltMask(screenUV, wetness, rainIntensity, inverseDirtRefraction, depthRefractionMask, lowTierMode);
+                [branch]
+                if (siltMask > 0.0001)
+                {
+                    half3 siltTint = half3(0.055h, 0.078h, 0.066h);
+                    color.rgb += siltTint * (half)siltMask;
                 }
                 [branch]
                 if (dustMask > 0.0001)

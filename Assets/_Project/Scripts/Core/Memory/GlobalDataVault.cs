@@ -317,6 +317,11 @@ namespace Hecton8.Core.Memory
         private const byte DefragFlagRelocated = 1 << 5;
         private const byte DefragFlagUnaligned = 1 << 6;
         private const int DefragBlackBoxFrameCount = 300;
+        private const int VaultRelocationRecordSizeBytes = 32;
+        private const int VaultBufferMetaSizeBytes = 48;
+        private const int VaultArenaBlockSizeBytes = 32;
+        private const int MemoryDefragTelemetryEntrySizeBytes = 128;
+        private const int VaultGapAuditResultSizeBytes = 32;
         private const string DefragDumpPath = "Docs/AgentLogs/Dump_PLATINUM_DATA_VAULT_WARDEN.bin";
         private const string PhiVodDumpPath = "Docs/AgentLogs/Dump_PLATINUM_DATA_VAULT_WARDEN_PHIVOD.bin";
 
@@ -335,6 +340,7 @@ namespace Hecton8.Core.Memory
         private long _arenaCapacityLimitBytes;
         private int _allocationLock;
         private int _compactionFence;
+        private bool _memMoveBlockedByStress;
         private uint _lockedShiftFrameId;
         private long _allocatedBytes;
         private long _macroDatabasePayloadBytes;
@@ -424,6 +430,7 @@ namespace Hecton8.Core.Memory
             if (_initialized)
                 return;
 
+            ValidateAbiLayout();
             int safeCapacity = ResolveBufferCapacity(capacity);
             int blockCapacity = ResolveBlockCapacity(safeCapacity);
 
@@ -507,6 +514,18 @@ namespace Hecton8.Core.Memory
             }
 
             _initialized = true;
+        }
+
+        private static void ValidateAbiLayout()
+        {
+            if (UnsafeUtility.SizeOf<VaultRelocationRecord>() != VaultRelocationRecordSizeBytes ||
+                UnsafeUtility.SizeOf<VaultBufferMeta>() != VaultBufferMetaSizeBytes ||
+                UnsafeUtility.SizeOf<VaultArenaBlock>() != VaultArenaBlockSizeBytes ||
+                UnsafeUtility.SizeOf<MemoryDefragTelemetryEntry>() != MemoryDefragTelemetryEntrySizeBytes ||
+                UnsafeUtility.SizeOf<VaultGapAuditResult>() != VaultGapAuditResultSizeBytes)
+            {
+                FatalMemoryException.ThrowAbiLayoutMismatch();
+            }
         }
 
         /// <inheritdoc />

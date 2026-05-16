@@ -1965,6 +1965,70 @@ namespace Hecton8.Physics
                 math.max(math.abs(localExtents.z) * 2f, 0.5f));
         }
 
+        private IDataVault ResolveDataVault()
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null)
+                return vault;
+
+            vault = GlobalRegistry.DataVault;
+            _dataVault = vault;
+            return vault;
+        }
+
+        private bool EnsureBreachVaultState()
+        {
+            IDataVault vault = ResolveDataVault();
+            if (vault == null)
+                return false;
+
+            if (!_breachesHandle.IsCreated ||
+                _breachesHandle.BufferId != BufferID.SubmarineStructuralBreaches ||
+                _breachesHandle.Length < MaxActiveBreaches)
+            {
+                _breachesHandle = vault.GetBufferHandle<float4>(
+                    BufferID.SubmarineStructuralBreaches,
+                    MaxActiveBreaches,
+                    SystemID.VehiclesPhysics,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_damageControlTelemetryHandle.IsCreated ||
+                _damageControlTelemetryHandle.BufferId != BufferID.SubmarineDamageControlBlackBox ||
+                _damageControlTelemetryHandle.Length < DamageControlTelemetryCapacity)
+            {
+                _damageControlTelemetryHandle = vault.GetBufferHandle<DamageControlTelemetryEntry>(
+                    BufferID.SubmarineDamageControlBlackBox,
+                    DamageControlTelemetryCapacity,
+                    SystemID.VehiclesPhysics,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            return _breachesHandle.IsCreated && _damageControlTelemetryHandle.IsCreated;
+        }
+
+        private bool TryResolveBreachBuffer(out NativeArray<float4> breaches)
+        {
+            breaches = default;
+            if (!EnsureBreachVaultState())
+                return false;
+
+            IDataVault vault = ResolveDataVault();
+            breaches = _breachesHandle.Resolve(vault);
+            return breaches.IsCreated && breaches.Length >= MaxActiveBreaches;
+        }
+
+        private bool TryResolveDamageControlTelemetry(out NativeArray<DamageControlTelemetryEntry> telemetry)
+        {
+            telemetry = default;
+            if (!EnsureBreachVaultState())
+                return false;
+
+            IDataVault vault = ResolveDataVault();
+            telemetry = _damageControlTelemetryHandle.Resolve(vault);
+            return telemetry.IsCreated && telemetry.Length >= DamageControlTelemetryCapacity;
+        }
+
         private void EnsureNativeState()
         {
             if (_cellIntegrityFront.IsCreated)
@@ -2000,12 +2064,9 @@ namespace Hecton8.Physics
             _fatigueIntegrityLossPerCycle = new NativeArray<float>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<float>[1] — pressure-fatigue peak metric returned by Burst job — owner: SubmarineStructuralGrid
             _fatiguePeakResult = new NativeArray<float>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float4>[64] - packed hull breach SOA; xyz local point, w severity - owner: SubmarineStructuralGrid
-            _breaches = new NativeArray<float4>(MaxActiveBreaches, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            EnsureBreachVaultState();
             // COLD ALLOC: NativeArray<float>[1] - Burst repair severity sum return lane - owner: SubmarineStructuralGrid
             _breachSeveritySumResult = new NativeArray<float>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<DamageControlTelemetryEntry>[300] - damage-control black box ring buffer - owner: SubmarineStructuralGrid
-            _damageControlTelemetry = new NativeArray<DamageControlTelemetryEntry>(DamageControlTelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             RegisterNativeStateMemorySentinel();
 
             _nativeStateReady = true;
@@ -2046,10 +2107,10 @@ namespace Hecton8.Physics
             if (_fatiguePeakResult.IsCreated)
                 _fatiguePeakResult[0] = 0f;
 
-            if (_breaches.IsCreated)
+            if (TryResolveBreachBuffer(out var breaches))
             {
-                for (int i = 0; i < _breaches.Length; i++)
-                    _breaches[i] = float4.zero;
+                for (int i = 0; i < breaches.Length; i++)
+                    breaches[i] = float4.zero;
             }
 
             if (_breachSeveritySumResult.IsCreated)
@@ -2371,9 +2432,10 @@ namespace Hecton8.Physics
             DisposeDeferred(ref _fatigueCompartmentFlags, ref dependency);
             DisposeDeferred(ref _fatigueIntegrityLossPerCycle, ref dependency);
             DisposeDeferred(ref _fatiguePeakResult, ref dependency);
-            DisposeDeferred(ref _breaches, ref dependency);
             DisposeDeferred(ref _breachSeveritySumResult, ref dependency);
-            DisposeDeferred(ref _damageControlTelemetry, ref dependency);
+            _breachesHandle = default;
+            _damageControlTelemetryHandle = default;
+            _dataVault = null;
             _damageJobHandle = default;
             _mappingJobHandle = default;
             _fatigueJobHandle = default;
@@ -2444,9 +2506,7 @@ namespace Hecton8.Physics
             NativeMemorySentinel.RegisterNativeArray(_fatigueCompartmentFlags, NativeMemoryOwner, nameof(_fatigueCompartmentFlags), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_fatigueIntegrityLossPerCycle, NativeMemoryOwner, nameof(_fatigueIntegrityLossPerCycle), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_fatiguePeakResult, NativeMemoryOwner, nameof(_fatiguePeakResult), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_breaches, NativeMemoryOwner, nameof(_breaches), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_breachSeveritySumResult, NativeMemoryOwner, nameof(_breachSeveritySumResult), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_damageControlTelemetry, NativeMemoryOwner, nameof(_damageControlTelemetry), NativeMemoryLifetime);
         }
 
         private sealed class SubmarineHullImpactRelay : MonoBehaviour

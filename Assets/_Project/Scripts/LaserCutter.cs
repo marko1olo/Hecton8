@@ -748,6 +748,7 @@ namespace Hecton8.Gameplay
 
             PublishBeamState(false);
             LaserCutterEvents.UnregisterSource(this);
+            ReleaseEquippedAudio();
         }
 
         private void OnDestroy()
@@ -773,6 +774,18 @@ namespace Hecton8.Gameplay
                 cutAudio.outputAudioMixerGroup = spatialAudioManager.SfxGroup;
         }
 
+        private void PrewarmEquippedAudio()
+        {
+            AudioResidencyCache.PrewarmAudioSource(cutAudio, AudioResidencyDomain.Player);
+            AudioResidencyCache.TouchClip(overheatErrorClip, AudioResidencyDomain.Player, true);
+        }
+
+        private void ReleaseEquippedAudio()
+        {
+            AudioResidencyCache.ReleaseAudioSource(cutAudio);
+            AudioResidencyCache.ReleaseClip(overheatErrorClip);
+        }
+
         public override void OnSpawn()
         {
             base.OnSpawn();
@@ -791,11 +804,14 @@ namespace Hecton8.Gameplay
             LaserCutterEvents.UnregisterSource(this);
             ResetAllState();
             SetVisualsActive(false);
+            ReleaseEquippedAudio();
         }
 
         public override void OnEquip()
         {
             base.OnEquip();
+            TryAssignCutAudioMixerRoute();
+            PrewarmEquippedAudio();
         }
 
         public override void OnUnequip()
@@ -803,6 +819,7 @@ namespace Hecton8.Gameplay
             CancelAction();
             ResetDeconstructState();
             SetVisualsActive(false);
+            ReleaseEquippedAudio();
             base.OnUnequip();
         }
 

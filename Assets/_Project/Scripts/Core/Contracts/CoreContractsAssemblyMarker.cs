@@ -26,18 +26,28 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// Cached hardware thermal/battery snapshot. Values are written on FrostTick, never per-frame polled.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 20)]
     public struct HardwareThermalSnapshot
     {
+        [FieldOffset(0)]
         public byte Severity;
+        [FieldOffset(1)]
         public byte PreviousSeverity;
+        [FieldOffset(2)]
         public byte BatteryPercent;
+        [FieldOffset(3)]
         public byte BatteryStatus;
+        [FieldOffset(4)]
         public byte ThermalStatus;
+        [FieldOffset(5)]
         public byte Flags;
+        [FieldOffset(6)]
         public short TemperatureTenthsCelsius;
+        [FieldOffset(8)]
         public uint Sequence;
+        [FieldOffset(12)]
         public uint Frame;
+        [FieldOffset(16)]
         public uint ActionMask;
     }
 

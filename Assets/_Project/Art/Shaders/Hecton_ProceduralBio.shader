@@ -267,8 +267,17 @@ Shader "Hecton8/Flora/ProceduralBio"
                 int stateIndex = min((int)floor(selector * activeCount), activeCount - 1);
                 float4 state = _GlobalBiolumStates[stateIndex];
                 half strobe = saturate((half)_GlobalBiolumParams.z);
+                half highTier = step(4.0h, (half)_GlobalBiolumParams.y);
+                int secondaryIndex = stateIndex + 1;
+                if (secondaryIndex >= activeCount)
+                    secondaryIndex = 0;
+                float4 secondaryState = _GlobalBiolumStates[secondaryIndex];
+                half overPulse = (half)(1.0 - abs(frac(_GlobalBiolumClock.x * 0.07 + selector * 3.0) * 2.0 - 1.0));
+                half overdrive = highTier * overPulse * 0.35h;
                 half3 color = lerp((half3)state.rgb, half3(1.0h, 1.0h, 1.0h), strobe);
                 half intensity = clamp(max((half)state.w, strobe * 10.0h), 0.0h, 10.0h);
+                color = lerp(color, (half3)secondaryState.rgb, overdrive);
+                intensity = clamp(intensity + (half)secondaryState.w * overdrive, 0.0h, 10.0h);
                 return half4(color, intensity);
             }
 

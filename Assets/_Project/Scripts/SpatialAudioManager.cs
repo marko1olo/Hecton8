@@ -197,7 +197,10 @@ namespace Hecton8.Audio
 
             int slot = FindSlot(clip);
             if (slot < 0)
+            {
+                UnloadClipData(clip);
                 return;
+            }
 
             ReleaseSlot(slot);
         }
@@ -329,19 +332,27 @@ namespace Hecton8.Audio
                 return;
 
             Entry entry = s_entries[slot];
-            if (entry.Clip != null && entry.Resident)
+            if (entry.Clip != null)
             {
-                if (entry.Clip.loadState == AudioDataLoadState.Loaded)
-                    entry.Clip.UnloadAudioData();
+                UnloadClipData(entry.Clip);
 
-                s_residentBytes -= entry.EstimatedBytes;
-                if (s_residentBytes < 0L)
-                    s_residentBytes = 0L;
+                if (entry.Resident)
+                {
+                    s_residentBytes -= entry.EstimatedBytes;
+                    if (s_residentBytes < 0L)
+                        s_residentBytes = 0L;
 
-                s_residentCount = math.max(0, s_residentCount - 1);
+                    s_residentCount = math.max(0, s_residentCount - 1);
+                }
             }
 
             s_entries[slot] = default;
+        }
+
+        private static void UnloadClipData(AudioClip clip)
+        {
+            if (clip != null && clip.loadState == AudioDataLoadState.Loaded)
+                clip.UnloadAudioData();
         }
 
         private static long EstimateDecodedBytes(AudioClip clip)
@@ -2286,6 +2297,9 @@ namespace Hecton8.Audio
                     selection.EventID);
             }
 
+            if (hasListener && IsBeyondMaxHearingRange(in audibleAup, in listenerAup))
+                return false;
+
             AudioLodTier lodTier = hasListener
                 ? ResolveAudioLodTier(in audibleAup, in listenerAup)
                 : AudioLodTier.Tier0Full;
@@ -3150,6 +3164,9 @@ namespace Hecton8.Audio
                     0,
                     0u);
             }
+
+            if (hasListener && IsBeyondMaxHearingRange(in audibleAup, in listenerAup))
+                return;
 
             AudioLodTier lodTier = hasListener
                 ? ResolveAudioLodTier(in audibleAup, in listenerAup)

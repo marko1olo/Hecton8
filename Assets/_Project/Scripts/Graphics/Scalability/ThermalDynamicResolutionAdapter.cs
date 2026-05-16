@@ -38,7 +38,6 @@ namespace Hecton8.Graphics.Scalability
         private const uint ScaleContextHash = 0x5343414Cu; // SCAL
         private const uint DrsWarningHash = 0x44525357u; // DRSW
         private const string NotificationMessage = "OPTICS COMPENSATING";
-        private const string OwnerName = nameof(ThermalDynamicResolutionAdapter);
         private const string DumpFileName = "Dump_STP_QUALITY_ADAPTER.bin";
         private const float DangerFrameTimeMs = 15.0f;
         private const float TargetFrameTimeMs = 16.66f;
@@ -277,7 +276,7 @@ namespace Hecton8.Graphics.Scalability
             if (!ownsAdapter)
                 return;
 
-            CompletePendingStressJob();
+            CompletePendingStressJob(true);
             ClearSystemOverrideRenderScale();
             ReleaseSystemDynamicResolutionScaler();
         }
@@ -295,7 +294,7 @@ namespace Hecton8.Graphics.Scalability
             TryUnregister();
             TryUnregisterHotSwap();
             UnregisterResolutionScalerService();
-            CompletePendingStressJob();
+            CompletePendingStressJob(true);
             if (ownsAdapter)
             {
                 ClearSystemOverrideRenderScale();
@@ -568,102 +567,69 @@ namespace Hecton8.Graphics.Scalability
             }
         }
 
-        private void EnsureTelemetry()
+        private bool TryResolveScaleStateBuffer(out NativeArray<ResolutionScaleState> scaleState)
         {
-            if (_telemetryRing.IsCreated)
-                return;
-
-            _telemetryRing = new NativeArray<DrsTelemetryEntry>(
-                TelemetryCapacity,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<DrsTelemetryEntry>[300] - STP DRS blackbox telemetry - owner: ThermalDynamicResolutionAdapter
-            NativeMemorySentinel.RegisterNativeArray(
-                _telemetryRing,
-                OwnerName,
-                nameof(_telemetryRing),
-                NativeAllocationLifetime.Session);
-        }
-
-        private void ResolveScaleStateBuffer()
-        {
+            scaleState = default;
             IDataVault vault = GlobalRegistry.DataVault;
             if (!ReferenceEquals(_dataVault, vault))
                 RebindDataVault(vault);
 
-            if (_dataVault != null)
+            if (_dataVault == null)
+                return false;
+
+            if (!_dataVault.TryGetBufferHandle(BufferID.ResolutionScaleState, out _scaleStateHandle) ||
+                !_scaleStateHandle.IsCreated)
             {
-                if (!_scaleStateHandle.IsCreated)
-                {
-                    _scaleStateHandle = _dataVault.GetBufferHandle<ResolutionScaleState>(
-                        BufferID.ResolutionScaleState,
-                        1,
-                        SystemID.GraphicsScalability,
-                        NativeArrayOptions.ClearMemory);
-                }
-
-                NativeArray<ResolutionScaleState> resolved = _scaleStateHandle.Resolve(_dataVault);
-                if (!resolved.IsCreated || resolved.Length <= 0)
-                {
-                    _scaleStateHandle = _dataVault.GetBufferHandle<ResolutionScaleState>(
-                        BufferID.ResolutionScaleState,
-                        1,
-                        SystemID.GraphicsScalability,
-                        NativeArrayOptions.ClearMemory);
-                    resolved = _scaleStateHandle.Resolve(_dataVault);
-                }
-
-                if (resolved.IsCreated && resolved.Length > 0)
-                {
-                    ReleaseFallbackScaleState();
-                    _scaleState = resolved;
-                    return;
-                }
+                _scaleStateHandle = _dataVault.GetBufferHandle<ResolutionScaleState>(
+                    BufferID.ResolutionScaleState,
+                    1,
+                    SystemID.GraphicsScalability,
+                    NativeArrayOptions.ClearMemory);
             }
 
-            EnsureFallbackScaleState();
-            _scaleState = _fallbackScaleState;
+            scaleState = _scaleStateHandle.Resolve(_dataVault);
+            return scaleState.IsCreated && scaleState.Length >= 1;
+        }
+
+        private bool TryResolveTelemetryBuffer(out NativeArray<DrsTelemetryEntry> telemetryRing)
+        {
+            telemetryRing = default;
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (!ReferenceEquals(_dataVault, vault))
+                RebindDataVault(vault);
+
+            if (_dataVault == null)
+                return false;
+
+            if (!_dataVault.TryGetBufferHandle(BufferID.ResolutionScaleTelemetry, out _telemetryHandle) ||
+                !_telemetryHandle.IsCreated)
+            {
+                _telemetryHandle = _dataVault.GetBufferHandle<DrsTelemetryEntry>(
+                    BufferID.ResolutionScaleTelemetry,
+                    TelemetryCapacity,
+                    SystemID.GraphicsScalability,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            telemetryRing = _telemetryHandle.Resolve(_dataVault);
+            return telemetryRing.IsCreated && telemetryRing.Length >= TelemetryCapacity;
         }
 
         private void RebindDataVault(IDataVault vault)
         {
-            CompletePendingStressJob();
+            CompletePendingStressJob(true);
+
             if (ReferenceEquals(_dataVault, vault))
                 return;
 
             _dataVault = vault;
-            _scaleState = default;
             _scaleStateHandle = default;
+            _telemetryHandle = default;
         }
 
-        private void EnsureFallbackScaleState()
+        private void UpdateScaleState(byte flags, NativeArray<ResolutionScaleState> scaleState)
         {
-            if (_fallbackScaleState.IsCreated)
-                return;
-
-            _fallbackScaleState = new NativeArray<ResolutionScaleState>(
-                1,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ResolutionScaleState>[1] - temporary pre-DataVault STP scale state - owner: ThermalDynamicResolutionAdapter
-            NativeMemorySentinel.RegisterNativeArray(
-                _fallbackScaleState,
-                OwnerName,
-                nameof(_fallbackScaleState),
-                NativeAllocationLifetime.Session);
-        }
-
-        private void ReleaseFallbackScaleState()
-        {
-            if (!_fallbackScaleState.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(_fallbackScaleState);
-            _fallbackScaleState.Dispose();
-            _fallbackScaleState = default;
-        }
-
-        private void UpdateScaleState(byte flags)
-        {
-            if (!_scaleState.IsCreated || _scaleState.Length <= 0)
+            if (!scaleState.IsCreated || scaleState.Length <= 0)
                 return;
 
             byte stateFlags = 0;
@@ -678,7 +644,7 @@ namespace Hecton8.Graphics.Scalability
             if ((flags & FlagInvalidState) != 0)
                 stateFlags |= ResolutionScaleStateFlags.InvalidStateRecovered;
 
-            _scaleState[0] = new ResolutionScaleState
+            scaleState[0] = new ResolutionScaleState
             {
                 CurrentRenderScale01 = _currentScale,
                 TargetRenderScale01 = _targetScale,
@@ -695,14 +661,14 @@ namespace Hecton8.Graphics.Scalability
             };
         }
 
-        private void ScheduleStressEwmaJob(float inputStress01)
+        private void ScheduleStressEwmaJob(float inputStress01, NativeArray<ResolutionScaleState> scaleState)
         {
-            if (_stressEwmaScheduled || !_scaleState.IsCreated || _scaleState.Length <= 0)
+            if (_stressEwmaScheduled || !scaleState.IsCreated || scaleState.Length <= 0)
                 return;
 
             SystemStressEwmaJob job = new SystemStressEwmaJob
             {
-                State = _scaleState,
+                State = scaleState,
                 InputStress01 = inputStress01,
                 Alpha = EwmaAlpha
             };
@@ -710,16 +676,19 @@ namespace Hecton8.Graphics.Scalability
             _stressEwmaScheduled = true;
         }
 
-        private void CompletePendingStressJob()
+        private void CompletePendingStressJob(bool force = false)
         {
             if (!_stressEwmaScheduled)
                 return;
 
+            if (!force && !_stressEwmaHandle.IsCompleted)
+                return;
+
             _stressEwmaHandle.Complete();
             _stressEwmaScheduled = false;
-            if (_scaleState.IsCreated && _scaleState.Length > 0)
+            if (TryResolveScaleStateBuffer(out NativeArray<ResolutionScaleState> scaleState))
             {
-                ResolutionScaleState state = _scaleState[0];
+                ResolutionScaleState state = scaleState[0];
                 _latestSystemStress01 = Sanitize01(state.SystemStress01);
                 _latestSystemStressEwma01 = Sanitize01(state.SystemStressEwma01);
             }
@@ -839,7 +808,7 @@ namespace Hecton8.Graphics.Scalability
             }
         }
 
-        private bool RecoverInvalidScaleState()
+        private bool RecoverInvalidScaleState(NativeArray<ResolutionScaleState> scaleState)
         {
             if (math.isfinite(_currentScale) &&
                 math.isfinite(_targetScale) &&
@@ -861,7 +830,7 @@ namespace Hecton8.Graphics.Scalability
             _recoveryFrameCount = RecoveryHysteresisFrames;
             s_systemScalePercentage = 100f;
             CommitRenderScale(FlagInvalidState);
-            UpdateScaleState(FlagInvalidState);
+            UpdateScaleState(FlagInvalidState, scaleState);
             return true;
         }
 
@@ -945,7 +914,7 @@ namespace Hecton8.Graphics.Scalability
 
         private void WriteTelemetry(byte flags)
         {
-            if (!_telemetryRing.IsCreated)
+            if (!TryResolveTelemetryBuffer(out NativeArray<DrsTelemetryEntry> telemetryRing))
                 return;
 
             bool nonFinite =
@@ -957,7 +926,7 @@ namespace Hecton8.Graphics.Scalability
                 !math.isfinite(_sharpenIntensity01);
 
             int index = _telemetryCursor;
-            _telemetryRing[index] = new DrsTelemetryEntry
+            telemetryRing[index] = new DrsTelemetryEntry
             {
                 Frame = unchecked((uint)Time.frameCount),
                 CurrentScale01 = _currentScale,
@@ -995,7 +964,7 @@ namespace Hecton8.Graphics.Scalability
 
         private void DumpBlackBoxOnce()
         {
-            if (_blackBoxDumped || !_telemetryRing.IsCreated)
+            if (_blackBoxDumped || !TryResolveTelemetryBuffer(out NativeArray<DrsTelemetryEntry> telemetryRing))
                 return;
 
             _blackBoxDumped = true;
@@ -1015,7 +984,7 @@ namespace Hecton8.Graphics.Scalability
                 writer.Write(_sequence);
                 for (int i = 0; i < TelemetryCapacity; i++)
                 {
-                    DrsTelemetryEntry entry = _telemetryRing[i];
+                    DrsTelemetryEntry entry = telemetryRing[i];
                     writer.Write(entry.Frame);
                     writer.Write(entry.CurrentScale01);
                     writer.Write(entry.TargetScale01);
@@ -1031,6 +1000,7 @@ namespace Hecton8.Graphics.Scalability
                     writer.Write(entry.AupLockFrames);
                     writer.Write(entry.HysteresisCounters);
                     writer.Write(entry.Reserved);
+                    writer.Write(entry.Reserved0);
                 }
             }
             catch (Exception)

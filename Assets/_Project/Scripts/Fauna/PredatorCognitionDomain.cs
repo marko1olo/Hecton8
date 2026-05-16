@@ -361,6 +361,9 @@ namespace Hecton8.AI
         private const float RetinalExposureRiseScale = 0.72f;
         private const float RetinalExposureDecayPerSecond = 0.1f;
         private const float RetinalBlindHoldSeconds = 2.25f;
+        private const float RetinalMinLightRangeMeters = 0.1f;
+        private const float RetinalMaxLightRangeMeters = 10000f;
+        private const float RetinalMaxLightIntensity = 100000f;
         private const uint RetinalBlindPredatorsTelemetryHash = 0x5242544Cu; // RBTL
         private const uint RetinalTelemetryContextHash = 0x4641554Eu; // FAUN
         private const float AlphaLeviathanSlowTickIntervalSeconds = 0.1f;
@@ -1504,7 +1507,15 @@ namespace Hecton8.AI
 
         private static LightSourceData BuildRetinalLightSource(in SubmarineLightsChangedSignal signal, int frameId)
         {
-            float range = math.max(0.1f, signal.RangeMeters);
+            float range = MathGuard.IsFinite(signal.RangeMeters)
+                ? math.clamp(signal.RangeMeters, RetinalMinLightRangeMeters, RetinalMaxLightRangeMeters)
+                : RetinalMinLightRangeMeters;
+            float intensity = MathGuard.IsFinite(signal.Intensity)
+                ? math.clamp(signal.Intensity, 0f, RetinalMaxLightIntensity)
+                : 0f;
+            float spotOuterCos = MathGuard.IsFinite(signal.SpotOuterCos)
+                ? math.clamp(signal.SpotOuterCos, -1f, 1f)
+                : 0f;
             float3 forward = ResolveFiniteDirection(signal.Forward, new float3(0f, 0f, 1f));
             return new LightSourceData
             {
@@ -1512,8 +1523,8 @@ namespace Hecton8.AI
                 Forward = forward,
                 RangeMeters = range,
                 RangeSq = range * range,
-                Intensity = math.max(0f, signal.Intensity),
-                SpotOuterCos = math.clamp(signal.SpotOuterCos, -1f, 1f),
+                Intensity = intensity,
+                SpotOuterCos = spotOuterCos,
                 SourceId = signal.SourceId,
                 LastFrame = unchecked((uint)math.max(0, frameId)),
                 Slot = signal.Slot,

@@ -155,3 +155,21 @@ Exact microseconds saved:
 Validation:
 - Static scan shows no `NativeArray`, no old dump path, no managed XR-active subscription, and no direct foveation writes in `OculusFfrEnforcer.cs`.
 - Filtered `dotnet build` diagnostic scan after quarantine produced no `FoveatedRenderCommander`, `FoveatedRenderBlackBox`, `OculusFfrEnforcer`, or `Graphics/VR` diagnostics. Full build remains red externally.
+
+## 2026-05-16 - Escalation Polish / Duplicate Guard Fix
+
+What was wrong:
+- `FoveatedRenderCommander` duplicate handling destroyed the entire host GameObject. If a duplicate component were placed on a scene XR rig, that would delete unrelated rig components.
+
+What was done:
+- Changed duplicate handling to `Destroy(this)` so only the duplicate commander component is removed.
+
+Cinematic Cheats used:
+- None. This is scene safety hardening.
+
+Exact microseconds saved:
+- Exact measured microseconds saved: 0. This prevents scene-object loss, not frame-time cost.
+
+Validation:
+- Static scan found no `Destroy(gameObject)` in the VR commander.
+- Filtered build diagnostics after the fix produced no VR/legacy foveation matches. Full build remains red externally.

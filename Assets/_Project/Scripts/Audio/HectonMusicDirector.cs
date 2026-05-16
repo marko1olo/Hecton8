@@ -1716,6 +1716,7 @@ namespace Hecton8.Audio
         {
             AudioSource source = _musicSources[voiceIndex];
             source.Stop();
+            AudioResidencyCache.TouchClip(clip, AudioResidencyDomain.Music, false);
             source.clip = clip;
             source.loop = loop;
             source.volume = initialVolume * _duckCurrent;
@@ -1809,6 +1810,7 @@ namespace Hecton8.Audio
                 return;
 
             AudioSource source = _musicSources[voiceIndex];
+            AudioClip releasedClip = source != null ? source.clip : null;
             if (_voicePool != null)
             {
                 _voicePool.ReleaseMusicVoice(voiceIndex);
@@ -1820,6 +1822,9 @@ namespace Hecton8.Audio
                 source.volume = 0f;
                 source.loop = false;
             }
+
+            if (releasedClip != null)
+                AudioResidencyCache.ReleaseClip(releasedClip);
 
             _voiceProfiles[voiceIndex] = null;
             _voiceClips[voiceIndex] = default;
