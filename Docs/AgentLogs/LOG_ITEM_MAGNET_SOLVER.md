@@ -144,3 +144,8 @@ Cinematic Cheats used:
 
 Exact Microseconds saved:
 - 0 us hot-frame savings claimed. Cost is cold O(active pickups) on disable/clear; benefit is preventing collision-suppression leaks after scheduler shutdown.
+
+Validation:
+- Forbidden item-magnet scope scan remains clean: no trigger callbacks, overlap sphere calls, `LootManager.Instance`, `Vector3.Distance`, `foreach`, `string.Format`, standard `Update` loops, or legacy item-collected publishers.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -v:minimal` fails outside this domain in `SargassumMicroFaunaBoids`, `HectonMarineSnowRenderer`, and `VehicleDockingModule`.
+- No loot/item magnet compile errors were emitted.

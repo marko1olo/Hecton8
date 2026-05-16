@@ -737,54 +737,114 @@ namespace Hecton8.Environment
             _nextFluidRebindFrame = frame + 30;
         }
 
-        private void EnsureNativeState()
+        private bool RefreshDataVaultBinding(bool force)
         {
-            if (!_vehicleWakeJobResult.IsCreated)
+            int frame = Time.frameCount;
+            if (!force && _dataVault != null && !_dataVault.IsCompactionFenceActive)
+                return true;
+            if (!force && frame < _nextDataVaultRebindFrame)
+                return _dataVault != null && !_dataVault.IsCompactionFenceActive;
+
+            IDataVault vault = GlobalRegistry.DataVault;
+            _nextDataVaultRebindFrame = frame + 30;
+            if (!ReferenceEquals(_dataVault, vault))
             {
-                _vehicleWakeJobResult = H8Memory.Allocate<VehicleWakeJobResult>(
-                    1,
-                    SystemID.Vfx,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<VehicleWakeJobResult>[1] - throttle wake job output lane - owner: HectonMarineSnowRenderer
-                if (_vehicleWakeJobResult.IsCreated)
-                    NativeMemorySentinel.RegisterNativeArray(_vehicleWakeJobResult, nameof(HectonMarineSnowRenderer), nameof(_vehicleWakeJobResult), NativeAllocationLifetime.Session);
+                _dataVault = vault;
+                _vehicleWakeJobResultHandle = default;
+                _telemetryRingHandle = default;
+                _nativeStateReady = false;
             }
 
-            if (!_telemetryRing.IsCreated)
-            {
-                _telemetryRing = H8Memory.Allocate<MarineSnowTelemetryEntry>(
-                    TelemetryCapacity,
-                    SystemID.Vfx,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<MarineSnowTelemetryEntry>[300] - marine snow black box ring - owner: HectonMarineSnowRenderer
-                if (_telemetryRing.IsCreated)
-                    NativeMemorySentinel.RegisterNativeArray(_telemetryRing, nameof(HectonMarineSnowRenderer), nameof(_telemetryRing), NativeAllocationLifetime.Session);
-            }
+            return _dataVault != null && !_dataVault.IsCompactionFenceActive;
         }
 
-        private void DisposeNativeState()
+        private bool EnsureNativeState()
         {
-            ReleaseNativeArray(ref _vehicleWakeJobResult);
-            ReleaseNativeArray(ref _telemetryRing);
+            if (!ValidateNativeStructLayouts() || !RefreshDataVaultBinding(force: false))
+            {
+                _nativeStateReady = false;
+                return false;
+            }
+
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive)
+            {
+                _nativeStateReady = false;
+                return false;
+            }
+
+            if (!vault.TryGetBufferHandle(BufferID.MarineSnowWakeJobResult, out _vehicleWakeJobResultHandle) ||
+                !_vehicleWakeJobResultHandle.IsCreated)
+            {
+                _vehicleWakeJobResultHandle = vault.GetBufferHandle<VehicleWakeJobResult>(
+                    BufferID.MarineSnowWakeJobResult,
+                    1,
+                    SystemID.Vfx,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (!vault.TryGetBufferHandle(BufferID.MarineSnowTelemetryRing, out _telemetryRingHandle) ||
+                !_telemetryRingHandle.IsCreated)
+            {
+                _telemetryRingHandle = vault.GetBufferHandle<MarineSnowTelemetryEntry>(
+                    BufferID.MarineSnowTelemetryRing,
+                    TelemetryCapacity,
+                    SystemID.Vfx,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            _nativeStateReady =
+                _vehicleWakeJobResultHandle.IsCreated &&
+                _vehicleWakeJobResultHandle.Length >= 1 &&
+                _telemetryRingHandle.IsCreated &&
+                _telemetryRingHandle.Length >= TelemetryCapacity;
+            return _nativeStateReady;
+        }
+
+        private bool TryResolveVehicleWakeJobResultBuffer(out NativeArray<VehicleWakeJobResult> result)
+        {
+            result = default;
+            if (!_nativeStateReady && !EnsureNativeState())
+                return false;
+
+            result = _vehicleWakeJobResultHandle.Resolve(_dataVault);
+            return result.IsCreated && result.Length >= 1;
+        }
+
+        private bool TryResolveTelemetryRing(out NativeArray<MarineSnowTelemetryEntry> telemetryRing)
+        {
+            telemetryRing = default;
+            if (!_nativeStateReady && !EnsureNativeState())
+                return false;
+
+            telemetryRing = _telemetryRingHandle.Resolve(_dataVault);
+            return telemetryRing.IsCreated && telemetryRing.Length >= TelemetryCapacity;
+        }
+
+        private void ClearNativeStateLease()
+        {
+            _dataVault = null;
+            _vehicleWakeJobResultHandle = default;
+            _telemetryRingHandle = default;
+            _nativeStateReady = false;
             _telemetryWriteIndex = 0;
             _telemetryWrittenCount = 0;
             _blackBoxDumped = false;
         }
 
-        private static void ReleaseNativeArray<T>(ref NativeArray<T> array) where T : struct
+        private static bool ValidateNativeStructLayouts()
         {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            H8Memory.Release(ref array, SystemID.Vfx);
+            return UnsafeUtility.SizeOf<ParticleGpuData>() == ParticleStride &&
+                UnsafeUtility.SizeOf<FrameConstantsData>() == FrameConstantsStride &&
+                UnsafeUtility.SizeOf<VehicleWakeJobResult>() == VehicleWakeJobResultStride &&
+                UnsafeUtility.SizeOf<MarineSnowTelemetryEntry>() == TelemetryEntrySizeBytes;
         }
 
         private void PublishVehicleWakeImpulse(float dt)
         {
             _vehicleWakePublishCooldown = math.max(0f, _vehicleWakePublishCooldown - dt);
             if (_vehicleWakePublishCooldown > 0f ||
-                !_vehicleWakeJobResult.IsCreated ||
+                !TryResolveVehicleWakeJobResultBuffer(out NativeArray<VehicleWakeJobResult> vehicleWakeJobResult) ||
                 math.abs(_lastVehicleThrottle) <= VehicleWakeThrottleDeadZone)
             {
                 return;
@@ -800,11 +860,11 @@ namespace Hecton8.Environment
                 WakeRadius = math.max(0.5f, vehicleWakeRadius),
                 WakeLifetime = math.max(0.1f, vehicleWakeLifetime),
                 WakeStrength = math.max(0.01f, vehicleWakeStrength),
-                Result = _vehicleWakeJobResult
+                Result = vehicleWakeJobResult
             };
             job.Run();
 
-            VehicleWakeJobResult result = _vehicleWakeJobResult[0];
+            VehicleWakeJobResult result = vehicleWakeJobResult[0];
             if ((result.Flags & 1u) == 0u)
                 return;
 
@@ -2320,7 +2380,7 @@ namespace Hecton8.Environment
 
         private void RecordTelemetry()
         {
-            if (!_telemetryRing.IsCreated)
+            if (!TryResolveTelemetryRing(out NativeArray<MarineSnowTelemetryEntry> telemetryRing))
                 return;
 
             Vector3 cameraPosition = targetCamera != null ? targetCamera.position : Vector3.zero;
@@ -2343,7 +2403,7 @@ namespace Hecton8.Environment
             hash = MixTelemetryHash(hash, math.asuint(_lastVehicleThrottle));
             hash = MixTelemetryHash(hash, math.asuint(systemStress01));
 
-            _telemetryRing[_telemetryWriteIndex] = new MarineSnowTelemetryEntry
+            telemetryRing[_telemetryWriteIndex] = new MarineSnowTelemetryEntry
             {
                 Frame = Time.frameCount,
                 ActiveSiltCount = math.max(0, _activeParticleCount),
@@ -2382,7 +2442,7 @@ namespace Hecton8.Environment
 
         private void DumpBlackBoxOnce()
         {
-            if (_blackBoxDumped || !_telemetryRing.IsCreated)
+            if (_blackBoxDumped || !TryResolveTelemetryRing(out NativeArray<MarineSnowTelemetryEntry> telemetryRing))
                 return;
 
             _blackBoxDumped = true;
@@ -2405,7 +2465,7 @@ namespace Hecton8.Environment
                 if (slot >= TelemetryCapacity)
                     slot -= TelemetryCapacity;
 
-                MarineSnowTelemetryEntry entry = _telemetryRing[slot];
+                MarineSnowTelemetryEntry entry = telemetryRing[slot];
                 writer.Write(entry.Frame);
                 writer.Write(entry.ActiveSiltCount);
                 writer.Write(entry.Capacity);

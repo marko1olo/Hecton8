@@ -109,3 +109,27 @@ Solution: Treat current authored data as a skeleton: 11 QuestData assets, 5 Audi
 Rejected Alternatives: Claiming Subnautica-level onboarding because code and a few assets exist, or copying Subnautica PDA text/data.
 Scalability potential: Low = minimum route counts for pod exit, titanium, scanner craft, scan targets, one unlock, one log, one danger/biome; Middle = biome density quotas; High = authored discovery graph; Ultra = optional VO/hologram layers by hardware tier.
 Hardware Impact: Research-only 0us. Future benefit is production/content reliability, not frame-time gain.
+
+Problem: Subnautica's small sidecar files carry important authored world meaning that H8's current sector page schema does not encode.
+Solution: Treat `index.txt`, `biomeMap.bin`, `biomes.csv`, `signals.csv`, and saved-slot cell/global/scene separation as clean-room taxonomy. H8 `H8SectorPageRecord` currently carries sector hash, biome hash, file offset, byte count, AUP X, and AUP Z only. Add separate DataMonolith sections for sector signal anchors, object batch payloads, visibility/physics proxies, and route/discovery metadata.
+Rejected Alternatives: Expanding save deltas until they also become base-world cache, parsing proprietary Subnautica binaries, or putting authored signal anchors into scene-only GameObjects.
+Scalability potential: Low = sparse route anchors and biome IDs; Middle = object and signal sidecars per sector; High = PVS/SDF/audio proxies; Ultra = tiered visual overkill payloads attached to the same sector directory.
+Hardware Impact: Research-only 0us. Future benefit is predictable IO and fewer scene-object scans on i3/MX350; exact gains need a player build profiler capture after payloads exist.
+
+Problem: ContentAuthority exists in source now, but the actual content authority assets and wiring are absent.
+Solution: Correct the prior "missing entirely" claim: `ContentAssetHashMap`, `ObjectBatchBase`, `VisibilityProxyBase`, `ContentAuthorityRuntime`, and build validators exist. Then record the current gap: AddressableAssetsData has 0 files, there are 0 `ContentAssetHashMap` assets, 0 `ContentVfxPrewarmManifest` assets, and no scene/prefab/data wiring found for `ContentAuthorityRuntime`. The scaffold is useful but not a populated authority.
+Rejected Alternatives: Rewriting another content system, or marking the foundation solved because source files were added by another agent.
+Scalability potential: Low = one Core map with required fallback meshes; Middle = High_Res/Overkill maps and VFX manifests; High = biome/object/audio payload maps; Ultra = hardware-tier visual payload isolation with denied Overkill on weak devices.
+Hardware Impact: Research-only 0us. Future benefit is fewer missing mesh/bundle failures and controlled VRAM residency; exact microseconds are unmeasured.
+
+Problem: Scanner crafting can be locked behind an entry that is not proven reachable in production scene content.
+Solution: Verify `Recipe_Scanner` requires `scan.expedition_contact`, then search current Prefabs/Scenes/Data. Only editor bootstrap scripts author that probe; current prefab/data search found only `Item_Titanium` as a real scannable prefab and no production scene/data instance of `scan.expedition_contact`, `scan.resource_cache`, or `scan.structure_relay`. Mark this as a P0 first-hour route gate until a build/preplay validator proves the scan entry is reachable before scanner crafting.
+Rejected Alternatives: Trusting `ConstructionBootstrapAuthoring` or runtime smoke helpers as shipped content, or unlocking scanner by bypassing the scan system without documenting the design decision.
+Scalability potential: Low = one guaranteed route scan plus fallback unlock; Middle = multiple authored shallow route probes; High = biome-specific discovery lanes; Ultra = richer hologram/PDA/VO layers attached after the same hashed entry is resolved.
+Hardware Impact: Research-only 0us. Future benefit is correctness and onboarding reliability, not direct frame time.
+
+Problem: Public Subnautica mod sources are useful as taxonomy but unsafe as code dependencies for H8.
+Solution: Re-check public sources on 2026-05-16. Unknown Worlds terrain article is safe as public format documentation; Nautilus handler docs are safe as handler taxonomy; BepInEx.Subnautica is a loader pack reference with mixed ISC/MIT/LGPL components; Nitrox is GPL-3.0; TerrainPatcher is AGPL-3.0 and explicitly warns non-AGPL mods away from direct interaction. Borrow handler categories and patch-file concepts, not code.
+Rejected Alternatives: Importing GPL/AGPL/LGPL source, exposing direct Unity object handles to H8 mods, or building a BepInEx-like runtime patcher into the commercial codebase.
+Scalability potential: Low = content-only overlay manifests; Middle = hash/resource validation and package gates; High = DataMonolith/MacroDB overlay merge; Ultra = tiered mod visuals under first-party residency budgets.
+Hardware Impact: Research-only 0us. Future impact is licensing/support-risk reduction and deterministic mod loading, not raw CPU savings.

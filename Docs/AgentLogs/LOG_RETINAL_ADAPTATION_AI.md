@@ -89,3 +89,31 @@ Verification:
 - `rg` found no `new NativeArray<.*Retinal`, no `new NativeArray<AlphaLeviathanTelemetryEntry>`, no `AlphaLeviathanStalkConstants`, and no retinal raycasts/casts/overlaps/string.Format/standard `Update()` in `AI/Perception` + `PredatorCognitionDomain`.
 - `git diff --check` reported only a CRLF normalization warning for `PredatorCognitionDomain.cs`.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:BuildInParallel=false -v:minimal -clp:Summary` no longer reports errors in `PredatorCognitionDomain`, `RetinalAdaptationVault`, or `RetinalExposureMath`. Remaining failures are external: `DiegeticGyroCompassRuntime` missing runtime buffers/helpers, `TetherFiredSignal` missing `ISignal`, `ItemAcquiredSignal`, HomeostasisBrain hardware/black-box fields/helpers, and `LockstepReplayBlockHeader.HashCadenceFrames`.
+
+## 2026-05-16 - NaN / Signal Edge Polish
+What was wrong:
+- Retinal cache upsert still trusted dequeued light signal scalars after the global queue boundary.
+- Brownout-suppressed lights were not explicitly removed in the retinal signal drain.
+- High-tier biolum strobe used frame `0` as the implicit duplicate-suppression sentinel, which can suppress a valid first-frame Blind signal or stale pooled fauna state.
+- `GlobalDataVault` had a duplicated `ValidateAbiLayout()` method, blocking compilation of the DataVault surface that retinal state now uses.
+
+What was done:
+- Rejected non-finite `SubmarineLightsChangedSignal` AUP/range/intensity/spot values before they can occupy the retinal light cache.
+- Reinstated explicit brownout-suppressed light removal in the retinal drain.
+- Clamped cached retinal light range to `[0.1, 10000]`, intensity to `[0, 100000]`, and spot cosine to `[-1, 1]`.
+- Changed `_lastRetinalBlindSignalFrame` to `uint.MaxValue` and reset it on spawn, despawn, and death presentation.
+- Removed the duplicate identical `GlobalDataVault.ValidateAbiLayout()` method body.
+
+Cinematic Cheats used:
+- Corrupt light inputs are dropped at the cache boundary; no raycast or physical light query was added.
+- High-tier strobe remains deterministic triangle-wave presentation only.
+
+Exact Microseconds saved:
+- Measured exact savings: unavailable; profiler was not run.
+- Added sanitation cost is per dequeued light signal, not per predator.
+- Runtime cost of duplicate DataVault method removal: 0 us/frame.
+
+Verification:
+- `rg` found no retinal local `NativeArray`, no Alpha telemetry local allocation, no retinal raycasts/casts/overlaps, no `string.Format`, and no standard `Update()` in `AI/Perception` + `PredatorCognitionDomain`.
+- `git diff --check` reported only CRLF normalization warnings.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:BuildInParallel=false -v:minimal -clp:Summary` no longer reports errors in `PredatorCognitionDomain`, `FaunaBrain`, `GlobalDataVault`, `RetinalAdaptationVault`, or `RetinalExposureMath`. Remaining failures are external: `SargassumMicroFaunaBoids.EnsureVaultBufferHandle`, `HectonMarineSnowRenderer` wake/telemetry fields, and `VehicleDockingModule` runtime-cache helpers.

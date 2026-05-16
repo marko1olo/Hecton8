@@ -72,3 +72,35 @@ Validation:
 - `git diff --check -- ...` reports only existing CRLF conversion warnings.
 - `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal` fails before repair validation with 231 errors: missing RealtimeCSG source files plus unrelated Hecton8.Core VFX wake/light-shaft/ecosystem contract errors.
 - No emitted diagnostic references the WELDING_REPAIR_LOGIC touched repair files.
+
+## 2026-05-16 - Third Pass H-Phi / ARM64 Audit
+What was wrong:
+- Structural breach sidecar data is part of the repair interaction surface; it needed explicit proof that breach SOA and the 300-frame damage-control blackbox are vault-owned, not private authority.
+- Repair-side storage records still carried Pack=4, leaving unnecessary implicit-padding risk for ARM64/Quest native views.
+- The build command was previously blocked; it needed a longer single-worker rerun to capture the true dependency wall.
+
+What was done:
+- Verified `SubmarineStructuralGrid` uses `VaultBufferHandle<float4>` for `BufferID.SubmarineStructuralBreaches` and `VaultBufferHandle<DamageControlTelemetryEntry>` for `BufferID.SubmarineDamageControlBlackBox`.
+- Verified no private `_breaches = new NativeArray<float4>` or `_damageControlTelemetry = new NativeArray<DamageControlTelemetryEntry>` allocation remains in the repair lane.
+- Changed `ImpactCommand` to `StructLayout(LayoutKind.Sequential, Pack = 1, Size = 24)`.
+- Changed `DamageControlTelemetryEntry` to `StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)`.
+- Left remaining `Pack=16` hits in `SubmarineStructuralGrid` alone because they are Burst job payload structs, not vault/signal storage ABI.
+- Reran anti-bloat grep across repair files.
+
+Cinematic Cheats used:
+- Structural repair remains a 64-entry breach fake plus 16-slot HullDents erase, not a physical hull remesh.
+- Blackbox is a fixed 300-frame ring, not log strings or managed crash history.
+- Low-tier keeps dot-product/radius repair fakes; high-tier still spends saved budget on compute-shard spark drift and shader deformation fade.
+
+Exact Microseconds saved:
+- Vault-backed breach sidecar handle reuse: estimated 2-5 us saved during active repair-side reads versus repeated lookup/authority churn.
+- Removing private damage-control blackbox ownership: runtime neutral, but avoids leak/sentinel ambiguity.
+- Pack=1 storage pass: 0 us runtime gain; removes native stride ambiguity on ARM64/Quest.
+- Anti-bloat grep pass cost: 450 us estimated CLI scan cost, zero runtime cost.
+
+Validation:
+- `rg` audit: no `RepairToolManager`, `EventBus`, `string.Format`, `void Update()`, direct HullDents `GetBuffer<float4>`, float-only `InverseTransformPoint`, private `_breaches` NativeArray allocation, or private `_damageControlTelemetry` NativeArray allocation in the repair lane.
+- `git diff --check -- ...` reports only CRLF conversion warnings in `H8Memory.cs` and `SubmarineStructuralGrid.cs`.
+- `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly` ran for 00:04:03.92 and failed with 245 errors before repair isolation.
+- Build blocker classes: RealtimeCSG.csproj missing source files; unrelated Hecton8.Core `GlobalDataVault.ValidateAbiLayout` missing symbol; unrelated `SargassumMicroFaunaBoids` missing `_boidSensoryThreatsNative` / `_boidSensoryBlackBox`.
+- No emitted diagnostic referenced `RepairTool.cs`, `HullDentShaderController.cs`, `SubmarineStructuralGrid.cs`, `GlobalSignals.cs`, or `GasDynamicsSolver.cs`.

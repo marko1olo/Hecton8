@@ -155,3 +155,9 @@ Solution: Added a scheduler-level `RestoreAllManagedProxyRuntimeStates` pass and
 Rejected Alternatives: Relying on `PickupItem.OnDisable`; permanently forcing pickups kinematic; leaving vault state intact after shutdown.
 Scalability potential: Low/Middle/High/Ultra share the same cold cleanup. Visual overkill stays in typed lanes; physics state returns to authored behavior without a per-frame tax.
 Hardware Impact: 0 hot-frame cost. Shutdown/clear cost is one bounded loop over active pickup sidecars and only touches pickups that were cached by the magnet scheduler.
+
+Problem: Compile validation shifted after concurrent DataVault edits; the item magnet assembly no longer reports local errors, but the project still fails in unrelated domains.
+Solution: Re-ran `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -v:minimal` against current disk state. Current hard wall is external: `SargassumMicroFaunaBoids` missing `EnsureVaultBufferHandle`, `HectonMarineSnowRenderer` missing data-vault/native telemetry members, and `VehicleDockingModule` missing fluid runtime cache helpers.
+Rejected Alternatives: Claiming green; editing world boids, marine snow renderer, or vehicle docking from the loot magnet task.
+Scalability potential: No runtime impact for loot magnet; this keeps cross-domain ownership intact.
+Hardware Impact: None at runtime.

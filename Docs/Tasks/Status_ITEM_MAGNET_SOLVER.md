@@ -60,6 +60,7 @@ Status: VERIFIED MASTER GRADE - BUILD BLOCKED BY EXTERNAL DEPENDENCY
 - Loop 10: Physics/platform pass hardened magnet pose ownership: attached pickup Rigidbodies are made kinematic and collision-disabled before transform mutation, previous state is restored when magnet math stops owning pose, and magnet-emitted public signal structs (`ItemAcquiredSignal`, `WakeGeneratedSignal`, `FluidImpulseSignal`) now use `Pack=1`.
 - Loop 10 Compile Gate: First retry exposed local `HectonItem` missing `Hecton8.Core.Contracts.Signals`; fixed. Second retry failed only outside item magnet scope in `HectonXRRuntimeState`, `SubmarineStructuralGrid`, `VaultProbeUtility`, `BiolumPulseSyncRuntime`, and `SpatialAudioManager`.
 - Loop 11: Shutdown integrity pass restored all magnet-owned pickup proxy runtime physics state when the scheduler clears runtime state or disables, closing the post-pull collision suppression leak.
+- Loop 11 Compile Gate: `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -v:minimal` now fails outside item magnet scope in `SargassumMicroFaunaBoids`, `HectonMarineSnowRenderer`, and `VehicleDockingModule`. No loot/item magnet compile errors were emitted.
 
 ## Omega Polish Mandate
 

@@ -41,6 +41,7 @@ namespace Hecton8.Core.Memory
         AmbientBiota = 162,
         Vfx = 192,
         GraphicsScalability = 193,
+        ContentAuthority = 194,
         UI = 224,
         External = 65534
     }
@@ -264,7 +265,20 @@ namespace Hecton8.Core.Memory
         ResolutionScaleTelemetry = 211,
         TetherCableBlackBoxHead = 212,
         MarineSnowWakeJobResult = 213,
-        MarineSnowTelemetryRing = 214
+        MarineSnowTelemetryRing = 214,
+        EcosystemMacroSwarms = 215,
+        EcosystemMacroSwarmArrivals = 216,
+        EcosystemMacroSwarmCounters = 217,
+        EcosystemMacroSwarmBlackBox = 218,
+        EcosystemMacroSwarmMutationRadiation = 219,
+        EcosystemMacroSwarmMutationToxicity = 220,
+        EcosystemMacroSwarmMutationBrine = 221,
+        EcosystemMacroSwarmMutationResults = 222,
+        EcosystemMacroHydrationScratch = 223,
+        EcosystemMacroDehydrationScratch = 224,
+        BiotaMacroHydrationCounters = 225,
+        ContentAuthorityBlackBox = 226,
+        ContentAuthorityTelemetryCursor = 227
     }
 
     [Flags]

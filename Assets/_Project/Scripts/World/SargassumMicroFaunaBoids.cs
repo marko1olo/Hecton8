@@ -2473,8 +2473,8 @@ namespace Hecton8.World
             EnsureNativeArrayCapacity(vault, ref _foveatedSimulationFrontNative, BufferID.SargassumFoveatedSimulationFront, 1, nameof(_foveatedSimulationFrontNative));
             EnsureNativeArrayCapacity(vault, ref _foveatedSimulationBackNative, BufferID.SargassumFoveatedSimulationBack, 1, nameof(_foveatedSimulationBackNative));
             EnsureNativeArrayCapacity(vault, ref _simulationFrameNative, BufferID.SargassumSimulationFrame, 1, nameof(_simulationFrameNative));
-            EnsureVaultBufferHandle(vault, ref _boidSensoryThreatsHandle, BufferID.SargassumBoidSensoryThreats, PredatorAupBufferCapacity);
-            EnsureVaultBufferHandle(vault, ref _boidSensoryBlackBoxHandle, BufferID.SargassumBoidSensoryBlackBox, BoidSensoryBlackBoxCapacity);
+            EnsureNativeArrayCapacity(vault, ref _boidSensoryThreatsNative, BufferID.SargassumBoidSensoryThreats, PredatorAupBufferCapacity, nameof(_boidSensoryThreatsNative));
+            EnsureNativeArrayCapacity(vault, ref _boidSensoryBlackBox, BufferID.SargassumBoidSensoryBlackBox, BoidSensoryBlackBoxCapacity, nameof(_boidSensoryBlackBox));
             EnsureNativeArrayCapacity(vault, ref _foodChainTelemetryRing, BufferID.SargassumFoodChainTelemetryRing, FoodChainTelemetryCapacity, nameof(_foodChainTelemetryRing));
             _inactiveStatisticalSwarmRing.EnsureCapacity(vault, BufferID.SargassumInactiveSwarmRing, InactiveStatisticalSwarmRingCapacity, nameof(_inactiveStatisticalSwarmRing));
             _inactiveStatisticalSwarmCenterRing.EnsureCapacity(vault, BufferID.SargassumInactiveSwarmCenterRing, InactiveStatisticalSwarmRingCapacity, nameof(_inactiveStatisticalSwarmCenterRing));

@@ -4,7 +4,7 @@ Agent: STP_QUALITY_ADAPTER
 Role: GRAPHICS_PROGRAMMER
 Domain: RENDER/SCALABILITY
 Task Count: 18
-Status: CORE COMPLETE - FINAL VALIDATION BLOCKED BY DEPENDENCY
+Status: CORE COMPLETE - ESCALATION POLISH COMPLETE - FINAL VALIDATION BLOCKED BY DEPENDENCY
 
 ## Mandates Read
 
@@ -14,6 +14,11 @@ Status: CORE COMPLETE - FINAL VALIDATION BLOCKED BY DEPENDENCY
 - Docs/README.md
 - Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md
 - Docs/SYSTEMS_CONTRACTS.md
+- OPT_Native_Memory_Collections_JobSystem_Protocol.txt
+- OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+- ARCH_Signal_Lane_Segregation.txt
+- REND_GPU_Sovereignty.txt
+- OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt
 
 ## Tasks
 
@@ -22,19 +27,19 @@ Status: CORE COMPLETE - FINAL VALIDATION BLOCKED BY DEPENDENCY
 - [x] 3. DATA_EVICTION | Done | DOD: added `ResolutionScaleState` in `GlobalDataVault` lane and cached hardware tier through registry profile | Rejected: per-frame concrete scaler polling as policy input | Estimate: 1 us/frame
 - [x] 4. BURST_ALGORITHM | Done | DOD: one-frame-latent Burst `IJob` EWMA filters `SystemStress01` in native scale state | Rejected: managed-only smoothing in Tick | Estimate: 1 us/frame
 - [x] 5. AUP_INTEGRITY | Done | DOD: documented/implemented no AUP position ownership; adapter only locks temporal scale during AUP shifts | Rejected: inventing AUP dependencies for screen-space policy | Estimate: 0 us/frame
-- [x] 6. DOD_SOA_LAYOUT | Done | DOD: active render scale/stress/sharpen state stored in persistent DataVault/fallback NativeArray for render consumers | Rejected: managed object snapshot only | Estimate: 1 us/frame
+- [x] 6. DOD_SOA_LAYOUT | Done | DOD: active render scale/stress/sharpen state stored in DataVault-owned buffers only; no adapter-owned persistent NativeArray or fallback NativeArray remains | Rejected: local fallback NativeArray ownership | Estimate: 1 us/frame
 - [x] 7. SIGNAL_FLOW | Done | DOD: consumes `SystemHealthSignal`/`FrameTimeSignal` and publishes `ResolutionChangedSignal` only after >5 percent scale movement | Rejected: string events and per-frame spam | Estimate: 2 us/frame
 - [x] 8. LOW_TIER_FAKE | Done | DOD: `Low`/`Mx350`/`Unknown` base scale 0.5; stress EWMA >0.8 drops policy target to 0.35 | Rejected: native-resolution low-tier rendering | Estimate: 0 us/frame
 - [x] 9. HIGH_END_OVERKILL | Done | DOD: high/ultra policy base remains 1.0 and publishes STP active intent for anti-aliasing | Rejected: static medium compromise | Estimate: 0 us/frame
 - [x] 10. REACTIVE_VFX | Done | DOD: `_SharpenIntensity` global scalar increases as render scale drops | Rejected: separate post blur compensation pass | Estimate: 1 us/frame
 - [x] 11. STP_STABILIZATION | Done | DOD: HUD runtime render scale no longer multiplies by 3D dynamic resolution; UI/offscreen RTs remain explicit | Rejected: scaling Canvas through scene camera | Estimate: 0 us/frame
 - [x] 12. NAN_VACCINATION | Done | DOD: render scale clamped 0.25f..1.5f and non-finite state recovers to 1.0 with blackbox dump | Rejected: blind renderScale write | Estimate: 1 us/frame
-- [x] 13. BLACKBOX_LOGGING | Done | DOD: 300-frame NativeArray telemetry ring records `CurrentRenderScale` plus `StpActive` byte and dumps on NaN | Rejected: Debug.Log telemetry | Estimate: 1 us/frame
+- [x] 13. BLACKBOX_LOGGING | Done | DOD: 300-frame DataVault telemetry ring records `CurrentRenderScale` plus `StpActive` byte and dumps on NaN; entry layout is explicit 48B Pack=1 | Rejected: adapter-private telemetry NativeArray and Debug.Log telemetry | Estimate: 1 us/frame
 - [x] 14. TRIPLE_STRIKE_REPAIR | Done | DOD: adapter uses Unity 6000 `DynamicResolutionHandler`/`ScalableBufferManager`; no legacy RenderGraph blit path introduced | Rejected: obsolete Execute/Blit pass | Estimate: 0 us/frame
 - [x] 15. HOMEOSTASIS_ADAPTATION | Done | DOD: `AupShiftSignal` locks scale changes for three frames to preserve temporal history | Rejected: immediate scale shift during rebase | Estimate: 1 us/frame
 - [x] 16. MOTION_VECTOR_CHECK | Done | DOD: static scan found no silt/bubble motion-vector writers; only debris compute renderer explicitly uses `ForceNoMotion` | Rejected: broad material mutation sweep | Estimate: 0 us/frame
 - [x] 17. HUD_NOTIFICATION | Done | DOD: registered `OPTICS COMPENSATING` HUD notification and emits it only once below 0.4 scale until recovery | Rejected: visible UI string assignment in hot path | Estimate: 1 us/frame
-- [x] 18. FINAL_VALIDATION | BLOCKED BY DEPENDENCY | DOD: three compile gates logged; final `dotnet build` cannot reach STP adapter validation because core project references missing/duplicate tether-owned files | Rejected: editing physics/AI/visor domains from graphics task | Estimate: 0 us/frame
+- [x] 18. FINAL_VALIDATION | BLOCKED BY DEPENDENCY | DOD: four compile gates logged; current `dotnet build --no-restore` wall is outside STP in `SargassumMicroFaunaBoids` and `VehicleDockingModule` | Rejected: editing World/Construction domain methods from graphics scalability task | Estimate: 0 us/frame
 
 ## Loop Log
 
@@ -47,3 +52,5 @@ Status: CORE COMPLETE - FINAL VALIDATION BLOCKED BY DEPENDENCY
 - Compile Gate 3: `dotnet build Hecton8.Core.csproj` failed on missing external file `Assets/_Project/Scripts/Physics/Tethers/Contracts/TetherSignalContracts.cs`; final validation blocked.
 - Loop 4: Tasks 16-18 closed. Motion-vector static check complete, optics notification implemented, compile wall documented.
 - Loop 5: Omega polish mandate read. Anti-bloat scan found no `Update`, no `ResolutionManager.Instance`, and no stale `Hecton8.Graphics.DRS` references in the adapter path. Stale DataVault handle reacquire path patched. `git diff --check` reported no whitespace errors.
+- Loop 6: Escalation polish executed. Removed adapter-owned persistent NativeArrays, moved the STP blackbox to `GlobalDataVault`, hardened STP/thermal contract structs to explicit Pack=1 layouts, and replaced hot-path EWMA completion with non-blocking completion unless teardown/hotswap forces a structural sync.
+- Compile Gate 4: `dotnet build Hecton8.Core.csproj --no-restore` failed on unrelated errors: missing `EnsureVaultBufferHandle` in `World/SargassumMicroFaunaBoids.cs`, missing `CacheFluidRuntime`, and missing `ResetDockingRuntimeCaches` in `Construction/VehicleDockingModule.cs`.

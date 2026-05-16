@@ -37,7 +37,7 @@ Status source: `Docs/Tasks/CURRENT_BATCH.md`
 - [x] 15. HOMEOSTASIS_ADAPTATION | DOD: marked N/A per prompt | Rejected: invented physiology scope | Estimate: 0 us/frame
 - [x] 16. JOINT_LIMITS | DOD: solver clamps reach/cosine envelope and uses pole-plane bend direction with `OutputFlagJointLimited` | Rejected: unlimited elbow hyperextension | Estimate: 1 us for two hands
 - [x] 17. GHOST_HAND | DOD: locked hand separation >0.3m sets `OutputFlagGhostHand` and outputs real-controller ghost position | Rejected: snapping real hand through steel | Estimate: 1 us/frame
-- [BLOCKED BY DEPENDENCY] 18. FINAL_VALIDATION | DOD: static checks passed; full compile blocked after 3 attempts by non-Animation missing types/contracts | Rejected: chat-only completion | Estimate: cold verification only
+- [BLOCKED BY DEPENDENCY] 18. FINAL_VALIDATION | DOD: static checks passed; current full compile is blocked outside Animation/IK by `World/SargassumMicroFaunaBoids.EnsureVaultBufferHandle`, `VFX/HectonMarineSnowRenderer` missing fields, and `Construction/VehicleDockingModule` missing cache helpers | Rejected: chat-only completion | Estimate: cold verification only
 
 ## Loop Log
 
@@ -50,3 +50,4 @@ Status source: `Docs/Tasks/CURRENT_BATCH.md`
 - Loop 6 | Multiplatform inquisition pass: all owned IK structs now use `Pack = 1`; hand input/output lanes moved into GlobalDataVault IDs `HandPresenceInput=190` and `HandPresenceOutput=191`; duplicate BufferID scan found no numeric collisions; `git diff --check` reports line-ending warnings only.
 - Loop 7 | Full owned-domain statelessness pass: added `LeviathanTerrainIkVault.TryResolveBuffers` for existing leviathan DataVault IDs; forbidden-pattern scans over `Assets/_Project/Scripts/Animation/IK` found no `Pack=4`, `Vector3.Lerp`, `Quaternion.Slerp`, `math.acos`, `Physics.SphereCast`, `VRHandManager`, `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, legacy `EventBus`, managed delegates, local `new NativeArray`, or allocator ownership.
 - Loop 8 | Compile retry after H-Phi pass: `dotnet build Hecton8.Core.csproj --no-restore` fails outside Animation/IK on `GameBootstrapper.cs` missing `Hecton8.Core.Bucketing.ModuloSimulationBucketer`; no owned IK errors reported.
+- Loop 9 | ARM64 ABI pass: added `VRPhysicalHandPresenceLayout.Validate()` with fixed byte strides and explicit telemetry padding so packed records remain 4-byte aligned before `float3` payloads; restored a single `GlobalDataVault.ValidateAbiLayout()` after concurrent duplicate/missing validator churn; build now progresses to external World/VFX/Construction errors with no owned IK errors reported.

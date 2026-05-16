@@ -24,6 +24,7 @@ Status policy: `PENDING VERIFICATION` until Unity/Profiler evidence exists.
 - Loop 5: Completed. Read Omega Polish after all tasks were checked/blocked, verified `math.rsqrt` in `VerletCableSolverJob`, scanned for banned tether joints/singletons/distance calls, and ran final diff/static checks.
 - Loop 6: Completed. Multiplatform inquisition pass: converted tether signal/telemetry structs to `Pack=1`, moved snap notifications to typed `SignalBus<TetherSnappedSignal>` with `ReadOnlySpan<T>` reads, removed the private fallback allocation for public cable DataVault lanes, moved remaining tether-owned NativeArray allocations to `H8Memory.Allocate/Release(SystemID.Physics)`, and re-ran static scans.
 - Loop 7: Completed. Purged the private `NativeQueue<TetherFiredSignal>`, moved fire notifications to typed `SignalBus<TetherFiredSignal>`, repaired the compiled contract placement, and re-ran the directed compile probe until tether errors were gone.
+- Loop 8: Completed. Re-read XML, moved the 300-frame Verlet blackbox ring and per-slot cursor into `GlobalDataVault`, updated the telemetry job/dump to use fixed vault slot offsets, and re-ran compile/static probes. Build remains dependency-blocked outside tether code.
 
 ## Titanium Task Checklist
 
@@ -39,7 +40,7 @@ Status policy: `PENDING VERIFICATION` until Unity/Profiler evidence exists.
 - [x] 10. REACTIVE_VFX | DOD: tension over 0.9 snap threshold drives shader stress and emits high-flag creak/impact signals. Rejected: polling components. Estimate: <2 us when threshold crossed.
 - [x] 11. STP_STABILIZATION | DOD: tether render submissions use `MotionVectorGenerationMode.Camera` and persistent point buffers, avoiding invalid object-motion history. Rejected: per-frame mesh transforms. Estimate: 0 B GC, motion vectors remain camera-valid.
 - [x] 12. NAN_VACCINATION | DOD: integration and DataVault velocity export clamp to `MaxCableVelocity` with finite guards; constraint correction weight uses an epsilon floor before reciprocal. Rejected: raw stuck-wreck velocity and raw near-zero reciprocal. Estimate: <1 us per 11-node pass.
-- [x] 13. BLACKBOX_LOGGING | DOD: `PeakCableTension` is written to `TetherVerletTelemetryEntry` and binary dump `Docs/AgentLogs/Dump_VERLET_TOW_WINCH.bin`. Rejected: chat-only crash diagnosis. Estimate: 64 bytes/frame in fixed 300-frame ring.
+- [x] 13. BLACKBOX_LOGGING | DOD: `PeakCableTension` is written to a `GlobalDataVault`-owned `TetherVerletTelemetryEntry` ring and binary dump `Docs/AgentLogs/Dump_VERLET_TOW_WINCH.bin`. Rejected: private per-instance telemetry ring. Estimate: 64 bytes/frame in fixed 300-frame ring; cursor write is one int/frame.
 - [x] 14. TRIPLE_STRIKE_REPAIR | DOD: solver runs in `TetherManager.FixedTick` registered to `PriorityLayer.Environment`; `PlayerKinematicsRuntime` registers to `PriorityLayer.Player`; dispatcher lane order is Core=0, Environment=1, Player=2. Rejected: same-lane ordering guess. Estimate: 0 us direct overhead.
 - [x] 15. HOMEOSTASIS_ADAPTATION | DOD: no adaptive homeostasis mutation was added; physics tiering is deterministic from scalability tier. Rejected: runtime self-tuning force changes. Estimate: 0 us.
 - [x] 16. NEWTONS_3RD_LAW | DOD: peak tension queues equal/opposite endpoint force packets through `PhysicsForceRouter`, scaled by `MassSub / (MassSub + MassWreck)` and max acceleration. Rejected: direct `Rigidbody.AddForce` and one-sided tow force. Estimate: 2 queued force packets per active tow step.
@@ -51,10 +52,11 @@ Status policy: `PENDING VERIFICATION` until Unity/Profiler evidence exists.
 - ARM64/Quest: `TetherTensionSignal`, `TetherSnappedSignal`, `TetherFiredSignal`, `TetherVerletTelemetryEntry`, and `TetherManagerTelemetryEntry` now declare `Pack=1` with explicit sizes. Remaining `Pack=4` hits in `GlobalSignals.cs` are unrelated pre-existing global contracts outside this tether patch.
 - Metal/Mac: `Hecton_TetherLineStrip.shader` has no `numthreads`, `RWTexture`, `ByteAddressBuffer`, or DirectX-only token hits in the tether shader scan. It uses Unity cross-compiled vertex semantics `SV_VertexID` / `SV_InstanceID`.
 - Steam Deck/I/O: tether binary dumps remain fault-path/dev-build only; no per-frame file reads or writes were added.
-- Data sovereignty: public 10-segment cable SOA export no longer creates a private fallback buffer when `GlobalDataVault` is unavailable. It fails closed until the vault exists.
-- Memory sentinel: tether visual/solver/telemetry `NativeArray` allocations now use `H8Memory.Allocate(..., SystemID.Physics)` and release through `H8Memory.Release`.
+- Data sovereignty: public 10-segment cable SOA export and the 300-frame blackbox telemetry ring now resolve through `GlobalDataVault`; no private fallback is created when the vault is unavailable. The ring is partitioned by fixed tether slot.
+- Memory sentinel: remaining tether visual/solver scratch `NativeArray` allocations use `H8Memory.Allocate(..., SystemID.Physics)` and release through `H8Memory.Release`. The Verlet blackbox ring/head are vault-owned views, not local persistent allocations.
 - SignalBus: snap notification moved off private `NativeQueue<TetherSnappedSignal>` to typed `SignalBus<TetherSnappedSignal>` with `ReadOnlySpan<TetherSnappedSignal>` readback. Fire notification moved off private `NativeQueue<TetherFiredSignal>` to typed `SignalBus<TetherFiredSignal>` with `ReadOnlySpan<TetherFiredSignal>` snapshot reads. Tension remains typed `SignalBus<TetherTensionSignal>`.
 - Remaining bounded exception: fire attach still uses a managed fixed-size request sidecar because it carries Unity object references for immediate same-frame attach. It is not a delegate/EventBus/native queue path, but it is not a pure unmanaged typed lane.
+- Remaining bounded exception: solver and visual staging arrays remain local H8Memory-tracked scratch, not fully DataVault-evicted. The blackbox telemetry exception was removed; full solver scratch eviction still requires offset-aware solver/visual upload refactor.
 - Hot-path debt scan: no `Update`, `FixedUpdate`, `LateUpdate`, `string.Format`, LINQ, banned Unity Joint type, `TetherManager.Instance`, `math.distance`, or `distance(` hits in the touched tether path.
 
 ## Compile Attempts
@@ -69,6 +71,8 @@ Status policy: `PENDING VERIFICATION` until Unity/Profiler evidence exists.
 - Attempt 8: same command exposed unqualified fire payload resolution as `Hecton8.Physics.TetherFiredSignal`; fixed by explicitly routing runtime fire payload usage through the `Hecton8.Core.Contracts.Signals.TetherFiredSignal` contract alias.
 - Attempt 9: same command failed only on unrelated `GameBootstrapper` / `ModuloSimulationBucketer` namespace errors. No tether compiler errors appeared in the reported set.
 - Attempt 10: same command failed on unrelated XR refresh-rate API, item signal import, submarine structural breach buffers, biolum buffers, and vault probe generic inference errors. No tether compiler errors appeared in the reported set.
+- Attempt 11: `dotnet build Hecton8.Core.csproj -v:minimal /clp:ErrorsOnly /p:UseSharedCompilation=false` failed before tether validation on an unrelated `GlobalDataVault.ValidateAbiLayout` duplicate report. No tether compiler errors appeared.
+- Attempt 12: `dotnet build Hecton8.Core.csproj -v:minimal /p:UseSharedCompilation=false` failed on unrelated Sargassum, MarineSnow, and VehicleDocking missing-member errors. No tether compiler errors appeared in the reported set.
 
 ## Omega Polish
 

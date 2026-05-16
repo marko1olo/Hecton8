@@ -78,3 +78,17 @@ Solution: Resolve `_alphaLeviathanTelemetryRing` from `GlobalDataVault` using th
 Rejected Alternatives: Keeping the local ring was rejected because it preserved private persistent telemetry ownership. Adding a new buffer ID was rejected because an Alpha telemetry lane already exists. Requesting only 300 entries was rejected because a later 19,200-entry owner could resize the DataVault block and invalidate stale views. Returning registration failure when DataVault is late was rejected because it would break fauna spawn order for a non-authoritative retinal cache.
 Scalability potential: Low/Middle/High/Ultra share one central black-box lane. Low-end devices keep fault-only disk I/O. High/Ultra can retain per-slot Alpha telemetry without another allocation owner.
 Hardware Impact: Runtime ownership cost remains 0 us/frame after cold resolve. Memory footprint for this shared lane is 19,200 entries by design, matching the existing 300-frame/64-slot Alpha telemetry contract. Register/unregister adds three cold-path `IsCreated` checks; no profiler microseconds were measured.
+
+## Decision 12 - Retinal Signal Sanitation And Strobe Sentinel
+Problem: Retinal light cache upsert still trusted dequeued signal scalars, and high-tier blind-strobe duplicate suppression used `0` as its implicit first-frame value.
+Solution: Reject non-finite light AUP/range/intensity/spot values and brownout-suppressed lights before cache upsert, clamp finite range/intensity/spot values in the cache record, and use `uint.MaxValue` as the blind-strobe frame sentinel reset on fauna lifecycle transitions.
+Rejected Alternatives: Relying only on `GlobalSignals` sanitation was rejected because the retinal cache is a four-slot scarce resource and should be self-defending. Keeping frame `0` as the strobe sentinel was rejected because frame-0 signals and pooled objects are valid runtime cases.
+Scalability potential: Low-tier devices avoid wasting one of four light records on corrupt payloads. Middle/High/Ultra get the same deterministic headlight truth, while high-tier strobe no longer misses the first valid blind frame.
+Hardware Impact: Signal sanitation adds five scalar branches per dequeued light signal and zero per-predator hot-loop cost. Sentinel reset is cold lifecycle work only. No profiler microseconds were measured.
+
+## Decision 13 - DataVault Duplicate Compile Unblock
+Problem: `GlobalDataVault` contained two identical `ValidateAbiLayout()` methods, blocking compilation of the DataVault interface now used by retinal buffers.
+Solution: Removed the second identical method body only. The remaining validator still runs from `EnsureInitialized()`.
+Rejected Alternatives: Leaving the compile wall was rejected because this retinal pass depends on DataVault for all retinal state. Reworking DataVault ABI validation was rejected as cross-domain overreach.
+Scalability potential: All tiers retain the same DataVault ABI validation path; no runtime behavior changes.
+Hardware Impact: Runtime impact is 0 us/frame; this was compile-only duplicate removal. No profiler microseconds were measured.

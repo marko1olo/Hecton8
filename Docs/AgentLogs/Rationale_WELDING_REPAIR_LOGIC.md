@@ -90,3 +90,24 @@ Solution: Ran `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal`; c
 Rejected Alternatives: Fabricating missing RealtimeCSG package sources or editing VFX/ecosystem service contracts would violate domain boundaries.
 Scalability potential: No runtime scalability impact; this is repository dependency health debt.
 Hardware Impact: No hardware gain; build remains blocked outside WELDING_REPAIR_LOGIC.
+
+## Structural Sidecar Vault Ownership
+Problem: The repair contract touches the submarine structural breach sidecar, and a scene-owned breach SOA or blackbox ring would violate the H-Phi data sovereignty demand even when the primary HullDents lane is already vaulted.
+Solution: Verified the breach SOA resolves through GlobalDataVault BufferID.SubmarineStructuralBreaches and the 300-frame damage-control blackbox resolves through BufferID.SubmarineDamageControlBlackBox; SubmarineStructuralGrid now holds handles and transient NativeArray views only for those lanes.
+Rejected Alternatives: Keeping private persistent NativeArray<float4> breach authority or private damage-control telemetry storage would duplicate truth and hide memory ownership from the vault.
+Scalability potential: Low keeps the same 64-entry breach fake for repair leakage. Middle/High/Ultra can feed heavier leak plume and repair VFX from the same vault-owned sidecar without adding gameplay authority.
+Hardware Impact: i3/MX350 avoids repeated allocation/ownership ambiguity and saves an estimated 2-5 microseconds in handle reuse/lookup churn during active repair-side reads; the blackbox move is runtime-neutral but removes leak-risk ownership.
+
+## ARM64 Storage ABI Pass
+Problem: Damage-control storage records still used Pack=4, leaving implicit padding risk for ARM64/Quest when these records are viewed through vault/native buffers.
+Solution: Changed ImpactCommand to StructLayout Sequential Pack=1 Size=24 and DamageControlTelemetryEntry to Pack=1 Size=32. Remaining Pack=16 hits in SubmarineStructuralGrid are Burst job payload structs, not cross-system storage ABI.
+Rejected Alternatives: Repacking Burst job payload structs would risk worse NativeArray/job scheduler alignment with no vault/signal ABI benefit. Leaving Pack=4 on stored records would fail the Quest packing audit.
+Scalability potential: Low/Middle/High/Ultra share deterministic storage stride; high-tier VFX can read sidecar records without platform-specific padding assumptions.
+Hardware Impact: Runtime microsecond gain is 0; the gain is platform survival: deterministic native stride and no hidden padding on ARM64 storage records.
+
+## Validation Wall Third Pass
+Problem: Build validation still cannot isolate the repair domain because project graph errors stop the compile first.
+Solution: Ran `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /clp:ErrorsOnly`; captured 245 errors dominated by RealtimeCSG missing source files plus unrelated Hecton8.Core failures in GlobalDataVault and SargassumMicroFaunaBoids. No emitted diagnostic referenced the WELDING repair files.
+Rejected Alternatives: Repairing RealtimeCSG package inventory, fauna sensory buffers, or global vault ABI helper code is outside this XML domain and would trample active work from other agents.
+Scalability potential: No runtime scalability impact; this remains external build health debt.
+Hardware Impact: No hardware gain; compile is dependency-blocked outside the repair kernel.

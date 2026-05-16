@@ -92,7 +92,7 @@ namespace Hecton8.Core
         private const float PauseDepthOfFieldBlendSeconds = 0.2f;
         private const float VisualStaticGlitchDurationSeconds = 1f;
         private const float SafeGcCollectFrameBudgetSeconds = 0.014f;
-        private const double HomeostasisEmergencySlowTickIntervalSeconds = 0.5;
+        private const double HomeostasisEmergencySlowTickIntervalSeconds = 1.0;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private const float AupNanInquisitorLogIntervalSeconds = 5f;
         private const float DispatcherPhaseWarningLogIntervalSeconds = 5f;

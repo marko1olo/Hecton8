@@ -138,21 +138,19 @@ namespace Hecton8.Rendering.Scatter
         private const string GpuIndirectKeyword = "HECTON_GPU_INDIRECT";
         private const string QualityMx350Keyword = "_QUALITY_MX350";
         private const string QualityHighKeyword = "_QUALITY_HIGH";
+        private const string ScatterFrameConstantsBufferName = "HectonScatterFrameConstants";
+        private const int ScatterFrameConstantsStrideBytes = 80;
 
         private static readonly int _SourceMatricesId = Shader.PropertyToID("_HectonScatterSourceMatrices");
         private static readonly int _VisibleIndicesId = Shader.PropertyToID("_HectonScatterVisibleIndices");
         private static readonly int _VisibleMatricesId = Shader.PropertyToID("_HectonScatterVisibleMatrices");
         private static readonly int _MotionVectorsId = Shader.PropertyToID("_HectonScatterMotionVectors");
-        private static readonly int _InstanceCountId = Shader.PropertyToID("_HectonScatterInstanceCount");
         private static readonly int _FrustumPlanesId = Shader.PropertyToID("_HectonScatterFrustumPlanes");
-        private static readonly int _AupShiftOffsetId = Shader.PropertyToID("_HectonScatterAupShiftOffset");
-        private static readonly int _CameraPositionId = Shader.PropertyToID("_HectonScatterCameraPosition");
-        private static readonly int _LocalBoundsCenterId = Shader.PropertyToID("_HectonScatterLocalBoundsCenter");
-        private static readonly int _LocalBoundsExtentsId = Shader.PropertyToID("_HectonScatterLocalBoundsExtents");
-        private static readonly int _MaxDistanceSqId = Shader.PropertyToID("_HectonScatterMaxDistanceSq");
-        private static readonly int _MotionStrengthId = Shader.PropertyToID("_HectonScatterMotionStrength");
-        private static readonly int _FrameIndexId = Shader.PropertyToID("_HectonScatterFrameIndex");
-        private static readonly int _CrossfadeEnabledId = Shader.PropertyToID("_HectonScatterCrossfadeEnabled");
+        private static readonly int _ScatterParams0Id = Shader.PropertyToID("_HectonScatterParams0");
+        private static readonly int _ScatterParams1Id = Shader.PropertyToID("_HectonScatterParams1");
+        private static readonly int _ScatterParams2Id = Shader.PropertyToID("_HectonScatterParams2");
+        private static readonly int _ScatterParams3Id = Shader.PropertyToID("_HectonScatterParams3");
+        private static readonly int _ScatterParams4Id = Shader.PropertyToID("_HectonScatterParams4");
         private static readonly int _ShaderInstanceMatricesId = Shader.PropertyToID("_HectonInstanceMatrices");
         private static readonly int _ShaderInstanceDataId = Shader.PropertyToID("_HectonVegetationInstanceData");
         private static readonly int _ShaderVisibleIndicesId = Shader.PropertyToID("_HectonVisibleInstanceIndices");
@@ -257,8 +255,10 @@ namespace Hecton8.Rendering.Scatter
         private GraphicsBuffer _visibleMatrixBuffer;
         private GraphicsBuffer _motionVectorBuffer;
         private GraphicsBuffer _argsBuffer;
+        private GraphicsBuffer _frameConstantsBuffer;
         private Plane[] _cameraPlanes;
         private Vector4[] _frustumPlaneUpload;
+        private readonly ScatterFrameConstants[] _frameConstantsUpload = new ScatterFrameConstants[1]; // COLD ALLOC: ScatterFrameConstants[1] - packed compute constant upload lane - owner: GpuScatterLodManager
         private IDataVault _registryDataVault;
         private IDataVault _dataVault;
         private VaultBufferHandle<Matrix4x4> _vaultMatricesHandle;
@@ -363,9 +363,9 @@ namespace Hecton8.Rendering.Scatter
             if (_activeInstanceCount <= 0 || !EnsureCpuAuditBuffers(_activeInstanceCount))
                 return false;
 
-            if (!TryResolveMatrixView(out NativeArray<Matrix4x4> matrices) ||
-                !TryResolveCpuFrustumPlaneView(out NativeArray<float4> frustumPlanes) ||
-                !TryResolveCpuVisibilityMaskView(out NativeArray<byte> visibilityMask))
+            if (!TryResolveMatrixView(out var matrices) ||
+                !TryResolveCpuFrustumPlaneView(out var frustumPlanes) ||
+                !TryResolveCpuVisibilityMaskView(out var visibilityMask))
             {
                 return false;
             }
@@ -791,8 +791,7 @@ namespace Hecton8.Rendering.Scatter
                 return;
             }
 
-            NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> argsWrite =
-                _argsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
+            var argsWrite = _argsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
             argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
             {
                 indexCountPerInstance = indexCount,
@@ -829,8 +828,8 @@ namespace Hecton8.Rendering.Scatter
             if (!_forceUpload && !generationChanged)
                 return true;
 
-            if (!TryResolveMatrixView(out NativeArray<Matrix4x4> matrices) ||
-                !TryResolveMetadataView(out NativeArray<GpuScatterFloraInstanceData> metadata))
+            if (!TryResolveMatrixView(out var matrices) ||
+                !TryResolveMetadataView(out var metadata))
             {
                 return false;
             }
@@ -971,7 +970,7 @@ namespace Hecton8.Rendering.Scatter
                 _visibleCountReadbackPending = false;
                 if (!_visibleCountReadbackRequest.hasError)
                 {
-                    NativeArray<uint> argsData = _visibleCountReadbackRequest.GetData<uint>();
+                    var argsData = _visibleCountReadbackRequest.GetData<uint>();
                     _lastVisibleFloraCount = argsData.Length > IndirectArgsInstanceCountIndex
                         ? (int)math.min(argsData[IndirectArgsInstanceCountIndex], (uint)int.MaxValue)
                         : 0;
@@ -1205,7 +1204,7 @@ namespace Hecton8.Rendering.Scatter
 
         private void EnsureMetadataDefaults()
         {
-            if (!TryResolveMetadataView(out NativeArray<GpuScatterFloraInstanceData> metadata) ||
+            if (!TryResolveMetadataView(out var metadata) ||
                 _metadataDefaultsInitialized ||
                 metadata.Length <= 0)
             {
@@ -1387,7 +1386,7 @@ namespace Hecton8.Rendering.Scatter
 
         private void UploadCpuFrustumPlanes()
         {
-            if (!TryResolveCpuFrustumPlaneView(out NativeArray<float4> frustumPlanes))
+            if (!TryResolveCpuFrustumPlaneView(out var frustumPlanes))
                 return;
 
             for (int i = 0; i < FrustumPlaneCount; i++)

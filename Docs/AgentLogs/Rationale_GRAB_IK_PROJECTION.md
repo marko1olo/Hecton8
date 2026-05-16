@@ -64,6 +64,12 @@ Rejected Alternatives: Trusting CLR default layout or platform-dependent padding
 Scalability potential: Identical binary payloads on Quest, Steam Deck, Mac, and PC allow one DataVault schema for all tiers.
 Hardware Impact: Slightly denser payloads improve cache residency; any unaligned-access cost is bounded by two hand lanes and is cheaper than layout mismatch recovery.
 
+Problem: `Pack = 1` removed implicit padding, but the telemetry record placed its first `float3` at an odd offset, which is hostile to ARM64 and dump readers.
+Solution: Add explicit `LayoutPadding` and `VRPhysicalHandPresenceLayout.Validate()` byte-stride checks for `VRHandAupPose` 48, `VRHandGrabState` 72, `VRHandPresenceInput` 260, `VRHandPresenceOutput` 116, and `VRHandIkTelemetryEntry` 80 bytes before resolving DataVault lanes.
+Rejected Alternatives: Relying on default CLR padding was rejected; leaving a 79-byte telemetry stride was rejected because it creates deliberate unaligned vector payloads.
+Scalability potential: Low/Middle/High/Ultra share one binary lane schema; Ultra can add richer presentation without changing the hand IK ABI.
+Hardware Impact: Cold validation only. Hot-path telemetry remains one fixed 80-byte write per frame instead of an odd-stride record that can penalize Quest-class memory access.
+
 Problem: Steam Deck and MicroSD installs cannot tolerate surprise hot-path file I/O.
 Solution: Keep telemetry dumping as an explicit cold crash/NaN path; the job hot path only writes the fixed DataVault ring and never touches `FileStream`, `Directory`, or managed strings.
 Rejected Alternatives: Continuous frame dumps or verbose logs were rejected as I/O pressure and GC hazards.
@@ -75,3 +81,9 @@ Solution: Add `LeviathanTerrainIkVault.TryResolveBuffers` against existing `Buff
 Rejected Alternatives: Adding local persistent arrays or assuming caller-owned arrays was rejected; widening into unrelated AI/world ownership was also rejected.
 Scalability potential: Leviathan low tier can request eight segments; high tier can request twenty segments and SDF/height data without changing job state ownership.
 Hardware Impact: Cold resolver only. Hot-path job cost is unchanged; data residency becomes explicit and cache-bounded.
+
+Problem: Compile verification was masked by concurrent `GlobalDataVault.ValidateAbiLayout()` churn: one pass duplicated the method, the next removed both copies while leaving the call.
+Solution: Restore exactly one validator in `GlobalDataVault` because hand DataVault lanes depend on that memory contract and the project could not reach downstream compile gates without it.
+Rejected Alternatives: Removing the call would weaken the ABI sentinel; editing unrelated World/VFX/Construction blockers was rejected as outside this agent's domain after the vault gate moved forward.
+Scalability potential: All device tiers keep the same DataVault ABI checks before persistent buffers are exposed.
+Hardware Impact: Cold boot only; no hot-frame cost.
