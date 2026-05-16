@@ -42,7 +42,7 @@ Authority file: Assets/_Project/Scripts/Core/GlobalSignals.cs
 | Command | Result |
 | --- | --- |
 | `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false` | PASS: 0 warnings, 0 errors. Latest pass verified bridge DTO import repair plus tether ABI padding and validator updates. |
-| `dotnet build Assembly-CSharp.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false` | FAIL outside CORE/SIGNALS: `RealtimeCSG.csproj` references 216 missing third-party source files. Signal/core assemblies compile before this wall. |
+| `dotnet build Assembly-CSharp.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false` | FAIL outside CORE/SIGNALS: `RealtimeCSG.csproj` references 216 missing third-party source files; 131 third-party warnings were emitted before failure. Signal/core assemblies compile before this wall. |
 
 Audit conclusion: 0 duplicate signal names, 0 signal payloads outside `Hecton8.Core.Contracts.Signals`, and 0 decentralized SignalBus lane Configure calls remain.
 

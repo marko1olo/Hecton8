@@ -173,7 +173,7 @@ Exact microseconds saved:
 
 Verification:
 - `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false`: PASS, 0 warnings, 0 errors.
-- `dotnet build Assembly-CSharp.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false`: FAIL outside domain in `RealtimeCSG.csproj` with 216 missing third-party source file errors and 26 third-party warnings.
+- `dotnet build Assembly-CSharp.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false`: FAIL outside domain in `RealtimeCSG.csproj` with 216 missing third-party source file errors and 131 third-party warnings.
 - Decentralized `SignalBus<T>.Configure` audit: `CONFIGURE_CENTRALIZED`.
 - Line-tracked `ISignal` namespace audit: `ISIGNAL_NAMESPACE_OK`.
 - Duplicate combat signal and old namespace scan: 0 matches.
@@ -182,3 +182,34 @@ Verification:
 
 Blocked:
 - Full Unity project graph remains blocked by RealtimeCSG third-party project/source inventory, not by CORE/SIGNALS.
+
+## Surgical Record - 2026-05-16 Tether ABI Padding Recovery
+
+What was wrong:
+- Fresh strict layout scan found `TetherSnappedSignal` at 72 bytes and `TetherFiredSignal` at 40 bytes.
+- Both were sequential Pack=1, but neither was a 16-byte multiple.
+- `GlobalSignals` runtime size validators still encoded the old 72/40 byte sizes.
+
+What was done:
+- Padded `TetherSnappedSignal` to 80 bytes with a reserved field.
+- Padded `TetherFiredSignal` to 48 bytes with a reserved field.
+- Updated `ValidateSignalSize<TetherSnappedSignal>` and `ValidateSignalSize<TetherFiredSignal>` to 80/48.
+- Re-ran layout, centralization, duplicate, stale namespace, managed event/delegate, managed string, and core build checks.
+
+Cinematic cheats used:
+- No visual math change in this pass. The stable tether event ABI preserves low-tier bounded truth and lets high-tier consumers spend the signal on snap sparks, cable recoil, visor warnings, and audio overkill without increasing physics cost.
+
+Exact microseconds saved:
+- Tether ABI padding: 0 us runtime saved. This prevents layout drift and stricter ARM64/mobile read hazards rather than reducing frame time.
+
+Verification:
+- `ISIGNAL_TOTAL=163`.
+- `ISIGNAL_NO_SIZE_OR_NON16=0`.
+- `CONFIGURE_OUTSIDE_GLOBALSIGNALS=0`.
+- Duplicate combat signal, old namespace, `string.Format`, `$"`, `.ToString()`, `UnityEvent`, `Action<`, and `EventBus` scans over the signal authority files: 0 hits.
+- `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false`: PASS, 0 warnings, 0 errors.
+- `dotnet build Assembly-CSharp.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false`: FAIL outside domain in `RealtimeCSG.csproj` with 216 missing third-party source file errors and 131 third-party warnings.
+
+Blocked:
+- 105 legacy explicit signal layouts still omit `Pack=1`; they are ABI-union layouts and remain staged-migration work, not a safe mechanical edit.
+- Full Unity project graph remains blocked by RealtimeCSG third-party source inventory outside CORE/SIGNALS.

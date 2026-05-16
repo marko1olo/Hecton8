@@ -149,7 +149,7 @@ Hardware Impact: Runtime gain is 0 us. Compile recovery unblocks `Hecton8.Core.c
 
 ## Decision - Final Project Graph Boundary
 
-Problem: After the core assembly passed, `Assembly-CSharp.csproj` failed in `RealtimeCSG.csproj` with 216 missing third-party source file errors and 26 third-party warnings.
+Problem: After the core assembly passed, `Assembly-CSharp.csproj` failed in `RealtimeCSG.csproj` with 216 missing third-party source file errors and 131 third-party warnings.
 Solution: Classified the full graph failure as outside CORE/SIGNALS because the signal/core assemblies already compiled and the failing paths are absent RealtimeCSG plugin files.
 Rejected Alternatives: Editing generated third-party `.csproj` entries or recreating vendor source files from the signal pass would violate asset integrity and domain boundaries.
 Scalability potential: SignalBus remains independently verified; third-party project hygiene can be handled by the integrator without mutating signal contracts.
